@@ -1,0 +1,10 @@
+LICENSE
+README.md
+pyproject.toml
+setup.cfg
+setup.py
+ModelAugmentation.egg-info/PKG-INFO
+ModelAugmentation.egg-info/SOURCES.txt
+ModelAugmentation.egg-info/dependency_links.txt
+ModelAugmentation.egg-info/top_level.txt
+model_augmentation/__init__.py

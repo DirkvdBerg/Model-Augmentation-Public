@@ -4,4 +4,8 @@ __pycache__/
 /build/
 
 ## ignore hidden files!
-.*  
+.*
+
+# PDF files to ignore
+SCRIPTS_GUIDE.md 1.pdf
+20250206_Kessels_hf.pdf  
