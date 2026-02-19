@@ -119,8 +119,18 @@ for t in range(wait_minutes):
     print(f"Time passed: {t+1} minutes")
 
 ## ------------- Train fit system -----------------
+# Check GPU usage
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"CUDA Available: {torch.cuda.is_available()}")
+print(f"Using device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
+if torch.cuda.is_available():
+    print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
+
 fit_sys = SSE_Interconnect(interconnect=interconnect, na=nxd*2+1, nb=nxd*2+1, e_net_kwargs={"n_nodes_per_layer":16})
-fit_sys.fit(train_sys_data=train_data, val_sys_data=val_data, batch_size=batch_size, epochs=epochs, auto_fit_norm=True, loss_kwargs={'nf':nf}, validation_measure="sim-RMS")
+# Initialize model with device parameter to enable GPU training
+fit_sys.init_model(sys_data=train_data, device=device, auto_fit_norm=True)
+# Train on GPU if available
+fit_sys.fit(train_sys_data=train_data, val_sys_data=val_data, batch_size=batch_size, epochs=epochs, loss_kwargs={'nf':nf}, validation_measure="sim-RMS")
 
 # ------------- Save fit system -----------------
 if save_flag:
