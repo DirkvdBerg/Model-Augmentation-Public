@@ -1,5 +1,13 @@
-numpy
-matplotlib
-torch
-pandas
-deepSI
+deepSI==0.3.29
+matplotlib==3.10.8
+numpy==2.0.1
+scipy==1.17.0
+torch==2.5.1
+torchaudio==2.5.1
+torchvision==0.20.1
+
+# numpy
+# matplotlib
+# torch
+# pandas
+# deepSI

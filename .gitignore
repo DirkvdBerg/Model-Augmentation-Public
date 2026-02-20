@@ -1,15 +1,22 @@
 /development/
-/model_augmentation.egg-info/
-__pycache__/
 /build/
+__pycache__/
+*.egg-info/
 
-## ignore hidden files!
-.*
+# hidden/cache/editor
+.vscode/
+.pytest_cache/
+.mypy_cache/
 
-# PDF files to ignore
-SCRIPTS_GUIDE.md 1.pdf 
-4.pdf 5.pdf
-20250206_Kessels_hf.pdf  
+# docs/pdfs you want excluded
+SCRIPTS_GUIDE.md
+1.pdf
+4.pdf
+5.pdf
+20250206_Kessels_hf.pdf
 
-# Ignore entire Industrial Robot benchmark folder (all files/subfolders)
+# benchmark folder
 /Robot Identification Benchmark/
+
+# data folder
+/data/
