@@ -18,10 +18,39 @@ Convert the ASMPT dual-gantry First Principles (FP) model (García-Herreros et a
 | Augmentation framework — core library | `model_augmentation/fit_systems/` |
 | Reference benchmark scripts | `scripts/` |
 | Research plan & methods | `Research-Plan/` |
+| FP model structure (curated reference) | `docs/fp-model-structure.md` |
 | Design decisions log | `docs/decisions.md` |
 | Session task tracking | `tasks/todo.md` |
 | Self-improvement ruleset | `tasks/lessons.md` |
+| Session handoff state | `tasks/handoff.md` |
 | Archived LPV planning docs | `archive/` |
+
+## Multi-Agent File Ownership
+
+This project may be worked on by Claude and Codex in relay. File ownership rules:
+
+| File(s) | Claude | Codex |
+|---------|--------|-------|
+| `tasks/lessons.md`, `docs/decisions.md`, `tasks/todo.md`, `tasks/handoff.md`, `docs/` | read/write | read/write |
+| `CLAUDE.md`, `.claude/settings.json` | read/write | read + propose only |
+| `CODEX.md` | read + propose only | read/write |
+| `kamtin-fp-model/` | **never write** | **never write** |
+
+**Proposing changes to the other agent's instruction file:** write the suggestion in `tasks/handoff.md` under `### Proposed improvements for [Claude/Codex]`. The owning agent implements it.
+
+---
+
+## Step 0 — Before Every Response
+
+**Check for corrections first.** If the previous message was a correction, rejection, or redo request:
+1. Read `tasks/lessons.md`
+2. Apply the 3-criteria gate (generalizable + actionable + novel)
+3. Update the ruleset if it passes — merge with existing rules, do not append duplicates
+4. Only then proceed with the current request
+
+This is non-optional. Do not defer it until after execution.
+
+---
 
 ## Workflow Rules (Hard Constraints)
 
@@ -37,7 +66,7 @@ Convert the ASMPT dual-gantry First Principles (FP) model (García-Herreros et a
 
 ### Self-Improvement
 - After ANY correction from the user: evaluate whether it meets the lesson criteria (see `tasks/lessons.md`). If yes, update the ruleset — do not just append.
-- Review `tasks/lessons.md` at the start of each session for relevant rules.
+- **At the start of every session**: read `tasks/lessons.md` before doing any work. Rules there are active constraints, not suggestions.
 
 ### Verification
 - Never mark a task complete without proving it works.
@@ -53,10 +82,11 @@ Convert the ASMPT dual-gantry First Principles (FP) model (García-Herreros et a
 ## Task Management
 
 1. **Plan first** — write plan to `tasks/todo.md` with checkable items.
-2. **Check in** before starting implementation on non-trivial work.
-3. **Track progress** — mark items complete as you go.
+2. **Check in** — verify plan with user before starting implementation on non-trivial work.
+3. **Track progress** — mark items complete as you go; give a high-level summary at each step.
 4. **Log design choices** — any architectural or method decision goes to `docs/decisions.md`.
-5. **Capture lessons** — update `tasks/lessons.md` after any user correction that meets the criteria.
+5. **Document results** — add a brief review section to `tasks/todo.md` when work is complete.
+6. **Capture lessons** — after any correction, apply the 3-criteria gate and update `tasks/lessons.md`.
 
 ## Core Principles
 
