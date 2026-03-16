@@ -134,6 +134,83 @@ class Parameterized_Linear_State_Block(Block):
         else:
             return 0.0
     
+class Parameterized_LPV_Affine_Linear_State_Block(Block):
+    """Affine LPV state update with internal self-scheduling.
+
+    Computes: x_{k+1} = (A0 + p*A1) x_k + B0 u_k
+    with scheduling p = clamp(x[i]^2, 0, p_max).
+
+    Notes:
+    - Phase-1 intended usage: A0 and A1 trainable with regularization, B0 fixed.
+    - p is computed from state to avoid algebraic loops in the Interconnect graph.
+    """
+
+    def __init__(
+        self,
+        A0=torch.empty((0, 0)),
+        B0=torch.empty((0, 0)),
+        A1_init=None,
+        sched_state_ix=0,    # which state component x[i] is used to compute the scheduling signal.
+        p_max=4.0,           # upper bound for p. Prevents making p*A1 dominate, else can destabilize training/rollout
+        RMSE_baseline=1.0,
+        flag_loss_reg=True,
+        reg_A1_scale=1.0,    # extra scalar to control how strongly A1 is regularized. want the A1 (/LPV component) damped at the start.
+        train_B0=False,      # whether B0 is trainable. First phases keep B0 fixed.
+        *args,
+        **kwargs,
+    ) -> None:
+        self.A0_init = to_tensor(A0)
+        self.B0_init = to_tensor(B0)
+
+        self.nx = self.A0_init.size(0) if self.A0_init.numel() else 0
+        self.nu = self.B0_init.size(1) if self.B0_init.numel() else 0
+        if self.nx == 0:
+            self.nx = self.B0_init.size(0) if self.B0_init.numel() else 0
+
+        super().__init__(nw=self.nx, nz=self.nx + self.nu, *args, **kwargs)
+
+        if A1_init is None:
+            A1_init = torch.zeros((self.nx, self.nx), dtype=self.A0_init.dtype)
+        self.A1_init = to_tensor(A1_init)
+
+        self.A0 = nn.Parameter(self.A0_init.clone())
+        self.A1 = nn.Parameter(self.A1_init.clone())
+        self.B0 = nn.Parameter(self.B0_init.clone(), requires_grad=bool(train_B0))
+
+        self.sched_state_ix = int(sched_state_ix) # ensure its int for indexing
+        self.p_max = float(p_max) # ensure its float for clamping
+
+        # Regularization weights (same spirit as Parameterized_Linear_State_Block).
+        self.Lambda_A0 = (torch.ones(self.A0.shape) / self.A0_init) * RMSE_baseline
+        self.Lambda_A0[torch.isinf(self.Lambda_A0)] = 0.0
+
+        # For A1 we regularize toward A1_init (typically zero). Use a scalar weight.
+        # We dont want the optimizer to put a lot of "dynamics" into A1 at the start
+        # Can choose a different (/more sophisticated) scale metric for A1 regularization if prefered.
+        self.Lambda_A1 = torch.ones(self.A1.shape) * (RMSE_baseline * float(reg_A1_scale))
+
+        self.flag_loss_reg = flag_loss_reg
+
+    def forward(self, z: Tensor):
+        assert z.size(1) == self.nx + self.nu
+        x = z[:, : self.nx, :]
+        u = z[:, self.nx :, :]
+
+        # minimal self‑scheduled LPV construction (simplified assumption).
+        xi = x[:, self.sched_state_ix : self.sched_state_ix + 1, :]
+        p = torch.clamp(xi * xi, min=0.0, max=self.p_max)  # (batch,1,1)
+
+        w = torch.matmul(self.A0, x) + p * torch.matmul(self.A1, x) + torch.matmul(self.B0, u)
+        return w
+
+    def param_loss(self):
+        if not self.flag_loss_reg:
+            return 0.0
+        # Add B later if we want to regularize it as well
+        loss_theta = nn.functional.mse_loss(self.Lambda_A0 * self.A0, self.Lambda_A0 * self.A0_init, reduction='sum') \
+            + nn.functional.mse_loss(self.Lambda_A1 * self.A1, self.Lambda_A1 * self.A1_init, reduction='sum')
+        return loss_theta
+
 class Parameterized_Linear_Output_Block(Block):
     def __init__(self, C=torch.empty((0,0)), D=torch.empty((0,0)), RMSE_baseline=1.0, flag_loss_reg = True, *args, **kwargs) -> None:
         # Matrices defining the known linear ss model
@@ -382,3 +459,4 @@ class Parameterized_MSD_State_Block(Discrete_Nonlinear_Function_Block):
 
         # w = xk_n
         return w
+

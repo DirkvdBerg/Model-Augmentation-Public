@@ -430,6 +430,9 @@ class SSE_Interconnect(SS_encoder_general):
             elif isinstance(m, Parameterized_Linear_Output_Block):
                 loss_theta = loss_theta + m.param_loss()
                 has_theta_loss = True
+            elif isinstance(m, Parameterized_LPV_Affine_Linear_State_Block):
+                loss_theta = loss_theta + m.param_loss()
+                has_theta_loss = True
             elif isinstance(m, Parameterized_MSD_State_Block):
                 loss_theta = loss_theta + nn.functional.mse_loss(m.Lambda * m.params, m.Lambda * m.init_params, reduction="sum")
                 has_theta_loss = True
@@ -444,3 +447,4 @@ class SSE_Interconnect(SS_encoder_general):
         with torch.no_grad():
             y_predict, self.state = self.hfn(self.state, actions)
         return y_predict.numpy()
+

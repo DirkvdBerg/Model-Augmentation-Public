@@ -1,0 +1,174 @@
+LPV CONTEXT MAP FOR FUTURE CODEX CHATS
+======================================
+
+Purpose
+-------
+This file captures the agreed LPV direction for this repository and maps relevant ideas from:
+- 1.pdf
+- 4.pdf
+- 5.pdf
+
+Read this file first before proposing LPV code changes.
+
+
+A) AGREED DIRECTION FROM CHAT
+-----------------------------
+1) Start simple: SISO LPV first, then MIMO later.
+2) First LPV milestone should be LPV-only baseline:
+   - no augmentation block,
+   - no learned scheduling map yet.
+3) Reuse existing ECC MSD train/val/test data first; regenerate only if needed.
+4) Use existing evaluation style (RMS/NRMS + rollout plots) to verify progress.
+5) Treat "unknown mass" behavior in current code as latent/residual dynamics learned from data,
+   not as an explicitly identified physical mass parameter.
+6) MIMO benchmark target (later): Industrial Robot (MIMO-MIMO); decoupled baseline is allowed as
+   a baseline approximation, but not the benchmark-native formulation.
+
+
+B) WHAT CURRENT CODE IS DOING (IMPORTANT BASELINE FACTS)
+---------------------------------------------------------
+Repository path focus:
+- scripts/ecc_2025/msd_ndof_data_generation_dynamic.py
+- scripts/ecc_2025/msd_ndof_interconnect_dynamic.py
+- model_augmentation/fit_systems/interconnect.py
+- model_augmentation/fit_systems/blocks.py
+
+Current ECC flow (MSD):
+- Data generation uses 3-DOF simulated plant (SISO I/O selection in script settings).
+- Training script uses a 2-DOF first-principles baseline and augmentation around it.
+- Dynamic augmentation extends model state size beyond baseline FP size.
+- Unknown dynamics are absorbed by augmentation + latent states (encoder-based training),
+  not directly mapped to a known third mass parameter.
+
+Implication for LPV migration:
+- LPV should be introduced first on the baseline dynamics path,
+  without mixing in ANN augmentation in step 1.
+
+
+C) PDF RELEVANCE MAP
+--------------------
+
+1) 1.pdf (Learning-based model augmentation with LFRs, EJC 2025)
+-----------------------------------------------------------------
+What it is:
+- Encoder-based baseline+augmentation identification in LFR-style interconnection.
+- Covers static/dynamic and parallel/series augmentation structures.
+- Uses graph/interconnection perspective and well-posedness via loop-free structure.
+
+Useful for LPV effort:
+- Interconnection design logic and structure selection workflow.
+- Training/evaluation mindset (baseline vs augmentation variants).
+- Regularization idea to prevent replacing FP model behavior fully.
+
+Not sufficient for LPV by itself:
+- No explicit LPV scheduling variable design pipeline (p(k)).
+- Not an LPV-LFR identification method with explicit scheduling-map estimation framework.
+
+Bottom line:
+- 1.pdf is strong for architecture and augmentation philosophy,
+  but not the core LPV identification recipe.
+
+
+2) 4.pdf (Master thesis: Efficient Gradient-Based Learning of LPV Models with LFR)
+-----------------------------------------------------------------------------------
+What it is:
+- Broad LPV-LFR thesis with rational scheduling dependency.
+- Joint estimation of LPV model + scheduling map (+ noise).
+- Includes well-posed parameterization, multiple shooting, BLA bootstrapping,
+  and LPV model augmentation extensions.
+
+Useful for this repo:
+- Detailed LPV-LFR concepts beyond affine LPV-SS.
+- Practical training improvements:
+  - multiple-shooting optimization,
+  - initialization/bootstrapping,
+  - scheduling-map estimation strategy.
+- Helps plan a robust LPV pipeline rather than only a minimal prototype.
+
+What is still missing for direct coding:
+- No direct 1-to-1 implementation mapping to this repo’s current classes/scripts.
+- You must design concrete block APIs and data interfaces in this codebase.
+
+Bottom line:
+- 4.pdf is the most complete design reference for long-term LPV migration.
+
+
+3) 5.pdf (Paper: Efficient Learning of Affine and Rational Dependency LPV Models with LFR)
+--------------------------------------------------------------------------------------------
+What it is:
+- Concise LPV-LFR method paper.
+- Focuses on affine+rational scheduling dependency,
+  direct well-posedness parameterization, joint-estimation of LPV model and scheduling map,
+  innovation/noise-aware setting.
+
+Useful for this repo:
+- Best concise method guide for first LPV-LFR implementation decisions.
+- Clearer than thesis for implementation priorities:
+  - explicit scheduling-map role,
+  - well-posedness constraints,
+  - rational dependency motivation (reduce overbounding).
+
+What is still missing:
+- Same as 4.pdf: no ready-made classes matching this repository’s code structure.
+
+Bottom line:
+- 5.pdf should be the primary method reference;
+  4.pdf should be used for deeper implementation details and robustness tricks.
+
+
+D) LPV PHASE PLAN FOR THIS REPO
+-------------------------------
+
+Phase 0 (already agreed): keep current ECC baseline/augmentation scripts as reference.
+
+Phase 1 (first LPV milestone, SISO):
+- Implement LPV-only baseline block:
+  - A(p) = A0 + p*A1 (start simple, one scheduling scalar)
+  - Keep B, C, D constant initially.
+- Use simple fixed scheduling signal from available measurements (e.g., normalized y^2 proxy).
+- Do not include ANN augmentation yet.
+- Train/evaluate against current LTI baseline.
+
+Phase 2:
+- Add more scheduling terms (p1, p2, ...), still without ANN augmentation.
+- Optionally allow B(p) after A(p) is stable.
+
+Phase 3:
+- Add augmentation back on top of LPV baseline if needed.
+- Only then explore learned scheduling map.
+
+Phase 4:
+- Extend to MIMO benchmark (Industrial Robot).
+
+
+E) VERIFICATION CHECKLIST (EARLY LPV STEPS)
+--------------------------------------------
+For each LPV increment, check:
+1) Metrics:
+   - RMS + NRMS on train/val/test.
+2) Rollout behavior:
+   - long-horizon simulation does not diverge.
+3) Regime sensitivity:
+   - LPV gives most gain in nonlinear/high-amplitude regions vs LTI baseline.
+4) Parameter sanity:
+   - learned LPV parameters remain bounded and interpretable in scale.
+5) Reproducibility:
+   - fixed random seeds and identical eval settings when comparing models.
+
+
+F) CURRENT DECISIONS TO AVOID CONFUSION
+---------------------------------------
+- This repo is currently nonlinear/grey-box augmentation oriented, not LPV-native.
+- Industrial Robot benchmark is MIMO-MIMO by definition.
+- Decoupled per-joint models can be used as a baseline approximation,
+  but should not be treated as the benchmark-native truth.
+- Use most recent benchmark problem description as canonical where multiple docs exist.
+
+
+G) QUICK RECOMMENDATION SUMMARY
+-------------------------------
+If time is limited:
+1) Read 5.pdf first (method core).
+2) Use 4.pdf for implementation depth (init, shooting, bootstrapping).
+3) Use 1.pdf for architecture/augmentation integration choices.
+4) Implement LPV-only SISO baseline first, verify, then scale.

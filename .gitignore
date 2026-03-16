@@ -10,10 +10,9 @@ __pycache__/
 
 # docs/pdfs you want excluded
 SCRIPTS_GUIDE.md
-1.pdf
-4.pdf
-5.pdf
-20250206_Kessels_hf.pdf
+LPV_CONTEXT.MAP.txt
+*.pdf
+PLAN.md
 
 # benchmark folder
 /Robot Identification Benchmark/

@@ -26,6 +26,8 @@ test_data = deepSI.load_system_data(os.path.join(os.getcwd(), data_file_path, "m
 # test_data = deepSI.load_system_data(os.path.join(os.getcwd(), data_file_path, "msd_3dof_multisine_extrapolate.npz"))
 
 ## ------------- Add noise -----------------
+seed = 0
+np.random.seed(seed)
 if SNR == 20:
     sigma_n = 15e-3 # SNR20:15e-3
 elif SNR == 30:
@@ -56,6 +58,8 @@ test_data.y = test_data.y + np.random.normal(0, sigma_n, test_data.y.shape)
 
 # loss epochs plot
 FP_type = "ideal"
+# LPV-only baseline example (uncomment if trained):
+# "msd_3dof_lpv_affine_A0A1_xi2_e3000_SNR30"
 fit_sys_file_name_list = ["msd_3dof_dynamic_parallel_e3000",
                           "msd_3dof_static_parallel_e3000",
                           "msd_3dof_linear_dynamic_parallel_e1000",
