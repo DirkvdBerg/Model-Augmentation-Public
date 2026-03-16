@@ -27,18 +27,36 @@ it is a validation tool to rule out physics bugs before moving to LPV.
 - [x] Eigenvalues on/inside unit circle (marginally stable — correct, rigid body modes)
 - [x] A, B, C, D match MATLAB G matrices to < 1e-10 (actual error ~1e-19)
 
-### Task 1.3 — Standalone simulation (no augmentation)
+### Task 1.3 — Standalone simulation and comparison against Simscape
 **File**: `scripts/gantry/gantry_sim.py`
+
+**Sub-task A — Python open-loop simulation**
 - [ ] Simulate N steps using plain matrix recursion:
       `x_{k+1} = A·x_k + B·u_k`,  `y_k = C·x_k`
 - [ ] Use same synthetic input trajectory as `main.m` (`thirdOrderSetpointETEL`)
-      OR a simple step input for quick visual check
-- [ ] Export MATLAB `lsim` output (`q3`) from `main.m` to `Matlab-output/`
-- [ ] Compare Python simulation vs MATLAB `lsim` — confirm outputs match
 - [ ] Plot X1, X2, Y over time — confirm physically reasonable behaviour
 
-**Pass criterion**: Python lsim output matches MATLAB q3 to numerical tolerance.
-If mismatch: physics bug. Fix before proceeding.
+**Sub-task B — Export Simscape output from MATLAB**
+- [ ] In MATLAB, after running `main.m`, save the Simscape output `q` to:
+      `Matlab-output/gantry_simscape.mat`
+      ```matlab
+      save('Matlab-output/gantry_simscape.mat', 'q', 't')
+      ```
+- [ ] `q` is the nonlinear ground truth (highest accuracy, ode45-based)
+
+**Sub-task C — Compare Python linearised vs Simscape nonlinear**
+- [ ] Load `q` in Python and plot alongside Python simulation output
+- [ ] Quantify residual (linearisation error) for X1, X2, Y
+- [ ] This gap is the error the augmentation network must learn to correct
+
+**Why not compare against lsim (q3)?**
+A, B, C, D already match MATLAB G to 1e-19 (Task 1.2) — lsim comparison
+is therefore redundant. Simscape is the nonlinear ground truth and shows
+the physically meaningful linearisation gap.
+
+**Pass criterion**: Python output matches lsim trivially (same matrices).
+Simscape comparison shows a visible but bounded residual — confirms the
+linearised model captures the dominant dynamics.
 
 ---
 
