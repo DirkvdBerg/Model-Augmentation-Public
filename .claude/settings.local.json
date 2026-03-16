@@ -3,7 +3,14 @@
     "allow": [
       "Bash(mkdir:*)",
       "Bash(unzip:*)",
-      "Bash(SLX=\"/c/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/kamtin-fp-model/03 Simulink gantry/gantry_2025a.slx\"\nunzip -l \"$SLX\" | grep \"simulink/systems\")"
+      "Bash(SLX=\"/c/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/kamtin-fp-model/03 Simulink gantry/gantry_2025a.slx\"\nunzip -l \"$SLX\" | grep \"simulink/systems\")",
+      "Bash(cd:*)",
+      "Bash(python:*)",
+      "Bash(pip show:*)",
+      "Bash(conda run:*)",
+      "Bash(pip list:*)",
+      "Bash(powershell -Command \"Get-Command python | Select-Object -ExpandProperty Source\")",
+      "Bash(powershell -Command \"conda env list\")"
     ]
   }
 }

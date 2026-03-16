@@ -4,6 +4,13 @@
 
 Convert the ASMPT dual-gantry First Principles (FP) model (García-Herreros et al.) from MATLAB to a discrete-time state-space form compatible with the LFR-based model augmentation framework in this repository. Once in the correct form, the augmentation framework learns data-driven corrections to the FP model from experimental gantry data.
 
+## Python Environment
+
+All packages (deepSI, PyTorch, scipy, etc.) are installed in the **`GraduationProject`** conda environment only.
+
+- When running Python via Bash: always use `conda run -n GraduationProject python ...`
+- When the user runs scripts manually: they must activate `conda activate GraduationProject` first
+
 ## Hard Constraints
 
 - **`kamtin-fp-model/` is immutable.** These MATLAB files define the FP model structure and are the ground truth. They must never be modified. All Python implementations must conform to the structure they define.
