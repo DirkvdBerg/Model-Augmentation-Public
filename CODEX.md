@@ -32,6 +32,7 @@ Convert the ASMPT dual-gantry First Principles (FP) model (García-Herreros et a
 | Reference benchmark scripts | `scripts/` |
 | Research plan & methods | `Research-Plan/` |
 | FP model structure (curated reference) | `docs/fp-model-structure.md` |
+| FP ↔ augmentation interface contract | `docs/fp-augmentation-interface.md` |
 | Design decisions log | `docs/decisions.md` |
 | Session task tracking | `tasks/todo.md` |
 | Self-improvement ruleset | `tasks/lessons.md` |
