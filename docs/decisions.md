@@ -64,6 +64,16 @@ Decisions are logged here before implementation. Each entry states what was deci
 
 ---
 
+### [D-008] Fixed SISO-only bug in modified_encoder_net; kept local copy over deepSI default
+**Date**: 2026-03-16
+**What**: Uncommented line 361 in `model_augmentation/fit_systems/interconnect.py` so `self.ny` is set from the `ny` argument instead of hardcoded to `tuple()`.
+**Why**: The original code forced `np.prod(self.ny) = 1` regardless of actual ny, making the encoder input `nb·nu + na·1` even for MIMO systems. For the gantry (ny=3) this would silently drop output channels 2 and 3 from encoder history, giving input size 40 instead of the correct 60.
+**Verified**: Unit test confirmed SISO (ny=1) input unchanged at 20; MIMO (ny=3) input now 60 (was 40).
+**Ruled out**: Replacing `modified_encoder_net` with deepSI's `default_encoder_net` — kept local copy to allow gantry-specific encoder extensions later. The two are now functionally identical.
+**Constrains**: Nothing locked in — local copy can still be extended independently of deepSI upstream.
+
+---
+
 ### [D-007] Implement fixed baseline first, add trainability in a second step
 **Date**: 2026-03-16
 **What**: The Python FP model is first implemented as a fixed (non-trainable) baseline using `Linear_State_Block` and `Linear_Output_Block`. Trainability (`Parameterized_Linear_State_Block` / `Parameterized_Linear_Output_Block`) is added only after the fixed baseline is validated end-to-end in the augmentation interconnect.
