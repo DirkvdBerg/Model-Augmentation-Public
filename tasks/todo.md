@@ -30,33 +30,47 @@ it is a validation tool to rule out physics bugs before moving to LPV.
 ### Task 1.3 — Standalone simulation and comparison against Simscape
 **File**: `scripts/gantry/gantry_sim.py`
 
-**Sub-task A — Python open-loop simulation**
-- [ ] Simulate N steps using plain matrix recursion:
-      `x_{k+1} = A·x_k + B·u_k`,  `y_k = C·x_k`
-- [ ] Use same synthetic input trajectory as `main.m` (`thirdOrderSetpointETEL`)
-- [ ] Plot X1, X2, Y over time — confirm physically reasonable behaviour
+**Sub-task A — Export MATLAB data** ✅
+- [x] `Matlab-output/gantry_input.mat`  — `u` (force input), `r` (reference), `t`
+- [x] `Matlab-output/gantry_output.mat` — `q` (Simscape nonlinear ground truth), `t`
 
-**Sub-task B — Export Simscape output from MATLAB**
-- [ ] In MATLAB, after running `main.m`, save the Simscape output `q` to:
-      `Matlab-output/gantry_simscape.mat`
+**Sub-task B — Choose simulation approach**
+
+Two options were considered:
+
+*Option A — Open-loop with closed-loop u*
+Feed the closed-loop controller output `u` directly into the Python model open-loop.
+**Problem**: without feedback the linearisation error accumulates freely — the Python
+output will drift from `q` in a way that reflects the missing feedback, not just
+linearisation error. Not a fair comparison.
+
+*Option B — Closed-loop Python simulation* ✅ **chosen**
+Replicate the full closed-loop in Python: implement `Cfb`, feed reference `r`,
+simulate the feedback loop. Compare Python closed-loop output vs Simscape `q`.
+**Why**: both systems see the same reference under the same controller — any
+residual is purely linearisation error, which is exactly what we want to quantify.
+
+**Sub-task C — Export Cfb from MATLAB**
+- [ ] Save `Cfb` matrices from MATLAB:
       ```matlab
-      save('Matlab-output/gantry_simscape.mat', 'q', 't')
+      [Cfb_num, Cfb_den] = tfdata(Cfb);
+      save('Matlab-output/gantry_controller.mat', 'Cfb_num', 'Cfb_den', 'ts')
       ```
-- [ ] `q` is the nonlinear ground truth (highest accuracy, ode45-based)
 
-**Sub-task C — Compare Python linearised vs Simscape nonlinear**
-- [ ] Load `q` in Python and plot alongside Python simulation output
-- [ ] Quantify residual (linearisation error) for X1, X2, Y
-- [ ] This gap is the error the augmentation network must learn to correct
+**Sub-task D — Implement and run `gantry_sim.py`**
+- [ ] Load `gantry_input.mat`, `gantry_output.mat`, `gantry_controller.mat`
+- [ ] Implement discrete-time feedback loop in Python:
+      `e_k = r_k - y_k`,  `u_k = Cfb * e_k`,  `x_{k+1} = A·x_k + B·u_k`
+- [ ] Plot three panels (X1, X2, Y): Python vs Simscape `q` vs reference `r`
+- [ ] Print max and RMS residual per channel — this is the linearisation gap
 
 **Why not compare against lsim (q3)?**
 A, B, C, D already match MATLAB G to 1e-19 (Task 1.2) — lsim comparison
-is therefore redundant. Simscape is the nonlinear ground truth and shows
-the physically meaningful linearisation gap.
+is redundant. Simscape is the nonlinear ground truth and shows the physically
+meaningful linearisation gap the augmentation must learn to correct.
 
-**Pass criterion**: Python output matches lsim trivially (same matrices).
-Simscape comparison shows a visible but bounded residual — confirms the
-linearised model captures the dominant dynamics.
+**Pass criterion**: Simscape comparison shows a visible but bounded residual —
+confirms the linearised model captures dominant dynamics.
 
 ---
 

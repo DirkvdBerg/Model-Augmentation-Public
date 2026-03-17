@@ -64,6 +64,15 @@ Decisions are logged here before implementation. Each entry states what was deci
 
 ---
 
+### [D-009] One file per responsibility — scripts import from gantry_ss.py, not duplicate it
+**Date**: 2026-03-17
+**What**: Each script in `scripts/gantry/` has a single responsibility. `gantry_ss.py` is the sole definition of the model (physics → discrete A, B, C, D). All other scripts (simulation, validation, augmentation wiring) import `gantry_discrete_ss()` from it rather than redefining the matrices.
+**Why**: Avoids parameter duplication — if a physical parameter changes, it changes in one place only. Makes the boundary between "model definition" and "model use" explicit.
+**Ruled out**: Copying A, B, C, D into each script — creates silent inconsistencies if parameters are updated.
+**Constrains**: Any script that needs the discrete model must import from `gantry_ss.py`. Extensions (LPV variant, different Y) are added as new functions in `gantry_ss.py`, not in the calling scripts.
+
+---
+
 ### [D-008] Fixed SISO-only bug in modified_encoder_net; kept local copy over deepSI default
 **Date**: 2026-03-16
 **What**: Uncommented line 361 in `model_augmentation/fit_systems/interconnect.py` so `self.ny` is set from the `ny` argument instead of hardcoded to `tuple()`.
