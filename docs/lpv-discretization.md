@@ -189,13 +189,10 @@ Step 2 is validation only. Neither Option D nor E is used here — scipy `cont2d
 Before implementing the training block, Drenth's thesis (`literature/drenth2025_lpv-lfr-thesis.pdf`)
 must be consulted to understand how the LPV baseline enters the LFR interconnect structure.
 
-Specifically:
-- Does the LFR interconnect for LPV use A(Y), B(Y) directly (as in `LPV_Linear_State_Block`)?
-- Or does it represent Y-dependence via a scheduling function Δ(p) in the LFR structure,
-  which would require a different block design?
-- Is Option E (exact ZOH via matrix_exp) consistent with how Drenth discretizes the LPV baseline?
+Full question list: **`docs/lpv-lfr-interconnect.md`** (spec file for the Drenth assessment).
 
-Use `assess-paper` on Drenth's thesis before starting Step 3 implementation.
+Use `assess-paper` with spec `docs/lpv-lfr-interconnect.md` on Drenth's thesis before
+starting Step 3 implementation.
 
 ### Output files
 

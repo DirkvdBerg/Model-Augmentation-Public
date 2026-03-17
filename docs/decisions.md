@@ -136,3 +136,12 @@ Decisions are logged here before implementation. Each entry states what was deci
   - Rectangular approximation (Option D): O(ts) error — valid fallback only. Superseded by Option E.
   - scipy `cont2discrete` in training loop: not inside autograd graph.
 **Constrains**: `LPV_Linear_State_Block.forward()` must compute A_c(Y) analytically from M(Y)⁻¹ using tensor ops, then apply `torch.linalg.matrix_exp(A_c(Y) * ts)`. See `docs/lpv-discretization.md` for full rationale and option comparison table.
+
+---
+
+### [D-013] LPV baseline uses Architecture 1 (direct forward) — Drenth confirms
+**Date**: 2026-03-17
+**What**: `LPV_Linear_State_Block` computes `A_d(Y), B_d(Y)` directly inside `forward(z)` (Architecture 1). The formal LFR Δ(p) structure is NOT required for the baseline. `SSE_Interconnect` and all existing wiring machinery are used unchanged.
+**Why**: Drenth's thesis (Chapter 2, eq. 2.29) confirms that the forward simulation loop collapses to direct A(p)x + B(p)u at each step, even when the model is parameterized as a Δ(p)-LFR internally. The Δ(p) structure applies to the learned augmentation, not the physics baseline. Self-scheduled quasi-LPV (Y from state) is explicitly supported — Y is read from the state inside `forward()`, not routed through S. Confirmed by assess-paper assessment of Drenth (2025) + Hoekstra et al. (2025).
+**Ruled out**: Architecture 2 (formal Δ(p) scheduling block with separate wiring through S) — not required for the physics baseline. New `SSE_Interconnect` subclass — existing class is sufficient.
+**Constrains**: `LPV_Linear_State_Block` wires into `SSE_Interconnect` identically to `Linear_State_Block`. One open question remains: how to apply normalization (Tx/Tx⁻¹) when A_d(Y) is computed at runtime via `matrix_exp` rather than stored as a constant matrix. Must be resolved before Step 3 implementation. See `docs/lpv-lfr-interconnect.md` for full assessment.

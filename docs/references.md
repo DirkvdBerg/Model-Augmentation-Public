@@ -11,9 +11,9 @@ All PDFs are in `literature/`.
 | Cite key | File | Description |
 |----------|------|-------------|
 | `garcia2013model` | `literature/garcia2013_gantry-decoupling-control.pdf` | García-Herreros et al. — dual-gantry FP model (Euler-Lagrange, stage coordinates). Ground truth for the baseline. |
-| `hoekstra2026lfr` | `literature/hoekstra2025_lfr-augmentation.pdf` | Hoekstra, Verhoek, Tóth, Schoukens — LFR-based model augmentation (European Journal of Control, 2025). The augmentation framework this project builds on. |
+| `hoekstra2026lfr` | `literature/hoekstra2025_lfr-augmentation-ejc.pdf` | Hoekstra, Verhoek, Tóth, Schoukens — LFR-based model augmentation (European Journal of Control, 2025). The augmentation framework this project builds on. |
 | `drenth2025lpvlfr` | `literature/drenth2025_lpv-lfr-thesis.pdf` | Drenth — Master thesis: gradient-based learning of LPV-LFR models (TU/e, 2025). LPV extension of the augmentation framework. |
-| — | `literature/drenth2025_lpv-lfr-rational.pdf` | Drenth, Hoekstra, Schoukens, Tóth — affine and rational dependency LPV-LFR (conference paper). Companion to the thesis. |
+| — | `literature/drenth2025_lpv-lfr-rational.pdf` | Drenth, Hoekstra, Schoukens, Tóth — affine and rational dependency LPV-LFR (IFAC conference paper). Companion to the thesis. |
 | `toth2010discretization` | `literature/toth2010_zoh-discretization-lpv.pdf` | Tóth (2010) — ZOH discretization of LPV systems. Reference for LPV discretization in Aspect 1. |
 | `kessels2025ai` | `literature/kessels2025_ai-control.pdf` | Kessels (2025) — AI in control. |
 
