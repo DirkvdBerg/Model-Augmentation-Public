@@ -145,3 +145,39 @@ Decisions are logged here before implementation. Each entry states what was deci
 **Why**: Drenth's thesis (Chapter 2, eq. 2.29) confirms that the forward simulation loop collapses to direct A(p)x + B(p)u at each step, even when the model is parameterized as a Δ(p)-LFR internally. The Δ(p) structure applies to the learned augmentation, not the physics baseline. Self-scheduled quasi-LPV (Y from state) is explicitly supported — Y is read from the state inside `forward()`, not routed through S. Confirmed by assess-paper assessment of Drenth (2025) + Hoekstra et al. (2025).
 **Ruled out**: Architecture 2 (formal Δ(p) scheduling block with separate wiring through S) — not required for the physics baseline. New `SSE_Interconnect` subclass — existing class is sufficient.
 **Constrains**: `LPV_Linear_State_Block` wires into `SSE_Interconnect` identically to `Linear_State_Block`. One open question remains: how to apply normalization (Tx/Tx⁻¹) when A_d(Y) is computed at runtime via `matrix_exp` rather than stored as a constant matrix. Must be resolved before Step 3 implementation. See `docs/lpv-lfr-interconnect.md` for full assessment.
+
+---
+
+### [D-014] gantry_discrete_ss stays numpy; torch version lives in a separate file
+**Date**: 2026-03-17
+**What**: `gantry_ss.py` / `gantry_discrete_ss()` is not modified to support PyTorch. A separate file `scripts/gantry/gantry_lpv_torch.py` holds a torch-native implementation that mirrors `gantry_discrete_ss` in structure but uses tensor ops and `torch.linalg.matrix_exp` throughout.
+**Why**: Two entirely different use cases with different dependencies and contracts:
+  - `gantry_discrete_ss`: numpy in, numpy out, scipy `cont2discrete`, validation and MATLAB comparison only. Pure, simple, zero framework dependency.
+  - torch version: torch tensor in, torch tensor out, differentiable, lives inside the training loop. Must stay inside the autograd graph.
+  Adding a `use_torch=True` flag to `gantry_discrete_ss` would mix two concerns, add a conditional dependency on torch in a validation-only file, and violate D-009 (one file per responsibility).
+**Ruled out**: Modifying `gantry_discrete_ss` to support a torch mode via flag — mixes validation and training concerns in one function.
+**Constrains**: `gantry_lpv_torch.py` is a full torch reimplementation — NOT a wrapper around `gantry_discrete_ss`. Every value (physical parameters, M(Y), A_c, B_c, P transform, A_d, B_d) is defined as a `torch.tensor` from the start. No numpy intermediates, no conversion. This ensures gradients flow through the entire computation and physical parameters can optionally be made trainable later without refactoring. The only structural change from `gantry_ss.py` is replacing `cont2discrete` with `torch.linalg.matrix_exp` on the 9×9 augmented matrix (see D-015).
+
+---
+
+### [D-015] B_d(Y) must use augmented matrix exponential — naive formula fails
+**Date**: 2026-03-17
+**What**: Computing B_d(Y) via the naive formula `B_d = A_c⁻¹ · (A_d − I) · B_c` is forbidden. The correct formula uses the augmented matrix exponential:
+```
+M_aug = [[A_c(Y),  B_c(Y)],    # (n+m) × (n+m) = 9×9 for gantry
+         [  0,        0   ]]
+
+[A_d, B_d] = expm(M_aug · ts)[:n, :], split at column n
+```
+**Why**: The gantry A_c(Y) is singular — the top-left 3×3 block is all zeros (position states have no velocity-independent dynamics; rigid body modes give zero eigenvalues). `A_c⁻¹` does not exist, so the naive formula is undefined. The augmented exponential sidesteps the singularity and is mathematically identical to what scipy `cont2discrete(method='zoh')` does internally. Both scipy and the torch version must use this formula — any discrepancy between them is a numerical precision issue only.
+**Ruled out**: `B_d = A_c⁻¹ · (A_d − I) · B_c` — undefined for singular A_c. `B_d = ts · B_c` (rectangular fallback) — O(ts) error, only valid as Option D fallback.
+**Constrains**: Both `gantry_lpv_torch.py` and any future `LPV_Linear_State_Block` must form the 9×9 augmented matrix before calling `torch.linalg.matrix_exp`. See `docs/lpv-discretization.md` for the full derivation.
+
+---
+
+### [D-016] Step 2 validation is matrix comparison, not trajectory simulation
+**Date**: 2026-03-17
+**What**: Step 2 validation compares discrete A(Y), B(Y) matrices directly against MATLAB output at 5 operating points (Y = 0.1, 0.2, 0.3, 0.4, 0.5 m). It does not require simulating a full trajectory.
+**Why**: A(Y), B(Y) already match MATLAB to 1e-19 at Y=0.3 (Task 1.2). The LPV question is whether the same holds at other Y values. If the matrices match at every Y, the physics is correct — no trajectory needed to confirm that. Trajectory simulation would add complexity (need input data, initial conditions, etc.) without providing additional information about the correctness of the physics parameterization.
+**Ruled out**: Running a full closed-loop trajectory simulation at each Y — unnecessary for validating the LPV matrix computation. The trajectory simulation in Step 1 already validated the dynamics at Y=0.3.
+**Constrains**: Requires a new MATLAB script `Matlab-scripts/export_lpv_matrices.m` (does not modify immutable files — calls existing functions) that evaluates G at each Y and saves A, B, C, D per operating point to `Matlab-output/lpv_matrices.mat`. Python comparison script `gantry_lpv_validate.py` checks max absolute error < 1e-10 per matrix per Y. Validation sweep: Y = linspace(0.05, 0.75, 50) — confirmed from ETEL Telica datasheet (total Y stroke = 800 mm, 5% margin from hard limits). 5 points is insufficient: M(Y)⁻¹ is rational in Y and could have non-monotone error behaviour between sparse samples. Dense 50-point sweep allows plotting error vs Y to confirm uniformity across the full operational range.

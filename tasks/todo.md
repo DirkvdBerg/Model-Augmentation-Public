@@ -81,33 +81,103 @@ confirms the linearised model captures dominant dynamics.
 
 ---
 
-## Step 2: LPV Extension — Tóth Discretization
+## Step 2: LPV Extension — Frozen-at-sampling-instant ZOH
 
-**Goal**: Replace frozen ZOH with proper discrete-time LPV model where A(Y), B(Y)
-vary with the scheduling variable Y. This is the model that goes into augmentation.
+**Goal**: Implement and validate the discrete-time LPV model where A(Y), B(Y) vary with
+scheduling variable Y. Validation is matrix comparison only — no trajectory simulation needed.
 
-**Reference**: `toth2010discretization` (cited in research-methods.md)
-**Decisions needed**: D-009 (LPV discretization method choice)
+**Method**: Frozen-at-sampling-instant ZOH (Tóth Section III-B) — call standard ZOH at each
+Y value. Zero local truncation error within the ZOH assumption (justified at 16 kHz, ΔY small).
 
-### Task 2.1 — Study Tóth LPV discretization method
-- [ ] Read `toth2010discretization` — understand what changes vs standard ZOH
-- [ ] Determine: does M(Y) vary linearly or nonlinearly in Y?
-      (from main.m: M[0,1] = M[1,0] linear in Y, M[1,1] quadratic in Y)
-- [ ] Identify which matrices become scheduling-dependent: A(Y), B(Y) or both
+**Key decisions**: D-012 (discretization method), D-014 (numpy vs torch files), D-015 (augmented
+matrix exponential for B_d), D-016 (matrix comparison validation strategy)
 
-### Task 2.2 — Implement LPV discretization
-**File**: `scripts/gantry/gantry_lpv_ss.py`
-- [ ] Implement `gantry_lpv_discrete_ss(Y, fs=16e3)` returning A(Y), B(Y), C, D
-- [ ] Verify reduces to frozen LTI at Y=0.3 (matches Task 1.2 result)
+### Task 2.1 — Decisions and method ✅
+- [x] Tóth (2010) assessed via assess-paper skill
+- [x] Method chosen: frozen-at-sampling-instant ZOH for validation; augmented matrix_exp for training
+- [x] Drenth (2025) assessed — Architecture 1 confirmed, SSE_Interconnect unchanged
+- [x] Augmented matrix exponential formula documented (D-015)
 
-### Task 2.3 — Validate LPV model across operating points
-- [ ] Evaluate A(Y), B(Y) at multiple Y values (e.g. Y = 0.1, 0.2, 0.3, 0.4, 0.5 m)
-- [ ] Export MATLAB G at each Y from `main.m` to `Matlab-output/`
-- [ ] Compare Python vs MATLAB at each operating point
-- [ ] Verify eigenvalues remain stable across full operational range
-- [ ] Verify invertibility of M(Y) across full operational range
+### Task 2.2 — MATLAB export script
+**File**: `Matlab-scripts/export_lpv_matrices.m` (new script — does not modify immutable files)
 
-**Pass criterion**: Python LPV matrices match MATLAB at all tested Y values.
+Cannot call `main.m` in a loop — it is a script that runs Simulink, figures, setpoint generation.
+Instead: duplicate only the physics setup from `main.m` and call `getss.m` directly (immutable
+function, safe to call). This is the same computation main.m does at lines 12–88 + 103 + 218.
+
+**Export 1 — LPV matrix sweep** → `Matlab-output/lpv_matrices.mat`
+Compares Python A(Y), B(Y) against MATLAB at each operating point (core matrix validation).
+- [ ] Y sweep: `Y_values = linspace(0.05, 0.75, 50)` (50 points, ~14 mm spacing, D-016)
+- [ ] At each Y: build M(Y), call `getss(n,M,C,K)`, apply P transform, `c2d(...,'zoh')`
+- [ ] Save per Y: `A` (6×6), `B` (6×3), `C` (3×6), `D` (3×3), `Y_values` (50×1)
+- [ ] Save: `det_M` (50×1) — physics health check, confirms M(Y) positive definite across range
+
+**Export 2 — Varying-Y Simulink simulation** → `Matlab-output/lpv_sim_varying_y.mat`
+Ground truth for simulation-level LPV validation: compares frozen LTI vs LPV model vs Simscape
+when Y actually sweeps the operating range. This is the only export that proves the LPV model
+is useful (not just mathematically correct).
+- [ ] NOTE: first check Step 1 Simscape data — if Y varies significantly there, reuse it
+      instead of running a new simulation (load q_simscape.mat, plot Y channel vs time)
+- [ ] If new simulation needed: design reference where Y axis sweeps 0.1 → 0.7 m slowly
+      while X1/X2 do normal motion — requires a new reference signal r_lpv
+- [ ] Run Simscape (nonlinear ground truth) with this reference
+- [ ] Save the following variables:
+      - `t`              (N×1)   — time vector [s]
+      - `r`              (N×3)   — reference signals [X1_ref, X2_ref, Y_ref] in stage coords [m]
+      - `u`              (N×3)   — controller force inputs [F_X1, F_X2, F_Y] [N]
+                                   (must be from linear feedback, same as Step 1 — NOT Simscape
+                                    nonlinear friction forces; see Step 1 u/q3 fix for why)
+      - `q_simscape`     (N×3)   — Simscape nonlinear output [X1, X2, Y] [m] — ground truth
+      - `Y_trajectory`   (N×1)   — absolute Y position over time [m], extracted from q_simscape
+                                   (used by Python LPV sim to verify Y variation range)
+      - `fs`             (1×1)   — sample frequency [Hz] = 16000
+
+### Task 2.3 — Torch reimplementation
+**File**: `scripts/gantry/gantry_lpv_torch.py`
+
+This is a **full torch reimplementation** of `gantry_discrete_ss` — NOT a wrapper around it.
+Every value (physical parameters, M(Y), A_c, B_c, P transform) is defined as a torch tensor
+from the start so that gradients flow through the entire computation. The only structural
+difference from `gantry_ss.py` is the numerical backend: `cont2discrete` is replaced by
+`torch.linalg.matrix_exp` on the 9×9 augmented matrix (required for differentiability and
+to handle singular A_c — see D-015).
+
+Defining everything in torch from the start (not converting from numpy) also means physical
+parameters (mb, mh, m1, m2, …) can optionally be made trainable later with no refactoring.
+
+- [ ] Implement `gantry_lpv_matrices_torch(Y: torch.Tensor, fs=16e3) -> tuple[Tensor, Tensor, Tensor, Tensor]`
+      - All physical parameters defined as `torch.tensor` scalars (float64)
+      - M(Y), C_mat, K built as torch tensors using tensor arithmetic
+      - A_c(Y), B_c(Y) assembled as torch tensors
+      - Stage coordinate transform P as torch tensor; B_c_stage = B_c @ P, C_c_stage = P.T @ C_c
+      - 9×9 augmented matrix: `M_aug[:6,:6] = A_c; M_aug[:6,6:] = B_c_stage`
+      - `EM = torch.linalg.matrix_exp(M_aug * ts)`
+      - Returns A_d=EM[:6,:6], B_d=EM[:6,6:], C_c_stage (constant), D=zeros — all torch tensors
+- [ ] Add `__main__` block: call with `Y = torch.tensor(0.3)`, compare `.numpy()` output
+      against `gantry_discrete_ss(Y=0.3)` to < 1e-10 — verifies torch vs scipy agreement
+
+### Task 2.4 — Validation: Python vs MATLAB matrix comparison
+**File**: `scripts/gantry/gantry_lpv_validate.py`
+
+- [ ] Load `Matlab-output/lpv_matrices.mat`
+- [ ] At each Y in the sweep:
+      - Call `gantry_discrete_ss(Y)` → A_py, B_py, C_py, D_py
+      - Compare to MATLAB A, B, C, D: `max_err = np.max(np.abs(A_py - A_mat))`
+      - Check max_err < 1e-10 for all matrices
+- [ ] Plot max error vs Y for each matrix (A, B, C) — should be flat near 1e-19
+- [ ] Verify M(Y) positive definite at all Y (det > 0, or all eigenvalues > 0)
+- [ ] Verify all eigenvalues of A(Y) inside unit circle across full sweep
+- [ ] Save summary plot to `simulations/lpv_validation/matrix_errors.png`
+
+### Task 2.5 — Quantify rectangular approximation error (Option D vs Option E)
+**File**: `scripts/gantry/gantry_lpv_validate.py` (add section)
+
+- [ ] At each Y: compare `A_d_rect = I + ts·A_c(Y)` vs `A_d_exact = expm(A_c(Y)·ts)`
+- [ ] Plot relative error vs Y — establishes the O(ts) bound numerically
+- [ ] Confirms Option E (matrix_exp) is preferred over Option D (rectangular)
+
+**Pass criterion**: Python LPV matrices match MATLAB to < 1e-10 at all Y values in the sweep.
+Eigenvalues stable and M(Y) positive definite across full operational range.
 
 ---
 

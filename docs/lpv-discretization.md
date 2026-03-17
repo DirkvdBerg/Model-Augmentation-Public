@@ -147,19 +147,64 @@ The five options and why each was accepted or rejected:
 
 ### Why Option E is torch-differentiable
 
-At runtime:
+#### The singularity problem — and why naive B_d fails
+
+The standard ZOH formula for B_d is:
 ```
-M(Y)   = M0 + Y·M1 + Y²·M2           # polynomial in Y, exact
-M_inv  = inverse(M(Y))                # 3×3 analytical inverse, all tensor ops
-A_c(Y) = [[0, I], [-M_inv@K, -M_inv@C]]
-A_d(Y) = torch.linalg.matrix_exp(A_c(Y) * ts)   # exact ZOH, differentiable
-B_d(Y) = torch.linalg.solve(A_c(Y), (A_d(Y) - I)) @ B_c  # or use ts·B_c for simplicity
+B_d = A_c⁻¹ · (A_d - I) · B_c
+```
+This requires A_c to be invertible. **The gantry A_c is singular** — the top-left 3×3 block
+is all zeros (position states have no velocity-independent dynamics — rigid body modes). So
+`A_c⁻¹` does not exist and this formula cannot be used.
+
+#### Correct formula — augmented matrix exponential
+
+The correct ZOH method (used internally by scipy `cont2discrete`) avoids the singularity by
+augmenting the system matrix before taking the exponential:
+
+```
+n = 6  (number of states)
+m = 3  (number of inputs)
+
+M_aug = [ A_c(Y)   B_c(Y) ]   ← (n+m) × (n+m) = 9×9 matrix
+        [   0         0   ]
+
+exp(M_aug · ts) = [ A_d(Y)   B_d(Y) ]
+                  [   0         I   ]
+
+→ A_d = exp(M_aug · ts)[:n, :n]     # top-left  6×6
+→ B_d = exp(M_aug · ts)[:n, n:]     # top-right 6×3
+```
+
+This works even when A_c is singular. It is equivalent to the exact ZOH formula and is what
+scipy uses internally. For the torch implementation, `torch.linalg.matrix_exp(M_aug * ts)`
+is a single differentiable call that produces both A_d and B_d.
+
+#### Full runtime computation for Option E
+
+```
+M(Y)   = M0 + Y·M1 + Y²·M2           # 3×3 polynomial in Y (tensor ops)
+M_inv  = torch.linalg.inv(M(Y))       # 3×3 inverse (tensor op)
+A_c(Y) = [[0,      I    ],            # 6×6 continuous-time state matrix
+           [-M_inv@K, -M_inv@C]]
+B_c(Y) = [[zeros(3,3)],               # 6×3 continuous-time input matrix
+           [M_inv      ]]
+
+M_aug  = [[A_c(Y), B_c(Y)],           # 9×9 augmented matrix
+           [zeros(3,6), zeros(3,3)]]
+
+EM     = torch.linalg.matrix_exp(M_aug * ts)   # 9×9, differentiable
+A_d(Y) = EM[:6, :6]                   # exact discrete A
+B_d(Y) = EM[:6, 6:]                   # exact discrete B
 ```
 
 `torch.linalg.matrix_exp` is a native PyTorch op — autograd traces through it.
-Gradients propagate from the loss back through `A_d(Y[k])` to `Y[k]` exactly.
+Gradients propagate from the loss back through `A_d(Y[k])` and `B_d(Y[k])` to `Y[k]`.
 
 `cont2discrete` (scipy) remains non-differentiable and is only used for validation (Use case 1).
+It uses the same augmented matrix exponential internally — so the two approaches are
+mathematically identical. Any discrepancy between them would be a numerical precision issue,
+not a formula difference.
 
 ### Approximation error orders (from Tóth Table I)
 

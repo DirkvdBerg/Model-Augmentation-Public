@@ -16,6 +16,7 @@ All PDFs are in `literature/`.
 | — | `literature/drenth2025_lpv-lfr-rational.pdf` | Drenth, Hoekstra, Schoukens, Tóth — affine and rational dependency LPV-LFR (IFAC conference paper). Companion to the thesis. |
 | `toth2010discretization` | `literature/toth2010_zoh-discretization-lpv.pdf` | Tóth (2010) — ZOH discretization of LPV systems. Reference for LPV discretization in Aspect 1. |
 | `kessels2025ai` | `literature/kessels2025_ai-control.pdf` | Kessels (2025) — AI in control. |
+| — | `literature/telica-xyz-0750-0800-data.pdf` | ETEL Telica ASME-YGNN-08-0750-0800W3 datasheet — XYZ dual gantry system specs. Y stroke = 800 mm, operational range for LPV validation: Y = 0.05 to 0.75 m. |
 
 ---
 
