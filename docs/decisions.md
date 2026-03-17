@@ -121,12 +121,18 @@ Decisions are logged here before implementation. Each entry states what was deci
 
 ---
 
-### [D-012] LPV discretization method — open, pending Tóth review
-**Date**: 2026-03-17
-**What**: The discrete-time LPV model requires A_d(Y), B_d(Y) at each timestep. The discretization method has not yet been finalised — Tóth (2010) must be assessed first.
-**Why**: Two concerns require resolution before implementation:
-  1. **Validation simulation** (Step 2): calling `cont2discrete` at each step is straightforward. Frozen-at-sampling-instant is likely sufficient at 16 kHz (ΔY ≤ 0.125 mm/sample), but Tóth's error bound must confirm this.
-  2. **Training loop** (Step 3): calling `cont2discrete` inside a PyTorch autograd graph is not feasible — it involves matrix exponentiation and is not differentiable. A_d(Y) must be expressed as a closed-form polynomial or rational function of Y that can be evaluated analytically at each step.
-**Ruled out**: ode45 — does not produce discrete-time matrices. Calling `cont2discrete` inside the training loop — not torch-differentiable and computationally prohibitive at training scale.
-**Open question**: Does Tóth (2010) provide a closed-form polynomial expansion of A_d(Y) that can be used analytically? If not, an alternative (e.g. first-order Taylor expansion in Y or affine interpolation between frozen operating points) must be chosen.
-**Constrains**: See `docs/lpv-discretization.md` for the full specification of what we need from Tóth's paper.
+### [D-012] LPV discretization: frozen ZOH for validation, exact ZOH via matrix_exp for training
+**Date**: 2026-03-17 (updated 2026-03-17 after torch.linalg.matrix_exp fact-check)
+**What**: Two discretization approaches are used, one per use case:
+  1. **Validation (Step 2)**: frozen-at-sampling-instant — call `cont2discrete(A_c(Y[k]), ts)` at each step. Theoretically exact within ZOH (zero local truncation error, Tóth Section III-B).
+  2. **Training loop (Step 3)**: exact ZOH via `torch.linalg.matrix_exp(A_c(Y) * ts)`. Zero local truncation error, fully torch-differentiable (confirmed by test).
+**Why**:
+  - Validation: `cont2discrete` is exact and fast enough for a one-off simulation. At 16 kHz with ΔY ≤ 0.125 mm/sample the within-sample variation of A(Y) is negligible — confirmed by Tóth (2010).
+  - Training: `torch.linalg.matrix_exp` is a native PyTorch op — autograd traces through it, gradients flow back to Y[k]. This gives the same zero truncation error as scipy `cont2discrete` without leaving the autograd graph. The rectangular approximation (Option D, O(ts) error) is a valid fallback but is strictly inferior — there is no reason to accept approximation error when exact ZOH is differentiable.
+**Ruled out**:
+  - Polynomial expansion (Option A): A_c(Y) is rational (from M(Y)⁻¹), so no exact polynomial A_d(Y) exists.
+  - Linear-affine approximation (Option B): drops dominant Y² term in M[1,1].
+  - Grid interpolation (Option C): not natively torch-differentiable.
+  - Rectangular approximation (Option D): O(ts) error — valid fallback only. Superseded by Option E.
+  - scipy `cont2discrete` in training loop: not inside autograd graph.
+**Constrains**: `LPV_Linear_State_Block.forward()` must compute A_c(Y) analytically from M(Y)⁻¹ using tensor ops, then apply `torch.linalg.matrix_exp(A_c(Y) * ts)`. See `docs/lpv-discretization.md` for full rationale and option comparison table.

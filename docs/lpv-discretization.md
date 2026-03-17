@@ -116,8 +116,96 @@ After reading Tóth (2010), update D-012 with:
 
 ---
 
+## Method selection — findings from Tóth (2010)
+
+*Assessed via `assess-paper` skill against `literature/toth2010_zoh-discretization-lpv.pdf`.*
+
+### Use case 1 (validation): frozen-at-sampling-instant ✅ justified
+
+Tóth Section III-B shows the complete frozen-at-sampling-instant method has **zero local
+truncation error** within the ZOH assumption. The only real error is from the slowly-varying
+scheduling during `[k·ts, (k+1)·ts]`, which at 16 kHz and ΔY ≤ 0.125 mm/sample is
+negligible. Calling `cont2discrete(A_c(Y[k]), ts)` at each step is theoretically exact.
+
+### Use case 2 (training loop): exact ZOH via `torch.linalg.matrix_exp` ✅ chosen
+
+**Fact-checked 2026-03-17**: `torch.linalg.matrix_exp` fully supports PyTorch autograd.
+Gradients flow through the matrix exponential and back to scalar inputs (e.g. Y).
+Test confirmed: `d/dY [sum(expm(A_c(Y)·ts))]` returns a valid gradient.
+
+This makes exact ZOH available inside the training loop — no approximation needed.
+
+The five options and why each was accepted or rejected:
+
+| Option | Form | Torch-differentiable? | Verdict |
+|--------|------|-----------------------|---------|
+| A | `A_d(Y) = A0_d + Y·A1_d + Y²·A2_d` | ✅ Yes | ❌ Not achievable: A_c(Y) is rational, so no exact polynomial A_d(Y) exists. |
+| B | `A_d(Y) = A0_d + Y·A1_d` | ✅ Yes | ❌ Drops the Y² term in M[1,1] — dominant Y-dependence lost. |
+| C | Interpolate A_d(Y) from a pre-computed grid | ❌ Not natively | ❌ scipy/numpy lookup outside autograd graph. |
+| D | `A_d(Y) = I + ts·A_c(Y)`, `B_d(Y) = ts·B_c(Y)` | ✅ Yes — all tensor ops | ⚠️ First-order (rectangular), error **O(ts)**. Still valid fallback if matrix_exp is too slow at scale. |
+| **E** | `A_d(Y) = expm(A_c(Y)·ts)` via `torch.linalg.matrix_exp` | ✅ **Yes — confirmed** | ✅ **Chosen.** Zero local truncation error (exact ZOH within frozen-at-sampling-instant). No approximation. Mirrors Use case 1 exactly but with torch ops instead of scipy. |
+
+### Why Option E is torch-differentiable
+
+At runtime:
+```
+M(Y)   = M0 + Y·M1 + Y²·M2           # polynomial in Y, exact
+M_inv  = inverse(M(Y))                # 3×3 analytical inverse, all tensor ops
+A_c(Y) = [[0, I], [-M_inv@K, -M_inv@C]]
+A_d(Y) = torch.linalg.matrix_exp(A_c(Y) * ts)   # exact ZOH, differentiable
+B_d(Y) = torch.linalg.solve(A_c(Y), (A_d(Y) - I)) @ B_c  # or use ts·B_c for simplicity
+```
+
+`torch.linalg.matrix_exp` is a native PyTorch op — autograd traces through it.
+Gradients propagate from the loss back through `A_d(Y[k])` to `Y[k]` exactly.
+
+`cont2discrete` (scipy) remains non-differentiable and is only used for validation (Use case 1).
+
+### Approximation error orders (from Tóth Table I)
+
+| Method | Local truncation error | Torch-differentiable |
+|--------|----------------------|---------------------|
+| Exact ZOH via scipy `cont2discrete` | Zero | ❌ No |
+| Exact ZOH via `torch.linalg.matrix_exp` (Option E) | **Zero** | ✅ Yes |
+| Rectangular (Option D) | O(ts) — first-order | ✅ Yes |
+| Trapezoidal | O(ts²) — second-order | ❌ Not natively |
+
+Option E dominates Option D on accuracy with no cost in differentiability.
+Option D is kept as a documented fallback (simpler, faster per step).
+
+### Evaluation strategy — Step 2 (pure Python, no framework)
+
+Step 2 is validation only. Neither Option D nor E is used here — scipy `cont2discrete` is exact and fast. The sequence is:
+
+1. Implement `gantry_lpv_ss.py` using exact ZOH: call `gantry_discrete_ss(Y[k])` at each step.
+2. At Y=0.3 (constant): verify output matches frozen LTI exactly (same call → identical matrices).
+3. At Y = 0.1, 0.2, 0.3, 0.4, 0.5 m: export MATLAB G at each Y, compare Python vs MATLAB to < 1e-10.
+4. After Step 2 is validated, quantify rectangular approximation error (Option D) numerically:
+   compare `A_d = I + ts·A_c(Y)` vs `expm(A_c(Y)·ts)` at each Y value.
+   This establishes the O(ts) error bound — confirms Option E is preferred over D for training.
+
+### Open question — LPV baseline in the LFR interconnect (Step 3)
+
+Before implementing the training block, Drenth's thesis (`literature/drenth2025_lpv-lfr-thesis.pdf`)
+must be consulted to understand how the LPV baseline enters the LFR interconnect structure.
+
+Specifically:
+- Does the LFR interconnect for LPV use A(Y), B(Y) directly (as in `LPV_Linear_State_Block`)?
+- Or does it represent Y-dependence via a scheduling function Δ(p) in the LFR structure,
+  which would require a different block design?
+- Is Option E (exact ZOH via matrix_exp) consistent with how Drenth discretizes the LPV baseline?
+
+Use `assess-paper` on Drenth's thesis before starting Step 3 implementation.
+
+### Output files
+
+- Full Q-by-Q assessment: `assess-paper-workspace/iteration-1/toth-assessment/with_skill/outputs/assessment.md`
+- Decision updated in: `docs/decisions.md` D-012
+
+---
+
 ## Reference
 
-Tóth, R. (2010). *Modeling and Identification of Linear Parameter-Varying Systems.*
-Lecture Notes in Control and Information Sciences, Vol. 403. Springer.
-Cited in: `Research-Plan/research-methods.md`
+Tóth, R. (2010). *ZOH Discretization of LPV Systems.*
+File: `literature/toth2010_zoh-discretization-lpv.pdf`
+Cited in: `Research-Plan/research-methods.md` as `toth2010discretization`
