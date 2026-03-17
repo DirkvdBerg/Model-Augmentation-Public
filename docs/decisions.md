@@ -98,3 +98,35 @@ Decisions are logged here before implementation. Each entry states what was deci
 **Why**: The immediate priority is getting the FP model into the correct discrete-time state-space form compatible with the existing augmentation code. LPV-LFR augmentation adds complexity that should not be introduced before the baseline integration is validated.
 **Ruled out**: Attempting LPV-LFR augmentation before the FP model baseline is working.
 **Constrains**: Current work focuses on FP model conversion and compatibility with the existing LFR interconnect. LPV scheduling in the augmentation layer comes after.
+
+---
+
+### [D-010] LPV baseline and LPV augmentation are separate concerns
+**Date**: 2026-03-17
+**What**: The LPV extension has two distinct parts that must not be conflated:
+  1. **LPV baseline** — the FP model with A(Y[k]), B(Y[k]) recomputed each step from physics. This is what Step 2 builds and validates.
+  2. **LPV augmentation** — a data-driven network on top of the baseline that also varies with Y. This is a Step 3+ concern.
+**Why**: Jan's original augmentation framework has no LPV support. The `Parameterized_LPV_Affine_Linear_State_Block` found in the codebase is a user-added augmentation component, not a baseline block. Treating it as the LPV baseline would conflate two separate responsibilities.
+**Ruled out**: Using `Parameterized_LPV_Affine_Linear_State_Block` as the LPV baseline block — it is trainable, augmentation-side, and uses an affine-in-Y² approximation that does not represent the full physics.
+**Constrains**: Step 2 validates the LPV baseline purely in Python (no framework). Step 3 requires a new `LPV_Linear_State_Block` (see D-011).
+
+---
+
+### [D-011] Framework integration of LPV baseline requires a new block type
+**Date**: 2026-03-17
+**What**: Wiring the LPV baseline into the augmentation interconnect requires a new block — `LPV_Linear_State_Block` — that reads Y from the current state at each forward call and recomputes A(Y), B(Y) via `gantry_discrete_ss(Y)`.
+**Why**: The existing `Linear_State_Block` stores A and B as fixed attributes set at init — it cannot update them per step. The LPV baseline needs matrices that change every timestep as Y evolves. No existing block in the framework supports this.
+**Ruled out**: Reusing `Linear_State_Block` with a single frozen operating point — that is the frozen LTI, not the LPV baseline. Reusing `Parameterized_LPV_Affine_Linear_State_Block` — wrong structure (affine-in-Y², trainable, augmentation-side).
+**Constrains**: Implementation of `LPV_Linear_State_Block` is a Step 3 task, blocked on Step 2 validation. The block must expose Y as a self-scheduled variable (read from state index 2 in stage coordinates) and call `gantry_discrete_ss(Y)` internally.
+
+---
+
+### [D-012] LPV discretization method — open, pending Tóth review
+**Date**: 2026-03-17
+**What**: The discrete-time LPV model requires A_d(Y), B_d(Y) at each timestep. The discretization method has not yet been finalised — Tóth (2010) must be assessed first.
+**Why**: Two concerns require resolution before implementation:
+  1. **Validation simulation** (Step 2): calling `cont2discrete` at each step is straightforward. Frozen-at-sampling-instant is likely sufficient at 16 kHz (ΔY ≤ 0.125 mm/sample), but Tóth's error bound must confirm this.
+  2. **Training loop** (Step 3): calling `cont2discrete` inside a PyTorch autograd graph is not feasible — it involves matrix exponentiation and is not differentiable. A_d(Y) must be expressed as a closed-form polynomial or rational function of Y that can be evaluated analytically at each step.
+**Ruled out**: ode45 — does not produce discrete-time matrices. Calling `cont2discrete` inside the training loop — not torch-differentiable and computationally prohibitive at training scale.
+**Open question**: Does Tóth (2010) provide a closed-form polynomial expansion of A_d(Y) that can be used analytically? If not, an alternative (e.g. first-order Taylor expansion in Y or affine interpolation between frozen operating points) must be chosen.
+**Constrains**: See `docs/lpv-discretization.md` for the full specification of what we need from Tóth's paper.

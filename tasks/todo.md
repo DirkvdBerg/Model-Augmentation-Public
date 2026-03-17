@@ -67,7 +67,9 @@ residual is purely linearisation error, which is exactly what we want to quantif
 - [x] Loads `simulations/frozen_lti/y.npz`, `gantry_q3_lsim.mat`, `gantry_q_simscape.mat`
 - [x] Plots y, q3, q on same axes per channel (3 panels)
 - [x] Prints RMS and max absolute residual (in µm) for: y vs q3, q3 vs q, y vs q
-- [ ] **Run both scripts** and verify residuals are as expected
+- [x] **Results**: y vs q3 = 0.00 µm (PASS), q3 vs q: X1 4.86 µm / X2 3.19 µm / Y 0.10 µm
+
+**Step 1 PASS** — Python model matches MATLAB lsim to numerical zero. Linearisation gap is 4–16 µm, bounded and small. Dominant dynamics captured.
 
 **Why not compare against lsim (q3)?**
 A, B, C, D already match MATLAB G to 1e-19 (Task 1.2) — lsim comparison
