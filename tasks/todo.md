@@ -57,12 +57,17 @@ residual is purely linearisation error, which is exactly what we want to quantif
       save('Matlab-output/gantry_controller.mat', 'Cfb_num', 'Cfb_den', 'ts')
       ```
 
-**Sub-task D — Implement and run `gantry_sim.py`**
-- [ ] Load `gantry_input.mat`, `gantry_output.mat`, `gantry_controller.mat`
-- [ ] Implement discrete-time feedback loop in Python:
-      `e_k = r_k - y_k`,  `u_k = Cfb * e_k`,  `x_{k+1} = A·x_k + B·u_k`
-- [ ] Plot three panels (X1, X2, Y): Python vs Simscape `q` vs reference `r`
-- [ ] Print max and RMS residual per channel — this is the linearisation gap
+**Sub-task D — Implement and run `gantry_sim.py`** ✅
+- [x] Load `gantry_input.mat` (u already in deviation coordinates from lsim)
+- [x] Run open-loop simulation in deviation coordinates (x_0=0), add Y_op back
+- [x] Save y (N,3) and t to `simulations/frozen_lti/y.npz`
+
+**Sub-task E — Comparison script** ✅
+- [x] `scripts/gantry/gantry_compare.py` created
+- [x] Loads `simulations/frozen_lti/y.npz`, `gantry_q3_lsim.mat`, `gantry_q_simscape.mat`
+- [x] Plots y, q3, q on same axes per channel (3 panels)
+- [x] Prints RMS and max absolute residual (in µm) for: y vs q3, q3 vs q, y vs q
+- [ ] **Run both scripts** and verify residuals are as expected
 
 **Why not compare against lsim (q3)?**
 A, B, C, D already match MATLAB G to 1e-19 (Task 1.2) — lsim comparison
