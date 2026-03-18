@@ -262,16 +262,30 @@ Stage forces [F_X1, F_X2, F_Y]
 
 All four output signals are in **stage coordinates [X1, X2, Y]** and are directly comparable:
 
-| Variable | Source | Linearized? | Coriolis? | Coulomb friction? |
-|----------|--------|-------------|-----------|-------------------|
-| `q` | Simscape physical model | No (nonlinear) | Yes | Yes |
-| `q1` | `gantrySystem.m` + P.' | Yes | No | No |
-| `q2` | `gantrySystemCoriolisCentripetal.m` + P.' | Partial | Yes | No |
-| `q3` | `lsim(G, ...)` in `main.m` post-processing | Yes | No | No |
+| Variable | Source | M(Y) varies? | Coriolis? | Coulomb friction? | Role |
+|----------|--------|-------------|-----------|-------------------|------|
+| `q` | Simscape physical model | Yes | Yes | Yes | Ultimate ground truth |
+| `q1` | `gantrySystem.m` + Selector + P.' | Yes (continuous) | No | No | **Primary LPV comparison target** |
+| `q2` | `gantrySystemCoriolisCentripetal.m` + Selector + P.' | Yes (continuous) | Yes | No | Coriolis reference |
+| `q3` | `lsim(G, ...)` in `main.m` post-processing | No (frozen Y=0.3) | No | No | Frozen LTI reference |
 
-`q3` is NOT a Simulink workspace variable — it is computed in `main.m` after the simulation by calling `lsim` on `G = c2d(StageCoordinatesSystem, ts, 'zoh')`. G's C matrix = `P.' * [I, 0]` maps logical states to stage positions, consistent with q1/q2.
+**Key insight — q1 is a continuous-time quasi-LPV simulation:**
+`gantrySystem.m` evaluates M(Y) at the current Y = x(3) at each integration step. As Y
+evolves during the trajectory, M(Y) updates. This is NOT a frozen LTI — it is the same
+physics as our discrete Python LPV model (same M(Y), C, K, no Coriolis), integrated in
+continuous time. This makes q1 the correct reference for proving LPV beats frozen LTI:
 
-The Simscape model (q) is the ground truth for the nonlinear system. The linearization gap between q3 and q (4–16 µm at Y=0.3 m, from Step 1 validation) is what the augmentation must learn to close.
+```
+Frozen LTI (q3)  ──┐
+                   ├── vs q1  →  proves LPV benefit (Y-varying inertia effect)
+Python LPV sim   ──┘
+
+q1  ── vs q (Simscape)  →  augmentation target (Coriolis + Coulomb gap)
+```
+
+`q3` is NOT a Simulink workspace variable — it is computed in `main.m` after simulation by
+calling `lsim` on `G = c2d(StageCoordinatesSystem, ts, 'zoh')` at frozen Y=0.3.
+G's C matrix = `P.' * [I, 0]` maps logical states to stage positions, consistent with q1/q2.
 
 ### Subsystem: Single H-gantry (system_47)
 

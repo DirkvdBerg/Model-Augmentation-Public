@@ -102,9 +102,25 @@ This is a quasi-LPV model. The augmentation must learn the rest from data.
 - Task 2.4 (matrix comparison) — proves Python correctly implements the same physics as
   MATLAB G(Y). Implementation correctness only.
 - Export 2 + simulation comparison — proves the LPV simulation is a *better baseline* than
-  the frozen LTI (Step 1) when Y varies. This is a hypothesis until Export 2 is run.
-  LPV is only superior if Y varies enough that M(Y) error in the frozen model is significant.
+  the frozen LTI when Y varies. Comparison target is q1 (not q directly — see below).
 - The augmentation closes what neither frozen LTI nor LPV captures: Coriolis, friction, etc.
+
+**Correct comparison target for LPV superiority: q1, not q**
+q1 (from gantrySystem.m in Simulink) is a continuous-time quasi-LPV simulation — M(Y) is
+re-evaluated at each integration step as Y evolves. It uses identical physics to our LPV
+model (same M(Y), C, K, no Coriolis). This makes it the cleanest reference:
+
+  Frozen LTI ──┐
+               ├── vs q1  →  proves LPV beats frozen LTI (Y-varying inertia effect)
+  Python LPV ──┘
+
+  q1  ── vs q (Simscape)  →  defines augmentation target (Coriolis + Coulomb gap)
+
+Comparison chain (supervisor-confirmed):
+1. q3 (frozen LTI lsim) vs q1 — intermediate step, shows frozen LTI error
+2. Python LPV sim vs q1       — validates LPV implementation (discrete vs continuous)
+3. LPV vs LTI vs q1           — proves LPV benefit when Y varies
+4. q1 vs q (Simscape)         — quantifies what augmentation must learn
 
 ### Task 2.1 — Decisions and method ✅
 - [x] Tóth (2010) assessed via assess-paper skill
@@ -127,23 +143,29 @@ Compares Python A(Y), B(Y) against MATLAB at each operating point (core matrix v
 - [ ] Save: `det_M` (50×1) — physics health check, confirms M(Y) positive definite across range
 
 **Export 2 — Varying-Y Simulink simulation** → `Matlab-output/lpv_sim_varying_y.mat`
-Ground truth for simulation-level LPV validation: compares frozen LTI vs LPV model vs Simscape
-when Y actually sweeps the operating range. This is the only export that proves the LPV model
-is useful (not just mathematically correct).
+Provides the reference signals needed to prove LPV is a better baseline than frozen LTI.
+Primary comparison target is q1 (continuous-time quasi-LPV, same physics as our model).
+q (Simscape) is the secondary target — quantifies the augmentation gap.
 - [ ] NOTE: first check Step 1 Simscape data — if Y varies significantly there, reuse it
       instead of running a new simulation (load q_simscape.mat, plot Y channel vs time)
 - [ ] If new simulation needed: design reference where Y axis sweeps 0.1 → 0.7 m slowly
       while X1/X2 do normal motion — requires a new reference signal r_lpv
-- [ ] Run Simscape (nonlinear ground truth) with this reference
+- [ ] Run Simulink model (gantry_2025a) with this reference — saves q, q1, q2 automatically
 - [ ] Save the following variables:
       - `t`              (N×1)   — time vector [s]
       - `r`              (N×3)   — reference signals [X1_ref, X2_ref, Y_ref] in stage coords [m]
       - `u`              (N×3)   — controller force inputs [F_X1, F_X2, F_Y] [N]
-                                   (must be from linear feedback, same as Step 1 — NOT Simscape
-                                    nonlinear friction forces; see Step 1 u/q3 fix for why)
-      - `q_simscape`     (N×3)   — Simscape nonlinear output [X1, X2, Y] [m] — ground truth
-      - `Y_trajectory`   (N×1)   — absolute Y position over time [m], extracted from q_simscape
-                                   (used by Python LPV sim to verify Y variation range)
+                                   (must be from linear feedback — NOT Simscape nonlinear
+                                    friction forces; see Step 1 u/q3 fix for why)
+      - `q1`             (N×3)   — gantrySystem.m output [X1, X2, Y] [m]
+                                   PRIMARY comparison target: continuous-time quasi-LPV,
+                                   same physics as our LPV model (M(Y) updated each step,
+                                   no Coriolis, no Coulomb). Proves LPV beats frozen LTI.
+      - `q_simscape`     (N×3)   — Simscape nonlinear output [X1, X2, Y] [m]
+                                   SECONDARY target: quantifies augmentation gap (q1 vs q
+                                   = Coriolis + Coulomb contribution)
+      - `Y_trajectory`   (N×1)   — absolute Y position over time [m], extracted from q1
+                                   (used by Python LPV sim to set scheduling variable)
       - `fs`             (1×1)   — sample frequency [Hz] = 16000
 
 ### Task 2.3 — Torch reimplementation

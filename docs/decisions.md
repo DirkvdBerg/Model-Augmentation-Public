@@ -185,9 +185,13 @@ M_aug = [[A_c(Y),  B_c(Y)],    # (n+m) × (n+m) = 9×9 for gantry
 **Important distinction — what matrix comparison proves vs simulation comparison**:
 Matrix comparison (Task 2.4) proves implementation correctness only: Python A(Y), B(Y) match
 the same physics as MATLAB G(Y). It does NOT prove that the LPV simulation is a better baseline
-than the frozen LTI. That requires a separate simulation comparison (Export 2, Task 2.2) on a
-trajectory where Y varies significantly, comparing frozen LTI vs LPV vs Simscape. LPV is only
-a better baseline if M(Y) error from using a fixed operating point is large enough to matter.
-The model is quasi-LPV: it captures Y-dependent inertia only — Coriolis, centripetal, and
-velocity-dependent friction are all dropped in the linearization and must be learned by the
-augmentation.
+than the frozen LTI. That requires Export 2 (Task 2.2) on a varying-Y trajectory.
+
+**Correct simulation comparison target: q1, not q (Simscape).**
+q1 (gantrySystem.m in Simulink) is a continuous-time quasi-LPV simulation — M(Y) is
+re-evaluated each integration step as Y evolves. It uses identical physics to the LPV model
+(same M(Y), C, K; no Coriolis, no Coulomb). Comparing LPV vs frozen LTI both against q1
+isolates the Y-varying inertia effect cleanly, without Coriolis/Coulomb interference.
+q (Simscape) is the secondary target: q1 vs q quantifies the augmentation gap (Coriolis +
+Coulomb). The model is quasi-LPV: captures Y-dependent inertia only — Coriolis, centripetal,
+and velocity-dependent friction are dropped and must be learned by the augmentation.
