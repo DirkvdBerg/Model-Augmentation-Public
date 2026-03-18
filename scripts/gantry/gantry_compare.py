@@ -47,7 +47,7 @@ def _print_residuals(label, e):
     print(f"  {label}:")
     names = ['X1', 'X2', 'Y ']
     for i, name in enumerate(names):
-        print(f"    {name}  RMS={_rms(e[:, i])*1e6:.2f} µm   max={np.max(np.abs(e[:, i]))*1e6:.2f} µm")
+        print(f"    {name}  RMS={_rms(e[:, i]):.2e} m   max={np.max(np.abs(e[:, i])):.2e} m")
 
 
 def main():
@@ -82,7 +82,7 @@ def main():
     e_q3_q  = q3 - q    # linearisation gap
     e_y_q   = y  - q    # total error
 
-    print("\nResiduals (RMS and max absolute, in µm):")
+    print("\nResiduals (RMS and max absolute, in m):")
     _print_residuals("y  vs q3  [implementation check]", e_y_q3)
     _print_residuals("q3 vs q   [linearisation gap]   ", e_q3_q)
     _print_residuals("y  vs q   [total error]          ", e_y_q)
