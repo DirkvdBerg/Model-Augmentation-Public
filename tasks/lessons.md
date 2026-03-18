@@ -30,3 +30,10 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 **Trigger**: When the user corrects an output, rejects an approach, or asks for a redo
 **Rule**: Before executing the correction, apply the 3-criteria gate and log to `tasks/lessons.md` if it passes. Do not defer it — corrections get forgotten once execution resumes.
 **Why**: The fp-model-structure correction was not logged at the time because execution continued immediately. The lesson system only works if the checkpoint is non-optional.
+
+---
+
+### Rule: Never use em-dashes in any writing output
+**Trigger**: When writing any text — prose, LaTeX, comments, documentation, or any other output
+**Rule**: Do not use em-dashes in any form: not the Unicode character (—), not the LaTeX ligature (---), not double-dash (--) used as an em-dash substitute. Use a comma, colon, parentheses, or rewrite the sentence instead.
+**Why**: User explicitly requested this as a hard rule across all writing contexts including LaTeX source.
