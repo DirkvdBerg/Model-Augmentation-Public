@@ -32,18 +32,23 @@ Reference: kamtin-fp-model/03 Simulink gantry/main.m (immutable ground truth)
 
 import torch
 
+# Module-level default: consistent with main.m (fs = 16e3).
+# Note: discrepancy with ETEL spec (PLTI = 50 us = 20 kHz) — see docs/decisions.md D-012.
+_DEFAULT_FS = torch.tensor(16e3, dtype=torch.float64)
 
-def gantry_lpv_matrices_torch(Y: torch.Tensor, fs: float = 16e3):
+
+def gantry_lpv_matrices_torch(Y: torch.Tensor, fs: torch.Tensor = _DEFAULT_FS):
     """
     Compute discrete-time LPV state-space matrices for the gantry FP model.
 
-    All intermediate values are torch tensors — gradients flow from A_d, B_d
+    All intermediate values are torch tensors. Gradients flow from A_d, B_d
     back through Y and all physical parameters.
 
     Parameters
     ----------
     Y  : torch.Tensor, scalar — payload Y-position [m]. May have requires_grad=True.
-    fs : float — sample frequency [Hz]. Default: 16000 (from main.m line 164).
+    fs : torch.Tensor, scalar float64 — sample frequency [Hz].
+         Default: 16000 Hz (from main.m line 164; see D-012 for ETEL rate discrepancy).
 
     Returns
     -------
@@ -55,7 +60,8 @@ def gantry_lpv_matrices_torch(Y: torch.Tensor, fs: float = 16e3):
     All outputs are dtype=torch.float64.
     """
     dtype = torch.float64
-    ts = torch.tensor(1.0 / fs, dtype=dtype)
+    # fs is now a tensor. Avoid torch.tensor(tensor) — use division directly.
+    ts = torch.tensor(1.0, dtype=dtype) / fs.to(dtype=dtype)
 
     # ------------------------------------------------------------------
     # Step 1: Physical parameters (from main.m lines 12-36)

@@ -95,6 +95,52 @@
 
 \vspace{0.8em}
 
+\section*{Model Classification}
+
+Tóth \cite{toth2010} defines CT-LPV-SS representations as models of an underlying physical
+system $S$ where the state-space matrices depend on a scheduling variable $p$:
+\[
+    \dot{x}(t) = A_c(p(t))\,x(t) + B_c(p(t))\,u(t), \qquad
+    y(t) = C_c(p(t))\,x(t) + D_c(p(t))\,u(t).
+\]
+
+The dual-gantry model fits this definition. The state vector is
+\[
+    x = \begin{bmatrix} X & \Theta & Y & \dot{X} & \dot{\Theta} & \dot{Y} \end{bmatrix}^\top \in \R^6,
+\]
+so the payload Y-position is the third component: $Y = x_3$.
+The scheduling variable is $p = Y$, and the matrices $A_c(Y)$ and $B_c(Y)$ depend on it
+through the mass matrix $M(Y)$ (see Derivation Step~1 and Step~2).
+
+\textbf{$C_c$ and $D_c$ are constant.}
+In the general LPV definition all four matrices may depend on $p$. For our model:
+\[
+    C_c = \begin{bmatrix} I_3 & 0_{3\times 3} \end{bmatrix}, \qquad D_c = 0_{3\times 3}.
+\]
+Neither depends on $Y$. The LPV structure is carried entirely by the state equation; the
+output equation is parameter-invariant. As a consequence, $C_d = C_c$ and $D_d = D_c$
+follow trivially from the discretization with no scheduling complication.
+
+The classification requires specifying the nature of the scheduling dependence, for which
+Tóth distinguishes two cases:
+
+\begin{itemize}
+    \item \textbf{Static dependence}: $p$ is an exogenous signal, independent of the system
+    state. The scheduling variable is externally measured or prescribed.
+    \item \textbf{Dynamic dependence}: $p = f(x)$, i.e., the scheduling variable is a
+    function of the system state. This is referred to as \emph{quasi-LPV}.
+\end{itemize}
+
+\textbf{Our system is quasi-LPV with dynamic scheduling dependence.}
+The scheduling variable $p = Y = x_3$ is the third component of the state vector, so it is
+not an exogenous signal but evolves as part of the system dynamics. Both classifications are
+valid CT-LPV representations in Tóth's framework; quasi-LPV is a subclass of LPV, not
+outside it. The distinction matters at the discretization step: the ZOH complete method
+is exact for static dependence and approximate for dynamic dependence (see quasi-LPV caveat
+in the assumptions below).
+
+\vspace{0.8em}
+
 \section*{Assumptions (Tóth \cite{toth2010}, pp.~5--6)}
 
 The complete method for LPV discrete-time state-space conversion requires exactly two
@@ -420,6 +466,47 @@ y[k] = C_{c,\text{stage}}x[k],
 D_d = 0.
 \]
 
+This result is a DT-LPV-SS model in the sense of Tóth \cite{toth2010} Definition~2, with
+discrete scheduling signal $p_d(k) := p_c(kT_d) = Y(kT_d)$.
+
+\medskip
+\textbf{Point 1: self-scheduling property.}
+$Y[k] = x_3[k]$ is not an external signal. It is the third component of the state vector
+$x[k]$, updated by the recurrence itself. After each step the new state $x[k+1]$ contains
+$x_3[k+1] = Y[k+1]$, which becomes the scheduling variable for the next interval. No
+separate scheduling signal is needed: the model is self-scheduled through the state.
+
+\medskip
+\textbf{Point 2: chaining of frozen intervals.}
+Tóth's complete method gives the exact solution for a single interval $[kT_d, (k+1)T_d)$
+with $Y$ frozen at $Y[k]$. The full LPV simulation is formed by chaining these intervals:
+\[
+    x[k+1] = A_d(x_3[k])\,x[k] + B_d(x_3[k])\,u[k], \qquad k = 0,\,1,\,2,\,\ldots
+\]
+At each step $k$: (i) read $Y[k] = x_3[k]$ from the current state, (ii) compute
+$A_d(Y[k])$ and $B_d(Y[k])$ via the augmented matrix exponential, (iii) advance the state.
+The scheduling variable is updated automatically in step (iii) via the new $x_3[k+1]$.
+
+\medskip
+\textbf{Point 3: initial conditions.}
+The model uses absolute coordinates (not deviations from an operating point). The initial
+state is $x[0] = x_0$, where $x_3[0] = Y_0$ is the initial absolute payload position.
+
+\medskip
+\textbf{Point 4: backpropagation through time (training loop only).}
+In the training loop the loss $\mathcal{L}$ must propagate gradients back through the
+entire simulation sequence. The gradient chain at step $k$ is:
+\[
+    \frac{\partial \mathcal{L}}{\partial A_d(Y[k])} \cdot
+    \frac{\partial A_d}{\partial Y[k]} \cdot
+    \frac{\partial Y[k]}{\partial x[k]} \cdot
+    \frac{\partial x[k]}{\partial x[k-1]} \cdots
+\]
+The middle term $\partial A_d / \partial Y[k]$ flows through
+\texttt{torch.linalg.matrix\_exp}, which is differentiable. The full chain is therefore
+traceable by autograd across all timesteps (BPTT). This requires that every operation in
+Points~1--2 uses torch tensor arithmetic with no detach or numpy conversion.
+
 \textbf{Quasi-LPV caveat.}
 Tóth \cite{toth2010} notes this method is \emph{``only reasonable for the discretization of
 LPV-SS representation with static dependence as dynamic dependence requires a higher-order
@@ -431,16 +518,66 @@ PLTI rate \cite{etel_accuret}) and the plant dynamics (\(\sim\!1.6\,\text{ms}\) 
 The maximum \(Y\)-velocity \(v_{\max} = 2\,\text{m/s}\) is taken from the ETEL Telica
 specification \cite{etel_accuret} and confirmed in \texttt{main.m} (\texttt{vmax = 2}).
 
-\textbf{Open: verify sampling rate.}
-The ETEL Telica system has three loop rates: PLTI (position), CLTI (current), and MLTI
-(manager) \cite{etel_accuret}. The value \(f_s = 16\,\text{kHz}\) used here matches
-\texttt{main.m} (\texttt{fs = 16e3}) and is assumed to be the PLTI rate, but this must
-be confirmed against the specification. The correct rate determines \(T_d\), and therefore
-the magnitude of \(\Delta Y \le v_{\max} / f_s\) and the validity of the ZOH approximation.
+\textbf{Discrepancy: \texttt{main.m} vs.\ ETEL specification.}
+The ETEL Telica specification \cite[p.~18]{etel_accuret} states three loop cycle times:
+\begin{itemize}
+    \item MLTI (manager loop): $400\,\mu\text{s}$ \quad ($f_\text{MLTI} = 2.5\,\text{kHz}$)
+    \item PLTI (position loop): $50\,\mu\text{s}$ \quad ($f_\text{PLTI} = 20\,\text{kHz}$)
+    \item CLTI (current loop): $50\,\mu\text{s}$ \quad ($f_\text{CLTI} = 20\,\text{kHz}$)
+\end{itemize}
+PLTI and CLTI run at the same rate and are synchronised: the force command computed by
+the position loop is executed by the current loop at the same tick. There is no timing
+cascade issue; $u[k]$ is held for exactly one PLTI period of $T_d = 50\,\mu\text{s}$.
 
-\sourcenote{\cite{toth2010} Assumptions 1 \& 2 (pages 5--6). Sample rate and \(v_{\max}\):
-\cite{etel_accuret} (PLTI position loop rate -- to be verified).
-Design decision: \texttt{docs/decisions.md} D-012.}
+\texttt{main.m} uses \texttt{fs = 16e3} ($T_d = 62.5\,\mu\text{s}$), which does
+\textbf{not} match the ETEL specification ($T_d = 50\,\mu\text{s}$, $f_s = 20\,\text{kHz}$).
+This discrepancy must be resolved before $T_d$ can be stated definitively. All numbers in
+this document that depend on $T_d$ (in particular $\Delta Y_{\max}$ and the timescale
+separation) use the \texttt{main.m} value until this is clarified. For reference, at
+$f_s = 20\,\text{kHz}$:
+\[
+    \Delta Y_{\max} = v_{\max} \cdot T_d = 2 \times 50 \times 10^{-6} = 0.1\,\text{mm},
+\]
+which is smaller than the 0.125\,mm computed at 16\,kHz and only strengthens the ZOH
+justification.
+
+\sourcenote{\cite{toth2010} Assumptions 1 \& 2 (pages 5--6).
+Loop rates: \cite[p.~18]{etel_accuret}.
+Discrepancy flagged in \texttt{docs/decisions.md} D-012.}
+
+\begin{tcolorbox}[
+    colback=red!4, colframe=red!60!black, boxrule=0.9pt, arc=1.5mm,
+    left=2mm, right=2mm, top=1mm, bottom=1mm,
+    title={\bfseries Implementation requirement: scheduling wiring not yet done},
+    coltitle=black, colbacktitle=red!15, fonttitle=\bfseries
+]
+The complete method produces $A_d(p_d(k))$ and $B_d(p_d(k))$ where
+$p_d(k) = Y(kT_d) = x_3[k]$. This means at \textbf{every timestep} the training loop must:
+\begin{enumerate}
+    \item read $Y[k] = x_3[k]$ from the current state vector,
+    \item pass it into \texttt{gantry\_lpv\_matrices\_torch(Y)} to obtain $A_d(Y[k])$
+          and $B_d(Y[k])$,
+    \item use those matrices for the state update $x[k+1] = A_d(Y[k])\,x[k] + B_d(Y[k])\,u[k]$.
+\end{enumerate}
+\textbf{This wiring does not exist yet.} The function
+\texttt{gantry\_lpv\_matrices\_torch} is implemented and validated
+(\texttt{scripts/gantry/gantry\_lpv\_torch.py}), but the caller that reads $x_3[k]$ from
+the state and passes it in at each step belongs to \texttt{LPV\_Linear\_State\_Block.forward()},
+which is not yet implemented (Step~3 of the project plan,
+\texttt{docs/decisions.md} D-013).
+
+\medskip
+\textbf{Autograd compatibility.}
+The proposed architecture (Points~1--4 above) is fully compatible with autograd.
+Two gradient paths exist at each step $k$:
+(a) direct: $\mathcal{L} \to x[k+1] \to A_d x[k] \to x[k]$, and
+(b) self-scheduling: $\mathcal{L} \to x[k+1] \to A_d(Y[k]) \xrightarrow{\partial\,\mathrm{matrix\_exp}/\partial Y} Y[k] = x_k[2] \to x[k]$.
+PyTorch accumulates gradients from both branches at $x[k]$ correctly.
+Requirements: (i) extract scheduling variable as \texttt{Y\_k = x\_k[2]} (tensor, never \texttt{.item()}),
+(ii) all state updates out-of-place, (iii) trajectory accumulated via \texttt{list} + \texttt{torch.stack}.
+Gradient clipping (\texttt{clip\_grad\_norm\_}) is recommended due to the double gradient path.
+
+\end{tcolorbox}
 
 \end{derivationstep}
 
@@ -554,9 +691,10 @@ Assumptions~1 \& 2 (pp.~5--6), complete method eq.~9a and footnote~2.
 ETEL~S.A.,
 \textit{AccurET -- Operation \& Software, Version~V},
 \texttt{literature/AccurET-Oper\&Soft-VerV.pdf}.
-Relevant parameters: PLTI (position loop) sample rate \(f_s = 16\,\text{kHz}\),
-CLTI (current loop) and MLTI (manager loop) rates; maximum Y-axis velocity
-\(v_{\max} = 2\,\text{m/s}\).
+Page~18: PLTI = $50\,\mu\text{s}$ (20\,kHz), CLTI = $50\,\mu\text{s}$ (20\,kHz),
+MLTI = $400\,\mu\text{s}$ (2.5\,kHz). Maximum Y-axis velocity \(v_{\max} = 2\,\text{m/s}\).
+Note: \texttt{main.m} uses \texttt{fs = 16e3} (62.5\,$\mu$s) -- discrepancy with spec
+must be resolved.
 
 \end{thebibliography}
 

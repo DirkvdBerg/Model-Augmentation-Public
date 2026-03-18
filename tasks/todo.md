@@ -173,8 +173,8 @@ q (Simscape) is the secondary target — quantifies the augmentation gap.
                                    (used by Python LPV sim to set scheduling variable)
       - `fs`             (1×1)   — sample frequency [Hz] = 16000
 
-### Task 2.3 — Torch reimplementation
-**File**: `scripts/gantry/gantry_lpv_torch.py`
+### Task 2.3 — Torch reimplementation ✅
+**Files**: `scripts/gantry/gantry_lpv_torch.py`, `scripts/gantry/gantry_lpv_sim_torch.py`
 
 This is a **full torch reimplementation** of `gantry_discrete_ss` — NOT a wrapper around it.
 Every value (physical parameters, M(Y), A_c, B_c, P transform) is defined as a torch tensor
@@ -184,18 +184,24 @@ difference from `gantry_ss.py` is the numerical backend: `cont2discrete` is repl
 to handle singular A_c — see D-015).
 
 Defining everything in torch from the start (not converting from numpy) also means physical
-parameters (mb, mh, m1, m2, …) can optionally be made trainable later with no refactoring.
+parameters (mb, mh, m1, m2, ...) can optionally be made trainable later with no refactoring.
 
-- [ ] Implement `gantry_lpv_matrices_torch(Y: torch.Tensor, fs=16e3) -> tuple[Tensor, Tensor, Tensor, Tensor]`
+- [x] Implement `gantry_lpv_matrices_torch(Y: torch.Tensor, fs: torch.Tensor = _DEFAULT_FS)`
       - All physical parameters defined as `torch.tensor` scalars (float64)
       - M(Y), C_mat, K built as torch tensors using tensor arithmetic
       - A_c(Y), B_c(Y) assembled as torch tensors
       - Stage coordinate transform P as torch tensor; B_c_stage = B_c @ P, C_c_stage = P.T @ C_c
-      - 9×9 augmented matrix: `M_aug[:6,:6] = A_c; M_aug[:6,6:] = B_c_stage`
+      - 9x9 augmented matrix: `M_aug[:6,:6] = A_c; M_aug[:6,6:] = B_c_stage`
       - `EM = torch.linalg.matrix_exp(M_aug * ts)`
       - Returns A_d=EM[:6,:6], B_d=EM[:6,6:], C_c_stage (constant), D=zeros — all torch tensors
-- [ ] Add `__main__` block: call with `Y = torch.tensor(0.3)`, compare `.numpy()` output
-      against `gantry_discrete_ss(Y=0.3)` to < 1e-10 — verifies torch vs scipy agreement
+      - fs changed from float to torch.Tensor for consistency; module-level `_DEFAULT_FS` buffer
+- [x] Add `__main__` block in `gantry_lpv_torch.py`: torch vs scipy < 1e-10 at Y=0.3 (actual 5.5e-15)
+- [x] Implement `GantryLPVSimulator(nn.Module)` in `gantry_lpv_sim_torch.py`
+      - `forward(x0, u)`: self-scheduling loop p[k]=x[k][2], list+torch.stack, out-of-place updates
+      - `simulate(x0, u)`: torch.no_grad wrapper around forward()
+      - C_d computed once in __init__ (constant, no Y-dependence), registered as buffer
+      - `__main__` block: Test 1 (frozen Y free-response vs scipy, error 5.5e-15 PASS),
+        Test 2 (BPTT gradient test, grad norm 2.24e2 PASS)
 
 ### Task 2.4 — Validation: Python vs MATLAB matrix comparison
 **File**: `scripts/gantry/gantry_lpv_validate.py`
@@ -255,4 +261,8 @@ and prepare for training on real experimental data.
 ## Deferred
 
 - LPV-LFR augmentation adaptation (D-005)
+- `torch.compile` on `LPV_Linear_State_Block.forward()`: one-line optimisation once eager-mode
+  implementation is validated. Static matrix shapes (6×6, 6×3) and no data-dependent control
+  flow make it a good candidate. Must test compatibility with `torch.utils.checkpoint`
+  (stable from PyTorch 2.1+). Do not add until correctness is confirmed in eager mode.
 - Orthogonal projection regularization (Aspect 3, research-methods.md)

@@ -179,6 +179,13 @@ Decisions are logged here before implementation. Each entry states what was deci
   the intra-sample Y variation negligible in practice. Rigorous numerical confirmation:
   ‖A(Y+ΔY) − A(Y)‖/‖A(Y)‖ at ΔY = 0.125 mm is verified in Task 2.5.
 
+**OPEN: sample rate discrepancy**:
+  AccurET-Oper&Soft-VerV.pdf page 18 states: PLTI = 50 µs (20 kHz), CLTI = 50 µs (20 kHz),
+  MLTI = 400 µs (2.5 kHz). PLTI and CLTI are synchronised at the same rate.
+  main.m uses fs = 16e3 (T_d = 62.5 µs), which does NOT match the spec (T_d = 50 µs).
+  All T_d-dependent numbers in this document use the main.m value until resolved.
+  At 20 kHz: ΔY_max = 2 × 50e-6 = 0.1 mm — smaller than 0.125 mm, strengthens the argument.
+
 **Why**:
   - Validation: `cont2discrete` is exact for the frozen ODE and fast enough for a one-off
     simulation. The residual quasi-LPV error is accepted as small (see above).

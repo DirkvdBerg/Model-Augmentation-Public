@@ -14,7 +14,15 @@
       "Bash(powershell -Command \"conda run -n GraduationProject python 'C:\\\\Users\\\\20203253\\\\OneDrive - TU Eindhoven\\\\Graduation Project\\\\Baseline FP model\\\\Baseline-LPV-Augmentation\\\\temp_extract.py'\" 2>&1)",
       "Bash(powershell -Command \"conda run -n GraduationProject python 'C:\\\\Users\\\\20203253\\\\OneDrive - TU Eindhoven\\\\Graduation Project\\\\Baseline FP model\\\\Baseline-LPV-Augmentation\\\\scripts\\\\gantry\\\\test_mimo_encoder.py'\" 2>&1 | Select-String -NotMatch \"Gym|gymnasium|migration\")",
       "Bash(powershell -Command \"conda run -n GraduationProject python 'C:\\\\Users\\\\20203253\\\\OneDrive - TU Eindhoven\\\\Graduation Project\\\\Baseline FP model\\\\Baseline-LPV-Augmentation\\\\scripts\\\\gantry\\\\test_mimo_encoder.py' 2>&1 | Where-Object { $_ -notmatch 'Gym|gymnasium|migration' }\")",
-      "Bash(claude doctor:*)"
+      "Bash(claude doctor:*)",
+      "WebFetch(domain:docs.pytorch.org)",
+      "WebFetch(domain:discuss.pytorch.org)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:colah.github.io)",
+      "WebFetch(domain:openreview.net)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.cs.toronto.edu)"
     ]
   }
 }
