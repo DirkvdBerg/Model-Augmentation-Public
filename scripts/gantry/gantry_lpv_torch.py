@@ -108,22 +108,28 @@ def gantry_lpv_matrices_torch(Y: torch.Tensor, fs: float = 16e3):
     # Step 3: Viscous damping matrix C_damp  (from main.m lines 57-59)
     # Named C_damp to avoid collision with output matrix C_d.
     # Constant — no Y-dependence.
+    # torch.stack used (not torch.tensor) because elements are torch tensors.
     # ------------------------------------------------------------------
-    C_damp = torch.tensor([
-        [cg1 + cg2,              (cg1 - cg2) * Lb / 2,                         0.0],
-        [(cg1 - cg2) * Lb / 2,  cb1 + cb2 + (cg1 + cg2) * Lb**2 / 4,          0.0],
-        [0.0,                    0.0,                                            cy ],
-    ], dtype=dtype)
+    z = torch.zeros((), dtype=dtype)
+    C_00 = cg1 + cg2
+    C_01 = (cg1 - cg2) * Lb / 2
+    C_11 = cb1 + cb2 + (cg1 + cg2) * Lb**2 / 4
+    C_damp = torch.stack([
+        torch.stack([C_00, C_01, z   ]),
+        torch.stack([C_01, C_11, z   ]),
+        torch.stack([z,    z,    cy  ]),
+    ])  # (3, 3)
 
     # ------------------------------------------------------------------
     # Step 4: Stiffness matrix K  (from main.m lines 62-64)
     # Constant — no Y-dependence.
     # ------------------------------------------------------------------
-    K = torch.tensor([
-        [0.0,  0.0,          0.0],
-        [0.0,  kb1 + kb2,    0.0],
-        [0.0,  0.0,          0.0],
-    ], dtype=dtype)
+    K_11 = kb1 + kb2
+    K = torch.stack([
+        torch.stack([z,    z,    z   ]),
+        torch.stack([z,    K_11, z   ]),
+        torch.stack([z,    z,    z   ]),
+    ])  # (3, 3)
 
     # ------------------------------------------------------------------
     # Step 5: Continuous-time SS in logical coordinates  (from getss.m)
@@ -143,13 +149,13 @@ def gantry_lpv_matrices_torch(Y: torch.Tensor, fs: float = 16e3):
     MiC = torch.linalg.solve(M, C_damp)      # (3, 3)  M^{-1} C
     Mi  = torch.linalg.solve(M, eye3)        # (3, 3)  M^{-1}
 
-    A_c = torch.zeros(6, 6, dtype=dtype)
-    A_c[:3, 3:] = eye3
-    A_c[3:, :3] = -MiK
-    A_c[3:, 3:] = -MiC
+    zeros_33 = torch.zeros(3, 3, dtype=dtype)
+    A_c = torch.cat([
+        torch.cat([zeros_33, eye3 ], dim=1),
+        torch.cat([-MiK,    -MiC  ], dim=1),
+    ], dim=0)  # (6, 6)
 
-    B_c = torch.zeros(6, 3, dtype=dtype)
-    B_c[3:, :] = Mi
+    B_c = torch.cat([zeros_33, Mi], dim=0)  # (6, 3)
 
     # ------------------------------------------------------------------
     # Step 6: Transform I/O to stage coordinates  (from main.m lines 98-103)
@@ -161,11 +167,12 @@ def gantry_lpv_matrices_torch(Y: torch.Tensor, fs: float = 16e3):
     #   C_stage = P.T @ C_c   where C_c = [I_3 | 0_3]
     #   A unchanged (internal states stay in logical coordinates)
     # ------------------------------------------------------------------
-    P = torch.tensor([
-        [1.0,      1.0,       0.0],
-        [Lb / 2,  -Lb / 2,   0.0],
-        [0.0,      0.0,       1.0],
-    ], dtype=dtype)
+    one = torch.ones((), dtype=dtype)
+    P = torch.stack([
+        torch.stack([one,      one,      z  ]),
+        torch.stack([Lb / 2,  -Lb / 2,  z  ]),
+        torch.stack([z,        z,        one]),
+    ])  # (3, 3)
 
     B_c_stage = B_c @ P                                               # (6, 3)
     C_c       = torch.cat([eye3, torch.zeros(3, 3, dtype=dtype)], dim=1)  # (3, 6)
@@ -190,9 +197,10 @@ def gantry_lpv_matrices_torch(Y: torch.Tensor, fs: float = 16e3):
     # back to Y and all physical parameters.  (D-012, D-015)
     # ------------------------------------------------------------------
     n, m = 6, 3
-    M_aug = torch.zeros(n + m, n + m, dtype=dtype)
-    M_aug[:n, :n] = A_c
-    M_aug[:n, n:] = B_c_stage
+    M_aug = torch.cat([
+        torch.cat([A_c,                          B_c_stage                   ], dim=1),
+        torch.cat([torch.zeros(m, n, dtype=dtype), torch.zeros(m, m, dtype=dtype)], dim=1),
+    ], dim=0)  # (9, 9)
 
     EM  = torch.linalg.matrix_exp(M_aug * ts)
 
