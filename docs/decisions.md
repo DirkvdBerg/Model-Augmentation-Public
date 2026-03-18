@@ -181,3 +181,13 @@ M_aug = [[A_c(Y),  B_c(Y)],    # (n+m) × (n+m) = 9×9 for gantry
 **Why**: A(Y), B(Y) already match MATLAB to 1e-19 at Y=0.3 (Task 1.2). The LPV question is whether the same holds at other Y values. If the matrices match at every Y, the physics is correct — no trajectory needed to confirm that. Trajectory simulation would add complexity (need input data, initial conditions, etc.) without providing additional information about the correctness of the physics parameterization.
 **Ruled out**: Running a full closed-loop trajectory simulation at each Y — unnecessary for validating the LPV matrix computation. The trajectory simulation in Step 1 already validated the dynamics at Y=0.3.
 **Constrains**: Requires a new MATLAB script `Matlab-scripts/export_lpv_matrices.m` (does not modify immutable files — calls existing functions) that evaluates G at each Y and saves A, B, C, D per operating point to `Matlab-output/lpv_matrices.mat`. Python comparison script `gantry_lpv_validate.py` checks max absolute error < 1e-10 per matrix per Y. Validation sweep: Y = linspace(0.05, 0.75, 50) — confirmed from ETEL Telica datasheet (total Y stroke = 800 mm, 5% margin from hard limits). 5 points is insufficient: M(Y)⁻¹ is rational in Y and could have non-monotone error behaviour between sparse samples. Dense 50-point sweep allows plotting error vs Y to confirm uniformity across the full operational range.
+
+**Important distinction — what matrix comparison proves vs simulation comparison**:
+Matrix comparison (Task 2.4) proves implementation correctness only: Python A(Y), B(Y) match
+the same physics as MATLAB G(Y). It does NOT prove that the LPV simulation is a better baseline
+than the frozen LTI. That requires a separate simulation comparison (Export 2, Task 2.2) on a
+trajectory where Y varies significantly, comparing frozen LTI vs LPV vs Simscape. LPV is only
+a better baseline if M(Y) error from using a fixed operating point is large enough to matter.
+The model is quasi-LPV: it captures Y-dependent inertia only — Coriolis, centripetal, and
+velocity-dependent friction are all dropped in the linearization and must be learned by the
+augmentation.

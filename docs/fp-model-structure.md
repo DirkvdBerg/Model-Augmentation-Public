@@ -109,6 +109,14 @@ X(4) = dX,     X(5) = dTheta,  X(6) = dY
 
 Simplified EOM — ignores Coriolis and centripetal terms. Constructs M(Y), C, K and evaluates `dxdt = A*x + B*u`.
 
+**Important: dead C matrix on line 23**
+```matlab
+C = [eye(3), zeros(3)]   % BUG: this line should be commented out
+```
+This line redefines `C` (silently overwriting the damping matrix) but is never used — the function only returns `dxdt`, not an output `y = C*x`. The coordinate transform is handled externally in Simulink by Gain4 (= P.'). This line should be `% C = [eye(3), zeros(3)]`.
+
+The correct output C matrix for stage coordinates is `P.' * [eye(3), zeros(3)]` — identical to G's C — but this is applied by the Gain blocks in the Simulink model, not inside this function.
+
 **Mass Matrix M(Y)** — Y = x(3):
 ```matlab
 M = [ m1+m2+mb+mh,              (m1-m2)*Lb/2 - mh*Y,               0   ]
@@ -136,6 +144,8 @@ A = [ zeros(3),  eye(3);
      -M\K,      -M\C  ]
 B = [ zeros(3); pinv(M) ]
 ```
+
+**Coordinate system note:** `gantrySystem.m` uses logical-coordinate dynamics (M, C, K are in logical coordinates). The internal states integrated in Simulink are logical [X, Θ, Y, dX, dΘ, dY]. The Simulink model handles coordinate transforms externally (Gain3 = P on input, Gain4 = P.' on output).
 
 ---
 
@@ -215,24 +225,53 @@ ccy=11.6 N  (Y Coulomb friction, not in SS model)
 | MATLAB Function1 | SubSystem | Wraps `gantrySystem.m` (no Coriolis) + explicit Integrator |
 | MATLAB Function2 | SubSystem | Wraps `gantrySystemCoriolisCentripetal.m` + explicit Integrator |
 | LTI System / LTI System1 / LTI System2 | Reference | Discrete SS from `getss` workspace variable |
-| Gain1, Gain3 | Gain | Matrix P — logical→stage coordinate transform |
-| Gain2, Gain4 | Gain | Matrix P' — stage→logical coordinate transform |
-| Integrator / Integrator1 | Integrator | Initial condition `[0;0;Y;0;0;0]` |
+| Gain1 (SID=161), Gain3 (SID=148) | Gain | Matrix `P` — converts stage forces → logical forces (input side) |
+| Gain2 (SID=162), Gain4 (SID=149) | Gain | Matrix `P.'` — converts logical positions → stage positions (output side) |
+| Selector1 (SID=154), Selector2 (SID=172) | Selector | Selects indices [1,2,3] from 6-state integrator → logical positions [X,Θ,Y] |
+| Integrator / Integrator1 | Integrator | Integrates `dxdt`; 6 states in logical coordinates |
 | Reference / Reference1 / Reference2 | FromWorkspace | Reference trajectory `[t, r]` |
 | Feedforward / Feedforward1 / Feedforward2 | FromWorkspace | Feedforward force `[t, f]` |
-| To Workspace `q` | ToWorkspace | Simscape output positions |
-| To Workspace `q1` | ToWorkspace | Simplified EOM output positions |
-| To Workspace `q2` | ToWorkspace | Full EOM output positions |
+| To Workspace `q` (SID=59) | ToWorkspace | Simscape output — stage positions [X1, X2, Y] |
+| To Workspace `q1` (SID=141) | ToWorkspace | Simplified EOM output — stage positions [X1, X2, Y] |
+| To Workspace `q2` (SID=175) | ToWorkspace | Full EOM output — stage positions [X1, X2, Y] |
 | Error / Error1 / Error2 | ToWorkspace | Tracking errors `e`, `e1`, `e2` |
 | Sum (×6) | Sum | Feedback error and force summation |
 
-**Signal flow (root):**
+**Signal flow for MATLAB Function paths (q1, q2):**
 ```
-Reference [t,r] ──→ Sum (error = r - q) ──→ Feedback ──→ Sum (u = ufb + f) ──→ Plant
-                                                                                    ↓
-                                              Feedforward [t,f] ──────────────→ Sum
-Plant output ──→ P'/P gain ──→ To Workspace (q, q1, q2)
+Stage forces [F_X1, F_X2, F_Y]
+  → Gain3/Gain1 (×P) → logical forces [F_X, F_Θ, F_Y]
+  → MATLAB Function (gantrySystem / gantrySystemCoriolisCentripetal)
+  → dxdt → Integrator → logical states [X, Θ, Y, dX, dΘ, dY]
+  → Selector[1,2,3] → logical positions [X, Θ, Y]
+  → Gain4/Gain2 (×P.') → stage positions [X1, X2, Y]
+  → To Workspace q1 / q2
 ```
+
+**Signal flow for Simscape path (q):**
+```
+Stage forces [F_X1, F_X2, F_Y]
+  → Single H-gantry (Simscape, nonlinear, includes Coulomb friction)
+  → physical outports x1, x2, y (directly stage positions)
+  → Mux → To Workspace q
+```
+
+---
+
+### Workspace output variables — coordinate systems
+
+All four output signals are in **stage coordinates [X1, X2, Y]** and are directly comparable:
+
+| Variable | Source | Linearized? | Coriolis? | Coulomb friction? |
+|----------|--------|-------------|-----------|-------------------|
+| `q` | Simscape physical model | No (nonlinear) | Yes | Yes |
+| `q1` | `gantrySystem.m` + P.' | Yes | No | No |
+| `q2` | `gantrySystemCoriolisCentripetal.m` + P.' | Partial | Yes | No |
+| `q3` | `lsim(G, ...)` in `main.m` post-processing | Yes | No | No |
+
+`q3` is NOT a Simulink workspace variable — it is computed in `main.m` after the simulation by calling `lsim` on `G = c2d(StageCoordinatesSystem, ts, 'zoh')`. G's C matrix = `P.' * [I, 0]` maps logical states to stage positions, consistent with q1/q2.
+
+The Simscape model (q) is the ground truth for the nonlinear system. The linearization gap between q3 and q (4–16 µm at Y=0.3 m, from Step 1 validation) is what the augmentation must learn to close.
 
 ### Subsystem: Single H-gantry (system_47)
 

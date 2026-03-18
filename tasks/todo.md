@@ -84,13 +84,27 @@ confirms the linearised model captures dominant dynamics.
 ## Step 2: LPV Extension — Frozen-at-sampling-instant ZOH
 
 **Goal**: Implement and validate the discrete-time LPV model where A(Y), B(Y) vary with
-scheduling variable Y. Validation is matrix comparison only — no trajectory simulation needed.
+scheduling variable Y.
 
 **Method**: Frozen-at-sampling-instant ZOH (Tóth Section III-B) — call standard ZOH at each
 Y value. Zero local truncation error within the ZOH assumption (justified at 16 kHz, ΔY small).
 
 **Key decisions**: D-012 (discretization method), D-014 (numpy vs torch files), D-015 (augmented
 matrix exponential for B_d), D-016 (matrix comparison validation strategy)
+
+**What the LPV model captures and what it does not**:
+- ✓ Y-dependent inertia M(Y): M[0,1] linear in Y, M[1,1] quadratic in Y — this is the LPV part
+- ✗ Coriolis/centripetal terms: dropped in linearization (velocity-dependent, not in G)
+- ✗ Velocity-dependent friction: linearized away
+This is a quasi-LPV model. The augmentation must learn the rest from data.
+
+**What each validation step proves**:
+- Task 2.4 (matrix comparison) — proves Python correctly implements the same physics as
+  MATLAB G(Y). Implementation correctness only.
+- Export 2 + simulation comparison — proves the LPV simulation is a *better baseline* than
+  the frozen LTI (Step 1) when Y varies. This is a hypothesis until Export 2 is run.
+  LPV is only superior if Y varies enough that M(Y) error in the frozen model is significant.
+- The augmentation closes what neither frozen LTI nor LPV captures: Coriolis, friction, etc.
 
 ### Task 2.1 — Decisions and method ✅
 - [x] Tóth (2010) assessed via assess-paper skill
