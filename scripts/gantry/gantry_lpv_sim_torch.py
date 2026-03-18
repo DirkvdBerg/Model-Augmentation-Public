@@ -88,25 +88,23 @@ class GantryLPVSimulator(nn.Module):
         self.register_buffer('C_d', C_d)  # (3, 6)
         self.register_buffer('D_d', D_d)  # (3, 3), zero
 
-    def forward(self, x0: torch.Tensor, u: torch.Tensor) -> torch.Tensor:
+    def forward(self, x0: torch.Tensor, u: torch.Tensor,
+                Y_schedule: torch.Tensor = None) -> torch.Tensor:
         """
         Run LPV simulation with BPTT support.
 
-        Implements the self-scheduling loop from LPV/LPV-derivation.tex:
+        Implements the scheduling loop from LPV/LPV-derivation.tex:
 
-            p[k]   = Y[k] = x[k][2]               (self-scheduling)
+            p[k]   = Y_schedule[k]  if provided  (external scheduling)
+                   = x[k][2]        otherwise     (self-scheduling)
             A_d(k), B_d(k) = matrix_exp(...)       (frozen-at-sampling-instant ZOH)
             x[k+1] = A_d(k) @ x[k] + B_d(k) @ u[k]
             y[k]   = C_d @ x[k]                   (D_d = 0)
 
-        The scheduling variable is extracted as x_k[2] (tensor slice), never via
-        .item(). This preserves the autograd graph through the self-scheduling
-        path and through the matrix exponential in gantry_lpv_matrices_torch.
-
-        IMPORTANT: the wiring p[k] = x[k][2] is implemented here. The caller
-        does NOT supply p[k]. The caller must set x0[2] to the correct initial
-        Y-position [m]. This is the only point in the codebase where the
-        scheduling variable is extracted from the state.
+        External scheduling (Y_schedule provided) is more consistent with Tóth's
+        Assumption 1 and is used for validation and training. Self-scheduling
+        (Y_schedule=None) is used for autonomous simulation without measurements.
+        See LPV/LPV-derivation.tex Point 1 and docs/decisions.md D-012.
 
         Parameters
         ----------
@@ -115,6 +113,10 @@ class GantryLPVSimulator(nn.Module):
             x0[2] must be the initial Y-position [m].
         u  : (N, 3) torch.Tensor
             Input sequence [F_X1, F_X2, F_Y] in stage coordinates [N].
+        Y_schedule : (N,) torch.Tensor, optional
+            External scheduling variable [m]. If provided, Y_schedule[k] is used
+            as the scheduling variable at step k instead of x_k[2]. Use for
+            validation (constant Y or MATLAB reference trajectory) and training.
 
         Returns
         -------
@@ -129,10 +131,10 @@ class GantryLPVSimulator(nn.Module):
         states = []
 
         for k in range(N):
-            # Self-scheduling: Y is the third state (0-indexed).
-            # x_k[2] is a 0-d tensor slice. Grad flows through here on the
-            # backward pass, linking state evolution to scheduling.
-            Y_k = x_k[2]
+            # Scheduling variable: external if provided, self-scheduled otherwise.
+            # External scheduling is consistent with Tóth Assumption 1 (p measured).
+            # Self-scheduling uses x_k[2] as a tensor slice to preserve autograd.
+            Y_k = Y_schedule[k].to(dtype=torch.float64) if Y_schedule is not None else x_k[2]
 
             # LPV matrices at the current scheduling variable.
             # Grad flows from A_d(Y_k) and B_d(Y_k) back to Y_k via matrix_exp.
@@ -156,14 +158,15 @@ class GantryLPVSimulator(nn.Module):
         return y
 
     @torch.no_grad()
-    def simulate(self, x0: torch.Tensor, u: torch.Tensor) -> torch.Tensor:
+    def simulate(self, x0: torch.Tensor, u: torch.Tensor,
+                 Y_schedule: torch.Tensor = None) -> torch.Tensor:
         """
         Inference-only simulation (no gradient tracking).
 
         Identical to forward() but wrapped in torch.no_grad() for efficiency.
         Use for validation, comparison, and any context where BPTT is not needed.
         """
-        return self.forward(x0, u)
+        return self.forward(x0, u, Y_schedule=Y_schedule)
 
 
 # ---------------------------------------------------------------------------

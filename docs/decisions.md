@@ -160,6 +160,25 @@ Decisions are logged here before implementation. Each entry states what was deci
   controllers in the structure given in Figure 2"* — our closed-loop Python simulation is
   within the scope Tóth explicitly covers.
 
+**Self-scheduling vs external scheduling**:
+  Tóth's Assumption 1 requires p[k] to be held by an ideal ZOH device -- it must be
+  *measurable* (externally available) at each step k, not predicted from internal state.
+  This implies external scheduling: Y[k] is read from the encoder at step k and held for
+  that interval.
+
+  Using Y[k] = x_predicted[k][2] from the model's own state (self-scheduling) introduces
+  a further approximation on top of the dynamic dependence caveat already accepted above:
+  - Dynamic dependence caveat: Y is a state, not an exogenous signal -- ZOH is approximate.
+  - Self-scheduling: Y[k] itself is approximate (from predicted state, not measured). If the
+    open-loop state drifts, the scheduling variable is wrong, compounding the error.
+
+  External scheduling (Y[k] from measurement) is more consistent with Tóth and is used
+  wherever measurements are available:
+  - Training loop: Y[k] = x_measured[k][2] from real data (external, consistent with Tóth).
+  - Validation against q1: Y[k] = Y_trajectory[k] from the MATLAB reference (external).
+  Self-scheduling is reserved for autonomous simulation with no external measurements and
+  carries the additional compounding approximation noted above.
+
 **A_c invertibility (Tóth footnote 2)**:
   Tóth writes the complete discretization formula assuming A_c invertible *"for convenience"*
   but footnote 2 states: *"To compute the resulting matrix functions of this discretization

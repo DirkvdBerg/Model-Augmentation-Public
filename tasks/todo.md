@@ -151,6 +151,31 @@ Compares Python A(Y), B(Y) against MATLAB at each operating point (core matrix v
 Provides the reference signals needed to prove LPV is a better baseline than frozen LTI.
 Primary comparison target is q1 (continuous-time quasi-LPV, same physics as our model).
 q (Simscape) is the secondary target — quantifies the augmentation gap.
+
+**Open design questions to resolve before implementing the Python comparison script:**
+- [ ] RESOLVE: Deviation coordinates vs absolute for varying Y.
+      The Python LPV sim works in deviation coordinates (x0=0). With fixed Y=0.3 the operating
+      point is known. When Y varies, the operating point itself varies with time. Decide: do we
+      subtract a time-varying operating point trajectory from q1, or run the Python LPV sim in
+      absolute coordinates? This choice affects the entire comparison implementation.
+- [ ] RESOLVE: Frozen LTI operating point. The frozen LTI uses A_d, B_d at Y=0.3 (main.m design
+      point). Make this explicit in the comparison script and state it clearly in the thesis.
+      Do not use mean(Y_trajectory) or initial Y -- Y=0.3 is the documented design point.
+- [ ] RESOLVE: Controller stability across Y range. Before designing a wide Y sweep, verify in
+      Simulink that the closed-loop remains stable when Y moves far from 0.3 m. If the controller
+      degrades at extreme Y, the comparison is hard to interpret. Limit Y range to the region
+      where tracking remains good.
+- [ ] NOTE: LPV improvement is expected primarily in X1, X2 channels (M[0,1] and M[1,1] are
+      Y-dependent). The Y channel dynamics are largely decoupled (M[2,2]=mh constant). Report
+      results per channel; do not expect uniform improvement across all three.
+- [ ] NOTE: CT vs DT error floor. q1 is continuous-time; Python LPV is discrete-time at 16 kHz.
+      An irreducible discretization error exists between them even with perfect implementation.
+      Task 2.5 quantifies this floor so it is not confused with LPV model error.
+
+**Metric (DECISION):** Report BFR per channel (primary) and RMS in µm (secondary).
+BFR is normalized by signal variance so X1/X2 and Y are comparable without unit artifacts.
+RMS in µm gives physical interpretability. Both belong in the thesis results table.
+
 - [ ] NOTE: first check Step 1 Simscape data — if Y varies significantly there, reuse it
       instead of running a new simulation (load q_simscape.mat, plot Y channel vs time)
 - [ ] If new simulation needed: design reference where Y axis sweeps 0.1 → 0.7 m slowly

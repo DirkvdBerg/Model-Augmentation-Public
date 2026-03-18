@@ -470,11 +470,40 @@ This result is a DT-LPV-SS model in the sense of Tóth \cite{toth2010} Definitio
 discrete scheduling signal $p_d(k) := p_c(kT_d) = Y(kT_d)$.
 
 \medskip
-\textbf{Point 1: self-scheduling property.}
-$Y[k] = x_3[k]$ is not an external signal. It is the third component of the state vector
-$x[k]$, updated by the recurrence itself. After each step the new state $x[k+1]$ contains
-$x_3[k+1] = Y[k+1]$, which becomes the scheduling variable for the next interval. No
-separate scheduling signal is needed: the model is self-scheduled through the state.
+\textbf{Point 1: self-scheduling and external scheduling.}
+$Y[k] = x_3[k]$ is the third component of the state vector $x[k]$, updated by the
+recurrence itself. After each step the new state $x[k+1]$ contains $x_3[k+1] = Y[k+1]$,
+which becomes the scheduling variable for the next interval. This is called
+\emph{self-scheduling}: the model extracts its own scheduling variable from its own predicted
+state, with no separate scheduling signal required.
+
+\medskip
+\textbf{Remark: Tóth's framework implies external scheduling.}
+Assumption~1 (the ZOH setting) requires $p[k]$ to be held constant on
+$[kT_d,\,(k+1)T_d)$ by an ideal ZOH device. This presupposes that $p[k]$ is
+\emph{measured} (externally available) at step $k$, not predicted from internal state.
+In Tóth's framework, $p$ is an exogenous, measurable signal -- using it requires reading
+it from a sensor, not from the model's own state prediction.
+
+Using $Y[k]$ from the \emph{predicted} state in an open-loop simulation (self-scheduling)
+introduces a further approximation beyond the dynamic dependence caveat: the scheduling
+variable itself is approximate. If the predicted state drifts from the real state, the
+scheduling variable is wrong, the matrices are computed at the wrong $Y$, and the error
+compounds.
+
+Using $Y[k]$ from the \emph{measured} state (external scheduling) is more consistent with
+Assumption~1: $Y$ is read from the encoder at each sample tick, held for that interval, and
+passed directly into $A_d(Y[k])$ and $B_d(Y[k])$. This is the correct mode when
+measurements are available:
+\begin{itemize}
+    \item \textbf{Training loop}: $Y[k] = x_\text{measured}[k][2]$ from the data
+    (external scheduling). Consistent with Tóth.
+    \item \textbf{Validation against q1}: $Y[k]$ taken from the MATLAB reference
+    trajectory $Y_\text{trajectory}[k]$ (external scheduling). Isolates discretization
+    error from scheduling variable drift.
+    \item \textbf{Autonomous simulation} (no measurements): $Y[k] = x_\text{predicted}[k][2]$
+    (self-scheduling). Unavoidable but carries the additional approximation noted above.
+\end{itemize}
 
 \medskip
 \textbf{Point 2: chaining of frozen intervals.}
