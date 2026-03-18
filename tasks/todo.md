@@ -122,11 +122,15 @@ Comparison chain (supervisor-confirmed):
 3. LPV vs LTI vs q1           — proves LPV benefit when Y varies
 4. q1 vs q (Simscape)         — quantifies what augmentation must learn
 
-### Task 2.1 — Decisions and method ✅
+### Task 2.1 — Decisions and method 🔄 (Tóth justification in progress)
 - [x] Tóth (2010) assessed via assess-paper skill
 - [x] Method chosen: frozen-at-sampling-instant ZOH for validation; augmented matrix_exp for training
 - [x] Drenth (2025) assessed — Architecture 1 confirmed, SSE_Interconnect unchanged
 - [x] Augmented matrix exponential formula documented (D-015)
+- [x] D-012 updated with quasi-LPV dynamic dependence caveat: Tóth states ZOH is "only reasonable
+      for static dependence"; our system has dynamic dependence (Y=x(3)); residual intra-sample
+      error accepted as small due to 220:1 timescale separation (ΔY ≤ 0.125 mm/sample).
+      Exact Tóth quotes and Assumptions 1 & 2 added. Numerical confirmation deferred to Task 2.5.
 
 ### Task 2.2 — MATLAB export script
 **File**: `Matlab-scripts/export_lpv_matrices.m` (new script — does not modify immutable files)
@@ -135,12 +139,13 @@ Cannot call `main.m` in a loop — it is a script that runs Simulink, figures, s
 Instead: duplicate only the physics setup from `main.m` and call `getss.m` directly (immutable
 function, safe to call). This is the same computation main.m does at lines 12–88 + 103 + 218.
 
-**Export 1 — LPV matrix sweep** → `Matlab-output/lpv_matrices.mat`
+**Export 1 — LPV matrix sweep** → `Matlab-output/lpv_matrices.mat` ✅
 Compares Python A(Y), B(Y) against MATLAB at each operating point (core matrix validation).
-- [ ] Y sweep: `Y_values = linspace(0.05, 0.75, 50)` (50 points, ~14 mm spacing, D-016)
-- [ ] At each Y: build M(Y), call `getss(n,M,C,K)`, apply P transform, `c2d(...,'zoh')`
-- [ ] Save per Y: `A` (6×6), `B` (6×3), `C` (3×6), `D` (3×3), `Y_values` (50×1)
-- [ ] Save: `det_M` (50×1) — physics health check, confirms M(Y) positive definite across range
+**File**: `Matlab-scripts/export_lpv_matrices.m`
+- [x] Y sweep: `Y_values = linspace(0.05, 0.75, 50)` (50 points, ~14 mm spacing, D-016)
+- [x] At each Y: build M(Y), call `getss(n,M,C,K)`, apply P transform, `c2d(...,'zoh')`
+- [x] Save per Y: `A` (6×6), `B` (6×3), `C` (3×6), `D` (3×3), `Y_values` (50×1)
+- [x] Save: `det_M` (50×1) — physics health check, confirms M(Y) positive definite across range
 
 **Export 2 — Varying-Y Simulink simulation** → `Matlab-output/lpv_sim_varying_y.mat`
 Provides the reference signals needed to prove LPV is a better baseline than frozen LTI.
