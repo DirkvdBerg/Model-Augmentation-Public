@@ -70,7 +70,9 @@ n = 3;  % DOF
 % ------------------------------------------------------------------
 % Y sweep (D-016: 50 points, linspace(0.05, 0.75))
 % ------------------------------------------------------------------
-Y_values = linspace(0.05, 0.75, 50)';  % (50, 1)
+% Physical range (ETEL datasheet): Y=0 at beam center, total stroke 800 mm,
+% so valid range is [-0.4, 0.4] m. See docs/fp-model-structure.md.
+Y_values = linspace(-0.35, 0.35, 50)';  % (50, 1) -- within physical range
 
 nY = length(Y_values);
 

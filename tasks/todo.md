@@ -94,33 +94,62 @@ matrix exponential for B_d), D-016 (matrix comparison validation strategy)
 
 **What the LPV model captures and what it does not**:
 - ✓ Y-dependent inertia M(Y): M[0,1] linear in Y, M[1,1] quadratic in Y — this is the LPV part
-- ✗ Coriolis/centripetal terms: dropped in linearization (velocity-dependent, not in G)
+- ✗ Coriolis/centripetal terms: dropped at linearization (velocity-product terms vanish)
+- ✗ Coulomb friction: non-differentiable, excluded from state-space model by construction
+  (cc1=16.8 N, cc2=18.35 N, ccy=11.6 N appear in main.m but are marked "not in SS model")
 - ✗ Velocity-dependent friction: linearized away
 This is a quasi-LPV model. The augmentation must learn the rest from data.
 
+**Why Simscape is the ground truth reference, not the baseline**:
+Simscape captures M(Y) + Coriolis + Coulomb. However, it cannot be expressed as differentiable
+discrete-time state-space matrices. The augmentation framework requires A(Y)*x + B(Y)*u in
+closed form, differentiable through PyTorch for training. Simscape cannot be called from Python
+and cannot be backpropagated through. The linearized state-space model is the best physics
+expressible in the required form. Simscape is used only as the evaluation ground truth after
+training — it is the target to measure against, not the model to train with.
+
 **What each validation step proves**:
-- Task 2.4 (matrix comparison) — proves Python correctly implements the same physics as
-  MATLAB G(Y). Implementation correctness only.
-- Export 2 + simulation comparison — proves the LPV simulation is a *better baseline* than
-  the frozen LTI when Y varies. Comparison target is q1 (not q directly — see below).
-- The augmentation closes what neither frozen LTI nor LPV captures: Coriolis, friction, etc.
+- Task 2.4 (matrix comparison) — proves Python A(Y), B(Y) match MATLAB G(Y) exactly.
+  Implementation correctness only. Does NOT prove LPV is better than frozen LTI.
+- Simulation comparison (Export 2) — layered validation chain, see below.
+- The augmentation closes what neither baseline captures: Coriolis + Coulomb.
 
-**Correct comparison target for LPV superiority: q1, not q**
-q1 (from gantrySystem.m in Simulink) is a continuous-time quasi-LPV simulation — M(Y) is
-re-evaluated at each integration step as Y evolves. It uses identical physics to our LPV
-model (same M(Y), C, K, no Coriolis). This makes it the cleanest reference:
+**Layered comparison chain — what each step isolates**:
 
-  Frozen LTI ──┐
-               ├── vs q1  →  proves LPV beats frozen LTI (Y-varying inertia effect)
-  Python LPV ──┘
+Each comparison isolates exactly one effect:
 
-  q1  ── vs q (Simscape)  →  defines augmentation target (Coriolis + Coulomb gap)
+  DT-LPV vs q1 (CT-LPV):
+    Both have identical physics (same M(Y), C, K, no Coriolis).
+    Residual = ZOH discretization error only.
+    Purpose: validates that the ZOH discretization was done correctly.
+    Expected: small residual (16 kHz, ΔY ≤ 0.125 mm/sample, 220:1 timescale separation).
 
-Comparison chain (supervisor-confirmed):
-1. q3 (frozen LTI lsim) vs q1 — intermediate step, shows frozen LTI error
-2. Python LPV sim vs q1       — validates LPV implementation (discrete vs continuous)
-3. LPV vs LTI vs q1           — proves LPV benefit when Y varies
-4. q1 vs q (Simscape)         — quantifies what augmentation must learn
+  Frozen LTI vs q1 (CT-LPV):
+    Residual = ZOH discretization error + frozen M(Y) error.
+    When Y varies, this is larger than the DT-LPV residual above.
+    Purpose: shows the cost of freezing M(Y) at Y=0.3.
+
+  Gap between the two residuals above:
+    = frozen M(Y) error alone (discretization cancels).
+    Purpose: quantifies the LPV improvement over frozen LTI.
+
+  DT-LPV vs q (Simscape):
+    Residual = Coriolis + Coulomb + ZOH discretization error.
+    Purpose: defines the augmentation target — what the network must learn.
+
+  NOTE: Y must vary significantly during the simulation for any difference between
+  DT-LPV and frozen LTI to appear. If Y stays near 0.3 m, both use the same matrices
+  and produce the same output. The comparison is only meaningful with a trajectory
+  where Y sweeps the operational range.
+
+  NOTE: Y=0.3 is the main.m design point — not an arbitrary choice. The frozen LTI
+  represents the model you would deploy without any knowledge that Y matters.
+
+Comparison chain steps (supervisor-confirmed):
+1. DT-LPV sim vs q1        — ZOH discretization validation (discrete vs continuous, same physics)
+2. Frozen LTI vs q1        — shows frozen M(Y) error on top of discretization
+3. LPV vs frozen LTI vs q1 — gap = LPV benefit from Y-varying inertia
+4. LPV vs q (Simscape)     — augmentation target (Coriolis + Coulomb gap)
 
 ### Task 2.1 — Decisions and method 🔄 (Tóth justification in progress)
 - [x] Tóth (2010) assessed via assess-paper skill
@@ -132,8 +161,8 @@ Comparison chain (supervisor-confirmed):
       error accepted as small due to 220:1 timescale separation (ΔY ≤ 0.125 mm/sample).
       Exact Tóth quotes and Assumptions 1 & 2 added. Numerical confirmation deferred to Task 2.5.
 
-### Task 2.2 — MATLAB export script
-**File**: `Matlab-scripts/export_lpv_matrices.m` (new script — does not modify immutable files)
+### Task 2.2 — MATLAB export scripts
+**Files**: `Matlab-scripts/export_lpv_matrices.m`, `Matlab-scripts/export_lpv_sim.m`
 
 Cannot call `main.m` in a loop — it is a script that runs Simulink, figures, setpoint generation.
 Instead: duplicate only the physics setup from `main.m` and call `getss.m` directly (immutable
@@ -148,55 +177,163 @@ Compares Python A(Y), B(Y) against MATLAB at each operating point (core matrix v
 - [x] Save: `det_M` (50×1) — physics health check, confirms M(Y) positive definite across range
 
 **Export 2 — Varying-Y Simulink simulation** → `Matlab-output/lpv_sim_varying_y.mat`
-Provides the reference signals needed to prove LPV is a better baseline than frozen LTI.
-Primary comparison target is q1 (continuous-time quasi-LPV, same physics as our model).
-q (Simscape) is the secondary target — quantifies the augmentation gap.
+Provides the reference signals needed for two validations:
+  (a) DT-LPV vs q1: proves ZOH discretization was implemented correctly (primary goal)
+  (b) Frozen LTI vs q1: shows the cost of freezing M(Y) at Y=0.3 (LPV benefit)
+Primary comparison target is q1 (CT quasi-LPV, same physics as our model). q (Simscape) is
+the secondary target for the augmentation gap.
 
-**Open design questions to resolve before implementing the Python comparison script:**
-- [ ] RESOLVE: Deviation coordinates vs absolute for varying Y.
-      The Python LPV sim works in deviation coordinates (x0=0). With fixed Y=0.3 the operating
-      point is known. When Y varies, the operating point itself varies with time. Decide: do we
-      subtract a time-varying operating point trajectory from q1, or run the Python LPV sim in
-      absolute coordinates? This choice affects the entire comparison implementation.
-- [ ] RESOLVE: Frozen LTI operating point. The frozen LTI uses A_d, B_d at Y=0.3 (main.m design
-      point). Make this explicit in the comparison script and state it clearly in the thesis.
-      Do not use mean(Y_trajectory) or initial Y -- Y=0.3 is the documented design point.
-- [ ] RESOLVE: Controller stability across Y range. Before designing a wide Y sweep, verify in
-      Simulink that the closed-loop remains stable when Y moves far from 0.3 m. If the controller
-      degrades at extreme Y, the comparison is hard to interpret. Limit Y range to the region
-      where tracking remains good.
+**Why Y must vary:** With constant Y both models run the same frozen LTI and ZOH error
+is zero by construction -- nothing to measure. ZOH error only appears when M(Y) is changing
+between samples. The comparison is only meaningful when Y moves through the operational range.
+
+**Why external scheduling (Y_schedule):** The validation runs DT-LPV with Y_schedule=q1(:,3).
+This isolates the ZOH error only. Self-scheduling (x_k[2]) would add a second approximation
+on top, confounding the ZOH comparison.
+
+**Trajectory design (choice between two options):**
+
+  Option A -- Reuse existing main.m trajectory (X step + Y sweep):
+    r(:,1:2) = 400mm X step; r(:,3) = -400mm Y sweep from 0.3 to -0.1 m.
+    Pros: realistic, exercises coupling, no new design work.
+    Cons: Y reaches -0.1 m which may be near physical limit; coupled X+Y motion
+          makes individual channel residuals harder to interpret.
+
+  Option B -- Dedicated Y ramp, X at rest (RECOMMENDED for ZOH validation):
+    r(:,1:2) = 0 (X stays at rest); r(:,3) = smooth Y step from 0.3 to 0.1 m.
+    Direction: negative (same as main.m convention: r(:,3) = -pvajs + 0.3).
+    Moving positive (toward 0.5 m) risks reaching the physical beam end-stop.
+    Pros: isolates Y dynamics cleanly, Y stays within safe range (0.1-0.3 m),
+          coupling terms are zero when X motion is absent.
+    Cons: less representative of real operation.
+
+  Use Option B for ZOH discretization validation. Option A can be added later
+  for the full LPV-vs-frozen-LTI comparison (more realistic conditions).
+
+**MATLAB implementation for export_lpv_sim.m** (new file, does NOT modify kamtin-fp-model):
+
+```matlab
+% Matlab-scripts/export_lpv_sim.m
+% Exports q1, u, Y_trajectory for LPV ZOH validation.
+% Does not modify any file in kamtin-fp-model/.
+
+addpath(genpath('../kamtin-fp-model'))
+
+% --- 1. Physics parameters (identical to main.m lines 12-49) ---
+mb = 22.8; mh = 10.1; m1 = 10.2; m2 = 10.7;
+Jb = 1.0;  Jh = 0.05;
+cg1 = 14.5; cg2 = 20.3; cy = 10;
+cb1 = 9;    cb2 = 9;
+kb1 = 1987.5; kb2 = 1987.5;
+Lb = 0.725; d = 0.1;
+Y_op = 0.3;  % main.m design operating point (frozen LTI reference)
+
+M_op = [m1+m2+mb+mh, (m1-m2)*Lb/2-mh*Y_op, 0;
+        (m1-m2)*Lb/2-mh*Y_op, Jb+Jh+(m1+m2)*Lb^2/4+mh*d^2+mh*Y_op^2, -mh*d;
+        0, -mh*d, mh];
+C_mat = [cg1+cg2, (cg1-cg2)*Lb/2, 0;
+         (cg1-cg2)*Lb/2, cb1+cb2+(cg1+cg2)*Lb^2/4, 0;
+         0, 0, cy];
+K_mat = [0,0,0; 0,kb1+kb2,0; 0,0,0];
+
+% --- 2. Build state-space and controller (identical to main.m lines 88-207) ---
+n = 3;
+sys = getss(n, M_op, C_mat, K_mat);
+P = [1, 1, 0; Lb/2, -Lb/2, 0; 0, 0, 1];
+StageCoordinatesSystem = P.' * sys * P;
+fs = 16e3;  ts = 1/fs;
+
+fbw = 100;
+Cfb = tf(num2cell(zeros(3)), num2cell(ones(3)));
+for j = 1:3
+    Cfb(j,j) = ruleOfThumb(fbw, StageCoordinatesSystem(j,j), ts);
+end
+
+% --- 3. Test trajectory: Y step from 0.3 to 0.5 m, X at rest (Option B) ---
+% Use thirdOrderSetpointETEL for smooth acceleration-limited Y motion.
+% Parameters chosen for Y axis (slower than X: vmax_Y=0.3 m/s, amax_Y=3 m/s^2).
+pmax_Y = 0.2;    % [m] Y displacement: 0.3 -> 0.5 m
+vmax_Y = 0.3;    % [m/s]
+amax_Y = 3.0;    % [m/s^2]
+jerkTime_Y = 0.05;  % [s]
+jmax_Y = amax_Y / jerkTime_Y;
+
+[pvajs_Y] = thirdOrderSetpointETEL(pmax_Y, vmax_Y, amax_Y, jmax_Y, Inf, ts);
+n_move = size(pvajs_Y, 1);
+
+% Add 0.5 s hold at start (system settles at Y=0.3) and 0.5 s at end.
+n_hold = round(0.5 / ts);
+nt = n_hold + n_move + n_hold;
+t = ts * (0:nt-1)';
+
+% Reference: X1=X2 hold at zero, Y ramps from 0.3 to 0.5 m.
+r = zeros(nt, 3);
+r(:, 3) = 0.3;  % Y reference starts and holds at 0.3 m
+r(n_hold + (1:n_move), 3) = 0.3 + pvajs_Y(:, 1);  % Y moves to 0.5 m
+r(n_hold + n_move + 1 : end, 3) = 0.5;             % Y holds at 0.5 m
+
+f = zeros(nt, 3);  % no feedforward forces
+
+% --- 4. Run Simulink ---
+% r, f, Cfb are set in workspace -- Simulink FromWorkspace blocks read them.
+mdl = 'gantry_2025a';
+sim(mdl, t(end));
+% After sim(): q1, q, q2 are automatically in workspace via ToWorkspace blocks.
+
+% --- 5. Reconstruct u from q1 ---
+% u applied to q1 path = Cfb * (r - q1)  (f=0, so no feedforward term).
+% Cfb is a discrete diagonal 3x3 TF. lsim handles it channel by channel.
+e_q1 = r - q1;          % (N x 3) tracking error
+u_q1 = lsim(ss(Cfb), e_q1, t);  % (N x 3) force applied to q1 path
+
+% --- 6. Extract Y trajectory and rename Simscape output ---
+Y_trajectory = q1(:, 3);   % (N x 1) absolute Y position [m]
+q_simscape = q;            % rename for clarity
+
+% --- 7. Save ---
+save('../Matlab-output/lpv_sim_varying_y.mat', ...
+     't', 'fs', 'r', 'u_q1', 'q1', 'q_simscape', 'Y_trajectory');
+disp('Saved Matlab-output/lpv_sim_varying_y.mat')
+```
+
+**Notes on u reconstruction:**
+`sim()` does not export u directly (no ToWorkspace block for u in the model). The u applied
+to the gantrySystem.m path is `Cfb * (r - q1)` because: (a) the feedback controller reads
+the q1 path output, (b) feedforward f=0. Using `lsim(ss(Cfb), r-q1, t)` recovers this
+exactly at discrete-time steps. This is the u we pass to the Python DT-LPV simulator.
+
+**Initial conditions:**
+Simulink integrators start from zero (default ICs). The initial reference is r(1) = [0, 0, 0.3],
+so the feedback will drive X1=X2 to 0 and Y to 0.3 during the first 0.5 s hold period.
+Python DT-LPV starts at x0 = [0, 0, 0, 0, 0, 0] matching Simulink ICs. The initial tracking
+transient is NOT trimmed -- it is additional valid data (Y is changing during it).
+
+**Key design notes:**
 - [ ] NOTE: LPV improvement is expected primarily in X1, X2 channels (M[0,1] and M[1,1] are
       Y-dependent). The Y channel dynamics are largely decoupled (M[2,2]=mh constant). Report
       results per channel; do not expect uniform improvement across all three.
-- [ ] NOTE: CT vs DT error floor. q1 is continuous-time; Python LPV is discrete-time at 16 kHz.
-      An irreducible discretization error exists between them even with perfect implementation.
-      Task 2.5 quantifies this floor so it is not confused with LPV model error.
+- [ ] NOTE: CT vs DT error floor. q1 is CT; Python LPV is DT at 16 kHz.
+      An irreducible ZOH discretization error exists. Task 2.5 quantifies this floor so it
+      is not confused with model error.
+- [ ] RESOLVE: Controller stability across Y range. Before finalizing 0.3->0.5 m sweep,
+      verify in Simulink that the closed-loop (Cfb designed at Y=0.3) remains stable at Y=0.5.
+      If controller performance degrades significantly, reduce the Y range.
 
-**Metric (DECISION):** Report BFR per channel (primary) and RMS in µm (secondary).
-BFR is normalized by signal variance so X1/X2 and Y are comparable without unit artifacts.
-RMS in µm gives physical interpretability. Both belong in the thesis results table.
+**Metric:** BFR per channel (primary), RMS in µm (secondary).
 
-- [ ] NOTE: first check Step 1 Simscape data — if Y varies significantly there, reuse it
-      instead of running a new simulation (load q_simscape.mat, plot Y channel vs time)
-- [ ] If new simulation needed: design reference where Y axis sweeps 0.1 → 0.7 m slowly
-      while X1/X2 do normal motion — requires a new reference signal r_lpv
-- [ ] Run Simulink model (gantry_2025a) with this reference — saves q, q1, q2 automatically
-- [ ] Save the following variables:
-      - `t`              (N×1)   — time vector [s]
-      - `r`              (N×3)   — reference signals [X1_ref, X2_ref, Y_ref] in stage coords [m]
-      - `u`              (N×3)   — controller force inputs [F_X1, F_X2, F_Y] [N]
-                                   (must be from linear feedback — NOT Simscape nonlinear
-                                    friction forces; see Step 1 u/q3 fix for why)
-      - `q1`             (N×3)   — gantrySystem.m output [X1, X2, Y] [m]
-                                   PRIMARY comparison target: continuous-time quasi-LPV,
-                                   same physics as our LPV model (M(Y) updated each step,
-                                   no Coriolis, no Coulomb). Proves LPV beats frozen LTI.
-      - `q_simscape`     (N×3)   — Simscape nonlinear output [X1, X2, Y] [m]
-                                   SECONDARY target: quantifies augmentation gap (q1 vs q
-                                   = Coriolis + Coulomb contribution)
-      - `Y_trajectory`   (N×1)   — absolute Y position over time [m], extracted from q1
-                                   (used by Python LPV sim to set scheduling variable)
-      - `fs`             (1×1)   — sample frequency [Hz] = 16000
+**Variables saved:**
+  - `t`              (N x 1)   time vector [s]
+  - `fs`             (1 x 1)   sample frequency = 16000 Hz
+  - `r`              (N x 3)   reference [X1_ref, X2_ref, Y_ref] stage coords [m]
+  - `u_q1`           (N x 3)   reconstructed force [F_X1, F_X2, F_Y] [N]
+  - `q1`             (N x 3)   CT quasi-LPV output [X1, X2, Y] [m] -- PRIMARY target
+  - `q_simscape`     (N x 3)   Simscape nonlinear output [X1, X2, Y] [m] -- secondary
+  - `Y_trajectory`   (N x 1)   absolute Y position = q1(:,3) [m]
+
+**Export 2 script written:** `Matlab-scripts/export_lpv_sim.m` ✅
+- [ ] Run the script in MATLAB and verify Y_trajectory sweeps 0.3 -> 0.5 m
+- [ ] Confirm q1 and q_simscape are populated (N rows match expected duration)
+- [ ] Confirm u_q1 is non-zero (feedback is active)
 
 ### Task 2.3 — Torch reimplementation ✅
 **Files**: `scripts/gantry/gantry_lpv_torch.py`, `scripts/gantry/gantry_lpv_sim_torch.py`
