@@ -8,39 +8,39 @@ Implements the discrete-time LPV state-space model derived in LPV/LPV-derivation
     x[k+1] = A_d(Y[k]) @ x[k] + B_d(Y[k]) @ u[k]
     y[k]   = C_d          @ x[k]
 
-where Y[k] = x[k][2] (self-scheduling: payload Y-position is the third state).
+where Y[k] is the scheduling variable (payload Y-position) taken from one of two sources:
 
-The scheduling variable is extracted as a tensor slice (x_k[2]), never as a Python
-scalar via .item(), so the full autograd graph is preserved for BPTT.
+    External scheduling (Y_schedule provided):
+        Y[k] = Y_schedule[k]   -- from measurement or reference trajectory.
+        Consistent with Toth Assumption 1 (p measurable and externally held).
+        Use for validation against q1 and for the training loop.
+
+    Self-scheduling (Y_schedule=None, default):
+        Y[k] = x[k][2]        -- extracted as a tensor slice from the predicted state.
+        Unavoidable for autonomous simulation without external measurements.
+        Carries an additional approximation beyond the dynamic dependence caveat
+        (see LPV/LPV-derivation.tex Point 1 and docs/decisions.md D-012).
 
 Architecture
 ------------
 GantryLPVSimulator(nn.Module):
-    forward(x0, u)  -- full simulation, BPTT-compatible (gradients tracked)
-    simulate(x0, u) -- inference-only (torch.no_grad wrapper)
+    forward(x0, u, Y_schedule=None)  -- full simulation, BPTT-compatible
+    simulate(x0, u, Y_schedule=None) -- inference-only (torch.no_grad wrapper)
 
 - C_d is constant (no Y-dependence). It is computed once in __init__ and
   registered as a buffer so it moves with the module (to(device), dtype).
 - State trajectory is accumulated in a Python list and stacked once at the
   end with torch.stack. No in-place tensor writes, preserving the autograd graph.
 
-Wiring note
------------
-The self-scheduling loop p[k] = x[k][2] is wired inside forward(). The caller
-does NOT pass the scheduling variable. The caller must ensure x0[2] contains
-the correct initial Y-position [m] in the same coordinate frame as gantry_lpv_torch.py.
-This wiring does not exist anywhere outside this file yet. For the training loop,
-whoever calls forward() is responsible for supplying the correct initial state x0.
-
 Validation (__main__)
 ---------------------
-Test 1: Constant Y free-response
+Test 1: Constant Y free-response (self-scheduling)
     u = 0, Y held near-constant at 0.3 m (zero initial dY, zero F_Y).
     Compare against scipy reference with A_d, B_d frozen at Y=0.3.
-    Expected: max absolute error < 1e-8 (Y drift is negligible at 100 steps).
+    Expected: max absolute error < 1e-8 (Y drift negligible over 100 steps).
 
 Test 2: BPTT gradient test
-    requires_grad=True on x0. Run forward, compute loss, call backward.
+    requires_grad=True on x0. Run forward (self-scheduling), compute loss, backward.
     Verify gradient flows through the LPV loop back to x0.
 
 Reference: LPV/LPV-derivation.tex (self-scheduling, Steps 1-6)
