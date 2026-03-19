@@ -50,6 +50,29 @@ gantry_2025a.slx
   → LTI System blocks              use discrete SS from getss via main.m workspace
 ```
 
+**Simulink output signals — what each q is:**
+
+| Signal | Source | How computed | M(Y) updates | Coriolis | Coulomb |
+|--------|--------|--------------|-------------|----------|---------|
+| q | Simscape | Physical component-based simulation (masses, joints, actuators, friction elements as a network). All nonlinear effects included automatically. ode45. | Yes | Yes | Yes |
+| q1 | gantrySystem.m | Linearized EOM: `dxdt = A(Y)*x + B*u`, integrated by ode45. M(Y) recomputed from x(3) at every sub-step. Velocity-dependent nonlinear terms (Coriolis) not included. | Yes | No | No |
+| q2 | gantrySystemCoriolisCentripetal.m | Full Euler-Lagrange EOM (symbolic derivation), integrated by ode45. Same as q1 but with Coriolis and centripetal terms added back. | Yes | Yes | No |
+| q3 | lsim on frozen G | Frozen discrete SS (ZOH, 16 kHz) at Y=0.3 m fixed. Stepped with lsim post-simulation. NOT in Simulink closed loop. | No | No | No |
+
+q, q1, q2 each run in their own separate closed loop (same Cfb controller, same reference trajectory) inside Simulink simultaneously.
+q3 is computed after sim() using the same force input — open-loop, not in a feedback loop.
+
+**Why q1 can serve as a CT reference for ZOH validation:**
+gantrySystem.m returns the derivative `dxdt`, so Simulink's ode45 integrates it at variable sub-steps (far smaller than 1/16kHz), with M(Y) updated at every sub-step. The output is sampled at 16 kHz but the integration is genuinely continuous-time. Comparing Python DT-LPV against q1 is comparing two numerical methods (matrix exponential vs ode45) computing the same CT quantity — a valid ZOH test.
+
+**gantrySystem.m is a continuous-time function.**
+It returns `dxdt = A(Y)*x + B*u` (a derivative, not next-state). Simulink's ode45 solver
+integrates it at variable sub-steps, so M(Y(t)) is recomputed from `x(3)` at every sub-step.
+The discrete feedback controller Cfb runs at 16 kHz and holds its output constant between ticks
+(ZOH). Consequence: q1 from Simulink is the CT plant response to a ZOH-held input — exactly
+what the matrix-exponential ZOH formula computes. Comparing Python DT-LPV vs q1 therefore
+validates the ZOH implementation (not just compares the model against itself).
+
 ---
 
 ## `02 EulerLagrange/get_eom.m`

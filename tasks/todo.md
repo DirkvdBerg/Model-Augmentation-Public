@@ -44,21 +44,14 @@ Feed the closed-loop controller output `u` directly into the Python model open-l
 output will drift from `q` in a way that reflects the missing feedback, not just
 linearisation error. Not a fair comparison.
 
-*Option B — Closed-loop Python simulation* ✅ **chosen**
-Replicate the full closed-loop in Python: implement `Cfb`, feed reference `r`,
-simulate the feedback loop. Compare Python closed-loop output vs Simscape `q`.
-**Why**: both systems see the same reference under the same controller — any
-residual is purely linearisation error, which is exactly what we want to quantify.
-
-**Sub-task C — Export Cfb from MATLAB**
-- [ ] Save `Cfb` matrices from MATLAB:
-      ```matlab
-      [Cfb_num, Cfb_den] = tfdata(Cfb);
-      save('Matlab-output/gantry_controller.mat', 'Cfb_num', 'Cfb_den', 'ts')
-      ```
+*Option A — Open-loop with closed-loop u* ✅ **what was actually implemented**
+Load u from MATLAB closed-loop simulation, drive Python model open-loop.
+**Result**: y vs q3 = 0.00 µm — proves Python matrices match MATLAB (same as Task 1.2 but via simulation).
+**Note**: Option B (full Python closed-loop) was discussed but not implemented — Cfb was never exported
+and the meaningful comparison is q3 vs Simscape, not y vs q3.
 
 **Sub-task D — Implement and run `gantry_sim.py`** ✅
-- [x] Load `gantry_input.mat` (u already in deviation coordinates from lsim)
+- [x] Load `gantry_input.mat` (u from MATLAB closed-loop, deviation coordinates)
 - [x] Run open-loop simulation in deviation coordinates (x_0=0), add Y_op back
 - [x] Save y (N,3) and t to `simulations/frozen_lti/y.npz`
 
@@ -151,7 +144,7 @@ Comparison chain steps (supervisor-confirmed):
 3. LPV vs frozen LTI vs q1 — gap = LPV benefit from Y-varying inertia
 4. LPV vs q (Simscape)     — augmentation target (Coriolis + Coulomb gap)
 
-### Task 2.1 — Decisions and method 🔄 (Tóth justification in progress)
+### Task 2.1 — Decisions and method ✅
 - [x] Tóth (2010) assessed via assess-paper skill
 - [x] Method chosen: frozen-at-sampling-instant ZOH for validation; augmented matrix_exp for training
 - [x] Drenth (2025) assessed — Architecture 1 confirmed, SSE_Interconnect unchanged
@@ -171,7 +164,7 @@ function, safe to call). This is the same computation main.m does at lines 12–
 **Export 1 — LPV matrix sweep** → `Matlab-output/lpv_matrices.mat` ✅
 Compares Python A(Y), B(Y) against MATLAB at each operating point (core matrix validation).
 **File**: `Matlab-scripts/export_lpv_matrices.m`
-- [x] Y sweep: `Y_values = linspace(0.05, 0.75, 50)` (50 points, ~14 mm spacing, D-016)
+- [x] Y sweep: `Y_values = linspace(-0.35, 0.35, 50)` (50 points, within physical range ±400 mm)
 - [x] At each Y: build M(Y), call `getss(n,M,C,K)`, apply P transform, `c2d(...,'zoh')`
 - [x] Save per Y: `A` (6×6), `B` (6×3), `C` (3×6), `D` (3×3), `Y_values` (50×1)
 - [x] Save: `det_M` (50×1) — physics health check, confirms M(Y) positive definite across range
@@ -331,9 +324,16 @@ transient is NOT trimmed -- it is additional valid data (Y is changing during it
   - `Y_trajectory`   (N x 1)   absolute Y position = q1(:,3) [m]
 
 **Export 2 script written:** `Matlab-scripts/export_lpv_sim.m` ✅
-- [ ] Run the script in MATLAB and verify Y_trajectory sweeps 0.3 -> 0.5 m
-- [ ] Confirm q1 and q_simscape are populated (N rows match expected duration)
-- [ ] Confirm u_q1 is non-zero (feedback is active)
+- [x] Run the script in MATLAB: Y_trajectory sweeps 0.3 -> 0.1 m, N=29068 samples, 1.817 s
+- [x] q1 and q_simscape populated, u_q1 non-zero (F_Y RMS > 1 N confirmed by verify_exports.m)
+- [x] All verify_exports.m checks PASS
+
+**ZOH validation result (gantry_lpv_compare.py):** ✅
+- DT-LPV (Python, matrix_exp) vs q1 (CT, ode45): BFR X1=99.99%, X2=99.98%, Y=100.00%
+- Residual sub-nanometre across all channels — ZOH discretization confirmed correct
+- **What this proves:** matrix_exp ZOH formula and ode45 CT integration agree to numerical precision
+- **What this does NOT prove:** model quality vs physical reality (need y_lpv vs q_simscape next)
+- Script: `scripts/gantry/gantry_lpv_compare.py`, output: `simulations/lpv_zoh/`
 
 ### Task 2.3 — Torch reimplementation ✅
 **Files**: `scripts/gantry/gantry_lpv_torch.py`, `scripts/gantry/gantry_lpv_sim_torch.py`

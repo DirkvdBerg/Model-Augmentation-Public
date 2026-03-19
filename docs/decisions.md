@@ -325,3 +325,13 @@ isolates the Y-varying inertia effect cleanly, without Coriolis/Coulomb interfer
 q (Simscape) is the secondary target: q1 vs q quantifies the augmentation gap (Coriolis +
 Coulomb). The model is quasi-LPV: captures Y-dependent inertia only — Coriolis, centripetal,
 and velocity-dependent friction are dropped and must be learned by the augmentation.
+
+---
+
+### [D-017] Delta p block is for the augmentation only — FP LPV baseline does not need it
+**Date**: 2026-03-19
+**What**: The Drenth-style delta p block (Δ(Y) in the LFR structure) is needed for the augmentation so that the learned correction can vary with Y. The FP LPV baseline does not need it.
+**Why**: The p block parameterizes the Y-dependency of the learned correction via a fixed LFR structure: constant trainable matrices (M11/M12/M21/M22) are combined with Δ(Y) to produce a Y-dependent output. This is needed because the residual (Coriolis, etc.) is Y-dependent and the network must learn how its corrections scale with Y. The FP baseline does not need this because A(Y) and B(Y) are computed directly from the closed-form physics at each step — the Y-dependency is already explicit and exact.
+**Open question**: Whether parameter refinement of the FP baseline (making mb, mh, etc. trainable) requires including the baseline in the LFR structure with a p block, or whether gradients through the physics formula alone are sufficient. To be confirmed with supervisor.
+**Ruled out**: Adding a p block to the FP baseline for scheduling purposes — the physics already handles this.
+**Constrains**: The augmentation block needs the delta p block; the baseline block (`LPV_Linear_State_Block`) does not. These are separate implementation concerns.

@@ -91,7 +91,7 @@ def main():
     # Plot
     # ------------------------------------------------------------------
     fig, axes = plt.subplots(3, 1, figsize=(12, 8), sharex=True)
-    fig.suptitle('Frozen LTI — Python vs MATLAB references', fontsize=13)
+    fig.suptitle('Frozen LTI - Python vs MATLAB references', fontsize=13)
 
     for i, (ax, label) in enumerate(zip(axes, _CHANNEL_LABELS)):
         ax.plot(t, q[:, i],  color='k',      lw=1.2, label='q  (Simscape nonlinear)')

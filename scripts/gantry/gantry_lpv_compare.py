@@ -91,17 +91,16 @@ y_lpv = sim.simulate(x0, u_t, Y_schedule=Y_t).numpy()    # (N, 3)
 residual = y_lpv - q1  # (N, 3)
 
 channel_names = ['X1', 'X2', 'Y']
-units_scale   = 1e6    # m -> um
 
 print('\n' + '=' * 55)
 print('  DT-LPV vs q1 (CT quasi-LPV) -- ZOH discretization error')
 print('=' * 55)
-print(f'  {"Channel":<8}  {"RMS [um]":>10}  {"Max |err| [um]":>16}')
-print('  ' + '-' * 38)
+print(f'  {"Channel":<8}  {"RMS [m]":>12}  {"Max |err| [m]":>14}')
+print('  ' + '-' * 42)
 for i, ch in enumerate(channel_names):
-    rms = np.sqrt(np.mean(residual[:, i]**2)) * units_scale
-    mx  = np.max(np.abs(residual[:, i])) * units_scale
-    print(f'  {ch:<8}  {rms:>10.4f}  {mx:>16.4f}')
+    rms = np.sqrt(np.mean(residual[:, i]**2))
+    mx  = np.max(np.abs(residual[:, i]))
+    print(f'  {ch:<8}  {rms:>12.3e}  {mx:>14.3e}')
 
 # BFR per channel: 1 - ||e|| / ||q1 - mean(q1)||
 print()
@@ -142,9 +141,9 @@ plt.close(fig)
 # Residual plot
 fig2, axes2 = plt.subplots(3, 1, figsize=(12, 7), sharex=True)
 for i, (ax, ch) in enumerate(zip(axes2, channel_names)):
-    ax.plot(t_sim, residual[:, i] * 1e6, lw=0.8)
+    ax.plot(t_sim, residual[:, i], lw=0.8)
     ax.axhline(0, color='k', lw=0.5, ls='--')
-    ax.set_ylabel(f'{ch} error [um]')
+    ax.set_ylabel(f'{ch} error [m]')
     ax.grid(True, alpha=0.4)
 
 axes2[-1].set_xlabel('Time [s]')
