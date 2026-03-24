@@ -8,12 +8,20 @@ and Ch. 5, and the companion IFAC paper.
 
 ## 1. What is an LFR?
 
+### Source split: thesis vs IFAC paper
+
+Two Drenth LPV-LFR sources are available locally, but they do **not** play the same role:
+- **Drenth thesis** (`literature/books/drenth2025_lpv-lfr-thesis.pdf`): primary source for the **continuous-time** LPV-LFR definition. Chapter 2 defines the pair `(G, Delta(p))` with `x_dot(t)`, `z(t)`, `w(t)`, `y(t)`.
+- **Drenth IFAC paper** (`literature/lpv-lfr/drenth2025_lpv-lfr-rational.pdf`): **discrete-time** companion paper. It defines the pair `{M, Delta(p)}` in DT and is useful for rational-dependency and well-posedness context.
+
+For the gantry CT derivation, the thesis is the source to cite for the generic LPV-LFR equations. The IFAC paper should be treated as supporting DT context, not as the primary CT citation.
+
 An LFR represents an LPV system as a pair {G, Delta(p)}, where G is a constant
 interconnection matrix and Delta(p) is a structured matrix that depends on the
 scheduling variable p. The key idea: all parameter dependence is isolated in Delta(p),
 while G captures the system dynamics in a fixed, linear structure.
 
-**Reference**: Drenth thesis eq. 2.1, IFAC paper eq. 6, Zhou et al. (1996) Ch. 10.
+**Reference**: Drenth thesis eq. 2.1-2.3 (primary CT source), IFAC paper eq. 6-9 (DT companion), Zhou et al. (1996) Ch. 10.
 
 ### Continuous-time LFR (Drenth eq. 2.1)
 
@@ -339,7 +347,8 @@ p_bar^b = sat(T_p * psi_bar^b)
 ## 7. Integration with CT + RK4 (D-018)
 
 The LFR structure is defined in both CT and DT (Drenth gives CT in eq. 2.1, DT in
-IFAC paper eq. 6). For the gantry:
+the IFAC paper eq. 6). For the gantry, the thesis is the correct primary source for
+the CT equations; the IFAC paper is only the DT companion. For the gantry:
 
 - The **baseline** is a CT model integrated with RK4 at each timestep (D-018)
 - The RK4 integration happens **inside** the state block
@@ -375,7 +384,7 @@ eq. 6 it is called M. To avoid confusion with the inertia matrix, we use:
 
 | Item | Status | Reference |
 |------|--------|-----------|
-| LFR definition and notation | Known | Drenth Ch. 2 |
+| LFR definition and notation | Known | Drenth thesis Ch. 2 (CT); IFAC eq. 6-9 (DT companion) |
 | Well-posedness conditions | Known | Drenth Theorem 2.5, eq. 2.12 |
 | Direct parameterization (D_zw = exp(-N)) | Known | Drenth eq. 2.12-2.13 |
 | Baseline assumed in LFR form | Known (eq. 5.1) | Drenth Ch. 5 |

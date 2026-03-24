@@ -62,20 +62,87 @@
 %------------------------------------------------------------------------------
 
 The gantry first-principles model is derived from the Euler-Lagrange equations
-for the dual-gantry stage in García-Herreros et al.\ \cite{garcia2013model}.
+for the dual-gantry stage in García-Herreros et al. \cite{garcia2013model}.
 In logical coordinates $q = [X,\,\Theta,\,Y]^\top \in \R^3$, the equations of motion are
 \begin{equation}
-    M(Y)\,\ddot{q}(t) + C\,\dot{q}(t) + K\,q(t) = P\,u(t),
+    M(Y)\,\ddot{q}(t) + C\,\dot{q}(t) + K\,q(t) = f_\ell(t),
     \label{eq:eom}
 \end{equation}
-where:
-\begin{itemize}[noitemsep, topsep=2pt]
-    \item $M(Y) \in \R^{3\times3}$ is the configuration-dependent inertia matrix;
-    \item $C \in \R^{3\times3}$ is the (constant) damping matrix;
-    \item $K \in \R^{3\times3}$ is the (constant) stiffness matrix;
-    \item $P \in \R^{3\times3}$ maps motor forces to generalized forces;
-    \item $Y \in \R$ is the scheduling variable ($Y$-stage position).
-\end{itemize}
+with
+\begin{equation}
+    M(Y) =
+    \begin{bmatrix}
+        m_1 + m_2 + m_b + m_h &
+        \dfrac{(m_1 - m_2)L_b}{2} - m_h Y &
+        0 \\[6pt]
+        \dfrac{(m_1 - m_2)L_b}{2} - m_h Y &
+        J_b + J_h + \dfrac{(m_1+m_2)L_b^2}{4} + m_h d^2 + m_h Y^2 &
+        -m_h d \\[6pt]
+        0 & -m_h d & m_h
+    \end{bmatrix},
+    \label{eq:M_full}
+\end{equation}
+\begin{equation}
+    C =
+    \begin{bmatrix}
+        c_{g1} + c_{g2} & \dfrac{(c_{g1} - c_{g2})L_b}{2} & 0 \\[6pt]
+        \dfrac{(c_{g1} - c_{g2})L_b}{2} &
+        c_{b1} + c_{b2} + \dfrac{(c_{g1}+c_{g2})L_b^2}{4} &
+        0 \\[6pt]
+        0 & 0 & c_y
+    \end{bmatrix},
+    \qquad
+    K =
+    \begin{bmatrix}
+        0 & 0 & 0 \\
+        0 & k_{b1} + k_{b2} & 0 \\
+        0 & 0 & 0
+    \end{bmatrix},
+    \label{eq:CK_full}
+\end{equation}
+and
+\begin{equation}
+    f_\ell =
+    \begin{bmatrix}
+        F_X \\
+        F_\Theta \\
+        F_Y
+    \end{bmatrix}
+    \in \R^3
+    \label{eq:fell}
+\end{equation}
+the generalized-force vector in logical coordinates.
+
+If the actuator forces are instead given in stage coordinates as
+\begin{equation}
+    f_s =
+    \begin{bmatrix}
+        F_{X1} \\
+        F_{X2} \\
+        F_Y
+    \end{bmatrix},
+    \label{eq:fs}
+\end{equation}
+then
+\begin{equation}
+    f_\ell = P\,f_s,
+    \qquad
+    P =
+    \begin{bmatrix}
+        1 & 1 & 0 \\
+        L_b/2 & -L_b/2 & 0 \\
+        0 & 0 & 1
+    \end{bmatrix},
+    \label{eq:P_force}
+\end{equation}
+which is the constant input transformation used in the MATLAB/Simulink model.
+
+From this point onward, we denote the generalized input by
+\begin{equation}
+    u := f_\ell
+    \label{eq:u_def}
+\end{equation}
+to match standard state-space and LFR notation.
 
 Introducing the state $x = [q^\top,\,\dot{q}^\top]^\top \in \R^6$, the CT state-space is
 \begin{equation}
@@ -88,7 +155,7 @@ with
 \begin{equation}
     A_c(Y) = \begin{bmatrix} 0 & I_3 \\ -M(Y)^{-1}K & -M(Y)^{-1}C \end{bmatrix},
     \quad
-    B_c(Y) = \begin{bmatrix} 0 \\ M(Y)^{-1}P \end{bmatrix},
+    B_c(Y) = \begin{bmatrix} 0 \\ M(Y)^{-1} \end{bmatrix},
     \quad
     C_c = \begin{bmatrix} I_3 & 0 \end{bmatrix}.
     \label{eq:ctmatrices}
@@ -147,15 +214,16 @@ original parameter-dependent state-space, provided the algebraic loop
 \eqref{eq:lfr_z}--\eqref{eq:lfr_loop} has a unique solution for $z$ given $x$ and $u$
 (well-posedness, see Section~\ref{sec:wp}).
 
-\sourcenote{Drenth et al., IFAC 2025, eq.\ (6)--(7). Update cite key to
-\texttt{drenth2025rational} if that is the final bibliography key.}
+\sourcenote{Primary CT source: Drenth thesis \cite{drenth2025thesis},
+Section~2.1, eq.\ (2.1)--(2.3). Supporting DT companion: Drenth et al.,
+IFAC 2025 \cite{drenth2025lpvlfr}, eq.\ (6)--(9).}
 
 %------------------------------------------------------------------------------
 \section{Decomposition of \texorpdfstring{$M(Y)$}{M(Y)}}
 %------------------------------------------------------------------------------
 
-The inertia matrix $M(Y)$ is polynomial in $Y$ of degree~2.
-Writing out the $Y$-dependence entry by entry \cite{garcia2013model}:
+The inertia matrix in \eqref{eq:M_full} is polynomial in $Y$ of degree~2.
+Rearranging the already stated expression into terms of equal degree in $Y$ gives:
 \begin{equation}
     M(Y) = \underbrace{\begin{bmatrix} a & b_0 & 0 \\ b_0 & c_0 & -e \\ 0 & -e & f \end{bmatrix}}_{M_0}
          + Y \underbrace{\begin{bmatrix} 0 & -m_h & 0 \\ -m_h & 0 & 0 \\ 0 & 0 & 0 \end{bmatrix}}_{M_1}
@@ -178,7 +246,7 @@ $M_0 = M(Y_0)$ is equivalent.
 \section{Latent Variable Construction}
 %------------------------------------------------------------------------------
 
-Let $f_\mathrm{gen} = [-K,\,-C]\,x + P\,u$ denote the generalized force.
+Let $f_\mathrm{gen} = [-K,\,-C]\,x + u$ denote the generalized force.
 Define the latent acceleration vector
 \begin{equation}
     v \;=\; M(Y)^{-1}\,f_\mathrm{gen} \;=\; \ddot{q} \;\in\; \R^3.
@@ -218,7 +286,7 @@ to the CT state-space \eqref{eq:ctss}--\eqref{eq:ctmatrices}.
 The state equation $\dot{x} = A_c(Y)\,x + B_c(Y)\,u$ has two blocks:
 \begin{align}
     \dot{q}   &= \dot{q}, \label{eq:upper}\\
-    \ddot{q}  &= -M(Y)^{-1}K\,q - M(Y)^{-1}C\,\dot{q} + M(Y)^{-1}P\,u = v. \label{eq:lower}
+    \ddot{q}  &= -M(Y)^{-1}K\,q - M(Y)^{-1}C\,\dot{q} + M(Y)^{-1}u = v. \label{eq:lower}
 \end{align}
 The upper block depends only on $x$ and contributes $[0,\,I_3;\,0,\,0]\,x$.
 The lower block is $v = M(Y)^{-1}f_\mathrm{gen}$.
@@ -228,13 +296,13 @@ by $M(Y)$ and expand using \eqref{eq:decomp_short}:
 \begin{equation}
     M_0\,v \;=\; f_\mathrm{gen} - Y\,M_1\,v - Y^2\,M_2\,v
               \;=\; f_\mathrm{gen} - M_1\,v_1 - M_2\,v_2
-              \;=\; [-K,-C]\,x - M_1\,w_1 - M_2\,w_2 + P\,u,
+              \;=\; [-K,-C]\,x - M_1\,w_1 - M_2\,w_2 + u,
     \label{eq:Mv_expand}
 \end{equation}
 where $w_1 = v_1$ and $w_2 = v_2$ denote the $\R^3$ blocks of $w$.
 Solving for $v$:
 \begin{equation}
-    v \;=\; M_0^{-1}[-K,-C]\,x - M_0^{-1}M_1\,w_1 - M_0^{-1}M_2\,w_2 + M_0^{-1}P\,u.
+    v \;=\; M_0^{-1}[-K,-C]\,x - M_0^{-1}M_1\,w_1 - M_0^{-1}M_2\,w_2 + M_0^{-1}u.
     \label{eq:v_expr}
 \end{equation}
 Substituting into the lower block of the state equation:
@@ -242,7 +310,7 @@ Substituting into the lower block of the state equation:
     \ddot{q} \;=\;
     \bigl(-M_0^{-1}K\,q - M_0^{-1}C\,\dot{q}\bigr)
     - M_0^{-1}M_1\,w_1 - M_0^{-1}M_2\,w_2
-    + M_0^{-1}P\,u.
+    + M_0^{-1}u.
     \label{eq:lower_expanded}
 \end{equation}
 Reading off $A$, $B_w$, $B_u$ from \eqref{eq:upper} and \eqref{eq:lower_expanded}:
@@ -251,7 +319,7 @@ Reading off $A$, $B_w$, $B_u$ from \eqref{eq:upper} and \eqref{eq:lower_expanded
     \quad
     B_w = \begin{bmatrix} 0 & 0 \\ -M_0^{-1}M_1 & -M_0^{-1}M_2 \end{bmatrix},
     \quad
-    B_u = \begin{bmatrix} 0 \\ M_0^{-1}P \end{bmatrix}.
+    B_u = \begin{bmatrix} 0 \\ M_0^{-1} \end{bmatrix}.
     \label{eq:state_mats}
 \end{equation}
 For the choice $M_0 = M(0)$, the constant matrix $A$ equals $A_c(0)$.
@@ -270,7 +338,7 @@ Stacking both blocks:
     \;+\;
     \underbrace{\begin{bmatrix} -M_0^{-1}M_1 & -M_0^{-1}M_2 \\ I_3 & 0 \end{bmatrix}}_{D_{zw}}\,w
     \;+\;
-    \underbrace{\begin{bmatrix} M_0^{-1}P \\ 0 \end{bmatrix}}_{D_{zu}}\,u.
+    \underbrace{\begin{bmatrix} M_0^{-1} \\ 0 \end{bmatrix}}_{D_{zu}}\,u.
     \label{eq:z_eq}
 \end{equation}
 
@@ -290,18 +358,18 @@ With $z = [v;\,v_1]$, $w = [v_1;\,v_2]$, $\Delta(Y) = Y\,I_6$:
              & \;\in\; \R^{6\times6}, \label{eq:A_fin}\\[4pt]
     B_w    &= \begin{bmatrix} 0 & 0 \\ -M_0^{-1}M_1 & -M_0^{-1}M_2 \end{bmatrix}
              & \;\in\; \R^{6\times6}, \label{eq:Bw_fin}\\[4pt]
-    B_u    &= \begin{bmatrix} 0 \\ M_0^{-1}P \end{bmatrix}
+    B_u    &= \begin{bmatrix} 0 \\ M_0^{-1} \end{bmatrix}
              & \;\in\; \R^{6\times3}, \label{eq:Bu_fin}\\[4pt]
     C_z    &= \begin{bmatrix} M_0^{-1}[-K,\,-C] \\ 0 \end{bmatrix}
              & \;\in\; \R^{6\times6}, \label{eq:Cz_fin}\\[4pt]
     D_{zw} &= \begin{bmatrix} -M_0^{-1}M_1 & -M_0^{-1}M_2 \\ I_3 & 0 \end{bmatrix}
              & \;\in\; \R^{6\times6}, \label{eq:Dzw_fin}\\[4pt]
-    D_{zu} &= \begin{bmatrix} M_0^{-1}P \\ 0 \end{bmatrix}
+    D_{zu} &= \begin{bmatrix} M_0^{-1} \\ 0 \end{bmatrix}
              & \;\in\; \R^{6\times3}, \label{eq:Dzu_fin}\\[4pt]
     C_y    &= \begin{bmatrix} I_3 & 0 \end{bmatrix}, \quad D_{yw} = 0, \quad D_{yu} = 0.
              & \label{eq:out_fin}
 \end{alignat}
-All entries depend only on $M_0, M_1, M_2, K, C, P$ (all constant matrices).
+All entries depend only on $M_0, M_1, M_2, K, C$ (all constant matrices).
 \end{resultbox}
 
 \begin{notebox}{Representation versus runtime evaluation}
@@ -329,8 +397,8 @@ the first block of \eqref{eq:z_eq} becomes:
     v &= M_0^{-1}[-K,-C]\,x
         - M_0^{-1}M_1\,(Y\,v)
         - M_0^{-1}M_2\,(Y^2\,v)
-        + M_0^{-1}P\,u \notag\\
-    M_0\,v + Y\,M_1\,v + Y^2\,M_2\,v &= [-K,-C]\,x + P\,u \notag\\
+        + M_0^{-1}u \notag\\
+    M_0\,v + Y\,M_1\,v + Y^2\,M_2\,v &= [-K,-C]\,x + u \notag\\
     M(Y)\,v &= f_\mathrm{gen}. \label{eq:loop_check}
 \end{align}
 This is exactly \eqref{eq:latent_v}. The second block $z[3{:}6] = v_1 = w_1 = Y\,v$
@@ -343,11 +411,11 @@ Substituting $w = [Y\,v;\,Y^2\,v]$ into \eqref{eq:lfr_state} with \eqref{eq:stat
     \dot{x} &= \begin{bmatrix} 0 & I_3 \\ -M_0^{-1}K & -M_0^{-1}C \end{bmatrix} x
               + \begin{bmatrix} 0 & 0 \\ -M_0^{-1}M_1 & -M_0^{-1}M_2 \end{bmatrix}
                 \begin{bmatrix} Y\,v \\ Y^2\,v \end{bmatrix}
-              + \begin{bmatrix} 0 \\ M_0^{-1}P \end{bmatrix} u \notag\\[4pt]
+              + \begin{bmatrix} 0 \\ M_0^{-1} \end{bmatrix} u \notag\\[4pt]
     &= \begin{bmatrix} \dot{q} \\
          -M_0^{-1}K\,q - M_0^{-1}C\,\dot{q}
          - M_0^{-1}M_1\,Y\,v - M_0^{-1}M_2\,Y^2\,v
-         + M_0^{-1}P\,u \end{bmatrix} \notag\\[4pt]
+         + M_0^{-1}u \end{bmatrix} \notag\\[4pt]
     &= \begin{bmatrix} \dot{q} \\
          M_0^{-1}\bigl(f_\mathrm{gen} - M_1\,Y\,v - M_2\,Y^2\,v\bigr) \end{bmatrix}.
     \label{eq:xdot_expand}
@@ -386,7 +454,7 @@ The general condition is
 \noindent\textbf{Reduction to $M(Y)$ invertibility.}
 With $\Delta(Y) = Y\,I_6$, the loop equation \eqref{eq:z_eq} with $w = Y\,z$ is:
 \begin{align}
-    v   &= M_0^{-1}[-K,-C]\,x - M_0^{-1}M_1\,(Y\,v) - M_0^{-1}M_2\,(Y\,v_1) + M_0^{-1}P\,u,
+    v   &= M_0^{-1}[-K,-C]\,x - M_0^{-1}M_1\,(Y\,v) - M_0^{-1}M_2\,(Y\,v_1) + M_0^{-1}u,
     \label{eq:loop_v}\\
     v_1 &= Y\,v. \label{eq:loop_v1}
 \end{align}

@@ -35,7 +35,12 @@
       "Bash(mv drenth2025_lpv-lfr-thesis.pdf books/)",
       "Bash(mv \"Toth_2010_[12]_LPVModelingIdentificationBook.pdf\" books/)",
       "Bash(mv \"Robust and Optimal Control.pdf\" books/)",
-      "Bash(mv Zhou-Robust_and_optimal_control.pdf books/)"
+      "Bash(mv Zhou-Robust_and_optimal_control.pdf books/)",
+      "Bash(where pdflatex:*)",
+      "Read(//c/Program Files/MiKTeX/miktex/bin/x64/**)",
+      "Read(//c/Program Files/MiKTeX 2.9/miktex/bin/x64/**)",
+      "Bash(cmd.exe /c \"where pdflatex\")",
+      "Bash(cmd.exe /c \"where pdflatex 2>nul || echo NOT_FOUND\")"
     ]
   }
 }

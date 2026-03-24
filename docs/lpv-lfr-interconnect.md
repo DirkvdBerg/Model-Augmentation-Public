@@ -3,6 +3,11 @@
 This document defines the use case and specific questions that Drenth's thesis must answer
 before Step 3 (wiring the LPV baseline into the augmentation interconnect) is implemented.
 
+**Source clarification update (2026-03-24)**:
+- `literature/books/drenth2025_lpv-lfr-thesis.pdf` is the primary **continuous-time** LPV-LFR source. It defines the pair `(G, Delta(p))` with `x_dot(t)`, `z(t)`, `w(t)`, `y(t)`.
+- `literature/lpv-lfr/drenth2025_lpv-lfr-rational.pdf` is the **discrete-time** companion IFAC paper. It defines `{M, Delta(p)}` in DT.
+- For any CT LPV-LFR definition used in the gantry derivation, cite the thesis first and treat the IFAC paper as supporting DT context.
+
 ---
 
 ## Context — what we have now (LTI baseline)
