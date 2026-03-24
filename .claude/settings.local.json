@@ -22,7 +22,20 @@
       "WebFetch(domain:colah.github.io)",
       "WebFetch(domain:openreview.net)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:www.cs.toronto.edu)"
+      "WebFetch(domain:www.cs.toronto.edu)",
+      "Bash(mv garcia2013_gantry-decoupling-control.pdf gantry/)",
+      "Bash(mv telica-xyz-0750-0800-data.pdf gantry/)",
+      "Bash(mv \"AccurET-Oper&Soft-VerV.pdf\" gantry/)",
+      "Bash(mv drenth2025_lpv-lfr-rational.pdf lpv-lfr/)",
+      "Bash(mv toth2010_zoh-discretization-lpv.pdf lpv-lfr/)",
+      "Bash(mv Schoukens_2018_LPVRepresentationMIMO.pdf lpv-lfr/)",
+      "Bash(mv Schoukens_2020_LFRInitializationBLA.pdf lpv-lfr/)",
+      "Bash(mv hoekstra2025_lfr-augmentation-ejc.pdf augmentation/)",
+      "Bash(mv kessels2025_ai-control.pdf augmentation/)",
+      "Bash(mv drenth2025_lpv-lfr-thesis.pdf books/)",
+      "Bash(mv \"Toth_2010_[12]_LPVModelingIdentificationBook.pdf\" books/)",
+      "Bash(mv \"Robust and Optimal Control.pdf\" books/)",
+      "Bash(mv Zhou-Robust_and_optimal_control.pdf books/)"
     ]
   }
 }

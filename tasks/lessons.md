@@ -37,3 +37,11 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 **Trigger**: When writing any text — prose, LaTeX, comments, documentation, or any other output
 **Rule**: Do not use em-dashes in any form: not the Unicode character (—), not the LaTeX ligature (---), not double-dash (--) used as an em-dash substitute. Use a comma, colon, parentheses, or rewrite the sentence instead.
 **Why**: User explicitly requested this as a hard rule across all writing contexts including LaTeX source.
+
+---
+
+### Rule: Mathematical implications must be justified for the specific construction, not asserted as general facts
+**Trigger**: When claiming "X implies Y" or "X if and only if Y" in a mathematical derivation
+**Rule**: Always state explicitly why the implication holds for this specific construction. Do not assert it as if it follows from a general theorem unless it actually does. Show the connecting steps.
+**Why**: Claimed "LFR is well-posed if and only if M(Y) is invertible" without justification. User correctly challenged this twice. The claim is true only because D_zw was specifically constructed to encode M(Y)^{-1} through the algebraic loop — so the loop's solvability reduces directly to M(Y) invertibility. For a different D_zw this would not hold. The justification is: substitute the specific D_zw into the algebraic loop, show it collapses to M(Y)·v = f_gen, then cite M-invertibility.tex. Without that connecting argument, the claim is unsupported.
+**How to apply**: Before writing "X implies Y" in any derivation, ask: is this a general theorem, or does it hold only because of how I constructed the specific objects involved? If the latter, show the construction-specific steps explicitly.

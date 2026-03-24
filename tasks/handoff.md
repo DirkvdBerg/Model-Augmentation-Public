@@ -5,107 +5,121 @@ The receiving agent reads this as step 3 of their session start sequence.
 
 ---
 
-**Written by**: Claude (Opus 4.6 + Sonnet 4.6)
-**Date**: 2026-03-22
+**Written by**: Claude (Sonnet 4.6)
+**Date**: 2026-03-24
 **Handed to**: Next Claude session or user
 
 ## Session Goal
 
-1. Incorporate conclusions from supervisor meeting (2026-03-20) into all planning and design documents.
-2. Critical analysis of the LPV-LFR plan using Opus, verifying claims against source papers.
-3. Update stale decisions (D-011, D-013, D-017) after confirming baseline needs LFR form.
+Derive the LPV-LFR structure for the gantry FP model from the MATLAB CT state-space.
+This was Blocker B from the previous handoff.
 
 ## Status
 
-Complete. All planning documents updated. Critical analysis performed and corrections applied.
+**Blocker B is resolved.** The LFR derivation is complete conceptually and ready to be
+written up formally in `LPV/`. No implementation has been done yet.
 
 ## What Was Done
 
-**Phase 1: Meeting notes incorporation**
-- Updated D-005 in `docs/decisions.md`: LFR confirmed by supervisor (no longer deferred)
-- Updated D-012: Training loop shifts to RK4 (see D-018)
-- Added D-018: CT-first approach, RK4 with fixed step
-- Rewrote Step 3 in `tasks/todo.md`: CT+RK4 and LFR structure
-- Added Step 4: Three research novelties
-- Added April 9 meeting preparation section
-- Updated `docs/fp-augmentation-interface.md`: CT+RK4 note
+**Literature organization**
+- Reorganized `literature/` into subfolders: `gantry/`, `lpv-lfr/`, `augmentation/`, `books/`, `math/`
+- Updated `docs/references.md` with all new sources and corrected paths
+- New sources confirmed available: Tóth (2010) Springer book, Schoukens & Tóth (2018) MIMO,
+  Schoukens (2020) LFR initialization, Tsai & Gu robust control book
+- Zhou, Doyle & Glover (1996): only title page + ToC available (incomplete). Full book NOT needed
+  for the derivation -- Drenth papers and direct algebra are sufficient.
 
-**Phase 2: Critical analysis (Opus)**
-- Read Drenth IFAC paper (full), Drenth thesis Ch. 5, Hoekstra EJC paper (full)
-- Key finding: Drenth eq. 5.1 ASSUMES baseline is already in LFR form. His papers cover
-  LFR identification (learning from data), NOT converting known physics to LFR form.
-- Blocker B downgraded from "LARGELY RESOLVED" to "PARTIALLY RESOLVED":
-  well-posedness is resolved (Drenth), but baseline LFR realization is not covered by Drenth.
-  Need Zhou, Doyle & Glover (1996) Ch. 10 for LFT realization.
-- Identified notation collision: M(Y) (inertia) vs M_lfr (LFR interconnection matrix).
-  All docs now use M_lfr for the LFR matrix to disambiguate.
+**LPV-LFR derivation (conceptual, not yet written to LaTeX)**
 
-**Phase 3: Stale decisions updated**
-- D-011: Changed from `LPV_Linear_State_Block` to `CT_RK4_State_Block`, noted baseline needs LFR
-- D-013: Changed from "LFR NOT required" to "baseline uses LFR form with CT+RK4"
-- D-017: Changed from "Delta p for augmentation only" to "Both baseline and augmentation use LFR"
+Starting from `getss.m`: A_c(Y) = [0, I; -M(Y)^{-1}K, -M(Y)^{-1}C], B_c(Y) = [0; M(Y)^{-1}P].
 
-**Phase 4: Documentation cleanup (end of session)**
-- Task 3.3 Blocker B: Corrected "LARGELY RESOLVED" to "PARTIALLY RESOLVED" with clear
-  separation of what IS vs what is NOT resolved
-- Task 3.4: Rewrote to use Drenth's notation (A_x, B_w, C_z, D_zw, not M11/M12/M21/M22),
-  added eta design choice, separated baseline and augmentation LFR subsystems
-- Added notation collision warning to Task 3.4
+Step 1 -- Decompose M(Y) = M0 + Y*M1 + Y^2*M2 where:
+  M0 = M(Y=0), M1 = dM/dY (rank 2, only off-diag (0,1)(1,0) entries),
+  M2 = 1/2*d^2M/dY^2 (rank 1, only (1,1) entry)
 
-## Files Created or Modified
+Step 2 -- Define latent variables:
+  v = M(Y)^{-1}*f_gen, f_gen = [-K,-C]*x + P*u
+  v1 = Y*v, v2 = Y^2*v = Y*v1
+  z = [v; v1] in R^6, w = [v1; v2] = Y*z in R^6
+  Delta(Y) = Y*I6 (six repetitions of scalar Y, nw = 6)
 
-- `docs/decisions.md` (D-005, D-011, D-012, D-013, D-017 updated; D-018 added)
-- `tasks/todo.md` (Step 3 rewritten twice, Step 4 added, Task 3.3/3.4 corrected)
-- `docs/fp-augmentation-interface.md` (CT+RK4 baseline note)
-- `tasks/handoff.md` (this file)
+Step 3 -- Constant G matrix (all entries constant, only M0, M1, M2, K, C, P):
+  A   = [0,       I      ]   (A_c at Y=0)
+        [-M0^{-1}K, -M0^{-1}C]
 
-## Decisions Made
+  Bw  = [0,        0     ]
+        [-M0^{-1}M1, -M0^{-1}M2]
 
-- D-005: LFR confirmed by supervisor
-- D-011: CT_RK4_State_Block replaces LPV_Linear_State_Block; baseline needs LFR form
-- D-013: Baseline DOES need LFR form (reversed from original)
-- D-017: Both baseline and augmentation use LFR structure (reversed from original)
-- D-018: CT model with RK4 fixed step for training loop
+  Bu  = [0; M0^{-1}P]
 
-## Lessons Added
+  Cz  = [M0^{-1}(-K), M0^{-1}(-C)]   (z[0:3]: encodes v)
+        [0,            0           ]   (z[3:6]: pass-through of w[0:3])
 
-None this session (no corrections from user).
+  Dzw = [-M0^{-1}M1, -M0^{-1}M2]
+        [I3,          0          ]
+
+  Dzu = [M0^{-1}P; 0]
+
+  Cy  = P^T * [I3, 0]    IMPORTANT: stage coordinates, not [I3,0]
+  Dyw = 0,  Dyu = 0
+
+Step 4 -- Algebraic verification: substitute w = Delta*z into ẋ equation, confirm recovers
+  A_c(Y)*x + B_c(Y)*u exactly.
+
+**Well-posedness argument**
+The well-posedness condition (Drenth thesis Section 2.2, eq. 2.4) requires det(I - Dzw*Delta(Y)) != 0.
+For this specific LFR, substituting z = Cz*x + Dzw*w + Dzu*u and w = Y*z into the z[0:3] equation
+and solving gives directly: M(Y)*z[0:3] = f_gen. This has a unique solution iff M(Y) is invertible.
+This reduction holds because Dzw was constructed to encode M(Y)^{-1} -- it is NOT a general theorem.
+M-invertibility.tex proves det(M(Y)) > 0 for all Y in R (Sylvester's criterion). Combined:
+well-posedness holds for all Y in R, not just the operational range.
+
+Key distinction: this is a physics-specific argument. Jan's D_zw = e^{-N} parameterization
+(Drenth Theorem 2.5) is for the trainable augmentation only. The baseline uses a fixed D_zw
+from physics with a separate well-posedness proof.
+
+**Stage coordinate correction**
+Cy = P^T * [I3, 0] (3x6), not [I3, 0]. This was identified as an error in the draft derivation.
+Bu already had P incorporated: Bu = [0; M0^{-1}P]. A_c(Y) internals stay in logical coordinates.
+
+**Discretization clarification (RK4)**
+Jan's interconnect is discrete at the outer level: forward(x_k, u_k) -> (x_{k+1}, y_k).
+RK4 goes inside the CT_RK4_State_Block.forward(). Both u_k and Y_k are frozen (ZOH-held)
+for all 4 RK4 evaluations -- Y is NOT updated from intermediate states within the step.
+ZOH (matrix exponential) is exact for linear CT given these assumptions; RK4 has O(ts^5)
+error per step. Supervisor preferred RK4 to avoid precomputing A_d(Y), B_d(Y).
+
+## Files Modified
+
+- `literature/` -- reorganized into subfolders
+- `docs/references.md` -- all paths updated, new sources added, Zhou-Doyle-Glover flagged incomplete
+- `tasks/lessons.md` -- new rule on mathematical implication justification
+
+## Decisions Made or Clarified
+
+No new decisions logged. Existing decisions D-011, D-013, D-017, D-018 remain current.
+Blocker B ("Need Zhou et al. for LFT realization") is resolved -- derivation done directly.
 
 ## Exact Next Step
 
-The user wants to answer this question:
+**Write the LFR derivation formally in `LPV/`.**
 
-**"What steps are needed to transform the gantry FP model formulas into LPV format in the LFR structure?"**
-
-To answer this well, the next session should:
-1. Read `docs/fp-model-structure.md` for the gantry CT ODE (M(Y), C, K, P transform)
-2. **Obtain Zhou, Doyle & Glover (1996) Ch. 10** for LFT realization theory.
-   This is the standard reference for converting rational parameter dependence to LFR form.
-   Both Drenth and Hoekstra cite this textbook.
-3. Read `literature/drenth2025_lpv-lfr-thesis.pdf` Chapter 5 (pages 29-34) for how
-   the baseline LFR is assumed to look (eq. 5.1-5.2)
-4. Reason through: A_c(Y) = [[0, I], [-M(Y)^{-1}K, -M(Y)^{-1}C]] has rational Y-entries.
-   The LFT realization pulls out the Y-dependence into Δ(Y) = diag(Y * I_η).
-   Determine η from the rational degree of M(Y)^{-1} entries.
-
-**Key context from this session:**
-- Drenth's papers cover identification (learning LFR from data), NOT physics-to-LFR conversion
-- The gantry has rational parameter dependence: M(Y)^{-1} entries are rational in Y
-- Zhou et al. (1996) is the missing reference for the realization step
-- Alternatively: MATLAB `lftdata`, LPVcore, lpvtools, or ask supervisors directly
-- Y in [-0.35, 0.35] already satisfies |Y| <= 1, so scheduling variable scaling is not a blocker
+1. Create `LPV/LFR-derivation.tex` (or extend `LPV/LPV-derivation.tex`).
+2. Follow the 5-step outline above (decompose M, define latents, write G matrix, verify, well-posedness).
+3. Use source notes: getss.m for the starting equations, M-invertibility.tex for well-posedness,
+   Drenth thesis eq. 2.1 and 2.4 for the LFR definition and well-posedness condition.
+4. The stage coordinate transform must appear explicitly: Bu incorporates P, Cy = P^T*[I3,0].
+5. After write-up: implement CT_RK4_State_Block using this G matrix.
 
 ## Open Questions or Blockers
 
-- **Blocker B (baseline LFR realization)**: Need Zhou et al. (1996) Ch. 10 or equivalent.
-  Drenth does not cover converting known physics to LFR form.
 - **Blocker A (LFR discretization paper)**: Still not found. Supervisor action item from 2026-03-20.
-- **eta choice**: What repetition count for the baseline Δ(Y)? Depends on rational structure
-  of M(Y)^{-1}. Must be determined analytically or from Zhou et al.
-- **D-017 open question**: Whether trainable inertia parameters (mb, mh, etc.) require
-  re-checking invertibility during training. Recommended: start with fixed inertia,
-  only train damping/stiffness (see KEEP IN MIND block in Task 3.7).
-- **Sample rate discrepancy**: D-012 notes 16 kHz vs 20 kHz from spec, still unresolved.
+  Now less critical since RK4 approach does not require a separate DT-LFR theory.
+- **M0 choice**: Derivation uses M0 = M(Y=0). Could use M(Y_nom=0.3) for numerical conditioning.
+  Numerically equivalent; choice should be stated explicitly in write-up.
+- **Sample rate discrepancy**: D-012 notes 16 kHz (main.m) vs 20 kHz (ETEL spec), unresolved.
+- **April 9 meeting**: Confirm with supervisor whether trainable inertia parameters affect
+  Delta^b structure during training (D-017 open question).
 
 ## Proposed Improvements for Claude
 

@@ -1,0 +1,427 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{physics}
+\usepackage{microtype}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{booktabs}
+
+% ---------- Section formatting ----------
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.75em}{}
+\titlespacing*{\section}{0pt}{1.4ex plus .2ex minus .2ex}{0.9ex}
+\titlespacing*{\subsection}{0pt}{1.0ex plus .2ex minus .2ex}{0.5ex}
+
+% ---------- Box environments ----------
+\newtcolorbox{resultbox}[1]{
+    breakable, enhanced,
+    colback=blue!2, colframe=blue!40!black,
+    boxrule=0.7pt, arc=1.5mm,
+    left=3mm, right=3mm, top=1.5mm, bottom=1.5mm,
+    title={\bfseries #1}, coltitle=black,
+    colbacktitle=blue!10, fonttitle=\bfseries
+}
+
+\newtcolorbox{notebox}[1]{
+    breakable, enhanced,
+    colback=gray!4, colframe=gray!50,
+    boxrule=0.7pt, arc=1.5mm,
+    left=3mm, right=3mm, top=1.5mm, bottom=1.5mm,
+    title={\bfseries #1}, coltitle=black,
+    colbacktitle=gray!12, fonttitle=\bfseries
+}
+
+% ---------- Source note ----------
+\newcommand{\sourcenote}[1]{%
+    \par\vspace{0.4em}%
+    \textcolor{gray}{\footnotesize\textbf{Source:} #1}%
+}
+
+% ---------- Math shortcuts ----------
+\newcommand{\R}{\mathbb{R}}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries LPV-LFR Realization of the Gantry First-Principles Model}\\[0.5em]
+    {\large Derivation from the MATLAB CT State-Space}\\[0.4em]
+    {\normalsize Baseline for the LFR Augmentation Framework}
+\end{center}
+
+\vspace{1em}
+
+%------------------------------------------------------------------------------
+\section{Starting Point: CT State-Space from MATLAB}
+%------------------------------------------------------------------------------
+
+The gantry first-principles model is derived from the Euler-Lagrange equations
+for the dual-gantry stage in García-Herreros et al.\ \cite{garcia2013model}.
+In logical coordinates $q = [X,\,\Theta,\,Y]^\top \in \R^3$, the equations of motion are
+\begin{equation}
+    M(Y)\,\ddot{q}(t) + C\,\dot{q}(t) + K\,q(t) = P\,u(t),
+    \label{eq:eom}
+\end{equation}
+where:
+\begin{itemize}[noitemsep, topsep=2pt]
+    \item $M(Y) \in \R^{3\times3}$ is the configuration-dependent inertia matrix;
+    \item $C \in \R^{3\times3}$ is the (constant) damping matrix;
+    \item $K \in \R^{3\times3}$ is the (constant) stiffness matrix;
+    \item $P \in \R^{3\times3}$ maps motor forces to generalized forces;
+    \item $Y \in \R$ is the scheduling variable ($Y$-stage position).
+\end{itemize}
+
+Introducing the state $x = [q^\top,\,\dot{q}^\top]^\top \in \R^6$, the CT state-space is
+\begin{equation}
+    \dot{x}(t) = A_c(Y)\,x(t) + B_c(Y)\,u(t),
+    \qquad
+    y(t) = C_c\,x(t),
+    \label{eq:ctss}
+\end{equation}
+with
+\begin{equation}
+    A_c(Y) = \begin{bmatrix} 0 & I_3 \\ -M(Y)^{-1}K & -M(Y)^{-1}C \end{bmatrix},
+    \quad
+    B_c(Y) = \begin{bmatrix} 0 \\ M(Y)^{-1}P \end{bmatrix},
+    \quad
+    C_c = \begin{bmatrix} I_3 & 0 \end{bmatrix}.
+    \label{eq:ctmatrices}
+\end{equation}
+The parameter dependence is rational in $Y$ (through $M(Y)^{-1}$), so a standard affine
+LPV representation does not exist; an LFR is required.
+
+\sourcenote{\texttt{kamtin-fp-model/03 Simulink gantry/functions/getss.m}}
+
+\begin{notebox}{Stage coordinates}
+The MATLAB model is in logical coordinates $q = [X,\,\Theta,\,Y]^\top$.
+Stage positions $q_s = [q_{X1},\,q_{X2},\,q_Y]^\top$ are related by $q_s = P^\top q$.
+The LFR derivation below uses logical coordinates throughout.
+If the experimental data are in stage coordinates, the output row is
+$C_y = P^\top[I_3,\,0]$ instead of $[I_3,\,0]$.
+\end{notebox}
+
+%------------------------------------------------------------------------------
+\section{LPV-LFR Definition}
+%------------------------------------------------------------------------------
+
+An LPV system admits a Linear Fractional Representation (LFR)
+when it can be written as the lower linear fractional transformation
+$\mathcal{F}_\ell(G,\,\Delta(p))$,
+where $G$ is a constant (parameter-independent) matrix partitioned as
+\begin{equation}
+    G = \begin{bmatrix}
+        A   & B_w   & B_u \\
+        C_z & D_{zw} & D_{zu} \\
+        C_y & D_{yw} & D_{yu}
+    \end{bmatrix},
+    \label{eq:Gmat}
+\end{equation}
+and $\Delta(p)$ is a block-diagonal matrix whose entries depend only on the scheduling
+parameter $p$ \cite{drenth2025lpvlfr}.
+
+The system equations are
+\begin{align}
+    \dot{x} &= A\,x + B_w\,w + B_u\,u, \label{eq:lfr_state}\\
+    z       &= C_z\,x + D_{zw}\,w + D_{zu}\,u, \label{eq:lfr_z}\\
+    y       &= C_y\,x + D_{yw}\,w + D_{yu}\,u, \label{eq:lfr_out}\\
+    w       &= \Delta(p)\,z. \label{eq:lfr_loop}
+\end{align}
+Substituting \eqref{eq:lfr_loop} into \eqref{eq:lfr_state}--\eqref{eq:lfr_out} recovers the
+original parameter-dependent state-space, provided the algebraic loop
+\eqref{eq:lfr_z}--\eqref{eq:lfr_loop} has a unique solution for $z$ given $x$ and $u$
+(well-posedness, see Section~\ref{sec:wp}).
+
+\sourcenote{Drenth et al.\ \cite{drenth2025lpvlfr}, eq.\ (6)--(7).}
+
+%------------------------------------------------------------------------------
+\section{Decomposition of \texorpdfstring{$M(Y)$}{M(Y)}}
+%------------------------------------------------------------------------------
+
+The inertia matrix $M(Y)$ is polynomial in $Y$ of degree~2.
+Writing out the $Y$-dependence entry by entry \cite{garcia2013model}:
+\begin{equation}
+    M(Y) = \underbrace{\begin{bmatrix} a & b_0 & 0 \\ b_0 & c_0 & -e \\ 0 & -e & f \end{bmatrix}}_{M_0}
+         + Y \underbrace{\begin{bmatrix} 0 & -m_h & 0 \\ -m_h & 0 & 0 \\ 0 & 0 & 0 \end{bmatrix}}_{M_1}
+         + Y^2 \underbrace{\begin{bmatrix} 0 & 0 & 0 \\ 0 & m_h & 0 \\ 0 & 0 & 0 \end{bmatrix}}_{M_2},
+    \label{eq:decomp}
+\end{equation}
+where $b_0 = \tfrac{(m_1-m_2)L_b}{2}$ and
+$c_0 = J_b + J_h + \tfrac{(m_1+m_2)L_b^2}{4} + m_h d^2$.
+Compactly:
+\begin{equation}
+    M(Y) = M_0 + Y\,M_1 + Y^2\,M_2, \qquad M_0 = M(0).
+    \label{eq:decomp_short}
+\end{equation}
+$M_1$ is rank~2 (only the $(1,2)$ and $(2,1)$ entries are nonzero);
+$M_2$ is rank~1 (only the $(2,2)$ entry is nonzero).
+The choice $M_0 = M(0)$ is algebraically convenient; numerically any fixed
+$M_0 = M(Y_0)$ is equivalent.
+
+%------------------------------------------------------------------------------
+\section{Latent Variable Construction}
+%------------------------------------------------------------------------------
+
+Let $f_\mathrm{gen} = [-K,\,-C]\,x + P\,u$ denote the generalized force.
+Define the latent acceleration vector
+\begin{equation}
+    v \;=\; M(Y)^{-1}\,f_\mathrm{gen} \;=\; \ddot{q} \;\in\; \R^3.
+    \label{eq:latent_v}
+\end{equation}
+The $Y$-dependence in $M(Y)^{-1}$ enters through two additional latent variables:
+\begin{equation}
+    v_1 \;=\; Y\,v, \qquad v_2 \;=\; Y^2\,v \;=\; Y\,v_1.
+    \label{eq:latent_v1v2}
+\end{equation}
+Stack these into loop signals
+\begin{equation}
+    z \;=\; \begin{bmatrix} v \\ v_1 \end{bmatrix} \in \R^6,
+    \qquad
+    w \;=\; \begin{bmatrix} v_1 \\ v_2 \end{bmatrix} \in \R^6.
+    \label{eq:zw}
+\end{equation}
+Observe that $w = Y\,z$, so define the scheduling block
+\begin{equation}
+    \Delta(Y) \;=\; Y\,I_6, \qquad n_z = n_w = 6.
+    \label{eq:Delta}
+\end{equation}
+The scalar $Y$ enters the model exclusively through $\Delta(Y)$;
+all remaining structure is parameter-independent.
+
+%------------------------------------------------------------------------------
+\section{Constant \texorpdfstring{$G$}{G} Matrix}
+%------------------------------------------------------------------------------
+
+The submatrices of $G$ are determined by matching \eqref{eq:lfr_state}--\eqref{eq:lfr_out}
+to the CT state-space \eqref{eq:ctss}--\eqref{eq:ctmatrices}.
+
+\subsection{State equation}
+
+The state equation $\dot{x} = A_c(Y)\,x + B_c(Y)\,u$ has two blocks:
+\begin{align}
+    \dot{q}   &= \dot{q}, \label{eq:upper}\\
+    \ddot{q}  &= -M(Y)^{-1}K\,q - M(Y)^{-1}C\,\dot{q} + M(Y)^{-1}P\,u = v. \label{eq:lower}
+\end{align}
+The upper block depends only on $x$ and contributes $[0,\,I_3;\,0,\,0]\,x$.
+The lower block is $v = M(Y)^{-1}f_\mathrm{gen}$.
+
+To express $v$ in terms of $x$, $w$, and $u$, pre-multiply definition \eqref{eq:latent_v}
+by $M(Y)$ and expand using \eqref{eq:decomp_short}:
+\begin{equation}
+    M_0\,v \;=\; f_\mathrm{gen} - Y\,M_1\,v - Y^2\,M_2\,v
+              \;=\; f_\mathrm{gen} - M_1\,v_1 - M_2\,v_2
+              \;=\; [-K,-C]\,x - M_1\,w_1 - M_2\,w_2 + P\,u,
+    \label{eq:Mv_expand}
+\end{equation}
+where $w_1 = v_1$ and $w_2 = v_2$ denote the $\R^3$ blocks of $w$.
+Solving for $v$:
+\begin{equation}
+    v \;=\; M_0^{-1}[-K,-C]\,x - M_0^{-1}M_1\,w_1 - M_0^{-1}M_2\,w_2 + M_0^{-1}P\,u.
+    \label{eq:v_expr}
+\end{equation}
+Substituting into the lower block of the state equation:
+\begin{equation}
+    \ddot{q} \;=\;
+    \bigl(-M_0^{-1}K\,q - M_0^{-1}C\,\dot{q}\bigr)
+    - M_0^{-1}M_1\,w_1 - M_0^{-1}M_2\,w_2
+    + M_0^{-1}P\,u.
+    \label{eq:lower_expanded}
+\end{equation}
+Reading off $A$, $B_w$, $B_u$ from \eqref{eq:upper} and \eqref{eq:lower_expanded}:
+\begin{equation}
+    A = \begin{bmatrix} 0 & I_3 \\ -M_0^{-1}K & -M_0^{-1}C \end{bmatrix},
+    \quad
+    B_w = \begin{bmatrix} 0 & 0 \\ -M_0^{-1}M_1 & -M_0^{-1}M_2 \end{bmatrix},
+    \quad
+    B_u = \begin{bmatrix} 0 \\ M_0^{-1}P \end{bmatrix}.
+    \label{eq:state_mats}
+\end{equation}
+Note that $A = A_c(0)$ is the state matrix evaluated at $Y = 0$.
+
+\subsection{Loop equation}
+
+The loop equation \eqref{eq:lfr_z} must produce $z = [v;\,v_1]$.
+From \eqref{eq:v_expr}, the first block is $v$ expressed in terms of $x$, $w$, $u$.
+The second block is $v_1 = w_1 = I_3\,w_1 + 0\cdot w_2$.
+Stacking both blocks:
+\begin{equation}
+    z \;=\;
+    \underbrace{\begin{bmatrix} M_0^{-1}[-K,\,-C] \\ 0 \end{bmatrix}}_{C_z}\,x
+    \;+\;
+    \underbrace{\begin{bmatrix} -M_0^{-1}M_1 & -M_0^{-1}M_2 \\ I_3 & 0 \end{bmatrix}}_{D_{zw}}\,w
+    \;+\;
+    \underbrace{\begin{bmatrix} M_0^{-1}P \\ 0 \end{bmatrix}}_{D_{zu}}\,u.
+    \label{eq:z_eq}
+\end{equation}
+
+\subsection{Output equation}
+
+The output in logical coordinates is $y = C_c\,x = [I_3,\,0]\,x$ with no feedthrough:
+\begin{equation}
+    C_y = \begin{bmatrix} I_3 & 0 \end{bmatrix}, \qquad D_{yw} = 0, \qquad D_{yu} = 0.
+    \label{eq:out_eq}
+\end{equation}
+
+\medskip
+\begin{resultbox}{Complete $G$ matrix}
+With $z = [v;\,v_1]$, $w = [v_1;\,v_2]$, $\Delta(Y) = Y\,I_6$:
+\begin{alignat}{2}
+    A      &= \begin{bmatrix} 0 & I_3 \\ -M_0^{-1}K & -M_0^{-1}C \end{bmatrix}
+             & \;\in\; \R^{6\times6}, \label{eq:A_fin}\\[4pt]
+    B_w    &= \begin{bmatrix} 0 & 0 \\ -M_0^{-1}M_1 & -M_0^{-1}M_2 \end{bmatrix}
+             & \;\in\; \R^{6\times6}, \label{eq:Bw_fin}\\[4pt]
+    B_u    &= \begin{bmatrix} 0 \\ M_0^{-1}P \end{bmatrix}
+             & \;\in\; \R^{6\times3}, \label{eq:Bu_fin}\\[4pt]
+    C_z    &= \begin{bmatrix} M_0^{-1}[-K,\,-C] \\ 0 \end{bmatrix}
+             & \;\in\; \R^{6\times6}, \label{eq:Cz_fin}\\[4pt]
+    D_{zw} &= \begin{bmatrix} -M_0^{-1}M_1 & -M_0^{-1}M_2 \\ I_3 & 0 \end{bmatrix}
+             & \;\in\; \R^{6\times6}, \label{eq:Dzw_fin}\\[4pt]
+    D_{zu} &= \begin{bmatrix} M_0^{-1}P \\ 0 \end{bmatrix}
+             & \;\in\; \R^{6\times3}, \label{eq:Dzu_fin}\\[4pt]
+    C_y    &= \begin{bmatrix} I_3 & 0 \end{bmatrix}, \quad D_{yw} = 0, \quad D_{yu} = 0.
+             & \label{eq:out_fin}
+\end{alignat}
+All entries depend only on $M_0, M_1, M_2, K, C, P$ (all constant matrices).
+\end{resultbox}
+
+%------------------------------------------------------------------------------
+\section{Algebraic Verification}
+\label{sec:verify}
+%------------------------------------------------------------------------------
+
+We verify that substituting $w = \Delta(Y)\,z = Y\,z$ into the LFR equations
+recovers \eqref{eq:ctss}--\eqref{eq:ctmatrices}.
+
+\medskip
+\noindent\textbf{Step 1: Solve the loop.}
+With $w = Y\,z$, i.e., $w_1 = Y\,v$ and $w_2 = Y\,v_1 = Y^2\,v$,
+the first block of \eqref{eq:z_eq} becomes:
+\begin{align}
+    v &= M_0^{-1}[-K,-C]\,x
+        - M_0^{-1}M_1\,(Y\,v)
+        - M_0^{-1}M_2\,(Y^2\,v)
+        + M_0^{-1}P\,u \notag\\
+    M_0\,v + Y\,M_1\,v + Y^2\,M_2\,v &= [-K,-C]\,x + P\,u \notag\\
+    M(Y)\,v &= f_\mathrm{gen}. \label{eq:loop_check}
+\end{align}
+This is exactly \eqref{eq:latent_v}. The second block $z[3{:}6] = v_1 = w_1 = Y\,v$
+is trivially consistent with $v_1 = Y\,v$.
+
+\medskip
+\noindent\textbf{Step 2: Recover the state equation.}
+Substituting $w = [Y\,v;\,Y^2\,v]$ into \eqref{eq:lfr_state} with \eqref{eq:state_mats}:
+\begin{align}
+    \dot{x} &= \begin{bmatrix} 0 & I_3 \\ -M_0^{-1}K & -M_0^{-1}C \end{bmatrix} x
+              + \begin{bmatrix} 0 & 0 \\ -M_0^{-1}M_1 & -M_0^{-1}M_2 \end{bmatrix}
+                \begin{bmatrix} Y\,v \\ Y^2\,v \end{bmatrix}
+              + \begin{bmatrix} 0 \\ M_0^{-1}P \end{bmatrix} u \notag\\[4pt]
+    &= \begin{bmatrix} \dot{q} \\
+         -M_0^{-1}K\,q - M_0^{-1}C\,\dot{q}
+         - M_0^{-1}M_1\,Y\,v - M_0^{-1}M_2\,Y^2\,v
+         + M_0^{-1}P\,u \end{bmatrix} \notag\\[4pt]
+    &= \begin{bmatrix} \dot{q} \\
+         M_0^{-1}\bigl(f_\mathrm{gen} - M_1\,Y\,v - M_2\,Y^2\,v\bigr) \end{bmatrix}.
+    \label{eq:xdot_expand}
+\end{align}
+From \eqref{eq:loop_check}: $M_0\,v = f_\mathrm{gen} - M_1\,Y\,v - M_2\,Y^2\,v$.
+Substituting:
+\begin{equation}
+    \dot{x} = \begin{bmatrix} \dot{q} \\ M_0^{-1}\,M_0\,v \end{bmatrix}
+            = \begin{bmatrix} \dot{q} \\ v \end{bmatrix}
+            = \begin{bmatrix} \dot{q} \\ M(Y)^{-1}f_\mathrm{gen} \end{bmatrix}
+            = A_c(Y)\,x + B_c(Y)\,u. \quad \checkmark
+    \label{eq:verify_ok}
+\end{equation}
+
+\medskip
+\noindent\textbf{Step 3: Output.}
+$y = C_y\,x = [I_3,\,0]\,x = q = C_c\,x$. \quad $\checkmark$
+
+%------------------------------------------------------------------------------
+\section{Well-Posedness of the Algebraic Loop}
+\label{sec:wp}
+%------------------------------------------------------------------------------
+
+The LFR interconnection is well-posed if the algebraic loop
+\eqref{eq:lfr_z}--\eqref{eq:lfr_loop} has a unique solution for $z$ given any
+$(x, u)$ and any scheduling value $Y$.
+The general condition is
+\begin{equation}
+    \det\bigl(I - D_{zw}\,\Delta(Y)\bigr) \neq 0 \qquad \forall\,Y.
+    \label{eq:wp_general}
+\end{equation}
+
+\sourcenote{Drenth thesis \cite{drenth2025thesis}, Section~2.2, eq.\ (2.4).}
+
+\medskip
+\noindent\textbf{Reduction to $M(Y)$ invertibility.}
+With $\Delta(Y) = Y\,I_6$, the loop equation \eqref{eq:z_eq} with $w = Y\,z$ is:
+\begin{align}
+    v   &= M_0^{-1}[-K,-C]\,x - M_0^{-1}M_1\,(Y\,v) - M_0^{-1}M_2\,(Y\,v_1) + M_0^{-1}P\,u,
+    \label{eq:loop_v}\\
+    v_1 &= Y\,v. \label{eq:loop_v1}
+\end{align}
+Substituting \eqref{eq:loop_v1} into \eqref{eq:loop_v}:
+\begin{equation}
+    \bigl(M_0 + Y\,M_1 + Y^2\,M_2\bigr)\,v = f_\mathrm{gen}
+    \quad\Longrightarrow\quad
+    M(Y)\,v = f_\mathrm{gen}.
+    \label{eq:loop_reduced}
+\end{equation}
+The $6\times6$ algebraic loop reduces to a $3\times3$ linear system for $v$.
+Once $v$ is found, $v_1 = Y\,v$ follows immediately.
+The loop has a unique solution if and only if $M(Y)$ is invertible.
+
+\medskip
+\begin{notebox}{Why this reduction is specific to this $D_{zw}$}
+    The collapse \eqref{eq:loop_reduced} is not a general property of LFRs.
+    It holds because $D_{zw}$ was constructed so that pre-multiplying by $M_0$ and collecting
+    terms in $v$ reconstitutes exactly $M(Y)$ on the left-hand side.
+    For a different $D_{zw}$, the loop would not reduce in this way.
+    The implication ``loop has unique solution $\Leftrightarrow$ $M(Y)$ invertible'' is
+    a consequence of this specific construction, not a general theorem.
+\end{notebox}
+
+\medskip
+\noindent\textbf{Invertibility of $M(Y)$.}
+The companion document M-invertibility.tex proves via Sylvester's criterion that
+$M(Y)$ is positive definite for all $Y \in \R$, provided
+$m_1, m_2, m_b, m_h > 0$, $J_b, J_h > 0$, $L_b, d > 0$.
+Positive definiteness implies invertibility.
+
+\medskip
+\begin{resultbox}{Well-posedness}
+    The algebraic loop of the LFR has a unique solution for every $Y \in \R$ and every
+    $(x, u)$, provided all physical mass, inertia, and geometry parameters are
+    strictly positive.
+    Well-posedness holds globally (not only on the operational range $Y \in [0.05,\,0.75]$~m).
+\end{resultbox}
+
+\newpage
+\begin{thebibliography}{9}
+
+\bibitem{garcia2013model}
+I.~Garc{\'i}a-Herreros, X.~Kestelyn, J.~Gomand, R.~Coleman, and P.-J.~Barre,
+``Model-based decoupling control method for dual-drive gantry stages:
+A case study with experimental validations,''
+\textit{Control Engineering Practice}, vol.~21, no.~3, pp.~298--307, 2013.
+doi: 10.1016/j.conengprac.2012.10.010.
+
+\bibitem{drenth2025lpvlfr}
+J.~Drenth, J.~Hoekstra, M.~Schoukens, and R.~T{\'o}th,
+``Efficient Learning of Affine and Rational Dependency LPV Models With LFR,''
+in \textit{Proc.\ IFAC}, 2025.
+
+\bibitem{drenth2025thesis}
+J.~Drenth,
+``Gradient-based Learning of LPV-LFR Models,''
+M.Sc.\ thesis, Eindhoven University of Technology, 2025.
+
+\end{thebibliography}
+
+\end{document}
