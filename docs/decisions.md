@@ -92,12 +92,12 @@ Decisions are logged here before implementation. Each entry states what was deci
 
 ---
 
-### [D-005] LFR-LPV augmentation adaptation is deferred
-**Date**: 2026-03-16
-**What**: Extending the augmentation framework to the full LPV-LFR setting is deferred to a later phase.
-**Why**: The immediate priority is getting the FP model into the correct discrete-time state-space form compatible with the existing augmentation code. LPV-LFR augmentation adds complexity that should not be introduced before the baseline integration is validated.
-**Ruled out**: Attempting LPV-LFR augmentation before the FP model baseline is working.
-**Constrains**: Current work focuses on FP model conversion and compatibility with the existing LFR interconnect. LPV scheduling in the augmentation layer comes after.
+### [D-005] LFR structure confirmed for the LPV augmentation
+**Date**: 2026-03-16 (updated 2026-03-20)
+**What**: The augmentation framework will use an LFR structure for the LPV scheduling. This was initially deferred but was confirmed as the right approach by the supervisor in the meeting of 2026-03-20.
+**Why**: The supervisor stated: "LFR gives more flexibility. Can always compute a state-space representation if we want to remap. Suggestion: start with LFR structure for scheduling/LPV." The LFR parameterization allows the learned correction to vary with Y in a principled way through the delta-p block (see D-017). Rank of the M matrix across different trajectories should be computed to confirm no rank drop occurs (expected to be fine, but must be verified).
+**Ruled out**: Pure state-space augmentation without LFR structure. Deferring LFR indefinitely (supervisor explicitly suggested it as the starting point for the LPV scheduling).
+**Constrains**: Step 3 implementation targets the LFR structure for LPV scheduling. A paper on discretizing LFRs must be found and reviewed before implementation (supervisor action item from 2026-03-20 meeting). The CT conversion must be written up first before the LFR structure is implemented (see D-018).
 
 ---
 
@@ -113,11 +113,13 @@ Decisions are logged here before implementation. Each entry states what was deci
 ---
 
 ### [D-011] Framework integration of LPV baseline requires a new block type
-**Date**: 2026-03-17
-**What**: Wiring the LPV baseline into the augmentation interconnect requires a new block — `LPV_Linear_State_Block` — that reads Y from the current state at each forward call and recomputes A(Y), B(Y) via `gantry_discrete_ss(Y)`.
-**Why**: The existing `Linear_State_Block` stores A and B as fixed attributes set at init — it cannot update them per step. The LPV baseline needs matrices that change every timestep as Y evolves. No existing block in the framework supports this.
-**Ruled out**: Reusing `Linear_State_Block` with a single frozen operating point — that is the frozen LTI, not the LPV baseline. Reusing `Parameterized_LPV_Affine_Linear_State_Block` — wrong structure (affine-in-Y², trainable, augmentation-side).
-**Constrains**: Implementation of `LPV_Linear_State_Block` is a Step 3 task, blocked on Step 2 validation. The block must expose Y as a self-scheduled variable (read from state index 2 in stage coordinates) and call `gantry_discrete_ss(Y)` internally.
+**Date**: 2026-03-17 (updated 2026-03-22)
+**What**: Wiring the LPV baseline into the augmentation interconnect requires a new block, `CT_RK4_State_Block`, that reads Y from the current state at each forward call and integrates the CT ODE using one RK4 step.
+**Why**: The existing `Linear_State_Block` stores A and B as fixed attributes set at init, so it cannot update them per step. The LPV baseline needs physics that change every timestep as Y evolves. No existing block in the framework supports this.
+**Ruled out**: Reusing `Linear_State_Block` with a single frozen operating point (that is the frozen LTI). Reusing `Parameterized_LPV_Affine_Linear_State_Block` (wrong structure: affine-in-Y², trainable, augmentation-side).
+**Constrains**: The block computes A_c(Y), B_c(Y) from physics at each step and applies RK4 with dt=ts (see D-018). The baseline should also be expressed in LFR form for compatibility with Drenth's augmentation procedure (see D-005, updated 2026-03-22). Y is read from state index 2 in stage coordinates (self-scheduled).
+
+**Update 2026-03-22**: Changed from `LPV_Linear_State_Block` calling `gantry_discrete_ss(Y)` (pre-discretized DT) to `CT_RK4_State_Block` integrating the CT ODE with RK4 (per D-018). Additionally, the baseline should be expressed in LFR form per supervisor confirmation (D-005).
 
 ---
 
@@ -220,14 +222,18 @@ Decisions are logged here before implementation. Each entry states what was deci
   - scipy `cont2discrete` in training loop: not inside autograd graph.
 **Constrains**: `LPV_Linear_State_Block.forward()` must compute A_c(Y) analytically from M(Y)⁻¹ using tensor ops, then apply `torch.linalg.matrix_exp(A_c(Y) * ts)`. See `docs/lpv-discretization.md` for full rationale and option comparison table.
 
+**Update 2026-03-20 (supervisor meeting)**: For the augmentation training loop (Step 3+), the discretization approach shifts from pre-discretized ZOH to CT model with RK4 integration. The ZOH approach remains valid for Step 2 validation (completed). See D-018, which supersedes the "training loop" part of this decision. Read D-012 as: Steps 1-2 validation used ZOH (done); Step 3+ training loop uses RK4 on the CT model (see D-018).
+
 ---
 
-### [D-013] LPV baseline uses Architecture 1 (direct forward) — Drenth confirms
-**Date**: 2026-03-17
-**What**: `LPV_Linear_State_Block` computes `A_d(Y), B_d(Y)` directly inside `forward(z)` (Architecture 1). The formal LFR Δ(p) structure is NOT required for the baseline. `SSE_Interconnect` and all existing wiring machinery are used unchanged.
-**Why**: Drenth's thesis (Chapter 2, eq. 2.29) confirms that the forward simulation loop collapses to direct A(p)x + B(p)u at each step, even when the model is parameterized as a Δ(p)-LFR internally. The Δ(p) structure applies to the learned augmentation, not the physics baseline. Self-scheduled quasi-LPV (Y from state) is explicitly supported — Y is read from the state inside `forward()`, not routed through S. Confirmed by assess-paper assessment of Drenth (2025) + Hoekstra et al. (2025).
-**Ruled out**: Architecture 2 (formal Δ(p) scheduling block with separate wiring through S) — not required for the physics baseline. New `SSE_Interconnect` subclass — existing class is sufficient.
-**Constrains**: `LPV_Linear_State_Block` wires into `SSE_Interconnect` identically to `Linear_State_Block`. One open question remains: how to apply normalization (Tx/Tx⁻¹) when A_d(Y) is computed at runtime via `matrix_exp` rather than stored as a constant matrix. Must be resolved before Step 3 implementation. See `docs/lpv-lfr-interconnect.md` for full assessment.
+### [D-013] LPV baseline uses LFR form with CT+RK4 integration
+**Date**: 2026-03-17 (updated 2026-03-22)
+**What**: The LPV baseline is expressed in LFR form {M^b, Δ^b(Y)} and integrated using RK4 inside a custom `CT_RK4_State_Block`. The `SSE_Interconnect` wiring machinery is used unchanged. Internally, the forward simulation collapses to evaluating A_c(Y)x + B_c(Y)u (as Drenth Ch. 2 eq. 2.29 confirms), but the LFR parameterization is needed for compatibility with Drenth's augmentation framework (Ch. 5 eq. 5.1-5.2).
+**Why**: Supervisor confirmed (2026-03-22) that the baseline itself should use the LFR structure. Drenth Ch. 5 eq. 5.1 assumes the baseline is available in LPV-LFR form. Self-scheduled quasi-LPV (Y from state) is supported. The LFR representation of the baseline requires converting A_c(Y) with its rational M(Y)^{-1} entries into LFR form using standard LFT realization methods (Zhou, Doyle & Glover, 1996).
+**Ruled out**: Computing A_c(Y) directly without LFR form (originally chosen, but revised per supervisor guidance). New `SSE_Interconnect` subclass (existing class is sufficient).
+**Constrains**: The baseline LFR must be realized from the known physics. Normalization is handled by Drenth eq. 5.5: T_x, T_u, T_y scaling applies to all LFR submatrices. The conversion requires choosing η (repetition count in Δ) and verifying LFR well-posedness. See `docs/lpv-lfr-interconnect.md` for the original assessment (partially superseded by this update).
+
+**Update 2026-03-22**: Major revision. Original decision said LFR is NOT required for the baseline. Supervisor confirmed the opposite: use LFR structure for the baseline. Also changed from pre-discretized A_d(Y), B_d(Y) to CT+RK4 (per D-018). Normalization question is answered by Drenth eq. 5.5.
 
 ---
 
@@ -328,10 +334,35 @@ and velocity-dependent friction are dropped and must be learned by the augmentat
 
 ---
 
-### [D-017] Delta p block is for the augmentation only — FP LPV baseline does not need it
-**Date**: 2026-03-19
-**What**: The Drenth-style delta p block (Δ(Y) in the LFR structure) is needed for the augmentation so that the learned correction can vary with Y. The FP LPV baseline does not need it.
-**Why**: The p block parameterizes the Y-dependency of the learned correction via a fixed LFR structure: constant trainable matrices (M11/M12/M21/M22) are combined with Δ(Y) to produce a Y-dependent output. This is needed because the residual (Coriolis, etc.) is Y-dependent and the network must learn how its corrections scale with Y. The FP baseline does not need this because A(Y) and B(Y) are computed directly from the closed-form physics at each step — the Y-dependency is already explicit and exact.
-**Open question**: Whether parameter refinement of the FP baseline (making mb, mh, etc. trainable) requires including the baseline in the LFR structure with a p block, or whether gradients through the physics formula alone are sufficient. To be confirmed with supervisor.
-**Ruled out**: Adding a p block to the FP baseline for scheduling purposes — the physics already handles this.
-**Constrains**: The augmentation block needs the delta p block; the baseline block (`LPV_Linear_State_Block`) does not. These are separate implementation concerns.
+### [D-017] Both baseline and augmentation use LFR Δ(Y) structure
+**Date**: 2026-03-19 (updated 2026-03-22)
+**What**: Both the FP LPV baseline and the learned augmentation use the LFR Δ(Y) structure, as required by Drenth Ch. 5 eq. 5.1-5.2. The baseline has its own Δ^b(Y) block derived from the known physics (M(Y)^{-1}). The augmentation has a separate Δ^a(Y) block with trainable parameters. The two Δ blocks are block-diagonal (no cross-coupling in Δ), but the interconnection between baseline and augmentation happens through the combined M matrix (Drenth eq. 5.2, the `ab` and `ba` submatrices).
+**Why**: Supervisor confirmed (2026-03-22) that the baseline should use LFR structure. Drenth Ch. 5 eq. 5.1 explicitly assumes the baseline is in LPV-LFR form. The baseline's Δ^b(Y) is fixed (derived from physics, not trained). The augmentation's Δ^a(Y) has trainable parameters. Well-posedness of the combined LFR is guaranteed by Drenth's direct parameterization (D_zw = exp(-N), Theorem 2.5).
+**Open question**: Whether parameter refinement of the FP baseline (making mb, mh, etc. trainable) changes the baseline's Δ^b structure during training. To be confirmed with supervisor at April 9 meeting.
+**Ruled out**: Original decision that the baseline does not need LFR (revised per supervisor guidance 2026-03-22).
+**Constrains**: The baseline LFR realization must be derived from M(Y)^{-1} using standard LFT methods (Zhou et al., 1996). This determines the baseline's Δ^b structure and the minimum η (repetition count). The combined well-posedness (baseline + augmentation) must be ensured.
+
+**Update 2026-03-22**: Major revision. Original decision said baseline does NOT need Δ(Y). Supervisor confirmed the opposite. Both baseline and augmentation now use LFR structure, per Drenth Ch. 5.
+
+---
+
+### [D-018] CT model kept in continuous time; RK4 used for integration at fixed step
+**Date**: 2026-03-20
+**What**: The gantry FP model is implemented and maintained as a continuous-time (CT) ODE. Simulation and augmentation training both integrate the CT equations using RK4 with a fixed time step equal to the sampling period (ts = 1/fs). The model is not pre-discretized before the integration step in the training loop.
+**Why**: Supervisor confirmed in meeting (2026-03-20), quoting directly from notes: "write up the ct conversion. dont do discretization first will get messy." and "use rk4 not euler discretization. better to not precompute." Key reasoning:
+  - RK4 with fixed step always takes the same dt, so it responds correctly to the sampling period and is compatible with the discrete control loop.
+  - RK4 is a sum of 4 terms (4 evaluations with weighting), strictly more accurate than Euler (1st order) at the same step size.
+  - ODE45 uses variable step sizes (cannot enforce a consistent sampling period by default). The ode4 variant forces a fixed step, but that is equivalent to RK4 directly.
+  - ZOH pre-discretization is kept only for Steps 1-2 validation (already completed) where exact MATLAB matrix comparison was the goal. It is not used in the augmentation training loop.
+  - When using system identification with a CT baseline, the same RK4 approach applies: keep the model in CT, apply RK4 alongside it.
+  - ZOH (zero-order hold) holds the input constant within each interval but says nothing about how the ODE is integrated inside the interval. RK4 is the integration method used inside that interval.
+**Ruled out**:
+  - Euler discretization: O(h) truncation error, inferior accuracy for the same step size. Supervisor confirmed: "use rk4 not euler."
+  - ODE45 with variable step: incompatible with a fixed sampling period in a discrete control loop. Acceptable only as the ode4 variant (fixed step), but RK4 achieves the same result directly.
+  - Pre-discretizing with ZOH for the training loop: supervisor explicitly said not to pre-compute. Write up CT first, apply RK4 at runtime.
+**Constrains**:
+  - The CT model equations must be written up in full before integration is applied. This means: coordinate transforms, all physical quantities with dimensions and units, the full state-space ODE in logical and stage coordinates. This write-up is a prerequisite for Step 3.
+  - A paper on discretizing LFRs must be found and reviewed (supervisor action item from 2026-03-20). The LFR structure also operates on the CT equations; understanding how LFRs are discretized informs the Step 3 implementation.
+  - The torch training loop integrates the CT ODE using RK4 with dt=ts. The `LPV_Linear_State_Block` planned in D-011 is revised: instead of computing and storing A_d(Y), B_d(Y), it computes A_c(Y), B_c(Y) and applies one RK4 step.
+  - The LFR structure for LPV augmentation (D-005, confirmed 2026-03-20) also builds on the CT formulation.
+  - Rank of the M matrix should be computed across different trajectories to confirm no rank drop occurs across the operational range.

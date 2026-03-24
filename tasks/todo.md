@@ -390,41 +390,272 @@ Eigenvalues stable and M(Y) positive definite across full operational range.
 
 ---
 
-## Step 3: Combine with Augmentation Framework
+## Step 3: CT Model Write-up and RK4 Integration
 
-**Goal**: Wire the validated LPV baseline into the augmentation interconnect
-and prepare for training on real experimental data.
+**Goal**: Write up the CT model equations in full, implement RK4 integration in torch,
+and establish the foundation for the LFR-based LPV augmentation.
 
-**Blocked on**: Step 2 complete + real experimental gantry data available
+**Key decision**: D-018 (confirmed 2026-03-20 by supervisor). The model is kept in continuous
+time. RK4 with fixed step replaces the pre-discretized ZOH approach in the training loop.
+The LFR structure is used for LPV scheduling (D-005, confirmed 2026-03-20).
 
-### Task 3.1 — Wire into augmentation interconnect
-**File**: `scripts/gantry/gantry_baseline.py`
+**Prerequisites**:
+- [x] Step 2 complete (LPV baseline validated, physics confirmed)
+- [ ] Paper on discretizing LFRs found and reviewed (supervisor action item, 2026-03-20)
+- [ ] M matrix rank validated across different trajectories
+
+**Why CT + RK4 instead of pre-discretized ZOH**:
+Steps 1 and 2 used ZOH discretization to validate that the Python physics matches MATLAB
+exactly. That goal is now achieved. For the augmentation training loop, the supervisor
+confirmed: keep the model in CT, apply RK4 with a fixed time step. Pre-discretizing first
+gets messy and is not needed when RK4 is available. ZOH holds the input constant within
+each interval; RK4 is the integration method used inside that interval.
+
+---
+
+### Task 3.0 — CT model write-up (prerequisite for all of Step 3)
+**File**: `docs/ct-model-writeup.md` (new document)
+
+This is a prerequisite task. No implementation begins until this write-up is complete.
+
+- [ ] State the CT ODE in logical coordinates: A_c(Y), B_c in terms of M(Y), C, K, P
+- [ ] State the coordinate transform from logical to stage (P matrix, numerical values)
+- [ ] List every physical quantity with its symbol, value, dimension, and unit
+      (mb, mh, m1, m2, Jb, Jh, cg1, cg2, cy, cb1, cb2, kb1, kb2, Lb, d, fs)
+- [ ] Explain what q = [X1, X2, Y, dX1, dX2, dY] means physically (stage positions and velocities)
+- [ ] Explain where in the signal chain feedforward (ff) enters (feedforward entry point is
+      where excitation/disturbances would be added)
+- [ ] Document the RK4 formula applied to the CT ODE:
+      k1 = f(x_k, u_k),  k2 = f(x_k + ts/2 * k1, u_k),
+      k3 = f(x_k + ts/2 * k2, u_k),  k4 = f(x_k + ts * k3, u_k)
+      x_{k+1} = x_k + ts/6 * (k1 + 2*k2 + 2*k3 + k4)
+- [ ] Explain why fixed step (RK4) is chosen over variable step (ODE45) and Euler (see D-018)
+
+### Task 3.1 — Validate M matrix invertibility across the operational range
+**File**: `scripts/gantry/validate_rank_m.py` (new script)
+
+Supervisor noted (2026-03-20): "computing rank of m matrix for different trajectories.
+Can see if there is rank drop/can happen. Will probably not happen."
+
+**Method (two-part, rigorous):**
+
+Part A — Analytical rank/positive-definiteness check (complete, no sweep needed):
+M(Y) is a polynomial in Y, so det(M(Y)) is a degree-2 polynomial (parabola) in Y.
+This means the check can be done analytically without any sampling:
+- [ ] Compute det(M(Y)) symbolically as a function of Y (numpy.poly1d or sympy)
+- [ ] Find all real roots of det(M(Y)) = 0
+- [ ] Verify no real root falls inside the ETEL operational range [-0.35, 0.35] m
+- [ ] Confirm det(M(0)) > 0 (sign check at one point, combined with no roots in range, proves
+      det > 0 everywhere in the range)
+- [ ] Apply Sylvester's criterion: verify all three leading principal minors are positive
+      across the range (M[0,0] is constant; 2x2 minor and 3x3 det are both polynomials in Y)
+This approach is complete and rigorous. If no roots exist in the range, M(Y) is positive
+definite (and therefore invertible) everywhere the gantry operates.
+
+Part B — Condition number sweep (numerical health check):
+The condition number is not a polynomial, so use a dense sweep here:
+- [ ] Compute cond(M(Y)) for Y in linspace(-0.35, 0.35, 200)
+- [ ] Plot condition number vs Y; report the maximum
+- [ ] Pass criterion: condition number stays below a reasonable threshold (e.g. < 1e4)
+      A high condition number would not break invertibility but would cause numerical issues
+      in computing M(Y)^{-1} and therefore A_c(Y)
+
+**Literature note**: Find a paper or textbook reference that formally states inertia matrices
+from the Lagrangian formulation are positive definite by construction (T = 0.5 q_dot^T M q_dot > 0
+for any non-zero q_dot implies M positive definite). This provides the theoretical backing
+for why rank drop is not expected, and can be cited in the thesis.
+- [ ] Find and log the reference (add to `docs/references.md`)
+
+- [ ] Save summary plots and analytical result to `simulations/rank_validation/`
+
+### Task 3.2 — RK4 integrator in torch
+**File**: `scripts/gantry/gantry_rk4_torch.py` (new file)
+
+Implements the CT ODE integration using RK4 with fixed step ts = 1/fs. This replaces
+the role of `gantry_lpv_torch.py` (which used matrix_exp ZOH) in the training loop.
+
+- [ ] Implement `gantry_ct_ode(x, u, Y=None)` returning dxdt:
+      Uses A_c(Y), B_c from physical parameters (all torch tensors)
+      Y defaults to x[2] (self-scheduling) when not provided externally
+- [ ] Implement `rk4_step(f, x, u, ts)` as a standalone function
+      k1 = f(x, u), k2 = f(x + ts/2 * k1, u), k3 = f(x + ts/2 * k2, u),
+      k4 = f(x + ts * k3, u); return x + ts/6 * (k1 + 2k2 + 2k3 + k4)
+- [ ] Implement `GantryRK4Simulator(nn.Module)`:
+      `forward(x0, u)`: loop over time steps, call rk4_step at each step
+      Self-scheduling: Y from x[k][2] at each step
+      Output: y_k = C * x_k (C constant, same as before)
+- [ ] Verify gradient flow (BPTT test, same pattern as Task 2.3)
+- [ ] Cross-check against ZOH results from Step 2: BFR should remain above 99.9% (both
+      methods integrate the same CT ODE; small numerical difference expected)
+
+### Task 3.3 — Literature: two open blockers for LFR implementation
+**Output**: Notes in `docs/decisions.md` and/or `docs/lfr-discretization-notes.md`
+
+Both items below must be resolved before Task 3.4 can begin.
+
+**Blocker A — Paper on discretizing LFRs (supervisor action item, 2026-03-20):**
+- [ ] Search literature for a paper on discretizing LFRs
+      (supervisor explicitly mentioned this as an action item in the meeting)
+- [ ] Understand how the LFR structure is handled when integrating with a CT baseline:
+      does the LFR itself need to be discretized separately from the CT ODE,
+      or does applying RK4 to the full CT system subsume the LFR?
+- [ ] Log design implications in `docs/decisions.md` (new decision D-019 if needed)
+
+**Blocker B — Realizing the LPV model with rational parameter dependence as an LFR:**
+The gantry CT model contains M(Y)^{-1}, which makes the entries of A_c(Y) rational
+functions of Y (not polynomial). Converting this to a proper LFR form requires expressing
+the rational Y-dependence as a linear fractional transformation with a structured Δ(Y).
+
+PARTIALLY RESOLVED (checked 2026-03-22):
+
+What IS resolved (augmentation well-posedness):
+- drenth2025_lpv-lfr-rational.pdf covers well-posedness for the LFR structure.
+- Well-posedness condition: Definition 1 (IFAC) defines det(I - Dzw * Δ(p(k))) ≠ 0.
+  Theorem 2.5 (thesis) / Theorem 6 (IFAC) gives sufficient conditions.
+- Direct parameterization: Dzw = exp(-N) with N ≻ 0 guarantees ρ(Dzw) < 1 by
+  construction. Well-posedness satisfied automatically during training.
+
+What is NOT resolved (baseline LFR realization):
+- Drenth's papers address LPV-LFR **identification** (learning M and Δ from data).
+  They do NOT address converting a known physics model (with rational M(Y)^{-1}) into
+  LFR form. The baseline is assumed to already be in LFR form (eq. 5.1 in thesis).
+- Converting A_c(Y) with rational Y-entries to a proper LFR {M_lfr, Δ(Y)} requires an
+  LFT realization procedure. The standard reference is Zhou, Doyle & Glover (1996),
+  "Robust and Optimal Control", Chapter 10. Both Drenth and Hoekstra cite this textbook.
+- Alternative tools: MATLAB Robust Control Toolbox (`lftdata`), LPVcore, lpvtools.
+- [ ] Obtain Zhou, Doyle & Glover (1996) Ch. 10 for LFT realization procedure
+- [ ] Alternatively: ask supervisors for the specific conversion method they recommend
+- [ ] Read Drenth thesis Chapter 5 (pages 29-34): confirm how the baseline LFR is
+      assumed to be structured, and whether any guidance on conversion is given
+- [ ] Log any remaining gaps in `docs/decisions.md`
+
+### Task 3.4 — LFR structure for LPV baseline and augmentation (supervisor confirmed 2026-03-20)
+**File**: `scripts/gantry/gantry_lfr_lpv.py` (new file)
+
+Implements the LFR structure for both the baseline and augmentation, following Drenth's
+notation (thesis eq. 5.1-5.2, IFAC paper eq. 6-7).
+
+**Notation** (Drenth convention, NOT the generic M11/M12/M21/M22):
+- M_lfr = [[A_x, B_w, B_u], [C_z, D_zw, D_zu], [C_y, D_yw, D_yu]]
+  (the constant interconnection matrix; called "M_lfr" to avoid collision with M(Y) inertia)
+- Δ(p) = diag(p * I_η) where p = Y (scheduling variable), η = repetition count
+- The repetition count η is a design parameter: higher η allows richer rational dependence
+  on Y but increases the latent dimension. Start with η determined by the rational degree
+  of M(Y)^{-1} entries. Document choice as a new decision (D-019 or D-020).
+
+**Two LFR subsystems** (Drenth thesis eq. 5.2):
+1. Baseline LFR: captures the known rational Y-dependence from M(Y)^{-1} in A_c(Y).
+   Requires an LFT realization procedure (see Task 3.3 Blocker B).
+2. Augmentation LFR: learned from data, adds correction on top of baseline.
+   Uses Drenth's direct parameterization for well-posedness (D_zw = exp(-N)).
+
+- [ ] Determine η for the baseline LFR (from the rational structure of M(Y)^{-1})
+- [ ] Implement the baseline LFR realization (blocked on Task 3.3 Blocker B)
+- [ ] Implement Δ(Y) block: maps scheduling variable Y to diag(Y * I_η)
+- [ ] Implement M_lfr as trainable parameters using Drenth's notation
+- [ ] Implement augmentation LFR with direct parameterization (D_zw = exp(-N))
+- [ ] Wire both into the SSE_Interconnect alongside the CT+RK4 integration
+- [ ] Validate well-posedness: ρ(D_zw) < 1 holds by construction
+- [ ] Blocked on: Task 3.3 (both blockers) and Task 3.2 (RK4 baseline)
+
+**Notation collision warning**: Throughout this project, "M" refers to two different things:
+- M(Y): the 3x3 inertia matrix from the gantry Lagrangian (physics)
+- M_lfr: the constant interconnection matrix in the LFR structure (control theory)
+Always use M(Y) or M_lfr to disambiguate. Never use bare "M" without context.
+
+### Task 3.5 — Wire CT + RK4 baseline into augmentation interconnect
+**File**: `scripts/gantry/gantry_baseline.py` (updated from original plan)
+
+The CT + RK4 baseline requires a custom block class, not the existing `Linear_State_Block`.
+
+- [ ] Implement `CT_RK4_State_Block(Block)`:
+      Takes x_k and u_k, performs one RK4 step using `gantry_ct_ode`, returns x_{k+1}
+      Computes A_c(Y), B_c at each forward call (Y from x_k[2])
+- [ ] Implement `Linear_Output_Block(C, D)` (unchanged, C is constant)
 - [ ] Instantiate `Interconnect(nx=6, nu=3, ny=3)`
-- [ ] Instantiate `Linear_State_Block(A, B)` and `Linear_Output_Block(C, D)`
-- [ ] Wire with `selection_matrix` / `expansion_matrix` (FP_state_ix = np.arange(6))
-- [ ] Run forward pass — confirm no shape errors
+- [ ] Wire with selection/expansion matrices (FP_state_ix = np.arange(6))
+- [ ] Run forward pass: confirm no shape errors and gradient flow works
 
-### Task 3.2 — Normalization
-- [ ] Apply `normalize_linear_ss_matrices()` once real data is available
+### Task 3.6 — Normalization
+- [ ] Apply normalization once real experimental data is available
 - [ ] Compute T_x, T_u, T_y from training data statistics
+- [ ] Note: normalization must be compatible with the CT ODE (normalizing the state changes
+      the ODE coefficients; document how this is handled)
 
-### Task 3.3 — Promote to trainable baseline
-- [ ] Replace `Linear_State_Block` with `Parameterized_Linear_State_Block`
-- [ ] Replace `Linear_Output_Block` with `Parameterized_Linear_Output_Block`
-- [ ] Set RMSE_baseline from Step 2 simulation results
-
-### Task 3.4 — Add augmentation network and train
+### Task 3.7 — Add augmentation network and train
 - [ ] Add `Static_ANN_Block` or `Dynamic_ANN_Block` as parallel augmentation
-- [ ] Train on experimental data
+- [ ] Step 1: fit to least squares (minimize MSE on output)
+- [ ] Step 2: adjust cost function for settling time (see Step 4)
 - [ ] Evaluate on held-out data (unseen Y positions, unseen motion profiles)
+
+**KEEP IN MIND — M(Y) invertibility under trainable parameters:**
+If any inertia parameters (mb, mh, m1, m2, Jb, Jh, Lb, d) are made trainable during
+augmentation, the pre-training invertibility verification (Task 3.1) no longer holds.
+The roots of det(M(Y)) shift with every parameter update. Options to handle this:
+  1. Keep inertia parameters fixed; only allow damping (cg1, cg2, cy, cb1, cb2) and
+     stiffness (kb1, kb2) to be trainable. These do not enter M(Y) so invertibility is
+     unaffected. This is the recommended starting point.
+  2. If inertia parameters must be trained: add a regularization term or hard constraint
+     that keeps the minimum eigenvalue of M(Y) above a safe threshold.
+  3. Monitor cond(M(Y)) during training and stop/warn if it degrades.
+Decide which parameters are trainable before starting Task 3.7 and document in decisions.md.
+
+---
+
+## Step 4: Research Novelties Development
+
+These are confirmed research contributions (supervisor meeting 2026-03-20).
+
+### Novelty 1: Orthogonal projection regularization
+**Status**: Theoretical development ongoing. Theory must be developed before implementation.
+- [ ] Formalize the orthogonal projection approach (Gyorok et al. base)
+- [ ] The extra states introduced by the augmentation are not fully theorized yet
+      (supervisor note: "extra states not really thought about yet, will also need theoretical development")
+
+### Novelty 2: Settling time cost function (supervisor identified, 2026-03-20)
+**Status**: Planned, not started.
+
+Supervisor noted: "first step fit model to least square fit. then settling time. change cost
+function for that. another novelty: tuning cost function for settling error bound."
+
+- [ ] Design cost function that emphasizes settling time and settling error bound
+      (not just squared loss, which treats all time steps equally)
+- [ ] Literature review: existing cost functions for settling time in system ID
+- [ ] Implement and test on gantry simulation data first
+
+### Novelty 3: Local FRF integration into global fitting
+**Status**: Identified as interesting, open question on experiment design.
+
+Supervisor note: "use local measurements, small excitations, local frf. can include in total
+fitting of the model. their expectation: if you take local frf response will describe system
+really well. in squared loss function hard to emphasise that. combine local data, if not
+able to estimate global model -- about experiment design."
+
+- [ ] Investigate how to combine local FRF measurements with global trajectory fitting
+- [ ] Design: how to weight local FRF vs global trajectory loss
+- [ ] This is also tied to experiment design (what excitations to use)
+
+---
+
+## April 9 Meeting Preparation
+
+Next meeting: April 9, afternoon (online or on campus), supervisor preference confirmed.
+
+- [ ] Clearly explain the MATLAB model: what each file does, what each q signal means,
+      what the physical quantities are (units, dimensions)
+- [ ] Prepare slides with a picture of the model structure (block diagram of gantry, signals)
+- [ ] Prepare Gantt chart with absolute dates (not relative dates)
+- [ ] Find and review paper on discretizing LFRs (see Task 3.3) and summarize findings
+- [ ] Write up CT conversion (Task 3.0) so it can be presented
+- [ ] Be ready to answer: what is q? What are X, Y positions physically? Where does ff enter?
 
 ---
 
 ## Deferred
 
-- LPV-LFR augmentation adaptation (D-005)
-- `torch.compile` on `LPV_Linear_State_Block.forward()`: one-line optimisation once eager-mode
-  implementation is validated. Static matrix shapes (6×6, 6×3) and no data-dependent control
-  flow make it a good candidate. Must test compatibility with `torch.utils.checkpoint`
+- `torch.compile` on the RK4 state block: one-line optimization once eager-mode
+  implementation is validated. Static input shapes and no data-dependent control flow
+  make it a good candidate. Must test compatibility with `torch.utils.checkpoint`
   (stable from PyTorch 2.1+). Do not add until correctness is confirmed in eager mode.
-- Orthogonal projection regularization (Aspect 3, research-methods.md)
+- Orthogonal projection regularization (full implementation, blocked on theory in Novelty 1 above)
+- F1Tenth application: supervisor noted (2026-03-20) this is simulation-only.

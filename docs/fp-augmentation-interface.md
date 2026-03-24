@@ -6,12 +6,20 @@ Describes the interface between a First Principles (FP) baseline model and the a
 
 ## Paper: Required Form of the Baseline (1.pdf, Section 2)
 
-The baseline must be expressed in **discrete-time** state-space form:
+The baseline must produce a **discrete-time** mapping from (x_k, u_k) to x_{k+1}:
 
 ```
 x̃_{k+1} = f_base(θ_base, x̃_k, u_k)    state transition
 ỹ_k      = h_base(θ_base, x̃_k, u_k)    output readout
 ```
+
+**Note on CT + RK4 approach (D-018, confirmed 2026-03-20)**: For the gantry, the baseline
+is implemented as a continuous-time ODE integrated with RK4 at each step. The mapping
+x_{k+1} = RK4(f_c, x_k, u_k, ts) satisfies the discrete-time interface above — it still
+maps (x_k, u_k) to x_{k+1} — but the internal computation is not a linear A*x + B*u.
+This requires a custom block class (`CT_RK4_State_Block`) instead of `Linear_State_Block`.
+The output block (`Linear_Output_Block(C, D)`) is unchanged since C is constant.
+Pre-discretizing with ZOH is not used in the training loop (only in Steps 1-2 for validation).
 
 | Symbol | Meaning | Dimension |
 |--------|---------|-----------|
