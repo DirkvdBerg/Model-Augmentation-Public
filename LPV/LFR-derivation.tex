@@ -93,17 +93,27 @@ with
     C_c = \begin{bmatrix} I_3 & 0 \end{bmatrix}.
     \label{eq:ctmatrices}
 \end{equation}
-The parameter dependence is rational in $Y$ (through $M(Y)^{-1}$), so a standard affine
-LPV representation does not exist; an LFR is required.
+The parameter dependence is rational in $Y$ through $M(Y)^{-1}$.
+Consequently, the model is not in a standard affine LPV state-space form in the
+scheduling variable $Y$.
+The construction below gives an exact LPV-LFR realization of this rational dependence.
 
 \sourcenote{\texttt{kamtin-fp-model/03 Simulink gantry/functions/getss.m}}
 
-\begin{notebox}{Stage coordinates}
-The MATLAB model is in logical coordinates $q = [X,\,\Theta,\,Y]^\top$.
-Stage positions $q_s = [q_{X1},\,q_{X2},\,q_Y]^\top$ are related by $q_s = P^\top q$.
-The LFR derivation below uses logical coordinates throughout.
-If the experimental data are in stage coordinates, the output row is
-$C_y = P^\top[I_3,\,0]$ instead of $[I_3,\,0]$.
+\begin{notebox}{Stage coordinates and implementation}
+The derivation below is written in logical coordinates
+$q = [X,\,\Theta,\,Y]^\top$, because this is the coordinate system in which the
+MATLAB equations are defined.
+
+If the implemented model must operate in stage coordinates
+$q_s = [q_{X1},\,q_{X2},\,q_Y]^\top$, then $q_s = P^\top q$ and the full state
+must be transformed by the corresponding block transformation
+$x_s = \mathrm{blkdiag}(P^\top,\,P^\top)\,x$.
+In that case, the realized baseline can be similarity-transformed to stage
+coordinates before implementation.
+
+If only the measured output is needed in stage coordinates, then the output row
+becomes $C_y = P^\top [I_3,\,0]$ instead of $[I_3,\,0]$.
 \end{notebox}
 
 %------------------------------------------------------------------------------
@@ -122,8 +132,8 @@ where $G$ is a constant (parameter-independent) matrix partitioned as
     \end{bmatrix},
     \label{eq:Gmat}
 \end{equation}
-and $\Delta(p)$ is a block-diagonal matrix whose entries depend only on the scheduling
-parameter $p$ \cite{drenth2025lpvlfr}.
+and $\Delta(p)$ is a block-diagonal matrix whose entries depend only on the
+scheduling parameter $p$.
 
 The system equations are
 \begin{align}
@@ -137,7 +147,8 @@ original parameter-dependent state-space, provided the algebraic loop
 \eqref{eq:lfr_z}--\eqref{eq:lfr_loop} has a unique solution for $z$ given $x$ and $u$
 (well-posedness, see Section~\ref{sec:wp}).
 
-\sourcenote{Drenth et al.\ \cite{drenth2025lpvlfr}, eq.\ (6)--(7).}
+\sourcenote{Drenth et al., IFAC 2025, eq.\ (6)--(7). Update cite key to
+\texttt{drenth2025rational} if that is the final bibliography key.}
 
 %------------------------------------------------------------------------------
 \section{Decomposition of \texorpdfstring{$M(Y)$}{M(Y)}}
@@ -192,6 +203,8 @@ Observe that $w = Y\,z$, so define the scheduling block
 \end{equation}
 The scalar $Y$ enters the model exclusively through $\Delta(Y)$;
 all remaining structure is parameter-independent.
+This establishes a valid LPV-LFR realization of the baseline model.
+No claim of minimality is made for the chosen latent dimension.
 
 %------------------------------------------------------------------------------
 \section{Constant \texorpdfstring{$G$}{G} Matrix}
@@ -241,7 +254,9 @@ Reading off $A$, $B_w$, $B_u$ from \eqref{eq:upper} and \eqref{eq:lower_expanded
     B_u = \begin{bmatrix} 0 \\ M_0^{-1}P \end{bmatrix}.
     \label{eq:state_mats}
 \end{equation}
-Note that $A = A_c(0)$ is the state matrix evaluated at $Y = 0$.
+For the choice $M_0 = M(0)$, the constant matrix $A$ equals $A_c(0)$.
+More generally, if a different constant reference matrix $M_0 = M(Y_0)$ were chosen,
+the same construction would proceed with that choice.
 
 \subsection{Loop equation}
 
@@ -288,6 +303,15 @@ With $z = [v;\,v_1]$, $w = [v_1;\,v_2]$, $\Delta(Y) = Y\,I_6$:
 \end{alignat}
 All entries depend only on $M_0, M_1, M_2, K, C, P$ (all constant matrices).
 \end{resultbox}
+
+\begin{notebox}{Representation versus runtime evaluation}
+The matrices above define a constant LPV-LFR representation of the baseline.
+For simulation or training, one may either:
+(i) evaluate the explicit LFR algebraic loop at each scheduling value $Y$, or
+(ii) use the equivalent collapsed state equation
+$\dot{x} = A_c(Y)x + B_c(Y)u$ obtained after solving the loop.
+These two descriptions are algebraically equivalent for the present construction.
+\end{notebox}
 
 %------------------------------------------------------------------------------
 \section{Algebraic Verification}
