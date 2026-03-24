@@ -399,6 +399,26 @@ and establish the foundation for the LFR-based LPV augmentation.
 time. RK4 with fixed step replaces the pre-discretized ZOH approach in the training loop.
 The LFR structure is used for LPV scheduling (D-005, confirmed 2026-03-20).
 
+**Important clarification after derivation review**:
+Step 3 currently mixes two different kinds of statements:
+- what is already mathematically established
+- what is still an implementation decision
+
+What is established:
+- the CT quasi-LPV baseline can be written as an explicit LPV-LFR using the
+  latent-variable construction in `LPV/LFR-derivation.tex`
+- the resulting algebraic loop is well-posed because it reduces to solving
+  `M(Y) v = f_gen` for this specific construction
+
+What is still not fixed:
+- whether the implemented baseline state should live in logical or stage coordinates
+- whether runtime RK4 should evaluate the explicit LFR loop or the equivalent
+  collapsed CT vector field
+- whether the chosen LFR repetition count is accepted as "valid and sufficient"
+  or needs a stronger minimality argument
+
+These decision checkpoints should be resolved before Task 3.4 code starts.
+
 **Prerequisites**:
 - [x] Step 2 complete (LPV baseline validated, physics confirmed)
 - [ ] Paper on discretizing LFRs found and reviewed (supervisor action item, 2026-03-20)
@@ -501,6 +521,14 @@ Both items below must be resolved before Task 3.4 can begin.
       or does applying RK4 to the full CT system subsume the LFR?
 - [ ] Log design implications in `docs/decisions.md` (new decision D-019 if needed)
 
+**Blocker A interpretation note**:
+This blocker is now narrower than it first appeared. Because the project moved
+to CT+RK4, the missing literature is no longer needed to justify the existence
+of the baseline LFR itself. It is mainly needed to answer a more specific
+implementation question: whether there is any reason the explicit LFR loop must
+also be treated as a separately discretized object, or whether RK4 on the full
+CT realization is sufficient.
+
 **Blocker B — Realizing the LPV model with rational parameter dependence as an LFR:**
 The gantry CT model contains M(Y)^{-1}, which makes the entries of A_c(Y) rational
 functions of Y (not polynomial). Converting this to a proper LFR form requires expressing
@@ -529,6 +557,20 @@ What is NOT resolved (baseline LFR realization):
       assumed to be structured, and whether any guidance on conversion is given
 - [ ] Log any remaining gaps in `docs/decisions.md`
 
+**Blocker B interpretation note**:
+The derivation document has now changed the shape of this blocker. It is no
+longer accurate to treat the project as if there were no baseline realization
+method at all. There is now a direct algebraic realization available.
+
+The remaining question is narrower:
+- do we accept the latent-variable realization from `LPV/LFR-derivation.tex` as
+  the project baseline, or
+- do we still require a textbook or tool-based LFT realization for comparison,
+  minimality, or supervisor preference?
+
+This should be written explicitly before implementation, otherwise the task can
+ drift between "derive any valid realization" and "derive a canonical one".
+
 ### Task 3.4 — LFR structure for LPV baseline and augmentation (supervisor confirmed 2026-03-20)
 **File**: `scripts/gantry/gantry_lfr_lpv.py` (new file)
 
@@ -545,9 +587,20 @@ notation (thesis eq. 5.1-5.2, IFAC paper eq. 6-7).
 
 **Two LFR subsystems** (Drenth thesis eq. 5.2):
 1. Baseline LFR: captures the known rational Y-dependence from M(Y)^{-1} in A_c(Y).
-   Requires an LFT realization procedure (see Task 3.3 Blocker B).
+   A valid latent-variable realization now exists in `LPV/LFR-derivation.tex`.
+   Remaining decision: implement that realization directly, or replace/compare
+   it with a textbook/tool-based LFT realization if one is obtained later.
 2. Augmentation LFR: learned from data, adds correction on top of baseline.
    Uses Drenth's direct parameterization for well-posedness (D_zw = exp(-N)).
+
+**Decision checkpoint before implementation**:
+- [ ] Decide whether the baseline will be implemented in logical coordinates and
+      transformed around the data interface, or similarity-transformed fully to
+      stage coordinates before coding
+- [ ] Decide whether `gantry_lfr_lpv.py` represents a runtime simulation object
+      or a representation/proof object that feeds an equivalent RK4 vector field
+- [ ] Decide whether the current repetition count is accepted as sufficient, or
+      whether a minimality/canonical-form argument is required
 
 - [ ] Determine η for the baseline LFR (from the rational structure of M(Y)^{-1})
 - [ ] Implement the baseline LFR realization (blocked on Task 3.3 Blocker B)
@@ -567,6 +620,11 @@ Always use M(Y) or M_lfr to disambiguate. Never use bare "M" without context.
 **File**: `scripts/gantry/gantry_baseline.py` (updated from original plan)
 
 The CT + RK4 baseline requires a custom block class, not the existing `Linear_State_Block`.
+
+**Important scope note**:
+Task 3.5 should not start until Task 3.4 has answered the representation-versus-
+runtime question. Otherwise there is a risk of building `CT_RK4_State_Block`
+against the wrong abstraction boundary.
 
 - [ ] Implement `CT_RK4_State_Block(Block)`:
       Takes x_k and u_k, performs one RK4 step using `gantry_ct_ode`, returns x_{k+1}
