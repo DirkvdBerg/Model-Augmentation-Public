@@ -1,0 +1,955 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.75em}{}
+\titlespacing*{\section}{0pt}{1.4ex plus .2ex minus .2ex}{0.9ex}
+\titlespacing*{\subsection}{0pt}{1.0ex plus .2ex minus .2ex}{0.5ex}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\adj}{\operatorname{adj}}
+\newcommand{\diag}{\operatorname{diag}}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries Dual-Gantry CT LPV-LFR Realization}\\[0.5em]
+    {\large Supervisor-Facing Derivation Note}
+\end{center}
+
+\vspace{0.7em}
+
+%------------------------------------------------------------------------------
+\section{Purpose and Scope}
+%------------------------------------------------------------------------------
+
+This note derives an exact continuous-time LPV-LFR realization of the
+dual-gantry baseline model. The generic LPV-LFR framework is taken from
+Drenth's thesis \cite{drenth2025thesis}. The particular latent-variable
+construction, the constant interconnection matrices, and the reduction of the
+well-posedness problem to invertibility of the gantry inertia matrix are
+plant-specific steps for the present dual-gantry model.
+
+The derivation is organized around one exactness requirement: after eliminating
+the latent loop, the LPV-LFR must collapse back to the original MATLAB-derived
+continuous-time state-space model.
+
+%------------------------------------------------------------------------------
+\section{Starting Point: Dual-Gantry CT Model}
+%------------------------------------------------------------------------------
+
+In logical coordinates
+\[
+q = [X,\Theta,Y]^\top \in \R^3,
+\]
+the dual-gantry equations of motion are
+\begin{equation}
+    M(Y)\,\ddot{q}(t) + C\,\dot{q}(t) + K\,q(t) = f_\ell(t),
+    \label{eqs:eom}
+\end{equation}
+with
+\begin{equation}
+    M(Y) =
+    \begin{bmatrix}
+        m_1 + m_2 + m_b + m_h &
+        \dfrac{(m_1-m_2)L_b}{2} - m_h Y &
+        0 \\
+        \dfrac{(m_1-m_2)L_b}{2} - m_h Y &
+        J_b + J_h + \dfrac{(m_1+m_2)L_b^2}{4} + m_h d^2 + m_h Y^2 &
+        -m_h d \\
+        0 & -m_h d & m_h
+    \end{bmatrix}.
+    \label{eqs:mass}
+\end{equation}
+Here $C \in \R^{3\times3}$ and $K \in \R^{3\times3}$ denote the constant
+damping and stiffness matrices of the baseline gantry model.
+
+This model is second order in the configuration coordinates $q$. The standard
+first-order state choice is therefore
+\begin{equation}
+    x = \begin{bmatrix} q \\ \dot{q} \end{bmatrix} \in \R^6,
+    \label{eqs:state}
+\end{equation}
+which stores the positions and velocities needed to evolve the second-order
+mechanics.
+
+Let
+\begin{equation}
+    u := f_\ell
+    \label{eqs:input}
+\end{equation}
+denote the generalized logical input. The MATLAB-derived continuous-time
+state-space model is then
+\begin{equation}
+    \dot{x}(t) = A_c(Y)\,x(t) + B_c(Y)\,u(t),
+    \qquad
+    y(t) = C_c\,x(t),
+    \label{eqs:ctss}
+\end{equation}
+with
+\begin{equation}
+    A_c(Y) =
+    \begin{bmatrix}
+        0 & I_3 \\
+        -M(Y)^{-1}K & -M(Y)^{-1}C
+    \end{bmatrix},
+    \qquad
+    B_c(Y) =
+    \begin{bmatrix}
+        0 \\
+        M(Y)^{-1}
+    \end{bmatrix},
+    \qquad
+    C_c = \begin{bmatrix} I_3 & 0 \end{bmatrix}.
+    \label{eqs:ctmats}
+\end{equation}
+This is the target continuous-time model that the LPV-LFR realization must
+recover after elimination of the latent loop.
+
+The output choice is
+\begin{equation}
+    y = q.
+    \label{eqs:yq}
+\end{equation}
+This matches the MATLAB output map, because
+\begin{equation}
+    C_c x
+    =
+    \begin{bmatrix} I_3 & 0 \end{bmatrix}
+    \begin{bmatrix} q \\ \dot{q} \end{bmatrix}
+    = q.
+    \label{eqs:ccx}
+\end{equation}
+
+%------------------------------------------------------------------------------
+\section{Why the Model Is Rational and Why an LPV-LFR Is Needed}
+%------------------------------------------------------------------------------
+
+In the present single-scheduler setting, an affine dependence on $Y$ means that
+each matrix entry depends linearly on $Y$, while a rational dependence on $Y$
+means that matrix entries are ratios of polynomials in $Y$
+\cite{drenth2025thesis}.
+
+The matrices in \eqref{eqs:ctmats} contain $M(Y)^{-1}$. Since $M(Y)$ is
+polynomial in $Y$, its inverse satisfies
+\begin{equation}
+    M(Y)^{-1} = \frac{\adj(M(Y))}{\det(M(Y))},
+    \label{eqs:adjdet}
+\end{equation}
+where $\adj(M(Y))$ and $\det(M(Y))$ are polynomial in $Y$. Therefore the
+entries of $M(Y)^{-1}$ are rational functions of $Y$ wherever $M(Y)$ is
+invertible. It follows that the exact continuous-time dual-gantry model is
+rational in $Y$, not affine in $Y$.
+
+This is the reason to seek a rational LPV-LFR realization: the exact
+$Y$-dependence can then be represented through a constant interconnection and a
+scheduling block, rather than by introducing an unnecessary affine
+overbounding.
+
+%------------------------------------------------------------------------------
+\section{Drenth's CT LPV-LFR Target Form}
+%------------------------------------------------------------------------------
+
+Drenth defines a continuous-time LPV-LFR as the interconnection between a
+constant matrix $G$ and a scheduling block $\Delta(p)$
+\cite{drenth2025thesis}. The equations are
+\begin{align}
+    \dot{x} &= A x + B_w w + B_u u,
+    \label{eqs:lfrstate} \\
+    z &= C_z x + D_{zw} w + D_{zu} u,
+    \label{eqs:lfrz} \\
+    y &= C_y x + D_{yw} w + D_{yu} u,
+    \label{eqs:lfry} \\
+    w &= \Delta(p) z,
+    \label{eqs:lfrw}
+\end{align}
+with constant interconnection matrix
+\begin{equation}
+    G =
+    \begin{bmatrix}
+        A & B_w & B_u \\
+        C_z & D_{zw} & D_{zu} \\
+        C_y & D_{yw} & D_{yu}
+    \end{bmatrix}.
+    \label{eqs:G}
+\end{equation}
+All scheduling dependence is carried by $\Delta(p)$; the blocks of $G$ are
+constant.
+
+Drenth also allows repeated block-diagonal scheduling structures of the form
+\begin{equation}
+    \Delta(p) =
+    \diag\!\bigl(p_1 I_{\eta_1}, \dots, p_{n_p} I_{\eta_{n_p}}\bigr),
+    \label{eqs:deltageneric}
+\end{equation}
+which is the structural template used below.
+
+%------------------------------------------------------------------------------
+\section{Scheduling Choice and Repeated-Delta Structure}
+%------------------------------------------------------------------------------
+
+The physical scheduling quantity in the dual-gantry model is the single
+coordinate $Y$. Although $Y^2$ appears in \eqref{eqs:mass}, it is not
+introduced as a second independent scheduling variable. This follows the
+motivation in Drenth's discussion of rational versus affine embeddings
+\cite{drenth2025thesis}: repeated use of one physical scheduler preserves the
+coupling between $Y$ and $Y^2$, whereas treating them as independent scheduling
+variables would overbound that coupling.
+
+Accordingly, the plant-specific realization below uses repeated action of the
+same scalar scheduler $Y$ inside $\Delta(Y)$, rather than introducing multiple
+independent scheduling coordinates. In the notation of
+\eqref{eqs:deltageneric}, the chosen realization has one independent scheduler,
+$p_1 = Y$, with repetition count fixed later by the chosen loop signals.
+
+%------------------------------------------------------------------------------
+\section{Plant-Specific Latent Variables and Loop Signals}
+%------------------------------------------------------------------------------
+
+Define the generalized force
+\begin{equation}
+    f_{\mathrm{gen}} = [-K,-C]\,x + u.
+    \label{eqs:fgen}
+\end{equation}
+Here $[-K,-C]$ denotes the horizontal concatenation of $-K$ and $-C$.
+Now define the plant-specific latent vectors
+\begin{equation}
+    v = M(Y)^{-1} f_{\mathrm{gen}},
+    \qquad
+    v_1 = Y v,
+    \qquad
+    v_2 = Y^2 v = Y v_1.
+    \label{eqs:vv1v2}
+\end{equation}
+Here $v$, $v_1$, and $v_2$ are whole vectors in $\R^3$. In logical coordinates,
+\begin{equation}
+    v = \ddot{q} =
+    \begin{bmatrix}
+        \ddot{X} \\
+        \ddot{\Theta} \\
+        \ddot{Y}
+    \end{bmatrix}.
+    \label{eqs:vlogic}
+\end{equation}
+The vectors $v_1$ and $v_2$ are derived latent vectors, not physical states and
+not components of $v$. They are internal helper variables introduced for this
+particular dual-gantry realization; Drenth's framework supplies the generic
+roles of $z$ and $w$, but not this plant-specific choice of $v$, $v_1$, and
+$v_2$.
+
+Decompose the inertia matrix as
+\begin{equation}
+    M(Y) = M_0 + Y M_1 + Y^2 M_2,
+    \label{eqs:decomp}
+\end{equation}
+with
+\begin{align}
+    M_0 &=
+    \begin{bmatrix}
+        m_1 + m_2 + m_b + m_h &
+        \dfrac{(m_1-m_2)L_b}{2} &
+        0 \\
+        \dfrac{(m_1-m_2)L_b}{2} &
+        J_b + J_h + \dfrac{(m_1+m_2)L_b^2}{4} + m_h d^2 &
+        -m_h d \\
+        0 & -m_h d & m_h
+    \end{bmatrix},
+    \label{eqs:M0} \\
+    M_1 &=
+    \begin{bmatrix}
+        0 & -m_h & 0 \\
+        -m_h & 0 & 0 \\
+        0 & 0 & 0
+    \end{bmatrix},
+    \label{eqs:M1} \\
+    M_2 &=
+    \begin{bmatrix}
+        0 & 0 & 0 \\
+        0 & m_h & 0 \\
+        0 & 0 & 0
+    \end{bmatrix}.
+    \label{eqs:M2}
+\end{align}
+
+Choose the loop signals
+\begin{equation}
+    z =
+    \begin{bmatrix}
+        v \\
+        v_1
+    \end{bmatrix}
+    \in \R^6,
+    \qquad
+    w =
+    \begin{bmatrix}
+        v_1 \\
+        v_2
+    \end{bmatrix}
+    \in \R^6.
+    \label{eqs:zw}
+\end{equation}
+Because $v \in \R^3$ and $v_1 \in \R^3$, both $z$ and $w$ lie in $\R^6$. This
+fixes the repeated block dimension in the chosen realization. With
+\begin{equation}
+    \Delta(Y) =
+    \begin{bmatrix}
+        Y I_3 & 0 \\
+        0 & Y I_3
+    \end{bmatrix}
+    = Y I_6,
+    \label{eqs:Delta}
+\end{equation}
+one obtains
+\begin{equation}
+    \Delta(Y) z
+    =
+    \begin{bmatrix}
+        Yv \\
+        Yv_1
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        v_1 \\
+        v_2
+    \end{bmatrix}
+    = w.
+    \label{eqs:Deltaz}
+\end{equation}
+Thus the chosen repeated block is one independent scheduler $Y$ repeated over
+six latent channels. No minimality claim is made for this choice.
+
+%------------------------------------------------------------------------------
+\section{Derivation of the Constant LPV-LFR Interconnection}
+%------------------------------------------------------------------------------
+
+Drenth's framework fixes the block structure \eqref{eqs:lfrstate}--\eqref{eqs:G}.
+The explicit coefficients below are obtained by plant-specific coefficient
+matching once the dual-gantry equations have been rewritten in terms of $x$,
+$w$, and $u$.
+
+\subsection{Rewrite the Acceleration Equation}
+
+From \eqref{eqs:vv1v2},
+\[
+M(Y)\,v = f_{\mathrm{gen}}.
+\]
+Using \eqref{eqs:decomp},
+\[
+(M_0 + Y M_1 + Y^2 M_2)\,v = f_{\mathrm{gen}}.
+\]
+Using $v_1 = Yv$ and $v_2 = Y^2 v$, this becomes
+\begin{equation}
+    M_0 v = f_{\mathrm{gen}} - M_1 v_1 - M_2 v_2.
+    \label{eqs:M0v}
+\end{equation}
+Substitute \eqref{eqs:fgen}:
+\begin{equation}
+    M_0 v = [-K,-C]\,x + u - M_1 v_1 - M_2 v_2.
+    \label{eqs:M0vsub}
+\end{equation}
+Multiply by $M_0^{-1}$:
+\begin{equation}
+    v = M_0^{-1}[-K,-C]\,x - M_0^{-1}M_1 v_1 - M_0^{-1}M_2 v_2 + M_0^{-1}u.
+    \label{eqs:vexpanded}
+\end{equation}
+Since
+\[
+w =
+\begin{bmatrix}
+    v_1 \\
+    v_2
+\end{bmatrix},
+\]
+the terms involving $v_1$ and $v_2$ can be written as
+\begin{equation}
+    \begin{bmatrix}
+        -M_0^{-1}M_1 & -M_0^{-1}M_2
+    \end{bmatrix}
+    w
+    =
+    -M_0^{-1}M_1 v_1 - M_0^{-1}M_2 v_2.
+    \label{eqs:wrewrite}
+\end{equation}
+Hence
+\begin{equation}
+    v =
+    M_0^{-1}[-K,-C]\,x
+    +
+    \begin{bmatrix}
+        -M_0^{-1}M_1 & -M_0^{-1}M_2
+    \end{bmatrix}
+    w
+    +
+    M_0^{-1}u.
+    \label{eqs:vxwu}
+\end{equation}
+
+\subsection{Derive the State Equation}
+
+From the state definition \eqref{eqs:state},
+\begin{equation}
+    \dot{x}
+    =
+    \begin{bmatrix}
+        \dot{q} \\
+        \ddot{q}
+    \end{bmatrix}.
+    \label{eqs:xdotdef}
+\end{equation}
+Using \eqref{eqs:vlogic}, $\ddot{q} = v$, so
+\begin{equation}
+    \dot{x}
+    =
+    \begin{bmatrix}
+        \dot{q} \\
+        v
+    \end{bmatrix}.
+    \label{eqs:xdotv}
+\end{equation}
+The upper block is
+\begin{equation}
+    \dot{q}
+    =
+    \begin{bmatrix}
+        0 & I_3
+    \end{bmatrix}
+    x,
+    \label{eqs:qdotselector}
+\end{equation}
+because
+\[
+\begin{bmatrix}
+    0 & I_3
+\end{bmatrix}
+\begin{bmatrix}
+    q \\
+    \dot{q}
+\end{bmatrix}
+= \dot{q}.
+\]
+
+For the lower block, rewrite the first term in \eqref{eqs:vxwu} as
+\begin{equation}
+    M_0^{-1}[-K,-C]
+    =
+    \begin{bmatrix}
+        -M_0^{-1}K & -M_0^{-1}C
+    \end{bmatrix}.
+    \label{eqs:blocksplit}
+\end{equation}
+Then \eqref{eqs:vxwu} becomes
+\begin{equation}
+    v
+    =
+    \begin{bmatrix}
+        -M_0^{-1}K & -M_0^{-1}C
+    \end{bmatrix}
+    x
+    +
+    \begin{bmatrix}
+        -M_0^{-1}M_1 & -M_0^{-1}M_2
+    \end{bmatrix}
+    w
+    +
+    M_0^{-1}u.
+    \label{eqs:vfinalblock}
+\end{equation}
+Stacking \eqref{eqs:qdotselector} and \eqref{eqs:vfinalblock} gives
+\begin{equation}
+    \dot{x}
+    =
+    \begin{bmatrix}
+        0 & I_3 \\
+        -M_0^{-1}K & -M_0^{-1}C
+    \end{bmatrix}
+    x
+    +
+    \begin{bmatrix}
+        0 & 0 \\
+        -M_0^{-1}M_1 & -M_0^{-1}M_2
+    \end{bmatrix}
+    w
+    +
+    \begin{bmatrix}
+        0 \\
+        M_0^{-1}
+    \end{bmatrix}
+    u.
+    \label{eqs:stateblocks}
+\end{equation}
+Therefore
+\begin{equation}
+    A =
+    \begin{bmatrix}
+        0 & I_3 \\
+        -M_0^{-1}K & -M_0^{-1}C
+    \end{bmatrix},
+    \qquad
+    B_w =
+    \begin{bmatrix}
+        0 & 0 \\
+        -M_0^{-1}M_1 & -M_0^{-1}M_2
+    \end{bmatrix},
+    \qquad
+    B_u =
+    \begin{bmatrix}
+        0 \\
+        M_0^{-1}
+    \end{bmatrix}.
+    \label{eqs:ABmats}
+\end{equation}
+
+\subsection{Derive the Loop-Output Equation}
+
+By definition,
+\begin{equation}
+    z =
+    \begin{bmatrix}
+        v \\
+        v_1
+    \end{bmatrix}.
+    \label{eqs:zdef}
+\end{equation}
+The first block is already given by \eqref{eqs:vxwu}. For the second block,
+because
+\[
+w =
+\begin{bmatrix}
+    v_1 \\
+    v_2
+\end{bmatrix},
+\]
+the first half of $w$ is exactly $v_1$, so
+\begin{equation}
+    v_1 =
+    \begin{bmatrix}
+        I_3 & 0
+    \end{bmatrix}
+    w.
+    \label{eqs:v1selector}
+\end{equation}
+There is no direct dependence of $v_1$ on $x$ or $u$. Hence
+\begin{equation}
+    z
+    =
+    \begin{bmatrix}
+        M_0^{-1}[-K,-C] \\
+        0
+    \end{bmatrix}
+    x
+    +
+    \begin{bmatrix}
+        -M_0^{-1}M_1 & -M_0^{-1}M_2 \\
+        I_3 & 0
+    \end{bmatrix}
+    w
+    +
+    \begin{bmatrix}
+        M_0^{-1} \\
+        0
+    \end{bmatrix}
+    u.
+    \label{eqs:loopblocks}
+\end{equation}
+Therefore
+\begin{equation}
+    C_z =
+    \begin{bmatrix}
+        M_0^{-1}[-K,-C] \\
+        0
+    \end{bmatrix},
+    \qquad
+    D_{zw} =
+    \begin{bmatrix}
+        -M_0^{-1}M_1 & -M_0^{-1}M_2 \\
+        I_3 & 0
+    \end{bmatrix},
+    \qquad
+    D_{zu} =
+    \begin{bmatrix}
+        M_0^{-1} \\
+        0
+    \end{bmatrix}.
+    \label{eqs:CDloop}
+\end{equation}
+
+\subsection{Derive the Output Equation}
+
+The chosen output is $y=q$. Since
+\[
+x =
+\begin{bmatrix}
+    q \\
+    \dot{q}
+\end{bmatrix},
+\]
+one has
+\begin{equation}
+    y =
+    \begin{bmatrix}
+        I_3 & 0
+    \end{bmatrix}
+    x.
+    \label{eqs:yfromx}
+\end{equation}
+There is no direct dependence on $w$ or $u$, so
+\begin{equation}
+    C_y =
+    \begin{bmatrix}
+        I_3 & 0
+    \end{bmatrix},
+    \qquad
+    D_{yw} = 0,
+    \qquad
+    D_{yu} = 0.
+    \label{eqs:Cy}
+\end{equation}
+
+The matrices \eqref{eqs:ABmats}, \eqref{eqs:CDloop}, and \eqref{eqs:Cy} define
+the constant interconnection matrix $G$ in \eqref{eqs:G}.
+
+%------------------------------------------------------------------------------
+\section{Exact Recovery of the Original CT Model}
+%------------------------------------------------------------------------------
+
+To verify exactness, substitute the loop relation
+\[
+w = \Delta(Y) z = Y z
+\]
+into the LPV-LFR. Since
+\[
+z =
+\begin{bmatrix}
+    v \\
+    v_1
+\end{bmatrix},
+\qquad
+w =
+\begin{bmatrix}
+    w_1 \\
+    w_2
+\end{bmatrix},
+\]
+one obtains
+\begin{equation}
+    w_1 = Yv,
+    \qquad
+    w_2 = Yv_1 = Y^2 v.
+    \label{eqs:wcollapse}
+\end{equation}
+
+Substitute \eqref{eqs:wcollapse} into the first block of
+\eqref{eqs:loopblocks}:
+\begin{equation}
+    v
+    =
+    M_0^{-1}[-K,-C]\,x
+    - M_0^{-1}M_1\,(Yv)
+    - M_0^{-1}M_2\,(Y^2 v)
+    + M_0^{-1}u.
+    \label{eqs:collapsev}
+\end{equation}
+Multiply by $M_0$:
+\begin{equation}
+    M_0 v
+    =
+    [-K,-C]\,x + u - Y M_1 v - Y^2 M_2 v.
+    \label{eqs:collapseM0}
+\end{equation}
+Using \eqref{eqs:fgen} and collecting terms on the left gives
+\begin{equation}
+    M_0 v + Y M_1 v + Y^2 M_2 v = f_{\mathrm{gen}}.
+    \label{eqs:collapsecollect}
+\end{equation}
+By \eqref{eqs:decomp}, this is
+\begin{equation}
+    M(Y)\,v = f_{\mathrm{gen}}.
+    \label{eqs:collapseMY}
+\end{equation}
+Hence
+\begin{equation}
+    v = M(Y)^{-1} f_{\mathrm{gen}}.
+    \label{eqs:collapsevinv}
+\end{equation}
+
+Now return to the state equation. From \eqref{eqs:xdotv},
+\[
+\dot{x} =
+\begin{bmatrix}
+    \dot{q} \\
+    v
+\end{bmatrix}.
+\]
+Using \eqref{eqs:collapsevinv} and \eqref{eqs:fgen},
+\begin{align}
+    \dot{x}
+    &=
+    \begin{bmatrix}
+        \dot{q} \\
+        M(Y)^{-1}\bigl([-K,-C]\,x + u\bigr)
+    \end{bmatrix}
+    \notag\\
+    &=
+    \begin{bmatrix}
+        0 & I_3 \\
+        -M(Y)^{-1}K & -M(Y)^{-1}C
+    \end{bmatrix}
+    x
+    +
+    \begin{bmatrix}
+        0 \\
+        M(Y)^{-1}
+    \end{bmatrix}
+    u
+    \notag\\
+    &= A_c(Y)\,x + B_c(Y)\,u.
+    \label{eqs:recoverstate}
+\end{align}
+The output equation is unchanged:
+\begin{equation}
+    y =
+    \begin{bmatrix}
+        I_3 & 0
+    \end{bmatrix}
+    x
+    = C_c x
+    = q.
+    \label{eqs:recoveroutput}
+\end{equation}
+Therefore the LPV-LFR collapses exactly to the original MATLAB-derived
+continuous-time state-space model \eqref{eqs:ctss}--\eqref{eqs:ctmats}.
+
+%------------------------------------------------------------------------------
+\section{Well-Posedness}
+%------------------------------------------------------------------------------
+
+\subsection{Drenth's Exact Criterion}
+
+For a continuous-time LPV-LFR, Drenth's exact well-posedness criterion is that
+\begin{equation}
+    I - D_{zw}\Delta(p)
+    \quad \text{is nonsingular for all admissible } p.
+    \label{eqs:drenthcriterion}
+\end{equation}
+For the present realization, this becomes
+\begin{equation}
+    I - D_{zw}\Delta(Y)
+    \quad \text{is nonsingular for all admissible } Y.
+    \label{eqs:presentcriterion}
+\end{equation}
+Equivalently, substituting $w = \Delta(Y) z$ into \eqref{eqs:lfrz} gives the
+generic loop equation
+\begin{equation}
+    (I - D_{zw}\Delta(Y))\,z = C_z x + D_{zu}u.
+    \label{eqs:genericloop}
+\end{equation}
+For fixed $x$, $u$, and $Y$, nonsingularity of $I-D_{zw}\Delta(Y)$ is
+equivalent to unique solvability of \eqref{eqs:genericloop}, and hence to
+unique solvability of the internal loop variables $z$ and
+$w=\Delta(Y)z$.
+
+\subsection{Plant-Specific Reduction}
+
+Using \eqref{eqs:CDloop} and \eqref{eqs:Delta},
+\begin{equation}
+    D_{zw}\Delta(Y)
+    =
+    \begin{bmatrix}
+        -Y M_0^{-1}M_1 & -Y M_0^{-1}M_2 \\
+        Y I_3 & 0
+    \end{bmatrix},
+    \label{eqs:DzwDelta}
+\end{equation}
+and therefore
+\begin{equation}
+    I - D_{zw}\Delta(Y)
+    =
+    \begin{bmatrix}
+        I_3 + Y M_0^{-1}M_1 & Y M_0^{-1}M_2 \\
+        -Y I_3 & I_3
+    \end{bmatrix}.
+    \label{eqs:IDzwDelta}
+\end{equation}
+Also,
+\begin{equation}
+    C_z x + D_{zu}u
+    =
+    \begin{bmatrix}
+        M_0^{-1}[-K,-C]\,x + M_0^{-1}u \\
+        0
+    \end{bmatrix}.
+    \label{eqs:rhsloop}
+\end{equation}
+Substituting \eqref{eqs:zw}, \eqref{eqs:IDzwDelta}, and \eqref{eqs:rhsloop}
+into \eqref{eqs:genericloop} yields
+\begin{equation}
+    \begin{bmatrix}
+        I_3 + Y M_0^{-1}M_1 & Y M_0^{-1}M_2 \\
+        -Y I_3 & I_3
+    \end{bmatrix}
+    \begin{bmatrix}
+        v \\
+        v_1
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        M_0^{-1}[-K,-C]\,x + M_0^{-1}u \\
+        0
+    \end{bmatrix}.
+    \label{eqs:blockloop}
+\end{equation}
+The two block equations are
+\begin{align}
+    v + Y M_0^{-1}M_1 v + Y M_0^{-1}M_2 v_1
+    &= M_0^{-1}[-K,-C]\,x + M_0^{-1}u,
+    \label{eqs:block1} \\
+    -Yv + v_1 &= 0.
+    \label{eqs:block2}
+\end{align}
+From \eqref{eqs:block2},
+\begin{equation}
+    v_1 = Yv.
+    \label{eqs:v1Yv}
+\end{equation}
+Substitute \eqref{eqs:v1Yv} into \eqref{eqs:block1}:
+\begin{equation}
+    v + Y M_0^{-1}M_1 v + Y^2 M_0^{-1}M_2 v
+    = M_0^{-1}[-K,-C]\,x + M_0^{-1}u.
+    \label{eqs:vreduced1}
+\end{equation}
+Multiply by $M_0$:
+\begin{equation}
+    M_0 v + Y M_1 v + Y^2 M_2 v = [-K,-C]\,x + u = f_{\mathrm{gen}}.
+    \label{eqs:vreduced2}
+\end{equation}
+Thus the generic loop equation reduces to
+\begin{equation}
+    M(Y)\,v = f_{\mathrm{gen}},
+    \qquad
+    v_1 = Yv.
+    \label{eqs:finalreduction}
+\end{equation}
+This reduction is specific to the chosen dual-gantry realization. It is not a
+generic LPV-LFR fact in isolation.
+
+\subsection{Unique Solvability and Well-Posedness}
+
+Fix admissible $x$, $u$, and $Y$. After the reduction
+\eqref{eqs:finalreduction}, the internal loop has a unique solution if and only
+if the linear system
+\[
+M(Y)\,v = f_{\mathrm{gen}}
+\]
+has a unique solution. Since this is a square linear system in $v$, that occurs
+if and only if $M(Y)$ is invertible.
+
+When $M(Y)$ is invertible,
+\begin{equation}
+    v = M(Y)^{-1} f_{\mathrm{gen}}
+    \label{eqs:wellposedv}
+\end{equation}
+is unique. Then
+\begin{equation}
+    v_1 = Yv,
+    \qquad
+    v_2 = Y^2 v
+    \label{eqs:wellposedv1v2}
+\end{equation}
+are unique, and therefore
+\begin{equation}
+    z =
+    \begin{bmatrix}
+        v \\
+        v_1
+    \end{bmatrix},
+    \qquad
+    w =
+    \begin{bmatrix}
+        v_1 \\
+        v_2
+    \end{bmatrix}
+    \label{eqs:wellposedzw}
+\end{equation}
+are unique. This is exactly well-posedness for the chosen realization: for each
+fixed admissible $x$, $u$, and $Y$, the internal loop variables have a unique
+solution.
+
+Hence, for the chosen dual-gantry realization,
+\begin{equation}
+    \text{the algebraic loop is well posed}
+    \quad \Longleftrightarrow \quad
+    M(Y) \text{ is invertible}.
+    \label{eqs:equivwellposed}
+\end{equation}
+
+\subsection{Global Well-Posedness and Relation to Drenth's Section 2.2}
+
+The companion note \texttt{LPV/M-invertibility.tex} proves, using Sylvester's
+criterion, that under positive masses, inertias, and geometric parameters,
+\begin{equation}
+    M(Y) \succ 0
+    \qquad
+    \forall\, Y \in \R.
+    \label{eqs:MYpd}
+\end{equation}
+Therefore $M(Y)$ is invertible for all real $Y$, and the chosen LPV-LFR
+realization is globally well posed in $Y$.
+
+Drenth's Section~2.2 provides a generic sufficient well-posedness theorem based
+on diagonal $\Delta(p)$, bounded scheduling, and a spectral-radius condition on
+$D_{zw}$ \cite{drenth2025thesis}. That theorem is not the proof route used
+here. The present argument uses the plant-specific exact reduction
+\eqref{eqs:finalreduction} together with the companion proof of invertibility of
+$M(Y)$.
+
+%------------------------------------------------------------------------------
+\section{Final Remarks and Scope of Claims}
+%------------------------------------------------------------------------------
+
+The derivation above establishes an exact continuous-time LPV-LFR realization of
+the dual-gantry baseline model. The realization uses one physical scheduling
+variable, namely $Y$, represented through the repeated block
+\[
+\Delta(Y) = Y I_6.
+\]
+After collapse, the realization reproduces the original MATLAB-derived
+continuous-time state-space model and preserves the MATLAB output map
+$y=q=C_cx$.
+
+The generic LPV-LFR framework, the role of the constant interconnection matrix
+$G$, and the repeated block-diagonal structure of $\Delta(p)$ come from
+Drenth's thesis \cite{drenth2025thesis}. The particular latent-variable
+construction, the explicit block matrices, and the reduction of the
+well-posedness problem to invertibility of $M(Y)$ are plant-specific steps for
+the present dual-gantry model. No claim is made that the chosen realization is
+minimal.
+
+\begin{thebibliography}{9}
+
+\bibitem{garcia2013model}
+I.~Garcia-Herreros, X.~Kestelyn, J.~Gomand, R.~Coleman, and P.-J.~Barre,
+``Model-based decoupling control method for dual-drive gantry stages:
+A case study with experimental validations,''
+\textit{Control Engineering Practice}, vol.~21, no.~3, pp.~298--307, 2013.
+
+\bibitem{drenth2025lpvlfr}
+J.~Drenth, J.~Hoekstra, M.~Schoukens, and R.~Toth,
+``Efficient Learning of Affine and Rational Dependency LPV Models With LFR,''
+in \textit{Proc.\ IFAC}, 2025.
+
+\bibitem{drenth2025thesis}
+J.~Drenth,
+``Gradient-based Learning of LPV-LFR Models,''
+M.Sc.\ thesis, Eindhoven University of Technology, 2025.
+
+\end{thebibliography}
+
+\end{document}

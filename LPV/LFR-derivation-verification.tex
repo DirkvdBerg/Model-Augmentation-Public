@@ -401,7 +401,13 @@ then define the plant-specific latent variables
     v_2 = Y^2 v = Y v_1.
     \label{eqv:latent}
 \end{equation}
-These are internal helper variables, not physical states.}
+Here $v$, $v_1$, and $v_2$ are whole vectors in $\R^3$. In logical coordinates,
+$v$ corresponds to the acceleration vector
+\[
+v = \ddot q = \begin{bmatrix} \ddot X \\ \ddot \Theta \\ \ddot Y \end{bmatrix},
+\]
+and the subscripts on $v_1$ and $v_2$ label derived latent vectors rather than
+components of $v$. These are internal helper variables, not physical states.}
 
 \audititem{Status}{\statusline{Direct from Drenth} for the latent-variable
 concept. \statusline{Own derivation} for the specific choices
@@ -696,7 +702,52 @@ and sharper than the generic sufficient theorem.}
            \label{eqv:loopv} \\
     v_1 &= Yv. \label{eqv:loopv1}
 \end{align}
-Substituting \eqref{eqv:loopv1} into \eqref{eqv:loopv} yields
+Equivalently, starting from Drenth's generic loop relation
+\[
+    (I-D_{zw}\Delta(Y))\,z = C_z x + D_{zu}u,
+\]
+and using
+\[
+    z=\begin{bmatrix}v\\v_1\end{bmatrix},\qquad
+    D_{zw}=
+    \begin{bmatrix}
+        -M_0^{-1}M_1 & -M_0^{-1}M_2 \\
+        I_3 & 0
+    \end{bmatrix},
+    \qquad
+    \Delta(Y)=YI_6=
+    \begin{bmatrix}
+        YI_3 & 0 \\
+        0 & YI_3
+    \end{bmatrix},
+\]
+gives
+\[
+    I-D_{zw}\Delta(Y)=
+    \begin{bmatrix}
+        I_3 + YM_0^{-1}M_1 & YM_0^{-1}M_2 \\
+        -YI_3 & I_3
+    \end{bmatrix},
+\]
+so the exact loop equation becomes
+\[
+    \begin{bmatrix}
+        I_3 + YM_0^{-1}M_1 & YM_0^{-1}M_2 \\
+        -YI_3 & I_3
+    \end{bmatrix}
+    \begin{bmatrix}
+        v \\
+        v_1
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        M_0^{-1}[-K,-C]\,x + M_0^{-1}u \\
+        0
+    \end{bmatrix}.
+\]
+This is equivalent to the two block equations \eqref{eqv:loopv}--\eqref{eqv:loopv1}. The
+second block gives \(v_1=Yv\), and substituting \eqref{eqv:loopv1} into
+\eqref{eqv:loopv} yields
 \[
 (M_0 + YM_1 + Y^2 M_2)\,v = f_{\mathrm{gen}},
 \]
@@ -879,4 +930,3 @@ M.Sc.\ thesis, Eindhoven University of Technology, 2025.
 \end{thebibliography}
 
 \end{document}
-
