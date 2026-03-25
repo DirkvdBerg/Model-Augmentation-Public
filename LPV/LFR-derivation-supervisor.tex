@@ -134,8 +134,8 @@ This matches the MATLAB output map, because
 %------------------------------------------------------------------------------
 
 In the present single-scheduler setting, an affine dependence on $Y$ means that
-each matrix entry depends linearly on $Y$, while a rational dependence on $Y$
-means that matrix entries are ratios of polynomials in $Y$
+each matrix entry is at most a first-degree polynomial in $Y$, while a rational
+dependence on $Y$ means that matrix entries are ratios of polynomials in $Y$
 \cite{drenth2025thesis}.
 
 The matrices in \eqref{eqs:ctmats} contain $M(Y)^{-1}$. Since $M(Y)$ is
@@ -208,7 +208,8 @@ Accordingly, the plant-specific realization below uses repeated action of the
 same scalar scheduler $Y$ inside $\Delta(Y)$, rather than introducing multiple
 independent scheduling coordinates. In the notation of
 \eqref{eqs:deltageneric}, the chosen realization has one independent scheduler,
-$p_1 = Y$, with repetition count fixed later by the chosen loop signals.
+$p_1 = Y$. The specific $\Delta$ block and its repetition count are derived in
+the next section, once the latent variables have fixed the loop dimension.
 
 %------------------------------------------------------------------------------
 \section{Plant-Specific Latent Variables and Loop Signals}
@@ -241,9 +242,9 @@ Here $v$, $v_1$, and $v_2$ are whole vectors in $\R^3$. In logical coordinates,
 \end{equation}
 The vectors $v_1$ and $v_2$ are derived latent vectors, not physical states and
 not components of $v$. They are internal helper variables introduced for this
-particular dual-gantry realization; Drenth's framework supplies the generic
-roles of $z$ and $w$, but not this plant-specific choice of $v$, $v_1$, and
-$v_2$.
+particular dual-gantry realization: $v_1$ absorbs the $Y$-term and $v_2$ the
+$Y^2$-term in the inertia matrix. Drenth's framework supplies the generic roles
+of $z$ and $w$, but not this plant-specific choice of $v$, $v_1$, and $v_2$.
 
 Decompose the inertia matrix as
 \begin{equation}
@@ -559,7 +560,8 @@ There is no direct dependence of $v_1$ on $x$ or $u$. Hence
     u.
     \label{eqs:loopblocks}
 \end{equation}
-Therefore
+Therefore (recall that $[-K,-C]$ denotes the horizontal concatenation of $-K$
+and $-C$)
 \begin{equation}
     C_z =
     \begin{bmatrix}
@@ -614,7 +616,9 @@ There is no direct dependence on $w$ or $u$, so
 \end{equation}
 
 The matrices \eqref{eqs:ABmats}, \eqref{eqs:CDloop}, and \eqref{eqs:Cy} define
-the constant interconnection matrix $G$ in \eqref{eqs:G}.
+the constant interconnection matrix $G$ in \eqref{eqs:G}. The system dimensions
+are $x \in \R^6$, $z,w \in \R^6$, $u \in \R^3$, and $y \in \R^3$, so
+$G \in \R^{15\times15}$.
 
 %------------------------------------------------------------------------------
 \section{Exact Recovery of the Original CT Model}
@@ -645,6 +649,8 @@ one obtains
     w_2 = Yv_1 = Y^2 v.
     \label{eqs:wcollapse}
 \end{equation}
+These are consistent with the definitions in \eqref{eqs:vv1v2}: $w_1 = v_1$
+and $w_2 = v_2$.
 
 Substitute \eqref{eqs:wcollapse} into the first block of
 \eqref{eqs:loopblocks}:
@@ -733,7 +739,8 @@ continuous-time state-space model \eqref{eqs:ctss}--\eqref{eqs:ctmats}.
 
 \subsection{Drenth's Exact Criterion}
 
-For a continuous-time LPV-LFR, Drenth's exact well-posedness criterion is that
+For a continuous-time LPV-LFR, Drenth's exact well-posedness criterion
+\cite{drenth2025thesis} is that
 \begin{equation}
     I - D_{zw}\Delta(p)
     \quad \text{is nonsingular for all admissible } p.
