@@ -133,10 +133,9 @@ This matches the MATLAB output map, because
 \section{Why the Model Is Rational and Why an LPV-LFR Is Needed}
 %------------------------------------------------------------------------------
 
-In the present single-scheduler setting, an affine dependence on $Y$ means that
-each matrix entry is at most a first-degree polynomial in $Y$, while a rational
-dependence on $Y$ means that matrix entries are ratios of polynomials in $Y$
-\cite{drenth2025thesis}.
+In the present single-scheduler setting, we use \emph{affine} dependence on $Y$
+to mean that the matrix dependence is linear in $Y$, and \emph{rational}
+dependence on $Y$ to mean that matrix entries are rational functions of $Y$.
 
 The matrices in \eqref{eqs:ctmats} contain $M(Y)^{-1}$. Since $M(Y)$ is
 polynomial in $Y$, its inverse satisfies
@@ -146,8 +145,11 @@ polynomial in $Y$, its inverse satisfies
 \end{equation}
 where $\adj(M(Y))$ and $\det(M(Y))$ are polynomial in $Y$. Therefore the
 entries of $M(Y)^{-1}$ are rational functions of $Y$ wherever $M(Y)$ is
-invertible. It follows that the exact continuous-time dual-gantry model is
-rational in $Y$, not affine in $Y$.
+invertible. Drenth states that collapsing an LPV-LFR yields an LPV state-space
+model with rational dependency on the scheduling variable, with affine
+dependency as the special case $D_{zw}=0$ \cite{drenth2025thesis}. It follows
+that the exact continuous-time dual-gantry model is rational in $Y$, not affine
+in $Y$.
 
 This is the reason to seek a rational LPV-LFR realization: the exact
 $Y$-dependence can then be represented through a constant interconnection and a
@@ -215,22 +217,49 @@ the next section, once the latent variables have fixed the loop dimension.
 \section{Plant-Specific Latent Variables and Loop Signals}
 %------------------------------------------------------------------------------
 
-Define the generalized force
+Starting from the mechanical model \eqref{eqs:eom},
+\[
+M(Y)\,\ddot{q} + C\,\dot{q} + K\,q = u.
+\]
+Using the state definition \eqref{eqs:state},
+\[
+x =
+\begin{bmatrix}
+    q \\
+    \dot{q}
+\end{bmatrix},
+\]
+the right-hand side can be rewritten as
+\begin{equation}
+    M(Y)\,\ddot{q}
+    =
+    -Kq - C\dot{q} + u
+    =
+    [-K,-C]\,x + u.
+    \label{eqs:mechrewrite}
+\end{equation}
+This motivates the definition of the generalized force
 \begin{equation}
     f_{\mathrm{gen}} = [-K,-C]\,x + u.
     \label{eqs:fgen}
 \end{equation}
 Here $[-K,-C]$ denotes the horizontal concatenation of $-K$ and $-C$.
-Now define the plant-specific latent vectors
+Equation \eqref{eqs:mechrewrite} then becomes
 \begin{equation}
-    v = M(Y)^{-1} f_{\mathrm{gen}},
-    \qquad
-    v_1 = Y v,
-    \qquad
-    v_2 = Y^2 v = Y v_1.
-    \label{eqs:vv1v2}
+    M(Y)\,\ddot{q} = f_{\mathrm{gen}}.
+    \label{eqs:mechfgen}
 \end{equation}
-Here $v$, $v_1$, and $v_2$ are whole vectors in $\R^3$. In logical coordinates,
+If $M(Y)$ is invertible, this gives
+\begin{equation}
+    \ddot{q} = M(Y)^{-1} f_{\mathrm{gen}}.
+    \label{eqs:qddotfromfgen}
+\end{equation}
+This motivates the first latent vector
+\begin{equation}
+    v := \ddot{q} = M(Y)^{-1} f_{\mathrm{gen}}.
+    \label{eqs:vdef}
+\end{equation}
+In logical coordinates,
 \begin{equation}
     v = \ddot{q} =
     \begin{bmatrix}
@@ -240,11 +269,18 @@ Here $v$, $v_1$, and $v_2$ are whole vectors in $\R^3$. In logical coordinates,
     \end{bmatrix}.
     \label{eqs:vlogic}
 \end{equation}
-The vectors $v_1$ and $v_2$ are derived latent vectors, not physical states and
-not components of $v$. They are internal helper variables introduced for this
-particular dual-gantry realization: $v_1$ absorbs the $Y$-term and $v_2$ the
-$Y^2$-term in the inertia matrix. Drenth's framework supplies the generic roles
-of $z$ and $w$, but not this plant-specific choice of $v$, $v_1$, and $v_2$.
+Since $q \in \R^3$, one has $\ddot{q} \in \R^3$. Hence
+\[
+v \in \R^3.
+\]
+Because $v_1 := Yv$ and $v_2 := Y^2v$, it follows that
+\[
+v_1 \in \R^3,
+\qquad
+v_2 \in \R^3.
+\]
+Thus $v$ is the logical-coordinate acceleration vector, while $v_1$ and $v_2$
+are scheduled copies of $v$.
 
 Decompose the inertia matrix as
 \begin{equation}
@@ -279,6 +315,53 @@ with
     \end{bmatrix}.
     \label{eqs:M2}
 \end{align}
+Substituting \eqref{eqs:decomp} into \eqref{eqs:mechfgen} with
+$\ddot{q}=v$ gives
+\begin{equation}
+    (M_0 + Y M_1 + Y^2 M_2)\,v = f_{\mathrm{gen}}.
+    \label{eqs:polyinv}
+\end{equation}
+Expanding the left-hand side yields
+\begin{equation}
+    M_0 v + M_1(Yv) + M_2(Y^2v) = f_{\mathrm{gen}}.
+    \label{eqs:polyexpanded}
+\end{equation}
+This is the point at which the additional latent vectors are introduced. The
+only non-constant signal factors in \eqref{eqs:polyexpanded} are $Yv$ and
+$Y^2v$, so define
+\begin{equation}
+    v_1 := Yv,
+    \qquad
+    v_2 := Y^2 v = Yv_1.
+    \label{eqs:vv1v2}
+\end{equation}
+With these definitions, \eqref{eqs:polyexpanded} becomes
+\begin{equation}
+    M_0 v + M_1 v_1 + M_2 v_2 = f_{\mathrm{gen}}.
+    \label{eqs:constantrewrite}
+\end{equation}
+This is the key motivation for $v_1$ and $v_2$: they turn the polynomial
+$Y$-dependence in $M(Y)v$ into a constant-matrix relation in the variables
+$v$, $v_1$, and $v_2$. The variables $v_1$ and $v_2$ are therefore derived
+latent vectors, not additional physical states.
+
+Drenth's framework specifies the generic latent loop signals $z$ and $w$, but
+the present choice of $v$, $v_1$, and $v_2$ is plant-specific. The constant
+rewrite \eqref{eqs:constantrewrite} shows that the relevant plant-specific
+signals are $v$, $v_1$, and $v_2$. Since $Y$ is the only independent
+scheduling variable, the factor $Y^2$ must be realized as a second application
+of the same multiplier $Y$, rather than as a separate scheduler. In signal
+form,
+\begin{equation}
+    v \xrightarrow{\,Y\,} v_1 \xrightarrow{\,Y\,} v_2,
+    \qquad
+    v_1 = Yv,
+    \qquad
+    v_2 = Yv_1 = Y^2v.
+    \label{eqs:Ychain}
+\end{equation}
+Accordingly, it is natural to collect in $z$ the signals before one
+multiplication by $Y$, and in $w$ their scheduled images.
 
 Choose the loop signals
 \begin{equation}
@@ -297,8 +380,11 @@ Choose the loop signals
     \in \R^6.
     \label{eqs:zw}
 \end{equation}
-Because $v \in \R^3$ and $v_1 \in \R^3$, both $z$ and $w$ lie in $\R^6$. This
-fixes the repeated block dimension in the chosen realization. With
+This choice matches the signal chain in \eqref{eqs:Ychain}: $z$ contains the
+signals before one multiplication by $Y$, while $w$ contains their images
+after that multiplication. Because $v \in \R^3$ and $v_1 \in \R^3$, both $z$
+and $w$ lie in $\R^6$. This fixes the repeated block dimension in the chosen
+realization. With
 \begin{equation}
     \Delta(Y) =
     \begin{bmatrix}
@@ -649,8 +735,15 @@ one obtains
     w_2 = Yv_1 = Y^2 v.
     \label{eqs:wcollapse}
 \end{equation}
-These are consistent with the definitions in \eqref{eqs:vv1v2}: $w_1 = v_1$
-and $w_2 = v_2$.
+Comparing with the definition
+\[
+w=
+\begin{bmatrix}
+    v_1 \\
+    v_2
+\end{bmatrix}
+\]
+in \eqref{eqs:zw}, one has $w_1 = v_1$ and $w_2 = v_2$.
 
 Substitute \eqref{eqs:wcollapse} into the first block of
 \eqref{eqs:loopblocks}:
@@ -716,7 +809,7 @@ Using \eqref{eqs:collapsevinv} and \eqref{eqs:fgen},
     \end{bmatrix}
     u
     \notag\\
-    &= A_c(Y)\,x + B_c(Y)\,u.
+    &=: A_{\mathrm{coll}}(Y)\,x + B_{\mathrm{coll}}(Y)\,u.
     \label{eqs:recoverstate}
 \end{align}
 The output equation is unchanged:
@@ -726,9 +819,39 @@ The output equation is unchanged:
         I_3 & 0
     \end{bmatrix}
     x
-    = C_c x
+    =: C_{\mathrm{coll}}x
     = q.
     \label{eqs:recoveroutput}
+\end{equation}
+Thus the collapsed matrices are
+\begin{equation}
+    A_{\mathrm{coll}}(Y) =
+    \begin{bmatrix}
+        0 & I_3 \\
+        -M(Y)^{-1}K & -M(Y)^{-1}C
+    \end{bmatrix},
+    \qquad
+    B_{\mathrm{coll}}(Y) =
+    \begin{bmatrix}
+        0 \\
+        M(Y)^{-1}
+    \end{bmatrix},
+    \qquad
+    C_{\mathrm{coll}} =
+    \begin{bmatrix}
+        I_3 & 0
+    \end{bmatrix}.
+    \label{eqs:collapsedmats}
+\end{equation}
+Comparing \eqref{eqs:collapsedmats} with the target matrices
+\eqref{eqs:ctmats} gives
+\begin{equation}
+    A_{\mathrm{coll}}(Y) = A_c(Y),
+    \qquad
+    B_{\mathrm{coll}}(Y) = B_c(Y),
+    \qquad
+    C_{\mathrm{coll}} = C_c.
+    \label{eqs:collapsedequal}
 \end{equation}
 Therefore the LPV-LFR collapses exactly to the original MATLAB-derived
 continuous-time state-space model \eqref{eqs:ctss}--\eqref{eqs:ctmats}.
