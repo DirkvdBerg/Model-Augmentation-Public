@@ -1,8 +1,12 @@
-# LFR Structure for the Gantry LPV Model
+﻿# LFR Structure for the Gantry LPV Model
 
 Outlines the Linear Fractional Representation (LFR) as it applies to the gantry
 baseline model and the augmentation framework. Based on Drenth (2025) thesis Ch. 2
 and Ch. 5, and the companion IFAC paper.
+
+For a more explicit audit trail of Chapter 2, including step-by-step labels
+`Direct from Drenth` / `Generalized from Drenth` / `Own dual-gantry derivation`,
+see `docs/drenth/README.md`.
 
 ---
 
@@ -395,3 +399,4 @@ eq. 6 it is called M. To avoid confusion with the inertia matrix, we use:
 | **RK4 + LFR interaction** | **OPEN** | No paper found yet (Blocker A) |
 | M(Y) invertibility | **PROVEN** | `docs/m-matrix-invertibility.md` |
 | Scheduling range ||Y|| <= 1 | Satisfied | Y in [-0.35, 0.35] |
+

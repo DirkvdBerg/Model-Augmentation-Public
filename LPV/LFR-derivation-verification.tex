@@ -1,0 +1,882 @@
+﻿\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{microtype}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{booktabs}
+
+% ---------- Section formatting ----------
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.75em}{}
+\titlespacing*{\section}{0pt}{1.4ex plus .2ex minus .2ex}{0.9ex}
+\titlespacing*{\subsection}{0pt}{1.0ex plus .2ex minus .2ex}{0.5ex}
+
+% ---------- Box environments ----------
+\newtcolorbox{notebox}[1]{
+    breakable, enhanced,
+    colback=gray!4, colframe=gray!55,
+    boxrule=0.7pt, arc=1.5mm,
+    left=2.5mm, right=2.5mm, top=1.3mm, bottom=1.3mm,
+    title={\bfseries #1}, coltitle=black,
+    colbacktitle=gray!12, fonttitle=\bfseries
+}
+
+\newtcolorbox{resultbox}[1]{
+    breakable, enhanced,
+    colback=blue!2, colframe=blue!40!black,
+    boxrule=0.7pt, arc=1.5mm,
+    left=2.5mm, right=2.5mm, top=1.3mm, bottom=1.3mm,
+    title={\bfseries #1}, coltitle=black,
+    colbacktitle=blue!10, fonttitle=\bfseries
+}
+
+\newtcolorbox{warningbox}[1]{
+    breakable, enhanced,
+    colback=orange!4, colframe=orange!60!black,
+    boxrule=0.7pt, arc=1.5mm,
+    left=2.5mm, right=2.5mm, top=1.3mm, bottom=1.3mm,
+    title={\bfseries #1}, coltitle=black,
+    colbacktitle=orange!14, fonttitle=\bfseries
+}
+
+% ---------- Helper commands ----------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\audititem}[2]{\par\smallskip\noindent\textbf{#1.} #2\par}
+\newcommand{\statusline}[1]{\texttt{#1}}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries Verification Note for the Dual-Gantry CT LPV-LFR Reformulation}\\[0.5em]
+    {\large Consolidated audit document based on Drenth Chapter 2 and the current gantry derivation}\\[0.3em]
+    {\normalsize Working document for internal verification, not the final supervisor-facing version}
+\end{center}
+
+\vspace{0.7em}
+
+%------------------------------------------------------------------------------
+\section{Purpose and Scope}
+%------------------------------------------------------------------------------
+
+This document consolidates the current verification work for the dual-gantry
+continuous-time LPV-LFR reformulation into one \LaTeX{} file. Its goal is
+\textbf{traceability}, not compactness. The intended use is:
+
+\begin{itemize}[leftmargin=1.2em]
+    \item check what Drenth's thesis actually states,
+    \item separate that from what is only a generalized modeling lesson,
+    \item identify where the dual-gantry derivation becomes our own algebra,
+    \item keep the well-posedness discussion honest by separating Drenth's
+    generic sufficient route from the sharper plant-specific route.
+\end{itemize}
+
+\begin{notebox}{Source Backbone}
+This verification note is consolidated from the following working notes and
+companion derivations already present in the repo:
+\begin{itemize}[leftmargin=1.2em]
+    \item \texttt{docs/drenth/ch2-sec21-source.md}
+    \item \texttt{docs/drenth/ch2-sec211-source.md}
+    \item \texttt{docs/drenth/ch2-sec22-source.md}
+    \item \texttt{docs/drenth/ch2-generalized-recipe.md}
+    \item \texttt{docs/drenth/ch2-dual-gantry-mapping.md}
+    \item \texttt{LPV/LFR-derivation.tex}
+    \item \texttt{LPV/M-invertibility.tex}
+\end{itemize}
+It therefore uses the notes as an audited backbone rather than re-inventing the
+interpretation from scratch.
+\end{notebox}
+
+\begin{notebox}{Reading Rule}
+For every major verification step below, the same fields are kept explicit:
+\begin{itemize}[leftmargin=1.2em]
+    \item Drenth reference
+    \item What Drenth does
+    \item Generalized step
+    \item Dual-gantry application
+    \item Status
+    \item What still needs checking
+\end{itemize}
+The point is not elegance but the ability to verify each step carefully.
+\end{notebox}
+
+\begin{warningbox}{Important Source Boundary}
+The thesis source for the generic LPV-LFR definition used here is Drenth's
+\textbf{thesis}, Chapter~2, especially Sections~2.1--2.2
+\cite{drenth2025thesis}. The IFAC paper \cite{drenth2025lpvlfr} remains useful
+as supporting context, but its formal LPV-LFR definition is in discrete time.
+So this document treats the thesis as the primary CT source.
+\end{warningbox}
+
+\begin{notebox}{Role of the Sources}
+The source roles in this document are intentionally separated:
+\begin{itemize}[leftmargin=1.2em]
+    \item Section~2.1 of Drenth gives the generic CT LPV-LFR framework.
+    \item Section~2.1.1 of Drenth motivates the preference for rational
+    dependency over an unnecessarily overbounded affine embedding.
+    \item Section~2.2 of Drenth gives a generic sufficient well-posedness route.
+    \item \texttt{LPV/LFR-derivation.tex} provides the dual-gantry-specific
+    realization algebra.
+    \item \texttt{LPV/M-invertibility.tex} provides the sharper
+    plant-specific well-posedness proof used for the current baseline.
+\end{itemize}
+\end{notebox}
+
+%------------------------------------------------------------------------------
+\section{Starting Point: Dual-Gantry CT Model}
+%------------------------------------------------------------------------------
+
+The dual-gantry first-principles model is taken from the current gantry
+derivation already present in the repo. That derivation in turn starts from the
+logical-coordinate mechanical model of Garcia-Herreros et al.~\cite{garcia2013model}. In logical
+coordinates
+\[
+q = [X,\Theta,Y]^\top \in \R^3,
+\]
+the equations of motion are
+\begin{equation}
+    M(Y)\,\ddot{q}(t) + C\,\dot{q}(t) + K\,q(t) = f_\ell(t),
+    \label{eqv:eom}
+\end{equation}
+with
+\begin{equation}
+    M(Y) =
+    \begin{bmatrix}
+        m_1 + m_2 + m_b + m_h &
+        \dfrac{(m_1-m_2)L_b}{2} - m_h Y &
+        0 \\
+        \dfrac{(m_1-m_2)L_b}{2} - m_h Y &
+        J_b + J_h + \dfrac{(m_1+m_2)L_b^2}{4} + m_h d^2 + m_h Y^2 &
+        -m_h d \\
+        0 & -m_h d & m_h
+    \end{bmatrix}.
+    \label{eqv:M}
+\end{equation}
+
+With the state
+\[
+x = [q^\top,\dot{q}^\top]^\top \in \R^6
+\]
+and generalized logical input
+\[
+u := f_\ell,
+\]
+the continuous-time state-space form is
+\begin{equation}
+    \dot{x}(t) = A_c(Y)\,x(t) + B_c(Y)\,u(t),
+    \qquad
+    y(t) = C_c\,x(t),
+    \label{eqv:ctss}
+\end{equation}
+where
+\begin{equation}
+    A_c(Y) =
+    \begin{bmatrix}
+        0 & I_3 \\
+        -M(Y)^{-1}K & -M(Y)^{-1}C
+    \end{bmatrix},
+    \qquad
+    B_c(Y) =
+    \begin{bmatrix}
+        0 \\
+        M(Y)^{-1}
+    \end{bmatrix},
+    \qquad
+    C_c = \begin{bmatrix} I_3 & 0 \end{bmatrix}.
+    \label{eqv:ctmats}
+\end{equation}
+
+The key structural point is that the dependence on the scheduling coordinate
+$Y$ enters through $M(Y)^{-1}$, so the exact continuous-time model is
+\textbf{rational} in $Y$.
+
+\begin{resultbox}{Why an LPV-LFR reformulation is needed}
+The exact dual-gantry baseline is not naturally affine in the scheduling
+variable $Y$. The LPV-LFR reformulation is therefore not a cosmetic rewriting:
+it is the device that allows the rational dependence induced by
+$M(Y)^{-1}$ to be represented inside a constant interconnection plus a
+scheduling block.
+\end{resultbox}
+
+%------------------------------------------------------------------------------
+\section{Drenth-Based Stepwise Verification}
+%------------------------------------------------------------------------------
+
+This section is the core audit trail. Its internal flow is:
+\begin{itemize}[leftmargin=1.2em]
+    \item Steps~1--3: fix the target LPV-LFR framework and the CT model that
+    must be recovered after collapse.
+    \item Steps~4--6: explain why a rational repeated-$\Delta$ structure is the
+    natural modeling direction.
+    \item Steps~7--10: carry out the dual-gantry-specific realization.
+    \item Step~11: classify the collapsed result.
+\end{itemize}
+The well-posedness discussion is then handled separately in the next section so
+that the two proof routes do not get mixed together.
+
+\subsection{Step 1: Fix the target representation class as a CT LPV-LFR}
+
+\audititem{Drenth reference}{Thesis Section~2.1, especially eq.~(2.1)
+\cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth defines an LPV-LFR in continuous time as a
+pair $(G,\Delta(p))$ with the interconnection
+\[
+\dot{x} = A x + B_w w + B_u u,\quad
+z = C_z x + D_{zw} w + D_{zu} u,\quad
+y = C_y x + D_{yw} w + D_{yu} u,\quad
+w = \Delta(p)\,z.
+\]
+(Drenth writes $A_x$ for the state matrix; we use $A$ since no ambiguity arises.)
+The matrices in $G$ are constant, while scheduling dependence enters through
+$\Delta(p)$.}
+
+\audititem{Generalized step}{Before any plant-specific algebra, choose the CT
+LPV-LFR pair $(G,\Delta(p))$ as the target representation class.}
+
+\audititem{Dual-gantry application}{For the dual gantry, the target is a CT
+LPV-LFR with state $x = [q^\top,\dot{q}^\top]^\top$, generalized logical input
+$u = f_\ell$, and measured output $y = q$.}
+
+\audititem{Status}{\statusline{Direct from Drenth} for the framework choice.
+\statusline{Own derivation} for the particular gantry state, input, and output
+assignment.}
+
+\audititem{What still needs checking}{This step does not justify the existence
+of a convenient dual-gantry realization. It only fixes the target class.}
+
+\subsection{Step 2: Treat the model as a constant interconnection plus a scheduling block}
+
+\audititem{Drenth reference}{Thesis Section~2.1, conceptual text around
+eq.~(2.1) and the definition of $(G,\Delta(p))$ \cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth presents the LPV-LFR as the interconnection
+between a nominal constant system $G$ and a structured scheduling block
+$\Delta(p)$.}
+
+\audititem{Generalized step}{Organize the reformulation so that all constant
+linear structure lives in $G$ and all scheduling dependence is pushed into
+$\Delta(p)$.}
+
+\audititem{Dual-gantry application}{In the dual-gantry derivation, the constant
+objects are $M_0$, $M_1$, $M_2$, $C$, $K$, and the eventual blocks of $G$.
+The scheduling object is the scalar coordinate $Y$. The design target is that
+$Y$ enters only through the eventual $\Delta(Y)$.}
+
+\audititem{Status}{\statusline{Direct from Drenth} for the structural split.
+\statusline{Generalized from Drenth} for using this split as a design rule
+during reformulation.}
+
+\audititem{What still needs checking}{This step does not yet tell us how the
+$Y$-dependence is actually pushed into the loop.}
+
+\subsection{Step 3: State the collapsed CT model that the LPV-LFR must reproduce}
+
+\audititem{Drenth reference}{Thesis Section~2.1, eqs.~(2.3)--(2.4)
+\cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth states that, after eliminating the latent
+variables, the LPV-LFR becomes a continuous-time LPV state-space model with
+rational dependence on the scheduling variable.}
+
+\audititem{Generalized step}{Write down the continuous-time target model that
+must be recovered after elimination of the latent loop.}
+
+\audititem{Dual-gantry application}{The target is exactly the MATLAB-derived CT
+model in \eqref{eqv:ctss}--\eqref{eqv:ctmats}. The LPV-LFR is only acceptable if
+it collapses back to these equations.}
+
+\audititem{Status}{\statusline{Generalized from Drenth} for using the collapsed
+form as the central correctness criterion. \statusline{Own derivation} for the
+particular dual-gantry target equations.}
+
+\audititem{What still needs checking}{This step does not tell us how to
+construct the realization. It only states what success means.}
+
+\subsection{Step 4: Decide whether the exact realization should be affine or rational}
+
+\audititem{Drenth reference}{Thesis Section~2.1.1 for the motivating discussion;
+Section~2.1, paragraph after eq.~(2.4), for the affine/rational classification
+\cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth identifies affine dependency as the special
+case $D_{zw}=0$ and then argues in Section~2.1.1 that rational dependency can
+reduce overbounding and reduce unnecessary scheduling-variable count.}
+
+\audititem{Generalized step}{Before constructing the realization, decide whether
+the exact plant can be represented adequately in the affine special case, or
+whether the model should retain genuinely rational scheduling dependence.}
+
+\audititem{Dual-gantry application}{Because the dual-gantry CT matrices depend
+on $M(Y)^{-1}$, the exact collapsed dependence is rational in $Y$. So the
+natural target is a rational LPV-LFR, not the affine special case.}
+
+\audititem{Status}{\statusline{Generalized from Drenth} for the modeling
+decision. \statusline{Own derivation} for concluding that this specific plant is
+rational in $Y$.}
+
+\audititem{What still needs checking}{This step does not yet construct the
+rational realization or prove that the chosen one is minimal.}
+
+\subsection{Step 5: Choose the scheduling variable with coupling loss in mind}
+
+\audititem{Drenth reference}{Thesis Section~2.1.1, especially the discussion
+around eqs.~(2.6)--(2.9) \cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth compares an affine MSD embedding using two
+scheduling variables $(p_1=x,\; p_2=x^2)$ with a rational embedding using only
+one scheduling variable repeated in $\Delta$. The point is that the affine
+embedding loses coupling between quantities that are not truly independent.}
+
+\audititem{Generalized step}{Choose the scheduling description so that real
+structural coupling is preserved as much as possible, instead of introducing
+unnecessary independent scheduling variables.}
+
+\audititem{Dual-gantry application}{For the gantry, the natural physical
+scheduling quantity is the single coordinate $Y$. Even though $Y^2$ appears in
+$M(Y)$, it is not introduced as a second independent scheduling variable.}
+
+\audititem{Status}{\statusline{Generalized from Drenth}.}
+
+\audititem{What still needs checking}{This step does not yet explain how the
+$Y^2$ dependence will be represented in the LFR.}
+
+\subsection{Step 6: Use repeated Delta-block structure to represent richer dependency}
+
+\audititem{Drenth reference}{Thesis Section~2.1, eq.~(2.2), and Section~2.1.1,
+eq.~(2.9) \cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth defines $\Delta(p)$ as a repeated
+block-diagonal structure and uses repeated copies of the same scheduling
+variable in the rational MSD example.}
+
+\audititem{Generalized step}{If richer dependency must be represented, reuse the
+same scheduling variable repeatedly inside $\Delta(p)$ rather than introducing
+more independent scheduling coordinates by default.}
+
+\audititem{Dual-gantry application}{The dual-gantry realization chooses
+\begin{equation}
+    \Delta(Y) = Y\,I_6.
+    \label{eqv:Delta}
+\end{equation}
+This is repeated-scalar structure: the same physical scheduling variable $Y$
+acts repeatedly on the latent loop signals.}
+
+\audititem{Status}{\statusline{Direct from Drenth} for the admissibility of
+repeated Delta structure. \statusline{Own derivation} for the specific choice
+$YI_6$ and the repetition count $6$.}
+
+\audititem{What still needs checking}{Drenth does not justify why the dimension
+should be exactly $6$ or whether this choice is minimal.}
+
+\subsection{Step 7: Introduce latent variables so the Delta action becomes simple}
+
+\audititem{Drenth reference}{Thesis Section~2.1, eq.~(2.1), together with the
+rational MSD structure in Section~2.1.1 \cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth uses latent variables $z$ and $w$ as the
+internal mechanism by which scheduling dependence is routed through
+$w = \Delta(p)z$. However, he does not give a symbolic algorithm for choosing
+these variables for a new plant.}
+
+\audititem{Generalized step}{Introduce internal algebraic helper variables so
+that the scheduling dependence can be represented through simple repeated action
+of the Delta block.}
+
+\audititem{Dual-gantry application}{Define the generalized force
+\begin{equation}
+    f_{\mathrm{gen}} = [-K,\,-C]\,x + u,
+    \label{eqv:fgen}
+\end{equation}
+then define the plant-specific latent variables
+\begin{equation}
+    v = M(Y)^{-1} f_{\mathrm{gen}}, \qquad
+    v_1 = Yv, \qquad
+    v_2 = Y^2 v = Y v_1.
+    \label{eqv:latent}
+\end{equation}
+These are internal helper variables, not physical states.}
+
+\audititem{Status}{\statusline{Direct from Drenth} for the latent-variable
+concept. \statusline{Own derivation} for the specific choices
+$v$, $v_1$, and $v_2$.}
+
+\audititem{What still needs checking}{This is one of the main places where
+Drenth stops and our own derivation begins. The actual latent-variable choice is
+fully plant-specific.}
+
+\subsection{Step 8: Assemble the loop signals and push all scheduling dependence into the loop}
+
+\audititem{Drenth reference}{Thesis Section~2.1 for the structural target,
+reinforced by Section~2.1.1 for repeated scheduling action
+\cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth's framework requires a constant
+interconnection matrix and a Delta loop containing the scheduling dependence.
+The MSD example shows repeated scheduling action in such a loop but does not
+give a universal symbolic construction rule.}
+
+\audititem{Generalized step}{Package the helper variables into $z$ and $w$ so
+that $w=\Delta(p)z$ holds directly and all non-constant dependence is pushed
+into the loop.}
+
+\audititem{Dual-gantry application}{Choose
+\begin{equation}
+    z = \begin{bmatrix} v \\ v_1 \end{bmatrix}, \qquad
+    w = \begin{bmatrix} v_1 \\ v_2 \end{bmatrix},
+    \label{eqv:zw}
+\end{equation}
+so that $w = \Delta(Y) z = Y z$. Also decompose the inertia matrix as
+\begin{equation}
+    M(Y) = M_0 + Y M_1 + Y^2 M_2.
+    \label{eqv:decomp}
+\end{equation}
+Then pre-multiplying $v = M(Y)^{-1} f_{\mathrm{gen}}$ by $M(Y)$ yields
+\begin{equation}
+    M_0 v = f_{\mathrm{gen}} - M_1 v_1 - M_2 v_2,
+    \label{eqv:M0v}
+\end{equation}
+so the dependence on $Y$ has been shifted into the loop variables.}
+
+\audititem{Status}{\statusline{Generalized from Drenth} for the design
+objective. \statusline{Own derivation} for the decomposition of $M(Y)$, the
+signal definitions in \eqref{eqv:zw}, and the algebraic rewrite in
+\eqref{eqv:M0v}.}
+
+\audititem{What still needs checking}{This is not a direct Drenth construction.
+The decomposition of $M(Y)$ and the specific algebraic rewrite are part of the
+dual-gantry derivation.}
+
+\subsection{Step 9: Rewrite the plant in constant-matrix LPV-LFR form and read off $G$}
+
+\audititem{Drenth reference}{Thesis Section~2.1, eq.~(2.1)
+\cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth fixes the block structure that a valid
+LPV-LFR must match. The actual coefficients are model-dependent.}
+
+\audititem{Generalized step}{Once the equations are in LPV-LFR form, collect the
+coefficients of $x$, $w$, and $u$ and identify the constant blocks of $G$.}
+
+\audititem{Dual-gantry application}{Using the dual-gantry rewrite, the constant
+blocks become
+\begin{align}
+    A &=
+    \begin{bmatrix}
+        0 & I_3 \\
+        -M_0^{-1}K & -M_0^{-1}C
+    \end{bmatrix},
+    &
+    B_w &=
+    \begin{bmatrix}
+        0 & 0 \\
+        -M_0^{-1}M_1 & -M_0^{-1}M_2
+    \end{bmatrix},
+    &
+    B_u &=
+    \begin{bmatrix}
+        0 \\
+        M_0^{-1}
+    \end{bmatrix},
+    \label{eqv:stateblocks}
+\end{align}
+\begin{align}
+    C_z &=
+    \begin{bmatrix}
+        M_0^{-1}[-K,\,-C] \\
+        0
+    \end{bmatrix},
+    &
+    D_{zw} &=
+    \begin{bmatrix}
+        -M_0^{-1}M_1 & -M_0^{-1}M_2 \\
+        I_3 & 0
+    \end{bmatrix},
+    &
+    D_{zu} &=
+    \begin{bmatrix}
+        M_0^{-1} \\
+        0
+    \end{bmatrix},
+    \label{eqv:loopblocks}
+\end{align}
+with
+\begin{equation}
+    C_y = \begin{bmatrix} I_3 & 0 \end{bmatrix},
+    \qquad
+    D_{yw} = 0,
+    \qquad
+    D_{yu} = 0.
+    \label{eqv:outblocks}
+\end{equation}}
+
+\audititem{Status}{\statusline{Direct from Drenth} for the required block
+partition. \statusline{Own derivation} for the explicit matrix formulas.}
+
+\audititem{What still needs checking}{Drenth does not justify uniqueness or
+minimality of these formulas. This is plant-specific coefficient matching.}
+
+\subsection{Step 10: Collapse the loop and verify exact recovery of the target CT model}
+
+\audititem{Drenth reference}{Thesis Section~2.1, eqs.~(2.3)--(2.4)
+\cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth eliminates the latent variables to recover
+the collapsed LPV state-space model.}
+
+\audititem{Generalized step}{Use loop collapse as the main exactness check:
+substitute the Delta relation, eliminate the latent variables, and verify that
+the target continuous-time model is recovered.}
+
+\audititem{Dual-gantry application}{With $w = \Delta(Y) z = Y z$, we have
+\[
+w_1 = Yv, \qquad w_2 = Yv_1 = Y^2 v.
+\]
+Substituting into the first block of
+$z = C_z x + D_{zw} w + D_{zu} u$ gives
+\[
+v = M_0^{-1}[-K,-C]\,x - M_0^{-1}M_1\,(Yv) - M_0^{-1}M_2\,(Y^2 v) + M_0^{-1}u.
+\]
+Multiplying through by $M_0$ and collecting yields
+\begin{equation}
+    M_0 v + Y M_1 v + Y^2 M_2 v = f_{\mathrm{gen}},
+    \label{eqv:loopcollapse}
+\end{equation}
+hence
+\begin{equation}
+    M(Y)\,v = f_{\mathrm{gen}}.
+    \label{eqv:MYv}
+\end{equation}
+Then the state equation becomes
+\[
+\dot{x} = \begin{bmatrix} \dot{q} \\ v \end{bmatrix}
+= \begin{bmatrix} \dot{q} \\ M(Y)^{-1} f_{\mathrm{gen}} \end{bmatrix}
+= A_c(Y)\,x + B_c(Y)\,u,
+\]
+which matches \eqref{eqv:ctss}--\eqref{eqv:ctmats}.}
+
+\audititem{Status}{\statusline{Direct from Drenth} for the collapse principle.
+\statusline{Own derivation} for the explicit reduction to \eqref{eqv:MYv}.}
+
+\audititem{What still needs checking}{The identity $M(Y)v = f_{\mathrm{gen}}$
+is not a Drenth theorem. It is the key plant-specific correctness result of the
+dual-gantry derivation.}
+
+\subsection{Step 11: Confirm the collapsed dependence class}
+
+\audititem{Drenth reference}{Thesis Section~2.1, text after eq.~(2.4)
+\cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth states that collapsing the LPV-LFR yields an
+LPV state-space model with rational dependence on the scheduling variable, with
+affine dependency as the special case $D_{zw}=0$.}
+
+\audititem{Generalized step}{After collapse, classify the resulting dual-gantry
+model as affine or rational.}
+
+\audititem{Dual-gantry application}{Because the collapsed matrices contain
+$M(Y)^{-1}$, the dual-gantry CT model is rational in $Y$.}
+
+\audititem{Status}{\statusline{Direct from Drenth} for the classification
+framework. \statusline{Own derivation} for classifying this specific plant.}
+
+\audititem{What still needs checking}{This does not say whether an approximate
+affine embedding might also be useful. It only classifies the exact baseline.}
+
+%------------------------------------------------------------------------------
+\section{Well-Posedness: Generic Drenth Route Versus Sharper Plant-Specific Route}
+%------------------------------------------------------------------------------
+
+\subsection{Step 12: State the exact basic loop-solvability condition}
+
+\audititem{Drenth reference}{Thesis Section~2.1, immediately after eq.~(2.4)
+\cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth states the exact algebraic-loop solvability
+condition:
+\[
+I - D_{zw}\Delta(p)
+\]
+must be nonsingular for all admissible scheduling values.}
+
+\audititem{Generalized step}{Every candidate LPV-LFR realization must first be
+checked against the exact basic nonsingularity condition.}
+
+\audititem{Dual-gantry application}{For the dual-gantry realization, the exact
+condition is
+\begin{equation}
+    I - D_{zw}\Delta(Y) \text{ is nonsingular for all admissible } Y.
+    \label{eqv:wpbasic}
+\end{equation}}
+
+\audititem{Status}{\statusline{Direct from Drenth}.}
+
+\audititem{What still needs checking}{At this stage we do not yet have either
+Drenth's sufficient theorem or the sharper plant-specific simplification. Those
+are two different next moves and must be kept separate.}
+
+\subsection{Step 13: State Drenth's generic sufficient well-posedness route}
+
+\audititem{Drenth reference}{Thesis Section~2.2, Assumptions~2.1--2.2,
+Remark~2.3, Condition~2.4, Theorem~2.5, and eqs.~(2.10)--(2.13)
+\cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth turns the exact basic condition into a
+generic sufficient route:
+\begin{itemize}[leftmargin=1.2em]
+    \item $\Delta(p)$ has diagonal structure,
+    \item the scheduling set is contained in the unit $\ell_\infty$ ball,
+    \item $\rho(D_{zw}) < 1$,
+    \item therefore $I - D_{zw}\Delta(p)$ is nonsingular for all admissible $p$.
+\end{itemize}
+He then introduces parameterizations of $D_{zw}$ suited for unconstrained
+optimization.}
+
+\audititem{Generalized step}{One generic way to establish well-posedness is:
+\begin{enumerate}[leftmargin=1.4em,label=\arabic*.]
+    \item verify the required Delta structure,
+    \item normalize the scheduling range if needed,
+    \item verify the spectral-radius bound on $D_{zw}$,
+    \item apply Theorem~2.5.
+\end{enumerate}
+This route is sufficient, not exact.}
+
+\audititem{Dual-gantry application}{For the dual gantry:
+\begin{itemize}[leftmargin=1.2em]
+    \item the chosen $\Delta(Y)=YI_6$ is structurally compatible with the
+    diagonal repeated-block requirement,
+    \item on the operational interval $Y \in [0.05,0.75]$, the raw variable
+    already satisfies $|Y| \leq 1$,
+    \item for another bounded interval, Remark~2.3 says scaling and shifting are
+    available,
+    \item the unresolved part is Condition~2.4: we would still need to prove
+    $\rho(D_{zw}) < 1$ for the specific dual-gantry $D_{zw}$.
+\end{itemize}
+So Drenth's Section~2.2 gives a generic sufficient route in principle, but that
+route is not completed for the present gantry derivation unless the spectral
+radius is checked explicitly. In other words, this route is available as theory
+background, but it is not yet the proof route actually used for the current
+baseline.}
+
+\audititem{Status}{\statusline{Direct from Drenth} for the theorem and its
+assumptions. \statusline{Generalized from Drenth} for the workflow
+``check assumptions, then apply theorem.'' \statusline{Own derivation} for
+identifying how the current dual-gantry realization fits those assumptions.}
+
+\audititem{What still needs checking}{This route does not by itself justify
+global well-posedness for all $Y \in \R$. It also does not justify invoking
+Theorem~2.5 without actually checking $\rho(D_{zw}) < 1$.}
+
+\subsection{Step 14: State the sharper plant-specific well-posedness route}
+
+\audititem{Drenth reference}{The exact starting point comes from Section~2.1:
+well-posedness is equivalent to solvability of the algebraic loop. The actual
+reduction below is \textbf{not} from Drenth; it comes from the dual-gantry
+algebra in \texttt{LPV/LFR-derivation.tex} and the companion proof in
+\texttt{LPV/M-invertibility.tex}.}
+
+\audititem{What Drenth does}{Drenth supplies the exact loop-solvability
+condition and a generic sufficient theorem, but not a plant-specific reduction
+for this mechanical model.}
+
+\audititem{Generalized step}{If the plant structure allows it, reduce the exact
+loop-solvability condition to a simpler condition that is specific to the plant
+and sharper than the generic sufficient theorem.}
+
+\audititem{Dual-gantry application}{For the dual gantry, the loop equations are
+\begin{align}
+    v   &= M_0^{-1}[-K,-C]\,x - M_0^{-1}M_1\,(Yv)
+           - M_0^{-1}M_2\,(Yv_1) + M_0^{-1}u,
+           \label{eqv:loopv} \\
+    v_1 &= Yv. \label{eqv:loopv1}
+\end{align}
+Substituting \eqref{eqv:loopv1} into \eqref{eqv:loopv} yields
+\[
+(M_0 + YM_1 + Y^2 M_2)\,v = f_{\mathrm{gen}},
+\]
+that is,
+\begin{equation}
+    M(Y)\,v = f_{\mathrm{gen}}.
+    \label{eqv:loopreduced}
+\end{equation}
+So the algebraic loop has a unique solution if and only if $M(Y)$ is
+invertible.
+
+The companion note \texttt{LPV/M-invertibility.tex} then proves, using
+Sylvester's criterion, that under positive masses, inertias, and geometric
+parameters:
+\[
+M(Y) \succ 0 \qquad \forall\, Y \in \R.
+\]
+Hence $M(Y)$ is invertible for all real $Y$, and therefore the dual-gantry LFR
+is globally well-posed in $Y$. This is the proof route actually used for the
+current baseline.}
+
+\audititem{Status}{\statusline{Direct from Drenth} only for the fact that the
+exact algebraic loop must be solved. \statusline{Own derivation} for the
+reduction to \eqref{eqv:loopreduced}. \statusline{Own derivation} for the proof
+route through the companion invertibility note \texttt{LPV/M-invertibility.tex}.}
+
+\audititem{What still needs checking}{This route should not be described as an
+application of Theorem~2.5. It is a different, sharper route.
+Also, if physical parameters are later made trainable, the proof remains valid
+only if the positivity assumptions in the companion invertibility note are
+preserved.}
+
+\subsection{Step 15: Compare the two well-posedness routes explicitly}
+
+\audititem{Drenth reference}{Section~2.1 gives the exact condition, and
+Section~2.2 gives a sufficient theorem \cite{drenth2025thesis}.}
+
+\audititem{What Drenth does}{Drenth does not perform this comparison for the
+dual gantry. The comparison here is a verification aid built on top of the
+framework he provides.}
+
+\audititem{Generalized step}{When both a generic sufficient theorem and a
+plant-specific exact reduction are available, compare them rather than treating
+them as interchangeable.}
+
+\audititem{Dual-gantry application}{For the dual gantry, the two routes are best
+read side by side:
+\begin{center}
+\begin{tabular}{p{0.22\linewidth}p{0.33\linewidth}p{0.33\linewidth}}
+\toprule
+Aspect & Drenth Section~2.2 route & Dual-gantry plant-specific route \\
+\midrule
+Type of result & Generic sufficient theorem & Exact structural reduction for this plant \\
+Starting point & Diagonal $\Delta$, bounded scheduling, $\rho(D_{zw})<1$ & Exact loop equations of the chosen realization \\
+Key object to check & Spectral radius of $D_{zw}$ & Invertibility of $M(Y)$ \\
+Range in which it naturally lives & Bounded scheduling setup & Global in $Y$ once $M(Y)\succ 0$ is proved \\
+Best use here & Background theorem and later learnable-model context & Actual baseline well-posedness proof \\
+\bottomrule
+\end{tabular}
+\end{center}
+So the honest conclusion is:
+\begin{itemize}[leftmargin=1.2em]
+    \item Drenth Section~2.2 supplies the \textbf{generic sufficient theorem}.
+    \item The dual-gantry derivation supplies the \textbf{sharper plant-specific
+    proof}.
+\end{itemize}}
+
+\audititem{Status}{\statusline{Generalized from Drenth} for the comparison
+viewpoint. \statusline{Own derivation} for concluding which route is sharper for
+this plant.}
+
+\audititem{What still needs checking}{This comparison does not make Drenth's
+route irrelevant. It remains useful if one later introduces a learnable rational
+LPV-LFR block or wants a bounded-range sufficient theorem aligned with Drenth's
+identification framework.}
+
+%------------------------------------------------------------------------------
+\section{Boundary Summary}
+%------------------------------------------------------------------------------
+
+\begin{resultbox}{Directly supported by Drenth}
+\begin{itemize}[leftmargin=1.2em]
+    \item CT LPV-LFR framework $(G,\Delta(p))$
+    \item repeated block-diagonal Delta structure
+    \item latent-loop interpretation of $z$ and $w$
+    \item affine special case $D_{zw}=0$
+    \item collapse of the loop to an LPV-SS model
+    \item rational dependency after collapse
+    \item affine-versus-rational trade-off and overbounding motivation
+    \item exact basic loop-solvability condition
+    \item generic sufficient well-posedness theorem from Section~2.2
+    \item optimization-oriented well-posed parameterization of $D_{zw}$
+\end{itemize}
+\end{resultbox}
+
+\begin{resultbox}{Generalized from Drenth}
+\begin{itemize}[leftmargin=1.2em]
+    \item using the LPV-LFR form as a design target for a plant-specific reformulation
+    \item using collapse as the main correctness check of a candidate realization
+    \item using coupling preservation as a scheduling-design principle
+    \item preferring repeated use of one physical scheduling variable over
+    introducing unnecessary independent scheduling variables
+    \item treating Theorem~2.5 as one available well-posedness route rather than
+    the only route
+\end{itemize}
+\end{resultbox}
+
+\begin{resultbox}{Own Dual-Gantry Derivation}
+\begin{itemize}[leftmargin=1.2em]
+    \item the target CT gantry model itself
+    \item the decomposition $M(Y) = M_0 + YM_1 + Y^2M_2$
+    \item the specific latent variables $v$, $v_1$, $v_2$
+    \item the signal definitions $z = [v;v_1]$, $w = [v_1;v_2]$
+    \item the specific Delta block $\Delta(Y) = YI_6$
+    \item the explicit constant matrix blocks of $G$
+    \item the reduction of the loop to $M(Y)v = f_{\mathrm{gen}}$
+    \item the sharper plant-specific well-posedness proof through invertibility
+    of $M(Y)$
+\end{itemize}
+\end{resultbox}
+
+%------------------------------------------------------------------------------
+\section{Manual Checking Priorities}
+%------------------------------------------------------------------------------
+
+\begin{warningbox}{Weakest or Most Important Parts to Check Manually}
+The current document is structured and explicit, but the following parts still
+deserve the most manual attention:
+\begin{enumerate}[leftmargin=1.4em,label=\arabic*.]
+    \item \textbf{Equation numbering against the thesis.} The document assumes
+    the current local thesis edition matches the Section~2 numbering already
+    extracted in the source-only notes. This should be checked once more against
+    the PDF before any external use.
+    \item \textbf{The plant-specific latent-variable choice.} The definitions of
+    $v$, $v_1$, $v_2$, $z$, and $w$ are the most important own-derivation step.
+    They are algebraically sensible, but they are not prescribed by Drenth.
+    \item \textbf{The reduction to $M(Y)v = f_{\mathrm{gen}}$.} This is the key
+    exactness result of the gantry derivation. It should be checked line by line
+    against \texttt{LPV/LFR-derivation.tex}.
+    \item \textbf{The relationship between Drenth's Theorem~2.5 and the current
+    gantry proof.} The present document keeps them separate, which is good, but
+    if the supervisor-facing version later cites Theorem~2.5 directly, it should
+    be made explicit that the sharper proof used here is different.
+    \item \textbf{Future trainable-parameter use.} If physical parameters are
+    later updated during augmentation, the global invertibility statement remains
+    valid only if the positivity assumptions from \texttt{LPV/M-invertibility.tex}
+    are preserved by the parameterization.
+\end{enumerate}
+\end{warningbox}
+
+\begin{resultbox}{Practical Outcome}
+This verification document now supports the following clean statement:
+
+Drenth's thesis provides the generic CT LPV-LFR framework, the affine-versus-rational
+motivation, and a generic sufficient well-posedness theorem. The exact
+dual-gantry realization, however, is mainly our own derivation, and the
+strongest well-posedness proof for this baseline is the plant-specific reduction
+to $M(Y)v = f_{\mathrm{gen}}$ together with the companion invertibility proof.
+\end{resultbox}
+
+\newpage
+\begin{thebibliography}{9}
+
+\bibitem{garcia2013model}
+I.~Garcia-Herreros, X.~Kestelyn, J.~Gomand, R.~Coleman, and P.-J.~Barre,
+``Model-based decoupling control method for dual-drive gantry stages:
+A case study with experimental validations,''
+\textit{Control Engineering Practice}, vol.~21, no.~3, pp.~298--307, 2013.
+
+\bibitem{drenth2025lpvlfr}
+J.~Drenth, J.~Hoekstra, M.~Schoukens, and R.~Toth,
+``Efficient Learning of Affine and Rational Dependency LPV Models With LFR,''
+in \textit{Proc.\ IFAC}, 2025.
+
+\bibitem{drenth2025thesis}
+J.~Drenth,
+``Gradient-based Learning of LPV-LFR Models,''
+M.Sc.\ thesis, Eindhoven University of Technology, 2025.
+
+\end{thebibliography}
+
+\end{document}
+
