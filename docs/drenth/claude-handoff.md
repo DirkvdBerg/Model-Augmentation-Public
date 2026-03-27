@@ -25,11 +25,13 @@ The key files are:
   Generalized CT LPV-LFR recipe built from the source-only notes.
 - `docs/drenth/ch2-dual-gantry-mapping.md`
   Step-by-step mapping of that recipe onto the dual-gantry model.
-- `LPV/LFR-derivation-verification.tex`
+- `LPV/supporting/verification/LFR-derivation-verification.tex`
   Consolidated internal verification document.
-- `LPV/LFR-derivation.tex`
+- `LPV/LFR-derivation-supervisor.tex`
+  Current supervisor-facing derivation document.
+- `LPV/supporting/derivations/LFR-derivation.tex`
   Cleaner derivation document.
-- `LPV/M-invertibility.tex`
+- `LPV/supporting/derivations/M-invertibility.tex`
   Plant-specific invertibility proof used for well-posedness.
 
 ## Important Source Boundary
@@ -85,7 +87,7 @@ The verification chain also distinguishes two well-posedness routes:
 1. Drenth's generic sufficient route from Section `2.2`
 2. the sharper plant-specific route based on:
    - reduction of the loop to `M(Y) v = f_gen`
-   - invertibility proved in `LPV/M-invertibility.tex`
+   - invertibility proved in `LPV/supporting/derivations/M-invertibility.tex`
 
 The plant-specific route is the stronger and more relevant proof for the
 current fixed baseline model.
@@ -112,7 +114,7 @@ The review should focus on the following questions:
 
 If you want the smallest useful bundle, give Claude:
 
-- `LPV/LFR-derivation-verification.tex`
+- `LPV/supporting/verification/LFR-derivation-verification.tex`
 - `literature/books/drenth2025_lpv-lfr-thesis.pdf`
 
 This is usually enough for a direct verification pass, because the `.tex`
@@ -123,7 +125,7 @@ labels.
 
 If you want a more reliable audit, give Claude:
 
-- `LPV/LFR-derivation-verification.tex`
+- `LPV/supporting/verification/LFR-derivation-verification.tex`
 - `docs/drenth/ch2-sec21-source.md`
 - `docs/drenth/ch2-sec211-source.md`
 - `docs/drenth/ch2-sec22-source.md`
@@ -144,12 +146,12 @@ Primary source to use:
 - literature/books/drenth2025_lpv-lfr-thesis.pdf
 
 Files to review:
-- LPV/LFR-derivation-verification.tex
+- LPV/supporting/verification/LFR-derivation-verification.tex
 - docs/drenth/ch2-sec21-source.md
 - docs/drenth/ch2-sec211-source.md
 - docs/drenth/ch2-sec22-source.md
 - docs/drenth/ch2-dual-gantry-mapping.md
-- LPV/M-invertibility.tex
+- LPV/supporting/derivations/M-invertibility.tex
 
 Review goal:
 I want a careful verification-oriented review of whether the consolidated verification document is faithful to Drenth's thesis and whether the dual-gantry-specific derivation steps are correct.
@@ -164,7 +166,7 @@ Important context:
 - The dual-gantry realization is not claimed to come directly from Drenth.
 
 What I want you to do:
-1. Read LPV/LFR-derivation-verification.tex as the main document.
+1. Read LPV/supporting/verification/LFR-derivation-verification.tex as the main document.
 2. Check the cited Drenth-based claims against the thesis, especially Sections 2.1, 2.1.1, and 2.2.
 3. Verify whether the lines labeled or described as “Direct from Drenth” are really directly supported.
 4. Verify whether the “Generalized from Drenth” steps are reasonable and not overstated.
@@ -191,6 +193,6 @@ Please be critical and precise. I do not want a friendly summary only. I want a 
 
 ## Recommended Use
 
-For the strongest result, ask Claude to review `LPV/LFR-derivation-verification.tex`
+For the strongest result, ask Claude to review `LPV/supporting/verification/LFR-derivation-verification.tex`
 first, then use the source-only notes only when he needs to check how a given
 claim was constructed.

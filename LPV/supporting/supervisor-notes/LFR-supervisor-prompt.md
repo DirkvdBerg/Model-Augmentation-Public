@@ -10,12 +10,12 @@ realization.
 
 Use these two files as the main references:
 
-- `LPV/LFR-supervisor-inclusion-guide.md`
-- `LPV/LFR-supervisor-outline.md`
+- `LPV/supporting/supervisor-notes/LFR-supervisor-inclusion-guide.md`
+- `LPV/supporting/supervisor-notes/LFR-supervisor-outline.md`
 
 Use this file as the detailed mathematical source of truth:
 
-- `LPV/LFR-derivation-verification.tex`
+- `LPV/supporting/verification/LFR-derivation-verification.tex`
 
 Requirements:
 
@@ -83,7 +83,7 @@ exact reduction, not Drenth's generic sufficient theorem from Section 2.2.
 15. State explicitly that the realization is exact, but no minimality claim is
 made.
 
-Structure the document according to `LPV/LFR-supervisor-outline.md`.
+Structure the document according to `LPV/supporting/supervisor-notes/LFR-supervisor-outline.md`.
 
 The tone should be mathematically clear, calm, and direct. Avoid the internal
 audit style of the verification note.

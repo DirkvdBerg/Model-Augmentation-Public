@@ -11,13 +11,13 @@ The receiving agent reads this as step 3 of their session start sequence.
 
 ## Session Goal
 
-Write `LPV/LFR-derivation.tex` -- a standalone LaTeX document deriving the LPV-LFR
+Write `LPV/supporting/derivations/LFR-derivation.tex` -- a standalone LaTeX document deriving the LPV-LFR
 structure of the gantry FP model from the MATLAB CT state-space, suitable for
 TU/e supervisor review.
 
 ## Status
 
-**`LPV/LFR-derivation.tex` is written and structurally complete.**
+**`LPV/supporting/derivations/LFR-derivation.tex` is written and structurally complete.**
 Citation strategy is resolved (see below). The document needs one revision pass
 to update citations and verify the Section 2 LFR definition against Tóth Ch. 3.
 
@@ -31,7 +31,7 @@ stage-coordinate RK4 baseline used by the codebase?"
 
 ### LFR-derivation.tex written
 
-File: `LPV/LFR-derivation.tex`
+File: `LPV/supporting/derivations/LFR-derivation.tex`
 
 Seven sections:
 1. CT state-space from MATLAB (`getss.m`), with stage coordinate remark
@@ -40,7 +40,7 @@ Seven sections:
 4. Latent variable construction: v, v1=Yv, v2=Y^2v; z=[v;v1], w=[v1;v2]=Yz, Δ(Y)=YI6
 5. Constant G matrix -- derived subsection by subsection (state, loop, output)
 6. Algebraic verification -- 3-step: solve loop (M(Y)v=f_gen), recover ẋ, check output
-7. Well-posedness -- loop reduces to M(Y)v=f_gen by construction of Dzw; cite M-invertibility.tex
+7. Well-posedness -- loop reduces to M(Y)v=f_gen by construction of Dzw; cite `LPV/supporting/derivations/M-invertibility.tex`
 
 The verified G matrix:
 - A   = [0, I3; -M0^{-1}K, -M0^{-1}C]
@@ -59,7 +59,7 @@ Extensive source review was conducted this session. Conclusions:
 - `drenth2025rational` (Drenth IFAC) -- for the {G, Δ(p)} definition (eq. 6-7)
   and well-posedness condition. This is the right source. Cite in Section 2.
 - `garcia2013model` -- for EOM and M(Y) structure. Already in Section 1 and 3.
-- `M-invertibility.tex` -- for well-posedness (positive definiteness of M(Y)). Section 7.
+- `LPV/supporting/derivations/M-invertibility.tex` -- for well-posedness (positive definiteness of M(Y)). Section 7.
 
 **Do NOT use (with reasons):**
 - `toth2010modeling` Ch. 7 ("LPV Modeling of Physical Systems"):
@@ -99,7 +99,7 @@ for the document.
 
 ## Files Modified This Session
 
-- `LPV/LFR-derivation.tex` -- created (new file)
+- `LPV/supporting/derivations/LFR-derivation.tex` -- created (new file)
 
 ## Decisions Made
 
@@ -113,7 +113,7 @@ read as more settled than it really is.
 
 ### 1. Coordinate-system boundary is still an implementation decision
 
-The derivation in `LPV/LFR-derivation.tex` is written in logical coordinates
+The derivation in `LPV/supporting/derivations/LFR-derivation.tex` is written in logical coordinates
 `[X, Theta, Y]`, which is the cleanest match to the MATLAB equations.
 The implementation path in the repository is stage-coordinate centric by D-006:
 states, inputs, outputs, and data all live in `[X1, X2, Y]`.
@@ -185,7 +185,7 @@ Question: does it contain the LFR/LFT interconnection structure in the
 - If yes: add as secondary cite for Section 2 alongside Drenth IFAC.
 - If no: use only Drenth IFAC for Section 2.
 
-### Step 2: Update Section 2 citation in LFR-derivation.tex
+### Step 2: Update Section 2 citation in `LPV/supporting/derivations/LFR-derivation.tex`
 
 Current Section 2 cites `drenth2025lpvlfr` (thesis) and `drenth2025thesis`.
 Replace/verify citations based on Step 1 outcome:
@@ -197,7 +197,7 @@ Replace/verify citations based on Step 1 outcome:
 Add Alkhoury et al. (2016) entry if needed.
 Verify all paths and cite keys in the document match references.md.
 
-### Step 4: Final review pass of LFR-derivation.tex
+### Step 4: Final review pass of `LPV/supporting/derivations/LFR-derivation.tex`
 
 Check:
 - No em-dashes anywhere (lessons.md rule)

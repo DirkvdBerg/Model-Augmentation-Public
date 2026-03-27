@@ -3,8 +3,8 @@
 This file gives the recommended structure for the clean supervisor-facing
 derivation. It should be used together with:
 
-- `LPV/LFR-supervisor-inclusion-guide.md`
-- `LPV/LFR-derivation-verification.tex`
+- `LPV/supporting/supervisor-notes/LFR-supervisor-inclusion-guide.md`
+- `LPV/supporting/verification/LFR-derivation-verification.tex`
 
 The goal is concise wording with complete mathematical steps.
 

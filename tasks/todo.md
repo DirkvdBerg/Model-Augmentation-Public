@@ -406,7 +406,7 @@ Step 3 currently mixes two different kinds of statements:
 
 What is established:
 - the CT quasi-LPV baseline can be written as an explicit LPV-LFR using the
-  latent-variable construction in `LPV/LFR-derivation.tex`
+latent-variable construction in `LPV/supporting/derivations/LFR-derivation.tex`
 - the resulting algebraic loop is well-posed because it reduces to solving
   `M(Y) v = f_gen` for this specific construction
 
@@ -563,7 +563,7 @@ longer accurate to treat the project as if there were no baseline realization
 method at all. There is now a direct algebraic realization available.
 
 The remaining question is narrower:
-- do we accept the latent-variable realization from `LPV/LFR-derivation.tex` as
+- do we accept the latent-variable realization from `LPV/supporting/derivations/LFR-derivation.tex` as
   the project baseline, or
 - do we still require a textbook or tool-based LFT realization for comparison,
   minimality, or supervisor preference?
@@ -587,7 +587,7 @@ notation (thesis eq. 5.1-5.2, IFAC paper eq. 6-7).
 
 **Two LFR subsystems** (Drenth thesis eq. 5.2):
 1. Baseline LFR: captures the known rational Y-dependence from M(Y)^{-1} in A_c(Y).
-   A valid latent-variable realization now exists in `LPV/LFR-derivation.tex`.
+A valid latent-variable realization now exists in `LPV/supporting/derivations/LFR-derivation.tex`.
    Remaining decision: implement that realization directly, or replace/compare
    it with a textbook/tool-based LFT realization if one is obtained later.
 2. Augmentation LFR: learned from data, adds correction on top of baseline.

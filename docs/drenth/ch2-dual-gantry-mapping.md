@@ -8,7 +8,7 @@ This note maps the generalized recipe in:
 
 onto the dual-gantry continuous-time model documented in:
 
-- `LPV/LFR-derivation.tex`
+- `LPV/supporting/derivations/LFR-derivation.tex`
 
 The purpose is **verification**, not presentation quality. For each step, the note records:
 
@@ -34,8 +34,8 @@ This note intentionally uses:
 - `docs/drenth/ch2-sec211-source.md`
 - `docs/drenth/ch2-sec22-source.md`
 - `docs/drenth/ch2-generalized-recipe.md`
-- `LPV/LFR-derivation.tex`
-- `LPV/M-invertibility.tex`
+- `LPV/supporting/derivations/LFR-derivation.tex`
+- `LPV/supporting/derivations/M-invertibility.tex`
 
 This note intentionally does **not** yet use:
 
@@ -72,7 +72,7 @@ Adopt the CT LPV-LFR pair `(G, Delta(p))` as the target representation class.
 
 ### 3. Dual-gantry application
 
-In `LPV/LFR-derivation.tex`, the target class is taken to be a CT LPV-LFR for the dual-gantry baseline:
+In `LPV/supporting/derivations/LFR-derivation.tex`, the target class is taken to be a CT LPV-LFR for the dual-gantry baseline:
 
 - state: `x = [q^T, qdot^T]^T in R^6`
 - input: `u := f_ell`
@@ -153,7 +153,7 @@ Write down the continuous-time model that must be recovered exactly after collap
 
 ### 3. Dual-gantry application
 
-The target CT model is the MATLAB-derived baseline in `LPV/LFR-derivation.tex`, Section `Starting Point: CT State-Space from MATLAB`:
+The target CT model is the MATLAB-derived baseline in `LPV/supporting/derivations/LFR-derivation.tex`, Section `Starting Point: CT State-Space from MATLAB`:
 
 - `x_dot(t) = A_c(Y) x(t) + B_c(Y) u(t)`
 - `y(t) = C_c x(t)`
@@ -197,7 +197,7 @@ Decide whether the plant can be represented adequately in the affine special cas
 
 ### 3. Dual-gantry application
 
-In `LPV/LFR-derivation.tex`, the baseline CT matrices depend on `M(Y)^(-1)`.
+In `LPV/supporting/derivations/LFR-derivation.tex`, the baseline CT matrices depend on `M(Y)^(-1)`.
 
 Since `M(Y)` is polynomial in `Y`, but `A_c(Y)` and `B_c(Y)` depend on the inverse `M(Y)^(-1)`, the collapsed dependence is rational in `Y`.
 
@@ -264,7 +264,7 @@ If richer dependency must be represented, use repetition of the same scheduling 
 
 ### 3. Dual-gantry application
 
-In `LPV/LFR-derivation.tex`, the eventual scheduling block is chosen as:
+In `LPV/supporting/derivations/LFR-derivation.tex`, the eventual scheduling block is chosen as:
 
 - `Delta(Y) = Y I_6`
 
@@ -302,7 +302,7 @@ Introduce internal latent variables so that the scheduling dependence is express
 
 ### 3. Dual-gantry application
 
-In `LPV/LFR-derivation.tex`, the plant-specific latent variables are chosen as:
+In `LPV/supporting/derivations/LFR-derivation.tex`, the plant-specific latent variables are chosen as:
 
 - `f_gen = [-K, -C] x + u`
 - `v = M(Y)^(-1) f_gen`
@@ -343,7 +343,7 @@ Rewrite the plant equations so that the parameter dependence appears only throug
 
 ### 3. Dual-gantry application
 
-The crucial preparatory algebra in `LPV/LFR-derivation.tex` is:
+The crucial preparatory algebra in `LPV/supporting/derivations/LFR-derivation.tex` is:
 
 - `M(Y) = M_0 + Y M_1 + Y^2 M_2`
 
@@ -391,7 +391,7 @@ Once the equations are written in LPV-LFR form, identify the constant blocks of 
 
 ### 3. Dual-gantry application
 
-In `LPV/LFR-derivation.tex`, this produces:
+In `LPV/supporting/derivations/LFR-derivation.tex`, this produces:
 
 - state equation blocks:
   - `A = [[0, I_3]; [-M_0^(-1) K, -M_0^(-1) C]]`
@@ -438,7 +438,7 @@ Use loop collapse as the main correctness check: substitute the Delta relation, 
 
 ### 3. Dual-gantry application
 
-In `LPV/LFR-derivation.tex`, the loop collapse is checked explicitly:
+In `LPV/supporting/derivations/LFR-derivation.tex`, the loop collapse is checked explicitly:
 
 - `w = Delta(Y) z = Y z`
 - hence `w_1 = Y v`
@@ -602,8 +602,8 @@ That exact condition is direct from Drenth.
 
 The rest of this step is **not** from Drenth:
 
-- it comes from the plant-specific algebra in `LPV/LFR-derivation.tex`,
-- together with the positivity/invertibility proof in `LPV/M-invertibility.tex`.
+- it comes from the plant-specific algebra in `LPV/supporting/derivations/LFR-derivation.tex`,
+- together with the positivity/invertibility proof in `LPV/supporting/derivations/M-invertibility.tex`.
 
 ### 2. Generalized step
 
@@ -611,7 +611,7 @@ Instead of applying only a generic sufficient theorem, attempt to use the plant 
 
 ### 3. Dual-gantry application
 
-For the dual gantry, `LPV/LFR-derivation.tex` derives the loop equations:
+For the dual gantry, `LPV/supporting/derivations/LFR-derivation.tex` derives the loop equations:
 
 - `v = M_0^(-1) [-K, -C] x - M_0^(-1) M_1 (Y v) - M_0^(-1) M_2 (Y v_1) + M_0^(-1) u`
 - `v_1 = Y v`
@@ -623,7 +623,7 @@ Substituting `v_1 = Y v` gives:
 
 So the algebraic loop has a unique solution if and only if `M(Y)` is invertible.
 
-Then `LPV/M-invertibility.tex` proves, using Sylvester's criterion, that under positive physical masses, inertias, and geometric parameters:
+Then `LPV/supporting/derivations/M-invertibility.tex` proves, using Sylvester's criterion, that under positive physical masses, inertias, and geometric parameters:
 
 - `M(Y)` is positive definite for all `Y in R`,
 - therefore `M(Y)` is invertible for all `Y in R`.
@@ -637,13 +637,13 @@ This yields a sharper plant-specific result:
 
 - `Direct from Drenth` for the fact that one must solve the exact algebraic loop
 - `Own dual-gantry derivation` for the reduction to `M(Y) v = f_gen`
-- `Own dual-gantry derivation` for the proof route through `LPV/M-invertibility.tex`
+- `Own dual-gantry derivation` for the proof route through `LPV/supporting/derivations/M-invertibility.tex`
 
 ### 5. What is not yet justified
 
 This route does **not** come from Drenth's Section `2.2`, so it should not be described as an application of Theorem `2.5`.
 
-Also, if physical parameters are later made trainable, this proof continues to apply only if the optimization preserves the positivity assumptions used in `LPV/M-invertibility.tex`.
+Also, if physical parameters are later made trainable, this proof continues to apply only if the optimization preserves the positivity assumptions used in `LPV/supporting/derivations/M-invertibility.tex`.
 
 ## Step 15. Compare the two well-posedness routes explicitly
 
@@ -676,7 +676,7 @@ For the dual gantry:
   - exact for this plant,
   - structurally tied to the chosen `D_zw`,
   - reduced to the mechanical matrix `M(Y)`,
-  - and global in `Y` once `LPV/M-invertibility.tex` is invoked.
+- and global in `Y` once `LPV/supporting/derivations/M-invertibility.tex` is invoked.
 
 So the honest conclusion is:
 
@@ -741,7 +741,7 @@ With Drenth Sections `2.1`, `2.1.1`, and `2.2` all explicitly available, the dua
 
 - Sections `2.1` and `2.1.1` justify the **framework choice**, the **rational modeling choice**, and the **verification logic**.
 - Section `2.2` adds a **generic sufficient well-posedness theorem**.
-- The dual-gantry derivation then goes further and gives a **sharper plant-specific proof** by reducing the loop to `M(Y) v = f_gen` and invoking `LPV/M-invertibility.tex`.
+- The dual-gantry derivation then goes further and gives a **sharper plant-specific proof** by reducing the loop to `M(Y) v = f_gen` and invoking `LPV/supporting/derivations/M-invertibility.tex`.
 
 So the verification note should preserve the following distinction:
 

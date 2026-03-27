@@ -1,274 +1,232 @@
-# LPV-LFR Interconnect — Specification and Open Questions
+# LPV-LFR Interconnect — Architecture and Decisions
 
-This document defines the use case and specific questions that Drenth's thesis must answer
-before Step 3 (wiring the LPV baseline into the augmentation interconnect) is implemented.
-
-**Source clarification update (2026-03-24)**:
-- `literature/books/drenth2025_lpv-lfr-thesis.pdf` is the primary **continuous-time** LPV-LFR source. It defines the pair `(G, Delta(p))` with `x_dot(t)`, `z(t)`, `w(t)`, `y(t)`.
-- `literature/lpv-lfr/drenth2025_lpv-lfr-rational.pdf` is the **discrete-time** companion IFAC paper. It defines `{M, Delta(p)}` in DT.
-- For any CT LPV-LFR definition used in the gantry derivation, cite the thesis first and treat the IFAC paper as supporting DT context.
+*Last updated: 2026-03-27. Reflects D-011, D-012, D-013, D-017, D-018 (all updated 2026-03-20 to 2026-03-22).*
 
 ---
 
-## Context — what we have now (LTI baseline)
+## Sources
 
-Jan's augmentation framework uses a fixed LFR interconnect. For the LTI case, the baseline
-provides constant A, B, C, D matrices. Two blocks wire into `SSE_Interconnect`:
-
-```
-Linear_State_Block(A, B)    →  x[k+1] = A @ x[k] + B @ u[k]
-Linear_Output_Block(C, D)   →  y[k]   = C @ x[k] + D @ u[k]
-```
-
-The augmentation (data-driven correction) adds additively to x[k+1] and y[k] in parallel.
-Signals flow through a pre-computed interconnection matrix S (LFR structure). Algebraic loops
-are checked at init. Normalization is applied to A, B, C, D before block construction.
-
-This is validated and working for the gantry frozen LTI (Step 1 ✅).
+- `literature/books/drenth2025_lpv-lfr-thesis.pdf` — primary CT LPV-LFR source. Defines `(G, Δ(p))` with `ẋ(t)`, `z(t)`, `w(t)`, `y(t)`.
+- `literature/lpv-lfr/drenth2025_lpv-lfr-rational.pdf` — discrete-time companion IFAC paper. Defines `{M, Δ(p)}` in DT.
+- `LPV/LFR-derivation-supervisor.tex` — completed gantry LPV-LFR derivation. Derives the constant G matrix and Δ(Y) = Y·I₆ explicitly from the dual-gantry physics.
 
 ---
 
-## What we need to add — LPV baseline
+## Current architecture (as of 2026-03-22)
 
-The gantry FP model has Y-dependent matrices:
+### Baseline: CT_RK4_State_Block (D-011, D-013, D-018)
 
+The physics baseline is implemented as a **continuous-time ODE integrated with RK4** at each forward call. It is NOT pre-discretized:
+
+```python
+class CT_RK4_State_Block(Block):
+    def forward(self, z):
+        Y   = z[state_ix_Y]              # read Y from state (self-scheduled)
+        x   = z[:nx]
+        u   = z[nx:]
+        # CT vector field: ẋ = A_c(Y)·x + B_c(Y)·u
+        # Integrate one RK4 step with dt = ts
+        xp  = rk4_step(A_c(Y), B_c(Y), x, u, ts)
+        return xp
 ```
-x[k+1] = A_d(Y[k]) @ x[k] + B_d(Y[k]) @ u[k]
-y[k]   = C @ x[k]
-```
 
-where Y[k] = x[k, 2] (payload Y-position, state index 2 in stage coordinates).
-A_d(Y) and B_d(Y) change every timestep as Y evolves. C and D are constant.
+Where `A_c(Y)`, `B_c(Y)` are computed from `M(Y)⁻¹` each step — the LFR derivation shows these reduce to M0⁻¹ in the G matrix entries, with Y-dependence isolated in Δ(Y).
 
-Our planned block (`LPV_Linear_State_Block`, D-011) reads Y from the state at each forward
-call and recomputes A_d(Y), B_d(Y). This is the *direct* approach — it fits naturally into
-the existing `Block` interface since `forward(z)` already receives the current state.
+**Why RK4 over ZOH (D-018, D-012 update 2026-03-20)**:
+- Supervisor confirmed RK4 for the augmentation training loop (Step 3+)
+- ZOH pre-discretization remains valid for Steps 1–2 validation (already completed)
+- RK4 integrates the CT ODE directly — no pre-discretization, stays in continuous time
+- Avoids the dynamic dependence caveat of ZOH for quasi-LPV systems (Tóth, D-012)
 
-**The critical unknown**: Is this compatible with how Drenth represents LPV-LFR structure,
-or does his framework require a fundamentally different interconnect architecture?
+### Both baseline and augmentation use LFR structure (D-017)
+
+Per supervisor confirmation (2026-03-22):
+- **Baseline** has its own `Δ^b(Y)` derived from known physics. Fixed, not trained.
+- **Augmentation** has a separate `Δ^a(Y)` with trainable parameters.
+- Both follow Drenth Ch. 5 eq. 5.1–5.2.
+- `SSE_Interconnect` is used unchanged — no new interconnect class needed (Q2 ✅).
 
 ---
 
-## Two possible architectures
+## Completed LFR derivation
 
-### Architecture 1 — Direct (our current plan)
+The gantry LPV-LFR realization is derived in `LPV/LFR-derivation-supervisor.tex`. Key results:
 
-```
-LPV_Linear_State_Block.forward(z):
-    Y    = z[2]                         # read Y from state
-    A_d  = matrix_exp(A_c(Y) * ts)      # exact ZOH, torch-differentiable
-    B_d  = ...
-    return A_d @ x + B_d @ u
-```
+**Scheduling**: `Δ(Y) = Y·I₆` — a single scalar Y repeated 6 times.
 
-The block is stateful only in the sense that Y changes. It wires into `SSE_Interconnect`
-the same way as `Linear_State_Block`. No changes to the interconnect itself.
+**Latent variables**: `z = [v; v₁]`, `w = [v₁; v₂]` where `v = q̈`, `v₁ = Y·v`, `v₂ = Y·v₁`.
 
-### Architecture 2 — Δ(p) scheduling block (formal LFR-LPV)
+**Constant G matrix** (built from M₀, the Y-independent part of the mass matrix):
 
-In the formal LFR representation of LPV systems, the scheduling parameter enters as a
-separate block Δ(p) in the feedback path of the LFR. The plant is decomposed as:
+| | `x` | `w` | `u` |
+|---|---|---|---|
+| `ẋ` | `Ax = [0, I; -M₀⁻¹K, -M₀⁻¹C]` | `Bw = [0,0; -M₀⁻¹M₁, -M₀⁻¹M₂]` | `Bu = [0; M₀⁻¹]` |
+| `z` | `Cz = [-M₀⁻¹K, -M₀⁻¹C; 0, 0]` | `Dzw = [-M₀⁻¹M₁, -M₀⁻¹M₂; I₃, 0]` | `Dzu = [M₀⁻¹; 0]` |
+| `y` | `Cy = [I₃, 0]` | `Dyw = 0` | `Dyu = 0` |
 
-```
-M = [A0 + ΔA(p), B0 + ΔB(p)]
-```
+Collapsing the loop recovers `M(Y)⁻¹` exactly — verified algebraically in the derivation.
 
-where ΔA(p) = Δ(p) @ L_A (structured uncertainty block). This is the standard LFR-LPV
-representation (Tóth, Schoukens & Tóth 2018). It requires:
-- A different factorization of the plant matrices
-- A dedicated Δ block in the interconnect (scheduling function block)
-- Potentially different wiring topology — the scheduling variable enters as a separate signal
-
-If Drenth uses Architecture 2, our `LPV_Linear_State_Block` plan (Architecture 1) would
-need to be redesigned. This is the most important thing the thesis must resolve.
+All G matrix entries involve only **M₀⁻¹**, which is constant and precomputed once.
 
 ---
 
-## Questions Drenth's thesis must answer
+## Algebraic loop problem: why the explicit G + Δ wiring cannot enter the Interconnect
 
-### Q1 — Which architecture for the LPV baseline?
+### The algebraic loop in the gantry LFR
 
-Does Drenth represent the LPV baseline as:
-- (a) A block that directly computes A(p)x + B(p)u in `forward()`, or
-- (b) A formal LFR Δ(p) structure with separate scheduling and plant blocks?
+The LFR loop equations from the derivation are:
 
-Which sections/theorems define this? Does he give a concrete `forward()` or equivalent?
+```
+z = Cz·x + Dzw·w + Dzu·u       (output equation of G)
+w = Δ(Y)·z = Y·I₆·z            (scheduling block)
+```
 
-### Q2 — Does `SSE_Interconnect` still work, or is there a new class?
+where:
 
-Does the LPV extension use the same `SSE_Interconnect` class with the same
-`connect_signals` wiring, or does it introduce a new interconnect class / different
-connection topology?
+```
+Dzw = [-M₀⁻¹M₁,  -M₀⁻¹M₂]     ← NOT zero
+      [ I₃,        0      ]
+```
 
-### Q3 — How does the scheduling variable Y enter the interconnect?
+Because `Dzw ≠ 0`, substituting `w = Y·z` into the first equation gives:
 
-In our system, Y is a state (quasi-LPV). In the LFR structure, it must be available
-to the LPV block at each forward call. Does Drenth:
-- (a) Pass it as part of the state vector z (same as Architecture 1), or
-- (b) Treat it as a separate scheduling signal that routes through the S matrix?
+```
+z = Cz·x + Y·Dzw·z + Dzu·u
+(I - Y·Dzw)·z = Cz·x + Dzu·u
+```
 
-### Q4 — Normalization for LPV
+**z depends on itself** through `Dzw`. This is an algebraic loop.
 
-In the LTI case, `normalize_linear_ss_matrices()` applies T_x, T_u, T_y to constant
-A, B, C, D. For LPV, A(Y) is computed from physics at runtime. How does Drenth handle
-normalization — is it applied to A_c(Y) before the matrix exponential, to A_d(Y) after,
-or not at all for the physics-based LPV baseline?
+This is not a defect in the derivation — it is the correct LFR for a system with *rational* scheduling dependency (M(Y)⁻¹). The loop is well-posed because M(Y) is invertible (proven in `docs/m-matrix-invertibility.md`), which implies `(I - Y·Dzw)` is invertible, satisfying Drenth's well-posedness condition.
 
-### Q5 — Discretization approach in Drenth
+### Why Jan's Interconnect rejects it
 
-Does Drenth specify how the continuous-time LPV model is discretized? Does he use:
-- Exact ZOH (via matrix_exp or similar),
-- Rectangular approximation,
-- Or something else?
+`interconnect.py:135`:
+```python
+assert not detect_algebraic_loop(directional_signal_connection_matrix)
+```
 
-Is this compatible with our chosen Option E (`torch.linalg.matrix_exp`, D-012)?
+The framework unconditionally rejects algebraic loops regardless of well-posedness. The comment at `blocks.py:145` for `Parameterized_LPV_Affine_Linear_State_Block` explicitly acknowledges this constraint:
 
-### Q6 — Parallel augmentation still applies?
+> *"p is computed from state to avoid algebraic loops in the Interconnect graph."*
 
-Does the parallel LFR augmentation structure (data-driven correction additive to baseline)
-still hold in the LPV case? Or does the LPV structure change how the augmentation
-connects to the baseline?
+Wiring G and Δ(Y) as two separate blocks with the `z → Δ → w → G` signal path creates exactly the loop the assertion guards against.
 
-### Q7 — Existing LPV block in the codebase
+### What the algebraic loop resolves to
 
-The codebase has `Parameterized_LPV_Affine_Linear_State_Block` with:
-- `A(p) = A0 + p·A1` (affine in p)
-- `sched_state_ix` — index of scheduling variable in the state vector
-- `p = x[sched_state_ix]²` (quadratic scheduling function)
+Solving `(I - Y·Dzw)·z = Cz·x + Dzu·u` analytically:
 
-Is this block consistent with Drenth's architecture, or is it user-added and inconsistent?
-Does Drenth's thesis define the affine-in-p structure or a more general rational structure?
+```
+v = M₀⁻¹·fnet - Y·M₀⁻¹M₁·v - Y²·M₀⁻¹M₂·v
+(I + Y·M₀⁻¹M₁ + Y²·M₀⁻¹M₂)·v = M₀⁻¹·fnet
+M₀⁻¹·(M₀ + Y·M₁ + Y²·M₂)·v = M₀⁻¹·fnet
+M(Y)·v = fnet
+v = M(Y)⁻¹·fnet
+```
 
-### Q8 — Block interface contract for LPV
+**Resolving the algebraic loop recovers M(Y)⁻¹ exactly.** The LFR does not avoid computing M(Y)⁻¹ — it restructures so G uses only the constant M₀⁻¹, with the Y-dependence in Δ. At runtime, the loop resolution is equivalent to evaluating M(Y)⁻¹.
 
-Does the `Block` base class interface (`forward(z: Tensor) -> Tensor`) remain the same
-for the LPV block, or does Drenth's framework add new interface requirements (e.g., a
-separate `sched_signal` argument, or a `forward_lpv(z, p)` signature)?
+### Adaptation to the no-algebraic-loop constraint
 
----
+#### Route 1 — Single CT block with RK4 (exact, current approach)
 
-## Decision gate — RESOLVED (2026-03-17)
+Compute the CT vector field `A_c(Y)·x + B_c(Y)·u` directly inside `CT_RK4_State_Block.forward()`, then integrate with RK4. The Interconnect never sees the loop.
 
-*Assessed via `assess-paper` skill against `literature/drenth2025_lpv-lfr-thesis.pdf` and companion papers.*
-Full Q-by-Q output: `assess-paper-workspace/iteration-1/drenth-assessment/with_skill/outputs/assessment.md`
-Decision logged: `docs/decisions.md` D-013
+```python
+class CT_RK4_State_Block(Block):
+    def forward(self, z):
+        Y   = z[state_ix_Y]
+        # A_c(Y), B_c(Y) use M(Y)⁻¹ — algebraic loop resolved analytically
+        xp  = rk4_step(A_c(Y), B_c(Y), x, u, ts)
+        return xp
+```
 
-### Q1 — Architecture ✅ Architecture 1 confirmed
+The LFR derivation's value is theoretical: it proves valid LPV-LFR structure, identifies the constant G matrix, and provides the baseline for Drenth's augmentation framework. Runtime simulation uses the resolved form.
 
-Drenth eq. (2.29) collapses to direct A(p)x + B(p)u in the forward loop. The Δ(p) structure is a parameterization of the learned augmentation, not a constraint on the physics baseline. `LPV_Linear_State_Block.forward(z)` reading Y from state and computing A_d(Y), B_d(Y) is fully consistent.
+#### Route 2 — Affine approximation, Dzw = 0 (approximate, not chosen)
 
-### Q2 — SSE_Interconnect ✅ Unchanged
+Approximate `A_d(Y) ≈ A₀ + Y·A₁`. Affine dependency gives `Dzw = 0` — no algebraic loop. Fits directly into `Parameterized_LPV_Affine_Linear_State_Block`.
 
-Hoekstra et al. (EJC 2025) uses fixed S matrices. Drenth Chapter 5 extends within the same framework. No new interconnect class is needed.
+Not chosen: the gantry has rational dependency (M(Y)⁻¹), not affine. Approximation degrades over large Y excursions.
 
-### Q3 — Scheduling variable routing ✅ From state vector
+### Summary
 
-Y is read from the state inside `forward()`. It does NOT route through S. Drenth Section 2.4 explicitly supports self-scheduled quasi-LPV.
+| | Explicit G + Δ wiring | Route 1: CT_RK4_State_Block | Route 2: affine approx |
+|---|---|---|---|
+| Dzw | ≠ 0 (rational) | hidden inside block | = 0 by approximation |
+| Loop visible to Interconnect | yes — assertion fails | no | no |
+| Exactness | exact | exact | approximate |
+| Fits Interconnect | no | yes | yes |
+| Discretization | — | RK4 on CT model | A₀ + Y·A₁ DT |
 
-### Q4 — Normalization ⚠️ OPEN QUESTION
-
-Drenth eq. (5.5) normalizes constant DT matrices (Tx·A·Tx⁻¹). For A_d(Y) computed via matrix_exp at runtime, this procedure must be adapted. Two options:
-- **(i) Pre-scale A_c**: normalize the continuous-time system before physics computation — preserves physics interpretation
-- **(ii) Post-wrap A_d**: apply Tx/Tx⁻¹ around A_d(Y) at each forward call — matches Drenth eq. (5.5) pattern
-
-**Must be resolved before Step 3 implementation.** Option (i) is likely more natural.
-
-### Q5 — Discretization ⚠️ Not addressed by Drenth
-
-Drenth uses Euler for his examples. Option E (exact ZOH via `torch.linalg.matrix_exp`) is not contradicted — Drenth's framework accepts any DT baseline. Option E remains the correct choice (D-012) on engineering grounds.
-
-### Q6 — Parallel augmentation ✅ Confirmed
-
-Drenth Chapter 5.2 explicitly states "we consider only the parallel augmentation case." Additive correction to x[k+1] and y[k] applies.
-
-### Q7 — Existing LPV block ✅ Architecturally consistent, simplified
-
-`Parameterized_LPV_Affine_Linear_State_Block` is consistent with Drenth's affine-dependency case (Dzw=0). It uses a fixed quadratic scheduling function rather than a learned ResNet, but is not architecturally incompatible.
-
-### Q8 — Block interface ✅ Unchanged
-
-`forward(z: Tensor) -> Tensor` is the correct interface. Scheduling variable is computed inside `forward()` from the state. No new interface requirements.
+**Route 1 (CT_RK4_State_Block) is the current decision (D-011, D-018).**
 
 ---
 
 ## Why the Δ(p) block is needed for the augmentation but not the baseline
 
-This distinction is easy to conflate — both the baseline and the augmentation vary with Y, but
-the source of that variation is fundamentally different.
+Both the baseline and the augmentation vary with Y, but for different reasons.
 
 ### Physics baseline — Y-dependency is known analytically
 
-The FP model gives the exact formula for how Y enters the mass matrix M(Y), and therefore
-A_d(Y) and B_d(Y). At each timestep, you plug in the current Y and get exact matrices.
-Nothing needs to be learned about the Y-dependency structure — physics provides it.
+The FP model gives the exact formula for how Y enters M(Y), and therefore `A_c(Y)`, `B_c(Y)`. At each timestep, plug in Y and get the exact CT vector field. Nothing needs to be learned.
 
-```
-LPV_Linear_State_Block.forward(z):
-    Y    = z[2]                             # read from state
-    A_d  = matrix_exp(A_c(Y) * ts)          # exact physics formula
-    return A_d @ x + B_d @ u
-```
-
-The Y-dependency is **explicit and closed-form**. No Δ(p) block needed.
+The Y-dependency is **explicit and closed-form** from the physics.
 
 ### Learned augmentation — Y-dependency must be parameterized
 
-The augmentation learns an unknown correction to the baseline from data. That correction
-also varies with Y (e.g. flexible dynamics shift with payload position) — but the formula is
-unknown. A neural network must approximate it from measurements.
+The augmentation learns an unknown correction from data. That correction also varies with Y, but the formula is unknown. A neural network must approximate it.
 
-The problem: how do you parameterize a **matrix-valued function of Y** that a network can learn?
-
-A naive free-matrix approach gives an unstructured black box. The **Δ(p) LFR structure**
-is a principled factorization:
+The **Δ(p) LFR structure** is a principled factorization:
 
 ```
 augmentation output = [M11  M12] [   x_aug   ]
                       [M21  M22] [ Δ(Y)·z_aug ]
 ```
 
-where Δ(Y) is a block-diagonal matrix of Y values (fixed structure), and M11/M12/M21/M22
-are **constant** learnable matrices. This gives:
+where Δ(Y) is a block-diagonal matrix of Y values (fixed structure), and M11/M12/M21/M22 are **constant** learnable matrices. This gives:
 
 - The network only trains constant matrices (simpler optimization)
 - Y-dependency enters through a fixed structured channel
-- Well-posedness (no algebraic loops) can be enforced via constraints on M22
-- Rational dependencies on Y (like M(Y)⁻¹ in the baseline) can be represented exactly
-  by stacking multiple Δ channels
+- Well-posedness enforced via constraints on M22 (Drenth Theorem 2.5)
+- Rational dependency on Y can be represented by stacking Δ channels
 
 ### Summary
 
 | | Physics baseline | Learned augmentation |
-|--|--|--|
-| Y-dependency | Known from physics | Unknown, must be learned from data |
-| How Y enters | Explicit formula A_c(Y) | Via structured Δ(Y) factorization |
+|---|---|---|
+| Y-dependency | Known from physics | Unknown, must be learned |
+| How Y enters | Explicit CT formula A_c(Y) | Via structured Δ(Y) factorization |
 | What is learned | Nothing (fixed) | Constant matrices M11/M12/M21/M22 |
-| Why Δ(p) structure | Not needed — physics is explicit | Makes learning tractable and well-posed |
-
-The Δ(p) block is a **design choice for the augmentation** that makes the learning problem
-tractable. The baseline doesn't need it because physics already specifies the Y-dependency exactly.
+| Why Δ(p) structure | Not needed — physics is exact | Makes learning tractable and well-posed |
 
 ---
 
-## Paper to assess
+## Resolved Q&A (historical, from 2026-03-17)
 
-Drenth, J. (2025). *Gradient-Based Learning of LPV-LFR Models.*
-Master thesis, TU Eindhoven.
-File: `literature/drenth2025_lpv-lfr-thesis.pdf`
+These questions were open before Drenth's thesis was assessed. All resolved.
 
-Companion paper (conference):
-File: `literature/drenth2025_lpv-lfr-rational.pdf`
-(May contain a more compact formulation — check both)
+| Q | Question | Resolution |
+|---|---|---|
+| Q1 | Which architecture? | Architecture 1 (direct A(p)x + B(p)u in forward). LFR is for augmentation parameterization, not a runtime constraint on the baseline. Drenth eq. 2.29. |
+| Q2 | SSE_Interconnect unchanged? | Yes. No new class needed. |
+| Q3 | How does Y enter? | From state inside forward(). Does not route through S. Drenth Sec. 2.4. |
+| Q4 | Normalization? | Drenth eq. 5.5: Tx·A·Tx⁻¹. Applied to all LFR submatrices. |
+| Q5 | Discretization? | Drenth uses Euler. Decision: RK4 on CT model (D-018), not ZOH. |
+| Q6 | Parallel augmentation? | Confirmed. Drenth Ch. 5.2 explicitly uses parallel case. |
+| Q7 | Parameterized_LPV_Affine_Linear_State_Block? | Consistent with affine case (Dzw=0). Augmentation-side block, not baseline. |
+| Q8 | Block interface? | forward(z: Tensor) unchanged. Y computed inside forward() from state. |
 
 ---
 
-## Relevant existing code locations
+## Relevant code locations
 
 | File | What it contains |
 |------|-----------------|
+| `LPV/LFR-derivation-supervisor.tex` | Complete gantry CT LPV-LFR derivation — G matrix, Δ(Y) = Y·I₆ |
 | `model_augmentation/fit_systems/blocks.py` | All block classes including `Parameterized_LPV_Affine_Linear_State_Block` |
 | `model_augmentation/fit_systems/interconnect.py` | `SSE_Interconnect`, `connect_signals`, algebraic loop check |
-| `model_augmentation/utils/utils.py` | `normalize_linear_ss_matrices()` |
-| `scripts/ecc_2025/msd_ndof_interconnect_dynamic.py` | MSD reference (Architecture 1 style — `Parameterized_MSD_State_Block` computes physics in forward()) |
-| `docs/fp-augmentation-interface.md` | LTI baseline interface contract |
-| `docs/decisions.md` D-010, D-011, D-012 | LPV baseline decisions logged so far |
+| `scripts/gantry/gantry_lpv_torch.py` | Torch ZOH implementation — used for Steps 1–2 validation |
+| `scripts/ecc_2025/msd_ndof_interconnect_dynamic.py` | MSD reference — `Parameterized_MSD_State_Block` computes physics in forward() |
+| `docs/decisions.md` D-011, D-012, D-013, D-017, D-018 | All LPV baseline and discretization decisions |
+| `docs/m-matrix-invertibility.md` | Proof that M(Y) is invertible across the operational range |

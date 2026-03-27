@@ -11,7 +11,7 @@ Main source to compare against:
 - `literature/books/drenth2025_lpv-lfr-thesis.pdf`
 
 Main document to review:
-- `LPV/LFR-derivation-verification.tex`
+- `LPV/supporting/verification/LFR-derivation-verification.tex`
 
 Additional supporting files you may use if needed:
 - `docs/drenth/ch2-sec21-source.md`
@@ -19,12 +19,12 @@ Additional supporting files you may use if needed:
 - `docs/drenth/ch2-sec22-source.md`
 - `docs/drenth/ch2-generalized-recipe.md`
 - `docs/drenth/ch2-dual-gantry-mapping.md`
-- `LPV/LFR-derivation.tex`
-- `LPV/M-invertibility.tex`
+- `LPV/supporting/derivations/LFR-derivation.tex`
+- `LPV/supporting/derivations/M-invertibility.tex`
 
 Review instructions:
 1. First read `docs/drenth/claude-handoff.md` and follow its source boundaries and interpretation rules.
-2. Then read `LPV/LFR-derivation-verification.tex` as the main verification document.
+2. Then read `LPV/supporting/verification/LFR-derivation-verification.tex` as the main verification document.
 3. Check the Drenth-based claims against the thesis, especially Sections 2.1, 2.1.1, and 2.2.
 4. Verify whether statements marked or described as `Direct from Drenth` are truly directly supported by the thesis.
 5. Verify whether statements marked or described as `Generalized from Drenth` are reasonable and not too strong.
@@ -51,5 +51,5 @@ Please structure your response as:
 - Suggested wording or structural improvements
 - If useful, proposed revised text snippets
 
-If possible, reference the relevant line or local passage in `LPV/LFR-derivation-verification.tex` and the corresponding section/equation in Drenth's thesis.
+If possible, reference the relevant line or local passage in `LPV/supporting/verification/LFR-derivation-verification.tex` and the corresponding section/equation in Drenth's thesis.
 ```

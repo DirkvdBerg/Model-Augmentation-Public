@@ -86,8 +86,8 @@ companion derivations already present in the repo:
     \item \texttt{docs/drenth/ch2-sec22-source.md}
     \item \texttt{docs/drenth/ch2-generalized-recipe.md}
     \item \texttt{docs/drenth/ch2-dual-gantry-mapping.md}
-    \item \texttt{LPV/LFR-derivation.tex}
-    \item \texttt{LPV/M-invertibility.tex}
+    \item \texttt{LPV/supporting/derivations/LFR-derivation.tex}
+    \item \texttt{LPV/supporting/derivations/M-invertibility.tex}
 \end{itemize}
 It therefore uses the notes as an audited backbone rather than re-inventing the
 interpretation from scratch.
@@ -121,9 +121,9 @@ The source roles in this document are intentionally separated:
     \item Section~2.1.1 of Drenth motivates the preference for rational
     dependency over an unnecessarily overbounded affine embedding.
     \item Section~2.2 of Drenth gives a generic sufficient well-posedness route.
-    \item \texttt{LPV/LFR-derivation.tex} provides the dual-gantry-specific
+    \item \texttt{LPV/supporting/derivations/LFR-derivation.tex} provides the dual-gantry-specific
     realization algebra.
-    \item \texttt{LPV/M-invertibility.tex} provides the sharper
+    \item \texttt{LPV/supporting/derivations/M-invertibility.tex} provides the sharper
     plant-specific well-posedness proof used for the current baseline.
 \end{itemize}
 \end{notebox}
@@ -684,8 +684,8 @@ Theorem~2.5 without actually checking $\rho(D_{zw}) < 1$.}
 \audititem{Drenth reference}{The exact starting point comes from Section~2.1:
 well-posedness is equivalent to solvability of the algebraic loop. The actual
 reduction below is \textbf{not} from Drenth; it comes from the dual-gantry
-algebra in \texttt{LPV/LFR-derivation.tex} and the companion proof in
-\texttt{LPV/M-invertibility.tex}.}
+algebra in \texttt{LPV/supporting/derivations/LFR-derivation.tex} and the companion proof in
+\texttt{LPV/supporting/derivations/M-invertibility.tex}.}
 
 \audititem{What Drenth does}{Drenth supplies the exact loop-solvability
 condition and a generic sufficient theorem, but not a plant-specific reduction
@@ -759,7 +759,7 @@ that is,
 So the algebraic loop has a unique solution if and only if $M(Y)$ is
 invertible.
 
-The companion note \texttt{LPV/M-invertibility.tex} then proves, using
+The companion note \texttt{LPV/supporting/derivations/M-invertibility.tex} then proves, using
 Sylvester's criterion, that under positive masses, inertias, and geometric
 parameters:
 \[
@@ -772,7 +772,7 @@ current baseline.}
 \audititem{Status}{\statusline{Direct from Drenth} only for the fact that the
 exact algebraic loop must be solved. \statusline{Own derivation} for the
 reduction to \eqref{eqv:loopreduced}. \statusline{Own derivation} for the proof
-route through the companion invertibility note \texttt{LPV/M-invertibility.tex}.}
+route through the companion invertibility note \texttt{LPV/supporting/derivations/M-invertibility.tex}.}
 
 \audititem{What still needs checking}{This route should not be described as an
 application of Theorem~2.5. It is a different, sharper route.
@@ -886,14 +886,14 @@ deserve the most manual attention:
     They are algebraically sensible, but they are not prescribed by Drenth.
     \item \textbf{The reduction to $M(Y)v = f_{\mathrm{gen}}$.} This is the key
     exactness result of the gantry derivation. It should be checked line by line
-    against \texttt{LPV/LFR-derivation.tex}.
+against \texttt{LPV/supporting/derivations/LFR-derivation.tex}.
     \item \textbf{The relationship between Drenth's Theorem~2.5 and the current
     gantry proof.} The present document keeps them separate, which is good, but
     if the supervisor-facing version later cites Theorem~2.5 directly, it should
     be made explicit that the sharper proof used here is different.
     \item \textbf{Future trainable-parameter use.} If physical parameters are
     later updated during augmentation, the global invertibility statement remains
-    valid only if the positivity assumptions from \texttt{LPV/M-invertibility.tex}
+valid only if the positivity assumptions from \texttt{LPV/supporting/derivations/M-invertibility.tex}
     are preserved by the parameterization.
 \end{enumerate}
 \end{warningbox}

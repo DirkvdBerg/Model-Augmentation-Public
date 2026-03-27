@@ -22,7 +22,7 @@ This folder groups the Drenth-based working notes for the dual-gantry CT LPV-LFR
   Handoff note and copy-paste verification prompt for Claude.
 - `docs/drenth/claude-paste-prompt.md`
   Direct prompt to paste into Claude for a critical external verification pass.
-- `LPV/LFR-derivation-verification.tex`
+- `LPV/supporting/verification/LFR-derivation-verification.tex`
   Consolidated internal verification document in LaTeX form.
 
 ## Recommended Reading Order
@@ -32,7 +32,7 @@ This folder groups the Drenth-based working notes for the dual-gantry CT LPV-LFR
 3. `docs/drenth/ch2-sec22-source.md`
 4. `docs/drenth/ch2-generalized-recipe.md`
 5. `docs/drenth/ch2-dual-gantry-mapping.md`
-6. `LPV/LFR-derivation-verification.tex`
+6. `LPV/supporting/verification/LFR-derivation-verification.tex`
 7. `docs/drenth/claude-handoff.md` for the full handoff context
 8. `docs/drenth/claude-paste-prompt.md` for the direct paste prompt
 
@@ -40,7 +40,8 @@ This folder groups the Drenth-based working notes for the dual-gantry CT LPV-LFR
 
 These notes are the audit trail behind:
 
-- `LPV/LFR-derivation.tex` for the cleaner derivation, and
-- `LPV/LFR-derivation-verification.tex` for the single consolidated internal check document.
+- `LPV/LFR-derivation-supervisor.tex` as the current supervisor-facing derivation,
+- `LPV/supporting/derivations/LFR-derivation.tex` as the earlier cleaner derivation, and
+- `LPV/supporting/verification/LFR-derivation-verification.tex` as the single consolidated internal check document.
 
-They are intentionally more explicit than the eventual supervisor-facing version.
+They are intentionally more explicit than the current supervisor-facing version.

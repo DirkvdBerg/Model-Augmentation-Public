@@ -4,7 +4,7 @@ This note records the content that should be carried into the clean
 supervisor-facing LPV-LFR derivation. It is a writing guide distilled from the
 current clarification session and should be used together with:
 
-- `LPV/LFR-derivation-verification.tex`
+- `LPV/supporting/verification/LFR-derivation-verification.tex`
 - the eventual clean derivation draft
 
 It is not itself the final derivation. Its role is to make sure the clean
@@ -13,7 +13,7 @@ internal-audit style of the verification note.
 
 ## Primary Reference File
 
-Use `LPV/LFR-derivation-verification.tex` as the detailed source of truth,
+Use `LPV/supporting/verification/LFR-derivation-verification.tex` as the detailed source of truth,
 especially these sections:
 
 - Step 1: CT LPV-LFR target class
@@ -28,7 +28,7 @@ especially these sections:
 - Step 11: dependence-class confirmation
 - Step 14: plant-specific well-posedness route
 
-Useful anchors in `LPV/LFR-derivation-verification.tex`:
+Useful anchors in `LPV/supporting/verification/LFR-derivation-verification.tex`:
 
 - Step 1 starts around line 223
 - Step 3 starts around line 279
