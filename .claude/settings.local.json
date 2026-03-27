@@ -40,7 +40,9 @@
       "Read(//c/Program Files/MiKTeX/miktex/bin/x64/**)",
       "Read(//c/Program Files/MiKTeX 2.9/miktex/bin/x64/**)",
       "Bash(cmd.exe /c \"where pdflatex\")",
-      "Bash(cmd.exe /c \"where pdflatex 2>nul || echo NOT_FOUND\")"
+      "Bash(cmd.exe /c \"where pdflatex 2>nul || echo NOT_FOUND\")",
+      "Bash(find 'C:\\\\Users\\\\20203253\\\\OneDrive - TU Eindhoven\\\\Graduation Project\\\\Baseline FP model\\\\Baseline-LPV-Augmentation\\\\kamtin-fp-model' -name *.mat)",
+      "Bash(find 'C:\\\\Users\\\\20203253\\\\OneDrive - TU Eindhoven\\\\Graduation Project\\\\Baseline FP model\\\\Baseline-LPV-Augmentation' -maxdepth 2 -name *.m)"
     ]
   }
 }
