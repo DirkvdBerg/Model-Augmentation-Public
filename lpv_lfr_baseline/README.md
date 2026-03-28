@@ -5,10 +5,10 @@
 This folder contains a self-contained Python implementation of the dual-gantry
 LPV-LFR baseline derived in `LPV/LFR-derivation-supervisor.tex`.
 
-It is intentionally **independent of Jan's `model_augmentation/` framework** — no imports
-from `model_augmentation/fit_systems/` or `model_augmentation/utils/`. The goal is to
-implement and verify the derivation cleanly before integrating it into the augmentation
-framework as a future step.
+The physics (`lfr_forward.py`, `lfr_simulate.py`) is self-contained and independent of
+Jan's framework. The integration layer (`lfr_block.py`, `test_jan_compat.py`) wraps the
+physics as a `Block` subclass compatible with Jan's `Interconnect`. All phases are complete
+and validated.
 
 ---
 
@@ -120,18 +120,20 @@ Three checks, in order of strength:
 
 ## Jan's framework compatibility
 
-This folder does **not** import from `model_augmentation/`. However, it is designed so
-the baseline block can be wrapped as a `Block` subclass with minimal changes:
+`lfr_block.py` implements `LFRBaselineBlock(Block)` — a stateless Jan-compatible wrapper:
 
-- `LFRBaselineBlock.forward(x, u)` returns a stacked tensor `cat([xp, z, w]) ∈ R¹⁸`
-- Physical parameters stored as instance attributes (torch buffers, not global state)
-- Stacked output means `connect_signals` + selection matrices route slices to `xp`,
-  augmentation z-input, and augmentation w-input respectively
+- **Stateless**: state `x` is managed externally by Jan's `Interconnect`, not stored in the block
+- `forward(z_in: (batch,9,1) float32) → w_out: (batch,18,1) float32`
+- `z_in = cat([x(6), u_stage(3)])` — Interconnect routes x and u into the block each step
+- `w_out = cat([x_next(6), z_lfr(6), w_lfr(6)])` — fixed slot contract, do not change
+- dtype boundary: float32→float64 at entry, float64→float32 at exit (marked in code)
 
-**Open questions before Jan's integration** (see `docs/lfr-baseline-implementation-method.md`):
-- Whether M_ba coupling (augmentation signals into baseline) is needed for parallel augmentation
-- Coordinate system of z/w (logical vs stage — see D-006)
-- Exact connection matrix wiring for the stacked output
+**Augmentation wiring** (parallel, additive — D-003):
+- `w_out[:, 6:12, :]` (`z_lfr`) → augmentation block input via `selection_matrix(arange(6,12), 18)`
+- `w_out[:, 12:,  :]` (`w_lfr`) → optional second augmentation input channel
+- Augmentation output → `xp` additively via `connect_signals(aug_block, 'xp')`
+
+See `test_jan_compat.py` for the full working wiring (checks C and D).
 
 ---
 
@@ -197,10 +199,9 @@ They must match to machine precision at all tested (x, u, Y) points.
 This confirms the forward pass is algebraically correct before introducing RK4.
 
 **Pitfalls:**
-- Y = x[2] is a 0D scalar tensor. `torch.linalg.solve` requires M_Y to be exactly
-  (3,3) and fnet exactly (3,) — verify shapes before calling
-- `M1 * Y`: multiplying (3,3) by a 0D tensor — torch broadcasts correctly,
-  but only if Y has no extra batch dimensions. Extract with `Y = x[2]` (scalar), not `x[2:3]` (1D)
+- `Y = x[:, 2]` is shape `(batch,)`. `M_Y` is built as `(batch,3,3)` via `Y[:, None, None]`;
+  `fnet` is `(batch,3)`. `torch.linalg.solve(M_Y, fnet.unsqueeze(-1)).squeeze(-1)` gives `(batch,3)`.
+- All operations are batch-native — no squeeze/unsqueeze hacks in the physics internals.
 - **No in-place operations**: `x[0] = ...` or `.fill_()` break autograd.
   Use `torch.cat`, `torch.stack`, always create new tensors
 - Confirm autograd: set `Y.requires_grad=True`, run `lfr_forward`, call `.backward()`
@@ -224,6 +225,43 @@ This confirms the forward pass is algebraically correct before introducing RK4.
   to a loop structure that conflicts with it.
 - RK4 intermediate states (`x + h/2 * k1`, etc.) must remain float64 — verify no
   implicit dtype downcast during addition with `ts`
+
+### Phase 5 — `lfr_block.py` + `test_jan_compat.py`: Jan's framework integration ✅
+
+**Status: complete. All 11 checks pass.**
+
+Run as: `conda run -n GraduationProject python -m lpv_lfr_baseline.test_jan_compat`
+
+#### `lfr_block.py` — stateless Block wrapper
+
+Key design decisions implemented:
+- **Stateless**: `x` is NOT stored in the block. Jan's `Interconnect` routes `x_next` back as
+  the next step's `x` input — the block receives it via `z_in[:, :6, :]` each call.
+- `z_in = cat([x(6), u_stage(3)])` — nz=9; `w_out = cat([x_next(6), z_lfr(6), w_lfr(6)])` — nw=18
+- Y = x[:, 2] extracted inside `forward()` — never a named Interconnect signal (no algebraic loop)
+- dtype boundary: `z_in.squeeze(-1).double()` at entry; `w_f64.float().unsqueeze(-1)` at exit
+- Physical parameters stored as plain attributes (not `nn.Parameter`). For GPU: replace with
+  `self.register_buffer()`. For trainable params: call `build_G_matrix()` inside `forward()`.
+
+#### `test_jan_compat.py` — integration tests
+
+**Checks 1–5** (structural compatibility):
+1. `isinstance(block, Block)` and `nz==9`, `nw==18`
+2. `detect_algebraic_loop` does not trigger (Y not an external signal)
+3. Forward shapes: `y (batch,3)`, `xp (batch,6)` ✅
+4. Single-step BPTT: `x.grad is not None` after `xp.sum().backward()` ✅
+5. `z_lfr` slot has `grad_fn` after `selection_matrix @ w_out` ✅
+
+**Checks A–F** (value correctness + augmentation readiness):
+
+| Check | What it verifies | Bug it catches |
+|-------|-----------------|----------------|
+| A | `xp` values match `rk4_step` directly | Wrong slot selection in S_xp |
+| B | `z_lfr`/`w_lfr` slot values match `lfr_forward` | z/w slot swap (both 6-dim) |
+| C | Aug weights get gradients end-to-end | Broken z_lfr routing to aug block |
+| D | Non-zero aug output changes `xp` | Silent aug→xp disconnection |
+| E | 3-step BPTT: gradient reaches x0 | `.detach()` at step boundary |
+| F | Dynamic G gives larger M0 grad than static G | Incomplete gradient with stale G |
 
 ---
 
@@ -282,7 +320,7 @@ If M₀, K, or C entries later become `nn.Parameter` (learning physical correcti
 | Cached inverse invalid if params trainable | Use `torch.linalg.solve`; implement `build_G_matrix` as a callable function, not a stored object |
 | In-place ops break autograd | Never use `x[i] = ...` or `.fill_()` in the forward path |
 | Shape mismatch in solve | M_Y must be exactly (3,3), fnet exactly (3,) — check before calling |
-| Y dimensionality | `Y = x[2]` is 0D; use this form, not `x[2:3]` which is 1D and will cause broadcasting issues |
+| Y dimensionality | `Y = x[:, 2]` — batch-native (batch,) tensor. Inside `lfr_block`, extracted as `z_f64[:, 2]` after squeeze |
 | Long-sequence memory | Do not write a naive N-step loop assuming it fits in memory during training — align loop structure with Jan's framework first |
 | numpy in training path | No numpy from `lfr_forward` onward — numpy ops are not in the autograd graph |
 
@@ -295,8 +333,11 @@ If M₀, K, or C entries later become `nn.Parameter` (learning physical correcti
 | `physics.py` | Physical constants as torch tensors: M₀, M₁, M₂, K, C, P, fs, ts |
 | `lfr_matrices.py` | Precompute constant G matrix entries from M₀⁻¹ |
 | `lfr_forward.py` | Resolve-and-retain forward pass: steps 1–7 above |
-| `lfr_simulate.py` | Standalone RK4 simulation loop using `lfr_forward` |
-| `validate_lfr.py` | Validation script: G matrix check, loop resolution, trajectory comparison |
+| `lfr_simulate.py` | Standalone RK4 simulation loop using `lfr_forward`; exposes `rk4_step` |
+| `validate_lfr.py` | Validation script: G matrix check, loop resolution, trajectory comparison (stub) |
+| `test_augmentation_compat.py` | Gradient/graph compatibility tests — no Jan imports; simulates augmentation wiring internally |
+| `lfr_block.py` | Stateless Jan-compatible `Block` subclass; nz=9, nw=18; float32↔float64 dtype boundary |
+| `test_jan_compat.py` | 11 integration checks using real Jan imports: structural (1–5) + value/aug readiness (A–F) |
 
 ---
 
@@ -380,6 +421,16 @@ what they actually prove.
 Note: `lpv_matrices.mat` and `lpv_sim_varying_y.mat` are derived from the same physics
 as `main.m` (constants copied verbatim, `getss.m` called directly) — they are not
 independent from the ground truth, but they were not part of the original codebase.
+
+### Expected error magnitudes (what the numbers mean)
+
+| Comparison | Expected error | Why |
+|------------|---------------|-----|
+| **Check 4** — Python RK4 vs `q1` (lpv_sim_varying_y.mat) | ~2e-14 m | Both integrate the **same CT quasi-LPV ODE** (`gantrySystem.m` uses `Y=x(3)` self-scheduled). Error is RK4 fixed-step vs MATLAB ode45 adaptive — pure integration method mismatch, not a physics difference. This is **not machine precision** (float64 ε ≈ 2.2e-16). |
+| **Check 3** — Python RK4 vs `q3` (gantry_q3_lsim.mat) | ~11 mm | Different physics: our sim self-schedules M(Y) while MATLAB lsim **freezes Y=0.3** (LTI). Error grows as Y moves away from 0.3 m. Informational only — not a correctness check. |
+| Old ZOH simulator vs `q1` | ~2.7e-11 m | Same quasi-LPV ODE, but ZOH discretization error on top of the integration mismatch. |
+
+**Key insight:** A ~2e-14 agreement on Check 4 means the physics and LPV scheduling are correct — both methods compute the same trajectory to within floating-point noise of the ODE solver. If you ever see Check 4 errors above ~1e-10, that indicates a physics bug (wrong M(Y), wrong initial condition, or wrong input coordinates).
 
 ---
 
