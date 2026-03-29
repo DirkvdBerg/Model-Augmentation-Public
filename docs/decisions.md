@@ -372,6 +372,15 @@ and velocity-dependent friction are dropped and must be learned by the augmentat
 
 ---
 
+### [D-020] Resolve-and-retain is augmentation of a resolved explicit ODE, not proper LFR augmentation — open question for supervisor
+**Date**: 2026-03-29
+**What**: The current resolve-and-retain implementation resolves the algebraic loop analytically inside `LFRBaselineBlock.forward()` before the augmentation block receives any signal. The augmentation therefore operates on post-resolution signals (z₁ = M(Y)⁻¹·fnet already computed). This is structurally equivalent to augmenting the collapsed explicit ODE `ẋ = Ac(Y)·x + Bc(Y)·u`, not to the proper LFR augmentation described in Drenth Ch. 5 where Δ^b participates inside the scheduling loop.
+**Why**: The gantry's rational parameter dependence (`M(Y)⁻¹`) requires `Dzw ≠ 0` in the G matrix. There is no equivalent LFR realization with `Dzw = 0` — setting `Dzw = 0` eliminates rational structure entirely (collapses to affine LPV). Jan's framework requires acyclic signal graphs, which is structurally equivalent to `Dzw = 0` in the scheduling channel. These two constraints together make it impossible to wire G and Δ(Y) as separate live runtime blocks for this system. Confirmed by: both AI research documents in `LPV/Algebraic loops in LPV-LFR systems/`, the LPVcore toolbox documentation, and Zhou/Doyle/Glover (1996).
+**Ruled out**: Architecture 2 (G and Δ as separate blocks, Δ^b inside the loop) — not achievable with Jan's current framework for rational-LPV systems without resolving the `Dzw ≠ 0` constraint or extending the framework to support algebraic loops.
+**Constrains**: Before implementing the training pipeline, confirm with Roland Tóth which interpretation of "LFR form" was intended: (1) LFR used for derivation and structure analysis, resolved at runtime; or (2) augmentation genuinely interacts with live LFR loop signals. The answer determines whether the current architecture is acceptable or whether a framework extension is needed. Full analysis: `docs/lfr-baseline-implementation-method.md`, section "Critical architectural finding".
+
+---
+
 ### [D-019] Use Drenth thesis for CT LPV-LFR citations; treat IFAC paper as DT companion
 **Date**: 2026-03-24
 **What**: For any continuous-time LPV-LFR definition, notation, or generic interconnection equations used in the gantry write-up, the primary source is Drenth's thesis (`literature/books/drenth2025_lpv-lfr-thesis.pdf`). The IFAC paper (`literature/lpv-lfr/drenth2025_lpv-lfr-rational.pdf`) is treated as the discrete-time companion paper and cited as such.

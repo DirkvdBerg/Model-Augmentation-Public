@@ -332,6 +332,104 @@ The G matrix computation gives exactly `q̈ = M(Y)⁻¹·fnet`. The physics is r
 
 ---
 
+## Critical architectural finding: resolve-and-retain is not LFR augmentation
+
+*Added 2026-03-29, based on research in `LPV/Algebraic loops in LPV-LFR systems/`.*
+
+This section states explicitly what the resolve-and-retain approach does and does not provide for the augmentation, and why the alternative is not currently achievable.
+
+### The two architectures
+
+**Architecture 1 — our current implementation (resolve-and-retain):**
+
+```
+Inside LFRBaselineBlock.forward():
+    z₁ = torch.linalg.solve(M(Y), fnet)      ← loop resolved here
+    z₂ = Y · z₁
+    w₂ = Y · z₂
+    z = [z₁; z₂],  w = [z₂; w₂]             ← post-resolution signals
+    ẋ  = Ax·x + Bw·w + Bu·u
+    x_next = RK4(...)
+
+Output to Interconnect: [x_next | z | w]     ← augmentation sees these
+```
+
+The augmentation block Δ^b receives z and w **after** the algebraic loop has already been fully resolved. By the time augmentation sees z₁, it already equals M(Y)⁻¹·fnet — the full rational scheduling effect is baked in. The augmentation block adds a correction to xp on top of a physics model that has already run to completion.
+
+**This is structurally equivalent to augmenting the collapsed explicit ODE:**
+```
+ẋ = Ac(Y)·x + Bc(Y)·u + [Δ^b correction]
+```
+The LFR structure (G, Δ) is not present at augmentation time. It was used only to derive Ac(Y) and Bc(Y) analytically.
+
+---
+
+**Architecture 2 — proper LFR augmentation (what Drenth Ch. 5 describes):**
+
+```
+G and Δ(Y) are separate wired blocks in the Interconnect.
+Δ^b is wired in parallel or in series with Δ(Y).
+
+The combined scheduling equation is:
+    z = Cz·x + Dzw·[Δ(Y) + Δ^b]·z + Dzu·u
+
+This is a joint implicit equation. Δ^b participates in computing z —
+it can change how the rational dependence resolves, not just correct
+the output after it has resolved.
+```
+
+In this architecture, z and w are genuinely live LFR signals. The augmentation is part of the closed loop, not an additive correction on top of it.
+
+---
+
+### Why Architecture 2 is not achievable for this system
+
+Architecture 2 requires G and Δ(Y) as separate runtime blocks. That requires the signal path `z → Δ(Y) → w → G → z` to be a live wired loop in Jan's Interconnect. Jan's framework explicitly rejects this via the acyclicity assertion (`assert not detect_algebraic_loop(...)`).
+
+The root cause is `Dzw ≠ 0`. If `Dzw = 0` the loop disappears and Architecture 2 becomes straightforward. But `Dzw = 0` is impossible for this system:
+
+- `Dzw ≠ 0` is the structural mechanism that encodes rational parameter dependence in an LFR. The upper LFT formula is `Fu(G, Δ) = G₂₂ + G₂₁·Δ·(I − Dzw·Δ)⁻¹·G₁₂`. When `Dzw = 0` this collapses to `G₂₂ + G₂₁·Δ·G₁₂` — affine in Δ, which cannot represent `M(Y)⁻¹`.
+- Setting `Dzw = 0` does not eliminate the rational structure — it loses it entirely. There is no equivalent LFR with `Dzw = 0` that produces the same input-output behavior for this system.
+- This was confirmed in both AI research documents (`LPV/Algebraic loops in LPV-LFR systems/`) and is consistent with Zhou, Doyle & Glover (1996) and the LPVcore toolbox documentation from Tóth's group.
+
+There are three workarounds, none of which preserve the intended LFR structure cleanly:
+
+| Workaround | What it does | Why it falls short |
+|---|---|---|
+| Extended scheduling vector (e.g. pre-compute L(Y) = Cholesky factor) | Makes remaining interconnect affine | Δ is no longer Y·I₆; it encodes M(Y) knowledge, defeating the purpose |
+| Descriptor/mass-matrix form | Hides the solve inside an implicit ODE solver | Still requires a solve at each step; doesn't expose z/w to augmentation |
+| Loop shifting | Moves Dzw terms elsewhere | Introduces new rational dependencies or changes block definitions |
+
+---
+
+### What post-resolution z and w can still do
+
+Exposing z and w is not useless — it is better than the xp-only collapsed approach. What it provides:
+
+- The augmentation can **read** z^b and w^b as structured inputs — it sees signals that carry information about the current scheduling state (z₁ = q̈, z₂ = Y·q̈) rather than just the full state x.
+- The M_ab coupling (augmentation receives baseline latent signals) is enabled and implemented — see `test_jan_compat.py` checks C and D.
+- The physical interpretation of z and w is preserved: z₁ = q̈, z₂ = Y·q̈, w₂ = Y²·q̈.
+
+What it does not provide:
+
+- The augmentation cannot **participate in resolving** the rational scheduling effect. It only sees the result after M(Y) has been inverted.
+- The M_ba coupling (augmentation output feeds back into the baseline's loop) is not realizable in the current framework without re-introducing an algebraic loop.
+- Drenth Ch. 5's full combined-LFR coupling (where Δ^b modifies the scheduling channel itself) is not implemented.
+
+---
+
+### Open question for supervisor
+
+The supervisor explicitly required LFR form (D-005, D-013, D-017). There are two possible interpretations:
+
+1. **Derivation in LFR form, execution can resolve it**: The LFR derivation is used to understand structure, verify well-posedness, and derive the constant G matrices — but at runtime the loop is resolved analytically before augmentation. This is what we currently do.
+
+2. **Augmentation interacts with the live LFR structure**: G and Δ(Y) are separate runtime blocks and Δ^b participates in the loop. This is Architecture 2 — which is not achievable with Jan's current framework for rational-LPV systems.
+
+This distinction should be confirmed with Roland Tóth before implementing the training pipeline. If interpretation 2 is required, a different implementation strategy or framework extension is needed.
+
+---
+
 ## Summary
 
 This document proposes a **candidate implementation method** for the gantry LFR baseline that is

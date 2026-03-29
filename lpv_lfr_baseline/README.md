@@ -20,11 +20,15 @@ The LPV-LFR realization is derived in `LPV/LFR-derivation-supervisor.tex`. Key r
 
 **Scheduling block**: `Δ(Y) = Y·I₆` — one scalar Y repeated across 6 latent channels.
 
-**Latent variables**:
+**Latent variables** (standard z/w notation per Roland Tóth):
 ```
-z = [v;  v₁]    v  = q̈ = M(Y)⁻¹·fnet
-w = [v₁; v₂]    v₁ = Y·v
-                 v₂ = Y·v₁ = Y²·v
+z = [z₁; z₂]    z₁ := q̈  (first latent variable, defined directly)
+w = [w₁; w₂]    w₁  = Y·z₁ = z₂
+                 w₂  = Y·z₂ = Y²·z₁
+```
+Note: z₂ = w₁ (the second z-channel equals the first w-channel). The chain is:
+```
+z₁ →^Y w₁ = z₂ →^Y w₂
 ```
 
 **Mass matrix decomposition**: `M(Y) = M₀ + M₁·Y + M₂·Y²` where M₀, M₁, M₂ are
@@ -73,12 +77,12 @@ The method used here resolves the loop analytically in a **forward sequence**, w
 retaining z and w as explicit tensors (not discarding them):
 
 ```
-Step 1:  fnet = [-K, -C]·x + u
-Step 2:  v    = M(Y)⁻¹ · fnet              ← loop resolved analytically
-Step 3:  v₁   = Y · v
-         v₂   = Y · v₁
-Step 4:  z    = [v;  v₁]
-         w    = [v₁; v₂]
+Step 1:  fnet = [-K  -C]·x + u
+Step 2:  z₁   = M(Y)⁻¹ · fnet              ← loop resolved analytically (z₁ := q̈)
+Step 3:  z₂   = Y · z₁  (= w₁)
+         w₂   = Y · z₂
+Step 4:  z    = [z₁; z₂]
+         w    = [z₂; w₂]                   ← note: w₁ = z₂
 Step 5:  ẋ    = Ax·x + Bw·w + Bu·u         ← G matrix applied explicitly
 Step 6:  integrate with RK4, step = ts
 Step 7:  y    = Cy·x
@@ -323,6 +327,20 @@ If M₀, K, or C entries later become `nn.Parameter` (learning physical correcti
 | Y dimensionality | `Y = x[:, 2]` — batch-native (batch,) tensor. Inside `lfr_block`, extracted as `z_f64[:, 2]` after squeeze |
 | Long-sequence memory | Do not write a naive N-step loop assuming it fits in memory during training — align loop structure with Jan's framework first |
 | numpy in training path | No numpy from `lfr_forward` onward — numpy ops are not in the autograd graph |
+
+---
+
+## Related documents
+
+| Document | Path | Description |
+|----------|------|-------------|
+| LFR derivation (LaTeX) | `LPV/LFR-derivation-supervisor.tex` | Full step-by-step CT LPV-LFR derivation; supervisor-reviewed version |
+| Supervisor feedback | `LPV/Feedback Supervisor/Roland_Toth_Feedback.md` | All of Roland Tóth's annotations on the derivation PDF, structured by page and priority |
+| Dimension reduction notes | `LPV/Feedback Supervisor/Roland_Toth_Reduction_Notes.md` | Roland's SVD-based method to reduce n_z from 6 to 4; includes numerical verification |
+| Annotated PDF | `LPV/Feedback Supervisor/LPV_LFR_Stepwise_Derivation_Feedback.pdf` | Original annotated document |
+| Reduction notes PDF | `LPV/Feedback Supervisor/LPV_LFR_Roland_notes.pdf` | Roland's handwritten notes on the SVD reduction method |
+| Implementation method | `docs/lfr-baseline-implementation-method.md` | Resolve-and-retain architecture, algebraic loop analysis, and Architecture 1 vs 2 comparison |
+| Dzw=0 alternative | `lpv_lfr_baseline/lfr-dzw-zero-alternative.md` | Alternative LFR using ρ=[σ,Yσ,Y²σ] scheduling — achieves Dzw=0, enables proper LFR augmentation |
 
 ---
 
