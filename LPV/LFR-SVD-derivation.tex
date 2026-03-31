@@ -278,35 +278,67 @@ $D_{zu} = [M_0^{-1};\, 0]$ block, which is unaffected by any change to $D_{zw}$.
 Method~2 first reduces $D_{zw}$ to expose its true rank before applying the SVD
 procedure, yielding a loop of dimension $n \leq 4$.
 
-\subsection{Rank of $D_{zw}$}
+\subsection{Block Structure of $D_{zw}$}
 
-Write the columns of $D_{zw}$ explicitly. Using
-$M_1 = \bigl[\begin{smallmatrix}0&-m_h&0\\-m_h&0&0\\0&0&0\end{smallmatrix}\bigr]$
-and
-$M_2 = \bigl[\begin{smallmatrix}0&0&0\\0&m_h&0\\0&0&0\end{smallmatrix}\bigr]$,
-let $M_0^{-1}[\cdot, j]$ denote the $j$-th column of $M_0^{-1}$. Then:
-
+The coupling matrices from the gantry equations are
+\begin{equation}
+    M_1 =
+    \begin{bmatrix}
+        0 & -m_h & 0 \\ -m_h & 0 & 0 \\ 0 & 0 & 0
+    \end{bmatrix},
+    \qquad
+    M_2 =
+    \begin{bmatrix}
+        0 & 0 & 0 \\ 0 & m_h & 0 \\ 0 & 0 & 0
+    \end{bmatrix}.
+    \label{eq:M1M2}
+\end{equation}
+From \eqref{eq:CDmats}, $D_{zw}$ decomposes into two row blocks:
 \begin{equation}
     D_{zw} =
-    \left[
-    \begin{array}{c|c|c|c|c|c}
-        m_h M_0^{-1}[\cdot,1] & m_h M_0^{-1}[\cdot,0] & 0 & 0 & m_h M_0^{-1}[\cdot,1] & 0 \\[3pt]
-        e_1 & e_2 & e_3 & 0 & 0 & 0
-    \end{array}
-    \right],
-    \label{eq:Dzwcols}
+    \begin{bmatrix}
+        D_{\mathrm{top}} \\ D_{\mathrm{bot}}
+    \end{bmatrix},
+    \qquad
+    D_{\mathrm{top}} := -M_0^{-1}[M_1,\, M_2] \in \R^{3\times 6},
+    \qquad
+    D_{\mathrm{bot}} := [I_3,\; 0] \in \R^{3\times 6}.
+    \label{eq:DzwBlocks}
 \end{equation}
-where $e_i$ denotes the $i$-th standard basis vector in $\R^3$.
-Columns~4 and~6 are zero because $M_2[\cdot,0] = M_2[\cdot,2] = 0$.
-The remaining columns~1, 2, 3, 5 are linearly independent: suppose
-$\alpha_1 c_1 + \alpha_2 c_2 + \alpha_3 c_3 + \alpha_5 c_5 = 0$. Rows~4--6
-give $\alpha_1 = \alpha_2 = \alpha_3 = 0$ directly from the $e_1, e_2, e_3$
-pattern. The remaining equation is
+
+\subsection{Rank of $D_{zw}$}
+
+Let $(M_j)_k$ denote the $k$-th column of $M_j$. Columns~3, 4, 6 of
+$D_{\mathrm{top}}$ are zero because $(M_1)_3 = (M_2)_1 = (M_2)_3 = 0$.
+The non-zero columns follow from $(M_1)_1 = [0,\,-m_h,\,0]^\top$,
+$(M_1)_2 = [-m_h,\,0,\,0]^\top$, $(M_2)_2 = [0,\,m_h,\,0]^\top$:
 \begin{equation}
-    \alpha_5\, m_h\, M_0^{-1}[\cdot,1] = 0.
+    (D_{\mathrm{top}})_1 = m_h\,(M_0^{-1})_2,
+    \qquad
+    (D_{\mathrm{top}})_2 = m_h\,(M_0^{-1})_1,
+    \qquad
+    (D_{\mathrm{top}})_5 = -m_h\,(M_0^{-1})_2.
+    \label{eq:Dtopcols}
+\end{equation}
+Columns~4 and~6 of $D_{\mathrm{bot}}$ are zero as well, so $\rank(D_{zw}) \leq 4$.
+To show that columns~1, 2, 3, 5 are linearly independent, suppose
+\begin{equation}
+    \alpha_1 c_1 + \alpha_2 c_2 + \alpha_3 c_3 + \alpha_5 c_5 = 0,
+    \label{eq:lindep2}
+\end{equation}
+where $c_k$ denotes column~$k$ of $D_{zw}$. Restricting \eqref{eq:lindep2}
+to the bottom block $D_{\mathrm{bot}}$:
+\begin{equation}
+    \alpha_1 e_1 + \alpha_2 e_2 + \alpha_3 e_3 = 0
+    \quad\Longrightarrow\quad
+    \alpha_1 = \alpha_2 = \alpha_3 = 0.
+\end{equation}
+Restricting to the top block with $\alpha_1 = \alpha_2 = \alpha_3 = 0$:
+\begin{equation}
+    -\alpha_5\, m_h\, (M_0^{-1})_2 = 0.
     \label{eq:alpha5}
 \end{equation}
-Since $m_h > 0$ and $M_0^{-1}[\cdot,1] \neq 0$ (invertibility of $M_0$),
+Since $m_h > 0$ and $(M_0^{-1})_2 \neq 0$ (invertibility of $M_0$),
 $\alpha_5 = 0$. Therefore
 \begin{equation}
     \rank(D_{zw}) = 4.
@@ -315,22 +347,18 @@ $\alpha_5 = 0$. Therefore
 
 \subsection{Structural Identity $B_w = E\, D_{zw}$}
 
-Inspecting \eqref{eq:Bmats} and \eqref{eq:CDmats}: the lower three rows of
-$B_w$ equal the upper three rows of $D_{zw}$. Defining
+From \eqref{eq:Bmats} and \eqref{eq:DzwBlocks}: the bottom block of $B_w$
+equals $D_{\mathrm{top}}$, while the top block of $B_w$ is zero. Defining
 \begin{equation}
     E :=
     \begin{bmatrix}
         0 & 0 \\ I_3 & 0
     \end{bmatrix}
     \in \R^{6\times 6},
-    \label{eq:Edef}
-\end{equation}
-one verifies directly that
-\begin{equation}
+    \qquad
     B_w = E\, D_{zw}.
     \label{eq:BwEDzw}
 \end{equation}
-This identity is the key structural fact used to bound $\rank(S_{\mathrm{new}})$.
 
 \subsection{Thin SVD of $D_{zw}$ and Loop Pre-Compression}
 
@@ -347,10 +375,10 @@ and define
 \begin{equation}
     S_2 := \hat{U}\,\hat{\Sigma} \in \R^{6\times 4},
     \qquad
-    P := \hat{V}^\top \in \R^{4\times 6}.
+    P := \hat{V}^\top \in \R^{4\times 6},
     \label{eq:S2P}
 \end{equation}
-Define compressed loop variables
+so that $D_{zw} = S_2\, P$. Define compressed loop variables
 \begin{equation}
     \hat{z}(t) := P\, z(t) \in \R^4,
     \qquad
@@ -365,9 +393,7 @@ The scheduling relation $w = Y I_6 z$ projects to
 so the compressed loop retains the same structure with $\Delta(Y) = Y I_4$.
 The $D_{zw}$ coupling term in \eqref{eq:loopz} becomes
 \begin{equation}
-    D_{zw}\, w(t)
-    = \hat{U}\,\hat{\Sigma}\,\hat{V}^\top\, w(t)
-    = S_2\, \hat{w}(t).
+    D_{zw}\, w(t) = S_2\, P\, w(t) = S_2\, \hat{w}(t).
     \label{eq:DzwS2}
 \end{equation}
 
@@ -392,18 +418,67 @@ $I_6$ by $P$), the modified stacked matrix is
 
 \subsection{Rank Bound $n \leq 4$}
 
-From \eqref{eq:BwEDzw} and \eqref{eq:DzwSVD}:
+From \eqref{eq:BwEDzw} and $D_{zw} = S_2\,P$:
 \begin{equation}
-    B_w = E\, D_{zw} = E\, S_2\, P.
+    B_w = E\, S_2\, P.
     \label{eq:BwES2P}
 \end{equation}
-Therefore every row of $B_w$ is a linear combination of rows of $P$, which gives
+Every row of $B_w$ is a linear combination of rows of $P$, so
 \begin{equation}
     \rank\!\begin{bmatrix} B_w \\ P \end{bmatrix} = \rank(P) \leq 4.
     \label{eq:rankBwP}
 \end{equation}
-Since $[C_z, S_2, D_{zu}]$ has full row rank~6 (the $D_{zu} = [M_0^{-1};\,0]$
-argument from Section~1.4 applies unchanged),
+It remains to show $\rank([C_z, S_2, D_{zu}]) = 6$. Split $S_2$ conformably
+with $D_{zw}$:
+\begin{equation}
+    S_2 =
+    \begin{bmatrix}
+        S_{2,\mathrm{top}} \\ S_{2,\mathrm{bot}}
+    \end{bmatrix},
+    \qquad S_{2,\mathrm{top}},\, S_{2,\mathrm{bot}} \in \R^{3\times 4}.
+    \label{eq:S2split}
+\end{equation}
+From $D_{zw} = S_2\, P$ and \eqref{eq:DzwBlocks}, the bottom block gives
+\begin{equation}
+    S_{2,\mathrm{bot}}\, P = D_{\mathrm{bot}} = [I_3,\; 0].
+    \label{eq:S2botP}
+\end{equation}
+Since $S_{2,\mathrm{bot}} \in \R^{3\times 4}$ and $\rank(S_{2,\mathrm{bot}}\,P) = 3$:
+\begin{equation}
+    \rank(S_{2,\mathrm{bot}}) = 3.
+    \label{eq:rankS2bot}
+\end{equation}
+Partition $[C_z, S_2, D_{zu}]$ into top and bottom row blocks conformably
+with $D_{zw}$.
+
+\paragraph{Step 1: bottom block has rank~3.}
+The bottom block restricted to the $S_2$ columns is $S_{2,\mathrm{bot}}$,
+which has rank~3 by \eqref{eq:rankS2bot}.
+
+\paragraph{Step 2: bottom block is zero in the input columns.}
+$D_{zu} = [M_0^{-1};\, 0]$ has zero bottom block.
+
+\paragraph{Step 3: top block is nonsingular in the input columns.}
+The top block of $D_{zu}$ is $M_0^{-1}$, which is invertible.
+
+\paragraph{Step 4: top and bottom blocks are mutually independent.}
+Suppose $\alpha^\top(\text{top block}) + \beta^\top(\text{bottom block}) = 0$
+for $\alpha, \beta \in \R^3$. Restricting to the input columns:
+\begin{equation}
+    \alpha^\top M_0^{-1} + \beta^\top \cdot 0 = 0
+    \quad\Longrightarrow\quad
+    \alpha^\top M_0^{-1} = 0
+    \quad\Longrightarrow\quad
+    \alpha = 0.
+\end{equation}
+Then $\beta^\top(\text{bottom block}) = 0$; by Step~1, $\beta = 0$.
+
+\paragraph{Conclusion.}
+All six rows of $[C_z, S_2, D_{zu}]$ are linearly independent, so
+$\rank([C_z, S_2, D_{zu}]) = 6$.
+
+Since $[C_z, S_2, D_{zu}]$ has full row rank, right-multiplication by it
+preserves rank:
 \begin{equation}
     \rank(S_{\mathrm{new}})
     = \rank\!\begin{bmatrix} B_w \\ P \end{bmatrix}

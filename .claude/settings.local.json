@@ -44,7 +44,8 @@
       "Bash(find 'C:\\\\Users\\\\20203253\\\\OneDrive - TU Eindhoven\\\\Graduation Project\\\\Baseline FP model\\\\Baseline-LPV-Augmentation\\\\kamtin-fp-model' -name *.mat)",
       "Bash(find 'C:\\\\Users\\\\20203253\\\\OneDrive - TU Eindhoven\\\\Graduation Project\\\\Baseline FP model\\\\Baseline-LPV-Augmentation' -maxdepth 2 -name *.m)",
       "Bash(set PYTHONIOENCODING=utf-8)",
-      "Bash(pdflatex -interaction=nonstopmode LFR-derivation-supervisor.tex)"
+      "Bash(pdflatex -interaction=nonstopmode LFR-derivation-supervisor.tex)",
+      "WebSearch"
     ]
   }
 }
