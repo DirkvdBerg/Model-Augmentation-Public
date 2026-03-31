@@ -29,6 +29,8 @@ PDFs are organized in `literature/` subfolders:
 | `toth2010discretization` | `literature/lpv-lfr/toth2010_zoh-discretization-lpv.pdf` | Toth (2010) - ZOH discretization of LPV systems. Assumptions 1 and 2, complete method eq. 9a, footnote 2 on singular `A_c`. |
 | `schoukens2018mimo` | `literature/lpv-lfr/Schoukens_2018_LPVRepresentationMIMO.pdf` | Schoukens and Toth (2018) - LPV representation of MIMO nonlinear systems via NLFR embedding and factorization `f(z) ->` scheduling map. |
 | `schoukens2020lfr` | `literature/lpv-lfr/Schoukens_2020_LFRInitializationBLA.pdf` | Schoukens (2020) - LFR initialization via best linear approximation. |
+| - | `literature/lpv-lfr/Structural properties of LPV to LFR transformation.pdf` | Alkhoury, Petreczky, Mercere (2016) - structural properties of LPV-to-LFR transformation (minimality, identifiability). **Not applicable**: covers affine LPV only and is discrete-time. Our model has rational dependence via M(Y)^{-1}, so exact affine realization is not available. Shelved. |
+| - | `literature/lpv-lfr/Rational-to-Affine/Systematische paden...pdf` | ChatGPT-generated research aid (Dutch). Surveys two systematic routes for rewriting rational LPV dependency to affine: (1) scheduling-lifting / functional-affine LPV via denominator absorption; (2) descriptor/DAE representations. Explains why Dzw != 0 causes rational dependence and how Dzw = 0 forces affine. Background context for why this project uses LFR rather than affine rewriting (D-020). Not a citable source. |
 
 ---
 
@@ -53,6 +55,14 @@ PDFs are organized in `literature/` subfolders:
 **Important source split**:
 - `drenth2025thesis` (thesis) is the source to cite for continuous-time LPV-LFR definitions used in the gantry derivation.
 - `drenth2025lpvlfr` (IFAC paper) is the discrete-time companion and should be cited as such.
+
+---
+
+## Model reduction
+
+| Cite key | File | Description |
+|----------|------|-------------|
+| - | `literature/model-reduction/Model-reduction-for-discrete-time-parameter-dependent-sytems-with-rational-dependence-via-LFR-based-truncation-methods.pdf` | Pereira (2026) - Model reduction for DT LPV systems with rational dependence via LFR-based balanced truncation (Systems & Control Letters). **Not applicable to this project**: addresses DT model reduction only. Our project uses CT integration via RK4 and does not perform model reduction. Shelved unless a DT reduced-order model is needed later. |
 
 ---
 

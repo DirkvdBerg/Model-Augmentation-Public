@@ -695,6 +695,32 @@ able to estimate global model -- about experiment design."
 
 ---
 
+## Step 3b: Baseline Parameter Training on Synthetic MATLAB Data (D-023)
+
+**Goal**: Before adding any augmentation black box, demonstrate that the baseline with free physical parameters can recover the correct parameter values from MATLAB-generated synthetic data. This is Jan's parameter update method applied to the gantry baseline.
+
+**Why first**: Roland specified this phasing (2026-03-31 meeting). Validates the training pipeline in isolation before augmentation complexity is added.
+
+### Task 3b.1 — Generate synthetic training data from MATLAB
+- [ ] Generate synthetic data for a range of Y values and parameter volumes (use export scripts or extend them)
+- [ ] Data must cover representative operational range of Y
+
+### Task 3b.2 — Implement trainable baseline parameters
+- [ ] Make physical parameters (mb, mh, m1, m2, etc.) trainable in the torch model
+- [ ] Initialize close to true values
+- [ ] Document which parameters are made trainable (decisions.md)
+
+### Task 3b.3 — Train and validate parameter recovery
+- [ ] Train on MATLAB synthetic data (no augmentation block)
+- [ ] Verify that estimated parameters converge to the MATLAB ground-truth values
+- [ ] This is the go/no-go gate before augmentation begins
+
+### Task 3b.4 — Compare LPV-LFR model with Jasper's MATLAB result
+- [ ] Compare the Python LPV-LFR simulation output against Jasper's MATLAB LPV-LFR implementation
+- [ ] Raised by ASMPT in the 2026-03-31 meeting as a cross-check
+
+---
+
 ## April 9 Meeting Preparation
 
 Next meeting: April 9, afternoon (online or on campus), supervisor preference confirmed.
