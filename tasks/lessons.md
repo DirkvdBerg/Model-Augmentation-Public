@@ -40,6 +40,13 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
+### Rule: Describe proposed changes to documentation before writing them
+**Trigger**: When about to write or substantially update `docs/decisions.md`, `tasks/handoff.md`, or any other shared documentation
+**Rule**: Before executing the write, summarize the proposed changes and wait for user confirmation. Do not write directly without that checkpoint.
+**Why**: User stopped a decisions.md edit because I wrote it without discussing the content first. Documentation changes are hard to review after the fact if the framing is wrong.
+
+---
+
 ### Rule: Mathematical implications must be justified for the specific construction, not asserted as general facts
 **Trigger**: When claiming "X implies Y" or "X if and only if Y" in a mathematical derivation
 **Rule**: Always state explicitly why the implication holds for this specific construction. Do not assert it as if it follows from a general theorem unless it actually does. Show the connecting steps.

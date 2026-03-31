@@ -372,12 +372,49 @@ and velocity-dependent friction are dropped and must be learned by the augmentat
 
 ---
 
-### [D-020] Resolve-and-retain is augmentation of a resolved explicit ODE, not proper LFR augmentation — open question for supervisor
-**Date**: 2026-03-29
-**What**: The current resolve-and-retain implementation resolves the algebraic loop analytically inside `LFRBaselineBlock.forward()` before the augmentation block receives any signal. The augmentation therefore operates on post-resolution signals (z₁ = M(Y)⁻¹·fnet already computed). This is structurally equivalent to augmenting the collapsed explicit ODE `ẋ = Ac(Y)·x + Bc(Y)·u`, not to the proper LFR augmentation described in Drenth Ch. 5 where Δ^b participates inside the scheduling loop.
-**Why**: The gantry's rational parameter dependence (`M(Y)⁻¹`) requires `Dzw ≠ 0` in the G matrix. There is no equivalent LFR realization with `Dzw = 0` — setting `Dzw = 0` eliminates rational structure entirely (collapses to affine LPV). Jan's framework requires acyclic signal graphs, which is structurally equivalent to `Dzw = 0` in the scheduling channel. These two constraints together make it impossible to wire G and Δ(Y) as separate live runtime blocks for this system. Confirmed by: both AI research documents in `LPV/Algebraic loops in LPV-LFR systems/`, the LPVcore toolbox documentation, and Zhou/Doyle/Glover (1996).
-**Ruled out**: Architecture 2 (G and Δ as separate blocks, Δ^b inside the loop) — not achievable with Jan's current framework for rational-LPV systems without resolving the `Dzw ≠ 0` constraint or extending the framework to support algebraic loops.
-**Constrains**: Before implementing the training pipeline, confirm with Roland Tóth which interpretation of "LFR form" was intended: (1) LFR used for derivation and structure analysis, resolved at runtime; or (2) augmentation genuinely interacts with live LFR loop signals. The answer determines whether the current architecture is acceptable or whether a framework extension is needed. Full analysis: `docs/lfr-baseline-implementation-method.md`, section "Critical architectural finding".
+### [D-020] Two methods for rational LPV dependency; Method 2 (state-space form) chosen
+**Date**: 2026-03-29 (resolved 2026-03-31, Roland Tóth meeting)
+**What**: Two methods exist for handling the rational LPV dependency introduced by M(Y)⁻¹. Method 2 is chosen.
+
+**Method 1 — Online resolve (what Roel implemented):**
+Keep the full LFR structure live at runtime. G and Δ(Y) remain as separate blocks. During training, the backward pass propagates through the matrix inverse, implemented either by differentiating through the explicit inverse or via fixed-point iteration. Benefits: stays in true LFR form; LTI and parameter-varying blocks remain separated (useful for control design); potentially faster inference. Disadvantage: must deal with the rational symbolic form of M(Y)⁻¹ explicitly; more complex to implement.
+
+**Method 2 — State-space form (chosen):**
+Take M(Y)⁻¹ analytically and absorb it into Ac(Y), Bc(Y). Runtime evaluates `ẋ = Ac(Y)x + Bc(Y)u` directly via RK4. Rational dependency on Y is retained (do NOT rewrite to affine). LFR is used for derivation and structural analysis only, not as a live runtime loop. The augmentation block operates on the same collapsed signals; its black box component can remain affine.
+
+**Why Method 2**: Roland confirmed in 2026-03-31 meeting that this is acceptable. The "algebraic loop" concern was a misapplication of the definition: M(Y) being invertible means the system is well-posed and no true algebraic loop exists. Need to stick to the original parameter structure of M(Y) (augmentation can be added on top without changing the baseline structure). Simpler to implement.
+**Ruled out**: Method 1 for now. Not blocked, but not needed: the simpler SS form suffices and Method 1 can be revisited if control design or faster inference become priorities.
+**Constrains**: Implement `CT_RK4_State_Block` using Ac(Y), Bc(Y) with rational-in-Y entries (from M(Y)⁻¹). Do not rewrite to affine. Verify M(Y) invertibility numerically: compute singular values of M(Y) across the full Y operational range and confirm they remain bounded away from zero. Check that maximum signal values in M(Y) are below 1 (or 1/0.75) to bound remaining concern.
+
+---
+
+### [D-021] Verify M(Y) invertibility numerically across the Y operational range
+**Date**: 2026-03-31
+**What**: Before relying on M(Y)⁻¹ in the runtime implementation, numerically verify that M(Y) remains invertible across the full operational Y range. Compute singular values of M(Y) for Y swept across [0, 0.7] m. Confirm all singular values stay bounded away from zero. Also check that maximum signal values in M(Y) are below 1 (or 1/0.75) to bound any remaining well-posedness concern.
+**Why**: Roland noted this as a concrete verification step. Y range is also relevant for centering the scheduling variable: centering Y (e.g., Y_c = Y - Y_mean) improves numerical conditioning and avoids potential singularities near the boundary of the operational range.
+**Ruled out**: Assuming invertibility without verification.
+**Constrains**: This is a prerequisite check before implementing `CT_RK4_State_Block`. Script can be a short standalone MATLAB or Python check. Results should confirm M(Y) is positive definite (physical mass matrix) throughout the range.
+
+---
+
+### [D-022] Non-baseline physics (Coriolis, etc.) go in augmentation, not in baseline
+**Date**: 2026-03-31
+**What**: Physical effects not present in the García-Herreros first-principles equations (e.g., Coriolis forces, cross-coupling terms) must not be added to the baseline model. They belong in the augmentation component and can be parametrized there.
+**Why**: Roland explicitly stated in the 2026-03-31 meeting: "don't add to the baseline model, build into the black box/augmentation model." The baseline must remain the exact FP model as derived. Adding extra physics to the baseline would conflate the known physics with the learned correction, making it harder to isolate what the augmentation is doing.
+**Ruled out**: Extending the baseline state-space equations with additional physical terms before augmentation is validated.
+**Constrains**: The baseline is frozen at the García-Herreros equations. Any additional dynamics or forces are learned/parametrized in the augmentation block. Extra states (e.g., for Coriolis) can be added to the augmentation but not to the baseline.
+
+---
+
+### [D-023] Training roadmap: validate parameter estimation on synthetic MATLAB data before adding augmentation
+**Date**: 2026-03-31
+**What**: The training proceeds in two phases before full augmentation:
+  1. Generate synthetic data from MATLAB for various Y values and parameter volumes.
+  2. Train the baseline model with free (trainable) physical parameters only — no augmentation black box (Jan's parameter update method). Initialize parameters close to the true values. Show that the parameter estimation recovers the correct parameters from MATLAB-generated data.
+  Only after this is demonstrated does augmentation (extra states, Coriolis, etc.) get added.
+**Why**: Roland specified this phasing in the 2026-03-31 meeting. Validating the parameter update step in isolation (no black box) proves the baseline training pipeline works before adding augmentation complexity. This mirrors Jan's original method.
+**Ruled out**: Jumping straight to augmentation training without first showing the baseline parameter estimation works on synthetic data.
+**Constrains**: Synthetic data must cover a representative range of Y and other parameter volumes. The parameter initialization must be close enough to the true values for convergence. The "show it works" milestone (baseline parameters converge to MATLAB ground truth) is required before Step 4 (augmentation) begins.
 
 ---
 

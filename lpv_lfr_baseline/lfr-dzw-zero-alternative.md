@@ -195,11 +195,27 @@ asks how to manage it (resolve analytically, use descriptor form, shift it out, 
 The extended scheduling approach sidesteps that question entirely by reformulating the *model* before
 building the LFR. It belongs to LPV-SS modeling theory — specifically the problem of converting a
 rational parameter dependence into an equivalent affine one by absorbing the denominator into the
-scheduling signal. This is treated in the LPV system identification and modeling literature, in
-particular Tóth (2010), *Modeling and Identification of Linear Parameter-Varying Systems* (Springer),
-Chapter 4, where rational LPV representations are converted to affine ones via scheduling variable
-lifting. The two bodies of literature (loop handling vs. model reformulation) ask different questions
-and do not cross-reference.
+scheduling signal. This belongs to the LPV modeling literature on scheduling variable lifting — the technique of
+absorbing a rational denominator into an extended set of scheduling variables to obtain an affine
+representation. No verified reference for this specific technique is available in the project
+library. Tóth (2010), *Modeling and Identification of LPV Systems* (Springer; cite key
+`toth2010modeling`), is a plausible source but has not been verified against the text.
+
+Note: `drenth2025lpvlfr` (Drenth, Hoekstra, Schoukens, Tóth — IFAC) treats affine and rational LPV
+as two separate model classes that are each learned directly. It does not discuss converting one to
+the other and should not be cited as a reference for this technique. The two bodies of literature (loop handling vs. model reformulation) ask
+different questions and do not cross-reference.
+
+**Note on the tension with Drenth's advocacy for rational LPV**: `drenth2025lpvlfr` explicitly argues
+that rational LPV dependency has benefits over affine — it reduces overbounding and requires fewer
+independent scheduling variables. The gantry is classified as naturally rational in
+`docs/drenth/ch2-dual-gantry-mapping.md` (Step 4) on exactly these grounds. Yet Jan's
+`SSE_Interconnect` requires acyclic signal graphs (Dzw = 0), which is the affine case. This tension
+is unresolved in the current project. One possible interpretation is that Drenth's learning algorithm
+handles rational LPV through the (I − Dzw·Δ)⁻¹ resolution step — retaining the rational LFR as the
+representation but resolving the loop algebraically before training — which would make resolve-and-
+retain not a workaround but the intended mechanism for rational dependency in their framework. This
+should be verified against the IFAC paper before being treated as established.
 
 ---
 
