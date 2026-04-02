@@ -7,14 +7,14 @@ Discretization: RK4 with fixed step ts = 1/fs. Consistent with D-018.
 
 Provides two functions:
 
-    rk4_step(x, u_logical, G, M0, M1, M2, K, C, ts) -> (x_next, z, w, y)
+    rk4_step(x, u_logical, M0, M1, M2, K, C, ts) -> (x_next, z, w, y)
         Single RK4 step in logical coordinates.
         Used by both simulate() and lfr_block.py (Jan's Block wrapper).
         Y is extracted from the state at each sub-step — self-scheduled.
         z and w are from the START of the step (x[k], not sub-steps).
         y is in logical coordinates — caller applies @ P for stage output.
 
-    simulate(x0, u_seq_stage, G, M0, M1, M2, K, C, P, ts) -> SimResult
+    simulate(x0, u_seq_stage, M0, M1, M2, K, C, P, ts) -> SimResult
         Full trajectory simulation over N steps.
         x0           : (batch, 6)    initial state in logical coordinates
         u_seq_stage  : (batch, N, 3) input sequence in stage coordinates
@@ -28,10 +28,10 @@ All inputs and outputs carry a leading batch dimension.
 For single-trajectory use, add/remove the batch dim with unsqueeze(0)/squeeze(0).
 
 RK4 sub-step schedule:
-    k1, z, w, y = lfr_forward(x,             u_logical, x[:, 2],           ...)
-    k2, _, _, _ = lfr_forward(x + ts/2 * k1, u_logical, (x+ts/2*k1)[:,2], ...)
-    k3, _, _, _ = lfr_forward(x + ts/2 * k2, u_logical, (x+ts/2*k2)[:,2], ...)
-    k4, _, _, _ = lfr_forward(x + ts   * k3, u_logical, (x+ts*k3)[:,2],   ...)
+    k1, z, w, y = lfr_forward(x,             u_logical, x[:, 2],           M0, M1, M2, K, C)
+    k2, _, _, _ = lfr_forward(x + ts/2 * k1, u_logical, (x+ts/2*k1)[:,2], M0, M1, M2, K, C)
+    k3, _, _, _ = lfr_forward(x + ts/2 * k2, u_logical, (x+ts/2*k2)[:,2], M0, M1, M2, K, C)
+    k4, _, _, _ = lfr_forward(x + ts   * k3, u_logical, (x+ts*k3)[:,2],   M0, M1, M2, K, C)
     x_next = x + ts/6 * (k1 + 2*k2 + 2*k3 + k4)
 
 Note on RK4 vs ZOH:
@@ -45,7 +45,6 @@ from dataclasses import dataclass
 import torch
 
 from lpv_lfr_baseline.lfr_forward import lfr_forward
-from lpv_lfr_baseline.lfr_matrices import GMatrix
 
 
 @dataclass
@@ -67,7 +66,6 @@ class SimResult:
 def rk4_step(
     x:         torch.Tensor,   # (batch, 6)  state in logical coordinates
     u_logical: torch.Tensor,   # (batch, 3)  input in logical coordinates
-    G:         GMatrix,
     M0:        torch.Tensor,   # (3,3)
     M1:        torch.Tensor,   # (3,3)
     M2:        torch.Tensor,   # (3,3)
@@ -83,19 +81,19 @@ def rk4_step(
     y is returned in logical coordinates — apply @ P for stage output.
     """
     # k1 — also records z, w, y at x[k] (start of step)
-    k1, z, w, y = lfr_forward(x,                   u_logical, x[:, 2],                   G, M0, M1, M2, K, C)
+    k1, z, w, y = lfr_forward(x,                   u_logical, x[:, 2],                   M0, M1, M2, K, C)
 
     # k2 — Y from intermediate state
     x2 = x + (ts / 2) * k1
-    k2, _, _, _  = lfr_forward(x2,                  u_logical, x2[:, 2],                  G, M0, M1, M2, K, C)
+    k2, _, _, _  = lfr_forward(x2,                  u_logical, x2[:, 2],                  M0, M1, M2, K, C)
 
     # k3 — Y from intermediate state
     x3 = x + (ts / 2) * k2
-    k3, _, _, _  = lfr_forward(x3,                  u_logical, x3[:, 2],                  G, M0, M1, M2, K, C)
+    k3, _, _, _  = lfr_forward(x3,                  u_logical, x3[:, 2],                  M0, M1, M2, K, C)
 
     # k4 — Y from end-of-step state
     x4 = x + ts * k3
-    k4, _, _, _  = lfr_forward(x4,                  u_logical, x4[:, 2],                  G, M0, M1, M2, K, C)
+    k4, _, _, _  = lfr_forward(x4,                  u_logical, x4[:, 2],                  M0, M1, M2, K, C)
 
     x_next = x + (ts / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
 
@@ -105,7 +103,6 @@ def rk4_step(
 def simulate(
     x0:           torch.Tensor,   # (batch, 6)     initial state in logical coordinates
     u_seq_stage:  torch.Tensor,   # (batch, N, 3)  input sequence in stage coordinates
-    G:            GMatrix,
     M0:           torch.Tensor,
     M1:           torch.Tensor,
     M2:           torch.Tensor,
@@ -132,7 +129,7 @@ def simulate(
     for k in range(N):
         # Stage -> logical: u_logical[n] = P @ u_stage[n]  =>  u_logical = u_stage @ P.T
         u_logical = u_seq_stage[:, k, :] @ P.T                    # (batch, 3)
-        x_next, z_k, w_k, y_k = rk4_step(x, u_logical, G, M0, M1, M2, K, C, ts)
+        x_next, z_k, w_k, y_k = rk4_step(x, u_logical, M0, M1, M2, K, C, ts)
 
         # Logical -> stage: y_stage[n] = P.T @ y_logical[n]  =>  y_stage = y_logical @ P
         Y_list.append(y_k @ P)
@@ -161,7 +158,6 @@ if __name__ == '__main__':
     from scipy.io import loadmat
 
     from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, ts
-    from lpv_lfr_baseline.lfr_matrices import G
 
     dtype    = torch.float64
     mat_base = os.path.join(os.path.dirname(__file__), '..', 'Matlab-output')
@@ -178,7 +174,7 @@ if __name__ == '__main__':
     u_test    = torch.tensor([[1.0, -0.5, 0.2]], dtype=dtype)               # (1, 3)  stage
     u_logical = u_test @ P.T                                                 # (1, 3)  logical
 
-    x_next, z_k, w_k, y_k = rk4_step(x0_test, u_logical, G, M0, M1, M2, K, C, ts)
+    x_next, z_k, w_k, y_k = rk4_step(x0_test, u_logical, M0, M1, M2, K, C, ts)
 
     shape_ok = (
         x_next.shape == (1, 6) and
@@ -201,7 +197,7 @@ if __name__ == '__main__':
     print("=" * 60)
 
     x_grad = x0_test.clone().requires_grad_(True)
-    x_next_g, _, _, _ = rk4_step(x_grad, u_logical, G, M0, M1, M2, K, C, ts)
+    x_next_g, _, _, _ = rk4_step(x_grad, u_logical, M0, M1, M2, K, C, ts)
     x_next_g.sum().backward()
 
     grad_ok = x_grad.grad is not None
@@ -236,7 +232,7 @@ if __name__ == '__main__':
         # Batch dim: unsqueeze(0) → (1, N, 3) and (1, 6)
         x0 = torch.tensor([[0.0, 0.0, 0.3, 0.0, 0.0, 0.0]], dtype=dtype)   # (1, 6)
         with torch.no_grad():
-            result = simulate(x0, u_matlab.unsqueeze(0), G, M0, M1, M2, K, C, P, ts)
+            result = simulate(x0, u_matlab.unsqueeze(0), M0, M1, M2, K, C, P, ts)
 
         Y_ours = result.Y[0]   # (N, 3) — squeeze batch dim
 
@@ -282,7 +278,7 @@ if __name__ == '__main__':
         x0_lpv = torch.tensor([[0.0, 0.0, 0.3, 0.0, 0.0, 0.0]], dtype=dtype)   # (1, 6)
 
         with torch.no_grad():
-            result_lpv = simulate(x0_lpv, u_lpv.unsqueeze(0), G, M0, M1, M2, K, C, P, ts)
+            result_lpv = simulate(x0_lpv, u_lpv.unsqueeze(0), M0, M1, M2, K, C, P, ts)
 
         Y_ours_lpv = result_lpv.Y[0]   # (N, 3) — squeeze batch dim
 

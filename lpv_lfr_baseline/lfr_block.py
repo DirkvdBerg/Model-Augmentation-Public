@@ -49,7 +49,6 @@ import torch
 from torch import Tensor
 
 from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, ts
-from lpv_lfr_baseline.lfr_matrices import G
 from lpv_lfr_baseline.lfr_simulate import rk4_step
 
 try:
@@ -80,7 +79,6 @@ class LFRBaselineBlock(_BASE):
 
         # Physical parameters as plain attributes.
         # For GPU training: replace with self.register_buffer(name, tensor).
-        self._G  = G
         self._M0 = M0
         self._M1 = M1
         self._M2 = M2
@@ -114,7 +112,7 @@ class LFRBaselineBlock(_BASE):
         # One RK4 step — Y self-scheduled inside rk4_step via x[:, 2]
         x_next, z_lfr, w_lfr, _ = rk4_step(
             x, u_logical,
-            self._G, self._M0, self._M1, self._M2, self._K, self._C, self._ts,
+            self._M0, self._M1, self._M2, self._K, self._C, self._ts,
         )
 
         # Stack output along feature dim
@@ -168,7 +166,6 @@ if __name__ == '__main__':
     print("=" * 60)
 
     from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, ts
-    from lpv_lfr_baseline.lfr_matrices import G
 
     x_f64        = x_test.double()                     # (1, 6)
     u_stage_f64  = u_test.double()                     # (1, 3)
@@ -176,7 +173,7 @@ if __name__ == '__main__':
 
     with torch.no_grad():
         x_next_ref, z_lfr_ref, w_lfr_ref, _ = rk4_step(
-            x_f64, u_logical_f64, G, M0, M1, M2, K, C, ts
+            x_f64, u_logical_f64, M0, M1, M2, K, C, ts
         )
 
         w_out = block.forward(z_in)

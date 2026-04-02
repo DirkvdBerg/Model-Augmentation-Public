@@ -45,11 +45,9 @@ Run as:
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
 import torch
 
 from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P
-from lpv_lfr_baseline.lfr_matrices import G
 from lpv_lfr_baseline.lfr_forward import lfr_forward
 
 dtype = torch.float64
@@ -78,7 +76,7 @@ if __name__ == '__main__':
     W = torch.randn(6, 6, dtype=dtype, requires_grad=True)
 
     x_in = x_test.clone().requires_grad_(True)
-    xdot, z, w, y = lfr_forward(x_in, u_logical, Y_val, G, M0, M1, M2, K, C)
+    xdot, z, w, y = lfr_forward(x_in, u_logical, Y_val, M0, M1, M2, K, C)
 
     delta_xdot = z @ W.T          # (1, 6) — mock augmentation correction
     xdot_aug   = xdot + delta_xdot
@@ -106,7 +104,7 @@ if __name__ == '__main__':
     print("=" * 60)
 
     x_in = x_test.clone().requires_grad_(True)
-    xdot, z, w, y = lfr_forward(x_in, u_logical, Y_val, G, M0, M1, M2, K, C)
+    xdot, z, w, y = lfr_forward(x_in, u_logical, Y_val, M0, M1, M2, K, C)
 
     # Simulate what the Block wrapper returns and connect_signals does.
     # Stacked along feature dim (batch, 18).
@@ -143,7 +141,7 @@ if __name__ == '__main__':
     W_aug = torch.randn(6, 6, dtype=dtype, requires_grad=True)  # augmentation weights
     x_in  = x_test.clone().requires_grad_(True)
 
-    xdot, z, w, y = lfr_forward(x_in, u_logical, Y_val, G, M0, M1, M2, K, C)
+    xdot, z, w, y = lfr_forward(x_in, u_logical, Y_val, M0, M1, M2, K, C)
 
     delta_xdot = z @ W_aug.T           # (1, 6)
     xdot_aug   = xdot + delta_xdot    # parallel augmentation (D-003)

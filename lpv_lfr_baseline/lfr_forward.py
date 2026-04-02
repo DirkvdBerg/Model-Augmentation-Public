@@ -18,16 +18,21 @@ Forward pass steps:
        v2    = Y * v1
     5. z     = cat([v;  v1])  in R^6            (batch, 6)
        w     = cat([v1; v2])  in R^6            (batch, 6)
-    6. xdot  = Ax @ x + Bw @ w + Bu @ u        (batch, 6)
-    7. y     = Cy @ x                           (batch, 3)
+    6. xdot  = cat([x[3:]; v])                  (batch, 6)  — direct from physics
+    7. y     = x[:3]                            (batch, 3)  — logical positions
+
+Step 6 uses the direct physics identity xdot = [qdot; qddot] = [x[3:]; v] rather
+than the G-matrix form G.Ax@x + G.Bw@w + G.Bu@u. The two are algebraically
+identical (the G matrices were derived to encode this exact relationship), but the
+direct form is always consistent with the current M0/M1/M2/K/C parameters — no
+risk of stale G when parameters are updated. See docs/decisions.md D-026.
 
 Provides:
-    lfr_forward(x, u, Y, G, M0, M1, M2, K, C) -> (xdot, z, w, y)
+    lfr_forward(x, u, Y, M0, M1, M2, K, C) -> (xdot, z, w, y)
         All inputs and outputs are torch tensors, dtype=float64.
         x  : (batch, 6)  state [q; qdot] in logical coordinates
         u  : (batch, 3)  input in LOGICAL coordinates — caller applies P transform
         Y  : (batch,)    scheduling variable — extract as x[:, 2] in caller
-        G  : GMatrix     constant G matrix entries from lfr_matrices.py
         M0, M1, M2 : (3,3)  mass matrix decomposition (passed explicitly so gradients
                              flow correctly if parameters become trainable)
         K, C       : (3,3)  stiffness and damping matrices
@@ -41,12 +46,11 @@ Note on coordinates:
 Note on u:
     u must be in logical coordinates when it enters this function.
     In lfr_simulate: u_logical = u_stage @ P.T  (batched) before calling lfr_forward.
-    y is returned in logical coordinates; lfr_simulate applies P.T to get stage output.
+    y is returned in logical coordinates; lfr_simulate applies @ P to get stage output.
 """
 
 import torch
 
-from lpv_lfr_baseline.lfr_matrices import GMatrix
 from lpv_lfr_baseline.physics import build_M
 
 
@@ -54,7 +58,6 @@ def lfr_forward(
     x:  torch.Tensor,   # (batch, 6)   state in logical coordinates
     u:  torch.Tensor,   # (batch, 3)   input in logical coordinates
     Y:  torch.Tensor,   # (batch,)     scheduling variable — x[:, 2] in caller
-    G:  GMatrix,
     M0: torch.Tensor,   # (3,3)
     M1: torch.Tensor,   # (3,3)
     M2: torch.Tensor,   # (3,3)
@@ -69,13 +72,12 @@ def lfr_forward(
     u must already be in logical coordinates.
     """
     # Step 1: M(Y) for each item in the batch  →  (batch, 3, 3)
-    M_Y = (M0.unsqueeze(0)
-           + M1.unsqueeze(0) * Y[:, None, None]
-           + M2.unsqueeze(0) * Y[:, None, None] ** 2)
+    Y_e = Y[:, None, None]                                          # (batch, 1, 1)  reused below
+    M_Y = M0.unsqueeze(0) + M1.unsqueeze(0) * Y_e + M2.unsqueeze(0) * Y_e ** 2
 
     # Step 2: net force in logical coordinates  →  (batch, 3)
     #   M(Y) @ qdotdot = -K @ q - C @ qdot + u
-    fnet = -(x[:, :3] @ K.T) - (x[:, 3:] @ C.T) + u
+    fnet = -(x[:, :3] @ K) - (x[:, 3:] @ C) + u
 
     # Step 3: resolve algebraic loop  →  (batch, 3)
     #   v = M_Y^{-1} @ fnet  (batched solve; differentiable)
@@ -89,11 +91,13 @@ def lfr_forward(
     z = torch.cat([v,  v1], dim=-1)   # (batch, 6)
     w = torch.cat([v1, v2], dim=-1)   # (batch, 6)
 
-    # Step 6: state derivative via G matrix  →  (batch, 6)
-    xdot = x @ G.Ax.T + w @ G.Bw.T + u @ G.Bu.T
+    # Step 6: state derivative — direct from physics (D-026)
+    #   xdot = [qdot; qddot] = [x[3:]; v]  — algebraically exact, always consistent
+    #   with current M0/M1/M2/K/C, no G matrix needed.
+    xdot = torch.cat([x[:, 3:], v], dim=-1)   # (batch, 6)
 
-    # Step 7: output  →  (batch, 3)
-    y = x @ G.Cy.T
+    # Step 7: output — logical positions (first 3 state components)
+    y = x[:, :3]   # (batch, 3)
 
     return xdot, z, w, y
 
@@ -107,7 +111,6 @@ if __name__ == '__main__':
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
     from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P
-    from lpv_lfr_baseline.lfr_matrices import G
 
     dtype = torch.float64
 
@@ -135,7 +138,7 @@ if __name__ == '__main__':
     print("=" * 60)
     print("Check 1: Loop resolution residual  M(Y)@v - fnet  (batch=5)")
     print("=" * 60)
-    xdot_b, z_b, w_b, y_b = lfr_forward(x_batch, u_batch, Y_batch, G, M0, M1, M2, K, C)
+    xdot_b, z_b, w_b, y_b = lfr_forward(x_batch, u_batch, Y_batch, M0, M1, M2, K, C)
 
     all_pass = True
     fnet_ref = -K @ x_test[:3] - C @ x_test[3:] + u_logical   # same for all Y
@@ -187,7 +190,7 @@ if __name__ == '__main__':
     Y_grad    = torch.tensor([0.3], dtype=dtype, requires_grad=True)   # (1,)
     x_b1      = x_test.unsqueeze(0)                                     # (1, 6)
     u_b1      = u_logical.unsqueeze(0)                                  # (1, 3)
-    xdot_g, _, _, _ = lfr_forward(x_b1, u_b1, Y_grad, G, M0, M1, M2, K, C)
+    xdot_g, _, _, _ = lfr_forward(x_b1, u_b1, Y_grad, M0, M1, M2, K, C)
     xdot_g.sum().backward()
 
     grad_ok = Y_grad.grad is not None
@@ -205,7 +208,7 @@ if __name__ == '__main__':
     print("=" * 60)
     x_grad = x_test.unsqueeze(0).clone().requires_grad_(True)   # (1, 6)
     Y_b1   = torch.tensor([0.3], dtype=dtype)                   # (1,)
-    xdot_g, _, _, _ = lfr_forward(x_grad, u_b1, Y_b1, G, M0, M1, M2, K, C)
+    xdot_g, _, _, _ = lfr_forward(x_grad, u_b1, Y_b1, M0, M1, M2, K, C)
     xdot_g.sum().backward()
 
     grad_ok = x_grad.grad is not None
@@ -223,7 +226,7 @@ if __name__ == '__main__':
     print("=" * 60)
     print("Check 5: LFR signal structure  w = Y·I6·z  (batch=5)")
     print("=" * 60)
-    _, z_b5, w_b5, _ = lfr_forward(x_batch, u_batch, Y_batch, G, M0, M1, M2, K, C)
+    _, z_b5, w_b5, _ = lfr_forward(x_batch, u_batch, Y_batch, M0, M1, M2, K, C)
 
     all_pass = True
     for i, y_val in enumerate(test_Y_vals):

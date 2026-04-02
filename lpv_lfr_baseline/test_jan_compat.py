@@ -76,13 +76,10 @@ Checks
         x0 → xp1 → xp2 → xp3; gradient must flow back to x0.
         Single-step BPTT (Check 4) misses truncation at step boundaries.
 
-    Check F — Trainable physical parameters: gradient via G matrix entries:
-        Part 1: lfr_forward with M0 as nn.Parameter (static G) gives
-                M0.grad != None via the linalg.solve path.
-        Part 2: lfr_forward with G rebuilt from M0 (dynamic G) gives a
-                strictly larger M0 grad norm — the Ax/Bw/Bu paths also
-                contribute.  Proves lfr_block.py must call
-                build_G_matrix() inside forward() for full identifiability.
+    Check F — Trainable physical parameters: gradient via M(Y)^{-1} solve:
+        M0 as nn.Parameter, lfr_forward called without G (D-026).
+        Gradient flows via linalg.solve(M_Y, fnet) where M_Y depends on M0.
+        M0.grad must be non-None after backward.
 
 Run as:
     conda run -n GraduationProject python -m lpv_lfr_baseline.test_jan_compat
@@ -91,7 +88,6 @@ Run as:
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
 import numpy as np
 import torch
 
@@ -102,7 +98,6 @@ from model_augmentation.utils.utils import detect_algebraic_loop, selection_matr
 from lpv_lfr_baseline.lfr_block import LFRBaselineBlock
 from lpv_lfr_baseline.lfr_forward import lfr_forward
 from lpv_lfr_baseline.lfr_simulate import rk4_step
-from lpv_lfr_baseline.lfr_matrices import G as G_module, build_G_matrix
 from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, ts
 
 
@@ -125,8 +120,10 @@ def build_baseline_interconnect(debugging=False):
     S_xp = selection_matrix(np.arange(6), 18)    # (6, 18)
     ic.connect_signals(lfr_block, 'xp', connection_matrix=S_xp)
 
-    # Output → y: select first 3 of x_next as position proxy
-    S_y = selection_matrix(np.arange(3), 18)     # (3, 18)
+    # Output → y: select first 3 of x_next (logical positions) then apply
+    # logical → stage transform P.T (column-vector convention: y_stage = P.T @ y_logical).
+    # See decisions.md D-027. Reference data is in stage coordinates [X1, X2, Y].
+    S_y = torch.tensor(P.numpy().T @ selection_matrix(np.arange(3), 18).numpy()).float()   # (3, 18)
     ic.connect_signals(lfr_block, 'y', connection_matrix=S_y)
 
     return ic, lfr_block
@@ -152,8 +149,8 @@ def build_augmented_interconnect(debugging=False):
     # LFR wiring (same as baseline)
     ic.connect_signals('x', lfr_block)
     ic.connect_signals('u', lfr_block)
-    S_xp = selection_matrix(np.arange(6),    18).float()   # (6, 18)
-    S_y  = selection_matrix(np.arange(3),    18).float()   # (3, 18)
+    S_xp = selection_matrix(np.arange(6), 18).float()                            # (6, 18)
+    S_y  = torch.tensor(P.numpy().T @ selection_matrix(np.arange(3), 18).numpy()).float()  # (3, 18)
     ic.connect_signals(lfr_block, 'xp', connection_matrix=S_xp)
     ic.connect_signals(lfr_block, 'y',  connection_matrix=S_y)
 
@@ -333,7 +330,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         x_next_ref, _, _, _ = rk4_step(
             x_test_a.double(), u_logical_a,
-            G_module, M0, M1, M2, K, C, ts,
+            M0, M1, M2, K, C, ts,
         )
 
     err_a = (xp_ic.double() - x_next_ref).abs().max().item()
@@ -367,7 +364,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         _, z_ref, w_ref, _ = lfr_forward(
             x_test_b.double(), u_logical_b, Y_b,
-            G_module, M0, M1, M2, K, C,
+            M0, M1, M2, K, C,
         )
 
     z_lfr_slot = w_out_b[:, 6:12, 0].double()    # (1, 6)
@@ -499,21 +496,19 @@ if __name__ == '__main__':
     print(f"\nCheck E: {'PASS' if status else 'FAIL'}")
 
     # ------------------------------------------------------------------
-    # Check F — Trainable physical parameters: gradient path through G
+    # Check F — Trainable physical parameters: gradient via M(Y)^{-1} solve
     #
-    # Part 1 (static G): M0 as nn.Parameter + module-level G.
-    #   Gradient flows via linalg.solve (M_Y → v → z/w → xdot).
-    #   M0.grad must be non-None.
+    # M0 as nn.Parameter. lfr_forward computes M_Y = M0 + M1*Y + M2*Y^2,
+    # then v = linalg.solve(M_Y, fnet). M0 appears in M_Y, so the autograd
+    # graph carries a gradient from xdot back to M0 through the solve.
+    # M0.grad must be non-None after backward.
     #
-    # Part 2 (dynamic G): G rebuilt from M0 inside forward context.
-    #   Both solve-path AND G-entry paths contribute.
-    #   M0.grad norm must be strictly larger than Part 1.
-    #   This is the required design for lfr_block.py when params are
-    #   trainable: call build_G_matrix() inside forward(), not at init.
+    # After D-026 (G removed from lfr_forward), the solve path is the sole
+    # gradient route for M0. The old "dynamic G" path no longer exists.
     # ------------------------------------------------------------------
     print()
     print("=" * 60)
-    print("Check F: Trainable physical parameters — gradient via G matrix")
+    print("Check F: Trainable physical parameters — gradient via M(Y)^-1 solve")
     print("=" * 60)
 
     x_f_test  = torch.tensor([[0.05, 0.01, 0.30, 0.02, -0.01, 0.05]], dtype=torch.float64)
@@ -521,30 +516,17 @@ if __name__ == '__main__':
     u_f_log   = u_f_stage @ P.T        # (1, 3)  logical coords
     Y_f       = x_f_test[:, 2]         # (1,)
 
-    # --- Part 1: static G (module-level, precomputed from fixed M0 at import) ---
-    M0_param1 = torch.nn.Parameter(M0.clone())
-    xdot1, _, _, _ = lfr_forward(x_f_test, u_f_log, Y_f, G_module, M0_param1, M1, M2, K, C)
-    xdot1.sum().backward()
+    M0_param = torch.nn.Parameter(M0.clone())
+    xdot_f, _, _, _ = lfr_forward(x_f_test, u_f_log, Y_f, M0_param, M1, M2, K, C)
+    xdot_f.sum().backward()
 
-    part1_ok = M0_param1.grad is not None
-    norm1    = M0_param1.grad.norm().item() if part1_ok else 0.0
-    print(f"  Part 1 (static G)  M0.grad is not None : {part1_ok}  norm = {norm1:.6e}")
-
-    # --- Part 2: dynamic G (built from M0_param inside forward context) ---
-    M0_param2 = torch.nn.Parameter(M0.clone())
-    G_dynamic = build_G_matrix(M0_param2, M1, M2, K, C)
-    xdot2, _, _, _ = lfr_forward(x_f_test, u_f_log, Y_f, G_dynamic, M0_param2, M1, M2, K, C)
-    xdot2.sum().backward()
-
-    part2_ok   = M0_param2.grad is not None
-    norm2      = M0_param2.grad.norm().item() if part2_ok else 0.0
-    larger_ok  = norm2 > norm1
-    print(f"  Part 2 (dynamic G) M0.grad is not None : {part2_ok}  norm = {norm2:.6e}")
-    print(f"  Dynamic G norm > static G norm (more paths active): {larger_ok}")
-    print(f"  (Ratio: {norm2/norm1:.2f}x)" if norm1 > 0 else "")
-    print(f"  Design note: lfr_block.py must call build_G_matrix() inside forward()")
-    print(f"               for M0/M1/M2/K/C to be fully identifiable from data.")
-    status = part1_ok and part2_ok and larger_ok
+    grad_ok = M0_param.grad is not None
+    norm_f  = M0_param.grad.norm().item() if grad_ok else 0.0
+    print(f"  M0.grad is not None (via linalg.solve path) : {grad_ok}")
+    if grad_ok:
+        print(f"  M0.grad norm = {norm_f:.6e}")
+    print(f"  (Gradient path: xdot[3:] = v = M(Y)^-1 @ fnet -> M_Y -> M0)")
+    status = grad_ok
     results['Check F (trainable param grad)'] = status
     print(f"\nCheck F: {'PASS' if status else 'FAIL'}")
 

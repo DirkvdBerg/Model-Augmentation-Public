@@ -24,16 +24,14 @@ Usage:
 
 import os
 import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, ts, build_M
-from lpv_lfr_baseline.lfr_matrices import G
+from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, fs, ts, build_M
 from lpv_lfr_baseline.lfr_simulate import simulate
 
 # ---------------------------------------------------------------------------
@@ -41,8 +39,8 @@ from lpv_lfr_baseline.lfr_simulate import simulate
 # ---------------------------------------------------------------------------
 _MAT_BASE    = os.path.join(os.path.dirname(__file__), '..', 'Matlab-output')
 _DTYPE       = torch.float64
-_FS          = 16e3
-_TS          = 1.0 / _FS
+_FS          = fs.item()
+_TS          = ts.item()
 _FREQS_HZ    = np.logspace(np.log10(1.0), np.log10(500.0), 1000)   # 1-500 Hz, log
 _Y_FIXED     = 0.300                              # m, for Plot 2
 _Y_FAMILY    = [-0.30, -0.15, 0.00, 0.15, 0.30]  # m, for Plot 3
@@ -142,7 +140,7 @@ def _phase_unwrapped(H: np.ndarray, row: int, col: int) -> np.ndarray:
     return np.degrees(np.unwrap(np.angle(H[:, row, col])))
 
 
-def _bode_axes(fig, axes, row: int, col: int,
+def _bode_axes(axes, row: int, col: int,
                freqs: np.ndarray, mag_db: np.ndarray,
                label: str, color: str, linestyle: str = '-', lw: float = 1.5):
     ax = axes[row, col]
@@ -156,7 +154,7 @@ def _bode_axes(fig, axes, row: int, col: int,
     ax.set_title(f'{_OUT_LABELS[row]} \u2190 {_IN_LABELS[col]}', fontsize=9)
 
 
-def _phase_axes(fig, axes, col: int,
+def _phase_axes(axes, col: int,
                 freqs: np.ndarray, H: np.ndarray,
                 label: str, color: str, linestyle: str = '-', lw: float = 1.5):
     """Plot unwrapped phase for diagonal channel [col, col] into phase row (row=3)."""
@@ -194,7 +192,7 @@ def _section_trajectory():
     x0[0, 2] = 0.3
 
     with torch.no_grad():
-        result = simulate(x0, u_seq.unsqueeze(0), G, M0, M1, M2, K, C, P, ts)
+        result = simulate(x0, u_seq.unsqueeze(0), M0, M1, M2, K, C, P, ts)
 
     Y_py  = result.Y[0]              # (N, 3) stage coords: Python
     err   = (Y_py - q1_ref).abs()   # (N, 3)
@@ -307,18 +305,18 @@ def _section_bode_fixed_y():
 
     for row in range(3):
         for col in range(3):
-            _bode_axes(fig, axes, row, col, _FREQS_HZ, mag_dt,
+            _bode_axes(axes, row, col, _FREQS_HZ, mag_dt,
                        'MATLAB ZOH DT', 'tab:orange', '--', lw=1.8)
-            _bode_axes(fig, axes, row, col, _FREQS_HZ, mag_ct,
+            _bode_axes(axes, row, col, _FREQS_HZ, mag_ct,
                        'Python CT', 'tab:blue', '-', lw=1.4)
             for f in nat_f:
                 axes[row, col].axvline(f, color='gray', linestyle=':', alpha=0.5, linewidth=0.8)
 
     # Phase row — diagonal channels only
     for col in range(3):
-        _phase_axes(fig, axes, col, _FREQS_HZ, H_dt,
+        _phase_axes(axes, col, _FREQS_HZ, H_dt,
                     'MATLAB ZOH DT', 'tab:orange', '--', lw=1.8)
-        _phase_axes(fig, axes, col, _FREQS_HZ, H_ct,
+        _phase_axes(axes, col, _FREQS_HZ, H_ct,
                     'Python CT', 'tab:blue', '-', lw=1.4)
         for f in nat_f:
             axes[3, col].axvline(f, color='gray', linestyle=':', alpha=0.5, linewidth=0.8)
@@ -366,8 +364,10 @@ def _section_bode_varying_y():
     fig.suptitle('Y-varying Bode: Python CT FRF  |  dashed = MATLAB ZOH DT  '
                  '(row 4 = diagonal phase)', fontsize=11)
 
+    H_ct_cache = {}
     for idx, Y_val in enumerate(sorted(_Y_FAMILY)):
         H_ct      = _ct_frf_stage(Y_val)
+        H_ct_cache[Y_val] = H_ct
         mag_ct    = _mag_db(H_ct)
         col_c     = colors[idx]
         label_ct  = f'CT  Y={Y_val:+.2f}'
@@ -425,7 +425,7 @@ def _section_bode_varying_y():
 
     print()
     # Frequency shift summary (diagonal channels)
-    _print_freq_shift_summary()
+    _print_freq_shift_summary(H_ct_cache)
 
     # Add colorbar-style legend + note for dashed
     axes[0, 2].legend(fontsize=7, loc='upper right')
@@ -435,8 +435,13 @@ def _section_bode_varying_y():
     return fig
 
 
-def _print_freq_shift_summary():
-    """Print diagonal channel peak frequency range across all Y values in _Y_FAMILY."""
+def _print_freq_shift_summary(H_ct_cache: dict):
+    """Print diagonal channel peak frequency range across all Y values in _Y_FAMILY.
+
+    Parameters
+    ----------
+    H_ct_cache : dict mapping Y_val (float) -> H_ct (nf, 3, 3) — precomputed FRFs.
+    """
     print('  Diagonal peak frequency range across Y family (CT, min/max over all Y):')
     print(f"  {'Channel':14s}  {'f_min [Hz]':>12s}  {'f_max [Hz]':>12s}  "
           f"{'Range [Hz]':>12s}  {'Note':s}")
@@ -445,8 +450,7 @@ def _print_freq_shift_summary():
     for i, ch in enumerate(['X1<-F_X1', 'X2<-F_X2', 'Y<-F_Y']):
         peak_freqs = []
         for Y_val in _Y_FAMILY:
-            H    = _ct_frf_stage(Y_val)
-            mag  = _mag_db(H)
+            mag  = _mag_db(H_ct_cache[Y_val])
             diag = mag[:, i, i]
             f_pk = float(_FREQS_HZ[mask][np.argmax(diag[mask])])
             peak_freqs.append(f_pk)

@@ -438,6 +438,123 @@ Take M(Y)⁻¹ analytically and absorb it into Ac(Y), Bc(Y). Runtime evaluates `
 
 ---
 
+### [D-026] Remove G from lfr_forward — replace G-matrix steps with direct physics expressions
+**Date**: 2026-04-02
+
+#### What was decided
+
+The `G` argument is removed from `lfr_forward`. Steps 6 and 7 of the forward pass are replaced with direct physics expressions:
+
+**Before (removed):**
+```python
+def lfr_forward(x, u, Y, G, M0, M1, M2, K, C):
+    ...
+    # Step 6: state derivative via G matrix  →  (batch, 6)
+    xdot = x @ G.Ax.T + w @ G.Bw.T + u @ G.Bu.T
+
+    # Step 7: output  →  (batch, 3)
+    y = x @ G.Cy.T
+```
+
+**After (implemented):**
+```python
+def lfr_forward(x, u, Y, M0, M1, M2, K, C):
+    ...
+    # Step 6: state derivative — direct from physics (no G needed)
+    xdot = torch.cat([x[:, 3:], v], dim=-1)   # (batch, 6)
+
+    # Step 7: output — positions in logical coordinates
+    y = x[:, :3]   # (batch, 3)
+```
+
+The `G` argument is also removed from `rk4_step` in `lfr_simulate.py`, from the `simulate` function signature, and from `LFRBaselineBlock` in `lfr_block.py` (the `self._G` attribute is removed; `rk4_step` no longer needs it).
+
+---
+
+#### Why this is a valid change — mathematical justification
+
+**The physical state equations.** The gantry equation of motion in logical coordinates is:
+
+```
+M(Y) q̈ = -K q - C q̇ + u
+```
+
+The state is `x = [q; q̇] ∈ R⁶`, with `x[0:3] = q` (positions) and `x[3:6] = q̇` (velocities). The continuous-time state derivative is therefore:
+
+```
+ẋ = [q̇; q̈] = [x[3:6];  M(Y)⁻¹ fnet]       (equation 1)
+```
+
+where `fnet = -K x[0:3] - C x[3:6] + u` is the net generalized force. After **step 3** of `lfr_forward`, the quantity `v = M(Y)⁻¹ fnet` is already computed via `torch.linalg.solve(M_Y, fnet)`. Equation (1) then gives directly:
+
+```
+xdot = cat([x[:, 3:], v], dim=-1)            (equation 2)
+```
+
+This is always exactly correct, for any value of Y, because it is derived directly from the physical equations of motion.
+
+**What G.Ax/Bw/Bu encode.** The LFR G-matrix representation expresses the same state equation as:
+
+```
+xdot = G.Ax @ x + G.Bw @ w + G.Bu @ u
+```
+
+where `w = [v₁; v₂] = [Y·v; Y²·v]` are the LFR latent signals (already computed in steps 4–5). The entries G.Ax, G.Bw, G.Bu are **constant matrices**, constructed by `build_G_matrix()` using `M₀⁻¹` (the mass matrix at a nominal point). The Y-dependence is captured through the latent signals `w`, not through G directly.
+
+This G-matrix expression is algebraically identical to equation (2) — the LFR G matrices were derived precisely to encode the physical state equations in the LFR framework. The identity holds because the LFR structure is exact: the LFR is not a linearization or approximation; it is an exact rewriting of the rational-in-Y equations using the Δ(Y) = Y·I₆ block (verified in `lfr_forward.py` Check 2 against the collapsed form A_c(Y)@x + B_c(Y)@u).
+
+**Why the G-matrix expression is inferior to the direct expression.** Even though the two forms are algebraically equivalent, the G-matrix form has a hidden dependency: it is only correct when G.Ax/Bw/Bu are consistent with the current values of M0/M1/M2/K/C. G is precomputed at import time in `lfr_matrices.py` by calling `build_G_matrix(M0, M1, M2, K, C)`. If M0/M1/M2/K/C are updated during parameter estimation, but G is not rebuilt, the G-matrix expression silently produces incorrect gradients and incorrect dynamics. The direct expression (equation 2) has no such dependency: it is always correct for whatever M0/M1/M2/K/C are passed to `lfr_forward` at that call.
+
+**Why G.Cy = [I₃ | 0₃] is also removed.** The output `y = x @ G.Cy.T` selects the first 3 state components (logical positions). G.Cy is always `[I₃ | 0_{3×3}]` by the gantry output definition (output = position in logical coordinates). This is directly `x[:, :3]`. Unlike G.Ax/Bw/Bu, G.Cy would not become stale during parameter estimation (it does not depend on M0). However, replacing it with `x[:, :3]` is simpler, removes the G dependency entirely, and is more readable.
+
+**Autograd implications.** The gradient path for physical parameters (M0, M1, M2) flows through `torch.linalg.solve(M_Y, fnet)` → `v` → `xdot`. This path exists in both the old and new implementation. The G-matrix form additionally has gradient paths through G.Ax/Bw/Bu entries when G is built dynamically from M0 inside the forward context. These extra paths disappear with the G removal. However, the physically correct gradient path (through the solve) is the one that was always present and is the one required for parameter estimation. The extra G-entry gradient paths in the old implementation were an artifact of redundant parameterization, not a feature.
+
+---
+
+#### What was ruled out
+
+**Option A: Keep G in the signature but always rebuild it inside forward.**
+`G = build_G_matrix(M0, M1, M2, K, C)` at each forward call, then use `G.Ax/Bw/Bu`. This adds unnecessary matrix computation at every forward step (linalg.solve inside build_G_matrix) and computes the same result as equation (2) through a much more expensive path. Rejected: unnecessary overhead, no benefit over the direct expression.
+
+**Option B: Keep G and require the caller to always pass a freshly built G.**
+Documented as a constraint ("caller must keep G consistent"). This is error-prone: the interface has two representations of the same physics, and nothing prevents them from diverging silently. Rejected: fragile by design, no benefit over the direct expression.
+
+**Option C: Keep G only for documentation/clarity.**
+G was never purely documentary — it participates directly in computation and autograd. Keeping a live computational dependency on G for readability reasons is not justified. Rejected.
+
+---
+
+#### What this constrains
+
+- **lfr_forward signature** is now `(x, u, Y, M0, M1, M2, K, C)`. Any call site must be updated.
+- **rk4_step and simulate** no longer accept or pass G. All call sites updated accordingly.
+- **LFRBaselineBlock** does not store `self._G`. `build_G_matrix` is not called inside `forward()`.
+- **G and build_G_matrix** remain in `lfr_matrices.py` — they are still useful for numerical analysis, LFR structure inspection, and offline verification. They are not deleted.
+- **SVD-reduced forward pass** (`svd/lfr_svd_forward.py`) must NOT apply this shortcut. In the reduced realization the state and latent vectors are rotated by the SVD transformation matrices; the physical structure (positions first, velocities last) no longer holds, so `cat([x[:,3:], v])` is incorrect for the reduced system. The SVD-reduced forward must retain its G_reduced.Ax/Bw/Bu parameterization.
+- **Check F in test_jan_compat.py** (trainable physical parameter gradient test) is simplified: only the solve-path gradient path exists. The distinction between "static G" and "dynamic G" is removed. The updated check verifies that M0.grad is non-None after backward — which is guaranteed by the linalg.solve gradient — and reports the gradient norm.
+
+---
+
+### [D-027] Fix y-output coordinate mismatch in the Interconnect connection matrix
+**Date**: 2026-04-02
+**What**: The `S_y` selection matrix in `build_baseline_interconnect` and `build_augmented_interconnect` (in `test_jan_compat.py`) was:
+```python
+S_y = selection_matrix(np.arange(3), 18)    # (3, 18) — selects logical positions
+```
+This routes `x_next[0:3]` (logical positions [X, Θ, Y]) directly as the Interconnect output `y`. The reference and training data use stage coordinates [X1, X2, Y]. The fix embeds the logical→stage transform into the connection matrix:
+```python
+S_y = P.numpy() @ selection_matrix(np.arange(3), 18)    # (3, 18) — logical → stage
+```
+In row-vector convention used throughout the Python code, `y_stage = y_logical @ P` (see `simulate()`: `Y_list.append(y_k @ P)`). For the Interconnect where the connection matrix acts as `y = S_y @ w_block` (column-vector convention), the correct transform is `S_y = P.numpy().T @ selection_matrix(np.arange(3), 18)`.
+
+Wait — the Interconnect uses column-vector convention (w_block is (batch, nw, 1)), so `y = S_y @ w_block` computes (3, 18) @ (18, 1) = (3, 1). To obtain `y_stage = P.T @ y_logical` (column-vector form), `S_y = P.numpy().T @ selection_matrix(np.arange(3), 18)`.
+
+**Why**: The MATLAB reference data (`q3`, simulation outputs) are in stage coordinates [X1, X2, Y]. The `lfr_forward` output `y = x[:, :3]` is in logical coordinates [X, Θ, Y]. The two coordinate systems differ in the X1/X2 vs X/Θ representation — they are related by `y_stage = P.T @ y_logical` (column-vector form). Without the P-transform in S_y, the Interconnect would output logical positions as training targets, causing incorrect loss computation when compared against stage-coordinate reference data.
+**Ruled out**: Embedding the P-transform in `lfr_block.py` (adding y-routing logic to the block output, changing nw). The connection matrix is the correct place for coordinate transforms in Jan's framework — the block output format is fixed by the nw=18 contract.
+**Constrains**: `build_baseline_interconnect` and `build_augmented_interconnect` in `test_jan_compat.py` apply this fix. Any future Interconnect wiring for the gantry baseline must use `P.numpy().T @ selection_matrix(np.arange(3), 18)` for the y connection matrix, not a plain selection matrix.
+
+---
+
 ### [D-019] Use Drenth thesis for CT LPV-LFR citations; treat IFAC paper as DT companion
 **Date**: 2026-03-24
 **What**: For any continuous-time LPV-LFR definition, notation, or generic interconnection equations used in the gantry write-up, the primary source is Drenth's thesis (`literature/books/drenth2025_lpv-lfr-thesis.pdf`). The IFAC paper (`literature/lpv-lfr/drenth2025_lpv-lfr-rational.pdf`) is treated as the discrete-time companion paper and cited as such.
