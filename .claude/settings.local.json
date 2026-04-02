@@ -46,7 +46,8 @@
       "Bash(set PYTHONIOENCODING=utf-8)",
       "Bash(pdflatex -interaction=nonstopmode LFR-derivation-supervisor.tex)",
       "WebSearch",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(PYTHONIOENCODING=utf-8 conda run -n GraduationProject python -m lpv_lfr_baseline.lfr_svd_reduction)"
     ]
   }
 }
