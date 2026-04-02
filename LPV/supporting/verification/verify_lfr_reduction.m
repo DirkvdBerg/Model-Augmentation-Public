@@ -1,0 +1,95 @@
+% Numerical verification of the LFR latent-dimension reduction (6 -> 4 channels).
+
+% Given parameters
+mb = 22.8;   % Mass of the moving cross-arm (kg)
+mh = 10.1;   % Mass of the payload (Y-axis) (kg)
+m1 = 10.2;   % Mass of actuator X1 (kg)
+m2 = 10.7;   % Mass of actuator X2 (kg)
+
+Jb = 1.0;    % Rotary inertia of the cross-arm (kg.m^2)
+Jh = 0.05;   % Rotary inertia of the payload (Y-axis) (kg.m^2)
+
+cg1 = 14.5;  % Viscous friction of actuator X1 (N/(m/s))
+cg2 = 20.3;  % Viscous friction of actuator X2 (N/(m/s))
+cy = 10;     % Viscous friction of the payload (Y-axis) (N/(m/s))
+
+cb1 = 9;     % Viscous Friction of elastic joints 1 (Nm/(rad/s))
+cb2 = 9;     % Viscous Friction of elastic joints 2 (Nm/(rad/s))
+
+cc1 = 16.8;  % Coulomb friction of actuator X1 (N)
+cc2 = 18.35; % Coulomb friction of actuator X2 (N)
+ccy = 11.6;  % Coulomb friction of the payload (Y-axis) (N)
+
+kb1 = 1987.5; % Stiffness of elastic joint 1 (N.m/rad)
+kb2 = 1987.5; % Stiffness of elastic joint 2 (N.m/rad)
+
+Lb = 0.725;   % Length of the moving cross-arm (m)
+Lh = 0.25;    % Length of the payload (m)
+d = 0.1;      % Distance between cross-arm and payload (m)
+
+I3=eye(3); Z3=zeros(3); I4=eye(4);
+
+% Mass matrix decomposition M(Y) = M0 + M1*Y + M2*Y^2
+M0 = [m1+m2+mb+mh,       (m1-m2)*Lb/2,                          0;
+      (m1-m2)*Lb/2, Jb+Jh+(m1+m2)*Lb^2/4+mh*d^2, -mh*d;
+      0,            -mh*d,                                     mh];
+M1 = [0,-mh,0; -mh,0,0; 0,0,0];
+M2 = [0, 0,0;   0,mh,0; 0,0,0];
+
+% Viscous Damping Matrix
+C = [           cg1 + cg2,               (cg1 - cg2) * Lb / 2,  0;
+     (cg1 - cg2) * Lb / 2, cb1 + cb2 + (cg1 + cg2) * Lb^2 / 4,  0;
+                        0,                                  0, cy];
+% Stiffness Matrix
+K = [0,         0, 0;
+     0, kb1 + kb2, 0;
+     0,         0, 0];
+
+% LFR matrices / LFR-derivation)
+Ax  = [Z3, I3; -M0\K, -M0\C];
+Bw  = [Z3,Z3; -M0\M1,-M0\M2];
+Bu  = [Z3; inv(M0)];
+Cz  = [-M0\K,-M0\C; Z3,Z3];
+Dzw = [-M0\M1,-M0\M2; I3,Z3];
+Dzu = [inv(M0); Z3];
+
+% Verify rank(Dzw) = 4
+r1 = rank(Dzw);
+fprintf('rank(Dzw) = %d  (expected 4)\n', r1);
+
+% SVD1 - compact factorisation Dzw = Sf*P
+[Ua,Sa,Va] = svd(Dzw);
+Sf = Ua(:,1:r1)*Sa(1:r1,1:r1);   % 6x4
+P  = Va(:,1:r1)';                 % 4x6
+
+% compressed stacked matrix and rank
+Snew = [Bw; P]*[Cz, Sf, Dzu];    % 10x13
+r2   = rank(Snew);
+fprintf('rank(Snew)  = %d  (expected 4)\n', r2);
+
+% SVD2 — extract reduced matrices
+[Ub,Sb,Vb] = svd(Snew);
+sqS   = diag(sqrt(diag(Sb(1:r2,1:r2))));
+Lmat  = Ub(:,1:r2)*sqS;           % 10x4
+Rmat  = sqS*Vb(:,1:r2)';          % 4x13
+
+Bw_t  = Lmat(1:6,:);              % tilde Bw,  6x4
+Lz    = Lmat(7:10,:);             % 4x4
+Cz_t  = Rmat(:,1:6);              % tilde Cz,  4x6
+Dzw_t = Rmat(:,7:10)*Lz;          % tilde Dzw, 4x4
+Dzu_t = Rmat(:,11:13);            % tilde Dzu, 4x3
+
+% round-trip verification over Y in [-0.4, 0.4] m
+eA=0; eB=0;
+for Y = linspace(-0.4, 0.4, 200)
+    MY     = M0 + M1*Y + M2*Y^2;
+    Ac_ref = [Z3,I3; -MY\K,-MY\C];
+    Bc_ref = [Z3; inv(MY)];
+    iloop  = (I4 - Y*Dzw_t)\[Cz_t, Dzu_t];   % 4x9
+    Ac_col = Ax + Y*Bw_t*iloop(:,1:6);
+    Bc_col = Bu + Y*Bw_t*iloop(:,7:9);
+    eA = max(eA, norm(Ac_col - Ac_ref, 'fro'));
+    eB = max(eB, norm(Bc_col - Bc_ref, 'fro'));
+end
+fprintf('Max ||A_coll - Ac||_F = %.2e  (expected ~0)\n', eA);
+fprintf('Max ||B_coll - Bc||_F = %.2e  (expected ~0)\n', eB);

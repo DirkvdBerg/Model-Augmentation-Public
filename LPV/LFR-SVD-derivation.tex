@@ -28,29 +28,298 @@
 \vspace{0.7em}
 
 \noindent
-The LPV-LFR realization derived in \texttt{LFR-derivation-supervisor.tex} uses
-$\Delta(Y) = Y I_6$, meaning six latent channels. This document derives a
-reduced realization with fewer channels, following the SVD-based procedure of
-R.~Tóth. Two methods are presented. Method~1 applies SVD directly to the full
-coupling matrix. Method~2 first reduces $D_{zw}$ before applying SVD. Section~2
-is a placeholder to be filled in after Section~1 is verified.
+% The LPV-LFR realization derived in \texttt{LFR-derivation-supervisor.tex} uses
+% $\Delta(Y) = Y I_6$, meaning six latent channels. This document derives a
+% reduced realization with fewer channels, following the SVD-based procedure of
+% R.~Tóth. Two methods are presented. Method~1 applies SVD directly to the full
+% coupling matrix and is shown to give no reduction for the dual-gantry model.
+% Method~2 first compresses the $D_{zw}$ channel and then applies the same SVD
+% idea to the compressed loop.
 
 \section{Method 1: SVD on the Full Coupling Matrix}
+The stacked matrix is defined as
+\[
+S = \begin{bmatrix} B_w \\ I_6 \end{bmatrix} [C_z,\; D_{zw},\; D_{zu}] \in \mathbb{R}^{12\times 15}.
+\]
+The compact SVD of $S$ gives the minimal latent dimension $n = \operatorname{rank}(S)$.
+\medskip
+\\
+\textbf{Step 1: Simplify $\operatorname{rank}(S)$}\\
+The lower 6 rows of $S$ are exactly $[C_z,\; D_{zw},\; D_{zu}]$, so the row 
+space of $[C_z,\; D_{zw},\; D_{zu}]$ is contained in the row space of $S$. 
+Since $[C_z,\; D_{zw},\; D_{zu}]$ has only 6 rows, $\operatorname{rank}(S) \leq 6$.
+Together:
+\[
+\operatorname{rank}(S) = \operatorname{rank}\bigl([C_z,\; D_{zw},\; D_{zu}]\bigr).
+\]
+\medskip
+\\
+\textbf{Step 2: Show $\operatorname{rank}([C_z,\; D_{zw},\; D_{zu}]) = 6$}\\
+Extract the columns corresponding to the first block of $D_{zw}$ and $D_{zu}$,
+forming the $6\times 6$ submatrix
+\[
+\begin{bmatrix} -M_0^{-1}M_1 & M_0^{-1} \\ I_3 & 0 \end{bmatrix}.
+\]
+Permuting the row blocks yields the block lower triangular matrix
+\[
+\begin{bmatrix} I_3 & 0 \\ -M_0^{-1}M_1 & M_0^{-1} \end{bmatrix},
+\]
+with $I_3$ and $M_0^{-1}$ on the diagonal. Since $M_0 \succ 0$ for all valid 
+physical parameters, both blocks are invertible, so this submatrix is nonsingular.
+\medskip
+\\
+\textbf{Conclusion}\\
+A nonsingular $6\times 6$ submatrix exists $\Rightarrow$ 
+$\operatorname{rank}(S) = 6$ $\Rightarrow$ Method 1 yields no reduction.
+
+% \subsection{Setup}
+
+% The starting point is the LPV-LFR realization from
+% \texttt{LFR-derivation-supervisor.tex}, with constant matrix $G$ and scheduling
+% block $\Delta(Y) = Y I_6$. The loop and state equations are
+% \begin{align}
+%     \dot{x}(t) &= A_x\, x(t) + B_w\, w(t) + B_u\, u(t), 
+%     \label{eq:state} \\
+%     z(t) &= C_z\, x(t) + D_{zw}\, w(t) + D_{zu}\, u(t),
+%     \label{eq:loopz} \\
+%     w(t) &= Y\, I_6\, z(t),
+%     \label{eq:loopw}
+% \end{align}
+% with the constant matrices (reproduced from the derivation for reference)
+% \begin{equation}
+%     C_z =
+%     \begin{bmatrix}
+%         -M_0^{-1}K & -M_0^{-1}C \\
+%         0 & 0
+%     \end{bmatrix},
+%     \quad
+%     D_{zw} =
+%     \begin{bmatrix}
+%         -M_0^{-1}M_1 & -M_0^{-1}M_2 \\
+%         I_3 & 0
+%     \end{bmatrix},
+%     \quad
+%     D_{zu} =
+%     \begin{bmatrix}
+%         M_0^{-1} \\
+%         0
+%     \end{bmatrix},
+%     \label{eq:CDmats}
+% \end{equation}
+% \begin{equation}
+%     B_w =
+%     \begin{bmatrix}
+%         0 & 0 \\
+%         -M_0^{-1}M_1 & -M_0^{-1}M_2
+%     \end{bmatrix},
+%     \quad
+%     B_u =
+%     \begin{bmatrix}
+%         0 \\ M_0^{-1}
+%     \end{bmatrix}.
+%     \label{eq:Bmats}
+% \end{equation}
+% The goal is to find a reduced latent dimension $n \leq 6$ such that
+% $\Delta(Y) = Y I_n$ suffices, with a correspondingly smaller set of loop
+% signals $\tilde{z}(t), \tilde{w}(t) \in \R^n$.
+
+% \subsection{Constructing the Stacked Matrix}
+
+% Substituting \eqref{eq:loopz} into \eqref{eq:loopw} gives
+% \begin{equation}
+%     w(t) = Y\bigl[C_z\, x(t) + D_{zw}\, w(t) + D_{zu}\, u(t)\bigr]
+%          = Y\,[C_z,\; D_{zw},\; D_{zu}]
+%            \begin{bmatrix} x(t) \\ w(t) \\ u(t) \end{bmatrix}.
+%     \label{eq:wexpanded}
+% \end{equation}
+% The state equation \eqref{eq:state} contains $B_w w(t)$. Using
+% \eqref{eq:wexpanded},
+% \begin{equation}
+%     B_w\, w(t)
+%     = Y\, B_w\,[C_z,\; D_{zw},\; D_{zu}]
+%       \begin{bmatrix} x(t) \\ w(t) \\ u(t) \end{bmatrix}.
+%     \label{eq:Bwexpanded}
+% \end{equation}
+% Both \eqref{eq:wexpanded} and \eqref{eq:Bwexpanded} depend on
+% $[x(t);\, w(t);\, u(t)]$ through the same right factor $[C_z, D_{zw}, D_{zu}]$,
+% scaled by $Y$. Stacking them yields
+% \begin{equation}
+%     Y \underbrace{
+%         \begin{bmatrix}
+%             B_w \\[2pt] I_6
+%         \end{bmatrix}
+%         [C_z,\; D_{zw},\; D_{zu}]
+%     }_{S\;\in\;\R^{12 \times 15}}
+%     \begin{bmatrix} x(t) \\ w(t) \\ u(t) \end{bmatrix}
+%     =
+%     \begin{bmatrix} B_w\, w(t) \\ w(t) \end{bmatrix}.
+%     \label{eq:stacked}
+% \end{equation}
+% The matrix $S$ encodes all dependence of $[B_w w;\, w]$ on $[x;\, w;\, u]$
+% through the latent variable. Its rank determines the minimal number of latent
+% channels required.
+
+% \subsection{SVD and Change of Basis}
+
+% Since $[B_w;\, I_6]$ has $I_6$ in its lower half, it has full column rank $6$.
+% Therefore
+% \begin{equation}
+%     \rank(S)
+%     = \rank\!\Bigl(\bigl[B_w;\, I_6\bigr]\,[C_z,\; D_{zw},\; D_{zu}]\Bigr)
+%     = \rank\!\bigl([C_z,\; D_{zw},\; D_{zu}]\bigr).
+%     \label{eq:rankS}
+% \end{equation}
+% Compute the compact SVD of $S$:
+% \begin{equation}
+%     S = U\,\Sigma\,V^\top,
+%     \qquad
+%     \Sigma = \diag(\sigma_1, \dots, \sigma_n),
+%     \quad \sigma_1 \geq \cdots \geq \sigma_n > 0,
+%     \label{eq:svd}
+% \end{equation}
+% where $n = \rank(S) \leq 6$. Split the left factor as
+% \begin{equation}
+%     L := U\,\Sigma^{1/2}
+%     =
+%     \begin{bmatrix} L_x \\ L_z \end{bmatrix},
+%     \qquad L_x \in \R^{6\times n},\quad L_z \in \R^{6\times n},
+%     \label{eq:Lsplit}
+% \end{equation}
+% and define
+% \begin{equation}
+%     R := \Sigma^{1/2}\,V^\top
+%     = \bigl[R_x,\; R_w,\; R_u\bigr],
+%     \qquad R_x \in \R^{n\times 6},\quad R_w \in \R^{n\times 6},\quad R_u \in \R^{n\times 3}.
+%     \label{eq:Rsplit}
+% \end{equation}
+% Note that $LR = U\Sigma V^\top = S$ by construction. Define the reduced latent
+% variable
+% \begin{equation}
+%     \tilde{z}(t) := R\,\begin{bmatrix} x(t) \\ w(t) \\ u(t) \end{bmatrix}
+%     = R_x\, x(t) + R_w\, w(t) + R_u\, u(t) \;\in \R^n.
+%     \label{eq:ztilde}
+% \end{equation}
+% From $S = LR$ and \eqref{eq:stacked}, the original loop signals satisfy
+% \begin{equation}
+%     B_w\, w(t) = L_x\, \tilde{w}(t),
+%     \qquad
+%     w(t) = L_z\, \tilde{w}(t),
+%     \label{eq:wfromwtilde}
+% \end{equation}
+% where the reduced scheduling relation is
+% \begin{equation}
+%     \tilde{w}(t) = Y\, I_n\, \tilde{z}(t).
+%     \label{eq:wtilde}
+% \end{equation}
+% Substituting \eqref{eq:wfromwtilde} into \eqref{eq:ztilde},
+% \begin{equation}
+%     \tilde{z}(t)
+%     = R_x\, x(t) + R_w\, L_z\, \tilde{w}(t) + R_u\, u(t),
+%     \label{eq:ztildeloop}
+% \end{equation}
+% and substituting \eqref{eq:wfromwtilde} into \eqref{eq:state},
+% \begin{equation}
+%     \dot{x}(t) = A_x\, x(t) + L_x\, \tilde{w}(t) + B_u\, u(t).
+%     \label{eq:statereduced}
+% \end{equation}
+% The reduced constant matrix $\tilde{G}$ therefore has entries
+% \begin{equation}
+%     \tilde{B}_w = L_x,\quad
+%     \tilde{C}_z = R_x,\quad
+%     \tilde{D}_{zw} = R_w\, L_z,\quad
+%     \tilde{D}_{zu} = R_u,
+%     \label{eq:Gtilde}
+% \end{equation}
+% with $A_x$, $B_u$, $C_y$, $D_{yw}$, $D_{yu}$ unchanged. The scheduling block
+% becomes $\Delta(Y) = Y I_n$ with $n \leq 6$.
+
+% \subsection{Application to the Dual-Gantry Model: Why Method 1 Gives No Reduction}
+
+% Method 1 reduces the latent dimension if and only if $\rank([C_z, D_{zw}, D_{zu}]) < 6$.
+% We now show that for the dual-gantry realization this rank equals $6$, so
+% Method 1 cannot reduce $\Delta(Y) = Y I_6$.
+
+% Write $[C_z, D_{zw}, D_{zu}] \in \R^{6 \times 15}$ by blocks of columns,
+% grouping state columns $(1$--$6)$, loop columns $(7$--$12)$, and input columns
+% $(13$--$15)$:
+% \begin{equation}
+%     [C_z,\; D_{zw},\; D_{zu}]
+%     =
+%     \left[
+%     \begin{array}{cc|cc|c}
+%         -M_0^{-1}K & -M_0^{-1}C &
+%         -M_0^{-1}M_1 & -M_0^{-1}M_2 &
+%         M_0^{-1} \\[4pt]
+%         0 & 0 &
+%         I_3 & 0 &
+%         0
+%     \end{array}
+%     \right].
+%     \label{eq:CzDzwDzu}
+% \end{equation}
+% The top three rows (rows $1$--$3$) and bottom three rows (rows $4$--$6$) are
+% linearly independent by the following argument.
+
+% \paragraph{Step 1: bottom rows have rank 3.}
+% Restrict rows $4$--$6$ to the loop columns $7$--$9$: the submatrix is $I_3$,
+% which has rank $3$. Hence rows $4$--$6$ are linearly independent among themselves.
+
+% \paragraph{Step 2: bottom rows are zero in the input columns.}
+% Rows $4$--$6$ restricted to columns $13$--$15$ are the zero matrix.
+
+% \paragraph{Step 3: top rows are nonsingular in the input columns.}
+% Rows $1$--$3$ restricted to columns $13$--$15$ equal $M_0^{-1}$. Since $M_0$
+% is the inertia matrix evaluated at $Y = 0$ and is positive definite (physical
+% mass matrix), $M_0^{-1}$ is invertible. Therefore rows $1$--$3$ are linearly
+% independent among themselves.
+
+% \paragraph{Step 4: top and bottom rows are mutually independent.}
+% Suppose $\alpha^\top(\text{rows } 1\text{--}3) + \beta^\top(\text{rows }
+% 4\text{--}6) = 0$ for some $\alpha, \beta \in \R^3$. Restricting to columns
+% $13$--$15$:
+% \begin{equation}
+%     \alpha^\top M_0^{-1} + \beta^\top \cdot 0 = 0
+%     \quad\Longrightarrow\quad
+%     \alpha^\top M_0^{-1} = 0
+%     \quad\Longrightarrow\quad
+%     \alpha = 0,
+%     \label{eq:alpha0}
+% \end{equation}
+% where the last implication uses invertibility of $M_0^{-1}$. With $\alpha = 0$,
+% the equation reduces to $\beta^\top(\text{rows } 4\text{--}6) = 0$, and since
+% rows $4$--$6$ are linearly independent (Step~1), $\beta = 0$.
+
+% \paragraph{Conclusion.}
+% All six rows are linearly independent, so
+% \begin{equation}
+%     \rank\!\bigl([C_z,\; D_{zw},\; D_{zu}]\bigr) = 6.
+%     \label{eq:rank6}
+% \end{equation}
+% From \eqref{eq:rankS}, $\rank(S) = 6$ as well. The SVD of $S$ has six non-zero
+% singular values, and Method~1 yields $n = 6$: the latent dimension is
+% unchanged. Method~1 therefore provides no reduction for the dual-gantry
+% realization.
+
+% The reason is structural: $D_{zu} = [M_0^{-1};\, 0]$ introduces a full-rank
+% $3 \times 3$ block in the input columns of the top rows, while the bottom rows
+% are zero there. This is a direct consequence of the input $u(t)$ entering the
+% acceleration equation through $M_0^{-1}$, an invertible matrix. No change of
+% parameters removes this structure as long as $M_0$ remains invertible.
+
+\newpage
+\section{Method 2: SVD after Pre-Compression of $D_{zw}$}
 
 \subsection{Setup}
-
-The starting point is the LPV-LFR realization from
-\texttt{LFR-derivation-supervisor.tex}, with constant matrix $G$ and scheduling
-block $\Delta(Y) = Y I_6$. The loop and state equations are
+The starting point is the derived LPV-LFR realization, with constant matrix $G$ and scheduling block $\Delta(Y) = Y I_6$. The state and loop equations are
 \begin{align}
+    \dot{x}(t) &= A_x\, x(t) + B_w\, w(t) + B_u\, u(t), 
+    \label{eq:state2} \\
     z(t) &= C_z\, x(t) + D_{zw}\, w(t) + D_{zu}\, u(t),
-    \label{eq:loopz} \\
+    \label{eq:loopz2} \\
     w(t) &= Y\, I_6\, z(t),
-    \label{eq:loopw} \\
-    \dot{x}(t) &= A_x\, x(t) + B_w\, w(t) + B_u\, u(t),
-    \label{eq:state}
+    \label{eq:loopw2}
 \end{align}
-with the constant matrices (reproduced from the derivation for reference)
+with
 \begin{equation}
     C_z =
     \begin{bmatrix}
@@ -69,7 +338,7 @@ with the constant matrices (reproduced from the derivation for reference)
         M_0^{-1} \\
         0
     \end{bmatrix},
-    \label{eq:CDmats}
+    \label{eq:method2CD}
 \end{equation}
 \begin{equation}
     B_w =
@@ -82,287 +351,237 @@ with the constant matrices (reproduced from the derivation for reference)
     \begin{bmatrix}
         0 \\ M_0^{-1}
     \end{bmatrix}.
-    \label{eq:Bmats}
+    \label{eq:method2B}
 \end{equation}
-The goal is to find a reduced latent dimension $n \leq 6$ such that
-$\Delta(Y) = Y I_n$ suffices, with a correspondingly smaller set of loop
-signals $\tilde{z}(t), \tilde{w}(t) \in \R^n$.
+Method~1 gives no reduction because $[C_z,\; D_{zw},\; D_{zu}]$ has full 
+row rank~$6$: $D_{zu} = [M_0^{-1};\, 0]$ introduces three directions 
+independent of the bottom-row loop structure.
+\\
+Method~2 first compresses $D_{zw} = S_2 P$ via compact SVD, replacing $I_6$ 
+by $P$ in the left factor of the stacked matrix:
+\[
+    S_{\mathrm{new}} =
+    \begin{bmatrix} B_w \\[2pt] P \end{bmatrix}
+    \begin{bmatrix} C_z & S_2 & D_{zu} \end{bmatrix}.
+\]
+The rank of the left factor is now determined by $\rank(P) = \rank(D_{zw})$.
 
-\subsection{Constructing the Stacked Matrix}
 
-Substituting \eqref{eq:loopz} into \eqref{eq:loopw} gives
-\begin{equation}
-    w(t) = Y\bigl[C_z\, x(t) + D_{zw}\, w(t) + D_{zu}\, u(t)\bigr]
-         = Y\,[C_z,\; D_{zw},\; D_{zu}]
-           \begin{bmatrix} x(t) \\ w(t) \\ u(t) \end{bmatrix}.
-    \label{eq:wexpanded}
-\end{equation}
-The state equation \eqref{eq:state} contains $B_w w(t)$. Using
-\eqref{eq:wexpanded},
-\begin{equation}
-    B_w\, w(t)
-    = Y\, B_w\,[C_z,\; D_{zw},\; D_{zu}]
-      \begin{bmatrix} x(t) \\ w(t) \\ u(t) \end{bmatrix}.
-    \label{eq:Bwexpanded}
-\end{equation}
-Both \eqref{eq:wexpanded} and \eqref{eq:Bwexpanded} depend on
-$[x(t);\, w(t);\, u(t)]$ through the same right factor $[C_z, D_{zw}, D_{zu}]$,
-scaled by $Y$. Stacking them yields
-\begin{equation}
-    Y \underbrace{
-        \begin{bmatrix}
-            B_w \\[2pt] I_6
-        \end{bmatrix}
-        [C_z,\; D_{zw},\; D_{zu}]
-    }_{S\;\in\;\R^{12 \times 15}}
-    \begin{bmatrix} x(t) \\ w(t) \\ u(t) \end{bmatrix}
-    =
-    \begin{bmatrix} B_w\, w(t) \\ w(t) \end{bmatrix}.
-    \label{eq:stacked}
-\end{equation}
-The matrix $S$ encodes all dependence of $[B_w w;\, w]$ on $[x;\, w;\, u]$
-through the latent variable. Its rank determines the minimal number of latent
-channels required.
 
-\subsection{SVD and Change of Basis}
 
-Since $[B_w;\, I_6]$ has $I_6$ in its lower half, it has full column rank $6$.
-Therefore
-\begin{equation}
-    \rank(S)
-    = \rank\!\Bigl(\bigl[B_w;\, I_6\bigr]\,[C_z,\; D_{zw},\; D_{zu}]\Bigr)
-    = \rank\!\bigl([C_z,\; D_{zw},\; D_{zu}]\bigr).
-    \label{eq:rankS}
-\end{equation}
-Compute the thin SVD of $S$:
-\begin{equation}
-    S = U\,\Sigma\,V^\top,
-    \qquad
-    \Sigma = \diag(\sigma_1, \dots, \sigma_n),
-    \quad \sigma_1 \geq \cdots \geq \sigma_n > 0,
-    \label{eq:svd}
-\end{equation}
-where $n = \rank(S) \leq 6$. Split the left factor as
-\begin{equation}
-    L := U\,\Sigma^{1/2}
-    =
-    \begin{bmatrix} L_x \\ L_z \end{bmatrix},
-    \qquad L_x \in \R^{6\times n},\quad L_z \in \R^{6\times n},
-    \label{eq:Lsplit}
-\end{equation}
-and define
-\begin{equation}
-    R := \Sigma^{1/2}\,V^\top
-    = \bigl[R_x,\; R_w,\; R_u\bigr],
-    \qquad R_x \in \R^{n\times 6},\quad R_w \in \R^{n\times 6},\quad R_u \in \R^{n\times 3}.
-    \label{eq:Rsplit}
-\end{equation}
-Note that $LR = U\Sigma V^\top = S$ by construction. Define the reduced latent
-variable
-\begin{equation}
-    \tilde{z}(t) := R\,\begin{bmatrix} x(t) \\ w(t) \\ u(t) \end{bmatrix}
-    = R_x\, x(t) + R_w\, w(t) + R_u\, u(t) \;\in \R^n.
-    \label{eq:ztilde}
-\end{equation}
-From $S = LR$ and \eqref{eq:stacked}, the original loop signals satisfy
-\begin{equation}
-    B_w\, w(t) = L_x\, \tilde{w}(t),
-    \qquad
-    w(t) = L_z\, \tilde{w}(t),
-    \label{eq:wfromwtilde}
-\end{equation}
-where the reduced scheduling relation is
-\begin{equation}
-    \tilde{w}(t) = Y\, I_n\, \tilde{z}(t).
-    \label{eq:wtilde}
-\end{equation}
-Substituting \eqref{eq:wfromwtilde} into \eqref{eq:ztilde},
-\begin{equation}
-    \tilde{z}(t)
-    = R_x\, x(t) + R_w\, L_z\, \tilde{w}(t) + R_u\, u(t),
-    \label{eq:ztildeloop}
-\end{equation}
-and substituting \eqref{eq:wfromwtilde} into \eqref{eq:state},
-\begin{equation}
-    \dot{x}(t) = A_x\, x(t) + L_x\, \tilde{w}(t) + B_u\, u(t).
-    \label{eq:statereduced}
-\end{equation}
-The reduced constant matrix $\tilde{G}$ therefore has entries
-\begin{equation}
-    \tilde{B}_w = L_x,\quad
-    \tilde{C}_z = R_x,\quad
-    \tilde{D}_{zw} = R_w\, L_z,\quad
-    \tilde{D}_{zu} = R_u,
-    \label{eq:Gtilde}
-\end{equation}
-with $A_x$, $B_u$, $C_y$, $D_{yw}$, $D_{yu}$ unchanged. The scheduling block
-becomes $\Delta(Y) = Y I_n$ with $n \leq 6$.
 
-\subsection{Application to the Dual-Gantry Model: Why Method 1 Gives No Reduction}
-
-Method 1 reduces the latent dimension if and only if $\rank([C_z, D_{zw}, D_{zu}]) < 6$.
-We now show that for the dual-gantry realization this rank equals $6$, so
-Method 1 cannot reduce $\Delta(Y) = Y I_6$.
-
-Write $[C_z, D_{zw}, D_{zu}] \in \R^{6 \times 15}$ by blocks of columns,
-grouping state columns $(1$--$6)$, loop columns $(7$--$12)$, and input columns
-$(13$--$15)$:
-\begin{equation}
-    [C_z,\; D_{zw},\; D_{zu}]
-    =
-    \left[
-    \begin{array}{cc|cc|c}
-        -M_0^{-1}K & -M_0^{-1}C &
-        -M_0^{-1}M_1 & -M_0^{-1}M_2 &
-        M_0^{-1} \\[4pt]
-        0 & 0 &
-        I_3 & 0 &
-        0
-    \end{array}
-    \right].
-    \label{eq:CzDzwDzu}
-\end{equation}
-The top three rows (rows $1$--$3$) and bottom three rows (rows $4$--$6$) are
-linearly independent by the following argument.
-
-\paragraph{Step 1: bottom rows have rank 3.}
-Restrict rows $4$--$6$ to the loop columns $7$--$9$: the submatrix is $I_3$,
-which has rank $3$. Hence rows $4$--$6$ are linearly independent among themselves.
-
-\paragraph{Step 2: bottom rows are zero in the input columns.}
-Rows $4$--$6$ restricted to columns $13$--$15$ are the zero matrix.
-
-\paragraph{Step 3: top rows are nonsingular in the input columns.}
-Rows $1$--$3$ restricted to columns $13$--$15$ equal $M_0^{-1}$. Since $M_0$
-is the inertia matrix evaluated at $Y = 0$ and is positive definite (physical
-mass matrix), $M_0^{-1}$ is invertible. Therefore rows $1$--$3$ are linearly
-independent among themselves.
-
-\paragraph{Step 4: top and bottom rows are mutually independent.}
-Suppose $\alpha^\top(\text{rows } 1\text{--}3) + \beta^\top(\text{rows }
-4\text{--}6) = 0$ for some $\alpha, \beta \in \R^3$. Restricting to columns
-$13$--$15$:
-\begin{equation}
-    \alpha^\top M_0^{-1} + \beta^\top \cdot 0 = 0
-    \quad\Longrightarrow\quad
-    \alpha^\top M_0^{-1} = 0
-    \quad\Longrightarrow\quad
-    \alpha = 0,
-    \label{eq:alpha0}
-\end{equation}
-where the last implication uses invertibility of $M_0^{-1}$. With $\alpha = 0$,
-the equation reduces to $\beta^\top(\text{rows } 4\text{--}6) = 0$, and since
-rows $4$--$6$ are linearly independent (Step~1), $\beta = 0$.
-
-\paragraph{Conclusion.}
-All six rows are linearly independent, so
-\begin{equation}
-    \rank\!\bigl([C_z,\; D_{zw},\; D_{zu}]\bigr) = 6.
-    \label{eq:rank6}
-\end{equation}
-From \eqref{eq:rankS}, $\rank(S) = 6$ as well. The SVD of $S$ has six non-zero
-singular values, and Method~1 yields $n = 6$: the latent dimension is
-unchanged. Method~1 therefore provides no reduction for the dual-gantry
-realization.
-
-The reason is structural: $D_{zu} = [M_0^{-1};\, 0]$ introduces a full-rank
-$3 \times 3$ block in the input columns of the top rows, while the bottom rows
-are zero there. This is a direct consequence of the input $u(t)$ entering the
-acceleration equation through $M_0^{-1}$, an invertible matrix. No change of
-parameters removes this structure as long as $M_0$ remains invertible.
-
-\section{Method 2: SVD after Pre-Compression of $D_{zw}$}
-
-Method~1 fails because $\rank([C_z, D_{zw}, D_{zu}]) = 6$. The cause is the
-$D_{zu} = [M_0^{-1};\, 0]$ block, which is unaffected by any change to $D_{zw}$.
-Method~2 first reduces $D_{zw}$ to expose its true rank before applying the SVD
-procedure, yielding a loop of dimension $n \leq 4$.
-
-\subsection{Block Structure of $D_{zw}$}
-
-The coupling matrices from the gantry equations are
+\subsection{Structure and Rank of $D_{zw}$}
+Using
 \begin{equation}
     M_1 =
     \begin{bmatrix}
-        0 & -m_h & 0 \\ -m_h & 0 & 0 \\ 0 & 0 & 0
+        0 & -m_h & 0 \\
+        -m_h & 0 & 0 \\
+        0 & 0 & 0
     \end{bmatrix},
     \qquad
     M_2 =
     \begin{bmatrix}
-        0 & 0 & 0 \\ 0 & m_h & 0 \\ 0 & 0 & 0
-    \end{bmatrix}.
+        0 & 0 & 0 \\
+        0 & m_h & 0 \\
+        0 & 0 & 0
+    \end{bmatrix},
     \label{eq:M1M2}
 \end{equation}
-From \eqref{eq:CDmats}, $D_{zw}$ decomposes into two row blocks:
+and writing the columns of $M_0^{-1}$ as
+\begin{equation}
+    M_0^{-1} = \begin{bmatrix} r_1 & r_2 & r_3 \end{bmatrix},
+    \qquad
+    \text{where } r_i \in \R^3 \text{ denotes the $i$th column of } M_0^{-1}.
+    \label{eq:rcols}
+\end{equation}
+the matrix $D_{zw}$ from \eqref{eq:method2CD} decomposes into the two row blocks
 \begin{equation}
     D_{zw} =
     \begin{bmatrix}
-        D_{\mathrm{top}} \\ D_{\mathrm{bot}}
+        D_{z_1} \\ D_{z_2}
     \end{bmatrix},
     \qquad
-    D_{\mathrm{top}} := -M_0^{-1}[M_1,\, M_2] \in \R^{3\times 6},
+    D_{z_1} := \begin{bmatrix} -M_0^{-1}M_1 & -M_0^{-1}M_2 \end{bmatrix} \in \R^{3\times 6},
     \qquad
-    D_{\mathrm{bot}} := [I_3,\; 0] \in \R^{3\times 6}.
+    D_{z_2} := \begin{bmatrix} I_3 & 0 \end{bmatrix} \in \R^{3\times 6}.
     \label{eq:DzwBlocks}
 \end{equation}
-
-\subsection{Rank of $D_{zw}$}
-
-Let $(M_j)_k$ denote the $k$-th column of $M_j$. Columns~3, 4, 6 of
-$D_{\mathrm{top}}$ are zero because $(M_1)_3 = (M_2)_1 = (M_2)_3 = 0$.
-The non-zero columns follow from $(M_1)_1 = [0,\,-m_h,\,0]^\top$,
-$(M_1)_2 = [-m_h,\,0,\,0]^\top$, $(M_2)_2 = [0,\,m_h,\,0]^\top$:
+Expanding $-M_0^{-1}M_1$ column by column,
 \begin{equation}
-    (D_{\mathrm{top}})_1 = m_h\,(M_0^{-1})_2,
-    \qquad
-    (D_{\mathrm{top}})_2 = m_h\,(M_0^{-1})_1,
-    \qquad
-    (D_{\mathrm{top}})_5 = -m_h\,(M_0^{-1})_2.
-    \label{eq:Dtopcols}
+    -M_0^{-1}M_1
+    =
+    \begin{bmatrix}
+        -M_0^{-1}\!\begin{bmatrix} 0 \\ -m_h \\ 0 \end{bmatrix} &
+        -M_0^{-1}\!\begin{bmatrix} -m_h \\ 0 \\ 0 \end{bmatrix} &
+        -M_0^{-1}\!\begin{bmatrix} 0 \\ 0 \\ 0 \end{bmatrix}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        m_h r_2 & m_h r_1 & 0
+    \end{bmatrix},
+    \label{eq:M0invM1}
 \end{equation}
-Columns~4 and~6 of $D_{\mathrm{bot}}$ are zero as well, so $\rank(D_{zw}) \leq 4$.
-To show that columns~1, 2, 3, 5 are linearly independent, suppose
+and similarly
 \begin{equation}
-    \alpha_1 c_1 + \alpha_2 c_2 + \alpha_3 c_3 + \alpha_5 c_5 = 0,
-    \label{eq:lindep2}
+    -M_0^{-1}M_2
+    =
+    \begin{bmatrix}
+        -M_0^{-1}\!\begin{bmatrix} 0 \\ 0 \\ 0 \end{bmatrix} &
+        -M_0^{-1}\!\begin{bmatrix} 0 \\ m_h \\ 0 \end{bmatrix} &
+        -M_0^{-1}\!\begin{bmatrix} 0 \\ 0 \\ 0 \end{bmatrix}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        0 & -m_h r_2 & 0
+    \end{bmatrix}.
+    \label{eq:M0invM2}
 \end{equation}
-where $c_k$ denotes column~$k$ of $D_{zw}$. Restricting \eqref{eq:lindep2}
-to the bottom block $D_{\mathrm{bot}}$:
+Hence
 \begin{equation}
-    \alpha_1 e_1 + \alpha_2 e_2 + \alpha_3 e_3 = 0
-    \quad\Longrightarrow\quad
+    D_{z_1}
+    =
+    m_h
+    \begin{bmatrix}
+        r_2 & r_1 & 0 & 0 & -r_2 & 0
+    \end{bmatrix}.
+    \label{eq:Dz1structure}
+\end{equation}
+Let
+\begin{equation}
+    e_1 =
+    \begin{bmatrix}
+        1 \\ 0 \\ 0
+    \end{bmatrix},
+    \qquad
+    e_2 =
+    \begin{bmatrix}
+        0 \\ 1 \\ 0
+    \end{bmatrix},
+    \qquad
+    e_3 =
+    \begin{bmatrix}
+        0 \\ 0 \\ 1
+    \end{bmatrix}
+    \in \R^3
+    \label{eq:basisvectors}
+\end{equation}
+denote the standard basis vectors of $\R^3$. Then the columns of $D_{zw}$ are
+\begin{equation}
+    d_1 =
+    \begin{bmatrix}
+        m_h r_2 \\ e_1
+    \end{bmatrix},
+    \qquad
+    d_2 =
+    \begin{bmatrix}
+        m_h r_1 \\ e_2
+    \end{bmatrix},
+    \qquad
+    d_3 =
+    \begin{bmatrix}
+        0 \\ e_3
+    \end{bmatrix},
+    \qquad
+    d_4 =
+    \begin{bmatrix}
+        0 \\ 0
+    \end{bmatrix},
+    \qquad
+    d_5 =
+    \begin{bmatrix}
+        -m_h r_2 \\ 0
+    \end{bmatrix},
+    \qquad
+    d_6 =
+    \begin{bmatrix}
+        0 \\ 0
+    \end{bmatrix}.
+    \label{eq:Dzwcolumns}
+\end{equation}
+Therefore columns $4$ and $6$ are zero, so all nonzero columns of $D_{zw}$
+lie among columns $1$, $2$, $3$, and $5$. Hence
+\begin{equation}
+    \rank(D_{zw}) \leq 4.
+    \label{eq:rankDzwUpper}
+\end{equation}
+For the lower bound, note that columns 1, 2, 3, 4 and 5 are linearly independent:
+\begin{equation}
+    \alpha_1 d_1 + \alpha_2 d_2 + \alpha_3 d_3 + \alpha_5 d_5 = 0.
+    \label{eq:lindepDzw}
+\end{equation}
+Looking at the lower three entries of \eqref{eq:lindepDzw} gives
+\begin{equation}
+    \alpha_1 e_1 + \alpha_2 e_2 + \alpha_3 e_3 = 0.
+    \label{eq:lowerblock}
+\end{equation}
+Since $e_1,e_2,e_3$ are linearly independent, it follows that
+\begin{equation}
     \alpha_1 = \alpha_2 = \alpha_3 = 0.
+    \label{eq:alpha123zero}
 \end{equation}
-Restricting to the top block with $\alpha_1 = \alpha_2 = \alpha_3 = 0$:
+After \eqref{eq:alpha123zero}, the relation \eqref{eq:lindepDzw} reduces to
 \begin{equation}
-    -\alpha_5\, m_h\, (M_0^{-1})_2 = 0.
-    \label{eq:alpha5}
+    \alpha_5 d_5 = 0.
 \end{equation}
-Since $m_h > 0$ and $(M_0^{-1})_2 \neq 0$ (invertibility of $M_0$),
-$\alpha_5 = 0$. Therefore
+Using the expression for $d_5$ from \eqref{eq:Dzwcolumns}, this becomes
+\begin{equation}
+    \alpha_5
+    \begin{bmatrix}
+        -m_h r_2 \\ 0
+    \end{bmatrix}
+    = 0.
+    \label{eq:alpha5eq} 
+\end{equation}
+Since $m_h > 0$ and $r_2$ is the second column of the invertible matrix $M_0^{-1}$, we have $r_2 \neq 0$. Therefore \eqref{eq:alpha5eq} implies
+\begin{equation}
+    \alpha_5 = 0.
+\end{equation}
+Hence columns $1$, $2$, $3$, and $5$ are linearly independent, so
+\begin{equation}
+    \rank(D_{zw}) \geq 4.
+    \label{eq:rankDzwLower}
+\end{equation}
+Combining \eqref{eq:rankDzwUpper} and \eqref{eq:rankDzwLower} yields
 \begin{equation}
     \rank(D_{zw}) = 4.
     \label{eq:rankDzw}
 \end{equation}
 
-\subsection{Structural Identity $B_w = E\, D_{zw}$}
 
-From \eqref{eq:Bmats} and \eqref{eq:DzwBlocks}: the bottom block of $B_w$
-equals $D_{\mathrm{top}}$, while the top block of $B_w$ is zero. Defining
+
+
+
+\subsection{Structural Identity $B_w = E D_{zw}$}
+Comparing \eqref{eq:method2B} and \eqref{eq:DzwBlocks}, $B_w$ places $D_{z_1}$ in its lower block and zeros in its upper block. Define
 \begin{equation}
     E :=
     \begin{bmatrix}
-        0 & 0 \\ I_3 & 0
+        0_{3\times 3} & 0_{3\times 3} \\
+        I_3 & 0_{3\times 3}
     \end{bmatrix}
-    \in \R^{6\times 6},
-    \qquad
-    B_w = E\, D_{zw}.
+    \in \R^{6\times 6}.
+    \label{eq:Edef}
+\end{equation}
+Then
+\begin{equation}
+    E D_{zw}
+    =
+    \begin{bmatrix}
+        0 \\
+        D_{z_1}
+    \end{bmatrix}
+    =
+    B_w,
     \label{eq:BwEDzw}
 \end{equation}
+so
+\begin{equation}
+    B_w = E D_{zw}.
+\end{equation}
 
-\subsection{Thin SVD of $D_{zw}$ and Loop Pre-Compression}
-
-Since $\rank(D_{zw}) = 4$, compute the thin SVD
+\subsection{compact SVD of $D_{zw}$ and Loop Pre-Compression}
+Since $\rank(D_{zw}) = 4$, compute the compact SVD
 \begin{equation}
     D_{zw} = \hat{U}\,\hat{\Sigma}\,\hat{V}^\top,
     \qquad
@@ -375,135 +594,322 @@ and define
 \begin{equation}
     S_2 := \hat{U}\,\hat{\Sigma} \in \R^{6\times 4},
     \qquad
-    P := \hat{V}^\top \in \R^{4\times 6},
+    P := \hat{V}^\top \in \R^{4\times 6}, \qquad \rank(P) = 4,
     \label{eq:S2P}
 \end{equation}
-so that $D_{zw} = S_2\, P$. Define compressed loop variables
+so that
 \begin{equation}
-    \hat{z}(t) := P\, z(t) \in \R^4,
-    \qquad
-    \hat{w}(t) := P\, w(t) \in \R^4.
-    \label{eq:zwhat}
+    D_{zw} = S_2\,P.
+    \label{eq:Dzwfactor}
 \end{equation}
-The scheduling relation $w = Y I_6 z$ projects to
+$D_{zw}w$ and $B_w w$ both depend on $w$ only through $Pw$. From \eqref{eq:BwEDzw},
 \begin{equation}
-    \hat{w}(t) = Y\, I_4\, \hat{z}(t),
+    B_w = E D_{zw} = E S_2 P,
+    \label{eq:BwES2P_repeat}
+\end{equation}
+motivating the compressed loop variable
+\begin{equation}
+    \hat{w}(t) := P\,w(t) \in \R^4.
+    \label{eq:whatdef}
+\end{equation}
+To obtain a closed loop with the same scalar scheduling structure, define
+\begin{equation}
+    \hat{z}(t) := P\,z(t) \in \R^4.
+    \label{eq:zhatdef}
+\end{equation}
+Then the original scheduling relation $w(t)=Y I_6 z(t)$ projects to
+\begin{equation}
+    \hat{w}(t)
+    = P w(t)
+    = P\bigl(Y I_6 z(t)\bigr)
+    = Y\,P z(t)
+    = Y\,\hat{z}(t)
+    = Y I_4 \hat{z}(t),
     \label{eq:whatnew}
 \end{equation}
-so the compressed loop retains the same structure with $\Delta(Y) = Y I_4$.
-The $D_{zw}$ coupling term in \eqref{eq:loopz} becomes
+Hence the projected loop
+retains the same repeated-scalar structure, but now with four channels instead
+of six.
+\\
+Therefore the realization can be rewritten entirely in terms of the compressed loop variable $\hat{w}(t)$:
 \begin{equation}
-    D_{zw}\, w(t) = S_2\, P\, w(t) = S_2\, \hat{w}(t).
-    \label{eq:DzwS2}
+    D_{zw} w(t) = S_2 \hat{w}(t),
+    \qquad
+    B_w w(t) = E S_2 \hat{w}(t).
+    \label{eq:compressedwterms}
 \end{equation}
-
 \subsection{Modified Stacked Matrix}
 
-Substituting \eqref{eq:DzwS2} into \eqref{eq:loopz} and multiplying by $P$:
+Substituting \eqref{eq:compressedwterms} into \eqref{eq:loopz2} gives
+\begin{equation}
+    z(t) = C_z\, x(t) + S_2\, \hat{w}(t) + D_{zu}\, u(t).
+    \label{eq:loopzcompressed}
+\end{equation}
+Multiplying \eqref{eq:loopzcompressed} by $P$ yields
 \begin{equation}
     \hat{z}(t) = P C_z\, x(t) + P S_2\, \hat{w}(t) + P D_{zu}\, u(t).
     \label{eq:zhatloop}
 \end{equation}
-Following the same substitution as Method~1 (replacing $D_{zw}$ by $S_2$ and
-$I_6$ by $P$), the modified stacked matrix is
+Using \eqref{eq:whatnew} and \eqref{eq:loopzcompressed},
 \begin{equation}
-    S_{\mathrm{new}} =
+    \hat{w}(t)
+    = Y\, P\,[C_z,\; S_2,\; D_{zu}]
+      \begin{bmatrix}
+          x(t) \\ \hat{w}(t) \\ u(t)
+      \end{bmatrix},
+    \label{eq:whatstack}
+\end{equation}
+and the state equation \eqref{eq:state2} gives
+\begin{equation}
+    B_w\, w(t)
+    = Y\, B_w\,[C_z,\; S_2,\; D_{zu}]
+      \begin{bmatrix}
+          x(t) \\ \hat{w}(t) \\ u(t)
+      \end{bmatrix}.
+    \label{eq:Bwwstack}
+\end{equation}
+Stacking \eqref{eq:whatstack} and \eqref{eq:Bwwstack} yields
+\begin{equation}
+    Y \underbrace{
+        \begin{bmatrix}
+            B_w \\[2pt] P
+        \end{bmatrix}
+        [C_z,\; S_2,\; D_{zu}]
+    }_{S_{\mathrm{new}}\;\in\;\R^{10\times 13}}
     \begin{bmatrix}
-        B_w \\[2pt] P
+        x(t) \\ \hat{w}(t) \\ u(t)
     \end{bmatrix}
-    \underbrace{[C_z,\; S_2,\; D_{zu}]}_{6\times 13}
-    \;\in\; \R^{10\times 13}.
+    =
+    \begin{bmatrix}
+        B_w\, w(t) \\ \hat{w}(t)
+    \end{bmatrix},
     \label{eq:Snew}
 \end{equation}
 
-\subsection{Rank Bound $n \leq 4$}
-
-From \eqref{eq:BwEDzw} and $D_{zw} = S_2\,P$:
+\subsection{Rank of the Compressed Stacked Matrix}
+From \eqref{eq:BwES2P_repeat}, $B_w = ES_2P$, so every row of $B_w$ is a 
+linear combination of rows of $P$, and therefore $\operatorname{row}(B_w) 
+\subseteq \operatorname{row}(P)$. Stacking adds no new row directions, so
 \begin{equation}
-    B_w = E\, S_2\, P.
-    \label{eq:BwES2P}
-\end{equation}
-Every row of $B_w$ is a linear combination of rows of $P$, so
-\begin{equation}
-    \rank\!\begin{bmatrix} B_w \\ P \end{bmatrix} = \rank(P) \leq 4.
+    \rank\!\begin{bmatrix} B_w \\ P \end{bmatrix} = \rank(P) = 4.
     \label{eq:rankBwP}
 \end{equation}
-It remains to show $\rank([C_z, S_2, D_{zu}]) = 6$. Split $S_2$ conformably
-with $D_{zw}$:
+% From \eqref{eq:BwES2P_repeat}, $B_w = ES_2P$, so every row of $B_w$ is a 
+% linear combination of rows of $P$, and therefore
+% \begin{equation}
+%     \operatorname{row}(B_w) \subseteq \operatorname{row}(P).
+%     \label{eq:rowspaceincl}
+% \end{equation}
+% Stacking $B_w$ on top of $P$ therefore adds no new row directions, giving
+% \begin{equation}
+%     \rank\!\begin{bmatrix} B_w \\ P \end{bmatrix}
+%     \leq
+%     \rank(P)
+%     = 4.
+%     \label{eq:rankupperBwP}
+% \end{equation}
+% Since $P$ appears as the lower row block of
+% $\begin{bmatrix} B_w \\ P \end{bmatrix}$, we also have
+% \begin{equation}
+%     \rank\!\begin{bmatrix} B_w \\ P \end{bmatrix}
+%     \geq
+%     \rank(P)
+%     = 4.
+%     \label{eq:ranklowerBwP}
+% \end{equation}
+% Therefore,
+% \begin{equation}
+%     \rank\!\begin{bmatrix} B_w \\ P \end{bmatrix}
+%     = \rank(P)
+%     = 4.
+%     \label{eq:rankBwP}
+% \end{equation}
+To determine rank$(S_\text{new})$ exactly, we show that the right factor
 \begin{equation}
-    S_2 =
-    \begin{bmatrix}
-        S_{2,\mathrm{top}} \\ S_{2,\mathrm{bot}}
-    \end{bmatrix},
-    \qquad S_{2,\mathrm{top}},\, S_{2,\mathrm{bot}} \in \R^{3\times 4}.
-    \label{eq:S2split}
+    F := [C_z,\; S_2,\; D_{zu}] \in \R^{6\times 13}
+    \label{eq:Fdef}
 \end{equation}
-From $D_{zw} = S_2\, P$ and \eqref{eq:DzwBlocks}, the bottom block gives
+has full row rank. Let
 \begin{equation}
-    S_{2,\mathrm{bot}}\, P = D_{\mathrm{bot}} = [I_3,\; 0].
-    \label{eq:S2botP}
+    J := \begin{bmatrix} 0 & I_3 \end{bmatrix} \in \R^{3\times 6}
+    \label{eq:Jdef}
 \end{equation}
-Since $S_{2,\mathrm{bot}} \in \R^{3\times 4}$ and $\rank(S_{2,\mathrm{bot}}\,P) = 3$:
+select the lower three rows of any $6\times n$ matrix. From 
+\eqref{eq:DzwBlocks}, $J D_{zw} = D_{z_2} = [I_3\ \ 0]$, which has rank~$3$. 
+Substituting $D_{zw} = S_2 P$ and applying the rank product inequality,
 \begin{equation}
-    \rank(S_{2,\mathrm{bot}}) = 3.
-    \label{eq:rankS2bot}
+    3 = \rank(J D_{zw}) = \rank\!\bigl((J S_2) P\bigr) \leq \rank(J S_2) \leq 3,
+    \label{eq:rankJS2}
 \end{equation}
-Partition $[C_z, S_2, D_{zu}]$ into top and bottom row blocks conformably
-with $D_{zw}$.
-
-\paragraph{Step 1: bottom block has rank~3.}
-The bottom block restricted to the $S_2$ columns is $S_{2,\mathrm{bot}}$,
-which has rank~3 by \eqref{eq:rankS2bot}.
-
-\paragraph{Step 2: bottom block is zero in the input columns.}
-$D_{zu} = [M_0^{-1};\, 0]$ has zero bottom block.
-
-\paragraph{Step 3: top block is nonsingular in the input columns.}
-The top block of $D_{zu}$ is $M_0^{-1}$, which is invertible.
-
-\paragraph{Step 4: top and bottom blocks are mutually independent.}
-Suppose $\alpha^\top(\text{top block}) + \beta^\top(\text{bottom block}) = 0$
-for $\alpha, \beta \in \R^3$. Restricting to the input columns:
+so $\rank(J S_2) = 3$, meaning three columns of $S_2$ have linearly independent 
+lower three entries. Denote by $A \in \R^{3\times 3}$ the lower three entries 
+of those columns (invertible by construction) and by $* \in \R^{3\times 3}$ 
+the upper three entries. Together with the three columns of $D_{zu}$, the 
+corresponding $6\times 6$ submatrix of $F$ is
 \begin{equation}
-    \alpha^\top M_0^{-1} + \beta^\top \cdot 0 = 0
-    \quad\Longrightarrow\quad
-    \alpha^\top M_0^{-1} = 0
-    \quad\Longrightarrow\quad
-    \alpha = 0.
+    \begin{bmatrix} * & M_0^{-1} \\ A & 0 \end{bmatrix}.
+    \label{eq:submat}
 \end{equation}
-Then $\beta^\top(\text{bottom block}) = 0$; by Step~1, $\beta = 0$.
+Permuting the row blocks yields the block lower triangular matrix
+\begin{equation}
+    \begin{bmatrix} A & 0 \\ * & M_0^{-1} \end{bmatrix},
+    \label{eq:submatperm}
+\end{equation}
+with $A$ and $M_0^{-1}$ on the diagonal. Both are invertible: $A$ by 
+construction and $M_0^{-1}$ since $M_0 \succ 0$ for all valid physical 
+parameters. Therefore this submatrix is nonsingular, which gives
 
-\paragraph{Conclusion.}
-All six rows of $[C_z, S_2, D_{zu}]$ are linearly independent, so
-$\rank([C_z, S_2, D_{zu}]) = 6$.
 
-Since $[C_z, S_2, D_{zu}]$ has full row rank, right-multiplication by it
-preserves rank:
+
+\begin{equation}
+    \rank(F) = 6.
+    \label{eq:rankF}
+\end{equation}
+It follows that $\rank(S_{\mathrm{new}}) = 4$ by the following two-sided
+argument. For the upper bound, the rank product inequality gives
 \begin{equation}
     \rank(S_{\mathrm{new}})
-    = \rank\!\begin{bmatrix} B_w \\ P \end{bmatrix}
-    = \rank(P) \leq 4.
+    = \rank\!\left(
+        \begin{bmatrix} B_w \\ P \end{bmatrix} F
+      \right)
+    \leq
+    \rank\!\begin{bmatrix} B_w \\ P \end{bmatrix}
+    = 4.
+    \label{eq:rankSnewUpper}
+\end{equation}
+For the lower bound, since $F$ has full row rank there exists a right inverse
+$F^\dagger$ satisfying $F F^\dagger = I_6$. Therefore
+\begin{equation}
+    \begin{bmatrix} B_w \\ P \end{bmatrix}
+    = S_{\mathrm{new}}\, F^\dagger,
+    \label{eq:rightinverse}
+\end{equation}
+and applying the rank product inequality again,
+\begin{equation}
+    4 = \rank\!\begin{bmatrix} B_w \\ P \end{bmatrix}
+    \leq \rank(S_{\mathrm{new}}).
+    \label{eq:rankSnewLower}
+\end{equation}
+Combining \eqref{eq:rankSnewUpper} and \eqref{eq:rankSnewLower},
+\begin{equation}
+    \rank(S_{\mathrm{new}}) = 4.
     \label{eq:rankSnew}
 \end{equation}
-The number of non-zero singular values of $S_{\mathrm{new}}$ is therefore $n \leq 4$.
 
-\subsection{SVD of $S_{\mathrm{new}}$ and Reduced Matrices}
 
-Compute the thin SVD $S_{\mathrm{new}} = U_{\mathrm{new}}\,\Sigma_{\mathrm{new}}\,V_{\mathrm{new}}^\top$
-with $n = \rank(S_{\mathrm{new}}) \leq 4$ non-zero singular values. Split
+
+
+% It remains to show that the right factor
+% \begin{equation}
+%     F := [C_z,\; S_2,\; D_{zu}] \in \R^{6\times 13}
+%     \label{eq:Fdef}
+% \end{equation}
+% has full row rank. Let
+% \begin{equation}
+%     J := \begin{bmatrix} 0 & I_3 \end{bmatrix} \in \R^{3\times 6},
+%     \label{eq:Jdef}
+% \end{equation}
+% which selects the lower three rows. From \eqref{eq:DzwBlocks},
+% \begin{equation}
+%     J D_{zw} = D_{z_2} = \begin{bmatrix} I_3 & 0 \end{bmatrix},
+%     \label{eq:JDzw}
+% \end{equation}
+% so $\rank(J D_{zw}) = 3$. Using $D_{zw} = S_2 P$,
+% \begin{equation}
+%     3 = \rank(J D_{zw}) = \rank\!\bigl((J S_2) P\bigr) \leq \rank(J S_2) \leq 3.
+%     \label{eq:rankJS2}
+% \end{equation}
+% Hence $\rank(J S_2) = 3$, so the lower three rows of $F$, restricted to the
+% $S_2$ columns, are linearly independent.
+
+% The upper three rows of $F$, restricted to the $D_{zu}$ columns, equal
+% $M_0^{-1}$ and are therefore linearly independent. Moreover, the lower three
+% rows are zero in the $D_{zu}$ columns. Hence if
+% \begin{equation}
+%     \alpha^\top(\text{upper rows of } F) + \beta^\top(\text{lower rows of } F) = 0
+%     \label{eq:Frows}
+% \end{equation}
+% for some $\alpha, \beta \in \R^3$, then restricting \eqref{eq:Frows} to the
+% $D_{zu}$ columns yields
+% \begin{equation}
+%     \alpha^\top M_0^{-1} = 0
+%     \quad\Longrightarrow\quad
+%     \alpha = 0,
+%     \label{eq:alphaF}
+% \end{equation}
+% since $M_0^{-1}$ is invertible. The remaining relation is then
+% $\beta^\top(\text{lower rows of } F) = 0$, which implies $\beta = 0$ because
+% the lower rows are linearly independent. Therefore
+% \begin{equation}
+%     \rank(F) = 6.
+%     \label{eq:rankF}
+% \end{equation}
+% Since $F$ has full row rank, it has a right inverse $F^\dagger$ satisfying
+% $F F^\dagger = I_6$, and therefore
+% \begin{equation}
+%     \begin{bmatrix}
+%         B_w \\ P
+%     \end{bmatrix}
+%     = S_{\mathrm{new}}\, F^\dagger.
+%     \label{eq:rightinverse}
+% \end{equation}
+% Hence
+% \begin{equation}
+%     \rank(S_{\mathrm{new}})
+%     = \rank\!\begin{bmatrix} B_w \\ P \end{bmatrix}
+%     = 4.
+%     \label{eq:rankSnew}
+% \end{equation}
+% and the compressed stacked matrix has exactly four non-zero singular values.
+
+\subsection{Compact SVD of $S_{\mathrm{new}}$ and Reduced Matrices}
+
+Since $\rank(S_{\mathrm{new}}) = 4$, compute the compact SVD
 \begin{equation}
-    L_{\mathrm{new}} := U_{\mathrm{new}}\,\Sigma_{\mathrm{new}}^{1/2}
-    =
-    \begin{bmatrix} L_x \\ L_z \end{bmatrix},
+    S_{\mathrm{new}} = U_{\mathrm{new}}\,\Sigma_{\mathrm{new}}\,V_{\mathrm{new}}^\top,
     \qquad
-    R_{\mathrm{new}} := \Sigma_{\mathrm{new}}^{1/2}\,V_{\mathrm{new}}^\top
-    = \bigl[R_x,\; R_{\hat{w}},\; R_u\bigr],
+    \Sigma_{\mathrm{new}} = \diag(\sigma_1, \sigma_2, \sigma_3, \sigma_4),
+    \qquad
+    \sigma_i > 0.
+    \label{eq:SnewSVD}
+\end{equation}
+Define
+\begin{equation}
+    L_{\mathrm{new}} := U_{\mathrm{new}}\,\Sigma_{\mathrm{new}}^{1/2},
+    \qquad
+    R_{\mathrm{new}} := \Sigma_{\mathrm{new}}^{1/2}\,V_{\mathrm{new}}^\top,
     \label{eq:LRnew}
 \end{equation}
-where $L_x \in \R^{6\times n}$, $L_z \in \R^{4\times n}$,
-$R_x \in \R^{n\times 6}$, $R_{\hat{w}} \in \R^{n\times 4}$, $R_u \in \R^{n\times 3}$.
-Define the final reduced latent variable $\tilde{z}(t) := R_{\mathrm{new}}[x;\,\hat{w};\,u] \in \R^n$.
-The reduced constant matrix $\tilde{G}$ has entries
+so that $S_{\mathrm{new}} = L_{\mathrm{new}} R_{\mathrm{new}}$ by construction.
+Since $S_{\mathrm{new}}$ has 10 rows corresponding to the stacking of $B_w$
+(6 rows) and $P$ (4 rows), split $L_{\mathrm{new}}$ as
+\begin{equation}
+    L_{\mathrm{new}} =
+    \begin{bmatrix} L_x \\ L_z \end{bmatrix},
+    \qquad L_x \in \R^{6\times 4},\quad L_z \in \R^{4\times 4},
+    \label{eq:Lsplit}
+\end{equation}
+and since $R_{\mathrm{new}}$ has 13 columns corresponding to $x$ (6), $\hat{w}$
+(4), and $u$ (3), split $R_{\mathrm{new}}$ as
+\begin{equation}
+    R_{\mathrm{new}} = \bigl[R_x,\; R_{\hat{w}},\; R_u\bigr],
+    \qquad R_x \in \R^{4\times 6},\quad R_{\hat{w}} \in \R^{4\times 4},
+    \quad R_u \in \R^{4\times 3}.
+    \label{eq:Rsplit}
+\end{equation}
+Define the reduced latent variable
+\begin{equation}
+    \tilde{z}(t)
+    := R_{\mathrm{new}}
+    \begin{bmatrix}
+        x(t) \\ \hat{w}(t) \\ u(t)
+    \end{bmatrix}
+    \in \R^4.
+    \label{eq:ztilde2}
+\end{equation}
+Substituting $\tilde{w}(t) = YI_4\tilde{z}(t)$ and $B_w w(t) = L_x \tilde{w}(t)$
+into the state and loop equations, the reduced constant matrix $\tilde{G}$ has 
+entries
 \begin{equation}
     \tilde{B}_w = L_x,\quad
     \tilde{C}_z = R_x,\quad
@@ -511,11 +917,62 @@ The reduced constant matrix $\tilde{G}$ has entries
     \tilde{D}_{zu} = R_u,
     \label{eq:Gtilde2}
 \end{equation}
-with $A_x$, $B_u$, $C_y$, $D_{yw}$, $D_{yu}$ unchanged, and the final
-scheduling block $\Delta(Y) = Y I_n$ with $n \leq 4$.
+with $A_x$, $B_u$, $C_y$, $D_{yw}$, $D_{yu}$ unchanged, and the scheduling
+block reduced to $\Delta(Y) = Y I_4$.
+\\
+The numerical values of $\tilde{G}$ depend on the SVDs in \eqref{eq:DzwSVD}
+and \eqref{eq:SnewSVD}. However, the reduction from six to four latent channels
+is structural: it follows from $\rank(D_{zw}) = 4$, which holds for all
+physically valid parameter values ($m_h > 0$, $M_0 \succ 0$).
+%kijken matlab toepassing laten zien!!!
 
-The computation of $\tilde{G}$ requires the numerical SVD in
-\eqref{eq:DzwSVD} and \eqref{eq:LRnew}. The bound $n \leq 4$ is algebraic
-and holds for all physically valid parameter values ($m_h > 0$, $M_0 \succ 0$).
+% \subsection{SVD of $S_{\mathrm{new}}$ and Reduced Matrices}
+
+% Compute the compact SVD
+% \begin{equation}
+%     S_{\mathrm{new}} = U_{\mathrm{new}}\,\Sigma_{\mathrm{new}}\,V_{\mathrm{new}}^\top,
+%     \qquad
+%     \Sigma_{\mathrm{new}} = \diag(\sigma_1, \sigma_2, \sigma_3, \sigma_4),
+%     \qquad
+%     \sigma_i > 0,
+%     \label{eq:SnewSVD}
+% \end{equation}
+% and split
+% \begin{equation}
+%     L_{\mathrm{new}} := U_{\mathrm{new}}\,\Sigma_{\mathrm{new}}^{1/2}
+%     =
+%     \begin{bmatrix} L_x \\ L_z \end{bmatrix},
+%     \qquad
+%     R_{\mathrm{new}} := \Sigma_{\mathrm{new}}^{1/2}\,V_{\mathrm{new}}^\top
+%     = \bigl[R_x,\; R_{\hat{w}},\; R_u\bigr],
+%     \label{eq:LRnew}
+% \end{equation}
+% where $L_x \in \R^{6\times 4}$, $L_z \in \R^{4\times 4}$,
+% $R_x \in \R^{4\times 6}$, $R_{\hat{w}} \in \R^{4\times 4}$, $R_u \in \R^{4\times 3}$.
+% Define the final reduced latent variable
+% \begin{equation}
+%     \tilde{z}(t)
+%     := R_{\mathrm{new}}
+%     \begin{bmatrix}
+%         x(t) \\ \hat{w}(t) \\ u(t)
+%     \end{bmatrix}
+%     \in \R^4.
+%     \label{eq:ztilde2}
+% \end{equation}
+% The reduced constant matrix $\tilde{G}$ has entries
+% \begin{equation}
+%     \tilde{B}_w = L_x,\quad
+%     \tilde{C}_z = R_x,\quad
+%     \tilde{D}_{zw} = R_{\hat{w}}\, L_z,\quad
+%     \tilde{D}_{zu} = R_u,
+%     \label{eq:Gtilde2}
+% \end{equation}
+% with $A_x$, $B_u$, $C_y$, $D_{yw}$, $D_{yu}$ unchanged, and the final
+% scheduling block $\Delta(Y) = Y I_4$.
+
+% The computation of $\tilde{G}$ requires the numerical SVD in
+% \eqref{eq:DzwSVD} and \eqref{eq:LRnew}. The reduction to four latent channels
+% follows from the structural identities above and therefore holds for all
+% physically valid parameter values ($m_h > 0$, $M_0 \succ 0$).
 
 \end{document}
