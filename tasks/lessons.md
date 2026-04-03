@@ -47,6 +47,14 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
+### Rule: Shape-only checks on outputs do not verify coordinate correctness
+**Trigger**: When writing or reviewing a test for any block or function whose output undergoes a coordinate transform (P-transform, rotation, normalization, selection matrix)
+**Rule**: Always add a value-correctness check alongside any shape check. The check must compare the actual values against a reference computed via the same transform. A shape check passing is not evidence the coordinate system is correct.
+**Why**: `S_y` in `test_jan_compat.py` applied no P-transform for over a session. The y-output check only verified `y_out.shape == (batch, 3)`. The bug was invisible because: (1) shape was correct, (2) the Y-axis component is identical in both coordinate systems so single-channel inspection would also pass, (3) the simulation checks in `lfr_simulate` use a different code path (`simulate()` applies P correctly) and cannot catch Interconnect-level errors.
+**How to apply**: For every output that touches a coordinate transform, write a check of the form: call the function, compute the expected result independently (using the known transform), assert values match within tolerance. Do not write a shape check and treat it as sufficient.
+
+---
+
 ### Rule: Mathematical implications must be justified for the specific construction, not asserted as general facts
 **Trigger**: When claiming "X implies Y" or "X if and only if Y" in a mathematical derivation
 **Rule**: Always state explicitly why the implication holds for this specific construction. Do not assert it as if it follows from a general theorem unless it actually does. Show the connecting steps.

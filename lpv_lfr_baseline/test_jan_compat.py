@@ -341,6 +341,46 @@ if __name__ == '__main__':
     print(f"\nCheck A: {'PASS' if status else 'FAIL'}")
 
     # ------------------------------------------------------------------
+    # Check A2 — y output value correctness: stage coordinates
+    #
+    # y_out from the Interconnect must be in stage coordinates.
+    # Reference: y_logical = x[:, :3], then y_stage = y_logical @ P.
+    # S_y embeds P.T into the connection matrix (D-027); this check
+    # verifies that embedding is correct.  A shape-only check cannot
+    # catch a missing or wrong P-transform — see tasks/lessons.md.
+    # ------------------------------------------------------------------
+    print()
+    print("=" * 60)
+    print("Check A2: y output value correctness (stage coordinates, D-027)")
+    print("=" * 60)
+
+    ic_a2, _ = build_baseline_interconnect()
+
+    x_test_a2 = torch.zeros(1, 6).float()
+    x_test_a2[:, 2] = 0.3
+    u_test_a2 = torch.tensor([[10.0, -5.0, 3.0]]).float()
+
+    with torch.no_grad():
+        y_ic_a2, _ = ic_a2.forward(x_test_a2, u_test_a2)   # (1, 3) — should be stage coords
+
+    # Reference: rk4_step returns y_logical = x_next[:, :3]; stage = y_logical @ P
+    u_logical_a2 = u_test_a2.double() @ P.T
+    with torch.no_grad():
+        _, _, _, y_logical_ref = rk4_step(
+            x_test_a2.double(), u_logical_a2, M0, M1, M2, K, C, ts
+        )
+    y_stage_ref = y_logical_ref @ P   # (1, 3) stage coords
+
+    tol_a2 = 1e-5
+    err_a2 = (y_ic_a2.double() - y_stage_ref).abs().max().item()
+    status = err_a2 < tol_a2
+    print(f"  max|y_ic - y_stage_ref| : {err_a2:.2e}   (tol {tol_a2:.0e})")
+    print(f"  y_ic       = {y_ic_a2[0].tolist()}")
+    print(f"  y_stage_ref= {y_stage_ref[0].tolist()}")
+    results['Check A2 (y value stage coords)'] = status
+    print(f"\nCheck A2: {'PASS' if status else 'FAIL'}")
+
+    # ------------------------------------------------------------------
     # Check B — z_lfr and w_lfr slot content correct
     #
     # w_out[:, 6:12, 0] must match z from lfr_forward; likewise w_lfr.
