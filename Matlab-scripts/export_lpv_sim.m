@@ -3,13 +3,50 @@
 % Export varying-Y Simulink simulation data for LPV ZOH discretization
 % validation (Task 2.2 Export 2).
 %
-% What this proves:
-%   DT-LPV vs q1 -- ZOH discretization error only (same physics: M(Y), C, K;
-%   no Coriolis; no Coulomb). With Y moving from 0.3 to 0.1 m, M(Y) changes
-%   between samples. Any residual between DT-LPV and q1 is purely ZOH error.
-%   Expected: BFR > 99% if ZOH is correctly implemented at 16 kHz.
+% ---------------------------------------------------------------------------
+% Simulink output variables -- what each q is and how it was verified
+% ---------------------------------------------------------------------------
+% The gantry_2025a Simulink model contains four ToWorkspace blocks. Their
+% contents were verified by inspecting the .slx XML directly (gantry_2025a.slx
+% is a ZIP; simulink/systems/system_root.xml lists ToWorkspace VariableNames,
+% and simulink/systems/system_47.xml -- the Simscape subsystem -- lists the
+% Coulomb gain blocks with <P Name="Commented">on</P>, confirming they are
+% disabled).
 %
-%   Frozen LTI vs q1 -- ZOH error + frozen M(Y=0.3) error combined.
+%   q          Simscape full nonlinear model.
+%              Coulomb friction gains (cc1, cc2, ccy) are present in the
+%              subsystem XML but carry <P Name="Commented">on</P> -- they are
+%              DISABLED. Coriolis-centripetal forces are included (Simscape
+%              integrates the full multibody equations). No Coulomb.
+%
+%   q1         CT quasi-LPV, gantrySystem.m integrated by Simulink.
+%              Self-schedules Y = x(3) at every ODE step -- M(Y) varies
+%              continuously as Y moves 0.3 -> 0.1 m.
+%              No Coulomb, no Coriolis-centripetal.
+%              PRIMARY comparison target for Python LPV-LFR baseline.
+%
+%   q2         CT quasi-LPV with Coriolis-centripetal,
+%              gantrySystemCoriolisCentripetal.m integrated by Simulink.
+%              Self-schedules Y = x(3). No Coulomb.
+%              NOT exported to .mat (not needed for current validation).
+%
+%   q3         Frozen LTI lsim at Y = 0.3 m (operating point), computed in
+%              main.m AFTER sim() via lsim(T, ...). ZOH discrete-time.
+%              NOT a Simulink ToWorkspace output -- generated post-hoc.
+%              NOT exported here.
+%
+% Residual interpretation (from main.m figure titles):
+%   q - q1  = Coriolis-centripetal effect (both have no Coulomb)
+%   q - q2  = residual nonlinear geometry beyond Coriolis (small at 16 kHz)
+%   q - q3  = Coriolis + LPV scheduling benefit (frozen M(Y=0.3) vs varying)
+%
+% ---------------------------------------------------------------------------
+% What this proves:
+%   Python RK4 vs q1 -- integration method mismatch only (RK4 fixed-step vs
+%   ode45 adaptive). Both integrate the same CT quasi-LPV ODE. Expected error
+%   ~1e-14 m. Validates that Python correctly implements gantrySystem.m physics.
+%
+%   Frozen LTI vs q1 -- ZOH error + frozen M(Y=0.3) scheduling error combined.
 %   Gap between the two = LPV benefit from tracking M(Y).
 %
 % Test trajectory (Option B -- Y step, X at rest):
@@ -20,12 +57,12 @@
 %   Why: isolates Y dynamics, decouples X-Y coupling, Y stays within safe range.
 %
 % Variables exported (Matlab-output/lpv_sim_varying_y.mat):
-%   t              (N x 1)  time vector [s]
+%   t_sim          (N x 1)  time vector [s]
 %   fs             (1 x 1)  sample frequency = 16000 Hz
-%   r              (N x 3)  reference [X1_ref, X2_ref, Y_ref] stage coords [m]
+%   r_sim          (N x 3)  reference [X1_ref, X2_ref, Y_ref] stage coords [m]
 %   u_q1           (N x 3)  force applied to q1 path [F_X1, F_X2, F_Y] [N]
 %   q1             (N x 3)  CT quasi-LPV output [X1, X2, Y] [m]  -- PRIMARY target
-%   q_simscape     (N x 3)  Simscape nonlinear output [X1, X2, Y] [m]
+%   q_simscape     (N x 3)  Simscape output [X1, X2, Y] [m]  (Coulomb disabled)
 %   Y_trajectory   (N x 1)  absolute Y(t) = q1(:,3) [m]  -- scheduling variable
 %
 % Does NOT modify any file in kamtin-fp-model/.
