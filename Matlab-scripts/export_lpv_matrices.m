@@ -62,7 +62,7 @@ P = [1,     1,    0;
      0,     0,    1];
 
 % Sample frequency (from main.m line 164)
-fs = 16e3;
+fs = 20e3;
 ts = 1 / fs;
 
 n = 3;  % DOF

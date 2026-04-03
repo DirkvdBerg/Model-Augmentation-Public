@@ -58,7 +58,7 @@
 %
 % Variables exported (Matlab-output/lpv_sim_varying_y.mat):
 %   t_sim          (N x 1)  time vector [s]
-%   fs             (1 x 1)  sample frequency = 16000 Hz
+%   fs             (1 x 1)  sample frequency = 20000 Hz
 %   r_sim          (N x 3)  reference [X1_ref, X2_ref, Y_ref] stage coords [m]
 %   u_q1           (N x 3)  force applied to q1 path [F_X1, F_X2, F_Y] [N]
 %   q1             (N x 3)  CT quasi-LPV output [X1, X2, Y] [m]  -- PRIMARY target
@@ -135,7 +135,7 @@ P = [1,    1,    0;
      0,    0,    1];
 StageCoordinatesSystem = P.' * sys_logical * P;
 
-fs = 16e3;
+fs = 20e3;
 ts = 1 / fs;
 
 % Discrete feedback controller (main.m lines 199-202, fbw=100 Hz)
@@ -233,6 +233,9 @@ end
 e_q1  = r_sim - q1;                     % (N x 3) tracking error
 u_q1  = lsim(ss(Cfb), e_q1, t_sim);     % (N x 3) [F_X1, F_X2, F_Y] [N]
 
+e_q   = r_sim - q;                      % (N x 3) Simscape tracking error
+u_q   = lsim(ss(Cfb), e_q, t_sim);      % (N x 3) forces applied to Simscape path
+
 % ------------------------------------------------------------------
 % 6. Extract scheduling variable and rename Simscape output
 % ------------------------------------------------------------------
@@ -259,9 +262,9 @@ if ~exist(out_dir, 'dir')
     mkdir(out_dir);
 end
 
-save(out_path, 't_sim', 'fs', 'r_sim', 'u_q1', 'q1', 'q_simscape', 'Y_trajectory');
+save(out_path, 't_sim', 'fs', 'r_sim', 'u_q1', 'u_q', 'q1', 'q_simscape', 'Y_trajectory');
 
 fprintf('\nSaved to: %s\n', out_path)
-fprintf('Variables: t_sim (%dx1), r_sim (%dx3), u_q1 (%dx3), q1 (%dx3), ', ...
-        N_sim, N_sim, N_sim, N_sim)
+fprintf('Variables: t_sim (%dx1), r_sim (%dx3), u_q1 (%dx3), u_q (%dx3), q1 (%dx3), ', ...
+        N_sim, N_sim, N_sim, N_sim, N_sim)
 fprintf('q_simscape (%dx3), Y_trajectory (%dx1)\n', N_sim, N_sim)

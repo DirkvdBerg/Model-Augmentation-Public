@@ -33,10 +33,10 @@ Y-dependent dynamics are correctly captured.
 
 **Requirement**: Compute A_d(Y[k]), B_d(Y[k]) at each timestep k.
 
-**Approach**: Call `gantry_discrete_ss(Y[k], fs=16e3)` at each step — this runs `cont2discrete`
+**Approach**: Call `gantry_discrete_ss(Y[k], fs=20e3)` at each step — this runs `cont2discrete`
 with the current Y value. This is the frozen-at-sampling-instant approach.
 
-**Open question for Tóth**: Is this approach sufficiently accurate at fs = 16 kHz given
+**Open question for Tóth**: Is this approach sufficiently accurate at fs = 20 kHz given
 ΔY ≤ 0.125 mm/sample? What is the order of the approximation error in ts?
 
 ---
@@ -94,7 +94,7 @@ Similarly B_c(Y) = [0; M(Y)⁻¹] — rational in Y, C and D are constant.
 
 2. **Polynomial expansion of A_d(Y)**: Does the paper provide a method to compute
    `A_d(Y) = A0_d + Y·A1_d + Y²·A2_d + ...` analytically from A_c(Y)? If so, how many
-   terms are needed for accuracy at ts = 62.5 µs?
+   terms are needed for accuracy at ts = 50 µs?
 
 3. **Non-affine handling**: A_c(Y) is rational (not polynomial) in Y. Does Tóth's method
    apply directly, or does it assume an affine (A0 + ρ·A1) structure?
@@ -124,7 +124,7 @@ After reading Tóth (2010), update D-012 with:
 
 Tóth Section III-B shows the complete frozen-at-sampling-instant method has **zero local
 truncation error** within the ZOH assumption. The only real error is from the slowly-varying
-scheduling during `[k·ts, (k+1)·ts]`, which at 16 kHz and ΔY ≤ 0.125 mm/sample is
+scheduling during `[k·ts, (k+1)·ts]`, which at 20 kHz and ΔY ≤ 0.100 mm/sample is
 negligible. Calling `cont2discrete(A_c(Y[k]), ts)` at each step is theoretically exact.
 
 ### Use case 2 (training loop): exact ZOH via `torch.linalg.matrix_exp` ✅ chosen

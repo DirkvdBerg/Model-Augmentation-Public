@@ -57,7 +57,7 @@ gantry_2025a.slx
 | q | Simscape | Physical component-based simulation (masses, joints, actuators, friction elements as a network). Coriolis included automatically. ode45. | Yes | Yes | **No (disabled)** |
 | q1 | gantrySystem.m | Linearized EOM: `dxdt = A(Y)*x + B*u`, integrated by ode45. M(Y) recomputed from x(3) at every sub-step. Velocity-dependent nonlinear terms (Coriolis) not included. | Yes | No | No |
 | q2 | gantrySystemCoriolisCentripetal.m | Full Euler-Lagrange EOM (symbolic derivation), integrated by ode45. Same as q1 but with Coriolis and centripetal terms added back. | Yes | Yes | No |
-| q3 | lsim on frozen G | Frozen discrete SS (ZOH, 16 kHz) at Y=0.3 m fixed. Stepped with lsim post-simulation. NOT in Simulink closed loop. | No | No | No |
+| q3 | lsim on frozen G | Frozen discrete SS (ZOH, 20 kHz) at Y=0.3 m fixed. Stepped with lsim post-simulation. NOT in Simulink closed loop. | No | No | No |
 
 **Coulomb status verified by SLX inspection:** `gantry_2025a.slx` is a ZIP archive.
 Reading `simulink/systems/system_47.xml` (the "Single H-gantry" Simscape subsystem) shows
@@ -70,12 +70,12 @@ q, q1, q2 each run in their own separate closed loop (same Cfb controller, same 
 q3 is computed after sim() using the same force input — open-loop, not in a feedback loop.
 
 **Why q1 can serve as a CT reference for ZOH validation:**
-gantrySystem.m returns the derivative `dxdt`, so Simulink's ode45 integrates it at variable sub-steps (far smaller than 1/16kHz), with M(Y) updated at every sub-step. The output is sampled at 16 kHz but the integration is genuinely continuous-time. Comparing Python DT-LPV against q1 is comparing two numerical methods (matrix exponential vs ode45) computing the same CT quantity — a valid ZOH test.
+gantrySystem.m returns the derivative `dxdt`, so Simulink's ode45 integrates it at variable sub-steps (far smaller than 1/20kHz), with M(Y) updated at every sub-step. The output is sampled at 20 kHz but the integration is genuinely continuous-time. Comparing Python DT-LPV against q1 is comparing two numerical methods (matrix exponential vs ode45) computing the same CT quantity — a valid ZOH test.
 
 **gantrySystem.m is a continuous-time function.**
 It returns `dxdt = A(Y)*x + B*u` (a derivative, not next-state). Simulink's ode45 solver
 integrates it at variable sub-steps, so M(Y(t)) is recomputed from `x(3)` at every sub-step.
-The discrete feedback controller Cfb runs at 16 kHz and holds its output constant between ticks
+The discrete feedback controller Cfb runs at 20 kHz and holds its output constant between ticks
 (ZOH). Consequence: q1 from Simulink is the CT plant response to a ZOH-held input — exactly
 what the matrix-exponential ZOH formula computes. Comparing Python DT-LPV vs q1 therefore
 validates the ZOH implementation (not just compares the model against itself).
@@ -217,7 +217,7 @@ Entry point for analysis and simulation.
 3. Computes mode shapes via `eigs(K, M, n, 'smallestabs')`
 4. Calls `getss(3, M, C, K)` → `sys` (continuous-time SS in logical coordinates)
 5. Constructs coordinate transformations P (logical ↔ stage) and Psi (stage ↔ modal)
-6. Discretises: `G = c2d(StageCoordinatesSystem, ts, 'zoh')` at `fs = 16 kHz`
+6. Discretises: `G = c2d(StageCoordinatesSystem, ts, 'zoh')` at `fs = 20 kHz`
 7. Runs Simulink model `gantry_2025a` for comparison
 8. Runs `lsim` on discrete model and plots residuals
 
@@ -302,12 +302,12 @@ Extracted from the `.slx` ZIP archive (`simulink/configSet0.xml`).
 | `SolverName` | `ode45` | Dormand-Prince RK45, variable-step |
 | `RelTol` | `1e-4` | Relative tolerance |
 | `AbsTol` | `1e-8` | Absolute tolerance |
-| `MaxStep` | `auto` | Not manually bounded (effective upper bound from ZOH blocks: 62.5 us) |
+| `MaxStep` | `auto` | Not manually bounded (effective upper bound from ZOH blocks: 50 us) |
 | `FixedStep` | `auto` | Not fixed-step (variable-step solver is active) |
 | `ODENIntegrationMethod` | `ode3` | Fixed-step fallback for code generation only, NOT used in simulation |
 
 **Conclusion:** q1 is genuinely continuous-time. ode45 takes adaptive sub-steps within each
-62.5 us ZOH interval, re-evaluating `gantrySystem.m` (and therefore M(Y(t))) at each
+50 us ZOH interval, re-evaluating `gantrySystem.m` (and therefore M(Y(t))) at each
 sub-step. The `ode3` entry is a code-generation artifact that has no effect on simulation
 results.
 

@@ -656,6 +656,7 @@ def _section_lpv_vs_frozen():
     mat          = loadmat(path)
     q1_ref       = torch.tensor(mat['q1'],        dtype=_DTYPE)   # (N, 3) stage
     u_seq_stage  = torch.tensor(mat['u_q1'],      dtype=_DTYPE)   # (N, 3) stage forces
+    u_q_stage    = torch.tensor(mat['u_q'],       dtype=_DTYPE) if 'u_q' in mat else None
     t_sim        = mat['t_sim'].squeeze()                          # (N,)
     q_simscape   = mat['q_simscape'] if 'q_simscape' in mat else None
     N            = q1_ref.shape[0]
@@ -669,6 +670,10 @@ def _section_lpv_vs_frozen():
     with torch.no_grad():
         res_lpv    = simulate(x0, u_batch, M0, M1, M2, K, C, P, ts)
         res_frozen = simulate_frozen(x0, u_batch, Y_freeze=_Y_FREEZE)
+        if u_q_stage is not None:
+            u_q_batch      = u_q_stage.unsqueeze(0)
+            res_lpv_uq     = simulate(x0, u_q_batch, M0, M1, M2, K, C, P, ts)
+            res_frozen_uq  = simulate_frozen(x0, u_q_batch, Y_freeze=_Y_FREEZE)
 
     # Stage-coordinate outputs: (N, 3)
     y_lpv    = res_lpv.Y[0].numpy()      # Python LPV
@@ -710,14 +715,16 @@ def _section_lpv_vs_frozen():
                   f"{maxe:{col_w}.3e}  {mne:{col_w}.3e}")
         print()
 
-    # Simscape secondary reference (optional)
-    if q_simscape is not None:
+    # Simscape secondary reference — driven by matched u_q forces
+    if q_simscape is not None and u_q_stage is not None:
         q_sc = q_simscape.astype(np.float64)
-        print('  Secondary reference: Simscape (Coulomb disabled, includes Coriolis)')
-        print(hdr.replace('Channel', 'vs     ').replace('Model', 'Model              '))
+        y_lpv_uq    = res_lpv_uq.Y[0].numpy()
+        y_frozen_uq = res_frozen_uq.Y[0].numpy()
+        print('  Secondary reference: Simscape  (driven by u_q -- matched forces)')
+        print(hdr)
         print('  ' + '-' * (len(hdr) - 2))
-        for model_name, y_hat in [('Python LPV',    y_lpv),
-                                   ('Python frozen', y_frozen)]:
+        for model_name, y_hat in [('Python LPV',    y_lpv_uq),
+                                   ('Python frozen', y_frozen_uq)]:
             err_sc = np.abs(y_hat - q_sc)
             for i, ch in enumerate(_CH_NAMES):
                 bfr  = _bfr(q_sc[:, i], y_hat[:, i])

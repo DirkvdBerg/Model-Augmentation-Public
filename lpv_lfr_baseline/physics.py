@@ -110,8 +110,8 @@ P[2, 2] = torch.ones((), dtype=_D)
 # ----------------------------------------------------------------------
 # Sampling constants  (from main.m line 164)
 # ----------------------------------------------------------------------
-fs = torch.tensor(16e3,     dtype=_D)   # sample frequency  [Hz]
-ts = torch.tensor(1 / 16e3, dtype=_D)  # sample period     [s]
+fs = torch.tensor(20e3,     dtype=_D)   # sample frequency  [Hz]
+ts = torch.tensor(1 / 20e3, dtype=_D)  # sample period     [s]
 
 
 def build_M(Y: torch.Tensor) -> torch.Tensor:
