@@ -54,10 +54,17 @@ gantry_2025a.slx
 
 | Signal | Source | How computed | M(Y) updates | Coriolis | Coulomb |
 |--------|--------|--------------|-------------|----------|---------|
-| q | Simscape | Physical component-based simulation (masses, joints, actuators, friction elements as a network). All nonlinear effects included automatically. ode45. | Yes | Yes | Yes |
+| q | Simscape | Physical component-based simulation (masses, joints, actuators, friction elements as a network). Coriolis included automatically. ode45. | Yes | Yes | **No (disabled)** |
 | q1 | gantrySystem.m | Linearized EOM: `dxdt = A(Y)*x + B*u`, integrated by ode45. M(Y) recomputed from x(3) at every sub-step. Velocity-dependent nonlinear terms (Coriolis) not included. | Yes | No | No |
 | q2 | gantrySystemCoriolisCentripetal.m | Full Euler-Lagrange EOM (symbolic derivation), integrated by ode45. Same as q1 but with Coriolis and centripetal terms added back. | Yes | Yes | No |
 | q3 | lsim on frozen G | Frozen discrete SS (ZOH, 16 kHz) at Y=0.3 m fixed. Stepped with lsim post-simulation. NOT in Simulink closed loop. | No | No | No |
+
+**Coulomb status verified by SLX inspection:** `gantry_2025a.slx` is a ZIP archive.
+Reading `simulink/systems/system_47.xml` (the "Single H-gantry" Simscape subsystem) shows
+the three Coulomb gain blocks (cc1 SID=40, cc2 SID=37, ccy SID=32) all carry
+`<P Name="Commented">on</P>`, meaning they are disabled in the Simulink model.
+The Sign blocks and Gain blocks for Coulomb are present in the XML but not active.
+Consequence: `q - q1` residual is purely Coriolis-centripetal, with no Coulomb contamination.
 
 q, q1, q2 each run in their own separate closed loop (same Cfb controller, same reference trajectory) inside Simulink simultaneously.
 q3 is computed after sim() using the same force input — open-loop, not in a feedback loop.
@@ -342,7 +349,7 @@ Stage forces [F_X1, F_X2, F_Y]
 **Signal flow for Simscape path (q):**
 ```
 Stage forces [F_X1, F_X2, F_Y]
-  → Single H-gantry (Simscape, nonlinear, includes Coulomb friction)
+  → Single H-gantry (Simscape, nonlinear, Coriolis included, Coulomb DISABLED)
   → physical outports x1, x2, y (directly stage positions)
   → Mux → To Workspace q
 ```
@@ -355,7 +362,7 @@ All four output signals are in **stage coordinates [X1, X2, Y]** and are directl
 
 | Variable | Source | M(Y) varies? | Coriolis? | Coulomb friction? | Role |
 |----------|--------|-------------|-----------|-------------------|------|
-| `q` | Simscape physical model | Yes | Yes | Yes | Ultimate ground truth |
+| `q` | Simscape physical model | Yes | Yes | **No (disabled)** | Near ground truth (Coriolis only gap vs q1) |
 | `q1` | `gantrySystem.m` + Selector + P.' | Yes (continuous) | No | No | **Primary LPV comparison target** |
 | `q2` | `gantrySystemCoriolisCentripetal.m` + Selector + P.' | Yes (continuous) | Yes | No | Coriolis reference |
 | `q3` | `lsim(G, ...)` in `main.m` post-processing | No (frozen Y=0.3) | No | No | Frozen LTI reference |
@@ -383,8 +390,10 @@ state-space model is the best physics expressible in the required form. Simscape
 only as the evaluation ground truth — the target to measure against after training.
 
 **Coriolis drops out at linearization** (velocity-product terms vanish at zero velocity).
-**Coulomb friction is explicitly excluded** from the SS model (cc1, cc2, ccy in main.m
-are marked "not in SS model" — the Sign+Gain blocks exist only in the Simscape subsystem).
+**Coulomb friction is excluded from all four signals.** cc1, cc2, ccy are defined in main.m
+but marked "not in SS model". The Coulomb Sign+Gain blocks in the Simscape subsystem
+(system_47.xml) carry `<P Name="Commented">on</P>` — they are disabled. Verified by
+inspecting the .slx ZIP archive directly. No signal in the Simulink model includes Coulomb.
 
 **Layered comparison chain — each step isolates exactly one effect:**
 ```
@@ -397,8 +406,8 @@ Frozen LTI vs q1     residual = ZOH error + frozen M(Y) error
 Gap between above    = frozen M(Y) error alone (discretization cancels)
                      = LPV improvement over frozen LTI
 
-DT-LPV vs q          residual = Coriolis + Coulomb + ZOH error
-                     purpose  = define augmentation target
+DT-LPV vs q          residual = Coriolis + ZOH error  (no Coulomb — disabled in Simscape)
+                     purpose  = define augmentation target (Coriolis is the unmodelled gap)
 ```
 
 `q3` is NOT a Simulink workspace variable — it is computed in `main.m` after simulation by
@@ -420,9 +429,9 @@ Simscape multibody model. Inputs: `Fx1, Fx2, Fy`. Outputs: `x1, x2, y`.
 | World Frame | Reference | Inertial reference frame |
 | Mechanism Configuration | Reference | Simscape solver settings |
 | Solver Configuration | Reference | Simulink-Simscape interface |
-| Sign ×3 | Signum | `sign(velocity)` for Coulomb friction |
-| Gain (cc1, cc2, ccy) | Gain | Coulomb friction magnitudes |
-| Sum ×3 | Sum | Applied force = input force − Coulomb friction |
+| Sign ×3 | Signum | `sign(velocity)` for Coulomb friction — **DISABLED** (`Commented=on`) |
+| Gain (cc1, cc2, ccy) | Gain | Coulomb friction magnitudes — **DISABLED** (`Commented=on`) |
+| Sum ×3 | Sum | Applied force = input force − Coulomb friction — **DISABLED** (`Commented=on`) |
 | PS-Simulink Converter ×6 | Reference | Physical signal → Simulink |
 | Simulink-PS Converter ×3 | Reference | Simulink → physical signal |
 

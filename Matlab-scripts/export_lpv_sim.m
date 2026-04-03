@@ -146,21 +146,24 @@ for j = 1:3
 end
 
 % ------------------------------------------------------------------
-% 3. Test trajectory: Y step 0.3 -> 0.1 m, X at rest
+% 3. Test trajectory: Y step 0.3 -> -0.3 m, X at rest
 % ------------------------------------------------------------------
-% Y displacement: 0.2 m in the NEGATIVE direction (same as main.m convention).
-% main.m: r(:,3) = -pvajs + 0.3 moves Y from 0.3 down to -0.1 m.
-% Moving positive (toward 0.5 m) risks reaching the physical beam end-stop.
-% X1=X2 reference stays at zero throughout.
+% Y displacement: 0.6 m in the NEGATIVE direction.
+% Crosses Y=0 where M[0,1] = (m1-m2)*Lb/2 - mh*Y changes sign (~Y=0.018 m).
+% At Y=+0.3: M[0,1] = -3.21 kg.m.  At Y=-0.3: M[0,1] = +3.17 kg.m.
+% This sign flip maximises the frozen-LTI modeling error for LPV demonstration.
+% Moving positive (toward +0.4 m limit) avoided: risks reaching physical end-stop.
+% X1=X2 reference stays at zero throughout (Coriolis ~ 0 when X velocities ~ 0).
 %
-% Parameters chosen for the Y axis (slower than X):
-%   vmax  = 0.3 m/s  -- conservative for Y axis
-%   amax  = 3   m/s^2
-%   jmax  = amax / jerkTime = 3 / 0.05 = 60 m/s^3
-% Expected motion duration: ~1.1 s total.
-pmax_Y    = 0.2;     % [m]    Y displacement magnitude (0.3 -> 0.1 m)
-vmax_Y    = 0.3;     % [m/s]
-amax_Y    = 3.0;     % [m/s^2]
+% Parameters verified against ETEL TELICA datasheet (telica-xyz-0750-0800-data.pdf):
+%   hardware max speed = 2 m/s,  hardware max accel = 50 m/s²,  stroke = ±400 mm
+%   vmax  = 1.0 m/s   -- 50% of hardware max  (realistic P&P operating speed)
+%   amax  = 10  m/s²  -- 20% of hardware max
+%   jmax  = amax / jerkTime = 10 / 0.05 = 200 m/s³
+% Expected motion duration: ~0.7 s total.
+pmax_Y    = 0.6;     % [m]    Y displacement magnitude (0.3 -> -0.3 m)
+vmax_Y    = 1.0;     % [m/s]  50% of hardware max (2 m/s)
+amax_Y    = 10.0;    % [m/s^2] 20% of hardware max (50 m/s^2)
 jerkTime  = 0.05;    % [s]
 jmax_Y    = amax_Y / jerkTime;   % [m/s^3]
 smax      = Inf;
@@ -174,11 +177,11 @@ nt = n_hold + n_move + n_hold;
 t  = ts * (0:nt-1)';
 
 % Reference matrix [X1_ref, X2_ref, Y_ref] in stage coordinates [m].
-% X1, X2: hold at 0.  Y: hold at 0.3, then ramp DOWN to 0.1, then hold at 0.1.
+% X1, X2: hold at 0.  Y: hold at 0.3, then ramp DOWN to -0.3, then hold at -0.3.
 r = zeros(nt, 3);
 r(:, 3) = 0.3;                                         % Y starts at 0.3 m
-r(n_hold + (1:n_move), 3) = 0.3 - pvajs_Y(:, 1);      % Y moves 0.3 -> 0.1 m
-r(n_hold + n_move + 1 : end, 3) = 0.1;                 % Y holds at 0.1 m
+r(n_hold + (1:n_move), 3) = 0.3 - pvajs_Y(:, 1);      % Y moves 0.3 -> -0.3 m
+r(n_hold + n_move + 1 : end, 3) = -0.3;                % Y holds at -0.3 m
 
 f = zeros(nt, 3);  % no feedforward forces
 
