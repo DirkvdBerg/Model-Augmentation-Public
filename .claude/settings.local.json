@@ -48,7 +48,8 @@
       "WebSearch",
       "Bash(grep -v \"^$\")",
       "Bash(PYTHONIOENCODING=utf-8 conda run -n GraduationProject python -m lpv_lfr_baseline.lfr_svd_reduction)",
-      "Bash(PYTHONIOENCODING=utf-8 conda run -n GraduationProject python -m lpv_lfr_baseline.lfr_forward)"
+      "Bash(PYTHONIOENCODING=utf-8 conda run -n GraduationProject python -m lpv_lfr_baseline.lfr_forward)",
+      "Bash(del:*)"
     ]
   }
 }

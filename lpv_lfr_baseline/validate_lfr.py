@@ -3,11 +3,11 @@ validate_lfr.py
 ---------------
 Visual validation and printed diagnostics for the dual-gantry LPV-LFR baseline.
 
-Three plots with accompanying printed summaries:
+Five plots with accompanying printed summaries:
 
   [1] Trajectory comparison
       Python RK4 vs MATLAB quasi-LPV ODE (lpv_sim_varying_y.mat).
-      Y moves 0.3 -> 0.1 m. Expected error ~2e-14 m (same CT ODE, RK4 vs ode45).
+      Y moves 0.3 -> -0.3 m. Expected error ~2e-14 m (same CT ODE, RK4 vs ode45).
 
   [2] Bode at fixed Y = 0.3 m
       Python CT FRF vs MATLAB ZOH DT (gantry_G_matrices.mat).
@@ -17,6 +17,15 @@ Three plots with accompanying printed summaries:
       Python CT FRF at Y in {-0.30, -0.15, 0.00, +0.15, +0.30} m.
       MATLAB ZOH DT at nearest available Y (lpv_matrices.mat) overlaid as dashed.
       Shows the LPV scheduling effect: how dynamics shift with payload position.
+
+  [4] Natural frequencies vs Y
+      The 3 natural frequencies of A_c(Y) swept over Y in [-0.4, +0.4] m.
+      Shows how resonant frequencies shift with payload position — motivates LPV.
+
+  [5] LPV vs frozen LTI trajectory comparison
+      Python LPV and Python frozen LTI (M frozen at Y=0.3), both driven by u_q1.
+      Reference: q1 (MATLAB quasi-LPV). Metrics: BFR, RMSE, Max|error| per channel.
+      Demonstrates LPV scheduling benefit over frozen baseline.
 
 Usage:
     conda run -n GraduationProject python -m lpv_lfr_baseline.validate_lfr
@@ -32,7 +41,8 @@ import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
 from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, fs, ts, build_M
-from lpv_lfr_baseline.lfr_simulate import simulate
+from lpv_lfr_baseline.lfr_forward import lfr_forward
+from lpv_lfr_baseline.lfr_simulate import simulate, SimResult
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -44,10 +54,67 @@ _TS          = ts.item()
 _FREQS_HZ    = np.logspace(np.log10(1.0), np.log10(500.0), 1000)   # 1-500 Hz, log
 _Y_FIXED     = 0.300                              # m, for Plot 2
 _Y_FAMILY    = [-0.30, -0.15, 0.00, 0.15, 0.30]  # m, for Plot 3
+_Y_FREEZE    = 0.300                              # m, frozen LTI operating point (Plot 5)
+_Y_SWEEP     = np.linspace(-0.4, 0.4, 200)        # m, for Plot 4 (nat freqs vs Y)
 _YLIM_DB     = (-80, 20)                          # dB axis limits for Bode plots
 _IN_LABELS   = ['$F_{X1}$', '$F_{X2}$', '$F_Y$']
 _OUT_LABELS  = ['$X_1$',    '$X_2$',    '$Y$']
+_CH_NAMES    = ['X1', 'X2', 'Y ']
 _SEP         = '=' * 72
+
+
+# ---------------------------------------------------------------------------
+# Frozen LTI simulator
+# ---------------------------------------------------------------------------
+
+def simulate_frozen(
+    x0:          torch.Tensor,   # (batch, 6)    initial state in logical coordinates
+    u_seq_stage: torch.Tensor,   # (batch, N, 3) input sequence in stage coordinates
+    Y_freeze:    float = _Y_FREEZE,
+) -> SimResult:
+    """
+    Simulate N steps with M(Y) frozen at Y_freeze — frozen LTI baseline.
+
+    Identical to simulate() except Y passed to lfr_forward is held constant
+    at Y_freeze instead of being read from x[:, 2]. All four RK4 sub-steps
+    use the same frozen Y. Everything else (P transform, RK4 weights) is
+    identical to the LPV version.
+
+    Use for comparison against Python LPV driven by the same u_seq_stage.
+    Do NOT compare against MATLAB q3 — q3 uses its own closed-loop forces.
+    """
+    N     = u_seq_stage.shape[1]
+    batch = x0.shape[0]
+    Y_c   = torch.full((batch,), Y_freeze, dtype=_DTYPE)   # constant Y
+
+    X_list, Y_list, Z_list, W_list = [x0], [], [], []
+    x = x0
+
+    for k in range(N):
+        u_logical = u_seq_stage[:, k, :] @ P.T          # stage -> logical
+
+        # RK4 — frozen Y at every sub-step
+        k1, z, w, y = lfr_forward(x,                   u_logical, Y_c, M0, M1, M2, K, C)
+        x2 = x + (ts / 2) * k1
+        k2, _,  _,  _ = lfr_forward(x2,                u_logical, Y_c, M0, M1, M2, K, C)
+        x3 = x + (ts / 2) * k2
+        k3, _,  _,  _ = lfr_forward(x3,                u_logical, Y_c, M0, M1, M2, K, C)
+        x4 = x + ts * k3
+        k4, _,  _,  _ = lfr_forward(x4,                u_logical, Y_c, M0, M1, M2, K, C)
+        x_next = x + (ts / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+
+        Y_list.append(y @ P)     # logical -> stage
+        Z_list.append(z)
+        W_list.append(w)
+        X_list.append(x_next)
+        x = x_next
+
+    return SimResult(
+        X=torch.stack(X_list, dim=1),
+        Y=torch.stack(Y_list, dim=1),
+        Z=torch.stack(Z_list, dim=1),
+        W=torch.stack(W_list, dim=1),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -199,7 +266,7 @@ def _section_trajectory():
 
     # --- Print ---
     print(_SEP)
-    print('[1/3]  TRAJECTORY  -  Python RK4 vs MATLAB quasi-LPV ODE')
+    print('[1/5]  TRAJECTORY  -  Python RK4 vs MATLAB quasi-LPV ODE')
     print(_SEP)
     print(f'  Source    : lpv_sim_varying_y.mat')
     print(f'  Steps     : {N}       Duration : {N / _FS:.3f} s')
@@ -268,7 +335,7 @@ def _section_bode_fixed_y():
 
     # --- Print ---
     print(_SEP)
-    print(f'[2/3]  BODE  -  Python CT vs MATLAB ZOH DT  at  Y = {_Y_FIXED:.3f} m')
+    print(f'[2/5]  BODE  -  Python CT vs MATLAB ZOH DT  at  Y = {_Y_FIXED:.3f} m')
     print(_SEP)
     print(f'  Source        : gantry_G_matrices.mat')
     print(f'  Freq range    : {_FREQS_HZ[0]:.1f} - {_FREQS_HZ[-1]:.0f} Hz  '
@@ -348,7 +415,7 @@ def _section_bode_varying_y():
 
     # --- Print ---
     print(_SEP)
-    print('[3/3]  Y-VARYING BODE  -  Python CT FRF at 5 scheduling points')
+    print('[3/5]  Y-VARYING BODE  -  Python CT FRF at 5 scheduling points')
     print(_SEP)
     print(f'  Source        : lpv_matrices.mat')
     print(f'  Y values [m]  : {_Y_FAMILY}')
@@ -462,6 +529,266 @@ def _print_freq_shift_summary(H_ct_cache: dict):
 
 
 # ---------------------------------------------------------------------------
+# Section 4: Natural frequencies vs Y
+# ---------------------------------------------------------------------------
+
+def _section_nat_freqs_vs_Y():
+    """
+    Section 4: Natural frequencies vs Y.
+
+    Plots all oscillatory natural frequencies of A_c(Y) over Y ∈ [-0.4, +0.4] m.
+    Shows how resonant frequencies shift with payload position — key motivation
+    for LPV scheduling over a frozen LTI.
+    """
+
+    def _freqs_at_Y(Y_val: float) -> np.ndarray:
+        """
+        Natural frequencies [Hz] from A_c(Y) eigenvalues, sorted ascending.
+        Returns one frequency per conjugate pair (positive imaginary part only).
+        Result is zero-padded to 3 entries for consistent stacking.
+        """
+        Y_t    = torch.tensor(Y_val, dtype=_DTYPE)
+        M_Y    = build_M(Y_t)
+        eye3   = torch.eye(3, dtype=_DTYPE)
+        MYinvK = torch.linalg.solve(M_Y, K).numpy()
+        MYinvC = torch.linalg.solve(M_Y, C).numpy()
+        A_c    = np.block([[np.zeros((3, 3)), np.eye(3)],
+                           [-MYinvK,          -MYinvC  ]])
+        eigs      = np.linalg.eigvals(A_c)
+        pos_imag  = eigs.imag[eigs.imag > 1e-4]          # one per conjugate pair
+        freqs_hz  = np.sort(np.abs(pos_imag) / (2 * np.pi))   # ascending Hz
+        n = len(freqs_hz)
+        if n >= 3:
+            return freqs_hz[-3:]                          # take 3 highest
+        return np.concatenate([np.zeros(3 - n), freqs_hz])   # zero-pad low end
+
+    # Build (n_Y, 3) matrix across the full sweep
+    freq_all = np.array([_freqs_at_Y(y) for y in _Y_SWEEP])   # (200, 3)
+
+    # --- Print ---
+    print(_SEP)
+    print('[4/5]  NATURAL FREQUENCIES vs Y  -  A_c(Y) eigenvalue imaginary parts')
+    print(_SEP)
+    print(f'  Y sweep       : [{_Y_SWEEP[0]:.2f}, {_Y_SWEEP[-1]:.2f}] m  ({len(_Y_SWEEP)} points)')
+    print(f'  Operating pt  : Y = {_Y_FREEZE:.3f} m')
+    print()
+
+    mode_labels = ['f1 (lowest)', 'f2', 'f3 (highest)']
+    key_Y_vals  = [-0.40, 0.00, 0.30, 0.40]
+
+    header = f"  {'Y [m]':>8s}  " + '  '.join([f'{lb:>18s}' for lb in mode_labels])
+    print(header)
+    print('  ' + '-' * 70)
+    for Y_k in key_Y_vals:
+        f     = _freqs_at_Y(Y_k)
+        cells = []
+        for fi in f:
+            cells.append(f'{"(non-osc.)":>15s}' if fi < 0.1 else f'{fi:>13.2f} Hz')
+        note = '  <- operating pt' if abs(Y_k - 0.30) < 0.01 else ''
+        print(f'  {Y_k:>8.2f}  ' + '  '.join(cells) + note)
+    print()
+
+    print('  Range per mode across full Y sweep:')
+    for i, label in enumerate(mode_labels):
+        col = freq_all[:, i]
+        osc = col[col > 0.1]
+        if len(osc) == 0:
+            print(f'  {label:14s}  (non-oscillatory)')
+        else:
+            print(f'  {label:14s}  {osc.min():.2f} - {osc.max():.2f} Hz  '
+                  f'(delta {osc.max() - osc.min():.2f} Hz)')
+    print()
+
+    # --- Plot ---
+    fig, ax = plt.subplots(1, 1, figsize=(9, 5))
+    fig.suptitle('Natural Frequencies vs Payload Position Y  '
+                 '(A_c(Y) eigenvalue imaginary parts)', fontsize=12)
+
+    colors = ['tab:blue', 'tab:orange', 'tab:green']
+    for i, (label, col) in enumerate(zip(mode_labels, colors)):
+        f_col = freq_all[:, i]
+        mask  = f_col > 0.1    # only plot oscillatory segments
+        if mask.any():
+            ax.plot(_Y_SWEEP[mask], f_col[mask], color=col, linewidth=2.0, label=label)
+
+    ax.axvline(_Y_FREEZE, color='gray', linestyle='--', linewidth=1.2,
+               label=f'Operating pt  Y = {_Y_FREEZE:.2f} m')
+    ax.axvline(0.0, color='black', linestyle=':', linewidth=0.8, alpha=0.5)
+
+    ax.set_xlabel('Payload position Y [m]', fontsize=11)
+    ax.set_ylabel('Natural frequency [Hz]', fontsize=11)
+    ax.set_xlim([_Y_SWEEP[0], _Y_SWEEP[-1]])
+    ax.grid(True, alpha=0.35)
+    ax.legend(fontsize=9)
+    plt.tight_layout()
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Section 5: LPV vs frozen LTI trajectory comparison
+# ---------------------------------------------------------------------------
+
+def _bfr(y_ref: np.ndarray, y_hat: np.ndarray) -> float:
+    """Best Fit Rate [%] = max(1 - ||y-yhat||2 / ||y-mean(y)||2, 0) * 100."""
+    num = np.linalg.norm(y_ref - y_hat)
+    den = np.linalg.norm(y_ref - y_ref.mean())
+    if den < 1e-300:
+        return 100.0 if num < 1e-300 else 0.0
+    return float(max(1.0 - num / den, 0.0) * 100.0)
+
+
+def _section_lpv_vs_frozen():
+    """
+    Section 5: LPV vs frozen LTI trajectory comparison.
+
+    Both Python models are driven open-loop by u_q1 from MATLAB (closed-loop
+    forces from the q1 path). Reference is q1 (MATLAB CT quasi-LPV, ode45).
+    Frozen LTI: same physics as LPV but M(Y) frozen at Y=0.3 m.
+
+    Prints BFR, RMSE, Max|error|, Mean|error| per model per channel.
+    Figure: 4 panels — Y(t), positions, |LPV error| log, |frozen error| log.
+    """
+    path = os.path.join(_MAT_BASE, 'lpv_sim_varying_y.mat')
+    if not os.path.exists(path):
+        print(f'  SKIPPED - file not found: {path}')
+        return None
+
+    mat          = loadmat(path)
+    q1_ref       = torch.tensor(mat['q1'],        dtype=_DTYPE)   # (N, 3) stage
+    u_seq_stage  = torch.tensor(mat['u_q1'],      dtype=_DTYPE)   # (N, 3) stage forces
+    t_sim        = mat['t_sim'].squeeze()                          # (N,)
+    q_simscape   = mat['q_simscape'] if 'q_simscape' in mat else None
+    N            = q1_ref.shape[0]
+
+    # Initial state: Y=0.3 m, all else zero (logical coords)
+    x0 = torch.zeros(1, 6, dtype=_DTYPE)
+    x0[0, 2] = 0.3
+
+    u_batch = u_seq_stage.unsqueeze(0)   # (1, N, 3)
+
+    with torch.no_grad():
+        res_lpv    = simulate(x0, u_batch, M0, M1, M2, K, C, P, ts)
+        res_frozen = simulate_frozen(x0, u_batch, Y_freeze=_Y_FREEZE)
+
+    # Stage-coordinate outputs: (N, 3)
+    y_lpv    = res_lpv.Y[0].numpy()      # Python LPV
+    y_frozen = res_frozen.Y[0].numpy()   # Python frozen LTI
+    y_ref    = q1_ref.numpy()            # MATLAB q1 (reference)
+
+    err_lpv    = np.abs(y_lpv    - y_ref)
+    err_frozen = np.abs(y_frozen - y_ref)
+
+    # Y(t) scheduling variable from LPV state
+    Y_traj = res_lpv.X[0, :N, 2].numpy()   # logical x[:,2] = Y position
+
+    # --- Print ---
+    print(_SEP)
+    print('[5/5]  LPV vs FROZEN LTI  -  open-loop replay of u_q1')
+    print(_SEP)
+    print(f'  Source    : lpv_sim_varying_y.mat')
+    print(f'  Steps     : {N}       Duration : {N / _FS:.3f} s')
+    print(f'  Y range   : {Y_traj.min():.3f} to {Y_traj.max():.3f} m')
+    print(f'  Frozen at : Y = {_Y_FREEZE:.3f} m')
+    print()
+
+    col_w = 14
+    hdr   = (f"  {'Model':<20s}  {'Channel':<8s}  "
+             f"{'BFR [%]':>{col_w}}  {'RMSE [m]':>{col_w}}  "
+             f"{'Max|e| [m]':>{col_w}}  {'Mean|e| [m]':>{col_w}}")
+    print(hdr)
+    print('  ' + '-' * (len(hdr) - 2))
+
+    for model_name, y_hat, err in [('Python LPV',    y_lpv,    err_lpv),
+                                    ('Python frozen', y_frozen, err_frozen)]:
+        for i, ch in enumerate(_CH_NAMES):
+            bfr  = _bfr(y_ref[:, i], y_hat[:, i])
+            rmse = float(np.sqrt(np.mean((y_ref[:, i] - y_hat[:, i])**2)))
+            maxe = float(err[:, i].max())
+            mne  = float(err[:, i].mean())
+            print(f"  {model_name:<20s}  {ch:<8s}  "
+                  f"{bfr:{col_w}.4f}  {rmse:{col_w}.3e}  "
+                  f"{maxe:{col_w}.3e}  {mne:{col_w}.3e}")
+        print()
+
+    # Simscape secondary reference (optional)
+    if q_simscape is not None:
+        q_sc = q_simscape.astype(np.float64)
+        print('  Secondary reference: Simscape (Coulomb disabled, includes Coriolis)')
+        print(hdr.replace('Channel', 'vs     ').replace('Model', 'Model              '))
+        print('  ' + '-' * (len(hdr) - 2))
+        for model_name, y_hat in [('Python LPV',    y_lpv),
+                                   ('Python frozen', y_frozen)]:
+            err_sc = np.abs(y_hat - q_sc)
+            for i, ch in enumerate(_CH_NAMES):
+                bfr  = _bfr(q_sc[:, i], y_hat[:, i])
+                rmse = float(np.sqrt(np.mean((q_sc[:, i] - y_hat[:, i])**2)))
+                maxe = float(err_sc[:, i].max())
+                mne  = float(err_sc[:, i].mean())
+                print(f"  {model_name:<20s}  {ch:<8s}  "
+                      f"{bfr:{col_w}.4f}  {rmse:{col_w}.3e}  "
+                      f"{maxe:{col_w}.3e}  {mne:{col_w}.3e}")
+            print()
+
+    # --- Plot ---
+    n_panels = 4
+    fig, axes = plt.subplots(n_panels, 1, figsize=(13, 12), sharex=True)
+    fig.suptitle('LPV vs Frozen LTI  |  open-loop replay of u_q1  |  ref = MATLAB q1',
+                 fontsize=12)
+
+    # Panel 1: Y(t) scheduling variable
+    ax = axes[0]
+    ax.plot(t_sim[:N], y_ref[:, 2],  color='tab:orange', linestyle='--',
+            linewidth=1.5, label='q1 Y [ref]')
+    ax.plot(t_sim[:N], Y_traj,       color='tab:blue',   linewidth=1.0,
+            label='Python LPV Y', alpha=0.85)
+    ax.axhline(_Y_FREEZE, color='gray', linestyle=':', linewidth=1.0,
+               label=f'Frozen at {_Y_FREEZE:.2f} m')
+    ax.set_ylabel('Y [m]')
+    ax.set_title('Scheduling variable Y(t)')
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=8, loc='upper right')
+
+    # Panel 2: position outputs — all 3 channels
+    ax = axes[1]
+    ch_colors = ['tab:blue', 'tab:orange', 'tab:green']
+    for i, (ch, col) in enumerate(zip(['X1', 'X2', 'Y'], ch_colors)):
+        ax.plot(t_sim[:N], y_ref[:, i],    color=col, linestyle='--',
+                linewidth=1.5, label=f'q1 {ch}',         alpha=0.9)
+        ax.plot(t_sim[:N], y_lpv[:, i],    color=col, linestyle='-',
+                linewidth=1.0, label=f'LPV {ch}',         alpha=0.85)
+        ax.plot(t_sim[:N], y_frozen[:, i], color=col, linestyle=':',
+                linewidth=1.2, label=f'Frozen {ch}',      alpha=0.7)
+    ax.set_ylabel('Position [m]')
+    ax.set_title('Position outputs  (-- q1 ref  |  solid LPV  |  dotted frozen)')
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=7, loc='upper right', ncol=3)
+
+    # Panel 3: |error| LPV vs q1 — log scale
+    ax = axes[2]
+    for i, (ch, col) in enumerate(zip(['X1', 'X2', 'Y'], ch_colors)):
+        ax.semilogy(t_sim[:N], err_lpv[:, i] + 1e-20, color=col,
+                    linewidth=1.2, label=ch)
+    ax.set_ylabel('|error| [m]')
+    ax.set_title('|Python LPV - q1|  per channel')
+    ax.grid(True, which='both', alpha=0.3)
+    ax.legend(fontsize=8)
+
+    # Panel 4: |error| frozen vs q1 — log scale
+    ax = axes[3]
+    for i, (ch, col) in enumerate(zip(['X1', 'X2', 'Y'], ch_colors)):
+        ax.semilogy(t_sim[:N], err_frozen[:, i] + 1e-20, color=col,
+                    linewidth=1.2, label=ch)
+    ax.set_ylabel('|error| [m]')
+    ax.set_title('|Python frozen LTI - q1|  per channel')
+    ax.set_xlabel('Time [s]')
+    ax.grid(True, which='both', alpha=0.3)
+    ax.legend(fontsize=8)
+
+    plt.tight_layout()
+    return fig
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -470,8 +797,10 @@ if __name__ == '__main__':
     _section_trajectory()
     _section_bode_fixed_y()
     _section_bode_varying_y()
+    _section_nat_freqs_vs_Y()
+    _section_lpv_vs_frozen()
 
     print(_SEP)
-    print('All plots generated. Displaying...')
+    print('All 5 plots generated. Displaying...')
     print(_SEP)
     plt.show()
