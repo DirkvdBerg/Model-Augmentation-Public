@@ -252,7 +252,7 @@ fprintf('  Range     : %.1f mm\n', (max(Y_trajectory) - min(Y_trajectory)) * 1e3
 % ------------------------------------------------------------------
 % 8. Save
 % ------------------------------------------------------------------
-out_dir  = fullfile(pwd, 'Matlab-output');
+out_dir  = fullfile(fileparts(mfilename('fullpath')), '..', 'Matlab-output');
 out_path = fullfile(out_dir, 'lpv_sim_varying_y.mat');
 
 if ~exist(out_dir, 'dir')
