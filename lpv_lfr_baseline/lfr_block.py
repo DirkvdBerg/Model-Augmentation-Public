@@ -77,15 +77,16 @@ class LFRBaselineBlock(_BASE):
             self.nz = 9
             self.nw = 18
 
-        # Physical parameters as plain attributes.
-        # For GPU training: replace with self.register_buffer(name, tensor).
-        self._M0 = M0
-        self._M1 = M1
-        self._M2 = M2
-        self._K  = K
-        self._C  = C
-        self._P  = P
-        self._ts = ts
+        # Physical parameters registered as buffers so .to(device) / .cuda()
+        # moves them automatically alongside the module.
+        # Access pattern (self._M0 etc.) is identical to plain attributes.
+        self.register_buffer('_M0', M0)
+        self.register_buffer('_M1', M1)
+        self.register_buffer('_M2', M2)
+        self.register_buffer('_K',  K)
+        self.register_buffer('_C',  C)
+        self.register_buffer('_P',  P)
+        self.register_buffer('_ts', ts)
 
     def forward(self, z_in: Tensor) -> Tensor:
         """
