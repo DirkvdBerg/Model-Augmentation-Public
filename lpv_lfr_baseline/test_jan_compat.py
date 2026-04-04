@@ -501,37 +501,42 @@ if __name__ == '__main__':
     print(f"\nCheck D: {'PASS' if status else 'FAIL'}")
 
     # ------------------------------------------------------------------
-    # Check E — Multi-step BPTT (3 steps)
+    # Check E — Multi-step BPTT (200 steps)
     #
-    # x0 → xp1 → xp2 → xp3.  Gradient must reach x0 through all steps.
-    # Single-step BPTT (Check 4) misses truncation at step boundaries.
+    # x0 → xp1 → ... → xp200.  Gradient must reach x0 with meaningful
+    # magnitude. At ts=5e-5 s and least-damped mode σ≈-1, the DT spectral
+    # radius is ρ ≈ exp(-1*5e-5) ≈ 0.99995. Over 200 steps:
+    # ρ^200 ≈ 0.99, so gradients should be essentially unattenuated.
+    # We check: (a) gradient reaches x0, (b) norm > 0.01 (not vanished).
     # ------------------------------------------------------------------
     print()
     print("=" * 60)
-    print("Check E: Multi-step BPTT — gradient flows through 3 steps")
+    print("Check E: Multi-step BPTT — gradient flows through 200 steps")
     print("=" * 60)
 
+    N_E = 200
     ic_e, _ = build_baseline_interconnect()
 
     x0_e = torch.zeros(1, 6, requires_grad=True).float()
     x0_e.data[:, 2] = 0.3
     u0_e = torch.zeros(1, 3).float()
 
-    _, xp1_e = ic_e.forward(x0_e,  u0_e)
-    _, xp2_e = ic_e.forward(xp1_e, u0_e)
-    _, xp3_e = ic_e.forward(xp2_e, u0_e)
-    xp3_e.sum().backward()
+    xp_e = x0_e
+    for _ in range(N_E):
+        _, xp_e = ic_e.forward(xp_e, u0_e)
+    xp_e.sum().backward()
 
-    grad_ok_e    = x0_e.grad is not None and x0_e.grad.norm().item() > 0
-    graph_ok_xp1 = xp1_e.grad_fn is not None
-    graph_ok_xp2 = xp2_e.grad_fn is not None
+    grad_exists  = x0_e.grad is not None
+    grad_norm    = x0_e.grad.norm().item() if grad_exists else 0.0
+    grad_healthy = grad_norm > 0.01   # not vanished after 200 steps
+    graph_ok     = xp_e.grad_fn is not None
 
-    print(f"  x0.grad is not None after 3-step backward : {x0_e.grad is not None}")
-    if x0_e.grad is not None:
-        print(f"  x0.grad norm                              : {x0_e.grad.norm().item():.6e}")
-    print(f"  xp1 has grad_fn (graph not truncated)     : {graph_ok_xp1}")
-    print(f"  xp2 has grad_fn (graph not truncated)     : {graph_ok_xp2}")
-    status = grad_ok_e and graph_ok_xp1 and graph_ok_xp2
+    print(f"  Steps                                     : {N_E}")
+    print(f"  x0.grad is not None                       : {grad_exists}")
+    print(f"  x0.grad norm                              : {grad_norm:.6e}")
+    print(f"  grad norm > 0.01 (not vanished)           : {grad_healthy}")
+    print(f"  xp has grad_fn (graph not truncated)      : {graph_ok}")
+    status = grad_exists and grad_healthy and graph_ok
     results['Check E (multi-step BPTT)'] = status
     print(f"\nCheck E: {'PASS' if status else 'FAIL'}")
 

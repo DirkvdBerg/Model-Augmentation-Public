@@ -68,11 +68,11 @@ class LFRBaselineBlock(_BASE):
     nw = 18 : output = cat([x_next (6), z_lfr (6), w_lfr (6)], dim=1)
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         if _BASE.__name__ == 'Block':
-            super().__init__(nz=9, nw=18, *args, **kwargs)
+            super().__init__(nz=9, nw=18, **kwargs)
         else:
-            super().__init__(*args, **kwargs)
+            super().__init__(**kwargs)
             self.nz = 9
             self.nw = 18
 
