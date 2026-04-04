@@ -81,6 +81,7 @@ def rk4_step(
     y is returned in logical coordinates — apply @ P for stage output.
     """
     # k1 — also records z, w, y at x[k] (start of step)
+    # x[:, 2] = Y in both logical [X, Θ, Y] and stage [X1, X2, Y] — P's third row is [0,0,1]
     k1, z, w, y = lfr_forward(x,                   u_logical, x[:, 2],                   M0, M1, M2, K, C)
 
     # k2 — Y from intermediate state

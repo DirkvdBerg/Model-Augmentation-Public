@@ -77,7 +77,9 @@ def lfr_forward(
 
     # Step 2: net force in logical coordinates  →  (batch, 3)
     #   M(Y) @ qdotdot = -K @ q - C @ qdot + u
-    fnet = -(x[:, :3] @ K) - (x[:, 3:] @ C) + u
+    #   Row-vector form: fnet = q_row @ (-K.T) + qdot_row @ (-C.T) + u_row
+    #   .T is correct for any K, C (no-op when symmetric, as they currently are).
+    fnet = -(x[:, :3] @ K.T) - (x[:, 3:] @ C.T) + u
 
     # Step 3: resolve algebraic loop  →  (batch, 3)
     #   v = M_Y^{-1} @ fnet  (batched solve; differentiable)

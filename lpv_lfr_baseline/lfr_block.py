@@ -111,6 +111,7 @@ class LFRBaselineBlock(_BASE):
         u_logical = u_stage @ self._P.T      # (batch, 3)
 
         # One RK4 step — Y self-scheduled inside rk4_step via x[:, 2]
+        # x[:, 2] = Y in both logical [X, Θ, Y] and stage [X1, X2, Y] — P's third row is [0,0,1]
         x_next, z_lfr, w_lfr, _ = rk4_step(
             x, u_logical,
             self._M0, self._M1, self._M2, self._K, self._C, self._ts,
