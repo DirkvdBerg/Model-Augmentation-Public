@@ -1,0 +1,68 @@
+\contentsline {section}{\numberline {1}Introduction}{3}{section.1}%
+\contentsline {section}{\numberline {2}Plant Model}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Equations of motion}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Physical parameters}{3}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Mass matrix decomposition}{3}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Constant matrices}{4}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}What is included and excluded}{5}{subsection.2.5}%
+\contentsline {paragraph}{Included:}{5}{section*.3}%
+\contentsline {paragraph}{Excluded (by design, \texttt {D-022}):}{5}{section*.4}%
+\contentsline {subsection}{\numberline {2.6}Coordinate systems}{5}{subsection.2.6}%
+\contentsline {subsection}{\numberline {2.7}M(Y) invertibility}{5}{subsection.2.7}%
+\contentsline {section}{\numberline {3}LFR Formulation}{6}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Why LFR?}{6}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}The scheduling dependence}{6}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}The resolve-and-retain forward pass}{6}{subsection.3.3}%
+\contentsline {paragraph}{Step 1: Build $M(Y)$ per batch.}{6}{section*.5}%
+\contentsline {paragraph}{Step 2: Compute net generalised force.}{6}{section*.6}%
+\contentsline {paragraph}{Step 3: Resolve the algebraic loop.}{6}{section*.7}%
+\contentsline {paragraph}{Step 4: Latent variable chain from $\Delta (Y) = Y \cdot I_6$.}{7}{section*.8}%
+\contentsline {paragraph}{Step 5: Assemble LFR latent signals.}{7}{section*.9}%
+\contentsline {paragraph}{Why $z$ and $w$ are retained.}{7}{section*.10}%
+\contentsline {paragraph}{Step 6: State derivative---direct from physics (\texttt {D-026}).}{7}{section*.11}%
+\contentsline {paragraph}{Step 7: Output.}{7}{section*.12}%
+\contentsline {subsection}{\numberline {3.4}Self-scheduling: quasi-LPV}{8}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Mathematical verification}{8}{subsection.3.5}%
+\contentsline {section}{\numberline {4}Numerical Integration}{8}{section.4}%
+\contentsline {subsection}{\numberline {4.1}RK4 choice (\texttt {D-018})}{8}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}RK4 formula with self-scheduling}{8}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Why not ZOH pre-discretisation?}{9}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Why not Euler?}{9}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Why not ODE45?}{9}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Step size and sample rate}{9}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}Numerical precision}{9}{subsection.4.7}%
+\contentsline {section}{\numberline {5}Jan's Augmentation Framework Interface}{9}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Block base class contract}{9}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}LFRBaselineBlock: nz = 9, nw = 18}{10}{subsection.5.2}%
+\contentsline {paragraph}{Input packing:}{10}{section*.13}%
+\contentsline {paragraph}{Output packing:}{10}{section*.14}%
+\contentsline {subsection}{\numberline {5.3}Stateless design}{10}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}float32/float64 boundary}{10}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}Naming convention}{10}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}How augmentation connects}{11}{subsection.5.6}%
+\contentsline {subsection}{\numberline {5.7}Coordinate transform at the boundary (\texttt {D-027})}{11}{subsection.5.7}%
+\contentsline {subsection}{\numberline {5.8}Physical parameters as attributes}{11}{subsection.5.8}%
+\contentsline {section}{\numberline {6}Comparison Strategy}{11}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Open-loop replay rationale}{11}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Reference signal: why q1}{11}{subsection.6.2}%
+\contentsline {paragraph}{Why NOT q3.}{11}{section*.15}%
+\contentsline {paragraph}{Why NOT Simscape as primary.}{12}{section*.16}%
+\contentsline {subsection}{\numberline {6.3}Frozen LTI baseline}{12}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Simscape secondary comparison}{12}{subsection.6.4}%
+\contentsline {subsection}{\numberline {6.5}Metrics}{12}{subsection.6.5}%
+\contentsline {section}{\numberline {7}Trajectory Design}{12}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Y motion: 0.3 to $-$0.3 m}{12}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}X1, X2 at rest}{12}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Hardware limits}{13}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Why this trajectory maximises the frozen LTI error}{13}{subsection.7.4}%
+\contentsline {section}{\numberline {8}MATLAB Data Generation Pipeline}{13}{section.8}%
+\contentsline {subsection}{\numberline {8.1}export\_lpv\_matrices.m --- discrete A(Y), B(Y) at 50 operating points}{13}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}export\_lpv\_sim.m --- closed-loop varying-Y Simulink simulation}{13}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}verify\_exports.m --- automated validation of both exports}{15}{subsection.8.3}%
+\contentsline {paragraph}{lpv\_matrices checks (6 checks):}{15}{section*.20}%
+\contentsline {paragraph}{lpv\_sim\_varying\_y checks (9 checks):}{15}{section*.21}%
+\contentsline {subsection}{\numberline {8.4}Other files in Matlab-output/}{15}{subsection.8.4}%
+\contentsline {section}{\numberline {9}Results}{15}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Summary table}{15}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Natural frequencies vs Y}{15}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}Key findings}{16}{subsection.9.3}%

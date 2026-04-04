@@ -1,0 +1,1021 @@
+% lpv-lfr-baseline.tex
+% --------------------
+% Comprehensive documentation of the LPV-LFR baseline implementation
+% for the dual-gantry first-principles model.
+%
+% Compile: pdflatex lpv-lfr-baseline.tex  (twice, for cross-references)
+%
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{caption}
+
+\geometry{margin=2.5cm}
+\hypersetup{colorlinks=true, linkcolor=blue!70!black, citecolor=green!50!black, urlcolor=blue!60!black}
+
+% Shorthand commands
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\inv}{^{-1}}
+\newcommand{\T}{^{\!\top}}
+\newcommand{\dt}{\Delta t}
+\newcommand{\ts}{t_s}
+\newcommand{\fs}{f_s}
+\newcommand{\xdot}{\dot{x}}
+\newcommand{\qdot}{\dot{q}}
+\newcommand{\qddot}{\ddot{q}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+\newcommand{\decref}[1]{\texttt{D-#1}}
+\newcommand{\pyfile}[1]{\texttt{#1}}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue!70!black},
+  commentstyle=\color{green!50!black},
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+}
+
+\title{LPV-LFR Baseline Model for the ASMPT Dual-Gantry:\\
+Implementation, Design Choices, and Verification}
+\author{Dirk van den Berg}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+\newpage
+
+% ======================================================================
+\section{Introduction}
+\label{sec:intro}
+% ======================================================================
+
+This document describes the implementation of the Linear Parameter Varying (LPV) baseline
+model for the ASMPT dual-gantry positioning stage, realised in the Linear Fractional
+Representation (LFR) framework. The baseline serves as the non-trainable first-principles
+component in the augmented model architecture proposed by Drenth~(2025, Ch.~5, eq.~5.1).
+
+The baseline captures the Y-dependent inertia coupling of the gantry through the mass matrix
+$M(Y)$, which is polynomial in the payload position~$Y$. Effects not present in the
+Garc\'ia-Herreros first-principles equations---Coulomb friction, Coriolis/centripetal forces,
+resonance dynamics---are excluded from the baseline by design (\decref{022}) and belong in the
+augmentation component.
+
+The document is structured as follows.
+\Cref{sec:plant} defines the plant model and physical parameters.
+\Cref{sec:lfr} derives the LFR formulation and the resolve-and-retain forward pass.
+\Cref{sec:integration} explains the RK4 numerical integration choice.
+\Cref{sec:framework} describes the interface with Jan's augmentation framework.
+\Cref{sec:comparison} presents the comparison strategy for validation.
+\Cref{sec:trajectory} discusses trajectory design.
+\Cref{sec:matlab} describes the MATLAB data generation pipeline.
+\Cref{sec:results} summarises the validation results.
+
+
+% ======================================================================
+\section{Plant Model}
+\label{sec:plant}
+% ======================================================================
+
+\subsection{Equations of motion}
+
+The dual-gantry is modelled as a 3-DOF system in logical coordinates
+$q = [X,\, \Theta,\, Y]\T$, where $X$ is the rigid-body translation of the cross-arm,
+$\Theta$ is the rotational deflection angle, and $Y$ is the payload position along the
+cross-arm. The equation of motion is:
+\begin{equation}
+\label{eq:eom}
+M(Y)\, \qddot = -K\, q - C\, \qdot + u,
+\end{equation}
+where $u = [F_X,\, \tau_\Theta,\, F_Y]\T$ are the generalised forces in logical coordinates.
+The mass matrix $M(Y)$ depends on the scheduling variable $Y$ (payload position); the
+stiffness matrix $K$ and viscous damping matrix $C$ are constant.
+
+\subsection{Physical parameters}
+\label{sec:params}
+
+All parameters are taken from \texttt{kamtin-fp-model/03 Simulink gantry/main.m},
+which is the immutable ground truth (\decref{002}). \Cref{tab:params} lists all values.
+
+\begin{table}[ht]
+\centering
+\caption{Physical parameters of the dual-gantry model.}
+\label{tab:params}
+\begin{tabular}{llrl}
+\toprule
+Symbol & Description & Value & Unit \\
+\midrule
+$m_b$  & Mass of moving cross-arm        & 22.8   & kg \\
+$m_h$  & Mass of payload (Y-axis)        & 10.1   & kg \\
+$m_1$  & Mass of actuator X1             & 10.2   & kg \\
+$m_2$  & Mass of actuator X2             & 10.7   & kg \\
+$J_b$  & Rotary inertia of cross-arm     & 1.0    & kg\,m$^2$ \\
+$J_h$  & Rotary inertia of payload       & 0.05   & kg\,m$^2$ \\
+$c_{g1}$ & Viscous friction X1           & 14.5   & N/(m/s) \\
+$c_{g2}$ & Viscous friction X2           & 20.3   & N/(m/s) \\
+$c_y$    & Viscous friction Y            & 10.0   & N/(m/s) \\
+$c_{b1}$ & Viscous friction joint 1      & 9.0    & Nm/(rad/s) \\
+$c_{b2}$ & Viscous friction joint 2      & 9.0    & Nm/(rad/s) \\
+$k_{b1}$ & Stiffness joint 1             & 1987.5 & Nm/rad \\
+$k_{b2}$ & Stiffness joint 2             & 1987.5 & Nm/rad \\
+$L_b$    & Length of cross-arm           & 0.725  & m \\
+$d$      & Distance cross-arm to payload & 0.1    & m \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Python implementation: \pyfile{lpv\_lfr\_baseline/physics.py}, lines 27--46.
+
+\subsection{Mass matrix decomposition}
+\label{sec:mass_matrix}
+
+The mass matrix is polynomial in $Y$:
+\begin{equation}
+\label{eq:MY}
+M(Y) = M_0 + M_1 Y + M_2 Y^2,
+\end{equation}
+with the full $3 \times 3$ form:
+\begin{equation}
+\label{eq:MY_full}
+M(Y) = \begin{bmatrix}
+m_1 + m_2 + m_b + m_h & \frac{(m_1 - m_2) L_b}{2} - m_h Y & 0 \\[4pt]
+\frac{(m_1 - m_2) L_b}{2} - m_h Y & J_b + J_h + \frac{(m_1 + m_2) L_b^2}{4} + m_h d^2 + m_h Y^2 & -m_h d \\[4pt]
+0 & -m_h d & m_h
+\end{bmatrix}.
+\end{equation}
+The decomposition by polynomial degree in $Y$:
+\begin{align}
+\label{eq:M0}
+M_0 &= \begin{bmatrix}
+m_1 + m_2 + m_b + m_h & \frac{(m_1 - m_2) L_b}{2} & 0 \\[3pt]
+\frac{(m_1 - m_2) L_b}{2} & J_b + J_h + \frac{(m_1 + m_2) L_b^2}{4} + m_h d^2 & -m_h d \\[3pt]
+0 & -m_h d & m_h
+\end{bmatrix}, \\[6pt]
+\label{eq:M1}
+M_1 &= \begin{bmatrix}
+0 & -m_h & 0 \\
+-m_h & 0 & 0 \\
+0 & 0 & 0
+\end{bmatrix}, \\[6pt]
+\label{eq:M2}
+M_2 &= \begin{bmatrix}
+0 & 0 & 0 \\
+0 & m_h & 0 \\
+0 & 0 & 0
+\end{bmatrix}.
+\end{align}
+Python implementation: \pyfile{physics.py}, lines 62--78.
+
+\subsection{Constant matrices}
+
+The viscous damping matrix $C$ (no Y-dependence):
+\begin{equation}
+\label{eq:C}
+C = \begin{bmatrix}
+c_{g1} + c_{g2} & \frac{(c_{g1} - c_{g2}) L_b}{2} & 0 \\[3pt]
+\frac{(c_{g1} - c_{g2}) L_b}{2} & c_{b1} + c_{b2} + \frac{(c_{g1} + c_{g2}) L_b^2}{4} & 0 \\[3pt]
+0 & 0 & c_y
+\end{bmatrix}.
+\end{equation}
+The stiffness matrix $K$ (no Y-dependence):
+\begin{equation}
+\label{eq:K}
+K = \begin{bmatrix}
+0 & 0 & 0 \\
+0 & k_{b1} + k_{b2} & 0 \\
+0 & 0 & 0
+\end{bmatrix}.
+\end{equation}
+Note that $K$ has zero rows for X and Y---these are rigid-body modes with no spring restoring
+force in those directions.
+
+\subsection{What is included and excluded}
+
+\paragraph{Included:}
+\begin{itemize}[nosep]
+\item Y-dependent inertia coupling through $M(Y)$
+\item Viscous damping $C$ (constant)
+\item Joint stiffness $K$ (constant)
+\end{itemize}
+
+\paragraph{Excluded (by design, \decref{022}):}
+\begin{itemize}[nosep]
+\item \textbf{Coulomb friction}: The Simulink Simscape model has Coulomb friction gains
+  (\texttt{cc1}, \texttt{cc2}, \texttt{ccy}) present in the subsystem XML, but they carry
+  \texttt{<P Name="Commented">on</P>}---they are \emph{disabled}. Verified by inspecting the
+  \texttt{.slx} ZIP archive: \texttt{system\_47.xml} lists the Coulomb gain blocks as commented
+  out. The quasi-LPV model \texttt{gantrySystem.m} (which produces the \texttt{q1} reference)
+  does not include Coulomb friction.
+\item \textbf{Coriolis/centripetal forces}: Not present in \texttt{gantrySystem.m}. These
+  forces arise from the full nonlinear multibody equations (Simscape includes them) but are
+  absent from the linearised quasi-LPV ODE. They belong in the augmentation (\decref{022}).
+\item \textbf{Resonance dynamics}: Higher-order flexible dynamics not captured by the 3-DOF
+  rigid-body model. To be addressed in the augmentation (\decref{024}).
+\end{itemize}
+
+\subsection{Coordinate systems}
+\label{sec:coords}
+
+The physics equations~\eqref{eq:eom} are formulated in \emph{logical coordinates}
+$q = [X, \Theta, Y]\T$. However, experimental data from the real gantry is measured in
+\emph{stage coordinates} $q_s = [X_1, X_2, Y]\T$ (encoder positions and amplifier forces).
+The model operates in stage coordinates at the external interface (\decref{006}).
+
+The transform between coordinate systems is given by the matrix $P$:
+\begin{equation}
+\label{eq:P}
+P = \begin{bmatrix}
+1 & 1 & 0 \\
+L_b/2 & -L_b/2 & 0 \\
+0 & 0 & 1
+\end{bmatrix}
+= \begin{bmatrix}
+1 & 1 & 0 \\
+0.3625 & -0.3625 & 0 \\
+0 & 0 & 1
+\end{bmatrix}.
+\end{equation}
+The relationships are:
+\begin{align}
+u_{\text{logical}} &= P \cdot u_{\text{stage}}, \label{eq:u_transform} \\
+y_{\text{stage}} &= P\T \cdot y_{\text{logical}}. \label{eq:y_transform}
+\end{align}
+In the batched row-vector convention used by the Python code:
+\begin{align}
+\texttt{u\_logical} &= \texttt{u\_stage} \;\texttt{@}\; P\T, \\
+\texttt{y\_stage} &= \texttt{y\_logical} \;\texttt{@}\; P.
+\end{align}
+Python implementation: \pyfile{physics.py}, lines 99--108.
+
+\subsection{M(Y) invertibility}
+\label{sec:invertibility}
+
+The forward pass requires $M(Y)\inv$ at every timestep. $M(Y)$ is a physical mass matrix and
+therefore symmetric positive definite for all physically realisable configurations. This was
+verified numerically (\decref{021}): singular values of $M(Y)$ remain bounded away from zero
+for $Y \in [-0.4,\, 0.4]\;\text{m}$ (the full operational range with margin). The determinant
+$\det(M(Y))$ was compared against MATLAB at 50 $Y$ values, matching to better than
+$10^{-8}$ (\pyfile{physics.py}, Check~2).
+
+
+% ======================================================================
+\section{LFR Formulation}
+\label{sec:lfr}
+% ======================================================================
+
+\subsection{Why LFR?}
+
+The supervisor confirmed (\decref{005}, updated 2026-03-22) that the baseline should use the
+LFR structure. Drenth (2025, Ch.~5, eq.~5.1) assumes the baseline is available in LPV-LFR
+form. The LFR parameterisation allows the learned augmentation correction to vary with $Y$ in
+a principled way through the $\Delta$ block, and it separates the LTI dynamics from the
+parameter-varying scheduling structure.
+
+\subsection{The scheduling dependence}
+
+From~\eqref{eq:eom}, the continuous-time state-space form is:
+\begin{equation}
+\label{eq:xdot}
+\xdot = \begin{bmatrix} \qdot \\ \qddot \end{bmatrix}
+= \begin{bmatrix} \qdot \\ M(Y)\inv\bigl(-K q - C \qdot + u\bigr) \end{bmatrix}
+= \underbrace{\begin{bmatrix} 0 & I \\ -M(Y)\inv K & -M(Y)\inv C \end{bmatrix}}_{A_c(Y)}
+x + \underbrace{\begin{bmatrix} 0 \\ M(Y)\inv \end{bmatrix}}_{B_c(Y)} u.
+\end{equation}
+Because $M(Y) = M_0 + M_1 Y + M_2 Y^2$ is polynomial in $Y$, the inverse $M(Y)\inv$ is
+\emph{rational} in $Y$---not polynomial, not affine. This rational dependence is exactly what
+the LFR is designed to handle: it factors the rational function into an LTI part (constant
+matrices) and a structured uncertainty/scheduling block $\Delta(Y)$.
+
+\subsection{The resolve-and-retain forward pass}
+\label{sec:forward_pass}
+
+The forward pass is implemented in \pyfile{lfr\_forward.py} as a 7-step sequence. The key
+insight is the \emph{resolve-and-retain} approach: the algebraic loop created by $M(Y)\inv$
+is resolved by solving the linear system, and the intermediate latent variables $z$ and $w$
+are retained as explicit tensors (not discarded). This is what distinguishes the LFR form from
+a simple collapsed evaluation of $A_c(Y) x + B_c(Y) u$---the latent signals are the
+connection points where the augmentation network will attach.
+
+\paragraph{Step 1: Build $M(Y)$ per batch.}
+\begin{equation}
+M(Y) = M_0 + M_1 Y + M_2 Y^2 \quad \in \R^{B \times 3 \times 3}
+\end{equation}
+where $B$ is the batch size.
+
+\paragraph{Step 2: Compute net generalised force.}
+\begin{equation}
+f_{\text{net}} = -K q - C \qdot + u \quad \in \R^{B \times 3}
+\end{equation}
+where $q = x_{0:3}$ and $\qdot = x_{3:6}$ are the position and velocity components of the
+state vector $x \in \R^6$.
+
+\paragraph{Step 3: Resolve the algebraic loop.}
+\begin{equation}
+\label{eq:v_solve}
+v = M(Y)\inv f_{\text{net}} \quad \in \R^{B \times 3}
+\end{equation}
+Implemented via \texttt{torch.linalg.solve(M\_Y, fnet)}, which is numerically stable and
+differentiable. This is the acceleration $\qddot = M(Y)\inv f_{\text{net}}$.
+
+The solve is the resolution of the algebraic loop: $M(Y)$ depends on $Y$, which is a state,
+and $v$ feeds back into the state derivative. Solving the linear system computes the
+unique $v$ that satisfies $M(Y) v = f_{\text{net}}$ without any iterative procedure---the
+system is always well-posed because $M(Y)$ is invertible (\cref{sec:invertibility}).
+
+\paragraph{Step 4: Latent variable chain from $\Delta(Y) = Y \cdot I_6$.}
+\begin{align}
+v_1 &= Y \cdot v \quad \in \R^{B \times 3}, \\
+v_2 &= Y \cdot v_1 = Y^2 \cdot v \quad \in \R^{B \times 3}.
+\end{align}
+These are the scheduling-dependent quantities that carry the $Y$ and $Y^2$ dependence of
+$M(Y)\inv$ into the LFR structure.
+
+\paragraph{Step 5: Assemble LFR latent signals.}
+\begin{align}
+z &= \begin{bmatrix} v \\ v_1 \end{bmatrix} \in \R^{B \times 6}, \label{eq:z_def} \\
+w &= \begin{bmatrix} v_1 \\ v_2 \end{bmatrix} \in \R^{B \times 6}. \label{eq:w_def}
+\end{align}
+These satisfy the fundamental LFR relationship:
+\begin{equation}
+\label{eq:delta}
+\boxed{w = \Delta(Y) \cdot z, \qquad \Delta(Y) = Y \cdot I_6.}
+\end{equation}
+This is verified exactly (entry-wise, zero error) in \pyfile{lfr\_forward.py}, Check~5.
+The $\Delta(Y) = Y \cdot I_6$ structure means the scheduling block is a simple scalar
+multiplication broadcast across all 6 latent channels.
+
+\paragraph{Why $z$ and $w$ are retained.}
+The augmentation network connects \emph{between} $z$ and $w$. In the augmented model
+(Drenth Ch.~5, eq.~5.1--5.2), the augmentation $\Delta^a$ block receives $z$ and produces a
+correction to $w$. If we collapsed $z$ and $w$ into the state derivative (as in a simple
+$A_c(Y) x + B_c(Y) u$ evaluation), these connection points would not exist. Retaining them as
+explicit tensors is the defining feature of the LFR implementation.
+
+\paragraph{Step 6: State derivative---direct from physics (\decref{026}).}
+\begin{equation}
+\label{eq:xdot_direct}
+\xdot = \begin{bmatrix} x_{3:6} \\ v \end{bmatrix} = \begin{bmatrix} \qdot \\ \qddot \end{bmatrix} \in \R^{B \times 6}.
+\end{equation}
+This uses the physical identity directly: the first 3 state derivatives are the velocities
+(already in the state), and the last 3 are the accelerations $v = M(Y)\inv f_{\text{net}}$
+(computed in Step~3).
+
+\textbf{Why not the G-matrix form?} An earlier implementation used $\xdot = G_{Ax} x +
+G_{Bw} w + G_{Bu} u$, where $G_{Ax}$, $G_{Bw}$, $G_{Bu}$ are constant LFR matrices.
+This was removed (\decref{026}) because the G-matrices are precomputed using $M_0\inv$ and
+become stale if physical parameters are updated during training (parameter estimation). The
+direct physics expression~\eqref{eq:xdot_direct} is always correct for whatever $M_0, M_1,
+M_2, K, C$ are passed to the forward function at that call. The two forms are algebraically
+identical---verified in \pyfile{lfr\_forward.py}, Check~2---but the direct form eliminates
+the silent-staleness risk.
+
+\paragraph{Step 7: Output.}
+\begin{equation}
+y = x_{0:3} = q \quad \in \R^{B \times 3} \quad \text{(logical positions)}.
+\end{equation}
+The output is the position part of the state. The conversion to stage coordinates
+$y_{\text{stage}} = P\T y$ is applied by the caller (\pyfile{lfr\_simulate.py}).
+
+\subsection{Self-scheduling: quasi-LPV}
+\label{sec:self_scheduling}
+
+The scheduling variable $Y$ is not an exogenous signal---it is extracted from the state:
+$Y = x_2$ (the third state component in logical coordinates, corresponding to the payload
+position). This makes the system \emph{quasi-LPV}: the scheduling variable is a function of
+the state, not an independent external input.
+
+In the forward pass, $Y$ is extracted as \texttt{Y = x[:, 2]} before calling
+\texttt{lfr\_forward}. During RK4 integration (\cref{sec:integration}), $Y$ is re-extracted
+at each of the 4 sub-step evaluations from the intermediate state, ensuring the scheduling
+tracks the evolving state throughout the integration step.
+
+\subsection{Mathematical verification}
+\label{sec:lfr_verification}
+
+Five checks are implemented in \pyfile{lfr\_forward.py} (\texttt{\_\_main\_\_}):
+\begin{enumerate}[nosep]
+\item \textbf{Loop resolution residual}: $\|M(Y) v - f_{\text{net}}\|_\infty < 10^{-12}$
+  for 5 test $Y$ values.
+\item \textbf{CT vector field}: $\xdot$ matches the collapsed $A_c(Y) x + B_c(Y) u$ to
+  $< 10^{-12}$ for 5 $Y$ values.
+\item \textbf{Autograd through $Y$}: gradient $\partial L / \partial Y$ exists after backward
+  pass through \texttt{torch.linalg.solve}.
+\item \textbf{Autograd through $x$}: gradient $\partial L / \partial x$ exists after backward
+  pass.
+\item \textbf{LFR signal structure}: $w = Y \cdot z$ verified entry-wise with zero error for
+  all 5 $Y$ values.
+\end{enumerate}
+All checks pass, confirming the forward pass is mathematically correct and fully
+differentiable.
+
+
+% ======================================================================
+\section{Numerical Integration}
+\label{sec:integration}
+% ======================================================================
+
+\subsection{RK4 choice (\decref{018})}
+
+The supervisor directed: ``use RK4, not Euler discretization. Better to not precompute.''
+and ``write up the CT conversion. Don't do discretisation first, will get messy.'' The model
+is therefore maintained in continuous time and integrated using a classical 4th-order
+Runge--Kutta (RK4) method with fixed step size $h = \ts = 1/\fs$.
+
+\subsection{RK4 formula with self-scheduling}
+
+Given state $x[k]$ and input $u[k]$ (held constant over the step), one RK4 step computes:
+\begin{align}
+k_1 &= f\bigl(x[k],\; u[k],\; Y = x[k]_2\bigr), \label{eq:rk4_k1} \\
+k_2 &= f\bigl(x[k] + \tfrac{h}{2} k_1,\; u[k],\; Y = (x[k] + \tfrac{h}{2} k_1)_2\bigr), \label{eq:rk4_k2} \\
+k_3 &= f\bigl(x[k] + \tfrac{h}{2} k_2,\; u[k],\; Y = (x[k] + \tfrac{h}{2} k_2)_2\bigr), \label{eq:rk4_k3} \\
+k_4 &= f\bigl(x[k] + h\, k_3,\; u[k],\; Y = (x[k] + h\, k_3)_2\bigr), \label{eq:rk4_k4} \\
+x[k\!+\!1] &= x[k] + \frac{h}{6}\bigl(k_1 + 2 k_2 + 2 k_3 + k_4\bigr), \label{eq:rk4_update}
+\end{align}
+where $f(\cdot)$ is the \texttt{lfr\_forward} function returning $\xdot$, and the subscript
+$(\cdot)_2$ denotes extraction of the 3rd state component (Y-position in logical coordinates).
+
+The critical detail is that $Y$ is \emph{re-extracted from the intermediate state} at each
+sub-step evaluation ($k_1$ through $k_4$). This is the self-scheduling aspect: the scheduling
+variable tracks the state as it evolves within the integration step, rather than being frozen
+at $Y[k]$.
+
+Python implementation: \pyfile{lfr\_simulate.py}, lines 66--100.
+
+The $z$ and $w$ latent signals are recorded from the $k_1$ evaluation only (at the start of
+the step, $x[k]$). This is consistent with the LFR interpretation: the latent signals
+represent the scheduling structure at the current state, and the RK4 sub-steps are internal
+to the integrator.
+
+\subsection{Why not ZOH pre-discretisation?}
+
+The zero-order hold (ZOH) approach pre-computes discrete matrices $A_d(Y)$, $B_d(Y)$ via
+matrix exponential and then applies $x[k+1] = A_d x[k] + B_d u[k]$. This was used for
+Steps~1--2 validation (\decref{012}) where exact MATLAB matrix comparison was the goal. For
+the training loop, the supervisor explicitly directed against pre-discretisation (\decref{018}).
+
+ZOH holds the input constant within each interval but says nothing about how the ODE is
+integrated inside the interval. RK4 is the integration method used inside that interval. The
+two are not alternatives to the same problem---they address different aspects of discretisation.
+
+\subsection{Why not Euler?}
+
+Euler (forward) is a 1st-order method with local truncation error $O(h^2)$ per step and
+global error $O(h)$. RK4 has local truncation error $O(h^5)$ per step and global error
+$O(h^4)$. At $h = 50\;\mu\text{s}$ ($\fs = 20\;\text{kHz}$), this is a dramatic accuracy
+difference. The supervisor confirmed: ``use RK4 not Euler.''
+
+\subsection{Why not ODE45?}
+
+ODE45 uses adaptive step sizes (Dormand--Prince), which is incompatible with a fixed sampling
+period in a discrete control loop. The \texttt{ode4} variant forces a fixed step, but that is
+equivalent to RK4 directly.
+
+\subsection{Step size and sample rate}
+
+The step size is $h = \ts = 1/\fs = 50\;\mu\text{s}$, corresponding to $\fs = 20\;\text{kHz}$.
+This matches the Position Loop Time Interval (PLTI) from the AccurET hardware specification
+(\texttt{AccurET-Oper\&Soft-VerV.pdf}). The PLTI is the rate at which the position control
+loop executes on the real hardware, making it the natural sampling period for plant modelling.
+
+Note: the original \texttt{main.m} used $\fs = 16\;\text{kHz}$, which was a discrepancy with
+the hardware specification. All files have been updated to $20\;\text{kHz}$ (\decref{012},
+resolved note).
+
+\subsection{Numerical precision}
+
+All physics computations use \texttt{float64} (double precision). This is required to avoid
+error accumulation over long trajectories---a typical simulation of $1.75\;\text{s}$ at
+$20\;\text{kHz}$ involves $35{,}000$ integration steps. With \texttt{float32}, the accumulated
+rounding error would degrade the trajectory after several thousand steps.
+
+
+% ======================================================================
+\section{Jan's Augmentation Framework Interface}
+\label{sec:framework}
+% ======================================================================
+
+\subsection{Block base class contract}
+
+Jan's augmentation framework (\texttt{model\_augmentation/fit\_systems/blocks.py}) defines a
+\texttt{Block} base class with the interface:
+\begin{lstlisting}[language=Python]
+class Block(nn.Module):
+    def __init__(self, nz, nw):
+        self.nz = nz   # input dimension
+        self.nw = nw   # output dimension
+
+    def forward(self, z: Tensor) -> Tensor:
+        # z shape: (batch, nz, 1)
+        # returns: (batch, nw, 1)
+\end{lstlisting}
+Every block receives a 3D tensor $z \in \R^{B \times n_z \times 1}$ and returns
+$w \in \R^{B \times n_w \times 1}$. The trailing dimension of~1 is a framework convention
+(column-vector semantics in the batch dimension).
+
+\subsection{LFRBaselineBlock: nz = 9, nw = 18}
+
+The baseline block (\pyfile{lfr\_block.py}) implements the \texttt{Block} interface with:
+\begin{align}
+n_z &= 9 \quad (n_x = 6 \text{ state} + n_u = 3 \text{ stage-coord input}), \\
+n_w &= 18 \quad (x_{\text{next}} = 6 + z_{\text{lfr}} = 6 + w_{\text{lfr}} = 6).
+\end{align}
+
+\paragraph{Input packing:}
+\begin{equation}
+z_{\text{in}} = \begin{bmatrix} x \\ u_{\text{stage}} \end{bmatrix} \in \R^{B \times 9 \times 1},
+\qquad
+z_{\text{in}}[\,:\,,\, 0\!:\!6\,,\, :] = x, \quad
+z_{\text{in}}[\,:\,,\, 6\!:\!9\,,\, :] = u_{\text{stage}}.
+\end{equation}
+
+\paragraph{Output packing:}
+\begin{equation}
+w_{\text{out}} = \begin{bmatrix} x_{\text{next}} \\ z_{\text{lfr}} \\ w_{\text{lfr}} \end{bmatrix} \in \R^{B \times 18 \times 1},
+\quad
+\begin{cases}
+w_{\text{out}}[\,:\,,\, 0\!:\!6\,,\, :] = x_{\text{next}} & \text{(next state, logical coords)}, \\
+w_{\text{out}}[\,:\,,\, 6\!:\!12\,,\, :] = z_{\text{lfr}} & \text{(LFR latent $z$)}, \\
+w_{\text{out}}[\,:\,,\, 12\!:\!18\,,\, :] = w_{\text{lfr}} & \text{(LFR latent $w$)}.
+\end{cases}
+\end{equation}
+
+\subsection{Stateless design}
+
+The block is \emph{stateless}: it does not store or update any internal state variable.
+State management is handled externally by Jan's \texttt{Interconnect} class, which routes
+$x_{\text{next}}$ from the block output back to the block input at each timestep. This is
+critical: storing \texttt{self.x} inside the block and updating it in \texttt{forward()} would
+break the \texttt{Interconnect}'s state management assumptions.
+
+\subsection{float32/float64 boundary}
+
+Jan's framework operates in \texttt{float32} (standard for neural network training). The
+physics computation requires \texttt{float64} for numerical accuracy (\cref{sec:integration}).
+The boundary is managed by two cast operations in \texttt{forward()}:
+\begin{lstlisting}[language=Python]
+# Entry: float32 -> float64
+z_f64 = z_in.squeeze(-1).double()
+
+# [... all physics in float64 ...]
+
+# Exit: float64 -> float32
+return w_f64.float().unsqueeze(-1)
+\end{lstlisting}
+To run the entire pipeline in \texttt{float64} (e.g., for validation), remove these two cast
+lines---no other file needs changing.
+
+\subsection{Naming convention}
+
+Jan's API uses `$z$' for block input and `$w$' for block output. Our LFR also has latent
+signals called $z$ and $w$. To avoid confusion, the LFR latent signals are called
+$z_{\text{lfr}}$ and $w_{\text{lfr}}$ inside the block code.
+
+\subsection{How augmentation connects}
+
+In the augmented model, the augmentation $\Delta^a$ network sits between the $w_{\text{lfr}}$
+and $z_{\text{lfr}}$ slots in the \texttt{Interconnect} wiring. The \texttt{Interconnect}
+reads $z_{\text{lfr}}$ and $w_{\text{lfr}}$ from the baseline block's output, routes them
+through the augmentation network, and combines the result with the baseline's state update.
+
+\subsection{Coordinate transform at the boundary (\decref{027})}
+
+The block output $y = x_{0:3}$ is in logical coordinates $[X, \Theta, Y]$, but the training
+data and reference signals are in stage coordinates $[X_1, X_2, Y]$. The coordinate transform
+$P\T$ must be applied somewhere. The correct place is the \texttt{Interconnect}'s output
+connection matrix $S_y$, not inside the block (which would change the $n_w = 18$ contract):
+\begin{equation}
+S_y = P\T \cdot S_{\text{select}}(0\!:\!3,\; 18),
+\end{equation}
+where $S_{\text{select}}$ is a $(3 \times 18)$ selection matrix that picks the first 3
+components of $w_{\text{out}}$, and $P\T$ transforms from logical to stage coordinates.
+
+\subsection{Physical parameters as attributes}
+
+Physical parameters ($M_0$, $M_1$, $M_2$, $K$, $C$, $P$, $\ts$) are stored as plain
+attributes. For GPU training, these should be replaced with
+\texttt{self.register\_buffer(name, tensor)} so tensors move automatically with the model
+to the correct device. No other change is needed.
+
+
+% ======================================================================
+\section{Comparison Strategy}
+\label{sec:comparison}
+% ======================================================================
+
+\subsection{Open-loop replay rationale}
+
+All models are compared by replaying the \emph{same} force sequence $u_{q1}[k]$ in open loop.
+This isolates model quality from controller compensation. In a closed-loop comparison, a better
+controller could mask a worse model (and vice versa), confounding the assessment.
+
+\subsection{Reference signal: why q1}
+\label{sec:why_q1}
+
+Three MATLAB outputs are available from the Simulink simulation:
+
+\begin{description}[nosep]
+\item[\texttt{q1}] CT quasi-LPV, integrated by Simulink using \texttt{gantrySystem.m}.
+  Self-schedules $Y = x(3)$ at every ODE step. $M(Y)$ varies continuously. No Coulomb, no
+  Coriolis. \textbf{Primary comparison target.}
+\item[\texttt{q}] Simscape full nonlinear model. Coulomb friction disabled (verified by SLX
+  XML inspection). Includes Coriolis/centripetal. \textbf{Secondary comparison target.}
+\item[\texttt{q3}] Frozen LTI \texttt{lsim} at $Y = 0.3\;\text{m}$. Computed post-hoc in
+  \texttt{main.m} via \texttt{lsim(T, ...)}. Uses its \emph{own} forces $u_{q3}$.
+\end{description}
+
+\texttt{q1} is chosen as the primary reference because it integrates the \emph{same} CT
+quasi-LPV ODE as the Python implementation---same $M(Y)$, same $C$, same $K$, no Coulomb,
+no Coriolis. The Python LPV model driven by $u_{q1}$ should match \texttt{q1} to numerical
+precision (integration method mismatch only: RK4 fixed-step vs MATLAB \texttt{ode45} adaptive).
+
+\paragraph{Why NOT q3.}
+\texttt{q3} runs in its own closed loop: $u_{q3} = C_{fb}(r - q3)$. These forces are
+different from $u_{q1}$ because the frozen LTI tracks the reference differently. Comparing
+the Python frozen model driven by $u_{q1}$ against \texttt{q3} driven by $u_{q3}$ confounds
+the model quality assessment with the force mismatch.
+
+\paragraph{Why NOT Simscape as primary.}
+The Simscape model includes Coriolis/centripetal forces that our baseline intentionally
+excludes (\decref{022}). It also runs with its own forces $u_q = C_{fb}(r - q)$, different
+from $u_{q1}$. Using Simscape as the primary reference would mix the ``Coriolis gap'' with
+the ``force mismatch,'' making it impossible to isolate the LPV scheduling benefit.
+
+\subsection{Frozen LTI baseline}
+
+The frozen LTI comparison is implemented in Python (\texttt{simulate\_frozen} in
+\pyfile{validate\_lfr.py}): the same simulation code as the LPV model, but with $Y$ held
+constant at $Y = 0.3\;\text{m}$ (the design operating point from \texttt{main.m}). This is
+\emph{not} the same as MATLAB's \texttt{q3}---it uses the same forces $u_{q1}$ as the LPV
+model, isolating the scheduling benefit.
+
+\subsection{Simscape secondary comparison}
+
+The Simscape model is compared as a secondary reference using its own matched forces $u_q$.
+The Python LPV model is re-simulated with $u_q$ as input (not $u_{q1}$), ensuring a fair
+comparison. The gap between Python LPV and Simscape (both driven by $u_q$) quantifies the
+Coriolis effect---physics that our baseline intentionally does not model and that the
+augmentation must learn.
+
+\subsection{Metrics}
+
+\begin{description}[nosep]
+\item[BFR (Best Fit Rate)] The field-standard, scale-invariant quality metric:
+\begin{equation}
+\label{eq:bfr}
+\text{BFR} = \max\!\left(1 - \frac{\|y - \hat{y}\|_2}{\|y - \bar{y}\|_2},\; 0\right) \times 100\%,
+\end{equation}
+where $y$ is the reference, $\hat{y}$ is the model prediction, and $\bar{y}$ is the
+reference mean. BFR = 100\% means perfect prediction; BFR = 0\% means the model is no
+better than predicting the mean.
+\item[$\max|e|$] Maximum absolute error---engineering bound on worst-case deviation.
+\item[RMSE] Root mean square error---overall deviation magnitude.
+\item[$\text{Mean}|e|$] Mean absolute error---average deviation for completeness.
+\end{description}
+
+
+% ======================================================================
+\section{Trajectory Design}
+\label{sec:trajectory}
+% ======================================================================
+
+\subsection{Y motion: 0.3 to $-$0.3 m}
+
+The test trajectory moves $Y$ from $+0.3\;\text{m}$ to $-0.3\;\text{m}$---a displacement of
+$0.6\;\text{m}$ in the negative direction. This trajectory was chosen to maximise the frozen
+LTI modelling error:
+
+\begin{itemize}[nosep]
+\item The $M_{01}$ entry (mass matrix off-diagonal coupling) is:
+  $M_{01}(Y) = \frac{(m_1 - m_2) L_b}{2} - m_h Y$.
+  This changes sign at $Y \approx 0.018\;\text{m}$. The trajectory crosses this sign-flip
+  point, making the frozen model (evaluated at $Y = 0.3\;\text{m}$) qualitatively wrong for
+  a significant portion of the motion.
+\item At $Y = +0.3\;\text{m}$: $M_{01} = -3.21\;\text{kg\,m}$.
+  At $Y = -0.3\;\text{m}$: $M_{01} = +3.17\;\text{kg\,m}$.
+  The sign flip means the frozen model predicts the wrong direction of X--$\Theta$ coupling.
+\end{itemize}
+
+\subsection{X1, X2 at rest}
+
+$X_1$ and $X_2$ references are held at zero throughout the trajectory. This decouples the
+Coriolis effect (which is proportional to $\dot{X} \cdot \dot{Y}$): when $\dot{X} \approx 0$,
+Coriolis forces vanish. This allows isolating the Y-varying inertia effect from
+Coriolis/centripetal coupling.
+
+\subsection{Hardware limits}
+
+Motion parameters are verified against the ETEL TELICA datasheet
+(\texttt{telica-xyz-0750-0800-data.pdf}):
+
+\begin{table}[ht]
+\centering
+\caption{Motion profile parameters vs hardware limits.}
+\label{tab:motion}
+\begin{tabular}{lrrl}
+\toprule
+Parameter & Used & Hardware max & Fraction \\
+\midrule
+$v_{\max}$ & 1.0 m/s & 2.0 m/s & 50\% \\
+$a_{\max}$ & 10 m/s$^2$ & 50 m/s$^2$ & 20\% \\
+Stroke     & $\pm 300$ mm & $\pm 400$ mm & 75\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The motion profile uses a 3rd-order jerk-limited setpoint
+(\texttt{thirdOrderSetpointETEL})---the same profile generator used by the real machine's
+motion controller.
+
+\subsection{Why this trajectory maximises the frozen LTI error}
+
+The key is the $M_{01}$ sign flip at $Y \approx 0.018\;\text{m}$. The frozen LTI at
+$Y = 0.3\;\text{m}$ has a negative $M_{01}$. As $Y$ moves past $0.018\;\text{m}$ toward
+$-0.3\;\text{m}$, the true $M_{01}$ becomes positive---the frozen model predicts the wrong
+sign for the inertia coupling. This creates a growing discrepancy that cannot be corrected by
+simply scaling the frozen matrices. The LPV model, which re-evaluates $M(Y)$ at every step,
+tracks this sign change correctly.
+
+
+% ======================================================================
+\section{MATLAB Data Generation Pipeline}
+\label{sec:matlab}
+% ======================================================================
+
+All reference data used for Python validation is generated by three MATLAB scripts in
+\texttt{Matlab-scripts/}. The scripts call functions from the immutable
+\texttt{kamtin-fp-model/} directory but do not modify any file in it.
+Run each script from the repository root with MATLAB's working directory set there.
+
+\subsection{export\_lpv\_matrices.m --- discrete A(Y), B(Y) at 50 operating points}
+\label{sec:export_matrices}
+
+\textbf{Purpose}: Provides a dense grid of MATLAB-computed discrete-time state matrices for
+Python matrix comparison (Task~2.4, \decref{016}).
+
+\textbf{What it does}:
+\begin{enumerate}[nosep]
+\item Replicates the physics setup from \texttt{main.m} (lines 12--64): physical parameters,
+  $C$, $K$, $P$ (identical values to \pyfile{physics.py}).
+\item Sweeps $Y$ over 50 values: \texttt{linspace(-0.35, 0.35, 50)} m---the full operational
+  range with margin.
+\item At each $Y$: builds $M(Y)$, calls \texttt{getss(n, M, C, K)} to get the logical-coordinate
+  continuous-time system, applies the $P$-transform to stage coordinates, then discretises with
+  \texttt{c2d(sys\_stage, ts, 'zoh')}.
+\item Stores $A(Y)$, $B(Y)$, $C$, $D$ per operating point, plus $\det(M(Y))$ as a
+  physics health check.
+\end{enumerate}
+
+\textbf{Output file}: \texttt{Matlab-output/lpv\_matrices.mat}
+
+\begin{table}[ht]
+\centering
+\caption{Variables in \texttt{lpv\_matrices.mat}.}
+\label{tab:lpv_matrices}
+\begin{tabular}{lll}
+\toprule
+Variable & Shape & Description \\
+\midrule
+\texttt{A\_all}   & $(6,6,50)$ & Discrete-time state matrix $A(Y)$ at each operating point \\
+\texttt{B\_all}   & $(6,3,50)$ & Discrete-time input matrix $B(Y)$ at each operating point \\
+\texttt{C\_all}   & $(3,6,50)$ & Output matrix (constant, stored per Y for convenience) \\
+\texttt{D\_all}   & $(3,3,50)$ & Feedthrough matrix (identically zero) \\
+\texttt{Y\_values} & $(50,1)$  & Y sweep values [m] \\
+\texttt{det\_M}   & $(50,1)$  & $\det(M(Y))$ at each Y (physics health check) \\
+\texttt{fs}, \texttt{ts} & scalar & Sample frequency and period \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Used by}: \pyfile{validate\_lfr.py} Section~3 (Y-varying Bode), and
+\pyfile{physics.py} Check~2 ($\det M$ comparison).
+
+\textbf{Why 50 points instead of 5}: $M(Y)\inv$ is rational in $Y$ and could have
+non-monotone error behaviour between sparse samples. A dense 50-point sweep allows plotting
+error vs $Y$ to confirm uniformity across the full operational range.
+
+\subsection{export\_lpv\_sim.m --- closed-loop varying-Y Simulink simulation}
+\label{sec:export_sim}
+
+\textbf{Purpose}: Provides the varying-$Y$ closed-loop trajectory that proves the LPV model
+captures Y-dependent dynamics better than a frozen LTI.
+
+\textbf{What it does}:
+\begin{enumerate}[nosep]
+\item Sets up identical physics to \texttt{main.m}.
+\item Constructs the test trajectory: $Y$ moves from $+0.3$ to $-0.3\;\text{m}$ using a
+  3rd-order jerk-limited profile (\texttt{thirdOrderSetpointETEL}); $X_1 = X_2 = 0$
+  throughout.
+\item Builds the discrete feedback controller $C_{fb}$ (rule-of-thumb, 100~Hz bandwidth) and
+  the frozen LTI $G$ at $Y = 0.3\;\text{m}$ (needed by Simulink at runtime for the LTI
+  block).
+\item Runs the Simulink model \texttt{gantry\_2025a} via \texttt{sim(mdl, t(end))}.
+  Three ToWorkspace blocks produce \texttt{q} (Simscape), \texttt{q1} (CT quasi-LPV), and
+  \texttt{q2} (CT quasi-LPV + Coriolis; not exported).
+\item Reconstructs the forces applied to each path post-hoc using \texttt{lsim}:
+  $u_{q1} = C_{fb}(r - q_1)$ and $u_q = C_{fb}(r - q)$.
+\item Saves all variables to \texttt{Matlab-output/lpv\_sim\_varying\_y.mat}.
+\end{enumerate}
+
+\textbf{Output file}: \texttt{Matlab-output/lpv\_sim\_varying\_y.mat}
+
+\begin{table}[ht]
+\centering
+\caption{Variables in \texttt{lpv\_sim\_varying\_y.mat}.}
+\label{tab:lpv_sim}
+\begin{tabular}{lll}
+\toprule
+Variable & Shape & Description \\
+\midrule
+\texttt{t\_sim}        & $(N,1)$   & Time vector [s] \\
+\texttt{fs}            & scalar    & Sample frequency = 20\,000 Hz \\
+\texttt{r\_sim}        & $(N,3)$   & Reference $[X_{1,\text{ref}},\, X_{2,\text{ref}},\, Y_{\text{ref}}]$ [m] \\
+\texttt{u\_q1}         & $(N,3)$   & Forces applied to q1 path: $C_{fb}(r - q_1)$ [N] \\
+\texttt{u\_q}          & $(N,3)$   & Forces applied to Simscape path: $C_{fb}(r - q)$ [N] \\
+\texttt{q1}            & $(N,3)$   & CT quasi-LPV output $[X_1, X_2, Y]$ [m] --- primary reference \\
+\texttt{q\_simscape}   & $(N,3)$   & Simscape nonlinear output $[X_1, X_2, Y]$ [m] \\
+\texttt{Y\_trajectory} & $(N,1)$   & $Y(t) = q_1[:,2]$ -- scheduling variable trajectory [m] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Why u\_q and u\_q1 are different}: The two paths run in their own closed loops
+during the Simulink simulation. \texttt{q1} tracks the reference with forces $u_{q1} =
+C_{fb}(r - q_1)$; the Simscape model tracks with forces $u_q = C_{fb}(r - q)$. Because the
+two outputs differ slightly (quasi-LPV ODE vs full nonlinear Simscape), the forces differ.
+For a fair Python--MATLAB comparison, the Python model must be driven by the \emph{same}
+forces as the MATLAB reference it is compared against (\cref{sec:why_q1}).
+
+\textbf{Why the save path uses fileparts}: The save path is resolved as
+\texttt{fullfile(fileparts(mfilename('fullpath')), '..', 'Matlab-output')}, so it saves to
+the correct directory regardless of MATLAB's current working directory. This was a bug fix:
+the original \texttt{fullfile(pwd, 'Matlab-output')} saved to wherever MATLAB's \texttt{pwd}
+happened to be, often in the wrong place.
+
+\textbf{Coulomb friction verification}: The Simscape Coulomb friction gains (\texttt{cc1},
+\texttt{cc2}, \texttt{ccy}) are defined as workspace variables in this script but are
+disabled in the Simulink model. Verified by inspecting \texttt{gantry\_2025a.slx} as a ZIP
+archive: the subsystem XML (\texttt{system\_47.xml}) lists the Coulomb gain blocks with
+\texttt{<P Name="Commented">on</P>}, confirming they are commented out and have no effect.
+
+\subsection{verify\_exports.m --- automated validation of both exports}
+\label{sec:verify_exports}
+
+\textbf{Purpose}: A single entry-point that runs both export scripts and checks their outputs
+against a set of physical sanity checks. Run this after any change to either export script.
+
+\textbf{What it checks}:
+
+\paragraph{lpv\_matrices checks (6 checks):}
+\begin{itemize}[nosep]
+\item Array dimensions: $A$ is $(6,6,50)$, $B$ is $(6,3,50)$, $C$ is $(3,6,50)$, $D$ is $(3,3,50)$.
+\item $Y$ values within $[-0.35, 0.35]\;\text{m}$.
+\item $D$ matrix identically zero (max abs $< 10^{-12}$).
+\item $\det(M(Y)) > 0$ at all 50 operating points (mass matrix positive definite).
+\item $C$ matrix constant across all $Y$ values (max std $< 10^{-10}$).
+\item All eigenvalues of $A(Y)$ strictly inside the unit circle (stable discrete system).
+\end{itemize}
+
+\paragraph{lpv\_sim\_varying\_y checks (9 checks):}
+\begin{itemize}[nosep]
+\item Consistent array dimensions.
+\item $Y$ trajectory within physical machine range $[-0.4, 0.4]\;\text{m}$.
+\item Initial $Y = 0.3\;\text{m}$ (tolerance $\pm 2\;\text{mm}$).
+\item Final $Y = 0.1\;\text{m}$ (tolerance $\pm 2\;\text{mm}$).
+  \emph{Note: the current trajectory goes to $-0.3\;\text{m}$; this check catches an
+  outdated trajectory if verify\_exports.m is not updated to match.}
+\item $F_Y$ RMS $> 1\;\text{N}$ (confirms feedback was active).
+\item $X_1$, $X_2$ max deviation $< 10\;\mu\text{m}$ (X reference held at zero).
+\item $Y$ tracking error in final hold period $< 50\;\mu\text{m}$.
+\item Forces within ETEL peak limits: $F_{X1}, F_{X2} < 2000\;\text{N}$;
+  $F_Y < 1420\;\text{N}$.
+\end{itemize}
+
+\subsection{Other files in Matlab-output/}
+
+\begin{description}[nosep]
+\item[\texttt{gantry\_G\_matrices.mat}] Discrete $A$, $B$, $C$, $D$ at the single operating
+  point $Y = 0.3\;\text{m}$. Used by \pyfile{validate\_lfr.py} Section~2 (Bode comparison).
+\item[\texttt{gantry\_input.mat}] Force input sequence $u[k]$ for the initial frozen LTI
+  simulation. Used by \pyfile{lfr\_simulate.py} Check~3.
+\item[\texttt{gantry\_q3\_lsim.mat}] MATLAB \texttt{lsim} output for the frozen LTI at
+  $Y = 0.3\;\text{m}$. Used by \pyfile{lfr\_simulate.py} Check~3.
+\item[\texttt{gantry\_q\_simscape.mat}] Simscape output from an earlier single-point run (not
+  the varying-$Y$ trajectory). Superseded by \texttt{lpv\_sim\_varying\_y.mat} for LPV
+  validation purposes.
+\item[\texttt{workspace\_snapshot.txt}] Text dump of key MATLAB workspace variables at the
+  time of export. Useful for auditing that export scripts ran with the intended parameters.
+\end{description}
+
+
+% ======================================================================
+\section{Results}
+\label{sec:results}
+% ======================================================================
+
+\subsection{Summary table}
+
+\Cref{tab:results} shows the validation results from all 5 sections of
+\pyfile{validate\_lfr.py}. All models are driven by the same forces $u_{q1}$ (open-loop
+replay).
+
+\begin{table}[ht]
+\centering
+\caption{Validation results: Python LPV and frozen LTI vs MATLAB q1 reference.
+  All models driven by $u_{q1}$ forces. Y range: $-0.3$ to $+0.3\;\text{m}$.}
+\label{tab:results}
+\begin{tabular}{llrrrr}
+\toprule
+Model & Channel & BFR [\%] & RMSE [m] & Max$|e|$ [m] & Mean$|e|$ [m] \\
+\midrule
+Python LPV    & X1 & 100.0000 & $1.18 \times 10^{-14}$ & $2.60 \times 10^{-14}$ & $7.66 \times 10^{-15}$ \\
+Python LPV    & X2 & 100.0000 & $1.17 \times 10^{-14}$ & $2.57 \times 10^{-14}$ & $7.61 \times 10^{-15}$ \\
+Python LPV    & Y  & 100.0000 & $8.64 \times 10^{-14}$ & $2.25 \times 10^{-13}$ & $5.39 \times 10^{-14}$ \\
+\midrule
+Python frozen & X1 & 52.84 & $1.69 \times 10^{-7}$ & $6.04 \times 10^{-7}$ & $1.02 \times 10^{-7}$ \\
+Python frozen & X2 & 36.49 & $1.52 \times 10^{-7}$ & $5.10 \times 10^{-7}$ & $9.27 \times 10^{-8}$ \\
+Python frozen & Y  & 100.00 & $2.62 \times 10^{-8}$ & $9.31 \times 10^{-8}$ & $1.58 \times 10^{-8}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Natural frequencies vs Y}
+
+The eigenvalue analysis of $A_c(Y)$ across $Y \in [-0.4, +0.4]\;\text{m}$ reveals that only
+the $\Theta$ mode (cross-arm rotation) is oscillatory. The X and Y modes are overdamped
+(non-oscillatory)---their eigenvalues are purely real.
+
+The oscillatory natural frequency varies from $4.41\;\text{Hz}$ (at $|Y| = 0.4\;\text{m}$) to
+$5.13\;\text{Hz}$ (at $Y = 0\;\text{m}$). This is because the effective rotational inertia
+$J_{\text{eff}}(Y) = J_b + J_h + (m_1 + m_2) L_b^2/4 + m_h d^2 + m_h Y^2$ increases with
+$|Y|$ (the payload acts as a point mass at distance $Y$ from the rotation axis), lowering the
+natural frequency $\omega_n \sim \sqrt{k / J_{\text{eff}}}$.
+
+\subsection{Key findings}
+
+\begin{enumerate}
+\item \textbf{LPV model matches MATLAB to machine precision}: BFR = 100.0\% across all
+  channels, with maximum error $2.25 \times 10^{-13}\;\text{m}$. This confirms the Python
+  implementation correctly reproduces the MATLAB quasi-LPV ODE.
+
+\item \textbf{Frozen LTI fails on X channels}: BFR drops to 52.8\% (X1) and 36.5\% (X2)
+  when $Y$ varies from $+0.3$ to $-0.3\;\text{m}$. The Y channel remains at 100\% because
+  $M_{22} = m_h$ is constant---Y dynamics do not depend on $Y$ in the mass matrix.
+
+\item \textbf{Frozen LTI failure is asymmetric}: X2 (BFR = 36.5\%) degrades more than X1
+  (BFR = 52.8\%). This is because the mass asymmetry $(m_1 \neq m_2)$ makes the off-diagonal
+  coupling $M_{01}$ asymmetric: the frozen model's error in $M_{01}$ affects X1 and X2
+  differently through the $P$-transform.
+
+\item \textbf{LPV scheduling benefit is substantial}: The 47--64 percentage-point BFR
+  improvement on X1/X2 demonstrates that tracking $M(Y)$ is essential for accurate prediction
+  when $Y$ varies over its operational range.
+\end{enumerate}
+
+
+% ======================================================================
+\section*{Decision Reference}
+% ======================================================================
+
+Key design decisions referenced in this document, logged in
+\texttt{docs/decisions.md}:
+
+\begin{description}[nosep,font=\ttfamily]
+\item[D-002] MATLAB files in \texttt{kamtin-fp-model/} are immutable ground truth.
+\item[D-005] LFR structure confirmed for the LPV augmentation (supervisor, 2026-03-20).
+\item[D-006] Python implementation uses stage coordinates at the external interface.
+\item[D-012] LPV discretisation: frozen ZOH for validation, CT+RK4 for training.
+\item[D-018] CT model with RK4 integration at fixed step (supervisor directive).
+\item[D-020] Method~2 (state-space form) chosen for rational LPV dependency.
+\item[D-022] Non-baseline physics go in augmentation, not in baseline.
+\item[D-026] Direct physics replaces G-matrix form in forward pass.
+\item[D-027] $P\T$ coordinate transform embedded in Interconnect $S_y$ matrix.
+\end{description}
+
+
+% ======================================================================
+\section*{Source File Reference}
+% ======================================================================
+
+\begin{description}[nosep,font=\ttfamily]
+\item[physics.py] Physical parameters, $M_0$/$M_1$/$M_2$, $K$, $C$, $P$, $\fs$, $\ts$,
+  \texttt{build\_M()}.
+\item[lfr\_forward.py] 7-step resolve-and-retain forward pass.
+\item[lfr\_simulate.py] RK4 step function, \texttt{simulate()} loop, \texttt{SimResult}.
+\item[lfr\_block.py] \texttt{LFRBaselineBlock}---Jan's \texttt{Block} interface wrapper.
+\item[validate\_lfr.py] All 5 validation sections (trajectory, Bode, Y-varying, eigenvalues,
+  LPV vs frozen).
+\item[test\_jan\_compat.py] Interconnect wiring tests and augmentation compatibility checks.
+\end{description}
+
+\end{document}

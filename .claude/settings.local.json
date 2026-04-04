@@ -50,7 +50,8 @@
       "Bash(PYTHONIOENCODING=utf-8 conda run -n GraduationProject python -m lpv_lfr_baseline.lfr_svd_reduction)",
       "Bash(PYTHONIOENCODING=utf-8 conda run -n GraduationProject python -m lpv_lfr_baseline.lfr_forward)",
       "Bash(del:*)",
-      "WebFetch(domain:)"
+      "WebFetch(domain:)",
+      "Bash(pdflatex -interaction=nonstopmode lpv-lfr-baseline.tex)"
     ]
   }
 }
