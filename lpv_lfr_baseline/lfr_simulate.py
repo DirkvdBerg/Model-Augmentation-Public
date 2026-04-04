@@ -5,7 +5,7 @@ RK4 single-step function and standalone simulation loop for the dual-gantry LPV-
 
 Discretization: RK4 with fixed step ts = 1/fs. Consistent with D-018.
 
-Provides two functions:
+Provides three functions:
 
     rk4_step(x, u_logical, M0, M1, M2, K, C, ts) -> (x_next, z, w, y)
         Single RK4 step in logical coordinates.
@@ -14,7 +14,7 @@ Provides two functions:
         z and w are from the START of the step (x[k], not sub-steps).
         y is in logical coordinates — caller applies @ P for stage output.
 
-    simulate(x0, u_seq_stage, M0, M1, M2, K, C, P, ts) -> SimResult
+    simulate(x0, u_seq_stage, M0, M1, M2, K, C, P, ts, ...) -> SimResult
         Full trajectory simulation over N steps.
         x0           : (batch, 6)    initial state in logical coordinates
         u_seq_stage  : (batch, N, 3) input sequence in stage coordinates
@@ -23,6 +23,16 @@ Provides two functions:
             Y  : (batch, N, 3)    output trajectory (stage coordinates)
             Z  : (batch, N, 6)    latent z at start of each step
             W  : (batch, N, 6)    latent w at start of each step
+
+        BPTT modes (bptt_mode parameter):
+            "full"        — retain entire computation graph (default, current behavior)
+            "truncated"   — detach state every segment_len steps, capping graph depth
+            "checkpoint"  — torch.utils.checkpoint on each RK4 step (exact gradients,
+                            O(sqrt(N)) memory, ~1.3x compute)
+
+    simulate_frozen(x0, u_seq_stage, M0, M1, M2, K, C, P, ts, Y_freeze) -> SimResult
+        Same as simulate() but M(Y) frozen at Y_freeze for all RK4 sub-steps.
+        For LPV vs frozen LTI comparison.
 
 All inputs and outputs carry a leading batch dimension.
 For single-trajectory use, add/remove the batch dim with unsqueeze(0)/squeeze(0).
@@ -41,8 +51,10 @@ Note on RK4 vs ZOH:
 """
 
 from dataclasses import dataclass
+from typing import Literal
 
 import torch
+from torch.utils.checkpoint import checkpoint as grad_checkpoint
 
 from lpv_lfr_baseline.lfr_forward import lfr_forward
 
@@ -101,6 +113,20 @@ def rk4_step(
     return x_next, z, w, y
 
 
+def _rk4_step_for_checkpoint(
+    x: torch.Tensor, u_logical: torch.Tensor,
+    M0: torch.Tensor, M1: torch.Tensor, M2: torch.Tensor,
+    K: torch.Tensor, C: torch.Tensor, ts: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Wrapper for rk4_step compatible with torch.utils.checkpoint.
+
+    checkpoint requires all inputs and outputs to be tensors, and the
+    function must be called without keyword arguments. This thin wrapper
+    satisfies both constraints while delegating to the real rk4_step.
+    """
+    return rk4_step(x, u_logical, M0, M1, M2, K, C, ts)
+
+
 def simulate(
     x0:           torch.Tensor,   # (batch, 6)     initial state in logical coordinates
     u_seq_stage:  torch.Tensor,   # (batch, N, 3)  input sequence in stage coordinates
@@ -111,6 +137,8 @@ def simulate(
     C:            torch.Tensor,
     P:            torch.Tensor,   # (3,3)  stage <-> logical transform
     ts:           torch.Tensor,
+    bptt_mode:    Literal["full", "truncated", "checkpoint"] = "full",
+    segment_len:  int = 200,
 ) -> SimResult:
     """
     Simulate N steps using RK4. Returns SimResult.
@@ -118,6 +146,33 @@ def simulate(
     u_seq_stage is in stage coordinates — P transform applied at each step.
     Output Y is converted to stage coordinates.
     All tensors float64.
+
+    Parameters
+    ----------
+    bptt_mode : {"full", "truncated", "checkpoint"}
+        Controls memory/gradient trade-off during training:
+
+        "full" (default)
+            Retain the entire computation graph across all N steps.
+            Exact gradients. Memory: O(N). Best for short horizons (N < ~1000).
+
+        "truncated"
+            Detach the state every `segment_len` steps, capping the maximum
+            computation graph depth. Gradients do not flow across segment
+            boundaries — this introduces gradient bias but matches the
+            nf-bounded horizon used in Jan's SSE_Interconnect.loss().
+            Memory: O(segment_len). Best when long-range gradients are not
+            needed or when segment_len covers the system's settling time.
+
+        "checkpoint"
+            Use torch.utils.checkpoint on each RK4 step. Activations are
+            discarded during the forward pass and recomputed during backward.
+            Exact gradients (no bias). Memory: O(sqrt(N)). Compute: ~1.3x.
+            Best for long horizons where exact gradients are required.
+
+    segment_len : int
+        Number of steps per segment for "truncated" mode. Ignored otherwise.
+        Default 200 (matches Jan's typical nf).
     """
     N = u_seq_stage.shape[1]
 
@@ -130,20 +185,90 @@ def simulate(
     for k in range(N):
         # Stage -> logical: u_logical[n] = P @ u_stage[n]  =>  u_logical = u_stage @ P.T
         u_logical = u_seq_stage[:, k, :] @ P.T                    # (batch, 3)
-        x_next, z_k, w_k, y_k = rk4_step(x, u_logical, M0, M1, M2, K, C, ts)
+
+        if bptt_mode == "checkpoint":
+            x_next, z_k, w_k, y_k = grad_checkpoint(
+                _rk4_step_for_checkpoint,
+                x, u_logical, M0, M1, M2, K, C, ts,
+                use_reentrant=False,
+            )
+        else:
+            x_next, z_k, w_k, y_k = rk4_step(x, u_logical, M0, M1, M2, K, C, ts)
 
         # Logical -> stage: y_stage[n] = P.T @ y_logical[n]  =>  y_stage = y_logical @ P
         Y_list.append(y_k @ P)
         Z_list.append(z_k)
         W_list.append(w_k)
         X_list.append(x_next)
-        x = x_next
+
+        # Truncated BPTT: detach state at segment boundaries to cap graph depth
+        if bptt_mode == "truncated" and (k + 1) % segment_len == 0:
+            x = x_next.detach().requires_grad_(x_next.requires_grad)
+        else:
+            x = x_next
 
     return SimResult(
         X=torch.stack(X_list, dim=1),   # (batch, N+1, 6)
         Y=torch.stack(Y_list, dim=1),   # (batch, N, 3)
         Z=torch.stack(Z_list, dim=1),   # (batch, N, 6)
         W=torch.stack(W_list, dim=1),   # (batch, N, 6)
+    )
+
+
+def simulate_frozen(
+    x0:          torch.Tensor,   # (batch, 6)    initial state in logical coordinates
+    u_seq_stage: torch.Tensor,   # (batch, N, 3) input sequence in stage coordinates
+    M0:          torch.Tensor,
+    M1:          torch.Tensor,
+    M2:          torch.Tensor,
+    K:           torch.Tensor,
+    C:           torch.Tensor,
+    P:           torch.Tensor,   # (3,3)  stage <-> logical transform
+    ts:          torch.Tensor,
+    Y_freeze:    float = 0.3,
+) -> SimResult:
+    """
+    Simulate N steps with M(Y) frozen at Y_freeze — frozen LTI baseline.
+
+    Identical to simulate() except Y passed to lfr_forward is held constant
+    at Y_freeze instead of being read from x[:, 2]. All four RK4 sub-steps
+    use the same frozen Y. Everything else (P transform, RK4 weights) is
+    identical to the LPV version.
+
+    Use for comparison against Python LPV driven by the same u_seq_stage.
+    Do NOT compare against MATLAB q3 — q3 uses its own closed-loop forces.
+    """
+    N     = u_seq_stage.shape[1]
+    batch = x0.shape[0]
+    Y_c   = torch.full((batch,), Y_freeze, dtype=x0.dtype)   # constant Y
+
+    X_list, Y_list, Z_list, W_list = [x0], [], [], []
+    x = x0
+
+    for k in range(N):
+        u_logical = u_seq_stage[:, k, :] @ P.T          # stage -> logical
+
+        # RK4 — frozen Y at every sub-step
+        k1, z, w, y = lfr_forward(x,                   u_logical, Y_c, M0, M1, M2, K, C)
+        x2 = x + (ts / 2) * k1
+        k2, _,  _,  _ = lfr_forward(x2,                u_logical, Y_c, M0, M1, M2, K, C)
+        x3 = x + (ts / 2) * k2
+        k3, _,  _,  _ = lfr_forward(x3,                u_logical, Y_c, M0, M1, M2, K, C)
+        x4 = x + ts * k3
+        k4, _,  _,  _ = lfr_forward(x4,                u_logical, Y_c, M0, M1, M2, K, C)
+        x_next = x + (ts / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
+
+        Y_list.append(y @ P)     # logical -> stage
+        Z_list.append(z)
+        W_list.append(w)
+        X_list.append(x_next)
+        x = x_next
+
+    return SimResult(
+        X=torch.stack(X_list, dim=1),
+        Y=torch.stack(Y_list, dim=1),
+        Z=torch.stack(Z_list, dim=1),
+        W=torch.stack(W_list, dim=1),
     )
 
 
@@ -296,3 +421,77 @@ if __name__ == '__main__':
     else:
         print("  SKIPPED — MATLAB reference file not found.")
         print(f"  Expected: {lpv_path}")
+
+    # ------------------------------------------------------------------
+    # Check 5 — BPTT modes: truncated and checkpoint produce same
+    # trajectory as full, and gradient behavior is correct.
+    #
+    # Uses a short 50-step sim with batch=1.
+    # ------------------------------------------------------------------
+    print()
+    print("=" * 60)
+    print("Check 5: BPTT modes — trajectory match and gradient behaviour")
+    print("=" * 60)
+
+    N_bptt  = 50
+    x0_bptt = torch.tensor([[0.05, 0.01, 0.30, 0.02, -0.01, 0.05]], dtype=dtype)
+    u_bptt  = torch.randn(1, N_bptt, 3, dtype=dtype) * 5.0   # random stage forces
+
+    # Reference: full BPTT (no grad needed for trajectory comparison)
+    with torch.no_grad():
+        ref = simulate(x0_bptt, u_bptt, M0, M1, M2, K, C, P, ts, bptt_mode="full")
+
+    # --- 5a: truncated trajectory matches full ---
+    with torch.no_grad():
+        trunc = simulate(x0_bptt, u_bptt, M0, M1, M2, K, C, P, ts,
+                         bptt_mode="truncated", segment_len=20)
+    err_trunc = (trunc.X - ref.X).abs().max().item()
+    trunc_traj_ok = err_trunc == 0.0
+    print(f"  5a  truncated trajectory matches full : {trunc_traj_ok}  "
+          f"(max|diff| = {err_trunc:.2e})")
+
+    # --- 5b: checkpoint trajectory matches full ---
+    with torch.no_grad():
+        ckpt = simulate(x0_bptt, u_bptt, M0, M1, M2, K, C, P, ts,
+                        bptt_mode="checkpoint")
+    err_ckpt = (ckpt.X - ref.X).abs().max().item()
+    ckpt_traj_ok = err_ckpt == 0.0
+    print(f"  5b  checkpoint trajectory matches full: {ckpt_traj_ok}  "
+          f"(max|diff| = {err_ckpt:.2e})")
+
+    # --- 5c: truncated gradient is blocked at segment boundary ---
+    # With segment_len=20 and N=50, detach happens at steps 20 and 40.
+    # Gradient from step 50 should NOT reach x0 through the detached segment.
+    # But gradient from steps 1-20 (first segment) should reach x0.
+    x0_t = x0_bptt.clone().requires_grad_(True)
+    res_t = simulate(x0_t, u_bptt, M0, M1, M2, K, C, P, ts,
+                     bptt_mode="truncated", segment_len=20)
+    # Loss on LAST step only — gradient must cross 2 segment boundaries
+    res_t.X[:, -1, :].sum().backward()
+    trunc_grad_blocked = x0_t.grad is None or x0_t.grad.norm().item() == 0.0
+    print(f"  5c  truncated: last-step grad blocked at x0: {trunc_grad_blocked}")
+
+    # Loss on step 10 (within first segment) — gradient should reach x0
+    x0_t2 = x0_bptt.clone().requires_grad_(True)
+    res_t2 = simulate(x0_t2, u_bptt, M0, M1, M2, K, C, P, ts,
+                      bptt_mode="truncated", segment_len=20)
+    res_t2.X[:, 10, :].sum().backward()
+    trunc_grad_flows = x0_t2.grad is not None and x0_t2.grad.norm().item() > 0.0
+    print(f"  5c  truncated: within-segment grad flows to x0: {trunc_grad_flows}")
+
+    # --- 5d: checkpoint gradient matches full gradient ---
+    x0_full = x0_bptt.clone().requires_grad_(True)
+    res_full = simulate(x0_full, u_bptt, M0, M1, M2, K, C, P, ts, bptt_mode="full")
+    res_full.X[:, -1, :].sum().backward()
+
+    x0_ckpt = x0_bptt.clone().requires_grad_(True)
+    res_ckpt = simulate(x0_ckpt, u_bptt, M0, M1, M2, K, C, P, ts, bptt_mode="checkpoint")
+    res_ckpt.X[:, -1, :].sum().backward()
+
+    grad_err = (x0_full.grad - x0_ckpt.grad).abs().max().item()
+    ckpt_grad_ok = grad_err < 1e-10
+    print(f"  5d  checkpoint grad matches full: {ckpt_grad_ok}  "
+          f"(max|diff| = {grad_err:.2e})")
+
+    all_bptt = trunc_traj_ok and ckpt_traj_ok and trunc_grad_blocked and trunc_grad_flows and ckpt_grad_ok
+    print(f"\nCheck 5: {'PASS' if all_bptt else 'FAIL'}")

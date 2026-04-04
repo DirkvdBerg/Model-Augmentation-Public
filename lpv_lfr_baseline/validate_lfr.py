@@ -42,7 +42,7 @@ from scipy.io import loadmat
 
 from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, fs, ts, build_M
 from lpv_lfr_baseline.lfr_forward import lfr_forward
-from lpv_lfr_baseline.lfr_simulate import simulate, SimResult
+from lpv_lfr_baseline.lfr_simulate import simulate, simulate_frozen, SimResult
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -61,60 +61,6 @@ _IN_LABELS   = ['$F_{X1}$', '$F_{X2}$', '$F_Y$']
 _OUT_LABELS  = ['$X_1$',    '$X_2$',    '$Y$']
 _CH_NAMES    = ['X1', 'X2', 'Y ']
 _SEP         = '=' * 72
-
-
-# ---------------------------------------------------------------------------
-# Frozen LTI simulator
-# ---------------------------------------------------------------------------
-
-def simulate_frozen(
-    x0:          torch.Tensor,   # (batch, 6)    initial state in logical coordinates
-    u_seq_stage: torch.Tensor,   # (batch, N, 3) input sequence in stage coordinates
-    Y_freeze:    float = _Y_FREEZE,
-) -> SimResult:
-    """
-    Simulate N steps with M(Y) frozen at Y_freeze — frozen LTI baseline.
-
-    Identical to simulate() except Y passed to lfr_forward is held constant
-    at Y_freeze instead of being read from x[:, 2]. All four RK4 sub-steps
-    use the same frozen Y. Everything else (P transform, RK4 weights) is
-    identical to the LPV version.
-
-    Use for comparison against Python LPV driven by the same u_seq_stage.
-    Do NOT compare against MATLAB q3 — q3 uses its own closed-loop forces.
-    """
-    N     = u_seq_stage.shape[1]
-    batch = x0.shape[0]
-    Y_c   = torch.full((batch,), Y_freeze, dtype=_DTYPE)   # constant Y
-
-    X_list, Y_list, Z_list, W_list = [x0], [], [], []
-    x = x0
-
-    for k in range(N):
-        u_logical = u_seq_stage[:, k, :] @ P.T          # stage -> logical
-
-        # RK4 — frozen Y at every sub-step
-        k1, z, w, y = lfr_forward(x,                   u_logical, Y_c, M0, M1, M2, K, C)
-        x2 = x + (ts / 2) * k1
-        k2, _,  _,  _ = lfr_forward(x2,                u_logical, Y_c, M0, M1, M2, K, C)
-        x3 = x + (ts / 2) * k2
-        k3, _,  _,  _ = lfr_forward(x3,                u_logical, Y_c, M0, M1, M2, K, C)
-        x4 = x + ts * k3
-        k4, _,  _,  _ = lfr_forward(x4,                u_logical, Y_c, M0, M1, M2, K, C)
-        x_next = x + (ts / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
-
-        Y_list.append(y @ P)     # logical -> stage
-        Z_list.append(z)
-        W_list.append(w)
-        X_list.append(x_next)
-        x = x_next
-
-    return SimResult(
-        X=torch.stack(X_list, dim=1),
-        Y=torch.stack(Y_list, dim=1),
-        Z=torch.stack(Z_list, dim=1),
-        W=torch.stack(W_list, dim=1),
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -669,11 +615,13 @@ def _section_lpv_vs_frozen():
 
     with torch.no_grad():
         res_lpv    = simulate(x0, u_batch, M0, M1, M2, K, C, P, ts)
-        res_frozen = simulate_frozen(x0, u_batch, Y_freeze=_Y_FREEZE)
+        res_frozen = simulate_frozen(x0, u_batch, M0, M1, M2, K, C, P, ts,
+                                     Y_freeze=_Y_FREEZE)
         if u_q_stage is not None:
             u_q_batch      = u_q_stage.unsqueeze(0)
             res_lpv_uq     = simulate(x0, u_q_batch, M0, M1, M2, K, C, P, ts)
-            res_frozen_uq  = simulate_frozen(x0, u_q_batch, Y_freeze=_Y_FREEZE)
+            res_frozen_uq  = simulate_frozen(x0, u_q_batch, M0, M1, M2, K, C, P, ts,
+                                             Y_freeze=_Y_FREEZE)
 
     # Stage-coordinate outputs: (N, 3)
     y_lpv    = res_lpv.Y[0].numpy()      # Python LPV

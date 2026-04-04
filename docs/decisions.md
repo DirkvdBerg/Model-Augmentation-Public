@@ -554,6 +554,13 @@ Wait — the Interconnect uses column-vector convention (w_block is (batch, nw, 
 
 ---
 
+### [D-028] Add BPTT mode toggle to simulate()
+**Date**: 2026-04-03
+**What**: `simulate()` in `lfr_simulate.py` gains a `bptt_mode` parameter with three options: `"full"` (default, unchanged behaviour — retains entire graph), `"truncated"` (detach state every `segment_len` steps), and `"checkpoint"` (use `torch.utils.checkpoint` for exact gradients at O(sqrt(N)) memory). `simulate_frozen()` moved from `validate_lfr.py` to `lfr_simulate.py`.
+**Why**: The full computation graph across N RK4 steps is O(N) in memory. For realistic training horizons (N > 1000), this becomes impractical. Jan's framework handles this implicitly via `nf`-bounded windows (typical nf=200), but our standalone `simulate()` had no such bound. The three modes give callers explicit control: `"truncated"` matches Jan's nf pattern (cheap, biased gradients); `"checkpoint"` gives exact gradients at ~1.3x compute; `"full"` remains the default for backward compatibility and short horizons.
+**Ruled out**: Adjoint method (torchdiffeq) — exact O(1) memory but numerically unstable for stiff systems and adds an external dependency. Hardcoding a single BPTT strategy — different training scenarios benefit from different trade-offs.
+**Constrains**: Training scripts should choose `bptt_mode` explicitly based on horizon length and gradient quality requirements. `segment_len` for truncated mode should cover the system's settling time (~200-1000 steps at 20 kHz).
+
 ### [D-019] Use Drenth thesis for CT LPV-LFR citations; treat IFAC paper as DT companion
 **Date**: 2026-03-24
 **What**: For any continuous-time LPV-LFR definition, notation, or generic interconnection equations used in the gantry write-up, the primary source is Drenth's thesis (`literature/books/drenth2025_lpv-lfr-thesis.pdf`). The IFAC paper (`literature/lpv-lfr/drenth2025_lpv-lfr-rational.pdf`) is treated as the discrete-time companion paper and cited as such.

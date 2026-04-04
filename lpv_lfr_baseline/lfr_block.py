@@ -40,9 +40,8 @@ Design notes:
     Y is never a named external signal — this keeps the Interconnect free of
     algebraic loops (see README: Interconnect pitfalls).
 
-    Physical parameters — stored as plain attributes. For GPU training,
-    replace with self.register_buffer() so tensors move automatically with
-    the model. No other change needed.
+    Physical parameters — registered as buffers via self.register_buffer()
+    so .to(device) / .cuda() moves them automatically with the module.
 """
 
 import torch
