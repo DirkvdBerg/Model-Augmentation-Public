@@ -684,6 +684,77 @@ def _section_lpv_vs_frozen():
                       f"{maxe:{col_w}.3e}  {mne:{col_w}.3e}")
             print()
 
+    # --- Settling error analysis ---
+    # Detect settled regions: where |dY/dt| < threshold for at least min_hold samples.
+    # This is a non-standard metric (the LPV-LFR literature uses full-trajectory BFR),
+    # included as an application-specific diagnostic for the ASMPT gantry where
+    # positioning accuracy after a move is the key performance indicator.
+    _SETTLE_THRESH = 0.01   # m/s — below this, Y is considered stationary
+    _SETTLE_HOLD   = 100    # samples at 20 kHz = 5 ms minimum hold time
+
+    dY_dt = np.gradient(y_ref[:, 2], t_sim[:N])          # dY/dt from reference
+    is_settled = np.abs(dY_dt) < _SETTLE_THRESH           # (N,) bool
+
+    # Enforce minimum hold: erode short settled blips
+    settled_mask = np.zeros(N, dtype=bool)
+    run_start = None
+    for k in range(N):
+        if is_settled[k]:
+            if run_start is None:
+                run_start = k
+        else:
+            if run_start is not None and (k - run_start) >= _SETTLE_HOLD:
+                settled_mask[run_start:k] = True
+            run_start = None
+    # Close final run
+    if run_start is not None and (N - run_start) >= _SETTLE_HOLD:
+        settled_mask[run_start:N] = True
+
+    n_settled = settled_mask.sum()
+    moving_mask = ~settled_mask
+
+    if n_settled > 0:
+        # Find contiguous settled regions for reporting
+        changes     = np.diff(settled_mask.astype(np.int8))
+        reg_starts  = np.where(changes == 1)[0] + 1
+        reg_ends    = np.where(changes == -1)[0] + 1
+        # Handle edge cases: settled at start/end
+        if settled_mask[0]:
+            reg_starts = np.concatenate([[0], reg_starts])
+        if settled_mask[-1]:
+            reg_ends = np.concatenate([reg_ends, [N]])
+
+        print(f'  Settling analysis  (|dY/dt| < {_SETTLE_THRESH} m/s, hold >= {_SETTLE_HOLD} samples)')
+        print(f'  Settled samples   : {n_settled} / {N} ({100 * n_settled / N:.1f}%)')
+        for r, (rs, re) in enumerate(zip(reg_starts, reg_ends)):
+            Y_at = y_ref[rs, 2]
+            print(f'    Region {r}: t = {t_sim[rs]:.4f} - {t_sim[min(re-1, N-1)]:.4f} s  '
+                  f'({re - rs} samples, {(re - rs) * _TS * 1e3:.1f} ms)  Y ~ {Y_at:.3f} m')
+        print()
+
+        settle_hdr = (f"  {'Model':<20s}  {'Channel':<8s}  "
+                      f"{'RMSE settled':>14s}  {'Max|e| settled':>14s}  "
+                      f"{'RMSE moving':>14s}  {'Max|e| moving':>14s}")
+        print(settle_hdr)
+        print('  ' + '-' * (len(settle_hdr) - 2))
+        for model_name, y_hat in [('Python LPV', y_lpv), ('Python frozen', y_frozen)]:
+            err_all = np.abs(y_hat - y_ref)
+            for i, ch in enumerate(_CH_NAMES):
+                e_s = err_all[settled_mask, i]
+                e_m = err_all[moving_mask, i]
+                rmse_s = float(np.sqrt(np.mean(e_s ** 2)))
+                maxe_s = float(e_s.max())
+                rmse_m = float(np.sqrt(np.mean(e_m ** 2))) if e_m.size > 0 else 0.0
+                maxe_m = float(e_m.max()) if e_m.size > 0 else 0.0
+                print(f"  {model_name:<20s}  {ch:<8s}  "
+                      f"{rmse_s:14.3e}  {maxe_s:14.3e}  "
+                      f"{rmse_m:14.3e}  {maxe_m:14.3e}")
+            print()
+    else:
+        print(f'  Settling analysis: no settled regions detected '
+              f'(threshold {_SETTLE_THRESH} m/s, hold {_SETTLE_HOLD} samples)')
+        print()
+
     # --- Plot ---
     n_panels = 4
     fig, axes = plt.subplots(n_panels, 1, figsize=(13, 12), sharex=True)
@@ -702,6 +773,16 @@ def _section_lpv_vs_frozen():
     ax.set_title('Scheduling variable Y(t)')
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=8, loc='upper right')
+
+    # Shade settled regions on all panels
+    if n_settled > 0:
+        for ax_i in axes:
+            for rs, re in zip(reg_starts, reg_ends):
+                ax_i.axvspan(t_sim[rs], t_sim[min(re - 1, N - 1)],
+                             alpha=0.08, color='green', zorder=0)
+        # Label once on Panel 1
+        axes[0].annotate('green = settled', xy=(0.01, 0.04),
+                          xycoords='axes fraction', fontsize=7, color='green')
 
     # Panel 2: position outputs — all 3 channels
     ax = axes[1]
