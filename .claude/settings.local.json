@@ -52,7 +52,19 @@
       "Bash(del:*)",
       "WebFetch(domain:)",
       "Bash(pdflatex -interaction=nonstopmode lpv-lfr-baseline.tex)",
-      "Bash(grep -E \"\\\\.\\(py|ipynb\\)$\")"
+      "Bash(grep -E \"\\\\.\\(py|ipynb\\)$\")",
+      "Bash(grep -n \"data_generation\\\\|interconnect_fit\\\\|deepSI_encoder\" \"C:\\\\Users\\\\20203253\\\\OneDrive - TU Eindhoven\\\\Graduation Project\\\\Baseline FP model\\\\Baseline-LPV-Augmentation/scripts/ecc_2025/\"*.py)",
+      "WebFetch(domain:rdrr.io)",
+      "WebFetch(domain:link.springer.com)",
+      "WebFetch(domain:docs.gpytorch.ai)",
+      "WebFetch(domain:pmc.ncbi.nlm.nih.gov)",
+      "WebFetch(domain:lucaselbert.medium.com)",
+      "WebFetch(domain:cse.sc.edu)",
+      "Bash(echo \"exit: $?\")",
+      "Read(//tmp/**)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(echo \"Failed with $?\")"
     ]
   }
 }

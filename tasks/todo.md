@@ -625,27 +625,97 @@ able to estimate global model -- about experiment design."
 
 ---
 
-## Step 3b: Baseline Parameter Training on Synthetic MATLAB Data (D-023)
+## Step 3b: Baseline Parameter Training on Synthetic MATLAB Data (D-023, D-030–D-033)
 
-**Goal**: Before adding any augmentation black box, demonstrate that the baseline with free physical parameters can recover the correct parameter values from MATLAB-generated synthetic data. This is Jan's parameter update method applied to the gantry baseline.
+**Goal**: Demonstrate that the baseline with free physical parameters can recover the correct parameter values from MATLAB-generated data. No ANN augmentation in this step — parameter recovery only. This is the go/no-go gate before augmentation complexity is added.
 
-**Why first**: Roland specified this phasing (2026-03-31 meeting). Validates the training pipeline in isolation before augmentation complexity is added.
+**Why first**: Roland specified this phasing (2026-03-31 meeting). Validates the training pipeline in isolation.
 
-### Task 3b.1 — Generate synthetic training data from MATLAB
-- [ ] Generate synthetic data for a range of Y values and parameter volumes (use export scripts or extend them)
-- [ ] Data must cover representative operational range of Y
+**Key decisions**: D-030 (parameter set + identifiability), D-031 (separate file), D-032 (SSE_Interconnect subclass), D-033 (data strategy).
 
-### Task 3b.2 — Implement trainable baseline parameters
-- [ ] Make physical parameters (mb, mh, m1, m2, etc.) trainable in the torch model
-- [ ] Initialize close to true values
-- [ ] Document which parameters are made trainable (decisions.md)
+**Future extension (not in this step)**:
+- Option B data: Python `simulate()` with multisine input, controlled SNR, explicit train/val/test splits (mirrors Jan's MSD setup exactly)
+- ANN augmentation on z_lfr slot (parallel, additive to xp) after parameter recovery is proven
 
-### Task 3b.3 — Train and validate parameter recovery
-- [ ] Train on MATLAB synthetic data (no augmentation block)
-- [ ] Verify that estimated parameters converge to the MATLAB ground-truth values
-- [ ] This is the go/no-go gate before augmentation begins
+---
 
-### Task 3b.4 — Compare LPV-LFR model with Jasper's MATLAB result
+### Task 3b.1 — Decisions logged ✅
+- [x] Parameter set chosen and identifiability justified (D-030)
+- [x] File structure decided (D-031)
+- [x] SSE_Interconnect integration strategy decided (D-032)
+- [x] Data strategy decided: Option A MATLAB, Option B future (D-033)
+
+---
+
+### Task 3b.2 — Implement `lpv_lfr_baseline/lfr_param_block.py`
+
+**Trainable scalars** (nn.Parameter, 10 total):
+`kb_sum`, `cg1`, `cg2`, `cy`, `cb_sum`, `mh`, `m1`, `m2`, `mb`, `J_sum`
+
+**Fixed buffers**: `Lb`, `d` (see D-030 for rationale)
+
+**Detuned initial values**:
+| Scalar | True value | Detuned init | Δ |
+|--------|-----------|--------------|---|
+| kb_sum | 3975.0    | 3776.25      | −5% |
+| cg1    | 14.5      | 13.05        | −10% |
+| cg2    | 20.3      | 18.27        | −10% |
+| cy     | 10.0      | 9.00         | −10% |
+| cb_sum | 18.0      | 16.20        | −10% |
+| mh     | 10.1      | 9.595        | −5% |
+| m1     | 10.2      | 9.690        | −5% |
+| m2     | 10.7      | 10.165       | −5% |
+| mb     | 22.8      | 22.344       | −2% |
+| J_sum  | 1.05      | 0.9975       | −5% |
+
+**Implementation checklist**:
+- [ ] `class ParameterizedLFRBlock(_BASE)` with `nz=9, nw=18`
+- [ ] `self.params` as `nn.Parameter` (10 scalars, detuned init)
+- [ ] `self.params_init` as frozen buffer (same detuned values — regularization anchor)
+- [ ] `self.Lambda` as buffer — weighted per-parameter (tight for `mb`, standard for rest)
+- [ ] `_build_matrices()` — differentiable reconstruction of M0, M1, M2, K, C from `self.params` + fixed `Lb`, `d`
+- [ ] `forward()` — same structure as `LFRBaselineBlock.forward()`, calls `_build_matrices()` then `rk4_step()`
+- [ ] `param_loss()` — Lambda-weighted L2 regularization toward `params_init`
+- [ ] Verification checks (shape, autograd through `_build_matrices`, `param_loss` non-negative, gradient flows to `self.params`)
+
+**RMSE_baseline**: Compute from one no-gradient forward pass of detuned baseline on MATLAB data before training (D-034). Pass result to `ParameterizedLFRBlock.__init__()`.
+
+**Positivity constraint**: Log/exp reparameterization (D-035). Store `self.log_params = nn.Parameter(torch.log(params_init))`. Recover `params = torch.exp(self.log_params).clamp(min=1e-6)` in forward and param_loss.
+
+---
+
+### Task 3b.3 — Subclass SSE_Interconnect
+
+**File**: `lpv_lfr_baseline/lfr_fit_system.py` (new)
+
+- [ ] `class LFRFitSystem(SSE_Interconnect)` that overrides `loss()`
+- [ ] Generic sweep: `for m in self.hfn.connected_blocks: if hasattr(m, 'param_loss'): loss_theta += m.param_loss()`
+- [ ] All other loss logic (simulation MSE, encoder) inherited unchanged from `SSE_Interconnect`
+- [ ] Smoke test: instantiate with a `ParameterizedLFRBlock`, check `loss()` calls `param_loss()`
+
+---
+
+### Task 3b.4 — Training script
+
+**File**: `lpv_lfr_baseline/train_param_recovery.py` (new)
+
+- [ ] Load `Matlab-output/lpv_sim_varying_y.mat` → convert `u_q1`, `q1` to deepSI `System_data`
+- [ ] Build Interconnect with `ParameterizedLFRBlock` (same wiring as `build_baseline_interconnect()` in `test_jan_compat.py`)
+- [ ] Instantiate `LFRFitSystem`, call `init_model()` and `fit()`
+- [ ] Set RMSE_baseline (from Task 3b.2 open item)
+
+---
+
+### Task 3b.5 — Proof / evaluation
+
+- [ ] After training: print `params` (learned) vs `params_init` (detuned) vs true values from `physics.py`
+- [ ] Compute RMS prediction error: detuned baseline (no training) vs trained `ParameterizedLFRBlock`
+- [ ] Show parameters moved toward true values — this is the go/no-go criterion
+- [ ] If parameters do NOT recover: diagnose (data richness, Lambda tuning, RMSE_baseline)
+
+---
+
+### Task 3b.6 — Compare LPV-LFR model with Jasper's MATLAB result
 - [ ] Compare the Python LPV-LFR simulation output against Jasper's MATLAB LPV-LFR implementation
 - [ ] Raised by ASMPT in the 2026-03-31 meeting as a cross-check
 

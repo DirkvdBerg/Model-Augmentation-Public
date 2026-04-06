@@ -568,9 +568,78 @@ Wait — the Interconnect uses column-vector convention (w_block is (batch, nw, 
 **Ruled out**: Deleting lfr_matrices.py (still used by svd/). Switching from torch.linalg.solve to Cholesky (negligible difference for 3x3 matrices).
 **Constrains**: `rk4_step` now has an optional `Y_override` keyword argument. Callers using positional args are unaffected. `simulate_frozen` is now a thin wrapper around `simulate`-style logic with `Y_override`.
 
+### [D-030] Trainable physical parameter set for ParameterizedLFRBlock
+**Date**: 2026-04-06
+**What**: 10 trainable scalars, 2 fixed scalars, in `ParameterizedLFRBlock`. Trainable: `kb_sum` (=kb1+kb2), `cg1`, `cg2`, `cy`, `cb_sum` (=cb1+cb2), `mh`, `m1`, `m2`, `mb`, `J_sum` (=Jb+Jh). Fixed buffers: `Lb`, `d`.
+**Why**: Identifiability analysis on the matrix structure of M(Y), C, K:
+- `kb1`, `kb2` appear only as their sum in K[1,1] → not individually identifiable; train sum.
+- `cg1`, `cg2` appear as both sum and difference in C → individually identifiable.
+- `cy` appears isolated in C[2,2] → directly identifiable.
+- `cb1`, `cb2` appear only as sum in C[1,1] → train sum.
+- `mh` is the sole LPV parameter (enters M0, M1, M2) → strongest signal, must train.
+- `m1`, `m2` appear individually via M0[0,1]=(m1-m2)*Lb/2 → identifiable.
+- `mb` appears only in M0[0,0] sum with m1+m2+mh → weakest signal; train with tight Lambda.
+- `Jb`, `Jh` appear only as sum in M0[1,1] → train sum.
+- `Lb` appears in M0, C, and the P coordinate transform; changing P corrupts stage↔logical mapping during training → fixed.
+- `d` appears only in products mh*d and mh*d² alongside trainable mh → not separately identifiable; fixed.
+All 10 trainable scalars are simultaneously trained from the start (same pattern as `Parameterized_MSD_State_Block`). Lambda regularization weights handle the varying identifiability — tighter for `mb` (2% detuning), standard for others (5–10% detuning).
+**Ruled out**: Training `Lb` (corrupts P transform), training `d` (unidentifiable alongside mh), training `Jb`/`Jh` individually (only sum is identifiable), phased training (Jan trains all params at once; regularization handles weak identifiability).
+**Constrains**: `_build_matrices()` in `lfr_param_block.py` must reconstruct M0, M1, M2, K, C from these 10 scalars plus fixed `Lb`, `d`. Detuning amounts: kb_sum −5%, cg1/cg2/cy/cb_sum −10%, mh/m1/m2/J_sum −5%, mb −2%.
+
+---
+
+### [D-031] Implement ParameterizedLFRBlock in a separate file lfr_param_block.py
+**Date**: 2026-04-06
+**What**: The trainable-parameter LFR block lives in `lpv_lfr_baseline/lfr_param_block.py`, not in `lfr_block.py`.
+**Why**: `lfr_block.py` has a single well-tested responsibility (stateless frozen-parameter wrapper). The parameterized variant adds substantial new logic: scalar parameter management, `_build_matrices()` differentiable reconstruction, and `param_loss()` regularization. Mixing these two concerns would make both files harder to read and test independently. The existing module follows a one-concern-per-file pattern.
+**Ruled out**: Extending `lfr_block.py` with a subclass (same file becomes bloated); creating a generic `parameterized_block.py` (too abstract for one use case).
+**Constrains**: `lfr_block.py` stays untouched as the frozen baseline reference. `lfr_param_block.py` imports `rk4_step` from `lfr_simulate.py` and scalar constants from `physics.py` as initial values only.
+
+---
+
+### [D-032] Subclass SSE_Interconnect to handle ParameterizedLFRBlock.param_loss()
+**Date**: 2026-04-06
+**What**: A thin subclass of `SSE_Interconnect` (living in `lpv_lfr_baseline/`) overrides `loss()` to add a generic `hasattr(m, 'param_loss')` sweep over connected blocks. Jan's `model_augmentation/` code is not modified.
+**Why**: `SSE_Interconnect.loss()` calls `param_loss()` only on hard-coded `isinstance` checks for its own block types. `model_augmentation/` is read-only (CLAUDE.md). A subclass override is the minimal, non-invasive extension.
+**Ruled out**: Editing Jan's `interconnect.py` (violates read-only constraint); monkey-patching at runtime (fragile).
+**Constrains**: The subclass must call `super().loss()` minus the block-type sweep, then add its own generic sweep — or replicate the loss structure with the generic check. It lives in `lpv_lfr_baseline/` and is the entry point for all training scripts in this project.
+
+---
+
+### [D-033] Data strategy: Option A (MATLAB) for first experiment, Option B (Python simulate) future
+**Date**: 2026-04-06
+**What**: The first parameter-recovery experiment uses the existing `Matlab-output/lpv_sim_varying_y.mat` as training data (Option A). Option B — generating fresh synthetic data via Python `simulate()` with a multisine input, controlled noise (SNR), and explicit train/val/test splits — is deferred to a future experiment.
+**Why**: The MATLAB trajectory was generated with the true physical parameters and provides the ground-truth output we need to train against. It exercises varying Y (0.3→0.1 m), which is exactly the range where M(Y) variation is observable. Option B is more rigorous and mirrors Jan's experimental design exactly, but requires additional scripting (input design, noise model, data splits) that is not needed to prove the concept.
+**Ruled out**: Using frozen-Y data (LPV parameter mh not identifiable without Y variation); skipping Option B entirely (it is the right long-term approach for a rigorous benchmark).
+**Constrains**: The training script must load and convert `lpv_sim_varying_y.mat` to deepSI format. When Option B is implemented, the training script should be parameterizable to switch data sources without changing the model structure.
+
+---
+
 ### [D-019] Use Drenth thesis for CT LPV-LFR citations; treat IFAC paper as DT companion
 **Date**: 2026-03-24
 **What**: For any continuous-time LPV-LFR definition, notation, or generic interconnection equations used in the gantry write-up, the primary source is Drenth's thesis (`literature/books/drenth2025_lpv-lfr-thesis.pdf`). The IFAC paper (`literature/lpv-lfr/drenth2025_lpv-lfr-rational.pdf`) is treated as the discrete-time companion paper and cited as such.
 **Why**: The two local Drenth sources are not interchangeable. The thesis explicitly gives the LPV-LFR pair `(G, Delta(p))` in continuous time with `x_dot(t)`, `z(t)`, `w(t)`, `y(t)` and the equivalent rational LPV-SS form. The IFAC paper defines the LPV-LFR pair `{M, Delta(p)}` in discrete time. Citing the IFAC paper as if it were the primary CT definition overstates the DT-to-CT adaptation and obscures the notation difference between the two sources.
 **Ruled out**: Treating the thesis and IFAC paper as equivalent sources for Section 2-style CT LPV-LFR definitions. Citing IFAC eq. 6-9 as if it were the primary CT source.
 **Constrains**: `docs/references.md`, `docs/lfr-structure.md`, and future LaTeX source notes should cite the thesis for CT LPV-LFR definitions. The IFAC paper remains useful for DT LPV-LFR context, rational-dependency motivation, and well-posedness discussion, but should be labeled as the DT companion when referenced.
+
+---
+
+### [D-034] RMSE_baseline for Lambda regularization computed from detuned baseline on MATLAB data
+**Date**: 2026-04-06
+**What**: Before training begins, run one no-gradient forward simulation of `ParameterizedLFRBlock` with `params = params_init` (detuned values) on `lpv_sim_varying_y.mat`. Measure the RMS prediction error in stage coordinates. Use this value as `RMSE_baseline` in the Lambda computation: `Lambda[i] = RMSE_baseline / params_init[i]`.
+**Why**: RMSE_baseline scales the regularization relative to the simulation loss. If it is set correctly, the optimizer naturally balances simulation MSE against parameter deviation — when parameters have moved enough to reduce prediction error by one RMSE_baseline unit, the regularization cost is comparable to the simulation benefit. Computing it from the actual detuned baseline on actual data gives an automatic, principled calibration that does not require guessing. Our data is in physical units (metres), so a pre-chosen constant (Jan's value of 0.2 for his normalised MSD system) would be arbitrary and likely wrong.
+**Ruled out**: Manual constant (Jan's approach, e.g. 0.2 for MSD) — only valid because Jan pre-normalises his data to dimensionless units; our data is in metres and the appropriate scale is unknown a priori without a simulation. Setting it too small over-regularises (parameters cannot move); too large under-regularises (parameters may overshoot true values).
+**Constrains**: The training script must run a forward-pass RMSE computation before calling `init_model()`. This value is passed to `ParameterizedLFRBlock.__init__()` as `RMSE_baseline`. It should be logged alongside training results for reproducibility.
+
+---
+
+### [D-035] Physical parameter positivity enforced via log/exp reparameterization
+**Date**: 2026-04-06
+**What**: Physical scalars in `ParameterizedLFRBlock` are stored as `self.log_params = nn.Parameter(torch.log(params_init))`. Physical values are recovered as `params = torch.exp(self.log_params).clamp(min=1e-6)` inside `forward()` and `param_loss()`. The clamp is a numerical crash guard only, not an optimization mechanism.
+**Why**: If any physical parameter goes zero or negative during training, `M(Y) = M0 + M1*Y + M2*Y²` becomes singular and `torch.linalg.solve` crashes or produces garbage. L2 regularization alone provides no hard guarantee. Log/exp reparameterization maps the unconstrained real line to `(0, ∞)` — the optimizer trains `log_params` freely in ℝ and positivity is guaranteed by construction. Literature survey (GPyTorch, Stan, neural ODE grey-box models, PINN parameter ID papers) confirms log/exp is the dominant choice for positive scalar physical parameters. Initialisation is trivial: `log(params_init)` exactly inverts the exp transform, so training starts at the correct physical values.
+**Ruled out**:
+- *Softplus*: `params = log(1 + exp(raw))`. Functionally equivalent to log/exp at our parameter magnitudes (all ≥ 1.05 kg) — softplus saturates to identity for large inputs so the two are numerically indistinguishable. Softplus is GPyTorch's default because it prevents overflow during large hyperparameter searches; this concern does not apply here since L2 regularization keeps params near init. Rejected in favour of log/exp for simplicity (no `softplus_inverse` needed at init) and because it is the more standard choice in the system identification literature.
+- *Projected gradient / clamping as training strategy*: `params.clamp_(min=1e-6)` after each optimizer step. Creates a discontinuous gradient at the boundary — the optimizer sees a flat landscape and cannot recover. Parameters cluster at the clip value. Widely considered an antipattern (cf. WGAN weight clipping critique). Retained only as a numerical safety net after exp, not as a constraint mechanism.
+- *Log-barrier term*: Add `-λ · Σ log(params)` to the loss. Requires scheduling λ toward 0 (interior point method) to be principled; in stochastic gradient training with Adam this scheduling is difficult to get right. Adds a hyperparameter with no clear benefit when L2 regularization already anchors parameters near positive initial values.
+- *Unconstrained training relying on regularization alone*: L2 regularization provides a soft pull toward positive init values but no hard guarantee. For a small detuning (5-10%) and well-calibrated Lambda this would likely work in practice, but provides no protection against edge cases (aggressive learning rates, long training, poor RMSE_baseline calibration).
+**Constrains**: `ParameterizedLFRBlock` stores `self.log_params` as `nn.Parameter`. All reads of physical parameter values — in `_build_matrices()`, `param_loss()`, and any diagnostic printout — must go through `torch.exp(self.log_params)`. The regularization reference `self.params_init` remains in physical space (not log space) for interpretability.
