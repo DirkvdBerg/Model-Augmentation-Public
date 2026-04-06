@@ -1,53 +1,12 @@
 """
 lfr_simulate.py
 ---------------
-RK4 single-step function and standalone simulation loop for the dual-gantry LPV-LFR baseline.
+RK4 single-step and trajectory simulation for the dual-gantry LPV-LFR baseline.
 
-Discretization: RK4 with fixed step ts = 1/fs. Consistent with D-018.
-
-Provides three functions:
-
-    rk4_step(x, u_logical, M0, M1, M2, K, C, ts) -> (x_next, z, w, y)
-        Single RK4 step in logical coordinates.
-        Used by both simulate() and lfr_block.py (Jan's Block wrapper).
-        Y is extracted from the state at each sub-step — self-scheduled.
-        z and w are from the START of the step (x[k], not sub-steps).
-        y is in logical coordinates — caller applies @ P for stage output.
-
-    simulate(x0, u_seq_stage, M0, M1, M2, K, C, P, ts, ...) -> SimResult
-        Full trajectory simulation over N steps.
-        x0           : (batch, 6)    initial state in logical coordinates
-        u_seq_stage  : (batch, N, 3) input sequence in stage coordinates
-        Returns SimResult with fields:
-            X  : (batch, N+1, 6)  state trajectory (logical coordinates)
-            Y  : (batch, N, 3)    output trajectory (stage coordinates)
-            Z  : (batch, N, 6)    latent z at start of each step
-            W  : (batch, N, 6)    latent w at start of each step
-
-        BPTT modes (bptt_mode parameter):
-            "full"        — retain entire computation graph (default, current behavior)
-            "truncated"   — detach state every segment_len steps, capping graph depth
-            "checkpoint"  — torch.utils.checkpoint on each RK4 step (exact gradients,
-                            O(sqrt(N)) memory, ~1.3x compute)
-
-    simulate_frozen(x0, u_seq_stage, M0, M1, M2, K, C, P, ts, Y_freeze) -> SimResult
-        Same as simulate() but M(Y) frozen at Y_freeze for all RK4 sub-steps.
-        For LPV vs frozen LTI comparison.
-
-All inputs and outputs carry a leading batch dimension.
-For single-trajectory use, add/remove the batch dim with unsqueeze(0)/squeeze(0).
-
-RK4 sub-step schedule:
-    k1, z, w, y = lfr_forward(x,             u_logical, x[:, 2],           M0, M1, M2, K, C)
-    k2, _, _, _ = lfr_forward(x + ts/2 * k1, u_logical, (x+ts/2*k1)[:,2], M0, M1, M2, K, C)
-    k3, _, _, _ = lfr_forward(x + ts/2 * k2, u_logical, (x+ts/2*k2)[:,2], M0, M1, M2, K, C)
-    k4, _, _, _ = lfr_forward(x + ts   * k3, u_logical, (x+ts*k3)[:,2],   M0, M1, M2, K, C)
-    x_next = x + ts/6 * (k1 + 2*k2 + 2*k3 + k4)
-
-Note on RK4 vs ZOH:
-    Validation against MATLAB (ZOH) will show small bounded differences at 16kHz.
-    This is expected — RK4 and ZOH are different discretization methods.
-    Do not switch to ZOH to match MATLAB exactly — RK4 is the chosen method (D-018).
+Provides:
+    rk4_step()       - single RK4 step, self-scheduled Y from state
+    simulate()       - N-step trajectory with BPTT mode control
+    simulate_frozen() - same but M(Y) frozen at a fixed Y (LTI comparison)
 """
 
 from dataclasses import dataclass
@@ -76,55 +35,38 @@ class SimResult:
 
 
 def rk4_step(
-    x:         torch.Tensor,   # (batch, 6)  state in logical coordinates
-    u_logical: torch.Tensor,   # (batch, 3)  input in logical coordinates
-    M0:        torch.Tensor,   # (3,3)
-    M1:        torch.Tensor,   # (3,3)
-    M2:        torch.Tensor,   # (3,3)
-    K:         torch.Tensor,   # (3,3)
-    C:         torch.Tensor,   # (3,3)
-    ts:        torch.Tensor,   # ()    sample period
+    x:          torch.Tensor,   # (batch, 6)  state in logical coordinates
+    u_logical:  torch.Tensor,   # (batch, 3)  input in logical coordinates
+    M0:         torch.Tensor,   # (3,3)
+    M1:         torch.Tensor,   # (3,3)
+    M2:         torch.Tensor,   # (3,3)
+    K:          torch.Tensor,   # (3,3)
+    C:          torch.Tensor,   # (3,3)
+    ts:         torch.Tensor,   # ()    sample period
+    Y_override: torch.Tensor | None = None,  # (batch,) freeze Y at this value
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Single RK4 step. Returns (x_next, z, w, y_logical).
 
-    Y is extracted from the state at each sub-step — quasi-LPV self-scheduling.
-    z and w are from the start of the step (x[k]).
-    y is returned in logical coordinates — apply @ P for stage output.
+    Y_override=None: self-scheduled, Y re-extracted from state at each sub-step.
+    Y_override=tensor: frozen LTI, Y held constant across all sub-steps.
     """
-    # k1 — also records z, w, y at x[k] (start of step)
-    # x[:, 2] = Y in both logical [X, Θ, Y] and stage [X1, X2, Y] — P's third row is [0,0,1]
-    k1, z, w, y = lfr_forward(x,                   u_logical, x[:, 2],                   M0, M1, M2, K, C)
+    def _Y(state: torch.Tensor) -> torch.Tensor:
+        return state[:, 2] if Y_override is None else Y_override
 
-    # k2 — Y from intermediate state
+    k1, z, w, y = lfr_forward(x, u_logical, _Y(x), M0, M1, M2, K, C)
+
     x2 = x + (ts / 2) * k1
-    k2, _, _, _  = lfr_forward(x2,                  u_logical, x2[:, 2],                  M0, M1, M2, K, C)
+    k2, _, _, _ = lfr_forward(x2, u_logical, _Y(x2), M0, M1, M2, K, C)
 
-    # k3 — Y from intermediate state
     x3 = x + (ts / 2) * k2
-    k3, _, _, _  = lfr_forward(x3,                  u_logical, x3[:, 2],                  M0, M1, M2, K, C)
+    k3, _, _, _ = lfr_forward(x3, u_logical, _Y(x3), M0, M1, M2, K, C)
 
-    # k4 — Y from end-of-step state
     x4 = x + ts * k3
-    k4, _, _, _  = lfr_forward(x4,                  u_logical, x4[:, 2],                  M0, M1, M2, K, C)
+    k4, _, _, _ = lfr_forward(x4, u_logical, _Y(x4), M0, M1, M2, K, C)
 
     x_next = x + (ts / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
-
     return x_next, z, w, y
-
-
-def _rk4_step_for_checkpoint(
-    x: torch.Tensor, u_logical: torch.Tensor,
-    M0: torch.Tensor, M1: torch.Tensor, M2: torch.Tensor,
-    K: torch.Tensor, C: torch.Tensor, ts: torch.Tensor,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Wrapper for rk4_step compatible with torch.utils.checkpoint.
-
-    checkpoint requires all inputs and outputs to be tensors, and the
-    function must be called without keyword arguments. This thin wrapper
-    satisfies both constraints while delegating to the real rk4_step.
-    """
-    return rk4_step(x, u_logical, M0, M1, M2, K, C, ts)
 
 
 def simulate(
@@ -143,76 +85,47 @@ def simulate(
     """
     Simulate N steps using RK4. Returns SimResult.
 
-    u_seq_stage is in stage coordinates — P transform applied at each step.
-    Output Y is converted to stage coordinates.
-    All tensors float64.
-
-    Parameters
-    ----------
-    bptt_mode : {"full", "truncated", "checkpoint"}
-        Controls memory/gradient trade-off during training:
-
-        "full" (default)
-            Retain the entire computation graph across all N steps.
-            Exact gradients. Memory: O(N). Best for short horizons (N < ~1000).
-
-        "truncated"
-            Detach the state every `segment_len` steps, capping the maximum
-            computation graph depth. Gradients do not flow across segment
-            boundaries — this introduces gradient bias but matches the
-            nf-bounded horizon used in Jan's SSE_Interconnect.loss().
-            Memory: O(segment_len). Best when long-range gradients are not
-            needed or when segment_len covers the system's settling time.
-
-        "checkpoint"
-            Use torch.utils.checkpoint on each RK4 step. Activations are
-            discarded during the forward pass and recomputed during backward.
-            Exact gradients (no bias). Memory: O(sqrt(N)). Compute: ~1.3x.
-            Best for long horizons where exact gradients are required.
-
-    segment_len : int
-        Number of steps per segment for "truncated" mode. Ignored otherwise.
-        Default 200 (matches Jan's typical nf).
+    bptt_mode: "full" (exact, O(N) memory), "truncated" (detach every segment_len),
+               "checkpoint" (exact, O(sqrt(N)) memory, ~1.3x compute).
     """
+    batch = x0.shape[0]
     N = u_seq_stage.shape[1]
 
-    X_list = [x0]
-    Y_list = []
-    Z_list = []
-    W_list = []
+    # Pre-transform entire input sequence: stage -> logical (once, not N times)
+    u_seq_logical = u_seq_stage @ P.T                              # (batch, N, 3)
+
+    # Pre-allocate output tensors
+    X = x0.new_empty(batch, N + 1, 6)
+    Y = x0.new_empty(batch, N, 3)
+    Z = x0.new_empty(batch, N, 6)
+    W = x0.new_empty(batch, N, 6)
+    X[:, 0, :] = x0
 
     x = x0
     for k in range(N):
-        # Stage -> logical: u_logical[n] = P @ u_stage[n]  =>  u_logical = u_stage @ P.T
-        u_logical = u_seq_stage[:, k, :] @ P.T                    # (batch, 3)
+        u_logical = u_seq_logical[:, k, :]
 
         if bptt_mode == "checkpoint":
             x_next, z_k, w_k, y_k = grad_checkpoint(
-                _rk4_step_for_checkpoint,
+                rk4_step,
                 x, u_logical, M0, M1, M2, K, C, ts,
                 use_reentrant=False,
             )
         else:
             x_next, z_k, w_k, y_k = rk4_step(x, u_logical, M0, M1, M2, K, C, ts)
 
-        # Logical -> stage: y_stage[n] = P.T @ y_logical[n]  =>  y_stage = y_logical @ P
-        Y_list.append(y_k @ P)
-        Z_list.append(z_k)
-        W_list.append(w_k)
-        X_list.append(x_next)
+        X[:, k + 1, :] = x_next
+        Y[:, k, :]     = y_k @ P          # logical -> stage
+        Z[:, k, :]     = z_k
+        W[:, k, :]     = w_k
 
-        # Truncated BPTT: detach state at segment boundaries to cap graph depth
+        # Truncated BPTT: detach state at segment boundaries
         if bptt_mode == "truncated" and (k + 1) % segment_len == 0:
             x = x_next.detach().requires_grad_(x_next.requires_grad)
         else:
             x = x_next
 
-    return SimResult(
-        X=torch.stack(X_list, dim=1),   # (batch, N+1, 6)
-        Y=torch.stack(Y_list, dim=1),   # (batch, N, 3)
-        Z=torch.stack(Z_list, dim=1),   # (batch, N, 6)
-        W=torch.stack(W_list, dim=1),   # (batch, N, 6)
-    )
+    return SimResult(X=X, Y=Y, Z=Z, W=W)
 
 
 def simulate_frozen(
@@ -228,48 +141,34 @@ def simulate_frozen(
     Y_freeze:    float = 0.3,
 ) -> SimResult:
     """
-    Simulate N steps with M(Y) frozen at Y_freeze — frozen LTI baseline.
-
-    Identical to simulate() except Y passed to lfr_forward is held constant
-    at Y_freeze instead of being read from x[:, 2]. All four RK4 sub-steps
-    use the same frozen Y. Everything else (P transform, RK4 weights) is
-    identical to the LPV version.
-
-    Use for comparison against Python LPV driven by the same u_seq_stage.
-    Do NOT compare against MATLAB q3 — q3 uses its own closed-loop forces.
+    Simulate N steps with M(Y) frozen at Y_freeze (LTI baseline for comparison).
+    Reuses rk4_step with Y_override to avoid duplicating RK4 logic.
     """
-    N     = u_seq_stage.shape[1]
     batch = x0.shape[0]
-    Y_c   = torch.full((batch,), Y_freeze, dtype=x0.dtype)   # constant Y
+    N     = u_seq_stage.shape[1]
+    Y_c   = torch.full((batch,), Y_freeze, dtype=x0.dtype, device=x0.device)
 
-    X_list, Y_list, Z_list, W_list = [x0], [], [], []
+    u_seq_logical = u_seq_stage @ P.T                  # pre-transform once
+
+    X = x0.new_empty(batch, N + 1, 6)
+    Y = x0.new_empty(batch, N, 3)
+    Z = x0.new_empty(batch, N, 6)
+    W = x0.new_empty(batch, N, 6)
+    X[:, 0, :] = x0
+
     x = x0
-
     for k in range(N):
-        u_logical = u_seq_stage[:, k, :] @ P.T          # stage -> logical
-
-        # RK4 — frozen Y at every sub-step
-        k1, z, w, y = lfr_forward(x,                   u_logical, Y_c, M0, M1, M2, K, C)
-        x2 = x + (ts / 2) * k1
-        k2, _,  _,  _ = lfr_forward(x2,                u_logical, Y_c, M0, M1, M2, K, C)
-        x3 = x + (ts / 2) * k2
-        k3, _,  _,  _ = lfr_forward(x3,                u_logical, Y_c, M0, M1, M2, K, C)
-        x4 = x + ts * k3
-        k4, _,  _,  _ = lfr_forward(x4,                u_logical, Y_c, M0, M1, M2, K, C)
-        x_next = x + (ts / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
-
-        Y_list.append(y @ P)     # logical -> stage
-        Z_list.append(z)
-        W_list.append(w)
-        X_list.append(x_next)
+        x_next, z_k, w_k, y_k = rk4_step(
+            x, u_seq_logical[:, k, :], M0, M1, M2, K, C, ts,
+            Y_override=Y_c,
+        )
+        X[:, k + 1, :] = x_next
+        Y[:, k, :]     = y_k @ P
+        Z[:, k, :]     = z_k
+        W[:, k, :]     = w_k
         x = x_next
 
-    return SimResult(
-        X=torch.stack(X_list, dim=1),
-        Y=torch.stack(Y_list, dim=1),
-        Z=torch.stack(Z_list, dim=1),
-        W=torch.stack(W_list, dim=1),
-    )
+    return SimResult(X=X, Y=Y, Z=Z, W=W)
 
 
 # ----------------------------------------------------------------------

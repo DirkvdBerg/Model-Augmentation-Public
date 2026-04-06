@@ -51,7 +51,8 @@
       "Bash(PYTHONIOENCODING=utf-8 conda run -n GraduationProject python -m lpv_lfr_baseline.lfr_forward)",
       "Bash(del:*)",
       "WebFetch(domain:)",
-      "Bash(pdflatex -interaction=nonstopmode lpv-lfr-baseline.tex)"
+      "Bash(pdflatex -interaction=nonstopmode lpv-lfr-baseline.tex)",
+      "Bash(grep -E \"\\\\.\\(py|ipynb\\)$\")"
     ]
   }
 }

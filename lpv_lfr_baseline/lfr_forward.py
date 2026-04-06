@@ -3,55 +3,12 @@ lfr_forward.py
 --------------
 Resolve-and-retain forward pass for the dual-gantry LPV-LFR baseline.
 
-Implements the step-by-step computation described in README.md and
-docs/lfr-baseline-implementation-method.md.
-
-The algebraic loop z = Cz*x + Dzw*w + Dzu*u, w = Y*I6*z (Dzw != 0) is resolved
-analytically in a forward sequence. z and w are retained as explicit tensors
-rather than discarded — this is the key distinction from a full collapse to A_c(Y)*x + B_c(Y)*u.
-
-Forward pass steps:
-    1. M_Y   = M0 + M1*Y + M2*Y^2              (batch, 3, 3)
-    2. fnet  = -K @ x[:3] - C @ x[3:] + u      (batch, 3)
-    3. v     = M_Y^{-1} @ fnet                  (batch, 3)  — loop resolved
-    4. v1    = Y * v
-       v2    = Y * v1
-    5. z     = cat([v;  v1])  in R^6            (batch, 6)
-       w     = cat([v1; v2])  in R^6            (batch, 6)
-    6. xdot  = cat([x[3:]; v])                  (batch, 6)  — direct from physics
-    7. y     = x[:3]                            (batch, 3)  — logical positions
-
-Step 6 uses the direct physics identity xdot = [qdot; qddot] = [x[3:]; v] rather
-than the G-matrix form G.Ax@x + G.Bw@w + G.Bu@u. The two are algebraically
-identical (the G matrices were derived to encode this exact relationship), but the
-direct form is always consistent with the current M0/M1/M2/K/C parameters — no
-risk of stale G when parameters are updated. See docs/decisions.md D-026.
-
-Provides:
-    lfr_forward(x, u, Y, M0, M1, M2, K, C) -> (xdot, z, w, y)
-        All inputs and outputs are torch tensors, dtype=float64.
-        x  : (batch, 6)  state [q; qdot] in logical coordinates
-        u  : (batch, 3)  input in LOGICAL coordinates — caller applies P transform
-        Y  : (batch,)    scheduling variable — extract as x[:, 2] in caller
-        M0, M1, M2 : (3,3)  mass matrix decomposition (passed explicitly so gradients
-                             flow correctly if parameters become trainable)
-        K, C       : (3,3)  stiffness and damping matrices
-        returns xdot (batch, 6), z (batch, 6), w (batch, 6), y (batch, 3)
-
-Note on coordinates:
-    This function works entirely in logical coordinates.
-    The P transform (stage -> logical for u, logical -> stage for y) is the
-    caller's responsibility — see lfr_simulate.py.
-
-Note on u:
-    u must be in logical coordinates when it enters this function.
-    In lfr_simulate: u_logical = u_stage @ P.T  (batched) before calling lfr_forward.
-    y is returned in logical coordinates; lfr_simulate applies @ P to get stage output.
+Steps: M(Y) -> fnet -> v=solve(M,fnet) -> z=[v;Yv] -> w=[Yv;Y^2 v] -> xdot=[qdot;v].
+All inputs/outputs have a leading batch dim, dtype=float64, logical coordinates.
+Caller applies P transform for stage coords (see lfr_simulate.py).
 """
 
 import torch
-
-from lpv_lfr_baseline.physics import build_M
 
 
 def lfr_forward(
@@ -64,42 +21,28 @@ def lfr_forward(
     K:  torch.Tensor,   # (3,3)
     C:  torch.Tensor,   # (3,3)
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """
-    Resolve-and-retain forward pass. Returns (xdot, z, w, y).
-
-    All inputs have a leading batch dimension.
-    Y = x[:, 2] in the caller — extracted before calling.
-    u must already be in logical coordinates.
-    """
-    # Step 1: M(Y) for each item in the batch  →  (batch, 3, 3)
-    Y_e = Y[:, None, None]                                          # (batch, 1, 1)  reused below
+    """Resolve-and-retain forward pass. Returns (xdot, z, w, y)."""
+    # Step 1: M(Y) for each item in the batch  ->  (batch, 3, 3)
+    Y_e = Y[:, None, None]
     M_Y = M0.unsqueeze(0) + M1.unsqueeze(0) * Y_e + M2.unsqueeze(0) * Y_e ** 2
 
-    # Step 2: net force in logical coordinates  →  (batch, 3)
-    #   M(Y) @ qdotdot = -K @ q - C @ qdot + u
-    #   Row-vector form: fnet = q_row @ (-K.T) + qdot_row @ (-C.T) + u_row
-    #   .T is correct for any K, C (no-op when symmetric, as they currently are).
+    # Step 2: net force  ->  (batch, 3)
     fnet = -(x[:, :3] @ K.T) - (x[:, 3:] @ C.T) + u
 
-    # Step 3: resolve algebraic loop  →  (batch, 3)
-    #   v = M_Y^{-1} @ fnet  (batched solve; differentiable)
+    # Step 3: v = M(Y)^{-1} fnet  (batched solve)
     v = torch.linalg.solve(M_Y, fnet.unsqueeze(-1)).squeeze(-1)
 
-    # Step 4: latent variable chain from scheduling structure Δ(Y) = Y*I6
-    v1 = Y[:, None] * v    # (batch, 3)
-    v2 = Y[:, None] * v1   # (batch, 3)
+    # Steps 4-5: LFR latent signals, Delta(Y) = Y*I6
+    v1 = Y[:, None] * v
+    v2 = Y[:, None] * v1
+    z = torch.cat([v,  v1], dim=-1)    # (batch, 6)
+    w = torch.cat([v1, v2], dim=-1)    # (batch, 6)
 
-    # Step 5: assemble z and w
-    z = torch.cat([v,  v1], dim=-1)   # (batch, 6)
-    w = torch.cat([v1, v2], dim=-1)   # (batch, 6)
+    # Step 6: xdot = [qdot; qddot] direct from physics (D-026)
+    xdot = torch.cat([x[:, 3:], v], dim=-1)
 
-    # Step 6: state derivative — direct from physics (D-026)
-    #   xdot = [qdot; qddot] = [x[3:]; v]  — algebraically exact, always consistent
-    #   with current M0/M1/M2/K/C, no G matrix needed.
-    xdot = torch.cat([x[:, 3:], v], dim=-1)   # (batch, 6)
-
-    # Step 7: output — logical positions (first 3 state components)
-    y = x[:, :3]   # (batch, 3)
+    # Step 7: output = logical positions
+    y = x[:, :3]
 
     return xdot, z, w, y
 
@@ -112,7 +55,7 @@ if __name__ == '__main__':
     import os
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-    from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P
+    from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, build_M
 
     dtype = torch.float64
 

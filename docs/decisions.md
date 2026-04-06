@@ -561,6 +561,13 @@ Wait — the Interconnect uses column-vector convention (w_block is (batch, nw, 
 **Ruled out**: Adjoint method (torchdiffeq) — exact O(1) memory but numerically unstable for stiff systems and adds an external dependency. Hardcoding a single BPTT strategy — different training scenarios benefit from different trade-offs.
 **Constrains**: Training scripts should choose `bptt_mode` explicitly based on horizon length and gradient quality requirements. `segment_len` for truncated mode should cover the system's settling time (~200-1000 steps at 20 kHz).
 
+### [D-029] LPV-LFR baseline code cleanup: performance and CUDA readiness
+**Date**: 2026-04-05
+**What**: Cleaned up the lpv_lfr_baseline package based on a line-by-line code review. Changes: (1) Pre-transform u_seq from stage to logical coords once before the simulate() loop instead of N times inside it. (2) Pre-allocate output tensors in simulate() and simulate_frozen() instead of list+stack. (3) Removed `_rk4_step_for_checkpoint` wrapper (identical to `rk4_step`; checkpoint calls `rk4_step` directly now). (4) Added `Y_override` parameter to `rk4_step` so `simulate_frozen` reuses the same RK4 logic instead of duplicating it. (5) Made lfr_block.py dtype cast conditional (skip when already float64). (6) Fixed CUDA device bug in simulate_frozen (`torch.full` was missing `device=x0.device`). (7) Pre-allocated tensors use `x0.new_empty()` to inherit device and dtype. (8) Trimmed module docstrings in lfr_forward.py and lfr_simulate.py. (9) Fixed test_jan_compat.py S_y construction to avoid unnecessary numpy round-trip.
+**Why**: Preparing for GPU training. The original code had N redundant P.T matmuls per trajectory, N+1 tensor object allocations in Python lists, and a device bug that would crash on CUDA.
+**Ruled out**: Deleting lfr_matrices.py (still used by svd/). Switching from torch.linalg.solve to Cholesky (negligible difference for 3x3 matrices).
+**Constrains**: `rk4_step` now has an optional `Y_override` keyword argument. Callers using positional args are unaffected. `simulate_frozen` is now a thin wrapper around `simulate`-style logic with `Y_override`.
+
 ### [D-019] Use Drenth thesis for CT LPV-LFR citations; treat IFAC paper as DT companion
 **Date**: 2026-03-24
 **What**: For any continuous-time LPV-LFR definition, notation, or generic interconnection equations used in the gantry write-up, the primary source is Drenth's thesis (`literature/books/drenth2025_lpv-lfr-thesis.pdf`). The IFAC paper (`literature/lpv-lfr/drenth2025_lpv-lfr-rational.pdf`) is treated as the discrete-time companion paper and cited as such.

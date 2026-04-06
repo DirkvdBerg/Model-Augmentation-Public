@@ -101,11 +101,11 @@ K[1, 1] = kb1 + kb2
 # Stage positions = P.T @ logical positions
 # ----------------------------------------------------------------------
 P = z3.clone()
-P[0, 0] = torch.ones((), dtype=_D)
-P[0, 1] = torch.ones((), dtype=_D)
+P[0, 0] = 1.0
+P[0, 1] = 1.0
 P[1, 0] = Lb / 2
 P[1, 1] = -Lb / 2
-P[2, 2] = torch.ones((), dtype=_D)
+P[2, 2] = 1.0
 
 # ----------------------------------------------------------------------
 # Sampling constants  (from main.m line 164)

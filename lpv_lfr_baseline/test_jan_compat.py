@@ -120,10 +120,10 @@ def build_baseline_interconnect(debugging=False):
     S_xp = selection_matrix(np.arange(6), 18)    # (6, 18)
     ic.connect_signals(lfr_block, 'xp', connection_matrix=S_xp)
 
-    # Output → y: select first 3 of x_next (logical positions) then apply
-    # logical → stage transform P.T (column-vector convention: y_stage = P.T @ y_logical).
+    # Output -> y: select first 3 of x_next (logical positions) then apply
+    # logical -> stage transform P.T (column-vector convention: y_stage = P.T @ y_logical).
     # See decisions.md D-027. Reference data is in stage coordinates [X1, X2, Y].
-    S_y = torch.tensor(P.numpy().T @ selection_matrix(np.arange(3), 18).numpy()).float()   # (3, 18)
+    S_y = (P.T @ selection_matrix(np.arange(3), 18).double()).float()   # (3, 18)
     ic.connect_signals(lfr_block, 'y', connection_matrix=S_y)
 
     return ic, lfr_block
@@ -149,18 +149,17 @@ def build_augmented_interconnect(debugging=False):
     # LFR wiring (same as baseline)
     ic.connect_signals('x', lfr_block)
     ic.connect_signals('u', lfr_block)
-    S_xp = selection_matrix(np.arange(6), 18).float()                            # (6, 18)
-    S_y  = torch.tensor(P.numpy().T @ selection_matrix(np.arange(3), 18).numpy()).float()  # (3, 18)
+    S_xp = selection_matrix(np.arange(6), 18).float()
+    S_y  = (P.T @ selection_matrix(np.arange(3), 18).double()).float()
     ic.connect_signals(lfr_block, 'xp', connection_matrix=S_xp)
     ic.connect_signals(lfr_block, 'y',  connection_matrix=S_y)
 
-    # z_lfr (indices 6:12 of LFR w_out) → aug block input
-    S_z_to_aug = selection_matrix(np.arange(6, 12), 18).float()   # (6, 18)
+    # z_lfr (indices 6:12 of LFR w_out) -> aug block input
+    S_z_to_aug = selection_matrix(np.arange(6, 12), 18).float()
     ic.connect_signals(lfr_block, aug_block, connection_matrix=S_z_to_aug)
 
-    # aug output → xp (additive; eye(6) connection matrix)
-    S_aug_to_xp = selection_matrix(np.arange(6), 6).float()       # (6, 6) = I6
-    ic.connect_signals(aug_block, 'xp', connection_matrix=S_aug_to_xp)
+    # aug output -> xp (additive)
+    ic.connect_signals(aug_block, 'xp', connection_matrix=torch.eye(6))
 
     return ic, lfr_block, aug_block
 

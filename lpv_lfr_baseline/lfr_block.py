@@ -52,12 +52,11 @@ from lpv_lfr_baseline.lfr_simulate import rk4_step
 
 try:
     from model_augmentation.fit_systems.blocks import Block as _JanBlock
+    _MODEL_AUG_AVAILABLE = True
     _BASE = _JanBlock
 except ImportError:
-    # model_augmentation not on path — fall back to nn.Module.
-    # Standalone checks and gradient tests still work without it.
-    import torch.nn as nn
-    _BASE = nn.Module
+    _MODEL_AUG_AVAILABLE = False
+    _BASE = torch.nn.Module
 
 
 class LFRBaselineBlock(_BASE):
@@ -69,7 +68,7 @@ class LFRBaselineBlock(_BASE):
     """
 
     def __init__(self, **kwargs):
-        if _BASE.__name__ == 'Block':
+        if _MODEL_AUG_AVAILABLE:
             super().__init__(nz=9, nw=18, **kwargs)
         else:
             super().__init__(**kwargs)
@@ -88,39 +87,29 @@ class LFRBaselineBlock(_BASE):
         self.register_buffer('_ts', ts)
 
     def forward(self, z_in: Tensor) -> Tensor:
-        """
-        One RK4 step.
+        """One RK4 step. (batch, 9, 1) -> (batch, 18, 1)."""
+        in_dtype = z_in.dtype
+        z_flat   = z_in.squeeze(-1)                                # (batch, 9)
 
-        Parameters
-        ----------
-        z_in : (batch, 9, 1) float32
-            cat([x_logical (6), u_stage (3)], dim=1)
+        # Cast to float64 only if needed (Jan's framework uses float32; physics needs float64)
+        if z_flat.dtype != torch.float64:
+            z_flat = z_flat.double()
 
-        Returns
-        -------
-        w_out : (batch, 18, 1) float32
-            cat([x_next (6), z_lfr (6), w_lfr (6)], dim=1)
-        """
-        # Entry cast: float32 (batch, 9, 1) -> float64 (batch, 9)
-        z_f64   = z_in.squeeze(-1).double()   # (batch, 9)  [dtype cast — remove for full float64]
-        x       = z_f64[:, :6]               # (batch, 6)  logical coords
-        u_stage = z_f64[:, 6:]               # (batch, 3)  stage coords
+        x       = z_flat[:, :6]
+        u_stage = z_flat[:, 6:]
 
-        # Stage -> logical input transform
-        u_logical = u_stage @ self._P.T      # (batch, 3)
+        u_logical = u_stage @ self._P.T
 
-        # One RK4 step — Y self-scheduled inside rk4_step via x[:, 2]
-        # x[:, 2] = Y in both logical [X, Θ, Y] and stage [X1, X2, Y] — P's third row is [0,0,1]
         x_next, z_lfr, w_lfr, _ = rk4_step(
             x, u_logical,
             self._M0, self._M1, self._M2, self._K, self._C, self._ts,
         )
 
-        # Stack output along feature dim
-        w_f64 = torch.cat([x_next, z_lfr, w_lfr], dim=-1)   # (batch, 18)
+        w_f64 = torch.cat([x_next, z_lfr, w_lfr], dim=-1)        # (batch, 18)
 
-        # Exit cast: float64 (batch, 18) -> float32 (batch, 18, 1)
-        return w_f64.float().unsqueeze(-1)                    # [dtype cast — remove for full float64]
+        # Cast back to input dtype only if we changed it
+        out = w_f64 if in_dtype == torch.float64 else w_f64.to(in_dtype)
+        return out.unsqueeze(-1)
 
 
 # ----------------------------------------------------------------------
