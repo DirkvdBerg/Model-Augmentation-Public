@@ -36,21 +36,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from lpv_lfr_baseline.blocks.lfr_param_block import (
     ParameterizedLFRBlock, _build_matrices, _TRUE_PARAMS, _PARAM_NAMES,
 )
-from lpv_lfr_baseline.core.lfr_simulate import simulate as _simulate_eager
+from lpv_lfr_baseline.core.lfr_simulate import simulate
 from lpv_lfr_baseline.scripts.data_utils import compute_rmse_baseline
-
-_compile_backend = (
-    'inductor'    # Triton-backed, fastest - requires CUDA capability >= 7.0
-    if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 7
-    else 'aot_eager'  # fallback: works on CPU and older GPUs
-)
-simulate = torch.compile(_simulate_eager, backend=_compile_backend)
 
 # ----------------------------------------------------------------------
 # Configuration
 # ----------------------------------------------------------------------
-MAT_PATH     = os.path.join(os.path.dirname(__file__), '..', 'Matlab-output', 'lpv_sim_varying_y.mat')
-SAVE_DIR     = os.path.join(os.path.dirname(__file__), '..', 'models', 'gantry', 'param_recovery')
+MAT_PATH     = os.path.join(os.path.dirname(__file__), '..', '..', 'Matlab-output', 'lpv_sim_varying_y.mat')
+SAVE_DIR     = os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'gantry', 'param_recovery')
 
 N_STEPS      = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
 EPOCHS       = 1     # training epochs
@@ -85,7 +78,7 @@ def _run_no_grad(block, x0, u):
     with torch.no_grad():
         params = torch.exp(block.log_params).clamp(min=1e-6)
         M0, M1, M2, K, C = _build_matrices(params, block._Lb, block._d)
-        return _simulate_eager(x0, u, M0, M1, M2, K, C, block._P, block._ts, bptt_mode='full')
+        return simulate(x0, u, M0, M1, M2, K, C, block._P, block._ts, bptt_mode='full')
 
 
 def _save_profile(prof, save_dir):
