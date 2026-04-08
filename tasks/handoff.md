@@ -1,181 +1,133 @@
 # Session Handoff
 
-_Full session archived to `archive/sessions/2026-04-03-handoff.md`._
+_Full session archived to `archive/sessions/2026-04-07-handoff.md`._
 
-**Last written**: 2026-04-03 by Claude (Sonnet 4.6)
+**Last written**: 2026-04-07 by Claude (Sonnet 4.6)
 
 ---
 
 ## What Was Found Out This Session
 
-### Simulink q variable contents — verified by SLX inspection
-Opened `gantry_2025a.slx` as a ZIP archive and read `simulink/systems/system_47.xml`
-(the Simscape subsystem). The three Coulomb gain blocks (cc1, cc2, ccy) all carry
-`<P Name="Commented">on</P>` — **Coulomb friction is disabled in all Simulink paths**.
+### `lpv_lfr_baseline` package architecture
+The package implements the LPV-LFR baseline for a 3-DOF gantry (X1, X2, Y axes).
+Key files:
+- `physics.py` — all physical constants as `torch.float64` CPU tensors (M0, M1, M2, K, C, P, ts)
+- `lfr_forward.py` — single-step LPV update: M(Y)=M0+M1·Y+M2·Y², `torch.linalg.solve`, dtype-neutral
+- `lfr_simulate.py` — RK4 integration over full trajectory, 3 BPTT modes (full/truncated/checkpoint)
+- `lfr_param_block.py` — `ParameterizedLFRBlock`: 10 trainable params via log/exp reparameterization,
+  `register_buffer` for Lb, d, P, ts (auto-move with `.to(device)`)
+- `train_param_recovery.py` — Step 3b training script: recovers true physical params from MATLAB data
+- `data_utils.py` — `compute_rmse_baseline()` and `load_gantry_data()` (deepSI format)
+- `compare_dtype.py` — standalone script: float64 vs float32 simulation accuracy vs MATLAB q1
 
-| Variable | Source | Coriolis | Coulomb | Notes |
-|---|---|---|---|---|
-| `q` | Simscape | Yes | **No (disabled)** | Near ground truth; gap to q1 = Coriolis only |
-| `q1` | `gantrySystem.m` | No | No | Primary Python comparison target |
-| `q2` | `gantrySystemCoriolisCentripetal.m` | Yes | No | Not exported currently |
-| `q3` | `lsim(G_frozen, r, t)` post-sim | No | No | Own closed-loop forces — NOT comparable directly |
+### GPU support added to `train_param_recovery.py`
+**Problem**: module-level physics tensors from `physics.py` are always CPU. Using them inside
+the training loop means GPU tensors (block params) and CPU tensors (M0, M1, M2) mix → crash.
 
-Updated in: `docs/fp-model-structure.md` and `Matlab-scripts/export_lpv_sim.m`.
+**Fix**: use `block._Lb`, `block._d`, `block._P`, `block._ts` (registered buffers) instead of
+importing from `physics.py`. These move automatically with `block.to(device)`. Key changes:
+- `device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')` — detect GPU
+- `block = ParameterizedLFRBlock(...).to(device)`, `x0 = X0_LOGICAL.to(device)`
+- `u_train.to(device)`, `q1_train.to(device)`
+- Training loop: `_build_matrices(params, block._Lb, block._d)`, `simulate(..., block._P, block._ts)`
+- `_simulate_no_grad`: same buffer pattern
 
-### q1 does handle varying Y
-`gantrySystem.m` reads `Y = x(3)` at every ODE sub-step — M(Y) updates continuously
-as Y evolves. q1 is a genuine CT quasi-LPV simulation, not a frozen LTI.
+### Train/val split removed from `train_param_recovery.py`
+**Rationale**: only 10 params (M0, M1, M2 scalars, K[3], C[3]) cannot overfit a 35001-step
+trajectory. Jan's validation / early stopping is designed for ANN models. The real go/no-go
+criterion is the parameter recovery table (`block.param_table()`), not val MSE.
+`load_gantry_data()` in `data_utils.py` still exists for potential future use (deepSI format).
 
-### q3 cannot be used for direct model comparison
-q3 is driven by `u_q3 = Cfb*(r - q3)` — different forces from `u_q1 = Cfb*(r - q1)`.
-Comparing q3 against Python LPV confounds model error with controller compensation.
-q3's Cfb partially corrects the frozen M(Y) error, making it look better than it is.
+### N_STEPS=4000 issue — MSE=0, no gradient
+With N_STEPS=4000 (first 0.2s), Y barely moves from 0.3m → M(Y) detuning error is negligible
+→ MSE≈0 → no gradient → params unchanged after 2 epochs. Fix: `N_STEPS=None` (full 35001 steps,
+Y sweeps 0.3→-0.3m, ΔY=0.6m covers full operational range).
 
-### Correct comparison strategy for LPV vs frozen LTI
-All three models must be driven by the **same force sequence** (u_q1) so only the
-model differs. The frozen LTI baseline should be a **Python frozen LTI** — same code
-as Python LPV but with Y fixed at 0.3 inside `lfr_forward`. No new MATLAB export needed.
+### Float64 vs float32 simulation accuracy (`compare_dtype.py`)
+Results vs MATLAB ground truth (q1, float64):
 
-### Current test trajectory is too conservative for demonstration
-Y: 0.3→0.1m (ΔY=0.2m). The M[0,1] off-diagonal term changes by only ~2 kg·m.
-The hardware supports Y ∈ [-0.4, +0.4] m. At Y=-0.3m, M[0,1] flips sign relative
-to Y=0.3m (−3.21 → +3.17 kg·m). ΔY=0.6m makes the frozen LTI error ~3× larger
-and visually unambiguous.
+| Channel | float64 vs MATLAB | float32 vs MATLAB |
+|---------|------------------|--------------------|
+| X1      | ~0 (1e-14 range) | ~5e-06 m          |
+| X2      | ~0 (1e-14 range) | ~2e-06 m          |
+| Y       | 4.0e-12 m        | 2.2e-05 m         |
 
-### Bode family plot role clarified
-The Bode family (5 Y values, `validate_lfr.py` plot 3) motivates WHY LPV is needed
-(frequency response shifts with Y) but does NOT prove implementation correctness.
-Proof of correctness = trajectory match with q1 at ~1e-14. These serve different roles.
+float32 is 7 orders of magnitude worse on Y (22 µm floor). The comparison is not perfectly fair
+(q1 is float64, MATLAB uses float64 internally) — there's no ideal fair comparison.
 
-### Natural frequencies vs Y is a cleaner motivation plot
-Plotting the 3 natural frequencies of A_c(Y) vs Y ∈ [-0.4, +0.4] is more readable
-than the 3×3 Bode grid. Python can compute this entirely from existing physics
-constants — no new MATLAB export needed.
+**Supervisor concern**: floating-point discretization/integration errors stack over 35001 steps.
+float32 gives 22 µm on Y — this is the numerical floor, independent of parameter detuning.
+The detuning signal is ~29 mm on Y, so float32 has 3 orders of margin there. However, the
+concern is whether float32 errors are uniform or accumulate in ways that corrupt gradient signals.
+
+**Recommendation**: stick with float64. The codebase was designed for it. float64 on NVIDIA RTX
+2080 Ti is ~1/32 of float32 TFLOPS (~420 vs ~13,500 GFLOPS) but the simulation is memory-bound
+not FLOP-bound, so the slowdown is milder in practice.
+
+### Float32 acceptability: definitive test
+There is no analytically fair comparison (MATLAB is float64, Python-vs-Python is not vs ground truth).
+The only definitive test is: run `train_param_recovery.py` in float64 AND float32, compare the final
+`param_table()` columns. If recovered parameters match true values equally well, float32 is acceptable.
+This test has NOT been run yet.
+
+### Lambda regularization and parameter scale invariance
+`ParameterizedLFRBlock` uses the same Lambda formula as Jan's `Parameterized_Linear_State_Block`:
+```python
+Lambda[i] = RMSE_baseline / params_init[i]
+```
+This penalizes relative deviations equally regardless of scale — critical because parameters span
+3 orders of magnitude (Lb~4e-3 m vs M~10 kg). The log/exp reparameterization makes Adam steps
+multiplicative (scale-invariant). Design is directly aligned with Jan's framework.
 
 ---
 
 ## Open Blockers (carried forward)
 
-- **LFR discretization paper**: Still not found. Less critical since RK4 is the chosen method.
+- **LFR discretization paper**: Still not found. Less critical since RK4 is chosen.
 - **M0 choice**: M0 = M(0) vs M(Y_nom=0.3). State explicitly in write-up.
 - **Sample rate**: D-012 — 16 kHz (main.m) vs 20 kHz (ETEL spec), unresolved.
-- **April 9 meeting**: Confirm with supervisor whether trainable inertia parameters affect Delta^b structure during training (D-017).
+- **April 9 meeting**: Confirm with supervisor whether trainable inertia parameters affect
+  Delta^b structure during training (D-017). Meeting was scheduled — outcome unknown.
+- **Float32 acceptability**: Run training in both dtypes, compare param_table() (see above).
+  Recommendation: use float64 for correctness-first approach.
 
 ---
 
 ## Exact Next Steps
 
-### Step 1 — Update `export_lpv_sim.m` trajectory (MATLAB, run once)
-Change Y sweep from 0.3→0.1m to **0.3→-0.3m** (ΔY=0.6m, crosses M[0,1] sign flip).
-Verified against ETEL TELICA datasheet (telica-xyz-0750-0800-data.pdf): max speed 2 m/s,
-max acceleration 50 m/s², stroke ±400mm. All values below are well within hardware limits.
-
-Five exact changes to make:
-
-1. `pmax_Y = 0.6`           (was 0.2  — 75% of 800mm stroke)
-2. `vmax_Y = 1.0`           (was 0.3  — 50% of 2 m/s hardware max, realistic P&P speed)
-3. `amax_Y = 10.0`          (was 3.0  — 20% of 50 m/s² hardware max)
-4. `r(... end, 3) = -0.3`   (was 0.1  — hold value at end of trajectory)
-5. Update header comment    (trajectory description, pmax/vmax/amax values, direction note)
-
-Y_LIMIT assertion: max=0.3 ≤ 0.4 ✓, min=-0.3 ≥ -0.4 ✓ — passes as-is, no change needed.
-jerkTime stays at 0.05 s → jmax = 10.0/0.05 = 200 m/s³.
-
-Re-run in MATLAB to regenerate `Matlab-output/lpv_sim_varying_y.mat`.
-
-### Step 2 — Implement Python frozen LTI in `validate_lfr.py`
-**All model comparison is done in Python, open-loop, driven by u_q1.**
-No MATLAB frozen LTI needed. Do NOT use q3 from MATLAB (different forces — own closed loop).
-
-Implement `simulate_frozen(x0, u_seq_stage, Y_freeze, ...)` in `validate_lfr.py`:
-same call signature as `simulate()` but passes `Y_freeze * torch.ones(batch)` as the
-Y argument to `lfr_forward` instead of extracting Y from the state. Y_freeze = 0.3.
-No changes to `lfr_forward.py` or `lfr_simulate.py` — wrapper only.
-
-### Step 3 — Add natural frequencies vs Y plot to `validate_lfr.py`
-New function `_section_nat_freqs_vs_Y()`. Sweep Y ∈ [-0.4, +0.4] m (200 points).
-At each Y: build A_c(Y), compute eigenvalues, extract imaginary parts / (2π) → Hz.
-
-**Figure layout** (single figure):
+### Step 1 — Run parameter recovery training (float64, full trajectory)
 ```
-1 panel:
-  x-axis: Y [m], range [-0.4, +0.4], mark Y=0.3 with vertical dashed line
-  y-axis: natural frequency [Hz]
-  3 curves, one per mode (label: X-mode, Theta-mode, Y-mode)
-  grid on
+conda run -n GraduationProject python -m lpv_lfr_baseline.train_param_recovery
 ```
-**Printed output:**
-```
-  Y=-0.40 m:  f1=XX.X Hz,  f2=XX.X Hz,  f3=XX.X Hz
-  Y= 0.00 m:  ...
-  Y=+0.30 m:  ...   (operating point)
-  Y=+0.40 m:  ...
-  Range per mode:  f1: XX.X–XX.X Hz  (ΔX.X Hz),  f2: ...
-```
+Expected config: `N_STEPS=None`, `EPOCHS=500`, `LR=1e-3`, `SEGMENT_LEN=500`.
+Hardware: 7× NVIDIA RTX 2080 Ti (11 GB each). float64 is ~1/32 TFLOPS of float32 on RTX 2080 Ti.
+Estimated time: unknown — first run will reveal per-epoch timing.
 
-### Step 4 — Add trajectory comparison figure to `validate_lfr.py`
-New function `_section_lpv_vs_frozen()`. Requires updated `lpv_sim_varying_y.mat`
-(Step 1) and Python frozen LTI simulate function (Step 2).
+**Success criterion**: `param_table()` shows recovered params converging toward true values.
+The detuning is 2–10% on each parameter; recovery should bring error below 1% if training works.
 
-**Figure layout** (4 panels, shared x-axis):
-```
-Panel 1:  Y(t) [m] — scheduling variable over time
-          shows q1[:,2] (Y channel), marks Y=0.3 operating point as dashed line
+### Step 2 — Interpret and log results
+After training completes:
+- Read the printed `param_table()` (detuned → trained → true)
+- Log result in `docs/decisions.md` under D-033 / D-034
+- If params converge: mark Step 3b complete in `tasks/todo.md`
+- If params diverge or loss plateaus: diagnose (check gradient magnitudes, LR sensitivity)
 
-Panel 2:  Position outputs [m] — all 3 channels (X1, X2, Y)
-          q1           : solid,  tab:orange  (reference)
-          Python LPV   : solid,  tab:blue
-          Python frozen: dashed, tab:red
-          legend, grid
+### Step 3 — Continue Step 2 pipeline (LPV vs frozen LTI comparison)
+The tasks/todo.md Step 2 items (frozen LTI, nat-freq plot, trajectory comparison figure) were
+NOT addressed this session. Resume after Step 3b is validated.
 
-Panel 3:  |error vs q1| per channel — Python LPV [m], log scale
-          X1: tab:blue,  X2: tab:orange,  Y: tab:green
-          grid both
+See `tasks/todo.md` Step 2 section for the five exact implementation steps with layout specs.
 
-Panel 4:  |error vs q1| per channel — Python frozen LTI [m], log scale
-          same colors as panel 3
-          grid both
+---
 
-x-label:  Time [s]
-```
+## Files Modified This Session
 
-**Printed output (per model, per channel, reference = q1):**
-```
-  Model              Channel   BFR [%]   RMSE [m]    Max|e| [m]   Mean|e| [m]
-  -------            -------   -------   --------    ----------   -----------
-  Python LPV         X1        ~100.00   X.XXe-XX    X.XXe-XX     X.XXe-XX
-  Python LPV         X2        ~100.00   ...
-  Python LPV         Y         ~100.00   ...
-  Python frozen LTI  X1        XX.XX     ...
-  Python frozen LTI  X2        XX.XX     ...
-  Python frozen LTI  Y         XX.XX     ...
-```
-
-**BFR definition** (standard in LPV/system-ID literature, used by Jan's framework):
-```
-BFR = max(1 - ||y - ŷ||₂ / ||y - mean(y)||₂, 0) × 100%
-```
-BFR=100% → perfect fit. BFR=0% → model no better than predicting the mean.
-Python LPV vs q1 expected ~100%. Frozen LTI vs q1 expected meaningfully lower
-when Y deviates from 0.3 — quantifies the scheduling benefit.
-
-Primary metrics: **BFR** (overall fit quality, field-standard) + **Max|error|**
-(worst-case engineering bound). RMSE and Mean|error| printed for completeness.
-MSE not printed (units m² unintuitive — RMSE covers it).
-
-### Step 5 (optional) — Overlay q (Simscape) as secondary reference
-Add q_simscape from the .mat file to panels 2–4 above as a secondary reference.
-- Panel 2: add q_simscape as solid gray line labelled "Simscape"
-- Panel 3/4: add |LPV - q_simscape| and |frozen - q_simscape| as lighter curves
-- Add footnote: "Simscape forces differ slightly from u_q1 (own closed loop);
-  residual includes Coriolis (~0 for this trajectory since X at rest)"
-
-**Printed output addition (reference = Simscape):**
-```
-  Model              vs        BFR [%]   RMSE [m]    Max|e| [m]
-  Python LPV         Simscape  XX.XX     ...         ...
-  Python frozen LTI  Simscape  XX.XX     ...         ...
-```
+| File | Change |
+|------|--------|
+| `lpv_lfr_baseline/train_param_recovery.py` | GPU support, removed val split, N_STEPS cap, progress print |
+| `lpv_lfr_baseline/compare_dtype.py` | Created — float64 vs float32 vs MATLAB comparison script |
+| `archive/sessions/2026-04-07-handoff.md` | Archived 2026-04-03 handoff content |
 
 ---
 

@@ -41,12 +41,9 @@ from scipy.io import loadmat
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from lpv_lfr_baseline.lfr_param_block import (
-    ParameterizedLFRBlock, _build_matrices, _Lb, _d,
-)
+from lpv_lfr_baseline.lfr_param_block import ParameterizedLFRBlock, _build_matrices
 from lpv_lfr_baseline.lfr_simulate import simulate
-from lpv_lfr_baseline.data_utils import compute_rmse_baseline, load_gantry_data
-from lpv_lfr_baseline.physics import P, ts
+from lpv_lfr_baseline.data_utils import compute_rmse_baseline
 
 # ----------------------------------------------------------------------
 # Configuration
@@ -54,8 +51,8 @@ from lpv_lfr_baseline.physics import P, ts
 MAT_PATH   = os.path.join(os.path.dirname(__file__), '..', 'Matlab-output', 'lpv_sim_varying_y.mat')
 SAVE_DIR   = os.path.join(os.path.dirname(__file__), '..', 'models', 'gantry', 'param_recovery')
 
-TRAIN_FRAC   = 0.8       # fraction of trajectory used for training
-EPOCHS       = 500       # training epochs (increase for better convergence)
+N_STEPS      = None      # cap on training steps per epoch (None = use all)
+EPOCHS       = 2         # training epochs (increase for better convergence)
 LR           = 1e-3      # Adam learning rate
 SEGMENT_LEN  = 500       # truncated BPTT segment length (steps)
 LOG_INTERVAL = 25        # print interval (epochs)
@@ -65,33 +62,25 @@ LOG_INTERVAL = 25        # print interval (epochs)
 X0_LOGICAL = torch.tensor([[0.0, 0.0, 0.3, 0.0, 0.0, 0.0]], dtype=torch.float64)
 
 
-def _load_tensors(mat_path, train_frac):
-    """Load MATLAB data and split into train/val tensors."""
+def _load_tensors(mat_path):
+    """Load MATLAB data as tensors (no train/val split — param recovery uses full trajectory)."""
     mat    = loadmat(mat_path)
-    u_all  = torch.tensor(mat['u_q1'], dtype=torch.float64)   # (N, 3)
-    q1_all = torch.tensor(mat['q1'],   dtype=torch.float64)   # (N, 3)
-    N      = u_all.shape[0]
-    n_train = int(N * train_frac)
-
-    u_train  = u_all[:n_train].unsqueeze(0)    # (1, n_train, 3)
-    q1_train = q1_all[:n_train]                # (n_train, 3)
-    u_val    = u_all[n_train:].unsqueeze(0)    # (1, n_val, 3)
-    q1_val   = q1_all[n_train:]                # (n_val, 3)
-
-    return u_train, q1_train, u_val, q1_val
+    u      = torch.tensor(mat['u_q1'], dtype=torch.float64).unsqueeze(0)  # (1, N, 3)
+    q1     = torch.tensor(mat['q1'],   dtype=torch.float64)               # (N, 3)
+    return u, q1
 
 
 def _simulate_no_grad(block, x0, u_seq):
     """Run a no-gradient simulation and return stage-coordinate output."""
     with torch.no_grad():
         params = torch.exp(block.log_params).clamp(min=1e-6)
-        M0, M1, M2, K, C = _build_matrices(params, _Lb, _d)
-        result = simulate(x0, u_seq, M0, M1, M2, K, C, P, ts, bptt_mode='full')
+        M0, M1, M2, K, C = _build_matrices(params, block._Lb, block._d)
+        result = simulate(x0, u_seq, M0, M1, M2, K, C, block._P, block._ts, bptt_mode='full')
     return result.Y[0]   # (N, 3)
 
 
 def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
-          train_frac=TRAIN_FRAC, log_interval=LOG_INTERVAL,
+          n_steps=N_STEPS, log_interval=LOG_INTERVAL,
           mat_path=MAT_PATH, save_dir=SAVE_DIR):
     """
     Run the parameter recovery training loop.
@@ -101,6 +90,12 @@ def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
     block : ParameterizedLFRBlock  -- trained block with recovered parameters
     """
     os.makedirs(save_dir, exist_ok=True)
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if device.type == 'cuda':
+        print(f"  Device: {torch.cuda.get_device_name(0)}  (CUDA {torch.version.cuda})")
+    else:
+        print(f"  Device: CPU  (no CUDA GPU detected)")
 
     # ------------------------------------------------------------------
     # 1. RMSE_baseline (D-034) -- one forward pass, no gradient
@@ -118,9 +113,13 @@ def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
     print("=" * 60)
     print("Step 2: Loading training and validation data")
     print("=" * 60)
-    u_train, q1_train, u_val, q1_val = _load_tensors(mat_path, train_frac)
-    print(f"  Train: {u_train.shape[1]} steps  ({u_train.shape[1]/20000:.3f} s)")
-    print(f"  Val  : {u_val.shape[1]} steps  ({u_val.shape[1]/20000:.3f} s)")
+    u_train, q1_train = _load_tensors(mat_path)
+    if n_steps is not None:
+        u_train  = u_train[:, :n_steps, :]
+        q1_train = q1_train[:n_steps]
+    u_train  = u_train.to(device)
+    q1_train = q1_train.to(device)
+    print(f"  Steps: {u_train.shape[1]}  ({u_train.shape[1]/20000:.3f} s)")
 
     # ------------------------------------------------------------------
     # 3. Build block with computed RMSE_baseline
@@ -129,7 +128,8 @@ def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
     print("=" * 60)
     print("Step 3: Building ParameterizedLFRBlock")
     print("=" * 60)
-    block = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline)
+    block = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline).to(device)
+    x0 = X0_LOGICAL.to(device)
     print(f"  RMSE_baseline used  : {rmse_baseline:.6e} m")
     print(f"  Trainable params    : {sum(p.numel() for p in block.parameters())}")
     print()
@@ -156,15 +156,16 @@ def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
 
     for epoch in range(epochs):
         epoch_t0 = time.time()
+        print(f"  Epoch {epoch}/{epochs} running...", end='\r', flush=True)
         optimizer.zero_grad()
 
         # Forward: rebuild matrices from current log_params each epoch
         params = torch.exp(block.log_params).clamp(min=1e-6)
-        M0, M1, M2, K, C = _build_matrices(params, _Lb, _d)
+        M0, M1, M2, K, C = _build_matrices(params, block._Lb, block._d)
 
         result = simulate(
-            X0_LOGICAL, u_train,
-            M0, M1, M2, K, C, P, ts,
+            x0, u_train,
+            M0, M1, M2, K, C, block._P, block._ts,
             bptt_mode='truncated', segment_len=segment_len,
         )
         y_pred = result.Y[0]   # (n_train, 3)
@@ -182,46 +183,36 @@ def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
             print(f"  {epoch:>6}  {mse_loss.item():>12.4e}  "
                   f"{theta_loss.item():>12.4e}  "
                   f"{total_loss.item():>12.4e}  "
-                  f"{epoch_dt:>9.3f}")
+                  f"{epoch_dt:>9.3f}", flush=True)
 
     total_time = time.time() - t_start
     print(f"\n  Training complete in {total_time:.1f} s  ({total_time/epochs:.2f} s/epoch)")
 
     # ------------------------------------------------------------------
-    # 6. Validation MSE (no gradient)
+    # 6. Simulation MSE on training data (no gradient)
     # ------------------------------------------------------------------
     print()
     print("=" * 60)
-    print("Step 5: Validation")
+    print("Step 5: Prediction error on training data")
     print("=" * 60)
 
-    # Run detuned baseline (no training) on full trajectory for reference
-    block_ref = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline)
-    y_pred_ref = _simulate_no_grad(block_ref, X0_LOGICAL, u_train)
-    mse_ref = F.mse_loss(y_pred_ref, q1_train).item()
+    y_pred_train = _simulate_no_grad(block, x0, u_train)
+    mse_train    = F.mse_loss(y_pred_train, q1_train).item()
+    err_train    = (y_pred_train - q1_train).pow(2).mean(0).sqrt()
 
-    # Run trained block on training data
-    y_pred_train = _simulate_no_grad(block, X0_LOGICAL, u_train)
-    mse_train = F.mse_loss(y_pred_train, q1_train).item()
-
-    # Compute RMSE per channel
-    err_ref   = (y_pred_ref   - q1_train).pow(2).mean(0).sqrt()
-    err_train = (y_pred_train - q1_train).pow(2).mean(0).sqrt()
     ch = ['X1', 'X2', 'Y']
-    print(f"  {'Channel':<6}  {'Detuned RMSE [mm]':>18}  {'Trained RMSE [mm]':>18}")
-    print(f"  {'-'*6}  {'-'*18}  {'-'*18}")
+    print(f"  {'Channel':<6}  {'Trained RMSE [mm]':>18}")
+    print(f"  {'-'*6}  {'-'*18}")
     for i, name in enumerate(ch):
-        print(f"  {name:<6}  {err_ref[i].item()*1e3:>18.4f}  {err_train[i].item()*1e3:>18.4f}")
-    print(f"\n  Overall MSE: detuned={mse_ref:.4e}  trained={mse_train:.4e}")
-    improved = mse_train < mse_ref
-    print(f"  Prediction improved: {improved}")
+        print(f"  {name:<6}  {err_train[i].item()*1e3:>18.4f}")
+    print(f"\n  Overall MSE: {mse_train:.4e} m²")
 
     # ------------------------------------------------------------------
-    # 7. Parameter recovery table
+    # 7. Parameter recovery table — primary go/no-go criterion
     # ------------------------------------------------------------------
     print()
     print("=" * 60)
-    print("Step 6: Parameter recovery")
+    print("Step 6: Parameter recovery (go/no-go criterion)")
     print("=" * 60)
     print(block.param_table())
 
