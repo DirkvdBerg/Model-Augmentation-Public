@@ -60,8 +60,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-from lpv_lfr_baseline.physics import P, ts
-from lpv_lfr_baseline.lfr_simulate import rk4_step
+from lpv_lfr_baseline.core.physics import P, ts
+from lpv_lfr_baseline.core.lfr_simulate import rk4_step
 
 try:
     from model_augmentation.fit_systems.blocks import Block as _JanBlock

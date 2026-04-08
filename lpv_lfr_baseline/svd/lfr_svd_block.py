@@ -15,7 +15,7 @@ SVD-reduced LPV-LFR, not the original helper signals [v; Y*v] and [Y*v; Y^2*v].
 import torch
 from torch import Tensor
 
-from lpv_lfr_baseline.physics import P, ts
+from lpv_lfr_baseline.core.physics import P, ts
 from lpv_lfr_baseline.svd.lfr_svd_reduction import G_reduced
 from lpv_lfr_baseline.svd.lfr_svd_simulate import rk4_step
 

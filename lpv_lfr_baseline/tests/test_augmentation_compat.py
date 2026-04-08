@@ -20,8 +20,8 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import torch
 
-from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P
-from lpv_lfr_baseline.lfr_forward import lfr_forward
+from lpv_lfr_baseline.core.physics import M0, M1, M2, K, C, P
+from lpv_lfr_baseline.core.lfr_forward import lfr_forward
 
 dtype = torch.float64
 

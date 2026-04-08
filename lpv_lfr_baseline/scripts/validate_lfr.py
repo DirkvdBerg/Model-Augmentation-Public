@@ -40,9 +40,9 @@ import torch
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
-from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, fs, ts, build_M
-from lpv_lfr_baseline.lfr_forward import lfr_forward
-from lpv_lfr_baseline.lfr_simulate import simulate, simulate_frozen, SimResult
+from lpv_lfr_baseline.core.physics import M0, M1, M2, K, C, P, fs, ts, build_M
+from lpv_lfr_baseline.core.lfr_forward import lfr_forward
+from lpv_lfr_baseline.core.lfr_simulate import simulate, simulate_frozen, SimResult
 
 # ---------------------------------------------------------------------------
 # Configuration

@@ -11,8 +11,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import torch
 from scipy.io import loadmat
 
-from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, ts
-from lpv_lfr_baseline.lfr_simulate import simulate
+from lpv_lfr_baseline.core.physics import M0, M1, M2, K, C, P, ts
+from lpv_lfr_baseline.core.lfr_simulate import simulate
 
 mat = loadmat(os.path.join(os.path.dirname(__file__), '..', 'Matlab-output', 'lpv_sim_varying_y.mat'))
 q1    = torch.tensor(mat['q1'],   dtype=torch.float64)          # (N, 3) MATLAB reference

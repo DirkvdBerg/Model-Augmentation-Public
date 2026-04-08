@@ -15,7 +15,7 @@ from typing import Literal
 import torch
 from torch.utils.checkpoint import checkpoint as grad_checkpoint
 
-from lpv_lfr_baseline.lfr_forward import lfr_forward
+from lpv_lfr_baseline.core.lfr_forward import lfr_forward
 
 
 @dataclass

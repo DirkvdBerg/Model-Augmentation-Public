@@ -234,7 +234,7 @@ This confirms the forward pass is algebraically correct before introducing RK4.
 
 **Status: complete. All 11 checks pass.**
 
-Run as: `conda run -n GraduationProject python -m lpv_lfr_baseline.test_jan_compat`
+Run as: `conda run -n GraduationProject python -m lpv_lfr_baseline.tests.test_jan_compat`
 
 #### `lfr_block.py` — stateless Block wrapper
 
@@ -340,22 +340,45 @@ If M₀, K, or C entries later become `nn.Parameter` (learning physical correcti
 | Annotated PDF | `LPV/Feedback Supervisor/LPV_LFR_Stepwise_Derivation_Feedback.pdf` | Original annotated document |
 | Reduction notes PDF | `LPV/Feedback Supervisor/LPV_LFR_Roland_notes.pdf` | Roland's handwritten notes on the SVD reduction method |
 | Implementation method | `docs/lfr-baseline-implementation-method.md` | Resolve-and-retain architecture, algebraic loop analysis, and Architecture 1 vs 2 comparison |
-| Dzw=0 alternative | `lpv_lfr_baseline/lfr-dzw-zero-alternative.md` | Alternative LFR using ρ=[σ,Yσ,Y²σ] scheduling — achieves Dzw=0, enables proper LFR augmentation |
+| Dzw=0 alternative | `lpv_lfr_baseline/docs/lfr-dzw-zero-alternative.md` | Alternative LFR using ρ=[σ,Yσ,Y²σ] scheduling — achieves Dzw=0, enables proper LFR augmentation |
 
 ---
 
-## File map
+## Package structure
 
-| File | Contents |
-|------|----------|
-| `physics.py` | Physical constants as torch tensors: M₀, M₁, M₂, K, C, P, fs, ts |
-| `lfr_matrices.py` | Precompute constant G matrix entries from M₀⁻¹ |
-| `lfr_forward.py` | Resolve-and-retain forward pass: steps 1–7 above |
-| `lfr_simulate.py` | Standalone RK4 simulation loop using `lfr_forward`; exposes `rk4_step` |
-| `validate_lfr.py` | Validation script: G matrix check, loop resolution, trajectory comparison (stub) |
-| `test_augmentation_compat.py` | Gradient/graph compatibility tests — no Jan imports; simulates augmentation wiring internally |
-| `lfr_block.py` | Stateless Jan-compatible `Block` subclass; nz=9, nw=18; float32↔float64 dtype boundary |
-| `test_jan_compat.py` | 11 integration checks using real Jan imports: structural (1–5) + value/aug readiness (A–F) |
+```
+lpv_lfr_baseline/
+├── core/                          # Pure LFR model — no Jan dependency
+│   ├── physics.py                 # Physical constants as torch tensors: M₀, M₁, M₂, K, C, P, fs, ts
+│   ├── lfr_matrices.py            # Precompute constant G matrix entries from M₀⁻¹
+│   ├── lfr_forward.py             # Resolve-and-retain forward pass: steps 1–7
+│   └── lfr_simulate.py            # RK4 integration loop; exposes rk4_step and simulate
+│
+├── blocks/                        # Jan-compatible wrappers
+│   ├── lfr_block.py               # Stateless Block subclass; nz=9, nw=18; float32↔float64 boundary
+│   ├── lfr_param_block.py         # Block with trainable physical parameters (nn.Parameter)
+│   └── lfr_fit_system.py          # SSE_Interconnect subclass with param_loss support
+│
+├── svd/                           # SVD-reduced LFR (n_z: 6 → 4)
+│   ├── lfr_svd_reduction.py       # G matrix reduction via SVD
+│   ├── lfr_svd_forward.py         # Forward pass using reduced G
+│   ├── lfr_svd_simulate.py        # RK4 with reduced G
+│   └── lfr_svd_block.py           # Jan-compatible Block for reduced model
+│
+├── scripts/                       # Runnable entry points (not imported by core)
+│   ├── train_param_recovery.py    # Step 3b: recover physical params from MATLAB data
+│   ├── validate_lfr.py            # G matrix check, loop resolution, trajectory comparison
+│   ├── compare_dtype.py           # float64 vs float32 accuracy diagnostic
+│   └── data_utils.py              # Data loading and RMSE baseline computation
+│
+├── tests/                         # Integration and compatibility tests
+│   ├── test_jan_compat.py         # 11 checks: structural (1–5) + value/aug readiness (A–F)
+│   └── test_augmentation_compat.py # Gradient/graph tests — no Jan imports
+│
+└── docs/                          # Design notes and LaTeX documentation
+    ├── lfr-dzw-zero-alternative.md # Alternative LFR with Dzw=0 via ρ=[σ,Yσ,Y²σ]
+    └── Documentation/             # LaTeX source and compiled PDF
+```
 
 ---
 

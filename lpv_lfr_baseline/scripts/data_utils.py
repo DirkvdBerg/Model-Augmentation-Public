@@ -36,11 +36,11 @@ from scipy.io import loadmat
 
 import deepSI
 
-from lpv_lfr_baseline.lfr_param_block import (
+from lpv_lfr_baseline.blocks.lfr_param_block import (
     ParameterizedLFRBlock, _build_matrices, _Lb, _d,
 )
-from lpv_lfr_baseline.lfr_simulate import simulate
-from lpv_lfr_baseline.physics import P, ts
+from lpv_lfr_baseline.core.lfr_simulate import simulate
+from lpv_lfr_baseline.core.physics import P, ts
 
 # Default path relative to repo root
 _DEFAULT_MAT = os.path.join(

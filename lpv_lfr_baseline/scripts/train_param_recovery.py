@@ -33,11 +33,11 @@ from scipy.io import loadmat
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from lpv_lfr_baseline.lfr_param_block import (
+from lpv_lfr_baseline.blocks.lfr_param_block import (
     ParameterizedLFRBlock, _build_matrices, _TRUE_PARAMS, _PARAM_NAMES,
 )
-from lpv_lfr_baseline.lfr_simulate import simulate as _simulate_eager
-from lpv_lfr_baseline.data_utils import compute_rmse_baseline
+from lpv_lfr_baseline.core.lfr_simulate import simulate as _simulate_eager
+from lpv_lfr_baseline.scripts.data_utils import compute_rmse_baseline
 
 _compile_backend = (
     'inductor'    # Triton-backed, fastest - requires CUDA capability >= 7.0

@@ -41,7 +41,7 @@ from dataclasses import dataclass
 
 import torch
 
-from lpv_lfr_baseline.lfr_matrices import G, GMatrix
+from lpv_lfr_baseline.core.lfr_matrices import G, GMatrix
 
 
 @dataclass

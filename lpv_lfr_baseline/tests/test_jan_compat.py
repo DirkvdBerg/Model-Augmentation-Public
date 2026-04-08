@@ -95,10 +95,10 @@ from model_augmentation.fit_systems.blocks import Block, Static_ANN_Block
 from model_augmentation.fit_systems.interconnect import Interconnect
 from model_augmentation.utils.utils import detect_algebraic_loop, selection_matrix
 
-from lpv_lfr_baseline.lfr_block import LFRBaselineBlock
-from lpv_lfr_baseline.lfr_forward import lfr_forward
-from lpv_lfr_baseline.lfr_simulate import rk4_step
-from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, ts
+from lpv_lfr_baseline.blocks.lfr_block import LFRBaselineBlock
+from lpv_lfr_baseline.core.lfr_forward import lfr_forward
+from lpv_lfr_baseline.core.lfr_simulate import rk4_step
+from lpv_lfr_baseline.core.physics import M0, M1, M2, K, C, P, ts
 
 
 def build_baseline_interconnect(debugging=False):

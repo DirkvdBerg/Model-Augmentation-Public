@@ -51,7 +51,7 @@ from dataclasses import dataclass
 
 import torch
 
-from lpv_lfr_baseline.physics import M0, M1, M2, K, C
+from lpv_lfr_baseline.core.physics import M0, M1, M2, K, C
 
 
 @dataclass
@@ -180,7 +180,7 @@ if __name__ == '__main__':
     import os
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-    from lpv_lfr_baseline.physics import M0, M1, M2, K, C
+    from lpv_lfr_baseline.core.physics import M0, M1, M2, K, C
 
     dtype = torch.float64
     eye3  = torch.eye(3, dtype=dtype)
