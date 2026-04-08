@@ -68,7 +68,8 @@
       "Bash(touch \"C:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/lpv_lfr_baseline/core/__init__.py\")",
       "Bash(touch \"C:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/lpv_lfr_baseline/blocks/__init__.py\")",
       "Bash(touch \"C:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/lpv_lfr_baseline/tests/__init__.py\")",
-      "Bash(touch \"C:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/lpv_lfr_baseline/scripts/__init__.py\")"
+      "Bash(touch \"C:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/lpv_lfr_baseline/scripts/__init__.py\")",
+      "Bash(xargs grep:*)"
     ]
   }
 }

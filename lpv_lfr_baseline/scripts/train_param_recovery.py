@@ -50,7 +50,8 @@ EPOCHS       = 1     # training epochs
 LR           = 1e-3  # Adam learning rate
 SEGMENT_LEN  = 500   # segment length - batch size = N_STEPS // SEGMENT_LEN
 LOG_INTERVAL = 25    # print every N epochs
-PROFILE      = True  # profile epoch 0 and save report to SAVE_DIR/profile_out.txt
+PROFILE      = False  # profile epoch 0 and save report to SAVE_DIR/profile_out.txt
+TIME_EPOCHS  = True  # print pre-pass / forward / backward timing each epoch
 
 # Initial logical state: positions [0,0,0.3], velocities [0,0,0]
 # Matches q1[0] = [0,0,0.3] in stage coords (see data_utils.py derivation)
@@ -93,14 +94,42 @@ def _save_profile(prof, save_dir):
     print(f'  Saved to: {path}')
 
 
+class _SimWrapper(torch.nn.Module):
+    """Thin wrapper so DataParallel can replicate block across GPUs.
+
+    Keeps _build_matrices inside forward() so each GPU replica computes
+    its own M0-C from its local copy of log_params instead of receiving
+    pre-built matrices that DataParallel would incorrectly scatter along dim 0.
+    """
+    def __init__(self, block):
+        super().__init__()
+        self.block = block
+
+    def forward(self, x0_seg, u_seg):
+        params = torch.exp(self.block.log_params).clamp(min=1e-6)
+        M0, M1, M2, K, C = _build_matrices(params, self.block._Lb, self.block._d)
+        return simulate(
+            x0_seg, u_seg, M0, M1, M2, K, C,
+            self.block._P, self.block._ts, bptt_mode='full',
+        ).Y
+
+
 # ----------------------------------------------------------------------
 # Training
 # ----------------------------------------------------------------------
+
+def _sync_time(device):
+    """Wall-clock time after synchronizing CUDA (accurate GPU timing)."""
+    if device.type == 'cuda':
+        torch.cuda.synchronize()
+    return time.time()
+
 
 def train(
     epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
     n_steps=N_STEPS, log_interval=LOG_INTERVAL,
     mat_path=MAT_PATH, save_dir=SAVE_DIR, profile=PROFILE,
+    time_epochs=TIME_EPOCHS,
 ):
     """Run parameter recovery training. Returns trained ParameterizedLFRBlock."""
     os.makedirs(save_dir, exist_ok=True)
@@ -144,8 +173,13 @@ def train(
     block     = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline).to(device)
     x0        = X0_LOGICAL.to(device)
     optimizer = torch.optim.Adam(block.parameters(), lr=lr)
+    n_gpus  = min(4, torch.cuda.device_count()) if device.type == 'cuda' else 0
+    wrapper = torch.nn.DataParallel(_SimWrapper(block), device_ids=list(range(n_gpus))) \
+              if n_gpus > 1 else _SimWrapper(block)
     print(f'  Trainable params : {sum(p.numel() for p in block.parameters())}')
-    print(f'  RMSE_baseline    : {rmse_baseline:.6e} m\n')
+    print(f'  RMSE_baseline    : {rmse_baseline:.6e} m')
+    print(f'  GPUs in use      : {n_gpus if n_gpus > 1 else 1}  '
+          f'({", ".join(torch.cuda.get_device_name(i) for i in range(max(n_gpus,1) if device.type == "cuda" else 0))})\n')
     print(block.param_table())
 
     # ------------------------------------------------------------------
@@ -159,12 +193,13 @@ def train(
     t_start = time.time()
 
     for epoch in range(epochs):
-        t0 = time.time()
+        t0 = _sync_time(device)
         optimizer.zero_grad()
 
         # Pre-pass: no-grad simulation to get accurate segment start states
         pre    = _run_no_grad(block, x0, u_train)
         x0_seg = pre.X[0, :n_seg * segment_len:segment_len, :]   # (n_seg, 6)
+        t_pre  = _sync_time(device)
 
         # Training pass - profiled on epoch 0 when profile=True, no-op context otherwise
         ctx = (
@@ -174,13 +209,13 @@ def train(
             ) if (profile and epoch == 0) else contextlib.nullcontext()
         )
         with ctx as prof:
-            params     = torch.exp(block.log_params).clamp(min=1e-6)
-            M0, M1, M2, K, C = _build_matrices(params, block._Lb, block._d)
-            result     = simulate(x0_seg, u_seg, M0, M1, M2, K, C, block._P, block._ts, bptt_mode='full')
-            mse_loss   = F.mse_loss(result.Y, q1_seg)
+            Y_pred     = wrapper(x0_seg, u_seg)
+            mse_loss   = F.mse_loss(Y_pred, q1_seg)
             theta_loss = block.param_loss()
             loss       = mse_loss + theta_loss
+            t_fwd      = _sync_time(device)
             loss.backward()
+            t_bwd      = _sync_time(device)
 
         if prof is not None:
             _save_profile(prof, save_dir)
@@ -190,6 +225,9 @@ def train(
         if epoch % log_interval == 0 or epoch == epochs - 1:
             print(f'  {epoch:>6}  {mse_loss.item():>12.4e}  {theta_loss.item():>12.4e}  '
                   f'{loss.item():>12.4e}  {time.time()-t0:>9.3f}', flush=True)
+        if time_epochs:
+            print(f'    pre={t_pre-t0:.2f}s  fwd={t_fwd-t_pre:.2f}s  '
+                  f'bwd={t_bwd-t_fwd:.2f}s  total={t_bwd-t0:.2f}s', flush=True)
 
     if epochs > 1:
         total = time.time() - t_start
@@ -234,4 +272,4 @@ def train(
 
 
 if __name__ == '__main__':
-    train(profile=PROFILE)
+    train(profile=PROFILE, time_epochs=TIME_EPOCHS)
