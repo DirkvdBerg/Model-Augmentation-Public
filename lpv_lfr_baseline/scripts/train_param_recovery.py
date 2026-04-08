@@ -5,10 +5,11 @@ Step 3b: recover true physical parameters from MATLAB data using batched multipl
 
 Approach:
     x0 is known exactly ([0, 0, 0.3, 0, 0, 0] logical), so no encoder is needed.
-    Segment start states are computed once from data (parameter-free): positions
-    read directly from q1_train, velocities from forward finite differences.
-    Each epoch: simulate all n_seg segments in parallel (batch=n_seg, T=segment_len),
-    full BPTT within each segment. Segment start states are fixed and detached.
+    Full state trajectory (positions + central-difference velocities) precomputed from
+    data once and cached — parameter-free, independent of segmentation.
+    Each epoch: n_seg segments sampled via stratified random indexing (one per stratum),
+    guaranteeing full trajectory coverage every epoch. Segment start states from cached
+    state_traj; u_seg and q1_seg built by vectorised advanced indexing each epoch.
     Loss: MSE(Y_pred, q1_train) + block.param_loss()
     Optimizer: Adam on block.log_params only.
 
@@ -102,6 +103,33 @@ def _get_state_traj(q1_train, ts, device, save_dir):
     return traj.to(device)
 
 
+_EPOCH_CACHE_SIZE = 10_000  # minimum epochs pre-generated in cache
+
+
+def _get_epoch_indices(N_steps, n_seg, segment_len, epochs, device, save_dir):
+    """
+    Stratified random segment start indices for all training epochs.
+    Trajectory [0, N_steps-segment_len] split into n_seg equal strata;
+    one random start sampled per stratum per epoch — full coverage guaranteed every epoch.
+    Cached independently of epoch count; reused as long as cache has >= epochs rows.
+    """
+    tag        = f'n{N_steps}_sl{segment_len}_nb{n_seg}'
+    cache_path = os.path.join(save_dir, f'epoch_idx_{tag}.pt')
+    if os.path.exists(cache_path):
+        cached = torch.load(cache_path, map_location='cpu')
+        if cached.shape[0] >= epochs:
+            print(f'  epoch_idx: loaded from cache  ({tag})')
+            return cached.to(device)
+    n_gen   = max(_EPOCH_CACHE_SIZE, epochs)
+    stratum = (N_steps - segment_len) // n_seg
+    base    = torch.arange(n_seg).unsqueeze(0) * stratum            # (1, n_seg)
+    offsets = torch.randint(0, stratum, (n_gen, n_seg))             # (n_gen, n_seg)
+    idx     = (base + offsets).to(torch.int64)                      # (n_gen, n_seg)
+    torch.save(idx.cpu(), cache_path)
+    print(f'  epoch_idx: computed and cached  ({tag}, {n_gen} epochs)')
+    return idx.to(device)
+
+
 def _save_profile(prof, save_dir):
     """Print profiler table to console and save to profile_out.txt."""
     table  = prof.key_averages().table(sort_by='self_cpu_time_total', row_limit=20)
@@ -182,9 +210,8 @@ def train(
 
     N_steps = u_train.shape[1]
     n_seg   = N_steps // segment_len
-    u_seg   = u_train[0, :n_seg * segment_len].reshape(n_seg, segment_len, 3)   # (n_seg, T, 3)
-    q1_seg  = q1_train[:n_seg * segment_len].reshape(n_seg, segment_len, 3)     # (n_seg, T, 3)
-    print(f'  {N_steps} steps  →  {n_seg} × {segment_len}  ({N_steps - n_seg*segment_len} steps dropped)')
+    print(f'  {N_steps} steps  →  {n_seg} × {segment_len} per epoch  '
+          f'(stratified random, {N_steps - segment_len + 1} valid start positions)')
 
     # ------------------------------------------------------------------
     # 3. Block + optimizer
@@ -203,11 +230,11 @@ def train(
     print(block.param_table())
 
     # ------------------------------------------------------------------
-    # 3b. Segment start states - precomputed from data, parameter-free
+    # 3b. Precomputed data structures - parameter-free
     # ------------------------------------------------------------------
     state_traj = _get_state_traj(q1_train, block._ts, device, save_dir)
-    idx        = torch.arange(n_seg, device=device) * segment_len
-    x0_seg     = state_traj[idx]   # (n_seg, 6)
+    all_idx    = _get_epoch_indices(N_steps, n_seg, segment_len, epochs, device, save_dir)[:epochs]
+    _arange_T  = torch.arange(segment_len, device=device)   # (T,) reused every epoch
 
     # ------------------------------------------------------------------
     # 4. Training loop
@@ -229,6 +256,11 @@ def train(
                 record_shapes=False, with_stack=False,
             ) if (profile and epoch == 0) else contextlib.nullcontext()
         )
+        step_idx   = all_idx[epoch].unsqueeze(1) + _arange_T  # (n_seg, T)
+        x0_seg     = state_traj[all_idx[epoch]]               # (n_seg, 6)
+        u_seg      = u_train[0][step_idx]                     # (n_seg, T, 3)
+        q1_seg     = q1_train[step_idx]                       # (n_seg, T, 3)
+
         with ctx as prof:
             Y_pred     = wrapper(x0_seg, u_seg)
             mse_loss   = F.mse_loss(Y_pred, q1_seg)
