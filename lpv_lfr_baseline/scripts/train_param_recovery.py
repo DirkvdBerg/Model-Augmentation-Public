@@ -45,12 +45,12 @@ MAT_PATH     = os.path.join(os.path.dirname(__file__), '..', '..', 'Matlab-outpu
 SAVE_DIR     = os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'gantry', 'param_recovery')
 
 N_STEPS      = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
-EPOCHS       = 2     # training epochs
+EPOCHS       = 3     # training epochs
 LR           = 1e-3  # Adam learning rate
-SEGMENT_LEN  = 500   # segment length - batch size = N_STEPS // SEGMENT_LEN
-LOG_INTERVAL = 25    # print every N epochs
+SEGMENT_LEN  = 2000   # segment length - batch size = N_STEPS // SEGMENT_LEN
+LOG_INTERVAL = 1    # print every N epochs
 PROFILE      = False  # profile epoch 0 and save report to SAVE_DIR/profile_out.txt
-TIME_EPOCHS  = True   # print forward / backward timing each epoch
+TIME_EPOCHS  = False   # print forward / backward timing each epoch
 
 # Initial logical state: positions [0,0,0.3], velocities [0,0,0]
 # Matches q1[0] = [0,0,0.3] in stage coords (see data_utils.py derivation)
@@ -213,8 +213,8 @@ def train(
     # 4. Training loop
     # ------------------------------------------------------------------
     print(f'\n{"="*60}\nStep 4: Train  ({epochs} epochs, lr={lr}, batch={n_seg}×{segment_len})\n{"="*60}')
-    print(f'  {"Epoch":>6}  {"MSE [m²]":>12}  {"param_loss":>12}  {"total":>12}  {"time [s]":>9}')
-    print(f'  {"-"*6}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*9}')
+    print(f'  {"Epoch":>6}  {"MSE [m²]":>12}  {"param_loss":>12}  {"total":>12}  {"grad_norm":>12}  {"time [s]":>9}')
+    print(f'  {"-"*6}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*9}')
 
     t_start = time.time()
 
@@ -241,11 +241,12 @@ def train(
         if prof is not None:
             _save_profile(prof, save_dir)
 
+        grad_norm = block.log_params.grad.norm().item() if block.log_params.grad is not None else float('nan')
         optimizer.step()
 
         if epoch % log_interval == 0 or epoch == epochs - 1:
             print(f'  {epoch:>6}  {mse_loss.item():>12.4e}  {theta_loss.item():>12.4e}  '
-                  f'{loss.item():>12.4e}  {time.time()-t0:>9.3f}', flush=True)
+                  f'{loss.item():>12.4e}  {grad_norm:>12.3e}  {time.time()-t0:>9.3f}', flush=True)
         if time_epochs:
             print(f'    fwd={t_fwd-t0:.2f}s  bwd={t_bwd-t_fwd:.2f}s  '
                   f'total={t_bwd-t0:.2f}s', flush=True)
