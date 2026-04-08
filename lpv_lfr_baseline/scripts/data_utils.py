@@ -34,8 +34,6 @@ import numpy as np
 import torch
 from scipy.io import loadmat
 
-import deepSI
-
 from lpv_lfr_baseline.blocks.lfr_param_block import (
     ParameterizedLFRBlock, _build_matrices, _Lb, _d,
 )
@@ -69,6 +67,13 @@ def load_gantry_data(
         u shape (N, 3) -- stage forces [N]
         y shape (N, 3) -- stage positions [m]
     """
+    try:
+        import deepSI
+    except ImportError as exc:
+        raise ImportError(
+            "load_gantry_data requires the optional 'deepSI' dependency."
+        ) from exc
+
     mat = loadmat(mat_path)
 
     u = mat['u_q1'].astype(np.float32)   # (N, 3) stage forces

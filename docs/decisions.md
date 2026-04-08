@@ -633,6 +633,34 @@ All 10 trainable scalars are simultaneously trained from the start (same pattern
 
 ---
 
+### [D-036] OPEN — Augmentation training: state initialisation and mini-batch strategy
+**Date**: 2026-04-08
+**Status**: Deferred — decide when implementing augmentation training.
+**What**: Two coupled design choices must be made when extending from parameter recovery to augmentation training:
+
+**Choice A — State initialisation for segment start states:**
+
+Option 1 (data-derived, current): positions from measured q1, velocities from central finite differences. Cached as `state_traj_n{N}.pt`. Works for parameter recovery because all states are observable (q, q̇ from positions). **Will not generalise to augmentation**: the augmentation block introduces latent states (e.g. hidden flexible modes) that cannot be read from measured positions or computed by finite differences.
+
+Option 2 (encoder, Jan's approach — `model_augmentation/fit_systems/interconnect.py` line 417): `x = self.encoder(uhist, yhist)`. A learned neural network maps a window of past inputs and outputs to the full augmented state. The encoder is trained jointly with the physics parameters. This is the only correct approach when latent states exist.
+
+**Recommendation**: Keep data-derived states for parameter recovery (current code). Switch to an encoder when augmentation is added. The encoder architecture Jan used is `modified_encoder_net` in `interconnect.py` — a `simple_res_net` mapping `[uhist, yhist]` → `x0`.
+
+**Choice B — Segmentation strategy (overlapping vs non-overlapping):**
+
+Current (parameter recovery): non-overlapping segments, stride = segment_len. Batch = n_seg = N // segment_len (e.g. 70). One gradient update per epoch = full-batch GD.
+
+Jan's approach (augmentation): overlapping sliding windows, stride controlled by deepSI data loader (typically stride=1 or small). Many more gradient updates per epoch — effectively mini-batch SGD. More diverse gradient signal; helps generalisation and can escape local minima.
+
+Trade-off: overlapping windows require the encoder to re-estimate state at every window start (batch × encoder forward pass per epoch). Non-overlapping is cheaper but less diverse. For noisy real data with a learned augmentation, mini-batch SGD over overlapping windows is the standard choice (confirmed by Jan's code).
+
+**Recommendation**: For augmentation training, adopt Jan's overlapping strategy with encoder-based state init. The precomputed `state_traj` cache is still useful for the physical (observable) state components as a warm-start or validation reference.
+
+**Ruled out at this stage**: None — decision deferred until augmentation implementation begins.
+**Constrains**: Augmentation training script design. Encoder architecture and hyperparameters (nb, na window lengths) must be chosen at that time.
+
+---
+
 ### [D-035] Physical parameter positivity enforced via log/exp reparameterization
 **Date**: 2026-04-06
 **What**: Physical scalars in `ParameterizedLFRBlock` are stored as `self.log_params = nn.Parameter(torch.log(params_init))`. Physical values are recovered as `params = torch.exp(self.log_params).clamp(min=1e-6)` inside `forward()` and `param_loss()`. The clamp is a numerical crash guard only, not an optimization mechanism.

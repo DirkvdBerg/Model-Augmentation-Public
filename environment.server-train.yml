@@ -1,0 +1,21 @@
+# Keep this file package-focused and reusable.
+# Create the server env on dataB with a prefix such as:
+#   export CONDA_PKGS_DIRS=/dataB1/dirk_van_den_berg/conda-pkgs
+#   conda env create --prefix /dataB1/dirk_van_den_berg/conda-envs/GraduationProject -f environment.server-train.yml
+# The `name:` below is still useful for local named-env workflows, but `--prefix`
+# takes precedence on the server.
+name: GraduationProject
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.11.14
+  - pip
+  - numpy=2.0.1
+  - scipy=1.17.0
+  - matplotlib=3.10.8
+  - pytorch=2.5.1
+  - torchvision=0.20.1
+  - torchaudio=2.5.1
+  - pytorch-cuda=12.1

@@ -69,7 +69,8 @@
       "Bash(touch \"C:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/lpv_lfr_baseline/blocks/__init__.py\")",
       "Bash(touch \"C:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/lpv_lfr_baseline/tests/__init__.py\")",
       "Bash(touch \"C:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/lpv_lfr_baseline/scripts/__init__.py\")",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(python3 -c \"import sys; sys.path.insert\\(0, '/c/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation'\\); from deepSI.fit_systems.encoders import SS_encoder_general; import inspect; print\\(inspect.getfile\\(SS_encoder_general\\)\\)\")"
     ]
   }
 }
