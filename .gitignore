@@ -13,6 +13,7 @@ SCRIPTS_GUIDE.md
 LPV_CONTEXT.MAP.txt
 *.pdf
 PLAN.md
+*.png
 
 # benchmark folder
 literature/robot-benchmark-full/

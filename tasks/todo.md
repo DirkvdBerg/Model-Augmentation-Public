@@ -743,3 +743,58 @@ Next meeting: April 9, afternoon (online or on campus), supervisor preference co
   (stable from PyTorch 2.1+). Do not add until correctness is confirmed in eager mode.
 - Orthogonal projection regularization (full implementation, blocked on theory in Novelty 1 above)
 - F1Tenth application: supervisor noted (2026-03-20) this is simulation-only.
+
+---
+
+## Training Speed — Options Under Discussion
+
+Context: `train_param_recovery.py` runs a pure Python loop over 35,001 RK4 steps (140,004
+sequential op dispatches per epoch). Current setup: batch=1, float64, CPU.
+Available hardware: 7× RTX 2080 Ti.
+
+**Root cause options (to be confirmed by profiler first):**
+- Python dispatch overhead (140K op dispatches per epoch, ~5–15 µs each)
+- Actual matrix compute (3×3 float64 solve — unlikely to be the bottleneck)
+
+### Profiler status
+- `PROFILE=True` flag added to `train_param_recovery.py`
+- When `PROFILE=True`, caps to 500 steps, profiles epoch 0, writes to
+  `models/gantry/param_recovery/profile_out.txt`
+- **Pending**: profiler output not yet produced (debugging in progress)
+- **Decision needed**: confirm bottleneck before committing to any option below
+
+### Option 1 — `torch.compile` (zero architecture change)
+- Wrap `simulate()` in `torch.compile`; compiler eliminates Python dispatch overhead
+- No gradient changes, no approximation, no code restructuring
+- Expected: 2–5× speedup if Python overhead is the bottleneck
+- **Decision**: try first after profiler confirms dispatch overhead dominates
+
+### Option 2 — Switch to `LFRFitSystem` + Jan's multiple-shooting batching
+- Jan's `SSE_Interconnect.loss()` runs N random subsections of length T in parallel
+  as a batch (e.g. batch=2000, T=200 from the paper)
+- Instead of one sequential 35001-step pass, runs 2000 parallel 200-step sims
+- GPU-friendly: matrix solve becomes (2000, 3, 3) instead of (1, 3, 3)
+- **Key fact**: the earlier blocker ("X1/X2 have near-zero std → auto_fit_norm breaks")
+  was based on a wrong assumption. `lpv_sim_varying_y.mat` has meaningful X1/X2
+  variation (confirmed by compare_dtype.py plots). auto_fit_norm works fine.
+- **Decision needed**:
+  - [ ] Confirm profiler result justifies this change (not just Option 1)
+  - [ ] Decide: keep `train_param_recovery.py` direct-sim path OR replace with
+        `LFRFitSystem` path (the latter aligns param recovery and augmentation on
+        same infrastructure, which is cleaner long-term)
+
+### Option 3 — Multi-GPU use
+- Single training run: NOT parallelizable across GPUs (sequential state dependency,
+  3×3 float64 ops too small, RTX 2080 Ti FP64 is 1/32 of FP32 peak)
+- **Recommended use of multiple GPUs:**
+  - Multiple MATLAB trajectories (different Y excitations) on different GPUs:
+    better for generalization and parameter identifiability
+  - Cross-validation splits: variance estimates on recovered parameters
+  - Ablation over regularization weight ε (eq. 7 in Hoekstra 2025): scientifically
+    more useful than a simple LR grid search
+- **Decision needed**: what question do we want the multi-GPU runs to answer?
+
+### Immediate next step
+- [ ] Get profiler output (fix profiling issue in `train_param_recovery.py`)
+- [ ] Read profiler table: dispatch overhead vs compute?
+- [ ] Based on result: decide Option 1 only, or Option 1 + Option 2

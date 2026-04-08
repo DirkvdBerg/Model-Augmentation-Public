@@ -13,10 +13,11 @@ Approach: direct simulation (no encoder).
     the future ANN augmentation experiment where x0 is genuinely unknown.
 
 Why not SSE_Interconnect here:
-    X1 and X2 output channels have std ~ 3e-7 m in this trajectory (the Y-sweep
-    keeps X1=X2=0). auto_fit_norm divides by those stds, producing astronomically
-    large normalised values that break the encoder and MSE computation.
-    Direct simulation avoids the normalisation issue entirely.
+    Using direct simulation (known x0, no encoder needed) keeps the training
+    loop minimal for parameter recovery. All three output channels (X1, X2, Y)
+    have meaningful variation in lpv_sim_varying_y.mat, so auto_fit_norm would
+    work fine -- switching to LFRFitSystem/SSE_Interconnect is viable if Jan's
+    multiple-shooting batching is needed for speed.
 
 Data: Matlab-output/lpv_sim_varying_y.mat
     True-parameter trajectory (ground truth, D-033).
@@ -37,13 +38,21 @@ import time
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torch.profiler
 from scipy.io import loadmat
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from lpv_lfr_baseline.lfr_param_block import ParameterizedLFRBlock, _build_matrices
-from lpv_lfr_baseline.lfr_simulate import simulate
+from lpv_lfr_baseline.lfr_simulate import simulate as _simulate_eager
 from lpv_lfr_baseline.data_utils import compute_rmse_baseline
+
+_compile_backend = (
+    'inductor'   # Triton-backed, fastest - requires CUDA capability >= 7.0
+    if torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 7
+    else 'aot_eager'  # fallback: no Triton, works on CPU and old GPUs
+)
+simulate = torch.compile(_simulate_eager, backend=_compile_backend)
 
 # ----------------------------------------------------------------------
 # Configuration
@@ -52,10 +61,11 @@ MAT_PATH   = os.path.join(os.path.dirname(__file__), '..', 'Matlab-output', 'lpv
 SAVE_DIR   = os.path.join(os.path.dirname(__file__), '..', 'models', 'gantry', 'param_recovery')
 
 N_STEPS      = None      # cap on training steps per epoch (None = use all)
-EPOCHS       = 2         # training epochs (increase for better convergence)
+EPOCHS       = 1         # training epochs (increase for better convergence)
 LR           = 1e-3      # Adam learning rate
-SEGMENT_LEN  = 500       # truncated BPTT segment length (steps)
+SEGMENT_LEN  = 500       # segment length (steps): controls batch size = N // segment_len
 LOG_INTERVAL = 25        # print interval (epochs)
+PROFILE      = True     # set True to profile epoch 0 and print a time breakdown
 
 # Initial logical state: positions [0,0,0.3], velocities [0,0,0]
 # Matches q1[0] = [0,0,0.3] in stage coords (see data_utils.py derivation)
@@ -63,7 +73,7 @@ X0_LOGICAL = torch.tensor([[0.0, 0.0, 0.3, 0.0, 0.0, 0.0]], dtype=torch.float64)
 
 
 def _load_tensors(mat_path):
-    """Load MATLAB data as tensors (no train/val split — param recovery uses full trajectory)."""
+    """Load MATLAB data as tensors (no train/val split - param recovery uses full trajectory)."""
     mat    = loadmat(mat_path)
     u      = torch.tensor(mat['u_q1'], dtype=torch.float64).unsqueeze(0)  # (1, N, 3)
     q1     = torch.tensor(mat['q1'],   dtype=torch.float64)               # (N, 3)
@@ -81,7 +91,7 @@ def _simulate_no_grad(block, x0, u_seq):
 
 def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
           n_steps=N_STEPS, log_interval=LOG_INTERVAL,
-          mat_path=MAT_PATH, save_dir=SAVE_DIR):
+          mat_path=MAT_PATH, save_dir=SAVE_DIR, profile=PROFILE):
     """
     Run the parameter recovery training loop.
 
@@ -114,12 +124,23 @@ def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
     print("Step 2: Loading training and validation data")
     print("=" * 60)
     u_train, q1_train = _load_tensors(mat_path)
-    if n_steps is not None:
-        u_train  = u_train[:, :n_steps, :]
-        q1_train = q1_train[:n_steps]
+    # When profiling, cap at 500 steps so the profiler finishes quickly.
+    # The bottleneck pattern is identical regardless of trajectory length.
+    effective_n_steps = 500 if profile else n_steps
+    if effective_n_steps is not None:
+        u_train  = u_train[:, :effective_n_steps, :]
+        q1_train = q1_train[:effective_n_steps]
     u_train  = u_train.to(device)
     q1_train = q1_train.to(device)
-    print(f"  Steps: {u_train.shape[1]}  ({u_train.shape[1]/20000:.3f} s)")
+    N_steps  = u_train.shape[1]
+    print(f"  Steps: {N_steps}  ({N_steps/20000:.3f} s)")
+
+    # Pre-slice data into segments (constant across epochs — only x0_seg changes).
+    # Last N_steps % segment_len steps are dropped (at most segment_len-1 steps lost).
+    n_seg  = N_steps // segment_len
+    u_seg  = u_train[0, :n_seg * segment_len, :].reshape(n_seg, segment_len, 3)  # (n_seg, T, 3)
+    q1_seg = q1_train[:n_seg * segment_len, :].reshape(n_seg, segment_len, 3)    # (n_seg, T, 3)
+    print(f"  Segments: {n_seg} × {segment_len} steps  ({N_steps - n_seg*segment_len} steps dropped)")
 
     # ------------------------------------------------------------------
     # 3. Build block with computed RMSE_baseline
@@ -146,7 +167,7 @@ def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
     # ------------------------------------------------------------------
     print()
     print("=" * 60)
-    print(f"Step 4: Training  ({epochs} epochs, lr={lr}, segment_len={segment_len})")
+    print(f"Step 4: Training  ({epochs} epochs, lr={lr}, batch={n_seg}×{segment_len} steps)")
     print("=" * 60)
     print(f"  {'Epoch':>6}  {'MSE [m^2]':>12}  {'param_loss':>12}  {'total':>12}  {'time [s]':>9}")
     print(f"  {'-'*6}  {'-'*12}  {'-'*12}  {'-'*12}  {'-'*9}")
@@ -159,22 +180,68 @@ def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
         print(f"  Epoch {epoch}/{epochs} running...", end='\r', flush=True)
         optimizer.zero_grad()
 
-        # Forward: rebuild matrices from current log_params each epoch
-        params = torch.exp(block.log_params).clamp(min=1e-6)
-        M0, M1, M2, K, C = _build_matrices(params, block._Lb, block._d)
+        # Pre-pass: get segment start states with current params (no gradient).
+        # Uses _simulate_eager to avoid a separate compiled graph for the no-grad path.
+        with torch.no_grad():
+            params_pre = torch.exp(block.log_params).clamp(min=1e-6)
+            M0_p, M1_p, M2_p, K_p, C_p = _build_matrices(params_pre, block._Lb, block._d)
+            pre = _simulate_eager(
+                x0, u_train,
+                M0_p, M1_p, M2_p, K_p, C_p, block._P, block._ts,
+                bptt_mode='full',
+            )
+        # pre.X: (1, N_steps+1, 6) — take state at start of each segment
+        x0_seg = pre.X[0, :n_seg * segment_len:segment_len, :]  # (n_seg, 6)
 
-        result = simulate(
-            x0, u_train,
-            M0, M1, M2, K, C, block._P, block._ts,
-            bptt_mode='truncated', segment_len=segment_len,
-        )
-        y_pred = result.Y[0]   # (n_train, 3)
+        def _run_epoch():
+            # Rebuild matrices with gradient for the training pass.
+            params = torch.exp(block.log_params).clamp(min=1e-6)
+            M0, M1, M2, K, C = _build_matrices(params, block._Lb, block._d)
 
-        mse_loss   = F.mse_loss(y_pred, q1_train)
-        theta_loss = block.param_loss()
-        total_loss = mse_loss + theta_loss
+            # Batched simulation: n_seg segments of segment_len steps in parallel.
+            # x0_seg is detached (from no-grad pre-pass) so grad flows only within
+            # each segment, not through the segment start states.
+            result = simulate(
+                x0_seg, u_seg,
+                M0, M1, M2, K, C, block._P, block._ts,
+                bptt_mode='full',
+            )
 
-        total_loss.backward()
+            mse_loss   = F.mse_loss(result.Y, q1_seg)
+            theta_loss = block.param_loss()
+            total_loss = mse_loss + theta_loss
+            total_loss.backward()
+            return mse_loss, theta_loss, total_loss
+
+        if profile and epoch == 0:
+            # Profile epoch 0 only: records CPU time per op, then prints a
+            # summary sorted by total self-CPU time (top 20 ops).
+            # Disable CUDA activity recording -- float64 physics runs on CPU.
+            with torch.profiler.profile(
+                activities=[torch.profiler.ProfilerActivity.CPU],
+                record_shapes=False,
+                with_stack=False,
+            ) as prof:
+                mse_loss, theta_loss, total_loss = _run_epoch()
+            prof_path = os.path.join(save_dir, 'profile_out.txt')
+            os.makedirs(save_dir, exist_ok=True)
+            table = prof.key_averages().table(
+                sort_by="self_cpu_time_total", row_limit=20
+            )
+            header = (
+                "=" * 60 + "\n"
+                "Profiler report - epoch 0 (top 20 ops by self-CPU time)\n"
+                + "=" * 60
+            )
+            with open(prof_path, 'w') as f:
+                f.write(header + "\n" + table + "\n")
+            print()
+            print(header)
+            print(table)
+            print(f"  Profiler report also saved to: {prof_path}")
+        else:
+            mse_loss, theta_loss, total_loss = _run_epoch()
+
         optimizer.step()
 
         epoch_dt = time.time() - epoch_t0
@@ -186,7 +253,8 @@ def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
                   f"{epoch_dt:>9.3f}", flush=True)
 
     total_time = time.time() - t_start
-    print(f"\n  Training complete in {total_time:.1f} s  ({total_time/epochs:.2f} s/epoch)")
+    if epochs > 1:
+        print(f"\n  Training complete in {total_time:.1f} s  ({total_time/epochs:.2f} s/epoch)")
 
     # ------------------------------------------------------------------
     # 6. Simulation MSE on training data (no gradient)
@@ -208,7 +276,7 @@ def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
     print(f"\n  Overall MSE: {mse_train:.4e} m²")
 
     # ------------------------------------------------------------------
-    # 7. Parameter recovery table — primary go/no-go criterion
+    # 7. Parameter recovery table - primary go/no-go criterion
     # ------------------------------------------------------------------
     print()
     print("=" * 60)
@@ -235,4 +303,4 @@ def train(epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
 
 
 if __name__ == '__main__':
-    trained_block = train()
+    trained_block = train(profile=PROFILE)
