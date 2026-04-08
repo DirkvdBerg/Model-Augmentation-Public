@@ -5,11 +5,10 @@ Step 3b: recover true physical parameters from MATLAB data using batched multipl
 
 Approach:
     x0 is known exactly ([0, 0, 0.3, 0, 0, 0] logical), so no encoder is needed.
-    Each epoch:
-      1. Pre-pass (no grad): simulate full trajectory to get n_seg segment start states.
-      2. Training pass: simulate all n_seg segments in parallel (batch=n_seg, T=segment_len),
-         full BPTT within each segment. Segment start states are detached - gradient flows
-         only within each segment, matching the horizon of standard truncated BPTT.
+    Segment start states are computed once from data (parameter-free): positions
+    read directly from q1_train, velocities from forward finite differences.
+    Each epoch: simulate all n_seg segments in parallel (batch=n_seg, T=segment_len),
+    full BPTT within each segment. Segment start states are fixed and detached.
     Loss: MSE(Y_pred, q1_train) + block.param_loss()
     Optimizer: Adam on block.log_params only.
 
@@ -46,12 +45,12 @@ MAT_PATH     = os.path.join(os.path.dirname(__file__), '..', '..', 'Matlab-outpu
 SAVE_DIR     = os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'gantry', 'param_recovery')
 
 N_STEPS      = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
-EPOCHS       = 1     # training epochs
+EPOCHS       = 2     # training epochs
 LR           = 1e-3  # Adam learning rate
 SEGMENT_LEN  = 500   # segment length - batch size = N_STEPS // SEGMENT_LEN
 LOG_INTERVAL = 25    # print every N epochs
 PROFILE      = False  # profile epoch 0 and save report to SAVE_DIR/profile_out.txt
-TIME_EPOCHS  = True  # print pre-pass / forward / backward timing each epoch
+TIME_EPOCHS  = True   # print forward / backward timing each epoch
 
 # Initial logical state: positions [0,0,0.3], velocities [0,0,0]
 # Matches q1[0] = [0,0,0.3] in stage coords (see data_utils.py derivation)
@@ -71,15 +70,35 @@ def _load_data(mat_path):
 
 
 def _run_no_grad(block, x0, u):
-    """
-    Simulate full trajectory with current block params, no gradient.
-    Used for both the per-epoch pre-pass and the final evaluation.
-    Returns SimResult with .X (1, N+1, 6) and .Y (1, N, 3).
-    """
+    """Simulate full trajectory with current params, no gradient. Used for evaluation."""
     with torch.no_grad():
         params = torch.exp(block.log_params).clamp(min=1e-6)
         M0, M1, M2, K, C = _build_matrices(params, block._Lb, block._d)
         return simulate(x0, u, M0, M1, M2, K, C, block._P, block._ts, bptt_mode='full')
+
+
+def _get_state_traj(q1_train, ts, device, save_dir):
+    """
+    Full state trajectory from data — parameter-free.
+    Positions from q1_train; velocities via central differences (O(ts²)),
+    with forward/backward FD at the two boundary points.
+    Result cached to disk by data length; independent of segmentation.
+    """
+    N          = q1_train.shape[0]
+    tag        = f'n{N}'
+    cache_path = os.path.join(save_dir, f'state_traj_{tag}.pt')
+    if os.path.exists(cache_path):
+        print(f'  state_traj: loaded from cache  ({tag})')
+        return torch.load(cache_path, map_location=device)
+    q    = q1_train.cpu()
+    qdot = torch.empty_like(q)
+    qdot[0]    = (q[1]  - q[0])  / ts          # forward FD
+    qdot[1:-1] = (q[2:] - q[:-2]) / (2 * ts)   # central differences
+    qdot[-1]   = (q[-1] - q[-2]) / ts          # backward FD
+    traj = torch.cat([q, qdot], dim=-1)         # (N, 6)
+    torch.save(traj, cache_path)
+    print(f'  state_traj: computed and cached  ({tag})')
+    return traj.to(device)
 
 
 def _save_profile(prof, save_dir):
@@ -183,23 +202,24 @@ def train(
     print(block.param_table())
 
     # ------------------------------------------------------------------
+    # 3b. Segment start states - precomputed from data, parameter-free
+    # ------------------------------------------------------------------
+    state_traj = _get_state_traj(q1_train, block._ts, device, save_dir)
+    idx        = torch.arange(n_seg, device=device) * segment_len
+    x0_seg     = state_traj[idx]   # (n_seg, 6)
+
+    # ------------------------------------------------------------------
     # 4. Training loop
     # ------------------------------------------------------------------
     print(f'\n{"="*60}\nStep 4: Train  ({epochs} epochs, lr={lr}, batch={n_seg}×{segment_len})\n{"="*60}')
     print(f'  {"Epoch":>6}  {"MSE [m²]":>12}  {"param_loss":>12}  {"total":>12}  {"time [s]":>9}')
     print(f'  {"-"*6}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*9}')
 
-    pre     = None
     t_start = time.time()
 
     for epoch in range(epochs):
         t0 = _sync_time(device)
         optimizer.zero_grad()
-
-        # Pre-pass: no-grad simulation to get accurate segment start states
-        pre    = _run_no_grad(block, x0, u_train)
-        x0_seg = pre.X[0, :n_seg * segment_len:segment_len, :]   # (n_seg, 6)
-        t_pre  = _sync_time(device)
 
         # Training pass - profiled on epoch 0 when profile=True, no-op context otherwise
         ctx = (
@@ -226,18 +246,19 @@ def train(
             print(f'  {epoch:>6}  {mse_loss.item():>12.4e}  {theta_loss.item():>12.4e}  '
                   f'{loss.item():>12.4e}  {time.time()-t0:>9.3f}', flush=True)
         if time_epochs:
-            print(f'    pre={t_pre-t0:.2f}s  fwd={t_fwd-t_pre:.2f}s  '
-                  f'bwd={t_bwd-t_fwd:.2f}s  total={t_bwd-t0:.2f}s', flush=True)
+            print(f'    fwd={t_fwd-t0:.2f}s  bwd={t_bwd-t_fwd:.2f}s  '
+                  f'total={t_bwd-t0:.2f}s', flush=True)
 
     if epochs > 1:
         total = time.time() - t_start
         print(f'\n  Done: {total:.1f} s  ({total/epochs:.2f} s/epoch)')
 
     # ------------------------------------------------------------------
-    # 5. Evaluate - reuse last pre-pass, no extra simulation needed
+    # 5. Evaluate - fresh post-training pre-pass (pre may be stale)
     # ------------------------------------------------------------------
     print(f'\n{"="*60}\nStep 5: Prediction error\n{"="*60}')
-    y_pred   = pre.Y[0]                                      # (N_steps, 3)
+    pre    = _run_no_grad(block, x0, u_train)
+    y_pred = pre.Y[0]                                        # (N_steps, 3)
     mse_eval = F.mse_loss(y_pred, q1_train).item()
     err      = (y_pred - q1_train).pow(2).mean(0).sqrt()    # per-channel RMSE
     print(f'  {"Channel":<6}  {"RMSE [mm]":>12}')
@@ -273,3 +294,4 @@ def train(
 
 if __name__ == '__main__':
     train(profile=PROFILE, time_epochs=TIME_EPOCHS)
+
