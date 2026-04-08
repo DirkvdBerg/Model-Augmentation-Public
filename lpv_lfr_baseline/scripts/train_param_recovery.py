@@ -48,8 +48,9 @@ SAVE_DIR     = os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'ga
 N_STEPS      = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
 EPOCHS       = 3     # training epochs
 LR           = 1e-3  # Adam learning rate
-SEGMENT_LEN  = 2000   # segment length - batch size = N_STEPS // SEGMENT_LEN
-LOG_INTERVAL = 1    # print every N epochs
+SEGMENT_LEN       = 4000  # segment length - batch size = N_STEPS // SEGMENT_LEN
+PARAM_LOSS_WEIGHT = 0.0   # 0.0 = disabled (parameter recovery), 1.0 = full (augmentation)
+LOG_INTERVAL      = 25    # print every N epochs
 PROFILE      = False  # profile epoch 0 and save report to SAVE_DIR/profile_out.txt
 TIME_EPOCHS  = False   # print forward / backward timing each epoch
 
@@ -177,7 +178,7 @@ def train(
     epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
     n_steps=N_STEPS, log_interval=LOG_INTERVAL,
     mat_path=MAT_PATH, save_dir=SAVE_DIR, profile=PROFILE,
-    time_epochs=TIME_EPOCHS,
+    time_epochs=TIME_EPOCHS, param_loss_weight=PARAM_LOSS_WEIGHT,
 ):
     """Run parameter recovery training. Returns trained ParameterizedLFRBlock."""
     os.makedirs(save_dir, exist_ok=True)
@@ -220,6 +221,9 @@ def train(
     block     = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline).to(device)
     x0        = X0_LOGICAL.to(device)
     optimizer = torch.optim.Adam(block.parameters(), lr=lr)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, patience=5, factor=0.5, min_lr=1e-5,
+    )
     n_gpus  = min(4, torch.cuda.device_count()) if device.type == 'cuda' else 0
     wrapper = torch.nn.DataParallel(_SimWrapper(block), device_ids=list(range(n_gpus))) \
               if n_gpus > 1 else _SimWrapper(block)
@@ -235,13 +239,22 @@ def train(
     state_traj = _get_state_traj(q1_train, block._ts, device, save_dir)
     all_idx    = _get_epoch_indices(N_steps, n_seg, segment_len, epochs, device, save_dir)[:epochs]
     _arange_T  = torch.arange(segment_len, device=device)   # (T,) reused every epoch
+    val_idx    = torch.arange(n_seg, device=device) * segment_len
+    val_step   = val_idx.unsqueeze(1) + _arange_T
+    val_x0     = state_traj[val_idx]                        # (n_seg, 6)  fixed every epoch
+    val_u      = u_train[0][val_step]                       # (n_seg, T, 3)
+    val_q1     = q1_train[val_step]                         # (n_seg, T, 3)
 
     # ------------------------------------------------------------------
     # 4. Training loop
     # ------------------------------------------------------------------
     print(f'\n{"="*60}\nStep 4: Train  ({epochs} epochs, lr={lr}, batch={n_seg}×{segment_len})\n{"="*60}')
-    print(f'  {"Epoch":>6}  {"MSE [m²]":>12}  {"param_loss":>12}  {"total":>12}  {"grad_norm":>12}  {"time [s]":>9}')
-    print(f'  {"-"*6}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*9}')
+    if param_loss_weight > 0:
+        print(f'  {"Epoch":>6}  {"train_mse":>12}  {"param_loss":>12}  {"total":>12}  {"val_mse":>12}  {"grad_norm":>12}  {"time [s]":>9}')
+        print(f'  {"-"*6}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*9}')
+    else:
+        print(f'  {"Epoch":>6}  {"train_mse":>12}  {"val_mse":>12}  {"grad_norm":>12}  {"time [s]":>9}')
+        print(f'  {"-"*6}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*9}')
 
     t_start = time.time()
 
@@ -264,8 +277,8 @@ def train(
         with ctx as prof:
             Y_pred     = wrapper(x0_seg, u_seg)
             mse_loss   = F.mse_loss(Y_pred, q1_seg)
-            theta_loss = block.param_loss()
-            loss       = mse_loss + theta_loss
+            theta_loss = block.param_loss() if param_loss_weight > 0 else None
+            loss       = mse_loss + (param_loss_weight * theta_loss if theta_loss is not None else 0)
             t_fwd      = _sync_time(device)
             loss.backward()
             t_bwd      = _sync_time(device)
@@ -277,8 +290,15 @@ def train(
         optimizer.step()
 
         if epoch % log_interval == 0 or epoch == epochs - 1:
-            print(f'  {epoch:>6}  {mse_loss.item():>12.4e}  {theta_loss.item():>12.4e}  '
-                  f'{loss.item():>12.4e}  {grad_norm:>12.3e}  {time.time()-t0:>9.3f}', flush=True)
+            with torch.no_grad():
+                val_mse = F.mse_loss(wrapper(val_x0, val_u), val_q1).item()
+            scheduler.step(val_mse)
+            if param_loss_weight > 0:
+                print(f'  {epoch:>6}  {mse_loss.item():>12.4e}  {theta_loss.item():>12.4e}  '
+                      f'{loss.item():>12.4e}  {val_mse:>12.4e}  {grad_norm:>12.3e}  {time.time()-t0:>9.3f}', flush=True)
+            else:
+                print(f'  {epoch:>6}  {mse_loss.item():>12.4e}  {val_mse:>12.4e}  '
+                      f'{grad_norm:>12.3e}  {time.time()-t0:>9.3f}', flush=True)
         if time_epochs:
             print(f'    fwd={t_fwd-t0:.2f}s  bwd={t_bwd-t_fwd:.2f}s  '
                   f'total={t_bwd-t0:.2f}s', flush=True)
@@ -311,15 +331,17 @@ def train(
     # 7. Save
     # ------------------------------------------------------------------
     params_true = torch.tensor([_TRUE_PARAMS[n] for n in _PARAM_NAMES], dtype=torch.float64)
-    save_path   = os.path.join(save_dir, f'lfr_param_recovery_e{epochs}.pt')
+    save_path   = os.path.join(save_dir, f'lfr_param_recovery_e{epochs}_plw{param_loss_weight:.1f}.pt')
     torch.save({
-        'log_params':    block.log_params.detach(),
-        'params_init':   block.params_init,
-        'params_true':   params_true,
-        'RMSE_baseline': rmse_baseline,
-        'epochs':        epochs,
-        'lr':            lr,
-        'train_mse':     mse_eval,
+        'log_params':         block.log_params.detach(),
+        'params_init':        block.params_init,
+        'params_true':        params_true,
+        'RMSE_baseline':      rmse_baseline,
+        'epochs':             epochs,
+        'lr':                 lr,
+        'segment_len':        segment_len,
+        'param_loss_weight':  param_loss_weight,
+        'train_mse':          mse_eval,
     }, save_path)
     print(f'\n  Saved to: {save_path}')
 
