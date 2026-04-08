@@ -90,11 +90,12 @@ def _get_state_traj(q1_train, ts, device, save_dir):
     if os.path.exists(cache_path):
         print(f'  state_traj: loaded from cache  ({tag})')
         return torch.load(cache_path, map_location=device)
-    q    = q1_train.cpu()
-    qdot = torch.empty_like(q)
-    qdot[0]    = (q[1]  - q[0])  / ts          # forward FD
-    qdot[1:-1] = (q[2:] - q[:-2]) / (2 * ts)   # central differences
-    qdot[-1]   = (q[-1] - q[-2]) / ts          # backward FD
+    ts_val = float(ts)
+    q      = q1_train.cpu()
+    qdot   = torch.empty_like(q)
+    qdot[0]    = (q[1]  - q[0])  / ts_val          # forward FD
+    qdot[1:-1] = (q[2:] - q[:-2]) / (2 * ts_val)   # central differences
+    qdot[-1]   = (q[-1] - q[-2]) / ts_val           # backward FD
     traj = torch.cat([q, qdot], dim=-1)         # (N, 6)
     torch.save(traj, cache_path)
     print(f'  state_traj: computed and cached  ({tag})')
