@@ -46,11 +46,12 @@ MAT_PATH     = os.path.join(os.path.dirname(__file__), '..', '..', 'Matlab-outpu
 SAVE_DIR     = os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'gantry', 'param_recovery')
 
 N_STEPS      = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
-EPOCHS       = 3     # training epochs
+EPOCHS       = 1000     # training epochs
 LR           = 1e-3  # Adam learning rate
 SEGMENT_LEN       = 4000  # segment length - batch size = N_STEPS // SEGMENT_LEN
 PARAM_LOSS_WEIGHT = 0.0   # 0.0 = disabled (parameter recovery), 1.0 = full (augmentation)
-LOG_INTERVAL      = 25    # print every N epochs
+LOG_INTERVAL        = 25    # print every N epochs
+CHECKPOINT_INTERVAL = 100   # save checkpoint_eN.pt every N epochs; 0 = disabled
 PROFILE      = False  # profile epoch 0 and save report to SAVE_DIR/profile_out.txt
 TIME_EPOCHS  = False   # print forward / backward timing each epoch
 
@@ -177,6 +178,7 @@ def _sync_time(device):
 def train(
     epochs=EPOCHS, lr=LR, segment_len=SEGMENT_LEN,
     n_steps=N_STEPS, log_interval=LOG_INTERVAL,
+    checkpoint_interval=CHECKPOINT_INTERVAL,
     mat_path=MAT_PATH, save_dir=SAVE_DIR, profile=PROFILE,
     time_epochs=TIME_EPOCHS, param_loss_weight=PARAM_LOSS_WEIGHT,
 ):
@@ -288,6 +290,10 @@ def train(
 
         grad_norm = block.log_params.grad.norm().item() if block.log_params.grad is not None else float('nan')
         optimizer.step()
+
+        if checkpoint_interval > 0 and epoch > 0 and epoch % checkpoint_interval == 0:
+            torch.save({'log_params': block.log_params.detach(), 'epoch': epoch},
+                       os.path.join(save_dir, f'checkpoint_e{epoch}.pt'))
 
         if epoch % log_interval == 0 or epoch == epochs - 1:
             with torch.no_grad():
