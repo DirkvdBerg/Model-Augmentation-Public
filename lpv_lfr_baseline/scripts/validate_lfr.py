@@ -47,7 +47,7 @@ from lpv_lfr_baseline.core.lfr_simulate import simulate, simulate_frozen, SimRes
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-_MAT_BASE    = os.path.join(os.path.dirname(__file__), '..', 'Matlab-output')
+_MAT_BASE    = os.path.join(os.path.dirname(__file__), '..', '..', 'Matlab-output')
 _DTYPE       = torch.float64
 _FS          = fs.item()
 _TS          = ts.item()
