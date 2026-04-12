@@ -8,17 +8,24 @@ Mirrors LFRBaselineBlock (lfr_block.py) but makes 10 physical scalars
 trainable via log/exp reparameterization. All other design choices are
 identical: stateless, (batch, 9, 1) -> (batch, 18, 1), float64 physics.
 
-Trainable scalars (10, stored as log_params):
-    kb_sum  = kb1 + kb2     [N.m/rad]   stiffness sum (only sum identifiable)
+Trainable scalars (13, stored as log_params):
+    kb1                     [N.m/rad]   stiffness joint 1
+    kb2                     [N.m/rad]   stiffness joint 2
     cg1                     [N/(m/s)]   X1 viscous friction
     cg2                     [N/(m/s)]   X2 viscous friction
     cy                      [N/(m/s)]   Y  viscous friction (isolated in C[2,2])
-    cb_sum  = cb1 + cb2     [N.m/(rad/s)] rotational friction sum
+    cb1                     [N.m/(rad/s)] rotational friction joint 1
+    cb2                     [N.m/(rad/s)] rotational friction joint 2
     mh                      [kg]        payload mass -- the sole LPV parameter
     m1                      [kg]        actuator X1 mass
     m2                      [kg]        actuator X2 mass
     mb                      [kg]        cross-arm mass
-    J_sum   = Jb + Jh       [kg.m^2]    rotary inertia sum
+    Jb                      [kg.m^2]    rotary inertia of cross-arm
+    Jh                      [kg.m^2]    rotary inertia of payload
+
+    Note: dynamics only observes kb1+kb2, cb1+cb2, Jb+Jh (sums). The individual
+    components are regularized toward physical priors to resolve the flat ridge
+    in the loss landscape (see param_loss).
 
 Fixed buffers (not trainable):
     Lb      [m]     cross-arm length  -- also enters P transform, cannot train
@@ -77,33 +84,39 @@ except ImportError:
 # Used only for verification in __main__. Training uses detuned inits.
 # ----------------------------------------------------------------------
 _TRUE_PARAMS = {
-    'kb_sum': 3975.00,
+    'kb1':    1987.50,
+    'kb2':    1987.50,
     'cg1':      14.50,
     'cg2':      20.30,
     'cy':       10.00,
-    'cb_sum':   18.00,
+    'cb1':       9.00,
+    'cb2':       9.00,
     'mh':       10.10,
     'm1':       10.20,
     'm2':       10.70,
     'mb':       22.80,
-    'J_sum':     1.05,
+    'Jb':        1.00,
+    'Jh':        0.05,
 }
 
-# Detuned initial values (D-030)
+# Detuned initial values (D-030) — same detuning percentages as original sums
 _DETUNED_PARAMS = {
-    'kb_sum': 3776.25,   # -5%
+    'kb1':    1888.125,  # -5%
+    'kb2':    1888.125,  # -5%
     'cg1':      13.05,   # -10%
     'cg2':      18.27,   # -10%
     'cy':        9.00,   # -10%
-    'cb_sum':   16.20,   # -10%
+    'cb1':       8.10,   # -10%
+    'cb2':       8.10,   # -10%
     'mh':        9.595,  # -5%
     'm1':        9.690,  # -5%
     'm2':       10.165,  # -5%
     'mb':       22.344,  # -2%
-    'J_sum':     0.9975, # -5%
+    'Jb':        0.950,  # -5%
+    'Jh':        0.0475, # -5%
 }
 
-_PARAM_NAMES = ['kb_sum', 'cg1', 'cg2', 'cy', 'cb_sum', 'mh', 'm1', 'm2', 'mb', 'J_sum']
+_PARAM_NAMES = ['kb1', 'kb2', 'cg1', 'cg2', 'cy', 'cb1', 'cb2', 'mh', 'm1', 'm2', 'mb', 'Jb', 'Jh']
 
 # Fixed geometry (also enter P -- cannot be trained)
 _Lb = torch.tensor(0.725, dtype=torch.float64)
@@ -327,8 +340,12 @@ class ParameterizedLFRBlock(_BASE):
         u_logical = u_stage @ self._P.T
 
         # Rebuild matrices from current trainable params each forward call
-        params    = self._recover_params()
-        M0, M1, M2, K, C = _build_matrices(params, self._Lb, self._d)
+        params = self._recover_params()
+        kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = params
+        M0, M1, M2, K, C = _build_matrices(
+            torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh]),
+            self._Lb, self._d,
+        )
 
         x_next, z_lfr, w_lfr, _ = rk4_step(
             x, u_logical, M0, M1, M2, K, C, self._ts,

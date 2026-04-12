@@ -76,7 +76,11 @@ def _run_no_grad(block, x0, u):
     """Simulate full trajectory with current params, no gradient. Used for evaluation."""
     with torch.no_grad():
         params = block._recover_params()
-        M0, M1, M2, K, C = _build_matrices(params, block._Lb, block._d)
+        kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = params
+        M0, M1, M2, K, C = _build_matrices(
+            torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh]),
+            block._Lb, block._d,
+        )
         return simulate(x0, u, M0, M1, M2, K, C, block._P, block._ts, bptt_mode='full')
 
 
@@ -157,6 +161,8 @@ class _SimWrapper(torch.nn.Module):
 
     def forward(self, x0_seg, u_seg):
         params = self.block._recover_params()
+        kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = params
+        params = torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh])
         M0, M1, M2, K, C = _build_matrices(params, self.block._Lb, self.block._d)
         return simulate(
             x0_seg, u_seg, M0, M1, M2, K, C,
