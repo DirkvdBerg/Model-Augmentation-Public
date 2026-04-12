@@ -670,4 +670,103 @@ Trade-off: overlapping windows require the encoder to re-estimate state at every
 - *Projected gradient / clamping as training strategy*: `params.clamp_(min=1e-6)` after each optimizer step. Creates a discontinuous gradient at the boundary — the optimizer sees a flat landscape and cannot recover. Parameters cluster at the clip value. Widely considered an antipattern (cf. WGAN weight clipping critique). Retained only as a numerical safety net after exp, not as a constraint mechanism.
 - *Log-barrier term*: Add `-λ · Σ log(params)` to the loss. Requires scheduling λ toward 0 (interior point method) to be principled; in stochastic gradient training with Adam this scheduling is difficult to get right. Adds a hyperparameter with no clear benefit when L2 regularization already anchors parameters near positive initial values.
 - *Unconstrained training relying on regularization alone*: L2 regularization provides a soft pull toward positive init values but no hard guarantee. For a small detuning (5-10%) and well-calibrated Lambda this would likely work in practice, but provides no protection against edge cases (aggressive learning rates, long training, poor RMSE_baseline calibration).
+
+---
+
+### [D-036] OPEN: LFR structure vs. state-space-only for LPV baseline and augmentation
+**Date**: 2026-04-09 (raised in supervisor meeting, not yet decided)
+**What**: Decide whether to express the LPV baseline as a true LFR (with M(Y) invertibility as a
+rational/symbolic expression) or remain in state-space form (current: `torch.linalg.solve` at
+every step).
+**Why this matters**:
+- Current `linalg.solve` approach is numerically correct but gives zero LFR structural benefit.
+- LFR structure is almost essential for control design (H-inf, mu-synthesis) — a primary interest
+  of ASMPT even when a black-box augmentation is added on top.
+- Expressing M(Y)^{-1} symbolically as a rational function (MATLAB can do this) means no per-step
+  matrix inversion; the forward pass becomes matrix-vector products only — computationally cheaper
+  and structurally a proper LFR.
+- Jan's interconnect framework supports state-space directly (no LFR required), but this trades
+  away the control-design benefit.
+**Open sub-questions**:
+1. Does the parallel augmentation (D-003) still provide the orthogonality regularization benefit
+   if the baseline is in state-space form rather than LFR? (I.e., what exactly is traded away?)
+2. SVD on the LFR channels: reduces latent signals (good for control), but how does it affect
+   interpretability of the learned augmentation states?
+3. Identifiability / uniqueness of parameter updating: which parameter combinations only appear
+   as sums in M(Y)? Can trajectory excitation separate them, or is norm regularization needed?
+**Decision path**:
+- If project scope includes control design deliverable → invest in symbolic M(Y)^{-1} (MATLAB)
+  to recover LFR structure before augmentation.
+- If scope is simulation/prediction only → state-space form is acceptable; note the limitation
+  explicitly in the thesis.
+**Ruled out**: Nothing ruled out yet — decision deferred pending scope clarification with supervisors.
+**Constrains**: LPV model implementation (`lpv_lfr_baseline/`), augmentation interconnect structure,
+and any control design work downstream.
+
+---
+
+### [D-037] OPEN: Norm regularization on cost function to improve parameter identifiability
+**Date**: 2026-04-09 (raised in supervisor meeting, not yet decided)
+**What**: When two or more physical parameters are only identifiable as a sum (e.g. M[i,j] = a + b
+where only a+b enters M(Y)), add a norm term to the cost function to shape the landscape so that
+individual components can be recovered.
+**Why**: The standard RMSE + L2 loss may have a degenerate valley along directions where a+b is
+constant — any (a, b) pair on that line gives the same loss. A norm term (e.g. L1 or L2 on the
+individual values) breaks the degeneracy by preferring sparse or small-magnitude decompositions,
+making the optimizer converge to a specific point rather than sliding along the valley.
+**Connection to log-domain gradients (D-035)**:
+- If Adam operates in log-domain (log/exp reparameterization), gradients near zero/small values
+  are amplified — parameters at very different scales receive unfair updates.
+- Roland's suggestion: **centre and normalize** log-parameters around ~1 before the gradient step
+  to equalize the effective step sizes across parameters.
+- Alternative to log: `p² = p * p` (always positive, smooth near zero gradient) or `|p * p|` —
+  avoids log singularity near zero but still requires positivity guarantee.
+**Open question**: What is the cleanest guarantee that a parameter never hits zero during training?
+Current answer: log/exp (D-035). Revisit if instability seen near small parameter values.
+**Ruled out**: Nothing ruled out yet.
+**Constrains**: `train_param_recovery.py` loss function and optimizer configuration; see also
+MEET-02 and MEET-06 in `tasks/todo.md`.
 **Constrains**: `ParameterizedLFRBlock` stores `self.log_params` as `nn.Parameter`. All reads of physical parameter values — in `_build_matrices()`, `param_loss()`, and any diagnostic printout — must go through `torch.exp(self.log_params)`. The regularization reference `self.params_init` remains in physical space (not log space) for interpretability.
+
+---
+
+### [D-038] Simulation study extra state: Y-position-dependent Dahl friction states [z₁, z₂]
+**Date**: 2026-04-10
+**What**: The 8-state data-generating model for the augmentation simulation study adds two Dahl friction states [z₁, z₂] — bristle deflections on the X₁ and X₂ guides — to the 6-state LPV baseline. The baseline remains unmodified (6 states, constant C and K). The augmentation must discover the extra states and their coupling.
+
+Data-generating model dynamics (extra states):
+```
+ż₁ = Ẋ₁ − (|Ẋ₁|/g) · z₁     where Ẋ₁ = Ẋ + (Lb/2)·Θ̇
+ż₂ = Ẋ₂ − (|Ẋ₂|/g) · z₂     where Ẋ₂ = Ẋ − (Lb/2)·Θ̇
+
+Y-dependent Coulomb amplitudes:
+  Fc₁(Y) = Fc · (Lb/2 − Y) / Lb
+  Fc₂(Y) = Fc · (Lb/2 + Y) / Lb
+
+Modified force equations in data generator:
+  F_X_friction = Fc₁(Y)·z₁ + cg1·Ẋ₁ + Fc₂(Y)·z₂ + cg2·Ẋ₂
+  τ_Θ_friction = (Fc₁(Y)·z₁ − Fc₂(Y)·z₂) · Lb/2 + (cg1·Ẋ₁ − cg2·Ẋ₂) · Lb/2
+```
+
+**Why**: Five candidates were evaluated; the friction states were the only choice satisfying all criteria simultaneously:
+1. Genuine dynamic states (own ODE, memory — not computable from current [X,Θ,Y,Ẋ,Θ̇,Ẏ])
+2. Creates coupling: asymmetric Fc₁(Y) ≠ Fc₂(Y) when Y ≠ 0 generates Y-dependent torque on Θ from X motion
+3. Position-dependent: coupling amplitude varies with Y, enriching the LPV structure (C(Y) alongside M(Y))
+4. Direction-sensitive: z₁, z₂ carry history through direction reversals (pre-sliding transient)
+5. Physically motivated: load distribution N₁(Y), N₂(Y) on X-guides changes with payload Y — documented in gantry literature
+6. Directly connects to D-025 (supervisor's hysteresis observation) as the proper dynamic formulation of sign(Ẏ) scheduling
+7. Exact Jan-analogy: extra states in data generator (absent from baseline), augmentation must rediscover them
+
+**Ruled out**:
+- *Support structure resonance [x_b, ẋ_b]*: Garcia's 37.7 Hz die-cast base resonance is specific to his rig; Telica uses granite/polymer-concrete frame with first resonance >100 Hz, above control bandwidth. No Y-dependence — does not enrich LPV structure.
+- *Cross-arm bending mode [δ, δ̇]*: Garcia explicitly calls cross-arm vibration "negligible in comparison to the coupling between actuators." Building the simulation study on a phenomenon the original paper dismisses is a weak foundation.
+- *Coriolis coupling (Ẏ·Θ̇ terms)*: Not a state — a static nonlinear function of existing states. A non-dynamic augmentation could capture it without extra states. Reserved for second augmentation step (D-024).
+- *sign(Ẏ)*: Not a state — a static (memoryless) nonlinearity. Already approximately modelled as Coulomb friction in the baseline. The friction states [z₁, z₂] are the correct dynamic version that captures the hysteresis memory sign(Ẏ) approximates.
+
+**Constrains**:
+- Data generator implementation extends `rk4_step` / `lfr_simulate.py` to an 8-state variant; the 6-state baseline code is NOT modified.
+- Augmentation interconnect uses `nxd=2` extra states (analogous to Jan's `nxd=2` for m₃ in MSD).
+- Verification: true z₁(t), z₂(t) from the data generator are saved and compared against the augmentation's learned states.
+- Key metric: Θ prediction error as a function of Y-position and motion direction.
+- Parameter g (Dahl stiffness) and Fc (nominal Coulomb amplitude) must be chosen to produce a physically plausible but clearly observable effect — suggested range: g ≈ 1–5 μm (pre-sliding displacement), Fc ≈ 10–30 N.
+- Cross-references: D-022 (extra states in augmentation, not baseline), D-023 (validate parameter recovery before augmentation), D-024 (friction study is the first augmentation demonstration), D-025 (friction states are the dynamic formulation of hysteresis scheduling).

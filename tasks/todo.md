@@ -798,3 +798,90 @@ Available hardware: 7× RTX 2080 Ti.
 - [ ] Get profiler output (fix profiling issue in `train_param_recovery.py`)
 - [ ] Read profiler table: dispatch overhead vs compute?
 - [ ] Based on result: decide Option 1 only, or Option 1 + Option 2
+
+---
+
+## Supervisor Meeting Notes — 2026-04-09
+
+Notes and action items from meeting with TUe + ASMPT supervisors. Items are flagged here so they are encountered at the right step.
+
+---
+
+### [MEET-01] URGENT: Gantt chart / planning required for next meeting
+**Raised by**: Maarten (third time — this is a hard requirement)
+- [ ] **Before next meeting**: prepare a Gantt chart / planning covering remaining project milestones
+- Include: parameter recovery completion, augmentation implementation, validation, thesis writing
+- Supervisors need this to steer the project; do not attend the next meeting without it
+
+---
+
+### [MEET-02] Parameter updating — norm to tune cost function landscape
+**Relevant at**: Step 3 (parameter recovery training)
+- When parameters are not individually identifiable but their sum is, add a **norm term** to the
+  cost function to tune the landscape and make individual parameters more identifiable
+- This is a regularization strategy, not a penalty on the sum itself — it shapes the landscape
+  so the optimizer can distinguish the components
+
+**Logarithmic parameterization for Adam** (follow-up on D-035):
+- If log-domain gradients are used, **centre and normalize** the log-parameters (around ~1)
+  before computing the gradient update — Roland's suggestion
+- Near zero / near 1 in log-space the gradient magnitude can be very different across parameters
+  with different scales; centring corrects for this
+- Alternative to log: `params * params` (square, always positive) or `abs(params * params)` —
+  ensures positivity without log but gradient behaviour near zero still needs checking
+- **Open question**: what is the cleanest guarantee that a parameter never reaches zero?
+  → see D-035 for current log/exp approach; revisit if instability observed near small values
+- **Open question (MEET-06 below)**: how important is uniqueness for the parameter updating?
+
+---
+
+### [MEET-03] LPV baseline is a state-space model, NOT LFR — LFR not exploited
+**Relevant at**: Step 2 (LPV) and Step 3+ (augmentation)
+- **Current state**: `torch.linalg.solve` is used to invert `M(Y)` at every step — this is
+  numerically correct but gives **zero benefit from LFR structure**
+- **LFR benefit for ASMPT**: LFR structure is almost essential for control design, even with a
+  black-box augmentation on top — the structured plant model allows structured H-inf / mu-synthesis
+- **Path to LFR**: express `M(Y)` invertibility as a rational function symbolically
+  (MATLAB can do this), then the full forward pass does not require a matrix inverse at every
+  timestep — the rational form is the LFR representation
+- **Jan's interconnect framework**: does allow pure state-space (no LFR), but this trades away
+  the control-design benefit; decision depends on project scope
+- **SVD**: primarily beneficial for control design (fewer latent signals / lower-rank channel)
+  — open question: how does SVD affect interpretability of learned states?
+- **Unresolved**: in the parallel augmentation structure (D-003), the additive augmentation is
+  one option; parallel in Jan's framework would allow orthogonality regularization — it is not
+  yet clear whether switching to state-space (not LFR) loses that orthogonality benefit
+- **Decision needed (see D-036 placeholder in decisions.md)**: commit to state-space only vs.
+  invest in symbolic M(Y) inversion to recover LFR structure
+
+---
+
+### [MEET-04] Augmentation — physical interpretability of learned states
+**Relevant at**: Step 4 (augmentation training)
+- The augmentation result must be **physically meaningful** — not just low residual
+- Additional learned states should be interpretable (e.g. map to a physical mode)
+- **Open question**: how to enforce this? Options to investigate:
+  - Regularization on the magnitude or structure of the additional states
+  - Constrain state-space matrices of the augmentation block (e.g. passivity, sparsity)
+  - Compare learned states against known unmodeled effects (Coriolis, Coulomb)
+
+---
+
+### [MEET-05] BFR low for X1 and X2 — expected, not a bug
+**Relevant at**: Step 2/3 validation
+- X1 and X2 have low BFR; reference is 0 (the Y-axis excites them only weakly via coupling)
+- Signal amplitude is small relative to the error scale → BFR is noisy/low by construction
+- Not an indicator of a model problem — document this in any results/thesis section that
+  reports BFR per channel
+
+---
+
+### [MEET-06] Uniqueness of parameter updating
+**Relevant at**: Step 3 (parameter recovery)
+- Open question raised in meeting: how important is uniqueness (identifiability) for the
+  parameter updating procedure?
+- Directly related to MEET-02: if uniqueness is not guaranteed, norm regularization may be
+  the primary tool to shape the cost landscape toward a unique minimum
+- **Action**: review identifiability theory for the specific parameter set; check which
+  parameter combinations appear only as sums in M(Y) and whether the trajectory excitation
+  is rich enough to separate them
