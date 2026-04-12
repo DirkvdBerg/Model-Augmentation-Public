@@ -46,17 +46,9 @@ Regularization (D-034):
     RMSE_baseline is passed at construction from a pre-training forward-pass
     measurement on the MATLAB data (D-034).
 
-Detuned initial values (D-030):
-    kb_sum  : 3975.00 -> 3776.25  (-5%)
-    cg1     :   14.50 ->   13.05  (-10%)
-    cg2     :   20.30 ->   18.27  (-10%)
-    cy      :   10.00 ->    9.00  (-10%)
-    cb_sum  :   18.00 ->   16.20  (-10%)
-    mh      :   10.10 ->    9.595 (-5%)
-    m1      :   10.20 ->    9.690 (-5%)
-    m2      :   10.70 ->   10.165 (-5%)
-    mb      :   22.80 ->   22.344 (-2%)
-    J_sum   :    1.05 ->    0.9975(-5%)
+Detuned initial values:
+    Uniform ±10% applied to each parameter with alternating signs (see _DETUNING_SIGNS).
+    Signs are fixed so results are reproducible without a seed.
 
 Block interface (identical to LFRBaselineBlock):
     nz = 9   (nx=6 state + nu=3 stage-coord input)
@@ -99,24 +91,12 @@ _TRUE_PARAMS = {
     'Jh':        0.05,
 }
 
-# Detuned initial values (D-030) — same detuning percentages as original sums
-_DETUNED_PARAMS = {
-    'kb1':    1888.125,  # -5%
-    'kb2':    1888.125,  # -5%
-    'cg1':      13.05,   # -10%
-    'cg2':      18.27,   # -10%
-    'cy':        9.00,   # -10%
-    'cb1':       8.10,   # -10%
-    'cb2':       8.10,   # -10%
-    'mh':        9.595,  # -5%
-    'm1':        9.690,  # -5%
-    'm2':       10.165,  # -5%
-    'mb':       22.344,  # -2%
-    'Jb':        0.950,  # -5%
-    'Jh':        0.0475, # -5%
-}
-
 _PARAM_NAMES = ['kb1', 'kb2', 'cg1', 'cg2', 'cy', 'cb1', 'cb2', 'mh', 'm1', 'm2', 'mb', 'Jb', 'Jh']
+
+# Detuned initial values — uniform ±10%, alternating signs across parameters.
+# Signs are fixed (not runtime-random) so results are reproducible without a seed.
+_DETUNING_SIGNS  = [+1, -1, +1, -1, +1, -1, +1, -1, +1, -1, +1, -1, +1]
+_DETUNED_PARAMS  = {n: _TRUE_PARAMS[n] * (1 + s * 0.10) for n, s in zip(_PARAM_NAMES, _DETUNING_SIGNS)}
 
 # Fixed geometry (also enter P -- cannot be trained)
 _Lb = torch.tensor(0.725, dtype=torch.float64)
