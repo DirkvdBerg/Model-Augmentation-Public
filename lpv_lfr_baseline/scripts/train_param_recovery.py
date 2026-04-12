@@ -75,7 +75,7 @@ def _load_data(mat_path):
 def _run_no_grad(block, x0, u):
     """Simulate full trajectory with current params, no gradient. Used for evaluation."""
     with torch.no_grad():
-        params = torch.exp(block.log_params).clamp(min=1e-6)
+        params = block._recover_params()
         M0, M1, M2, K, C = _build_matrices(params, block._Lb, block._d)
         return simulate(x0, u, M0, M1, M2, K, C, block._P, block._ts, bptt_mode='full')
 
@@ -156,7 +156,7 @@ class _SimWrapper(torch.nn.Module):
         self.block = block
 
     def forward(self, x0_seg, u_seg):
-        params = torch.exp(self.block.log_params).clamp(min=1e-6)
+        params = self.block._recover_params()
         M0, M1, M2, K, C = _build_matrices(params, self.block._Lb, self.block._d)
         return simulate(
             x0_seg, u_seg, M0, M1, M2, K, C,

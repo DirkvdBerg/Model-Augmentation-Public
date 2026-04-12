@@ -25,12 +25,13 @@ Fixed buffers (not trainable):
     d       [m]     cross-arm to payload -- only appears in products with mh
 
 Positivity guarantee (D-035):
-    Parameters stored as self.log_params = nn.Parameter(log(params_init_detuned)).
-    Physical values recovered as torch.exp(self.log_params).clamp(min=1e-6).
-    This maps the unconstrained real line to (0, inf) -- the optimizer never
-    touches physical values directly. At our parameter magnitudes (all >= 1.05),
-    softplus and exp are numerically indistinguishable; log/exp is the standard
-    choice in the system identification literature.
+    Parameters stored as self.log_params = nn.Parameter(zeros), representing
+    log(theta / params_init). Physical values recovered as
+    params_init * exp(log_params), clamped to (1e-6, inf).
+    Initialized at zero so all parameters start at their reference value (= 1
+    in normalized space). This centers the log-space landscape around 0 and
+    normalizes each parameter to be ~1 at init, giving Adam uniform gradient
+    scaling across parameters that otherwise span 1-4000 in physical units.
 
 Regularization (D-034):
     param_loss() computes Lambda-weighted L2 toward params_init (physical space).
@@ -237,7 +238,7 @@ class ParameterizedLFRBlock(_BASE):
         # Trainable parameters -- stored in log space (D-035)
         # torch.exp(log_params) gives physical values, always > 0
         # ------------------------------------------------------------------
-        self.log_params = nn.Parameter(torch.log(params_init))
+        self.log_params = nn.Parameter(torch.zeros_like(params_init))
 
         # ------------------------------------------------------------------
         # Frozen reference for regularization -- physical space (D-034, D-035)
@@ -264,9 +265,13 @@ class ParameterizedLFRBlock(_BASE):
     # Physical parameter access helpers
     # ------------------------------------------------------------------
 
+    def _recover_params(self) -> Tensor:
+        """Return physical parameters: params_init * exp(log_params), clamped > 0."""
+        return (self.params_init * torch.exp(self.log_params)).clamp(min=1e-6)
+
     def physical_params(self) -> dict:
         """Return current physical parameter values as a dict."""
-        vals = torch.exp(self.log_params).clamp(min=1e-6).detach()
+        vals = self._recover_params().detach()
         return {name: vals[i].item() for i, name in enumerate(_PARAM_NAMES)}
 
     def param_table(self) -> str:
@@ -297,7 +302,7 @@ class ParameterizedLFRBlock(_BASE):
         Both sides are in physical space (not log space) for interpretability.
         Returns a scalar tensor.
         """
-        params = torch.exp(self.log_params).clamp(min=1e-6)
+        params = self._recover_params()
         return F.mse_loss(
             self.Lambda * params,
             self.Lambda * self.params_init,
@@ -322,7 +327,7 @@ class ParameterizedLFRBlock(_BASE):
         u_logical = u_stage @ self._P.T
 
         # Rebuild matrices from current trainable params each forward call
-        params    = torch.exp(self.log_params).clamp(min=1e-6)
+        params    = self._recover_params()
         M0, M1, M2, K, C = _build_matrices(params, self._Lb, self._d)
 
         x_next, z_lfr, w_lfr, _ = rk4_step(
@@ -378,13 +383,19 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------
     print()
     print("=" * 60)
-    print("Check 2: exp(log_params) reproduces detuned init values")
+    print("Check 2: _recover_params() reproduces detuned init values; log_params all zero")
     print("=" * 60)
 
     block = ParameterizedLFRBlock(RMSE_baseline=1.0)
-    recovered = torch.exp(block.log_params)
+    recovered = block._recover_params()
 
     all_ok = True
+    # log_params must be all zeros at init
+    log_zero_ok = (block.log_params.abs().max().item() == 0.0)
+    print(f"  log_params all zeros at init     : {log_zero_ok}")
+    if not log_zero_ok:
+        all_ok = False
+
     for i, name in enumerate(_PARAM_NAMES):
         expected = _DETUNED_PARAMS[name]
         got_val  = recovered[i].item()
