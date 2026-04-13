@@ -112,9 +112,13 @@ def compute_rmse_baseline(mat_path: str = _DEFAULT_MAT) -> float:
     N    = u_q1.shape[0]
 
     # Build detuned matrices (no gradient needed)
-    block  = ParameterizedLFRBlock(RMSE_baseline=1.0)
-    params = torch.exp(block.log_params).clamp(min=1e-6).detach()
-    M0_d, M1_d, M2_d, K_d, C_d = _build_matrices(params, _Lb, _d)
+    block = ParameterizedLFRBlock(RMSE_baseline=1.0)
+    with torch.no_grad():
+        kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = block._recover_params()
+    M0_d, M1_d, M2_d, K_d, C_d = _build_matrices(
+        torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh]),
+        _Lb, _d,
+    )
 
     # simulate() expects (batch, N, 3) inputs
     u_seq = u_q1.unsqueeze(0)   # (1, N, 3)

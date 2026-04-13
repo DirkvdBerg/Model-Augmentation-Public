@@ -356,10 +356,10 @@ if __name__ == '__main__':
     print("Check 1: _build_matrices(true params) matches physics.py")
     print("=" * 60)
 
-    true_params = torch.tensor(
-        [_TRUE_PARAMS[n] for n in _PARAM_NAMES], dtype=dtype
-    )
-    M0_t, M1_t, M2_t, K_t, C_t = _build_matrices(true_params, _Lb, _d)
+    p = torch.tensor([_TRUE_PARAMS[n] for n in _PARAM_NAMES], dtype=dtype)
+    kb1, kb2, cg1_, cg2_, cy_, cb1, cb2, mh_, m1_, m2_, mb_, Jb_, Jh_ = p
+    true_params_10 = torch.stack([kb1+kb2, cg1_, cg2_, cy_, cb1+cb2, mh_, m1_, m2_, mb_, Jb_+Jh_])
+    M0_t, M1_t, M2_t, K_t, C_t = _build_matrices(true_params_10, _Lb, _d)
 
     tol = 1e-10
     results_1 = {}
@@ -443,8 +443,10 @@ if __name__ == '__main__':
     u_logical_f64 = u_stage_f64 @ P_ref.T
 
     # Build detuned matrices directly for reference
-    detuned_p = torch.tensor([_DETUNED_PARAMS[n] for n in _PARAM_NAMES], dtype=dtype)
-    M0_d, M1_d, M2_d, K_d, C_d = _build_matrices(detuned_p, _Lb, _d)
+    dp = torch.tensor([_DETUNED_PARAMS[n] for n in _PARAM_NAMES], dtype=dtype)
+    kb1d, kb2d, cg1d, cg2d, cyd, cb1d, cb2d, mhd, m1d, m2d, mbd, Jbd, Jhd = dp
+    detuned_p_10 = torch.stack([kb1d+kb2d, cg1d, cg2d, cyd, cb1d+cb2d, mhd, m1d, m2d, mbd, Jbd+Jhd])
+    M0_d, M1_d, M2_d, K_d, C_d = _build_matrices(detuned_p_10, _Lb, _d)
 
     with torch.no_grad():
         x_next_ref, _, _, _ = rk4_step(x_f64, u_logical_f64, M0_d, M1_d, M2_d, K_d, C_d, ts_ref)
