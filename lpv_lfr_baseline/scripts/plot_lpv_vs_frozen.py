@@ -55,7 +55,7 @@ fig1.suptitle('Trajectories: MATLAB ref vs Python LPV vs Python frozen', fontsiz
 for i, (ax, ch) in enumerate(zip(axes1, _CH_NAMES)):
     ax.plot(t_sim[:N], y_ref[:, i],    color='tab:orange', linestyle='--', linewidth=1.5, label='MATLAB ref')
     # ax.plot(t_sim[:N], y_lpv[:, i],    color='tab:blue',   linestyle='-',  linewidth=1.0, label='Python LPV')
-    # ax.plot(t_sim[:N], y_frozen[:, i], color='tab:red',    linestyle='-',  linewidth=1.0, label='Python frozen', alpha=0.7)
+    ax.plot(t_sim[:N], y_frozen[:, i], color='tab:red',    linestyle='-',  linewidth=1.0, label='Python frozen', alpha=0.7)
     ax.set_ylabel(f'{ch} [m]')
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=8, loc='upper right')
@@ -64,17 +64,17 @@ axes1[-1].set_xlabel('Time [s]')
 plt.tight_layout()
 
 # --- Figure 2: errors ---
-# fig2, axes2 = plt.subplots(3, 1, figsize=(12, 8), sharex=True)
-# fig2.suptitle('Absolute errors: |Python LPV - ref|  vs  |Python frozen - ref|', fontsize=12)
+fig2, axes2 = plt.subplots(3, 1, figsize=(12, 8), sharex=True)
+fig2.suptitle('Absolute errors: |Python LPV - ref|  vs  |Python frozen - ref|', fontsize=12)
 
-# for i, (ax, ch) in enumerate(zip(axes2, _CH_NAMES)):
-#     ax.semilogy(t_sim[:N], err_lpv[:, i]    + 1e-20, color='tab:blue', linewidth=1.0, label='|LPV - ref|')
-#     ax.semilogy(t_sim[:N], err_frozen[:, i] + 1e-20, color='tab:red',  linewidth=1.0, label='|frozen - ref|', alpha=0.8)
-#     ax.set_ylabel(f'{ch} |error| [m]')
-#     ax.grid(True, which='both', alpha=0.3)
-#     ax.legend(fontsize=8, loc='upper right')
+for i, (ax, ch) in enumerate(zip(axes2, _CH_NAMES)):
+    ax.semilogy(t_sim[:N], err_lpv[:, i]    + 1e-20, color='tab:blue', linewidth=1.0, label='|LPV - ref|')
+    ax.semilogy(t_sim[:N], err_frozen[:, i] + 1e-20, color='tab:red',  linewidth=1.0, label='|frozen - ref|', alpha=0.8)
+    ax.set_ylabel(f'{ch} |error| [m]')
+    ax.grid(True, which='both', alpha=0.3)
+    ax.legend(fontsize=8, loc='upper right')
 
-# axes2[-1].set_xlabel('Time [s]')
-# plt.tight_layout()
+axes2[-1].set_xlabel('Time [s]')
+plt.tight_layout()
 
 plt.show()
