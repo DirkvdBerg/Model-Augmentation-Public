@@ -36,6 +36,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from lpv_lfr_baseline.blocks.lfr_param_block import (
     ParameterizedLFRBlock, _build_matrices, _TRUE_PARAMS, _PARAM_NAMES,
 )
+from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
+from lpv_lfr_baseline.core.physics import build_poly_constants
 from lpv_lfr_baseline.core.lfr_simulate import simulate
 from lpv_lfr_baseline.scripts.data_utils import compute_rmse_baseline
 
@@ -81,7 +83,14 @@ def _run_no_grad(block, x0, u):
             torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh]),
             block._Lb, block._d,
         )
-        return simulate(x0, u, M0, M1, M2, K, C, block._P, block._ts, bptt_mode='full')
+        G = build_G_matrix(M0, M1, M2, K, C)
+        alpha, beta, gamma, N0, N1, N2 = build_poly_constants(
+            m1, m2, mb, mh, Jb, Jh, block._Lb, block._d
+        )
+        return simulate(
+            x0, u, G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
+            block._P, block._ts, bptt_mode='full',
+        )
 
 
 def _get_state_traj(q1_train, ts, device, save_dir):
@@ -162,10 +171,14 @@ class _SimWrapper(torch.nn.Module):
     def forward(self, x0_seg, u_seg):
         params = self.block._recover_params()
         kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = params
-        params = torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh])
-        M0, M1, M2, K, C = _build_matrices(params, self.block._Lb, self.block._d)
+        params_10 = torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh])
+        M0, M1, M2, K, C = _build_matrices(params_10, self.block._Lb, self.block._d)
+        G = build_G_matrix(M0, M1, M2, K, C)
+        alpha, beta, gamma, N0, N1, N2 = build_poly_constants(
+            m1, m2, mb, mh, Jb, Jh, self.block._Lb, self.block._d
+        )
         return simulate(
-            x0_seg, u_seg, M0, M1, M2, K, C,
+            x0_seg, u_seg, G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
             self.block._P, self.block._ts, bptt_mode='full',
         ).Y
 

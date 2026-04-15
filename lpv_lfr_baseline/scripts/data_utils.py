@@ -37,8 +37,9 @@ from scipy.io import loadmat
 from lpv_lfr_baseline.blocks.lfr_param_block import (
     ParameterizedLFRBlock, _build_matrices, _Lb, _d,
 )
+from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
+from lpv_lfr_baseline.core.physics import P, ts, build_poly_constants
 from lpv_lfr_baseline.core.lfr_simulate import simulate
-from lpv_lfr_baseline.core.physics import P, ts
 
 # Default path relative to repo root
 _DEFAULT_MAT = os.path.join(
@@ -111,13 +112,17 @@ def compute_rmse_baseline(mat_path: str = _DEFAULT_MAT) -> float:
     q1   = torch.tensor(mat['q1'],   dtype=torch.float64)   # (N, 3)
     N    = u_q1.shape[0]
 
-    # Build detuned matrices (no gradient needed)
+    # Build detuned matrices and G/poly constants (no gradient needed)
     block = ParameterizedLFRBlock(RMSE_baseline=1.0)
     with torch.no_grad():
         kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = block._recover_params()
     M0_d, M1_d, M2_d, K_d, C_d = _build_matrices(
         torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh]),
         _Lb, _d,
+    )
+    G_d = build_G_matrix(M0_d, M1_d, M2_d, K_d, C_d)
+    alpha_d, beta_d, gamma_d, N0_d, N1_d, N2_d = build_poly_constants(
+        m1, m2, mb, mh, Jb, Jh, _Lb, _d
     )
 
     # simulate() expects (batch, N, 3) inputs
@@ -127,8 +132,8 @@ def compute_rmse_baseline(mat_path: str = _DEFAULT_MAT) -> float:
     with torch.no_grad():
         result = simulate(
             _X0_LOGICAL, u_seq,
-            M0_d, M1_d, M2_d, K_d, C_d, P, ts,
-            bptt_mode='full',
+            G_d, K_d, C_d, mh, alpha_d, beta_d, gamma_d, N0_d, N1_d, N2_d,
+            P, ts, bptt_mode='full',
         )
 
     # result.Y: (1, N, 3) stage positions — squeeze batch dim

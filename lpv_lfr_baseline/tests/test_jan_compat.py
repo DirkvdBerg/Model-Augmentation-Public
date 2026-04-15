@@ -97,8 +97,19 @@ from model_augmentation.utils.utils import detect_algebraic_loop, selection_matr
 
 from lpv_lfr_baseline.blocks.lfr_block import LFRBaselineBlock
 from lpv_lfr_baseline.core.lfr_forward import lfr_forward
+from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
 from lpv_lfr_baseline.core.lfr_simulate import rk4_step
-from lpv_lfr_baseline.core.physics import M0, M1, M2, K, C, P, ts
+from lpv_lfr_baseline.core.physics import (
+    M0, M1, M2, K, C, P, ts, build_poly_constants,
+    mh as _mh, m1 as _m1, m2 as _m2, mb as _mb, Jb as _Jb, Jh as _Jh,
+    Lb as _Lb, d as _d,
+)
+
+# Precompute G and poly constants from fixed physics params
+_G_TRUE    = build_G_matrix(M0, M1, M2, K, C)
+_alpha, _beta, _gamma, _N0, _N1, _N2 = build_poly_constants(
+    _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
+)
 
 
 def build_baseline_interconnect(debugging=False):
@@ -329,7 +340,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         x_next_ref, _, _, _ = rk4_step(
             x_test_a.double(), u_logical_a,
-            M0, M1, M2, K, C, ts,
+            _G_TRUE, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2, ts,
         )
 
     err_a = (xp_ic.double() - x_next_ref).abs().max().item()
@@ -366,7 +377,8 @@ if __name__ == '__main__':
     u_logical_a2 = u_test_a2.double() @ P.T
     with torch.no_grad():
         _, _, _, y_logical_ref = rk4_step(
-            x_test_a2.double(), u_logical_a2, M0, M1, M2, K, C, ts
+            x_test_a2.double(), u_logical_a2,
+            _G_TRUE, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2, ts,
         )
     y_stage_ref = y_logical_ref @ P   # (1, 3) stage coords
 
@@ -403,7 +415,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         _, z_ref, w_ref, _ = lfr_forward(
             x_test_b.double(), u_logical_b, Y_b,
-            M0, M1, M2, K, C,
+            _G_TRUE, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2,
         )
 
     z_lfr_slot = w_out_b[:, 6:12, 0].double()    # (1, 6)
@@ -540,19 +552,19 @@ if __name__ == '__main__':
     print(f"\nCheck E: {'PASS' if status else 'FAIL'}")
 
     # ------------------------------------------------------------------
-    # Check F — Trainable physical parameters: gradient via M(Y)^{-1} solve
+    # Check F — Trainable physical parameters: gradient via G.Bw @ w
     #
-    # M0 as nn.Parameter. lfr_forward computes M_Y = M0 + M1*Y + M2*Y^2,
-    # then v = linalg.solve(M_Y, fnet). M0 appears in M_Y, so the autograd
-    # graph carries a gradient from xdot back to M0 through the solve.
-    # M0.grad must be non-None after backward.
+    # With the LFR-first implementation, G submatrices (built via build_G_matrix)
+    # depend on M0, so a gradient on M0 flows through G.Ax, G.Bw, G.Bu into xdot.
+    # The polynomial constants also depend on physical params and carry gradients
+    # through the loop solve (N(Y)/d(Y)) back to the mass/inertia parameters.
     #
-    # After D-026 (G removed from lfr_forward), the solve path is the sole
-    # gradient route for M0. The old "dynamic G" path no longer exists.
+    # Test: build G and poly constants from an M0_param (nn.Parameter), run
+    # lfr_forward, backward — M0_param.grad must be non-None.
     # ------------------------------------------------------------------
     print()
     print("=" * 60)
-    print("Check F: Trainable physical parameters — gradient via M(Y)^-1 solve")
+    print("Check F: Trainable physical parameters — gradient through G.Bw@w")
     print("=" * 60)
 
     x_f_test  = torch.tensor([[0.05, 0.01, 0.30, 0.02, -0.01, 0.05]], dtype=torch.float64)
@@ -560,16 +572,20 @@ if __name__ == '__main__':
     u_f_log   = u_f_stage @ P.T        # (1, 3)  logical coords
     Y_f       = x_f_test[:, 2]         # (1,)
 
-    M0_param = torch.nn.Parameter(M0.clone())
-    xdot_f, _, _, _ = lfr_forward(x_f_test, u_f_log, Y_f, M0_param, M1, M2, K, C)
+    M0_param  = torch.nn.Parameter(M0.clone())
+    G_param   = build_G_matrix(M0_param, M1, M2, K, C)
+    xdot_f, _, _, _ = lfr_forward(
+        x_f_test, u_f_log, Y_f,
+        G_param, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2,
+    )
     xdot_f.sum().backward()
 
     grad_ok = M0_param.grad is not None
     norm_f  = M0_param.grad.norm().item() if grad_ok else 0.0
-    print(f"  M0.grad is not None (via linalg.solve path) : {grad_ok}")
+    print(f"  M0.grad is not None (via G.Bw@w path) : {grad_ok}")
     if grad_ok:
         print(f"  M0.grad norm = {norm_f:.6e}")
-    print(f"  (Gradient path: xdot[3:] = v = M(Y)^-1 @ fnet -> M_Y -> M0)")
+    print(f"  (Gradient path: xdot = Ax@x + Bw@w + Bu@u  ->  G(M0)  ->  M0)")
     status = grad_ok
     results['Check F (trainable param grad)'] = status
     print(f"\nCheck F: {'PASS' if status else 'FAIL'}")

@@ -114,6 +114,55 @@ fs = torch.tensor(20e3,     dtype=_D)   # sample frequency  [Hz]
 ts = torch.tensor(1 / 20e3, dtype=_D)  # sample period     [s]
 
 
+def build_poly_constants(
+    m1:  torch.Tensor,
+    m2:  torch.Tensor,
+    mb:  torch.Tensor,
+    mh:  torch.Tensor,
+    Jb:  torch.Tensor,
+    Jh:  torch.Tensor,
+    Lb:  torch.Tensor,
+    d:   torch.Tensor,
+) -> tuple:
+    """
+    Build polynomial constants for the analytical LPV-LFR loop solution.
+
+    Returns (alpha, beta, gamma, N0, N1, N2) where:
+        alpha, beta, gamma : scalar tensors (polynomial denominator shorthand)
+        N0, N1, N2         : (3, 3) adjugate coefficient matrices
+
+    gamma does NOT include mh*d^2 — see LPV-LFR-Rational-rewrite.md.
+
+    All outputs are differentiable w.r.t. inputs.
+    Call inside forward() when any input is a trainable nn.Parameter.
+
+    Source: LPV-LFR-Implementation-Spec.md Section 4, verified against
+    Verification/LPV-LFR-Rational/LPV_LFR_rational_verification.m.
+    """
+    alpha = m1 + m2 + mb + mh
+    beta  = (m1 - m2) * Lb / 2
+    gamma = Jb + Jh + (m1 + m2) * Lb ** 2 / 4    # WITHOUT mh*d^2
+
+    z = torch.zeros((), dtype=m1.dtype, device=m1.device)
+
+    N0 = torch.stack([
+        torch.stack([mh * gamma,        -beta * mh,                    -beta * d * mh              ]),
+        torch.stack([-beta * mh,         alpha * mh,                    alpha * d * mh             ]),
+        torch.stack([-beta * d * mh,     alpha * d * mh,   alpha * (gamma + mh * d ** 2) - beta ** 2]),
+    ])
+    N1 = torch.stack([
+        torch.stack([z,           mh ** 2,       d * mh ** 2  ]),
+        torch.stack([mh ** 2,     z,             z            ]),
+        torch.stack([d * mh ** 2, z,             2 * beta * mh]),
+    ])
+    N2 = torch.stack([
+        torch.stack([mh ** 2,  z,  z                    ]),
+        torch.stack([z,        z,  z                    ]),
+        torch.stack([z,        z,  alpha * mh - mh ** 2 ]),
+    ])
+    return alpha, beta, gamma, N0, N1, N2
+
+
 def build_M(Y: torch.Tensor) -> torch.Tensor:
     """
     Compute M(Y) = M0 + M1*Y + M2*Y^2 for a scalar Y tensor.

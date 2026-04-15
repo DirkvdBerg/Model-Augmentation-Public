@@ -11,7 +11,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import torch
 from scipy.io import loadmat
 
-from lpv_lfr_baseline.core.physics import M0, M1, M2, K, C, P, ts
+from lpv_lfr_baseline.core.physics import (
+    M0, M1, M2, K, C, P, ts, build_poly_constants,
+    mh as _mh, m1 as _m1, m2 as _m2, mb as _mb, Jb as _Jb, Jh as _Jh,
+    Lb as _Lb, d as _d,
+)
+from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
 from lpv_lfr_baseline.core.lfr_simulate import simulate
 
 mat = loadmat(os.path.join(os.path.dirname(__file__), '..', 'Matlab-output', 'lpv_sim_varying_y.mat'))
@@ -23,14 +28,33 @@ x0_f32 = torch.tensor([[0.0, 0.0, 0.3, 0.0, 0.0, 0.0]], dtype=torch.float32)
 
 # x0_f32 = x0_f64.float()
 
+G_f64    = build_G_matrix(M0, M1, M2, K, C)
+alpha_f64, beta_f64, gamma_f64, N0_f64, N1_f64, N2_f64 = build_poly_constants(
+    _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
+)
+
+G_f32    = build_G_matrix(M0.float(), M1.float(), M2.float(), K.float(), C.float())
+alpha_f32, beta_f32, gamma_f32, N0_f32, N1_f32, N2_f32 = build_poly_constants(
+    _m1.float(), _m2.float(), _mb.float(), _mh.float(),
+    _Jb.float(), _Jh.float(), _Lb.float(), _d.float(),
+)
+
 print("Running float64 simulation...")
 with torch.no_grad():
-    r64 = simulate(x0_f64, u_f64, M0, M1, M2, K, C, P, ts)
+    r64 = simulate(
+        x0_f64, u_f64,
+        G_f64, K, C, _mh, alpha_f64, beta_f64, gamma_f64, N0_f64, N1_f64, N2_f64,
+        P, ts,
+    )
 
 print("Running float32 simulation...")
 with torch.no_grad():
-    r32 = simulate(x0_f32, u_f32, M0.float(), M1.float(), M2.float(),
-                   K.float(), C.float(), P.float(), ts.float())
+    r32 = simulate(
+        x0_f32, u_f32,
+        G_f32, K.float(), C.float(), _mh.float(),
+        alpha_f32, beta_f32, gamma_f32, N0_f32, N1_f32, N2_f32,
+        P.float(), ts.float(),
+    )
 
 err64 = (r64.Y[0] - q1).abs()
 err32 = (r32.Y[0].double() - q1).abs()

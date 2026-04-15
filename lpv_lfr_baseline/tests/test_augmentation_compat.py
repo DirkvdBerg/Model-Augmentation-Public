@@ -20,7 +20,12 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import torch
 
-from lpv_lfr_baseline.core.physics import M0, M1, M2, K, C, P
+from lpv_lfr_baseline.core.physics import (
+    M0, M1, M2, K, C, P, build_poly_constants,
+    mh as _mh, m1 as _m1, m2 as _m2, mb as _mb, Jb as _Jb, Jh as _Jh,
+    Lb as _Lb, d as _d,
+)
+from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
 from lpv_lfr_baseline.core.lfr_forward import lfr_forward
 
 dtype = torch.float64
@@ -30,6 +35,12 @@ x_test    = torch.tensor([[0.05, 0.01, 0.30, 0.02, -0.01, 0.05]], dtype=dtype)  
 u_stage   = torch.tensor([[10.0, -5.0, 3.0]], dtype=dtype)                       # (1, 3)
 u_logical = u_stage @ P.T                                                         # (1, 3)
 Y_val     = x_test[:, 2]                                                          # (1,)  from state
+
+# G and polynomial constants from fixed physics params
+_G   = build_G_matrix(M0, M1, M2, K, C)
+_alpha, _beta, _gamma, _N0, _N1, _N2 = build_poly_constants(
+    _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
+)
 
 
 if __name__ == '__main__':
@@ -49,7 +60,7 @@ if __name__ == '__main__':
     W_aug = torch.randn(6, 6, dtype=dtype, requires_grad=True)
     x_in  = x_test.clone().requires_grad_(True)
 
-    xdot, z, w, y = lfr_forward(x_in, u_logical, Y_val, M0, M1, M2, K, C)
+    xdot, z, w, y = lfr_forward(x_in, u_logical, Y_val, _G, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2)
 
     delta_xdot = z @ W_aug.T
     xdot_aug   = xdot + delta_xdot
@@ -79,7 +90,7 @@ if __name__ == '__main__':
     print("=" * 60)
 
     x_in = x_test.clone().requires_grad_(True)
-    xdot, z, w, y = lfr_forward(x_in, u_logical, Y_val, M0, M1, M2, K, C)
+    xdot, z, w, y = lfr_forward(x_in, u_logical, Y_val, _G, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2)
 
     stacked    = torch.cat([xdot, z, w], dim=-1)   # (1, 18)
     x_next_sl  = stacked[:, :6]

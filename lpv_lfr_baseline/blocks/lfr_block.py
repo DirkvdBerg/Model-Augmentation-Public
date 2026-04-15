@@ -40,14 +40,22 @@ Design notes:
     Y is never a named external signal — this keeps the Interconnect free of
     algebraic loops (see README: Interconnect pitfalls).
 
-    Physical parameters — registered as buffers via self.register_buffer()
-    so .to(device) / .cuda() moves them automatically with the module.
+    Physical parameters — G submatrices and polynomial constants are precomputed
+    at construction from the fixed physics.py values and stored as buffers.
+    They move automatically with .to(device) / .cuda(). G is not a trainable
+    parameter here — see lfr_param_block.py for the trainable version.
 """
 
 import torch
 from torch import Tensor
 
-from lpv_lfr_baseline.core.physics import M0, M1, M2, K, C, P, ts
+from lpv_lfr_baseline.core.physics import (
+    M0, M1, M2, K, C, P, ts,
+    mh as _mh, m1 as _m1, m2 as _m2, mb as _mb, Jb as _Jb, Jh as _Jh,
+    Lb as _Lb, d as _d,
+    build_poly_constants,
+)
+from lpv_lfr_baseline.core.lfr_matrices import GMatrix, build_G_matrix
 from lpv_lfr_baseline.core.lfr_simulate import rk4_step
 
 try:
@@ -75,16 +83,46 @@ class LFRBaselineBlock(_BASE):
             self.nz = 9
             self.nw = 18
 
-        # Physical parameters registered as buffers so .to(device) / .cuda()
-        # moves them automatically alongside the module.
-        # Access pattern (self._M0 etc.) is identical to plain attributes.
-        self.register_buffer('_M0', M0)
-        self.register_buffer('_M1', M1)
-        self.register_buffer('_M2', M2)
+        # Build G and polynomial constants from fixed physics params.
+        # Store as individual buffers so .to(device) / .cuda() moves them.
+        G   = build_G_matrix(M0, M1, M2, K, C)
+        alpha, beta, gamma, N0, N1, N2 = build_poly_constants(
+            _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
+        )
+
+        # G submatrices
+        self.register_buffer('_G_Ax',  G.Ax)
+        self.register_buffer('_G_Bw',  G.Bw)
+        self.register_buffer('_G_Bu',  G.Bu)
+        self.register_buffer('_G_Cz',  G.Cz)
+        self.register_buffer('_G_Dzw', G.Dzw)
+        self.register_buffer('_G_Dzu', G.Dzu)
+        self.register_buffer('_G_Cy',  G.Cy)
+
+        # Polynomial constants for loop solve
+        self.register_buffer('_mh',    _mh.clone())
+        self.register_buffer('_alpha', alpha if isinstance(alpha, Tensor) else torch.tensor(alpha, dtype=torch.float64))
+        self.register_buffer('_beta',  beta  if isinstance(beta,  Tensor) else torch.tensor(beta,  dtype=torch.float64))
+        self.register_buffer('_gamma', gamma if isinstance(gamma, Tensor) else torch.tensor(gamma, dtype=torch.float64))
+        self.register_buffer('_N0',    N0)
+        self.register_buffer('_N1',    N1)
+        self.register_buffer('_N2',    N2)
+
+        # K, C needed by rk4_step for f_net computation
         self.register_buffer('_K',  K)
         self.register_buffer('_C',  C)
+
+        # Coordinate transform and sample period
         self.register_buffer('_P',  P)
         self.register_buffer('_ts', ts)
+
+    def _get_G(self) -> GMatrix:
+        """Reconstruct GMatrix from stored buffers."""
+        return GMatrix(
+            Ax=self._G_Ax, Bw=self._G_Bw, Bu=self._G_Bu,
+            Cz=self._G_Cz, Dzw=self._G_Dzw, Dzu=self._G_Dzu,
+            Cy=self._G_Cy,
+        )
 
     def forward(self, z_in: Tensor) -> Tensor:
         """One RK4 step. (batch, 9, 1) -> (batch, 18, 1)."""
@@ -100,9 +138,13 @@ class LFRBaselineBlock(_BASE):
 
         u_logical = u_stage @ self._P.T
 
+        G = self._get_G()
         x_next, z_lfr, w_lfr, _ = rk4_step(
             x, u_logical,
-            self._M0, self._M1, self._M2, self._K, self._C, self._ts,
+            G, self._K, self._C,
+            self._mh, self._alpha, self._beta, self._gamma,
+            self._N0, self._N1, self._N2,
+            self._ts,
         )
 
         w_f64 = torch.cat([x_next, z_lfr, w_lfr], dim=-1)        # (batch, 18)
@@ -113,12 +155,12 @@ class LFRBaselineBlock(_BASE):
 
 
 # ----------------------------------------------------------------------
-# Verification  (run as: conda run -n GraduationProject python -m lpv_lfr_baseline.lfr_block)
+# Verification  (run as: conda run -n GraduationProject python -m lpv_lfr_baseline.blocks.lfr_block)
 # ----------------------------------------------------------------------
 if __name__ == '__main__':
     import sys
     import os
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
     dtype = torch.float64
 
@@ -147,31 +189,38 @@ if __name__ == '__main__':
 
     # ------------------------------------------------------------------
     # Check 2 — Physical consistency
-    # Compare block's x_next against direct rk4_step call in float64.
-    # Difference should be at float32 precision (~1e-7 relative).
     # ------------------------------------------------------------------
     print()
     print("=" * 60)
     print("Check 2: Physical consistency — block vs direct rk4_step")
     print("=" * 60)
 
-    from lpv_lfr_baseline.physics import M0, M1, M2, K, C, P, ts
+    from lpv_lfr_baseline.core.physics import (
+        M0, M1, M2, K, C, P, ts, build_poly_constants,
+        mh as _mh, m1 as _m1, m2 as _m2, mb as _mb,
+        Jb as _Jb, Jh as _Jh, Lb as _Lb, d as _d,
+    )
+    from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
+    from lpv_lfr_baseline.core.lfr_simulate import rk4_step as rk4_ref
 
-    x_f64        = x_test.double()                     # (1, 6)
-    u_stage_f64  = u_test.double()                     # (1, 3)
-    u_logical_f64 = u_stage_f64 @ P.T                  # (1, 3)
+    G_ref = build_G_matrix(M0, M1, M2, K, C)
+    alpha_r, beta_r, gamma_r, N0_r, N1_r, N2_r = build_poly_constants(
+        _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
+    )
+
+    x_f64        = x_test.double()
+    u_stage_f64  = u_test.double()
+    u_logical_f64 = u_stage_f64 @ P.T
 
     with torch.no_grad():
-        x_next_ref, z_lfr_ref, w_lfr_ref, _ = rk4_step(
-            x_f64, u_logical_f64, M0, M1, M2, K, C, ts
+        x_next_ref, z_lfr_ref, w_lfr_ref, _ = rk4_ref(
+            x_f64, u_logical_f64,
+            G_ref, K, C, _mh, alpha_r, beta_r, gamma_r, N0_r, N1_r, N2_r, ts
         )
-
         w_out = block.forward(z_in)
 
-    x_next_block = w_out[0, :6, 0].double()   # extract x_next, cast to float64 for comparison
-
+    x_next_block = w_out[0, :6, 0].double()
     err = (x_next_block - x_next_ref[0]).abs().max().item()
-    # float32 has ~7 decimal digits; expect error at ~1e-7 relative
     tol = 1e-6
     status = 'PASS' if err < tol else 'FAIL'
     print(f"  Max |x_next error| (block vs rk4_step) : {err:.2e}   {status}")
@@ -179,8 +228,7 @@ if __name__ == '__main__':
     print(f"\nCheck 2: {status}")
 
     # ------------------------------------------------------------------
-    # Check 3 — Autograd: gradient flows from output back to input
-    # Verifies the computation graph is intact through the block.
+    # Check 3 — Autograd
     # ------------------------------------------------------------------
     print()
     print("=" * 60)
@@ -198,8 +246,7 @@ if __name__ == '__main__':
     print(f"\nCheck 3: {'PASS' if grad_ok else 'FAIL'}")
 
     # ------------------------------------------------------------------
-    # Check 4 — Stateless: two calls with identical input give identical output
-    # Confirms no hidden state accumulates inside the block.
+    # Check 4 — Stateless
     # ------------------------------------------------------------------
     print()
     print("=" * 60)
@@ -215,8 +262,7 @@ if __name__ == '__main__':
     print(f"\nCheck 4: {'PASS' if identical else 'FAIL'}")
 
     # ------------------------------------------------------------------
-    # Check 5 — Stacked output slot contract
-    # x_next slot matches rk4_step reference; z_lfr and w_lfr are non-zero.
+    # Check 5 — Output slot contract
     # ------------------------------------------------------------------
     print()
     print("=" * 60)
@@ -239,9 +285,6 @@ if __name__ == '__main__':
     status = 'PASS' if nonzero_z and nonzero_w else 'FAIL'
     print(f"\nCheck 5: {status}")
 
-    # ------------------------------------------------------------------
-    # Summary
-    # ------------------------------------------------------------------
     print()
     print("=" * 60)
     print(f"nz={block.nz}, nw={block.nw}  |  Base class: {_BASE.__name__}")

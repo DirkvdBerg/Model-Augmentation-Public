@@ -40,9 +40,20 @@ import torch
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
-from lpv_lfr_baseline.core.physics import M0, M1, M2, K, C, P, fs, ts, build_M
+from lpv_lfr_baseline.core.physics import (
+    M0, M1, M2, K, C, P, fs, ts, build_M, build_poly_constants,
+    mh as _mh, m1 as _m1, m2 as _m2, mb as _mb, Jb as _Jb, Jh as _Jh,
+    Lb as _Lb, d as _d,
+)
+from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
 from lpv_lfr_baseline.core.lfr_forward import lfr_forward
 from lpv_lfr_baseline.core.lfr_simulate import simulate, simulate_frozen, SimResult
+
+# Precompute G and poly constants from fixed physics params once at module load
+_G_TRUE    = build_G_matrix(M0, M1, M2, K, C)
+_alpha, _beta, _gamma, _N0, _N1, _N2 = build_poly_constants(
+    _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
+)
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -205,7 +216,10 @@ def _section_trajectory():
     x0[0, 2] = 0.3
 
     with torch.no_grad():
-        result = simulate(x0, u_seq.unsqueeze(0), M0, M1, M2, K, C, P, ts)
+        result = simulate(
+            x0, u_seq.unsqueeze(0),
+            _G_TRUE, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2, P, ts,
+        )
 
     Y_py  = result.Y[0]              # (N, 3) stage coords: Python
     err   = (Y_py - q1_ref).abs()   # (N, 3)
@@ -614,14 +628,22 @@ def _section_lpv_vs_frozen():
     u_batch = u_seq_stage.unsqueeze(0)   # (1, N, 3)
 
     with torch.no_grad():
-        res_lpv    = simulate(x0, u_batch, M0, M1, M2, K, C, P, ts)
-        res_frozen = simulate_frozen(x0, u_batch, M0, M1, M2, K, C, P, ts,
-                                     Y_freeze=_Y_FREEZE)
+        res_lpv    = simulate(
+            x0, u_batch, _G_TRUE, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2, P, ts,
+        )
+        res_frozen = simulate_frozen(
+            x0, u_batch, _G_TRUE, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2, P, ts,
+            Y_freeze=_Y_FREEZE,
+        )
         if u_q_stage is not None:
             u_q_batch      = u_q_stage.unsqueeze(0)
-            res_lpv_uq     = simulate(x0, u_q_batch, M0, M1, M2, K, C, P, ts)
-            res_frozen_uq  = simulate_frozen(x0, u_q_batch, M0, M1, M2, K, C, P, ts,
-                                             Y_freeze=_Y_FREEZE)
+            res_lpv_uq     = simulate(
+                x0, u_q_batch, _G_TRUE, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2, P, ts,
+            )
+            res_frozen_uq  = simulate_frozen(
+                x0, u_q_batch, _G_TRUE, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2, P, ts,
+                Y_freeze=_Y_FREEZE,
+            )
 
     # Stage-coordinate outputs: (N, 3)
     y_lpv    = res_lpv.Y[0].numpy()      # Python LPV

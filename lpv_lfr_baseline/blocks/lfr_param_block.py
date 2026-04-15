@@ -60,7 +60,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-from lpv_lfr_baseline.core.physics import P, ts
+from lpv_lfr_baseline.core.physics import P, ts, build_poly_constants
+from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
 from lpv_lfr_baseline.core.lfr_simulate import rk4_step
 
 try:
@@ -319,16 +320,24 @@ class ParameterizedLFRBlock(_BASE):
 
         u_logical = u_stage @ self._P.T
 
-        # Rebuild matrices from current trainable params each forward call
+        # Rebuild G and polynomial constants from current trainable params each forward call.
+        # Cannot cache as module-level constants — physical params are nn.Parameter objects,
+        # so G and poly constants must be recomputed here to preserve gradient flow.
         params = self._recover_params()
         kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = params
         M0, M1, M2, K, C = _build_matrices(
             torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh]),
             self._Lb, self._d,
         )
+        G = build_G_matrix(M0, M1, M2, K, C)
+        alpha, beta, gamma, N0, N1, N2 = build_poly_constants(
+            m1, m2, mb, mh, Jb, Jh, self._Lb, self._d
+        )
 
         x_next, z_lfr, w_lfr, _ = rk4_step(
-            x, u_logical, M0, M1, M2, K, C, self._ts,
+            x, u_logical,
+            G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
+            self._ts,
         )
 
         w_f64 = torch.cat([x_next, z_lfr, w_lfr], dim=-1)   # (batch, 18)
@@ -344,8 +353,8 @@ if __name__ == '__main__':
     import os
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-    from lpv_lfr_baseline.physics import M0 as M0_ref, M1 as M1_ref, M2 as M2_ref
-    from lpv_lfr_baseline.physics import K as K_ref, C as C_ref
+    from lpv_lfr_baseline.core.physics import M0 as M0_ref, M1 as M1_ref, M2 as M2_ref
+    from lpv_lfr_baseline.core.physics import K as K_ref, C as C_ref
 
     dtype = torch.float64
 
@@ -436,7 +445,7 @@ if __name__ == '__main__':
     print("Check 4: Physical consistency -- block vs direct rk4_step (detuned params)")
     print("=" * 60)
 
-    from lpv_lfr_baseline.physics import P as P_ref, ts as ts_ref
+    from lpv_lfr_baseline.core.physics import P as P_ref, ts as ts_ref
 
     x_f64        = x_test.double()
     u_stage_f64  = u_test.double()
@@ -447,9 +456,17 @@ if __name__ == '__main__':
     kb1d, kb2d, cg1d, cg2d, cyd, cb1d, cb2d, mhd, m1d, m2d, mbd, Jbd, Jhd = dp
     detuned_p_10 = torch.stack([kb1d+kb2d, cg1d, cg2d, cyd, cb1d+cb2d, mhd, m1d, m2d, mbd, Jbd+Jhd])
     M0_d, M1_d, M2_d, K_d, C_d = _build_matrices(detuned_p_10, _Lb, _d)
+    G_d = build_G_matrix(M0_d, M1_d, M2_d, K_d, C_d)
+    alpha_d, beta_d, gamma_d, N0_d, N1_d, N2_d = build_poly_constants(
+        m1d, m2d, mbd, mhd, Jbd, Jhd, _Lb, _d
+    )
 
     with torch.no_grad():
-        x_next_ref, _, _, _ = rk4_step(x_f64, u_logical_f64, M0_d, M1_d, M2_d, K_d, C_d, ts_ref)
+        x_next_ref, _, _, _ = rk4_step(
+            x_f64, u_logical_f64,
+            G_d, K_d, C_d, mhd, alpha_d, beta_d, gamma_d, N0_d, N1_d, N2_d,
+            ts_ref,
+        )
         w_out_block = block.forward(z_in)
 
     x_next_block = w_out_block[0, :6, 0].double()
