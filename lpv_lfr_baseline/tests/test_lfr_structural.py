@@ -48,7 +48,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 import torch
 from lpv_lfr_baseline.core.physics import (
-    M0, M1, M2, K, C, P, ts, build_poly_constants,
+    M0, M1, M2, K, C, P, ts, build_poly_constants, build_M,
     mh as _mh, m1 as _m1, m2 as _m2, mb as _mb,
     Jb as _Jb, Jh as _Jh, Lb as _Lb, d as _d,
 )
@@ -304,6 +304,138 @@ def test5_simulation_causality(xdot_nom, w_nom) -> bool:
 
 
 # -----------------------------------------------------------------------
+# Test 6 — Loop wellposedness and analytical resolution
+#
+# The LFR loop equation is:
+#   z = Cz@x + Dzu@u + Dzw@w   and   w = Y*z
+# Substituting:  (I - Y*Dzw) z = Cz@x + Dzu@u
+#
+# For a solution to exist uniquely, L(Y) = I - Y*Dzw must be invertible.
+# In lfr_forward.py we solve this analytically using N(Y)/d(Y) where
+# d(Y) = det(M(Y)) and N(Y) is the adjugate of M(Y).
+#
+# Three sub-checks:
+#   6a. det(L(Y)) != 0 at multiple Y values     [LFR] loop wellposedness
+#   6b. z_numerical = z_analytical               [LFR] analytical solve is correct
+#       Compute (I - Y*Dzw)^{-1} @ (Cz@x + Dzu@u) and compare to z from
+#       lfr_forward — must agree to float64 precision.
+#   6c. d(Y) == det(M(Y)) at multiple Y values  [physics] Cramer derivation sanity
+#       NOT LFR-specific — holds in LPV-SS too. Validates build_poly_constants().
+#       Cross-check: det(I-Y*Dzw)*det(M0)==d(Y) [LFR] catches corrupt G.Dzw entries.
+# -----------------------------------------------------------------------
+def test6_loop_wellposedness(xdot_nom, z_nom, w_nom) -> bool:
+    print()
+    print("=" * 60)
+    print("Test 6: Loop wellposedness and analytical resolution")
+    print("=" * 60)
+
+    # Y values spanning the operating range — include Y=0 (singular edge case check)
+    Y_vals = [0.0, 0.1, 0.20, 0.30, 0.35, -0.10, -0.20]
+
+    eye6 = torch.eye(6, dtype=dtype)
+    det_M0 = torch.linalg.det(M0).item()
+
+    # ------------------------------------------------------------------
+    # 6a — Wellposedness: det(I - Y*Dzw) != 0 at all test Y values
+    # ------------------------------------------------------------------
+    print()
+    print("  6a. Loop wellposedness: det(I - Y*Dzw) != 0")
+    ok_6a = True
+    for y_val in Y_vals:
+        Y_t = torch.tensor(y_val, dtype=dtype)
+        L_Y = eye6 - y_val * _G.Dzw                # (6, 6)
+        det_L = torch.linalg.det(L_Y).item()
+        invertible = abs(det_L) > 1e-6
+        if not invertible:
+            ok_6a = False
+        print(f"    Y = {y_val:+.2f} m   det(L) = {det_L:+.6e}   "
+              f"{'invertible' if invertible else 'SINGULAR -- FAIL'}")
+
+    # ------------------------------------------------------------------
+    # 6b — Analytical solve matches numerical: z == L(Y)^{-1} @ rhs
+    # Uses the nominal test point (Y=0.30, x=_x, u=_u).
+    # ------------------------------------------------------------------
+    print()
+    print("  6b. Analytical z matches numerical (I-Y*Dzw)^{-1} @ (Cz@x + Dzu@u)")
+    ok_6b_all = True
+    for y_val in [0.1, 0.20, 0.30, 0.35]:
+        Y_t   = torch.tensor([y_val], dtype=dtype)
+        L_Y   = eye6 - y_val * _G.Dzw              # (6, 6)
+        rhs   = (_x @ _G.Cz.T) + (_u @ _G.Dzu.T)  # (1, 6)
+        z_num = torch.linalg.solve(L_Y, rhs.T).T   # (1, 6)  numerical
+
+        xdot_a, z_a, w_a, _ = lfr_forward(
+            _x, _u, Y_t, _G, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2
+        )
+        err = (z_num - z_a).abs().max().item()
+        ok  = err < 1e-10
+        if not ok:
+            ok_6b_all = False
+        print(f"    Y = {y_val:+.2f} m   max|z_num - z_analytical| = {err:.2e}   "
+              f"{'PASS' if ok else 'FAIL'}")
+
+    # ------------------------------------------------------------------
+    # 6c — Physics/polynomial sanity check: d(Y) == det(M(Y))
+    # NOT LFR-structural — this holds for LPV-SS too.
+    # Validates that build_poly_constants() correctly derives d(Y) as the
+    # determinant of M(Y) via Cramer's rule. If d(Y) is wrong, the
+    # analytical N(Y)/d(Y) loop solve in lfr_forward is wrong.
+    # ------------------------------------------------------------------
+    print()
+    print("  6c. [Physics sanity] d(Y) == det(M(Y))  (Cramer derivation check)")
+    ok_6c = True
+    for y_val in Y_vals:
+        Y_t  = torch.tensor(y_val, dtype=dtype)
+        M_Y  = build_M(Y_t)
+        det_MY_num = torch.linalg.det(M_Y).item()
+
+        # d(Y) from analytical formula
+        dY_analytical = (
+            _mh * (_alpha * _gamma - _beta ** 2
+                   + 2 * _beta * _mh * Y_t
+                   + _mh * (_alpha - _mh) * Y_t ** 2)
+        ).item()
+
+        err = abs(dY_analytical - det_MY_num)
+        rel = err / max(abs(det_MY_num), 1e-30)
+        ok  = rel < 1e-10
+        if not ok:
+            ok_6c = False
+        print(f"    Y = {y_val:+.2f} m   det(M) = {det_MY_num:.6e}   "
+              f"d(Y) = {dY_analytical:.6e}   rel_err = {rel:.2e}   "
+              f"{'PASS' if ok else 'FAIL'}")
+
+    # Cross-verify: det(I - Y*Dzw) * det(M0) == d(Y)
+    # LFR-structural: uses G.Dzw. Algebraic tautology given G definition,
+    # but catches corrupt G.Dzw entries (wrong M0invM1/M0invM2 products).
+    print()
+    print("  6c (cross). [LFR] det(L)*det(M0) == d(Y)  (G.Dzw structure)")
+    ok_6c_cross = True
+    for y_val in [0.1, 0.30, -0.10]:
+        Y_t  = torch.tensor(y_val, dtype=dtype)
+        L_Y  = eye6 - y_val * _G.Dzw
+        det_L = torch.linalg.det(L_Y).item()
+        dY_analytical = (
+            _mh * (_alpha * _gamma - _beta ** 2
+                   + 2 * _beta * _mh * Y_t
+                   + _mh * (_alpha - _mh) * Y_t ** 2)
+        ).item()
+        product = det_L * det_M0
+        err = abs(product - dY_analytical)
+        rel = err / max(abs(dY_analytical), 1e-30)
+        ok  = rel < 1e-10
+        if not ok:
+            ok_6c_cross = False
+        print(f"    Y = {y_val:+.2f} m   det(L)*det(M0) = {product:.6e}   "
+              f"d(Y) = {dY_analytical:.6e}   rel_err = {rel:.2e}   "
+              f"{'PASS' if ok else 'FAIL'}")
+
+    result = ok_6a and ok_6b_all and ok_6c and ok_6c_cross
+    print(f"\nTest 6: {'PASS' if result else 'FAIL'}")
+    return result
+
+
+# -----------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------
 if __name__ == '__main__':
@@ -324,6 +456,7 @@ if __name__ == '__main__':
     results['Test 3 (G completeness)']     = test3_g_completeness(xdot_nom, w_nom)
     results['Test 4 (Full Jacobian)']      = test4_jacobian(xdot_nom, w_nom)
     results['Test 5 (Sim causality)']      = test5_simulation_causality(xdot_nom, w_nom)
+    results['Test 6 (Loop wellposedness)'] = test6_loop_wellposedness(xdot_nom, z_nom, w_nom)
 
     print()
     print("=" * 60)
