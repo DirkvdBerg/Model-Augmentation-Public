@@ -86,6 +86,7 @@ SEGMENT_DIAG_SEGMENTS_PER_GROUP = 8
 BASE_SEED = 1234
 SEGMENT_DIAG_VERSION = 1
 RMSE_BASELINE_CACHE_VERSION = 1
+SIGMA_CACHE_VERSION = 1
 
 
 # ----------------------------------------------------------------------
@@ -333,7 +334,56 @@ def _get_or_compute_rmse_baseline(traj_specs, device, save_dir):
 
     overall_rmse = _aggregate_grouped_rmse(selected_entries)
     _print_rmse_baseline_summary(selected_entries, overall_rmse)
-    return overall_rmse
+    return overall_rmse, selected_entries
+
+
+def _sigma_cache_path(save_dir):
+    """Cache path for the channel normalisation sigma."""
+    return os.path.join(save_dir, f'sigma_v{SIGMA_CACHE_VERSION}.pt')
+
+
+def _get_or_compute_sigma(save_dir):
+    """
+    Compute per-channel std over ALL TRAJ_SPECS and cache the result.
+
+    Always uses the full trajectory set (not the active subset) so sigma is
+    stable regardless of ACTIVE_TRAJ_IDS.  Cache is keyed on (version, file
+    fingerprint) and invalidates automatically when TRAJ_SPECS changes.
+    Returns a (3,) float64 tensor on CPU.
+    """
+    cache_path = _sigma_cache_path(save_dir)
+    fingerprint = tuple((s['id'], s['file']) for s in TRAJ_SPECS)
+    if os.path.exists(cache_path):
+        cached = torch.load(cache_path, map_location='cpu')
+        if cached.get('version') == SIGMA_CACHE_VERSION and cached.get('fingerprint') == fingerprint:
+            print('  sigma: loaded from cache')
+            return cached['sigma']
+    all_q1 = [_load_trajectory(os.path.join(TRAJ_DIR, s['file']))[1] for s in TRAJ_SPECS]
+    sigma = torch.cat(all_q1, dim=0).std(dim=0).clamp(min=1e-4)
+    torch.save({'version': SIGMA_CACHE_VERSION, 'fingerprint': fingerprint, 'sigma': sigma}, cache_path)
+    print('  sigma: computed and cached')
+    return sigma
+
+
+def _aggregate_normalized_rmse_baseline(selected_entries, sigma):
+    """
+    Group-balanced RMSE_baseline in dimensionless (normalized) units.
+
+    Mirrors _aggregate_grouped_rmse but normalizes per-channel RMSE by sigma
+    before aggregating.  sigma is a (3,) CPU tensor.
+    """
+    def _entry_mse_norm(entry):
+        rmse_ch = torch.tensor(entry['rmse_ch'], dtype=torch.float64)
+        return ((rmse_ch / sigma).pow(2).mean()).item()
+
+    if len(selected_entries) == 1:
+        return _entry_mse_norm(selected_entries[0]) ** 0.5
+
+    group_mse = {}
+    for entry in selected_entries:
+        group_mse.setdefault(entry['group'], []).append(_entry_mse_norm(entry))
+    overall_mse = sum(sum(v) / len(v) for v in group_mse.values()) / len(group_mse)
+    return overall_mse ** 0.5
 
 
 def _attach_valid_start_idx(trajs, segment_len):
@@ -620,8 +670,12 @@ def train(
     # ------------------------------------------------------------------
     # 1. RMSE_baseline (D-034)
     # ------------------------------------------------------------------
-    print(f'\n{"=" * 60}\nStep 1: RMSE_baseline\n{"=" * 60}')
-    rmse_baseline = _get_or_compute_rmse_baseline(traj_specs, device, save_dir)
+    print(f'\n{"=" * 60}\nStep 1: RMSE_baseline + normalisation sigma\n{"=" * 60}')
+    rmse_baseline, _rmse_entries = _get_or_compute_rmse_baseline(traj_specs, device, save_dir)
+    sigma = _get_or_compute_sigma(save_dir).to(device)
+    print(f'  sigma [mm]: X1={sigma[0]*1e3:.2f}  X2={sigma[1]*1e3:.2f}  Y={sigma[2]*1e3:.2f}')
+    rmse_baseline_normalized = _aggregate_normalized_rmse_baseline(_rmse_entries, sigma.cpu())
+    print(f'  RMSE_baseline normalized: {rmse_baseline_normalized:.6e}')
 
     # ------------------------------------------------------------------
     # 2. Data
@@ -664,7 +718,7 @@ def train(
     # 3. Block + optimizer
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 3: Build model\n{"=" * 60}')
-    block = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline).to(device)
+    block = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline_normalized).to(device)
     optimizer = torch.optim.Adam(block.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
@@ -678,7 +732,7 @@ def train(
         if n_gpus > 1 else _SimWrapper(block)
     )
     print(f'  Trainable params : {sum(p.numel() for p in block.parameters())}')
-    print(f'  RMSE_baseline    : {rmse_baseline:.6e} m')
+    print(f'  RMSE_baseline    : {rmse_baseline:.6e} m  (normalized: {rmse_baseline_normalized:.6e})')
     gpu_names = ", ".join(
         torch.cuda.get_device_name(i)
         for i in range(max(n_gpus, 1) if device.type == 'cuda' else 0)
@@ -729,7 +783,8 @@ def train(
 
         with ctx as prof:
             Y_pred = wrapper(x0_seg, u_seg)
-            mse_loss = F.mse_loss(Y_pred, q1_seg)
+            err = (Y_pred - q1_seg) / sigma
+            mse_loss = err.pow(2).mean()
             theta_loss = block.param_loss() if param_loss_weight > 0 else None
             loss = mse_loss + (param_loss_weight * theta_loss if theta_loss is not None else 0)
             t_fwd = _sync_time(device)
@@ -752,18 +807,21 @@ def train(
             )
 
         if epoch % log_interval == 0 or epoch == epochs - 1:
+            train_rmse_m = (Y_pred.detach() - q1_seg).pow(2).mean().sqrt().item()
             with torch.no_grad():
-                val_mse = F.mse_loss(wrapper(val_x0, val_u), val_q1).item()
+                val_pred = wrapper(val_x0, val_u)
+                val_mse = ((val_pred - val_q1) / sigma).pow(2).mean().item()
+                val_rmse_m = (val_pred - val_q1).pow(2).mean().sqrt().item()
             scheduler.step(val_mse)
             if param_loss_weight > 0:
                 print(
-                    f'  {epoch:>6}  {mse_loss.item()**0.5:>14.4e}  {theta_loss.item():>12.4e}  '
-                    f'{loss.item():>12.4e}  {val_mse**0.5:>12.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
+                    f'  {epoch:>6}  {train_rmse_m:>14.4e}  {theta_loss.item():>12.4e}  '
+                    f'{loss.item():>12.4e}  {val_rmse_m:>12.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
                     flush=True,
                 )
             else:
                 print(
-                    f'  {epoch:>6}  {mse_loss.item()**0.5:>14.4e}  {val_mse**0.5:>12.4e}  '
+                    f'  {epoch:>6}  {train_rmse_m:>14.4e}  {val_rmse_m:>12.4e}  '
                     f'{grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
                     flush=True,
                 )
@@ -816,6 +874,8 @@ def train(
             'params_init': block.params_init,
             'params_true': params_true,
             'RMSE_baseline': rmse_baseline,
+            'RMSE_baseline_normalized': rmse_baseline_normalized,
+            'sigma': sigma.cpu(),
             'active_traj_ids': tuple(spec['id'] for spec in traj_specs),
             'epochs': epochs,
             'lr': lr,

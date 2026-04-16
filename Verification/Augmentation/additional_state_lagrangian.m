@@ -14,7 +14,7 @@ clear; clc;
 syms X Theta Y real
 syms dX dTheta dY real
 
-% Extended coordinate and velocity — hidden mass relative displacement
+% Extended coordinate and velocity - hidden mass relative displacement
 syms delta_a vdelta_a real    % delta_a = position, vdelta_a = velocity
 
 % Garcia parameters
@@ -48,16 +48,16 @@ Lb_n  = 0.725;   % Length of the moving cross-arm (m)
 d_n   = 0.1;     % Distance between cross-arm and payload (m)
 Y_n   = 0.3;     % Payload Y position for verification (m)
 
-% Hidden mass parameters — chosen for visibility (tune later)
-ma_n  = 1.0;     % Hidden mass (kg) — ~10% of mh
-ka_n  = 500;     % Spring stiffness (N/m) — resonance ~3.6 Hz
+% Hidden mass parameters - chosen for visibility (tune later)
+ma_n  = 1.0;     % Hidden mass (kg) - ~10% of mh
+ka_n  = 500;     % Spring stiffness (N/m) - resonance ~3.6 Hz
 ca_n  = 2;       % Damping (Ns/m)
 
 %% -----------------------------------------------------------------------
 %% STEP 1: GARCIA BASELINE ENERGIES (verified)
 %% -----------------------------------------------------------------------
 
-% Kinetic energy — Garcia equation (3), small angle applied
+% Kinetic energy - Garcia equation (3), small angle applied
 % cos(Theta)=1, sin(Theta)=0 per Garcia Section 2.3
 T_mb = 0.5*mb*dX^2 + 0.5*Jb*dTheta^2;
 T_m1 = 0.5*m1*(dX + Lb/2*dTheta)^2;
@@ -66,10 +66,10 @@ T_mh = 0.5*mh*((dX - Y*dTheta)^2 + (dY - d*dTheta)^2) + 0.5*Jh*dTheta^2;
 
 T_garcia = expand(T_mb + T_m1 + T_m2 + T_mh);
 
-% Potential energy — Garcia equation (4)
+% Potential energy - Garcia equation (4)
 V_garcia = 0.5*(kb1+kb2)*Theta^2;
 
-% Rayleigh dissipation — Garcia equation (5), small angle applied
+% Rayleigh dissipation - Garcia equation (5), small angle applied
 D_garcia = 0.5*(cg1+cg2)*dX^2 ...
          + (cg1-cg2)*(Lb/2)*dX*dTheta ...
          + 0.5*(cb1+cb2+(cg1+cg2)*Lb^2/4)*dTheta^2 ...
@@ -107,19 +107,19 @@ fprintf('Residual K (should be ~0): max abs = %.2e\n', max(abs(K_garcia_num - K_
 fprintf('Residual C (should be ~0): max abs = %.2e\n', max(abs(C_garcia_num - C_supervisor),[],'all'))
 
 %% -----------------------------------------------------------------------
-%% STEP 2: EXTENDED ENERGIES — add hidden mass ma
+%% STEP 2: EXTENDED ENERGIES - add hidden mass ma
 %% -----------------------------------------------------------------------
 
 % Hidden mass ma sits at absolute position (Y + delta_a) along crossarm
-% delta_a is the RELATIVE displacement from mh — same geometry as mh
+% delta_a is the RELATIVE displacement from mh - same geometry as mh
 % absolute x-velocity: dX - (Y+delta_a)*dTheta
 % absolute y-velocity: dY + ddelta_a - d*dTheta
 T_ma = 0.5*ma*((dX - (Y+delta_a)*dTheta)^2 + (dY + vdelta_a - d*dTheta)^2);
 
-% Spring between mh and ma — only relative displacement delta_a
+% Spring between mh and ma - only relative displacement delta_a
 V_spring = 0.5*ka*delta_a^2;
 
-% Damper between mh and ma — only relative velocity ddelta_a
+% Damper between mh and ma - only relative velocity ddelta_a
 D_damper = 0.5*ca*vdelta_a^2;
 
 % Extended total energies
@@ -138,7 +138,7 @@ M_ext = simplify(hessian(T, dq4));
 K_ext = simplify(hessian(V, q4));
 C_ext = simplify(hessian(D, dq4));
 
-% Force vector — no direct force on hidden mass
+% Force vector - no direct force on hidden mass
 f_ext = [F1+F2; (F1-F2)*Lb/2; Fy; 0];
 
 fprintf('\n=== STEP 2: Extended symbolic matrices ===\n')
@@ -147,7 +147,7 @@ fprintf('--- K_ext ---\n'); disp(K_ext)
 fprintf('--- C_ext ---\n'); disp(C_ext)
 
 %% -----------------------------------------------------------------------
-%% STEP 4: VERIFY — setting ma=0 must recover Garcia 3x3 exactly
+%% STEP 4: VERIFY - setting ma=0 must recover Garcia 3x3 exactly
 %% -----------------------------------------------------------------------
 
 M_check = simplify(subs(M_ext(1:3,1:3), ma, 0));
