@@ -65,6 +65,25 @@ jointly on all of them. This excites all parameter sensitivities.
 2. Update `train_param_recovery.py` to load and concatenate multiple `.mat` files.
 3. Re-run training and compare `param_table()` convergence.
 
+**How to use multiple trajectories well:**
+
+- Do **not** sample proportional to trajectory length only. That will overrepresent
+  long or easy trajectories.
+- Balance by **information content** instead.
+- Start with one global `segment_len` for all trajectories; optimize the sampling
+  strategy before introducing per-trajectory segment lengths.
+- Group the trajectories by what they excite:
+  - `T1`, `T6`: Y-only excitation
+  - `T2`, `T3`: X-symmetric / `mh`-coupling contrast
+  - `T4`, `T5`: rotational + coupled excitation
+- Then allocate roughly equal batch budget to each group, so `T4` and `T5` do not
+  get drowned out just because they are fewer or shorter.
+- Parallel training should mean:
+  - sample segments from different trajectories
+  - stack them into one batch
+  - simulate them together
+  - update one shared parameter vector
+
 **Status:** Not yet started. **Start here.**
 
 ---
