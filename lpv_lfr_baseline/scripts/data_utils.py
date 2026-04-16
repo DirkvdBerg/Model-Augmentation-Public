@@ -89,7 +89,11 @@ def load_gantry_data(
     return train_data, val_data
 
 
-def compute_rmse_baseline(mat_path: str = _DEFAULT_MAT) -> float:
+def compute_rmse_baseline_metrics(
+    mat_path: str = _DEFAULT_MAT,
+    x0_logical: torch.Tensor | None = None,
+    verbose: bool = True,
+) -> dict:
     """
     Run the detuned ParameterizedLFRBlock in open loop on the MATLAB trajectory.
 
@@ -97,20 +101,21 @@ def compute_rmse_baseline(mat_path: str = _DEFAULT_MAT) -> float:
     -----
     1. Load u_q1 (stage forces) and q1 (ground-truth stage positions).
     2. Build detuned matrices from ParameterizedLFRBlock initial params.
-    3. Run simulate() with those matrices and x0_logical=[0,0,0.3,0,0,0].
+    3. Run simulate() with those matrices and the provided x0_logical.
     4. Compute RMS of (y_pred_stage - q1) over all samples and channels.
 
     Returns
     -------
-    rmse : float  -- overall RMSE in metres (D-034)
-
-    Also prints per-channel RMSE for diagnostic purposes.
+    metrics : dict
+        Contains overall/per-channel RMSE and dataset metadata.
     """
     mat = loadmat(mat_path)
 
     u_q1 = torch.tensor(mat['u_q1'], dtype=torch.float64)   # (N, 3)
     q1   = torch.tensor(mat['q1'],   dtype=torch.float64)   # (N, 3)
     N    = u_q1.shape[0]
+    fs_hz = float(mat['fs'].squeeze()) if 'fs' in mat else None
+    x0 = _X0_LOGICAL if x0_logical is None else x0_logical.to(dtype=torch.float64)
 
     # Build detuned matrices and G/poly constants (no gradient needed)
     block = ParameterizedLFRBlock(RMSE_baseline=1.0)
@@ -129,10 +134,11 @@ def compute_rmse_baseline(mat_path: str = _DEFAULT_MAT) -> float:
     # simulate() expects (batch, N, 3) inputs
     u_seq = u_q1.unsqueeze(0)   # (1, N, 3)
 
-    print(f"  Running open-loop simulation ({N} steps) with detuned parameters...")
+    if verbose:
+        print(f"  Running open-loop simulation ({N} steps) with detuned parameters...")
     with torch.no_grad():
         result = simulate(
-            _X0_LOGICAL, u_seq,
+            x0, u_seq,
             G_d, K_d, C_d, mh, alpha_d, beta_d, gamma_d, N0_d, N1_d, N2_d,
             P, ts, bptt_mode='full',
         )
@@ -142,14 +148,30 @@ def compute_rmse_baseline(mat_path: str = _DEFAULT_MAT) -> float:
 
     # Per-channel and overall RMSE
     err        = y_pred - q1                              # (N, 3)
+    mse_total  = err.pow(2).mean().item()
     rmse_ch    = err.pow(2).mean(dim=0).sqrt()            # (3,)
-    rmse_total = err.pow(2).mean().sqrt().item()          # scalar
+    rmse_total = mse_total ** 0.5                         # scalar
 
     ch_names = ['X1', 'X2', 'Y']
-    print(f"  Per-channel RMSE [m]:")
-    for i, name in enumerate(ch_names):
-        print(f"    {name}: {rmse_ch[i].item():.6e} m  ({rmse_ch[i].item()*1e3:.4f} mm)")
-    print(f"  Overall RMSE: {rmse_total:.6e} m  ({rmse_total*1e3:.4f} mm)")
+    if verbose:
+        print(f"  Per-channel RMSE [m]:")
+        for i, name in enumerate(ch_names):
+            print(f"    {name}: {rmse_ch[i].item():.6e} m  ({rmse_ch[i].item()*1e3:.4f} mm)")
+        print(f"  Overall RMSE: {rmse_total:.6e} m  ({rmse_total*1e3:.4f} mm)")
+
+    return {
+        'N': int(N),
+        'fs': fs_hz,
+        'mse_total': mse_total,
+        'rmse_total': rmse_total,
+        'rmse_ch': [float(v.item()) for v in rmse_ch],
+    }
+
+
+def compute_rmse_baseline(mat_path: str = _DEFAULT_MAT) -> float:
+    """Backward-compatible wrapper returning only the overall RMSE."""
+    metrics = compute_rmse_baseline_metrics(mat_path=mat_path, x0_logical=_X0_LOGICAL, verbose=True)
+    rmse_total = metrics['rmse_total']
 
     return rmse_total
 

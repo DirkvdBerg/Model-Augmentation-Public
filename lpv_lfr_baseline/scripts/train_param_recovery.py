@@ -47,7 +47,7 @@ from lpv_lfr_baseline.blocks.lfr_param_block import (
 from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
 from lpv_lfr_baseline.core.lfr_simulate import simulate
 from lpv_lfr_baseline.core.physics import P as _P_PHYSICS, ts as _TS_PHYSICS, build_poly_constants
-from lpv_lfr_baseline.scripts.data_utils import compute_rmse_baseline
+from lpv_lfr_baseline.scripts.data_utils import compute_rmse_baseline_metrics
 
 # ----------------------------------------------------------------------
 # Configuration
@@ -81,15 +81,13 @@ LOG_INTERVAL = 25
 CHECKPOINT_INTERVAL = 100
 PROFILE = False
 TIME_EPOCHS = False
+USE_MULTI_TRAJ_BASELINE = False
 AUTO_SEGMENT_LEN = False
 SEGMENT_DIAG_CANDIDATES_S = (0.1, 0.2, 0.4, 0.6)
 SEGMENT_DIAG_N_PER_GROUP = 8
 SEGMENT_DIAG_SEED = 1234
 SEGMENT_DIAG_VERSION = 1
-
-# Initial logical state: positions [0, 0, 0.3], velocities [0, 0, 0]
-# Matches q1[0] = [0, 0, 0.3] in stage coordinates.
-X0_LOGICAL = torch.tensor([[0.0, 0.0, 0.3, 0.0, 0.0, 0.0]], dtype=torch.float64)
+RMSE_BASELINE_CACHE_VERSION = 1
 
 
 # ----------------------------------------------------------------------
@@ -208,6 +206,115 @@ def _load_grouped_trajectories(traj_specs, traj_dir, P, ts, device, save_dir, lo
     for group, items in grouped.items():
         print(f"  {group:<12}: {', '.join(items)}")
     return trajs
+
+
+def _rmse_baseline_cache_path(save_dir):
+    """Cache path for per-trajectory RMSE_baseline metrics."""
+    return os.path.join(save_dir, f'rmse_baseline_cache_v{RMSE_BASELINE_CACHE_VERSION}.pt')
+
+
+def _baseline_specs_for_run(mat_path, use_multi_traj_baseline):
+    """Select which trajectories contribute to RMSE_baseline for this run."""
+    if use_multi_traj_baseline:
+        return tuple(
+            {
+                'id': spec['id'],
+                'group': spec['group'],
+                'file': spec['file'],
+                'path': os.path.join(TRAJ_DIR, spec['file']),
+            }
+            for spec in TRAJ_SPECS
+        )
+
+    file_name = os.path.basename(mat_path)
+    return ({
+        'id': os.path.splitext(file_name)[0],
+        'group': 'single',
+        'file': file_name,
+        'path': mat_path,
+    },)
+
+
+def _load_rmse_baseline_cache(save_dir):
+    """Load the RMSE_baseline cache or create an empty one."""
+    cache_path = _rmse_baseline_cache_path(save_dir)
+    if os.path.exists(cache_path):
+        cached = torch.load(cache_path, map_location='cpu')
+        if cached.get('version') == RMSE_BASELINE_CACHE_VERSION:
+            return cached
+    return {'version': RMSE_BASELINE_CACHE_VERSION, 'per_traj': {}}
+
+
+def _aggregate_rmse_baseline(selected_entries):
+    """Aggregate cached per-trajectory baseline results into one scalar."""
+    if len(selected_entries) == 1:
+        return float(selected_entries[0]['rmse_total'])
+
+    group_mse = {}
+    for entry in selected_entries:
+        group_mse.setdefault(entry['group'], []).append(entry['mse_total'])
+
+    overall_mse = sum(sum(values) / len(values) for values in group_mse.values()) / len(group_mse)
+    return overall_mse ** 0.5
+
+
+def _print_rmse_baseline_summary(selected_entries, overall_rmse):
+    """Print the cached/computed RMSE_baseline values relevant to the current run."""
+    if len(selected_entries) == 1:
+        entry = selected_entries[0]
+        print(
+            f"  {entry['id']}: RMSE = {entry['rmse_total']:.6e} m  "
+            f"({entry['rmse_total'] * 1e3:.4f} mm)"
+        )
+    else:
+        print(f'  {"Traj":<6}  {"Group":<12}  {"RMSE [mm]":>12}')
+        print(f'  {"-" * 6}  {"-" * 12}  {"-" * 12}')
+        for entry in selected_entries:
+            print(
+                f"  {entry['id']:<6}  {entry['group']:<12}  "
+                f"{entry['rmse_total'] * 1e3:>12.4f}"
+            )
+    print(f'  Overall RMSE_baseline = {overall_rmse:.6e} m  ({overall_rmse * 1e3:.4f} mm)')
+
+
+def _get_or_compute_rmse_baseline(mat_path, use_multi_traj_baseline, device, save_dir):
+    """Load cached per-trajectory RMSE_baseline metrics and derive the run scalar."""
+    specs = _baseline_specs_for_run(mat_path, use_multi_traj_baseline)
+    cache = _load_rmse_baseline_cache(save_dir)
+    updated = False
+    selected_entries = []
+
+    for spec in specs:
+        entry = cache['per_traj'].get(spec['id'])
+        if entry is None or entry.get('file') != spec['file'] or entry.get('group') != spec['group']:
+            _, q1_i, _ = _load_trajectory(spec['path'])
+            state_traj_i = _load_or_build_state_traj(
+                spec['id'], q1_i, _P_PHYSICS, _TS_PHYSICS, device, save_dir, load=True
+            )
+            metrics = compute_rmse_baseline_metrics(
+                mat_path=spec['path'],
+                x0_logical=state_traj_i[:1],
+                verbose=False,
+            )
+            entry = {
+                'id': spec['id'],
+                'file': spec['file'],
+                'group': spec['group'],
+                **metrics,
+            }
+            cache['per_traj'][spec['id']] = entry
+            updated = True
+        selected_entries.append(entry)
+
+    if updated:
+        torch.save(cache, _rmse_baseline_cache_path(save_dir))
+        print('  RMSE_baseline cache: updated')
+    else:
+        print('  RMSE_baseline cache: loaded')
+
+    overall_rmse = _aggregate_rmse_baseline(selected_entries)
+    _print_rmse_baseline_summary(selected_entries, overall_rmse)
+    return overall_rmse
 
 
 def _attach_valid_start_idx(trajs, segment_len):
@@ -519,8 +626,9 @@ def train(
     # 1. RMSE_baseline (D-034)
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 1: RMSE_baseline\n{"=" * 60}')
-    rmse_baseline = compute_rmse_baseline(mat_path)
-    print(f'  RMSE_baseline = {rmse_baseline:.6e} m  ({rmse_baseline * 1e3:.4f} mm)')
+    rmse_baseline = _get_or_compute_rmse_baseline(
+        mat_path, USE_MULTI_TRAJ_BASELINE, device, save_dir
+    )
 
     # ------------------------------------------------------------------
     # 2. Data
@@ -559,7 +667,6 @@ def train(
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 3: Build model\n{"=" * 60}')
     block = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline).to(device)
-    x0 = X0_LOGICAL.to(device)
     optimizer = torch.optim.Adam(block.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
@@ -586,6 +693,7 @@ def train(
     # ------------------------------------------------------------------
     traj_id = os.path.splitext(os.path.basename(mat_path))[0]
     state_traj = _load_or_build_state_traj(traj_id, q1_train, block._P, block._ts, device, save_dir)
+    x0 = state_traj[:1]
     all_idx = _get_epoch_indices(N_steps, n_seg, segment_len, epochs, device, save_dir)[:epochs]
     _arange_T = torch.arange(segment_len, device=device)
     val_idx = torch.arange(n_seg, device=device) * segment_len
