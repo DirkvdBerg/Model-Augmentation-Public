@@ -64,26 +64,28 @@ TRAJ_SPECS = (
     {'id': 'T4', 'group': 'rot_coupled', 'file': 'T4_X_antisym_Y020.mat'},
     {'id': 'T5', 'group': 'rot_coupled', 'file': 'T5_X_sym_Y_sweep.mat'},
 )
-TRAJ_GROUPS = ('y_only', 'x_sym_mh', 'rot_coupled')
+TRAJ_GROUPS = tuple(dict.fromkeys(spec['group'] for spec in TRAJ_SPECS))  # canonical group order derived from TRAJ_SPECS
 ACTIVE_TRAJ_IDS = tuple(spec['id'] for spec in TRAJ_SPECS)
 
+# ── Experiment settings ───────────────────────────────────────────────────────
 N_STEPS = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
 EPOCHS = 3
 LR = 1e-3
-SEGMENT_LEN = 4000
+SEGMENT_LEN = None  # None = choose the smallest stable candidate from the segment-length diagnostic; int = use that fixed number of samples
 PARAM_LOSS_WEIGHT = 0.0
 LOG_INTERVAL = 25
 CHECKPOINT_INTERVAL = 100
 PROFILE = False
 TIME_EPOCHS = False
-AUTO_SEGMENT_LEN = False
+TRAIN_SEGMENTS_PER_EPOCH = 8
+VAL_SEGMENTS_FIXED = 8
+
+# ── Internal / cache constants ────────────────────────────────────────────────
 SEGMENT_DIAG_CANDIDATES_S = (0.1, 0.2, 0.4, 0.6)
-SEGMENT_DIAG_N_PER_GROUP = 8
-SEGMENT_DIAG_SEED = 1234
+SEGMENT_DIAG_SEGMENTS_PER_GROUP = 8
+BASE_SEED = 1234
 SEGMENT_DIAG_VERSION = 1
 RMSE_BASELINE_CACHE_VERSION = 1
-TRAIN_SEGMENTS = 8
-VAL_SEGMENTS = 8
 
 
 # ----------------------------------------------------------------------
@@ -426,8 +428,8 @@ def _segment_diag_cache_matches(cached, traj_specs, param_set_names):
         cached.get('version') == SEGMENT_DIAG_VERSION
         and tuple(cached.get('traj_specs', ())) == tuple(traj_specs)
         and tuple(cached.get('candidate_lengths_s', ())) == SEGMENT_DIAG_CANDIDATES_S
-        and cached.get('n_per_group') == SEGMENT_DIAG_N_PER_GROUP
-        and cached.get('seed') == SEGMENT_DIAG_SEED
+        and cached.get('n_per_group') == SEGMENT_DIAG_SEGMENTS_PER_GROUP
+        and cached.get('seed') == BASE_SEED
         and tuple(cached.get('param_set_names', ())) == tuple(param_set_names)
     )
 
@@ -482,9 +484,9 @@ def _get_or_run_segment_length_diagnostic(traj_specs, rmse_baseline, device, sav
     for candidate_s in SEGMENT_DIAG_CANDIDATES_S:
         segment_len = int(round(candidate_s / float(_TS_PHYSICS)))
         _attach_valid_start_idx(trajs, segment_len)
-        group_counts = {group: SEGMENT_DIAG_N_PER_GROUP for group in active_groups}
+        group_counts = {group: SEGMENT_DIAG_SEGMENTS_PER_GROUP for group in active_groups}
         x0_seg, u_seg, q1_seg, sample_plan = _sample_balanced_segments(
-            trajs, segment_len, group_counts, SEGMENT_DIAG_SEED + segment_len
+            trajs, segment_len, group_counts, BASE_SEED + segment_len
         )
 
         losses = {
@@ -521,8 +523,8 @@ def _get_or_run_segment_length_diagnostic(traj_specs, rmse_baseline, device, sav
         'traj_specs': tuple(traj_specs),
         'candidate_lengths_s': SEGMENT_DIAG_CANDIDATES_S,
         'candidate_lengths_samples': [result['segment_len'] for result in results],
-        'n_per_group': SEGMENT_DIAG_N_PER_GROUP,
-        'seed': SEGMENT_DIAG_SEED,
+        'n_per_group': SEGMENT_DIAG_SEGMENTS_PER_GROUP,
+        'seed': BASE_SEED,
         'param_set_names': param_set_names,
         'results': results,
         'chosen_segment_len': _choose_segment_len_from_diag(results),
@@ -629,7 +631,8 @@ def train(
         traj_specs, TRAJ_DIR, _P_PHYSICS, _TS_PHYSICS, device, save_dir, load_tensors=False
     )
 
-    if AUTO_SEGMENT_LEN:
+    auto_segment = segment_len is None
+    if auto_segment:
         print(f'\n{"=" * 60}\nStep 2b: Segment-length diagnostic\n{"=" * 60}')
         diag = _get_or_run_segment_length_diagnostic(traj_specs, rmse_baseline, device, save_dir)
         segment_len = int(diag['chosen_segment_len'])
@@ -637,7 +640,7 @@ def train(
 
     if profile:
         n_steps = 500
-    data_step = '2c' if AUTO_SEGMENT_LEN else '2b'
+    data_step = '2c' if auto_segment else '2b'
     print(f'\n{"=" * 60}\nStep {data_step}: Load active training trajectories\n{"=" * 60}')
     trajs = _load_grouped_trajectories(
         traj_specs, TRAJ_DIR, _P_PHYSICS, _TS_PHYSICS, device, save_dir,
@@ -645,8 +648,8 @@ def train(
     )
     _attach_valid_start_idx(trajs, segment_len)
     active_groups = _active_groups_from_trajs(trajs)
-    train_group_counts = _balanced_group_counts(TRAIN_SEGMENTS, active_groups)
-    val_group_counts = _balanced_group_counts(VAL_SEGMENTS, active_groups)
+    train_group_counts = _balanced_group_counts(TRAIN_SEGMENTS_PER_EPOCH, active_groups)
+    val_group_counts = _balanced_group_counts(VAL_SEGMENTS_FIXED, active_groups)
     print(
         f'  Active set: {", ".join(spec["id"] for spec in traj_specs)}  '
         f'({len(trajs)} trajectories, {len(active_groups)} groups)'
@@ -687,7 +690,7 @@ def train(
     # 3b. Precomputed data structures - parameter-free
     # ------------------------------------------------------------------
     val_x0, val_u, val_q1, _ = _sample_balanced_segments(
-        trajs, segment_len, val_group_counts, SEGMENT_DIAG_SEED
+        trajs, segment_len, val_group_counts, BASE_SEED
     )
 
     # ------------------------------------------------------------------
@@ -699,13 +702,13 @@ def train(
     )
     if param_loss_weight > 0:
         print(
-            f'  {"Epoch":>6}  {"train_mse":>12}  {"param_loss":>12}  '
-            f'{"total":>12}  {"val_mse":>12}  {"grad_norm":>12}  {"time [s]":>9}'
+            f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"param_loss":>12}  '
+            f'{"total":>12}  {"val_rmse[m]":>12}  {"grad_norm":>12}  {"time [s]":>9}'
         )
-        print(f'  {"-" * 6}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 9}')
+        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 9}')
     else:
-        print(f'  {"Epoch":>6}  {"train_mse":>12}  {"val_mse":>12}  {"grad_norm":>12}  {"time [s]":>9}')
-        print(f'  {"-" * 6}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 9}')
+        print(f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"val_rmse[m]":>12}  {"grad_norm":>12}  {"time [s]":>9}')
+        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 12}  {"-" * 9}')
 
     t_start = time.time()
 
@@ -721,7 +724,7 @@ def train(
             ) if (profile and epoch == 0) else contextlib.nullcontext()
         )
         x0_seg, u_seg, q1_seg, _ = _sample_balanced_segments(
-            trajs, segment_len, train_group_counts, SEGMENT_DIAG_SEED + 10_000 + epoch
+            trajs, segment_len, train_group_counts, BASE_SEED + 10_000 + epoch
         )
 
         with ctx as prof:
@@ -754,13 +757,13 @@ def train(
             scheduler.step(val_mse)
             if param_loss_weight > 0:
                 print(
-                    f'  {epoch:>6}  {mse_loss.item():>12.4e}  {theta_loss.item():>12.4e}  '
-                    f'{loss.item():>12.4e}  {val_mse:>12.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
+                    f'  {epoch:>6}  {mse_loss.item()**0.5:>14.4e}  {theta_loss.item():>12.4e}  '
+                    f'{loss.item():>12.4e}  {val_mse**0.5:>12.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
                     flush=True,
                 )
             else:
                 print(
-                    f'  {epoch:>6}  {mse_loss.item():>12.4e}  {val_mse:>12.4e}  '
+                    f'  {epoch:>6}  {mse_loss.item()**0.5:>14.4e}  {val_mse**0.5:>12.4e}  '
                     f'{grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
                     flush=True,
                 )
