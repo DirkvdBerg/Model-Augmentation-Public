@@ -70,6 +70,7 @@ TRAJ_SPECS = (
     {'id': 'T4', 'group': 'rot_coupled', 'file': 'T4_X_antisym_Y020.mat'},
     {'id': 'T5', 'group': 'rot_coupled', 'file': 'T5_X_sym_Y_sweep.mat'},
 )
+TRAJ_GROUPS = ('y_only', 'x_sym_mh', 'rot_coupled')
 
 N_STEPS = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
 EPOCHS = 3
@@ -80,6 +81,11 @@ LOG_INTERVAL = 25
 CHECKPOINT_INTERVAL = 100
 PROFILE = False
 TIME_EPOCHS = False
+AUTO_SEGMENT_LEN = False
+SEGMENT_DIAG_CANDIDATES_S = (0.1, 0.2, 0.4, 0.6)
+SEGMENT_DIAG_N_PER_GROUP = 8
+SEGMENT_DIAG_SEED = 1234
+SEGMENT_DIAG_VERSION = 1
 
 # Initial logical state: positions [0, 0, 0.3], velocities [0, 0, 0]
 # Matches q1[0] = [0, 0, 0.3] in stage coordinates.
@@ -174,18 +180,229 @@ def _load_or_build_state_traj(traj_id, q1_stage, P, ts, device, save_dir, load=T
     return traj.to(device) if load else None
 
 
-def _prepare_grouped_state_caches(traj_specs, traj_dir, P, ts, device, save_dir):
-    """Ensure every grouped parameter-recovery trajectory has a cached state file."""
-    grouped = {}
+def _load_grouped_trajectories(traj_specs, traj_dir, P, ts, device, save_dir, load_tensors):
+    """Load grouped trajectories and ensure per-trajectory state caches exist."""
+    trajs = []
+    grouped = {group: [] for group in TRAJ_GROUPS}
     for spec in traj_specs:
         mat_path = os.path.join(traj_dir, spec['file'])
-        _, q1_i, fs_i = _load_trajectory(mat_path)
-        _load_or_build_state_traj(spec['id'], q1_i, P, ts, device, save_dir, load=False)
+        u_i, q1_i, fs_i = _load_trajectory(mat_path)
+        state_traj_i = _load_or_build_state_traj(
+            spec['id'], q1_i, P, ts, device, save_dir, load=load_tensors
+        )
         label = f"{spec['id']} ({q1_i.shape[0] / fs_i:.2f}s)" if fs_i else spec['id']
-        grouped.setdefault(spec['group'], []).append(label)
+        grouped[spec['group']].append(label)
+        traj = {
+            'id': spec['id'],
+            'group': spec['group'],
+            'file': spec['file'],
+            'N': int(q1_i.shape[0]),
+            'fs': fs_i,
+        }
+        if load_tensors:
+            traj['u'] = u_i.to(device)
+            traj['q1'] = q1_i.to(device)
+            traj['state_traj'] = state_traj_i
+        trajs.append(traj)
 
     for group, items in grouped.items():
         print(f"  {group:<12}: {', '.join(items)}")
+    return trajs
+
+
+def _attach_valid_start_idx(trajs, segment_len):
+    """Attach valid segment starts 0 .. N - segment_len for each trajectory."""
+    for traj in trajs:
+        n_valid = max(traj['N'] - segment_len + 1, 0)
+        traj['valid_start_idx'] = torch.arange(n_valid, dtype=torch.int64)
+
+
+def _sample_balanced_segments(trajs, segment_len, n_per_group, seed):
+    """Sample the same number of segments from each trajectory group."""
+    generator = torch.Generator(device='cpu')
+    generator.manual_seed(seed)
+
+    x0_seg_list = []
+    u_seg_list = []
+    q1_seg_list = []
+    sample_plan = []
+
+    for group in TRAJ_GROUPS:
+        group_trajs = [traj for traj in trajs if traj['group'] == group and traj['valid_start_idx'].numel() > 0]
+        if not group_trajs:
+            raise ValueError(f'No valid trajectories for group {group!r} at segment_len={segment_len}')
+
+        for _ in range(n_per_group):
+            traj = group_trajs[torch.randint(len(group_trajs), (1,), generator=generator).item()]
+            start_idx = int(
+                traj['valid_start_idx'][
+                    torch.randint(traj['valid_start_idx'].numel(), (1,), generator=generator).item()
+                ].item()
+            )
+            stop_idx = start_idx + segment_len
+            x0_seg_list.append(traj['state_traj'][start_idx])
+            u_seg_list.append(traj['u'][0, start_idx:stop_idx, :])
+            q1_seg_list.append(traj['q1'][start_idx:stop_idx, :])
+            sample_plan.append({
+                'traj_id': traj['id'],
+                'group': group,
+                'start_idx': start_idx,
+            })
+
+    return (
+        torch.stack(x0_seg_list, dim=0),
+        torch.stack(u_seg_list, dim=0),
+        torch.stack(q1_seg_list, dim=0),
+        sample_plan,
+    )
+
+
+def _build_segment_diag_param_sets():
+    """Fixed parameter sets for segment-length discrimination testing."""
+    params_true = torch.tensor([_TRUE_PARAMS[name] for name in _PARAM_NAMES], dtype=torch.float64)
+    idx = {name: i for i, name in enumerate(_PARAM_NAMES)}
+    scales = torch.ones_like(params_true)
+    for name in ('kb1', 'kb2', 'cg1', 'cg2'):
+        scales[idx[name]] = 1.1
+    for name in ('mh', 'Jb', 'Jh'):
+        scales[idx[name]] = 0.9
+
+    return (
+        {'name': 'true', 'params': params_true},
+        {'name': 'all_up_10', 'params': params_true * 1.1},
+        {'name': 'all_down_10', 'params': params_true * 0.9},
+        {'name': 'coupling_mix', 'params': params_true * scales},
+    )
+
+
+def _set_block_physical_params(block, params_vec):
+    """Overwrite block parameters using physical values in _PARAM_NAMES order."""
+    with torch.no_grad():
+        block.log_params.copy_(params_vec.to(block.log_params.device, dtype=block.log_params.dtype).log())
+
+
+def _eval_param_set_on_segments(block, wrapper, params_vec, x0_seg, u_seg, q1_seg):
+    """Return per-segment MSE for one fixed physical-parameter vector."""
+    _set_block_physical_params(block, params_vec)
+    with torch.no_grad():
+        y_pred = wrapper(x0_seg, u_seg)
+    return (y_pred - q1_seg).pow(2).mean(dim=(1, 2)).cpu()
+
+
+def _segment_diag_cache_path(save_dir):
+    """Cache path for the segment-length diagnostic result."""
+    return os.path.join(save_dir, f'segment_len_diag_v{SEGMENT_DIAG_VERSION}.pt')
+
+
+def _segment_diag_cache_matches(cached, param_set_names):
+    """Return True when the cached diagnostic matches the current config."""
+    return (
+        cached.get('version') == SEGMENT_DIAG_VERSION
+        and tuple(cached.get('traj_specs', ())) == TRAJ_SPECS
+        and tuple(cached.get('candidate_lengths_s', ())) == SEGMENT_DIAG_CANDIDATES_S
+        and cached.get('n_per_group') == SEGMENT_DIAG_N_PER_GROUP
+        and cached.get('seed') == SEGMENT_DIAG_SEED
+        and tuple(cached.get('param_set_names', ())) == tuple(param_set_names)
+    )
+
+
+def _choose_segment_len_from_diag(results):
+    """Choose the most robust segment length, breaking ties toward shorter windows."""
+    best_min_group = max(r['min_group_true_best_rate'] for r in results)
+    candidates = [r for r in results if r['min_group_true_best_rate'] == best_min_group]
+    best_true_rate = max(r['true_best_rate'] for r in candidates)
+    candidates = [r for r in candidates if r['true_best_rate'] == best_true_rate]
+    best_margin = max(r['median_margin'] for r in candidates)
+    candidates = [r for r in candidates if r['median_margin'] == best_margin]
+    return min(candidates, key=lambda r: r['segment_len'])['segment_len']
+
+
+def _print_segment_diag_summary(diag):
+    """Print a compact summary of cached or freshly computed diagnostic results."""
+    print('  segment_len diagnostic:')
+    print(f'  {"samples":>8}  {"seconds":>8}  {"true_best":>10}  {"min_group":>10}  {"margin":>10}')
+    for result in diag['results']:
+        print(
+            f"  {result['segment_len']:>8}  "
+            f"{result['segment_len_s']:>8.3f}  "
+            f"{result['true_best_rate']:>10.3f}  "
+            f"{result['min_group_true_best_rate']:>10.3f}  "
+            f"{result['median_margin']:>10.3e}"
+        )
+    print(f"  chosen_segment_len: {diag['chosen_segment_len']} samples")
+
+
+def _get_or_run_segment_length_diagnostic(rmse_baseline, device, save_dir):
+    """Load cached segment-length diagnostic or run it once and save the result."""
+    param_sets = _build_segment_diag_param_sets()
+    param_set_names = [item['name'] for item in param_sets]
+    cache_path = _segment_diag_cache_path(save_dir)
+    if os.path.exists(cache_path):
+        cached = torch.load(cache_path, map_location='cpu')
+        if _segment_diag_cache_matches(cached, param_set_names):
+            print('  segment_len_diag: loaded from cache')
+            _print_segment_diag_summary(cached)
+            return cached
+
+    print('  segment_len_diag: computing')
+    trajs = _load_grouped_trajectories(
+        TRAJ_SPECS, TRAJ_DIR, _P_PHYSICS, _TS_PHYSICS, device, save_dir, load_tensors=True
+    )
+    diag_block = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline).to(device)
+    diag_wrapper = _SimWrapper(diag_block)
+    results = []
+
+    for candidate_s in SEGMENT_DIAG_CANDIDATES_S:
+        segment_len = int(round(candidate_s / float(_TS_PHYSICS)))
+        _attach_valid_start_idx(trajs, segment_len)
+        x0_seg, u_seg, q1_seg, sample_plan = _sample_balanced_segments(
+            trajs, segment_len, SEGMENT_DIAG_N_PER_GROUP, SEGMENT_DIAG_SEED + segment_len
+        )
+
+        losses = {
+            param_set['name']: _eval_param_set_on_segments(
+                diag_block, diag_wrapper, param_set['params'], x0_seg, u_seg, q1_seg
+            )
+            for param_set in param_sets
+        }
+        all_losses = torch.stack([losses[name] for name in param_set_names], dim=1)
+        true_is_best = all_losses.argmin(dim=1) == 0
+        detuned_losses = torch.stack([losses[name] for name in param_set_names[1:]], dim=1)
+        margin = detuned_losses.min(dim=1).values - losses['true']
+
+        group_true_best_rate = {}
+        for group in TRAJ_GROUPS:
+            mask = torch.tensor([item['group'] == group for item in sample_plan], dtype=torch.bool)
+            group_true_best_rate[group] = float(true_is_best[mask].double().mean().item())
+
+        results.append({
+            'segment_len': segment_len,
+            'segment_len_s': candidate_s,
+            'true_best_rate': float(true_is_best.double().mean().item()),
+            'group_true_best_rate': group_true_best_rate,
+            'min_group_true_best_rate': float(min(group_true_best_rate.values())),
+            'median_margin': float(margin.median().item()),
+            'mean_loss_by_set': {
+                name: float(losses[name].mean().item()) for name in param_set_names
+            },
+            'sample_plan': sample_plan,
+        })
+
+    diag = {
+        'version': SEGMENT_DIAG_VERSION,
+        'traj_specs': TRAJ_SPECS,
+        'candidate_lengths_s': SEGMENT_DIAG_CANDIDATES_S,
+        'candidate_lengths_samples': [result['segment_len'] for result in results],
+        'n_per_group': SEGMENT_DIAG_N_PER_GROUP,
+        'seed': SEGMENT_DIAG_SEED,
+        'param_set_names': param_set_names,
+        'results': results,
+        'chosen_segment_len': _choose_segment_len_from_diag(results),
+    }
+    torch.save(diag, cache_path)
+    _print_segment_diag_summary(diag)
+    print(f'  segment_len_diag: saved to {cache_path}')
+    return diag
 
 
 _EPOCH_CACHE_SIZE = 10_000
@@ -309,9 +526,18 @@ def train(
     # 2. Data
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 2a: Prepare grouped trajectory caches\n{"=" * 60}')
-    _prepare_grouped_state_caches(TRAJ_SPECS, TRAJ_DIR, _P_PHYSICS, _TS_PHYSICS, device, save_dir)
+    _load_grouped_trajectories(
+        TRAJ_SPECS, TRAJ_DIR, _P_PHYSICS, _TS_PHYSICS, device, save_dir, load_tensors=False
+    )
 
-    print(f'\n{"=" * 60}\nStep 2b: Load and segment training data\n{"=" * 60}')
+    if AUTO_SEGMENT_LEN:
+        print(f'\n{"=" * 60}\nStep 2b: Segment-length diagnostic\n{"=" * 60}')
+        diag = _get_or_run_segment_length_diagnostic(rmse_baseline, device, save_dir)
+        segment_len = int(diag['chosen_segment_len'])
+        print(f'  Using segment_len={segment_len} from cached diagnostic result')
+
+    data_step = '2c' if AUTO_SEGMENT_LEN else '2b'
+    print(f'\n{"=" * 60}\nStep {data_step}: Load and segment training data\n{"=" * 60}')
     u_train, q1_train, _ = _load_trajectory(mat_path)
     if profile:
         n_steps = 500
