@@ -113,7 +113,7 @@ if __name__ == '__main__':
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
     from lpv_lfr_baseline.core.physics import (
-        M0, M1, M2, K, C, P, build_M, build_poly_constants,
+        M1, M2, K, C, P, build_M, build_poly_constants,
         mh as _mh, m1 as _m1, m2 as _m2, mb as _mb, Jb as _Jb, Jh as _Jh,
         Lb as _Lb, d as _d,
     )
@@ -122,8 +122,9 @@ if __name__ == '__main__':
     dtype = torch.float64
 
     # Build G and polynomial constants once from true physics params
-    G_true   = build_G_matrix(M0, M1, M2, K, C)
     alpha, beta, gamma, N0, N1, N2 = build_poly_constants(_m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d)
+    d0_true = _mh * (alpha * gamma - beta ** 2)
+    G_true  = build_G_matrix(N0, d0_true, M1, M2, K, C)
 
     # Fixed test inputs
     x_test    = torch.tensor([0.05, 0.01, 0.30, 0.02, -0.01, 0.05], dtype=dtype)

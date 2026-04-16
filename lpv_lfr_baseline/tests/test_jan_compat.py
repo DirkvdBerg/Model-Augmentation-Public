@@ -100,16 +100,17 @@ from lpv_lfr_baseline.core.lfr_forward import lfr_forward
 from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
 from lpv_lfr_baseline.core.lfr_simulate import rk4_step
 from lpv_lfr_baseline.core.physics import (
-    M0, M1, M2, K, C, P, ts, build_poly_constants,
+    M1, M2, K, C, P, ts, build_poly_constants,
     mh as _mh, m1 as _m1, m2 as _m2, mb as _mb, Jb as _Jb, Jh as _Jh,
     Lb as _Lb, d as _d,
 )
 
 # Precompute G and poly constants from fixed physics params
-_G_TRUE    = build_G_matrix(M0, M1, M2, K, C)
 _alpha, _beta, _gamma, _N0, _N1, _N2 = build_poly_constants(
     _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
 )
+_d0_TRUE = _mh * (_alpha * _gamma - _beta ** 2)
+_G_TRUE  = build_G_matrix(_N0, _d0_TRUE, M1, M2, K, C)
 
 
 def build_baseline_interconnect(debugging=False):
@@ -572,20 +573,24 @@ if __name__ == '__main__':
     u_f_log   = u_f_stage @ P.T        # (1, 3)  logical coords
     Y_f       = x_f_test[:, 2]         # (1,)
 
-    M0_param  = torch.nn.Parameter(M0.clone())
-    G_param   = build_G_matrix(M0_param, M1, M2, K, C)
+    mh_param = torch.nn.Parameter(_mh.clone())
+    alpha_p, beta_p, gamma_p, N0_p, N1_p, N2_p = build_poly_constants(
+        _m1, _m2, _mb, mh_param, _Jb, _Jh, _Lb, _d
+    )
+    d0_p    = mh_param * (alpha_p * gamma_p - beta_p ** 2)
+    G_param = build_G_matrix(N0_p, d0_p, M1, M2, K, C)
     xdot_f, _, _, _ = lfr_forward(
         x_f_test, u_f_log, Y_f,
-        G_param, K, C, _mh, _alpha, _beta, _gamma, _N0, _N1, _N2,
+        G_param, K, C, mh_param, alpha_p, beta_p, gamma_p, N0_p, N1_p, N2_p,
     )
     xdot_f.sum().backward()
 
-    grad_ok = M0_param.grad is not None
-    norm_f  = M0_param.grad.norm().item() if grad_ok else 0.0
-    print(f"  M0.grad is not None (via G.Bw@w path) : {grad_ok}")
+    grad_ok = mh_param.grad is not None
+    norm_f  = mh_param.grad.norm().item() if grad_ok else 0.0
+    print(f"  mh.grad is not None (via G.Bw@w path) : {grad_ok}")
     if grad_ok:
-        print(f"  M0.grad norm = {norm_f:.6e}")
-    print(f"  (Gradient path: xdot = Ax@x + Bw@w + Bu@u  ->  G(M0)  ->  M0)")
+        print(f"  mh.grad norm = {norm_f:.6e}")
+    print(f"  (Gradient path: xdot = Ax@x + Bw@w + Bu@u  ->  G(mh)  ->  mh)")
     status = grad_ok
     results['Check F (trainable param grad)'] = status
     print(f"\nCheck F: {'PASS' if status else 'FAIL'}")

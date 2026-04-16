@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import torch
 
 from lpv_lfr_baseline.core.physics import (
-    M0, M1, M2, K, C, P, build_poly_constants,
+    M1, M2, K, C, P, build_poly_constants,
     mh as _mh, m1 as _m1, m2 as _m2, mb as _mb, Jb as _Jb, Jh as _Jh,
     Lb as _Lb, d as _d,
 )
@@ -37,10 +37,11 @@ u_logical = u_stage @ P.T                                                       
 Y_val     = x_test[:, 2]                                                          # (1,)  from state
 
 # G and polynomial constants from fixed physics params
-_G   = build_G_matrix(M0, M1, M2, K, C)
 _alpha, _beta, _gamma, _N0, _N1, _N2 = build_poly_constants(
     _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
 )
+_d0 = _mh * (_alpha * _gamma - _beta ** 2)
+_G  = build_G_matrix(_N0, _d0, M1, M2, K, C)
 
 
 if __name__ == '__main__':

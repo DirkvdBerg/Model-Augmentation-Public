@@ -50,7 +50,7 @@ import torch
 from torch import Tensor
 
 from lpv_lfr_baseline.core.physics import (
-    M0, M1, M2, K, C, P, ts,
+    M1, M2, K, C, P, ts,
     mh as _mh, m1 as _m1, m2 as _m2, mb as _mb, Jb as _Jb, Jh as _Jh,
     Lb as _Lb, d as _d,
     build_poly_constants,
@@ -83,12 +83,14 @@ class LFRBaselineBlock(_BASE):
             self.nz = 9
             self.nw = 18
 
-        # Build G and polynomial constants from fixed physics params.
+        # Build polynomial constants and G from fixed physics params.
         # Store as individual buffers so .to(device) / .cuda() moves them.
-        G   = build_G_matrix(M0, M1, M2, K, C)
+        # G uses N0/d0 = adj(M0)/det(M0) — no linalg.solve.
         alpha, beta, gamma, N0, N1, N2 = build_poly_constants(
             _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
         )
+        d0  = _mh * (alpha * gamma - beta ** 2)
+        G   = build_G_matrix(N0, d0, M1, M2, K, C)
 
         # G submatrices
         self.register_buffer('_G_Ax',  G.Ax)
@@ -196,17 +198,18 @@ if __name__ == '__main__':
     print("=" * 60)
 
     from lpv_lfr_baseline.core.physics import (
-        M0, M1, M2, K, C, P, ts, build_poly_constants,
+        M1, M2, K, C, P, ts, build_poly_constants,
         mh as _mh, m1 as _m1, m2 as _m2, mb as _mb,
         Jb as _Jb, Jh as _Jh, Lb as _Lb, d as _d,
     )
     from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
     from lpv_lfr_baseline.core.lfr_simulate import rk4_step as rk4_ref
 
-    G_ref = build_G_matrix(M0, M1, M2, K, C)
     alpha_r, beta_r, gamma_r, N0_r, N1_r, N2_r = build_poly_constants(
         _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
     )
+    d0_r  = _mh * (alpha_r * gamma_r - beta_r ** 2)
+    G_ref = build_G_matrix(N0_r, d0_r, M1, M2, K, C)
 
     x_f64        = x_test.double()
     u_stage_f64  = u_test.double()

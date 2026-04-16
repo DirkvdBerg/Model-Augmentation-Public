@@ -39,19 +39,25 @@ Where:
 
 Provides:
     GMatrix dataclass holding all entries as plain torch tensors (not nn.Parameter).
-    build_G_matrix(M0, M1, M2, K, C) -> GMatrix
+    build_G_matrix(N0, d0, M1, M2, K, C) -> GMatrix
 
 Note on build_G_matrix signature:
-    M0, M1, M2, K, C are passed explicitly (not read from physics.py inside this
-    function). This allows build_G_matrix to be called inside a forward() pass if
-    physical parameters ever become trainable — no signature change needed.
+    N0 (adj(M0)) and d0 (det(M0)) are passed explicitly rather than M0 itself.
+    This keeps the construction purely polynomial — M0^{-1} = N0/d0 — with no
+    numerical matrix solve. N0 and d0 come from build_poly_constants() evaluated
+    at Y=0. M1, M2, K, C are still passed explicitly so the function can be called
+    inside forward() when physical parameters are trainable (nn.Parameter).
 """
 
 from dataclasses import dataclass
 
 import torch
 
-from lpv_lfr_baseline.core.physics import M0, M1, M2, K, C
+from lpv_lfr_baseline.core.physics import (
+    M1, M2, K, C, build_poly_constants,
+    mh as _mh, m1 as _m1, m2 as _m2, mb as _mb,
+    Jb as _Jb, Jh as _Jh, Lb as _Lb, d as _d,
+)
 
 
 @dataclass
@@ -81,34 +87,42 @@ class GMatrix:
 
 
 def build_G_matrix(
-    M0: torch.Tensor,
+    N0: torch.Tensor,
+    d0: torch.Tensor,
     M1: torch.Tensor,
     M2: torch.Tensor,
     K:  torch.Tensor,
     C:  torch.Tensor,
 ) -> GMatrix:
     """
-    Build the constant G matrix from M0, M1, M2, K, C.
+    Build the constant G matrix analytically from polynomial constants.
 
     Parameters
     ----------
-    M0, M1, M2 : (3, 3) torch.float64 — mass matrix decomposition
-    K, C       : (3, 3) torch.float64 — stiffness and damping matrices
+    N0      : (3, 3) — adjugate of M0, i.e. adj(M(Y=0)). From build_poly_constants().
+    d0      : ()     — det(M0) = mh*(alpha*gamma - beta^2). From build_poly_constants().
+    M1, M2  : (3, 3) — mass matrix Y-linear and Y-quadratic coefficients
+    K, C    : (3, 3) — stiffness and damping matrices
 
     Returns
     -------
-    GMatrix with all entries as (plain) torch.float64 tensors.
-    """
-    dtype = torch.float64
-    eye3  = torch.eye(3, dtype=dtype)
-    z33   = torch.zeros(3, 3, dtype=dtype)
+    GMatrix with all entries as plain tensors on the same device/dtype as N0.
 
-    # M0^{-1} and products — use solve, not inv
-    M0inv   = torch.linalg.solve(M0, eye3)       # (3,3)  M0^{-1}
-    M0invK  = torch.linalg.solve(M0, K)          # (3,3)  M0^{-1} K
-    M0invC  = torch.linalg.solve(M0, C)          # (3,3)  M0^{-1} C
-    M0invM1 = torch.linalg.solve(M0, M1)         # (3,3)  M0^{-1} M1
-    M0invM2 = torch.linalg.solve(M0, M2)         # (3,3)  M0^{-1} M2
+    Note: M0^{-1} = N0/d0 analytically (Cramer's rule). No linalg.solve is used,
+    so this function is safe to call inside forward() with trainable parameters
+    and on any device without hardcoded CPU tensors.
+    """
+    dtype  = N0.dtype
+    device = N0.device
+    eye3   = torch.eye(3, dtype=dtype, device=device)
+    z33    = torch.zeros(3, 3, dtype=dtype, device=device)
+
+    # M0^{-1} = adj(M0) / det(M0) = N0 / d0  -- purely polynomial, no solve
+    M0inv   = N0 / d0            # (3,3)  M0^{-1}
+    M0invK  = M0inv @ K          # (3,3)  M0^{-1} K
+    M0invC  = M0inv @ C          # (3,3)  M0^{-1} C
+    M0invM1 = M0inv @ M1         # (3,3)  M0^{-1} M1
+    M0invM2 = M0inv @ M2         # (3,3)  M0^{-1} M2
 
     # ------------------------------------------------------------------
     # Ax = [  0,       I3    ]  (6x6)
@@ -166,10 +180,14 @@ def build_G_matrix(
     return GMatrix(Ax=Ax, Bw=Bw, Bu=Bu, Cz=Cz, Dzw=Dzw, Dzu=Dzu, Cy=Cy)
 
 
-# Module-level singleton — precomputed from the fixed physical parameters.
-# If physical parameters become trainable in future, call build_G_matrix()
-# inside forward() instead of using this singleton.
-G = build_G_matrix(M0, M1, M2, K, C)
+# Module-level singleton — precomputed from fixed physical parameters.
+# Uses polynomial path: N0/d0 = adj(M0)/det(M0), no linalg.solve.
+# If physical parameters become trainable, call build_G_matrix() inside forward().
+_alpha_s, _beta_s, _gamma_s, _N0_s, _N1_s, _N2_s = build_poly_constants(
+    _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
+)
+_d0_s = _mh * (_alpha_s * _gamma_s - _beta_s ** 2)
+G = build_G_matrix(_N0_s, _d0_s, M1, M2, K, C)
 
 
 # ----------------------------------------------------------------------
@@ -193,9 +211,9 @@ if __name__ == '__main__':
     M0invM1 = torch.linalg.solve(M0, M1)
     M0invM2 = torch.linalg.solve(M0, M2)
 
-    def check(name, actual, expected):
+    def check(name, actual, expected, tol=1e-12):
         err = (actual - expected).abs().max().item()
-        status = 'PASS' if err == 0.0 else 'FAIL'
+        status = 'PASS' if err < tol else 'FAIL'
         print(f"  {name:30s}  max|error| = {err:.2e}   {status}")
         return status == 'PASS'
 

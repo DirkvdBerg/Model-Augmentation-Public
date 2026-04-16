@@ -12,7 +12,7 @@ import torch
 from scipy.io import loadmat
 
 from lpv_lfr_baseline.core.physics import (
-    M0, M1, M2, K, C, P, ts, build_poly_constants,
+    M1, M2, K, C, P, ts, build_poly_constants,
     mh as _mh, m1 as _m1, m2 as _m2, mb as _mb, Jb as _Jb, Jh as _Jh,
     Lb as _Lb, d as _d,
 )
@@ -28,16 +28,18 @@ x0_f32 = torch.tensor([[0.0, 0.0, 0.3, 0.0, 0.0, 0.0]], dtype=torch.float32)
 
 # x0_f32 = x0_f64.float()
 
-G_f64    = build_G_matrix(M0, M1, M2, K, C)
 alpha_f64, beta_f64, gamma_f64, N0_f64, N1_f64, N2_f64 = build_poly_constants(
     _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
 )
+d0_f64 = _mh * (alpha_f64 * gamma_f64 - beta_f64 ** 2)
+G_f64  = build_G_matrix(N0_f64, d0_f64, M1, M2, K, C)
 
-G_f32    = build_G_matrix(M0.float(), M1.float(), M2.float(), K.float(), C.float())
 alpha_f32, beta_f32, gamma_f32, N0_f32, N1_f32, N2_f32 = build_poly_constants(
     _m1.float(), _m2.float(), _mb.float(), _mh.float(),
     _Jb.float(), _Jh.float(), _Lb.float(), _d.float(),
 )
+d0_f32 = _mh.float() * (alpha_f32 * gamma_f32 - beta_f32 ** 2)
+G_f32  = build_G_matrix(N0_f32, d0_f32, M1.float(), M2.float(), K.float(), C.float())
 
 print("Running float64 simulation...")
 with torch.no_grad():

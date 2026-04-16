@@ -48,7 +48,7 @@ MAT_PATH     = os.path.join(os.path.dirname(__file__), '..', '..', 'Matlab-outpu
 SAVE_DIR     = os.path.join(os.path.dirname(__file__), '..', '..', 'models', 'gantry', 'param_recovery')
 
 N_STEPS      = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
-EPOCHS       = 1000     # training epochs
+EPOCHS       = 3     # training epochs
 LR           = 1e-3  # Adam learning rate
 SEGMENT_LEN       = 4000  # segment length - batch size = N_STEPS // SEGMENT_LEN
 PARAM_LOSS_WEIGHT = 0.0   # 0.0 = disabled (parameter recovery), 1.0 = full (augmentation)
@@ -79,14 +79,15 @@ def _run_no_grad(block, x0, u):
     with torch.no_grad():
         params = block._recover_params()
         kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = params
-        M0, M1, M2, K, C = _build_matrices(
+        _, M1, M2, K, C = _build_matrices(
             torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh]),
             block._Lb, block._d,
         )
-        G = build_G_matrix(M0, M1, M2, K, C)
         alpha, beta, gamma, N0, N1, N2 = build_poly_constants(
             m1, m2, mb, mh, Jb, Jh, block._Lb, block._d
         )
+        d0 = mh * (alpha * gamma - beta ** 2)
+        G = build_G_matrix(N0, d0, M1, M2, K, C)
         return simulate(
             x0, u, G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
             block._P, block._ts, bptt_mode='full',
@@ -172,11 +173,12 @@ class _SimWrapper(torch.nn.Module):
         params = self.block._recover_params()
         kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = params
         params_10 = torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh])
-        M0, M1, M2, K, C = _build_matrices(params_10, self.block._Lb, self.block._d)
-        G = build_G_matrix(M0, M1, M2, K, C)
+        _, M1, M2, K, C = _build_matrices(params_10, self.block._Lb, self.block._d)
         alpha, beta, gamma, N0, N1, N2 = build_poly_constants(
             m1, m2, mb, mh, Jb, Jh, self.block._Lb, self.block._d
         )
+        d0 = mh * (alpha * gamma - beta ** 2)
+        G = build_G_matrix(N0, d0, M1, M2, K, C)
         return simulate(
             x0_seg, u_seg, G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
             self.block._P, self.block._ts, bptt_mode='full',

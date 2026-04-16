@@ -325,14 +325,15 @@ class ParameterizedLFRBlock(_BASE):
         # so G and poly constants must be recomputed here to preserve gradient flow.
         params = self._recover_params()
         kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = params
-        M0, M1, M2, K, C = _build_matrices(
+        _, M1, M2, K, C = _build_matrices(
             torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh]),
             self._Lb, self._d,
         )
-        G = build_G_matrix(M0, M1, M2, K, C)
         alpha, beta, gamma, N0, N1, N2 = build_poly_constants(
             m1, m2, mb, mh, Jb, Jh, self._Lb, self._d
         )
+        d0 = mh * (alpha * gamma - beta ** 2)
+        G = build_G_matrix(N0, d0, M1, M2, K, C)
 
         x_next, z_lfr, w_lfr, _ = rk4_step(
             x, u_logical,
@@ -455,11 +456,12 @@ if __name__ == '__main__':
     dp = torch.tensor([_DETUNED_PARAMS[n] for n in _PARAM_NAMES], dtype=dtype)
     kb1d, kb2d, cg1d, cg2d, cyd, cb1d, cb2d, mhd, m1d, m2d, mbd, Jbd, Jhd = dp
     detuned_p_10 = torch.stack([kb1d+kb2d, cg1d, cg2d, cyd, cb1d+cb2d, mhd, m1d, m2d, mbd, Jbd+Jhd])
-    M0_d, M1_d, M2_d, K_d, C_d = _build_matrices(detuned_p_10, _Lb, _d)
-    G_d = build_G_matrix(M0_d, M1_d, M2_d, K_d, C_d)
+    _, M1_d, M2_d, K_d, C_d = _build_matrices(detuned_p_10, _Lb, _d)
     alpha_d, beta_d, gamma_d, N0_d, N1_d, N2_d = build_poly_constants(
         m1d, m2d, mbd, mhd, Jbd, Jhd, _Lb, _d
     )
+    d0_d = mhd * (alpha_d * gamma_d - beta_d ** 2)
+    G_d = build_G_matrix(N0_d, d0_d, M1_d, M2_d, K_d, C_d)
 
     with torch.no_grad():
         x_next_ref, _, _, _ = rk4_step(

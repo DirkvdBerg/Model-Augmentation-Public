@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from scipy.io import loadmat
 
 from lpv_lfr_baseline.core.physics import (
-    M0, M1, M2, K, C, P, ts, build_poly_constants,
+    M1, M2, K, C, P, ts, build_poly_constants,
     mh as _mh, m1 as _m1, m2 as _m2, mb as _mb, Jb as _Jb, Jh as _Jh,
     Lb as _Lb, d as _d,
 )
@@ -42,8 +42,9 @@ x0      = torch.zeros(1, 6, dtype=_DTYPE)
 x0[0, 2] = 0.3
 u_batch = u_seq_stage.unsqueeze(0)   # (1, N, 3)
 
-_G   = build_G_matrix(M0, M1, M2, K, C)
 _alpha, _beta, _gamma, _N0, _N1, _N2 = build_poly_constants(_m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d)
+_d0 = _mh * (_alpha * _gamma - _beta ** 2)
+_G  = build_G_matrix(_N0, _d0, M1, M2, K, C)
 
 with torch.no_grad():
     res_lpv    = simulate(
