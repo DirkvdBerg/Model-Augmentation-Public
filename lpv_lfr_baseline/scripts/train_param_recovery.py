@@ -53,7 +53,7 @@ TRAJ_DIR = os.path.join(
     os.path.dirname(__file__), '..', '..', 'Matlab-output', 'parameter-recovery'
 )
 SAVE_DIR = os.path.join(
-    os.path.dirname(__file__), '..', '..', 'models', 'gantry', 'param_recovery'
+    os.path.dirname(__file__), '..', '..', 'simulations', 'param_recovery'
 )
 
 TRAJ_SPECS = (
@@ -69,7 +69,7 @@ ACTIVE_TRAJ_IDS = tuple(spec['id'] for spec in TRAJ_SPECS)
 
 # ── Experiment settings ───────────────────────────────────────────────────────
 N_STEPS = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
-EPOCHS = 3
+EPOCHS = 600
 LR = 1e-3
 SEGMENT_LEN = None  # None = choose the smallest stable candidate from the segment-length diagnostic; int = use that fixed number of samples
 PARAM_LOSS_WEIGHT = 0.0
@@ -313,7 +313,7 @@ def _get_or_compute_rmse_baseline(traj_specs, device, save_dir):
             )
             metrics = compute_rmse_baseline_metrics(
                 mat_path=spec_path,
-                x0_logical=state_traj_i[:1],
+                x0_logical=state_traj_i[:1].cpu(),
                 verbose=False,
             )
             entry = {
