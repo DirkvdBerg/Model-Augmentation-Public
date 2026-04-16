@@ -20,8 +20,20 @@ from typing import Literal
 import torch
 from torch.utils.checkpoint import checkpoint as grad_checkpoint
 
-from lpv_lfr_baseline.core.lfr_forward import lfr_forward
+from lpv_lfr_baseline.core.lfr_forward import lfr_forward as _lfr_forward_raw
 from lpv_lfr_baseline.core.lfr_matrices import GMatrix
+
+# torch.compile hook — set _COMPILE_LFR_FORWARD = True to enable.
+# Requires a working C++ compiler (MSVC on Windows, GCC/clang on Linux/Mac).
+# On Windows without Visual Studio build tools, Inductor will fail at first call.
+# When enabled, fuses element-wise ops in lfr_forward and reduces kernel-launch
+# overhead across the 4× per RK4 step × N-step training loop.
+_COMPILE_LFR_FORWARD = False
+
+if _COMPILE_LFR_FORWARD:
+    _lfr_forward = torch.compile(_lfr_forward_raw, mode='reduce-overhead')
+else:
+    _lfr_forward = _lfr_forward_raw
 
 
 @dataclass
@@ -31,13 +43,13 @@ class SimResult:
 
     X  : (batch, N+1, 6)  state trajectory in logical coordinates
     Y  : (batch, N, 3)    output trajectory in stage coordinates
-    Z  : (batch, N, 6)    latent z recorded at start of each step
-    W  : (batch, N, 6)    latent w recorded at start of each step
+    Z  : (batch, N, 6)    latent z — None when return_latents=False
+    W  : (batch, N, 6)    latent w — None when return_latents=False
     """
     X: torch.Tensor
     Y: torch.Tensor
-    Z: torch.Tensor
-    W: torch.Tensor
+    Z: torch.Tensor | None
+    W: torch.Tensor | None
 
 
 def rk4_step(
@@ -66,7 +78,7 @@ def rk4_step(
         return state[:, 2] if Y_override is None else Y_override
 
     def _fwd(s):
-        return lfr_forward(s, u_logical, _Y(s), G, K, C, mh, alpha, beta, gamma, N0, N1, N2)
+        return _lfr_forward(s, u_logical, _Y(s), G, K, C, mh, alpha, beta, gamma, N0, N1, N2)
 
     k1, z, w, y = _fwd(x)
 
@@ -98,31 +110,37 @@ def simulate(
     N2:           torch.Tensor,   # (3, 3)
     P:            torch.Tensor,   # (3, 3)  stage <-> logical transform
     ts:           torch.Tensor,
-    bptt_mode:    Literal["full", "truncated", "checkpoint"] = "full",
-    segment_len:  int = 200,
+    bptt_mode:      Literal["full", "truncated", "checkpoint"] = "full",
+    segment_len:    int = 200,
+    return_latents: bool = True,
 ) -> SimResult:
     """
     Simulate N steps using RK4. Returns SimResult.
 
-    bptt_mode: "full" (exact, O(N) memory), "truncated" (detach every segment_len),
-               "checkpoint" (exact, O(sqrt(N)) memory, ~1.3x compute).
+    bptt_mode:      "full" (exact, O(N) memory), "truncated" (detach every segment_len),
+                    "checkpoint" (exact, O(sqrt(N)) memory, ~1.3x compute).
+    return_latents: if False, SimResult.Z and .W are None (skips allocation and writes).
     """
     batch = x0.shape[0]
     N = u_seq_stage.shape[1]
 
-    # Pre-transform entire input sequence: stage -> logical (once, not N times)
-    u_seq_logical = u_seq_stage @ P.T                              # (batch, N, 3)
+    # Pre-transform stage->logical, then reorder to (N, batch, 3) for contiguous time-axis reads.
+    # The .contiguous() physically rearranges memory once so every loop slice u_seq_logical[k]
+    # is a contiguous (batch, 3) view instead of a strided middle-dimension slice.
+    u_seq_logical = (u_seq_stage @ P.T).permute(1, 0, 2).contiguous()  # (N, batch, 3)
 
-    # Pre-allocate output tensors
-    X = x0.new_empty(batch, N + 1, 6)
-    Y = x0.new_empty(batch, N, 3)
-    Z = x0.new_empty(batch, N, 6)
-    W = x0.new_empty(batch, N, 6)
-    X[:, 0, :] = x0
+    # Pre-allocate in time-first layout — X_t[k], Y_t[k] writes are contiguous
+    X_t = x0.new_empty(N + 1, batch, 6)
+    Y_t = x0.new_empty(N, batch, 3)
+    Z_t = W_t = None
+    if return_latents:
+        Z_t = x0.new_empty(N, batch, 6)
+        W_t = x0.new_empty(N, batch, 6)
+    X_t[0] = x0
 
     x = x0
     for k in range(N):
-        u_logical = u_seq_logical[:, k, :]
+        u_logical = u_seq_logical[k]   # (batch, 3) — contiguous
 
         if bptt_mode == "checkpoint":
             # Capture G and poly constants in closure; only pass x and u as tensor args.
@@ -139,10 +157,11 @@ def simulate(
                 x, u_logical, G, K, C, mh, alpha, beta, gamma, N0, N1, N2, ts
             )
 
-        X[:, k + 1, :] = x_next
-        Y[:, k, :]     = y_k @ P          # logical -> stage
-        Z[:, k, :]     = z_k
-        W[:, k, :]     = w_k
+        X_t[k + 1] = x_next
+        Y_t[k]     = y_k @ P          # logical -> stage
+        if return_latents:
+            Z_t[k] = z_k
+            W_t[k] = w_k
 
         # Truncated BPTT: detach state at segment boundaries
         if bptt_mode == "truncated" and (k + 1) % segment_len == 0:
@@ -150,7 +169,12 @@ def simulate(
         else:
             x = x_next
 
-    return SimResult(X=X, Y=Y, Z=Z, W=W)
+    return SimResult(
+        X = X_t.permute(1, 0, 2),   # (batch, N+1, 6)
+        Y = Y_t.permute(1, 0, 2),   # (batch, N, 3)
+        Z = Z_t.permute(1, 0, 2) if return_latents else None,
+        W = W_t.permute(1, 0, 2) if return_latents else None,
+    )
 
 
 def simulate_frozen(
@@ -168,7 +192,8 @@ def simulate_frozen(
     N2:          torch.Tensor,   # (3, 3)
     P:           torch.Tensor,   # (3, 3)  stage <-> logical transform
     ts:          torch.Tensor,
-    Y_freeze:    float = 0.3,
+    Y_freeze:       float = 0.3,
+    return_latents: bool = True,
 ) -> SimResult:
     """
     Simulate N steps with M(Y) frozen at Y_freeze (LTI baseline for comparison).
@@ -178,27 +203,35 @@ def simulate_frozen(
     N     = u_seq_stage.shape[1]
     Y_c   = torch.full((batch,), Y_freeze, dtype=x0.dtype, device=x0.device)
 
-    u_seq_logical = u_seq_stage @ P.T                  # pre-transform once
+    u_seq_logical = (u_seq_stage @ P.T).permute(1, 0, 2).contiguous()  # (N, batch, 3)
 
-    X = x0.new_empty(batch, N + 1, 6)
-    Y = x0.new_empty(batch, N, 3)
-    Z = x0.new_empty(batch, N, 6)
-    W = x0.new_empty(batch, N, 6)
-    X[:, 0, :] = x0
+    X_t = x0.new_empty(N + 1, batch, 6)
+    Y_t = x0.new_empty(N, batch, 3)
+    Z_t = W_t = None
+    if return_latents:
+        Z_t = x0.new_empty(N, batch, 6)
+        W_t = x0.new_empty(N, batch, 6)
+    X_t[0] = x0
 
     x = x0
     for k in range(N):
         x_next, z_k, w_k, y_k = rk4_step(
-            x, u_seq_logical[:, k, :], G, K, C, mh, alpha, beta, gamma, N0, N1, N2, ts,
+            x, u_seq_logical[k], G, K, C, mh, alpha, beta, gamma, N0, N1, N2, ts,
             Y_override=Y_c,
         )
-        X[:, k + 1, :] = x_next
-        Y[:, k, :]     = y_k @ P
-        Z[:, k, :]     = z_k
-        W[:, k, :]     = w_k
+        X_t[k + 1] = x_next
+        Y_t[k]     = y_k @ P
+        if return_latents:
+            Z_t[k] = z_k
+            W_t[k] = w_k
         x = x_next
 
-    return SimResult(X=X, Y=Y, Z=Z, W=W)
+    return SimResult(
+        X = X_t.permute(1, 0, 2),
+        Y = Y_t.permute(1, 0, 2),
+        Z = Z_t.permute(1, 0, 2) if return_latents else None,
+        W = W_t.permute(1, 0, 2) if return_latents else None,
+    )
 
 
 # ----------------------------------------------------------------------

@@ -5,7 +5,7 @@ Genuine LFR-first forward pass for the dual-gantry LPV-LFR baseline.
 
 Signal flow (mandatory ordering — see LPV-LFR-Implementation-Spec.md):
   Step 1  Delta(Y) = Y * I6              -- explicit scheduling block
-  Step 2  rhs = Cz @ x + Dzu @ u        -- loop RHS  (= [M0inv f_net; 0])
+  Step 2  fnet = -K q - C qdot + u      -- net force (loop RHS absorbed analytically)
   Step 3  z = L(Y)^{-1} rhs             -- analytical loop solution via N(Y)/d(Y)
   Step 4  w = Delta(Y) @ z = Y * z      -- scheduling block output
   Step 5  xdot = Ax@x + Bw@w + Bu@u    -- state update THROUGH G (not directly from a)
@@ -58,13 +58,11 @@ def lfr_forward(
     # ------------------------------------------------------------------
 
     # ------------------------------------------------------------------
-    # Step 2 — RHS of loop equation:  rhs = C_z x + D_zu u
-    # Analytically: rhs = [M0inv f_net; 0] where f_net = -K q - C qdot + u
+    # Step 2 — Net force:  fnet = -K q - C qdot + u
+    # The loop solve (Step 3) uses fnet directly via N(Y)/d(Y), which
+    # analytically absorbs M0^{-1} — no explicit rhs = Cz@x + Dzu@u needed.
     # ------------------------------------------------------------------
     fnet = -(x[:, :3] @ K.T) - (x[:, 3:] @ C.T) + u        # (batch, 3)
-    # rhs is conceptually [M0inv @ fnet; 0] — used in the loop solve below
-    # via the analytical rational form N(Y)/d(Y) which absorbs M0^{-1}
-    rhs = (x @ G.Cz.T) + (u @ G.Dzu.T)                     # (batch, 6)  [LFR signal]
 
     # ------------------------------------------------------------------
     # Step 3 — Solve loop analytically:  z = L(Y)^{-1} rhs
@@ -76,9 +74,11 @@ def lfr_forward(
     dY  = mh * (alpha * gamma - beta ** 2
                 + 2 * beta * mh * Y
                 + mh * (alpha - mh) * Y ** 2)               # (batch,)
-    Ye  = Y[:, None, None]                                   # (batch, 1, 1) for broadcasting
-    N_Y = N0 + Ye * N1 + Ye ** 2 * N2                       # (batch, 3, 3)
-    a   = (N_Y @ fnet.unsqueeze(-1)).squeeze(-1) / dY[:, None]  # (batch, 3)
+    Y_r = Y.unsqueeze(0)                                     # (1, batch)  row broadcast
+    n0f = N0 @ fnet.T                                        # (3, batch)  grad → N0 → params
+    n1f = N1 @ fnet.T                                        # (3, batch)  grad → N1 → params
+    n2f = N2 @ fnet.T                                        # (3, batch)  grad → N2 → params
+    a   = (n0f + Y_r * (n1f + Y_r * n2f)).T / dY[:, None]  # (batch, 3)  Horner form
     z   = torch.cat([a, Y[:, None] * a], dim=-1)             # (batch, 6)  z = [a; Y*a]
 
     # ------------------------------------------------------------------
@@ -97,9 +97,6 @@ def lfr_forward(
     # Step 6 — y = Cy @ x   (logical positions)
     # ------------------------------------------------------------------
     y = x @ G.Cy.T                                           # (batch, 3)
-
-    # Suppress unused warning — rhs is a structural LFR signal, intentionally computed
-    _ = rhs
 
     return xdot, z, w, y
 

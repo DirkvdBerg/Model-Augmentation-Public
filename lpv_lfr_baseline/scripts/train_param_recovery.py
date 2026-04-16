@@ -90,7 +90,7 @@ def _run_no_grad(block, x0, u):
         G = build_G_matrix(N0, d0, M1, M2, K, C)
         return simulate(
             x0, u, G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
-            block._P, block._ts, bptt_mode='full',
+            block._P, block._ts, bptt_mode='full', return_latents=False,
         )
 
 
@@ -181,7 +181,9 @@ class _SimWrapper(torch.nn.Module):
         G = build_G_matrix(N0, d0, M1, M2, K, C)
         return simulate(
             x0_seg, u_seg, G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
-            self.block._P, self.block._ts, bptt_mode='full',
+            self.block._P, self.block._ts,
+            bptt_mode='full',
+            return_latents=False,
         ).Y
 
 
