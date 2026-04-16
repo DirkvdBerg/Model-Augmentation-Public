@@ -5,22 +5,19 @@ Step 3b: recover true physical parameters from MATLAB data using batched multipl
 shooting.
 
 Approach:
-    x0 is known exactly ([0, 0, 0.3, 0, 0, 0] logical), so no encoder is needed.
     Full state trajectories (positions + finite-difference velocities) are cached
     once per source trajectory in logical coordinates.
-    At startup, grouped parameter-recovery trajectories are load-or-build cached so
-    later multi-trajectory work does not recompute them.
-    Each epoch: n_seg segments sampled via stratified random indexing (one per
-    stratum), guaranteeing full trajectory coverage every epoch. Segment start states
-    come from cached state_traj; u_seg and q1_seg use vectorized advanced indexing.
-    Loss: MSE(Y_pred, q1_train) + block.param_loss()
+    At startup, active parameter-recovery trajectories are load-or-build cached.
+    Each epoch samples a balanced segment batch across the active trajectory groups.
+    Segment start states come from cached state_traj; u_seg and q1_seg are sliced
+    directly from the selected trajectories.
+    Loss: MSE(Y_pred, q1_seg) + block.param_loss()
     Optimizer: Adam on block.log_params only.
 
-Current training data: Matlab-output/lpv_sim_varying_y.mat
-    True-parameter trajectory (ground truth, D-033).
-    u_q1 (N, 3) stage forces [N], q1 (N, 3) stage positions [m], fs = 20 kHz.
-
-Grouped cache preparation data: Matlab-output/parameter-recovery/*.mat
+Training data: Matlab-output/parameter-recovery/*.mat
+    Active trajectories are selected from T1-T6 below. Using one active trajectory
+    is effectively single-trajectory training; using several is multi-trajectory
+    training. The code path is the same in both cases.
 
 Run as:
     conda run -n GraduationProject python -m lpv_lfr_baseline.train_param_recovery
@@ -52,9 +49,6 @@ from lpv_lfr_baseline.scripts.data_utils import compute_rmse_baseline_metrics
 # ----------------------------------------------------------------------
 # Configuration
 # ----------------------------------------------------------------------
-MAT_PATH = os.path.join(
-    os.path.dirname(__file__), '..', '..', 'Matlab-output', 'lpv_sim_varying_y.mat'
-)
 TRAJ_DIR = os.path.join(
     os.path.dirname(__file__), '..', '..', 'Matlab-output', 'parameter-recovery'
 )
@@ -71,6 +65,7 @@ TRAJ_SPECS = (
     {'id': 'T5', 'group': 'rot_coupled', 'file': 'T5_X_sym_Y_sweep.mat'},
 )
 TRAJ_GROUPS = ('y_only', 'x_sym_mh', 'rot_coupled')
+ACTIVE_TRAJ_IDS = tuple(spec['id'] for spec in TRAJ_SPECS)
 
 N_STEPS = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
 EPOCHS = 3
@@ -81,13 +76,14 @@ LOG_INTERVAL = 25
 CHECKPOINT_INTERVAL = 100
 PROFILE = False
 TIME_EPOCHS = False
-USE_MULTI_TRAJ_BASELINE = False
 AUTO_SEGMENT_LEN = False
 SEGMENT_DIAG_CANDIDATES_S = (0.1, 0.2, 0.4, 0.6)
 SEGMENT_DIAG_N_PER_GROUP = 8
 SEGMENT_DIAG_SEED = 1234
 SEGMENT_DIAG_VERSION = 1
 RMSE_BASELINE_CACHE_VERSION = 1
+TRAIN_SEGMENTS = 8
+VAL_SEGMENTS = 8
 
 
 # ----------------------------------------------------------------------
@@ -101,6 +97,45 @@ def _load_trajectory(mat_path):
     q1 = torch.tensor(mat['q1'], dtype=torch.float64)  # (N, 3)
     fs = float(mat['fs'].squeeze()) if 'fs' in mat else None
     return u, q1, fs
+
+
+def _active_traj_specs():
+    """Return the active trajectory specs in library order."""
+    active_ids = set(ACTIVE_TRAJ_IDS)
+    specs = tuple(spec for spec in TRAJ_SPECS if spec['id'] in active_ids)
+    missing = active_ids.difference(spec['id'] for spec in specs)
+    if missing:
+        raise ValueError(f'Unknown ACTIVE_TRAJ_IDS: {sorted(missing)}')
+    if not specs:
+        raise ValueError('ACTIVE_TRAJ_IDS must contain at least one trajectory id')
+    return specs
+
+
+def _active_groups_from_specs(traj_specs):
+    """Return active groups in the canonical group order."""
+    return tuple(group for group in TRAJ_GROUPS if any(spec['group'] == group for spec in traj_specs))
+
+
+def _active_groups_from_trajs(trajs):
+    """Return active groups for already loaded trajectories."""
+    groups = {traj['group'] for traj in trajs}
+    return tuple(group for group in TRAJ_GROUPS if group in groups)
+
+
+def _traj_set_tag(traj_specs):
+    """Stable tag for cache/save files derived from the active trajectory ids."""
+    return '-'.join(spec['id'] for spec in traj_specs)
+
+
+def _balanced_group_counts(total_segments, active_groups):
+    """Distribute a total segment budget as evenly as possible across groups."""
+    n_groups = len(active_groups)
+    base = total_segments // n_groups
+    rem = total_segments % n_groups
+    return {
+        group: base + (1 if i < rem else 0)
+        for i, group in enumerate(active_groups)
+    }
 
 
 def _run_no_grad(block, x0, u):
@@ -178,16 +213,20 @@ def _load_or_build_state_traj(traj_id, q1_stage, P, ts, device, save_dir, load=T
     return traj.to(device) if load else None
 
 
-def _load_grouped_trajectories(traj_specs, traj_dir, P, ts, device, save_dir, load_tensors):
+def _load_grouped_trajectories(traj_specs, traj_dir, P, ts, device, save_dir, load_tensors, n_steps=None):
     """Load grouped trajectories and ensure per-trajectory state caches exist."""
     trajs = []
-    grouped = {group: [] for group in TRAJ_GROUPS}
+    grouped = {group: [] for group in _active_groups_from_specs(traj_specs)}
     for spec in traj_specs:
         mat_path = os.path.join(traj_dir, spec['file'])
         u_i, q1_i, fs_i = _load_trajectory(mat_path)
         state_traj_i = _load_or_build_state_traj(
             spec['id'], q1_i, P, ts, device, save_dir, load=load_tensors
         )
+        if load_tensors and n_steps is not None:
+            u_i = u_i[:, :n_steps, :]
+            q1_i = q1_i[:n_steps]
+            state_traj_i = state_traj_i[:n_steps]
         label = f"{spec['id']} ({q1_i.shape[0] / fs_i:.2f}s)" if fs_i else spec['id']
         grouped[spec['group']].append(label)
         traj = {
@@ -213,28 +252,6 @@ def _rmse_baseline_cache_path(save_dir):
     return os.path.join(save_dir, f'rmse_baseline_cache_v{RMSE_BASELINE_CACHE_VERSION}.pt')
 
 
-def _baseline_specs_for_run(mat_path, use_multi_traj_baseline):
-    """Select which trajectories contribute to RMSE_baseline for this run."""
-    if use_multi_traj_baseline:
-        return tuple(
-            {
-                'id': spec['id'],
-                'group': spec['group'],
-                'file': spec['file'],
-                'path': os.path.join(TRAJ_DIR, spec['file']),
-            }
-            for spec in TRAJ_SPECS
-        )
-
-    file_name = os.path.basename(mat_path)
-    return ({
-        'id': os.path.splitext(file_name)[0],
-        'group': 'single',
-        'file': file_name,
-        'path': mat_path,
-    },)
-
-
 def _load_rmse_baseline_cache(save_dir):
     """Load the RMSE_baseline cache or create an empty one."""
     cache_path = _rmse_baseline_cache_path(save_dir)
@@ -245,8 +262,8 @@ def _load_rmse_baseline_cache(save_dir):
     return {'version': RMSE_BASELINE_CACHE_VERSION, 'per_traj': {}}
 
 
-def _aggregate_rmse_baseline(selected_entries):
-    """Aggregate cached per-trajectory baseline results into one scalar."""
+def _aggregate_grouped_rmse(selected_entries):
+    """Aggregate per-trajectory MSE values into one group-balanced RMSE scalar."""
     if len(selected_entries) == 1:
         return float(selected_entries[0]['rmse_total'])
 
@@ -277,22 +294,22 @@ def _print_rmse_baseline_summary(selected_entries, overall_rmse):
     print(f'  Overall RMSE_baseline = {overall_rmse:.6e} m  ({overall_rmse * 1e3:.4f} mm)')
 
 
-def _get_or_compute_rmse_baseline(mat_path, use_multi_traj_baseline, device, save_dir):
+def _get_or_compute_rmse_baseline(traj_specs, device, save_dir):
     """Load cached per-trajectory RMSE_baseline metrics and derive the run scalar."""
-    specs = _baseline_specs_for_run(mat_path, use_multi_traj_baseline)
     cache = _load_rmse_baseline_cache(save_dir)
     updated = False
     selected_entries = []
 
-    for spec in specs:
+    for spec in traj_specs:
+        spec_path = os.path.join(TRAJ_DIR, spec['file'])
         entry = cache['per_traj'].get(spec['id'])
         if entry is None or entry.get('file') != spec['file'] or entry.get('group') != spec['group']:
-            _, q1_i, _ = _load_trajectory(spec['path'])
+            _, q1_i, _ = _load_trajectory(spec_path)
             state_traj_i = _load_or_build_state_traj(
                 spec['id'], q1_i, _P_PHYSICS, _TS_PHYSICS, device, save_dir, load=True
             )
             metrics = compute_rmse_baseline_metrics(
-                mat_path=spec['path'],
+                mat_path=spec_path,
                 x0_logical=state_traj_i[:1],
                 verbose=False,
             )
@@ -312,7 +329,7 @@ def _get_or_compute_rmse_baseline(mat_path, use_multi_traj_baseline, device, sav
     else:
         print('  RMSE_baseline cache: loaded')
 
-    overall_rmse = _aggregate_rmse_baseline(selected_entries)
+    overall_rmse = _aggregate_grouped_rmse(selected_entries)
     _print_rmse_baseline_summary(selected_entries, overall_rmse)
     return overall_rmse
 
@@ -324,8 +341,8 @@ def _attach_valid_start_idx(trajs, segment_len):
         traj['valid_start_idx'] = torch.arange(n_valid, dtype=torch.int64)
 
 
-def _sample_balanced_segments(trajs, segment_len, n_per_group, seed):
-    """Sample the same number of segments from each trajectory group."""
+def _sample_balanced_segments(trajs, segment_len, group_counts, seed):
+    """Sample balanced segments according to the provided per-group counts."""
     generator = torch.Generator(device='cpu')
     generator.manual_seed(seed)
 
@@ -334,7 +351,9 @@ def _sample_balanced_segments(trajs, segment_len, n_per_group, seed):
     q1_seg_list = []
     sample_plan = []
 
-    for group in TRAJ_GROUPS:
+    for group, n_per_group in group_counts.items():
+        if n_per_group <= 0:
+            continue
         group_trajs = [traj for traj in trajs if traj['group'] == group and traj['valid_start_idx'].numel() > 0]
         if not group_trajs:
             raise ValueError(f'No valid trajectories for group {group!r} at segment_len={segment_len}')
@@ -396,16 +415,16 @@ def _eval_param_set_on_segments(block, wrapper, params_vec, x0_seg, u_seg, q1_se
     return (y_pred - q1_seg).pow(2).mean(dim=(1, 2)).cpu()
 
 
-def _segment_diag_cache_path(save_dir):
+def _segment_diag_cache_path(save_dir, traj_specs):
     """Cache path for the segment-length diagnostic result."""
-    return os.path.join(save_dir, f'segment_len_diag_v{SEGMENT_DIAG_VERSION}.pt')
+    return os.path.join(save_dir, f'segment_len_diag_{_traj_set_tag(traj_specs)}_v{SEGMENT_DIAG_VERSION}.pt')
 
 
-def _segment_diag_cache_matches(cached, param_set_names):
+def _segment_diag_cache_matches(cached, traj_specs, param_set_names):
     """Return True when the cached diagnostic matches the current config."""
     return (
         cached.get('version') == SEGMENT_DIAG_VERSION
-        and tuple(cached.get('traj_specs', ())) == TRAJ_SPECS
+        and tuple(cached.get('traj_specs', ())) == tuple(traj_specs)
         and tuple(cached.get('candidate_lengths_s', ())) == SEGMENT_DIAG_CANDIDATES_S
         and cached.get('n_per_group') == SEGMENT_DIAG_N_PER_GROUP
         and cached.get('seed') == SEGMENT_DIAG_SEED
@@ -439,21 +458,22 @@ def _print_segment_diag_summary(diag):
     print(f"  chosen_segment_len: {diag['chosen_segment_len']} samples")
 
 
-def _get_or_run_segment_length_diagnostic(rmse_baseline, device, save_dir):
+def _get_or_run_segment_length_diagnostic(traj_specs, rmse_baseline, device, save_dir):
     """Load cached segment-length diagnostic or run it once and save the result."""
     param_sets = _build_segment_diag_param_sets()
     param_set_names = [item['name'] for item in param_sets]
-    cache_path = _segment_diag_cache_path(save_dir)
+    active_groups = _active_groups_from_specs(traj_specs)
+    cache_path = _segment_diag_cache_path(save_dir, traj_specs)
     if os.path.exists(cache_path):
         cached = torch.load(cache_path, map_location='cpu')
-        if _segment_diag_cache_matches(cached, param_set_names):
+        if _segment_diag_cache_matches(cached, traj_specs, param_set_names):
             print('  segment_len_diag: loaded from cache')
             _print_segment_diag_summary(cached)
             return cached
 
     print('  segment_len_diag: computing')
     trajs = _load_grouped_trajectories(
-        TRAJ_SPECS, TRAJ_DIR, _P_PHYSICS, _TS_PHYSICS, device, save_dir, load_tensors=True
+        traj_specs, TRAJ_DIR, _P_PHYSICS, _TS_PHYSICS, device, save_dir, load_tensors=True
     )
     diag_block = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline).to(device)
     diag_wrapper = _SimWrapper(diag_block)
@@ -462,8 +482,9 @@ def _get_or_run_segment_length_diagnostic(rmse_baseline, device, save_dir):
     for candidate_s in SEGMENT_DIAG_CANDIDATES_S:
         segment_len = int(round(candidate_s / float(_TS_PHYSICS)))
         _attach_valid_start_idx(trajs, segment_len)
+        group_counts = {group: SEGMENT_DIAG_N_PER_GROUP for group in active_groups}
         x0_seg, u_seg, q1_seg, sample_plan = _sample_balanced_segments(
-            trajs, segment_len, SEGMENT_DIAG_N_PER_GROUP, SEGMENT_DIAG_SEED + segment_len
+            trajs, segment_len, group_counts, SEGMENT_DIAG_SEED + segment_len
         )
 
         losses = {
@@ -478,7 +499,7 @@ def _get_or_run_segment_length_diagnostic(rmse_baseline, device, save_dir):
         margin = detuned_losses.min(dim=1).values - losses['true']
 
         group_true_best_rate = {}
-        for group in TRAJ_GROUPS:
+        for group in active_groups:
             mask = torch.tensor([item['group'] == group for item in sample_plan], dtype=torch.bool)
             group_true_best_rate[group] = float(true_is_best[mask].double().mean().item())
 
@@ -497,7 +518,7 @@ def _get_or_run_segment_length_diagnostic(rmse_baseline, device, save_dir):
 
     diag = {
         'version': SEGMENT_DIAG_VERSION,
-        'traj_specs': TRAJ_SPECS,
+        'traj_specs': tuple(traj_specs),
         'candidate_lengths_s': SEGMENT_DIAG_CANDIDATES_S,
         'candidate_lengths_samples': [result['segment_len'] for result in results],
         'n_per_group': SEGMENT_DIAG_N_PER_GROUP,
@@ -510,35 +531,6 @@ def _get_or_run_segment_length_diagnostic(rmse_baseline, device, save_dir):
     _print_segment_diag_summary(diag)
     print(f'  segment_len_diag: saved to {cache_path}')
     return diag
-
-
-_EPOCH_CACHE_SIZE = 10_000
-
-
-def _get_epoch_indices(N_steps, n_seg, segment_len, epochs, device, save_dir):
-    """
-    Stratified random segment start indices for all training epochs.
-
-    Trajectory [0, N_steps - segment_len] is split into n_seg equal strata;
-    one random start is sampled per stratum per epoch.
-    """
-    tag = f'n{N_steps}_sl{segment_len}_nb{n_seg}'
-    cache_path = os.path.join(save_dir, f'epoch_idx_{tag}.pt')
-    if os.path.exists(cache_path):
-        cached = torch.load(cache_path, map_location='cpu')
-        if cached.shape[0] >= epochs:
-            print(f'  epoch_idx: loaded from cache  ({tag})')
-            return cached.to(device)
-
-    n_gen = max(_EPOCH_CACHE_SIZE, epochs)
-    stratum = (N_steps - segment_len) // n_seg
-    base = torch.arange(n_seg).unsqueeze(0) * stratum
-    offsets = torch.randint(0, stratum, (n_gen, n_seg))
-    idx = (base + offsets).to(torch.int64)
-    torch.save(idx.cpu(), cache_path)
-    print(f'  epoch_idx: computed and cached  ({tag}, {n_gen} epochs)')
-    return idx.to(device)
-
 
 def _save_profile(prof, save_dir):
     """Print profiler table to console and save to profile_out.txt."""
@@ -607,7 +599,6 @@ def train(
     n_steps=N_STEPS,
     log_interval=LOG_INTERVAL,
     checkpoint_interval=CHECKPOINT_INTERVAL,
-    mat_path=MAT_PATH,
     save_dir=SAVE_DIR,
     profile=PROFILE,
     time_epochs=TIME_EPOCHS,
@@ -615,6 +606,8 @@ def train(
 ):
     """Run parameter recovery training. Returns trained ParameterizedLFRBlock."""
     os.makedirs(save_dir, exist_ok=True)
+    traj_specs = _active_traj_specs()
+    traj_tag = _traj_set_tag(traj_specs)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
@@ -626,40 +619,42 @@ def train(
     # 1. RMSE_baseline (D-034)
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 1: RMSE_baseline\n{"=" * 60}')
-    rmse_baseline = _get_or_compute_rmse_baseline(
-        mat_path, USE_MULTI_TRAJ_BASELINE, device, save_dir
-    )
+    rmse_baseline = _get_or_compute_rmse_baseline(traj_specs, device, save_dir)
 
     # ------------------------------------------------------------------
     # 2. Data
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 2a: Prepare grouped trajectory caches\n{"=" * 60}')
     _load_grouped_trajectories(
-        TRAJ_SPECS, TRAJ_DIR, _P_PHYSICS, _TS_PHYSICS, device, save_dir, load_tensors=False
+        traj_specs, TRAJ_DIR, _P_PHYSICS, _TS_PHYSICS, device, save_dir, load_tensors=False
     )
 
     if AUTO_SEGMENT_LEN:
         print(f'\n{"=" * 60}\nStep 2b: Segment-length diagnostic\n{"=" * 60}')
-        diag = _get_or_run_segment_length_diagnostic(rmse_baseline, device, save_dir)
+        diag = _get_or_run_segment_length_diagnostic(traj_specs, rmse_baseline, device, save_dir)
         segment_len = int(diag['chosen_segment_len'])
         print(f'  Using segment_len={segment_len} from cached diagnostic result')
 
-    data_step = '2c' if AUTO_SEGMENT_LEN else '2b'
-    print(f'\n{"=" * 60}\nStep {data_step}: Load and segment training data\n{"=" * 60}')
-    u_train, q1_train, _ = _load_trajectory(mat_path)
     if profile:
         n_steps = 500
-    if n_steps is not None:
-        u_train = u_train[:, :n_steps, :]
-        q1_train = q1_train[:n_steps]
-    u_train = u_train.to(device)
-    q1_train = q1_train.to(device)
-
-    N_steps = u_train.shape[1]
-    n_seg = N_steps // segment_len
+    data_step = '2c' if AUTO_SEGMENT_LEN else '2b'
+    print(f'\n{"=" * 60}\nStep {data_step}: Load active training trajectories\n{"=" * 60}')
+    trajs = _load_grouped_trajectories(
+        traj_specs, TRAJ_DIR, _P_PHYSICS, _TS_PHYSICS, device, save_dir,
+        load_tensors=True, n_steps=n_steps,
+    )
+    _attach_valid_start_idx(trajs, segment_len)
+    active_groups = _active_groups_from_trajs(trajs)
+    train_group_counts = _balanced_group_counts(TRAIN_SEGMENTS, active_groups)
+    val_group_counts = _balanced_group_counts(VAL_SEGMENTS, active_groups)
     print(
-        f'  {N_steps} steps -> {n_seg} x {segment_len} per epoch  '
-        f'(stratified random, {N_steps - segment_len + 1} valid start positions)'
+        f'  Active set: {", ".join(spec["id"] for spec in traj_specs)}  '
+        f'({len(trajs)} trajectories, {len(active_groups)} groups)'
+    )
+    print(
+        f'  segment_len={segment_len}  '
+        f'train batch={sum(train_group_counts.values())} segments/epoch  '
+        f'val batch={sum(val_group_counts.values())} segments'
     )
 
     # ------------------------------------------------------------------
@@ -691,21 +686,17 @@ def train(
     # ------------------------------------------------------------------
     # 3b. Precomputed data structures - parameter-free
     # ------------------------------------------------------------------
-    traj_id = os.path.splitext(os.path.basename(mat_path))[0]
-    state_traj = _load_or_build_state_traj(traj_id, q1_train, block._P, block._ts, device, save_dir)
-    x0 = state_traj[:1]
-    all_idx = _get_epoch_indices(N_steps, n_seg, segment_len, epochs, device, save_dir)[:epochs]
-    _arange_T = torch.arange(segment_len, device=device)
-    val_idx = torch.arange(n_seg, device=device) * segment_len
-    val_step = val_idx.unsqueeze(1) + _arange_T
-    val_x0 = state_traj[val_idx]
-    val_u = u_train[0][val_step]
-    val_q1 = q1_train[val_step]
+    val_x0, val_u, val_q1, _ = _sample_balanced_segments(
+        trajs, segment_len, val_group_counts, SEGMENT_DIAG_SEED
+    )
 
     # ------------------------------------------------------------------
     # 4. Training loop
     # ------------------------------------------------------------------
-    print(f'\n{"=" * 60}\nStep 4: Train  ({epochs} epochs, lr={lr}, batch={n_seg}x{segment_len})\n{"=" * 60}')
+    print(
+        f'\n{"=" * 60}\nStep 4: Train  '
+        f'({epochs} epochs, lr={lr}, batch={sum(train_group_counts.values())}x{segment_len})\n{"=" * 60}'
+    )
     if param_loss_weight > 0:
         print(
             f'  {"Epoch":>6}  {"train_mse":>12}  {"param_loss":>12}  '
@@ -729,10 +720,9 @@ def train(
                 with_stack=False,
             ) if (profile and epoch == 0) else contextlib.nullcontext()
         )
-        step_idx = all_idx[epoch].unsqueeze(1) + _arange_T
-        x0_seg = state_traj[all_idx[epoch]]
-        u_seg = u_train[0][step_idx]
-        q1_seg = q1_train[step_idx]
+        x0_seg, u_seg, q1_seg, _ = _sample_balanced_segments(
+            trajs, segment_len, train_group_counts, SEGMENT_DIAG_SEED + 10_000 + epoch
+        )
 
         with ctx as prof:
             Y_pred = wrapper(x0_seg, u_seg)
@@ -788,15 +778,23 @@ def train(
     # 5. Evaluate - fresh post-training pre-pass (pre may be stale)
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 5: Prediction error\n{"=" * 60}')
-    pre = _run_no_grad(block, x0, u_train)
-    y_pred = pre.Y[0]
-    mse_eval = F.mse_loss(y_pred, q1_train).item()
-    err = (y_pred - q1_train).pow(2).mean(0).sqrt()
-    print(f'  {"Channel":<6}  {"RMSE [mm]":>12}')
-    print(f'  {"-" * 6}  {"-" * 12}')
-    for name, e in zip(['X1', 'X2', 'Y'], err):
-        print(f'  {name:<6}  {e.item() * 1e3:>12.4f}')
-    print(f'\n  Overall MSE: {mse_eval:.4e} m^2')
+    eval_entries = []
+    print(f'  {"Traj":<6}  {"Group":<12}  {"RMSE [mm]":>12}')
+    print(f'  {"-" * 6}  {"-" * 12}  {"-" * 12}')
+    for traj in trajs:
+        pre = _run_no_grad(block, traj['state_traj'][:1], traj['u'])
+        y_pred = pre.Y[0]
+        mse_eval = F.mse_loss(y_pred, traj['q1']).item()
+        rmse_eval = mse_eval ** 0.5
+        eval_entries.append({
+            'id': traj['id'],
+            'group': traj['group'],
+            'mse_total': mse_eval,
+            'rmse_total': rmse_eval,
+        })
+        print(f'  {traj["id"]:<6}  {traj["group"]:<12}  {rmse_eval * 1e3:>12.4f}')
+    overall_rmse = _aggregate_grouped_rmse(eval_entries)
+    print(f'\n  Overall RMSE: {overall_rmse:.6e} m  ({overall_rmse * 1e3:.4f} mm)')
 
     # ------------------------------------------------------------------
     # 6. Parameter recovery table - primary go/no-go criterion
@@ -808,18 +806,19 @@ def train(
     # 7. Save
     # ------------------------------------------------------------------
     params_true = torch.tensor([_TRUE_PARAMS[n] for n in _PARAM_NAMES], dtype=torch.float64)
-    save_path = os.path.join(save_dir, f'lfr_param_recovery_e{epochs}_plw{param_loss_weight:.1f}.pt')
+    save_path = os.path.join(save_dir, f'lfr_param_recovery_{traj_tag}_e{epochs}_plw{param_loss_weight:.1f}.pt')
     torch.save(
         {
             'log_params': block.log_params.detach(),
             'params_init': block.params_init,
             'params_true': params_true,
             'RMSE_baseline': rmse_baseline,
+            'active_traj_ids': tuple(spec['id'] for spec in traj_specs),
             'epochs': epochs,
             'lr': lr,
             'segment_len': segment_len,
             'param_loss_weight': param_loss_weight,
-            'train_mse': mse_eval,
+            'eval_rmse': overall_rmse,
         },
         save_path,
     )
