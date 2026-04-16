@@ -360,9 +360,9 @@ with
 \begin{equation}
     N_0 =
     \begin{bmatrix}
-        m_h\gamma          & -\beta m_h          & -\beta d\,m_h \\
-        -\beta m_h         & \alpha m_h           & \alpha d\,m_h \\
-        -\beta d\,m_h      & \alpha d\,m_h        & \alpha\gamma - \beta^2
+        m_h(\gamma - m_h d^2) & -\beta m_h          & -\beta d\,m_h \\
+        -\beta m_h            & \alpha m_h           & \alpha d\,m_h \\
+        -\beta d\,m_h         & \alpha d\,m_h        & \alpha\gamma - \beta^2
     \end{bmatrix},
     \label{eq:N0}
 \end{equation}
