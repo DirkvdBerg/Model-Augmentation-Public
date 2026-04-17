@@ -1,0 +1,107 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper, margin=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb, mathtools}
+\usepackage{booktabs}
+
+\title{LPV-SS vs.\ LPV-LFR Forward Pass}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent
+Both methods compute the same trajectory. They differ in whether the
+LFR structure $(G,\,\Delta(Y))$ is made explicit.
+
+\bigskip
+
+% -----------------------------------------------------------------------
+% Side-by-side comparison
+% -----------------------------------------------------------------------
+\noindent
+\begin{minipage}[t]{0.44\textwidth}
+\centering\textbf{LPV-SS}
+
+\medskip
+\raggedright
+
+\textbf{Step 1.} Net force:
+\[ f_{\mathrm{net}} = -Kq - C\dot{q} + u \]
+
+\textbf{Step 2.} Solve numerically at each time step:
+\[ M(Y)\,a = f_{\mathrm{net}}, \quad a \in \mathbb{R}^3 \]
+
+\textbf{Step 3.} Assemble state derivative:
+\[ \dot{x} = \begin{bmatrix} \dot{q} \\ a \end{bmatrix} \]
+
+\end{minipage}
+\hfill
+\vrule
+\hfill
+\begin{minipage}[t]{0.50\textwidth}
+\centering\textbf{LPV-LFR}
+
+\medskip
+\raggedright
+
+\textbf{Step 1.} Net force:
+\[ f_{\mathrm{net}} = -Kq - C\dot{q} + u \]
+
+\textbf{Step 2.} Set up the LFR loop equation:
+\[ L(Y)\,z = \begin{bmatrix} M_0^{-1}f_{\mathrm{net}} \\ 0 \end{bmatrix},
+   \quad L(Y) := I - D_{zw}\Delta(Y) \]
+
+\textbf{Step 3a.} Solve block-by-block via Schur complement of $L(Y)$:$^*$
+\[ z_2 = Y z_1, \qquad M(Y)\,z_1 = f_{\mathrm{net}} \]
+
+\textbf{Step 3b.} Evaluate $M(Y)^{-1}$ as a rational function via Cramer's rule:$^{**}$
+\[ z_1 = \frac{N(Y)\,f_{\mathrm{net}}}{d(Y)} =: a
+   \quad\Rightarrow\quad
+   z = \begin{bmatrix} a \\ Ya \end{bmatrix} \]
+
+\textbf{Step 4.} Apply scheduling block:
+\[ w = \Delta(Y)\,z = Yz \]
+
+\textbf{Step 5.} State derivative through $G$:
+\[ \dot{x} = A_x x + B_w w + B_u u \]
+
+\end{minipage}
+
+\medskip
+\noindent\rule{\textwidth}{0.4pt}
+\smallskip
+\noindent
+$^*$ Schur complement of the lower-right $I_3$ block in $L(Y)$ yields
+$M_0^{-1}M(Y)$, giving $M(Y)z_1 = f_{\mathrm{net}}$ after cancelling $M_0^{-1}$.\\
+$^{**}$ Cramer's rule applied to $M(Y)$ gives $M(Y)^{-1} = N(Y)/d(Y)$,
+where $N(Y) = N_0 + YN_1 + Y^2N_2$ and $d(Y)$ are polynomial in $Y$,
+precomputed once from physical parameters.
+Both methods are used at different stages: Schur complement to solve the loop,
+Cramer's rule to evaluate the result as a polynomial.
+
+\bigskip
+
+% -----------------------------------------------------------------------
+% Properties table
+% -----------------------------------------------------------------------
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+ & \textbf{LPV-SS} & \textbf{LPV-LFR} \\
+\midrule
+$G$ matrix explicit           & $\times$ & $\checkmark$ \\
+$\Delta(Y)$ explicit          & $\times$ & $\checkmark$ \\
+$z$, $w$ available            & $\times$ & $\checkmark$ \\
+Runtime matrix solve          & $\checkmark$ ($3\times3$ per step) & $\times$ \\
+Augmentation interface        & $\times$ & $\checkmark$ \\
+Numerically equivalent        & \multicolumn{2}{c}{$\checkmark$} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

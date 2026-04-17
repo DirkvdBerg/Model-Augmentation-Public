@@ -2,7 +2,37 @@
 
 _Previous sessions archived to `archive/sessions/`._
 
-**Last written**: 2026-04-16 by Claude (Sonnet 4.6) — updated normalization design
+**Last written**: 2026-04-17 by Claude (Sonnet 4.6)
+
+---
+
+## LPV-LFR structural review (2026-04-17)
+
+Reviewed `lfr_forward.py`, `lfr_matrices.py`, `lfr_block.py`, `lfr_param_block.py`.
+
+**The implementation is genuinely LFR.** Key findings:
+
+**Loop solve is analytically pre-solved, not bypassed:**
+The formal loop `(I - Dzw·Δ(Y))·z = Cz·x + Dzu·u` is solved analytically via Cramer's rule.
+`N0, N1, N2` (adjugate polynomial coefficients) and `dY` (determinant polynomial) are exactly
+`L(Y)⁻¹·rhs` pre-derived in closed form — not a collapse. `Cz`, `Dzw`, `Dzu` are baked into
+this derivation; they're absent as runtime variables, not absent from the computation.
+
+**Output equation is LFR-structured:**
+`xdot = Ax@x + Bw@w + Bu@u` — w is causally upstream of xdot through G.Bw.
+The decisive structural audit (Check 4 in `lfr_forward.py`) passes: `d(xdot)/d(w) = G.Bw ≠ 0`.
+
+**G is properly rebuilt for the trainable block:**
+`lfr_param_block.py` calls `build_G_matrix()` and `build_poly_constants()` inside every
+`forward()` — gradient flows correctly back to `log_params` (nn.Parameter). ✅
+`lfr_block.py` (non-trainable) precomputes G at `__init__` and stores as buffers — correct. ✅
+
+**Open question for supervisor (Roland Tóth):**
+The loop solve uses the analytical pre-solved form of `L(Y)⁻¹·rhs` rather than materializing
+`L(Y)` at runtime. When augmentation extends G (new rows/columns in Cz, Dzw, Dzu), the
+analytical loop solve must also be re-derived or replaced by a numerical solve of the augmented
+`L(Y)·z = rhs`. Ask: is this the expected path, or is there a clean way to extend the
+analytical solution to the augmented system?
 
 ---
 
