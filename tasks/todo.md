@@ -998,6 +998,284 @@ against a reference run before changes).
 
 ---
 
+#### Task P1.8 — Update test_lfr_structural.py
+
+**File**: `lpv_lfr_baseline/tests/test_lfr_structural.py`
+
+**Why this task exists:**
+After the GMatrix refactor, `build_G_matrix()` returns a `(15, 15)` tensor instead of
+a GMatrix dataclass. The test file has 7 uses of GMatrix (import, constructor, attribute
+access). None of the mathematical properties tested change -- only the syntax for
+accessing submatrices changes. This task updates syntax without changing any assertion,
+tolerance threshold, or test logic.
+
+**Critical rule**: Do NOT write bad code to match the test. Update the test to match the
+clean (15,15) tensor API. Every change is a direct mechanical substitution.
+
+---
+
+**Change 1 — Import (line 55): remove `GMatrix` from the import**
+
+Old:
+```python
+from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix, GMatrix
+```
+New:
+```python
+from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
+```
+Rationale: `GMatrix` class no longer exists after Task P1.1. The `build_G_matrix` function
+import stays; only the class name is removed.
+
+---
+
+**Change 2 — Module-level setup (after line 68): add 7 named slice views**
+
+After the line:
+```python
+_G  = build_G_matrix(_N0, _d0, M1, M2, K, C)
+```
+Insert the following 7 lines immediately below it:
+```python
+_G_Ax  = _G[:6,    :6]    # (6,6)  state map
+_G_Bw  = _G[:6,   6:12]   # (6,6)  w input
+_G_Bu  = _G[:6,  12:15]   # (6,3)  u input
+_G_Cz  = _G[6:12,   :6]   # (6,6)  z output, state columns
+_G_Dzw = _G[6:12,  6:12]  # (6,6)  z output, w columns
+_G_Dzu = _G[6:12, 12:15]  # (6,3)  z output, u columns
+_G_Cy  = _G[12:15,  :6]   # (3,6)  y output
+```
+These are strided views into the (15,15) contiguous tensor -- no data copy, zero overhead.
+They replace every attribute access `_G.Ax` → `_G_Ax`, etc. throughout the file.
+
+---
+
+**Change 3 — `_xdot_from_w` helper (line 82): replace 3 attribute accesses**
+
+Old:
+```python
+    return (_x @ _G.Ax.T) + (w_in @ _G.Bw.T) + (_u @ _G.Bu.T)
+```
+New:
+```python
+    return (_x @ _G_Ax.T) + (w_in @ _G_Bw.T) + (_u @ _G_Bu.T)
+```
+
+---
+
+**Change 4 — Test 1, line 109: replace `_G.Bw.T`**
+
+Old:
+```python
+    expected_delta = (w_fake - w_nom) @ _G.Bw.T    # (1, 6)
+```
+New:
+```python
+    expected_delta = (w_fake - w_nom) @ _G_Bw.T    # (1, 6)
+```
+
+---
+
+**Change 5 — Test 3, lines 191-204: replace GMatrix constructor + attribute access**
+
+Old block (lines 191-204):
+```python
+    dBw = torch.randn_like(_G.Bw) * 0.1     # (6, 6)  random perturbation
+
+    # Build perturbed G (replace only Bw)
+    G_pert = GMatrix(
+        Ax=_G.Ax,
+        Bw=_G.Bw + dBw,
+        Bu=_G.Bu,
+        Cz=_G.Cz,
+        Dzw=_G.Dzw,
+        Dzu=_G.Dzu,
+        Cy=_G.Cy,
+    )
+
+    xdot_pert = (_x @ G_pert.Ax.T) + (w_nom @ G_pert.Bw.T) + (_u @ G_pert.Bu.T)
+```
+New block:
+```python
+    dBw    = torch.randn_like(_G_Bw) * 0.1   # (6, 6)  random perturbation
+
+    # Build perturbed G (clone the (15,15) tensor, modify only the Bw slice)
+    G_pert = _G.clone()
+    G_pert[:6, 6:12] = G_pert[:6, 6:12] + dBw
+
+    xdot_pert = (_x @ G_pert[:6, :6].T) + (w_nom @ G_pert[:6, 6:12].T) + (_u @ G_pert[:6, 12:15].T)
+```
+Mathematical meaning is identical: the perturbed xdot uses the full G with only the Bw
+block modified. The slice `G_pert[:6, 6:12]` is exactly `Bw`. The `.clone()` ensures the
+original `_G` is not mutated.
+
+---
+
+**Change 6 — Test 4, `f_w` inner function (line 240): replace 3 attribute accesses**
+
+Old:
+```python
+        return (_x @ _G.Ax.T) + (w_in @ _G.Bw.T) + (_u @ _G.Bu.T)
+```
+New:
+```python
+        return (_x @ _G_Ax.T) + (w_in @ _G_Bw.T) + (_u @ _G_Bu.T)
+```
+
+---
+
+**Change 7 — Test 4, lines 246 and 253: replace `_G.Bw`**
+
+Line 246 old:
+```python
+    max_err = (J_mat - _G.Bw).abs().max().item()
+```
+Line 246 new:
+```python
+    max_err = (J_mat - _G_Bw).abs().max().item()
+```
+
+Line 253 old:
+```python
+    n_wrong = (J_mat - _G.Bw).abs().gt(1e-12).sum().item()
+```
+Line 253 new:
+```python
+    n_wrong = (J_mat - _G_Bw).abs().gt(1e-12).sum().item()
+```
+
+---
+
+**Change 8 — Test 5, line 289: replace `_G.Bw.T`**
+
+Old:
+```python
+    expected_delta = ts * (w_fake - w_nom) @ _G.Bw.T    # (1, 6)
+```
+New:
+```python
+    expected_delta = ts * (w_fake - w_nom) @ _G_Bw.T    # (1, 6)
+```
+
+---
+
+**Change 9 — Test 6, line 347: replace `_G.Dzw`**
+
+Old:
+```python
+        L_Y = eye6 - y_val * _G.Dzw                # (6, 6)
+```
+New:
+```python
+        L_Y = eye6 - y_val * _G_Dzw                # (6, 6)
+```
+Note: the same pattern appears again at line 417 (second loop in 6c cross-check). Both
+occurrences must be updated.
+
+---
+
+**Change 10 — Test 6, lines 364-365: replace `_G.Cz.T` and `_G.Dzu.T`**
+
+Old:
+```python
+        rhs   = (_x @ _G.Cz.T) + (_u @ _G.Dzu.T)  # (1, 6)
+```
+New:
+```python
+        rhs   = (_x @ _G_Cz.T) + (_u @ _G_Dzu.T)  # (1, 6)
+```
+
+---
+
+**Change 11 — Test 6, line 417 (cross-check loop): replace `_G.Dzw`**
+
+Old:
+```python
+        L_Y  = eye6 - y_val * _G.Dzw
+```
+New:
+```python
+        L_Y  = eye6 - y_val * _G_Dzw
+```
+
+---
+
+**Change 12 — Test 7c (lines 501-505): simplify device check**
+
+Old block:
+```python
+    G_cpu  = build_G_matrix(N0_cpu, d0_cpu, M1.cpu(), M2.cpu(), K.cpu(), C.cpu())
+    ok_7c  = all(
+        getattr(G_cpu, f).device.type == 'cpu'
+        for f in ['Ax', 'Bw', 'Bu', 'Cz', 'Dzw', 'Dzu', 'Cy']
+    )
+    print(f"    All G entries on CPU : {ok_7c}   {'PASS' if ok_7c else 'FAIL'}")
+```
+New block:
+```python
+    G_cpu  = build_G_matrix(N0_cpu, d0_cpu, M1.cpu(), M2.cpu(), K.cpu(), C.cpu())
+    ok_7c  = G_cpu.device.type == 'cpu'
+    print(f"    G on CPU : {ok_7c}   {'PASS' if ok_7c else 'FAIL'}")
+```
+Rationale: `G_cpu` is now a `(15, 15)` tensor. One `.device.type` check on the tensor is
+equivalent to checking all 7 submatrices -- they all live in the same storage. The
+multi-attribute loop was only needed because GMatrix was a struct of separate tensors.
+
+**What this test still proves after the change:**
+The regression being tested is: "no hardcoded `torch.eye(3)` on CPU inside `build_G_matrix`
+that would put part of G on CPU when N0 is on CUDA". That bug manifests as the returned
+tensor being on CPU when inputs are on CUDA. Checking `G_cpu.device.type == 'cpu'` when all
+inputs are on CPU confirms the device-following contract holds. The test description in the
+comment above (`7c`) remains accurate.
+
+---
+
+**Summary of all lines changed in test_lfr_structural.py:**
+
+| Location | Old text (key fragment) | New text (key fragment) |
+|----------|------------------------|------------------------|
+| Line 55 | `import build_G_matrix, GMatrix` | `import build_G_matrix` |
+| After line 68 | (nothing) | Add 7 `_G_Xx = _G[rows, cols]` views |
+| Line 82 | `_G.Ax.T ... _G.Bw.T ... _G.Bu.T` | `_G_Ax.T ... _G_Bw.T ... _G_Bu.T` |
+| Line 109 | `_G.Bw.T` | `_G_Bw.T` |
+| Line 191 | `torch.randn_like(_G.Bw)` | `torch.randn_like(_G_Bw)` |
+| Lines 193-203 | `G_pert = GMatrix(Ax=..., Bw=_G.Bw+dBw, ...)` | `G_pert = _G.clone(); G_pert[:6,6:12] += dBw` |
+| Line 204 | `G_pert.Ax.T ... G_pert.Bw.T ... G_pert.Bu.T` | `G_pert[:6,:6].T ... G_pert[:6,6:12].T ...` |
+| Line 240 | `_G.Ax.T ... _G.Bw.T ... _G.Bu.T` | `_G_Ax.T ... _G_Bw.T ... _G_Bu.T` |
+| Line 246 | `_G.Bw` | `_G_Bw` |
+| Line 253 | `_G.Bw` | `_G_Bw` |
+| Line 289 | `_G.Bw.T` | `_G_Bw.T` |
+| Line 347 | `_G.Dzw` | `_G_Dzw` |
+| Lines 364-365 | `_G.Cz.T ... _G.Dzu.T` | `_G_Cz.T ... _G_Dzu.T` |
+| Line 417 | `_G.Dzw` | `_G_Dzw` |
+| Lines 501-505 | `all(getattr(G_cpu, f).device.type ... for f in [...])` | `G_cpu.device.type == 'cpu'` |
+
+**No changes to:**
+- Any test assertion (tolerances, expected values, pass/fail logic)
+- Any call to `lfr_forward` (signature unchanged)
+- Any physics constant (`_alpha`, `_beta`, `_gamma`, `_N0`, `_N1`, `_N2`, `_d0`)
+- Test 7a (uses `_N0`, `_d0` directly -- no GMatrix)
+- Test 7b (builds G_p locally via `build_G_matrix`, passes to `lfr_forward` -- G_p is now a tensor, lfr_forward now takes a tensor, so this is automatically correct)
+- Module-level `_x`, `_u`, `_u_s`, `_Y` definitions
+
+**Verification run after this task:**
+```
+conda run -n GraduationProject python -m lpv_lfr_baseline.tests.test_lfr_structural
+```
+Expected output: all 7 tests PASS, `Overall: ALL PASS`.
+
+**Why Test 7b is automatically correct without changes:**
+Test 7b does:
+```python
+G_p  = build_G_matrix(N0_p, d0_p, M1, M2, K, C)
+xdot_p, _, _, _ = lfr_forward(_x, _u, _Y, G_p, ...)
+```
+After Phase 1: `build_G_matrix` returns a `(15,15)` tensor; `lfr_forward` accepts a
+`(15,15)` tensor. The call pattern is unchanged. Autograd flows through the tensor
+slice operations inside `lfr_forward`. No syntax change needed here.
+
+---
+
 ### Phase 2: torch.compile (requires Phase 1 complete)
 
 #### Task P2.1 — Benchmark baseline (before compile)
