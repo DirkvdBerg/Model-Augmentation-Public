@@ -6,6 +6,267 @@ _Previous sessions archived to `archive/sessions/`._
 
 ---
 
+## Trajectory generation & supervisor feedback (2026-04-17)
+
+### What `export_lpv_multi_traj.m` actually does
+
+The 6-trajectory script generates **reference positions** `r = [X1_ref, X2_ref, Y_ref]`
+in stage coordinates. These are NOT inputs to the actuators. The actual actuator inputs
+are **force commands** produced by the closed-loop controller:
+
+```
+u = Cfb*(r - q1)      ← force commands [F_X1, F_X2, F_Y] — what the actuators receive
+```
+
+`[X1, X2, Y]` are the **output measurements**, not the inputs. The forces `u_q1` are
+reconstructed post-hoc via `lsim(Cfb, r - q1, t)` and saved alongside `q1`.
+
+**Correct framing (for supervisor):** "We design reference position trajectories in
+stage coordinates. A feedback controller converts tracking errors to force commands
+`[F_X1, F_X2, F_Y]` — the actual inputs to the three actuators. `[X1, X2, Y]` are
+the measured position outputs."
+
+### Feedback controller — single operating point for all 6 trajectories
+
+`Cfb` is designed at `Y_op = 0.3` (frozen M(Y=0.3)) and **is the same for all 6
+trajectories**. This is a known imperfection:
+
+| Trajectory | Y during main motion | Mismatch vs Y_op=0.3 |
+|---|---|---|
+| T1, T2, T6 | starts at 0.3 | none at start |
+| T3 | held at 0.0 m | moderate — M[0,1] changes sign |
+| T4 | held at 0.2 m | small |
+| T5 | sweeps 0.2 → −0.2 m | continuously varying |
+
+The quasi-LPV `q1` path self-schedules M(Y) correctly (gantrySystem.m reads Y=x(3)
+at every ODE step), so the **plant dynamics are correct**. The controller is off-
+design-point for T3/T4/T5 but should remain stable at fbw=100 Hz across the full
+Y range. Performance degrades but identifiability is not broken.
+
+The post-hoc force reconstruction `u_q1 = lsim(Cfb, r-q1, t)` is mathematically
+exact for the current setup (same Cfb, f=0).
+
+### Multisine injection — not yet implemented
+
+**Current state:** `f = zeros(size(r))` for all 6 trajectories — no excitation signal.
+
+**No Simulink changes needed.** The feedforward slot is already wired in the Simulink
+model — `f` is read from the workspace via a FromWorkspace block and summed with the
+controller output (from main.m: `S2 = sumblk("u = ufb + f", n)`):
+```matlab
+% Currently in export_lpv_multi_traj.m:
+f = zeros(size(r));   % ← replace this with multisine signal
+sim(mdl, t(end));     % Simulink picks up f automatically
+```
+
+**Injection point (supervisor):** Multisine goes **at the feedforward slot**, after
+the controller, directly at the actuator force level:
+```
+r ──► [Cfb] ──► (+) ──► [Plant G(Y)] ──► q1 = [X1, X2, Y]
+               ▲   ▲
+               │   └── f_multisine   ← injected here
+               └─────────────────────── feedback (r - q1)
+
+u_total = Cfb*(r - q1) + f_multisine     [F_X1, F_X2, F_Y]
+```
+The reference `r` sets the nominal operating point; `f_multisine` provides broadband
+identification excitation directly at the plant input, independent of the closed-loop
+sensitivity function.
+
+---
+
+### Optimal multisine design — decided
+
+The sysid lecture notes (`sysid-experiment-design-notes.md`) directly support the
+supervisor's approach and resolve all open design choices.
+
+**Theoretical justification:**
+The parameter covariance scales inversely with input power:
+```
+V(θ) ∝ ∫ |G_0(ω) - G(ω,θ)|² · Φ_u(ω) dω
+```
+Maximising `Φ_u(ω)` minimises parameter uncertainty. In simulation (zero cost), the
+optimal strategy is: push amplitude as high as possible, then filter on hardware limits.
+Schroeder phases maximise RMS for a given peak force (crest factor 1.58 vs 22.3 for
+linear phases), so more amplitude passes the ETEL filter for the same peak constraint.
+
+---
+
+#### Step 1 — Multisine structure (identical for all 6 trajectories)
+
+| Parameter | Value | Reason |
+|---|---|---|
+| Frequency range | **1–200 Hz** | Covers dynamics; 2× controller bandwidth (100 Hz); well below Nyquist (10 kHz) |
+| Period length | **T_p = 1 s = 20,000 samples** | Δf = 1 Hz; multisine frequencies are integer multiples of Δf → zero leakage |
+| Frequency lines | 200 (one per integer Hz from 1–200) | PE order = 400 ≫ 13 parameters |
+| Phases | **Schroeder:** φ_n = −n(n−1)π/F | Crest factor 1.58 — minimum peak force for given RMS |
+| Channels | **3 independent signals** (different seeds per channel) | Ensures Φ_u(ω) ≻ 0 (MIMO PE condition); inputs not linearly correlated |
+| Harmonics | All (not odd-only) | Parameter recovery goal; odd-only needed only for nonlinearity detection |
+
+**Schroeder phase MATLAB implementation:**
+```matlab
+function sig = multisine_schroeder(N, fs, f_low_hz, f_high_hz, amp_rms)
+    freq_lines = f_low_hz : fs/N : f_high_hz;   % integer Hz lines, Δf = fs/N
+    F          = length(freq_lines);
+    phi        = -((1:F) .* (0:F-1)) * pi / F;  % Schroeder phases
+    t          = (0:N-1)' / fs;
+    sig        = zeros(N, 1);
+    for k = 1:F
+        sig = sig + cos(2*pi*freq_lines(k)*t + phi(k));
+    end
+    sig = amp_rms * sig / rms(sig);             % normalise to desired RMS [N]
+end
+```
+Call 3× with different random offsets added to `phi` to get independent channels.
+
+#### Step 2 — Tile over full trajectory duration
+
+The trajectory is longer than one period. Tile to fill:
+```matlab
+n_tile   = ceil(size(r,1) / N_period);
+f_tiled  = repmat(f_one_period, n_tile, 1);
+f        = f_tiled(1:size(r,1), :);   % (N_traj × 3)
+```
+Parameter recovery uses the full `(u_total, q1)` time series — no per-period averaging
+needed for time-domain gradient-based fitting.
+
+#### Step 3 — Amplitude sweep and ETEL filter
+
+Run simulation at increasing RMS amplitudes. Filter on the **actual simulated `q1`**
+(not on the reference `r`) — the closed loop shapes the response and may amplify
+certain frequencies.
+
+```matlab
+amp_rms_grid = [1, 2, 5, 10, 20, 50, 100, 200];  % [N] RMS per channel
+
+amp_max = 0;
+for amp = amp_rms_grid
+    for ch = 1:3
+        f(:,ch) = multisine_schroeder(size(r,1), fs, 1, 200, amp);
+    end
+
+    sim(mdl, t(end));          % produces q1 in workspace
+
+    vel = diff(q1) * fs;       % (N-1 × 3) velocity  [m/s]
+    acc = diff(vel) * fs;      % (N-2 × 3) acceleration [m/s²]
+
+    ok =    max(abs(q1(:,1)))            <= 0.375  ...  % X1 position [m]
+         && max(abs(q1(:,2)))            <= 0.375  ...  % X2 position [m]
+         && max(abs(q1(:,3)))            <= 0.400  ...  % Y  position [m]
+         && max(abs(q1(:,1)-q1(:,2)))   <= 0.100  ...  % |X1-X2| differential [m]
+         && max(abs(vel(:)))             <= 2.0    ...  % all axes velocity [m/s]
+         && max(abs(acc(:)))             <= 50.0;       % all axes acceleration [m/s²]
+
+    if ok
+        amp_max = amp;
+    else
+        break;   % first failure: stop, use amp_max
+    end
+end
+fprintf('  Trajectory %s: amp_max = %.1f N RMS\n', sp.id, amp_max);
+```
+
+#### Step 4 — Per-trajectory amplitude differs (expected and correct)
+
+The nominal motion already uses part of the actuator headroom. The filter naturally
+gives different `amp_max` per trajectory:
+
+| Trajectory | Nominal motion headroom | Expected amp_max |
+|---|---|---|
+| T4 (anti-sym, small X) | High — small nominal forces | Highest multisine amplitude |
+| T3 (X-sym at Y=0) | Medium | Medium |
+| T2 (X-sym at Y=0.3) | Medium | Medium |
+| T1 (Y sweep, conservative) | Medium-high | Medium |
+| T5 (X+Y combined) | Lower | Lower |
+| T6 (Y sweep, hardware max) | Low — already near accel limit | Lowest multisine amplitude |
+
+This is correct: the filter is doing exactly what optimal experiment design prescribes —
+maximum excitation per trajectory subject to physical realizability.
+
+#### Step 5 — What to save
+
+The full actuator input is `u_total = u_q1 + f_multisine`. Both must be saved:
+```matlab
+save(out_path, 't_sim', 'fs', 'r_sim', ...
+     'u_q1',        ...   % Cfb*(r-q1) — feedback forces
+     'f_multisine', ...   % identification excitation
+     'q1', 'q_simscape', 'Y_trajectory', 'amp_max');
+```
+Parameter recovery uses `u_total = u_q1 + f_multisine` as the model input and `q1`
+as the target output.
+
+---
+
+### Sysid theory — key pitfalls for our setup
+
+Full reference: `literature/experiment-design/System-identification/sysid-experiment-design-notes.md`
+
+The most critical for our multisine design:
+
+| Pitfall | Our mitigation |
+|---|---|
+| **Leakage** — non-integer periods corrupt all FRF estimates | Δf = fs/N = 1 Hz; frequencies are exact integer Hz; T_p tiles exactly |
+| **Actuator saturation** — high crest factor → nonlinear response | Schroeder phases: CF = 1.58; amplitude filtered on actual q1 |
+| **MIMO inputs correlated** — singular Φ_u(ω) | 3 independent channels (different Schroeder seeds) |
+| **Loss of excitation** — Cfb attenuates multisine at some frequencies | Filter checks plant response q1, not reference; amplitudes are at plant input |
+| **Transient not removed** — biases FRF at resonances | Not critical for time-domain parameter recovery; but discard first period if doing FRF analysis |
+| **Closed-loop residual misread** — R̂_eu(τ≠0) seen as model error | Expected for τ<0 due to feedback; not a model failure |
+
+**Theoretical backing for max-excitation + filter approach (Lecture 9):**
+> "Minimize identification cost while maximising information content."
+In simulation (cost=0): maximise Φ_u(ω) subject to ETEL constraints. Schroeder phases
+maximise RMS for given peak → more amplitude passes the filter.
+
+---
+
+### Hoekstra comparison
+
+| | Hoekstra (MSD) | Our gantry |
+|---|---|---|
+| Multisine role | Only input (open loop) | Feedforward on top of closed-loop Cfb |
+| Language | Python (`deepSI.exp_design.multisine()`) | MATLAB (`multisine_schroeder`) |
+| Channels | SISO | MIMO 3×3 — independent per channel |
+| Amplitude | Fixed `amp_scale=10` | Sweep per trajectory, filter on ETEL limits |
+| Phases | Random + crest factor optim | Schroeder (deterministic optimal) |
+| Noise | Commented out | Not yet added to q1 |
+
+### Current `validate_ref()` is incomplete
+
+The current filter only checks **reference positions**. It does not check velocity
+or acceleration of the actual simulated response. Missing checks:
+
+| Quantity | ETEL limit | Currently checked? |
+|---|---|---|
+| X1, X2 position | ±375 mm | Yes (reference only) |
+| Y position | ±400 mm | Yes (reference only) |
+| \|X1−X2\| differential | ≤ 100 mm | Yes (reference only) |
+| X1, X2 velocity | ≤ 2 m/s | **No** |
+| Y velocity | ≤ 2 m/s | **No** |
+| X1, X2 acceleration | ≤ 50 m/s² | **No** |
+| Y acceleration | ≤ 50 m/s² | **No** |
+
+Velocity and acceleration must be computed from `q1` via finite differences on the
+simulated output (not from the reference profile).
+
+### No measurement noise yet
+
+All 6 trajectories are currently noise-free. This gives overly optimistic parameter
+recovery results. Realistic position measurement noise needs to be added to `q1`
+before evaluating identifiability seriously.
+
+### Open items from supervisor meeting
+
+- [ ] Implement multisine injection at `f` slot in `export_lpv_multi_traj.m`
+- [ ] Add velocity and acceleration checks to the trajectory filter (on `q1`, not `r`)
+- [ ] Add measurement noise to `q1` outputs
+- [ ] Check MUSSV / LFR well-posedness: verify `σ_max(Dzw) < 1/max|δ(Y)|` over
+      operating range — ensures `I - Dzw·δ(Y)` is non-singular for all Y in [-0.3, 0.3]
+- [ ] Kinematic transformation `[X, Theta, Y] ↔ [X1, X2, Y]` (P matrix) is a
+      linearized small-angle approximation — accuracy cannot be verified from
+      simulation data alone; requires additional sensor or measurement
+
+---
+
 ## LPV-LFR structural review (2026-04-17)
 
 Reviewed `lfr_forward.py`, `lfr_matrices.py`, `lfr_block.py`, `lfr_param_block.py`.

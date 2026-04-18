@@ -737,6 +737,13 @@ Next meeting: April 9, afternoon (online or on campus), supervisor preference co
 
 ## Deferred
 
+- **Measurement noise in `multisine_muli_traject.m`**: Add realistic position measurement noise
+  to `q1` outputs before claiming results reflect real-hardware performance. Current simulation
+  is noise-free → overly optimistic parameter recovery. Suggested: encoder noise ~1–10 nm RMS
+  at 20 kHz, additive Gaussian on `q1` after simulation. Reference: `tasks/handoff.md`
+  section "No measurement noise yet". Do NOT add until parameter recovery pipeline is validated
+  on clean data first.
+
 - `torch.compile` on the RK4 state block: one-line optimization once eager-mode
   implementation is validated. Static input shapes and no data-dependent control flow
   make it a good candidate. Must test compatibility with `torch.utils.checkpoint`

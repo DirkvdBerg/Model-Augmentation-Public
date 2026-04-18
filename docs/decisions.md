@@ -770,3 +770,43 @@ Modified force equations in data generator:
 - Key metric: Θ prediction error as a function of Y-position and motion direction.
 - Parameter g (Dahl stiffness) and Fc (nominal Coulomb amplitude) must be chosen to produce a physically plausible but clearly observable effect — suggested range: g ≈ 1–5 μm (pre-sliding displacement), Fc ≈ 10–30 N.
 - Cross-references: D-022 (extra states in augmentation, not baseline), D-023 (validate parameter recovery before augmentation), D-024 (friction study is the first augmentation demonstration), D-025 (friction states are the dynamic formulation of hysteresis scheduling).
+
+---
+
+### [D-039] Feedback controller operating point per trajectory: Y_initial
+**Date**: 2026-04-17
+**What**: In `export_lpv_multi_traj.m`, the feedback controller `Cfb` and frozen LTI `G`
+are designed at `Y_op = sp.Y_initial` for each trajectory — the Y position at the start
+of the main motion. This replaces the previous single frozen choice of `Y_op = 0.3` for
+all trajectories.
+
+| Trajectory | Y_initial | Cfb designed at |
+|---|---|---|
+| T1 | 0.3 | Y = 0.3 |
+| T2 | 0.3 | Y = 0.3 |
+| T3 | 0.0 | Y = 0.0 |
+| T4 | 0.2 | Y = 0.2 |
+| T5 | 0.2 | Y = 0.2 |
+| T6 | 0.3 | Y = 0.3 |
+
+**Why**: Designing at `Y_op = 0.3` for all trajectories is unnecessarily wrong for T3
+(Y=0.0), T4 (Y=0.2), T5 (starts at Y=0.2). Using `Y_initial` gives each trajectory a
+controller optimally matched to its operating condition without requiring any Simulink
+changes — `Cfb` and `G` are still plain workspace variables.
+
+**Ruled out**:
+- *Single Y=0.3 for all*: unnecessarily off-design for T3/T4/T5.
+- *Gain-scheduled LPV controller Cfb(Y)*: the correct solution for trajectories where
+  Y varies during motion (T1, T5, T6). Requires replacing the fixed LTI `Cfb` block in
+  Simulink with an online-scheduled controller (S-function or MATLAB function block).
+  Not implemented because it requires modifying the Simulink model, which is out of
+  scope for the current parameter recovery phase.
+
+**Constrains**:
+- For T1, T5, T6 where Y actively sweeps during the main motion, `Cfb` at `Y_initial`
+  is still an approximation — the controller is off-design-point as Y moves. This is
+  accepted for now; the recorded `(u_q1, q1)` pair remains a valid input-output dataset
+  for parameter recovery regardless of controller quality, since both signals are saved
+  exactly as simulated.
+- If gain-scheduled control is added later, `Cfb` computation must move inside the
+  trajectory loop and be evaluated online using the current Y state.
