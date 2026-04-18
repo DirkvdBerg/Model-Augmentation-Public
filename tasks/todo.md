@@ -753,58 +753,439 @@ Next meeting: April 9, afternoon (online or on campus), supervisor preference co
 
 ---
 
-## Training Speed — Options Under Discussion
+## Step 3c: Training Speed Optimization — GMatrix Refactor + torch.compile
 
-Context: `train_param_recovery.py` runs a pure Python loop over 35,001 RK4 steps (140,004
-sequential op dispatches per epoch). Current setup: batch=1, float64, CPU.
-Available hardware: 7× RTX 2080 Ti.
+**Goal**: Reduce per-epoch wall-clock time of `train_param_recovery.py` without
+changing the LPV-LFR structure, the polynomial loop solve, or the BPTT gradient flow.
 
-**Root cause options (to be confirmed by profiler first):**
-- Python dispatch overhead (140K op dispatches per epoch, ~5–15 µs each)
-- Actual matrix compute (3×3 float64 solve — unlikely to be the bottleneck)
+**Decided approach**: Two-phase. Phase 1 is a structural prerequisite; Phase 2 is the
+compilation. CUDA graphs are explicitly NOT used (they bypass autograd, incompatible
+with gradient-based parameter recovery). bptt_mode='full' stays.
 
-### Profiler status
-- `PROFILE=True` flag added to `train_param_recovery.py`
-- When `PROFILE=True`, caps to 500 steps, profiles epoch 0, writes to
-  `models/gantry/param_recovery/profile_out.txt`
-- **Pending**: profiler output not yet produced (debugging in progress)
-- **Decision needed**: confirm bottleneck before committing to any option below
+**Why two phases and not just adding @torch.compile now:**
+Phase 1 is motivated by arithmetic intensity, not by compilation correctness.
+TorchDynamo natively flattens Python dataclasses (including `GMatrix`) into PyTrees
+when they are passed as function arguments, referencing the underlying tensor memory
+pointers directly. Attribute access on a dataclass is therefore free in a compiled
+graph, and value changes after an optimizer step do NOT trigger recompilation.
 
-### Option 1 — `torch.compile` (zero architecture change)
-- Wrap `simulate()` in `torch.compile`; compiler eliminates Python dispatch overhead
-- No gradient changes, no approximation, no code restructuring
-- Expected: 2–5× speedup if Python overhead is the bottleneck
-- **Decision**: try first after profiler confirms dispatch overhead dominates
+The reason to replace `GMatrix` with a single `(15, 15)` tensor is GPU arithmetic
+efficiency: seven separate submatrix tensors require seven independent global memory
+loads, seven micro-matmuls, and seven intermediate writes back to HBM. A single
+contiguous tensor lets TorchInductor load the entire G block into SM shared memory
+once and process all four matrix products in a single fused Triton kernel -- higher
+arithmetic intensity, lower memory bandwidth pressure, better SM utilization.
 
-### Option 2 — Switch to `LFRFitSystem` + Jan's multiple-shooting batching
-- Jan's `SSE_Interconnect.loss()` runs N random subsections of length T in parallel
-  as a batch (e.g. batch=2000, T=200 from the paper)
-- Instead of one sequential 35001-step pass, runs 2000 parallel 200-step sims
-- GPU-friendly: matrix solve becomes (2000, 3, 3) instead of (1, 3, 3)
-- **Key fact**: the earlier blocker ("X1/X2 have near-zero std → auto_fit_norm breaks")
-  was based on a wrong assumption. `lpv_sim_varying_y.mat` has meaningful X1/X2
-  variation (confirmed by compare_dtype.py plots). auto_fit_norm works fine.
-- **Decision needed**:
-  - [ ] Confirm profiler result justifies this change (not just Option 1)
-  - [ ] Decide: keep `train_param_recovery.py` direct-sim path OR replace with
-        `LFRFitSystem` path (the latter aligns param recovery and augmentation on
-        same infrastructure, which is cleaner long-term)
+Phase 1 also simplifies the codebase (one buffer instead of seven, one argument
+instead of a structured object) which makes the code easier to read and extend.
 
-### Option 3 — Multi-GPU use
-- Single training run: NOT parallelizable across GPUs (sequential state dependency,
-  3×3 float64 ops too small, RTX 2080 Ti FP64 is 1/32 of FP32 peak)
-- **Recommended use of multiple GPUs:**
-  - Multiple MATLAB trajectories (different Y excitations) on different GPUs:
-    better for generalization and parameter identifiability
-  - Cross-validation splits: variance estimates on recovered parameters
-  - Ablation over regularization weight ε (eq. 7 in Hoekstra 2025): scientifically
-    more useful than a simple LR grid search
-- **Decision needed**: what question do we want the multi-GPU runs to answer?
+**What is NOT changed (hard constraints):**
+- LFR signal flow: Steps 1-6 in `lfr_forward.py` remain exactly as specified in
+  `literature/lpv-lfr/Additional notes/LPV-LFR-Implementation-Spec.md`
+- Polynomial loop solve: N(Y)/d(Y) Horner form stays -- no torch.linalg.solve
+- BPTT mode: bptt_mode='full' stays -- full gradient tape, no truncation
+- All physical parameters remain trainable via `log_params` (nn.Parameter)
+- All verification checks in every `__main__` block must still pass after each task
 
-### Immediate next step
-- [ ] Get profiler output (fix profiling issue in `train_param_recovery.py`)
-- [ ] Read profiler table: dispatch overhead vs compute?
-- [ ] Based on result: decide Option 1 only, or Option 1 + Option 2
+---
+
+### Phase 1: GMatrix Refactor (prerequisite for Phase 2)
+
+#### Task P1.1 — Replace GMatrix dataclass with (15,15) tensor in lfr_matrices.py
+
+**File**: `lpv_lfr_baseline/core/lfr_matrices.py`
+
+**What to remove:**
+- The entire `@dataclass class GMatrix` definition (current lines 63-86), including
+  all 7 field annotations (Ax, Bw, Bu, Cz, Dzw, Dzu, Cy)
+- The `from dataclasses import dataclass` import (line 52)
+- The module-level singleton `G = build_G_matrix(...)` (current lines 190) -- this
+  singleton is only used in the `__main__` block and is dead code in the pipeline
+
+**What to change in `build_G_matrix()`:**
+- Return type changes from `GMatrix` to `torch.Tensor` with shape `(15, 15)`
+- Assemble Ax, Bw, Bu, Cz, Dzw, Dzu, Cy exactly as now (same formulas)
+- Then pack into one tensor using `torch.zeros(15, 15, dtype=dtype, device=device)`:
+
+```python
+G_mat = torch.zeros(15, 15, dtype=dtype, device=device)
+G_mat[:6,   :6]   = Ax   # (6,6)  state rows,  state cols
+G_mat[:6,  6:12]  = Bw   # (6,6)  state rows,  w cols
+G_mat[:6, 12:15]  = Bu   # (6,3)  state rows,  u cols
+G_mat[6:12,  :6]  = Cz   # (6,6)  z rows,      state cols
+G_mat[6:12, 6:12] = Dzw  # (6,6)  z rows,      w cols
+G_mat[6:12,12:15] = Dzu  # (6,3)  z rows,      u cols
+G_mat[12:15, :6]  = Cy   # (3,6)  y rows,      state cols
+# G_mat[12:15, 6:15] = 0 by default (Dyw=0, Dyu=0)
+return G_mat
+```
+
+**Block layout (rows: xdot/z/y; cols: x/w/u):**
+```
+G_mat (15×15):
+         x(0:6)   w(6:12)  u(12:15)
+xdot(0:6)  [ Ax   |  Bw   |  Bu  ]
+z(6:12)    [ Cz   |  Dzw  |  Dzu ]
+y(12:15)   [ Cy   |   0   |   0  ]
+```
+
+**What to update in `__main__` block:**
+- Replace all `G.Ax`, `G.Bw`, etc. with `G_mat[:6,:6]`, `G_mat[:6,6:12]`, etc.
+- The `_alpha_s, _beta_s, ...` module-level precomputation stays (needed for the
+  `__main__` block to construct `G_mat` for verification)
+- All `check(...)` calls verify submatrix slices against the expected values -- same
+  checks, just accessed via slicing instead of attribute
+
+**Verification run after this task:**
+```
+conda run -n GraduationProject python -m lpv_lfr_baseline.core.lfr_matrices
+```
+All shape checks and algebraic assembly checks must pass.
+
+---
+
+#### Task P1.2 — Update lfr_forward.py
+
+**File**: `lpv_lfr_baseline/core/lfr_forward.py`
+
+**What to remove:**
+- `from lpv_lfr_baseline.core.lfr_matrices import GMatrix` import (line 30)
+
+**What to change in the `lfr_forward()` signature:**
+- `G: GMatrix` parameter becomes `G: torch.Tensor  # (15, 15) LFR interconnection`
+
+**What to add at the top of the function body (before Step 1):**
+```python
+# Extract submatrices from the packed (15,15) G tensor.
+# These are strided views -- no data copy, same storage.
+# torch.compile traces these as part of the computation graph.
+Ax  = G[:6,   :6]    # (6,6)
+Bw  = G[:6,  6:12]   # (6,6)
+Bu  = G[:6, 12:15]   # (6,3)
+Cy  = G[12:15, :6]   # (3,6)
+```
+
+**What stays unchanged:**
+- All 6 LFR signal-flow steps (the computation is identical; only variable names change
+  from attribute access to local tensor variables)
+- `xdot = (x @ Ax.T) + (w @ Bw.T) + (u @ Bu.T)` -- same formula
+- `y = x @ Cy.T` -- same formula
+- The docstring (update the G parameter description only)
+
+**What to update in `__main__` block:**
+- `G_true` is now a `(15, 15)` tensor returned by `build_G_matrix()`
+- Replace `G_true.Ax`, `G_true.Bw` etc. with slice notation throughout
+- All 6 verification checks (loop residual, xdot vs collapsed, w=Y*z, structural audit,
+  autograd through Y, collapsed pattern absent) must still pass
+
+**Verification run after this task:**
+```
+conda run -n GraduationProject python -m lpv_lfr_baseline.core.lfr_forward
+```
+All 6 checks must pass (PASS status for each).
+
+---
+
+#### Task P1.3 — Update lfr_simulate.py
+
+**File**: `lpv_lfr_baseline/core/lfr_simulate.py`
+
+**What to remove:**
+- Any `from lpv_lfr_baseline.core.lfr_matrices import GMatrix` import if present
+
+**What to change in `rk4_step()` signature (line 55):**
+- `G: GMatrix` → `G: torch.Tensor  # (15, 15)`
+- All other parameters and the function body are unchanged
+- G is only passed through to `_lfr_forward()` -- no attribute access on G in rk4_step
+
+**What to change in `simulate()` signature (line 98):**
+- `G: GMatrix` → `G: torch.Tensor  # (15, 15)`
+- Function body unchanged (G is passed to `rk4_step` only)
+
+**What to change in `SimResult` / type annotations:**
+- Any GMatrix type hint in comments or annotations → `torch.Tensor (15, 15)`
+
+No logic changes. This is a signature-only update.
+
+---
+
+#### Task P1.4 — Update LFRBaselineBlock in lfr_block.py
+
+**File**: `lpv_lfr_baseline/blocks/lfr_block.py`
+
+**What to remove from `__init__`:**
+- All 7 individual buffer registrations: `_G_Ax`, `_G_Bw`, `_G_Bu`, `_G_Cz`,
+  `_G_Dzw`, `_G_Dzu`, `_G_Cy` (7 separate `self.register_buffer(...)` calls)
+
+**What to add in `__init__`:**
+```python
+# Single (15,15) G matrix -- packed LFR interconnection, stored as one buffer.
+# Submatrices are extracted by lfr_forward() via slicing at call time.
+self.register_buffer('_G', G_true)   # G_true is now the (15,15) tensor
+```
+
+**What to update in `forward()`:**
+- Replace any unpacking of `self._G_Ax`, `self._G_Bw` etc. with `self._G`
+- The call to `rk4_step(...)` passes `self._G` directly as the G argument
+- No reconstruction needed (G never changes for the baseline block -- it is constant)
+
+**Dead code to remove:**
+- Any helper that unpacks the old buffer set into a GMatrix instance (if any)
+
+**Verification:** run the block's `__main__` or existing tests.
+
+---
+
+#### Task P1.5 — Update ParameterizedLFRBlock in lfr_param_block.py
+
+**File**: `lpv_lfr_baseline/blocks/lfr_param_block.py`
+
+**What to update:**
+- `build_G_matrix()` now returns a `(15, 15)` tensor -- any code that previously
+  accessed `G.Ax`, `G.Bw` etc. on its return value must use slices instead
+- In `forward()` (if it calls `build_G_matrix()` directly): the returned tensor is
+  passed directly to `rk4_step()` -- no unpacking needed
+- Any type annotation `G: GMatrix` becomes `G: torch.Tensor`
+
+**What does NOT change:**
+- `_recover_params()`, `param_loss()`, `param_table()` -- completely unaffected
+- `log_params` (nn.Parameter) -- unchanged
+- All buffers (`_Lb`, `_d`, `_P`, `_ts`) -- unchanged
+- The call pattern: G is rebuilt inside `_SimWrapper.forward()` (not inside
+  `ParameterizedLFRBlock.forward()`) -- this separation stays
+
+---
+
+#### Task P1.6 — Update _SimWrapper in train_param_recovery.py
+
+**File**: `lpv_lfr_baseline/scripts/train_param_recovery.py`
+
+**Location**: `class _SimWrapper` (line 599), `forward()` method (line 606)
+
+**What to update:**
+- `build_G_matrix()` call at line 615 now returns a `(15, 15)` tensor
+- `simulate(...)` call at line 616 receives the tensor directly -- no change to
+  the call signature (the G argument is just passed through)
+- Remove any GMatrix import at the top of the file
+
+**What does NOT change:**
+- The structure of `_SimWrapper.forward()`: still recovers params once, builds G
+  once, calls `simulate()` once per forward -- this is correct and stays
+- `bptt_mode='full'` at line 631 stays
+
+---
+
+#### Task P1.7 — Remove GMatrix import from all files and verify
+
+**Files to scan**: grep for `GMatrix` across the entire `lpv_lfr_baseline/` folder:
+```
+conda run -n GraduationProject grep -r "GMatrix" lpv_lfr_baseline/
+```
+Every occurrence should be gone. Any remaining reference is dead code to remove.
+
+**Full verification suite -- run all __main__ blocks in order:**
+```
+conda run -n GraduationProject python -m lpv_lfr_baseline.core.lfr_matrices
+conda run -n GraduationProject python -m lpv_lfr_baseline.core.lfr_forward
+conda run -n GraduationProject python -m lpv_lfr_baseline.core.lfr_simulate   (if exists)
+conda run -n GraduationProject python -m lpv_lfr_baseline.blocks.lfr_block    (if exists)
+```
+
+**Pass criterion for Phase 1**: all checks pass, no GMatrix references remain,
+`build_G_matrix()` returns a `(15, 15)` tensor, `lfr_forward` accepts it and produces
+numerically identical output to before the refactor (compare xdot, z, w, y values
+against a reference run before changes).
+
+---
+
+### Phase 2: torch.compile (requires Phase 1 complete)
+
+#### Task P2.1 — Benchmark baseline (before compile)
+
+**File**: `lpv_lfr_baseline/scripts/train_param_recovery.py`
+
+Before adding any compilation, measure the current per-epoch wall-clock time:
+- Run 20 epochs with current code (post Phase 1, pre compile)
+- Record: `t_fwd` (forward pass time), `t_bwd` (backward pass time) from the existing
+  `_sync_time()` instrumentation already in the training loop
+- Record: total epoch time
+- Save this as the baseline for comparison
+
+This measurement establishes the speedup denominator. Without it we cannot claim
+any particular improvement.
+
+---
+
+#### Task P2.2 — Add @torch.compile to rk4_step
+
+**File**: `lpv_lfr_baseline/core/lfr_simulate.py`
+
+**What to add:**
+```python
+import torch
+
+@torch.compile
+def rk4_step(
+    x:       torch.Tensor,
+    ...
+```
+
+Place `@torch.compile` directly above the `def rk4_step(...)` line.
+
+**Why this is the right granularity:**
+`rk4_step` contains all four `_lfr_forward` calls (k1, k2, k3, k4) in a single
+Python function. The compiler traces through all four in one shot and produces a
+single fused computation graph. Inter-stage tensor operations (e.g. `x + ts/2 * k1`)
+are also inside this graph. The result: 4 Python function dispatches become 1-2
+compiled kernel launches per time step.
+
+**Why not @torch.compile on lfr_forward:**
+If compile is applied to `lfr_forward` alone, the compiler sees each call in
+isolation -- it cannot fuse across the k1→k2→k3→k4 chain. `rk4_step` is the right
+boundary because it holds the full RK4 accumulation in scope.
+
+**Why not @torch.compile on simulate:**
+`simulate` contains the Python `for k in range(N)` loop. When TorchDynamo compiles
+a function containing a Python loop it attempts to **fully unroll** the loop into a
+flat FX graph. For N=4000-8000 steps this generates millions of graph nodes, can
+exhaust system RAM during tracing, and compilation can take hours. Do NOT apply
+`torch.compile` directly to `simulate`. The correct solution for the loop is
+`torch.func.scan` (see Task P2.4).
+
+**After Phase 1, all arguments to rk4_step are tensors:**
+- G is a `(15, 15)` tensor argument
+- K, C, mh, alpha, beta, gamma, N0, N1, N2, ts are all tensors
+- x, u_logical are tensors
+- `_lfr_forward` contains no Python-level data-dependent branching on Y
+
+This means `fullgraph=True` is achievable. Use these compile flags:
+```python
+@torch.compile(fullgraph=True, dynamic=False)
+def rk4_step(...):
+```
+- `fullgraph=True`: raises an error on any graph break rather than silently degrading
+- `dynamic=False`: prevents generation of generic shape-polymorphic kernels; since
+  state dimension (6), batch size, and number of RK4 stages are all fixed, the
+  compiler generates shape-specialised Triton kernels which are significantly faster
+
+**Compatibility with BPTT:**
+`torch.compile` preserves autograd. The compiled graph still records operations for
+backward. bptt_mode='full' works unchanged. No gradient flow is lost.
+
+**Compatibility with float64:**
+`torch.compile` works with float64 on both CPU and GPU. No dtype changes needed.
+
+**Compatibility with the checkpoint bptt_mode:**
+The existing `grad_checkpoint` call in `simulate` wraps a `_step` closure. If
+`rk4_step` is compiled, the closure captures the compiled function -- this is
+compatible with `grad_checkpoint`.
+
+---
+
+#### Task P2.3 — Benchmark after compile and decide on next step
+
+Run the same 20-epoch benchmark from Task P2.1 with `@torch.compile` on `rk4_step`.
+Compare `t_fwd`, `t_bwd`, total epoch time.
+
+**Expected outcome:**
+- First epoch: slower than baseline (compilation warmup, ~1-5 s overhead once)
+- Subsequent epochs: 2-5x faster on GPU; modest speedup on CPU (Python dispatch
+  overhead is lower on CPU so the relative gain is smaller)
+
+**Decision gate:**
+- If speedup is sufficient for practical training (epoch time acceptable): stop here.
+- If forward pass time is still dominant: proceed to Task P2.4.
+- If backward pass time is dominant: the bottleneck is BPTT memory, not dispatch;
+  consider enabling bptt_mode='checkpoint' for long segments (already implemented).
+
+---
+
+#### Task P2.4 (conditional) — Replace Python loop with torch.func.scan
+
+**Only do this if Task P2.3 shows insufficient speedup.**
+
+**What it does**: `torch.func.scan` (PyTorch 2.4+) is the PyTorch equivalent of
+JAX's `lax.scan`. Instead of unrolling a Python for-loop into a massive FX graph,
+it traces the loop body **once**, then executes a device-side loop directly on the
+GPU. This gives O(1) compilation memory and time regardless of N, with the same
+autograd support as a full BPTT Python loop.
+
+**Why this and not torch.compile(simulate):**
+Compiling `simulate` would cause TorchDynamo to unroll the N-step for-loop into a
+monolithic FX graph with millions of nodes -- O(hours) to compile, potential OOM.
+`torch.func.scan` avoids unrolling entirely: the RK4 body is traced once.
+
+**File**: `lpv_lfr_baseline/core/lfr_simulate.py`
+
+**Restructuring required:**
+`torch.func.scan` expects a pure transition function of the form:
+```python
+def step_fn(carry, input_t):
+    # carry: current state x  -- (batch, 6)
+    # input_t: u at this timestep -- (batch, 3)
+    # returns: (next_carry, output_t)
+    x_next, z, w, y = rk4_step(carry, input_t, G, K, C, ...)
+    return x_next, y  # (carry_out, scan_output)
+```
+Then replace the `for k in range(N)` loop in `simulate()` with:
+```python
+# u_seq_logical shape: (N, batch, 3) -- time-first, already the correct layout
+x_final, Y_seq = torch.func.scan(step_fn, x0, u_seq_logical)
+# Y_seq: (N, batch, 3) -- outputs stacked along the time dimension
+```
+
+**Constraints to verify before implementing:**
+- `torch.func.scan` requires PyTorch >= 2.4. Check installed version:
+  `conda run -n GraduationProject python -c "import torch; print(torch.__version__)"`
+- The carry (x) and inputs (u) must be plain tensors or pytrees of tensors -- satisfied
+- G, K, C and poly constants must be captured in the closure of `step_fn`, not passed
+  as scan inputs -- this is fine since they are fixed within one `simulate()` call
+- Autograd through scan is supported but was marked experimental in PyTorch 2.4.
+  Test gradient flow with the same BPTT verification used in Task P2.1.
+- The `return_latents=True` path (storing Z, W per step) requires returning z and w
+  as scan outputs alongside y -- restructure the output tuple accordingly.
+- `bptt_mode='truncated'` and `bptt_mode='checkpoint'` paths in `simulate()` become
+  irrelevant once scan is used (scan handles its own backward); remove or guard them.
+
+**Known issue (from Gemini source ref #6):**
+`torch._higher_order_ops.scan` has a reported interaction with `clamp` operations
+under `torch.compile` + `autograd` in early PyTorch 2.x. The `_recover_params()`
+call uses `.clamp(min=1e-6)`. If this is captured in the scan closure and causes
+issues, move the clamp outside the scan call (compute params once before calling
+`simulate`, pass as closed-over tensors).
+
+**Verification after implementing:**
+- Run 20-epoch benchmark and compare against Task P2.3 result
+- Verify `param_table()` matches Task P2.1 reference (same seed) to within 1e-6
+- Confirm gradient flows to `log_params`: `block.log_params.grad` must be non-zero
+  after `loss.backward()`
+
+---
+
+### Verification: numerical correctness after all changes
+
+After Phase 1 + Phase 2 are complete, run a short training run (20 epochs) with the
+same seed as a reference run (eager mode, post Phase 1, pre compile) and compare:
+- `param_table()` output: learned parameters must be identical (or within float
+  tolerance -- compilation may change floating-point evaluation order slightly)
+- `val_rmse` per epoch: must match within 1e-6 relative tolerance
+
+If values diverge beyond tolerance, suspect float reordering in the compiled graph.
+Acceptable fix: use `torch.compile(..., options={"triton.cudagraph_trees": False})`
+to disable aggressive graph optimization.
+
+---
+
+### Dead code removed by this plan (summary)
+
+| What | Where | Why removed |
+|------|-------|-------------|
+| `@dataclass class GMatrix` | `lfr_matrices.py` | Replaced by (15,15) tensor |
+| `from dataclasses import dataclass` | `lfr_matrices.py` | No longer needed |
+| Module-level `G = build_G_matrix(...)` singleton | `lfr_matrices.py` | Only in __main__, not in pipeline |
+| 7 individual buffer registrations `_G_Ax` ... `_G_Cy` | `lfr_block.py` | Replaced by single `_G` buffer |
+| All `import GMatrix` / `from ... import GMatrix` | all files | Class removed |
+| Any GMatrix type annotations | all files | Type is now `torch.Tensor` |
 
 ---
 
