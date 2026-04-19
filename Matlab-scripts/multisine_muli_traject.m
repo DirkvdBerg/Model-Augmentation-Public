@@ -329,10 +329,16 @@ end
 % ----------------------------------------------------------------------
 
 function validate_ref(r, id)
-% Assert all reference positions are within hardware limits (TELICA datasheet).
-    X_LIM    = 0.375;   % ±375 mm  (750 mm total stroke / 2)
-    Y_LIM    = 0.400;   % ±400 mm
-    DIFF_LIM = 0.100;   % 100 mm max |X1-X2| differential
+% Assert all reference positions are within hardware limits.
+% Sources:
+%   X_LIM, Y_LIM : TELICA datasheet (telica-xyz-0750-0800-data.pdf) p.2/4,
+%                  Dimensional Data: total stroke 750 mm (X), 800 mm (Y).
+%   DIFF_LIM     : Garcia (2013) eq.(1) + Section 2.3: Theta_max = 0.1 rad,
+%                  |X1-X2| = sin(Theta_max) * Lb = sin(0.1) * 0.725 m.
+    Lb       = 0.725;            % cross-arm length [m] (main.m)
+    X_LIM    = 0.375;            % ±375 mm  (750 mm total stroke / 2)
+    Y_LIM    = 0.400;            % ±400 mm  (800 mm total stroke / 2)
+    DIFF_LIM = sin(0.1) * Lb;   % 72.4 mm  (yaw limit 0.1 rad, Garcia 2013)
 
     assert(max(abs(r(:,1))) <= X_LIM, ...
            '%s: X1 exceeds +/-%.0f mm', id, X_LIM*1e3);
@@ -343,9 +349,10 @@ function validate_ref(r, id)
     assert(min(r(:,3)) >= -Y_LIM, ...
            '%s: Y exceeds -%.0f mm', id, Y_LIM*1e3);
     assert(max(abs(r(:,1) - r(:,2))) <= DIFF_LIM, ...
-           '%s: |X1-X2| exceeds %.0f mm differential limit', id, DIFF_LIM*1e3);
+           '%s: |X1-X2| exceeds %.1f mm yaw limit (0.1 rad, Garcia 2013)', ...
+           id, DIFF_LIM*1e3);
 
-    fprintf('  Limits OK:  X1=[%+.0f %+.0f]  X2=[%+.0f %+.0f]  Y=[%+.0f %+.0f]  |X1-X2|_max=%.0f mm\n', ...
+    fprintf('  Limits OK:  X1=[%+.0f %+.0f]  X2=[%+.0f %+.0f]  Y=[%+.0f %+.0f]  |X1-X2|_max=%.1f mm\n', ...
             min(r(:,1))*1e3, max(r(:,1))*1e3, ...
             min(r(:,2))*1e3, max(r(:,2))*1e3, ...
             min(r(:,3))*1e3, max(r(:,3))*1e3, ...
@@ -428,19 +435,31 @@ end
 function ok = validate_response(q1, fs)
 % Check actual simulated response against ETEL TELICA hardware limits.
 % Operates on q1 (not reference r) — closed loop shapes the response.
-    X_LIM    = 0.375;   % ±375 mm
-    Y_LIM    = 0.400;   % ±400 mm
-    DIFF_LIM = 0.100;   % 100 mm max |X1-X2|
-    VEL_LIM  = 2.0;     % m/s  all axes
-    ACC_LIM  = 50.0;    % m/s² all axes
+% Sources:
+%   X_LIM, Y_LIM  : TELICA datasheet p.2/4, Dimensional Data: 750 mm (X), 800 mm (Y).
+%   DIFF_LIM      : Garcia (2013) eq.(1) + Section 2.3: Theta_max = 0.1 rad.
+%   VEL_LIM       : TELICA datasheet p.2/4, Dynamic Performance: 2 m/s (X and Y).
+%   ACC_LIM_X     : TELICA datasheet p.2/4, Dynamic Performance: 30 m/s² (X axes).
+%   ACC_LIM_Y     : TELICA datasheet p.2/4, Dynamic Performance: 50 m/s² (Y axis).
+    Lb        = 0.725;          % cross-arm length [m] (main.m)
+    X_LIM     = 0.375;          % ±375 mm
+    Y_LIM     = 0.400;          % ±400 mm
+    DIFF_LIM  = sin(0.1) * Lb;  % 72.4 mm  (yaw limit 0.1 rad, Garcia 2013)
+    VEL_LIM   = 2.0;            % m/s  X and Y (TELICA p.2/4)
+    ACC_LIM_X = 30.0;           % m/s² X1, X2 axes (TELICA p.2/4)
+    ACC_LIM_Y = 50.0;           % m/s² Y axis      (TELICA p.2/4)
 
-    vel = diff(q1) * fs;
-    acc = diff(vel) * fs;
+    vel = diff(q1) * fs;        % (N-1 x 3)
+    acc = diff(vel) * fs;       % (N-2 x 3)
 
-    ok =    max(abs(q1(:,1)))          <= X_LIM    ...
-         && max(abs(q1(:,2)))          <= X_LIM    ...
-         && max(abs(q1(:,3)))          <= Y_LIM    ...
-         && max(abs(q1(:,1)-q1(:,2))) <= DIFF_LIM ...
-         && max(abs(vel(:)))           <= VEL_LIM  ...
-         && max(abs(acc(:)))           <= ACC_LIM;
+    ok =    max(abs(q1(:,1)))          <= X_LIM     ...
+         && max(abs(q1(:,2)))          <= X_LIM     ...
+         && max(abs(q1(:,3)))          <= Y_LIM     ...
+         && max(abs(q1(:,1)-q1(:,2))) <= DIFF_LIM  ...
+         && max(abs(vel(:,1)))         <= VEL_LIM   ...
+         && max(abs(vel(:,2)))         <= VEL_LIM   ...
+         && max(abs(vel(:,3)))         <= VEL_LIM   ...
+         && max(abs(acc(:,1)))         <= ACC_LIM_X ...
+         && max(abs(acc(:,2)))         <= ACC_LIM_X ...
+         && max(abs(acc(:,3)))         <= ACC_LIM_Y;
 end

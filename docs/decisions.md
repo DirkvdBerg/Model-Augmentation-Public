@@ -810,3 +810,66 @@ changes — `Cfb` and `G` are still plain workspace variables.
   exactly as simulated.
 - If gain-scheduled control is added later, `Cfb` computation must move inside the
   trajectory loop and be evaluated online using the current Y state.
+
+---
+
+### [D-040] torch.compile on rk4_step deferred — hardware constraint
+**Date**: 2026-04-18
+**What**: `@torch.compile(fullgraph=True, dynamic=False)` was added to `rk4_step` as
+Phase 2 of the Step 3c training speed optimization. It has been removed and deferred.
+**Why**:
+- Training GPU is a Quadro P2000 (CUDA Capability 6.1). Triton requires CC ≥ 7.0 (Volta+).
+  `backend='inductor'` fails with: *"Found Quadro P2000 which is too old to be supported
+  by the triton GPU compiler"*.
+- CPU path also blocked: MSVC `cl.exe` is not installed on this Windows machine; TorchInductor
+  cannot compile C++ kernels for the CPU fallback.
+- `backend='aot_eager'` works on both but provides no kernel fusion — only Python dispatch
+  overhead reduction, which is negligible on a GPU-bound workload.
+**What WAS completed (kept)**: Phase 1 (GMatrix → (15,15) tensor refactor) is complete
+and stays. It reduces the buffer count from 7 to 1 in `lfr_block.py`, simplifies the API,
+and is the necessary prerequisite for Triton kernel fusion once hardware is upgraded.
+**Ruled out**: `aot_eager` as a permanent solution — it provides ~0% speedup on CUDA.
+**Re-enable when**: Training moves to a Volta/Turing/Ampere GPU (CC ≥ 7.0). The code
+comment in `lfr_simulate.py` contains the exact decorator to uncomment.
+**Known issue to fix on re-enable**: `rk4_step` is called in both gradient (training loop)
+and no-grad (eval pass) contexts. With the default `cache_size_limit=8`, this triggers
+`GLOBAL_STATE changed: grad_mode` recompilations that eventually raise `CacheLimitExceeded`.
+Fix: use `options={"cache_size_limit": 4}` in the decorator — allows grad/no-grad × dtype
+specializations without restructuring the call sites. No logic change needed.
+**Constrains**: `lfr_simulate.py` — the commented-out decorator block must not be removed;
+it documents the intended optimization for future hardware.
+
+---
+
+### [D-041] Physics computation kept in float64 — float32 not precise enough
+**Date**: 2026-04-18
+**What**: All physics in `rk4_step` and `lfr_forward` (the polynomial loop solve, RK4
+integration, matrix products) is computed in float64. The Jan framework uses float32
+throughout; explicit casts are applied at the block boundary in `lfr_block.py` and
+`lfr_param_block.py` (float32 → float64 on entry, float64 → float32 on exit).
+**Why**:
+- The polynomial loop solve `N(Y)/d(Y)` uses Horner evaluation of the adjugate matrix
+  (N0, N1, N2) and the scalar determinant polynomial d(Y). These involve subtraction
+  of near-equal terms and division by a scalar that can be small near the limits of the
+  Y operational range. float32 provides only ~7 decimal digits of precision — insufficient
+  to guarantee numerical accuracy of the solve across the full Y range and over long
+  trajectories (4000 RK4 steps per segment).
+- RK4 integration accumulates truncation error per step; float32 rounding adds a second
+  error source on top. Over 4000 steps at ts = 1/16 kHz the accumulated float32 error
+  has not been validated against the required parameter recovery accuracy.
+- Physical parameters (masses ~10–25 kg, stiffnesses ~2000 N/m) span two orders of
+  magnitude. float32 relative error (~1e-7) translates to absolute errors that may not
+  be negligible for gradient-based parameter recovery where small parameter deltas matter.
+**Ruled out**: float32 physics — not validated, risk of gradient degradation during
+parameter recovery training. The Quadro P2000 has 1/32 fp64-to-fp32 throughput ratio
+(Pascal), so float32 would be significantly faster, but correctness must come first.
+**Future investigation**: If training speed becomes a bottleneck after moving to better
+hardware (or if float64 remains slow), run a controlled experiment:
+1. Train with float64 (reference), record `param_table()` and val RMSE per epoch.
+2. Remove the two cast lines in `lfr_block.py` to run entirely in float32.
+3. Compare `param_table()` — if parameters agree to within ~0.1% and RMSE curves match,
+   float32 is acceptable and the cast lines can be removed permanently.
+The comment in `lfr_block.py` marks the exact two lines to change.
+**Constrains**: `lfr_block.py` and `lfr_param_block.py` — the float32↔float64 cast lines
+must not be removed without the above validation. `lfr_forward.py` and `lfr_simulate.py`
+need no changes; they operate on whatever dtype the caller passes.
