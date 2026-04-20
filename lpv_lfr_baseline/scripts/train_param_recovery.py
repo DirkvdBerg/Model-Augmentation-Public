@@ -781,6 +781,7 @@ def train(
         print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 12}  {"-" * 9}')
 
     t_start = time.time()
+    history = []  # one entry per log_interval epoch
 
     for epoch in range(epochs):
         t0 = _sync_time(device)
@@ -820,18 +821,35 @@ def train(
 
         if checkpoint_interval > 0 and epoch > 0 and epoch % checkpoint_interval == 0:
             torch.save(
-                {'log_params': block.log_params.detach(), 'epoch': epoch},
+                {'log_params': block.log_params.detach(), 'epoch': epoch, 'history': history},
                 os.path.join(save_dir, f'checkpoint_e{epoch}.pt'),
             )
 
         if epoch % log_interval == 0 or epoch == epochs - 1:
-            train_rmse_m = (Y_pred.detach() - q1_seg).pow(2).mean().sqrt().item()
+            train_err = Y_pred.detach() - q1_seg
+            train_rmse_m = train_err.pow(2).mean().sqrt().item()
+            train_rmse_ch = train_err.pow(2).mean(dim=(0, 1)).sqrt().cpu()  # (3,)
             with torch.no_grad():
                 val_pred = wrapper(val_x0, val_u)
                 val_mse = ((val_pred - val_q1) / sigma).pow(2).mean().item()
-                val_rmse_m = (val_pred - val_q1).pow(2).mean().sqrt().item()
+                val_err = val_pred - val_q1
+                val_rmse_m = val_err.pow(2).mean().sqrt().item()
+                val_rmse_ch = val_err.pow(2).mean(dim=(0, 1)).sqrt().cpu()  # (3,)
             scheduler.step(val_mse)
+            current_lr = optimizer.param_groups[0]['lr']
+            hist_entry = {
+                'epoch': epoch,
+                'train_rmse_m': train_rmse_m,
+                'train_rmse_ch': train_rmse_ch,
+                'val_rmse_m': val_rmse_m,
+                'val_rmse_ch': val_rmse_ch,
+                'val_mse_norm': val_mse,
+                'grad_norm': grad_norm,
+                'lr': current_lr,
+            }
             if param_loss_weight > 0:
+                hist_entry['param_loss'] = theta_loss.item()
+                hist_entry['total_loss'] = loss.item()
                 print(
                     f'  {epoch:>6}  {train_rmse_m:>14.4e}  {theta_loss.item():>12.4e}  '
                     f'{loss.item():>12.4e}  {val_rmse_m:>12.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
@@ -844,7 +862,10 @@ def train(
                     flush=True,
                 )
             if PARAM_LOG_INTERVAL > 0 and (epoch % PARAM_LOG_INTERVAL == 0 or epoch == epochs - 1):
-                _print_param_detail(block, _pg, optimizer.param_groups[0]['lr'])
+                with torch.no_grad():
+                    hist_entry['log_params_snapshot'] = block.log_params.detach().cpu().clone()
+                _print_param_detail(block, _pg, current_lr)
+            history.append(hist_entry)
         if time_epochs:
             print(
                 f'    fwd={t_fwd - t0:.2f}s  bwd={t_bwd - t_fwd:.2f}s  total={t_bwd - t0:.2f}s',
@@ -860,20 +881,26 @@ def train(
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 5: Prediction error\n{"=" * 60}')
     eval_entries = []
-    print(f'  {"Traj":<6}  {"Group":<12}  {"RMSE [mm]":>12}')
-    print(f'  {"-" * 6}  {"-" * 12}  {"-" * 12}')
+    print(f'  {"Traj":<6}  {"Group":<12}  {"RMSE [mm]":>12}  {"X1 [mm]":>10}  {"X2 [mm]":>10}  {"Y [mm]":>10}')
+    print(f'  {"-" * 6}  {"-" * 12}  {"-" * 12}  {"-" * 10}  {"-" * 10}  {"-" * 10}')
     for traj in trajs:
         pre = _run_no_grad(block, traj['state_traj'][:1], traj['u'])
         y_pred = pre.Y[0]
-        mse_eval = F.mse_loss(y_pred, traj['q1']).item()
+        diff = y_pred - traj['q1']
+        mse_eval = diff.pow(2).mean().item()
         rmse_eval = mse_eval ** 0.5
+        rmse_ch = diff.pow(2).mean(dim=0).sqrt().cpu()  # (3,) per channel
         eval_entries.append({
             'id': traj['id'],
             'group': traj['group'],
             'mse_total': mse_eval,
             'rmse_total': rmse_eval,
+            'rmse_ch': rmse_ch,
         })
-        print(f'  {traj["id"]:<6}  {traj["group"]:<12}  {rmse_eval * 1e3:>12.4f}')
+        print(
+            f'  {traj["id"]:<6}  {traj["group"]:<12}  {rmse_eval * 1e3:>12.4f}'
+            f'  {rmse_ch[0] * 1e3:>10.4f}  {rmse_ch[1] * 1e3:>10.4f}  {rmse_ch[2] * 1e3:>10.4f}'
+        )
     overall_rmse = _aggregate_grouped_rmse(eval_entries)
     print(f'\n  Overall RMSE: {overall_rmse:.6e} m  ({overall_rmse * 1e3:.4f} mm)')
 
@@ -887,21 +914,44 @@ def train(
     # 7. Save
     # ------------------------------------------------------------------
     params_true = torch.tensor([_TRUE_PARAMS[n] for n in _PARAM_NAMES], dtype=torch.float64)
+    params_learned = block.params_init * block.log_params.detach().exp()
+
+    # Group-balanced per-channel RMSE (mirrors _aggregate_grouped_rmse logic)
+    _group_mse_ch = {}
+    for _e in eval_entries:
+        _group_mse_ch.setdefault(_e['group'], []).append(_e['rmse_ch'].pow(2))
+    eval_rmse_ch = (
+        sum(torch.stack(v).mean(dim=0) for v in _group_mse_ch.values()) / len(_group_mse_ch)
+    ).sqrt()  # (3,) group-balanced per-channel RMSE
+
     save_path = os.path.join(save_dir, f'lfr_param_recovery_{traj_tag}_e{epochs}_plw{param_loss_weight:.1f}.pt')
     torch.save(
         {
-            'log_params': block.log_params.detach(),
-            'params_init': block.params_init,
+            # Parameters
+            'param_names': list(_PARAM_NAMES),
             'params_true': params_true,
+            'params_init': block.params_init,
+            'params_learned': params_learned,
+            'log_params': block.log_params.detach(),
+            # Normalisation
             'RMSE_baseline': rmse_baseline,
             'RMSE_baseline_normalized': rmse_baseline_normalized,
+            'rmse_baseline_entries': _rmse_entries,
             'sigma': sigma.cpu(),
+            # Run config
             'active_traj_ids': tuple(spec['id'] for spec in traj_specs),
             'epochs': epochs,
             'lr': lr,
             'segment_len': segment_len,
             'param_loss_weight': param_loss_weight,
+            'train_segments_per_epoch': TRAIN_SEGMENTS_PER_EPOCH,
+            'val_segments_fixed': VAL_SEGMENTS_FIXED,
+            'base_seed': BASE_SEED,
+            # Results
             'eval_rmse': overall_rmse,
+            'eval_rmse_ch': eval_rmse_ch,
+            'eval_entries': eval_entries,
+            'history': history,
         },
         save_path,
     )
