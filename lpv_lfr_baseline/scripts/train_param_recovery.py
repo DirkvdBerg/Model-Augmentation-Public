@@ -69,11 +69,12 @@ ACTIVE_TRAJ_IDS = tuple(spec['id'] for spec in TRAJ_SPECS)
 
 # ── Experiment settings ───────────────────────────────────────────────────────
 N_STEPS = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
-EPOCHS = 3
+EPOCHS = 2000
 LR = 1e-3
 SEGMENT_LEN = None  # None = choose the smallest stable candidate from the segment-length diagnostic; int = use that fixed number of samples
 PARAM_LOSS_WEIGHT = 0.0
 LOG_INTERVAL = 25
+PARAM_LOG_INTERVAL = 100   # 0 = disable; per-param value+gradient table at this cadence
 CHECKPOINT_INTERVAL = 100
 PROFILE = False
 TIME_EPOCHS = False
@@ -584,6 +585,21 @@ def _get_or_run_segment_length_diagnostic(traj_specs, rmse_baseline, device, sav
     print(f'  segment_len_diag: saved to {cache_path}')
     return diag
 
+def _print_param_detail(block, log_param_grads, lr):
+    """Per-parameter learned value vs truth and log_param gradient norms."""
+    with torch.no_grad():
+        learned = block._recover_params()  # tuple of scalar tensors, _PARAM_NAMES order
+    print(f'\n  [param detail  lr={lr:.2e}]')
+    print(f'  {"Param":<6}  {"True":>10}  {"Learned":>10}  {"Delta%":>8}  {"|grad|":>10}')
+    print(f'  {"-"*6}  {"-"*10}  {"-"*10}  {"-"*8}  {"-"*10}')
+    for i, name in enumerate(_PARAM_NAMES):
+        true_v = _TRUE_PARAMS[name]
+        lrn_v  = float(learned[i])
+        delta  = (lrn_v - true_v) / true_v * 100
+        grad_v = float(log_param_grads[i].abs()) if log_param_grads is not None else float('nan')
+        print(f'  {name:<6}  {true_v:>10.4f}  {lrn_v:>10.4f}  {delta:>+8.2f}%  {grad_v:>10.3e}')
+
+
 def _save_profile(prof, save_dir):
     """Print profiler table to console and save to profile_out.txt."""
     table = prof.key_averages().table(sort_by='self_cpu_time_total', row_limit=20)
@@ -794,10 +810,12 @@ def train(
         if prof is not None:
             _save_profile(prof, save_dir)
 
-        grad_norm = (
-            block.log_params.grad.norm().item()
-            if block.log_params.grad is not None else float('nan')
-        )
+        if block.log_params.grad is not None:
+            _pg = block.log_params.grad.detach().clone()
+            grad_norm = _pg.norm().item()
+        else:
+            _pg = None
+            grad_norm = float('nan')
         optimizer.step()
 
         if checkpoint_interval > 0 and epoch > 0 and epoch % checkpoint_interval == 0:
@@ -825,6 +843,8 @@ def train(
                     f'{grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
                     flush=True,
                 )
+            if PARAM_LOG_INTERVAL > 0 and (epoch % PARAM_LOG_INTERVAL == 0 or epoch == epochs - 1):
+                _print_param_detail(block, _pg, optimizer.param_groups[0]['lr'])
         if time_epochs:
             print(
                 f'    fwd={t_fwd - t0:.2f}s  bwd={t_bwd - t_fwd:.2f}s  total={t_bwd - t0:.2f}s',
