@@ -625,11 +625,27 @@ All 10 trainable scalars are simultaneously trained from the start (same pattern
 ---
 
 ### [D-034] RMSE_baseline for Lambda regularization computed from detuned baseline on MATLAB data
-**Date**: 2026-04-06
-**What**: Before training begins, run one no-gradient forward simulation of `ParameterizedLFRBlock` with `params = params_init` (detuned values) on `lpv_sim_varying_y.mat`. Measure the RMS prediction error in stage coordinates. Use this value as `RMSE_baseline` in the Lambda computation: `Lambda[i] = RMSE_baseline / params_init[i]`.
-**Why**: RMSE_baseline scales the regularization relative to the simulation loss. If it is set correctly, the optimizer naturally balances simulation MSE against parameter deviation — when parameters have moved enough to reduce prediction error by one RMSE_baseline unit, the regularization cost is comparable to the simulation benefit. Computing it from the actual detuned baseline on actual data gives an automatic, principled calibration that does not require guessing. Our data is in physical units (metres), so a pre-chosen constant (Jan's value of 0.2 for his normalised MSD system) would be arbitrary and likely wrong.
-**Ruled out**: Manual constant (Jan's approach, e.g. 0.2 for MSD) — only valid because Jan pre-normalises his data to dimensionless units; our data is in metres and the appropriate scale is unknown a priori without a simulation. Setting it too small over-regularises (parameters cannot move); too large under-regularises (parameters may overshoot true values).
-**Constrains**: The training script must run a forward-pass RMSE computation before calling `init_model()`. This value is passed to `ParameterizedLFRBlock.__init__()` as `RMSE_baseline`. It should be logged alongside training results for reproducibility.
+**Date**: 2026-04-06 (updated 2026-04-20)
+**What**: Before training begins, compute the per-trajectory RMSE of `ParameterizedLFRBlock` with `params = params_init` (detuned values) on the active MATLAB trajectories. Two quantities are derived from this:
+
+1. `rmse_baseline` — group-balanced RMSE **in metres** (physical units). Used only for reporting and to instantiate the block when the loss is in physical units (not the current training setup).
+2. `rmse_baseline_normalized` — the same RMSE expressed **in sigma-normalized units** (dimensionless), computed via `_aggregate_normalized_rmse_baseline()`. This is what is actually passed to `ParameterizedLFRBlock.__init__()` as `RMSE_baseline`.
+
+The distinction matters because the training loss is normalized by sigma (see D-042):
+```
+mse_loss = mean(((Y_pred - q1) / sigma)²)    # dimensionless, O(1)
+```
+Lambda must be calibrated in the same unit system as `mse_loss`. Passing the metre-space value would make Lambda ~450× too small, effectively disabling regularization.
+
+Inside the block, Lambda is computed as:
+```python
+Lambda[i] = RMSE_baseline_normalized / params_init[i]
+```
+This ensures the regularization cost is comparable to the simulation MSE when parameters have moved enough to reduce the (normalized) prediction error by one `RMSE_baseline_normalized` unit.
+
+**Why**: RMSE_baseline_normalized scales the regularization relative to the simulation loss in the same unit system. Computing it from the actual detuned baseline on actual data gives principled, automatic calibration. Jan's fixed constant (0.2) is only valid because his data is already normalized to O(1) — our raw data is in metres and sigma-normalization must be applied first.
+**Ruled out**: Passing `rmse_baseline` (metres) to the block — Lambda would be ~450× too small and regularization would be ineffective. Manual constant without sigma normalization — arbitrary and unit-dependent.
+**Constrains**: `train_param_recovery.py` must compute both `rmse_baseline` (for logging) and `rmse_baseline_normalized` (for the block). The block always receives the sigma-normalized value. Both values should be logged in the saved `.pt` file for reproducibility. See D-042 for the sigma normalization itself.
 
 ---
 
@@ -873,3 +889,63 @@ The comment in `lfr_block.py` marks the exact two lines to change.
 **Constrains**: `lfr_block.py` and `lfr_param_block.py` — the float32↔float64 cast lines
 must not be removed without the above validation. `lfr_forward.py` and `lfr_simulate.py`
 need no changes; they operate on whatever dtype the caller passes.
+
+---
+
+### [D-042] Training loss normalized by per-channel output standard deviation (sigma)
+**Date**: 2026-04-20
+**What**: The MSE training loss in `train_param_recovery.py` is computed in sigma-normalized space:
+```python
+sigma = std of q1 across all 6 TRAJ_SPECS trajectories, per channel  # (3,) float64 tensor
+err   = (Y_pred - q1_seg) / sigma
+mse_loss = err.pow(2).mean()                                           # dimensionless
+```
+`sigma` is computed over the **full trajectory set** (all TRAJ_SPECS, not just ACTIVE_TRAJ_IDS) and cached to disk. It does not change when the active trajectory subset is changed.
+
+**Why**: The three output channels [X1, X2, Y] are in metres but have different signal amplitudes. Without normalization the Y channel (largest excursion) dominates the loss, pulling parameter gradients toward Y-related parameters (mh, cy) at the expense of X-related ones (m1, m2, cg1, cg2). Dividing by sigma gives each channel unit variance, so MSE contribution is proportional to relative prediction error, not absolute channel amplitude.
+
+Using the full TRAJ_SPECS for sigma (not the active subset) means:
+- Sigma is stable regardless of which trajectories are active — no cache invalidation when ACTIVE_TRAJ_IDS changes.
+- Sigma represents the full operating envelope of the system, not just the subset being trained on.
+
+**Connection to D-034 (RMSE_baseline_normalized)**: Because the loss is dimensionless, the RMSE_baseline passed to `ParameterizedLFRBlock` must also be in sigma-normalized units. `rmse_baseline_normalized` is computed by `_aggregate_normalized_rmse_baseline()`, which applies the same per-channel sigma division to the per-trajectory RMSE before aggregating. This is the value passed to the block — not the metre-space `rmse_baseline`. See D-034 for the full Lambda calibration rationale.
+
+**Ruled out**:
+- *No normalization*: Y channel dominates; X1/X2 parameter gradients are suppressed.
+- *Global scalar normalization*: a single scalar (e.g. overall std) does not correct the per-channel imbalance.
+- *Normalizing by active-subset sigma*: sigma would shift when ACTIVE_TRAJ_IDS changes, making Lambda (which is fixed at block construction) inconsistent across runs.
+
+**Constrains**: `train_param_recovery.py` — `sigma` must always be computed from the full TRAJ_SPECS, not the active subset. The `SIGMA_CACHE_VERSION` constant must be incremented if TRAJ_SPECS itself changes. Any future training script for this system must apply the same sigma normalization and pass `rmse_baseline_normalized` (not metres) to the block.
+
+---
+
+### [D-043] Checkpoint/epoch selection strategy for parameter recovery training
+**Date**: 2026-04-20
+**What**: Three decisions about which parameter vector to save and how to track convergence:
+
+1. **Current phase (clean MATLAB data):** Use **Polyak-Ruppert tail averaging** over the plateau phase. Start averaging on the first LR reduction event from `ReduceLROnPlateau` — this trigger is automatic and requires no additional hyperparameter. The averaged `log_params` are saved alongside the final-epoch `log_params` in the `.pt` file. This is not yet implemented.
+
+2. **Convergence tracking:** Run a full-trajectory eval (same as step 5) every `PARAM_LOG_INTERVAL` epochs. Save the result in `history`. This gives a clean convergence curve comparable to the final step 5 result, and provides the signal for best-epoch tracking if needed. This is not yet implemented.
+
+3. **Future phase (measurement noise):** Polyak averaging over the late plateau becomes harmful — the late iterates are corrupted by semi-convergence (the optimizer fits noise after exhausting the clean signal). Switch to early stopping:
+   - Known noise variance → **Morozov Discrepancy Principle**: halt when the smoothed training residual hits the noise floor `τ·δ²`.
+   - Unknown noise variance → **L-curve method**: log `(residual norm, solution norm)` at each epoch; find the corner post-training. This requires logging `‖log_params‖` (or deviation from init) alongside the loss in `history`. The `log_params_snapshot` already saved at `PARAM_LOG_INTERVAL` supports this.
+
+**Why:**
+- **Saving last epoch is not principled.** The last epoch may not be optimal: the stochastic 8-segment train loss has high variance, and `ReduceLROnPlateau` does not guarantee the last iterate is the best. Last ≈ best only if LR has fully decayed to `min_lr` — which may not happen within 2000 epochs.
+- **Best-epoch on stochastic train loss is actively wrong.** It rewards lucky random batches, not genuine parameter improvement. Confirmed by both the subagent research and Gemini Deep Research.
+- **Polyak tail averaging is theoretically optimal for clean data.** For a 13-parameter, physics-constrained, locally convex problem, iterate averaging achieves the Cramér-Rao lower bound. It cancels the zero-mean batch noise algebraically without any additional computation beyond a running sum of 13 scalars.
+- **Full-trajectory eval every PARAM_LOG_INTERVAL solves two problems at once:** the convergence plot becomes directly comparable to the step 5 final result, and it provides a stable signal for best-epoch tracking that is immune to batch sampling noise.
+- **Semi-convergence is a real risk when noise is added.** With only 13 parameters, structural overfitting cannot occur. But the optimizer will eventually start fitting measurement noise rather than physics — "clean priority learning" means accuracy peaks mid-training, not at the end. Polyak averaging the corrupted plateau would amplify this effect.
+
+**Ruled out:**
+- *Best-epoch on stochastic train loss:* rewards sampling variance; statistically invalid for epoch selection.
+- *Best-epoch on fixed held-out segment set:* computationally wasteful per epoch; vulnerable to trajectory divergence and the same noise issue as the train set (just with a fixed random seed instead of a varying one). Less principled than full-trajectory eval.
+- *Schedule-Free optimizer (Defazio 2024):* eliminates epoch selection entirely by unifying momentum and iterate averaging — promising but not implemented. Would remove `ReduceLROnPlateau` and its associated patience/factor hyperparameters. Deferred as a future experiment.
+- *Stochastic Weight Averaging (SWA) with cyclical LR:* correct in principle but requires replacing `ReduceLROnPlateau` with a cyclical schedule. More disruptive to the current setup than Polyak tail averaging which re-uses the existing scheduler trigger.
+
+**Constrains:**
+- `train_param_recovery.py`: add `averaging_active` flag, `AveragedModel` from `torch.optim.swa_utils`, triggered by first LR reduction. Save `averaged_log_params` in the `.pt` file.
+- `train_param_recovery.py`: add full-trajectory eval loop inside the `PARAM_LOG_INTERVAL` block. Save per-trajectory RMSE snapshots in `history`.
+- When noise is added: `history` must log solution norm `‖log_params − log(params_init)‖` per epoch to support L-curve analysis post-training. The `log_params_snapshot` at `PARAM_LOG_INTERVAL` already provides this at coarser resolution.
+- Both `params_learned` (last epoch) and `params_learned_avg` (Polyak average) must appear in the final `.pt` save so results can be compared.
