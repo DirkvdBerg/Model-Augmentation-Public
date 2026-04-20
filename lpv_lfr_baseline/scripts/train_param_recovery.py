@@ -732,6 +732,8 @@ def train(
     # 3. Block + optimizer
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 3: Build model\n{"=" * 60}')
+    # Pass the sigma-normalized RMSE (not the metre-space value) so that Lambda
+    # is calibrated in the same unit system as mse_loss (D-034, D-042).
     block = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline_normalized).to(device)
     optimizer = torch.optim.Adam(block.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -791,6 +793,8 @@ def train(
 
         with ctx as prof:
             Y_pred = wrapper(x0_seg, u_seg)
+            # Normalize by per-channel std so all three output channels contribute
+            # equally to the loss regardless of their absolute amplitude (D-042).
             err = (Y_pred - q1_seg) / sigma
             mse_loss = err.pow(2).mean()
             theta_loss = block.param_loss() if param_loss_weight > 0 else None
