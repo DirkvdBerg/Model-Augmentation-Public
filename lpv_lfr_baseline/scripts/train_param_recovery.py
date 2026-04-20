@@ -719,15 +719,13 @@ def train(
     _attach_valid_start_idx(trajs, segment_len)
     active_groups = _active_groups_from_trajs(trajs)
     train_group_counts = _balanced_group_counts(TRAIN_SEGMENTS_PER_EPOCH, active_groups)
-    val_group_counts = _balanced_group_counts(VAL_SEGMENTS_FIXED, active_groups)
     print(
         f'  Active set: {", ".join(spec["id"] for spec in traj_specs)}  '
         f'({len(trajs)} trajectories, {len(active_groups)} groups)'
     )
     print(
         f'  segment_len={segment_len}  '
-        f'train batch={sum(train_group_counts.values())} segments/epoch  '
-        f'val batch={sum(val_group_counts.values())} segments'
+        f'train batch={sum(train_group_counts.values())} segments/epoch'
     )
 
     # ------------------------------------------------------------------
@@ -738,7 +736,7 @@ def train(
     optimizer = torch.optim.Adam(block.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
-        patience=5,
+        patience=125,  # steps every epoch on train loss; 125 epochs ≈ original 5×LOG_INTERVAL=25
         factor=0.5,
         min_lr=1e-5,
     )
@@ -757,13 +755,6 @@ def train(
     print(block.param_table())
 
     # ------------------------------------------------------------------
-    # 3b. Precomputed data structures - parameter-free
-    # ------------------------------------------------------------------
-    val_x0, val_u, val_q1, _ = _sample_balanced_segments(
-        trajs, segment_len, val_group_counts, BASE_SEED
-    )
-
-    # ------------------------------------------------------------------
     # 4. Training loop
     # ------------------------------------------------------------------
     print(
@@ -773,12 +764,12 @@ def train(
     if param_loss_weight > 0:
         print(
             f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"param_loss":>12}  '
-            f'{"total":>12}  {"val_rmse[m]":>12}  {"grad_norm":>12}  {"time [s]":>9}'
+            f'{"total":>12}  {"grad_norm":>12}  {"time [s]":>9}'
         )
-        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 9}')
+        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 9}')
     else:
-        print(f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"val_rmse[m]":>12}  {"grad_norm":>12}  {"time [s]":>9}')
-        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 12}  {"-" * 9}')
+        print(f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"grad_norm":>12}  {"time [s]":>9}')
+        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 9}')
 
     t_start = time.time()
     history = []  # one entry per log_interval epoch
@@ -818,6 +809,7 @@ def train(
             _pg = None
             grad_norm = float('nan')
         optimizer.step()
+        scheduler.step(mse_loss.item())
 
         if checkpoint_interval > 0 and epoch > 0 and epoch % checkpoint_interval == 0:
             torch.save(
@@ -829,21 +821,12 @@ def train(
             train_err = Y_pred.detach() - q1_seg
             train_rmse_m = train_err.pow(2).mean().sqrt().item()
             train_rmse_ch = train_err.pow(2).mean(dim=(0, 1)).sqrt().cpu()  # (3,)
-            with torch.no_grad():
-                val_pred = wrapper(val_x0, val_u)
-                val_mse = ((val_pred - val_q1) / sigma).pow(2).mean().item()
-                val_err = val_pred - val_q1
-                val_rmse_m = val_err.pow(2).mean().sqrt().item()
-                val_rmse_ch = val_err.pow(2).mean(dim=(0, 1)).sqrt().cpu()  # (3,)
-            scheduler.step(val_mse)
             current_lr = optimizer.param_groups[0]['lr']
             hist_entry = {
                 'epoch': epoch,
                 'train_rmse_m': train_rmse_m,
                 'train_rmse_ch': train_rmse_ch,
-                'val_rmse_m': val_rmse_m,
-                'val_rmse_ch': val_rmse_ch,
-                'val_mse_norm': val_mse,
+                'mse_loss_norm': mse_loss.item(),
                 'grad_norm': grad_norm,
                 'lr': current_lr,
             }
@@ -852,13 +835,12 @@ def train(
                 hist_entry['total_loss'] = loss.item()
                 print(
                     f'  {epoch:>6}  {train_rmse_m:>14.4e}  {theta_loss.item():>12.4e}  '
-                    f'{loss.item():>12.4e}  {val_rmse_m:>12.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
+                    f'{loss.item():>12.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
                     flush=True,
                 )
             else:
                 print(
-                    f'  {epoch:>6}  {train_rmse_m:>14.4e}  {val_rmse_m:>12.4e}  '
-                    f'{grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
+                    f'  {epoch:>6}  {train_rmse_m:>14.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
                     flush=True,
                 )
             if PARAM_LOG_INTERVAL > 0 and (epoch % PARAM_LOG_INTERVAL == 0 or epoch == epochs - 1):
@@ -945,7 +927,6 @@ def train(
             'segment_len': segment_len,
             'param_loss_weight': param_loss_weight,
             'train_segments_per_epoch': TRAIN_SEGMENTS_PER_EPOCH,
-            'val_segments_fixed': VAL_SEGMENTS_FIXED,
             'base_seed': BASE_SEED,
             # Results
             'eval_rmse': overall_rmse,
