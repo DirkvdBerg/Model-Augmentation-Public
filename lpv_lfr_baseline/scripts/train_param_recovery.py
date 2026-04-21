@@ -27,6 +27,8 @@ import contextlib
 import os
 import sys
 import time
+import threading
+import queue
 
 import torch
 import torch.nn.functional as F
@@ -83,6 +85,7 @@ CHANNEL_MASKS = {
 N_STEPS = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
 EPOCHS = 3
 LR = 1e-3
+FULL_EVAL_INTERVAL = 10   # run full-trajectory eval every N epochs
 SEGMENT_LEN = None  # None = choose the smallest stable candidate from the segment-length diagnostic; int = use that fixed number of samples
 PARAM_LOSS_WEIGHT = 0.0
 LOG_INTERVAL = 25
@@ -187,6 +190,21 @@ def _run_no_grad(block, x0, u):
             bptt_mode='full',
             return_latents=False,
         )
+
+
+def _full_traj_eval(block, trajs):
+    """Full-trajectory eval (no grad). Same metric as Step 5. Returns (rmse_m, entries)."""
+    entries = []
+    for traj in trajs:
+        pre = _run_no_grad(block, traj['state_traj'][:1], traj['u'])
+        diff = pre.Y[0] - traj['q1']
+        rmse = diff.pow(2).mean().item() ** 0.5
+        entries.append({
+            'id': traj['id'], 'group': traj['group'],
+            'mse_total': rmse ** 2, 'rmse_total': rmse,
+            'rmse_ch': diff.pow(2).mean(dim=0).sqrt().cpu(),
+        })
+    return _aggregate_grouped_rmse(entries), entries
 
 
 def _state_cache_path(save_dir, traj_id, n_steps):
@@ -795,9 +813,13 @@ def train(
         min_lr=1e-5,
     )
     n_gpus = min(4, torch.cuda.device_count()) if device.type == 'cuda' else 0
+    # Reserve last GPU for async eval; give the rest to DataParallel.
+    n_gpus_train = max(n_gpus - 1, 1)
+    eval_device   = torch.device(f'cuda:{n_gpus - 1}') if n_gpus > 1 else device
+
     wrapper = (
-        torch.nn.DataParallel(_SimWrapper(block), device_ids=list(range(n_gpus)))
-        if n_gpus > 1 else _SimWrapper(block)
+        torch.nn.DataParallel(_SimWrapper(block), device_ids=list(range(n_gpus_train)))
+        if n_gpus_train > 1 else _SimWrapper(block)
     )
     print(f'  Trainable params : {sum(p.numel() for p in block.parameters())}')
     print(f'  RMSE_baseline    : {rmse_baseline:.6e} m  (normalized: {rmse_baseline_normalized:.6e})')
@@ -827,6 +849,44 @@ def train(
 
     t_start = time.time()
     history = []  # one entry per log_interval epoch
+
+    # Eval copies on eval_device. If eval_device == device (single GPU), .to() is a no-op.
+    eval_trajs = []
+    for t in trajs:
+        eval_t = {}
+        for k, v in t.items():
+            if isinstance(v, torch.Tensor):
+                eval_t[k] = v.to(eval_device)
+            else:
+                eval_t[k] = v
+        eval_trajs.append(eval_t)
+
+    # Best-epoch tracking (updated by full-traj eval results)
+    best_full_traj_rmse = float('inf')
+    best_epoch          = -1
+    best_log_params     = None
+
+    # Async eval worker (only when a dedicated GPU is available)
+    use_async_eval = (n_gpus > 1)
+    snap_queue   = queue.Queue(maxsize=2)   # main -> worker: (epoch, log_params_cpu)
+    result_queue = queue.Queue()            # worker -> main: (epoch, rmse, entries, log_params_cpu)
+
+    if use_async_eval:
+        _eval_block = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline_normalized).to(eval_device)
+
+        def _eval_worker():
+            while True:
+                item = snap_queue.get()
+                if item is None:  # poison pill
+                    break
+                snap_epoch, lp_cpu = item
+                with torch.no_grad():
+                    _eval_block.log_params.copy_(lp_cpu.to(eval_device))
+                rmse, entries = _full_traj_eval(_eval_block, eval_trajs)
+                result_queue.put((snap_epoch, rmse, entries, lp_cpu))
+                snap_queue.task_done()
+
+        threading.Thread(target=_eval_worker, daemon=True).start()
 
     for epoch in range(epochs):
         t0 = _sync_time(device)
@@ -914,11 +974,62 @@ def train(
                     hist_entry['log_params_snapshot'] = block.log_params.detach().cpu().clone()
                 _print_param_detail(block, _pg, current_lr)
             history.append(hist_entry)
+
+        # ── Async path: drain completed results (non-blocking) ──────────────────────
+        if use_async_eval:
+            while not result_queue.empty():
+                snap_epoch, full_rmse, _, lp_cpu = result_queue.get_nowait()
+                # Back-fill full_traj_rmse into the history entry for snap_epoch
+                for h in history:
+                    if h['epoch'] == snap_epoch:
+                        h['full_traj_rmse_m'] = full_rmse
+                        h['log_params_snapshot'] = lp_cpu
+                        break
+                print(f'    [eval GPU] epoch {snap_epoch:>4}  full-traj RMSE = {full_rmse * 1e3:.4f} mm',
+                      flush=True)
+                if full_rmse < best_full_traj_rmse:
+                    best_full_traj_rmse, best_epoch, best_log_params = full_rmse, snap_epoch, lp_cpu
+
+            # Push snapshot every FULL_EVAL_INTERVAL epochs
+            if epoch % FULL_EVAL_INTERVAL == 0 or epoch == epochs - 1:
+                try:
+                    if epoch == epochs - 1:
+                        snap_queue.put((epoch, block.log_params.detach().cpu().clone()))
+                    else:
+                        snap_queue.put_nowait((epoch, block.log_params.detach().cpu().clone()))
+                except queue.Full:
+                    pass  # worker not yet done with previous snapshot; skip (rare with 80% slack)
+
+        # ── Sync path (single GPU / CPU): block and run directly ────────────────────
+        elif epoch % FULL_EVAL_INTERVAL == 0 or epoch == epochs - 1:
+            full_rmse, _ = _full_traj_eval(block, eval_trajs)
+            hist_entry['full_traj_rmse_m'] = full_rmse
+            hist_entry['log_params_snapshot'] = block.log_params.detach().cpu().clone()
+            print(f'    [full-traj] epoch {epoch:>4}  RMSE = {full_rmse * 1e3:.4f} mm', flush=True)
+            if full_rmse < best_full_traj_rmse:
+                best_full_traj_rmse = full_rmse
+                best_epoch          = epoch
+                best_log_params     = hist_entry['log_params_snapshot']
+
         if time_epochs:
             print(
                 f'    fwd={t_fwd - t0:.2f}s  bwd={t_bwd - t_fwd:.2f}s  total={t_bwd - t0:.2f}s',
                 flush=True,
             )
+
+    if use_async_eval:
+        snap_queue.put(None)          # poison pill -> worker exits cleanly
+        snap_queue.join()             # wait for worker to finish current item
+        # Drain any results that arrived during the final epochs
+        while not result_queue.empty():
+            snap_epoch, full_rmse, _, lp_cpu = result_queue.get_nowait()
+            for h in history:
+                if h['epoch'] == snap_epoch:
+                    h['full_traj_rmse_m'] = full_rmse
+                    h['log_params_snapshot'] = lp_cpu
+                    break
+            if full_rmse < best_full_traj_rmse:
+                best_full_traj_rmse, best_epoch, best_log_params = full_rmse, snap_epoch, lp_cpu
 
     if epochs > 1:
         total = time.time() - t_start
@@ -927,7 +1038,15 @@ def train(
     # ------------------------------------------------------------------
     # 5. Evaluate - fresh post-training pre-pass (pre may be stale)
     # ------------------------------------------------------------------
-    print(f'\n{"=" * 60}\nStep 5: Prediction error\n{"=" * 60}')
+    print(f'\n{"=" * 60}\nStep 5: Prediction error  (best epoch = {best_epoch})\n{"=" * 60}')
+
+    # Restore best-epoch parameters before the final eval pass
+    if best_log_params is not None:
+        with torch.no_grad():
+            block.log_params.copy_(best_log_params.to(device))
+        print(f'  Loaded best_log_params from epoch {best_epoch} '
+              f'(full-traj RMSE = {best_full_traj_rmse * 1e3:.4f} mm)\n')
+
     eval_entries = []
     print(f'  {"Traj":<6}  {"Group":<12}  {"RMSE [mm]":>12}  {"X1 [mm]":>10}  {"X2 [mm]":>10}  {"Y [mm]":>10}')
     print(f'  {"-" * 6}  {"-" * 12}  {"-" * 12}  {"-" * 10}  {"-" * 10}  {"-" * 10}')
@@ -981,6 +1100,10 @@ def train(
             'params_init': block.params_init,
             'params_learned': params_learned,
             'log_params': block.log_params.detach(),
+            # Best-epoch tracking
+            'best_epoch': best_epoch,
+            'best_full_traj_rmse': best_full_traj_rmse,
+            'best_log_params': best_log_params,
             # Normalisation
             'RMSE_baseline': rmse_baseline,
             'RMSE_baseline_normalized': rmse_baseline_normalized,
