@@ -949,3 +949,170 @@ Using the full TRAJ_SPECS for sigma (not the active subset) means:
 - `train_param_recovery.py`: add full-trajectory eval loop inside the `PARAM_LOG_INTERVAL` block. Save per-trajectory RMSE snapshots in `history`.
 - When noise is added: `history` must log solution norm `‖log_params − log(params_init)‖` per epoch to support L-curve analysis post-training. The `log_params_snapshot` at `PARAM_LOG_INTERVAL` already provides this at coarser resolution.
 - Both `params_learned` (last epoch) and `params_learned_avg` (Polyak average) must appear in the final `.pt` save so results can be compared.
+
+---
+
+### [D-044] Multi-trajectory loss function: binary masking + per-trajectory per-channel sigma
+**Date**: 2026-04-21
+**What**: Replace the current global-sigma unweighted MSE loss with a loss that applies
+binary channel masks per trajectory group, normalizes by per-trajectory per-channel signal
+std, and averages per segment before averaging over the batch.
+
+**The six problems with the current implementation (global sigma, no masking):**
+
+1. **Dormant channels included in the loss.** On T1/T6 (Y-only), X1 and X2 are actively
+   suppressed by the feedback controller but contribute equally to the MSE. The optimizer
+   receives gradient signal from controller suppression dynamics rather than plant physics,
+   pulling physical parameters away from their true values.
+
+2. **Global sigma dilutes Y, inflates X.** sigma[Y] is computed from all 6 trajectories
+   including T2/T3/T4 where Y is constant → sigma[Y] is artificially small → Y is
+   over-weighted. sigma[X1] is computed across all 6 trajectories including T1/T6 where
+   X1 ≈ 0 → sigma[X1] is artificially large → X1 is under-weighted on trajectories where
+   it is actually active. Both biases compound simultaneously.
+
+3. **Within-trajectory amplitude imbalance.** On T5 (X + Y both active), if Y sweeps much
+   more than X1/X2, Y dominates the loss. Parameters primarily identified by X motion
+   (m1, m2, cg1, cg2) are undertrained relative to Y-related parameters (mh, cy).
+
+4. **Cross-trajectory amplitude imbalance.** Trajectories with the same active channels
+   can have very different amplitudes (T1 conservative vs T6 aggressive Y sweep). A single
+   global sigma[Y] does not capture this: T6 segments always dominate T1 segments in the
+   loss, even though both are Y-only trajectories contributing equal information about Y.
+
+5. **Denominator is inconsistent across segments.** Different segments have different numbers
+   of active channels (T1: 1 active, T2/T3/T4: 2 active, T5: 3 active). A fixed global
+   denominator gives unequal weight per active channel-step across trajectory groups. No
+   single global denominator is correct for all segments simultaneously.
+
+6. **Adam sees inconsistent loss scale across batches.** With 8 segments sampled from
+   different trajectory groups per batch, the loss magnitude depends on which groups appear.
+   Without per-segment normalization, Adam's second moment estimate v_t cannot stabilize,
+   making its adaptive learning rate unreliable.
+
+**Why**: Problems 1–6 compound. Problems 1 and 2 corrupt the gradient direction. Problems
+3 and 4 create systematic undertraining of specific parameter subsets. Problems 5 and 6
+make Adam's adaptation unreliable across epochs. The combination means the optimizer is
+simultaneously given wrong gradient directions AND wrong step sizes.
+
+**Chosen solution:**
+```
+For each segment in the batch:
+  1. Binary mask:  zero out dormant channels for this trajectory group
+  2. Normalize:    divide residual by sigma[traj_id][channel]
+                   (sigma computed from that trajectory individually, active channel only)
+  3. Per-segment loss = masked_normalized_err².mean() over (active_channels × T)
+Average segment losses over the batch.
+```
+
+Formally:
+```
+loss = (1/B) Σ_i [ (1 / (n_active_i · T)) Σ_c Σ_t  m_{g,c} · ((ŷ_c - y_c) / σ_{traj,c})² ]
+```
+
+where m_{g,c} ∈ {0,1} is the binary mask for channel c in trajectory group g,
+and σ_{traj,c} is the std of channel c computed from that trajectory only.
+
+**Why per-trajectory sigma solves problems 3 and 4:** Each trajectory's sigma reflects
+its own excitation amplitude. T6's sigma[Y] ≈ 300 mm; T1's sigma[Y] ≈ 50 mm. After
+normalization, a 30 mm residual on T6 contributes (30/300)² = 0.01 — equal to a 5 mm
+residual on T1 contributing (5/50)² = 0.01. Equal relative contribution regardless of
+absolute excitation amplitude.
+
+**Why per-segment averaging solves problems 5 and 6:** Each segment contributes O(1) to
+the loss regardless of how many active channels it has. Adam sees a consistent loss
+magnitude across all batches regardless of trajectory group composition. The second
+moment estimate v_t stabilizes correctly.
+
+**Forward compatibility (future hardware data):** When moving to real measurements with
+additive noise, per-trajectory sigma transitions directly to the principled Λ⁻¹ weighting
+(Ljung 1999 §7.4, Gautier, Janot & Vandanjon 2013). At high SNR (gantry encoders:
+signal mm–cm, noise µm), signal std ≈ noise-floor-independent scale → per-trajectory
+sigma is the high-SNR approximation of Λ⁻¹ weighting. No architectural change required
+at the transition to hardware data; only the interpretation of sigma changes.
+
+**Literature support:**
+
+*Problem 1 — Dormant channel masking in gradient-based SysID (verified by direct quote):*
+- **Werling et al., "Trajectory-based actuator identification via differentiable
+  simulation"** (PDF p. 5, Eq. 2 and p. 12, Appendix B): loss `L = (1/MN) Σ ‖W(s'−s)‖²`
+  with `W = diag(w_q, w_qdot)`; set to `diag(1, 0)` so velocity remains in the rollout
+  but *"velocity residuals are not penalized because the measured velocity signal is
+  noticeably noisier than position."* Directly confirms: mask in the loss, keep in the
+  dynamics. Optimizer: Adam (Appendix B).
+- **Gautier & Khalil (1990)** — dormant joints produce structural zeros in the regressor
+  (classical least-squares analog). Forssell & Ljung (1999) additionally applies when
+  measurement noise is present (closed-loop bias-pull mechanism).
+
+*Problems 2 & 3 — Amplitude normalization across channels in gradient-based SysID (verified):*
+- **Lutter et al., "Dynamic Modeling of Robotic Manipulator via an Augmented Deep
+  Lagrangian Network"** (PDF p. 4, Eq. 8): Mahalanobis norm with diagonal covariance
+  matrix W_τ; explicit justification: *"It is necessary to normalize the loss function
+  using covariance matrix since the torque magnitude may vary greatly from joint to joint."*
+- **Lutter et al., "Combining Physics and Deep Learning to learn Continuous-Time Dynamics
+  Models" (Deep Lagrangian Networks, IJRR)** (PDF p. 7, Eq. 12): same Mahalanobis norm
+  with diagonal W_τ; *"It is beneficial to normalize the loss using the covariance matrix
+  because magnitude of the residual might vary between different joints."*
+- **"Constrained Gray-Box Identification of Electromechanical Systems Under Unfiltered
+  Step-Response Data"** (PDF pp. 6–7, Eq. 3): normalized composite residual dividing
+  trajectory errors by `RMS(signal)` per channel; *"naturally balances the relative
+  contribution of current and velocity; thus α_ω = α_i = 1 is sufficient and avoids
+  additional manual scaling."*
+
+*Problems 5 & 6 — Segmented minibatch objective for Adam consistency (verified):*
+- **Werling et al. (above)**, Eq. 2: loss averaged over M segments and N timesteps as
+  `(1/MN) Σ_j Σ_i ‖W(s'_{i,j} − s_{i,j})‖²` — each segment normalized independently
+  before batch average. Adam confirmed as optimizer (Appendix B).
+
+*Problem 4 — Cross-trajectory amplitude imbalance:*
+- **No exact citable method found** that matches all of: multiple trajectories + same
+  active channels + different amplitudes + joint gradient-based physical parameter ID +
+  trajectory-specific normalization in the training loss.
+- **Citable principle — experiment-balanced weighting:** adjacent inverse-identification
+  literature explicitly supports the broader principle that multiple experiments should
+  contribute in a balanced or uncertainty-weighted way to the cost function, rather than
+  in proportion to raw residual magnitude:
+  - **Zhang et al., Int. J. Solids Struct. (2023), doi:10.1016/j.ijsolstr.2023.112534**:
+    explicitly states that good inverse-identification results depend on *"maintaining
+    equal contribution of the strain states from each experiment to the cost function"*
+    — the clearest paper-level support for equal cross-experiment contribution.
+  - **Neggers et al., Mech. Mater. (2019), doi:10.1016/j.mechmat.2019.03.001**:
+    when combining multiple experiments and data sources, weighting should follow
+    measurement uncertainty derived from a Bayesian formulation — citable basis for
+    experiment-wise balancing rather than raw aggregation.
+- **Framing for thesis:** per-trajectory sigma normalization is an engineering
+  realization of experiment-balanced weighting — supported in adjacent inverse-
+  identification literature as a principle, but not a canonical standard method in
+  robot gradient-based SysID. It is not "uncited" but it is also not "established."
+
+*Supporting context — gradient-based physical SysID as established paradigm (verified):*
+- **Muratore et al., "Differentiable Simulation for Physical System Identification"
+  (RA-L 2021)** (PDF p. 6, Sec. IV-B): friction and mass estimated by backpropagating
+  MSE loss through differentiable simulator via PyTorch AD; Adam optimizer.
+- **Saveriano et al., "Physics-informed online learning of gray-box models by moving
+  horizon estimation" (EJC 2023, 100861)** (PDF pp. 3–4): physical submodel + neural
+  network trained via BPTT; arrival cost covariance *"can be seen as an adaptive
+  learning-rate."*
+- **Ljung (1999) §7.4 eq. (7.27)** — Λ⁻¹ weighting of multi-output prediction errors
+  (classical PEM; per-trajectory sigma is the high-SNR approximation of this).
+- **Gautier, Janot & Vandanjon (2013), IEEE TCST** — per-joint inverse-std normalization
+  *"normalises the errors"* in closed-loop robot ID (regressor analog).
+
+**Ruled out:**
+- *Global sigma (D-042):* contaminated by inactive-channel samples for every channel
+  (Problems 1–4). Documented as the identified flaw in D-042.
+- *Per-channel-global sigma (no per-trajectory split):* solves Problems 1–2 partially
+  but not Problems 3–4. T6 still dominates T1 after normalization.
+- *Per-segment sigma (normalize each segment by its own std):* independently normalizes
+  each segment but breaks Adam — momentum estimates are built from segments with
+  incompatible normalization bases, corrupting gradient direction across batches.
+- *GradNorm (Chen et al. 2018):* correct in principle but requires computing ‖∂L_i/∂θ‖
+  through the RK4 graph at every step — expensive and unverified on physical grey-box
+  sensitivity Jacobians.
+
+**Constrains:**
+- `train_param_recovery.py`: precompute `sigma[traj_id][channel]` from each trajectory's
+  active samples before training. Pass trajectory ID with each segment in the batch.
+- Loss function must use per-segment averaging (Option B), not global averaging (Option A).
+- When hardware data is available: replace sigma computation with noise std estimated from
+  static measurements; loss architecture unchanged.

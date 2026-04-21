@@ -818,6 +818,35 @@ reverted. Full rationale in decisions.md D-040 and D-041.)_
 
 ---
 
+## Task 3b.4b — Fix multi-trajectory loss function (D-044)
+
+**Decision**: D-044  
+**File**: `lpv_lfr_baseline/scripts/train_param_recovery.py`
+
+The current loss uses global sigma with no masking — six identified problems documented in D-044.
+
+- [ ] Precompute `sigma[traj_id][channel]` from each trajectory individually, using only
+      time steps where that channel is active (non-constant signal)
+- [ ] Store trajectory ID alongside each segment in the data loader / batch
+- [ ] Implement binary mask table per trajectory group:
+      ```
+      T1, T6 (y_only):       mask = [0, 0, 1]
+      T2, T3, T4 (x-only):   mask = [1, 1, 0]
+      T5 (rot_coupled+Y):    mask = [1, 1, 1]
+      ```
+- [ ] Replace loss computation with per-segment formulation (Option B):
+      ```python
+      err = (Y_pred - Y_true) / sigma[traj_id]   # [T, 3]
+      err_masked = err * mask[traj_id]            # [T, 3]
+      seg_loss = err_masked.pow(2).sum() / (mask[traj_id].sum() * T)
+      loss = mean(seg_losses over batch)
+      ```
+- [ ] Verify: print per-trajectory per-channel sigma before training; confirm no
+      near-zero sigmas on active channels and no inflated sigmas on dormant channels
+- [ ] Verify: confirm loss is O(1) per segment regardless of trajectory group in the batch
+
+---
+
 ## Supervisor Meeting Notes — 2026-04-09
 
 Notes and action items from meeting with TUe + ASMPT supervisors. Items are flagged here so they are encountered at the right step.
