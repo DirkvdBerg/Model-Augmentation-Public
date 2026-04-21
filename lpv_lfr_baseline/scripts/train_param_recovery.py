@@ -840,15 +840,19 @@ def train(
     if param_loss_weight > 0:
         print(
             f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"param_loss":>12}  '
-            f'{"total":>12}  {"grad_norm":>12}  {"time [s]":>9}'
+            f'{"total":>12}  {"grad_norm":>12}  {"time [s]":>9}  |  {"eval_ep":>7}  {"eval_rmse[mm]":>13}'
         )
-        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 9}')
+        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 9}  |  {"-" * 7}  {"-" * 13}')
     else:
-        print(f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"grad_norm":>12}  {"time [s]":>9}')
-        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 9}')
+        print(
+            f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"grad_norm":>12}  {"time [s]":>9}  |  {"eval_ep":>7}  {"eval_rmse[mm]":>13}'
+        )
+        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 9}  |  {"-" * 7}  {"-" * 13}')
 
     t_start = time.time()
     history = []  # one entry per log_interval epoch
+    latest_eval_epoch = '-'
+    latest_eval_rmse  = '-'
 
     # Eval copies on eval_device. If eval_device == device (single GPU), .to() is a no-op.
     eval_trajs = []
@@ -943,50 +947,18 @@ def train(
                 os.path.join(save_dir, f'checkpoint_e{epoch}.pt'),
             )
 
-        if epoch % log_interval == 0 or epoch == epochs - 1:
-            train_err = Y_pred.detach() - q1_seg
-            train_rmse_m = train_err.pow(2).mean().sqrt().item()
-            train_rmse_ch = train_err.pow(2).mean(dim=(0, 1)).sqrt().cpu()  # (3,)
-            current_lr = optimizer.param_groups[0]['lr']
-            hist_entry = {
-                'epoch': epoch,
-                'train_rmse_m': train_rmse_m,
-                'train_rmse_ch': train_rmse_ch,
-                'mse_loss_norm': mse_loss.item(),
-                'grad_norm': grad_norm,
-                'lr': current_lr,
-            }
-            if param_loss_weight > 0:
-                hist_entry['param_loss'] = theta_loss.item()
-                hist_entry['total_loss'] = loss.item()
-                print(
-                    f'  {epoch:>6}  {train_rmse_m:>14.4e}  {theta_loss.item():>12.4e}  '
-                    f'{loss.item():>12.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
-                    flush=True,
-                )
-            else:
-                print(
-                    f'  {epoch:>6}  {train_rmse_m:>14.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}',
-                    flush=True,
-                )
-            if PARAM_LOG_INTERVAL > 0 and (epoch % PARAM_LOG_INTERVAL == 0 or epoch == epochs - 1):
-                with torch.no_grad():
-                    hist_entry['log_params_snapshot'] = block.log_params.detach().cpu().clone()
-                _print_param_detail(block, _pg, current_lr)
-            history.append(hist_entry)
-
         # ── Async path: drain completed results (non-blocking) ──────────────────────
         if use_async_eval:
             while not result_queue.empty():
                 snap_epoch, full_rmse, _, lp_cpu = result_queue.get_nowait()
+                latest_eval_epoch = snap_epoch
+                latest_eval_rmse = f"{full_rmse * 1e3:.4f}"
                 # Back-fill full_traj_rmse into the history entry for snap_epoch
                 for h in history:
                     if h['epoch'] == snap_epoch:
                         h['full_traj_rmse_m'] = full_rmse
                         h['log_params_snapshot'] = lp_cpu
                         break
-                print(f'    [eval GPU] epoch {snap_epoch:>4}  full-traj RMSE = {full_rmse * 1e3:.4f} mm',
-                      flush=True)
                 if full_rmse < best_full_traj_rmse:
                     best_full_traj_rmse, best_epoch, best_log_params = full_rmse, snap_epoch, lp_cpu
 
@@ -1003,13 +975,52 @@ def train(
         # ── Sync path (single GPU / CPU): block and run directly ────────────────────
         elif epoch % FULL_EVAL_INTERVAL == 0 or epoch == epochs - 1:
             full_rmse, _ = _full_traj_eval(block, eval_trajs)
-            hist_entry['full_traj_rmse_m'] = full_rmse
-            hist_entry['log_params_snapshot'] = block.log_params.detach().cpu().clone()
-            print(f'    [full-traj] epoch {epoch:>4}  RMSE = {full_rmse * 1e3:.4f} mm', flush=True)
+            latest_eval_epoch = epoch
+            latest_eval_rmse = f"{full_rmse * 1e3:.4f}"
             if full_rmse < best_full_traj_rmse:
                 best_full_traj_rmse = full_rmse
                 best_epoch          = epoch
-                best_log_params     = hist_entry['log_params_snapshot']
+                best_log_params     = block.log_params.detach().cpu().clone()
+
+        if epoch % log_interval == 0 or epoch == epochs - 1:
+            train_err = Y_pred.detach() - q1_seg
+            train_rmse_m = train_err.pow(2).mean().sqrt().item()
+            train_rmse_ch = train_err.pow(2).mean(dim=(0, 1)).sqrt().cpu()  # (3,)
+            current_lr = optimizer.param_groups[0]['lr']
+            hist_entry = {
+                'epoch': epoch,
+                'train_rmse_m': train_rmse_m,
+                'train_rmse_ch': train_rmse_ch,
+                'mse_loss_norm': mse_loss.item(),
+                'grad_norm': grad_norm,
+                'lr': current_lr,
+            }
+            # For the sync path we can write the current epoch's full_rmse immediately
+            if epoch % FULL_EVAL_INTERVAL == 0 or epoch == epochs - 1:
+                if not use_async_eval:
+                    hist_entry['full_traj_rmse_m'] = full_rmse
+                    hist_entry['log_params_snapshot'] = block.log_params.detach().cpu().clone()
+
+            if param_loss_weight > 0:
+                hist_entry['param_loss'] = theta_loss.item()
+                hist_entry['total_loss'] = loss.item()
+                print(
+                    f'  {epoch:>6}  {train_rmse_m:>14.4e}  {theta_loss.item():>12.4e}  '
+                    f'{loss.item():>12.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}  |  '
+                    f'{latest_eval_epoch:>7}  {latest_eval_rmse:>13}',
+                    flush=True,
+                )
+            else:
+                print(
+                    f'  {epoch:>6}  {train_rmse_m:>14.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}  |  '
+                    f'{latest_eval_epoch:>7}  {latest_eval_rmse:>13}',
+                    flush=True,
+                )
+            if PARAM_LOG_INTERVAL > 0 and (epoch % PARAM_LOG_INTERVAL == 0 or epoch == epochs - 1):
+                with torch.no_grad():
+                    hist_entry['log_params_snapshot'] = block.log_params.detach().cpu().clone()
+                _print_param_detail(block, _pg, current_lr)
+            history.append(hist_entry)
 
         if time_epochs:
             print(
