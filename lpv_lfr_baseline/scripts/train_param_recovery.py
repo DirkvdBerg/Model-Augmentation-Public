@@ -67,9 +67,21 @@ TRAJ_SPECS = (
 TRAJ_GROUPS = tuple(dict.fromkeys(spec['group'] for spec in TRAJ_SPECS))  # canonical group order derived from TRAJ_SPECS
 ACTIVE_TRAJ_IDS = tuple(spec['id'] for spec in TRAJ_SPECS)
 
+# Binary channel masks per trajectory — channels [X1, X2, Y].
+# A 0 means the channel is dormant (controller-suppressed, no informative residual)
+# and must not contribute gradient signal.  See D-044 and docs/loss-function-design.md.
+CHANNEL_MASKS = {
+    'T1': [0, 0, 1],   # y_only: only Y is excited
+    'T6': [0, 0, 1],   # y_only: only Y is excited
+    'T2': [1, 1, 0],   # x_sym_mh: X1 and X2 excited, Y held fixed
+    'T3': [1, 1, 0],   # x_sym_mh: X1 and X2 excited, Y held fixed
+    'T4': [1, 1, 0],   # rot_coupled: X1 and X2 excited (antisym), Y held fixed
+    'T5': [1, 1, 1],   # rot_coupled+Y: all three channels active
+}
+
 # ── Experiment settings ───────────────────────────────────────────────────────
 N_STEPS = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
-EPOCHS = 2000
+EPOCHS = 3
 LR = 1e-3
 SEGMENT_LEN = None  # None = choose the smallest stable candidate from the segment-length diagnostic; int = use that fixed number of samples
 PARAM_LOSS_WEIGHT = 0.0
@@ -87,7 +99,7 @@ SEGMENT_DIAG_SEGMENTS_PER_GROUP = 8
 BASE_SEED = 1234
 SEGMENT_DIAG_VERSION = 1
 RMSE_BASELINE_CACHE_VERSION = 1
-SIGMA_CACHE_VERSION = 1
+SIGMA_CACHE_VERSION = 2  # v2: per-trajectory per-channel dict (was global (3,) tensor in v1)
 
 
 # ----------------------------------------------------------------------
@@ -345,37 +357,62 @@ def _sigma_cache_path(save_dir):
 
 def _get_or_compute_sigma(save_dir):
     """
-    Compute per-channel std over ALL TRAJ_SPECS and cache the result.
+    Compute per-trajectory per-channel std and cache the result.
 
-    Always uses the full trajectory set (not the active subset) so sigma is
-    stable regardless of ACTIVE_TRAJ_IDS.  Cache is keyed on (version, file
-    fingerprint) and invalidates automatically when TRAJ_SPECS changes.
-    Returns a (3,) float64 tensor on CPU.
+    For each trajectory, sigma[traj_id][c] is the std of channel c computed
+    *only* from the time steps where that channel is active (mask == 1).
+    Dormant channels (mask == 0) get sigma = 1.0 so that masked residuals
+    produce a zero numerator regardless of their denominator value.
+
+    Returns a dict {traj_id: (3,) float64 CPU tensor}.
+    See D-044 and docs/loss-function-design.md for the full design rationale.
     """
     cache_path = _sigma_cache_path(save_dir)
     fingerprint = tuple((s['id'], s['file']) for s in TRAJ_SPECS)
     if os.path.exists(cache_path):
-        cached = torch.load(cache_path, map_location='cpu')
+        cached = torch.load(cache_path, map_location='cpu', weights_only=False)
         if cached.get('version') == SIGMA_CACHE_VERSION and cached.get('fingerprint') == fingerprint:
             print('  sigma: loaded from cache')
             return cached['sigma']
-    all_q1 = [_load_trajectory(os.path.join(TRAJ_DIR, s['file']))[1] for s in TRAJ_SPECS]
-    sigma = torch.cat(all_q1, dim=0).std(dim=0).clamp(min=1e-4)
+
+    sigma = {}
+    for spec in TRAJ_SPECS:
+        traj_id = spec['id']
+        q1 = _load_trajectory(os.path.join(TRAJ_DIR, spec['file']))[1]  # (N, 3) CPU
+        mask = CHANNEL_MASKS[traj_id]
+        ch_sigma = torch.ones(3, dtype=torch.float64)
+        for c in range(3):
+            if mask[c] == 1:
+                ch_sigma[c] = q1[:, c].std().clamp(min=1e-4)
+            # dormant channels keep sigma = 1.0 (masked residual is 0 anyway)
+        sigma[traj_id] = ch_sigma
+
     torch.save({'version': SIGMA_CACHE_VERSION, 'fingerprint': fingerprint, 'sigma': sigma}, cache_path)
     print('  sigma: computed and cached')
     return sigma
 
 
-def _aggregate_normalized_rmse_baseline(selected_entries, sigma):
+def _aggregate_normalized_rmse_baseline(selected_entries, sigma_dict):
     """
     Group-balanced RMSE_baseline in dimensionless (normalized) units.
 
-    Mirrors _aggregate_grouped_rmse but normalizes per-channel RMSE by sigma
-    before aggregating.  sigma is a (3,) CPU tensor.
+    Mirrors _aggregate_grouped_rmse but normalizes per-channel RMSE by the
+    per-trajectory per-channel sigma, then averages only over active channels
+    (mask == 1) so dormant channels do not contribute.
+
+    sigma_dict is a {traj_id: (3,) CPU tensor} dict (from _get_or_compute_sigma).
     """
     def _entry_mse_norm(entry):
+        traj_id = entry['id']
         rmse_ch = torch.tensor(entry['rmse_ch'], dtype=torch.float64)
-        return ((rmse_ch / sigma).pow(2).mean()).item()
+        sigma = sigma_dict[traj_id]
+        mask = torch.tensor(CHANNEL_MASKS[traj_id], dtype=torch.float64)
+        n_active = mask.sum()
+        if n_active == 0:
+            return 0.0
+        # Only include active channels in the mean
+        normalized_sq = ((rmse_ch / sigma) * mask).pow(2).sum() / n_active
+        return normalized_sq.item()
 
     if len(selected_entries) == 1:
         return _entry_mse_norm(selected_entries[0]) ** 0.5
@@ -688,9 +725,24 @@ def train(
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 1: RMSE_baseline + normalisation sigma\n{"=" * 60}')
     rmse_baseline, _rmse_entries = _get_or_compute_rmse_baseline(traj_specs, device, save_dir)
-    sigma = _get_or_compute_sigma(save_dir).to(device)
-    print(f'  sigma [mm]: X1={sigma[0]*1e3:.2f}  X2={sigma[1]*1e3:.2f}  Y={sigma[2]*1e3:.2f}')
-    rmse_baseline_normalized = _aggregate_normalized_rmse_baseline(_rmse_entries, sigma.cpu())
+    sigma_dict = _get_or_compute_sigma(save_dir)
+    # Fuse mask and sigma into a single per-trajectory weight vector (mask/sigma).
+    # Dormant channels: mask=0, so weight=0 — one multiply in the loss instead of divide+multiply.
+    # n_active is a fixed integer per trajectory, derived purely from CHANNEL_MASKS.
+    weight_device = {
+        tid: (torch.tensor(CHANNEL_MASKS[tid], dtype=torch.float64) / sigma_dict[tid]).to(device)
+        for tid in sigma_dict
+    }
+    n_active_per_traj = {tid: int(sum(CHANNEL_MASKS[tid])) for tid in CHANNEL_MASKS}
+    print(f'  {"Traj":>4}  {"mask":>8}  {"sigma_X1[mm]":>13}  {"sigma_X2[mm]":>13}  {"sigma_Y[mm]":>11}')
+    for spec in traj_specs:
+        tid = spec['id']
+        s = sigma_dict[tid]
+        m = CHANNEL_MASKS[tid]
+        print(
+            f'  {tid:>4}  {str(m):>8}  {s[0]*1e3:>13.2f}  {s[1]*1e3:>13.2f}  {s[2]*1e3:>11.2f}'
+        )
+    rmse_baseline_normalized = _aggregate_normalized_rmse_baseline(_rmse_entries, sigma_dict)
     print(f'  RMSE_baseline normalized: {rmse_baseline_normalized:.6e}')
 
     # ------------------------------------------------------------------
@@ -733,7 +785,7 @@ def train(
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 3: Build model\n{"=" * 60}')
     # Pass the sigma-normalized RMSE (not the metre-space value) so that Lambda
-    # is calibrated in the same unit system as mse_loss (D-034, D-042).
+    # is calibrated in the same unit system as mse_loss (D-034, D-044).
     block = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline_normalized).to(device)
     optimizer = torch.optim.Adam(block.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -787,16 +839,26 @@ def train(
                 with_stack=False,
             ) if (profile and epoch == 0) else contextlib.nullcontext()
         )
-        x0_seg, u_seg, q1_seg, _ = _sample_balanced_segments(
+        x0_seg, u_seg, q1_seg, sample_plan = _sample_balanced_segments(
             trajs, segment_len, train_group_counts, BASE_SEED + 10_000 + epoch
         )
+        # Precompute batch weight/n_active from sample_plan — fixed constants, no grad.
+        batch_weights = torch.stack(
+            [weight_device[p['traj_id']] for p in sample_plan]
+        )  # (B, 3): mask/sigma fused; dormant channels are 0
+        batch_n_active = torch.tensor(
+            [n_active_per_traj[p['traj_id']] for p in sample_plan],
+            dtype=torch.float64, device=device,
+        )  # (B,)
 
         with ctx as prof:
             Y_pred = wrapper(x0_seg, u_seg)
-            # Normalize by per-channel std so all three output channels contribute
-            # equally to the loss regardless of their absolute amplitude (D-042).
-            err = (Y_pred - q1_seg) / sigma
-            mse_loss = err.pow(2).mean()
+            # Per-segment masked + normalized loss (D-044, docs/loss-function-design.md).
+            # Single multiply by weight (= mask/sigma) masks dormant channels and
+            # normalizes active ones; per-segment average over (n_active * T).
+            err = (Y_pred - q1_seg) * batch_weights.unsqueeze(1)               # (B, T, 3)
+            seg_losses = err.pow(2).sum(dim=(1, 2)) / (batch_n_active * segment_len)  # (B,)
+            mse_loss = seg_losses.mean()
             theta_loss = block.param_loss() if param_loss_weight > 0 else None
             loss = mse_loss + (param_loss_weight * theta_loss if theta_loss is not None else 0)
             t_fwd = _sync_time(device)
@@ -923,7 +985,7 @@ def train(
             'RMSE_baseline': rmse_baseline,
             'RMSE_baseline_normalized': rmse_baseline_normalized,
             'rmse_baseline_entries': _rmse_entries,
-            'sigma': sigma.cpu(),
+            'sigma': {tid: s.cpu() for tid, s in sigma_device.items()},
             # Run config
             'active_traj_ids': tuple(spec['id'] for spec in traj_specs),
             'epochs': epochs,
