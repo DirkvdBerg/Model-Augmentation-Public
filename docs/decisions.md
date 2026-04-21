@@ -1116,3 +1116,11 @@ at the transition to hardware data; only the interpretation of sigma changes.
 - Loss function must use per-segment averaging (Option B), not global averaging (Option A).
 - When hardware data is available: replace sigma computation with noise std estimated from
   static measurements; loss architecture unchanged.
+
+**Implemented**: 2026-04-21 in `lpv_lfr_baseline/scripts/train_param_recovery.py`.
+Changes: `CHANNEL_MASKS` dict (6 changes), `_get_or_compute_sigma` rewritten to return
+`{traj_id: (3,) tensor}` (SIGMA_CACHE_VERSION bumped to 2), sigma display table updated,
+`sample_plan` captured in training loop, per-segment loss loop replacing 2-line MSE,
+`_aggregate_normalized_rmse_baseline` updated to mask + per-trajectory sigma.
+Verified: sigma table output correct (dormant channels = 1.0 m, active channels physically
+meaningful); exit code 0; loss value is O(1) per segment.
