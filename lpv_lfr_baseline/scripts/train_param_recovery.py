@@ -89,7 +89,6 @@ FULL_EVAL_INTERVAL = 10   # run full-trajectory eval every N epochs
 SEGMENT_LEN = None  # None = choose the smallest stable candidate from the segment-length diagnostic; int = use that fixed number of samples
 PARAM_LOSS_WEIGHT = 0.0
 LOG_INTERVAL = 25
-PARAM_LOG_INTERVAL = 100   # 0 = disable; per-param value+gradient table at this cadence
 CHECKPOINT_INTERVAL = 100
 PROFILE = False
 TIME_EPOCHS = False
@@ -313,19 +312,16 @@ def _print_rmse_baseline_summary(selected_entries, overall_rmse):
     """Print the cached/computed RMSE_baseline values relevant to the current run."""
     if len(selected_entries) == 1:
         entry = selected_entries[0]
-        print(
-            f"  {entry['id']}: RMSE = {entry['rmse_total']:.6e} m  "
-            f"({entry['rmse_total'] * 1e3:.4f} mm)"
-        )
+        print(f"  {entry['id']}: RMSE = {entry['rmse_total']:.6e} m")
     else:
-        print(f'  {"Traj":<6}  {"Group":<12}  {"RMSE [mm]":>12}')
+        print(f'  {"Traj":<6}  {"Group":<12}  {"RMSE [m]":>12}')
         print(f'  {"-" * 6}  {"-" * 12}  {"-" * 12}')
         for entry in selected_entries:
             print(
                 f"  {entry['id']:<6}  {entry['group']:<12}  "
-                f"{entry['rmse_total'] * 1e3:>12.4f}"
+                f"{entry['rmse_total']:>12.4e}"
             )
-    print(f'  Overall RMSE_baseline = {overall_rmse:.6e} m  ({overall_rmse * 1e3:.4f} mm)')
+    print(f'  Overall RMSE_baseline = {overall_rmse:.6e} m')
 
 
 def _get_or_compute_rmse_baseline(traj_specs, device, save_dir):
@@ -752,13 +748,13 @@ def train(
         for tid in sigma_dict
     }
     n_active_per_traj = {tid: int(sum(CHANNEL_MASKS[tid])) for tid in CHANNEL_MASKS}
-    print(f'  {"Traj":>4}  {"mask":>8}  {"sigma_X1[mm]":>13}  {"sigma_X2[mm]":>13}  {"sigma_Y[mm]":>11}')
+    print(f'  {"Traj":>4}  {"mask":>8}  {"sigma_X1[m]":>13}  {"sigma_X2[m]":>13}  {"sigma_Y[m]":>11}')
     for spec in traj_specs:
         tid = spec['id']
         s = sigma_dict[tid]
         m = CHANNEL_MASKS[tid]
         print(
-            f'  {tid:>4}  {str(m):>8}  {s[0]*1e3:>13.2f}  {s[1]*1e3:>13.2f}  {s[2]*1e3:>11.2f}'
+            f'  {tid:>4}  {str(m):>8}  {s[0]:>13.4e}  {s[1]:>13.4e}  {s[2]:>11.4e}'
         )
     rmse_baseline_normalized = _aggregate_normalized_rmse_baseline(_rmse_entries, sigma_dict)
     print(f'  RMSE_baseline normalized: {rmse_baseline_normalized:.6e}')
@@ -840,12 +836,12 @@ def train(
     if param_loss_weight > 0:
         print(
             f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"param_loss":>12}  '
-            f'{"total":>12}  {"grad_norm":>12}  {"time [s]":>9}  |  {"eval_ep":>7}  {"eval_rmse[mm]":>13}'
+            f'{"total":>12}  {"grad_norm":>12}  {"time [s]":>9}  |  {"eval_ep":>7}  {"eval_rmse[m]":>13}'
         )
         print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 9}  |  {"-" * 7}  {"-" * 13}')
     else:
         print(
-            f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"grad_norm":>12}  {"time [s]":>9}  |  {"eval_ep":>7}  {"eval_rmse[mm]":>13}'
+            f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"grad_norm":>12}  {"time [s]":>9}  |  {"eval_ep":>7}  {"eval_rmse[m]":>13}'
         )
         print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 9}  |  {"-" * 7}  {"-" * 13}')
 
@@ -952,7 +948,7 @@ def train(
             while not result_queue.empty():
                 snap_epoch, full_rmse, _, lp_cpu = result_queue.get_nowait()
                 latest_eval_epoch = snap_epoch
-                latest_eval_rmse = f"{full_rmse * 1e3:.4f}"
+                latest_eval_rmse = f"{full_rmse:.4e}"
                 # Back-fill full_traj_rmse into the history entry for snap_epoch
                 for h in history:
                     if h['epoch'] == snap_epoch:
@@ -976,7 +972,7 @@ def train(
         elif epoch % FULL_EVAL_INTERVAL == 0 or epoch == epochs - 1:
             full_rmse, _ = _full_traj_eval(block, eval_trajs)
             latest_eval_epoch = epoch
-            latest_eval_rmse = f"{full_rmse * 1e3:.4f}"
+            latest_eval_rmse = f"{full_rmse:.4e}"
             if full_rmse < best_full_traj_rmse:
                 best_full_traj_rmse = full_rmse
                 best_epoch          = epoch
@@ -1016,10 +1012,6 @@ def train(
                     f'{latest_eval_epoch:>7}  {latest_eval_rmse:>13}',
                     flush=True,
                 )
-            if PARAM_LOG_INTERVAL > 0 and (epoch % PARAM_LOG_INTERVAL == 0 or epoch == epochs - 1):
-                with torch.no_grad():
-                    hist_entry['log_params_snapshot'] = block.log_params.detach().cpu().clone()
-                _print_param_detail(block, _pg, current_lr)
             history.append(hist_entry)
 
         if time_epochs:
@@ -1046,6 +1038,8 @@ def train(
         total = time.time() - t_start
         print(f'\n  Done: {total:.1f} s  ({total / epochs:.2f} s/epoch)')
 
+    _print_param_detail(block, _pg, optimizer.param_groups[0]['lr'])
+
     # ------------------------------------------------------------------
     # 5. Evaluate - fresh post-training pre-pass (pre may be stale)
     # ------------------------------------------------------------------
@@ -1056,10 +1050,10 @@ def train(
         with torch.no_grad():
             block.log_params.copy_(best_log_params.to(device))
         print(f'  Loaded best_log_params from epoch {best_epoch} '
-              f'(full-traj RMSE = {best_full_traj_rmse * 1e3:.4f} mm)\n')
+              f'(full-traj RMSE = {best_full_traj_rmse:.4e} m)\n')
 
     eval_entries = []
-    print(f'  {"Traj":<6}  {"Group":<12}  {"RMSE [mm]":>12}  {"X1 [mm]":>10}  {"X2 [mm]":>10}  {"Y [mm]":>10}')
+    print(f'  {"Traj":<6}  {"Group":<12}  {"RMSE [m]":>12}  {"X1 [m]":>10}  {"X2 [m]":>10}  {"Y [m]":>10}')
     print(f'  {"-" * 6}  {"-" * 12}  {"-" * 12}  {"-" * 10}  {"-" * 10}  {"-" * 10}')
     for traj in trajs:
         pre = _run_no_grad(block, traj['state_traj'][:1], traj['u'])
@@ -1076,11 +1070,11 @@ def train(
             'rmse_ch': rmse_ch,
         })
         print(
-            f'  {traj["id"]:<6}  {traj["group"]:<12}  {rmse_eval * 1e3:>12.4f}'
-            f'  {rmse_ch[0] * 1e3:>10.4f}  {rmse_ch[1] * 1e3:>10.4f}  {rmse_ch[2] * 1e3:>10.4f}'
+            f'  {traj["id"]:<6}  {traj["group"]:<12}  {rmse_eval:>12.4e}'
+            f'  {rmse_ch[0]:>10.4e}  {rmse_ch[1]:>10.4e}  {rmse_ch[2]:>10.4e}'
         )
     overall_rmse = _aggregate_grouped_rmse(eval_entries)
-    print(f'\n  Overall RMSE: {overall_rmse:.6e} m  ({overall_rmse * 1e3:.4f} mm)')
+    print(f'\n  Overall RMSE: {overall_rmse:.6e} m')
 
     # ------------------------------------------------------------------
     # 6. Parameter recovery table - primary go/no-go criterion
