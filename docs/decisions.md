@@ -1124,3 +1124,39 @@ Changes: `CHANNEL_MASKS` dict (6 changes), `_get_or_compute_sigma` rewritten to 
 `_aggregate_normalized_rmse_baseline` updated to mask + per-trajectory sigma.
 Verified: sigma table output correct (dormant channels = 1.0 m, active channels physically
 meaningful); exit code 0; loss value is O(1) per segment.
+
+---
+
+### [D-045] param_loss disabled (PARAM_LOSS_WEIGHT = 0.0) for parameter recovery training
+**Date**: 2026-04-22
+**What**: `PARAM_LOSS_WEIGHT = 0.0` in `train_param_recovery.py` — `param_loss()` is not
+added to the training loss. The method exists on `ParameterizedLFRBlock` but is bypassed.
+
+**Why**: `param_loss` is a Lambda-weighted L2 pull toward `params_init` (the detuned
+initial values). It was designed for the noisy-data regime, where the MSE landscape is
+rough and the optimizer needs an anchor to stay in a physically plausible region.
+
+In the parameter recovery setting:
+- Training data is noise-free MATLAB simulation output.
+- The Python model reproduces MATLAB exactly at the true parameter values (verified:
+  full-trajectory RMSE on T1 = 0.000 mm at `_TRUE_PARAMS`).
+- The MSE landscape therefore has an unambiguous global minimum at the true parameters.
+
+Under these conditions, `param_loss` provides no benefit and actively harms convergence:
+it adds a competing gradient pull toward `params_init` (the detuned values, ±10% from
+true), which is the wrong target. The stronger the regularization weight, the further the
+optimizer is biased away from the true parameter values.
+
+**Ruled out**: Enabling `param_loss` at any non-zero weight for noise-free parameter
+recovery — it anchors toward detuned init, not toward truth, and slows or prevents
+convergence to the true parameters.
+
+**When to revisit**: If training data gains additive measurement noise (encoder noise,
+etc.) and the MSE landscape becomes rough or ill-conditioned, a small `param_loss` weight
+anchored toward physically plausible values may help stability. At that point, `params_init`
+should ideally be updated to the best currently known parameter estimate rather than the
+detuned starting values, to avoid the wrong-anchor problem documented here.
+
+**Constrains**: `PARAM_LOSS_WEIGHT = 0.0` must be kept for all clean-data parameter
+recovery runs. If re-enabled, the anchor target (`params_init`) and weight must be
+revisited together.
