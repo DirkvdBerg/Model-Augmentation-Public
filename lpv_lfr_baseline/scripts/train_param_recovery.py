@@ -81,7 +81,7 @@ LOG_INTERVAL             = 25
 CHECKPOINT_INTERVAL      = 100
 SPLIT_REG_WEIGHT         = 1e-2
 N_STEPS                  = None    # cap on trajectory steps (None = all); set to 500 when PROFILE=True
-PROFILE                  = True
+PROFILE                  = False
 TIME_EPOCHS              = False
 BASE_SEED                = 1234
 
