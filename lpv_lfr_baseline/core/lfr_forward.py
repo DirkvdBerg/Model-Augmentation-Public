@@ -90,8 +90,10 @@ def lfr_forward(
     # Step 5 — xdot = Ax@x + Bw@w + Bu@u   (THROUGH G — not directly from a)
     # This is the decisive structural property of LFR-first: w is causally
     # upstream of xdot. Autograd must show nonzero d(xdot)/d(w) via G.Bw.
+    # Fused into one matmul via G.A_combined = [Ax, Bw, Bu].
     # ------------------------------------------------------------------
-    xdot = (x @ G.Ax.T) + (w @ G.Bw.T) + (u @ G.Bu.T)     # (batch, 6)
+    combined_input = torch.cat([x, w, u], dim=-1)            # (batch, 15)
+    xdot = combined_input @ G.A_combined.T                   # (batch, 6)
 
     # ------------------------------------------------------------------
     # Step 6 — y = Cy @ x   (logical positions)
@@ -99,6 +101,34 @@ def lfr_forward(
     y = x @ G.Cy.T                                           # (batch, 3)
 
     return xdot, z, w, y
+
+
+def lfr_xdot(
+    x:     torch.Tensor,   # (batch, 6)   state  [q; qdot]  in logical coordinates
+    u:     torch.Tensor,   # (batch, 3)   input  f_ell      in logical coordinates
+    Y:     torch.Tensor,   # (batch,)     scheduling variable — x[:, 2] in caller
+    G:     GMatrix,        # constant interconnection matrix
+    K:     torch.Tensor,   # (3, 3)       stiffness matrix
+    C:     torch.Tensor,   # (3, 3)       damping matrix
+    mh:    torch.Tensor,   # ()           payload mass scalar
+    alpha: torch.Tensor,   # ()           m1+m2+mb+mh
+    beta:  torch.Tensor,   # ()           (m1-m2)*Lb/2
+    gamma: torch.Tensor,   # ()           Jb+Jh+(m1+m2)*Lb^2/4  (WITHOUT mh*d^2)
+    N0:    torch.Tensor,   # (3, 3)       adjugate coefficient at Y^0
+    N1:    torch.Tensor,   # (3, 3)       adjugate coefficient at Y^1
+    N2:    torch.Tensor,   # (3, 3)       adjugate coefficient at Y^2
+) -> torch.Tensor:
+    """Fast path: returns only xdot. Used for RK4 substeps 2, 3, 4."""
+    fnet = -(x[:, :3] @ K.T) - (x[:, 3:] @ C.T) + u
+    dY   = mh * (alpha * gamma - beta ** 2
+                 + 2 * beta * mh * Y
+                 + mh * (alpha - mh) * Y ** 2)
+    Y_r  = Y.unsqueeze(0)
+    a    = (N0 @ fnet.T + Y_r * (N1 @ fnet.T + Y_r * (N2 @ fnet.T))).T / dY[:, None]
+    z    = torch.cat([a, Y[:, None] * a], dim=-1)
+    w    = Y[:, None] * z
+    combined_input = torch.cat([x, w, u], dim=-1)
+    return combined_input @ G.A_combined.T
 
 
 # ----------------------------------------------------------------------

@@ -38,7 +38,7 @@ Where:
     M0invM2 = M0_inv @ M2
 
 Provides:
-    GMatrix dataclass holding all entries as plain torch tensors (not nn.Parameter).
+    GMatrix NamedTuple holding all entries as plain torch tensors (not nn.Parameter).
     build_G_matrix(N0, d0, M1, M2, K, C) -> GMatrix
 
 Note on build_G_matrix signature:
@@ -49,7 +49,7 @@ Note on build_G_matrix signature:
     inside forward() when physical parameters are trainable (nn.Parameter).
 """
 
-from dataclasses import dataclass
+from typing import NamedTuple
 
 import torch
 
@@ -60,8 +60,7 @@ from lpv_lfr_baseline.core.physics import (
 )
 
 
-@dataclass
-class GMatrix:
+class GMatrix(NamedTuple):
     """
     Constant G matrix entries for the LPV-LFR realization.
 
@@ -69,21 +68,23 @@ class GMatrix:
     not trainable parameters.
 
     Shapes:
-        Ax  : (6, 6)
-        Bw  : (6, 6)
-        Bu  : (6, 3)
-        Cz  : (6, 6)
-        Dzw : (6, 6)
-        Dzu : (6, 3)
-        Cy  : (3, 6)
+        Ax         : (6, 6)
+        Bw         : (6, 6)
+        Bu         : (6, 3)
+        A_combined : (6, 15)  [Ax, Bw, Bu] concatenated for fused state update
+        Cz         : (6, 6)
+        Dzw        : (6, 6)
+        Dzu        : (6, 3)
+        Cy         : (3, 6)
     """
-    Ax:  torch.Tensor   # (6, 6)
-    Bw:  torch.Tensor   # (6, 6)
-    Bu:  torch.Tensor   # (6, 3)
-    Cz:  torch.Tensor   # (6, 6)
-    Dzw: torch.Tensor   # (6, 6)
-    Dzu: torch.Tensor   # (6, 3)
-    Cy:  torch.Tensor   # (3, 6)
+    Ax:         torch.Tensor   # (6, 6)
+    Bw:         torch.Tensor   # (6, 6)
+    Bu:         torch.Tensor   # (6, 3)
+    A_combined: torch.Tensor   # (6, 15)
+    Cz:         torch.Tensor   # (6, 6)
+    Dzw:        torch.Tensor   # (6, 6)
+    Dzu:        torch.Tensor   # (6, 3)
+    Cy:         torch.Tensor   # (3, 6)
 
 
 def build_G_matrix(
@@ -177,7 +178,14 @@ def build_G_matrix(
     # ------------------------------------------------------------------
     Cy = torch.cat([eye3, z33], dim=1)
 
-    return GMatrix(Ax=Ax, Bw=Bw, Bu=Bu, Cz=Cz, Dzw=Dzw, Dzu=Dzu, Cy=Cy)
+    # ------------------------------------------------------------------
+    # A_combined = [Ax, Bw, Bu]  (6x15) — fused state update
+    # xdot = combined_input @ A_combined.T  where
+    # combined_input = cat([x, w, u], dim=-1)  (batch, 15)
+    # ------------------------------------------------------------------
+    A_combined = torch.cat([Ax, Bw, Bu], dim=1)
+
+    return GMatrix(Ax=Ax, Bw=Bw, Bu=Bu, A_combined=A_combined, Cz=Cz, Dzw=Dzw, Dzu=Dzu, Cy=Cy)
 
 
 # Module-level singleton — precomputed from fixed physical parameters.
@@ -259,6 +267,10 @@ if __name__ == '__main__':
     results.append(check("Cy[0:3, 0:3]  == I3",       G.Cy[:, :3],    eye3       ))
     results.append(check("Cy[0:3, 3:6]  == 0",        G.Cy[:, 3:],    z33        ))
 
+    # A_combined = [Ax, Bw, Bu] concatenated
+    A_combined_ref = torch.cat([G.Ax, G.Bw, G.Bu], dim=1)
+    results.append(check("A_combined == cat([Ax,Bw,Bu])", G.A_combined, A_combined_ref))
+
     print()
     print(f"Overall: {'ALL PASS' if all(results) else 'SOME FAILED'}")
 
@@ -266,10 +278,10 @@ if __name__ == '__main__':
     print()
     print("Shape check:")
     shapes = {
-        'Ax': (6,6), 'Bw': (6,6), 'Bu': (6,3),
+        'Ax': (6,6), 'Bw': (6,6), 'Bu': (6,3), 'A_combined': (6,15),
         'Cz': (6,6), 'Dzw': (6,6), 'Dzu': (6,3), 'Cy': (3,6),
     }
     for name, expected_shape in shapes.items():
         actual = tuple(getattr(G, name).shape)
         status = 'PASS' if actual == expected_shape else 'FAIL'
-        print(f"  {name:6s}  {str(actual):12s}  {status}")
+        print(f"  {name:12s}  {str(actual):12s}  {status}")

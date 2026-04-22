@@ -20,20 +20,11 @@ from typing import Literal
 import torch
 from torch.utils.checkpoint import checkpoint as grad_checkpoint
 
-from lpv_lfr_baseline.core.lfr_forward import lfr_forward as _lfr_forward_raw
+from lpv_lfr_baseline.core.lfr_forward import lfr_forward, lfr_xdot
 from lpv_lfr_baseline.core.lfr_matrices import GMatrix
 
-# torch.compile hook — set _COMPILE_LFR_FORWARD = True to enable.
-# Requires a working C++ compiler (MSVC on Windows, GCC/clang on Linux/Mac).
-# On Windows without Visual Studio build tools, Inductor will fail at first call.
-# When enabled, fuses element-wise ops in lfr_forward and reduces kernel-launch
-# overhead across the 4× per RK4 step × N-step training loop.
-_COMPILE_LFR_FORWARD = False
-
-if _COMPILE_LFR_FORWARD:
-    _lfr_forward = torch.compile(_lfr_forward_raw, mode='reduce-overhead')
-else:
-    _lfr_forward = _lfr_forward_raw
+# 'cudagraphs' works on Windows without MSVC; change to 'inductor' on server.
+COMPILE_BACKEND = 'cudagraphs'
 
 
 @dataclass
@@ -52,6 +43,7 @@ class SimResult:
     W: torch.Tensor | None
 
 
+@torch.compile(backend=COMPILE_BACKEND, fullgraph=True)
 def rk4_step(
     x:          torch.Tensor,           # (batch, 6)  state in logical coordinates
     u_logical:  torch.Tensor,           # (batch, 3)  input in logical coordinates
@@ -73,26 +65,44 @@ def rk4_step(
 
     Y_override=None: self-scheduled, Y re-extracted from state at each sub-step.
     Y_override=tensor: frozen LTI, Y held constant across all sub-steps.
+    Compiled as a whole so all four substeps fuse into one graph.
     """
-    def _Y(state: torch.Tensor) -> torch.Tensor:
-        return state[:, 2] if Y_override is None else Y_override
+    # k1: full forward — need z, w, y for output recording
+    k1, z, w, y = lfr_forward(
+        x, u_logical,
+        x[:, 2] if Y_override is None else Y_override,
+        G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
+    )
 
-    def _fwd(s):
-        return _lfr_forward(s, u_logical, _Y(s), G, K, C, mh, alpha, beta, gamma, N0, N1, N2)
-
-    k1, z, w, y = _fwd(x)
-
+    # k2, k3, k4: xdot only — z, w, y not needed for intermediate substeps
     x2 = x + (ts / 2) * k1
-    k2, _, _, _ = _fwd(x2)
+    k2 = lfr_xdot(
+        x2, u_logical,
+        x2[:, 2] if Y_override is None else Y_override,
+        G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
+    )
 
     x3 = x + (ts / 2) * k2
-    k3, _, _, _ = _fwd(x3)
+    k3 = lfr_xdot(
+        x3, u_logical,
+        x3[:, 2] if Y_override is None else Y_override,
+        G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
+    )
 
     x4 = x + ts * k3
-    k4, _, _, _ = _fwd(x4)
+    k4 = lfr_xdot(
+        x4, u_logical,
+        x4[:, 2] if Y_override is None else Y_override,
+        G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
+    )
 
     x_next = x + (ts / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
     return x_next, z, w, y
+
+
+def _rk4_checkpoint(x, u_logical, G, K, C, mh, alpha, beta, gamma, N0, N1, N2, ts):
+    """Module-level helper for grad_checkpoint — avoids a per-iteration closure."""
+    return rk4_step(x, u_logical, G, K, C, mh, alpha, beta, gamma, N0, N1, N2, ts)
 
 
 def simulate(
@@ -110,16 +120,18 @@ def simulate(
     N2:           torch.Tensor,   # (3, 3)
     P:            torch.Tensor,   # (3, 3)  stage <-> logical transform
     ts:           torch.Tensor,
-    bptt_mode:      Literal["full", "truncated", "checkpoint"] = "full",
-    segment_len:    int = 200,
+    bptt_mode:      Literal["full", "checkpoint"] = "full",
     return_latents: bool = True,
 ) -> SimResult:
     """
     Simulate N steps using RK4. Returns SimResult.
 
-    bptt_mode:      "full" (exact, O(N) memory), "truncated" (detach every segment_len),
+    bptt_mode:      "full" (exact, O(N) memory) or
                     "checkpoint" (exact, O(sqrt(N)) memory, ~1.3x compute).
     return_latents: if False, SimResult.Z and .W are None (skips allocation and writes).
+
+    Windowed BPTT (detaching state between windows) is the caller's responsibility
+    and must be implemented as an outer loop in the training script.
     """
     batch = x0.shape[0]
     N = u_seq_stage.shape[1]
@@ -143,14 +155,10 @@ def simulate(
         u_logical = u_seq_logical[k]   # (batch, 3) — contiguous
 
         if bptt_mode == "checkpoint":
-            # Capture G and poly constants in closure; only pass x and u as tensor args.
-            # use_reentrant=False handles tensors captured in the closure correctly.
-            def _step(x_in, u_in):
-                return rk4_step(
-                    x_in, u_in, G, K, C, mh, alpha, beta, gamma, N0, N1, N2, ts
-                )
             x_next, z_k, w_k, y_k = grad_checkpoint(
-                _step, x, u_logical, use_reentrant=False,
+                _rk4_checkpoint, x, u_logical,
+                G, K, C, mh, alpha, beta, gamma, N0, N1, N2, ts,
+                use_reentrant=False,
             )
         else:
             x_next, z_k, w_k, y_k = rk4_step(
@@ -163,11 +171,7 @@ def simulate(
             Z_t[k] = z_k
             W_t[k] = w_k
 
-        # Truncated BPTT: detach state at segment boundaries
-        if bptt_mode == "truncated" and (k + 1) % segment_len == 0:
-            x = x_next.detach().requires_grad_(x_next.requires_grad)
-        else:
-            x = x_next
+        x = x_next
 
     return SimResult(
         X = X_t.permute(1, 0, 2),   # (batch, N+1, 6)
@@ -398,40 +402,13 @@ if __name__ == '__main__':
         )
 
     with torch.no_grad():
-        trunc = simulate(
-            x0_bptt, u_bptt, G_true, K, C, _mh, alpha, beta, gamma, N0, N1, N2, P, ts,
-            bptt_mode="truncated", segment_len=20
-        )
-    err_trunc = (trunc.X - ref.X).abs().max().item()
-    trunc_traj_ok = err_trunc == 0.0
-    print(f"  5a  truncated trajectory matches full : {trunc_traj_ok}  (max|diff| = {err_trunc:.2e})")
-
-    with torch.no_grad():
         ckpt = simulate(
             x0_bptt, u_bptt, G_true, K, C, _mh, alpha, beta, gamma, N0, N1, N2, P, ts,
             bptt_mode="checkpoint"
         )
     err_ckpt = (ckpt.X - ref.X).abs().max().item()
     ckpt_traj_ok = err_ckpt == 0.0
-    print(f"  5b  checkpoint trajectory matches full: {ckpt_traj_ok}  (max|diff| = {err_ckpt:.2e})")
-
-    x0_t = x0_bptt.clone().requires_grad_(True)
-    res_t = simulate(
-        x0_t, u_bptt, G_true, K, C, _mh, alpha, beta, gamma, N0, N1, N2, P, ts,
-        bptt_mode="truncated", segment_len=20
-    )
-    res_t.X[:, -1, :].sum().backward()
-    trunc_grad_blocked = x0_t.grad is None or x0_t.grad.norm().item() == 0.0
-    print(f"  5c  truncated: last-step grad blocked at x0: {trunc_grad_blocked}")
-
-    x0_t2 = x0_bptt.clone().requires_grad_(True)
-    res_t2 = simulate(
-        x0_t2, u_bptt, G_true, K, C, _mh, alpha, beta, gamma, N0, N1, N2, P, ts,
-        bptt_mode="truncated", segment_len=20
-    )
-    res_t2.X[:, 10, :].sum().backward()
-    trunc_grad_flows = x0_t2.grad is not None and x0_t2.grad.norm().item() > 0.0
-    print(f"  5c  truncated: within-segment grad flows to x0: {trunc_grad_flows}")
+    print(f"  5a  checkpoint trajectory matches full: {ckpt_traj_ok}  (max|diff| = {err_ckpt:.2e})")
 
     x0_full = x0_bptt.clone().requires_grad_(True)
     res_full = simulate(
@@ -449,7 +426,7 @@ if __name__ == '__main__':
 
     grad_err = (x0_full.grad - x0_ckpt.grad).abs().max().item()
     ckpt_grad_ok = grad_err < 1e-10
-    print(f"  5d  checkpoint grad matches full: {ckpt_grad_ok}  (max|diff| = {grad_err:.2e})")
+    print(f"  5b  checkpoint grad matches full: {ckpt_grad_ok}  (max|diff| = {grad_err:.2e})")
 
-    all_bptt = trunc_traj_ok and ckpt_traj_ok and trunc_grad_blocked and trunc_grad_flows and ckpt_grad_ok
+    all_bptt = ckpt_traj_ok and ckpt_grad_ok
     print(f"\nCheck 5: {'PASS' if all_bptt else 'FAIL'}")
