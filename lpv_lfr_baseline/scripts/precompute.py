@@ -206,7 +206,7 @@ def _compute(traj_specs, traj_dir, save_dir, dtype):
     # --- segment length diagnostic ---
     print('  precompute: running segment diagnostic')
     from lpv_lfr_baseline.scripts.segment_diag import run_segment_diag  # noqa: PLC0415
-    segment_len = run_segment_diag(traj_specs, save_dir)
+    segment_len = run_segment_diag(traj_specs, traj_dir, save_dir)
     print(f'  precompute: chosen segment_len = {segment_len}')
 
     return {
