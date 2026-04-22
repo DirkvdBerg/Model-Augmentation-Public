@@ -83,7 +83,7 @@ CHANNEL_MASKS = {
 
 # ── Experiment settings ───────────────────────────────────────────────────────
 N_STEPS = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
-EPOCHS = 1000
+EPOCHS = 3
 LR = 1e-3
 FULL_EVAL_INTERVAL = 10   # run full-trajectory eval every N epochs
 SEGMENT_LEN = None  # None = choose the smallest stable candidate from the segment-length diagnostic; int = use that fixed number of samples
@@ -91,7 +91,7 @@ PARAM_LOSS_WEIGHT = 0.0
 SPLIT_REG_WEIGHT = 1e-2   # D-037: scale-invariant penalty on degenerate splits (kb1/kb2, cb1/cb2, Jb/Jh)
 LOG_INTERVAL = 25
 CHECKPOINT_INTERVAL = 100
-PROFILE = False
+PROFILE = True
 TIME_EPOCHS = False
 TRAIN_SEGMENTS_PER_EPOCH = 8
 VAL_SEGMENTS_FIXED = 8
@@ -661,7 +661,12 @@ def _save_profile(prof, save_dir):
         f.write(header + '\n' + table + '\n')
     print('\n' + header)
     print(table)
-    print(f'  Saved to: {path}')
+    print(f'  Saved text log to: {path}')
+    
+    # Export extensive Chrome trace
+    trace_path = os.path.join(save_dir, 'profile_trace.json')
+    prof.export_chrome_trace(trace_path)
+    print(f'  Saved detailed Chrome Trace to: {trace_path} (open in chrome://tracing)')
 
 
 class _SimWrapper(torch.nn.Module):
@@ -778,6 +783,8 @@ def train(
 
     if profile:
         n_steps = 500
+    if n_steps is not None and segment_len > n_steps:
+        segment_len = n_steps
     data_step = '2c' if auto_segment else '2b'
     print(f'\n{"=" * 60}\nStep {data_step}: Load active training trajectories\n{"=" * 60}')
     trajs = _load_grouped_trajectories(
@@ -891,30 +898,35 @@ def train(
 
         threading.Thread(target=_eval_worker, daemon=True).start()
 
+    prof = None
+    if profile:
+        prof = torch.profiler.profile(
+            activities=[
+                torch.profiler.ProfilerActivity.CPU,
+                torch.profiler.ProfilerActivity.CUDA,
+            ] if torch.cuda.is_available() else [torch.profiler.ProfilerActivity.CPU],
+            record_shapes=True,
+            with_stack=True,
+        )
+        prof.start()
+
     for epoch in range(epochs):
-        t0 = _sync_time(device)
-        optimizer.zero_grad()
-
-        ctx = (
-            torch.profiler.profile(
-                activities=[torch.profiler.ProfilerActivity.CPU],
-                record_shapes=False,
-                with_stack=False,
-            ) if (profile and epoch == 0) else contextlib.nullcontext()
-        )
-        x0_seg, u_seg, q1_seg, sample_plan = _sample_balanced_segments(
-            trajs, segment_len, train_group_counts, BASE_SEED + 10_000 + epoch
-        )
-        # Precompute batch weight/n_active from sample_plan — fixed constants, no grad.
-        batch_weights = torch.stack(
-            [weight_device[p['traj_id']] for p in sample_plan]
-        )  # (B, 3): mask/sigma fused; dormant channels are 0
-        batch_n_active = torch.tensor(
-            [n_active_per_traj[p['traj_id']] for p in sample_plan],
-            dtype=torch.float64, device=device,
-        )  # (B,)
-
-        with ctx as prof:
+        with torch.profiler.record_function(f"Epoch {epoch}") if profile else contextlib.nullcontext():
+            t0 = _sync_time(device)
+            optimizer.zero_grad()
+    
+            x0_seg, u_seg, q1_seg, sample_plan = _sample_balanced_segments(
+                trajs, segment_len, train_group_counts, BASE_SEED + 10_000 + epoch
+            )
+            # Precompute batch weight/n_active from sample_plan — fixed constants, no grad.
+            batch_weights = torch.stack(
+                [weight_device[p['traj_id']] for p in sample_plan]
+            )  # (B, 3): mask/sigma fused; dormant channels are 0
+            batch_n_active = torch.tensor(
+                [n_active_per_traj[p['traj_id']] for p in sample_plan],
+                dtype=torch.float64, device=device,
+            )  # (B,)
+    
             Y_pred = wrapper(x0_seg, u_seg)
             # Per-segment masked + normalized loss (D-044, docs/loss-function-design.md).
             # Single multiply by weight (= mask/sigma) masks dormant channels and
@@ -928,9 +940,6 @@ def train(
             t_fwd = _sync_time(device)
             loss.backward()
             t_bwd = _sync_time(device)
-
-        if prof is not None:
-            _save_profile(prof, save_dir)
 
         if block.log_params.grad is not None:
             _pg = block.log_params.grad.detach().clone()
@@ -1027,6 +1036,10 @@ def train(
                 flush=True,
             )
 
+    if prof is not None:
+        prof.stop()
+        _save_profile(prof, save_dir)
+
     if use_async_eval:
         snap_queue.put(None)          # poison pill -> worker exits cleanly
         snap_queue.join()             # wait for worker to finish current item
@@ -1044,9 +1057,6 @@ def train(
     if epochs > 1:
         total = time.time() - t_start
         print(f'\n  Done: {total:.1f} s  ({total / epochs:.2f} s/epoch)')
-
-    if PARAM_LOG_INTERVAL > 0:
-        _print_param_detail(block, _pg, optimizer.param_groups[0]['lr'])
 
     # ------------------------------------------------------------------
     # 5. Evaluate - fresh post-training pre-pass (pre may be stale)
