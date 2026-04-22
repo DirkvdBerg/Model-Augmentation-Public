@@ -804,7 +804,7 @@ def train(
     optimizer = torch.optim.Adam(block.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
-        patience=125,  # steps every epoch on train loss; 125 epochs ≈ original 5×LOG_INTERVAL=25
+        patience=7,    # steps on eval_rmse (~every 10 training epochs); 7 eval-steps ≈ 70 training epochs
         factor=0.5,
         min_lr=1e-5,
     )
@@ -836,14 +836,14 @@ def train(
     if param_loss_weight > 0:
         print(
             f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"param_loss":>12}  '
-            f'{"total":>12}  {"grad_norm":>12}  {"time [s]":>9}  |  {"eval_ep":>7}  {"eval_rmse[m]":>13}'
+            f'{"total":>12}  {"grad_norm":>12}  {"time [s]":>9}  {"lr":>10}  |  {"eval_ep":>7}  {"eval_rmse[m]":>13}'
         )
-        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 9}  |  {"-" * 7}  {"-" * 13}')
+        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 9}  {"-" * 10}  |  {"-" * 7}  {"-" * 13}')
     else:
         print(
-            f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"grad_norm":>12}  {"time [s]":>9}  |  {"eval_ep":>7}  {"eval_rmse[m]":>13}'
+            f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"grad_norm":>12}  {"time [s]":>9}  {"lr":>10}  |  {"eval_ep":>7}  {"eval_rmse[m]":>13}'
         )
-        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 9}  |  {"-" * 7}  {"-" * 13}')
+        print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 9}  {"-" * 10}  |  {"-" * 7}  {"-" * 13}')
 
     t_start = time.time()
     history = []  # one entry per log_interval epoch
@@ -936,7 +936,6 @@ def train(
             _pg = None
             grad_norm = float('nan')
         optimizer.step()
-        scheduler.step(mse_loss.item())
 
         if checkpoint_interval > 0 and epoch > 0 and epoch % checkpoint_interval == 0:
             torch.save(
@@ -950,6 +949,7 @@ def train(
                 snap_epoch, full_rmse, _, lp_cpu = result_queue.get_nowait()
                 latest_eval_epoch = snap_epoch
                 latest_eval_rmse = f"{full_rmse:.4e}"
+                scheduler.step(full_rmse)
                 # Back-fill full_traj_rmse into the history entry for snap_epoch
                 for h in history:
                     if h['epoch'] == snap_epoch:
@@ -974,6 +974,7 @@ def train(
             full_rmse, _ = _full_traj_eval(block, eval_trajs)
             latest_eval_epoch = epoch
             latest_eval_rmse = f"{full_rmse:.4e}"
+            scheduler.step(full_rmse)
             if full_rmse < best_full_traj_rmse:
                 best_full_traj_rmse = full_rmse
                 best_epoch          = epoch
@@ -1003,13 +1004,13 @@ def train(
                 hist_entry['total_loss'] = loss.item()
                 print(
                     f'  {epoch:>6}  {train_rmse_m:>14.4e}  {theta_loss.item():>12.4e}  '
-                    f'{loss.item():>12.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}  |  '
+                    f'{loss.item():>12.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}  {current_lr:>10.3e}  |  '
                     f'{latest_eval_epoch:>7}  {latest_eval_rmse:>13}',
                     flush=True,
                 )
             else:
                 print(
-                    f'  {epoch:>6}  {train_rmse_m:>14.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}  |  '
+                    f'  {epoch:>6}  {train_rmse_m:>14.4e}  {grad_norm:>12.3e}  {time.time() - t0:>9.3f}  {current_lr:>10.3e}  |  '
                     f'{latest_eval_epoch:>7}  {latest_eval_rmse:>13}',
                     flush=True,
                 )
