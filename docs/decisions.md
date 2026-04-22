@@ -721,28 +721,31 @@ and any control design work downstream.
 
 ---
 
-### [D-037] OPEN: Norm regularization on cost function to improve parameter identifiability
-**Date**: 2026-04-09 (raised in supervisor meeting, not yet decided)
-**What**: When two or more physical parameters are only identifiable as a sum (e.g. M[i,j] = a + b
-where only a+b enters M(Y)), add a norm term to the cost function to shape the landscape so that
-individual components can be recovered.
-**Why**: The standard RMSE + L2 loss may have a degenerate valley along directions where a+b is
-constant — any (a, b) pair on that line gives the same loss. A norm term (e.g. L1 or L2 on the
-individual values) breaks the degeneracy by preferring sparse or small-magnitude decompositions,
-making the optimizer converge to a specific point rather than sliding along the valley.
-**Connection to log-domain gradients (D-035)**:
-- If Adam operates in log-domain (log/exp reparameterization), gradients near zero/small values
-  are amplified — parameters at very different scales receive unfair updates.
-- Roland's suggestion: **centre and normalize** log-parameters around ~1 before the gradient step
-  to equalize the effective step sizes across parameters.
-- Alternative to log: `p² = p * p` (always positive, smooth near zero gradient) or `|p * p|` —
-  avoids log singularity near zero but still requires positivity guarantee.
-**Open question**: What is the cleanest guarantee that a parameter never hits zero during training?
-Current answer: log/exp (D-035). Revisit if instability seen near small parameter values.
-**Ruled out**: Nothing ruled out yet.
-**Constrains**: `train_param_recovery.py` loss function and optimizer configuration; see also
-MEET-02 and MEET-06 in `tasks/todo.md`.
-**Constrains**: `ParameterizedLFRBlock` stores `self.log_params` as `nn.Parameter`. All reads of physical parameter values — in `_build_matrices()`, `param_loss()`, and any diagnostic printout — must go through `torch.exp(self.log_params)`. The regularization reference `self.params_init` remains in physical space (not log space) for interpretability.
+### [D-037] IMPLEMENTED: Split regularization on degenerate parameter pairs
+**Date**: 2026-04-09 (raised in supervisor meeting); **Implemented**: 2026-04-22
+**What**: kb1/kb2, cb1/cb2, and Jb/Jh each appear only as sums in the physics equations (K[1,1]=kb1+kb2, C[1,1]=cb1+cb2, M[1,1] contains Jb+Jh). This creates a flat ridge in loss: any split summing to the correct value gives identical RMSE. A scale-invariant "split loss" breaks the degeneracy.
+**Why**: The standard RMSE loss has zero gradient in the split direction for these pairs. Without a tiebreaker the optimizer stagnates on a line rather than converging to the true split.
+**Implementation** (`SPLIT_REG_WEIGHT = 1e-2`):
+```python
+# lfr_param_block.py -- ParameterizedLFRBlock.split_loss()
+def split_loss(self) -> Tensor:
+    p = self._recover_params()
+    kb1, kb2 = p[0], p[1]
+    cb1, cb2 = p[5], p[6]
+    return (
+        ((kb1 - kb2) / (kb1 + kb2)).pow(2)   # symmetric pairs -- prefers equal split
+        + ((cb1 - cb2) / (cb1 + cb2)).pow(2)
+        + (self.log_params[11] - self.log_params[12]).pow(2)  # Jb/Jh -- log-space (true values differ)
+    )
+```
+- kb/cb pairs: normalised squared difference `((a-b)/(a+b))^2` — dimensionless, scale-invariant, zero at a=b. Correct because true values are equal by design (kb1=kb2=1987.5, cb1=cb2=9.0).
+- Jb/Jh: log-space squared difference — prefers proportional fractional detuning rather than equal split. Correct because true values differ (Jb=1.0, Jh=0.05); forcing equal split would be physically wrong.
+- Weight `1e-2` is small enough that it does not meaningfully distort the RMSE landscape when the sum is already near its correct value; it only resolves the flat direction.
+**Compute cost**: Three tensor ops per backward pass — negligible.
+**Constrains**: `train_param_recovery.py` (`SPLIT_REG_WEIGHT`, `train()` signature, loss assembly, hist_entry, save dict); `lfr_param_block.py` (`split_loss()` method).
+**Old notes (pre-implementation)**:
+- Roland's suggestion: centre and normalize log-parameters around ~1 before gradient step. Not implemented — log/exp reparameterization (D-035) already handles scale.
+- Alternative to log: `p^2` reparameterization. Not needed; log/exp stable in practice.
 
 ---
 

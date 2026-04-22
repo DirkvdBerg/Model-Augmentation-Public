@@ -303,6 +303,26 @@ class ParameterizedLFRBlock(_BASE):
             reduction='sum',
         )
 
+    def split_loss(self) -> Tensor:
+        """
+        Scale-invariant penalty on degenerate parameter splits (D-037).
+
+        kb1/kb2, cb1/cb2: normalised squared difference -- prefers equal split.
+          (true values are symmetric by design: kb1=kb2, cb1=cb2)
+        Jb/Jh: log-space squared difference -- prefers proportional fractional
+          change rather than equal split (true values differ: Jb=1.0, Jh=0.05).
+
+        Returns a scalar tensor.
+        """
+        p = self._recover_params()
+        kb1, kb2 = p[0], p[1]
+        cb1, cb2 = p[5], p[6]
+        return (
+            ((kb1 - kb2) / (kb1 + kb2)).pow(2)
+            + ((cb1 - cb2) / (cb1 + cb2)).pow(2)
+            + (self.log_params[11] - self.log_params[12]).pow(2)
+        )
+
     # ------------------------------------------------------------------
     # Forward pass
     # ------------------------------------------------------------------

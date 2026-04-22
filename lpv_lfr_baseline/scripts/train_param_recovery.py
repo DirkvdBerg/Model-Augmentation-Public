@@ -88,6 +88,7 @@ LR = 1e-3
 FULL_EVAL_INTERVAL = 10   # run full-trajectory eval every N epochs
 SEGMENT_LEN = None  # None = choose the smallest stable candidate from the segment-length diagnostic; int = use that fixed number of samples
 PARAM_LOSS_WEIGHT = 0.0
+SPLIT_REG_WEIGHT = 1e-2   # D-037: scale-invariant penalty on degenerate splits (kb1/kb2, cb1/cb2, Jb/Jh)
 LOG_INTERVAL = 25
 CHECKPOINT_INTERVAL = 100
 PROFILE = False
@@ -722,6 +723,7 @@ def train(
     profile=PROFILE,
     time_epochs=TIME_EPOCHS,
     param_loss_weight=PARAM_LOSS_WEIGHT,
+    split_reg_weight=SPLIT_REG_WEIGHT,
 ):
     """Run parameter recovery training. Returns trained ParameterizedLFRBlock."""
     os.makedirs(save_dir, exist_ok=True)
@@ -921,7 +923,8 @@ def train(
             seg_losses = err.pow(2).sum(dim=(1, 2)) / (batch_n_active * segment_len)  # (B,)
             mse_loss = seg_losses.mean()
             theta_loss = block.param_loss() if param_loss_weight > 0 else None
-            loss = mse_loss + (param_loss_weight * theta_loss if theta_loss is not None else 0)
+            split_reg = block.split_loss() * split_reg_weight if split_reg_weight > 0 else 0.0
+            loss = mse_loss + split_reg + (param_loss_weight * theta_loss if theta_loss is not None else 0)
             t_fwd = _sync_time(device)
             loss.backward()
             t_bwd = _sync_time(device)
@@ -999,6 +1002,8 @@ def train(
                     hist_entry['full_traj_rmse_m'] = full_rmse
                     hist_entry['log_params_snapshot'] = block.log_params.detach().cpu().clone()
 
+            if split_reg_weight > 0:
+                hist_entry['split_reg'] = split_reg.item() if hasattr(split_reg, 'item') else float(split_reg)
             if param_loss_weight > 0:
                 hist_entry['param_loss'] = theta_loss.item()
                 hist_entry['total_loss'] = loss.item()
@@ -1116,13 +1121,14 @@ def train(
             'RMSE_baseline': rmse_baseline,
             'RMSE_baseline_normalized': rmse_baseline_normalized,
             'rmse_baseline_entries': _rmse_entries,
-            'sigma': {tid: s.cpu() for tid, s in sigma_device.items()},
+            'sigma': {tid: s.cpu() for tid, s in sigma_dict.items()},
             # Run config
             'active_traj_ids': tuple(spec['id'] for spec in traj_specs),
             'epochs': epochs,
             'lr': lr,
             'segment_len': segment_len,
             'param_loss_weight': param_loss_weight,
+            'split_reg_weight': split_reg_weight,
             'train_segments_per_epoch': TRAIN_SEGMENTS_PER_EPOCH,
             'base_seed': BASE_SEED,
             # Results
