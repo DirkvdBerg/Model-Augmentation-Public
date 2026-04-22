@@ -39,14 +39,14 @@ class GMatrix(NamedTuple):
     Ax:  torch.Tensor   # (6, 6)
     Bw:  torch.Tensor   # (6, 6)
     Bu:  torch.Tensor   # (6, 3)
+    A_combined: torch.Tensor # (6, 15)  [Ax, Bw, Bu] concatenated for fused update
     Cz:  torch.Tensor   # (6, 6)
     Dzw: torch.Tensor   # (6, 6)
     Dzu: torch.Tensor   # (6, 3)
     Cy:  torch.Tensor   # (3, 6)
 ```
 
-The `build_G_matrix` function body, the module-level `G` singleton, and the `__main__`
-verification block are unchanged.
+The `build_G_matrix` function must be updated to concatenate `Ax`, `Bw`, `Bu` into `A_combined = torch.cat([Ax, Bw, Bu], dim=1)` before returning the `GMatrix`. The module-level `G` singleton and `__main__` verification block are otherwise unchanged.
 
 ---
 
@@ -66,7 +66,7 @@ verification block are unchanged.
 Stops computation after step 5; skips `z`, `w`, and `y` assembly.
 
 ```python
-def _lfr_xdot_impl(
+def lfr_xdot(
     x, u, Y, G, K, C, mh, alpha, beta, gamma, N0, N1, N2
 ) -> torch.Tensor:
     """Fast path: returns only xdot. Used for RK4 substeps 2, 3, 4."""
@@ -78,49 +78,28 @@ def _lfr_xdot_impl(
     a    = (N0 @ fnet.T + Y_r * (N1 @ fnet.T + Y_r * (N2 @ fnet.T))).T / dY[:, None]
     z    = torch.cat([a, Y[:, None] * a], dim=-1)
     w    = Y[:, None] * z
-    return (x @ G.Ax.T) + (w @ G.Bw.T) + (u @ G.Bu.T)
-
-lfr_xdot = torch.compile(_lfr_xdot_impl, backend='cudagraphs', fullgraph=True)
+    
+    # Fused state update
+    combined_input = torch.cat([x, w, u], dim=-1)
+    return combined_input @ G.A_combined.T
 ```
 
-**Compile `lfr_forward` unconditionally** with `cudagraphs`:
+**Update `lfr_forward` to use the fused update** (but do NOT compile it here):
 
 ```python
-def _lfr_forward_impl(x, u, Y, G, K, C, mh, alpha, beta, gamma, N0, N1, N2):
-    # ... existing body unchanged ...
+def lfr_forward(x, u, Y, G, K, C, mh, alpha, beta, gamma, N0, N1, N2):
+    # ... existing body up to Step 5 ...
+    
+    # Fused state update replacing (x @ Ax.T) + (w @ Bw.T) + ...
+    combined_input = torch.cat([x, w, u], dim=-1)
+    xdot = combined_input @ G.A_combined.T
+    
+    y = x @ G.Cy.T
     return xdot, z, w, y
-
-lfr_forward = torch.compile(_lfr_forward_impl, backend='cudagraphs', fullgraph=True)
 ```
 
-The public names `lfr_forward` and `lfr_xdot` are compiled functions. The private `_impl`
-names exist for unit tests that need to call the raw implementation.
-
-### Backend selection: `cudagraphs` vs `inductor`
-
-One module-level constant in `lfr_forward.py` selects the backend:
-
-```python
-COMPILE_BACKEND = 'cudagraphs'   # change to 'inductor' on server when MSVC is available
-```
-
-This is the only allowed conditional between two implementations in the codebase. Both
-`lfr_forward` and `lfr_xdot` use it:
-
-```python
-lfr_forward = torch.compile(_lfr_forward_impl, backend=COMPILE_BACKEND, fullgraph=True)
-lfr_xdot    = torch.compile(_lfr_xdot_impl,    backend=COMPILE_BACKEND, fullgraph=True)
-```
-
-`cudagraphs`: works on Windows (no MSVC required) and Linux. Eliminates CUDA kernel-
-launch overhead by recording the op sequence once and replaying it. This is the primary
-bottleneck identified in profiling (284,950 launches per epoch).
-
-`inductor`: additionally fuses adjacent pointwise kernels. Secondary gain for this
-codebase -- launch overhead dominates, not compute throughput. Use on server where MSVC
-or GCC is available.
-
-`aot_eager`: traces but executes eagerly. Slower than no compile. Debug only.
+**Important Note on Compilation:**
+Do NOT apply `@torch.compile` to `lfr_forward` or `lfr_xdot` in this file. They must remain pure Python functions. We will compile the entire `rk4_step` loop at once in `lfr_simulate.py` instead. This reduces the 4 CUDA graph launches per time step down to just 1.
 
 The `__main__` verification block calls `_lfr_forward_impl` directly so it remains
 unaffected by compile.
@@ -161,9 +140,14 @@ to
 from lpv_lfr_baseline.core.lfr_forward import lfr_forward, lfr_xdot
 ```
 
-**`rk4_step` after changes:**
+**`rk4_step` after changes (compiled as a whole):**
+
+We move `COMPILE_BACKEND` here to `lfr_simulate.py` and compile the entire RK4 sequence.
 
 ```python
+COMPILE_BACKEND = 'cudagraphs'   # change to 'inductor' on server when MSVC is available
+
+@torch.compile(backend=COMPILE_BACKEND, mode='reduce-overhead', fullgraph=True)
 def rk4_step(x, u_logical, G, K, C, mh, alpha, beta, gamma, N0, N1, N2, ts,
              Y_override=None):
     Y = x[:, 2] if Y_override is None else Y_override
