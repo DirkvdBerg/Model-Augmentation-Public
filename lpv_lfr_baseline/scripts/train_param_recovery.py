@@ -83,7 +83,7 @@ CHANNEL_MASKS = {
 
 # ── Experiment settings ───────────────────────────────────────────────────────
 N_STEPS = None  # cap on steps (None = use all); overridden to 500 when PROFILE=True
-EPOCHS = 3
+EPOCHS = 1000
 LR = 1e-3
 FULL_EVAL_INTERVAL = 10   # run full-trajectory eval every N epochs
 SEGMENT_LEN = None  # None = choose the smallest stable candidate from the segment-length diagnostic; int = use that fixed number of samples
@@ -841,7 +841,7 @@ def train(
         print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 12}  {"-" * 12}  {"-" * 9}  |  {"-" * 7}  {"-" * 13}')
     else:
         print(
-            f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"grad_norm":>12}  {"time [s]":>9}  |  {"eval_ep":>7}  {"eval_rmse[m]":>13}'
+            f'  {"Epoch":>6}  {"train_rmse[m]":>14}  {"grad_norm":>12}  {"time [s]":>9}  |  {"eval_ep":>7}  {"eval_rmse[mm]":>13}'
         )
         print(f'  {"-" * 6}  {"-" * 14}  {"-" * 12}  {"-" * 9}  |  {"-" * 7}  {"-" * 13}')
 
@@ -878,6 +878,7 @@ def train(
             while True:
                 item = snap_queue.get()
                 if item is None:  # poison pill
+                    snap_queue.task_done()  # unblock snap_queue.join() in post-loop cleanup
                     break
                 snap_epoch, lp_cpu = item
                 with torch.no_grad():
@@ -948,7 +949,7 @@ def train(
             while not result_queue.empty():
                 snap_epoch, full_rmse, _, lp_cpu = result_queue.get_nowait()
                 latest_eval_epoch = snap_epoch
-                latest_eval_rmse = f"{full_rmse:.4e}"
+                latest_eval_rmse = f"{full_rmse * 1e3:.4f}"
                 # Back-fill full_traj_rmse into the history entry for snap_epoch
                 for h in history:
                     if h['epoch'] == snap_epoch:
@@ -972,7 +973,7 @@ def train(
         elif epoch % FULL_EVAL_INTERVAL == 0 or epoch == epochs - 1:
             full_rmse, _ = _full_traj_eval(block, eval_trajs)
             latest_eval_epoch = epoch
-            latest_eval_rmse = f"{full_rmse:.4e}"
+            latest_eval_rmse = f"{full_rmse * 1e3:.4f}"
             if full_rmse < best_full_traj_rmse:
                 best_full_traj_rmse = full_rmse
                 best_epoch          = epoch
@@ -1038,7 +1039,8 @@ def train(
         total = time.time() - t_start
         print(f'\n  Done: {total:.1f} s  ({total / epochs:.2f} s/epoch)')
 
-    _print_param_detail(block, _pg, optimizer.param_groups[0]['lr'])
+    if PARAM_LOG_INTERVAL > 0:
+        _print_param_detail(block, _pg, optimizer.param_groups[0]['lr'])
 
     # ------------------------------------------------------------------
     # 5. Evaluate - fresh post-training pre-pass (pre may be stale)
