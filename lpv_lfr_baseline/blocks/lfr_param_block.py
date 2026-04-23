@@ -331,9 +331,10 @@ class ParameterizedLFRBlock(_BASE):
         """One RK4 step. (batch, 9, 1) -> (batch, 18, 1)."""
         in_dtype = z_in.dtype
         z_flat   = z_in.squeeze(-1)
+        work_dtype = self.log_params.dtype
 
-        if z_flat.dtype != torch.float64:
-            z_flat = z_flat.double()
+        if z_flat.dtype != work_dtype:
+            z_flat = z_flat.to(dtype=work_dtype)
 
         x       = z_flat[:, :6]
         u_stage = z_flat[:, 6:]
@@ -361,8 +362,8 @@ class ParameterizedLFRBlock(_BASE):
             self._ts,
         )
 
-        w_f64 = torch.cat([x_next, z_lfr, w_lfr], dim=-1)   # (batch, 18)
-        out   = w_f64 if in_dtype == torch.float64 else w_f64.to(in_dtype)
+        w_out = torch.cat([x_next, z_lfr, w_lfr], dim=-1)   # (batch, 18)
+        out   = w_out if in_dtype == work_dtype else w_out.to(in_dtype)
         return out.unsqueeze(-1)
 
 

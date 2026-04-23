@@ -73,7 +73,7 @@ ACTIVE_TRAJ_IDS = tuple(spec['id'] for spec in TRAJ_SPECS)
 
 # ── Training hyperparameters ──────────────────────────────────────────────────
 W                        = 50      # BPTT window [samples] — outer loop in train()
-EPOCHS                   = 3
+EPOCHS                   = 600
 LR                       = 1e-3
 TRAIN_SEGMENTS_PER_EPOCH = 8
 FULL_EVAL_INTERVAL       = 10
@@ -131,8 +131,15 @@ def _build_sim_params(block):
     return G, K, C, mh, alpha, beta, gamma, N0, N1, N2
 
 
+@torch._dynamo.disable
 def _run_no_grad(block, x0, u):
-    """Simulate full trajectory with current params, no gradient."""
+    """Simulate full trajectory with current params, no gradient.
+
+    Decorated with @torch._dynamo.disable (recursive) so compiled functions
+    called within (rk4_step) run eagerly. This is required for two reasons:
+    1. The eval worker thread does not have the TLS state that cudagraphs needs.
+    2. Eval runs infrequently so compilation overhead is not worth it.
+    """
     with torch.no_grad():
         G, K, C, mh, alpha, beta, gamma, N0, N1, N2 = _build_sim_params(block)
         return simulate(
@@ -250,12 +257,12 @@ def train(
 
     # Move trajectory tensors to training device
     for traj in trajs:
-        traj['u']          = traj['u'].to(device)
-        traj['q1']         = traj['q1'].to(device)
-        traj['state_traj'] = traj['state_traj'].to(device)
+        traj['u']          = traj['u'].to(device=device, dtype=DTYPE)
+        traj['q1']         = traj['q1'].to(device=device, dtype=DTYPE)
+        traj['state_traj'] = traj['state_traj'].to(device=device, dtype=DTYPE)
 
     # Pre-build device-side sigma lookup — avoids per-epoch .to() inside the loop
-    sigma_device = {tid: s.to(device) for tid, s in sigma.items()}
+    sigma_device = {tid: s.to(device=device, dtype=DTYPE) for tid, s in sigma.items()}
 
     print(f'  rmse_baseline_normalized = {rmse_baseline_normalized:.4e}')
     print(f'  segment_len = {segment_len} samples')
@@ -288,7 +295,9 @@ def train(
     # Step 2 — Block + optimizer
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 2: Build model\n{"=" * 60}')
-    block     = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline_normalized).to(device)
+    block     = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline_normalized).to(
+        device=device, dtype=DTYPE
+    )
     optimizer = torch.optim.Adam(block.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, patience=7, factor=0.5, min_lr=1e-5,
@@ -322,7 +331,9 @@ def train(
     best_log_params     = None
 
     # Async eval: separate block so main loop and eval thread don't share parameters.
-    eval_block   = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline_normalized).to(device)
+    eval_block   = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline_normalized).to(
+        device=device, dtype=DTYPE
+    )
     snap_queue   = queue.Queue(maxsize=2)   # main -> worker: (epoch, log_params_cpu)
     result_queue = queue.Queue()            # worker -> main: (epoch, rmse, entries, lp_cpu)
 
@@ -334,7 +345,9 @@ def train(
                 break
             snap_epoch, lp_cpu = item
             with torch.no_grad():
-                eval_block.log_params.copy_(lp_cpu.to(device))
+                eval_block.log_params.copy_(
+                    lp_cpu.to(device=device, dtype=eval_block.log_params.dtype)
+                )
             rmse, entries = _full_traj_eval(eval_block, trajs)
             result_queue.put((snap_epoch, rmse, entries, lp_cpu))
             snap_queue.task_done()
@@ -509,7 +522,9 @@ def train(
 
     if best_log_params is not None:
         with torch.no_grad():
-            block.log_params.copy_(best_log_params.to(device))
+            block.log_params.copy_(
+                best_log_params.to(device=device, dtype=block.log_params.dtype)
+            )
         print(
             f'  Loaded best_log_params from epoch {best_epoch} '
             f'(full-traj RMSE = {best_full_traj_rmse:.4e} m)\n'
