@@ -23,8 +23,11 @@ from torch.utils.checkpoint import checkpoint as grad_checkpoint
 from lpv_lfr_baseline.core.lfr_forward import lfr_forward, lfr_xdot
 from lpv_lfr_baseline.core.lfr_matrices import GMatrix
 
-# 'cudagraphs' works on Windows without MSVC; change to 'inductor' on server.
-COMPILE_BACKEND = 'cudagraphs'
+import platform as _platform
+
+# inductor requires MSVC on Windows but works out of the box on Linux/macOS.
+# cudagraphs works everywhere but only eliminates kernel-launch overhead (no fusion).
+COMPILE_BACKEND = 'cudagraphs' if _platform.system() == 'Windows' else 'inductor'
 
 
 @dataclass
