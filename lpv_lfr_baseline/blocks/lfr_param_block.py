@@ -47,8 +47,8 @@ Regularization (D-034):
     measurement on the MATLAB data (D-034).
 
 Detuned initial values:
-    Uniform ±10% applied to each parameter with alternating signs (see _DETUNING_SIGNS).
-    Signs are fixed so results are reproducible without a seed.
+    Fixed ±10% applied per parameter (see _DETUNING); sum pairs share the same sign
+    so identifiable sums are detuned. Signs are fixed for reproducibility without a seed.
 
 Block interface (identical to LFRBaselineBlock):
     nz = 9   (nx=6 state + nu=3 stage-coord input)
@@ -94,10 +94,22 @@ _TRUE_PARAMS = {
 
 _PARAM_NAMES = ['kb1', 'kb2', 'cg1', 'cg2', 'cy', 'cb1', 'cb2', 'mh', 'm1', 'm2', 'mb', 'Jb', 'Jh']
 
-# Detuned initial values — uniform ±10%, alternating signs across parameters.
-# Signs are fixed (not runtime-random) so results are reproducible without a seed.
-_DETUNING_SIGNS  = [+1, -1, +1, -1, +1, -1, +1, -1, +1, -1, +1, -1, +1]
-_DETUNED_PARAMS  = {n: _TRUE_PARAMS[n] * (1 + s * 0.10) for n, s in zip(_PARAM_NAMES, _DETUNING_SIGNS)}
+# Detuned initial values — fixed ±10% per parameter, reproducible without a seed.
+# Sum pairs (kb1+kb2, cb1+cb2, Jb+Jh) share the same sign so the sum is detuned;
+# individual params within a pair are not data-identifiable anyway.
+_DETUNING = {
+    'kb1': +0.10, 'kb2': +0.10,   # kb_sum starts +10% from true
+    'cg1': +0.10,
+    'cg2': -0.10,
+    'cy':  +0.10,
+    'cb1': -0.10, 'cb2': -0.10,   # cb_sum starts -10% from true
+    'mh':  -0.10,
+    'm1':  +0.10,
+    'm2':  -0.10,
+    'mb':  +0.10,
+    'Jb':  -0.10, 'Jh':  -0.10,   # J_sum  starts -10% from true
+}
+_DETUNED_PARAMS = {n: _TRUE_PARAMS[n] * (1 + _DETUNING[n]) for n in _PARAM_NAMES}
 
 # Fixed geometry (also enter P -- cannot be trained)
 _Lb = torch.tensor(0.725, dtype=torch.float64)
