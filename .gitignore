@@ -15,7 +15,7 @@ LPV_CONTEXT.MAP.txt
 PLAN.md
 *.png
 *.json
-#*.pt
+*.pt
 
 # benchmark folder
 literature/robot-benchmark-full/
