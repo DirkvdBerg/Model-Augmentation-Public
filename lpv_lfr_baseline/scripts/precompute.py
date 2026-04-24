@@ -8,13 +8,21 @@ result immediately.
 Computes
 --------
 trajs                    : list of dicts — per-trajectory u (1,T,3), q1 (T,3),
-                           state_traj (T,6), and metadata (id, group, file, N, fs)
-sigma                    : dict traj_id -> (3,) — per-trajectory per-channel
-                           output std for loss normalization, clamped to min 1e-4.
-                           All three channels contribute (no masks).
+                           state_traj (T,6), and metadata (id, file, N, fs)
+sigma                    : dict traj_id -> (3,) — per-channel output std for
+                           loss normalization, clamped to min 1e-4.
+                           Mode controlled by norm_mode (see below).
 rmse_entries             : list of dicts — per-trajectory detuned-model RMSE
-rmse_baseline_normalized : float — group-balanced RMSE baseline in sigma units
+rmse_baseline_normalized : float — simple mean RMSE baseline in sigma units
 segment_len              : int — BPTT window length chosen by segment diagnostic
+metadata                 : dict — human-readable record of what was computed
+                           (dtype, norm_mode, traj_ids, n_timesteps, segment_len)
+
+norm_mode options
+-----------------
+'per_traj'  (default) : each trajectory normalized by its own per-channel std.
+'global'              : single sigma pooled across all trajectories, applied
+                        uniformly — same (3,) tensor returned for every traj_id.
 
 All tensors are on CPU in the requested dtype. The training loop moves them to
 the training device via .to(device).
@@ -41,12 +49,13 @@ CACHE_VERSION = 1
 # Cache helpers
 # ----------------------------------------------------------------------
 
-def _fingerprint(traj_specs, dtype):
-    """Stable cache key — invalidated by any change to traj set or dtype."""
+def _fingerprint(traj_specs, dtype, norm_mode):
+    """Stable cache key — invalidated by any change to traj set, dtype, or norm_mode."""
     return (
         CACHE_VERSION,
-        tuple((s['id'], s['file'], s['group']) for s in traj_specs),
+        tuple((s['id'], s['file']) for s in traj_specs),
         str(dtype),
+        norm_mode,
     )
 
 
@@ -91,14 +100,24 @@ def _build_state_traj_logical(q1_stage, P, ts_val, dtype):
     return torch.cat([q_logical, qdot], dim=-1)   # (T, 6)
 
 
-def _compute_sigma(trajs, dtype):
+def _compute_sigma(trajs, norm_mode, dtype):
     """
-    Per-trajectory per-channel output std, clamped to min 1e-4.
+    Compute sigma for loss normalization. All values clamped to min 1e-4.
 
-    All three channels contribute — no channel masks. Channels with
-    near-zero variance (controller-suppressed) are clamped so they
-    produce finite but small loss signal rather than division by zero.
+    norm_mode='per_traj' : per-trajectory per-channel std. Channels with
+                           near-zero variance are clamped so they produce a
+                           finite but small loss signal.
+    norm_mode='global'   : single sigma pooled across all trajectories,
+                           returned as a dict with the same tensor for every id.
     """
+    if norm_mode == 'global':
+        q1_all = torch.cat([traj['q1'] for traj in trajs], dim=0)   # (T_total, 3)
+        global_sigma = torch.empty(3, dtype=dtype)
+        for c in range(3):
+            global_sigma[c] = q1_all[:, c].std().clamp(min=1e-4)
+        return {traj['id']: global_sigma for traj in trajs}
+    if norm_mode != 'per_traj':
+        raise ValueError(f"norm_mode must be 'per_traj' or 'global', got {norm_mode!r}")
     sigma = {}
     for traj in trajs:
         ch = torch.empty(3, dtype=dtype)
@@ -112,20 +131,14 @@ def _compute_sigma(trajs, dtype):
 # RMSE aggregation helpers
 # ----------------------------------------------------------------------
 
-def _aggregate_grouped_rmse(entries):
-    """Group-balanced RMSE scalar from a list of per-trajectory MSE entries."""
-    if len(entries) == 1:
-        return float(entries[0]['rmse_total'])
-    group_mse = {}
-    for e in entries:
-        group_mse.setdefault(e['group'], []).append(e['mse_total'])
-    overall_mse = sum(sum(v) / len(v) for v in group_mse.values()) / len(group_mse)
-    return overall_mse ** 0.5
+def _aggregate_rmse(entries):
+    """Simple mean RMSE across all trajectories."""
+    return (sum(e['mse_total'] for e in entries) / len(entries)) ** 0.5
 
 
 def _aggregate_normalized_rmse_baseline(rmse_entries, sigma):
     """
-    Group-balanced RMSE baseline in sigma-normalized (dimensionless) units.
+    Simple mean RMSE baseline in sigma-normalized (dimensionless) units.
 
     Uses float64 throughout for the scalar computation regardless of training
     dtype — normalization constants should be computed at full precision.
@@ -135,13 +148,7 @@ def _aggregate_normalized_rmse_baseline(rmse_entries, sigma):
         s = sigma[entry['id']].to(torch.float64)
         return (rmse_ch / s).pow(2).mean().item()
 
-    if len(rmse_entries) == 1:
-        return _normalized_mse(rmse_entries[0]) ** 0.5
-
-    group_mse = {}
-    for e in rmse_entries:
-        group_mse.setdefault(e['group'], []).append(_normalized_mse(e))
-    overall_mse = sum(sum(v) / len(v) for v in group_mse.values()) / len(group_mse)
+    overall_mse = sum(_normalized_mse(e) for e in rmse_entries) / len(rmse_entries)
     return overall_mse ** 0.5
 
 
@@ -149,7 +156,7 @@ def _aggregate_normalized_rmse_baseline(rmse_entries, sigma):
 # Core computation
 # ----------------------------------------------------------------------
 
-def _compute(traj_specs, traj_dir, save_dir, dtype):
+def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode):
     """Run all precomputation. Only called when cache is absent or stale."""
     P      = _P.to(dtype)
     ts_val = float(_ts)
@@ -163,7 +170,6 @@ def _compute(traj_specs, traj_dir, save_dir, dtype):
         state_traj = _build_state_traj_logical(q1, P, ts_val, dtype)
         trajs.append({
             'id':         spec['id'],
-            'group':      spec['group'],
             'file':       spec['file'],
             'N':          int(q1.shape[0]),
             'fs':         fs,
@@ -174,8 +180,8 @@ def _compute(traj_specs, traj_dir, save_dir, dtype):
         print(f'    {spec["id"]}: T={q1.shape[0]}, fs={fs} Hz')
 
     # --- sigma ---
-    print('  precompute: computing sigma')
-    sigma = _compute_sigma(trajs, dtype)
+    print(f'  precompute: computing sigma  (norm_mode={norm_mode!r})')
+    sigma = _compute_sigma(trajs, norm_mode, dtype)
     for traj in trajs:
         s = sigma[traj['id']]
         print(f'    {traj["id"]}: sigma = [{s[0]:.3e}, {s[1]:.3e}, {s[2]:.3e}]')
@@ -192,7 +198,6 @@ def _compute(traj_specs, traj_dir, save_dir, dtype):
         )
         rmse_entries.append({
             'id':         traj['id'],
-            'group':      traj['group'],
             'file':       traj['file'],
             'mse_total':  metrics['mse_total'],
             'rmse_total': metrics['rmse_total'],
@@ -209,12 +214,23 @@ def _compute(traj_specs, traj_dir, save_dir, dtype):
     segment_len = run_segment_diag(traj_specs, traj_dir, save_dir)
     print(f'  precompute: chosen segment_len = {segment_len}')
 
+    metadata = {
+        'version':     CACHE_VERSION,
+        'dtype':       str(dtype),
+        'norm_mode':   norm_mode,
+        'traj_ids':    [t['id'] for t in trajs],
+        'traj_files':  [t['file'] for t in trajs],
+        'n_timesteps': {t['id']: t['N'] for t in trajs},
+        'segment_len': segment_len,
+    }
+
     return {
         'trajs':                    trajs,
         'sigma':                    sigma,
         'rmse_entries':             rmse_entries,
         'rmse_baseline_normalized': rmse_baseline_normalized,
         'segment_len':              segment_len,
+        'metadata':                 metadata,
     }
 
 
@@ -222,36 +238,42 @@ def _compute(traj_specs, traj_dir, save_dir, dtype):
 # Public API
 # ----------------------------------------------------------------------
 
-def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64, force=False):
+def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
+               norm_mode='per_traj', force=False):
     """
     Load or compute all fixed precomputed data for parameter recovery training.
 
     Parameters
     ----------
-    traj_specs : sequence of dicts with keys 'id', 'group', 'file'
+    traj_specs : sequence of dicts with keys 'id', 'file'
     traj_dir   : directory containing the .mat trajectory files
     save_dir   : directory for the cache file and segment diagnostic outputs
     dtype      : torch dtype for all output tensors (default float64)
+    norm_mode  : 'per_traj' (default) or 'global' — controls how sigma is computed.
+                 Changing this invalidates the cache and forces a recompute.
     force      : if True, recompute even when a valid cache exists
 
     Returns
     -------
     dict with keys:
         trajs, sigma, rmse_entries, rmse_baseline_normalized,
-        segment_len, version, fingerprint
+        segment_len, metadata, version, fingerprint
     """
     os.makedirs(save_dir, exist_ok=True)
     cache_path = Path(save_dir) / 'precomputed.pt'
-    fp = _fingerprint(traj_specs, dtype)
+    fp = _fingerprint(traj_specs, dtype, norm_mode)
 
     if not force and cache_path.exists():
         cached = torch.load(cache_path, weights_only=False)
         if cached.get('fingerprint') == fp:
             print(f'  precompute: loaded from cache ({cache_path})')
+            meta = cached.get('metadata', {})
+            print(f'    dtype={meta.get("dtype")}  norm_mode={meta.get("norm_mode")!r}  '
+                  f'trajs={meta.get("traj_ids")}  segment_len={meta.get("segment_len")}')
             return cached
         print('  precompute: cache fingerprint mismatch — recomputing')
 
-    data = _compute(traj_specs, traj_dir, save_dir, dtype)
+    data = _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode)
     data['version']     = CACHE_VERSION
     data['fingerprint'] = fp
     torch.save(data, cache_path)
@@ -314,13 +336,13 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------
     print('\nCheck 2: _compute_sigma')
     fake_trajs = [
-        {'id': 'T1', 'group': 'g1',
+        {'id': 'T1',
          'q1': torch.cat([torch.zeros(100, 2, dtype=dtype),
                           torch.randn(100, 1, dtype=dtype) * 0.05], dim=1)},
-        {'id': 'T2', 'group': 'g1',
+        {'id': 'T2',
          'q1': torch.zeros(100, 3, dtype=dtype)},   # all-zero: should clamp
     ]
-    sigma = _compute_sigma(fake_trajs, dtype)
+    sigma = _compute_sigma(fake_trajs, 'per_traj', dtype)
     results.append(check('sigma keys match traj ids',
                          set(sigma.keys()) == {'T1', 'T2'}))
     results.append(check('sigma shape (3,)',
@@ -333,40 +355,46 @@ if __name__ == '__main__':
     results.append(check('active channel > 1e-4',
                          sigma['T1'][2].item() > 1e-4,
                          f'sigma_Y={sigma["T1"][2].item():.4e}'))
+    sigma_g = _compute_sigma(fake_trajs, 'global', dtype)
+    results.append(check('global: all traj_ids return same tensor object',
+                         sigma_g['T1'] is sigma_g['T2']))
+    results.append(check('global: shape (3,)', sigma_g['T1'].shape == (3,)))
 
     # ------------------------------------------------------------------
-    # Check 3 — _aggregate_grouped_rmse: group balancing
+    # Check 3 — _aggregate_rmse: simple mean
     # ------------------------------------------------------------------
-    print('\nCheck 3: _aggregate_grouped_rmse')
-    entries_single = [{'id': 'T1', 'group': 'g1', 'mse_total': 0.04, 'rmse_total': 0.2}]
-    entries_two_groups = [
-        {'id': 'T1', 'group': 'g1', 'mse_total': 0.01, 'rmse_total': 0.1},
-        {'id': 'T2', 'group': 'g1', 'mse_total': 0.09, 'rmse_total': 0.3},
-        {'id': 'T3', 'group': 'g2', 'mse_total': 0.25, 'rmse_total': 0.5},
+    print('\nCheck 3: _aggregate_rmse')
+    entries_single = [{'id': 'T1', 'mse_total': 0.04, 'rmse_total': 0.2}]
+    entries_multi = [
+        {'id': 'T1', 'mse_total': 0.01, 'rmse_total': 0.1},
+        {'id': 'T2', 'mse_total': 0.09, 'rmse_total': 0.3},
+        {'id': 'T3', 'mse_total': 0.25, 'rmse_total': 0.5},
     ]
-    rmse_single = _aggregate_grouped_rmse(entries_single)
-    results.append(check('single traj: returns rmse_total directly',
+    rmse_single = _aggregate_rmse(entries_single)
+    results.append(check('single traj: sqrt(mse_total)',
                          abs(rmse_single - 0.2) < 1e-12, f'{rmse_single:.4f}'))
-    # g1 mean_mse = (0.01+0.09)/2 = 0.05; g2 mean_mse = 0.25; overall = sqrt((0.05+0.25)/2)
-    expected = ((0.05 + 0.25) / 2) ** 0.5
-    rmse_two = _aggregate_grouped_rmse(entries_two_groups)
-    results.append(check('two groups: group-balanced correctly',
-                         abs(rmse_two - expected) < 1e-12,
-                         f'{rmse_two:.6f} vs {expected:.6f}'))
+    # simple mean: sqrt((0.01 + 0.09 + 0.25) / 3)
+    expected = ((0.01 + 0.09 + 0.25) / 3) ** 0.5
+    rmse_multi = _aggregate_rmse(entries_multi)
+    results.append(check('multi-traj: simple mean RMSE',
+                         abs(rmse_multi - expected) < 1e-12,
+                         f'{rmse_multi:.6f} vs {expected:.6f}'))
 
     # ------------------------------------------------------------------
     # Check 4 — _fingerprint: dtype change invalidates cache
     # ------------------------------------------------------------------
     print('\nCheck 4: _fingerprint cache invalidation')
-    specs = [{'id': 'T1', 'file': 'f1.mat', 'group': 'g1'}]
-    fp32 = _fingerprint(specs, torch.float32)
-    fp64 = _fingerprint(specs, torch.float64)
-    specs2 = [{'id': 'T2', 'file': 'f2.mat', 'group': 'g1'}]
-    fp_other = _fingerprint(specs2, torch.float64)
+    specs = [{'id': 'T1', 'file': 'f1.mat'}]
+    fp32      = _fingerprint(specs, torch.float32, 'per_traj')
+    fp64      = _fingerprint(specs, torch.float64, 'per_traj')
+    fp_global = _fingerprint(specs, torch.float64, 'global')
+    specs2    = [{'id': 'T2', 'file': 'f2.mat'}]
+    fp_other  = _fingerprint(specs2, torch.float64, 'per_traj')
     results.append(check('float32 != float64 fingerprint', fp32 != fp64))
+    results.append(check('norm_mode change invalidates cache', fp64 != fp_global))
     results.append(check('different traj_specs invalidates cache', fp64 != fp_other))
     results.append(check('same inputs produce same fingerprint',
-                         _fingerprint(specs, torch.float64) == fp64))
+                         _fingerprint(specs, torch.float64, 'per_traj') == fp64))
 
     # ------------------------------------------------------------------
     # Summary

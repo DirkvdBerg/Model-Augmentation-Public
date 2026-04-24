@@ -37,7 +37,7 @@ from lpv_lfr_baseline.scripts.precompute import _build_state_traj_logical, _load
 # ----------------------------------------------------------------------
 
 SEGMENT_DIAG_CANDIDATES_S    = (0.1, 0.2, 0.4, 0.6)
-SEGMENT_DIAG_SEGMENTS_PER_GROUP = 8
+SEGMENT_DIAG_N_SEGMENTS = 24
 SEGMENT_DIAG_VERSION         = 1
 _BASE_SEED                   = 1234
 
@@ -51,14 +51,6 @@ def _traj_set_tag(traj_specs):
     return '-'.join(spec['id'] for spec in traj_specs)
 
 
-def _active_groups_from_specs(traj_specs):
-    """Return active groups in first-appearance order from traj_specs."""
-    seen = {}
-    for spec in traj_specs:
-        seen[spec['group']] = True
-    return tuple(seen)
-
-
 def _load_trajs(traj_specs, traj_dir, dtype):
     """Load trajectories and build state trajectories. Returns list of dicts."""
     P      = _P.to(dtype)
@@ -70,7 +62,6 @@ def _load_trajs(traj_specs, traj_dir, dtype):
         state_traj = _build_state_traj_logical(q1, P, ts_val, dtype)
         trajs.append({
             'id':         spec['id'],
-            'group':      spec['group'],
             'N':          int(q1.shape[0]),
             'fs':         fs,
             'u':          u,            # (1, T, 3)
@@ -87,55 +78,44 @@ def _attach_valid_start_idx(trajs, segment_len):
         traj['valid_start_idx'] = torch.arange(n_valid, dtype=torch.int64)
 
 
-def _sample_balanced_segments(trajs, segment_len, group_counts, seed):
+def _sample_balanced_segments(trajs, segment_len, n_segments, seed):
     """
-    Sample balanced segments per group. Returns pre-allocated tensors.
+    Sample n_segments uniformly from all trajectories with valid starts.
 
-    Pre-allocates (total, ...) output tensors and fills by index — no list
-    accumulation. total = sum(group_counts.values()).
+    Pre-allocates (n_segments, ...) output tensors and fills by index.
     """
     generator = torch.Generator(device='cpu')
     generator.manual_seed(seed)
 
-    total   = sum(group_counts.values())
-    ref     = next(t for t in trajs if t['valid_start_idx'].numel() > 0)
-    dtype   = ref['state_traj'].dtype
-    device  = ref['state_traj'].device
+    valid_trajs = [t for t in trajs if t['valid_start_idx'].numel() > 0]
+    if not valid_trajs:
+        raise ValueError(f'No valid trajectories at segment_len={segment_len}')
 
-    x0_seg    = torch.empty(total, 6,              dtype=dtype, device=device)
-    u_seg     = torch.empty(total, segment_len, 3, dtype=dtype, device=device)
-    q1_seg    = torch.empty(total, segment_len, 3, dtype=dtype, device=device)
+    ref    = valid_trajs[0]
+    dtype  = ref['state_traj'].dtype
+    device = ref['state_traj'].device
+
+    x0_seg    = torch.empty(n_segments, 6,              dtype=dtype, device=device)
+    u_seg     = torch.empty(n_segments, segment_len, 3, dtype=dtype, device=device)
+    q1_seg    = torch.empty(n_segments, segment_len, 3, dtype=dtype, device=device)
     sample_plan = []
-    idx = 0
 
-    for group, n_per_group in group_counts.items():
-        if n_per_group <= 0:
-            continue
-        group_trajs = [
-            t for t in trajs
-            if t['group'] == group and t['valid_start_idx'].numel() > 0
+    for i in range(n_segments):
+        traj  = valid_trajs[
+            torch.randint(len(valid_trajs), (1,), generator=generator).item()
         ]
-        if not group_trajs:
-            raise ValueError(
-                f'No valid trajectories for group {group!r} at segment_len={segment_len}'
-            )
-        for _ in range(n_per_group):
-            traj  = group_trajs[
-                torch.randint(len(group_trajs), (1,), generator=generator).item()
-            ]
-            start = int(
-                traj['valid_start_idx'][
-                    torch.randint(
-                        traj['valid_start_idx'].numel(), (1,), generator=generator
-                    ).item()
-                ].item()
-            )
-            stop = start + segment_len
-            x0_seg[idx]  = traj['state_traj'][start]
-            u_seg[idx]   = traj['u'][0, start:stop, :]
-            q1_seg[idx]  = traj['q1'][start:stop, :]
-            sample_plan.append({'traj_id': traj['id'], 'group': group, 'start_idx': start})
-            idx += 1
+        start = int(
+            traj['valid_start_idx'][
+                torch.randint(
+                    traj['valid_start_idx'].numel(), (1,), generator=generator
+                ).item()
+            ].item()
+        )
+        stop = start + segment_len
+        x0_seg[i]  = traj['state_traj'][start]
+        u_seg[i]   = traj['u'][0, start:stop, :]
+        q1_seg[i]  = traj['q1'][start:stop, :]
+        sample_plan.append({'traj_id': traj['id'], 'start_idx': start})
 
     return x0_seg, u_seg, q1_seg, sample_plan
 
@@ -216,7 +196,7 @@ def _segment_diag_cache_matches(cached, traj_specs, param_set_names):
         cached.get('version') == SEGMENT_DIAG_VERSION
         and tuple(cached.get('traj_specs', ())) == tuple(traj_specs)
         and tuple(cached.get('candidate_lengths_s', ())) == SEGMENT_DIAG_CANDIDATES_S
-        and cached.get('n_per_group') == SEGMENT_DIAG_SEGMENTS_PER_GROUP
+        and cached.get('n_segments') == SEGMENT_DIAG_N_SEGMENTS
         and cached.get('seed') == _BASE_SEED
         and tuple(cached.get('param_set_names', ())) == tuple(param_set_names)
     )
@@ -228,10 +208,8 @@ def _segment_diag_cache_matches(cached, traj_specs, param_set_names):
 
 def _choose_segment_len_from_diag(results):
     """Choose the most robust segment length, breaking ties toward shorter windows."""
-    best_min_group = max(r['min_group_true_best_rate'] for r in results)
-    candidates = [r for r in results if r['min_group_true_best_rate'] == best_min_group]
-    best_true_rate = max(r['true_best_rate'] for r in candidates)
-    candidates = [r for r in candidates if r['true_best_rate'] == best_true_rate]
+    best_true_rate = max(r['true_best_rate'] for r in results)
+    candidates = [r for r in results if r['true_best_rate'] == best_true_rate]
     best_margin = max(r['median_margin'] for r in candidates)
     candidates = [r for r in candidates if r['median_margin'] == best_margin]
     return min(candidates, key=lambda r: r['segment_len'])['segment_len']
@@ -239,13 +217,12 @@ def _choose_segment_len_from_diag(results):
 
 def _print_segment_diag_summary(diag):
     print('  segment_diag results:')
-    print(f'  {"samples":>8}  {"seconds":>8}  {"true_best":>10}  {"min_group":>10}  {"margin":>10}')
+    print(f'  {"samples":>8}  {"seconds":>8}  {"true_best":>10}  {"margin":>10}')
     for r in diag['results']:
         print(
             f"  {r['segment_len']:>8}  "
             f"{r['segment_len_s']:>8.3f}  "
             f"{r['true_best_rate']:>10.3f}  "
-            f"{r['min_group_true_best_rate']:>10.3f}  "
             f"{r['median_margin']:>10.3e}"
         )
     print(f"  chosen segment_len: {diag['chosen_segment_len']} samples")
@@ -261,7 +238,7 @@ def run_segment_diag(traj_specs, traj_dir, save_dir):
 
     Parameters
     ----------
-    traj_specs : sequence of dicts with keys 'id', 'group', 'file'
+    traj_specs : sequence of dicts with keys 'id', 'file'
     traj_dir   : directory containing the .mat trajectory files
     save_dir   : directory for the cache file
 
@@ -271,7 +248,6 @@ def run_segment_diag(traj_specs, traj_dir, save_dir):
     """
     param_sets      = _build_segment_diag_param_sets()
     param_set_names = [p['name'] for p in param_sets]
-    active_groups   = _active_groups_from_specs(traj_specs)
     cache_path      = _segment_diag_cache_path(save_dir, traj_specs)
 
     if os.path.exists(cache_path):
@@ -300,9 +276,8 @@ def run_segment_diag(traj_specs, traj_dir, save_dir):
     for candidate_s in SEGMENT_DIAG_CANDIDATES_S:
         segment_len = int(round(candidate_s / float(_ts)))
         _attach_valid_start_idx(trajs, segment_len)
-        group_counts = {group: SEGMENT_DIAG_SEGMENTS_PER_GROUP for group in active_groups}
         x0_seg, u_seg, q1_seg, sample_plan = _sample_balanced_segments(
-            trajs, segment_len, group_counts, _BASE_SEED + segment_len
+            trajs, segment_len, SEGMENT_DIAG_N_SEGMENTS, _BASE_SEED + segment_len
         )
 
         losses = {
@@ -316,22 +291,13 @@ def run_segment_diag(traj_specs, traj_dir, save_dir):
         detuned_losses = torch.stack([losses[n] for n in param_set_names[1:]], dim=1)
         margin         = detuned_losses.min(dim=1).values - losses['true']
 
-        group_true_best_rate = {}
-        for group in active_groups:
-            mask = torch.tensor(
-                [item['group'] == group for item in sample_plan], dtype=torch.bool
-            )
-            group_true_best_rate[group] = float(true_is_best[mask].double().mean().item())
-
         results.append({
-            'segment_len':              segment_len,
-            'segment_len_s':            candidate_s,
-            'true_best_rate':           float(true_is_best.double().mean().item()),
-            'group_true_best_rate':     group_true_best_rate,
-            'min_group_true_best_rate': float(min(group_true_best_rate.values())),
-            'median_margin':            float(margin.median().item()),
-            'mean_loss_by_set':         {n: float(losses[n].mean().item()) for n in param_set_names},
-            'sample_plan':              sample_plan,
+            'segment_len':      segment_len,
+            'segment_len_s':    candidate_s,
+            'true_best_rate':   float(true_is_best.double().mean().item()),
+            'median_margin':    float(margin.median().item()),
+            'mean_loss_by_set': {n: float(losses[n].mean().item()) for n in param_set_names},
+            'sample_plan':      sample_plan,
         })
 
     chosen = _choose_segment_len_from_diag(results)
@@ -340,7 +306,7 @@ def run_segment_diag(traj_specs, traj_dir, save_dir):
         'traj_specs':                tuple(traj_specs),
         'candidate_lengths_s':       SEGMENT_DIAG_CANDIDATES_S,
         'candidate_lengths_samples': [r['segment_len'] for r in results],
-        'n_per_group':               SEGMENT_DIAG_SEGMENTS_PER_GROUP,
+        'n_segments':                SEGMENT_DIAG_N_SEGMENTS,
         'seed':                      _BASE_SEED,
         'param_set_names':           param_set_names,
         'results':                   results,
@@ -379,66 +345,45 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------
     print('\nCheck 1: _traj_set_tag')
     specs = [
-        {'id': 'T1', 'group': 'g1', 'file': 'f1.mat'},
-        {'id': 'T3', 'group': 'g2', 'file': 'f3.mat'},
+        {'id': 'T1', 'file': 'f1.mat'},
+        {'id': 'T3', 'file': 'f3.mat'},
     ]
     tag = _traj_set_tag(specs)
     results.append(check('tag is T1-T3', tag == 'T1-T3', repr(tag)))
     results.append(check('single traj tag', _traj_set_tag(specs[:1]) == 'T1'))
 
     # ------------------------------------------------------------------
-    # Check 2 — _active_groups_from_specs: preserves insertion order
+    # Check 2 — _choose_segment_len_from_diag: tie-breaking toward shorter
     # ------------------------------------------------------------------
-    print('\nCheck 2: _active_groups_from_specs')
-    specs_mixed = [
-        {'id': 'T1', 'group': 'y_only',      'file': 'f1.mat'},
-        {'id': 'T6', 'group': 'y_only',      'file': 'f6.mat'},
-        {'id': 'T2', 'group': 'x_sym_mh',    'file': 'f2.mat'},
-        {'id': 'T4', 'group': 'rot_coupled',  'file': 'f4.mat'},
-    ]
-    groups = _active_groups_from_specs(specs_mixed)
-    results.append(check('three unique groups', len(groups) == 3, str(groups)))
-    results.append(check('insertion order preserved',
-                         groups == ('y_only', 'x_sym_mh', 'rot_coupled'), str(groups)))
-    results.append(check('duplicates removed', groups.count('y_only') == 1))
-
-    # ------------------------------------------------------------------
-    # Check 3 — _choose_segment_len_from_diag: tie-breaking toward shorter
-    # ------------------------------------------------------------------
-    print('\nCheck 3: _choose_segment_len_from_diag')
+    print('\nCheck 2: _choose_segment_len_from_diag')
     mock_results = [
-        {'segment_len': 2000, 'true_best_rate': 1.0,
-         'min_group_true_best_rate': 1.0, 'median_margin': 0.5},
-        {'segment_len': 4000, 'true_best_rate': 1.0,
-         'min_group_true_best_rate': 1.0, 'median_margin': 0.5},
-        {'segment_len': 8000, 'true_best_rate': 0.9,
-         'min_group_true_best_rate': 0.9, 'median_margin': 0.4},
+        {'segment_len': 2000, 'true_best_rate': 1.0, 'median_margin': 0.5},
+        {'segment_len': 4000, 'true_best_rate': 1.0, 'median_margin': 0.5},
+        {'segment_len': 8000, 'true_best_rate': 0.9, 'median_margin': 0.4},
     ]
     chosen = _choose_segment_len_from_diag(mock_results)
     results.append(check('tie broken toward shorter window',
                          chosen == 2000, f'got {chosen}'))
 
     mock_results_2 = [
-        {'segment_len': 2000, 'true_best_rate': 0.7,
-         'min_group_true_best_rate': 0.7, 'median_margin': 0.1},
-        {'segment_len': 4000, 'true_best_rate': 1.0,
-         'min_group_true_best_rate': 0.9, 'median_margin': 0.5},
+        {'segment_len': 2000, 'true_best_rate': 0.7, 'median_margin': 0.1},
+        {'segment_len': 4000, 'true_best_rate': 1.0, 'median_margin': 0.5},
     ]
     chosen2 = _choose_segment_len_from_diag(mock_results_2)
     results.append(check('higher true_best_rate preferred',
                          chosen2 == 4000, f'got {chosen2}'))
 
     # ------------------------------------------------------------------
-    # Check 4 — _segment_diag_cache_matches
+    # Check 3 — _segment_diag_cache_matches
     # ------------------------------------------------------------------
-    print('\nCheck 4: _segment_diag_cache_matches')
-    specs_4 = [{'id': 'T1', 'group': 'g1', 'file': 'f1.mat'}]
+    print('\nCheck 3: _segment_diag_cache_matches')
+    specs_4 = [{'id': 'T1', 'file': 'f1.mat'}]
     names_4 = ['true', 'all_up_10', 'all_down_10', 'coupling_mix']
     valid_cache = {
         'version':             SEGMENT_DIAG_VERSION,
         'traj_specs':          tuple(specs_4),
         'candidate_lengths_s': SEGMENT_DIAG_CANDIDATES_S,
-        'n_per_group':         SEGMENT_DIAG_SEGMENTS_PER_GROUP,
+        'n_segments':          SEGMENT_DIAG_N_SEGMENTS,
         'seed':                _BASE_SEED,
         'param_set_names':     names_4,
     }
@@ -447,14 +392,14 @@ if __name__ == '__main__':
     bad_version = {**valid_cache, 'version': 0}
     results.append(check('wrong version rejects',
                          not _segment_diag_cache_matches(bad_version, specs_4, names_4)))
-    bad_specs = {**valid_cache, 'traj_specs': tuple([{'id': 'T2', 'group': 'g1', 'file': 'f2.mat'}])}
+    bad_specs = {**valid_cache, 'traj_specs': tuple([{'id': 'T2', 'file': 'f2.mat'}])}
     results.append(check('wrong traj_specs rejects',
                          not _segment_diag_cache_matches(bad_specs, specs_4, names_4)))
 
     # ------------------------------------------------------------------
-    # Check 5 — _build_segment_diag_param_sets: true params at index 0
+    # Check 4 — _build_segment_diag_param_sets: true params at index 0
     # ------------------------------------------------------------------
-    print('\nCheck 5: _build_segment_diag_param_sets')
+    print('\nCheck 4: _build_segment_diag_param_sets')
     param_sets = _build_segment_diag_param_sets()
     results.append(check('four parameter sets', len(param_sets) == 4))
     results.append(check('first set is true params', param_sets[0]['name'] == 'true'))

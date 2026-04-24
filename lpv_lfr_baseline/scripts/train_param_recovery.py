@@ -9,7 +9,7 @@ Approach
 2. Each epoch:
    a. torch.compiler.cudagraph_mark_step_begin() — signal new step to CUDA graph backend.
    b. Build G, K, C and polynomial constants once from current block.log_params.
-   c. Sample a balanced segment batch.
+   c. Sample a uniform segment batch.
    d. Windowed BPTT (window size W): simulate W steps per window, accumulate MSE
       losses into a single tensor, detach state between windows. Single backward.
    e. split_loss() backward separately (independent graph).
@@ -43,7 +43,6 @@ from lpv_lfr_baseline.core.lfr_simulate import simulate
 from lpv_lfr_baseline.core.physics import build_poly_constants
 from lpv_lfr_baseline.scripts.precompute import precompute
 from lpv_lfr_baseline.scripts.segment_diag import (
-    _active_groups_from_specs,
     _attach_valid_start_idx,
     _sample_balanced_segments,
     _traj_set_tag,
@@ -62,14 +61,17 @@ SAVE_DIR = os.path.join(
 
 # ── Trajectory specs (canonical library order) ────────────────────────────────
 TRAJ_SPECS = (
-    {'id': 'T1', 'group': 'y_only',      'file': 'T1_Y_sweep_conservative.mat'},
-    {'id': 'T6', 'group': 'y_only',      'file': 'T6_Y_sweep_aggressive.mat'},
-    {'id': 'T2', 'group': 'x_sym_mh',    'file': 'T2_X_sym_Y030.mat'},
-    {'id': 'T3', 'group': 'x_sym_mh',    'file': 'T3_X_sym_Y000.mat'},
-    {'id': 'T4', 'group': 'rot_coupled', 'file': 'T4_X_antisym_Y020.mat'},
-    {'id': 'T5', 'group': 'rot_coupled', 'file': 'T5_X_sym_Y_sweep.mat'},
+    {'id': 'T1', 'file': 'T1_Y_sweep_conservative.mat'},
+    {'id': 'T6', 'file': 'T6_Y_sweep_aggressive.mat'},
+    {'id': 'T2', 'file': 'T2_X_sym_Y030.mat'},
+    {'id': 'T3', 'file': 'T3_X_sym_Y000.mat'},
+    {'id': 'T4', 'file': 'T4_X_antisym_Y020.mat'},
+    {'id': 'T5', 'file': 'T5_X_sym_Y_sweep.mat'},
 )
 ACTIVE_TRAJ_IDS = tuple(spec['id'] for spec in TRAJ_SPECS)
+
+# ── Normalisation ────────────────────────────────────────────────────────────
+NORM_MODE = 'per_traj'   # 'per_traj' | 'global'  (see precompute.py)
 
 # ── Training hyperparameters ──────────────────────────────────────────────────
 W                        = 50      # BPTT window [samples] — outer loop in train()
@@ -101,13 +103,6 @@ def _active_traj_specs():
     if not specs:
         raise ValueError('ACTIVE_TRAJ_IDS must contain at least one trajectory id')
     return specs
-
-
-def _balanced_group_counts(total, active_groups):
-    """Distribute total segments as evenly as possible across groups."""
-    n = len(active_groups)
-    base, rem = divmod(total, n)
-    return {g: base + (1 if i < rem else 0) for i, g in enumerate(active_groups)}
 
 
 # ── Physics helpers ───────────────────────────────────────────────────────────
@@ -150,19 +145,13 @@ def _run_no_grad(block, x0, u):
 
 # ── Evaluation helpers ────────────────────────────────────────────────────────
 
-def _aggregate_grouped_rmse(entries):
-    """Group-balanced RMSE from per-trajectory MSE dicts."""
-    if len(entries) == 1:
-        return float(entries[0]['rmse_total'])
-    group_mse = {}
-    for e in entries:
-        group_mse.setdefault(e['group'], []).append(e['mse_total'])
-    overall_mse = sum(sum(v) / len(v) for v in group_mse.values()) / len(group_mse)
-    return overall_mse ** 0.5
+def _aggregate_rmse(entries):
+    """Simple mean RMSE across all trajectories."""
+    return (sum(e['mse_total'] for e in entries) / len(entries)) ** 0.5
 
 
 def _full_traj_eval(block, trajs):
-    """Full-trajectory eval (no grad). Returns (group_balanced_rmse_m, entries)."""
+    """Full-trajectory eval (no grad). Returns (mean_rmse_m, entries)."""
     entries = []
     for traj in trajs:
         result   = _run_no_grad(block, traj['state_traj'][:1], traj['u'])
@@ -171,31 +160,14 @@ def _full_traj_eval(block, trajs):
         rmse_tot = float(diff.pow(2).mean().item() ** 0.5)
         entries.append({
             'id':         traj['id'],
-            'group':      traj['group'],
             'mse_total':  rmse_tot ** 2,
             'rmse_total': rmse_tot,
             'rmse_ch':    rmse_ch,
         })
-    return _aggregate_grouped_rmse(entries), entries
+    return _aggregate_rmse(entries), entries
 
 
 # ── Logging helpers ───────────────────────────────────────────────────────────
-
-def _print_param_detail(block, lr):
-    """Per-parameter learned value vs truth and log_param gradient norms."""
-    with torch.no_grad():
-        learned = block._recover_params()
-    grads = block.log_params.grad
-    print(f'\n  [param detail  lr={lr:.2e}]')
-    print(f'  {"Param":<6}  {"True":>10}  {"Learned":>10}  {"Delta%":>8}  {"|grad|":>10}')
-    print(f'  {"-" * 6}  {"-" * 10}  {"-" * 10}  {"-" * 8}  {"-" * 10}')
-    for i, name in enumerate(_PARAM_NAMES):
-        true_v = _TRUE_PARAMS[name]
-        lrn_v  = float(learned[i])
-        delta  = (lrn_v - true_v) / true_v * 100
-        grad_v = float(grads[i].abs()) if grads is not None else float('nan')
-        print(f'  {name:<6}  {true_v:>10.4f}  {lrn_v:>10.4f}  {delta:>+8.2f}%  {grad_v:>10.3e}')
-
 
 def _sync_time(device):
     """Wall-clock time after CUDA synchronization (accurate GPU timing)."""
@@ -232,6 +204,7 @@ def train(
     profile=PROFILE,
     time_epochs=TIME_EPOCHS,
     split_reg_weight=SPLIT_REG_WEIGHT,
+    norm_mode=NORM_MODE,
 ):
     """Run parameter recovery training. Returns trained ParameterizedLFRBlock."""
     os.makedirs(save_dir, exist_ok=True)
@@ -248,7 +221,7 @@ def train(
     # Step 1 — Precompute (cache-backed)
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 1: Precompute (trajectories, sigma, segment_len)\n{"=" * 60}')
-    pre = precompute(traj_specs, TRAJ_DIR, save_dir, dtype=DTYPE)
+    pre = precompute(traj_specs, TRAJ_DIR, save_dir, dtype=DTYPE, norm_mode=norm_mode)
 
     trajs                    = pre['trajs']
     sigma                    = pre['sigma']               # dict traj_id -> (3,) CPU float64
@@ -278,17 +251,12 @@ def train(
         segment_len = min(segment_len, n_steps)
 
     _attach_valid_start_idx(trajs, segment_len)
-    active_groups      = _active_groups_from_specs(traj_specs)
-    train_group_counts = _balanced_group_counts(TRAIN_SEGMENTS_PER_EPOCH, active_groups)
-    n_windows          = (segment_len + W - 1) // W
+    n_windows = (segment_len + W - 1) // W
 
-    print(
-        f'  Active: {", ".join(s["id"] for s in traj_specs)}  '
-        f'({len(active_groups)} groups)'
-    )
+    print(f'  Active: {", ".join(s["id"] for s in traj_specs)}')
     print(
         f'  segment_len={segment_len}, W={W}, n_windows={n_windows}, '
-        f'batch={sum(train_group_counts.values())} segments/epoch'
+        f'batch={TRAIN_SEGMENTS_PER_EPOCH} segments/epoch'
     )
 
     # ------------------------------------------------------------------
@@ -381,9 +349,9 @@ def train(
             # Build G once per epoch from current parameters — used for all windows
             G, K, C, mh, alpha, beta, gamma, N0, N1, N2 = _build_sim_params(block)
 
-            # Sample balanced segment batch
+            # Sample segment batch uniformly from all trajectories
             x0_seg, u_seg, q1_seg, sample_plan = _sample_balanced_segments(
-                trajs, segment_len, train_group_counts, BASE_SEED + 10_000 + epoch
+                trajs, segment_len, TRAIN_SEGMENTS_PER_EPOCH, BASE_SEED + 10_000 + epoch
             )
 
             # Per-segment sigma (B, 3): all channels, no masks
@@ -531,8 +499,8 @@ def train(
         )
 
     eval_entries = []
-    print(f'  {"Traj":<6}  {"Group":<12}  {"RMSE [m]":>12}  {"X1 [m]":>10}  {"X2 [m]":>10}  {"Y [m]":>10}')
-    print(f'  {"-" * 6}  {"-" * 12}  {"-" * 12}  {"-" * 10}  {"-" * 10}  {"-" * 10}')
+    print(f'  {"Traj":<6}  {"RMSE [m]":>12}  {"X1 [m]":>10}  {"X2 [m]":>10}  {"Y [m]":>10}')
+    print(f'  {"-" * 6}  {"-" * 12}  {"-" * 10}  {"-" * 10}  {"-" * 10}')
     for traj in trajs:
         result   = _run_no_grad(block, traj['state_traj'][:1], traj['u'])
         diff     = result.Y[0] - traj['q1']
@@ -540,16 +508,15 @@ def train(
         rmse_tot = float(diff.pow(2).mean().item() ** 0.5)
         eval_entries.append({
             'id':         traj['id'],
-            'group':      traj['group'],
             'mse_total':  rmse_tot ** 2,
             'rmse_total': rmse_tot,
             'rmse_ch':    rmse_ch,
         })
         print(
-            f'  {traj["id"]:<6}  {traj["group"]:<12}  {rmse_tot:>12.4e}'
+            f'  {traj["id"]:<6}  {rmse_tot:>12.4e}'
             f'  {rmse_ch[0]:>10.4e}  {rmse_ch[1]:>10.4e}  {rmse_ch[2]:>10.4e}'
         )
-    overall_rmse = _aggregate_grouped_rmse(eval_entries)
+    overall_rmse = _aggregate_rmse(eval_entries)
     print(f'\n  Overall RMSE: {overall_rmse:.6e} m')
 
     # ------------------------------------------------------------------
@@ -564,12 +531,9 @@ def train(
     params_true    = torch.tensor([_TRUE_PARAMS[n] for n in _PARAM_NAMES], dtype=DTYPE)
     params_learned = block.params_init * block.log_params.detach().exp()
 
-    _group_mse_ch = {}
-    for e in eval_entries:
-        _group_mse_ch.setdefault(e['group'], []).append(e['rmse_ch'].pow(2))
     eval_rmse_ch = (
-        sum(torch.stack(v).mean(dim=0) for v in _group_mse_ch.values()) / len(_group_mse_ch)
-    ).sqrt()   # (3,) group-balanced per-channel RMSE
+        sum(e['rmse_ch'].pow(2) for e in eval_entries) / len(eval_entries)
+    ).sqrt()   # (3,) simple mean per-channel RMSE across all trajectories
 
     save_path = os.path.join(save_dir, f'lfr_param_recovery_{traj_tag}_e{epochs}.pt')
     torch.save(
@@ -590,6 +554,7 @@ def train(
             # Run config
             'active_traj_ids':          tuple(s['id'] for s in traj_specs),
             'dtype':                    str(DTYPE),
+            'norm_mode':                norm_mode,
             'epochs':                   epochs,
             'lr':                       lr,
             'segment_len':              segment_len,
