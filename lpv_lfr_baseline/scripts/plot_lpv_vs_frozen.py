@@ -59,6 +59,8 @@ y_ref    = q1_ref.numpy()
 y_lpv    = res_lpv.Y[0].numpy()
 y_frozen = res_frozen.Y[0].numpy()
 
+
+
 err_lpv    = np.abs(y_lpv    - y_ref)
 err_frozen = np.abs(y_frozen - y_ref)
 

@@ -75,7 +75,9 @@
       "Bash(pdflatex -interaction=nonstopmode lpv-ss-vs-lpv-lfr.tex)",
       "Read(//c/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/model_augmentation/**)",
       "Bash(echo \"EXIT:$?\")",
-      "Bash(powershell.exe -Command \"cd 'C:\\\\\\\\Users\\\\\\\\20203253\\\\\\\\OneDrive - TU Eindhoven\\\\\\\\Graduation Project\\\\\\\\Baseline FP model\\\\\\\\Baseline-LPV-Augmentation'; conda run -n GraduationProject python smoke_test_loss.py 2>&1 | Tee-Object -FilePath 'C:\\\\\\\\Temp\\\\\\\\smoke_out.txt'\")"
+      "Bash(powershell.exe -Command \"cd 'C:\\\\\\\\Users\\\\\\\\20203253\\\\\\\\OneDrive - TU Eindhoven\\\\\\\\Graduation Project\\\\\\\\Baseline FP model\\\\\\\\Baseline-LPV-Augmentation'; conda run -n GraduationProject python smoke_test_loss.py 2>&1 | Tee-Object -FilePath 'C:\\\\\\\\Temp\\\\\\\\smoke_out.txt'\")",
+      "WebFetch(domain:blog.ezyang.com)",
+      "WebFetch(domain:docs.nvidia.com)"
     ]
   }
 }
