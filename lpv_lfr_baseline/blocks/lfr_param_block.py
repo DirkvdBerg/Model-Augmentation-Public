@@ -280,21 +280,42 @@ class ParameterizedLFRBlock(_BASE):
         vals = self._recover_params().detach()
         return {name: vals[i].item() for i, name in enumerate(_PARAM_NAMES)}
 
+    # Identifiable sums and the non-split individually identifiable params, in physics order.
+    _SUM_PAIRS   = [('kb_sum', 'kb1', 'kb2'), ('cb_sum', 'cb1', 'cb2'), ('J_sum', 'Jb', 'Jh')]
+    _SPLIT_NAMES = ['kb1', 'kb2', 'cb1', 'cb2', 'Jb', 'Jh']
+    _IDENT_ORDER = ['kb_sum', 'cg1', 'cg2', 'cy', 'cb_sum', 'mh', 'm1', 'm2', 'mb', 'J_sum']
+
     def param_table(self) -> str:
-        """Formatted comparison: learned vs detuned init vs true."""
-        lines = [
-            f"{'Parameter':<10} {'True':>10} {'Detuned':>10} {'Learned':>10} {'delta from true':>12}",
-            "-" * 58,
-        ]
-        current = self.physical_params()
-        for name in _PARAM_NAMES:
-            true_v    = _TRUE_PARAMS[name]
-            detuned_v = _DETUNED_PARAMS[name]
-            learned_v = current[name]
-            delta_pct = (learned_v - true_v) / true_v * 100
-            lines.append(
-                f"{name:<10} {true_v:>10.4f} {detuned_v:>10.4f} {learned_v:>10.4f} {delta_pct:>+11.2f}%"
+        """Two-table comparison: identifiable quantities, then split diagnostics."""
+        hdr = f"{'Parameter':<10} {'True':>10} {'Detuned':>10} {'Learned':>10} {'delta':>10}"
+        sep = "-" * 55
+        cur = self.physical_params()
+
+        # Build sum lookup for convenience
+        sums = {
+            sn: (
+                _TRUE_PARAMS[a]    + _TRUE_PARAMS[b],
+                _DETUNED_PARAMS[a] + _DETUNED_PARAMS[b],
+                cur[a]             + cur[b],
             )
+            for sn, a, b in self._SUM_PAIRS
+        }
+
+        lines = ['  Table 1 — identifiable quantities', hdr, sep]
+        for name in self._IDENT_ORDER:
+            if name in sums:
+                true_v, det_v, lrn_v = sums[name]
+            else:
+                true_v, det_v, lrn_v = _TRUE_PARAMS[name], _DETUNED_PARAMS[name], cur[name]
+            delta = (lrn_v - true_v) / true_v * 100
+            lines.append(f"{name:<10} {true_v:>10.4f} {det_v:>10.4f} {lrn_v:>10.4f} {delta:>+9.2f}%")
+
+        lines += ['', '  Table 2 — split diagnostics (not data-identifiable)', hdr, sep]
+        for name in self._SPLIT_NAMES:
+            true_v, det_v, lrn_v = _TRUE_PARAMS[name], _DETUNED_PARAMS[name], cur[name]
+            delta = (lrn_v - true_v) / true_v * 100
+            lines.append(f"{name:<10} {true_v:>10.4f} {det_v:>10.4f} {lrn_v:>10.4f} {delta:>+9.2f}%")
+
         return "\n".join(lines)
 
     # ------------------------------------------------------------------

@@ -36,6 +36,7 @@ from lpv_lfr_baseline.blocks.lfr_param_block import (
     ParameterizedLFRBlock,
     _PARAM_NAMES,
     _TRUE_PARAMS,
+    _DETUNED_PARAMS,
     _build_matrices,
 )
 from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
@@ -514,6 +515,15 @@ def train(
     params_true    = torch.tensor([_TRUE_PARAMS[n] for n in _PARAM_NAMES], dtype=DTYPE)
     params_learned = block.params_init * block.log_params.detach().exp()
 
+    # Identifiable sums
+    _sum_pairs = [('kb_sum', 'kb1', 'kb2'), ('cb_sum', 'cb1', 'cb2'), ('J_sum', 'Jb', 'Jh')]
+    _idx       = {n: i for i, n in enumerate(_PARAM_NAMES)}
+    sum_names         = [sn for sn, _, _ in _sum_pairs]
+    sum_params_true   = torch.tensor([_TRUE_PARAMS[a]    + _TRUE_PARAMS[b]    for _, a, b in _sum_pairs], dtype=DTYPE)
+    sum_params_init   = torch.tensor([_DETUNED_PARAMS[a] + _DETUNED_PARAMS[b] for _, a, b in _sum_pairs], dtype=DTYPE)
+    sum_params_learned = torch.stack([params_learned[_idx[a]] + params_learned[_idx[b]] for _, a, b in _sum_pairs])
+    sum_delta_pct      = (sum_params_learned - sum_params_true) / sum_params_true * 100
+
     eval_rmse_ch = (
         sum(e['rmse_ch'].pow(2) for e in eval_entries) / len(eval_entries)
     ).sqrt()   # (3,) simple mean per-channel RMSE across all trajectories
@@ -521,12 +531,18 @@ def train(
     save_path = os.path.join(save_dir, f'lfr_param_recovery_{traj_tag}_e{epochs}.pt')
     torch.save(
         {
-            # Parameters
+            # Parameters — individual
             'param_names':              list(_PARAM_NAMES),
             'params_true':              params_true,
             'params_init':              block.params_init,
             'params_learned':           params_learned,
             'log_params':               block.log_params.detach(),
+            # Parameters — identifiable sums
+            'sum_names':                sum_names,
+            'sum_params_true':          sum_params_true,
+            'sum_params_init':          sum_params_init,
+            'sum_params_learned':       sum_params_learned,
+            'sum_delta_pct':            sum_delta_pct,
             # Best-epoch tracking
             'best_epoch':               best_epoch,
             'best_full_traj_rmse':      best_full_traj_rmse,
