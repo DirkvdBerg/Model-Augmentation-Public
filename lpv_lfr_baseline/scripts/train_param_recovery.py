@@ -68,8 +68,6 @@ TRAJ_SPECS = (
     {'id': 'T4', 'file': 'T4_X_antisym_Y020.mat'},
     {'id': 'T5', 'file': 'T5_X_sym_Y_sweep.mat'},
 )
-ACTIVE_TRAJ_IDS = tuple(spec['id'] for spec in TRAJ_SPECS)
-
 # ── Normalisation ────────────────────────────────────────────────────────────
 NORM_MODE = 'per_traj'   # 'per_traj' | 'global'  (see precompute.py)
 
@@ -89,20 +87,6 @@ BASE_SEED                = 1234
 
 # Defensive: cudagraph_mark_step_begin is a PyTorch 2.x API — guard for older builds.
 _MARK_STEP_BEGIN = getattr(torch.compiler, 'cudagraph_mark_step_begin', None)
-
-
-# ── Trajectory helpers ────────────────────────────────────────────────────────
-
-def _active_traj_specs():
-    """Return active trajectory specs in TRAJ_SPECS order."""
-    active = set(ACTIVE_TRAJ_IDS)
-    specs = tuple(s for s in TRAJ_SPECS if s['id'] in active)
-    missing = active.difference(s['id'] for s in specs)
-    if missing:
-        raise ValueError(f'Unknown ACTIVE_TRAJ_IDS: {sorted(missing)}')
-    if not specs:
-        raise ValueError('ACTIVE_TRAJ_IDS must contain at least one trajectory id')
-    return specs
 
 
 # ── Physics helpers ───────────────────────────────────────────────────────────
@@ -208,8 +192,7 @@ def train(
 ):
     """Run parameter recovery training. Returns trained ParameterizedLFRBlock."""
     os.makedirs(save_dir, exist_ok=True)
-    traj_specs = _active_traj_specs()
-    traj_tag   = _traj_set_tag(traj_specs)
+    traj_tag = _traj_set_tag(TRAJ_SPECS)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
@@ -221,7 +204,7 @@ def train(
     # Step 1 — Precompute (cache-backed)
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 1: Precompute (trajectories, sigma, segment_len)\n{"=" * 60}')
-    pre = precompute(traj_specs, TRAJ_DIR, save_dir, dtype=DTYPE, norm_mode=norm_mode)
+    pre = precompute(TRAJ_SPECS, TRAJ_DIR, save_dir, dtype=DTYPE, norm_mode=norm_mode)
 
     trajs                    = pre['trajs']
     sigma                    = pre['sigma']               # dict traj_id -> (3,) CPU float64
@@ -253,7 +236,7 @@ def train(
     _attach_valid_start_idx(trajs, segment_len)
     n_windows = (segment_len + W - 1) // W
 
-    print(f'  Active: {", ".join(s["id"] for s in traj_specs)}')
+    print(f'  Active: {", ".join(s["id"] for s in TRAJ_SPECS)}')
     print(
         f'  segment_len={segment_len}, W={W}, n_windows={n_windows}, '
         f'batch={TRAIN_SEGMENTS_PER_EPOCH} segments/epoch'
@@ -552,7 +535,7 @@ def train(
             'rmse_baseline_normalized': rmse_baseline_normalized,
             'sigma':                    {tid: s.cpu() for tid, s in sigma.items()},
             # Run config
-            'active_traj_ids':          tuple(s['id'] for s in traj_specs),
+            'active_traj_ids':          tuple(s['id'] for s in TRAJ_SPECS),
             'dtype':                    str(DTYPE),
             'norm_mode':                norm_mode,
             'epochs':                   epochs,
