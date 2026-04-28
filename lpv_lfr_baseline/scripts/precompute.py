@@ -42,7 +42,7 @@ from scipy.io import loadmat
 from lpv_lfr_baseline.core.physics import P as _P, ts as _ts
 from lpv_lfr_baseline.scripts.data_utils import compute_rmse_baseline_metrics
 
-CACHE_VERSION = 1
+CACHE_VERSION = 1 # Need to manually increase, but keeps a fingerprint of all relevant inputs
 
 
 # ----------------------------------------------------------------------
@@ -87,6 +87,7 @@ def _build_state_traj_logical(q1_stage, P, ts_val, dtype):
     -------
     (T, 6) tensor  [q_logical; qdot_logical]
     """
+    # Use torch.linalg.solve to compute numerical instead of polynomial expression
     q_logical = torch.linalg.solve(P.to(dtype).T, q1_stage.to(dtype).T).T   # (T, 3)
 
     qdot = torch.empty_like(q_logical)
