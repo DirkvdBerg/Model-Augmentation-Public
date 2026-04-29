@@ -21,7 +21,10 @@
 % See docs/trajectory-design-param-recovery.md for full design rationale.
 %
 % Controller Cfb and frozen LTI G are designed per trajectory at Y_initial
-% (D-039: operating point linearisation).
+% (D-039: operating point linearisation). For trajectories that sweep Y,
+% Cfb is frozen at Y_initial while the plant M(Y) varies — the growing
+% mismatch is accepted and may benefit parameter recovery by keeping the
+% response less tightly controlled (plant dynamics more visible in q1).
 %
 % Outputs saved to:
 %   USE_MULTISINE=false: Matlab-output/parameter-recovery/<id>.mat
@@ -32,12 +35,17 @@
 %   fs           (1 x 1)  sample rate [Hz]
 %   r_sim        (N x 3)  reference [X1, X2, Y] [m]
 %   u_q1         (N x 3)  feedback force on CT LPV path [F_X1,F_X2,F_Y] [N]
-%   u_q          (N x 3)  feedback force on Simscape path [N]
 %   f_sim        (N x 3)  feedforward multisine force [N] (zeros if no multisine)
 %   amp_max      (1 x 1)  max passing RMS amplitude [N] (NaN if no multisine)
 %   q1           (N x 3)  CT quasi-LPV output [X1, X2, Y] [m]  -- PRIMARY
-%   q_simscape   (N x 3)  Simscape output [X1, X2, Y] [m]
 %   Y_trajectory (N x 1)  Y(t) = q1(:,3) [m]
+%
+% NOTE — Simscape path (q) is intentionally ignored:
+%   Only q1 (CT quasi-LPV, gantrySystem.m) is used for parameter recovery.
+%   The Simscape path is not used here and its output is not saved. When
+%   Y_initial != 0.3 the Simscape joint IC may differ from the reference
+%   start, producing incorrect or unstable results. Rather than work around
+%   this, q and u_q are simply excluded from all outputs.
 %
 % Does NOT modify any file in kamtin-fp-model/.
 %
@@ -309,11 +317,12 @@ for i = 1:numel(trajs)
     fprintf('=== %d/%d  %s ===\n', i, numel(trajs), sp.id);
 
     % -- Controller at this trajectory's operating point (D-039) -----------
-    % Always design at Y=0.3 (Simulink IC) so the settle phase is stable.
-    % Trajectories with Y_initial=0.3 are unaffected; others use a slightly
-    % conservative controller during main motion (acceptable for data gen).
-    Y_op = 0.3;
-    Y    = sp.Y_initial;   % Simulink workspace variable
+    % Y_op: operating point for controller/G design (correct for main motion).
+    % Y:    integrator IC in Simulink — must always be 0.3 to match the
+    %       hardcoded Simulink IC. gantrySystem.m reads Y from x(3) directly,
+    %       so this does NOT freeze the scheduling; it only sets the start state.
+    Y_op = sp.Y_initial;
+    Y    = sp.Y_initial;   % Simulink integrator IC for q1/q2 (gantrySystem reads x(3), not this)
     M_op = [m1+m2+mb+mh,             (m1-m2)*Lb/2 - mh*Y_op,                   0;
             (m1-m2)*Lb/2 - mh*Y_op,  Jb+Jh+(m1+m2)*Lb^2/4+mh*d^2+mh*Y_op^2,  -mh*d;
             0,                        -mh*d,                                      mh];
@@ -368,8 +377,7 @@ for i = 1:numel(trajs)
         fprintf('  Simulation complete. Samples: %d\n', size(q1, 1));
     end
 
-    [t_sim, r_sim, u_q1, u_q, Y_trajectory, q_simscape, f_sim] = ...
-        reconstruct(q1, q, r, t, f, Cfb);
+    [t_sim, r_sim, u_q1, Y_trajectory, f_sim] = reconstruct(q1, r, t, f, Cfb);
     force_report = summarize_forces(u_q1, f_sim, force_limits);
 
     report_traj(q1, Y_trajectory, amp_max);
@@ -377,8 +385,8 @@ for i = 1:numel(trajs)
 
     out_path = fullfile(out_dir, [sp.id, '.mat']);
     save(out_path, 't_sim', 'fs', 'r_sim', ...
-                   'u_q1', 'u_q', 'f_sim', 'amp_max', ...
-                   'q1', 'q_simscape', 'Y_trajectory', 'force_report');
+                   'u_q1', 'f_sim', 'amp_max', ...
+                   'q1', 'Y_trajectory', 'force_report');
     fprintf('  Saved: %s\n\n', out_path);
 end
 
@@ -404,13 +412,13 @@ function [r, t] = make_ref(sp, n_hold, ts)
 % When only one is non-zero the result reduces to the pure symmetric or
 % pure anti-symmetric case respectively.
 
-    Y0 = 0.3;  % Simulink fixed initial condition -- do not change
+    Y0 = sp.Y_initial;  % start reference at trajectory operating point (matches workspace Y IC)
 
     % Phase 1: pre-hold
     r     = repmat([0, 0, Y0], n_hold, 1);
     Y_now = Y0;
 
-    % Phase 2-3: Y settle (if Y_initial differs from Y0)
+    % Phase 2-3: Y settle — never triggers now that Y0 = sp.Y_initial
     if abs(sp.Y_initial - Y0) > 1e-9
         pv_s   = setpoint_1d(abs(sp.Y_initial - Y0), sp.vmax_Y, sp.amax_Y, sp.jerkTime, ts);
         n_s    = length(pv_s);
@@ -528,10 +536,10 @@ end
 
 % ----------------------------------------------------------------------
 
-function [t_sim, r_sim, u_q1, u_q, Y_trajectory, q_simscape, f_sim] = ...
-        reconstruct(q1, q, r, t, f, Cfb)
+function [t_sim, r_sim, u_q1, Y_trajectory, f_sim] = reconstruct(q1, r, t, f, Cfb)
 % Reconstruct applied forces from simulated output and reference.
 % Handles variable-step Simulink output (N_sim may differ from length(t)).
+% Simscape output (q) is intentionally excluded — see file header.
     N_sim = size(q1, 1);
     if N_sim ~= length(t)
         t_sim = linspace(0, t(end), N_sim)';
@@ -543,9 +551,7 @@ function [t_sim, r_sim, u_q1, u_q, Y_trajectory, q_simscape, f_sim] = ...
         f_sim = f;
     end
     u_q1         = lsim(ss(Cfb), r_sim - q1, t_sim);
-    u_q          = lsim(ss(Cfb), r_sim - q,  t_sim);
     Y_trajectory = q1(:, 3);
-    q_simscape   = q;
 end
 
 % ----------------------------------------------------------------------
