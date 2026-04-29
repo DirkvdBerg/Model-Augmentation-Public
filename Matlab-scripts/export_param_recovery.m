@@ -232,7 +232,7 @@ trajs(6).Y_disp     = 0.6;    % Y: 0.3 -> -0.3 m
 trajs(6).vmax_X     = 0;
 trajs(6).amax_X     = 0;
 trajs(6).vmax_Y     = 2.0;    % hardware max
-trajs(6).amax_Y     = 50.0;   % hardware max
+trajs(6).amax_Y     = 47.5;   % 5% below hardware max (50.0) — prevents closed-loop acc overshoot failing validate_response
 trajs(6).jerkTime   = 0.025;
 trajs(6).ms_f_low   = 1;
 trajs(6).ms_f_high  = 20;     % Y-axis band: cy/mh separation
@@ -309,7 +309,10 @@ for i = 1:numel(trajs)
     fprintf('=== %d/%d  %s ===\n', i, numel(trajs), sp.id);
 
     % -- Controller at this trajectory's operating point (D-039) -----------
-    Y_op = sp.Y_initial;
+    % Always design at Y=0.3 (Simulink IC) so the settle phase is stable.
+    % Trajectories with Y_initial=0.3 are unaffected; others use a slightly
+    % conservative controller during main motion (acceptable for data gen).
+    Y_op = 0.3;
     Y    = sp.Y_initial;   % Simulink workspace variable
     M_op = [m1+m2+mb+mh,             (m1-m2)*Lb/2 - mh*Y_op,                   0;
             (m1-m2)*Lb/2 - mh*Y_op,  Jb+Jh+(m1+m2)*Lb^2/4+mh*d^2+mh*Y_op^2,  -mh*d;
@@ -781,4 +784,18 @@ function ok = validate_response(q1, fs, Lb)
          && max(abs(acc(:,1)))         <= ACC_LIM_X ...
          && max(abs(acc(:,2)))         <= ACC_LIM_X ...
          && max(abs(acc(:,3)))         <= ACC_LIM_Y;
+
+    if ~ok
+        checks = {'X1 pos','X2 pos','Y pos','|X1-X2|','X1 vel','X2 vel','Y vel','X1 acc','X2 acc','Y acc'};
+        vals   = [max(abs(q1(:,1))),          max(abs(q1(:,2))),          max(abs(q1(:,3))), ...
+                  max(abs(q1(:,1)-q1(:,2))),  max(abs(vel(:,1))),         max(abs(vel(:,2))), ...
+                  max(abs(vel(:,3))),          max(abs(acc(:,1))),         max(abs(acc(:,2))), ...
+                  max(abs(acc(:,3)))];
+        limits = [X_LIM, X_LIM, Y_LIM, DIFF_LIM, VEL_LIM, VEL_LIM, VEL_LIM, ACC_LIM_X, ACC_LIM_X, ACC_LIM_Y];
+        for ii = 1:numel(vals)
+            if vals(ii) > limits(ii)
+                fprintf('  Response exceeded: %s = %.4f  limit = %.4f\n', checks{ii}, vals(ii), limits(ii));
+            end
+        end
+    end
 end
