@@ -298,7 +298,8 @@ if ~exist(out_dir, 'dir'), mkdir(out_dir); end
 
 n_hold       = round(0.5 / ts);                         % 0.5 s hold = 10000 samples
 amp_rms_grid = [1, 2, 5, 10, 20, 50, 100, 200];        % [N] RMS sweep (multisine only)
-force_limits = [2000, 2000, 1420];                     % [N] ETEL peak force limits [FX1,FX2,FY]
+force_limits.peak = [2000, 2000, 1420];                % [N] TELICA peak force [FX1,FX2,FY]
+force_limits.rms  = [916,  916,  656];                 % [N] TELICA continuous force [FX1,FX2,FY]
 
 % ======================================================================
 % 5. Run all trajectories
@@ -330,7 +331,7 @@ for i = 1:numel(trajs)
 
     % -- Feedforward force -------------------------------------------------
     if USE_MULTISINE
-        % Amplitude sweep: find maximum RMS that keeps q1 within ETEL limits.
+        % Amplitude sweep: find maximum RMS that keeps q1 and force demand within TELICA limits.
         amp_max = 0;
         for amp = amp_rms_grid
             f = generate_multisine(length(t), fs, sp, amp);
@@ -339,13 +340,13 @@ for i = 1:numel(trajs)
             if validate_response(q1, fs, Lb) && force_ok
                 amp_max = amp;
             else
-                fprintf('  Amplitude %.0f N RMS exceeds ETEL limits — stopping sweep.\n', amp);
+                fprintf('  Amplitude %.0f N RMS exceeds TELICA limits — stopping sweep.\n', amp);
                 break;
             end
         end
 
         if amp_max == 0
-            warning('%s: no amplitude passed ETEL limits — skipping.', sp.id);
+            warning('%s: no amplitude passed TELICA limits — skipping.', sp.id);
             continue;
         end
         fprintf('  amp_max = %.0f N RMS per channel\n', amp_max);
@@ -561,7 +562,7 @@ end
 % ----------------------------------------------------------------------
 
 function ok = validate_forces(q1, r, t, f, Cfb, force_limits)
-% Check feedforward and total commanded force peaks against actuator limits.
+% Check total commanded force against actuator peak and continuous limits.
 % This catches unrealistic cases where the position response stays bounded
 % but the controller or multisine asks for unavailable force/current.
     N_sim = size(q1, 1);
@@ -580,35 +581,49 @@ function ok = validate_forces(q1, r, t, f, Cfb, force_limits)
     ok   = rep.ok;
 
     if ~ok
-        fprintf('  Force check failed: max |f|=[%.0f %.0f %.0f] N, max |u_total|=[%.0f %.0f %.0f] N, limits=[%.0f %.0f %.0f] N\n', ...
-                rep.max_feedforward, rep.max_total, rep.limits);
+        fprintf('  Force check failed:\n');
+        fprintf('    peak total=[%.0f %.0f %.0f] N, peak limits=[%.0f %.0f %.0f] N\n', ...
+                rep.max_total, rep.peak_limits);
+        fprintf('    RMS total= [%.0f %.0f %.0f] N, RMS limits= [%.0f %.0f %.0f] N\n', ...
+                rep.rms_total, rep.rms_limits);
     end
 end
 
 % ----------------------------------------------------------------------
 
 function rep = summarize_forces(u_feedback, f_feedforward, force_limits)
-% Summarise force peaks for exported metadata and console reporting.
+% Summarise peak and RMS force demand for exported metadata and reporting.
     u_total = u_feedback + f_feedforward;
 
-    rep.limits          = force_limits;
+    rep.peak_limits     = force_limits.peak;
+    rep.rms_limits      = force_limits.rms;
     rep.max_feedforward = max(abs(f_feedforward), [], 1);
     rep.max_feedback    = max(abs(u_feedback), [], 1);
     rep.max_total       = max(abs(u_total), [], 1);
-    rep.ratio_total     = rep.max_total ./ force_limits;
-    rep.ok              = all(rep.max_feedforward <= force_limits) ...
-                       && all(rep.max_total       <= force_limits);
+    rep.rms_feedforward = sqrt(mean(f_feedforward.^2, 1));
+    rep.rms_feedback    = sqrt(mean(u_feedback.^2, 1));
+    rep.rms_total       = sqrt(mean(u_total.^2, 1));
+    rep.peak_ratio_total = rep.max_total ./ force_limits.peak;
+    rep.rms_ratio_total  = rep.rms_total ./ force_limits.rms;
+    rep.ok_peak          = all(rep.max_total <= force_limits.peak);
+    rep.ok_rms           = all(rep.rms_total <= force_limits.rms);
+    rep.ok               = rep.ok_peak && rep.ok_rms;
 end
 
 % ----------------------------------------------------------------------
 
 function report_forces(rep)
-% Print force peaks after the final simulation.
+% Print force demand after the final simulation.
     fprintf('  Force peaks [FX1 FX2 FY] N:\n');
     fprintf('    feedforward: [%7.1f %7.1f %7.1f]\n', rep.max_feedforward);
     fprintf('    feedback:    [%7.1f %7.1f %7.1f]\n', rep.max_feedback);
     fprintf('    total:       [%7.1f %7.1f %7.1f]  limits=[%.0f %.0f %.0f]\n', ...
-            rep.max_total, rep.limits);
+            rep.max_total, rep.peak_limits);
+    fprintf('  Force RMS [FX1 FX2 FY] N:\n');
+    fprintf('    feedforward: [%7.1f %7.1f %7.1f]\n', rep.rms_feedforward);
+    fprintf('    feedback:    [%7.1f %7.1f %7.1f]\n', rep.rms_feedback);
+    fprintf('    total:       [%7.1f %7.1f %7.1f]  limits=[%.0f %.0f %.0f]\n', ...
+            rep.rms_total, rep.rms_limits);
 end
 
 % ----------------------------------------------------------------------

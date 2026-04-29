@@ -264,7 +264,28 @@ Apply multisines to all 8 trajectories and reduce or suppress amplitude where ha
 
 **Note on off-axis cross-excitation**: Adding Fy to X-only trajectories (T2, T3) or (F1+F2) to Y-only trajectories (T1, T6) creates small cross-axis motion the position controller partially rejects. This is acceptable and beneficial — it produces gradient signal for coupling parameters (mh in the X equation, cg1+cg2 in the Y equation) without requiring the reference trajectory itself to move off-axis.
 
-In `export_param_recovery.m`, all three channels (F_X1, F_X2, F_Y) are always generated. Which channels carry non-zero energy is determined by the trajectory's `ms_f_low`/`ms_f_high` and the MIMO channel design (Section 6.6).
+In `export_param_recovery.m`, all three channels (F_X1, F_X2, F_Y) are always generated. Which channels carry non-zero energy is determined by the trajectory's `ms_f_low`/`ms_f_high` and the MIMO channel design (Section 6.9).
+
+---
+
+### 6.3.1 Force-limit filtering
+
+The TELICA datasheet limits used for data generation are:
+
+| Quantity | F_X1 | F_X2 | F_Y | Use in generator |
+|----------|------|------|-----|------------------|
+| Peak force | 2000 N | 2000 N | 1420 N | Reject if instantaneous total command exceeds this |
+| Continuous force | 916 N | 916 N | 656 N | Reject if RMS total command exceeds this |
+
+The force check is applied to the total commanded force:
+
+```text
+u_total = u_feedback + f_multisine
+```
+
+`u_feedback` is reconstructed from the controller and `f_multisine` is the optional force perturbation. Feedforward-only and feedback-only force peaks/RMS values are reported for diagnosis, but the pass/fail condition is based on total command because that is what the actuator would have to deliver.
+
+The X-axis datasheet row is written as `2 x 2000` peak and `2 x 916` continuous for the paired X1/X2 axes. For the generator we keep the conservative per-axis interpretation: `F_X1 <= 2000 N` and `F_X2 <= 2000 N`, not `4000 N` per channel.
 
 ---
 
