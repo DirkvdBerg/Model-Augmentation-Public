@@ -50,7 +50,7 @@ addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
 % ======================================================================
 % USER FLAG
 % ======================================================================
-USE_MULTISINE = false;   % true  -> multisine feedforward, output to parameter-recovery-multisine/
+USE_MULTISINE = true;   % true  -> multisine feedforward, output to parameter-recovery-multisine/
                          % false -> zero feedforward,      output to parameter-recovery/
 
 % ======================================================================

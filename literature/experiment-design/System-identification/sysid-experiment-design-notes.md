@@ -1,12 +1,14 @@
 # System Identification — Experiment Design Notes
 _Synthesized from Lectures 0–13 (5SMB0). Applied to dual-gantry LPV parameter recovery._
-_Generated: 2026-04-17_
+_Generated: 2026-04-17; corrected against `Matlab-scripts/export_param_recovery.m` on 2026-04-29._
 
 ---
 
 ## How to Use This Document
 
 This file is a **working synthesis**, not a slide-by-slide transcript. It keeps the parts of the 5SMB0 lectures that matter for designing identification experiments for the dual-gantry LPV parameter-recovery problem.
+
+Important scope note: the current MATLAB workflow is **not** a classical standalone closed-loop FRF experiment. It is a closed-loop trajectory-following simulation with an additional force-level multisine perturbation. Therefore, some lecture rules transfer directly (periodicity, leakage, PE sanity checks, odd lines, crest factor), while other entries below are engineering choices for safe parameter-recovery data generation rather than direct slide rules.
 
 Use it in two ways:
 
@@ -32,8 +34,8 @@ The current synthesis covers the experiment-design-relevant material from the sl
 | Which input signals are discussed? | Lecture 9, slides 15-29 | RBS, PRBS, multisine, swept sine, colored noise, staircase/interleaved multisine. | Section 2 |
 | Why multisine? | Lecture 3 and Lecture 9, slides 22-24 | Periodic, exact frequency-line control, multiple transient-free periods, controllable crest factor. | Section 2 |
 | How to handle MIMO excitation? | Lecture 9, slides 46-52 | Require positive-definite MIMO input spectrum; use zippered or orthogonal multisines. | Section 2 |
-| How to handle closed-loop identification? | Lecture 11, plus Lecture 6 background | Feedback correlates input and disturbances; external reference excitation can restore consistency. | Section 3 |
-| Why check plant input, not only injected reference? | Lecture 10-11 closed-loop material | Controller can attenuate excitation at some frequencies, causing loss of excitation. | Section 3 |
+| How to handle closed-loop identification? | Lecture 11, plus Lecture 6 background | Feedback correlates plant input and disturbances in real closed-loop data; independent external excitation or IV/reference methods may be needed for unbiased FRF/PEM estimates. | Section 3 |
+| Why check plant input, not only injected signal? | Lecture 10-11 closed-loop material plus actuator constraints | The signal that matters for identification and safety is the total plant/actuator input, not just the generated multisine. | Section 3 |
 | What if model uncertainty is too high? | Lecture 8, slides 50-56 | Redesign the experiment: increase input power or add spectral power near uncertain/resonant regions. | Sections 6-8 |
 | Why use odd multisines? | Lecture 13, slides 28-40 and 59-61 | Odd-only lines help detect/separate even and odd nonlinear distortion. | Sections 2 and 9 |
 | What is BLA and why does it matter? | Lecture 13, slides 43-58 | Nonlinear systems produce an input-dependent best linear approximation and nonlinear distortion floor. | Sections 1 and 9 |
@@ -70,8 +72,9 @@ redesign input spectrum/trajectory -> repeat
 - **Model:** quasi-LPV with scheduling variable Y; M(Y) varies continuously
 - **Identification goal:** recover 13 physical parameters from simulated closed-loop data
 - **Control loop:** feedback controller `Cfb` (designed at `Y_op = Y_initial` per trajectory)
-- **Excitation:** multisine injected at feedforward slot `f` after `Cfb`, directly at actuator force level
-- **Data:** 6 trajectories at different Y operating points; each includes nominal motion + multisine
+- **Reference:** smooth third-order position trajectories, not lecture-style white-noise/PRBS/reference-only experiments
+- **Excitation:** optional multisine injected at feedforward slot `f` after `Cfb`, directly at actuator force level
+- **Data:** 8 trajectories at different Y operating points; each can be exported with or without multisine
 
 ```
 r ──► [Cfb] ──► (+) ──► [Plant G(Y)] ──► y = [X1, X2, Y]
@@ -95,18 +98,30 @@ Parameter estimate `θ_N → θ*` as `N → ∞`. This is only the true paramete
 
 **Data informativity condition:** for open-loop, having `Φ_u(ω) > 0` at enough frequencies is sufficient. For MIMO: `Φ_u(ω) ≻ 0` (positive definite matrix) — inputs must not be linearly correlated at identification frequencies.
 
-### Persistence of excitation (Lectures 4–5)
+### Persistence of excitation (Lecture 6)
 
 A signal `u` is persistently exciting (PE) of order `n` if its autocorrelation matrix `R_u^n` is non-singular. This means:
 - White noise: PE of infinite order
 - Multisine with `m` distinct frequencies: PE of order `2m`
 - Single sine: PE of order 2 only
 
-**Rule:** PE order must be ≥ the number of parameters to identify. For our 13-parameter model, the multisine must have ≥ 7 distinct frequency lines per channel.
+**Rule:** PE order should be at least the number of parameters to identify. For a scalar multisine with `F` distinct frequency lines, `2F >= 13` gives the practical guard `F >= 7`.
+
+For `export_param_recovery.m`, this is only a **minimum spectral richness sanity check**. It does not prove that the 13 physical parameters are identifiable, because identifiability also depends on the trajectory, operating point, input direction, and parameter sensitivities of the LPV model.
 
 ### Best Linear Approximation (BLA) for nonlinear systems (Lecture 13)
 
-Since our gantry is nonlinear (LPV, friction), the identified model is strictly the **best linear approximation**:
+This lecture concept is relevant for **real hardware** and for the **Simscape secondary path**, but it should not be over-applied to the current primary parameter-recovery target.
+
+`export_param_recovery.m` exports `q1` as the primary signal. `q1` is generated by the simplified continuous-time quasi-LPV model:
+
+```text
+M(Y) qdd + C qdot + K q = u
+```
+
+with no Coulomb friction, no Coriolis/centripetal terms, and a linearised stage-coordinate mapping for the rotation. For a given scheduling trajectory `Y(t)`, this is a linear time-varying/LPV system. Because `Y` is itself a state, the model is self-scheduled quasi-LPV rather than LTI, but it is not the full nonlinear multibody model.
+
+For a genuinely nonlinear system, the identified model is strictly the **best linear approximation**:
 
 ```
 G_bla(ω) = argmin E_u,v { |Y(n) - G(ω)U(n)|² }
@@ -117,7 +132,7 @@ Key properties:
 - **Does not converge with N**: the stochastic nonlinear contribution `y_s` has O(N⁰) variance — it cannot be averaged away by collecting more data
 - Output decomposes as: `y = y_bla + y_s + v` where `y_s` is the nonlinear distortion and `v` is measurement noise
 
-**Implication for us:** the 6 trajectories give 6 BLA estimates at different Y operating points. The parameter recovery fits a physics model to these BLAs. Any unmodeled nonlinearity (Coulomb friction, Coriolis) appears as `y_s` and inflates the residuals — it cannot be reduced by longer experiments, only by better model structure.
+**Implication for us:** BLA language is mainly appropriate when analysing Simscape or future hardware data. For current `q1`-based parameter recovery, the cleaner statement is: the 8 trajectories give multiple operating regimes for fitting the simplified quasi-LPV physics model. The gap between `q1` and `q_simscape` is where omitted nonlinear physics such as Coriolis/centripetal terms would appear.
 
 ---
 
@@ -150,29 +165,21 @@ The crest factor CF = ‖u‖_∞ / ‖u‖_2 measures peak-to-RMS ratio. High C
 
 - Controller bandwidth: `fbw = 100 Hz`
 - Plant resonances: rotational mode around `kb1+kb2` (stiffness); translational at low frequency
-- Recommended range: **1–200 Hz** (covers controller bandwidth + margin; well below Nyquist at 10 kHz)
+- Current implementation ranges: common X mode **1–100 Hz**, differential X mode **1–20 Hz**, Y mode **1–20 Hz**
 - Frequency resolution: `Δf = fs/N` — choose N to get resolution ≤ 1 Hz
-- **Avoid controller zeros** where possible — the closed-loop may attenuate the multisine at these frequencies
+- If injecting through the position reference, avoid frequencies that the controller suppresses; with the current force-feedforward injection, check the actual force and `q1` response instead
 
-### MIMO orthogonal multisine (Lecture 9) — IMPORTANT
+### MIMO multisine design (Lecture 9, plus project-specific choice)
 
-For a 3×3 MIMO system, a single multisine on all inputs simultaneously does **not** give an invertible input matrix. Two approaches:
+For a classical 3x3 FRF estimate, the input spectrum must be full-rank. That usually means zippered frequency grids or repeated orthogonal sign-pattern experiments. In that setting, a single experiment with fully correlated actuator signals is not enough to invert the full MIMO frequency response.
 
-**Option A — Zippered multisine (one experiment):**
-- Interlace excited frequency grids across inputs (F_X1 gets even lines, F_X2 odd lines, F_Y every third, etc.)
-- Lower frequency resolution, relies on ideal spectrum; FRFs estimated on different frequencies
-- Simple to implement
+That is **not exactly what `export_param_recovery.m` is doing**. The script is generating training data for BPTT-based physical parameter recovery, not estimating a standalone 3x3 FRF at each operating point. It therefore uses physically meaningful force modes:
 
-**Option B — Orthogonal multisine (3 experiments, RECOMMENDED):**
-- Run 3 separate experiments with orthogonal input patterns
-- Example for 2×2 (generalises to 3×3):
-  - Experiment 1: `[U1, U2]`
-  - Experiment 2: `[U1, −U2]`
-  - Stack: `Ĝ = [Y1, Y2] · [U1 U1; U2 -U2]^{-1}`
-- Input matrix is orthogonal → well-conditioned inverse guaranteed
-- **For 3×3: requires 3 experiments**, each with a different sign pattern on the 3 multisines
+- `common`: `F_X1 = F_X2`, translational X excitation
+- `diff`: `F_X1 = -F_X2`, rotational excitation
+- `y`: `F_Y`, Y-axis excitation
 
-**What this means for our 6 trajectories:** each trajectory operating point requires 3 experiments (3 multisine sign patterns) to fully recover the 3×3 G matrix. Total: 18 simulations.
+These mode-shaped multisines are appropriate as simultaneous parameter-recovery perturbations, especially because the nominal reference trajectory is also moving. They should not be described as strict orthogonal MIMO FRF experiments. For future hardware FRF estimation, strict zippered or orthogonal multisines remain the cleaner lecture-consistent design.
 
 ### Odd harmonics design (Lecture 12–13)
 
@@ -204,16 +211,18 @@ For our gantry: Coriolis terms (Ẏ·Ẋ) are second-order → use odd-harmonics
 
 In closed-loop, the plant input `u` and disturbance `v` are **correlated** because feedback adjusts `u` to compensate for `v`. This violates the standard PEM consistency assumption, causing biased estimates if not handled.
 
-### Reference signal method — directly applicable to our setup (Lecture 3)
+### External excitation in our setup
 
-Since our multisine is injected at the feedforward slot `f`, it acts as an external reference signal `r_ff` that is **independent** of the disturbance `v`. The FRF can be estimated by projecting output and input onto this reference:
+The multisine in `export_param_recovery.m` is an **external force perturbation**, independent of the feedback signal. This is good experiment design: it prevents the identification excitation from being generated by the measured output.
+
+However, the script does not currently implement the lecture's full closed-loop FRF/reference projection workflow. It exports simulated total forces and positions for parameter recovery. If we later estimate hardware FRFs in closed loop, the external multisine can be used as the independent reference signal:
 
 ```
 Ĝ(ω_n) = S_YR(n) / S_UR(n)
          = Σ_p Y^[p](n) · R̄_ff^[p](n)  /  Σ_p U^[p](n) · R̄_ff^[p](n)
 ```
 
-This eliminates the bias from the feedback controller automatically. The key requirement: `f_multisine` must be **truly independent** of the feedback signal (do not compute it from the output).
+This projection can reduce closed-loop bias in an FRF setting, provided the reference is independent of the disturbance and the measured plant input is used correctly. It should not be claimed as an automatic guarantee for the current BPTT parameter-recovery pipeline.
 
 ### Residuals test interpretation in closed-loop (Lecture 7)
 
@@ -227,9 +236,92 @@ This eliminates the bias from the feedback controller automatically. The key req
 
 ### Loss of excitation (Lectures 10–11)
 
-If the controller `Cfb` has high gain at certain frequencies, it will attenuate the multisine excitation reaching the plant at those frequencies. This causes **loss of excitation** → those frequencies become unidentifiable.
+If the excitation is injected through the position reference, the controller can attenuate it before it reaches the plant. In the current script the multisine is injected after `Cfb` as force feedforward, so it is not filtered by the position controller in the same way.
 
-**Check:** verify that the multisine amplitude at the **plant input** (not just the feedforward reference) is sufficient. With `u = Cfb·(r−q1) + f_multisine`, the plant sees both. If `Cfb` has very high gain, `Cfb·(r−q1)` dominates and `f_multisine` is relatively small.
+The relevant check is therefore not "does the reference contain enough excitation?", but:
+
+```text
+u_total = u_feedback + f_multisine
+```
+
+`validate_forces` and `summarize_forces` check this total actuator command against ETEL peak and RMS limits. For hardware, actual motor-current-derived force would be better than commanded force if amplifier dynamics or saturation matter.
+
+### Lecture-verifiable closed-loop multisine design
+
+To make the multisine part of the trajectory defensible from the closed-loop system-identification lectures, separate two use cases:
+
+| Use case | What we may claim | What we must not claim |
+|---|---|---|
+| Moving parameter-recovery trajectory | The multisine improves spectral richness and parameter sensitivity during BPTT training | A clean closed-loop FRF/BLA estimate at one operating point |
+| Constant-operating-point ID window | A lecture-style closed-loop multisine experiment, suitable for FRF/coherence checks | Full LPV parameter recovery by itself |
+
+The lecture-clean version should satisfy this checklist:
+
+1. **External excitation independent of feedback/noise**  
+   Inject the multisine as a known signal `f_multisine` that is not computed from `q1`, `q`, or tracking error. In `export_param_recovery.m`, this is already true because `f` is generated before simulation and added at the force feedforward input after `Cfb`.
+
+2. **Measure/log the plant input actually used for identification**  
+   The plant input is not only `f_multisine`; it is:
+
+   ```text
+   u_total = u_feedback + f_multisine
+   ```
+
+   For current exports, `u_feedback` is `u_q1` and `f_multisine` is `f_sim`, so `u_total` can be reconstructed. For hardware, log motor-current-derived force if possible.
+
+3. **Use the external signal as the reference/instrument for closed-loop FRF checks**  
+   If estimating an FRF from closed-loop data, use the external multisine as the independent reference:
+
+   ```text
+   G_hat(omega_k) = S_yf(omega_k) / S_uf(omega_k)
+   ```
+
+   where `f` is the injected multisine, `u` is the measured total plant input, and `y` is the measured output. This is the closed-loop reference/instrument idea; it is separate from the BPTT training loss.
+
+4. **Keep the analysis window periodic and approximately stationary**  
+   For a lecture-style FRF/coherence check, use a hold segment at a fixed operating point, or a repeated periodic reference. A nonperiodic point-to-point move plus multisine is useful for parameter recovery but is not a clean stationary FRF experiment.
+
+5. **Use integer periods and discard transient periods**  
+   `pad_to_multisine_periods` gives integer 1 s periods. For FRF checks, analyse only complete periods after the initial transient. The current script guarantees at least two periods, but a stronger FRF run should collect more periods, e.g. 10-15 transient-free periods.
+
+6. **Check MIMO input rank/coherence on the analysed window**  
+   For full 3x3 FRF estimation, the input spectrum must be full-rank. The current `common`/`diff`/`y` modes are useful physical perturbations for parameter recovery, but strict FRF estimation should use orthogonal or zippered multisines, or separate repeated experiments.
+
+7. **Keep amplitude below actuator and response limits**  
+   The amplitude sweep, `validate_response`, and `validate_forces` implement this engineering constraint. In lecture terms, this protects against saturation and nonlinear distortion from excessive input amplitude.
+
+Practical consequence for this project: keep the current moving multisine trajectories for gradient-based parameter recovery, but add one or more optional **ID-hold trajectories/windows** if we want lecture-verifiable closed-loop FRF/coherence plots.
+
+### Choice-to-slide map
+
+Use this as the slide-check map for justifying `export_param_recovery.m`. The exact wording should be verified against the PDFs; entries marked "exact slide TBD" are lecture locations that still need the PDF opened to pin down the page number.
+
+| Implementation choice | Script location / variable | Lecture source to verify | Justification to claim |
+|---|---|---|---|
+| Use multisine excitation | `generate_multisine` | Lecture 9, slides 15-29; Lecture 9, slides 22-24 | Multisines are a standard experiment-design input with controlled spectral content and crest factor. |
+| Use periodic records | `multisine_schroeder_periodic` | Lecture 3 multisine/periodic measurement material, exact slide TBD; Lecture 9, slides 22-24 | Periodic excitation enables clean spectral analysis after transients. |
+| Use integer DFT-bin frequencies | `f0 = fs / N_period`, `freqs = k * f0` | Lecture 3 leakage/frequency-resolution material, exact slide TBD | Excited frequencies should lie on DFT bins to avoid leakage. |
+| Choose 1 s period, `df = 1 Hz` | `N_period = round(fs)` | Lecture 3 frequency-resolution material, exact slide TBD | Frequency resolution is `df = fs/N`; the 1 s period is our engineering choice giving simple 1 Hz line spacing. |
+| Pad to integer periods | `pad_to_multisine_periods` | Lecture 3 leakage material, exact slide TBD | The analysed record should contain an integer number of periods for leakage-free periodic excitation. |
+
+was here!!
+
+| Require at least two periods | `max(2, ceil(N / N_period))` | Lecture 9, slide 9 | Collect multiple periods so transient and useful data can be separated. |
+| Discard transient periods for FRF checks | downstream analysis, not currently in export | Lecture 9, slide 9; Lecture 3 periodic measurement material, exact slide TBD | First period(s) may contain transient response and should not be used for steady-state FRF/coherence checks. |
+| Use odd-only harmonics | `k = k(mod(k, 2) == 1)` | Lecture 13, slides 28-40 and 59-61 | Odd-only excitation leaves even lines available for detecting even-order nonlinear distortion. |
+| Use Schroeder phases | `phi = -idx .* (idx - 1) * pi / F` | Lecture 9, slides 22-24; Lecture 3 multisine phase material, exact slide TBD | Schroeder phases reduce crest factor, allowing more RMS excitation before peak limits. |
+| Per-channel RMS normalisation | channel loop after mode summation | Lecture 9, slides 22-24 | Compare amplitudes using RMS and control the input power delivered per actuator channel. |
+| PE line-count guard `F >= 7` | `if F < 7` | Lecture 6, slides 17-21; Lecture 6, slide 19; Lecture 9, slide 22 | A multisine with `F` lines has PE order `2F`; `F >= 7` gives `2F >= 14 > 13` as a minimum richness check. |
+| Treat PE as a sanity check, not proof | notes + future FIM/Jacobian check | Lecture 6, slides 12-21; Lecture 7, slides 14-19 | Informativity depends on the model set and experiment; covariance/sensitivity checks are needed for parameter directions. |
+| Inject excitation externally in closed loop | `f` feedforward input after `Cfb` | Lecture 11 closed-loop identification material, exact slide TBD | In closed loop, excitation used for identification should be independent of feedback/noise. |
+| Log/check total plant input | `u_q1`, `f_sim`, `force_report` | Lecture 11 closed-loop identification material, exact slide TBD | Closed-loop identification should reason about the plant input actually applied, not only the generated reference/excitation. |
+| Use external signal as reference/instrument for FRF checks | proposed diagnostic: `S_yf / S_uf` | Lecture 11 closed-loop identification material, exact slide TBD | An independent external signal can be used to form closed-loop FRF/reference estimates. |
+| Validate actual response, not reference only | `validate_response(q1, ...)` | Lecture 9, slides 22-24; Lecture 11 closed-loop material, exact slide TBD | The controller and plant shape the actual motion; safety and excitation checks must use measured/simulated output. |
+| Sweep amplitude and choose max passing level | `amp_rms_grid` loop | Lecture 9, slides 22-24; Lecture 8, slides 50-56 | Increase input power to improve information/SNR, while staying within response and actuator constraints. |
+| Check actuator peak/RMS force limits | `validate_forces`, `summarize_forces` | Lecture 9, slides 22-24 | Input amplitude must remain below saturation/actuator limits to avoid invalid nonlinear/saturated data. |
+| Use physical MIMO modes `common`, `diff`, `y` | `ms_modes`, `mode_band` | Lecture 9, slides 46-52 | MIMO excitation must provide distinguishable input directions; our adaptation uses physically meaningful modal directions for parameter recovery. |
+| Use strict orthogonal/zippered MIMO only for FRF diagnostics | proposed ID-hold runs | Lecture 9, slides 46-52 | Full MIMO FRF estimation requires a full-rank input spectrum; physical modes are not the same as strict FRF orthogonality. |
+| Use fixed/hold windows for lecture-clean FRF checks | proposed ID-hold trajectories/windows | Lecture 3 periodic measurement material, exact slide TBD; Lecture 9, slide 9 | A stationary periodic window is needed for clean FRF/coherence interpretation; moving trajectories are parameter-recovery data, not pure FRF experiments. |
 
 ---
 
@@ -240,8 +332,8 @@ If the controller `Cfb` has high gain at certain frequencies, it will attenuate 
 Minimum rule: `N ≥ 10 · n_θ` (number of parameters)
 Better rule: `N ≥ 10 · τ_set,95` (10× settling time of slowest mode)
 
-For each trajectory: collect **≥ 2 periods** of multisine (discard first as transient, use second onward).
-For reliable BLA: collect **10–15 transient-free periods** per operating point.
+For each trajectory: collect **≥ 2 periods** of multisine. `export_param_recovery.m` enforces the integer-period and minimum-two-period record length, but transient exclusion is a downstream segmentation/analysis decision.
+For reliable standalone BLA/FRF estimation, collect **10–15 transient-free periods** per operating point.
 
 ### Sampling frequency (Lecture 9)
 
@@ -334,10 +426,10 @@ Verify at the output `[X1, X2, Y]` for each trajectory and each multisine amplit
 | 1 | **Actuator saturation** from high crest factor | Nonlinear response → biased BLA | Use Schroeder phases; keep amplitude ≤ 20–30% max force |
 | 2 | **Leakage** from non-integer periods | FRF estimates corrupted across all frequencies | Design frequencies as integer multiples of Δf = fs/N |
 | 3 | **Transient not removed** | Systematic bias especially at resonances | Discard ≥ 1 full period; use 10+ transient-free periods |
-| 4 | **PE order too low** | Parameters not identifiable | Use ≥ 7 frequency lines per input; check Φ_u(ω) ≻ 0 |
-| 5 | **MIMO inputs correlated** | Singular input matrix → no FRF estimate | Use orthogonal multisine (3 experiments for 3×3) |
+| 4 | **PE order too low** | Weak spectral richness; possible hidden parameter directions | Use ≥ 7 frequency lines as a minimum guard, then check FIM/Jacobian rank |
+| 5 | **MIMO inputs correlated** | Singular input matrix for classical FRF estimation | Use orthogonal/zippered multisine for FRF tests; current BPTT export uses physical modes |
 | 6 | **Closed-loop residual misread** | τ < 0 cross-correlation misread as model error | Expected in CL; not a model failure |
-| 7 | **Loss of excitation** | Controller attenuates multisine at some frequencies | Verify plant input amplitude, not just feedforward amplitude |
+| 7 | **Loss of excitation** | Generated excitation may not create useful plant motion | Verify total actuator input and actual `q1` response |
 | 8 | **Model structure mismatch** | Biased parameters that don't improve with more data | Start with OE/BJ; validate residuals per trajectory |
 | 9 | **Nonlinear distortion y_s** | Residuals plateau → cannot be averaged away | Quantify y_s; use odd-harmonics multisine to detect source |
 | 10 | **Even-order nonlinearity aliasing** | u² terms contaminate excited frequency bins | Use odd-harmonics-only multisine |
@@ -350,33 +442,29 @@ Verify at the output `[X1, X2, Y]` for each trajectory and each multisine amplit
 
 ## 8. What This Means Concretely for Our Scripts
 
-### Immediate changes needed in `export_lpv_multi_traj.m`
+### Current implementation in `export_param_recovery.m`
 
-1. **Add multisine at `f`:**
-   ```matlab
-   % Replace: f = zeros(size(r));
-   % With (per trajectory, after Cfb/G design):
-   f = zeros(size(r));
-   for ch = 1:3
-       f(:,ch) = multisine_schroeder(size(r,1), fs, f_low, f_high, amp_rms);
-   end
-   % Make each channel independent (different phase seeds)
-   ```
+| Component | Status | Interpretation |
+|---|---|---|
+| `generate_multisine` | Implemented | Builds force-level perturbations in physical modes (`common`, `diff`, `y`) |
+| Odd-only harmonic lines | Implemented | Lecture-consistent nonlinear distortion diagnostic idea |
+| Schroeder phases | Implemented | Lecture-consistent low crest-factor phase choice |
+| 1 s period / `df = 1 Hz` | Implemented | Engineering choice that gives simple harmonic lines on DFT bins |
+| `pad_to_multisine_periods` | Implemented | Pads final hold so the multisine record contains integer periods |
+| `F < 7` guard | Implemented | Minimum PE sanity check, not an identifiability proof |
+| Per-channel RMS normalisation | Implemented | Practical force scaling after mode summation |
+| Amplitude sweep | Implemented | Safety/search heuristic: choose largest passing RMS amplitude |
+| `validate_response(q1, ...)` | Implemented | Checks actual simulated response, not the reference trajectory |
+| `validate_forces` / `summarize_forces` | Implemented | Checks total commanded force against ETEL peak/RMS limits |
+| Strict orthogonal MIMO FRF experiment | Not implemented | Not required for current BPTT parameter-recovery data; still useful for future FRF hardware tests |
+| Closed-loop reference projection FRF estimator | Not implemented | Relevant if estimating FRFs from hardware data, not part of current export script |
 
-2. **Make multisine frequencies integer multiples of Δf = fs/N** (no leakage)
+### Validation checks still useful downstream
 
-3. **Collect ≥ 2 periods** — discard first as transient, use rest for identification
-
-4. **Amplitude sweep + ETEL filter:** run at multiple amplitudes; filter on actual `q1` velocity and acceleration (not reference)
-
-5. **For full MIMO identification:** run 3 experiments per trajectory with orthogonal sign patterns on `[F_X1, F_X2, F_Y]`
-
-### Validation checks to add
-
-- Whiteness test on residuals (autocorrelation of prediction error)
-- Cross-correlation between residuals and input (expect nonzero for τ < 0 — that is fine)
-- SNR check per channel per trajectory
-- FRF confidence bounds: verify √cov{G} < 0.1·|G| in control bandwidth
+- SNR check per channel per trajectory if noise is added
+- Coherence/FRF confidence bounds if doing frequency-domain FRF analysis
+- Residual checks for fitted models, interpreted carefully in closed loop
+- FIM/Jacobian conditioning to verify that the trajectories excite all parameter directions
 
 ### No noise yet — to do
 
@@ -384,20 +472,20 @@ Current simulation is noise-free. Add realistic encoder noise (~1–10 nm RMS at
 
 ---
 
-## 9. Linear vs. Nonlinear Caveat
+## 9. Linear, LPV, and Nonlinear Caveat
 
-These lectures cover **linear** system identification. Our plant is nonlinear (LPV + friction + Coriolis). The key transfer:
+These lectures mostly cover **linear** system identification. Our current primary data target, `q1`, is a simplified quasi-LPV model: linear for a fixed scheduling trajectory `Y(t)`, self-scheduled because `Y` is a state, and intentionally missing Coulomb friction and Coriolis/centripetal terms. The Simscape path and real hardware are the genuinely nonlinear targets.
 
 | Linear concept | Applies to us as... |
 |---|---|
 | FRF at operating point | Linearised LPV model at fixed Y (each trajectory) |
 | Parameter consistency | Physical parameter recovery when model structure matches |
-| BLA | What our LPV fit actually estimates when nonlinearities present |
+| BLA | Relevant for Simscape/hardware nonlinear analysis, not the main interpretation of `q1` training |
 | PE condition | Multisine must excite all 13 parameter sensitivities |
-| Closed-loop bias | Reduced by reference signal method; not eliminated |
-| y_s (nonlinear distortion) | Coriolis, friction terms not in baseline — will inflate residuals |
+| Closed-loop bias | Relevant for noisy hardware FRF/PEM; current simulation exports commanded forces and positions for BPTT |
+| y_s (nonlinear distortion) | Coriolis, friction, and geometry effects when comparing against Simscape/hardware |
 
-The nonlinear parts (Coriolis, Coulomb friction) appear as `y_s` and set a floor on the achievable residual. This floor is what the **augmentation** phase is designed to model.
+When training against `q1`, the target is the same simplified quasi-LPV physics that the baseline is meant to represent. When comparing against `q_simscape` or hardware, omitted nonlinear effects appear as a residual floor. That residual is what the **augmentation** phase is designed to model.
 
 ---
 
