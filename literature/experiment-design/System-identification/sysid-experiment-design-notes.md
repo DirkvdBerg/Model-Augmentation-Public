@@ -4,6 +4,66 @@ _Generated: 2026-04-17_
 
 ---
 
+## How to Use This Document
+
+This file is a **working synthesis**, not a slide-by-slide transcript. It keeps the parts of the 5SMB0 lectures that matter for designing identification experiments for the dual-gantry LPV parameter-recovery problem.
+
+Use it in two ways:
+
+1. **Design guide:** Sections 1-9 translate the lecture material into concrete choices for our setup.
+2. **Lookup table:** The tables below tell you where to go in the original lecture PDFs when you want the source derivation or slide context.
+
+The current synthesis covers the experiment-design-relevant material from the slides, but it intentionally does not include every lecture topic. For example, generic predictor derivations, full ARMAX/OE/BJ algebra, subspace-realization details, and general validation theory are only included where they affect experiment design.
+
+---
+
+## Lecture Lookup Table
+
+| Question | Look in | Main idea | Used here |
+|---|---:|---|---|
+| What makes data informative? | Lecture 6, slides 12-15 | Data must distinguish models in the chosen model set; for open loop this is linked to input spectrum. | Section 1 |
+| What is persistent excitation? | Lecture 6, slides 17-21 | PE is a rank/non-singularity condition on input autocorrelation; white noise is PE of any order, one sine is PE order 2. | Section 1 |
+| How many frequencies do I need? | Lecture 6, slide 19; Lecture 9, slide 22 | Nonzero input spectrum at enough frequency points; multisine PE order is twice the number of excited lines. | Sections 1-2 |
+| How does experiment design influence variance? | Lecture 7, slides 14-19 | Parameter covariance depends on input power/SNR and experimental conditions. | Sections 6-8 |
+| Where is the Fisher information matrix used? | Lecture 7, ML slides near the end | ML/PEM covariance is asymptotically the inverse Fisher information matrix. | Section 10 |
+| Where is the Jacobian used? | Lecture 12, transfer-function identification slides around the Gauss-Newton derivation | Frequency-domain nonlinear least-squares uses a Jacobian of the complex residuals; covariance is built from that Jacobian. | Section 10 |
+| How should I choose experiment length? | Lecture 9, slide 9 | Minimum `N >= 10*n_theta`; better: long relative to slowest settling time. | Section 4 |
+| How should I choose sampling frequency? | Lecture 9, slides 10-12 | Sample fast enough for dynamics/noise, but decimate before parametric ID when oversampled. | Section 4 |
+| Which input signals are discussed? | Lecture 9, slides 15-29 | RBS, PRBS, multisine, swept sine, colored noise, staircase/interleaved multisine. | Section 2 |
+| Why multisine? | Lecture 3 and Lecture 9, slides 22-24 | Periodic, exact frequency-line control, multiple transient-free periods, controllable crest factor. | Section 2 |
+| How to handle MIMO excitation? | Lecture 9, slides 46-52 | Require positive-definite MIMO input spectrum; use zippered or orthogonal multisines. | Section 2 |
+| How to handle closed-loop identification? | Lecture 11, plus Lecture 6 background | Feedback correlates input and disturbances; external reference excitation can restore consistency. | Section 3 |
+| Why check plant input, not only injected reference? | Lecture 10-11 closed-loop material | Controller can attenuate excitation at some frequencies, causing loss of excitation. | Section 3 |
+| What if model uncertainty is too high? | Lecture 8, slides 50-56 | Redesign the experiment: increase input power or add spectral power near uncertain/resonant regions. | Sections 6-8 |
+| Why use odd multisines? | Lecture 13, slides 28-40 and 59-61 | Odd-only lines help detect/separate even and odd nonlinear distortion. | Sections 2 and 9 |
+| What is BLA and why does it matter? | Lecture 13, slides 43-58 | Nonlinear systems produce an input-dependent best linear approximation and nonlinear distortion floor. | Sections 1 and 9 |
+
+---
+
+## Method Lookup: Designing Experiments Beforehand
+
+| Method | What it chooses | What it needs | Strength | Limitation |
+|---|---|---|---|---|
+| PE/rank check | Enough independent frequency content | Model order or number of parameters | Simple necessary sanity check | Does not tell which frequencies are best |
+| Input spectrum shaping | Where to put input power over frequency | Frequency range of interest, rough dynamics | Directly targets bandwidth/resonances | Usually heuristic unless optimized |
+| Multisine design | Frequency lines, amplitudes, phases, periods | Sampling rate, duration, amplitude limits | Clean FRF/BLA estimates and no leakage when periodic | Needs careful MIMO design |
+| PRBS/RBS/white noise | Broad excitation under amplitude/power constraints | Bandwidth and actuator limits | Good generic excitation | Less targeted; can waste power |
+| Orthogonal MIMO multisine | Independent MIMO input directions | `n_u` repeated experiments or zippered grid | Well-conditioned FRF matrix estimate | More experiments |
+| Covariance/FIM design | Input spectrum or trajectory minimizing parameter covariance | Nominal model and noise assumptions | Formal optimal experiment design | Needs a model beforehand; local if nonlinear |
+| Jacobian/sensitivity design | Trajectory maximizing parameter-output sensitivities | Differentiable simulation model | Directly relevant to parameter recovery | Can miss structural non-identifiability |
+| BLA/nonlinear distortion analysis | Whether linear approximation is trustworthy | Repeated random-phase multisines | Separates noise from nonlinear distortion | Does not by itself recover nonlinear parameters |
+
+For our current project, the most useful workflow is:
+
+```text
+Lecture rules -> generate safe candidate excitations
+model sensitivities/Jacobian -> score parameter recoverability
+FIM/covariance -> check whether all parameter directions are excited
+redesign input spectrum/trajectory -> repeat
+```
+
+---
+
 ## Our Setup (context for all notes below)
 
 - **Plant:** dual-gantry, 3 inputs `[F_X1, F_X2, F_Y]` → 3 outputs `[X1, X2, Y]` (3×3 MIMO)
@@ -338,3 +398,54 @@ These lectures cover **linear** system identification. Our plant is nonlinear (L
 | y_s (nonlinear distortion) | Coriolis, friction terms not in baseline — will inflate residuals |
 
 The nonlinear parts (Coriolis, Coulomb friction) appear as `y_s` and set a floor on the achievable residual. This floor is what the **augmentation** phase is designed to model.
+
+---
+
+## 10. Jacobian, Fisher Information, and OED Connection
+
+The system-identification lectures mostly teach experiment design through **data informativity**, **persistent excitation**, and **input spectrum design**. They do also contain the ingredients used by optimal experiment design:
+
+| Object | Where in the lectures | Meaning |
+|---|---|---|
+| Parameter covariance `P_theta / N` | Lecture 7, slides 14-19 | Quantifies how uncertain the estimated parameters are. Larger input power and lower noise reduce this covariance. |
+| Fisher information matrix `J_N` | Lecture 7, ML/CRLB slides near the end | For ML/PEM, asymptotically `cov(theta_hat) = J_N^-1`. This is the formal link between experiment design and parameter uncertainty. |
+| Residual Jacobian | Lecture 12, frequency-domain fitting | Nonlinear least-squares fitting uses a Jacobian of the residuals with respect to parameters. Parameter covariance can be approximated from this Jacobian. |
+| Input spectrum `Phi_u(omega)` | Lecture 6 and Lecture 9 | Determines which model differences can be seen in the data and how much variance the estimate has. |
+
+For our differentiable LPV/LFR simulator, the same logic becomes:
+
+```text
+u(t) = [F_X1(t), F_X2(t), F_Y(t)]
+simulate model with known/nominal parameters
+J = d vec([X1(t), X2(t), Y(t)]) / d log_params
+F = J^T R^-1 J
+cov(theta_hat) approx F^-1
+```
+
+Then we can evaluate a candidate trajectory by scalar criteria such as:
+
+```text
+D-optimal: maximize log det(F + lambda I)
+A-optimal: minimize trace((F + lambda I)^-1)
+E-optimal: maximize lambda_min(F + lambda I)
+conditioning: minimize cond(F + lambda I)
+```
+
+This is the formal version of the lecture guidance:
+
+```text
+PE condition:
+    make sure enough independent parameter directions are visible
+
+FIM/Jacobian design:
+    quantify exactly which parameter directions are visible for this model
+```
+
+The practical recommendation is to use both:
+
+1. Use Lecture 9 rules to generate safe, physically meaningful input families: multisine, PRBS, colored noise, swept sine, staircase, orthogonal MIMO multisine.
+2. Use the simulator Jacobian/FIM to rank or optimize those candidates for recovery of the 13 physical parameters.
+3. Inspect the smallest eigenvectors of `F` to see which parameter combinations remain hidden.
+4. Add or reshape trajectories to target those weak directions.
+
+Important caveat: if two physical parameters enter the model only through the same combination, such as a pure sum, no trajectory can separate them. The FIM will reveal this as a structural rank deficiency, but experiment design cannot fix it without extra measurements or a different parametrization.

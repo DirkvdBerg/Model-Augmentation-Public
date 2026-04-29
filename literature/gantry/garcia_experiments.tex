@@ -1,0 +1,251 @@
+\documentclass[a4paper, 11pt]{article}
+
+\usepackage[margin=2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% Column types
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+\title{Parameter Identification Experiments\\
+\large Garc\'{i}a et al.\ (2013) --- Dual-Drive Gantry Stage}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Source}
+I.\ Garc\'{i}a-Herreros, R.\ Coleman, P.-J.\ Barre, J.\ Gomand, X.\ Kestelyn,
+\textit{Model-based decoupling control method for dual-drive gantry stages:
+A case study with experimental validations},
+Control Engineering Practice, Vol.\ 21, No.\ 3, pp.\ 298--307, 2013.
+
+The identification procedure is described in \textbf{Section 2.4} (``Model parameters'')
+and is organised as a sequential chain: each experiment assumes all prior parameters
+are already known.
+
+\section*{Model parameters (14 physical parameters)}
+
+The lumped-parameter model (Section~2.2) is described by fourteen physical parameters:
+
+\begin{itemize}
+    \item \textbf{4 masses:} $m_b$ (cross-arm), $m_h$ (payload/Y-axis), $m_1$ (actuator $X_1$), $m_2$ (actuator $X_2$)
+    \item \textbf{5 viscous friction coefficients:} $c_{g1}$, $c_{g2}$ ($X_1$, $X_2$), $c_y$ (Y-axis), $c_{b1}$, $c_{b2}$ (flexible joints)
+    \item \textbf{3 Coulomb friction forces:} $c_{c1}$, $c_{c2}$ ($X_1$, $X_2$), $c_{cy}$ (Y-axis)
+    \item \textbf{2 stiffness coefficients:} $k_{b1}$, $k_{b2}$ (flexible joints)
+\end{itemize}
+
+\noindent Note: the rotary inertias $J_b$ and $J_h$ appear in the model but are not free
+parameters --- they are resolved via the bar assumption Eq.~(21):
+$J_b = m_b L_b^2 / 12$, $J_h = m_h L_h^2 / 12$.
+
+\section*{Identification experiments}
+
+\begin{table}[htbp]
+\centering
+\caption{Sequential parameter identification experiments (Section~2.4, Garc\'{i}a et al.\ 2013).
+Experiments must be executed in order: each step uses results from all previous steps.}
+\label{tab:garcia_experiments}
+\small
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{C{0.5cm} C{0.9cm} L{3.2cm} C{1.0cm} L{3.2cm} L{5.0cm}}
+\toprule
+\textbf{Exp} & \textbf{Axis} & \textbf{Motion condition} & \textbf{Eq.} & \textbf{Parameters identified} & \textbf{Physical mechanism} \\
+\midrule
+
+1 & Y &
+$\dot{Y} = \text{const}$, $\ddot{Y} = 0$;\newline $X_1 = X_2 = \text{const}$ (blocked) &
+(17) &
+$c_y$,\ $c_{cy}$ &
+Eq.~(17) reduces to $F_y = c_y \dot{Y} + c_{cy}\,\mathrm{sign}(\dot{Y})$. Sweep multiple
+constant velocities: slope $\rightarrow c_y$, intercept $\rightarrow c_{cy}$. \\
+
+\midrule
+
+2 & Y &
+$\ddot{Y} = \text{const}$;\newline $X_1 = X_2 = \text{const}$ (blocked) &
+(17) &
+$m_h$,\ $d$ &
+Known $c_y$, $c_{cy}$ from Exp.~1. $m_h\ddot{Y} = F_y - c_y\dot{Y} - c_{cy}\,\mathrm{sign}(\dot{Y})$
+gives $m_h$. Asymmetric reaction $F_1 - F_2 = m_h d\,\ddot{Y}$ gives the CoM offset $d$. \\
+
+\midrule
+
+3 & $X_1, X_2$ &
+$\dot{X}_1 = \dot{X}_2 = \text{const}$,\newline $\ddot{X}_1 = \ddot{X}_2 = 0$ &
+(18),(19) &
+$c_{g1}$,\ $c_{g2}$,\newline $c_{c1}$,\ $c_{c2}$ &
+$F_1 + F_2$ gives $(c_{g1}+c_{g2})\dot{X} + (c_{c1}+c_{c2})\mathrm{sign}(\dot{X})$;
+$F_1 - F_2$ gives the differences. Fitting at multiple velocities separates all four values. \\
+
+\midrule
+
+4 & $X_1, X_2$ &
+$\ddot{X}_1 = \ddot{X}_2 = \text{const}$ &
+(18),(19) &
+$m_1{+}m_2{+}m_b{+}m_h$,\newline $m_1{-}m_2$ &
+Frictions known from Exp.~3. Eq.~(18) $\rightarrow$ total translational mass.
+Eq.~(19) $\rightarrow$ mass asymmetry $m_1 - m_2$.
+Individual $m_b$, $m_1$, $m_2$ remain underdetermined until Exp.~7 + Eq.~(21). \\
+
+\midrule
+
+5 & $\Theta$ &
+$\Theta$ held at fixed angles\newline $-0.1, -0.09, \ldots, +0.1$\,rad;\newline $\dot{\Theta} = \ddot{\Theta} = 0$ &
+(14) &
+$k_{b1}{+}k_{b2}$ &
+Static equilibrium: $(k_{b1}+k_{b2})\Theta = (F_1-F_2)\,L_b/2$.
+Linear fit across multiple fixed angles gives the stiffness sum. \\
+
+\midrule
+
+6 & $\Theta$ &
+$\dot{X}_1 = -\dot{X}_2 = \text{const}$\newline $\Rightarrow\ \dot{\Theta} = \text{const}$, $\ddot{\Theta} = 0$ &
+(13) &
+$c_{b1}{+}c_{b2}$ &
+No inertia term. Rotational damping: $[c_{b1}+c_{b2}+(c_{g1}+c_{g2})L_b^2/4]\,\dot{\Theta}$
+equals measured torque. $c_{g1}+c_{g2}$ known from Exp.~3, so $c_{b1}+c_{b2}$ is extracted. \\
+
+\midrule
+
+7 & $\Theta$ &
+$\ddot{X}_1 = -\ddot{X}_2 = \text{const}$\newline $\Rightarrow\ \ddot{\Theta} = \text{const}$ &
+(20),(21) &
+$J_b{+}J_h{+}(m_1{+}m_2)\tfrac{L_b^2}{4}{+}m_h d^2$;\newline resolves $m_b$, $m_1$, $m_2$ &
+All friction and stiffness known. Eq.~(20) gives the total rotary inertia sum.
+Eq.~(21) ($J_b = m_b L_b^2/12$, $J_h = m_h L_h^2/12$) closes the algebraic system
+to separately recover $m_b$, $m_1$, $m_2$. \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Dependency chain}
+
+\[
+\underbrace{\text{Exp.~1} \to \text{Exp.~2}}_{\text{Y-axis (decoupled)}}
+\;\longrightarrow\;
+\underbrace{\text{Exp.~3} \to \text{Exp.~4}}_{\text{Synchronized X}}
+\;\longrightarrow\;
+\underbrace{\text{Exp.~5} \to \text{Exp.~6} \to \text{Exp.~7} \xrightarrow{\text{Eq.~(21)}} m_b,\,m_1,\,m_2}_{\text{Rotational (uses all prior)}}
+\]
+
+% ---------------------------------------------------------------
+\newpage
+\section*{LPV-LFR baseline trajectories (T1--T6)}
+
+The six trajectories are generated by \texttt{export\_lpv\_multi\_traj.m} using
+third-order (jerk-limited) set-point profiles. Unlike Garc\'{i}a, all trajectories
+are fitted \emph{simultaneously} via gradient-based BPTT; there is no sequential
+algebraic chain. Identification uses position output only --- force measurements
+are not available.
+
+\medskip
+\noindent\textbf{Key structural differences from Garc\'{i}a:}
+\begin{itemize}
+    \item Profile shape: smooth third-order (jerk-limited) vs.\ piecewise constant velocity/acceleration.
+    \item Coulomb friction ($c_{c1}$, $c_{c2}$, $c_{cy}$): \textbf{not modelled} in the LFR --- absent from all trajectories.
+    \item CoM offset $d$ and cross-arm length $L_b$: \textbf{fixed buffers} (0.1\,m, 0.725\,m) --- not trainable.
+    \item T5 (simultaneous X+Y) is \textbf{LPV-unique}: exploits the scheduling variable $Y$ varying
+          continuously; Garc\'{i}a has no equivalent.
+    \item No static-hold equivalent of Garc\'{i}a Exp.~5 (fixed $\Theta$ angles for stiffness).
+\end{itemize}
+
+\begin{table}[htbp]
+\centering
+\caption{LPV-LFR baseline trajectories T1--T6 and their relationship to
+Garc\'{i}a's identification experiments.
+$v$/$a$ limits are given as (X, Y) pairs where both axes move; Y-only or X-only
+trajectories list the active axis only.}
+\label{tab:trajectories}
+\small
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{C{0.5cm} L{2.8cm} L{3.0cm} L{3.0cm} C{1.1cm} L{3.5cm}}
+\toprule
+\textbf{Traj} & \textbf{Motion} & \textbf{Parameters targeted} & \textbf{Physical mechanism} & \textbf{García Exp.} & \textbf{Comparison} \\
+\midrule
+
+T1 &
+Y sweep, conservative\newline $Y: 0.3\to-0.3$\,m\newline $v_Y=1.0$\,m/s,\ $a_Y=10$\,m/s$^2$ &
+$c_y$,\ $m_h$ &
+At lower dynamics the friction term $c_y\dot{Y}$ and inertia term $m_h\ddot{Y}$
+are comparably sized, exciting both simultaneously. &
+Exp.~1, 2 &
+\textbf{Partial.} Covers the same Y-only excitation as Exp.~1+2 combined.
+Smooth profile instead of piecewise constant; Coulomb $c_{cy}$ not modelled. \\
+
+\midrule
+
+T6 &
+Y sweep, aggressive\newline $Y: 0.3\to-0.3$\,m\newline $v_Y=2.0$\,m/s,\ $a_Y=50$\,m/s$^2$ &
+$m_h$ (primary),\ $c_y$ (secondary) &
+Higher dynamics shift dominance toward $m_h\ddot{Y}$.
+T1+T6 together: $c_y v/(m_h a)$ ratio = 0.099 (T1) vs.\ 0.040 (T6),
+allowing the optimizer to disambiguate $c_y$ from $m_h$. &
+Exp.~1, 2 &
+\textbf{Partial.} T6 at hardware-maximum dynamics is the closest analog to
+Garc\'{i}a's constant-acceleration mass identification. Still a smooth profile. \\
+
+\midrule
+
+T2 &
+X symmetric at $Y=0.3$\,m\newline $X_1{=}X_2: 0\to150$\,mm\newline $v_X=1.5$\,m/s,\ $a_X=20$\,m/s$^2$ &
+$c_{g1}$,\ $c_{g2}$,\ $m_1{+}m_2{+}m_b$,\ $m_h$\ (via $M_1$ coupling) &
+Synchronized X at $Y=0.3$\,m maximises LPV coupling:
+$M_1[0,1] = -m_h Y = -3.03$\,kg$\cdot$m.
+Friction excited by $\dot{X}$; inertia by $\ddot{X}$. &
+Exp.~3, 4 &
+\textbf{Partial.} Same synchronized-X mode as Garc\'{i}a. LPV coupling at $Y=0.3$\,m
+has no Garc\'{i}a analog. Coulomb $c_{c1}$, $c_{c2}$ not modelled. \\
+
+\midrule
+
+T3 &
+X symmetric at $Y=0$\,m\newline $X_1{=}X_2: 0\to150$\,mm\newline $v_X=1.5$\,m/s,\ $a_X=20$\,m/s$^2$ &
+$c_{g1}$,\ $c_{g2}$,\ $m_1{+}m_2{+}m_b$ &
+Identical motion to T2 but $M_1$ coupling $= 0$ at $Y=0$.
+T2 vs.\ T3 contrast isolates $m_h$ from $m_1{+}m_2{+}m_b$. &
+Exp.~3, 4 &
+\textbf{Partial.} T2+T3 together achieve the same mass disambiguation as
+Exp.~3+4, but via a Y-position contrast rather than a sequential algebraic formula. \\
+
+\midrule
+
+T4 &
+X anti-symmetric at $Y=0.2$\,m\newline $X_1{=}+35$\,mm,\ $X_2{=}-35$\,mm\newline $v_X=0.5$\,m/s,\ $a_X=8$\,m/s$^2$ &
+$k_{b1}{+}k_{b2}$,\ $c_{b1}{+}c_{b2}$,\ $J_b{+}J_h$ &
+Only trajectory exciting the rotational mode ($\dot{X}_1=-\dot{X}_2$).
+Stiffness, joint damping, and rotary inertia all appear in the $\Theta$-equation.
+Low dynamics chosen to keep $\Theta \leq 0.097$\,rad within safe limits. &
+Exp.~5, 6, 7 &
+\textbf{Weakest match.} Covers all three of Garc\'{i}a's rotational experiments
+in one dynamic trajectory. Garc\'{i}a separates stiffness (static hold),
+damping (const speed) and inertia (const accel) sequentially;
+here all three are excited simultaneously in a single smooth move. \\
+
+\midrule
+
+T5 &
+X sym.\ + Y sweep simultaneously\newline $X_1{=}X_2: 0\to100$\,mm,\newline $Y: 0.2\to-0.2$\,m\newline $v_X=1.0$, $a_X=15$\,m/s$^2$ &
+$m_h$,\ $M_1(Y) = -m_h Y$ over full range &
+Y varies continuously while X accelerates, tracing the full LPV mass-coupling
+schedule. Provides gradient signal for $m_h$ across the entire operating range
+of the scheduling variable. &
+\emph{None} &
+\textbf{LPV-unique.} Garc\'{i}a's model has no scheduling variable; this trajectory
+has no equivalent in his identification procedure. \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}
