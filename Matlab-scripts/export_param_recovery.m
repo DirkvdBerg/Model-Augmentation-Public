@@ -298,6 +298,7 @@ if ~exist(out_dir, 'dir'), mkdir(out_dir); end
 
 n_hold       = round(0.5 / ts);                         % 0.5 s hold = 10000 samples
 amp_rms_grid = [1, 2, 5, 10, 20, 50, 100, 200];        % [N] RMS sweep (multisine only)
+force_limits = [2000, 2000, 1420];                     % [N] ETEL peak force limits [FX1,FX2,FY]
 
 % ======================================================================
 % 5. Run all trajectories
@@ -334,7 +335,8 @@ for i = 1:numel(trajs)
         for amp = amp_rms_grid
             f = generate_multisine(length(t), fs, sp, amp);
             sim(mdl, t(end));
-            if validate_response(q1, fs, Lb)
+            force_ok = validate_forces(q1, r, t, f, Cfb, force_limits);
+            if validate_response(q1, fs, Lb) && force_ok
                 amp_max = amp;
             else
                 fprintf('  Amplitude %.0f N RMS exceeds ETEL limits — stopping sweep.\n', amp);
@@ -364,13 +366,15 @@ for i = 1:numel(trajs)
 
     [t_sim, r_sim, u_q1, u_q, Y_trajectory, q_simscape, f_sim] = ...
         reconstruct(q1, q, r, t, f, Cfb);
+    force_report = summarize_forces(u_q1, f_sim, force_limits);
 
     report_traj(q1, Y_trajectory, amp_max);
+    report_forces(force_report);
 
     out_path = fullfile(out_dir, [sp.id, '.mat']);
     save(out_path, 't_sim', 'fs', 'r_sim', ...
                    'u_q1', 'u_q', 'f_sim', 'amp_max', ...
-                   'q1', 'q_simscape', 'Y_trajectory');
+                   'q1', 'q_simscape', 'Y_trajectory', 'force_report');
     fprintf('  Saved: %s\n\n', out_path);
 end
 
@@ -552,6 +556,59 @@ function report_traj(q1, Y_trajectory, amp_max)
     else
         fprintf('  Multisine amp_max: %.1f N RMS per channel\n', amp_max);
     end
+end
+
+% ----------------------------------------------------------------------
+
+function ok = validate_forces(q1, r, t, f, Cfb, force_limits)
+% Check feedforward and total commanded force peaks against actuator limits.
+% This catches unrealistic cases where the position response stays bounded
+% but the controller or multisine asks for unavailable force/current.
+    N_sim = size(q1, 1);
+    if N_sim ~= length(t)
+        t_sim = linspace(0, t(end), N_sim)';
+        r_sim = interp1(t, r, t_sim);
+        f_sim = interp1(t, f, t_sim);
+    else
+        t_sim = t;
+        r_sim = r;
+        f_sim = f;
+    end
+
+    u_fb = lsim(ss(Cfb), r_sim - q1, t_sim);
+    rep  = summarize_forces(u_fb, f_sim, force_limits);
+    ok   = rep.ok;
+
+    if ~ok
+        fprintf('  Force check failed: max |f|=[%.0f %.0f %.0f] N, max |u_total|=[%.0f %.0f %.0f] N, limits=[%.0f %.0f %.0f] N\n', ...
+                rep.max_feedforward, rep.max_total, rep.limits);
+    end
+end
+
+% ----------------------------------------------------------------------
+
+function rep = summarize_forces(u_feedback, f_feedforward, force_limits)
+% Summarise force peaks for exported metadata and console reporting.
+    u_total = u_feedback + f_feedforward;
+
+    rep.limits          = force_limits;
+    rep.max_feedforward = max(abs(f_feedforward), [], 1);
+    rep.max_feedback    = max(abs(u_feedback), [], 1);
+    rep.max_total       = max(abs(u_total), [], 1);
+    rep.ratio_total     = rep.max_total ./ force_limits;
+    rep.ok              = all(rep.max_feedforward <= force_limits) ...
+                       && all(rep.max_total       <= force_limits);
+end
+
+% ----------------------------------------------------------------------
+
+function report_forces(rep)
+% Print force peaks after the final simulation.
+    fprintf('  Force peaks [FX1 FX2 FY] N:\n');
+    fprintf('    feedforward: [%7.1f %7.1f %7.1f]\n', rep.max_feedforward);
+    fprintf('    feedback:    [%7.1f %7.1f %7.1f]\n', rep.max_feedback);
+    fprintf('    total:       [%7.1f %7.1f %7.1f]  limits=[%.0f %.0f %.0f]\n', ...
+            rep.max_total, rep.limits);
 end
 
 % ----------------------------------------------------------------------
