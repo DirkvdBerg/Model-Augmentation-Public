@@ -22,14 +22,14 @@ Trainable scalars (13, stored as log_params):
     mb                      [kg]        cross-arm mass
     Jb                      [kg.m^2]    rotary inertia of cross-arm
     Jh                      [kg.m^2]    rotary inertia of payload
+    d                       [m]         cross-arm to payload distance
 
     Note: dynamics only observes kb1+kb2, cb1+cb2, Jb+Jh (sums). The individual
     components are regularized toward physical priors to resolve the flat ridge
     in the loss landscape (see param_loss).
 
 Fixed buffers (not trainable):
-    Lb      [m]     cross-arm length  -- also enters P transform, cannot train
-    d       [m]     cross-arm to payload -- only appears in products with mh
+    Lb      [m]     cross-arm length  -- enters P transform, cannot train
 
 Positivity guarantee (D-035):
     Parameters stored as self.log_params = nn.Parameter(zeros), representing
@@ -90,9 +90,10 @@ _TRUE_PARAMS = {
     'mb':       22.80,
     'Jb':        1.00,
     'Jh':        0.05,
+    'd':         0.10,
 }
 
-_PARAM_NAMES = ['kb1', 'kb2', 'cg1', 'cg2', 'cy', 'cb1', 'cb2', 'mh', 'm1', 'm2', 'mb', 'Jb', 'Jh']
+_PARAM_NAMES = ['kb1', 'kb2', 'cg1', 'cg2', 'cy', 'cb1', 'cb2', 'mh', 'm1', 'm2', 'mb', 'Jb', 'Jh', 'd']
 
 # Detuned initial values — fixed ±10% per parameter, reproducible without a seed.
 # Sum pairs (kb1+kb2, cb1+cb2, Jb+Jh) share the same sign so the sum is detuned;
@@ -108,12 +109,12 @@ _DETUNING = {
     'm2':  -0.10,
     'mb':  +0.10,
     'Jb':  -0.10, 'Jh':  -0.10,   # J_sum  starts -10% from true
+    'd':   +0.10,
 }
 _DETUNED_PARAMS = {n: _TRUE_PARAMS[n] * (1 + _DETUNING[n]) for n in _PARAM_NAMES}
 
-# Fixed geometry (also enter P -- cannot be trained)
+# Fixed geometry — Lb enters P (coordinate transform) and cannot be trained.
 _Lb = torch.tensor(0.725, dtype=torch.float64)
-_d  = torch.tensor(0.1,   dtype=torch.float64)
 
 
 def _build_matrices(
@@ -256,10 +257,9 @@ class ParameterizedLFRBlock(_BASE):
         self.register_buffer('Lambda', Lambda)
 
         # ------------------------------------------------------------------
-        # Fixed geometry -- cannot be trained (D-030)
+        # Fixed geometry -- Lb only (enters P transform, cannot train)
         # ------------------------------------------------------------------
         self.register_buffer('_Lb', _Lb.clone())
-        self.register_buffer('_d',  _d.clone())
 
         # ------------------------------------------------------------------
         # Coordinate transform and sample period -- fixed buffers
@@ -283,7 +283,7 @@ class ParameterizedLFRBlock(_BASE):
     # Identifiable sums and the non-split individually identifiable params, in physics order.
     _SUM_PAIRS   = [('kb_sum', 'kb1', 'kb2'), ('cb_sum', 'cb1', 'cb2'), ('J_sum', 'Jb', 'Jh')]
     _SPLIT_NAMES = ['kb1', 'kb2', 'cb1', 'cb2', 'Jb', 'Jh']
-    _IDENT_ORDER = ['kb_sum', 'cg1', 'cg2', 'cy', 'cb_sum', 'mh', 'm1', 'm2', 'mb', 'J_sum']
+    _IDENT_ORDER = ['kb_sum', 'cg1', 'cg2', 'cy', 'cb_sum', 'mh', 'm1', 'm2', 'mb', 'J_sum', 'd']
 
     def param_table(self) -> str:
         """Two-table comparison: identifiable quantities, then split diagnostics."""
@@ -378,13 +378,13 @@ class ParameterizedLFRBlock(_BASE):
         # Cannot cache as module-level constants — physical params are nn.Parameter objects,
         # so G and poly constants must be recomputed here to preserve gradient flow.
         params = self._recover_params()
-        kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = params
+        kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d = params
         _, M1, M2, K, C = _build_matrices(
             torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh]),
-            self._Lb, self._d,
+            self._Lb, d,
         )
         alpha, beta, gamma, N0, N1, N2 = build_poly_constants(
-            m1, m2, mb, mh, Jb, Jh, self._Lb, self._d
+            m1, m2, mb, mh, Jb, Jh, self._Lb, d
         )
         d0 = mh * (alpha * gamma - beta ** 2)
         G = build_G_matrix(N0, d0, M1, M2, K, C)
@@ -421,9 +421,9 @@ if __name__ == '__main__':
     print("=" * 60)
 
     p = torch.tensor([_TRUE_PARAMS[n] for n in _PARAM_NAMES], dtype=dtype)
-    kb1, kb2, cg1_, cg2_, cy_, cb1, cb2, mh_, m1_, m2_, mb_, Jb_, Jh_ = p
+    kb1, kb2, cg1_, cg2_, cy_, cb1, cb2, mh_, m1_, m2_, mb_, Jb_, Jh_, d_ = p
     true_params_10 = torch.stack([kb1+kb2, cg1_, cg2_, cy_, cb1+cb2, mh_, m1_, m2_, mb_, Jb_+Jh_])
-    M0_t, M1_t, M2_t, K_t, C_t = _build_matrices(true_params_10, _Lb, _d)
+    M0_t, M1_t, M2_t, K_t, C_t = _build_matrices(true_params_10, _Lb, d_)
 
     tol = 1e-10
     results_1 = {}
@@ -508,11 +508,11 @@ if __name__ == '__main__':
 
     # Build detuned matrices directly for reference
     dp = torch.tensor([_DETUNED_PARAMS[n] for n in _PARAM_NAMES], dtype=dtype)
-    kb1d, kb2d, cg1d, cg2d, cyd, cb1d, cb2d, mhd, m1d, m2d, mbd, Jbd, Jhd = dp
+    kb1d, kb2d, cg1d, cg2d, cyd, cb1d, cb2d, mhd, m1d, m2d, mbd, Jbd, Jhd, dd = dp
     detuned_p_10 = torch.stack([kb1d+kb2d, cg1d, cg2d, cyd, cb1d+cb2d, mhd, m1d, m2d, mbd, Jbd+Jhd])
-    _, M1_d, M2_d, K_d, C_d = _build_matrices(detuned_p_10, _Lb, _d)
+    _, M1_d, M2_d, K_d, C_d = _build_matrices(detuned_p_10, _Lb, dd)
     alpha_d, beta_d, gamma_d, N0_d, N1_d, N2_d = build_poly_constants(
-        m1d, m2d, mbd, mhd, Jbd, Jhd, _Lb, _d
+        m1d, m2d, mbd, mhd, Jbd, Jhd, _Lb, dd
     )
     d0_d = mhd * (alpha_d * gamma_d - beta_d ** 2)
     G_d = build_G_matrix(N0_d, d0_d, M1_d, M2_d, K_d, C_d)

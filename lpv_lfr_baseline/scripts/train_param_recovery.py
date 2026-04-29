@@ -100,11 +100,11 @@ def _build_sim_params(block):
     w.r.t. block.log_params so gradients flow back to the parameters.
     """
     params = block._recover_params()
-    kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = params
+    kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d = params
     params_10 = torch.stack([kb1 + kb2, cg1, cg2, cy, cb1 + cb2, mh, m1, m2, mb, Jb + Jh])
-    _, M1, M2, K, C = _build_matrices(params_10, block._Lb, block._d)
+    _, M1, M2, K, C = _build_matrices(params_10, block._Lb, d)
     alpha, beta, gamma, N0, N1, N2 = build_poly_constants(
-        m1, m2, mb, mh, Jb, Jh, block._Lb, block._d
+        m1, m2, mb, mh, Jb, Jh, block._Lb, d
     )
     d0 = mh * (alpha * gamma - beta ** 2)
     G  = build_G_matrix(N0, d0, M1, M2, K, C)
