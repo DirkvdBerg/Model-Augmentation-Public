@@ -33,6 +33,8 @@ G, alpha, beta, gamma, N0, N1, N2 — all depend on trainable parameters and mus
 be rebuilt each forward pass from current log_params.
 """
 
+import hashlib
+import inspect
 import os
 from pathlib import Path
 
@@ -42,21 +44,27 @@ from scipy.io import loadmat
 from lpv_lfr_baseline.core.physics import P as _P, ts as _ts
 from lpv_lfr_baseline.scripts.data_utils import compute_rmse_baseline_metrics
 
-CACHE_VERSION = 1 # Need to manually increase, but keeps a fingerprint of all relevant inputs
-
 
 # ----------------------------------------------------------------------
 # Cache helpers
 # ----------------------------------------------------------------------
 
-def _fingerprint(traj_specs, dtype, norm_mode):
-    """Stable cache key — invalidated by any change to traj set, dtype, or norm_mode."""
-    return (
-        CACHE_VERSION,
-        tuple((s['id'], s['file']) for s in traj_specs),
-        str(dtype),
-        norm_mode,
-    )
+def _mtime(path):
+    try:
+        return os.path.getmtime(path)
+    except OSError:
+        return None
+
+
+def _fingerprint(traj_specs, traj_dir, dtype, norm_mode):
+    """Cache key — invalidated by data changes (mtimes), logic changes (compute_hash), or config."""
+    return {
+        'traj_specs':   tuple((s['id'], s['file']) for s in traj_specs),
+        'mtimes':       tuple((s['file'], _mtime(os.path.join(traj_dir, s['file']))) for s in traj_specs),
+        'dtype':        str(dtype),
+        'norm_mode':    norm_mode,
+        'compute_hash': _COMPUTE_HASH,
+    }
 
 
 # ----------------------------------------------------------------------
@@ -216,7 +224,7 @@ def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode):
     print(f'  precompute: chosen segment_len = {segment_len}')
 
     metadata = {
-        'version':     CACHE_VERSION,
+        'traj_dir':    traj_dir,
         'dtype':       str(dtype),
         'norm_mode':   norm_mode,
         'traj_ids':    [t['id'] for t in trajs],
@@ -233,6 +241,9 @@ def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode):
         'segment_len':              segment_len,
         'metadata':                 metadata,
     }
+
+
+_COMPUTE_HASH = hashlib.md5(inspect.getsource(_compute).encode()).hexdigest()[:8]
 
 
 # ----------------------------------------------------------------------
@@ -258,24 +269,34 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
     -------
     dict with keys:
         trajs, sigma, rmse_entries, rmse_baseline_normalized,
-        segment_len, metadata, version, fingerprint
+        segment_len, metadata, fingerprint
     """
     os.makedirs(save_dir, exist_ok=True)
     cache_path = Path(save_dir) / 'precomputed.pt'
-    fp = _fingerprint(traj_specs, dtype, norm_mode)
+    fp = _fingerprint(traj_specs, traj_dir, dtype, norm_mode)
 
     if not force and cache_path.exists():
-        cached = torch.load(cache_path, weights_only=False)
-        if cached.get('fingerprint') == fp:
+        cached    = torch.load(cache_path, weights_only=False)
+        cached_fp = cached.get('fingerprint', {})
+        if cached_fp == fp:
             print(f'  precompute: loaded from cache ({cache_path})')
             meta = cached.get('metadata', {})
-            print(f'    dtype={meta.get("dtype")}  norm_mode={meta.get("norm_mode")!r}  '
+            print(f'    traj_dir={meta.get("traj_dir")}  norm_mode={meta.get("norm_mode")!r}  '
                   f'trajs={meta.get("traj_ids")}  segment_len={meta.get("segment_len")}')
             return cached
-        print('  precompute: cache fingerprint mismatch — recomputing')
+        print('  precompute: cache stale — recomputing. Changed:')
+        for key, val in fp.items():
+            old = cached_fp.get(key)
+            if old != val:
+                if key == 'mtimes':
+                    old_d = dict(old or [])
+                    for fname, t in val:
+                        if old_d.get(fname) != t:
+                            print(f'    mtime changed: {fname}')
+                else:
+                    print(f'    {key}: {old!r} → {val!r}')
 
     data = _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode)
-    data['version']     = CACHE_VERSION
     data['fingerprint'] = fp
     torch.save(data, cache_path)
     print(f'  precompute: saved to {cache_path}')
@@ -385,17 +406,19 @@ if __name__ == '__main__':
     # Check 4 — _fingerprint: dtype change invalidates cache
     # ------------------------------------------------------------------
     print('\nCheck 4: _fingerprint cache invalidation')
-    specs = [{'id': 'T1', 'file': 'f1.mat'}]
-    fp32      = _fingerprint(specs, torch.float32, 'per_traj')
-    fp64      = _fingerprint(specs, torch.float64, 'per_traj')
-    fp_global = _fingerprint(specs, torch.float64, 'global')
+    specs     = [{'id': 'T1', 'file': 'f1.mat'}]
+    fake_dir  = os.getcwd()
+    fp32      = _fingerprint(specs, fake_dir, torch.float32, 'per_traj')
+    fp64      = _fingerprint(specs, fake_dir, torch.float64, 'per_traj')
+    fp_global = _fingerprint(specs, fake_dir, torch.float64, 'global')
     specs2    = [{'id': 'T2', 'file': 'f2.mat'}]
-    fp_other  = _fingerprint(specs2, torch.float64, 'per_traj')
+    fp_other  = _fingerprint(specs2, fake_dir, torch.float64, 'per_traj')
     results.append(check('float32 != float64 fingerprint', fp32 != fp64))
     results.append(check('norm_mode change invalidates cache', fp64 != fp_global))
     results.append(check('different traj_specs invalidates cache', fp64 != fp_other))
     results.append(check('same inputs produce same fingerprint',
-                         _fingerprint(specs, torch.float64, 'per_traj') == fp64))
+                         _fingerprint(specs, fake_dir, torch.float64, 'per_traj') == fp64))
+    results.append(check('compute_hash present in fingerprint', 'compute_hash' in fp64))
 
     # ------------------------------------------------------------------
     # Summary

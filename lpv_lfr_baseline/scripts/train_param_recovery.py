@@ -52,23 +52,39 @@ from lpv_lfr_baseline.scripts.segment_diag import (
 # ── Dtype (single toggle — flows into precompute and all .to() calls) ────────
 DTYPE = torch.float64
 
-# ── Paths ────────────────────────────────────────────────────────────────────
-TRAJ_DIR = os.path.join(
-    os.path.dirname(__file__), '..', '..', 'Matlab-output', 'parameter-recovery'
-)
-SAVE_DIR = os.path.join(
-    os.path.dirname(__file__), '..', '..', 'simulations', 'param_recovery'
-)
+# ── Dataset toggle ────────────────────────────────────────────────────────────
+USE_MULTISINE = False   # mirrors MATLAB export_param_recovery.m flag
 
-# ── Trajectory specs (canonical library order) ────────────────────────────────
-TRAJ_SPECS = (
+_BASE = os.path.join(os.path.dirname(__file__), '..', '..')
+_TRAJ_BASE = (
     {'id': 'T1', 'file': 'T1_Y_sweep_conservative.mat'},
-    {'id': 'T6', 'file': 'T6_Y_sweep_aggressive.mat'},
     {'id': 'T2', 'file': 'T2_X_sym_Y030.mat'},
     {'id': 'T3', 'file': 'T3_X_sym_Y000.mat'},
     {'id': 'T4', 'file': 'T4_X_antisym_Y020.mat'},
     {'id': 'T5', 'file': 'T5_X_sym_Y_sweep.mat'},
+    {'id': 'T6', 'file': 'T6_Y_sweep_aggressive.mat'},
 )
+_DATASETS = {
+    False: dict(
+        traj_dir   = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery'),
+        save_dir   = os.path.join(_BASE, 'simulations', 'param_recovery'),
+        traj_specs = _TRAJ_BASE,
+    ),
+    True: dict(
+        traj_dir   = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery-multisine'),
+        save_dir   = os.path.join(_BASE, 'simulations', 'param_recovery_multisine'),
+        traj_specs = _TRAJ_BASE + (
+            {'id': 'T7', 'file': 'T7_X_antisym_Y_sweep.mat'},
+            {'id': 'T8', 'file': 'T8_X_sym_anti_Y_sweep.mat'},
+        ),
+    ),
+}
+
+_ds        = _DATASETS[USE_MULTISINE]
+TRAJ_DIR   = _ds['traj_dir']
+SAVE_DIR   = _ds['save_dir']
+TRAJ_SPECS = _ds['traj_specs']
+
 # ── Normalisation ────────────────────────────────────────────────────────────
 NORM_MODE = 'per_traj'   # 'per_traj' | 'global'  (see precompute.py)
 
@@ -528,7 +544,8 @@ def train(
         sum(e['rmse_ch'].pow(2) for e in eval_entries) / len(eval_entries)
     ).sqrt()   # (3,) simple mean per-channel RMSE across all trajectories
 
-    save_path = os.path.join(save_dir, f'lfr_param_recovery_{traj_tag}_e{epochs}.pt')
+    ms_tag    = 'ms_' if USE_MULTISINE else ''
+    save_path = os.path.join(save_dir, f'lfr_param_recovery_{ms_tag}{traj_tag}_e{epochs}.pt')
     torch.save(
         {
             # Parameters — individual
