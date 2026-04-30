@@ -72,11 +72,20 @@ def _fingerprint(traj_specs, traj_dir, dtype, norm_mode):
 # ----------------------------------------------------------------------
 
 def _load_trajectory(mat_path, dtype):
-    """Load one .mat trajectory. Returns (u, q1, fs)."""
+    """Load one .mat trajectory. Returns (u, q1, fs).
+
+    u is the total stage-coordinate force applied to the plant: u_q1 + f_sim.
+    For non-multisine trajectories f_sim is all zeros, so this reduces to u_q1.
+    For multisine trajectories f_sim is the feedforward force; omitting it would
+    feed only the feedback force (~800 N RMS) to the model while q1 was produced
+    by the net force (~40-60 N RMS), causing a large systematic input mismatch.
+    """
     mat = loadmat(mat_path)
-    u   = torch.tensor(mat['u_q1'], dtype=dtype).unsqueeze(0)   # (1, T, 3)
-    q1  = torch.tensor(mat['q1'],   dtype=dtype)                # (T, 3)
-    fs  = float(mat['fs'].squeeze()) if 'fs' in mat else None
+    u_q1  = mat['u_q1']                                           # (T, 3) stage coords
+    f_sim = mat['f_sim']                                           # (T, 3) zero if no multisine
+    u     = torch.tensor(u_q1 + f_sim, dtype=dtype).unsqueeze(0)  # (1, T, 3) total plant force
+    q1    = torch.tensor(mat['q1'],     dtype=dtype)               # (T, 3)
+    fs    = float(mat['fs'].squeeze()) if 'fs' in mat else None
     return u, q1, fs
 
 
