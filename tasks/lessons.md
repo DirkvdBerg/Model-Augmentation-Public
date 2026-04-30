@@ -40,10 +40,10 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
-### Rule: Describe proposed changes to documentation before writing them
-**Trigger**: When about to write or substantially update `docs/decisions.md`, `tasks/handoff.md`, or any other shared documentation
-**Rule**: Before executing the write, summarize the proposed changes and wait for user confirmation. Do not write directly without that checkpoint.
-**Why**: User stopped a decisions.md edit because I wrote it without discussing the content first. Documentation changes are hard to review after the fact if the framing is wrong.
+### Rule: Only modify files the user explicitly asked to modify
+**Trigger**: When noticing that a related file is stale, incorrect, or inconsistent with new work
+**Rule**: Do not modify any file that was not explicitly requested. Flag the inconsistency to the user in text and ask if they want it updated. This applies to all files: docs, notes, scripts, tests, everything.
+**Why**: Updated sysid-experiment-design-notes.md because it was stale relative to the new inject_ref script — but user did not ask for this. Extended from earlier rule about docs: the problem is any unsolicited file edit, not just documentation.
 
 ---
 

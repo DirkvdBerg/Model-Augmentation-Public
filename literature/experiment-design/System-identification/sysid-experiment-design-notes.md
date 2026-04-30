@@ -1,6 +1,6 @@
 # System Identification — Experiment Design Notes
 _Synthesized from Lectures 0–13 (5SMB0). Applied to dual-gantry LPV parameter recovery._
-_Generated: 2026-04-17; corrected against `Matlab-scripts/export_param_recovery.m` on 2026-04-29._
+_Generated: 2026-04-17; corrected against `Matlab-scripts/export_param_recovery.m` on 2026-04-29; updated for reference-injection approach (`export_param_recovery_inject_ref.m`) on 2026-04-30._
 
 ---
 
@@ -8,7 +8,7 @@ _Generated: 2026-04-17; corrected against `Matlab-scripts/export_param_recovery.
 
 This file is a **working synthesis**, not a slide-by-slide transcript. It keeps the parts of the 5SMB0 lectures that matter for designing identification experiments for the dual-gantry LPV parameter-recovery problem.
 
-Important scope note: the current MATLAB workflow is **not** a classical standalone closed-loop FRF experiment. It is a closed-loop trajectory-following simulation with an additional force-level multisine perturbation. Therefore, some lecture rules transfer directly (periodicity, leakage, PE sanity checks, odd lines, crest factor), while other entries below are engineering choices for safe parameter-recovery data generation rather than direct slide rules.
+Important scope note: the current MATLAB workflow is **not** a classical standalone closed-loop FRF experiment. It is a closed-loop trajectory-following simulation with an additional **reference-position** multisine perturbation (`r_ms`, in metres). The multisine is added to the reference `r` before it reaches the controller, not injected as a force after the controller. Therefore, some lecture rules transfer directly (periodicity, leakage, PE sanity checks, odd lines, crest factor), while other entries below are engineering choices for safe parameter-recovery data generation rather than direct slide rules.
 
 Use it in two ways:
 
@@ -73,14 +73,18 @@ redesign input spectrum/trajectory -> repeat
 - **Identification goal:** recover 13 physical parameters from simulated closed-loop data
 - **Control loop:** feedback controller `Cfb` (designed at `Y_op = Y_initial` per trajectory)
 - **Reference:** smooth third-order position trajectories, not lecture-style white-noise/PRBS/reference-only experiments
-- **Excitation:** optional multisine injected at feedforward slot `f` after `Cfb`, directly at actuator force level
+- **Excitation:** optional multisine added to the reference `r` (position level, metres). `r_total = r_traj + r_ms` is sent to the controller. Force input `f = 0` always.
 - **Data:** 8 trajectories at different Y operating points; each can be exported with or without multisine
 
 ```
-r ──► [Cfb] ──► (+) ──► [Plant G(Y)] ──► y = [X1, X2, Y]
-              ▲   ▲
-              │   └── f_multisine   ← identification excitation goes here
-              └─────────────────────── feedback
+r_ms ──►(+)──► r_total ──► [Cfb] ──► [Plant G(Y)] ──► y = [X1, X2, Y]
+                              ▲                               │
+                              └───────────────────────────────┘
+                                        feedback
+
+Sensitivity:            S(s) = 1/(1+GC)   — plant-input disturbances attenuated
+Complementary sens.:    T(s) = GC/(1+GC)  — reference signals transmitted (T≈1 below bandwidth)
+→ r_ms reaches the plant via T≈1, not attenuated by S≪1.
 ```
 
 ---
@@ -191,17 +195,28 @@ If even-order nonlinearities are suspected (e.g., u² terms from Coriolis or qua
 
 For our gantry: Coriolis terms (Ẏ·Ẋ) are second-order → use odd-harmonics multisine to detect their contribution.
 
-### Amplitude selection (supervisor's approach)
+### Amplitude selection (supervisor's approach — reference injection)
 
-1. In simulation, vary multisine RMS amplitude freely (no hardware risk)
-2. Simulate and check actual `q1` response
-3. Filter: keep amplitudes where `q1` derivatives stay within ETEL limits:
-   - Position: ±375 mm (X1, X2), ±400 mm (Y), ≤100 mm differential
-   - Velocity: ≤ 2 m/s
-   - Acceleration: ≤ 50 m/s²
-4. Use maximum passing amplitude → maximum excitation within hardware constraints
+For reference injection the binding constraint is **kinematics of `r_total`**, not TELICA actuator force. The amplitude translation is:
 
-**Rule of thumb from lectures:** keep multisine amplitude ≤ 20–30% of maximum actuator force to stay in linear regime.
+```
+F_equiv = M_eff * (2π·f)² * A   [N RMS]
+```
+
+where `A` is the RMS position amplitude of `r_ms` [m] and `M_eff` is the effective inertia for the mode (Y: `mh`; common X: total mass; diff: rotational inertia referred to actuator). `F_equiv` is the force the controller must produce to track `r_ms`, and it all reaches the plant because `T ≈ 1` below bandwidth.
+
+Accel-limited maximum amplitudes (binding at the highest excited frequency):
+- X common: `A_max ≈ 0.076 mm` at 100 Hz
+- X diff:   `A_max ≈ 1.9 mm`  at 20 Hz
+- Y:        `A_max ≈ 3.2 mm`  at 20 Hz
+
+Sweep procedure in `export_param_recovery_inject_ref.m`:
+1. Pre-check `r_total = r_traj + r_ms` kinematics before simulation (`check_ref_total`)
+2. Simulate and check actual `q1` response (`validate_response`)
+3. Check total controller force `u_q1 = Cfb*(r_total - q1)` against TELICA limits (`validate_forces`)
+4. Accept maximum passing amplitude
+
+**Rule of thumb from lectures:** keep multisine amplitude small enough that the controller remains linear. For reference injection a ratio `rms(r_ms)/rms(r_traj) < 0.3` confirms the multisine is a perturbation, not a dominant signal (`report_ref_ms` prints this).
 
 ---
 
@@ -213,16 +228,28 @@ In closed-loop, the plant input `u` and disturbance `v` are **correlated** becau
 
 ### External excitation in our setup
 
-The multisine in `export_param_recovery.m` is an **external force perturbation**, independent of the feedback signal. This is good experiment design: it prevents the identification excitation from being generated by the measured output.
+The multisine `r_ms` in `export_param_recovery_inject_ref.m` is an **external reference perturbation**, independent of the feedback signal. This is correct experiment design: `r_ms` is pre-generated before simulation and not computed from `q1` or the tracking error.
 
-However, the script does not currently implement the lecture's full closed-loop FRF/reference projection workflow. It exports simulated total forces and positions for parameter recovery. If we later estimate hardware FRFs in closed loop, the external multisine can be used as the independent reference signal:
+The sensitivity and complementary sensitivity functions govern what the plant sees:
+
+```
+S(s) = 1/(1+G·C)        — sensitivity (plant-input disturbance → plant output)
+T(s) = G·C/(1+G·C)      — complementary sensitivity (reference → plant output)
+```
+
+Below the controller bandwidth (100 Hz): `T(jω) ≈ 1` and `S(jω) ≈ 0`.
+
+- **Reference injection** (`r_ms` added before Cfb): plant motion follows `r_ms` via `T ≈ 1`. Excitation is not attenuated.
+- **Force injection** (`f` added after Cfb, at the plant input): plant sees `f` multiplied by `S ≪ 1` at low frequencies. At 1–20 Hz with 100 Hz bandwidth, `|S| ≈ 0.01–0.05`, so 95–99% of injected force is cancelled by the controller. Reference injection is therefore strongly preferred for below-bandwidth identification.
+
+The external reference `r_ms` can also serve as an instrument for closed-loop FRF estimation:
 
 ```
 Ĝ(ω_n) = S_YR(n) / S_UR(n)
-         = Σ_p Y^[p](n) · R̄_ff^[p](n)  /  Σ_p U^[p](n) · R̄_ff^[p](n)
+         = Σ_p Y^[p](n) · R̄_ms^[p](n)  /  Σ_p U^[p](n) · R̄_ms^[p](n)
 ```
 
-This projection can reduce closed-loop bias in an FRF setting, provided the reference is independent of the disturbance and the measured plant input is used correctly. It should not be claimed as an automatic guarantee for the current BPTT parameter-recovery pipeline.
+This projection is valid in a future hardware FRF setting; it is separate from the current BPTT training pipeline.
 
 ### Residuals test interpretation in closed-loop (Lecture 7)
 
@@ -236,15 +263,19 @@ This projection can reduce closed-loop bias in an FRF setting, provided the refe
 
 ### Loss of excitation (Lectures 10–11)
 
-If the excitation is injected through the position reference, the controller can attenuate it before it reaches the plant. In the current script the multisine is injected after `Cfb` as force feedforward, so it is not filtered by the position controller in the same way.
+Loss of excitation is the central failure mode for closed-loop identification: the controller compensates for the injected signal before it creates useful plant motion.
 
-The relevant check is therefore not "does the reference contain enough excitation?", but:
+**Force injection (old approach — rejected):** injecting `f` after `Cfb` at the plant input. The sensitivity function `S = 1/(1+GC)` multiplies the injected force. Below the controller bandwidth `|S| ≪ 1`, so the controller cancels most of the injected force. Example: 800 N injected → ~40 N net at 10 Hz with a 100 Hz bandwidth controller. This approach fails for below-bandwidth identification.
+
+**Reference injection (current approach):** injecting `r_ms` before `Cfb`. The complementary sensitivity `T = GC/(1+GC) ≈ 1` below bandwidth transmits the reference perturbation to plant motion. Loss of excitation does not occur below the bandwidth.
+
+The relevant check is therefore:
 
 ```text
-u_total = u_feedback + f_multisine
+u_q1 = Cfb * (r_total - q1)   [total plant force, f=0]
 ```
 
-`validate_forces` and `summarize_forces` check this total actuator command against ETEL peak and RMS limits. For hardware, actual motor-current-derived force would be better than commanded force if amplifier dynamics or saturation matter.
+`validate_forces` checks `u_q1` against ETEL peak and RMS limits. For hardware, motor-current-derived force would be better than commanded force if amplifier dynamics matter.
 
 ### Lecture-verifiable closed-loop multisine design
 
@@ -258,16 +289,16 @@ To make the multisine part of the trajectory defensible from the closed-loop sys
 The lecture-clean version should satisfy this checklist:
 
 1. **External excitation independent of feedback/noise**  
-   Inject the multisine as a known signal `f_multisine` that is not computed from `q1`, `q`, or tracking error. In `export_param_recovery.m`, this is already true because `f` is generated before simulation and added at the force feedforward input after `Cfb`.
+   Inject the multisine as a known signal that is not computed from `q1`, `q`, or tracking error. In `export_param_recovery_inject_ref.m`, `r_ms` is generated before simulation from a deterministic Schroeder multisine and added to the reference trajectory. `f = 0` always.
 
 2. **Measure/log the plant input actually used for identification**  
-   The plant input is not only `f_multisine`; it is:
+   For reference injection `f = 0`, so the total plant input is simply the controller output:
 
    ```text
-   u_total = u_feedback + f_multisine
+   u_q1 = Cfb * (r_total - q1)
    ```
 
-   For current exports, `u_feedback` is `u_q1` and `f_multisine` is `f_sim`, so `u_total` can be reconstructed. For hardware, log motor-current-derived force if possible.
+   This is what `reconstruct()` computes and what is saved. For hardware, log motor-current-derived force if possible.
 
 3. **Use the external signal as the reference/instrument for closed-loop FRF checks**  
    If estimating an FRF from closed-loop data, use the external multisine as the independent reference:
@@ -313,9 +344,9 @@ was here!!
 | Per-channel RMS normalisation | channel loop after mode summation | Lecture 9, slides 22-24 | Compare amplitudes using RMS and control the input power delivered per actuator channel. |
 | PE line-count guard `F >= 7` | `if F < 7` | Lecture 6, slides 17-21; Lecture 6, slide 19; Lecture 9, slide 22 | A multisine with `F` lines has PE order `2F`; `F >= 7` gives `2F >= 14 > 13` as a minimum richness check. |
 | Treat PE as a sanity check, not proof | notes + future FIM/Jacobian check | Lecture 6, slides 12-21; Lecture 7, slides 14-19 | Informativity depends on the model set and experiment; covariance/sensitivity checks are needed for parameter directions. |
-| Inject excitation externally in closed loop | `f` feedforward input after `Cfb` | Lecture 11 closed-loop identification material, exact slide TBD | In closed loop, excitation used for identification should be independent of feedback/noise. |
-| Log/check total plant input | `u_q1`, `f_sim`, `force_report` | Lecture 11 closed-loop identification material, exact slide TBD | Closed-loop identification should reason about the plant input actually applied, not only the generated reference/excitation. |
-| Use external signal as reference/instrument for FRF checks | proposed diagnostic: `S_yf / S_uf` | Lecture 11 closed-loop identification material, exact slide TBD | An independent external signal can be used to form closed-loop FRF/reference estimates. |
+| Inject excitation externally via reference `r_ms` | `r_total = r_traj + r_ms` before `Cfb`; `f=0` | Lecture 11 closed-loop identification material, exact slide TBD | In closed loop, excitation used for identification should be independent of feedback/noise. Reference injection uses `T≈1`; force injection would be attenuated by `S≪1`. |
+| Log/check total plant input | `u_q1 = Cfb*(r_total - q1)`, `force_report` | Lecture 11 closed-loop identification material, exact slide TBD | For reference injection `f=0`, so `u_q1` is the complete plant input. No `f_sim` saved. |
+| Use external signal as reference/instrument for FRF checks | proposed diagnostic: `S_yr_ms / S_ur_ms` | Lecture 11 closed-loop identification material, exact slide TBD | An independent external signal `r_ms` can be used to form closed-loop FRF estimates. |
 | Validate actual response, not reference only | `validate_response(q1, ...)` | Lecture 9, slides 22-24; Lecture 11 closed-loop material, exact slide TBD | The controller and plant shape the actual motion; safety and excitation checks must use measured/simulated output. |
 | Sweep amplitude and choose max passing level | `amp_rms_grid` loop | Lecture 9, slides 22-24; Lecture 8, slides 50-56 | Increase input power to improve information/SNR, while staying within response and actuator constraints. |
 | Check actuator peak/RMS force limits | `validate_forces`, `summarize_forces` | Lecture 9, slides 22-24 | Input amplitude must remain below saturation/actuator limits to avoid invalid nonlinear/saturated data. |
@@ -442,22 +473,26 @@ Verify at the output `[X1, X2, Y]` for each trajectory and each multisine amplit
 
 ## 8. What This Means Concretely for Our Scripts
 
-### Current implementation in `export_param_recovery.m`
+### Current implementation in `export_param_recovery_inject_ref.m`
 
 | Component | Status | Interpretation |
 |---|---|---|
-| `generate_multisine` | Implemented | Builds force-level perturbations in physical modes (`common`, `diff`, `y`) |
+| `generate_ref_multisine` | Implemented | Builds **position-level** perturbations [m] in physical modes (`common`, `diff`, `y`); same Schroeder/odd-harmonic structure |
+| Reference injection `r_total = r_traj + r_ms` | Implemented | Multisine enters before Cfb; transmitted via T≈1 below bandwidth; no S attenuation |
+| `f = 0` always | Implemented | Force feedforward slot unused; u_q1 is the complete plant input |
 | Odd-only harmonic lines | Implemented | Lecture-consistent nonlinear distortion diagnostic idea |
 | Schroeder phases | Implemented | Lecture-consistent low crest-factor phase choice |
 | 1 s period / `df = 1 Hz` | Implemented | Engineering choice that gives simple harmonic lines on DFT bins |
 | `pad_to_multisine_periods` | Implemented | Pads final hold so the multisine record contains integer periods |
 | `F < 7` guard | Implemented | Minimum PE sanity check, not an identifiability proof |
-| Per-channel RMS normalisation | Implemented | Practical force scaling after mode summation |
-| Amplitude sweep | Implemented | Safety/search heuristic: choose largest passing RMS amplitude |
+| Per-channel RMS normalisation | Implemented | Practical position scaling after mode summation |
+| Amplitude sweep | Implemented | Binding constraint is kinematics of `r_total`, not TELICA force limits |
+| `check_ref_total` (pre-check) | Implemented | Checks position/velocity/acceleration of r_total before simulation; stops sweep early |
 | `validate_response(q1, ...)` | Implemented | Checks actual simulated response, not the reference trajectory |
-| `validate_forces` / `summarize_forces` | Implemented | Checks total commanded force against ETEL peak/RMS limits |
+| `validate_forces` / `summarize_forces` | Implemented | Checks total controller force u_q1 against ETEL peak/RMS limits |
+| `report_ref_ms` | Implemented | Prints position RMS, ratio ms/traj, acceleration, and estimated tracking force per mode |
 | Strict orthogonal MIMO FRF experiment | Not implemented | Not required for current BPTT parameter-recovery data; still useful for future FRF hardware tests |
-| Closed-loop reference projection FRF estimator | Not implemented | Relevant if estimating FRFs from hardware data, not part of current export script |
+| Closed-loop reference projection FRF estimator | Not implemented | Relevant if estimating FRFs from hardware data (`S_yr_ms / S_ur_ms`); not part of current export |
 
 ### Validation checks still useful downstream
 

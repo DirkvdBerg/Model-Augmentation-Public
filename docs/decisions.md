@@ -1130,6 +1130,70 @@ meaningful); exit code 0; loss value is O(1) per segment.
 
 ---
 
+### [D-046] Multi-mode crest factor not fixed for simulation; fix specified for hardware
+**Date**: 2026-04-30
+**File**: `Matlab-scripts/export_param_recovery_inject_ref.m`, function `generate_ref_multisine`
+
+**What**: The multisine generator designs each spatial mode (common, diff, y) as an
+independent Schroeder-phase odd-harmonic signal. When two modes are combined on the same
+actuator channel, the combined signal is no longer guaranteed to be Schroeder-optimal.
+The only affected trajectory is T8 (`ms_modes = {'common', 'diff', 'y'}`), where:
+
+```
+X1_ms = common_sig + diff_sig   (two modes, overlapping frequency bands at 1-20 Hz)
+X2_ms = common_sig - diff_sig
+Y_ms  = y_sig                   (single mode, no issue)
+```
+
+T1-T7 each assign at most one mode per actuator channel, so T8 is the only case.
+
+**Why the gap exists**: Schroeder phases minimize crest factor for a single multisine
+signal. When two Schroeder signals with different seeds are summed, the combined CF
+is not guaranteed to be ~1.58. The seed-based phase offset in the script provides partial
+decorrelation between modes:
+
+```matlab
+phi = phi + 2*pi*freqs*(seed - 1)/(7*f_high);
+```
+
+This is a linear phase ramp (time shift) that decorrelates modes but does not produce
+a Schroeder-optimal combined signal.
+
+**Why we are not fixing it for simulation**: The kinematic pre-check (`check_ref_total`)
+evaluates the actual position, velocity, and acceleration of `r_total = r_traj + r_ms`
+before each simulation. Any elevated peak caused by non-optimal CF is caught there and
+stops the amplitude sweep. For noise-free simulation data, crest factor is a hardware-safety
+metric, not a parameter identifiability metric. The sweep already enforces the binding
+constraint (kinematics), so the CF gap has no practical consequence in the current pipeline.
+
+**Ruled out for simulation**: Interleaved frequency grids and per-channel numerical
+phase optimization. Both add complexity with no measurable benefit when `check_ref_total`
+already catches kinematic violations.
+
+**Fix for hardware experiments**: Use interleaved odd harmonics to eliminate frequency
+overlap between modes on the same channel. For T8 with two X-modes:
+
+```
+common mode: odd harmonics 1, 5,  9, 13, 17 Hz  (every other odd)
+diff   mode: odd harmonics 3, 7, 11, 15, 19 Hz  (interleaved)
+```
+
+Combined on X1: harmonics at 1, 3, 5, 7, 9, 11, 13, 15, 17, 19 Hz with no overlap.
+Each mode's Schroeder phases apply to non-overlapping lines, so the combined CF is
+still bounded by the per-mode Schroeder construction.
+
+Cost: each mode gets half the lines in the shared band (1-20 Hz). For diff mode this
+gives 5 lines instead of 10 in 1-20 Hz, which remains above the F >= 7 guard only
+if the full common mode band (1-100 Hz) is counted. If the F >= 7 guard is applied
+per-mode, the diff band would need to be widened or the grid adapted. Verify the
+guard on the actual interleaved line count before implementing.
+
+**Constrains**: For all hardware experiments on T8 involving simultaneous common and diff
+modes, switch to interleaved odd harmonics in `generate_ref_multisine`. For simulation,
+no change required.
+
+---
+
 ### [D-045] param_loss disabled (PARAM_LOSS_WEIGHT = 0.0) for parameter recovery training
 **Date**: 2026-04-22
 **What**: `PARAM_LOSS_WEIGHT = 0.0` in `train_param_recovery.py` — `param_loss()` is not
