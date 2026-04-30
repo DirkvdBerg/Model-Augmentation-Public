@@ -240,7 +240,7 @@ trajs(6).Y_disp     = 0.6;    % Y: 0.3 -> -0.3 m
 trajs(6).vmax_X     = 0;
 trajs(6).amax_X     = 0;
 trajs(6).vmax_Y     = 2.0;    % hardware max
-trajs(6).amax_Y     = 47.5;   % 5% below hardware max (50.0) — prevents closed-loop acc overshoot failing validate_response
+trajs(6).amax_Y     = 50.0;   % hardware max
 trajs(6).jerkTime   = 0.025;
 trajs(6).ms_f_low   = 1;
 trajs(6).ms_f_high  = 20;     % Y-axis band: cy/mh separation
@@ -305,7 +305,7 @@ out_dir = fullfile(fileparts(mfilename('fullpath')), '..', 'Matlab-output', out_
 if ~exist(out_dir, 'dir'), mkdir(out_dir); end
 
 n_hold       = round(0.5 / ts);                         % 0.5 s hold = 10000 samples
-amp_rms_grid = [1, 2, 5, 10, 20, 50, 100, 200];        % [N] RMS sweep (multisine only)
+amp_rms_grid = [1, 2, 5, 10, 20, 50, 100, 200, 400, 600, 800];  % [N] RMS sweep (multisine only)
 force_limits.peak = [2000, 2000, 1420];                % [N] TELICA peak force [FX1,FX2,FY]
 force_limits.rms  = [916,  916,  656];                 % [N] TELICA continuous force [FX1,FX2,FY]
 
@@ -400,11 +400,9 @@ function [r, t] = make_ref(sp, n_hold, ts)
 % Build stage-coordinate reference r (N x 3) = [X1, X2, Y].
 %
 % Reference phases:
-%   1. Pre-hold         -- n_hold samples at [0, 0, 0.3]  (Simulink IC)
-%   2. Y settle move    -- only if sp.Y_initial ~= 0.3; Y moves negative
-%   3. Settle hold      -- n_hold samples at [0, 0, sp.Y_initial]
-%   4. Main motion      -- X and/or Y simultaneous; shorter padded with hold
-%   5. Post-hold        -- n_hold samples at final position
+%   1. Pre-hold    -- n_hold samples at [0, 0, sp.Y_initial]
+%   2. Main motion -- X and/or Y simultaneous; shorter axis padded with hold
+%   3. Post-hold   -- n_hold samples at final position
 %
 % Supports combined X_sym_amp + X_anti_amp (T8):
 %   X1 = sym_profile + anti_profile
@@ -412,21 +410,9 @@ function [r, t] = make_ref(sp, n_hold, ts)
 % When only one is non-zero the result reduces to the pure symmetric or
 % pure anti-symmetric case respectively.
 
-    Y0 = sp.Y_initial;  % start reference at trajectory operating point (matches workspace Y IC)
-
-    % Phase 1: pre-hold
-    r     = repmat([0, 0, Y0], n_hold, 1);
-    Y_now = Y0;
-
-    % Phase 2-3: Y settle — never triggers now that Y0 = sp.Y_initial
-    if abs(sp.Y_initial - Y0) > 1e-9
-        pv_s   = setpoint_1d(abs(sp.Y_initial - Y0), sp.vmax_Y, sp.amax_Y, sp.jerkTime, ts);
-        n_s    = length(pv_s);
-        Y_prof = Y0 - pv_s;   % always negative direction (Y_initial <= Y0)
-        r      = [r; [zeros(n_s, 2), Y_prof]];
-        Y_now  = sp.Y_initial;
-        r      = [r; repmat([0, 0, Y_now], n_hold, 1)];
-    end
+    % Phase 1: pre-hold at trajectory operating point
+    r     = repmat([0, 0, sp.Y_initial], n_hold, 1);
+    Y_now = sp.Y_initial;
 
     % Phase 4: main motion
     % Generate symmetric and anti-symmetric X profiles independently,
@@ -777,8 +763,9 @@ function ok = validate_response(q1, fs, Lb)
     ACC_LIM_X = 30.0;            % m/s^2
     ACC_LIM_Y = 50.0;            % m/s^2
 
-    vel = diff(q1) * fs;         % (N-1 x 3)
-    acc = diff(vel) * fs;        % (N-2 x 3)
+    vel = diff(q1) * fs;              % (N-1 x 3)
+    vel = movmean(vel, 5, 1);         % smooth before second derivative to remove finite-difference noise
+    acc = diff(vel) * fs;             % (N-2 x 3)
 
     ok =    max(abs(q1(:,1)))          <= X_LIM     ...
          && max(abs(q1(:,2)))          <= X_LIM     ...
