@@ -36,7 +36,7 @@
 %   r_sim        (N x 3)  reference [X1, X2, Y] [m]
 %   u_q1         (N x 3)  feedback force on CT LPV path [F_X1,F_X2,F_Y] [N]
 %   f_sim        (N x 3)  feedforward multisine force [N] (zeros if no multisine)
-%   amp_max      (1 x 1)  max passing RMS amplitude [N] (NaN if no multisine)
+%   amp_max      (1 x 3)  max passing RMS amplitude [FX1 FX2 FY] [N] (NaN if no multisine)
 %   q1           (N x 3)  CT quasi-LPV output [X1, X2, Y] [m]  -- PRIMARY
 %   Y_trajectory (N x 1)  Y(t) = q1(:,3) [m]
 %
@@ -239,8 +239,8 @@ trajs(6).X_anti_amp = 0;
 trajs(6).Y_disp     = 0.6;    % Y: 0.3 -> -0.3 m
 trajs(6).vmax_X     = 0;
 trajs(6).amax_X     = 0;
-trajs(6).vmax_Y     = 2.0;    % hardware max
-trajs(6).amax_Y     = 50.0;   % hardware max
+trajs(6).vmax_Y     = 1.98;   % 1% below hardware max — closed-loop vel overshoot margin
+trajs(6).amax_Y     = 47.0;   % 6% below hardware max — closed-loop acc overshoot margin
 trajs(6).jerkTime   = 0.025;
 trajs(6).ms_f_low   = 1;
 trajs(6).ms_f_high  = 20;     % Y-axis band: cy/mh separation
@@ -344,15 +344,20 @@ for i = 1:numel(trajs)
     % -- Feedforward force -------------------------------------------------
     if USE_MULTISINE
         % Amplitude sweep: find maximum RMS that keeps q1 and force demand within TELICA limits.
+        % Per-channel amplitudes: X channels at full amp, Y scaled to its lower limit.
+        % amp_ch(amp) = amp * [916, 916, 656] / 916 = [amp, amp, amp*0.716]
+        amp_scale = force_limits.rms / max(force_limits.rms);   % [1, 1, 0.716]
+
         amp_max = 0;
         for amp = amp_rms_grid
-            f = generate_multisine(length(t), fs, sp, amp);
+            amp_ch = amp * amp_scale;
+            f = generate_multisine(length(t), fs, sp, amp_ch);
             sim(mdl, t(end));
             force_ok = validate_forces(q1, r, t, f, Cfb, force_limits);
             if validate_response(q1, fs, Lb) && force_ok
                 amp_max = amp;
             else
-                fprintf('  Amplitude %.0f N RMS exceeds TELICA limits — stopping sweep.\n', amp);
+                fprintf('  Amplitude [%.0f %.0f %.0f] N RMS exceeds TELICA limits — stopping sweep.\n', amp_ch);
                 break;
             end
         end
@@ -361,16 +366,17 @@ for i = 1:numel(trajs)
             warning('%s: no amplitude passed TELICA limits — skipping.', sp.id);
             continue;
         end
-        fprintf('  amp_max = %.0f N RMS per channel\n', amp_max);
+        amp_max_ch = amp_max * amp_scale;
+        fprintf('  amp_max = [%.0f %.0f %.0f] N RMS [FX1 FX2 FY]\n', amp_max_ch);
 
         % Final simulation at amp_max.
-        f = generate_multisine(length(t), fs, sp, amp_max);
+        f = generate_multisine(length(t), fs, sp, amp_max_ch);
         fprintf('  Simulating %.2f s (%d samples) at amp_max ...\n', t(end), length(t));
         sim(mdl, t(end));
         fprintf('  Simulation complete. Samples: %d\n', size(q1, 1));
     else
         f       = zeros(length(t), 3);   % no feedforward
-        amp_max = NaN;
+        amp_max_ch = [NaN NaN NaN];
 
         fprintf('  Simulating %.2f s (%d samples) ...\n', t(end), length(t));
         sim(mdl, t(end));
@@ -380,12 +386,12 @@ for i = 1:numel(trajs)
     [t_sim, r_sim, u_q1, Y_trajectory, f_sim] = reconstruct(q1, r, t, f, Cfb);
     force_report = summarize_forces(u_q1, f_sim, force_limits);
 
-    report_traj(q1, Y_trajectory, amp_max);
+    report_traj(q1, Y_trajectory, amp_max_ch);
     report_forces(force_report);
 
     out_path = fullfile(out_dir, [sp.id, '.mat']);
     save(out_path, 't_sim', 'fs', 'r_sim', ...
-                   'u_q1', 'f_sim', 'amp_max', ...
+                   'u_q1', 'f_sim', 'amp_max_ch', ...
                    'q1', 'Y_trajectory', 'force_report');
     fprintf('  Saved: %s\n\n', out_path);
 end
@@ -547,10 +553,10 @@ function report_traj(q1, Y_trajectory, amp_max)
     fprintf('  X1: [%+.3f, %+.3f] m\n', min(q1(:,1)), max(q1(:,1)));
     fprintf('  X2: [%+.3f, %+.3f] m\n', min(q1(:,2)), max(q1(:,2)));
     fprintf('  Y:  [%+.3f, %+.3f] m\n', min(Y_trajectory), max(Y_trajectory));
-    if isnan(amp_max)
+    if all(isnan(amp_max))
         fprintf('  Multisine: disabled\n');
     else
-        fprintf('  Multisine amp_max: %.1f N RMS per channel\n', amp_max);
+        fprintf('  Multisine amp_max: [%.1f %.1f %.1f] N RMS [FX1 FX2 FY]\n', amp_max);
     end
 end
 
@@ -651,8 +657,9 @@ end
 
 % ----------------------------------------------------------------------
 
-function f = generate_multisine(N, fs, sp, amp_rms)
+function f = generate_multisine(N, fs, sp, amp_ch)
 % Generate trajectory-specific force multisines [F_X1, F_X2, F_Y].
+% amp_ch: (1x3) per-channel RMS amplitudes [amp_X1, amp_X2, amp_Y] [N].
 %
 % Lecture checks implemented here:
 %   - periodic record, N is an integer number of 1 s periods
@@ -662,7 +669,7 @@ function f = generate_multisine(N, fs, sp, amp_rms)
 %   - at least 7 excited lines per active mode -> PE order 2F >= 14 > 13
 %   - Schroeder phases with deterministic time shifts for low crest factor
 %   - trajectory-specific physical modes: common, differential, and/or Y
-%   - final per-actuator RMS normalisation before the amplitude sweep
+%   - final per-channel RMS normalisation to amp_ch
     N_period = round(fs);
     assert(mod(N, N_period) == 0, ...
            '%s: N=%d must be a multiple of N_period=%d for leakage-free multisine', ...
@@ -691,7 +698,7 @@ function f = generate_multisine(N, fs, sp, amp_rms)
     for ch = 1:3
         ch_rms = rms(f(:, ch));
         if ch_rms > 0
-            f(:, ch) = f(:, ch) * (amp_rms / ch_rms);
+            f(:, ch) = f(:, ch) * (amp_ch(ch) / ch_rms);
         end
     end
 end
@@ -763,9 +770,8 @@ function ok = validate_response(q1, fs, Lb)
     ACC_LIM_X = 30.0;            % m/s^2
     ACC_LIM_Y = 50.0;            % m/s^2
 
-    vel = diff(q1) * fs;              % (N-1 x 3)
-    vel = movmean(vel, 5, 1);         % smooth before second derivative to remove finite-difference noise
-    acc = diff(vel) * fs;             % (N-2 x 3)
+    vel = diff(q1) * fs;         % (N-1 x 3)
+    acc = diff(vel) * fs;        % (N-2 x 3)
 
     ok =    max(abs(q1(:,1)))          <= X_LIM     ...
          && max(abs(q1(:,2)))          <= X_LIM     ...
