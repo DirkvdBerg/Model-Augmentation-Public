@@ -29,7 +29,7 @@
 %   r_sim        (N x 3)  total reference r_traj + r_ms [X1, X2, Y] [m]
 %   r_ms         (N x 3)  multisine position perturbation [m] (zeros if no multisine)
 %   u_q1         (N x 3)  total plant force = Cfb*(r_total - q1) [N]
-%   amp_max_m    (1 x 1)  max passing RMS amplitude [m] (NaN if no multisine)
+%   amp_max_modes (1 x M) max passing RMS amplitude per mode [m] (NaN if no multisine)
 %   q1           (N x 3)  CT quasi-LPV output [X1, X2, Y] [m]  -- PRIMARY
 %   Y_trajectory (N x 1)  Y(t) = q1(:,3) [m]
 %   force_report (struct) force demand summary for diagnostics
@@ -142,12 +142,12 @@ trajs(3).ms_f_high  = 100;
 trajs(3).ms_modes   = {'common'};
 
 % T4: X anti-symmetric (pure rotation) at Y=0.2.
-% NOTE: X_anti_amp=35 mm -> |X1-X2|=70 mm, near DIFF_LIM=72.4 mm.
-% Keep ref multisine amplitude small (sweep stops at kinematics limit).
+% NOTE: X_anti_amp=30 mm -> |X1-X2|=60 mm, leaving 12.4 mm yaw headroom
+% for the diff multisine (up to ~4 mm RMS before hitting DIFF_LIM=72.4 mm).
 trajs(4).id         = 'T4_X_antisym_Y020';
 trajs(4).Y_initial  = 0.2;
 trajs(4).X_sym_amp  = 0;
-trajs(4).X_anti_amp = 0.035;
+trajs(4).X_anti_amp = 0.030;
 trajs(4).Y_disp     = 0;
 trajs(4).vmax_X     = 0.5;
 trajs(4).amax_X     = 8.0;
@@ -181,19 +181,20 @@ trajs(6).X_anti_amp = 0;
 trajs(6).Y_disp     = 0.6;
 trajs(6).vmax_X     = 0;
 trajs(6).amax_X     = 0;
-trajs(6).vmax_Y     = 1.98;
-trajs(6).amax_Y     = 47.0;
+trajs(6).vmax_Y     = 1.80;
+trajs(6).amax_Y     = 42.0;
 trajs(6).jerkTime   = 0.025;
 trajs(6).ms_f_low   = 1;
 trajs(6).ms_f_high  = 20;
 trajs(6).ms_modes   = {'y'};
 
 % T7: X anti-symmetric + Y sweep simultaneously.
-% NOTE: same |X1-X2|=70 mm constraint as T4 — DIFF_LIM applies to r_total.
+% NOTE: X_anti_amp=30 mm -> |X1-X2|=60 mm, same headroom as T4 (12.4 mm
+% for diff multisine). DIFF_LIM applies to r_total = r_traj + r_ms.
 trajs(7).id         = 'T7_X_antisym_Y_sweep';
 trajs(7).Y_initial  = 0.3;
 trajs(7).X_sym_amp  = 0;
-trajs(7).X_anti_amp = 0.035;
+trajs(7).X_anti_amp = 0.030;
 trajs(7).Y_disp     = 0.6;
 trajs(7).vmax_X     = 0.5;
 trajs(7).amax_X     = 8.0;
@@ -238,7 +239,8 @@ J_rot        = Jb + Jh + (m1+m2)*Lb^2/4;
 M_eff_diff   = J_rot / (Lb/2)^2;               % rotation, referred to X actuator force
 
 % Accel-limited maximum amplitude at each mode's highest frequency.
-A_max_X_common_m = ACC_LIM_X / (2*pi*100)^2;   % ~0.076 mm at 100 Hz
+% common mode is now capped at 20 Hz (same as diff and y) — see mode_band().
+A_max_X_common_m = ACC_LIM_X / (2*pi*20)^2;    % ~1.9  mm at 20 Hz
 A_max_X_diff_m   = ACC_LIM_X / (2*pi*20)^2;    % ~1.9  mm at 20 Hz
 A_max_Y_m        = ACC_LIM_Y / (2*pi*20)^2;    % ~3.2  mm at 20 Hz
 
@@ -267,7 +269,7 @@ for A_mm = [0.05, 0.1, 0.2, 0.5, 1.0, 1.5, 1.9, 2.0, 3.2, 5.0]
     end
 end
 fprintf('%s\n', repmat('-', 1, 82));
-fprintf('Accel-limited max A: X_common=%.3f mm @100Hz  X_diff=%.2f mm @20Hz  Y=%.2f mm @20Hz\n', ...
+fprintf('Accel-limited max A: X_common=%.2f mm @20Hz  X_diff=%.2f mm @20Hz  Y=%.2f mm @20Hz\n', ...
         A_max_X_common_m*1e3, A_max_X_diff_m*1e3, A_max_Y_m*1e3);
 fprintf('Compare: force injection 800 N * |S~0.05| = ~40 N net  <->  ~1 mm @10 Hz ref injection\n');
 fprintf('%s\n\n', repmat('=', 1, 82));
@@ -287,8 +289,9 @@ if ~exist(out_dir, 'dir'), mkdir(out_dir); end
 n_hold = round(0.5 / ts);   % 0.5 s hold = 10000 samples at 20 kHz
 
 % Amplitude grid [m RMS]. Binding constraint: acceleration at the highest
-% excited frequency (not TELICA force limits).
-% Sweep typically stops at: X_common ~0.076 mm, X_diff ~1.9 mm, Y ~3.2 mm.
+% excited frequency (not TELICA force limits). All modes are now capped at
+% 20 Hz, so accel-limited max: X_common ~1.9 mm, X_diff ~1.9 mm, Y ~3.2 mm.
+% Each mode is swept independently (greedy sequential) so limits apply per mode.
 amp_rms_grid_m = [0.05, 0.10, 0.20, 0.50, 1.00, 1.50, 2.00, 3.00, 5.00] * 1e-3;  % [m]
 
 % ======================================================================
@@ -325,50 +328,62 @@ for i = 1:numel(trajs)
 
     % -- Amplitude sweep or no-multisine simulation ------------------------
     if USE_MULTISINE
-        amp_max_m = 0;
-        r_ms_best = zeros(length(t_traj), 3);
-        q1_best   = [];
+        n_modes       = numel(sp.ms_modes);
+        amp_max_modes = zeros(1, n_modes);
+        r_ms_fixed    = zeros(length(t_traj), 3);
 
-        for amp_m = amp_rms_grid_m
-            r_ms_trial    = generate_ref_multisine(length(t_traj), fs, sp, amp_m);
-            r_total_trial = r_traj + r_ms_trial;
-
-            % Pre-check: kinematics of r_total without simulation.
-            if ~check_ref_total(r_total_trial, fs, Lb)
-                fprintf('  [%.3f mm] r_total exceeds kinematics limits — stopping sweep.\n', ...
-                        amp_m*1e3);
-                break;
+        % Greedy per-mode sweep: each mode independently finds its maximum
+        % amplitude using check_ref_total only (no simulation in the loop).
+        % r_ms_fixed accumulates committed modes so later sweeps account for
+        % already-accepted contributions on shared channels.
+        for m = 1:n_modes
+            mode_name = sp.ms_modes{m};
+            for amp_m = amp_rms_grid_m
+                r_ms_trial    = generate_one_mode(length(t_traj), fs, sp, m, mode_name, amp_m);
+                r_total_trial = r_traj + r_ms_fixed + r_ms_trial;
+                if check_ref_total(r_total_trial, fs, Lb)
+                    amp_max_modes(m) = amp_m;
+                else
+                    fprintf('  [mode=%s, %.3f mm] r_total exceeds limits — stopping.\n', ...
+                            mode_name, amp_m*1e3);
+                    break;
+                end
             end
-
-            % Simulate with r_total. Simulink reads workspace variable 'r'.
-            r = r_total_trial;
-            sim(mdl, t_traj(end));
-
-            if validate_response(q1, fs, Lb) && ...
-               validate_forces(q1, r_total_trial, t_traj, Cfb, force_limits)
-                amp_max_m = amp_m;
-                r_ms_best = r_ms_trial;
-                q1_best   = q1;   % save q1 from this accepted step
+            if amp_max_modes(m) > 0
+                r_ms_fixed = r_ms_fixed + generate_one_mode(length(t_traj), fs, sp, m, mode_name, amp_max_modes(m));
             else
-                fprintf('  [%.3f mm] q1/force exceeded — stopping sweep.\n', amp_m*1e3);
-                break;
+                fprintf('  [mode=%s] no amplitude passed — mode excluded.\n', mode_name);
             end
         end
 
-        if amp_max_m == 0
-            warning('%s: no amplitude passed limits — skipping.', sp.id);
+        if all(amp_max_modes == 0)
+            warning('%s: no mode passed limits — skipping.', sp.id);
             continue;
         end
 
-        r_ms    = r_ms_best;
+        % One simulation with all modes at their accepted amplitudes.
+        r_ms    = r_ms_fixed;
         r_total = r_traj + r_ms;
-        fprintf('  amp_max = %.3f mm RMS per active mode\n', amp_max_m*1e3);
-        fprintf('  Samples: %d (%.2f s)\n', length(t_traj), t_traj(end));
+        r       = r_total;
+        sim(mdl, t_traj(end));
+
+        if ~validate_response(q1, fs, Lb) || ...
+           ~validate_forces(q1, r_total, t_traj, Cfb, force_limits)
+            warning('%s: final simulation failed validation — skipping.', sp.id);
+            continue;
+        end
+        q1_best = q1;
+
+        fprintf('  amp_max per mode [mm RMS]:');
+        for m = 1:n_modes
+            fprintf('  %s=%.3f', sp.ms_modes{m}, amp_max_modes(m)*1e3);
+        end
+        fprintf('\n  Samples: %d (%.2f s)\n', length(t_traj), t_traj(end));
     else
-        r_ms      = zeros(length(t_traj), 3);
-        r_total   = r_traj;
-        r         = r_traj;
-        amp_max_m = NaN;
+        r_ms          = zeros(length(t_traj), 3);
+        r_total       = r_traj;
+        r             = r_traj;
+        amp_max_modes = NaN(1, numel(sp.ms_modes));
 
         fprintf('  Simulating %.2f s (%d samples) ...\n', t_traj(end), length(t_traj));
         sim(mdl, t_traj(end));
@@ -380,13 +395,13 @@ for i = 1:numel(trajs)
     [t_sim, r_sim, u_q1, Y_trajectory] = reconstruct(q1_best, r_total, t_traj, Cfb);
     force_report = summarize_forces(u_q1, zeros(size(u_q1)), force_limits);
 
-    report_traj(q1_best, Y_trajectory, amp_max_m);
+    report_traj(q1_best, Y_trajectory, amp_max_modes);
     report_ref_ms(r_ms, r_traj, t_traj, fs, M_eff_Y, M_eff_common);
     report_forces(force_report);
 
     out_path = fullfile(out_dir, [sp.id, '.mat']);
     save(out_path, 't_sim', 'fs', 'r_sim', 'r_ms', ...
-                   'u_q1', 'amp_max_m', ...
+                   'u_q1', 'amp_max_modes', ...
                    'q1', 'Y_trajectory', 'force_report');
     fprintf('  Saved: %s\n\n', out_path);
 end
@@ -535,15 +550,15 @@ end
 
 % ----------------------------------------------------------------------
 
-function report_traj(q1, Y_trajectory, amp_max_m)
-% Print axis range and multisine amplitude after simulation.
+function report_traj(q1, Y_trajectory, amp_max_modes)
+% Print axis range and per-mode multisine amplitude after simulation.
     fprintf('  X1: [%+.3f, %+.3f] m\n', min(q1(:,1)), max(q1(:,1)));
     fprintf('  X2: [%+.3f, %+.3f] m\n', min(q1(:,2)), max(q1(:,2)));
     fprintf('  Y:  [%+.3f, %+.3f] m\n', min(Y_trajectory), max(Y_trajectory));
-    if isnan(amp_max_m)
+    if all(isnan(amp_max_modes))
         fprintf('  Multisine: disabled\n');
     else
-        fprintf('  Multisine amp_max: %.3f mm RMS per active mode\n', amp_max_m*1e3);
+        fprintf('  Multisine amp_max [mm RMS]: %s\n', num2str(amp_max_modes * 1e3, '%.3f  '));
     end
 end
 
@@ -664,43 +679,42 @@ end
 
 % ----------------------------------------------------------------------
 
-function r_ms = generate_ref_multisine(N, fs, sp, amp_m)
-% Generate reference position multisine r_ms (N x 3) = [X1, X2, Y] [m].
-% amp_m: scalar RMS amplitude [m] applied equally to all active modes.
-%
-% Identical mode/phase/frequency structure to the force multisine in
-% export_param_recovery.m, but output is position [m] not force [N].
+function r_ms = generate_one_mode(N, fs, sp, mode_idx, mode_name, amp_m)
+% Generate the N×3 multisine contribution for a single mode.
+% The signal is normalised to amp_m RMS BEFORE being written to channels so
+% that per-mode amplitudes are independent when summed onto shared channels.
 % Leakage check: N must be an integer multiple of fs (1 s period).
     N_period = round(fs);
     assert(mod(N, N_period) == 0, ...
            '%s: N=%d must be a multiple of N_period=%d', sp.id, N, N_period);
+    [f_low, f_high] = mode_band(sp, mode_name);
+    sig = multisine_schroeder_periodic(N, N_period, fs, f_low, f_high, mode_idx);
+    sig = sig * (amp_m / rms(sig));   % normalise to amp_m RMS
 
     r_ms = zeros(N, 3);
-    for m = 1:numel(sp.ms_modes)
-        mode = sp.ms_modes{m};
-        [f_low, f_high] = mode_band(sp, mode);
-        sig = multisine_schroeder_periodic(N, N_period, fs, f_low, f_high, m);
-
-        switch mode
-            case 'common'
-                r_ms(:, 1) = r_ms(:, 1) + sig;
-                r_ms(:, 2) = r_ms(:, 2) + sig;
-            case 'diff'
-                r_ms(:, 1) = r_ms(:, 1) + sig;
-                r_ms(:, 2) = r_ms(:, 2) - sig;
-            case 'y'
-                r_ms(:, 3) = r_ms(:, 3) + sig;
-            otherwise
-                error('%s: unknown multisine mode "%s"', sp.id, mode);
-        end
+    switch mode_name
+        case 'common'
+            r_ms(:,1) = sig;
+            r_ms(:,2) = sig;
+        case 'diff'
+            r_ms(:,1) =  sig;
+            r_ms(:,2) = -sig;
+        case 'y'
+            r_ms(:,3) = sig;
+        otherwise
+            error('%s: unknown multisine mode "%s"', sp.id, mode_name);
     end
+end
 
-    % Normalise each channel to amp_m RMS (skip zero channels).
-    for ch = 1:3
-        ch_rms = rms(r_ms(:, ch));
-        if ch_rms > 0
-            r_ms(:, ch) = r_ms(:, ch) * (amp_m / ch_rms);
-        end
+% ----------------------------------------------------------------------
+
+function r_ms = generate_ref_multisine(N, fs, sp, amp_m_vec)
+% Generate reference position multisine r_ms (N x 3) = [X1, X2, Y] [m].
+% amp_m_vec: vector [m RMS], one entry per mode in sp.ms_modes.
+% Calls generate_one_mode per mode so each mode is normalised independently.
+    r_ms = zeros(N, 3);
+    for m = 1:numel(sp.ms_modes)
+        r_ms = r_ms + generate_one_mode(N, fs, sp, m, sp.ms_modes{m}, amp_m_vec(m));
     end
 end
 
@@ -709,7 +723,7 @@ end
 function [f_low, f_high] = mode_band(sp, mode)
     f_low = sp.ms_f_low;
     switch mode
-        case 'common', f_high = min(100, sp.ms_f_high);
+        case 'common', f_high = min(20,  sp.ms_f_high);
         case 'diff',   f_high = min(20,  sp.ms_f_high);
         case 'y',      f_high = min(20,  sp.ms_f_high);
         otherwise,     error('%s: unknown mode "%s"', sp.id, mode);
