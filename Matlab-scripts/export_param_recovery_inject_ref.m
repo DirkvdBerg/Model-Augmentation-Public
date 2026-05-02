@@ -43,10 +43,11 @@
 addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
 
 % ======================================================================
-% USER FLAG
+% USER FLAGS
 % ======================================================================
 USE_MULTISINE = true;   % true  -> reference multisine, output to parameter-recovery-ref-injection/
                          % false -> no multisine,        output to parameter-recovery/
+TRAJ_SUBSET   = 8;    % which trajectories to generate, e.g. [8] to debug only T8
 
 % ======================================================================
 % 1. Physical parameters (identical to main.m lines 12-49)
@@ -212,9 +213,9 @@ trajs(8).X_sym_amp  = 0.10;
 trajs(8).X_anti_amp = 0.020;
 trajs(8).Y_disp     = 0.4;
 trajs(8).vmax_X     = 1.0;
-trajs(8).amax_X     = 12.0;
-trajs(8).vmax_Y     = 1.5;
-trajs(8).amax_Y     = 25.0;
+trajs(8).amax_X     = 8.0;
+trajs(8).vmax_Y     = 1.2;
+trajs(8).amax_Y     = 12.0;
 trajs(8).jerkTime   = 0.035;
 trajs(8).ms_f_low   = 1;
 trajs(8).ms_f_high  = 100;
@@ -288,16 +289,16 @@ if ~exist(out_dir, 'dir'), mkdir(out_dir); end
 
 n_hold = round(0.5 / ts);   % 0.5 s hold = 10000 samples at 20 kHz
 
-% Amplitude grid [m RMS]. Binding constraint: acceleration at the highest
-% excited frequency (not TELICA force limits). All modes are now capped at
-% 20 Hz, so accel-limited max: X_common ~1.9 mm, X_diff ~1.9 mm, Y ~3.2 mm.
-% Each mode is swept independently (greedy sequential) so limits apply per mode.
-amp_rms_grid_m = [0.05, 0.10, 0.20, 0.50, 1.00, 1.50, 2.00, 3.00, 5.00] * 1e-3;  % [m]
+% Amplitude grid [m RMS]. Each mode is swept independently (greedy sequential)
+% over both amplitude and f_high band; check_ref_total determines the binding
+% constraint per (f_high, amp) combination. Grid extends to 10 mm since at
+% lower frequencies large amplitudes may be feasible.
+amp_rms_grid_m = [0.05, 0.10, 0.20, 0.50, 1.00, 1.50, 2.00, 3.00, 5.00, 7.00, 10.0] * 1e-3;
 
 % ======================================================================
 % 6. Run all trajectories
 % ======================================================================
-for i = 1:numel(trajs)
+for i = TRAJ_SUBSET
     sp = trajs(i);
     fprintf('=== %d/%d  %s ===\n', i, numel(trajs), sp.id);
 
@@ -330,29 +331,57 @@ for i = 1:numel(trajs)
     if USE_MULTISINE
         n_modes       = numel(sp.ms_modes);
         amp_max_modes = zeros(1, n_modes);
+        f_high_modes  = zeros(1, n_modes);
         r_ms_fixed    = zeros(length(t_traj), 3);
 
-        % Greedy per-mode sweep: each mode independently finds its maximum
-        % amplitude using check_ref_total only (no simulation in the loop).
-        % r_ms_fixed accumulates committed modes so later sweeps account for
-        % already-accepted contributions on shared channels.
+        % Candidate upper band edges (Hz), descending, capped at ms_f_high.
+        % Each mode independently sweeps all candidates and keeps the
+        % (f_high, amp) pair that maximises score = amp^2 * n_odd_bins.
+        % This gives spectral separation between modes automatically: each
+        % settles at the band where its constraints allow the most energy.
+        fhc = unique([sp.ms_f_high, 50, 20, 10]);
+        fhc = sort(fhc(fhc <= sp.ms_f_high & ...
+                       arrayfun(@(f) count_odd_bins(sp.ms_f_low, f, fs), fhc) >= 7), 'descend');
+
         for m = 1:n_modes
-            mode_name = sp.ms_modes{m};
-            for amp_m = amp_rms_grid_m
-                r_ms_trial    = generate_one_mode(length(t_traj), fs, sp, m, mode_name, amp_m);
-                r_total_trial = r_traj + r_ms_fixed + r_ms_trial;
-                if check_ref_total(r_total_trial, fs, Lb)
-                    amp_max_modes(m) = amp_m;
-                else
-                    fprintf('  [mode=%s, %.3f mm] r_total exceeds limits — stopping.\n', ...
-                            mode_name, amp_m*1e3);
-                    break;
+            mode_name  = sp.ms_modes{m};
+            best_score = -1;
+            best_amp   = 0;
+            best_fh    = 0;
+
+            for fi = 1:numel(fhc)
+                fh         = fhc(fi);
+                amp_for_fh = 0;
+                for amp_m = amp_rms_grid_m
+                    r_ms_trial    = generate_one_mode(length(t_traj), fs, sp, m, mode_name, fh, amp_m);
+                    r_total_trial = r_traj + r_ms_fixed + r_ms_trial;
+                    if check_ref_total(r_total_trial, fs, Lb, false)
+                        amp_for_fh = amp_m;
+                    else
+                        break;
+                    end
+                end
+                if amp_for_fh > 0
+                    score = amp_for_fh^2 * count_odd_bins(sp.ms_f_low, fh, fs);
+                    if score > best_score
+                        best_score = score;
+                        best_amp   = amp_for_fh;
+                        best_fh    = fh;
+                    end
                 end
             end
-            if amp_max_modes(m) > 0
-                r_ms_fixed = r_ms_fixed + generate_one_mode(length(t_traj), fs, sp, m, mode_name, amp_max_modes(m));
+
+            amp_max_modes(m) = best_amp;
+            f_high_modes(m)  = best_fh;
+            if best_amp > 0
+                F_est = mode_M_eff(mode_name, M_eff_common, M_eff_diff, M_eff_Y) ...
+                        * (2*pi*best_fh)^2 * best_amp;
+                fprintf('  [mode=%-6s] band=%g-%gHz  amp=%.3fmm  score=%.1f  F_est~%.0fN\n', ...
+                        mode_name, sp.ms_f_low, best_fh, best_amp*1e3, best_score, F_est);
+                r_ms_fixed = r_ms_fixed + ...
+                    generate_one_mode(length(t_traj), fs, sp, m, mode_name, best_fh, best_amp);
             else
-                fprintf('  [mode=%s] no amplitude passed — mode excluded.\n', mode_name);
+                fprintf('  [mode=%-6s] no amplitude passed any band — excluded.\n', mode_name);
             end
         end
 
@@ -361,12 +390,13 @@ for i = 1:numel(trajs)
             continue;
         end
 
-        % One simulation with all modes at their accepted amplitudes.
+        % One simulation with all committed modes.
         r_ms    = r_ms_fixed;
         r_total = r_traj + r_ms;
         r       = r_total;
         sim(mdl, t_traj(end));
 
+        report_tracking(q1, r_total, t_traj);
         if ~validate_response(q1, fs, Lb) || ...
            ~validate_forces(q1, r_total, t_traj, Cfb, force_limits)
             warning('%s: final simulation failed validation — skipping.', sp.id);
@@ -374,9 +404,11 @@ for i = 1:numel(trajs)
         end
         q1_best = q1;
 
-        fprintf('  amp_max per mode [mm RMS]:');
+        fprintf('  Committed:');
         for m = 1:n_modes
-            fprintf('  %s=%.3f', sp.ms_modes{m}, amp_max_modes(m)*1e3);
+            if amp_max_modes(m) > 0
+                fprintf('  %s=%.3fmm@%gHz', sp.ms_modes{m}, amp_max_modes(m)*1e3, f_high_modes(m));
+            end
         end
         fprintf('\n  Samples: %d (%.2f s)\n', length(t_traj), t_traj(end));
     else
@@ -384,10 +416,12 @@ for i = 1:numel(trajs)
         r_total       = r_traj;
         r             = r_traj;
         amp_max_modes = NaN(1, numel(sp.ms_modes));
+        f_high_modes  = NaN(1, numel(sp.ms_modes));
 
         fprintf('  Simulating %.2f s (%d samples) ...\n', t_traj(end), length(t_traj));
         sim(mdl, t_traj(end));
         fprintf('  Simulation complete. Samples: %d\n', size(q1, 1));
+        report_tracking(q1, r_total, t_traj);
         q1_best = q1;
     end
 
@@ -401,12 +435,12 @@ for i = 1:numel(trajs)
 
     out_path = fullfile(out_dir, [sp.id, '.mat']);
     save(out_path, 't_sim', 'fs', 'r_sim', 'r_ms', ...
-                   'u_q1', 'amp_max_modes', ...
+                   'u_q1', 'amp_max_modes', 'f_high_modes', ...
                    'q1', 'Y_trajectory', 'force_report');
     fprintf('  Saved: %s\n\n', out_path);
 end
 
-fprintf('Done. %d trajectories exported to:\n  %s\n', numel(trajs), out_dir);
+fprintf('Done. %d/%d trajectories exported to:\n  %s\n', numel(TRAJ_SUBSET), numel(trajs), out_dir);
 
 % ======================================================================
 % Local functions
@@ -501,9 +535,11 @@ end
 
 % ----------------------------------------------------------------------
 
-function ok = check_ref_total(r_total, fs, Lb)
+function ok = check_ref_total(r_total, fs, Lb, verbose)
 % Soft check (returns bool) of all TELICA limits on r_total = r_traj + r_ms.
-% Used inside the amplitude sweep — does not throw, prints what failed.
+% verbose (default true): print exceeded values. Pass false during sweep loops
+% to suppress per-trial output.
+    if nargin < 4, verbose = true; end
     X_LIM    = 0.375;  Y_LIM = 0.400;  DIFF_LIM = sin(0.1)*Lb;
     VEL_LIM  = 2.0;    ACC_LIM_X = 30.0;  ACC_LIM_Y = 50.0;
 
@@ -521,7 +557,7 @@ function ok = check_ref_total(r_total, fs, Lb)
               VEL_LIM, VEL_LIM, VEL_LIM, ACC_LIM_X, ACC_LIM_X, ACC_LIM_Y];
 
     ok = all(vals <= limits);
-    if ~ok
+    if ~ok && verbose
         for ii = 1:numel(vals)
             if vals(ii) > limits(ii)
                 fprintf('    exceeded: %s = %.4f  limit = %.4f\n', names{ii}, vals(ii), limits(ii));
@@ -679,17 +715,29 @@ end
 
 % ----------------------------------------------------------------------
 
-function r_ms = generate_one_mode(N, fs, sp, mode_idx, mode_name, amp_m)
+function r_ms = generate_one_mode(N, fs, sp, mode_idx, mode_name, f_high, amp_m)
 % Generate the N×3 multisine contribution for a single mode.
+% f_high [Hz]: upper band edge (selected by the amplitude sweep).
 % The signal is normalised to amp_m RMS BEFORE being written to channels so
 % that per-mode amplitudes are independent when summed onto shared channels.
 % Leakage check: N must be an integer multiple of fs (1 s period).
+%
+% Cosine ramp-up (first N_RAMP samples): the Schroeder sum is non-zero at t=0.
+% The Tustin-discretised Cfb has a direct feedthrough D != 0, so a non-zero
+% initial reference error e[0] = r_ms[0] produces a 1-sample force spike
+% u[0] = D * e[0] ~ 4900 N that is hardware-safe (50 us impulse) but causes
+% validate_forces to fail. Ramping r_ms from zero eliminates e[0], keeping
+% stored u_q1 and q1 physically consistent with no spike.
+    N_RAMP   = 20;   % 1 ms at 20 kHz -- long enough to kill spike, << one multisine period
     N_period = round(fs);
     assert(mod(N, N_period) == 0, ...
            '%s: N=%d must be a multiple of N_period=%d', sp.id, N, N_period);
-    [f_low, f_high] = mode_band(sp, mode_name);
-    sig = multisine_schroeder_periodic(N, N_period, fs, f_low, f_high, mode_idx);
+    sig = multisine_schroeder_periodic(N, N_period, fs, sp.ms_f_low, f_high, mode_idx);
     sig = sig * (amp_m / rms(sig));   % normalise to amp_m RMS
+
+    % Apply cosine taper: sig(1)=0, smooth rise to full amplitude over N_RAMP samples.
+    w = 0.5 * (1 - cos(pi * (0:N_RAMP-1)' / N_RAMP));
+    sig(1:N_RAMP) = sig(1:N_RAMP) .* w;
 
     r_ms = zeros(N, 3);
     switch mode_name
@@ -708,26 +756,61 @@ end
 
 % ----------------------------------------------------------------------
 
-function r_ms = generate_ref_multisine(N, fs, sp, amp_m_vec)
+function r_ms = generate_ref_multisine(N, fs, sp, amp_m_vec, f_high_vec)
 % Generate reference position multisine r_ms (N x 3) = [X1, X2, Y] [m].
-% amp_m_vec: vector [m RMS], one entry per mode in sp.ms_modes.
-% Calls generate_one_mode per mode so each mode is normalised independently.
+% amp_m_vec: [m RMS] per mode; f_high_vec: [Hz] upper band edge per mode.
+% Skips modes where amp_m_vec(m) == 0 (excluded by sweep).
     r_ms = zeros(N, 3);
     for m = 1:numel(sp.ms_modes)
-        r_ms = r_ms + generate_one_mode(N, fs, sp, m, sp.ms_modes{m}, amp_m_vec(m));
+        if amp_m_vec(m) > 0
+            r_ms = r_ms + generate_one_mode(N, fs, sp, m, sp.ms_modes{m}, ...
+                                            f_high_vec(m), amp_m_vec(m));
+        end
     end
 end
 
 % ----------------------------------------------------------------------
 
-function [f_low, f_high] = mode_band(sp, mode)
-    f_low = sp.ms_f_low;
-    switch mode
-        case 'common', f_high = min(20,  sp.ms_f_high);
-        case 'diff',   f_high = min(20,  sp.ms_f_high);
-        case 'y',      f_high = min(20,  sp.ms_f_high);
-        otherwise,     error('%s: unknown mode "%s"', sp.id, mode);
+function n = count_odd_bins(f_low, f_high, fs)
+% Count odd-harmonic frequency bins in [f_low, f_high] for a 1 s period.
+% Used as the bandwidth factor in sweep scoring: score = amp^2 * n_bins.
+    f0 = fs / round(fs);   % bin width = 1 Hz (fs=20 kHz, N_period=20000)
+    k0 = max(1, ceil(f_low  / f0));
+    k1 = floor(f_high / f0);
+    k  = k0:k1;
+    n  = sum(mod(k, 2) == 1);
+end
+
+% ----------------------------------------------------------------------
+
+function M = mode_M_eff(mode_name, M_eff_common, M_eff_diff, M_eff_Y)
+% Return effective inertia [kg or kg*m^2/m^2] for a mode — used to estimate
+% peak controller force: F_est = M_eff * (2*pi*f_high)^2 * amp_rms.
+    switch mode_name
+        case 'common', M = M_eff_common;
+        case 'diff',   M = M_eff_diff;
+        case 'y',      M = M_eff_Y;
+        otherwise,     M = NaN;
     end
+end
+
+% ----------------------------------------------------------------------
+
+function report_tracking(q1, r_total, t)
+% Print per-channel tracking error statistics after simulation.
+% Large Y max error (>> 1 mm) indicates controller integrator windup.
+    N_sim = size(q1, 1);
+    if N_sim ~= length(t)
+        t_sim = linspace(0, t(end), N_sim)';
+        r_sim = interp1(t, r_total, t_sim);
+    else
+        r_sim = r_total;
+    end
+    e = r_sim - q1;
+    fprintf('  Tracking error |r_total - q1| [mm]:\n');
+    fprintf('    X1: max=%.3f  RMS=%.3f\n', max(abs(e(:,1)))*1e3, rms(e(:,1))*1e3);
+    fprintf('    X2: max=%.3f  RMS=%.3f\n', max(abs(e(:,2)))*1e3, rms(e(:,2))*1e3);
+    fprintf('    Y:  max=%.3f  RMS=%.3f\n', max(abs(e(:,3)))*1e3, rms(e(:,3))*1e3);
 end
 
 % ----------------------------------------------------------------------
