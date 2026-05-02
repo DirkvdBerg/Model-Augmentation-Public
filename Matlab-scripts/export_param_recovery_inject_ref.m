@@ -728,15 +728,17 @@ function r_ms = generate_one_mode(N, fs, sp, mode_idx, mode_name, f_high, amp_m)
 % u[0] = D * e[0] ~ 4900 N that is hardware-safe (50 us impulse) but causes
 % validate_forces to fail. Ramping r_ms from zero eliminates e[0], keeping
 % stored u_q1 and q1 physically consistent with no spike.
-    N_RAMP   = 20;   % 1 ms at 20 kHz -- long enough to kill spike, << one multisine period
     N_period = round(fs);
     assert(mod(N, N_period) == 0, ...
            '%s: N=%d must be a multiple of N_period=%d', sp.id, N, N_period);
     sig = multisine_schroeder_periodic(N, N_period, fs, sp.ms_f_low, f_high, mode_idx);
     sig = sig * (amp_m / rms(sig));   % normalise to amp_m RMS
 
-    % Apply cosine taper: sig(1)=0, smooth rise to full amplitude over N_RAMP samples.
-    w = 0.5 * (1 - cos(pi * (0:N_RAMP-1)' / N_RAMP));
+    % Smooth startup avoids the Tustin direct-feedthrough impulse at t=0
+    % without adding an artificial acceleration spike to the validation.
+    ramp_time = 0.100;   % 100 ms, still short relative to the 1 s period
+    N_RAMP = min(round(ramp_time * fs), floor(0.25 * N_period));
+    w = 0.5 * (1 - cos(pi * (0:N_RAMP-1)' / (N_RAMP-1)));
     sig(1:N_RAMP) = sig(1:N_RAMP) .* w;
 
     r_ms = zeros(N, 3);
