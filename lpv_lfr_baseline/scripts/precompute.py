@@ -81,8 +81,8 @@ def _load_trajectory(mat_path, dtype):
     by the net force (~40-60 N RMS), causing a large systematic input mismatch.
     """
     mat = loadmat(mat_path)
-    u_q1  = mat['u_q1']                                           # (T, 3) stage coords
-    f_sim = mat['f_sim']                                           # (T, 3) zero if no multisine
+    u_q1  = mat['u_q1']                                            # (T, 3) stage coords
+    f_sim = mat.get('f_sim', 0)                                    # (T, 3) or 0; absent in ref_injection (always zero there)
     u     = torch.tensor(u_q1 + f_sim, dtype=dtype).unsqueeze(0)  # (1, T, 3) total plant force
     q1    = torch.tensor(mat['q1'],     dtype=dtype)               # (T, 3)
     fs    = float(mat['fs'].squeeze()) if 'fs' in mat else None

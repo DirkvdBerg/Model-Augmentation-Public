@@ -35,7 +35,7 @@ import torch
 from scipy.io import loadmat
 
 from lpv_lfr_baseline.blocks.lfr_param_block import (
-    ParameterizedLFRBlock, _build_matrices, _Lb, _d,
+    ParameterizedLFRBlock, _build_matrices, _Lb,
 )
 from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
 from lpv_lfr_baseline.core.physics import P, ts, build_poly_constants
@@ -120,13 +120,13 @@ def compute_rmse_baseline_metrics(
     # Build detuned matrices and G/poly constants (no gradient needed)
     block = ParameterizedLFRBlock(RMSE_baseline=1.0)
     with torch.no_grad():
-        kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh = block._recover_params()
+        kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d_val = block._recover_params()
     _, M1_d, M2_d, K_d, C_d = _build_matrices(
         torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh]),
-        _Lb, _d,
+        _Lb, d_val,
     )
     alpha_d, beta_d, gamma_d, N0_d, N1_d, N2_d = build_poly_constants(
-        m1, m2, mb, mh, Jb, Jh, _Lb, _d
+        m1, m2, mb, mh, Jb, Jh, _Lb, d_val
     )
     d0_d = mh * (alpha_d * gamma_d - beta_d ** 2)
     G_d = build_G_matrix(N0_d, d0_d, M1_d, M2_d, K_d, C_d)

@@ -77,7 +77,12 @@
       "Bash(echo \"EXIT:$?\")",
       "Bash(powershell.exe -Command \"cd 'C:\\\\\\\\Users\\\\\\\\20203253\\\\\\\\OneDrive - TU Eindhoven\\\\\\\\Graduation Project\\\\\\\\Baseline FP model\\\\\\\\Baseline-LPV-Augmentation'; conda run -n GraduationProject python smoke_test_loss.py 2>&1 | Tee-Object -FilePath 'C:\\\\\\\\Temp\\\\\\\\smoke_out.txt'\")",
       "WebFetch(domain:blog.ezyang.com)",
-      "WebFetch(domain:docs.nvidia.com)"
+      "WebFetch(domain:docs.nvidia.com)",
+      "Bash(tee /tmp/diag_run.txt)",
+      "Bash(tasklist)",
+      "Bash(taskkill:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(powershell:*)"
     ]
   }
 }
