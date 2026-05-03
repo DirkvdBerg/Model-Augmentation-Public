@@ -43,11 +43,6 @@ from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
 from lpv_lfr_baseline.core.lfr_simulate import simulate
 from lpv_lfr_baseline.core.physics import build_poly_constants
 from lpv_lfr_baseline.scripts.precompute import precompute
-from lpv_lfr_baseline.scripts.segment_diag import (
-    _attach_valid_start_idx,
-    _sample_balanced_segments,
-    _traj_set_tag,
-)
 
 # ── Dtype (single toggle — flows into precompute and all .to() calls) ────────
 DTYPE = torch.float64
@@ -102,12 +97,14 @@ TRAJ_SPECS = _ds['traj_specs']
 # ── Normalisation ────────────────────────────────────────────────────────────
 NORM_MODE = 'per_traj'   # 'per_traj' | 'global'  (see precompute.py)
 
+# ── Segment sampling ──────────────────────────────────────────────────────────
+OVERLAP_FRACTION = 0.0   # 0.0 = non-overlapping; 0.5 = 50% overlap
+
 # ── Training hyperparameters ──────────────────────────────────────────────────
-W                        = 50      # BPTT window [samples] — outer loop in train()
-EPOCHS                   = 600
-LR                       = 1e-3
-TRAIN_SEGMENTS_PER_EPOCH = 8
-FULL_EVAL_INTERVAL       = 10
+W                  = 50      # BPTT window [samples] — outer loop in train()
+EPOCHS             = 600
+LR                 = 1e-3
+FULL_EVAL_INTERVAL = 10
 LOG_INTERVAL             = 25
 CHECKPOINT_INTERVAL      = 100
 SPLIT_REG_WEIGHT         = 1e-2
@@ -118,6 +115,61 @@ BASE_SEED                = 1234
 
 # Defensive: cudagraph_mark_step_begin is a PyTorch 2.x API — guard for older builds.
 _MARK_STEP_BEGIN = getattr(torch.compiler, 'cudagraph_mark_step_begin', None)
+
+
+# ── Segment pool helpers ──────────────────────────────────────────────────────
+
+def _traj_set_tag(specs):
+    return '_'.join(s['id'] for s in specs)
+
+
+def _build_segment_pools(trajs, segment_len, overlap_fraction=0.0):
+    """
+    Pre-compute valid segment start indices for each trajectory.
+
+    stride = segment_len * (1 - overlap_fraction), rounded to nearest sample.
+    Returns dict traj_id -> list[int] of start indices.
+    Raises ValueError if any trajectory is shorter than segment_len.
+    """
+    stride = max(1, round(segment_len * (1 - overlap_fraction)))
+    pools  = {}
+    for traj in trajs:
+        T      = traj['N']
+        starts = list(range(0, T - segment_len + 1, stride))
+        if not starts:
+            raise ValueError(
+                f'Trajectory {traj["id"]} (N={T}) is shorter than segment_len={segment_len}. '
+                f'Reduce segment_len or use a longer trajectory.'
+            )
+        pools[traj['id']] = starts
+    return pools
+
+
+def _sample_batch(trajs, pools, segment_len, seed):
+    """
+    Sample one segment uniformly at random from each trajectory.
+    Batch order matches trajs order.
+
+    Returns
+    -------
+    x0_batch  : (B, 6)     initial states
+    u_batch   : (B, S, 3)  stage-force inputs
+    q1_batch  : (B, S, 3)  stage positions (targets)
+    """
+    rng = torch.Generator().manual_seed(seed)
+    x0_list, u_list, q1_list = [], [], []
+    for traj in trajs:
+        starts = pools[traj['id']]
+        idx    = int(torch.randint(len(starts), (1,), generator=rng))
+        s      = starts[idx]
+        x0_list.append(traj['state_traj'][s])
+        u_list.append(traj['u'][0, s:s + segment_len])
+        q1_list.append(traj['q1'][s:s + segment_len])
+    return (
+        torch.stack(x0_list),    # (B, 6)
+        torch.stack(u_list),     # (B, S, 3)
+        torch.stack(q1_list),    # (B, S, 3)
+    )
 
 
 # ── Physics helpers ───────────────────────────────────────────────────────────
@@ -223,7 +275,7 @@ def train(
 ):
     """Run parameter recovery training. Returns trained ParameterizedLFRBlock."""
     os.makedirs(save_dir, exist_ok=True)
-    traj_tag = _traj_set_tag(TRAJ_SPECS)
+    traj_tag = _traj_set_tag(TRAJ_SPECS)   # e.g. 'T1_T2_T3_T4_T5_T6_T7_T8'
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
@@ -264,14 +316,21 @@ def train(
             traj['N']          = min(traj['N'], n_steps)
         segment_len = min(segment_len, n_steps)
 
-    _attach_valid_start_idx(trajs, segment_len)
+    # Build segment pools — one pool of start indices per trajectory
+    pools     = _build_segment_pools(trajs, segment_len, OVERLAP_FRACTION)
     n_windows = (segment_len + W - 1) // W
 
+    # sigma_batch is constant each epoch: one entry per trajectory in trajs order
+    sigma_batch = torch.stack([sigma_device[traj['id']] for traj in trajs])  # (B, 3)
+
+    pool_summary = {tid: len(s) for tid, s in pools.items()}
+    stride = max(1, round(segment_len * (1 - OVERLAP_FRACTION)))
     print(f'  Active: {", ".join(s["id"] for s in TRAJ_SPECS)}')
     print(
         f'  segment_len={segment_len}, W={W}, n_windows={n_windows}, '
-        f'batch={TRAIN_SEGMENTS_PER_EPOCH} segments/epoch'
+        f'batch={len(trajs)} trajs/epoch  (overlap={OVERLAP_FRACTION:.0%}, stride={stride})'
     )
+    print(f'  Pool sizes: {pool_summary}')
 
     # ------------------------------------------------------------------
     # Step 2 — Block + optimizer
@@ -363,15 +422,10 @@ def train(
             # Build G once per epoch from current parameters — used for all windows
             G, K, C, mh, alpha, beta, gamma, N0, N1, N2 = _build_sim_params(block)
 
-            # Sample segment batch uniformly from all trajectories
-            x0_seg, u_seg, q1_seg, sample_plan = _sample_balanced_segments(
-                trajs, segment_len, TRAIN_SEGMENTS_PER_EPOCH, BASE_SEED + 10_000 + epoch
+            # Sample one segment per trajectory — guaranteed coverage each epoch
+            x0_seg, u_seg, q1_seg = _sample_batch(
+                trajs, pools, segment_len, BASE_SEED + 10_000 + epoch
             )
-
-            # Per-segment sigma (B, 3): all channels, no masks
-            sigma_batch = torch.stack(
-                [sigma_device[p['traj_id']] for p in sample_plan]
-            )  # (B, 3) on device
 
             # Windowed BPTT — accumulate into a single loss tensor, then one backward.
             # State is detached between windows (truncated BPTT); G is shared across all
@@ -587,9 +641,10 @@ def train(
             'epochs':                   epochs,
             'lr':                       lr,
             'segment_len':              segment_len,
+            'overlap_fraction':         OVERLAP_FRACTION,
             'W':                        W,
             'split_reg_weight':         split_reg_weight,
-            'train_segments_per_epoch': TRAIN_SEGMENTS_PER_EPOCH,
+            'batch_size':               len(trajs),
             'base_seed':                BASE_SEED,
             # Results
             'eval_rmse':                overall_rmse,

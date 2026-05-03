@@ -227,9 +227,9 @@ def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode):
     print(f'  precompute: rmse_baseline_normalized = {rmse_baseline_normalized:.4e}')
 
     # --- segment length diagnostic ---
-    print('  precompute: running segment diagnostic')
-    from lpv_lfr_baseline.scripts.segment_diag import run_segment_diag  # noqa: PLC0415
-    segment_len = run_segment_diag(traj_specs, traj_dir, save_dir)
+    print('  precompute: running segment length diagnostic')
+    from lpv_lfr_baseline.scripts.experiment_diagnostics import recommend_segment_len  # noqa: PLC0415
+    segment_len = recommend_segment_len(trajs, float(trajs[0]['fs']), save_dir, dtype=dtype)
     print(f'  precompute: chosen segment_len = {segment_len}')
 
     metadata = {
