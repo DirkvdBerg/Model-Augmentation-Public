@@ -42,7 +42,7 @@ from lpv_lfr_baseline.blocks.lfr_param_block import (
 from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
 from lpv_lfr_baseline.core.lfr_simulate import simulate
 from lpv_lfr_baseline.core.physics import build_poly_constants
-from lpv_lfr_baseline.scripts.precompute import precompute
+from lpv_lfr_baseline.scripts.precompute import precompute, _build_segment_pools
 
 # ── Dtype (single toggle — flows into precompute and all .to() calls) ────────
 DTYPE = torch.float64
@@ -121,28 +121,6 @@ _MARK_STEP_BEGIN = getattr(torch.compiler, 'cudagraph_mark_step_begin', None)
 
 def _traj_set_tag(specs):
     return '_'.join(s['id'] for s in specs)
-
-
-def _build_segment_pools(trajs, segment_len, overlap_fraction=0.0):
-    """
-    Pre-compute valid segment start indices for each trajectory.
-
-    stride = segment_len * (1 - overlap_fraction), rounded to nearest sample.
-    Returns dict traj_id -> list[int] of start indices.
-    Raises ValueError if any trajectory is shorter than segment_len.
-    """
-    stride = max(1, round(segment_len * (1 - overlap_fraction)))
-    pools  = {}
-    for traj in trajs:
-        T      = traj['N']
-        starts = list(range(0, T - segment_len + 1, stride))
-        if not starts:
-            raise ValueError(
-                f'Trajectory {traj["id"]} (N={T}) is shorter than segment_len={segment_len}. '
-                f'Reduce segment_len or use a longer trajectory.'
-            )
-        pools[traj['id']] = starts
-    return pools
 
 
 def _sample_batch(trajs, pools, segment_len, seed):
@@ -287,12 +265,14 @@ def train(
     # Step 1 — Precompute (cache-backed)
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 1: Precompute (trajectories, sigma, segment_len)\n{"=" * 60}')
-    pre = precompute(TRAJ_SPECS, TRAJ_DIR, save_dir, dtype=DTYPE, norm_mode=norm_mode)
+    pre = precompute(TRAJ_SPECS, TRAJ_DIR, save_dir, dtype=DTYPE, norm_mode=norm_mode,
+                     overlap_fraction=OVERLAP_FRACTION)
 
     trajs                    = pre['trajs']
     sigma                    = pre['sigma']               # dict traj_id -> (3,) CPU float64
     rmse_baseline_normalized = pre['rmse_baseline_normalized']
     segment_len              = pre['segment_len']
+    pools                    = pre['pools']               # dict traj_id -> list[int] start indices
 
     # Move trajectory tensors to training device
     for traj in trajs:
@@ -315,9 +295,7 @@ def train(
             traj['state_traj'] = traj['state_traj'][:n_steps]
             traj['N']          = min(traj['N'], n_steps)
         segment_len = min(segment_len, n_steps)
-
-    # Build segment pools — one pool of start indices per trajectory
-    pools     = _build_segment_pools(trajs, segment_len, OVERLAP_FRACTION)
+        pools = _build_segment_pools(trajs, segment_len, OVERLAP_FRACTION)  # truncation changes valid starts
     n_windows = (segment_len + W - 1) // W
 
     # sigma_batch is constant each epoch: one entry per trajectory in trajs order

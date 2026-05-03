@@ -56,14 +56,15 @@ def _mtime(path):
         return None
 
 
-def _fingerprint(traj_specs, traj_dir, dtype, norm_mode):
+def _fingerprint(traj_specs, traj_dir, dtype, norm_mode, overlap_fraction):
     """Cache key — invalidated by data changes (mtimes), logic changes (compute_hash), or config."""
     return {
-        'traj_specs':   tuple((s['id'], s['file']) for s in traj_specs),
-        'mtimes':       tuple((s['file'], _mtime(os.path.join(traj_dir, s['file']))) for s in traj_specs),
-        'dtype':        str(dtype),
-        'norm_mode':    norm_mode,
-        'compute_hash': _COMPUTE_HASH,
+        'traj_specs':       tuple((s['id'], s['file']) for s in traj_specs),
+        'mtimes':           tuple((s['file'], _mtime(os.path.join(traj_dir, s['file']))) for s in traj_specs),
+        'dtype':            str(dtype),
+        'norm_mode':        norm_mode,
+        'overlap_fraction': overlap_fraction,
+        'compute_hash':     _COMPUTE_HASH,
     }
 
 
@@ -171,10 +172,36 @@ def _aggregate_normalized_rmse_baseline(rmse_entries, sigma):
 
 
 # ----------------------------------------------------------------------
+# Segment pool helpers
+# ----------------------------------------------------------------------
+
+def _build_segment_pools(trajs, segment_len, overlap_fraction=0.0):
+    """
+    Pre-compute valid segment start indices for each trajectory.
+
+    stride = segment_len * (1 - overlap_fraction), rounded to nearest sample.
+    Returns dict traj_id -> list[int] of start indices.
+    Raises ValueError if any trajectory is shorter than segment_len.
+    """
+    stride = max(1, round(segment_len * (1 - overlap_fraction)))
+    pools  = {}
+    for traj in trajs:
+        T      = traj['N']
+        starts = list(range(0, T - segment_len + 1, stride))
+        if not starts:
+            raise ValueError(
+                f'Trajectory {traj["id"]} (N={T}) is shorter than segment_len={segment_len}. '
+                f'Reduce segment_len or use a longer trajectory.'
+            )
+        pools[traj['id']] = starts
+    return pools
+
+
+# ----------------------------------------------------------------------
 # Core computation
 # ----------------------------------------------------------------------
 
-def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode):
+def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction):
     """Run all precomputation. Only called when cache is absent or stale."""
     P      = _P.to(dtype)
     ts_val = float(_ts)
@@ -232,14 +259,19 @@ def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode):
     segment_len = recommend_segment_len(trajs, float(trajs[0]['fs']), save_dir, dtype=dtype)
     print(f'  precompute: chosen segment_len = {segment_len}')
 
+    # --- segment pools ---
+    pools = _build_segment_pools(trajs, segment_len, overlap_fraction)
+    print(f'  precompute: pool sizes = { {tid: len(s) for tid, s in pools.items()} }')
+
     metadata = {
-        'traj_dir':    traj_dir,
-        'dtype':       str(dtype),
-        'norm_mode':   norm_mode,
-        'traj_ids':    [t['id'] for t in trajs],
-        'traj_files':  [t['file'] for t in trajs],
-        'n_timesteps': {t['id']: t['N'] for t in trajs},
-        'segment_len': segment_len,
+        'traj_dir':         traj_dir,
+        'dtype':            str(dtype),
+        'norm_mode':        norm_mode,
+        'overlap_fraction': overlap_fraction,
+        'traj_ids':         [t['id'] for t in trajs],
+        'traj_files':       [t['file'] for t in trajs],
+        'n_timesteps':      {t['id']: t['N'] for t in trajs},
+        'segment_len':      segment_len,
     }
 
     return {
@@ -248,6 +280,7 @@ def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode):
         'rmse_entries':             rmse_entries,
         'rmse_baseline_normalized': rmse_baseline_normalized,
         'segment_len':              segment_len,
+        'pools':                    pools,
         'metadata':                 metadata,
     }
 
@@ -260,29 +293,31 @@ _COMPUTE_HASH = hashlib.md5(inspect.getsource(_compute).encode()).hexdigest()[:8
 # ----------------------------------------------------------------------
 
 def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
-               norm_mode='per_traj', force=False):
+               norm_mode='per_traj', overlap_fraction=0.0, force=False):
     """
     Load or compute all fixed precomputed data for parameter recovery training.
 
     Parameters
     ----------
-    traj_specs : sequence of dicts with keys 'id', 'file'
-    traj_dir   : directory containing the .mat trajectory files
-    save_dir   : directory for the cache file and segment diagnostic outputs
-    dtype      : torch dtype for all output tensors (default float64)
-    norm_mode  : 'per_traj' (default) or 'global' — controls how sigma is computed.
-                 Changing this invalidates the cache and forces a recompute.
-    force      : if True, recompute even when a valid cache exists
+    traj_specs       : sequence of dicts with keys 'id', 'file'
+    traj_dir         : directory containing the .mat trajectory files
+    save_dir         : directory for the cache file and segment diagnostic outputs
+    dtype            : torch dtype for all output tensors (default float64)
+    norm_mode        : 'per_traj' (default) or 'global' — controls how sigma is computed.
+                       Changing this invalidates the cache and forces a full recompute.
+    overlap_fraction : fraction of segment_len used as overlap between consecutive segments.
+                       Changing this only rebuilds pools — no full recompute needed.
+    force            : if True, recompute even when a valid cache exists
 
     Returns
     -------
     dict with keys:
         trajs, sigma, rmse_entries, rmse_baseline_normalized,
-        segment_len, metadata, fingerprint
+        segment_len, pools, metadata, fingerprint
     """
     os.makedirs(save_dir, exist_ok=True)
     cache_path = Path(save_dir) / 'precomputed.pt'
-    fp = _fingerprint(traj_specs, traj_dir, dtype, norm_mode)
+    fp = _fingerprint(traj_specs, traj_dir, dtype, norm_mode, overlap_fraction)
 
     if not force and cache_path.exists():
         cached    = torch.load(cache_path, weights_only=False)
@@ -291,8 +326,24 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
             print(f'  precompute: loaded from cache ({cache_path})')
             meta = cached.get('metadata', {})
             print(f'    traj_dir={meta.get("traj_dir")}  norm_mode={meta.get("norm_mode")!r}  '
-                  f'trajs={meta.get("traj_ids")}  segment_len={meta.get("segment_len")}')
+                  f'trajs={meta.get("traj_ids")}  segment_len={meta.get("segment_len")}  '
+                  f'overlap={meta.get("overlap_fraction", 0.0):.0%}')
             return cached
+
+        # Fast path: only overlap_fraction changed — rebuild pools without full recompute
+        fp_core        = {k: v for k, v in fp.items()        if k != 'overlap_fraction'}
+        cached_fp_core = {k: v for k, v in cached_fp.items() if k != 'overlap_fraction'}
+        if fp_core == cached_fp_core and 'segment_len' in cached:
+            print(f'  precompute: overlap_fraction changed — rebuilding pools only')
+            cached['pools']                       = _build_segment_pools(
+                cached['trajs'], cached['segment_len'], overlap_fraction
+            )
+            cached['fingerprint']['overlap_fraction']  = overlap_fraction
+            cached['metadata']['overlap_fraction']     = overlap_fraction
+            torch.save(cached, cache_path)
+            print(f'  precompute: pools updated and saved to {cache_path}')
+            return cached
+
         print('  precompute: cache stale — recomputing. Changed:')
         for key, val in fp.items():
             old = cached_fp.get(key)
@@ -305,7 +356,7 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
                 else:
                     print(f'    {key}: {old!r} → {val!r}')
 
-    data = _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode)
+    data = _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction)
     data['fingerprint'] = fp
     torch.save(data, cache_path)
     print(f'  precompute: saved to {cache_path}')
