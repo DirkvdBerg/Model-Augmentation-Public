@@ -6,18 +6,17 @@ Experiment-level diagnostics for the dual-gantry parameter recovery dataset.
 Diagnostics (run in order — each feeds the next)
 -------------------------------------------------
 1. FFT / frequency content   — sampling rate and decimation factor recommendation
-2. Step response             — dominant time constant tau_max per Y operating point
-3. Parameter sensitivity     — minimum segment length per parameter via finite differences
-4. Observability             — horizon sanity check (expected: 2 samples)
+2. Step response             — dominant time constant tau_max and segment length
+3. Observability             — horizon sanity check (expected: 2 samples)
 
 Public API
 ----------
-recommend_segment_len(trajs, fs, save_dir, dtype) -> int
-    Called by precompute._compute(). Runs diagnostics 2+3 only (no plots).
-    Returns segment_len in samples at the given fs.
+recommend_segment_len(fs, fs_new, save_dir, dtype) -> int
+    Called by precompute._compute(). Runs diagnostic 2 only (no plots).
+    Returns segment_len in samples at fs_new.
 
 run_all_diagnostics(trajs, save_dir) -> None
-    Runs all four diagnostics, saves plots, prints full summary.
+    Runs all three diagnostics, saves plots, prints full summary.
     Called by __main__.
 
 Run standalone:
@@ -46,28 +45,10 @@ from lpv_lfr_baseline.core.lfr_simulate import simulate_frozen
 # ----------------------------------------------------------------------
 
 _Y_OP_POINTS          = (0.00, 0.20, 0.30)        # frozen Y operating points [m]
-_ENERGY_THRESHOLD     = 0.95                       # cumulative sensitivity energy to capture
 _FS_CANDIDATES        = (1000, 2000, 4000, 8000)   # candidate new sampling rates [Hz]
 _FS_RULE_FACTOR       = 8                          # require fs_new >= factor * f_99
 _FFT_ENERGY_THRESHOLD = 0.99                       # cumulative PSD energy for f_99
-_SENS_T_TEST_MAX      = 2000                       # max decimated samples for sensitivity JVP
-_SENS_T_TEST_FACTOR   = 5                          # T_test = factor * tau_max * fs_dec
-
-_PARAM_CATEGORIES = {
-    'mh': 'inertial', 'm1': 'inertial', 'm2': 'inertial', 'mb': 'inertial',
-    'Jb': 'inertial', 'Jh': 'inertial',
-    'cg1': 'damping',  'cg2': 'damping', 'cy': 'damping',
-    'cb1': 'damping',  'cb2': 'damping',
-    'kb1': 'stiffness', 'kb2': 'stiffness',
-    'd':  'geometry',
-}
-
-_CATEGORY_COLORS = {
-    'inertial':  'steelblue',
-    'damping':   'darkorange',
-    'stiffness': 'forestgreen',
-    'geometry':  'mediumpurple',
-}
+N_PERIODS             = 3                          # number of slowest oscillatory periods per segment
 
 _CH_NAMES = ('X1', 'X2', 'Y')
 
@@ -188,7 +169,7 @@ def _diag_fft(trajs, save_dir):
 # Diagnostic 2 — Step response / pole analysis
 # ----------------------------------------------------------------------
 
-def _diag_step_response(fs, save_dir, dtype=torch.float64):
+def _diag_step_response(fs, fs_new, save_dir, dtype=torch.float64):
     """
     Compute eigenvalues of A_c = [[0, I], [-M(Y)^-1 K, -M(Y)^-1 C]] at each
     Y in _Y_OP_POINTS using detuned initial parameters.
@@ -196,9 +177,15 @@ def _diag_step_response(fs, save_dir, dtype=torch.float64):
     Time constants: tau_i = -1 / Re(lambda_i) for Re(lambda_i) < 0.
     tau_max = max over all poles and operating points.
 
+    Oscillatory poles (|Im(lambda)| > 1.0 rad/s) determine the slowest
+    oscillatory frequency f_osc_min and hence the segment length:
+        segment_len_s = N_PERIODS / f_osc_min
+        segment_len   = ceil(segment_len_s * fs_new)
+
     Returns
     -------
-    dict: tau_max [s], poles {Y_val: eigvals tensor}
+    dict: tau_max [s], poles {Y_val: eigvals tensor},
+          f_osc_min [Hz], segment_len [samples at fs_new], segment_len_s [s]
     """
     block = ParameterizedLFRBlock(RMSE_baseline=1.0)
     Lb    = _Lb.to(dtype)
@@ -240,125 +227,35 @@ def _diag_step_response(fs, save_dir, dtype=torch.float64):
 
     print(f'  tau_max overall = {tau_max:.4f} s')
 
+    # Oscillatory poles: |Im(lambda)| > 1.0 rad/s
+    all_osc_freqs_rads = []
+    for eigvals in poles.values():
+        osc_mask = eigvals.imag.abs() > 1.0
+        if osc_mask.any():
+            all_osc_freqs_rads.extend(eigvals.imag[osc_mask].abs().tolist())
+
+    f_osc_min     = min(all_osc_freqs_rads) / (2 * math.pi)
+    segment_len_s = N_PERIODS / f_osc_min
+    segment_len   = math.ceil(segment_len_s * fs_new)
+
+    print(f'  f_osc_min = {f_osc_min:.4f} Hz  (slowest oscillatory mode)')
+    print(f'  segment_len_s = {segment_len_s:.4f} s  ({N_PERIODS} periods of f_osc_min)')
+    print(f'  segment_len = {segment_len} samples at {fs_new:.0f} Hz')
+
     if save_dir is not None:
         _plot_poles(poles, tau_max, save_dir)
 
-    return {'tau_max': tau_max, 'poles': poles}
-
-
-# ----------------------------------------------------------------------
-# Diagnostic 3 — Parameter sensitivity via JVP
-# ----------------------------------------------------------------------
-
-def _diag_param_sensitivity(trajs, fs, tau_max, save_dir, dtype=torch.float64,
-                             fs_dec=_FS_CANDIDATES[0]):
-    """
-    For each log-parameter, compute the time-resolved sensitivity
-        s_i(t) = ||d y(t) / d log_theta_i||_2
-    via central finite differences through simulate_frozen.
-
-    Uses decimated inputs (fs_dec Hz) so T_test is manageable.
-    Averages over all trajectories; Y is frozen at each traj's initial Y.
-
-    Returns
-    -------
-    dict: segment_len [samples at native fs], t95 {name: float [s]},
-          slowest_param str, segment_len_s float
-    """
-    block       = ParameterizedLFRBlock(RMSE_baseline=1.0)
-    params_init = block.params_init.to(dtype)
-    log_p       = block.log_params.detach().to(dtype)   # zeros at init
-    P           = _P.to(dtype)
-
-    D      = max(1, round(fs / fs_dec))
-    fs_dec = fs / D   # exact decimated rate
-    ts_eff = torch.tensor(float(_ts) * D, dtype=dtype)
-
-    # T_test: enough to observe _SENS_T_TEST_FACTOR * tau_max at decimated rate,
-    # capped to avoid excessive compute.
-    min_T_dec = min(traj['N'] // D for traj in trajs)
-    T_test = min(
-        int(_SENS_T_TEST_FACTOR * tau_max * fs_dec),
-        _SENS_T_TEST_MAX,
-        min_T_dec,
-    )
-    T_test = max(T_test, 50)   # floor: always simulate at least 50 samples
-
-    n_params = len(_PARAM_NAMES)
-    n_trajs  = len(trajs)
-
-    print(f'\nParameter Sensitivity'
-          f'  (fs_dec={fs_dec:.0f} Hz, D={D}, T_test={T_test} steps = {T_test/fs_dec:.2f} s)')
-
-    sensitivity_sum = torch.zeros(n_params, T_test, dtype=dtype)
-
-    for traj in trajs:
-        u_dec = traj['u'][0, ::D, :][:T_test].to(dtype)   # (T_test, 3)
-        u_seq = u_dec.unsqueeze(0)                          # (1, T_test, 3)
-        x0    = traj['state_traj'][0:1].to(dtype)           # (1, 6)
-        Y_freeze = float(x0[0, 2].item())                   # Y position at traj start
-
-        def forward_fn(lp):
-            with torch.no_grad():
-                G, K, C, mh, alpha, beta, gamma, N0, N1, N2 = _build_sim_matrices(
-                    lp, params_init, dtype
-                )
-                result = simulate_frozen(
-                    x0, u_seq, G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
-                    P, ts_eff, Y_freeze=Y_freeze, return_latents=False,
-                )
-            return result.Y[0]   # (T_test, 3)
-
-        eps = 1e-5
-        for i in range(n_params):
-            lp_plus  = log_p.clone(); lp_plus[i]  = lp_plus[i]  + eps
-            lp_minus = log_p.clone(); lp_minus[i] = lp_minus[i] - eps
-            sens_i = (forward_fn(lp_plus) - forward_fn(lp_minus)) / (2 * eps)
-            sensitivity_sum[i] += sens_i.norm(dim=-1)
-            print(f'    {traj["id"]}  param {_PARAM_NAMES[i]:<6} done', flush=True)
-
-    sensitivity_avg = sensitivity_sum / n_trajs   # (n_params, T_test)
-
-    # Cumulative energy and t_95 per parameter
-    t95 = {}
-    for i, name in enumerate(_PARAM_NAMES):
-        s     = sensitivity_avg[i]
-        total = s.pow(2).sum().clamp(min=1e-30)
-        cs    = s.pow(2).cumsum(0) / total
-        hits  = (cs >= _ENERGY_THRESHOLD).nonzero(as_tuple=True)[0]
-        t95_samp    = int(hits[0]) if hits.numel() > 0 else T_test - 1
-        t95[name]   = t95_samp / fs_dec
-
-    slowest      = max(t95, key=t95.get)
-    t_sens_max   = t95[slowest]
-    t_capped     = t_sens_max >= (T_test - 1) / fs_dec * 0.99
-
-    segment_len_s = t_sens_max
-    segment_len   = math.ceil(segment_len_s * fs)
-
-    print(f'\n  t_95 per parameter [s]:')
-    for name in _PARAM_NAMES:
-        cat  = _PARAM_CATEGORIES[name]
-        mark = ' <-- slowest' if name == slowest else ''
-        print(f'    {name:<6}: {t95[name]:.4f} s  ({cat}){mark}')
-    if t_capped:
-        print(f'  WARNING: {slowest} sensitivity may not have converged — T_test cap reached')
-    print(f'  Segment length: t_95_max = {segment_len_s:.4f} s')
-    print(f'  -> segment_len = {segment_len} samples at {fs:.0f} Hz')
-
-    if save_dir is not None:
-        _plot_sensitivity(sensitivity_avg, t95, fs_dec, T_test, save_dir)
-
     return {
+        'tau_max':       tau_max,
+        'poles':         poles,
+        'f_osc_min':     f_osc_min,
         'segment_len':   segment_len,
         'segment_len_s': segment_len_s,
-        't95':           t95,
-        'slowest_param': slowest,
     }
 
 
 # ----------------------------------------------------------------------
-# Diagnostic 4 — Observability
+# Diagnostic 3 — Observability
 # ----------------------------------------------------------------------
 
 def _diag_observability(fs, save_dir, dtype=torch.float64):
@@ -440,34 +337,29 @@ def _diag_observability(fs, save_dir, dtype=torch.float64):
 # Public API
 # ----------------------------------------------------------------------
 
-def recommend_segment_len(trajs, fs, save_dir, dtype=torch.float64):
+def recommend_segment_len(fs, fs_new, save_dir, dtype=torch.float64):
     """
-    Determine segment_len from step response + parameter sensitivity.
+    Determine segment_len from step response pole analysis.
     Called by precompute._compute() — prints, no plots.
 
     Parameters
     ----------
-    trajs    : list of traj dicts (id, u, q1, state_traj, N, fs)
-    fs       : native sampling frequency [Hz]
+    fs       : native sampling frequency [Hz] (before decimation)
+    fs_new   : target sampling frequency [Hz] (after decimation)
     save_dir : directory for cache artefacts (unused here, passed for consistency)
     dtype    : torch dtype (default float64)
 
     Returns
     -------
-    int — segment_len in samples at the native fs
+    int — segment_len in samples at fs_new
     """
-    print('\nSegment length recommendation')
-    r_step = _diag_step_response(fs, save_dir=None, dtype=dtype)
-    r_sens = _diag_param_sensitivity(
-        trajs, fs, r_step['tau_max'], save_dir=None, dtype=dtype,
-        fs_dec=_FS_CANDIDATES[0],
-    )
-    return r_sens['segment_len']
+    r_step = _diag_step_response(fs, fs_new, save_dir=None, dtype=dtype)
+    return r_step['segment_len']
 
 
 def run_all_diagnostics(trajs, save_dir):
     """
-    Run all four diagnostics. Saves plots to save_dir, prints full summary.
+    Run all three diagnostics. Saves plots to save_dir, prints full summary.
 
     Parameters
     ----------
@@ -478,11 +370,7 @@ def run_all_diagnostics(trajs, save_dir):
     fs = float(trajs[0]['fs'])
 
     r_fft  = _diag_fft(trajs, save_dir)
-    r_step = _diag_step_response(fs, save_dir, dtype=torch.float64)
-    r_sens = _diag_param_sensitivity(
-        trajs, fs, r_step['tau_max'], save_dir, dtype=torch.float64,
-        fs_dec=r_fft['fs_new'],
-    )
+    r_step = _diag_step_response(fs, r_fft['fs_new'], save_dir, dtype=torch.float64)
     r_obs  = _diag_observability(fs, save_dir, dtype=torch.float64)
 
     print()
@@ -492,10 +380,9 @@ def run_all_diagnostics(trajs, save_dir):
     print(f'  Recommended fs   : {r_fft["fs_new"]} Hz'
           f'  (D={r_fft["decimation_factor"]} from {fs:.0f} Hz)')
     print(f'  tau_max          : {r_step["tau_max"]:.4f} s')
-    print(f'  Slowest param    : {r_sens["slowest_param"]}'
-          f'  (t_95={r_sens["t95"][r_sens["slowest_param"]]:.4f} s)')
-    print(f'  segment_len      : {r_sens["segment_len"]} samples'
-          f'  ({r_sens["segment_len_s"]:.3f} s at {fs:.0f} Hz)')
+    print(f'  f_osc_min        : {r_step["f_osc_min"]:.4f} Hz')
+    print(f'  segment_len      : {r_step["segment_len"]} samples'
+          f'  ({r_step["segment_len_s"]:.3f} s at {r_fft["fs_new"]:.0f} Hz)')
     print(f'  Observability    : horizon = {r_obs["horizon"]}  (expected 2)')
     print('=' * 60)
 
@@ -520,29 +407,6 @@ def _plot_poles(poles, tau_max, save_dir):
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     _save_fig(fig, save_dir, 'diag_step_response.png')
-
-
-def _plot_sensitivity(sensitivity_avg, t95, fs_dec, T_test, save_dir):
-    t_axis = [k / fs_dec for k in range(T_test)]
-    fig, ax = plt.subplots(figsize=(10, 5))
-    for i, name in enumerate(_PARAM_NAMES):
-        cat   = _PARAM_CATEGORIES[name]
-        color = _CATEGORY_COLORS[cat]
-        s     = sensitivity_avg[i]
-        total = s.pow(2).sum().clamp(min=1e-30)
-        cs    = (s.pow(2).cumsum(0) / total).tolist()
-        ax.plot(t_axis, cs, color=color, alpha=0.85, linewidth=1.2, label=name)
-        ax.axvline(t95[name], color=color, linestyle=':', linewidth=0.8, alpha=0.6)
-    ax.axhline(_ENERGY_THRESHOLD, color='k', linestyle='--', linewidth=1.2,
-               label=f'{_ENERGY_THRESHOLD:.0%} threshold')
-    ax.set_xlabel('Time [s]')
-    ax.set_ylabel('Cumulative sensitivity energy [-]')
-    ax.set_title('Parameter sensitivity — cumulative energy  (dotted lines = t_95 per param)')
-    ax.legend(fontsize=7, ncol=5, loc='lower right')
-    ax.grid(True, alpha=0.3)
-    ax.set_ylim(0, 1.05)
-    plt.tight_layout()
-    _save_fig(fig, save_dir, 'diag_sensitivity.png')
 
 
 def _plot_observability(rank_profiles, horizon, save_dir):
@@ -587,16 +451,7 @@ if __name__ == '__main__':
         '--dataset', default=DATASET, choices=list(_DATASETS),
         help='Dataset to analyse (default: active DATASET in train_param_recovery.py)',
     )
-    parser.add_argument(
-        '--quick', action='store_true',
-        help='Cap sensitivity T_test to 50 samples — fast smoke test, results not meaningful.',
-    )
     args = parser.parse_args()
-
-    if args.quick:
-        import lpv_lfr_baseline.scripts.experiment_diagnostics as _self
-        _self._SENS_T_TEST_MAX = 50
-        print('[quick mode] T_test capped to 50 samples — smoke test only')
 
     ds       = _DATASETS[args.dataset]
     save_dir = os.path.join(ds['save_dir'], 'diagnostics')

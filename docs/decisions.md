@@ -1224,6 +1224,53 @@ anchored toward physically plausible values may help stability. At that point, `
 should ideally be updated to the best currently known parameter estimate rather than the
 detuned starting values, to avoid the wrong-anchor problem documented here.
 
+---
+
+### [D-047] Parameter sensitivity diagnostic removed from experiment_diagnostics.py
+**Date**: 2026-05-03
+**What**: `_diag_param_sensitivity` was implemented and then removed. The final
+`experiment_diagnostics.py` contains three diagnostics only: FFT, step response,
+and observability. Segment length is determined from the step response oscillatory
+frequency alone.
+
+**Why it was built**: An attempt to determine the minimum segment length rigorously —
+by computing `∂y/∂log(θᵢ)` for each of the 14 parameters over time (via finite
+differences through `simulate_frozen`), finding the time `t_95` at which 95% of
+cumulative sensitivity energy is captured, and setting `segment_len = t_95_max`.
+
+**Why it was removed**:
+1. **Not supervisor-suggested.** Supervisors explicitly recommended FFT + step response.
+   Parameter sensitivity was an independent addition from research reasoning, not
+   requested or validated by supervisors. Their guidance: keep it simple, don't solve
+   problems you are not facing.
+2. **Slow.** 14 parameters × 8 trajectories × 2 forward passes = 224 `simulate_frozen`
+   calls per diagnostic run. On CPU eager mode this takes several minutes.
+3. **Result was unusable.** `t_95` for all parameters hit the T_test cap of 2.0 s
+   (the full decimated trajectory length), meaning sensitivity never converged within
+   the available data. The diagnostic returned `segment_len ≈ 39420 samples at 20000 Hz`
+   — essentially the full trajectory — giving only 1 segment per trajectory and no
+   meaningful segment pool.
+4. **Wrong reference timescale.** An earlier version used `segment_len = max(10×tau_max,
+   t_95_max)`, which produced 314436 samples (15.7 s) — longer than the trajectories
+   entirely. Even after removing the 10× multiplier, the result was still impractical.
+
+**What replaced it**: Segment length is derived from the oscillatory poles in the step
+response. The slowest oscillatory frequency `f_osc_min` is extracted from the complex
+eigenvalues of `A_c` at each frozen Y operating point. Segment length is then:
+
+    segment_len_s = N_PERIODS / f_osc_min
+
+with `N_PERIODS = 3` (configurable). At `f_osc_min ≈ 4.94 Hz` (Y=0.30 m):
+`segment_len_s ≈ 0.61 s → 610 samples at 1000 Hz`. This gives multiple segments per
+2 s trajectory and is consistent with the supervisor-recommended approach.
+
+**Ruled out**: Re-enabling sensitivity in any form unless supervisors specifically request
+it and longer trajectories are available (so t_95 can actually converge).
+
+**Constrains**: `recommend_segment_len` now only calls `_diag_step_response` — it no
+longer requires trajectory data as input (only `fs` and `dtype`). The function signature
+changes accordingly.
+
 **Constrains**: `PARAM_LOSS_WEIGHT = 0.0` must be kept for all clean-data parameter
 recovery runs. If re-enabled, the anchor target (`params_init`) and weight must be
 revisited together.

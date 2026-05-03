@@ -172,7 +172,7 @@ def _build_sim_params(block):
 
 
 @torch._dynamo.disable
-def _run_no_grad(block, x0, u):
+def _run_no_grad(block, x0, u, ts_tensor):
     """Simulate full trajectory with current params, no gradient.
 
     Decorated with @torch._dynamo.disable (recursive) so compiled functions
@@ -184,7 +184,7 @@ def _run_no_grad(block, x0, u):
         G, K, C, mh, alpha, beta, gamma, N0, N1, N2 = _build_sim_params(block)
         return simulate(
             x0, u, G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
-            block._P, block._ts, bptt_mode='full', return_latents=False,
+            block._P, ts_tensor, bptt_mode='full', return_latents=False,
         )
 
 
@@ -195,11 +195,11 @@ def _aggregate_rmse(entries):
     return (sum(e['mse_total'] for e in entries) / len(entries)) ** 0.5
 
 
-def _full_traj_eval(block, trajs):
+def _full_traj_eval(block, trajs, ts_tensor):
     """Full-trajectory eval (no grad). Returns (mean_rmse_m, entries)."""
     entries = []
     for traj in trajs:
-        result   = _run_no_grad(block, traj['state_traj'][:1], traj['u'])
+        result   = _run_no_grad(block, traj['state_traj'][:1], traj['u'], ts_tensor)
         diff     = result.Y[0] - traj['q1']
         rmse_ch  = diff.pow(2).mean(dim=0).sqrt().cpu()
         rmse_tot = float(diff.pow(2).mean().item() ** 0.5)
@@ -273,6 +273,9 @@ def train(
     rmse_baseline_normalized = pre['rmse_baseline_normalized']
     segment_len              = pre['segment_len']
     pools                    = pre['pools']               # dict traj_id -> list[int] start indices
+    ts_eff                   = float(pre['ts_eff'])       # effective timestep after decimation [s]
+    fs_new                   = float(pre['fs_new'])       # sampling rate after decimation [Hz]
+    D                        = int(pre['D'])              # decimation factor
 
     # Move trajectory tensors to training device
     for traj in trajs:
@@ -282,6 +285,9 @@ def train(
 
     # Pre-build device-side sigma lookup — avoids per-epoch .to() inside the loop
     sigma_device = {tid: s.to(device=device, dtype=DTYPE) for tid, s in sigma.items()}
+
+    # Effective timestep tensor — replaces block._ts in all simulate() calls
+    ts_tensor = torch.tensor(ts_eff, dtype=DTYPE, device=device)
 
     print(f'  rmse_baseline_normalized = {rmse_baseline_normalized:.4e}')
     print(f'  segment_len = {segment_len} samples')
@@ -306,7 +312,10 @@ def train(
     print(f'  Active: {", ".join(s["id"] for s in TRAJ_SPECS)}')
     print(
         f'  segment_len={segment_len}, W={W}, n_windows={n_windows}, '
-        f'batch={len(trajs)} trajs/epoch  (overlap={OVERLAP_FRACTION:.0%}, stride={stride})'
+        f'batch={len(trajs)} trajs/epoch'
+    )
+    print(
+        f'  fs_new={fs_new:.0f} Hz (D={D}), overlap={OVERLAP_FRACTION:.0%}, stride={stride}'
     )
     print(f'  Pool sizes: {pool_summary}')
 
@@ -367,7 +376,7 @@ def train(
                 eval_block.log_params.copy_(
                     lp_cpu.to(device=device, dtype=eval_block.log_params.dtype)
                 )
-            rmse, entries = _full_traj_eval(eval_block, trajs)
+            rmse, entries = _full_traj_eval(eval_block, trajs, ts_tensor)
             result_queue.put((snap_epoch, rmse, entries, lp_cpu))
             snap_queue.task_done()
 
@@ -420,7 +429,7 @@ def train(
                 result  = simulate(
                     x_win, u_win,
                     G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
-                    block._P, block._ts,
+                    block._P, ts_tensor,
                     bptt_mode='full', return_latents=False,
                 )
 
@@ -548,7 +557,7 @@ def train(
     print(f'  {"Traj":<6}  {"RMSE [m]":>12}  {"X1 [m]":>10}  {"X2 [m]":>10}  {"Y [m]":>10}')
     print(f'  {"-" * 6}  {"-" * 12}  {"-" * 10}  {"-" * 10}  {"-" * 10}')
     for traj in trajs:
-        result   = _run_no_grad(block, traj['state_traj'][:1], traj['u'])
+        result   = _run_no_grad(block, traj['state_traj'][:1], traj['u'], ts_tensor)
         diff     = result.Y[0] - traj['q1']
         rmse_ch  = diff.pow(2).mean(dim=0).sqrt().cpu()
         rmse_tot = float(diff.pow(2).mean().item() ** 0.5)

@@ -84,7 +84,9 @@
       "Bash(cmd.exe:*)",
       "Bash(powershell:*)",
       "Bash(tasklist /FI \"IMAGENAME eq python.exe\" /FO CSV)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(ls:*)",
+      "Bash(echo \"PID: $!\")"
     ]
   }
 }

@@ -55,6 +55,14 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
+### Rule: Diagnose test failures by reading code, not by running more commands
+**Trigger**: When a test or smoke test fails during verification of completed implementation work
+**Rule**: Read the relevant code and traceback to diagnose the cause. Do not run multiple follow-up test commands that each take minutes. Once the root cause is identified from code reading, report it and stop.
+**Why**: User canceled after multiple slow test runs (~5 min each) that were diagnosing a pre-existing race condition. The cause was identifiable from reading lfr_simulate.py and the traceback in under 30 seconds.
+**How to apply**: Traceback + 1-2 targeted file reads = sufficient diagnosis. Only run a second test command if it directly confirms/falsifies the hypothesis with a fast result.
+
+---
+
 ### Rule: Mathematical implications must be justified for the specific construction, not asserted as general facts
 **Trigger**: When claiming "X implies Y" or "X if and only if Y" in a mathematical derivation
 **Rule**: Always state explicitly why the implication holds for this specific construction. Do not assert it as if it follows from a general theorem unless it actually does. Show the connecting steps.
