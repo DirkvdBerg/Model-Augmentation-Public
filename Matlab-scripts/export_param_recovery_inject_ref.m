@@ -66,6 +66,7 @@ cb2 = 9;       % Viscous friction joint 2            [Nm/(rad/s)]
 kb1 = 1987.5;  % Stiffness joint 1                   [N.m/rad]
 kb2 = 1987.5;  % Stiffness joint 2                   [N.m/rad]
 Lb  = 0.725;   % Length of moving cross-arm          [m]
+Lh  = 0.25;    % Length of payload                   [m]
 d   = 0.1;     % Distance cross-arm centre to payload CoM [m]
 cc1 = 16.8;    % Coulomb friction X1 (Simscape only) [N]
 cc2 = 18.35;   % Coulomb friction X2 (Simscape only) [N]
@@ -393,6 +394,7 @@ for i = TRAJ_SUBSET
         % One simulation with all committed modes.
         r_ms    = r_ms_fixed;
         r_total = r_traj + r_ms;
+        t       = t_traj;
         r       = r_total;
         sim(mdl, t_traj(end));
 
@@ -414,6 +416,7 @@ for i = TRAJ_SUBSET
     else
         r_ms          = zeros(length(t_traj), 3);
         r_total       = r_traj;
+        t             = t_traj;
         r             = r_traj;
         amp_max_modes = NaN(1, numel(sp.ms_modes));
         f_high_modes  = NaN(1, numel(sp.ms_modes));
