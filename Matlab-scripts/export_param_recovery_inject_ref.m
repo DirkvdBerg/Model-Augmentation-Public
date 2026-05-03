@@ -47,7 +47,7 @@ addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
 % ======================================================================
 USE_MULTISINE = true;   % true  -> reference multisine, output to parameter-recovery-ref-injection/
                          % false -> no multisine,        output to parameter-recovery/
-TRAJ_SUBSET   = 8;    % which trajectories to generate, e.g. [8] to debug only T8
+TRAJ_SUBSET   = 1:8;    % which trajectories to generate, e.g. [8] to debug only T8
 
 % ======================================================================
 % 1. Physical parameters (identical to main.m lines 12-49)

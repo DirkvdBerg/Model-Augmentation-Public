@@ -52,8 +52,16 @@ from lpv_lfr_baseline.scripts.segment_diag import (
 # ── Dtype (single toggle — flows into precompute and all .to() calls) ────────
 DTYPE = torch.float64
 
-# ── Dataset toggle ────────────────────────────────────────────────────────────
-USE_MULTISINE = False   # mirrors MATLAB export_param_recovery.m flag
+# ── Dataset selector ─────────────────────────────────────────────────────────
+# Options:
+#   'base'          — T1–T6, pure trajectory, no multisine
+#                     Matlab-output/parameter-recovery/
+#   'multisine'     — T1–T8, multisine injected as plant-input force (old approach)
+#                     Matlab-output/parameter-recovery-multisine/
+#   'ref_injection' — T1–T8, multisine injected into reference r (preferred)
+#                     Matlab-output/parameter-recovery-ref-injection/
+#                     Excitation reaches plant via T≈1, not attenuated by S≪1.
+DATASET = 'ref_injection'
 
 _BASE = os.path.join(os.path.dirname(__file__), '..', '..')
 _TRAJ_BASE = (
@@ -64,23 +72,29 @@ _TRAJ_BASE = (
     {'id': 'T5', 'file': 'T5_X_sym_Y_sweep.mat'},
     {'id': 'T6', 'file': 'T6_Y_sweep_aggressive.mat'},
 )
+_TRAJ_EXTENDED = _TRAJ_BASE + (
+    {'id': 'T7', 'file': 'T7_X_antisym_Y_sweep.mat'},
+    {'id': 'T8', 'file': 'T8_X_sym_anti_Y_sweep.mat'},
+)
 _DATASETS = {
-    False: dict(
+    'base': dict(
         traj_dir   = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery'),
         save_dir   = os.path.join(_BASE, 'simulations', 'param_recovery'),
         traj_specs = _TRAJ_BASE,
     ),
-    True: dict(
+    'multisine': dict(
         traj_dir   = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery-multisine'),
         save_dir   = os.path.join(_BASE, 'simulations', 'param_recovery_multisine'),
-        traj_specs = _TRAJ_BASE + (
-            {'id': 'T7', 'file': 'T7_X_antisym_Y_sweep.mat'},
-            {'id': 'T8', 'file': 'T8_X_sym_anti_Y_sweep.mat'},
-        ),
+        traj_specs = _TRAJ_EXTENDED,
+    ),
+    'ref_injection': dict(
+        traj_dir   = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery-ref-injection'),
+        save_dir   = os.path.join(_BASE, 'simulations', 'param_recovery_ref_injection'),
+        traj_specs = _TRAJ_EXTENDED,
     ),
 }
 
-_ds        = _DATASETS[USE_MULTISINE]
+_ds        = _DATASETS[DATASET]
 TRAJ_DIR   = _ds['traj_dir']
 SAVE_DIR   = _ds['save_dir']
 TRAJ_SPECS = _ds['traj_specs']
@@ -544,8 +558,7 @@ def train(
         sum(e['rmse_ch'].pow(2) for e in eval_entries) / len(eval_entries)
     ).sqrt()   # (3,) simple mean per-channel RMSE across all trajectories
 
-    ms_tag    = 'ms_' if USE_MULTISINE else ''
-    save_path = os.path.join(save_dir, f'lfr_param_recovery_{ms_tag}{traj_tag}_e{epochs}.pt')
+    save_path = os.path.join(save_dir, f'lfr_param_recovery_{DATASET}_{traj_tag}_e{epochs}.pt')
     torch.save(
         {
             # Parameters — individual
