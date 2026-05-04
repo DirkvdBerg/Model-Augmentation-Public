@@ -202,7 +202,7 @@ def _diag_step_response(fs, fs_new, save_dir, dtype=torch.float64):
     print('\nStep Response / Pole Analysis')
     for Y_val in _Y_OP_POINTS:
         with torch.no_grad():
-            M_Y = build_M(torch.tensor(Y_val, dtype=dtype))
+            M_Y = build_M(torch.tensor(Y_val, dtype=dtype)).to(dtype)
             A_c = torch.zeros(6, 6, dtype=dtype)
             A_c[:3, 3:] = torch.eye(3, dtype=dtype)
             A_c[3:, :3] = -torch.linalg.solve(M_Y, K)
@@ -293,7 +293,7 @@ def _diag_observability(fs, save_dir, dtype=torch.float64):
     print('\nObservability Analysis')
     for Y_val in _Y_OP_POINTS:
         with torch.no_grad():
-            M_Y = build_M(torch.tensor(Y_val, dtype=dtype))
+            M_Y = build_M(torch.tensor(Y_val, dtype=dtype)).to(dtype)
             A_c = torch.zeros(6, 6, dtype=dtype)
             A_c[:3, 3:] = torch.eye(3, dtype=dtype)
             A_c[3:, :3] = -torch.linalg.solve(M_Y, K)
