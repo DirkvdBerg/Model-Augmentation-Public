@@ -45,7 +45,7 @@ from lpv_lfr_baseline.core.physics import build_poly_constants
 from lpv_lfr_baseline.scripts.precompute import precompute, _build_segment_pools, load_eval_trajs
 
 # ── Dtype (single toggle — flows into precompute and all .to() calls) ────────
-DTYPE = torch.float64
+DTYPE = torch.float32
 
 # ── Dataset selector ─────────────────────────────────────────────────────────
 # Options:
@@ -114,7 +114,7 @@ OVERLAP_FRACTION = 0.0   # 0.0 = non-overlapping; 0.5 = 50% overlap
 
 # ── Training hyperparameters ──────────────────────────────────────────────────
 W                  = 50      # BPTT window [samples] — outer loop in train()
-EPOCHS             = 600
+EPOCHS             = 1500
 LR                 = 1e-3
 VALIDATION_INTERVAL = None     # Set to None when not used. The lr scheduler steps on validation RMSE every VALIDATION_INTERVAL epochs; best params tracked.
 LOG_INTERVAL             = 1
@@ -124,6 +124,7 @@ N_STEPS                  = None    # cap on trajectory steps (None = all); set t
 PROFILE                  = False
 TIME_EPOCHS              = False
 BASE_SEED                = 1234
+FULL_COVERAGE            = False  # True = all segments per trajectory per epoch; False = 1 random segment per trajectory per epoch
 
 # ── Choose CPU or GPU ──────────────────────────────────────────────────
 device = torch.device('cpu') # Else 'cuda'
@@ -137,6 +138,17 @@ _MARK_STEP_BEGIN = getattr(torch.compiler, 'cudagraph_mark_step_begin', None)
 
 def _traj_set_tag(specs):
     return '_'.join(s['id'] for s in specs)
+
+
+def _get_batch_at_position(trajs, pools, segment_len, pos):
+    """Return the segment at pool position `pos` from each trajectory."""
+    x0_list, u_list, q1_list = [], [], []
+    for traj in trajs:
+        s = pools[traj['id']][pos]
+        x0_list.append(traj['state_traj'][s])
+        u_list.append(traj['u'][0, s:s + segment_len])
+        q1_list.append(traj['q1'][s:s + segment_len])
+    return torch.stack(x0_list), torch.stack(u_list), torch.stack(q1_list)
 
 
 def _sample_batch(trajs, pools, segment_len, seed):
@@ -391,6 +403,9 @@ def train(
         f'  fs_new={fs_new:.0f} Hz (D={D}), overlap={OVERLAP_FRACTION:.0%}, stride={stride}'
     )
     print(f'  Pool sizes: {pool_summary}')
+    n_seg_steps = min(len(pools[t['id']]) for t in trajs) if FULL_COVERAGE else 1
+    if FULL_COVERAGE:
+        print(f'  FULL_COVERAGE: {n_seg_steps} gradient steps/epoch (limited by shortest pool)')
 
     # ------------------------------------------------------------------
     # Step 2 — Block + optimizer
@@ -478,63 +493,68 @@ def train(
             if _MARK_STEP_BEGIN is not None:
                 _MARK_STEP_BEGIN()
 
-            # Build G once per epoch from current parameters — used for all windows
-            G, K, C, mh, alpha, beta, gamma, N0, N1, N2 = _build_sim_params(block)
+            for pos in (range(n_seg_steps) if FULL_COVERAGE else (None,)):
+                # Rebuild G each step: params change after every optimizer.step()
+                G, K, C, mh, alpha, beta, gamma, N0, N1, N2 = _build_sim_params(block)
 
-            # Sample one segment per trajectory — guaranteed coverage each epoch
-            x0_seg, u_seg, q1_seg = _sample_batch(
-                trajs, pools, segment_len, BASE_SEED + 10_000 + epoch
-            )
-            if not trajs_on_gpu:
-                x0_seg = x0_seg.to(device)
-                u_seg  = u_seg.to(device)
-                q1_seg = q1_seg.to(device)
+                if FULL_COVERAGE:
+                    x0_seg, u_seg, q1_seg = _get_batch_at_position(
+                        trajs, pools, segment_len, pos
+                    )
+                else:
+                    x0_seg, u_seg, q1_seg = _sample_batch(
+                        trajs, pools, segment_len, BASE_SEED + 10_000 + epoch
+                    )
+                if not trajs_on_gpu:
+                    x0_seg = x0_seg.to(device)
+                    u_seg  = u_seg.to(device)
+                    q1_seg = q1_seg.to(device)
 
-            # Windowed BPTT — accumulate into a single loss tensor, then one backward.
-            # State is detached between windows (truncated BPTT); G is shared across all
-            # windows so gradients flow back through the shared prefix log_params -> G.
-            x_win    = x0_seg    # (B, 6)
-            mse_loss = None      # accumulated as a computation-graph tensor
+                # Windowed BPTT — accumulate into a single loss tensor, then one backward.
+                # State is detached between windows (truncated BPTT); G is shared across all
+                # windows so gradients flow back through the shared prefix log_params -> G.
+                x_win    = x0_seg    # (B, 6)
+                mse_loss = None      # accumulated as a computation-graph tensor
 
-            for w in range(n_windows):
-                w_start = w * W
-                w_end   = min(w_start + W, segment_len)
-                u_win   = u_seg[:, w_start:w_end, :]     # (B, w_len, 3)
-                q1_win  = q1_seg[:, w_start:w_end, :]    # (B, w_len, 3)
+                for w in range(n_windows):
+                    w_start = w * W
+                    w_end   = min(w_start + W, segment_len)
+                    u_win   = u_seg[:, w_start:w_end, :]     # (B, w_len, 3)
+                    q1_win  = q1_seg[:, w_start:w_end, :]    # (B, w_len, 3)
 
-                result  = simulate(
-                    x_win, u_win,
-                    G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
-                    block._P, ts_tensor,
-                    bptt_mode='full', return_latents=False,
+                    result  = simulate(
+                        x_win, u_win,
+                        G, K, C, mh, alpha, beta, gamma, N0, N1, N2,
+                        block._P, ts_tensor,
+                        bptt_mode='full', return_latents=False,
+                    )
+
+                    # Normalize by sigma (all channels contribute, no masking)
+                    err      = (result.Y - q1_win) / sigma_batch.unsqueeze(1)  # (B, w_len, 3)
+                    win_loss = err.pow(2).mean() / n_windows   # scale so sum = mean over windows
+                    mse_loss = win_loss if mse_loss is None else mse_loss + win_loss
+
+                    x_win = result.X[:, -1, :].detach()   # carry state, stop gradient
+
+                mse_loss.backward()
+
+                # split_reg backward separately — independent graph, accumulates to log_params.grad
+                split_reg_val = 0.0
+                if split_reg_weight > 0:
+                    split_reg     = block.split_loss() * split_reg_weight
+                    split_reg.backward()
+                    split_reg_val = split_reg.item()
+
+                grad_norm = (
+                    block.log_params.grad.norm().item()
+                    if block.log_params.grad is not None
+                    else float('nan')
                 )
 
-                # Normalize by sigma (all channels contribute, no masking)
-                err      = (result.Y - q1_win) / sigma_batch.unsqueeze(1)  # (B, w_len, 3)
-                win_loss = err.pow(2).mean() / n_windows   # scale so sum = mean over windows
-                mse_loss = win_loss if mse_loss is None else mse_loss + win_loss
-
-                x_win = result.X[:, -1, :].detach()   # carry state, stop gradient
-
-            mse_loss.backward()
-
-            # split_reg backward separately — independent graph, accumulates to log_params.grad
-            split_reg_val = 0.0
-            if split_reg_weight > 0:
-                split_reg     = block.split_loss() * split_reg_weight
-                split_reg.backward()
-                split_reg_val = split_reg.item()
+                optimizer.step()
+                optimizer.zero_grad(set_to_none=True)
 
             t_fwd = _sync_time(device)   # fwd + bwd complete
-
-        grad_norm = (
-            block.log_params.grad.norm().item()
-            if block.log_params.grad is not None
-            else float('nan')
-        )
-
-        optimizer.step()
-        optimizer.zero_grad(set_to_none=True)
 
         if checkpoint_interval > 0 and epoch > 0 and epoch % checkpoint_interval == 0:
             torch.save(
