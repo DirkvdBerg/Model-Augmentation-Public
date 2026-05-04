@@ -109,6 +109,11 @@ def rk4_step(
 
 if _USE_COMPILE:
     rk4_step = torch.compile(rk4_step, backend=COMPILE_BACKEND, fullgraph=True)
+else:
+    try:
+        rk4_step = torch.jit.script(rk4_step)
+    except Exception:
+        pass  # fall through to plain eager
 
 
 def _rk4_checkpoint(x, u_logical, G, K, C, mh, alpha, beta, gamma, N0, N1, N2, ts):
