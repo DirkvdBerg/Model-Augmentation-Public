@@ -2,8 +2,8 @@
 precompute.py
 -------------
 One-time setup: computes and caches all data that does not depend on trainable
-parameters. Writes a single .pt cache file. Subsequent calls return the cached
-result immediately.
+parameters. Writes a dtype-specific .pt cache file. Subsequent calls return the
+cached result immediately.
 
 Computes
 --------
@@ -420,7 +420,8 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
     """
     os.makedirs(save_dir, exist_ok=True)
     traj_tag   = '_'.join(s['id'] for s in traj_specs)
-    cache_path = Path(save_dir) / f'precomputed_{traj_tag}.pt'
+    dtype_tag  = str(dtype).replace('torch.', '')
+    cache_path = Path(save_dir) / f'precomputed_{traj_tag}_{dtype_tag}.pt'
     # Compute D from data so it can be included in the fingerprint as a cache key.
     # A change in D (e.g., from updated _diag_fft logic) will therefore invalidate the cache.
     D = _compute_D_from_specs(traj_specs, traj_dir, dtype)
