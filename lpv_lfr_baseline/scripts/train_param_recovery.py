@@ -224,6 +224,26 @@ def _full_traj_eval(block, trajs, ts_tensor):
     return _aggregate_rmse(entries), entries
 
 
+def _vram_fits(traj_list, dtype, dev, headroom=0.8):
+    """Return True if all trajectory tensors fit in free VRAM (with headroom).
+
+    Always returns True on CPU (no limit). headroom=0.8 reserves 20% for
+    model weights, optimizer states, and intermediate activations.
+    """
+    if dev.type != 'cuda':
+        return True
+    itemsize = torch.finfo(dtype).bits // 8
+    needed   = sum(
+        (t['u'].numel() + t['q1'].numel() + t['state_traj'].numel()) * itemsize
+        for t in traj_list
+    )
+    free, _  = torch.cuda.mem_get_info(dev)
+    fits     = needed < free * headroom
+    needed_mb = needed / 2**20
+    free_mb   = free   / 2**20
+    return fits, needed_mb, free_mb
+
+
 # ── Logging helpers ───────────────────────────────────────────────────────────
 
 def _sync_time(device):
@@ -289,11 +309,24 @@ def train(
     fs_new                   = float(pre['fs_new'])       # sampling rate after decimation [Hz]
     D                        = int(pre['D'])              # decimation factor
 
-    # Move trajectory tensors to training device
-    for traj in trajs:
-        traj['u']          = traj['u'].to(device=device, dtype=DTYPE)
-        traj['q1']         = traj['q1'].to(device=device, dtype=DTYPE)
-        traj['state_traj'] = traj['state_traj'].to(device=device, dtype=DTYPE)
+    # Move trajectory tensors to training device — pre-flight VRAM check.
+    # Fast path: all tensors resident on GPU (zero per-epoch H2D transfer).
+    # Slow path: tensors stay on CPU; _sample_batch slices on CPU, then the
+    #            small segment batch (~300 KB) is moved to device each epoch.
+    fits, needed_mb, free_mb = _vram_fits(trajs, DTYPE, device)
+    trajs_on_gpu = fits
+    if trajs_on_gpu:
+        print(f'  Trajectory preload: GPU  ({needed_mb:.0f} MB needed, {free_mb:.0f} MB free)')
+        for traj in trajs:
+            traj['u']          = traj['u'].to(device=device, dtype=DTYPE)
+            traj['q1']         = traj['q1'].to(device=device, dtype=DTYPE)
+            traj['state_traj'] = traj['state_traj'].to(device=device, dtype=DTYPE)
+    else:
+        print(f'  Trajectory preload: CPU  ({needed_mb:.0f} MB needed, {free_mb:.0f} MB free — per-epoch H2D transfer)')
+        for traj in trajs:
+            traj['u']          = traj['u'].to(dtype=DTYPE)
+            traj['q1']         = traj['q1'].to(dtype=DTYPE)
+            traj['state_traj'] = traj['state_traj'].to(dtype=DTYPE)
 
     # Pre-build device-side sigma lookup — avoids per-epoch .to() inside the loop
     sigma_device = {tid: s.to(device=device, dtype=DTYPE) for tid, s in sigma.items()}
@@ -319,16 +352,28 @@ def train(
     else:
         val_trajs_raw = trajs
 
+    val_fits, val_needed_mb, val_free_mb = _vram_fits(val_trajs_raw, DTYPE, eval_device)
+    val_trajs_on_gpu = val_fits
     val_trajs = []
     for _t in val_trajs_raw:
-        val_trajs.append({
-            **_t,
-            'u':          _t['u'].to(device=eval_device, dtype=DTYPE),
-            'q1':         _t['q1'].to(device=eval_device, dtype=DTYPE),
-            'state_traj': _t['state_traj'].to(device=eval_device, dtype=DTYPE),
-        })
+        if val_trajs_on_gpu:
+            val_trajs.append({
+                **_t,
+                'u':          _t['u'].to(device=eval_device, dtype=DTYPE),
+                'q1':         _t['q1'].to(device=eval_device, dtype=DTYPE),
+                'state_traj': _t['state_traj'].to(device=eval_device, dtype=DTYPE),
+            })
+        else:
+            val_trajs.append({
+                **_t,
+                'u':          _t['u'].to(dtype=DTYPE),
+                'q1':         _t['q1'].to(dtype=DTYPE),
+                'state_traj': _t['state_traj'].to(dtype=DTYPE),
+            })
+    print(f'  Val preload: {"GPU" if val_trajs_on_gpu else "CPU"}  ({val_needed_mb:.0f} MB needed, {val_free_mb:.0f} MB free)')
 
-    # Test trajectories: loaded to training device, evaluated in Step 4 only.
+    # Test trajectories: evaluated in Step 4 only; _eval_group does .to(device)
+    # so these are always kept on CPU to avoid consuming VRAM during training.
     test_trajs = []
     if TEST_SPECS:
         pre_test = precompute(TEST_SPECS, _VAL_TEST_DIR, save_dir, dtype=DTYPE, norm_mode=norm_mode,
@@ -336,9 +381,9 @@ def train(
         for _t in pre_test['trajs']:
             test_trajs.append({
                 **_t,
-                'u':          _t['u'].to(device=device, dtype=DTYPE),
-                'q1':         _t['q1'].to(device=device, dtype=DTYPE),
-                'state_traj': _t['state_traj'].to(device=device, dtype=DTYPE),
+                'u':          _t['u'].to(dtype=DTYPE),
+                'q1':         _t['q1'].to(dtype=DTYPE),
+                'state_traj': _t['state_traj'].to(dtype=DTYPE),
             })
 
     print(f'  rmse_baseline_normalized = {rmse_baseline_normalized:.4e}')
@@ -464,6 +509,10 @@ def train(
             x0_seg, u_seg, q1_seg = _sample_batch(
                 trajs, pools, segment_len, BASE_SEED + 10_000 + epoch
             )
+            if not trajs_on_gpu:
+                x0_seg = x0_seg.to(device)
+                u_seg  = u_seg.to(device)
+                q1_seg = q1_seg.to(device)
 
             # Windowed BPTT — accumulate into a single loss tensor, then one backward.
             # State is detached between windows (truncated BPTT); G is shared across all
