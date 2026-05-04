@@ -42,7 +42,7 @@ from lpv_lfr_baseline.blocks.lfr_param_block import (
 from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
 from lpv_lfr_baseline.core.lfr_simulate import simulate
 from lpv_lfr_baseline.core.physics import build_poly_constants
-from lpv_lfr_baseline.scripts.precompute import precompute, _build_segment_pools
+from lpv_lfr_baseline.scripts.precompute import precompute, _build_segment_pools, load_eval_trajs
 
 # ── Dtype (single toggle — flows into precompute and all .to() calls) ────────
 DTYPE = torch.float64
@@ -117,7 +117,7 @@ W                  = 50      # BPTT window [samples] — outer loop in train()
 EPOCHS             = 600
 LR                 = 1e-3
 VALIDATION_INTERVAL = None     # Set to None when not used. The lr scheduler steps on validation RMSE every VALIDATION_INTERVAL epochs; best params tracked.
-LOG_INTERVAL             = 25
+LOG_INTERVAL             = 1
 CHECKPOINT_INTERVAL      = 100
 SPLIT_REG_WEIGHT         = 1e-2
 N_STEPS                  = None    # cap on trajectory steps (None = all); set to 500 when PROFILE=True
@@ -345,46 +345,17 @@ def train(
 
     # Validation trajectories: held-out if VAL_SPECS is set, else reuse training trajs.
     # Moved to eval_device so the async worker (2-GPU) can use them directly.
-    if VAL_SPECS:
-        pre_val = precompute(VAL_SPECS, _VAL_TEST_DIR, save_dir, dtype=DTYPE, norm_mode=norm_mode,
-                             overlap_fraction=0.0)
-        val_trajs_raw = pre_val['trajs']
-    else:
-        val_trajs_raw = trajs
-
+    val_trajs_raw = load_eval_trajs(VAL_SPECS, _VAL_TEST_DIR, D, dtype=DTYPE) if VAL_SPECS else trajs
     val_fits, val_needed_mb, val_free_mb = _vram_fits(val_trajs_raw, DTYPE, eval_device)
-    val_trajs_on_gpu = val_fits
-    val_trajs = []
-    for _t in val_trajs_raw:
-        if val_trajs_on_gpu:
-            val_trajs.append({
-                **_t,
-                'u':          _t['u'].to(device=eval_device, dtype=DTYPE),
-                'q1':         _t['q1'].to(device=eval_device, dtype=DTYPE),
-                'state_traj': _t['state_traj'].to(device=eval_device, dtype=DTYPE),
-            })
-        else:
-            val_trajs.append({
-                **_t,
-                'u':          _t['u'].to(dtype=DTYPE),
-                'q1':         _t['q1'].to(dtype=DTYPE),
-                'state_traj': _t['state_traj'].to(dtype=DTYPE),
-            })
-    print(f'  Val preload: {"GPU" if val_trajs_on_gpu else "CPU"}  ({val_needed_mb:.0f} MB needed, {val_free_mb:.0f} MB free)')
+    val_dev   = eval_device if val_fits else torch.device('cpu')
+    val_trajs = [{**_t, 'u': _t['u'].to(device=val_dev, dtype=DTYPE),
+                  'q1': _t['q1'].to(device=val_dev, dtype=DTYPE),
+                  'state_traj': _t['state_traj'].to(device=val_dev, dtype=DTYPE)}
+                 for _t in val_trajs_raw]
+    print(f'  Val preload: {"GPU" if val_fits else "CPU"}  ({val_needed_mb:.0f} MB needed, {val_free_mb:.0f} MB free)')
 
-    # Test trajectories: evaluated in Step 4 only; _eval_group does .to(device)
-    # so these are always kept on CPU to avoid consuming VRAM during training.
-    test_trajs = []
-    if TEST_SPECS:
-        pre_test = precompute(TEST_SPECS, _VAL_TEST_DIR, save_dir, dtype=DTYPE, norm_mode=norm_mode,
-                              overlap_fraction=0.0)
-        for _t in pre_test['trajs']:
-            test_trajs.append({
-                **_t,
-                'u':          _t['u'].to(dtype=DTYPE),
-                'q1':         _t['q1'].to(dtype=DTYPE),
-                'state_traj': _t['state_traj'].to(dtype=DTYPE),
-            })
+    # Test trajectories: evaluated in Step 4 only; kept on CPU to avoid consuming VRAM during training.
+    test_trajs = load_eval_trajs(TEST_SPECS, _VAL_TEST_DIR, D, dtype=DTYPE) if TEST_SPECS else []
 
     print(f'  rmse_baseline_normalized = {rmse_baseline_normalized:.4e}')
     print(f'  segment_len = {segment_len} samples')

@@ -207,6 +207,31 @@ def _aggregate_normalized_rmse_baseline(rmse_entries, sigma):
 # Segment pool helpers
 # ----------------------------------------------------------------------
 
+def load_eval_trajs(traj_specs, traj_dir, D, dtype=torch.float64):
+    """Load and decimate trajectories for evaluation only.
+
+    Skips sigma, RMSE baseline, and segment pooling — none are needed for
+    full-trajectory evaluation. Uses the decimation factor D already
+    determined by the training precompute.
+    """
+    P      = _P.to(dtype)
+    ts_val = float(_ts)
+    trajs  = []
+    for spec in traj_specs:
+        u, q1, fs = _load_trajectory(os.path.join(traj_dir, spec['file']), dtype)
+        x0 = _build_state_traj_logical(q1[:2], P, ts_val, dtype)[:1]  # (1, 6) — only x0 needed
+        trajs.append({
+            'id':         spec['id'],
+            'file':       spec['file'],
+            'u':          u[:, ::D, :],
+            'q1':         q1[::D, :],
+            'state_traj': x0,
+            'N':          q1[::D, :].shape[0],
+            'fs':         float(fs) / D,
+        })
+    return trajs
+
+
 def _build_segment_pools(trajs, segment_len, overlap_fraction=0.0):
     """
     Pre-compute valid segment start indices for each trajectory.
