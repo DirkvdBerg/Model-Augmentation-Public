@@ -1274,3 +1274,46 @@ changes accordingly.
 **Constrains**: `PARAM_LOSS_WEIGHT = 0.0` must be kept for all clean-data parameter
 recovery runs. If re-enabled, the anchor target (`params_init`) and weight must be
 revisited together.
+
+---
+
+### [D-048] `ref_injection` dataset is incompatible with open-loop parameter recovery training
+**Date**: 2026-05-04
+**What**: The `ref_injection` dataset (multisine injected into the reference `r`) is
+fundamentally incompatible with the open-loop simulation objective used in
+`train_param_recovery.py`. The `multisine` dataset (force injection via `f_sim`) is
+the correct choice for parameter recovery.
+
+**Why**: The training minimises `||simulate(x0, u_recorded, params) - q1_recorded||²`
+open-loop. In `ref_injection`, within the controller bandwidth (≤ 100 Hz):
+
+    u_ms = C * S * r_ms ≈ 0          (sensitivity S ≈ 0 kills the force)
+    q1_ms = T * r_ms ≈ r_ms          (position closely tracks reference)
+
+The open-loop model receives a near-zero multisine force but must predict a full-amplitude
+multisine position. The residual `q1_ms - simulate(u_ms) ≈ r_ms` is large and almost
+independent of plant parameters. This uninformative residual dominates the MSE, masks the
+parameter-sensitive gradient from trajectory dynamics, and drives the optimizer into bad
+local minima. Observed: `ref_injection` stalls at loss `2.8e-3` vs `base` converging to
+`3.2e-7`; recovered parameters off by up to +1083% for `cy`.
+
+With force injection (`multisine`), `f_sim` is generated independently of the plant and
+added as a direct input. The open-loop model receives the full multisine force and must
+produce the matching oscillations at the correct frequency/amplitude — a parameter-sensitive
+residual that gives informative gradients.
+
+**Ruled out**: Continuing to use `ref_injection` for open-loop training. The
+S-attenuation argument ("ref injection reaches plant via T≈1") is correct for
+closed-loop identification on real hardware; it is irrelevant for the open-loop
+simulator in `train_param_recovery.py`.
+
+**Constrains**:
+- Use `DATASET = 'multisine'` for parameter recovery training runs.
+- `ref_injection` data can still be used for: (a) closed-loop identification frameworks,
+  (b) training with the `r_ms` component subtracted from `q1` targets (see D-048 options
+  in `docs/ref-injection-openloop-incompatibility.md`).
+- T7 and T8 provide genuine observability benefit (all 13 parameters excited simultaneously)
+  but only when the multisine injection method is compatible with the training objective.
+  They should be included in the `multisine` dataset runs.
+
+**Full analysis**: `docs/ref-injection-openloop-incompatibility.md`
