@@ -29,6 +29,11 @@ import platform as _platform
 # cudagraphs works everywhere but only eliminates kernel-launch overhead (no fusion).
 COMPILE_BACKEND = 'cudagraphs' if _platform.system() == 'Windows' else 'inductor'
 
+# torch.compile with cudagraphs requires mark_step_begin to safely reset the memory
+# pool between steps. If the API is absent the graph pool leaks into epoch N+1 and
+# raises MemoryError. Fall back to eager when the API is not present.
+_USE_COMPILE = getattr(torch.compiler, 'cudagraph_mark_step_begin', None) is not None
+
 
 @dataclass
 class SimResult:
@@ -46,7 +51,6 @@ class SimResult:
     W: torch.Tensor | None
 
 
-@torch.compile(backend=COMPILE_BACKEND, fullgraph=True)
 def rk4_step(
     x:          torch.Tensor,           # (batch, 6)  state in logical coordinates
     u_logical:  torch.Tensor,           # (batch, 3)  input in logical coordinates
@@ -101,6 +105,10 @@ def rk4_step(
 
     x_next = x + (ts / 6) * (k1 + 2 * k2 + 2 * k3 + k4)
     return x_next, z, w, y
+
+
+if _USE_COMPILE:
+    rk4_step = torch.compile(rk4_step, backend=COMPILE_BACKEND, fullgraph=True)
 
 
 def _rk4_checkpoint(x, u_logical, G, K, C, mh, alpha, beta, gamma, N0, N1, N2, ts):

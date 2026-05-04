@@ -107,7 +107,7 @@ VAL_SPECS = ({'id': 'V1', 'file': 'V1_X_sym_Y_mid_sweep.mat'},)
 TEST_SPECS = ({'id': 'E1', 'file': 'E1_X_sym_anti_Y_low_offset_sweep.mat'},)
 
 # ── Normalisation ────────────────────────────────────────────────────────────
-NORM_MODE = 'per_traj'   # 'per_traj' | 'global'  (see precompute.py)
+NORM_MODE = 'global'   # 'per_traj' | 'global'  (see precompute.py)
 
 # ── Segment sampling ──────────────────────────────────────────────────────────
 OVERLAP_FRACTION = 0.0   # 0.0 = non-overlapping; 0.5 = 50% overlap
