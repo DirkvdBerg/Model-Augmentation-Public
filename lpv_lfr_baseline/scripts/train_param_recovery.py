@@ -125,6 +125,10 @@ PROFILE                  = False
 TIME_EPOCHS              = False
 BASE_SEED                = 1234
 
+# ── Choose CPU or GPU ──────────────────────────────────────────────────
+device = torch.device('cpu') # Else 'cuda'
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 # Defensive: cudagraph_mark_step_begin is a PyTorch 2.x API — guard for older builds.
 _MARK_STEP_BEGIN = getattr(torch.compiler, 'cudagraph_mark_step_begin', None)
 
@@ -231,7 +235,7 @@ def _vram_fits(traj_list, dtype, dev, headroom=0.8):
     model weights, optimizer states, and intermediate activations.
     """
     if dev.type != 'cuda':
-        return True
+        return True, 0.0, 0.0
     itemsize = torch.finfo(dtype).bits // 8
     needed   = sum(
         (t['u'].numel() + t['q1'].numel() + t['state_traj'].numel()) * itemsize
@@ -287,7 +291,8 @@ def train(
     os.makedirs(save_dir, exist_ok=True)
     traj_tag = _traj_set_tag(TRAJ_SPECS)   # e.g. 'T1_T2_T3_T4_T5_T6_T7_T8'
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # device = torch.device('cpu')
     if device.type == 'cuda':
         print(f'  Device: {torch.cuda.get_device_name(0)}  (CUDA {torch.version.cuda})')
     else:
