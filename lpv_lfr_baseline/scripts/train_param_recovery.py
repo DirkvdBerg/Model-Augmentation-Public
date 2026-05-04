@@ -14,7 +14,7 @@ Approach
       losses into a single tensor, detach state between windows. Single backward.
    e. split_loss() backward separately (independent graph).
    f. optimizer.step(); optimizer.zero_grad(set_to_none=True).
-3. Full-trajectory eval every FULL_EVAL_INTERVAL epochs; best params tracked.
+3. Full-trajectory eval every VALIDATION_INTERVAL epochs; best params tracked.
 4. Post-training: restore best params, final eval, param table, save.
 
 No _SimWrapper, no DataParallel. Direct simulate() calls throughout.
@@ -116,7 +116,7 @@ OVERLAP_FRACTION = 0.0   # 0.0 = non-overlapping; 0.5 = 50% overlap
 W                  = 50      # BPTT window [samples] — outer loop in train()
 EPOCHS             = 600
 LR                 = 1e-3
-FULL_EVAL_INTERVAL = 10
+VALIDATION_INTERVAL = None     # Set to None when not used. The lr scheduler steps on validation RMSE every VALIDATION_INTERVAL epochs; best params tracked.
 LOG_INTERVAL             = 25
 CHECKPOINT_INTERVAL      = 100
 SPLIT_REG_WEIGHT         = 1e-2
@@ -393,14 +393,10 @@ def train(
         f'\n{"=" * 60}\nStep 3: Train  '
         f'({epochs} epochs, lr={lr}, W={W})\n{"=" * 60}'
     )
-    print(
-        f'  {"Epoch":>6}  {"mse_loss":>12}  {"split_reg":>12}  '
-        f'{"grad_norm":>10}  {"time [s]":>9}  {"lr":>10}  |  {"eval_ep":>7}  {"eval_rmse":>12}'
-    )
-    print(
-        f'  {"-" * 6}  {"-" * 12}  {"-" * 12}  '
-        f'{"-" * 10}  {"-" * 9}  {"-" * 10}  |  {"-" * 7}  {"-" * 12}'
-    )
+    _eval_suffix = f'  |  {"eval_ep":>7}  {"eval_rmse":>12}' if VALIDATION_INTERVAL is not None else ''
+    print(f'  {"Epoch":>6}  {"mse_loss":>12}  {"split_reg":>12}  {"grad_norm":>10}  {"time [s]":>9}  {"lr":>10}' + _eval_suffix)
+    _sep_suffix  = f'  |  {"-" * 7}  {"-" * 12}' if VALIDATION_INTERVAL is not None else ''
+    print(f'  {"-" * 6}  {"-" * 12}  {"-" * 12}  {"-" * 10}  {"-" * 9}  {"-" * 10}' + _sep_suffix)
 
     t_start             = time.time()
     history             = []
@@ -539,7 +535,7 @@ def train(
                     best_epoch          = snap_epoch
                     best_log_params     = lp_cpu
 
-            if epoch % FULL_EVAL_INTERVAL == 0 or epoch == epochs - 1:
+            if VALIDATION_INTERVAL is not None and (epoch % VALIDATION_INTERVAL == 0 or epoch == epochs - 1):
                 try:
                     snap = block.log_params.detach().cpu().clone()
                     if epoch == epochs - 1:
@@ -550,7 +546,7 @@ def train(
                     pass
 
         else:
-            if epoch % FULL_EVAL_INTERVAL == 0 or epoch == epochs - 1:
+            if VALIDATION_INTERVAL is not None and (epoch % VALIDATION_INTERVAL == 0 or epoch == epochs - 1):
                 lp_cpu    = block.log_params.detach().cpu().clone()
                 full_rmse, _ = _full_traj_eval(block, val_trajs, ts_tensor)
                 latest_eval_epoch = epoch
@@ -565,10 +561,11 @@ def train(
         if epoch % log_interval == 0 or epoch == epochs - 1:
             current_lr = optimizer.param_groups[0]['lr']
             elapsed    = time.time() - t0
+            _row_suffix = (f'  |  {latest_eval_epoch!s:>7}  {latest_eval_rmse!s:>12}'
+                           if VALIDATION_INTERVAL is not None else '')
             print(
                 f'  {epoch:>6}  {mse_loss.item():>12.4e}  {split_reg_val:>12.4e}  '
-                f'{grad_norm:>10.3e}  {elapsed:>9.3f}  {current_lr:>10.3e}  |  '
-                f'{latest_eval_epoch!s:>7}  {latest_eval_rmse!s:>12}',
+                f'{grad_norm:>10.3e}  {elapsed:>9.3f}  {current_lr:>10.3e}' + _row_suffix,
                 flush=True,
             )
             entry = {
