@@ -61,6 +61,8 @@ def _mtime(path):
 def _fingerprint(traj_specs, traj_dir, dtype, norm_mode, overlap_fraction=0.0, D=None):
     """Cache key — invalidated by data changes (mtimes), logic changes (compute_hash), or config.
 
+    norm_mode is intentionally excluded: both sigma variants are always stored so switching
+    norm_mode never requires a recompute.
     D is included when known (computed from data via _diag_fft). A change in D due to updated
     _diag_fft logic invalidates the cache even if data mtimes are unchanged.
     """
@@ -68,7 +70,6 @@ def _fingerprint(traj_specs, traj_dir, dtype, norm_mode, overlap_fraction=0.0, D
         'traj_specs':       tuple((s['id'], s['file']) for s in traj_specs),
         'mtimes':           tuple((s['file'], _mtime(os.path.join(traj_dir, s['file']))) for s in traj_specs),
         'dtype':            str(dtype),
-        'norm_mode':        norm_mode,
         'overlap_fraction': overlap_fraction,
         'compute_hash':     _COMPUTE_HASH,
     }
@@ -277,11 +278,13 @@ def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction)
 
     ts_eff = float(_ts) * D   # effective timestep after decimation [s]
 
-    # --- sigma (on decimated data) ---
-    print(f'  precompute: computing sigma  (norm_mode={norm_mode!r})')
-    sigma = _compute_sigma(trajs, norm_mode, dtype)
+    # --- sigma (on decimated data) — both variants stored; norm_mode selects at load time ---
+    print(f'  precompute: computing sigma  (storing both variants; active={norm_mode!r})')
+    sigma_per_traj = _compute_sigma(trajs, 'per_traj', dtype)
+    sigma_global   = _compute_sigma(trajs, 'global',   dtype)
+    sigma_active   = sigma_per_traj if norm_mode == 'per_traj' else sigma_global
     for traj in trajs:
-        s = sigma[traj['id']]
+        s = sigma_active[traj['id']]
         print(f'    {traj["id"]}: sigma = [{s[0]:.3e}, {s[1]:.3e}, {s[2]:.3e}]')
 
     # --- RMSE baseline (detuned initial model, runs at original resolution from .mat) ---
@@ -303,8 +306,10 @@ def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction)
         })
         print(f'    {traj["id"]}: RMSE = {metrics["rmse_total"]:.4e} m')
 
-    rmse_baseline_normalized = _aggregate_normalized_rmse_baseline(rmse_entries, sigma)
-    print(f'  precompute: rmse_baseline_normalized = {rmse_baseline_normalized:.4e}')
+    rmse_baseline_normalized_per_traj = _aggregate_normalized_rmse_baseline(rmse_entries, sigma_per_traj)
+    rmse_baseline_normalized_global   = _aggregate_normalized_rmse_baseline(rmse_entries, sigma_global)
+    print(f'  precompute: rmse_baseline_normalized = '
+          f'{rmse_baseline_normalized_per_traj if norm_mode == "per_traj" else rmse_baseline_normalized_global:.4e}')
 
     # --- segment length diagnostic (based on oscillatory poles at fs_new) ---
     print('  precompute: running segment length diagnostic')
@@ -330,16 +335,18 @@ def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction)
     }
 
     return {
-        'trajs':                    trajs,
-        'sigma':                    sigma,
-        'rmse_entries':             rmse_entries,
-        'rmse_baseline_normalized': rmse_baseline_normalized,
-        'segment_len':              segment_len,
-        'pools':                    pools,
-        'metadata':                 metadata,
-        'D':                        D,
-        'fs_new':                   fs_new,
-        'ts_eff':                   ts_eff,
+        'trajs':                             trajs,
+        'sigma_per_traj':                    sigma_per_traj,
+        'sigma_global':                      sigma_global,
+        'rmse_entries':                      rmse_entries,
+        'rmse_baseline_normalized_per_traj': rmse_baseline_normalized_per_traj,
+        'rmse_baseline_normalized_global':   rmse_baseline_normalized_global,
+        'segment_len':                       segment_len,
+        'pools':                             pools,
+        'metadata':                          metadata,
+        'D':                                 D,
+        'fs_new':                            fs_new,
+        'ts_eff':                            ts_eff,
     }
 
 
@@ -349,6 +356,18 @@ _COMPUTE_HASH = hashlib.md5(inspect.getsource(_compute).encode()).hexdigest()[:8
 # ----------------------------------------------------------------------
 # Public API
 # ----------------------------------------------------------------------
+
+def _inject_norm_mode(data, norm_mode):
+    """Select sigma and rmse_baseline_normalized for the requested norm_mode.
+
+    Both variants are always stored in the cache. This injects 'sigma' and
+    'rmse_baseline_normalized' into the dict so callers see a stable interface.
+    """
+    key = 'per_traj' if norm_mode == 'per_traj' else 'global'
+    data['sigma']                    = data[f'sigma_{key}']
+    data['rmse_baseline_normalized'] = data[f'rmse_baseline_normalized_{key}']
+    return data
+
 
 def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
                norm_mode='per_traj', overlap_fraction=0.0, force=False):
@@ -361,8 +380,9 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
     traj_dir         : directory containing the .mat trajectory files
     save_dir         : directory for the cache file and segment diagnostic outputs
     dtype            : torch dtype for all output tensors (default float64)
-    norm_mode        : 'per_traj' (default) or 'global' — controls how sigma is computed.
-                       Changing this invalidates the cache and forces a full recompute.
+    norm_mode        : 'per_traj' (default) or 'global' — selects which stored sigma
+                       variant to return. Both are always cached; switching norm_mode
+                       never triggers a recompute.
     overlap_fraction : fraction of segment_len used as overlap between consecutive segments.
                        Changing this only rebuilds pools — no full recompute needed.
     force            : if True, recompute even when a valid cache exists
@@ -374,7 +394,8 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
         segment_len, pools, metadata, fingerprint
     """
     os.makedirs(save_dir, exist_ok=True)
-    cache_path = Path(save_dir) / 'precomputed.pt'
+    traj_tag   = '_'.join(s['id'] for s in traj_specs)
+    cache_path = Path(save_dir) / f'precomputed_{traj_tag}.pt'
     # Compute D from data so it can be included in the fingerprint as a cache key.
     # A change in D (e.g., from updated _diag_fft logic) will therefore invalidate the cache.
     D = _compute_D_from_specs(traj_specs, traj_dir, dtype)
@@ -386,10 +407,10 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
         if cached_fp == fp:
             print(f'  precompute: loaded from cache ({cache_path})')
             meta = cached.get('metadata', {})
-            print(f'    traj_dir={meta.get("traj_dir")}  norm_mode={meta.get("norm_mode")!r}  '
+            print(f'    traj_dir={meta.get("traj_dir")}  norm_mode={norm_mode!r}  '
                   f'trajs={meta.get("traj_ids")}  segment_len={meta.get("segment_len")}  '
                   f'overlap={meta.get("overlap_fraction", 0.0):.0%}')
-            return cached
+            return _inject_norm_mode(cached, norm_mode)
 
         # Fast path: only overlap_fraction changed — rebuild pools without full recompute
         fp_core        = {k: v for k, v in fp.items()        if k != 'overlap_fraction'}
@@ -403,7 +424,7 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
             cached['metadata']['overlap_fraction']     = overlap_fraction
             torch.save(cached, cache_path)
             print(f'  precompute: pools updated and saved to {cache_path}')
-            return cached
+            return _inject_norm_mode(cached, norm_mode)
 
         print('  precompute: cache stale — recomputing. Changed:')
         for key, val in fp.items():
@@ -421,7 +442,7 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
     data['fingerprint'] = fp
     torch.save(data, cache_path)
     print(f'  precompute: saved to {cache_path}')
-    return data
+    return _inject_norm_mode(data, norm_mode)
 
 
 # ----------------------------------------------------------------------
@@ -535,7 +556,7 @@ if __name__ == '__main__':
     specs2    = [{'id': 'T2', 'file': 'f2.mat'}]
     fp_other  = _fingerprint(specs2, fake_dir, torch.float64, 'per_traj')
     results.append(check('float32 != float64 fingerprint', fp32 != fp64))
-    results.append(check('norm_mode change invalidates cache', fp64 != fp_global))
+    results.append(check('norm_mode does not affect fingerprint (both variants cached)', fp64 == fp_global))
     results.append(check('different traj_specs invalidates cache', fp64 != fp_other))
     results.append(check('same inputs produce same fingerprint',
                          _fingerprint(specs, fake_dir, torch.float64, 'per_traj') == fp64))
