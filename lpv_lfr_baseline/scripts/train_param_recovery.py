@@ -94,6 +94,18 @@ TRAJ_DIR   = _ds['traj_dir']
 SAVE_DIR   = _ds['save_dir']
 TRAJ_SPECS = _ds['traj_specs']
 
+# ── Validation / test trajectories ───────────────────────────────────────────
+# Separate directory; files not used during training.
+_VAL_TEST_DIR = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery-ref-injection-val-test')
+
+# VAL_SPECS: drives LR scheduler and best-model selection during training.
+# () = fall back to training trajectories (no held-out validation).
+VAL_SPECS = ({'id': 'V1', 'file': 'V1_X_sym_Y_mid_sweep.mat'},)
+
+# TEST_SPECS: evaluated in Step 4 only; never seen during training.
+# () = skip test evaluation.
+TEST_SPECS = ({'id': 'E1', 'file': 'E1_X_sym_anti_Y_low_offset_sweep.mat'},)
+
 # ── Normalisation ────────────────────────────────────────────────────────────
 NORM_MODE = 'per_traj'   # 'per_traj' | 'global'  (see precompute.py)
 
@@ -289,6 +301,46 @@ def train(
     # Effective timestep tensor — replaces block._ts in all simulate() calls
     ts_tensor = torch.tensor(ts_eff, dtype=DTYPE, device=device)
 
+    # Eval device: cuda:1 when available (separate compile cache, true GPU parallelism);
+    # falls back to training device (sync eval, no thread).
+    eval_device = torch.device('cuda:1') if torch.cuda.device_count() >= 2 else device
+    async_eval  = eval_device != device
+    if async_eval:
+        print(f'  Eval device: {torch.cuda.get_device_name(1)} (cuda:1, async)')
+    else:
+        print(f'  Eval device: same as training (sync, no thread)')
+
+    # Validation trajectories: held-out if VAL_SPECS is set, else reuse training trajs.
+    # Moved to eval_device so the async worker (2-GPU) can use them directly.
+    if VAL_SPECS:
+        pre_val = precompute(VAL_SPECS, _VAL_TEST_DIR, save_dir, dtype=DTYPE, norm_mode=norm_mode,
+                             overlap_fraction=0.0)
+        val_trajs_raw = pre_val['trajs']
+    else:
+        val_trajs_raw = trajs
+
+    val_trajs = []
+    for _t in val_trajs_raw:
+        val_trajs.append({
+            **_t,
+            'u':          _t['u'].to(device=eval_device, dtype=DTYPE),
+            'q1':         _t['q1'].to(device=eval_device, dtype=DTYPE),
+            'state_traj': _t['state_traj'].to(device=eval_device, dtype=DTYPE),
+        })
+
+    # Test trajectories: loaded to training device, evaluated in Step 4 only.
+    test_trajs = []
+    if TEST_SPECS:
+        pre_test = precompute(TEST_SPECS, _VAL_TEST_DIR, save_dir, dtype=DTYPE, norm_mode=norm_mode,
+                              overlap_fraction=0.0)
+        for _t in pre_test['trajs']:
+            test_trajs.append({
+                **_t,
+                'u':          _t['u'].to(device=device, dtype=DTYPE),
+                'q1':         _t['q1'].to(device=device, dtype=DTYPE),
+                'state_traj': _t['state_traj'].to(device=device, dtype=DTYPE),
+            })
+
     print(f'  rmse_baseline_normalized = {rmse_baseline_normalized:.4e}')
     print(f'  segment_len = {segment_len} samples')
 
@@ -358,29 +410,32 @@ def train(
     best_epoch          = -1
     best_log_params     = None
 
-    # Async eval: separate block so main loop and eval thread don't share parameters.
-    eval_block   = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline_normalized).to(
-        device=device, dtype=DTYPE
-    )
-    snap_queue   = queue.Queue(maxsize=2)   # main -> worker: (epoch, log_params_cpu)
-    result_queue = queue.Queue()            # worker -> main: (epoch, rmse, entries, lp_cpu)
+    # Async eval infrastructure: only created when eval_device != device (2-GPU case).
+    # On 1 GPU: eval runs inline in the training loop (no thread, no compile-cache race).
+    if async_eval:
+        eval_block   = ParameterizedLFRBlock(RMSE_baseline=rmse_baseline_normalized).to(
+            device=eval_device, dtype=DTYPE
+        )
+        ts_eval_tensor = torch.tensor(ts_eff, dtype=DTYPE, device=eval_device)
+        snap_queue   = queue.Queue(maxsize=2)
+        result_queue = queue.Queue()
 
-    def _eval_worker():
-        while True:
-            item = snap_queue.get()
-            if item is None:                # poison pill
+        def _eval_worker():
+            while True:
+                item = snap_queue.get()
+                if item is None:
+                    snap_queue.task_done()
+                    break
+                snap_epoch, lp_cpu = item
+                with torch.no_grad():
+                    eval_block.log_params.copy_(
+                        lp_cpu.to(device=eval_device, dtype=eval_block.log_params.dtype)
+                    )
+                rmse, entries = _full_traj_eval(eval_block, val_trajs, ts_eval_tensor)
+                result_queue.put((snap_epoch, rmse, entries, lp_cpu))
                 snap_queue.task_done()
-                break
-            snap_epoch, lp_cpu = item
-            with torch.no_grad():
-                eval_block.log_params.copy_(
-                    lp_cpu.to(device=device, dtype=eval_block.log_params.dtype)
-                )
-            rmse, entries = _full_traj_eval(eval_block, trajs, ts_tensor)
-            result_queue.put((snap_epoch, rmse, entries, lp_cpu))
-            snap_queue.task_done()
 
-    threading.Thread(target=_eval_worker, daemon=True).start()
+        threading.Thread(target=_eval_worker, daemon=True).start()
 
     prof = None
     if profile:
@@ -466,32 +521,46 @@ def train(
                 os.path.join(save_dir, f'checkpoint_e{epoch}.pt'),
             )
 
-        # ── Drain completed async eval results (non-blocking) ─────────────────
-        while not result_queue.empty():
-            snap_epoch, full_rmse, _, lp_cpu = result_queue.get_nowait()
-            latest_eval_epoch = snap_epoch
-            latest_eval_rmse  = f'{full_rmse:.4e}'
-            scheduler.step(full_rmse)
-            for h in history:
-                if h['epoch'] == snap_epoch:
-                    h['full_traj_rmse_m'] = full_rmse
-                    h['log_params_snapshot'] = lp_cpu
-                    break
-            if full_rmse < best_full_traj_rmse:
-                best_full_traj_rmse = full_rmse
-                best_epoch          = snap_epoch
-                best_log_params     = lp_cpu
+        # ── Eval (async drain+push or sync inline) ────────────────────────────
+        _eval_rmse_this_epoch = None
+        if async_eval:
+            while not result_queue.empty():
+                snap_epoch, full_rmse, _, lp_cpu = result_queue.get_nowait()
+                latest_eval_epoch = snap_epoch
+                latest_eval_rmse  = f'{full_rmse:.4e}'
+                scheduler.step(full_rmse)
+                for h in history:
+                    if h['epoch'] == snap_epoch:
+                        h['full_traj_rmse_m'] = full_rmse
+                        h['log_params_snapshot'] = lp_cpu
+                        break
+                if full_rmse < best_full_traj_rmse:
+                    best_full_traj_rmse = full_rmse
+                    best_epoch          = snap_epoch
+                    best_log_params     = lp_cpu
 
-        # ── Push snapshot to eval worker ──────────────────────────────────────
-        if epoch % FULL_EVAL_INTERVAL == 0 or epoch == epochs - 1:
-            try:
-                snap = block.log_params.detach().cpu().clone()
-                if epoch == epochs - 1:
-                    snap_queue.put((epoch, snap))        # blocking on last epoch
-                else:
-                    snap_queue.put_nowait((epoch, snap)) # non-blocking otherwise
-            except queue.Full:
-                pass   # worker still busy with previous snapshot; skip (rare)
+            if epoch % FULL_EVAL_INTERVAL == 0 or epoch == epochs - 1:
+                try:
+                    snap = block.log_params.detach().cpu().clone()
+                    if epoch == epochs - 1:
+                        snap_queue.put((epoch, snap))
+                    else:
+                        snap_queue.put_nowait((epoch, snap))
+                except queue.Full:
+                    pass
+
+        else:
+            if epoch % FULL_EVAL_INTERVAL == 0 or epoch == epochs - 1:
+                lp_cpu    = block.log_params.detach().cpu().clone()
+                full_rmse, _ = _full_traj_eval(block, val_trajs, ts_tensor)
+                latest_eval_epoch = epoch
+                latest_eval_rmse  = f'{full_rmse:.4e}'
+                scheduler.step(full_rmse)
+                if full_rmse < best_full_traj_rmse:
+                    best_full_traj_rmse = full_rmse
+                    best_epoch          = epoch
+                    best_log_params     = lp_cpu
+                _eval_rmse_this_epoch = full_rmse
 
         if epoch % log_interval == 0 or epoch == epochs - 1:
             current_lr = optimizer.param_groups[0]['lr']
@@ -502,13 +571,17 @@ def train(
                 f'{latest_eval_epoch!s:>7}  {latest_eval_rmse!s:>12}',
                 flush=True,
             )
-            history.append({
+            entry = {
                 'epoch':      epoch,
                 'mse_loss':   mse_loss.item(),
                 'split_reg':  split_reg_val,
                 'grad_norm':  grad_norm,
                 'lr':         current_lr,
-            })
+            }
+            if _eval_rmse_this_epoch is not None:
+                entry['full_traj_rmse_m']    = _eval_rmse_this_epoch
+                entry['log_params_snapshot'] = block.log_params.detach().cpu().clone()
+            history.append(entry)
 
         if time_epochs:
             print(f'    fwd+bwd={t_fwd - t0:.2f}s', flush=True)
@@ -519,20 +592,21 @@ def train(
         prof.stop()
         _save_profile(prof, save_dir)
 
-    # Drain any remaining eval results
-    snap_queue.put(None)   # poison pill — worker exits cleanly
-    snap_queue.join()      # wait for worker to finish current item
-    while not result_queue.empty():
-        snap_epoch, full_rmse, _, lp_cpu = result_queue.get_nowait()
-        for h in history:
-            if h['epoch'] == snap_epoch:
-                h['full_traj_rmse_m'] = full_rmse
-                h['log_params_snapshot'] = lp_cpu
-                break
-        if full_rmse < best_full_traj_rmse:
-            best_full_traj_rmse = full_rmse
-            best_epoch          = snap_epoch
-            best_log_params     = lp_cpu
+    # Drain any remaining async eval results
+    if async_eval:
+        snap_queue.put(None)
+        snap_queue.join()
+        while not result_queue.empty():
+            snap_epoch, full_rmse, _, lp_cpu = result_queue.get_nowait()
+            for h in history:
+                if h['epoch'] == snap_epoch:
+                    h['full_traj_rmse_m'] = full_rmse
+                    h['log_params_snapshot'] = lp_cpu
+                    break
+            if full_rmse < best_full_traj_rmse:
+                best_full_traj_rmse = full_rmse
+                best_epoch          = snap_epoch
+                best_log_params     = lp_cpu
 
     if epochs > 1:
         total = time.time() - t_start
@@ -553,26 +627,48 @@ def train(
             f'(full-traj RMSE = {best_full_traj_rmse:.4e} m)\n'
         )
 
-    eval_entries = []
-    print(f'  {"Traj":<6}  {"RMSE [m]":>12}  {"X1 [m]":>10}  {"X2 [m]":>10}  {"Y [m]":>10}')
-    print(f'  {"-" * 6}  {"-" * 12}  {"-" * 10}  {"-" * 10}  {"-" * 10}')
-    for traj in trajs:
-        result   = _run_no_grad(block, traj['state_traj'][:1], traj['u'], ts_tensor)
-        diff     = result.Y[0] - traj['q1']
-        rmse_ch  = diff.pow(2).mean(dim=0).sqrt().cpu()
-        rmse_tot = float(diff.pow(2).mean().item() ** 0.5)
-        eval_entries.append({
-            'id':         traj['id'],
-            'mse_total':  rmse_tot ** 2,
-            'rmse_total': rmse_tot,
-            'rmse_ch':    rmse_ch,
-        })
-        print(
-            f'  {traj["id"]:<6}  {rmse_tot:>12.4e}'
-            f'  {rmse_ch[0]:>10.4e}  {rmse_ch[1]:>10.4e}  {rmse_ch[2]:>10.4e}'
-        )
-    overall_rmse = _aggregate_rmse(eval_entries)
-    print(f'\n  Overall RMSE: {overall_rmse:.6e} m')
+    _hdr = f'  {"Traj":<6}  {"RMSE [m]":>12}  {"X1 [m]":>10}  {"X2 [m]":>10}  {"Y [m]":>10}'
+    _sep = f'  {"-" * 6}  {"-" * 12}  {"-" * 10}  {"-" * 10}  {"-" * 10}'
+
+    def _eval_group(traj_list):
+        entries = []
+        for traj in traj_list:
+            _x0 = traj['state_traj'][:1].to(device)
+            _u  = traj['u'].to(device)
+            _q1 = traj['q1'].to(device)
+            result   = _run_no_grad(block, _x0, _u, ts_tensor)
+            diff     = result.Y[0] - _q1
+            rmse_ch  = diff.pow(2).mean(dim=0).sqrt().cpu()
+            rmse_tot = float(diff.pow(2).mean().item() ** 0.5)
+            entries.append({'id': traj['id'], 'mse_total': rmse_tot ** 2,
+                            'rmse_total': rmse_tot, 'rmse_ch': rmse_ch})
+            print(f'  {traj["id"]:<6}  {rmse_tot:>12.4e}'
+                  f'  {rmse_ch[0]:>10.4e}  {rmse_ch[1]:>10.4e}  {rmse_ch[2]:>10.4e}')
+        return entries
+
+    print('\n  [Training]')
+    print(_hdr); print(_sep)
+    train_eval_entries = _eval_group(trajs)
+    train_overall_rmse = _aggregate_rmse(train_eval_entries)
+    print(f'\n  Train RMSE: {train_overall_rmse:.6e} m')
+
+    val_eval_entries = []
+    val_overall_rmse = None
+    if VAL_SPECS:
+        print('\n  [Validation]')
+        print(_hdr); print(_sep)
+        val_eval_entries = _eval_group(val_trajs)
+        val_overall_rmse = _aggregate_rmse(val_eval_entries)
+        print(f'\n  Val RMSE:   {val_overall_rmse:.6e} m')
+
+    test_eval_entries = []
+    test_overall_rmse = None
+    if TEST_SPECS:
+        print('\n  [Test]')
+        print(_hdr); print(_sep)
+        test_eval_entries = _eval_group(test_trajs)
+        test_overall_rmse = _aggregate_rmse(test_eval_entries)
+        print(f'\n  Test RMSE:  {test_overall_rmse:.6e} m')
 
     # ------------------------------------------------------------------
     # Step 5 — Parameter recovery table
@@ -595,9 +691,9 @@ def train(
     sum_params_learned = torch.stack([params_learned[_idx[a]] + params_learned[_idx[b]] for _, a, b in _sum_pairs])
     sum_delta_pct      = (sum_params_learned - sum_params_true) / sum_params_true * 100
 
-    eval_rmse_ch = (
-        sum(e['rmse_ch'].pow(2) for e in eval_entries) / len(eval_entries)
-    ).sqrt()   # (3,) simple mean per-channel RMSE across all trajectories
+    train_eval_rmse_ch = (
+        sum(e['rmse_ch'].pow(2) for e in train_eval_entries) / len(train_eval_entries)
+    ).sqrt()   # (3,) mean per-channel RMSE across training trajectories
 
     save_path = os.path.join(save_dir, f'lfr_param_recovery_{DATASET}_{traj_tag}_e{epochs}.pt')
     torch.save(
@@ -633,10 +729,16 @@ def train(
             'split_reg_weight':         split_reg_weight,
             'batch_size':               len(trajs),
             'base_seed':                BASE_SEED,
-            # Results
-            'eval_rmse':                overall_rmse,
-            'eval_rmse_ch':             eval_rmse_ch,
-            'eval_entries':             eval_entries,
+            # Results — training trajectories
+            'eval_train_rmse':          train_overall_rmse,
+            'eval_train_rmse_ch':       train_eval_rmse_ch,
+            'eval_train_entries':       train_eval_entries,
+            # Results — validation trajectory
+            'eval_val_rmse':            val_overall_rmse,
+            'eval_val_entries':         val_eval_entries,
+            # Results — test trajectory
+            'eval_test_rmse':           test_overall_rmse,
+            'eval_test_entries':        test_eval_entries,
             'history':                  history,
         },
         save_path,
