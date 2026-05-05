@@ -45,8 +45,7 @@ from lpv_lfr_baseline.core.physics import build_poly_constants
 from lpv_lfr_baseline.scripts.precompute import precompute, _build_segment_pools, load_eval_trajs
 
 # ── Dtype (single toggle — flows into precompute and all .to() calls) ────────
-DTYPE = torch.float32
-
+DTYPE = torch.float64
 # ── Dataset selector ─────────────────────────────────────────────────────────
 # Options:
 #   'base'          — T1–T6, pure trajectory, no multisine
@@ -124,7 +123,7 @@ N_STEPS                  = None    # cap on trajectory steps (None = all); set t
 PROFILE                  = False
 TIME_EPOCHS              = False
 BASE_SEED                = 1234
-FULL_COVERAGE            = False  # True = all segments per trajectory per epoch; False = 1 random segment per trajectory per epoch
+FULL_COVERAGE            = True  # True = all segments per trajectory per epoch; False = 1 random segment per trajectory per epoch
 
 # ── Choose CPU or GPU ──────────────────────────────────────────────────
 device = torch.device('cpu') # Else 'cuda'
