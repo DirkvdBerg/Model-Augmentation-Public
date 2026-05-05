@@ -2,13 +2,16 @@
 % ---------------------------------
 % Parameter-recovery trajectory generation with post-controller force multisine.
 %
-% In diagnostic mode, the reference stays clean and the multisine is injected
-% as feedforward force after the controller. The script simulates candidate
-% complementary sensitivity T = GC/(1+GC) ≈ 1 below bandwidth, rather than
-% being attenuated by S = 1/(1+GC) ≪ 1 as with post-controller force injection.
+% The reference stays clean (r = r_traj). The Schroeder-phase multisine is
+% injected as feedforward force f_sim after the controller, so the plant
+% receives total input u_total = u_q1 + f_sim. Best injection bands were
+% determined by a diagnostic scan (multisine-analysis.md, 2026-05-05):
+%   common → 50-100 Hz @ 400 N RMS
+%   diff   → 100-200 Hz @ 400 N RMS
+%   y      → 50-100 Hz @ 400 N RMS
 %
-% USE_MULTISINE = true: scan force multisine candidates.
-% DIAGNOSTIC_ONLY = true: do not export .mat files.
+% DIAGNOSTIC_ONLY = true : re-run band/amplitude scan, no .mat export.
+% DIAGNOSTIC_ONLY = false: export using FORCE_BEST_BAND / FORCE_BEST_AMP_N.
 %
 % Trajectories T1-T8:
 %   T1  Y sweep, conservative         cy / mh (friction-dominant regime)
@@ -23,13 +26,13 @@
 % Variables saved per trajectory:
 %   t_sim        (N x 1)  time vector [s]
 %   fs           (1 x 1)  sample rate [Hz]
-%   r_sim        (N x 3)  reference r_traj [X1, X2, Y] [m]
-%   f_sim        (N x 3)  feedforward force multisine [N]
+%   r_sim        (N x 3)  clean reference r_traj [X1, X2, Y] [m]
+%   f_sim        (N x 3)  feedforward force multisine [N]   -- plant input component
 %   u_q1         (N x 3)  feedback force = Cfb*(r_sim - q1) [N]
-%   amp_max_modes (1 x M) max passing RMS force per mode [N] (export path TODO)
-%   q1           (N x 3)  CT quasi-LPV output [X1, X2, Y] [m]  -- PRIMARY
+%   u_total      (N x 3)  total plant input = u_q1 + f_sim [N]  -- use for ID
+%   q1           (N x 3)  plant output [X1, X2, Y] [m]          -- use for ID
 %   Y_trajectory (N x 1)  Y(t) = q1(:,3) [m]
-%   force_report (struct) force demand summary for diagnostics
+%   force_report (struct) force demand summary
 %
 % Does NOT modify any file in kamtin-fp-model/.
 %
@@ -42,19 +45,13 @@ addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
 % ======================================================================
 % USER FLAGS
 % ======================================================================
-USE_MULTISINE   = true;   % true -> force multisine diagnostics/export
-DIAGNOSTIC_ONLY = true;   % true -> only scan candidate force bands; no .mat export
-TRAJ_SUBSET     = 7:8;    % which trajectories to scan, e.g. [8] to debug only T8
+DIAGNOSTIC_ONLY = true;  % true -> scan + print only; false -> scan then export
+TRAJ_SUBSET     = 7:8;    % which trajectories to run
 
-% Candidate force bands/amplitudes for diagnostics. Bands include below,
-% near, and above the 100 Hz controller bandwidth so the printed survival
-% ratios reveal where closed-loop rejection is too strong.
-FORCE_DIAG_BANDS_HZ = [ ...
-      5,  20;
-     20,  50;
-     50, 100;
-    100, 200;
-    200, 400];
+% Candidate force bands/amplitudes. The scan always runs first and builds
+% f_sim_committed (cumulative across modes). Export uses that result directly —
+% no hard-coded best params needed.
+FORCE_DIAG_BANDS_HZ  = [ 5,20; 20,50; 50,100; 100,200; 200,400];
 FORCE_DIAG_AMP_RMS_N = [10, 25, 50, 100, 200, 400, 800];
 
 % ======================================================================
@@ -213,7 +210,7 @@ trajs(7).amax_Y     = 20.0;
 trajs(7).jerkTime   = 0.040;
 trajs(7).ms_f_low   = 1;
 trajs(7).ms_f_high  = 20;
-trajs(7).ms_modes   = {'diff', 'y'};
+trajs(7).ms_modes   = {'y', 'diff'};   % y first: lower survival needs full headroom; diff self-limits
 
 % T8: X symmetric + X anti-symmetric simultaneously + Y sweep.
 trajs(8).id         = 'T8_X_sym_anti_Y_sweep';
@@ -228,7 +225,7 @@ trajs(8).amax_Y     = 12.0;
 trajs(8).jerkTime   = 0.035;
 trajs(8).ms_f_low   = 1;
 trajs(8).ms_f_high  = 100;
-trajs(8).ms_modes   = {'common', 'diff', 'y'};
+trajs(8).ms_modes   = {'y', 'common', 'diff'};   % y first, then common, diff last (heaviest X consumer)
 
 % ======================================================================
 % 4. Hardware limits and amplitude translation table
@@ -285,30 +282,14 @@ fprintf('Compare: force injection 800 N * |S~0.05| = ~40 N net  <->  ~1 mm @10 H
 fprintf('%s\n\n', repmat('=', 1, 82));
 
 % ======================================================================
-% 5. Output directory and amplitude grid
+% 5. Output directory
 % ======================================================================
-mdl = 'gantry_2025a';
-if USE_MULTISINE
-    out_subdir = 'parameter-recovery-multisine';
-else
-    out_subdir = 'parameter-recovery';
-end
-out_dir = fullfile(fileparts(mfilename('fullpath')), '..', 'Matlab-output', out_subdir);
+mdl       = 'gantry_2025a';
+out_subdir = 'parameter-recovery-multisine';
+out_dir   = fullfile(fileparts(mfilename('fullpath')), '..', 'Matlab-output', out_subdir);
 if ~exist(out_dir, 'dir'), mkdir(out_dir); end
 
 n_hold = round(0.5 / ts);   % 0.5 s hold = 10000 samples at 20 kHz
-
-% Amplitude grid [m RMS]. Each mode is swept independently (greedy sequential)
-% over both amplitude and f_high band; check_ref_total determines the binding
-% constraint per (f_high, amp) combination. Grid extends to 10 mm since at
-% lower frequencies large amplitudes may be feasible.
-amp_rms_grid_m = [0.05, 0.10, 0.20, 0.50, 1.00, 1.50, 2.00, 3.00, 5.00, 7.00, 10.0] * 1e-3;
-
-if ~DIAGNOSTIC_ONLY
-    error(['Full force-multisine export is not enabled yet. ', ...
-           'Run with DIAGNOSTIC_ONLY=true, choose bands/amplitudes from the scan, ', ...
-           'then convert the export path to save f_sim.']);
-end
 
 % ======================================================================
 % 6. Run all trajectories
@@ -329,205 +310,151 @@ for i = TRAJ_SUBSET
     for j = 1:3
         Cfb(j,j) = ruleOfThumb(fbw, StageCoordinatesSystem(j,j), ts);
     end
-    G = c2d(StageCoordinatesSystem, ts, 'zoh');
 
     % -- Base trajectory (no multisine) ------------------------------------
     [r_traj, t_traj] = make_ref(sp, n_hold, ts);
-    if USE_MULTISINE
-        [r_traj, t_traj] = pad_to_multisine_periods(r_traj, ts, fs);
-    end
+    [r_traj, t_traj] = pad_to_multisine_periods(r_traj, ts, fs);   % leakage-free period alignment
     validate_ref(r_traj, sp.id, Lb);   % assert: base trajectory must be within limits
 
-    % f = 0 always — multisine goes into r, not into plant-input force.
-    % Simulink reads variable 'r' from workspace; we set r = r_total below.
-    f = zeros(length(t_traj), 3);  % diagnostic baseline; candidates overwrite this with f_sim
+    % -- Baseline simulation (f=0, r=r_traj) ----------------------------------
+    r = r_traj;
+    t = t_traj;
+    f = zeros(length(t_traj), 3);
+    fprintf('  Baseline simulation (f=0) %.2f s (%d samples) ...\n', t_traj(end), length(t_traj));
+    sim(mdl, t_traj(end));
+    q1_base = q1;
+    [t_base, ~, u_base, ~] = reconstruct(q1_base, r_traj, t_traj, Cfb);
+    base_force_report = summarize_forces(u_base, zeros(size(u_base)), force_limits);
+    fprintf('  Baseline complete. q1 samples=%d, u_total RMS=[%.1f %.1f %.1f] N\n', ...
+            size(q1_base, 1), base_force_report.rms_total);
 
-    if DIAGNOSTIC_ONLY
-        r = r_traj;
-        t = t_traj;
+    % -- Cumulative force-multisine scan ------------------------------------
+    % Each mode is scanned with all previously committed modes already active.
+    % This ensures safety checks (force limits, response limits) reflect the
+    % true combined load — fixing the single-mode isolation bug that caused
+    % T7 and T8 to fail at export.
+    % Score uses the committed-mode baseline so ranking measures only the
+    % incremental contribution of the current trial mode (not coupling from
+    % previously committed modes), fixing inflated survival ratios at m>=2.
+    fprintf('  Force-multisine scan: cumulative across modes\n');
+    fprintf('    %-7s %-11s %-8s %-7s %-10s %-17s %-17s %-7s\n', ...
+            'mode', 'band[Hz]', 'amp[N]', 'ok', 'survive', 'dq_rms[mm]', 'u_rms[N]', 'score');
 
-        fprintf('  Baseline simulation (f=0) %.2f s (%d samples) ...\n', t_traj(end), length(t_traj));
-        sim(mdl, t_traj(end));
-        q1_base = q1;
-        [t_base, ~, u_base, ~] = reconstruct(q1_base, r_traj, t_traj, Cfb);
-        base_force_report = summarize_forces(u_base, zeros(size(u_base)), force_limits);
-        fprintf('  Baseline complete. q1 samples=%d, u_total RMS=[%.1f %.1f %.1f] N\n', ...
-                size(q1_base, 1), base_force_report.rms_total);
+    f_sim_committed = zeros(length(t_traj), 3);  % accumulates best signal per mode
 
-        fprintf('  Force-multisine diagnostic: one mode at a time\n');
-        fprintf('    %-7s %-11s %-8s %-7s %-10s %-17s %-17s %-7s\n', ...
-                'mode', 'band[Hz]', 'amp[N]', 'ok', 'survive', 'dq_rms[mm]', 'u_rms[N]', 'score');
+    for m = 1:numel(sp.ms_modes)
+        mode_name  = sp.ms_modes{m};
+        best_score = -inf;
+        best_row   = '';
+        best_f_mode = zeros(length(t_traj), 3);   % best force signal for this mode
 
-        for m = 1:numel(sp.ms_modes)
-            mode_name = sp.ms_modes{m};
-            best_score = -inf;
-            best_row = '';
+        % Committed-mode baseline for scoring: reuse f=0 result for m==1;
+        % run one extra sim with committed modes only for m>=2.
+        if m == 1
+            q1_committed = q1_base;
+            t_committed  = t_base;
+            u_committed  = u_base;
+        else
+            r = r_traj; t = t_traj; f = f_sim_committed;
+            sim(mdl, t_traj(end));
+            q1_committed = q1;
+            [t_committed, ~, u_committed, ~] = reconstruct(q1_committed, r_traj, t_traj, Cfb);
+        end
 
-            for bi = 1:size(FORCE_DIAG_BANDS_HZ, 1)
-                f_low  = FORCE_DIAG_BANDS_HZ(bi, 1);
-                f_high = FORCE_DIAG_BANDS_HZ(bi, 2);
-                if count_odd_bins(f_low, f_high, fs) < 7
-                    continue;
-                end
-
-                for amp_N = FORCE_DIAG_AMP_RMS_N
-                    f_trial = generate_force_one_mode(length(t_traj), fs, f_low, f_high, ...
-                                                      m, mode_name, amp_N);
-                    r = r_traj;
-                    t = t_traj;
-                    f = f_trial;
-                    sim(mdl, t_traj(end));
-
-                    [t_sim, ~, u_q1_trial, ~] = reconstruct(q1, r_traj, t_traj, Cfb);
-                    f_sim_trial = resample_signal(f_trial, t_traj, t_sim);
-                    rep = summarize_forces(u_q1_trial, f_sim_trial, force_limits);
-                    ok_response = validate_response(q1, fs, Lb, false);
-                    ok = rep.ok && ok_response;
-
-                    u_base_sim = resample_signal(u_base, t_base, t_sim);
-                    u_delta = u_q1_trial + f_sim_trial - u_base_sim;
-                    diag = force_multisine_metrics(q1, q1_base, f_sim_trial, ...
-                                                   u_delta, mode_name);
-                    score = diag.survival * diag.dq_mode_rms_m * 1e3 * sqrt(count_odd_bins(f_low, f_high, fs));
-                    if ~ok
-                        score = 0;
-                    end
-
-                    row = sprintf('    %-7s %3.0f-%-6.0f %8.1f %-7s %-10.3f [%5.3f %5.3f %5.3f] [%5.1f %5.1f %5.1f] %7.3f', ...
-                                  mode_name, f_low, f_high, amp_N, string_ok(ok), ...
-                                  diag.survival, diag.dq_rms_m*1e3, diag.u_rms_N, score);
-                    fprintf('%s\n', row);
-
-                    if score > best_score
-                        best_score = score;
-                        best_row = row;
-                    end
-                end
+        for bi = 1:size(FORCE_DIAG_BANDS_HZ, 1)
+            f_low  = FORCE_DIAG_BANDS_HZ(bi, 1);
+            f_high = FORCE_DIAG_BANDS_HZ(bi, 2);
+            if count_odd_bins(f_low, f_high, fs) < 7
+                continue;
             end
 
-            if ~isempty(best_row)
-                fprintf('  best %s:\n%s\n', mode_name, best_row);
-            else
-                fprintf('  best %s: no valid diagnostic candidate\n', mode_name);
+            for amp_N = FORCE_DIAG_AMP_RMS_N
+                f_trial = generate_force_one_mode(length(t_traj), fs, f_low, f_high, ...
+                                                  m, mode_name, amp_N);
+                % Inject committed modes + this trial together so safety
+                % checks see the true combined force on the plant.
+                r = r_traj;
+                t = t_traj;
+                f = f_sim_committed + f_trial;
+                sim(mdl, t_traj(end));
+
+                [t_sim, ~, u_q1_trial, ~] = reconstruct(q1, r_traj, t_traj, Cfb);
+                f_combined  = resample_signal(f_sim_committed + f_trial, t_traj, t_sim);
+                rep         = summarize_forces(u_q1_trial, f_combined, force_limits);
+                ok_response = validate_response(q1, fs, Lb, false);
+                ok          = rep.ok && ok_response;
+
+                % Score: incremental contribution of this trial mode above the
+                % committed-mode baseline (u_q1_trial - u_comm already removes
+                % coupling from committed modes; + f_trial_sim is the injected
+                % excitation that drives that increment).
+                f_trial_sim  = resample_signal(f_trial,      t_traj,      t_sim);
+                u_comm_sim   = resample_signal(u_committed,  t_committed, t_sim);
+                q1_comm_sim  = resample_signal(q1_committed, t_committed, t_sim);
+                u_delta      = (u_q1_trial - u_comm_sim) + f_trial_sim;
+                diag_m       = force_multisine_metrics(q1, q1_comm_sim, f_trial_sim, ...
+                                                       u_delta, mode_name);
+                score = diag_m.survival * diag_m.dq_mode_rms_m * 1e3 ...
+                        * sqrt(count_odd_bins(f_low, f_high, fs));
+                if ~ok, score = 0; end
+
+                row = sprintf('    %-7s %3.0f-%-6.0f %8.1f %-7s %-10.3f [%5.3f %5.3f %5.3f] [%5.1f %5.1f %5.1f] %7.3f', ...
+                              mode_name, f_low, f_high, amp_N, string_ok(ok), ...
+                              diag_m.survival, diag_m.dq_rms_m*1e3, diag_m.u_rms_N, score);
+                fprintf('%s\n', row);
+
+                if score > best_score
+                    best_score  = score;
+                    best_row    = row;
+                    best_f_mode = f_trial;
+                end
             end
         end
 
+        if best_score > 0
+            fprintf('  best %s:\n%s\n', mode_name, best_row);
+            f_sim_committed = f_sim_committed + best_f_mode;
+        else
+            fprintf('  best %s: no valid candidate — mode excluded.\n', mode_name);
+        end
+    end
+
+    if DIAGNOSTIC_ONLY
         fprintf('  DIAGNOSTIC_ONLY=true: skipping export for %s.\n\n', sp.id);
         continue;
     end
 
-    % -- Amplitude sweep or no-multisine simulation ------------------------
-    if USE_MULTISINE
-        n_modes       = numel(sp.ms_modes);
-        amp_max_modes = zeros(1, n_modes);
-        f_high_modes  = zeros(1, n_modes);
-        r_ms_fixed    = zeros(length(t_traj), 3);
+    % -- Export: use exactly the signals found by the cumulative scan -------
+    if all(f_sim_committed(:) == 0)
+        warning('%s: no mode produced a valid signal — skipping.', sp.id);
+        continue;
+    end
 
-        % Candidate upper band edges (Hz), descending, capped at ms_f_high.
-        % Each mode independently sweeps all candidates and keeps the
-        % (f_high, amp) pair that maximises score = amp^2 * n_odd_bins.
-        % This gives spectral separation between modes automatically: each
-        % settles at the band where its constraints allow the most energy.
-        fhc = unique([sp.ms_f_high, 50, 20, 10]);
-        fhc = sort(fhc(fhc <= sp.ms_f_high & ...
-                       arrayfun(@(f) count_odd_bins(sp.ms_f_low, f, fs), fhc) >= 7), 'descend');
+    r = r_traj;
+    t = t_traj;
+    f = f_sim_committed;
+    fprintf('  Export simulation: %.2f s (%d samples) ...\n', t_traj(end), length(t_traj));
+    sim(mdl, t_traj(end));
 
-        for m = 1:n_modes
-            mode_name  = sp.ms_modes{m};
-            best_score = -1;
-            best_amp   = 0;
-            best_fh    = 0;
-
-            for fi = 1:numel(fhc)
-                fh         = fhc(fi);
-                amp_for_fh = 0;
-                for amp_m = amp_rms_grid_m
-                    r_ms_trial    = generate_one_mode(length(t_traj), fs, sp, m, mode_name, fh, amp_m);
-                    r_total_trial = r_traj + r_ms_fixed + r_ms_trial;
-                    if check_ref_total(r_total_trial, fs, Lb, false)
-                        amp_for_fh = amp_m;
-                    else
-                        break;
-                    end
-                end
-                if amp_for_fh > 0
-                    score = amp_for_fh^2 * count_odd_bins(sp.ms_f_low, fh, fs);
-                    if score > best_score
-                        best_score = score;
-                        best_amp   = amp_for_fh;
-                        best_fh    = fh;
-                    end
-                end
-            end
-
-            amp_max_modes(m) = best_amp;
-            f_high_modes(m)  = best_fh;
-            if best_amp > 0
-                F_est = mode_M_eff(mode_name, M_eff_common, M_eff_diff, M_eff_Y) ...
-                        * (2*pi*best_fh)^2 * best_amp;
-                fprintf('  [mode=%-6s] band=%g-%gHz  amp=%.3fmm  score=%.1f  F_est~%.0fN\n', ...
-                        mode_name, sp.ms_f_low, best_fh, best_amp*1e3, best_score, F_est);
-                r_ms_fixed = r_ms_fixed + ...
-                    generate_one_mode(length(t_traj), fs, sp, m, mode_name, best_fh, best_amp);
-            else
-                fprintf('  [mode=%-6s] no amplitude passed any band — excluded.\n', mode_name);
-            end
-        end
-
-        if all(amp_max_modes == 0)
-            warning('%s: no mode passed limits — skipping.', sp.id);
-            continue;
-        end
-
-        % One simulation with all committed modes.
-        r_ms    = r_ms_fixed;
-        r_total = r_traj + r_ms;
-        t       = t_traj;
-        r       = r_total;
-        sim(mdl, t_traj(end));
-
-        report_tracking(q1, r_total, t_traj);
-        if ~validate_response(q1, fs, Lb) || ...
-           ~validate_forces(q1, r_total, t_traj, Cfb, force_limits)
-            warning('%s: final simulation failed validation — skipping.', sp.id);
-            continue;
-        end
-        q1_best = q1;
-
-        fprintf('  Committed:');
-        for m = 1:n_modes
-            if amp_max_modes(m) > 0
-                fprintf('  %s=%.3fmm@%gHz', sp.ms_modes{m}, amp_max_modes(m)*1e3, f_high_modes(m));
-            end
-        end
-        fprintf('\n  Samples: %d (%.2f s)\n', length(t_traj), t_traj(end));
-    else
-        r_ms          = zeros(length(t_traj), 3);
-        r_total       = r_traj;
-        t             = t_traj;
-        r             = r_traj;
-        amp_max_modes = NaN(1, numel(sp.ms_modes));
-        f_high_modes  = NaN(1, numel(sp.ms_modes));
-
-        fprintf('  Simulating %.2f s (%d samples) ...\n', t_traj(end), length(t_traj));
-        sim(mdl, t_traj(end));
-        fprintf('  Simulation complete. Samples: %d\n', size(q1, 1));
-        report_tracking(q1, r_total, t_traj);
-        q1_best = q1;
+    report_tracking(q1, r_traj, t_traj);
+    if ~validate_response(q1, fs, Lb, true) || ...
+       ~validate_forces_with_ff(q1, r_traj, f_sim_committed, t_traj, Cfb, force_limits)
+        warning('%s: export simulation failed validation — skipping.', sp.id);
+        continue;
     end
 
     % -- Reconstruct, report, save -----------------------------------------
-    [t_sim, r_sim, u_q1, Y_trajectory] = reconstruct(q1_best, r_total, t_traj, Cfb);
-    force_report = summarize_forces(u_q1, zeros(size(u_q1)), force_limits);
+    [t_sim, r_sim, u_q1, Y_trajectory] = reconstruct(q1, r_traj, t_traj, Cfb);
+    f_sim        = resample_signal(f_sim_committed, t_traj, t_sim);
+    u_total      = u_q1 + f_sim;
+    force_report = summarize_forces(u_q1, f_sim, force_limits);
 
-    report_traj(q1_best, Y_trajectory, amp_max_modes);
-    report_ref_ms(r_ms, r_traj, t_traj, fs, M_eff_Y, M_eff_common);
+    report_traj(q1, Y_trajectory);
     report_forces(force_report);
 
     out_path = fullfile(out_dir, [sp.id, '.mat']);
-    save(out_path, 't_sim', 'fs', 'r_sim', 'r_ms', ...
-                   'u_q1', 'amp_max_modes', 'f_high_modes', ...
-                   'q1', 'Y_trajectory', 'force_report');
+    save(out_path, 't_sim', 'fs', 'r_sim', 'f_sim', ...
+                   'u_q1', 'u_total', 'q1', 'Y_trajectory', 'force_report');
     fprintf('  Saved: %s\n\n', out_path);
 end
 
@@ -535,7 +462,8 @@ if DIAGNOSTIC_ONLY
     fprintf('Done. Diagnostics scanned for %d/%d trajectories. No files exported.\n', ...
             numel(TRAJ_SUBSET), numel(trajs));
 else
-    fprintf('Done. %d/%d trajectories exported to:\n  %s\n', numel(TRAJ_SUBSET), numel(trajs), out_dir);
+    fprintf('Done. %d/%d trajectories exported to:\n  %s\n', ...
+            numel(TRAJ_SUBSET), numel(trajs), out_dir);
 end
 
 % ======================================================================
@@ -682,72 +610,35 @@ end
 
 % ----------------------------------------------------------------------
 
-function report_traj(q1, Y_trajectory, amp_max_modes)
-% Print axis range and per-mode multisine amplitude after simulation.
+function report_traj(q1, Y_trajectory)
+% Print axis range after simulation.
     fprintf('  X1: [%+.3f, %+.3f] m\n', min(q1(:,1)), max(q1(:,1)));
     fprintf('  X2: [%+.3f, %+.3f] m\n', min(q1(:,2)), max(q1(:,2)));
     fprintf('  Y:  [%+.3f, %+.3f] m\n', min(Y_trajectory), max(Y_trajectory));
-    if all(isnan(amp_max_modes))
-        fprintf('  Multisine: disabled\n');
-    else
-        fprintf('  Multisine amp_max [mm RMS]: %s\n', num2str(amp_max_modes * 1e3, '%.3f  '));
-    end
 end
 
 % ----------------------------------------------------------------------
 
-function report_ref_ms(r_ms, r_traj, t, fs, M_eff_Y, M_eff_common)
-% Print diagnostic for reference multisine: position amplitude, ratio to
-% trajectory, acceleration, and estimated tracking force per channel.
-% Ratio < 0.3 confirms multisine is a perturbation, not dominant signal.
-    if all(r_ms(:) == 0)
-        return;
-    end
-
-    r_ms_rms   = sqrt(mean(r_ms.^2,   1));   % (1x3) [m]
-    r_traj_rms = sqrt(mean(r_traj.^2, 1));   % (1x3) [m]
-    ratio      = r_ms_rms ./ max(r_traj_rms, 1e-9);
-
-    vel_ms     = diff(r_ms) * fs;
-    acc_ms     = diff(vel_ms) * fs;
-    acc_ms_rms = sqrt(mean(acc_ms.^2, 1));   % (1x3) [m/s^2]
-
-    % Rough force estimate: F ~ M_eff * acc (per channel; common mode uses total mass)
-    F_est = [M_eff_common * acc_ms_rms(1), M_eff_common * acc_ms_rms(2), ...
-             M_eff_Y      * acc_ms_rms(3)];
-
-    flag = '';
-    if any(ratio > 0.3), flag = '  << ratio > 0.3: multisine may dominate'; end
-
-    fprintf('  Reference multisine [mm RMS]:  [%.3f  %.3f  %.3f]\n',  r_ms_rms*1e3);
-    fprintf('  Trajectory motion   [mm RMS]:  [%.3f  %.3f  %.3f]\n',  r_traj_rms*1e3);
-    fprintf('  Ratio (ms/traj)     [—]:       [%.3f  %.3f  %.3f]%s\n', ratio, flag);
-    fprintf('  Multisine accel     [m/s^2]:   [%.2f  %.2f  %.2f]  limits=[%.0f %.0f %.0f]\n', ...
-            acc_ms_rms, 30, 30, 50);
-    fprintf('  Est. tracking force [N RMS]:   [%.1f  %.1f  %.1f]\n', F_est);
-end
-
-% ----------------------------------------------------------------------
-
-function ok = validate_forces(q1, r_total, t, Cfb, force_limits)
-% Check controller force demand against TELICA actuator limits.
-% For reference injection f=0, so total force = u_q1 = Cfb*(r_total - q1).
+function ok = validate_forces_with_ff(q1, r_traj, f_sim, t, Cfb, force_limits)
+% Check total force (feedback + feedforward) against TELICA actuator limits.
+% For force injection: total = u_q1 + f_sim where u_q1 = Cfb*(r_traj - q1).
     N_sim = size(q1, 1);
     if N_sim ~= length(t)
         t_sim = linspace(0, t(end), N_sim)';
-        r_sim = interp1(t, r_total, t_sim);
+        r_sim = interp1(t, r_traj, t_sim);
+        f_sim = interp1(t, f_sim, t_sim, 'linear', 'extrap');
     else
         t_sim = t;
-        r_sim = r_total;
+        r_sim = r_traj;
     end
     u_q1 = lsim(ss(Cfb), r_sim - q1, t_sim);
-    rep  = summarize_forces(u_q1, zeros(size(u_q1)), force_limits);
+    rep  = summarize_forces(u_q1, f_sim, force_limits);
     ok   = rep.ok;
     if ~ok
         fprintf('  Force check failed:\n');
-        fprintf('    peak u_q1=[%.0f %.0f %.0f] N, limits=[%.0f %.0f %.0f] N\n', ...
+        fprintf('    peak total=[%.0f %.0f %.0f] N, limits=[%.0f %.0f %.0f] N\n', ...
                 rep.max_total, rep.peak_limits);
-        fprintf('    RMS  u_q1=[%.0f %.0f %.0f] N, limits=[%.0f %.0f %.0f] N\n', ...
+        fprintf('    RMS  total=[%.0f %.0f %.0f] N, limits=[%.0f %.0f %.0f] N\n', ...
                 rep.rms_total, rep.rms_limits);
     end
 end
@@ -776,12 +667,12 @@ end
 % ----------------------------------------------------------------------
 
 function report_forces(rep)
-% Print force demand. Feedforward is always 0 for reference injection.
+% Print total force demand (feedback + feedforward).
     fprintf('  Force peaks [FX1 FX2 FY] N:\n');
-    fprintf('    u_q1 (peak): [%7.1f %7.1f %7.1f]  limits=[%.0f %.0f %.0f]\n', ...
+    fprintf('    u_total (peak): [%7.1f %7.1f %7.1f]  limits=[%.0f %.0f %.0f]\n', ...
             rep.max_total, rep.peak_limits);
     fprintf('  Force RMS [FX1 FX2 FY] N:\n');
-    fprintf('    u_q1 (RMS):  [%7.1f %7.1f %7.1f]  limits=[%.0f %.0f %.0f]\n', ...
+    fprintf('    u_total (RMS):  [%7.1f %7.1f %7.1f]  limits=[%.0f %.0f %.0f]\n', ...
             rep.rms_total, rep.rms_limits);
 end
 
@@ -807,64 +698,6 @@ function [r_pad, t_pad] = pad_to_multisine_periods(r, ts, fs)
         r_pad = r;
     end
     t_pad = ts * (0:size(r_pad,1)-1)';
-end
-
-% ----------------------------------------------------------------------
-
-function r_ms = generate_one_mode(N, fs, sp, mode_idx, mode_name, f_high, amp_m)
-% Generate the N×3 multisine contribution for a single mode.
-% f_high [Hz]: upper band edge (selected by the amplitude sweep).
-% The signal is normalised to amp_m RMS BEFORE being written to channels so
-% that per-mode amplitudes are independent when summed onto shared channels.
-% Leakage check: N must be an integer multiple of fs (1 s period).
-%
-% Cosine ramp-up (first N_RAMP samples): the Schroeder sum is non-zero at t=0.
-% The Tustin-discretised Cfb has a direct feedthrough D != 0, so a non-zero
-% initial reference error e[0] = r_ms[0] produces a 1-sample force spike
-% u[0] = D * e[0] ~ 4900 N that is hardware-safe (50 us impulse) but causes
-% validate_forces to fail. Ramping r_ms from zero eliminates e[0], keeping
-% stored u_q1 and q1 physically consistent with no spike.
-    N_period = round(fs);
-    assert(mod(N, N_period) == 0, ...
-           '%s: N=%d must be a multiple of N_period=%d', sp.id, N, N_period);
-    sig = multisine_schroeder_periodic(N, N_period, fs, sp.ms_f_low, f_high, mode_idx);
-    sig = sig * (amp_m / rms(sig));   % normalise to amp_m RMS
-
-    % Smooth startup avoids the Tustin direct-feedthrough impulse at t=0
-    % without adding an artificial acceleration spike to the validation.
-    ramp_time = 0.100;   % 100 ms, still short relative to the 1 s period
-    N_RAMP = min(round(ramp_time * fs), floor(0.25 * N_period));
-    w = 0.5 * (1 - cos(pi * (0:N_RAMP-1)' / (N_RAMP-1)));
-    sig(1:N_RAMP) = sig(1:N_RAMP) .* w;
-
-    r_ms = zeros(N, 3);
-    switch mode_name
-        case 'common'
-            r_ms(:,1) = sig;
-            r_ms(:,2) = sig;
-        case 'diff'
-            r_ms(:,1) =  sig;
-            r_ms(:,2) = -sig;
-        case 'y'
-            r_ms(:,3) = sig;
-        otherwise
-            error('%s: unknown multisine mode "%s"', sp.id, mode_name);
-    end
-end
-
-% ----------------------------------------------------------------------
-
-function r_ms = generate_ref_multisine(N, fs, sp, amp_m_vec, f_high_vec)
-% Generate reference position multisine r_ms (N x 3) = [X1, X2, Y] [m].
-% amp_m_vec: [m RMS] per mode; f_high_vec: [Hz] upper band edge per mode.
-% Skips modes where amp_m_vec(m) == 0 (excluded by sweep).
-    r_ms = zeros(N, 3);
-    for m = 1:numel(sp.ms_modes)
-        if amp_m_vec(m) > 0
-            r_ms = r_ms + generate_one_mode(N, fs, sp, m, sp.ms_modes{m}, ...
-                                            f_high_vec(m), amp_m_vec(m));
-        end
-    end
 end
 
 % ----------------------------------------------------------------------
