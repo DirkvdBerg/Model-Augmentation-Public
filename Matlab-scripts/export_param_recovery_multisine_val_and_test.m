@@ -41,14 +41,14 @@ addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
 % ======================================================================
 % USER FLAGS
 % ======================================================================
-DIAGNOSTIC_ONLY = true;   % true -> scan + print only; false -> scan then export
+DIAGNOSTIC_ONLY = false;  % true -> scan + print only; false -> scan then export
 TRAJ_SUBSET     = 1:2;    % 1=V1 (val), 2=E1 (test)
 
 % Candidate force bands/amplitudes. 5-20 Hz excluded (survival ~0.036, never
 % competitive from T1-T8 scan). Full range kept otherwise until V1/E1 are
 % scanned — narrow after first diagnostic run.
-FORCE_DIAG_BANDS_HZ  = [20,50; 50,100; 100,200];
-FORCE_DIAG_AMP_RMS_N = [100, 200, 400, 800];
+FORCE_DIAG_BANDS_HZ  = [50,100; 100,200];
+FORCE_DIAG_AMP_RMS_N = [200, 400];
 
 % ======================================================================
 % 1. Physical parameters (identical to main.m lines 12-49)
