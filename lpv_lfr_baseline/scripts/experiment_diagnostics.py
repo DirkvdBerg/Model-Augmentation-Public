@@ -3,11 +3,11 @@ experiment_diagnostics.py
 -------------------------
 Experiment-level diagnostics for the dual-gantry parameter recovery dataset.
 
-Diagnostics (run in order — each feeds the next)
+Diagnostics (run in order - each feeds the next)
 -------------------------------------------------
-1. FFT / frequency content   — sampling rate and decimation factor recommendation
-2. Step response             — dominant time constant tau_max and segment length
-3. Observability             — horizon sanity check (expected: 2 samples)
+1. FFT / frequency content   - sampling rate and decimation factor recommendation
+2. Step response             - dominant time constant tau_max and segment length
+3. Observability             - horizon sanity check (expected: 2 samples)
 
 Public API
 ----------
@@ -28,7 +28,7 @@ import math
 import os
 
 import matplotlib
-matplotlib.use('Agg')   # non-interactive — safe on servers, always saves to file
+matplotlib.use('Agg')   # non-interactive - safe on servers, always saves to file
 import matplotlib.pyplot as plt
 import torch
 from lpv_lfr_baseline.blocks.lfr_param_block import (
@@ -54,7 +54,7 @@ _CH_NAMES = ('X1', 'X2', 'Y')
 
 
 # ----------------------------------------------------------------------
-# Shared helper — differentiable matrix build from log_params
+# Shared helper - differentiable matrix build from log_params
 # ----------------------------------------------------------------------
 
 def _build_sim_matrices(log_p, params_init, dtype):
@@ -87,7 +87,7 @@ def _build_sim_matrices(log_p, params_init, dtype):
 
 
 # ----------------------------------------------------------------------
-# Diagnostic 1 — FFT / frequency content
+# Diagnostic 1 - FFT / frequency content
 # ----------------------------------------------------------------------
 
 def _diag_fft(trajs, save_dir):
@@ -156,17 +156,18 @@ def _diag_fft(trajs, save_dir):
                 ax.legend(fontsize=7, ncol=5, loc='upper right')
         axes[-1].set_xlabel('Frequency [Hz]')
         fig.suptitle(
-            f'FFT  —  f_99={f99_overall:.0f} Hz  ->  Recommended fs={fs_new} Hz (D={D})',
+            f'FFT  -  f_99={f99_overall:.0f} Hz  ->  Recommended fs={fs_new} Hz (D={D})',
             fontsize=11,
         )
         plt.tight_layout()
         _save_fig(fig, save_dir, 'diag_fft.png')
 
-    return {'f99_overall': f99_overall, 'fs_new': fs_new, 'decimation_factor': D}
+    return {'f99_overall': f99_overall, 'fs_new': fs_new, 'decimation_factor': D,
+            'f99_by_traj': f99_by_traj}
 
 
 # ----------------------------------------------------------------------
-# Diagnostic 2 — Step response / pole analysis
+# Diagnostic 2 - Step response / pole analysis
 # ----------------------------------------------------------------------
 
 def _diag_step_response(fs, fs_new, save_dir, dtype=torch.float64):
@@ -215,8 +216,8 @@ def _diag_step_response(fs, fs_new, save_dir, dtype=torch.float64):
         tau_max_Y  = float((-1.0 / neg_real).max()) if neg_real.numel() > 0 else 0.0
         tau_max    = max(tau_max, tau_max_Y)
 
-        # Re≈0: rigid-body modes (no X1/X2 stiffness open-loop — expected)
-        # Re>1e-4: genuinely unstable — warn
+        # Re≈0: rigid-body modes (no X1/X2 stiffness open-loop - expected)
+        # Re>1e-4: genuinely unstable - warn
         n_rb       = int((eigvals.real.abs() < 1e-4).sum())
         n_unstable = int((eigvals.real > 1e-4).sum())
         note  = f'  ({n_rb} rigid-body)' if n_rb else ''
@@ -255,7 +256,7 @@ def _diag_step_response(fs, fs_new, save_dir, dtype=torch.float64):
 
 
 # ----------------------------------------------------------------------
-# Diagnostic 3 — Observability
+# Diagnostic 3 - Observability
 # ----------------------------------------------------------------------
 
 def _diag_observability(fs, save_dir, dtype=torch.float64):
@@ -267,7 +268,7 @@ def _diag_observability(fs, save_dir, dtype=torch.float64):
     in column-vector convention C selects first 3 states and applies P^T.
 
     Expected: rank reaches 6 at h=2 since
-        [C; CA_c] = [[P^T, 0], [0, P^T]] — block diagonal of invertible P^T.
+        [C; CA_c] = [[P^T, 0], [0, P^T]] - block diagonal of invertible P^T.
 
     Returns
     -------
@@ -340,7 +341,7 @@ def _diag_observability(fs, save_dir, dtype=torch.float64):
 def recommend_segment_len(fs, fs_new, save_dir, dtype=torch.float64):
     """
     Determine segment_len from step response pole analysis.
-    Called by precompute._compute() — prints, no plots.
+    Called by precompute._compute() - prints, no plots.
 
     Parameters
     ----------
@@ -351,15 +352,107 @@ def recommend_segment_len(fs, fs_new, save_dir, dtype=torch.float64):
 
     Returns
     -------
-    int — segment_len in samples at fs_new
+    int - segment_len in samples at fs_new
     """
     r_step = _diag_step_response(fs, fs_new, save_dir=None, dtype=dtype)
     return r_step['segment_len']
 
 
+def _save_report(trajs, r_fft, r_step, r_obs, save_dir):
+    """
+    Write a compact diagnostics_report.txt — all key numbers, no prose.
+    Designed to be pasted directly into a review conversation.
+    """
+    import datetime
+    fs_orig = float(trajs[0]['fs'])
+    lines   = []
+    W       = 60
+
+    def hdr(title):
+        lines.append('=' * W)
+        lines.append(f'  {title}')
+        lines.append('-' * W)
+
+    def sep():
+        lines.append('-' * W)
+
+    lines.append('=' * W)
+    lines.append('  DIAGNOSTICS REPORT')
+    lines.append(f'  Generated : {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
+    lines.append(f'  Trajs     : {", ".join(t["id"] for t in trajs)}')
+    lines.append(f'  fs_orig   : {fs_orig:.0f} Hz')
+    lines.append('=' * W)
+
+    # ── 1. FFT ──────────────────────────────────────────────────────────
+    hdr('1. FFT  (f_99 = freq below which 99% power lies)')
+    lines.append(f'  {"Traj":<6}  {"X1 [Hz]":>10}  {"X2 [Hz]":>10}  {"Y [Hz]":>10}')
+    lines.append(f'  {"-"*6}  {"-"*10}  {"-"*10}  {"-"*10}')
+    for traj, f99s in zip(trajs, r_fft['f99_by_traj']):
+        lines.append(f'  {traj["id"]:<6}  {f99s[0]:>10.1f}  {f99s[1]:>10.1f}  {f99s[2]:>10.1f}')
+    lines.append(f'  {"MAX":<6}  {"":>10}  {"":>10}  {r_fft["f99_overall"]:>9.1f}*')
+    lines.append(f'  * f_99_overall = {r_fft["f99_overall"]:.1f} Hz  '
+                 f'(max across all channels + trajs)')
+    lines.append(f'  Rule: fs_new >= 8 x {r_fft["f99_overall"]:.0f} = '
+                 f'{8 * r_fft["f99_overall"]:.0f} Hz')
+    lines.append(f'  -> fs_new = {r_fft["fs_new"]} Hz  '
+                 f'(D = {r_fft["decimation_factor"]} from {fs_orig:.0f} Hz)')
+
+    # ── 2. Pole analysis ─────────────────────────────────────────────────
+    sep()
+    hdr('2. POLE ANALYSIS  (frozen LTI at each Y)')
+    lines.append(f'  {"Y [m]":<7}  {"tau_max [s]":>11}  {"rigid-body":>10}  '
+                 f'{"unstable":>8}  poles (re+imj)')
+    lines.append(f'  {"-"*7}  {"-"*11}  {"-"*10}  {"-"*8}  {"-"*28}')
+    for Y_val, eigvals in r_step['poles'].items():
+        neg_real   = eigvals.real[eigvals.real < -1e-8]
+        tau_Y      = float((-1.0 / neg_real).max()) if neg_real.numel() > 0 else 0.0
+        n_rb       = int((eigvals.real.abs() < 1e-4).sum())
+        n_unstable = int((eigvals.real > 1e-4).sum())
+        pole_str   = '  '.join(
+            f'{e.real.item():+.2f}{e.imag.item():+.2f}j' for e in eigvals
+        )
+        lines.append(f'  {Y_val:<7.2f}  {tau_Y:>11.4f}  {n_rb:>10}  '
+                     f'{n_unstable:>8}  {pole_str}')
+    lines.append(f'  tau_max_overall = {r_step["tau_max"]:.4f} s')
+    lines.append(f'  f_osc_min       = {r_step["f_osc_min"]:.4f} Hz  '
+                 f'(slowest oscillatory mode)')
+    lines.append(f'  segment_len     = {r_step["segment_len"]} samples  '
+                 f'({r_step["segment_len_s"]:.3f} s at {r_fft["fs_new"]:.0f} Hz,  '
+                 f'{N_PERIODS} periods)')
+
+    # ── 3. Observability ─────────────────────────────────────────────────
+    sep()
+    hdr('3. OBSERVABILITY  (rank of O_h vs horizon h)')
+    max_h = max(len(v) for v in r_obs['rank_profiles'].values())
+    h_cols = ''.join(f'  h={h}' for h in range(1, max_h + 1))
+    lines.append(f'  {"Y [m]":<7}{h_cols}  full_at_h')
+    lines.append(f'  {"-"*7}' + '  ----' * max_h + '  ---------')
+    for Y_val, ranks in r_obs['rank_profiles'].items():
+        rank_str  = ''.join(f'  {r:>4}' for r in ranks)
+        full_h    = ranks.index(6) + 1 if 6 in ranks else f'>{max_h}'
+        lines.append(f'  {Y_val:<7.2f}{rank_str}  {full_h}')
+    lines.append(f'  Observability horizon = {r_obs["horizon"]}  (expected 2)')
+
+    # ── Summary ──────────────────────────────────────────────────────────
+    sep()
+    hdr('SUMMARY')
+    lines.append(f'  fs_new      : {r_fft["fs_new"]} Hz  (D={r_fft["decimation_factor"]})')
+    lines.append(f'  tau_max     : {r_step["tau_max"]:.4f} s')
+    lines.append(f'  f_osc_min   : {r_step["f_osc_min"]:.4f} Hz')
+    lines.append(f'  segment_len : {r_step["segment_len"]} samples  '
+                 f'({r_step["segment_len_s"]:.3f} s)')
+    lines.append(f'  obs_horizon : {r_obs["horizon"]}  (expected 2)')
+    lines.append('=' * W)
+
+    path = os.path.join(save_dir, 'diagnostics_report.txt')
+    with open(path, 'w') as f:
+        f.write('\n'.join(lines) + '\n')
+    print(f'  Report saved: {path}')
+
+
 def run_all_diagnostics(trajs, save_dir):
     """
-    Run all three diagnostics. Saves plots to save_dir, prints full summary.
+    Run all three diagnostics. Saves plots + diagnostics_report.txt to save_dir.
 
     Parameters
     ----------
@@ -385,6 +478,8 @@ def run_all_diagnostics(trajs, save_dir):
           f'  ({r_step["segment_len_s"]:.3f} s at {r_fft["fs_new"]:.0f} Hz)')
     print(f'  Observability    : horizon = {r_obs["horizon"]}  (expected 2)')
     print('=' * 60)
+
+    _save_report(trajs, r_fft, r_step, r_obs, save_dir)
 
 
 # ----------------------------------------------------------------------

@@ -55,7 +55,7 @@ DTYPE = torch.float64
 #   'ref_injection' — T1–T8, multisine injected into reference r (preferred)
 #                     Matlab-output/parameter-recovery-ref-injection/
 #                     Excitation reaches plant via T≈1, not attenuated by S≪1.
-DATASET = 'ref_injection'
+DATASET = 'multisine'
 
 _BASE = os.path.join(os.path.dirname(__file__), '..', '..')
 _TRAJ_BASE = (
@@ -95,7 +95,7 @@ TRAJ_SPECS = _ds['traj_specs']
 
 # ── Validation / test trajectories ───────────────────────────────────────────
 # Separate directory; files not used during training.
-_VAL_TEST_DIR = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery-ref-injection-val-test')
+_VAL_TEST_DIR = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery-multisine-val-test')
 
 # VAL_SPECS: drives LR scheduler and best-model selection during training.
 # () = fall back to training trajectories (no held-out validation).
@@ -123,7 +123,7 @@ N_STEPS                  = None    # cap on trajectory steps (None = all); set t
 PROFILE                  = False
 TIME_EPOCHS              = False
 BASE_SEED                = 1234
-FULL_COVERAGE            = True  # True = all segments per trajectory per epoch; False = 1 random segment per trajectory per epoch
+FULL_COVERAGE            = False  # True = all segments per trajectory per epoch; False = 1 random segment per trajectory per epoch
 
 # ── Choose CPU or GPU ──────────────────────────────────────────────────
 device = torch.device('cpu') # Else 'cuda'
