@@ -112,7 +112,7 @@ NORM_MODE = 'global'   # 'per_traj' | 'global'  (see precompute.py)
 OVERLAP_FRACTION = 0.0   # 0.0 = non-overlapping; 0.5 = 50% overlap
 
 # ── Training hyperparameters ──────────────────────────────────────────────────
-W                  = 50      # BPTT window [samples] — outer loop in train()
+W                  = None    # BPTT window [samples] — None = full segment (no truncation)
 EPOCHS             = 1500
 LR                 = 1e-3
 VALIDATION_INTERVAL = None     # Set to None when not used. The lr scheduler steps on validation RMSE every VALIDATION_INTERVAL epochs; best params tracked.
@@ -386,7 +386,8 @@ def train(
             traj['N']          = min(traj['N'], n_steps)
         segment_len = min(segment_len, n_steps)
         pools = _build_segment_pools(trajs, segment_len, OVERLAP_FRACTION)  # truncation changes valid starts
-    n_windows = (segment_len + W - 1) // W
+    W_eff     = segment_len if W is None else W
+    n_windows = (segment_len + W_eff - 1) // W_eff
 
     # sigma_batch is constant each epoch: one entry per trajectory in trajs order
     sigma_batch = torch.stack([sigma_device[traj['id']] for traj in trajs])  # (B, 3)
@@ -395,7 +396,7 @@ def train(
     stride = max(1, round(segment_len * (1 - OVERLAP_FRACTION)))
     print(f'  Active: {", ".join(s["id"] for s in TRAJ_SPECS)}')
     print(
-        f'  segment_len={segment_len}, W={W}, n_windows={n_windows}, '
+        f'  segment_len={segment_len}, W={"full" if W is None else W}, n_windows={n_windows}, '
         f'batch={len(trajs)} trajs/epoch'
     )
     print(
@@ -516,8 +517,8 @@ def train(
                 mse_loss = None      # accumulated as a computation-graph tensor
 
                 for w in range(n_windows):
-                    w_start = w * W
-                    w_end   = min(w_start + W, segment_len)
+                    w_start = w * W_eff
+                    w_end   = min(w_start + W_eff, segment_len)
                     u_win   = u_seg[:, w_start:w_end, :]     # (B, w_len, 3)
                     q1_win  = q1_seg[:, w_start:w_end, :]    # (B, w_len, 3)
 
