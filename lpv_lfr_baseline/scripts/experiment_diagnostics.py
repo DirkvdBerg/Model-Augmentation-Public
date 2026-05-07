@@ -33,12 +33,13 @@ import matplotlib.pyplot as plt
 import torch
 from lpv_lfr_baseline.blocks.lfr_param_block import (
     ParameterizedLFRBlock, _build_matrices, _Lb, _PARAM_NAMES,
+    _TRUE_PARAMS, _DETUNED_PARAMS,
 )
 from lpv_lfr_baseline.core.physics import (
     build_poly_constants, build_M, P as _P, ts as _ts,
 )
 from lpv_lfr_baseline.core.lfr_matrices import build_G_matrix
-from lpv_lfr_baseline.core.lfr_simulate import simulate_frozen
+from lpv_lfr_baseline.core.lfr_simulate import simulate_frozen, simulate
 
 # ----------------------------------------------------------------------
 # Constants
@@ -49,6 +50,8 @@ _FS_CANDIDATES        = (1000, 2000, 4000, 8000)   # candidate new sampling rate
 _FS_RULE_FACTOR       = 8                          # require fs_new >= factor * f_99
 _FFT_ENERGY_THRESHOLD = 0.99                       # cumulative PSD energy for f_99
 N_PERIODS             = 3                          # number of slowest oscillatory periods per segment
+_N_GRAD_CHECK_EPOCHS  = 50                         # epochs for gradient convergence quick-check
+GRAD_CHECK            = False                      # toggle: run diagnostic 4 when running as __main__
 
 _CH_NAMES = ('X1', 'X2', 'Y')
 
@@ -126,6 +129,12 @@ def _diag_fft(trajs, save_dir):
             psd_data.append((freqs[1:].numpy(), psd[1:].numpy()))
 
     f99_overall = max(f for f99s in f99_by_traj for f in f99s)
+    worst_traj, worst_ch = next(
+        (trajs[ti]['id'], _CH_NAMES[ci])
+        for ti, f99s in enumerate(f99_by_traj)
+        for ci, f in enumerate(f99s)
+        if f == f99_overall
+    )
     fs_new = next(
         (f for f in _FS_CANDIDATES if f >= _FS_RULE_FACTOR * f99_overall),
         int(fs_orig),
@@ -163,7 +172,7 @@ def _diag_fft(trajs, save_dir):
         _save_fig(fig, save_dir, 'diag_fft.png')
 
     return {'f99_overall': f99_overall, 'fs_new': fs_new, 'decimation_factor': D,
-            'f99_by_traj': f99_by_traj}
+            'f99_by_traj': f99_by_traj, 'worst_traj': worst_traj, 'worst_ch': worst_ch}
 
 
 # ----------------------------------------------------------------------
@@ -389,9 +398,8 @@ def _save_report(trajs, r_fft, r_step, r_obs, save_dir):
     lines.append(f'  {"-"*6}  {"-"*10}  {"-"*10}  {"-"*10}')
     for traj, f99s in zip(trajs, r_fft['f99_by_traj']):
         lines.append(f'  {traj["id"]:<6}  {f99s[0]:>10.1f}  {f99s[1]:>10.1f}  {f99s[2]:>10.1f}')
-    lines.append(f'  {"MAX":<6}  {"":>10}  {"":>10}  {r_fft["f99_overall"]:>9.1f}*')
-    lines.append(f'  * f_99_overall = {r_fft["f99_overall"]:.1f} Hz  '
-                 f'(max across all channels + trajs)')
+    lines.append(f'  * worst case: {r_fft["worst_traj"]} / {r_fft["worst_ch"]}'
+                 f' = {r_fft["f99_overall"]:.1f} Hz  (drives fs_new)')
     lines.append(f'  Rule: fs_new >= 8 x {r_fft["f99_overall"]:.0f} = '
                  f'{8 * r_fft["f99_overall"]:.0f} Hz')
     lines.append(f'  -> fs_new = {r_fft["fs_new"]} Hz  '
@@ -450,14 +458,15 @@ def _save_report(trajs, r_fft, r_step, r_obs, save_dir):
     print(f'  Report saved: {path}')
 
 
-def run_all_diagnostics(trajs, save_dir):
+def run_all_diagnostics(trajs, save_dir, grad_check=False):
     """
-    Run all three diagnostics. Saves plots + diagnostics_report.txt to save_dir.
+    Run all diagnostics. Saves plots + diagnostics_report.txt to save_dir.
 
     Parameters
     ----------
-    trajs    : list of traj dicts — each with keys: id, u, q1, state_traj, N, fs
-    save_dir : directory to save plots (created if absent)
+    trajs      : list of traj dicts — each with keys: id, u, q1, state_traj, N, fs
+    save_dir   : directory to save plots (created if absent)
+    grad_check : if True, run diagnostic 4 (gradient convergence check)
     """
     os.makedirs(save_dir, exist_ok=True)
     fs = float(trajs[0]['fs'])
@@ -480,6 +489,208 @@ def run_all_diagnostics(trajs, save_dir):
     print('=' * 60)
 
     _save_report(trajs, r_fft, r_step, r_obs, save_dir)
+
+    if grad_check:
+        _diag_gradient_convergence(trajs, r_fft, r_step, save_dir, dtype=torch.float64)
+
+
+# ----------------------------------------------------------------------
+# Diagnostic 4 — Gradient convergence check
+# ----------------------------------------------------------------------
+
+def _diag_gradient_convergence(trajs, r_fft, r_step, save_dir, dtype=torch.float64):
+    """
+    Gradient convergence sanity check using true parameters.
+
+    Imports LR and W from train_param_recovery so the check uses the same
+    optimiser settings as actual training.
+
+    Two checks
+    ----------
+    1. Gradient direction (1 backward pass at detuned params):
+       dot(grad[i], log_true[i]) < 0  →  gradient points toward true value.
+    2. Short optimisation (_N_GRAD_CHECK_EPOCHS of Adam):
+       tracks per-parameter % error vs true params; checks that errors decrease.
+
+    Returns
+    -------
+    dict with direction and convergence results, or None if trajectories too short.
+    """
+    # Lazy import to avoid circular dependency at module load time
+    from lpv_lfr_baseline.scripts.train_param_recovery import LR, W as W_cfg
+    from lpv_lfr_baseline.scripts.precompute import _build_state_traj_logical
+
+    D           = r_fft['decimation_factor']
+    fs_new      = float(r_fft['fs_new'])
+    ts_eff      = 1.0 / fs_new
+    segment_len = r_step['segment_len']
+    W_eff       = segment_len if W_cfg is None else int(W_cfg)
+    n_windows   = (segment_len + W_eff - 1) // W_eff
+
+    print('\nGradient Convergence Check')
+    print(f'  LR={LR}  W={"full" if W_cfg is None else W_cfg}'
+          f'  (W_eff={W_eff})  segment_len={segment_len}  n_windows={n_windows}')
+
+    # --- Decimate and build state trajectories ---
+    P        = _P.to(dtype)
+    dec_trajs = []
+    for traj in trajs:
+        q1_dec = traj['q1'][::D]
+        u_dec  = traj['u'][:, ::D, :]
+        N_dec  = int(q1_dec.shape[0])
+        if N_dec < segment_len:
+            print(f'  WARNING: {traj["id"]} too short after decimation '
+                  f'({N_dec} < {segment_len}) — skipping')
+            continue
+        state = _build_state_traj_logical(q1_dec, P, ts_eff, dtype)
+        dec_trajs.append({'id': traj['id'], 'u': u_dec, 'q1': q1_dec,
+                          'state_traj': state, 'N': N_dec})
+
+    if not dec_trajs:
+        print('  ERROR: no trajectories long enough — aborting gradient check')
+        return None
+
+    # Batch: first segment from each trajectory (same as one training epoch)
+    x0_batch  = torch.stack([t['state_traj'][0]          for t in dec_trajs])  # (B, 6)
+    u_batch   = torch.stack([t['u'][0, :segment_len]      for t in dec_trajs])  # (B, S, 3)
+    q1_batch  = torch.stack([t['q1'][:segment_len]        for t in dec_trajs])  # (B, S, 3)
+
+    # Global sigma from all decimated data (same logic as precompute 'global' mode)
+    q1_all = torch.cat([t['q1'] for t in dec_trajs], dim=0)
+    sigma  = torch.stack([q1_all[:, c].std().clamp(min=1e-4) for c in range(3)])  # (3,)
+
+    # True log_params: direction from detuned (log_params=0) toward true params
+    params_true_t    = torch.tensor([_TRUE_PARAMS[n]    for n in _PARAM_NAMES], dtype=dtype)
+    params_detuned_t = torch.tensor([_DETUNED_PARAMS[n] for n in _PARAM_NAMES], dtype=dtype)
+    log_params_true  = (params_true_t / params_detuned_t).log()   # target for log_params
+
+    ts_tensor = torch.tensor(ts_eff, dtype=dtype)
+
+    def _loss(block):
+        """Windowed forward loss — differentiable w.r.t. block.log_params."""
+        G, K, C, mh, alpha, beta, gamma, N0, N1, N2 = _build_sim_matrices(
+            block.log_params, block.params_init, dtype
+        )
+        x_win    = x0_batch
+        total    = None
+        for w in range(n_windows):
+            ws      = w * W_eff
+            we      = min(ws + W_eff, segment_len)
+            result  = simulate(x_win, u_batch[:, ws:we], G, K, C, mh, alpha, beta, gamma,
+                               N0, N1, N2, block._P, ts_tensor,
+                               bptt_mode='full', return_latents=False)
+            err     = (result.Y - q1_batch[:, ws:we]) / sigma.unsqueeze(0).unsqueeze(0)
+            wloss   = err.pow(2).mean() / n_windows
+            total   = wloss if total is None else total + wloss
+            x_win   = result.X[:, -1, :].detach()
+        return total
+
+    # ── 1. Gradient direction test ────────────────────────────────────────
+    block = ParameterizedLFRBlock(RMSE_baseline=1.0).to(dtype=dtype)
+    block.log_params.data.zero_()   # detuned starting point
+
+    _loss(block).backward()
+    grad = block.log_params.grad.detach().clone()
+
+    # dot < 0  →  gradient descent moves log_params toward log_params_true
+    dots    = (grad * log_params_true).tolist()
+    correct = [d < 0 for d in dots]
+    n_ok    = sum(correct)
+
+    print(f'\n  [1] Gradient direction  (dot < 0 = grad points toward true value)'
+          f'  {n_ok}/{len(_PARAM_NAMES)} correct')
+    print(f'  {"Param":<8}  {"grad":>12}  {"to_true":>12}  {"dot":>12}  correct?')
+    print(f'  {"-"*8}  {"-"*12}  {"-"*12}  {"-"*12}  --------')
+    for i, name in enumerate(_PARAM_NAMES):
+        print(f'  {name:<8}  {float(grad[i]):>12.4e}  {float(log_params_true[i]):>12.4e}'
+              f'  {dots[i]:>12.4e}  {"YES" if correct[i] else "NO"}')
+
+    # ── 2. Short optimisation ─────────────────────────────────────────────
+    block = ParameterizedLFRBlock(RMSE_baseline=1.0).to(dtype=dtype)
+    block.log_params.data.zero_()
+    optimizer = torch.optim.Adam(block.parameters(), lr=LR)
+
+    def _param_err_pct():
+        p = block.params_init * block.log_params.detach().exp()
+        return ((p - params_true_t) / params_true_t * 100).abs().tolist()
+
+    init_err     = _param_err_pct()
+    loss_history = []
+
+    # Compute initial loss before any optimisation step
+    with torch.no_grad():
+        loss_history.append(float(_loss(block)))
+
+    print(f'\n  [2] Short optimisation  ({_N_GRAD_CHECK_EPOCHS} epochs, LR={LR})')
+    print(f'  {"epoch":>6}  {"loss":>12}  {"grad_norm":>12}')
+    print(f'  {"-"*6}  {"-"*12}  {"-"*12}')
+    for epoch in range(1, _N_GRAD_CHECK_EPOCHS + 1):
+        optimizer.zero_grad(set_to_none=True)
+        loss_val = _loss(block)
+        loss_val.backward()
+        grad_norm = float(block.log_params.grad.norm().item()
+                          if block.log_params.grad is not None else 0.0)
+        optimizer.step()
+        loss_history.append(float(loss_val.item()))
+        if epoch % 10 == 0 or epoch == _N_GRAD_CHECK_EPOCHS:
+            print(f'  {epoch:>6}  {loss_history[-1]:>12.4e}  {grad_norm:>12.4e}', flush=True)
+
+    final_err   = _param_err_pct()
+    n_improved  = sum(fe < ie for ie, fe in zip(init_err, final_err))
+
+    print(f'  {"Param":<8}  {"init err%":>9}  {"final err%":>10}  improved?')
+    print(f'  {"-"*8}  {"-"*9}  {"-"*10}  ---------')
+    for i, name in enumerate(_PARAM_NAMES):
+        imp = final_err[i] < init_err[i]
+        print(f'  {name:<8}  {init_err[i]:>9.2f}  {final_err[i]:>10.2f}  {"YES" if imp else "NO"}')
+    print(f'  -> {n_improved}/{len(_PARAM_NAMES)} parameters improved')
+
+    result = {
+        'n_correct_direction': n_ok,
+        'n_params':            len(_PARAM_NAMES),
+        'dots':                dots,
+        'correct':             correct,
+        'init_err_pct':        init_err,
+        'final_err_pct':       final_err,
+        'n_improved':          n_improved,
+        'loss_init':           loss_history[0],
+        'loss_final':          loss_history[-1],
+        'W_eff':               W_eff,
+        'LR':                  LR,
+        'n_epochs':            _N_GRAD_CHECK_EPOCHS,
+    }
+
+    if save_dir is not None:
+        _append_gradient_report(result, save_dir)
+
+    return result
+
+
+def _append_gradient_report(r, save_dir):
+    """Append gradient convergence section to diagnostics_report.txt."""
+    W = 60
+    lines = ['', '=' * W, '  4. GRADIENT CONVERGENCE CHECK',
+             f'  LR={r["LR"]}  W_eff={r["W_eff"]}  epochs={r["n_epochs"]}',
+             '-' * W]
+
+    lines.append(f'  [1] Direction  ({r["n_correct_direction"]}/{r["n_params"]} correct)')
+    lines.append(f'  {"Param":<8}  {"dot":>12}  ok?')
+    lines.append(f'  {"-"*8}  {"-"*12}  ---')
+    for name, dot, ok in zip(_PARAM_NAMES, r['dots'], r['correct']):
+        lines.append(f'  {name:<8}  {dot:>12.4e}  {"YES" if ok else "NO"}')
+
+    lines += ['', f'  [2] Convergence  ({r["n_improved"]}/{r["n_params"]} improved)']
+    lines.append(f'  {"Param":<8}  {"init%":>8}  {"final%":>8}  ok?')
+    lines.append(f'  {"-"*8}  {"-"*8}  {"-"*8}  ---')
+    for name, ie, fe in zip(_PARAM_NAMES, r['init_err_pct'], r['final_err_pct']):
+        lines.append(f'  {name:<8}  {ie:>8.2f}  {fe:>8.2f}  {"YES" if fe < ie else "NO"}')
+    lines.append(f'  Loss: {r["loss_init"]:.4e} -> {r["loss_final"]:.4e}')
+    lines.append('=' * W)
+
+    path = os.path.join(save_dir, 'diagnostics_report.txt')
+    with open(path, 'a') as f:
+        f.write('\n'.join(lines) + '\n')
+    print(f'  Gradient report appended: {path}')
 
 
 # ----------------------------------------------------------------------
@@ -546,6 +757,10 @@ if __name__ == '__main__':
         '--dataset', default=DATASET, choices=list(_DATASETS),
         help='Dataset to analyse (default: active DATASET in train_param_recovery.py)',
     )
+    parser.add_argument(
+        '--grad-check', action='store_true', default=GRAD_CHECK,
+        help=f'Run gradient convergence check (diagnostic 4, {_N_GRAD_CHECK_EPOCHS} epochs)',
+    )
     args = parser.parse_args()
 
     ds       = _DATASETS[args.dataset]
@@ -575,4 +790,4 @@ if __name__ == '__main__':
         })
         print(f'  {spec["id"]}: T={q1.shape[0]}, fs={fs_traj:.0f} Hz')
 
-    run_all_diagnostics(trajs, save_dir)
+    run_all_diagnostics(trajs, save_dir, grad_check=args.grad_check)
