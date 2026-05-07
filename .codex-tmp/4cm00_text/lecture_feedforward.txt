@@ -1,0 +1,2197 @@
+     4CM00: Control Engineering
+     FeedForward control
+     Dr.ir. Gert Witvoet
+
+
+
+
+October 2025
+                            Where innovation starts
+  Influence of the setpoint                                                  2/38
+
+
+  Consider a simple motion system
+
+                                               F
+                                           m
+
+                                       x
+      Objective: Move the mass move from position 0 to 1
+   Question 1: How does the error depend on the setpoint trajectory xs ?
+               I.e. how do we get from 0 to 1?
+   Question 2: Can we obtain (nearly) perfect tracking using just a simple
+               PD-controller?
+
+
+
+Department of Mechanical Engineering
+  Closed loop response: 0th order setpoint                                                               3/38
+
+
+                                                                   1
+                 1.6
+
+                                                                  0.8
+                 1.4
+
+                                                                  0.6
+                 1.2
+
+                  1                                               0.4
+      setpoint
+
+
+
+
+                                                         error
+                 0.8                                              0.2
+
+                 0.6                                               0
+
+                 0.4                                             −0.2
+
+                 0.2                                             −0.4
+
+                  0                                              −0.6
+                       0   2   4       6   8   10   12                  0   2   4    6     8   10   12
+                                   time                                             time
+
+
+
+Department of Mechanical Engineering
+  Closed loop response: 0th order setpoint                                                               3/38
+
+
+                                                                   1
+                 1.6
+
+                                                                  0.8
+                 1.4
+
+                                                                  0.6
+                 1.2
+
+                  1                                               0.4
+      setpoint
+
+
+
+
+                                                         error
+                 0.8                                              0.2
+
+                 0.6                                               0
+
+                 0.4                                             −0.2
+
+                 0.2                                             −0.4
+
+                  0                                              −0.6
+                       0   2   4       6   8   10   12                  0   2   4    6     8   10   12
+                                   time                                             time
+                                       Maximal error / overshoot: 0.6
+
+Department of Mechanical Engineering
+  Closed loop response: 1st order setpoint                                                                 4/38
+
+                                                                   0.01
+
+                  1                                               0.008
+
+                                                                  0.006
+                 0.8
+                                                                  0.004
+
+                                                                  0.002
+      setpoint
+
+
+
+
+                 0.6
+
+
+
+
+                                                         error
+                                                                     0
+
+                 0.4                                             −0.002
+
+                                                                 −0.004
+                 0.2
+                                                                 −0.006
+
+
+                  0                                              −0.008
+
+                                                                  −0.01
+                       0   2   4       6   8   10   12                    0   2   4    6     8   10   12
+                                   time                                               time
+
+
+
+Department of Mechanical Engineering
+  Closed loop response: 1st order setpoint                                                                 4/38
+
+                                                                   0.01
+
+                  1                                               0.008
+
+                                                                  0.006
+                 0.8
+                                                                  0.004
+
+                                                                  0.002
+      setpoint
+
+
+
+
+                 0.6
+
+
+
+
+                                                         error
+                                                                     0
+
+                 0.4                                             −0.002
+
+                                                                 −0.004
+                 0.2
+                                                                 −0.006
+
+
+                  0                                              −0.008
+
+                                                                  −0.01
+                       0   2   4       6   8   10   12                    0   2   4    6     8   10   12
+                                   time                                               time
+                                   Maximal error / overshoot: 0.009
+
+Department of Mechanical Engineering
+  Closed loop response: 2nd order setpoint                                                                  5/38
+
+                                                                          −4
+                                                                      x 10
+
+                  1                                               4
+
+                                                                  3
+                 0.8
+                                                                  2
+
+                                                                  1
+      setpoint
+
+
+
+
+                 0.6
+
+
+
+
+                                                         error
+                                                                  0
+
+                 0.4
+                                                                 −1
+
+                                                                 −2
+                 0.2
+                                                                 −3
+
+                  0                                              −4
+
+                       0   2   4       6   8   10   12                0        2   4    6     8   10   12
+                                   time                                                time
+
+
+Department of Mechanical Engineering
+  Closed loop response: 2nd order setpoint                                                                  5/38
+
+                                                                          −4
+                                                                      x 10
+
+                  1                                               4
+
+                                                                  3
+                 0.8
+                                                                  2
+
+                                                                  1
+      setpoint
+
+
+
+
+                 0.6
+
+
+
+
+                                                         error
+                                                                  0
+
+                 0.4
+                                                                 −1
+
+                                                                 −2
+                 0.2
+                                                                 −3
+
+                  0                                              −4
+
+                       0   2   4       6   8   10   12                0        2   4    6     8   10   12
+                                   time                                                time
+                                   Maximal error / overshoot: 0.0004
+Department of Mechanical Engineering
+  Trajectory planning                                                    6/38
+
+
+  Very good tracking results can be obtained
+      ▶   using a simple (low bandwidth) controller
+      ▶   using a ‘smart’ trajectory for xs
+      ▶   basic idea: shape trajectory    →   restrict ẋs , ẍs , etc
+
+
+
+
+Department of Mechanical Engineering
+  Trajectory planning                                                     6/38
+
+
+  Very good tracking results can be obtained
+      ▶   using a simple (low bandwidth) controller
+      ▶   using a ‘smart’ trajectory for xs
+      ▶   basic idea: shape trajectory     →   restrict ẋs , ẍs , etc
+
+  Advantages of trajectory planning:
+      ▶   less oscillations
+      ▶   possibly faster settling times
+      ▶   smaller control signals (less saturation issues)
+
+
+
+
+Department of Mechanical Engineering
+  Trajectory planning                                                      6/38
+
+
+  Very good tracking results can be obtained
+      ▶   using a simple (low bandwidth) controller
+      ▶   using a ‘smart’ trajectory for xs
+      ▶   basic idea: shape trajectory     →    restrict ẋs , ẍs , etc
+
+  Advantages of trajectory planning:
+      ▶   less oscillations
+      ▶   possibly faster settling times
+      ▶   smaller control signals (less saturation issues)
+
+  One can wonder...
+      ▶   Can we quantify the tracking error?
+      ▶   Is there a way to further reduce this tracking error?
+
+
+Department of Mechanical Engineering
+                                                   7/38
+
+
+
+
+                         Understanding the servo
+                                 error
+
+
+
+
+Department of Mechanical Engineering
+  2nd order trajectory                                             8/38
+
+
+  For now, assume only xs , ẋs and ẍs are restricted
+                           1
+                    xs
+                          0.5
+
+
+
+                           0
+                                0      2   4   6   8     10   12
+
+                          0.2
+
+                         0.15
+                   ẋs
+
+
+
+
+                          0.1
+
+                         0.05
+
+                           0
+                                0      2   4   6   8     10   12
+
+
+                         0.05
+                  ẍs
+
+
+
+
+                           0
+
+
+                        −0.05
+
+                                0      2   4   6   8     10   12
+                                               t
+
+Department of Mechanical Engineering
+  Tracking example 1: error dynamics                                                   9/38
+
+  Equation of motion:                                                              F
+                                                                               m
+                                                  1
+         m ẍ = F           ⇒          X (s) =        · F (s)              x
+                                                 ms 2
+  PD-controller:
+
+                                       F   = Kp e + Kv ė
+                                           = Kp (xs − x) + Kv (ẋs − ẋ)
+
+  Hence, closed-loop equation of motion becomes
+
+                                  m ẍ + Kv (ẋ − ẋs ) + Kp (x − xs ) = 0
+                      m (ẍs − ẍ) + Kv (ẋs − ẋ) + Kp (xs − x) = m ẍs
+
+  Using e = xs − x, the tracking error dynamics thus becomes
+
+                                           m ë + Kv ė + Kp e = m ẍs
+Department of Mechanical Engineering
+  Tracking example 1: error dynamics                                      10/38
+
+
+                             m ë + Kv ė + Kp e  =      m ẍs
+                             |       {z        }         |{z}
+                           mass - spring - damper   force on mass
+
+  Does e go to zero?
+
+                                       Kv                 mẍs
+                                                  m
+                                         Kp
+                                              e
+      ▶   Iff ẍs = 0 then e → 0
+      ▶   Tracking error whenever ẍs ̸= 0
+  Whenever the mass needs to be accelerated, there is a tracking error!
+
+Department of Mechanical Engineering
+  Tracking example 1: error dynamics                                                                 11/38
+
+
+
+
+                                                                 −20
+
+
+                    Kv                 mẍs                      −25
+                               m
+                      Kp                                         −30
+
+                           e                                              1/Kp
+
+
+
+
+                                                Magnitude [dB]
+                                                                 −35
+
+
+
+
+          m ë + Kv ė + Kp e = u                                −40
+                                                                                            q
+                                                                                                Kp
+                                                                 −45                            m
+
+
+
+
+      ▶    DC-gain: K1p                                          −50
+
+
+
+                                       q                         −55
+                                           Kp
+      ▶    Eigenfrequency:                 m                     −60
+                                                                     −1                 0             1
+                                                                   10                 10             10
+      ▶    u = m ẍs                                                             Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  Tracking example 1: error dynamics                                                                   11/38
+
+
+
+
+                    Kv                 mẍs                                                 mẍs /Kp
+                                                                                            error
+                               m                            0.1
+
+                      Kp
+                           e                               0.05
+
+
+
+
+          m ë + Kv ė + Kp e = u
+
+                                                error e
+                                                             0
+
+
+
+
+      ▶    DC-gain: K1p                                   −0.05
+
+
+                                       q
+                                           Kp
+      ▶    Eigenfrequency:                 m               −0.1
+
+
+      ▶    u = m ẍs                                              0   2   4     6      8   10          12
+                                                                              time t
+
+
+
+
+Department of Mechanical Engineering
+  Tracking example 2: error dynamics                                                         12/38
+
+
+  Suppose the mass encounters friction:
+
+                           b                         F
+                                           m
+                                                                             1
+                                                               X (s) =             · F (s)
+                                                                         ms 2 + bs
+                                       x
+  Closed-loop equation of motion:
+                                m ẍ + b ẋ = Kp (xs − x) + Kv (ẋs − ẋ)
+                                              |           {z            }
+                                                    PD-controller
+  Hence, the error dynamics becomes
+
+           m (ẍs − ẍ) + (Kv + b ) (ẋs − ẋ) + Kp (xs − x) = m ẍs + b ẋs
+                                           m ë + (Kv + b ) ė + Kp e = m ẍs + b ẋs
+
+Department of Mechanical Engineering
+  Tracking example 2: error dynamics                                     13/38
+
+
+                          m ë + (Kv + b ) ė + Kp e =   m ẍs + b ẋs
+                          |          {z            }     | {z }
+                          mass - spring - damper       force  on mass
+
+  Does e go to zero?
+
+                                       Kv +b
+                                                            mẍs +bẋs
+                                                        m
+                                               Kp
+                                                    e
+      ▶   Iff ẍs = 0 and ẋs = 0, then e → 0
+      ▶   Tracking error whenever ẍs ̸= 0 and/or ẋs ̸= 0
+
+
+Department of Mechanical Engineering
+  Tracking example 2: error dynamics                                                                     14/38
+
+
+
+
+                                                                     −25
+
+
+             Kv +b
+                                       mẍs +bẋs                    −30
+                              m
+                     Kp                                                       1/Kp
+                                                                     −35
+                          e
+
+
+
+
+                                                    Magnitude [dB]
+                                                                     −40
+                                                                                                q
+   m ë + (Kv +b ) ė + Kp e = u                                                                    Kp
+                                                                                                    m
+                                                                     −45
+
+
+
+
+                                                                     −50
+      ▶   DC-gain: K1p
+                                         q                           −55
+
+                                              Kp
+      ▶   Eigenfrequency:                     m                      −60
+                                                                         −1                 0             1
+                                                                       10                 10             10
+      ▶   u = m ẍs + b ẋs                                                          Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  Tracking example 2: error dynamics                                                                                14/38
+
+
+
+
+             Kv +b                                             0.12                            (mẍs + bẋs ) /Kp
+                                       mẍs +bẋs                                              error
+                              m                                 0.1
+                     Kp
+                          e                                    0.08
+
+
+                                                               0.06
+
+
+
+   m ë + (Kv +b ) ė + Kp e = u                               0.04
+
+
+
+
+                                                    error e
+                                                               0.02
+
+
+                                                                 0
+
+      ▶   DC-gain: K1p                                        −0.02
+
+                                         q                    −0.04
+                                              Kp
+      ▶   Eigenfrequency:                     m               −0.06
+
+
+      ▶   u = m ẍs + b ẋs                                           0   2   4     6      8          10            12
+                                                                                  time t
+
+
+
+
+Department of Mechanical Engineering
+  Error dynamics                       15/38
+
+
+  How can we decrease this error?
+
+
+
+
+Department of Mechanical Engineering
+  Error dynamics                       15/38
+
+
+  How can we decrease this error?
+
+      ▶   Using feedback
+               •   increase Kp
+
+
+
+
+Department of Mechanical Engineering
+  Error dynamics                                                              15/38
+
+
+  How can we decrease this error?
+
+               ▶        Using feedback
+                          •       increase Kp
+             0.12                                  error with Kp = 40
+                                                   error with Kp = 200
+              0.1
+
+
+             0.08
+
+
+             0.06
+
+
+             0.04
+  error e
+
+
+
+
+             0.02
+
+
+               0
+
+
+            −0.02
+
+
+            −0.04
+
+
+            −0.06
+
+
+                    0         2       4     6      8        10           12
+                                          time t
+
+
+
+
+  There is still a (steady-state) error. . .
+Department of Mechanical Engineering
+  Error dynamics                                                                                                  15/38
+
+
+  How can we decrease this error?
+
+               ▶        Using feedback                                        ▶   Using feedforward
+                          •       increase Kp                                 m ë + Kv ė + Kp e =      m ẍs
+                                                                                                         |{z}
+             0.12                                  error with Kp = 40
+
+              0.1
+                                                   error with Kp = 200                                is known!
+             0.08
+
+
+             0.06
+                                                                              ▶   Given xs , can we compensate
+             0.04                                                                 the error beforehand?
+  error e
+
+
+
+
+             0.02
+
+
+               0
+
+
+            −0.02
+
+
+            −0.04
+
+
+            −0.06
+
+
+                    0         2       4     6      8        10           12
+                                          time t
+
+
+
+
+  There is still a (steady-state) error. . .
+Department of Mechanical Engineering
+  Feedback vs feedforward                         16/38
+
+  Feedback:
+      ▶   Controller responds to an error
+      ▶   Error thus already exists
+      ▶   Feedback = looking back
+               •   you’re always lagging behind
+
+
+
+
+Department of Mechanical Engineering
+  Feedback vs feedforward                         16/38
+
+  Feedback:
+      ▶   Controller responds to an error
+      ▶   Error thus already exists
+      ▶   Feedback = looking back
+               •   you’re always lagging behind
+
+
+
+
+Department of Mechanical Engineering
+  Feedback vs feedforward                                      16/38
+
+  Feedback:
+      ▶   Controller responds to an error
+      ▶   Error thus already exists
+      ▶   Feedback = looking back
+               •   you’re always lagging behind
+
+
+
+
+  Feedforward:
+      ▶   Use knowledge about the input
+      ▶ Correct before the error can occur
+      ▶ Feedforward = looking ahead
+
+               •   anticipate what happens or what is needed
+
+
+
+Department of Mechanical Engineering
+                                                    17/38
+
+
+
+
+                           Feedforward for motion
+                                  systems
+
+
+
+
+Department of Mechanical Engineering
+  The inverse problem (1)                                        18/38
+
+
+  How does feedforward work?
+
+                                                        F
+                                            m
+
+                                        x
+      ▶   Goal: zero error for t → ∞ for all xs :
+
+                                       m ë + Kv ė + Kp e = 0
+
+
+
+
+Department of Mechanical Engineering
+  The inverse problem (1)                                                 18/38
+
+
+  How does feedforward work?
+
+                                                             F
+                                                  m
+
+                                              x
+      ▶   Goal: zero error for t → ∞ for all xs :
+
+                                            m ë + Kv ė + Kp e = 0
+
+      ▶   Since m ẍ = F , we can obtain this when
+
+                                       F=       m ẍs     −Kv ė − Kp e
+                                                |{z}      |     {z    }
+                                            feedforward   PD-controller
+Department of Mechanical Engineering
+  Feedforward in the loop (1)                         19/38
+
+
+  Note that xs is known and
+                          L {m ẍs } = ms 2 L {xs }
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward in the loop (1)                                    19/38
+
+
+  Note that xs is known and
+                          L {m ẍs } = ms 2 L {xs }
+
+
+                                         ms 2
+
+
+          xs                                           1     x
+                                       K p  Kv s
+                                                      ms 2
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward in the loop (1)                                           19/38
+
+
+  Note that xs is known and
+                          L {m ẍs } = ms 2 L {xs }
+
+
+                                         ms 2
+
+
+          xs                                                 1      x
+                                       K p  Kv s
+                                                            ms 2
+
+
+
+   Forward feed / prescribe in advance . . .
+      ▶   . . . the force necessary to accelerate the rigid mass.
+
+Department of Mechanical Engineering
+  The inverse problem (2)                                            20/38
+
+
+
+
+                                        b                        F
+                                                   m
+
+                                               x
+      ▶   Goal: zero error for t → ∞ for all xs :
+
+                                       m ë + Kv ė + Kp e = 0
+
+
+
+
+Department of Mechanical Engineering
+  The inverse problem (2)                                                  20/38
+
+
+
+
+                                              b                       F
+                                                           m
+
+                                                     x
+      ▶   Goal: zero error for t → ∞ for all xs :
+
+                                            m ë + Kv ė + Kp e = 0
+
+      ▶   Since m ẍ + b ẋ = F , we can obtain this when
+
+                                       F = m ẍs + b ẋs   −Kv ė − Kp e
+                                            | {z }         |     {z    }
+                                           feedforward     PD-controller
+
+Department of Mechanical Engineering
+  Feedforward in the loop (2)                                21/38
+
+
+  Note that xs is known and
+                                                  
+                    L {m ẍs + b ẋs } = ms 2 + bs L {xs }
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward in the loop (2)                                    21/38
+
+
+  Note that xs is known and
+                                                  
+                    L {m ẍs + b ẋs } = ms 2 + bs L {xs }
+
+
+                                       ms2 +bs
+
+                                                        1    x
+           xs
+                                       Kp +Kv s     ms2+bs
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward in the loop (2)                                           21/38
+
+
+  Note that xs is known and
+                                                  
+                    L {m ẍs + b ẋs } = ms 2 + bs L {xs }
+
+
+                                       ms2 +bs
+
+                                                               1    x
+           xs
+                                       Kp +Kv s           ms2+bs
+
+
+
+   Forward feed / prescribe in advance . . .
+      ▶   . . . the force necessary to accelerate the rigid mass,
+      ▶   . . . the force required to overcome the friction.
+Department of Mechanical Engineering
+  Pure feedforward                                                      22/38
+
+
+
+
+  In theory, a feedback controller is not necessary for tracking:
+
+                      xs                                     x
+                                       H -1 (s)   H(s)
+
+
+  Ideal feedforward:
+      ▶   Cff (s) = H −1 (s)
+      ▶   x = H (s)H −1 (s)xs = xs
+      ▶   use the plant inverse to compute the plant input in advance
+                                                                    x
+
+
+Department of Mechanical Engineering
+  Combination feedback and feedforward                                 23/38
+
+  In practice, feedback is needed to compensate additional disturbances:
+
+
+                                       H -1 (s)
+
+
+        xs                                                       x
+                                        C(s)        H(s)
+
+
+
+
+Department of Mechanical Engineering
+  Combination feedback and feedforward                                 23/38
+
+  In practice, feedback is needed to compensate additional disturbances:
+
+
+                                       H -1 (s)
+
+
+          xs                                                     x
+                                        C(s)            H(s)
+
+
+
+  However,
+      ▶   what if H −1 (s) is unstable?
+      ▶   what if H (s) is unknown?
+  Then we try to approximate H −1 (s) in time domain.
+Department of Mechanical Engineering
+  General feedforward (1)                                                          24/38
+
+  Forward feeding the force required to. . .
+      ▶   . . . accelerate the rigid body mode of the plant: Fa = Kfa ẍs
+      ▶   . . . overcome the viscous friction with the fixed world: Fv = Kfv ẋs
+
+
+
+
+Department of Mechanical Engineering
+  General feedforward (1)                                                           24/38
+
+  Forward feeding the force required to. . .
+      ▶    . . . accelerate the rigid body mode of the plant: Fa = Kfa ẍs
+      ▶    . . . overcome the viscous friction with the fixed world: Fv = Kfv ẋs
+
+          xs
+                                       K fa
+
+          x s
+                                       K fv
+
+          xs                                                                 x
+                                       C(s)                  H(s)
+
+
+Department of Mechanical Engineering
+  Coulomb friction                                                    25/38
+
+  What if Coulomb friction (dry friction) is present?
+      ▶   constant force, opposing direction of motion
+      ▶   direction dependent
+
+                                       Fc
+
+
+                                                                ẋ
+
+                                            −Fc
+
+  Hence, to overcome this force in advance, we need a feedforward
+
+                                             Fc = Kfc · sign (ẋs )
+
+
+
+Department of Mechanical Engineering
+  General feedforward (2)                                26/38
+
+
+            sign( x s )
+                                       K fc
+
+            xs
+                                       K fa
+
+            x s
+                                       K fv
+
+            xs                                       x
+                                       C(s)   H(s)
+
+
+
+
+Department of Mechanical Engineering
+  General feedforward (2)                                                          26/38
+
+
+            sign( x s )
+                                          K fc
+
+            xs
+                                          K fa
+
+            x s
+                                          K fv
+
+            xs                                                                 x
+                                         C(s)                           H(s)
+
+
+                                   Fff = Kfa ẍs + Kfv ẋs + Kfc sign (ẋs )
+
+Department of Mechanical Engineering
+                                                      27/38
+
+
+
+
+                                 Tuning feedforward
+                                    parameters
+
+
+
+
+Department of Mechanical Engineering
+  Error profile                                                    28/38
+
+
+  Feedforward tuning is based on error profile in time domain
+   error
+
+
+
+
+                                                                time
+
+
+
+
+                          forward motion    backward motion
+
+  There is an error due to:
+
+
+
+
+Department of Mechanical Engineering
+  Error profile                                                     28/38
+
+
+  Feedforward tuning is based on error profile in time domain
+   error
+
+
+
+
+                                                                 time
+
+
+
+
+                          forward motion       backward motion
+
+  There is an error due to:
+      ▶   lack of force to accelerate (Kfa )
+
+
+
+Department of Mechanical Engineering
+  Error profile                                                        28/38
+
+
+  Feedforward tuning is based on error profile in time domain
+   error
+
+
+
+
+                                                                    time
+
+
+
+
+                          forward motion          backward motion
+
+  There is an error due to:
+      ▶   lack of force to accelerate (Kfa )
+      ▶   lack of force to compensate viscous friction (Kfv )
+
+Department of Mechanical Engineering
+  Error profile                                                        28/38
+
+
+  Feedforward tuning is based on error profile in time domain
+   error
+
+
+
+
+                                                                    time
+
+
+
+
+                          forward motion          backward motion
+
+  There is an error due to:
+      ▶   lack of force to accelerate (Kfa )
+      ▶   lack of force to compensate viscous friction (Kfv )
+      ▶   lack of force to compensate Coulomb friction (Kfc )
+Department of Mechanical Engineering
+  Feedforward tuning procedure                                                      29/38
+
+      ▶   Define a suitable (2nd or higher order) setpoint trajectory
+               • both forward and backward movement (with a small pause)
+               • rather ‘challenging’ (it must generate some error profile)
+               • approx 1/3 acceleration, 1/3 constant velocity, 1/3 deceleration
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward tuning procedure                                                      29/38
+
+      ▶   Define a suitable (2nd or higher order) setpoint trajectory
+               • both forward and backward movement (with a small pause)
+               • rather ‘challenging’ (it must generate some error profile)
+               • approx 1/3 acceleration, 1/3 constant velocity, 1/3 deceleration
+
+      ▶   Monitor the error
+               • the error should be large enough
+               • each feedforward component should be recognizable
+               • maybe feedback bandwidth should be lowered?
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward tuning procedure                                                      29/38
+
+      ▶   Define a suitable (2nd or higher order) setpoint trajectory
+               • both forward and backward movement (with a small pause)
+               • rather ‘challenging’ (it must generate some error profile)
+               • approx 1/3 acceleration, 1/3 constant velocity, 1/3 deceleration
+
+      ▶   Monitor the error
+               • the error should be large enough
+               • each feedforward component should be recognizable
+               • maybe feedback bandwidth should be lowered?
+
+      ▶   Tune Kfc
+               •   deceleration forward movement and acceleration backward
+                   movement should have same error
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward tuning procedure                                                        29/38
+
+      ▶   Define a suitable (2nd or higher order) setpoint trajectory
+               • both forward and backward movement (with a small pause)
+               • rather ‘challenging’ (it must generate some error profile)
+               • approx 1/3 acceleration, 1/3 constant velocity, 1/3 deceleration
+
+      ▶   Monitor the error
+               • the error should be large enough
+               • each feedforward component should be recognizable
+               • maybe feedback bandwidth should be lowered?
+
+      ▶   Tune Kfc
+               •   deceleration forward movement and acceleration backward
+                   movement should have same error
+      ▶   Tune Kfv
+               •   remove slopes during acceleration and deceleration
+               •   no error during constant velocity phase when Kfc and Kfv are correct
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward tuning procedure                                                        29/38
+
+      ▶   Define a suitable (2nd or higher order) setpoint trajectory
+               • both forward and backward movement (with a small pause)
+               • rather ‘challenging’ (it must generate some error profile)
+               • approx 1/3 acceleration, 1/3 constant velocity, 1/3 deceleration
+
+      ▶   Monitor the error
+               • the error should be large enough
+               • each feedforward component should be recognizable
+               • maybe feedback bandwidth should be lowered?
+
+      ▶   Tune Kfc
+               •   deceleration forward movement and acceleration backward
+                   movement should have same error
+      ▶   Tune Kfv
+               •   remove slopes during acceleration and deceleration
+               •   no error during constant velocity phase when Kfc and Kfv are correct
+      ▶   Tune Kfa
+               •   minimize error during acceleration and deceleration
+
+Department of Mechanical Engineering
+  Feedforward tuning procedure                                                        29/38
+
+      ▶   Define a suitable (2nd or higher order) setpoint trajectory
+               • both forward and backward movement (with a small pause)
+               • rather ‘challenging’ (it must generate some error profile)
+               • approx 1/3 acceleration, 1/3 constant velocity, 1/3 deceleration
+
+      ▶   Monitor the error
+               • the error should be large enough
+               • each feedforward component should be recognizable
+               • maybe feedback bandwidth should be lowered?
+
+      ▶   Tune Kfc
+               •   deceleration forward movement and acceleration backward
+                   movement should have same error
+      ▶   Tune Kfv
+               •   remove slopes during acceleration and deceleration
+               •   no error during constant velocity phase when Kfc and Kfv are correct
+      ▶   Tune Kfa
+               •   minimize error during acceleration and deceleration
+      ▶   If desired, tune up the feedback controller
+Department of Mechanical Engineering
+  Feedforward tuning                                                                   30/38
+
+
+       0.025
+
+         0.02
+
+       0.015                                                               ▶   No FF
+         0.01
+
+       0.005
+
+            0
+
+      -0.005
+
+        -0.01
+
+      -0.015
+
+        -0.02
+
+      -0.025
+                0     0.5        1     1.5   2   2.5   3   3.5   4   4.5
+
+
+
+Department of Mechanical Engineering
+  Feedforward tuning                                                                   30/38
+
+
+       0.025
+
+         0.02
+
+       0.015                                                               ▶   No FF
+         0.01                                                              ▶   Kfc
+                                                                               tuned
+       0.005
+
+            0
+
+      -0.005
+
+        -0.01
+
+      -0.015
+
+        -0.02
+
+      -0.025
+                0     0.5        1     1.5   2   2.5   3   3.5   4   4.5
+
+
+
+Department of Mechanical Engineering
+  Feedforward tuning                                                                   30/38
+
+
+       0.025
+
+         0.02
+                                                                           ▶   No FF
+       0.015
+                                                                           ▶   Kfc
+         0.01
+                                                                               tuned
+       0.005                                                               ▶   Kfv
+            0                                                                  tuned
+      -0.005
+
+        -0.01
+
+      -0.015
+
+        -0.02
+
+      -0.025
+                0     0.5        1     1.5   2   2.5   3   3.5   4   4.5
+
+
+
+Department of Mechanical Engineering
+  Feedforward tuning                                                                   30/38
+
+
+       0.025
+
+         0.02
+                                                                           ▶   No FF
+       0.015
+                                                                           ▶   Kfc
+         0.01
+                                                                               tuned
+       0.005                                                               ▶   Kfv
+            0                                                                  tuned
+      -0.005                                                               ▶   Kfa
+                                                                               tuned
+        -0.01
+
+      -0.015
+
+        -0.02
+
+      -0.025
+                0     0.5        1     1.5   2   2.5   3   3.5   4   4.5
+
+
+
+Department of Mechanical Engineering
+  Feedforward tuning                                                                   30/38
+
+
+       0.025
+
+         0.02
+                                                                           ▶   No FF
+       0.015
+                                                                           ▶   Kfc
+         0.01
+                                                                               tuned
+       0.005                                                               ▶   Kfv
+            0                                                                  tuned
+      -0.005                                                               ▶   Kfa
+                                                                               tuned
+        -0.01
+                      Maximal error reduced from 2.5 · 10−2 to
+      -0.015
+                                     3.5 · 10−4
+        -0.02
+
+      -0.025
+                0     0.5        1     1.5   2   2.5   3   3.5   4   4.5
+
+
+
+Department of Mechanical Engineering
+  Integral controller action                                           31/38
+
+
+  To tune feedforward, don’t use a high performance feedback controller!
+
+
+                        0.1
+
+
+
+                      0.05
+
+
+
+                          0
+
+
+
+                     -0.05
+
+
+
+                       -0.1
+
+
+
+                              0        5   10   15   20        25
+
+
+Department of Mechanical Engineering
+  Trajectory and feedback bandwidth                                                            32/38
+
+
+  Feedback bandwidth and trajectory should ‘match’ to be able to see
+  decent error profile with clear acceleration and velocity contributions:
+
+                                     1
+            Position [mm]
+
+
+
+
+                              0.5
+
+
+                                     0
+                                     5.4    5.6   5.8   6              6.2   6.4   6.6   6.8
+                                                            Time [s]
+                                     5
+                   Velocity [mm/s]
+
+
+
+
+                                     0
+
+
+                                     -5
+                                      5.4   5.6   5.8   6              6.2   6.4   6.6   6.8
+                                                            Time [s]
+      Acceleration [mm/s2 ]
+
+
+
+
+                                     50
+
+
+                                     0
+
+
+                              -50
+                                5.4         5.6   5.8   6              6.2   6.4   6.6   6.8
+                                                            Time [s]
+
+
+
+  Here: setpoint period Tset ≈ 0.67 s, so base harmonic fset,1 ≈ 1.5 Hz.
+Department of Mechanical Engineering
+  Trajectory and feedback bandwidth                                                                                                                                   32/38
+
+
+  Feedback bandwidth and trajectory should ‘match’ to be able to see
+  decent error profile with clear acceleration and velocity contributions:
+
+                 0.002
+                                                                          30Hz bandwidth
+                 0.001
+   Error [mm]
+
+
+
+
+                            0                                                                                                         Sensitivity
+
+                                                                                                                      0
+                -0.001
+
+
+
+
+                                                                                                   Magnitude [dB]
+                -0.002                                                                                              -20
+                     5.4           5.6   5.8   6          6.2   6.4           6.6            6.8
+                                                   Time [s]
+                                                                                                                    -40
+                           50
+                                                                      Acceleration [mm/s2]
+                                                                                                                    -60
+                Setpoint
+
+
+
+
+                                                                                                                                                    30Hz bandwidth
+                            0                                                                                       -80
+                                                                                                                      10 -1   10 0        10 1        10 2           10 3
+                                                                                                                                     Frequency [Hz]
+
+                           -50
+                             5.4   5.6   5.8   6          6.2   6.4           6.6            6.8
+                                                   Time [s]
+
+
+  Here: setpoint period Tset ≈ 0.67 s, so base harmonic fset,1 ≈ 1.5 Hz.
+Department of Mechanical Engineering
+  Trajectory and feedback bandwidth                                                                                                                                   32/38
+
+
+  Feedback bandwidth and trajectory should ‘match’ to be able to see
+  decent error profile with clear acceleration and velocity contributions:
+
+                     0.01
+                                                                          30Hz bandwidth
+                 0.005                                                    20Hz bandwidth
+   Error [mm]
+
+
+
+
+                            0                                                                                                         Sensitivity
+
+                                                                                                                      0
+                -0.005
+
+
+
+
+                                                                                                   Magnitude [dB]
+                   -0.01                                                                                            -20
+                       5.4         5.6   5.8   6          6.2   6.4           6.6            6.8
+                                                   Time [s]
+                                                                                                                    -40
+                           50
+                                                                      Acceleration [mm/s2]
+                                                                                                                    -60
+                                                                                                                                                    30Hz bandwidth
+                Setpoint
+
+
+
+
+                                                                                                                                                    20Hz bandwidth
+                            0                                                                                       -80
+                                                                                                                      10 -1   10 0        10 1        10 2           10 3
+                                                                                                                                     Frequency [Hz]
+
+
+                           -50
+                             5.4   5.6   5.8   6          6.2   6.4           6.6            6.8
+                                                   Time [s]
+
+
+  Here: setpoint period Tset ≈ 0.67 s, so base harmonic fset,1 ≈ 1.5 Hz.
+Department of Mechanical Engineering
+  Trajectory and feedback bandwidth                                                                                                                              32/38
+
+
+  Feedback bandwidth and trajectory should ‘match’ to be able to see
+  decent error profile with clear acceleration and velocity contributions:
+
+                 0.05
+                                                                     30Hz bandwidth
+                                                                     20Hz bandwidth
+    Error [mm]
+
+
+
+
+                                                                     10Hz bandwidth
+
+                       0                                                                                                         Sensitivity
+
+                                                                                                                 0
+
+
+
+
+                                                                                              Magnitude [dB]
+                 -0.05                                                                                         -20
+                     5.4      5.6   5.8   6          6.2   6.4           6.6            6.8
+                                              Time [s]
+                                                                                                               -40
+                      50
+                                                                 Acceleration [mm/s2]
+                                                                                                               -60                             30Hz bandwidth
+                                                                                                                                               20Hz bandwidth
+           Setpoint
+
+
+
+
+                                                                                                                                               10Hz bandwidth
+                       0                                                                                       -80
+                                                                                                                 10 -1   10 0        10 1        10 2           10 3
+                                                                                                                                Frequency [Hz]
+
+
+                      -50
+                        5.4   5.6   5.8   6          6.2   6.4           6.6            6.8
+                                              Time [s]
+
+
+  Here: setpoint period Tset ≈ 0.67 s, so base harmonic fset,1 ≈ 1.5 Hz.
+Department of Mechanical Engineering
+  Trajectory and feedback bandwidth                                                                                                                           32/38
+
+
+  Feedback bandwidth and trajectory should ‘match’ to be able to see
+  decent error profile with clear acceleration and velocity contributions:
+
+                  0.2
+                                                                  30Hz bandwidth
+                  0.1                                             20Hz bandwidth
+     Error [mm]
+
+
+
+
+                                                                  10Hz bandwidth
+                                                                  5Hz bandwidth
+                    0                                                                                                         Sensitivity
+
+                                                                                                              0
+                  -0.1
+
+
+
+
+                                                                                           Magnitude [dB]
+                  -0.2                                                                                      -20
+                     5.4   5.6   5.8   6          6.2   6.4           6.6            6.8
+                                           Time [s]
+                                                                                                            -40
+                   50
+                                                                                                                                            30Hz bandwidth
+                                                              Acceleration [mm/s2]
+                                                                                                            -60                             20Hz bandwidth
+                                                                                                                                            10Hz bandwidth
+       Setpoint
+
+
+
+
+                                                                                                                                            5Hz bandwidth
+                    0                                                                                       -80
+                                                                                                              10 -1   10 0        10 1        10 2           10 3
+                                                                                                                             Frequency [Hz]
+
+
+                  -50
+                    5.4    5.6   5.8   6          6.2   6.4           6.6            6.8
+                                           Time [s]
+
+
+  Here: setpoint period Tset ≈ 0.67 s, so base harmonic fset,1 ≈ 1.5 Hz.
+Department of Mechanical Engineering
+  Trajectory and feedback bandwidth                                                                                                                           32/38
+
+
+  Feedback bandwidth and trajectory should ‘match’ to be able to see
+  decent error profile with clear acceleration and velocity contributions:
+
+                  0.4
+                                                                  30Hz bandwidth
+                  0.2                                             20Hz bandwidth
+     Error [mm]
+
+
+
+
+                                                                  10Hz bandwidth
+                                                                  5Hz bandwidth
+                    0                                                                                                         Sensitivity
+                                                                  2Hz bandwidth
+
+                                                                                                              0
+                  -0.2
+
+
+
+
+                                                                                           Magnitude [dB]
+                  -0.4                                                                                      -20
+                     5.4   5.6   5.8   6          6.2   6.4           6.6            6.8
+                                           Time [s]
+                                                                                                            -40
+                   50                                                                                                                       30Hz bandwidth
+                                                                                                                                            20Hz bandwidth
+                                                              Acceleration [mm/s2]
+                                                                                                            -60                             10Hz bandwidth
+                                                                                                                                            5Hz bandwidth
+       Setpoint
+
+
+
+
+                                                                                                                                            2Hz bandwidth
+                    0                                                                                       -80
+                                                                                                              10 -1   10 0        10 1        10 2           10 3
+                                                                                                                             Frequency [Hz]
+
+
+                  -50
+                    5.4    5.6   5.8   6          6.2   6.4           6.6            6.8
+                                           Time [s]
+
+
+  Here: setpoint period Tset ≈ 0.67 s, so base harmonic fset,1 ≈ 1.5 Hz.
+Department of Mechanical Engineering
+  Trajectory and feedback bandwidth                                                                                                                             32/38
+
+
+  Feedback bandwidth and trajectory should ‘match’ to be able to see
+  decent error profile with clear acceleration and velocity contributions:
+
+                0.4
+                                                                  30Hz bandwidth
+                0.2                                               20Hz bandwidth
+   Error [mm]
+
+
+
+
+                                                                  10Hz bandwidth
+                                                                  5Hz bandwidth
+                  0                                                                                                             Sensitivity
+                                                                  2Hz bandwidth
+
+                                                                                                                0
+                -0.2
+
+
+
+
+                                                                                             Magnitude [dB]
+                -0.4                                                                                          -20
+                   5.4   5.6   5.8     6          6.2   6.4           6.6            6.8
+                                           Time [s]
+                                                                                                              -40
+                 50                                                                                                                           30Hz bandwidth
+                                                                                       1                                                      20Hz bandwidth
+                                                              Acceleration [mm/s2]
+                                                                                                              -60                             10Hz bandwidth
+                                                              Position [mm]
+                                                                                                                                              5Hz bandwidth
+     Setpoint
+
+
+
+
+                                                                                                                                              2Hz bandwidth
+                  0                                                                    0.5                    -80
+                                                                                                                10 -1   10 0        10 1        10 2           10 3
+                                                                                                                               Frequency [Hz]
+
+                                                                                       0
+                -50
+                  5.4    5.6   5.8     6          6.2   6.4           6.6            6.8
+                                           Time [s]
+
+
+  Here: setpoint period Tset ≈ 0.67 s, so base harmonic fset,1 ≈ 1.5 Hz.
+Department of Mechanical Engineering
+  Trajectory and feedback bandwidth                                                                                                                             32/38
+
+
+  Feedback bandwidth and trajectory should ‘match’ to be able to see
+  decent error profile with clear acceleration and velocity contributions:
+
+                0.4
+                                                                  30Hz bandwidth
+                0.2                                               20Hz bandwidth
+   Error [mm]
+
+
+
+
+                                                                  10Hz bandwidth
+                                                                  5Hz bandwidth
+                  0                                                                                                             Sensitivity
+                                                                  2Hz bandwidth
+
+                                                                                                                0
+                -0.2
+
+
+
+
+                                                                                             Magnitude [dB]
+                -0.4                                                                                          -20
+                   5.4   5.6   5.8     6          6.2   6.4           6.6            6.8
+                                           Time [s]
+                                                                                                              -40
+                 50                                                                                                                           30Hz bandwidth
+                                                                                       1                                                      20Hz bandwidth
+                                                              Acceleration [mm/s2]
+                                                                                                              -60                             10Hz bandwidth
+                                                              Position [mm]
+                                                                                                                                              5Hz bandwidth
+     Setpoint
+
+
+
+
+                                                                                                                                              2Hz bandwidth
+                  0                                                                    0.5                    -80
+                                                                                                                10 -1   10 0        10 1        10 2           10 3
+                                                                                                                               Frequency [Hz]
+                  For too low bandwidth setpoint position0 appears in the error.
+                -50
+                  5.4    5.6   5.8     6          6.2   6.4           6.6            6.8
+                                           Time [s]
+
+
+  Here: setpoint period Tset ≈ 0.67 s, so base harmonic fset,1 ≈ 1.5 Hz.
+Department of Mechanical Engineering
+  Trajectory and feedback bandwidth                                                                                                      33/38
+
+
+                                                                                                         Sensitivity
+
+                 0.01                                                                    0
+
+
+
+
+                                                                      Magnitude [dB]
+                0.005                                                                  -20
+   Error [mm]
+
+
+
+
+                    0                                                                  -40
+                                                                                                                       30Hz bandwidth
+                                                                                                                       20Hz bandwidth
+                -0.005                                                                 -60                             10Hz bandwidth
+                                                                                                                       5Hz bandwidth
+                                                                                                                       2Hz bandwidth
+                 -0.01                                                                 -80
+                     5.4   5.6   5.8   6          6.2   6.4   6.6   6.8                  10 -1   10 0        10 1        10 2           10 3
+                                           Time [s]                                                     Frequency [Hz]
+
+
+  Feedback bandwidth and trajectory should ‘match’:
+                ▶   Closed loop should sufficiently attenuate at f = fset,1
+                ▶   Guideline: Sensitivity S (fset,1 ) ≤ -40dB
+
+
+
+
+Department of Mechanical Engineering
+  Trajectory and feedback bandwidth                                                                                                      33/38
+
+
+                                                                                                         Sensitivity
+
+                 0.01                                                                    0
+
+
+
+
+                                                                      Magnitude [dB]
+                0.005                                                                  -20
+   Error [mm]
+
+
+
+
+                    0                                                                  -40
+                                                                                                                       30Hz bandwidth
+                                                                                                                       20Hz bandwidth
+                -0.005                                                                 -60                             10Hz bandwidth
+                                                                                                                       5Hz bandwidth
+                                                                                                                       2Hz bandwidth
+                 -0.01                                                                 -80
+                     5.4   5.6   5.8   6          6.2   6.4   6.6   6.8                  10 -1   10 0        10 1        10 2           10 3
+                                           Time [s]                                                     Frequency [Hz]
+
+
+  Feedback bandwidth and trajectory should ‘match’:
+                ▶   Closed loop should sufficiently attenuate at f = fset,1
+                ▶   Guideline: Sensitivity S (fset,1 ) ≤ -40dB
+  Alternative (but equivalent) view:
+                ▶   Each phase (acceleration, constant speed) lasts about tphase ≈ 0.1 s
+                ▶   Response should settle to ‘steady state’ well within tphase
+                                                 2
+                ▶   Guideline: bandwidth fbw ≥ tphase ≈ 20 Hz
+Department of Mechanical Engineering
+  Feedforward issues to be aware of                    34/38
+
+  Feedforward tuning is time domain trial and error.
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward issues to be aware of                                            34/38
+
+  Feedforward tuning is time domain trial and error.
+    ▶ Stability
+
+               •   Can a stable closed loop be destabilized by feedforward?
+               •   Can an unstable closed loop be stabilized by feedforward?
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward issues to be aware of                                           34/38
+
+  Feedforward tuning is time domain trial and error.
+    ▶ Stability
+
+              Can a stable closed loop be destabilized by feedforward? No.
+               •
+
+              Can an unstable closed loop be stabilized by feedforward? No.
+               •
+
+            ⇒ Feedforward is open loop, in parallel with closed loop
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward issues to be aware of                                           34/38
+
+  Feedforward tuning is time domain trial and error.
+    ▶ Stability
+
+              Can a stable closed loop be destabilized by feedforward? No.
+               •
+
+              Can an unstable closed loop be stabilized by feedforward? No.
+               •
+
+            ⇒ Feedforward is open loop, in parallel with closed loop
+      ▶   Over-tuning
+               •   What happens if we over-tune feedforward parameters?
+
+           error
+
+
+                                                  time
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward issues to be aware of                                           34/38
+
+  Feedforward tuning is time domain trial and error.
+    ▶ Stability
+
+              Can a stable closed loop be destabilized by feedforward? No.
+               •
+
+              Can an unstable closed loop be stabilized by feedforward? No.
+               •
+
+            ⇒ Feedforward is open loop, in parallel with closed loop
+      ▶   Over-tuning
+             • What happens if we over-tune feedforward parameters?
+
+            ⇒ Over-compensation of required forces reverses the error
+           error
+
+
+                                               time
+
+
+
+
+Department of Mechanical Engineering
+  Feedforward issues to be aware of                                               34/38
+
+  Feedforward tuning is time domain trial and error.
+    ▶ Stability
+
+              Can a stable closed loop be destabilized by feedforward? No.
+               •
+
+              Can an unstable closed loop be stabilized by feedforward? No.
+               •
+
+            ⇒ Feedforward is open loop, in parallel with closed loop
+      ▶   Over-tuning
+             • What happens if we over-tune feedforward parameters?
+
+            ⇒ Over-compensation of required forces reverses the error
+           error
+
+
+                                                  time
+
+
+      ▶   Trajectory dependence
+               •   Do the feedforward terms change when the trajectory changes?
+
+
+Department of Mechanical Engineering
+  Feedforward issues to be aware of                                               34/38
+
+  Feedforward tuning is time domain trial and error.
+    ▶ Stability
+
+              Can a stable closed loop be destabilized by feedforward? No.
+               •
+
+              Can an unstable closed loop be stabilized by feedforward? No.
+               •
+
+            ⇒ Feedforward is open loop, in parallel with closed loop
+      ▶   Over-tuning
+             • What happens if we over-tune feedforward parameters?
+
+            ⇒ Over-compensation of required forces reverses the error
+           error
+
+
+                                               time
+
+
+      ▶   Trajectory dependence
+             • Do the feedforward terms change when the trajectory changes? No.
+
+            ⇒ Terms represent system parameters, which do not change
+
+Department of Mechanical Engineering
+  Smoothing feedforward                                  35/38
+
+
+
+
+  Second order trajectory may not be sufficient
+      ▶   jump in ẍs ⇒ jump in feedforward force
+      ▶   can excite parasitic (higher order) dynamics
+      ▶   can introduce oscillations
+      ▶   can cause actuator saturation
+
+
+
+
+Department of Mechanical Engineering
+  Smoothing feedforward                                                 35/38
+
+
+
+
+  Second order trajectory may not be sufficient
+      ▶   jump in ẍs ⇒ jump in feedforward force
+      ▶   can excite parasitic (higher order) dynamics
+      ▶   can introduce oscillations
+      ▶   can cause actuator saturation
+
+  How to solve this?
+    ▶ Higher order setpoints
+
+               •   gradual increase of feedforward forces (smoothing)
+               •   by limiting higher derivatives (e.g. jerk)
+      ▶   Here: using 3rd order setpoints
+
+
+
+Department of Mechanical Engineering
+  3rd order setpoint                                               36/38
+
+                       1
+
+                xs
+                      0.5
+
+
+
+                       0
+                            0          0.2   0.4   0.6   0.8   1
+
+                      1.5
+
+                       1
+               ẋs
+
+
+
+
+                      0.5
+
+                       0
+
+                     −0.5
+                            0          0.2   0.4   0.6   0.8   1
+
+
+                       5
+                ẍs
+
+
+
+
+                       0
+
+
+
+                      −5
+                            0          0.2   0.4   0.6   0.8   1
+                                                   t
+
+Department of Mechanical Engineering
+  Higher order setpoints                      37/38
+
+
+
+
+   Momentum = mass × velocity
+
+              Force = mass × acceleration
+
+              Yank         = mass × jerk
+
+                 Tug = mass × snap
+
+           Snatch          = mass × crackle
+
+            Shake = mass × pop
+
+
+
+Department of Mechanical Engineering
+  More advanced methods                                                        38/38
+
+
+
+
+  Other more advanced techniques:
+      ▶   Model-based input shaping
+      ▶   Learning input shaping
+               •   adapt the trajectory after each trial
+      ▶   Iterative Learning Control (ILC)
+               •   adapt the feedforward signal after each trial
+               •   frequency domain, lifted domain, or using basis functions
+
+  See other courses (4SC070: Learning Control) and current research.
+
+
+
+
+Department of Mechanical Engineering
+

@@ -1,0 +1,3248 @@
+     4CM00: Control Engineering
+     Frequency response
+     measurements
+     Dr.ir. Gert Witvoet
+
+
+
+
+September 2020
+                            Where innovation starts
+  The context                                                            2/60
+
+
+
+
+  Goal of this course:
+
+           r + e
+                             −
+                                       C                 H         y
+            Given: the plant H (s)
+          Design: the controller C (s)
+
+
+  The design of C (s) depends on the specific characteristics of H (s)
+      I   But how to design C (s) if H (s) is unknown?
+
+
+
+
+Department of Mechanical Engineering
+  The context: model-based                                             3/60
+
+                                                                1
+  Approach 1: Make a model based on physics, e.g. H (s) = ms 2 +ds+k
+
+
+
+
+Department of Mechanical Engineering
+  The context: model-based                                              3/60
+
+                                                                1
+  Approach 1: Make a model based on physics, e.g. H (s) = ms 2 +ds+k
+
+
+
+                                                     Problem:
+       u?                              y?     How to derive models of
+                                                complex systems?
+
+
+
+
+Department of Mechanical Engineering
+  The context: model-based                                                 3/60
+
+                                                                1
+  Approach 1: Make a model based on physics, e.g. H (s) = ms 2 +ds+k
+
+
+
+                                                        Problem:
+       u?                                   y?   How to derive models of
+                                                   complex systems?
+
+
+
+
+             Problem:
+     How to determine system
+                                       u?                          y?
+       parameter values?
+
+
+Department of Mechanical Engineering
+  The context: data-based                               4/60
+
+
+  Approach 2: Identify the system by measuring it
+
+
+
+                                  u                 y
+
+
+
+
+Department of Mechanical Engineering
+  The context: data-based                                   4/60
+
+
+  Approach 2: Identify the system by measuring it
+
+
+
+                                  u                 y
+
+
+                            Known:              Measured:
+
+
+
+
+Department of Mechanical Engineering
+  The context: data-based                                               4/60
+
+
+  Approach 2: Identify the system by measuring it
+
+
+
+                                  u                            y
+
+
+                            Known:                          Measured:
+
+
+
+
+                               Find mapping / relation from u to y
+
+
+
+Department of Mechanical Engineering
+  The context: data-based                                               4/60
+
+
+  Approach 2: Identify the system by measuring it
+
+
+
+                                  u                            y
+
+
+                            Known:                          Measured:
+                                               H
+
+                               Find mapping / relation from u to y
+
+
+
+Department of Mechanical Engineering
+  The context: data-based                                               4/60
+
+
+  Approach 2: Identify the system by measuring it
+
+
+
+                                  u                            y
+
+
+                            Known:                          Measured:
+                                               H
+
+                               Find mapping / relation from u to y
+
+  Disadvantage: Obtained parameters do not have any physical meaning
+      I   Irrelevant for controller design
+Department of Mechanical Engineering
+  The context: identification                               5/60
+
+  There are various data-based identification techniques:
+      I   Prediction error identification
+      I   Subspace identification
+      I   Minimal realization techniques
+      I   Frequency response measurements
+      I   ...
+
+
+
+
+Department of Mechanical Engineering
+  The context: identification                                               5/60
+
+  There are various data-based identification techniques:
+      I   Prediction error identification
+      I   Subspace identification
+      I   Minimal realization techniques
+      I   Frequency response measurements
+      I   ...
+                              Known:                       Measured:
+                                           H(jω)
+                           u(t) → U (ω)                   y(t) → Y (ω)
+
+
+                        Find mapping H(jω) from U (ω) to Y (ω) for each ω
+
+                Note: Only applicable for linear systems!
+
+Department of Mechanical Engineering
+                                                  6/60
+
+
+
+
+                          Why frequency domain?
+
+
+
+
+Department of Mechanical Engineering
+  Time vs frequency                                                       7/60
+
+              1
+
+             0.5
+   Signal
+
+
+
+
+              0
+
+            −0.5
+
+             −1
+                   0      1            2   3              4   5   6   7
+
+              1
+
+             0.5
+   Signal
+
+
+
+
+              0
+
+            −0.5
+
+             −1
+                   0      1            2   3              4   5   6   7
+
+              1
+
+             0.5
+   Signal
+
+
+
+
+              0
+
+            −0.5
+
+             −1
+                   0      1            2   3              4   5   6   7
+                                               Time [s]
+
+Department of Mechanical Engineering
+  Time vs frequency                                               7/60
+
+                −30
+   Power [dB]
+
+
+
+                −40
+                −50
+                −60
+                −70
+                           1             2               3    4
+                         10            10               10   10
+
+
+                −30
+   Power [dB]
+
+
+
+
+                −40
+                −50
+                −60
+                −70
+                           1             2               3    4
+                         10            10               10   10
+
+
+                −30
+   Power [dB]
+
+
+
+
+                −40
+                −50
+                −60
+                −70
+                           1             2               3    4
+                         10            10               10   10
+                                       Frequency [Hz]
+
+Department of Mechanical Engineering
+  Time vs frequency                                               7/60
+
+                −30
+   Power [dB]
+
+
+
+                −40
+                −50
+                −60
+                −70
+                           1             2               3    4
+                         10            10               10   10
+
+
+                −30
+   Power [dB]
+
+
+
+
+                −40
+                −50
+                −60
+                −70
+                           1             2               3    4
+                         10            10               10   10
+
+
+                −30
+   Power [dB]
+
+
+
+
+                −40
+                −50
+                −60
+                −70
+                           1             2               3    4
+                         10            10               10   10
+                                       Frequency [Hz]
+
+Department of Mechanical Engineering
+  Time vs frequency                                               7/60
+
+                −30
+   Power [dB]
+
+
+
+                −40
+                −50
+                −60
+                −70
+                           1             2               3    4
+                         10            10               10   10
+
+
+                −30
+   Power [dB]
+
+
+
+
+                −40
+                −50
+                −60
+                −70
+                           1             2               3    4
+                         10            10               10   10
+
+
+                −30
+   Power [dB]
+
+
+
+
+                −40
+                −50
+                −60
+                −70
+                           1             2               3    4
+                         10            10               10   10
+                                       Frequency [Hz]
+
+Department of Mechanical Engineering
+                                                   8/60
+
+
+
+
+                      How to transform time into
+                             frequency?
+
+
+
+
+Department of Mechanical Engineering
+  Signal analysis: Fourier series                                         9/60
+
+
+  Any signal x(t ) of length T can be represented as a sum of harmonics.
+                                                             Joseph Fourier
+  Example: square wave
+
+
+
+
+Department of Mechanical Engineering
+  Signal analysis: Fourier series                                         9/60
+
+
+  Any signal x(t ) of length T can be represented as a sum of harmonics.
+                                                             Joseph Fourier
+  Example: square wave
+
+
+
+
+Department of Mechanical Engineering
+  Signal analysis: Fourier series                                         9/60
+
+
+  Any signal x(t ) of length T can be represented as a sum of harmonics.
+                                                             Joseph Fourier
+  Example: square wave
+
+
+
+
+Department of Mechanical Engineering
+  Signal analysis: Fourier series                                         9/60
+
+
+  Any signal x(t ) of length T can be represented as a sum of harmonics.
+                                                             Joseph Fourier
+  Example: square wave
+
+
+
+
+Department of Mechanical Engineering
+  Signal analysis: Fourier series                                         9/60
+
+
+  Any signal x(t ) of length T can be represented as a sum of harmonics.
+                                                             Joseph Fourier
+  Example: square wave
+
+
+
+
+Department of Mechanical Engineering
+  Signal analysis: Fourier series                                         9/60
+
+
+  Any signal x(t ) of length T can be represented as a sum of harmonics.
+                                                             Joseph Fourier
+  Example: square wave
+
+
+
+
+Department of Mechanical Engineering
+  Signal analysis: Fourier series                                         9/60
+
+
+  Any signal x(t ) of length T can be represented as a sum of harmonics.
+                                                             Joseph Fourier
+  Example: square wave
+
+
+
+
+Department of Mechanical Engineering
+  Signal analysis: Fourier series                                              10/60
+
+
+  Any signal x(t ) of length T can be represented as a sum of harmonics.
+                          X∞ h                            i
+                                          k               k
+              x(t ) =          ak cos 2π T t + bk sin 2π T t            (1)
+                                       k =0
+                                              ∞
+                                              X
+                                                     Ak cos k 2π
+                                                                          
+                                 = A0 +                        T t + φk       (2)
+                                              k =1
+
+
+
+
+Department of Mechanical Engineering
+  Signal analysis: Fourier series                                                    10/60
+
+
+  Any signal x(t ) of length T can be represented as a sum of harmonics.
+                          X∞ h                            i
+                                          k               k
+              x(t ) =          ak cos 2π T t + bk sin 2π T t            (1)
+                                       k =0
+                                              ∞
+                                              X
+                                                     Ak cos k 2π
+                                                                          
+                                 = A0 +                        T t + φk             (2)
+                                              k =1
+
+   where
+                                        2π
+                                         T    : Fundamental frequency (period T )
+                                         k    : Harmonic number
+                       A = a0 : Constant signal offset
+                      q 0
+                  Ak = ak2 + bk2 : Amplitude of k -th harmonic
+                φk = − arctan bakk            : Phase of k -th harmonic
+
+  Note: assumes the signal is periodic: x(t + T ) = x(t )
+Department of Mechanical Engineering
+  Signal analysis: Fourier series                                                   11/60
+
+
+  Any signal x(t ) of length T can be represented as a sum of harmonics.
+                          X∞ h                            i
+                                          k               k
+              x(t ) =          ak cos 2π T t + bk sin 2π T t
+                                       k =0
+
+  Let’s try to rewrite this equation.
+  Using Euler’s formula
+
+                                         e jt = cos(t ) + j sin(t ),               (3)
+
+  we can write
+                                                      k             k
+                                                                           
+                          cos 2π kT t   =         e j 2π T t + e −j 2π T t
+                                                  1
+                                                  2                               (4a)
+                                                            k              k
+                                                                              
+                              sin(2π kT t ) = −j 12 e j 2π T t − e −j 2π T t .    (4b)
+
+
+
+Department of Mechanical Engineering
+  Signal analysis: Fourier series                                                                   12/60
+
+
+  Then x(t ) can be written as
+               ∞ h                                                                          i
+                             j 2π kT t     −j 2π kT t                 j 2π kT t     −j 2π kT t
+               X
+                    1                                       1
+    x(t ) =         2 ak   e           + e              − j 2 b k   e           − e
+                       k =0
+                        ∞ h                                                             i
+                                               j 2π kT t                          k
+                       X
+                =              1
+                               2 (ak − jbk ) e           + 12 (ak + jbk ) e −j 2π T t
+                       k =0
+                               ∞ h                                               i
+                               X                     k                     k
+                = a0 +                   X (k )e j 2π T t + X (−k )e −j 2π T t
+                               k =1
+                         ∞
+                         X                     k
+                =                X (k )e j 2π T t                                               (5)
+                       k =−∞
+
+  where we have defined the coefficients
+
+             X (0) = a0 ,              X (k ) = 21 (ak − jbk ),     X (−k ) = 12 (ak + jbk ).
+Department of Mechanical Engineering
+  Fourier series expansion                                                      13/60
+
+
+  Hence, the complex form of the Fourier series is
+                                  ∞
+                                 X                 k
+                        x(t ) =       X (k )e j 2π T t .                    (6)
+                                       k =−∞
+
+      I   X (k ) are the complex valued Fourier series expansion coefficients
+
+
+
+
+Department of Mechanical Engineering
+  Fourier series expansion                                                      13/60
+
+
+  Hence, the complex form of the Fourier series is
+                                  ∞
+                                 X                 k
+                        x(t ) =       X (k )e j 2π T t .                      (6)
+                                        k =−∞
+
+      I   X (k ) are the complex valued Fourier series expansion coefficients
+
+  How to find these Fourier coefficients?
+      I   by using the ‘inverse’ of (6):
+                       1 t0 +T
+                         Z
+                                            k
+              X (k ) =         x(t )e −j 2π T t dt ,   k = 0, ±1, ±2, . . .   (7)
+                       T t0
+
+
+
+
+Department of Mechanical Engineering
+  Fourier series expansion                                                         13/60
+
+
+  Hence, the complex form of the Fourier series is
+                                  ∞
+                                 X                 k
+                        x(t ) =       X (k )e j 2π T t .                          (6)
+                                        k =−∞
+
+      I   X (k ) are the complex valued Fourier series expansion coefficients
+
+  How to find these Fourier coefficients?
+      I   by using the ‘inverse’ of (6):
+                       1 t0 +T
+                         Z
+                                            k
+              X (k ) =         x(t )e −j 2π T t dt ,       k = 0, ±1, ±2, . . .   (7)
+                       T t0
+  Note: the proof for (7) is based on orthogonality of sines and cosines
+                   Z t0 +T                               
+                                                            0 for k 6= `
+                            cos(2π kT ) cos(2π T` )dt =     T
+                     t0                                     2
+                                                                for k = `
+                    Z t0 +T
+                            cos(2π kT ) sin(2π T` )dt = 0 for all k , `
+                            t0
+
+
+Department of Mechanical Engineering
+  Fourier series expansion: interpretation                                    14/60
+
+
+  Theory:                                             In practice (Matlab):
+                     Z t0 +T
+                 1                           k
+   X (k ) =                     x(t )e −j 2π T t dt   X = fft(x)/length(x);
+                 T     t0
+
+  How to interpret these complex coefficients X (k )?
+
+
+
+
+Department of Mechanical Engineering
+  Fourier series expansion: interpretation                                                  14/60
+
+
+  Theory:                                              In practice (Matlab):
+                     Z t0 +T
+                 1                           k
+   X (k ) =                     x(t )e −j 2π T t dt     X = fft(x)/length(x);
+                 T     t0
+
+  How to interpret these complex coefficients X (k )?
+             X (k ) = 21 (ak − jbk ),            X (−k ) = 21 (ak + jbk ),   X (0) = a0 .
+
+
+
+
+Department of Mechanical Engineering
+  Fourier series expansion: interpretation                                                    14/60
+
+
+  Theory:                                              In practice (Matlab):
+                     Z t0 +T
+                 1                           k
+   X (k ) =                     x(t )e −j 2π T t dt     X = fft(x)/length(x);
+                 T     t0
+
+  How to interpret these complex coefficients X (k )?
+             X (k ) = 21 (ak − jbk ),            X (−k ) = 21 (ak + jbk ),   X (0) = a0 .
+
+      I   meaning of amplitude and phase:
+                               |X (0)| = a0 = A0                                            (8a)
+                                            q
+                               |X (k )| = 12 ak2 + bk2 = 12 Ak                              (8b)
+                            arg X (k ) = − arg X (−k ) = − arctan bakk = φk                 (8c)
+
+
+
+
+Department of Mechanical Engineering
+  Fourier series expansion: interpretation                                                    14/60
+
+
+  Theory:                                                In practice (Matlab):
+                     Z t0 +T
+                 1                           k
+   X (k ) =                     x(t )e −j 2π T t dt      X = fft(x)/length(x);
+                 T     t0
+
+  How to interpret these complex coefficients X (k )?
+             X (k ) = 21 (ak − jbk ),            X (−k ) = 21 (ak + jbk ),   X (0) = a0 .
+
+      I   meaning of amplitude and phase:
+                               |X (0)| = a0 = A0                                            (8a)
+                                            q
+                               |X (k )| = 12 ak2 + bk2 = 12 Ak                              (8b)
+                            arg X (k ) = − arg X (−k ) = − arctan bakk = φk                 (8c)
+      I   which can be directly linked to the signal x(t ):
+                                       X∞
+                                            Ak cos k 2π
+                                                               
+                         x(t ) = A0 +                 T t + φk
+                                                      k =1
+Department of Mechanical Engineering
+  Fourier series: examples                                                                   15/60
+
+
+  Fourier series maps time into frequency:
+
+               Continuous time t               ⇐⇒    Discrete frequency 2π
+                                                                         T k
+
+       x(t )                                                       |X (k )|
+                                                          A                       A
+                                                          2                       2
+
+
+
+
+                                                                                         k
+                                                ⇐⇒            -1              1
+                                           t
+                                                          π             arg X (k )
+                                                          4
+
+           φ = π4                  A
+                                                                                         k
+
+                                                                                  − π4
+
+                                  Signal       ⇐⇒     Spectrum
+
+Department of Mechanical Engineering
+  Fourier series: examples                                                                                  15/60
+
+
+  Fourier series maps time into frequency:
+
+             Continuous time t                 ⇐⇒         Discrete frequency 2π
+                                                                              T k
+
+        x(t )                                                            |X (k )|
+                                                               A2                       A2
+                                                               2                        2
+
+
+                                                     A6                                            A6
+                                                     2                                             2
+
+                                                                                                        k
+                                                ⇐⇒        -6        -2              2          6
+                                           t
+                                                               π              arg X (k )
+                                                               2
+
+
+                                                                                                        k
+
+                                                                                        − π2
+
+                                  Signal       ⇐⇒          Spectrum
+
+
+Department of Mechanical Engineering
+  Fourier series: examples                                                                                  15/60
+
+
+  Fourier series maps time into frequency:
+
+             Continuous time t             ⇐⇒         Discrete frequency 2π
+                                                                          T k
+
+
+
+
+                                                −22 −18 −14 −10   −6   −2      2    6   10   14   18   22
+                                           ⇐⇒
+                                                                              π/2
+
+
+
+
+                                                                       −π/2
+
+
+
+                                  Signal   ⇐⇒           Spectrum
+
+
+Department of Mechanical Engineering
+                                                    16/60
+
+
+
+
+                       Fourier series, energy and
+                                 power
+
+
+
+
+Department of Mechanical Engineering
+  Signal energy and power                                                                                     17/60
+
+
+  Periodic signals have finite power P
+      I     Power = Energy per second
+      I     Power = RMS2 (Root Mean Squared)
+    u(t )                                                  Z T
+                                               P   =   1
+                                                       T         u 2 (t )dt
+                                                            0
+                                                           Z T
+                                                       1
+                                                                 A 2 cos2     2π
+                                                                                     
+                                                   =   T                       T t       dt
+                                           t                0
+                                       T                   Z T
+                                                       1         1 2   1 2                    4π
+                                                                                                     
+                                                   =             2 A + 2 A cos                 T t       dt
+                                 A
+                                                       T
+                                                            0
+                                                       1    2
+                                                   =   2A
+
+
+
+
+Department of Mechanical Engineering
+  Signal energy and power                                                                                     17/60
+
+
+  Periodic signals have finite power P
+      I     Power = Energy per second
+      I     Power = RMS2 (Root Mean Squared)
+    u(t )                                                  Z T
+                                               P   =   1
+                                                       T         u 2 (t )dt
+                                                            0
+                                                           Z T
+                                                       1
+                                                                 A 2 cos2     2π
+                                                                                     
+                                                   =   T                       T t       dt
+                                           t                0
+                                       T                   Z T
+                                                       1         1 2   1 2                    4π
+                                                                                                     
+                                                   =             2 A + 2 A cos                 T t       dt
+                                 A
+                                                       T
+                                                            0
+                                                       1    2
+                                                   =   2A
+
+  Can we calculate this also from the frequency spectrum X (k )?
+
+
+Department of Mechanical Engineering
+  Signal energy and power                                                                            18/60
+
+
+  Total power in a signal u(t ):
+                                           Z T
+                        P     =        1
+                                       T     u 2 (t )dt
+                                          0
+                                                                          
+                                         Z T            ∞
+                                                        X              k
+                              =        1
+                                       T     u(t )       U (k )e j 2π T t  dt
+                                            0            k =−∞
+                                           ∞                 Z T
+                                           X                                   k
+                              =                  U (k ) T1         u(t )e j 2π T t dt
+                                       k =−∞                  0
+
+                                         X∞                               ∞
+                                                                          X
+                              =                  U (k )U (−k ) =                   U (k )U ∗ (k )   (9)
+                                       k =−∞                             k =−∞
+
+  Known as Parseval’s theorem:
+      I   Power in time domain = power in frequency domain
+Department of Mechanical Engineering
+  Signal energy and power                                                                  19/60
+
+
+  Power per frequency = power spectral density (PSD)
+
+                    Suu (k ) = U (k )U ∗ (k )                                            (10)
+                                       1              1              1
+                                                                         ak2 + bk2
+                                                                                     
+                                   =   2 (ak −jbk ) · 2 (ak +jbk ) = 4
+
+  Or expressed in actual frequencies f = kT :
+
+                                          Suu (f ) = U (f )U ∗ (f )                      (11)
+
+
+
+
+Department of Mechanical Engineering
+  Signal energy and power                                                                  19/60
+
+
+  Power per frequency = power spectral density (PSD)
+
+                    Suu (k ) = U (k )U ∗ (k )                                            (10)
+                                       1              1              1
+                                                                         ak2 + bk2
+                                                                                     
+                                   =   2 (ak −jbk ) · 2 (ak +jbk ) = 4
+
+  Or expressed in actual frequencies f = kT :
+
+                                          Suu (f ) = U (f )U ∗ (f )                      (11)
+      I   PSD in Matlab (be aware of scaling!):
+          pwelch.m, periodogram.m
+      I   PSD has no phase information
+
+
+
+
+Department of Mechanical Engineering
+  Signal energy and power                                                                                19/60
+
+
+  Power per frequency = power spectral density (PSD)
+
+                    Suu (k ) = U (k )U ∗ (k )                                                       (10)
+                                       1              1              1
+                                                                         ak2 + bk2
+                                                                                         
+                                   =   2 (ak −jbk ) · 2 (ak +jbk ) = 4
+
+  Or expressed in actual frequencies f = kT :
+
+                                          Suu (f ) = U (f )U ∗ (f )                                 (11)
+      I   PSD in Matlab (be aware of scaling!):                               U (f )U ∗ (f )
+
+          pwelch.m, periodogram.m                                        A2                    A2
+                                                                         4                     4
+      I   PSD has no phase information
+
+
+                                                                                                     f
+                                                                         −1/T            1/T
+
+
+Department of Mechanical Engineering
+  Signal energy and power                                                                                19/60
+
+
+  Power per frequency = power spectral density (PSD)
+
+                    Suu (k ) = U (k )U ∗ (k )                                                       (10)
+                                       1              1              1
+                                                                         ak2 + bk2
+                                                                                         
+                                   =   2 (ak −jbk ) · 2 (ak +jbk ) = 4
+
+  Or expressed in actual frequencies f = kT :
+
+                                          Suu (f ) = U (f )U ∗ (f )                                 (11)
+      I   PSD in Matlab (be aware of scaling!):                               U (f )U ∗ (f )
+
+          pwelch.m, periodogram.m                                        A2                    A2
+                                                                         4                     4
+      I   PSD has no phase information
+      I   Total power = sum of PSD over all f :
+                                       2    2
+                 X
+            P=      U (f )U ∗ (f ) = A4 + A4 = 21 A 2                                                f
+                                                                         −1/T            1/T
+
+
+Department of Mechanical Engineering
+  Positive and negative frequencies                                            20/60
+
+
+  Spectral densities can be either twosided or onesided:
+
+                           U (f )U ∗ (f )            U (f )U ∗ (f )
+                                                                      A2
+                                                                      2
+
+
+
+
+                      A2                    A2
+                      4                     4
+
+
+
+
+                                                 f                         f
+                      −1/T             1/T                      1/T
+
+      I   Negative frequencies are added to positive frequencies
+      I   Known as Auto Power Spectral Density
+
+Department of Mechanical Engineering
+  Common power between signals                                                  21/60
+
+
+  So the product of the Fourier series U (f ) and U ∗ (f ) of a single signal
+  u(t ) returns the energy within a single signal per frequency.
+
+                                       Suu (f ) = U (f )U ∗ (f )
+
+
+
+
+Department of Mechanical Engineering
+  Common power between signals                                                  21/60
+
+
+  So the product of the Fourier series U (f ) and U ∗ (f ) of a single signal
+  u(t ) returns the energy within a single signal per frequency.
+
+                                       Suu (f ) = U (f )U ∗ (f )
+
+  Then the product of the Fourier series of different signals u(t ) and v(t )
+  returns their common power per frequency.
+
+                                       Suv (f ) = U (f )V ∗ (f )
+
+
+      I   Known as Cross Power Spectral Density (CPSD)
+      I   can indicate ‘common power’ between the signals
+      I   signals could be related if this common power repeats
+
+
+Department of Mechanical Engineering
+  Cross power density                                                22/60
+
+
+  Cross Power Spectral Density (CPSD):
+
+                                       Suv (f ) = U (f )V ∗ (f )
+
+  Interpretation:
+      I   For each frequency: how much power of u is present in v?
+      I   Can indicate (cross-)covariance between u and v
+
+
+
+
+Department of Mechanical Engineering
+  Cross power density                                                              22/60
+
+
+  Cross Power Spectral Density (CPSD):
+
+                                       Suv (f ) = U (f )V ∗ (f )
+
+  Interpretation:
+      I   For each frequency: how much power of u is present in v?
+      I   Can indicate (cross-)covariance between u and v
+  Remarks:
+    I S
+       uv (f ) does contain phase information
+               •   Indicates how much v is shifted w.r.t. u for each frequency f
+      I               ∗ (f )
+          Svu (f ) = Suv
+               •   same magnitude, negative phase
+      I   If u = v, then Cross PSD reduces to Auto PSD
+      I   Matlab: cpsd.m (again, be aware of scaling!)
+
+Department of Mechanical Engineering
+  Cross power: example                                                                                                               23/60
+
+
+                                                  5                                                   5
+
+
+
+
+                                  Signal U [−]
+
+
+
+
+                                                                                      Signal V [−]
+                                                  0                                                   0
+
+
+
+
+                                                 −5                                                  −5
+                                                      0   50     100      150   200                       0   50     100      150   200
+                                                               Time [s]                                            Time [s]
+
+
+
+  Assume two (apparently) noisy signals u(t ) and v(t ).
+      I   Do these signals have common ground?
+      I   I.e. is there a repeated common frequency in both?
+      I   Compute CPSD of several pieces (frames) of the signals, and
+          average them
+
+
+
+Department of Mechanical Engineering
+  Cross power and importance of averaging                                                                                                        24/60
+
+
+                                                        5                                                        5
+
+
+
+
+                                        Signal U [−]
+
+
+
+
+                                                                                                 Signal V [−]
+  Frames of 10s.                                        0                                                        0
+
+
+
+
+      I   1 frame
+                                                       −5                                                       −5
+      I   2 frames                                          0   50     100
+                                                                     Time [s]
+                                                                                150       200                        0   50      100
+                                                                                                                               Time [s]
+                                                                                                                                          150   200
+
+
+      I   4 frames                                     0
+                                                10
+      I   10                                           −1
+                                                10
+          frames
+                                Cross power
+
+
+
+
+                                                       −2
+      I   400                                   10
+
+
+          frames                                10
+                                                       −3
+
+
+
+
+                                                       −4
+                                                10
+                                                            0   2     4         6     8        10        12               14       16      18   20
+                                                                                          Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  Cross power and importance of averaging                                                                                                        24/60
+
+
+                                                        5                                                        5
+
+
+
+
+                                        Signal U [−]
+
+
+
+
+                                                                                                 Signal V [−]
+  Frames of 10s.                                        0                                                        0
+
+
+
+
+      I   1 frame
+                                                       −5                                                       −5
+      I   2 frames                                          0   50     100
+                                                                     Time [s]
+                                                                                150       200                        0   50      100
+                                                                                                                               Time [s]
+                                                                                                                                          150   200
+
+
+      I   4 frames                                     0
+                                                10
+      I   10                                           −1
+                                                10
+          frames
+                                Cross power
+
+
+
+
+                                                       −2
+      I   400                                   10
+
+
+          frames                                10
+                                                       −3
+
+
+
+
+                                                       −4
+                                                10
+                                                            0   2     4         6     8        10        12               14       16      18   20
+                                                                                          Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  Cross power and importance of averaging                                                                                                        24/60
+
+
+                                                        5                                                        5
+
+
+
+
+                                        Signal U [−]
+
+
+
+
+                                                                                                 Signal V [−]
+  Frames of 10s.                                        0                                                        0
+
+
+
+
+      I   1 frame
+                                                       −5                                                       −5
+      I   2 frames                                          0   50     100
+                                                                     Time [s]
+                                                                                150       200                        0   50      100
+                                                                                                                               Time [s]
+                                                                                                                                          150   200
+
+
+      I   4 frames                                     0
+                                                10
+      I   10                                           −1
+                                                10
+          frames
+                                Cross power
+
+
+
+
+                                                       −2
+      I   400                                   10
+
+
+          frames                                10
+                                                       −3
+
+
+
+
+                                                       −4
+                                                10
+                                                            0   2     4         6     8        10        12               14       16      18   20
+                                                                                          Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  Cross power and importance of averaging                                                                                                        24/60
+
+
+                                                        5                                                        5
+
+
+
+
+                                        Signal U [−]
+
+
+
+
+                                                                                                 Signal V [−]
+  Frames of 10s.                                        0                                                        0
+
+
+
+
+      I   1 frame
+                                                       −5                                                       −5
+      I   2 frames                                          0   50     100
+                                                                     Time [s]
+                                                                                150       200                        0   50      100
+                                                                                                                               Time [s]
+                                                                                                                                          150   200
+
+
+      I   4 frames                                     0
+                                                10
+      I   10                                           −1
+                                                10
+          frames
+                                Cross power
+
+
+
+
+                                                       −2
+      I   400                                   10
+
+
+          frames                                10
+                                                       −3
+
+
+
+
+                                                       −4
+                                                10
+                                                            0   2     4         6     8        10        12               14       16      18   20
+                                                                                          Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  Cross power and importance of averaging                                                                                                             24/60
+
+
+                                                        5                                                             5
+
+
+
+
+                                        Signal U [−]
+
+
+
+
+                                                                                                      Signal V [−]
+  Frames of 10s.                                        0                                                             0
+
+
+
+
+      I   1 frame
+                                                       −5                                                            −5
+      I   2 frames                                          0   50     100
+                                                                     Time [s]
+                                                                                150            200                        0   50      100
+                                                                                                                                    Time [s]
+                                                                                                                                               150   200
+
+
+      I   4 frames                                     0                            X: 6.5
+                                                10
+                                                                                    Y: 0.309
+      I   10                                           −1
+                                                10
+          frames
+                                Cross power
+
+
+
+
+                                                       −2
+      I   400                                   10
+
+
+          frames                                10
+                                                       −3
+
+
+
+
+                                                       −4
+                                                10
+                                                            0   2     4         6         8         10        12               14       16      18   20
+                                                                                               Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  Importance of averaging                                                                               25/60
+
+
+  Hence, averaging in computing a CPSD is important to
+                  I        emphasize repeating commonness between two signals
+                  I        but also to minimize the effect of randomness or noise
+
+  Example:
+                   2                                                   4
+
+                                                                       2
+                   1
+   Signal U [−]
+
+
+
+
+                                                       Signal V [−]
+                                                                       0
+                   0
+                                                                      −2
+
+                  −1
+                                                                      −4
+
+                  −2                                                  −6
+                       0      1   2        3   4   5                       0   1   2        3   4   5
+                                   Time [s]                                         Time [s]
+
+
+                  I        u(t ) is a 4 Hz sine wave
+                  I        v(t ) is a random number sequence
+
+Department of Mechanical Engineering
+  CPSD with a random number                                                                                    26/60
+
+
+
+
+  Frames of 1s.                                      0.14
+
+                                                     0.12
+      I   1 frame                                     0.1
+
+
+
+
+                                       Cross power
+      I   3 frames                                   0.08
+
+                                                     0.06
+      I   10 frames                                  0.04
+
+                                                     0.02
+      I   100 frames                                   0
+                                                            0   1   2   3   4         5        6   7   8   9   10
+      I   1000 frames                                                           Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  CPSD with a random number                                                                                    26/60
+
+
+
+
+  Frames of 1s.                                      0.14
+
+                                                     0.12
+      I   1 frame                                     0.1
+
+
+
+
+                                       Cross power
+      I   3 frames                                   0.08
+
+                                                     0.06
+      I   10 frames                                  0.04
+
+                                                     0.02
+      I   100 frames                                   0
+                                                            0   1   2   3   4         5        6   7   8   9   10
+      I   1000 frames                                                           Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  CPSD with a random number                                                                                    26/60
+
+
+
+
+  Frames of 1s.                                      0.14
+
+                                                     0.12
+      I   1 frame                                     0.1
+
+
+
+
+                                       Cross power
+      I   3 frames                                   0.08
+
+                                                     0.06
+      I   10 frames                                  0.04
+
+                                                     0.02
+      I   100 frames                                   0
+                                                            0   1   2   3   4         5        6   7   8   9   10
+      I   1000 frames                                                           Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  CPSD with a random number                                                                                    26/60
+
+
+
+
+  Frames of 1s.                                      0.14
+
+                                                     0.12
+      I   1 frame                                     0.1
+
+
+
+
+                                       Cross power
+      I   3 frames                                   0.08
+
+                                                     0.06
+      I   10 frames                                  0.04
+
+                                                     0.02
+      I   100 frames                                   0
+                                                            0   1   2   3   4         5        6   7   8   9   10
+      I   1000 frames                                                           Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  CPSD with a random number                                                                                    26/60
+
+
+
+
+  Frames of 1s.                                      0.14
+
+                                                     0.12
+      I   1 frame                                     0.1
+
+
+
+
+                                       Cross power
+      I   3 frames                                   0.08
+
+                                                     0.06
+      I   10 frames                                  0.04
+
+                                                     0.02
+      I   100 frames                                   0
+                                                            0   1   2   3   4         5        6   7   8   9   10
+      I   1000 frames                                                           Frequency [Hz]
+
+
+
+
+  Note that U (f )V ∗ (f ) with U (f ) 6= V (f ) is a complex number.
+  Hence, it has phase!
+      I   We’re averaging vectors with random size and random angles
+      I   Hence, average CPSD with a random number converges to zero
+
+
+
+Department of Mechanical Engineering
+  Averaging a complex number                                                                                                                  27/60
+
+
+
+                                                           0.4
+                                                                                                                    Individual frames
+                                                                                                                    Averaged
+                                                           0.3
+
+
+
+                                                           0.2
+                           Imaginary part CPSD @ 4.0 Hz
+
+
+
+                                                           0.1
+
+
+
+                                                            0
+
+
+
+                                                          −0.1
+
+
+
+                                                          −0.2
+
+
+
+                                                          −0.3
+
+
+
+                                                          −0.4
+                                                            −0.4   −0.3   −0.2   −0.1          0        0.1   0.2       0.3             0.4
+                                                                                   Real part CPSD @ 4.0 Hz
+
+
+
+  Conclusion:                          N              N
+                                     1X i           1X
+    I always calculate average CPSD:     Suv (f ) =     Ui (f )Vi∗ (f )
+                                     N              N
+                                                                                                   i =1                           i =1
+Department of Mechanical Engineering
+  Averaging the Auto PSD                                                     28/60
+
+
+  Note that averaging the auto PSD for noisy signals is also a good idea
+      I   APSD is a non-negative real-valued function Suu (f ) ∈ R≥0
+      I   Hence, phase is constant at 0◦
+      I   Averaged APSD Au (f ) will thus not converge to zero
+  Due to Parseval we know that
+                                                    N
+                                                              !
+                           X                  X   1X i
+                                  Au (f ) =           Suu (f ) = P > 0.
+                                                  N
+                              f               f     i =1
+
+  For zero-mean white noise the APSD converges to flat spectrum, hence
+
+                                                              σ2
+                                         lim Au (f ) = Au =      ,
+                                        N →∞                  Nf
+
+  where σ 2 is the variance of the white noise signal u(t ), and Nf is the
+  number of frequency points in the APSD.
+Department of Mechanical Engineering
+                                                     29/60
+
+
+
+
+                             How do we use this to
+                             ‘measure’ a system?
+
+
+
+
+Department of Mechanical Engineering
+  Direct open loop method                                                 30/60
+
+
+
+
+                                              v(t)
+                           u(t)                         y(t)
+                                       h(t)
+
+      I   impulse response h (t ) is unknown (but approximately linear)
+      I   v(t ) is (unknown) disturbance or noise
+  Direct method:
+      I   no controller present: open-loop
+      I   directly measuring plant input u and plant output y
+
+
+
+
+Department of Mechanical Engineering
+  Direct open loop method                                                      30/60
+
+
+
+
+                                                           v(t)
+                           u(t)                                         y(t)
+                                           h(t)
+
+      I   impulse response h (t ) is unknown (but approximately linear)
+      I   v(t ) is (unknown) disturbance or noise
+  Direct method:
+      I   no controller present: open-loop
+      I   directly measuring plant input u and plant output y
+                                       y(t ) = h (t ) ⊗ u(t ) + v(t )
+  But how to obtain an estimate for H (s) = L{h (t )}?
+
+Department of Mechanical Engineering
+  Direct open loop method                                                        31/60
+
+
+
+                                                               V (f )
+                                       U (f )                           Y (f )
+                                                 H(f )
+
+
+  First convert all signals to frequency domain:
+                                                         fft
+                                                u(t ) −−→ U (f )
+                                                         fft
+                                                y(t ) −−→ Y (f )
+                                                         fft
+                                                v(t ) −−→ V (f )
+
+  (Note that v(t ) and V (f ) are actually unknown).
+
+
+
+
+Department of Mechanical Engineering
+  Direct open loop method                                                        31/60
+
+
+
+                                                               V (f )
+                                       U (f )                           Y (f )
+                                                 H(f )
+
+
+  First convert all signals to frequency domain:
+                                                         fft
+                                                u(t ) −−→ U (f )
+                                                         fft
+                                                y(t ) −−→ Y (f )
+                                                         fft
+                                                v(t ) −−→ V (f )
+
+  (Note that v(t ) and V (f ) are actually unknown).
+
+  Then, due to superposition:
+
+                                         Y (f ) = H (f )U (f ) + V (f )
+Department of Mechanical Engineering
+  Direct open loop method                                                          32/60
+
+
+
+                                                           V (f )
+                                         U (f )                     Y (f )
+                                                  H(f )
+
+
+
+                                       Y (f ) = H (f )U (f ) + V (f )
+
+                          Y (f )U ∗ (f ) = H (f )U (f )U ∗ (f ) + V (f )U ∗ (f )
+
+                                 Syu (f ) = H (f )Suu (f ) + Svu (f )
+                                                             | {z }
+                                                                    ???
+
+
+
+
+Department of Mechanical Engineering
+  Direct open loop method                                                          32/60
+
+
+
+                                                              V (f )
+                                         U (f )                         Y (f )
+                                                  H(f )
+
+
+
+                                       Y (f ) = H (f )U (f ) + V (f )
+
+                          Y (f )U ∗ (f ) = H (f )U (f )U ∗ (f ) + V (f )U ∗ (f )
+
+                                 Syu (f ) = H (f )Suu (f ) + Svu (f )
+                                                             | {z }
+                                                                        ???
+
+  If we can make sure that Svu (f ) ≈ 0, then
+
+                                                             Syu (f )
+                                                  H (f ) ≈
+                                                             Suu (f )
+
+Department of Mechanical Engineering
+  Enhancing the spectral estimation                                             33/60
+
+
+  How to minimize the effect of v(t )?
+    I By making sure u(t ) and v(t ) are uncorrelated
+
+               •   e.g. by choosing u(t ) white noise, or other random signal
+      I   By taking multiple data series N and averaging them
+
+
+
+
+Department of Mechanical Engineering
+  Enhancing the spectral estimation                                                         33/60
+
+
+  How to minimize the effect of v(t )?
+    I By making sure u(t ) and v(t ) are uncorrelated
+
+               •   e.g. by choosing u(t ) white noise, or other random signal
+      By taking multiple data series N and averaging them
+      I
+
+                 N
+             1X i
+  Then lim          Suv (f ) = 0, so that
+       N →∞ N
+               i =1           XN              XN
+                                    i
+                                   Syu (f )      Yi (f )Ui∗ (f )
+                                           i =1                  i =1
+                        H (f )         ≈     N
+                                                             =     N
+                                                                                          (12)
+                                           X                     X
+                                                   i
+                                                  Suu (f )              Ui (f )Ui∗ (f )
+                                           i =1                  i =1
+
+  Of course, averaging measurements allows you to
+      I minimize the effect of disturbances, measurement noise, etc.
+                                                               √
+      I reduce the uncertainty on your end result (scales with   N)
+Department of Mechanical Engineering
+  Transfer function estimates using Welch                                       34/60
+
+
+  Welch’s averaged modified periodogram method
+
+
+              2
+
+              1
+      x(t)
+
+
+
+
+              0
+
+             −1
+
+             −2
+               0              0.5      1     1.5        2        2.5        3
+                                              t
+      I      Example: one data serie of 3 seconds (for both input and output)
+
+Department of Mechanical Engineering
+  Transfer function estimates using Welch                                  34/60
+
+
+  Welch’s averaged modified periodogram method
+
+
+              2
+
+              1
+      x(t)
+
+
+
+
+              0
+
+             −1
+
+             −2
+               0              0.5      1         1.5         2   2.5   3
+                                                  t
+      I      Calculated spectrum: 13 Hz, 23 Hz, 1Hz, . . .
+      I      Frequency resolution: 13 Hz
+Department of Mechanical Engineering
+  Transfer function estimates using Welch                                     34/60
+
+
+  Welch’s averaged modified periodogram method
+
+
+              2
+
+              1
+      x(t)
+
+
+
+
+              0
+
+             −1
+
+             −2
+               0              0.5      1     1.5         2          2.5   3
+                                              t
+      I      Create three data frames by cutting the original one
+
+Department of Mechanical Engineering
+  Transfer function estimates using Welch                                           34/60
+
+
+  Welch’s averaged modified periodogram method
+
+
+              2
+
+              1
+      x(t)
+
+
+
+
+              0
+
+             −1
+
+             −2
+               0              0.5      1      1.5        2         2.5          3
+                                               t
+      I      Calculate Fourier series (and APSD and CPSD) for each block. . .
+
+Department of Mechanical Engineering
+  Transfer function estimates using Welch                                      34/60
+
+
+  Welch’s averaged modified periodogram method
+
+
+              2
+
+              1
+      x(t)
+
+
+
+
+              0
+
+             −1
+
+             −2
+               0              0.5      1       1.5       2           2.5   3
+                                                t
+      I      Calculated spectrum: 1Hz, 2Hz, 3Hz, . . .
+      I      Frequency resolution: 1Hz     ⇒    loss of resolution
+Department of Mechanical Engineering
+  Transfer function estimates using Welch                              34/60
+
+
+  Welch’s averaged modified periodogram method
+
+
+              2
+
+              1
+      x(t)
+
+
+
+
+              0
+
+             −1
+
+             −2
+               0              0.5      1       1.5       2   2.5   3
+                                                t
+      I      Fourier assumes the data is periodic. . .
+
+Department of Mechanical Engineering
+  Transfer function estimates using Welch                               34/60
+
+
+  Welch’s averaged modified periodogram method
+
+
+              2
+
+              1
+      x(t)
+
+
+
+
+              0
+
+             −1
+
+             −2
+               0              0.5      1      1.5        2    2.5   3
+                                               t
+      I      . . . which introduces non-present frequencies
+
+Department of Mechanical Engineering
+  Transfer function estimates using Welch                            34/60
+
+
+  Welch’s averaged modified periodogram method
+
+
+              2
+
+              1
+      x(t)
+
+
+
+
+              0
+
+             −1
+
+             −2
+               0              0.5      1     1.5       2   2.5   3
+                                              t
+      I      Solution: multiply signal with a window
+
+Department of Mechanical Engineering
+  Transfer function estimates using Welch                            34/60
+
+
+  Welch’s averaged modified periodogram method
+
+
+              2
+
+              1
+      x(t)
+
+
+
+
+              0
+
+             −1
+
+             −2
+               0              0.5      1     1.5       2   2.5   3
+                                              t
+      I      Solution: multiply signal with a window
+
+Department of Mechanical Engineering
+  Transfer function estimates using Welch                               34/60
+
+
+  Welch’s averaged modified periodogram method
+
+
+              2
+
+              1
+      x(t)
+
+
+
+
+              0
+
+             −1
+
+             −2
+               0              0.5      1    1.5        2      2.5   3
+                                             t
+      I      Disadvantage: loss of data at frame boundaries
+
+Department of Mechanical Engineering
+  Transfer function estimates using Welch                            34/60
+
+
+  Welch’s averaged modified periodogram method
+
+
+              2
+
+              1
+      x(t)
+
+
+
+
+              0
+
+             −1
+
+             −2
+               0              0.5      1    1.5        2   2.5   3
+                                             t
+      I      Solution: create more frames by overlapping
+
+Department of Mechanical Engineering
+  Transfer function estimates using Welch                                34/60
+
+
+  Welch’s averaged modified periodogram method
+
+
+              2
+
+              1
+      x(t)
+
+
+
+
+              0
+
+             −1
+
+             −2
+               0              0.5      1    1.5        2       2.5   3
+                                             t
+      I      Now: averaging over 5 frames, resolution of 1Hz
+
+Department of Mechanical Engineering
+  Estimating the transfer function                                                       35/60
+
+
+  Transfer function estimation:
+                         PN                   i             PN               ∗
+                                        i =1 Syu (f )        i =1 Ȳi (f )Ūi (f )
+                    H (f )       ≈     PN               =   PN                     ,   (13)
+                                              i                              ∗
+                                        i =1 Suu (f )        i =1 Ūi (f )Ūi (f )
+
+  where Ū and Ȳ indicate windowed Fourier coefficients of u and y.
+  In Matlab:
+     [H,hz] = tfestimate(u,y,window,noverlap,nfft,fs)
+
+
+
+
+Department of Mechanical Engineering
+  Estimating the transfer function                                                       35/60
+
+
+  Transfer function estimation:
+                         PN                   i             PN               ∗
+                                        i =1 Syu (f )        i =1 Ȳi (f )Ūi (f )
+                    H (f )       ≈     PN               =   PN                     ,   (13)
+                                              i                              ∗
+                                        i =1 Suu (f )        i =1 Ūi (f )Ūi (f )
+
+  where Ū and Ȳ indicate windowed Fourier coefficients of u and y.
+  In Matlab:
+     [H,hz] = tfestimate(u,y,window,noverlap,nfft,fs)
+      I   window: shape of the window, normally hann(nfft)
+      I   noverlap: number of overlap between frames (in samples)
+      I   nfft: frame length in samples
+      I   fs: sample frequency of u and y, to calculate frequency vector hz
+
+
+
+
+Department of Mechanical Engineering
+  Estimating the transfer function                                                       35/60
+
+
+  Transfer function estimation:
+                         PN                   i             PN               ∗
+                                        i =1 Syu (f )        i =1 Ȳi (f )Ūi (f )
+                    H (f )       ≈     PN               =   PN                     ,   (13)
+                                              i                              ∗
+                                        i =1 Suu (f )        i =1 Ūi (f )Ūi (f )
+
+  where Ū and Ȳ indicate windowed Fourier coefficients of u and y.
+  In Matlab:
+     [H,hz] = tfestimate(u,y,window,noverlap,nfft,fs)
+      I   window: shape of the window, normally hann(nfft)
+      I   noverlap: number of overlap between frames (in samples)
+      I   nfft: frame length in samples
+      I   fs: sample frequency of u and y, to calculate frequency vector hz
+
+  Note: Frequency resolution = fs/nfft Hz
+
+
+Department of Mechanical Engineering
+  Estimating the transfer function: example                36/60
+
+                                        4
+
+                                        2
+
+                                        0
+
+
+                                  u
+                                       −2
+      I   20 seconds                   −4
+          of input- and                  0   5   10   15   20
+          output-data
+                                       10
+      I   sampled with
+          300Hz                         5
+                                  y
+
+
+
+
+                                        0
+
+
+                                       −5
+                                         0   5   10   15   20
+                                                  t
+
+
+
+Department of Mechanical Engineering
+  Estimating the transfer function: example                                                       36/60
+
+                                                                         Bode diagram
+
+
+
+
+                                       Magnitude [dB]
+                                                         20
+
+                                                          0
+
+                                                        −20
+      I   frame length                                  −40
+          = 6000 (20s)                                         −1     0                  1    2
+                                                              10    10                  10   10
+      I   1 frame
+                                                        180
+      I   Resolution:
+            0.05Hz                                       90
+                                  Phase [°]
+
+
+
+
+                                                          0
+
+                                                        −90
+
+                                                 −180
+                                                               −1     0                  1    2
+                                                              10    10               10      10
+                                                                      Frequency [Hz]
+
+
+Department of Mechanical Engineering
+  Estimating the transfer function: example                                                       36/60
+
+                                                                         Bode diagram
+
+
+
+
+                                       Magnitude [dB]
+                                                         20
+
+                                                          0
+
+                                                        −20
+      I   frame length                                  −40
+          = 240 (0.8s)                                         −1     0                  1    2
+                                                              10    10                  10   10
+      I   49 frames
+                                                        180
+      I   Resolution:
+            1.25Hz                                       90
+                                  Phase [°]
+
+
+
+
+                                                          0
+
+                                                        −90
+
+                                                 −180
+                                                               −1     0                  1    2
+                                                              10    10               10      10
+                                                                      Frequency [Hz]
+
+
+Department of Mechanical Engineering
+  Estimating the transfer function: example                                                       36/60
+
+                                                                         Bode diagram
+
+
+
+
+                                       Magnitude [dB]
+                                                         20
+
+                                                          0
+
+                                                        −20
+      I   frame length                                  −40
+          = 1200 (4s)                                          −1     0                  1    2
+                                                              10    10                  10   10
+      I   9 frames
+                                                        180
+      I   Resolution:
+            0.25Hz                                       90
+                                  Phase [°]
+
+
+
+
+                                                          0
+
+                                                        −90
+
+                                                 −180
+                                                               −1     0                  1    2
+                                                              10    10               10      10
+                                                                      Frequency [Hz]
+
+
+Department of Mechanical Engineering
+                                                  37/60
+
+
+
+
+                  What about the quality of the
+                        measurement?
+
+
+
+
+Department of Mechanical Engineering
+  Coherence                                                                         38/60
+
+  How reliable is our measurement?
+                                                            v(t)
+                                         u(t)                       y(t)
+                                                 h(t)
+
+
+
+                                       Y (f ) = H (f )U (f ) + V (f )
+                           Y (f )Y ∗ (f ) = H (f )U (f )Y ∗ (f ) + V (f )Y ∗ (f )
+                                 Syy (f ) = H (f )Suy (f ) + Svy (f )
+                                                             | {z }
+                                                                   ???
+
+  Quality is determined by Svy (f ):
+      I   minimal when |Syy (f )| = |H (f )Suy (f )|
+      I   when output power can be explained by plant
+
+Department of Mechanical Engineering
+  Coherence                                                                             39/60
+
+  This motivates the idea behind the coherence function:
+                               H (f )Suy (f )   Syu (f )Suy (f )             Suu (f )
+                C (f ) =                      =                  = |H (f )|2
+                                  Syy (f )      Suu (f )Syy (f )             Syy (f )
+
+  (where we assumed that Suv (f ) = 0).
+
+
+
+
+Department of Mechanical Engineering
+  Coherence                                                                                          39/60
+
+  This motivates the idea behind the coherence function:
+                               H (f )Suy (f )   Syu (f )Suy (f )             Suu (f )
+                C (f ) =                      =                  = |H (f )|2
+                                  Syy (f )      Suu (f )Syy (f )             Syy (f )
+
+  (where we assumed that Suv (f ) = 0).
+  More precisely, when averaging is used:
+                                           PN     i
+                                                            PN     i
+                                            i =1 Syu (f ) ·  i =1 Suy (f )
+                              C (f )   =   PN                N
+                                                  i                i
+                                                            P
+                                            i =1 Suu (f ) ·  i =1 Syy (f )
+                                                    N
+                                                                    !2
+                                                       X
+                                                               Ȳi (f )Ūi∗ (f )
+                                                        i =1
+                                       =   N                            N
+                                                                                                   (14)
+                                           X                            X
+                                                  Ūi (f )Ūi∗ (f ) ·          Ȳi (f )Ȳi∗ (f )
+                                           i =1                         i =1
+
+
+
+Department of Mechanical Engineering
+  Coherence: interpretation                                                     40/60
+
+
+                                            PN     i
+                                                             PN     i
+                                             i =1 Syu (f ) ·  i =1 Suy (f )
+                                 C (f ) =   PN               PN
+                                                   i                i
+                                             i =1 Suu (f ) ·  i =1 Syy (f )
+
+  When is a measurement reliable?
+   I when each data serie in N yields the same PSD’s
+
+               •   i.e. when S··i (f ) ≈ S..j (f ) for all i 6= j
+      I   then C (f ) ≈ 1
+               •   i.e. then relation from u to y is mostly linear for that f
+
+
+
+
+Department of Mechanical Engineering
+  Coherence: interpretation                                                     40/60
+
+
+                                            PN     i
+                                                             PN     i
+                                             i =1 Syu (f ) ·  i =1 Suy (f )
+                                 C (f ) =   PN               PN
+                                                   i                i
+                                             i =1 Suu (f ) ·  i =1 Syy (f )
+
+  When is a measurement reliable?
+   I when each data serie in N yields the same PSD’s
+
+               •   i.e. when S··i (f ) ≈ S..j (f ) for all i 6= j
+      I   then C (f ) ≈ 1
+               •   i.e. then relation from u to y is mostly linear for that f
+
+  Hence, when C (f ) < 1 at a certain f , there are
+      I   non-linearities in H (f )
+      I   dominant (measurement) noise sources
+      I   other disturbances or inputs present in y
+
+
+Department of Mechanical Engineering
+  Coherence: example                                                                              41/60
+
+
+
+                                                           20
+
+
+
+
+                                       Magnitude [dB]
+                                                            0
+
+        Coherence                                       −20
+              m                                         −40
+    signal-to-noise ratio                                         −1     0               1    2
+                                                                 10    10              10    10
+
+  C (f ) < 1 if                                             1
+                                           Coherence [−]
+
+
+
+      I   noise is large
+      I   ‘signal’ is small                                0.5
+
+
+
+                                                            0     −1     0               1    2
+                                                                 10    10               10   10
+                                                                         Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  Coherence: example                                                                              41/60
+
+
+
+                                                           20
+
+
+
+
+                                       Magnitude [dB]
+                                                            0
+
+  If N = 1                                              −20
+
+      I   just one frame                                −40
+                                                                  −1     0               1    2
+                                                                 10    10              10    10
+      I   no averaging
+      I   noise is seen as                                  1
+                                           Coherence [−]
+
+
+
+          linear dynamics
+      I   C (f ) = 1 for all f                             0.5
+
+
+
+                                                            0     −1     0               1    2
+                                                                 10    10               10   10
+                                                                         Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  Coherence: example                                                                              41/60
+
+
+
+                                                           20
+
+
+
+
+                                       Magnitude [dB]
+                                                            0
+
+  If N = 1                                              −20
+
+      I   just one frame                                −40
+                                                                  −1     0               1    2
+                                                                 10    10              10    10
+      I   no averaging
+      I   noise is seen as                                  1
+                                           Coherence [−]
+
+
+
+          linear dynamics
+      I   C (f ) = 1 for all f                             0.5
+
+
+
+                                                            0     −1     0               1    2
+                                                                 10    10               10   10
+                                                                         Frequency [Hz]
+
+   Coherence is not ‘holy’: handle with care!
+
+Department of Mechanical Engineering
+                                                    42/60
+
+
+
+
+                           Can we also measure in
+                                closed loop?
+
+
+
+
+Department of Mechanical Engineering
+  Closed loop measurements                                               43/60
+
+
+  Open loop measurements of the plant not always a good idea:
+      I   when plant is unstable
+      I   when plant movement is restricted
+  Then plant has to be controlled before an experiment can take place.
+
+
+
+
+Department of Mechanical Engineering
+  Closed loop measurements                                               43/60
+
+
+  Open loop measurements of the plant not always a good idea:
+      I   when plant is unstable
+      I   when plant movement is restricted
+  Then plant has to be controlled before an experiment can take place.
+
+  Solution: Indirect closed loop measurement:
+      I   Given any stabilizing controller
+      I   Measure closed loop transfer function
+               •   e.g. Sensitivity or Process Sensitivity
+      I   Derive plant H (f ) or open loop C (f )H (f ) from that
+
+
+
+
+Department of Mechanical Engineering
+  Indirect method: two-point                                            44/60
+
+
+  Two-point measurement:
+      I   measure Sensitivity directly, then derive open-loop
+      I   apply disturbance d , measure u
+
+                                           d
+                r +               e             u               y
+                              −
+                                       C             H
+                                                                    η
+                                           ⇐=
+
+                                       d        u
+                                           S
+Department of Mechanical Engineering
+  Indirect method: two-point                                                             45/60
+
+
+
+                                                    d
+                                  r +       e           u        y
+                                        −
+                                                C           H
+                                                                     η
+
+
+          U (f ) = D (f ) + C (f )R (f ) − C (f )N (f ) − C (f )H (f )U (f )
+       Sud (f ) = Sdd (f ) + C (f )Srd (f ) − C (f )Sηd (f ) − C (f )H (f )Sud (f )
+                          1                         C (f )                          
+                =                  Sdd (f ) +                     Srd (f ) − Sηd (f )
+                  1 + C (f )H (f )            1 + C (f )H (f )
+
+
+
+
+Department of Mechanical Engineering
+  Indirect method: two-point                                                             45/60
+
+
+
+                                                          d
+                                  r +         e               u            y
+                                          −
+                                                   C               H
+                                                                               η
+
+
+          U (f ) = D (f ) + C (f )R (f ) − C (f )N (f ) − C (f )H (f )U (f )
+       Sud (f ) = Sdd (f ) + C (f )Srd (f ) − C (f )Sηd (f ) − C (f )H (f )Sud (f )
+                          1                         C (f )                          
+                =                  Sdd (f ) +                     Srd (f ) − Sηd (f )
+                  1 + C (f )H (f )            1 + C (f )H (f )
+
+  When r, d and η are uncorrelated:
+
+                                                        1           S (f )
+                                       S (f ) =                    ≈ ud
+                                                  1 + C (f )H (f )  Sdd (f )
+
+Department of Mechanical Engineering
+  Indirect method: two-point                                                 46/60
+
+
+
+                                                       d
+                                  r    +       e           u         y
+                                           −
+                                                   C           H
+                                                                         η
+
+  Or when averaging is used (as usual):
+                                                            PN
+                                               1                  S i (f )
+                                S (f ) =                  ≈ PNi =1 ud
+                                         1 + C (f )H (f )           i
+                                                             i =1 S (f )
+                                                                    dd
+
+
+
+
+Department of Mechanical Engineering
+  Indirect method: two-point                                                        46/60
+
+
+
+                                                         d
+                                  r    +       e             u              y
+                                           −
+                                                   C              H
+                                                                                η
+
+  Or when averaging is used (as usual):
+                                                            PN
+                                               1                  S i (f )
+                                S (f ) =                  ≈ PNi =1 ud
+                                         1 + C (f )H (f )           i
+                                                             i =1 S (f ) dd
+
+  Then the open-loop is:
+
+                                       L (f ) = C (f )H (f ) = S −1 (f ) − 1
+
+  And since C (f ) is known (or can be measured):
+
+                                        H (f ) = C −1 (f ) S −1 (f ) − 1
+                                                                       
+
+Department of Mechanical Engineering
+  Indirect method: two-point                                            47/60
+
+
+
+                                                    d
+                                  r +       e           u       y
+                                        −
+                                                C           H
+                                                                    η
+
+  How to obtain Srd (f ) ≈ 0 and Sηd (f ) ≈ 0?
+      I   choose r = 0
+      I   choose d as white noise
+
+
+
+
+Department of Mechanical Engineering
+  Indirect method: two-point                                                                      47/60
+
+
+
+                                                     d
+                                  r +       e            u             y
+                                        −
+                                                C             H
+                                                                           η
+
+  How to obtain Srd (f ) ≈ 0 and Sηd (f ) ≈ 0?
+      I   choose r = 0
+      I   choose d as white noise
+
+  Otherwise
+                                  1                         C (f )                           
+       Sud (f ) =                            Sdd (f ) +                    Srd (f ) − Sηd (f )
+                            1 + C (f )H (f )            1 + C (f )H (f )
+                                                        |                 {z                  }
+                                                                         bias
+  Results in a wrong estimation of the Sensitivity S (f ).
+Department of Mechanical Engineering
+  Indirect method: three-point                                             48/60
+
+
+  What if C (f ) is not (exactly) known?
+
+                                                d
+                r +               e                  u             y
+                              −
+                                           C                 H
+                                                                       η
+
+
+                 d                     u       ⇐=        d         e
+                              S                and
+                                                             -PS
+      I   measure both Sensitivity and Process Sensitivity directly
+      I   apply d , measure both u and e (or y)
+Department of Mechanical Engineering
+  Indirect method: three-point                                                                  49/60
+
+
+  What if C (f ) is not (exactly) known?
+
+                                                    d
+                r +               e                       u                     y
+                              −
+                                        C                         H
+                                                                                    η
+        u
+                              
+        d = S (f )
+                                       PS (f )       H (f )         1 + C (f )H (f )
+        e                         ⇒            =                  ·                  = H (f )
+        d = −PS (f )                    S (f )   1 + C (f )H (f )         1
+
+      I   No (separate) measurement of C (f ) necessary
+      I   Check coherence of both d → u and d → e
+  Note: make sure that r, d and η are uncorrelated
+        Be aware of bias otherwise!
+Department of Mechanical Engineering
+  Bad idea...                                                                         50/60
+
+
+                                                    d
+                                  r +       e           u             y
+                                        −
+                                                C              H
+                                                                          η
+
+  Some people are tempted to do a direct measurement in closed loop...
+                                                         yu        S (f )
+      I   apply d , measure u and y, calculate H (f ) = Suu (f )
+
+  Problem: η and u are correlated:
+
+                       Syu (f ) = Sηu (f ) + H (f )Suu (f ),       Sηu (f ) 6= 0,
+
+  since U (f ) = D (f ) − C (f )N (f ) − C (f )H (f )U (f ) we have
+
+                    Suη (f ) = S (f )Sd η (f ) − CS (f )Sηη (f )      Sd η (f ) ≈ 0
+                    Syu (f ) = H (f )Suu (f ) − CS (f )Sηη (f )
+                                                |     {z     }
+                                                            bias
+Department of Mechanical Engineering
+                                                    51/60
+
+
+
+
+                   Practical tricks and issues to
+                           be aware of
+
+
+
+
+Department of Mechanical Engineering
+  Leakage                                                                            52/60
+
+
+  Suppose: x(t ) = A cos(2πft ), with t ∈ [0, T ] and f ·T an integer
+                 2
+        x(t)
+
+
+
+                 0
+                −2
+                 −1          −0.5      0        0.5          1        1.5        2
+                 2
+
+                1.5
+       |X(f)|
+
+
+
+
+                 1
+
+                0.5
+
+                 0
+                  1              2         4            10       20         40
+                                               f [Hz]
+
+
+Department of Mechanical Engineering
+  Leakage                                                                            52/60
+
+
+  Suppose: x(t ) = A cos(2πft ), with t ∈ [0, T ] and f ·T an integer
+                 2
+        x(t)
+
+
+
+                 0
+                −2
+                 −1          −0.5      0        0.5          1        1.5        2
+                 2
+
+                1.5
+       |X(f)|
+
+
+
+
+                 1
+
+                0.5
+
+                 0
+                  1              2         4            10       20         40
+                                               f [Hz]
+  Only then x(t ) is exactly periodic: spectrum is exact.
+Department of Mechanical Engineering
+  Leakage                                                                            53/60
+
+
+  Suppose: x(t ) = A cos(2πft ), with t ∈ [0, T ] and T is random
+                 2
+        x(t)
+
+
+
+                 0
+                −2
+                 −1          −0.5      0        0.5          1        1.5        2
+                 2
+
+                1.5
+       |X(f)|
+
+
+
+
+                 1
+
+                0.5
+
+                 0
+                  1              2         4            10       20         40
+                                               f [Hz]
+
+
+Department of Mechanical Engineering
+  Leakage                                                                            53/60
+
+
+  Suppose: x(t ) = A cos(2πft ), with t ∈ [0, T ] and T is random
+                 2
+        x(t)
+
+
+
+                 0
+                −2
+                 −1          −0.5      0        0.5          1        1.5        2
+                 2
+
+                1.5
+       |X(f)|
+
+
+
+
+                 1
+
+                0.5
+
+                 0
+                  1              2         4            10       20         40
+                                               f [Hz]
+  Then f is not part of spectrum (x(t ) is aperiodic): leakage.
+Department of Mechanical Engineering
+  Zero-padding                                                                       54/60
+
+
+  Solution: add zeros to increase frequency resolution
+                 2
+        x(t)
+
+
+
+                 0
+                −2
+                 −1          −0.5      0        0.5          1        1.5        2
+                 2
+
+                1.5
+       |X(f)|
+
+
+
+
+                 1
+
+                0.5
+
+                 0
+                  1              2         4            10       20         40
+                                               f [Hz]
+
+
+Department of Mechanical Engineering
+  Zero-padding                                                                       54/60
+
+
+  Solution: add zeros to increase frequency resolution
+                 2
+        x(t)
+
+
+
+                 0
+                −2
+                 −1          −0.5      0        0.5          1        1.5        2
+                 2
+
+                1.5
+       |X(f)|
+
+
+
+
+                 1
+
+                0.5
+
+                 0
+                  1              2         4            10       20         40
+                                               f [Hz]
+  Zero-padding increases resolution, but introduces ripple.
+Department of Mechanical Engineering
+  Windowing                                                                          55/60
+
+
+  Solution: apply window to remove jumps in time-signal
+                 2
+        x(t)
+
+
+
+                 0
+                −2
+                 −1          −0.5      0        0.5          1        1.5        2
+                 2
+
+                1.5
+       |X(f)|
+
+
+
+
+                 1
+
+                0.5
+
+                 0
+                  1              2         4            10       20         40
+                                               f [Hz]
+  Reduced ripple and leakage, but spectrum is still not exact.
+Department of Mechanical Engineering
+  Sampling                                                                 56/60
+
+
+  In practice signals are sampled with sample frequency Fs
+      I   at least two samples are needed to identify an harmonic:
+
+
+
+
+          Highest frequency recognized in Fourier analysis is thus Fs /2
+      I   Fs /2 is known as the Nyquist frequency
+
+
+
+
+Department of Mechanical Engineering
+  Sampling                                                                 56/60
+
+
+  In practice signals are sampled with sample frequency Fs
+      I   at least two samples are needed to identify an harmonic:
+
+
+
+
+          Highest frequency recognized in Fourier analysis is thus Fs /2
+      I   Fs /2 is known as the Nyquist frequency
+
+  Spectrum for sampled signals is repetitive
+
+
+
+                                                         −f0   f0 Fs /2
+
+
+
+
+Department of Mechanical Engineering
+  Sampling                                                                     56/60
+
+
+  In practice signals are sampled with sample frequency Fs
+      I   at least two samples are needed to identify an harmonic:
+
+
+
+
+          Highest frequency recognized in Fourier analysis is thus Fs /2
+      I   Fs /2 is known as the Nyquist frequency
+
+  Spectrum for sampled signals is repetitive
+
+
+
+                                                         −f0   f0 Fs /2
+
+                                                         Fs               Fs
+
+
+
+
+Department of Mechanical Engineering
+  Sampling                                                                     56/60
+
+
+  In practice signals are sampled with sample frequency Fs
+      I   at least two samples are needed to identify an harmonic:
+
+
+
+
+          Highest frequency recognized in Fourier analysis is thus Fs /2
+      I   Fs /2 is known as the Nyquist frequency
+
+  Spectrum for sampled signals is repetitive
+
+
+
+                                                         −f0   f0 Fs /2
+
+                                                         Fs               Fs
+
+
+      I   only frequencies between −Fs /2 and Fs /2 are relevant
+
+Department of Mechanical Engineering
+  Aliasing                                                                57/60
+
+
+  What happens if frequencies higher than Fs /2 are present?
+      I   these frequencies are mapped (or folded) to lower frequencies
+
+
+
+
+                                 −f1   −f0   f0   Fs /2 f1
+
+
+
+
+  Note: Aliased frequencies will change when sample frequency Fs
+        changes, while f0 remains the same. This can be used to check
+        whether aliasing occurs.
+
+Department of Mechanical Engineering
+  Aliasing                                                                  57/60
+
+
+  What happens if frequencies higher than Fs /2 are present?
+      I   these frequencies are mapped (or folded) to lower frequencies
+                                       f1 −Fs               Fs −f1
+
+
+
+
+                                 −f1        −f0        f0        Fs /2 f1
+                                                  Fs
+
+
+      I   Hence, f1 is wrongly identified as Fs −f1
+
+
+  Note: Aliased frequencies will change when sample frequency Fs
+        changes, while f0 remains the same. This can be used to check
+        whether aliasing occurs.
+
+Department of Mechanical Engineering
+  Aliasing                                                                                                            58/60
+
+
+  What does that mean in time domain?
+                  Signal to be sampled                        Aliasing: fh=5 [Hz], fs=8 [Hz], ff=3 [Hz]
+                                         1
+
+
+                                         0
+
+
+                                         -1
+
+                                         1
+                  Samples at fs
+
+
+
+
+                                         0
+
+
+                                         -1
+
+                                         1
+                  Folded signal
+
+
+
+
+                                         0
+
+
+                                         -1
+                                              0   0.1   0.2      0.3    0.4    0.5     0.6     0.7    0.8   0.9   1
+Department of Mechanical Engineering                                          t [s]
+  Aliasing                                                                59/60
+
+
+  Hence, to prevent aliasing:
+      I   Sampling frequency should be at least twice the highest frequency
+          present in the signal
+
+
+
+
+                                       −Fs /2   Fs /2
+
+
+
+
+Department of Mechanical Engineering
+  Aliasing                                                                59/60
+
+
+  Hence, to prevent aliasing:
+      I   Sampling frequency should be at least twice the highest frequency
+          present in the signal
+
+
+
+
+                                       −Fs /2   Fs /2
+
+
+      I   Known as Shannon sampling theorem
+
+
+
+
+Department of Mechanical Engineering
+                                                      60/60
+
+
+
+
+                            And now it’s your turn!
+
+Department of Mechanical Engineering
+

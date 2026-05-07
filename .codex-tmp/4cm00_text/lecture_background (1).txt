@@ -1,0 +1,1899 @@
+     4CM00: Control
+     Engineering
+     Background and
+     prerequisites
+     Dr.ir. Gert Witvoet
+
+
+February 2025
+                           Where innovation starts
+  4CM00                                                                         2/59
+
+  What is this course all about?
+   ▶ Control the output of a dynamic system by manipulating its input
+
+               •   via both feedback and feedforward techniques
+               •   requires knowledge and understanding of the dynamic system
+      ▶ We consider only linear systems
+      ▶ We consider only single-input-single-output (SISO) systems
+      ▶ Because we’re mechanical engineers, we apply our knowledge
+
+        particularly to motion systems
+
+
+
+
+Department of Mechanical Engineering
+  Motion systems                                                                    3/59
+
+
+
+
+  What’s so special about motion systems?
+      ▶   they behave (fairly) linear
+      ▶ they can be of very high order
+      ▶ they’re often hardly damped
+
+               •   they can have very sharp resonances
+      ▶   they react fast, and can be sampled at a high rate
+               •   you can collect lot’s of measurement data in a very short time
+
+
+  The theory of this course (4CM00) is
+      ▶   in principle generally applicable to any linear system
+      ▶   particularly useful for motion systems
+
+
+Department of Mechanical Engineering
+                                                   4/59
+
+
+
+
+                    Prerequisites; or things you
+                      should already know...
+
+
+
+
+Department of Mechanical Engineering
+  Linear dynamic systems                                                                    5/59
+
+
+  We consider dynamic systems with input u and output y
+   ▶ The output of a dynamic system is time dependent and can be
+
+      manipulated by its input
+               •   It can be interpreted as an operation on signals
+               •   It transforms signal u(t ) into another signal y(t )
+      ▶   A dynamic system can be described by a differential equation
+                        du d2 u          dm u         dy d2 y                dn y
+                                                                                  
+               F t , u,   ,     , . . . , m , y, , 2 , . . . , n                      = 0
+                        dt dt 2          dt           dt dt                  dt
+                                                                                   
+                          F t , u, u̇, ü, . . . , u (m) , y, ẏ, ÿ, . . . , y (n)   = 0
+
+      ▶   A dynamic system is linear if F is linear in its arguments, i.e. if the
+          differential equation is linear in the (derivatives of) u and y
+
+            an y (n) + an−1 y (n−1) + . . . + a2 ÿ + a1 ẏ + a0 y =
+                                 bm u (m) + bm−1 u (m−1) + . . . + b2 ü + b1 u̇ + b0 u
+Department of Mechanical Engineering
+  Example systems                                                              6/59
+
+
+
+                   M
+                                       Mass supported by a spring and damper
+
+                   F                                   M ẍ + d ẋ + kx = F
+                                         ▶   Input u = F , output y = x
+                                         ▶   Linear system
+
+
+
+
+Department of Mechanical Engineering
+  Example systems                                                                         6/59
+
+
+
+                   M
+                                           Mass supported by a spring and damper
+
+                   F                                       M ẍ + d ẋ + kx = F
+                                             ▶   Input u = F , output y = x
+                                             ▶   Linear system
+
+
+
+                                           Charged plate suspended on a spring
+                        k
+     x                                                                      V2
+                                                        m ẍ + kx = −α
+                                       m                                 (d0 + x)2
+                       F (V, x)              ▶   Input u = V , output y = x
+                                             ▶   Non-linear system (both in u and in y)
+Department of Mechanical Engineering
+  Why linear systems?                                                    7/59
+
+
+  All systems are non-linear...
+
+
+
+
+  ...but in this course we focus on linear systems only. Why?
+      ▶ Most systems behave linearly in their relevant operating range
+      ▶ Most solutions are linear
+
+               •   linear controllers often do the job
+      ▶   Linear systems are relatively easy to work with!
+               •   they have very useful properties
+
+Department of Mechanical Engineering
+  Linear systems: input–output behavior                                       8/59
+
+
+  Linear systems have a unique frequency response
+                                       u                  y
+                                                H
+      ▶   when u = cos(ωt ), then y = A cos(ωt + ϕ)
+               •   amplitude A and phase ϕ only depend on frequency ω
+               •   no other frequencies are induced
+  Linear systems have a superposition property:
+     1. When u1 → y1 and u2 → y2 ,
+        then αu1 + βu2 → αy1 + βy2                   for any (real) α and β
+     2. Consider the series interconnection
+                                  u                 y1               y2
+                                           H1              H2
+
+          When u = cos(ωt ), then y1 = A1 cos(ωt + ϕ1 ) and
+          y2 = A2 A1 cos(ωt + ϕ1 + ϕ2 )
+Department of Mechanical Engineering
+  Laplace transform                                                           9/59
+
+
+  Note that a system is actually an operation on one or more signals
+      ▶   A time-domain signal x(t ) can be transformed to s-domain via the
+          Laplace transform:
+                                              Z ∞
+                          X (s) = L{x(t )} =       e −st x(t ) dt         (1)
+                                               0
+
+      ▶   Consequently, time derivatives of signals can be expressed as:
+                        Z ∞                                  Z ∞
+                              −st
+                                             −st     ∞
+          L{ẋ(t )} =       e ẋ(t ) dt = e x(t ) 0 + s          e −st x(t ) dt
+                                       0                        0
+                            = sX (s) − x(0)                                 (2)
+                                       2
+           L{ẍ(t )} = s X (s) − sx(0) − ẋ(0)                              (3)
+
+      ▶   Since we’re often only interested in input–output behavior, the
+          transients x(0) and ẋ(0) are often omitted.
+
+Department of Mechanical Engineering
+  Laplace transform table                                                 10/59
+
+
+
+
+                             Time domain x(t )     Laplace domain X (s)
+                                     δ(t )                  1
+                                     1(t )                 1/s
+                                       t                   1/s 2
+                                      t2                  2!/s 3
+                                      tm                m!/s m+1
+                                                               1
+                                     e −at                   s+a
+                                                               1
+                                    te −at                (s+a)2
+                                 1     m−1 e −at               1
+                              (m−1)! t                    (s+a)m
+                                                               ω
+                                   sin(ωt )                s 2 +ω 2
+                                                               s
+                                   cos(ωt )                s 2 +ω 2
+                                                             s+a
+                               e −at cos(ωt )           (s+a)2 +ω 2
+                                                               ω
+                                e −at sin(ωt )          (s+a)2 +ω 2
+
+
+Department of Mechanical Engineering
+  Using Laplace transform on linear systems                                    11/59
+
+
+      ▶   Consider the example
+
+                                               ÿ + 2ẏ + 25y = u
+
+      ▶   Using the Laplace transform, this can be written as
+
+                                       s 2 Y (s) + 2sY (s) + 25Y (s) = U (s)
+
+      ▶   The ratio between U (s) and Y (s) defines the transfer function H (s)
+
+                                                   Y (s)       1
+                                         H (s) =         = 2
+                                                   U (s)  s + 2s + 25
+      ▶   For linear systems the transfer function is always rational
+               •   i.e. both numerator and denominator are polynomials in s
+
+                                         u                       y
+                                                    H(s)
+Department of Mechanical Engineering
+  The use of the Laplace transform (1)                                              12/59
+
+
+  How to determine the output y(t ) for a given u(t )?
+                                       u                        y
+                                                 H(s)
+
+      ▶   In time domain you’d need to solve the differential equation
+      ▶   Or calculate the convolution
+                                                          Z ∞
+                               y(t ) = h (t ) ⊗ u(t ) =         h (τ )u(t − τ )dτ
+                                                          −∞
+
+          where h (τ ) is the impulse response of the system H (s).
+  It’s much easier via the Laplace domain (at least for linear systems)
+      ▶   Convolution simplifies to
+
+                          Y (s) = L{y(t )} = L{h (t ) ⊗ u(t )} = H (s) · U (s)
+
+Department of Mechanical Engineering
+  The use of the Laplace transform (2)                                13/59
+
+
+  Hence, y(t ) = L−1 {H (s) · L{u(t )}}, or schematically
+
+                                         u(t)               y(t)
+                                                  ODE
+
+                                       L{. . .}          L−1{. . .}
+
+                                                  H(s)
+                                         U (s)              Y (s)
+                           3
+  Simple example: H (s) = s+3 with step input u(t ) = 1(t )
+      ▶   U (s) = 1/s
+                     3
+      ▶   Y (s) = s(s+3) = s1 − s+3
+                                 1
+
+      ▶   y(t ) = 1 − e −3t
+  Note: Impulse response h (t ) = 3e −3t
+
+Department of Mechanical Engineering
+  Using superposition                                                                       14/59
+
+
+  Linear systems + Laplace domain = easy combinations
+       u                           y1                   y2
+                      H1(s)              H2(s)               y2 = H2 (s)H1 (s)u
+
+                           H1(s)
+                  u                                          y = (H1 (s) + H2 (s)) u
+                                                y
+                           H2(s)
+
+                      H1(s)
+                                                    y             H2 (s)H1 (s) + H2 (s)
+              u                         H2(s)                y=                         u
+                                                                    1 − H2 (s)H3 (s)
+                                   H3(s)
+
+  Note: in this course we only consider SISO systems. For MIMO systems
+        the order of multiplication matters, i.e. H2 H1 ̸= H1 H2 !
+Department of Mechanical Engineering
+                                                        15/59
+
+
+
+
+                                  Transfer functions:
+                                     time domain
+
+
+
+
+Department of Mechanical Engineering
+  Poles and zeros: definition                                     16/59
+
+  What are poles and zeros?
+      ▶   Poles: solutions of “denominator = 0”
+      ▶   Zeros: solutions of “numerator = 0”
+
+  Example:
+                                                     s + 16
+                                       H (s) =
+                                                 (s + 2)(s + 4)
+
+      ▶   Two poles: one at s = −2, one at s = −4
+      ▶   One zero: at s = −16
+
+  But what do these poles and zeros mean?
+
+
+
+
+Department of Mechanical Engineering
+  Poles: interpretation                                             17/59
+
+
+  To understand, consider a step response of the same system.
+      ▶   U (s) = L{1(t )} = s1
+                                  s+16
+      ▶   Y (s) = H (s)U (s) = s(s+2)(s+4)
+  Using partial fraction expansion, we can write this output as
+                                                 2    3.5   1.5
+                                       Y (s) =     −      +
+                                                 s   s +2 s +4
+  The step response in time domain thus becomes
+
+            y(t ) = L−1 {Y (s)} = 2 − 3.5e −2t + 1.5e −4t · 1(t )
+                                                        
+
+
+
+
+Department of Mechanical Engineering
+  Poles: interpretation                                                 17/59
+
+
+  To understand, consider a step response of the same system.
+      ▶   U (s) = L{1(t )} = s1
+                                  s+16
+      ▶   Y (s) = H (s)U (s) = s(s+2)(s+4)
+  Using partial fraction expansion, we can write this output as
+                                                 2    3.5   1.5
+                                       Y (s) =     −      +
+                                                 s   s +2 s +4
+  The step response in time domain thus becomes
+
+            y(t ) = L−1 {Y (s)} = 2 − 3.5e −2t + 1.5e −4t · 1(t )
+                                                        
+
+
+  Note: the exponents are the same as the poles at s = −2 and s = −4.
+
+
+
+
+Department of Mechanical Engineering
+  Poles: interpretation                                                                18/59
+
+
+
+                                  2
+
+                                 1.8
+
+                                 1.6
+
+                                 1.4
+                      Response
+
+
+
+                                 1.2
+
+                                  1
+
+                                 0.8
+
+                                 0.6
+
+                                 0.4
+
+                                 0.2
+
+                                  0
+                                   0       0.5     1         1.5      2     2.5    3
+                                                           Time [s]
+                                                          −2t
+                                                              + 1.5e −4t · 1(t )
+                                                                       
+                                       y(t ) = 2 − 3.5e
+
+Department of Mechanical Engineering
+  Poles: interpretation                                                                  19/59
+
+
+  Another example:
+                                                         s + 20
+                                            H (s) =
+                                                      s 2 + 4s + 40
+
+      ▶   Poles: at s = −2 − 6j and s = −2 + 6j .
+      ▶   Zero: at s = −20
+  With a step input U (s) = s1 the output becomes
+                                            s+20
+                 Y (s) =               s(s 2 +4s+40)
+                                       0.5      0.5s+1       1          s+2
+                             =          s − s 2 +4s+40 = 0.5 s − 0.5 (s+2)2 +62
+                                         −1                      −2t
+                                                                             
+                  y(t ) = L                {Y (s)} = 0.5 − 0.5e       cos(6t ) · 1(t )
+
+
+
+
+Department of Mechanical Engineering
+  Poles: interpretation                                                                  19/59
+
+
+  Another example:
+                                                         s + 20
+                                            H (s) =
+                                                      s 2 + 4s + 40
+
+      ▶   Poles: at s = −2 − 6j and s = −2 + 6j .
+      ▶   Zero: at s = −20
+  With a step input U (s) = s1 the output becomes
+                                            s+20
+                 Y (s) =               s(s 2 +4s+40)
+                                       0.5      0.5s+1       1          s+2
+                             =          s − s 2 +4s+40 = 0.5 s − 0.5 (s+2)2 +62
+                                         −1                      −2t
+                                                                             
+                  y(t ) = L                {Y (s)} = 0.5 − 0.5e       cos(6t ) · 1(t )
+      ▶   exponent is real part of the pole, frequency is its imaginary part
+      ▶   system is stable iff all exponents decay ⇔ all poles are in LHP
+
+Department of Mechanical Engineering
+  Poles: interpretation                                                                  20/59
+
+
+
+
+                                 0.6
+
+
+                                 0.5
+
+
+                                 0.4
+                      Response
+
+
+
+
+                                 0.3
+
+
+                                 0.2
+
+
+                                 0.1
+
+
+                                  0
+
+                                   0       0.5     1        1.5        2       2.5   3
+                                                       Time [s]
+                                                         −2t
+                                                                         
+                                       y(t ) = 0.5 − 0.5e         cos(6t ) · 1(t )
+
+Department of Mechanical Engineering
+  Pole locations: typical responses                                  21/59
+
+
+
+                                           Im(s)
+                x(t)=exp(st)
+
+
+                         X                 X           X
+
+
+
+                  LHP                      X           RHP
+
+
+                                                             Re(s)
+                         X             X   X       X   X
+
+
+
+
+Department of Mechanical Engineering
+  Zeros: interpretation                                                            22/59
+
+
+  The effect of the zero is much more subtle
+    ▶ determines details of the time response
+
+               •   i.e. the gain of each exponent
+               •   i.e. how much each exponent contributes to the total response
+      ▶   most evident when located in the right-half-plane (RHP)
+
+
+
+
+Department of Mechanical Engineering
+  Zeros: interpretation                                                            22/59
+
+
+  The effect of the zero is much more subtle
+    ▶ determines details of the time response
+
+               •   i.e. the gain of each exponent
+               •   i.e. how much each exponent contributes to the total response
+      ▶   most evident when located in the right-half-plane (RHP)
+  Example:
+                                                      16 − s
+                                        H (s) =
+                                                  (s + 2)(s + 4)
+  With a step input U (s) = s1 the output becomes
+                                      16−s
+                   Y (s) =         s(s+2)(s+4)
+                                   2    4.5    2.5
+                            =      s − s+2 + s+4
+                                     −1
+                                       {Y (s)} = 2 − 4.5e −2t + 2.5e −4t · 1(t )
+                                                                       
+                   y(t ) = L
+
+
+Department of Mechanical Engineering
+  Effect of RHP zeros                                                           23/59
+
+
+
+                               2
+
+                              1.8
+
+                              1.6
+
+                              1.4
+                   Response
+
+
+
+
+                              1.2
+
+                               1
+
+                              0.8
+
+                              0.6
+
+                              0.4
+
+                              0.2
+                                                                 LHP zero
+                               0                                 RHP zero
+                                0      0.5   1     1.5      2   2.5         3
+                                                 Time [s]
+
+
+Department of Mechanical Engineering
+  Effect of RHP zeros                                                           23/59
+
+
+
+                               2
+
+                              1.8
+
+                              1.6
+
+                              1.4
+                   Response
+
+
+
+
+                              1.2
+
+                               1
+
+                              0.8            Response initially moves in
+                              0.6             the wrong direction, and
+                              0.4               seems to be delayed!
+                              0.2
+                                                                 LHP zero
+                               0                                 RHP zero
+                                0      0.5   1     1.5      2   2.5         3
+                                                 Time [s]
+
+
+Department of Mechanical Engineering
+  Effect of RHP zeros                                                             24/59
+
+  Another example:
+                                                     20 − s
+                                        H (s) =
+                                                  s 2 + 4s + 40
+
+      ▶   Poles: at s = −2 − 6j and s = −2 + 6j .
+      ▶   Zero: at s = +20
+  With a step input U (s) = s1 the output becomes
+                                       s+20
+                Y (s) =           s(s 2 +4s+40)
+                                                = 0.5     0.5s+3
+                                                   s − s 2 +4s+40
+
+                                  1 1     1       s +2        1         6
+                           =      2 · s − 2 · (s + 2)2 + 62 − 3 · (s + 2)2 + 62
+
+                y(t ) = L−1 {Y (s)}
+                      = 12 − 12 e −2t cos(6t ) − 31 e −2t sin(6t ) · 1(t )
+                                                                 
+
+
+
+Department of Mechanical Engineering
+  Effect of RHP zeros                                                             24/59
+
+  Another example:
+                                                     20 − s
+                                        H (s) =
+                                                  s 2 + 4s + 40
+
+      ▶   Poles: at s = −2 − 6j and s = −2 + 6j .
+      ▶   Zero: at s = +20
+  With a step input U (s) = s1 the output becomes
+                                       s+20
+                Y (s) =           s(s 2 +4s+40)
+                                                = 0.5     0.5s+3
+                                                   s − s 2 +4s+40
+
+                                  1 1     1       s +2        1         6
+                           =      2 · s − 2 · (s + 2)2 + 62 − 3 · (s + 2)2 + 62
+
+                y(t ) = L−1 {Y (s)}
+                      = 12 − 12 e −2t cos(6t ) − 31 e −2t sin(6t ) · 1(t )
+                                                                 
+
+
+
+Department of Mechanical Engineering
+  Effect of RHP zeros                                                           25/59
+
+
+
+
+                              0.6
+
+
+                              0.5
+
+
+                              0.4
+                   Response
+
+
+
+
+                              0.3
+
+
+                              0.2
+
+
+                              0.1
+
+                                                                 LHP zero
+                               0
+                                                                 RHP zero
+                                0      0.5   1     1.5      2   2.5         3
+                                                 Time [s]
+
+
+Department of Mechanical Engineering
+  Effect of RHP zeros                                                           25/59
+
+
+
+
+                              0.6
+
+
+                              0.5
+
+
+                              0.4
+                   Response
+
+
+
+
+                              0.3            Response initially moves in
+                              0.2
+                                              the wrong direction, and
+                                                seems to be delayed!
+                              0.1
+
+                                                                 LHP zero
+                               0
+                                                                 RHP zero
+                                0      0.5   1     1.5      2   2.5         3
+                                                 Time [s]
+
+
+Department of Mechanical Engineering
+  Near-pole-zero cancellation                                     26/59
+
+
+  What happens if poles and zeros are close to each other?
+      ▶   Example:
+                                                    s + 1.92
+                                       H (s) =
+                                                 (s + 2)(s + 4)
+      ▶   Zero at s = −1.92 is very close to pole at s = −2
+
+
+
+
+Department of Mechanical Engineering
+  Near-pole-zero cancellation                                          26/59
+
+
+  What happens if poles and zeros are close to each other?
+      ▶   Example:
+                                                    s + 1.92
+                                       H (s) =
+                                                 (s + 2)(s + 4)
+      ▶   Zero at s = −1.92 is very close to pole at s = −2
+  With a step input U (s) = s1 the output becomes
+
+                         s + 1.92
+             Y (s) =
+                      s(s + 2)(s + 4)
+                      0.24    0.02    0.26
+                    =      +       −
+                       s      s +2 s +4
+              y(t ) = L{Y (s)} = 0.24 + 0.02e −2t − 0.26e −4t · 1(s)
+                                                            
+
+
+  Hence, the pole at s = −2 hardly contributes to the time response.
+
+
+Department of Mechanical Engineering
+                                                        27/59
+
+
+
+
+                                  Transfer functions:
+                                  frequency domain
+
+
+
+
+Department of Mechanical Engineering
+  Linear systems: frequency response                                                        28/59
+
+
+  Remember: linear systems have a unique frequency response
+      ▶   when u = cos(ωt ), then y = A cos(ωt + ϕ)
+  Hence, there is a unique frequency response function (FRF) H (j ω)
+                                               10
+                            Magnitude [dB]
+
+
+
+                                                0
+
+                                              −10
+
+                                              −20
+
+                                              −30 −1      0                        1    2
+                                                10       10                       10   10
+
+
+                                                0
+                            Phase [degrees]
+
+
+
+
+                                              −45
+
+
+                                              −90
+                                                    −1    0                        1    2
+                                                10       10                       10   10
+                                                              Frequency [rad/s]
+
+Department of Mechanical Engineering
+  Linear systems: frequency response                                                        28/59
+
+
+  Remember: linear systems have a unique frequency response
+      ▶   when u = cos(ωt ), then y = A cos(ωt + ϕ)
+  Hence, there is a unique frequency response function (FRF) H (j ω)
+                                               10
+                            Magnitude [dB]
+
+
+
+                                                0
+
+                                              −10
+
+                                              −20
+
+                                              −30 −1      0                        1    2
+                                                10       10                       10   10
+
+
+                                                0
+                            Phase [degrees]
+
+
+
+
+                                              −45
+
+
+                                              −90
+                                                    −1    0                        1    2
+                                                10       10                       10   10
+                                                              Frequency [rad/s]
+
+Department of Mechanical Engineering
+  The Bode diagram                                                          29/59
+
+
+  Frequency response H (j ω) is often represented in a Bode diagram
+      ▶   considers steady state at each frequency
+      ▶   gives amplitude amplification and phase shift at ω1 in steady state
+      ▶   superposition: also valid for a combination of frequencies ωi
+
+
+
+
+Department of Mechanical Engineering
+  The Bode diagram                                                             29/59
+
+
+  Frequency response H (j ω) is often represented in a Bode diagram
+      ▶   considers steady state at each frequency
+      ▶   gives amplitude amplification and phase shift at ω1 in steady state
+      ▶   superposition: also valid for a combination of frequencies ωi
+  FRF follows directly from the transfer function H (s)
+      ▶   by substitution of s = j ω into H (s)
+      ▶   yields a complex valued function H (j ω)
+      ▶   then |H (j ω)| = A (ω) and ∠H (j ω) = ϕ(ω)
+                    3
+  Example: H (s) = s+3
+      ▶   substituting s = j ω yields
+                                           3        9              3j ω
+                             H (j ω) =          = 2       −        2+9
+                                         jω + 3  |ω {z
+                                                     + 9}        |ω {z  }
+                                                 real part    imaginary part
+Department of Mechanical Engineering
+  Frequency response and complex numbers                                        30/59
+
+
+  Hence, a frequency response function (FRF) is a complex function!
+      ▶   Frequency response can also be drawn in the complex plane!
+
+                                        Im(H(jω))         Magnitude + Phase
+                              |H(jω)|
+                                                          = same information!
+                                              6   H(jω)
+
+                                                          Real + Imaginary
+               Re(H(jω))
+
+  However, note that
+      ▶   all input/output signals are of course still real valued
+      ▶   the complex number represents the operation on these signals
+
+
+Department of Mechanical Engineering
+  Bode basics                                                               31/59
+
+
+
+
+      ▶   frequency axis is logarithmic
+      ▶   magnitude plot (vertical axis) is also logarithmic
+               •   amplitude A is expressed in decibel (dB):
+
+                                              dB = 20 · log10 A
+
+               •   amplitude axis is thus linear on dB-scale
+      ▶   consequence: simple powers ω x are straight lines
+               •   E.g. mass line:
+
+                                                            1
+                                       log |H | =   log −
+                                                           mω 2
+                                               =    log (1/m) − 2 · log ω
+
+      ▶   these asymptotes are therefore characterized by their slopes
+
+Department of Mechanical Engineering
+  Frequency response asymptotes                                                    32/59
+
+                                 1
+  Another example: H (s) = s 2 +2s+25
+      ▶   substituting s = j ω yields
+
+                                  1            25 − ω 2            2j ω
+            H (j ω) =             2
+                                          =       2 2    2
+                                                           −
+                            25 − ω + 2j ω   (25−ω ) + 4ω     (25−ω 2 )2 + 4ω 2
+                                            |     {z     } |        {z       }
+                                               real part      imaginary part
+
+  But how to easily construct the Bode diagram from this?
+
+  The FRF approximates certain asymptotes, e.g.
+                       1                                      1
+      ▶    lim H (s) = 25              hence   lim H (j ω) = 25   ⇒ 0-slope
+          s→0                                  ω→0
+      ▶    lim H (s) = s12             hence    lim H (j ω) = − ω12   ⇒ -2-slope
+          s→∞                                  ω→∞
+  And what happens in between?
+
+
+Department of Mechanical Engineering
+  Complex-valued poles (or zeros)                                        33/59
+
+
+  Complex-valued poles (or zeros) have an (anti-)resonance with damping
+
+  Normalized second-order denominator:
+                                                         ωn2
+                                       H (s) =
+                                                 s 2 + 2ξωn s + ωn2
+      ▶   ωn : undamped natural frequency
+      ▶   ξ: normalized damping
+  Poles are located at (using ABC-formula):
+                                                     p
+                                       s = −ξωn ±j ωn 1 − ξ 2
+                                           | {z }  |  {z    }
+                                          exponential      oscillation
+                                             decay       frequency ωd
+
+      ▶   for small damping ωd ≈ ωn
+      ▶   for ξ ≥ 1 both poles are real
+Department of Mechanical Engineering
+  Complex-valued poles (or zeros)                                                                                                      34/59
+
+
+                                                                                         ωn2
+                                              H (s) =
+                                                                                 s 2 + 2ξωn s + ωn2
+
+                                                                           20
+                                                                                                                Increased damping ξ
+
+
+
+
+                                                         Magnitude [dB]
+                                  Imaginary
+
+
+                                                                            0
+                                   √
+                                 ωn 1−ξ 2
+                                                                          −20
+                        ωn
+                                                                          −40 −1                           0                           1
+                                                                            10                          10                            10
+
+    Real       ξωn                                                          0
+                                                Phase [degrees]
+
+
+
+
+                                                                          −90
+
+
+
+
+                                                                   −180
+                                                                                −1                         0                           1
+                                                                            10                           10                           10
+                                                                                            Normalized frequency ω/ωn [−]
+
+
+Department of Mechanical Engineering
+  Complex-valued poles: Q-factor                                                                        35/59
+
+
+  How to estimate the damping from a Bode diagram?
+      ▶   By evaluating the magnitude at the eigenfrequency ωn , since
+
+                                                          ωn2               1     1
+                                  |H (j ωn )| =     2                2
+                                                                       =        =
+                                                  −ωn + 2ξωn j ωn + ωn   j · 2ξ   2ξ
+      ▶   This is known as the Q-factor of a resonance.
+                                   1
+      ▶   The damping is then ξ = 2Q .
+                                       40
+                     Magnitude [dB]
+
+
+
+
+                                       20
+                                                                                Q−factor = 1/(2ξ)
+
+                                        0
+
+                                      −20
+
+                                      −40 −1                      0                                 1
+                                        10                       10                             10
+                                                    Normalized frequency ω/ω [−]
+                                                                            n
+
+
+Department of Mechanical Engineering
+  Bode diagram example                           36/59
+
+
+  Draw the frequency response function H (j ω)
+                            1
+      ▶   for H (s) = s 2 +2s+25
+
+
+
+
+Department of Mechanical Engineering
+  Bode diagram example                                                                                                36/59
+
+
+  Draw the frequency response function H (j ω)
+                            1
+      ▶   for H (s) = s 2 +2s+25
+                                              −20                                                 β = 0.2
+                             Magnitude [dB]
+
+
+                                              −40
+
+                                              −60        1/25 or −28dB
+
+                                              −80                                                 ωn = 5 rad/s
+                                                    −1                   0                        1               2
+                                               10                    10                          10              10
+
+                                                0
+                     Phase [degrees]
+
+
+
+
+                                              −90        180 degrees phase drop
+
+
+
+                                       −180
+                                                    −1                   0                        1               2
+                                               10                    10                          10              10
+                                                                             Frequency [rad/s]
+
+Department of Mechanical Engineering
+  From transfer function to Bode diagram                                     37/59
+
+
+  A transfer function
+      ▶   consists of only first and second order terms in both numerator and
+          denominator
+      ▶   thus has real and complex valued zeros and poles
+
+  The shape of the Bode diagram is determined by the location of the
+  poles and zeros of the transfer function
+      ▶   a pole/zero at s = λ manifests itself at frequency f = |λ| rad/s
+      ▶   at every zero the slope increases +1
+      ▶   at every pole the slope decreases -1
+      ▶   the phase depends on LHP or RHP
+
+
+
+
+Department of Mechanical Engineering
+  Effect of real LHP and RHP zeros                                                       38/59
+
+                       H (s) = s +a                            H (s) = s −a
+                      H (j ω) = j ω+a                         H (j ω) = j ω−a
+                Im                         ω →∞             ω →∞          Im
+                             |H|                               |H|              6   H
+
+                               6   H       ω =0           ω =0
+                                       a      Re        −a                          Re
+                |H|                                     |H|
+                                           +1                              +1
+                              a                                       a
+                                                ω                                    ω
+
+            6   H                                   6   H
+                                            +90◦              +180◦
+
+                        0◦                                                     +90◦
+
+Department of Mechanical Engineering
+  Effect of real LHP and RHP poles                                                          39/59
+                                1
+                       H (s) = s+a                                         1
+                                                                  H (s) = s−a
+                        1
+           H (j ω) = j ω+a = − ωj ω−a
+                                  2 +a 2                            1
+                                                       H (j ω) = j ω−a = − ωj ω+a
+                                                                              2 +a 2
+                                               1
+                      ω →∞                     a            − a1
+                                         ω = 0 Re                            ω →∞
+                                 6   H                     Re ω = 0
+                                                                      |H|           6   H
+                                |H|
+                      Im                                                            Im
+                |H|                                        |H|
+                                         −1                                  −1
+
+                                 a                 ω                     a          ω
+
+
+            6   H
+                                                       6   H
+                           0◦                                                     −90◦
+
+                                                                 −180◦
+                                              −90◦
+
+Department of Mechanical Engineering
+  Effects of poles and zeros on Bode                                           40/59
+
+
+  Summarizing:
+
+                                           Magnitude             Phase
+
+                    LHP pole           slope decrease: −1   phase lag: −90◦
+
+                    RHP pole           slope decrease: −1   phase lead: +90◦
+
+                    LHP zero           slope increase: +1   phase lead: +90◦
+
+                    RHP zero           slope increase: +1   phase lag: −90◦
+
+  Note: For complex conjugated poles or zeros (i.e. two poles or two
+        zeros) the effect is doubled.
+
+
+Department of Mechanical Engineering
+  Bode gain-phase relation                                              41/59
+
+
+  If all poles and zeros are in LHP we have:
+
+                                       angle(H ) = slope(H ) × 90◦
+      ▶   known as Bode gain-phase relation
+  Does not hold for:
+      ▶   unstable systems (RHP poles)
+      ▶   non-minimum phase systems (RHP zeros)
+  Fortunately, most motion systems are stable and minimum phase:
+      ▶   simplifies stability analysis
+      ▶   simplifies controller design
+  Note1: Poles or zeros in RHP can easily be identified from the Bode
+         diagram.
+  Note2: Often, you can even determine stability by close examination of
+         the Bode diagram.
+Department of Mechanical Engineering
+  Bode diagram                                                                                                           42/59
+
+
+  Poles, zeros and resonances can be read from the Bode diagram.
+
+  Some examples:
+                                        Bode diagram                                               Bode diagram
+
+                             −20
+            Magnitude [dB]
+
+
+
+
+                                                                       Magnitude [dB]
+                                                                                        100
+                             −30
+                                                                                         80
+                             −40
+                             −50                                                         60
+
+                             −60                                                         40
+                                    1                     2                                    1                     2
+                                   10                    10                                   10                    10
+
+                                                                                          0
+   Phase [degrees]
+
+
+
+
+                                                              Phase [degrees]
+                             −90                                                        −90
+
+
+
+                      −180                                                      −180
+                                    1                     2                                    1                     2
+                                   10                    10                                   10                    10
+                                        Frequency [Hz]                                             Frequency [Hz]
+
+
+
+
+  Note: angle(H ) = slope(H ) × 90◦
+
+Department of Mechanical Engineering
+  Bode diagram - interpretation                                               43/59
+
+
+  Another example:
+                                          −20
+                         Magnitude [dB]   −40
+                                          −60
+                                          −80
+                                          −100
+                                          −120
+                                                 0      1                 2
+                                             10      10                  10
+
+                                             0
+                         Phase [°]
+
+
+
+
+                                          −90
+
+
+
+                                          −180
+                                                 0      1                 2
+                                             10       10                 10
+                                                     Frequency [rad/s]
+
+  How many poles and zeros are there, and are they LHP or RHP?
+
+Department of Mechanical Engineering
+  Bode diagram - interpretation                                               43/59
+
+
+  Another example:
+                                          −20
+                         Magnitude [dB]   −40
+                                          −60
+                                          −80
+                                          −100
+                                          −120
+                                                 0      1                 2
+                                             10      10                  10
+
+                                             0
+                         Phase [°]
+
+
+
+
+                                          −90
+
+
+
+                                          −180
+                                                 0      1                 2
+                                             10       10                 10
+                                                     Frequency [rad/s]
+
+  How many poles and zeros are there, and are they LHP or RHP?
+
+Department of Mechanical Engineering
+  Bode: additional remarks                                                  44/59
+
+  Bode contains more information:
+      ▶   Amplitude for ω → 0 gives the steady state gain in the output for a
+          constant input
+      ▶   Amplitude for ω → ∞ denotes the direct feedthrough: it denotes
+          the output gain at a step on the input
+
+  The first one obviously follows from the Final Value Theorem:
+
+                                         lim y(t ) = lim sY (s)
+                                         t →∞        s→0
+
+      ▶   for a step input U (s) = s1 this yields
+
+                                                           H (s)
+                                       lim y(t ) = lim s         = H (0).
+                                       t →∞       s→0        s
+  Note: This holds for any transfer function, including closed loops!
+Department of Mechanical Engineering
+                                                   45/59
+
+
+
+
+                     Poles and zeros in physical
+                             systems
+
+
+
+
+Department of Mechanical Engineering
+  Poles and zeros: 1-D example         46/59
+
+
+                               x1
+
+                     F
+
+
+
+
+Department of Mechanical Engineering
+  Poles and zeros: 1-D example                                     46/59
+
+
+                                             x1
+
+                     F
+
+                                                  Bode diagram
+                                           −20
+                                           −40
+                          Magnitude [dB]
+
+
+
+
+                                           −60
+                                           −80
+                                           −100
+                                           −120
+                                           −140
+                                           −160
+
+
+
+                                            180
+
+
+                                             90
+                          Phase [◦ ]
+
+
+
+
+                                              0
+
+
+                                           −90
+
+
+                                           −180
+                                                         1
+                                                       10
+                                                  Frequency [Hz]
+
+
+Department of Mechanical Engineering
+  Poles and zeros: 1-D example                                           46/59
+
+
+                                              x1   x2
+
+                      F
+
+                                                        Bode diagram
+                                            −20
+                                            −40
+                           Magnitude [dB]
+
+
+
+
+                                            −60
+                                            −80
+                                            −100
+                                            −120
+                                            −140
+                                            −160
+
+
+
+                                             180
+
+
+                                              90
+                           Phase [◦ ]
+
+
+
+
+                                               0
+
+
+                                            −90
+
+
+                                            −180
+                                                               1
+                                                             10
+                                                        Frequency [Hz]
+
+
+Department of Mechanical Engineering
+  Poles and zeros: 1-D example                                           46/59
+
+
+                                              x1   x2              x3
+
+                      F
+
+                                                        Bode diagram
+                                            −20
+                                            −40
+                           Magnitude [dB]
+
+
+
+
+                                            −60
+                                            −80
+                                            −100
+                                            −120
+                                            −140
+                                            −160
+
+
+
+                                             180
+
+
+                                              90
+                           Phase [◦ ]
+
+
+
+
+                                               0
+
+
+                                            −90
+
+
+                                            −180
+                                                               1
+                                                             10
+                                                        Frequency [Hz]
+
+
+Department of Mechanical Engineering
+  Poles and zeros: 1-D example                                                46/59
+
+
+                                              x1   x2              x3    x4
+
+                      F
+
+                                                        Bode diagram
+                                            −20
+                                            −40
+                           Magnitude [dB]
+
+
+
+
+                                            −60
+                                            −80
+                                            −100
+                                            −120
+                                            −140
+                                            −160
+
+
+
+                                             180
+
+
+                                              90
+                           Phase [◦ ]
+
+
+
+
+                                               0
+
+
+                                            −90
+
+
+                                            −180
+                                                               1
+                                                             10
+                                                        Frequency [Hz]
+
+
+Department of Mechanical Engineering
+  Poles and zeros in physical systems                                         47/59
+
+
+  Summarizing, the example shows that
+      ▶   all plants had exactly the same resonances, regardless of sensor
+          position;
+      ▶   each plant had different anti-resonances; even the number of
+          anti-resonances varies.
+
+  This is an important fundamental difference between poles and zeros.
+      ▶   Poles are a system property
+      ▶   Zeros are the result of specific actuator and/or sensor placement
+
+  Note that zeros can make poles unobservable or uncontrollable, but they
+  cannot remove or shift poles.
+  This can be understood by looking at the State-Space (SS) notation of
+  dynamical systems.
+
+
+Department of Mechanical Engineering
+  State-space system representations                                        48/59
+
+
+  Most general form of linear dynamical system is State Space (SS):
+
+                                       ẋ = Ax + Bu
+                                       y = Cx + Du
+      ▶   The transfer function is then given by
+                                   h                 i
+                          Y (s) = C (sI − A )−1 B + D ·U (s)
+                                   |         {z      }
+                                              H (s)
+
+      ▶   The poles of the system are the eigenvalues of A
+      ▶   The zeros follow from B , C and D , which are determined by the
+          sensor and actuator locations
+      ▶   System matrix A is unaffected by sensor/actuator locations!
+  Here we only use the Transfer Function (TF) representation H (s).
+
+Department of Mechanical Engineering
+  When do we get RHP zeros in practice?                          49/59
+
+
+
+
+  Remember how we recognized RHP
+  zeros in the time domain?
+
+              0.6
+
+
+              0.5
+
+
+              0.4
+   Response
+
+
+
+
+              0.3
+
+
+              0.2
+
+
+              0.1
+
+                                                  LHP zero
+               0
+                                                  RHP zero
+                0   0.5    1           1.5   2   2.5         3
+                                 Time [s]
+
+
+
+
+Department of Mechanical Engineering
+  When do we get RHP zeros in practice?                                                         49/59
+
+
+                                                                 F
+  Remember how we recognized RHP
+  zeros in the time domain?                                                ∆
+                                                                               y
+
+              0.6                                                                  x
+
+
+              0.5
+
+
+              0.4
+   Response
+
+
+
+
+              0.3
+                                                                       φ
+              0.2
+
+
+              0.1                                                    k1, d1
+                                                  LHP zero                             k2, d2
+               0
+                                                  RHP zero
+                0   0.5    1           1.5   2   2.5         3
+                                 Time [s]
+
+
+
+
+Department of Mechanical Engineering
+  When do we get RHP zeros in practice?                                              49/59
+
+
+                                                                 F
+  Remember how we recognized RHP
+  zeros in the time domain?                                          ∆
+                                                                         y
+
+              0.6                                                            x
+
+
+              0.5
+
+
+              0.4
+   Response
+
+
+
+
+              0.3
+
+
+              0.2
+                          RHP zero occurs when actuator and sensor
+                                                                φ    are on
+                          opposing ends of the CoG with sufficient distance
+              0.1                                            k1, d1
+                                             LHP zero                       k2, d2
+               0
+                                                  RHP zero
+                0   0.5      1         1.5   2   2.5         3
+                                 Time [s]
+
+
+
+
+Department of Mechanical Engineering
+  Drawback of RHP zeros                                                                 50/59
+
+  Other classic examples:
+      ▶   Throwing coal on a fire: temperature first drops before it rises
+      ▶   Parallel parking: car front initially goes to the left when you steer to
+          the right
+
+  But what’s wrong with RHP zeros?
+      ▶   It takes a while before the system moves in the right direction
+      ▶   Time domain: the response effectively becomes ‘slower’ or delayed
+      ▶   Frequency domain: the system looses extra phase (non-minimum
+          phase)
+      ▶ A controller has to ‘wait’ for that delayed response
+      ▶ Hence it limits the achievable bandwidth
+
+               •   will become clear when we look at it in frequency domain (Nyquist)
+
+
+
+Department of Mechanical Engineering
+                                                      51/59
+
+
+
+
+                            Basic controller design
+
+
+
+
+Department of Mechanical Engineering
+  General motion system                                        52/59
+
+
+
+
+                                       F = m · a = m ẍ
+                                                ⇓
+                                       X (s) = ms1 2 · F (s)
+
+
+Department of Mechanical Engineering
+  Motion system example (1)                                                   53/59
+
+
+        Problem: there is a disturbance force Fd on the mass
+              Goal: how to maintain a certain position x in the presence of this
+                    disturbance?
+
+
+
+
+  In other words, what must Fs look like?
+
+
+
+Department of Mechanical Engineering
+  Motion system example (2)                               54/59
+
+
+  Mechanical solution:
+      ▶   make a stiff connection between mass and base
+
+
+
+
+  Resulting force on mass: F = −k · x − d · ẋ
+                                   r
+                                 1    k
+  Resulting eigenfrequency: f =
+                                2π M
+
+
+
+Department of Mechanical Engineering
+  Motion system example (2)                                                    55/59
+
+
+  Electrical solution / servo analogy:
+      ▶ measure distance x between mass and base
+      ▶ compute servo force based on x and its velocity ẋ
+
+            ⇒ PD-controller
+
+
+
+
+                                                             kp : servo stiffness
+                                                             kv : servo damping
+
+
+
+  Resulting force on mass: Fs = −kp · x − kv · ẋ
+                                   r
+                                 1    kp
+  Resulting eigenfrequency: f =
+                                2π M
+Department of Mechanical Engineering
+  Motion control example (3)                                         56/59
+
+
+  To follow a non-zero setpoint:
+      ▶   make a ‘stiff connection’ between x and the setpoint
+
+
+
+
+  Mechanical: F = k (h − x) + d (ḣ − ẋ)
+            Servo: Fs = kp (xs − x) + kv (ẋs − ẋ) = kp e + kv ė
+
+
+Department of Mechanical Engineering
+  Motion system example (4)                                                                57/59
+
+
+  What are we actually doing?
+    ⇒ designing a PD-controller!
+                                                         Fd
+                                       Controller                  Process
+               xs +             e                             +                  x
+                                                         +               1
+                                       kp +kv s
+                            −                       Fs                  ms2
+
+
+
+
+  What is the transfer function from Fd to x?
+
+  Open loop:                                             Closed loop:
+                                                                   1
+                        x     1                          x       ms 2               1
+                           =                                =     k   +k   s
+                                                                             =   2
+                        Fd   ms 2                        Fd   1+    p
+                                                                        2
+                                                                         v     ms + kv s + kp
+                                                                       ms
+
+
+Department of Mechanical Engineering
+  Motion system example: frequency response                                                                                   58/59
+
+
+                                      Open loop; C⋅H
+                             40
+           Magnitude [dB]
+
+
+
+
+                             20
+
+                              0
+
+                            −20
+
+                                                                                                Closed loop; H/(1+C⋅H)
+                            −40                                                        40
+                              0
+                                                                                                          Increased damping
+                                                                                       20
+
+
+
+
+                                                                     Magnitude [dB]
+  Phase [degrees]
+
+
+
+
+                                                                                        0
+                                        Increased kv
+                            −90
+                                                                                      −20
+
+                                                                                      −40
+
+                     −180                                                             −60
+                                  0          1          2
+                              10           10          10                               0
+                                      Frequency [Hz]
+                                                            Phase [degrees]
+
+                                                                                      −90
+
+
+
+
+                                                                               −180
+                                                                                            0              1                   2
+                                                                                        10              10                    10
+                                                                                                   Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  Suggested reading                                     59/59
+
+
+
+
+      ▶   all lecture slides
+      ▶   book: “Feedback control of dynamic systems”
+          (Franklin, Powell, Emami-Naeini)
+      ▶   document: “Summary_Control_Engineering”
+      ▶   document: “Tips and tricks”
+
+
+
+
+Department of Mechanical Engineering
+

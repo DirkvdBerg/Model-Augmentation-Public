@@ -1,0 +1,1795 @@
+     4CM00: Control Engineering
+     Digital filters
+     Dr.ir. Gert Witvoet
+
+
+
+
+September 2020
+                            Where innovation starts
+  Controller implementation                                  2/39
+
+
+
+      I Derive model / measurement of the plant
+      I Design a controller
+
+
+      I Implement controller in real-time environment. . .
+
+
+
+
+Department of Mechanical Engineering
+  Controller implementation                                      2/39
+
+
+
+      I Derive model / measurement of the plant
+      I Design a controller
+
+
+      I Implement controller in real-time environment. . .
+
+
+
+
+                                                ⇓
+                                       unexpected problems,
+                                       maybe even instability!
+                                                ⇓
+                                             WHY ??
+
+Department of Mechanical Engineering
+  Controller implementation: example                                                  3/39
+
+
+                                             Designed controller C (s):
+                                                           Bode diagram
+
+                                        60
+                       Magnitude [dB]
+
+
+
+
+                                        40
+
+                                        20
+
+                                         0
+                                                   0           1             2    3
+                                                 10          10             10   10
+
+                                 180
+     Phase [degrees]
+
+
+
+
+                                        90
+
+                                         0
+
+                                −90
+
+                        −180
+                                                   0           1             2    3
+                                                 10          10             10   10
+                                                           Frequency [Hz]
+
+
+
+Department of Mechanical Engineering
+  Controller implementation: example                                                                        3/39
+
+
+                                             Designed controller C (s):
+                                                           Bode diagram
+
+                                        60
+                       Magnitude [dB]
+
+
+
+
+                                                                                      Measurement:
+                                        40
+                                                                                        Random
+                                        20                                              Number
+
+                                         0
+                                                   0           1             2    3
+                                                 10          10             10   10         C          2
+                                                                                                      Out
+                                 180                                                     LTI System
+     Phase [degrees]
+
+
+
+
+                                        90
+
+                                         0                                                  1
+                                                                                            In
+                                −90
+
+                        −180
+                                                   0           1             2    3
+                                                 10          10             10   10
+                                                           Frequency [Hz]
+
+
+
+Department of Mechanical Engineering
+  Controller implementation: example                                                                                    3/39
+
+
+                                             Designed controller C (s):
+                                                           Bode diagram
+                       Magnitude [dB]
+
+
+
+
+                                        60
+                                                                                                  Measurement:
+                                        40
+                                                                                                    Random
+                                        20                                       Designed C         Number
+                                                                                 Measured C
+                                         0
+                                                   0           1             2                3
+                                                 10          10             10            10            C          2
+                                                                                                                  Out
+                                 180                                                                 LTI System
+     Phase [degrees]
+
+
+
+
+                                        90
+
+                                         0                                                              1
+                                                                                                        In
+                                −90
+
+                        −180
+                                                   0           1             2                3
+                                                 10          10             10            10
+                                                           Frequency [Hz]
+
+
+
+Department of Mechanical Engineering
+  Controller implementation: example                                  4/39
+
+
+                                            Bode diagram
+                      100
+   Magnitude [dB]
+
+
+
+
+                       50
+
+                        0
+
+                     −50    Designed open loop
+                            Achieved open loop
+                     −100
+                                0                 1          2    3
+                              10                 10         10   10
+
+                      180
+   Phase [degrees]
+
+
+
+
+                       90
+
+                        0
+
+                     −90
+
+                     −180
+                                0                 1          2    3
+                              10             10             10   10
+                                           Frequency [Hz]
+
+
+Department of Mechanical Engineering
+  Controller implementation: example                                                4/39
+
+
+                                            Bode diagram
+                      100
+   Magnitude [dB]
+
+
+
+
+                       50
+
+                        0
+
+                     −50    Designed open loop
+                            Achieved open loop
+                     −100
+                              10
+                                0                 1
+                                                 10
+                                                             2
+                                                            10
+                                                                  3
+                                                                 10
+                                                                      Achieved closed
+                                                                      loop system is
+                      180                                             unstable!
+   Phase [degrees]
+
+
+
+
+                       90
+
+                        0
+
+                     −90
+
+                     −180
+                                0                 1          2    3
+                              10             10             10   10
+                                           Frequency [Hz]
+
+
+Department of Mechanical Engineering
+                                                   5/39
+
+
+
+
+                                     Real-time
+                                  implementation
+
+
+
+Department of Mechanical Engineering
+  Real-time implementation                              6/39
+
+
+
+  r(t)
+                                       C(s)   P (s)
+
+                                                      y(t)
+
+
+
+
+Department of Mechanical Engineering
+  Real-time implementation                                                                     6/39
+
+
+
+  r(t)                                              D/A converter
+                                       C(z)                              actuator   P (s)
+         sample                                       and hold
+                                                                                             y(t)
+
+                                              A/D converter                         sensor
+                                                                sample
+
+
+
+
+Department of Mechanical Engineering
+  Real-time implementation                                                                     6/39
+
+
+
+  r(t)                                              D/A converter
+                                       C(z)                              actuator   P (s)
+          sample                                      and hold
+                                                                                             y(t)
+
+                                              A/D converter                         sensor
+                                                                sample
+
+
+      I    Measurement y(t ) is sampled every T seconds: y(t ) → y(kT )
+      I    Analog value of y(kT ) is digitized
+               •   e.g. by an encoder
+               •   e.g. by a 10, 12 or 16 bits A/D converter
+      I    Controller C (z) computes new output u(kT ) based on
+           measurements y(kT ), y((k −1)T ), y((k −2)T ), etc.
+      I    D/A converter creates analog continuous signal by holding the
+           output u(kT ) until the next sample
+
+Department of Mechanical Engineering
+  Real-time implementation                                                                     7/39
+
+
+
+  r(t)                                              D/A converter
+                                       C(z)                              actuator   P (s)
+         sample                                       and hold
+                                                                                             y(t)
+
+                                              A/D converter                         sensor
+                                                                sample
+
+
+  Continuous time:
+        Controller C (s) computes     R     u(t
+                                             RR) based on continuous time signals
+        e(t ), ė(t ), ë(t ), . . . , e(t ), e(t ), . . .
+  Discrete time:
+        Controller C (z) computes u(k ) based on sampled signals
+        e(k ), e(k −1), e(k −2), . . . , u(k − 1), u(k − 2), . . .
+
+                                        Consequence: C (s) 6= C (z) !!!
+
+Department of Mechanical Engineering
+  Real-time implementation                                                                     8/39
+
+
+
+  r(t)                                              D/A converter
+                                       C(z)                              actuator   P (s)
+         sample                                       and hold
+                                                                                             y(t)
+
+                                              A/D converter                         sensor
+                                                                sample
+
+
+
+  How to make correct controller C (z)?
+    I Discrete filter design
+
+               •   Design C (z) from scratch in z-domain
+
+
+
+
+Department of Mechanical Engineering
+  Real-time implementation                                                                     8/39
+
+
+
+  r(t)                                              D/A converter
+                                       C(z)                              actuator   P (s)
+          sample                                      and hold
+                                                                                             y(t)
+
+                                              A/D converter                         sensor
+                                                                sample
+
+
+
+  How to make correct controller C (z)?
+    I Discrete filter design
+
+               •   Design C (z) from scratch in z-domain
+      I    Emulation: discretize continuous time controller C (s)
+               •   Various discretization methods possible
+               •   Accuracy depends on method and sample time
+
+
+
+
+Department of Mechanical Engineering
+  Effect of sampling                                 9/39
+
+
+  Measured plant output y(t ):
+
+
+        0.7
+
+        0.6
+
+        0.5
+
+        0.4
+
+        0.3
+   y
+
+
+
+
+        0.2
+
+        0.1
+
+           0
+
+       −0.1
+
+       −0.2
+            0                  0.5     1   1.5   2
+                                       t
+Department of Mechanical Engineering
+  Effect of sampling                                            9/39
+
+
+  Measured plant output y(t ):
+
+                                           Real signal
+        0.7                                Sampled signal
+        0.6
+
+        0.5
+
+        0.4
+
+        0.3
+   y
+
+
+
+
+        0.2
+
+        0.1
+
+           0
+
+       −0.1
+
+       −0.2
+            0                  0.5     1   1.5              2
+                                       t
+Department of Mechanical Engineering
+  Effect of sampling                                                     10/39
+
+
+  Calculated and applied controller output u(t ):
+        4
+
+        3
+                                                        I   Calculated
+        2                                                   signal
+
+        1
+   u
+
+
+
+
+        0
+
+       −1
+
+       −2
+
+       −3
+          0                  0.5       1   1.5      2
+                                       t
+
+Department of Mechanical Engineering
+  Effect of sampling                                                     10/39
+
+
+  Calculated and applied controller output u(t ):
+        4
+
+        3
+                                                        I   Calculated
+        2                                                   signal
+                                                        I   Applied
+        1
+                                                            signal
+   u
+
+
+
+
+        0
+
+       −1
+
+       −2
+
+       −3
+          0                  0.5       1   1.5      2
+                                       t
+
+Department of Mechanical Engineering
+  Effect of sampling                                                     10/39
+
+
+  Calculated and applied controller output u(t ):
+        4
+
+        3
+                                                        I   Calculated
+        2                                                   signal
+                                                        I   Applied
+        1
+                                                            signal
+   u
+
+
+
+
+        0                                               I   Equivalent
+                                                            signal
+       −1
+
+       −2
+
+       −3
+          0                  0.5       1   1.5      2
+                                       t
+
+Department of Mechanical Engineering
+  Effect of sampling                                                      10/39
+
+
+  Calculated and applied controller output u(t ):
+        4
+
+        3
+                                                        I    Calculated
+        2                                                    signal
+                                                        I    Applied
+        1
+                                                             signal
+   u
+
+
+
+
+        0                                               I    Equivalent
+                                                             signal
+       −1
+
+       −2                                                       ⇓
+                                                            delay: 21 T
+       −3
+          0                  0.5       1   1.5      2
+                                       t
+
+Department of Mechanical Engineering
+  Effect of sampling                                                             10/39
+
+
+  Calculated and applied controller output u(t ):
+        4
+
+        3                        Delay is independent of       I    Calculated
+        2
+                                 discretization method!             signal
+                                                               I    Applied
+        1
+                                                                    signal
+   u
+
+
+
+
+        0                                                      I    Equivalent
+                                                                    signal
+       −1
+
+       −2                                                              ⇓
+                                                                   delay: 21 T
+       −3
+          0                  0.5        1        1.5       2
+                                        t
+
+Department of Mechanical Engineering
+  Effect of sampling                                                                   11/39
+
+
+  Phase delay is frequency dependent!
+                                             10
+
+
+                                              5
+                           Magnitude [dB]
+
+
+
+
+                                              0
+
+
+                                             −5
+
+
+                                            −10
+                                                −1      0          1          2    3
+                                              10       10        10          10   10
+
+
+
+
+                                              0
+                  Phase [degrees]
+
+
+
+
+                                            −90
+
+
+
+
+                                       −180
+                                                  −1    0          1          2    3
+                                              10       10        10          10   10
+                                                            Frequency [Hz]
+
+Department of Mechanical Engineering
+  Effect of sampling                                                                                                                 11/39
+
+
+  Phase delay is frequency dependent!
+                                             10
+
+
+                                              5
+                           Magnitude [dB]
+
+
+
+
+                                              0
+
+
+                                             −5
+
+
+                                            −10
+                                                −1                0                      1                    2                 3
+                                              10                 10                    10                    10               10
+
+
+
+
+                                              0
+                  Phase [degrees]
+
+
+
+
+                                            −90
+
+
+
+
+                                       −180
+                                                     100   200        300   400        500       600   700        800   900   1000
+                                                                                  Frequency [Hz]
+
+Department of Mechanical Engineering
+  Effect of sampling                                                                                                                  11/39
+
+
+  Phase delay is frequency dependent!                                                        ⇒         Hd   (j ω) = e −j ωTd
+                                             10
+
+
+                                              5
+                           Magnitude [dB]
+
+
+
+
+                                              0
+
+
+                                             −5
+
+
+                                            −10
+                                                −1                0                      1                     2                 3
+                                              10                 10                    10                     10               10
+
+
+
+
+                                              0
+                  Phase [degrees]
+
+
+
+
+                                            −90
+
+
+
+
+                                       −180
+                                                     100   200        300   400        500       600    700        800   900   1000
+                                                                                  Frequency [Hz]
+
+Department of Mechanical Engineering
+                                              12/39
+
+
+
+
+                   Introduction to discrete
+                        time systems
+
+
+
+Department of Mechanical Engineering
+  Discrete time systems                                                          13/39
+
+
+  Discrete time systems produce sampled outputs based on
+  sampled inputs.
+
+                  Continuous:          ↔   Discrete:
+                          time t       ↔   time step k
+                     signal x(t )      ↔   sample x(k )
+               ẋ(t ) = f (x(t ))      ↔   x(k +1) = f (x(k ), x(k −1), . . .)
+
+
+
+
+Department of Mechanical Engineering
+  Discrete time systems                                                           13/39
+
+
+  Discrete time systems produce sampled outputs based on
+  sampled inputs.
+
+                  Continuous:           ↔   Discrete:
+                          time t        ↔   time step k
+                     signal x(t )       ↔   sample x(k )
+               ẋ(t ) = f (x(t ))       ↔   x(k +1) = f (x(k ), x(k −1), . . .)
+
+  Past, present and future values of x(k ) are denoted by the shift
+  operator z:
+
+                                       x(k + 1) = zx(k )
+                                       x(k − 1) = z −1 x(k )
+                                       x(k − N ) = z −N x(k )
+
+Department of Mechanical Engineering
+  The z transform                                                   14/39
+
+  Shift operator z is discrete counterpart of Laplace variable s:
+
+                                ẋ(s) = sx(s) ↔ x(k + 1) = zx(k )
+
+  The z transform can be used to derive I/O models.
+
+
+
+
+Department of Mechanical Engineering
+  The z transform                                                                     14/39
+
+  Shift operator z is discrete counterpart of Laplace variable s:
+
+                                ẋ(s) = sx(s) ↔ x(k + 1) = zx(k )
+
+  The z transform can be used to derive I/O models.
+  Example:
+
+                                  y(k ) = −a1 y(k − 1) + b0 u(k ) + b1 u(k − 1)
+                                  y(k ) = −a1 z −1 y(k ) + b0 u(k ) + b1 z −1 u(k )
+                           −1
+                                  y(k ) = b0 + b1 z −1 u(k )
+                                                       
+              1 + a1 z
+                                 y(k )        b0 + b1 z −1
+                   H (z) =               =
+                                 u(k )        1 + a1 z −1
+
+                                         b0 z + b1
+  or equivalently: H (z) =                         .
+                                          z + a1
+
+Department of Mechanical Engineering
+  The z transform                                                   15/39
+
+  Backwards derivation:
+      I   derive the difference equation of the transfer function
+                                                   z
+                                       H (z) =
+                                                 z −1
+
+
+
+
+Department of Mechanical Engineering
+  The z transform                                                      15/39
+
+  Backwards derivation:
+      I   derive the difference equation of the transfer function
+                                                            z
+                                                H (z) =
+                                                          z −1
+  Answer:
+                                              y(k )     z
+                                                    =
+                                              u(k )   z −1
+                                       (z − 1)y(k ) = zu(k )
+                              y(k + 1) − y(k ) = u(k + 1)
+                                         y(k + 1) = u(k + 1) + y(k )
+
+  or equivalently: y(k ) = u(k ) + y(k − 1).
+
+
+Department of Mechanical Engineering
+  Stability                                                                             16/39
+
+
+
+                                       Continuous time          Discrete time
+    Transfer function                   H (s) = num(s)
+                                                den(s)          H (z) = num(z)
+                                                                        den(z)
+    Poles λi                           den(s = λi ) = 0        den(z = λi ) = 0
+    Stable if                          Re(λi ) < 0 ∀λi          |λi | < 1 ∀λi
+    Stability boundary                 imaginary axis:            unit disc:
+                                           s = jω         z = cos ω + j sin ω = e j ω
+
+
+
+
+Department of Mechanical Engineering
+  Stability                                                                             16/39
+
+
+
+                                       Continuous time          Discrete time
+    Transfer function                   H (s) = num(s)
+                                                den(s)          H (z) = num(z)
+                                                                        den(z)
+    Poles λi                           den(s = λi ) = 0        den(z = λi ) = 0
+    Stable if                          Re(λi ) < 0 ∀λi          |λi | < 1 ∀λi
+    Stability boundary                 imaginary axis:            unit disc:
+                                           s = jω         z = cos ω + j sin ω = e j ω
+
+
+  Discrete time frequency ω:
+        Frequency ω is normalized, such that ω ∈ [−π, π].
+        This corresponds to a sampling time T = 1.
+        Actual frequency ωs = Tωs , where Ts is actual sample time.
+
+
+Department of Mechanical Engineering
+  Stability                                                             17/39
+
+
+  Example 1:
+                                         y(k + 1) = ay(k )
+  Consider a time sequence:
+
+                                  y(k + 2) = ay(k + 1) = a 2 y(k )
+                                  y(k + 3) = ay(k + 2) = a 3 y(k )
+                                 y(k + N ) = a N y(k )
+
+  Note: y(k + N ) → 0 for N → ∞ if and only if a N → 0, i.e. |a| < 1.
+
+
+
+
+Department of Mechanical Engineering
+  Stability                                                           18/39
+
+
+  Example 2:
+                            z 3 + 0.9z 2 + 0.16z − 0.9
+                                  H (z) =
+                             z 3 − 1.3z 2 + 0.2z + 0.2
+                                                                 
+                                                     0.80 + 0.19j
+  Poles: λ3 − 1.3λ2 + 0.2λ + 0.2 = 0 ⇒ λ =  0.80 − 0.19j 
+                                                        −0.30
+
+
+
+
+Department of Mechanical Engineering
+  Stability                                                                                               18/39
+
+
+  Example 2:
+                            z 3 + 0.9z 2 + 0.16z − 0.9
+                                  H (z) =
+                             z 3 − 1.3z 2 + 0.2z + 0.2
+                                                                 
+                                                     0.80 + 0.19j
+  Poles: λ3 − 1.3λ2 + 0.2λ + 0.2 = 0 ⇒ λ =  0.80 − 0.19j 
+                  Im
+                            poles
+                                                        −0.30
+                                            zeros
+                                                                        Impulse response
+
+
+
+                                                         2.5
+
+
+                                                          2
+
+
+                                                         1.5
+                                                Re
+
+                                                     y
+                                                          1
+
+
+                                                         0.5
+
+
+                                                          0
+
+
+                                                           0   5   10     15       20      25   30   35
+                                                                               t
+
+
+
+Department of Mechanical Engineering
+  Discrete frequency response                                   19/39
+
+
+
+  Continuous: Substitute s = j ω into H (s) to obtain H (j ω)
+  Discrete: Substitute z = e j ω into H (z) to obtain H (j ω)
+
+
+
+
+Department of Mechanical Engineering
+  Discrete frequency response                                                                   19/39
+
+
+
+  Continuous: Substitute s = j ω into H (s) to obtain H (j ω)
+  Discrete: Substitute z = e j ω into H (z) to obtain H (j ω)
+                                       ω = π/2
+                                                  z = ejω     Example:
+
+                                                                                z +b
+                                                                 H (z) =
+                           |Z|          |P1 |     φ1                       (z + a1 )(z + a2 )
+
+                                                              Magnitude and phase:
+        ω =π               θ           |P2 |           ω =0
+                                                                                |e j ω +b |
+                                                 φ2           |H (j ω)| =
+                                                                         |e j ω +a1 ||e j ω +a2 |
+                                                                              |Z |
+                                                                       =
+                                                                         |P1 | · |P2 |
+                                                              ∠H (j ω) = θ − φ1 − φ2
+
+Department of Mechanical Engineering
+  Discrete frequency response                                                 20/39
+
+                              I            Stable poles and zeros can
+                                           have 180◦ phase change
+                                                           1
+                                                 H (z) = z−0.8
+                                                      Bode diagram
+                     Magnitude [dB]
+
+
+
+
+                                      10
+
+                                       5
+
+                                       0
+
+                                      −5
+                                           −2          −1                 0
+                                      10             10                  10
+
+                                       0
+   Phase [degrees]
+
+
+
+
+                               −90
+
+
+
+                      −180
+                                           −2          −1                 0
+                                      10             10                  10
+                                                     Frequency [rad/s]
+
+                     Information up to Nyquist frequency
+
+
+Department of Mechanical Engineering
+  Discrete frequency response                                                                                                                                           20/39
+
+                              I            Stable poles and zeros can                                    I            Frequency response repeats
+                                           have 180◦ phase change                                                     itself every 2π rad/s
+                                                           1                                                                              1
+                                                 H (z) = z−0.8                                                                  H (z) = z−0.8
+                                                      Bode diagram                                                                       Bode diagram
+                     Magnitude [dB]
+
+
+
+
+                                                                                                Magnitude [dB]
+                                      10                                                                         10
+
+                                       5                                                                          5
+
+                                       0                                                                          0
+
+                                      −5                                                                         −5
+                                           −2          −1                 0
+                                      10             10                  10                                              3.14     6.28       9.42       12.57   15.71
+
+                                       0
+                                                                                                          180
+   Phase [degrees]
+
+
+
+
+                                                                              Phase [degrees]
+                                                                                                                 90
+                               −90
+                                                                                                                  0
+
+                                                                                                          −90
+                      −180
+                                                                                                 −180
+                                           −2          −1                 0
+                                      10             10                  10                                              3.14     6.28      9.42      12.57     15.71
+                                                     Frequency [rad/s]                                                                Frequency [rad/s]
+
+                     Information up to Nyquist frequency                                                         Plotted on linear frequency scale
+
+
+Department of Mechanical Engineering
+  Discrete frequency response                                          21/39
+
+
+  Is there a relation between continuous and discrete poles / zeros?
+
+
+
+
+Department of Mechanical Engineering
+  Discrete frequency response                                          21/39
+
+
+  Is there a relation between continuous and discrete poles / zeros?
+  Answer: Yes, λD = e Ts λC
+        - λD : discrete time pole / zero
+        - λC : continuous time pole / zero
+        - Ts : sample time
+
+
+
+
+Department of Mechanical Engineering
+  Discrete frequency response                                          21/39
+
+
+  Is there a relation between continuous and discrete poles / zeros?
+  Answer: Yes, λD = e Ts λC
+        - λD : discrete time pole / zero
+        - λC : continuous time pole / zero
+        - Ts : sample time
+      I   Stable poles / zeros are mapped inside the unit disc
+            Re(λC ) < 0 ⇒ |λD | < 1
+      I   Unstable poles / zeros are mapped outside the unit disc
+            Re(λC ) > 0 ⇒ |λD | > 1
+
+
+
+
+Department of Mechanical Engineering
+  Discrete frequency response                                          21/39
+
+
+  Is there a relation between continuous and discrete poles / zeros?
+  Answer: Yes, λD = e Ts λC
+        - λD : discrete time pole / zero
+        - λC : continuous time pole / zero
+        - Ts : sample time
+      I   Stable poles / zeros are mapped inside the unit disc
+            Re(λC ) < 0 ⇒ |λD | < 1
+      I   Unstable poles / zeros are mapped outside the unit disc
+            Re(λC ) > 0 ⇒ |λD | > 1
+  To find frequency of discrete pole / zero, use inverse relation:
+                                            ln(λD )
+                                       f=
+                                             2πTs
+  E.g. when fs = 1000Hz we have that λD = 0.8 is located at f = 35.5Hz.
+
+Department of Mechanical Engineering
+  Discrete frequency response                                                                        22/39
+
+
+
+                                     0.5π/T
+                               0.6π/T      0.4π/T
+                      0.7π/T                       0.1
+                                                   0.3π/T
+                                                                          I   Stability boundary:
+                                                  0.2
+                                                 0.3
+                                                                              s = j ω ⇒ |z| = 1
+             0.8π/T                             0.4       0.2π/T
+                                                0.5                       I   ‘Origin’:
+                                                0.6                           s = 0 ⇒ z = +1
+                                                0.7
+       0.9π/T                                   0.8           0.1π/T
+                                                0.9                       I   ‘Infinite’ pole:
+       π/T                                                                    s = −∞ ⇒ z = 0
+       π/T
+                                                                          I   Vertical lines in
+       0.9π/T                                                    0.1π/T       s-plane ⇒ circles in
+                                                                              z-plane
+             0.8π/T                                          0.2π/T       I   Horizontal lines in
+                                                                              s-plane ⇒ radial
+                      0.7π/T                        0.3π/T
+                                                                              lines in z-plane
+                               0.6π/T      0.4π/T
+                                     0.5π/T
+
+
+Department of Mechanical Engineering
+  Impulse response                                                                   23/39
+
+
+  It is easy to derive the impulse response from the z-transform:
+      I   write H (z) in the form H (z) = c0 + c1 z −1 + c2 z −2 + c3 z −3 + . . .
+      I   i.e. eliminate denominator term
+
+
+
+
+Department of Mechanical Engineering
+  Impulse response                                                                   23/39
+
+
+  It is easy to derive the impulse response from the z-transform:
+      I   write H (z) in the form H (z) = c0 + c1 z −1 + c2 z −2 + c3 z −3 + . . .
+      I   i.e. eliminate denominator term
+
+  Difference equation then becomes:
+
+            y(k ) = c0 u(k ) + c1 u(k −1) + c2 u(k −2) + c3 u(k −3) + . . .
+
+  Impulse input: u(k ) = 1 for k = 0, and u(k ) = 0 for k 6= 0.
+      I   At time step k = i only u(k − i ) contributes to output
+      I   So coefficient ci determines output: y(i ) = ci
+
+
+
+
+Department of Mechanical Engineering
+  Impulse response                                                                   23/39
+
+
+  It is easy to derive the impulse response from the z-transform:
+      I   write H (z) in the form H (z) = c0 + c1 z −1 + c2 z −2 + c3 z −3 + . . .
+      I   i.e. eliminate denominator term
+
+  Difference equation then becomes:
+
+            y(k ) = c0 u(k ) + c1 u(k −1) + c2 u(k −2) + c3 u(k −3) + . . .
+
+  Impulse input: u(k ) = 1 for k = 0, and u(k ) = 0 for k 6= 0.
+      I   At time step k = i only u(k − i ) contributes to output
+      I   So coefficient ci determines output: y(i ) = ci
+
+  Note: In general, expansion of H (z) is infinite. However, in some cases
+        H (z) has a Finite Impulse Response. H (z) is then a FIR filter.
+
+
+Department of Mechanical Engineering
+  Impulse response: example                                              24/39
+
+
+                              4 + 3z −1
+           H (z) =
+                               2 + z −1
+
+
+                                              Impulse response
+
+                                   2
+
+
+
+                                  1.5
+
+
+
+                                   1
+                              y
+
+
+
+
+                                  0.5
+
+
+
+                                   0
+
+
+                                    0     1    2           3     4   5
+                                                     t
+
+Department of Mechanical Engineering
+  Impulse response: example                                            24/39
+
+
+                   4 + 3z −1        1      1       1
+           H (z) =        −1
+                               = 2 + z −1 − z −2 + z −3 − . . .
+                    2+z             2      4       8
+                             1        1          1
+           y(k ) = 2u(k ) + u(k −1) − u(k −2) + u(k −3) − . . .
+                             2        4          8
+                                            Impulse response
+
+                                   2
+
+
+
+                                  1.5
+
+
+
+                                   1
+                              y
+
+
+
+
+                                  0.5
+
+
+
+                                   0
+
+
+                                    0   1    2           3     4   5
+                                                   t
+
+Department of Mechanical Engineering
+  Anti-causal systems                                             25/39
+
+
+  Ordinary causal systems:
+      I   output only depends on present and past input values:
+          y(k ) = f (u(k ), u(k −1), u(k −2), . . .)
+  Anti-causal systems:
+      I   output also depends on future input values
+      I   ‘predicts’ future
+      I   do not occur in reality
+
+
+
+
+Department of Mechanical Engineering
+  Anti-causal systems                                                      25/39
+
+
+  Ordinary causal systems:
+      I   output only depends on present and past input values:
+          y(k ) = f (u(k ), u(k −1), u(k −2), . . .)
+  Anti-causal systems:
+      I   output also depends on future input values
+      I   ‘predicts’ future
+      I   do not occur in reality
+
+  How to recognize recognize anti-causal systems?
+      I   Impulse response of H (z):
+          contains positive powers of shift operator, i.e. z, z 2 , etc.
+      I   Transfer function H (z):
+          numerator has higher degree than denominator,
+          i.e. H (z) has more zeros than poles.
+
+Department of Mechanical Engineering
+                                                   26/39
+
+
+
+
+                               Controller design
+
+
+
+
+Department of Mechanical Engineering
+  Controller emulation                                     27/39
+
+
+  Implementation procedure
+    I Design continuous time controller C (s)
+
+    I Discretize the controller
+
+               •   Time domain approximation
+                       - Forward Euler (Zero-order hold)
+                       - Backward Euler
+                       - Tustin
+               •   Frequency domain approximation
+                       - Tustin with prewarping
+                       - Pole-zero matching
+      I   Measure obtained controller C (z) in open loop
+               •   Compare with design!
+               •   Adjust controller if necessary
+      I   Implement C (z) in closed loop
+
+
+Department of Mechanical Engineering
+  Time domain approximations                                                     28/39
+
+
+      I   Imitate time domain effect of controller C (s)
+      I   Make assumptions on behavior of u(t ) between samples:
+               •   hold: take u(t ) constant between samples (Euler)
+               •   linear: assume linear change from u(k −1) to u(k ) (Tustin)
+
+
+
+
+Department of Mechanical Engineering
+  Time domain approximations                                                     28/39
+
+
+      I   Imitate time domain effect of controller C (s)
+      I   Make assumptions on behavior of u(t ) between samples:
+               •   hold: take u(t ) constant between samples (Euler)
+               •   linear: assume linear change from u(k −1) to u(k ) (Tustin)
+
+
+  Consider continuous time integrator: C (s) = s1
+
+                      Z                                                u(t)
+               y=         u dt         or   ẏ = u
+
+                                                                      y(t)
+      I   y(t ) is surface beneath curve u(t )
+      I   y(k ) is previous value y(k −1) + additional surface
+      I   Sample time: T
+Department of Mechanical Engineering
+  Forward Euler                                                                        29/39
+
+  Assume u(t ) constant from k −1 to k .
+  u(t)                                                   Forward Euler:
+                                         u(k)
+                                                          y(k ) = y(k −1) + Tu(k −1)
+                             u(k−1)
+                                                         Approximation of C (s):
+
+                                                                       Tz −1      T
+                                                            C (z) =        −1
+                                                                              =
+                                                                      1−z       z −1
+                                       k−1 k
+                              1    T
+  Forward Euler:              s → z−1      and s → z−1
+                                                    T
+
+
+
+
+Department of Mechanical Engineering
+  Forward Euler                                                                        29/39
+
+  Assume u(t ) constant from k −1 to k .
+  u(t)                                                   Forward Euler:
+                                         u(k)
+                                                          y(k ) = y(k −1) + Tu(k −1)
+                             u(k−1)
+                                                         Approximation of C (s):
+
+                                                                       Tz −1      T
+                                                            C (z) =        −1
+                                                                              =
+                                                                      1−z       z −1
+                                       k−1 k
+                              1    T
+  Forward Euler:              s → z−1      and s → z−1
+                                                    T
+  Example:
+                                         s +a                 z − 1 + aT
+                            C (s) =             ⇒   C (z) =
+                                         s +b                 z − 1 + bT
+  Drawback: C (z) is anti-causal for non-proper C (s) (derivative-terms)!
+
+Department of Mechanical Engineering
+  Backward Euler                                                                         30/39
+
+  Assume u(t ) was constant from k to k −1.
+  u(t)
+                                                         Backward Euler:
+                                         u(k)
+                                                              y(k ) = y(k −1) + Tu(k )
+                            u(k−1)
+                                                         Approximation of C (s):
+
+                                                                          T        Tz
+                                                              C (z) =       −1
+                                                                               =
+                                                                        1−z      z −1
+                                       k−1 k
+                                 1    Tz
+  Backward Euler:                s → z−1        and s → z−1
+                                                         Tz
+
+
+
+
+Department of Mechanical Engineering
+  Backward Euler                                                                           30/39
+
+  Assume u(t ) was constant from k to k −1.
+  u(t)
+                                                         Backward Euler:
+                                         u(k)
+                                                                y(k ) = y(k −1) + Tu(k )
+                            u(k−1)
+                                                         Approximation of C (s):
+
+                                                                            T        Tz
+                                                                C (z) =       −1
+                                                                                 =
+                                                                          1−z      z −1
+                                       k−1 k
+                                 1    Tz
+  Backward Euler:                s → z−1        and s → z−1
+                                                         Tz
+  Example:
+
+                                       s +a                     (1 + aT )z − 1
+                         C (s) =                  ⇒   C (z) =
+                                       s +b                     (1 + bT )z − 1
+
+Department of Mechanical Engineering
+  Tustin                                                                                  31/39
+
+  Assume linear change from u(k −1) to u(k )
+  u(t)                                                   Tustin:
+                                         u(k)
+                                                         y(k ) = y(k −1) + T u(k )+u(k−1)
+                                                                                   2
+                            u(k−1)
+                                                         Approximation of C (s):
+
+                                                                   T (1 + z −1 )   T (z + 1)
+                                                         C (z) =            −1
+                                                                                 =
+                                                                   2(1 − z )       2(z − 1)
+                                       k−1 k
+                     T (z+1)
+  Tustin:        1
+                 s → 2(z−1)            and s → T2(z−1)
+                                                 (z+1)
+
+
+
+
+Department of Mechanical Engineering
+  Tustin                                                                                   31/39
+
+  Assume linear change from u(k −1) to u(k )
+  u(t)                                                    Tustin:
+                                         u(k)
+                                                          y(k ) = y(k −1) + T u(k )+u(k−1)
+                                                                                    2
+                            u(k−1)
+                                                          Approximation of C (s):
+
+                                                                    T (1 + z −1 )   T (z + 1)
+                                                          C (z) =            −1
+                                                                                  =
+                                                                    2(1 − z )       2(z − 1)
+                                       k−1 k
+
+  Tustin: s1 → T2(z−1)
+                 (z+1)
+                       and s → T2(z−1)
+                                 (z+1)
+  Example:
+
+                                 s +a                     2(z − 1) + aT (z + 1)
+                   C (s) =                  ⇒   C (z) =
+                                 s +b                     2(z − 1) + bT (z + 1)
+
+Department of Mechanical Engineering
+  Frequency domain approximation                                                           32/39
+
+
+
+  Note: Time domain approximations (especially Euler) do not take
+        frequency response information into account!
+        Especially ‘fast’ dynamics in C (s) can be ‘missed’ by the
+        discretization, e.g. (anti-)resonances.
+
+                                                      Bode diagram
+                           Magnitude [dB]
+
+
+
+
+                                            60
+
+                                            40
+
+                                            20                            Designed C
+                                                                          Measured C
+                                             0
+                                                  0      1            2                3
+                                                 10    10            10            10
+
+
+
+
+Department of Mechanical Engineering
+  Frequency domain approximation                                                           32/39
+
+
+
+  Note: Time domain approximations (especially Euler) do not take
+        frequency response information into account!
+        Especially ‘fast’ dynamics in C (s) can be ‘missed’ by the
+        discretization, e.g. (anti-)resonances.
+
+                                                      Bode diagram
+                           Magnitude [dB]
+
+
+
+
+                                            60
+
+                                            40
+
+                                            20                            Designed C
+                                                                          Measured C
+                                             0
+                                                  0      1            2                3
+                                                 10    10            10            10
+
+
+  Solution:
+    I Include frequency information into discretization:
+
+               •   Tustin with prewarping
+               •   Pole-zero matching
+Department of Mechanical Engineering
+  Tustin with prewarping                                                   33/39
+
+
+  Extension of the Tustin discretization:
+      I   Prewarping matches frequency responses of C (z) and C (s) at a
+          specified frequency ωp
+      I   Combination of time and frequency domain techniques
+  Tustin substitution changes into:
+                                                   ωp        z −1
+                                          s→               ·
+                                               tan(ωp T /2) z + 1
+
+  As a consequence:
+                                                                     
+                                       C (s = j ωp ) = C z = e j ωp T
+
+
+
+
+Department of Mechanical Engineering
+  Pole-zero matching                                        34/39
+
+
+      I   Completely frequency based
+      I   Maps all poles and zeros to the discrete domain
+  Procedure:
+      I   Determine poles pi and zeros qi of C (s)
+      I   Map pi and qi to discrete domain:
+               • discrete poles at z = e pi T
+               • discrete zeros at z = e qi T
+
+      I   Match low-frequent DC-gain of C (z) to C (s)
+
+
+
+
+Department of Mechanical Engineering
+  Pole-zero matching                                                         34/39
+
+
+      I   Completely frequency based
+      I   Maps all poles and zeros to the discrete domain
+  Procedure:
+      I   Determine poles pi and zeros qi of C (s)
+      I   Map pi and qi to discrete domain:
+               • discrete poles at z = e pi T
+               • discrete zeros at z = e qi T
+
+      I   Match low-frequent DC-gain of C (z) to C (s)
+
+  Example:
+
+                              s +a                   a 1 − e −bT z − e −aT
+                   C (s) =             ⇒   C (z) =    ·         ·
+                              s +b                   b 1 − e −aT z − e −bT
+
+
+Department of Mechanical Engineering
+  Influence of sample time                                                                                  35/39
+
+
+  For all discretization methods:
+      I   The smaller the sample time T, the better the approximation
+      I   In practice, choose sample frequency at least 20 times bandwidth
+
+                                                               60
+                                              Magnitude [dB]
+
+
+
+                                                                                               Designed C
+                                                               40
+                                                                                               fs = 200Hz
+                                                               20                              fs = 400Hz
+                                                                                               fs = 800Hz
+                                                                0
+                                                                     1                     2
+                                                                    10                    10
+                            Phase [degrees]
+
+
+
+
+                                                        100
+
+                                                                0
+
+                                               −100
+
+                                                                     1                     2
+                                                                    10                    10
+                                                                         Frequency [Hz]
+
+Department of Mechanical Engineering
+  Simulink                                                                                                         36/39
+
+  Back to our original problem:
+                                                                            Bode diagram
+
+
+
+
+                                                 Magnitude [dB]
+                                                                  60
+
+                                                                  40
+
+                                                                  20                              Designed C
+                                                                                                  Measured C
+                                                                   0
+                                                                        0       1             2                3
+                                                                       10     10             10            10
+
+                                                           180
+                               Phase [degrees]
+
+
+
+
+                                                                  90
+
+                                                                   0
+
+                                                          −90
+
+                                                  −180
+                                                                        0       1             2                3
+                                                                       10     10             10            10
+                                                                            Frequency [Hz]
+
+
+  Simulink chooses its own discretization method for C (s):
+      I   uses zero-order hold (ZOH)
+      I   same as forward Euler for small sample times T
+Department of Mechanical Engineering
+  DCtools                                                             37/39
+
+  ShapeIt comes with the DCtools blockset.
+  Controller blocks are discretized versions of continuous filters:
+    I using Tustin with prewarping
+
+      (prewarp frequency differs per block)
+
+
+
+
+Department of Mechanical Engineering
+  DCtools                                                                                                     37/39
+
+  ShapeIt comes with the DCtools blockset.
+  Controller blocks are discretized versions of continuous filters:
+    I using Tustin with prewarping
+
+      (prewarp frequency differs per block)
+                                                                             Bode diagram
+
+                                                               60
+                                              Magnitude [dB]
+
+
+
+
+                                                               40
+
+                                                               20
+                                                                                                 Designed C
+                                                                                                 Measured C
+                                                               0
+                                                                 0        1                  2
+                                                               10       10                  10
+
+                                                        180
+                            Phase [degrees]
+
+
+
+
+                                                               90
+
+                                                                0
+
+                                                       −90
+
+                                               −180
+                                                                    0     1                  2
+                                                               10       10                  10
+                                                                          Frequency [Hz]
+Department of Mechanical Engineering
+  The best alternative. . . ?                                             38/39
+
+  Alternatively, discretize C (s) yourself
+      I   choose an appropriate method
+      I   choose a sample frequency
+      I   compare C (s) and C (z)
+      I   make adjustments in C (s), fs or the method if necessary
+      I   implement the obtained C (z)
+
+  Note: If C (s) and C (z) differ, try to reason how it would alter the
+        open-loop. Will C (z) make it worse or better?
+
+
+
+
+Department of Mechanical Engineering
+  Conclusion                                        39/39
+
+
+
+
+                              Always measure your
+                                controller before
+                                 implementing!
+
+
+
+
+Department of Mechanical Engineering
+

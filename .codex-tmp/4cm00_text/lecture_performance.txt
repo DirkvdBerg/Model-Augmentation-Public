@@ -1,0 +1,1201 @@
+     4CM00: Control Engineering
+     Performance
+     Dr.ir. Gert Witvoet
+
+
+
+
+March 2025
+                            Where innovation starts
+                                                     2/41
+
+
+
+
+                             The importance of the
+                              Sensitivity function
+
+
+
+
+Department of Mechanical Engineering
+  The Sensitivity function                                                                                 3/41
+
+
+  Remember from the previous lecture
+      ▶   direct relation between Nyquist plot of L (j ω) and |S (j ω)|
+      ▶   modulus margin: max |S (j ω)|
+                                       ω
+
+
+                                                                                       Sensitivity
+
+
+
+                                                                            5
+
+          2dB   6dB      10dB
+                                                                            0
+
+
+
+
+                                                         Magnitude [dB]
+                                                                          −5
+
+
+
+                                           |L(jω)| = 1                    −10
+
+
+                                                                          −15
+                      L(jω)
+                                                                                 1                     2
+                                                                                10                    10
+                                                                                     Frequency [Hz]
+
+
+
+Department of Mechanical Engineering
+  The Sensitivity function                                                                   4/41
+
+
+  The use of the Sensitivity function:
+    ▶ Robustness - ‘closeness to instability’
+
+              !! Small |S | can still yield instability; the point (-1,0) can be passed on
+                 the wrong side with a large margin
+              !! Large |S | can still come with stability
+      ▶   Measure for performance
+      ▶   Indicates the benefit of feedback
+
+
+
+
+Department of Mechanical Engineering
+  The Sensitivity function                                                                   4/41
+
+
+  The use of the Sensitivity function:
+    ▶ Robustness - ‘closeness to instability’
+
+              !! Small |S | can still yield instability; the point (-1,0) can be passed on
+                 the wrong side with a large margin
+              !! Large |S | can still come with stability
+      ▶   Measure for performance
+      ▶   Indicates the benefit of feedback
+                                   r + e
+                                           −
+                                                   C             H   y
+
+  Error e resulting from an input r:
+                                                       e       1
+  e = r −y = r −HCe                    ⇒       (1 + HC ) e = r
+                                                         =       ⇒  =S
+                                                       r    1 + HC
+  The Sensitivity function determines the resulting closed loop error.
+
+Department of Mechanical Engineering
+  The benefit of feedback                                             5/41
+
+
+           d
+                  u                    y
+                            H              Open loop:   y = Hu = Hd
+
+
+
+
+Department of Mechanical Engineering
+  The benefit of feedback                                                          5/41
+
+
+           d
+                  u                       y
+                            H                         Open loop:     y = Hu = Hd
+                                             d
+    r +                                           u             y
+                −
+                               C                        H
+
+  Closed loop:
+
+                                       y = Hu = H (d + C (−y)) = Hd − HCy
+                     (1 + HC )y = Hd
+                                                    H
+                                       y =              d = S · Hd
+                                                 1 + HC
+
+
+Department of Mechanical Engineering
+  The benefit of feedback                                                          5/41
+
+
+           d
+                  u                       y
+                            H                         Open loop:     y = Hu = Hd
+                                             d
+    r +                                           u             y
+                −
+                               C                        H
+
+  Closed loop:
+
+                                       y = Hu = H (d + C (−y)) = Hd − HCy
+                     (1 + HC )y = Hd
+                                                    H
+                                       y =              d = S · Hd
+                                                 1 + HC
+  Improvement due to feedback: S
+Department of Mechanical Engineering
+  The benefit of feedback                     6/41
+
+  Feedback is:
+      ▶   advantageous when |S | < 1
+      ▶   disadvantageous when |S | > 1
+
+              |S|
+               0dB
+                                          ω
+
+
+
+
+Department of Mechanical Engineering
+  WaterBed Effect (1)                                                                 7/41
+
+  So, the goal of feedback is to get: |S (j ω)| < 1 ∀ω, right?
+                       ...well, actually...
+  There’s something known as the Bode Sensitivity Integral:
+                                   Z ∞                            Np
+                                                                  X
+                                           ln |S (j ω)| d ω = π          Re(pi ),   (1)
+                                       0                          i =1
+
+  where S (s) = 1+L1(s) and L (s) has Np RHP poles at locations pi .
+      ▶   Implies that area beneath |S | is always non-negative
+      ▶   Hence, there are always regions where |S | > 1
+      ▶   The ‘faster’ the RHP poles are, the larger the area above |S | = 1
+      ▶   That’s the price of having to stabilize an unstable system
+  Note: holds for open loops L (s) with relative degree 2 or higher
+Department of Mechanical Engineering
+  WaterBed Effect (2)                                                          8/41
+
+  For stable open loops the Bode Sensitivity Integral simplifies to
+                           Z ∞
+                               ln |S (j ω)| d ω = 0
+                                       0
+
+      ▶   Surface beneath |S | is always zero
+      ▶   Suppression of |S | at certain frequency ω always results in an
+          amplification elsewhere
+      ▶   (Again only for open loops L (s) with relative degree 2 or higher)
+
+  Also known as the WaterBed Effect
+  Fundamental limitation of linear control!
+
+             Control design: making S small only for those frequencies
+            where it matters, and allowing large S where it doesn’t matter.
+
+Department of Mechanical Engineering
+  WaterBed Effect                      9/41
+
+
+
+
+Department of Mechanical Engineering
+                                                       10/41
+
+
+
+
+                                Closed loop transfer
+                                     functions
+
+
+
+
+Department of Mechanical Engineering
+  Assumption                                                                11/41
+
+
+  We assume that the open loop is of the following form:
+  |HC|            −?               Various dynamics
+                                                         ω
+
+
+                                                      Noise
+                                            −?
+
+
+      ▶   Negative slope for low frequencies
+      ▶   Various (anti-)resonances in the mid- to high-frequency range
+      ▶   Flat (measurement) noise level for high frequencies
+  Assume: Large HC for ω → 0 and small HC for ω → ∞
+        Note: This typically holds for motion systems and their open loop
+
+Department of Mechanical Engineering
+  Closed loop transfers                                            12/41
+
+
+                                               d
+                    r +                e           u       y
+                                −
+                                           C           H
+                                                               η
+                e  u
+                  = =
+                r  d
+                y  y
+                  = =
+                r  η
+                   y
+                     =
+                   d
+                   u
+                     =
+                   r
+
+
+
+Department of Mechanical Engineering
+  Closed loop transfers                                                    12/41
+
+
+                                                     d
+                    r +                e                 u         y
+                                −
+                                           C                   H
+                                                                       η
+                e  u                      1
+                  = =                         =S :   Sensitivity
+                r  d                   1 + HC
+                y  y
+                  = =
+                r  η
+                   y
+                     =
+                   d
+                   u
+                     =
+                   r
+
+
+
+Department of Mechanical Engineering
+  Closed loop transfers                                                          12/41
+
+
+                                                     d
+                    r +                e                 u              y
+                                −
+                                           C                   H
+                                                                            η
+                e  u                      1
+                  = =                         =S :   Sensitivity
+                r  d                   1 + HC
+                y  y                     HC
+                  = =                         =T :   Complementary sensitivity
+                r  η                   1 + HC
+                   y
+                     =
+                   d
+                   u
+                     =
+                   r
+
+
+
+Department of Mechanical Engineering
+  Closed loop transfers                                                          12/41
+
+
+                                                     d
+                    r +                e                 u              y
+                                −
+                                            C                  H
+                                                                            η
+                e  u                       1
+                  = =                          = S : Sensitivity
+                r  d                    1 + HC
+                y  y                      HC
+                  = =                          = T : Complementary sensitivity
+                r  η                    1 + HC
+                   y                      H
+                     =                         = HS : Process sensitivity
+                   d                   1 + HC
+                   u
+                     =
+                   r
+
+
+
+Department of Mechanical Engineering
+  Closed loop transfers                                                               12/41
+
+
+                                                        d
+                    r +                e                    u                 y
+                                −
+                                             C                    H
+                                                                                  η
+                e  u                       1
+                  = =                          =S :     Sensitivity
+                r  d                    1 + HC
+                y  y                      HC
+                  = =                          =T :     Complementary sensitivity
+                r  η                    1 + HC
+                   y                      H
+                     =                         = HS :   Process sensitivity
+                   d                   1 + HC
+                   u                      C
+                     =                         = CS :   Control sensitivity
+                   r                   1 + HC
+
+
+
+Department of Mechanical Engineering
+  Closed loop transfers                                                    13/41
+
+
+  For simple controllers this yields the following closed loop transfers
+  Note: HC → ∞ for ω → 0 and HC → 0 for ω → ∞
+
+
+
+
+Department of Mechanical Engineering
+  Closed loop transfers                                                    13/41
+
+
+  For simple controllers this yields the following closed loop transfers
+  Note: HC → ∞ for ω → 0 and HC → 0 for ω → ∞
+     |S|                               1    |T |    1
+
+                  (HC)−1                                            HC
+
+
+  |PS|                                     |CS|
+            C −1                                                           C
+                                       H
+                                                   H −1
+
+
+
+Department of Mechanical Engineering
+  Relation S and T                                                    14/41
+
+  Note that
+                                                   1       HC
+                                       S +T =          +        =1   (2)
+                                                1 + HC   1 + HC
+
+
+
+
+Department of Mechanical Engineering
+  Relation S and T                                                14/41
+
+  Note that
+                                     1          HC
+                                       S +T =
+                                          +          =1          (2)
+                                  1 + HC     1 + HC
+  Both S and T are complex valued
+    ▶ S and T have different angles,
+
+    ▶ so |S | and |T | can be larger than 1 at the same time!
+
+
+                                           Im
+                                                    S
+
+                                                        1
+                                                            Re
+
+                                                T
+Department of Mechanical Engineering
+                                                      15/41
+
+
+
+
+                                How to achieve high
+                                  performance?
+
+
+
+
+Department of Mechanical Engineering
+  High-gain feedback                                                   16/41
+
+
+                                   r + e
+                                       −
+                                               C               H   y
+
+    Transfer from r to e:              Transfer from r to y:
+      e       1                          y      HC
+        =          =S                      =          =T
+      r   1 + HC                         r   1 + HC
+  General goals:
+      ▶   minimizing the error: e = 0,
+      ▶   tracking the input: y = r.
+
+
+
+
+Department of Mechanical Engineering
+  High-gain feedback                                                   16/41
+
+
+                                   r + e
+                                       −
+                                               C               H   y
+
+    Transfer from r to e:              Transfer from r to y:
+      e       1                          y      HC
+        =          =S                      =          =T
+      r   1 + HC                         r   1 + HC
+  General goals:
+      ▶   minimizing the error: e = 0,
+      ▶   tracking the input: y = r.
+  Can be achieved by high-gain feedback:
+                                
+                                     1
+                                         →0
+                  maximize HC      1 + HC
+                                    HC     HC
+                                         →    =1
+                                   1 + HC   HC
+Department of Mechanical Engineering
+  High-gain feedback                                                    17/41
+
+
+  Consequence of high-gain feedback:
+
+           |S|                         1    |T |    1
+
+                                                                   HC
+                            (HC)−1
+
+          |PS|                             |HC|
+
+                                       H
+                   C −1
+
+  However, in reality the high-gain in HC is limited:
+      ▶   High frequent measurement noise in y will be amplified
+      ▶   High frequent gain in T should be small
+Department of Mechanical Engineering
+  Balancing S and T                                                                  18/41
+
+
+  What’s the true error in feedback?
+
+                                                   d
+                 r +              e                         u               y
+                              −
+                                               C                H
+                                                                                η
+  The measured error e = r − (y + η) is not the true error etrue = r − y.
+
+                                     1              H             HC
+                Etrue (s) =              R (s) −        D (s) +        N (s)        (3)
+                                  1 + HC
+                                  | {z }         1 + HC
+                                                 | {z }         1 + HC
+                                                                | {z }
+                                       S (s)       PS (s)           T (s)
+
+
+
+
+Department of Mechanical Engineering
+  Balancing S and T                                                                  18/41
+
+
+  What’s the true error in feedback?
+
+                                                   d
+                 r +              e                         u               y
+                              −
+                                               C                H
+                                                                                η
+  The measured error e = r − (y + η) is not the true error etrue = r − y.
+
+                                     1              H             HC
+                Etrue (s) =              R (s) −        D (s) +        N (s)        (3)
+                                  1 + HC
+                                  | {z }         1 + HC
+                                                 | {z }         1 + HC
+                                                                | {z }
+                                       S (s)       PS (s)           T (s)
+
+
+      ▶   So ideally, we want S → 0 and T → 0, but that’s impossible.
+      ▶   The answer is in frequency separation, i.e. the notion of bandwidth.
+Department of Mechanical Engineering
+  Bandwidth                                                                19/41
+
+  Around the world different definitions for bandwidth are used:
+           |S|           ωS                   |T |            ωT
+                               −3dB                                −3dB
+
+
+
+                                       |L|
+                                             ωco      0dB
+
+
+
+      ▶   Frequency up to where disturbances are suppressed: ωS
+      ▶   Frequency up to where references are tracked: ωT
+      ▶   Cross-over frequency of the open-loop L : ωco
+  In practice:            ωS ≤ ωco ≤ ωT      We take: bandwidth ωb = ωco
+
+Department of Mechanical Engineering
+  Bandwidth: frequency separation                                              20/41
+
+
+  Typically, references are low-frequency, and disturbances bandpass
+    ▶ Then high-bandwidth is beneficial
+
+            ⇒ |S | < 1 over large frequency band: small tracking error e
+            ⇒ |PS | gets smaller: more disturbance rejection
+  Sensor noise is very often broadband
+    ▶ Then bandwidth should not be too high
+
+            ⇒ |T | = 1 over large frequency range means that measurement noise η
+              is simply propagated in feedback
+  So what to do in practice? Balance!
+      ▶   Bandwidth is normally chosen as high as possible
+      ▶   But not more than necessary
+  Or stated the other way around:
+                 "Choose the bandwidth as low as possible,
+         but such that the closed loop still meets its requirements"
+                                                              (I.M. Horowitz)
+Department of Mechanical Engineering
+  Control requirements                                                   21/41
+
+
+  Control targets:
+    ▶ Low frequencies (LF): track reference r, suppress disturbances d
+
+            ⇒ small S for ω < ωb
+      ▶    High frequencies (HF): suppress measurement noise in y
+            ⇒ small T for ω > ωb
+  Desired closed loop transfers:
+
+          |S|                               |T |
+                                       ωb               ωb
+
+
+
+
+Department of Mechanical Engineering
+  Control targets                                                          22/41
+
+  Hence, the ideal open loop has the
+  following shape:
+      ▶ Large slope for ω ≪ ωb and
+        ω ≫ ωb                            |L|         −much
+      ▶ Slope≈ −1 at ω
+                        b
+            ⇒ Necessary for stability
+                                                         −1
+  However, keep the controller order            0dB                    ω
+  limited to prevent                                      ωb
+      ▶   large complexity
+      ▶   large computation times
+      ▶   risk of implementation errors                        −much
+      ▶   undesired unforeseen
+          behavior
+
+Department of Mechanical Engineering
+                                                    23/41
+
+
+
+
+                       Basic building blocks of a
+                           linear controller
+
+
+
+
+Department of Mechanical Engineering
+  Controller blocks                                        24/41
+
+  Controller design = adding poles and zeros to L (s).
+  Each controller element is either
+      ▶   a first order term, or
+      ▶   a second order term,
+  in the numerator and/or denominator.
+
+  Possible controller blocks:
+      ▶   Integrator / PI-controller
+      ▶   PD controller
+      ▶   lead/lag filter
+      ▶   second order filter (notch)
+      ▶   low-pass filter (first or second order)
+
+  You should know the formulas of these blocks by heart!
+
+Department of Mechanical Engineering
+  Integrator / PI-controller                           25/41
+
+
+
+  Pure integrator:
+
+               C =k·
+                             1                −1
+                             s
+                                                   f
+  Cut-off integral action              0dB
+  due to phase lag:                                    k
+                        s + 2πf
+          C =k·
+                           s             0◦
+  Same as a PI controller:
+                              I
+              C =P+
+                              s
+                                       −90◦
+  with P = k and I = 2πfk .
+
+Department of Mechanical Engineering
+  Integrator / PI-controller (cont’d)                                                    26/41
+                                                      Open loop transfers
+                Magnitude [dB]
+                                   20
+
+
+                                    0
+                                        Larger gain
+                                                               Zero shifted to right
+                                  −20
+                                                 1                           2
+                                               10                           10
+                Phase [degrees]
+
+
+
+
+                                  −90                             Loss of phase margin
+
+
+
+                                                 1                           2
+                                               10                           10
+                                                        Frequency [Hz]
+Department of Mechanical Engineering
+  Integrator / PI-controller (cont’d)                                                              26/41
+                                                            Sensitivity functions
+                Magnitude [dB]
+                                           0
+
+                                  −10
+                                               More suppression                 Higher peak in S
+
+                                  −20
+
+                                  −30
+                                                        1                            2
+                                                      10                            10
+                        Phase [degrees]
+
+
+
+
+                                          90
+
+
+
+                                           0
+                                                        1                            2
+                                                      10                            10
+                                                              Frequency [Hz]
+Department of Mechanical Engineering
+  PD controller                                                              27/41
+
+
+
+
+                                                             1 P   Ds   +1
+  Create phase lead:                                    f = 2π D
+                                             0dB
+    C      = P
+              + Ds                                 P
+                    1
+           = k 1+      s
+                   2πf
+
+  Note that:                                 +90◦
+                                        k
+   P =k           and D =
+                                       2πf
+
+                                               0◦
+
+
+Department of Mechanical Engineering
+  Lead/lag filter                                                 28/41
+
+
+
+
+                1                                            f2
+                    s +1                           +1        f1
+           C = 2πf
+                1
+                  1
+
+               2πf2 s + 1
+                                       0dB
+  If f2 > f1 : phase lead                         √
+  If f2 < f1 : phase lag                      fc = f1 f2
+  Maximum phase at:
+                                       +90◦
+           p
+       fc = f1 f2
+
+                                         0◦
+                                              f1        f2
+
+Department of Mechanical Engineering
+  Lead/lag filter (cont’d)                                                       29/41
+                                                      Open loop transfers
+
+                         Magnitude [dB]
+                                           20
+
+                                            0
+                                             Larger
+                                          −20 gain        Smaller
+                                                           band
+                                                1               2            3
+                                            10               10             10
+
+                                            0
+                Phase [degrees]
+
+
+
+
+                                                           Loss of
+                                                           phase
+                                          −90
+
+
+
+                                   −180 1                       2            3
+                                      10                     10             10
+                                                        Frequency [Hz]
+
+Department of Mechanical Engineering
+  Lead/lag filter (cont’d)                                                          29/41
+                                                       Sensitivity functions
+
+                Magnitude [dB]
+                                    0
+
+                                  −10                       Higher peak in S
+                                  −20
+
+                                  −30       More suppression
+                                        1                         2             3
+                                    10                         10              10
+
+                                  180
+                Phase [degrees]
+
+
+
+
+                                   90
+
+
+
+                                    0
+                                      1                           2             3
+                                    10                        10               10
+                                                         Frequency [Hz]
+Department of Mechanical Engineering
+  General second order filter (skewed notch)                                          30/41
+
+
+
+                                                                   β2
+
+                                                                                2
+                                                                            f2
+       1           2β1
+             s 2 + 2πf   s +1                            +2                 f1
+    (2πf1 )2           1
+  C= 1             2β
+    (2πf2 )2
+             s 2 + 2πf22 s + 1          0dB
+                                                    β1
+  gain at high frequencies:
+                   2                 +180◦
+                   f2
+                   f1
+
+                                          0◦
+                                               f1             f2
+
+Department of Mechanical Engineering
+  Second order filter (notch)                               31/41
+
+
+
+                                             f1 = f2
+                                       0dB
+
+                                                       β1
+                                                       β2
+
+       1           2β1
+    (2πf1 )2
+             s 2 + 2πf1
+                        s +1
+  C= 1             2β2
+    (2πf2 )2
+             s 2 + 2πf2
+                        s +1
+
+  with
+                  f1 = f2
+                                        0◦
+
+
+
+
+Department of Mechanical Engineering
+  Second order filter (cont’d)                                                                                                                                                                                    32/41
+                                               Numerator                                                                                                                                Denominator
+                          40          1          2β1
+                                             2
+                                   (2πf1 )2 s + 2πf1 s + 1
+       Magnitude [dB]
+
+
+
+
+                                                                                                                                                Magnitude [dB]
+                                                                                                                                                                   0
+                          20
+                                                                                                     +2                                                                                                 −2
+                           0                                                                                                                                     −20               1
+                                                                                                                                                                            1           2β
+                         −20                                                                                                                                                      s2 + 2πf2 s+1
+                                                                                                                                                                         (2πf2 )2          2
+                                                                                                                                                                 −40
+                           10
+
+                         180
+                               0
+                                                  10
+                                                    1                                                      2
+                                                                                                          10
+
+                                                                                                                   +                                               10
+
+                                                                                                                                                                   0
+                                                                                                                                                                     0
+                                                                                                                                                                                            10
+                                                                                                                                                                                              1               2
+                                                                                                                                                                                                             10
+
+
+
+
+                                                                                                                                       Phase [degrees]
+       Phase [degrees]
+
+
+
+
+                          90                                                                                                                                     −90
+
+
+
+                           0                                                                                                                              −180
+                             0                      1                                                      2                                                   0                              1               2
+                           10                     10                                                      10                                                 10                             10               10
+                                             Frequency [Hz]                                                                                                                            Frequency [Hz]
+
+                                                                                                               Notch filter: the sum
+                                                                                                 0
+                                                              Magnitude [dB]
+
+
+
+
+                                                                                −10
+
+
+                                                                                −20
+
+
+
+
+                                            =                                                    10
+                                                                                                     0
+                                                                                                                       10
+                                                                                                                          1
+                                                                                                                                                                             10
+                                                                                                                                                                               2
+                                                                               Phase [degrees]
+
+
+
+
+                                                                                                 0
+
+
+
+
+                                                                                                     0                    1                                                    2
+                                                                                                 10                   10                                                     10
+                                                                                                                 Frequency [Hz]
+
+
+Department of Mechanical Engineering
+  Second order filter (cont’d)                                                               33/41
+                                                         Second order filters
+
+                Magnitude [dB]
+                                             Poles shifted to right
+                                   20                                            Large
+                                                                                controller
+                                    0
+                                                                                  gain
+                                  −20
+
+                                                     1                                 2
+                                                    10                               10
+
+                                  180
+                Phase [degrees]
+
+
+
+
+                                   90
+                                        Increased
+                                          phase
+                                    0
+
+
+                                                     1                                 2
+                                                    10                               10
+                                                           Frequency [Hz]
+Department of Mechanical Engineering
+  Lowpass filter: 1st order                            34/41
+
+
+
+                                              f
+                                       0dB
+                                                  −1
+
+                          1
+            C=        1
+                     2πf s + 1
+  Low frequent gain: 0dB                 0◦
+
+
+
+                                       −90◦
+
+
+Department of Mechanical Engineering
+  Lowpass filter: 2nd order                             35/41
+
+
+
+
+                                        0dB
+                                               f
+                                                   −2
+
+                          1
+  C=         1           2β
+           (2πf )2
+                   s 2 + 2πf s +1
+                                          0◦
+  Low frequent gain: 0dB
+
+
+
+                                       −180◦
+
+
+Department of Mechanical Engineering
+  Lowpass filter: 2nd order (cont’d)                                                        36/41
+                                                     Open loop transfers
+                                           20
+                         Magnitude [dB]
+                                            0                              Smaller β
+
+                                          −20         Larger peak in L
+                                          −40           close to 0dB
+
+                                                         2                              3
+                                                       10                              10
+
+                                          180
+                Phase [degrees]
+
+
+
+
+                                           90
+
+                                            0
+
+                                          −90   Phase increase
+                                   −180
+                                                         2                              3
+                                                       10                              10
+                                                       Frequency [Hz]
+
+Department of Mechanical Engineering
+  Lowpass filter: 2nd order (cont’d)                                                  36/41
+                                               Sensitivity functions
+
+                                          10
+                Magnitude [dB]
+
+
+                                           0
+                                               Reduction of
+                                  −10           first peak
+                                                        Creation of second peak
+                                  −20
+                                                    2                             3
+                                                 10                           10
+                        Phase [degrees]
+
+
+
+
+                                          90
+
+
+                                           0
+
+
+                                                    2                             3
+                                                 10                           10
+                                                 Frequency [Hz]
+Department of Mechanical Engineering
+                                                      37/41
+
+
+
+
+                              Wrapping things up...
+
+
+
+
+Department of Mechanical Engineering
+  Loop shaping motion systems                                                        38/41
+
+
+  ‘Shaping’ the open loop transfer, until stability and satisfactory
+  performance is achieved.
+     1. Stabilize the plant
+              make the right number of encirclements of (-1,0)
+               •
+
+              create phase lead at bandwidth
+               •
+
+         ROT: add lead filter with zero at bandwidth/3 and pole at bandwidth*3;
+              adjust gain
+     2. Meeting the margins and/or shape the loop
+               •   remove resonances if necessary (e.g. for stability margins)
+               •   use notch or second order filters (skewed notch)
+     3. Increase performance
+              add integrator (if necessary or desired)
+               •
+
+         ROT: choose zero at bandwidth/5
+            • add other filter blocks (e.g. notches) to shape specific closed loop
+
+              transfer functions in specific frequency regions
+
+Department of Mechanical Engineering
+  Loop shaping motion systems (cont’d)                                         39/41
+
+
+     4. Cut-off high frequent controller gain
+            • add low-pass filter
+
+         ROT: choose poles at bandwidth*6 (and beta of 0.5 in case of second
+              order low-pass)
+  If desired, increase bandwidth.
+
+  The procedure is iterative; adjust the poles and zeros while shaping the
+  loop / tuning the bandwidth. Make sure to check all relevant transfer
+  functions!
+
+
+
+  ROT = Rule Of Thumb
+        All parameter choices are indicative, adjust them to your specific
+        situation!
+
+
+Department of Mechanical Engineering
+  Summary                                                             40/41
+
+
+  Designing controllers for performance implies:
+    ▶ identifying the performance requirements
+
+               •   on what signal (e, y, u?) under what conditions?
+      ▶   identifying the error sources in the feedback loop
+               •   r, d , η, others?
+      ▶   estimating or measuring their spectral content
+      ▶   making a balanced choice in required bandwidth
+      ▶   creating a high gain in L (s) where r and d are large
+      ▶   creating a low gain in L (s) where η is large
+      ▶   remember to check stability all along (Nyquist)
+
+
+
+
+Department of Mechanical Engineering
+  Summary                                                                      40/41
+
+
+  Designing controllers for performance implies:
+    ▶ identifying the performance requirements
+
+               •   on what signal (e, y, u?) under what conditions?
+      ▶   identifying the error sources in the feedback loop
+               •   r, d , η, others?
+      ▶   estimating or measuring their spectral content
+      ▶   making a balanced choice in required bandwidth
+      ▶   creating a high gain in L (s) where r and d are large
+      ▶   creating a low gain in L (s) where η is large
+      ▶   remember to check stability all along (Nyquist)
+
+                    Control design = balancing (waterbed effect):
+           creating a high gain in L for those frequencies where it matters,
+                    and allowing small L where it doesn’t matter.
+
+Department of Mechanical Engineering
+  Controller design example            41/41
+
+
+
+
+Department of Mechanical Engineering
+

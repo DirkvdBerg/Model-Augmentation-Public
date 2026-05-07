@@ -1,0 +1,1783 @@
+    4CM00: Control Engineering
+Performance – a TNO application
+           Dr.ir. Gert Witvoet
+              March 2025
+Extremely Large Telescope (ELT)
+
+
+
+
+                                  1/44
+ELT: the inside
+
+
+
+
+                  2/44
+ELT: the primary mirror
+
+ ▶   Largest ground-based telescope in
+     optical and near IR range
+ ▶   Total diameter: 39.3 m
+ ▶   798 hexagonal segments of 1.4 m
+     corner-to-corner (1.2 m flat-to-flat)
+ ▶   6 identical mirror segment sets (M1)
+ ▶   One support system (M1SS) for 133
+     different mirror segments
+ ▶   Compensation of gravity induced
+     surface form deformations by passive
+     and active means
+
+
+                                             3/44
+M1 support structure (M1SS)
+
+
+
+
+                              4/44
+M1 support structure (M1SS)
+
+
+
+
+ ▶   Piston/tip/tilt movement by three Position ACTuators (PACT)
+ ▶   Total moving mass: 270 kg
+ ▶ (in the image, PACT is replaced by a passive suspension)
+
+
+
+                                                                   4/44
+M1 support structure (M1SS)
+
+
+
+
+ ▶   Piston/tip/tilt movement by three Position ACTuators (PACT)
+ ▶   Total moving mass: 270 kg
+ ▶ (in the image, PACT is replaced by a passive suspension)
+
+
+
+                                                                   4/44
+Position ACTuator (PACT)
+Some requirements:
+  ▶   Static load: 0 – 900 N
+  ▶   Operating angles: 0 – 90◦
+  ▶   Stroke: 15 mm
+  ▶ Tracking velocity: ±1.2 µm/s
+  ▶ Positioning accuracy: 1.7 nm RMS
+
+        •   in presence of ground and wind disturbances
+
+
+
+
+                                                          5/44
+Position ACTuator (PACT)
+Some requirements:
+  ▶   Static load: 0 – 900 N
+  ▶   Operating angles: 0 – 90◦
+  ▶   Stroke: 15 mm
+  ▶ Tracking velocity: ±1.2 µm/s
+  ▶ Positioning accuracy: 1.7 nm RMS
+
+        •   in presence of ground and wind disturbances
+TNO design of PACT:
+  ▶ Two stage actuator:
+
+        •   Coarse stage: DC-motor driven spindle
+        •   Fine stage: voice coil
+  ▶   225 mm diameter
+
+                                                          5/44
+PACT – the TNO version
+
+
+
+
+                         6/44
+Test setup for PACT
+   (a)                       (b)         Supporting leaf springs
+                                                                            PACT
+ Pendulum wires
+
+
+
+                      PACT
+  Heavy                                                        M1SS-matching
+ container                    90 kg test mass                   strut stiffness
+    box
+                                   (c)
+
+
+
+
+                                                                                   7/44
+Model of PACT + test setup
+                                    mt : test mass, representing 1/3 of the complete M1
+        ẍ0                              segment (90 kg)
+                                    mf : fixed frame + non-moving part of PACT
+                                    mp : moving mass of PACT
+                                    kp : internal stiffness of PACT
+                                    ks : strut stiffness, representing the stiffness of the
+          k                  mt          total M1SS
+                                    kt : stiffness of test mass
+                    kt
+    ϕ                                k : stiffness of setup suspension
+
+                   mf        ks
+        F                           ẍ0 : external vibrations
+              kp         β           F : actuator force, between mf and mp
+        mp
+                                  Output: position of mt
+
+                                                                                          8/44
+Setting up the control
+      challenge
+
+
+
+
+                         9/44
+PACT control problem
+Goal: minimize the RMS of the error e
+  ▶   y: position of the mirror / test mass
+  ▶   subject to ground vibrations G (s)
+  ▶   in the presence of wind force disturbances W (s)
+                       vground               ẍ0
+                                 G                 Htransmissibility
+
+               vwind
+                           W
+
+       +       e                     +
+                                         F                                 +   y
+                       C         +
+                                                   Hcompliance         +
+           −
+
+
+
+
+                                                                                   10/44
+Disturbances
+Ground vibrations:
+  ▶ G (s) (floor) and H
+                       transmissibility (s) (setup) are always present
+Wind forces at the ELT site:
+  ▶ defined by ESO as PSD: S
+                                 ww (f )
+  ▶ converted to model W (s) and added as force disturbance
+
+                                                        Wind force disturbance spectrum
+        Power spectral density [N2/Hz]
+
+
+
+
+                                          0
+                                         10
+
+
+
+                                          −5
+                                         10
+
+
+
+                                          −10
+                                         10
+
+
+
+                                          −15
+                                         10
+                                                0.001   0.01      0.1         1           10   100
+                                                                 Frequency [Hz]
+
+                                                                                                     11/44
+Relevant transfer functions
+                                                                              vground → y :
+                  vground               ẍ0
+                            G                 Htransmissibility
+
+          vwind
+                      W
+
+  +       e                     +
+                                    F
+                                              Hcompliance
+                                                                      +   y    vwind → y :
+      −
+                  C         +                                     +
+
+
+
+
+                                                                                              12/44
+Relevant transfer functions
+                                                                              vground → y :
+                  vground               ẍ0
+                            G                 Htransmissibility                            Htransmissibility G
+          vwind
+                      W                                                                  1 + Hcompliance C
+  +       e                     +
+                                    F
+                                              Hcompliance
+                                                                      +   y    vwind → y :
+      −
+                  C         +                                     +
+
+
+
+
+                                                                                                             12/44
+Relevant transfer functions
+                                                                              vground → y :
+                  vground               ẍ0
+                            G                 Htransmissibility                            Htransmissibility G
+          vwind
+                      W                                                                  1 + Hcompliance C
+  +       e                     +
+                                    F
+                                              Hcompliance
+                                                                      +   y    vwind → y :
+                  C
+      −
+                            +                                     +
+                                                                                            Hcompliance W
+                                                                                         1 + Hcompliance C
+
+
+
+
+                                                                                                             12/44
+Relevant transfer functions
+                                                                                vground → y :
+                    vground               ẍ0
+                              G                 Htransmissibility                            Htransmissibility G
+           vwind
+                       W                                                                   1 + Hcompliance C
+   +       e                      +
+                                      F
+                                                Hcompliance
+                                                                        +   y    vwind → y :
+                   C
+       −
+                              +                                     +
+                                                                                              Hcompliance W
+                                                                                           1 + Hcompliance C
+
+Since vground = vwind = v is unit variance white noise:
+                      Htransmissibility G                     Hcompliance W
+   Y (s) =                                 Vground (s) +                      V    (s)
+                     1 + Hcompliance C                     1 + Hcompliance C wind
+                             1                                                   
+                   =                        · Htransmissibility G + Hcompliance W V (s)
+                     1 + Hcompliance C |                           {z                  }
+                     |       {z           }                       D (s)
+                                      S (s)
+ D (s) : fixed disturbance signal
+ S (s) : sensitivity, tunable via controller C (s)                                                             12/44
+RMS?
+RMS = Root Mean Squared = Square-root of power
+  ▶ remember Parseval’s theorem:
+
+
+
+                         RMS in time = RMS in frequency
+                   s                       v
+                                           u∞
+                         Z T               uX
+                       1
+                             y 2 (t ) dt = t  Syy (f ) df
+                       T 0
+                                           f =0
+
+  ▶   we need to minimize the cumulative PSD of the output
+
+
+
+
+                                                             13/44
+RMS?
+RMS = Root Mean Squared = Square-root of power
+  ▶ remember Parseval’s theorem:
+
+
+
+                         RMS in time = RMS in frequency
+                   s                       v
+                                           u∞
+                         Z T               uX
+                       1
+                             y 2 (t ) dt = t  Syy (f ) df
+                       T 0
+                                              f =0
+
+  ▶ we need to minimize the cumulative PSD of the output
+Since Y (s) = S (s) · D (s) we have that
+                             
+       Syd = S (s) · Sdd
+                                Syy = S (s)S ∗ (s) · Sdd = |S (s)|2 Sdd
+       Syy = S (s) · Sdy
+
+Hence, we minimize power by shaping the sensitivity function.
+                                                                          13/44
+Open-loop response
+                                  PSD of error − open loop
+  [nm2/Hz]
+
+
+
+
+               0
+             10
+
+
+
+                                 Cumulative amplitude spectrum
+             1900
+
+             1800
+  [nm]
+
+
+
+
+                                                                           X: 2500
+                                                                           Y: 1826
+
+             1700
+
+             1600
+                              Inverse cumulative amplitude spectrum
+             1500
+
+             1000
+  [nm]
+
+
+
+
+             500
+
+                  0 −1    0                  1                2        3
+                  10     10                10               10        10
+                                        Frequency [Hz]
+                                                                                     14/44
+Measuring the plant
+  (in open loop)
+
+
+
+
+                      15/44
+FRF measurement (1) – 0.01N white noise
+                                       Frequency response function
+  Magnitude [dB]
+
+
+
+
+                   −100
+
+                   −150
+
+                   −200
+
+                            180
+  Phase [°]
+
+
+
+
+                             90
+                              0
+                            −90
+                   −180
+                      1
+            Coherence [−]
+
+
+
+
+                            0.5
+
+
+                              0    0           1               2      3
+                                  10         10               10     10
+                                             Frequency [Hz]
+                                                                          16/44
+FRF measurement (2) – 0.1N white noise
+                                       Frequency response function
+  Magnitude [dB]
+
+
+
+
+                   −100
+
+                   −150
+
+                   −200
+
+                            180
+  Phase [°]
+
+
+
+
+                             90
+                              0
+                            −90
+                   −180
+                      1
+            Coherence [−]
+
+
+
+
+                            0.5
+
+
+                              0    0           1               2      3
+                                  10         10               10     10
+                                             Frequency [Hz]
+                                                                          17/44
+FRF measurement (3) – 0.5N, 400Hz low-pass
+                                       Frequency response function
+  Magnitude [dB]
+
+
+
+
+                   −100
+
+                   −150
+
+                   −200
+
+                            180
+  Phase [°]
+
+
+
+
+                             90
+                              0
+                            −90
+                   −180
+                      1
+            Coherence [−]
+
+
+
+
+                            0.5
+
+
+                              0    0           1               2      3
+                                  10         10               10     10
+                                             Frequency [Hz]
+                                                                          18/44
+FRF measurement (4) – 5N, 2-300Hz band-pass
+                                       Frequency response function
+  Magnitude [dB]
+
+
+
+                   −100
+
+                   −150
+
+                   −200
+
+                            180
+  Phase [°]
+
+
+
+
+                             90
+                              0
+                            −90
+                   −180
+                      1
+            Coherence [−]
+
+
+
+
+                            0.5
+
+
+                              0    0           1               2      3
+                                  10         10               10     10
+                                             Frequency [Hz]
+                                                                          19/44
+FRF measurement (4) – 5N, 2-300Hz band-pass
+                                       Frequency response function
+  Magnitude [dB]
+
+
+
+                   −100
+
+                   −150
+
+                   −200
+
+                            180
+  Phase [°]
+
+
+
+
+                             90
+                              0
+                            −90
+                   −180
+                      1
+            Coherence [−]
+
+
+
+
+                            0.5
+
+
+                              0    0           1               2      3
+                                  10         10               10     10
+                                             Frequency [Hz]
+                                                                          19/44
+Why is the phase always
+  dropping in an FRF
+    measurement?
+
+
+
+                          20/44
+Real-time implementation
+
+r(t)
+                       C(s)                                       P (s)
+
+                                                                            y(t)
+
+
+
+
+Continuous-time plant P (s) is part of sampled-data control loop
+   ▶   each block typically requires processing and/or computation time
+   ▶   adds up to a total time delay Td in the loop
+   ▶   controller thus finds that the plant output is delayed w.r.t. its input
+
+
+
+                                                                             21/44
+Real-time implementation
+
+r(t)                                 D/A converter
+                        C(z)                              actuator   P (s)
+       sample                          and hold
+                                                                              y(t)
+
+                               A/D converter                         sensor
+                                                 sample
+
+
+
+Continuous-time plant P (s) is part of sampled-data control loop
+   ▶    each block typically requires processing and/or computation time
+   ▶    adds up to a total time delay Td in the loop
+   ▶    controller thus finds that the plant output is delayed w.r.t. its input
+
+
+
+                                                                               21/44
+Effect of time delay on signals
+Example: 0.1 s time delay
+                   1                                                          1
+                                                original                                                   original
+                                                delayed                                                    delayed
+                  0.5                                                        0.5
+    1Hz signal
+
+
+
+
+                                                               4Hz signal
+                   0                                                          0
+
+
+                 −0.5                                                       −0.5
+
+
+                  −1                                                         −1
+                        0   0.2   0.4     0.6   0.8        1                       0   0.2   0.4     0.6   0.8        1
+                                    Time [s]                                                   Time [s]
+
+
+
+
+                                                                                                                          22/44
+Effect of time delay on signals
+Example: 0.1 s time delay
+                     1                                                          1
+                                                  original                                                   original
+                                                  delayed                                                    delayed
+                    0.5                                                        0.5
+      1Hz signal
+
+
+
+
+                                                                 4Hz signal
+                     0                                                          0
+
+
+                   −0.5                                                       −0.5
+
+
+                    −1                                                         −1
+                          0   0.2   0.4     0.6   0.8        1                       0   0.2   0.4     0.6   0.8        1
+                                      Time [s]                                                   Time [s]
+
+
+
+Phase shift ϕ depends on frequency f of the signal:
+  ▶ ϕ = −2π ·
+                 time delay
+                signal period = −2πf · Td = −ωTd
+  ▶       As a transfer function: Hd (j ω) = e −j ωTd
+                                                                                                                            22/44
+From time to phase delay
+             180
+Phase [°]
+
+
+
+
+              90
+               0
+            −90
+            −180
+                    0         1               2            3
+                   10       10               10           10
+                            Frequency [Hz]
+
+How to estimate the time delay from an FRF measurement?
+
+
+
+
+                                                               23/44
+From time to phase delay
+                180
+Phase [°]
+
+
+
+
+                 90
+                  0
+                −90
+            −180
+                0               200             400            600   800
+                                           Frequency [Hz]
+
+How to estimate the time delay from an FRF measurement?
+            ▶    Plot the phase with a linear frequency axis
+            ▶    Identify parts that are linearly decreasing
+
+
+
+
+                                                                           23/44
+From time to phase delay
+                180
+Phase [°]
+
+
+
+
+                 90
+                  0
+                −90
+            −180
+                0                    200             400               600   800
+                                               Frequency [Hz]
+
+How to estimate the time delay from an FRF measurement?
+            ▶    Plot the phase with a linear frequency axis
+            ▶    Identify parts that are linearly decreasing
+            ▶    Estimate the slope of the linear decay
+                      •   Here: estimated Td = 0.34 ms
+                      •   Less than 2 samples (sample rate is 5 kHz)
+
+
+                                                                                   23/44
+Controller design
+
+
+
+
+                    24/44
+Iteration 1: lead filter
+                                     open loop
+                      60
+                      40
+                                                               bandwidth: 81 Hz
+    Magnitude [dB]
+
+
+
+
+                                                           ▶
+                      20
+                       0
+                     −20
+                     −40
+                     −60
+
+                     180
+
+                      90
+Phase [°]
+
+
+
+
+                       0
+
+                     −90
+
+                −180
+                            0    1                2    3
+                           10   10               10   10
+                                Frequency [Hz]
+
+
+
+
+                                                                                  25/44
+Iteration 1: lead filter
+                                     open loop
+                      60
+                      40
+                                                                             bandwidth: 81 Hz
+    Magnitude [dB]
+
+
+
+
+                                                                         ▶
+                      20
+                       0                                                          nyquist
+                                                            3
+                     −20
+                     −40
+                     −60                                    2
+
+
+                     180
+                                                            1
+
+                      90
+Phase [°]
+
+
+
+
+                                                      Im
+                                                            0
+                       0
+
+                     −90
+                                                           −1
+
+                −180
+                            0    1                2             3
+                           10   10               10        10
+                                                           −2
+                                Frequency [Hz]
+
+                ▶ phase margin: 35.9◦                      −3
+                                                            −4      −3       −2     −1      0   1    2
+                                                                                    Re
+                ▶ modulus margin: 5.7 dB                                                            25/44
+RMS error controller 1
+                                  PSD of error − controller 1
+   [nm2/Hz]
+
+
+
+
+               0
+              10
+
+
+
+
+                                  Cumulative amplitude spectrum
+              140
+                                                                            X: 2500
+      [nm]
+
+
+
+
+                                                                            Y: 138.4
+              135
+
+
+              130
+                               Inverse cumulative amplitude spectrum
+              100
+      [nm]
+
+
+
+
+               50
+
+
+                   0 −1    0                  1                2        3
+                   10     10                10               10        10
+                                         Frequency [Hz]
+                                                                                       26/44
+RMS error controller 1
+                                  PSD of error − controller 1
+   [nm2/Hz]
+
+
+
+
+               0
+              10
+
+
+ Low-frequent contribution of wind force
+                                  Cumulative amplitude spectrum
+              140
+                                                                            X: 2500
+      [nm]
+
+
+
+
+                                                                            Y: 138.4
+              135
+
+
+              130
+                               Inverse cumulative amplitude spectrum
+              100
+      [nm]
+
+
+
+
+               50
+
+
+                   0 −1    0                  1                2        3
+                   10     10                10               10        10
+                                         Frequency [Hz]
+                                                                                       26/44
+Iteration 2: lead + I + low-pass
+                                     open loop
+                      50
+                                                               bandwidth: 75 Hz
+    Magnitude [dB]
+
+
+
+
+                                                           ▶
+
+                       0
+
+
+
+                     −50
+
+
+
+
+                     180
+
+                      90
+Phase [°]
+
+
+
+
+                       0
+
+                     −90
+
+                −180
+                            0    1                2    3
+                           10   10               10   10
+                                Frequency [Hz]
+
+
+
+
+                                                                                  27/44
+Iteration 2: lead + I + low-pass
+                                     open loop
+                      50
+                                                                             bandwidth: 75 Hz
+    Magnitude [dB]
+
+
+
+
+                                                                         ▶
+
+                       0
+                                                                                  nyquist
+                                                            3
+
+                     −50
+                                                            2
+
+
+
+                     180
+                                                            1
+
+                      90
+Phase [°]
+
+
+
+
+                                                      Im
+                                                            0
+                       0
+
+                     −90                                   −1
+
+
+                −180
+                            0    1                2             3
+                           10   10               10        −2
+                                                           10
+                                Frequency [Hz]
+
+                ▶ phase margin: 33.9◦                      −3
+                                                            −4      −3       −2     −1
+                                                                                    Re
+                                                                                            0   1    2
+
+
+                ▶ modulus margin: 6.0 dB                                                            27/44
+RMS error controller 2
+                                    PSD of error − controller 2
+                     0
+              10
+   [nm2/Hz]
+
+
+
+
+                                    Cumulative amplitude spectrum
+                     6
+
+                     4
+              [nm]
+
+
+
+
+                                                                              X: 2500
+                                                                              Y: 4.419
+                     2
+
+                     0
+                                 Inverse cumulative amplitude spectrum
+                     6
+
+                     4
+              [nm]
+
+
+
+
+                     2
+
+                     0 −1    0                  1                2        3
+                     10     10                10               10        10
+                                           Frequency [Hz]
+                                                                                         28/44
+RMS error controller 2
+                                                PSD of error − controller 2
+                     0
+              10
+   [nm2/Hz]
+
+
+
+
+                         Still too much low-frequent   contribution
+                                           Cumulative amplitude spectrum
+                     6
+
+                     4
+              [nm]
+
+
+
+
+                                                                                          X: 2500
+                                                                                          Y: 4.419
+                     2
+
+                     0
+                                             Inverse cumulative amplitude spectrum
+                     6
+
+                     4
+              [nm]
+
+
+
+
+                     2
+
+                     0 −1                0                  1                2        3
+                     10                10                 10               10        10
+                                                       Frequency [Hz]
+                                                                                                     28/44
+Iteration 3: lead + II + low-pass
+                                     open loop
+                     100
+
+                                                               bandwidth: 78 Hz
+    Magnitude [dB]
+
+
+
+
+                                                           ▶
+                      50
+
+
+                       0
+
+
+                     −50
+
+
+
+                     180
+
+                      90
+Phase [°]
+
+
+
+
+                       0
+
+                     −90
+
+                −180
+                            0    1                2    3
+                           10   10               10   10
+                                Frequency [Hz]
+
+
+
+
+                                                                                  29/44
+Iteration 3: lead + II + low-pass
+                                     open loop
+                     100
+
+                                                                             bandwidth: 78 Hz
+    Magnitude [dB]
+
+
+
+
+                                                                         ▶
+                      50
+
+                                                                                  nyquist
+                       0                                    3
+
+
+                     −50
+                                                            2
+
+
+
+                     180
+                                                            1
+
+                      90
+Phase [°]
+
+
+
+
+                                                      Im
+                                                            0
+                       0
+
+                     −90                                   −1
+
+
+                −180
+                            0    1                2             3
+                           10   10               10        −2
+                                                           10
+                                Frequency [Hz]
+
+                ▶ phase margin: 35.9◦                      −3
+                                                            −4      −3       −2     −1
+                                                                                    Re
+                                                                                            0   1    2
+
+
+                ▶ modulus margin: 6.0 dB                                                            29/44
+RMS error controller 3
+                                    PSD of error − controller 3
+                     0
+              10
+   [nm2/Hz]
+
+
+
+
+                                    Cumulative amplitude spectrum
+                     6
+
+                     4
+              [nm]
+
+
+
+
+                                                                              X: 2500
+                                                                              Y: 3.97
+                     2
+
+                     0
+                                 Inverse cumulative amplitude spectrum
+                     6
+
+                     4
+              [nm]
+
+
+
+
+                     2
+
+                     0 −1    0                  1                2        3
+                     10     10                10               10        10
+                                           Frequency [Hz]                               30/44
+RMS error controller 3
+                                    PSD of error − controller 3
+                     0
+              10
+   [nm2/Hz]
+
+
+
+
+                                    Cumulative amplitude spectrum
+                     6
+
+                     4
+              [nm]
+
+
+
+
+                                                                                 X: 2500
+                                                                                 Y: 3.97
+                     2
+
+                     0
+                                                    Still haven’t
+                                 Inverse cumulative amplitude        met the requirement...
+                                                              spectrum
+                     6
+
+                     4
+              [nm]
+
+
+
+
+                     2
+
+                     0 −1    0                 1                2            3
+                     10     10               10               10           10
+                                           Frequency [Hz]
+RMS error controller 3
+                                              PSD of error − controller 3
+                     0
+              10
+   [nm2/Hz]
+
+
+
+
+                            ...due to peaksCumulative
+                                             aroundamplitude
+                                                      8-9 Hz spectrum
+                     6
+
+                     4
+              [nm]
+
+
+
+
+                                                                                           X: 2500
+                                                                                           Y: 3.97
+                     2
+
+                     0
+                                                              Still haven’t
+                                           Inverse cumulative amplitude        met the requirement...
+                                                                        spectrum
+                     6
+
+                     4
+              [nm]
+
+
+
+
+                     2
+
+                     0 −1              0                 1              2              3
+                     10              10                10             10             10
+                                                    Frequency [Hz]                                   30/44
+Iteration 3: understanding the error
+                            d
+             r +   e          u                          y
+                 −
+                      C           H
+                                                             η
+Remember that: Y (s) = T (s) · R (s) + PS (s) · D (s) − T (s) · N (s)
+
+
+
+
+                                                                        31/44
+Iteration 3: understanding the error
+                            d
+             r +   e          u                                                                          y
+                 −
+                      C           H
+                                                                                                             η
+Remember that: Y (s) = T (s) · R (s) + PS (s) · D (s) − T (s) · N (s)
+                                 PSD of error − controller 3
+           10
+                  0                                                                  Realize that:
+[nm2/Hz]
+
+
+
+
+                                                                                       ▶   T (s) and PS (s) do not have
+                  6
+                                 Cumulative amplitude spectrum
+                                                                                           peaks around 8-9 Hz
+                  4
+           [nm]
+
+
+
+
+                  2
+                                                                           X: 2500
+                                                                           Y: 3.97     ▶   R (s) = L{r(t )} = 0
+                  0
+
+                  6
+                              Inverse cumulative amplitude spectrum
+                                                                                       ▶   N (s) = L{η(t )} is flat (likely)
+                  4
+           [nm]
+
+
+
+
+                  2
+                                                                                       ▶   Hence, d (t ) probably has
+                  0 −1
+                  10
+                          0
+                         10                10
+                                             1
+
+                                        Frequency [Hz]
+                                                            10
+                                                              2        3
+                                                                      10                   oscillations
+                                                                                                                               31/44
+Controller enhancements
+using the internal model
+        principle
+
+
+
+                           32/44
+Tracking / disturbance attenuation
+External signals enter at various points in the loop:
+
+                                      d
+          r +         e                    u                 y
+                  −
+                            C                       H
+                                                                 η
+Closed loop performance (e.g. error e) is determined by
+  ▶ Relevant closed loop transfer
+                   H
+      e.g. e = − 1+HC d (disturbance attenuation)
+                 1
+      e.g. e = 1+HC r (tracking)
+  ▶   Specific frequency content of the input signals r, d and/or η
+
+                                                                      33/44
+Tracking / disturbance attenuation
+Perfect tracking / disturbance attenuation can be achieved when
+  ▶ the input signal is exactly known;
+
+  ▶ then the relevant transfer function should counteract the specific
+
+     input signal.
+
+
+
+
+                                                                         34/44
+Tracking / disturbance attenuation
+Perfect tracking / disturbance attenuation can be achieved when
+  ▶ the input signal is exactly known;
+
+  ▶ then the relevant transfer function should counteract the specific
+
+     input signal.
+Simple example:
+  ▶ Suppose r(t ) = sin(at )
+
+  ▶ In frequency domain: R (s) = L(r(t )) has infinite peak at ω = a
+
+  ▶ To get e → 0 for t → ∞ we need e = S to be 0 at ω = a
+                                       r
+                                                  a
+                                       |S|                      ω
+
+
+     −ω −a          0       a    +ω
+                                                                         34/44
+Tracking / disturbance attenuation
+Note that:
+                                     Infinite dip in S means it should
+    Laplace transform of r(t ):            contain an undamped
+                            a      ⇔
+     R (s) = L(r(t )) = s 2 +a 2            anti-resonance at a:
+                                              S (s) ∼ s 2 + a 2
+                        1
+As a result, since S = 1+L  , we know that e → 0 if
+  ▶ L contains the term       1
+                          s 2 +a 2
+                                   ,
+  ▶ so if L contains the Laplace transform of the input r!
+
+
+
+
+                                                                         35/44
+Tracking / disturbance attenuation
+Note that:
+                                     Infinite dip in S means it should
+    Laplace transform of r(t ):            contain an undamped
+                            a      ⇔
+     R (s) = L(r(t )) = s 2 +a 2            anti-resonance at a:
+                                              S (s) ∼ s 2 + a 2
+                        1
+As a result, since S = 1+L  , we know that e → 0 if
+  ▶ L contains the term       1
+                          s 2 +a 2
+                                   ,
+  ▶ so if L contains the Laplace transform of the input r!
+
+
+
+Similarly, if r(t ) is a step reference:
+  ▶ Laplace transform: R (s) = 1
+                                     s
+ ⇒ For perfect tracking: S (s) ∼ s (+1 slope for ω → 0)
+ ⇒ So perfect tracking if L (s) ∼ s1 (-1 slope for ω → 0)
+                                                                         35/44
+Internal model principle
+Summarizing:
+            Signal r(t )     Laplace R (s)   L should contain
+                                     1                 1
+            1(t ) - step             s                 s
+                                     1                 1
+          t · 1(t ) - ramp          s2                s2
+                                     1                 1
+              t 2 · 1(t )           s3                s3
+                                     a                 a
+               sin(at )          s 2 +a 2          s 2 +a 2
+
+If L (s) contains a model of the reference, perfect tracking can be
+guaranteed, so:
+                           e → 0 for t → ∞
+This is known as the Internal Model Principle (IMP).
+Note: A similar reasoning can be applied for disturbances.
+      Perfect disturbance attenuation can be achieved when PS , CS or
+      T contains the inverse model of the disturbance d or η.        36/44
+Internal model principle: examples
+        Open loop                  Sensitivity                   4Hz reference
+                                                        1
+                            0
+20
+                           -10
+ 0                                                      0
+                           -20
+-20
+                           -30
+                                                        -1
+ 10 0      10 1     10 2    10 0      10 1       10 2        0        0.5         1
+
+
+
+
+                                                                                 37/44
+Internal model principle: examples
+        Open loop                  Sensitivity                   4Hz reference
+                                                        1
+                            0
+20
+                           -10
+ 0                                                      0
+                           -20
+-20
+                           -30
+                                                        -1
+ 10 0      10 1     10 2    10 0      10 1       10 2        0        0.5         1
+
+
+
+
+                                                                                 37/44
+Internal model principle: examples
+        Open loop                  Sensitivity                   4Hz reference
+                                                         1
+                            0
+20
+                           -10
+ 0                                                       0
+                           -20
+-20
+                           -30
+                                                        -1
+ 10 0      10 1     10 2    10 0      10 1       10 2        0        0.5          1
+
+        Open loop                  Sensitivity                   Step reference
+                           10                           1.5
+20                          0
+                                                         1
+                           -10
+ 0
+                           -20                          0.5
+-20
+                           -30
+                                                         0
+ 10 0      10 1     10 2    10 0      10 1       10 2        0        0.5          1
+                                                                                  37/44
+Internal model principle: examples
+        Open loop                  Sensitivity                   4Hz reference
+                                                         1
+                            0
+20
+                           -10
+ 0                                                       0
+                           -20
+-20
+                           -30
+                                                        -1
+ 10 0      10 1     10 2    10 0      10 1       10 2        0        0.5          1
+
+        Open loop                  Sensitivity                   Step reference
+                           10                           1.5
+20                          0
+                                                         1
+                           -10
+ 0
+                           -20                          0.5
+-20
+                           -30
+                                                         0
+ 10 0      10 1     10 2    10 0      10 1       10 2        0        0.5          1
+                                                                                  37/44
+Internal model principle: examples
+        Open loop                  Sensitivity                   4Hz reference
+                                                         1
+                            0
+20
+                           -10
+ 0                                                       0
+                           -20
+-20
+                           -30
+                                                        -1
+ 10 0      10 1     10 2    10 0      10 1       10 2        0        0.5          1
+            IMP is essentially the same as high-gain feedback
+        Open loop                  Sensitivity                   Step reference
+                           10                           1.5
+20                          0
+                                                         1
+                           -10
+ 0
+                           -20                          0.5
+-20
+                           -30
+                                                         0
+ 10 0      10 1     10 2    10 0      10 1       10 2        0        0.5          1
+                                                                                  37/44
+So what does this imply for
+  our controller design?
+
+
+
+
+                              38/44
+IMC for PACT
+                                                PSD of error − controller 3
+                            0
+                     10
+          [nm2/Hz]
+
+
+
+
+                                   Largest contribution to total RMS
+                                                Cumulative amplitude spectrum
+                            6
+
+                            4
+                     [nm]
+
+
+
+
+                                                                                          X: 2500
+                                                                                          Y: 3.97
+                            2
+
+                            0
+                                             Inverse cumulative amplitude spectrum
+                            6
+
+                            4
+                     [nm]
+
+
+
+
+                            2
+
+                            0 −1         0                  1                2        3
+                            10          10                10               10        10
+                                                       Frequency [Hz]
+
+ ▶   Required: larger dips in sensitivity S (s) @ 8.3 and 9.1 Hz
+ ▶   Hence, larger gain in C (s) at these frequencies
+                                                                                                    39/44
+Iteration 4: lead + II + low-pass + notches
+                                     open loop
+                     100
+
+                                                               bandwidth: 67 Hz
+    Magnitude [dB]
+
+
+
+
+                                                           ▶
+                      50
+
+
+                       0
+
+
+                     −50
+
+
+
+                     180
+
+                      90
+Phase [°]
+
+
+
+
+                       0
+
+                     −90
+
+                −180
+                            0    1                2    3
+                           10   10               10   10
+                                Frequency [Hz]
+
+
+
+
+                                                                                  40/44
+Iteration 4: lead + II + low-pass + notches
+                                     open loop
+                     100
+
+                                                                             bandwidth: 67 Hz
+    Magnitude [dB]
+
+
+
+
+                                                                         ▶
+                      50
+
+                                                                                  nyquist
+                       0                                    3
+
+
+                     −50
+                                                            2
+
+
+
+                     180
+                                                            1
+
+                      90
+Phase [°]
+
+
+
+
+                                                      Im
+                                                            0
+                       0
+
+                     −90                                   −1
+
+
+                −180
+                            0    1                2             3
+                           10   10               10        −2
+                                                           10
+                                Frequency [Hz]
+
+                ▶ phase margin: 30.4◦                      −3
+                                                            −4      −3       −2     −1
+                                                                                    Re
+                                                                                            0   1    2
+
+
+                ▶ modulus margin: 6.0 dB                                                            40/44
+RMS error controller 4
+                                  PSD of error − controller 4
+               0
+              10
+   [nm2/Hz]
+
+
+
+
+                                  Cumulative amplitude spectrum
+
+              1.5
+       [nm]
+
+
+
+
+                   1
+                                                                            X: 2500
+                                                                            Y: 1.036
+              0.5
+                   0
+                               Inverse cumulative amplitude spectrum
+
+              1.5
+       [nm]
+
+
+
+
+                   1
+              0.5
+                   0 −1    0                  1                2        3
+                   10     10                10               10        10
+                                         Frequency [Hz]
+                                                                                       41/44
+One step further: tracking
+ ▶   Off-loading needed via DC-motor
+        • To reach required stroke of 15 mm
+          (voice coil can handle only few hundred µm)
+        • To reduce power consumption of voice coil
+
+ ▶   Controller design philosophy is MIMO-based:
+
+
+     yref                                               y
+                       CVC FVC
+                   −
+
+               +                       HVC      +
+
+                                                    +
+
+
+
+
+     FVC,ref
+               +   −
+                       CDC TDC         HDC
+                                                        FVC
+
+
+ ▶   Controller CDC can/must be low bandwidth
+                                                              42/44
+Tracking results
+
+
+
+
+                   43/44
+In conclusion
+What have we learned?
+ ▶ PACT successfully controlled well below the required 1.7 nm RMS
+
+        •   using simple loopshaping techniques!
+  ▶   improve FRF measurement by shaping input noise
+  ▶   delays are bandwidth limiting
+  ▶   high bandwidth is not everything
+        •   initial design 81 Hz; final design 67 Hz
+        •   loop gain should be large where it matters
+  ▶   resonances are not necessarily bad
+
+
+
+
+                                                                     44/44
+

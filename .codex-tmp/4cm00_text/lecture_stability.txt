@@ -1,0 +1,1143 @@
+     4CM00: Control Engineering
+     Stability
+     Dr.ir. Gert Witvoet
+
+
+
+
+February 2025
+                            Where innovation starts
+                                                     2/36
+
+
+
+
+                            Feedback and stability
+
+
+
+
+Department of Mechanical Engineering
+  Why feedback?                                                        3/36
+
+
+  Consider a linear system H (s):
+
+                                               Laplace transforms:
+  u [V]                                y [m]   L(u(t )) = U (s)
+                         H                     L(y(t )) = Y (s)
+                                               Y (s) = H (s)U (s)
+
+      ▶   H (s) is a transfer function with polynomial numerator and
+          denominator: H (s) = qp11 (s)
+                                     (s)
+
+
+
+
+Department of Mechanical Engineering
+  Why feedback?                                                              3/36
+
+
+  Consider a linear system H (s):
+
+                                                       Laplace transforms:
+  u [V]                                y [m]           L(u(t )) = U (s)
+                         H                             L(y(t )) = Y (s)
+                                                       Y (s) = H (s)U (s)
+
+      ▶   H (s) is a transfer function with polynomial numerator and
+          denominator: H (s) = qp11 (s)
+                                     (s)
+
+      ▶   Stability is governed by the poles λi of the system:
+               • H (s) is stable if and only if Re(λi ) < 0 for all λi
+               • All poles must be in the LHP!
+               • Poles are solutions s = λ to q1 (s) = 0
+                                             i
+      ▶   Note: discrepancy between units of input u and output y
+
+
+Department of Mechanical Engineering
+  Why feedback?                                                4/36
+
+
+  Add a controller C (s) in series:
+
+  r [m]                                u [V]           y [m]
+                         C                     H
+      ▶   Both input r and output y now in [m]
+      ▶   Controller transfer function: C (s) = pq22 (s)
+                                                     (s)
+
+
+
+
+Department of Mechanical Engineering
+  Why feedback?                                                       4/36
+
+
+  Add a controller C (s) in series:
+
+  r [m]                                u [V]           y [m]
+                         C                     H
+      ▶   Both input r and output y now in [m]
+      ▶   Controller transfer function: C (s) = pq22 (s)
+                                                     (s)
+      ▶   Transfer from r to y:
+          y                        p1 (s) p2 (s)
+          r = L (s) = H (s)C (s) = q1 (s) · q2 (s)
+      ▶   Poles are determined by q1 (s)q2 (s) = 0
+      ▶   Hence, poles remain unchanged!
+  Furthermore, C (s) does not ‘see’ the output y;
+  disturbances or errors are not detected nor compensated by C (s)!
+
+Department of Mechanical Engineering
+  Why feedback?                                                       5/36
+
+
+  Solution: close the loop, feedback the error:
+
+
+  r [m]            +                       u [V]              y [m]
+                           −
+                                       C           H
+                                            H (s)C (s)     L (s)
+  ‘Creates’ a new system from r to y: yr = 1+H (s)C (s) = 1+L (s)
+
+
+
+
+Department of Mechanical Engineering
+  Why feedback?                                                        5/36
+
+
+  Solution: close the loop, feedback the error:
+
+
+  r [m]            +                       u [V]               y [m]
+                           −
+                                       C           H
+                                            H (s)C (s)     L (s)
+  ‘Creates’ a new system from r to y: yr = 1+H (s)C (s) = 1+L (s)
+
+      ▶   Poles are now determined by
+          1 + L (s) = 0 ⇒ q1 (s)q2q(s)  + p1 (s)p2 (s)
+                                    1 (s)q2 (s)
+                                                       =0
+      ▶   Closed loop system has different poles than H (s)
+      ▶   Controller C (s) can be used to ‘change’ the poles
+
+
+
+Department of Mechanical Engineering
+  Stability tests                                                          6/36
+
+
+  How to check closed loop stability?
+
+     1. (Re)compute the closed loop poles (Matlab?)
+  Drawbacks:
+      ▶   Recompute after every controller adjustment
+      ▶   Unclear how to change controller when poles are unsatisfactory
+      ▶   Impossible to do when using an FRF measurement of the plant H
+          (model of H is unknown)
+
+
+
+
+Department of Mechanical Engineering
+  Stability tests                                                          6/36
+
+
+  How to check closed loop stability?
+
+     1. (Re)compute the closed loop poles (Matlab?)
+  Drawbacks:
+      ▶   Recompute after every controller adjustment
+      ▶   Unclear how to change controller when poles are unsatisfactory
+      ▶   Impossible to do when using an FRF measurement of the plant H
+          (model of H is unknown)
+     2. Graphically → Nyquist diagram
+               •   Checks stability as a function of frequency
+               •   No plant model required
+
+
+
+
+Department of Mechanical Engineering
+                                                   7/36
+
+
+
+
+                          Closed loop stability
+                        according to the Nyquist
+                                criterion
+
+
+
+Department of Mechanical Engineering
+  Open loop vs closed loop stability                          8/36
+
+
+  Goal: checking closed loop stability.
+
+  Assume the open-loop transfer: L (s) = H (s)C (s) = ba(s)
+                                                        (s)
+                                            L (s)
+      ▶   Closed loop transfers: 1+L1(s) , 1+L (s) , etc.
+      ▶   Stability governed by denominator:
+          1 + L (s) = 1 + ba(s)
+                            (s) =
+                                  a(s)+b (s)
+                                     b (s)   =0
+
+
+
+
+Department of Mechanical Engineering
+  Open loop vs closed loop stability                                           8/36
+
+
+  Goal: checking closed loop stability.
+
+  Assume the open-loop transfer: L (s) = H (s)C (s) = ba(s)
+                                                        (s)
+                                            L (s)
+      ▶   Closed loop transfers: 1+L1(s) , 1+L (s) , etc.
+      ▶   Stability governed by denominator:
+          1 + L (s) = 1 + ba(s)
+                            (s) =
+                                  a(s)+b (s)
+                                     b (s)   =0
+  Hence:
+      ▶   Poles of 1 + L (s)           ⇒   b (s) = 0   ⇒    open-loop poles!
+      ▶   Zeros of 1 + L (s) ⇒ a(s)+b (s) = 0 ⇒ closed-loop poles!
+
+                   The transfer function 1 + L (s) is thus important as it
+                     contains both open loop and closed loop stability
+                                        information!
+
+
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): background                                     9/36
+
+
+  Let’s analyze 1 + L (s) in the complex plane
+                                                    m
+                                                    Y
+                                                           (s + zi )
+  Any linear system can be written as: G (s) = K · i =1
+                                                     n
+                                                   Y
+                                                           (s + pi )
+                                                    i =1
+      ▶   Zeros located at −zi (could be complex valued)
+      ▶   Poles located at −pi (could be complex valued)
+      ▶   K ∈ R is a real valued gain
+
+
+
+
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): background                                     9/36
+
+
+  Let’s analyze 1 + L (s) in the complex plane
+                                                    m
+                                                    Y
+                                                           (s + zi )
+  Any linear system can be written as: G (s) = K · i =1
+                                                     n
+                                                   Y
+                                                           (s + pi )
+                                                    i =1
+      ▶   Zeros located at −zi (could be complex valued)
+      ▶   Poles located at −pi (could be complex valued)
+      ▶   K ∈ R is a real valued gain
+  Magnitude and phase can be expressed as
+                   Qm
+                          |s + zi |
+   ▶ |G (s)| = K · Q i =1
+                    n
+                    i =1 |s + pi |
+               Xm                   n
+                                    X
+   ▶ ∠G (s) =      ∠ (s + zi ) −      ∠ (s + pi )
+                           i =1         i =1
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): background                                                      10/36
+
+
+      ▶   The terms s + zi and s + pi are complex valued
+      ▶   Thus they can be interpreted as vectors in the complex plane
+      ▶   s + zi : vector from the zero −zi to the value of s = σ + j ω
+          s + pi : vector from the pole −pi to the value of s = σ + j ω
+
+                                Im
+                                            s = σ+jω
+                            ω                          Angle of the term s + pi :
+                −−−→
+                s+p i                                    ▶ Pole location: −pi
+   −pi             φi                                                     −−→ −−−→
+                                       ~s
+                                                         ▶ s + pi = ⃗s − −pi = s + pi
+                                                             −−−→
+           −−
+            →
+            pi                                           ▶ ∠s + p = ϕ
+                                                                  i     i
+                                             σ   Re
+
+  Note: The ‘image’ G (σ + j ω) is also a complex number
+
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): background                                                     11/36
+
+
+  For multiple poles and zeros:
+
+                                       Im
+
+                                                  s = σ+jω
+                     φ2
+
+                                                     θ1
+                                  φ3
+                                                       Re
+                                            G (σ + j ω) is a complex number.
+                                            The phase of G (s) evaluated at s = σ + j ω:
+                        φ1                    ▶   ∠G (σ + j ω) = θ1 − ϕ1 − ϕ2 − ϕ3
+
+                                            ∠G (σ+j ω) = ∠zeros−∠poles
+
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): along a closed contour                              12/36
+
+
+  Now evaluate 1 + L (s) along a closed contour C in the complex plane.
+
+  Poles (×) and zeros (#) of 1+L (s):         Resulting image:
+                            Im                 Im
+                                       s∈C
+
+                                         Re                            Re
+
+                                                       1+L(s), s ∈ C
+
+
+
+
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): along a closed contour                                 12/36
+
+
+  Now evaluate 1 + L (s) along a closed contour C in the complex plane.
+
+  Poles (×) and zeros (#) of 1+L (s):          Resulting image:
+                            Im                   Im
+                                       s∈C
+
+                                         Re                               Re
+
+                                                          1+L(s), s ∈ C
+
+
+  Total phase change after complete revolution: 0◦
+      ▶   No pole or zero encircled by C (all poles and zeros in LHP)
+    ⇒ No encirclement of origin by 1 + L (s)
+
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): along a closed contour                             13/36
+
+
+  Now assume 1 + L (s) has one pole within the contour C .
+
+  Poles (×) and zeros (#) of 1+L (s):         Resulting image:
+                            Im                          Im
+                                       s∈C
+
+                                         Re                           Re
+
+                                                             1+L(s)
+
+
+
+
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): along a closed contour                              13/36
+
+
+  Now assume 1 + L (s) has one pole within the contour C .
+
+  Poles (×) and zeros (#) of 1+L (s):         Resulting image:
+                            Im                          Im
+                                       s∈C
+
+                                         Re                            Re
+
+                                                              1+L(s)
+
+
+  Total phase change after complete revolution: +360◦
+      ▶   Orientation w.r.t. enclosed RHP pole changes 360◦
+    ⇒ One counterclockwise encirclement of origin by 1 + L (s)
+  Enclosed zero yields clockwise encirclement (−360◦ )
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): along a closed contour                  14/36
+
+
+  What if multiple poles and zeros are enclosed?
+
+  Poles (×) and zeros (#) of 1+L (s):     Resulting image:
+
+
+
+
+                                                       1+L(s)
+
+
+
+
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): along a closed contour                        14/36
+
+
+  What if multiple poles and zeros are enclosed?
+
+  Poles (×) and zeros (#) of 1+L (s):     Resulting image:
+
+
+
+
+                                                       1+L(s)
+
+
+
+  Net phase change after complete revolution: −360◦
+  Hence, number of clockwise encirclements of the origin: N = Z − P
+      ▶   Z = number of enclosed zeros
+      ▶   P = number of enclosed poles
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): contour around RHP         15/36
+
+
+  To check if there are poles and zeros in RHP:
+      ▶   Closed contour must encircle whole RHP
+      ▶   Called the D-contour
+
+
+
+
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): contour around RHP                                            15/36
+
+
+  To check if there are poles and zeros in RHP:
+      ▶   Closed contour must encircle whole RHP
+      ▶   Called the D-contour
+                                       Assume strictly proper open loops L (s):
+                                         ▶   #poles > #zeros
+                                         ▶   L (s) → 0 for s → ∞
+                                         ▶   1 + L (s) = 1 for all s on dashed line
+
+
+
+
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): contour around RHP                                            15/36
+
+
+  To check if there are poles and zeros in RHP:
+      ▶   Closed contour must encircle whole RHP
+      ▶   Called the D-contour
+                                       Assume strictly proper open loops L (s):
+                                         ▶   #poles > #zeros
+                                         ▶   L (s) → 0 for s → ∞
+                                         ▶   1 + L (s) = 1 for all s on dashed line
+                                       Evaluation of 1+L (s) along D-contour reduces to
+                                       evaluation of 1+L (s) along imaginary axis:
+                                         ▶   1 + L (j ω) for −∞ < ω < ∞
+
+
+
+
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): contour around RHP                                              15/36
+
+
+  To check if there are poles and zeros in RHP:
+      ▶   Closed contour must encircle whole RHP
+      ▶   Called the D-contour
+                                       Assume strictly proper open loops L (s):
+                                         ▶   #poles > #zeros
+                                         ▶   L (s) → 0 for s → ∞
+                                         ▶   1 + L (s) = 1 for all s on dashed line
+                                       Evaluation of 1+L (s) along D-contour reduces to
+                                       evaluation of 1+L (s) along imaginary axis:
+                                         ▶   1 + L (j ω) for −∞ < ω < ∞
+                                       # clockwise encirclements of origin: N = Z − P
+                                         ▶   Z = # RHP zeros in 1+L (s)
+                                         ▶   P = # RHP poles in 1+L (s)
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): closed loop stability                                 16/36
+
+                                                   L (s)      1
+      ▶   Goal: checking stability of closed loop 1+L (s) , 1+L (s) , etc.
+      ▶   Given: L (s) = ba(s)
+                           (s)
+  Then:
+      ▶   Poles of 1 + L (s)           ⇒   b (s) = 0   ⇒   open-loop poles!
+      ▶   Zeros of 1 + L (s) ⇒ a(s)+b (s) = 0 ⇒ closed-loop poles!
+
+
+
+
+Department of Mechanical Engineering
+  Evaluating 1 + L (s): closed loop stability                                  16/36
+
+                                                   L (s)      1
+      ▶   Goal: checking stability of closed loop 1+L (s) , 1+L (s) , etc.
+      ▶   Given: L (s) = ba(s)
+                           (s)
+  Then:
+      ▶   Poles of 1 + L (s)           ⇒   b (s) = 0    ⇒   open-loop poles!
+      ▶   Zeros of 1 + L (s) ⇒ a(s)+b (s) = 0 ⇒ closed-loop poles!
+
+  To test closed loop stability:
+      ▶   Evaluate 1 + L (j ω) for all −∞ < ω < ∞
+      ▶   Plot the the resulting image in the complex plane
+      ▶   Count # clockwise encirclements of origin: N = Z − P
+               •   Z = # RHP closed loop poles
+               •   P = # RHP open loop poles (known!)
+
+                          Closed loop is stable when Z = N + P = 0
+
+Department of Mechanical Engineering
+  The Nyquist criterion                                                     17/36
+
+
+
+                1 + L (j ω) in s-plane ↔ encirclements of origin
+                                         ⇕   is equivalent to
+                       L (j ω) in s-plane ↔ encirclements of point (-1,0)
+
+
+
+
+Department of Mechanical Engineering
+  The Nyquist criterion                                                           17/36
+
+
+
+                1 + L (j ω) in s-plane ↔ encirclements of origin
+                                         ⇕   is equivalent to
+                       L (j ω) in s-plane ↔ encirclements of point (-1,0)
+
+  Hence, for controller design: N = Z − P
+      ▶   Controller C (s) is designed stable
+      ▶   Plant H (s) has P unstable poles (known a priori)
+      ▶   Requirement: stable closed loop, so Z = 0
+
+                  Nyquist plot of L (j ω) should have P counterclockwise
+                                  encirclements of (-1,0)
+
+  Note: L (j ω) for negative ω is mirror image of L (j ω) for positive ω w.r.t.
+        real axis: L (j ω) = L ∗ (−j ω)
+Department of Mechanical Engineering
+  The Nyquist criterion: relationship with Bode                                                            18/36
+
+
+  Closed loop stability determined by open loop L (s) = H (s)C (s)
+      ▶   Evaluate 1+L (j ω) for −∞ < ω < ∞?                                 ⇒       Frequency response!
+      ▶   Bode(L (j ω)) and Nyquist(L (j ω)) contain the same information!
+                                                                               5
+                                                         Example: L (s) = s 2 +s+4
+                                                  Bode diagram
+                                       10
+                     Magnitude [dB]
+
+
+
+
+                                        0
+
+                                      −10
+
+                                      −20
+
+                                      −30
+                                             −1                     0
+                                            10                     10
+
+                                        0
+            Phase [degrees]
+
+
+
+
+                                      −90
+
+
+
+                               −180
+                                             −1                     0
+                                            10                     10
+                                                  Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+  The Nyquist criterion: relationship with Bode                                                                                  18/36
+
+
+  Closed loop stability determined by open loop L (s) = H (s)C (s)
+      ▶   Evaluate 1+L (j ω) for −∞ < ω < ∞?                                 ⇒                      Frequency response!
+      ▶   Bode(L (j ω)) and Nyquist(L (j ω)) contain the same information!
+                                                                               5
+                                                         Example: L (s) = s 2 +s+4
+                                                  Bode diagram
+                                       10
+                                                                                                2
+                     Magnitude [dB]
+
+
+
+
+                                        0
+
+                                      −10
+                                                                                                1
+                                      −20
+
+
+
+
+                                                                              Imaginary axis
+                                      −30
+                                             −1                     0
+                                            10                     10                           0              ω=∞         ω=0
+
+                                        0
+            Phase [degrees]
+
+
+
+
+                                                                                               −1
+
+                                      −90
+                                                                                               −2
+
+                               −180
+                                             −1                     0
+                                            10                     10                          −2     −1      0        1     2
+                                                  Frequency [Hz]                                           Real axis
+  Note: Unit disc in Nyquist = 0dB line in Bode
+
+Department of Mechanical Engineering
+  The Nyquist criterion: pole at origin                              19/36
+
+
+  What happens if L (s) has an integrator / pole at the origin: s1
+      ▶   How do ω ↑ 0 and ω ↓ 0 connect?
+                 ω↑0
+
+
+
+                         ω <0
+
+                                       ω =∞
+                         -1
+                          ω >0
+
+
+
+
+                 ω↓0
+
+
+
+
+Department of Mechanical Engineering
+  The Nyquist criterion: pole at origin                              19/36
+
+
+  What happens if L (s) has an integrator / pole at the origin: s1
+      ▶   How do ω ↑ 0 and ω ↓ 0 connect?
+                 ω↑0
+
+
+
+                         ω <0
+
+                                       ω =∞
+                         -1
+                          ω >0
+
+                                         ω =0
+
+                 ω↓0
+
+
+      ▶   Infinite gain at ω = 0, i.e. L (j ω) → ∞ for ω → 0
+      ▶   Rapid phase change of −180◦ at ω = 0
+    ⇒ L (j ω) travels half a circle clockwise at infinity
+
+Department of Mechanical Engineering
+  The Nyquist criterion: pole at origin                                       20/36
+
+
+  Poles of L (s) in origin always give clockwise encirclements at infinity.
+  Examples:
+
+
+                                   ω <0
+                                                               ω <0
+
+
+                                   ω =∞
+                              -1
+
+
+                                                 ω =0          ω >0
+                  ω =0             ω >0
+
+
+
+
+                                                           2          2
+               L (s) = s15                     L (s) = 4(s +0.8s+1)
+                                                            s5
+      Two unstable closed loop poles       No net encirclements of (-1,0)
+                                                         ⇓
+                                                Stable closed loop
+
+Department of Mechanical Engineering
+                                                   21/36
+
+
+
+
+                          Some other examples...
+
+
+
+
+Department of Mechanical Engineering
+  Nyquist: examples                                                                                                                                   22/36
+
+
+  Example: unstable open loop (P = 1)
+                                                                1                                                    3
+                                                      L1 (s) = s−2               and                       L2 (s) = s−2
+                                                           Bode diagram
+
+                                      0                                                                  0.6
+                   Magnitude [dB]
+
+
+
+
+                                    −10
+                                                                                                         0.4
+                                    −20
+                                    −30         L1
+                                                                                                         0.2
+
+
+
+
+                                                                                       Imaginary axis
+                                    −40         L2
+                                           −2         −1                0    1
+                                          10         10              10     10                            0
+
+                                    −90                                                                 −0.2
+          Phase [degrees]
+
+
+
+
+                                                                                                        −0.4
+
+                                                                                                        −0.6
+                             −180
+                                           −2         −1                0    1
+                                          10         10               10    10                                 −1.4 −1.2   −1   −0.8 −0.6 −0.4 −0.2
+                                                           Frequency [Hz]                                                       Real axis
+
+      ▶                L1 has no encirclement → closed loop has 1 RHP pole
+      ▶                L2 has 1 counterclockwise encirclement → closed loop stable
+
+Department of Mechanical Engineering
+  Nyquist: examples                                                                                                                          23/36
+
+
+  Example: unstable open loop (P = 1)
+                                                          2                                                  10·2
+                                              L1 (s) = s(s−2)            and                       L2 (s) = s(s−2) · s+0.75
+                                                                                                                     s+6.75
+                                                      Bode diagram                                1
+                               20
+                                                                                                 0.8
+             Magnitude [dB]
+
+
+
+
+                                0
+                                                                                                 0.6
+                              −20
+                              −40        L1                                                      0.4
+
+
+
+
+                                                                               Imaginary axis
+                              −60        L2                                                      0.2
+                                    −2           −1                  0     1
+                               10               10               10       10                      0
+                                                                                                −0.2
+                              180
+    Phase [degrees]
+
+
+
+
+                                                                                                −0.4
+                               90
+                                                                                                −0.6
+                                0
+                                                                                                −0.8
+                              −90
+                                                                                                 −1
+                       −180
+                            −2                   −1                  0     1
+                          10                    10                10      10                     −2.5    −2    −1.5          −1   −0.5   0
+                                                      Frequency [Hz]                                                  Real axis
+
+                      ▶         L1 has 1 clockwise encirclement → closed loop has 2 RHP poles
+                      ▶         L2 has 1 counterclockwise encirclement → closed loop stable
+
+Department of Mechanical Engineering
+  Nyquist: examples                                                                                         24/36
+
+
+  Specific motion system (stable, minimum phase):
+                                              Bode diagram
+                                                                                       90◦
+            Magnitude [dB]
+
+
+
+
+                              20
+
+                               0
+                                                                                         |L(jω)| = 1
+                             −20
+
+                             −40
+                                   0                 1           2
+                               10                  10           10
+                                                                        180◦
+                                                                       −180◦                           0◦
+                             180
+   Phase [degrees]
+
+
+
+
+                              90
+
+                               0
+
+                             −90
+
+                      −180                                                     L(jω)
+                         10
+                           0
+                                                   10
+                                                     1           2
+                                                                10                     −90◦
+                                              Frequency [Hz]
+
+
+                                       Bode: |L | and ∠L                 Nyquist: Re(L ) and Im(L )
+  2 integrators: 2 poles in the origin
+                         ▶         L (j ω) makes 1 clockwise (infinite length) encirclement at ω = 0
+
+Department of Mechanical Engineering
+                                                      25/36
+
+
+
+
+                            Making Nyquist a little
+                                 simpler...
+
+
+
+
+Department of Mechanical Engineering
+  Simplifying Nyquist                                                                   26/36
+      ▶    A necessary requirement for stable closed loop:
+          Nyquist: (-1,0) is on the left side of L (j ω) = H (j ω)C (j ω),
+                   where 0 < ω < ∞ (only positive frequencies)
+                                  ⇕
+          Bode: slope at first crossover frequency ωco is approx -1,
+                 i.e. ∠L (j ω) at ωco is between −180◦ and 0◦
+      ▶ When there are no more crossovers and Bode gain-phase holds,
+
+        then this is also sufficient, i.e. when L (s):
+               •   is stable and minimum phase (all poles and zeros in LHP),
+               •   and |L (j ω)| < 1, ∀ω > ωco
+          then all ‘rotations’ have been compensated by the time L (j ω) hits
+          the unit disc, and L (j ω) stays inside this disc for ω > ωco .
+      ▶   If |L (j ω)| = 1 at multiple frequencies, then also count the possible
+          encirclements between subsequent crossovers.
+  Crossover ωco : Frequency where |L (j ω)| = 1, i.e. where L (j ω) crosses 0dB line.
+
+Department of Mechanical Engineering
+                                                 27/36
+
+
+
+
+                 Nyquist and stability margins
+
+
+
+
+Department of Mechanical Engineering
+  Stability margins                                                                                       28/36
+
+
+
+
+                                                Bode diagram
+            Magnitude [dB]
+
+
+
+
+                              20
+
+                                 0
+                                                                                       1/GM
+                                                                      −180◦
+                             −20
+
+                             −40
+                                                                                  PM
+                                     0                 1          2
+                                 10                  10          10
+
+                             180
+   Phase [degrees]
+
+
+
+
+                                                                                                |L(jω)| = 1
+                              90
+
+                                 0
+
+                             −90
+                                                                              L(jω)
+                      −180
+                           0                           1          2
+                                                                                              −90◦
+                         10                          10          10
+                                                Frequency [Hz]
+
+
+
+
+                             ▶       Infinite gain and phase= −180◦ for small ω
+                             ▶       Small phase lead PM at crossover ωco
+                             ▶       Resonance loop (with phase shift) around 50Hz
+Department of Mechanical Engineering
+  Robustness                                                                    29/36
+
+
+  Robustness: the quality of being able to withstand changes or
+       variations in circumstances or dynamics
+      ▶   A robust closed loop stays stable after small variations in dynamics
+      ▶   A Nyquist curve far from -1 is more robust than a curve close to -1
+
+  Robustness margins:
+  Phase margin (PM): Phase lead above −180◦ at the frequency where
+        |L (j ω)| = 0dB
+  Gain margin (GM): The inverse of GM is the gain at the frequency where
+        ∠L (j ω) = −180◦
+  Modulus margin (MM): The inverse of the smallest distance of L (j ω)
+       over all ω to the point -1
+
+
+
+
+Department of Mechanical Engineering
+  Modulus margin                                                                         30/36
+
+
+
+
+     −180◦                                             Distance between a point on
+                                                       L (j ω) and (-1,0) is a simple vec-
+                                                       tor operation:
+          1+L(jω)
+                                         |L(jω)| = 1      L (j ω) − (−1) = 1 + L (j ω)
+
+                   L(jω)
+                                       −90◦
+
+
+
+      ▶   This is the inverse of Sensitivity S (j ω) = 1+L1(j ω) !
+      ▶   Peak in S gives smallest distance to (-1,0)
+
+
+Department of Mechanical Engineering
+  Modulus margin                                                                                       31/36
+
+
+  Circles around (-1,0) represent bounds on
+      ▶   ‘distance from instability’ ⇒ robustness
+      ▶   maximum value in S
+
+                                                                                   Sensitivity
+
+
+
+                                                                        5
+
+          2dB   6dB      10dB
+                                                                        0
+
+
+
+
+                                                     Magnitude [dB]
+                                                                      −5
+
+
+
+                                       |L(jω)| = 1                    −10
+
+
+                                                                      −15
+                      L(jω)
+                                                                             1                     2
+                                                                            10                    10
+                                                                                 Frequency [Hz]
+
+
+
+
+Department of Mechanical Engineering
+                                                   32/36
+
+
+
+
+                         What does this mean for
+                           controller design?
+
+
+
+
+Department of Mechanical Engineering
+  Stabilization                                                                  33/36
+
+  General procedure to design stabilizing controller:
+
+      ▶   choose desired crossover frequency ωco
+      ▶   tune L (j ω) for low frequencies ω ≤ ωco
+               • Bode: change slope of L (j ω) at ωco to approx -1,
+                        i.e. create phase between −180◦ and 0◦
+                 Nyquist: leave (-1,0) on the left of L (j ω)
+               • if RHP zeros or poles in open loop:
+
+                        check encirclements in Nyquist
+                                ⇓
+                        if unstable, try different ωco
+      ▶   tune L (j ω) for higher frequencies ω > ωco
+               •   check phase at other 0dB crossings and correct if necessary
+      ▶   make adjustments to meet desired margins
+
+
+
+Department of Mechanical Engineering
+  Stabilization tools                                                                34/36
+
+  Basic control methods to stabilize closed loop:
+    ▶ Open loop gain
+
+              increase or decrease controller gain globally
+               •
+
+            ⇒ Bode: move frequency response of L (j ω) up or down
+                    to change ωco and the corresponding phase
+            ⇒ Nyquist: enlarge or reduce the Nyquist plot of L (j ω) w.r.t. (0,0)
+                    to position L (j ω) around (-1,0)
+      ▶   Controller phase
+               add LHP zero(s) (or pole(s)) to the controller to increase (or decrease)
+               •
+
+               the phase locally
+             • normally using lead filter or PD
+
+            ⇒ Bode: place LHP zero(s) somewhat before ωco to increase
+                     the phase around ωco
+            ⇒ Nyquist: rotate a part of L (j ω) to pull it to right of (-1,0)
+             • Note 1: this also changes the gain locally!
+             • Note 2: negative gain changes phase with 180◦ globally
+
+
+
+
+Department of Mechanical Engineering
+  Some final stabilization tips                                                35/36
+
+
+  For stable minimum-phase open loops:
+      ▶   Use simplified Nyquist criterion
+    ⇒ Leave -1 to the left (i.e. phase lead above −180◦ at cross-over)
+  For unstable open loops (P RHP poles):
+      ▶   Use full Nyquist criterion
+      ▶   Create P counterclockwise encirclements (i.e. extra phase)
+      ▶   Use phase lead of RHP pole to create extra phase outside unit disc
+    ⇒ Choose crossover ωco above unstable poles
+  For non-minimum phase open loops:
+      ▶   Use full and/or simplified Nyquist criterion
+      ▶   RHP zero creates undesired phase lag
+      ▶   Allow this phase lag only inside the unit disc
+    ⇒ Choose crossover ωco below RHP zeros
+Department of Mechanical Engineering
+                                                                            36/36
+
+
+
+
+                                                                    m
+                                                              φ
+
+
+                                                                  Fg = mg
+                                       C
+                                                   F
+                                                         M
+
+                                                                     x
+
+
+
+
+                                           Let’s stabilize!
+Department of Mechanical Engineering
+
