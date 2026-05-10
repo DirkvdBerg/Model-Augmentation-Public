@@ -55,7 +55,7 @@ DTYPE = torch.float64
 #   'ref_injection' — T1–T8, multisine injected into reference r (preferred)
 #                     Matlab-output/parameter-recovery-ref-injection/
 #                     Excitation reaches plant via T≈1, not attenuated by S≪1.
-DATASET = 'multisine'
+DATASET = 'identification'
 
 _BASE = os.path.join(os.path.dirname(__file__), '..', '..')
 _TRAJ_BASE = (
@@ -70,21 +70,32 @@ _TRAJ_EXTENDED = _TRAJ_BASE + (
     {'id': 'T7', 'file': 'T7_X_antisym_Y_sweep.mat'},
     {'id': 'T8', 'file': 'T8_X_sym_anti_Y_sweep.mat'},
 )
+_MULTISINE_VAL_TEST = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery-multisine-val-test')
+_IDENTIFICATION_DIR = os.path.join(_BASE, 'Matlab-output', 'identification-trajectories')
 _DATASETS = {
     'base': dict(
-        traj_dir   = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery'),
-        save_dir   = os.path.join(_BASE, 'simulations', 'param_recovery'),
-        traj_specs = _TRAJ_BASE,
+        traj_dir     = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery'),
+        val_test_dir = _MULTISINE_VAL_TEST,
+        save_dir     = os.path.join(_BASE, 'simulations', 'param_recovery'),
+        traj_specs   = _TRAJ_BASE,
     ),
     'multisine': dict(
-        traj_dir   = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery-multisine'),
-        save_dir   = os.path.join(_BASE, 'simulations', 'param_recovery_multisine'),
-        traj_specs = _TRAJ_EXTENDED,
+        traj_dir     = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery-multisine'),
+        val_test_dir = _MULTISINE_VAL_TEST,
+        save_dir     = os.path.join(_BASE, 'simulations', 'param_recovery_multisine'),
+        traj_specs   = _TRAJ_EXTENDED,
     ),
     'ref_injection': dict(
-        traj_dir   = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery-ref-injection'),
-        save_dir   = os.path.join(_BASE, 'simulations', 'param_recovery_ref_injection'),
-        traj_specs = _TRAJ_EXTENDED,
+        traj_dir     = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery-ref-injection'),
+        val_test_dir = _MULTISINE_VAL_TEST,
+        save_dir     = os.path.join(_BASE, 'simulations', 'param_recovery_ref_injection'),
+        traj_specs   = _TRAJ_EXTENDED,
+    ),
+    'identification': dict(
+        traj_dir     = _IDENTIFICATION_DIR,
+        val_test_dir = _IDENTIFICATION_DIR,   # V1/E1 live in the same folder as T1-T8
+        save_dir     = os.path.join(_BASE, 'simulations', 'param_recovery_identification'),
+        traj_specs   = _TRAJ_EXTENDED,
     ),
 }
 
@@ -94,8 +105,8 @@ SAVE_DIR   = _ds['save_dir']
 TRAJ_SPECS = _ds['traj_specs']
 
 # ── Validation / test trajectories ───────────────────────────────────────────
-# Separate directory; files not used during training.
-_VAL_TEST_DIR = os.path.join(_BASE, 'Matlab-output', 'parameter-recovery-multisine-val-test')
+# Directory follows dataset config — for 'identification', same folder as training.
+_VAL_TEST_DIR = _ds['val_test_dir']
 
 # VAL_SPECS: drives LR scheduler and best-model selection during training.
 # () = fall back to training trajectories (no held-out validation).
