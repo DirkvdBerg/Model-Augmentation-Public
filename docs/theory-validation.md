@@ -80,65 +80,100 @@ different identification paradigms:
 
 ## STEP 0 — Pre-analysis: `diagnostics_system.m`
 
-**What it does:** Runs a short broadband probe through the closed-loop simulation to
-empirically estimate the sensitivity survival profile `|Ŝ(jω)|²`. Outputs f_low, f_high,
-τ_max, and the survival profile used to shape Step 1 amplitude weighting.
+**What it does:** Runs a broadband probe through the closed-loop simulation at multiple
+Y operating points. Estimates two empirical FRFs from the probe data: the sensitivity
+survival profile Ŝ(jω) and the open-loop plant FRF Ĝ(jω). Outputs f_low, f_high,
+and fs_new — all derived from data, not from parametric model matrices.
+τ_max is NOT an output of Step 0 — it belongs to Step 2 (BPTT segment analysis) and
+requires separate justification there.
 
-> **Why simulation-based (not analytical):** In the current parametric model, empirical
-> Ŝ and analytical S are identical — equivalent results. But when the model becomes
-> incomplete (augmentation added, or hardware), the nominal analytical S(jω) diverges
-> from the true survival profile. Running from simulation data means the same code works
-> at every stage without modification.
+> **Why empirical (not analytical):** In the current parametric model, empirical and
+> analytical FRFs are identical. But when the augmentation network is added, or on
+> hardware, the nominal analytical FRFs diverge from the true system behavior. Deriving
+> all outputs from observed data means the same code works at every stage without
+> modification — the key extensibility requirement.
+
+> **Why multiple Y positions:** The plant is LPV — M(Y) changes with Y, so both Ĝ and
+> Ŝ are Y-dependent. The probe is run at 5 static Y positions evenly spaced across the
+> full hardware operating range [-0.4, 0.4] m. All four outputs are taken as worst-case
+> (maximum) across Y values, ensuring the design is valid at every operating point.
+
+**Probe signal (decisions fixed):**
+- All odd harmonics from 1 Hz to 9 kHz, flat amplitude, Schroeder phases
+- 4 periods at 20 kHz simulation rate
+- Force injection (f_sim after controller, reference r held static at each Y)
+- Record: f_sim, u_total, q1 at each Y position
+
+**Two FRF estimates per Y position:**
+
+| Estimator | Formula | Derivation |
+|-----------|---------|------------|
+| Ŝ(jω) | FFT(u_total) / FFT(f_sim) | At excited frequencies where r has no content: U_fb = −T×F_sim, so U_total = U_fb + F_sim = (1−T)×F_sim = S×F_sim. Ratio gives S exactly. |
+| Ĝ(jω) | FFT(q1) / FFT(u_total) | Plant equation y = G×u_total holds regardless of closed-loop context. Ratio gives G exactly at excited frequencies in noiseless simulation. |
 
 **Procedure:**
-1. Inject a flat broadband probe multisine (all odd harmonics from f_probe_low to f_probe_high,
-   equal amplitude) as force injection — **probe signal design is itself a gap: frequency
-   range, amplitude, and number of averaging periods must be specified before implementation**
-2. Record `f_sim(t)` and `u_total(t)` from the closed-loop simulation
-3. Estimate `Ŝ(jω) = FFT(u_total) / FFT(f_sim)` — empirical survival profile
-4. Derive f_low = lowest frequency where `|Ŝ(jω)|²` is meaningfully above zero
-5. Derive τ_max from the dominant pole of the open-loop plant state matrix A_c
-   (A_c is the plant, not closed-loop, matrix; BPTT replays u open-loop through the plant)
-6. Use `|Ŝ(jω)|` profile as input to Step 1 amplitude weighting —
-   **formula for A_k as a function of |Ŝ| must be specified before implementation (see gap below)**
+1. For each Y in {-0.4, -0.2, 0.0, 0.2, 0.4} m: hold stage static, inject probe f_sim, record f_sim, u_total, q1
+2. Compute Ŝ(jω) = FFT(u_total)/FFT(f_sim) and Ĝ(jω) = FFT(q1)/FFT(u_total) per Y
+3. Derive f_low, f_high, fs_new per Y, then take max across Y
 
-**Future (augmentation active):** re-run Step 0 with augmented closed-loop — Ŝ reflects
-new dynamics automatically. No code change.
-**Future (hardware):** replace simulation run with measured `f_sim` and `u_total` from
-the real system. Same estimation formula. No code change.
+**Three outputs:**
 
-| Choice | Type | Source to verify | Flag |
-|--------|------|-----------------|------|
-| `Ŝ(jω) = FFT(u_total) / FFT(f_sim)` as empirical survival | THEORY | Feedback algebra: with force injection and no multisine in reference r, at each injected frequency ω_k: U_total = S×F_sim exactly (derivation: Y = G×S×F_sim, U_fb = −C×Y = −CGS×F_sim, U_total = U_fb + F_sim = F_sim(1−CGS) = S×F_sim). D-048; any feedback control textbook, e.g. Skogestad & Postlethwaite (2005) Ch.2. **Note: u_fb DOES contain the multisine — the ratio is S because u_fb + f_sim = S×f_sim, not because u_fb = 0** | **Verify derivation. Single-period FFT exact in noiseless sim; need period averaging on hardware** |
-| f_low from lowest frequency where `\|Ŝ\|²` meaningful | HEURISTIC | No universal threshold — engineering choice. Declare threshold value explicitly to supervisors. **Check for general range guidance:** Lecture 9 (`literature/experiment-design/System-identification/Lecture 9.pdf`) slides on bandwidth selection; Lecture 13 on experiment design bounds | **NO SOURCE for threshold — must declare value and basis. Look in lectures first.** |
-| f_high from controller bandwidth | Engineering constraint | Controller design spec — no theory needed | OK |
-| `τ_max` from dominant pole of open-loop plant matrix A_c | THEORY | BPTT replays u open-loop through the plant model; memory is governed by open-loop plant poles. τ_max = −1/Re(λ_max(A_c)) where A_c is the continuous-time plant state matrix | **Verify A_c is plant matrix not closed-loop; confirm τ_max definition** |
-| Probe signal design (frequency range, amplitude, periods) | **GAP** | **No design specification exists for the Step 0 probe signal.** Must specify: f_probe_low (use known physical lower bound), f_probe_high (use controller bandwidth), amplitude (within actuator limits), N_avg periods. **Check for general guidance:** Lecture 3 (`Lecture 3.pdf`) on periodic signal measurement; Lecture 9 slides on averaging/SNR; P&S Ch.2 §2.5 on number of averages for FRF convergence (DOI: 10.1002/9781118287422) | **Must specify before implementation. Look in Lecture 3, 9 and P&S Ch.2 first.** |
-| A_k = g(|Ŝ(jω_k)|) amplitude weighting formula | **GAP** | **No formula exists translating the |Ŝ| profile into actual amplitude values A_k.** Options: A_k ∝ |Ŝ(jω_k)|; A_k ∝ 1/|Ŝ|; proximity to resonance. **Check for general guidance:** Lecture 9 slide 13 and 27 on power allocation rules; Lecture 13 on input spectrum shaping. If no formula found, declare engineering choice | **Must specify before implementation. Look in Lecture 9, 13 first.** |
-| `fs_new ≥ 10 × f_osc_min` | HEURISTIC from lecture | 5SMB0 Lecture 9, slides 10–12 (TU/e internal). Not confirmed at page level in Ljung (1999) or P&S (2012) | **Verify slide number. Declare as lecture heuristic if no book source** |
-| Integer decimation: `D = round(fs_orig / fs_new)` | THEORY | Standard decimation — any DSP textbook | OK |
-| FIM-driven band selection and amplitude shaping | DEFERRED | Not currently used — see Gap G12 | — |
+| Output | From | How | Type |
+|--------|------|-----|------|
+| f_low | Ŝ | max over Y of lowest frequency where \|Ŝ(jω)\|² > 0.1 | HEURISTIC threshold |
+| f_high | Ĝ | max over Y of last resonance peak in \|Ĝ(jω)\| | INFERENCE |
+| fs_new | Ĝ | 10 × f_high (same peak, same Y worst-case). Ensures ≥10 samples per period of highest excited mode. D = round(fs_orig / fs_new) | HEURISTIC from lecture — applied to highest frequency, not lowest |
+
+**Future (augmentation active):** re-run probe with augmented closed-loop — both Ŝ and
+Ĝ reflect new dynamics automatically. No code change.
+**Future (hardware):** replace simulation run with measured f_sim, u_total, q1 from
+the real system. Same formulas. No code change.
+
+| Choice | Type | Source | Flag |
+|--------|------|--------|------|
+| `Ŝ(jω) = FFT(u_total) / FFT(f_sim)` | THEORY | Feedback algebra: U_total = S×F_sim at injected frequencies where r has no content. D-048; Skogestad & Postlethwaite (2005) Ch.2. Note: u_fb contains the multisine — the ratio is S because u_fb + f_sim = S×f_sim, not because u_fb = 0. | Verify derivation. Single-period FFT exact in noiseless sim; needs period averaging on hardware. |
+| `Ĝ(jω) = FFT(q1) / FFT(u_total)` | THEORY | Plant equation y = G×u_total. At excited frequencies, ratio gives G exactly. Not biased in closed loop because u_total is the actual plant input (not the reference). | Exact in noiseless sim. On hardware with noise, use indirect estimator or multiple periods to average. |
+| f_low from \|Ŝ\|² > 0.1 (−10 dB threshold) | HEURISTIC | No universal threshold. Declared as engineering design choice. | Must declare threshold and basis to supervisors. No source found in Lecture 9, 13, or P&S. |
+| f_high from \|Ĝ\| rolloff past last resonance | INFERENCE | Above highest resonance, G ~ −1/(ω²M) (inertia-dominated), parameter sensitivity drops. f_high set where \|Ĝ\| has clearly flattened. Criterion for "clearly flattened" is a declared heuristic. | Needs a concrete criterion (e.g. within X dB of high-frequency asymptote). Declare to supervisors. |
+| `fs_new = 10 × f_high` from last resonance peak in \|Ĝ\| | HEURISTIC from lecture | 5SMB0 Lecture 9, slides 10-12: "10ωb ≤ ωs ≤ 30ωb" where ωb is system bandwidth. Applied here to f_high (highest excited mode) — ensures ≥10 samples per oscillation period of the fastest relevant dynamic. Not confirmed at page level in Ljung (1999) or P&S (2012). **Correction from session:** earlier stated 10 × f_osc_min (lowest resonance) which is wrong — 10 × f_osc_min can fall below Nyquist for f_high. | Declare as lecture heuristic. González et al. (2024) confirms this is not a hard consistency threshold for PEM. DOI: 10.1109/LCSYS.2024.3487501 |
+| Multiple Y positions, worst-case combining | ENGINEERING PRACTICE | No specific source. Conservative design: ensures outputs valid at most demanding operating point across the LPV range. | Declare as engineering choice. |
+| Odd harmonics, Schroeder phases, 4 periods | THEORY / HEURISTIC | Odd harmonics: P&S (2012) Ch.4 §4.3.2 — leakage-free, nonlinearity detection. Schroeder phases: Schroeder (1970) DOI 10.1109/TIT.1970.1054411 — crest factor minimization. 4 periods: heuristic (P&S Ch.2 §2.5 discusses multiple periods for variance reduction, no specific number). | Verify P&S §4.3.2 for odd harmonics. Declare 4 periods as engineering choice. |
+| Integer decimation: `D = round(fs_orig / fs_new)` | THEORY | Standard decimation — any DSP textbook. | OK |
 
 **Supervisor statement for f_low threshold:**
 > "f_low is set to the lowest frequency at which the empirical sensitivity estimate
-> `|Ŝ(jω)|²` exceeds [declared threshold]. This threshold has no universal literature
-> value and is declared as an engineering design choice."
+> `|Ŝ(jω)|²` exceeds 0.1 (−10 dB). This threshold has no universal literature value
+> and is declared as an engineering design choice."
+
+**Supervisor statement for f_high:**
+> "f_high is set to the frequency at which the empirical open-loop plant FRF `|Ĝ(jω)|`
+> has rolled off past its last mechanical resonance into the inertia-dominated regime.
+> The specific rolloff criterion is an engineering design choice."
 
 **Skogestad & Postlethwaite (2005):** "Multivariable Feedback Design," 2nd ed., Wiley.
-ISBN: 978-0-470-01168-3. Widely available as PDF; DOI of 1st ed: 10.1002/0470012978.
+ISBN: 978-0-470-01168-3. DOI of 1st ed: 10.1002/0470012978.
 
 ---
 
 ## STEP 1 — Multisine design: `design_multisine.m`
 
-**What it does:** Constructs the multisine excitation signal from the f_low, f_high, fs_new
-output of Step 0. Every parameter below must be justified before the signal is generated.
+**What it does:** Constructs the multisine excitation signal using f_low, f_high, fs_new
+from Step 0. Every parameter below must be justified before the signal is generated.
+
+**What Step 0 justifies for Step 1:**
+
+| Step 0 output | Justifies in Step 1 |
+|---------------|---------------------|
+| f_low | Lowest excited harmonic; sets period length T_p = 1/f_low |
+| f_high | Highest excited harmonic; also determines fs_new = 10 × f_high |
+| fs_new = 10 × f_high | Decimation factor D = round(fs_orig / fs_new) for BPTT training |
+
+All other choices (harmonic structure, phase, amplitude) are independent of Step 0.
 
 ### Frequency line selection
 
-> **Active strategy (resonance/bandwidth-weighted broadband):** all odd harmonics from f_low
-> to f_high, with amplitude biased toward resonances and system bandwidth. No FIM-driven
-> line filtering. FIM-based selection deferred to G12.
+> **Active strategy:** all odd harmonics from f_low to f_high, flat amplitude. No
+> FIM-driven line filtering. FIM-based selection deferred to G12.
 
 | Choice | Type | Source to verify | Flag |
 |--------|------|-----------------|------|
@@ -150,29 +185,31 @@ output of Step 0. Every parameter below must be justified before the signal is g
 
 ### Amplitude
 
-> **Active strategy — Phase 1 (parametric only):** amplitude biased toward resonances and
-> system bandwidth using |Ŝ(jω)| profile from Step 0. Declared HEURISTIC — variance
-> motivation in source is PEM/noise-based, not BPTT-specific.
-> **Phase 2 (augmentation active):** switch to flat amplitude spectrum (D-050).
+> **Active strategy:** flat amplitude spectrum across all excited lines. Declared
+> HEURISTIC — no primary source justifies flat amplitude as optimal for BPTT.
+> The amplitude weighting formula A_k = g(|Ŝ(jω_k)|) is a documented gap (no primary
+> source found in Lecture 9, 13, or P&S for the exact formula). Flat amplitude is the
+> minimal defensible choice: simpler to declare, avoids introducing an unjustified formula.
 > FIM-optimal shaping deferred to G12.
 
-| Choice | Type | Source to verify | Flag |
-|--------|------|-----------------|------|
-| Principle: concentrate amplitude toward resonances and system bandwidth | HEURISTIC | 5SMB0 Lecture 9 slide 13 (TU/e internal): "allocate power to relevant frequency ranges, e.g. resonance frequency and bandwidth"; Lecture 9 slide 27: "colored noise/filtering can assign more power to important frequency ranges". Also check Lecture 13 for any quantitative guidance on power allocation | **HEURISTIC — PEM/noise justification, not BPTT-specific. Declare to supervisors. Verify slide numbers against `Lecture 9.pdf` and `Lecture 13.pdf`** |
-| Formula A_k = g(\|Ŝ(jω_k)\|) — how to translate profile into amplitudes | **GAP** | **No formula specified.** Check Lecture 9 slides 13, 27 and Lecture 13 for any quantitative rule (e.g. proportional to |Ŝ|, power of |Ŝ|, dB-based). If none found: declare engineering choice and specify value | **Must specify before implementation. Check `Lecture 9.pdf` and `Lecture 13.pdf` first.** |
-| Phase 2 (augmentation): flat amplitude spectrum | THEORY | Ljung (1999) Ch.13 — informative inputs over full operating range | **Verify §number** |
-| Normalize RMS to ETEL actuator limits | Engineering constraint | Hardware spec — no theory needed | OK |
-| Clipping / amplitude sweep to max passing limits | Engineering constraint | Hardware spec | OK |
-| FIM-optimal amplitude shaping `A_k ∝ 1/\|S\|` or convex `p_k` optimization | DEFERRED | No primary source for our exact setup — see Gap G12 | — |
+**What Step 0 justifies for amplitude:** Step 0 provides the Ŝ profile which MOTIVATES
+concentrating amplitude where |Ŝ| is larger (more force survives). However, the
+translation formula A_k = g(|Ŝ_k|) has no primary source, so flat amplitude is used
+and the Ŝ profile is retained as a diagnostic output only.
 
-**Supervisor statement for amplitude shaping:**
-> "We concentrate multisine amplitude toward resonances and system bandwidth using the
-> empirical |Ŝ(jω)| profile from Step 0, following the input design guidance in
-> 5SMB0 Lecture 9 (slide 13). The specific amplitude formula A_k = g(|Ŝ(jω_k)|) is
-> an engineering design choice with no primary source. The variance-based justification
-> in the lecture assumes PEM with a noise model; for our noiseless BPTT setup the same
-> principle applies qualitatively but has no formal proof.
-> FIM-optimal line-power allocation (Gevers et al. 2011) is recorded as future work (G12)."
+| Choice | Type | Source | Flag |
+|--------|------|--------|------|
+| Flat amplitude across all lines | HEURISTIC | Declared engineering choice — simplest defensible option given no primary source for BPTT-specific amplitude weighting formula. | Declare to supervisors. |
+| Normalize total RMS to ETEL actuator limits | Engineering constraint | Hardware spec — no theory needed. | OK |
+| A_k = g(\|Ŝ(jω_k)\|) amplitude weighting | **GAP** | No formula found in Lecture 9, 13, or P&S that specifies the exact translation from |Ŝ| to amplitude values for BPTT. | Not implemented. Deferred to G12 together with FIM-optimal shaping. |
+| FIM-optimal amplitude shaping | DEFERRED | No primary source for our exact BPTT setup — see Gap G12. | — |
+
+**Supervisor statement for amplitude:**
+> "All excited lines carry equal amplitude. The |Ŝ(jω)| profile from Step 0 motivates
+> concentrating amplitude where force injection survives the controller, but no primary
+> source specifies the translation formula A_k = g(|Ŝ_k|) for BPTT identification.
+> Flat amplitude is therefore used and declared as an engineering design choice.
+> FIM-optimal line-power allocation is recorded as future work (G12)."
 
 ### Phase and harmonic structure
 

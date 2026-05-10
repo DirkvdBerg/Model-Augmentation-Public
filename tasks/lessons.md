@@ -80,6 +80,15 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
+### Rule: In a nonparametric analysis, derive all outputs from empirical data — never from the parametric model
+
+**Trigger**: When computing any output quantity (time constant, resonance frequency, bandwidth, sampling rate) in a context explicitly framed as nonparametric or empirical
+**Rule**: Do not compute that quantity from the parametric model (e.g. eigenvalues of A_c, eig(A_c), model matrices). Derive it from the observed data (e.g. Ŝ(jω) from FFT(u_total)/FFT(f_sim), Ĝ(jω) from FFT(q1)/FFT(u_total), resonance peaks from |Ĝ|). This rule has been violated repeatedly — it is non-negotiable.
+**Why**: User has corrected this mistake multiple times across the session. Every time a parametric fallback is suggested (eig(A_c) for fs_new, eigenvalues for f_osc_min, A_c for τ_max), it defeats the entire purpose: the nonparametric approach must work on hardware where the model is unknown or wrong.
+**How to apply**: Before writing ANY formula or code in a nonparametric analysis step, check: does this reference a model matrix, eigenvalue, or analytical model quantity? If yes, STOP. Replace with the equivalent quantity read from Ŝ or Ĝ estimated from probe data. No exceptions.
+
+---
+
 ### Rule: Mathematical implications must be justified for the specific construction, not asserted as general facts
 **Trigger**: When claiming "X implies Y" or "X if and only if Y" in a mathematical derivation
 **Rule**: Always state explicitly why the implication holds for this specific construction. Do not assert it as if it follows from a general theorem unless it actually does. Show the connecting steps.
