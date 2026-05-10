@@ -47,11 +47,13 @@ from lpv_lfr_baseline.core.lfr_simulate import simulate_frozen, simulate
 
 _Y_OP_POINTS          = (0.00, 0.20, 0.30)        # frozen Y operating points [m]
 _FS_CANDIDATES        = (1000, 2000, 4000, 8000)   # candidate new sampling rates [Hz]
-_FS_RULE_FACTOR       = 8                          # require fs_new >= factor * f_99
+# THEORY: Lecture 9 slides 10-12 (5SMB0) — "10 * omega_b <= omega_s <= 30 * omega_b"
+_FS_RULE_FACTOR       = 10                         # require fs_new >= factor * f_osc_min (system bandwidth)
 _FFT_ENERGY_THRESHOLD = 0.99                       # cumulative PSD energy for f_99
 N_PERIODS             = 3                          # number of slowest oscillatory periods per segment
 _N_GRAD_CHECK_EPOCHS  = 50                         # epochs for gradient convergence quick-check
 GRAD_CHECK            = False                      # toggle: run diagnostic 4 when running as __main__
+_WELCH_FREQ_RESOLUTION_HZ = None                  # None = f_osc_min/3 (auto), or set float [Hz]
 
 _CH_NAMES = ('X1', 'X2', 'Y')
 
@@ -93,32 +95,69 @@ def _build_sim_matrices(log_p, params_init, dtype):
 # Diagnostic 1 - FFT / frequency content
 # ----------------------------------------------------------------------
 
-def _diag_fft(trajs, save_dir):
+def _get_f_osc_min(dtype=torch.float64):
+    """Return slowest oscillatory mode frequency [Hz] from physics model (no data needed)."""
+    block = ParameterizedLFRBlock(RMSE_baseline=1.0)
+    Lb    = _Lb.to(dtype)
+    with torch.no_grad():
+        p = block._recover_params().to(dtype)
+        kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d = [p[i] for i in range(14)]
+        params_10 = torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh])
+        _, _, _, K, C = _build_matrices(params_10, Lb, d)
+        freqs_rads = []
+        for Y_val in _Y_OP_POINTS:
+            M_Y = build_M(torch.tensor(Y_val, dtype=dtype)).to(dtype)
+            A_c = torch.zeros(6, 6, dtype=dtype)
+            A_c[:3, 3:] = torch.eye(3, dtype=dtype)
+            A_c[3:, :3] = -torch.linalg.solve(M_Y, K)
+            A_c[3:, 3:] = -torch.linalg.solve(M_Y, C)
+            osc = torch.linalg.eigvals(A_c).imag.abs()
+            freqs_rads.extend(osc[osc > 1.0].tolist())
+    return min(freqs_rads) / (2 * math.pi) if freqs_rads else 5.0
+
+
+def _diag_fft(trajs, save_dir, *, fs_new, f_osc_min):
     """
     Compute PSD of each output channel for all trajectories.
 
     Centres signals before FFT to remove the DC operating-point offset.
     Finds f_99: the frequency below which _FFT_ENERGY_THRESHOLD of signal power
-    lies per channel. Recommends the smallest fs_new in _FS_CANDIDATES satisfying
-        fs_new >= _FS_RULE_FACTOR * f_99_overall.
+    lies per channel. f_99 is reported as a diagnostic check only — it is NOT used
+    to set fs_new. fs_new is passed in from run_all_diagnostics (derived from
+    f_osc_min via the Lecture 9 "10 * omega_b <= omega_s" rule).
+
+    A warning is printed if f_99 > 10 * f_osc_min (excitation energy above model band).
+
+    Parameters
+    ----------
+    fs_new     : target sampling frequency [Hz] — already determined from f_osc_min
+    f_osc_min  : slowest oscillatory natural frequency [Hz] from pole analysis
 
     Returns
     -------
-    dict: f99_overall [Hz], fs_new [Hz], decimation_factor
+    dict: f99_overall [Hz], fs_new [Hz], decimation_factor, f_osc_min [Hz], f99_by_traj
     """
     fs_orig = float(trajs[0]['fs'])
 
     f99_by_traj = []
     psd_data    = []
 
+    from scipy.signal import welch as _welch
+    delta_f = (_get_f_osc_min() / 3.0) if _WELCH_FREQ_RESOLUTION_HZ is None \
+              else float(_WELCH_FREQ_RESOLUTION_HZ)
+    nperseg = max(256, int(fs_orig / delta_f))
+    print(f'  Welch: delta_f={delta_f:.2f} Hz  nperseg={nperseg}'
+          f'  (~{int(fs_orig / nperseg)} Hz resolution)')
+
     with torch.no_grad():
         for traj in trajs:
             q1  = traj['q1']
             q1c = q1 - q1.mean(dim=0, keepdim=True)
-            T   = q1c.shape[0]
 
-            freqs = torch.fft.rfftfreq(T, d=1.0 / fs_orig)
-            psd   = torch.fft.rfft(q1c, dim=0).abs().pow(2) / T
+            freqs_np, psd_np = _welch(q1c.numpy(), fs=fs_orig, nperseg=nperseg,
+                                      window='hann', axis=0)
+            freqs = torch.tensor(freqs_np)
+            psd   = torch.tensor(psd_np)
 
             cum  = psd.cumsum(dim=0) / psd.sum(dim=0, keepdim=True).clamp(min=1e-30)
             f99s = []
@@ -135,20 +174,28 @@ def _diag_fft(trajs, save_dir):
         for ci, f in enumerate(f99s)
         if f == f99_overall
     )
-    fs_new = next(
-        (f for f in _FS_CANDIDATES if f >= _FS_RULE_FACTOR * f99_overall),
-        int(fs_orig),
-    )
+    # THEORY: Lecture 9 slides 10-12 (5SMB0) — fs_new is driven by system physics (f_osc_min),
+    # not signal content (f_99). D is derived from the passed-in fs_new.
     D = round(fs_orig / fs_new)
 
-    print('\nFFT Analysis')
+    # HEURISTIC: model band cap = 10 * f_osc_min — same factor as the sampling rule;
+    # energy above this band aliases after decimation but does not bias in-band estimates
+    # (Gonzalez, van Haren, Oomen, Rojas — arXiv:2410.19629 / IEEE TAC 2024)
+    model_band = _FS_RULE_FACTOR * f_osc_min
+
+    print('\nFFT Analysis  (f_99 is informational — does NOT drive fs_new)')
     print(f'  fs_original = {fs_orig:.0f} Hz')
+    print(f'  model band  = {_FS_RULE_FACTOR} x f_osc_min = {_FS_RULE_FACTOR} x {f_osc_min:.2f} = {model_band:.1f} Hz')
     print(f'  {"traj":<6}' + ''.join(f'  {ch:>10}' for ch in _CH_NAMES))
     for traj, f99s in zip(trajs, f99_by_traj):
         print(f'  {traj["id"]:<6}' + ''.join(f'  {f:>9.1f}Hz' for f in f99s))
     print(f'  f_99 overall (max across all channels + trajectories): {f99_overall:.1f} Hz')
-    print(f'  Rule: fs_new >= {_FS_RULE_FACTOR} x {f99_overall:.0f} = {_FS_RULE_FACTOR * f99_overall:.0f} Hz')
-    print(f'  -> Recommended fs_new = {fs_new} Hz  (decimation factor D={D})')
+    if f99_overall > model_band:
+        print(f'  WARNING: f_99={f99_overall:.0f} Hz > model band ({model_band:.0f} Hz). '
+              f'Excitation energy above the model band will alias after decimation '
+              f'but should not bias in-band estimates (Gonzalez et al. 2024). '
+              f'fs_new is set from physics, not from signal content.')
+    print(f'  fs_new = {fs_new} Hz  (set from f_osc_min, see Diagnostic 2; D={D})')
 
     if save_dir is not None:
         fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
@@ -165,14 +212,16 @@ def _diag_fft(trajs, save_dir):
                 ax.legend(fontsize=7, ncol=5, loc='upper right')
         axes[-1].set_xlabel('Frequency [Hz]')
         fig.suptitle(
-            f'FFT  -  f_99={f99_overall:.0f} Hz  ->  Recommended fs={fs_new} Hz (D={D})',
-            fontsize=11,
+            f'FFT  -  f_99={f99_overall:.0f} Hz  (info only)  '
+            f'fs_new={fs_new} Hz (from f_osc_min={f_osc_min:.2f} Hz, D={D})',
+            fontsize=10,
         )
         plt.tight_layout()
         _save_fig(fig, save_dir, 'diag_fft.png')
 
     return {'f99_overall': f99_overall, 'fs_new': fs_new, 'decimation_factor': D,
-            'f99_by_traj': f99_by_traj, 'worst_traj': worst_traj, 'worst_ch': worst_ch}
+            'f99_by_traj': f99_by_traj, 'worst_traj': worst_traj, 'worst_ch': worst_ch,
+            'f_osc_min': f_osc_min}
 
 
 # ----------------------------------------------------------------------
@@ -244,13 +293,37 @@ def _diag_step_response(fs, fs_new, save_dir, dtype=torch.float64):
         if osc_mask.any():
             all_osc_freqs_rads.extend(eigvals.imag[osc_mask].abs().tolist())
 
-    f_osc_min     = min(all_osc_freqs_rads) / (2 * math.pi)
-    segment_len_s = N_PERIODS / f_osc_min
-    segment_len   = math.ceil(segment_len_s * fs_new)
+    f_osc_min = min(all_osc_freqs_rads) / (2 * math.pi)
+    n_params  = len(_PARAM_NAMES)
+
+    seg_period  = math.ceil(N_PERIODS / f_osc_min * fs_new)        # period rule
+    seg_taumax  = math.ceil(10 * tau_max * fs_new)                  # 10x time constant
+    seg_nparams = 10 * n_params                                     # 10x parameter count
+
+    # THEORY: Lecture 9 slide 9 (5SMB0) — "N >= 10 * tau_set,95" and "N >= 10 * n_theta"
+    # THEORY: Lecture 3 periodic measurement (5SMB0) — integer periods required
+    # HEURISTIC: N_PERIODS = 3 — covers slowest mode with margin; Lecture 12 uses 10 for FRF quality
+    segment_len   = max(seg_period, seg_taumax, seg_nparams)
+    segment_len_s = segment_len / fs_new
+
+    binding_rule = (
+        'period rule'        if segment_len == seg_period  and seg_period >= max(seg_taumax, seg_nparams) else
+        '10x tau_max rule'   if segment_len == seg_taumax  and seg_taumax >= seg_nparams else
+        '10x n_params rule'
+    )
 
     print(f'  f_osc_min = {f_osc_min:.4f} Hz  (slowest oscillatory mode)')
-    print(f'  segment_len_s = {segment_len_s:.4f} s  ({N_PERIODS} periods of f_osc_min)')
-    print(f'  segment_len = {segment_len} samples at {fs_new:.0f} Hz')
+    print(f'  segment_len candidates:')
+    print(f'    period rule    ({N_PERIODS}/f_osc_min): {seg_period} samples  ({N_PERIODS/f_osc_min:.3f} s)')
+    print(f'    10x tau_max               : {seg_taumax} samples  ({10*tau_max:.3f} s)')
+    print(f'    10x n_params  (10x{n_params:d})    : {seg_nparams} samples')
+    print(f'  segment_len = {segment_len} samples at {fs_new:.0f} Hz  ({segment_len_s:.3f} s)'
+          f'  [binding: {binding_rule}]')
+
+    if seg_taumax > seg_period * 5:
+        print(f'  NOTE: 10x tau_max rule dominates strongly ({seg_taumax} vs {seg_period} from period rule).')
+        print(f'        This rule is derived for stationary FRF estimation (Lecture 9).')
+        print(f'        For BPTT training it may be overly conservative. Discuss with supervisor.')
 
     if save_dir is not None:
         _plot_poles(poles, tau_max, save_dir)
@@ -261,6 +334,7 @@ def _diag_step_response(fs, fs_new, save_dir, dtype=torch.float64):
         'f_osc_min':     f_osc_min,
         'segment_len':   segment_len,
         'segment_len_s': segment_len_s,
+        'binding_rule':  binding_rule,
     }
 
 
@@ -399,9 +473,16 @@ def _save_report(trajs, r_fft, r_step, r_obs, save_dir):
     for traj, f99s in zip(trajs, r_fft['f99_by_traj']):
         lines.append(f'  {traj["id"]:<6}  {f99s[0]:>10.1f}  {f99s[1]:>10.1f}  {f99s[2]:>10.1f}')
     lines.append(f'  * worst case: {r_fft["worst_traj"]} / {r_fft["worst_ch"]}'
-                 f' = {r_fft["f99_overall"]:.1f} Hz  (drives fs_new)')
-    lines.append(f'  Rule: fs_new >= 8 x {r_fft["f99_overall"]:.0f} = '
-                 f'{8 * r_fft["f99_overall"]:.0f} Hz')
+                 f' = {r_fft["f99_overall"]:.1f} Hz  (informational only)')
+    model_band = _FS_RULE_FACTOR * r_fft['f_osc_min']
+    if r_fft['f99_overall'] > model_band:
+        lines.append(f'  WARNING: f_99 ({r_fft["f99_overall"]:.0f} Hz) > model band '
+                     f'({model_band:.0f} Hz = {_FS_RULE_FACTOR} x f_osc_min). '
+                     f'Out-of-band content aliases but does not bias in-band estimates '
+                     f'(Gonzalez et al. 2024).')
+    lines.append(f'  fs_new rule: >= {_FS_RULE_FACTOR} x f_osc_min = '
+                 f'{_FS_RULE_FACTOR} x {r_fft["f_osc_min"]:.2f} = {model_band:.0f} Hz'
+                 f'  [Lecture 9 "10*omega_b <= omega_s"]')
     lines.append(f'  -> fs_new = {r_fft["fs_new"]} Hz  '
                  f'(D = {r_fft["decimation_factor"]} from {fs_orig:.0f} Hz)')
 
@@ -425,8 +506,8 @@ def _save_report(trajs, r_fft, r_step, r_obs, save_dir):
     lines.append(f'  f_osc_min       = {r_step["f_osc_min"]:.4f} Hz  '
                  f'(slowest oscillatory mode)')
     lines.append(f'  segment_len     = {r_step["segment_len"]} samples  '
-                 f'({r_step["segment_len_s"]:.3f} s at {r_fft["fs_new"]:.0f} Hz,  '
-                 f'{N_PERIODS} periods)')
+                 f'({r_step["segment_len_s"]:.3f} s at {r_fft["fs_new"]:.0f} Hz)'
+                 f'  [binding: {r_step["binding_rule"]}]')
 
     # ── 3. Observability ─────────────────────────────────────────────────
     sep()
@@ -471,20 +552,34 @@ def run_all_diagnostics(trajs, save_dir, grad_check=False):
     os.makedirs(save_dir, exist_ok=True)
     fs = float(trajs[0]['fs'])
 
-    r_fft  = _diag_fft(trajs, save_dir)
-    r_step = _diag_step_response(fs, r_fft['fs_new'], save_dir, dtype=torch.float64)
+    # THEORY: Lecture 9 slides 10-12 (5SMB0) — fs_new derived from system physics (f_osc_min),
+    # not from signal content (f_99).  Derivation chain: poles -> f_osc_min -> fs_new.
+    f_osc_min_pre = _get_f_osc_min()
+    fs_new = next(
+        (f for f in _FS_CANDIDATES if f >= _FS_RULE_FACTOR * f_osc_min_pre),
+        int(fs),
+    )
+    print(f'Sampling rate: f_osc_min={f_osc_min_pre:.4f} Hz  ->  '
+          f'fs_new={fs_new} Hz  (rule: >= {_FS_RULE_FACTOR} x f_osc_min = '
+          f'{_FS_RULE_FACTOR * f_osc_min_pre:.1f} Hz)')
+
+    r_fft  = _diag_fft(trajs, save_dir, fs_new=fs_new, f_osc_min=f_osc_min_pre)
+    r_step = _diag_step_response(fs, fs_new, save_dir, dtype=torch.float64)
     r_obs  = _diag_observability(fs, save_dir, dtype=torch.float64)
 
     print()
     print('=' * 60)
     print('  EXPERIMENT DIAGNOSTICS SUMMARY')
     print('-' * 60)
-    print(f'  Recommended fs   : {r_fft["fs_new"]} Hz'
-          f'  (D={r_fft["decimation_factor"]} from {fs:.0f} Hz)')
+    print(f'  fs_new           : {r_fft["fs_new"]} Hz'
+          f'  (D={r_fft["decimation_factor"]} from {fs:.0f} Hz)'
+          f'  [from f_osc_min={r_step["f_osc_min"]:.4f} Hz, Lecture 9]')
     print(f'  tau_max          : {r_step["tau_max"]:.4f} s')
     print(f'  f_osc_min        : {r_step["f_osc_min"]:.4f} Hz')
+    print(f'  f_99 overall     : {r_fft["f99_overall"]:.1f} Hz  (informational; not driving fs_new)')
     print(f'  segment_len      : {r_step["segment_len"]} samples'
-          f'  ({r_step["segment_len_s"]:.3f} s at {r_fft["fs_new"]:.0f} Hz)')
+          f'  ({r_step["segment_len_s"]:.3f} s at {r_fft["fs_new"]:.0f} Hz)'
+          f'  [binding: {r_step["binding_rule"]}]')
     print(f'  Observability    : horizon = {r_obs["horizon"]}  (expected 2)')
     print('=' * 60)
 
@@ -532,11 +627,19 @@ def _diag_gradient_convergence(trajs, r_fft, r_step, save_dir, dtype=torch.float
           f'  (W_eff={W_eff})  segment_len={segment_len}  n_windows={n_windows}')
 
     # --- Decimate and build state trajectories ---
+    from scipy.signal import decimate as _decimate
     P        = _P.to(dtype)
     dec_trajs = []
     for traj in trajs:
-        q1_dec = traj['q1'][::D]
-        u_dec  = traj['u'][:, ::D, :]
+        # THEORY: Lecture 9 (5SMB0) pre-processing — apply anti-aliasing filter before downsampling
+        # THEORY: lecture_digital-filters.pdf (4CM00) slides 30-35 — >= 40 dB at new Nyquist
+        # scipy.signal.decimate applies Chebyshev Type I filter automatically before striding
+        q1_dec = torch.tensor(
+            _decimate(traj['q1'].numpy(), D, axis=0), dtype=traj['q1'].dtype
+        )
+        u_dec  = torch.tensor(
+            _decimate(traj['u'].numpy(), D, axis=1), dtype=traj['u'].dtype
+        )
         N_dec  = int(q1_dec.shape[0])
         if N_dec < segment_len:
             print(f'  WARNING: {traj["id"]} too short after decimation '
