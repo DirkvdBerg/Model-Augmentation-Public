@@ -29,16 +29,18 @@ are covered.
 > Read this before implementing anything.
 
 **What we are designing for now:**
-- Noiseless simulation (no measurement noise, Φ_v = const drops out of FIM)
+- Noiseless simulation (no measurement noise)
 - Complete parametric model (no unmodeled dynamics, augmentation network not yet fitted)
 - Open-loop BPTT training with replayed plant input `u_total`
+- **Active input design: resonance/bandwidth-weighted broadband odd multisine** (Lecture 9 slide 13)
 
 **What must be possible to extend to later (without redesigning from scratch):**
 - Hardware with measurement noise → switch to indirect closed-loop FRF estimator
-  (`Ĝ = Φ_yd / Φ_ud`) instead of direct `Ĝ = Ŷ/Û`; update `Φ_v` in FIM with measured noise floor
-- Augmentation active → rerun Step 0 with augmented model (new poles, different S(jω),
-  different ∂G/∂θ); the pipeline structure does not change, only the model passed in
-- Multiple operating points / scheduling → aggregate FIM over Y values (already designed for this)
+  (`Ĝ = Φ_yd / Φ_ud`) instead of direct `Ĝ = Ŷ/Û`; amplitude weighting may be updated
+- Augmentation active → rerun Step 0 with augmented model (new poles, different S(jω));
+  switch to broadband uniform per D-050 Phase 2 criterion
+- Multiple operating points / scheduling → broadband uniform covers full operating range;
+  FIM aggregation over Y deferred to G12
 
 **Consequence for every design choice:** if a choice only works in the noiseless / no-augmentation
 case and cannot be extended, it must be flagged explicitly. Do not implement anything that
@@ -78,35 +80,52 @@ different identification paradigms:
 
 ## STEP 0 — Pre-analysis: `diagnostics_system.m`
 
-**What it does:** Characterizes the closed-loop system analytically at each Y operating
-point. Outputs the FIM per frequency, recommended f_low, f_high, fs_new. This is the
-foundation that justifies all downstream choices. It does not yet exist.
+**What it does:** Runs a short broadband probe through the closed-loop simulation to
+empirically estimate the sensitivity survival profile `|Ŝ(jω)|²`. Outputs f_low, f_high,
+τ_max, and the survival profile used to shape Step 1 amplitude weighting.
 
-**Now:** uses analytical G(jω) from the parametric physics model — equivalent to a
-nonparametric FRF in noiseless simulation because the model IS the truth.
-**Future (hardware):** replace analytical G with the indirect closed-loop FRF estimate
-`Φ_yd/Φ_ud`. The rest of the step is unchanged.
-**Future (augmentation active):** re-run with augmented model (different A_c, B_c, C_c,
-different poles and S(jω)). Pipeline structure unchanged.
+> **Why simulation-based (not analytical):** In the current parametric model, empirical
+> Ŝ and analytical S are identical — equivalent results. But when the model becomes
+> incomplete (augmentation added, or hardware), the nominal analytical S(jω) diverges
+> from the true survival profile. Running from simulation data means the same code works
+> at every stage without modification.
+
+**Procedure:**
+1. Inject a flat broadband probe multisine (all odd harmonics from f_probe_low to f_probe_high,
+   equal amplitude) as force injection — **probe signal design is itself a gap: frequency
+   range, amplitude, and number of averaging periods must be specified before implementation**
+2. Record `f_sim(t)` and `u_total(t)` from the closed-loop simulation
+3. Estimate `Ŝ(jω) = FFT(u_total) / FFT(f_sim)` — empirical survival profile
+4. Derive f_low = lowest frequency where `|Ŝ(jω)|²` is meaningfully above zero
+5. Derive τ_max from the dominant pole of the open-loop plant state matrix A_c
+   (A_c is the plant, not closed-loop, matrix; BPTT replays u open-loop through the plant)
+6. Use `|Ŝ(jω)|` profile as input to Step 1 amplitude weighting —
+   **formula for A_k as a function of |Ŝ| must be specified before implementation (see gap below)**
+
+**Future (augmentation active):** re-run Step 0 with augmented closed-loop — Ŝ reflects
+new dynamics automatically. No code change.
+**Future (hardware):** replace simulation run with measured `f_sim` and `u_total` from
+the real system. Same estimation formula. No code change.
 
 | Choice | Type | Source to verify | Flag |
 |--------|------|-----------------|------|
-| `G(jω) = C(jωI − A_c)^{-1} B_c` | THEORY | Standard state-space FRF — any sysid textbook | OK |
-| `S(jω) = 1 / (1 + G(jω) C(jω))` | THEORY | Standard sensitivity definition — any feedback textbook | OK |
-| `T(jω) = G(jω) C(jω) / (1 + G(jω) C(jω))` | THEORY | Complementary sensitivity — standard | OK |
-| `∂G/∂θ_i` by finite difference | THEORY | Standard numerical differentiation, context matches | OK |
-| FIM per frequency: `v(ω) = Σ_i \|∂G/∂θ_i\|² × \|S(jω)\|² / Φ_v(ω)` | THEORY | Gevers et al. (2011), §5, eqs. (5.1)–(5.10) — verify reduction steps | **Verify eq. numbers** |
-| Noise model: `Φ_v = const` (white, drops out) | Assumption | Noiseless simulation — declared assumption. For hardware: replace with measured noise floor | Declare assumption |
-| `f_low` = lowest ω where v(ω) > threshold | HEURISTIC | **No primary source for threshold value** | **NO SOURCE — must state** |
-| `f_high` = highest ω where v(ω) > threshold | HEURISTIC | **No primary source for threshold value** | **NO SOURCE — must state** |
-| Aggregate over Y: `min_Y v(ω)` (worst-case) | HEURISTIC | Ghosh et al. (2018) prefer joint optimization; worst-case is conservative heuristic | Declare heuristic |
-| `fs_new ≥ 10 × f_osc_min` | THEORY | 5SMB0 Lecture 9, slides 10–12: "10ωb ≤ ωs" | **Verify slide** |
-| Integer decimation: `D = round(fs_orig / fs_new)` | THEORY | Required for clean decimation — standard | OK |
+| `Ŝ(jω) = FFT(u_total) / FFT(f_sim)` as empirical survival | THEORY | Feedback algebra: with force injection and no multisine in reference r, at each injected frequency ω_k: U_total = S×F_sim exactly (derivation: Y = G×S×F_sim, U_fb = −C×Y = −CGS×F_sim, U_total = U_fb + F_sim = F_sim(1−CGS) = S×F_sim). D-048; any feedback control textbook, e.g. Skogestad & Postlethwaite (2005) Ch.2. **Note: u_fb DOES contain the multisine — the ratio is S because u_fb + f_sim = S×f_sim, not because u_fb = 0** | **Verify derivation. Single-period FFT exact in noiseless sim; need period averaging on hardware** |
+| f_low from lowest frequency where `\|Ŝ\|²` meaningful | HEURISTIC | No universal threshold — engineering choice. Declare threshold value explicitly to supervisors. **Check for general range guidance:** Lecture 9 (`literature/experiment-design/System-identification/Lecture 9.pdf`) slides on bandwidth selection; Lecture 13 on experiment design bounds | **NO SOURCE for threshold — must declare value and basis. Look in lectures first.** |
+| f_high from controller bandwidth | Engineering constraint | Controller design spec — no theory needed | OK |
+| `τ_max` from dominant pole of open-loop plant matrix A_c | THEORY | BPTT replays u open-loop through the plant model; memory is governed by open-loop plant poles. τ_max = −1/Re(λ_max(A_c)) where A_c is the continuous-time plant state matrix | **Verify A_c is plant matrix not closed-loop; confirm τ_max definition** |
+| Probe signal design (frequency range, amplitude, periods) | **GAP** | **No design specification exists for the Step 0 probe signal.** Must specify: f_probe_low (use known physical lower bound), f_probe_high (use controller bandwidth), amplitude (within actuator limits), N_avg periods. **Check for general guidance:** Lecture 3 (`Lecture 3.pdf`) on periodic signal measurement; Lecture 9 slides on averaging/SNR; P&S Ch.2 §2.5 on number of averages for FRF convergence (DOI: 10.1002/9781118287422) | **Must specify before implementation. Look in Lecture 3, 9 and P&S Ch.2 first.** |
+| A_k = g(|Ŝ(jω_k)|) amplitude weighting formula | **GAP** | **No formula exists translating the |Ŝ| profile into actual amplitude values A_k.** Options: A_k ∝ |Ŝ(jω_k)|; A_k ∝ 1/|Ŝ|; proximity to resonance. **Check for general guidance:** Lecture 9 slide 13 and 27 on power allocation rules; Lecture 13 on input spectrum shaping. If no formula found, declare engineering choice | **Must specify before implementation. Look in Lecture 9, 13 first.** |
+| `fs_new ≥ 10 × f_osc_min` | HEURISTIC from lecture | 5SMB0 Lecture 9, slides 10–12 (TU/e internal). Not confirmed at page level in Ljung (1999) or P&S (2012) | **Verify slide number. Declare as lecture heuristic if no book source** |
+| Integer decimation: `D = round(fs_orig / fs_new)` | THEORY | Standard decimation — any DSP textbook | OK |
+| FIM-driven band selection and amplitude shaping | DEFERRED | Not currently used — see Gap G12 | — |
 
-**Supervisor statement for f_low / f_high threshold:**
-> "The FIM threshold for frequency band selection has no universally established value in
-> the literature. We select a threshold of [X] based on [stated engineering reasoning],
-> and declare it a design heuristic."
+**Supervisor statement for f_low threshold:**
+> "f_low is set to the lowest frequency at which the empirical sensitivity estimate
+> `|Ŝ(jω)|²` exceeds [declared threshold]. This threshold has no universal literature
+> value and is declared as an engineering design choice."
+
+**Skogestad & Postlethwaite (2005):** "Multivariable Feedback Design," 2nd ed., Wiley.
+ISBN: 978-0-470-01168-3. Widely available as PDF; DOI of 1st ed: 10.1002/0470012978.
 
 ---
 
@@ -117,30 +136,43 @@ output of Step 0. Every parameter below must be justified before the signal is g
 
 ### Frequency line selection
 
+> **Active strategy (resonance/bandwidth-weighted broadband):** all odd harmonics from f_low
+> to f_high, with amplitude biased toward resonances and system bandwidth. No FIM-driven
+> line filtering. FIM-based selection deferred to G12.
+
 | Choice | Type | Source to verify | Flag |
 |--------|------|-----------------|------|
 | `f_k = k × Δf` (integer multiples of fundamental) | THEORY | P&S (2012), Ch.2 §2.2.3–2.2.5, eqs. (2-11), (2-16) — integer periods give exact DFT | **Verify eq. numbers** |
 | `Δf = 1 / T_p` (fundamental = inverse of period) | THEORY | Same source — leakage-free condition | **Verify eq. numbers** |
-| Lines restricted to `[f_low, f_high]` from Step 0 | THEORY | FIM-driven selection — Gevers et al. (2011) | OK once Step 0 is verified |
-| **Period length T_p:** must satisfy `T_p ≥ 1/f_low` so that the lowest desired frequency is a line | THEORY | Direct consequence of `f_k = k/T_p` — lowest line is `1/T_p` | Verify and document this choice explicitly |
-| **PE condition: F ≥ n_params = 14 positive sinusoids** | THEORY | Gevers et al. (2011) §6 around eq. (6.6); 5SMB0 Lecture 6 | **Verify — current impl has min 7 bins which is INSUFFICIENT** |
-| Lines where v(f_k) > threshold only | THEORY | FIM-driven — Gevers et al. (2011) | OK once Step 0 is verified |
+| **Period length T_p:** must satisfy `T_p ≥ 1/f_low` so that the lowest desired frequency is a line | THEORY | Direct consequence of `f_k = k/T_p` — lowest line is `1/T_p` | Verify and document |
+| Full odd-harmonic coverage from f_low to f_high | THEORY | Broadband informativity: Ljung (1999) Ch.13 p.423–424 — closed-loop data informative when input spectrum is nonzero over relevant band; PE condition (Lecture 6 sl.17–20) requires F ≥ 7 lines spread across band | **Verify Ljung §13 page; Lecture 9 slide 13 is about amplitude allocation, not coverage — do not cite for this row** |
+| **PE condition: F ≥ 7 positive sinusoids** (PE order = 2F ≥ 14 = n_params) | THEORY | 5SMB0 Lecture 6 slides 17–20: "nonzero spectrum at n points → PE order n; single sine → PE order 2"; Lecture 9 slide 22: "PE(u) = 2 × harmonics" | **Verify slides — current impl min 7 bins is sufficient** |
 
 ### Amplitude
 
+> **Active strategy — Phase 1 (parametric only):** amplitude biased toward resonances and
+> system bandwidth using |Ŝ(jω)| profile from Step 0. Declared HEURISTIC — variance
+> motivation in source is PEM/noise-based, not BPTT-specific.
+> **Phase 2 (augmentation active):** switch to flat amplitude spectrum (D-050).
+> FIM-optimal shaping deferred to G12.
+
 | Choice | Type | Source to verify | Flag |
 |--------|------|-----------------|------|
-| **`A_k ∝ 1 / \|S(j·2π·f_k)\|` (amplitude shaping)** | HEURISTIC | **No primary source found.** Motivated by Landau (2001) §around Fig.4, p.54 — qualitative, not a design rule | **NO SOURCE — must declare heuristic** |
-| Alternative (correct): jointly optimize `p_k = A_k²` via FIM criterion | THEORY | Gevers et al. (2011) §5–6; De Cock et al. (2016), Automatica 73:88–100 | More defensible but harder to implement |
+| Principle: concentrate amplitude toward resonances and system bandwidth | HEURISTIC | 5SMB0 Lecture 9 slide 13 (TU/e internal): "allocate power to relevant frequency ranges, e.g. resonance frequency and bandwidth"; Lecture 9 slide 27: "colored noise/filtering can assign more power to important frequency ranges". Also check Lecture 13 for any quantitative guidance on power allocation | **HEURISTIC — PEM/noise justification, not BPTT-specific. Declare to supervisors. Verify slide numbers against `Lecture 9.pdf` and `Lecture 13.pdf`** |
+| Formula A_k = g(\|Ŝ(jω_k)\|) — how to translate profile into amplitudes | **GAP** | **No formula specified.** Check Lecture 9 slides 13, 27 and Lecture 13 for any quantitative rule (e.g. proportional to |Ŝ|, power of |Ŝ|, dB-based). If none found: declare engineering choice and specify value | **Must specify before implementation. Check `Lecture 9.pdf` and `Lecture 13.pdf` first.** |
+| Phase 2 (augmentation): flat amplitude spectrum | THEORY | Ljung (1999) Ch.13 — informative inputs over full operating range | **Verify §number** |
 | Normalize RMS to ETEL actuator limits | Engineering constraint | Hardware spec — no theory needed | OK |
 | Clipping / amplitude sweep to max passing limits | Engineering constraint | Hardware spec | OK |
+| FIM-optimal amplitude shaping `A_k ∝ 1/\|S\|` or convex `p_k` optimization | DEFERRED | No primary source for our exact setup — see Gap G12 | — |
 
 **Supervisor statement for amplitude shaping:**
-> "We use `A_k ∝ 1/|S(f_k)|` as an amplitude shaping heuristic motivated by the
-> qualitative argument that plant-input excitation is attenuated by the sensitivity
-> function inside the controller bandwidth (Landau 2001). A formally optimal design
-> would require solving the FIM optimization over line powers (Gevers et al. 2011),
-> which is deferred to future work."
+> "We concentrate multisine amplitude toward resonances and system bandwidth using the
+> empirical |Ŝ(jω)| profile from Step 0, following the input design guidance in
+> 5SMB0 Lecture 9 (slide 13). The specific amplitude formula A_k = g(|Ŝ(jω_k)|) is
+> an engineering design choice with no primary source. The variance-based justification
+> in the lecture assumes PEM with a noise model; for our noiseless BPTT setup the same
+> principle applies qualitatively but has no formal proof.
+> FIM-optimal line-power allocation (Gevers et al. 2011) is recorded as future work (G12)."
 
 ### Phase and harmonic structure
 
@@ -151,10 +183,13 @@ output of Step 0. Every parameter below must be justified before the signal is g
 | Different seed per MIMO channel (phase offset) | HEURISTIC | Motivated by MIMO decorrelation need, but **insufficient per literature** | **NO SOURCE for MIMO decorrelation via phase alone** |
 | Correct MIMO approach: disjoint frequency line sets per channel | THEORY | Pintelon, Vandersteen, Schoukens, Rolain (2011) "Fast FRF measurement of multivariable systems" | **Must verify — current implementation does not do this** |
 
-**Critical MIMO flag:** The current script uses a phase seed offset per channel. Per
-Pintelon et al. (2011), correct MIMO identification requires channels to have no common
-excited frequencies, OR n_u separate experiments with uncorrelated inputs. This needs
-to be addressed or declared as a known limitation.
+**MIMO declared limitation:** The current script uses a phase seed offset per channel.
+Per Pintelon et al. (2011), correct MIMO identification requires disjoint frequency line
+sets per channel OR n_u separate experiments. Phase offset alone is insufficient.
+**This is accepted as a known limitation for the simulation phase.** In simulation,
+the impact is reduced because we are doing BPTT parameter recovery (not FRF estimation)
+and channels share physical coupling. Must be resolved before hardware experiments.
+Declare explicitly to supervisors.
 
 ### Injection point
 
@@ -172,7 +207,8 @@ With reference injection, the controller tracks r_ms, so `u_recorded ≈ u_fb` o
 the multisine does not appear in the recorded plant input. Replaying `u_recorded` through
 our model carries no multisine, gradients vanish, and the parameters become unidentifiable.
 Force injection puts f_sim directly into `u_total`, so it survives the replay.
-The attenuation by `|S|` inside bandwidth is the cost — compensated by amplitude shaping.
+The attenuation by `|S|` inside bandwidth is the cost — partially compensated by
+concentrating amplitude toward the system bandwidth (resonance-weighted heuristic, Lecture 9 slide 13).
 This argument is specific to our u-replay identification method and does not contradict
 the literature; the two recommendations apply to different paradigms.
 
@@ -238,11 +274,11 @@ structure and open-loop data, the estimator is consistent (converges to true θ)
 Under misspecification it converges to a **pseudo-true parameter θ\***, not the true θ.
 
 ### Sources to verify
-| Book | Where | What to check |
-|------|-------|---------------|
-| Ljung (1999) | Ch. 8, Theorem 8.4, pp. 259–260, eqs. (8.45)–(8.50) | Consistency of OE under correct spec |
-| Ljung (1999) | Ch. 8, eqs. (8.71a)–(8.71b), pp. 266–267 | Pseudo-true parameter under misspecification |
-| Pintelon & Schoukens (2012) | §9.9.1, pp. 305–307, eqs. (9-43)–(9-47) | NLS/OE formulation |
+| Book | Where | What to check | Find it |
+|------|-------|---------------|---------|
+| Ljung (1999) | Ch. 8, Theorem 8.4, pp. 259–260, eqs. (8.45)–(8.50) | Consistency of OE under correct spec | Lennart Ljung, "System Identification: Theory for the User," 2nd ed., Prentice Hall, 1999. ISBN 978-0-13-656695-3. Search Google Scholar: "Ljung 1999 system identification" |
+| Ljung (1999) | Ch. 8, eqs. (8.71a)–(8.71b), pp. 266–267 | Pseudo-true parameter under misspecification | Same book |
+| Pintelon & Schoukens (2012) | §9.9.1, pp. 305–307, eqs. (9-43)–(9-47) | NLS/OE formulation | Rik Pintelon & Johan Schoukens, "System Identification: A Frequency Domain Approach," 2nd ed., Wiley-IEEE, 2012. DOI: 10.1002/9781118287422 |
 
 ### GPT confidence: HIGH — equation numbers traceable in GPT research
 ### Status: `[ ]` Verified
@@ -257,10 +293,10 @@ Replaying `u_recorded` through the model as if it were an open-loop input is the
 reference r and a known controller to identify the closed-loop transfer, then inverts it.
 
 ### Sources to verify
-| Book | Where | What to check |
-|------|-------|---------------|
-| Ljung (1999) | §13.5, pp. 435–437, eqs. (13.57)–(13.60) | Indirect method definition and back-calculation |
-| Ljung (1999) | §13, eqs. (13.53a)–(13.53b), p. 433 | Bias expression for direct CL identification |
+| Book | Where | What to check | Find it |
+|------|-------|---------------|---------|
+| Ljung (1999) | §13.5, pp. 435–437, eqs. (13.57)–(13.60) | Indirect method definition and back-calculation | Same book as Claim 1 |
+| Ljung (1999) | §13, eqs. (13.53a)–(13.53b), p. 433 | Bias expression for direct CL identification | Same book |
 
 ### GPT confidence: HIGH — direct vs indirect distinction clearly resolved
 ### Status: `[ ]` Verified
@@ -331,26 +367,22 @@ convex optimization problem over spectrum amplitudes.
 ## 5. Persistent Excitation (PE) Condition
 
 ### Claim
-For an n-th order SISO model: signal must be persistently exciting of order ≥ 2n.
-A sum of F real sinusoids has 2F spectral lines and is PE of order 2F.
-Minimum number of sinusoids for a non-singular FIM: F ≥ n_params (positive sinusoids),
-because D-optimal designs use at most 2n_params lines.
+A sum of F real sinusoids is PE of order 2F (each sinusoid contributes 2 spectral lines).
+For n_params = 14: required PE order ≥ 14, so 2F ≥ 14 → **F ≥ 7 distinct positive-frequency
+sinusoids is the minimum**. The current implementation minimum of 7 bins is sufficient.
 
-The rule `F ≥ 2 n_params` in our docs refers to positive-frequency lines counted with
-the factor: `2F non-zero lines ≥ required PE order`.
+Note: PE is a necessary richness condition only — it does not prove identifiability of
+the specific 14 ETEL physical parameters under closed-loop force injection (see G2).
 
-### Sources to verify
-| Source | Where | What to check |
-|--------|-------|---------------|
-| Gevers et al. (2011) | §6 around eq. (6.6)/(5.14) | Minimum sinusoid count and D-optimal upper bound |
-| 5SMB0 Lecture 6 | PE condition slide | "PE order = 2F ≥ 2n_theta" statement |
+### Sources
+| Source | Where | What it says | Find it |
+|--------|-------|--------------|---------|
+| 5SMB0 Lecture 6 | slides 17–20 | "nonzero spectrum at n frequency points → PE of order n; single sine → PE order 2" | TU/e internal. Local: `literature/experiment-design/System-identification/Lecture 6.pdf` |
+| 5SMB0 Lecture 9 | slide 22 | "multisine: PE(u) = 2 × harmonics" | TU/e internal. Local: `literature/experiment-design/System-identification/Lecture 9.pdf` |
+| Gevers et al. (2011) | §6 around eq. (6.6)/(5.14) | D-optimal upper bound on sinusoid count | DOI: 10.4310/CIS.2011.v11.n3.a1 — **Verify eq. numbers** |
 
-> **Caution from GPT research:** `F ≥ 2 n_theta` where F counts positive sinusoids
-> may be incorrect. The correct statement is `2F ≥ 2n_theta`, i.e., F ≥ n_theta positive
-> sinusoids is sufficient. Verify this carefully.
-
-### GPT confidence: MEDIUM — PE condition statement needs exact source check
-### Status: `[ ]` Verified
+### GPT confidence: HIGH — corrected and confirmed from lecture primary sources
+### Status: `[ ]` Verify slide numbers against PDFs
 
 ---
 
@@ -363,17 +395,20 @@ Leakage is eliminated when:
 3. Period length: `T_p = 1/Δf`
 
 ### Sources to verify
-| Source | Where | What to check |
-|--------|-------|---------------|
-| 5SMB0 Lecture 3 | Periodic measurement material | "Only then x(t) is exactly periodic: spectrum is exact" |
-| Automatica (2006) | "Analysis of windowing/leakage effects in FRF measurements" | Integer periods → zero leakage |
+| Source | Where | What to check | Find it |
+|--------|-------|---------------|---------|
+| 5SMB0 Lecture 3 | Periodic measurement material | "Only then x(t) is exactly periodic: spectrum is exact" | TU/e internal. Local: `literature/experiment-design/System-identification/Lecture 3.pdf` |
+| Pintelon & Schoukens (2012) | Ch.2 §2.2.3–2.2.5, eqs. (2-11), (2-16) | Integer periods → zero leakage | DOI: 10.1002/9781118287422 |
 
 ### GPT confidence: HIGH — multiple independent sources confirm this
 ### Status: `[ ]` Verified
 
 ---
 
-## 7. Amplitude Shaping Rule
+## 7. Amplitude Shaping Rule *(DEFERRED — not the active design; see G12)*
+
+> **Not currently used.** Active design is resonance/bandwidth-weighted heuristic (Lecture 9
+> slide 13). This claim documents the FIM-optimal shaping for future reference.
 
 ### Claim
 For **force/plant-input injection**, amplitude shaping compensates for controller suppression:
@@ -435,12 +470,12 @@ to guarantee identifiability. Channels must use non-overlapping frequency line s
 (zippered/disjoint spectra) OR run n_u separate experiments with uncorrelated input sets.
 
 ### Sources to verify
-| Paper | Where | What to check |
-|-------|-------|---------------|
-| Pintelon, Vandersteen, Schoukens, Rolain (2011) | "Fast FRF measurement of multivariable systems using periodic excitations" | No common excited frequencies between input pairs |
+| Paper | Where | What to check | Find it |
+|-------|-------|---------------|---------|
+| Pintelon, Vandersteen, Schoukens, Rolain (2011) | "Fast FRF measurement of multivariable systems using periodic excitations" | No common excited frequencies between input pairs | Search Google Scholar: "Pintelon Vandersteen Schoukens Rolain fast multivariable FRF 2011". Likely IEEE Trans. Instrum. Meas. or Mech. Syst. Signal Process. — **DOI not confirmed, must find** |
 
 ### GPT confidence: MEDIUM — claim is from GPT research, paper not fully read
-### Status: `[ ]` Verified
+### Status: `[ ]` Verified — **find DOI before citing in thesis**
 
 ---
 
@@ -455,11 +490,11 @@ fs_new ≤ 30 × f_system_bandwidth    (upper bound — avoid pole clustering)
 where bandwidth = 2π × f_osc_min (physics-derived, NOT signal content f_99).
 
 ### Sources to verify
-| Source | Where | What to check |
-|--------|-------|---------------|
-| 5SMB0 Lecture 9 | Slides 10–12 | "10ωb ≤ ωs ≤ 30ωb" — exact statement |
-| Ljung (1999) | Somewhere in Ch. 2 or Ch. 8 | Pole clustering near unity when oversampled |
-| Pintelon & Schoukens (2012) | Relevant section | Model band vs. excitation band distinction |
+| Source | Where | What to check | Find it |
+|--------|-------|---------------|---------|
+| 5SMB0 Lecture 9 | Slides 10–12 | "10ωb ≤ ωs ≤ 30ωb" — exact statement | TU/e internal. Local: `literature/experiment-design/System-identification/Lecture 9.pdf` |
+| Ljung (1999) | Ch. 2 or Ch. 8 — page not confirmed | Pole clustering near unity when oversampled | ISBN 978-0-13-656695-3. Search index for "sampling" or "pole clustering" |
+| Pintelon & Schoukens (2012) | Relevant section — not confirmed | Model band vs. excitation band | DOI: 10.1002/9781118287422 |
 
 > **WARNING from GPT research:** The "10× rule" as a canonical equation was NOT found
 > in verifiable page-level previews of Ljung (1999) or Pintelon & Schoukens (2012).
@@ -483,10 +518,10 @@ An anti-aliasing filter must be applied before any downsampling.
 Required attenuation: ≥40 dB, preferably ≥60 dB at fs_new/2.
 
 ### Sources to verify
-| Source | Where | What to check |
-|--------|-------|---------------|
-| 5SMB0 Lecture 9 | Pre-processing steps slide | "Apply anti-aliasing filter before any downsampling" |
-| 4CM00 `lecture_digital-filters.pdf` | Slides 30–35 | ≥40 dB attenuation requirement |
+| Source | Where | What to check | Find it |
+|--------|-------|---------------|---------|
+| 5SMB0 Lecture 9 | Pre-processing steps slide | "Apply anti-aliasing filter before any downsampling" | TU/e internal. Local: `literature/experiment-design/System-identification/Lecture 9.pdf` |
+| 4CM00 `lecture_digital-filters.pdf` | Slides 30–35 | ≥40 dB attenuation requirement | TU/e internal. Local: `literature/experiment-design/4CM00 Control engineering/lecture_digital-filters.pdf` |
 
 ### GPT confidence: HIGH — standard signal processing, well established
 ### Status: `[ ]` Verified
@@ -532,17 +567,20 @@ For system identification: truncation length should be "a few times the largest
 characteristic time constant."
 
 ### Sources to verify
-| Paper | Where | What to check |
-|-------|-------|---------------|
-| Aicher, Foti, Fox (2019) | UAI 2019, Assumption (A-1) eq. (7); Theorem 1 eq. (9), p. 3; Theorem 2 p. 4 | Bias bound formula |
-| Beintema, Schoukens, Tóth (2023) | Automatica 156, art. 111210, §3.1, §3.4 | "few times largest time scale" guideline |
+| Paper | Where | What to check | Find it |
+|-------|-------|---------------|---------|
+| Aicher, Foti, Fox (2019) | UAI 2019, Assumption (A-1) eq. (7); Theorem 1 eq. (9), p. 3; Theorem 2 p. 4 | Bias bound formula | arXiv: 1905.07473. Conference proceedings: auai.org/uai2019/. Full title: "Adaptively Truncating Backpropagation Through Time to Control Gradient Bias" |
+| Beintema, Schoukens, Tóth (2023) | Automatica 156, art. 111210, §3.1, §3.4 | "few times largest time scale" guideline | DOI: 10.1016/j.automatica.2023.111182 (verify). Journal: Automatica, Vol.156, 2023. Search: "Beintema Schoukens Toth nonlinear state space encoder 2023" |
 
 ### GPT confidence: HIGH for Aicher et al.; MEDIUM for Beintema et al. (HTML parse)
 ### Status: `[ ]` Verified
 
 ---
 
-## 14. LPV Experiment Design — Local Approach
+## 14. LPV Experiment Design — Local Approach *(DEFERRED — FIM-based, see G12)*
+
+> **Not currently used.** Active design is resonance-weighted broadband (D-050).
+> This claim is retained for reference when FIM-based design is revisited (G12).
 
 ### Claim
 For LPV systems, optimal experiment design uses the **local approach**: run separate
@@ -551,17 +589,13 @@ of the LPV model is a sum of local contributions. Joint optimization over operat
 points and input spectra is possible and preferable to worst-case min_Y(v(ω)).
 
 ### Sources to verify
-| Paper | Where | What to check |
-|-------|-------|---------------|
-| Ghosh, Bombois, Huillery, Scorletti, Mercère (2018) | Automatica 87:258–266, DOI 10.1016/j.automatica.2017.10.013 | Local approach for LPV OED; joint design |
-| Khalate, Bombois, Tóth, Babuška (2009) | IFAC 2009, DOI 10.3182/20090706-3-FR-2004.00027 | Earlier local approach paper |
-
-> **Note:** Our current design uses `min_Y(v(ω))` as a worst-case heuristic. Per
-> Ghosh et al., the literature-preferred approach is a joint optimization summing
-> local FIM contributions. This is a design decision to discuss with supervisor.
+| Paper | Where | What to check | Find it |
+|-------|-------|---------------|---------|
+| Ghosh, Bombois, Huillery, Scorletti, Mercère (2018) | Automatica 87:258–266 | Local approach for LPV OED; joint design | DOI: 10.1016/j.automatica.2017.10.013 |
+| Khalate, Bombois, Tóth, Babuška (2009) | IFAC 2009 | Earlier local approach paper | DOI: 10.3182/20090706-3-FR-2004.00027 |
 
 ### GPT confidence: MEDIUM — abstract/metadata level only for Ghosh et al.
-### Status: `[ ]` Verified
+### Status: DEFERRED — verify when G12 is activated
 
 ---
 
@@ -573,9 +607,9 @@ simulation-error identification for LPV systems with incomplete model structure.
 Available formal results are for LPV-ARX/prediction-error approaches only.
 
 ### Sources to verify
-| Source | Where | What to check |
-|--------|-------|---------------|
-| Tóth, Heuberger, Van den Hof (2012) | Book chapter, Def. 2.3–2.4, Theorem 2.1–2.2 | LPV-PEM consistency (prediction-error, not simulation-error) |
+| Source | Where | What to check | Find it |
+|--------|-------|---------------|---------|
+| Tóth, Heuberger, Van den Hof (2012) | Book chapter, Def. 2.3–2.4, Theorem 2.1–2.2 | LPV-PEM consistency (prediction-error, not simulation-error) | Roland Tóth, "Modeling and Identification of Linear Parameter-Varying Systems," Springer, 2010. DOI: 10.1007/978-3-642-13812-6. Or: Tóth et al. in LPV Systems book chapter — search "Toth Heuberger Van den Hof LPV consistency 2012" |
 
 > **Conclusion:** This is an **open gap in the literature**. Our approach has no formal
 > consistency guarantee. Acknowledge in thesis write-up.
@@ -593,16 +627,16 @@ Available formal results are for LPV-ARX/prediction-error approaches only.
 | 2 | Direct vs indirect CL method | HIGH | THEORY | `[ ]` |
 | 3 | Closed-loop FIM formula | HIGH (full) / MEDIUM (reduced) | THEORY + derivation | `[ ]` |
 | 4 | D/A/E-optimal criteria | HIGH | THEORY | `[ ]` |
-| 5 | PE condition (F ≥ n_params) | MEDIUM | THEORY | `[ ]` |
+| 5 | PE condition (F ≥ 7, i.e. 2F ≥ 14) | HIGH | THEORY — Lecture 6 sl.17–20, Lecture 9 sl.22 | `[ ]` verify slides |
 | 6 | Leakage-free condition | HIGH | THEORY | `[ ]` |
-| 7 | Amplitude shaping A_k ∝ 1/\|S\| | LOW | **HEURISTIC** | `[ ]` |
+| 7 | Amplitude shaping A_k ∝ 1/\|S\| | — | **DEFERRED → G12** | — |
 | 8 | Schroeder phases | HIGH (formula) / LOW (CF=1.58) | THEORY + unconfirmed claim | `[ ]` |
 | 9 | MIMO disjoint spectra | MEDIUM | THEORY | `[ ]` |
 | 10 | 10× sampling rate rule | MEDIUM (lecture only) | HEURISTIC from lecture | `[ ]` |
 | 11 | Anti-aliasing before decimation | HIGH | THEORY | `[ ]` |
 | 12 | Segment length = N × T_p | LOW | **HEURISTIC** | `[ ]` |
 | 13 | BPTT truncation bias bound | HIGH | THEORY | `[ ]` |
-| 14 | LPV local approach OED | MEDIUM | THEORY | `[ ]` |
+| 14 | LPV local approach OED | — | **DEFERRED → G12** | — |
 | 15 | LPV BPTT consistency | HIGH (absence) | Open gap | `[ ]` |
 
 ---
@@ -741,3 +775,31 @@ in a post-hoc coherence adjustment.
 
 **Source:** Evers, Voorhoeve, Oomen (2020); de Vlugt et al. (2003),
 J. Neuroscience Methods 122, eqs. (18)–(21)
+
+---
+
+### G12. FIM-driven frequency selection and amplitude shaping (future parametric design)
+
+The FIM-based experiment design approach was deferred in favour of broadband uniform
+(D-050). When parametric parameter recovery is complete and the identification is to be
+made more efficient, the following approach should be revisited:
+
+**Frequency band selection:** restrict excited lines to bands where
+`v(ω) = Σ_i |∂G/∂θ_i|² × |S(jω)|² / Φ_v(ω)` exceeds a threshold. Avoids wasting
+signal on frequencies that carry no gradient for any of the 14 parameters.
+- Source: Gevers, Bombois, Hildebrand, Solari (2011), §5, eqs. (5.1)–(5.10)
+- Gap: threshold value has no primary source — must declare as heuristic
+- Gap: Gevers derives for stochastic PEM; our BPTT loss requires G1 (GN Gramian) correction
+
+**Amplitude shaping:** `A_k ∝ 1/|S(j·2πf_k)|` compensates for sensitivity attenuation
+inside controller bandwidth, so plant-input SNR is approximately uniform.
+- Qualitative motivation: Landau (2001) §around Fig. 4 p.54
+- No primary source gives this as a design rule — declare heuristic
+- Formally correct alternative: convex optimization over line powers `p_k = A_k²`
+  (D-optimal / A-optimal / E-optimal); source: De Cock et al. (2016), Automatica 73:88–100
+
+**Aggregate over operating points:** `min_Y v(ω)` (worst-case) or joint optimization.
+- Source: Ghosh et al. (2018) Automatica prefer joint optimization over worst-case
+
+**When to activate:** after broadband training confirms the 14 parameters are recoverable,
+and before hardware experiments where signal budget is limited.

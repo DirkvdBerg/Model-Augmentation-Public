@@ -1407,4 +1407,66 @@ simulator in `train_param_recovery.py`.
   but only when the multisine injection method is compatible with the training objective.
   They should be included in the `multisine` dataset runs.
 
-**Full analysis**: `docs/ref-injection-openloop-incompatibility.md`
+---
+
+### [D-050] Resonance/bandwidth-weighted broadband multisine as active experiment design strategy
+**Date**: 2026-05-10 (updated same day)
+**What**: Active multisine design strategy: all odd harmonics from f_low to f_high, with
+amplitude biased toward resonances and system bandwidth. Replaces FIM-driven scan-score
+band selection. Declared HEURISTIC — variance motivation is PEM/noise-based, not
+BPTT-specific; declared as such to supervisors.
+
+**Design**:
+- All odd harmonics from f_low to f_high (full band coverage)
+- Amplitude concentrated toward resonances and system bandwidth (Lecture 9 slide 13, 27)
+- Schroeder phases: φ_k = -k(k-1)π/F (Schroeder 1970, IEEE Trans. IT)
+- Odd harmonics only: enables nonlinearity detection via even output lines (P&S Ch.4 §4.3.2)
+- Force injection after controller (D-048): keeps excitation in u_recorded for BPTT replay
+- PE condition: F ≥ 7 positive sinusoids (2F ≥ 14 = n_params; Lecture 6 slides 17–20,
+  Lecture 9 slide 22: "PE(u) = 2 × harmonics")
+- f_low, f_high from system physics (f_osc_min ≈ 4.9 Hz from eigenvalues; f_high ≈ 100 Hz)
+
+**Why resonance-weighted over flat uniform**:
+5SMB0 Lecture 9 slide 13 explicitly supports concentrating input power at resonances and
+bandwidth. This is the lecture-backed middle ground: stronger motivation than flat uniform
+(Ljung §13 §number unconfirmed for our claim), weaker than FIM-optimal but without
+FIM's source gaps. Qualitatively compensates for |S| attenuation of force injection
+inside the controller bandwidth without requiring the unjustifiable A_k ∝ 1/|S| formula.
+
+**Why broadband over FIM-driven**:
+FIM-driven requires ∂G/∂θ at each operating point and has unresolved source gaps for
+deterministic BPTT (Gap G1). When NN augmentation is added, FIM-optimal for the 14
+known params under-excites model-error frequencies. Broadband with resonance weighting
+covers both needs without redesign. FIM-optimal deferred to G12.
+
+**Constrains**:
+- Drop scan-score band selection from `export_param_recovery_multisine.m`.
+- Replace with all odd harmonics from f_low to f_high, resonance-weighted amplitudes.
+- F ≥ 7 bins is the PE lower bound; more is better up to available trajectory length.
+- Amplitude weighting shape must be declared as HEURISTIC in thesis and to supervisors.
+
+---
+
+### [D-051] Step 0 preanalysis uses simulation-based empirical Ŝ(jω), not analytical S(jω)
+**Date**: 2026-05-10
+**What**: The Step 0 survival profile is estimated empirically by injecting a flat broadband
+probe into the closed-loop simulation and computing `Ŝ(jω) = FFT(u_total) / FFT(f_sim)`,
+rather than computing S(jω) analytically from A_c, B_c, C_c, and the controller.
+
+**Why**: In the current parametric model both methods give identical results. However,
+when the model becomes incomplete (NN augmentation added) or moves to hardware, the
+analytical S(jω) from the nominal model diverges from the true survival profile. The
+simulation-based approach uses the actual closed-loop response at every stage, so the
+same code path applies to:
+- Current parametric simulation: Ŝ = S (equivalent)
+- Augmented simulation: Ŝ reflects changed dynamics automatically
+- Hardware: replace simulation run with real measurements — same formula
+
+**Ruled out**: Purely analytical S(jω) from state-space matrices. Correct now but
+requires explicit code change at every model update; simulation-based is forward-compatible
+at no additional cost.
+
+**Constrains**:
+- Step 0 requires a short simulation run before Step 1 can proceed.
+- Probe signal: flat broadband multisine (all harmonics, equal amplitude, force injection).
+- f_low threshold from `|Ŝ|²` has no universal source — must be declared as engineering choice.
