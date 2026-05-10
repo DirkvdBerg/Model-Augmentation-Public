@@ -86,7 +86,9 @@
       "Bash(tasklist /FI \"IMAGENAME eq python.exe\" /FO CSV)",
       "Bash(tasklist:*)",
       "Bash(ls:*)",
-      "Bash(echo \"PID: $!\")"
+      "Bash(echo \"PID: $!\")",
+      "WebFetch(domain:dx.doi.org)",
+      "Bash(python3 -c ':*)"
     ]
   }
 }

@@ -1277,6 +1277,97 @@ revisited together.
 
 ---
 
+### [D-049] experiment_diagnostics.py: fs_new derived from system physics, not signal content
+**Date**: 2026-05-08
+**What**: Restructured `experiment_diagnostics.py` in five concrete ways:
+
+1. `fs_new` is now determined from `f_osc_min` (pole analysis, Diagnostic 2) using
+   `_FS_RULE_FACTOR = 10`: first candidate in `_FS_CANDIDATES` satisfying
+   `fs_new >= 10 * f_osc_min`. Previously, `fs_new` was set from `f_99` (Welch PSD,
+   Diagnostic 1) with `_FS_RULE_FACTOR = 8`.
+
+2. `_FS_RULE_FACTOR` changed from 8 to 10 to match the lecture lower bound.
+
+3. `segment_len` is now the maximum of three rules:
+   ```python
+   segment_len = max(
+       ceil(N_PERIODS / f_osc_min * fs_new),   # period rule
+       ceil(10 * tau_max * fs_new),              # 10x time constant rule
+       10 * n_params,                            # 10x parameter count rule
+   )
+   ```
+   Previously only the period rule was applied (yielding ~608 samples at 1000 Hz).
+   With the 10x tau_max rule the correct lower bound is ~15720 samples at 1000 Hz.
+
+4. `f_99` demoted to a warning-only check: if `f_99 > 10 * f_osc_min`, a warning is
+   printed that excitation energy is above the model band. `f_99` no longer drives
+   any design variable.
+
+5. `[::D]` stride in `_diag_gradient_convergence` replaced with
+   `scipy.signal.decimate`, which applies a Chebyshev Type I anti-aliasing filter
+   before striding.
+
+**Why**:
+
+*For change 1 and 2:*
+- Source: Lecture 9, slides 10-12 (5SMB0): "10 * omega_b <= omega_s <= 30 * omega_b"
+  where omega_b is the system bandwidth — a physics quantity, not a signal quantity.
+- `f_99` is the 99% energy frequency of the excitation. It measures where the
+  injected signal has power, not where the system has dynamics. Setting `fs_new` from
+  `f_99` ties the sampling rate to the excitation design rather than the model band.
+  This is the wrong causal direction: the sampling rate should be set first (from
+  physics), and then the multisine frequency range should be designed to stay within
+  the model band.
+- Factor 8 is below the lecture-stated lower bound of 10. Factor 10 is used.
+- Source: Ljung (1999) — setting fs too high causes all discrete-time poles to cluster
+  near unity, degrading numerical conditioning.
+- Source: Pintelon & Schoukens (2001/2012) — set fs from the model band, not the
+  excitation band.
+
+*For change 3:*
+- Source: Lecture 9, slide 9 (5SMB0): "N >= 10 * tau_set,95" and "N >= 10 * n_theta".
+- Source: Lecture 3, periodic measurement material (5SMB0) — integer periods required.
+- N_PERIODS = 3 is a HEURISTIC (covers the slowest mode with margin; lecture uses 10
+  for FRF quality, which is more conservative than needed for BPTT training).
+- The 10x tau_max rule dominates at the current parameters: tau_max = 1.572 s,
+  giving 15720 samples at 1000 Hz — 25x larger than the period rule alone.
+  This may be overly conservative for BPTT (the rule is derived for stationary FRF
+  estimation). The discrepancy is now reported in the diagnostics output and should
+  be discussed with the supervisor before shortening trajectories.
+
+*For change 4:*
+- Source: Gonzalez, van Haren, Oomen, Rojas (arXiv:2410.19629 / IEEE TAC 2024):
+  parametric estimator consistency survives aliasing of out-of-band input content,
+  provided in-band frequencies are correctly resolved. Therefore `f_99` above the
+  model band is not a problem for parameter recovery, only a warning.
+
+*For change 5:*
+- Source: Lecture 9 (5SMB0) pre-processing steps: "Apply anti-aliasing filter before
+  any downsampling."
+- Source: lecture_digital-filters.pdf (4CM00), slides 30-35: filter must provide
+  >= 40 dB attenuation at the new Nyquist frequency.
+- `scipy.signal.decimate` applies Chebyshev Type I filter automatically.
+
+**Ruled out**:
+- `_F99_PHYSICAL_CAP_FACTOR`: applying the 10x rule to `f_99` to cap it at
+  `10 * f_osc_min`. Documented in `docs/multisine-diagnostics-interface.md` —
+  this applies the 10x rule to the wrong variable and conflates two separate
+  design choices.
+
+**Constrains**:
+- `experiment_diagnostics.py`: `run_all_diagnostics` now computes `f_osc_min`,
+  `fs_new`, and `D` before calling `_diag_fft`. `_diag_fft` accepts `fs_new` and
+  `f_osc_min` as keyword parameters.
+- `recommend_segment_len`: now returns the max-of-three segment_len, which is larger
+  than before. Any caller that relies on the old (period-only) segment length will get
+  longer segments and fewer segments per trajectory. This is the correct direction.
+- Note: the 10x tau_max rule may produce segments longer than available trajectory
+  data (tau_max = 1.572 s => 15720 samples at 1000 Hz; trajectories are approximately
+  40000 samples at 20000 Hz = 2000 samples at 1000 Hz). This is a trajectory design
+  issue, not a code issue — the diagnostic now correctly reports it.
+
+---
+
 ### [D-048] `ref_injection` dataset is incompatible with open-loop parameter recovery training
 **Date**: 2026-05-04
 **What**: The `ref_injection` dataset (multisine injected into the reference `r`) is

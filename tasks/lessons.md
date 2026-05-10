@@ -63,6 +63,23 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
+### Rule: Verify that a theory rule's derivation context matches the application context before implementing it
+**Trigger**: When implementing a numerical rule or threshold cited from literature or lecture notes
+**Rule**: Check that the context in which the rule was derived matches the current application. A THEORY label is not sufficient if the rule comes from a different identification paradigm (e.g., FRF estimation vs. BPTT training). If contexts differ, flag it explicitly — do not implement the rule as if it applies.
+**Why**: Implemented "N ≥ 10 × τ_set,95" segment length rule from Lecture 9, which is derived for non-parametric FRF estimation (transients must settle before corrupting spectral estimates). Applied it to BPTT gradient-based training, where the criterion has no direct equivalent. The result (15722 samples at 1000 Hz = 15.7 s) exceeded available trajectory lengths and was physically meaningless for training.
+**How to apply**: Before writing `# THEORY: <source>` and implementing a formula, ask: "Was this rule derived for the same identification method being used here (FRF, PEM, BPTT, etc.)?" If not, flag the mismatch explicitly to the user before implementing.
+
+---
+
+### Rule: Use the user's exact technical term, do not substitute a related concept
+
+**Trigger**: When a user names a specific technical concept (e.g. "additional unmodeled states", "reference injection", "state-space order")
+**Rule**: Implement or document exactly that concept. Do not silently map it to a related but different concept (e.g. "unmodeled dynamics", "trust band on frequency"). If you think the user's term maps to something different, flag the mismatch explicitly and ask -- do not proceed with the substitution.
+**Why**: User said "additional states not modelled" (state-space augmentation -- extra state variables the model does not have). Output substituted "unmodeled dynamics / trust band" (a frequency-domain concept). These are different: one is about model order, the other is about frequency coverage. The substitution was invisible and wrong.
+**How to apply**: Before writing any design entry or code, re-read the user's exact words. If your output uses a different term, stop and verify equivalence first.
+
+---
+
 ### Rule: Mathematical implications must be justified for the specific construction, not asserted as general facts
 **Trigger**: When claiming "X implies Y" or "X if and only if Y" in a mathematical derivation
 **Rule**: Always state explicitly why the implication holds for this specific construction. Do not assert it as if it follows from a general theorem unless it actually does. Show the connecting steps.

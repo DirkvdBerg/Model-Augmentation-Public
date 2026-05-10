@@ -38,6 +38,13 @@ Read `tasks/lessons.md` before any work. Rules there are active constraints, not
 - `tasks/handoff.md`: archive full content to `archive/sessions/YYYY-MM-DD-handoff.md`, then trim file to open blockers only.
 - `tasks/todo.md`: move any completed sections/tasks to `archive/sessions/YYYY-MM-DD-todo.md`, then remove them from the live file.
 
+## Signal Processing & System Identification Code
+Any numerical formula, constant, or threshold in signal processing, experiment design, or system identification code **must carry an inline label before it can be written**:
+- `# THEORY: <source>` — formula derived directly from literature; source, variable, and context must all match
+- `# HEURISTIC: <reason>` — engineering invention with no literature source; flag it explicitly
+
+No label = do not implement yet. Literature validates only if the formula, variable, and context match — not just the numeric constant.
+
 ## Workflow
 - **Plan mode** for any task with 3+ steps or architectural decisions. Stop and re-plan if something goes sideways.
 - **Subagent triggers (non-negotiable):**
