@@ -24,6 +24,49 @@ are covered.
 
 ---
 
+# Current Assumptions and Required Extensibility
+
+> Read this before implementing anything.
+
+**What we are designing for now:**
+- Noiseless simulation (no measurement noise, Φ_v = const drops out of FIM)
+- Complete parametric model (no unmodeled dynamics, augmentation network not yet fitted)
+- Open-loop BPTT training with replayed plant input `u_total`
+
+**What must be possible to extend to later (without redesigning from scratch):**
+- Hardware with measurement noise → switch to indirect closed-loop FRF estimator
+  (`Ĝ = Φ_yd / Φ_ud`) instead of direct `Ĝ = Ŷ/Û`; update `Φ_v` in FIM with measured noise floor
+- Augmentation active → rerun Step 0 with augmented model (new poles, different S(jω),
+  different ∂G/∂θ); the pipeline structure does not change, only the model passed in
+- Multiple operating points / scheduling → aggregate FIM over Y values (already designed for this)
+
+**Consequence for every design choice:** if a choice only works in the noiseless / no-augmentation
+case and cannot be extended, it must be flagged explicitly. Do not implement anything that
+paints us into a corner.
+
+**On FRF estimation: parametric vs nonparametric**
+In noiseless simulation, the analytical FRF `G(jω) = C(jωI−A_c)^{-1}B_c` and a
+nonparametric FRF estimated from data give identical results — the model IS the truth.
+Computing analytically is therefore preferred (no pre-run simulation needed).
+On hardware, a nonparametric FRF requires the **indirect closed-loop estimator**
+(`Φ_yd/Φ_ud`) because the direct estimator (`Ŷ/Û`) is biased in closed loop.
+The indirect estimator is not needed now but the preanalysis structure must be compatible
+with plugging in a measured FRF later in place of the analytical one.
+
+**On reference vs force injection**
+This is context-dependent — both answers from the literature are correct, but for
+different identification paradigms:
+- **Nonparametric / PEM identification**: reference injection is preferred (P&S,
+  Gevers) because `|T| ≈ 1` inside bandwidth delivers excitation well.
+- **BPTT with u-replay (our method)**: force injection is required. With reference
+  injection the controller absorbs the multisine (`u_recorded ≈ u_fb` only), so
+  replaying `u_recorded` through our model carries no multisine excitation — gradients
+  vanish. This is why our supervisor's recommendation is correct for our specific
+  identification method, and why the literature recommendation does not apply directly.
+  Documented in D-048 and `docs/ref-injection-openloop-incompatibility.md`.
+
+---
+
 # PART 1 — Pipeline: Per-Step Theory Requirements
 
 > These are the three steps that must be implemented and justified before any simulation
@@ -39,6 +82,13 @@ are covered.
 point. Outputs the FIM per frequency, recommended f_low, f_high, fs_new. This is the
 foundation that justifies all downstream choices. It does not yet exist.
 
+**Now:** uses analytical G(jω) from the parametric physics model — equivalent to a
+nonparametric FRF in noiseless simulation because the model IS the truth.
+**Future (hardware):** replace analytical G with the indirect closed-loop FRF estimate
+`Φ_yd/Φ_ud`. The rest of the step is unchanged.
+**Future (augmentation active):** re-run with augmented model (different A_c, B_c, C_c,
+different poles and S(jω)). Pipeline structure unchanged.
+
 | Choice | Type | Source to verify | Flag |
 |--------|------|-----------------|------|
 | `G(jω) = C(jωI − A_c)^{-1} B_c` | THEORY | Standard state-space FRF — any sysid textbook | OK |
@@ -46,7 +96,7 @@ foundation that justifies all downstream choices. It does not yet exist.
 | `T(jω) = G(jω) C(jω) / (1 + G(jω) C(jω))` | THEORY | Complementary sensitivity — standard | OK |
 | `∂G/∂θ_i` by finite difference | THEORY | Standard numerical differentiation, context matches | OK |
 | FIM per frequency: `v(ω) = Σ_i \|∂G/∂θ_i\|² × \|S(jω)\|² / Φ_v(ω)` | THEORY | Gevers et al. (2011), §5, eqs. (5.1)–(5.10) — verify reduction steps | **Verify eq. numbers** |
-| Noise model: `Φ_v = const` (white, drops out) | Assumption | Stated in `docs/experiment-design-pipeline.md`. Defensible for simulation | Declare assumption |
+| Noise model: `Φ_v = const` (white, drops out) | Assumption | Noiseless simulation — declared assumption. For hardware: replace with measured noise floor | Declare assumption |
 | `f_low` = lowest ω where v(ω) > threshold | HEURISTIC | **No primary source for threshold value** | **NO SOURCE — must state** |
 | `f_high` = highest ω where v(ω) > threshold | HEURISTIC | **No primary source for threshold value** | **NO SOURCE — must state** |
 | Aggregate over Y: `min_Y v(ω)` (worst-case) | HEURISTIC | Ghosh et al. (2018) prefer joint optimization; worst-case is conservative heuristic | Declare heuristic |
@@ -110,8 +160,25 @@ to be addressed or declared as a known limitation.
 
 | Choice | Type | Source to verify | Flag |
 |--------|------|-----------------|------|
-| Force injection after controller (not reference) | THEORY | D-048, `docs/ref-injection-openloop-incompatibility.md` — reference injection makes BPTT gradients vanish inside bandwidth | OK — well documented |
-| cy identified from reference trajectories (T1/T6 Y-sweeps), NOT from force injection | THEORY | Closed-loop sensitivity: inside bandwidth `\|S\| ≈ 0` so force injection is suppressed; reference via `T ≈ 1` reaches plant | OK — confirm in thesis framing |
+| Force injection after controller (not reference) | THEORY | D-048, `docs/ref-injection-openloop-incompatibility.md` | OK — well documented |
+| cy identified from reference trajectories (T1/T6), NOT from force injection | THEORY | Inside bandwidth `\|S\| ≈ 0` → force suppressed; reference via `T ≈ 1` → reaches plant | OK — confirm in thesis framing |
+
+**Why force injection, not reference — full argument for supervisors:**
+Reference injection is the literature-preferred choice for nonparametric FRF estimation
+and PEM (P&S, Gevers et al.) because `|T| ≈ 1` inside bandwidth delivers excitation
+well to the plant output. However, our identification method is **BPTT with u-replay**:
+we record `u_total = u_fb + f_sim` and replay it through our parametric model.
+With reference injection, the controller tracks r_ms, so `u_recorded ≈ u_fb` only —
+the multisine does not appear in the recorded plant input. Replaying `u_recorded` through
+our model carries no multisine, gradients vanish, and the parameters become unidentifiable.
+Force injection puts f_sim directly into `u_total`, so it survives the replay.
+The attenuation by `|S|` inside bandwidth is the cost — compensated by amplitude shaping.
+This argument is specific to our u-replay identification method and does not contradict
+the literature; the two recommendations apply to different paradigms.
+
+**Future (hardware / noise):** force injection remains the correct choice for BPTT
+u-replay. If identification switches to PEM or indirect FRF estimation, reference
+injection should be reconsidered.
 
 ---
 
