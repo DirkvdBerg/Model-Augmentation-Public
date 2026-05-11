@@ -56,18 +56,22 @@ def _mtime(path):
         return None
 
 
-def _fingerprint(traj_specs, traj_dir, dtype, norm_mode, overlap_fraction=0.0):
+def _fingerprint(traj_specs, traj_dir, dtype, norm_mode, overlap_fraction=0.0,
+                 fs_new=None, segment_len=None):
     """Cache key — invalidated by data changes (mtimes), logic changes (compute_hash), or config.
 
     norm_mode is intentionally excluded: both sigma variants are always stored so switching
     norm_mode never requires a recompute.
+    fs_new and segment_len overrides are included: changing either invalidates the cache.
     """
     return {
-        'traj_specs':       tuple((s['id'], s['file']) for s in traj_specs),
-        'mtimes':           tuple((s['file'], _mtime(os.path.join(traj_dir, s['file']))) for s in traj_specs),
-        'dtype':            str(dtype),
-        'overlap_fraction': overlap_fraction,
-        'compute_hash':     _COMPUTE_HASH,
+        'traj_specs':        tuple((s['id'], s['file']) for s in traj_specs),
+        'mtimes':            tuple((s['file'], _mtime(os.path.join(traj_dir, s['file']))) for s in traj_specs),
+        'dtype':             str(dtype),
+        'overlap_fraction':  overlap_fraction,
+        'fs_new_override':   fs_new,
+        'segment_len_override': segment_len,
+        'compute_hash':      _COMPUTE_HASH,
     }
 
 
@@ -229,7 +233,8 @@ def _build_segment_pools(trajs, segment_len, overlap_fraction=0.0):
 # Core computation
 # ----------------------------------------------------------------------
 
-def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction):
+def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction,
+             fs_new=None, segment_len=None):
     """Run all precomputation. Only called when cache is absent or stale."""
     P      = _P.to(dtype)
     ts_val = float(_ts)
@@ -252,20 +257,24 @@ def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction)
         })
         print(f'    {spec["id"]}: T={q1.shape[0]}, fs={fs} Hz')
 
-    # --- Determine decimation factor and new sampling rate from physics model ---
-    # THEORY: Lecture 9 slides 10-12 (5SMB0) — fs_new >= _FS_RULE_FACTOR * f_osc_min
+    # --- Determine decimation factor and new sampling rate ---
     from lpv_lfr_baseline.scripts.experiment_diagnostics import (  # noqa: PLC0415
         recommend_segment_len, _get_f_osc_min, _FS_CANDIDATES, _FS_RULE_FACTOR,
     )
-    fs_orig       = float(trajs[0]['fs'])
-    f_osc_min_pre = _get_f_osc_min()
-    fs_new        = next(
-        (f for f in _FS_CANDIDATES if f >= _FS_RULE_FACTOR * f_osc_min_pre),
-        int(fs_orig),
-    )
-    D = round(fs_orig / fs_new)
-    print(f'  precompute: f_osc_min={f_osc_min_pre:.4f} Hz  ->  fs_new={fs_new} Hz  D={D}'
-          f'  [Lecture 9: fs >= {_FS_RULE_FACTOR} x f_osc_min]')
+    fs_orig = float(trajs[0]['fs'])
+    if fs_new is not None:
+        D = round(fs_orig / fs_new)
+        print(f'  precompute: fs_new = {fs_new} Hz  D={D}  (manual override)')
+    else:
+        # THEORY: Lecture 9 slides 10-12 (5SMB0) — fs_new >= _FS_RULE_FACTOR * f_osc_min
+        f_osc_min_pre = _get_f_osc_min()
+        fs_new = next(
+            (f for f in _FS_CANDIDATES if f >= _FS_RULE_FACTOR * f_osc_min_pre),
+            int(fs_orig),
+        )
+        D = round(fs_orig / fs_new)
+        print(f'  precompute: f_osc_min={f_osc_min_pre:.4f} Hz  ->  fs_new={fs_new} Hz  D={D}'
+              f'  [Lecture 9: fs >= {_FS_RULE_FACTOR} x f_osc_min]')
 
     # --- decimate all trajectories in-place ---
     print(f'  precompute: decimating trajectories by D={D}  ({fs_orig:.0f} -> {fs_new:.0f} Hz)')
@@ -312,10 +321,13 @@ def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction)
     print(f'  precompute: rmse_baseline_normalized = '
           f'{rmse_baseline_normalized_per_traj if norm_mode == "per_traj" else rmse_baseline_normalized_global:.4e}')
 
-    # --- segment length diagnostic (FFT-based f_osc_min from decimated trajectories) ---
-    print('  precompute: running segment length diagnostic')
-    segment_len = recommend_segment_len(trajs, fs_new, save_dir, dtype=dtype)
-    print(f'  precompute: chosen segment_len = {segment_len}  (at {fs_new:.0f} Hz)')
+    # --- segment length ---
+    if segment_len is not None:
+        print(f'  precompute: segment_len = {segment_len}  (manual override, at {fs_new:.0f} Hz)')
+    else:
+        print('  precompute: running segment length diagnostic')
+        segment_len = recommend_segment_len(trajs, fs_new, save_dir, dtype=dtype)
+        print(f'  precompute: segment_len = {segment_len}  (auto, at {fs_new:.0f} Hz)')
 
     # --- segment pools ---
     pools = _build_segment_pools(trajs, segment_len, overlap_fraction)
@@ -371,7 +383,8 @@ def _inject_norm_mode(data, norm_mode):
 
 
 def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
-               norm_mode='per_traj', overlap_fraction=0.0, force=False):
+               norm_mode='per_traj', overlap_fraction=0.0, force=False,
+               fs_new=None, segment_len=None):
     """
     Load or compute all fixed precomputed data for parameter recovery training.
 
@@ -387,6 +400,10 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
     overlap_fraction : fraction of segment_len used as overlap between consecutive segments.
                        Changing this only rebuilds pools — no full recompute needed.
     force            : if True, recompute even when a valid cache exists
+    fs_new           : int [Hz] override for target sampling rate; None = auto from
+                       _get_f_osc_min() + Lecture 9 rule. Set to fs_orig to skip decimation.
+    segment_len      : int override for BPTT segment length in samples; None = auto from
+                       experiment_diagnostics.recommend_segment_len().
 
     Returns
     -------
@@ -398,7 +415,8 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
     traj_tag   = '_'.join(s['id'] for s in traj_specs)
     dtype_tag  = str(dtype).replace('torch.', '')
     cache_path = Path(save_dir) / f'precomputed_{traj_tag}_{dtype_tag}.pt'
-    fp = _fingerprint(traj_specs, traj_dir, dtype, norm_mode, overlap_fraction)
+    fp = _fingerprint(traj_specs, traj_dir, dtype, norm_mode, overlap_fraction,
+                      fs_new=fs_new, segment_len=segment_len)
 
     if not force and cache_path.exists():
         cached    = torch.load(cache_path, weights_only=False)
@@ -437,7 +455,8 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
                 else:
                     print(f'    {key}: {old!r} → {val!r}')
 
-    data = _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction)
+    data = _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction,
+                    fs_new=fs_new, segment_len=segment_len)
     data['fingerprint'] = fp
     torch.save(data, cache_path)
     print(f'  precompute: saved to {cache_path}')

@@ -119,6 +119,11 @@ TEST_SPECS = ({'id': 'E1', 'file': 'E1_X_sym_anti_Y_low_offset_sweep.mat'},)
 # ── Normalisation ────────────────────────────────────────────────────────────
 NORM_MODE = 'global'   # 'per_traj' | 'global'  (see precompute.py)
 
+# ── Resampling / segment length overrides ────────────────────────────────────
+FS_NEW       = None   # int [Hz] override (e.g. 1000); None = auto from _get_f_osc_min()
+                      # set to fs_orig (e.g. 20000) to skip decimation entirely (D=1)
+SEGMENT_LEN  = None   # int override (e.g. 600); None = auto from experiment_diagnostics
+
 # ── Segment sampling ──────────────────────────────────────────────────────────
 OVERLAP_FRACTION = 0.0   # 0.0 = non-overlapping; 0.5 = 50% overlap
 
@@ -325,7 +330,8 @@ def train(
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 1: Precompute (trajectories, sigma, segment_len)\n{"=" * 60}')
     pre = precompute(TRAJ_SPECS, TRAJ_DIR, save_dir, dtype=DTYPE, norm_mode=norm_mode,
-                     overlap_fraction=OVERLAP_FRACTION)
+                     overlap_fraction=OVERLAP_FRACTION,
+                     fs_new=FS_NEW, segment_len=SEGMENT_LEN)
 
     trajs                    = pre['trajs']
     sigma                    = pre['sigma']               # dict traj_id -> (3,) CPU float64
