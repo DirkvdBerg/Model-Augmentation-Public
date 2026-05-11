@@ -29,6 +29,7 @@ import os
 import queue
 import threading
 import time
+from datetime import datetime
 
 import torch
 
@@ -120,9 +121,9 @@ TEST_SPECS = ({'id': 'E1', 'file': 'E1_X_sym_anti_Y_low_offset_sweep.mat'},)
 NORM_MODE = 'global'   # 'per_traj' | 'global'  (see precompute.py)
 
 # ── Resampling / segment length overrides ────────────────────────────────────
-FS_NEW       = None   # int [Hz] override (e.g. 1000); None = auto from _get_f_osc_min()
+FS_NEW       = 20000   # int [Hz] override (e.g. 1000); None = auto from _get_f_osc_min()
                       # set to fs_orig (e.g. 20000) to skip decimation entirely (D=1)
-SEGMENT_LEN  = None   # int override (e.g. 600); None = auto from experiment_diagnostics
+SEGMENT_LEN  = 4000   # int override (e.g. 600); None = auto from experiment_diagnostics
 
 # ── Segment sampling ──────────────────────────────────────────────────────────
 OVERLAP_FRACTION = 0.0   # 0.0 = non-overlapping; 0.5 = 50% overlap
@@ -317,6 +318,7 @@ def train(
     """Run parameter recovery training. Returns trained ParameterizedLFRBlock."""
     os.makedirs(save_dir, exist_ok=True)
     traj_tag = _traj_set_tag(TRAJ_SPECS)   # e.g. 'T1_T2_T3_T4_T5_T6_T7_T8'
+    run_id   = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
 
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # device = torch.device('cpu')
@@ -438,6 +440,14 @@ def train(
     print(f'  Trainable params : {sum(p.numel() for p in block.parameters())}')
     print(f'  RMSE_baseline_normalized: {rmse_baseline_normalized:.6e}')
     print(block.param_table())
+
+    # Static parameter metadata — defined once here so checkpoints and Step 6 share them
+    params_true     = torch.tensor([_TRUE_PARAMS[n] for n in _PARAM_NAMES], dtype=DTYPE)
+    _sum_pairs      = [('kb_sum', 'kb1', 'kb2'), ('cb_sum', 'cb1', 'cb2'), ('J_sum', 'Jb', 'Jh')]
+    _idx            = {n: i for i, n in enumerate(_PARAM_NAMES)}
+    sum_names       = [sn for sn, _, _ in _sum_pairs]
+    sum_params_true = torch.tensor([_TRUE_PARAMS[a]    + _TRUE_PARAMS[b]    for _, a, b in _sum_pairs], dtype=DTYPE)
+    sum_params_init = torch.tensor([_DETUNED_PARAMS[a] + _DETUNED_PARAMS[b] for _, a, b in _sum_pairs], dtype=DTYPE)
 
     # ------------------------------------------------------------------
     # Step 3 — Training loop
@@ -574,9 +584,47 @@ def train(
             t_fwd = _sync_time(device)   # fwd + bwd complete
 
         if checkpoint_interval > 0 and epoch > 0 and epoch % checkpoint_interval == 0:
+            _ckpt_params_learned = block.params_init * block.log_params.detach().exp()
+            _ckpt_sum_learned    = torch.stack([_ckpt_params_learned[_idx[a]] + _ckpt_params_learned[_idx[b]] for _, a, b in _sum_pairs])
             torch.save(
-                {'log_params': block.log_params.detach(), 'epoch': epoch, 'history': history},
-                os.path.join(save_dir, f'checkpoint_e{epoch}.pt'),
+                {
+                    # Parameters — individual
+                    'param_names':              list(_PARAM_NAMES),
+                    'params_true':              params_true,
+                    'params_init':              block.params_init,
+                    'params_learned':           _ckpt_params_learned,
+                    'log_params':               block.log_params.detach(),
+                    # Parameters — identifiable sums
+                    'sum_names':                sum_names,
+                    'sum_params_true':          sum_params_true,
+                    'sum_params_init':          sum_params_init,
+                    'sum_params_learned':       _ckpt_sum_learned,
+                    'sum_delta_pct':            (_ckpt_sum_learned - sum_params_true) / sum_params_true * 100,
+                    # Best-epoch tracking so far
+                    'best_epoch':               best_epoch,
+                    'best_full_traj_rmse':      best_full_traj_rmse,
+                    'best_log_params':          best_log_params,
+                    # Normalisation
+                    'rmse_baseline_normalized': rmse_baseline_normalized,
+                    'sigma':                    {tid: s.cpu() for tid, s in sigma.items()},
+                    # Run config
+                    'run_id':                   run_id,
+                    'active_traj_ids':          tuple(s['id'] for s in TRAJ_SPECS),
+                    'dtype':                    str(DTYPE),
+                    'norm_mode':                norm_mode,
+                    'epochs':                   epochs,
+                    'lr':                       lr,
+                    'segment_len':              segment_len,
+                    'overlap_fraction':         OVERLAP_FRACTION,
+                    'W':                        W,
+                    'split_reg_weight':         split_reg_weight,
+                    'batch_size':               len(trajs),
+                    'base_seed':                BASE_SEED,
+                    # Checkpoint state
+                    'epoch':                    epoch,
+                    'history':                  history,
+                },
+                os.path.join(save_dir, f'checkpoint_e{epoch}_{run_id}.pt'),
             )
 
         # ── Eval (async drain+push or sync inline) ────────────────────────────
@@ -738,15 +786,7 @@ def train(
     # ------------------------------------------------------------------
     # Step 6 — Save
     # ------------------------------------------------------------------
-    params_true    = torch.tensor([_TRUE_PARAMS[n] for n in _PARAM_NAMES], dtype=DTYPE)
-    params_learned = block.params_init * block.log_params.detach().exp()
-
-    # Identifiable sums
-    _sum_pairs = [('kb_sum', 'kb1', 'kb2'), ('cb_sum', 'cb1', 'cb2'), ('J_sum', 'Jb', 'Jh')]
-    _idx       = {n: i for i, n in enumerate(_PARAM_NAMES)}
-    sum_names         = [sn for sn, _, _ in _sum_pairs]
-    sum_params_true   = torch.tensor([_TRUE_PARAMS[a]    + _TRUE_PARAMS[b]    for _, a, b in _sum_pairs], dtype=DTYPE)
-    sum_params_init   = torch.tensor([_DETUNED_PARAMS[a] + _DETUNED_PARAMS[b] for _, a, b in _sum_pairs], dtype=DTYPE)
+    params_learned     = block.params_init * block.log_params.detach().exp()
     sum_params_learned = torch.stack([params_learned[_idx[a]] + params_learned[_idx[b]] for _, a, b in _sum_pairs])
     sum_delta_pct      = (sum_params_learned - sum_params_true) / sum_params_true * 100
 
@@ -754,7 +794,7 @@ def train(
         sum(e['rmse_ch'].pow(2) for e in train_eval_entries) / len(train_eval_entries)
     ).sqrt()   # (3,) mean per-channel RMSE across training trajectories
 
-    save_path = os.path.join(save_dir, f'lfr_param_recovery_{DATASET}_{traj_tag}_e{epochs}.pt')
+    save_path = os.path.join(save_dir, f'lfr_param_recovery_{DATASET}_{traj_tag}_e{epochs}_{run_id}.pt')
     torch.save(
         {
             # Parameters — individual
@@ -777,6 +817,7 @@ def train(
             'rmse_baseline_normalized': rmse_baseline_normalized,
             'sigma':                    {tid: s.cpu() for tid, s in sigma.items()},
             # Run config
+            'run_id':                   run_id,
             'active_traj_ids':          tuple(s['id'] for s in TRAJ_SPECS),
             'dtype':                    str(DTYPE),
             'norm_mode':                norm_mode,
