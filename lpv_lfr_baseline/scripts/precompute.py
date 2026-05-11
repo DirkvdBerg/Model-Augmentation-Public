@@ -33,10 +33,8 @@ G, alpha, beta, gamma, N0, N1, N2 — all depend on trainable parameters and mus
 be rebuilt each forward pass from current log_params.
 """
 
-import contextlib
 import hashlib
 import inspect
-import io
 import os
 from pathlib import Path
 
@@ -58,46 +56,19 @@ def _mtime(path):
         return None
 
 
-def _fingerprint(traj_specs, traj_dir, dtype, norm_mode, overlap_fraction=0.0, D=None):
+def _fingerprint(traj_specs, traj_dir, dtype, norm_mode, overlap_fraction=0.0):
     """Cache key — invalidated by data changes (mtimes), logic changes (compute_hash), or config.
 
     norm_mode is intentionally excluded: both sigma variants are always stored so switching
     norm_mode never requires a recompute.
-    D is included when known (computed from data via _diag_fft). A change in D due to updated
-    _diag_fft logic invalidates the cache even if data mtimes are unchanged.
     """
-    fp = {
+    return {
         'traj_specs':       tuple((s['id'], s['file']) for s in traj_specs),
         'mtimes':           tuple((s['file'], _mtime(os.path.join(traj_dir, s['file']))) for s in traj_specs),
         'dtype':            str(dtype),
         'overlap_fraction': overlap_fraction,
         'compute_hash':     _COMPUTE_HASH,
     }
-    if D is not None:
-        fp['D'] = D
-    return fp
-
-
-# ----------------------------------------------------------------------
-# Decimation factor helper (used for fingerprinting)
-# ----------------------------------------------------------------------
-
-def _compute_D_from_specs(traj_specs, traj_dir, dtype):
-    """Load trajectories and run FFT diagnostic (silently) to obtain decimation factor D.
-
-    Called once per precompute() invocation so D can be included in the cache fingerprint.
-    Output is suppressed; no plots are saved.
-    """
-    from lpv_lfr_baseline.scripts.experiment_diagnostics import _diag_fft  # noqa: PLC0415
-    trajs = []
-    for spec in traj_specs:
-        mat_path = os.path.join(traj_dir, spec['file'])
-        u, q1, fs = _load_trajectory(mat_path, dtype)
-        trajs.append({'id': spec['id'], 'N': int(q1.shape[0]), 'fs': fs, 'u': u, 'q1': q1})
-    buf = io.StringIO()
-    with contextlib.redirect_stdout(buf):
-        r = _diag_fft(trajs, save_dir=None)
-    return r['decimation_factor']
 
 
 # ----------------------------------------------------------------------
@@ -281,15 +252,20 @@ def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction)
         })
         print(f'    {spec["id"]}: T={q1.shape[0]}, fs={fs} Hz')
 
-    # --- FFT diagnostic: determine decimation factor and new sampling rate ---
-    print('  precompute: running FFT diagnostic')
+    # --- Determine decimation factor and new sampling rate from physics model ---
+    # THEORY: Lecture 9 slides 10-12 (5SMB0) — fs_new >= _FS_RULE_FACTOR * f_osc_min
     from lpv_lfr_baseline.scripts.experiment_diagnostics import (  # noqa: PLC0415
-        recommend_segment_len, _diag_fft,
+        recommend_segment_len, _get_f_osc_min, _FS_CANDIDATES, _FS_RULE_FACTOR,
     )
-    fs_orig = float(trajs[0]['fs'])
-    r_fft   = _diag_fft(trajs, save_dir)
-    D       = r_fft['decimation_factor']
-    fs_new  = float(r_fft['fs_new'])
+    fs_orig       = float(trajs[0]['fs'])
+    f_osc_min_pre = _get_f_osc_min()
+    fs_new        = next(
+        (f for f in _FS_CANDIDATES if f >= _FS_RULE_FACTOR * f_osc_min_pre),
+        int(fs_orig),
+    )
+    D = round(fs_orig / fs_new)
+    print(f'  precompute: f_osc_min={f_osc_min_pre:.4f} Hz  ->  fs_new={fs_new} Hz  D={D}'
+          f'  [Lecture 9: fs >= {_FS_RULE_FACTOR} x f_osc_min]')
 
     # --- decimate all trajectories in-place ---
     print(f'  precompute: decimating trajectories by D={D}  ({fs_orig:.0f} -> {fs_new:.0f} Hz)')
@@ -336,9 +312,9 @@ def _compute(traj_specs, traj_dir, save_dir, dtype, norm_mode, overlap_fraction)
     print(f'  precompute: rmse_baseline_normalized = '
           f'{rmse_baseline_normalized_per_traj if norm_mode == "per_traj" else rmse_baseline_normalized_global:.4e}')
 
-    # --- segment length diagnostic (based on oscillatory poles at fs_new) ---
+    # --- segment length diagnostic (FFT-based f_osc_min from decimated trajectories) ---
     print('  precompute: running segment length diagnostic')
-    segment_len = recommend_segment_len(fs_orig, fs_new, save_dir, dtype=dtype)
+    segment_len = recommend_segment_len(trajs, fs_new, save_dir, dtype=dtype)
     print(f'  precompute: chosen segment_len = {segment_len}  (at {fs_new:.0f} Hz)')
 
     # --- segment pools ---
@@ -422,10 +398,7 @@ def precompute(traj_specs, traj_dir, save_dir, dtype=torch.float64,
     traj_tag   = '_'.join(s['id'] for s in traj_specs)
     dtype_tag  = str(dtype).replace('torch.', '')
     cache_path = Path(save_dir) / f'precomputed_{traj_tag}_{dtype_tag}.pt'
-    # Compute D from data so it can be included in the fingerprint as a cache key.
-    # A change in D (e.g., from updated _diag_fft logic) will therefore invalidate the cache.
-    D = _compute_D_from_specs(traj_specs, traj_dir, dtype)
-    fp = _fingerprint(traj_specs, traj_dir, dtype, norm_mode, overlap_fraction, D=D)
+    fp = _fingerprint(traj_specs, traj_dir, dtype, norm_mode, overlap_fraction)
 
     if not force and cache_path.exists():
         cached    = torch.load(cache_path, weights_only=False)
