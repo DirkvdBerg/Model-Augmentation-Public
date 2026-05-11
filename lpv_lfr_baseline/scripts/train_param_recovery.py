@@ -27,6 +27,7 @@ Run as:
 import contextlib
 import os
 import queue
+import signal
 import threading
 import time
 from datetime import datetime
@@ -319,6 +320,13 @@ def train(
     os.makedirs(save_dir, exist_ok=True)
     traj_tag = _traj_set_tag(TRAJ_SPECS)   # e.g. 'T1_T2_T3_T4_T5_T6_T7_T8'
     run_id   = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
+
+    _stop_requested = False
+    def _handle_stop(signum, frame):
+        nonlocal _stop_requested
+        _stop_requested = True
+        print('\n  SIGUSR1 received — will stop after this epoch', flush=True)
+    signal.signal(signal.SIGUSR1, _handle_stop)
 
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # device = torch.device('cpu')
@@ -692,6 +700,10 @@ def train(
 
         if time_epochs:
             print(f'    fwd+bwd={t_fwd - t0:.2f}s', flush=True)
+
+        if _stop_requested:
+            print(f'  Stopping at epoch {epoch} — proceeding to final eval and save.')
+            break
 
     # Finalize profiler
     if prof is not None:
