@@ -177,6 +177,6 @@ fprintf('  f_low  = %.1f Hz    (controller bandwidth fbw=%.0f rad/s — by desig
 if ~isnan(fres_max)
     fprintf('  f_high = %.1f Hz    (fres_max — highest oscillatory pole)\n', fres_max);
 else
-    fprintf('  f_high = %.1f Hz    (1/tau_fastest — no oscillation found)\n', f_tau);
+    fprintf('  f_high = %.1f Hz    (1/(2pi*tau_fastest) — no oscillation found)\n', f_tau);
 end
 fprintf('%s\n', repmat('=', 1, 72));

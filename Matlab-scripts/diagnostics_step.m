@@ -192,7 +192,7 @@ fprintf('  f_low  = %.1f Hz    (fbw = %.0f rad/s by design)\n',  f_low, fbw);
 if ~isnan(f_high)
     fprintf('  f_high = %.1f Hz    (fres_max)\n',                f_high);
 else
-    fprintf('  f_high = %.1f Hz    (1/tau_fastest, no oscillation)\n', f_tau);
+    fprintf('  f_high = %.1f Hz    (1/(2pi*tau_fastest), no oscillation)\n', f_tau);
 end
 fprintf('%s\n', repmat('=',1,64));
 
@@ -246,7 +246,7 @@ function [tau, fres] = extract_tau_fres(sig, t, peak)
 %               tau  from first crossing of 0.368*peak (63.2% settled).
     fres = NaN;
     tau  = NaN;
-    MIN_H = 0.10 * peak;   % HEURISTIC: ignore peaks below 10% of max
+    MIN_H = 0.03 * peak;   % HEURISTIC: ignore peaks below 3% of max — captures lightly-damped resonances that the controller nearly suppresses
 
     [pks_p, locs_p] = findpeaks( sig, 'MinPeakHeight', MIN_H);
     [pks_n, locs_n] = findpeaks(-sig, 'MinPeakHeight', MIN_H);
