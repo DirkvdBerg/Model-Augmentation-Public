@@ -336,6 +336,54 @@ class ParameterizedLFRBlock(_BASE):
             reduction='sum',
         )
 
+    def matrix_table(self) -> str:
+        """Comparison of physics matrix entries: true vs learned (non-zero, upper triangle)."""
+        dtype = torch.float64
+
+        p_true = torch.tensor([_TRUE_PARAMS[n] for n in _PARAM_NAMES], dtype=dtype)
+        kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d = p_true
+        M0_t, M1_t, M2_t, K_t, C_t = _build_matrices(
+            torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh]),
+            self._Lb.to(dtype), d,
+        )
+
+        p = self._recover_params().detach().to(dtype)
+        kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d = p
+        M0_l, M1_l, M2_l, K_l, C_l = _build_matrices(
+            torch.stack([kb1+kb2, cg1, cg2, cy, cb1+cb2, mh, m1, m2, mb, Jb+Jh]),
+            self._Lb.to(dtype), d,
+        )
+
+        true_mats    = {'M0': M0_t, 'M1': M1_t, 'M2': M2_t, 'K': K_t, 'C': C_t}
+        learned_mats = {'M0': M0_l, 'M1': M1_l, 'M2': M2_l, 'K': K_l, 'C': C_l}
+
+        _ENTRIES = [
+            ('M0', 0, 0, 'm1+m2+mb+mh'),
+            ('M0', 0, 1, '(m1-m2)*Lb/2'),
+            ('M0', 1, 1, 'J+(m1+m2)*Lb^2/4+mh*d^2'),
+            ('M0', 1, 2, '-mh*d'),
+            ('M0', 2, 2, 'mh'),
+            ('M1', 0, 1, '-mh'),
+            ('M2', 1, 1, 'mh'),
+            ('K',  1, 1, 'kb_sum'),
+            ('C',  0, 0, 'cg1+cg2'),
+            ('C',  0, 1, '(cg1-cg2)*Lb/2'),
+            ('C',  1, 1, 'cb_sum+(cg1+cg2)*Lb^2/4'),
+            ('C',  2, 2, 'cy'),
+        ]
+
+        hdr = f"  {'Matrix':<6}  {'[i,j]':<6}  {'True':>12}  {'Learned':>12}  {'delta':>9}  Expression"
+        sep = "  " + "-" * 72
+        lines = ['  Table 3 — Physics matrix entries (non-zero, upper triangle)', hdr, sep]
+        for mat, i, j, expr in _ENTRIES:
+            tv = true_mats[mat][i, j].item()
+            lv = learned_mats[mat][i, j].item()
+            delta = (lv - tv) / tv * 100 if abs(tv) > 1e-12 else float('nan')
+            lines.append(
+                f"  {mat:<6}  [{i},{j}]  {tv:>12.4f}  {lv:>12.4f}  {delta:>+9.2f}%  {expr}"
+            )
+        return '\n'.join(lines)
+
     def split_loss(self) -> Tensor:
         """
         Scale-invariant penalty on degenerate parameter splits (D-037).

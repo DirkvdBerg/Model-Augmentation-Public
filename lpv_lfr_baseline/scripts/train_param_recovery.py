@@ -57,7 +57,7 @@ DTYPE = torch.float64
 #   'ref_injection' — T1–T8, multisine injected into reference r (preferred)
 #                     Matlab-output/parameter-recovery-ref-injection/
 #                     Excitation reaches plant via T≈1, not attenuated by S≪1.
-DATASET = 'identification'
+DATASET = 'base_extended'
 
 _BASE = os.path.join(os.path.dirname(__file__), '..', '..')
 _TRAJ_BASE = (
@@ -99,6 +99,12 @@ _DATASETS = {
         save_dir     = os.path.join(_BASE, 'simulations', 'param_recovery_identification'),
         traj_specs   = _TRAJ_EXTENDED,
     ),
+    'base_extended': dict(
+        traj_dir     = os.path.join(_BASE, 'Matlab-output', 'identification-trajectories-no-multisine'),
+        val_test_dir = os.path.join(_BASE, 'Matlab-output', 'identification-trajectories-no-multisine'),
+        save_dir     = os.path.join(_BASE, 'simulations', 'param_recovery_base_extended'),
+        traj_specs   = _TRAJ_EXTENDED,
+    ),
 }
 
 _ds        = _DATASETS[DATASET]
@@ -124,7 +130,7 @@ NORM_MODE = 'global'   # 'per_traj' | 'global'  (see precompute.py)
 # ── Resampling / segment length overrides ────────────────────────────────────
 FS_NEW       = 20000   # int [Hz] override (e.g. 1000); None = auto from _get_f_osc_min()
                       # set to fs_orig (e.g. 20000) to skip decimation entirely (D=1)
-SEGMENT_LEN  = 4000   # int override (e.g. 600); None = auto from experiment_diagnostics
+SEGMENT_LEN  = 650   # int override (e.g. 600); None = auto from experiment_diagnostics
 
 # ── Segment sampling ──────────────────────────────────────────────────────────
 OVERLAP_FRACTION = 0.0   # 0.0 = non-overlapping; 0.5 = 50% overlap
@@ -133,7 +139,7 @@ OVERLAP_FRACTION = 0.0   # 0.0 = non-overlapping; 0.5 = 50% overlap
 W                  = None    # BPTT window [samples] — None = full segment (no truncation)
 EPOCHS             = 1500
 LR                 = 1e-3
-VALIDATION_INTERVAL = None     # Set to None when not used. The lr scheduler steps on validation RMSE every VALIDATION_INTERVAL epochs; best params tracked.
+VALIDATION_INTERVAL = 20     # Set to None when not used. The lr scheduler steps on validation RMSE every VALIDATION_INTERVAL epochs; best params tracked.
 LOG_INTERVAL             = 1
 CHECKPOINT_INTERVAL      = 100
 SPLIT_REG_WEIGHT         = 1e-2
@@ -141,7 +147,7 @@ N_STEPS                  = None    # cap on trajectory steps (None = all); set t
 PROFILE                  = False
 TIME_EPOCHS              = False
 BASE_SEED                = 1234
-FULL_COVERAGE            = False  # True = all segments per trajectory per epoch; False = 1 random segment per trajectory per epoch
+FULL_COVERAGE            = True  # True = all segments per trajectory per epoch; False = 1 random segment per trajectory per epoch
 
 # ── Choose CPU or GPU ──────────────────────────────────────────────────
 device = torch.device('cpu') # Else 'cuda'
@@ -326,7 +332,8 @@ def train(
         nonlocal _stop_requested
         _stop_requested = True
         print('\n  SIGUSR1 received — will stop after this epoch', flush=True)
-    signal.signal(signal.SIGUSR1, _handle_stop)
+    if hasattr(signal, 'SIGUSR1'):
+        signal.signal(signal.SIGUSR1, _handle_stop)
 
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # device = torch.device('cpu')
@@ -794,6 +801,8 @@ def train(
     # ------------------------------------------------------------------
     print(f'\n{"=" * 60}\nStep 5: Parameter recovery\n{"=" * 60}')
     print(block.param_table())
+    print()
+    print(block.matrix_table())
 
     # ------------------------------------------------------------------
     # Step 6 — Save
