@@ -1,100 +1,81 @@
-% generate_identification_experiment.m
-% Generates BPTT identification trajectories with post-controller force injection.
+% generate_identification_experiment_adjusted.m
+% Selects minimum effective multisine amplitude per modal channel and plots
+% final trajectories with and without multisine.
 %
-% Design:
-%   Band [f_low, f_high] and A_max loaded from step0_outputs.mat (pre-analysis).
-%   Schroeder-phase odd-harmonic multisine injected post-controller per active mode.
-%   All active modes injected simultaneously; different Schroeder seed per mode.
-%
-% Theory:
-%   Schroeder phases:  Schroeder 1970 — minimises crest factor
-%   Odd harmonics:     P&S Ch.4 §4.3.2 — PE condition, even nonlinearity detection
-%   Leakage-free:      P&S Ch.2 §2.2.3 — integer periods, f0 = 1 Hz
-%   Force injection:   feedback algebra U_total = S × F_sim (D-048)
-%   Multi-mode seeds:  HEURISTIC — low cross-correlation, not strictly orthogonal
-%
-% Validation:
-%   Position, velocity checked on simulated q1.
-%   Acceleration checked on reference r (exact: piecewise polynomial).
-%   Acceleration NOT checked on q1: ode45 at 20 kHz amplifies sub-sample
-%   interpolation artifacts by fs^2 = 4e8, producing spurious spikes.
-%   Forces (peak + RMS) checked on u_total = u_q1 + f_sim.
+% Phase 1 — pass 0 for all trajectories: trajectory-only baseline.
+% Phase 2 — rho sweep on single-mode trajectories only; no plots.
+% Phase 3 — select minimum rho per mode where B(rho) > B_min; print table.
+% Phase 4 — final pass 1 at selected rho; verify combined trajectories; plot.
 %
 % Run from repo root:
-%   run('Matlab-scripts/generate_identification_experiment.m')
+%   run('Matlab-scripts/generate_identification_experiment_adjusted.m')
 
 addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
 
-% ── Pre-analysis outputs ──────────────────────────────────────────────────
-step0  = load(fullfile(fileparts(mfilename('fullpath')),'..','Matlab-output','step0_outputs.mat'));
-f_low  = step0.f_low;    % [Hz] lowest frequency where force survives controller
-f_high = step0.f_high;   % [Hz] highest frequency with useful plant response
-A_max  = step0.A_max;    % [N RMS] per mode: [common, diff, y]
-fprintf('Pre-analysis: f_low=%.1f Hz  f_high=%.1f Hz  A_max=[%.0f %.0f %.0f] N\n', ...
-        f_low, f_high, A_max);
+% ── Design parameters ─────────────────────────────────────────────────────
+% Band covers yaw resonance (~4-5 Hz across Y workspace) through controller bandwidth.
+% Yaw resonance: f = (1/2pi)*sqrt((kb1+kb2)/M(Y)(2,2)), M(Y)(2,2) ~ 3.9-5.1 kg·m².
+f_low   = 1;                        % [Hz]
+f_high  = 100;                      % [Hz] — controller bandwidth
+rho_vec = [0.01, 0.02, 0.05, 0.10]; % candidates swept in phase 2
+B_min   = 0.01;                     % [mm] minimum detectable perturbation — positioning repeatability floor
 
 % ── Physical parameters ───────────────────────────────────────────────────
 mb=22.8; mh=10.1; m1=10.2; m2=10.7; Jb=1.0; Jh=0.05;
 cg1=14.5; cg2=20.3; cy=10; cb1=9; cb2=9;
 kb1=1987.5; kb2=1987.5; Lb=0.725; Lh=0.25; d=0.1;
-cc1=16.8; cc2=18.35; ccy=11.6;
 
-C_damp = [cg1+cg2,        (cg1-cg2)*Lb/2,            0;
-          (cg1-cg2)*Lb/2, cb1+cb2+(cg1+cg2)*Lb^2/4,  0;
-          0,               0,                          cy];
+C_damp = [cg1+cg2,        (cg1-cg2)*Lb/2,           0;
+          (cg1-cg2)*Lb/2, cb1+cb2+(cg1+cg2)*Lb^2/4, 0;
+          0,              0,                          cy];
 K  = [0,0,0; 0,kb1+kb2,0; 0,0,0];
 n  = 3;  P = [1,1,0; Lb/2,-Lb/2,0; 0,0,1];
 fs = 20e3;  ts = 1/fs;  fbw = 100;  mdl = 'gantry_2025a';
-N_period = round(fs);       % 20000 samples = T_p = 1 s, f0 = 1 Hz
-n_hold   = round(0.5/ts);  % 0.5 s settle hold at start and end of trajectory
+N_period = round(fs);      % 20000 samples = T_p = 1 s
+n_hold   = round(0.5/ts); % 0.5 s settle hold at trajectory start and end
 
 % ── Hardware limits (TELICA spec) ─────────────────────────────────────────
 lim.pos_X      = 0.375;              % [m]
 lim.pos_Y      = 0.400;              % [m]
-lim.diff       = sin(0.1) * Lb;     % [m] max |X1-X2| yaw limit (Garcia 2013)
+lim.diff       = sin(0.1) * Lb;     % [m] max |X1-X2|
 lim.vel        = 2.0;               % [m/s]
-lim.acc_X      = 30.0;             % [m/s^2] — checked on r only
-lim.acc_Y      = 50.0;             % [m/s^2] — checked on r only
+lim.acc_X      = 30.0;             % [m/s²] — checked on r only
+lim.acc_Y      = 50.0;             % [m/s²] — checked on r only
 lim.force_peak = [2000, 2000, 1420]; % [N] peak [FX1,FX2,FY]
-lim.force_rms  = [916,  916,  656];  % [N] RMS
+lim.force_rms  = [916,  916,  656];  % [N] RMS  [FX1,FX2,FY]
 
 % ── Mode definitions ─────────────────────────────────────────────────────
-% Force direction in motor coordinates [FX1, FX2, FY].
-% A_max index: 1=common, 2=diff, 3=y (matches diagnostics_system.m)
-mode_def.common = struct('f_vec',[1, 1,0],'A_idx',1);
-mode_def.diff   = struct('f_vec',[1,-1,0],'A_idx',2);
-mode_def.y      = struct('f_vec',[0, 0,1],'A_idx',3);
+mode_def.common = struct('f_vec', [1,  1, 0]);
+mode_def.diff   = struct('f_vec', [1, -1, 0]);
+mode_def.y      = struct('f_vec', [0,  0, 1]);
 
 % ── Trajectory definitions (T1-T8 train, V1 val, E1 test) ────────────────
-% ms_modes: force injection modes active per trajectory.
-% seed_offset: shifts Schroeder seed so val/test spectral lines do not overlap
-%   with training lines (T1-T8 use seeds 1-3; V1 uses 1001-1003; E1 2001-2003).
-% All motion parameters identical to export_param_recovery_multisine.m.
-trajs(1).id='T1_Y_sweep_conservative'; trajs(1).split='train'; trajs(1).seed_offset=0;    trajs(1).Y_initial=0.3; trajs(1).X_sym_amp=0;    trajs(1).X_anti_amp=0;     trajs(1).Y_disp=0.6; trajs(1).vmax_X=0;   trajs(1).amax_X=0;    trajs(1).vmax_Y=1.00; trajs(1).amax_Y=10.0; trajs(1).jerkTime=0.050; trajs(1).ms_modes={'y'};
-trajs(2).id='T2_X_sym_Y030';          trajs(2).split='train'; trajs(2).seed_offset=0;    trajs(2).Y_initial=0.3; trajs(2).X_sym_amp=0.15; trajs(2).X_anti_amp=0;     trajs(2).Y_disp=0;   trajs(2).vmax_X=1.5; trajs(2).amax_X=20.0; trajs(2).vmax_Y=1.00; trajs(2).amax_Y=20.0; trajs(2).jerkTime=0.030; trajs(2).ms_modes={'common'};
-trajs(3).id='T3_X_sym_Y000';          trajs(3).split='train'; trajs(3).seed_offset=0;    trajs(3).Y_initial=0.0; trajs(3).X_sym_amp=0.15; trajs(3).X_anti_amp=0;     trajs(3).Y_disp=0;   trajs(3).vmax_X=1.5; trajs(3).amax_X=20.0; trajs(3).vmax_Y=1.00; trajs(3).amax_Y=20.0; trajs(3).jerkTime=0.030; trajs(3).ms_modes={'common'};
-trajs(4).id='T4_X_antisym_Y020';      trajs(4).split='train'; trajs(4).seed_offset=0;    trajs(4).Y_initial=0.2; trajs(4).X_sym_amp=0;    trajs(4).X_anti_amp=0.030; trajs(4).Y_disp=0;   trajs(4).vmax_X=0.5; trajs(4).amax_X=8.0;  trajs(4).vmax_Y=1.00; trajs(4).amax_Y=20.0; trajs(4).jerkTime=0.040; trajs(4).ms_modes={'diff'};
-trajs(5).id='T5_X_sym_Y_sweep';       trajs(5).split='train'; trajs(5).seed_offset=0;    trajs(5).Y_initial=0.2; trajs(5).X_sym_amp=0.10; trajs(5).X_anti_amp=0;     trajs(5).Y_disp=0.4; trajs(5).vmax_X=1.0; trajs(5).amax_X=15.0; trajs(5).vmax_Y=1.00; trajs(5).amax_Y=20.0; trajs(5).jerkTime=0.035; trajs(5).ms_modes={'common','y'};
-trajs(6).id='T6_Y_sweep_aggressive';  trajs(6).split='train'; trajs(6).seed_offset=0;    trajs(6).Y_initial=0.3; trajs(6).X_sym_amp=0;    trajs(6).X_anti_amp=0;     trajs(6).Y_disp=0.6; trajs(6).vmax_X=0;   trajs(6).amax_X=0;    trajs(6).vmax_Y=1.80; trajs(6).amax_Y=42.0; trajs(6).jerkTime=0.025; trajs(6).ms_modes={'y'};
-trajs(7).id='T7_X_antisym_Y_sweep';   trajs(7).split='train'; trajs(7).seed_offset=0;    trajs(7).Y_initial=0.3; trajs(7).X_sym_amp=0;    trajs(7).X_anti_amp=0.030; trajs(7).Y_disp=0.6; trajs(7).vmax_X=0.5; trajs(7).amax_X=8.0;  trajs(7).vmax_Y=1.50; trajs(7).amax_Y=20.0; trajs(7).jerkTime=0.040; trajs(7).ms_modes={'y','diff'};
-trajs(8).id='T8_X_sym_anti_Y_sweep';  trajs(8).split='train'; trajs(8).seed_offset=0;    trajs(8).Y_initial=0.2; trajs(8).X_sym_amp=0.10; trajs(8).X_anti_amp=0.020; trajs(8).Y_disp=0.4; trajs(8).vmax_X=1.0; trajs(8).amax_X=8.0;  trajs(8).vmax_Y=1.20; trajs(8).amax_Y=12.0; trajs(8).jerkTime=0.035; trajs(8).ms_modes={'y','common','diff'};
-% V1: validation — X symmetric + partial Y sweep. Y_initial=0.25 not covered by
-%   any training trajectory (interpolation holdout between T2 at Y=0.3 and T5 at Y=0.2).
+% seed_offset: shifts Schroeder seed so val/test spectral lines differ from train.
+% Single-mode trajectories (used for rho selection): T1,T2,T3,T4,T6.
+% Combined trajectories (verification only): T5,T7,T8,V1,E1.
+trajs(1).id='T1_Y_sweep_conservative'; trajs(1).split='train'; trajs(1).seed_offset=0;    trajs(1).Y_initial=0.30; trajs(1).X_sym_amp=0;     trajs(1).X_anti_amp=0;     trajs(1).Y_disp=0.60; trajs(1).vmax_X=0;   trajs(1).amax_X=0;    trajs(1).vmax_Y=1.00; trajs(1).amax_Y=10.0; trajs(1).jerkTime=0.050; trajs(1).ms_modes={'y'};
+trajs(2).id='T2_X_sym_Y030';          trajs(2).split='train'; trajs(2).seed_offset=0;    trajs(2).Y_initial=0.30; trajs(2).X_sym_amp=0.15;  trajs(2).X_anti_amp=0;     trajs(2).Y_disp=0;    trajs(2).vmax_X=1.5; trajs(2).amax_X=20.0; trajs(2).vmax_Y=1.00; trajs(2).amax_Y=20.0; trajs(2).jerkTime=0.030; trajs(2).ms_modes={'common'};
+trajs(3).id='T3_X_sym_Y000';          trajs(3).split='train'; trajs(3).seed_offset=0;    trajs(3).Y_initial=0.00; trajs(3).X_sym_amp=0.15;  trajs(3).X_anti_amp=0;     trajs(3).Y_disp=0;    trajs(3).vmax_X=1.5; trajs(3).amax_X=20.0; trajs(3).vmax_Y=1.00; trajs(3).amax_Y=20.0; trajs(3).jerkTime=0.030; trajs(3).ms_modes={'common'};
+trajs(4).id='T4_X_antisym_Y020';      trajs(4).split='train'; trajs(4).seed_offset=0;    trajs(4).Y_initial=0.20; trajs(4).X_sym_amp=0;     trajs(4).X_anti_amp=0.030; trajs(4).Y_disp=0;    trajs(4).vmax_X=0.5; trajs(4).amax_X=8.0;  trajs(4).vmax_Y=1.00; trajs(4).amax_Y=20.0; trajs(4).jerkTime=0.040; trajs(4).ms_modes={'diff'};
+trajs(5).id='T5_X_sym_Y_sweep';       trajs(5).split='train'; trajs(5).seed_offset=0;    trajs(5).Y_initial=0.20; trajs(5).X_sym_amp=0.10;  trajs(5).X_anti_amp=0;     trajs(5).Y_disp=0.40; trajs(5).vmax_X=1.0; trajs(5).amax_X=15.0; trajs(5).vmax_Y=1.00; trajs(5).amax_Y=20.0; trajs(5).jerkTime=0.035; trajs(5).ms_modes={'common','y'};
+trajs(6).id='T6_Y_sweep_aggressive';  trajs(6).split='train'; trajs(6).seed_offset=0;    trajs(6).Y_initial=0.30; trajs(6).X_sym_amp=0;     trajs(6).X_anti_amp=0;     trajs(6).Y_disp=0.60; trajs(6).vmax_X=0;   trajs(6).amax_X=0;    trajs(6).vmax_Y=1.80; trajs(6).amax_Y=42.0; trajs(6).jerkTime=0.025; trajs(6).ms_modes={'y'};
+trajs(7).id='T7_X_antisym_Y_sweep';   trajs(7).split='train'; trajs(7).seed_offset=0;    trajs(7).Y_initial=0.30; trajs(7).X_sym_amp=0;     trajs(7).X_anti_amp=0.030; trajs(7).Y_disp=0.60; trajs(7).vmax_X=0.5; trajs(7).amax_X=8.0;  trajs(7).vmax_Y=1.50; trajs(7).amax_Y=20.0; trajs(7).jerkTime=0.040; trajs(7).ms_modes={'y','diff'};
+trajs(8).id='T8_X_sym_anti_Y_sweep';  trajs(8).split='train'; trajs(8).seed_offset=0;    trajs(8).Y_initial=0.20; trajs(8).X_sym_amp=0.10;  trajs(8).X_anti_amp=0.020; trajs(8).Y_disp=0.40; trajs(8).vmax_X=1.0; trajs(8).amax_X=8.0;  trajs(8).vmax_Y=1.20; trajs(8).amax_Y=12.0; trajs(8).jerkTime=0.035; trajs(8).ms_modes={'y','common','diff'};
 trajs(9).id='V1_X_sym_Y_mid_sweep';   trajs(9).split='val';   trajs(9).seed_offset=1000; trajs(9).Y_initial=0.25; trajs(9).X_sym_amp=0.075; trajs(9).X_anti_amp=0;     trajs(9).Y_disp=0.30; trajs(9).vmax_X=0.8; trajs(9).amax_X=12.0; trajs(9).vmax_Y=0.90; trajs(9).amax_Y=14.0; trajs(9).jerkTime=0.040; trajs(9).ms_modes={'y','common'};
-% E1: test — X symmetric + X anti-symmetric + Y sweep. Y_initial=0.10 (different
-%   Y region from all training trajectories; coupled holdout related to T8).
 trajs(10).id='E1_X_sym_anti_Y_low_offset_sweep'; trajs(10).split='test'; trajs(10).seed_offset=2000; trajs(10).Y_initial=0.10; trajs(10).X_sym_amp=0.060; trajs(10).X_anti_amp=0.015; trajs(10).Y_disp=0.25; trajs(10).vmax_X=0.7; trajs(10).amax_X=10.0; trajs(10).vmax_Y=0.80; trajs(10).amax_Y=10.0; trajs(10).jerkTime=0.045; trajs(10).ms_modes={'y','common','diff'};
 
-% ── Output directory ──────────────────────────────────────────────────────
+n_traj  = numel(trajs);
+n_rho   = numel(rho_vec);
 out_dir = fullfile(fileparts(mfilename('fullpath')),'..','Matlab-output','identification-trajectories');
 if ~exist(out_dir,'dir'), mkdir(out_dir); end
 
-% ── Main loop ─────────────────────────────────────────────────────────────
-for i = 1:numel(trajs)
-    sp = trajs(i);
-    fprintf('\n=== %d/%d  %s  [%s] ===\n', i, numel(trajs), sp.id, sp.split);
-
-    % Controller frozen at Y_initial
+% ════════════════════════════════════════════════════════════════════════
+% Phase 1 — trajectory-only baseline for all trajectories
+% ════════════════════════════════════════════════════════════════════════
+fprintf('=== Phase 1: trajectory-only baselines (%d trajectories) ===\n', n_traj);
+td = struct();
+for i = 1:n_traj
+    sp   = trajs(i);
     Y_op = sp.Y_initial;
     M_op = [m1+m2+mb+mh,            (m1-m2)*Lb/2-mh*Y_op,                    0;
             (m1-m2)*Lb/2-mh*Y_op,   Jb+Jh+(m1+m2)*Lb^2/4+mh*d^2+mh*Y_op^2, -mh*d;
@@ -103,72 +84,203 @@ for i = 1:numel(trajs)
     Cfb = tf(num2cell(zeros(3)), num2cell(ones(3)));
     for j = 1:3, Cfb(j,j) = ruleOfThumb(fbw, sys(j,j), ts); end
 
-    % Reference trajectory padded to integer periods
-    % THEORY: leakage-free condition — N must be multiple of N_period (P&S Ch.2 §2.2.3)
     [r_traj, t_traj] = make_ref(sp, n_hold, ts);
     [r_traj, t_traj] = pad_to_periods(r_traj, ts, N_period);
-    validate_ref(r_traj, t_traj, sp.id, lim);   % acceleration checked here on r (exact)
+    validate_ref(r_traj, t_traj, sp.id, lim);
     N = size(r_traj, 1);
 
-    % Multisine force signal: all active modes summed simultaneously
-    % THEORY: Schroeder 1970 phases minimise crest factor per mode
-    % THEORY: odd harmonics — P&S Ch.4 §4.3.2
-    % HEURISTIC: seed per mode gives low cross-correlation between modes
-    % HEURISTIC: combined per-actuator RMS constraint — uncorrelated modes add in
-    %   quadrature: FXj_rms = sqrt(sum_m (f_vec_m(j)*A_m)^2). Scale all modes by
-    %   a single factor so the most loaded actuator stays within A_max budget.
-    %   A_max already encodes the 40% headroom factor from diagnostics_system.m.
-    n_modes = numel(sp.ms_modes);
-    amp_vec = zeros(1, n_modes);
-    fv_mat  = zeros(3, n_modes);   % rows=actuators [FX1;FX2;FY], cols=modes
-    for m = 1:n_modes
-        md = mode_def.(sp.ms_modes{m});
-        amp_vec(m)  = A_max(md.A_idx);
-        fv_mat(:,m) = abs(md.f_vec') * amp_vec(m);
-    end
-    actuator_rms = sqrt(sum(fv_mat.^2, 2));        % combined injection RMS per actuator
-    scale = min(1, min(A_max' ./ actuator_rms));   % =1 if within budget; <1 if overloaded
-    f_sim = zeros(N, 3);
-    for m = 1:n_modes
-        md  = mode_def.(sp.ms_modes{m});
-        sig = multisine_schroeder(N, N_period, fs, f_low, f_high, m + sp.seed_offset);
-        sig = sig * (amp_vec(m) * scale / rms(sig));
-        f_sim = f_sim + sig * md.f_vec;
-    end
-    if scale < 1
-        fprintf('  Injection scaled by %.3f — combined actuator load exceeded A_max.\n', scale);
-    end
-
-    % Simulation
-    r = r_traj;  t = t_traj;  f = f_sim;  Y = Y_op;
-    fprintf('  Simulating %.2f s (%d samples)...\n', t_traj(end), N);
+    r = r_traj;  t = t_traj;  f = zeros(N, 3);  Y = Y_op;
     sim(mdl, t_traj(end));
+    [t_sim0, ~, u_traj_only] = reconstruct(q1, r_traj, t_traj, Cfb);
 
-    % Reconstruct u_total
-    [t_sim, r_sim, u_q1] = reconstruct(q1, r_traj, t_traj, Cfb);
-    f_sim_out = resample_to(f_sim, t_traj, t_sim);
-    u_total   = u_q1 + f_sim_out;
+    td(i).r_traj      = r_traj;
+    td(i).t_traj      = t_traj;
+    td(i).N           = N;
+    td(i).Cfb         = Cfb;
+    td(i).Y_op        = Y_op;
+    td(i).q_nom_raw   = q1;
+    td(i).u_traj_only = u_traj_only;
+    td(i).t_sim0      = t_sim0;
+end
 
-    % Validate — skip trajectory if any limit violated
-    if ~validate_response(q1, fs, lim) || ~validate_forces(u_total, lim)
-        warning('%s: validation failed — skipping.', sp.id);
-        continue
+% ════════════════════════════════════════════════════════════════════════
+% Phase 2 — rho sweep on single-mode trajectories (no plots)
+% ════════════════════════════════════════════════════════════════════════
+fprintf('\n=== Phase 2: rho sweep on single-mode trajectories ===\n');
+B_sweep     = nan(n_traj, n_rho);   % B(rho) [mm]; NaN for combined trajectories
+hw_ok_sweep = true(n_traj, n_rho);  % hardware limit flag
+
+for i = 1:n_traj
+    sp = trajs(i);
+    if numel(sp.ms_modes) ~= 1, continue; end   % combined trajectories skipped here
+    md = mode_def.(sp.ms_modes{1});
+
+    for r_idx = 1:n_rho
+        rho = rho_vec(r_idx);
+        % Amplitude: rho fraction of trajectory modal force RMS.
+        % Divide by norm(f_vec)^2 so injected modal force = rho * rms(u_traj_modal).
+        % For common/diff: norm^2=2; for y: norm^2=1.
+        amp = rho * rms(td(i).u_traj_only * md.f_vec') / (md.f_vec * md.f_vec');
+        sig = multisine_schroeder(td(i).N, N_period, fs, f_low, f_high, 1 + sp.seed_offset);
+        f_sim = sig * (amp / rms(sig)) * md.f_vec;   % N×3
+
+        r = td(i).r_traj;  t = td(i).t_traj;  f = f_sim;  Y = td(i).Y_op;
+        sim(mdl, td(i).t_traj(end));
+        [t_sim, ~, u_q1] = reconstruct(q1, td(i).r_traj, td(i).t_traj, td(i).Cfb);
+        f_sim_out = resample_to(f_sim, td(i).t_traj, t_sim);
+        u_total   = u_q1 + f_sim_out;
+        q_ms      = q1;
+        q_nom     = resample_to(td(i).q_nom_raw, td(i).t_sim0, t_sim);
+
+        B_sweep(i, r_idx)     = rms((q_ms - q_nom) * md.f_vec') * 1e3;
+        hw_ok_sweep(i, r_idx) = all(max(abs(u_total)) <= lim.force_peak) && ...
+                                 all(rms(u_total)      <= lim.force_rms);
+    end
+end
+
+% ════════════════════════════════════════════════════════════════════════
+% Phase 3 — select minimum rho per mode; print selection table
+% ════════════════════════════════════════════════════════════════════════
+mode_names   = {'common', 'diff', 'y'};
+rho_selected = struct('common', NaN, 'diff', NaN, 'y', NaN);
+
+fprintf('\n=== Phase 3: rho selection (B_min = %.3f mm) ===\n', B_min);
+fprintf('%-8s  %-6s  %s\n', 'mode', 'rho', 'B [mm] per trajectory');
+fprintf('%s\n', repmat('-', 1, 60));
+
+for k = 1:numel(mode_names)
+    mn    = mode_names{k};
+    idx_m = find(arrayfun(@(ii) numel(trajs(ii).ms_modes)==1 && ...
+                 strcmp(trajs(ii).ms_modes{1}, mn), 1:n_traj));
+
+    if isempty(idx_m)
+        fprintf('%-8s  no single-mode trajectories found\n', mn);
+        continue;
     end
 
-    % Save
-    Y_trajectory = q1(:,3);
-    split = sp.split;
-    save(fullfile(out_dir,[sp.id,'.mat']), ...
-         't_sim','fs','r_sim','f_sim_out','u_q1','u_total','q1','Y_trajectory','split');
+    % Find minimum rho satisfying B_min for all single-mode trajectories of this mode
+    for r_idx = 1:n_rho
+        if all(B_sweep(idx_m, r_idx) > B_min) && all(hw_ok_sweep(idx_m, r_idx))
+            rho_selected.(mn) = rho_vec(r_idx);
+            break;
+        end
+    end
+
+    if isnan(rho_selected.(mn))
+        rho_selected.(mn) = rho_vec(end);
+        fprintf('%-8s  %-6.2f  [WARN: B_min not achieved]  ', mn, rho_selected.(mn));
+    else
+        fprintf('%-8s  %-6.2f  ', mn, rho_selected.(mn));
+    end
+
+    r_sel = find(rho_vec == rho_selected.(mn), 1);
+    for ii = idx_m
+        fprintf('%s:%.4f  ', trajs(ii).id, B_sweep(ii, r_sel));
+    end
+    fprintf('\n');
+end
+
+% ════════════════════════════════════════════════════════════════════════
+% Phase 4 — final simulation, combined-trajectory verification, plots
+% ════════════════════════════════════════════════════════════════════════
+fprintf('\n=== Phase 4: final simulation and plots ===\n');
+fprintf('\n%-42s  %-6s  %s\n', 'Combined trajectory', 'hw', 'B [mm] per mode');
+fprintf('%s\n', repmat('-', 1, 70));
+
+for i = 1:n_traj
+    sp = trajs(i);
+
+    % Build f_sim using per-mode selected rho
+    f_sim = zeros(td(i).N, 3);
+    for m = 1:numel(sp.ms_modes)
+        md    = mode_def.(sp.ms_modes{m});
+        rho_m = rho_selected.(sp.ms_modes{m});
+        amp   = rho_m * rms(td(i).u_traj_only * md.f_vec') / (md.f_vec * md.f_vec');
+        sig   = multisine_schroeder(td(i).N, N_period, fs, f_low, f_high, m + sp.seed_offset);
+        f_sim = f_sim + sig * (amp / rms(sig)) * md.f_vec;
+    end
+
+    r = td(i).r_traj;  t = td(i).t_traj;  f = f_sim;  Y = td(i).Y_op;
+    sim(mdl, td(i).t_traj(end));
+    [t_sim, r_sim, u_q1] = reconstruct(q1, td(i).r_traj, td(i).t_traj, td(i).Cfb);
+    f_sim_out = resample_to(f_sim, td(i).t_traj, t_sim);
+    u_total   = u_q1 + f_sim_out;
+    q_ms      = q1;
+    q_nom     = resample_to(td(i).q_nom_raw, td(i).t_sim0, t_sim);
+
+    % Save — same format as generate_identification_experiment.m
+    Y_trajectory = q_ms(:,3);
+    split        = sp.split;
+    save(fullfile(out_dir, [sp.id, '.mat']), ...
+         't_sim', 'fs', 'r_sim', 'f_sim_out', 'u_q1', 'u_total', 'q_ms', 'Y_trajectory', 'split');
     fprintf('  Saved: %s.mat\n', sp.id);
+
+    % Verification: combined trajectories only
+    if numel(sp.ms_modes) > 1
+        hw_ok  = all(max(abs(u_total)) <= lim.force_peak) && all(rms(u_total) <= lim.force_rms);
+        hw_str = 'OK'; if ~hw_ok, hw_str = 'WARN'; end
+        fprintf('%-42s  %-6s  ', sp.id, hw_str);
+        for m = 1:numel(sp.ms_modes)
+            md  = mode_def.(sp.ms_modes{m});
+            B   = rms((q_ms - q_nom) * md.f_vec') * 1e3;
+            tag = 'OK'; if B < B_min, tag = 'WARN'; end
+            fprintf('B(%s)=%.4f[%s]  ', sp.ms_modes{m}, B, tag);
+        end
+        fprintf('\n');
+    end
+
+    % Plot title rho: max across active modes (represents experiment level)
+    rho_use = max(cellfun(@(mn) rho_selected.(mn), sp.ms_modes));
+    plot_results(t_sim, q_nom, q_ms, td(i).u_traj_only, u_total, sp, rho_use, mode_def, fs, N_period);
 end
 
 % ════════════════════════════════════════════════════════════════════════
 % Local functions
 % ════════════════════════════════════════════════════════════════════════
 
+function plot_results(t_sim, q_nom, q_ms, u_traj_only, u_total, sp, rho_use, mode_def, fs, N_period)
+% One figure per trajectory:
+%   Row 1 — position overlay q_nom vs q_ms [mm]
+%   Row 2 — perturbation q_ms - q_nom [mm]
+%   Row 3+ — PSD per active mode (one full-width row each)
+    n_modes = numel(sp.ms_modes);
+    n_rows  = 2 + n_modes;
+    figure('Name', sprintf('%s', sp.id), 'NumberTitle', 'off');
+
+    ax_lbl = {'X1 [mm]', 'X2 [mm]', 'Y [mm]'};
+
+    % Row 1: position overlay
+    for j = 1:3
+        subplot(n_rows, 3, j);
+        plot(t_sim, q_nom(:,j)*1e3, 'b', t_sim, q_ms(:,j)*1e3, 'r--', 'LineWidth', 0.8);
+        ylabel(ax_lbl{j}); grid on; box off;
+        if j == 1, legend('traj-only', 'traj+ms', 'Location', 'best'); end
+        if j == 2, title(sprintf('%s   \\rho_{use}=%.2f', strrep(sp.id,'_','\_'), rho_use)); end
+    end
+
+    % Row 2: perturbation
+    for j = 1:3
+        subplot(n_rows, 3, 3 + j);
+        plot(t_sim, (q_ms(:,j) - q_nom(:,j))*1e3, 'k', 'LineWidth', 0.8);
+        ylabel(ax_lbl{j}); xlabel('time [s]'); grid on; box off;
+    end
+
+    % Row 3+: PSD per active mode, full-width row
+    win = hann(N_period);
+    for m = 1:n_modes
+        md = mode_def.(sp.ms_modes{m});
+        [P_t, f_ax] = pwelch(u_traj_only * md.f_vec', win, N_period/2, N_period, fs, 'onesided');
+        [P_o, ~]    = pwelch(u_total     * md.f_vec', win, N_period/2, N_period, fs, 'onesided');
+        subplot(n_rows, 3, 6 + (m-1)*3 + (1:3));
+        semilogy(f_ax, sqrt(P_t), 'b', f_ax, sqrt(P_o), 'r--', 'LineWidth', 0.8);
+        xlim([0, 150]); grid on; box off;
+        xlabel('Frequency [Hz]');
+        ylabel(sprintf('|U_{%s}| [N/sqrt(Hz)]', sp.ms_modes{m}));
+        legend('traj-only', 'traj+ms', 'Location', 'best');
+    end
+end
+
 function [r, t] = make_ref(sp, n_hold, ts)
-% Build [X1, X2, Y] reference (N×3) from trajectory parameters.
     r = repmat([0, 0, sp.Y_initial], n_hold, 1);
     pv_sym = []; pv_anti = []; n_sym = 0; n_anti = 0;
     if sp.X_sym_amp  > 0, pv_sym  = sp1d(sp.X_sym_amp,  sp.vmax_X, sp.amax_X, sp.jerkTime, ts); n_sym  = numel(pv_sym);  end
@@ -203,7 +315,6 @@ function pv = sp1d(dist, vmax, amax, jerkTime, ts)
 end
 
 function [r_pad, t_pad] = pad_to_periods(r, ts, N_period)
-% Pad final hold to integer number of 1 s periods — leakage-free (P&S Ch.2 §2.2.3)
     N     = size(r,1);
     N_tgt = max(2, ceil(N/N_period)) * N_period;
     r_pad = [r; repmat(r(end,:), N_tgt-N, 1)];
@@ -211,31 +322,31 @@ function [r_pad, t_pad] = pad_to_periods(r, ts, N_period)
 end
 
 function validate_ref(r, t, id, lim)
-% Assert reference within hardware limits. Acceleration checked here on r
-% (piecewise polynomial — derivative exact via finite difference on r).
-% This is the ONLY place acceleration is validated. Never check acceleration on q1.
-    ts   = t(2)-t(1);
-    vel  = diff(r)/ts;
-    acc  = diff(vel)/ts;
-    assert(max(abs(r(:,1)))          <= lim.pos_X,  '%s: X1 position limit', id);
-    assert(max(abs(r(:,2)))          <= lim.pos_X,  '%s: X2 position limit', id);
-    assert(max(r(:,3))               <=  lim.pos_Y, '%s: Y+ position limit', id);
-    assert(min(r(:,3))               >= -lim.pos_Y, '%s: Y- position limit', id);
-    assert(max(abs(r(:,1)-r(:,2)))   <= lim.diff,   '%s: yaw |X1-X2| limit', id);
-    assert(max(abs(vel(:,1:2)),[],'all') <= lim.vel,   '%s: X velocity limit', id);
-    assert(max(abs(vel(:,3)))        <= lim.vel,    '%s: Y velocity limit', id);
-    assert(max(abs(acc(:,1:2)),[],'all') <= lim.acc_X, '%s: X acceleration limit', id);
-    assert(max(abs(acc(:,3)))        <= lim.acc_Y,  '%s: Y acceleration limit', id);
+% Acceleration checked here on r (exact piecewise polynomial derivative).
+% Never check acceleration on q1: ode45 at 20 kHz amplifies sub-sample
+% interpolation artefacts by fs^2 = 4e8, producing spurious spikes.
+    ts  = t(2) - t(1);
+    vel = diff(r) / ts;
+    acc = diff(vel) / ts;
+    assert(max(abs(r(:,1)))              <= lim.pos_X,  '%s: X1 position limit', id);
+    assert(max(abs(r(:,2)))              <= lim.pos_X,  '%s: X2 position limit', id);
+    assert(max(r(:,3))                   <=  lim.pos_Y, '%s: Y+ position limit', id);
+    assert(min(r(:,3))                   >= -lim.pos_Y, '%s: Y- position limit', id);
+    assert(max(abs(r(:,1)-r(:,2)))       <= lim.diff,   '%s: yaw |X1-X2| limit', id);
+    assert(max(abs(vel(:,1:2)),[],'all') <= lim.vel,    '%s: X velocity limit',  id);
+    assert(max(abs(vel(:,3)))            <= lim.vel,    '%s: Y velocity limit',  id);
+    assert(max(abs(acc(:,1:2)),[],'all') <= lim.acc_X,  '%s: X acceleration limit', id);
+    assert(max(abs(acc(:,3)))            <= lim.acc_Y,  '%s: Y acceleration limit', id);
     fprintf('  r OK: X1=[%+.0f %+.0f] X2=[%+.0f %+.0f] Y=[%+.0f %+.0f] mm\n', ...
-            min(r(:,1))*1e3,max(r(:,1))*1e3,min(r(:,2))*1e3,max(r(:,2))*1e3, ...
-            min(r(:,3))*1e3,max(r(:,3))*1e3);
+            min(r(:,1))*1e3, max(r(:,1))*1e3, min(r(:,2))*1e3, max(r(:,2))*1e3, ...
+            min(r(:,3))*1e3, max(r(:,3))*1e3);
 end
 
 function [t_sim, r_sim, u_q1] = reconstruct(q1, r, t, Cfb)
-% u_q1 = Cfb*(r-q1). Handles variable-step Simulink output via interpolation.
-    Ns = size(q1,1);
-    if Ns ~= numel(t), t_sim = linspace(0,t(end),Ns)'; r_sim = interp1(t,r,t_sim);
-    else,              t_sim = t;                        r_sim = r; end
+% u_q1 = Cfb*(r - q1). Handles variable-step Simulink output via interpolation.
+    Ns = size(q1, 1);
+    if Ns ~= numel(t), t_sim = linspace(0, t(end), Ns)'; r_sim = interp1(t, r, t_sim);
+    else,              t_sim = t;                         r_sim = r; end
     u_q1 = lsim(ss(Cfb), r_sim - q1, t_sim);
 end
 
@@ -244,49 +355,22 @@ function y_out = resample_to(y, t_src, t_tgt)
     y_out = interp1(t_src, y, t_tgt, 'linear', 'extrap');
 end
 
-function ok = validate_response(q1, fs, lim)
-% Position and velocity on q1. Acceleration NOT checked — see header.
-    vel = diff(q1)*fs;
-    ok  =   max(abs(q1(:,1)))          <= lim.pos_X ...
-         && max(abs(q1(:,2)))          <= lim.pos_X ...
-         && max(abs(q1(:,3)))          <= lim.pos_Y ...
-         && max(abs(q1(:,1)-q1(:,2))) <= lim.diff  ...
-         && max(abs(vel(:,1)))         <= lim.vel   ...
-         && max(abs(vel(:,2)))         <= lim.vel   ...
-         && max(abs(vel(:,3)))         <= lim.vel;
-    if ~ok, fprintf('  Response validation failed.\n'); end
-end
-
-function ok = validate_forces(u_total, lim)
-% Peak and RMS of total actuator force u_total = u_q1 + f_sim vs TELICA limits.
-    ok =   all(max(abs(u_total)) <= lim.force_peak) ...
-        && all(rms(u_total)      <= lim.force_rms);
-    if ~ok
-        fprintf('  Force validation failed: peak=[%.0f %.0f %.0f] N  RMS=[%.0f %.0f %.0f] N\n', ...
-                max(abs(u_total)), rms(u_total));
-    end
-end
-
 function sig = multisine_schroeder(N, N_period, fs, f_low, f_high, seed)
-% Schroeder-phase odd-harmonic multisine, tiled to N samples (N must be multiple of N_period).
-% Returns unit-RMS signal; caller scales to A_max.
-%
+% Schroeder-phase odd-harmonic multisine. Returns unit-RMS signal.
 % THEORY: phi_k = -pi*k*(k-1)/F  (Schroeder 1970) minimises crest factor
-% THEORY: odd harmonics — P&S Ch.4 §4.3.2
 % HEURISTIC: seed phase offset decorrelates simultaneously injected modes
-    assert(mod(N,N_period)==0, 'N must be a multiple of N_period');
-    f0 = fs/N_period;
-    k0 = ceil(f_low/f0);  if mod(k0,2)==0, k0=k0+1; end   % first odd bin >= f_low
-    k1 = floor(f_high/f0); if mod(k1,2)==0, k1=k1-1; end  % last  odd bin <= f_high
+    assert(mod(N, N_period) == 0, 'N must be a multiple of N_period');
+    f0 = fs / N_period;
+    k0 = ceil(f_low/f0);   if mod(k0,2)==0, k0 = k0+1; end
+    k1 = floor(f_high/f0); if mod(k1,2)==0, k1 = k1-1; end
     k  = k0:2:k1;
     F  = numel(k);
     assert(F >= 7, 'Only %d odd bins in [%.1f %.1f] Hz — PE condition F>=7 not met', F, f_low, f_high);
-
-    idx      = 1:F;
-    phi      = -pi * idx .* (idx-1) / F;                    % Schroeder 1970
-    phi      = phi + 2*pi*(k*f0)*(seed-1)/(7*f_high);       % HEURISTIC: per-mode offset
-    t_period = (0:N_period-1)' / fs;
-    one_per  = sum(cos(2*pi*t_period*(k*f0) + phi), 2);
-    one_per  = one_per / rms(one_per);
-    sig      = repmat(one_per, N/N_period, 1);
+    idx     = 1:F;
+    phi     = -pi * idx .* (idx-1) / F;
+    phi     = phi + 2*pi*(k*f0)*(seed-1) / (7*f_high);
+    t_per   = (0:N_period-1)' / fs;
+    one_per = sum(cos(2*pi*t_per*(k*f0) + phi), 2);
+    one_per = one_per / rms(one_per);
+    sig     = repmat(one_per, N/N_period, 1);
 end
