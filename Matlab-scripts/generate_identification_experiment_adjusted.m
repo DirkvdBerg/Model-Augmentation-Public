@@ -31,6 +31,7 @@ C_damp = [cg1+cg2,        (cg1-cg2)*Lb/2,           0;
 K  = [0,0,0; 0,kb1+kb2,0; 0,0,0];
 n  = 3;  P = [1,1,0; Lb/2,-Lb/2,0; 0,0,1];
 fs = 20e3;  ts = 1/fs;  fbw = 100;  mdl = 'gantry_2025a';
+Y_ctrl = 0.25;                 % [m] fixed controller design point for all trajectories
 N_period = round(fs);      % 20000 samples = T_p = 1 s
 n_hold   = round(0.5/ts); % 0.5 s settle hold at trajectory start and end
 
@@ -77,8 +78,8 @@ td = struct();
 for i = 1:n_traj
     sp   = trajs(i);
     Y_op = sp.Y_initial;
-    M_op = [m1+m2+mb+mh,            (m1-m2)*Lb/2-mh*Y_op,                    0;
-            (m1-m2)*Lb/2-mh*Y_op,   Jb+Jh+(m1+m2)*Lb^2/4+mh*d^2+mh*Y_op^2, -mh*d;
+    M_op = [m1+m2+mb+mh,            (m1-m2)*Lb/2-mh*Y_ctrl,                    0;
+            (m1-m2)*Lb/2-mh*Y_ctrl, Jb+Jh+(m1+m2)*Lb^2/4+mh*d^2+mh*Y_ctrl^2, -mh*d;
             0,                       -mh*d,                                     mh];
     sys = P.' * getss(n, M_op, C_damp, K) * P;
     Cfb = tf(num2cell(zeros(3)), num2cell(ones(3)));
