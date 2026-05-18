@@ -230,39 +230,43 @@ for i = 1:n_traj
         fprintf('\n');
     end
 
-    % Plot title rho: max across active modes (represents experiment level)
-    rho_use = max(cellfun(@(mn) rho_selected.(mn), sp.ms_modes));
-    plot_results(t_sim, q_nom, q_ms, td(i).u_traj_only, u_total, sp, rho_use, mode_def, fs, N_period);
+    rho_per_mode = cellfun(@(mn) rho_selected.(mn), sp.ms_modes);
+    plot_results(t_sim, q_nom, q_ms, td(i).u_traj_only, u_total, sp, rho_per_mode, mode_def, fs, N_period);
 end
 
 % ════════════════════════════════════════════════════════════════════════
 % Local functions
 % ════════════════════════════════════════════════════════════════════════
 
-function plot_results(t_sim, q_nom, q_ms, u_traj_only, u_total, sp, rho_use, mode_def, fs, N_period)
+function plot_results(t_sim, q_nom, q_ms, u_traj_only, u_total, sp, rho_per_mode, mode_def, fs, N_period)
 % One figure per trajectory:
-%   Row 1 — position overlay q_nom vs q_ms [mm]
-%   Row 2 — perturbation q_ms - q_nom [mm]
+%   Row 1 — position overlay q_nom vs q_ms [m]
+%   Row 2 — perturbation q_ms - q_nom [m]
 %   Row 3+ — PSD per active mode (one full-width row each)
     n_modes = numel(sp.ms_modes);
     n_rows  = 2 + n_modes;
     figure('Name', sprintf('%s', sp.id), 'NumberTitle', 'off');
 
-    ax_lbl = {'X1 [mm]', 'X2 [mm]', 'Y [mm]'};
+    ax_lbl = {'X1 [m]', 'X2 [m]', 'Y [m]'};
+
+    % Build title: one rho label per active mode
+    rho_strs = arrayfun(@(k) sprintf('\\rho_{%s}=%.2f', sp.ms_modes{k}, rho_per_mode(k)), ...
+                        1:n_modes, 'UniformOutput', false);
+    rho_title = strjoin(rho_strs, '   ');
 
     % Row 1: position overlay
     for j = 1:3
         subplot(n_rows, 3, j);
-        plot(t_sim, q_nom(:,j)*1e3, 'b', t_sim, q_ms(:,j)*1e3, 'r--', 'LineWidth', 0.8);
+        plot(t_sim, q_nom(:,j), 'b', t_sim, q_ms(:,j), 'r--', 'LineWidth', 0.8);
         ylabel(ax_lbl{j}); grid on; box off;
         if j == 1, legend('traj-only', 'traj+ms', 'Location', 'best'); end
-        if j == 2, title(sprintf('%s   \\rho_{use}=%.2f', strrep(sp.id,'_','\_'), rho_use)); end
+        if j == 2, title(sprintf('%s\n%s', strrep(sp.id,'_','\_'), rho_title)); end
     end
 
     % Row 2: perturbation
     for j = 1:3
         subplot(n_rows, 3, 3 + j);
-        plot(t_sim, (q_ms(:,j) - q_nom(:,j))*1e3, 'k', 'LineWidth', 0.8);
+        plot(t_sim, q_ms(:,j) - q_nom(:,j), 'k', 'LineWidth', 0.8);
         ylabel(ax_lbl{j}); xlabel('time [s]'); grid on; box off;
     end
 
