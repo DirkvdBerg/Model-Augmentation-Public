@@ -1,4 +1,4 @@
-% generate_identification_experiment_adjusted.m
+p% generate_identification_experiment_adjusted.m
 % Selects minimum effective multisine amplitude per modal channel and plots
 % final trajectories with and without multisine.
 %
@@ -203,16 +203,17 @@ for i = 1:n_traj
     r = td(i).r_traj;  t = td(i).t_traj;  f = f_sim;  Y = td(i).Y_op;
     sim(mdl, td(i).t_traj(end));
     [t_sim, r_sim, u_q1] = reconstruct(q1, td(i).r_traj, td(i).t_traj, td(i).Cfb);
-    f_sim_out = resample_to(f_sim, td(i).t_traj, t_sim);
-    u_total   = u_q1 + f_sim_out;
+    f_sim     = resample_to(f_sim, td(i).t_traj, t_sim);   % rename: precompute.py reads 'f_sim'
+    u_total   = u_q1 + f_sim;
     q_ms      = q1;
     q_nom     = resample_to(td(i).q_nom_raw, td(i).t_sim0, t_sim);
 
-    % Save — same format as generate_identification_experiment.m
-    Y_trajectory = q_ms(:,3);
+    % Save — variable names must match precompute.py: mat['q1'], mat.get('f_sim'), mat['u_q1']
+    q1           = q_ms;          % precompute.py reads 'q1'
+    Y_trajectory = q1(:,3);
     split        = sp.split;
     save(fullfile(out_dir, [sp.id, '.mat']), ...
-         't_sim', 'fs', 'r_sim', 'f_sim_out', 'u_q1', 'u_total', 'q_ms', 'Y_trajectory', 'split');
+         't_sim', 'fs', 'r_sim', 'f_sim', 'u_q1', 'u_total', 'q1', 'Y_trajectory', 'split');
     fprintf('  Saved: %s.mat\n', sp.id);
 
     % Verification: combined trajectories only
