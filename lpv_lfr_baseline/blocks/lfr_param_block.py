@@ -282,16 +282,20 @@ class ParameterizedLFRBlock(_BASE):
 
     # Identifiable sums and the non-split individually identifiable params, in physics order.
     _SUM_PAIRS   = [('kb_sum', 'kb1', 'kb2'), ('cb_sum', 'cb1', 'cb2'), ('J_sum', 'Jb', 'Jh')]
-    _SPLIT_NAMES = ['kb1', 'kb2', 'cb1', 'cb2', 'Jb', 'Jh']
-    _IDENT_ORDER = ['kb_sum', 'cg1', 'cg2', 'cy', 'cb_sum', 'mh', 'm1', 'm2', 'mb', 'J_sum', 'd']
+    # Table 1: identifiable combinations (Jacobian rank analysis — 10 recoverable scalars).
+    # m_total, m_diff, J_eff replace individual m1/m2/mb/J_sum which are not separately identifiable.
+    _IDENT_ORDER = ['kb_sum', 'cg1', 'cg2', 'cy', 'cb_sum', 'mh', 'm_total', 'm_diff', 'J_eff', 'd']
+    # Table 2: not data-identifiable — individual splits and mass-inertia components.
+    _SPLIT_NAMES = ['kb1', 'kb2', 'cb1', 'cb2', 'Jb', 'Jh', 'm1', 'm2', 'mb', 'J_sum']
 
     def param_table(self) -> str:
         """Two-table comparison: identifiable quantities, then split diagnostics."""
         hdr = f"{'Parameter':<10} {'True':>10} {'Detuned':>10} {'Learned':>10} {'delta':>10}"
         sep = "-" * 55
         cur = self.physical_params()
+        Lb  = self._Lb.item()
 
-        # Build sum lookup for convenience
+        # Pairwise sums (kb_sum, cb_sum, J_sum)
         sums = {
             sn: (
                 _TRUE_PARAMS[a]    + _TRUE_PARAMS[b],
@@ -301,19 +305,44 @@ class ParameterizedLFRBlock(_BASE):
             for sn, a, b in self._SUM_PAIRS
         }
 
+        # Derived identifiable combinations for the mass-inertia group (n4 analysis).
+        # These are the quantities the data can actually determine; m1/m2/mb/J_sum are not
+        # individually identifiable (flat direction: Δm1=Δm2=ε, Δmb=-2ε, ΔJ_sum=-Lb²/2·ε).
+        sums['m_total'] = (
+            _TRUE_PARAMS['m1']    + _TRUE_PARAMS['m2']    + _TRUE_PARAMS['mb'],
+            _DETUNED_PARAMS['m1'] + _DETUNED_PARAMS['m2'] + _DETUNED_PARAMS['mb'],
+            cur['m1']             + cur['m2']             + cur['mb'],
+        )
+        sums['m_diff'] = (
+            _TRUE_PARAMS['m1']    - _TRUE_PARAMS['m2'],
+            _DETUNED_PARAMS['m1'] - _DETUNED_PARAMS['m2'],
+            cur['m1']             - cur['m2'],
+        )
+        # J_eff = J_sum + (m1+m2)*Lb²/4  [= M0[1,1] - mh*d²]
+        sums['J_eff'] = (
+            sums['J_sum'][0] + (_TRUE_PARAMS['m1']    + _TRUE_PARAMS['m2'])    * Lb**2 / 4,
+            sums['J_sum'][1] + (_DETUNED_PARAMS['m1'] + _DETUNED_PARAMS['m2']) * Lb**2 / 4,
+            sums['J_sum'][2] + (cur['m1']             + cur['m2'])             * Lb**2 / 4,
+        )
+
         lines = ['  Table 1 — identifiable quantities', hdr, sep]
         for name in self._IDENT_ORDER:
             if name in sums:
                 true_v, det_v, lrn_v = sums[name]
             else:
                 true_v, det_v, lrn_v = _TRUE_PARAMS[name], _DETUNED_PARAMS[name], cur[name]
-            delta = (lrn_v - true_v) / true_v * 100
+            delta = (lrn_v - true_v) / true_v * 100 if abs(true_v) > 1e-12 else float('nan')
             lines.append(f"{name:<10} {true_v:>10.4f} {det_v:>10.4f} {lrn_v:>10.4f} {delta:>+9.2f}%")
 
         lines += ['', '  Table 2 — split diagnostics (not data-identifiable)', hdr, sep]
         for name in self._SPLIT_NAMES:
-            true_v, det_v, lrn_v = _TRUE_PARAMS[name], _DETUNED_PARAMS[name], cur[name]
-            delta = (lrn_v - true_v) / true_v * 100
+            if name == 'J_sum':
+                true_v = sums['J_sum'][0]
+                det_v  = sums['J_sum'][1]
+                lrn_v  = sums['J_sum'][2]
+            else:
+                true_v, det_v, lrn_v = _TRUE_PARAMS[name], _DETUNED_PARAMS[name], cur[name]
+            delta = (lrn_v - true_v) / true_v * 100 if abs(true_v) > 1e-12 else float('nan')
             lines.append(f"{name:<10} {true_v:>10.4f} {det_v:>10.4f} {lrn_v:>10.4f} {delta:>+9.2f}%")
 
         return "\n".join(lines)
