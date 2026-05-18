@@ -1,4 +1,4 @@
-p% generate_identification_experiment_adjusted.m
+% generate_identification_experiment_adjusted.m
 % Selects minimum effective multisine amplitude per modal channel and plots
 % final trajectories with and without multisine.
 %
@@ -18,7 +18,7 @@ addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
 f_low   = 1;                        % [Hz]
 f_high  = 100;                      % [Hz] — controller bandwidth
 rho_vec = [0.01, 0.02, 0.05, 0.10]; % candidates swept in phase 2
-B_min   = 0.01;                     % [mm] minimum detectable perturbation — positioning repeatability floor
+B_min   = 1e-5;                     % [m] minimum detectable perturbation — positioning repeatability floor (10 µm)
 
 % ── Physical parameters ───────────────────────────────────────────────────
 mb=22.8; mh=10.1; m1=10.2; m2=10.7; Jb=1.0; Jh=0.05;
@@ -107,7 +107,7 @@ end
 % Phase 2 — rho sweep on single-mode trajectories (no plots)
 % ════════════════════════════════════════════════════════════════════════
 fprintf('\n=== Phase 2: rho sweep on single-mode trajectories ===\n');
-B_sweep     = nan(n_traj, n_rho);   % B(rho) [mm]; NaN for combined trajectories
+B_sweep     = nan(n_traj, n_rho);   % B(rho) [m]; NaN for combined trajectories
 hw_ok_sweep = true(n_traj, n_rho);  % hardware limit flag
 
 for i = 1:n_traj
@@ -132,7 +132,7 @@ for i = 1:n_traj
         q_ms      = q1;
         q_nom     = resample_to(td(i).q_nom_raw, td(i).t_sim0, t_sim);
 
-        B_sweep(i, r_idx)     = rms((q_ms - q_nom) * md.f_vec') * 1e3;
+        B_sweep(i, r_idx)     = rms((q_ms - q_nom) * md.f_vec');
         hw_ok_sweep(i, r_idx) = all(max(abs(u_total)) <= lim.force_peak) && ...
                                  all(rms(u_total)      <= lim.force_rms);
     end
@@ -144,8 +144,8 @@ end
 mode_names   = {'common', 'diff', 'y'};
 rho_selected = struct('common', NaN, 'diff', NaN, 'y', NaN);
 
-fprintf('\n=== Phase 3: rho selection (B_min = %.3f mm) ===\n', B_min);
-fprintf('%-8s  %-6s  %s\n', 'mode', 'rho', 'B [mm] per trajectory');
+fprintf('\n=== Phase 3: rho selection (B_min = %.2e m) ===\n', B_min);
+fprintf('%-8s  %-6s  %s\n', 'mode', 'rho', 'B [m] per trajectory');
 fprintf('%s\n', repmat('-', 1, 60));
 
 for k = 1:numel(mode_names)
@@ -175,7 +175,7 @@ for k = 1:numel(mode_names)
 
     r_sel = find(rho_vec == rho_selected.(mn), 1);
     for ii = idx_m
-        fprintf('%s:%.4f  ', trajs(ii).id, B_sweep(ii, r_sel));
+        fprintf('%s:%.2e  ', trajs(ii).id, B_sweep(ii, r_sel));
     end
     fprintf('\n');
 end
@@ -184,7 +184,7 @@ end
 % Phase 4 — final simulation, combined-trajectory verification, plots
 % ════════════════════════════════════════════════════════════════════════
 fprintf('\n=== Phase 4: final simulation and plots ===\n');
-fprintf('\n%-42s  %-6s  %s\n', 'Combined trajectory', 'hw', 'B [mm] per mode');
+fprintf('\n%-42s  %-6s  %s\n', 'Combined trajectory', 'hw', 'B [m] per mode');
 fprintf('%s\n', repmat('-', 1, 70));
 
 for i = 1:n_traj
@@ -223,9 +223,9 @@ for i = 1:n_traj
         fprintf('%-42s  %-6s  ', sp.id, hw_str);
         for m = 1:numel(sp.ms_modes)
             md  = mode_def.(sp.ms_modes{m});
-            B   = rms((q_ms - q_nom) * md.f_vec') * 1e3;
+            B   = rms((q_ms - q_nom) * md.f_vec');
             tag = 'OK'; if B < B_min, tag = 'WARN'; end
-            fprintf('B(%s)=%.4f[%s]  ', sp.ms_modes{m}, B, tag);
+            fprintf('B(%s)=%.2e[%s]  ', sp.ms_modes{m}, B, tag);
         end
         fprintf('\n');
     end
@@ -242,9 +242,10 @@ function plot_results(t_sim, q_nom, q_ms, u_traj_only, u_total, sp, rho_per_mode
 % One figure per trajectory:
 %   Row 1 — position overlay q_nom vs q_ms [m]
 %   Row 2 — perturbation q_ms - q_nom [m]
-%   Row 3+ — PSD per active mode (one full-width row each)
+%   Row 3 — actuator forces u_traj_only vs u_total [N]
+%   Row 4+ — force PSD per active mode (one full-width row each)
     n_modes = numel(sp.ms_modes);
-    n_rows  = 2 + n_modes;
+    n_rows  = 3 + n_modes;
     figure('Name', sprintf('%s', sp.id), 'NumberTitle', 'off');
 
     ax_lbl = {'X1 [m]', 'X2 [m]', 'Y [m]'};
@@ -270,13 +271,22 @@ function plot_results(t_sim, q_nom, q_ms, u_traj_only, u_total, sp, rho_per_mode
         ylabel(ax_lbl{j}); xlabel('time [s]'); grid on; box off;
     end
 
-    % Row 3+: PSD per active mode, full-width row
+    % Row 3: actuator forces
+    f_lbl = {'FX1 [N]', 'FX2 [N]', 'FY [N]'};
+    for j = 1:3
+        subplot(n_rows, 3, 6 + j);
+        plot(t_sim, u_traj_only(:,j), 'b', t_sim, u_total(:,j), 'r--', 'LineWidth', 0.8);
+        ylabel(f_lbl{j}); xlabel('time [s]'); grid on; box off;
+        if j == 1, legend('traj-only', 'traj+ms', 'Location', 'best'); end
+    end
+
+    % Row 4+: PSD per active mode, full-width row
     win = hann(N_period);
     for m = 1:n_modes
         md = mode_def.(sp.ms_modes{m});
         [P_t, f_ax] = pwelch(u_traj_only * md.f_vec', win, N_period/2, N_period, fs, 'onesided');
         [P_o, ~]    = pwelch(u_total     * md.f_vec', win, N_period/2, N_period, fs, 'onesided');
-        subplot(n_rows, 3, 6 + (m-1)*3 + (1:3));
+        subplot(n_rows, 3, 9 + (m-1)*3 + (1:3));
         semilogy(f_ax, sqrt(P_t), 'b', f_ax, sqrt(P_o), 'r--', 'LineWidth', 0.8);
         xlim([0, 150]); grid on; box off;
         xlabel('Frequency [Hz]');
@@ -342,9 +352,9 @@ function validate_ref(r, t, id, lim)
     assert(max(abs(vel(:,3)))            <= lim.vel,    '%s: Y velocity limit',  id);
     assert(max(abs(acc(:,1:2)),[],'all') <= lim.acc_X,  '%s: X acceleration limit', id);
     assert(max(abs(acc(:,3)))            <= lim.acc_Y,  '%s: Y acceleration limit', id);
-    fprintf('  r OK: X1=[%+.0f %+.0f] X2=[%+.0f %+.0f] Y=[%+.0f %+.0f] mm\n', ...
-            min(r(:,1))*1e3, max(r(:,1))*1e3, min(r(:,2))*1e3, max(r(:,2))*1e3, ...
-            min(r(:,3))*1e3, max(r(:,3))*1e3);
+    fprintf('  r OK: X1=[%+.3f %+.3f] X2=[%+.3f %+.3f] Y=[%+.3f %+.3f] m\n', ...
+            min(r(:,1)), max(r(:,1)), min(r(:,2)), max(r(:,2)), ...
+            min(r(:,3)), max(r(:,3)));
 end
 
 function [t_sim, r_sim, u_q1] = reconstruct(q1, r, t, Cfb)
