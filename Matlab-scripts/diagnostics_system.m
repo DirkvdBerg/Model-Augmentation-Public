@@ -6,13 +6,13 @@
 %   Ŝ_c(jω) = FFT(u_modal) / FFT(f_modal)  [feedback algebra: U_total = S × F_sim,
 %              valid at excited frequencies where r has no content]
 %   Ĝ_c(jω) = FFT(q_modal) / FFT(u_modal)  [plant equation: Q = G × U_total,
-%              directional FRF — not necessarily a modal FRF]
+%              directional FRF - not necessarily a modal FRF]
 %   Projection: x_modal = x * f_vec'        [projects signals onto excitation direction]
 %
 % Outputs (worst-case across 3 modes and 5 Y operating points):
-%   f_low  — lowest freq where |Ŝ|² > 0.1   [HEURISTIC: -10 dB survival threshold]
-%   f_high — last resonance peak in |Ĝ|      [HEURISTIC: above this G is mass-dominated]
-%   A_max  — 0.4 × hardware RMS limit        [HEURISTIC: 40% actuator capacity]
+%   f_low  - lowest freq where |Ŝ|² > 0.1   [HEURISTIC: -10 dB survival threshold]
+%   f_high - last resonance peak in |Ĝ|      [HEURISTIC: above this G is mass-dominated]
+%   A_max  - 0.4 × hardware RMS limit        [HEURISTIC: 40% actuator capacity]
 %
 % Run from repo root:
 %   run('Matlab-scripts/diagnostics_system.m')
@@ -36,12 +36,12 @@ fs  = 20e3; ts = 1/fs; fbw = 100; mdl = 'gantry_2025a';
 % ── Probe signal ──────────────────────────────────────────────────────────
 % T_p = 1 s → f0 = 1 Hz: leakage-free condition requires excited frequencies
 %   to be integer multiples of 1/T_p (P&S Ch.2 §2.2.3)
-% Odd harmonics 1 Hz to Nyquist: broadband — needed to observe G rolloff and
+% Odd harmonics 1 Hz to Nyquist: broadband - needed to observe G rolloff and
 %   locate f_high. Diagnostic probe only; identification multisine will be narrower.
 % 2 periods: discard first (transient), use second (steady state)
 % Schroeder phases: minimize crest factor (Schroeder 1970) to avoid actuator
 %   saturation from coherent peak of zero-phase cosine sum
-% 50 N RMS: HEURISTIC — sufficient probe level, well within all actuator limits
+% 50 N RMS: HEURISTIC - sufficient probe level, well within all actuator limits
 N_period  = round(fs);           % 20000 samples, T_p = 1 s
 N_periods = 2;                   % HEURISTIC: 1 transient + 1 steady-state period
 N         = N_periods * N_period;
@@ -62,9 +62,9 @@ sig      = repmat(sig_p, N_periods, 1);
 % ── Mode definitions ─────────────────────────────────────────────────────
 % Force direction in motor coordinates [FX1, FX2, FY].
 % Projection x_modal = x * f_vec' gives a scalar directional signal per mode.
-% Not necessarily a decoupled modal channel — called directional FRF.
+% Not necessarily a decoupled modal channel - called directional FRF.
 ch(1).name = 'common';  ch(1).f_vec = [1, 1, 0];   % X symmetric (rigid body)
-ch(2).name = 'diff';    ch(2).f_vec = [1,-1, 0];   % theta tilt — kb resonance here
+ch(2).name = 'diff';    ch(2).f_vec = [1,-1, 0];   % theta tilt - kb resonance here
 ch(3).name = 'y';       ch(3).f_vec = [0, 0, 1];   % Y translation (free mass)
 nCh = 3;
 
@@ -121,8 +121,8 @@ for i = 1:nY
         U_f = fft(u_modal(idx_ss));
         Q_f = fft(q_modal(idx_ss));
 
-        % THEORY: Ŝ = U_total/F_sim — feedback algebra, exact at excited freqs
-        % THEORY: Ĝ = Q/U_total — directional plant FRF, exact in noiseless simulation
+        % THEORY: Ŝ = U_total/F_sim - feedback algebra, exact at excited freqs
+        % THEORY: Ĝ = Q/U_total - directional plant FRF, exact in noiseless simulation
         S_hat(:,i,c) = abs(U_f(bins) ./ F_f(bins));
         G_hat(:,i,c) = abs(Q_f(bins) ./ U_f(bins));
     end
@@ -131,7 +131,7 @@ end
 % ── Extract outputs ───────────────────────────────────────────────────────
 
 % f_low: lowest freq where |Ŝ|² > threshold, worst-case across modes and Y
-% HEURISTIC: threshold 0.1 (-10 dB) — below this >90% of force is suppressed
+% HEURISTIC: threshold 0.1 (-10 dB) - below this >90% of force is suppressed
 S_THRESHOLD = 0.1;
 f_low_all = zeros(nCh, nY);
 for c = 1:nCh
@@ -146,10 +146,10 @@ f_low = max(f_low_all(:));
 % Q/F_sim = G × S (feedback algebra) is the closed-loop force-to-position FRF.
 % f_high is the highest frequency where the tail energy above that frequency
 % still exceeds ε of the total energy in the usable band (freqs >= f_low).
-% Below f_low: S ≈ 0, so G_hat = Q/U_total is noise-dominated — excluded.
+% Below f_low: S ≈ 0, so G_hat = Q/U_total is noise-dominated - excluded.
 % Per (mode, Y): normalise independently so no mode dominates by energy scale.
 % Worst-case across modes and Y: conservative, covers all modes.
-% HEURISTIC: ε = 0.05 — accept 5% energy loss above f_high (declared tolerance)
+% HEURISTIC: ε = 0.05 - accept 5% energy loss above f_high (declared tolerance)
 ENERGY_TAIL_THRESH = 0.05;
 valid       = freqs >= f_low;
 freqs_valid = freqs(valid);
@@ -164,7 +164,7 @@ for c = 1:nCh
 end
 f_high = max(f_high_all(:));
 
-% A_max per mode: HEURISTIC — 40% of hardware RMS limit per mode
+% A_max per mode: HEURISTIC - 40% of hardware RMS limit per mode
 % Declared engineering choice: leaves 60% actuator capacity for tracking and safety
 ALPHA = 0.4;
 mode_F_limit = [min(F_limit_rms(1:2)), min(F_limit_rms(1:2)), F_limit_rms(3)];
@@ -183,21 +183,32 @@ Y_lgd = arrayfun(@(y) sprintf('Y=%+.1f m', y), Y_vals, 'UniformOutput', false);
 
 for c = 1:nCh
     figure(c); clf;
-    subplot(2,1,1);
+    GS_hat = G_hat(:,:,c) .* S_hat(:,:,c);
+
+    subplot(3,1,1);
     semilogx(freqs, 20*log10(S_hat(:,:,c)));
     hold on
     yline(10*log10(S_THRESHOLD), 'k--', sprintf('|S|^2=%.0f dB', 10*log10(S_THRESHOLD)));
     xline(f_low, 'r--', sprintf('f_{low}=%.0f Hz', f_low));
     xlabel('Frequency [Hz]'); ylabel('|S| [dB]');
-    title(sprintf('Sensitivity Ŝ — %s mode', mode_names{c}));
+    title(sprintf('Sensitivity S_{hat} - %s mode', mode_names{c}));
     legend(Y_lgd); grid on;
 
-    subplot(2,1,2);
+    subplot(3,1,2);
     semilogx(freqs, 20*log10(G_hat(:,:,c)));
     hold on
     xline(f_high, 'r--', sprintf('f_{high}=%.0f Hz', f_high));
     xlabel('Frequency [Hz]'); ylabel('|G| [dB]');
-    title(sprintf('Directional plant FRF Ĝ — %s mode', mode_names{c}));
+    title(sprintf('Directional plant FRF G_{hat} - %s mode', mode_names{c}));
+    legend(Y_lgd); grid on;
+
+    subplot(3,1,3);
+    semilogx(freqs, 20*log10(GS_hat));
+    hold on
+    xline(f_low,  'r--', sprintf('f_{low}=%.0f Hz', f_low));
+    xline(f_high, 'r--', sprintf('f_{high}=%.0f Hz', f_high));
+    xlabel('Frequency [Hz]'); ylabel('|G S| [dB]');
+    title(sprintf('Closed-loop injected-force-to-motion FRF G_{hat}S_{hat} - %s mode', mode_names{c}));
     legend(Y_lgd); grid on;
 end
 

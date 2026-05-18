@@ -13,7 +13,7 @@
 %
 % Note on aliasing:
 %   The z → s conversion s = log(z)/ts produces aliased copies at
-%   s + j·k·(2π/ts) for integer k. Poles with |Re(s)| >> 2π·fbw are
+%   s + j*k*(2*pi/ts) for integer k. Poles with |Re(s)| >> 2*pi*fbw_hz are
 %   computational artefacts and are filtered out below.
 %
 % Run from repo root:
@@ -32,17 +32,21 @@ C_damp = [cg1+cg2,         (cg1-cg2)*Lb/2,             0;
 K_stiff = [0,0,0; 0,kb1+kb2,0; 0,0,0];   % named K_stiff to avoid clash with ctrl gain
 n   = 3;
 P   = [1,1,0; Lb/2,-Lb/2,0; 0,0,1];
-fs  = 20e3;  ts = 1/fs;  fbw = 100;
+fs  = 20e3;  ts = 1/fs;
+fbw_hz = 100;              % ruleOfThumb expects Hz
+wbw    = 2*pi*fbw_hz;      % angular bandwidth [rad/s]
 
 Y_vals      = [-0.4, 0.0, 0.4];
 
 % ── Summary accumulators ──────────────────────────────────────────────────────
-all_tau  = [];
-all_fres = [];
+all_tau  = nan(100, 1);
+all_fres = nan(100, 1);
+n_tau = 0;
+n_fres = 0;
 
 fprintf('\n%s\n', repmat('=', 1, 72));
 fprintf('Closed-loop eigenvalue analysis\n');
-fprintf('Plant: modal coordinates  |  Controller: ruleOfThumb, fbw=%d rad/s (%.1f Hz)\n', fbw, fbw/(2*pi));
+fprintf('Plant: modal coordinates  |  Controller: ruleOfThumb, fbw=%.1f Hz (%.1f rad/s)\n', fbw_hz, wbw);
 fprintf('%s\n', repmat('=', 1, 72));
 
 for i = 1:numel(Y_vals)
@@ -56,7 +60,7 @@ for i = 1:numel(Y_vals)
 
     % ── Diagonal controller — same construction as generate_identification_experiment.m
     % ruleOfThumb takes the continuous-time modal plant and ts; returns discrete tf.
-    Cfb_test = ruleOfThumb(fbw, sys_ct(1,1), ts);
+    Cfb_test = ruleOfThumb(fbw_hz, sys_ct(1,1), ts);
     if Cfb_test.Ts ~= 0
         % ruleOfThumb returned discrete controller → discretise plant to match
         sys_for_fb = c2d(sys_ct, ts, 'zoh');
@@ -67,7 +71,7 @@ for i = 1:numel(Y_vals)
         Cfb = tf(num2cell(zeros(3)), num2cell(ones(3)));
     end
     for j = 1:3
-        Cfb(j,j) = ruleOfThumb(fbw, sys_ct(j,j), ts);
+        Cfb(j,j) = ruleOfThumb(fbw_hz, sys_ct(j,j), ts);
     end
 
     % ── Closed-loop: disturbance at plant input → modal output ────────────────
@@ -91,13 +95,13 @@ for i = 1:numel(Y_vals)
     %   (c) in principal strip: |Im(s)| < π/ts
     %       The z → s mapping produces aliased copies at s + j·k·(2π/ts).
     %       Restricting to the principal strip [-π/ts, π/ts] removes them.
-    %   (d) not ZOH artifacts:  Re(s) > -20·fbw
-    %       Discrete controller poles from ZOH realisation appear at large
-    %       negative Re(s) >> fbw. They are not physical dynamics and inflate
-    %       tau_fastest and Fs_new if left in.
+    %   (d) not controller roll-off artifacts: Re(s) > -2*wbw
+    %       ruleOfThumb includes a controller low-pass around 10*fbw_hz. Those
+    %       very fast real poles are not useful for setting the plant-output
+    %       multisine bandwidth and would inflate Fs_new if left in.
     keep = real(poles_s) < -1e-4 ...
          & abs(imag(poles_s)) < pi/ts ...
-         & real(poles_s) > -20*fbw;
+         & real(poles_s) > -2*wbw;
     poles_s = poles_s(keep);
 
     % Sort by slowest tau first (least negative Re(s))
@@ -114,12 +118,14 @@ for i = 1:numel(Y_vals)
     for k = 1:numel(poles_s)
         s   = poles_s(k);
         tau = -1 / real(s);
-        all_tau(end+1) = tau; %#ok<AGROW>
+        n_tau = n_tau + 1;
+        all_tau(n_tau) = tau;
 
         if abs(imag(s)) > 1   % oscillatory: |Im(s)| > 1 rad/s
             fres = abs(imag(s)) / (2*pi);
             zeta = -real(s) / abs(s);
-            all_fres(end+1) = fres; %#ok<AGROW>
+            n_fres = n_fres + 1;
+            all_fres(n_fres) = fres;
             fprintf('  %+8.2f %+8.2fj         %8.5f    %8.3f    %.3f\n', ...
                     real(s), imag(s), tau, fres, zeta);
         else
@@ -130,6 +136,9 @@ for i = 1:numel(Y_vals)
 end
 
 % ── Worst-case summary ────────────────────────────────────────────────────────
+all_tau = all_tau(1:n_tau);
+all_fres = all_fres(1:n_fres);
+
 if isempty(all_tau)
     error('all_tau is empty — no poles survived the filter. Inspect poles_s at each Y0.');
 end
@@ -145,7 +154,7 @@ end
 fprintf('\n%s\n', repmat('=', 1, 72));
 fprintf('Worst-case summary (across all Y0)\n');
 fprintf('%s\n', repmat('-', 1, 72));
-fprintf('  tau_slowest  = %.5f s   (→ 10·tau = %.4f s)\n', tau_slowest, 10*tau_slowest);
+fprintf('  tau_slowest  = %.5f s   (10*tau = %.4f s)\n', tau_slowest, 10*tau_slowest);
 fprintf('  tau_fastest  = %.5f s\n', tau_fastest);
 if ~isnan(fres_max)
     fprintf('  fres_max     = %.3f Hz\n', fres_max);
@@ -165,18 +174,18 @@ else
     fmax_candidate = f_tau;
 end
 Fs_new_candidate = 10 * fmax_candidate;
-% fbw is in rad/s — convert to Hz for the multisine band lower bound.
-% Below fbw, the sensitivity S ≈ 0 and post-controller injection is suppressed.
-f_low = fbw / (2*pi);   % [Hz]  THEORY: S(jω) ≈ 0 for ω < fbw (controller bandwidth)
+% Initial lower band edge from controller bandwidth. For post-controller force
+% injection this should later be checked against sensitivity survival.
+f_low = fbw_hz;   % [Hz]
 
 fprintf('\n  Candidate design values (analytical ground truth):\n');
-fprintf('  T_ms   = %.4f s     (multisine period — NOT the BPTT segment length)\n', T_ms_candidate);
+fprintf('  T_ms   = %.4f s     (multisine period, NOT the BPTT segment length)\n', T_ms_candidate);
 fprintf('  Df     = %.4f Hz\n', Df_candidate);
 fprintf('  Fs_new = %.1f Hz    (lower bound; round up to standard rate)\n', Fs_new_candidate);
-fprintf('  f_low  = %.1f Hz    (controller bandwidth fbw=%.0f rad/s — by design)\n', f_low, fbw);
+fprintf('  f_low  = %.1f Hz    (controller bandwidth fbw=%.1f Hz by design)\n', f_low, fbw_hz);
 if ~isnan(fres_max)
-    fprintf('  f_high = %.1f Hz    (fres_max — highest oscillatory pole)\n', fres_max);
+    fprintf('  f_high = %.1f Hz    (fres_max, highest oscillatory pole)\n', fres_max);
 else
-    fprintf('  f_high = %.1f Hz    (1/(2pi*tau_fastest) — no oscillation found)\n', f_tau);
+    fprintf('  f_high = %.1f Hz    (1/(2pi*tau_fastest), no oscillation found)\n', f_tau);
 end
 fprintf('%s\n', repmat('=', 1, 72));

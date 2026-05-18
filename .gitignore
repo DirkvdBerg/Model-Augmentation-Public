@@ -16,9 +16,11 @@ PLAN.md
 *.png
 *.json
 *.pt
+*.txt
 
 # benchmark folder
 literature/robot-benchmark-full/
+literature Verification/
 
 # data folder
 /data/

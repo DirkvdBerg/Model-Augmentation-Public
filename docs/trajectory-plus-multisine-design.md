@@ -77,6 +77,23 @@ This means:
 
 Do not set `f_low` and `f_high` primarily from a closed-loop "which injected frequencies survive" pre-analysis. That pre-analysis is useful only after the plant-relevant band has been chosen.
 
+### Anchoring the Band to the FP Model
+
+The frequency band must be informed by what the existing FP model already captures and where it is expected to be inaccurate.
+
+```text
+Before choosing f_low and f_high:
+1. Compute the FP model Bode plots for all input-output pairs at several Y positions.
+2. Identify frequency regions where:
+   - Y-dependent shifts in resonance or antiresonance occur
+   - M(Y) approximation introduces model error
+   - Modal shapes or coupling change significantly with Y
+3. Set the multisine band to cover those regions.
+4. Verify the band includes all modes targeted by the augmentation.
+```
+
+The residual between FP model and measured data — once available — is the definitive guide. For now use the FP model's known structure to predict where augmentation will be needed.
+
 Use step/clutch responses to estimate slow dynamics and segment length:
 
 ```text
@@ -160,14 +177,20 @@ differential X -> [ 1, -1, 0]
 Y              -> [ 0,  0, 1]
 ```
 
-Start simple:
+All RMS, peak, and scaling calculations are done in physical actuator coordinates `[FX1, FX2, FY]` (units: Newtons). Modal multisines are generated in modal space and then mapped to physical forces before any metric is computed.
+
+### Active Channel Rule
+
+Only inject a multisine in the modal channel that is active in the current trajectory. Set all other modal channels to zero.
 
 ```text
-common-X trajectory      -> common-mode multisine
-differential/yaw test    -> differential-mode multisine
-Y trajectory             -> Y-force multisine
-combined validation      -> small MIMO multisine only if needed
+common-X trajectory:     common-mode multisine only    -> [F, F, 0]
+differential/yaw test:   differential-mode only        -> [F, -F, 0]
+Y trajectory:            Y-channel only                -> [0, 0, F]
+combined validation:     MIMO multisine only if needed
 ```
+
+This avoids the problem of scaling a multisine from a near-zero trajectory RMS in an inactive channel (e.g., the Y-hold force during a common-X test). Cross-channel multisine injection is only considered in combined experiments at a later stage.
 
 Random multisine design:
 
@@ -225,9 +248,23 @@ For each split:
 4. scale relative to the trajectory-only RMS.
 ```
 
-This tests generalization to unseen phase realizations while keeping the experiment design simple.
+Different phase realizations check FRF variance: a well-identified frequency response should be consistent across realizations. This is a variance/repeatability check, not a model generalization test.
 
-Disjoint frequency-line grids for train/validation/test are optional later. They are more complex and should only be added if frequency-generalization must be tested explicitly.
+For model generalization — testing whether the augmented model works at unseen operating conditions — the splits must differ in Y-position or trajectory type, not just phase:
+
+```text
+FRF variance check (phase split):
+    train/val/test = different random phase seeds, same Y, same trajectory type
+
+Model generalization check (condition split):
+    train: Y in {low, mid}, standard trajectory shapes
+    val:   Y in {mid}, different trajectory shape
+    test:  Y in {high}, unseen Y-position
+```
+
+Decide which goal applies before generating the splits. Both serve different purposes and should not be conflated.
+
+Disjoint frequency-line grids for train/validation/test are optional. Add them only if frequency-generalization must be tested explicitly.
 
 ## Metrics Per Trajectory
 
@@ -273,21 +310,20 @@ rho_total_excess(i,j) = rho_total(i,j) - 1
 
 ### Trajectory Distortion Ratio
 
-Preferred when the nominal trajectory has clear motion:
-
 ```text
 rho_track(i,j) =
-    rms(q_ms_i,j - q_nom_i,j) / rms(q_nom_i,j - mean(q_nom_i,j))
+    rms(q_ms_i,j - q_nom_i,j) / max(range(r_i,j), delta_min)
 ```
 
-Alternative when the denominator is near zero:
+where `delta_min` is a small floor to prevent division by near-zero on frozen-axis tests (e.g., 0.1 mm for position channels, 0.5 mrad for yaw). Choose `delta_min` from the positioning repeatability of the hardware.
 
-```text
-rho_track(i,j) =
-    rms(q_ms_i,j - q_nom_i,j) / range(r_i,j)
-```
+Use `range(r_i,j)` (the span of the commanded reference) as the normalizer for all trajectory types. This keeps cross-trajectory comparisons consistent: frozen-Y tests and moving-Y tests use the same formula.
 
-Meaning: how much the multisine changes the actual trajectory.
+Do not switch between two different denominators depending on the trajectory type. That makes dataset-level aggregation meaningless.
+
+Meaning: how much the multisine changes the actual trajectory relative to the commanded motion range.
+
+Note on `rho_total`: `rms(u_total)^2 = rms(u_traj)^2 + rms(f_ms)^2` holds approximately when the trajectory and multisine occupy different frequency regions. State the multisine frequency band explicitly so this assumption can be verified.
 
 ## Dataset-Level Aggregation
 
@@ -296,10 +332,14 @@ For each global candidate `rho_design`, aggregate over all trajectories and chan
 Benefit metric:
 
 ```text
-B(rho) = min_i,j rho_rms(i,j)
+B(rho) = min_i,j rms(q_ms_i,j - q_nom_i,j)    [physical units: mm or mrad]
 ```
 
-This is the weakest relative multisine level across the required dataset.
+This is the smallest output perturbation produced across all active trajectory/channel combinations. It answers: "does the multisine actually move the system?"
+
+`rho_rms` by itself is not a useful benefit metric — it is circular (it equals `rho_design` by construction) and says nothing about whether the perturbation is physically detectable.
+
+A perturbation that is large enough should produce output deviations clearly above positioning repeatability. Report `B(rho)` in absolute units and compare it to the known positioning repeatability of the hardware.
 
 Disturbance metrics:
 
@@ -329,40 +369,33 @@ Do not use hardcoded arbitrary thresholds unless they come from hardware or expl
 
 Rank candidates by added excitation versus disturbance.
 
-For candidate set `R = {rho_1, ..., rho_N}`, normalize:
+After rejecting hardware-limit violations, rank the remaining candidates by plotting:
 
 ```text
-b(rho) = B(rho) / max_{r in R} B(r)
-```
-
-```text
-c_peak(rho)  = C_peak(rho)  / max_{r in R} C_peak(r)
-c_total(rho) = C_total(rho) / max_{r in R} C_total(r)
-c_track(rho) = C_track(rho) / max_{r in R} C_track(r)
-```
-
-Conservative combined disturbance:
-
-```text
-c(rho) = max(c_peak(rho), c_total(rho), c_track(rho))
+x-axis: rho_design
+y-axis (benefit):     B(rho)      [mm or mrad — absolute output perturbation]
+y-axis (disturbance): C_peak(rho), C_total(rho), C_track(rho)
 ```
 
 Decision rule:
 
 ```text
-Choose the lowest rho at the knee of b(rho) versus c(rho),
-after rejecting candidates that violate hard physical limits.
+Choose the lowest rho_design where B(rho) is clearly above the hardware
+positioning repeatability, while C_peak, C_total, and C_track remain
+at acceptable levels.
 ```
+
+Do not normalize and then look for a "knee." Both B(rho) and the disturbance metrics scale roughly linearly with rho for small perturbations, so normalization does not reveal structure. Use absolute units and hardware knowledge instead.
 
 Interpretation:
 
 ```text
-rho too low  -> little added excitation
-rho useful   -> added excitation visible, trajectory remains nearly unchanged
-rho too high -> disturbance rises faster than useful excitation
+rho too low  -> B(rho) below positioning repeatability, perturbation not reliably detectable
+rho useful   -> B(rho) clearly above repeatability, disturbance metrics still small
+rho too high -> trajectory distortion or force peaks become unacceptable
 ```
 
-The final selected `rho` is the smallest global multisine percentage that gives useful added spectral content while keeping the nominal trajectories nearly unchanged.
+The final selected `rho` is the smallest global multisine percentage that produces a physically detectable output perturbation while keeping trajectories and actuator loads nearly unchanged.
 
 ## Required Plots
 
@@ -382,11 +415,11 @@ Per trajectory and candidate `rho_design`:
 Dataset-level:
 
 ```text
-1. rho_design vs B(rho)
+1. rho_design vs B(rho)           [absolute mm or mrad, with repeatability floor marked]
 2. rho_design vs C_peak(rho)
 3. rho_design vs C_total(rho)
 4. rho_design vs C_track(rho)
-5. b(rho) versus c(rho) benefit-disturbance curve
+5. per-trajectory breakdown of rho_track and rho_peak  [to see which trajectory is the outlier]
 6. hardware margin versus rho_design
 ```
 
@@ -425,15 +458,18 @@ so that all comparisons are reproducible.
 ## Final Workflow
 
 ```text
-1. Define simple trajectory-only experiments around system dynamics.
-2. Run trajectory-only baselines.
-3. Estimate slow dynamics from step/clutch responses.
-4. Choose f_low, f_high from plant dynamics.
-5. Generate normalized multisines.
-6. Sweep one global rho_design over all trajectories.
-7. Scale each trajectory's multisine by its own trajectory-only RMS.
-8. Reject any candidate that violates hard hardware/state limits.
-9. Rank remaining candidates using dataset-level benefit-disturbance curves.
-10. Choose the lowest useful rho_design.
-11. Report with plots, not only text.
+1.  Define simple trajectory-only experiments (one per modal DOF, multiple Y positions).
+2.  Run short step/clutch responses to estimate dominant time constants.
+3.  Choose T_segment from dominant time constants: T_segment ~ 5-6 * tau_dominant.
+4.  Inspect FP model Bode plots to identify where augmentation is needed.
+5.  Choose f_low, f_high to cover those regions plus all Y-dependent modes.
+6.  Run full trajectory-only baselines at the chosen segment length.
+7.  Generate normalized modal multisines (active channel only per trajectory).
+8.  Map to physical actuator forces [FX1, FX2, FY].
+9.  Minimize crest factor over phase candidates in physical actuator coordinates.
+10. Sweep one global rho_design; scale each trajectory by its active-channel trajectory RMS.
+11. Reject any candidate that violates hard hardware/state limits.
+12. Rank remaining candidates: plot B(rho) vs rho_design and disturbance metrics vs rho_design.
+13. Choose the lowest rho_design where B(rho) exceeds positioning repeatability.
+14. Report with plots, not only text.
 ```
