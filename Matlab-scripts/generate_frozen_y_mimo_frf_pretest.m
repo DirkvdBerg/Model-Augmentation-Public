@@ -158,20 +158,17 @@ for iY = 1:nY
         u_ctrl_uniform = interp1(t_sim, u_controller, t, 'linear', 'extrap');
         u_total = u_ctrl_uniform + f;
 
-        y_modal = output_to_modal(q_uniform);
-        u_modal = input_to_modal(u_total);
-
         validity(iY, im) = validate_run(q_uniform, u_total, lim);
         run_summary(iY, im) = summarize_run(Y0, mode.name, q_uniform, u_total, ...
-                                            y_modal, u_modal, validity(iY, im));
+                                            validity(iY, im));
 
         [Y_runs(:,:,im), U_runs(:,:,im)] = period_average_spectra( ...
-            y_modal, u_modal, N_period, N_settle_periods, ...
+            q_uniform, u_total, N_period, N_settle_periods, ...
             N_drop_periods, N_clean_periods, line_idx);
 
         if save_time_series
             save_run_time_series(run_dir, Y0, mode.name, fs, t, q_uniform, ...
-                                 u_total, f, y_modal, u_modal, validity(iY, im));
+                                 u_total, f, validity(iY, im));
         end
     end
 
@@ -259,14 +256,6 @@ function [t_sim, r_sim, u_controller] = reconstruct_controller(q1, r, t, Cfb)
     u_controller = lsim(ss(Cfb), r - q1, t);
 end
 
-function y_modal = output_to_modal(q)
-    y_modal = [(q(:,1)+q(:,2))/2, (q(:,1)-q(:,2))/2, q(:,3)];
-end
-
-function u_modal = input_to_modal(u_phys)
-    u_modal = [(u_phys(:,1)+u_phys(:,2))/2, (u_phys(:,1)-u_phys(:,2))/2, u_phys(:,3)];
-end
-
 function validity = validate_run(q, u_total, lim)
     validity.pos_X_ok = max(abs(q(:,1))) <= lim.pos_X && max(abs(q(:,2))) <= lim.pos_X;
     validity.pos_Y_ok = max(abs(q(:,3))) <= lim.pos_Y;
@@ -277,7 +266,7 @@ function validity = validate_run(q, u_total, lim)
                   validity.force_peak_ok && validity.force_rms_ok;
 end
 
-function summary = summarize_run(Y0, mode_name, q, u_total, y_modal, u_modal, validity)
+function summary = summarize_run(Y0, mode_name, q, u_total, validity)
     summary.Y_fixed = Y0;
     summary.mode = mode_name;
     summary.valid = validity.ok;
@@ -285,8 +274,6 @@ function summary = summarize_run(Y0, mode_name, q, u_total, y_modal, u_modal, va
     summary.q_max = max(q, [], 1);
     summary.u_peak = max(abs(u_total), [], 1);
     summary.u_rms = rms(u_total, 1);
-    summary.y_modal_peak = max(abs(y_modal), [], 1);
-    summary.u_modal_peak = max(abs(u_modal), [], 1);
 end
 
 function [Y_avg, U_avg] = period_average_spectra(y_modal, u_modal, N_period, n_settle, n_drop, n_clean, line_idx)
@@ -301,7 +288,7 @@ function [Y_avg, U_avg] = period_average_spectra(y_modal, u_modal, N_period, n_s
     U_avg = U_avg(line_idx, :);
 end
 
-function save_run_time_series(run_dir, Y0, mode_name, fs, t, q, u_total, f_multisine, y_modal, u_modal, validity)
+function save_run_time_series(run_dir, Y0, mode_name, fs, t, q, u_total, f_multisine, validity)
     safe_Y = sprintf('%+0.2f', Y0);
     safe_Y = strrep(strrep(safe_Y, '+', 'p'), '-', 'm');
     file_name = sprintf('run_Y%s_%s.mat', safe_Y, mode_name);
@@ -310,20 +297,19 @@ function save_run_time_series(run_dir, Y0, mode_name, fs, t, q, u_total, f_multi
     q = single(q);
     u_total = single(u_total);
     f_multisine = single(f_multisine);
-    y_modal = single(y_modal);
-    u_modal = single(u_modal);
 
     save(fullfile(run_dir, file_name), ...
          'Y0', 'mode_name', 'fs', 't', 'q', 'u_total', 'f_multisine', ...
-         'y_modal', 'u_modal', 'validity', '-v7.3');
+         'validity', '-v7.3');
 end
 
 function make_frf_plots(G, f, Y_grid, plot_dir)
-    out_names = {'com', 'dif', 'Y'};
-    in_names  = {'com', 'dif', 'Y'};
+    % Input/output labels: forces in, positions out.
+    out_names = {'$X_1$', '$X_2$', '$Y$'};
+    in_names  = {'$F_1$', '$F_2$', '$F_Y$'};
 
     plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, ...
-        @(x) 20*log10(abs(x)), 'Magnitude (dB)', 'frf_magnitude_matrix');
+        @(x) 20*log10(abs(x)), 'Magnitude (dB re m/N)', 'frf_magnitude_matrix');
     plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, ...
         @(x) unwrap(angle(x))*180/pi, 'Phase (deg)', 'frf_phase_matrix');
 
@@ -331,17 +317,17 @@ function make_frf_plots(G, f, Y_grid, plot_dir)
     fig = figure('Visible','off', 'Name', 'Diagonal FRF overlay', ...
                  'Position', [0 0 700 750]);
     tiledlayout(3, 1, 'TileSpacing','compact', 'Padding','compact');
-    diag_labels = {'Common mode', 'Differential mode', 'Y-axis'};
+    diag_labels = {'$G_{11}$: $X_1 / F_1$', '$G_{22}$: $X_2 / F_2$', '$G_{33}$: $Y / F_Y$'};
     for j = 1:3
         nexttile; hold on; set(gca, 'XScale', 'log')
         for iY = 1:numel(Y_grid)
             semilogx(f, 20*log10(abs(squeeze(G(:,j,j,iY)))), 'LineWidth', 1.2, ...
                      'Color', colors(iY,:), ...
-                     'DisplayName', sprintf('Y = %+.2f m', Y_grid(iY)));
+                     'DisplayName', sprintf('Y = %+d mm', round(Y_grid(iY)*1000)));
         end
         grid on; xlim([f(1) f(end)])
-        ylabel('Magnitude (dB)')
-        title(diag_labels{j})
+        ylabel('Magnitude (dB re m/N)')
+        title(diag_labels{j}, 'Interpreter', 'latex')
         if j == 1
             legend('Location','best', 'FontSize', 8)
         end
@@ -349,13 +335,15 @@ function make_frf_plots(G, f, Y_grid, plot_dir)
             xlabel('Frequency (Hz)')
         end
     end
-    sgtitle('Diagonal FRF elements across Y positions')
-    save_plot(fig, plot_dir, 'frf_diagonal_overlay_across_Y');
+    sgtitle('Diagonal FRF elements -- all Y positions')
+    save_plot(fig, plot_dir, 'frf_diagonal_overlay');
 end
 
 function plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, tfm, ylabel_str, file_prefix)
     for iY = 1:numel(Y_grid)
-        fig = figure('Visible','off', 'Name', sprintf('%s Y=%.2f', file_prefix, Y_grid(iY)), ...
+        Y_mm = round(Y_grid(iY) * 1000);
+        fig = figure('Visible','off', ...
+                     'Name', sprintf('%s Y=%+dmm', file_prefix, Y_mm), ...
                      'Position', [0 0 1100 850]);
         tiledlayout(3, 3, 'TileSpacing','compact', 'Padding','compact');
         for iy = 1:3
@@ -363,7 +351,8 @@ function plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, tfm, yla
                 nexttile
                 semilogx(f, tfm(squeeze(G(:,iy,iu,iY))), 'LineWidth', 1.2);
                 grid on; xlim([f(1) f(end)])
-                title(sprintf('%s %s %s', in_names{iu}, char(8594), out_names{iy}))
+                title(sprintf('%s / %s', out_names{iy}, in_names{iu}), ...
+                      'Interpreter', 'latex')
                 if iy == 3
                     xlabel('Frequency (Hz)')
                 end
@@ -372,8 +361,12 @@ function plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, tfm, yla
                 end
             end
         end
-        sgtitle(sprintf('Y = %.2f m', Y_grid(iY)))
-        save_plot(fig, plot_dir, sprintf('%s_Y%+.2f', file_prefix, Y_grid(iY)));
+        if Y_mm >= 0
+            sgtitle(sprintf('FRF matrix | Y = +%d mm', Y_mm))
+        else
+            sgtitle(sprintf('FRF matrix | Y = %d mm', Y_mm))
+        end
+        save_plot(fig, plot_dir, sprintf('%s_Y%+dmm', file_prefix, Y_mm));
     end
 end
 
@@ -384,15 +377,15 @@ function make_condition_plot(cond_U, f, Y_grid, plot_dir)
     hold on
     for iY = 1:numel(Y_grid)
         plot(f, cond_U(:,iY), 'LineWidth', 1.2, 'Color', colors(iY,:), ...
-             'DisplayName', sprintf('Y = %+.2f m', Y_grid(iY)));
+             'DisplayName', sprintf('Y = %+d mm', round(Y_grid(iY)*1000)));
     end
     set(gca, 'XScale', 'log', 'YScale', 'log')
     grid on; xlim([f(1) f(end)])
     xlabel('Frequency (Hz)')
-    ylabel('Condition number')
-    title('Input matrix condition number')
+    ylabel('Condition number of U_{all}')
+    title('Excitation input matrix condition number')
     legend('Location','best')
-    save_plot(fig, plot_dir, 'u_all_condition_number');
+    save_plot(fig, plot_dir, 'input_condition_number');
 end
 
 function save_plot(fig, plot_dir, base_name)
