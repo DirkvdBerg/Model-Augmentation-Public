@@ -102,6 +102,8 @@ end
 
 %% Low-crest-factor periodic multisines
 
+fprintf('Multisine design: f = %g\x2013%g Hz, df = %g Hz, %d lines, %d candidates, seed %d\n', ...
+        f_low_pre, f_high_pre, df, numel(f_lines), N_candidates, rng_base);
 for im = 1:numel(modes)
     seed = rng_base + 100*im;
     [one_period, cf_best] = best_random_multisine_period( ...
@@ -113,8 +115,9 @@ for im = 1:numel(modes)
     modes(im).force_peak = max(abs(one_period * modes(im).f_vec), [], 1);
     modes(im).force_rms = rms(one_period * modes(im).f_vec, 1);
 
-    fprintf('mode %-7s: target RMS %.1f N, CF %.3f, actuator peak [%g %g %g] N\n', ...
-            modes(im).name, modes(im).rms, modes(im).crest_factor, modes(im).force_peak);
+    fprintf('mode %-7s: RMS %5.1f N | CF %.3f | peak [%5.1f %5.1f %5.1f] N | rms [%5.1f %5.1f %5.1f] N\n', ...
+            modes(im).name, modes(im).rms, modes(im).crest_factor, ...
+            modes(im).force_peak, modes(im).force_rms);
 end
 
 %% Simulation and FRF estimation
@@ -316,59 +319,78 @@ function save_run_time_series(run_dir, Y0, mode_name, fs, t, q, u_total, f_multi
 end
 
 function make_frf_plots(G, f, Y_grid, plot_dir)
-    out_names = {'common', 'diff', 'Y'};
-    in_names  = {'common', 'diff', 'Y'};
+    out_names = {'com', 'dif', 'Y'};
+    in_names  = {'com', 'dif', 'Y'};
 
     plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, ...
-        @(x) 20*log10(abs(x)), 'Magnitude [dB]', 'frf_magnitude_matrix');
+        @(x) 20*log10(abs(x)), 'Magnitude (dB)', 'frf_magnitude_matrix');
     plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, ...
-        @(x) unwrap(angle(x))*180/pi, 'Phase [deg]', 'frf_phase_matrix');
+        @(x) unwrap(angle(x))*180/pi, 'Phase (deg)', 'frf_phase_matrix');
 
-    fig = figure('Visible','off', 'Name', 'Diagonal FRF overlay');
+    colors = cool(numel(Y_grid));
+    fig = figure('Visible','off', 'Name', 'Diagonal FRF overlay', ...
+                 'Position', [0 0 700 750]);
     tiledlayout(3, 1, 'TileSpacing','compact', 'Padding','compact');
+    diag_labels = {'Common mode', 'Differential mode', 'Y-axis'};
     for j = 1:3
         nexttile; hold on; set(gca, 'XScale', 'log')
         for iY = 1:numel(Y_grid)
-            semilogx(f, 20*log10(abs(squeeze(G(:,j,j,iY)))), 'LineWidth', 1.0, ...
-                     'DisplayName', sprintf('Y=%+.2f', Y_grid(iY)));
+            semilogx(f, 20*log10(abs(squeeze(G(:,j,j,iY)))), 'LineWidth', 1.2, ...
+                     'Color', colors(iY,:), ...
+                     'DisplayName', sprintf('Y = %+.2f m', Y_grid(iY)));
         end
-        grid on
-        xlabel('Frequency [Hz]'); ylabel('Magnitude [dB]')
-        title(sprintf('%s diagonal', out_names{j}))
-        legend('Location','best')
+        grid on; xlim([f(1) f(end)])
+        ylabel('Magnitude (dB)')
+        title(diag_labels{j})
+        if j == 1
+            legend('Location','best', 'FontSize', 8)
+        end
+        if j == 3
+            xlabel('Frequency (Hz)')
+        end
     end
+    sgtitle('Diagonal FRF elements across Y positions')
     save_plot(fig, plot_dir, 'frf_diagonal_overlay_across_Y');
 end
 
 function plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, tfm, ylabel_str, file_prefix)
     for iY = 1:numel(Y_grid)
-        fig = figure('Visible','off', 'Name', sprintf('%s Y=%+.2f', file_prefix, Y_grid(iY)));
+        fig = figure('Visible','off', 'Name', sprintf('%s Y=%.2f', file_prefix, Y_grid(iY)), ...
+                     'Position', [0 0 1100 850]);
         tiledlayout(3, 3, 'TileSpacing','compact', 'Padding','compact');
         for iy = 1:3
             for iu = 1:3
                 nexttile
-                semilogx(f, tfm(squeeze(G(:,iy,iu,iY))), 'LineWidth', 1.0);
-                grid on
-                xlabel('Frequency [Hz]'); ylabel(ylabel_str)
-                title(sprintf('%s <- %s', out_names{iy}, in_names{iu}))
+                semilogx(f, tfm(squeeze(G(:,iy,iu,iY))), 'LineWidth', 1.2);
+                grid on; xlim([f(1) f(end)])
+                title(sprintf('%s %s %s', in_names{iu}, char(8594), out_names{iy}))
+                if iy == 3
+                    xlabel('Frequency (Hz)')
+                end
+                if iu == 1
+                    ylabel(ylabel_str)
+                end
             end
         end
-        sgtitle(sprintf('Plant FRF %s, Y=%+.2f m', ylabel_str, Y_grid(iY)))
+        sgtitle(sprintf('Y = %.2f m', Y_grid(iY)))
         save_plot(fig, plot_dir, sprintf('%s_Y%+.2f', file_prefix, Y_grid(iY)));
     end
 end
 
 function make_condition_plot(cond_U, f, Y_grid, plot_dir)
-    fig = figure('Visible','off', 'Name', 'U_all condition number');
+    colors = cool(numel(Y_grid));
+    fig = figure('Visible','off', 'Name', 'Input matrix condition number', ...
+                 'Position', [0 0 700 400]);
     hold on
     for iY = 1:numel(Y_grid)
-        semilogy(f, cond_U(:,iY), 'LineWidth', 1.0, ...
-                 'DisplayName', sprintf('Y=%+.2f', Y_grid(iY)));
+        plot(f, cond_U(:,iY), 'LineWidth', 1.2, 'Color', colors(iY,:), ...
+             'DisplayName', sprintf('Y = %+.2f m', Y_grid(iY)));
     end
-    grid on
-    xlabel('Frequency [Hz]')
-    ylabel('cond(U_{all})')
-    title('Total-input matrix conditioning')
+    set(gca, 'XScale', 'log', 'YScale', 'log')
+    grid on; xlim([f(1) f(end)])
+    xlabel('Frequency (Hz)')
+    ylabel('Condition number')
+    title('Input matrix condition number')
     legend('Location','best')
     save_plot(fig, plot_dir, 'u_all_condition_number');
 end
