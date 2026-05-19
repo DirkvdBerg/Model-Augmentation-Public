@@ -88,7 +88,8 @@
       "Bash(ls:*)",
       "Bash(echo \"PID: $!\")",
       "WebFetch(domain:dx.doi.org)",
-      "Bash(python3 -c ':*)"
+      "Bash(python3 -c ':*)",
+      "Bash(dir C:\\\\Users\\\\20203253\\\\OneDrive - TU Eindhoven\\\\Graduation Project\\\\Baseline FP model\\\\Baseline-LPV-Augmentation\\\\lpv_lfr_baseline:*)"
     ]
   }
 }

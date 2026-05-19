@@ -313,30 +313,11 @@ function make_frf_plots(G, f, Y_grid, plot_dir)
     plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, ...
         @(x) unwrap(angle(x))*180/pi, 'Phase (deg)', 'frf_phase_matrix');
 
-    colors = cool(numel(Y_grid));
-    fig = figure('Visible','off', 'Name', 'Diagonal FRF overlay', ...
-                 'Position', [0 0 700 750]);
-    tiledlayout(3, 1, 'TileSpacing','compact', 'Padding','compact');
-    diag_labels = {'$G_{11}$: $X_1 / F_1$', '$G_{22}$: $X_2 / F_2$', '$G_{33}$: $Y / F_Y$'};
-    for j = 1:3
-        nexttile; hold on; set(gca, 'XScale', 'log')
-        for iY = 1:numel(Y_grid)
-            semilogx(f, 20*log10(abs(squeeze(G(:,j,j,iY)))), 'LineWidth', 1.2, ...
-                     'Color', colors(iY,:), ...
-                     'DisplayName', sprintf('Y = %+d mm', round(Y_grid(iY)*1000)));
-        end
-        grid on; xlim([f(1) f(end)])
-        ylabel('Magnitude (dB re m/N)')
-        title(diag_labels{j}, 'Interpreter', 'latex')
-        if j == 1
-            legend('Location','best', 'FontSize', 8)
-        end
-        if j == 3
-            xlabel('Frequency (Hz)')
-        end
-    end
-    sgtitle('Diagonal FRF elements -- all Y positions')
-    save_plot(fig, plot_dir, 'frf_diagonal_overlay');
+    [f_low, f_high, f_res] = detect_frequency_range(G, f);
+    fprintf('  Detected frequency range: f_low = %.1f Hz, f_high = %.1f Hz\n', f_low, f_high);
+
+    make_diagonal_overlay(G, f, Y_grid, f_low, f_high, f_res, plot_dir);
+    make_frf_overlay_matrix(G, f, Y_grid, out_names, in_names, f_low, f_high, f_res, plot_dir);
 end
 
 function plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, tfm, ylabel_str, file_prefix)
@@ -368,6 +349,163 @@ function plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, tfm, yla
         end
         save_plot(fig, plot_dir, sprintf('%s_Y%+dmm', file_prefix, Y_mm));
     end
+end
+
+function [f_low, f_high, f_res] = detect_frequency_range(G, f)
+    % Detect identification frequency bounds from G11 and G22 diagonal FRFs.
+    % G33 (Y/FY) is excluded: K[2,2] = 0, so Y/FY has no resonance.
+    %
+    % f_low  -- min across (channels, Y) of left half-prominence onset of first peak
+    % f_high -- max across (channels, Y) of right half-prominence descent of last peak
+    % f_res  -- (3 x nY) cell; f_res{j,iY} = peak frequencies for G_jj, row 3 always empty
+    %
+    % THEORY: half-prominence criterion for resonance bandwidth -- Pintelon & Schoukens
+    %         (2001), consistent with MATLAB findpeaks 'halfprom' width reference.
+    nY = size(G, 4);
+    f  = f(:);
+    f_low_cands  = nan(2, nY);
+    f_high_cands = nan(2, nY);
+    f_res = cell(3, nY);
+
+    for iY = 1:nY
+        for j = 1:2
+            mag_dB = 20*log10(abs(squeeze(G(:,j,j,iY))));
+            [pks, locs, ~, proms] = findpeaks(mag_dB, f);
+            keep = proms >= 1;   % 1 dB minimum prominence -- filters flat-region artefacts
+            pks = pks(keep); locs = locs(keep); proms = proms(keep);
+            if isempty(pks); continue; end
+            f_res{j, iY} = locs;
+
+            % Left half-prominence onset of first peak
+            half = pks(1) - proms(1)/2;
+            lf   = f(f <= locs(1));
+            lm   = mag_dB(f <= locs(1));
+            idx  = find(lm < half, 1, 'last');
+            if ~isempty(idx) && idx < numel(lf)
+                f_low_cands(j,iY) = interp1(lm(idx:idx+1), lf(idx:idx+1), half);
+            else
+                f_low_cands(j,iY) = f(1);
+            end
+
+            % Right half-prominence descent of last peak
+            half = pks(end) - proms(end)/2;
+            rf   = f(f >= locs(end));
+            rm   = mag_dB(f >= locs(end));
+            idx  = find(rm < half, 1, 'first');
+            if ~isempty(idx) && idx > 1
+                f_high_cands(j,iY) = interp1(rm(idx-1:idx), rf(idx-1:idx), half);
+            else
+                f_high_cands(j,iY) = f(end);
+            end
+        end
+    end
+
+    f_low  = min(f_low_cands(:),  [], 'omitnan');
+    f_high = max(f_high_cands(:), [], 'omitnan');
+end
+
+function make_diagonal_overlay(G, f, Y_grid, f_low, f_high, f_res, plot_dir)
+    colors     = cool(numel(Y_grid));
+    line_color = [0.15 0.15 0.15];
+    diag_labels = {'$G_{11}$: $X_1 / F_1$', '$G_{22}$: $X_2 / F_2$', '$G_{33}$: $Y / F_Y$'};
+
+    fig = figure('Visible','off', 'Name', 'Diagonal FRF overlay', ...
+                 'Position', [0 0 700 750]);
+    tiledlayout(3, 1, 'TileSpacing','compact', 'Padding','compact');
+
+    for j = 1:3
+        nexttile; hold on; set(gca, 'XScale', 'log')
+        for iY = 1:numel(Y_grid)
+            mag_dB = 20*log10(abs(squeeze(G(:,j,j,iY))));
+            semilogx(f, mag_dB, 'LineWidth', 1.2, 'Color', colors(iY,:), ...
+                     'DisplayName', sprintf('Y = %+d mm', round(Y_grid(iY)*1000)));
+            % Peak markers on G11 and G22 only
+            if j <= 2 && ~isempty(f_res{j,iY})
+                for ip = 1:numel(f_res{j,iY})
+                    [~, ki] = min(abs(f - f_res{j,iY}(ip)));
+                    plot(f(ki), mag_dB(ki), '^', 'MarkerSize', 6, ...
+                         'MarkerFaceColor', colors(iY,:), 'MarkerEdgeColor', 'none', ...
+                         'HandleVisibility', 'off');
+                end
+            end
+        end
+        grid on; xlim([f(1) f(end)])
+        % f_low/f_high lines -- label only in top tile to avoid repetition
+        if j == 1
+            xline(f_low,  '--', '$f_{\rm low}$',  'Color', line_color, 'LineWidth', 1.5, ...
+                  'HandleVisibility','off', 'Interpreter','latex', ...
+                  'LabelVerticalAlignment','top', 'LabelHorizontalAlignment','right');
+            xline(f_high, '--', '$f_{\rm high}$', 'Color', line_color, 'LineWidth', 1.5, ...
+                  'HandleVisibility','off', 'Interpreter','latex', ...
+                  'LabelVerticalAlignment','top', 'LabelHorizontalAlignment','left');
+        else
+            xline(f_low,  '--', 'Color', line_color, 'LineWidth', 1.5, 'HandleVisibility','off');
+            xline(f_high, '--', 'Color', line_color, 'LineWidth', 1.5, 'HandleVisibility','off');
+        end
+        ylabel('Magnitude (dB re m/N)')
+        title(diag_labels{j}, 'Interpreter','latex')
+        if j == 1; legend('Location','best', 'FontSize', 8); end
+        if j == 3; xlabel('Frequency (Hz)'); end
+    end
+    sgtitle('Diagonal FRF elements -- all Y positions')
+    save_plot(fig, plot_dir, 'frf_diagonal_overlay');
+end
+
+function make_frf_overlay_matrix(G, f, Y_grid, out_names, in_names, f_low, f_high, f_res, plot_dir)
+    nY         = numel(Y_grid);
+    colors     = cool(nY);
+    line_color = [0.15 0.15 0.15];
+
+    fig = figure('Visible','off', 'Name', 'FRF matrix overlay', ...
+                 'Position', [0 0 1100 850]);
+    tiledlayout(3, 3, 'TileSpacing','compact', 'Padding','compact');
+
+    for iy = 1:3
+        for iu = 1:3
+            nexttile; hold on; set(gca, 'XScale', 'log')
+            for iY = 1:nY
+                mag_dB = 20*log10(abs(squeeze(G(:,iy,iu,iY))));
+                semilogx(f, mag_dB, 'LineWidth', 1.2, 'Color', colors(iY,:), ...
+                         'DisplayName', sprintf('Y = %+d mm', round(Y_grid(iY)*1000)));
+            end
+            % Peak markers on diagonal panels for G11 and G22
+            if iy == iu && iy <= 2
+                for iY = 1:nY
+                    if ~isempty(f_res{iy,iY})
+                        mag_dB = 20*log10(abs(squeeze(G(:,iy,iu,iY))));
+                        for ip = 1:numel(f_res{iy,iY})
+                            [~, ki] = min(abs(f - f_res{iy,iY}(ip)));
+                            plot(f(ki), mag_dB(ki), '^', 'MarkerSize', 6, ...
+                                 'MarkerFaceColor', colors(iY,:), 'MarkerEdgeColor','none', ...
+                                 'HandleVisibility','off');
+                        end
+                    end
+                end
+            end
+            grid on; xlim([f(1) f(end)])
+            % f_low/f_high lines -- label only in top-left tile
+            if iy == 1 && iu == 1
+                xline(f_low,  '--', '$f_{\rm low}$',  'Color', line_color, 'LineWidth', 1.5, ...
+                      'HandleVisibility','off', 'Interpreter','latex', ...
+                      'LabelVerticalAlignment','top', 'LabelHorizontalAlignment','right');
+                xline(f_high, '--', '$f_{\rm high}$', 'Color', line_color, 'LineWidth', 1.5, ...
+                      'HandleVisibility','off', 'Interpreter','latex', ...
+                      'LabelVerticalAlignment','top', 'LabelHorizontalAlignment','left');
+            else
+                xline(f_low,  '--', 'Color', line_color, 'LineWidth', 1.5, 'HandleVisibility','off');
+                xline(f_high, '--', 'Color', line_color, 'LineWidth', 1.5, 'HandleVisibility','off');
+            end
+            title(sprintf('%s / %s', out_names{iy}, in_names{iu}), 'Interpreter','latex')
+            if iu == 1; ylabel('Magnitude (dB re m/N)'); end
+            if iy == 3; xlabel('Frequency (Hz)'); end
+            % Legend in top-right tile only
+            if iy == 1 && iu == 3
+                legend('Location','best', 'FontSize', 7)
+            end
+        end
+    end
+    sgtitle('FRF matrix -- all Y positions')
+    save_plot(fig, plot_dir, 'frf_matrix_overlay');
 end
 
 function make_condition_plot(cond_U, f, Y_grid, plot_dir)
