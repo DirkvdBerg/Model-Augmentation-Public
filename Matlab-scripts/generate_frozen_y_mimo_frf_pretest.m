@@ -327,7 +327,7 @@ function make_frf_plots(G, f, Y_grid, plot_dir)
     fig = figure('Visible','off', 'Name', 'Diagonal FRF overlay');
     tiledlayout(3, 1, 'TileSpacing','compact', 'Padding','compact');
     for j = 1:3
-        nexttile; hold on
+        nexttile; hold on; set(gca, 'XScale', 'log')
         for iY = 1:numel(Y_grid)
             semilogx(f, 20*log10(abs(squeeze(G(:,j,j,iY)))), 'LineWidth', 1.0, ...
                      'DisplayName', sprintf('Y=%+.2f', Y_grid(iY)));
