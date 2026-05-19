@@ -1,5 +1,5 @@
-showfig = false; 
-addpath(genpath(pwd))
+showfig = true;
+addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
 set(0,"DefaultTextInterpreter", "latex")
 
 freqsHz = logspace(-1, 3, 1000);
@@ -160,6 +160,8 @@ nexttile(2); ylim([0.5 2])
 sgtitle('Relative gain array diagonals', 'fontsize', 14); 
 end
 
+% Setpoint, feedback, and simulation require gantry_2025a — not needed here.
+%{
 %% Setpoint
 fs = 20e3; 
 ts = 1/fs;
@@ -247,3 +249,22 @@ plot(t, q-q3)
 title('residual lsim vs simscape')
 
 legend('x1', 'x2', 'y', "fontsize", 12, 'location', 'northoutside')
+%}
+
+function mybode(sys, opts, ls, freqs)
+    [mag, ~] = bode(sys, freqs * 2*pi);   % (nout, nin, nfreq)
+    [nout, nin, ~] = size(mag);
+    for i = 1:nout
+        for j = 1:nin
+            subplot(nout, nin, (i-1)*nin + j); hold on
+            plot(freqs, squeeze(mag(i,j,:)), ls)
+            set(gca, 'XScale', 'log', 'YScale', 'log')
+            grid on
+            xlabel('Frequency (Hz)'); ylabel('Magnitude')
+        end
+    end
+end
+
+function R = rga1(G)
+    R = G .* inv(G).';
+end

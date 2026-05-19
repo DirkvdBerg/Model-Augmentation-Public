@@ -1,0 +1,241 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{geometry}
+\usepackage{parskip}
+
+\geometry{margin=2.5cm}
+
+\title{Structural Identifiability of the Dual-Gantry LPV Model}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+% -----------------------------------------------------------------------
+\section{Model structure}
+% -----------------------------------------------------------------------
+
+The equations of motion for the dual-gantry system in logical coordinates are
+\begin{equation}
+    M(Y)\,\ddot{q} + C\,\dot{q} + K\,q = Bu,
+\end{equation}
+where $q \in \mathbb{R}^3$ are the logical-coordinate positions,
+$u \in \mathbb{R}^3$ are the logical-coordinate forces, and the mass matrix
+depends on the payload position $Y$ (the LPV scheduling variable).
+
+The full physical parameter vector is
+\begin{equation}
+    \theta =
+    \bigl[k_{b1},\; k_{b2},\; c_{g1},\; c_{g2},\; c_y,\;
+          c_{b1},\; c_{b2},\; m_h,\; m_1,\; m_2,\; m_b,\; J_b,\; J_h,\; d\bigr]
+    \in \mathbb{R}^{14}.
+\end{equation}
+The cross-arm length $L_b = 0.725\,\mathrm{m}$ is fixed geometry (it enters
+the coordinate transform $P$ only) and is not a trainable parameter.
+
+% -----------------------------------------------------------------------
+\section{The observable map}
+% -----------------------------------------------------------------------
+
+$M(Y)$ is polynomial in $Y$, so its matrix coefficients are separately
+observable at different powers of $Y$:
+\begin{equation}
+    M(Y) = M_0 + M_1\,Y + M_2\,Y^2.
+\end{equation}
+The data can therefore determine the independent entries of
+$\{M_0,\,M_1,\,M_2,\,K,\,C\}$ individually.
+Listing every non-zero independent entry yields the observable map
+$f:\mathbb{R}^{14}\to\mathbb{R}^{10}$ shown in Table~\ref{tab:observable_map}.
+
+\begin{table}[h]
+\centering
+\caption{Non-zero independent entries of the physics matrices and their
+         expressions in $\theta$.}
+\label{tab:observable_map}
+\begin{tabular}{llp{7cm}}
+\toprule
+Matrix & Entry & Expression in $\theta$ \\
+\midrule
+$M_0$ & $[0,0]$ & $m_1 + m_2 + m_b + m_h$ \\
+$M_0$ & $[0,1]$ & $(m_1 - m_2)\,L_b/2$ \\
+$M_0$ & $[1,1]$ & $J_\mathrm{sum} + (m_1+m_2)\,L_b^2/4 + m_h\,d^2$ \\
+$M_0$ & $[1,2]$ & $-m_h\,d$ \\
+$M_0$ & $[2,2]$ & $m_h$ \\
+$K$   & $[1,1]$ & $k_{b,\mathrm{sum}} = k_{b1}+k_{b2}$ \\
+$C$   & $[0,0]$ & $c_{g1}+c_{g2}$ \\
+$C$   & $[0,1]$ & $(c_{g1}-c_{g2})\,L_b/2$ \\
+$C$   & $[1,1]$ & $c_{b,\mathrm{sum}} + (c_{g1}+c_{g2})\,L_b^2/4$ \\
+$C$   & $[2,2]$ & $c_y$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% -----------------------------------------------------------------------
+\section{Jacobian rank}
+% -----------------------------------------------------------------------
+
+The Jacobian
+$\partial f/\partial\theta \in \mathbb{R}^{10\times14}$
+has a near-block-triangular structure.
+With $\theta$ ordered as
+$[k_{b1},\,k_{b2},\,c_{g1},\,c_{g2},\,c_y,\,c_{b1},\,c_{b2},\,m_h,\,m_1,\,m_2,\,m_b,\,J_b,\,J_h,\,d]$,
+the 10 rows are linearly independent by inspection, so
+\begin{equation}
+    \operatorname{rank}\!\left(\frac{\partial f}{\partial\theta}\right) = 10.
+\end{equation}
+The null space therefore has dimension $14 - 10 = 4$: there are four
+independent directions in parameter space along which the matrices — and
+hence the model output — are invariant.
+
+% -----------------------------------------------------------------------
+\section{The four null directions}
+% -----------------------------------------------------------------------
+
+Solving $(\partial f/\partial\theta)\,v = 0$ yields the four null directions
+listed in Table~\ref{tab:null_directions}.
+
+\begin{table}[h]
+\centering
+\caption{Null directions of the observable map, their physical
+         interpretation, and the chosen treatment.}
+\label{tab:null_directions}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{lp{5cm}p{2.5cm}p{4cm}}
+\toprule
+Direction & Perturbation & Physical meaning & Treatment \\
+\midrule
+$n_1$ &
+  $\Delta k_{b1} = +\varepsilon,\; \Delta k_{b2} = -\varepsilon$ &
+  Stiffness split &
+  Regularization — symmetric joints by design ($k_{b1}=k_{b2}$); prior is
+  physically motivated \\
+$n_2$ &
+  $\Delta c_{b1} = +\varepsilon,\; \Delta c_{b2} = -\varepsilon$ &
+  Damping split &
+  Same argument as $n_1$ \\
+$n_3$ &
+  $\Delta J_b = +\varepsilon,\; \Delta J_h = -\varepsilon$ &
+  Inertia split &
+  Regularization on log-ratio; symmetric design justification \\
+$n_4$ &
+  $\Delta m_1 = \Delta m_2 = +\varepsilon$,\newline
+  $\Delta m_b = -2\varepsilon$,\newline
+  $\Delta J_\mathrm{sum} = -(L_b^2/2)\,\varepsilon$ &
+  Mass--inertia coupling &
+  \textbf{Reparameterize} — no physical symmetry argument; regularization
+  would identify the prior, not the physics \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For $n_1$--$n_3$, regularization is acceptable because the prior encodes
+\emph{known physical symmetry} of the mechanical design (equal joints),
+not an arbitrary guess.
+For $n_4$, no such symmetry exists: shifting mass equally between $m_1$,
+$m_2$ and $m_b$ while compensating $J_\mathrm{sum}$ has no physical
+motivation.
+Regularizing $n_4$ would make the recovered values depend on the
+regularization weight rather than the measured data.
+
+The correct treatment for $n_4$ is \textbf{reparameterization}: replace
+the five parameters $\{m_1,\,m_2,\,m_b,\,J_b,\,J_h\}$ with the three
+identifiable combinations $\{m_\mathrm{total},\,m_\mathrm{diff},\,J_\mathrm{eff}\}$
+(Section~\ref{sec:reparam}).
+
+% -----------------------------------------------------------------------
+\section{Experimental verification of $n_4$}
+% -----------------------------------------------------------------------
+
+Training results confirm the theoretical null direction exactly.
+Starting from 10\,\% detuned initial values, the optimizer converges to
+the values shown in Table~\ref{tab:verification}.
+
+\begin{table}[h]
+\centering
+\caption{Recovered vs.\ true parameter values for the mass--inertia group.}
+\label{tab:verification}
+\begin{tabular}{lrrr}
+\toprule
+Parameter & True & Learned & $\Delta$ \\
+\midrule
+$m_1$           & 10.200 & 10.452 & $+0.252$ \\
+$m_2$           & 10.700 & 10.952 & $+0.252$ \\
+$m_b$           & 22.800 & 22.296 & $-0.504$ \\
+$J_\mathrm{sum}$& \phantom{0}1.050  & \phantom{0}0.984  & $-0.066$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Setting $\varepsilon = 0.252$ and evaluating the $n_4$ predictions:
+\begin{align}
+    \Delta m_b &= -2\varepsilon = -0.504 \quad \checkmark \\[4pt]
+    \Delta J_\mathrm{sum} &=
+        -\frac{L_b^2}{2}\,\varepsilon
+        = -\frac{0.725^2}{2}\times 0.252
+        = -0.066 \quad \checkmark
+\end{align}
+All other identifiable quantities (e.g.\ $m_h$,
+$m_\mathrm{diff} = m_1 - m_2$) are recovered to within numerical
+precision.
+The optimizer found a valid point on the flat manifold; $\varepsilon$ is
+not a hyperparameter but the magnitude of drift along $n_4$ determined by
+the optimizer trajectory from the detuned initialization.
+
+% -----------------------------------------------------------------------
+\section{The 10 identifiable combinations}
+% -----------------------------------------------------------------------
+
+Table~\ref{tab:identifiable} lists the 10 scalar quantities that are
+independently determined by the data.
+
+\begin{table}[h]
+\centering
+\caption{Identifiable combinations and the matrix entries from which they
+         are determined.}
+\label{tab:identifiable}
+\begin{tabular}{clll}
+\toprule
+\# & Quantity & Expression & Source \\
+\midrule
+1  & $m_h$                & $m_h$                                         & $M_0[2,2]$ \\
+2  & $d$                  & $d$                                           & $M_0[1,2]\,/\,(-m_h)$ \\
+3  & $m_\mathrm{diff}$    & $m_1 - m_2$                                   & $M_0[0,1]$ \\
+4  & $m_\mathrm{total}$   & $m_1 + m_2 + m_b$                             & $M_0[0,0]$ \\
+5  & $J_\mathrm{eff}$     & $J_\mathrm{sum} + (m_1+m_2)\,L_b^2/4$        & $M_0[1,1]$ \\
+6  & $k_{b,\mathrm{sum}}$ & $k_{b1}+k_{b2}$                               & $K[1,1]$ \\
+7  & $c_{g1}$             & $c_{g1}$                                      & $C[0,0]$ and $C[0,1]$ \\
+8  & $c_{g2}$             & $c_{g2}$                                      & $C[0,0]$ and $C[0,1]$ \\
+9  & $c_{b,\mathrm{sum}}$ & $c_{b1}+c_{b2}$                               & $C[1,1]$ \\
+10 & $c_y$                & $c_y$                                         & $C[2,2]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Note that $c_{g1}$ and $c_{g2}$ are \emph{individually} identifiable: the
+damping matrix $C$ encodes both their sum (via $C[0,0]$) and their
+difference scaled by $L_b$ (via $C[0,1]$), which together uniquely
+determine both scalars.
+
+% -----------------------------------------------------------------------
+\section{Reparameterization}
+\label{sec:reparam}
+% -----------------------------------------------------------------------
+
+Replace $\{m_1,\,m_2,\,m_b,\,J_b,\,J_h\}$ (5 parameters) with
+$\{m_\mathrm{total},\,m_\mathrm{diff},\,J_\mathrm{eff}\}$ (3 parameters).
+This eliminates $n_4$ from the parameter space entirely.
+The matrix entries are then constructed directly from the identifiable
+combinations:
+\begin{equation}
+    M_0[0,0] = m_\mathrm{total} + m_h, \qquad
+    M_0[0,1] = \frac{m_\mathrm{diff}\,L_b}{2}, \qquad
+    M_0[1,1] = J_\mathrm{eff} + m_h\,d^2.
+\end{equation}
+This yields a well-posed, minimal 10-parameter model in which every free
+parameter is independently determined by the trajectory data.
+
+\end{document}

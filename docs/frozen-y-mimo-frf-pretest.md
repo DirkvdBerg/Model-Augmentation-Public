@@ -24,17 +24,65 @@ Y fixed -> local LTI system -> FRF is meaningful
 Y sweep -> time-varying LPV data -> standard FRF is smeared
 ```
 
+## Script-Derived Constants
+
+Use the current MATLAB experiment scripts as the source for practical constants:
+
+```text
+source script: Matlab-scripts/generate_identification_experiment_adjusted.m
+fs = 20e3 Hz
+df = 1 Hz
+T_period = 1 / df = 1 s
+N_period = round(fs / df) = 20000 samples
+Y_ctrl = 0.25 m
+```
+
+Interpretation:
+
+```text
+fs = 20 kHz supports the 1-300 Hz exploratory FRF band.
+N_period = fs / df gives integer-period records and DFT-bin spacing df.
+Y_ctrl = 0.25 m keeps the controller design point fixed across experiments.
+```
+
+Use the script limits as hard validity checks:
+
+```text
+X position limit:      lim.pos_X = +/-0.375 m
+Y position limit:      lim.pos_Y = +/-0.400 m
+differential/yaw limit: lim.diff = sin(0.1)*Lb
+velocity limit:        lim.vel = 2.0 m/s
+X acceleration limit:  lim.acc_X = 30 m/s^2
+Y acceleration limit:  lim.acc_Y = 50 m/s^2
+force peak limits:     lim.force_peak = [2000, 2000, 1420] N
+force RMS limits:      lim.force_rms  = [916, 916, 656] N
+```
+
+For FRF estimation, always log the actual plant input:
+
+```text
+u_total = u_controller + f_multisine
+```
+
+The FRF input is the force/current entering the plant.
+
 ## Y Grid
 
 Use the trajectory-relevant frozen-Y grid:
 
 ```text
-Y = [-0.30, -0.15, 0.00, 0.15, 0.30] m
+Y = [-0.30, -0.25, -0.15, 0.00, 0.15, 0.25, 0.30] m
 ```
 
 This covers the current trajectory range while staying inside the hardware limit `lim.pos_Y = +/-0.400 m`.
 
-Keep the controller setup fixed across all Y positions.
+Keep the controller setup fixed across all Y positions. Use the same controller design point as the adjusted MATLAB script:
+
+```text
+Y_ctrl = 0.25 m
+```
+
+Including `Y = 0.25 m` gives one frozen-Y FRF at the controller design point. Other Y positions intentionally test the same fixed controller away from its design point.
 
 ## Modal Coordinates
 
@@ -54,7 +102,23 @@ diff:   [ 1, -1, 0]
 Y:      [ 0,  0, 1]
 ```
 
+These are the same modal directions used by `mode_def` in the MATLAB experiment scripts.
+
 For quantitative FRF magnitudes, use output coordinates consistent with the model `P` transform. For frequency-range selection, common/diff/Y modal plots are sufficient.
+
+Normalization convention:
+
+```text
+common input amplitude a -> FX1 = a, FX2 = a
+diff input amplitude a   -> FX1 = a, FX2 = -a
+Y input amplitude a      -> FY  = a
+
+y_common = (X1 + X2) / 2
+y_diff   = (X1 - X2) / 2
+y_Y      = Y
+```
+
+Therefore `G_common,common` is average X displacement per per-actuator common force. This is useful for actuator interpretation, but its magnitude includes the chosen input/output normalization.
 
 ## Simple MIMO FRF Method
 
@@ -70,21 +134,30 @@ At each fixed Y:
 
 Measure all outputs every time.
 
-Each test gives one FRF column:
+Important:
 
 ```text
-common input -> column 1 of G(jw, Y)
-diff input   -> column 2 of G(jw, Y)
-Y input      -> column 3 of G(jw, Y)
+Because the gantry is coupled and controlled in closed loop,
+one injected mode is not assumed to equal one plant FRF column.
 ```
 
-After three tests:
+The three modal tests are independent experiments. At each frequency, combine them into matrices:
 
 ```text
-G(jw, Y) = 3x3 modal FRF matrix
+F_all = [F_common_run, F_diff_run, F_Y_run]
+U_all = [U_common_run, U_diff_run, U_Y_run]
+Y_all = [Y_common_run, Y_diff_run, Y_Y_run]
 ```
 
-No simultaneous MIMO excitation is needed for the first pretest. Superposition covers combinations if the local response is linear.
+where `U_all` is the measured total modal plant input and `Y_all` is the measured modal output.
+
+For the first noise-free simulation pretest:
+
+```text
+G(jw, Y) = Y_all(jw, Y) * U_all(jw, Y)^(-1)
+```
+
+No simultaneous MIMO excitation is needed for the first pretest. One-mode-at-a-time excitation is used only to create independent experiments. Check that `U_all` is full rank and well-conditioned at each frequency.
 
 ## Excitation Signal
 
@@ -126,19 +199,21 @@ Use the current simulation/acquisition rate:
 fs = 20 kHz
 ```
 
+This matches the current MATLAB identification scripts.
+
 For the first exploratory FRF:
 
 ```text
 df = 1 Hz
 T_period = 1 / df = 1 s
-N_period = fs / df = 20000 samples
+N_period = round(fs / df) = 20000 samples
 f_lines = 1:300 Hz
 ```
 
 Requirements:
 
 ```text
-N_period must be integer
+fs / df must be integer, or choose df so N_period is integer
 all excited frequencies must be FFT-bin frequencies
 no partial periods enter the FFT
 ```
@@ -245,6 +320,8 @@ Current simulation has no measurement noise, so SNR/coherence are not the first 
 
 Use the same amplitude for the same mode across Y if possible. If one Y position is too sensitive, reduce the global mode amplitude rather than changing it per Y.
 
+Never choose amplitude as a fixed percentage of hardware limits. Use the hardware limits only as rejection/safety checks after the selected multisine is mapped to physical actuator forces.
+
 ## Initial Frequency Range
 
 The FRF pretest itself uses a broad exploratory band:
@@ -307,6 +384,7 @@ Use integer periods.
 Recommended:
 
 ```text
+settle at each Y before starting the recorded multisine experiment
 1-2 periods settling/transient
 10-15 transient-free periods for FRF averaging
 ```
@@ -329,11 +407,14 @@ The first periods can contain initial-condition/controller/plant transients.
 Procedure:
 
 ```text
-1. split the record into periods of N_period samples
-2. discard the first N_drop periods, e.g. N_drop = 1-2
-3. FFT each remaining complete period separately
-4. average only complete clean periods
-5. do not window periodic steady-state periods
+1. move/initialize plant to Y_fixed
+2. hold the frozen reference until plant and controller settle
+3. start the periodic multisine record
+4. split the record into periods of N_period samples
+5. discard the first N_drop periods, e.g. N_drop = 1-2
+6. FFT each remaining complete period separately
+7. average only complete clean periods
+8. do not window periodic steady-state periods
 ```
 
 Do not analyze the DC bin:
@@ -356,13 +437,30 @@ df
 N_period
 period count
 excited frequency lines
-input force signal entering the plant
+total modal plant input u_total_modal
+physical plant input forces/currents
 X1, X2, Y outputs
+modal outputs y_modal
 controller setup/gains
 saturation or clipping flags
 ```
 
 For closed-loop force injection, the FRF input must be the actual force/current entering the plant, not only a reference signal.
+
+Scope:
+
+```text
+This pretest is for the current noise-free simulation only.
+No closed-loop noisy estimator is implemented here.
+```
+
+Use the same convention as the MATLAB trajectory experiments:
+
+```text
+u_total = u_controller + f_multisine
+```
+
+Save `u_total` because it is the FRF input.
 
 ## Modal Output Transform
 
@@ -378,38 +476,37 @@ For quantitative comparison with the model, convert `y_diff` to the `P`-consiste
 
 ## FRF Estimator
 
-For one modal input at a time, each test estimates one FRF column.
+The first implementation assumes noise-free simulation data.
 
-At excited frequency line `f_k`, output row `i`, input mode `j`, and frozen position `Y_fixed`:
-
-```text
-G_ij(f_k, Y_fixed) = Y_i(f_k) / U_j(f_k)
-```
-
-With multiple clean periods, use the averaged spectral form:
+At each excited frequency line `f_k` and frozen position `Y_fixed`, form matrices from the three modal experiments:
 
 ```text
-G_ij(f_k, Y_fixed) =
-    sum_p Y_i,p(f_k) * conj(U_j,p(f_k))
-    /
-    sum_p U_j,p(f_k) * conj(U_j,p(f_k))
+Y_all(f_k) = [Y_common_run(f_k), Y_diff_run(f_k), Y_Y_run(f_k)]
+U_all(f_k) = [U_common_run(f_k), U_diff_run(f_k), U_Y_run(f_k)]
 ```
 
-where `p` indexes transient-free periods.
-
-Assemble columns:
+Then estimate the plant FRF:
 
 ```text
-common input -> column 1
-diff input   -> column 2
-Y input      -> column 3
+G(f_k, Y_fixed) = Y_all(f_k) * U_all(f_k)^(-1)
 ```
 
-Result:
+Use measured total plant input in `U_all`, not only the injected multisine.
 
 ```text
-G(jw, Y_fixed) = 3x3 modal FRF
+u_total = u_controller + f_multisine
 ```
+
+With multiple clean periods, first compute the FFT for each clean period, then average the complex spectra for each run before forming `Y_all` and `U_all`.
+
+Conditioning check:
+
+```text
+rank(U_all(f_k)) = 3
+cond(U_all(f_k)) should not be large
+```
+
+If `U_all(f_k)` is singular or ill-conditioned, the FRF at that frequency is unreliable.
 
 ## Combining Experiments
 
@@ -417,7 +514,7 @@ Combine in three different ways:
 
 ```text
 periods at same Y/input -> average for lower variance
-modal input tests       -> assemble FRF columns
+modal input tests       -> build Y_all and U_all, then invert U_all
 Y positions             -> keep separate as G(jw, Y_i)
 ```
 
@@ -479,6 +576,8 @@ no actuator saturation/clipping
 position/yaw limits remain valid
 FRF values are finite at excited lines
 same-mode signal is reused across Y
+U_all is full rank at each excited line
+cond(U_all) is acceptable at each excited line
 ```
 
 Useful later with noise/hardware:
@@ -499,7 +598,10 @@ multiple random-phase realizations for BLA/nonlinear distortion
 simultaneous orthogonal/zippered MIMO multisines
 combined-mode validation tests
 LPV model fitting directly to FRF family
+closed-loop noisy FRF estimator
 ```
+
+Orthogonal/zippered excitation can improve conditioning, but it is not part of this first noise-free pretest.
 
 ## Required Plots
 
@@ -566,22 +668,25 @@ Do not use hardware-limit percentage as excitation design.
 Do not scale the multisine amplitude before checking crest factor.
 Do not interpret moving trajectory-plus-multisine data as stationary FRF data.
 Do not forget actuator-coordinate force checks after modal mapping.
+Do not treat one injected mode as one plant FRF column in closed-loop coupled MIMO.
 ```
 
 ## Minimal Workflow
 
 ```text
 1. Choose broad plant-based exploratory frequency band.
-2. Set df = 1 Hz, T_period = 1 s, N_period = 20000.
+2. Set df, T_period = 1/df, N_period = round(fs/df), with fs/df integer.
 3. Generate low-crest-factor periodic random-phase multisines for common/diff/Y.
 4. Map candidates to physical actuator forces and choose the lowest CF_total.
 5. Scale the selected signals to safe RMS force levels.
 6. Choose frozen Y grid.
 7. Reuse each mode signal across all Y positions.
-8. At each Y, run common/diff/Y input tests one at a time.
-9. Split into periods, discard transients, FFT clean periods.
-10. Estimate FRF columns using the spectral estimator.
-11. Assemble 3x3 modal FRF for each Y.
-12. Compare FRF family across Y.
-13. Select final f_low/f_high for trajectory-plus-multisine design.
+8. At each Y, settle at the frozen operating point.
+9. Run common/diff/Y input tests one at a time.
+10. Split into periods, discard transients, FFT clean periods.
+11. For each frequency, build Y_all and U_all from the three runs.
+12. Estimate G = Y_all * U_all^(-1).
+13. Check rank and condition number of U_all.
+14. Compare FRF family across Y.
+15. Select final f_low/f_high for trajectory-plus-multisine design.
 ```

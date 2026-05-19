@@ -57,7 +57,7 @@ DTYPE = torch.float64
 #   'ref_injection' — T1–T8, multisine injected into reference r (preferred)
 #                     Matlab-output/parameter-recovery-ref-injection/
 #                     Excitation reaches plant via T≈1, not attenuated by S≪1.
-DATASET = 'identification'
+DATASET = 'base_extended'
 
 _BASE = os.path.join(os.path.dirname(__file__), '..', '..')
 _TRAJ_BASE = (

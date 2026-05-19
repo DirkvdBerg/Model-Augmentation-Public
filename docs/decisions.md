@@ -1470,3 +1470,33 @@ at no additional cost.
 - Step 0 requires a short simulation run before Step 1 can proceed.
 - Probe signal: flat broadband multisine (all harmonics, equal amplitude, force injection).
 - f_low threshold from `|Ŝ|²` has no universal source — must be declared as engineering choice.
+
+---
+
+### [D-052] FRF pretest uses stage coordinates directly -- no input/output transform
+**Date**: 2026-05-19
+**What**: The frozen-Y MIMO FRF pretest uses raw stage coordinates throughout:
+- Inputs: `[F1, F2, FY]` (physical actuator forces)
+- Outputs: `[X1, X2, Y]` (physical position sensors)
+No `output_to_modal` or `input_to_modal` transform is applied.
+
+**Why**: Orthogonality of the input matrix comes entirely from the excitation design
+(`f_vec = [1,1,0]`, `[1,-1,0]`, `[0,0,1]`), not from transforming the measured signals.
+At each frequency line k the U_all columns are orthogonal in stage coordinates by
+construction (the [1,1;1,-1] X-block is the Hadamard structure from Lecture 9; Y is
+independent). The pretest purpose is frequency range selection -- resonance peak
+locations are invariant to coordinate transforms. Stage coordinates are the simplest
+valid choice.
+
+**Ruled out**: Kamtin logical coordinates (P matrix transform) -- would enable a direct
+oracle-test overlay against the analytical model, but adds scaling decisions with no
+benefit for frequency range selection. Ad-hoc symmetric transform `(X1+/-X2)/2`,
+`(F1+/-F2)/2` -- neither stage nor logical, has no clear benefit and mismatches kamtin
+by constant factors anyway.
+
+**Constrains**:
+- FRF is 3x3 in stage coordinates. Plot axis labels are X1/X2/Y for both inputs and outputs.
+- All 3 excitation modes (common X, diff X, Y) are retained -- Y is a physical DOF, not
+  only a scheduling variable.
+- A post-hoc coordinate transform would be needed to directly compare this FRF against
+  kamtin's `StageCoordinatesSystem` (which is in logical coordinates).
