@@ -313,11 +313,11 @@ function make_frf_plots(G, f, Y_grid, plot_dir)
     plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, ...
         @(x) unwrap(angle(x))*180/pi, 'Phase (deg)', 'frf_phase_matrix');
 
-    [f_low, f_high, f_res] = detect_frequency_range(G, f);
+    [f_low, f_high, f_res, f_antires] = detect_frequency_range(G, f);
     fprintf('  Detected frequency range: f_low = %.1f Hz, f_high = %.1f Hz\n', f_low, f_high);
 
-    make_diagonal_overlay(G, f, Y_grid, f_low, f_high, f_res, plot_dir);
-    make_frf_overlay_matrix(G, f, Y_grid, out_names, in_names, f_low, f_high, f_res, plot_dir);
+    make_diagonal_overlay(G, f, Y_grid, f_low, f_high, f_res, f_antires, plot_dir);
+    make_frf_overlay_matrix(G, f, Y_grid, out_names, in_names, f_low, f_high, f_res, f_antires, plot_dir);
 end
 
 function plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, tfm, ylabel_str, file_prefix)
@@ -351,51 +351,47 @@ function plot_per_Y_matrix(G, f, Y_grid, out_names, in_names, plot_dir, tfm, yla
     end
 end
 
-function [f_low, f_high, f_res] = detect_frequency_range(G, f)
+function [f_low, f_high, f_res, f_antires] = detect_frequency_range(G, f)
     % Detect identification frequency bounds from G11 and G22 diagonal FRFs.
-    % G33 (Y/FY) is excluded: K[2,2] = 0, so Y/FY has no resonance.
+    % G33 (Y/FY) is excluded: K[2,2] = 0 so Y/FY has no resonance or anti-resonance.
     %
-    % f_low  -- min across (channels, Y) of left half-prominence onset of first peak
-    % f_high -- max across (channels, Y) of right half-prominence descent of last peak
-    % f_res  -- (3 x nY) cell; f_res{j,iY} = peak frequencies for G_jj, row 3 always empty
+    % f_low     -- min across (channels, Y) of left  half-prominence onset  of first feature
+    % f_high    -- max across (channels, Y) of right half-prominence descent of last  feature
+    % f_res     -- (3 x nY) cell; resonance     (peak)   frequencies, row 3 always empty
+    % f_antires -- (3 x nY) cell; anti-resonance (trough) frequencies, row 3 always empty
     %
-    % THEORY: half-prominence criterion for resonance bandwidth -- Pintelon & Schoukens
-    %         (2001), consistent with MATLAB findpeaks 'halfprom' width reference.
+    % Features = resonances (magnitude peaks) and anti-resonances (magnitude troughs).
+    % THEORY: half-prominence criterion -- Pintelon & Schoukens (2001), consistent with
+    %         MATLAB findpeaks 'halfprom' width reference.
     nY = size(G, 4);
     f  = f(:);
-    f_low_cands  = nan(2, nY);
-    f_high_cands = nan(2, nY);
-    f_res = cell(3, nY);
+    f_low_cands  = nan(4, nY);   % rows 1-2: peaks j=1,2; rows 3-4: troughs j=1,2
+    f_high_cands = nan(4, nY);
+    f_res     = cell(3, nY);
+    f_antires = cell(3, nY);
 
     for iY = 1:nY
         for j = 1:2
             mag_dB = 20*log10(abs(squeeze(G(:,j,j,iY))));
-            [pks, locs, ~, proms] = findpeaks(mag_dB, f);
-            keep = proms >= 1;   % 1 dB minimum prominence -- filters flat-region artefacts
-            pks = pks(keep); locs = locs(keep); proms = proms(keep);
-            if isempty(pks); continue; end
-            f_res{j, iY} = locs;
 
-            % Left half-prominence onset of first peak
-            half = pks(1) - proms(1)/2;
-            lf   = f(f <= locs(1));
-            lm   = mag_dB(f <= locs(1));
-            idx  = find(lm < half, 1, 'last');
-            if ~isempty(idx) && idx < numel(lf)
-                f_low_cands(j,iY) = interp1(lm(idx:idx+1), lf(idx:idx+1), half);
-            else
-                f_low_cands(j,iY) = f(1);
+            % Resonances (magnitude peaks)
+            [pks, locs, ~, proms] = findpeaks(mag_dB, f);
+            keep = proms >= 1;
+            pks = pks(keep); locs = locs(keep); proms = proms(keep);
+            if ~isempty(pks)
+                f_res{j,iY} = locs;
+                [f_low_cands(j,iY), f_high_cands(j,iY)] = ...
+                    feature_bounds(mag_dB, f, pks, locs, proms);
             end
 
-            % Right half-prominence descent of last peak
-            half = pks(end) - proms(end)/2;
-            rf   = f(f >= locs(end));
-            rm   = mag_dB(f >= locs(end));
-            idx  = find(rm < half, 1, 'first');
-            if ~isempty(idx) && idx > 1
-                f_high_cands(j,iY) = interp1(rm(idx-1:idx), rf(idx-1:idx), half);
-            else
-                f_high_cands(j,iY) = f(end);
+            % Anti-resonances (magnitude troughs via inverted signal)
+            [pks_t, locs_t, ~, proms_t] = findpeaks(-mag_dB, f);
+            keep_t = proms_t >= 1;
+            pks_t = pks_t(keep_t); locs_t = locs_t(keep_t); proms_t = proms_t(keep_t);
+            if ~isempty(pks_t)
+                f_antires{j,iY} = locs_t;
+                [f_low_cands(j+2,iY), f_high_cands(j+2,iY)] = ...
+                    feature_bounds(-mag_dB, f, pks_t, locs_t, proms_t);
             end
         end
     end
@@ -404,7 +400,30 @@ function [f_low, f_high, f_res] = detect_frequency_range(G, f)
     f_high = max(f_high_cands(:), [], 'omitnan');
 end
 
-function make_diagonal_overlay(G, f, Y_grid, f_low, f_high, f_res, plot_dir)
+function [f_lo, f_hi] = feature_bounds(mag_dB, f, pks, locs, proms)
+    % Left half-prominence onset of first feature and right descent of last.
+    % Pass mag_dB directly for peaks, pass -mag_dB for troughs.
+    half = pks(1) - proms(1)/2;
+    lf   = f(f <= locs(1));
+    lm   = mag_dB(f <= locs(1));
+    idx  = find(lm < half, 1, 'last');
+    if ~isempty(idx) && idx < numel(lf)
+        f_lo = interp1(lm(idx:idx+1), lf(idx:idx+1), half);
+    else
+        f_lo = f(1);
+    end
+    half = pks(end) - proms(end)/2;
+    rf   = f(f >= locs(end));
+    rm   = mag_dB(f >= locs(end));
+    idx  = find(rm < half, 1, 'first');
+    if ~isempty(idx) && idx > 1
+        f_hi = interp1(rm(idx-1:idx), rf(idx-1:idx), half);
+    else
+        f_hi = f(end);
+    end
+end
+
+function make_diagonal_overlay(G, f, Y_grid, f_low, f_high, f_res, f_antires, plot_dir)
     colors     = cool(numel(Y_grid));
     line_color = [0.15 0.15 0.15];
     diag_labels = {'$G_{11}$: $X_1 / F_1$', '$G_{22}$: $X_2 / F_2$', '$G_{33}$: $Y / F_Y$'};
@@ -419,18 +438,12 @@ function make_diagonal_overlay(G, f, Y_grid, f_low, f_high, f_res, plot_dir)
             mag_dB = 20*log10(abs(squeeze(G(:,j,j,iY))));
             semilogx(f, mag_dB, 'LineWidth', 1.2, 'Color', colors(iY,:), ...
                      'DisplayName', sprintf('Y = %+d mm', round(Y_grid(iY)*1000)));
-            % Peak markers on G11 and G22 only
-            if j <= 2 && ~isempty(f_res{j,iY})
-                for ip = 1:numel(f_res{j,iY})
-                    [~, ki] = min(abs(f - f_res{j,iY}(ip)));
-                    plot(f(ki), mag_dB(ki), '^', 'MarkerSize', 6, ...
-                         'MarkerFaceColor', colors(iY,:), 'MarkerEdgeColor', 'none', ...
-                         'HandleVisibility', 'off');
-                end
+            if j <= 2
+                add_feature_markers(f, mag_dB, f_res{j,iY},     '^', colors(iY,:));
+                add_feature_markers(f, mag_dB, f_antires{j,iY}, 'v', colors(iY,:));
             end
         end
         grid on; xlim([f(1) f(end)])
-        % f_low/f_high lines -- label only in top tile to avoid repetition
         if j == 1
             xline(f_low,  '--', '$f_{\rm low}$',  'Color', line_color, 'LineWidth', 1.5, ...
                   'HandleVisibility','off', 'Interpreter','latex', ...
@@ -447,11 +460,11 @@ function make_diagonal_overlay(G, f, Y_grid, f_low, f_high, f_res, plot_dir)
         if j == 1; legend('Location','best', 'FontSize', 8); end
         if j == 3; xlabel('Frequency (Hz)'); end
     end
-    sgtitle('Diagonal FRF elements -- all Y positions')
+    sgtitle('Diagonal FRF elements - all Y positions')
     save_plot(fig, plot_dir, 'frf_diagonal_overlay');
 end
 
-function make_frf_overlay_matrix(G, f, Y_grid, out_names, in_names, f_low, f_high, f_res, plot_dir)
+function make_frf_overlay_matrix(G, f, Y_grid, out_names, in_names, f_low, f_high, f_res, f_antires, plot_dir)
     nY         = numel(Y_grid);
     colors     = cool(nY);
     line_color = [0.15 0.15 0.15];
@@ -467,23 +480,13 @@ function make_frf_overlay_matrix(G, f, Y_grid, out_names, in_names, f_low, f_hig
                 mag_dB = 20*log10(abs(squeeze(G(:,iy,iu,iY))));
                 semilogx(f, mag_dB, 'LineWidth', 1.2, 'Color', colors(iY,:), ...
                          'DisplayName', sprintf('Y = %+d mm', round(Y_grid(iY)*1000)));
-            end
-            % Peak markers on diagonal panels for G11 and G22
-            if iy == iu && iy <= 2
-                for iY = 1:nY
-                    if ~isempty(f_res{iy,iY})
-                        mag_dB = 20*log10(abs(squeeze(G(:,iy,iu,iY))));
-                        for ip = 1:numel(f_res{iy,iY})
-                            [~, ki] = min(abs(f - f_res{iy,iY}(ip)));
-                            plot(f(ki), mag_dB(ki), '^', 'MarkerSize', 6, ...
-                                 'MarkerFaceColor', colors(iY,:), 'MarkerEdgeColor','none', ...
-                                 'HandleVisibility','off');
-                        end
-                    end
+                % Resonance and anti-resonance markers on diagonal panels G11 and G22
+                if iy == iu && iy <= 2
+                    add_feature_markers(f, mag_dB, f_res{iy,iY},     '^', colors(iY,:));
+                    add_feature_markers(f, mag_dB, f_antires{iy,iY}, 'v', colors(iY,:));
                 end
             end
             grid on; xlim([f(1) f(end)])
-            % f_low/f_high lines -- label only in top-left tile
             if iy == 1 && iu == 1
                 xline(f_low,  '--', '$f_{\rm low}$',  'Color', line_color, 'LineWidth', 1.5, ...
                       'HandleVisibility','off', 'Interpreter','latex', ...
@@ -498,14 +501,23 @@ function make_frf_overlay_matrix(G, f, Y_grid, out_names, in_names, f_low, f_hig
             title(sprintf('%s / %s', out_names{iy}, in_names{iu}), 'Interpreter','latex')
             if iu == 1; ylabel('Magnitude (dB re m/N)'); end
             if iy == 3; xlabel('Frequency (Hz)'); end
-            % Legend in top-right tile only
-            if iy == 1 && iu == 3
-                legend('Location','best', 'FontSize', 7)
-            end
+            if iy == 1 && iu == 3; legend('Location','best', 'FontSize', 7); end
         end
     end
-    sgtitle('FRF matrix -- all Y positions')
+    sgtitle('FRF matrix - all Y positions')
     save_plot(fig, plot_dir, 'frf_matrix_overlay');
+end
+
+function add_feature_markers(f, mag_dB, f_feat, marker, color)
+    % Plot up/down triangle markers at feature frequencies (resonances or anti-resonances).
+    % marker = '^' for resonances, 'v' for anti-resonances.
+    if isempty(f_feat); return; end
+    for ip = 1:numel(f_feat)
+        [~, ki] = min(abs(f - f_feat(ip)));
+        plot(f(ki), mag_dB(ki), marker, 'MarkerSize', 6, ...
+             'MarkerFaceColor', color, 'MarkerEdgeColor', 'none', ...
+             'HandleVisibility', 'off');
+    end
 end
 
 function make_condition_plot(cond_U, f, Y_grid, plot_dir)
@@ -520,7 +532,7 @@ function make_condition_plot(cond_U, f, Y_grid, plot_dir)
     set(gca, 'XScale', 'log', 'YScale', 'log')
     grid on; xlim([f(1) f(end)])
     xlabel('Frequency (Hz)')
-    ylabel('Condition number of U_{all}')
+    ylabel('Condition number')
     title('Excitation input matrix condition number')
     legend('Location','best')
     save_plot(fig, plot_dir, 'input_condition_number');
