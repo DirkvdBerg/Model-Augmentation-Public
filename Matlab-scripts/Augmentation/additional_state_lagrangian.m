@@ -22,7 +22,7 @@ syms mb mh m1 m2 Jb Jh Lb d real
 syms cg1 cg2 cy cb1 cb2 kb1 kb2 real
 
 % New parameters for hidden mass
-syms ma ka ca real
+syms ma ka ca L0 real
 
 % Forces
 syms F1 F2 Fy real
@@ -48,10 +48,14 @@ Lb_n  = 0.725;   % Length of the moving cross-arm (m)
 d_n   = 0.1;     % Distance between cross-arm and payload (m)
 Y_n   = 0.3;     % Payload Y position for verification (m)
 
-% Hidden mass parameters - chosen for visibility (tune later)
-ma_n  = 1.0;     % Hidden mass (kg) - ~10% of mh
-ka_n  = 500;     % Spring stiffness (N/m) - resonance ~3.6 Hz
-ca_n  = 2;       % Damping (Ns/m)
+% Hidden mass parameters (Option A: total payload splits into rigid + MSD)
+mh_total_n = mh_n;                   % total payload used in baseline (10.1 kg)
+ma_frac    = 0.10;
+ma_n       = ma_frac * mh_total_n;   % 1.01 kg — hidden MSD mass
+mh_rigid_n = mh_total_n - ma_n;      % 9.09 kg — rigid payload for extended model
+L0_n       = 0.05;                   % equilibrium offset of ma from mh [m]
+ka_n       = 500;                    % spring stiffness (N/m) — resonance ~3.6 Hz
+ca_n       = 2;                      % damping (Ns/m)
 
 %% -----------------------------------------------------------------------
 %% STEP 1: GARCIA BASELINE ENERGIES (verified)
@@ -114,7 +118,7 @@ fprintf('Residual C (should be ~0): max abs = %.2e\n', max(abs(C_garcia_num - C_
 % delta_a is the RELATIVE displacement from mh - same geometry as mh
 % absolute x-velocity: dX - (Y+delta_a)*dTheta
 % absolute y-velocity: dY + ddelta_a - d*dTheta
-T_ma = 0.5*ma*((dX - (Y+delta_a)*dTheta)^2 + (dY + vdelta_a - d*dTheta)^2);
+T_ma = 0.5*ma*((dX - (Y+L0+delta_a)*dTheta)^2 + (dY + vdelta_a - d*dTheta)^2);
 
 % Spring between mh and ma - only relative displacement delta_a
 V_spring = 0.5*ka*delta_a^2;
