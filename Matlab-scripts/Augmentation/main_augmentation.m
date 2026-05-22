@@ -1,5 +1,6 @@
 showfig = false; 
 addpath(genpath(pwd))
+addpath(genpath(fullfile(fileparts(mfilename('fullpath')), '..', '..', 'kamtin-fp-model')))
 set(0,"DefaultTextInterpreter", "latex")
 
 freqsHz = logspace(-1, 3, 1000);
@@ -34,6 +35,14 @@ kb2 = 1987.5; % Stiffness of elastic joint 2 (N.m/rad)
 Lb = 0.725;   % Length of the moving cross-arm (m)
 Lh = 0.25;    % Length of the payload (m)
 d = 0.1;      % Distance between cross-arm and payload (m)
+
+% Hidden MSD parameters (Option A: mh_total = mh_rigid + ma, conserved)
+ma_frac  = 0.10;
+ma       = ma_frac * mh;    % 1.01 kg  hidden MSD mass
+mh_rigid = mh - ma;         % 9.09 kg  rigid part of payload for Simscape model
+L0       = 0.10;            % equilibrium offset of ma in +Y direction (m)
+ka       = 500;             % MSD spring stiffness (N/m)
+ca       = 2;               % MSD damper coefficient (Ns/m)
 
 % Decoupled Coordinates
 % X = (X1 + X2) / 2;
@@ -207,7 +216,7 @@ xlim([freqsHz(1) freqsHz(end)]);
 end
 
 %% Simulation
-mdl = 'gantry_2025a';
+mdl = 'gantry_additional_state_2025a';
 
 f = 0*randn(nt, n); 
 r = repmat(pvajs(:, 1), 1, 3); 
@@ -232,18 +241,30 @@ simout = lsim(T, [r,f]-[zeros(nt, 2), Y*ones(nt, 1), zeros(nt, 3)], t);
 q3 = simout(:, 1:3); 
 q3(:, 3) = q3(:, 3) + Y; 
 
-figure(4); 
+figure(4);
 nexttile(1)
 plot(t, q)
 title('Simscape result')
 nexttile(2)
 plot(t, q-q1)
-title('residual eom without coriolis-centripetal vs simscape')
-nexttile(3)
-plot(t, q-q2)
-title('residual eom with coriolis-centripetal vs simscape')
-nexttile(4)
-plot(t, q-q3)
-title('residual lsim vs simscape')
+% title('residual eom without coriolis-centripetal vs simscape')
+% nexttile(3)
+% plot(t, q-q2)
+% title('residual eom with coriolis-centripetal vs simscape')
+% nexttile(4)
+% plot(t, q-q3)
+% title('residual lsim vs simscape')
 
 legend('x1', 'x2', 'y', "fontsize", 12, 'location', 'northoutside')
+
+%% Extended model verification — RMSE vs Simscape
+% q_ext expected as (nt x 4): [X, Theta, Y, delta_a] from extended ODE block
+% q expected as (nt x 3): [x1, x2, y] from Simscape
+if exist('q_ext', 'var') && exist('q', 'var')
+    rmse = @(a, b) sqrt(mean((a - b).^2));
+    fprintf('\n=== Extended model RMSE vs Simscape ===\n')
+    fprintf('RMSE X       : %.4e m\n',   rmse(q_ext(:,1), q(:,1)))
+    fprintf('RMSE Theta   : %.4e rad\n', rmse(q_ext(:,2), q(:,2)))
+    fprintf('RMSE Y       : %.4e m\n',   rmse(q_ext(:,3), q(:,3)))
+    fprintf('RMSE delta_a : %.4e m\n',   rmse(q_ext(:,4), q_delta_a))
+end

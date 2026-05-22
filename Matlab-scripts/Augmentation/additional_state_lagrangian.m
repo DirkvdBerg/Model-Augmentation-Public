@@ -53,7 +53,7 @@ mh_total_n = mh_n;                   % total payload used in baseline (10.1 kg)
 ma_frac    = 0.10;
 ma_n       = ma_frac * mh_total_n;   % 1.01 kg — hidden MSD mass
 mh_rigid_n = mh_total_n - ma_n;      % 9.09 kg — rigid payload for extended model
-L0_n       = 0.05;                   % equilibrium offset of ma from mh [m]
+L0_n       = 0.10;                   % equilibrium offset of ma from mh [m]
 ka_n       = 500;                    % spring stiffness (N/m) — resonance ~3.6 Hz
 ca_n       = 2;                      % damping (Ns/m)
 
