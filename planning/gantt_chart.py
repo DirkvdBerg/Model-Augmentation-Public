@@ -178,31 +178,43 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40):
     ax.grid(True, alpha=0.3, axis="x")
     ax.set_xlabel("")
 
-    # ---- Month-name band below week ticks ----------------------------------
-    # Find where each calendar month starts (in week-number space)
-    month_spans = {}
-    prev_month = None
-    for w in range(0, total_weeks + 1):
-        d = PROJECT_START + timedelta(weeks=w)
-        label = d.strftime("%b '%y")
-        if label != prev_month:
-            if prev_month is not None:
-                month_spans[prev_month]["end"] = w
-            month_spans[label] = {"start": w, "end": total_weeks}
-            prev_month = label
-    if prev_month:
-        month_spans[prev_month]["end"] = total_weeks
+    # ---- Month band (alternating colors) below week ticks ------------------
+    # Compute exact fractional week for the 1st of each calendar month
+    BAND_COLORS = ["#E8F4FD", "#F0F0F0"]  # alternating soft blue / light gray
+    BAND_Y0 = -0.13  # bottom of band in axes-fraction coords
+    BAND_Y1 = -0.06  # top of band (just below the tick labels)
+
+    project_end = PROJECT_START + timedelta(weeks=total_weeks)
+
+    # Collect (week_pos, label) for every month boundary within the range
+    month_firsts = [(0.0, PROJECT_START.strftime("%b"))]  # project start
+    m, y = PROJECT_START.month % 12 + 1, PROJECT_START.year + (1 if PROJECT_START.month == 12 else 0)
+    cursor = date(y, m, 1)
+    while cursor <= project_end:
+        wp = (cursor - PROJECT_START).days / 7.0
+        month_firsts.append((wp, cursor.strftime("%b")))
+        next_m = cursor.month % 12 + 1
+        next_y = cursor.year + (1 if cursor.month == 12 else 0)
+        cursor = date(next_y, next_m, 1)
+    month_firsts.append((total_weeks, None))  # sentinel
 
     xform = ax.get_xaxis_transform()  # x: data coords, y: axes fraction
-    for month_label, span in month_spans.items():
-        center = (span["start"] + span["end"]) / 2
-        # Thin separator at month boundary
-        if span["start"] > 0:
-            ax.axvline(x=span["start"], color="#bbbbbb", linewidth=0.8,
-                       linestyle="-", alpha=0.7, zorder=1)
-        ax.text(center, -0.09, month_label,
-                ha="center", va="top", fontsize=8, color="#444444",
-                transform=xform)
+    import matplotlib.patches as mpatches
+    for i, (x0, label) in enumerate(month_firsts[:-1]):
+        x1 = month_firsts[i + 1][0]
+        color = BAND_COLORS[i % 2]
+        # Filled rectangle in axes-fraction y space
+        rect = mpatches.FancyBboxPatch(
+            (x0, BAND_Y0), x1 - x0, BAND_Y1 - BAND_Y0,
+            boxstyle="square,pad=0",
+            facecolor=color, edgecolor="none",
+            transform=xform, clip_on=False, zorder=3,
+        )
+        ax.add_patch(rect)
+        # Month label centered in the band
+        ax.text((x0 + x1) / 2, (BAND_Y0 + BAND_Y1) / 2, label,
+                ha="center", va="center", fontsize=8,
+                color="#444444", transform=xform, zorder=4, clip_on=False)
 
     ax.set_title(title, fontsize=16, fontweight="bold", pad=20)
 
@@ -226,7 +238,7 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40):
             ax.text(-1.2, my, label, ha="right", va="center",
                     fontweight="bold", fontsize=9, rotation=20, color=c)
 
-    plt.tight_layout(rect=[0, 0.06, 1, 1])  # reserve bottom space for month labels
+    plt.tight_layout(rect=[0, 0.04, 1, 1])  # reserve bottom space for month band
     return fig, ax
 
 
