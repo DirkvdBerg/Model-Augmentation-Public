@@ -15,7 +15,7 @@ close all
 clc
 
 addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
-addpath(genpath(fullfile(fileparts(mfilename('fullpath')), 'Augmentation')))
+addpath(genpath(fileparts(mfilename('fullpath'))))
 
 %% Configuration
 
