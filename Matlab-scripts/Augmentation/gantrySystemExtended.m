@@ -14,7 +14,7 @@ function dxdt = gantrySystemExtended(u, x, m1, m2, mb, mh, Lb, Jb, Jh, d, ...
 %   ca        -- MSD damper coefficient (Ns/m)
 %   L0        -- equilibrium offset of ma from mh in +Y direction (m)
 %
-% Mass split convention (Option A):
+% Mass split convention:
 %   mh_total = mh + ma  (conserved w.r.t. baseline)
 %   Baseline gantrySystem uses mh_total as rigid mass.
 %   This function uses mh (rigid) + ma (MSD), caller must pass mh_rigid.
