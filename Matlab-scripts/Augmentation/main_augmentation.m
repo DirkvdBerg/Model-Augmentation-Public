@@ -36,14 +36,14 @@ Lb = 0.725;   % Length of the moving cross-arm (m)
 Lh = 0.25;    % Length of the payload (m)
 d = 0.1;      % Distance between cross-arm and payload (m)
 
-% Hidden MSD parameters (Option A: mh_total = mh_rigid + ma, conserved)
+% Hidden MSD parameters (mh_total = mh_rigid + ma, conserved)
 ma_frac  = 0.10;
 ma       = ma_frac * mh;    % 1.01 kg  hidden MSD mass
 mh_rigid = mh - ma;         % 9.09 kg  rigid part of payload for Simscape model
 L0       = 0.10;            % equilibrium offset of ma in +Y direction (m)
 fa       = 400;                          % target MSD natural frequency (Hz)
-ka       = ma * (2*pi*fa)^2;            % MSD spring stiffness (N/m) — f_a = 400 Hz
-zeta_a   = 0.05;                        % damping ratio — metal structures with joints (0.03-0.07)
+ka       = ma * (2*pi*fa)^2;            % MSD spring stiffness (N/m) - f_a = 400 Hz
+zeta_a   = 0.05;                        % damping ratio - metal structures with joints (0.03-0.07)
 ca       = 2 * zeta_a * sqrt(ka * ma); % MSD damper coefficient (Ns/m)
 
 % Decoupled Coordinates
@@ -224,8 +224,8 @@ f = 0*randn(nt, n);
 r = repmat(pvajs(:, 1), 1, 3); 
 r(:, 3) = -r(:, 3) + Y; 
 
-mh_original = mh;     % 10.1 kg — total rigid mass for baseline block (q1)
-mh = mh_rigid;        % 9.09 kg — rigid part only for extended block (q_aug)
+mh_original = mh;     % 10.1 kg - total rigid mass for baseline block (q1)
+mh = mh_rigid;        % 9.09 kg - rigid part only for extended block (q_aug)
 
 sim(mdl);
 
@@ -246,23 +246,23 @@ simout = lsim(T, [r,f]-[zeros(nt, 2), Y*ones(nt, 1), zeros(nt, 3)], t);
 q3 = simout(:, 1:3); 
 q3(:, 3) = q3(:, 3) + Y; 
 
-figure(4);
-nexttile(1)
-plot(t, q)
-title('Simscape result')
-nexttile(2)
-plot(t, q-q_aug)
-% title('residual eom without coriolis-centripetal vs simscape')
-% nexttile(3)
-% plot(t, q-q2)
-% title('residual eom with coriolis-centripetal vs simscape')
-% nexttile(4)
-% plot(t, q-q3)
-% title('residual lsim vs simscape')
+figure(4); clf
+tiledlayout(2,1)
+nexttile
+plot(t, q); grid on
+title('Simscape positions')
+xlabel('Time [s]')
+ylabel('Position [m]')
+legend('$X_1$', '$X_2$', '$Y$', 'Interpreter', 'latex', 'fontsize', 12, 'location', 'northoutside')
 
-legend('x1', 'x2', 'y', "fontsize", 12, 'location', 'northoutside')
+nexttile
+plot(t, q-q_aug); grid on
+title('Residual: Simscape $-$ Extended ODE', 'Interpreter', 'latex')
+xlabel('Time [s]')
+ylabel('Residual [m]')
+legend('$X_1$', '$X_2$', '$Y$', 'Interpreter', 'latex', 'fontsize', 12, 'location', 'northoutside')
 
-%% Extended model verification — RMSE vs Simscape
+%% Extended model verification - RMSE vs Simscape
 rmse = @(a, b) sqrt(mean((a - b).^2));
 fprintf('\n=== Extended model RMSE vs Simscape ===\n')
 fprintf('RMSE X1 : %.4e m\n',   rmse(q_aug(:,1), q(:,1)))
@@ -274,22 +274,23 @@ fprintf('RMSE X1 : %.4e m\n',   rmse(q1(:,1), q(:,1)))
 fprintf('RMSE X2 : %.4e m\n',   rmse(q1(:,2), q(:,2)))
 fprintf('RMSE Y  : %.4e m\n',   rmse(q1(:,3), q(:,3)))
 
-%% delta_a validation — Option 1
+%% delta_a validation
 fprintf('\n=== delta_a validation (extended ODE vs Simscape) ===\n')
 fprintf('RMSE delta_a : %.4e m\n', rmse(delta_a_ode, delta_a))
 
 figure(5); clf
 tiledlayout(2,1)
 nexttile
-plot(t, delta_a, 'b', t, delta_a_ode, 'r--')
-ylabel('delta\_a [m]')
+plot(t, delta_a, 'b', t, delta_a_ode, 'r--'); grid on
+title('Hidden mass relative displacement $\delta_a$')
+xlabel('Time [s]')
+ylabel('$\delta_a$ [m]')
 legend('Simscape', 'Extended ODE', 'location', 'northoutside')
-title('Hidden mass displacement')
-grid on
 
 nexttile
-plot(t, delta_a_ode - delta_a)
-ylabel('residual [m]')
+plot(t, delta_a_ode - delta_a); grid on
+title('Residual: Extended ODE - Simscape')
 xlabel('Time [s]')
-title('Extended ODE - Simscape')
-grid on
+ylabel('Residual [m]')
+
+sgtitle(sprintf('$\\delta_a$ validation, $f_a = %g$ Hz, $\\zeta = %.2f$', fa, zeta_a), 'Interpreter', 'latex')

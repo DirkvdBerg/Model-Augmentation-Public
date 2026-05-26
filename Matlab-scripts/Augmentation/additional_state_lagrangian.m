@@ -1,6 +1,6 @@
 %% garcia_extended_lagrangian.m
 % Step 1: Derives Garcia M, C, K from Lagrangian and verifies against
-%         supervisor's matrices.
+%         Jasper's matrices.
 % Step 2: Extends with hidden mass ma at relative displacement delta_a
 %         from mh, connected via spring ka and damper ca.
 
@@ -48,21 +48,20 @@ Lb_n  = 0.725;   % Length of the moving cross-arm (m)
 d_n   = 0.1;     % Distance between cross-arm and payload (m)
 Y_n   = 0.3;     % Payload Y position for verification (m)
 
-% Hidden mass parameters (Option A: total payload splits into rigid + MSD)
+% Hidden mass parameters (total payload splits into rigid + MSD)
 mh_total_n = mh_n;                   % total payload used in baseline (10.1 kg)
 ma_frac    = 0.10;
-ma_n       = ma_frac * mh_total_n;   % 1.01 kg — hidden MSD mass
-mh_rigid_n = mh_total_n - ma_n;      % 9.09 kg — rigid payload for extended model
+ma_n       = ma_frac * mh_total_n;   % 1.01 kg - hidden MSD mass
+mh_rigid_n = mh_total_n - ma_n;      % 9.09 kg - rigid payload for extended model
 L0_n       = 0.10;                   % equilibrium offset of ma from mh [m]
-ka_n       = 500;                    % spring stiffness (N/m) — resonance ~3.6 Hz
+ka_n       = 500;                    % spring stiffness (N/m)
 ca_n       = 2;                      % damping (Ns/m)
 
 %% -----------------------------------------------------------------------
-%% STEP 1: GARCIA BASELINE ENERGIES (verified)
+%% STEP 1: GARCIA BASELINE ENERGIES
 %% -----------------------------------------------------------------------
 
-% Kinetic energy - Garcia equation (3), small angle applied
-% cos(Theta)=1, sin(Theta)=0 per Garcia Section 2.3
+% Kinetic energy
 T_mb = 0.5*mb*dX^2 + 0.5*Jb*dTheta^2;
 T_m1 = 0.5*m1*(dX + Lb/2*dTheta)^2;
 T_m2 = 0.5*m2*(dX - Lb/2*dTheta)^2;
@@ -70,16 +69,16 @@ T_mh = 0.5*mh*((dX - Y*dTheta)^2 + (dY - d*dTheta)^2) + 0.5*Jh*dTheta^2;
 
 T_garcia = expand(T_mb + T_m1 + T_m2 + T_mh);
 
-% Potential energy - Garcia equation (4)
+% Potential energy
 V_garcia = 0.5*(kb1+kb2)*Theta^2;
 
-% Rayleigh dissipation - Garcia equation (5), small angle applied
+% Rayleigh dissipation
 D_garcia = 0.5*(cg1+cg2)*dX^2 ...
          + (cg1-cg2)*(Lb/2)*dX*dTheta ...
          + 0.5*(cb1+cb2+(cg1+cg2)*Lb^2/4)*dTheta^2 ...
          + 0.5*cy*dY^2;
 
-%% Verify Garcia baseline against supervisor's matrices
+%% Verify Garcia baseline against Jasper's matrices
 dq3 = [dX; dTheta; dY];
 q3  = [X;  Theta;  Y];
 
@@ -87,7 +86,7 @@ M_garcia_sym = simplify(hessian(T_garcia, dq3));
 K_garcia_sym = simplify(hessian(V_garcia, q3));
 C_garcia_sym = simplify(hessian(D_garcia, dq3));
 
-% Supervisor's matrices (exact copy)
+% Jasper's matrices
 M_supervisor = [ ...
     m1_n+m2_n+mb_n+mh_n, (m1_n-m2_n)*Lb_n/2-mh_n*Y_n, 0; ...
     (m1_n-m2_n)*Lb_n/2-mh_n*Y_n, Jb_n+Jh_n+(m1_n+m2_n)*Lb_n^2/4+mh_n*d_n^2+mh_n*Y_n^2, -mh_n*d_n; ...
