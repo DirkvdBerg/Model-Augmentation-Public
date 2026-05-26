@@ -11,7 +11,7 @@ Usage:
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from datetime import date
+from datetime import date, timedelta
 import numpy as np
 import argparse
 import sys
@@ -149,14 +149,15 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40):
                     ha="center", va="top", fontsize=9, fontweight="bold",
                     color="#333333", zorder=20)
 
-    # ---- Today line --------------------------------------------------------
-    today_week = weeks_since_start()
-    if 0 <= today_week <= total_weeks:
-        ax.axvline(x=today_week, color="red", linewidth=2,
-                   linestyle="--", zorder=15)
-        ax.text(today_week + 0.2, -0.3, "Today",
+    # ---- This week band --------------------------------------------------------
+    current_week_float = weeks_since_start()
+    this_week = int(current_week_float)  # 0-based index; week number = this_week + 1
+    if 0 <= this_week <= total_weeks:
+        ax.axvspan(this_week, min(this_week + 1, total_weeks),
+                   color="red", alpha=0.12, zorder=5)
+        ax.text(this_week + 0.5, -0.3, f"Week {this_week + 1}",
                 color="red", fontsize=9, fontweight="bold",
-                va="top", zorder=20)
+                ha="center", va="top", zorder=20)
 
     # ---- Axes & styling ----------------------------------------------------
     ax.set_yticks([])
@@ -168,10 +169,41 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40):
         spine.set_visible(False)
 
     ax.set_xlim(-4, total_weeks + 1)
-    ax.set_xticks(range(0, total_weeks + 1))
-    ax.set_xticklabels([str(w) for w in range(0, total_weeks + 1)], fontsize=8)
+
+    # Week-number ticks — label every 2 weeks to keep it readable
+    week_ticks = list(range(0, total_weeks + 1))
+    week_labels = [str(w) if w % 2 == 0 else "" for w in week_ticks]
+    ax.set_xticks(week_ticks)
+    ax.set_xticklabels(week_labels, fontsize=7)
     ax.grid(True, alpha=0.3, axis="x")
-    ax.set_xlabel("Week")
+    ax.set_xlabel("")
+
+    # ---- Month-name band below week ticks ----------------------------------
+    # Find where each calendar month starts (in week-number space)
+    month_spans = {}
+    prev_month = None
+    for w in range(0, total_weeks + 1):
+        d = PROJECT_START + timedelta(weeks=w)
+        label = d.strftime("%b '%y")
+        if label != prev_month:
+            if prev_month is not None:
+                month_spans[prev_month]["end"] = w
+            month_spans[label] = {"start": w, "end": total_weeks}
+            prev_month = label
+    if prev_month:
+        month_spans[prev_month]["end"] = total_weeks
+
+    xform = ax.get_xaxis_transform()  # x: data coords, y: axes fraction
+    for month_label, span in month_spans.items():
+        center = (span["start"] + span["end"]) / 2
+        # Thin separator at month boundary
+        if span["start"] > 0:
+            ax.axvline(x=span["start"], color="#bbbbbb", linewidth=0.8,
+                       linestyle="-", alpha=0.7, zorder=1)
+        ax.text(center, -0.09, month_label,
+                ha="center", va="top", fontsize=8, color="#444444",
+                transform=xform)
+
     ax.set_title(title, fontsize=16, fontweight="bold", pad=20)
 
     # ---- Work-package curly braces -----------------------------------------
@@ -194,7 +226,7 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40):
             ax.text(-1.2, my, label, ha="right", va="center",
                     fontweight="bold", fontsize=9, rotation=20, color=c)
 
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0.06, 1, 1])  # reserve bottom space for month labels
     return fig, ax
 
 
