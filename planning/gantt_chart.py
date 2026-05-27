@@ -155,7 +155,7 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40):
     if 0 <= this_week <= total_weeks:
         ax.axvspan(this_week, min(this_week + 1, total_weeks),
                    color="red", alpha=0.12, zorder=5)
-        ax.text(this_week + 0.5, -0.3, f"Week {this_week + 1}",
+        ax.text(this_week + 0.5, 0, f"Week {this_week + 1}",
                 color="red", fontsize=9, fontweight="bold",
                 ha="center", va="top", zorder=20)
 
