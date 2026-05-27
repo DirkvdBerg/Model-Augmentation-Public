@@ -157,7 +157,7 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40, first_
     if 0 <= this_week <= total_weeks:
         ax.axvspan(this_week, min(this_week + 1, total_weeks),
                    color="red", alpha=0.12, zorder=5)
-        ax.text(this_week + 0.5, 0, f"Week {this_week + 1}",
+        ax.text(this_week + 0.5, 0, "This week",
                 color="red", fontsize=9, fontweight="bold",
                 ha="center", va="top", zorder=20)
 
@@ -174,7 +174,7 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40, first_
 
     # Week-number ticks — label every 2 weeks to keep it readable
     week_ticks = list(range(x_min, x_max + 1))
-    week_labels = [str(w - x_min + first_week) if (w - x_min + first_week) % 2 == 0 else "" for w in week_ticks]
+    week_labels = [str(w - x_min + first_week) for w in week_ticks]
     ax.set_xticks(week_ticks)
     ax.set_xticklabels(week_labels, fontsize=7)
     ax.grid(True, alpha=0.3, axis="x")
@@ -230,17 +230,13 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40, first_
     for wp, (sy, ey) in wp_y_ranges.items():
         c = wp_colors[wp]
         label = format_wp(wp)
-        bx = -0.8
-        if sy == ey:
-            ax.text(-1.2, sy, label, ha="right", va="center",
-                    fontweight="bold", fontsize=9, color=c)
-        else:
-            my = (sy + ey) / 2
-            ax.plot([bx, bx + 0.2], [sy - 0.4, sy - 0.4], "k-", linewidth=1.5)
-            ax.plot([bx, bx],       [sy - 0.4, ey + 0.4], "k-", linewidth=1.5)
-            ax.plot([bx, bx + 0.2], [ey + 0.4, ey + 0.4], "k-", linewidth=1.5)
-            ax.text(-1.2, my, label, ha="right", va="center",
-                    fontweight="bold", fontsize=9, rotation=20, color=c)
+        bx = x_min - 0.8
+        my = (sy + ey) / 2
+        ax.plot([bx, bx + 0.2], [sy - 0.4, sy - 0.4], "k-", linewidth=1.5)
+        ax.plot([bx, bx],       [sy - 0.4, ey + 0.4], "k-", linewidth=1.5)
+        ax.plot([bx, bx + 0.2], [ey + 0.4, ey + 0.4], "k-", linewidth=1.5)
+        ax.text(x_min - 1.2, my, label, ha="right", va="center",
+                fontweight="bold", fontsize=9, rotation=20, color=c)
 
     plt.tight_layout(rect=[0, 0.04, 1, 1])  # reserve bottom space for month band
     return fig, ax
@@ -314,7 +310,7 @@ def parse_args():
     p.add_argument("-o", "--output", help="Save figure to file (e.g. chart.png)")
     p.add_argument("--dpi", type=int, default=300)
     p.add_argument("--weeks", type=int, default=40, help="Total weeks on x-axis")
-    p.add_argument("--first-week", type=int, default=1, help="Project week number of the first data week")
+    p.add_argument("--first-week", type=int, default=8, help="Project week number of the first data week")
     p.add_argument("--no-display", action="store_true")
     return p.parse_args()
 
@@ -331,7 +327,7 @@ if __name__ == "__main__":
         elif args.yaml:
             data = load_from_yaml(args.yaml)
         else:
-            default_yaml = os.path.join(os.path.dirname(__file__), "sample_data.yaml")
+            default_yaml = os.path.join(os.path.dirname(__file__), "graduation_sprint.yaml")
             if YAML_AVAILABLE and os.path.exists(default_yaml):
                 data = load_from_yaml(default_yaml)
             else:
