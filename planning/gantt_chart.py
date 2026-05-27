@@ -51,7 +51,7 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40, first_
     fig, ax = plt.subplots(figsize=(18, 10))
 
     work_packages = df["Work Package"].unique()
-    colors = plt.cm.Set3(np.linspace(0, 1, len(work_packages)))
+    colors = plt.cm.tab10(np.linspace(0, 1, len(work_packages)))
     wp_colors = dict(zip(work_packages, colors))
 
     y_pos = 0
