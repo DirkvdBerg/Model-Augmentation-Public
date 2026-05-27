@@ -79,9 +79,7 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40, first_
                 ax.text(
                     bar_center_x, y_pos, task["Task"],
                     ha="center", va="center", fontsize=8, fontweight="bold",
-                    color="black",
-                    bbox=dict(boxstyle="round,pad=0.2", facecolor="white",
-                              alpha=0.8, edgecolor="none"),
+                    color="white",
                 )
             else:
                 ax.text(
