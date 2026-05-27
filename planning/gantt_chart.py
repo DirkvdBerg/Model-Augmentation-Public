@@ -39,9 +39,11 @@ def weeks_since_start(d=None):
     return (d - PROJECT_START).days / 7.0
 
 
-def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40):
+def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40, first_week=1):
     df = pd.DataFrame(data)
     df["Duration"] = df["End"] - df["Start"]
+    x_min = int(df["Start"].min())
+    x_max = int(df["End"].max())
 
     tasks = df[df["Type"] == "Task"].copy()
     milestones = df[df["Type"] == "Milestone"].copy()
@@ -168,11 +170,11 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40):
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    ax.set_xlim(-4, total_weeks + 1)
+    ax.set_xlim(x_min - 4, x_max + 1)
 
     # Week-number ticks — label every 2 weeks to keep it readable
-    week_ticks = list(range(0, total_weeks + 1))
-    week_labels = [str(w) if w % 2 == 0 else "" for w in week_ticks]
+    week_ticks = list(range(x_min, x_max + 1))
+    week_labels = [str(w - x_min + first_week) if (w - x_min + first_week) % 2 == 0 else "" for w in week_ticks]
     ax.set_xticks(week_ticks)
     ax.set_xticklabels(week_labels, fontsize=7)
     ax.grid(True, alpha=0.3, axis="x")
@@ -184,19 +186,21 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40):
     BAND_Y0 = -0.13  # bottom of band in axes-fraction coords
     BAND_Y1 = -0.06  # top of band (just below the tick labels)
 
-    project_end = PROJECT_START + timedelta(weeks=total_weeks)
+    view_start_date = PROJECT_START + timedelta(weeks=x_min)
+    view_end_date   = PROJECT_START + timedelta(weeks=x_max)
 
-    # Collect (week_pos, label) for every month boundary within the range
-    month_firsts = [(0.0, PROJECT_START.strftime("%b"))]  # project start
-    m, y = PROJECT_START.month % 12 + 1, PROJECT_START.year + (1 if PROJECT_START.month == 12 else 0)
-    cursor = date(y, m, 1)
-    while cursor <= project_end:
+    # Collect (week_pos, label) for every month boundary within the view range
+    month_firsts = [(float(x_min), view_start_date.strftime("%b"))]
+    cur_m = view_start_date.month % 12 + 1
+    cur_y = view_start_date.year + (1 if view_start_date.month == 12 else 0)
+    cursor = date(cur_y, cur_m, 1)
+    while cursor <= view_end_date:
         wp = (cursor - PROJECT_START).days / 7.0
         month_firsts.append((wp, cursor.strftime("%b")))
         next_m = cursor.month % 12 + 1
         next_y = cursor.year + (1 if cursor.month == 12 else 0)
         cursor = date(next_y, next_m, 1)
-    month_firsts.append((total_weeks, None))  # sentinel
+    month_firsts.append((float(x_max), None))  # sentinel
 
     xform = ax.get_xaxis_transform()  # x: data coords, y: axes fraction
     import matplotlib.patches as mpatches
@@ -310,6 +314,7 @@ def parse_args():
     p.add_argument("-o", "--output", help="Save figure to file (e.g. chart.png)")
     p.add_argument("--dpi", type=int, default=300)
     p.add_argument("--weeks", type=int, default=40, help="Total weeks on x-axis")
+    p.add_argument("--first-week", type=int, default=1, help="Project week number of the first data week")
     p.add_argument("--no-display", action="store_true")
     return p.parse_args()
 
@@ -334,7 +339,7 @@ if __name__ == "__main__":
                 data = sample_data
 
         validate_data(data)
-        fig, ax = create_gantt_chart(data, title=args.title, total_weeks=args.weeks)
+        fig, ax = create_gantt_chart(data, title=args.title, total_weeks=args.weeks, first_week=args.first_week)
 
         if args.output:
             plt.savefig(args.output, dpi=args.dpi, bbox_inches="tight")
