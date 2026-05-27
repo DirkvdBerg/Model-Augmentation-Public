@@ -48,7 +48,7 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40, first_
     tasks = df[df["Type"] == "Task"].copy()
     milestones = df[df["Type"] == "Milestone"].copy()
 
-    fig, ax = plt.subplots(figsize=(18, 10))
+    fig, ax = plt.subplots(figsize=(32, 10))
 
     work_packages = df["Work Package"].unique()
     colors = plt.cm.tab10(np.linspace(0, 1, len(work_packages)))
@@ -56,6 +56,7 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40, first_
 
     y_pos = 0
     wp_y_ranges = {}
+    bar_texts = []  # (text_obj, x_start, x_end)
 
     for wp in work_packages:
         wp_tasks = tasks[tasks["Work Package"] == wp]
@@ -76,11 +77,12 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40, first_
             )
             bar_center_x = task["Start"] + task["Duration"] / 2
             if task["Duration"] >= 1.0:
-                ax.text(
+                txt = ax.text(
                     bar_center_x, y_pos, task["Task"],
-                    ha="center", va="center", fontsize=8, fontweight="bold",
+                    ha="center", va="center", fontsize=9, fontweight="bold",
                     color="white",
                 )
+                bar_texts.append((txt, task["Start"], task["End"]))
             else:
                 ax.text(
                     task["Start"] + task["Duration"] + 0.2, y_pos, task["Task"],
@@ -235,6 +237,15 @@ def create_gantt_chart(data, title="Project Gantt Chart", total_weeks=40, first_
         ax.plot([bx, bx + 0.2], [ey + 0.4, ey + 0.4], "k-", linewidth=1.5)
         ax.text(x_min - 1.2, my, label, ha="right", va="center",
                 fontweight="bold", fontsize=9, rotation=20, color=c)
+
+    # ---- Shrink text to fit bar width ----------------------------------------
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    for txt, x0, x1 in bar_texts:
+        tb = txt.get_window_extent(renderer=renderer)
+        bar_px = ax.transData.transform((x1, 0))[0] - ax.transData.transform((x0, 0))[0]
+        if tb.width > bar_px * 0.9:
+            txt.set_fontsize(txt.get_fontsize() * (bar_px * 0.9) / tb.width)
 
     plt.tight_layout(rect=[0, 0.04, 1, 1])  # reserve bottom space for month band
     return fig, ax
