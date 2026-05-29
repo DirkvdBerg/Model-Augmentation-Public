@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from deepSI import system_data
 
-def to_tensor(input):
+def to_tensor(input) -> torch.Tensor:
     if isinstance(input, type(None)):
         return None
     if isinstance(input, torch.Tensor):
@@ -154,3 +154,11 @@ def selection_matrix(ix, n):
     E = np.zeros((len(ix), n))
     E[np.arange(len(ix)), ix] = 1
     return torch.Tensor(E)
+
+def compute_noisy_y_from_SNR(y_true, SNR):
+    P_true = np.mean(y_true**2)
+    E = np.power(10, SNR/10)
+    P_noise = P_true / (E - 1)
+    sigma_noise = P_noise**0.5
+    noise = np.random.normal(0, sigma_noise, y_true.shape)
+    return y_true + noise, sigma_noise

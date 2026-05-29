@@ -5,7 +5,7 @@ import matplotlib.pylab as plt
 import numpy as np
 from scipy.io import loadmat, savemat
 
-from model_augmentation.systems.mass_spring_damper import Msd_ndof, Msd_ndof_lpf_output# Msd_ndof_lpf
+from model_augmentation.systems.mass_spring_damper import Msd_ndof, Msd_ndof_lpf
 from model_augmentation.utils.utils import plot_fft_freq, plot_sys_data, determine_yes_no_query_binary_output
 
 ## ------------- Define system -----------------

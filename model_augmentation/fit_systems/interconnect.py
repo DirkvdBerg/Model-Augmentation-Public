@@ -1,12 +1,20 @@
-from deepSI.fit_systems.encoders import SS_encoder_general, default_encoder_net
+from deepSI.fit_systems.encoders import SS_encoder_general
 
 from torch import nn, Tensor
 import torch
 import numpy as np
 import warnings
+import time
+import itertools
+from tqdm.auto import tqdm
+from torch.utils.data import Dataset, DataLoader
+from copy import deepcopy
 
-from model_augmentation.utils.utils import *
-from model_augmentation.fit_systems.blocks import *
+from deepSI.fit_systems.fit_system import print_array_byte_size, My_Simple_DataLoader, Tictoctimer, loop_dataset
+
+from model_augmentation.utils.utils import detect_algebraic_loop
+from model_augmentation.fit_systems.blocks import Block, Parameterized_Linear_Output_Block, Parameterized_MSD_State_Block, Parameterized_Linear_State_Block
+from model_augmentation.utils.deepSI_corrections import fixed_System_data_norm
 
 class Interconnect(nn.Module):
     def __init__(self, nx, nu, ny, debugging=False, *args, **kwargs) -> None:
@@ -87,8 +95,8 @@ class Interconnect(nn.Module):
                 self.saved_output_signals = concat_output_signals
                 self.first_step_eval = False
             else:
-                self.saved_input_signals = np.append(self.saved_input_signals, concat_input_signals, axis=1)
-                self.saved_output_signals = np.append(self.saved_output_signals, concat_output_signals, axis=1)
+                self.saved_input_signals = np.append(self.saved_input_signals, concat_input_signals, axis=1) # type: ignore
+                self.saved_output_signals = np.append(self.saved_output_signals, concat_output_signals, axis=1) # type: ignore
 
 
         if not state_has_correct_dimension: xp = xp.view(self.nb, self.nx)
@@ -249,7 +257,7 @@ class Interconnect(nn.Module):
         assert new_block not in self.connected_blocks
 
         self.nr_blocks += 1
-        new_block.block_ix = self.nr_blocks + 1 # index is offset by 1 from number of blocks because of external signals
+        new_block.block_ix = self.nr_blocks + 1 # index is offset by 1 from number of blocks because of external signals # type: ignore
         new_block.name = name if isinstance(name, str) else "Block_" + str(self.nr_blocks+1)
         self.connected_blocks.append(new_block)
 
@@ -263,8 +271,8 @@ class Interconnect(nn.Module):
         output_signal_ix = self.determine_signal_ix(output_signal)
         if add_to_input_signal_ix != None: add_to_input_signal_ix = self.determine_signal_ix(add_to_input_signal_ix)
 
-        if not isinstance(connection_function_method, str) and output_signal_ix >= 2: connection_function_method = "concatenation" # default for internal signals is concatenation
-        if not isinstance(connection_function_method, str) and output_signal_ix <= 1: connection_function_method = "additive" # default for progressed state and output is additive method
+        if not isinstance(connection_function_method, str) and output_signal_ix >= 2: connection_function_method = "concatenation" # default for internal signals is concatenation # type: ignore
+        if not isinstance(connection_function_method, str) and output_signal_ix <= 1: connection_function_method = "additive" # default for progressed state and output is additive method # type: ignore
         connection_function_method = self.parse_connection_function_method(connection_function_method)
         assert connection_function_method in ["concatenation", "additive", "add_to"]
         
@@ -358,32 +366,39 @@ class modified_encoder_net(nn.Module):
         super(modified_encoder_net, self).__init__()
         from deepSI.utils import simple_res_net
         self.nu = tuple() if nu is None else ((nu,) if isinstance(nu,int) else nu)
-        self.ny = tuple() if ny is None else ((ny,) if isinstance(ny,int) else ny)
+        self.ny = tuple()# if ny is None else ((ny,) if isinstance(ny,int) else ny) # <---------- This prevents the output target from ever being larger than 1 dimension, regardless of data size
         self.net = simple_res_net(n_in=nb*np.prod(self.nu,dtype=int) + na*np.prod(self.ny,dtype=int), \
             n_out=nx, n_nodes_per_layer=n_nodes_per_layer, n_hidden_layers=n_hidden_layers, activation=activation)
 
     def forward(self, upast, ypast):
         # ypast = ypast[:,:,0] # <---------- To be disabled after training encoder: This prevents selects a single value from the state to be the output
 
-        net_in = torch.cat([upast.view(upast.shape[0],-1),ypast.view(ypast.shape[0],-1)],axis=1)
+        net_in = torch.cat([upast.view(upast.shape[0],-1),ypast.view(ypast.shape[0],-1)],axis=1) # type: ignore
         return self.net(net_in)
 
 class SSE_Interconnect(SS_encoder_general):
     def __init__(self, na=5, nb=5, \
                  interconnect=Interconnect, e_net=modified_encoder_net,   e_net_kwargs={}, na_right=0, nb_right=0):
 
-        super(SSE_Interconnect, self).__init__(nx=interconnect.nx, nb=nb, na=na, na_right=na_right, nb_right=nb_right)
+        super(SSE_Interconnect, self).__init__(nx=interconnect.nx, nb=nb, na=na, na_right=na_right, nb_right=nb_right) # type: ignore
         
         self.e_net = e_net
         self.e_net_kwargs = e_net_kwargs
         self.hfn = interconnect
+        self.encoder = None
         # hf_net_kwargs['feedthrough'] = feedthrough
         # self.hf_net_kwargs = hf_net_kwargs
+        
+        self.norm = fixed_System_data_norm()
+        
+        self.multi_loss_val = np.array([])
 
     def init_nets(self, nu, ny): # a bit weird
         na_right = self.na_right if hasattr(self,'na_right') else 0
         nb_right = self.nb_right if hasattr(self,'nb_right') else 0
-        self.encoder = self.e_net(nb=self.nb+nb_right, nu=nu, na=self.na+na_right, ny=ny, nx=self.nx,**self.e_net_kwargs)
+        if self.encoder is None:
+            print('Initializing encoder network...')
+            self.encoder = self.e_net(nb=self.nb+nb_right, nu=nu, na=self.na+na_right, ny=ny, nx=self.nx,**self.e_net_kwargs)
 
     def init_model(self, sys_data=None, nu=-1, ny=-1, device='cpu', auto_fit_norm=True, optimizer_kwargs={}, parameters_optimizer_kwargs={}, scheduler_kwargs={}):
         '''This function set the nu and ny, inits the network, moves parameters to device, initilizes optimizer and initilizes logging parameters'''
@@ -394,12 +409,6 @@ class SSE_Interconnect(SS_encoder_general):
             self.nu, self.ny = sys_data.nu, sys_data.ny
             if auto_fit_norm:
                 self.norm.fit(sys_data)
-                # self.norm.ustd = 0.9995115994824683
-                # self.norm.ystd = 2.165135419802158
-                # self.norm.ystd  = np.array([2.165135419802158, 2.165135419802158])
-                # self.norm.u0 = 2.8
-                # self.norm.y0 = 5.582729231040664
-                # self.norm.y0 = np.array([5.582729231040664, 5.582729231040664])
                 
                 
         self.init_nets(self.nu, self.ny)
@@ -411,26 +420,23 @@ class SSE_Interconnect(SS_encoder_general):
         self.Loss_val, self.Loss_train, self.batch_id, self.time, self.epoch_id = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
         self.init_model_done = True
 
-        self.hfn.init_model(sys_data)
+        self.hfn.init_model(sys_data) # type: ignore
 
     def loss(self, uhist, yhist, ufuture, yfuture, **Loss_kwargs):
-        x = self.encoder(uhist, yhist) #initialize Nbatch number of states
+        x = self.encoder(uhist, yhist) #initialize Nbatch number of states # type: ignore
         errors = []
         for y, u in zip(torch.transpose(yfuture,0,1), torch.transpose(ufuture,0,1)): #iterate over time
-            yhat, x = self.hfn(x, u)
+            yhat, x = self.hfn(x, u) # type: ignore
             errors.append(nn.functional.mse_loss(y, yhat)) #calculate error after taking n-steps
         loss_MSE = torch.mean(torch.stack(errors))
         
         has_theta_loss = False
         loss_theta = 0
-        for m in self.hfn.connected_blocks:
+        for m in self.hfn.connected_blocks: # type: ignore
             if isinstance(m, Parameterized_Linear_State_Block):
                 loss_theta = loss_theta + m.param_loss()
                 has_theta_loss = True
             elif isinstance(m, Parameterized_Linear_Output_Block):
-                loss_theta = loss_theta + m.param_loss()
-                has_theta_loss = True
-            elif isinstance(m, Parameterized_LPV_Affine_Linear_State_Block):
                 loss_theta = loss_theta + m.param_loss()
                 has_theta_loss = True
             elif isinstance(m, Parameterized_MSD_State_Block):
@@ -445,6 +451,261 @@ class SSE_Interconnect(SS_encoder_general):
     def measure_act_multi(self,actions):
         actions = torch.tensor(np.array(actions), dtype=torch.float32) #(N,...)
         with torch.no_grad():
-            y_predict, self.state = self.hfn(self.state, actions)
+            y_predict, self.state = self.hfn(self.state, actions) # type: ignore
         return y_predict.numpy()
+    
+    def fit(self, train_sys_data, val_sys_data, epochs=30, n_its=None, batch_size=256, loss_kwargs={}, \
+            auto_fit_norm=True, validation_measure='sim-NRMS', optimizer_kwargs={}, its_per_val='epoch', concurrent_val=False, cuda=False, \
+            timeout=None, verbose=2, sqrt_train=True, num_workers_data_loader=0, print_full_time_profile=False, scheduler_kwargs={}, list_val_measures=[]):
+        '''The batch optimization method with parallel validation, 
 
+        Parameters
+        ----------
+        train_sys_data : System_data or System_data_list
+            The system data to be fitted
+        val_sys_data : System_data or System_data_list
+            The validation system data after each used after each epoch for early stopping. Use the keyword argument validation_measure to specify which measure should be used. 
+        epochs : int
+        batch_size : int
+        loss_kwargs : dict
+            The Keyword Arguments to be passed to the self.make_training_data and self.loss of the current fit_system.
+        auto_fit_norm : boole
+            If true will use self.norm.fit(train_sys_data) which will fit it element wise. 
+        validation_measure : str
+            Specify which measure should be used for validation, e.g. 'sim-RMS', '10-step-last-RMS', 'sim-NRMS_sys_norm', ect. See self.cal_validation_error for details.
+        optimizer_kwargs : dict
+            The Keyword Arguments to be passed on to init_optimizer. notes; init_optimizer['optimizer'] is the optimization function used (default torch.Adam)
+            and optimizer_kwargs['parameters_optimizer_kwargs'] the learning rates and such for the different elements of the models. see https://pytorch.org/docs/stable/optim.html
+        concurrent_val : boole
+            If set to true a subprocess will be started which concurrently evaluates the validation method selected.
+            Warning: if concurrent_val is set than "if __name__=='__main__'" or import from a file if using self defined method or networks.
+        cuda : bool
+            if cuda will be used (often slower than not using it, be aware)
+        timeout : None or number
+            Alternative to epochs to run until a set amount of time has past. 
+        verbose : int
+            Set to 0 for a silent run, 1 only print and 2 adds a progress bar.
+        sqrt_train : boole
+            will sqrt the loss while printing
+        num_workers_data_loader : int
+            see https://pytorch.org/docs/stable/data.html
+        print_full_time_profile : boole
+            will print the full time profile, useful for debugging and basic process optimization. 
+        scheduler_kwargs : dict
+            learning rate scheduals are a work in progress.
+        
+        Notes
+        -----
+        This method implements a batch optimization method in the following way; each epoch the training data is scrambled and batched where each batch
+        is passed to the self.loss method and utilized to optimize the parameters. After each epoch the systems is validated using the evaluation of a 
+        simulation or a validation split and a checkpoint will be crated if a new lowest validation loss has been achieved. (or concurrently if concurrent_val=True)
+        After training (which can be stopped at any moment using a KeyboardInterrupt) the system is loaded with the lowest validation loss. 
+
+        The default checkpoint location is "C:/Users/USER/AppData/Local/deepSI/checkpoints" for windows and ~/.deepSI/checkpoints/ for unix like.
+        These can be loaded manually using sys.load_checkpoint("_best") or "_last". (For this to work the sys.unique_code needs to be set to the correct string)
+        '''
+        def validation(train_loss=None, time_elapsed_total=None):
+            self.eval(); self.cpu()
+            Loss_val = self.cal_validation_error(val_sys_data, validation_measure=validation_measure)
+            self.Loss_val.append(Loss_val)
+            temp_loss_stack = np.array([])
+            for val_measure in list_val_measures:
+                loss_val = self.cal_validation_error(val_sys_data, validation_measure=val_measure)
+                temp_loss_stack = np.hstack((temp_loss_stack, loss_val))
+                # print(loss_val)
+            print( temp_loss_stack.T.shape)
+            self.multi_loss_val = np.append(self.multi_loss_val, temp_loss_stack.T)
+            
+            self.Loss_train.append(train_loss)
+            self.time.append(time_elapsed_total)
+            self.batch_id.append(self.batch_counter)
+            self.epoch_id.append(self.epoch_counter)
+            if self.bestfit>=Loss_val:
+                self.bestfit = Loss_val
+                self.checkpoint_save_system()
+            if cuda: 
+                self.cuda()
+            self.train()
+            return Loss_val
+        
+        ########## Initialization ##########
+        if self.init_model_done==False:
+            if verbose: print('Initilizing the model and optimizer')
+            device = 'cuda' if cuda else 'cpu'
+            optimizer_kwargs = deepcopy(optimizer_kwargs)
+            parameters_optimizer_kwargs = optimizer_kwargs.get('parameters_optimizer_kwargs',{})
+            if parameters_optimizer_kwargs:
+                del optimizer_kwargs['parameters_optimizer_kwargs']
+            self.init_model(sys_data=train_sys_data, device=device, auto_fit_norm=auto_fit_norm, optimizer_kwargs=optimizer_kwargs,\
+                    parameters_optimizer_kwargs=parameters_optimizer_kwargs, scheduler_kwargs=scheduler_kwargs)
+        else:
+            if verbose: print('Model already initilized (init_model_done=True), skipping initilizing of the model, the norm and the creation of the optimizer')
+            self._check_and_refresh_optimizer_if_needed() 
+
+
+        if self.scheduler==False and verbose:
+            print('!!!! Your might be continuing from a save which had scheduler but which was removed during saving... check this !!!!!!')
+        
+        self.dt = train_sys_data.dt
+        if cuda: 
+            self.cuda()
+        self.train()
+
+        self.epoch_counter = 0 if len(self.epoch_id)==0 else self.epoch_id[-1]
+        self.batch_counter = 0 if len(self.batch_id)==0 else self.batch_id[-1]
+        extra_t            = 0 if len(self.time)    ==0 else self.time[-1] #correct timer after restart
+
+        ########## Getting the data ##########
+        data_train = self.make_training_data(self.norm.transform(train_sys_data), **loss_kwargs)
+        if not isinstance(data_train, Dataset) and verbose: print_array_byte_size(sum([d.nbytes for d in data_train]))
+
+        #### transforming it back to a list to be able to append. ########
+        self.Loss_val, self.Loss_train, self.batch_id, self.time, self.epoch_id = list(self.Loss_val), list(self.Loss_train), list(self.batch_id), list(self.time), list(self.epoch_id)
+
+        #### init monitoring values ########
+        Loss_acc_val_loop, it_counter_per_val_loop, val_counter, best_it, batch_id_start = 0, 0, 0, 0, self.batch_counter #to print the frequency of the validation step.
+        N_training_samples = len(data_train) if isinstance(data_train, Dataset) else len(data_train[0])
+        batch_size = min(batch_size, N_training_samples)
+        N_batch_updates_per_epoch = N_training_samples//batch_size
+        n_its = int(N_batch_updates_per_epoch*epochs) if n_its is None else n_its
+        Loss_acc_print_loop = 0.
+        its_per_val = N_batch_updates_per_epoch if its_per_val=='epoch' else its_per_val
+        if verbose>0: 
+            print(f'N_training_samples = {N_training_samples}, batch_size = {batch_size}, N_batch_updates_per_epoch = {N_batch_updates_per_epoch}')
+        
+        ### convert to dataset ###
+        if isinstance(data_train, Dataset):
+            persistent_workers = False if num_workers_data_loader==0 else True
+            data_train_loader = DataLoader(data_train, batch_size=batch_size, drop_last=True, shuffle=True, \
+                                   num_workers=num_workers_data_loader, persistent_workers=persistent_workers)
+        else: #add my basic DataLoader
+            data_train_loader = My_Simple_DataLoader(data_train, batch_size=batch_size) #is quite a bit faster for low data situations
+
+        if concurrent_val:
+            self.remote_start(val_sys_data, validation_measure)
+            self.remote_send(float('nan'), extra_t)
+        else: #start with the initial validation 
+            validation(train_loss=float('nan'), time_elapsed_total=extra_t) #also sets current model to cuda
+            if verbose: 
+                print(f'Initial Validation {validation_measure}=', self.Loss_val[-1])
+
+        try:
+            t = Tictoctimer()
+            start_t = time.time() #time keeping
+            rang = range(n_its) if timeout is None else itertools.count(start=0)
+            if verbose>1:
+                rang = tqdm(rang)
+
+            if timeout is not None and verbose>0: 
+                print(f'Starting indefinite training until {timeout} seconds have passed due to provided timeout')
+
+
+            bestfit_old = self.bestfit
+            t.start()
+            t.tic('data get')
+            for it_count, train_batch in zip(rang, loop_dataset(data_train_loader)):
+                #Loss_acc_print_loop=0
+                if cuda:
+                    train_batch = [b.cuda() for b in train_batch]
+                t.toc('data get')
+                def closure(backward=True):
+                    t.toc('optimizer start')
+                    t.tic('loss')
+                    Loss = self.loss(*train_batch, **loss_kwargs)
+                    t.toc('loss')
+                    if backward:
+                        t.tic('zero_grad')
+                        self.optimizer.zero_grad()
+                        t.toc('zero_grad')
+                        t.tic('backward')
+                        Loss.backward()
+                        t.toc('backward')
+                    t.tic('stepping')
+                    return Loss
+
+                t.tic('optimizer start')
+                training_loss = self.optimizer.step(closure).item()
+
+                if np.isnan(training_loss):
+                    if verbose>0: print(f'&&&&&&&&&&&&& Encountered a NaN value in the training loss at it {it_count}, breaking from loop &&&&&&&&&&')
+                    break
+
+                t.toc('stepping')
+                if self.scheduler:
+                    t.tic('scheduler')
+                    self.scheduler.step()
+                    t.tic('scheduler')
+                
+                Loss_acc_val_loop += training_loss
+                Loss_acc_print_loop += training_loss
+                it_counter_per_val_loop += 1
+                self.batch_counter += 1
+                self.epoch_counter += 1/N_batch_updates_per_epoch
+
+                t.tic('val')
+                if (it_count+1)%its_per_val==0:
+                    if concurrent_val:
+                        if self.remote_recv(): #only when it is idle
+                            self.remote_send(Loss_acc_val_loop/it_counter_per_val_loop, time.time()-start_t+extra_t)
+                            Loss_acc_val_loop, it_counter_per_val_loop, val_counter = 0., 0, val_counter + 1
+                    else:
+                        validation(train_loss=Loss_acc_val_loop/it_counter_per_val_loop, \
+                               time_elapsed_total=time.time()-start_t+extra_t) #updates bestfit and goes back to cpu and back
+                        Loss_acc_val_loop, it_counter_per_val_loop, val_counter = 0., 0, val_counter + 1
+                t.toc('val')
+                # t.pause()
+
+                ######### Printing Routine ##########
+                if verbose>0 and (it_count+1)%its_per_val==0:
+                    if bestfit_old > self.bestfit:
+                        print(f'########## New lowest validation loss achieved ########### {validation_measure} = {self.bestfit}')
+                        best_it = it_count+1
+                        bestfit_old = self.bestfit
+                    if concurrent_val: #if concurrent val than print validation freq
+                        val_feq = val_counter/(it_count+1)
+                        valfeqstr = f', {val_feq:4.3} vals/it' if (val_feq>1 or val_feq==0) else f', {1/val_feq:4.3} its/val'
+                    else: #else print validation time use
+                        valfeqstr = f''
+                    train_loss_epoch, Loss_acc_print_loop = Loss_acc_print_loop/its_per_val, 0
+                    trainstr = f'sqrt loss {train_loss_epoch**0.5:7.4}' if sqrt_train and train_loss_epoch>=0 else f'loss {train_loss_epoch:7.4}'
+                    Loss_val_now = self.Loss_val[-1] if len(self.Loss_val)!=0 else float('nan')
+                    Loss_str = f'It {it_count+1:4}, {trainstr}, Val {validation_measure} {Loss_val_now:6.4}'
+                    loss_time = (t.acc_times['loss'] + t.acc_times['optimizer start'] + t.acc_times['zero_grad'] + t.acc_times['backward'] + t.acc_times['stepping'])  /t.time_elapsed
+                    time_str = f'Time Loss: {loss_time:.1%}, data: {t.acc_times["data get"]/t.time_elapsed:.1%}, val: {t.acc_times["val"]/t.time_elapsed:.1%}{valfeqstr}'
+                    self.batch_feq = (self.batch_counter - batch_id_start)/(time.time() - start_t)
+                    batch_str = (f'{self.batch_feq:4.1f} batches/sec' if (self.batch_feq>1 or self.batch_feq==0) else f'{1/self.batch_feq:4.1f} sec/batch')
+                    print(f'{Loss_str}, {time_str}, {batch_str}')
+                    if print_full_time_profile:
+                        print('Time profile:',t.percent())
+                t.tic('data get')
+
+                ####### Timeout Breaking ##########
+                if timeout is not None:
+                    if time.time() >= start_t+timeout:
+                        break
+        except KeyboardInterrupt:
+            print('Stopping early due to a KeyboardInterrupt')
+
+        self.train(); self.cpu()
+        del data_train_loader
+
+        ####### end of training concurrent things #####
+        if concurrent_val:
+            if verbose: print(f'Waiting for started validation process to finish and one last validation... (receiving = {self.remote.receiving})',end='')
+            if self.remote_recv(wait=True):
+                if verbose: print('Recv done... ',end='')
+                if it_counter_per_val_loop>0:
+                    self.remote_send(Loss_acc_val_loop/it_counter_per_val_loop, time.time()-start_t+extra_t)
+                    self.remote_recv(wait=True)
+            self.remote_close()
+            if verbose: print('Done!')
+
+        
+        self.Loss_val, self.Loss_train, self.batch_id, self.time, self.epoch_id = np.array(self.Loss_val), np.array(self.Loss_train), np.array(self.batch_id), np.array(self.time), np.array(self.epoch_id)
+        self.checkpoint_save_system(name='_last')
+        try:
+            self.checkpoint_load_system(name='_best')
+        except FileNotFoundError:
+            print('no best checkpoint found keeping last')
+        if verbose: 
+            print(f'Loaded model with best known validation {validation_measure} of {self.bestfit:6.4} which happened on epoch {best_it} (epoch_id={self.epoch_id[-1] if len(self.epoch_id)>0 else 0:.2f})')
