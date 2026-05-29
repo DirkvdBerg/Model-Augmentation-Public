@@ -38,12 +38,14 @@ Every choice made now must not block the end goal:
 ## Code Location Constraint
 
 ```
-model_augmentation/fit_systems/blocks.py   ← add Gantry_State_Block here
-                                             follows Nonlinear_MSD_State_Block pattern
-                                             Jan's file — extend it, don't treat as read-only
+model_augmentation/fit_systems/blocks.py          ← Gantry_State_Block added here
+                                                     follows Nonlinear_MSD_State_Block pattern
+                                                     Jan's file — extend it, don't treat as read-only
+
+model_augmentation/systems/gantry_ss.py           — gantry physical constants (single source of truth)
+                                                     importable from blocks.py via model_augmentation.systems.gantry_ss
 
 scripts/gantry/
-  gantry_ss.py               — gantry physical constants (single source of truth)
   gantry_subnet.py           — training script
   gantry_evaluate.py         — evaluation
   gantry_state_comparison.py — internal signal inspection
@@ -242,7 +244,7 @@ longer `nf`.
 | `scripts/ecc_2025/msd_ndof_interconnect_dynamic.py` | Template |
 | `model_augmentation/fit_systems/blocks.py` | `Nonlinear_MSD_State_Block` — RK4 pattern to follow; `Parameterized_MSD_State_Block` — joint estimation pattern; **add `Gantry_State_Block` here** |
 | `model_augmentation/fit_systems/interconnect.py` | `SSE_Interconnect`, `Interconnect` |
-| `scripts/gantry/gantry_ss.py` | Gantry physical constants — single source of truth |
+| `model_augmentation/systems/gantry_ss.py` | Gantry physical constants — single source of truth (importable by blocks.py) |
 | `scripts/gantry/gantry_subnet.py` | Training script |
 | `lpv_lfr_baseline/scripts/train_param_recovery.py` | **Reference only — do not import.** Shows how to inspect internal model state, plot trajectories, and evaluate a trained gantry model. Pattern to follow in `gantry_evaluate.py` / `gantry_state_comparison.py`. |
 
