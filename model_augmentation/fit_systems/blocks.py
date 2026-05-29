@@ -633,3 +633,173 @@ class Nonlinear_MSD_State_Block(Discrete_Nonlinear_Function_Block):
 
 # TODO: Not certain we need the output block
 # physical_output_model_block = Nonlinear_MSD_Output_Block()
+
+
+class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
+    """
+    Gantry continuous-time ODE integrated with RK4, using the LFR rational structure.
+
+    State convention: x = [q1, q2, q3, q1_dot, q2_dot, q3_dot]  (logical coordinates)
+
+    LFR signal flow inside deriv() — matches lfr_forward.py signal ordering:
+      fnet = -K@q - C@qdot + P@u_stage          net logical force
+      a    = N(Y)/d(Y) @ fnet                   rational M(Y)^{-1} (no matrix solve)
+      z    = [a;  Y*a]                           LFR latent z (6-vec, not yet routed)
+      w    = Y * z                               LFR latent w = Delta(Y)*z
+      xdot = Ax@x + Bw@w + Bu@u_log             through G — NOT directly from a
+
+    G is built from M0_inv = N0/d0 (constant, Y=0). Y-variation only enters via z, w.
+
+    Frozen Y (Phase 1/2): Y_op is a float; N(Y_op), d(Y_op) precomputed at init.
+                          deriv() is pure matmul — no dynamic solve.
+    LPV     (Phase 3):    Y_op=None; Y = x[2] per step; Horner form for N(Y)/d(Y).
+
+    Parameters
+    ----------
+    Y_op : float or None
+        Frozen operating-point Y [m]. None enables LPV self-scheduling (Phase 3).
+    std_x : array (6,1)
+        State normalisation std, precomputed from training data.
+    std_u : array (3,1)
+        Input normalisation std, precomputed from training data.
+    Ts : float
+        Sample period [s]. Default 1/20000.
+    """
+
+    def __init__(
+        self,
+        Y_op: float = 0.3,
+        std_x=np.ones((6, 1)),
+        std_u=np.ones((3, 1)),
+        Ts: float = 1 / 20000,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(nz=9, nw=6, *args, **kwargs)
+
+        self.Ts   = Ts
+        self.nu   = 3
+        self.ny   = 3
+        self.nx   = 6
+        self.Y_op = Y_op
+
+        from model_augmentation.systems.gantry_ss import (
+            mh as _mh, m1 as _m1, m2 as _m2, mb as _mb,
+            Jb as _Jb, Jh as _Jh, Lb as _Lb, d as _d,
+            M1 as _M1, M2 as _M2, K as _K, C as _C, P as _P,
+            build_poly_constants, build_G_matrix_entries,
+        )
+
+        # Derive LFR polynomial constants from physical parameters.
+        # This mirrors the pattern needed for joint estimation: when params become
+        # nn.Parameter, call these same functions with the Parameter tensors.
+        _alpha, _beta, _gamma, _N0, _N1, _N2 = build_poly_constants(
+            _m1, _m2, _mb, _mh, _Jb, _Jh, _Lb, _d
+        )
+        _d0 = _mh * (_alpha * _gamma - _beta ** 2)   # det(M0)
+
+        # Derive G matrix entries from M0_inv = N0/d0 (no solve — purely polynomial).
+        _Ax, _Bw, _Bu, _A_combined = build_G_matrix_entries(_N0, _d0, _M1, _M2, _K, _C)
+
+        # Register everything as buffers — moves with .to(device), not trainable.
+        self.register_buffer("mh",     _mh.clone())
+        self.register_buffer("alpha",  _alpha.clone())
+        self.register_buffer("beta",   _beta.clone())
+        self.register_buffer("gamma_", _gamma.clone())  # 'gamma' shadows Python builtin
+        self.register_buffer("N0",     _N0.clone())
+        self.register_buffer("N1",     _N1.clone())
+        self.register_buffer("N2",     _N2.clone())
+
+        self.register_buffer("Ax",         _Ax.clone())
+        self.register_buffer("Bw",         _Bw.clone())
+        self.register_buffer("Bu",         _Bu.clone())
+        self.register_buffer("A_combined", _A_combined.clone())
+
+        self.register_buffer("K_mat", _K.clone())
+        self.register_buffer("C_mat", _C.clone())
+        self.register_buffer("P_mat", _P.clone())
+
+        # Precompute frozen-Y rational constants — avoids recomputing each RK4 substep.
+        if Y_op is not None:
+            Y_t = torch.tensor(Y_op, dtype=_N0.dtype)
+            self.register_buffer("N_op", _N0 + _N1 * Y_t + _N2 * Y_t ** 2)  # (3,3)
+            _d_op = _mh * (_alpha * _gamma - _beta ** 2
+                           + 2 * _beta * _mh * Y_t
+                           + _mh * (_alpha - _mh) * Y_t ** 2)
+            self.register_buffer("d_op", _d_op)
+
+        # Register as buffers so .to(device) moves them with the model.
+        # std_x stored in both shapes to avoid reshape on every deriv() call:
+        #   std_x    (6,1) — broadcast against (batch,6,1) for denorm
+        #   std_x_1d (6,)  — broadcast against (batch,6)   for renorm
+        self.register_buffer("std_x",    to_tensor(std_x).reshape(6, 1))
+        self.register_buffer("std_x_1d", to_tensor(std_x).reshape(6))
+        self.register_buffer("std_u",    to_tensor(std_u).reshape(3, 1))
+
+    def nonlinear_function(self, z: Tensor):
+        # Copied verbatim from Nonlinear_MSD_State_Block — only self.nx/self.nu differ.
+        assert z.size(1) == self.nx + self.nu
+        x = z[:, : self.nx, :]
+        u = z[:, self.nx :, :]
+
+        up_sample = 10
+        for i in range(up_sample):
+            k1 = (self.Ts / up_sample) * self.deriv(x, u)
+            k2 = (self.Ts / up_sample) * self.deriv(x + k1 / 2, u)
+            k3 = (self.Ts / up_sample) * self.deriv(x + k2 / 2, u)
+            k4 = (self.Ts / up_sample) * self.deriv(x + k3, u)
+            x = x + (k1 + 2 * k2 + 2 * k3 + k4) / 6
+        return x
+
+    def deriv(self, x: Tensor, u: Tensor) -> Tensor:
+        # x: (batch, 6, 1) normalised   u: (batch, 3, 1) normalised
+
+        # --- denormalise -------------------------------------------------
+        x_phys = x * self.std_x          # (batch, 6, 1)
+        u_phys = u * self.std_u          # (batch, 3, 1)
+
+        # Work in 2D (batch, n) to match LFR signal-flow convention.
+        x2 = x_phys.squeeze(-1)          # (batch, 6)
+        u2 = u_phys.squeeze(-1)          # (batch, 3)
+
+        # --- P transform: stage forces -> logical forces -----------------
+        u_log = u2 @ self.P_mat.T        # (batch, 3)
+
+        # --- net logical force -------------------------------------------
+        # fnet = -K@q - C@qdot + u_logical
+        fnet = (-(x2[:, :3] @ self.K_mat.T)
+                - (x2[:, 3:] @ self.C_mat.T)
+                + u_log)                 # (batch, 3)
+
+        # --- LFR loop solve: a = N(Y)/d(Y) @ fnet -----------------------
+        # Frozen (Phase 1/2): N_op, d_op precomputed at init → pure matmul.
+        # LPV   (Phase 3):    Y = x[2]; Horner form for N(Y), d(Y) per step.
+        if self.Y_op is not None:
+            Y_val = self.Y_op                                  # Python scalar
+            a = (self.N_op @ fnet.T).T / self.d_op            # (batch, 3)
+        else:
+            Y   = x2[:, 2]                                     # (batch,)
+            dY  = self.mh * (self.alpha * self.gamma_ - self.beta ** 2
+                             + 2 * self.beta * self.mh * Y
+                             + self.mh * (self.alpha - self.mh) * Y ** 2)  # (batch,)
+            Y_r = Y.unsqueeze(0)                               # (1, batch)
+            n0f = self.N0 @ fnet.T                             # (3, batch)
+            n1f = self.N1 @ fnet.T                             # (3, batch)
+            n2f = self.N2 @ fnet.T                             # (3, batch)
+            a   = (n0f + Y_r * (n1f + Y_r * n2f)).T / dY[:, None]  # (batch, 3)  Horner
+            Y_val = Y[:, None]                                 # (batch, 1)
+
+        # --- LFR latent signals -----------------------------------------
+        # z and w are computed explicitly — structurally present for future
+        # routing through the Interconnect (Phase future: split into G-block + Δ-block).
+        z = torch.cat([a, Y_val * a], dim=-1)   # (batch, 6)
+        w = Y_val * z                            # (batch, 6)  w = Δ(Y)·z
+
+        # --- state update through G (NOT directly from a) ---------------
+        # xdot = Ax@x + Bw@w + Bu@u_log   (fused via A_combined)
+        combined  = torch.cat([x2, w, u_log], dim=-1)   # (batch, 15)
+        xdot_phys = combined @ self.A_combined.T         # (batch, 6)
+
+        # --- renormalise and restore trailing dim -----------------------
+        xdot = (xdot_phys / self.std_x_1d).unsqueeze(-1)  # (batch, 6, 1)
+        return xdot
