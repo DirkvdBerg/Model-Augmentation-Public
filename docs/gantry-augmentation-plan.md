@@ -1,40 +1,70 @@
 # Gantry SubNet Augmentation — Implementation Plan
 
-## Goal
+## End Goal
 
-Integrate the dual-gantry LPV baseline into Jan Hoekstra's `SSE_Interconnect` framework
-to enable data-driven model augmentation. Start from Jan's ECC 2025 example, adapt it
-step-by-step to the gantry, and validate each phase before adding complexity.
+The full research target — not yet implemented, but every design choice must keep
+the path to it open:
 
-All data is **simulated** throughout. Real measured gantry data is a later step.
+1. **Joint estimation** — baseline physical parameters (`mb, mh, cg1, ...`) and ANN
+   augmentation weights trained simultaneously, with `param_loss()` regularization
+   preventing physics drift (following `Parameterized_MSD_State_Block` pattern)
+2. **Orthogonality constraint** — ANN augmentation is penalised for learning dynamics
+   already captured by the baseline, so it only corrects genuine model error
+3. **LPV self-scheduling** — `Gantry_State_Block` with `Y_op=None`, M(Y) updated every
+   step from the current state `x[2]`
+4. **LFR signal routing** — LFR latent variables z and w routed explicitly through the
+   Interconnect so the ANN can target specific physical channels
 
-### Code location constraint
-
-All gantry SubNet code lives in exactly two places:
-
-| What | Where |
-|------|-------|
-| Physics constants + discrete LTI matrices | `scripts/gantry/gantry_ss.py` |
-| Gantry-specific block classes | `model_augmentation/fit_systems/gantry_blocks.py` |
-| Training scripts | `scripts/gantry/gantry_subnet.py` (and phase variants) |
-
-**No imports from `lpv_lfr_baseline/`** in any of the above. Physics constants are
-hardcoded in `gantry_ss.py`. The `lpv_lfr_baseline/` module is a separate research
-implementation that must not be coupled to the SubNet pipeline.
+**Current implementation covers:** fixed-physics RK4 block at one frozen Y, basic
+parallel ANN augmentation, no orthogonality, no joint estimation. This is intentional —
+validate the pipeline before adding complexity.
 
 ---
 
-### Mismatch strategy
+## Design Principle: Expansion-Friendly
+
+Every choice made now must not block the end goal:
+
+| Choice now | Why it keeps the path open |
+|------------|---------------------------|
+| `Gantry_State_Block` from Phase 1 (not `Linear_State_Block`) | Adding trainable params later = change constants to `nn.Parameter`; no structural rewrite |
+| Physics constants as plain attributes in block `__init__` | Mirrors `Parameterized_MSD_State_Block` — swap to `nn.Parameter` + `param_loss()` for joint estimation |
+| `Y_op` parameter on block (`float` → `None`) | Phase 1 frozen Y, Phase 3 LPV — one-line change |
+| Parallel ANN wiring from Phase 2 | Orthogonality constraint adds a loss term on top — wiring unchanged |
+| Jan's block/interconnect structure throughout | LFR routing = add more blocks and connect_signals calls — no redesign |
+
+---
+
+## Code Location Constraint
+
+```
+model_augmentation/fit_systems/blocks.py   ← add Gantry_State_Block here
+                                             follows Nonlinear_MSD_State_Block pattern
+                                             Jan's file — extend it, don't treat as read-only
+
+scripts/gantry/
+  gantry_ss.py               — gantry physical constants (single source of truth)
+  gantry_subnet.py           — training script
+  gantry_evaluate.py         — evaluation
+  gantry_state_comparison.py — internal signal inspection
+```
+
+`gantry_subnet.py` imports `Gantry_State_Block` from `model_augmentation.fit_systems.blocks`
+— same import as any other block. `gantry_ss.py` imports constants from `gantry_ss.py`.
+
+**No imports from `lpv_lfr_baseline/`** in any gantry scripts or blocks. Physics constants
+are hardcoded in `gantry_ss.py` and imported from there. The `lpv_lfr_baseline/` module
+is a separate research implementation and must not be coupled to the SubNet pipeline.
+
+---
+
+## Mismatch Strategy
 
 | Phase | Data source | Baseline model | Mismatch |
 |-------|-------------|----------------|----------|
-| 1 (MIMO LTI) | Simulated from same LTI model | LTI gantry (frozen Y) | None — NRMS → 0 is the sanity check |
-| 2 (augmentation) | Simulated from gantry + extra MSD on payload mass | LTI gantry without extra MSD | Known, controlled mismatch — ANN learns to correct it |
-| 3 (LPV) | Same as Phase 2 | LPV gantry without extra MSD | LPV variation + extra MSD residual |
-
-The extra MSD on the payload mass is a clean, controlled model mismatch — same strategy
-as the ECC 2025 MSD example (ideal vs approximate parameters). The baseline doesn't
-know about the extra MSD; the augmentation block must learn to compensate for it.
+| 1 | Simulated from same frozen-Y RK4 model | Same frozen-Y RK4 block | None — NRMS → 0 is the sanity check |
+| 2 | Simulated from gantry + extra MSD on payload | Frozen-Y RK4, no extra MSD | Known controlled mismatch |
+| 3 | Same as Phase 2 | LPV RK4, no extra MSD | LPV variation + extra MSD residual |
 
 ---
 
@@ -45,37 +75,36 @@ know about the extra MSD; the augmentation block must learn to compensate for it
 | Inputs `u` | 3 (stage forces: F_X1, F_X2, F_Y) |
 | Outputs `y` | 3 (stage positions: X1, X2, Y) |
 | States `x` | 6 (logical: q_logical, qdot_logical) |
-| Physics | Continuous-time LPV, RK4 integrated (Phase 3) |
-| Scheduling variable | Y = x[2] (Y position) |
+| Block | `Gantry_State_Block` — continuous ODE integrated with RK4 |
+| Scheduling variable | Y = x[2]; frozen in Phase 1/2, self-scheduled in Phase 3 |
 | Sampling rate | 20 kHz |
 
 **Why no SISO phase:** X1 and X2 are mechanically coupled — common mode drives X
-translation, differential mode drives rotation (mechanically limited). A SISO test
-on a single X channel has no physical meaning. F_Y→Y is decoupled but provides
-little additional value over the full MIMO test. Start at MIMO directly.
+translation, differential mode drives rotation (mechanically limited). No clean SISO
+on X. Start at full MIMO directly.
 
 ---
 
-## Starting Point: Copy from ECC 2025
+## Starting Point
 
 ```
 scripts/ecc_2025/msd_ndof_interconnect_dynamic.py
     → scripts/gantry/gantry_subnet.py
 ```
 
-Replace the MSD-specific sections in order: data → model matrices → blocks → wiring.
+Replace MSD-specific sections in order: data → block → wiring → save path.
 
 ---
 
 ## Phase Ordering Rationale
 
-1. **MIMO LTI** — validate full 3×3 pipeline end-to-end; NRMS → 0 is achievable
-2. **MIMO LTI + augmentation** — add ANN block with known mismatch; validate core contribution
-3. **MIMO LPV** — swap `Linear_State_Block` for `CT_RK4_State_Block`; physics now self-schedules on Y
+1. **MIMO, frozen Y, no augmentation** — pipeline sanity check; NRMS → 0 is achievable
+2. **MIMO, frozen Y, + ANN augmentation** — validate core contribution with known mismatch
+3. **MIMO, LPV (self-scheduled Y)** — one-line block change; validate LPV improvement
 
-Augmentation before LPV: (a) augmentation is the research goal — validate it on the
-simplest baseline first; (b) if augmentation fails on LTI, the cause is isolated from
-LPV dynamics; (c) the frozen-Y LTI error is itself real model error the ANN can learn.
+Augmentation before LPV: (a) augmentation is the research goal — validate on simplest
+baseline first; (b) frozen-Y error is real model error the ANN can learn; (c) if
+augmentation fails on frozen Y, cause is isolated from LPV scheduling.
 
 ---
 
@@ -83,112 +112,126 @@ LPV dynamics; (c) the frozen-Y LTI error is itself real model error the ANN can 
 
 | Symptom | Most likely cause |
 |---------|-------------------|
-| Flat loss from epoch 0 | Data format wrong, normalization broken, or block wiring disconnected — stop and fix |
+| Flat loss from epoch 0 | Data format wrong, normalisation broken, or block wiring disconnected |
 | NaN loss | float32/float64 mismatch at physics boundary, or LR too high |
 | Loss decreases then immediately plateaus | Encoder `na`/`nb` too short |
-| Simulation worse than zero-state init | Encoder making things worse — wiring or normalization error |
+| Simulation worse than zero-state init | Encoder making things worse — wiring or normalisation error |
 | NRMS > 1.0 | Model worse than predicting the mean — something fundamental is broken |
 
 ---
 
 ## Phases
 
-### Phase 1 — MIMO LTI (validate the pipeline)
+### Phase 1 — MIMO, frozen Y, no augmentation
 
-**Goal:** get the full 3×3 SubNet pipeline running and saving. No augmentation, no LPV.
+**Goal:** full 3×3 pipeline running end-to-end. No augmentation, no LPV.
 
-**System:** nu=3, ny=3, nx=6.
-
-**Approach:**
-- Compute frozen `Ad` (6×6), `Bd` (6×3) at Y=0 via augmented `matrix_exp` (ZOH,
-  handles singular `Ac` because Y has no spring) → `Linear_State_Block(Ad, Bd)`
-- Output block: `Linear_Output_Block(Cd, Dd)` where `Cd` maps x(6) → stage positions(3)
-- All matrices computed in `gantry_ss.py` from hardcoded physics constants; no lpv_lfr_baseline import
+**Block:** `Gantry_State_Block(Y_op=0.3)` — physics frozen at one operating point.
+RK4 integration used from the start so the block needs no structural change later.
 
 **What to build:**
-1. `scripts/gantry/gantry_ss.py` — standalone: physics constants + `gantry_discrete_ss(Y_op)` returning `(Ad, Bd, Cd, Dd)`
-2. **Data generation** — simulate Phase 1 MIMO trajectories using `CT_RK4_State_Block`
-   forward pass (frozen Y=0) or standalone numpy RK4 in `gantry_ss.py`; pack into
-   `System_data(u=u_stage, y=q1_stage, dt=1/fs)`
-3. **Interconnect wiring** — `Interconnect(nx=6, nu=3, ny=3)` with `Linear_State_Block` + `Linear_Output_Block`
+1. `scripts/gantry/gantry_ss.py` — gantry physical constants
+2. `Gantry_State_Block` added to `model_augmentation/fit_systems/blocks.py`,
+   following `Nonlinear_MSD_State_Block` pattern exactly, importing constants from `gantry_ss.py`
+2. **Data generation** — simulate with same block (frozen Y) to get matched train/val data
+3. **Interconnect wiring** — `Interconnect(nx=6, nu=3, ny=3)` + `Linear_Output_Block`
 4. **SSE_Interconnect + fit** — adapt ECC 2025 training call
 
-**Success criterion:** script runs, trains, saves; NRMS approaches near-zero.
+**Not yet implemented (end goal):**
+- Physical parameters are fixed (not `nn.Parameter`) — joint estimation deferred
+- No orthogonality constraint
+- No LFR signal routing
+
+**Success criterion:** NRMS → near zero (data from same model).
 
 **Verification checklist:**
-- [ ] Loss decreases over epochs (encoder learning)
+- [ ] Loss decreases over epochs
 - [ ] Loss does not go NaN
 - [ ] `fit_sys.simulate(val_data)` returns ŷ of shape `(T, 3)`
-- [ ] Per-channel NRMS reported separately (X1, X2, Y)
-- [ ] NRMS → near zero after sufficient epochs (data generated from same model)
-- [ ] Encoder-initialized simulation beats zero-state (x̂0=0) initialization
-- [ ] **One channel flat, others learn** → data shape error; check `System_data` construction
-- [ ] **All channels flat** → MIMO encoder fix (`self.ny` line 369 in `interconnect.py`) not active
-- [ ] X1/X2 NRMS worse than Y — expected (frozen Y=0 is a poor X operating point), not a bug
-- [ ] **NRMS stays high despite low loss** → normalization mismatch between encoder and physics block
+- [ ] Per-channel NRMS reported (X1, X2, Y)
+- [ ] NRMS → near zero after sufficient epochs
+- [ ] Encoder-initialised simulation beats zero-state initialisation
+- [ ] **One channel flat** → data shape error; check `System_data` construction
+- [ ] **All channels flat** → MIMO encoder fix (`self.ny` line 369 in `interconnect.py`)
+- [ ] **NRMS stays high despite low loss** → normalisation mismatch
 
 ---
 
-### Phase 2 — MIMO LTI + augmentation
+### Phase 2 — MIMO, frozen Y, + ANN augmentation
 
-**Goal:** add the ANN augmentation block with a controlled mismatch. Core research contribution.
+**Goal:** add ANN augmentation with controlled mismatch. Core research contribution.
 
-**Introduce mismatch:** generate training data from gantry + extra MSD on payload mass.
-`Linear_State_Block` does not know about the MSD. ANN must learn to compensate.
+**Mismatch:** training data from gantry + extra MSD on payload mass.
+`Gantry_State_Block` unchanged — it does not know about the extra MSD.
 
-**State block:** unchanged `Linear_State_Block` from Phase 1.
-
-**Augmentation block:** `Static_ANN_Block` in parallel to the state update:
+**Augmentation block:** `Static_ANN_Block` in parallel (same wiring as ECC 2025):
 ```python
 interconnect.connect_signals("x",  aug_block, "concat", selection_matrix(list(range(nx)), nx))
 interconnect.connect_signals("u",  aug_block, "concat")
 interconnect.connect_signals(aug_block, "xp", "additive", expansion_matrix(list(range(nx)), nx))
 ```
 
-**Success criterion:** augmented NRMS < LTI-only NRMS from Phase 1 on validation data.
+**Not yet implemented (end goal):**
+- Joint estimation: physics parameters still fixed
+- Orthogonality: ANN can still learn baseline-captured dynamics
+- LFR routing: ANN connects to state, not to LFR latent variables
+
+**Success criterion:** augmented NRMS < Phase 1 NRMS on validation data.
 
 **Verification checklist:**
-- [ ] Loss lower than Phase 1 (ANN contributing)
-- [ ] Per-channel NRMS improvement over Phase 1 on validation data
-- [ ] ANN output magnitude reasonable (not exploding)
-- [ ] Regularization loss (`param_loss`) tracked alongside simulation loss
-- [ ] **Loss lower on train but not val** → ANN overfitting; reduce size or add regularization
-- [ ] **No improvement over Phase 1** → ANN not contributing; check additive connection to `xp`
+- [ ] Loss lower than Phase 1
+- [ ] Per-channel NRMS improvement on validation data
+- [ ] ANN output magnitude reasonable
+- [ ] **No improvement** → check additive connection to `xp`
+- [ ] **Overfitting** → reduce ANN size or add regularisation
 
 ---
 
-### Phase 3 — MIMO LPV
+### Phase 3 — MIMO LPV (self-scheduled Y)
 
-**Goal:** replace frozen LTI block with RK4-integrated self-scheduled LPV physics.
+**Goal:** unlock LPV. One-line block change.
 
-**Block swap:** `Linear_State_Block(Ad, Bd)` → `CT_RK4_State_Block`
+**Block swap:** `Gantry_State_Block(Y_op=0.3)` → `Gantry_State_Block(Y_op=None)`
 
-`CT_RK4_State_Block` lives in `model_augmentation/fit_systems/gantry_blocks.py` and
-subclasses `Discrete_Nonlinear_Function_Block` following the `Nonlinear_MSD_State_Block`
-pattern in Jan's `blocks.py`:
+Inside `deriv()`: `Y = x_phys[:, 2]` instead of the fixed value. Everything else
+— wiring, augmentation, encoder, training loop — unchanged.
 
-```
-nonlinear_function(z):           z = [x(6), u_stage(3)], normalised
-    deriv(x_phys, u_phys):       continuous-time xdot from gantry ODE
-                                 M(Y)*q_ddot + C*q_dot + K*q = P @ u_stage
-    RK4 integration (4 substeps) → x_next (normalised)
-```
+**Not yet implemented (end goal):**
+- Joint estimation still deferred
+- Orthogonality still deferred
+- LFR routing still deferred
 
-- `deriv()` computes `xdot` directly from the second-order ODE — no lpv_lfr_baseline import
-- Physics constants (M0, M1, M2, C, K, P, ts) hardcoded in the block or passed at init from `gantry_ss.py`
-- All other wiring, augmentation block, encoder, training loop unchanged from Phase 2
+**Speed note:** RK4 backprop is 4× more compute than a linear block. Use HPC for
+longer `nf`.
 
-**Note on speed:** RK4 backprop is 4× more compute per step than a linear block.
-Use HPC for longer training runs.
-
-**Success criterion:** LPV NRMS < LTI+augmentation NRMS from Phase 2.
+**Success criterion:** LPV NRMS < Phase 2 NRMS.
 
 **Verification checklist:**
-- [ ] Training stable (no divergence from Y self-scheduling)
-- [ ] NRMS improves over Phase 2 LTI+augmentation baseline
-- [ ] Per-channel improvement largest on Y channel (Y is the scheduling variable)
-- [ ] **Loss diverges** → Y self-scheduling unstable; freeze Y at mean first to diagnose
-- [ ] **No improvement over LTI** → LPV variation small at this operating regime; expected for small Y range
+- [ ] Training stable (no divergence from self-scheduling)
+- [ ] NRMS improves over Phase 2
+- [ ] Largest improvement on Y channel (scheduling variable)
+- [ ] **Loss diverges** → self-scheduling unstable; try frozen Y at mean first
+
+---
+
+### Future — Joint Estimation + Orthogonality + LFR Routing
+
+**Not implemented yet. Expansion path from Phase 3:**
+
+**Joint estimation:**
+- Change physics constants in `Gantry_State_Block` from plain attributes to `nn.Parameter`
+- Add `param_loss()` method (following `Parameterized_MSD_State_Block` pattern)
+- Interconnect picks up `param_loss()` automatically — no training loop changes
+
+**Orthogonality:**
+- Add orthogonality penalty on ANN augmentation output
+- Penalises ANN for learning directions already spanned by the baseline Jacobian
+- Adds a loss term — wiring and block structure unchanged
+
+**LFR signal routing:**
+- Decompose `Gantry_State_Block` into G-matrix block + Δ(Y) block
+- Route z and w as explicit signals through the Interconnect
+- ANN connects to specific LFR channels instead of full state
 
 ---
 
@@ -196,74 +239,64 @@ Use HPC for longer training runs.
 
 | File | Role |
 |------|------|
-| `scripts/ecc_2025/msd_ndof_interconnect_dynamic.py` | Template to copy and adapt |
-| `model_augmentation/fit_systems/blocks.py` | Block base classes; `Nonlinear_MSD_State_Block` as RK4 pattern for Phase 3 |
-| `model_augmentation/fit_systems/interconnect.py` | `SSE_Interconnect`, `Interconnect`, `modified_encoder_net` |
-| `model_augmentation/fit_systems/gantry_blocks.py` | `CT_RK4_State_Block` (to be created) |
-| `scripts/gantry/gantry_ss.py` | Physics constants + `gantry_discrete_ss(Y_op)` (to be created) |
-| `scripts/gantry/gantry_subnet.py` | Main training script (to be created from ECC 2025 template) |
+| `scripts/ecc_2025/msd_ndof_interconnect_dynamic.py` | Template |
+| `model_augmentation/fit_systems/blocks.py` | `Nonlinear_MSD_State_Block` — RK4 pattern to follow; `Parameterized_MSD_State_Block` — joint estimation pattern; **add `Gantry_State_Block` here** |
+| `model_augmentation/fit_systems/interconnect.py` | `SSE_Interconnect`, `Interconnect` |
+| `scripts/gantry/gantry_ss.py` | Gantry physical constants — single source of truth |
+| `scripts/gantry/gantry_subnet.py` | Training script |
+| `lpv_lfr_baseline/scripts/train_param_recovery.py` | **Reference only — do not import.** Shows how to inspect internal model state, plot trajectories, and evaluate a trained gantry model. Pattern to follow in `gantry_evaluate.py` / `gantry_state_comparison.py`. |
 
 ---
 
 ## Data Pipeline
 
 ```
-Phase 1/2 (LTI baseline):
-  Simulate with frozen Y using CT_RK4_State_Block or numpy RK4 in gantry_ss.py
-  → u_stage (T, 3), q1_stage (T, 3)
-  → System_data(u=u_stage, y=q1_stage, dt=1/fs)
+All phases: simulate with Gantry_State_Block forward pass
+  Phase 1: frozen Y, no extra MSD → matched data, NRMS → 0
+  Phase 2: frozen Y, + extra MSD on payload mass → controlled mismatch
+  Phase 3: same data as Phase 2, block changes only
 
-Phase 2 (mismatch):
-  Same simulation + extra MSD on payload mass
-  → data looks different, baseline block unchanged
-
-Phase 3 (LPV):
-  Same data as Phase 2; only the block changes
+Format: System_data(u=u_stage (T,3), y=q1_stage (T,3), dt=1/20000)
+Multiple trajectories: System_data_list([traj1, traj2, ...])
 ```
-
-Multiple trajectories → `System_data_list([traj1, traj2, ...])`
 
 ---
 
-## Interconnect Wiring (Phase 1 MIMO reference)
+## Interconnect Wiring (Phase 1 reference)
 
 ```python
 nx, nu, ny = 6, 3, 3
 interconnect = Interconnect(nx=nx, nu=nu, ny=ny)
 
-# Physics state block
-state_block = Linear_State_Block(Ad, Bd)        # Phase 1/2
-# state_block = CT_RK4_State_Block(...)         # Phase 3
+state_block  = Gantry_State_Block(Y_op=0.3)   # Phase 1/2: frozen Y
+# state_block = Gantry_State_Block(Y_op=None)  # Phase 3:   self-scheduled LPV
 interconnect.add_block(state_block)
-interconnect.connect_signals("x",  state_block, "concat",  selection_matrix(list(range(nx)), nx))
-interconnect.connect_signals("u",  state_block, "concat")
+interconnect.connect_signals("x", state_block, "concat",  selection_matrix(list(range(nx)), nx))
+interconnect.connect_signals("u", state_block, "concat")
 interconnect.connect_signals(state_block, "xp", "additive", expansion_matrix(list(range(nx)), nx))
 
-# Output block
 output_block = Linear_Output_Block(Cd, Dd)
 interconnect.add_block(output_block)
-interconnect.connect_signals("x",  output_block, "concat", selection_matrix(list(range(nx)), nx))
-interconnect.connect_signals("u",  output_block, "concat")
+interconnect.connect_signals("x", output_block, "concat", selection_matrix(list(range(nx)), nx))
+interconnect.connect_signals("u", output_block, "concat")
 interconnect.connect_signals(output_block, "y", "additive")
 
 fit_sys = SSE_Interconnect(na=13, nb=13, interconnect=interconnect)
 fit_sys.fit(train_data, val_data, epochs=30, batch_size=256,
             auto_fit_norm=True, loss_kwargs={'nf': 50}, validation_measure='sim-NRMS')
-fit_sys.save_system('simulations/gantry_subnet/phase1_mimo_lti')
+fit_sys.save_system('simulations/gantry_subnet/phase1')
 ```
 
 ---
 
 ## Open Questions
 
-- **Normalization:** State in physical units for Phase 1/2 (no state data to compute std from).
-  Scale only `Bd` and `Cd` by `sigma_u` and `sigma_y` from training data. For Phase 3
-  (RK4 block), follow Jan's pattern: store `std_x`, `std_u` precomputed from a reference
-  simulation run; denormalize inside `deriv()`, renormalize output.
+- **Normalisation:** Follow Jan's `Nonlinear_MSD_State_Block` pattern — store `std_x`
+  and `std_u` precomputed from a short reference simulation; denormalise inside
+  `deriv()`, renormalise output.
 
-- **BPTT length `nf`:** start with `nf=50`. MSD example uses `nf=200`.
-  At 20 kHz, longer horizons are expensive — tune after Phase 1.
+- **BPTT length `nf`:** start with `nf=50`. Tune after Phase 1.
 
 - **Encoder history `na`, `nb`:** start with `na=nb=13` (nx*2+1).
 
-- **HPC:** for Phase 3 with long `nf`, request CPU time on `hpc.tue.nl`.
+- **HPC:** needed for Phase 3 with longer `nf`.
