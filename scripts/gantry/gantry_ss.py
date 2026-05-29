@@ -17,7 +17,7 @@ All tensors are dtype=torch.float64.
 
 import torch
 
-_D = torch.float64
+_D = torch.float32
 
 # ----------------------------------------------------------------------
 # Scalar physical parameters  (from main.m lines 12-36)
