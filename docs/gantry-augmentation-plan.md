@@ -15,9 +15,10 @@ the path to it open:
 4. **LFR signal routing** — LFR latent variables z and w routed explicitly through the
    Interconnect so the ANN can target specific physical channels
 
-**Current implementation covers:** fixed-physics RK4 block at one frozen Y, basic
-parallel ANN augmentation, no orthogonality, no joint estimation. This is intentional —
-validate the pipeline before adding complexity.
+**Current implementation covers:** LFR-structured RK4 block at one frozen Y (z and w
+computed explicitly but not yet routed through the Interconnect), basic parallel ANN
+augmentation, no orthogonality, no joint estimation. This is intentional —
+validate the pipeline before adding routing complexity.
 
 ---
 
@@ -27,11 +28,14 @@ Every choice made now must not block the end goal:
 
 | Choice now | Why it keeps the path open |
 |------------|---------------------------|
+| **LFR rational form in `deriv()`** — `a = N(Y)/d(Y) @ fnet`, then `xdot = Ax@x + Bw@w + Bu@u` through G | Preserves causal chain z → w → xdot. Future routing = expose z/w as Interconnect signals. `torch.linalg.solve` collapses this and loses the structure permanently. |
+| **G matrix from M0_inv** (not M(Y_op)_inv) | G is always constant; Y-variation only enters via z and w. Correct per LFR derivation. |
+| **z and w computed explicitly in `deriv()`** | Not yet routed through Interconnect, but structurally present. Adding routing = split into separate blocks + connect_signals calls. |
 | `Gantry_State_Block` from Phase 1 (not `Linear_State_Block`) | Adding trainable params later = change constants to `nn.Parameter`; no structural rewrite |
 | Physics constants as plain attributes in block `__init__` | Mirrors `Parameterized_MSD_State_Block` — swap to `nn.Parameter` + `param_loss()` for joint estimation |
-| `Y_op` parameter on block (`float` → `None`) | Phase 1 frozen Y, Phase 3 LPV — one-line change |
+| `Y_op` parameter on block (`float` → `None`) | Phase 1 frozen Y, Phase 3 LPV — one-line change in `deriv()` |
 | Parallel ANN wiring from Phase 2 | Orthogonality constraint adds a loss term on top — wiring unchanged |
-| Jan's block/interconnect structure throughout | LFR routing = add more blocks and connect_signals calls — no redesign |
+| Jan's block/interconnect structure throughout | LFR routing = split `Gantry_State_Block` into G-block + Δ-block, add connect_signals for z/w — no training loop changes |
 
 ---
 
@@ -42,14 +46,23 @@ model_augmentation/fit_systems/blocks.py          ← Gantry_State_Block added h
                                                      follows Nonlinear_MSD_State_Block pattern
                                                      Jan's file — extend it, don't treat as read-only
 
-model_augmentation/systems/gantry_ss.py           — gantry physical constants (single source of truth)
+model_augmentation/systems/gantry_ss.py           — gantry physical constants + LFR poly constants
+                                                     + build_poly_constants() + build_G_matrix_entries()
                                                      importable from blocks.py via model_augmentation.systems.gantry_ss
 
 scripts/gantry/
-  gantry_subnet.py           — training script
-  gantry_evaluate.py         — evaluation
-  gantry_state_comparison.py — internal signal inspection
+  gantry_subnet.py              — training script
+  gantry_evaluate.py            — evaluation
+  gantry_state_comparison.py    — internal signal inspection
+
+scripts/gantry/verification/
+  verify_block_shapes.py        — shape + no-NaN check for Gantry_State_Block forward pass
+  verify_lfr_residual.py        — check M(Y)@a - fnet < tol (mirrors lfr_forward.py Check 1)
+  verify_one_step.py            — compare one RK4 step against numpy reference
 ```
+
+All verification scripts live in `scripts/gantry/verification/`. They are standalone (no training),
+run quickly, and must pass before any Phase training begins.
 
 `gantry_subnet.py` imports `Gantry_State_Block` from `model_augmentation.fit_systems.blocks`
 — same import as any other block. `gantry_ss.py` imports constants from `gantry_ss.py`.
@@ -128,21 +141,38 @@ augmentation fails on frozen Y, cause is isolated from LPV scheduling.
 
 **Goal:** full 3×3 pipeline running end-to-end. No augmentation, no LPV.
 
-**Block:** `Gantry_State_Block(Y_op=0.3)` — physics frozen at one operating point.
-RK4 integration used from the start so the block needs no structural change later.
+**Block:** `Gantry_State_Block(Y_op=0.3)` — LFR-structured, physics frozen at one
+operating point. RK4 integration with LFR signal flow inside `deriv()`:
+
+```
+u_log = P @ u_stage                        # stage → logical  (applied inside deriv, not by caller)
+fnet  = -K@q - C@qdot + u_log             # net logical force
+a     = N(Y_op)/d(Y_op) @ fnet            # rational M(Y)^{-1} — precomputed at init for frozen Y
+z     = [a;  Y_op*a]                       # LFR latent z  (6-vector, not yet routed externally)
+w     = Y_op * z                           # LFR latent w = Δ(Y)·z  = [Y_op*a; Y_op²*a]
+xdot  = Ax@x + Bw@w + Bu@u_log            # through G — NOT directly from a
+```
+
+G is built from **M0_inv = N0/d0** (Y=0 constant, purely polynomial — no solve).
+Y never appears in G. Y-variation enters xdot **only** through w (which carries Y*a and Y²*a).
+At frozen Y_op: N(Y_op), d(Y_op) precomputed at `__init__`; `deriv()` is pure matmul.
+At LPV (Phase 3): Y = x[2]; N(Y), d(Y) computed via Horner form each step.
+
+**P-transform note:** `lfr_forward.py` expects u already in logical coordinates — the caller
+applies P. Jan's Interconnect passes u_stage directly to the block, so P is applied inside
+`deriv()` before the LFR flow. Mathematically identical; structurally a one-step shift inward.
 
 **What to build:**
-1. `scripts/gantry/gantry_ss.py` — gantry physical constants
-2. `Gantry_State_Block` added to `model_augmentation/fit_systems/blocks.py`,
-   following `Nonlinear_MSD_State_Block` pattern exactly, importing constants from `gantry_ss.py`
-2. **Data generation** — simulate with same block (frozen Y) to get matched train/val data
-3. **Interconnect wiring** — `Interconnect(nx=6, nu=3, ny=3)` + `Linear_Output_Block`
-4. **SSE_Interconnect + fit** — adapt ECC 2025 training call
+1. `model_augmentation/systems/gantry_ss.py` — physical constants + `build_poly_constants()` + G matrix entries
+2. `Gantry_State_Block` in `model_augmentation/fit_systems/blocks.py` — LFR `deriv()`, Jan's RK4 `nonlinear_function`
+3. **Data generation** — simulate with same block (frozen Y) to get matched train/val data
+4. **Interconnect wiring** — `Interconnect(nx=6, nu=3, ny=3)` + `Linear_Output_Block`
+5. **SSE_Interconnect + fit** — adapt ECC 2025 training call
 
 **Not yet implemented (end goal):**
 - Physical parameters are fixed (not `nn.Parameter`) — joint estimation deferred
 - No orthogonality constraint
-- No LFR signal routing
+- z/w not yet routed as explicit Interconnect signals — future split into G-block + Δ-block
 
 **Success criterion:** NRMS → near zero (data from same model).
 
@@ -247,6 +277,7 @@ longer `nf`.
 | `model_augmentation/systems/gantry_ss.py` | Gantry physical constants — single source of truth (importable by blocks.py) |
 | `scripts/gantry/gantry_subnet.py` | Training script |
 | `lpv_lfr_baseline/scripts/train_param_recovery.py` | **Reference only — do not import.** Shows how to inspect internal model state, plot trajectories, and evaluate a trained gantry model. Pattern to follow in `gantry_evaluate.py` / `gantry_state_comparison.py`. |
+| `docs/lfr-baseline-implementation-method.md` | Justifies why z/w must be computed explicitly (resolve-and-retain argument). Supervisor requirement D-005/D-013/D-017. Validates `Gantry_State_Block` design over collapsed `A_c(Y)x + B_c(Y)u`. |
 
 ---
 
