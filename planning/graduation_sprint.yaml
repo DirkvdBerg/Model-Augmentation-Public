@@ -1,0 +1,30 @@
+tasks:
+  - Task: "Create augmented simulation system with extra states, verified against Simscape"
+    Work Package: "System for additional state"
+    Start: 37
+    End: 38
+    Type: Task
+
+  - Task: "Adapt Jan's framework for the gantry baseline without augmentation at one fixed Y point"
+    Work Package: "Setup + MIMO"
+    Start: 38
+    End: 39
+    Type: Task
+
+  - Task: "Dynamic parallel augmentation at one fixed Y"
+    Work Package: "Dynamic parallel"
+    Start: 39
+    End: 40
+    Type: Task
+
+  - Task: "LPV: augmentation trained across multiple Y positions"
+    Work Package: "LPV"
+    Start: 40
+    End: 43
+    Type: Task
+
+  - Task: "LPV validation and comparison"
+    Work Package: "LPV"
+    Start: 41
+    End: 43
+    Type: Task
