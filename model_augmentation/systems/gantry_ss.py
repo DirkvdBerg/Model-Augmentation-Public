@@ -12,7 +12,7 @@ System:
   Outputs y : 3  (stage positions X1, X2, Y)
   States  x : 6  (logical: q1, q2, q3, q1_dot, q2_dot, q3_dot)
 
-All tensors are dtype=torch.float64.
+All tensors are dtype=torch.float32.
 """
 
 import torch
@@ -100,13 +100,12 @@ P[1, 1] = -Lb / 2
 P[2, 2] = 1.0
 
 # ----------------------------------------------------------------------
-# Output matrix  (stage positions = P.T @ logical positions)
-# Cd maps state x = [q; qdot] -> y_logical, then stage positions = P.T @ y_logical
-# In normalised form this is handled by Linear_Output_Block(Cd, Dd)
+# Output matrix  Cd: state x=[q;qdot] -> logical positions q
+# Stage positions = P.T @ q, handled in Linear_Output_Block(Cd, Dd)
 # ----------------------------------------------------------------------
 Cd = torch.zeros(3, 6, dtype=_D)
-Cd[0, 0] = 1.0  # q1 -> y1
-Cd[1, 1] = 1.0  # q2 -> y2
-Cd[2, 2] = 1.0  # q3 -> y3
+Cd[0, 0] = 1.0
+Cd[1, 1] = 1.0
+Cd[2, 2] = 1.0
 
 Dd = torch.zeros(3, 3, dtype=_D)
