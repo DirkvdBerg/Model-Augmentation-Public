@@ -366,7 +366,7 @@ class modified_encoder_net(nn.Module):
         super(modified_encoder_net, self).__init__()
         from deepSI.utils import simple_res_net
         self.nu = tuple() if nu is None else ((nu,) if isinstance(nu,int) else nu)
-        self.ny = tuple()# if ny is None else ((ny,) if isinstance(ny,int) else ny) # <---------- This prevents the output target from ever being larger than 1 dimension, regardless of data size
+        self.ny = tuple() if ny is None else ((ny,) if isinstance(ny,int) else ny)
         self.net = simple_res_net(n_in=nb*np.prod(self.nu,dtype=int) + na*np.prod(self.ny,dtype=int), \
             n_out=nx, n_nodes_per_layer=n_nodes_per_layer, n_hidden_layers=n_hidden_layers, activation=activation)
 
