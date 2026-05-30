@@ -108,13 +108,15 @@ P[1, 1] = -Lb / 2
 P[2, 2] = 1.0
 
 # ----------------------------------------------------------------------
-# Output matrix  Cd: state x=[q;qdot] -> logical positions q
-# Stage positions = P.T @ q, handled in Linear_Output_Block(Cd, Dd)
+# Output matrix  Cd: state x=[q_logical; qdot_logical] -> stage positions
+# y = [X1, X2, Y]_stage = P^T @ q_logical
+# X1 = q1_log + (Lb/2)*q2_log
+# X2 = q1_log - (Lb/2)*q2_log
+# Y  = q3_log  (identical in both coordinate systems)
+# Cd = [P^T | 0_{3x3}]  (velocities do not appear in the output)
 # ----------------------------------------------------------------------
 Cd = torch.zeros(3, 6, dtype=_D)
-Cd[0, 0] = 1.0
-Cd[1, 1] = 1.0
-Cd[2, 2] = 1.0
+Cd[:, :3] = P.T
 
 Dd = torch.zeros(3, 3, dtype=_D)
 
