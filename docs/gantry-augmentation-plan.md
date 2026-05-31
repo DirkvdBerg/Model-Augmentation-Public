@@ -77,8 +77,8 @@ is a separate research implementation and must not be coupled to the SubNet pipe
 
 | Phase | Data source | Baseline model | Mismatch |
 |-------|-------------|----------------|----------|
-| 1 | Simulated from same frozen-Y RK4 model | Same frozen-Y RK4 block | None — NRMS → 0 is the sanity check |
-| 2 | Simulated from gantry + extra MSD on payload | Frozen-Y RK4, no extra MSD | Known controlled mismatch |
+| 1 | Python: single trajectory from same frozen-Y RK4 block | Same frozen-Y RK4 block | None — NRMS → 0 is the sanity check |
+| 2 | MATLAB: motion-profile trajectories (no multisine) from gantry + extra MSD | Frozen-Y RK4, no extra MSD | Known controlled mismatch |
 | 3 | Same as Phase 2 | LPV RK4, no extra MSD | LPV variation + extra MSD residual |
 
 ---
@@ -283,14 +283,85 @@ longer `nf`.
 
 ## Data Pipeline
 
-```
-All phases: simulate with Gantry_State_Block forward pass
-  Phase 1: frozen Y, no extra MSD → matched data, NRMS → 0
-  Phase 2: frozen Y, + extra MSD on payload mass → controlled mismatch
-  Phase 3: same data as Phase 2, block changes only
+### Phase 1 — Python simulation (matched case)
 
-Format: System_data(u=u_stage (T,3), y=q1_stage (T,3), dt=1/20000)
-Multiple trajectories: System_data_list([traj1, traj2, ...])
+Single trajectory, simulated from `Gantry_State_Block(Y_op=0.3)` directly in Python.
+Y is frozen at the operating point (residual Y variation comes from coupling only, but
+M(Y) is still evaluated there — the frozen-Y model captures this).
+
+```python
+# Generate: step Gantry_State_Block with a motion-profile input, save u and y
+# Also save the full 6D state x = [q_logical; qdot_logical] at every step
+# → enables SS_pre_encoder (state supervision) and encoder quality verification
+
+train_data = System_data_with_x(u=u.astype(np.float32),
+                                 y=y.astype(np.float32),
+                                 x=x.astype(np.float32),
+                                 dt=1/20000)
+```
+
+Input signal: simple motion profile (ramp/hold), not multisine.
+Split: one trajectory for train, a shorter separate trajectory (different initial
+conditions or input) for validation.
+
+**Why save x:** the encoder maps past (u, y) → x̂0. Saving the true x allows:
+1. Direct comparison x̂ vs x to verify encoder quality per channel
+2. `SS_pre_encoder` training (state supervision before BPTT)
+3. Plotting state trajectories to verify physics is correct
+
+**Encoder coordinate convention:** the encoder output x̂₀ is always in **logical
+coordinates** — it feeds directly into `Gantry_State_Block` as the initial state,
+and that block operates internally in logical coordinates. `x_logical` saved from
+MATLAB is also in logical coordinates (derived via `q_logical = P^{-T} @ q_stage`).
+Stage coordinates appear only at the output (`Cd = [P^T | 0]`) and never inside the
+state evolution.
+
+**Encoder verification — matched case (nominal data):**
+- True system IS the nominal model → `x̂₀ ≈ x_logical[0]` should hold channel-by-channel
+- Verify by: simulating forward from `x̂₀` and from `x₀=0`; encoder-initialised NRMS
+  should be significantly lower
+
+**Encoder verification — mismatched case (augmented data, Phase 2):**
+- True system has 8 states (hidden MSD); nominal model has 6 → irreducible mismatch
+- `x̂₀ ≠ x_logical[0]` (x_logical is the 6D projection of the 8-state trajectory;
+  encoder finds the *best nominal initial condition*, which is different)
+- Verify by: plausibility checks (bounded, smooth states), and NRMS improvement over
+  zero-state init — NOT by comparing x̂₀ to x_logical directly
+- `x_logical` saved from augmented MATLAB data still useful as a ceiling: it shows the
+  best possible nominal-state projection, bounding how close the encoder can get
+
+**Note — velocities from MATLAB data (Phase 2+):** the existing MATLAB script
+(`Matlab-scripts/generate_identification_experiment_without_multisine.m`) saves
+stage positions `q1` [X1, X2, Y] and forces `u_total`, but NOT velocities.
+To get the full state for pre-encoder training from MATLAB data, either:
+- Add velocity ToWorkspace blocks to the Simulink model (`gantry_2025a.slx`), or
+- Derive velocities in Python via `np.gradient(q_logical, 1/fs, axis=0)` after
+  applying the inverse P-transform: `q_logical = np.linalg.solve(P_np, q_stage.T).T`
+The finite-difference approach introduces noise at 20 kHz — prefer Simulink output
+if velocities are needed for pre-encoder training on real data.
+
+### Future data expansion (not yet implemented)
+
+- **Multiple trajectories:** `System_data_list([traj1, traj2, ...])` is supported
+  natively by `SSE_Interconnect.fit()`. When moving to MATLAB data or real
+  experiments, use the 8 train + 1 val + 1 test trajectories defined in
+  `generate_identification_experiment_without_multisine.m`.
+
+- **Multisine excitation:** the existing MATLAB script has multisine infrastructure
+  (Schroeder-phase, odd-harmonic, band-limited). For real-data identification or
+  when motion-profile data gives insufficient frequency coverage, revisit. For Phase 1
+  (Python-simulated, matched case), a motion profile suffices.
+
+- **Phase 2+:** same MATLAB trajectories, different block (extra MSD mismatch).
+  MATLAB data saved as `single()` in MATLAB → float32 on Python side.
+
+### Format (all phases)
+```
+System_data / System_data_with_x:
+  u : (T, 3)  stage forces [F_X1, F_X2, F_Y]  [N]       float32
+  y : (T, 3)  stage positions [X1, X2, Y]       [m]       float32
+  x : (T, 6)  logical states [q; qdot]           [m, m/s]  float32  (Phase 1 only)
+  dt: 1/20000
 ```
 
 ---
