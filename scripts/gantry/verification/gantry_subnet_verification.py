@@ -33,8 +33,8 @@ from model_augmentation.systems.gantry_ss import Cd, Dd
 # ── Hyperparameters ───────────────────────────────────────────────────────────
 NA     = 100   # encoder history [samples] — 5 ms at 20 kHz
 NB     = 100
-NF     = 650   # BPTT horizon [samples]   — 32.5 ms (validated at this rate in train_param_recovery.py)
-EPOCHS = 30
+NF     = 200   # BPTT horizon [samples]   — 32.5 ms (validated at this rate in train_param_recovery.py)
+EPOCHS = 5
 BATCH  = 256
 SAVE   = True
 
@@ -183,6 +183,31 @@ plt.show()
 
 # ── Save ──────────────────────────────────────────────────────────────────────
 if SAVE:
+    # Model checkpoint — can be reloaded with SSE_Interconnect.load_system()
     save_path = os.path.join(plot_dir, 'phase1')
     fit_sys.save_system(save_path)
-    print(f'\nSaved: {save_path}')
+
+    # All results in one file — full trajectories, loss history, metrics.
+    # Load with: d = np.load('phase1_results.npz'); d['y_hat_enc'] etc.
+    np.savez(
+        os.path.join(plot_dir, 'phase1_results.npz'),
+        # Trajectories — full length (T,3), physical units [m]
+        y_ref     = y_ref,
+        y_hat_enc = y_hat_enc,
+        y_zero    = y_zero,
+        t_val     = t_val,        # time axis [s], shape (T,)
+        # Convergence
+        epoch_id  = np.array(fit_sys.epoch_id),
+        loss_val  = np.array(fit_sys.Loss_val),
+        # Per-channel NRMS (post-warmup window)
+        nrms_enc  = nrms_enc,     # shape (3,): [X1, X2, Y]
+        nrms_zero = nrms_zero,    # shape (3,): [X1, X2, Y]
+        # Metadata needed to interpret the arrays
+        cheat_n   = np.array(cheat_n),
+        dt        = np.array(val_data.dt),
+        NA        = np.array(NA),
+        NB        = np.array(NB),
+        NF        = np.array(NF),
+    )
+    print(f'\nSaved model : {save_path}')
+    print(f'Saved results: {os.path.join(plot_dir, "phase1_results.npz")}')
