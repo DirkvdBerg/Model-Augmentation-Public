@@ -35,7 +35,7 @@ from model_augmentation.systems.gantry_ss import Cd, Dd
 NA     = 200   # encoder history [samples] — 10 ms at 20 kHz
 NB     = 200
 NF     = 200   # BPTT horizon [samples]   — 10 ms at 20 kHz
-EPOCHS = 1
+EPOCHS = 60
 BATCH  = 256
 SAVE   = True
 N_HOLD = 10000 # hold samples at start/end of each MATLAB trajectory (0.5 s at 20 kHz, no motion)
@@ -124,8 +124,9 @@ x_ref      = val_data.x                 # (T, 6) physical [m, m/s] — x_logical
 #   [xp (NX), y (NY), block_outputs...] → shape (NX+NY+block_dims, T)
 # First NX rows are xp — the normalised state (interconnect internal space).
 # Denormalise with std_x to recover physical units [m, m/s].
-x_enc_norm = np.array(fit_sys.hfn.saved_output_signals)    # (NX+NY+..., T)
-x_enc_phys = (x_enc_norm[:NX, :] * std_x).T                # (T, NX) physical [m, m/s]
+x_enc_norm = np.array(fit_sys.hfn.saved_output_signals)              # (NX+NY+..., T-cheat_n)
+x_enc_phys = np.full((len(val_data.y), NX), np.nan, dtype=np.float32)
+x_enc_phys[cheat_n:] = (x_enc_norm[:NX, :] * std_x).T               # (T, NX) physical [m, m/s]; NaN for warmup
 
 nrms_enc = (
     np.sqrt(((y_hat_enc[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0))
@@ -173,7 +174,7 @@ fig1, ax1 = plt.subplots(figsize=(7, 3.5))
 ax1.semilogy(fit_sys.epoch_id, fit_sys.Loss_val)
 ax1.set_xlabel('Epoch')
 ax1.set_ylabel('Validation RMSE')
-ax1.set_title('SSE_Interconnect — validation loss convergence (Phase 1 baseline)')
+ax1.set_title('SSE_Interconnect - validation loss convergence')
 ax1.grid(True, which='both')
 fig1.tight_layout()
 fig1.savefig(os.path.join(plot_dir, 'phase1_val_loss.png'), dpi=150)
@@ -199,7 +200,7 @@ for ch, (ax, lab) in enumerate(zip(axes, ch_labels)):
     ax.legend(fontsize=7, loc='upper right')
     ax.grid(True)
 axes[-1].set_xlabel('Time [s]')
-fig2.suptitle('Validation simulation — encoder-init vs zero-state (Phase 1 baseline)')
+fig2.suptitle('Validation simulation - encoder-init vs zero-state')
 fig2.tight_layout()
 fig2.savefig(os.path.join(plot_dir, 'phase1_simulation.png'), dpi=150)
 
@@ -221,7 +222,7 @@ for ch, (ax, lab) in enumerate(zip(axes3, st_labels)):
     ax.legend(fontsize=7, loc='upper right')
     ax.grid(True)
 axes3[-1].set_xlabel('Time [s]')
-fig3.suptitle('Validation state trajectory — encoder-init vs zero-state (Phase 1 baseline)\n'
+fig3.suptitle('Validation state trajectory - encoder-init vs zero-state\n'
               'Logical coordinates [q_logical | qdot_logical]')
 fig3.tight_layout()
 fig3.savefig(os.path.join(plot_dir, 'phase1_states.png'), dpi=150)
