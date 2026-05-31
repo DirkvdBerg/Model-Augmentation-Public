@@ -35,7 +35,7 @@ from model_augmentation.systems.gantry_ss import Cd, Dd
 NA     = 200   # encoder history [samples] — 10 ms at 20 kHz
 NB     = 200
 NF     = 200   # BPTT horizon [samples]   — 10 ms at 20 kHz
-EPOCHS = 5
+EPOCHS = 1
 BATCH  = 256
 SAVE   = True
 N_HOLD = 10000 # hold samples at start/end of each MATLAB trajectory (0.5 s at 20 kHz, no motion)
@@ -112,10 +112,20 @@ fit_sys.eval()
 # and .cheat_n = max(NA, NB): the first cheat_n rows are copied verbatim from
 # val_data.y (encoder warmup). NRMS must exclude these rows — error is zero there
 # by construction, not because the model predicted correctly.
+fit_sys.hfn.reset_saved_signals()
 sim_result = fit_sys.apply_experiment(val_data)
 cheat_n    = sim_result.cheat_n          # = max(NA, NB)
 y_hat_enc  = sim_result.y               # (T, 3) physical [m], normed=False
 y_ref      = val_data.y                 # (T, 3) physical [m]
+x_ref      = val_data.x                 # (T, 6) physical [m, m/s] — x_logical from MATLAB
+
+# State trajectory from encoder-initialised rollout.
+# saved_output_signals concatenates ALL interconnect output signals:
+#   [xp (NX), y (NY), block_outputs...] → shape (NX+NY+block_dims, T)
+# First NX rows are xp — the normalised state (interconnect internal space).
+# Denormalise with std_x to recover physical units [m, m/s].
+x_enc_norm = np.array(fit_sys.hfn.saved_output_signals)    # (NX+NY+..., T)
+x_enc_phys = (x_enc_norm[:NX, :] * std_x).T                # (T, NX) physical [m, m/s]
 
 nrms_enc = (
     np.sqrt(((y_hat_enc[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0))
@@ -133,14 +143,17 @@ T_val    = len(val_norm.u)
 
 x_zero       = torch.zeros(1, NX)
 y_zero_norm  = np.zeros((T_val, NY), dtype=np.float32)
+x_zero_traj  = np.zeros((T_val, NX), dtype=np.float32)
 
 with torch.no_grad():
     for t in range(T_val):
         u_t = torch.tensor(val_norm.u[t], dtype=torch.float32).unsqueeze(0)  # (1, 3)
         y_t, x_zero = interconnect(x_zero, u_t)
         y_zero_norm[t] = y_t.squeeze().numpy()
+        x_zero_traj[t] = x_zero.squeeze().numpy()   # normalised
 
-y_zero = y_zero_norm * fit_sys.norm.ystd + fit_sys.norm.y0  # denormalise → physical [m]
+y_zero      = y_zero_norm * fit_sys.norm.ystd + fit_sys.norm.y0  # denormalise → physical [m]
+x_zero_phys = x_zero_traj * std_x.flatten()                       # (T, NX) physical [m, m/s]
 
 nrms_zero = (
     np.sqrt(((y_zero[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0))
@@ -190,6 +203,29 @@ fig2.suptitle('Validation simulation — encoder-init vs zero-state (Phase 1 bas
 fig2.tight_layout()
 fig2.savefig(os.path.join(plot_dir, 'phase1_simulation.png'), dpi=150)
 
+# Plot 3: State trajectory — all 6 channels (positions + velocities), logical coordinates.
+# Same structure as Plot 2. Reference is x_logical from MATLAB (val_data.x).
+# Encoder-init and zero-state state trajectories denormalised from interconnect internal space.
+# Note: x_logical velocities are finite-differenced in MATLAB (gradient() at 20 kHz).
+st_labels = ['q0 [m]', 'q1 [m]', 'q2 [m]', 'dq0 [m/s]', 'dq1 [m/s]', 'dq2 [m/s]']
+
+fig3, axes3 = plt.subplots(6, 1, figsize=(12, 12), sharex=True)
+for ch, (ax, lab) in enumerate(zip(axes3, st_labels)):
+    ax.plot(t_val, x_ref[:, ch],      color='black', lw=0.8, label='x_logical (MATLAB)')
+    ax.plot(t_val, x_enc_phys[:, ch], color='C0',    lw=0.9, label='Encoder-init')
+    ax.plot(t_val, x_zero_phys[:, ch],color='C1',    lw=0.9, linestyle='--', label='Zero-state')
+    enc_label = f'Encoder input ({cheat_n} samples, {cheat_t*1e3:.0f} ms)' if ch == 0 else '_nolegend_'
+    ax.axvspan(t_val[0], cheat_t, alpha=0.10, color='steelblue', label=enc_label)
+    ax.axvline(cheat_t, color='steelblue', linestyle='--', lw=0.8)
+    ax.set_ylabel(lab)
+    ax.legend(fontsize=7, loc='upper right')
+    ax.grid(True)
+axes3[-1].set_xlabel('Time [s]')
+fig3.suptitle('Validation state trajectory — encoder-init vs zero-state (Phase 1 baseline)\n'
+              'Logical coordinates [q_logical | qdot_logical]')
+fig3.tight_layout()
+fig3.savefig(os.path.join(plot_dir, 'phase1_states.png'), dpi=150)
+
 plt.show()
 
 # ── Save ──────────────────────────────────────────────────────────────────────
@@ -214,6 +250,10 @@ if SAVE:
         # Per-channel NRMS (post-warmup window)
         nrms_enc  = nrms_enc,     # shape (3,): [X1, X2, Y]
         nrms_zero = nrms_zero,    # shape (3,): [X1, X2, Y]
+        # State trajectories — full length (T,6), physical units [m, m/s], logical coordinates
+        x_ref      = x_ref,        # x_logical from MATLAB
+        x_enc_phys = x_enc_phys,   # encoder-init rollout states
+        x_zero_phys= x_zero_phys,  # zero-state rollout states
         # Metadata needed to interpret the arrays
         cheat_n   = np.array(cheat_n),
         dt        = np.array(val_data.dt),
