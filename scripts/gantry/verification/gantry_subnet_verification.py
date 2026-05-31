@@ -4,10 +4,13 @@ gantry_subnet_verification.py
 Verify that the full SSE_Interconnect pipeline (encoder + Gantry_State_Block +
 Linear_Output_Block) trains correctly on matched MATLAB data (Phase 1).
 
-Three checks after training:
+Two checks after training:
   1. Encoder-initialised sim-NRMS per channel (X1, X2, Y) — primary success metric
   2. Zero-state sim-NRMS per channel — encoder must beat this
-  3. x̂₀ vs x_logical[NA] per channel — direct encoder quality check
+
+Check 3 (x̂₀ vs x_logical) is not implemented: the encoder output is calibrated to
+satisfy Cd @ x̂₀ ≈ (y - y0)/ystd, not x̂₀ ≈ x_logical/std_x. A direct state
+comparison is not valid without knowing the model's internal coordinate convention.
 
 Run from project root:
     conda run -n GraduationProject python scripts/gantry/verification/gantry_subnet_verification.py
@@ -19,6 +22,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 import deepSI
 from scipy.io import loadmat
 
@@ -55,8 +59,9 @@ print(f'Train: T={len(train_data.u)}  Val: T={len(val_data.u)}')
 # ── Normalisation stats for Gantry_State_Block ────────────────────────────────
 # std_x / std_u normalise the physical ODE inputs inside the block.
 # Separate from fit_sys.norm, which normalises the encoder's (u, y) observations.
-std_u = train_data.u.std(axis=0).reshape(NU, 1).astype(np.float32)  # (3, 1) [N]
-std_x = train_data.x.std(axis=0).reshape(NX, 1).astype(np.float32)  # (6, 1) [m, m/s]
+std_u = train_data.u.std(axis=0).reshape(NU, 1).astype(np.float32) + 1e-8  # (3, 1) [N]
+std_x = train_data.x.std(axis=0).reshape(NX, 1).astype(np.float32) + 1e-8  # (6, 1) [m, m/s]
+# 1e-8 guard: Y position is frozen at 0.3 m → std_x[2] ≈ 0 without it.
 
 # ── Build Interconnect ────────────────────────────────────────────────────────
 interconnect = Interconnect(nx=NX, nu=NU, ny=NY)
@@ -95,13 +100,20 @@ fit_sys.fit(
 fit_sys.eval()
 
 # ── Check 1: Encoder-initialised sim-NRMS ────────────────────────────────────
-# fit_sys.simulate: runs encoder on first NA/NB samples → x̂₀, then steps
-# the interconnect forward for the full trajectory. Returns physical-unit ŷ.
-sim_result = fit_sys.simulate(val_data)
-y_hat_enc  = sim_result.y if hasattr(sim_result, 'y') else np.array(sim_result)
-y_ref      = val_data.y   # (T, 3) physical [m]
+# apply_experiment: encoder(u[:NB], y[:NA]) → x̂₀, then rolls out the interconnect
+# for the full trajectory. Returns fixed_System_data with .normed=False (physical y)
+# and .cheat_n = max(NA, NB): the first cheat_n rows are copied verbatim from
+# val_data.y (encoder warmup). NRMS must exclude these rows — error is zero there
+# by construction, not because the model predicted correctly.
+sim_result = fit_sys.apply_experiment(val_data)
+cheat_n    = sim_result.cheat_n          # = max(NA, NB) = 100
+y_hat_enc  = sim_result.y               # (T, 3) physical [m], normed=False
+y_ref      = val_data.y                 # (T, 3) physical [m]
 
-nrms_enc = np.sqrt(((y_hat_enc - y_ref) ** 2).mean(axis=0)) / y_ref.std(axis=0)
+nrms_enc = (
+    np.sqrt(((y_hat_enc[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0))
+    / y_ref[cheat_n:].std(axis=0)
+)
 print('\n=== Check 1: Encoder-initialised sim-NRMS ===')
 for ch, label in enumerate(['X1', 'X2', 'Y ']):
     print(f'  {label}: {nrms_enc[ch]:.4f}')
@@ -109,7 +121,7 @@ for ch, label in enumerate(['X1', 'X2', 'Y ']):
 # ── Check 2: Zero-state sim-NRMS ─────────────────────────────────────────────
 # Simulate the same trajectory from x₀ = 0, with no encoder — baseline to beat.
 # The interconnect operates on normalised (u, y); output is renormalised after.
-val_norm = fit_sys.norm.transform(val_data)  # normalised u and y; x passed through
+val_norm = fit_sys.norm.transform(val_data)  # normalised u and y; x is stripped (becomes None)
 T_val    = len(val_norm.u)
 
 x_zero       = torch.zeros(1, NX)
@@ -123,35 +135,54 @@ with torch.no_grad():
 
 y_zero = y_zero_norm * fit_sys.norm.ystd + fit_sys.norm.y0  # denormalise → physical [m]
 
-nrms_zero = np.sqrt(((y_zero - y_ref) ** 2).mean(axis=0)) / y_ref.std(axis=0)
+nrms_zero = (
+    np.sqrt(((y_zero[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0))
+    / y_ref[cheat_n:].std(axis=0)
+)
 print('\n=== Check 2: Zero-state vs encoder sim-NRMS ===')
 for ch, label in enumerate(['X1', 'X2', 'Y ']):
     status = 'PASS' if nrms_enc[ch] < nrms_zero[ch] else 'FAIL'
     print(f'  {label}: enc={nrms_enc[ch]:.4f}  zero={nrms_zero[ch]:.4f}  {status}')
 
-# ── Check 3: x̂₀ vs x_logical[NA] ────────────────────────────────────────────
-# Encoder maps first NB u samples and NA y samples → x̂₀ in normalised state units.
-# Block convention: x_phys = x_norm * std_x, so x̂₀_phys = x̂₀_norm * std_x.
-# Compare with x_logical at sample NA (true state after the encoder warmup window).
-u_past = torch.tensor(val_norm.u[:NB], dtype=torch.float32).unsqueeze(0)  # (1, NB, 3)
-y_past = torch.tensor(val_norm.y[:NA], dtype=torch.float32).unsqueeze(0)  # (1, NA, 3)
+# ── Plots ─────────────────────────────────────────────────────────────────────
+plot_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'simulations', 'gantry_subnet')
+os.makedirs(plot_dir, exist_ok=True)
 
-with torch.no_grad():
-    x_hat_norm = fit_sys.encoder(u_past, y_past)              # (1, 6) normalised
+# Plot 1: Validation loss convergence (mirrors Fig. 4 in Hoekstra 2025)
+fig1, ax1 = plt.subplots(figsize=(7, 3.5))
+ax1.semilogy(fit_sys.epoch_id, fit_sys.Loss_val)
+ax1.set_xlabel('Epoch')
+ax1.set_ylabel('Validation RMSE')
+ax1.set_title('SSE_Interconnect — validation loss convergence (Phase 1 baseline)')
+ax1.grid(True, which='both')
+fig1.tight_layout()
+fig1.savefig(os.path.join(plot_dir, 'phase1_val_loss.png'), dpi=150)
 
-x_hat_phys = x_hat_norm.squeeze().numpy() * std_x.flatten()  # (6,) physical [m, m/s]
-x_true      = val_data.x[NA]                                   # (6,) physical [m, m/s]
+# Plot 2: Simulated vs reference per channel (mirrors Fig. 5 in Hoekstra 2025)
+# Shows encoder-initialised sim, zero-state sim, and reference over the full
+# validation trajectory. Vertical line marks warmup boundary (cheat_n samples).
+t_val   = np.arange(len(y_ref)) * val_data.dt   # time axis [s]
+cheat_t = cheat_n * val_data.dt                  # warmup end [s]
+ch_labels = ['X1 [m]', 'X2 [m]', 'Y [m]']
 
-print('\n=== Check 3: x̂₀ vs x_logical[NA] ===')
-labels_x = ['q1   [m]   ', 'q2   [rad] ', 'q3   [m]   ',
-            'q1dot[m/s] ', 'q2dot[r/s] ', 'q3dot[m/s] ']
-for i, lab in enumerate(labels_x):
-    print(f'  {lab}  true={x_true[i]:+.4e}  hat={x_hat_phys[i]:+.4e}  |err|={abs(x_hat_phys[i]-x_true[i]):.2e}')
+fig2, axes = plt.subplots(3, 1, figsize=(12, 7), sharex=True)
+for ch, (ax, lab) in enumerate(zip(axes, ch_labels)):
+    ax.plot(t_val, y_ref[:, ch],      color='black',  lw=0.8,  label='Reference')
+    ax.plot(t_val, y_hat_enc[:, ch],  color='C0',     lw=0.9,  label=f'Encoder-init (NRMS={nrms_enc[ch]:.3f})')
+    ax.plot(t_val, y_zero[:, ch],     color='C1',     lw=0.9,  linestyle='--', label=f'Zero-state   (NRMS={nrms_zero[ch]:.3f})')
+    ax.axvline(cheat_t, color='grey', linestyle=':', lw=0.8,  label='Warmup end')
+    ax.set_ylabel(lab)
+    ax.legend(fontsize=7, loc='upper right')
+    ax.grid(True)
+axes[-1].set_xlabel('Time [s]')
+fig2.suptitle('Validation simulation — encoder-init vs zero-state (Phase 1 baseline)')
+fig2.tight_layout()
+fig2.savefig(os.path.join(plot_dir, 'phase1_simulation.png'), dpi=150)
+
+plt.show()
 
 # ── Save ──────────────────────────────────────────────────────────────────────
 if SAVE:
-    save_dir  = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'simulations', 'gantry_subnet')
-    save_path = os.path.join(save_dir, 'phase1')
-    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(plot_dir, 'phase1')
     fit_sys.save_system(save_path)
     print(f'\nSaved: {save_path}')
