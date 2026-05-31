@@ -113,13 +113,30 @@ Replace MSD-specific sections in order: data → block → wiring → save path.
 
 ## Phase Ordering Rationale
 
-1. **MIMO, frozen Y, no augmentation** — pipeline sanity check; NRMS → 0 is achievable
-2. **MIMO, frozen Y, + ANN augmentation** — validate core contribution with known mismatch
-3. **MIMO, LPV (self-scheduled Y)** — one-line block change; validate LPV improvement
+1. **MIMO, frozen Y, no augmentation** — pipeline sanity check; confirms wiring, normalisation, training loop
+2. **MIMO, LPV (self-scheduled Y), no augmentation** — validates LPV scheduling on Y-varying data before adding ANN
+3. **MIMO, LPV + dynamic parallel ANN** — core research contribution; ANN learns hidden MSD dynamics on top of correctly-scheduled baseline
 
-Augmentation before LPV: (a) augmentation is the research goal — validate on simplest
-baseline first; (b) frozen-Y error is real model error the ANN can learn; (c) if
-augmentation fails on frozen Y, cause is isolated from LPV scheduling.
+**Why LPV before augmentation (revised from original plan):**
+The hidden MSD is excited by Y acceleration — with Y frozen at 0.3 m, `delta_a ≈ L0`
+(equilibrium) and barely deviates. An augmentation trained on frozen-Y data would learn a
+near-constant offset, not the 400 Hz transient dynamics that are the actual research target.
+
+Additionally, with Y moving and a frozen-Y baseline, the ANN must simultaneously compensate for
+LPV mismatch (wrong `M(Y)`) and MSD dynamics — the two sources of error cannot be separated.
+LPV in Phase 2 fixes `M(Y)` first so the ANN in Phase 3 learns only the genuine MSD residual.
+
+**Why dynamic parallel (not static) for Phase 3:**
+The hidden MSD resonates at 400 Hz, sampled at 20 kHz — 50 samples per oscillation cycle. A
+static ANN sees only the current `(x, u)` at each RK4 step and has no memory between steps. It
+cannot track `delta_a` from instantaneous state alone. Dynamic parallel with 2 extra states
+(`n_hidden=2`) implicitly tracks `delta_a` and `delta_a_dot`, giving the ANN the memory it
+physically requires. See the static vs dynamic table in the Phase 3 section.
+
+**Note — original Phase 2 (frozen Y + static ANN):**
+The original plan placed augmentation before LPV to validate wiring and training loop with
+controlled mismatch. This remains a useful pipeline check but does NOT test MSD dynamics because
+Y is frozen. The wiring is preserved in Phase 3 as a reference; it is not a separate research phase.
 
 ---
 
@@ -189,15 +206,103 @@ applies P. Jan's Interconnect passes u_stage directly to the block, so P is appl
 
 ---
 
-### Phase 2 — MIMO, frozen Y, + ANN augmentation
+### Phase 2 — MIMO, LPV (self-scheduled Y), no augmentation
 
-**Goal:** add ANN augmentation with controlled mismatch. Core research contribution.
+**Goal:** validate LPV scheduling on Y-varying data. Prerequisite for augmentation.
 
-**Mismatch:** training data from gantry + extra MSD on payload mass.
-`Gantry_State_Block` unchanged — it does not know about the extra MSD.
+**Why this comes before augmentation:** with Y frozen, the hidden MSD is not excited
+(`delta_a ≈ L0`). For the ANN to learn MSD dynamics, Y must move. But when Y moves
+with a frozen-Y baseline, the ANN absorbs both LPV mismatch and MSD error simultaneously
+— the two cannot be separated. LPV must be correct first.
 
-**Augmentation block:** `Static_ANN_Block` in parallel (same wiring as ECC 2025):
+**Block swap:** `Gantry_State_Block(Y_op=0.3)` → `Gantry_State_Block(Y_op=None)`
+
+Inside `deriv()`: `Y = x[:, 2]` instead of the fixed scalar. `N(Y)` and `d(Y)` computed
+via Horner form each step. Everything else — wiring, encoder, training loop — unchanged.
+
+**Data requirement:** Y-varying MATLAB trajectories. The existing data files
+(`gantry_lti_train.mat`, `gantry_aug_train.mat`) both have Y frozen at 0.3 m — they
+cannot be used for Phase 2. New data generation scripts are needed with Y motion included
+in the reference trajectory. Both the nominal gantry model (for Phase 2) and augmented
+model (for Phase 3) must be re-simulated with Y-varying profiles.
+
+**Not yet implemented (end goal):**
+- Joint estimation still deferred
+- Orthogonality still deferred
+- LFR routing still deferred
+
+**Speed note:** RK4 backprop is 4× more compute than a linear block. Use HPC for longer `nf`.
+
+**Success criterion:** LPV NRMS < Phase 1 NRMS on Y-varying validation data.
+
+**Verification checklist:**
+- [ ] Training stable (no divergence from self-scheduling)
+- [ ] NRMS lower than Phase 1 baseline on Y-varying data
+- [ ] Largest improvement on Y channel (scheduling variable carries the LPV correction)
+- [ ] Y trajectory coverage verified (Y must actually move in training data)
+- [ ] **Loss diverges** → self-scheduling unstable; try frozen Y at mean as warm-start
+- [ ] **No improvement over Phase 1** → check Y-variation in data; check Horner form in `deriv()`
+
+---
+
+### Phase 3 — MIMO, LPV + dynamic parallel ANN
+
+**Goal:** add ANN augmentation on top of correct LPV baseline. Core research contribution.
+
+**Mismatch:** training data from gantry + extra MSD on payload mass with Y-varying motion.
+`Gantry_State_Block` (LPV) handles `M(Y)` correctly; the ANN learns the remaining MSD residual.
+
+**Why dynamic parallel (not static):**
+The hidden MSD resonates at 400 Hz (50 samples per cycle at 20 kHz). A static ANN maps
+instantaneous `(x, u)` → correction with no memory between timesteps — it cannot track
+`delta_a`. Dynamic parallel adds `n_hidden=2` extra states to the interconnect that the
+ANN owns and integrates via RK4, implicitly learning to track `delta_a` and `delta_a_dot`.
+
+**Static vs dynamic parallel — architecture reference:**
+Both use `Static_ANN_Block`. "Dynamic" refers to the interconnect state dimension, not the
+ANN itself. Reference: `scripts/ecc_2025/msd_ndof_interconnect_dynamic.py` lines 70–75, 83–98.
+
+| | Static parallel | Dynamic parallel (Phase 3) |
+|---|---|---|
+| `nx` | 6 (physics only) | 6 + n_hidden (= 8 for MSD) |
+| ANN memory | none — stateless each step | yes — extra states integrated by RK4 |
+| Encoder output | 6D | (6 + n_hidden)D |
+| ANN drives | correction to xdot[0:6] | correction to xdot[0:nx]; owns xdot[6:nx] entirely |
+| Can learn | steady-state residual | transient dynamics with their own timescale |
+
+For static parallel: `nxd = 2*FP_dof` (line 73 in reference script).
+For dynamic parallel: `nxd = 2*dof` (line 71), where `dof` is the true system DOF.
+The physics block receives only states 0:6 via `selection_matrix` (line 93);
+its xdot is placed back at those indices via `expansion_matrix` (line 95).
+The ANN block receives all `nxd` states and outputs corrections to all of them (line 91).
+Extra states (6:nxd) have no physics block — only the ANN drives them.
+
+**Wiring (dynamic parallel, nx=8):**
 ```python
+nxd = 8  # 6 physics + 2 ANN-owned (implicit delta_a, delta_a_dot)
+interconnect = Interconnect(nxd, nu=3, ny=3)
+
+# Physics block — operates on states 0:6 only
+interconnect.connect_signals("x", state_block, "concat", selection_matrix(list(range(6)), nxd))
+interconnect.connect_signals("u", state_block, "concat")
+interconnect.connect_signals(state_block, "xp", "additive", expansion_matrix(list(range(6)), nxd))
+
+# ANN block — sees all 8 states and all 3 inputs, corrects all 8 xdot components
+aug_block = Static_ANN_Block(nz=nxd+3, nw=nxd, n_nodes_per_layer=64, n_hidden_layers=2,
+                              net=zero_init_feed_forward_nn, activation=nn.Tanh)
+interconnect.add_block(aug_block)
+interconnect.connect_block_signals(aug_block, ["x", "u"], ["xp"])
+
+# Output block — reads only physics states 0:6
+interconnect.connect_signals("x", output_block, "concat", selection_matrix(list(range(6)), nxd))
+interconnect.connect_block_signals(output_block, ["u"], ["y"])
+```
+
+**Reference wiring (original frozen-Y static ANN, preserved for pipeline check):**
+```python
+# Static parallel, nx=6 — validates wiring and training loop with frozen Y + MSD mismatch.
+# Not a research phase (Y frozen → MSD not excited), but useful for sanity checking
+# the augmentation path before running Phase 3.
 interconnect.connect_signals("x",  aug_block, "concat", selection_matrix(list(range(nx)), nx))
 interconnect.connect_signals("u",  aug_block, "concat")
 interconnect.connect_signals(aug_block, "xp", "additive", expansion_matrix(list(range(nx)), nx))
@@ -208,41 +313,17 @@ interconnect.connect_signals(aug_block, "xp", "additive", expansion_matrix(list(
 - Orthogonality: ANN can still learn baseline-captured dynamics
 - LFR routing: ANN connects to state, not to LFR latent variables
 
-**Success criterion:** augmented NRMS < Phase 1 NRMS on validation data.
+**Success criterion:** Phase 3 NRMS < Phase 2 NRMS on Y-varying validation data with MSD.
 
 **Verification checklist:**
-- [ ] Loss lower than Phase 1
-- [ ] Per-channel NRMS improvement on validation data
-- [ ] ANN output magnitude reasonable
-- [ ] **No improvement** → check additive connection to `xp`
+- [ ] Loss lower than Phase 2
+- [ ] Per-channel NRMS improvement over Phase 2 on validation data
+- [ ] ANN output magnitude reasonable (not dominating the physics)
+- [ ] Extra ANN states (6:8) bounded and smooth — not diverging
+- [ ] Encoder output 8D — verify shape before training
+- [ ] **No improvement** → check additive connection to `xp`; check ANN state initialisation
+- [ ] **ANN states diverge** → reduce LR or ANN size; add state norm penalty
 - [ ] **Overfitting** → reduce ANN size or add regularisation
-
----
-
-### Phase 3 — MIMO LPV (self-scheduled Y)
-
-**Goal:** unlock LPV. One-line block change.
-
-**Block swap:** `Gantry_State_Block(Y_op=0.3)` → `Gantry_State_Block(Y_op=None)`
-
-Inside `deriv()`: `Y = x_phys[:, 2]` instead of the fixed value. Everything else
-— wiring, augmentation, encoder, training loop — unchanged.
-
-**Not yet implemented (end goal):**
-- Joint estimation still deferred
-- Orthogonality still deferred
-- LFR routing still deferred
-
-**Speed note:** RK4 backprop is 4× more compute than a linear block. Use HPC for
-longer `nf`.
-
-**Success criterion:** LPV NRMS < Phase 2 NRMS.
-
-**Verification checklist:**
-- [ ] Training stable (no divergence from self-scheduling)
-- [ ] NRMS improves over Phase 2
-- [ ] Largest improvement on Y channel (scheduling variable)
-- [ ] **Loss diverges** → self-scheduling unstable; try frozen Y at mean first
 
 ---
 
@@ -352,7 +433,14 @@ if velocities are needed for pre-encoder training on real data.
   when motion-profile data gives insufficient frequency coverage, revisit. For Phase 1
   (Python-simulated, matched case), a motion profile suffices.
 
-- **Phase 2+:** same MATLAB trajectories, different block (extra MSD mismatch).
+- **Phase 2 (LPV, no ANN):** Y-varying trajectories from nominal gantry model.
+  Existing data files (`gantry_lti_train.mat`, `gantry_aug_train.mat`) both freeze
+  Y at 0.3 m — new MATLAB data generation scripts are required with Y motion profiles.
+  Save as `gantry_lpv_train.mat` / `gantry_lpv_val.mat`.
+
+- **Phase 3 (LPV + ANN):** Y-varying trajectories from augmented gantry model (extra MSD).
+  Same Y-varying motion profile as Phase 2 but simulated with `gantry_additional_state_2025a`.
+  Save as `gantry_aug_lpv_train.mat` / `gantry_aug_lpv_val.mat`.
   MATLAB data saved as `single()` in MATLAB → float32 on Python side.
 
 ### Format (all phases)
@@ -372,8 +460,8 @@ System_data / System_data_with_x:
 nx, nu, ny = 6, 3, 3
 interconnect = Interconnect(nx=nx, nu=nu, ny=ny)
 
-state_block  = Gantry_State_Block(Y_op=0.3)   # Phase 1/2: frozen Y
-# state_block = Gantry_State_Block(Y_op=None)  # Phase 3:   self-scheduled LPV
+state_block  = Gantry_State_Block(Y_op=0.3)   # Phase 1 only: frozen Y
+# state_block = Gantry_State_Block(Y_op=None)  # Phase 2+:  self-scheduled LPV
 interconnect.add_block(state_block)
 interconnect.connect_signals("x", state_block, "concat",  selection_matrix(list(range(nx)), nx))
 interconnect.connect_signals("u", state_block, "concat")
