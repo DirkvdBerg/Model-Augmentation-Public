@@ -18,6 +18,7 @@ Run from project root:
 
 import sys
 import os
+from datetime import datetime
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 import numpy as np
@@ -38,6 +39,8 @@ EPOCHS = 5
 BATCH  = 256
 SAVE   = True
 N_HOLD = 10000 # hold samples at start/end of each MATLAB trajectory (0.5 s at 20 kHz, no motion)
+
+run_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
 
 NX, NU, NY = 6, 3, 3
 
@@ -192,13 +195,14 @@ plt.show()
 # ── Save ──────────────────────────────────────────────────────────────────────
 if SAVE:
     # Model checkpoint — can be reloaded with SSE_Interconnect.load_system()
-    save_path = os.path.join(plot_dir, 'phase1')
+    save_path = os.path.join(plot_dir, f'phase1_{run_id}')
     fit_sys.save_system(save_path)
 
     # All results in one file — full trajectories, loss history, metrics.
-    # Load with: d = np.load('phase1_results.npz'); d['y_hat_enc'] etc.
+    # Load with: d = np.load('phase1_results_{run_id}.npz'); d['y_hat_enc'] etc.
+    results_path = os.path.join(plot_dir, f'phase1_results_{run_id}.npz')
     np.savez(
-        os.path.join(plot_dir, 'phase1_results.npz'),
+        results_path,
         # Trajectories — full length (T,3), physical units [m]
         y_ref     = y_ref,
         y_hat_enc = y_hat_enc,
@@ -217,5 +221,5 @@ if SAVE:
         NB        = np.array(NB),
         NF        = np.array(NF),
     )
-    print(f'\nSaved model : {save_path}')
-    print(f'Saved results: {os.path.join(plot_dir, "phase1_results.npz")}')
+    print(f'\nSaved model  : {save_path}')
+    print(f'Saved results: {results_path}')
