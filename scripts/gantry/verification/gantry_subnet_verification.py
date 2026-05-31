@@ -31,12 +31,13 @@ from model_augmentation.fit_systems.blocks import Gantry_State_Block, Linear_Out
 from model_augmentation.systems.gantry_ss import Cd, Dd
 
 # ── Hyperparameters ───────────────────────────────────────────────────────────
-NA     = 100   # encoder history [samples] — 5 ms at 20 kHz
-NB     = 100
-NF     = 200   # BPTT horizon [samples]   — 32.5 ms (validated at this rate in train_param_recovery.py)
+NA     = 200   # encoder history [samples] — 10 ms at 20 kHz
+NB     = 200
+NF     = 200   # BPTT horizon [samples]   — 10 ms at 20 kHz
 EPOCHS = 5
 BATCH  = 256
 SAVE   = True
+N_HOLD = 10000 # hold samples at start/end of each MATLAB trajectory (0.5 s at 20 kHz, no motion)
 
 NX, NU, NY = 6, 3, 3
 
@@ -45,16 +46,19 @@ _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data', 'g
 
 def load_mat(split):
     d = loadmat(os.path.join(_DATA_DIR, f'gantry_lti_{split}.mat'), squeeze_me=True)
+    # Strip N_HOLD samples from start and end: those are static hold periods (no motion).
+    # The encoder window (cheat_n = max(NA, NB)) must fall during motion, not during the hold,
+    # otherwise the encoder sees a trivially static initial condition and is never tested properly.
     return deepSI.System_data(
-        u  = d['u'].astype(np.float32),            # (T, 3)  stage forces [N]
-        y  = d['y'].astype(np.float32),            # (T, 3)  stage positions [m]
-        x  = d['x_logical'].astype(np.float32),    # (T, 6)  logical state — encoder verify only
+        u  = d['u'][N_HOLD:-N_HOLD].astype(np.float32),         # (T, 3)  stage forces [N]
+        y  = d['y'][N_HOLD:-N_HOLD].astype(np.float32),         # (T, 3)  stage positions [m]
+        x  = d['x_logical'][N_HOLD:-N_HOLD].astype(np.float32), # (T, 6)  logical state — encoder verify only
         dt = float(d['dt']),
     )
 
 train_data = load_mat('train')
 val_data   = load_mat('val')
-print(f'Train: T={len(train_data.u)}  Val: T={len(val_data.u)}')
+print(f'Train: T={len(train_data.u)}  Val: T={len(val_data.u)}  (hold trimmed: {N_HOLD} samples each side)')
 
 # ── Normalisation stats for Gantry_State_Block ────────────────────────────────
 # std_x / std_u normalise the physical ODE inputs inside the block.
@@ -106,7 +110,7 @@ fit_sys.eval()
 # val_data.y (encoder warmup). NRMS must exclude these rows — error is zero there
 # by construction, not because the model predicted correctly.
 sim_result = fit_sys.apply_experiment(val_data)
-cheat_n    = sim_result.cheat_n          # = max(NA, NB) = 100
+cheat_n    = sim_result.cheat_n          # = max(NA, NB)
 y_hat_enc  = sim_result.y               # (T, 3) physical [m], normed=False
 y_ref      = val_data.y                 # (T, 3) physical [m]
 
@@ -160,17 +164,21 @@ fig1.savefig(os.path.join(plot_dir, 'phase1_val_loss.png'), dpi=150)
 
 # Plot 2: Simulated vs reference per channel (mirrors Fig. 5 in Hoekstra 2025)
 # Shows encoder-initialised sim, zero-state sim, and reference over the full
-# validation trajectory. Vertical line marks warmup boundary (cheat_n samples).
+# (trimmed) validation trajectory. Shaded region marks the encoder input window
+# [t=0, cheat_t]; dashed line marks rollout start.
 t_val   = np.arange(len(y_ref)) * val_data.dt   # time axis [s]
-cheat_t = cheat_n * val_data.dt                  # warmup end [s]
+cheat_t = cheat_n * val_data.dt                  # encoder window end / rollout start [s]
 ch_labels = ['X1 [m]', 'X2 [m]', 'Y [m]']
 
 fig2, axes = plt.subplots(3, 1, figsize=(12, 7), sharex=True)
 for ch, (ax, lab) in enumerate(zip(axes, ch_labels)):
-    ax.plot(t_val, y_ref[:, ch],      color='black',  lw=0.8,  label='Reference')
-    ax.plot(t_val, y_hat_enc[:, ch],  color='C0',     lw=0.9,  label=f'Encoder-init (NRMS={nrms_enc[ch]:.3f})')
-    ax.plot(t_val, y_zero[:, ch],     color='C1',     lw=0.9,  linestyle='--', label=f'Zero-state   (NRMS={nrms_zero[ch]:.3f})')
-    ax.axvline(cheat_t, color='grey', linestyle=':', lw=0.8,  label='Warmup end')
+    ax.plot(t_val, y_ref[:, ch],     color='black', lw=0.8, label='Reference')
+    ax.plot(t_val, y_hat_enc[:, ch], color='C0',    lw=0.9, label=f'Encoder-init (NRMS={nrms_enc[ch]:.3f})')
+    ax.plot(t_val, y_zero[:, ch],    color='C1',    lw=0.9, linestyle='--', label=f'Zero-state   (NRMS={nrms_zero[ch]:.3f})')
+    # Encoder input window: shaded band [t=0, cheat_t] + dashed boundary at rollout start
+    enc_label = f'Encoder input ({cheat_n} samples, {cheat_t*1e3:.0f} ms)' if ch == 0 else '_nolegend_'
+    ax.axvspan(t_val[0], cheat_t, alpha=0.10, color='steelblue', label=enc_label)
+    ax.axvline(cheat_t, color='steelblue', linestyle='--', lw=0.8)
     ax.set_ylabel(lab)
     ax.legend(fontsize=7, loc='upper right')
     ax.grid(True)
