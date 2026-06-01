@@ -65,16 +65,32 @@ print(f'Train: T={len(train_data.u)}  Val: T={len(val_data.u)}  (hold trimmed: {
 
 # ── Normalisation stats for Gantry_State_Block ────────────────────────────────
 # std_x / std_u normalise the physical ODE inputs inside the block.
-# Separate from fit_sys.norm, which normalises the encoder's (u, y) observations.
+# These are also used as the SSE_Interconnect's (u, y) normalisation below,
+# with no mean subtraction (u0=y0=0), so that:
+#   u_phys = u_norm * std_u = u   (block sees full physical force)
+#   y_norm = y_phys / ystd        (consistent with Cd_norm below)
 std_u = train_data.u.std(axis=0).reshape(NU, 1).astype(np.float32) + 1e-8  # (3, 1) [N]
 std_x = train_data.x.std(axis=0).reshape(NX, 1).astype(np.float32) + 1e-8  # (6, 1) [m, m/s]
 # 1e-8 guard: Y position is frozen at 0.3 m → std_x[2] ≈ 0 without it.
+
+# Output normalisation (stage frame) — used for Cd_norm and fit_sys.norm.
+# Computed from training data so fit_sys.norm can be set before training.
+ystd = train_data.y.std(axis=0).astype(np.float32) + 1e-8   # (3,) [m]
+
+# ── Normalised output matrix ──────────────────────────────────────────────────
+# Physical output equation: y_phys = Cd @ x_phys = P.T @ q_logical
+# In normalised space (x_norm = x_phys/std_x, y_norm = y_phys/ystd):
+#   y_norm = Cd_norm @ x_norm   where Cd_norm[i,j] = Cd[i,j] * std_x[j] / ystd[i]
+# This applies P.T BEFORE rescaling, so translation (large std_x[0]) and
+# rotation (tiny std_x[1]) are mixed with their correct physical weights.
+# Without this, the rotational mode is amplified by std_x[0]/std_x[1] ≈ 100-300x.
+Cd_norm = Cd.numpy() * std_x.flatten()[None, :] / ystd[:, None]  # (3, 6)
 
 # ── Build Interconnect ────────────────────────────────────────────────────────
 interconnect = Interconnect(nx=NX, nu=NU, ny=NY)
 
 gantry_block = Gantry_State_Block(Y_op=0.3, std_x=std_x, std_u=std_u)
-output_block  = Linear_Output_Block(C=Cd, D=Dd)
+output_block  = Linear_Output_Block(C=Cd_norm, D=Dd.numpy())
 
 interconnect.add_block(gantry_block)
 interconnect.add_block(output_block)
@@ -94,12 +110,21 @@ fit_sys = SSE_Interconnect(
     e_net_kwargs={'n_nodes_per_layer': 64, 'n_hidden_layers': 2},
 )
 
+# Set normalisation manually — no mean subtraction (u0=y0=0).
+# With u0=0: u_norm = u/ustd → Gantry block sees u_phys = u_norm*std_u = u (correct).
+# With y0=0: y_norm = y/ystd → consistent with Cd_norm which maps x_norm → y_phys/ystd.
+# auto_fit_norm=True would overwrite these with mean-subtracted values, breaking both.
+fit_sys.norm.u0   = np.zeros(NU, dtype=np.float32)
+fit_sys.norm.ustd = std_u.flatten()
+fit_sys.norm.y0   = np.zeros(NY, dtype=np.float32)
+fit_sys.norm.ystd = ystd
+
 fit_sys.fit(
     train_sys_data=train_data,
     val_sys_data=val_data,
     epochs=EPOCHS,
     batch_size=BATCH,
-    auto_fit_norm=True,
+    auto_fit_norm=False,
     loss_kwargs={'nf': NF},
     validation_measure='sim-NRMS',
 )
@@ -148,10 +173,10 @@ x_zero_traj  = np.zeros((T_val, NX), dtype=np.float32)
 
 with torch.no_grad():
     for t in range(T_val):
+        x_zero_traj[t] = x_zero.squeeze().numpy()   # state AT t (before step)
         u_t = torch.tensor(val_norm.u[t], dtype=torch.float32).unsqueeze(0)  # (1, 3)
         y_t, x_zero = interconnect(x_zero, u_t)
-        y_zero_norm[t] = y_t.squeeze().numpy()
-        x_zero_traj[t] = x_zero.squeeze().numpy()   # normalised
+        y_zero_norm[t] = y_t.squeeze().numpy()       # output AT t (from state at t)
 
 y_zero      = y_zero_norm * fit_sys.norm.ystd + fit_sys.norm.y0  # denormalise → physical [m]
 x_zero_phys = x_zero_traj * std_x.flatten()                       # (T, NX) physical [m, m/s]
