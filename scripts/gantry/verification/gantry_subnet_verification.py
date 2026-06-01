@@ -39,6 +39,11 @@ EPOCHS = 5
 BATCH  = 256
 SAVE   = True
 N_HOLD = 10000 # hold samples at start/end of each MATLAB trajectory (0.5 s at 20 kHz, no motion)
+Y_OP   = 0.3   # Y operating point [m] — frozen in Phase 1
+SEED   = 42
+
+np.random.seed(SEED)
+torch.manual_seed(SEED)
 
 run_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
 
@@ -71,11 +76,12 @@ print(f'Train: T={len(train_data.u)}  Val: T={len(val_data.u)}  (hold trimmed: {
 #   y_norm = y_phys / ystd        (consistent with Cd_norm below)
 std_u = train_data.u.std(axis=0).reshape(NU, 1).astype(np.float32) + 1e-8  # (3, 1) [N]
 std_x = train_data.x.std(axis=0).reshape(NX, 1).astype(np.float32) + 1e-8  # (6, 1) [m, m/s]
-# 1e-8 guard: Y position is frozen at 0.3 m → std_x[2] ≈ 0 without it.
+std_x[2] = Y_OP   # Y position frozen → data std ≈ 0; use operating point as physical scale
 
 # Output normalisation (stage frame) - used for Cd_norm and fit_sys.norm.
 # Computed from training data so fit_sys.norm can be set before training.
 ystd = train_data.y.std(axis=0).astype(np.float32) + 1e-8   # (3,) [m]
+ystd[2] = Y_OP    # consistent with std_x[2] → Cd_norm[2,2] = 1.0 * Y_OP/Y_OP = 1.0
 
 # ── Normalised output matrix ──────────────────────────────────────────────────
 # Physical output equation: y_phys = Cd @ x_phys = P.T @ q_logical
@@ -89,7 +95,7 @@ Cd_norm = Cd.numpy() * std_x.flatten()[None, :] / ystd[:, None]  # (3, 6)
 # ── Build Interconnect ────────────────────────────────────────────────────────
 interconnect = Interconnect(nx=NX, nu=NU, ny=NY)
 
-gantry_block = Gantry_State_Block(Y_op=0.3, std_x=std_x, std_u=std_u)
+gantry_block = Gantry_State_Block(Y_op=Y_OP, std_x=std_x, std_u=std_u)
 output_block  = Linear_Output_Block(C=Cd_norm, D=Dd.numpy())
 
 interconnect.add_block(gantry_block)
@@ -126,7 +132,7 @@ fit_sys.fit(
     batch_size=BATCH,
     auto_fit_norm=False,
     loss_kwargs={'nf': NF},
-    validation_measure='sim-NRMS',
+    validation_measure='sim-RMS',
 )
 
 # Capture full training history before reloading best weights.
