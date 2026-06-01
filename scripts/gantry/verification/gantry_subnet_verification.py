@@ -129,6 +129,16 @@ fit_sys.fit(
     validation_measure='sim-NRMS',
 )
 
+# Capture full training history before reloading best weights.
+# fit() ends by calling checkpoint_load_system('_best'), which restores the full
+# object state (including epoch_id / Loss_val / Loss_train) to the best epoch only.
+# Load '_last' first to recover the complete history, then restore '_best' for eval.
+fit_sys.checkpoint_load_system(name='_last')
+epoch_id_full    = fit_sys.epoch_id.copy()
+loss_val_full    = fit_sys.Loss_val.copy()
+loss_train_full  = fit_sys.Loss_train.copy()
+fit_sys.checkpoint_load_system(name='_best')
+
 fit_sys.eval()
 
 # ── Check 1: Encoder-initialised sim-NRMS ────────────────────────────────────
@@ -289,9 +299,10 @@ if SAVE:
         y_hat_enc = y_hat_enc,
         y_zero    = y_zero,
         t_val     = t_val,        # time axis [s], shape (T,)
-        # Convergence
-        epoch_id  = np.array(fit_sys.epoch_id),
-        loss_val  = np.array(fit_sys.Loss_val),
+        # Convergence — full history (all epochs, not just up to best)
+        epoch_id   = epoch_id_full,
+        loss_val   = loss_val_full,
+        loss_train = loss_train_full,
         # Per-channel NRMS (post-warmup window)
         nrms_enc  = nrms_enc,     # shape (3,): [X1, X2, Y]
         nrms_zero = nrms_zero,    # shape (3,): [X1, X2, Y]

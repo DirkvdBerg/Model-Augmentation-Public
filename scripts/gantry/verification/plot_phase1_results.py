@@ -51,6 +51,7 @@ y_zero      = d['y_zero']       # (T, 3)
 t_val       = d['t_val']        # (T,)   time axis [s]
 epoch_id    = d['epoch_id']     # (E,)
 loss_val    = d['loss_val']     # (E,)
+loss_train  = d['loss_train']   # (E,)  NaN at epoch 0 (before first batch)
 nrms_enc    = d['nrms_enc']     # (3,)
 nrms_zero   = d['nrms_zero']    # (3,)
 x_ref       = d['x_ref']        # (T, 6) logical coordinates
@@ -86,10 +87,11 @@ run_id  = os.path.basename(npz_path).replace('phase1_results_', '').replace('.np
 
 # ── Plot 1: Validation loss convergence ───────────────────────────────────────
 fig1, ax1 = plt.subplots(figsize=(7, 3.5))
-ax1.semilogy(epoch_id, loss_val, label='Val loss')
+ax1.semilogy(epoch_id, loss_val,   label='Val loss')
+ax1.semilogy(epoch_id, loss_train, label='Train loss', linestyle='--', alpha=0.7)
 ax1.set_xlabel('Epoch')
-ax1.set_ylabel('Validation RMSE')
-ax1.set_title('Validation loss convergence')
+ax1.set_ylabel('RMSE')
+ax1.set_title('Loss convergence')
 ax1.legend()
 ax1.grid(True, which='both')
 fig1.tight_layout()
@@ -97,17 +99,44 @@ fig1.savefig(os.path.join(out_dir, f'phase1_val_loss_{run_id}.png'), dpi=150)
 print('Saved: phase1_val_loss')
 
 # ── Plot 2: Output simulation ─────────────────────────────────────────────────
+# y_hat_enc / y_zero from the output block are WRONG: the physical Cd=[P.T|0]
+# is applied in normalised state space where x_norm = x_phys/std_x.  P.T mixes
+# translation (large std_x[0]) and rotation (tiny std_x[1]) with equal normalised
+# weight, then ystd rescales — amplifying the rotational mode ~100-300x.
+#
+# Fix: reconstruct stage positions as P.T @ q_logical directly from the physical
+# state (same operation used in Plot 3), which applies P.T AFTER restoring
+# physical units.  This is the correct order.
+#
+# Encoder-init warmup [0:cheat_n]: x_enc_stage is forward-filled there, so use
+# y_ref for that window (reference values — same as what apply_experiment copies).
+
+_eps = 1e-8
+
+# Corrected encoder-init output: reference for warmup, state-based for rollout.
+y_hat_enc_fixed = np.copy(y_ref)                          # (T, 3) — covers warmup
+y_hat_enc_fixed[cheat_n:] = x_enc_stage[cheat_n:, :3]    # post-warmup: P.T @ q_logical
+
+# Corrected zero-state output: state-based throughout (no warmup issue).
+y_zero_fixed = x_zero_stage[:, :3]                        # (T, 3) — P.T @ q_logical
+
+# Recompute NRMS from corrected positions (saved nrms_enc/nrms_zero used wrong y).
+nrms_enc_fixed  = (np.sqrt(((y_hat_enc_fixed[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0))
+                   / (y_ref[cheat_n:].std(axis=0) + _eps))
+nrms_zero_fixed = (np.sqrt(((y_zero_fixed[cheat_n:]    - y_ref[cheat_n:]) ** 2).mean(axis=0))
+                   / (y_ref[cheat_n:].std(axis=0) + _eps))
+
 ch_labels = ['X1 [m]', 'X2 [m]', 'Y [m]']
 fig2, axes2 = plt.subplots(3, 1, figsize=(12, 7), sharex=True)
 for ch, (ax, lab) in enumerate(zip(axes2, ch_labels)):
-    ax.plot(t_val, y_ref[:, ch],     color='black', lw=0.8, label='Reference')
-    ax.plot(t_val, y_hat_enc[:, ch], color='C0',    lw=0.9, label=f'Encoder-init (NRMS={nrms_enc[ch]:.3f})')
-    ax.plot(t_val, y_zero[:, ch],    color='C1',    lw=0.9, linestyle='--', label=f'Zero-state   (NRMS={nrms_zero[ch]:.3f})')
+    ax.plot(t_val, y_ref[:, ch],           color='black', lw=0.8, label='Reference')
+    ax.plot(t_val, y_hat_enc_fixed[:, ch], color='C0',    lw=0.9, label=f'Encoder-init (NRMS={nrms_enc_fixed[ch]:.3f})')
+    ax.plot(t_val, y_zero_fixed[:, ch],    color='C1',    lw=0.9, linestyle='--', label=f'Zero-state   (NRMS={nrms_zero_fixed[ch]:.3f})')
     ax.set_ylabel(lab)
     ax.legend(fontsize=7, loc='upper right')
     ax.grid(True)
 axes2[-1].set_xlabel('Time [s]')
-fig2.suptitle('Validation simulation - encoder-init vs zero-state')
+fig2.suptitle('Validation simulation - encoder-init vs zero-state\n(positions from P.T @ q_logical, bypassing broken Cd output block)')
 fig2.tight_layout()
 fig2.savefig(os.path.join(out_dir, f'phase1_simulation_{run_id}.png'), dpi=150)
 print('Saved: phase1_simulation')
