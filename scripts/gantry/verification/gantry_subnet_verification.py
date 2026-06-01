@@ -29,13 +29,13 @@ from scipy.io import loadmat
 
 from model_augmentation.fit_systems.interconnect import Interconnect, SSE_Interconnect
 from model_augmentation.fit_systems.blocks import Gantry_State_Block, Linear_Output_Block
-from model_augmentation.systems.gantry_ss import Cd, Dd
+from model_augmentation.systems.gantry_ss import Cd, Dd, P
 
 # ── Hyperparameters ───────────────────────────────────────────────────────────
 NA     = 200   # encoder history [samples] — 10 ms at 20 kHz
 NB     = 200
 NF     = 200   # BPTT horizon [samples]   — 10 ms at 20 kHz
-EPOCHS = 60
+EPOCHS = 1
 BATCH  = 256
 SAVE   = True
 N_HOLD = 10000 # hold samples at start/end of each MATLAB trajectory (0.5 s at 20 kHz, no motion)
@@ -204,17 +204,36 @@ fig2.suptitle('Validation simulation - encoder-init vs zero-state')
 fig2.tight_layout()
 fig2.savefig(os.path.join(plot_dir, 'phase1_simulation.png'), dpi=150)
 
-# Plot 3: State trajectory — all 6 channels (positions + velocities), logical coordinates.
-# Same structure as Plot 2. Reference is x_logical from MATLAB (val_data.x).
-# Encoder-init and zero-state state trajectories denormalised from interconnect internal space.
-# Note: x_logical velocities are finite-differenced in MATLAB (gradient() at 20 kHz).
-st_labels = ['q0 [m]', 'q1 [m]', 'q2 [m]', 'dq0 [m/s]', 'dq1 [m/s]', 'dq2 [m/s]']
+# Plot 3: State trajectory — all 6 channels (positions + velocities), stage coordinates.
+# Same structure as Plot 2. Reference is x_logical from MATLAB, converted to stage frame.
+# Encoder-init and zero-state denormalised from interconnect internal space, also converted.
+# Stage positions: q_stage = P.T @ q_logical.  Stage velocities: dq_stage = P.T @ dq_logical.
+# P maps logical forces → stage forces; P.T maps logical positions → stage positions.
+# Note: velocities are finite-differenced in MATLAB on q_logical at 20 kHz.
+P_np = P.numpy()   # (3, 3) transform: q_stage = P.T @ q_logical
+
+def to_stage(x_logical_arr):
+    """Convert (T, 6) logical-frame array to (T, 6) stage-frame array."""
+    q_stage  = (P_np.T @ x_logical_arr[:, 0:3].T).T   # (T, 3)
+    dq_stage = (P_np.T @ x_logical_arr[:, 3:6].T).T   # (T, 3)
+    return np.concatenate([q_stage, dq_stage], axis=1)
+
+x_ref_stage      = to_stage(x_ref)
+x_zero_stage     = to_stage(x_zero_phys)
+
+# NaN-fill encoder-init warmup so the line starts at cheat_n (avoids gap in plot).
+# Saved npz still gets the original x_enc_phys with NaN for the warmup window.
+x_enc_plot = x_enc_phys.copy()
+x_enc_plot[:cheat_n] = x_enc_phys[cheat_n]          # repeat first valid value
+x_enc_stage = to_stage(x_enc_plot)
+
+st_labels = ['X1 [m]', 'X2 [m]', 'Y [m]', 'dX1 [m/s]', 'dX2 [m/s]', 'dY [m/s]']
 
 fig3, axes3 = plt.subplots(6, 1, figsize=(12, 12), sharex=True)
 for ch, (ax, lab) in enumerate(zip(axes3, st_labels)):
-    ax.plot(t_val, x_ref[:, ch],      color='black', lw=0.8, label='x_logical (MATLAB)')
-    ax.plot(t_val, x_enc_phys[:, ch], color='C0',    lw=0.9, label='Encoder-init')
-    ax.plot(t_val, x_zero_phys[:, ch],color='C1',    lw=0.9, linestyle='--', label='Zero-state')
+    ax.plot(t_val, x_ref_stage[:, ch],   color='black', lw=0.8, label='Reference (MATLAB)')
+    ax.plot(t_val, x_enc_stage[:, ch],   color='C0',    lw=0.9, label='Encoder-init')
+    ax.plot(t_val, x_zero_stage[:, ch],  color='C1',    lw=0.9, linestyle='--', label='Zero-state')
     enc_label = f'Encoder input ({cheat_n} samples, {cheat_t*1e3:.0f} ms)' if ch == 0 else '_nolegend_'
     ax.axvspan(t_val[0], cheat_t, alpha=0.10, color='steelblue', label=enc_label)
     ax.axvline(cheat_t, color='steelblue', linestyle='--', lw=0.8)
@@ -223,7 +242,7 @@ for ch, (ax, lab) in enumerate(zip(axes3, st_labels)):
     ax.grid(True)
 axes3[-1].set_xlabel('Time [s]')
 fig3.suptitle('Validation state trajectory - encoder-init vs zero-state\n'
-              'Logical coordinates [q_logical | qdot_logical]')
+              'Stage coordinates [X1, X2, Y | dX1, dX2, dY]')
 fig3.tight_layout()
 fig3.savefig(os.path.join(plot_dir, 'phase1_states.png'), dpi=150)
 
