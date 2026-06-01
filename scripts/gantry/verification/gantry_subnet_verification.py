@@ -35,7 +35,7 @@ from model_augmentation.systems.gantry_ss import Cd, Dd, P
 NA     = 200   # encoder history [samples] - 10 ms at 20 kHz
 NB     = 200
 NF     = 200   # BPTT horizon [samples]   - 10 ms at 20 kHz
-EPOCHS = 5
+EPOCHS = 60
 BATCH  = 256
 SAVE   = True
 N_HOLD = 10000 # hold samples at start/end of each MATLAB trajectory (0.5 s at 20 kHz, no motion)
@@ -223,7 +223,7 @@ ax1.set_title('Loss convergence - train and validation')
 ax1.legend()
 ax1.grid(True, which='both')
 fig1.tight_layout()
-fig1.savefig(os.path.join(plot_dir, 'phase1_val_loss.png'), dpi=150)
+fig1.savefig(os.path.join(plot_dir, f'phase1_val_loss_{run_id}.png'), dpi=150)
 
 # Plot 2: Validation simulation - encoder-init vs zero-state vs reference (stage positions).
 # y_hat_enc and y_zero come directly from the output block (Cd_norm @ x_norm * ystd),
@@ -246,7 +246,7 @@ for ch, (ax, lab) in enumerate(zip(axes2, ch_labels)):
 axes2[-1].set_xlabel('Time [s]')
 fig2.suptitle('Validation simulation - encoder-init vs zero-state (stage positions)')
 fig2.tight_layout()
-fig2.savefig(os.path.join(plot_dir, 'phase1_simulation.png'), dpi=150)
+fig2.savefig(os.path.join(plot_dir, f'phase1_simulation_{run_id}.png'), dpi=150)
 
 # Plot 3: State trajectories - commented out.
 # Velocities are not part of the output equation and are not directly optimised.
@@ -283,7 +283,7 @@ axes4[-1].set_xlabel('Time [s]')
 fig4.suptitle('Training set - positions and input forces\n'
               'Shaded region: encoder warmup window')
 fig4.tight_layout()
-fig4.savefig(os.path.join(plot_dir, 'phase1_trajectory.png'), dpi=150)
+fig4.savefig(os.path.join(plot_dir, f'phase1_trajectory_{run_id}.png'), dpi=150)
 
 plt.show()
 
