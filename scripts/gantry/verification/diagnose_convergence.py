@@ -201,7 +201,7 @@ y_ref_train = train_data.y
 def zero_state_rollout(data):
     data_norm = fit_sys.norm.transform(data)
     x = torch.zeros(1, NX)
-    x[0, 2] = Y_OP / std_x[2].item()  # Y channel: normalised Y_OP, not 0
+    x[0, :] = torch.tensor(data.x[0] / std_x.flatten(), dtype=torch.float32)  # actual state at trim point
     y_out = np.zeros((len(data_norm.u), NY), dtype=np.float32)
     with torch.no_grad():
         for t in range(len(data_norm.u)):
