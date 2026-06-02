@@ -106,6 +106,15 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
+### Rule: When adapting a reference script, preserve its skeleton and append additions at the end
+
+**Trigger**: When converting or adapting an existing reference script (e.g. Jan's ECC-2025 code) to a new system
+**Rule**: Keep the original script's section order, variable naming style, and code structure intact. Make only the minimal changes needed for the new system. Add new sections (evaluation, plotting, extra saves) after the original script's final block (save). Do not restructure or rewrite the file from scratch.
+**Why**: User could not verify the gantry adaptation because the new file looked nothing like Jan's original. A complete rewrite makes the diff invisible, removing the ability to catch errors by comparison.
+**How to apply**: Before writing any adapted script, open the reference file and write the adapted version section-by-section in the same order. Mark each changed line with a comment if helpful. New additions go at the bottom.
+
+---
+
 ### Rule: Mathematical implications must be justified for the specific construction, not asserted as general facts
 **Trigger**: When claiming "X implies Y" or "X if and only if Y" in a mathematical derivation
 **Rule**: Always state explicitly why the implication holds for this specific construction. Do not assert it as if it follows from a general theorem unless it actually does. Show the connecting steps.
