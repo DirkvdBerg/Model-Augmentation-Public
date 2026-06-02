@@ -35,10 +35,10 @@ from model_augmentation.systems.gantry_ss import Cd, Dd, P
 NA     = 200   # encoder history [samples] - 10 ms at 20 kHz
 NB     = 200
 NF     = 200   # BPTT horizon [samples]   - 10 ms at 20 kHz
-EPOCHS = 60
+EPOCHS = 5
 BATCH  = 256
 SAVE   = True
-N_HOLD = 10000 # hold samples at start/end of each MATLAB trajectory (0.5 s at 20 kHz, no motion)
+N_HOLD = 0 # hold samples at start/end of each MATLAB trajectory (0.5 s at 20 kHz, no motion)
 Y_OP   = 0.3   # Y operating point [m] — frozen in Phase 1
 SEED   = 42
 
@@ -58,9 +58,9 @@ def load_mat(split):
     # The encoder window (cheat_n = max(NA, NB)) must fall during motion, not during the hold,
     # otherwise the encoder sees a trivially static initial condition and is never tested properly.
     return deepSI.System_data(
-        u  = d['u'][N_HOLD:-N_HOLD].astype(np.float32),         # (T, 3)  stage forces [N]
-        y  = d['y'][N_HOLD:-N_HOLD].astype(np.float32),         # (T, 3)  stage positions [m]
-        x  = d['x_logical'][N_HOLD:-N_HOLD].astype(np.float32), # (T, 6)  logical state - encoder verify only
+        u  = (d['u'][N_HOLD:] if N_HOLD == 0 else d['u'][N_HOLD:-N_HOLD]).astype(np.float32),
+        y  = (d['y'][N_HOLD:] if N_HOLD == 0 else d['y'][N_HOLD:-N_HOLD]).astype(np.float32),
+        x  = (d['x_logical'][N_HOLD:] if N_HOLD == 0 else d['x_logical'][N_HOLD:-N_HOLD]).astype(np.float32),
         dt = float(d['dt']),
     )
 
@@ -184,7 +184,7 @@ val_norm = fit_sys.norm.transform(val_data)  # normalised u and y; x is stripped
 T_val    = len(val_norm.u)
 
 x_zero       = torch.zeros(1, NX)
-x_zero[0, 2] = Y_OP / std_x[2].item()  # Y channel: normalised Y_OP, not 0
+x_zero[0, :] = torch.tensor(val_data.x[0] / std_x.flatten(), dtype=torch.float32)  # actual state at trim point
 y_zero_norm  = np.zeros((T_val, NY), dtype=np.float32)
 x_zero_traj  = np.zeros((T_val, NX), dtype=np.float32)
 
@@ -270,7 +270,7 @@ cheat_t_train   = cheat_n * train_data.dt
 train_norm   = fit_sys.norm.transform(train_data)
 T_train      = len(train_norm.u)
 x_zero_tr    = torch.zeros(1, NX)
-x_zero_tr[0, 2] = Y_OP / std_x[2].item()  # Y channel: normalised Y_OP, not 0
+x_zero_tr[0, :] = torch.tensor(train_data.x[0] / std_x.flatten(), dtype=torch.float32)  # actual state at trim point
 y_zero_train_norm = np.zeros((T_train, NY), dtype=np.float32)
 
 with torch.no_grad():
