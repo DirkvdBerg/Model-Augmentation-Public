@@ -171,7 +171,7 @@ x_enc_phys[cheat_n:] = (x_enc_norm[:NX, :] * std_x).T               # (T, NX) ph
 
 nrms_enc = (
     np.sqrt(((y_hat_enc[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0))
-    / y_ref[cheat_n:].std(axis=0)
+    / ystd  # use normalisation scale — raw data std is ~1e-7 for frozen Y, which blows up NRMS
 )
 print('\n=== Check 1: Encoder-initialised sim-NRMS ===')
 for ch, label in enumerate(['X1', 'X2', 'Y ']):
@@ -184,6 +184,7 @@ val_norm = fit_sys.norm.transform(val_data)  # normalised u and y; x is stripped
 T_val    = len(val_norm.u)
 
 x_zero       = torch.zeros(1, NX)
+x_zero[0, 2] = Y_OP / std_x[2].item()  # Y channel: normalised Y_OP, not 0
 y_zero_norm  = np.zeros((T_val, NY), dtype=np.float32)
 x_zero_traj  = np.zeros((T_val, NX), dtype=np.float32)
 
@@ -199,7 +200,7 @@ x_zero_phys = x_zero_traj * std_x.flatten()                       # (T, NX) phys
 
 nrms_zero = (
     np.sqrt(((y_zero[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0))
-    / y_ref[cheat_n:].std(axis=0)
+    / ystd  # use normalisation scale — consistent with nrms_enc denominator
 )
 print('\n=== Check 2: Zero-state vs encoder sim-NRMS ===')
 for ch, label in enumerate(['X1', 'X2', 'Y ']):
@@ -254,21 +255,49 @@ fig2.savefig(os.path.join(plot_dir, f'phase1_simulation_{run_id}.png'), dpi=150)
 # Comparing internal ODE states to MATLAB x_logical is not tied to the training objective.
 # Revisit if state supervision is added to the loss (see docs/gantry-augmentation-plan.md).
 
-# Plot 4: Training trajectory + input forces - what the model was trained on.
-# Input forces are only shown here, not in the validation simulation plot.
-# Shaded region marks the encoder warmup window at the start of the training trajectory.
-mat_train    = loadmat(os.path.join(_DATA_DIR, 'gantry_lti_train.mat'), squeeze_me=True)
-u_train      = mat_train['u'][N_HOLD:-N_HOLD].astype(np.float32)   # (T, 3) stage forces [N]
-y_train      = mat_train['y'][N_HOLD:-N_HOLD].astype(np.float32)   # (T, 3) stage positions [m]
-t_train      = np.arange(len(y_train)) * float(mat_train['dt'])
-cheat_t_train = cheat_n * float(mat_train['dt'])
+# Plot 4: Training simulation - encoder-init vs zero-state vs reference + input forces.
+# Same structure as Plot 2 (validation) but applied to training data, so overfitting
+# vs underfitting can be judged directly by comparing the two plots.
+fit_sys.hfn.reset_saved_signals()
+sim_train      = fit_sys.apply_experiment(train_data)
+y_hat_enc_train = sim_train.y                          # (T, 3) physical [m]
+y_ref_train     = train_data.y                         # (T, 3) physical [m]
+u_ref_train     = train_data.u                         # (T, 3) stage forces [N]
+t_train         = np.arange(len(y_ref_train)) * train_data.dt
+cheat_t_train   = cheat_n * train_data.dt
+
+# Zero-state simulation on training data
+train_norm   = fit_sys.norm.transform(train_data)
+T_train      = len(train_norm.u)
+x_zero_tr    = torch.zeros(1, NX)
+x_zero_tr[0, 2] = Y_OP / std_x[2].item()  # Y channel: normalised Y_OP, not 0
+y_zero_train_norm = np.zeros((T_train, NY), dtype=np.float32)
+
+with torch.no_grad():
+    for t in range(T_train):
+        u_t = torch.tensor(train_norm.u[t], dtype=torch.float32).unsqueeze(0)
+        y_t, x_zero_tr = interconnect(x_zero_tr, u_t)
+        y_zero_train_norm[t] = y_t.squeeze().numpy()
+
+y_zero_train = y_zero_train_norm * fit_sys.norm.ystd + fit_sys.norm.y0
+
+nrms_enc_train = (
+    np.sqrt(((y_hat_enc_train[cheat_n:] - y_ref_train[cheat_n:]) ** 2).mean(axis=0))
+    / ystd
+)
+nrms_zero_train = (
+    np.sqrt(((y_zero_train[cheat_n:] - y_ref_train[cheat_n:]) ** 2).mean(axis=0))
+    / ystd
+)
 
 pos_labels   = ['X1 [m]',  'X2 [m]',  'Y [m]' ]
 force_labels = ['FX1 [N]', 'FX2 [N]', 'FY [N]']
 
-fig4, axes4 = plt.subplots(6, 1, figsize=(12, 12), sharex=True)
+fig4, axes4 = plt.subplots(6, 1, figsize=(12, 14), sharex=True)
 for ch in range(3):
-    axes4[ch].plot(t_train, y_train[:, ch], color='black', lw=0.8)
+    axes4[ch].plot(t_train, y_ref_train[:, ch],      color='black', lw=0.8, label='Reference')
+    axes4[ch].plot(t_train, y_hat_enc_train[:, ch],  color='C0',    lw=0.9, label=f'Encoder-init (NRMS={nrms_enc_train[ch]:.3f})')
+    axes4[ch].plot(t_train, y_zero_train[:, ch],     color='C1',    lw=0.9, linestyle='--', label=f'Zero-state   (NRMS={nrms_zero_train[ch]:.3f})')
     enc_label = f'Encoder warmup ({cheat_n} samples, {cheat_t_train*1e3:.0f} ms)' if ch == 0 else '_nolegend_'
     axes4[ch].axvspan(t_train[0], cheat_t_train, alpha=0.10, color='steelblue', label=enc_label)
     axes4[ch].axvline(cheat_t_train, color='steelblue', linestyle='--', lw=0.8)
@@ -276,12 +305,11 @@ for ch in range(3):
     axes4[ch].legend(fontsize=7, loc='upper right')
     axes4[ch].grid(True)
 for ch in range(3):
-    axes4[3 + ch].plot(t_train, u_train[:, ch], color='C2', lw=0.8)
+    axes4[3 + ch].plot(t_train, u_ref_train[:, ch], color='C2', lw=0.8)
     axes4[3 + ch].set_ylabel(force_labels[ch])
     axes4[3 + ch].grid(True)
 axes4[-1].set_xlabel('Time [s]')
-fig4.suptitle('Training set - positions and input forces\n'
-              'Shaded region: encoder warmup window')
+fig4.suptitle('Training simulation - encoder-init vs zero-state (stage positions) + input forces')
 fig4.tight_layout()
 fig4.savefig(os.path.join(plot_dir, f'phase1_trajectory_{run_id}.png'), dpi=150)
 
@@ -308,8 +336,10 @@ if SAVE:
         loss_val   = loss_val_full,
         loss_train = loss_train_full,
         # Per-channel NRMS (post-warmup window)
-        nrms_enc  = nrms_enc,     # shape (3,): [X1, X2, Y]
-        nrms_zero = nrms_zero,    # shape (3,): [X1, X2, Y]
+        nrms_enc       = nrms_enc,        # shape (3,): [X1, X2, Y] — validation
+        nrms_zero      = nrms_zero,       # shape (3,): [X1, X2, Y] — validation
+        nrms_enc_train = nrms_enc_train,  # shape (3,): [X1, X2, Y] — training
+        nrms_zero_train= nrms_zero_train, # shape (3,): [X1, X2, Y] — training
         # State trajectories - full length (T,6), physical units [m, m/s], logical coordinates
         x_ref      = x_ref,        # x_logical from MATLAB
         x_enc_phys = x_enc_phys,   # encoder-init rollout states
