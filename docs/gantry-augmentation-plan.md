@@ -601,6 +601,57 @@ interconnect.connect_signals("u",  aug_block, "concat")
 interconnect.connect_signals(aug_block, "xp", "additive", expansion_matrix(list(range(nx)), nx))
 ```
 
+**`gantry_interconnect_dynamic.py` — conversion from `msd_ndof_interconnect_dynamic.py`**
+
+Reference: `scripts/ecc_2025/msd_ndof_interconnect_dynamic.py` (= `scripts/gantry/gantry_subnet.py` verbatim copy).
+Target: `scripts/gantry/gantry_interconnect_dynamic.py`.
+Rule: minimal changes only — copy Jan's structure as-is wherever possible.
+
+| Section | Jan (ECC 2025) | Gantry | Status |
+|---|---|---|---|
+| Imports | `from model_augmentation.systems.mass_spring_damper import *` | `from model_augmentation.systems.gantry_ss import Cd, Dd, P` | Trivial |
+| Flags | `FP_type`, `SNR`, `dynamic_aug`, `type_aug`, `linear_parallel`, `wait_minutes` | Drop all — not applicable | Trivial |
+| Hyperparams | `nf`, `epochs`, `batch_size` | Keep; add `NX_ann=2`, `NX_total=8`, `Y_OP`, `SEED`, `N_HOLD` | Verified in Phase 1 |
+| Data loading | `.npz` + noise injection | MATLAB `.mat` load, no noise | Verified in Phase 1 |
+| FP model + `normalize_linear_ss_matrices` | Loads `A,B,C,D`; pre-normalizes matrices | Drop entirely — replaced by `std_x`, `std_u`, `ystd`, `Cd_norm`, `Y_OP` override | Verified in Phase 1 + `verify_normalization.py` |
+| `Interconnect(nxd, nu, ny)` | `Interconnect(6, 3, 3)` | `Interconnect(8, 3, 3)` | Trivial dimension change |
+| Physical state block | `Parameterized_MSD_State_Block(nz=5, nw=4)` | `Gantry_State_Block(Y_op=Y_OP, std_x=std_x, std_u=std_u)` | Verified in Phase 1 |
+| Output block | `Linear_Output_Block(C=C_bar_bla)` — shape `(2,4)` | `Linear_Output_Block(C=Cd_norm, D=Dd.numpy())` — shape `(3,6)`; `selection_matrix` handles state slicing | Verified in Phase 1 + `verify_normalization.py` |
+| ANN block `nz`, `nw` | `nz=6+3=9`, `nw=6` | `nz=8+3=11`, `nw=8` | Trivial from dimension change |
+| ANN block `net` | `zero_init_feed_forward_nn` | 1:1 copy — critical for stability at init | Verified in Jan's code |
+| ANN block `activation` | `torch.nn.Tanh` | 1:1 copy | Verified in Jan's code |
+| ANN block `n_nodes_per_layer` | 8 | TBD — hyperparameter, start with 64 | Not a correctness issue |
+| ANN wiring | `connect_block_signals(ANN, ["x","u"], ["xp"])` | 1:1 copy | 1:1 |
+| Physics wiring | `selection_matrix([0,1,2,3], 6)` / `expansion_matrix([0,1,2,3], 6)` | `selection_matrix(np.arange(6), 8)` / `expansion_matrix(np.arange(6), 8)` | **UNVERIFIED — pretest required** |
+| Output wiring | `selection_matrix([0,1,2,3], 6)` | `selection_matrix(np.arange(6), 8)` | **UNVERIFIED — same pretest** |
+| `SSE_Interconnect` `na`, `nb` | `nxd*2+1 = 13` | `NX_total*2+1 = 17` | Trivial from dimension change |
+| `SSE_Interconnect` `e_net_kwargs` | `{"n_nodes_per_layer": 16}` | `{"n_nodes_per_layer": 64, "n_hidden_layers": 2}` | Carried from Phase 1 |
+| `fit()` `auto_fit_norm` | `True` | `False` + manual norm setup before `fit()` | Verified in Phase 1 |
+| `fit()` `validation_measure` | `"sim-RMS"` | 1:1 copy | Verified in Phase 1 |
+| Manual norm setup | — (handled by `auto_fit_norm=True`) | `fit_sys.norm.u0=0`, `fit_sys.norm.ustd=std_u`, `fit_sys.norm.y0=0`, `fit_sys.norm.ystd=ystd` | Verified in Phase 1 |
+| Save | MSD-specific path logic | Gantry `simulations/gantry_subnet/` pattern | Verified in Phase 1 |
+
+**Why `auto_fit_norm=False` (the only non-trivial structural difference from Jan):**
+Jan uses `auto_fit_norm=True` because his physical block is linear — the mean offset in `u` can
+be absorbed into the B matrix via `normalize_linear_ss_matrices`. `Gantry_State_Block` is
+nonlinear (LFR/RK4); there is no B matrix to absorb the mean. Setting `u0=0` ensures the
+block sees full physical forces. Setting `y0=0` keeps `Cd_norm` consistent: the output
+equation `y_norm = Cd_norm @ x_norm` holds only when no additive offset is present.
+
+**Pretest required — `selection_matrix` / `expansion_matrix` with gantry dimensions:**
+In Phase 1 the interconnect wiring used no selection/expansion matrices (NX_total=NX=6,
+so no partitioning was needed). In Phase 3 the state is partitioned: physical states [0:6]
+and ANN states [6:8]. This wiring pattern is taken directly from Jan but has not been
+exercised with our block shapes. Before training:
+
+1. Build the augmented interconnect with dummy data (no training)
+2. Run one forward pass: `x = torch.zeros(1, 8)`, `u = torch.zeros(1, 3)`
+3. Assert `y.shape == (1, 3)` and `xp.shape == (1, 8)`
+4. Assert that `Gantry_State_Block.deriv()` receives a `(1, 6)` tensor (not `(1, 8)`)
+5. Assert that `ANN_state_block` receives a `(1, 11)` tensor (`x` + `u`)
+
+This pretest can be added to `scripts/gantry/verification/` before writing the full training script.
+
 **Not yet implemented (end goal):**
 - Joint estimation: physics parameters still fixed
 - Orthogonality: ANN can still learn baseline-captured dynamics
