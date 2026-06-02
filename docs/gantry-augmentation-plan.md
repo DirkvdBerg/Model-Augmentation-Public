@@ -140,6 +140,297 @@ Y is frozen. The wiring is preserved in Phase 3 as a reference; it is not a sepa
 
 ---
 
+## LFR Structure and LPV Implementation
+
+### LFR signal flow (all phases)
+
+The gantry mass matrix is Y-dependent: `M(Y) = M0 + M1*Y + M2*Y²`. The LFR
+factorisation avoids recomputing `M(Y)^{-1}` directly by instead computing the
+rational adjugate `N(Y)/d(Y)` — polynomial in Y — via Horner evaluation:
+
+```
+fnet = -K@q - C@qdot + P@u_stage       # net logical force  (3-vec)
+a    = N(Y)/d(Y) @ fnet                # M(Y)^{-1} @ fnet  (3-vec, rational in Y)
+z    = [a; Y*a]                        # LFR latent z       (6-vec)
+w    = Y * z                           # LFR latent w = Δ(Y)·z = [Y*a; Y²*a]  (6-vec)
+xdot = Ax@x + Bw@w + Bu@u_log         # through G — NOT directly from a
+```
+
+`G = [Ax, Bw, Bu]` is constant, built from `M0_inv = N0/d0` (Y=0). Y-variation
+enters `xdot` **only through w** (which carries Y and Y² scaled accelerations).
+
+Polynomial constants:
+- `N(Y) = N0 + N1*Y + N2*Y²`   (3×3 adjugate, quadratic in Y)
+- `d(Y) = d0 + d1*Y + d2*Y²`   (scalar determinant, quadratic in Y)
+- At Y=0: `N(0)=N0`, `d(0)=d0=det(M0)` — the constant reference point
+
+Implemented in: `model_augmentation/fit_systems/blocks.py:Gantry_State_Block.deriv()`
+(lines 754–805) and `model_augmentation/systems/gantry_ss.py:build_poly_constants()`.
+
+### LPV self-scheduling — already implemented
+
+`Gantry_State_Block(Y_op=None)` activates LPV. Inside `deriv()` (line 781):
+
+```python
+# Frozen (Y_op is float):  N_op, d_op precomputed at __init__; deriv() is pure matmul
+# LPV   (Y_op is None):    Y = x2[:, 2] per step; Horner form recomputes N(Y), d(Y)
+Y   = x2[:, 2]                     # scheduling variable extracted from current state
+dY  = mh*(alpha*gamma - beta² + 2*beta*mh*Y + mh*(alpha-mh)*Y²)
+a   = (N0 + Y*(N1 + Y*N2)) @ fnet / dY    # Horner evaluation
+```
+
+**The encoder is structurally unchanged for LPV.** It still maps `(u_past, y_past) → x̂₀`
+(6D). LPV scheduling happens inside `deriv()` during rollout — the encoder estimates
+initial conditions from I/O history and has no awareness of whether the downstream block
+is frozen-Y or LPV. With Y-varying data, `y_past` contains richer information (genuine Y
+variation), which can only help encoder quality.
+
+**The interconnect wiring is unchanged for LPV.** Self-scheduling is internal to
+`Gantry_State_Block` — no new signals, no wiring changes. Phase 2 is literally:
+
+```python
+# Phase 1:  Gantry_State_Block(Y_op=0.3)
+# Phase 2:  Gantry_State_Block(Y_op=None)   ← only change
+```
+
+### LFR routing — future end goal, not needed for Phase 2/3
+
+The `lpv_lfr_baseline/blocks/lfr_param_block.py` (Jan-compatible block wrapper) outputs
+`nw=18`: `(x_next=6, z_lfr=6, w_lfr=6)`. This routes z and w as explicit interconnect
+signals so an augmentation ANN can connect to specific physical excitation channels.
+
+Our `Gantry_State_Block` computes z and w internally (blocks.py lines 795–796) but
+returns only `xdot` (nw=6). The LFR structure is structurally preserved but not yet
+exposed as interconnect signals.
+
+**Phase 2 and Phase 3 do not need LFR routing.** The dynamic parallel ANN connects to
+the full state x and input u — not to z or w. LFR routing is only required when the ANN
+must target specific physical channels (the end-goal architecture: split `Gantry_State_Block`
+into G-block + Δ-block, connect_signals for z and w). This is a future step.
+
+### Block class structure — factory + subclasses
+
+The frozen-Y and LPV paths have different `__init__` requirements (frozen precomputes
+`N_op`, `d_op`; LPV does not) and different hot-path logic in `deriv()`. Encoding
+both in one class with `if self.Y_op is not None:` adds a branch inside the RK4 inner
+loop (10 substeps × NF steps) and makes the two paths harder to test independently.
+
+**Design: factory function + two private subclasses.**
+
+```python
+# Public API — call signature unchanged from current code
+def Gantry_State_Block(Y_op=0.3, std_x=..., std_u=..., Ts=1/20000, **kwargs):
+    """Factory. Y_op=float → frozen; Y_op=None → LPV self-scheduled."""
+    if Y_op is None:
+        return _Gantry_State_Block_LPV(std_x=std_x, std_u=std_u, Ts=Ts, **kwargs)
+    return _Gantry_State_Block_Frozen(Y_op=Y_op, std_x=std_x, std_u=std_u, Ts=Ts, **kwargs)
+
+class _Gantry_State_Block_Base(Discrete_Nonlinear_Function_Block):
+    """Shared buffers (Ax, Bw, Bu, K, C, P, std_x, std_u, N0, N1, N2, mh, ...)
+    and shared nonlinear_function() RK4 loop. deriv() left abstract."""
+
+class _Gantry_State_Block_Frozen(_Gantry_State_Block_Base):
+    """Frozen-Y: N_op and d_op precomputed at __init__. deriv() is pure matmul.
+    No branch. No dynamic computation of N(Y)/d(Y) at runtime."""
+
+class _Gantry_State_Block_LPV(_Gantry_State_Block_Base):
+    """LPV self-scheduled: Y = x_phys[:,2] at each RK4 substep.
+    Horner form for N(Y) and d(Y). Physical validity guards TBD (open question)."""
+```
+
+**What each class owns:**
+
+| | `_Gantry_State_Block_Frozen` | `_Gantry_State_Block_LPV` |
+|---|---|---|
+| `__init__` extras | Precomputes `N_op`, `d_op` at `Y_op` | None |
+| `deriv()` | Pure matmul — `N_op @ fnet / d_op` | Horner: `(N0 + Y*(N1+Y*N2)) / d(Y)` |
+| Branch in hot path | None | None |
+| Physical validity guards | Not needed (Y fixed) | Open — to be decided |
+| Gradient behaviour | Linear Jacobian (Ax term only) | Nonlinear Y-dependent Jacobian |
+
+**Existing call sites are unchanged:**
+```python
+Gantry_State_Block(Y_op=0.3, std_x=std_x, std_u=std_u)   # → _Frozen, as before
+Gantry_State_Block(Y_op=None, std_x=std_x, std_u=std_u)   # → _LPV, Phase 2+
+```
+
+**Open questions before implementing `_Gantry_State_Block_LPV`:**
+- Physical validity guards on Y and d(Y) — approach not yet decided
+- Gradient behaviour through LPV Jacobian — NF choice and clipping strategy not yet decided
+- These must be resolved and logged in `docs/decisions.md` before implementation begins
+
+### LPV Implementation: Five Problems and Mitigations
+
+These problems become active when switching from `_Gantry_State_Block_Frozen` to
+`_Gantry_State_Block_LPV`. Each must be resolved (or explicitly accepted) before
+Phase 2 training begins. Decisions must be logged in `docs/decisions.md`.
+
+**Problem 1 — `std_x[2] ≈ 0` with frozen-Y training data**
+
+Y is frozen at 0.3 m → `std(x[:,2]) ≈ 0` → normalisation guard `1e-8` fires but
+`std_x[2]` carries no information. The LPV block's Horner evaluation uses
+`Y = x_norm[:,2] * std_x[2]` to recover physical Y, so a near-zero `std_x[2]`
+collapses all Y variation at runtime.
+
+Mitigation: Y-varying training data (Phase 2 prerequisite). This is a data
+requirement, not a code change. Verify `std_x[2]` before LPV training.
+
+**Problem 2 — d(Y) singularity / negative denominator**
+
+`d(Y) = d0 + d1·Y + d2·Y²` is the determinant of M(Y) — positive by physics for all
+physical Y. But the encoder can output x̂₀[2] outside the physical operating range.
+If Y strays far from [Y_min, Y_max], `d(Y)` can become small or negative → NaN in
+`a = N(Y)/d(Y) @ fnet`.
+
+Mitigations (not yet decided — see open questions below):
+- Clamp x̂₀[2] to [0.0, 0.5] m (physical range) before entering rollout
+- State-consistency regularization (Sertbas & Kumbasar 2025, arXiv 2510.24757):
+  `L_consistency = ||x̂_enc(t) - f_physics(x̂_enc(t-1), u(t-1), p(t-1))||²`
+  anchors encoder output to the physics manifold and indirectly keeps Y physical
+- Log-reparametrisation (from `lfr_param_block.py` lines 274–276):
+  `Y_phys = Y_min + (Y_max - Y_min) * sigmoid(Y_raw)` — maps encoder Y to physical range
+
+**Problem 3 — Jacobian explosion over NF BPTT steps**
+
+The LPV Jacobian `∂ẋ/∂x` includes `∂(N(Y)/d(Y))/∂x[2]` — a Y-dependent term absent
+in the frozen case. Over NF BPTT steps these extra terms can compound and cause
+gradient explosion, especially with long NF.
+
+Mitigations (not yet decided):
+- Start with NF=50 (shorter than frozen Phase 1 NF=200) — Verhoek et al. CDC 2023
+  (arXiv 2204.04060) use short windows for LPV-SUBNET for exactly this reason
+- h-detach (Arpit et al. ICLR 2019, arXiv 1810.03023): treat scheduling variable Y
+  as non-differentiable in the backward pass — `Y_sched = Y.detach()` — stops the
+  Jacobian chain through Y while preserving gradients through x and u
+- Gradient clipping (`torch.nn.utils.clip_grad_norm_`) as fallback
+
+**Problem 4 — Y re-extraction at each RK4 substep**
+
+Inside `_Gantry_State_Block_LPV.deriv()`, `Y = x_phys[:,2]` is extracted at each
+of 4 RK4 substeps. This propagates gradients through 4 nonlinear Y-dependent paths
+per BPTT timestep, compounding Problem 3.
+
+Mitigations:
+- h-detach (Problem 3 mitigation) also stops substep Y gradients as a side effect
+- Alternative: extract Y only at the start of each full timestep (pass Y as argument
+  to `deriv()` rather than extracting from x mid-RK4). Less physically accurate but
+  gradient-safe. Note: this changes the ODE integration slightly.
+
+**Problem 5 — Encoder Y estimation (least severe)**
+
+LPV scheduling uses `Y = x̂₀[2]` from the encoder output. A wrong initial Y means the
+wrong `M(Y₀)` is used for the first NF steps.
+
+Mitigation: Y is always `y[:,2]` in the output — directly measurable. A structured
+encoder reads `x̂₀[2] = y_past[-1, 2]` without learning, guaranteeing a physically
+correct Y₀. See "Encoder Architecture and Limitations" section below.
+
+**Open decisions before implementing `_Gantry_State_Block_LPV`:**
+- Y clamping strategy (sigmoid reparametrisation vs explicit clamp vs none)
+- Gradient strategy (h-detach vs short NF vs clipping vs combination)
+- Whether state-consistency regularization adds enough value to justify implementation
+- NF starting value for Phase 2 (propose: NF=50, tune upward if stable)
+
+---
+
+### Comparison: two LPV implementations in this repo
+
+| | `Gantry_State_Block` (Jan's framework) | `lpv_lfr_baseline` |
+|---|---|---|
+| Location | `model_augmentation/fit_systems/blocks.py` | `lpv_lfr_baseline/` |
+| LPV scheduling | `_LPV` subclass: `Y=x[:,2]` in `deriv()` | `Y_override=None` in `rk4_step()` |
+| z/w routing | Internal only (not exposed) | Output as `nw=18` (x_next + z + w) |
+| Trainable params | Fixed buffers (Phase 1–3) | `nn.Parameter` via log-reparametrisation |
+| Use in Jan's interconnect | Yes — this is the training block | Reference only — do not import |
+| Purpose | SUBNET training (Phases 1–3) | Parameter recovery (separate research arm) |
+
+---
+
+## Encoder Architecture and Limitations
+
+### Current encoder — `modified_encoder_net`
+
+Location: `model_augmentation/fit_systems/interconnect.py` (lines ~360–380).
+
+```python
+class modified_encoder_net(nn.Module):
+    def forward(self, upast, ypast):
+        # Flatten (nb, nu) + (na, ny) → single vector
+        net_in = torch.cat([upast.view(upast.shape[0], -1),
+                            ypast.view(ypast.shape[0], -1)], dim=1)
+        return self.net(net_in)   # simple_res_net: linear residual stack
+```
+
+Properties of Jan's encoder:
+- **Static feedforward** — ResNet with Tanh activations, no LSTM, no attention
+- **Flattens history** — `nb×nu + na×ny` = `100×3 + 100×3 = 600` inputs for Phase 1
+- **No temporal structure** — all timesteps in history treated as unordered features
+- **No physics awareness** — maps I/O history to x̂₀ without any dynamical constraint
+- **Output:** 6D for Phase 1/2; `(6 + n_hidden)D` for Phase 3
+
+The encoder's role is **initial condition estimation** for the BPTT rollout — it maps
+`(u_past[0:NB], y_past[0:NA])` → x̂₀ which seeds the interconnect simulation.
+It does NOT estimate state at every timestep; after x̂₀, the interconnect propagates
+state forward via the physics block.
+
+### Measurement structure insight
+
+The output equation is `y = Cd @ x` where `Cd = [P^T | 0]` (positions only):
+
+```
+y[:,0] = X1  =  q1  =  q_logical[0] + q_logical[1]
+y[:,1] = X2  =  q2  =  q_logical[0] - q_logical[1]   (via P^T)
+y[:,2] = Y   =  q3  =  q_logical[2]
+```
+
+All **three positions** are linearly recoverable from output via `q = P^{-T} @ y`.
+**Velocities are NOT in the output.** The encoder's primary job is therefore
+**velocity estimation** — positions are redundant given y_past.
+
+### Structured encoder improvement (Phase 2+)
+
+Under the structured encoder design:
+- `x̂₀[2]` (initial Y) is read directly from `y_past[-1, 2]` — Y is always `y[:,2]`,
+  no learning needed. This guarantees a physically correct Y₀ for M(Y₀) in LPV.
+- Remaining 5 components (q0, q1 and all three velocities) are learned from history.
+- This reduces the encoder's effective output from 6D to 5D learned, with 1D hard-coded.
+
+**Justification:** Y determines M(Y₀) for LPV initialisation. The measurement gives
+physical Y directly, regardless of hidden MSD mismatch — no ambiguity possible.
+
+**Mismatch caveat (Phase 3):** Under augmented-system mismatch, the 8-state truth has
+the same output `y = Cd_6 @ x_6` (positions only). Y₀ = y_past[-1,2] remains
+unambiguously correct (physical Y is measured). For positions X1, X2: reading directly
+from y_past via P^{-T} gives positions at `t = t_0 - 1 sample`, not `t = t_0`, so the
+encoder still needs to learn when to apply corrections. Velocities remain fully hidden.
+
+### Velocity validation gap
+
+BPTT trains on MSE loss over output y (positions only). Velocity components in x̂₀
+are **never directly supervised**. They are trained implicitly: wrong velocities →
+rollout diverges from reference → MSE increases → gradient corrects them. But this
+supervision is indirect and may leave velocities poorly constrained.
+
+**The only direct velocity check** is the Python matched case (Phase 1 gate):
+simulate from x̂₀ and verify NRMS → near zero. If the block is correct and data is
+matched, BPTT must have learned velocities correctly to achieve low NRMS.
+
+For Phase 3 (mismatched data), there is no direct velocity check. Plausibility
+bounds (physical velocity range from MATLAB data) and smooth state trajectories
+are the available sanity checks.
+
+### Literature — encoder for MIMO LPV SUBNET
+
+| Reference | Key finding | Relevance |
+|-----------|-------------|-----------|
+| Verhoek et al. CDC 2023, arXiv 2204.04060 | LPV-SUBNET with p-net for scheduling variable; short NF for stability | Direct precedent; our case simpler (Y measured, no p-net) |
+| Beintema et al. Automatica 2023, arXiv 2210.14816 | Foundational MIMO SUBNET theory and stability | Underpins Jan's framework |
+| Ramkannan et al. 2023, arXiv 2304.02119 | BLA encoder initialisation — init encoder from Best Linear Approx reconstructability map | Practical warm-start before BPTT |
+| Sertbas & Kumbasar 2025, arXiv 2510.24757 | State-consistency regularization `L_cons = \|\|x̂_enc(t) - f(x̂_enc(t-1),u(t-1))\|\|²` | Anchors encoder; shortens effective BPTT horizon |
+| Arpit et al. ICLR 2019, arXiv 1810.03023 | h-detach: freeze scheduling variable gradient in backward pass | Justifies detaching Y in LPV Jacobian |
+
+---
+
 ## General Failure Modes (all phases)
 
 | Symptom | Most likely cause |
@@ -172,8 +463,10 @@ xdot  = Ax@x + Bw@w + Bu@u_log            # through G — NOT directly from a
 
 G is built from **M0_inv = N0/d0** (Y=0 constant, purely polynomial — no solve).
 Y never appears in G. Y-variation enters xdot **only** through w (which carries Y*a and Y²*a).
-At frozen Y_op: N(Y_op), d(Y_op) precomputed at `__init__`; `deriv()` is pure matmul.
-At LPV (Phase 3): Y = x[2]; N(Y), d(Y) computed via Horner form each step.
+Frozen path (`_Gantry_State_Block_Frozen`): N(Y_op), d(Y_op) precomputed at `__init__`;
+`deriv()` is pure matmul — no branch, no Horner at runtime.
+LPV path (`_Gantry_State_Block_LPV`): Y = x_phys[:,2] per substep; Horner form for N(Y)/d(Y).
+Both accessed via factory: `Gantry_State_Block(Y_op=0.3)` or `Gantry_State_Block(Y_op=None)`.
 
 **P-transform note:** `lfr_forward.py` expects u already in logical coordinates — the caller
 applies P. Jan's Interconnect passes u_stage directly to the block, so P is applied inside
@@ -359,6 +652,11 @@ interconnect.connect_signals(aug_block, "xp", "additive", expansion_matrix(list(
 | `scripts/gantry/gantry_subnet.py` | Training script |
 | `lpv_lfr_baseline/scripts/train_param_recovery.py` | **Reference only — do not import.** Shows how to inspect internal model state, plot trajectories, and evaluate a trained gantry model. Pattern to follow in `gantry_evaluate.py` / `gantry_state_comparison.py`. |
 | `docs/lfr-baseline-implementation-method.md` | Justifies why z/w must be computed explicitly (resolve-and-retain argument). Supervisor requirement D-005/D-013/D-017. Validates `Gantry_State_Block` design over collapsed `A_c(Y)x + B_c(Y)u`. |
+| arXiv 2204.04060 — Verhoek et al. CDC 2023 | LPV-SUBNET: SUBNET extended to LPV systems; p-net estimates scheduling; short NF for stability. Direct architectural precedent for Phase 2. PDF in `docs/references.md`. |
+| arXiv 2210.14816 — Beintema et al. Automatica 2023 | Foundational MIMO SUBNET — theoretical basis for Jan's framework and our encoder. |
+| arXiv 2304.02119 — Ramkannan et al. 2023 | BLA encoder initialisation — warm-start encoder from Best Linear Approximation before BPTT. |
+| arXiv 2510.24757 — Sertbas & Kumbasar 2025 | State-consistency regularization — anchors encoder to physics manifold; helps d(Y) remain physical. |
+| arXiv 1810.03023 — Arpit et al. ICLR 2019 | h-detach — freeze scheduling variable gradient in backward pass; justifies LPV Jacobian treatment. |
 
 ---
 
@@ -478,6 +776,26 @@ fit_sys.fit(train_data, val_data, epochs=30, batch_size=256,
             auto_fit_norm=True, loss_kwargs={'nf': 50}, validation_measure='sim-NRMS')
 fit_sys.save_system('simulations/gantry_subnet/phase1')
 ```
+
+---
+
+## Potential Improvements
+
+### State-supervised encoder loss
+The MATLAB data includes ground-truth velocities (`x_logical[:, 3:6]`) which are never
+used in the training loss. The current loss is output-only: stage position error via
+`Cd_norm @ x_norm` vs `y / ystd`. Adding a state loss term would directly supervise
+velocity initialization, giving the encoder a gradient signal toward the true velocities
+rather than having to infer them indirectly through NF-step position error.
+
+Expected benefit: faster encoder convergence, better initial velocity estimates,
+more physically meaningful internal state trajectories.
+
+Trade-off: depends on having state measurements (not available in real deployment).
+Feasible here because MATLAB provides full `x_logical`. Requires extending
+`SSE_Interconnect` loss or adding an auxiliary loss term alongside the output loss.
+
+Revisit after Phase 1 baseline is validated.
 
 ---
 
