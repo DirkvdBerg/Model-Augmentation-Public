@@ -79,6 +79,7 @@ def zero_state_rollout(data, print_every=2000):
     u_norm = data.u / std_u.flatten()   # (T, NU) normalised
     T = len(u_norm)
     x = torch.zeros(1, NX)
+    x[0, 2] = Y_OP / std_x[2].item()  # Y channel: normalised Y_OP, not 0
     y_out = np.zeros((T, NY), dtype=np.float32)
     with torch.no_grad():
         for t in range(T):

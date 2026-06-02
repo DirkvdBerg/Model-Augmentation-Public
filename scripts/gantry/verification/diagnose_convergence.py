@@ -201,6 +201,7 @@ y_ref_train = train_data.y
 def zero_state_rollout(data):
     data_norm = fit_sys.norm.transform(data)
     x = torch.zeros(1, NX)
+    x[0, 2] = Y_OP / std_x[2].item()  # Y channel: normalised Y_OP, not 0
     y_out = np.zeros((len(data_norm.u), NY), dtype=np.float32)
     with torch.no_grad():
         for t in range(len(data_norm.u)):
@@ -260,6 +261,7 @@ def windowed_rollout(u_full, y_full):
         y_ref = y_full[t:t+NF]
 
         x0_zero = torch.zeros(1, NX)
+        x0_zero[0, 2] = Y_OP / std_x[2].item()  # Y channel: normalised Y_OP, not 0
         y_zero  = rollout_from_x0(x0_zero, u_norm_full[t:t+NF])
 
         t_starts.append(t)
