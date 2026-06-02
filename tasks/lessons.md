@@ -10,6 +10,14 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
+### Rule: Answer the question before writing any code
+
+**Trigger**: When the user asks a question about what you are doing, why you made a choice, or what something is for
+**Rule**: Answer the question in text first. Do not call any tools or write any code until the user has acknowledged the explanation and confirmed the direction. A question is not an implicit "proceed".
+**Why**: User asked "what are you doing here?" and "what are you using this checkpoint for?" Both times the response immediately started coding. The user had to explicitly stop the tool call.
+
+---
+
 ## Rules
 
 ### Rule: Reference documents describe what exists — not what to do next
@@ -86,6 +94,15 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 **Rule**: Do not compute that quantity from the parametric model (e.g. eigenvalues of A_c, eig(A_c), model matrices). Derive it from the observed data (e.g. Ŝ(jω) from FFT(u_total)/FFT(f_sim), Ĝ(jω) from FFT(q1)/FFT(u_total), resonance peaks from |Ĝ|). This rule has been violated repeatedly — it is non-negotiable.
 **Why**: User has corrected this mistake multiple times across the session. Every time a parametric fallback is suggested (eig(A_c) for fs_new, eigenvalues for f_osc_min, A_c for τ_max), it defeats the entire purpose: the nonparametric approach must work on hardware where the model is unknown or wrong.
 **How to apply**: Before writing ANY formula or code in a nonparametric analysis step, check: does this reference a model matrix, eigenvalue, or analytical model quantity? If yes, STOP. Replace with the equivalent quantity read from Ŝ or Ĝ estimated from probe data. No exceptions.
+
+---
+
+### Rule: Do not assert a specific cause for early training termination without evidence
+
+**Trigger**: When observing that training ran fewer epochs than configured
+**Rule**: Do not attribute the stop to a specific cause (NaN, timeout, early stopping) without direct evidence. Multiple causes are possible: intentional early stop (test run), NaN break, SLURM timeout, KeyboardInterrupt. Ask the user or check logs before stating a cause as fact.
+**Why**: Assumed NaN caused training to stop at 5 epochs and built a diagnosis around it. User corrected this twice: first to say it ran 60 epochs before, then to clarify it was an intentional test run. Both corrections invalidated reasoning that had already been presented confidently.
+**How to apply**: When N < configured epochs, state "training stopped early, cause unclear" and list candidate causes. Only commit to one after the user confirms or log evidence is read.
 
 ---
 
