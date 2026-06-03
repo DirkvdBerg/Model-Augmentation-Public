@@ -11,11 +11,19 @@
 % Run from project root:
 %   run('Matlab-scripts/Augmentation/data/tests/test_y_excitation_comparison.m')
 
-addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
-addpath(fullfile(pwd, 'Matlab-scripts', 'Augmentation'))
+clearvars
+close all
+clc
 
 MDL_BASE = 'gantry_2025a';
 MDL_AUG  = 'gantry_additional_state_2025a';
+
+% Close Simulink models if open
+if bdIsLoaded(MDL_BASE), close_system(MDL_BASE, 0); end
+if bdIsLoaded(MDL_AUG),  close_system(MDL_AUG,  0); end
+
+addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
+addpath(fullfile(pwd, 'Matlab-scripts', 'Augmentation'))
 
 %% Physical parameters (identical to generate scripts)
 mb=22.8; mh=10.1; m1=10.2; m2=10.7; Jb=1.0; Jh=0.05;
@@ -142,18 +150,18 @@ for iOpt = 1:3
     dy = ya - yb;
     Nfft=numel(t_ref); Nhalf=floor(Nfft/2);
     f_ax=(0:Nhalf-1)*fs/Nfft;
-    Y_fft=2*abs(fft(dy(:,3)))/Nfft*1e6;
+    Y_fft=2*abs(fft(dy(:,3)))/Nfft;
     [~,idx]=min(abs(f_ax-fa));
     fprintf('\n=== %s ===\n', lbl)
     fprintf('  fa = %g Hz\n', fa)
-    fprintf('  max|delta_a| = %.4f um\n',  max(abs(da))*1e6)
-    fprintf('  rms(delta_a) = %.4f um\n',  rms(da)*1e6)
+    fprintf('  max|delta_a| = %.4e m\n',  max(abs(da)))
+    fprintf('  rms(delta_a) = %.4e m\n',  rms(da))
     for j=1:3
-        fprintf('  rms(d%s)     = %.4f um\n', ch{j}, rms(dy(:,j))*1e6)
-        fprintf('  max|d%s|     = %.4f um\n', ch{j}, max(abs(dy(:,j)))*1e6)
+        fprintf('  rms(d%s)     = %.4e m\n', ch{j}, rms(dy(:,j)))
+        fprintf('  max|d%s|     = %.4e m\n', ch{j}, max(abs(dy(:,j))))
     end
-    fprintf('  FFT(dY) at %g Hz = %.6f um\n', fa, Y_fft(idx))
-    fprintf('  FFT(dY) DC       = %.4f um\n', Y_fft(1))
+    fprintf('  FFT(dY) at %g Hz = %.4e m\n', fa, Y_fft(idx))
+    fprintf('  FFT(dY) DC       = %.4e m\n', Y_fft(1))
 end
 
 %% Plots
@@ -225,6 +233,23 @@ G_aug  = frf_compute(Ya_runs, Ua_runs);
 
 plot_frf_comparison(frf_f_lines, G_base, G_aug, fa, Y_op)
 
+%% Linearize-based FRF comparison (MATLAB linearize workflow)
+% Follows: linearize(mdl, io) with linio I/O specification.
+% open-loop output breaks the feedback path so we get the plant FRF.
+fprintf('\nLinearizing baseline and augmented models at Y=%.2f m...\n', Y_op)
+
+io_b(1) = linio([MDL_BASE '/Gain3'],         1, 'input');
+io_b(2) = linio([MDL_BASE '/To Workspace1'], 1, 'openoutput');
+sys_base_lin = linearize(MDL_BASE, io_b);
+
+io_a(1) = linio([MDL_AUG '/Gain3'],         1, 'input');
+io_a(2) = linio([MDL_AUG '/To Workspace1'], 1, 'openoutput');
+mh = mh_rigid;
+sys_aug_lin = linearize(MDL_AUG, io_a);
+mh = mh_rigid + ma;
+
+plot_linearized_frf(sys_base_lin, sys_aug_lin, fa, Y_op)
+
 %% =========================================================================
 function plot_comparison(t, r, y_base, y_aug, da, fs, fa, ttl)
     dy = y_aug - y_base;
@@ -234,10 +259,10 @@ function plot_comparison(t, r, y_base, y_aug, da, fs, fa, ttl)
     % Row 1: overlaid trajectories (reference, baseline, augmented)
     for j = 1:3
         subplot(5,3,j); hold on
-        plot(t, r(:,j)*1e3,      'k--', 'LineWidth', 0.8)
-        plot(t, y_base(:,j)*1e3, 'b',   'LineWidth', 0.9)
-        plot(t, y_aug(:,j)*1e3,  'r',   'LineWidth', 0.9)
-        ylabel([ch{j} ' [mm]']); grid on
+        plot(t, r(:,j),      'k--', 'LineWidth', 0.8)
+        plot(t, y_base(:,j), 'b',   'LineWidth', 0.9)
+        plot(t, y_aug(:,j),  'r',   'LineWidth', 0.9)
+        ylabel([ch{j} ' [m]']); grid on
         title([ch{j} ' trajectory'])
         if j==1, legend('Ref','Baseline','Augmented','Location','best'); end
     end
@@ -245,27 +270,27 @@ function plot_comparison(t, r, y_base, y_aug, da, fs, fa, ttl)
     % Row 2: difference y_aug - y_base per channel
     for j = 1:3
         subplot(5,3,3+j)
-        plot(t, dy(:,j)*1e6, 'k', 'LineWidth', 0.9)
-        ylabel([ch{j} ' diff [\mum]']); grid on
-        title(sprintf('%s diff | rms=%.4f \\mum', ch{j}, rms(dy(:,j))*1e6))
+        plot(t, dy(:,j), 'k', 'LineWidth', 0.9)
+        ylabel([ch{j} ' diff [m]']); grid on
+        title(sprintf('%s diff | rms=%.2e m', ch{j}, rms(dy(:,j))))
     end
 
     Nfft  = numel(t);
     Nhalf = floor(Nfft/2);
     f_ax  = (0:Nhalf-1) * fs / Nfft;
-    Y_fft_diff = 2*abs(fft(dy(:,3)))/Nfft * 1e6;
-    Y_fft_base = 2*abs(fft(y_base(:,3)))/Nfft * 1e6;
-    Y_fft_aug  = 2*abs(fft(y_aug(:,3)))/Nfft  * 1e6;
+    Y_fft_diff = 2*abs(fft(dy(:,3)))/Nfft;
+    Y_fft_base = 2*abs(fft(y_base(:,3)))/Nfft;
+    Y_fft_aug  = 2*abs(fft(y_aug(:,3)))/Nfft;
     [~,idx_fa] = min(abs(f_ax - fa));
 
     % Row 3: FFT of Y-channel difference
     subplot(5,3,7:9)
     semilogy(f_ax, Y_fft_diff(1:Nhalf), 'k', 'LineWidth', 0.8); hold on
     xline(fa, 'r--', sprintf('%g Hz', fa), 'LineWidth', 1.2, 'LabelVerticalAlignment', 'bottom')
-    text(fa, Y_fft_diff(idx_fa)*2, sprintf('%.4f \\mum', Y_fft_diff(idx_fa)), ...
+    text(fa, Y_fft_diff(idx_fa)*2, sprintf('%.2e m', Y_fft_diff(idx_fa)), ...
          'Color','r', 'FontSize', 8, 'HorizontalAlignment','center')
     xlim([0 max(fa*4, 200)]); grid on
-    xlabel('Frequency [Hz]'); ylabel('|\DeltaY| [\mum]')
+    xlabel('Frequency [Hz]'); ylabel('|\DeltaY| [m]')
     title('FFT of Y-channel difference (aug - base)')
 
     % Row 4: FFT of Y channel — baseline vs augmented overlaid
@@ -274,16 +299,16 @@ function plot_comparison(t, r, y_base, y_aug, da, fs, fa, ttl)
     semilogy(f_ax, Y_fft_aug(1:Nhalf),  'r', 'LineWidth', 0.9)
     xline(fa, 'k--', sprintf('%g Hz', fa), 'LineWidth', 1.2, 'LabelVerticalAlignment', 'bottom')
     xlim([0 max(fa*4, 200)]); grid on
-    xlabel('Frequency [Hz]'); ylabel('|Y| [\mum]')
+    xlabel('Frequency [Hz]'); ylabel('|Y| [m]')
     legend('Baseline','Augmented','Location','best')
     title('FFT of Y channel — baseline vs augmented')
 
     % Row 5: delta_a — ground truth MSD displacement
     subplot(5,3,13:15)
-    plot(t, da*1e6, 'b', 'LineWidth', 0.9)
-    ylabel('\delta_a [\mum]'); xlabel('Time [s]'); grid on
-    title(sprintf('\\delta_a  |  max = %.3f \\mum   rms = %.4f \\mum', ...
-                  max(abs(da))*1e6, rms(da)*1e6))
+    plot(t, da, 'b', 'LineWidth', 0.9)
+    ylabel('\delta_a [m]'); xlabel('Time [s]'); grid on
+    title(sprintf('\\delta_a  |  max = %.2e m   rms = %.2e m', ...
+                  max(abs(da)), rms(da)))
 
     sgtitle(ttl, 'Interpreter', 'none')
 end
@@ -303,6 +328,36 @@ function G = frf_compute(Y_runs, U_runs)
     Y3 = permute(Y_runs, [2 3 1]);   % (3 x 3 x nFreq)
     U3 = permute(U_runs, [2 3 1]);
     G  = permute(pagemrdivide(Y3, U3), [3 1 2]);  % (nFreq x 3 x 3)
+end
+
+function plot_linearized_frf(sys_base, sys_aug, fa, Y_op)
+    out_names = {'X_1','X_2','Y'};
+    in_names  = {'F_1','F_2','F_Y'};
+    freq_hz   = logspace(0, log10(4*fa), 3000);   % 1 Hz to 4*fa
+    [mag_b, ~, w] = bode(sys_base, freq_hz*2*pi);
+    [mag_a, ~]    = bode(sys_aug,  freq_hz*2*pi);
+    f_hz = w / (2*pi);
+    figure('Name', sprintf('Linearized FRF Y=%.2fm', Y_op), ...
+           'Position', [100 50 1100 850]);
+    tiledlayout(3, 3, 'TileSpacing','compact', 'Padding','compact');
+    for iy = 1:3
+        for iu = 1:3
+            nexttile; hold on
+            semilogx(f_hz, 20*log10(squeeze(mag_b(iy,iu,:))), 'b', 'LineWidth', 1.0)
+            semilogx(f_hz, 20*log10(squeeze(mag_a(iy,iu,:))), 'r', 'LineWidth', 1.0)
+            xline(fa, 'k--', sprintf('%g Hz', fa), 'LineWidth', 1.0, ...
+                  'LabelVerticalAlignment','bottom')
+            grid on; xlim([f_hz(1) f_hz(end)])
+            title(sprintf('%s / %s', out_names{iy}, in_names{iu}))
+            if iu==1; ylabel('Mag [dB re m/N]'); end
+            if iy==3; xlabel('Frequency [Hz]'); end
+            if iy==1 && iu==1
+                legend('Baseline','Augmented','Location','best','FontSize',7)
+            end
+        end
+    end
+    sgtitle(sprintf('Linearized FRF: Baseline vs Augmented  |  Y = %.2f m  |  fa = %g Hz', Y_op, fa), ...
+            'Interpreter','none')
 end
 
 function plot_frf_comparison(f, G_base, G_aug, fa, Y_op)
