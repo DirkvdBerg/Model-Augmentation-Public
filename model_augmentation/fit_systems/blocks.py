@@ -733,9 +733,14 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         # std_x stored in both shapes to avoid reshape on every deriv() call:
         #   std_x    (6,1) — broadcast against (batch,6,1) for denorm
         #   std_x_1d (6,)  — broadcast against (batch,6)   for renorm
+        # x_mean (6,1): state mean offset, subtracted before normalisation.
+        #   For Y (index 2): x_mean[2] = Y_op (~0.3 m). All others zero.
+        #   xdot renorm is unaffected: d(x_norm)/dt = d(x_phys)/dt / std_x
+        #   because x_mean is constant.
         self.register_buffer("std_x",    to_tensor(std_x).reshape(6, 1))
         self.register_buffer("std_x_1d", to_tensor(std_x).reshape(6))
         self.register_buffer("std_u",    to_tensor(std_u).reshape(3, 1))
+        self.register_buffer("x_mean",   to_tensor(x_mean).reshape(6, 1))
 
     def nonlinear_function(self, z: Tensor):
         # Copied verbatim from Nonlinear_MSD_State_Block — only self.nx/self.nu differ.
@@ -756,8 +761,8 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         # x: (batch, 6, 1) normalised   u: (batch, 3, 1) normalised
 
         # --- denormalise -------------------------------------------------
-        x_phys = x * self.std_x          # (batch, 6, 1)
-        u_phys = u * self.std_u          # (batch, 3, 1)
+        x_phys = x * self.std_x + self.x_mean   # (batch, 6, 1)
+        u_phys = u * self.std_u                  # (batch, 3, 1)
 
         # Work in 2D (batch, n) to match LFR signal-flow convention.
         x2 = x_phys.squeeze(-1)          # (batch, 6)
