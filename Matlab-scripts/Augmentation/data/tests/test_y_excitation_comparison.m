@@ -164,6 +164,67 @@ plot_comparison(t_ref, r2, yb2, ya2, da2, fs, fa, ...
 plot_comparison(t_ref, r3, yb3, ya3, da3, fs, fa, ...
     'Option 3: multisine force all channels (1-100 Hz, 50 N)')
 
+%% FRF comparison: baseline vs augmented at Y = Y_op
+fprintf('\nFRF comparison: baseline vs augmented at Y=%.2f m...\n', Y_op)
+
+frf_f_lines  = 1:500;                   % 1-500 Hz at 1 Hz resolution
+frf_line_idx = frf_f_lines + 1;         % FFT bin indices (bin 1 = DC)
+frf_N_period = fs;                      % 1 s period = 20000 samples
+frf_N_settle = 1;
+frf_N_drop   = 2;
+frf_N_clean  = 5;
+frf_N_record = frf_N_drop + frf_N_clean;
+frf_N_total  = (frf_N_settle + frf_N_record) * frf_N_period;
+t_frf        = (0:frf_N_total-1)' * ts;
+
+frf_modes(1).name='common'; frf_modes(1).f_vec=[1, 1, 0]; frf_modes(1).rms=25;
+frf_modes(2).name='diff';   frf_modes(2).f_vec=[1,-1, 0]; frf_modes(2).rms=25;
+frf_modes(3).name='y';      frf_modes(3).f_vec=[0, 0, 1]; frf_modes(3).rms=15;
+
+rng(99);
+t_per = (0:frf_N_period-1)'/fs;
+for im = 1:3
+    phases = 2*pi*rand(1, numel(frf_f_lines));
+    sig = sum(cos(2*pi*frf_f_lines(:)' .* t_per + phases), 2);
+    frf_modes(im).one_period = frf_modes(im).rms * sig / rms(sig);
+end
+
+nFreqFRF = numel(frf_f_lines);
+Yb_runs  = complex(nan(nFreqFRF, 3, 3));
+Ub_runs  = complex(nan(nFreqFRF, 3, 3));
+Ya_runs  = complex(nan(nFreqFRF, 3, 3));
+Ua_runs  = complex(nan(nFreqFRF, 3, 3));
+
+r_frf     = repmat([0, 0, Y_op], frf_N_total, 1);
+rec_start = frf_N_settle*frf_N_period + 1;
+
+for im = 1:3
+    mode  = frf_modes(im);
+    f_frf = zeros(frf_N_total, 3);
+    f_frf(rec_start:end,:) = repmat(mode.one_period, frf_N_record, 1) * mode.f_vec;
+
+    fprintf('  FRF baseline  mode %-7s\n', mode.name)
+    r=r_frf; t=t_frf; f=f_frf; Y=Y_op;
+    sim(MDL_BASE, t_frf(end));
+    q1u = interp1((0:size(q1,1)-1)'*ts, q1, t_frf, 'linear', 'extrap');
+    ub  = lsim(ss(Cfb), r_frf-q1u, t_frf) + f_frf;
+    [Yb_runs(:,:,im), Ub_runs(:,:,im)] = frf_avg(q1u, ub, frf_N_period, frf_N_settle, frf_N_drop, frf_N_clean, frf_line_idx);
+
+    fprintf('  FRF augmented mode %-7s\n', mode.name)
+    r=r_frf; t=t_frf; f=f_frf; Y=Y_op; mh_original=mh; mh=mh_rigid;
+    sim(MDL_AUG, t_frf(end));
+    mh=mh_rigid+ma;
+    qau = interp1((0:size(q_aug,1)-1)'*ts, q_aug, t_frf, 'linear', 'extrap');
+    ua  = lsim(ss(Cfb), r_frf-qau, t_frf) + f_frf;
+    [Ya_runs(:,:,im), Ua_runs(:,:,im)] = frf_avg(qau, ua, frf_N_period, frf_N_settle, frf_N_drop, frf_N_clean, frf_line_idx);
+end
+f = zeros(N, 3);   % restore f
+
+G_base = frf_compute(Yb_runs, Ub_runs);
+G_aug  = frf_compute(Ya_runs, Ua_runs);
+
+plot_frf_comparison(frf_f_lines, G_base, G_aug, fa, Y_op)
+
 %% =========================================================================
 function plot_comparison(t, r, y_base, y_aug, da, fs, fa, ttl)
     dy = y_aug - y_base;
@@ -225,4 +286,49 @@ function plot_comparison(t, r, y_base, y_aug, da, fs, fa, ttl)
                   max(abs(da))*1e6, rms(da)*1e6))
 
     sgtitle(ttl, 'Interpreter', 'none')
+end
+
+function [Y_avg, U_avg] = frf_avg(y, u, N_period, n_settle, n_drop, n_clean, line_idx)
+    i0 = (n_settle + n_drop)*N_period + 1;
+    y3 = permute(reshape(y(i0:i0+n_clean*N_period-1,:), N_period, n_clean, 3), [1 3 2]);
+    u3 = permute(reshape(u(i0:i0+n_clean*N_period-1,:), N_period, n_clean, 3), [1 3 2]);
+    Y_avg = mean(fft(y3,[],1), 3);
+    U_avg = mean(fft(u3,[],1), 3);
+    Y_avg = Y_avg(line_idx,:);
+    U_avg = U_avg(line_idx,:);
+end
+
+function G = frf_compute(Y_runs, U_runs)
+    % Y_runs, U_runs: (nFreq x 3 x 3) -- third dim indexes the 3 modal inputs
+    Y3 = permute(Y_runs, [2 3 1]);   % (3 x 3 x nFreq)
+    U3 = permute(U_runs, [2 3 1]);
+    G  = permute(pagemrdivide(Y3, U3), [3 1 2]);  % (nFreq x 3 x 3)
+end
+
+function plot_frf_comparison(f, G_base, G_aug, fa, Y_op)
+    out_names = {'X_1','X_2','Y'};
+    in_names  = {'F_1','F_2','F_Y'};
+    figure('Name', sprintf('FRF baseline vs augmented Y=%.2fm', Y_op), ...
+           'Position', [100 50 1100 850]);
+    tiledlayout(3, 3, 'TileSpacing','compact', 'Padding','compact');
+    for iy = 1:3
+        for iu = 1:3
+            nexttile; hold on
+            mag_b = 20*log10(abs(squeeze(G_base(:,iy,iu))));
+            mag_a = 20*log10(abs(squeeze(G_aug(:,iy,iu))));
+            semilogx(f, mag_b, 'b', 'LineWidth', 1.0)
+            semilogx(f, mag_a, 'r', 'LineWidth', 1.0)
+            xline(fa, 'k--', sprintf('%g Hz', fa), 'LineWidth', 1.0, ...
+                  'LabelVerticalAlignment','bottom')
+            grid on; xlim([f(1) f(end)])
+            title(sprintf('%s / %s', out_names{iy}, in_names{iu}))
+            if iu==1; ylabel('Mag [dB re m/N]'); end
+            if iy==3; xlabel('Frequency [Hz]'); end
+            if iy==1 && iu==1
+                legend('Baseline','Augmented','Location','best','FontSize',7)
+            end
+        end
+    end
+    sgtitle(sprintf('FRF: Baseline vs Augmented  |  Y = %.2f m  |  fa = %g Hz', Y_op, fa), ...
+            'Interpreter','none')
 end
