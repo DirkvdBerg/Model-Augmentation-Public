@@ -28,6 +28,7 @@
 %   run('Matlab-scripts/Augmentation/data/generate_gantry_lti_augmented.m')
 
 addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
+addpath(fullfile(pwd, 'Matlab-scripts', 'Augmentation'))
 
 % ── Physical parameters (identical to main.m) ────────────────────────────
 mb=22.8; mh=10.1; m1=10.2; m2=10.7; Jb=1.0; Jh=0.05;
