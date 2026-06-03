@@ -98,15 +98,22 @@ plot_frf_diff_single(sys_base_cl, sys_aug_cl, freq_hz, fa, Y_op, 'Closed-loop FR
 function plot_frf_pair(G_base, G_aug, freq_hz, fa, Y_op, ttl)
     out_names = {'X_1','X_2','Y'};
     in_names  = {'F_1','F_2','F_Y'};
-    [mag_b, ~, w] = bode(G_base, freq_hz*2*pi);
-    [mag_a]       = bode(G_aug,  freq_hz*2*pi);
+    [mag_b, ph_b, w] = bode(G_base, freq_hz*2*pi);
+    [mag_a, ph_a]    = bode(G_aug,  freq_hz*2*pi);
     f_hz = w / (2*pi);
 
-    figure('Name', sprintf('%s  Y=%.2fm', ttl, Y_op), 'Position', [50 50 1200 900]);
-    tiledlayout(3, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+    fig = figure('Name', sprintf('%s  Y=%.2fm', ttl, Y_op), 'Position', [50 50 1200 950]);
+
+    % Reserve bottom strip for buttons
+    tl = tiledlayout(6, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+    tl.OuterPosition = [0, 0.07, 1, 0.93];   % leave 7% at bottom for buttons
+
+    ph_axes = gobjects(3, 3);   % store phase axes handles
+
     for iy = 1:3
         for iu = 1:3
-            nexttile; hold on
+            % Magnitude tile (rows 1, 3, 5)
+            nexttile(2*(iy-1)*3 + iu); hold on
             plot(f_hz, 20*log10(squeeze(mag_b(iy,iu,:))), 'b', 'LineWidth', 1.0)
             plot(f_hz, 20*log10(squeeze(mag_a(iy,iu,:))), 'r', 'LineWidth', 1.0)
             xline(fa, 'k:', sprintf('%g Hz', fa), 'LineWidth', 1.0, ...
@@ -115,14 +122,86 @@ function plot_frf_pair(G_base, G_aug, freq_hz, fa, Y_op, ttl)
             grid on; xlim([f_hz(1) f_hz(end)])
             title(sprintf('%s / %s', out_names{iy}, in_names{iu}), 'Interpreter', 'none')
             if iu == 1; ylabel('Mag [dB re m/N]'); end
-            if iy == 3; xlabel('Frequency [Hz]'); end
             if iy == 1 && iu == 1
                 legend('Baseline', 'Augmented', 'Location', 'best', 'FontSize', 7)
             end
+
+            % Phase tile (rows 2, 4, 6)
+            ax_ph = nexttile((2*iy-1)*3 + iu); hold on
+            plot(f_hz, squeeze(ph_b(iy,iu,:)), 'b', 'LineWidth', 1.0)
+            plot(f_hz, squeeze(ph_a(iy,iu,:)), 'r', 'LineWidth', 1.0)
+            xline(fa, 'k:', 'LineWidth', 1.0)
+            set(gca, 'XScale', 'log')
+            grid on; xlim([f_hz(1) f_hz(end)])
+            if iu == 1; ylabel('Phase [deg]'); end
+            if iy == 3; xlabel('Frequency [Hz]'); end
+            ph_axes(iy, iu) = ax_ph;
         end
     end
+
     sgtitle(sprintf('%s  |  Y = %.2f m  |  f_a = %g Hz', ttl, Y_op, fa), ...
             'Interpreter', 'none')
+
+    % --- Toggle buttons ---
+    btn_unwrap = uicontrol(fig, 'Style', 'togglebutton', ...
+        'String', 'Unwrap phase: OFF', ...
+        'Units', 'normalized', 'Position', [0.05 0.01 0.20 0.05], ...
+        'Value', 0);
+
+    btn_ylim = uicontrol(fig, 'Style', 'togglebutton', ...
+        'String', 'Fix Y-limits: OFF', ...
+        'Units', 'normalized', 'Position', [0.30 0.01 0.20 0.05], ...
+        'Value', 0);
+
+    % Shared callback
+    cb = @(~,~) redraw_phase(ph_axes, ph_b, ph_a, f_hz, fa, btn_unwrap, btn_ylim);
+    btn_unwrap.Callback = cb;
+    btn_ylim.Callback   = cb;
+end
+
+function redraw_phase(ph_axes, ph_b, ph_a, f_hz, fa, btn_unwrap, btn_ylim)
+    do_unwrap = btn_unwrap.Value == 1;
+    do_fix    = btn_ylim.Value   == 1;
+
+    btn_unwrap.String = sprintf('Unwrap phase: %s', onoff(do_unwrap));
+    btn_ylim.String   = sprintf('Fix Y-limits: %s', onoff(do_fix));
+
+    all_ph = [];
+    for iy = 1:3
+        for iu = 1:3
+            pb = squeeze(ph_b(iy,iu,:));
+            pa = squeeze(ph_a(iy,iu,:));
+            if do_unwrap
+                pb = rad2deg(unwrap(deg2rad(pb)));
+                pa = rad2deg(unwrap(deg2rad(pa)));
+            end
+            all_ph = [all_ph; pb; pa]; %#ok<AGROW>
+        end
+    end
+    ylims = [min(all_ph)-10, max(all_ph)+10];
+
+    for iy = 1:3
+        for iu = 1:3
+            ax = ph_axes(iy, iu);
+            cla(ax); hold(ax, 'on')
+            pb = squeeze(ph_b(iy,iu,:));
+            pa = squeeze(ph_a(iy,iu,:));
+            if do_unwrap
+                pb = rad2deg(unwrap(deg2rad(pb)));
+                pa = rad2deg(unwrap(deg2rad(pa)));
+            end
+            plot(ax, f_hz, pb, 'b', 'LineWidth', 1.0)
+            plot(ax, f_hz, pa, 'r', 'LineWidth', 1.0)
+            xline(ax, fa, 'k:', 'LineWidth', 1.0)
+            set(ax, 'XScale', 'log')
+            grid(ax, 'on'); xlim(ax, [f_hz(1) f_hz(end)])
+            if do_fix; ylim(ax, ylims); end
+        end
+    end
+end
+
+function s = onoff(val)
+    if val; s = 'ON'; else; s = 'OFF'; end
 end
 
 function plot_frf_diff_single(G_base, G_aug, freq_hz, fa, Y_op, ttl)
