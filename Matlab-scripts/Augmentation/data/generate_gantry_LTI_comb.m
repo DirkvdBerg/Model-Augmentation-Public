@@ -62,30 +62,74 @@ Cfb = tf(num2cell(zeros(3)), num2cell(ones(3)));
 for j = 1:3, Cfb(j,j) = ruleOfThumb(fbw, sys(j,j), ts); end
 G = c2d(sys, ts, 'zoh');   % read by Simulink LTI blocks
 
-%% Reference trajectory — Option 1
-n_hold = round(0.5/ts);   % 0.5 s hold at each end
+%% Reference trajectory — rich X + scattered Y moves
+n_hold = round(0.2/ts);   % 0.2 s hold at each end
 
-% X: symmetric motion, matches training trajectory profile
-pv_x = thirdOrderSetpointETEL(0.15, 1.5, 20.0, 20.0/0.030, Inf, ts);
-pv_x = pv_x(:,1);
+% ── X: common mode (X1=X2), 4 back-and-forth trips with varying speeds ────
+% Columns: [dist, vmax, amax, jerkTime, direction]
+% Absolute X positions: 0 -> +0.15 -> -0.15 -> +0.12 -> -0.12 -> 0
+x_profile = [
+    0.15,  0.8,  15.0, 0.030, +1;   % slow   0     -> +0.15
+    0.30,  1.5,  20.0, 0.030, -1;   % fast  +0.15  -> -0.15
+    0.27,  1.0,  18.0, 0.035, +1;   % med   -0.15  -> +0.12
+    0.24,  1.8,  22.0, 0.025, -1;   % fast  +0.12  -> -0.12
+    0.12,  0.7,  12.0, 0.040, +1;   % slow  -0.12  ->  0
+];
 
-% Y: 30 mm step, amax = 50 m/s^2
-pv_y = thirdOrderSetpointETEL(0.03, 0.5, 50.0, 50.0/0.005, Inf, ts);
-pv_y = pv_y(:,1);
+x_col = [];  x_pos = 0;  seg_len = zeros(size(x_profile,1), 1);
+for k = 1:size(x_profile,1)
+    pv = thirdOrderSetpointETEL(x_profile(k,1), x_profile(k,2), x_profile(k,3), ...
+                                 x_profile(k,3)/x_profile(k,4), Inf, ts);
+    pv    = pv(:,1);
+    x_col = [x_col; x_pos + x_profile(k,5) * pv]; %#ok<AGROW>
+    x_pos = x_pos + x_profile(k,5) * x_profile(k,1);
+    seg_len(k) = numel(pv);
+end
+seg_start = [1; cumsum(seg_len(1:end-1)) + 1];  % start sample of each seg in x_col
 
-N_move = max(numel(pv_x), numel(pv_y));
-N      = n_hold + N_move + n_hold;
+n_move = numel(x_col);
+N      = n_hold + n_move + n_hold;
 t_ref  = (0:N-1)' * ts;
 
-r      = zeros(N, 3);
-r(:,3) = Y_op;                                          % Y baseline
-i0     = n_hold + 1;
-ix1    = min(i0 + numel(pv_x) - 1, N);
-iy1    = min(i0 + numel(pv_y) - 1, N);
-r(i0:ix1, 1) = pv_x(1:ix1-i0+1);                      % X1 symmetric
-r(i0:ix1, 2) = pv_x(1:ix1-i0+1);                      % X2 symmetric
-r(i0:iy1, 3) = Y_op + pv_y(1:iy1-i0+1);               % Y step
+x_full = [zeros(n_hold,1); x_col; zeros(n_hold,1)];
 
+% ── Y: 5 small moves around Y_op, scattered across X segments ────────────
+% Absolute Y: 0.300 -> 0.310 -> 0.295 -> 0.300 -> 0.290 -> 0.300
+% Columns: [dist, sign, vmax, amax, jerkTime, seg_idx, frac_within_seg]
+y_profile = [
+    0.010, +1, 0.30, 30, 0.010, 1, 0.50;   % +10 mm, mid  seg 1 (slow X)
+    0.015, -1, 0.50, 40, 0.008, 2, 0.40;   % -15 mm, mid  seg 2 (fast X)
+    0.005, +1, 0.20, 25, 0.012, 3, 0.20;   % +5  mm, early seg 3
+    0.010, -1, 0.40, 35, 0.010, 4, 0.50;   % -10 mm, mid  seg 4 (fast X)
+    0.010, +1, 0.40, 35, 0.010, 5, 0.60;   % +10 mm, late seg 5 (slow X)
+];
+
+y_full = Y_op * ones(N, 1);
+y_pos  = Y_op;
+for k = 1:size(y_profile,1)
+    dist = y_profile(k,1);  sgn  = y_profile(k,2);
+    vm   = y_profile(k,3);  am   = y_profile(k,4);  jt = y_profile(k,5);
+    si   = y_profile(k,6);  frac = y_profile(k,7);
+
+    pv_y    = thirdOrderSetpointETEL(dist, vm, am, am/jt, Inf, ts);
+    pv_y    = pv_y(:,1);
+    i_start = n_hold + seg_start(si) + round(frac * seg_len(si));
+    i_end   = min(i_start + numel(pv_y) - 1, N);
+    y_full(i_start:i_end) = y_pos + sgn * pv_y(1:i_end-i_start+1);
+    y_pos = y_pos + sgn * dist;
+
+    % Hold at new Y position until next move starts
+    if k < size(y_profile,1)
+        si_next   = y_profile(k+1,6);
+        fr_next   = y_profile(k+1,7);
+        i_next    = n_hold + seg_start(si_next) + round(fr_next * seg_len(si_next));
+        y_full(i_end+1 : min(i_next-1, N)) = y_pos;
+    else
+        y_full(i_end+1:N) = y_pos;
+    end
+end
+
+r = [x_full, x_full, y_full];
 f = zeros(N, 3);   % no external force injection
 
 %% Baseline simulation
@@ -147,23 +191,39 @@ if save_flag
     fprintf('Saved: gantry_comb_augmented.mat\n')
 end
 
+%% Summary
+dy = ya - yb;
+du = u_a - u_b;
+fprintf('\n=== Position difference (aug - base) ===\n')
+for j = 1:3
+    lbl = {'X1','X2','Y '};
+    fprintf('  %s:  rms=%8.2e m   max=%8.2e m\n', lbl{j}, rms(dy(:,j)), max(abs(dy(:,j))))
+end
+fprintf('\n=== Force difference (aug - base) ===\n')
+for j = 1:3
+    lbl = {'F_X1','F_X2','F_Y '};
+    fprintf('  %s:  rms=%8.2e N   max=%8.2e N\n', lbl{j}, rms(du(:,j)), max(abs(du(:,j))))
+end
+fprintf('\n=== Hidden MSD displacement (delta_a) ===\n')
+fprintf('  rms=%8.2e m   max=%8.2e m\n', rms(da), max(abs(da)))
+
 %% Figures
-plot_trajectory_comparison(t_ref, r, yb, ya, u_b, u_a, da, fs, fa, Y_op)
-plot_force_comparison(t_ref, u_b, u_a)
+plot_trajectory_comparison(t_ref, r, yb, ya, u_b, u_a, da, dy, fs, fa, Y_op)
+plot_force_comparison(t_ref, u_b, u_a, du)
 
 % =============================================================================
 % Local functions
 % =============================================================================
 
-function plot_trajectory_comparison(t, r, yb, ya, ub, ua, da, fs, fa, Y_op)
-    dy    = ya - yb;
+function plot_trajectory_comparison(t, r, yb, ya, ub, ua, da, dy, fs, fa, Y_op)
     ch    = {'X1','X2','Y'};
+    ni    = 'none';   % shorthand: all labels use Interpreter none
     Nfft  = numel(t);
     Nhalf = floor(Nfft/2);
     f_ax  = (0:Nhalf-1) * fs / Nfft;
     f_pos = f_ax(2:end);   % drop DC bin (f=0 invalid on log axis)
 
-    figure('Name','Option 1: trajectory comparison','Position',[50 30 1100 1100]);
+    figure('Name','Trajectory comparison','Position',[50 30 1100 1100]);
     tl = tiledlayout(6, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
 
     % ── Row 1: trajectories ───────────────────────────────────────────────
@@ -172,8 +232,8 @@ function plot_trajectory_comparison(t, r, yb, ya, ub, ua, da, fs, fa, Y_op)
         plot(t, r(:,j),  'k--', 'LineWidth', 0.8)
         plot(t, yb(:,j), 'b',   'LineWidth', 0.9)
         plot(t, ya(:,j), 'r',   'LineWidth', 0.9)
-        ylabel([ch{j} ' [m]']); grid on
-        title([ch{j} ' trajectory'])
+        ylabel([ch{j} ' [m]'], 'Interpreter', ni); grid on
+        title([ch{j} ' trajectory'], 'Interpreter', ni)
         if j == 1
             legend('Ref','Baseline','Augmented','Location','best','FontSize',7)
         end
@@ -183,8 +243,9 @@ function plot_trajectory_comparison(t, r, yb, ya, ub, ua, da, fs, fa, Y_op)
     for j = 1:3
         nexttile; hold on
         plot(t, dy(:,j), 'k', 'LineWidth', 0.9)
-        ylabel([ch{j} ' diff [m]']); grid on
-        title(sprintf('%s diff | rms=%.2e m', ch{j}, rms(dy(:,j))))
+        ylabel([ch{j} ' diff [m]'], 'Interpreter', ni); grid on
+        title(sprintf('%s diff | rms=%.2e m  max=%.2e m', ...
+              ch{j}, rms(dy(:,j)), max(abs(dy(:,j)))), 'Interpreter', ni)
     end
 
     % ── Row 3: FFT of Y-channel difference (signal spectrum) ──────────────
@@ -198,8 +259,9 @@ function plot_trajectory_comparison(t, r, yb, ya, ub, ua, da, fs, fa, Y_op)
          sprintf('%.2e m', Y_fft_diff(idx_fa+1)), ...
          'Color','r','FontSize',8,'HorizontalAlignment','center')
     xlim([f_pos(1) max(fa*4, 200)]); grid on
-    xlabel('Frequency [Hz]'); ylabel('|{{\Delta}}Y| [dB re m]')
-    title('FFT of Y-channel difference (aug - base)')
+    xlabel('Frequency [Hz]', 'Interpreter', ni)
+    ylabel('|dY| [dB re m]',  'Interpreter', ni)
+    title('FFT of Y-channel difference (aug - base)', 'Interpreter', ni)
 
     % ── Row 4: FFT of Y-channel — baseline vs augmented ───────────────────
     Y_fft_base = 2*abs(fft(yb(:,3)))/Nfft;
@@ -210,15 +272,18 @@ function plot_trajectory_comparison(t, r, yb, ya, ub, ua, da, fs, fa, Y_op)
     xline(fa, 'k--', sprintf('%g Hz', fa), 'LineWidth', 1.2, ...
           'LabelVerticalAlignment','bottom')
     xlim([f_pos(1) max(fa*4, 200)]); grid on
-    xlabel('Frequency [Hz]'); ylabel('|Y| [dB re m]')
+    xlabel('Frequency [Hz]', 'Interpreter', ni)
+    ylabel('|Y| [dB re m]',  'Interpreter', ni)
     legend('Baseline','Augmented','Location','best','FontSize',7)
-    title('FFT of Y channel -- baseline vs augmented', 'Interpreter', 'none')
+    title('FFT of Y channel -- baseline vs augmented', 'Interpreter', ni)
 
     % ── Row 5: delta_a ────────────────────────────────────────────────────
     nexttile([1 3]); hold on
     plot(t, da, 'b', 'LineWidth', 0.9)
-    ylabel('\delta_a [m]'); xlabel('Time [s]'); grid on
-    title(sprintf('\\delta_a  |  max=%.2e m   rms=%.2e m', max(abs(da)), rms(da)))
+    ylabel('delta_a [m]', 'Interpreter', ni)
+    xlabel('Time [s]',    'Interpreter', ni); grid on
+    title(sprintf('delta_a  |  max=%.2e m   rms=%.2e m', max(abs(da)), rms(da)), ...
+          'Interpreter', ni)
 
     % ── Row 6: H1 FRF — Y output / Y force input ─────────────────────────
     % H1 = FFT(y_Y) / FFT(u_Y): nonparametric FRF estimate, Y(3,3) element.
@@ -231,19 +296,21 @@ function plot_trajectory_comparison(t, r, yb, ya, ub, ua, da, fs, fa, Y_op)
     xline(fa, 'k--', sprintf('%g Hz', fa), 'LineWidth', 1.2, ...
           'LabelVerticalAlignment','bottom')
     xlim([1, 4*fa]); grid on
-    xlabel('Frequency [Hz]'); ylabel('|Y/F_Y| [dB re m/N]')
+    xlabel('Frequency [Hz]',      'Interpreter', ni)
+    ylabel('|Y/F_Y| [dB re m/N]', 'Interpreter', ni)
     legend('Baseline','Augmented','Location','best','FontSize',7)
-    title('H1 FRF -- Y/F_Y  (interpret above ~20 Hz with caution: low input energy)', 'Interpreter', 'none')
+    title('H1 FRF -- Y/F_Y  (interpret above ~20 Hz with caution: low input energy)', ...
+          'Interpreter', ni)
 
-    title(tl, sprintf('Option 1: Y step 30 mm  |  Y_{op}=%.2f m  |  f_a=%g Hz', Y_op, fa), ...
-          'Interpreter','none')
+    title(tl, sprintf('Rich trajectory  |  Y_op=%.2f m  |  fa=%g Hz', Y_op, fa), ...
+          'Interpreter', ni)
 end
 
-function plot_force_comparison(t, ub, ua)
-    du = ua - ub;
-    ch = {'F_{X1}','F_{X2}','F_Y'};
+function plot_force_comparison(t, ub, ua, du)
+    ch  = {'F_X1','F_X2','F_Y'};
+    ni  = 'none';
 
-    figure('Name','Option 1: force comparison','Position',[100 30 900 950]);
+    figure('Name','Force comparison','Position',[100 30 900 950]);
     tl = tiledlayout(6, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 
     for j = 1:3
@@ -251,8 +318,8 @@ function plot_force_comparison(t, ub, ua)
         nexttile; hold on
         plot(t, ub(:,j), 'b', 'LineWidth', 0.9)
         plot(t, ua(:,j), 'r', 'LineWidth', 0.9)
-        ylabel([ch{j} ' [N]']); grid on
-        title(sprintf('%s -- baseline vs augmented', ch{j}), 'Interpreter', 'none')
+        ylabel([ch{j} ' [N]'], 'Interpreter', ni); grid on
+        title(sprintf('%s -- baseline vs augmented', ch{j}), 'Interpreter', ni)
         if j == 1
             legend('Baseline','Augmented','Location','best','FontSize',7)
         end
@@ -260,10 +327,11 @@ function plot_force_comparison(t, ub, ua)
         % Force difference
         nexttile; hold on
         plot(t, du(:,j), 'k', 'LineWidth', 0.9)
-        ylabel(['\Delta' ch{j} ' [N]']); grid on
-        title(sprintf('%s diff | rms=%.2e N', ch{j}, rms(du(:,j))))
-        if j == 3, xlabel('Time [s]'); end
+        ylabel(['d' ch{j} ' [N]'], 'Interpreter', ni); grid on
+        title(sprintf('%s diff | rms=%.2e N  max=%.2e N', ...
+              ch{j}, rms(du(:,j)), max(abs(du(:,j)))), 'Interpreter', ni)
+        if j == 3, xlabel('Time [s]', 'Interpreter', ni); end
     end
 
-    title(tl, 'Option 1: forces -- baseline vs augmented', 'Interpreter', 'none')
+    title(tl, 'Forces -- baseline vs augmented', 'Interpreter', ni)
 end
