@@ -1,5 +1,62 @@
 # Gantry SubNet Augmentation — Implementation Plan
 
+---
+
+## Current Status (2026-06-02)
+
+| Item | State |
+|------|-------|
+| Phase 1 — frozen Y, no augmentation | DONE. NRMS verified near zero. |
+| `diagnose_dynamic_parallel.py` | DONE. 15/15 tests pass. |
+| `gantry_interconnect_dynamic.py` | Written. Frozen Y=0.3, NX_ANN=2. Evaluation section cleaned (no zero-state, no train rollout). Not yet run on MATLAB augmented data. |
+| `generate_gantry_lti_baseline.m` | Written. One trajectory, Y frozen at 0.3 m. |
+| `generate_gantry_lti_augmented.m` | Written. Known bug: addpath missing for `gantry_additional_state_2025a.slx`. Y reference constant at 0.3 — MSD may not be excited. |
+| Phase 2 (LPV, no augmentation) | **Deferred.** Will do LPV later, after validating augmentation at frozen Y. |
+| Phase 3 (LPV + dynamic parallel ANN) | Blocked on data. |
+
+---
+
+## Immediate Next Steps — Data Generation and MSD Visibility
+
+**Goal:** generate augmented gantry data at Y=0.3 with small Y perturbations, and verify the hidden MSD shows up in the output signal before training.
+
+### Step 1 — Fix `generate_gantry_lti_augmented.m` addpath
+
+The script calls `sim('gantry_additional_state_2025a')` but never adds `Matlab-scripts/Augmentation` to the path. Add:
+```matlab
+addpath(fullfile(pwd, 'Matlab-scripts', 'Augmentation'))
+```
+after the existing `addpath(genpath(...))` line.
+
+### Step 2 — Add small Y perturbations to both scripts
+
+With Y reference constant at 0.3 m, Y acceleration is near zero and the 400 Hz MSD is not reliably excited. Add a slow sinusoidal Y perturbation to `make_ref()` in both `generate_gantry_lti_baseline.m` and `generate_gantry_lti_augmented.m`:
+
+- Amplitude: 5-10 mm (keeps Y variation small, LTI frozen-at-0.3 approximation still holds)
+- Frequency: 0.5-2 Hz (well within controller bandwidth; generates Y acceleration without hitting limits)
+- Reference: `r_Y = Y_initial + A_Y * sin(2*pi*f_Y * t)` added to the constant hold
+
+Both scripts must use identical Y perturbation parameters so the baseline vs augmented comparison is fair (same input, different plant).
+
+### Step 3 — Run both scripts and verify MSD appears
+
+Run `generate_gantry_lti_baseline.m` and `generate_gantry_lti_augmented.m`. Check:
+- `delta_a` amplitude in augmented data (`max(abs(delta_a))` printed by the script)
+- Y-channel difference: `max(abs(y_aug(:,3) - y_baseline(:,3)))` — if this is above numerical noise, MSD is visible in output
+- Plot: `y_aug(:,3) - y_baseline(:,3)` vs time; expect oscillation near 400 Hz
+
+If `delta_a` is negligible (sub-micrometre): increase Y perturbation amplitude or frequency.
+
+### Step 4 — Load augmented data into Python and run a smoke test
+
+Load `gantry_aug_train.mat`, verify shapes, check `std_x[2]` is non-negligible with Y moving, and run one forward pass of the interconnect. This confirms the Python pipeline accepts the new data before starting training.
+
+### Step 5 — Train Phase 3 model
+
+Run `gantry_interconnect_dynamic.py` with augmented data. Check loss curve and val NRMS.
+
+---
+
 ## End Goal
 
 The full research target — not yet implemented, but every design choice must keep
@@ -113,30 +170,22 @@ Replace MSD-specific sections in order: data → block → wiring → save path.
 
 ## Phase Ordering Rationale
 
-1. **MIMO, frozen Y, no augmentation** — pipeline sanity check; confirms wiring, normalisation, training loop
-2. **MIMO, LPV (self-scheduled Y), no augmentation** — validates LPV scheduling on Y-varying data before adding ANN
-3. **MIMO, LPV + dynamic parallel ANN** — core research contribution; ANN learns hidden MSD dynamics on top of correctly-scheduled baseline
+1. **MIMO, frozen Y, no augmentation** — pipeline sanity check; confirms wiring, normalisation, training loop. DONE.
+2. **MIMO, frozen Y, dynamic parallel ANN** — core augmentation pipeline at fixed operating point; ANN learns MSD dynamics with small Y perturbations. **Current focus.**
+3. **MIMO, LPV + dynamic parallel ANN** — full research contribution; self-scheduled M(Y) on top of step 2. Deferred until step 2 is validated.
 
-**Why LPV before augmentation (revised from original plan):**
-The hidden MSD is excited by Y acceleration — with Y frozen at 0.3 m, `delta_a ≈ L0`
-(equilibrium) and barely deviates. An augmentation trained on frozen-Y data would learn a
-near-constant offset, not the 400 Hz transient dynamics that are the actual research target.
+**Why LPV is deferred:**
+Augmentation at frozen Y is simpler to debug and sufficient to verify whether the ANN can learn the hidden MSD at a single operating point. LPV adds gradient complexity (Horner Jacobian, h-detach, shorter NF) and data requirements (Y-varying trajectories with adequate std_x[2]). Doing augmentation first at frozen Y avoids conflating LPV training issues with augmentation issues.
 
-Additionally, with Y moving and a frozen-Y baseline, the ANN must simultaneously compensate for
-LPV mismatch (wrong `M(Y)`) and MSD dynamics — the two sources of error cannot be separated.
-LPV in Phase 2 fixes `M(Y)` first so the ANN in Phase 3 learns only the genuine MSD residual.
+**Why small Y perturbations at frozen Y (not fully frozen):**
+The hidden MSD resonates at 400 Hz. With Y reference exactly constant, Y acceleration is near zero and the MSD is not excited. Adding small sinusoidal Y perturbations (5-10 mm, 0.5-2 Hz) provides Y acceleration that excites the MSD while keeping Y variation small enough that the frozen-Y LTI approximation still holds for the baseline block.
 
-**Why dynamic parallel (not static) for Phase 3:**
+**Why dynamic parallel (not static):**
 The hidden MSD resonates at 400 Hz, sampled at 20 kHz — 50 samples per oscillation cycle. A
 static ANN sees only the current `(x, u)` at each RK4 step and has no memory between steps. It
 cannot track `delta_a` from instantaneous state alone. Dynamic parallel with 2 extra states
 (`n_hidden=2`) implicitly tracks `delta_a` and `delta_a_dot`, giving the ANN the memory it
 physically requires. See the static vs dynamic table in the Phase 3 section.
-
-**Note — original Phase 2 (frozen Y + static ANN):**
-The original plan placed augmentation before LPV to validate wiring and training loop with
-controlled mismatch. This remains a useful pipeline check but does NOT test MSD dynamics because
-Y is frozen. The wiring is preserved in Phase 3 as a reference; it is not a separate research phase.
 
 ---
 
