@@ -671,6 +671,7 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         Y_op: float = 0.3,
         std_x=np.ones((6, 1)),
         std_u=np.ones((3, 1)),
+        x_mean=np.zeros((6, 1)),
         Ts: float = 1 / 20000,
         *args,
         **kwargs,
