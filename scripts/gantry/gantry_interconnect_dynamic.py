@@ -32,6 +32,9 @@ nf = 200; epochs = 5; batch_size = 256
 # utility parameters
 save_flag = True
 N_HOLD = 0    # hold samples stripped from each end of MATLAB trajectory
+USE_F64  = False                                         # flip to True to verify precision
+DTYPE_NP = np.float64    if USE_F64 else np.float32
+DTYPE_PT = torch.float64 if USE_F64 else torch.float32
 
 run_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
 
@@ -45,9 +48,9 @@ print(data_file_path)
 def load_mat(split):
     d = loadmat(os.path.join(data_file_path, f'gantry_comb_{split}.mat'), squeeze_me=True)
     return deepSI.System_data(
-        u  = (d['u'][N_HOLD:] if N_HOLD == 0 else d['u'][N_HOLD:-N_HOLD]).astype(np.float32),
-        y  = (d['y'][N_HOLD:] if N_HOLD == 0 else d['y'][N_HOLD:-N_HOLD]).astype(np.float32),
-        x  = (d['x_logical'][N_HOLD:] if N_HOLD == 0 else d['x_logical'][N_HOLD:-N_HOLD]).astype(np.float32),
+        u  = (d['u'][N_HOLD:] if N_HOLD == 0 else d['u'][N_HOLD:-N_HOLD]).astype(DTYPE_NP),
+        y  = (d['y'][N_HOLD:] if N_HOLD == 0 else d['y'][N_HOLD:-N_HOLD]).astype(DTYPE_NP),
+        x  = (d['x_logical'][N_HOLD:] if N_HOLD == 0 else d['x_logical'][N_HOLD:-N_HOLD]).astype(DTYPE_NP),
         dt = float(d['dt']),
     )
 
@@ -58,11 +61,11 @@ val_data   = load_mat('val')
 # Standard mean/std normalization from training data.
 # x_mean captures the Y operating point (~0.3 m) so the block recovers physical Y correctly.
 # ANN latent states [6:8] are dimensionless — no external normalisation needed for them.
-x_mean = train_data.x.mean(axis=0).reshape(NX_PHYS, 1).astype(np.float32)
-std_x  = train_data.x.std(axis=0).reshape(NX_PHYS, 1).astype(np.float32) + 1e-8
-std_u  = train_data.u.std(axis=0).reshape(nu, 1).astype(np.float32) + 1e-8
-ystd   = train_data.y.std(axis=0).astype(np.float32) + 1e-8
-y0     = (Cd.numpy() @ x_mean.flatten()).astype(np.float32)  # mean output, consistent with x_mean
+x_mean = train_data.x.mean(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP)
+std_x  = train_data.x.std(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP) + 1e-8
+std_u  = train_data.u.std(axis=0).reshape(nu, 1).astype(DTYPE_NP) + 1e-8
+ystd   = train_data.y.std(axis=0).astype(DTYPE_NP) + 1e-8
+y0     = (Cd.numpy() @ x_mean.flatten()).astype(DTYPE_NP)  # mean output, consistent with x_mean
 
 # Cd_norm[i,j] = Cd[i,j] * std_x[j] / ystd[i] -- applies P.T with correct physical weights
 Cd_norm = Cd.numpy() * std_x.flatten()[None, :] / ystd[:, None]  # (3, 6)
@@ -73,7 +76,7 @@ PHY_IX = np.arange(NX_PHYS)   # [0,1,2,3,4,5]
 
 interconnect = Interconnect(nxd, nu, ny, debugging=False)
 
-physical_state_model_block  = Gantry_State_Block(Y_op=Y_OP, std_x=std_x, std_u=std_u, x_mean=x_mean)
+physical_state_model_block  = Gantry_State_Block(Y_op=Y_OP, std_x=std_x, std_u=std_u, x_mean=x_mean).to(DTYPE_PT)
 physical_output_model_block = Linear_Output_Block(C=Cd_norm, D=Dd_np)
 interconnect.add_block(physical_state_model_block)
 interconnect.add_block(physical_output_model_block)
@@ -99,7 +102,7 @@ fit_sys = SSE_Interconnect(interconnect=interconnect, na=na, nb=nb,
 # Manual normalisation: Gantry_State_Block is nonlinear, auto_fit_norm=True would break this.
 # u0=0: no force offset (block sees full physical forces).
 # y0=Cd@x_mean: mean output offset consistent with x_mean in the block.
-fit_sys.norm.u0   = np.zeros(nu, dtype=np.float32)
+fit_sys.norm.u0   = np.zeros(nu, dtype=DTYPE_NP)
 fit_sys.norm.ustd = std_u.flatten()
 fit_sys.norm.y0   = y0
 fit_sys.norm.ystd = ystd
