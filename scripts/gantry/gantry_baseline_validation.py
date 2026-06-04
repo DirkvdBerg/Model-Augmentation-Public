@@ -34,6 +34,11 @@ Cd_np       = Cd.numpy()   # (3, 6)  Dd = 0, no feedthrough
 MAX_SAMPLES = None         # cap rollout to this many steps (None = full dataset)
 run_id      = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
 
+# ── Precision flag — flip USE_F64 to compare float32 vs float64 ───────────────
+USE_F64  = True
+DTYPE_NP = np.float64    if USE_F64 else np.float32
+DTYPE_PT = torch.float64 if USE_F64 else torch.float32
+
 os.makedirs(OUT_DIR, exist_ok=True)
 
 CH_LABELS    = ['X1 [m]', 'X2 [m]', 'Y [m]']
@@ -47,9 +52,9 @@ def load_mat(name, max_samples=MAX_SAMPLES):
     d = loadmat(os.path.join(DATA_DIR, f'{name}.mat'), squeeze_me=True)
     s = slice(None, max_samples)   # slice(None, None) = full dataset
     return {
-        'u':         d['u'][s].astype(np.float32),
-        'y':         d['y'][s].astype(np.float32),
-        'x_logical': d['x_logical'][s].astype(np.float32),
+        'u':         d['u'][s].astype(DTYPE_NP),
+        'y':         d['y'][s].astype(DTYPE_NP),
+        'x_logical': d['x_logical'][s].astype(DTYPE_NP),
         'dt':        float(d['dt']),
         'name':      name,
     }
@@ -94,8 +99,8 @@ print(f'\n  Y_op (from data mean): {Y_op:.4f} m')
 _block_kwargs = dict(std_x=std_x.reshape(6, 1), std_u=std_u.reshape(3, 1),
                      x_mean=x_mean.reshape(6, 1))
 
-block_lti = Gantry_State_Block(Y_op=Y_op,  **_block_kwargs)
-block_lpv = Gantry_State_Block(Y_op=None,  **_block_kwargs)
+block_lti = Gantry_State_Block(Y_op=Y_op,  **_block_kwargs).to(DTYPE_PT)
+block_lpv = Gantry_State_Block(Y_op=None,  **_block_kwargs).to(DTYPE_PT)
 block_lti.eval()
 block_lpv.eval()
 
@@ -123,8 +128,8 @@ x_norm_comb = (comb['x_logical'] - x_mean) / std_x  # (T, 6) capped
 u_norm_comb =  comb['u'] / std_u                     # (T, 3) capped
 T_cap = len(comb['u'])
 
-x_in = torch.tensor(x_norm_comb[:-1].reshape(T_cap - 1, 6, 1), dtype=torch.float32)
-u_in = torch.tensor(u_norm_comb[:-1].reshape(T_cap - 1, 3, 1), dtype=torch.float32)
+x_in = torch.tensor(x_norm_comb[:-1].reshape(T_cap - 1, 6, 1), dtype=DTYPE_PT)
+u_in = torch.tensor(u_norm_comb[:-1].reshape(T_cap - 1, 3, 1), dtype=DTYPE_PT)
 z_in = torch.cat([x_in, u_in], dim=1)   # (T-1, 9, 1)
 
 with torch.no_grad():
@@ -145,12 +150,12 @@ def rollout(data, block, label):
     T = len(u)
 
     x_norm   = torch.tensor(
-        ((x_logical[0] - x_mean) / std_x).reshape(1, 6, 1), dtype=torch.float32
+        ((x_logical[0] - x_mean) / std_x).reshape(1, 6, 1), dtype=DTYPE_PT
     )
     u_tensor = torch.tensor(
-        (u / std_u).reshape(T, 3, 1), dtype=torch.float32
+        (u / std_u).reshape(T, 3, 1), dtype=DTYPE_PT
     )
-    y_hat = np.zeros((T, 3), dtype=np.float32)
+    y_hat = np.zeros((T, 3), dtype=DTYPE_NP)
 
     print(f'  [{label}] Rolling out {T} steps ({T * data["dt"]:.2f} s)...')
     log_every = max(1, T // 10)
