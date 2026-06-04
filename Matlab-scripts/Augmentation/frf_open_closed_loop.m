@@ -1,9 +1,9 @@
-% frf_open_closed_loop.m
+% frf_plant_closed_loop.m
 % Linearize baseline and augmented gantry models at Y_op.
-% Produces both open-loop (plant G) and closed-loop (disturbance-to-output)
+% Produces both plant (no controller) and closed-loop (disturbance-to-output)
 % FRFs using the MATLAB linearize/linio workflow.
 %
-% Open-loop:   Cfb zeroed before linearize() -> plant FRF G (force to position).
+% Plant:       Cfb zeroed before linearize() -> plant FRF G (force to position).
 % Closed-loop: Cfb active during linearize() -> S*G from disturbance force to output.
 %
 % Run from project root:
@@ -58,8 +58,8 @@ t = [0; 1];                            % column vector — model blocks use [t, 
 r = repmat([0, 0, Y_op], 2, 1);        % constant reference at operating point
 f = zeros(2, 3);                       % no force injection
 
-%% Open-loop linearization — controller zeroed
-fprintf('\nLinearizing: open-loop (Cfb = 0)...\n')
+%% Plant linearization — controller zeroed (no controller)
+fprintf('\nLinearizing: plant (Cfb = 0)...\n')
 Cfb_orig = Cfb;
 Cfb = tf(num2cell(zeros(3)), num2cell(ones(3)));  % turn off controller
 
@@ -82,16 +82,16 @@ mh = mh_rigid + ma;
 
 %% Report state counts
 fprintf('\nState counts:\n')
-fprintf('  Baseline  OL: %d states\n', order(sys_base_ol))
-fprintf('  Augmented OL: %d states\n', order(sys_aug_ol))
-fprintf('  Baseline  CL: %d states\n', order(sys_base_cl))
-fprintf('  Augmented CL: %d states\n', order(sys_aug_cl))
+fprintf('  Baseline  Plant: %d states\n', order(sys_base_ol))
+fprintf('  Augmented Plant: %d states\n', order(sys_aug_ol))
+fprintf('  Baseline  CL:    %d states\n', order(sys_base_cl))
+fprintf('  Augmented CL:    %d states\n', order(sys_aug_cl))
 
 %% Plot — 4 separate figures
 freq_hz = logspace(0, log10(4*fa), 3000);
-plot_frf_pair(sys_base_ol, sys_aug_ol, freq_hz, fa, Y_op, 'Open-loop FRF')
+plot_frf_pair(sys_base_ol, sys_aug_ol, freq_hz, fa, Y_op, 'Plant FRF (no controller)')
 plot_frf_pair(sys_base_cl, sys_aug_cl, freq_hz, fa, Y_op, 'Closed-loop FRF')
-plot_frf_diff_single(sys_base_ol, sys_aug_ol, freq_hz, fa, Y_op, 'Open-loop FRF difference (aug - base)')
+plot_frf_diff_single(sys_base_ol, sys_aug_ol, freq_hz, fa, Y_op, 'Plant FRF difference (aug - base, no controller)')
 plot_frf_diff_single(sys_base_cl, sys_aug_cl, freq_hz, fa, Y_op, 'Closed-loop FRF difference (aug - base)')
 
 %% =========================================================================
