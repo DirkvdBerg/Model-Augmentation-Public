@@ -12,9 +12,9 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ### Rule: Answer the question before writing any code
 
-**Trigger**: When the user asks a question about what you are doing, why you made a choice, or what something is for
-**Rule**: Answer the question in text first. Do not call any tools or write any code until the user has acknowledged the explanation and confirmed the direction. A question is not an implicit "proceed".
-**Why**: User asked "what are you doing here?" and "what are you using this checkpoint for?" Both times the response immediately started coding. The user had to explicitly stop the tool call.
+**Trigger**: When the user asks a question, shares context, or presents a problem to think through
+**Rule**: Respond in text first. Do not call any tools or write any code until the user has acknowledged the explanation and confirmed the direction. A question is not an implicit "proceed". Sharing context or a problem is not an implicit "proceed" either.
+**Why**: User asked "what are you doing here?" and "what are you using this checkpoint for?" Both times the response immediately started coding. Later: user shared NotebookLM output about an analysis framework and I immediately started reading files and coding. The user had to stop both. The rule applies to any response, not just to explicit questions.
 
 ---
 
