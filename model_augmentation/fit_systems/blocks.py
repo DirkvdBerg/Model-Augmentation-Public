@@ -662,6 +662,10 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         State normalisation std, precomputed from training data.
     std_u : array (3,1)
         Input normalisation std, precomputed from training data.
+    u_mean : array (3,1)
+        Input mean offset, precomputed from training data. Must match
+        fit_sys.norm.u0 so the block can recover physical forces.
+        Default zeros (backward compatible with u0=0 normalisation).
     Ts : float
         Sample period [s]. Default 1/20000.
     """
@@ -672,6 +676,7 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         std_x=np.ones((6, 1)),
         std_u=np.ones((3, 1)),
         x_mean=np.zeros((6, 1)),
+        u_mean=np.zeros((3, 1)),
         Ts: float = 1 / 20000,
         *args,
         **kwargs,
@@ -741,6 +746,7 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         self.register_buffer("std_x_1d", to_tensor(std_x).reshape(6))
         self.register_buffer("std_u",    to_tensor(std_u).reshape(3, 1))
         self.register_buffer("x_mean",   to_tensor(x_mean).reshape(6, 1))
+        self.register_buffer("u_mean",   to_tensor(u_mean).reshape(3, 1))
 
     def nonlinear_function(self, z: Tensor):
         # Copied verbatim from Nonlinear_MSD_State_Block — only self.nx/self.nu differ.
@@ -762,7 +768,7 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
 
         # --- denormalise -------------------------------------------------
         x_phys = x * self.std_x + self.x_mean   # (batch, 6, 1)
-        u_phys = u * self.std_u                  # (batch, 3, 1)
+        u_phys = u * self.std_u + self.u_mean      # (batch, 3, 1)
 
         # Work in 2D (batch, n) to match LFR signal-flow convention.
         x2 = x_phys.squeeze(-1)          # (batch, 6)
