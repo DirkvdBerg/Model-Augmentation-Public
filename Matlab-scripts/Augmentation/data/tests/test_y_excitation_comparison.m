@@ -164,6 +164,23 @@ for iOpt = 1:3
     fprintf('  FFT(dY) DC       = %.4e m\n', Y_fft(1))
 end
 
+%% Linearize-based FRF comparison (MATLAB linearize workflow)
+% Follows: linearize(mdl, io) with linio I/O specification.
+% open-loop output breaks the feedback path so we get the plant FRF.
+fprintf('\nLinearizing baseline and augmented models at Y=%.2f m...\n', Y_op)
+
+io_b(1) = linio([MDL_BASE '/Gain3'], 1, 'input');
+io_b(2) = linio([MDL_BASE '/Gain4'], 1, 'openoutput');
+sys_base_lin = linearize(MDL_BASE, io_b);
+
+io_a(1) = linio([MDL_AUG '/Gain3'], 1, 'input');
+io_a(2) = linio([MDL_AUG '/Gain4'], 1, 'openoutput');
+mh = mh_rigid;
+sys_aug_lin = linearize(MDL_AUG, io_a);
+mh = mh_rigid + ma;
+
+plot_linearized_frf(sys_base_lin, sys_aug_lin, fa, Y_op)
+
 %% Plots
 plot_comparison(t_ref, r1, yb1, ya1, da1, fs, fa, ...
     'Option 1: Y step 30 mm (amax=50 m/s^2)')
@@ -233,23 +250,6 @@ G_aug  = frf_compute(Ya_runs, Ua_runs);
 
 plot_frf_comparison(frf_f_lines, G_base, G_aug, fa, Y_op)
 
-%% Linearize-based FRF comparison (MATLAB linearize workflow)
-% Follows: linearize(mdl, io) with linio I/O specification.
-% open-loop output breaks the feedback path so we get the plant FRF.
-fprintf('\nLinearizing baseline and augmented models at Y=%.2f m...\n', Y_op)
-
-io_b(1) = linio([MDL_BASE '/Gain3'],         1, 'input');
-io_b(2) = linio([MDL_BASE '/To Workspace1'], 1, 'openoutput');
-sys_base_lin = linearize(MDL_BASE, io_b);
-
-io_a(1) = linio([MDL_AUG '/Gain3'],         1, 'input');
-io_a(2) = linio([MDL_AUG '/To Workspace1'], 1, 'openoutput');
-mh = mh_rigid;
-sys_aug_lin = linearize(MDL_AUG, io_a);
-mh = mh_rigid + ma;
-
-plot_linearized_frf(sys_base_lin, sys_aug_lin, fa, Y_op)
-
 %% =========================================================================
 function plot_comparison(t, r, y_base, y_aug, da, fs, fa, ttl)
     dy = y_aug - y_base;
@@ -278,28 +278,29 @@ function plot_comparison(t, r, y_base, y_aug, da, fs, fa, ttl)
     Nfft  = numel(t);
     Nhalf = floor(Nfft/2);
     f_ax  = (0:Nhalf-1) * fs / Nfft;
+    f_pos = f_ax(2:end);   % drop DC bin (f=0 invalid on log axis)
     Y_fft_diff = 2*abs(fft(dy(:,3)))/Nfft;
     Y_fft_base = 2*abs(fft(y_base(:,3)))/Nfft;
     Y_fft_aug  = 2*abs(fft(y_aug(:,3)))/Nfft;
-    [~,idx_fa] = min(abs(f_ax - fa));
+    [~,idx_fa] = min(abs(f_pos - fa));
 
     % Row 3: FFT of Y-channel difference
     subplot(5,3,7:9)
-    semilogy(f_ax, Y_fft_diff(1:Nhalf), 'k', 'LineWidth', 0.8); hold on
+    semilogx(f_pos, 20*log10(Y_fft_diff(2:Nhalf)), 'k', 'LineWidth', 0.8); hold on
     xline(fa, 'r--', sprintf('%g Hz', fa), 'LineWidth', 1.2, 'LabelVerticalAlignment', 'bottom')
-    text(fa, Y_fft_diff(idx_fa)*2, sprintf('%.2e m', Y_fft_diff(idx_fa)), ...
+    text(fa, 20*log10(Y_fft_diff(idx_fa+1))+3, sprintf('%.2e m', Y_fft_diff(idx_fa+1)), ...
          'Color','r', 'FontSize', 8, 'HorizontalAlignment','center')
-    xlim([0 max(fa*4, 200)]); grid on
-    xlabel('Frequency [Hz]'); ylabel('|\DeltaY| [m]')
+    xlim([f_pos(1) max(fa*4, 200)]); grid on
+    xlabel('Frequency [Hz]'); ylabel('|\DeltaY| [dB re m]')
     title('FFT of Y-channel difference (aug - base)')
 
     % Row 4: FFT of Y channel — baseline vs augmented overlaid
     subplot(5,3,10:12)
-    semilogy(f_ax, Y_fft_base(1:Nhalf), 'b', 'LineWidth', 0.9); hold on
-    semilogy(f_ax, Y_fft_aug(1:Nhalf),  'r', 'LineWidth', 0.9)
+    semilogx(f_pos, 20*log10(Y_fft_base(2:Nhalf)), 'b', 'LineWidth', 0.9); hold on
+    semilogx(f_pos, 20*log10(Y_fft_aug(2:Nhalf)),  'r', 'LineWidth', 0.9)
     xline(fa, 'k--', sprintf('%g Hz', fa), 'LineWidth', 1.2, 'LabelVerticalAlignment', 'bottom')
-    xlim([0 max(fa*4, 200)]); grid on
-    xlabel('Frequency [Hz]'); ylabel('|Y| [m]')
+    xlim([f_pos(1) max(fa*4, 200)]); grid on
+    xlabel('Frequency [Hz]'); ylabel('|Y| [dB re m]')
     legend('Baseline','Augmented','Location','best')
     title('FFT of Y channel — baseline vs augmented')
 
