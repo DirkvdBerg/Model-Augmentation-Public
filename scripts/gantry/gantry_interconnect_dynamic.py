@@ -22,7 +22,7 @@ NX_ANN  = 2   # ANN latent states (implicit delta_a, vdelta_a)
 nxd = NX_PHYS + NX_ANN   # = 8  (replaces: nxd = 2*dof for dynamic aug)
 nu  = 3
 ny  = 3
-Y_OP = 0.3    # frozen Y operating point [m]
+Y_OP = None   # None = LPV self-scheduled; float = frozen operating point [m]
 SEED = 42
 
 # training parameters
@@ -43,7 +43,7 @@ data_file_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'ga
 print(data_file_path)
 
 def load_mat(split):
-    d = loadmat(os.path.join(data_file_path, f'gantry_lti_{split}.mat'), squeeze_me=True)
+    d = loadmat(os.path.join(data_file_path, f'gantry_comb_{split}.mat'), squeeze_me=True)
     return deepSI.System_data(
         u  = (d['u'][N_HOLD:] if N_HOLD == 0 else d['u'][N_HOLD:-N_HOLD]).astype(np.float32),
         y  = (d['y'][N_HOLD:] if N_HOLD == 0 else d['y'][N_HOLD:-N_HOLD]).astype(np.float32),
@@ -55,14 +55,14 @@ train_data = load_mat('train')
 val_data   = load_mat('val')
 
 ## ------------- Normalisation -----------------
-# Replaces: Load FP model + normalize_linear_ss_matrices
-# Physical states only — ANN latent states [6:8] are dimensionless, no external normalisation.
-std_u = train_data.u.std(axis=0).reshape(nu, 1).astype(np.float32) + 1e-8
-std_x = train_data.x.std(axis=0).reshape(NX_PHYS, 1).astype(np.float32) + 1e-8
-std_x[2] = Y_OP   # Y frozen -> std~0; use operating point as scale
-
-ystd = train_data.y.std(axis=0).astype(np.float32) + 1e-8
-ystd[2] = Y_OP    # consistent with std_x[2]
+# Standard mean/std normalization from training data.
+# x_mean captures the Y operating point (~0.3 m) so the block recovers physical Y correctly.
+# ANN latent states [6:8] are dimensionless — no external normalisation needed for them.
+x_mean = train_data.x.mean(axis=0).reshape(NX_PHYS, 1).astype(np.float32)
+std_x  = train_data.x.std(axis=0).reshape(NX_PHYS, 1).astype(np.float32) + 1e-8
+std_u  = train_data.u.std(axis=0).reshape(nu, 1).astype(np.float32) + 1e-8
+ystd   = train_data.y.std(axis=0).astype(np.float32) + 1e-8
+y0     = (Cd.numpy() @ x_mean.flatten()).astype(np.float32)  # mean output, consistent with x_mean
 
 # Cd_norm[i,j] = Cd[i,j] * std_x[j] / ystd[i] -- applies P.T with correct physical weights
 Cd_norm = Cd.numpy() * std_x.flatten()[None, :] / ystd[:, None]  # (3, 6)
@@ -73,7 +73,7 @@ PHY_IX = np.arange(NX_PHYS)   # [0,1,2,3,4,5]
 
 interconnect = Interconnect(nxd, nu, ny, debugging=False)
 
-physical_state_model_block  = Gantry_State_Block(Y_op=Y_OP, std_x=std_x, std_u=std_u)
+physical_state_model_block  = Gantry_State_Block(Y_op=Y_OP, std_x=std_x, std_u=std_u, x_mean=x_mean)
 physical_output_model_block = Linear_Output_Block(C=Cd_norm, D=Dd_np)
 interconnect.add_block(physical_state_model_block)
 interconnect.add_block(physical_output_model_block)
@@ -96,11 +96,12 @@ interconnect.connect_block_signals(physical_output_model_block, ["u"], ["y"])
 fit_sys = SSE_Interconnect(interconnect=interconnect, na=na, nb=nb,
                             e_net_kwargs={"n_nodes_per_layer": 64, "n_hidden_layers": 2})
 
-# Manual normalisation: no mean subtraction -- Gantry_State_Block is nonlinear,
-# cannot absorb mean offset into B matrix. auto_fit_norm=True would break this.
+# Manual normalisation: Gantry_State_Block is nonlinear, auto_fit_norm=True would break this.
+# u0=0: no force offset (block sees full physical forces).
+# y0=Cd@x_mean: mean output offset consistent with x_mean in the block.
 fit_sys.norm.u0   = np.zeros(nu, dtype=np.float32)
 fit_sys.norm.ustd = std_u.flatten()
-fit_sys.norm.y0   = np.zeros(ny, dtype=np.float32)
+fit_sys.norm.y0   = y0
 fit_sys.norm.ystd = ystd
 
 fit_sys.fit(train_sys_data=train_data, val_sys_data=val_data, batch_size=batch_size,
