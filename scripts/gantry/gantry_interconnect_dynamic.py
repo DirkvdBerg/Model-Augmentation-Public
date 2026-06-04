@@ -111,7 +111,7 @@ fit_sys.fit(train_sys_data=train_data, val_sys_data=val_data, batch_size=batch_s
 if save_flag:
     save_dir  = os.path.join(os.path.dirname(__file__), '..', '..', 'simulations', 'gantry_subnet')
     os.makedirs(save_dir, exist_ok=True)
-    model_file_path = os.path.join(save_dir, f'phase3_{run_id}')
+    model_file_path = os.path.join(save_dir, f'gantry_{run_id}')
     fit_sys.save_system(model_file_path)
     print(f'Saved model: {model_file_path}')
 
@@ -151,6 +151,25 @@ print('\n=== ANN latent state RMS ===')
 for ch in range(NX_ANN):
     print(f'  x[{NX_PHYS+ch}]: enc={ann_rms_enc[ch]:.4e}')
 
+# ── x_logical-initialised simulation (oracle baseline) ───────────────────────
+val_norm = fit_sys.norm.transform(val_data)
+u_val_norm = torch.tensor(np.ascontiguousarray(val_norm.u), dtype=torch.float32)
+
+x_xlog = torch.zeros(1, nxd)
+x_xlog[0, :NX_PHYS] = torch.tensor(val_data.x[0] / std_x.flatten(), dtype=torch.float32)
+
+y_xlog_list = []
+with torch.no_grad():
+    for t in range(len(u_val_norm)):
+        y_t, x_xlog = fit_sys.hfn(x_xlog, u_val_norm[t:t+1])
+        y_xlog_list.append(y_t.squeeze().numpy())
+y_hat_xlog = np.array(y_xlog_list) * ystd
+
+nrms_xlog = np.sqrt(((y_hat_xlog - y_ref) ** 2).mean(axis=0)) / ystd
+print('\n=== x_logical-initialised sim-NRMS ===')
+for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
+    print(f'  {lbl}: {nrms_xlog[ch]:.4f}')
+
 # ── Plots ─────────────────────────────────────────────────────────────────────
 t_val   = np.arange(len(y_ref)) * val_data.dt
 cheat_t = cheat_n * val_data.dt
@@ -160,25 +179,26 @@ fig1, ax1 = plt.subplots(figsize=(7, 3.5))
 ax1.semilogy(epoch_id_full, loss_val_full,   color='C0', label='Val loss')
 ax1.semilogy(epoch_id_full, loss_train_full, color='C1', linestyle='--', alpha=0.7, label='Train loss')
 ax1.set_xlabel('Epoch'); ax1.set_ylabel('sim-RMS')
-ax1.set_title(f'Loss convergence -- dynamic parallel (NX_ANN={NX_ANN})')
+ax1.set_title(f'Loss convergence - dynamic parallel (NX_ANN={NX_ANN})')
 ax1.legend(); ax1.grid(True, which='both')
 fig1.tight_layout()
-fig1.savefig(os.path.join(save_dir, f'phase3_val_loss_{run_id}.png'), dpi=150)
+fig1.savefig(os.path.join(save_dir, f'gantry_val_loss_{run_id}.png'), dpi=150)
 
 # Plot 2: Validation simulation
 ch_labels = ['X1 [m]', 'X2 [m]', 'Y [m]']
 fig2, axes2 = plt.subplots(3, 1, figsize=(12, 7), sharex=True)
 for ch, (ax, lab) in enumerate(zip(axes2, ch_labels)):
-    ax.plot(t_val, y_ref[:, ch],     'k',  lw=0.8, label='Reference')
-    ax.plot(t_val, y_hat_enc[:, ch], 'C0', lw=0.9, label=f'Encoder-init (NRMS={nrms_enc[ch]:.3f})')
+    ax.plot(t_val, y_ref[:, ch],      'k',  lw=0.8, label='Reference')
+    ax.plot(t_val, y_hat_enc[:, ch],  'C0', lw=0.9, label=f'Encoder-init (NRMS={nrms_enc[ch]:.3f})')
+    ax.plot(t_val, y_hat_xlog[:, ch], 'C1', lw=0.9, linestyle='--', label=f'x_logical-init (NRMS={nrms_xlog[ch]:.3f})')
     enc_lbl = f'Encoder warmup ({cheat_n} samples)' if ch == 0 else '_nolegend_'
     ax.axvspan(t_val[0], cheat_t, alpha=0.10, color='steelblue', label=enc_lbl)
     ax.axvline(cheat_t, color='steelblue', linestyle='--', lw=0.8)
     ax.set_ylabel(lab); ax.legend(fontsize=7, loc='upper right'); ax.grid(True)
 axes2[-1].set_xlabel('Time [s]')
-fig2.suptitle(f'Validation simulation -- dynamic parallel (NX_ANN={NX_ANN})')
+fig2.suptitle(f'Validation simulation - dynamic parallel (NX_ANN={NX_ANN})')
 fig2.tight_layout()
-fig2.savefig(os.path.join(save_dir, f'phase3_simulation_{run_id}.png'), dpi=150)
+fig2.savefig(os.path.join(save_dir, f'gantry_simulation_{run_id}.png'), dpi=150)
 
 # Plot 3: ANN latent state trajectories
 fig3, axes3 = plt.subplots(NX_ANN, 1, figsize=(12, 4), sharex=True)
@@ -190,20 +210,20 @@ for ch, ax in enumerate(axes3):
 axes3[-1].set_xlabel('Time [s]')
 fig3.suptitle('ANN latent states x[6:8] (dimensionless)')
 fig3.tight_layout()
-fig3.savefig(os.path.join(save_dir, f'phase3_ann_states_{run_id}.png'), dpi=150)
+fig3.savefig(os.path.join(save_dir, f'gantry_ann_states_{run_id}.png'), dpi=150)
 
 plt.show()
 
 # ── Results npz ───────────────────────────────────────────────────────────────
 if save_flag:
     np.savez(
-        os.path.join(save_dir, f'phase3_results_{run_id}.npz'),
-        y_ref=y_ref, y_hat_enc=y_hat_enc, t_val=t_val,
+        os.path.join(save_dir, f'gantry_results_{run_id}.npz'),
+        y_ref=y_ref, y_hat_enc=y_hat_enc, y_hat_xlog=y_hat_xlog, t_val=t_val,
         epoch_id=epoch_id_full, loss_val=loss_val_full, loss_train=loss_train_full,
-        nrms_enc=nrms_enc,
+        nrms_enc=nrms_enc, nrms_xlog=nrms_xlog,
         x_ref=x_ref, x_enc_phys=x_enc_phys, x_enc_ann=x_enc_ann,
         cheat_n=np.array(cheat_n), dt=np.array(val_data.dt),
         na=np.array(na), nb=np.array(nb), nf=np.array(nf),
         NX_PHYS=np.array(NX_PHYS), NX_ANN=np.array(NX_ANN), nxd=np.array(nxd),
     )
-    print(f'Saved results: phase3_results_{run_id}.npz')
+    print(f'Saved results: gantry_results_{run_id}.npz')
