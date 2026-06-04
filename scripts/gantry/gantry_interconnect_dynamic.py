@@ -141,9 +141,9 @@ y_ref     = val_data.y
 x_ref     = val_data.x         # (T, 6) x_logical from MATLAB
 
 x_enc_norm = np.array(fit_sys.hfn.saved_output_signals)           # (nxd+ny+..., T-cheat_n)
-x_enc_phys = np.full((len(y_ref), NX_PHYS), np.nan, dtype=np.float32)
-x_enc_phys[cheat_n:] = (x_enc_norm[:NX_PHYS, :] * std_x).T
-x_enc_ann  = np.full((len(y_ref), NX_ANN), np.nan, dtype=np.float32)
+x_enc_phys = np.full((len(y_ref), NX_PHYS), np.nan, dtype=DTYPE_NP)
+x_enc_phys[cheat_n:] = (x_enc_norm[:NX_PHYS, :] * std_x + x_mean).T
+x_enc_ann  = np.full((len(y_ref), NX_ANN), np.nan, dtype=DTYPE_NP)
 x_enc_ann[cheat_n:]  = x_enc_norm[NX_PHYS:nxd, :].T
 
 nrms_enc = (np.sqrt(((y_hat_enc[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0)) / ystd)
@@ -158,17 +158,17 @@ for ch in range(NX_ANN):
 
 # ── x_logical-initialised simulation (oracle baseline) ───────────────────────
 val_norm = fit_sys.norm.transform(val_data)
-u_val_norm = torch.tensor(np.ascontiguousarray(val_norm.u), dtype=torch.float32)
+u_val_norm = torch.tensor(np.ascontiguousarray(val_norm.u), dtype=DTYPE_PT)
 
 x_xlog = torch.zeros(1, nxd)
-x_xlog[0, :NX_PHYS] = torch.tensor(val_data.x[0] / std_x.flatten(), dtype=torch.float32)
+x_xlog[0, :NX_PHYS] = torch.tensor((val_data.x[0] - x_mean.flatten()) / std_x.flatten(), dtype=DTYPE_PT)
 
 y_xlog_list = []
 with torch.no_grad():
     for t in range(len(u_val_norm)):
         y_t, x_xlog = fit_sys.hfn(x_xlog, u_val_norm[t:t+1])
         y_xlog_list.append(y_t.squeeze().numpy())
-y_hat_xlog = np.array(y_xlog_list) * ystd
+y_hat_xlog = np.array(y_xlog_list) * ystd + y0
 
 nrms_xlog = np.sqrt(((y_hat_xlog - y_ref) ** 2).mean(axis=0)) / ystd
 print('\n=== x_logical-initialised sim-NRMS ===')
