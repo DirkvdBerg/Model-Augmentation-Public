@@ -51,6 +51,9 @@ fa       = 150;
 ka       = ma * (2*pi*fa)^2;
 zeta_a   = 0.05;
 ca       = 2 * zeta_a * sqrt(ka * ma);
+% Force injection at fa to excite MSD resonance (Q=10).
+% Both models see same f; difference = MSD contribution only.
+A_inj    = 50;   % [N] Y-channel injection amplitude
 
 %% Controller & LTI (frozen at Y_op, full mh — controller designed for nominal plant)
 Y_op = 0.3;
@@ -93,44 +96,62 @@ t_ref  = (0:N-1)' * ts;
 
 x_full = [zeros(n_hold,1); x_col; zeros(n_hold,1)];
 
-% ── Y: 5 small moves around Y_op, scattered across X segments ────────────
-% Absolute Y: 0.300 -> 0.310 -> 0.295 -> 0.300 -> 0.290 -> 0.300
+% ── Y: 4 large moves around Y_op, matching test-script excitation regime ──
+% Absolute Y: 0.300 -> 0.325 -> 0.300 -> 0.320 -> 0.300
+% amax=50 m/s², jerkTime=0.005 s matches Option 1 of test script.
+% LTI model error from ±25 mm at Y_op=0.3 is <0.5% — MSD mismatch dominates.
 % Columns: [dist, sign, vmax, amax, jerkTime, seg_idx, frac_within_seg]
-y_profile = [
-    0.010, +1, 0.30, 30, 0.010, 1, 0.50;   % +10 mm, mid  seg 1 (slow X)
-    0.015, -1, 0.50, 40, 0.008, 2, 0.40;   % -15 mm, mid  seg 2 (fast X)
-    0.005, +1, 0.20, 25, 0.012, 3, 0.20;   % +5  mm, early seg 3
-    0.010, -1, 0.40, 35, 0.010, 4, 0.50;   % -10 mm, mid  seg 4 (fast X)
-    0.010, +1, 0.40, 35, 0.010, 5, 0.60;   % +10 mm, late seg 5 (slow X)
+% Up-hold-down pairs: smooth up -> hold 50 ms (MSD rings at fa) -> smooth down.
+% No reference discontinuities. Y stays within +/-25 mm of Y_op.
+% Columns: [dist, vmax, amax, jerkTime, seg_up_idx, frac_within_seg]
+n_hold_y = round(0.050/ts);   % 50 ms = 7.5 cycles at fa=150 Hz
+
+y_pairs = [
+%   dist   vmax  amax  jerkTime  seg_up  frac_up
+    0.025, 0.5,  50,   0.005,    1,      0.25;   % pair 1: +25 mm in seg 1 (slow X)
+    0.020, 0.5,  50,   0.005,    3,      0.25;   % pair 2: +20 mm in seg 3 (med  X)
 ];
 
 y_full = Y_op * ones(N, 1);
 y_pos  = Y_op;
-for k = 1:size(y_profile,1)
-    dist = y_profile(k,1);  sgn  = y_profile(k,2);
-    vm   = y_profile(k,3);  am   = y_profile(k,4);  jt = y_profile(k,5);
-    si   = y_profile(k,6);  frac = y_profile(k,7);
 
-    pv_y    = thirdOrderSetpointETEL(dist, vm, am, am/jt, Inf, ts);
-    pv_y    = pv_y(:,1);
-    i_start = n_hold + seg_start(si) + round(frac * seg_len(si));
-    i_end   = min(i_start + numel(pv_y) - 1, N);
-    y_full(i_start:i_end) = y_pos + sgn * pv_y(1:i_end-i_start+1);
-    y_pos = y_pos + sgn * dist;
+for k = 1:size(y_pairs,1)
+    dist = y_pairs(k,1);  vm   = y_pairs(k,2);
+    am   = y_pairs(k,3);  jt   = y_pairs(k,4);
+    si   = y_pairs(k,5);  frac = y_pairs(k,6);
 
-    % Hold at new Y position until next move starts
-    if k < size(y_profile,1)
-        si_next   = y_profile(k+1,6);
-        fr_next   = y_profile(k+1,7);
-        i_next    = n_hold + seg_start(si_next) + round(fr_next * seg_len(si_next));
-        y_full(i_end+1 : min(i_next-1, N)) = y_pos;
+    pv = thirdOrderSetpointETEL(dist, vm, am, am/jt, Inf, ts);
+    pv = pv(:,1);  np = numel(pv);
+
+    % Up move
+    i_up     = n_hold + seg_start(si) + round(frac * seg_len(si));
+    i_up_end = min(i_up + np - 1, N);
+    y_full(i_up:i_up_end) = y_pos + pv(1:i_up_end-i_up+1);
+    y_pos = y_pos + dist;
+
+    % Hold at elevated position — MSD rings freely at fa
+    i_dn = i_up_end + 1 + n_hold_y;
+    y_full(i_up_end+1 : min(i_dn-1, N)) = y_pos;
+
+    % Down move (same profile, mirrored)
+    i_dn_end = min(i_dn + np - 1, N);
+    y_full(i_dn:i_dn_end) = y_pos - pv(1:i_dn_end-i_dn+1);
+    y_pos = y_pos - dist;
+
+    % Hold at base until next pair (or end)
+    if k < size(y_pairs,1)
+        si_next   = y_pairs(k+1,5);
+        frac_next = y_pairs(k+1,6);
+        i_next    = n_hold + seg_start(si_next) + round(frac_next * seg_len(si_next));
+        y_full(i_dn_end+1 : min(i_next-1, N)) = y_pos;
     else
-        y_full(i_end+1:N) = y_pos;
+        y_full(i_dn_end+1:N) = y_pos;
     end
 end
 
 r = [x_full, x_full, y_full];
-f = zeros(N, 3);   % no external force injection
+f = zeros(N, 3);
+f(:,3) = A_inj * sin(2*pi*fa * t_ref);   % inject at MSD resonance
 
 %% Baseline simulation
 fprintf('Baseline simulation...\n')
@@ -138,7 +159,7 @@ t = t_ref;  Y = Y_op;
 sim(MDL_BASE, t_ref(end));
 
 yb  = interp1((0:size(q1,1)-1)'*ts,    q1,  t_ref, 'linear', 'extrap');
-u_b = lsim(ss(Cfb), r - yb, t_ref);   % reconstruct plant input
+u_b = lsim(ss(Cfb), r - yb, t_ref) + f;   % total plant input (ctrl + injection)
 
 %% Augmented simulation
 fprintf('Augmented simulation...\n')
@@ -150,7 +171,18 @@ mh = mh_rigid + ma;   % restore
 
 ya   = interp1((0:size(q_aug,1)-1)'*ts,   q_aug,   t_ref, 'linear', 'extrap');
 da   = interp1((0:size(delta_a,1)-1)'*ts, delta_a, t_ref, 'linear', 'extrap');
-u_a  = lsim(ss(Cfb), r - ya, t_ref);   % reconstruct plant input
+u_a  = lsim(ss(Cfb), r - ya, t_ref) + f;   % total plant input (ctrl + injection)
+
+%% Plant simulation — same inputs as augmented, no controller
+% Shows pure plant difference: aug model has hidden MSD; baseline doesn't.
+% x0: q=[0,0,Y_op] (Y at operating point), dq=0.  sys state = [q_internal; dq_internal]
+% where q_internal(3) = Y_op because P.'*q_internal gives stage positions
+%   and P.'(3,:) = [0 0 1], so q_internal(3) = y_stage(3) = Y_op.
+fprintf('Plant simulation (baseline, same u as augmented)...\n')
+x0_replay  = [0; 0; Y_op; 0; 0; 0];
+yb_replay  = lsim(G, u_a, t_ref, x0_replay);
+
+dy_replay  = ya - yb_replay;
 
 %% Save (toggleable)
 if save_flag
@@ -194,15 +226,20 @@ end
 %% Summary
 dy = ya - yb;
 du = u_a - u_b;
-fprintf('\n=== Position difference (aug - base) ===\n')
+fprintf('\n=== Closed-loop position difference (aug - base, same ref) ===\n')
 for j = 1:3
     lbl = {'X1','X2','Y '};
     fprintf('  %s:  rms=%8.2e m   max=%8.2e m\n', lbl{j}, rms(dy(:,j)), max(abs(dy(:,j))))
 end
-fprintf('\n=== Force difference (aug - base) ===\n')
+fprintf('\n=== Closed-loop force difference (aug - base) ===\n')
 for j = 1:3
     lbl = {'F_X1','F_X2','F_Y '};
     fprintf('  %s:  rms=%8.2e N   max=%8.2e N\n', lbl{j}, rms(du(:,j)), max(abs(du(:,j))))
+end
+fprintf('\n=== Plant simulation difference (aug - base, same u, no controller) ===\n')
+for j = 1:3
+    lbl = {'X1','X2','Y '};
+    fprintf('  %s:  rms=%8.2e m   max=%8.2e m\n', lbl{j}, rms(dy_replay(:,j)), max(abs(dy_replay(:,j))))
 end
 fprintf('\n=== Hidden MSD displacement (delta_a) ===\n')
 fprintf('  rms=%8.2e m   max=%8.2e m\n', rms(da), max(abs(da)))
@@ -210,6 +247,7 @@ fprintf('  rms=%8.2e m   max=%8.2e m\n', rms(da), max(abs(da)))
 %% Figures
 plot_trajectory_comparison(t_ref, r, yb, ya, u_b, u_a, da, dy, fs, fa, Y_op)
 plot_force_comparison(t_ref, u_b, u_a, du)
+plot_plant_comparison(t_ref, ya, yb_replay, da, dy_replay, fs, fa, Y_op)
 
 % =============================================================================
 % Local functions
@@ -303,6 +341,81 @@ function plot_trajectory_comparison(t, r, yb, ya, ub, ua, da, dy, fs, fa, Y_op)
           'Interpreter', ni)
 
     title(tl, sprintf('Rich trajectory  |  Y_op=%.2f m  |  fa=%g Hz', Y_op, fa), ...
+          'Interpreter', ni)
+end
+
+function plot_plant_comparison(t, ya, yb_replay, da, dy_replay, fs, fa, Y_op)
+% Plant simulation: ya from augmented closed-loop, yb_replay from baseline plant
+% given the SAME input u_a (no controller).  Shows pure plant difference.
+    ch   = {'X1','X2','Y'};
+    ni   = 'none';
+    Nfft = numel(t);
+    Nhalf = floor(Nfft/2);
+    f_ax  = (0:Nhalf-1) * fs / Nfft;
+    f_pos = f_ax(2:end);
+
+    figure('Name','Augmented (CL) vs Baseline (plant) - same fore input u','Position',[150 30 1100 900]);
+    tl = tiledlayout(5, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+
+    % ── Row 1: ya vs yb_replay ───────────────────────────────────────────
+    for j = 1:3
+        nexttile; hold on
+        plot(t, yb_replay(:,j), 'b', 'LineWidth', 0.9)
+        plot(t, ya(:,j),        'r', 'LineWidth', 0.9)
+        ylabel([ch{j} ' [m]'], 'Interpreter', ni); grid on
+        title(ch{j}, 'Interpreter', ni)
+        if j == 1
+            legend('Base (plant)','Augmented','Location','best','FontSize',7)
+        end
+    end
+
+    % ── Row 2: position difference ───────────────────────────────────────
+    for j = 1:3
+        nexttile; hold on
+        plot(t, dy_replay(:,j), 'k', 'LineWidth', 0.9)
+        ylabel([ch{j} ' diff [m]'], 'Interpreter', ni); grid on
+        title(sprintf('%s diff | rms=%.2e  max=%.2e m', ...
+              ch{j}, rms(dy_replay(:,j)), max(abs(dy_replay(:,j)))), 'Interpreter', ni)
+    end
+
+    % ── Row 3: FFT of Y-channel difference ───────────────────────────────
+    Yd_fft = 2*abs(fft(dy_replay(:,3)))/Nfft;
+    [~, idx_fa] = min(abs(f_pos - fa));
+    nexttile([1 3]); hold on
+    semilogx(f_pos, 20*log10(Yd_fft(2:Nhalf)), 'k', 'LineWidth', 0.8)
+    xline(fa, 'r--', sprintf('%g Hz', fa), 'LineWidth', 1.2, ...
+          'LabelVerticalAlignment', 'bottom')
+    text(fa, 20*log10(Yd_fft(idx_fa+1))+3, ...
+         sprintf('%.2e m', Yd_fft(idx_fa+1)), ...
+         'Color','r','FontSize',8,'HorizontalAlignment','center')
+    xlim([f_pos(1) max(fa*4, 200)]); grid on
+    xlabel('Frequency [Hz]', 'Interpreter', ni)
+    ylabel('|dY| [dB re m]',  'Interpreter', ni)
+    title('FFT of Y-channel difference (plant sim: aug - base, same u)', 'Interpreter', ni)
+
+    % ── Row 4: FFT of Y — aug vs replay base ─────────────────────────────
+    Y_fft_base = 2*abs(fft(yb_replay(:,3)))/Nfft;
+    Y_fft_aug  = 2*abs(fft(ya(:,3)))/Nfft;
+    nexttile([1 3]); hold on
+    semilogx(f_pos, 20*log10(Y_fft_base(2:Nhalf)), 'b', 'LineWidth', 0.9)
+    semilogx(f_pos, 20*log10(Y_fft_aug(2:Nhalf)),  'r', 'LineWidth', 0.9)
+    xline(fa, 'k--', sprintf('%g Hz', fa), 'LineWidth', 1.2, ...
+          'LabelVerticalAlignment', 'bottom')
+    xlim([f_pos(1) max(fa*4, 200)]); grid on
+    xlabel('Frequency [Hz]', 'Interpreter', ni)
+    ylabel('|Y| [dB re m]',  'Interpreter', ni)
+    legend('Base (plant)','Augmented','Location','best','FontSize',7)
+    title('FFT of Y channel -- same u (MSD resonance visible at fa)', 'Interpreter', ni)
+
+    % ── Row 5: delta_a ────────────────────────────────────────────────────
+    nexttile([1 3]); hold on
+    plot(t, da, 'b', 'LineWidth', 0.9)
+    ylabel('delta_a [m]', 'Interpreter', ni)
+    xlabel('Time [s]',    'Interpreter', ni); grid on
+    title(sprintf('delta_a  |  max=%.2e m   rms=%.2e m', max(abs(da)), rms(da)), ...
+          'Interpreter', ni)
+
+    title(tl, sprintf('Augmented (CL) vs Baseline (plant)  |  same u_a  |  Y_op=%.2f m  |  fa=%g Hz', Y_op, fa), ...
           'Interpreter', ni)
 end
 
