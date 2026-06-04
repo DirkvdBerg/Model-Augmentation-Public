@@ -65,6 +65,9 @@ class fixed_System_data_norm(object):
         self.ystd = np.std(y,axis=0) + 1e-15
         
     def transform(self,sys_data):
+        from deepSI.system_data.system_data import System_data_list
+        if isinstance(sys_data, (list, tuple, System_data_list)):
+            return System_data_list([self.transform(s) for s in sys_data])
 
         if self.is_id:
             return fixed_System_data(u=sys_data.u,x=sys_data.x,y=sys_data.y, \
