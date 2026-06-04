@@ -64,6 +64,7 @@ val_data   = load_mat('val')
 x_mean = train_data.x.mean(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP)
 std_x  = train_data.x.std(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP) + 1e-8
 std_u  = train_data.u.std(axis=0).reshape(nu, 1).astype(DTYPE_NP) + 1e-8
+u_mean = train_data.u.mean(axis=0).reshape(nu, 1).astype(DTYPE_NP)
 ystd   = train_data.y.std(axis=0).astype(DTYPE_NP) + 1e-8
 y0     = (Cd.numpy() @ x_mean.flatten()).astype(DTYPE_NP)  # mean output, consistent with x_mean
 
@@ -76,7 +77,7 @@ PHY_IX = np.arange(NX_PHYS)   # [0,1,2,3,4,5]
 
 interconnect = Interconnect(nxd, nu, ny, debugging=False)
 
-physical_state_model_block  = Gantry_State_Block(Y_op=Y_OP, std_x=std_x, std_u=std_u, x_mean=x_mean).to(DTYPE_PT)
+physical_state_model_block  = Gantry_State_Block(Y_op=Y_OP, std_x=std_x, std_u=std_u, x_mean=x_mean, u_mean=u_mean).to(DTYPE_PT)
 physical_output_model_block = Linear_Output_Block(C=Cd_norm, D=Dd_np)
 interconnect.add_block(physical_state_model_block)
 interconnect.add_block(physical_output_model_block)
@@ -100,9 +101,9 @@ fit_sys = SSE_Interconnect(interconnect=interconnect, na=na, nb=nb,
                             e_net_kwargs={"n_nodes_per_layer": 64, "n_hidden_layers": 2})
 
 # Manual normalisation: Gantry_State_Block is nonlinear, auto_fit_norm=True would break this.
-# u0=0: no force offset (block sees full physical forces).
+# u0=mean(u): block has matching u_mean so it recovers physical forces correctly.
 # y0=Cd@x_mean: mean output offset consistent with x_mean in the block.
-fit_sys.norm.u0   = np.zeros(nu, dtype=DTYPE_NP)
+fit_sys.norm.u0   = u_mean.flatten()
 fit_sys.norm.ustd = std_u.flatten()
 fit_sys.norm.y0   = y0
 fit_sys.norm.ystd = ystd
