@@ -72,9 +72,16 @@ class Interconnect(nn.Module):
         input_signals = [x, u]
         output_signals = []
         for ix in range(2, self.n_input_signals):
-            input_signals.append(torch.zeros((self.nb, self.input_signal_sizes[ix], 1)))
+            input_signals.append(torch.zeros((self.nb, self.input_signal_sizes[ix], 1), device=x.device))
         for ix in range(0, self.n_output_signals):
-            output_signals.append(torch.zeros((self.nb, self.output_signal_sizes[ix], 1)))
+            output_signals.append(torch.zeros((self.nb, self.output_signal_sizes[ix], 1), device=x.device))
+
+        # Move connection matrices to input device if needed (lazy, once)
+        if self.array_connection_matrices[0][0].device != x.device:
+            for i in range(len(self.array_connection_matrices)):
+                for j in range(len(self.array_connection_matrices[i])):
+                    self.array_connection_matrices[i][j] = \
+                        self.array_connection_matrices[i][j].to(x.device)
 
         for output_signal_ix in self.order_output_signal_computation:
             for input_signal_ix in self.output_ix_sorted_input_ix_dependencies[output_signal_ix]:

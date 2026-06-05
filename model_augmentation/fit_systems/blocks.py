@@ -101,16 +101,19 @@ class Linear_Output_Block(Block):
     def __init__(
         self, C=torch.empty((0, 0)), D=torch.empty((0, 0)), *args, **kwargs
     ) -> None:
-        self.C = to_tensor(C)
-        self.D = to_tensor(D)
+        _C = to_tensor(C)
+        _D = to_tensor(D)
 
-        self.ny = self.C.size(0) if self.C.numel() else 0  # type: ignore
-        self.nx = self.C.size(1) if self.C.numel() else 0  # type: ignore
-        self.nu = self.D.size(1) if self.D.numel() else 0  # type: ignore
+        self.ny = _C.size(0) if _C.numel() else 0
+        self.nx = _C.size(1) if _C.numel() else 0
+        self.nu = _D.size(1) if _D.numel() else 0
         if self.ny == 0:
-            self.ny = self.D.size(0) if self.D.numel() else 0  # type: ignore
+            self.ny = _D.size(0) if _D.numel() else 0
 
         super().__init__(nw=self.ny, nz=self.nx + self.nu, *args, **kwargs)
+
+        self.register_buffer("C", _C)
+        self.register_buffer("D", _D)
 
     def forward(self, z: Tensor):
         assert z.size(1) == self.nx + self.nu
