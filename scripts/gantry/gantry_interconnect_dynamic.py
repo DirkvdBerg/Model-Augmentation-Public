@@ -29,6 +29,12 @@ SEED = 42
 na = 2*nxd + 1; nb = 2*nxd + 1   # = 17, follows Jan's formula
 nf = 200; epochs = 5; batch_size = 256
 
+# resampling
+FS_ORIG = 20000
+FS_NEW  = 1000          # 1 kHz — Nyquist safe for 150 Hz MSD resonance
+D       = FS_ORIG // FS_NEW   # = 20
+TS_NEW  = 1.0 / FS_NEW        # = 0.001 s
+
 # utility parameters
 save_flag = True
 USE_F64  = False
@@ -61,9 +67,9 @@ TEST_FILE = 'E1_X_sym_anti_Y_low_offset_sweep.mat'
 def load_traj(filename):
     d = loadmat(os.path.join(TRAJ_DIR, filename), squeeze_me=True)
     return deepSI.System_data(
-        u=d['u_total'].astype(DTYPE_NP),
-        y=d['q1'].astype(DTYPE_NP),
-        dt=1.0 / float(d['fs']),
+        u=d['u_total'][::D].astype(DTYPE_NP),
+        y=d['q1'][::D].astype(DTYPE_NP),
+        dt=TS_NEW,
     )
 
 train_list = [load_traj(f) for f in TRAIN_FILES]
@@ -105,7 +111,7 @@ PHY_IX = np.arange(NX_PHYS)   # [0,1,2,3,4,5]
 
 interconnect = Interconnect(nxd, nu, ny, debugging=False)
 
-physical_state_model_block  = Gantry_State_Block(Y_op=Y_OP, std_x=std_x, std_u=std_u, x_mean=x_mean, u_mean=u_mean).to(DTYPE_PT)
+physical_state_model_block  = Gantry_State_Block(Y_op=Y_OP, std_x=std_x, std_u=std_u, x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW).to(DTYPE_PT)
 physical_output_model_block = Linear_Output_Block(C=Cd_norm, D=Dd_np)
 interconnect.add_block(physical_state_model_block)
 interconnect.add_block(physical_output_model_block)
