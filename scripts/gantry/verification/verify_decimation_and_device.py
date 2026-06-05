@@ -277,46 +277,89 @@ elapsed_cpu, ms_cpu = bench_forward_steps_cpu(ic_cpu, BENCH_STEPS, BENCH_WARMUP)
 print(f'\n  Forward steps ({BENCH_STEPS} steps, {BENCH_WARMUP} warmup):')
 print(f'    CPU: {elapsed_cpu:.3f}s  ({ms_cpu:.2f} ms/step)')
 
-# NOTE: Jan's Interconnect.forward() allocates CPU tensors internally (torch.zeros
-# without device), so it cannot run on GPU directly. The cuda=True flag in fit()
-# only moves encoder weights and batch data to GPU — the Interconnect forward loop
-# stays on CPU. GPU benchmarking of the raw Interconnect is therefore not meaningful.
+def bench_forward_steps_gpu(ic, n_steps, warmup):
+    """Time n_steps forward passes on GPU, return ms/step."""
+    dev = torch.device('cuda')
+    ic = ic.to(dev)
+
+    x = torch.zeros(1, nxd, dtype=torch.float32, device=dev)
+    x[0, :NX_PHYS] = torch.tensor(x_norm_0, dtype=torch.float32, device=dev)
+    u_bench = torch.tensor(
+        (u_1k[:n_steps + warmup] - u_mean.flatten()) / std_u.flatten(),
+        dtype=torch.float32, device=dev,
+    )
+
+    # Warmup
+    with torch.no_grad():
+        for t in range(warmup):
+            _, x = ic.forward(x, u_bench[t:t+1])
+    torch.cuda.synchronize()
+
+    t0 = time.perf_counter()
+    with torch.no_grad():
+        for t in range(warmup, warmup + n_steps):
+            _, x = ic.forward(x, u_bench[t:t+1])
+    torch.cuda.synchronize()
+    elapsed = time.perf_counter() - t0
+    return elapsed, elapsed / n_steps * 1000
+
 if HAS_CUDA:
-    print(f'    GPU: skipped — Interconnect.forward() hardcodes CPU tensors')
-    print(f'         (cuda=True in fit() moves encoder + data, not the forward loop)')
+    ic_gpu = build_interconnect(TS_NEW).to('cuda')
+    elapsed_gpu, ms_gpu = bench_forward_steps_gpu(ic_gpu, BENCH_STEPS, BENCH_WARMUP)
+    print(f'    GPU: {elapsed_gpu:.3f}s  ({ms_gpu:.2f} ms/step)')
+    speedup = elapsed_cpu / elapsed_gpu
+    winner = 'GPU' if speedup > 1 else 'CPU'
+    print(f'    Speedup: {speedup:.2f}x ({winner} is faster)')
 
 # --- 4b: Batch fwd+bwd timing (CPU only, same reason) ---
-def bench_batch_fwd_bwd_cpu(batch_size, nf):
-    """Time one batch forward + backward pass on CPU."""
-    ic = build_interconnect(TS_NEW)
+def bench_batch_fwd_bwd(batch_size, nf, device_name='cpu'):
+    """Time one batch forward + backward pass."""
+    dev = torch.device(device_name)
+    ic = build_interconnect(TS_NEW).to(dev)
 
-    x_batch = torch.randn(batch_size, nxd)
-    u_batch = torch.randn(nf, batch_size, nu)
+    x_batch = torch.randn(batch_size, nxd, device=dev)
+    u_batch = torch.randn(nf, batch_size, nu, device=dev)
 
     # Warmup
     for _ in range(3):
         x_tmp = x_batch.clone()
-        loss = torch.tensor(0.0)
+        loss = torch.tensor(0.0, device=dev)
         for t in range(min(5, nf)):
             y_t, x_tmp = ic.forward(x_tmp, u_batch[t])
             loss = loss + y_t.pow(2).mean()
         loss.backward()
         ic.zero_grad()
 
+    if device_name == 'cuda':
+        torch.cuda.synchronize()
     t0 = time.perf_counter()
     x_run = x_batch.clone()
-    loss = torch.tensor(0.0, requires_grad=True)
+    loss = torch.tensor(0.0, device=dev, requires_grad=True)
     for t in range(nf):
         y_t, x_run = ic.forward(x_run, u_batch[t])
         loss = loss + y_t.pow(2).mean()
     loss.backward()
+    if device_name == 'cuda':
+        torch.cuda.synchronize()
     elapsed = time.perf_counter() - t0
     return elapsed
 
 print(f'\n  Batch fwd+bwd (batch_size={BATCH_SIZE}, nf={NF}):')
-t_batch_cpu = bench_batch_fwd_bwd_cpu(BATCH_SIZE, NF)
+t_batch_cpu = bench_batch_fwd_bwd(BATCH_SIZE, NF, 'cpu')
 print(f'    CPU: {t_batch_cpu:.3f}s')
-print(f'    Estimated per epoch (1kHz, 8 trajs): ~{t_batch_cpu * (16000 // BATCH_SIZE):.0f}s')
+
+if HAS_CUDA:
+    t_batch_gpu = bench_batch_fwd_bwd(BATCH_SIZE, NF, 'cuda')
+    print(f'    GPU: {t_batch_gpu:.3f}s')
+    speedup_batch = t_batch_cpu / t_batch_gpu
+    winner_batch = 'GPU' if speedup_batch > 1 else 'CPU'
+    print(f'    Speedup: {speedup_batch:.2f}x ({winner_batch} is faster)')
+
+est_windows = 16000
+est_batches = est_windows // BATCH_SIZE
+t_ref = t_batch_gpu if HAS_CUDA else t_batch_cpu
+print(f'\n  Estimated per epoch (1kHz, 8 trajs, ~{est_windows} windows):')
+print(f'    ~{t_ref * est_batches:.0f}s  ({est_batches} batches × {t_ref:.1f}s)')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -325,9 +368,30 @@ print(f'    Estimated per epoch (1kHz, 8 trajs): ~{t_batch_cpu * (16000 // BATCH
 print(f'\n{"="*70}')
 print(f'Part 5: CPU vs GPU numerical consistency')
 print(f'{"="*70}')
-print(f'  Skipped — Interconnect.forward() cannot run on GPU (see Part 4 note).')
-print(f'  The cuda=True flag in fit() only affects encoder and batch data transfer,')
-print(f'  not the Interconnect simulation loop itself.')
+
+if not HAS_CUDA:
+    print(f'  CUDA not available — skipping')
+else:
+    y_cpu = rollout(build_interconnect(TS_NEW), x0_phys, u_1k, N_STEPS)
+
+    ic_gpu = build_interconnect(TS_NEW).to('cuda')
+    x_norm_0_gpu = (x0_phys - x_mean.flatten()) / std_x.flatten()
+    u_norm_gpu = (u_1k[:N_STEPS] - u_mean.flatten()) / std_u.flatten()
+
+    x_g = torch.zeros(1, nxd, dtype=torch.float32, device='cuda')
+    x_g[0, :NX_PHYS] = torch.tensor(x_norm_0_gpu, dtype=torch.float32, device='cuda')
+    u_g = torch.tensor(u_norm_gpu, dtype=torch.float32, device='cuda')
+
+    y_gpu = np.zeros((N_STEPS, ny), dtype=np.float32)
+    with torch.no_grad():
+        for t in range(N_STEPS):
+            y_t, x_g = ic_gpu.forward(x_g, u_g[t:t+1])
+            y_gpu[t] = y_t.squeeze().cpu().numpy() * ystd + y0
+
+    err_5 = np.abs(y_cpu - y_gpu)
+    print(f'  {N_STEPS}-step rollout max|y_cpu - y_gpu| per channel:')
+    for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
+        print(f'    {lbl}: {err_5[:, ch].max():.3e}')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
