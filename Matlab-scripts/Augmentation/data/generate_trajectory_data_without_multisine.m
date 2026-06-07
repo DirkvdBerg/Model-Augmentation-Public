@@ -1,51 +1,57 @@
-% generate_identification_experiment_no_multisine.m
-% Generates BPTT identification trajectories WITHOUT multisine injection.
-% Identical motion profiles to generate_identification_experiment_copy.m (T1-T10).
-%
-% Design:
-%   Band [f_low, f_high] and A_max loaded from step0_outputs.mat (pre-analysis).
-%   Schroeder-phase odd-harmonic multisine injected post-controller per active mode.
-%   All active modes injected simultaneously; different Schroeder seed per mode.
-%
-% Theory:
-%   Schroeder phases:  Schroeder 1970 — minimises crest factor
-%   Odd harmonics:     P&S Ch.4 §4.3.2 — PE condition, even nonlinearity detection
-%   Leakage-free:      P&S Ch.2 §2.2.3 — integer periods, f0 = 1 Hz
-%   Force injection:   feedback algebra U_total = S × F_sim (D-048)
-%   Multi-mode seeds:  HEURISTIC — low cross-correlation, not strictly orthogonal
+% generate_trajectory_data_without_multisine.m
+% Generates BPTT identification trajectories WITHOUT multisine injection
+% for the AUGMENTED gantry system (baseline + hidden MSD on payload).
+% Uses gantry_additional_state_2025a.slx as the Simulink model.
+% Same motion profiles as the baseline data generation (T1-T8, V1, E1).
 %
 % Validation:
-%   Position, velocity checked on simulated q1.
+%   Position, velocity checked on simulated q_aug.
 %   Acceleration checked on reference r (exact: piecewise polynomial).
-%   Acceleration NOT checked on q1: ode45 at 20 kHz amplifies sub-sample
-%   interpolation artifacts by fs^2 = 4e8, producing spurious spikes.
-%   Forces (peak + RMS) checked on u_total = u_q1 + f_sim.
+%   Forces (peak + RMS) checked on u_total.
+%
+% Saved per file:
+%   u            (T x 3)  plant input  [F_X1, F_X2, F_Y]              [N]
+%   y            (T x 3)  plant output [X1, X2, Y]                    [m]
+%   x_logical    (T x 6)  [q_logical, qdot_logical]                   [m, m/s]
+%   delta_a      (T x 1)  hidden MSD relative displacement            [m]
+%   r_sim        (T x 3)  reference [X1_ref, X2_ref, Y_ref]           [m]
+%   Y_trajectory (T x 1)  Y(t) = y(:,3)                               [m]
+%   t_sim        (T x 1)  time vector                                  [s]
+%   fs           scalar   sample frequency = 20000                     [Hz]
+%   dt           scalar   sample period   = 1/20000                    [s]
+%   split        char     'train', 'val', or 'test'
 %
 % Run from repo root:
-%   run('Matlab-scripts/generate_identification_experiment.m')
+%   run('Matlab-scripts/Augmentation/data/generate_trajectory_data_without_multisine.m')
 
 addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
-
-% ── Pre-analysis outputs ──────────────────────────────────────────────────
-step0  = load(fullfile(fileparts(mfilename('fullpath')),'..','Matlab-output','step0_outputs.mat'));
-f_low  = step0.f_low;    % [Hz] lowest frequency where force survives controller
-f_high = step0.f_high;   % [Hz] highest frequency with useful plant response
-A_max  = step0.A_max;    % [N RMS] per mode: [common, diff, y]
-fprintf('Pre-analysis: f_low=%.1f Hz  f_high=%.1f Hz  A_max=[%.0f %.0f %.0f] N\n', ...
-        f_low, f_high, A_max);
+addpath(fullfile(pwd, 'Matlab-scripts', 'Augmentation'))
 
 % ── Physical parameters ───────────────────────────────────────────────────
 mb=22.8; mh=10.1; m1=10.2; m2=10.7; Jb=1.0; Jh=0.05;
 cg1=14.5; cg2=20.3; cy=10; cb1=9; cb2=9;
 kb1=1987.5; kb2=1987.5; Lb=0.725; Lh=0.25; d=0.1;
-cc1=16.8; cc2=18.35; ccy=11.6;
+cc1=16.8; cc2=18.35; ccy=11.6;  % Coulomb -- disabled in model but expected in workspace
+
+% ── Hidden MSD parameters (from main_augmentation.m) ─────────────────────
+% mh_total = mh_rigid + ma is conserved. Baseline uses full mh as rigid mass.
+% Augmented model uses mh_rigid for the Simscape body and extended ODE.
+ma_frac  = 0.10;
+ma       = ma_frac * mh;           % 1.01 kg  hidden MSD mass
+mh_rigid = mh - ma;               % 9.09 kg  rigid part of payload
+L0       = 0.10;                   % equilibrium offset of ma in +Y direction [m]
+fa       = 400;                    % target MSD natural frequency [Hz]
+ka       = ma * (2*pi*fa)^2;      % MSD spring stiffness [N/m]
+zeta_a   = 0.05;                   % damping ratio
+ca       = 2 * zeta_a * sqrt(ka * ma);  % MSD damper coefficient [Ns/m]
+mh_original = mh;                      % Simulink model reads this for internal reference
 
 C_damp = [cg1+cg2,        (cg1-cg2)*Lb/2,            0;
           (cg1-cg2)*Lb/2, cb1+cb2+(cg1+cg2)*Lb^2/4,  0;
           0,               0,                          cy];
 K  = [0,0,0; 0,kb1+kb2,0; 0,0,0];
 n  = 3;  P = [1,1,0; Lb/2,-Lb/2,0; 0,0,1];
-fs = 20e3;  ts = 1/fs;  fbw = 100;  mdl = 'gantry_2025a';
+fs = 20e3;  ts = 1/fs;  fbw = 100;  mdl = 'gantry_additional_state_2025a';
 N_period = round(fs);       % 20000 samples = T_p = 1 s, f0 = 1 Hz
 n_hold   = round(0.5/ts);  % 0.5 s settle hold at start and end of trajectory
 
@@ -59,35 +65,23 @@ lim.acc_Y      = 50.0;             % [m/s^2] — checked on r only
 lim.force_peak = [2000, 2000, 1420]; % [N] peak [FX1,FX2,FY]
 lim.force_rms  = [916,  916,  656];  % [N] RMS
 
-% ── Mode definitions ─────────────────────────────────────────────────────
-% Force direction in motor coordinates [FX1, FX2, FY].
-% A_max index: 1=common, 2=diff, 3=y (matches diagnostics_system.m)
-mode_def.common = struct('f_vec',[1, 1,0],'A_idx',1);
-mode_def.diff   = struct('f_vec',[1,-1,0],'A_idx',2);
-mode_def.y      = struct('f_vec',[0, 0,1],'A_idx',3);
-
 % ── Trajectory definitions (T1-T8 train, V1 val, E1 test) ────────────────
-% ms_modes: force injection modes active per trajectory.
-% seed_offset: shifts Schroeder seed so val/test spectral lines do not overlap
-%   with training lines (T1-T8 use seeds 1-3; V1 uses 1001-1003; E1 2001-2003).
-% All motion parameters identical to export_param_recovery_multisine.m.
-trajs(1).id='T1_Y_sweep_conservative'; trajs(1).split='train'; trajs(1).seed_offset=0;    trajs(1).Y_initial=0.3; trajs(1).X_sym_amp=0;    trajs(1).X_anti_amp=0;     trajs(1).Y_disp=0.6; trajs(1).vmax_X=0;   trajs(1).amax_X=0;    trajs(1).vmax_Y=1.00; trajs(1).amax_Y=10.0; trajs(1).jerkTime=0.050; trajs(1).ms_modes={'y'};
-trajs(2).id='T2_X_sym_Y030';          trajs(2).split='train'; trajs(2).seed_offset=0;    trajs(2).Y_initial=0.3; trajs(2).X_sym_amp=0.15; trajs(2).X_anti_amp=0;     trajs(2).Y_disp=0;   trajs(2).vmax_X=1.5; trajs(2).amax_X=20.0; trajs(2).vmax_Y=1.00; trajs(2).amax_Y=20.0; trajs(2).jerkTime=0.030; trajs(2).ms_modes={'common'};
-trajs(3).id='T3_X_sym_Y000';          trajs(3).split='train'; trajs(3).seed_offset=0;    trajs(3).Y_initial=0.0; trajs(3).X_sym_amp=0.15; trajs(3).X_anti_amp=0;     trajs(3).Y_disp=0;   trajs(3).vmax_X=1.5; trajs(3).amax_X=20.0; trajs(3).vmax_Y=1.00; trajs(3).amax_Y=20.0; trajs(3).jerkTime=0.030; trajs(3).ms_modes={'common'};
-trajs(4).id='T4_X_antisym_Y020';      trajs(4).split='train'; trajs(4).seed_offset=0;    trajs(4).Y_initial=0.2; trajs(4).X_sym_amp=0;    trajs(4).X_anti_amp=0.030; trajs(4).Y_disp=0;   trajs(4).vmax_X=0.5; trajs(4).amax_X=8.0;  trajs(4).vmax_Y=1.00; trajs(4).amax_Y=20.0; trajs(4).jerkTime=0.040; trajs(4).ms_modes={'diff'};
-trajs(5).id='T5_X_sym_Y_sweep';       trajs(5).split='train'; trajs(5).seed_offset=0;    trajs(5).Y_initial=0.2; trajs(5).X_sym_amp=0.10; trajs(5).X_anti_amp=0;     trajs(5).Y_disp=0.4; trajs(5).vmax_X=1.0; trajs(5).amax_X=15.0; trajs(5).vmax_Y=1.00; trajs(5).amax_Y=20.0; trajs(5).jerkTime=0.035; trajs(5).ms_modes={'common','y'};
-trajs(6).id='T6_Y_sweep_aggressive';  trajs(6).split='train'; trajs(6).seed_offset=0;    trajs(6).Y_initial=0.3; trajs(6).X_sym_amp=0;    trajs(6).X_anti_amp=0;     trajs(6).Y_disp=0.6; trajs(6).vmax_X=0;   trajs(6).amax_X=0;    trajs(6).vmax_Y=1.80; trajs(6).amax_Y=42.0; trajs(6).jerkTime=0.025; trajs(6).ms_modes={'y'};
-trajs(7).id='T7_X_antisym_Y_sweep';   trajs(7).split='train'; trajs(7).seed_offset=0;    trajs(7).Y_initial=0.3; trajs(7).X_sym_amp=0;    trajs(7).X_anti_amp=0.030; trajs(7).Y_disp=0.6; trajs(7).vmax_X=0.5; trajs(7).amax_X=8.0;  trajs(7).vmax_Y=1.50; trajs(7).amax_Y=20.0; trajs(7).jerkTime=0.040; trajs(7).ms_modes={'y','diff'};
-trajs(8).id='T8_X_sym_anti_Y_sweep';  trajs(8).split='train'; trajs(8).seed_offset=0;    trajs(8).Y_initial=0.2; trajs(8).X_sym_amp=0.10; trajs(8).X_anti_amp=0.020; trajs(8).Y_disp=0.4; trajs(8).vmax_X=1.0; trajs(8).amax_X=8.0;  trajs(8).vmax_Y=1.20; trajs(8).amax_Y=12.0; trajs(8).jerkTime=0.035; trajs(8).ms_modes={'y','common','diff'};
-% V1: validation — X symmetric + partial Y sweep. Y_initial=0.25 not covered by
-%   any training trajectory (interpolation holdout between T2 at Y=0.3 and T5 at Y=0.2).
-trajs(9).id='V1_X_sym_Y_mid_sweep';   trajs(9).split='val';   trajs(9).seed_offset=1000; trajs(9).Y_initial=0.25; trajs(9).X_sym_amp=0.075; trajs(9).X_anti_amp=0;     trajs(9).Y_disp=0.30; trajs(9).vmax_X=0.8; trajs(9).amax_X=12.0; trajs(9).vmax_Y=0.90; trajs(9).amax_Y=14.0; trajs(9).jerkTime=0.040; trajs(9).ms_modes={'y','common'};
-% E1: test — X symmetric + X anti-symmetric + Y sweep. Y_initial=0.10 (different
-%   Y region from all training trajectories; coupled holdout related to T8).
-trajs(10).id='E1_X_sym_anti_Y_low_offset_sweep'; trajs(10).split='test'; trajs(10).seed_offset=2000; trajs(10).Y_initial=0.10; trajs(10).X_sym_amp=0.060; trajs(10).X_anti_amp=0.015; trajs(10).Y_disp=0.25; trajs(10).vmax_X=0.7; trajs(10).amax_X=10.0; trajs(10).vmax_Y=0.80; trajs(10).amax_Y=10.0; trajs(10).jerkTime=0.045; trajs(10).ms_modes={'y','common','diff'};
+% Same motion profiles as baseline data generation.
+trajs(1).id='T1_Y_sweep_conservative'; trajs(1).split='train'; trajs(1).Y_initial=0.3; trajs(1).X_sym_amp=0;    trajs(1).X_anti_amp=0;     trajs(1).Y_disp=0.6; trajs(1).vmax_X=0;   trajs(1).amax_X=0;    trajs(1).vmax_Y=1.00; trajs(1).amax_Y=10.0; trajs(1).jerkTime=0.050;
+trajs(2).id='T2_X_sym_Y030';          trajs(2).split='train'; trajs(2).Y_initial=0.3; trajs(2).X_sym_amp=0.15; trajs(2).X_anti_amp=0;     trajs(2).Y_disp=0;   trajs(2).vmax_X=1.5; trajs(2).amax_X=20.0; trajs(2).vmax_Y=1.00; trajs(2).amax_Y=20.0; trajs(2).jerkTime=0.030;
+trajs(3).id='T3_X_sym_Y000';          trajs(3).split='train'; trajs(3).Y_initial=0.0; trajs(3).X_sym_amp=0.15; trajs(3).X_anti_amp=0;     trajs(3).Y_disp=0;   trajs(3).vmax_X=1.5; trajs(3).amax_X=20.0; trajs(3).vmax_Y=1.00; trajs(3).amax_Y=20.0; trajs(3).jerkTime=0.030;
+trajs(4).id='T4_X_antisym_Y020';      trajs(4).split='train'; trajs(4).Y_initial=0.2; trajs(4).X_sym_amp=0;    trajs(4).X_anti_amp=0.030; trajs(4).Y_disp=0;   trajs(4).vmax_X=0.5; trajs(4).amax_X=8.0;  trajs(4).vmax_Y=1.00; trajs(4).amax_Y=20.0; trajs(4).jerkTime=0.040;
+trajs(5).id='T5_X_sym_Y_sweep';       trajs(5).split='train'; trajs(5).Y_initial=0.2; trajs(5).X_sym_amp=0.10; trajs(5).X_anti_amp=0;     trajs(5).Y_disp=0.4; trajs(5).vmax_X=1.0; trajs(5).amax_X=15.0; trajs(5).vmax_Y=1.00; trajs(5).amax_Y=20.0; trajs(5).jerkTime=0.035;
+trajs(6).id='T6_Y_sweep_aggressive';  trajs(6).split='train'; trajs(6).Y_initial=0.3; trajs(6).X_sym_amp=0;    trajs(6).X_anti_amp=0;     trajs(6).Y_disp=0.6; trajs(6).vmax_X=0;   trajs(6).amax_X=0;    trajs(6).vmax_Y=1.80; trajs(6).amax_Y=42.0; trajs(6).jerkTime=0.025;
+trajs(7).id='T7_X_antisym_Y_sweep';   trajs(7).split='train'; trajs(7).Y_initial=0.3; trajs(7).X_sym_amp=0;    trajs(7).X_anti_amp=0.030; trajs(7).Y_disp=0.6; trajs(7).vmax_X=0.5; trajs(7).amax_X=8.0;  trajs(7).vmax_Y=1.50; trajs(7).amax_Y=20.0; trajs(7).jerkTime=0.040;
+trajs(8).id='T8_X_sym_anti_Y_sweep';  trajs(8).split='train'; trajs(8).Y_initial=0.2; trajs(8).X_sym_amp=0.10; trajs(8).X_anti_amp=0.020; trajs(8).Y_disp=0.4; trajs(8).vmax_X=1.0; trajs(8).amax_X=8.0;  trajs(8).vmax_Y=1.20; trajs(8).amax_Y=12.0; trajs(8).jerkTime=0.035;
+% V1: validation -- X symmetric + partial Y sweep. Y_initial=0.25 (interpolation holdout).
+trajs(9).id='V1_X_sym_Y_mid_sweep';   trajs(9).split='val';   trajs(9).Y_initial=0.25; trajs(9).X_sym_amp=0.075; trajs(9).X_anti_amp=0;     trajs(9).Y_disp=0.30; trajs(9).vmax_X=0.8; trajs(9).amax_X=12.0; trajs(9).vmax_Y=0.90; trajs(9).amax_Y=14.0; trajs(9).jerkTime=0.040;
+% E1: test -- X symmetric + X anti-symmetric + Y sweep. Y_initial=0.10 (extrapolation holdout).
+trajs(10).id='E1_X_sym_anti_Y_low_offset_sweep'; trajs(10).split='test'; trajs(10).Y_initial=0.10; trajs(10).X_sym_amp=0.060; trajs(10).X_anti_amp=0.015; trajs(10).Y_disp=0.25; trajs(10).vmax_X=0.7; trajs(10).amax_X=10.0; trajs(10).vmax_Y=0.80; trajs(10).amax_Y=10.0; trajs(10).jerkTime=0.045;
 
 % ── Output directory ──────────────────────────────────────────────────────
-out_dir = fullfile(fileparts(mfilename('fullpath')),'..','Matlab-output','identification-trajectories-no-multisine');
+out_dir = fullfile(fileparts(mfilename('fullpath')),'..','Matlab-output','augmented-trajectories-no-multisine');
 if ~exist(out_dir,'dir'), mkdir(out_dir); end
 
 % ── Main loop ─────────────────────────────────────────────────────────────
@@ -103,40 +97,63 @@ for i = 1:numel(trajs)
     sys = P.' * getss(n, M_op, C_damp, K) * P;
     Cfb = tf(num2cell(zeros(3)), num2cell(ones(3)));
     for j = 1:3, Cfb(j,j) = ruleOfThumb(fbw, sys(j,j), ts); end
+    G = c2d(sys, ts, 'zoh');  % discrete plant -- Simulink LTI blocks read G from workspace
 
     % Reference trajectory padded to integer periods
-    % THEORY: leakage-free condition — N must be multiple of N_period (P&S Ch.2 §2.2.3)
     [r_traj, t_traj] = make_ref(sp, n_hold, ts);
     [r_traj, t_traj] = pad_to_periods(r_traj, ts, N_period);
-    validate_ref(r_traj, t_traj, sp.id, lim);   % acceleration checked here on r (exact)
+    validate_ref(r_traj, t_traj, sp.id, lim);
     N = size(r_traj, 1);
 
-    % No multisine injection — pure trajectory only
-    f_sim = zeros(N, 3);
+    % Swap mh to mh_rigid for augmented Simulink model.
+    % The model reads mh from workspace for the rigid body mass.
+    % ma, ka, ca, L0 are already in workspace from the parameter block above.
+    mh = mh_rigid;
 
-    % Simulation
-    r = r_traj;  t = t_traj;  f = f_sim;  Y = Y_op;
+    % Simulation (no multisine injection)
+    r = r_traj;  t = t_traj;  f = zeros(N, 3);  Y = Y_op;
     fprintf('  Simulating %.2f s (%d samples)...\n', t_traj(end), N);
     sim(mdl, t_traj(end));
 
-    % Reconstruct u_total
-    [t_sim, r_sim, u_q1] = reconstruct(q1, r_traj, t_traj, Cfb);
-    f_sim_out = resample_to(f_sim, t_traj, t_sim);
-    u_total   = u_q1 + f_sim_out;
+    mh = mh_rigid + ma;  % restore full mh for next iteration
 
-    % Validate — skip trajectory if any limit violated
-    if ~validate_response(q1, fs, lim) || ~validate_forces(u_total, lim)
-        warning('%s: validation failed — skipping.', sp.id);
+    % Reconstruct plant input: u_total = Cfb*(r - q_aug) since f=0
+    [t_sim, r_sim, u_aug] = reconstruct(q_aug, r_traj, t_traj, Cfb);
+    u_total = u_aug;
+
+    % Validate -- skip trajectory if any limit violated
+    if ~validate_response(q_aug, fs, lim) || ~validate_forces(u_total, lim)
+        warning('%s: validation failed -- skipping.', sp.id);
         continue
     end
 
+    % Derive nominal 6D logical state from augmented stage positions
+    % q_aug is the extended ODE output in stage coordinates [X1, X2, Y] (T x 3).
+    % q_logical = P^{-T} * q_aug_stage  (exact coordinate transform)
+    % qdot_logical from central finite differences at 20 kHz
+    q_logical = ((P') \ q_aug')';       % (T x 3)
+    qdot_logical = zeros(size(q_logical));
+    for j = 1:3
+        qdot_logical(:,j) = gradient(q_logical(:,j), ts);
+    end
+    x_logical_out = [q_logical, qdot_logical];  % (T x 6)
+
     % Save
-    Y_trajectory = q1(:,3);
-    split = sp.split;
-    save(fullfile(out_dir,[sp.id,'.mat']), ...
-         't_sim','fs','r_sim','f_sim_out','u_q1','u_total','q1','Y_trajectory','split');
-    fprintf('  Saved: %s.mat\n', sp.id);
+    u            = single(u_total);           % (T x 3) plant forces -- training
+    y            = single(q_aug);             % (T x 3) stage positions -- training
+    x_logical    = single(x_logical_out);     % (T x 6) 6D state projection -- encoder verify
+    delta_a      = single(delta_a);           % (T x 1) hidden MSD displacement -- diagnostic
+    r_sim        = single(r_sim);             % (T x 3) reference -- plotting
+    Y_trajectory = single(q_aug(:,3));        % (T x 1) Y(t)
+    dt           = single(ts);
+    split        = sp.split;
+
+    out_path = fullfile(out_dir, [sp.id, '.mat']);
+    save(out_path, 'u','y','x_logical','delta_a','r_sim','Y_trajectory','t_sim','fs','dt','split');
+    fprintf('  Saved: %s  (%d samples, %.2f s,  Y in [%.4f, %.4f] m,  delta_a max=%.4e m)\n', ...
+            out_path, size(q_aug,1), t_sim(end), min(Y_trajectory), max(Y_trajectory), max(abs(double(delta_a))));
 end
+fprintf('\nDone.\n');
 
 % ════════════════════════════════════════════════════════════════════════
 % Local functions
@@ -206,29 +223,24 @@ function validate_ref(r, t, id, lim)
             min(r(:,3))*1e3,max(r(:,3))*1e3);
 end
 
-function [t_sim, r_sim, u_q1] = reconstruct(q1, r, t, Cfb)
-% u_q1 = Cfb*(r-q1). Handles variable-step Simulink output via interpolation.
-    Ns = size(q1,1);
+function [t_sim, r_sim, u_aug] = reconstruct(q_aug, r, t, Cfb)
+% u_aug = Cfb*(r-q_aug). Handles variable-step Simulink output via interpolation.
+    Ns = size(q_aug,1);
     if Ns ~= numel(t), t_sim = linspace(0,t(end),Ns)'; r_sim = interp1(t,r,t_sim);
     else,              t_sim = t;                        r_sim = r; end
-    u_q1 = lsim(ss(Cfb), r_sim - q1, t_sim);
+    u_aug = lsim(ss(Cfb), r_sim - q_aug, t_sim);
 end
 
-function y_out = resample_to(y, t_src, t_tgt)
-    if size(y,1) == numel(t_tgt), y_out = y; return; end
-    y_out = interp1(t_src, y, t_tgt, 'linear', 'extrap');
-end
-
-function ok = validate_response(q1, fs, lim)
-% Position and velocity on q1. Acceleration NOT checked — see header.
-    vel = diff(q1)*fs;
-    ok  =   max(abs(q1(:,1)))          <= lim.pos_X ...
-         && max(abs(q1(:,2)))          <= lim.pos_X ...
-         && max(abs(q1(:,3)))          <= lim.pos_Y ...
-         && max(abs(q1(:,1)-q1(:,2))) <= lim.diff  ...
-         && max(abs(vel(:,1)))         <= lim.vel   ...
-         && max(abs(vel(:,2)))         <= lim.vel   ...
-         && max(abs(vel(:,3)))         <= lim.vel;
+function ok = validate_response(q_aug, fs, lim)
+% Position and velocity on q_aug. Acceleration NOT checked -- see header.
+    vel = diff(q_aug)*fs;
+    ok  =   max(abs(q_aug(:,1)))            <= lim.pos_X ...
+         && max(abs(q_aug(:,2)))            <= lim.pos_X ...
+         && max(abs(q_aug(:,3)))            <= lim.pos_Y ...
+         && max(abs(q_aug(:,1)-q_aug(:,2))) <= lim.diff  ...
+         && max(abs(vel(:,1)))              <= lim.vel   ...
+         && max(abs(vel(:,2)))              <= lim.vel   ...
+         && max(abs(vel(:,3)))              <= lim.vel;
     if ~ok, fprintf('  Response validation failed.\n'); end
 end
 
@@ -242,26 +254,3 @@ function ok = validate_forces(u_total, lim)
     end
 end
 
-function sig = multisine_schroeder(N, N_period, fs, f_low, f_high, seed)
-% Schroeder-phase odd-harmonic multisine, tiled to N samples (N must be multiple of N_period).
-% Returns unit-RMS signal; caller scales to A_max.
-%
-% THEORY: phi_k = -pi*k*(k-1)/F  (Schroeder 1970) minimises crest factor
-% THEORY: odd harmonics — P&S Ch.4 §4.3.2
-% HEURISTIC: seed phase offset decorrelates simultaneously injected modes
-    assert(mod(N,N_period)==0, 'N must be a multiple of N_period');
-    f0 = fs/N_period;
-    k0 = ceil(f_low/f0);  if mod(k0,2)==0, k0=k0+1; end   % first odd bin >= f_low
-    k1 = floor(f_high/f0); if mod(k1,2)==0, k1=k1-1; end  % last  odd bin <= f_high
-    k  = k0:2:k1;
-    F  = numel(k);
-    assert(F >= 7, 'Only %d odd bins in [%.1f %.1f] Hz — PE condition F>=7 not met', F, f_low, f_high);
-
-    idx      = 1:F;
-    phi      = -pi * idx .* (idx-1) / F;                    % Schroeder 1970
-    phi      = phi + 2*pi*(k*f0)*(seed-1)/(7*f_high);       % HEURISTIC: per-mode offset
-    t_period = (0:N_period-1)' / fs;
-    one_per  = sum(cos(2*pi*t_period*(k*f0) + phi), 2);
-    one_per  = one_per / rms(one_per);
-    sig      = repmat(one_per, N/N_period, 1);
-end
