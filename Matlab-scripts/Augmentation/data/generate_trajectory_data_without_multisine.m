@@ -40,7 +40,7 @@ ma_frac  = 0.10;
 ma       = ma_frac * mh;           % 1.01 kg  hidden MSD mass
 mh_rigid = mh - ma;               % 9.09 kg  rigid part of payload
 L0       = 0.10;                   % equilibrium offset of ma in +Y direction [m]
-fa       = 400;                    % target MSD natural frequency [Hz]
+fa       = 150;                    % target MSD natural frequency [Hz]
 ka       = ma * (2*pi*fa)^2;      % MSD spring stiffness [N/m]
 zeta_a   = 0.05;                   % damping ratio
 ca       = 2 * zeta_a * sqrt(ka * ma);  % MSD damper coefficient [Ns/m]
@@ -81,7 +81,7 @@ trajs(9).id='V1_X_sym_Y_mid_sweep';   trajs(9).split='val';   trajs(9).Y_initial
 trajs(10).id='E1_X_sym_anti_Y_low_offset_sweep'; trajs(10).split='test'; trajs(10).Y_initial=0.10; trajs(10).X_sym_amp=0.060; trajs(10).X_anti_amp=0.015; trajs(10).Y_disp=0.25; trajs(10).vmax_X=0.7; trajs(10).amax_X=10.0; trajs(10).vmax_Y=0.80; trajs(10).amax_Y=10.0; trajs(10).jerkTime=0.045;
 
 % ── Output directory ──────────────────────────────────────────────────────
-out_dir = fullfile(fileparts(mfilename('fullpath')),'..','Matlab-output','augmented-trajectories-no-multisine');
+out_dir = fullfile(pwd, 'data', 'gantry', 'matlab', 'trajectories');
 if ~exist(out_dir,'dir'), mkdir(out_dir); end
 
 % ── Main loop ─────────────────────────────────────────────────────────────
