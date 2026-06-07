@@ -45,19 +45,19 @@ save_flag = True
 run_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
 
 # --- Optuna hyperparameter search ---
-USE_OPTUNA = False
+USE_OPTUNA = True
 N_OPTUNA_TRIALS = 40
-OPTUNA_STUDY_NAME = "gantry_subnet_dynamic"
+OPTUNA_STUDY_NAME = "gantry_subnet_augmented"
 
 # --- Default hyperparameters (used when USE_OPTUNA=False) ---
 DEFAULT_HP = dict(
-    NX_ANN=3,
+    NX_ANN=4,
     n_nodes_per_layer=128,
     n_hidden_layers=3,
     nf=350,
     batch_size=4000,
-    lr=7.6e-4,
-    epochs=100,
+    lr=2e-4,
+    epochs=200,
 )
 
 ## ═══════════════════════════════════════════════════════════════════════════════
@@ -68,7 +68,7 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 
 TRAJ_DIR = os.path.join(os.path.dirname(__file__), '..', '..',
-                        'Matlab-output', 'identification-trajectories-no-multisine')
+                        'data', 'gantry', 'matlab', 'trajectories')
 print(f'Trajectory dir: {TRAJ_DIR}')
 
 TRAIN_FILES = [
@@ -87,8 +87,8 @@ TEST_FILE = 'E1_X_sym_anti_Y_low_offset_sweep.mat'
 def load_traj(filename):
     d = loadmat(os.path.join(TRAJ_DIR, filename), squeeze_me=True)
     return deepSI.System_data(
-        u=d['u_total'][::D].astype(DTYPE_NP),
-        y=d['q1'][::D].astype(DTYPE_NP),
+        u=d['u'][::D].astype(DTYPE_NP),
+        y=d['y'][::D].astype(DTYPE_NP),
         dt=TS_NEW,
     )
 
@@ -347,13 +347,13 @@ def evaluate_and_save(fit_sys, hp, rid):
 
 def objective(trial):
     hp = dict(
-        NX_ANN            = trial.suggest_int("NX_ANN", 1, 4),
-        n_nodes_per_layer = trial.suggest_categorical("n_nodes_per_layer", [32, 64, 128]),
+        NX_ANN            = trial.suggest_int("NX_ANN", 2, 6),
+        n_nodes_per_layer = trial.suggest_categorical("n_nodes_per_layer", [64, 128, 256]),
         n_hidden_layers   = trial.suggest_int("n_hidden_layers", 1, 3),
-        nf                = trial.suggest_int("nf", 100, 400, step=50),
+        nf                = trial.suggest_int("nf", 150, 500, step=50),
         batch_size        = trial.suggest_categorical("batch_size", [1000, 2000, 4000]),
-        lr                = trial.suggest_float("lr", 1e-4, 1e-2, log=True),
-        epochs            = 100,
+        lr                = trial.suggest_float("lr", 5e-5, 5e-3, log=True),
+        epochs            = 40,
     )
 
     print(f"\n{'='*70}")

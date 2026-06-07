@@ -95,7 +95,7 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 
 TRAJ_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..',
-                        'Matlab-output', 'identification-trajectories-no-multisine')
+                        'data', 'gantry', 'matlab', 'trajectories')
 
 TRAIN_FILES = [
     'T1_Y_sweep_conservative.mat', 'T2_X_sym_Y030.mat',
@@ -109,8 +109,8 @@ TEST_FILE = 'E1_X_sym_anti_Y_low_offset_sweep.mat'
 def load_traj(filename):
     d = loadmat(os.path.join(TRAJ_DIR, filename), squeeze_me=True)
     return deepSI.System_data(
-        u=d['u_total'][::D].astype(DTYPE_NP),
-        y=d['q1'][::D].astype(DTYPE_NP),
+        u=d['u'][::D].astype(DTYPE_NP),
+        y=d['y'][::D].astype(DTYPE_NP),
         dt=TS_NEW,
     )
 
