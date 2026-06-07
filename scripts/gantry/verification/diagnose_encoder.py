@@ -224,8 +224,8 @@ def normalize_x(x_phys):
 def get_encoder_x0(fit_sys, data_norm, t_start):
     """Run encoder on a single window ending at t_start. Returns (nxd,) numpy."""
     na, nb = fit_sys.na, fit_sys.nb
-    uhist = data_norm.u[t_start - nb:t_start].reshape(1, nb, nu)
-    yhist = data_norm.y[t_start - na:t_start].reshape(1, na, ny)
+    uhist = np.ascontiguousarray(data_norm.u[t_start - nb:t_start]).reshape(1, nb, nu)
+    yhist = np.ascontiguousarray(data_norm.y[t_start - na:t_start]).reshape(1, na, ny)
     with torch.no_grad():
         x0 = fit_sys.encoder(
             torch.tensor(uhist, dtype=DTYPE_PT),
@@ -373,6 +373,8 @@ def multi_window_rollouts(fit_sys, hp):
 
     rms_encoder_all = []
     rms_analytical_all = []
+    traj_means_enc = []
+    traj_means_ana = []
 
     print(f"\n  {'Trajectory':<40s}  {'Windows':>7s}  "
           f"{'Enc RMS':>10s}  {'Ana RMS':>10s}  {'Winner':>8s}")
@@ -383,6 +385,8 @@ def multi_window_rollouts(fit_sys, hp):
         T = len(data_raw.u)
         if T < cheat_n + nf:
             print(f"  {label:<40s}  SKIPPED (too short)")
+            traj_means_enc.append(0)
+            traj_means_ana.append(0)
             continue
 
         # Evenly spaced starting points within this trajectory
@@ -421,6 +425,8 @@ def multi_window_rollouts(fit_sys, hp):
         mean_a = np.mean(traj_rms_ana)
         rms_encoder_all.extend(traj_rms_enc)
         rms_analytical_all.extend(traj_rms_ana)
+        traj_means_enc.append(mean_e)
+        traj_means_ana.append(mean_a)
 
         winner = "Encoder" if mean_e < mean_a else "Baseline"
         print(f"  {label:<40s}  {len(starts):>7d}  "
@@ -444,25 +450,6 @@ def multi_window_rollouts(fit_sys, hp):
     # ---- Plot: per-trajectory RMS comparison ----
     fig, ax = plt.subplots(figsize=(10, 5))
     x_pos = np.arange(len(all_labels))
-    # Collect per-trajectory means
-    traj_means_enc = []
-    traj_means_ana = []
-    offset = 0
-    for data_raw in all_data:
-        T = len(data_raw.u)
-        if T < cheat_n + nf:
-            traj_means_enc.append(0)
-            traj_means_ana.append(0)
-            continue
-        usable_start = cheat_n
-        usable_end = T - nf
-        n_w = min(10, (usable_end - usable_start) // nf)
-        if n_w < 1:
-            n_w = 1
-        traj_means_enc.append(np.mean(rms_encoder_all[offset:offset + n_w]))
-        traj_means_ana.append(np.mean(rms_analytical_all[offset:offset + n_w]))
-        offset += n_w
-
     bar_w = 0.35
     ax.bar(x_pos - bar_w/2, traj_means_enc, bar_w, label='Encoder', color='C0')
     ax.bar(x_pos + bar_w/2, traj_means_ana, bar_w, label='Analytical baseline', color='C1')
