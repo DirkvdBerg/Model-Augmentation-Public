@@ -45,18 +45,18 @@ save_flag = True
 run_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
 
 # --- Optuna hyperparameter search ---
-USE_OPTUNA = True
+USE_OPTUNA = False
 N_OPTUNA_TRIALS = 40
 OPTUNA_STUDY_NAME = "gantry_subnet_dynamic"
 
 # --- Default hyperparameters (used when USE_OPTUNA=False) ---
 DEFAULT_HP = dict(
-    NX_ANN=2,
-    n_nodes_per_layer=64,
-    n_hidden_layers=2,
-    nf=200,
-    batch_size=2000,
-    lr=1e-3,
+    NX_ANN=3,
+    n_nodes_per_layer=128,
+    n_hidden_layers=3,
+    nf=350,
+    batch_size=4000,
+    lr=7.6e-4,
     epochs=100,
 )
 
@@ -436,6 +436,8 @@ else:
     for k, v in DEFAULT_HP.items():
         print(f"  {k}: {v}")
 
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
     fit_sys, bestfit = build_and_train(DEFAULT_HP)
     print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
     evaluate_and_save(fit_sys, DEFAULT_HP, run_id)
