@@ -16,7 +16,7 @@ from model_augmentation.utils.utils import *
 from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn
 from model_augmentation.fit_systems.interconnect import *
 from model_augmentation.fit_systems.blocks import *
-from model_augmentation.systems.gantry_ss import Cd, Dd
+from model_augmentation.systems.gantry_ss import Cd, Dd, P
 
 ## ═══════════════════════════════════════════════════════════════════════════════
 ## Configuration
@@ -109,11 +109,13 @@ u_all = np.concatenate([t.u for t in train_list])
 y_all = np.concatenate([t.y for t in train_list])
 
 fs = 1.0 / train_list[0].dt
+P_inv_T = np.linalg.inv(P.numpy().T).astype(DTYPE_NP)  # stage -> logical
 x_logical_list = []
 for t in train_list:
-    vel = np.diff(t.y, axis=0) * fs          # (N-1, 3)
-    vel = np.vstack([vel[:1], vel])           # (N, 3) — repeat first sample
-    x_logical_list.append(np.hstack([t.y, vel]))  # (N, 6)
+    pos_logical = (P_inv_T @ t.y.T).T        # (N, 3) stage -> logical
+    vel_logical = np.diff(pos_logical, axis=0) * fs  # (N-1, 3)
+    vel_logical = np.vstack([vel_logical[:1], vel_logical])  # (N, 3)
+    x_logical_list.append(np.hstack([pos_logical, vel_logical]))  # (N, 6)
 x_all = np.concatenate(x_logical_list)
 
 x_mean = x_all.mean(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP)

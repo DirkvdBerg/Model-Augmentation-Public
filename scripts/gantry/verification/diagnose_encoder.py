@@ -53,7 +53,7 @@ from model_augmentation.fit_systems.interconnect import (
 from model_augmentation.fit_systems.blocks import (
     Gantry_State_Block, Linear_Output_Block, Static_ANN_Block,
 )
-from model_augmentation.systems.gantry_ss import Cd, Dd
+from model_augmentation.systems.gantry_ss import Cd, Dd, P
 
 # =========================================================================
 # Configuration (must match gantry_interconnect_dynamic.py)
@@ -129,11 +129,13 @@ u_all = np.concatenate([t.u for t in train_list])
 y_all = np.concatenate([t.y for t in train_list])
 
 fs = 1.0 / train_list[0].dt
+P_inv_T = np.linalg.inv(P.numpy().T).astype(DTYPE_NP)  # stage -> logical
 x_logical_list = []
 for t in train_list:
-    vel = np.diff(t.y, axis=0) * fs
-    vel = np.vstack([vel[:1], vel])
-    x_logical_list.append(np.hstack([t.y, vel]))
+    pos_logical = (P_inv_T @ t.y.T).T        # (N, 3) stage -> logical
+    vel_logical = np.diff(pos_logical, axis=0) * fs  # (N-1, 3)
+    vel_logical = np.vstack([vel_logical[:1], vel_logical])  # (N, 3)
+    x_logical_list.append(np.hstack([pos_logical, vel_logical]))  # (N, 6)
 x_all = np.concatenate(x_logical_list)
 
 x_mean = x_all.mean(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP)
@@ -212,19 +214,21 @@ def analytical_x0_at(y_seq, t_idx, dt):
     """
     Compute analytical physical state at time index t_idx.
 
-    Uses the same convention as gantry_interconnect_dynamic.py normalisation:
-    positions = [X1, X2, Y] directly from measurements (stage coordinates),
-    velocities = [dX1, dX2, dY] from finite differences.
+    Converts stage coordinates (X1, X2, Y) to logical coordinates
+    (q1, q2, q3) via P^{-T}, then computes velocities from finite
+    differences in logical space.
 
-    Returns: (6,) unnormalized physical state.
+    Returns: (6,) unnormalized physical state in logical coordinates.
     """
-    pos = y_seq[t_idx]
+    pos_stage = y_seq[t_idx]
+    pos = P_inv_T @ pos_stage
     if 0 < t_idx < len(y_seq) - 1:
-        vel = (y_seq[t_idx + 1] - y_seq[t_idx - 1]) / (2 * dt)
+        vel_stage = (y_seq[t_idx + 1] - y_seq[t_idx - 1]) / (2 * dt)
     elif t_idx == 0:
-        vel = (y_seq[t_idx + 1] - y_seq[t_idx]) / dt
+        vel_stage = (y_seq[t_idx + 1] - y_seq[t_idx]) / dt
     else:
-        vel = (y_seq[t_idx] - y_seq[t_idx - 1]) / dt
+        vel_stage = (y_seq[t_idx] - y_seq[t_idx - 1]) / dt
+    vel = P_inv_T @ vel_stage
     return np.concatenate([pos, vel])
 
 
