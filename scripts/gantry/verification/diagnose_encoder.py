@@ -78,7 +78,7 @@ DTYPE_PT = torch.float64 if USE_F64 else torch.float32
 
 # Hyperparameters for diagnostic (same defaults as gantry_interconnect_dynamic.py)
 DEFAULT_HP = dict(
-    NX_ANN=3,
+    NX_ANN=2,
     n_nodes_per_layer=128,
     n_hidden_layers=3,
     nf=350,
