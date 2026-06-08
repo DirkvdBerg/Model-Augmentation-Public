@@ -136,15 +136,15 @@ os.makedirs(save_dir, exist_ok=True)
 
 
 ## ═══════════════════════════════════════════════════════════════════════════════
-## build_and_train
+## build_model / train_model
 ## ═══════════════════════════════════════════════════════════════════════════════
 
-def build_and_train(hp):
-    """Build interconnect from hp dict, train, return (fit_sys, bestfit)."""
+def build_model(hp):
+    """Build interconnect + SSE_Interconnect from hp dict, return fit_sys (untrained)."""
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
-    na = 2 * nxd + 1
-    nb = 2 * nxd + 1
+    na = hp.get('na_nb', 2 * nxd + 1)
+    nb = hp.get('na_nb', 2 * nxd + 1)
 
     ic = Interconnect(nxd, nu, ny, debugging=False)
 
@@ -190,16 +190,20 @@ def build_and_train(hp):
     for net in (fit_sys.encoder, fit_sys.hfn):
         net.to(DTYPE_PT)
 
+    return fit_sys
+
+
+def train_model(fit_sys, hp, epochs=None):
+    """Train fit_sys for given epochs. Supports continuation (call multiple times)."""
     fit_sys.fit(
         train_sys_data=train_data, val_sys_data=val_data,
-        batch_size=hp['batch_size'], epochs=hp['epochs'],
+        batch_size=hp['batch_size'], epochs=epochs or hp['epochs'],
         auto_fit_norm=False,
         loss_kwargs={'nf': hp['nf']},
         optimizer_kwargs={'lr': hp['lr']},
         validation_measure="sim-RMS",
     )
-
-    return fit_sys, fit_sys.bestfit
+    return fit_sys.bestfit
 
 
 ## ═══════════════════════════════════════════════════════════════════════════════
@@ -210,8 +214,8 @@ def evaluate_and_save(fit_sys, hp, rid):
     """Load best checkpoint, simulate, compute NRMS, plot, save."""
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
-    na = 2 * nxd + 1
-    nb = 2 * nxd + 1
+    na = hp.get('na_nb', 2 * nxd + 1)
+    nb = hp.get('na_nb', 2 * nxd + 1)
 
     # Save model
     if save_flag:
@@ -351,15 +355,19 @@ def evaluate_and_save(fit_sys, hp, rid):
 ## Optuna objective
 ## ═══════════════════════════════════════════════════════════════════════════════
 
+OPTUNA_EPOCHS      = 30   # total epochs per trial
+OPTUNA_CHUNK_SIZE  = 10   # epochs per pruning checkpoint
+
 def objective(trial):
     hp = dict(
-        NX_ANN            = trial.suggest_int("NX_ANN", 2, 6),
+        NX_ANN            = trial.suggest_categorical("NX_ANN", [2, 4]),
         n_nodes_per_layer = trial.suggest_categorical("n_nodes_per_layer", [64, 128, 256]),
         n_hidden_layers   = trial.suggest_int("n_hidden_layers", 1, 3),
-        nf                = trial.suggest_int("nf", 150, 500, step=50),
+        na_nb             = trial.suggest_int("na_nb", 10, 50, step=5),
+        nf                = trial.suggest_int("nf", 50, 500, step=50),
         batch_size        = trial.suggest_categorical("batch_size", [1000, 2000, 4000]),
         lr                = trial.suggest_float("lr", 5e-5, 5e-3, log=True),
-        epochs            = 40,
+        epochs            = OPTUNA_EPOCHS,
     )
 
     print(f"\n{'='*70}")
@@ -373,13 +381,25 @@ def objective(trial):
     torch.manual_seed(trial_seed)
 
     try:
-        _, bestfit = build_and_train(hp)
+        fit_sys = build_model(hp)
+
+        n_chunks = OPTUNA_EPOCHS // OPTUNA_CHUNK_SIZE
+        for chunk in range(n_chunks):
+            train_model(fit_sys, hp, epochs=OPTUNA_CHUNK_SIZE)
+
+            trial.report(fit_sys.bestfit, chunk)
+            if trial.should_prune():
+                print(f"  Trial {trial.number} PRUNED at chunk {chunk+1}/{n_chunks}")
+                raise optuna.TrialPruned()
+
+    except optuna.TrialPruned:
+        raise
     except Exception as e:
         print(f"Trial {trial.number} FAILED: {e}")
         return float('inf')
 
-    print(f"\nTrial {trial.number} finished: bestfit = {bestfit:.6f}")
-    return bestfit
+    print(f"\nTrial {trial.number} finished: bestfit = {fit_sys.bestfit:.6f}")
+    return fit_sys.bestfit
 
 
 ## ═══════════════════════════════════════════════════════════════════════════════
@@ -397,6 +417,7 @@ if USE_OPTUNA:
         study_name=OPTUNA_STUDY_NAME,
         storage=storage,
         sampler=TPESampler(seed=SEED),
+        pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=0),
         direction="minimize",
         load_if_exists=True,
     )
@@ -420,20 +441,32 @@ if USE_OPTUNA:
     print(f"\nAll trials (sorted by value):")
     for t in sorted(study.trials, key=lambda t: t.value if t.value is not None else float('inf')):
         status = "OK" if t.value is not None and t.value < float('inf') else "FAIL"
-        print(f"  #{t.number:3d}  val={t.value:.6f}  [{status}]  {t.params}")
+        val_str = f"{t.value:.6f}" if t.value is not None else "None"
+        state = t.state.name
+        print(f"  #{t.number:3d}  val={val_str}  [{state}]  {t.params}")
 
-    # Save CSV
+    # Save CSV and best params JSON (before retrain, so results survive SLURM timeout)
     df = study.trials_dataframe()
     csv_path = os.path.join(save_dir, f'optuna_trials_{run_id}.csv')
     df.to_csv(csv_path, index=False)
     print(f"\nSaved trials CSV: {csv_path}")
 
+    best_params_path = os.path.join(save_dir, f'optuna_best_params_{run_id}.json')
+    with open(best_params_path, 'w') as f:
+        json.dump(dict(
+            best_trial=study.best_trial.number,
+            best_value=study.best_value,
+            best_params=study.best_params,
+        ), f, indent=2)
+    print(f"Saved best params: {best_params_path}")
+
     # ── Retrain best and do full evaluation ─────────────────────────────────
-    best_hp = {**study.best_params, 'epochs': 100}
-    print(f"\nRetraining best configuration for full evaluation...")
+    best_hp = {**study.best_params, 'epochs': 200}
+    print(f"\nRetraining best configuration for {best_hp['epochs']} epochs...")
     np.random.seed(SEED + study.best_trial.number)
     torch.manual_seed(SEED + study.best_trial.number)
-    fit_sys, bestfit = build_and_train(best_hp)
+    fit_sys = build_model(best_hp)
+    train_model(fit_sys, best_hp)
     evaluate_and_save(fit_sys, best_hp, f"optuna_best_{run_id}")
 
 else:
@@ -444,6 +477,7 @@ else:
 
     np.random.seed(SEED)
     torch.manual_seed(SEED)
-    fit_sys, bestfit = build_and_train(DEFAULT_HP)
+    fit_sys = build_model(DEFAULT_HP)
+    bestfit = train_model(fit_sys, DEFAULT_HP)
     print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
     evaluate_and_save(fit_sys, DEFAULT_HP, run_id)
