@@ -187,7 +187,7 @@ def build_and_train(hp):
     fit_sys.norm.ystd = ystd
 
     fit_sys.init_model(sys_data=train_data, auto_fit_norm=False)
-    for net in (fit_sys.encoder, fit_sys.fn, fit_sys.hn):
+    for net in (fit_sys.encoder, fit_sys.hfn):
         net.to(DTYPE_PT)
 
     fit_sys.fit(
