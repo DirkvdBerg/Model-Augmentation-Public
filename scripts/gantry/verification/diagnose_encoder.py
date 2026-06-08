@@ -12,8 +12,10 @@ from finite differences, ANN states = 0).
 Diagnostics:
   1. Gradient flow: does loss.backward() produce non-zero encoder gradients?
   2. Short training: does loss decrease and do encoder weights change?
-  3. Multi-window rollouts: encoder-init vs analytical-init (the baseline
-     the augmentation structure must outperform)
+  3. Multi-window rollouts: three-way comparison
+     - Encoder: trained augmented model, encoder x0
+     - Analytical (trained ANN): trained augmented model, analytical x0, ANN=0
+     - Physics only: physics-only model (no ANN), analytical x0
 
 Outputs (saved to simulations/gantry_subnet/encoder_verification/):
   All filenames include {run_id} (SLURM_JOB_ID or timestamp).
@@ -206,6 +208,27 @@ def build_model(hp):
     return fit_sys
 
 
+def build_physics_only():
+    """Build a physics-only interconnect (nxd=6, no ANN) for baseline comparison."""
+    ic = Interconnect(NX_PHYS, nu, ny, debugging=False)
+
+    phy_block = Gantry_State_Block(
+        Y_op=Y_OP, std_x=std_x, std_u=std_u,
+        x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
+    ).to(DTYPE_PT)
+    out_block = Linear_Output_Block(C=Cd_norm, D=Dd_np)
+
+    ic.add_block(phy_block)
+    ic.add_block(out_block)
+    ic.connect_signals("x", phy_block)
+    ic.connect_block_signals(phy_block, ["u"], [])
+    ic.connect_signals(phy_block, "xp")
+    ic.connect_signals("x", out_block)
+    ic.connect_block_signals(out_block, ["u"], ["y"])
+
+    return ic
+
+
 # =========================================================================
 # Analytical baseline x0
 # =========================================================================
@@ -254,9 +277,9 @@ def get_encoder_x0(fit_sys, data_norm, t_start):
     return x0.squeeze(0).numpy()
 
 
-def rollout_from_x0(fit_sys, data_norm, x0_norm, t_start, n_steps,
+def rollout_from_x0(interconnect, data_norm, x0_norm, t_start, n_steps,
                     return_states=False):
-    """Simulate n_steps from normalized x0.
+    """Simulate n_steps from normalized x0 through the given interconnect.
 
     Returns:
         y_hat: (n_steps, 3) physical output
@@ -271,12 +294,12 @@ def rollout_from_x0(fit_sys, data_norm, x0_norm, t_start, n_steps,
     x_list = []
     with torch.no_grad():
         for t in range(min(n_steps, len(u_norm))):
-            y_t, x = fit_sys.hfn(x, u_norm[t:t + 1])
+            y_t, x = interconnect(x, u_norm[t:t + 1])
             y_list.append(y_t.squeeze(0).numpy())
             if return_states:
                 x_list.append(x.squeeze(0).numpy())
     y_hat_norm = np.array(y_list)
-    y_hat = y_hat_norm * ystd + fit_sys.norm.y0
+    y_hat = y_hat_norm * ystd + y0
     if return_states:
         return y_hat, np.array(x_list)
     return y_hat
@@ -404,8 +427,8 @@ def short_training(fit_sys, hp):
 # DIAGNOSTIC 3: Multi-window rollouts (encoder vs analytical baseline)
 # =========================================================================
 
-def multi_window_rollouts(fit_sys, hp):
-    """Collect per-window rollout data for encoder vs analytical baseline.
+def multi_window_rollouts(fit_sys, ic_phy, hp):
+    """Collect per-window rollout data: encoder vs analytical (trained ANN) vs physics only.
 
     Model must already be at best checkpoint (done by short_training).
     Returns a dict with all rollout data for saving and plotting.
@@ -419,7 +442,10 @@ def multi_window_rollouts(fit_sys, hp):
     print(f"\n{'='*70}")
     print(f"DIAGNOSTIC 3: Multi-window rollouts (nf={nf} steps = {nf*TS_NEW:.3f} s)")
     print(f"{'='*70}")
-    print(f"  Comparing encoder-init vs analytical baseline (pos + finite-diff vel, ANN=0)")
+    print(f"  Three-way comparison:")
+    print(f"    Enc = trained augmented model, encoder x0")
+    print(f"    Ana = trained augmented model, analytical x0 (ANN=0)")
+    print(f"    Phy = physics-only model (no ANN), analytical x0")
 
     all_data = train_list + [val_data, test_data]
     all_labels = TRAIN_FILES + [VAL_FILE, TEST_FILE]
@@ -427,10 +453,11 @@ def multi_window_rollouts(fit_sys, hp):
 
     rms_encoder_all = []
     rms_analytical_all = []
+    rms_physics_all = []
     trajectories = []
 
-    print(f"\n  {'Trajectory':<40s}  {'Windows':>7s}  "
-          f"{'Enc RMS':>10s}  {'Ana RMS':>10s}  {'Winner':>8s}")
+    print(f"\n  {'Trajectory':<40s}  {'Win':>4s}  "
+          f"{'Enc RMS':>10s}  {'Ana RMS':>10s}  {'Phy RMS':>10s}  {'Winner':>8s}")
 
     for traj_idx, (data_raw, data_norm, label) in enumerate(
             zip(all_data, all_norms, all_labels)):
@@ -453,51 +480,71 @@ def multi_window_rollouts(fit_sys, hp):
 
         traj_rms_enc = []
         traj_rms_ana = []
+        traj_rms_phy = []
         windows = []
 
         for t_s in starts:
+            # Encoder rollout (trained augmented model)
             x0_enc = get_encoder_x0(fit_sys, data_norm, t_s)
             y_enc, x_traj_enc = rollout_from_x0(
-                fit_sys, data_norm, x0_enc, t_s, nf, return_states=True)
+                fit_sys.hfn, data_norm, x0_enc, t_s, nf, return_states=True)
 
+            # Analytical x0 in logical coordinates
             x0_ana_phys = analytical_x0_at(data_raw.y, t_s, TS_NEW)
             x0_ana_norm = normalize_x(x0_ana_phys)
+
+            # Analytical rollout through trained augmented model (ANN=0)
             x0_ana_full = np.zeros(nxd, dtype=DTYPE_NP)
             x0_ana_full[:NX_PHYS] = x0_ana_norm
             y_ana, x_traj_ana = rollout_from_x0(
-                fit_sys, data_norm, x0_ana_full, t_s, nf, return_states=True)
+                fit_sys.hfn, data_norm, x0_ana_full, t_s, nf, return_states=True)
+
+            # Physics-only rollout (no ANN, nxd=6)
+            x0_phy = x0_ana_norm.copy()
+            y_phy, x_traj_phy = rollout_from_x0(
+                ic_phy, data_norm, x0_phy, t_s, nf, return_states=True)
 
             n_cmp = min(nf, len(data_raw.y) - t_s, len(y_enc))
             y_ref = data_raw.y[t_s:t_s + n_cmp]
 
             rms_e = np.sqrt(np.mean((y_enc[:n_cmp] - y_ref) ** 2))
             rms_a = np.sqrt(np.mean((y_ana[:n_cmp] - y_ref) ** 2))
+            rms_p = np.sqrt(np.mean((y_phy[:n_cmp] - y_ref) ** 2))
             rms_enc_ch = np.sqrt(np.mean((y_enc[:n_cmp] - y_ref) ** 2, axis=0))
             rms_ana_ch = np.sqrt(np.mean((y_ana[:n_cmp] - y_ref) ** 2, axis=0))
+            rms_phy_ch = np.sqrt(np.mean((y_phy[:n_cmp] - y_ref) ** 2, axis=0))
 
             traj_rms_enc.append(rms_e)
             traj_rms_ana.append(rms_a)
+            traj_rms_phy.append(rms_p)
 
             windows.append({
                 'y_ref': y_ref.copy(),
                 'y_enc': y_enc[:n_cmp].copy(),
                 'y_ana': y_ana[:n_cmp].copy(),
+                'y_phy': y_phy[:n_cmp].copy(),
                 'x_traj_enc': x_traj_enc[:n_cmp].copy(),
                 'x_traj_ana': x_traj_ana[:n_cmp].copy(),
+                'x_traj_phy': x_traj_phy[:n_cmp].copy(),
                 'x0_enc': x0_enc.copy(),
                 'x0_ana': x0_ana_full.copy(),
+                'x0_phy': x0_phy.copy(),
                 'rms_enc_ch': rms_enc_ch,
                 'rms_ana_ch': rms_ana_ch,
+                'rms_phy_ch': rms_phy_ch,
                 'rms_enc': rms_e,
                 'rms_ana': rms_a,
+                'rms_phy': rms_p,
                 't_start': int(t_s),
                 'n_cmp': n_cmp,
             })
 
         mean_e = np.mean(traj_rms_enc)
         mean_a = np.mean(traj_rms_ana)
+        mean_p = np.mean(traj_rms_phy)
         rms_encoder_all.extend(traj_rms_enc)
         rms_analytical_all.extend(traj_rms_ana)
+        rms_physics_all.extend(traj_rms_phy)
 
         trajectories.append({
             'label': label,
@@ -506,29 +553,31 @@ def multi_window_rollouts(fit_sys, hp):
             'windows': windows,
             'mean_rms_enc': mean_e,
             'mean_rms_ana': mean_a,
+            'mean_rms_phy': mean_p,
         })
 
-        winner = "Encoder" if mean_e < mean_a else "Baseline"
-        print(f"  {label:<40s}  {len(starts):>7d}  "
-              f"{mean_e:10.6f}  {mean_a:10.6f}  {winner:>8s}")
+        best = min(mean_e, mean_a, mean_p)
+        winner = "Encoder" if best == mean_e else ("Ana" if best == mean_a else "Physics")
+        print(f"  {label:<40s}  {len(starts):>4d}  "
+              f"{mean_e:10.6f}  {mean_a:10.6f}  {mean_p:10.6f}  {winner:>8s}")
 
     overall_enc = np.mean(rms_encoder_all)
     overall_ana = np.mean(rms_analytical_all)
-    print(f"\n  {'OVERALL':<40s}  {len(rms_encoder_all):>7d}  "
-          f"{overall_enc:10.6f}  {overall_ana:10.6f}")
+    overall_phy = np.mean(rms_physics_all)
+    print(f"\n  {'OVERALL':<40s}  {len(rms_encoder_all):>4d}  "
+          f"{overall_enc:10.6f}  {overall_ana:10.6f}  {overall_phy:10.6f}")
 
-    if overall_enc < overall_ana:
-        pct = (1 - overall_enc / overall_ana) * 100
-        print(f"\n  Encoder OUTPERFORMS analytical baseline by {pct:.1f}%.")
-        print(f"  Augmentation structure is adding value.")
+    if overall_enc < overall_phy:
+        pct = (1 - overall_enc / overall_phy) * 100
+        print(f"\n  Encoder OUTPERFORMS physics baseline by {pct:.1f}%.")
     else:
-        pct = (overall_enc / overall_ana - 1) * 100
-        print(f"\n  Encoder is WORSE than analytical baseline by {pct:.1f}%.")
-        print(f"  Augmentation structure is not helping after {hp['epochs']} epochs.")
+        pct = (overall_enc / overall_phy - 1) * 100
+        print(f"\n  Encoder is WORSE than physics baseline by {pct:.1f}%.")
 
     return {
         'overall_enc': overall_enc,
         'overall_ana': overall_ana,
+        'overall_phy': overall_phy,
         'trajectories': trajectories,
         'nf': nf,
         'cheat_n': cheat_n,
@@ -587,7 +636,8 @@ def plot_per_trajectory_rollouts(rollout_result, save_dir):
                 ax = axes[ch, col]
                 ax.plot(t_plot, win['y_ref'][:, ch], 'k', lw=1, label='Reference')
                 ax.plot(t_plot, win['y_enc'][:, ch], 'C0', lw=0.8, label='Encoder')
-                ax.plot(t_plot, win['y_ana'][:, ch], 'C1--', lw=0.8, label='Analytical')
+                ax.plot(t_plot, win['y_ana'][:, ch], 'C1--', lw=0.8, label='Ana (trained ANN)')
+                ax.plot(t_plot, win['y_phy'][:, ch], 'C2:', lw=0.8, label='Physics only')
                 ax.grid(True, alpha=0.3)
                 if col == 0:
                     ax.set_ylabel(CH_LABELS[ch], fontsize=8)
@@ -598,7 +648,7 @@ def plot_per_trajectory_rollouts(rollout_result, save_dir):
                 if ch == 2:
                     ax.set_xlabel('Time [s]', fontsize=7)
 
-        fig.suptitle(f'{label_stem}: encoder vs analytical baseline', fontsize=10)
+        fig.suptitle(f'{label_stem}: encoder vs ana (trained ANN) vs physics only', fontsize=10)
         fig.tight_layout()
         path = os.path.join(save_dir, f'diag_rollout_{label_stem}_{run_id}.png')
         fig.savefig(path, dpi=150)
@@ -614,22 +664,27 @@ def plot_per_channel_bar_chart(rollout_result, hp, save_dir):
     # Compute per-channel means for each trajectory
     means_enc = np.zeros((len(active), 3))
     means_ana = np.zeros((len(active), 3))
+    means_phy = np.zeros((len(active), 3))
     for i, t in enumerate(active):
         enc_ch = np.array([w['rms_enc_ch'] for w in t['windows']])
         ana_ch = np.array([w['rms_ana_ch'] for w in t['windows']])
+        phy_ch = np.array([w['rms_phy_ch'] for w in t['windows']])
         means_enc[i] = enc_ch.mean(axis=0)
         means_ana[i] = ana_ch.mean(axis=0)
+        means_phy[i] = phy_ch.mean(axis=0)
 
     fig, axes = plt.subplots(1, 3, figsize=(14, 4), sharey=False)
     x_pos = np.arange(len(active))
-    bar_w = 0.35
+    bar_w = 0.25
 
     for ch in range(3):
         ax = axes[ch]
-        ax.bar(x_pos - bar_w/2, means_enc[:, ch], bar_w,
+        ax.bar(x_pos - bar_w, means_enc[:, ch], bar_w,
                label='Encoder', color='C0')
-        ax.bar(x_pos + bar_w/2, means_ana[:, ch], bar_w,
-               label='Analytical', color='C1')
+        ax.bar(x_pos, means_ana[:, ch], bar_w,
+               label='Ana (trained ANN)', color='C1')
+        ax.bar(x_pos + bar_w, means_phy[:, ch], bar_w,
+               label='Physics only', color='C2')
         ax.set_xticks(x_pos)
         ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=6)
         ax.set_title(CH_LABELS[ch])
@@ -638,7 +693,7 @@ def plot_per_channel_bar_chart(rollout_result, hp, save_dir):
         if ch == 0:
             ax.legend(fontsize=7)
 
-    fig.suptitle(f'Per-channel RMS: encoder vs analytical ({hp["epochs"]} epochs)',
+    fig.suptitle(f'Per-channel RMS: encoder vs ana vs physics ({hp["epochs"]} epochs)',
                  fontsize=10)
     fig.tight_layout()
     path = os.path.join(save_dir, f'diag_per_channel_rms_{run_id}.png')
@@ -653,6 +708,7 @@ def plot_error_over_time(rollout_result, save_dir):
     # Collect per-timestep squared errors from all windows
     err_enc_list = []
     err_ana_list = []
+    err_phy_list = []
     for traj in rollout_result['trajectories']:
         if traj['skipped']:
             continue
@@ -661,21 +717,27 @@ def plot_error_over_time(rollout_result, save_dir):
             # Pad to nf if shorter (edge windows)
             e_enc = np.full((nf, 3), np.nan)
             e_ana = np.full((nf, 3), np.nan)
+            e_phy = np.full((nf, 3), np.nan)
             e_enc[:n] = (win['y_enc'] - win['y_ref']) ** 2
             e_ana[:n] = (win['y_ana'] - win['y_ref']) ** 2
+            e_phy[:n] = (win['y_phy'] - win['y_ref']) ** 2
             err_enc_list.append(e_enc)
             err_ana_list.append(e_ana)
+            err_phy_list.append(e_phy)
 
     err_enc = np.array(err_enc_list)  # (n_windows, nf, 3)
     err_ana = np.array(err_ana_list)
+    err_phy = np.array(err_phy_list)
 
     # RMS across windows and channels at each timestep
     rms_enc_t = np.sqrt(np.nanmean(err_enc, axis=(0, 2)))  # (nf,)
     rms_ana_t = np.sqrt(np.nanmean(err_ana, axis=(0, 2)))
+    rms_phy_t = np.sqrt(np.nanmean(err_phy, axis=(0, 2)))
 
     # Also per-channel
     rms_enc_t_ch = np.sqrt(np.nanmean(err_enc, axis=0))  # (nf, 3)
     rms_ana_t_ch = np.sqrt(np.nanmean(err_ana, axis=0))
+    rms_phy_t_ch = np.sqrt(np.nanmean(err_phy, axis=0))
 
     t_axis = np.arange(nf) * TS_NEW
 
@@ -684,7 +746,8 @@ def plot_error_over_time(rollout_result, save_dir):
     # Top: overall
     ax = axes[0]
     ax.plot(t_axis, rms_enc_t, 'C0', lw=1, label='Encoder')
-    ax.plot(t_axis, rms_ana_t, 'C1', lw=1, label='Analytical')
+    ax.plot(t_axis, rms_ana_t, 'C1', lw=1, label='Ana (trained ANN)')
+    ax.plot(t_axis, rms_phy_t, 'C2', lw=1, label='Physics only')
     ax.set_ylabel('RMS error [m]')
     ax.set_title('Instantaneous RMS error vs rollout time (all windows)')
     ax.legend(fontsize=8)
@@ -697,6 +760,8 @@ def plot_error_over_time(rollout_result, save_dir):
                 label=f'{CH_LABELS[ch]} enc')
         ax.plot(t_axis, rms_ana_t_ch[:, ch], f'C{ch}--', lw=0.8,
                 label=f'{CH_LABELS[ch]} ana')
+        ax.plot(t_axis, rms_phy_t_ch[:, ch], f'C{ch}:', lw=0.8,
+                label=f'{CH_LABELS[ch]} phy')
     ax.set_xlabel('Rollout time [s]')
     ax.set_ylabel('RMS error [m]')
     ax.set_title('Per-channel breakdown')
@@ -790,6 +855,7 @@ def save_diagnostic_npz(train_result, rollout_result, hp, save_dir):
         'cheat_n': rollout_result['cheat_n'],
         'overall_rms_enc': rollout_result['overall_enc'],
         'overall_rms_ana': rollout_result['overall_ana'],
+        'overall_rms_phy': rollout_result['overall_phy'],
         # Training history
         'loss_train': train_result['loss_train'],
         'loss_val': train_result['loss_val'],
@@ -817,6 +883,7 @@ def save_diagnostic_npz(train_result, rollout_result, hp, save_dir):
         save_dict[f'traj{i}_starts'] = traj['starts']
         save_dict[f'traj{i}_mean_rms_enc'] = traj['mean_rms_enc']
         save_dict[f'traj{i}_mean_rms_ana'] = traj['mean_rms_ana']
+        save_dict[f'traj{i}_mean_rms_phy'] = traj['mean_rms_phy']
         save_dict[f'traj{i}_n_windows'] = len(traj['windows'])
 
         for j, win in enumerate(traj['windows']):
@@ -824,12 +891,16 @@ def save_diagnostic_npz(train_result, rollout_result, hp, save_dir):
             save_dict[p + 'y_ref'] = win['y_ref']
             save_dict[p + 'y_enc'] = win['y_enc']
             save_dict[p + 'y_ana'] = win['y_ana']
+            save_dict[p + 'y_phy'] = win['y_phy']
             save_dict[p + 'x_traj_enc'] = win['x_traj_enc']
             save_dict[p + 'x_traj_ana'] = win['x_traj_ana']
+            save_dict[p + 'x_traj_phy'] = win['x_traj_phy']
             save_dict[p + 'x0_enc'] = win['x0_enc']
             save_dict[p + 'x0_ana'] = win['x0_ana']
+            save_dict[p + 'x0_phy'] = win['x0_phy']
             save_dict[p + 'rms_enc_ch'] = win['rms_enc_ch']
             save_dict[p + 'rms_ana_ch'] = win['rms_ana_ch']
+            save_dict[p + 'rms_phy_ch'] = win['rms_phy_ch']
             save_dict[p + 't_start'] = win['t_start']
             save_dict[p + 'n_cmp'] = win['n_cmp']
 
@@ -855,6 +926,8 @@ if __name__ == '__main__':
     np.random.seed(SEED)
     torch.manual_seed(SEED)
     fit_sys = build_model(hp)
+    ic_phy = build_physics_only()
+    print(f"Physics-only baseline built (nxd={NX_PHYS})")
 
     # Trigger encoder initialisation (normally happens lazily in fit())
     fit_sys.init_model(sys_data=train_data, auto_fit_norm=False)
@@ -878,7 +951,7 @@ if __name__ == '__main__':
     plot_training_curves(train_result, save_dir)
 
     # Diagnostic 3: multi-window rollouts (model already at _best)
-    rollout_result = multi_window_rollouts(fit_sys, hp)
+    rollout_result = multi_window_rollouts(fit_sys, ic_phy, hp)
 
     # Plots 2-5
     plot_per_trajectory_rollouts(rollout_result, save_dir)
@@ -899,15 +972,20 @@ if __name__ == '__main__':
     # Final verdict
     rms_enc = rollout_result['overall_enc']
     rms_ana = rollout_result['overall_ana']
+    rms_phy = rollout_result['overall_phy']
     print(f"\n{'='*70}")
     print("VERDICT")
     print(f"{'='*70}")
+    print(f"  Encoder (augmented):        {rms_enc:.6f}")
+    print(f"  Ana (trained ANN, ANN=0):   {rms_ana:.6f}")
+    print(f"  Physics only (no ANN):      {rms_phy:.6f}")
     if not grad_ok:
-        print("  FAIL: Gradients do not reach encoder.")
+        print("\n  FAIL: Gradients do not reach encoder.")
     elif not train_ok:
-        print("  FAIL: Encoder weights unchanged after training.")
-    elif rms_enc < rms_ana:
-        print(f"  PASS: Encoder ({rms_enc:.6f}) beats analytical baseline ({rms_ana:.6f}).")
+        print("\n  FAIL: Encoder weights unchanged after training.")
+    elif rms_enc < rms_phy:
+        pct = (1 - rms_enc / rms_phy) * 100
+        print(f"\n  PASS: Encoder beats physics baseline by {pct:.1f}%.")
     else:
-        print(f"  NOT YET: Encoder ({rms_enc:.6f}) does not beat baseline ({rms_ana:.6f}).")
+        print(f"\n  NOT YET: Encoder does not beat physics baseline.")
         print(f"  This may improve with more epochs or different hyperparameters.")
