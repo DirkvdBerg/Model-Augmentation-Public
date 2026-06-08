@@ -186,6 +186,10 @@ def build_and_train(hp):
     fit_sys.norm.y0   = y0
     fit_sys.norm.ystd = ystd
 
+    fit_sys.init_model(sys_data=train_data, auto_fit_norm=False)
+    for net in (fit_sys.encoder, fit_sys.fn, fit_sys.hn):
+        net.to(DTYPE_PT)
+
     fit_sys.fit(
         train_sys_data=train_data, val_sys_data=val_data,
         batch_size=hp['batch_size'], epochs=hp['epochs'],

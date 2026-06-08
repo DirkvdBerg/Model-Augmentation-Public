@@ -858,6 +858,8 @@ if __name__ == '__main__':
 
     # Trigger encoder initialisation (normally happens lazily in fit())
     fit_sys.init_model(sys_data=train_data, auto_fit_norm=False)
+    for net in (fit_sys.encoder, fit_sys.fn, fit_sys.hn):
+        net.to(DTYPE_PT)
     print(f"Encoder initialised: {sum(p.numel() for p in fit_sys.encoder.parameters())} parameters")
 
     # Diagnostic 1: gradient flow
