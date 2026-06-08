@@ -410,21 +410,30 @@ if USE_OPTUNA:
     import optuna
     from optuna.samplers import TPESampler
 
-    db_path = os.path.join(save_dir, f"optuna_{OPTUNA_STUDY_NAME}.db")
+    def next_study_name(base_name, directory):
+        """Return base_name if no DB exists, else base_name_v2, _v3, etc."""
+        version = 1
+        while True:
+            name = base_name if version == 1 else f"{base_name}_v{version}"
+            db = os.path.join(directory, f"optuna_{name}.db")
+            if not os.path.exists(db):
+                return name
+            version += 1
+
+    study_name = next_study_name(OPTUNA_STUDY_NAME, save_dir)
+    db_path = os.path.join(save_dir, f"optuna_{study_name}.db")
     storage = f"sqlite:///{db_path}"
 
     study = optuna.create_study(
-        study_name=OPTUNA_STUDY_NAME,
+        study_name=study_name,
         storage=storage,
         sampler=TPESampler(seed=SEED),
         pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=0),
         direction="minimize",
-        load_if_exists=True,
     )
 
-    print(f"\nOptuna study '{OPTUNA_STUDY_NAME}' - {N_OPTUNA_TRIALS} trials")
-    print(f"DB: {db_path}")
-    print(f"Completed trials so far: {len(study.trials)}\n")
+    print(f"\nOptuna study '{study_name}' - {N_OPTUNA_TRIALS} trials")
+    print(f"DB: {db_path}\n")
 
     study.optimize(objective, n_trials=N_OPTUNA_TRIALS)
 
