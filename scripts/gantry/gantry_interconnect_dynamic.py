@@ -31,7 +31,7 @@ SEED = 42
 
 # --- Resampling ---
 FS_ORIG = 20000
-FS_NEW  = 1000          # 1 kHz — Nyquist safe for 150 Hz MSD resonance
+FS_NEW  = 1000          # 1 kHz - Nyquist safe for 150 Hz MSD resonance
 D       = FS_ORIG // FS_NEW   # = 20
 TS_NEW  = 1.0 / FS_NEW        # = 0.001 s
 
@@ -102,7 +102,7 @@ for i, (f, t) in enumerate(zip(TRAIN_FILES, train_list)):
     print(f'  T{i+1}: {t.u.shape[0]} samples  ({f})')
 
 ## ═══════════════════════════════════════════════════════════════════════════════
-## Normalisation (run once — all NX_PHYS-dimensional, independent of NX_ANN)
+## Normalisation (run once - all NX_PHYS-dimensional, independent of NX_ANN)
 ## ═══════════════════════════════════════════════════════════════════════════════
 
 u_all = np.concatenate([t.u for t in train_list])
@@ -397,7 +397,7 @@ if USE_OPTUNA:
         load_if_exists=True,
     )
 
-    print(f"\nOptuna study '{OPTUNA_STUDY_NAME}' — {N_OPTUNA_TRIALS} trials")
+    print(f"\nOptuna study '{OPTUNA_STUDY_NAME}' - {N_OPTUNA_TRIALS} trials")
     print(f"DB: {db_path}")
     print(f"Completed trials so far: {len(study.trials)}\n")
 
@@ -405,7 +405,7 @@ if USE_OPTUNA:
 
     # ── Summary ─────────────────────────────────────────────────────────────
     print(f"\n{'='*70}")
-    print(f"OPTUNA STUDY COMPLETE — {len(study.trials)} trials")
+    print(f"OPTUNA STUDY COMPLETE - {len(study.trials)} trials")
     print(f"{'='*70}")
     print(f"Best trial:  #{study.best_trial.number}")
     print(f"Best value:  {study.best_value:.6f}")
