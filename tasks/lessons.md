@@ -120,3 +120,11 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 **Rule**: Always state explicitly why the implication holds for this specific construction. Do not assert it as if it follows from a general theorem unless it actually does. Show the connecting steps.
 **Why**: Claimed "LFR is well-posed if and only if M(Y) is invertible" without justification. User correctly challenged this twice. The claim is true only because D_zw was specifically constructed to encode M(Y)^{-1} through the algebraic loop — so the loop's solvability reduces directly to M(Y) invertibility. For a different D_zw this would not hold. The justification is: substitute the specific D_zw into the algebraic loop, show it collapses to M(Y)·v = f_gen, then cite `LPV/supporting/derivations/M-invertibility.tex`. Without that connecting argument, the claim is unsupported.
 **How to apply**: Before writing "X implies Y" in any derivation, ask: is this a general theorem, or does it hold only because of how I constructed the specific objects involved? If the latter, show the construction-specific steps explicitly.
+
+---
+
+### Rule: Verification/diagnostic tools must not require the thing they are verifying
+**Trigger**: When building a test, diagnostic, or verification script for a component or pipeline
+**Rule**: The diagnostic must be able to run independently of the fully completed pipeline. If the purpose is to verify component X works, the script must construct X from scratch and test it, not require a successful run of the full pipeline that includes X. For example: an encoder diagnostic must build and briefly train its own model, not load a fully trained model from a prior multi-hour run.
+**Why**: Built an encoder diagnostic that required loading a trained model, but the whole point was to verify the encoder works before committing to a full training run. The user had to point out this was backwards twice.
+**How to apply**: Before designing any diagnostic, ask: "Can I run this in minutes without any prior artifacts?" If the answer is no, restructure so the diagnostic is self-contained.
