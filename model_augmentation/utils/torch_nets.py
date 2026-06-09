@@ -171,6 +171,67 @@ class unit_variance_feed_forward_nn(nn.Module): #a simple MLP
     def forward(self,X):
         return self.net(X)
     
+class HybridGantryEncoder(nn.Module):
+    """Hybrid encoder: analytical physical states + learned augmented states.
+
+    Physical states (positions + velocities) are computed analytically from the
+    output measurements using the measurement equation q = P_inv @ y and backward
+    finite differences. Only the augmented states are learned by a zero-init ANN.
+    """
+    def __init__(self, nb, nu, na, ny, nx,
+                 P_inv_T, y0, ystd, x_mean, std_x, fs, NX_PHYS=6,
+                 n_nodes_per_layer=64, n_hidden_layers=2, activation=nn.Tanh):
+        super(HybridGantryEncoder, self).__init__()
+        self.nu = tuple() if nu is None else ((nu,) if isinstance(nu, int) else nu)
+        self.ny = tuple() if ny is None else ((ny,) if isinstance(ny, int) else ny)
+        self.NX_PHYS = NX_PHYS
+        self.NX_ANN = nx - NX_PHYS
+        self.fs = fs
+
+        # Physics constants (non-learnable, move with .to(device))
+        self.register_buffer('P_inv', torch.tensor(np.asarray(P_inv_T).T, dtype=torch.float32))  # inv(P), (3,3)
+        self.register_buffer('y0', torch.tensor(np.asarray(y0), dtype=torch.float32))             # (3,)
+        self.register_buffer('ystd', torch.tensor(np.asarray(ystd), dtype=torch.float32))         # (3,)
+        self.register_buffer('x_mean', torch.tensor(np.asarray(x_mean), dtype=torch.float32))     # (6,)
+        self.register_buffer('std_x', torch.tensor(np.asarray(std_x), dtype=torch.float32))       # (6,)
+
+        # ANN for augmented states (zero-init → starts at zero)
+        if self.NX_ANN > 0:
+            n_in = nb * np.prod(self.nu, dtype=int) + na * np.prod(self.ny, dtype=int)
+            self.ann = zero_init_feed_forward_nn(
+                n_in=n_in, n_out=self.NX_ANN,
+                n_nodes_per_layer=n_nodes_per_layer,
+                n_hidden_layers=n_hidden_layers,
+                activation=activation,
+            )
+        else:
+            self.ann = None
+
+    def forward(self, upast, ypast):
+        # ── Physical states (analytical, no gradients) ──
+        # Un-normalize y: ypast is (batch, na, ny) in normalized coords
+        y_denorm = ypast * self.ystd + self.y0                  # (batch, na, ny)
+
+        # Positions: q = y @ inv(P)  — THEORY: measurement equation q = P^{-1} y
+        pos_last = y_denorm[:, -1, :] @ self.P_inv              # (batch, 3)
+        pos_prev = y_denorm[:, -2, :] @ self.P_inv              # (batch, 3)
+
+        # Velocities: backward finite difference — HEURISTIC: first-order approx, na >= 21 ensures history
+        vel = (pos_last - pos_prev) * self.fs                   # (batch, 3)
+
+        x_phys = torch.cat([pos_last, vel], dim=1)              # (batch, 6)
+        x_phys_norm = ((x_phys - self.x_mean) / self.std_x).detach()  # (batch, 6), no grad
+
+        # ── Augmented states (learned) ──
+        if self.ann is not None:
+            net_in = torch.cat([upast.view(upast.shape[0], -1),
+                                ypast.view(ypast.shape[0], -1)], dim=1)
+            x_ann = self.ann(net_in)                            # (batch, NX_ANN)
+            return torch.cat([x_phys_norm, x_ann], dim=1)       # (batch, nx)
+        else:
+            return x_phys_norm
+
+
 class positive_default_encoder_net(nn.Module):
     def __init__(self, nb, nu, na, ny, nx, n_nodes_per_layer=64, n_hidden_layers=2, activation=nn.Tanh):
         super(positive_default_encoder_net, self).__init__()
