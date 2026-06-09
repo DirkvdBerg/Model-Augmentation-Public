@@ -13,8 +13,8 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 ### Rule: Answer the question before writing any code
 
 **Trigger**: When the user asks a question, shares context, or presents a problem to think through
-**Rule**: Respond in text first. Do not call any tools or write any code until the user has acknowledged the explanation and confirmed the direction. A question is not an implicit "proceed". Sharing context or a problem is not an implicit "proceed" either.
-**Why**: User asked "what are you doing here?" and "what are you using this checkpoint for?" Both times the response immediately started coding. Later: user shared NotebookLM output about an analysis framework and I immediately started reading files and coding. The user had to stop both. The rule applies to any response, not just to explicit questions.
+**Rule**: Respond in text first. Do not call any tools or write any code until the user has acknowledged the explanation and explicitly confirmed the direction. A question is not an implicit "proceed". Sharing context or a problem is not an implicit "proceed". Saying "let me implement" at the end of a text reply and then proceeding in the same turn is also a violation if the user has not confirmed yet.
+**Why**: Violated repeatedly. (1) User asked "what are you doing here?" and "what are you using this checkpoint for?" Both times immediately started coding. (2) User shared NotebookLM output and I started coding. (3) User asked "can't we log through SLURM?" and "where are you saving the files?" indicating the design was still being discussed. I said "Let me implement it" and started editing code in the same message without waiting for confirmation. The rule must fire even when the conversation feels like it is converging on a solution.
 
 ---
 
