@@ -3,13 +3,15 @@ diagnose_encoder.py
 -------------------
 Pre-training encoder diagnostic for the gantry SUBNET.
 
-Builds a fresh SSE_Interconnect (identical to gantry_interconnect_dynamic.py),
-runs a short training, then tests the encoder using multi-window rollouts
-(matching the training loss setup). Compares encoder-initialised rollouts
-against the analytical baseline (positions from measurements, velocities
-from finite differences, ANN states = 0).
+Builds one or two SSE_Interconnect models with different encoder types,
+runs short training, then tests using multi-window rollouts.
 
-Diagnostics:
+Encoder modes:
+  - default: learned encoder (modified_encoder_net)
+  - hybrid:  analytical physical states + learned augmented states
+  - both:    runs both in parallel (one process each) for side-by-side comparison
+
+Diagnostics per encoder:
   1. Gradient flow: does loss.backward() produce non-zero encoder gradients?
   2. Short training: does loss decrease and do encoder weights change?
   3. Multi-window rollouts: three-way comparison
@@ -17,25 +19,23 @@ Diagnostics:
      - Analytical (trained ANN): trained augmented model, analytical x0, ANN=0
      - Physics only: physics-only model (no ANN), analytical x0
 
+When running both encoders, additional comparison plots are generated.
+
 Outputs (saved to simulations/gantry_subnet/encoder_verification/):
-  All filenames include {run_id} (SLURM_JOB_ID or timestamp).
-  - diag_encoder_results_{rid}.npz    : all data to reconstruct any plot
-  - diag_training_curves_{rid}.png    : train/val loss vs epoch
-  - diag_rollout_<traj>_{rid}.png     : per-trajectory time-domain rollouts
-  - diag_per_channel_rms_{rid}.png    : per-channel (X1, X2, Y) bar chart
-  - diag_error_over_time_{rid}.png    : instantaneous RMS error vs rollout step
-  - diag_encoder_states_{rid}.png     : encoder x0 vs analytical x0, ANN state histogram
-  - diag_encoder_model_{rid}          : trained model checkpoint
+  Per-encoder: diag_{diagnostic}_{encoder_mode}_{rid}.png
+  Comparison:  diag_cmp_{diagnostic}_{rid}.png
 
 Usage:
-  conda run -n GraduationProject python diagnose_encoder.py
-  conda run -n GraduationProject python diagnose_encoder.py --epochs 20
+  python diagnose_encoder.py                          # both encoders, default epochs
+  python diagnose_encoder.py --encoder hybrid         # hybrid only
+  python diagnose_encoder.py --encoder both --epochs 20 --cpus-per-worker 4
 """
 
 import os
 import sys
 import json
 import argparse
+import multiprocessing
 from datetime import datetime
 import numpy as np
 import torch
@@ -48,7 +48,7 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 from model_augmentation.utils.utils import *
-from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn
+from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn, HybridGantryEncoder
 from model_augmentation.fit_systems.interconnect import (
     SSE_Interconnect, Interconnect, modified_encoder_net,
 )
@@ -72,20 +72,22 @@ FS_NEW  = 1000
 D       = FS_ORIG // FS_NEW
 TS_NEW  = 1.0 / FS_NEW
 
+N_CPUS_PER_WORKER = 4  # torch intra-op threads per encoder process
+
 run_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
 
 USE_F64  = False
 DTYPE_NP = np.float64 if USE_F64 else np.float32
 DTYPE_PT = torch.float64 if USE_F64 else torch.float32
 
-# Hyperparameters for diagnostic (same defaults as gantry_interconnect_dynamic.py)
+# Hyperparameters for diagnostic (matches gantry_interconnect_dynamic.py)
 DEFAULT_HP = dict(
     NX_ANN=2,
-    n_nodes_per_layer=128,
-    n_hidden_layers=3,
+    n_nodes_per_layer=64,
+    n_hidden_layers=2,
     nf=350,
     batch_size=4000,
-    lr=7.6e-4,
+    lr=5e-4,
     epochs=50,
 )
 
@@ -159,8 +161,8 @@ os.makedirs(save_dir, exist_ok=True)
 # Build model (identical to build_and_train, but WITHOUT calling fit)
 # =========================================================================
 
-def build_model(hp):
-    """Build a fresh SSE_Interconnect with manual normalisation. Does NOT train."""
+def build_model(hp, encoder_mode='default'):
+    """Build SSE_Interconnect. encoder_mode: 'default' or 'hybrid'."""
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
     na = 2 * nxd + 1
@@ -204,6 +206,16 @@ def build_model(hp):
     fit_sys.norm.ustd = std_u.flatten()
     fit_sys.norm.y0   = y0
     fit_sys.norm.ystd = ystd
+
+    if encoder_mode == 'hybrid':
+        fit_sys.encoder = HybridGantryEncoder(
+            nb=nb, nu=nu, na=na, ny=ny, nx=nxd,
+            P_inv_T=P_inv_T, y0=y0, ystd=ystd,
+            x_mean=x_mean.flatten(), std_x=std_x.flatten(),
+            fs=fs, NX_PHYS=NX_PHYS,
+            n_nodes_per_layer=hp['n_nodes_per_layer'],
+            n_hidden_layers=hp['n_hidden_layers'],
+        ).to(DTYPE_PT)
 
     return fit_sys
 
@@ -309,9 +321,10 @@ def rollout_from_x0(interconnect, data_norm, x0_norm, t_start, n_steps,
 # DIAGNOSTIC 1: Gradient flow
 # =========================================================================
 
-def check_gradient_flow(fit_sys, hp):
+def check_gradient_flow(fit_sys, hp, label=''):
+    tag = f' [{label}]' if label else ''
     print(f"\n{'='*70}")
-    print("DIAGNOSTIC 1: Gradient flow check")
+    print(f"DIAGNOSTIC 1: Gradient flow check{tag}")
     print(f"{'='*70}")
 
     nf = hp['nf']
@@ -362,9 +375,10 @@ def check_gradient_flow(fit_sys, hp):
 # DIAGNOSTIC 2: Short training
 # =========================================================================
 
-def short_training(fit_sys, hp):
+def short_training(fit_sys, hp, label=''):
+    tag = f' [{label}]' if label else ''
     print(f"\n{'='*70}")
-    print(f"DIAGNOSTIC 2: Short training ({hp['epochs']} epochs)")
+    print(f"DIAGNOSTIC 2: Short training ({hp['epochs']} epochs){tag}")
     print(f"{'='*70}")
 
     # Snapshot encoder weights before training
@@ -427,7 +441,7 @@ def short_training(fit_sys, hp):
 # DIAGNOSTIC 3: Multi-window rollouts (encoder vs analytical baseline)
 # =========================================================================
 
-def multi_window_rollouts(fit_sys, ic_phy, hp):
+def multi_window_rollouts(fit_sys, ic_phy, hp, label=''):
     """Collect per-window rollout data: encoder vs analytical (trained ANN) vs physics only.
 
     Model must already be at best checkpoint (done by short_training).
@@ -439,8 +453,9 @@ def multi_window_rollouts(fit_sys, ic_phy, hp):
     na, nb = fit_sys.na, fit_sys.nb
     cheat_n = max(na, nb)
 
+    tag = f' [{label}]' if label else ''
     print(f"\n{'='*70}")
-    print(f"DIAGNOSTIC 3: Multi-window rollouts (nf={nf} steps = {nf*TS_NEW:.3f} s)")
+    print(f"DIAGNOSTIC 3: Multi-window rollouts (nf={nf} steps = {nf*TS_NEW:.3f} s){tag}")
     print(f"{'='*70}")
     print(f"  Three-way comparison:")
     print(f"    Enc = trained augmented model, encoder x0")
@@ -585,13 +600,81 @@ def multi_window_rollouts(fit_sys, ic_phy, hp):
 
 
 # =========================================================================
-# Plot functions
+# Worker function (runs in spawned process)
+# =========================================================================
+
+def run_encoder_diagnostic(args):
+    """Worker: build model with given encoder, train, evaluate. Returns results dict."""
+    import time as _time
+    encoder_mode, hp, cpus = args
+    torch.set_num_threads(cpus)
+    t0 = _time.time()
+
+    # Redirect stdout to per-encoder log file (avoids interleaving)
+    log_path = os.path.join(save_dir, f'diag_log_{encoder_mode}_{run_id}.txt')
+    log_file = open(log_path, 'w', buffering=1)  # line-buffered for tail -f
+    old_stdout = sys.stdout
+    sys.stdout = log_file
+
+    try:
+        seed = SEED if encoder_mode == 'default' else SEED + 1
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+
+        tag = encoder_mode
+        print(f"\n[{tag}] Building model...")
+        fit_sys = build_model(hp, encoder_mode=encoder_mode)
+        ic_phy = build_physics_only()
+
+        fit_sys.init_model(sys_data=train_data, auto_fit_norm=False)
+        if encoder_mode == 'hybrid':
+            fit_sys.hfn.to(DTYPE_PT)
+        else:
+            for net in (fit_sys.encoder, fit_sys.hfn):
+                net.to(DTYPE_PT)
+
+        n_params = sum(p.numel() for p in fit_sys.encoder.parameters())
+        print(f"[{tag}] Encoder: {n_params} learnable parameters")
+
+        grad_ok = check_gradient_flow(fit_sys, hp, label=tag)
+        if not grad_ok:
+            return {
+                'encoder_mode': encoder_mode,
+                'grad_ok': False,
+                'train_result': None,
+                'rollout_result': None,
+                'n_params': n_params,
+                'elapsed': _time.time() - t0,
+                'log_path': log_path,
+            }
+
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        train_result = short_training(fit_sys, hp, label=tag)
+        rollout_result = multi_window_rollouts(fit_sys, ic_phy, hp, label=tag)
+
+        return {
+            'encoder_mode': encoder_mode,
+            'grad_ok': grad_ok,
+            'train_result': train_result,
+            'rollout_result': rollout_result,
+            'n_params': n_params,
+            'elapsed': _time.time() - t0,
+            'log_path': log_path,
+        }
+    finally:
+        sys.stdout = old_stdout
+        log_file.close()
+
+
+# =========================================================================
+# Plot functions (per-encoder)
 # =========================================================================
 
 CH_LABELS = ['X1 [m]', 'X2 [m]', 'Y [m]']
 
 
-def plot_training_curves(train_result, save_dir):
+def plot_training_curves(train_result, save_dir, prefix=''):
     """Plot 1: training and validation loss vs epoch."""
     epoch_id = train_result['epoch_id']
     loss_val = train_result['loss_val']
@@ -605,16 +688,17 @@ def plot_training_curves(train_result, save_dir):
                label=f'Best epoch {epoch_id[best_idx]:.0f} (val={loss_val[best_idx]:.4f})')
     ax.set_xlabel('Epoch')
     ax.set_ylabel('Loss')
-    ax.set_title('Training convergence')
+    ax.set_title(f'Training convergence ({prefix})' if prefix else 'Training convergence')
     ax.legend(fontsize=8)
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
-    path = os.path.join(save_dir, f'diag_training_curves_{run_id}.png')
+    ftag = f'_{prefix}' if prefix else ''
+    path = os.path.join(save_dir, f'diag_training_curves{ftag}_{run_id}.png')
     fig.savefig(path, dpi=150)
     print(f"  Saved: {os.path.basename(path)}")
 
 
-def plot_per_trajectory_rollouts(rollout_result, save_dir):
+def plot_per_trajectory_rollouts(rollout_result, save_dir, prefix=''):
     """Plot 2: time-domain rollouts per trajectory (one figure each)."""
     for traj in rollout_result['trajectories']:
         if traj['skipped'] or not traj['windows']:
@@ -648,14 +732,16 @@ def plot_per_trajectory_rollouts(rollout_result, save_dir):
                 if ch == 2:
                     ax.set_xlabel('Time [s]', fontsize=7)
 
-        fig.suptitle(f'{label_stem}: encoder vs ana (trained ANN) vs physics only', fontsize=10)
+        ptag = f' ({prefix})' if prefix else ''
+        fig.suptitle(f'{label_stem}: enc vs ana vs physics{ptag}', fontsize=10)
         fig.tight_layout()
-        path = os.path.join(save_dir, f'diag_rollout_{label_stem}_{run_id}.png')
+        ftag = f'_{prefix}' if prefix else ''
+        path = os.path.join(save_dir, f'diag_rollout_{label_stem}{ftag}_{run_id}.png')
         fig.savefig(path, dpi=150)
         print(f"  Saved: {os.path.basename(path)}")
 
 
-def plot_per_channel_bar_chart(rollout_result, hp, save_dir):
+def plot_per_channel_bar_chart(rollout_result, hp, save_dir, prefix=''):
     """Plot 3: per-channel RMS bar chart (X1, X2, Y separately)."""
     trajs = rollout_result['trajectories']
     active = [t for t in trajs if not t['skipped']]
@@ -693,15 +779,17 @@ def plot_per_channel_bar_chart(rollout_result, hp, save_dir):
         if ch == 0:
             ax.legend(fontsize=7)
 
-    fig.suptitle(f'Per-channel RMS: encoder vs ana vs physics ({hp["epochs"]} epochs)',
+    ptag = f' ({prefix})' if prefix else ''
+    fig.suptitle(f'Per-channel RMS: enc vs ana vs physics ({hp["epochs"]} ep){ptag}',
                  fontsize=10)
     fig.tight_layout()
-    path = os.path.join(save_dir, f'diag_per_channel_rms_{run_id}.png')
+    ftag = f'_{prefix}' if prefix else ''
+    path = os.path.join(save_dir, f'diag_per_channel_rms{ftag}_{run_id}.png')
     fig.savefig(path, dpi=150)
     print(f"  Saved: {os.path.basename(path)}")
 
 
-def plot_error_over_time(rollout_result, save_dir):
+def plot_error_over_time(rollout_result, save_dir, prefix=''):
     """Plot 4: instantaneous RMS error vs rollout timestep, averaged over all windows."""
     nf = rollout_result['nf']
 
@@ -769,12 +857,13 @@ def plot_error_over_time(rollout_result, save_dir):
     ax.grid(True, alpha=0.3)
 
     fig.tight_layout()
-    path = os.path.join(save_dir, f'diag_error_over_time_{run_id}.png')
+    ftag = f'_{prefix}' if prefix else ''
+    path = os.path.join(save_dir, f'diag_error_over_time{ftag}_{run_id}.png')
     fig.savefig(path, dpi=150)
     print(f"  Saved: {os.path.basename(path)}")
 
 
-def plot_encoder_state_inspection(rollout_result, hp, save_dir):
+def plot_encoder_state_inspection(rollout_result, hp, save_dir, prefix=''):
     """Plot 5: encoder x0 vs analytical x0 (physical states), ANN state histogram."""
     NX_ANN = hp['NX_ANN']
 
@@ -827,10 +916,145 @@ def plot_encoder_state_inspection(rollout_result, hp, save_dir):
         ax.grid(True, alpha=0.3)
         ax.tick_params(labelsize=6)
 
-    fig.suptitle('Encoder state inspection: physical states (top) + ANN states (bottom)',
+    ptag = f' ({prefix})' if prefix else ''
+    fig.suptitle(f'Encoder state inspection: physical (top) + ANN (bottom){ptag}',
                  fontsize=10)
     fig.tight_layout()
-    path = os.path.join(save_dir, f'diag_encoder_states_{run_id}.png')
+    ftag = f'_{prefix}' if prefix else ''
+    path = os.path.join(save_dir, f'diag_encoder_states{ftag}_{run_id}.png')
+    fig.savefig(path, dpi=150)
+    print(f"  Saved: {os.path.basename(path)}")
+
+
+# =========================================================================
+# Comparison plot functions (side-by-side when running both encoders)
+# =========================================================================
+
+MODE_COLORS = {'default': 'C0', 'hybrid': 'C3'}
+MODE_LABELS = {'default': 'Default encoder', 'hybrid': 'Hybrid encoder'}
+
+
+def plot_cmp_training(all_results, save_dir):
+    """Comparison: overlay training curves for all encoder modes."""
+    fig, ax = plt.subplots(figsize=(8, 4))
+    for mode, res in all_results.items():
+        if not res['grad_ok']:
+            continue
+        tr = res['train_result']
+        c = MODE_COLORS[mode]
+        ax.semilogy(tr['epoch_id'], tr['loss_val'], color=c,
+                     label=f'{MODE_LABELS[mode]} val')
+        ax.semilogy(tr['epoch_id'], tr['loss_train'], color=c,
+                     linestyle='--', alpha=0.5, label=f'{MODE_LABELS[mode]} train')
+    ax.set_xlabel('Epoch')
+    ax.set_ylabel('sim-RMS')
+    ax.set_title('Training convergence comparison')
+    ax.legend(fontsize=8)
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    path = os.path.join(save_dir, f'diag_cmp_training_{run_id}.png')
+    fig.savefig(path, dpi=150)
+    print(f"  Saved: {os.path.basename(path)}")
+
+
+def plot_cmp_rms_bar(all_results, hp, save_dir):
+    """Comparison: per-channel RMS grouped bars (default enc | hybrid enc | physics)."""
+    modes = [m for m in all_results if all_results[m]['grad_ok']]
+    if not modes:
+        return
+
+    # Use first mode's rollout for trajectory labels and physics baseline
+    ref_mode = modes[0]
+    trajs_ref = all_results[ref_mode]['rollout_result']['trajectories']
+    active_idx = [i for i, t in enumerate(trajs_ref) if not t['skipped']]
+    labels = [os.path.splitext(trajs_ref[i]['label'])[0] for i in active_idx]
+
+    n_bars = len(modes) + 1  # +1 for physics
+    bar_w = 0.8 / n_bars
+    x_pos = np.arange(len(active_idx))
+
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4), sharey=False)
+    for ch in range(3):
+        ax = axes[ch]
+        for bi, mode in enumerate(modes):
+            trajs = all_results[mode]['rollout_result']['trajectories']
+            means = np.array([
+                np.mean([w['rms_enc_ch'][ch] for w in trajs[i]['windows']])
+                for i in active_idx
+            ])
+            ax.bar(x_pos + bi * bar_w, means, bar_w,
+                   label=MODE_LABELS[mode], color=MODE_COLORS[mode])
+
+        # Physics baseline (from first mode — identical across modes)
+        phy_means = np.array([
+            np.mean([w['rms_phy_ch'][ch] for w in trajs_ref[i]['windows']])
+            for i in active_idx
+        ])
+        ax.bar(x_pos + len(modes) * bar_w, phy_means, bar_w,
+               label='Physics only', color='C2')
+
+        ax.set_xticks(x_pos + bar_w * len(modes) / 2)
+        ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=6)
+        ax.set_title(CH_LABELS[ch])
+        ax.set_ylabel('Mean RMS [m]')
+        ax.grid(True, alpha=0.3, axis='y')
+        if ch == 0:
+            ax.legend(fontsize=7)
+
+    fig.suptitle(f'Encoder comparison: per-channel RMS ({hp["epochs"]} epochs)', fontsize=10)
+    fig.tight_layout()
+    path = os.path.join(save_dir, f'diag_cmp_rms_{run_id}.png')
+    fig.savefig(path, dpi=150)
+    print(f"  Saved: {os.path.basename(path)}")
+
+
+def plot_cmp_error_over_time(all_results, save_dir):
+    """Comparison: instantaneous RMS error vs rollout step for each encoder."""
+    modes = [m for m in all_results if all_results[m]['grad_ok']]
+    if not modes:
+        return
+
+    nf = all_results[modes[0]]['rollout_result']['nf']
+    t_axis = np.arange(nf) * TS_NEW
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+
+    for mode in modes:
+        rollout = all_results[mode]['rollout_result']
+        err_list = []
+        for traj in rollout['trajectories']:
+            if traj['skipped']:
+                continue
+            for win in traj['windows']:
+                n = win['n_cmp']
+                e = np.full((nf, 3), np.nan)
+                e[:n] = (win['y_enc'] - win['y_ref']) ** 2
+                err_list.append(e)
+        rms_t = np.sqrt(np.nanmean(np.array(err_list), axis=(0, 2)))
+        ax.plot(t_axis, rms_t, color=MODE_COLORS[mode], lw=1,
+                label=MODE_LABELS[mode])
+
+    # Physics baseline (from first mode)
+    rollout_ref = all_results[modes[0]]['rollout_result']
+    phy_err_list = []
+    for traj in rollout_ref['trajectories']:
+        if traj['skipped']:
+            continue
+        for win in traj['windows']:
+            n = win['n_cmp']
+            e = np.full((nf, 3), np.nan)
+            e[:n] = (win['y_phy'] - win['y_ref']) ** 2
+            phy_err_list.append(e)
+    rms_phy_t = np.sqrt(np.nanmean(np.array(phy_err_list), axis=(0, 2)))
+    ax.plot(t_axis, rms_phy_t, color='C2', lw=1, linestyle=':', label='Physics only')
+
+    ax.set_xlabel('Rollout time [s]')
+    ax.set_ylabel('RMS error [m]')
+    ax.set_title('Error growth comparison')
+    ax.legend(fontsize=8)
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    path = os.path.join(save_dir, f'diag_cmp_error_growth_{run_id}.png')
     fig.savefig(path, dpi=150)
     print(f"  Saved: {os.path.basename(path)}")
 
@@ -839,8 +1063,8 @@ def plot_encoder_state_inspection(rollout_result, hp, save_dir):
 # Save all data to .npz
 # =========================================================================
 
-def save_diagnostic_npz(train_result, rollout_result, hp, save_dir):
-    """Save all diagnostic data to a single .npz for later reconstruction."""
+def save_diagnostic_npz(all_results, hp, save_dir):
+    """Save diagnostic data for all encoder modes to .npz."""
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
 
@@ -851,58 +1075,53 @@ def save_diagnostic_npz(train_result, rollout_result, hp, save_dir):
         'NX_ANN': NX_ANN,
         'nxd': nxd,
         'TS_NEW': TS_NEW,
-        'nf': rollout_result['nf'],
-        'cheat_n': rollout_result['cheat_n'],
-        'overall_rms_enc': rollout_result['overall_enc'],
-        'overall_rms_ana': rollout_result['overall_ana'],
-        'overall_rms_phy': rollout_result['overall_phy'],
-        # Training history
-        'loss_train': train_result['loss_train'],
-        'loss_val': train_result['loss_val'],
-        'epoch_id': train_result['epoch_id'],
-        'batch_id': train_result['batch_id'],
-        'time': train_result['time'],
-        'best_epoch_idx': train_result['best_epoch_idx'],
-        'bestfit': train_result['bestfit'],
-        # Normalization (for denormalization of saved states)
         'x_mean': x_mean,
         'std_x': std_x,
         'ystd': ystd,
         'y0': y0,
-        # Trajectory metadata
-        'n_trajectories': len(rollout_result['trajectories']),
+        'encoder_modes': json.dumps(list(all_results.keys())),
     }
 
-    for i, traj in enumerate(rollout_result['trajectories']):
-        save_dict[f'traj{i}_label'] = traj['label']
-        save_dict[f'traj{i}_skipped'] = traj['skipped']
+    for mode, res in all_results.items():
+        pfx = f'{mode}_'
+        save_dict[pfx + 'grad_ok'] = res['grad_ok']
+        save_dict[pfx + 'n_params'] = res['n_params']
 
-        if traj['skipped']:
+        if not res['grad_ok']:
             continue
 
-        save_dict[f'traj{i}_starts'] = traj['starts']
-        save_dict[f'traj{i}_mean_rms_enc'] = traj['mean_rms_enc']
-        save_dict[f'traj{i}_mean_rms_ana'] = traj['mean_rms_ana']
-        save_dict[f'traj{i}_mean_rms_phy'] = traj['mean_rms_phy']
-        save_dict[f'traj{i}_n_windows'] = len(traj['windows'])
+        tr = res['train_result']
+        save_dict[pfx + 'loss_train'] = tr['loss_train']
+        save_dict[pfx + 'loss_val'] = tr['loss_val']
+        save_dict[pfx + 'epoch_id'] = tr['epoch_id']
+        save_dict[pfx + 'bestfit'] = tr['bestfit']
+        save_dict[pfx + 'best_epoch_idx'] = tr['best_epoch_idx']
 
-        for j, win in enumerate(traj['windows']):
-            p = f'traj{i}_win{j}_'
-            save_dict[p + 'y_ref'] = win['y_ref']
-            save_dict[p + 'y_enc'] = win['y_enc']
-            save_dict[p + 'y_ana'] = win['y_ana']
-            save_dict[p + 'y_phy'] = win['y_phy']
-            save_dict[p + 'x_traj_enc'] = win['x_traj_enc']
-            save_dict[p + 'x_traj_ana'] = win['x_traj_ana']
-            save_dict[p + 'x_traj_phy'] = win['x_traj_phy']
-            save_dict[p + 'x0_enc'] = win['x0_enc']
-            save_dict[p + 'x0_ana'] = win['x0_ana']
-            save_dict[p + 'x0_phy'] = win['x0_phy']
-            save_dict[p + 'rms_enc_ch'] = win['rms_enc_ch']
-            save_dict[p + 'rms_ana_ch'] = win['rms_ana_ch']
-            save_dict[p + 'rms_phy_ch'] = win['rms_phy_ch']
-            save_dict[p + 't_start'] = win['t_start']
-            save_dict[p + 'n_cmp'] = win['n_cmp']
+        ro = res['rollout_result']
+        save_dict[pfx + 'overall_rms_enc'] = ro['overall_enc']
+        save_dict[pfx + 'overall_rms_ana'] = ro['overall_ana']
+        save_dict[pfx + 'overall_rms_phy'] = ro['overall_phy']
+        save_dict[pfx + 'nf'] = ro['nf']
+        save_dict[pfx + 'n_trajectories'] = len(ro['trajectories'])
+
+        for i, traj in enumerate(ro['trajectories']):
+            tp = f'{mode}_traj{i}_'
+            save_dict[tp + 'label'] = traj['label']
+            save_dict[tp + 'skipped'] = traj['skipped']
+            if traj['skipped']:
+                continue
+            save_dict[tp + 'mean_rms_enc'] = traj['mean_rms_enc']
+            save_dict[tp + 'mean_rms_ana'] = traj['mean_rms_ana']
+            save_dict[tp + 'mean_rms_phy'] = traj['mean_rms_phy']
+            save_dict[tp + 'n_windows'] = len(traj['windows'])
+            for j, win in enumerate(traj['windows']):
+                wp = f'{mode}_traj{i}_win{j}_'
+                for key in ('y_ref', 'y_enc', 'y_ana', 'y_phy',
+                            'x0_enc', 'x0_ana', 'x0_phy',
+                            'rms_enc_ch', 'rms_ana_ch', 'rms_phy_ch'):
+                    save_dict[wp + key] = win[key]
+                save_dict[wp + 't_start'] = win['t_start']
+                save_dict[wp + 'n_cmp'] = win['n_cmp']
 
     path = os.path.join(save_dir, f'diag_encoder_results_{run_id}.npz')
     np.savez(path, **save_dict)
@@ -914,78 +1133,159 @@ def save_diagnostic_npz(train_result, rollout_result, hp, save_dir):
 # =========================================================================
 
 if __name__ == '__main__':
+    multiprocessing.set_start_method('spawn', force=True)
+
     parser = argparse.ArgumentParser(description='Encoder diagnostic for gantry SUBNET')
     parser.add_argument('--epochs', type=int, default=DEFAULT_HP['epochs'],
-                        help=f'Short training epochs (default: {DEFAULT_HP["epochs"]})')
+                        help=f'Training epochs (default: {DEFAULT_HP["epochs"]})')
+    parser.add_argument('--encoder', choices=['default', 'hybrid', 'both'],
+                        default='both', help='Encoder mode (default: both)')
+    parser.add_argument('--cpus-per-worker', type=int, default=N_CPUS_PER_WORKER,
+                        help=f'Torch threads per worker (default: {N_CPUS_PER_WORKER})')
     args = parser.parse_args()
 
     hp = DEFAULT_HP.copy()
     hp['epochs'] = args.epochs
+    cpus = args.cpus_per_worker
 
-    print(f"\nBuilding fresh model with hp: {hp}")
-    np.random.seed(SEED)
-    torch.manual_seed(SEED)
-    fit_sys = build_model(hp)
-    ic_phy = build_physics_only()
-    print(f"Physics-only baseline built (nxd={NX_PHYS})")
+    modes = ['default', 'hybrid'] if args.encoder == 'both' else [args.encoder]
 
-    # Trigger encoder initialisation (normally happens lazily in fit())
-    fit_sys.init_model(sys_data=train_data, auto_fit_norm=False)
-    for net in (fit_sys.encoder, fit_sys.hfn):
-        net.to(DTYPE_PT)
-    print(f"Encoder initialised: {sum(p.numel() for p in fit_sys.encoder.parameters())} parameters")
+    print(f"\nEncoder diagnostic — modes: {modes}, epochs: {hp['epochs']}, "
+          f"cpus/worker: {cpus}")
+    print(f"Hyperparameters: {hp}")
+    print(f"Save dir: {save_dir}")
 
-    # Diagnostic 1: gradient flow
-    grad_ok = check_gradient_flow(fit_sys, hp)
-    if not grad_ok:
-        print("\nAborting: no point training if gradients don't reach the encoder.")
-        sys.exit(1)
+    # ── Run diagnostics ────────────────────────────────────────────────
+    if len(modes) == 2:
+        print(f"\nLaunching 2 workers in parallel...")
+        for m in modes:
+            print(f"  Log: {os.path.join(save_dir, f'diag_log_{m}_{run_id}.txt')}")
+        worker_args = [(m, hp, cpus) for m in modes]
+        with multiprocessing.Pool(2) as pool:
+            results_list = pool.map(run_encoder_diagnostic, worker_args)
+    else:
+        print(f"\nRunning single encoder: {modes[0]}")
+        print(f"  Log: {os.path.join(save_dir, f'diag_log_{modes[0]}_{run_id}.txt')}")
+        results_list = [run_encoder_diagnostic((modes[0], hp, cpus))]
 
-    # Diagnostic 2: short training (captures history, loads best checkpoint)
-    np.random.seed(SEED)
-    torch.manual_seed(SEED)
-    train_result = short_training(fit_sys, hp)
-    train_ok = train_result['train_ok']
+    all_results = {r['encoder_mode']: r for r in results_list}
 
-    # Plot 1: training curves
-    plot_training_curves(train_result, save_dir)
+    # Print per-worker summary
+    print(f"\n{'='*70}")
+    print("Workers finished")
+    print(f"{'='*70}")
+    for mode, res in all_results.items():
+        elapsed = res.get('elapsed', 0)
+        m, s = int(elapsed // 60), int(elapsed % 60)
+        if res['grad_ok']:
+            best = res['train_result']['bestfit']
+            print(f"  [{mode}] {m}m{s:02d}s — best val sim-RMS: {best:.6f}")
+        else:
+            print(f"  [{mode}] {m}m{s:02d}s — GRADIENT CHECK FAILED")
 
-    # Diagnostic 3: multi-window rollouts (model already at _best)
-    rollout_result = multi_window_rollouts(fit_sys, ic_phy, hp)
+    # ── Per-encoder plots ──────────────────────────────────────────────
+    print(f"\n{'='*70}")
+    print("Generating plots...")
+    print(f"{'='*70}")
 
-    # Plots 2-5
-    plot_per_trajectory_rollouts(rollout_result, save_dir)
-    plot_per_channel_bar_chart(rollout_result, hp, save_dir)
-    plot_error_over_time(rollout_result, save_dir)
-    plot_encoder_state_inspection(rollout_result, hp, save_dir)
+    for mode, res in all_results.items():
+        if not res['grad_ok']:
+            print(f"  [{mode}] Skipping plots — gradient check failed.")
+            continue
+        plot_training_curves(res['train_result'], save_dir, prefix=mode)
+        plot_per_trajectory_rollouts(res['rollout_result'], save_dir, prefix=mode)
+        plot_per_channel_bar_chart(res['rollout_result'], hp, save_dir, prefix=mode)
+        plot_error_over_time(res['rollout_result'], save_dir, prefix=mode)
+        plot_encoder_state_inspection(res['rollout_result'], hp, save_dir, prefix=mode)
 
-    # Save all data
-    save_diagnostic_npz(train_result, rollout_result, hp, save_dir)
+    # ── Comparison plots (if both modes ran) ───────────────────────────
+    if len(all_results) >= 2:
+        print(f"\nGenerating comparison plots...")
+        plot_cmp_training(all_results, save_dir)
+        plot_cmp_rms_bar(all_results, hp, save_dir)
+        plot_cmp_error_over_time(all_results, save_dir)
 
-    # Save trained model checkpoint
-    model_path = os.path.join(save_dir, f'diag_encoder_model_{run_id}')
-    fit_sys.save_system(model_path)
-    print(f"  Saved model: {model_path}")
+    # ── Save data ──────────────────────────────────────────────────────
+    save_diagnostic_npz(all_results, hp, save_dir)
 
     plt.close('all')
 
-    # Final verdict
-    rms_enc = rollout_result['overall_enc']
-    rms_ana = rollout_result['overall_ana']
-    rms_phy = rollout_result['overall_phy']
+    # ── Verdict ────────────────────────────────────────────────────────
     print(f"\n{'='*70}")
     print("VERDICT")
     print(f"{'='*70}")
-    print(f"  Encoder (augmented):        {rms_enc:.6f}")
-    print(f"  Ana (trained ANN, ANN=0):   {rms_ana:.6f}")
-    print(f"  Physics only (no ANN):      {rms_phy:.6f}")
-    if not grad_ok:
-        print("\n  FAIL: Gradients do not reach encoder.")
-    elif not train_ok:
-        print("\n  FAIL: Encoder weights unchanged after training.")
-    elif rms_enc < rms_phy:
-        pct = (1 - rms_enc / rms_phy) * 100
-        print(f"\n  PASS: Encoder beats physics baseline by {pct:.1f}%.")
-    else:
-        print(f"\n  NOT YET: Encoder does not beat physics baseline.")
-        print(f"  This may improve with more epochs or different hyperparameters.")
+    print(f"  {'Metric':<30s}", end='')
+    for mode in all_results:
+        print(f"  {mode:>12s}", end='')
+    print(f"  {'physics':>12s}")
+
+    # Overall RMS
+    phy_rms = None
+    for mode, res in all_results.items():
+        if res['grad_ok']:
+            phy_rms = res['rollout_result']['overall_phy']
+            break
+
+    print(f"  {'Overall RMS':<30s}", end='')
+    for mode, res in all_results.items():
+        if res['grad_ok']:
+            print(f"  {res['rollout_result']['overall_enc']:12.6f}", end='')
+        else:
+            print(f"  {'GRAD FAIL':>12s}", end='')
+    print(f"  {phy_rms:12.6f}" if phy_rms else "")
+
+    # Per-channel
+    for ch, lbl in enumerate(['X1', 'X2', 'Y']):
+        print(f"  {f'  {lbl} RMS':<30s}", end='')
+        for mode, res in all_results.items():
+            if res['grad_ok']:
+                trajs = res['rollout_result']['trajectories']
+                ch_rms = np.mean([
+                    np.mean([w['rms_enc_ch'][ch] for w in t['windows']])
+                    for t in trajs if not t['skipped']
+                ])
+                print(f"  {ch_rms:12.6f}", end='')
+            else:
+                print(f"  {'—':>12s}", end='')
+        if phy_rms is not None:
+            trajs_ref = next(r['rollout_result']['trajectories']
+                             for r in all_results.values() if r['grad_ok'])
+            phy_ch = np.mean([
+                np.mean([w['rms_phy_ch'][ch] for w in t['windows']])
+                for t in trajs_ref if not t['skipped']
+            ])
+            print(f"  {phy_ch:12.6f}", end='')
+        print()
+
+    # Parameters + best epoch
+    print(f"  {'Encoder parameters':<30s}", end='')
+    for mode, res in all_results.items():
+        print(f"  {res['n_params']:>12d}", end='')
+    print(f"  {'0':>12s}")
+
+    print(f"  {'Best val sim-RMS':<30s}", end='')
+    for mode, res in all_results.items():
+        if res['grad_ok']:
+            print(f"  {res['train_result']['bestfit']:12.6f}", end='')
+        else:
+            print(f"  {'—':>12s}", end='')
+    print()
+
+    # Winner
+    valid = {m: r for m, r in all_results.items() if r['grad_ok']}
+    if len(valid) >= 2:
+        rms_vals = {m: r['rollout_result']['overall_enc'] for m, r in valid.items()}
+        best_mode = min(rms_vals, key=rms_vals.get)
+        worst_mode = max(rms_vals, key=rms_vals.get)
+        pct = (1 - rms_vals[best_mode] / rms_vals[worst_mode]) * 100
+        print(f"\n  WINNER: {best_mode} encoder ({pct:.1f}% lower RMS than {worst_mode})")
+
+    if phy_rms is not None:
+        for mode, res in valid.items():
+            enc_rms = res['rollout_result']['overall_enc']
+            if enc_rms < phy_rms:
+                pct = (1 - enc_rms / phy_rms) * 100
+                print(f"  {mode} beats physics baseline by {pct:.1f}%")
+            else:
+                pct = (enc_rms / phy_rms - 1) * 100
+                print(f"  {mode} is {pct:.1f}% worse than physics baseline")

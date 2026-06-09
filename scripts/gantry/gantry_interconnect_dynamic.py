@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from model_augmentation.utils.utils import *
-from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn
+from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn, HybridGantryEncoder
 from model_augmentation.fit_systems.interconnect import *
 from model_augmentation.fit_systems.blocks import *
 from model_augmentation.systems.gantry_ss import Cd, Dd, P
@@ -27,6 +27,7 @@ NX_PHYS = 6   # physical states: q1, q2, q3, dq1, dq2, dq3
 nu  = 3
 ny  = 3
 Y_OP = None   # None = LPV self-scheduled; float = frozen operating point [m]
+USE_HYBRID_ENCODER = True  # True = analytical physical states + learned augmented; False = default learned encoder
 SEED = 42
 
 # --- Resampling ---
@@ -45,18 +46,18 @@ save_flag = True
 run_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
 
 # --- Optuna hyperparameter search ---
-USE_OPTUNA = True
+USE_OPTUNA = False
 N_OPTUNA_TRIALS = 40
 OPTUNA_STUDY_NAME = "gantry_subnet_augmented"
 
 # --- Default hyperparameters (used when USE_OPTUNA=False) ---
 DEFAULT_HP = dict(
-    NX_ANN=4,
-    n_nodes_per_layer=128,
-    n_hidden_layers=3,
+    NX_ANN=2,
+    n_nodes_per_layer=64,
+    n_hidden_layers=2,
     nf=350,
     batch_size=4000,
-    lr=2e-4,
+    lr=5e-4,
     epochs=200,
 )
 
@@ -186,9 +187,23 @@ def build_model(hp):
     fit_sys.norm.y0   = y0
     fit_sys.norm.ystd = ystd
 
+    # Inject hybrid encoder BEFORE init_model (guard at init_nets skips default encoder)
+    if USE_HYBRID_ENCODER:
+        fit_sys.encoder = HybridGantryEncoder(
+            nb=nb, nu=nu, na=na, ny=ny, nx=nxd,
+            P_inv_T=P_inv_T, y0=y0, ystd=ystd,
+            x_mean=x_mean.flatten(), std_x=std_x.flatten(),
+            fs=fs, NX_PHYS=NX_PHYS,
+            n_nodes_per_layer=hp['n_nodes_per_layer'],
+            n_hidden_layers=hp['n_hidden_layers'],
+        ).to(DTYPE_PT)
+
     fit_sys.init_model(sys_data=train_data, auto_fit_norm=False)
-    for net in (fit_sys.encoder, fit_sys.hfn):
-        net.to(DTYPE_PT)
+    if USE_HYBRID_ENCODER:
+        fit_sys.hfn.to(DTYPE_PT)
+    else:
+        for net in (fit_sys.encoder, fit_sys.hfn):
+            net.to(DTYPE_PT)
 
     return fit_sys
 
