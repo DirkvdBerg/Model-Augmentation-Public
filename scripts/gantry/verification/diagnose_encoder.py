@@ -63,7 +63,7 @@ from model_augmentation.systems.gantry_ss import Cd, Dd, P
 # =========================================================================
 
 # Data source: 'trajectories' or 'multisine'
-MODE = 'trajectories'
+MODE = 'multisine'
 
 NX_PHYS = 6
 nu = 3
@@ -73,7 +73,7 @@ SEED = 42
 
 # --- Resampling ---
 FS_ORIG = 20000
-FS_NEW  = None          # None = no downsampling (use FS_ORIG); int = target sample rate [Hz]
+FS_NEW  = 4000          # None = no downsampling (use FS_ORIG); int = target sample rate [Hz]
 if FS_NEW is None:
     FS_NEW = FS_ORIG
 D       = FS_ORIG // FS_NEW
@@ -87,12 +87,17 @@ USE_F64  = False
 DTYPE_NP = np.float64 if USE_F64 else np.float32
 DTYPE_PT = torch.float64 if USE_F64 else torch.float32
 
+# --- Time-based horizons (converted to samples via TS_NEW) ---
+NF_SECONDS   = 0.015   # [s] rollout horizon for training loss
+NANB_SECONDS = 0.030   # [s] encoder history window
+
 # Hyperparameters for diagnostic (matches gantry_interconnect_dynamic.py)
 DEFAULT_HP = dict(
     NX_ANN=2,
     n_nodes_per_layer=64,
     n_hidden_layers=2,
-    nf=350,
+    nf=max(1, int(NF_SECONDS / TS_NEW)),
+    na_nb=max(1, int(NANB_SECONDS / TS_NEW)),
     batch_size=4000,
     lr=5e-4,
     epochs=50,
@@ -179,8 +184,8 @@ def build_model(hp, encoder_mode='default'):
     """Build SSE_Interconnect. encoder_mode: 'default' or 'hybrid'."""
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
-    na = 2 * nxd + 1
-    nb = 2 * nxd + 1
+    na = hp.get('na_nb', 2 * nxd + 1)
+    nb = hp.get('na_nb', 2 * nxd + 1)
 
     ic = Interconnect(nxd, nu, ny, debugging=False)
 
@@ -1207,10 +1212,18 @@ if __name__ == '__main__':
 
     modes = ['default', 'hybrid'] if args.encoder == 'both' else [args.encoder]
 
-    print(f"\nEncoder diagnostic — modes: {modes}, epochs: {hp['epochs']}, "
-          f"cpus/worker: {cpus}")
-    print(f"Hyperparameters: {hp}")
-    print(f"Save dir: {save_dir}")
+    print(f"\nConfiguration:")
+    print(f"  MODE:               {MODE}")
+    print(f"  NF_SECONDS:         {NF_SECONDS}")
+    print(f"  NANB_SECONDS:       {NANB_SECONDS}")
+    print(f"  Sampling rate:      {FS_NEW} Hz (D={D})")
+    print(f"  Dtype:              {'float64' if USE_F64 else 'float32'}")
+    print(f"  Encoder modes:      {modes}")
+    print(f"  CPUs/worker:        {cpus}")
+    print(f"\nHyperparameters:")
+    for k, v in hp.items():
+        print(f"  {k}: {v}")
+    print(f"\nSave dir: {save_dir}")
 
     # ── Run diagnostics ────────────────────────────────────────────────
     log_queue = multiprocessing.Queue()
