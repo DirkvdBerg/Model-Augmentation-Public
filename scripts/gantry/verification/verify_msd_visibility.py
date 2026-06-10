@@ -42,6 +42,9 @@ import matplotlib.pyplot as plt
 # Configuration (matches gantry_interconnect_dynamic.py)
 # =========================================================================
 
+# Toggle between data sources: 'trajectories' or 'multisine'
+MODE = 'multisine'
+
 NX_PHYS = 6
 nu = 3
 ny = 3
@@ -49,8 +52,8 @@ Y_OP = None
 SEED = 42
 
 FS_ORIG  = 20000
-FS_NEW   = 1000
-D        = FS_ORIG // FS_NEW   # = 20
+FS_NEW   = 4000
+D        = FS_ORIG // FS_NEW   # = 5
 TS_NEW   = 1.0 / FS_NEW
 TS_ORIG  = 1.0 / FS_ORIG
 
@@ -67,7 +70,7 @@ DTYPE_PT = torch.float32
 NPERSEG_20K = 16384   # ~1.2 Hz resolution at 20 kHz
 NPERSEG_1K  = 1024    # ~1.0 Hz resolution at 1 kHz
 
-ALL_FILES = [
+TRAJ_FILES = [
     'T1_Y_sweep_conservative.mat',
     'T2_X_sym_Y030.mat',
     'T3_X_sym_Y000.mat',
@@ -80,7 +83,39 @@ ALL_FILES = [
     'E1_X_sym_anti_Y_low_offset_sweep.mat',
 ]
 
+MULTISINE_FILES = [
+    'T1_Y_sweep_conservative.mat',
+    'T2_X_sym_Y030.mat',
+    'T3_X_sym_Y000.mat',
+    'T4_X_antisym_Y020.mat',
+    'T5_X_sym_Y_sweep.mat',
+    'T6_Y_sweep_aggressive.mat',
+    'T7_X_antisym_Y_sweep.mat',
+    'T8_X_sym_anti_Y_sweep.mat',
+    'V1_X_sym_Y_mid_sweep.mat',
+    'E1_X_sym_anti_Y_low_offset_sweep.mat',
+]
+
+# Select files and training subset based on mode
+ALL_FILES   = MULTISINE_FILES if MODE == 'multisine' else TRAJ_FILES
 TRAIN_FILES = ALL_FILES[:8]
+
+# Subdirectory under data/gantry/matlab/
+DATA_SUBDIR = 'multisine' if MODE == 'multisine' else 'trajectories'
+
+
+# =========================================================================
+# Data loading helpers
+# =========================================================================
+
+def _load_u(d):
+    """Load plant input force from .mat dict.
+
+    Multisine data saves as 'u_total'; trajectory data saves as 'u'.
+    """
+    if 'u_total' in d:
+        return d['u_total']
+    return d['u']
 
 
 # =========================================================================
@@ -103,7 +138,7 @@ def compute_normalization(traj_dir):
     train_u_list, train_y_list = [], []
     for f in TRAIN_FILES:
         d = loadmat(os.path.join(traj_dir, f), squeeze_me=True)
-        train_u_list.append(d['u'][::D].astype(DTYPE_NP))
+        train_u_list.append(_load_u(d)[::D].astype(DTYPE_NP))
         train_y_list.append(d['y'][::D].astype(DTYPE_NP))
 
     u_all = np.concatenate(train_u_list)
@@ -129,7 +164,7 @@ def compute_normalization(traj_dir):
     train_u_20k, train_y_20k = [], []
     for f in TRAIN_FILES:
         d = loadmat(os.path.join(traj_dir, f), squeeze_me=True)
-        train_u_20k.append(d['u'].astype(DTYPE_NP))
+        train_u_20k.append(_load_u(d).astype(DTYPE_NP))
         train_y_20k.append(d['y'].astype(DTYPE_NP))
 
     u_all_20k = np.concatenate(train_u_20k)
@@ -253,8 +288,8 @@ def process_trajectory(fname, norm, traj_dir, save_dir, run_id):
 
     d = loadmat(os.path.join(traj_dir, fname), squeeze_me=True)
 
-    # Raw 20 kHz data
-    u_20k = d['u'].astype(np.float64)
+    # Raw 20 kHz data (u_total for multisine, u for trajectories)
+    u_20k = _load_u(d).astype(np.float64)
     y_20k = d['y'].astype(np.float64)
 
     has_delta_a = 'delta_a' in d
@@ -315,7 +350,7 @@ def process_trajectory(fname, norm, traj_dir, save_dir, run_id):
     # Diagnostic 5: Time-domain Y residual at 1 kHz
     # ------------------------------------------------------------------
     y_1k = y_20k[::D].astype(DTYPE_NP)
-    u_1k = u_20k[::D].astype(DTYPE_NP)
+    u_1k = u_20k[::D].astype(DTYPE_NP)  # u_20k already loaded via _load_u
     N_1k = len(y_1k)
     t_1k = np.arange(N_1k) / FS_NEW
 
@@ -529,12 +564,13 @@ if __name__ == '__main__':
               or datetime.now().strftime('%Y%m%d_%H%M%S'))
 
     traj_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..',
-                            'data', 'gantry', 'matlab', 'trajectories')
+                            'data', 'gantry', 'matlab', DATA_SUBDIR)
     save_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..',
                             'simulations', 'gantry_subnet', 'msd_verification')
     os.makedirs(save_dir, exist_ok=True)
 
     print(f"MSD visibility verification (fa={FA_MSD} Hz, ma={MA_FRAC*100:.0f}% of mh)")
+    print(f"Mode: {MODE}  (data from {DATA_SUBDIR}/)")
     print(f"Decimation: {FS_ORIG} Hz -> {FS_NEW} Hz (factor {D}, no anti-alias filter)")
     print(f"Run ID: {run_id}")
 

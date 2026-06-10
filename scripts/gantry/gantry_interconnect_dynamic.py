@@ -22,6 +22,9 @@ from model_augmentation.systems.gantry_ss import Cd, Dd, P
 ## Configuration
 ## ═══════════════════════════════════════════════════════════════════════════════
 
+# --- Data source: 'trajectories' or 'multisine' ---
+MODE = 'trajectories'
+
 # --- Fixed model constants ---
 NX_PHYS = 6   # physical states: q1, q2, q3, dq1, dq2, dq3
 nu  = 3
@@ -68,9 +71,10 @@ DEFAULT_HP = dict(
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
+DATA_SUBDIR = 'multisine' if MODE == 'multisine' else 'trajectories'
 TRAJ_DIR = os.path.join(os.path.dirname(__file__), '..', '..',
-                        'data', 'gantry', 'matlab', 'trajectories')
-print(f'Trajectory dir: {TRAJ_DIR}')
+                        'data', 'gantry', 'matlab', DATA_SUBDIR)
+print(f'Data dir ({MODE}): {TRAJ_DIR}')
 
 TRAIN_FILES = [
     'T1_Y_sweep_conservative.mat',
@@ -85,10 +89,16 @@ TRAIN_FILES = [
 VAL_FILE  = 'V1_X_sym_Y_mid_sweep.mat'
 TEST_FILE = 'E1_X_sym_anti_Y_low_offset_sweep.mat'
 
+def _load_u(d):
+    """Return plant input: 'u_total' for multisine data, 'u' for trajectory data."""
+    if 'u_total' in d:
+        return d['u_total']
+    return d['u']
+
 def load_traj(filename):
     d = loadmat(os.path.join(TRAJ_DIR, filename), squeeze_me=True)
     return deepSI.System_data(
-        u=d['u'][::D].astype(DTYPE_NP),
+        u=_load_u(d)[::D].astype(DTYPE_NP),
         y=d['y'][::D].astype(DTYPE_NP),
         dt=TS_NEW,
     )
