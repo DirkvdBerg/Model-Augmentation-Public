@@ -753,84 +753,36 @@ Next meeting: April 9, afternoon (online or on campus), supervisor preference co
 
 ---
 
-## Step 3c: Training Speed Optimization — ATTEMPTED, REVERTED (2026-04-18)
-
-**Baseline**: ~90 s/epoch on Quadro P2000 (CUDA CC 6.1), float64 physics, bptt_mode='full'.
-
-**Result**: Both phases attempted. Neither produced a net speedup. All Python file
-changes reverted. Documentation of why is preserved in `docs/decisions.md` for future
-reference.
+_Step 3c (speed optimization, reverted) and Task 3b.4b (multi-traj loss fix, done) archived to `archive/sessions/2026-06-10-todo.md`._
 
 ---
 
-### What was tried and why it failed
+## State Recovery Diagnostic — gantry_interconnect_dynamic.py (2026-06-10)
 
-**Phase 1 — GMatrix → (15,15) tensor refactor** (D-040 in decisions.md)
-- Implemented across all 7 affected files. All verification checks passed.
-- Rationale: a single contiguous (15,15) tensor allows TorchInductor to load the full
-  G block into GPU shared memory and fuse all four RK4 matrix products into one Triton
-  kernel — lower HBM bandwidth, higher arithmetic intensity.
-- **Why it didn't help**: the benefit is only realised with TorchInductor kernel fusion
-  (Phase 2). Without that, PyTorch still launches individual CUDA kernels per matmul
-  regardless of tensor layout. Phase 1 is a prerequisite for Phase 2, not a standalone
-  speedup. Measured result: ~101 s/epoch vs baseline ~90 s/epoch (slight regression,
-  likely measurement noise + overhead from slicing instead of pre-stored submatrix buffers).
-- **Reverted**: all Python files restored to pre-Phase-1 state.
+**Goal**: Determine whether the encoder's poor recovery of theta/velocities is (a) basis
+rotation (information present, recoverable by a linear map) or (b) information genuinely
+absent from the encoder state. Decision: D-053.
 
-**Phase 2 — @torch.compile on rk4_step** (D-040 in decisions.md)
-- Added `@torch.compile(fullgraph=True, dynamic=False)` to `rk4_step`.
-- Hit two hardware/software walls:
-  1. **GPU too old**: Quadro P2000 is CUDA CC 6.1; Triton requires CC ≥ 7.0 (Volta+).
-     `backend='inductor'` fails: *"Found Quadro P2000 which is too old"*.
-  2. **No MSVC**: `cl.exe` not installed; TorchInductor CPU path also blocked.
-- Tried `backend='aot_eager'` as fallback: eliminates Python dispatch overhead only,
-  no kernel fusion. Negligible gain on a GPU-bound workload.
-- Additional issue discovered: `rk4_step` is called in both gradient (training) and
-  no-grad (eval) contexts, causing `GLOBAL_STATE changed: grad_mode` recompilations
-  that exhaust the default cache limit. Fix when re-enabling: add
-  `options={"cache_size_limit": 4}` to the decorator.
-- **P2.4 (torch.func.scan)**: also blocked — `torch.func.scan` not present in
-  PyTorch 2.5.1 on this install.
-- **Reverted**: decorator removed from `rk4_step`.
+**Context**: Code review (2026-06-10) found one hard bug (hybrid encoder one-sample history
+misalignment, `na_right=0` default) and otherwise verified physics, normalization, wiring,
+and data loading as correct. The default learned encoder's poor state recovery is suspected
+to be an identifiability artifact: the ANN block can correct all 8 derivative channels, so
+the loss does not pin states 3:6 to physical velocities; theta has near-zero output weight.
 
-**Float32 physics** (D-041 in decisions.md)
-- Not attempted. Identified as a potential future experiment: Quadro P2000 has 1/32
-  fp64-to-fp32 throughput (Pascal), so float32 could give a large speedup.
-- **Not safe without validation**: the polynomial loop solve N(Y)/d(Y) uses small
-  coefficients and scalar division; float32 precision (~1e-7) may not be sufficient
-  over 4000 RK4 steps. Must compare param_table() float32 vs float64 before enabling.
-- See D-041 for the exact validation procedure.
+- [ ] Add `state_recovery_diagnostic(fit_sys, hp, rid)` after `evaluate_and_save` in
+      `scripts/gantry/gantry_interconnect_dynamic.py` (appended, skeleton preserved)
+- [ ] Call it after each `evaluate_and_save` call in main (both Optuna and single-run paths)
+- [ ] Reports per channel: R2_raw (x_hat[:, :6] as-is), R2_linmap (best OLS map), R2_raw_lag1
+      (against x_true(k-1), detects one-sample lag)
+- [ ] Verify core math with synthetic test (identity encoder -> R2~1; rotated -> raw low, linmap high)
 
----
+**Interpretation key**: R2_lin ~ 1 & R2_raw low -> rotated basis (fix: pin basis, e.g. mask ANN
+corrections on physical rows or use fixed hybrid encoder). R2_lin low -> information absent
+(observability or training config). R2_raw_lag1 > R2_raw -> encoder aligned to k-1.
 
-### When to revisit
-
-| Optimization | Unblocked by |
-|---|---|
-| Phase 1 + Phase 2 (torch.compile) | GPU with CUDA CC ≥ 7.0 (Volta/Turing/Ampere) |
-| torch.func.scan | PyTorch upgrade that ships the API |
-| Float32 physics | Controlled validation experiment (D-041) |
-
-**Current state**: code is back to pre-Step-3c state. The ~90 s/epoch baseline stands.
-
-_(Detailed Phase 1 and Phase 2 task lists removed — implementation was attempted and
-reverted. Full rationale in decisions.md D-040 and D-041.)_
-
----
-
-## Task 3b.4b — Fix multi-trajectory loss function (D-044) ✅
-
-**Decision**: D-044  
-**File**: `lpv_lfr_baseline/scripts/train_param_recovery.py`  
-**Implemented**: 2026-04-21
-
-- [x] `CHANNEL_MASKS` dict — binary masks per trajectory
-- [x] `_get_or_compute_sigma` rewritten — per-trajectory per-channel sigma from active samples only (SIGMA_CACHE_VERSION=2)
-- [x] Sigma display table in Step 1 output
-- [x] `sample_plan` captured (not discarded) in training loop
-- [x] Per-segment loss loop with mask + sigma replacing 2-line global MSE
-- [x] `_aggregate_normalized_rmse_baseline` updated to use per-trajectory sigma + mask
-- [x] Verified: sigma table correct (dormant = 1.0 m, active = physically meaningful); exit 0
+**Known open issue (separate)**: hybrid encoder off-by-one — fix is `na_right=1` in
+`SSE_Interconnect` + encoder sized `na+1`. Not implemented yet; diagnostic will expose it
+via the lag column.
 
 ---
 
