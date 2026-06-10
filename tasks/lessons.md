@@ -123,6 +123,15 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
+### Rule: Fix bugs where the incorrect assumption lives, not upstream
+
+**Trigger**: When a class or function has a bug caused by a wrong assumption about its input convention
+**Rule**: Fix the class/function itself, not the caller or the data pipeline. If a class assumes `input[-1]` means "current time" but the framework convention is "previous time," the bug is the class's wrong assumption, not the framework's convention. Do not work around it by changing how data is passed; fix the assumption at the source.
+**Why**: Placed the hybrid encoder off-by-one fix in the training script (changing `na_right` and encoder constructor args) instead of in `HybridGantryEncoder.forward()`. User correctly pointed out: the deepSI convention is well-defined and Jan's encoder works with it; the encoder class was written with a wrong assumption about what `ypast[:, -1]` means. The fix belongs in the class.
+**How to apply**: When diagnosing a bug, ask: "which component made the incorrect assumption?" Fix that component. Do not change the interface or callers to accommodate the wrong assumption.
+
+---
+
 ### Rule: Verification/diagnostic tools must not require the thing they are verifying
 **Trigger**: When building a test, diagnostic, or verification script for a component or pipeline
 **Rule**: The diagnostic must be able to run independently of the fully completed pipeline. If the purpose is to verify component X works, the script must construct X from scratch and test it, not require a successful run of the full pipeline that includes X. For example: an encoder diagnostic must build and briefly train its own model, not load a fully trained model from a prior multi-hour run.

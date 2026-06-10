@@ -212,14 +212,23 @@ class HybridGantryEncoder(nn.Module):
         # Un-normalize y: ypast is (batch, na, ny) in normalized coords
         y_denorm = ypast * self.ystd + self.y0                  # (batch, na, ny)
 
-        # Positions: q = y @ inv(P)  — THEORY: measurement equation q = P^{-1} y
-        pos_last = y_denorm[:, -1, :] @ self.P_inv              # (batch, 3)
-        pos_prev = y_denorm[:, -2, :] @ self.P_inv              # (batch, 3)
+        # deepSI convention (na_right=0): ypast ends at y[k-1], not y[k].
+        # The encoder must produce x(k), so we extrapolate one step forward.
+        # THEORY: measurement equation q = P^{-1} y (row-vector form: q = y @ inv(P))
+        pos_km1 = y_denorm[:, -1, :] @ self.P_inv              # q(k-1)
+        pos_km2 = y_denorm[:, -2, :] @ self.P_inv              # q(k-2)
+        pos_km3 = y_denorm[:, -3, :] @ self.P_inv              # q(k-3)
 
-        # Velocities: backward finite difference — HEURISTIC: first-order approx, na >= 21 ensures history
-        vel = (pos_last - pos_prev) * self.fs                   # (batch, 3)
+        # HEURISTIC: linear extrapolation to q(k) and v(k), both O(Ts^2) accurate.
+        # v(k-1) = (q(k-1) - q(k-2)) * fs, v(k-2) = (q(k-2) - q(k-3)) * fs
+        # q(k) = 2*q(k-1) - q(k-2)         (linear extrapolation of position)
+        # v(k) = 2*v(k-1) - v(k-2)         (linear extrapolation of velocity)
+        vel_km1 = (pos_km1 - pos_km2) * self.fs
+        vel_km2 = (pos_km2 - pos_km3) * self.fs
+        pos = 2 * pos_km1 - pos_km2                            # q(k) extrapolated
+        vel = 2 * vel_km1 - vel_km2                            # v(k) extrapolated
 
-        x_phys = torch.cat([pos_last, vel], dim=1)              # (batch, 6)
+        x_phys = torch.cat([pos, vel], dim=1)                  # (batch, 6)
         x_phys_norm = ((x_phys - self.x_mean) / self.std_x).detach()  # (batch, 6), no grad
 
         # ── Augmented states (learned) ──
