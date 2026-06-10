@@ -1226,7 +1226,7 @@ if __name__ == '__main__':
     print(f"\nSave dir: {save_dir}")
 
     # ── Run diagnostics ────────────────────────────────────────────────
-    log_queue = multiprocessing.Queue()
+    log_queue = multiprocessing.Manager().Queue()
     listener = threading.Thread(target=queue_listener, args=(log_queue,), daemon=True)
     listener.start()
 
