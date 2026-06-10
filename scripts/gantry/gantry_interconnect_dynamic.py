@@ -23,19 +23,19 @@ from model_augmentation.systems.gantry_ss import Cd, Dd, P
 ## ═══════════════════════════════════════════════════════════════════════════════
 
 # --- Data source: 'trajectories' or 'multisine' ---
-MODE = 'trajectories'
+MODE = 'multisine'
 
 # --- Fixed model constants ---
 NX_PHYS = 6   # physical states: q1, q2, q3, dq1, dq2, dq3
 nu  = 3
 ny  = 3
 Y_OP = None   # None = LPV self-scheduled; float = frozen operating point [m]
-USE_HYBRID_ENCODER = True  # True = analytical physical states + learned augmented; False = default learned encoder
+USE_HYBRID_ENCODER = False  # True = analytical physical states + learned augmented; False = default learned encoder
 SEED = 42
 
 # --- Resampling ---
 FS_ORIG = 20000
-FS_NEW  = None          # None = no downsampling (use FS_ORIG); int = target sample rate [Hz]
+FS_NEW  = 4000          # None = no downsampling (use FS_ORIG); int = target sample rate [Hz]
 if FS_NEW is None:
     FS_NEW = FS_ORIG
 D       = FS_ORIG // FS_NEW
@@ -56,8 +56,8 @@ N_OPTUNA_TRIALS = 40
 OPTUNA_STUDY_NAME = "gantry_subnet_augmented"
 
 # --- Time-based horizons (converted to samples via TS_NEW) ---
-NF_SECONDS   = 0.350   # [s] rollout horizon for training loss
-NANB_SECONDS = 0.017   # [s] encoder history window (17 ms ~ 17 samples @ 1 kHz)
+NF_SECONDS   = 0.015   # [s] rollout horizon for training loss
+NANB_SECONDS = 0.030   # [s] encoder history window (17 ms ~ 17 samples @ 1 kHz)
 
 # --- Default hyperparameters (used when USE_OPTUNA=False) ---
 DEFAULT_HP = dict(
@@ -512,6 +512,14 @@ if USE_OPTUNA:
 
 else:
     # ── Single run with default hyperparameters ─────────────────────────────
+    print(f"\nConfiguration:")
+    print(f"  MODE:               {MODE}")
+    print(f"  NF_SECONDS:         {NF_SECONDS}")
+    print(f"  NANB_SECONDS:       {NANB_SECONDS}")
+    print(f"  Sampling rate:      {FS_NEW} Hz (D={D})")
+    print(f"  Dtype:              {'float64' if USE_F64 else 'float32'}")
+    print(f"  USE_OPTUNA:         {USE_OPTUNA}")
+    print(f"  USE_HYBRID_ENCODER: {USE_HYBRID_ENCODER}")
     print(f"\nHyperparameters:")
     for k, v in DEFAULT_HP.items():
         print(f"  {k}: {v}")
