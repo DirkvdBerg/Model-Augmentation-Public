@@ -35,9 +35,11 @@ SEED = 42
 
 # --- Resampling ---
 FS_ORIG = 20000
-FS_NEW  = 1000          # 1 kHz - Nyquist safe for 150 Hz MSD resonance
-D       = FS_ORIG // FS_NEW   # = 20
-TS_NEW  = 1.0 / FS_NEW        # = 0.001 s
+FS_NEW  = None          # None = no downsampling (use FS_ORIG); int = target sample rate [Hz]
+if FS_NEW is None:
+    FS_NEW = FS_ORIG
+D       = FS_ORIG // FS_NEW
+TS_NEW  = 1.0 / FS_NEW
 
 # --- Dtype ---
 USE_F64  = False
@@ -53,12 +55,17 @@ USE_OPTUNA = False
 N_OPTUNA_TRIALS = 40
 OPTUNA_STUDY_NAME = "gantry_subnet_augmented"
 
+# --- Time-based horizons (converted to samples via TS_NEW) ---
+NF_SECONDS   = 0.350   # [s] rollout horizon for training loss
+NANB_SECONDS = 0.017   # [s] encoder history window (17 ms ~ 17 samples @ 1 kHz)
+
 # --- Default hyperparameters (used when USE_OPTUNA=False) ---
 DEFAULT_HP = dict(
     NX_ANN=2,
     n_nodes_per_layer=64,
     n_hidden_layers=2,
-    nf=350,
+    nf=max(1, int(NF_SECONDS / TS_NEW)),
+    na_nb=max(1, int(NANB_SECONDS / TS_NEW)),
     batch_size=4000,
     lr=5e-4,
     epochs=200,
