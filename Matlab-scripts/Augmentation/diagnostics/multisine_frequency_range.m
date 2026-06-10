@@ -141,8 +141,8 @@ fn_lo = min(osc_fn);   bw_lo = max(osc_bw(osc_fn == fn_lo));
 fn_hi = max(osc_fn);   bw_hi = max(osc_bw(osc_fn == fn_hi));
 z_hi  = max(osc_z(osc_fn == fn_hi));
 
-% f_low: one BW below lowest oscillatory mode
-f_low  = max(1, floor(fn_lo - bw_lo));
+% f_low: fundamental frequency of 1-second period multisine
+f_low  = 1;
 
 % f_high: 2.5 * half-power BW above highest mode = fn*(1 + 5*zeta).
 % At this point the 2nd-order resonance contribution is negligible.
