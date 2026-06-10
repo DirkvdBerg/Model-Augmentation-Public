@@ -30,7 +30,8 @@ NX_PHYS = 6   # physical states: q1, q2, q3, dq1, dq2, dq3
 nu  = 3
 ny  = 3
 Y_OP = None   # None = LPV self-scheduled; float = frozen operating point [m]
-USE_HYBRID_ENCODER = False  # True = analytical physical states + learned augmented; False = default learned encoder
+USE_HYBRID_ENCODER = True  # True = analytical physical states + learned augmented; False = default learned encoder
+ANN_ACTIVATION = 'tanh'    # 'tanh' = nonlinear ANN (default); 'linear' = Identity activation (Jan's ECC setup)
 SEED = 42
 
 # --- Resampling ---
@@ -56,18 +57,18 @@ N_OPTUNA_TRIALS = 40
 OPTUNA_STUDY_NAME = "gantry_subnet_augmented"
 
 # --- Time-based horizons (converted to samples via TS_NEW) ---
-NF_SECONDS   = 0.015   # [s] rollout horizon for training loss
-NANB_SECONDS = 0.030   # [s] encoder history window (17 ms ~ 17 samples @ 1 kHz)
+NF_SECONDS   = 0.300   # [s] rollout horizon (~5× MSD settling time τ≈64ms)
+NANB_SECONDS = 0.100   # [s] encoder history window (~1.5× MSD settling time)
 
 # --- Default hyperparameters (used when USE_OPTUNA=False) ---
 DEFAULT_HP = dict(
     NX_ANN=2,
-    n_nodes_per_layer=64,
+    n_nodes_per_layer=8,
     n_hidden_layers=2,
     nf=max(1, int(NF_SECONDS / TS_NEW)),
     na_nb=max(1, int(NANB_SECONDS / TS_NEW)),
-    batch_size=4000,
-    lr=5e-4,
+    batch_size=256,
+    lr=1e-4,
     epochs=200,
 )
 
@@ -174,12 +175,13 @@ def build_model(hp):
     ic.add_block(phy_block)
     ic.add_block(out_block)
 
+    _act = torch.nn.Identity if ANN_ACTIVATION == 'linear' else torch.nn.Tanh
     ann_block = Static_ANN_Block(
         nz=nxd + nu, nw=nxd,
         n_nodes_per_layer=hp['n_nodes_per_layer'],
         n_hidden_layers=hp['n_hidden_layers'],
         net=zero_init_feed_forward_nn,
-        activation=torch.nn.Tanh,
+        activation=_act,
     )
     ic.add_block(ann_block)
 
@@ -384,6 +386,89 @@ def evaluate_and_save(fit_sys, hp, rid):
 
 
 ## ═══════════════════════════════════════════════════════════════════════════════
+## state_recovery_diagnostic (D-053)
+## ═══════════════════════════════════════════════════════════════════════════════
+
+def state_recovery_diagnostic(fit_sys, hp, rid, max_windows=2000):
+    """Linear-map state recovery test: basis rotation vs lost information.
+
+    Compares encoder state estimates x_hat(k) on the validation set against
+    physical states reconstructed from measurements:
+      R2_raw      x_hat[:, :6] read directly as normalized physical states
+      R2_linmap   best least-squares linear map x_true ~ x_hat @ W + b
+      R2_raw_lag1 raw comparison against x_true(k-1) (detects one-sample lag)
+    Interpretation:
+      R2_linmap ~ 1, R2_raw low  -> information present, basis rotated
+      R2_linmap low              -> information absent from encoder state
+      R2_raw_lag1 > R2_raw       -> encoder aligned to k-1 (history off-by-one)
+    """
+    NX_ANN = hp['NX_ANN']
+    nxd = NX_PHYS + NX_ANN
+    na = hp.get('na_nb', 2 * nxd + 1)
+    nb = hp.get('na_nb', 2 * nxd + 1)
+    fit_sys.eval()
+
+    # True physical states reconstructed from val measurements
+    # (same construction as the normalization statistics above)
+    pos_logical = (P_inv_T @ val_data.y.T).T                  # (N,3) THEORY: q = inv(P^T) y (measurement equation)
+    vel_logical = np.diff(pos_logical, axis=0) * fs           # HEURISTIC: backward FD, exact only for noise-free data
+    vel_logical = np.vstack([vel_logical[:1], vel_logical])   # (N,3)
+    x_true = np.hstack([pos_logical, vel_logical]).astype(DTYPE_NP)          # (N,6)
+    x_true_norm = (x_true - x_mean.flatten()) / std_x.flatten()              # (N,6)
+
+    # Encoder estimates. deepSI hist convention (na_right=0): ypast = y[k-na:k],
+    # upast = u[k-nb:k]; the encoder output initializes the state at time k.
+    val_norm = fit_sys.norm.transform(val_data)
+    yn = np.ascontiguousarray(val_norm.y, dtype=DTYPE_NP)
+    un = np.ascontiguousarray(val_norm.u, dtype=DTYPE_NP)
+    N = len(yn)
+    k0 = max(na, nb) + 1                                      # +1 so k-1 exists for the lag column
+    stride = max(1, (N - k0) // max_windows)                  # HEURISTIC: cap window count to bound memory
+    k_ix = np.arange(k0, N, stride)
+    ypast = np.stack([yn[k - na:k] for k in k_ix])            # (Nk, na, ny)
+    upast = np.stack([un[k - nb:k] for k in k_ix])            # (Nk, nb, nu)
+    with torch.no_grad():
+        x_hat = fit_sys.encoder(
+            torch.tensor(upast, dtype=DTYPE_PT),
+            torch.tensor(ypast, dtype=DTYPE_PT),
+        ).numpy()                                             # (Nk, nxd)
+
+    xt   = x_true_norm[k_ix]                                  # x_true(k)
+    xt_l = x_true_norm[k_ix - 1]                              # x_true(k-1)
+
+    def r2_per_channel(ref, est):
+        # THEORY: coefficient of determination R^2 = 1 - SS_res/SS_tot (standard OLS regression)
+        ss_res = ((ref - est) ** 2).sum(axis=0)
+        ss_tot = ((ref - ref.mean(axis=0)) ** 2).sum(axis=0)
+        return 1.0 - ss_res / ss_tot
+
+    r2_raw = r2_per_channel(xt,   x_hat[:, :NX_PHYS])
+    r2_lag = r2_per_channel(xt_l, x_hat[:, :NX_PHYS])
+
+    # Best affine map x_true ~ [x_hat, 1] @ W — THEORY: ordinary least squares
+    A = np.hstack([x_hat, np.ones((len(x_hat), 1), dtype=DTYPE_NP)])
+    W, *_ = np.linalg.lstsq(A, xt, rcond=None)
+    r2_lin = r2_per_channel(xt, A @ W)
+
+    labels = ['q1 ', 'q2 ', 'q3 ', 'dq1', 'dq2', 'dq3']
+    print('\n=== State recovery diagnostic (D-053) ===')
+    print(f'  {len(k_ix)} windows (stride {stride}), na=nb={na}, '
+          f'encoder={"hybrid" if USE_HYBRID_ENCODER else "default"}')
+    print('  channel   R2_raw      R2_linmap   R2_raw_lag1')
+    for ch in range(NX_PHYS):
+        print(f'  {labels[ch]}     {r2_raw[ch]:+10.4f}  {r2_lin[ch]:+10.4f}  {r2_lag[ch]:+10.4f}')
+    print('  R2_linmap ~ 1 & R2_raw low -> basis rotation;')
+    print('  R2_linmap low              -> information absent from encoder state;')
+    print('  R2_raw_lag1 > R2_raw       -> encoder aligned to k-1 (one-sample lag)')
+
+    if save_flag:
+        np.savez(os.path.join(save_dir, f'gantry_state_recovery_{rid}.npz'),
+                 r2_raw=r2_raw, r2_lin=r2_lin, r2_lag=r2_lag,
+                 W=W, k_ix=k_ix, x_hat=x_hat, x_true_norm=xt)
+        print(f'Saved state recovery diagnostic: gantry_state_recovery_{rid}.npz')
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
 ## Optuna objective
 ## ═══════════════════════════════════════════════════════════════════════════════
 
@@ -509,6 +594,7 @@ if USE_OPTUNA:
     fit_sys = build_model(best_hp)
     train_model(fit_sys, best_hp)
     evaluate_and_save(fit_sys, best_hp, f"optuna_best_{run_id}")
+    state_recovery_diagnostic(fit_sys, best_hp, f"optuna_best_{run_id}")
 
 else:
     # ── Single run with default hyperparameters ─────────────────────────────
@@ -520,6 +606,7 @@ else:
     print(f"  Dtype:              {'float64' if USE_F64 else 'float32'}")
     print(f"  USE_OPTUNA:         {USE_OPTUNA}")
     print(f"  USE_HYBRID_ENCODER: {USE_HYBRID_ENCODER}")
+    print(f"  ANN_ACTIVATION:     {ANN_ACTIVATION}")
     print(f"\nHyperparameters:")
     for k, v in DEFAULT_HP.items():
         print(f"  {k}: {v}")
@@ -530,3 +617,4 @@ else:
     bestfit = train_model(fit_sys, DEFAULT_HP)
     print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
     evaluate_and_save(fit_sys, DEFAULT_HP, run_id)
+    state_recovery_diagnostic(fit_sys, DEFAULT_HP, run_id)
