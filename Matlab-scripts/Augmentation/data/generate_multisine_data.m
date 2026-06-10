@@ -1,6 +1,9 @@
 % generate_multisine_data.m
-% Generates trajectory + multisine identification data for the AUGMENTED
-% gantry system (baseline + hidden MSD on payload).
+% Generates trajectory + multisine identification data for the gantry system.
+%
+% Toggle USE_MSD (below) to switch between:
+%   true  — augmented system (baseline + hidden MSD on payload)
+%   false — baseline system (rigid payload, no MSD)
 %
 % Same motion profiles as generate_trajectory_data_without_multisine.m
 % (T1-T8, V1, E1) with additive multisine feedforward force injection:
@@ -13,7 +16,9 @@
 %   1. Amplitude sweep via lsim (superposition on linear closed-loop)
 %   2. Simulink simulation WITH multisine at selected amplitude
 %   3. Simulink simulation WITHOUT multisine (informativeness baseline)
+%      [MSD mode only]
 %   4. Informativeness check: residual spectrum, delta_a comparison
+%      [MSD mode only]
 %
 % Independent multisine realizations per split (train/val/test).
 %
@@ -23,7 +28,7 @@
 %   f_sim        (T x 3)  multisine feedforward force                  [N]
 %   y            (T x 3)  plant output [X1, X2, Y]                    [m]
 %   x_logical    (T x 6)  [q_logical, qdot_logical]                   [m, m/s]
-%   delta_a      (T x 1)  hidden MSD relative displacement            [m]
+%   delta_a      (T x 1)  hidden MSD relative displacement [MSD only] [m]
 %   r_sim        (T x 3)  reference [X1_ref, X2_ref, Y_ref]           [m]
 %   Y_trajectory (T x 1)  Y(t) = y(:,3)                               [m]
 %   t_sim        (T x 1)  time vector                                  [s]
@@ -37,6 +42,13 @@
 
 clear; clc; close all;
 
+%% ── MODE TOGGLE ─────────────────────────────────────────────────────────
+USE_MSD = true;   % true = augmented (baseline + hidden MSD)
+                   % false = baseline (rigid payload, no MSD)
+MA_FRAC = 0.50;    % mass fraction of hidden MSD (only used when USE_MSD = true)
+                   % 0.10 = default (saves to multisine/)
+                   % 0.50 = heavy MSD  (saves to multisine/m50/)
+
 addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
 addpath(fullfile(pwd, 'Matlab-scripts', 'Augmentation'))
 addpath(fullfile(pwd, 'Matlab-scripts', 'Augmentation', 'diagnostics'))
@@ -48,16 +60,23 @@ cg1=14.5; cg2=20.3; cy=10; cb1=9; cb2=9;
 kb1=1987.5; kb2=1987.5; Lb=0.725; Lh=0.25; d=0.1;
 cc1=16.8; cc2=18.35; ccy=11.6;  % Coulomb (disabled in model but expected in workspace)
 
-% ── Hidden MSD parameters
-ma_frac  = 0.10;
-ma       = ma_frac * mh;           % 1.01 kg
-mh_rigid = mh - ma;               % 9.09 kg
-L0       = 0.10;                   % equilibrium offset [m]
-fa       = 150;                    % MSD natural frequency [Hz]
-ka       = ma * (2*pi*fa)^2;      % MSD spring stiffness [N/m]
-zeta_a   = 0.05;                   % damping ratio
-ca       = 2 * zeta_a * sqrt(ka * ma);  % MSD damper [Ns/m]
-mh_original = mh;
+% ── Hidden MSD parameters (only used when USE_MSD = true)
+if USE_MSD
+    ma_frac  = MA_FRAC;
+    ma       = ma_frac * mh;           % ma_frac * 10.1 kg
+    mh_rigid = mh - ma;               % 9.09 kg
+    L0       = 0.10;                   % equilibrium offset [m]
+    fa       = 150;                    % MSD natural frequency [Hz]
+    ka       = ma * (2*pi*fa)^2;      % MSD spring stiffness [N/m]
+    zeta_a   = 0.05;                   % damping ratio
+    ca       = 2 * zeta_a * sqrt(ka * ma);  % MSD damper [Ns/m]
+    mh_original = mh;
+    mdl = 'gantry_additional_state_2025a';
+    fprintf('MODE: augmented (baseline + MSD, fa=%d Hz, ma=%.2f kg)\n', fa, ma);
+else
+    mdl = 'gantry_2025a';
+    fprintf('MODE: baseline (rigid payload, mh=%.1f kg)\n', mh);
+end
 
 % ── System matrices & controller
 C_damp = [cg1+cg2,        (cg1-cg2)*Lb/2,            0;
@@ -65,7 +84,7 @@ C_damp = [cg1+cg2,        (cg1-cg2)*Lb/2,            0;
           0,               0,                          cy];
 K  = [0,0,0; 0,kb1+kb2,0; 0,0,0];
 n  = 3;  P = [1,1,0; Lb/2,-Lb/2,0; 0,0,1];
-fs = 20e3;  ts = 1/fs;  fbw = 100;  mdl = 'gantry_additional_state_2025a';
+fs = 20e3;  ts = 1/fs;  fbw = 100;
 N_period = round(fs);       % 20000 samples = 1 s period
 n_hold   = round(0.5/ts);  % 0.5 s settle hold at start and end
 
@@ -87,7 +106,16 @@ f_high = 200;  % [Hz] covers MSD resonance at ~150 Hz + margin
 amp_grid = [1, 2, 5, 10, 20, 50, 100, 200, 400];
 
 %% 1. Cached multisines (independent realization per split)
-out_dir = fullfile(pwd, 'data', 'gantry', 'matlab', 'multisine');
+if USE_MSD
+    if ma_frac == 0.10
+        out_dir = fullfile(pwd, 'data', 'gantry', 'matlab', 'multisine');
+    else
+        out_dir = fullfile(pwd, 'data', 'gantry', 'matlab', 'multisine', ...
+                           sprintf('m%d', round(ma_frac*100)));
+    end
+else
+    out_dir = fullfile(pwd, 'data', 'gantry', 'matlab', 'multisine', 'baseline');
+end
 if ~exist(out_dir, 'dir'), mkdir(out_dir); end
 
 n_cand = 200;
@@ -214,13 +242,21 @@ for i = 1:numel(trajs)
     f = amp_max * f_tiled;
     r = r_traj;  t = t_traj;  Y = Y_op;
 
-    mh = mh_rigid;
+    if USE_MSD
+        mh = mh_rigid;
+    end
     fprintf('  Simulating WITH multisine (%.2f s, %d samples)...\n', t(end), N);
     sim(mdl, t(end));
-    mh = mh_rigid + ma;
+    if USE_MSD
+        mh = mh_rigid + ma;
+    end
 
     % Reconstruct force decomposition
-    [t_sim, r_sim, f_ms, q_with, da_with] = resample_sim(q_aug, delta_a, r_traj, f, t_traj);
+    if USE_MSD
+        [t_sim, r_sim, f_ms, q_with, da_with] = resample_sim(q_aug, delta_a, r_traj, f, t_traj);
+    else
+        [t_sim, r_sim, f_ms, q_with, ~] = resample_sim(q1, zeros(size(q1,1),1), r_traj, f, t_traj);
+    end
     u_fb_with    = lsim(Cfb_ss, r_sim - q_with);
     u_total_with = u_fb_with + f_ms;
 
@@ -231,37 +267,39 @@ for i = 1:numel(trajs)
         warning('%s: WITH multisine force validation failed.', sp.id);
     end
 
-    % ── 3e. Simulink simulation WITHOUT multisine (informativeness baseline)
-    f = zeros(N, 3);
+    if USE_MSD
+        % ── 3e. Simulink simulation WITHOUT multisine (informativeness baseline)
+        f = zeros(N, 3);
 
-    mh = mh_rigid;
-    fprintf('  Simulating WITHOUT multisine...\n');
-    sim(mdl, t(end));
-    mh = mh_rigid + ma;
+        mh = mh_rigid;
+        fprintf('  Simulating WITHOUT multisine...\n');
+        sim(mdl, t(end));
+        mh = mh_rigid + ma;
 
-    [~, ~, ~, q_without, da_without] = resample_sim(q_aug, delta_a, r_traj, f, t_traj);
+        [~, ~, ~, q_without, da_without] = resample_sim(q_aug, delta_a, r_traj, f, t_traj);
 
-    % ── 3f. Informativeness check
-    residual = q_with - q_without;
-    da_rms_with    = rms(double(da_with));
-    da_rms_without = rms(double(da_without));
+        % ── 3f. Informativeness check
+        residual = q_with - q_without;
+        da_rms_with    = rms(double(da_with));
+        da_rms_without = rms(double(da_without));
 
-    [psd_res, f_psd] = pwelch(residual(:,3), hanning(N_period), N_period/2, N_period, fs);
-    idx_150 = find(f_psd >= 140 & f_psd <= 160);
-    psd_peak_150 = max(psd_res(idx_150));
+        [psd_res, f_psd] = pwelch(residual(:,3), hanning(N_period), N_period/2, N_period, fs);
+        idx_150 = find(f_psd >= 140 & f_psd <= 160);
+        psd_peak_150 = max(psd_res(idx_150));
 
-    fprintf('  Informativeness:\n');
-    fprintf('    delta_a RMS: with = %.4e m,  without = %.4e m,  ratio = %.1fx\n', ...
-        da_rms_with, da_rms_without, da_rms_with / da_rms_without);
-    fprintf('    residual RMS (Y)  = %.4e m\n', rms(residual(:,3)));
-    fprintf('    PSD peak @150 Hz  = %.4e m^2/Hz\n', psd_peak_150);
-    fprintf('  Force budget usage (with multisine):\n');
-    fprintf('    peak: [%.0f  %.0f  %.0f] / [%d %d %d] N  (%.0f%% %.0f%% %.0f%%)\n', ...
-        max(abs(u_total_with)), lim.force_peak, ...
-        100*max(abs(u_total_with)) ./ lim.force_peak);
-    fprintf('    RMS:  [%.0f  %.0f  %.0f] / [%d %d %d] N  (%.0f%% %.0f%% %.0f%%)\n', ...
-        rms(u_total_with), lim.force_rms, ...
-        100*rms(u_total_with) ./ lim.force_rms);
+        fprintf('  Informativeness:\n');
+        fprintf('    delta_a RMS: with = %.4e m,  without = %.4e m,  ratio = %.1fx\n', ...
+            da_rms_with, da_rms_without, da_rms_with / da_rms_without);
+        fprintf('    residual RMS (Y)  = %.4e m\n', rms(residual(:,3)));
+        fprintf('    PSD peak @150 Hz  = %.4e m^2/Hz\n', psd_peak_150);
+        fprintf('  Force budget usage (with multisine):\n');
+        fprintf('    peak: [%.0f  %.0f  %.0f] / [%d %d %d] N  (%.0f%% %.0f%% %.0f%%)\n', ...
+            max(abs(u_total_with)), lim.force_peak, ...
+            100*max(abs(u_total_with)) ./ lim.force_peak);
+        fprintf('    RMS:  [%.0f  %.0f  %.0f] / [%d %d %d] N  (%.0f%% %.0f%% %.0f%%)\n', ...
+            rms(u_total_with), lim.force_rms, ...
+            100*rms(u_total_with) ./ lim.force_rms);
+    end
 
     % ── 3g. Derive logical state and save
     q_logical = ((P') \ q_with')';
@@ -275,7 +313,6 @@ for i = 1:numel(trajs)
     f_sim        = single(f_ms);
     y            = single(q_with);
     x_logical    = single([q_logical, qdot_logical]);
-    delta_a      = single(da_with);
     r_sim        = single(r_sim);
     Y_trajectory = single(q_with(:,3));
     amp_rms      = amp_max;
@@ -283,8 +320,14 @@ for i = 1:numel(trajs)
     split        = sp.split;
 
     out_path = fullfile(out_dir, [sp.id, '.mat']);
-    save(out_path, 'u_total','u_fb','f_sim','y','x_logical','delta_a', ...
-         'r_sim','Y_trajectory','t_sim','fs','dt','split','amp_rms');
+    if USE_MSD
+        delta_a = single(da_with);
+        save(out_path, 'u_total','u_fb','f_sim','y','x_logical','delta_a', ...
+             'r_sim','Y_trajectory','t_sim','fs','dt','split','amp_rms');
+    else
+        save(out_path, 'u_total','u_fb','f_sim','y','x_logical', ...
+             'r_sim','Y_trajectory','t_sim','fs','dt','split','amp_rms');
+    end
     fprintf('  Saved: %s  (%d samples, %.2f s)\n', out_path, size(q_with,1), t_sim(end));
 
     % ── 3h. Summary plots
@@ -306,41 +349,60 @@ for i = 1:numel(trajs)
     ylabel('Force [N]'); xlabel('Time [s]');
     title('Y-channel force decomposition'); legend; grid on
 
-    % delta_a comparison
+    % delta_a comparison (MSD only, empty tile for baseline)
     nexttile; hold on
-    plot(t_sim, double(da_with)*1e6,    'DisplayName', 'with multisine');
-    plot(t_sim, double(da_without)*1e6, 'DisplayName', 'without');
-    ylabel('\delta_a [\mum]'); xlabel('Time [s]');
-    title('Hidden MSD displacement'); legend; grid on
+    if USE_MSD
+        plot(t_sim, double(da_with)*1e6,    'DisplayName', 'with multisine');
+        plot(t_sim, double(da_without)*1e6, 'DisplayName', 'without');
+        ylabel('\delta_a [\mum]'); xlabel('Time [s]');
+        title('Hidden MSD displacement'); legend; grid on
+    else
+        title('(no MSD)'); axis off
+    end
 
     % Force budget bar chart
     nexttile;
     pct_with = 100 * max(abs(u_total_with)) ./ lim.force_peak;
-    u_fb_without = lsim(Cfb_ss, r_sim - q_without);
-    pct_without = 100 * max(abs(u_fb_without)) ./ lim.force_peak;
-    bar(categorical(ch_names), [pct_without; pct_with]');
-    ylabel('Peak force [% of limit]'); legend('without ms', 'with ms');
+    if USE_MSD
+        u_fb_without = lsim(Cfb_ss, r_sim - q_without);
+        pct_without = 100 * max(abs(u_fb_without)) ./ lim.force_peak;
+        bar(categorical(ch_names), [pct_without; pct_with]');
+        legend('without ms', 'with ms');
+    else
+        bar(categorical(ch_names), pct_with');
+    end
+    ylabel('Peak force [% of limit]');
     title('Force budget usage'); grid on
 
-    % PSD of Y output (with vs without)
+    % PSD of Y output
     nexttile; hold on
     [psd_with, f_hz] = pwelch(q_with(:,3), hanning(N_period), N_period/2, N_period, fs);
-    psd_without      = pwelch(q_without(:,3), hanning(N_period), N_period/2, N_period, fs);
-    semilogy(f_hz, psd_with,    'DisplayName', 'with ms');
-    semilogy(f_hz, psd_without, 'DisplayName', 'without ms');
-    xline(150, 'r--', '150 Hz', 'LineWidth', 1);
+    semilogy(f_hz, psd_with, 'DisplayName', 'with ms');
+    if USE_MSD
+        psd_without = pwelch(q_without(:,3), hanning(N_period), N_period/2, N_period, fs);
+        semilogy(f_hz, psd_without, 'DisplayName', 'without ms');
+        xline(150, 'r--', '150 Hz', 'LineWidth', 1);
+    end
     xlim([0 500]); ylabel('PSD [m^2/Hz]'); xlabel('Frequency [Hz]');
     title('PSD of Y output'); legend; grid on
 
-    % PSD of residual
+    % PSD of residual (MSD only, empty tile for baseline)
     nexttile;
-    semilogy(f_psd, psd_res); hold on
-    xline(150, 'r--', '150 Hz', 'LineWidth', 1);
-    xlim([0 500]); ylabel('PSD [m^2/Hz]'); xlabel('Frequency [Hz]');
-    title('PSD of residual (Y_{with} - Y_{without})'); grid on
+    if USE_MSD
+        semilogy(f_psd, psd_res); hold on
+        xline(150, 'r--', '150 Hz', 'LineWidth', 1);
+        xlim([0 500]); ylabel('PSD [m^2/Hz]'); xlabel('Frequency [Hz]');
+        title('PSD of residual (Y_{with} - Y_{without})'); grid on
+    else
+        title('(no residual)'); axis off
+    end
 
-    sgtitle(sprintf('%s  |  amp = %.0f N RMS  |  \\delta_a ratio = %.1fx', ...
-        sp.id, amp_max, da_rms_with / da_rms_without));
+    if USE_MSD
+        sgtitle(sprintf('%s  |  amp = %.0f N RMS  |  \\delta_a ratio = %.1fx', ...
+            sp.id, amp_max, da_rms_with / da_rms_without));
+    else
+        sgtitle(sprintf('%s  [baseline]  |  amp = %.0f N RMS', sp.id, amp_max));
+    end
 end
 
 fprintf('\nDone.\n');
