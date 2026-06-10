@@ -36,6 +36,7 @@ import sys
 import json
 import argparse
 import multiprocessing
+import threading
 from datetime import datetime
 import numpy as np
 import torch
@@ -70,8 +71,11 @@ ny = 3
 Y_OP = None
 SEED = 42
 
+# --- Resampling ---
 FS_ORIG = 20000
-FS_NEW  = 1000
+FS_NEW  = None          # None = no downsampling (use FS_ORIG); int = target sample rate [Hz]
+if FS_NEW is None:
+    FS_NEW = FS_ORIG
 D       = FS_ORIG // FS_NEW
 TS_NEW  = 1.0 / FS_NEW
 
@@ -610,21 +614,63 @@ def multi_window_rollouts(fit_sys, ic_phy, hp, label=''):
 
 
 # =========================================================================
+# Queue-based parallel logging
+# =========================================================================
+
+class QueueWriter:
+    """File-like that sends lines to a Queue and optionally a log file."""
+    def __init__(self, queue, tag, log_file=None):
+        self.queue = queue
+        self.tag = tag
+        self.log_file = log_file
+        self.buf = ''
+
+    def write(self, text):
+        self.buf += text
+        while '\n' in self.buf:
+            line, self.buf = self.buf.split('\n', 1)
+            if line:
+                self.queue.put(f'[{self.tag}] {line}')
+            if self.log_file:
+                self.log_file.write(line + '\n')
+
+    def flush(self):
+        if self.buf:
+            self.queue.put(f'[{self.tag}] {self.buf}')
+            if self.log_file:
+                self.log_file.write(self.buf)
+                self.log_file.flush()
+            self.buf = ''
+
+
+def queue_listener(q):
+    """Main-process thread: prints queued lines to real stdout."""
+    while True:
+        msg = q.get()
+        if msg is None:
+            break
+        print(msg, flush=True)
+
+
+# =========================================================================
 # Worker function (runs in spawned process)
 # =========================================================================
 
 def run_encoder_diagnostic(args):
     """Worker: build model with given encoder, train, evaluate. Returns results dict."""
     import time as _time
-    encoder_mode, hp, cpus = args
+    encoder_mode, hp, cpus, log_queue = args
     torch.set_num_threads(cpus)
     t0 = _time.time()
 
-    # Redirect stdout to per-encoder log file (avoids interleaving)
+    # Redirect stdout/stderr through queue (also writes to log file as backup)
     log_path = os.path.join(save_dir, f'diag_log_{encoder_mode}_{run_id}.txt')
-    log_file = open(log_path, 'w', buffering=1)  # line-buffered for tail -f
+    log_file = open(log_path, 'w', buffering=1)
     old_stdout = sys.stdout
-    sys.stdout = log_file
+    old_stderr = sys.stderr
+    qw = QueueWriter(log_queue, encoder_mode, log_file)
+    sys.stdout = qw
+    sys.stderr = qw
 
     try:
         seed = SEED if encoder_mode == 'default' else SEED + 1
@@ -674,6 +720,7 @@ def run_encoder_diagnostic(args):
         }
     finally:
         sys.stdout = old_stdout
+        sys.stderr = old_stderr
         log_file.close()
 
 
@@ -1166,17 +1213,24 @@ if __name__ == '__main__':
     print(f"Save dir: {save_dir}")
 
     # ── Run diagnostics ────────────────────────────────────────────────
+    log_queue = multiprocessing.Queue()
+    listener = threading.Thread(target=queue_listener, args=(log_queue,), daemon=True)
+    listener.start()
+
     if len(modes) == 2:
         print(f"\nLaunching 2 workers in parallel...")
         for m in modes:
             print(f"  Log: {os.path.join(save_dir, f'diag_log_{m}_{run_id}.txt')}")
-        worker_args = [(m, hp, cpus) for m in modes]
+        worker_args = [(m, hp, cpus, log_queue) for m in modes]
         with multiprocessing.Pool(2) as pool:
             results_list = pool.map(run_encoder_diagnostic, worker_args)
     else:
         print(f"\nRunning single encoder: {modes[0]}")
         print(f"  Log: {os.path.join(save_dir, f'diag_log_{modes[0]}_{run_id}.txt')}")
-        results_list = [run_encoder_diagnostic((modes[0], hp, cpus))]
+        results_list = [run_encoder_diagnostic((modes[0], hp, cpus, log_queue))]
+
+    log_queue.put(None)
+    listener.join()
 
     all_results = {r['encoder_mode']: r for r in results_list}
 
