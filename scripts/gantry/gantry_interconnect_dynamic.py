@@ -57,19 +57,19 @@ N_OPTUNA_TRIALS = 40
 OPTUNA_STUDY_NAME = "gantry_subnet_augmented"
 
 # --- Time-based horizons (converted to samples via TS_NEW) ---
-NF_SECONDS   = 0.300   # [s] rollout horizon (~5× MSD settling time τ≈64ms)
-NANB_SECONDS = 0.100   # [s] encoder history window (~1.5× MSD settling time)
+NF_SECONDS   = 0.300   # [s] rollout horizon (~3x MSD settling time, tau_msd=19ms, 5*tau=95ms)
+NANB_SECONDS = 0.100   # [s] encoder history window (~15 MSD periods at 158 Hz)
 
 # --- Default hyperparameters (used when USE_OPTUNA=False) ---
 DEFAULT_HP = dict(
     NX_ANN=2,
-    n_nodes_per_layer=8,
+    n_nodes_per_layer=64,
     n_hidden_layers=2,
     nf=max(1, int(NF_SECONDS / TS_NEW)),
     na_nb=max(1, int(NANB_SECONDS / TS_NEW)),
-    batch_size=256,
-    lr=1e-4,
-    epochs=200,
+    batch_size=4000,
+    lr=5e-4,
+    epochs=100,
 )
 
 ## ═══════════════════════════════════════════════════════════════════════════════
@@ -150,7 +150,9 @@ Dd_np   = Dd.numpy()                                               # (3, 3)
 
 PHY_IX = np.arange(NX_PHYS)   # [0,1,2,3,4,5]
 
-save_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'simulations', 'gantry_subnet')
+_encoder_tag = 'hybrid' if USE_HYBRID_ENCODER else 'default'
+save_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'simulations',
+                        'gantry_subnet', f'{MODE}_{_encoder_tag}')
 os.makedirs(save_dir, exist_ok=True)
 
 
@@ -243,6 +245,45 @@ def train_model(fit_sys, hp, epochs=None):
 ## ═══════════════════════════════════════════════════════════════════════════════
 ## evaluate_and_save
 ## ═══════════════════════════════════════════════════════════════════════════════
+
+def compute_gradient_norms(fit_sys, hp):
+    """Single forward+backward pass on training data, return gradient norms per parameter group."""
+    fit_sys.train()
+    data_train = fit_sys.make_training_data(fit_sys.norm.transform(train_data), nf=hp['nf'])
+    batch_size = min(hp['batch_size'], len(data_train[0]))
+    batch = [torch.tensor(d[:batch_size], dtype=DTYPE_PT) for d in data_train]
+
+    fit_sys.optimizer.zero_grad()
+    loss = fit_sys.loss(*batch, nf=hp['nf'])
+    loss.backward()
+
+    grad_norms = {}
+    for name, p in fit_sys.named_parameters():
+        if p.grad is not None:
+            grad_norms[name] = float(torch.norm(p.grad).item())
+        else:
+            grad_norms[name] = 0.0
+
+    # Aggregate by parameter group (encoder, hfn.blocks.0=physics, hfn.blocks.2=ANN)
+    group_norms = {}
+    for name, norm in grad_norms.items():
+        if name.startswith('encoder'):
+            group = 'encoder'
+        elif 'blocks.0' in name or 'blocks.1' in name:
+            group = 'physics+output'
+        elif 'blocks.2' in name:
+            group = 'ann'
+        else:
+            group = 'other'
+        group_norms[group] = group_norms.get(group, 0.0) + norm ** 2
+    group_norms = {k: float(np.sqrt(v)) for k, v in group_norms.items()}
+
+    print('\n=== Gradient norms (single batch, post-training) ===')
+    for group, norm in sorted(group_norms.items()):
+        print(f'  {group:20s}: {norm:.4e}')
+
+    return grad_norms, group_norms
+
 
 def evaluate_and_save(fit_sys, hp, rid):
     """Load best checkpoint, simulate, compute NRMS, plot, save."""
@@ -370,13 +411,28 @@ def evaluate_and_save(fit_sys, hp, rid):
     # ── Results npz ─────────────────────────────────────────────────────────
     if save_flag:
         save_dict = dict(
+            # Predictions and targets
             y_ref=y_ref, y_hat_enc=y_hat_enc, t_val=t_val,
+            u_val=val_data.u,
+            # Loss curves
             epoch_id=epoch_id_full, loss_val=loss_val_full, loss_train=loss_train_full,
+            # Per-channel metrics
             nrms_enc=nrms_enc, x_enc_phys=x_enc_phys, x_enc_ann=x_enc_ann,
+            # Normalization constants (for reconstruction)
+            std_x=std_x, x_mean=x_mean, std_u=std_u, u_mean=u_mean,
+            ystd=ystd, y0=y0, Cd_norm=Cd_norm, Dd_np=Dd_np,
+            P_matrix=P.numpy(),
+            # Model dimensions
             cheat_n=np.array(cheat_n), dt=np.array(val_data.dt),
             na=np.array(na), nb=np.array(nb), nf=np.array(hp['nf']),
             NX_PHYS=np.array(NX_PHYS), NX_ANN=np.array(NX_ANN), nxd=np.array(nxd),
+            # Config metadata
             hp=json.dumps(hp),
+            config=json.dumps(dict(
+                MODE=MODE, USE_HYBRID_ENCODER=USE_HYBRID_ENCODER,
+                ANN_ACTIVATION=ANN_ACTIVATION, FS_NEW=FS_NEW, D=D,
+                FS_ORIG=FS_ORIG, SEED=SEED,
+            )),
         )
         if HAS_ORACLE:
             save_dict['y_hat_xlog'] = y_hat_xlog
@@ -600,12 +656,13 @@ else:
     # ── Single run with default hyperparameters ─────────────────────────────
     print(f"\nConfiguration:")
     print(f"  MODE:               {MODE}")
+    print(f"  USE_HYBRID_ENCODER: {USE_HYBRID_ENCODER}")
+    print(f"  save_dir:           {save_dir}")
     print(f"  NF_SECONDS:         {NF_SECONDS}")
     print(f"  NANB_SECONDS:       {NANB_SECONDS}")
     print(f"  Sampling rate:      {FS_NEW} Hz (D={D})")
     print(f"  Dtype:              {'float64' if USE_F64 else 'float32'}")
     print(f"  USE_OPTUNA:         {USE_OPTUNA}")
-    print(f"  USE_HYBRID_ENCODER: {USE_HYBRID_ENCODER}")
     print(f"  ANN_ACTIVATION:     {ANN_ACTIVATION}")
     print(f"\nHyperparameters:")
     for k, v in DEFAULT_HP.items():
@@ -616,5 +673,13 @@ else:
     fit_sys = build_model(DEFAULT_HP)
     bestfit = train_model(fit_sys, DEFAULT_HP)
     print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
+
+    # Gradient norm snapshot (before loading best checkpoint)
+    grad_norms, group_norms = compute_gradient_norms(fit_sys, DEFAULT_HP)
+    if save_flag:
+        np.savez(os.path.join(save_dir, f'gantry_grad_norms_{run_id}.npz'),
+                 grad_norms=json.dumps(grad_norms),
+                 group_norms=json.dumps(group_norms))
+
     evaluate_and_save(fit_sys, DEFAULT_HP, run_id)
     state_recovery_diagnostic(fit_sys, DEFAULT_HP, run_id)
