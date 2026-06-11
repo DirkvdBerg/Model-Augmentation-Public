@@ -57,19 +57,20 @@ N_OPTUNA_TRIALS = 40
 OPTUNA_STUDY_NAME = "gantry_subnet_augmented"
 
 # --- Time-based horizons (converted to samples via TS_NEW) ---
-NF_SECONDS   = 0.300   # [s] rollout horizon (~3x MSD settling time, tau_msd=19ms, 5*tau=95ms)
-NANB_SECONDS = 0.100   # [s] encoder history window (~15 MSD periods at 158 Hz)
+NF_SECONDS   = 0.100   # [s] rollout horizon (~1x MSD settling time, tau_msd=19ms, 5*tau=95ms)
+NANB_SECONDS = 0.025   # [s] encoder history (~4 MSD periods at 158 Hz)
 
 # --- Default hyperparameters (used when USE_OPTUNA=False) ---
 DEFAULT_HP = dict(
     NX_ANN=2,
-    n_nodes_per_layer=64,
+    n_nodes_per_layer=16,
     n_hidden_layers=2,
+    up_sample=2,
     nf=max(1, int(NF_SECONDS / TS_NEW)),
     na_nb=max(1, int(NANB_SECONDS / TS_NEW)),
-    batch_size=4000,
+    batch_size=256,
     lr=5e-4,
-    epochs=100,
+    epochs=50,
 )
 
 ## ═══════════════════════════════════════════════════════════════════════════════
@@ -172,6 +173,7 @@ def build_model(hp):
     phy_block = Gantry_State_Block(
         Y_op=Y_OP, std_x=std_x, std_u=std_u,
         x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
+        up_sample=hp['up_sample'],
     ).to(DTYPE_PT)
     out_block = Linear_Output_Block(C=Cd_norm, D=Dd_np)
     ic.add_block(phy_block)
@@ -258,21 +260,26 @@ def compute_gradient_norms(fit_sys, hp):
     loss.backward()
 
     grad_norms = {}
-    for name, p in fit_sys.named_parameters():
-        if p.grad is not None:
-            grad_norms[name] = float(torch.norm(p.grad).item())
+    for attr_name, item in fit_sys.parameters_with_names.items():
+        params = item['params']
+        if isinstance(params, nn.Parameter):
+            params = [params]
         else:
-            grad_norms[name] = 0.0
+            params = list(params)
+        for i, p in enumerate(params):
+            pname = f'{attr_name}.{i}'
+            if p.grad is not None:
+                grad_norms[pname] = float(torch.norm(p.grad).item())
+            else:
+                grad_norms[pname] = 0.0
 
     # Aggregate by parameter group (encoder, hfn.blocks.0=physics, hfn.blocks.2=ANN)
     group_norms = {}
     for name, norm in grad_norms.items():
         if name.startswith('encoder'):
             group = 'encoder'
-        elif 'blocks.0' in name or 'blocks.1' in name:
-            group = 'physics+output'
-        elif 'blocks.2' in name:
-            group = 'ann'
+        elif name.startswith('hfn'):
+            group = 'hfn'
         else:
             group = 'other'
         group_norms[group] = group_norms.get(group, 0.0) + norm ** 2
@@ -674,12 +681,15 @@ else:
     bestfit = train_model(fit_sys, DEFAULT_HP)
     print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
 
-    # Gradient norm snapshot (before loading best checkpoint)
-    grad_norms, group_norms = compute_gradient_norms(fit_sys, DEFAULT_HP)
-    if save_flag:
-        np.savez(os.path.join(save_dir, f'gantry_grad_norms_{run_id}.npz'),
-                 grad_norms=json.dumps(grad_norms),
-                 group_norms=json.dumps(group_norms))
-
     evaluate_and_save(fit_sys, DEFAULT_HP, run_id)
     state_recovery_diagnostic(fit_sys, DEFAULT_HP, run_id)
+
+    # Gradient norm snapshot (after evaluation, non-critical)
+    try:
+        grad_norms, group_norms = compute_gradient_norms(fit_sys, DEFAULT_HP)
+        if save_flag:
+            np.savez(os.path.join(save_dir, f'gantry_grad_norms_{run_id}.npz'),
+                     grad_norms=json.dumps(grad_norms),
+                     group_norms=json.dumps(group_norms))
+    except Exception as e:
+        print(f"Warning: gradient norm computation failed: {e}")
