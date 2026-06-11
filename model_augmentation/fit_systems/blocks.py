@@ -532,11 +532,12 @@ class Parameterized_MSD_State_Block(Discrete_Nonlinear_Function_Block):
 
 class Nonlinear_MSD_State_Block(Discrete_Nonlinear_Function_Block):
     def __init__(
-        self, Ts=0.02, std_x=np.ones((4, 1)), std_u=1, *args, **kwargs
+        self, Ts=0.02, std_x=np.ones((4, 1)), std_u=1, up_sample=10, *args, **kwargs
     ) -> None:
         super().__init__(*args, **kwargs)
 
         self.Ts = Ts
+        self.up_sample = up_sample
 
         self.nu = 1
         self.ny = 1
@@ -558,14 +559,11 @@ class Nonlinear_MSD_State_Block(Discrete_Nonlinear_Function_Block):
         x = z[:, : self.nx, :]
         u = z[:, self.nx :, :]
         
-        up_sample = 10
-        for i in range(up_sample):
-            k1 = (self.Ts/up_sample)*self.deriv(x,u)
-            # print(x.shape)
-            # print(k1.shape)
-            k2 = (self.Ts/up_sample)*self.deriv(x+k1/2,u)
-            k3 = (self.Ts/up_sample)*self.deriv(x+k2/2,u)
-            k4 = (self.Ts/up_sample)*self.deriv(x+k3,u)
+        for i in range(self.up_sample):
+            k1 = (self.Ts/self.up_sample)*self.deriv(x,u)
+            k2 = (self.Ts/self.up_sample)*self.deriv(x+k1/2,u)
+            k3 = (self.Ts/self.up_sample)*self.deriv(x+k2/2,u)
+            k4 = (self.Ts/self.up_sample)*self.deriv(x+k3,u)
         
             x = (x + (k1+2*k2+2*k3+k4)/6)
         return x
@@ -681,12 +679,14 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         x_mean=np.zeros((6, 1)),
         u_mean=np.zeros((3, 1)),
         Ts: float = 1 / 20000,
+        up_sample: int = 10,
         *args,
         **kwargs,
     ) -> None:
         super().__init__(nz=9, nw=6, *args, **kwargs)
 
         self.Ts   = Ts
+        self.up_sample = up_sample
         self.nu   = 3
         self.ny   = 3
         self.nx   = 6
@@ -757,12 +757,11 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         x = z[:, : self.nx, :]
         u = z[:, self.nx :, :]
 
-        up_sample = 10
-        for i in range(up_sample):
-            k1 = (self.Ts / up_sample) * self.deriv(x, u)
-            k2 = (self.Ts / up_sample) * self.deriv(x + k1 / 2, u)
-            k3 = (self.Ts / up_sample) * self.deriv(x + k2 / 2, u)
-            k4 = (self.Ts / up_sample) * self.deriv(x + k3, u)
+        for i in range(self.up_sample):
+            k1 = (self.Ts / self.up_sample) * self.deriv(x, u)
+            k2 = (self.Ts / self.up_sample) * self.deriv(x + k1 / 2, u)
+            k3 = (self.Ts / self.up_sample) * self.deriv(x + k2 / 2, u)
+            k4 = (self.Ts / self.up_sample) * self.deriv(x + k3, u)
             x = x + (k1 + 2 * k2 + 2 * k3 + k4) / 6
         return x
 
