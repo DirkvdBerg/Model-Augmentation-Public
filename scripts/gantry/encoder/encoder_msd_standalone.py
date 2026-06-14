@@ -95,9 +95,30 @@ VAL_FILE = 'V1_X_sym_Y_mid_sweep.mat'
 OUT_DIR = os.path.join(PROJECT_ROOT, 'simulations', 'gantry_subnet', 'encoder')
 os.makedirs(OUT_DIR, exist_ok=True)
 
-STATE_NAMES = ['q1', 'q2', 'q3', 'dq1', 'dq2', 'dq3']
-PHYS_UNITS = ['m', 'm', 'm', 'm/s', 'm/s', 'm/s']
+# Logical coordinate names
+STATE_NAMES = ['X', 'theta', 'Y', 'dX', 'dtheta', 'dY']
+PHYS_UNITS = ['m', 'rad', 'm', 'm/s', 'rad/s', 'm/s']
+
+# Stage coordinate names
+STAGE_NAMES = ['x1', 'x2', 'Y', 'dx1', 'dx2', 'dY']
+STAGE_UNITS = ['m', 'm', 'm', 'm/s', 'm/s', 'm/s']
+
 AUG_NAMES = ['aug1', 'aug2']
+
+# P^T maps logical positions to stage positions: y_stage = P^T @ q_logical
+P_np = P.numpy().astype(DTYPE_NP)
+PT = P_np.T  # (3, 3)
+
+
+# =============================================================================
+# Coordinate transforms
+# =============================================================================
+
+def logical_to_stage(x_logical):
+    """Convert (N, 6) logical states to (N, 6) stage states via P^T."""
+    pos_stage = (PT @ x_logical[:, :3].T).T
+    vel_stage = (PT @ x_logical[:, 3:].T).T
+    return np.hstack([pos_stage, vel_stage])
 
 
 # =============================================================================
@@ -279,7 +300,7 @@ def io_check(encoder, u, y, norm):
         x_enc_full = encoder(
             torch.tensor(u_hist, dtype=DTYPE_PT),
             torch.tensor(y_hist, dtype=DTYPE_PT),
-        )  # (M, NX_PHYS + NX_ANN)
+        )
 
     # Use only the 6 physical states for RK4
     x_enc_phys = x_enc_full[:, :NX_PHYS]
@@ -347,6 +368,34 @@ def evaluate_encoder(encoder, u_hist, y_hist, x_target):
     return x_hat_phys, x_hat_aug, compute_nrms(x_hat_phys, x_target)
 
 
+def denormalize_states(x_norm, norm):
+    """Convert normalized states back to physical units."""
+    return x_norm * norm['std_x'].flatten() + norm['x_mean'].flatten()
+
+
+# =============================================================================
+# Plotting helpers
+# =============================================================================
+
+def format_rms_unit(rms_val, unit):
+    """Format RMS with appropriate SI prefix."""
+    if unit in ('m', 'rad'):
+        if rms_val < 1e-3:
+            return f'{rms_val*1e6:.1f} \u03bcm' if unit == 'm' else f'{rms_val*1e6:.1f} \u03bcrad'
+        elif rms_val < 1.0:
+            return f'{rms_val*1e3:.2f} mm' if unit == 'm' else f'{rms_val*1e3:.2f} mrad'
+        else:
+            return f'{rms_val:.3f} {unit}'
+    elif unit in ('m/s', 'rad/s'):
+        if rms_val < 1e-3:
+            return f'{rms_val*1e6:.1f} \u03bc{unit}'
+        elif rms_val < 1.0:
+            return f'{rms_val*1e3:.2f} m{unit}'
+        else:
+            return f'{rms_val:.3f} {unit}'
+    return f'{rms_val:.2e} {unit}'
+
+
 # =============================================================================
 # Plotting
 # =============================================================================
@@ -366,18 +415,23 @@ def plot_loss_curve(train_losses, val_losses, out_path):
     print(f'Saved: {out_path}')
 
 
-def plot_comparison(x_enc, x_ana, x_target, nrms_enc, nrms_ana, title, out_path):
+def plot_comparison(x_enc, x_ana, x_target, nrms_enc, nrms_ana,
+                    rms_enc, rms_ana, names, units, title, out_path):
+    """Time-domain overlay with NRMS and RMS in legend."""
+    n_states = len(names)
     T = min(2000, len(x_enc))
     t = np.arange(T) / FS_NEW
 
-    fig, axes = plt.subplots(NX_PHYS, 1, figsize=(14, 2.5 * NX_PHYS), sharex=True)
+    fig, axes = plt.subplots(n_states, 1, figsize=(14, 2.5 * n_states), sharex=True)
     for i, ax in enumerate(axes):
-        ax.plot(t, x_target[:T, i], 'k-', linewidth=0.8, label='x_target (Python)')
+        ax.plot(t, x_target[:T, i], 'k-', linewidth=0.8, label='target')
+        rms_enc_str = format_rms_unit(rms_enc[i], units[i])
+        rms_ana_str = format_rms_unit(rms_ana[i], units[i])
         ax.plot(t, x_enc[:T, i], 'r--', linewidth=0.8,
-                label=f'encoder (NRMS={nrms_enc[i]:.2e})')
+                label=f'encoder (NRMS={nrms_enc[i]:.2e}, RMS={rms_enc_str})')
         ax.plot(t, x_ana[:T, i], 'b:', linewidth=0.8,
-                label=f'analytical (NRMS={nrms_ana[i]:.2e})')
-        ax.set_ylabel(STATE_NAMES[i])
+                label=f'analytical (NRMS={nrms_ana[i]:.2e}, RMS={rms_ana_str})')
+        ax.set_ylabel(f'{names[i]} [{units[i]}]')
         ax.legend(loc='upper right', fontsize=7)
         ax.grid(True, alpha=0.3)
     axes[-1].set_xlabel('Time [s]')
@@ -388,15 +442,19 @@ def plot_comparison(x_enc, x_ana, x_target, nrms_enc, nrms_ana, title, out_path)
     print(f'Saved: {out_path}')
 
 
-def plot_error(x_enc, x_ana, x_target, title, out_path):
+def plot_difference(x_enc, x_ana, x_target, names, units, title, out_path):
+    """Difference plot: encoder error vs analytical error."""
+    n_states = len(names)
     T = min(2000, len(x_enc))
     t = np.arange(T) / FS_NEW
 
-    fig, axes = plt.subplots(NX_PHYS, 1, figsize=(14, 2.5 * NX_PHYS), sharex=True)
+    fig, axes = plt.subplots(n_states, 1, figsize=(14, 2.5 * n_states), sharex=True)
     for i, ax in enumerate(axes):
-        ax.plot(t, x_enc[:T, i] - x_target[:T, i], 'r-', linewidth=0.6, label='encoder error')
-        ax.plot(t, x_ana[:T, i] - x_target[:T, i], 'b-', linewidth=0.6, label='analytical error')
-        ax.set_ylabel(f'{STATE_NAMES[i]} error')
+        enc_err = x_enc[:T, i] - x_target[:T, i]
+        ana_err = x_ana[:T, i] - x_target[:T, i]
+        ax.plot(t, enc_err, 'r-', linewidth=0.6, label='encoder error')
+        ax.plot(t, ana_err, 'b-', linewidth=0.6, alpha=0.7, label='analytical error')
+        ax.set_ylabel(f'{names[i]} error [{units[i]}]')
         ax.legend(loc='upper right', fontsize=7)
         ax.grid(True, alpha=0.3)
     axes[-1].set_xlabel('Time [s]')
@@ -407,15 +465,17 @@ def plot_error(x_enc, x_ana, x_target, title, out_path):
     print(f'Saved: {out_path}')
 
 
-def plot_nrms_bar(nrms_before, nrms_after, nrms_ana, out_path):
-    x = np.arange(NX_PHYS)
+def plot_nrms_bar(nrms_before, nrms_after, nrms_ana, names, out_path):
+    """Bar chart: NRMS per channel."""
+    n = len(names)
+    x = np.arange(n)
     w = 0.25
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.bar(x - w, nrms_before, w, label='model-based init', color='tab:orange', alpha=0.8)
     ax.bar(x, nrms_after, w, label='after pre-training', color='tab:red', alpha=0.8)
     ax.bar(x + w, nrms_ana, w, label='analytical baseline', color='tab:blue', alpha=0.8)
     ax.set_xticks(x)
-    ax.set_xticklabels(STATE_NAMES)
+    ax.set_xticklabels(names)
     ax.set_ylabel('NRMS')
     ax.set_yscale('log')
     ax.legend()
@@ -502,9 +562,9 @@ def main():
     vel_diff_rms = np.sqrt(np.mean((vel_python - vel_matlab)**2, axis=0))
     vel_matlab_rms = np.sqrt(np.mean(vel_matlab**2, axis=0))
     vel_nrms = vel_diff_rms / (vel_matlab_rms + 1e-12)
-    print(f'  {"Channel":<6s}  {"RMS diff [m/s]":>14s}  {"NRMS":>10s}')
-    for i, name in enumerate(['dq1', 'dq2', 'dq3']):
-        print(f'  {name:<6s}  {vel_diff_rms[i]:>14.4e}  {vel_nrms[i]:>10.4e}')
+    print(f'  {"Channel":<8s}  {"RMS diff":>14s}  {"NRMS":>10s}')
+    for i, name in enumerate(STATE_NAMES[3:]):
+        print(f'  {name:<8s}  {vel_diff_rms[i]:>14.4e}  {vel_nrms[i]:>10.4e}')
     print(f'  Max velocity NRMS (Python vs MATLAB): {np.max(vel_nrms):.4e}')
     if np.max(vel_nrms) < 0.01:
         print('  OK: Python velocities match MATLAB within 1%.')
@@ -544,10 +604,10 @@ def main():
     x_hat_ana = compute_analytical_baseline(val_y, norm)
     nrms_ana = compute_nrms(x_hat_ana, x_val)
 
-    print(f'  {"State":<6s}  {"Model-based init":>18s}  {"Analytical":>14s}')
-    print(f'  {"-"*6}  {"-"*18}  {"-"*14}')
+    print(f'  {"State":<8s}  {"Model-based init":>18s}  {"Analytical":>14s}')
+    print(f'  {"-"*8}  {"-"*18}  {"-"*14}')
     for i, name in enumerate(STATE_NAMES):
-        print(f'  {name:<6s}  {nrms_before[i]:>18.4e}  {nrms_ana[i]:>14.4e}')
+        print(f'  {name:<8s}  {nrms_before[i]:>18.4e}  {nrms_ana[i]:>14.4e}')
     print(f'  Max NRMS init:       {np.max(nrms_before):.4e}')
     print(f'  Max NRMS analytical: {np.max(nrms_ana):.4e}')
 
@@ -617,23 +677,41 @@ def main():
     x_hat_phys_after, x_hat_aug_after, nrms_after = evaluate_encoder(
         encoder, u_val, y_val, x_val)
 
-    print(f'  {"State":<6s}  {"Before":>14s}  {"After":>14s}  {"Analytical":>14s}  {"Beats ana?":>10s}')
-    print(f'  {"-"*6}  {"-"*14}  {"-"*14}  {"-"*14}  {"-"*10}')
+    print(f'  {"State":<8s}  {"Before":>14s}  {"After":>14s}  {"Analytical":>14s}  {"Beats?":>7s}')
+    print(f'  {"-"*8}  {"-"*14}  {"-"*14}  {"-"*14}  {"-"*7}')
     for i, name in enumerate(STATE_NAMES):
         beats = 'YES' if nrms_after[i] < nrms_ana[i] else 'NO'
-        print(f'  {name:<6s}  {nrms_before[i]:>14.4e}  {nrms_after[i]:>14.4e}  {nrms_ana[i]:>14.4e}  {beats:>10s}')
+        print(f'  {name:<8s}  {nrms_before[i]:>14.4e}  {nrms_after[i]:>14.4e}  {nrms_ana[i]:>14.4e}  {beats:>7s}')
 
     print(f'\n  Max NRMS before:     {np.max(nrms_before):.4e}')
     print(f'  Max NRMS after:      {np.max(nrms_after):.4e}')
     print(f'  Max NRMS analytical: {np.max(nrms_ana):.4e}')
 
-    # Physical-unit RMS error
-    x_after_phys = x_hat_phys_after * norm['std_x'].flatten() + norm['x_mean'].flatten()
-    x_gt_phys = x_val * norm['std_x'].flatten() + norm['x_mean'].flatten()
-    rms_phys = compute_rms_error(x_after_phys, x_gt_phys)
-    print(f'\n  Per-channel RMS error (physical units, after pre-training):')
+    # Physical-unit RMS error (logical coordinates)
+    x_after_phys = denormalize_states(x_hat_phys_after, norm)
+    x_ana_phys = denormalize_states(x_hat_ana, norm)
+    x_gt_phys = denormalize_states(x_val, norm)
+    rms_enc = compute_rms_error(x_after_phys, x_gt_phys)
+    rms_ana = compute_rms_error(x_ana_phys, x_gt_phys)
+
+    print(f'\n  Per-channel RMS error (logical coordinates):')
+    print(f'  {"State":<8s}  {"Encoder":>14s}  {"Analytical":>14s}  {"Unit":>6s}')
     for i, name in enumerate(STATE_NAMES):
-        print(f'    {name} [{PHYS_UNITS[i]}]: {rms_phys[i]:.4e}')
+        print(f'  {name:<8s}  {rms_enc[i]:>14.4e}  {rms_ana[i]:>14.4e}  {PHYS_UNITS[i]:>6s}')
+
+    # Physical-unit RMS error (stage coordinates)
+    x_after_stage = logical_to_stage(x_after_phys)
+    x_ana_stage = logical_to_stage(x_ana_phys)
+    x_gt_stage = logical_to_stage(x_gt_phys)
+    rms_enc_stage = compute_rms_error(x_after_stage, x_gt_stage)
+    rms_ana_stage = compute_rms_error(x_ana_stage, x_gt_stage)
+    nrms_after_stage = compute_nrms(x_after_stage, x_gt_stage)
+    nrms_ana_stage = compute_nrms(x_ana_stage, x_gt_stage)
+
+    print(f'\n  Per-channel RMS error (stage coordinates):')
+    print(f'  {"State":<8s}  {"Encoder":>14s}  {"Analytical":>14s}  {"Unit":>6s}')
+    for i, name in enumerate(STAGE_NAMES):
+        print(f'  {name:<8s}  {rms_enc_stage[i]:>14.4e}  {rms_ana_stage[i]:>14.4e}  {STAGE_UNITS[i]:>6s}')
 
     # =================================================================
     # CHECK 2: I/O check — one-step output prediction
@@ -642,7 +720,7 @@ def main():
     nrms_io, y_hat_io, y_next_io = io_check(encoder, val_u, val_y, norm)
     print(f'  {"Output":<6s}  {"1-step NRMS":>14s}')
     print(f'  {"-"*6}  {"-"*14}')
-    for i, name in enumerate(['y1', 'y2', 'y3']):
+    for i, name in enumerate(STAGE_NAMES[:3]):
         print(f'  {name:<6s}  {nrms_io[i]:>14.4e}')
     print(f'  Max I/O NRMS: {np.max(nrms_io):.4e}')
 
@@ -650,11 +728,12 @@ def main():
     # CHECK 3: Augmented state correlation with delta_a
     # =================================================================
     print('\n--- CHECK 3: Augmented states vs delta_a ---')
+    na_total = na + na_right
+    nb_total = nb + nb_right
+    history = max(na_total, nb_total)
+    M = x_hat_aug_after.shape[0]
+
     if val_delta_a is not None:
-        na_total = na + na_right
-        nb_total = nb + nb_right
-        history = max(na_total, nb_total)
-        M = x_hat_aug_after.shape[0]
         delta_a_aligned = val_delta_a[history: history + M]
         # Compute ddelta_a via central finite-diff
         ddelta_a = np.zeros_like(delta_a_aligned)
@@ -682,8 +761,11 @@ def main():
         worse = [STATE_NAMES[i] for i in range(NX_PHYS) if nrms_after[i] >= nrms_ana[i]]
         print(f'  PARTIAL: Still worse on: {", ".join(worse)}')
         vel_beats = all(nrms_after[i] < nrms_ana[i] for i in range(3, 6))
+        pos_worse = [STATE_NAMES[i] for i in range(3) if nrms_after[i] >= nrms_ana[i]]
         if vel_beats:
             print('  NOTE: All velocity channels beat analytical (expected win).')
+        if pos_worse:
+            print(f'  NOTE: Positions worse because analytical uses exact P_inv @ y (0 error).')
 
     # --- Save encoder weights ---
     weights_path = os.path.join(OUT_DIR, 'encoder_msd_weights.pt')
@@ -695,9 +777,12 @@ def main():
         nrms_before={name: float(nrms_before[i]) for i, name in enumerate(STATE_NAMES)},
         nrms_after={name: float(nrms_after[i]) for i, name in enumerate(STATE_NAMES)},
         nrms_analytical={name: float(nrms_ana[i]) for i, name in enumerate(STATE_NAMES)},
-        rms_phys_after={name: float(rms_phys[i]) for i, name in enumerate(STATE_NAMES)},
-        nrms_io={f'y{i+1}': float(nrms_io[i]) for i in range(ny)},
-        vel_verification_nrms={f'dq{i+1}': float(vel_nrms[i]) for i in range(3)},
+        rms_enc_logical={name: float(rms_enc[i]) for i, name in enumerate(STATE_NAMES)},
+        rms_ana_logical={name: float(rms_ana[i]) for i, name in enumerate(STATE_NAMES)},
+        rms_enc_stage={name: float(rms_enc_stage[i]) for i, name in enumerate(STAGE_NAMES)},
+        rms_ana_stage={name: float(rms_ana_stage[i]) for i, name in enumerate(STAGE_NAMES)},
+        nrms_io={name: float(nrms_io[i]) for i, name in enumerate(STAGE_NAMES[:3])},
+        vel_verification_nrms={name: float(vel_nrms[i]) for i, name in enumerate(STATE_NAMES[3:])},
         beats_analytical_per_channel={name: bool(nrms_after[i] < nrms_ana[i])
                                       for i, name in enumerate(STATE_NAMES)},
         n_channels_beating_analytical=n_beats,
@@ -723,22 +808,43 @@ def main():
         nrms_before=nrms_before, nrms_after=nrms_after, nrms_analytical=nrms_ana,
         train_losses=train_losses, val_losses=val_losses,
         std_x=norm['std_x'], x_mean=norm['x_mean'],
-        state_names=STATE_NAMES, fs=FS_NEW,
+        state_names=STATE_NAMES, stage_names=STAGE_NAMES, fs=FS_NEW,
     )
     print(f'Saved: {npz_path}')
 
     # --- Plots ---
+    # Compute before-training physical states for bar chart
+    x_before_phys = denormalize_states(x_hat_phys_before, norm)
+
     plot_loss_curve(train_losses, val_losses,
                     os.path.join(OUT_DIR, 'encoder_msd_loss.png'))
-    plot_comparison(x_hat_phys_after, x_hat_ana, x_val, nrms_after, nrms_ana,
-                    'Encoder MSD: trained encoder vs analytical',
-                    os.path.join(OUT_DIR, 'encoder_msd_comparison.png'))
-    plot_error(x_hat_phys_after, x_hat_ana, x_val,
-              'Encoder MSD: error',
-              os.path.join(OUT_DIR, 'encoder_msd_error.png'))
-    plot_nrms_bar(nrms_before, nrms_after, nrms_ana,
+
+    # Logical coordinate plots
+    plot_comparison(x_after_phys, x_ana_phys, x_gt_phys, nrms_after, nrms_ana,
+                    rms_enc, rms_ana, STATE_NAMES, PHYS_UNITS,
+                    'Encoder MSD (logical coords): encoder vs analytical',
+                    os.path.join(OUT_DIR, 'encoder_msd_comparison_logical.png'))
+
+    plot_difference(x_after_phys, x_ana_phys, x_gt_phys, STATE_NAMES, PHYS_UNITS,
+                    'Encoder MSD (logical coords): error comparison',
+                    os.path.join(OUT_DIR, 'encoder_msd_difference_logical.png'))
+
+    # Stage coordinate plots
+    plot_comparison(x_after_stage, x_ana_stage, x_gt_stage,
+                    nrms_after_stage, nrms_ana_stage,
+                    rms_enc_stage, rms_ana_stage, STAGE_NAMES, STAGE_UNITS,
+                    'Encoder MSD (stage coords): encoder vs analytical',
+                    os.path.join(OUT_DIR, 'encoder_msd_comparison_stage.png'))
+
+    plot_difference(x_after_stage, x_ana_stage, x_gt_stage, STAGE_NAMES, STAGE_UNITS,
+                    'Encoder MSD (stage coords): error comparison',
+                    os.path.join(OUT_DIR, 'encoder_msd_difference_stage.png'))
+
+    # NRMS bar chart (logical)
+    plot_nrms_bar(nrms_before, nrms_after, nrms_ana, STATE_NAMES,
                   os.path.join(OUT_DIR, 'encoder_msd_nrms_bar.png'))
 
+    # Augmented states vs delta_a
     if val_delta_a is not None and delta_a_aligned is not None:
         plot_augmented_vs_delta_a(x_hat_aug_after, delta_a_aligned, ddelta_a,
                                   os.path.join(OUT_DIR, 'encoder_msd_augmented.png'))
