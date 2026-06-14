@@ -1,21 +1,21 @@
 """
-step0b_data_based_init.py
--------------------------
-Phase 5: Data-based encoder pre-training via direct regression.
+encoder_baseline_standalone.py
+------------------------------
+Encoder standalone validation on BASELINE data (no MSD).
 
-Pre-trains the encoder to minimize ||encoder(u_hist, y_hist) - x_logical||^2
-on baseline data. This bypasses the LTI model accuracy / O_n conditioning
-ceiling of model-based init (linear_encoder_init).
+Train the encoder via direct regression ||encoder(u_hist, y_hist) - x_target||^2.
+Target: positions from P_inv @ y (exact), velocities from finite-diff of positions.
 
-The model-based init is used as warm start (not random), then refined by
-direct regression against ground-truth states from .mat files.
+Additional checks:
+1. Velocity verification: Python finite-diff vs MATLAB x_logical velocities.
+2. I/O check: feed encoder states through one RK4 step, compare y_hat vs y_measured.
 
-No SSE_Interconnect, no state propagation — pure encoder regression.
+Expected: encoder should match x_logical near-perfectly (no model mismatch).
 
 THEORY: Hoekstra 2026 Eq. 35 — pre-train encoder via state reconstruction loss.
 
 Usage:
-    conda run -n GraduationProject python scripts/gantry/encoder/step0b_data_based_init.py
+    conda run -n GraduationProject python scripts/gantry/encoder/encoder_baseline_standalone.py
 """
 
 import os
@@ -38,6 +38,7 @@ import deepSI
 from model_augmentation.utils.utils import normalize_linear_ss_matrices
 from model_augmentation.utils.torch_nets import LinearInitEncoderWrapper
 from model_augmentation.fit_systems.pre_encoder import linear_encoder_init
+from model_augmentation.fit_systems.blocks import Gantry_State_Block
 from model_augmentation.systems.gantry_ss import Cd, P
 from model_augmentation.systems.gantry_linearization import gantry_linearize_and_discretize
 
@@ -106,16 +107,39 @@ def load_mat(filename):
 
 
 # =============================================================================
+# Velocity computation from positions (reproduces what we'd do on real gantry)
+# =============================================================================
+
+def compute_velocities_from_positions(y, P_inv_T):
+    """Compute states from measurements only: P_inv @ y for positions,
+    central finite-diff for velocities. This is what we can do on the real system."""
+    pos = (P_inv_T @ y.T).T  # (N, 3)
+    vel = np.zeros_like(pos)
+    # THEORY: central difference (matches MATLAB gradient())
+    vel[1:-1] = (pos[2:] - pos[:-2]) * (FS_NEW / 2.0)
+    vel[0] = (pos[1] - pos[0]) * FS_NEW      # forward diff at start
+    vel[-1] = (pos[-1] - pos[-2]) * FS_NEW    # backward diff at end
+    return np.hstack([pos, vel])
+
+
+# =============================================================================
 # Normalization (same as gantry_interconnect_dynamic.py)
 # =============================================================================
 
 def compute_normalization(train_data):
-    """Compute normalization constants from training data."""
+    """Compute normalization constants from training data.
+    Uses Python-computed states (positions from P_inv@y, velocities from finite-diff)
+    as the target, NOT MATLAB x_logical directly."""
     P_inv_T = np.linalg.inv(P.numpy().T).astype(DTYPE_NP)
 
     u_all = np.concatenate([u for u, _, _ in train_data])
     y_all = np.concatenate([y for _, y, _ in train_data])
-    x_all = np.concatenate([x for _, _, x in train_data])
+
+    # Compute states from measurements (what we'd do on real gantry)
+    x_computed_list = []
+    for _, y_traj, _ in train_data:
+        x_computed_list.append(compute_velocities_from_positions(y_traj, P_inv_T))
+    x_all = np.concatenate(x_computed_list)
 
     x_mean = x_all.mean(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP)
     std_x = x_all.std(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP) + 1e-8
@@ -135,8 +159,9 @@ def compute_normalization(train_data):
 # Create windowed data
 # =============================================================================
 
-def create_encoder_windows(u, y, x_logical, norm):
-    """Create (u_hist, y_hist, x_target_norm) windows for encoder evaluation."""
+def create_encoder_windows(u, y, x_target, norm):
+    """Create (u_hist, y_hist, x_target_norm) windows for encoder training/eval.
+    x_target is the Python-computed state (positions + finite-diff velocities)."""
     na_total = na + na_right  # 26
     nb_total = nb + nb_right  # 26
     N = u.shape[0]
@@ -145,27 +170,28 @@ def create_encoder_windows(u, y, x_logical, norm):
 
     u_norm = (u - norm['u_mean'].flatten()) / norm['std_u'].flatten()
     y_norm = (y - norm['y0']) / norm['ystd']
-    x_norm = (x_logical - norm['x_mean'].flatten()) / norm['std_x'].flatten()
+    x_norm = (x_target - norm['x_mean'].flatten()) / norm['std_x'].flatten()
 
     u_hist = np.zeros((M, nb_total, nu), dtype=DTYPE_NP)
     y_hist = np.zeros((M, na_total, ny), dtype=DTYPE_NP)
-    x_target = np.zeros((M, NX_PHYS), dtype=DTYPE_NP)
+    x_tgt = np.zeros((M, NX_PHYS), dtype=DTYPE_NP)
 
     for i in range(M):
         k = history + i
         u_hist[i] = u_norm[k - nb_total + 1: k + 1]
         y_hist[i] = y_norm[k - na_total + 1: k + 1]
-        x_target[i] = x_norm[k]
+        x_tgt[i] = x_norm[k]
 
-    return u_hist, y_hist, x_target
+    return u_hist, y_hist, x_tgt
 
 
 # =============================================================================
-# Analytical baseline (P_inv + finite-diff)
+# Analytical baseline (P_inv + backward finite-diff)
 # =============================================================================
 
 def compute_analytical_baseline(y, norm):
-    """Compute analytical state estimates for the same time indices as encoder windows."""
+    """Analytical state estimates: P_inv for positions, backward finite-diff for velocities.
+    This is a simpler baseline (backward diff, not central) to compare against."""
     na_total = na + na_right
     nb_total = nb + nb_right
     history = max(na_total, nb_total)
@@ -206,7 +232,7 @@ def build_encoder(norm):
 
     encoder = LinearInitEncoderWrapper(
         phys_encoder=phys_encoder,
-        nx_ann=0,  # physical states only for pre-training
+        nx_ann=0,
         nb=nb + nb_right, nu=nu, na=na + na_right, ny=ny,
         n_nodes_per_layer=HP['n_nodes_per_layer'],
         n_hidden_layers=HP['n_hidden_layers'],
@@ -216,6 +242,80 @@ def build_encoder(norm):
     ).to(DTYPE_PT)
 
     return encoder
+
+
+# =============================================================================
+# I/O check: one-step output prediction using encoder states
+# =============================================================================
+
+def io_check(encoder, u, y, norm):
+    """Feed encoder states through one RK4 step, compare predicted output vs measured y.
+    Tests pipeline-compatibility of encoder states."""
+    na_total = na + na_right
+    nb_total = nb + nb_right
+    history = max(na_total, nb_total)
+    N = u.shape[0]
+    M = N - history - 1  # need k+1 for y_next
+
+    # Get encoder states for all valid indices
+    u_norm = (u - norm['u_mean'].flatten()) / norm['std_u'].flatten()
+    y_norm = (y - norm['y0']) / norm['ystd']
+
+    u_hist = np.zeros((M, nb_total, nu), dtype=DTYPE_NP)
+    y_hist = np.zeros((M, na_total, ny), dtype=DTYPE_NP)
+    u_current = np.zeros((M, nu), dtype=DTYPE_NP)
+
+    for i in range(M):
+        k = history + i
+        u_hist[i] = u_norm[k - nb_total + 1: k + 1]
+        y_hist[i] = y_norm[k - na_total + 1: k + 1]
+        u_current[i] = u_norm[k]
+
+    # Get encoder states
+    encoder.eval()
+    with torch.no_grad():
+        x_enc = encoder(
+            torch.tensor(u_hist, dtype=DTYPE_PT),
+            torch.tensor(y_hist, dtype=DTYPE_PT),
+        )  # (M, 6) normalized
+
+    # One RK4 step: x_next = f(x, u)
+    # Gantry_State_Block expects (batch, nx+nu, 1) as input to nonlinear_function
+    state_block = Gantry_State_Block(
+        Y_op=None,  # LPV: use actual Y from state
+        std_x=norm['std_x'],
+        std_u=norm['std_u'],
+        x_mean=norm['x_mean'],
+        u_mean=norm['u_mean'],
+        Ts=TS_NEW,
+        up_sample=1,  # single RK4 step at dt=TS_NEW
+    ).to(DTYPE_PT)
+    state_block.eval()
+
+    u_cur_t = torch.tensor(u_current, dtype=DTYPE_PT).unsqueeze(-1)  # (M, 3, 1)
+    x_enc_3d = x_enc.unsqueeze(-1)  # (M, 6, 1)
+    z_input = torch.cat([x_enc_3d, u_cur_t], dim=1)  # (M, 9, 1)
+
+    with torch.no_grad():
+        x_next = state_block.nonlinear_function(z_input)  # (M, 6, 1)
+
+    # Predict output: y_hat = Cd @ x_phys
+    # Denormalize x_next to physical
+    x_next_phys = x_next.squeeze(-1) * torch.tensor(norm['std_x'].flatten(), dtype=DTYPE_PT) \
+                  + torch.tensor(norm['x_mean'].flatten(), dtype=DTYPE_PT)
+    Cd_t = torch.tensor(Cd.numpy(), dtype=DTYPE_PT)
+    y_hat = (Cd_t @ x_next_phys.unsqueeze(-1)).squeeze(-1).numpy()  # (M, 3)
+
+    # Measured y at k+1
+    y_next = y[history + 1: history + 1 + M]
+
+    # NRMS per output channel
+    err = y_hat - y_next
+    rms_err = np.sqrt(np.mean(err**2, axis=0))
+    rms_y = np.sqrt(np.mean(y_next**2, axis=0))
+    nrms_io = rms_err / (rms_y + 1e-12)
+
+    return nrms_io, y_hat, y_next
 
 
 # =============================================================================
@@ -259,7 +359,7 @@ def plot_loss_curve(train_losses, val_losses, out_path):
     ax.set_ylabel('MSE loss')
     ax.legend()
     ax.grid(True, alpha=0.3)
-    ax.set_title('Step 0b: Data-based encoder pre-training')
+    ax.set_title('Encoder baseline standalone: training loss')
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
@@ -273,7 +373,7 @@ def plot_comparison(x_enc, x_ana, x_target, nrms_enc, nrms_ana, title, out_path)
 
     fig, axes = plt.subplots(NX_PHYS, 1, figsize=(14, 2.5 * NX_PHYS), sharex=True)
     for i, ax in enumerate(axes):
-        ax.plot(t, x_target[:T, i], 'k-', linewidth=0.8, label='x_logical')
+        ax.plot(t, x_target[:T, i], 'k-', linewidth=0.8, label='x_target (Python)')
         ax.plot(t, x_enc[:T, i], 'r--', linewidth=0.8,
                 label=f'encoder (NRMS={nrms_enc[i]:.2e})')
         ax.plot(t, x_ana[:T, i], 'b:', linewidth=0.8,
@@ -323,7 +423,7 @@ def plot_nrms_bar(nrms_before, nrms_after, nrms_ana, out_path):
     ax.set_yscale('log')
     ax.legend()
     ax.grid(True, alpha=0.3, axis='y')
-    ax.set_title('Step 0b: Encoder NRMS — before vs after pre-training')
+    ax.set_title('Encoder baseline standalone: NRMS comparison')
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
@@ -336,7 +436,7 @@ def plot_nrms_bar(nrms_before, nrms_after, nrms_ana, out_path):
 
 def main():
     print('=' * 70)
-    print('Step 0b: Data-based encoder pre-training (Phase 5)')
+    print('Encoder baseline standalone: train + validate (no MSD)')
     print('=' * 70)
 
     # --- Load data ---
@@ -355,11 +455,36 @@ def main():
     print(f'  std_u = {norm["std_u"].flatten()}')
     print(f'  ystd  = {norm["ystd"]}')
 
+    # =================================================================
+    # CHECK 1: Velocity verification — Python finite-diff vs MATLAB
+    # =================================================================
+    print('\n--- CHECK 1: Velocity verification (Python vs MATLAB) ---')
+    x_python = compute_velocities_from_positions(val_y, norm['P_inv_T'])
+    vel_python = x_python[:, 3:]
+    vel_matlab = val_x_logical[:, 3:]
+    vel_diff_rms = np.sqrt(np.mean((vel_python - vel_matlab)**2, axis=0))
+    vel_matlab_rms = np.sqrt(np.mean(vel_matlab**2, axis=0))
+    vel_nrms = vel_diff_rms / (vel_matlab_rms + 1e-12)
+    print(f'  {"Channel":<6s}  {"RMS diff [m/s]":>14s}  {"NRMS":>10s}')
+    for i, name in enumerate(['dq1', 'dq2', 'dq3']):
+        print(f'  {name:<6s}  {vel_diff_rms[i]:>14.4e}  {vel_nrms[i]:>10.4e}')
+    print(f'  Max velocity NRMS (Python vs MATLAB): {np.max(vel_nrms):.4e}')
+    if np.max(vel_nrms) < 0.01:
+        print('  OK: Python velocities match MATLAB within 1%.')
+    else:
+        print('  WARNING: Python velocities differ from MATLAB significantly.')
+
+    # Use Python-computed states as target (reproducible from measurements)
+    x_target_all = []
+    for _, y_traj, _ in train_data:
+        x_target_all.append(compute_velocities_from_positions(y_traj, norm['P_inv_T']))
+    val_x_target = compute_velocities_from_positions(val_y, norm['P_inv_T'])
+
     # --- Create windowed datasets ---
     print('\nCreating windows...')
     train_windows = []
-    for u, y, x in train_data:
-        uh, yh, xt = create_encoder_windows(u, y, x, norm)
+    for (u, y, _), x_tgt in zip(train_data, x_target_all):
+        uh, yh, xt = create_encoder_windows(u, y, x_tgt, norm)
         train_windows.append((uh, yh, xt))
 
     u_train = np.concatenate([w[0] for w in train_windows])
@@ -367,7 +492,7 @@ def main():
     x_train = np.concatenate([w[2] for w in train_windows])
     print(f'  Training windows: {len(u_train)}')
 
-    u_val, y_val, x_val = create_encoder_windows(val_u, val_y, val_x_logical, norm)
+    u_val, y_val, x_val = create_encoder_windows(val_u, val_y, val_x_target, norm)
     print(f'  Validation windows: {len(u_val)}')
 
     # --- Build encoder (model-based init as warm start) ---
@@ -408,7 +533,6 @@ def main():
 
     t_start = time.time()
     for epoch in range(HP['epochs']):
-        # Shuffle
         perm = torch.randperm(N_train)
         epoch_loss = 0.0
         n_batches = 0
@@ -432,7 +556,6 @@ def main():
         avg_train_loss = epoch_loss / n_batches
         train_losses.append(avg_train_loss)
 
-        # Validation
         encoder.eval()
         with torch.no_grad():
             x_hat_val = encoder(u_val_t, y_val_t)
@@ -470,21 +593,37 @@ def main():
     for i, name in enumerate(STATE_NAMES):
         print(f'    {name} [{PHYS_UNITS[i]}]: {rms_phys[i]:.4e}')
 
+    # =================================================================
+    # CHECK 2: I/O check — one-step output prediction
+    # =================================================================
+    print('\n--- CHECK 2: I/O check (one-step output prediction) ---')
+    nrms_io, y_hat_io, y_next_io = io_check(encoder, val_u, val_y, norm)
+    print(f'  {"Output":<6s}  {"1-step NRMS":>14s}')
+    print(f'  {"-"*6}  {"-"*14}')
+    for i, name in enumerate(['y1', 'y2', 'y3']):
+        print(f'  {name:<6s}  {nrms_io[i]:>14.4e}')
+    print(f'  Max I/O NRMS: {np.max(nrms_io):.4e}')
+    if np.max(nrms_io) < 0.01:
+        print('  OK: Encoder states are pipeline-compatible (1-step output NRMS < 1%).')
+    else:
+        print('  WARNING: Encoder states produce poor 1-step output predictions.')
+
     # --- Verdict ---
     beats_analytical = np.all(nrms_after < nrms_ana)
     beats_init = np.max(nrms_after) < np.max(nrms_before)
 
+    print('\n--- VERDICT ---')
     if beats_analytical:
-        print('\nPASS: Pre-trained encoder beats analytical baseline on ALL channels.')
+        print('  PASS: Pre-trained encoder beats analytical baseline on ALL channels.')
     elif beats_init:
-        print('\nIMPROVED: Pre-training improved over model-based init.')
+        print('  IMPROVED: Pre-training improved over model-based init.')
         worse = [STATE_NAMES[i] for i in range(NX_PHYS) if nrms_after[i] >= nrms_ana[i]]
         print(f'  Still worse than analytical on: {", ".join(worse)}')
     else:
-        print('\nNO IMPROVEMENT: Pre-training did not improve over model-based init.')
+        print('  NO IMPROVEMENT: Pre-training did not improve over model-based init.')
 
     # --- Save encoder weights ---
-    weights_path = os.path.join(OUT_DIR, 'step0b_encoder_weights.pt')
+    weights_path = os.path.join(OUT_DIR, 'encoder_baseline_weights.pt')
     torch.save(encoder.state_dict(), weights_path)
     print(f'\nSaved encoder weights: {weights_path}')
 
@@ -494,19 +633,21 @@ def main():
         nrms_after={name: float(nrms_after[i]) for i, name in enumerate(STATE_NAMES)},
         nrms_analytical={name: float(nrms_ana[i]) for i, name in enumerate(STATE_NAMES)},
         rms_phys_after={name: float(rms_phys[i]) for i, name in enumerate(STATE_NAMES)},
+        nrms_io={f'y{i+1}': float(nrms_io[i]) for i in range(ny)},
+        vel_verification_nrms={f'dq{i+1}': float(vel_nrms[i]) for i in range(3)},
         n_params=n_params,
         hp=HP,
         train_time_s=elapsed_total,
         final_train_loss=train_losses[-1],
         final_val_loss=val_losses[-1],
     )
-    json_path = os.path.join(OUT_DIR, 'step0b_results.json')
+    json_path = os.path.join(OUT_DIR, 'encoder_baseline_results.json')
     with open(json_path, 'w') as f:
         json.dump(results, f, indent=2)
     print(f'Saved: {json_path}')
 
-    # Save trajectories for reconstruction
-    npz_path = os.path.join(OUT_DIR, 'step0b_data.npz')
+    # Save trajectories
+    npz_path = os.path.join(OUT_DIR, 'encoder_baseline_data.npz')
     np.savez_compressed(npz_path,
         x_before_norm=x_hat_before, x_after_norm=x_hat_after,
         x_analytical_norm=x_hat_ana, x_target_norm=x_val,
@@ -519,18 +660,18 @@ def main():
 
     # --- Plots ---
     plot_loss_curve(train_losses, val_losses,
-                    os.path.join(OUT_DIR, 'step0b_loss.png'))
+                    os.path.join(OUT_DIR, 'encoder_baseline_loss.png'))
     plot_comparison(x_hat_after, x_hat_ana, x_val, nrms_after, nrms_ana,
-                    'Step 0b: After pre-training vs analytical',
-                    os.path.join(OUT_DIR, 'step0b_comparison.png'))
+                    'Encoder baseline: after training vs analytical',
+                    os.path.join(OUT_DIR, 'encoder_baseline_comparison.png'))
     plot_error(x_hat_after, x_hat_ana, x_val,
-              'Step 0b: Error after pre-training',
-              os.path.join(OUT_DIR, 'step0b_error.png'))
+              'Encoder baseline: error',
+              os.path.join(OUT_DIR, 'encoder_baseline_error.png'))
     plot_nrms_bar(nrms_before, nrms_after, nrms_ana,
-                  os.path.join(OUT_DIR, 'step0b_nrms_bar.png'))
+                  os.path.join(OUT_DIR, 'encoder_baseline_nrms_bar.png'))
 
     print('\n' + '=' * 70)
-    print('Step 0b complete.')
+    print('Encoder baseline standalone complete.')
 
 
 if __name__ == '__main__':
