@@ -757,32 +757,139 @@ _Step 3c (speed optimization, reverted) and Task 3b.4b (multi-traj loss fix, don
 
 ---
 
-## State Recovery Diagnostic — gantry_interconnect_dynamic.py (2026-06-10)
+## Code Review and Encoder Fix (2026-06-10) ✅
 
-**Goal**: Determine whether the encoder's poor recovery of theta/velocities is (a) basis
-rotation (information present, recoverable by a linear map) or (b) information genuinely
-absent from the encoder state. Decision: D-053.
+**Code review**: Physics, normalization, wiring, data loading all verified correct against
+MATLAB ground truth and Jan's reference. No bugs found in those areas.
 
-**Context**: Code review (2026-06-10) found one hard bug (hybrid encoder one-sample history
-misalignment, `na_right=0` default) and otherwise verified physics, normalization, wiring,
-and data loading as correct. The default learned encoder's poor state recovery is suspected
-to be an identifiability artifact: the ANN block can correct all 8 derivative channels, so
-the loss does not pin states 3:6 to physical velocities; theta has near-zero output weight.
+**Hybrid encoder off-by-one**: Found and fixed in `HybridGantryEncoder.forward()`
+(torch_nets.py). The encoder assumed `ypast[:,-1]` was y[k] but deepSI convention
+(`na_right=0`) means it's y[k-1]. Fixed with linear extrapolation of both position and
+velocity using three history samples. Verified by `verify_encoder_lag.py`: all 6 channels
+now align to x(k), R2 > 0.997. Decision D-053.
 
-- [ ] Add `state_recovery_diagnostic(fit_sys, hp, rid)` after `evaluate_and_save` in
-      `scripts/gantry/gantry_interconnect_dynamic.py` (appended, skeleton preserved)
-- [ ] Call it after each `evaluate_and_save` call in main (both Optuna and single-run paths)
-- [ ] Reports per channel: R2_raw (x_hat[:, :6] as-is), R2_linmap (best OLS map), R2_raw_lag1
-      (against x_true(k-1), detects one-sample lag)
-- [ ] Verify core math with synthetic test (identity encoder -> R2~1; rotated -> raw low, linmap high)
+**State recovery diagnostic**: `state_recovery_diagnostic()` appended to
+`gantry_interconnect_dynamic.py`, called after `evaluate_and_save` in both main paths.
+Reports R2_raw, R2_linmap (OLS), R2_raw_lag1 per channel. Verified with synthetic test.
 
-**Interpretation key**: R2_lin ~ 1 & R2_raw low -> rotated basis (fix: pin basis, e.g. mask ANN
-corrections on physical rows or use fixed hybrid encoder). R2_lin low -> information absent
-(observability or training config). R2_raw_lag1 > R2_raw -> encoder aligned to k-1.
+**Default encoder**: Not a bug. The dynamic-parallel ANN corrects all 8 derivative channels,
+so output-only loss does not pin states 3:6 to physical velocities. Theta has near-zero
+output weight. The R2 linmap diagnostic will distinguish basis rotation from lost information
+after a training run.
 
-**Known open issue (separate)**: hybrid encoder off-by-one — fix is `na_right=1` in
-`SSE_Interconnect` + encoder sized `na+1`. Not implemented yet; diagnostic will expose it
-via the lag column.
+---
+
+## Step 5: Systematic Augmentation Evaluation (2026-06-10)
+
+**NOTE TO NEXT SESSION**: This plan was drafted at the end of a long code-review session.
+You are free to argue with it, restructure it, or reject parts of it. Be critical. The
+reasoning below may have blind spots. Challenge the sweep ranges, the run matrix, and
+especially any implicit assumptions before implementing. If something doesn't make sense,
+push back on the user and discuss before coding.
+
+### Goal
+
+Justify hyperparameter choices (downsampling rate, nf, na_nb) empirically, then run a
+controlled comparison of encoder types x data types to characterize what the augmentation
+learns and why.
+
+### Phase 1: Hyperparameter justification (sweeps)
+
+Justify each choice with a physics argument AND an empirical sweep. The physics argument
+sets the expected range; the sweep confirms it and picks the value.
+
+**1a. Downsampling rate (fs)**
+- Physics argument: highest mode is MSD at 150 Hz. Nyquist requires >300 Hz. At fs=4000 Hz
+  we have 13x oversampling. The multisine excitation band is [1, 200] Hz, so nothing above
+  200 Hz is excited.
+- Empirical: sweep fs in {1000, 2000, 4000} Hz. Run baseline-only (NX_ANN=0) forward sim
+  on one trajectory, report sim-RMS. No training needed. Shows where decimation starts to
+  lose information.
+- Challenge this: is 1000 Hz even worth testing given the 150 Hz mode? Is the RK4 substep
+  count (10x) still adequate at lower fs?
+
+**1b. Rollout horizon nf**
+- Physics argument: MSD settling time tau = 1/(2*pi*150*0.05) ~ 21 ms. 5*tau ~ 106 ms.
+  The MSD ring-down must be visible in the rollout for the loss to learn it. Current
+  nf = 1200 samples = 300 ms at 4 kHz (~ 14*tau), which is conservative.
+- Empirical: sweep nf in {200, 400, 800, 1200} samples (50, 100, 200, 300 ms). Train
+  with default encoder, NX_ANN=2, multisine data. Report sim-RMS and state recovery R2.
+- Challenge this: does very long nf cause vanishing gradients? Is the settling time
+  argument even the right one for BPTT (see lessons.md rule on context mismatch)?
+
+**1c. Encoder history na_nb**
+- Physics argument: encoder needs to see at least one full MSD oscillation period
+  (1/150 Hz ~ 6.7 ms) and ideally some decay. 100 ms = 400 samples captures ~15 periods.
+- Empirical: sweep na_nb in {50, 100, 200, 400} samples (12.5, 25, 50, 100 ms). Same
+  training setup as 1b.
+- Challenge this: does the default ANN encoder even use the temporal structure, or does
+  it just flatten everything? If flattened, more history = more parameters = harder to train.
+
+**Sweep logistics**: Each sweep varies one parameter, holds others at default. Use short
+training (e.g. 50 epochs) to see trends, not convergence. Save sim-RMS and R2 per run.
+
+### Phase 2: Baseline model mismatch quantification
+
+Before any augmentation training, quantify what the baseline model gets wrong.
+
+- [ ] Forward-simulate the 6-state physics-only model (NX_ANN=0, no ANN, no training) on
+      both multisine and trajectory validation data. Report per-channel sim-RMS.
+- [ ] This is the "model mismatch floor": the error the ANN must absorb.
+- [ ] Compare multisine vs trajectory mismatch. If multisine data excites the MSD more,
+      the mismatch should be larger (the hidden mode is more visible).
+- [ ] Print std_x per channel for both data types. Quantifies the normalization conditioning
+      (if std_x[1] for theta is 1000x smaller than std_x[0], that explains poor theta recovery
+      regardless of encoder choice).
+
+### Phase 3: Controlled 2x2 comparison
+
+With hyperparameters fixed from Phase 1, run the full matrix:
+
+|                  | Multisine data | Trajectory data |
+|------------------|----------------|-----------------|
+| Default encoder  | Run A          | Run B           |
+| Hybrid encoder   | Run C          | Run D           |
+
+Also include the physics-only baseline from Phase 2 as reference (no encoder, no ANN).
+
+**Per run, report:**
+1. sim-RMS (val) per channel (X1, X2, Y)
+2. State recovery R2 diagnostic (R2_raw, R2_linmap per physical state channel)
+3. ANN latent state RMS (are the augmented states active?)
+4. Loss convergence curve
+5. Per-state gradient norm during training (encoder ANN params + augmentation ANN params,
+   logged per epoch). If theta's gradient is orders of magnitude below others, that is a
+   quantitative explanation for poor recovery.
+
+**Interpretation matrix:**
+- Run A vs B: does multisine excitation improve augmentation learning?
+- Run C vs D: same question for the hybrid encoder
+- Run A vs C: does fixing the encoder basis (hybrid) improve state recovery?
+- Run B vs D: same question on trajectory data
+- All vs baseline: how much does augmentation reduce sim-RMS vs physics-only?
+
+### Phase 4: Analysis and conclusions
+
+- [ ] Which states are recovered, which are not, and why (gradient magnitude, std_x
+      conditioning, output sensitivity via Cd_norm)
+- [ ] Does the default encoder rotate the basis (R2_linmap >> R2_raw)?
+- [ ] Does the hybrid encoder eliminate the rotation?
+- [ ] Does multisine data make the MSD states more identifiable?
+- [ ] Is theta recovery fundamentally limited by output sensitivity (PBH/observability),
+      or just poorly conditioned (fixable with better normalization/loss weighting)?
+
+### Open questions for the next session to resolve
+
+- Should the gradient logging be per-parameter-group or per-state-channel? Per-channel
+  is more informative but may require hooking into the backward pass.
+- Is 50 epochs enough for the sweeps, or do some hyperparameters only show their effect
+  at convergence?
+- Should we include a "masked ANN" variant (ANN corrections only on augmented state
+  channels 6:8, not on physical channels 0:6) as a fifth run? This directly tests the
+  basis-rotation hypothesis.
+- The PBH observability test scripts exist in `Matlab-scripts/Augmentation/diagnostics/`.
+  Should we run them first to get an analytical answer on theta observability before
+  spending compute on training runs?
 
 ---
 

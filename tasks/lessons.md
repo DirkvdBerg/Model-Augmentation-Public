@@ -14,7 +14,7 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 **Trigger**: When the user asks a question, shares context, or presents a problem to think through
 **Rule**: Respond in text first. Do not call any tools or write any code until the user has acknowledged the explanation and explicitly confirmed the direction. A question is not an implicit "proceed". Sharing context or a problem is not an implicit "proceed". Saying "let me implement" at the end of a text reply and then proceeding in the same turn is also a violation if the user has not confirmed yet.
-**Why**: Violated repeatedly. (1) User asked "what are you doing here?" and "what are you using this checkpoint for?" Both times immediately started coding. (2) User shared NotebookLM output and I started coding. (3) User asked "can't we log through SLURM?" and "where are you saving the files?" indicating the design was still being discussed. I said "Let me implement it" and started editing code in the same message without waiting for confirmation. The rule must fire even when the conversation feels like it is converging on a solution.
+**Why**: Violated repeatedly. (1) User asked "what are you doing here?" and "what are you using this checkpoint for?" Both times immediately started coding. (2) User shared NotebookLM output and I started coding. (3) User asked "can't we log through SLURM?" and "where are you saving the files?" indicating the design was still being discussed. I said "Let me implement it" and started editing code in the same message without waiting for confirmation. (4) After a plan was approved, immediately launched into implementing ALL steps at once (creating tasks, reading files, writing code) without pausing to discuss Step 1. "Plan approved" means "discuss the first step," not "implement everything now." The rule must fire even when the conversation feels like it is converging on a solution. Implementation is one step at a time, with user confirmation between steps.
 
 ---
 
@@ -97,12 +97,12 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
-### Rule: Do not assert a specific cause for early training termination without evidence
+### Rule: Do not assert a specific cause for a run failure without evidence from that run
 
-**Trigger**: When observing that training ran fewer epochs than configured
-**Rule**: Do not attribute the stop to a specific cause (NaN, timeout, early stopping) without direct evidence. Multiple causes are possible: intentional early stop (test run), NaN break, SLURM timeout, KeyboardInterrupt. Ask the user or check logs before stating a cause as fact.
-**Why**: Assumed NaN caused training to stop at 5 epochs and built a diagnosis around it. User corrected this twice: first to say it ran 60 epochs before, then to clarify it was an intentional test run. Both corrections invalidated reasoning that had already been presented confidently.
-**How to apply**: When N < configured epochs, state "training stopped early, cause unclear" and list candidate causes. Only commit to one after the user confirms or log evidence is read.
+**Trigger**: When diagnosing why a run stopped, crashed, or was killed (early termination, OOM, timeout)
+**Rule**: Do not attribute the failure to a specific cause without direct evidence from the failing run itself (its log, its sacct record, its config). In particular, do not assume that an artifact the user shares (a script, config, or output) belongs to the failing run -- confirm which job/config actually produced the failure before building a diagnosis on it.
+**Why**: Two incidents. (1) Assumed NaN caused training to stop at 5 epochs; it was an intentional test run. (2) Declared a `--mem=16gb` SLURM limit to be "the missing piece" explaining an OOM, but that sbatch script wrapped the diagnostic job, not the failed training job (which had `--mem=64gb`). Both diagnoses were presented confidently and were wrong.
+**How to apply**: Before committing to a cause: ask which exact job failed, request its log tail / `sacct` record, and verify any shared script or config is the one used by that job. Until then, present causes as ranked hypotheses, not conclusions.
 
 ---
 
@@ -137,3 +137,21 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 **Rule**: The diagnostic must be able to run independently of the fully completed pipeline. If the purpose is to verify component X works, the script must construct X from scratch and test it, not require a successful run of the full pipeline that includes X. For example: an encoder diagnostic must build and briefly train its own model, not load a fully trained model from a prior multi-hour run.
 **Why**: Built an encoder diagnostic that required loading a trained model, but the whole point was to verify the encoder works before committing to a full training run. The user had to point out this was backwards twice.
 **How to apply**: Before designing any diagnostic, ask: "Can I run this in minutes without any prior artifacts?" If the answer is no, restructure so the diagnostic is self-contained.
+
+---
+
+### Rule: Diagnostic results are data plus falsifiable plots, saved to the simulations output tree
+
+**Trigger**: When presenting diagnostic or verification results as figures
+**Rule**: (1) Save the underlying measurement data (JSON/CSV) and the figures under `simulations/<system>/diagnostics/`, not under `scripts/`. (2) Design each plot as a hypothesis test the viewer can judge for themselves: show the prediction and the independent measurement side by side with the quantified deviation. Do not assert the conclusion in the title; pose the test and let the data answer.
+**Why**: Memory-diagnosis plots were written to `scripts/gantry/figures/` with conclusion-asserting titles ("not a leak"). User rejected this: data must go to `simulations/gantry_subnet/diagnostics` and plots must show whether the claim is correct or not.
+**How to apply**: For each figure ask: "If my claim were wrong, would this plot reveal it?" If the plot only illustrates the claim, restructure it into prediction-vs-measurement with the error stated.
+
+---
+
+### Rule: Do not iterate on matplotlib for block diagrams; use text or TikZ instead
+
+**Trigger**: When the user asks for a block diagram, architecture overview, or signal flow figure
+**Rule**: Do not use matplotlib. It cannot produce readable block diagrams: text overflows boxes, labels overlap arrows, and each fix creates new collisions. After 5+ iterations the result was still unreadable. Instead, offer (1) a clear text/markdown description, or (2) a TikZ/LaTeX source file. Only use matplotlib for data plots (time series, spectra, loss curves).
+**Why**: Spent an entire session iterating on matplotlib box-and-arrow code. Every fix (bigger boxes, moved labels, shaded regions) created new overlap problems. The user correctly called the result unreadable and asked for a text description instead.
+**How to apply**: When the user asks for a diagram, respond in text first. If a figure file is needed, suggest TikZ or draw.io. Never start a matplotlib block diagram script.

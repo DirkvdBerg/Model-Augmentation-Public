@@ -1,113 +1,131 @@
-# Session Handoff — Multisine Excitation Design for Gantry Augmentation
+# Session Handoff — Encoder Standalone Validation + Augmented State Discussion
 
-**Last written**: 2026-06-09
-
----
-
-## Background and motivation
-
-The gantry augmentation pipeline uses a hybrid encoder (analytical physical states + learned augmented states via ANN). The hybrid encoder achieves **val sim-RMS = 0.000130** at initialization (ANN=0), which is better than the physics-only baseline (0.000262). This proves the encoder bottleneck is solved.
-
-However, **training makes things worse** (val sim-RMS jumps to 0.05-0.29). The ANN augmented states have nothing useful to learn because the hidden MSD dynamics (150 Hz resonance) are not excited in the current trajectory data. The MSD IS present in the model (delta_a RMS = 3.37 um) but the current trajectories only excite it at 0-50 Hz, not near its resonance.
-
-**Next step**: Design and generate multisine excitation data that excites the MSD resonance so the ANN can learn the augmented dynamics.
+**Last written**: 2026-06-14
 
 ---
 
-## What needs to be done
+## Discussion to continue
 
-### 1. Determine multisine frequency range from analytical plant dynamics
+**Question**: Can `NX_ANN=2` (augmented states) outperform `NX_ANN=0` in standalone encoder training (no pipeline)?
 
-The frequency band must be driven by the plant dynamics (NOT controller bandwidth). Key references:
-- `model_augmentation/systems/gantry_ss.py` has all physical parameters, masses, stiffnesses, damping
-- The MSD resonance is at 150 Hz (fa=150, from `Matlab-scripts/Augmentation/data/generate_trajectory_data_without_multisine.m` lines 39-46)
-- The system's dominant dynamics are below ~50 Hz, but the MSD adds a 150 Hz mode
-- Supervisor guidance: base flow and fhigh on relevant dynamics range, not on controller escape frequencies
+**Current conclusion**: No, because of the architecture. The `LinearInitEncoderWrapper` has two **separate** subnetworks:
+- `phys_encoder` (linear_encoder_init): outputs 6 physical states, gets gradient from state MSE loss
+- `ann` (zero_init_feed_forward_nn): outputs NX_ANN augmented states, gets **no gradient** because the loss is only on physical states
 
-Use the state-space model to analytically determine:
-- Where the MSD resonance sits (150 Hz, confirm from eigenvalues)
-- What frequency range captures the MSD effect on outputs
-- Upper bound should include 150 Hz; lower bound covers the baseline dynamics
-- Sampling at 1 kHz (Nyquist = 500 Hz) is sufficient for 150 Hz
+Since they share no parameters, the augmented states stay at ~0.
 
-### 2. Generate random-phase multisines and select low crest factor
+**Options for making 6+2 meaningful in standalone**:
+1. **Supervise augmented states on delta_a** — user does NOT want this (we don't know delta_a on real system)
+2. **Single shared-layer network** with 8 outputs — then loss on 6 physical states also trains hidden layers, and the 2 extra outputs get indirect gradient through shared representations
+3. **I/O loss in the pipeline** — this is how Jan does it. The state propagation uses all 8 states, output prediction depends on propagated state, and backprop reaches augmented states indirectly.
 
-Supervisor instruction: "generate multiple, choose the lowest crest factor. Need to work robust, not optimal."
-
-Implementation approach:
-- Generate N random-phase MIMO multisines (different random phases per channel)
-- Compute crest factor for each
-- Select the ones with lowest crest factor
-- deepSI has `deepSI.exp_design.multisine(..., n_crest_factor_optim=N)` which does exactly this
-
-Reference implementations:
-- `scripts/ecc_2025/msd_ndof_data_generation_dynamic.py` uses deepSI multisine with crest factor optimization
-- `scripts/encoder_initialisation/system_simulation.py` same pattern
-- `Matlab-scripts/multisine_muli_traject.m` Schroeder-phase multisine in MATLAB
-
-### 3. Determine safe amplitude (critical, previous attempt used too much)
-
-Previous issue: 40% excitation saturated actuators. Key constraint from meeting notes:
-- Must visualize the total signal (trajectory + multisine) before running
-- Plot the response with and without multisine to see the difference
-- Check against hardware limits (actuator saturation, angle limits at 72 mm)
-- The amplitude must be determined relative to what the system already experiences from the trajectory alone
-
-The amplitude translation: F_equiv = M_eff * (2*pi*f)^2 * A. See `Matlab-output/parameter-recovery-multisine/multisine-analysis.md` for previous amplitude scan results.
-
-### 4. Verify the data is informative
-
-Before committing to long training runs, verify the multisine data actually excites the MSD:
-- Run the existing `scripts/gantry/verification/verify_msd_visibility.py` on the new data
-- Check that the PSD shows energy at 150 Hz
-- Check that residuals (measured - physics-only) are larger with multisine than without
-- Run `diagnose_encoder.py --encoder hybrid` on the new data and check if ANN states become non-zero during training (val sim-RMS should decrease below 0.000130)
-
-### 5. MATLAB integration
-
-The multisine needs to be injected in the MATLAB Simulink model that generates trajectory data. The current data generation script is `Matlab-scripts/Augmentation/data/generate_trajectory_data_without_multisine.m`. A version WITH multisine needs to:
-- Add the multisine as a reference injection or force injection signal
-- Save the same output format (u, y, delta_a per trajectory)
-- Generate T1-T8 + V1 + E1 with multisine applied
+**User wants**: to compare 6+2 vs 6 and see if extra states help. This comparison only makes sense in the pipeline (option 3), OR if the architecture is changed (option 2).
 
 ---
 
-## Key files to read
+## How Jan uses the encoder initialization
 
-| What | Where |
-|------|-------|
-| **Gantry system matrices** | `model_augmentation/systems/gantry_ss.py` |
-| **Current data generation (no multisine)** | `Matlab-scripts/Augmentation/data/generate_trajectory_data_without_multisine.m` |
-| **Previous multisine MATLAB script** | `Matlab-scripts/multisine_muli_traject.m` |
-| **Previous multisine export** | `Matlab-scripts/export_param_recovery_multisine.m` |
-| **deepSI multisine reference** | `scripts/ecc_2025/msd_ndof_data_generation_dynamic.py` |
-| **Multisine design theory** | `docs/multisine-diagnostics-interface.md` |
-| **Trajectory + multisine design** | `docs/trajectory-plus-multisine-design.md` |
-| **Meeting notes on multisine problem** | `meeting-notes/Meetings Tue/13-05-2026-joint-meeting-multisine-problem.txt` |
-| **Previous amplitude analysis** | `Matlab-output/parameter-recovery-multisine/multisine-analysis.md` |
-| **MSD visibility diagnostic** | `scripts/gantry/verification/verify_msd_visibility.py` |
-| **Encoder comparison diagnostic** | `scripts/gantry/verification/diagnose_encoder.py` |
-| **Training script** | `scripts/gantry/gantry_interconnect_dynamic.py` |
-| **Hybrid encoder** | `model_augmentation/utils/torch_nets.py` (`HybridGantryEncoder`) |
+### Reference code
+`scripts/gantry/encoder_initialisation/interconnect_fit.py` (lines 318-530)
+
+### Jan's pipeline flow:
+1. **Build linear_encoder_init** from normalized (Ad_bar, Bd_bar, Cd_bar, Dd_bar)
+2. **Optionally pre-train** via `SS_pre_encoder` (Eq. 35): minimize `||encoder(u_hist, y_hist) - x_baseline||^2`
+   - Uses JAX static model for optimization (adam 50-200 epochs + L-BFGS 200 epochs)
+   - `x_baseline` comes from **forward simulation of the FP model** (NOT from measurements)
+   - Copies trained weights back into a PyTorch encoder
+3. **Inject** into `SSE_Interconnect`: `fit_sys.encoder = initialised_encoder`
+4. **Train full pipeline** via `fit_sys.fit()` with I/O loss (nf-step-RMS)
+   - This is where augmented states get indirect gradient
+   - Validation measures: 1-step, 5-step, 20-step, 50-step, 200-step RMS
+
+### Key: Jan's encoder has `nx_model` outputs total
+- In his MSD example: `nx_model = 4` (2 physical + 2 augmented for MSD)
+- The `linear_encoder_init` is built for ALL 4 states because the linearized system includes MSD states
+- His linearization already includes the MSD as part of the model → so the reconstruction map handles all states
+
+### Our situation is different:
+- Our linearization is the gantry ONLY (6 states, no MSD)
+- The MSD is the unknown disturbance we want to capture
+- `linear_encoder_init` only knows about 6 gantry states
+- The 2 augmented states have no model-based initialization available
+
+### Architecture details
+
+**`linear_encoder_init`** (pre_encoder.py:191-300):
+- ResNet: `x = Wb_psi_y @ y_hist + Wb_psi_u @ u_hist + psi_tilde(y_hist, u_hist)`
+- `Wb_psi_y = A^n @ O_n^{-1}` — from reconstructability theory (THEORY: Hoekstra 2026 Eq. 16-17)
+- `Wb_psi_u = -A^n @ O_n^{-1} @ Gamma_n + gamma_n` — input correction
+- `psi_tilde` = zero-init MLP for nonlinear corrections (starts at 0, so init is purely linear)
+- All weights are `nn.Parameter` — fully trainable in pipeline
+
+**`LinearInitEncoderWrapper`** (torch_nets.py:244-338):
+- `phys_encoder`: linear_encoder_init instance (6 outputs)
+- `ann`: zero_init_feed_forward_nn (NX_ANN outputs) — **separate network, no shared layers**
+- Convention fix: adds/subtracts mean offsets to bridge pipeline↔pure-scaled conventions
+- Forward: `cat(phys_encoder(u,y), ann(u,y))`
 
 ---
 
-## Supervisor constraints (from meeting 2026-05-13)
+## What was done this session
 
-1. Frequency range from plant dynamics, not controller escape
-2. Random-phase MIMO multisine, select lowest crest factor
-3. Conservative amplitude, must not saturate actuators (40% was too much)
-4. Plot total signal (trajectory + multisine) before running experiments
-5. Keep controller constant across all experiments
-6. Document everything, even failures, with plots
+### Encoder standalone scripts created and tested
+
+| Script | Data | NX_ANN | Status |
+|--------|------|--------|--------|
+| `encoder_baseline_standalone.py` | baseline (no MSD) | 0 | TESTED locally, works |
+| `encoder_msd_standalone.py` | MSD | 2 | Written, not yet run |
+
+### Baseline result (local run):
+- Velocities: encoder beats analytical (dq2: 5x better, dq3: 8x better)
+- Positions: encoder slightly worse than analytical (analytical is exact: P_inv@y = 0 error)
+- I/O check: 1-step NRMS < 0.1% (pipeline-compatible)
+- Velocity verification: Python central-diff matches MATLAB within 0.77%
+- Training: 200 epochs, 115s, converges at ~epoch 60
+
+### Script features (both):
+- Target states computed in Python (P_inv@y + central finite-diff), not from MATLAB directly
+- CHECK 1: velocity verification (Python vs MATLAB)
+- CHECK 2: I/O check (one RK4 step)
+- MSD additionally: CHECK 3 augmented state correlation with delta_a
+- Plots: loss, comparison (logical + stage), difference (logical + stage), NRMS bar
+- All plots show NRMS and RMS (with SI prefix) in legend
+- Coordinate names: logical (X, theta, Y, dX, dtheta, dY), stage (x1, x2, Y, dx1, dx2, dY)
+- Saves: .pt weights, .json results, .npz trajectories
+
+### Shell script updated
+`scripts/gantry/encoder/run_encoder_validation.sh`:
+- step0_init → encoder_baseline → encoder_msd → (step1_pipeline | step2_pipeline)
 
 ---
 
-## What has been completed this session
+## Key files
 
-- Hybrid encoder (`HybridGantryEncoder`) implemented and verified in `model_augmentation/utils/torch_nets.py`
-- `USE_HYBRID_ENCODER` toggle in training script
-- `diagnose_encoder.py` updated for parallel default vs hybrid comparison with separate log files
-- Confirmed hybrid encoder works: val sim-RMS = 0.000130 at init (better than physics-only 0.000262)
-- Confirmed ANN has nothing to learn from current data (training makes things worse)
-- MSD visibility fully characterized via `verify_msd_visibility.py` (excited at 0-50 Hz, not at 150 Hz resonance)
+| File | Role |
+|------|------|
+| `scripts/gantry/encoder/encoder_baseline_standalone.py` | Encoder standalone, baseline data |
+| `scripts/gantry/encoder/encoder_msd_standalone.py` | Encoder standalone, MSD data (NX_ANN=2) |
+| `scripts/gantry/encoder/run_encoder_validation.sh` | SLURM runner for all encoder scripts |
+| `model_augmentation/utils/torch_nets.py:244-338` | LinearInitEncoderWrapper (phys + ann) |
+| `model_augmentation/fit_systems/pre_encoder.py:191-300` | linear_encoder_init (Wb matrices) |
+| `scripts/gantry/encoder_initialisation/interconnect_fit.py:318-530` | Jan's reference: how he wires encoder → pipeline |
+| `model_augmentation/fit_systems/blocks.py:639-820` | Gantry_State_Block (RK4 + LFR) |
+| `model_augmentation/systems/gantry_ss.py` | P matrix, Cd, physical parameters |
+
+### Literature
+- `literature/hoekstra2025_lfr-augmentation-ejc.pdf` — Eq. 8 (encoder ResNet), Eq. 16-17 (Wb init from O_n), Eq. 35 (pre-training loss)
+- `literature/drenth2025_lpv-lfr-thesis.pdf` — full derivation and MSD examples
+
+---
+
+## Open question for next session
+
+The user wants 6+2 to outperform 6 in standalone. For this to work, the architecture needs to allow gradient flow to augmented states. Options:
+
+1. **Shared-layer architecture**: Replace two separate networks with one MLP that outputs 8 states. Physical state loss trains shared hidden layers → augmented outputs get meaningful hidden representations. But: loses the clean model-based initialization on the linear part.
+
+2. **I/O loss addition**: Add a secondary loss term: feed encoder states through one RK4 step, compare y_hat vs y_measured. This creates a gradient path for augmented states (since the state model could benefit from knowing MSD state). This is essentially a lightweight version of the pipeline.
+
+3. **Accept pipeline-only**: Augmented states only make sense in the full pipeline. Standalone validates the 6 physical states; pipeline validates the 6+2.
+
+The user explicitly does NOT want to supervise on delta_a (unknown in practice). They want to see the encoder discover MSD dynamics from I/O data alone.

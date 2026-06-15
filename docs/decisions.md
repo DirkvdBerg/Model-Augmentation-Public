@@ -1500,3 +1500,102 @@ by constant factors anyway.
   only a scheduling variable.
 - A post-hoc coordinate transform would be needed to directly compare this FRF against
   kamtin's `StageCoordinatesSystem` (which is in logical coordinates).
+
+---
+
+### [D-053] State recovery diagnostic appended to gantry_interconnect_dynamic.py (not standalone)
+**Date**: 2026-06-10
+**What**: A `state_recovery_diagnostic()` function is added at the end of
+`scripts/gantry/gantry_interconnect_dynamic.py` and called after `evaluate_and_save` in
+both main paths. It compares encoder state estimates x_hat(k) on the validation set against
+physical states reconstructed from measurements (q = inv(P^T) y, velocities via backward FD),
+reporting per channel: R2_raw (x_hat[:, :6] read directly as normalized physical states),
+R2_linmap (best OLS linear map x_true ~ x_hat @ W + b), and R2_raw_lag1 (against x_true(k-1)).
+
+**Why**: The 2026-06-10 code review verified physics, normalization, wiring, and data loading
+as correct, leaving two candidate explanations for poor theta/velocity recovery:
+(a) basis rotation -- the dynamic-parallel ANN corrects all 8 derivative channels, so the
+output-only loss does not pin states 3:6 to physical velocities; (b) information genuinely
+absent (observability / training config). R2_linmap ~ 1 with low R2_raw proves (a);
+low R2_linmap proves (b). R2_raw_lag1 > R2_raw exposes the separately-found hybrid encoder
+one-sample misalignment (deepSI na_right=0: ypast ends at y[k-1] while the encoder
+initializes x(k)).
+
+**Ruled out**: Standalone script in `scripts/gantry/verification/` (preferred per the
+self-contained-diagnostic rule) -- rejected by user because no trained checkpoint exists;
+the diagnostic must piggyback on the next training run. Window construction follows the
+deepSI hist convention exactly (ypast = y[k-na:k], na_right=0) so the diagnostic sees what
+training saw.
+
+**Constrains**: Diagnostic runs on the validation trajectory only; windows are subsampled
+(~2000) to bound memory. "True" velocities are backward-FD reconstructions at fs=4000 Hz,
+exact only for noise-free data (currently the case).
+
+---
+
+## D-054: Encoder initialization via reconstructability map (Hoekstra 2026)
+
+**Date**: 2026-06-11
+
+**Decision**: Replace detached `HybridGantryEncoder` with `linear_encoder_init`-based encoder
+from Hoekstra 2026 ("Encoder initialisation methods in the model augmentation setting").
+
+**Why**: The `HybridGantryEncoder` computes physical states analytically with `.detach()`,
+freezing them. The FP model's positions/velocities don't exactly match the real system, and
+the optimizer cannot correct this mismatch. The `linear_encoder_init` approach initializes
+encoder weights from the baseline model's reconstructability map (Eq. 16-17) while keeping
+all weights as trainable `nn.Parameter`. This gives a good starting point that the optimizer
+can then refine.
+
+**Implementation**:
+- Linearize CT gantry model at Y_op=0 and discretize (ZOH at TS_NEW=1/4000)
+  → `model_augmentation/systems/gantry_linearization.py`
+- Normalize (Ad, Bd, Cd, Dd) with `normalize_linear_ss_matrices()` using training data stats
+- Create `linear_encoder_init(A_bar, B_bar, C_bar, D_bar, nx=6, na=25, nb=25)`
+- Wrap with `LinearInitEncoderWrapper` (physical encoder + zero-init ANN for augmented states)
+- Inject with `na_right=1, nb_right=1` (encoder window includes y(k), required by
+  reconstructability map)
+- `na = nb = 4*NX_PHYS + 1 = 25` (Jan's rule of thumb)
+- Observability rank verified = 6 (full), ZOH vs RK4 error < 1e-11
+
+**Ruled out**:
+- Data-based encoder init (SS_pre_encoder, Eq. 35): deferred, not ruled out. Will use if
+  model-based struggles with LPV nonlinearity.
+- Keeping HybridGantryEncoder: `.detach()` prevents learning of physical state corrections.
+
+**Constrains**: Requires `na_right=1, nb_right=1` in SSE_Interconnect. Baseline simulation
+states must exist at `data/gantry/baseline_simulations/multisine_LPV/baseline_states.npz` for
+the normalization of the DT matrices.
+
+---
+
+### [D-017] Convention fix in LinearInitEncoderWrapper
+
+**Date**: 2026-06-12
+
+**Decision**: Add normalization convention conversion inside `LinearInitEncoderWrapper` to
+bridge the mismatch between `normalize_linear_ss_matrices` (pure scaling) and the pipeline's
+mean-subtracted data.
+
+**Why**: `normalize_linear_ss_matrices` produces (Ad_bar, Bd_bar, Cd_bar, Dd_bar) in the
+pure-scaled convention: x_scaled = x/std_x, u_scaled = u/std_u, y_scaled = y/std_y. The
+Wb_psi_y and Wb_psi_u matrices are derived from these normalized matrices. But the training
+pipeline normalizes with mean subtraction: u_norm = (u - u_mean)/std_u, y_norm = (y - y0)/ystd.
+Diagnostic results showed this mismatch caused up to 97% velocity NRMS (dq3), while pure-scaled
+reconstruction achieved ~10% (limited by LTI model accuracy and O_n conditioning at 818).
+
+**Implementation**: `LinearInitEncoderWrapper` now accepts optional normalization constants
+(u_mean, std_u, y0, ystd, x_mean, std_x). In `forward()`:
+1. Add u_mean/std_u and y0/ystd to input (undo mean subtraction → pure-scaled)
+2. Wb_psi_y @ y_scaled + Wb_psi_u @ u_scaled (reconstruction in pure-scaled space)
+3. Subtract x_mean/std_x from output (pure-scaled → pipeline convention)
+Constants are stored as registered buffers (no gradients, move with `.to(device)`).
+ANN branch still receives original pipeline-convention data.
+
+**Ruled out**: Adding bias correction to encoder output (CHECK 7 in diagnostic showed this
+doesn't work because it assumes perfect pure-scaled reconstruction, which doesn't hold due
+to LTI model error). Modifying `normalize_linear_ss_matrices` itself (would break other users).
+
+**Constrains**: All call sites of `LinearInitEncoderWrapper` must pass the 6 normalization
+constants. Old call sites (without constants) still work — convention fix is skipped when
+constants are None (backward compatible).
