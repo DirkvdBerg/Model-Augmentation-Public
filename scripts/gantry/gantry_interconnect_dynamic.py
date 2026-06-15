@@ -13,10 +13,13 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from model_augmentation.utils.utils import *
-from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn, HybridGantryEncoder
+from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn, HybridGantryEncoder, LinearInitEncoderWrapper
 from model_augmentation.fit_systems.interconnect import *
 from model_augmentation.fit_systems.blocks import *
+from model_augmentation.fit_systems.pre_encoder import linear_encoder_init
 from model_augmentation.systems.gantry_ss import Cd, Dd, P
+from model_augmentation.systems.gantry_linearization import gantry_linearize_and_discretize
+from model_augmentation.utils.utils import normalize_linear_ss_matrices
 
 ## ═══════════════════════════════════════════════════════════════════════════════
 ## Configuration
@@ -30,7 +33,11 @@ NX_PHYS = 6   # physical states: q1, q2, q3, dq1, dq2, dq3
 nu  = 3
 ny  = 3
 Y_OP = None   # None = LPV self-scheduled; float = frozen operating point [m]
-USE_HYBRID_ENCODER = True  # True = analytical physical states + learned augmented; False = default learned encoder
+# Encoder: 'linear_map' = Hoekstra 2026 reconstructability init (trainable);
+#          'hybrid' = analytical physical + learned augmented (detached);
+#          'default' = standard deepSI learned encoder
+ENCODER_INIT = 'linear_map'
+USE_HYBRID_ENCODER = (ENCODER_INIT == 'hybrid')
 ANN_ACTIVATION = 'tanh'    # 'tanh' = nonlinear ANN (default); 'linear' = Identity activation (Jan's ECC setup)
 SEED = 42
 
@@ -151,7 +158,7 @@ Dd_np   = Dd.numpy()                                               # (3, 3)
 
 PHY_IX = np.arange(NX_PHYS)   # [0,1,2,3,4,5]
 
-_encoder_tag = 'hybrid' if USE_HYBRID_ENCODER else 'default'
+_encoder_tag = ENCODER_INIT
 save_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'simulations',
                         'gantry_subnet', f'{MODE}_{_encoder_tag}')
 os.makedirs(save_dir, exist_ok=True)
@@ -165,8 +172,18 @@ def build_model(hp):
     """Build interconnect + SSE_Interconnect from hp dict, return fit_sys (untrained)."""
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
-    na = hp.get('na_nb', 2 * nxd + 1)
-    nb = hp.get('na_nb', 2 * nxd + 1)
+
+    # Encoder history: for linear_map, use Jan's 4*nx+1 rule; otherwise time-based
+    if ENCODER_INIT == 'linear_map':
+        na = 4 * NX_PHYS + 1  # HEURISTIC: Jan's rule of thumb, never needed more (25 for nx=6)
+        nb = na
+    else:
+        na = hp.get('na_nb', 2 * nxd + 1)
+        nb = hp.get('na_nb', 2 * nxd + 1)
+
+    # na_right=1 for linear_map: reconstructability map needs y(k) in the window
+    na_right = 1 if ENCODER_INIT == 'linear_map' else 0
+    nb_right = 1 if ENCODER_INIT == 'linear_map' else 0
 
     ic = Interconnect(nxd, nu, ny, debugging=False)
 
@@ -198,6 +215,7 @@ def build_model(hp):
 
     fit_sys = SSE_Interconnect(
         interconnect=ic, na=na, nb=nb,
+        na_right=na_right, nb_right=nb_right,
         e_net_kwargs={
             "n_nodes_per_layer": hp['n_nodes_per_layer'],
             "n_hidden_layers": hp['n_hidden_layers'],
@@ -210,8 +228,48 @@ def build_model(hp):
     fit_sys.norm.y0   = y0
     fit_sys.norm.ystd = ystd
 
-    # Inject hybrid encoder BEFORE init_model (guard at init_nets skips default encoder)
-    if USE_HYBRID_ENCODER:
+    # --- Encoder injection (BEFORE init_model) ---
+    if ENCODER_INIT == 'linear_map':
+        # THEORY: Hoekstra 2026 Eq. 16-17 — initialize encoder from reconstructability map
+        Ad, Bd, Cd_dt, Dd_dt = gantry_linearize_and_discretize(dt=TS_NEW)
+
+        # Build System_data_with_x for normalization (needs state trajectories)
+        baseline_npz_path = os.path.join(
+            os.path.dirname(__file__), '..', '..', 'data', 'gantry',
+            'baseline_simulations', f'{MODE}_LPV', 'baseline_states.npz')
+        if os.path.exists(baseline_npz_path):
+            bl = np.load(baseline_npz_path, allow_pickle=True)
+            x_phys_all = np.concatenate(bl['x_train_phys'])
+        else:
+            # Fallback: use the finite-diff states from the data loading section
+            x_phys_all = x_all
+            print("WARNING: baseline_states.npz not found, using finite-diff states for normalization")
+
+        sys_data_with_x = deepSI.System_data(u=u_all, y=y_all)
+        sys_data_with_x.x = x_phys_all
+
+        Ad_bar, Bd_bar, Cd_bar, Dd_bar = normalize_linear_ss_matrices(
+            Ad, Bd, Cd_dt, Dd_dt, sys_data_with_x)
+
+        phys_encoder = linear_encoder_init(
+            A=Ad_bar, B=Bd_bar, C=Cd_bar, D=Dd_bar,
+            nx=NX_PHYS, nu=nu, ny=ny, na=na, nb=nb,
+            n_nodes_per_layer=hp['n_nodes_per_layer'],
+            n_hidden_layers=hp['n_hidden_layers'],
+            flag_linear_only=False,
+        )
+
+        fit_sys.encoder = LinearInitEncoderWrapper(
+            phys_encoder=phys_encoder,
+            nx_ann=NX_ANN,
+            nb=nb + nb_right, nu=nu, na=na + na_right, ny=ny,
+            n_nodes_per_layer=hp['n_nodes_per_layer'],
+            n_hidden_layers=hp['n_hidden_layers'],
+            u_mean=u_mean, std_u=std_u, y0=y0, ystd=ystd,
+            x_mean=x_mean, std_x=std_x,
+        ).to(DTYPE_PT)
+
+    elif ENCODER_INIT == 'hybrid':
         fit_sys.encoder = HybridGantryEncoder(
             nb=nb, nu=nu, na=na, ny=ny, nx=nxd,
             P_inv_T=P_inv_T, y0=y0, ystd=ystd,
@@ -220,9 +278,10 @@ def build_model(hp):
             n_nodes_per_layer=hp['n_nodes_per_layer'],
             n_hidden_layers=hp['n_hidden_layers'],
         ).to(DTYPE_PT)
+    # else: ENCODER_INIT == 'default' — let SSE_Interconnect create its own
 
     fit_sys.init_model(sys_data=train_data, auto_fit_norm=False)
-    if USE_HYBRID_ENCODER:
+    if ENCODER_INIT in ('hybrid', 'linear_map'):
         fit_sys.hfn.to(DTYPE_PT)
     else:
         for net in (fit_sys.encoder, fit_sys.hfn):
