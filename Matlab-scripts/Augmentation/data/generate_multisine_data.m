@@ -330,34 +330,115 @@ for i = 1:numel(trajs)
     end
     fprintf('  Saved: %s  (%d samples, %.2f s)\n', out_path, size(q_with,1), t_sim(end));
 
-    % ── 3h. Summary plots
-    figure('Name', sp.id, 'Position', [50 50 1400 800]);
-    tiledlayout(3, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
-    ch_names = {'X1', 'X2', 'Y'};
+    % ── 3h-pre. Trajectory-only data on simulation time grid
+    % Use Simulink without-multisine when available (MSD mode),
+    % fall back to lsim closed-loop approximation otherwise.
+    if USE_MSD
+        q_traj_only = q_without;
+        u_traj_only = lsim(Cfb_ss, r_sim - q_without);
+    elseif numel(t_sim) ~= size(q0, 1)
+        q_traj_only = interp1(t_traj, q0 + r_eq, t_sim);
+        u_traj_only = interp1(t_traj, u0_fb, t_sim);
+    else
+        q_traj_only = q0 + r_eq;
+        u_traj_only = u0_fb;
+    end
 
-    % Positions (with multisine)
+    % ── 3h-1. Presentation figure: motion profiles and multisine effect
+    ch_labels = {'$X_1$', '$X_2$', '$Y$'};
+    col_traj = [0.0 0.45 0.74];     % blue
+    col_ms   = [0.85 0.33 0.10];    % orange
+
+    figure('Name', [sp.id ' - Presentation'], ...
+           'Position', [50 30 1800 900], 'Color', 'w');
+    tiledlayout(3, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+
+    % Row 1: Position overlay (trajectory-only vs trajectory+multisine)
+    ax_r1 = gobjects(1, 3);
+    for ch = 1:3
+        ax_r1(ch) = nexttile(ch);
+        plot(t_sim, q_traj_only(:,ch), 'Color', col_traj, ...
+             'LineWidth', 1.0, 'DisplayName', 'trajectory');
+        hold on
+        plot(t_sim, double(q_with(:,ch)), 'Color', col_ms, ...
+             'LineWidth', 0.8, 'DisplayName', 'trajectory + multisine');
+        title(ch_labels{ch}, 'Interpreter', 'latex', 'FontSize', 12);
+        ylabel('Position [m]');
+        grid on
+        set(gca, 'XTickLabel', []);
+        if ch == 1
+            legend('Location', 'northeast', 'FontSize', 8);
+        end
+    end
+
+    % Row 2: Position difference (multisine effect on position)
+    ax_r2 = gobjects(1, 3);
+    for ch = 1:3
+        ax_r2(ch) = nexttile(3 + ch);
+        plot(t_sim, double(q_with(:,ch)) - q_traj_only(:,ch), ...
+             'Color', [0.4 0.4 0.4], 'LineWidth', 0.8);
+        ylabel('\Delta position [m]');
+        grid on
+        set(gca, 'XTickLabel', []);
+        if ch == 2
+            title('Position difference (with ms - without ms)', 'FontSize', 10);
+        end
+    end
+
+    % Row 3: Force overlay (trajectory-only vs trajectory+multisine)
+    ax_r3 = gobjects(1, 3);
+    for ch = 1:3
+        ax_r3(ch) = nexttile(6 + ch);
+        plot(t_sim, u_traj_only(:,ch), 'Color', col_traj, ...
+             'LineWidth', 1.0, 'DisplayName', 'trajectory');
+        hold on
+        plot(t_sim, double(u_total_with(:,ch)), 'Color', col_ms, ...
+             'LineWidth', 0.8, 'DisplayName', 'trajectory + multisine');
+        ylabel('Force [N]');
+        xlabel('Time [s]');
+        grid on
+        if ch == 1
+            legend('Location', 'northeast', 'FontSize', 8);
+        end
+    end
+
+    linkaxes([ax_r1, ax_r2, ax_r3], 'x');
+    if USE_MSD
+        sgtitle(sprintf('%s | %s | multisine %.0f N RMS | MSD f_a = %d Hz', ...
+            sp.id, sp.split, amp_max, fa), 'FontSize', 12, 'FontWeight', 'bold');
+    else
+        sgtitle(sprintf('%s | %s | multisine %.0f N RMS | baseline', ...
+            sp.id, sp.split, amp_max), 'FontSize', 12, 'FontWeight', 'bold');
+    end
+
+    % ── 3h-2. Diagnostic plots
+    figure('Name', [sp.id ' - Diagnostics'], 'Position', [50 50 1400 800]);
+    tiledlayout(3, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+    ch_diag = {'X1', 'X2', 'Y'};
+
+    % Stage positions (with multisine)
     nexttile; hold on
-    for ch = 1:3, plot(t_sim, q_with(:,ch)*1e3, 'DisplayName', ch_names{ch}); end
-    ylabel('Position [mm]'); xlabel('Time [s]');
+    for ch = 1:3, plot(t_sim, q_with(:,ch), 'DisplayName', ch_diag{ch}); end
+    ylabel('Position [m]'); xlabel('Time [s]');
     title('Stage positions (with multisine)'); legend; grid on
 
-    % Force decomposition
+    % Y-channel force decomposition
     nexttile; hold on
-    plot(t_sim, double(u_total_with(:,3)), 'DisplayName', 'u_{total}');
-    plot(t_sim, double(u_fb_with(:,3)),    'DisplayName', 'u_{fb}');
-    plot(t_sim, double(f_ms(:,3)),         'DisplayName', 'f_{ms}');
+    plot(t_sim, double(u_total_with(:,3)), 'DisplayName', 'total');
+    plot(t_sim, double(u_fb_with(:,3)),    'DisplayName', 'feedback');
+    plot(t_sim, double(f_ms(:,3)),         'DisplayName', 'multisine');
     ylabel('Force [N]'); xlabel('Time [s]');
-    title('Y-channel force decomposition'); legend; grid on
+    title('Y force decomposition'); legend; grid on
 
-    % delta_a comparison (MSD only, empty tile for baseline)
+    % Hidden MSD displacement (MSD only)
     nexttile; hold on
     if USE_MSD
-        plot(t_sim, double(da_with)*1e6,    'DisplayName', 'with multisine');
-        plot(t_sim, double(da_without)*1e6, 'DisplayName', 'without');
-        ylabel('\delta_a [\mum]'); xlabel('Time [s]');
+        plot(t_sim, double(da_with),    'DisplayName', 'with multisine');
+        plot(t_sim, double(da_without), 'DisplayName', 'without');
+        ylabel('Displacement [m]'); xlabel('Time [s]');
         title('Hidden MSD displacement'); legend; grid on
     else
-        title('(no MSD)'); axis off
+        title('No MSD'); axis off
     end
 
     % Force budget bar chart
@@ -366,10 +447,10 @@ for i = 1:numel(trajs)
     if USE_MSD
         u_fb_without = lsim(Cfb_ss, r_sim - q_without);
         pct_without = 100 * max(abs(u_fb_without)) ./ lim.force_peak;
-        bar(categorical(ch_names), [pct_without; pct_with]');
-        legend('without ms', 'with ms');
+        bar(categorical(ch_diag), [pct_without; pct_with]');
+        legend('without multisine', 'with multisine');
     else
-        bar(categorical(ch_names), pct_with');
+        bar(categorical(ch_diag), pct_with');
     end
     ylabel('Peak force [% of limit]');
     title('Force budget usage'); grid on
@@ -377,31 +458,33 @@ for i = 1:numel(trajs)
     % PSD of Y output
     nexttile; hold on
     [psd_with, f_hz] = pwelch(q_with(:,3), hanning(N_period), N_period/2, N_period, fs);
-    semilogy(f_hz, psd_with, 'DisplayName', 'with ms');
+    semilogy(f_hz, psd_with, 'DisplayName', 'with multisine');
     if USE_MSD
         psd_without = pwelch(q_without(:,3), hanning(N_period), N_period/2, N_period, fs);
-        semilogy(f_hz, psd_without, 'DisplayName', 'without ms');
+        semilogy(f_hz, psd_without, 'DisplayName', 'without multisine');
         xline(150, 'r--', '150 Hz', 'LineWidth', 1);
     end
     xlim([0 500]); ylabel('PSD [m^2/Hz]'); xlabel('Frequency [Hz]');
-    title('PSD of Y output'); legend; grid on
+    title('Y output PSD'); legend; grid on
 
-    % PSD of residual (MSD only, empty tile for baseline)
+    % PSD of residual (MSD only)
     nexttile;
     if USE_MSD
         semilogy(f_psd, psd_res); hold on
         xline(150, 'r--', '150 Hz', 'LineWidth', 1);
         xlim([0 500]); ylabel('PSD [m^2/Hz]'); xlabel('Frequency [Hz]');
-        title('PSD of residual (Y_{with} - Y_{without})'); grid on
+        title('Y residual PSD (with - without)'); grid on
     else
-        title('(no residual)'); axis off
+        title('No residual'); axis off
     end
 
     if USE_MSD
-        sgtitle(sprintf('%s  |  amp = %.0f N RMS  |  \\delta_a ratio = %.1fx', ...
-            sp.id, amp_max, da_rms_with / da_rms_without));
+        sgtitle(sprintf('%s | %s | %.0f N RMS | delta_a ratio = %.1fx', ...
+            sp.id, sp.split, amp_max, da_rms_with / da_rms_without), ...
+            'FontSize', 12, 'FontWeight', 'bold');
     else
-        sgtitle(sprintf('%s  [baseline]  |  amp = %.0f N RMS', sp.id, amp_max));
+        sgtitle(sprintf('%s | %s | %.0f N RMS | baseline', ...
+            sp.id, sp.split, amp_max), 'FontSize', 12, 'FontWeight', 'bold');
     end
 end
 
