@@ -57,7 +57,7 @@ DTYPE = torch.float64
 #   'ref_injection' — T1–T8, multisine injected into reference r (preferred)
 #                     Matlab-output/parameter-recovery-ref-injection/
 #                     Excitation reaches plant via T≈1, not attenuated by S≪1.
-DATASET = 'base_extended'
+DATASET = 'base_extended_6mm'
 
 _BASE = os.path.join(os.path.dirname(__file__), '..', '..')
 _TRAJ_BASE = (
@@ -103,6 +103,12 @@ _DATASETS = {
         traj_dir     = os.path.join(_BASE, 'Matlab-output', 'identification-trajectories-no-multisine'),
         val_test_dir = os.path.join(_BASE, 'Matlab-output', 'identification-trajectories-no-multisine'),
         save_dir     = os.path.join(_BASE, 'simulations', 'param_recovery_base_extended'),
+        traj_specs   = _TRAJ_EXTENDED,
+    ),
+    'base_extended_6mm': dict(
+        traj_dir     = os.path.join(_BASE, 'Matlab-output', 'identification-trajectories-no-multisine-6mm'),
+        val_test_dir = os.path.join(_BASE, 'Matlab-output', 'identification-trajectories-no-multisine-6mm'),
+        save_dir     = os.path.join(_BASE, 'simulations', 'param_recovery_base_extended_6mm'),
         traj_specs   = _TRAJ_EXTENDED,
     ),
 }
