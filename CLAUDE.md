@@ -4,6 +4,7 @@
 - `kamtin-fp-model/` — READ ONLY, never modify. All Python must conform to it.
 - Log design decisions in `docs/decisions.md` BEFORE implementing non-trivial choices.
 - `scripts/` benchmarks (MSD, Bouc-Wen, Cascaded Tanks) are reference examples only — not the target system.
+- When the user says "don't touch the code," do NOT edit or run ANY code. Only respond in text. Present the changes you would make and wait for explicit permission before writing or editing any file.
 
 ## Python Environment
 Bash: `conda run -n GraduationProject python ...`. User manual: `conda activate GraduationProject`.
