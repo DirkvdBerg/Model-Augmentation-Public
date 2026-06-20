@@ -35,20 +35,18 @@ CONFIG = "baseline"  # Toggle: "baseline" or "msd"
 
 FS_ORIG = 20000  # THEORY: original sample rate (Hz), from main.m line 164
 # THEORY: integer divisors of 20000 for alias-free decimation (ZOH inputs)
-ALL_FS_NEW = [
-    20000, 10000, 5000, 4000, 2500, 2000, 1000, 800,
-    500, 400, 250, 200, 100, 50,
-]
+# Transition region for baseline f_high=7 Hz (Nyquist=14 Hz)
+ALL_FS_NEW = [100, 80, 50, 40, 25, 20]
 # HEURISTIC: 1% conservative bound for acceptable discretization error
 NRMS_THRESHOLD = 0.01
 # Reference uses high up_sample to approximate continuous-time integration
 REF_UP_SAMPLE = 20
 
-# T8: symmetric + antisymmetric X with Y sweep, excites all modes + LPV scheduling
-MAT_FILE = "T8_X_sym_anti_Y_sweep.mat"
+# T7: full MIMO (X sym + X anti + Y sweep), excites all modes + LPV scheduling
+MAT_FILE = "T7_full_MIMO.mat"
 
 DATA_DIR = os.path.join(
-    PROJECT_ROOT, "data", "gantry", "matlab", "multisine", "baseline"
+    PROJECT_ROOT, "data", "gantry", "matlab", "multisine", "baseline-v2"
 )
 OUT_DIR = os.path.join(
     PROJECT_ROOT, "simulations", "gantry_subnet", "diagnostics"
