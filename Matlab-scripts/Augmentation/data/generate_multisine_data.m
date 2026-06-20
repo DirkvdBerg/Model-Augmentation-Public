@@ -43,7 +43,7 @@
 clear; clc; close all;
 
 %% ── MODE TOGGLE ─────────────────────────────────────────────────────────
-USE_MSD = true;   % true = augmented (baseline + hidden MSD)
+USE_MSD = false;  % true = augmented (baseline + hidden MSD)
                    % false = baseline (rigid payload, no MSD)
 MA_FRAC = 0.50;    % mass fraction of hidden MSD (only used when USE_MSD = true)
                    % 0.10 = default (saves to multisine/)
@@ -91,16 +91,20 @@ n_hold   = round(0.5/ts);  % 0.5 s settle hold at start and end
 % ── Hardware limits (TELICA spec)
 lim.pos_X      = 0.375;              % [m]
 lim.pos_Y      = 0.400;              % [m]
-lim.diff       = sin(0.1) * Lb;     % [m] max |X1-X2|
+lim.diff       = 6e-3;              % [m] max |X1-X2| = 6 mm (from generate_data_correct_max_theta.m)
 lim.vel        = 2.0;               % [m/s]
 lim.acc_X      = 30.0;             % [m/s^2] (checked on r only)
 lim.acc_Y      = 50.0;             % [m/s^2] (checked on r only)
 lim.force_peak = [2000, 2000, 1420]; % [N] peak [FX1,FX2,FY]
 lim.force_rms  = [916,  916,  656];  % [N] RMS
 
-% ── Multisine frequency band (from diagnostics/multisine_frequency_range.m)
+% ── Multisine frequency band
 f_low  = 1;    % [Hz] fundamental of 1-second period
-f_high = 200;  % [Hz] covers MSD resonance at ~150 Hz + margin
+if USE_MSD
+    f_high = 200;  % [Hz] covers MSD resonance at ~150 Hz + margin (from diagnostics/multisine_frequency_range_MSD.m)
+else
+    f_high = 7;    % [Hz] single oscillatory mode at ~5 Hz (from diagnostics/multisine_frequency_range_baseline.m)
+end
 
 % ── Amplitude sweep grid [N RMS]
 amp_grid = [1, 2, 5, 10, 20, 50, 100, 200, 400];
@@ -135,13 +139,13 @@ fprintf('Multisine seeds: train=%d (CF=%.3f), val=%d (CF=%.3f), test=%d (CF=%.3f
 trajs(1).id='T1_Y_sweep_conservative'; trajs(1).split='train'; trajs(1).Y_initial=0.3; trajs(1).X_sym_amp=0;    trajs(1).X_anti_amp=0;     trajs(1).Y_disp=0.6; trajs(1).vmax_X=0;   trajs(1).amax_X=0;    trajs(1).vmax_Y=1.00; trajs(1).amax_Y=10.0; trajs(1).jerkTime=0.050;
 trajs(2).id='T2_X_sym_Y030';          trajs(2).split='train'; trajs(2).Y_initial=0.3; trajs(2).X_sym_amp=0.15; trajs(2).X_anti_amp=0;     trajs(2).Y_disp=0;   trajs(2).vmax_X=1.5; trajs(2).amax_X=20.0; trajs(2).vmax_Y=1.00; trajs(2).amax_Y=20.0; trajs(2).jerkTime=0.030;
 trajs(3).id='T3_X_sym_Y000';          trajs(3).split='train'; trajs(3).Y_initial=0.0; trajs(3).X_sym_amp=0.15; trajs(3).X_anti_amp=0;     trajs(3).Y_disp=0;   trajs(3).vmax_X=1.5; trajs(3).amax_X=20.0; trajs(3).vmax_Y=1.00; trajs(3).amax_Y=20.0; trajs(3).jerkTime=0.030;
-trajs(4).id='T4_X_antisym_Y020';      trajs(4).split='train'; trajs(4).Y_initial=0.2; trajs(4).X_sym_amp=0;    trajs(4).X_anti_amp=0.030; trajs(4).Y_disp=0;   trajs(4).vmax_X=0.5; trajs(4).amax_X=8.0;  trajs(4).vmax_Y=1.00; trajs(4).amax_Y=20.0; trajs(4).jerkTime=0.040;
+trajs(4).id='T4_X_antisym_Y020';      trajs(4).split='train'; trajs(4).Y_initial=0.2; trajs(4).X_sym_amp=0;    trajs(4).X_anti_amp=0.0025; trajs(4).Y_disp=0;   trajs(4).vmax_X=0.5; trajs(4).amax_X=8.0;  trajs(4).vmax_Y=1.00; trajs(4).amax_Y=20.0; trajs(4).jerkTime=0.040;
 trajs(5).id='T5_X_sym_Y_sweep';       trajs(5).split='train'; trajs(5).Y_initial=0.2; trajs(5).X_sym_amp=0.10; trajs(5).X_anti_amp=0;     trajs(5).Y_disp=0.4; trajs(5).vmax_X=1.0; trajs(5).amax_X=15.0; trajs(5).vmax_Y=1.00; trajs(5).amax_Y=20.0; trajs(5).jerkTime=0.035;
 trajs(6).id='T6_Y_sweep_aggressive';  trajs(6).split='train'; trajs(6).Y_initial=0.3; trajs(6).X_sym_amp=0;    trajs(6).X_anti_amp=0;     trajs(6).Y_disp=0.6; trajs(6).vmax_X=0;   trajs(6).amax_X=0;    trajs(6).vmax_Y=1.80; trajs(6).amax_Y=42.0; trajs(6).jerkTime=0.025;
-trajs(7).id='T7_X_antisym_Y_sweep';   trajs(7).split='train'; trajs(7).Y_initial=0.3; trajs(7).X_sym_amp=0;    trajs(7).X_anti_amp=0.030; trajs(7).Y_disp=0.6; trajs(7).vmax_X=0.5; trajs(7).amax_X=8.0;  trajs(7).vmax_Y=1.50; trajs(7).amax_Y=20.0; trajs(7).jerkTime=0.040;
-trajs(8).id='T8_X_sym_anti_Y_sweep';  trajs(8).split='train'; trajs(8).Y_initial=0.2; trajs(8).X_sym_amp=0.10; trajs(8).X_anti_amp=0.020; trajs(8).Y_disp=0.4; trajs(8).vmax_X=1.0; trajs(8).amax_X=8.0;  trajs(8).vmax_Y=1.20; trajs(8).amax_Y=12.0; trajs(8).jerkTime=0.035;
+trajs(7).id='T7_X_antisym_Y_sweep';   trajs(7).split='train'; trajs(7).Y_initial=0.3; trajs(7).X_sym_amp=0;    trajs(7).X_anti_amp=0.0025; trajs(7).Y_disp=0.6; trajs(7).vmax_X=0.5; trajs(7).amax_X=8.0;  trajs(7).vmax_Y=1.50; trajs(7).amax_Y=20.0; trajs(7).jerkTime=0.040;
+trajs(8).id='T8_X_sym_anti_Y_sweep';  trajs(8).split='train'; trajs(8).Y_initial=0.2; trajs(8).X_sym_amp=0.10; trajs(8).X_anti_amp=0.0018; trajs(8).Y_disp=0.4; trajs(8).vmax_X=1.0; trajs(8).amax_X=8.0;  trajs(8).vmax_Y=1.20; trajs(8).amax_Y=12.0; trajs(8).jerkTime=0.035;
 trajs(9).id='V1_X_sym_Y_mid_sweep';   trajs(9).split='val';   trajs(9).Y_initial=0.25; trajs(9).X_sym_amp=0.075; trajs(9).X_anti_amp=0;     trajs(9).Y_disp=0.30; trajs(9).vmax_X=0.8; trajs(9).amax_X=12.0; trajs(9).vmax_Y=0.90; trajs(9).amax_Y=14.0; trajs(9).jerkTime=0.040;
-trajs(10).id='E1_X_sym_anti_Y_low_offset_sweep'; trajs(10).split='test'; trajs(10).Y_initial=0.10; trajs(10).X_sym_amp=0.060; trajs(10).X_anti_amp=0.015; trajs(10).Y_disp=0.25; trajs(10).vmax_X=0.7; trajs(10).amax_X=10.0; trajs(10).vmax_Y=0.80; trajs(10).amax_Y=10.0; trajs(10).jerkTime=0.045;
+trajs(10).id='E1_X_sym_anti_Y_low_offset_sweep'; trajs(10).split='test'; trajs(10).Y_initial=0.10; trajs(10).X_sym_amp=0.060; trajs(10).X_anti_amp=0.0013; trajs(10).Y_disp=0.25; trajs(10).vmax_X=0.7; trajs(10).amax_X=10.0; trajs(10).vmax_Y=0.80; trajs(10).amax_Y=10.0; trajs(10).jerkTime=0.045;
 
 %% 3. Main loop
 for i = 1:numel(trajs)
@@ -236,6 +240,18 @@ for i = 1:numel(trajs)
         warning('%s: no amplitude passed -- skipping.', sp.id);
         continue
     end
+
+    % HEURISTIC: cap multisine RMS force at 40% of trajectory-only RMS force
+    % to prevent multisine from dominating the actuator effort
+    force_cap_frac = 0.40;
+    traj_rms = rms(u0_fb);
+    force_cap = force_cap_frac * min(traj_rms(traj_rms > 0));
+    if force_cap > 0 && force_cap < amp_max
+        fprintf('  Force cap: %.0f N RMS (%.0f%% of traj RMS %.0f N) < sweep max %.0f N\n', ...
+            force_cap, force_cap_frac*100, min(traj_rms(traj_rms > 0)), amp_max);
+        amp_max = force_cap;
+    end
+
     fprintf('  Selected amplitude: %.0f N RMS\n', amp_max);
 
     % ── 3d. Simulink simulation WITH multisine
