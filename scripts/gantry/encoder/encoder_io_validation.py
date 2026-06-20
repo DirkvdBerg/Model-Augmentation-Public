@@ -1,28 +1,18 @@
 """
 encoder_io_validation.py
 ------------------------
-Encoder validation via n-step OUTPUT PREDICTION on baseline data (no MSD).
+Three-way encoder pre-training comparison:
 
-Train the encoder via output-prediction loss: encoder produces states,
-RK4 rolls them forward n_steps, Cd maps to output, compare y_hat vs y_measured.
+  Training A: State MSE with TRUE system states (x_logical from MATLAB data)
+  Training B: Output prediction loss (n-step RK4 rollout through baseline dynamics)
+  Training C: State MSE with BASELINE-SIMULATED states (linearized at Y_op=0)
 
-Key difference from encoder_baseline_standalone.py:
-  That script trains with state MSE ||x_hat - x_target||^2, which has no
-  mechanism to balance position vs velocity importance. This script uses
-  output-prediction loss, which lets the dynamics block determine what matters.
+Training A validates that the encoder architecture can learn the state map.
+Training B tests whether output-prediction loss alone produces good states.
+Training C tests what happens with approximate (linearized) state targets,
+relevant when true states are unavailable (e.g. on hardware).
 
-Critical: Cd = [P^T | 0_{3x3}] only sees positions. With 1-step prediction,
-velocities get ZERO gradient signal. Multi-step (n_steps >= 2) is essential:
-velocity errors compound through RK4, affecting future positions and hence y.
-
-Training improvements (aligned with encoder_io_comparison.py):
-  - Best-model checkpointing: saves encoder with lowest val loss, loads after training
-  - ReduceLROnPlateau scheduler: halves lr if val loss stalls
-  - up_sample=2: 2 RK4 substeps per time step (numerical stability)
-  - lr=1e-4, nf=20: matches encoder_io_comparison.py
-
-THEORY: Hoekstra 2026 Eq. 35 -- pre-train encoder via state reconstruction loss.
-        Here adapted: train via output prediction through the known dynamics.
+THEORY: Hoekstra 2026 Eq. 35 -- data-based encoder init via state MSE loss.
 
 Usage:
     conda run -n GraduationProject python scripts/gantry/encoder/encoder_io_validation.py
@@ -33,6 +23,7 @@ import sys
 import copy
 import json
 import time
+from datetime import datetime
 import numpy as np
 import torch
 import torch.nn as nn
@@ -101,7 +92,8 @@ TRAIN_FILES = [
 ]
 VAL_FILE = 'V1_X_sym_Y_mid_sweep.mat'
 
-OUT_DIR = os.path.join(PROJECT_ROOT, 'simulations', 'gantry_subnet', 'encoder')
+run_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
+OUT_DIR = os.path.join(PROJECT_ROOT, 'simulations', 'gantry_subnet', 'encoder', run_id)
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # Logical coordinate names
@@ -264,6 +256,28 @@ def compute_analytical_baseline(y, norm):
 
     x_analytical_norm = (x_analytical - norm['x_mean'].flatten()) / norm['std_x'].flatten()
     return x_analytical_norm[history: history + M]
+
+
+# =============================================================================
+# Baseline-simulated states (linearized model at Y_op=0)
+# =============================================================================
+
+# HEURISTIC: discard initial transient from baseline simulation.
+# theta mode settling time is ~1.3s = 5200 samples at 4 kHz.
+N_TRANSIENT = 5000
+
+def simulate_baseline_states(u_stage, dt):
+    """Forward-simulate linearized baseline: x[k+1] = Ad @ x[k] + Bd @ u[k].
+
+    Uses the linearized gantry model at Y_op=0. Input u_stage is raw stage
+    forces (NOT normalized). Returns x in logical coordinates [X,theta,Y,dX,dtheta,dY].
+    """
+    Ad, Bd, _, _ = gantry_linearize_and_discretize(dt)
+    N = u_stage.shape[0]
+    x = np.zeros((N, NX_PHYS), dtype=np.float64)
+    for k in range(N - 1):
+        x[k + 1] = Ad @ x[k] + Bd @ u_stage[k]
+    return x.astype(DTYPE_NP)
 
 
 # =============================================================================
@@ -669,15 +683,61 @@ def main():
     uh_val, yh_val, uf_val, yf_val = create_io_windows(val_u, val_y, norm, n_steps)
     print(f'  Validation windows: {len(uh_val)}')
 
+    # State windows for STATE MSE training (using x_logical from .mat as targets)
+    print('\nCreating state windows for state MSE training...')
+    train_state_windows = []
+    for u, y, x_log in train_data:
+        uh, yh, xt = create_state_windows(u, y, x_log, norm)
+        train_state_windows.append((uh, yh, xt))
+
+    u_train_state = np.concatenate([w[0] for w in train_state_windows])
+    y_train_state = np.concatenate([w[1] for w in train_state_windows])
+    x_train_target = np.concatenate([w[2] for w in train_state_windows])
+    print(f'  State training windows: {len(u_train_state)}')
+
     # State-evaluation windows (no future needed, covers more samples)
     sx_uh_val, sx_yh_val, sx_xt_val = create_state_windows(
         val_u, val_y, val_x_target, norm)
+    print(f'  State validation windows: {len(sx_uh_val)}')
 
-    # --- Build encoder and state block ---
-    print('\nBuilding encoder (model-based init)...')
+    # Baseline-simulated state windows (Training C: linearized baseline at Y_op=0)
+    print(f'\nSimulating baseline model (linearized at Y_op=0)...')
+    train_bsim_windows = []
+    for u, y, _ in train_data:
+        x_bsim = simulate_baseline_states(u, TS_NEW)
+        # Discard initial transient, replace with steady-state value
+        x_bsim[:N_TRANSIENT] = x_bsim[N_TRANSIENT]
+        uh, yh, xt = create_state_windows(u, y, x_bsim, norm)
+        train_bsim_windows.append((uh, yh, xt))
+
+    u_train_bsim = np.concatenate([w[0] for w in train_bsim_windows])
+    y_train_bsim = np.concatenate([w[1] for w in train_bsim_windows])
+    x_train_bsim = np.concatenate([w[2] for w in train_bsim_windows])
+    print(f'  Baseline-sim training windows: {len(u_train_bsim)}')
+
+    # Validation baseline-simulated states (for Training C val loss)
+    x_bsim_val = simulate_baseline_states(val_u, TS_NEW)
+    x_bsim_val[:N_TRANSIENT] = x_bsim_val[N_TRANSIENT]
+    bsim_uh_val, bsim_yh_val, bsim_xt_val = create_state_windows(
+        val_u, val_y, x_bsim_val, norm)
+    print(f'  Baseline-sim validation windows: {len(bsim_uh_val)}')
+
+    # Check: how much do baseline-simulated states differ from true states?
+    x_bsim_val_full = simulate_baseline_states(val_u, TS_NEW)
+    bsim_vs_true_nrms = compute_nrms(
+        x_bsim_val_full[N_TRANSIENT:], val_x_logical[N_TRANSIENT:])
+    print(f'\n  Baseline-simulated vs true states (after transient):')
+    print(f'  {"State":<8s}  {"NRMS":>10s}')
+    for i, name in enumerate(STATE_NAMES):
+        print(f'  {name:<8s}  {bsim_vs_true_nrms[i]:>10.4e}')
+
+    # --- Build encoders and state block ---
+    print('\nBuilding encoders (model-based init)...')
     encoder = build_encoder(norm)
+    encoder_smse = copy.deepcopy(encoder)   # Training A: state MSE (true states)
+    encoder_bsim = copy.deepcopy(encoder)   # Training C: state MSE (baseline-simulated)
     n_params = sum(p.numel() for p in encoder.parameters())
-    print(f'  Parameters: {n_params}')
+    print(f'  Parameters per encoder: {n_params}')
 
     state_block = build_state_block(norm)
 
@@ -744,10 +804,97 @@ def main():
     for i, name in enumerate(STAGE_NAMES):
         print(f'  {name:<6s}  {nrms_out_ana[0, i]:>14.4e}  {nrms_out_ana[-1, i]:>14.4e}')
 
-    # --- Training ---
-    print(f'\n--- Training ({HP["epochs"]} epochs, lr={HP["lr"]}, '
+    # =================================================================
+    # TRAINING A: State MSE loss (Hoekstra 2026, Eq. 35)
+    # =================================================================
+    print(f'\n{"="*70}')
+    print(f'TRAINING A: State MSE ({HP["epochs"]} epochs, lr={HP["lr"]}, '
+          f'batch={HP["batch_size"]})')
+    print('='*70)
+    optimizer_smse = torch.optim.Adam(encoder_smse.parameters(), lr=HP['lr'])
+    scheduler_smse = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer_smse, mode='min',
+        factor=HP['scheduler_factor'],
+        patience=HP['scheduler_patience'],
+        verbose=False,
+    )
+
+    u_train_state_t = torch.tensor(u_train_state, dtype=DTYPE_PT)
+    y_train_state_t = torch.tensor(y_train_state, dtype=DTYPE_PT)
+    x_train_target_t = torch.tensor(x_train_target, dtype=DTYPE_PT)
+
+    sx_uh_val_t = torch.tensor(sx_uh_val, dtype=DTYPE_PT)
+    sx_yh_val_t = torch.tensor(sx_yh_val, dtype=DTYPE_PT)
+    sx_xt_val_t = torch.tensor(sx_xt_val, dtype=DTYPE_PT)
+
+    N_train_state = len(u_train_state_t)
+    batch_size = HP['batch_size']
+    smse_train_losses = []
+    smse_val_losses = []
+
+    best_smse_val_loss = float('inf')
+    best_smse_state = copy.deepcopy(encoder_smse.state_dict())
+    best_smse_epoch = -1
+
+    t_start_smse = time.time()
+    for epoch in range(HP['epochs']):
+        encoder_smse.train()
+        perm = torch.randperm(N_train_state)
+        epoch_loss = 0.0
+        n_batches = 0
+
+        for start in range(0, N_train_state, batch_size):
+            idx = perm[start: start + batch_size]
+            x_hat = encoder_smse(u_train_state_t[idx], y_train_state_t[idx])
+            loss = torch.mean((x_hat - x_train_target_t[idx]) ** 2)
+
+            optimizer_smse.zero_grad()
+            loss.backward()
+            optimizer_smse.step()
+
+            epoch_loss += loss.item()
+            n_batches += 1
+
+        avg_train_loss = epoch_loss / n_batches
+        smse_train_losses.append(avg_train_loss)
+
+        # Validation loss (state MSE)
+        encoder_smse.eval()
+        with torch.no_grad():
+            x_hat_val = encoder_smse(sx_uh_val_t, sx_yh_val_t)
+            val_loss = torch.mean((x_hat_val - sx_xt_val_t) ** 2).item()
+        smse_val_losses.append(val_loss)
+
+        scheduler_smse.step(val_loss)
+
+        if val_loss < best_smse_val_loss:
+            best_smse_val_loss = val_loss
+            best_smse_state = copy.deepcopy(encoder_smse.state_dict())
+            best_smse_epoch = epoch + 1
+
+        current_lr = optimizer_smse.param_groups[0]['lr']
+        if (epoch + 1) % 20 == 0 or epoch == 0:
+            elapsed = time.time() - t_start_smse
+            best_flag = ' *' if best_smse_epoch == epoch + 1 else ''
+            print(f'  Epoch {epoch+1:4d}/{HP["epochs"]}  '
+                  f'train={avg_train_loss:.4e}  val={val_loss:.4e}  '
+                  f'lr={current_lr:.1e}  [best@{best_smse_epoch}]  '
+                  f'[{elapsed:.0f}s]{best_flag}')
+
+    elapsed_smse = time.time() - t_start_smse
+    print(f'\nState MSE training complete in {elapsed_smse:.0f}s')
+    print(f'  Best val loss: {best_smse_val_loss:.4e} at epoch {best_smse_epoch}')
+    encoder_smse.load_state_dict(best_smse_state)
+    print(f'  Loaded best encoder (epoch {best_smse_epoch})')
+
+    # =================================================================
+    # TRAINING B: Output prediction loss (n-step rollout)
+    # =================================================================
+    print(f'\n{"="*70}')
+    print(f'TRAINING B: Output prediction ({HP["epochs"]} epochs, lr={HP["lr"]}, '
           f'batch={HP["batch_size"]}, n_steps={n_steps}, '
-          f'up_sample={HP["up_sample"]}) ---')
+          f'up_sample={HP["up_sample"]})')
+    print('='*70)
     encoder.train()
     state_block.eval()  # dynamics block is frozen (no trainable params)
     optimizer = torch.optim.Adam(encoder.parameters(), lr=HP['lr'])
@@ -769,7 +916,6 @@ def main():
     yf_val_t = torch.tensor(yf_val, dtype=DTYPE_PT)
 
     N_train = len(u_train_t)
-    batch_size = HP['batch_size']
     train_losses = []
     val_losses = []
 
@@ -844,122 +990,243 @@ def main():
     print(f'  Loaded best encoder (epoch {best_epoch})')
 
     # =================================================================
-    # AFTER training: output prediction evaluation
+    # TRAINING C: State MSE with baseline-simulated states
     # =================================================================
-    print(f'\n--- AFTER training: {n_steps}-step output prediction ---')
-    y_hat_after, nrms_out_after = evaluate_nstep(
-        encoder, state_block, uh_val, yh_val, uf_val, yf_val, norm)
+    print(f'\n{"="*70}')
+    print(f'TRAINING C: Baseline-simulated state MSE ({HP["epochs"]} epochs, '
+          f'lr={HP["lr"]}, batch={HP["batch_size"]})')
+    print('='*70)
+    optimizer_bsim = torch.optim.Adam(encoder_bsim.parameters(), lr=HP['lr'])
+    scheduler_bsim = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer_bsim, mode='min',
+        factor=HP['scheduler_factor'],
+        patience=HP['scheduler_patience'],
+        verbose=False,
+    )
 
-    print(f'  {"Output":<6s}  {"Init 1-step":>14s}  {"Trained 1-step":>14s}  '
-          f'{"Analytical 1-step":>18s}')
-    print(f'  {"-"*6}  {"-"*14}  {"-"*14}  {"-"*18}')
-    for i, name in enumerate(STAGE_NAMES):
-        print(f'  {name:<6s}  {nrms_out_before[0, i]:>14.4e}  '
-              f'{nrms_out_after[0, i]:>14.4e}  {nrms_out_ana[0, i]:>18.4e}')
+    u_train_bsim_t = torch.tensor(u_train_bsim, dtype=DTYPE_PT)
+    y_train_bsim_t = torch.tensor(y_train_bsim, dtype=DTYPE_PT)
+    x_train_bsim_t = torch.tensor(x_train_bsim, dtype=DTYPE_PT)
 
-    col_init = f'Init {n_steps}-step'
-    col_train = f'Trained {n_steps}-step'
-    col_ana = f'Analytical {n_steps}-step'
-    print(f'\n  {"Output":<6s}  {col_init:>14s}  {col_train:>14s}  {col_ana:>18s}')
-    print(f'  {"-"*6}  {"-"*14}  {"-"*14}  {"-"*18}')
-    for i, name in enumerate(STAGE_NAMES):
-        print(f'  {name:<6s}  {nrms_out_before[-1, i]:>14.4e}  '
-              f'{nrms_out_after[-1, i]:>14.4e}  {nrms_out_ana[-1, i]:>14.4e}')
+    bsim_uh_val_t = torch.tensor(bsim_uh_val, dtype=DTYPE_PT)
+    bsim_yh_val_t = torch.tensor(bsim_yh_val, dtype=DTYPE_PT)
+    bsim_xt_val_t = torch.tensor(bsim_xt_val, dtype=DTYPE_PT)
+
+    N_train_bsim = len(u_train_bsim_t)
+    bsim_train_losses = []
+    bsim_val_losses = []
+
+    best_bsim_val_loss = float('inf')
+    best_bsim_state = copy.deepcopy(encoder_bsim.state_dict())
+    best_bsim_epoch = -1
+
+    t_start_bsim = time.time()
+    for epoch in range(HP['epochs']):
+        encoder_bsim.train()
+        perm = torch.randperm(N_train_bsim)
+        epoch_loss = 0.0
+        n_batches = 0
+
+        for start in range(0, N_train_bsim, batch_size):
+            idx = perm[start: start + batch_size]
+            x_hat = encoder_bsim(u_train_bsim_t[idx], y_train_bsim_t[idx])
+            loss = torch.mean((x_hat - x_train_bsim_t[idx]) ** 2)
+
+            optimizer_bsim.zero_grad()
+            loss.backward()
+            optimizer_bsim.step()
+
+            epoch_loss += loss.item()
+            n_batches += 1
+
+        avg_train_loss = epoch_loss / n_batches
+        bsim_train_losses.append(avg_train_loss)
+
+        # Validation loss (against baseline-simulated targets)
+        encoder_bsim.eval()
+        with torch.no_grad():
+            x_hat_val = encoder_bsim(bsim_uh_val_t, bsim_yh_val_t)
+            val_loss = torch.mean((x_hat_val - bsim_xt_val_t) ** 2).item()
+        bsim_val_losses.append(val_loss)
+
+        scheduler_bsim.step(val_loss)
+
+        if val_loss < best_bsim_val_loss:
+            best_bsim_val_loss = val_loss
+            best_bsim_state = copy.deepcopy(encoder_bsim.state_dict())
+            best_bsim_epoch = epoch + 1
+
+        current_lr = optimizer_bsim.param_groups[0]['lr']
+        if (epoch + 1) % 20 == 0 or epoch == 0:
+            elapsed = time.time() - t_start_bsim
+            best_flag = ' *' if best_bsim_epoch == epoch + 1 else ''
+            print(f'  Epoch {epoch+1:4d}/{HP["epochs"]}  '
+                  f'train={avg_train_loss:.4e}  val={val_loss:.4e}  '
+                  f'lr={current_lr:.1e}  [best@{best_bsim_epoch}]  '
+                  f'[{elapsed:.0f}s]{best_flag}')
+
+    elapsed_bsim = time.time() - t_start_bsim
+    print(f'\nBaseline-sim state MSE training complete in {elapsed_bsim:.0f}s')
+    print(f'  Best val loss: {best_bsim_val_loss:.4e} at epoch {best_bsim_epoch}')
+    encoder_bsim.load_state_dict(best_bsim_state)
+    print(f'  Loaded best encoder (epoch {best_bsim_epoch})')
 
     # =================================================================
-    # AFTER training: state quality evaluation (secondary)
+    # COMPARISON: Evaluate all three encoders
     # =================================================================
-    print('\n--- AFTER training: state quality (secondary) ---')
-    x_hat_after, nrms_after = evaluate_encoder_states(
+    print(f'\n{"="*70}')
+    print('COMPARISON: State MSE vs Output Prediction vs Baseline-Sim')
+    print('='*70)
+
+    # --- State quality (all evaluated against TRUE states) ---
+    x_hat_smse, nrms_smse = evaluate_encoder_states(
+        encoder_smse, sx_uh_val, sx_yh_val, sx_xt_val)
+    x_hat_opl, nrms_opl = evaluate_encoder_states(
         encoder, sx_uh_val, sx_yh_val, sx_xt_val)
+    x_hat_bsim, nrms_bsim = evaluate_encoder_states(
+        encoder_bsim, sx_uh_val, sx_yh_val, sx_xt_val)
 
-    print(f'  {"State":<8s}  {"Before":>14s}  {"After":>14s}  {"Analytical":>14s}')
-    print(f'  {"-"*8}  {"-"*14}  {"-"*14}  {"-"*14}')
+    # --- N-step output prediction ---
+    y_hat_smse, nrms_out_smse = evaluate_nstep(
+        encoder_smse, state_block, uh_val, yh_val, uf_val, yf_val, norm)
+    y_hat_opl, nrms_out_opl = evaluate_nstep(
+        encoder, state_block, uh_val, yh_val, uf_val, yf_val, norm)
+    y_hat_bsim, nrms_out_bsim = evaluate_nstep(
+        encoder_bsim, state_block, uh_val, yh_val, uf_val, yf_val, norm)
+
+    # --- Print state NRMS comparison ---
+    print(f'\n--- State NRMS comparison (all vs true states) ---')
+    print(f'  {"State":<8s}  {"Init":>12s}  {"TrueMSE":>12s}  '
+          f'{"BsimMSE":>12s}  {"OutPred":>12s}  {"Analyt":>12s}')
+    print(f'  {"-"*8}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*12}')
     for i, name in enumerate(STATE_NAMES):
-        print(f'  {name:<8s}  {nrms_before[i]:>14.4e}  {nrms_after[i]:>14.4e}  '
-              f'{nrms_ana[i]:>14.4e}')
+        print(f'  {name:<8s}  {nrms_before[i]:>12.4e}  {nrms_smse[i]:>12.4e}  '
+              f'{nrms_bsim[i]:>12.4e}  {nrms_opl[i]:>12.4e}  {nrms_ana[i]:>12.4e}')
 
     # Physical-unit RMS errors
-    x_after_phys = denormalize_states(x_hat_after, norm)
+    x_smse_phys = denormalize_states(x_hat_smse, norm)
+    x_opl_phys = denormalize_states(x_hat_opl, norm)
+    x_bsim_phys = denormalize_states(x_hat_bsim, norm)
     x_ana_phys = denormalize_states(x_hat_ana, norm)
     x_gt_phys = denormalize_states(sx_xt_val, norm)
-    rms_enc = compute_rms_error(x_after_phys, x_gt_phys)
+    rms_smse = compute_rms_error(x_smse_phys, x_gt_phys)
+    rms_opl = compute_rms_error(x_opl_phys, x_gt_phys)
+    rms_bsim = compute_rms_error(x_bsim_phys, x_gt_phys)
     rms_ana = compute_rms_error(x_ana_phys, x_gt_phys)
 
     print(f'\n  Per-channel RMS error (logical coordinates):')
-    print(f'  {"State":<8s}  {"Encoder":>14s}  {"Analytical":>14s}  {"Unit":>6s}')
+    print(f'  {"State":<8s}  {"TrueMSE":>12s}  {"BsimMSE":>12s}  '
+          f'{"OutPred":>12s}  {"Analyt":>12s}  {"Unit":>6s}')
     for i, name in enumerate(STATE_NAMES):
-        print(f'  {name:<8s}  {rms_enc[i]:>14.4e}  {rms_ana[i]:>14.4e}  '
-              f'{PHYS_UNITS[i]:>6s}')
+        print(f'  {name:<8s}  {rms_smse[i]:>12.4e}  {rms_bsim[i]:>12.4e}  '
+              f'{rms_opl[i]:>12.4e}  {rms_ana[i]:>12.4e}  {PHYS_UNITS[i]:>6s}')
+
+    # --- Print output NRMS comparison ---
+    print(f'\n--- {n_steps}-step output NRMS comparison ---')
+    print(f'  {"Output":<6s}  {"Init":>12s}  {"TrueMSE":>12s}  '
+          f'{"BsimMSE":>12s}  {"OutPred":>12s}  {"Analyt":>12s}')
+    print(f'  {"-"*6}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*12}  {"-"*12}')
+    for i, name in enumerate(STAGE_NAMES):
+        print(f'  {name:<6s}  {nrms_out_before[0, i]:>12.4e}  '
+              f'{nrms_out_smse[0, i]:>12.4e}  {nrms_out_bsim[0, i]:>12.4e}  '
+              f'{nrms_out_opl[0, i]:>12.4e}  {nrms_out_ana[0, i]:>12.4e}')
+
+    print(f'\n  {n_steps}-step:')
+    for i, name in enumerate(STAGE_NAMES):
+        print(f'  {name:<6s}  {nrms_out_before[-1, i]:>12.4e}  '
+              f'{nrms_out_smse[-1, i]:>12.4e}  {nrms_out_bsim[-1, i]:>12.4e}  '
+              f'{nrms_out_opl[-1, i]:>12.4e}  {nrms_out_ana[-1, i]:>12.4e}')
 
     # --- Verdict ---
-    print('\n--- VERDICT ---')
-    # Output prediction verdict
-    enc_max_nstep = np.max(nrms_out_after[-1])
-    ana_max_nstep = np.max(nrms_out_ana[-1])
-    init_max_nstep = np.max(nrms_out_before[-1])
+    print(f'\n--- VERDICT ---')
+    methods = {
+        'Model-based init': (np.max(nrms_out_before[-1]), np.max(nrms_before)),
+        'True state MSE':   (np.max(nrms_out_smse[-1]),   np.max(nrms_smse)),
+        'Baseline-sim MSE': (np.max(nrms_out_bsim[-1]),   np.max(nrms_bsim)),
+        'Output pred':      (np.max(nrms_out_opl[-1]),    np.max(nrms_opl)),
+        'Analytical':       (np.max(nrms_out_ana[-1]),     np.max(nrms_ana)),
+    }
+    print(f'  {"Method":<20s}  {f"{n_steps}-step NRMS":>14s}  {"State NRMS":>12s}')
+    print(f'  {"-"*20}  {"-"*14}  {"-"*12}')
+    for name, (out_nrms, st_nrms) in methods.items():
+        print(f'  {name:<20s}  {out_nrms:>14.4e}  {st_nrms:>12.4e}')
 
-    print(f'  {n_steps}-step output NRMS (max channel):')
-    print(f'    Model-based init: {init_max_nstep:.4e}')
-    print(f'    After training:   {enc_max_nstep:.4e}')
-    print(f'    Analytical:       {ana_max_nstep:.4e}')
-
-    if enc_max_nstep < ana_max_nstep:
-        print(f'  PASS: Trained encoder beats analytical on {n_steps}-step output prediction.')
-    elif enc_max_nstep < init_max_nstep:
-        print(f'  IMPROVED: Training improved over init, but analytical is still better.')
-    else:
-        print(f'  NO IMPROVEMENT on output prediction.')
-
-    # State verdict
-    vel_better = all(nrms_after[i] < nrms_ana[i] for i in range(3, 6))
-    pos_worse = any(nrms_after[i] > nrms_ana[i] for i in range(3))
-    if vel_better and pos_worse:
-        print(f'  States: velocities better than analytical, positions worse (expected).')
-    elif vel_better and not pos_worse:
-        print(f'  States: PASS on all channels vs analytical.')
-    else:
-        worse_vel = [STATE_NAMES[i] for i in range(3, 6) if nrms_after[i] >= nrms_ana[i]]
-        print(f'  States: velocities still worse than analytical on: {", ".join(worse_vel)}')
+    # Find winners (among trained methods only)
+    trained = {'True state MSE': methods['True state MSE'],
+               'Baseline-sim MSE': methods['Baseline-sim MSE'],
+               'Output pred': methods['Output pred']}
+    best_output = min(trained, key=lambda k: trained[k][0])
+    best_state = min(trained, key=lambda k: trained[k][1])
+    print(f'\n  Best {n_steps}-step output: {best_output}')
+    print(f'  Best state reconstruction: {best_state}')
 
     # =================================================================
     # Save outputs
     # =================================================================
 
     # --- Encoder weights ---
-    weights_path = os.path.join(OUT_DIR, 'encoder_io_weights.pt')
-    torch.save(encoder.state_dict(), weights_path)
-    print(f'\nSaved encoder weights: {weights_path}')
+    torch.save(encoder.state_dict(),
+               os.path.join(OUT_DIR, 'encoder_opl_weights.pt'))
+    torch.save(encoder_smse.state_dict(),
+               os.path.join(OUT_DIR, 'encoder_smse_weights.pt'))
+    torch.save(encoder_bsim.state_dict(),
+               os.path.join(OUT_DIR, 'encoder_bsim_weights.pt'))
+    print(f'\nSaved encoder weights to {OUT_DIR}')
 
     # --- Results JSON ---
     results = dict(
-        output_nrms_1step={name: float(nrms_out_after[0, i])
-                           for i, name in enumerate(STAGE_NAMES)},
-        output_nrms_nstep={name: float(nrms_out_after[-1, i])
-                           for i, name in enumerate(STAGE_NAMES)},
-        output_nrms_analytical_1step={name: float(nrms_out_ana[0, i])
-                                      for i, name in enumerate(STAGE_NAMES)},
-        output_nrms_analytical_nstep={name: float(nrms_out_ana[-1, i])
-                                      for i, name in enumerate(STAGE_NAMES)},
-        state_nrms_before={name: float(nrms_before[i])
+        # Training A: true state MSE
+        smse_state_nrms={name: float(nrms_smse[i])
+                         for i, name in enumerate(STATE_NAMES)},
+        smse_output_nrms_1step={name: float(nrms_out_smse[0, i])
+                                for i, name in enumerate(STAGE_NAMES)},
+        smse_output_nrms_nstep={name: float(nrms_out_smse[-1, i])
+                                for i, name in enumerate(STAGE_NAMES)},
+        smse_state_rms={name: float(rms_smse[i])
+                        for i, name in enumerate(STATE_NAMES)},
+        smse_train_time_s=elapsed_smse,
+        smse_best_epoch=best_smse_epoch,
+        smse_best_val_loss=best_smse_val_loss,
+        # Training B: output prediction
+        opl_state_nrms={name: float(nrms_opl[i])
+                        for i, name in enumerate(STATE_NAMES)},
+        opl_output_nrms_1step={name: float(nrms_out_opl[0, i])
+                               for i, name in enumerate(STAGE_NAMES)},
+        opl_output_nrms_nstep={name: float(nrms_out_opl[-1, i])
+                               for i, name in enumerate(STAGE_NAMES)},
+        opl_state_rms={name: float(rms_opl[i])
+                       for i, name in enumerate(STATE_NAMES)},
+        opl_train_time_s=elapsed_total,
+        opl_best_epoch=best_epoch,
+        opl_best_val_loss=best_val_loss,
+        # Training C: baseline-simulated state MSE
+        bsim_state_nrms={name: float(nrms_bsim[i])
+                         for i, name in enumerate(STATE_NAMES)},
+        bsim_output_nrms_1step={name: float(nrms_out_bsim[0, i])
+                                for i, name in enumerate(STAGE_NAMES)},
+        bsim_output_nrms_nstep={name: float(nrms_out_bsim[-1, i])
+                                for i, name in enumerate(STAGE_NAMES)},
+        bsim_state_rms={name: float(rms_bsim[i])
+                        for i, name in enumerate(STATE_NAMES)},
+        bsim_train_time_s=elapsed_bsim,
+        bsim_best_epoch=best_bsim_epoch,
+        bsim_best_val_loss=best_bsim_val_loss,
+        bsim_vs_true_nrms={name: float(bsim_vs_true_nrms[i])
                            for i, name in enumerate(STATE_NAMES)},
-        state_nrms_after={name: float(nrms_after[i])
-                          for i, name in enumerate(STATE_NAMES)},
-        state_nrms_analytical={name: float(nrms_ana[i])
+        # Baselines
+        init_state_nrms={name: float(nrms_before[i])
+                         for i, name in enumerate(STATE_NAMES)},
+        analytical_state_nrms={name: float(nrms_ana[i])
                                for i, name in enumerate(STATE_NAMES)},
-        state_rms_logical={name: float(rms_enc[i])
-                           for i, name in enumerate(STATE_NAMES)},
-        state_rms_analytical_logical={name: float(rms_ana[i])
-                                      for i, name in enumerate(STATE_NAMES)},
+        analytical_output_nrms_1step={name: float(nrms_out_ana[0, i])
+                                      for i, name in enumerate(STAGE_NAMES)},
+        analytical_output_nrms_nstep={name: float(nrms_out_ana[-1, i])
+                                      for i, name in enumerate(STAGE_NAMES)},
         vel_verification_nrms={name: float(vel_nrms[i])
                                for i, name in enumerate(STATE_NAMES[3:])},
         n_params=n_params,
+        n_transient=N_TRANSIENT,
         hp=HP,
-        train_time_s=elapsed_total,
-        final_train_loss=train_losses[-1],
-        final_val_loss=val_losses[-1],
-        best_epoch=best_epoch,
-        best_val_loss=best_val_loss,
     )
     json_path = os.path.join(OUT_DIR, 'encoder_io_results.json')
     with open(json_path, 'w') as f:
@@ -969,24 +1236,32 @@ def main():
     # --- Trajectory data ---
     npz_path = os.path.join(OUT_DIR, 'encoder_io_data.npz')
     np.savez_compressed(npz_path,
-        # Output predictions
-        y_hat_1step=y_hat_after[:, 0, :],
-        y_hat_nstep=y_hat_after[:, -1, :],
-        y_target_1step=yf_val[:, 0, :],
-        y_target_nstep=yf_val[:, -1, :],
-        y_hat_ana_1step=y_hat_ana_steps[:, 0, :],
-        y_hat_ana_nstep=y_hat_ana_steps[:, -1, :],
-        output_nrms_per_horizon_enc=nrms_out_after,
-        output_nrms_per_horizon_ana=nrms_out_ana,
-        output_nrms_per_horizon_init=nrms_out_before,
-        # State trajectories
-        x_after_norm=x_hat_after,
+        # Training A: true state MSE
+        smse_x_norm=x_hat_smse,
+        smse_y_hat_steps=y_hat_smse,
+        smse_output_nrms_per_horizon=nrms_out_smse,
+        smse_train_losses=smse_train_losses,
+        smse_val_losses=smse_val_losses,
+        # Training B: output prediction
+        opl_x_norm=x_hat_opl,
+        opl_y_hat_steps=y_hat_opl,
+        opl_output_nrms_per_horizon=nrms_out_opl,
+        opl_train_losses=train_losses,
+        opl_val_losses=val_losses,
+        # Training C: baseline-simulated state MSE
+        bsim_x_norm=x_hat_bsim,
+        bsim_y_hat_steps=y_hat_bsim,
+        bsim_output_nrms_per_horizon=nrms_out_bsim,
+        bsim_train_losses=bsim_train_losses,
+        bsim_val_losses=bsim_val_losses,
+        # Baselines
         x_before_norm=x_hat_before,
         x_analytical_norm=x_hat_ana,
         x_target_norm=sx_xt_val,
-        # Training curves
-        train_losses=train_losses,
-        val_losses=val_losses,
+        y_target=yf_val,
+        y_hat_ana_steps=y_hat_ana_steps,
+        output_nrms_per_horizon_init=nrms_out_before,
+        output_nrms_per_horizon_ana=nrms_out_ana,
         # Normalization
         std_x=norm['std_x'], x_mean=norm['x_mean'], ystd=norm['ystd'],
         # Metadata
@@ -999,41 +1274,107 @@ def main():
     # Plots
     # =================================================================
 
-    # 1. Loss curve
-    plot_loss_curve(train_losses, val_losses,
-                    os.path.join(OUT_DIR, 'encoder_io_loss.png'))
+    # 1. Loss curves (three methods)
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 5))
+    ax1.semilogy(smse_train_losses, label='train', linewidth=0.8)
+    ax1.semilogy(smse_val_losses, label='val', linewidth=0.8)
+    ax1.set_xlabel('Epoch'); ax1.set_ylabel('State MSE')
+    ax1.set_title('A: True state MSE')
+    ax1.legend(); ax1.grid(True, alpha=0.3)
+    ax2.semilogy(train_losses, label='train', linewidth=0.8)
+    ax2.semilogy(val_losses, label='val', linewidth=0.8)
+    ax2.set_xlabel('Epoch'); ax2.set_ylabel('Output prediction MSE')
+    ax2.set_title(f'B: Output prediction ({n_steps}-step)')
+    ax2.legend(); ax2.grid(True, alpha=0.3)
+    ax3.semilogy(bsim_train_losses, label='train', linewidth=0.8)
+    ax3.semilogy(bsim_val_losses, label='val', linewidth=0.8)
+    ax3.set_xlabel('Epoch'); ax3.set_ylabel('State MSE')
+    ax3.set_title('C: Baseline-sim state MSE')
+    ax3.legend(); ax3.grid(True, alpha=0.3)
+    fig.suptitle('Encoder training loss curves', y=1.02)
+    fig.tight_layout()
+    fig.savefig(os.path.join(OUT_DIR, 'encoder_comparison_loss.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f'Saved: encoder_comparison_loss.png')
 
-    # 2. 1-step output prediction
-    plot_output_prediction(
-        y_hat_after[:, 0, :], yf_val[:, 0, :], nrms_out_after[0],
-        '1-step',
-        os.path.join(OUT_DIR, 'encoder_io_output_1step.png'))
+    # 2. State NRMS bar chart (5 methods)
+    n = len(STATE_NAMES)
+    x_pos = np.arange(n)
+    w = 0.15
+    fig, ax = plt.subplots(figsize=(14, 5))
+    ax.bar(x_pos - 2*w, nrms_before, w, label='model-based init',
+           color='tab:orange', alpha=0.8)
+    ax.bar(x_pos - w, nrms_smse, w, label='A: true state MSE',
+           color='tab:green', alpha=0.8)
+    ax.bar(x_pos, nrms_bsim, w, label='C: baseline-sim MSE',
+           color='tab:purple', alpha=0.8)
+    ax.bar(x_pos + w, nrms_opl, w, label='B: output pred',
+           color='tab:red', alpha=0.8)
+    ax.bar(x_pos + 2*w, nrms_ana, w, label='analytical baseline',
+           color='tab:blue', alpha=0.8)
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(STATE_NAMES)
+    ax.set_ylabel('NRMS')
+    ax.set_yscale('log')
+    ax.legend()
+    ax.grid(True, alpha=0.3, axis='y')
+    ax.set_title('State NRMS comparison (all vs true states)')
+    fig.tight_layout()
+    fig.savefig(os.path.join(OUT_DIR, 'encoder_comparison_state_nrms.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f'Saved: encoder_comparison_state_nrms.png')
 
-    # 3. n-step output prediction
-    plot_output_prediction(
-        y_hat_after[:, -1, :], yf_val[:, -1, :], nrms_out_after[-1],
-        f'{n_steps}-step',
-        os.path.join(OUT_DIR, 'encoder_io_output_nstep.png'))
+    # 3. NRMS vs prediction horizon (5 methods)
+    horizons = np.arange(1, n_steps + 1)
+    fig, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
+    for i, ax in enumerate(axes):
+        ax.semilogy(horizons, nrms_out_before[:, i], '--', color='tab:orange',
+                    markersize=3, linewidth=1.0, label='model-based init')
+        ax.semilogy(horizons, nrms_out_smse[:, i], '-o', color='tab:green',
+                    markersize=3, linewidth=1.0, label='A: true state MSE')
+        ax.semilogy(horizons, nrms_out_bsim[:, i], '-d', color='tab:purple',
+                    markersize=3, linewidth=1.0, label='C: baseline-sim MSE')
+        ax.semilogy(horizons, nrms_out_opl[:, i], '-s', color='tab:red',
+                    markersize=3, linewidth=1.0, label='B: output pred')
+        ax.semilogy(horizons, nrms_out_ana[:, i], '-^', color='tab:blue',
+                    markersize=3, linewidth=1.0, label='analytical')
+        ax.set_ylabel(f'{STAGE_NAMES[i]} NRMS')
+        ax.legend(loc='upper left', fontsize=7)
+        ax.grid(True, alpha=0.3)
+    axes[-1].set_xlabel('Prediction horizon [steps]')
+    fig.suptitle('Output NRMS vs horizon', y=1.01)
+    fig.tight_layout()
+    fig.savefig(os.path.join(OUT_DIR, 'encoder_comparison_horizon_nrms.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f'Saved: encoder_comparison_horizon_nrms.png')
 
-    # 4. Output error comparison (n-step)
-    plot_output_error(
-        y_hat_after[:, -1, :], y_hat_ana_steps[:, -1, :], yf_val[:, -1, :],
-        os.path.join(OUT_DIR, 'encoder_io_output_error.png'))
-
-    # 5. NRMS vs horizon
-    plot_horizon_nrms(
-        nrms_out_after, nrms_out_ana, nrms_out_before,
-        os.path.join(OUT_DIR, 'encoder_io_horizon_nrms.png'))
-
-    # 6. State comparison (logical coords)
-    plot_state_comparison(
-        x_after_phys, x_ana_phys, x_gt_phys, nrms_after, nrms_ana,
-        rms_enc, rms_ana,
-        os.path.join(OUT_DIR, 'encoder_io_state_comparison.png'))
-
-    # 7. State NRMS bar chart
-    plot_nrms_bar(nrms_before, nrms_after, nrms_ana,
-                  os.path.join(OUT_DIR, 'encoder_io_nrms_bar.png'))
+    # 4. State trajectories (all encoders vs target)
+    T = min(2000, len(x_hat_smse))
+    t = np.arange(T) / FS_NEW
+    fig, axes = plt.subplots(NX_PHYS, 1, figsize=(14, 2.5 * NX_PHYS), sharex=True)
+    for i, ax in enumerate(axes):
+        ax.plot(t, x_gt_phys[:T, i], 'k-', linewidth=0.8, label='target')
+        ax.plot(t, x_smse_phys[:T, i], '-', color='tab:green', linewidth=0.8,
+                label=f'A: true MSE (NRMS={nrms_smse[i]:.2e})')
+        ax.plot(t, x_bsim_phys[:T, i], '-', color='tab:purple', linewidth=0.8,
+                label=f'C: bsim MSE (NRMS={nrms_bsim[i]:.2e})')
+        ax.plot(t, x_opl_phys[:T, i], '--', color='tab:red', linewidth=0.8,
+                label=f'B: out pred (NRMS={nrms_opl[i]:.2e})')
+        ax.plot(t, x_ana_phys[:T, i], ':', color='tab:blue', linewidth=0.8,
+                label=f'analytical (NRMS={nrms_ana[i]:.2e})')
+        ax.set_ylabel(f'{STATE_NAMES[i]} [{PHYS_UNITS[i]}]')
+        ax.legend(loc='upper right', fontsize=7)
+        ax.grid(True, alpha=0.3)
+    axes[-1].set_xlabel('Time [s]')
+    fig.suptitle('State reconstruction comparison', y=1.01)
+    fig.tight_layout()
+    fig.savefig(os.path.join(OUT_DIR, 'encoder_comparison_states.png'),
+                dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f'Saved: encoder_comparison_states.png')
 
     print('\n' + '=' * 70)
     print('Encoder I/O validation complete.')
