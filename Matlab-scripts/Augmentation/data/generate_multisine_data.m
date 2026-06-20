@@ -106,9 +106,6 @@ else
     f_high = 7;    % [Hz] single oscillatory mode at ~5 Hz (from diagnostics/multisine_frequency_range_baseline.m)
 end
 
-% ── Amplitude sweep grid [N RMS]
-amp_grid = [1, 2, 5, 10, 20, 50, 100, 200, 400];
-
 %% 1. Cached multisines (independent realization per split)
 if USE_MSD
     if ma_frac == 0.10
@@ -203,59 +200,63 @@ for i = 1:numel(trajs)
     fprintf('    RMS  = [%.0f  %.0f  %.0f] N  (limit [%d %d %d])\n', ...
         rms(u0_fb), lim.force_rms);
 
-    fprintf('  Amplitude sweep (lsim, superposition):\n');
-    fprintf('  %8s  %10s  %10s  %10s  %6s\n', ...
-        'amp[N]', 'q_max[mm]', 'u_pk[N]', 'u_rms[N]', 'pass');
-    fprintf('  %s\n', repmat('-', 1, 52));
+    % ── 3c. Per-channel multisine amplitude (replaces single-scalar sweep)
+    % HEURISTIC: each channel's multisine RMS = 40% of that channel's
+    % trajectory-only RMS force. Inactive channels get 10% of the strongest
+    % active channel to ensure MIMO identifiability (all channels excited).
+    force_cap_frac  = 0.40;   % HEURISTIC: 40% of trajectory effort per channel
+    inactive_frac   = 0.10;   % HEURISTIC: 10% of dominant channel for inactive
+    active_thresh   = 1.0;    % HEURISTIC: [N RMS] below this = inactive channel
+    traj_rms = rms(u0_fb);    % (1x3) per channel
 
-    amp_max = 0;
-    for ia = 1:length(amp_grid)
-        amp = amp_grid(ia);
+    amp_ch = zeros(1, 3);
+    for j = 1:3
+        if traj_rms(j) > active_thresh
+            amp_ch(j) = force_cap_frac * traj_rms(j);
+        end
+    end
+    % Inactive channels: fraction of strongest active channel
+    if max(amp_ch) > 0
+        inactive_floor = inactive_frac * max(amp_ch);
+        amp_ch(amp_ch == 0) = inactive_floor;
+    end
 
-        % Multisine perturbation (superposition: linear system)
-        q_ms  = lsim(sys_cl, amp * f_tiled);            % position from multisine
-        u_ms  = lsim(Cfb_ss, -q_ms) + amp * f_tiled;   % force from multisine path
+    % Scale multisine per channel
+    f_scaled = f_tiled .* amp_ch;  % (N x 3) .* (1 x 3)
 
-        % Total = trajectory + multisine (superposition)
-        q_total = q0 + q_ms + r_eq;   % back to absolute coordinates
-        u_total = u0_fb + u_ms;
+    % Verify hardware limits via lsim (single check, fast)
+    q_ms  = lsim(sys_cl, f_scaled);
+    u_ms  = lsim(Cfb_ss, -q_ms) + f_scaled;
+    q_total = q0 + q_ms + r_eq;
+    u_total = u0_fb + u_ms;
 
-        ok_resp  = validate_response(q_total, fs, lim);
-        ok_force = validate_forces(u_total, lim);
-        ok = ok_resp && ok_force;
-
-        fprintf('  %8.0f  %10.2f  %10.0f  %10.0f  %6s\n', ...
-            amp, max(abs(q_total), [], 'all')*1e3, ...
-            max(abs(u_total), [], 'all'), max(rms(u_total)), ...
-            string(ok));
-
-        if ok
-            amp_max = amp;
-        else
-            break
+    ok_resp  = validate_response(q_total, fs, lim);
+    ok_force = validate_forces(u_total, lim);
+    if ~ok_resp || ~ok_force
+        % Scale down all channels proportionally until limits pass
+        for scale = 0.9:-0.1:0.1
+            q_ms_s  = lsim(sys_cl, scale * f_scaled);
+            u_ms_s  = lsim(Cfb_ss, -q_ms_s) + scale * f_scaled;
+            q_tot_s = q0 + q_ms_s + r_eq;
+            u_tot_s = u0_fb + u_ms_s;
+            if validate_response(q_tot_s, fs, lim) && validate_forces(u_tot_s, lim)
+                amp_ch = scale * amp_ch;
+                f_scaled = scale * f_scaled;
+                fprintf('  Scaled down to %.0f%% to meet limits.\n', scale*100);
+                break
+            end
+        end
+        if scale <= 0.1
+            warning('%s: could not find valid amplitude -- skipping.', sp.id);
+            continue
         end
     end
 
-    if amp_max == 0
-        warning('%s: no amplitude passed -- skipping.', sp.id);
-        continue
-    end
-
-    % HEURISTIC: cap multisine RMS force at 40% of trajectory-only RMS force
-    % to prevent multisine from dominating the actuator effort
-    force_cap_frac = 0.40;
-    traj_rms = rms(u0_fb);
-    force_cap = force_cap_frac * min(traj_rms(traj_rms > 0));
-    if force_cap > 0 && force_cap < amp_max
-        fprintf('  Force cap: %.0f N RMS (%.0f%% of traj RMS %.0f N) < sweep max %.0f N\n', ...
-            force_cap, force_cap_frac*100, min(traj_rms(traj_rms > 0)), amp_max);
-        amp_max = force_cap;
-    end
-
-    fprintf('  Selected amplitude: %.0f N RMS\n', amp_max);
+    fprintf('  Per-channel amplitude: [%.1f  %.1f  %.1f] N RMS\n', amp_ch);
+    fprintf('    (traj RMS:           [%.0f  %.0f  %.0f] N)\n', traj_rms);
 
     % ── 3d. Simulink simulation WITH multisine
-    f = amp_max * f_tiled;
+    f = f_scaled;
     r = r_traj;  t = t_traj;  Y = Y_op;
 
     if USE_MSD
@@ -331,7 +332,7 @@ for i = 1:numel(trajs)
     x_logical    = single([q_logical, qdot_logical]);
     r_sim        = single(r_sim);
     Y_trajectory = single(q_with(:,3));
-    amp_rms      = amp_max;
+    amp_rms      = amp_ch;   % (1x3) per-channel multisine RMS [N]
     dt           = single(ts);
     split        = sp.split;
 
@@ -420,11 +421,11 @@ for i = 1:numel(trajs)
 
     linkaxes([ax_r1, ax_r2, ax_r3], 'x');
     if USE_MSD
-        sgtitle(sprintf('%s | %s | multisine %.0f N RMS | MSD f_a = %d Hz', ...
-            sp.id, sp.split, amp_max, fa), 'FontSize', 12, 'FontWeight', 'bold');
+        sgtitle(sprintf('%s | %s | multisine [%.0f %.0f %.0f] N RMS | MSD f_a = %d Hz', ...
+            sp.id, sp.split, amp_ch, fa), 'FontSize', 12, 'FontWeight', 'bold');
     else
-        sgtitle(sprintf('%s | %s | multisine %.0f N RMS | baseline', ...
-            sp.id, sp.split, amp_max), 'FontSize', 12, 'FontWeight', 'bold');
+        sgtitle(sprintf('%s | %s | multisine [%.0f %.0f %.0f] N RMS | baseline', ...
+            sp.id, sp.split, amp_ch), 'FontSize', 12, 'FontWeight', 'bold');
     end
 
     % ── 3h-2. Diagnostic plots
@@ -495,12 +496,12 @@ for i = 1:numel(trajs)
     end
 
     if USE_MSD
-        sgtitle(sprintf('%s | %s | %.0f N RMS | delta_a ratio = %.1fx', ...
-            sp.id, sp.split, amp_max, da_rms_with / da_rms_without), ...
+        sgtitle(sprintf('%s | %s | [%.0f %.0f %.0f] N RMS | delta_a ratio = %.1fx', ...
+            sp.id, sp.split, amp_ch, da_rms_with / da_rms_without), ...
             'FontSize', 12, 'FontWeight', 'bold');
     else
-        sgtitle(sprintf('%s | %s | %.0f N RMS | baseline', ...
-            sp.id, sp.split, amp_max), 'FontSize', 12, 'FontWeight', 'bold');
+        sgtitle(sprintf('%s | %s | [%.0f %.0f %.0f] N RMS | baseline', ...
+            sp.id, sp.split, amp_ch), 'FontSize', 12, 'FontWeight', 'bold');
     end
 end
 
