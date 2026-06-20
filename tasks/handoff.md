@@ -1,101 +1,133 @@
-# Session Handoff — Encoder Standalone Validation + Augmented State Discussion
+# Session Handoff — Baseline Multisine Data Quality + Downsampling Validation
 
-**Last written**: 2026-06-14
-
----
-
-## Discussion to continue
-
-**Question**: Can `NX_ANN=2` (augmented states) outperform `NX_ANN=0` in standalone encoder training (no pipeline)?
-
-**Current conclusion**: No, because of the architecture. The `LinearInitEncoderWrapper` has two **separate** subnetworks:
-- `phys_encoder` (linear_encoder_init): outputs 6 physical states, gets gradient from state MSE loss
-- `ann` (zero_init_feed_forward_nn): outputs NX_ANN augmented states, gets **no gradient** because the loss is only on physical states
-
-Since they share no parameters, the augmented states stay at ~0.
-
-**Options for making 6+2 meaningful in standalone**:
-1. **Supervise augmented states on delta_a** — user does NOT want this (we don't know delta_a on real system)
-2. **Single shared-layer network** with 8 outputs — then loss on 6 physical states also trains hidden layers, and the 2 extra outputs get indirect gradient through shared representations
-3. **I/O loss in the pipeline** — this is how Jan does it. The state propagation uses all 8 states, output prediction depends on propagated state, and backprop reaches augmented states indirectly.
-
-**User wants**: to compare 6+2 vs 6 and see if extra states help. This comparison only makes sense in the pipeline (option 3), OR if the architecture is changed (option 2).
+**Last written**: 2026-06-20
 
 ---
 
-## How Jan uses the encoder initialization
+## Summary
 
-### Reference code
-`scripts/gantry/encoder_initialisation/interconnect_fit.py` (lines 318-530)
-
-### Jan's pipeline flow:
-1. **Build linear_encoder_init** from normalized (Ad_bar, Bd_bar, Cd_bar, Dd_bar)
-2. **Optionally pre-train** via `SS_pre_encoder` (Eq. 35): minimize `||encoder(u_hist, y_hist) - x_baseline||^2`
-   - Uses JAX static model for optimization (adam 50-200 epochs + L-BFGS 200 epochs)
-   - `x_baseline` comes from **forward simulation of the FP model** (NOT from measurements)
-   - Copies trained weights back into a PyTorch encoder
-3. **Inject** into `SSE_Interconnect`: `fit_sys.encoder = initialised_encoder`
-4. **Train full pipeline** via `fit_sys.fit()` with I/O loss (nf-step-RMS)
-   - This is where augmented states get indirect gradient
-   - Validation measures: 1-step, 5-step, 20-step, 50-step, 200-step RMS
-
-### Key: Jan's encoder has `nx_model` outputs total
-- In his MSD example: `nx_model = 4` (2 physical + 2 augmented for MSD)
-- The `linear_encoder_init` is built for ALL 4 states because the linearized system includes MSD states
-- His linearization already includes the MSD as part of the model → so the reconstruction map handles all states
-
-### Our situation is different:
-- Our linearization is the gantry ONLY (6 states, no MSD)
-- The MSD is the unknown disturbance we want to capture
-- `linear_encoder_init` only knows about 6 gantry states
-- The 2 augmented states have no model-based initialization available
-
-### Architecture details
-
-**`linear_encoder_init`** (pre_encoder.py:191-300):
-- ResNet: `x = Wb_psi_y @ y_hist + Wb_psi_u @ u_hist + psi_tilde(y_hist, u_hist)`
-- `Wb_psi_y = A^n @ O_n^{-1}` — from reconstructability theory (THEORY: Hoekstra 2026 Eq. 16-17)
-- `Wb_psi_u = -A^n @ O_n^{-1} @ Gamma_n + gamma_n` — input correction
-- `psi_tilde` = zero-init MLP for nonlinear corrections (starts at 0, so init is purely linear)
-- All weights are `nn.Parameter` — fully trainable in pipeline
-
-**`LinearInitEncoderWrapper`** (torch_nets.py:244-338):
-- `phys_encoder`: linear_encoder_init instance (6 outputs)
-- `ann`: zero_init_feed_forward_nn (NX_ANN outputs) — **separate network, no shared layers**
-- Convention fix: adds/subtracts mean offsets to bridge pipeline↔pure-scaled conventions
-- Forward: `cat(phys_encoder(u,y), ann(u,y))`
+This session diagnosed and partially fixed fundamental problems with the baseline multisine training data. The existing baseline data is unusable for identification (wrong frequency range, unrealistic forces, loose safety limits). Supervisor feedback adds two more issues: not enough data, and the data lacks oscillatory content.
 
 ---
 
-## What was done this session
+## Problem 1: Baseline multisine bandwidth wrong (FIXED in code, data not regenerated)
 
-### Encoder standalone scripts created and tested
+**Root cause**: `generate_multisine_data.m` used `f_high = 200 Hz` for both baseline and MSD modes. The baseline system only has dynamics up to ~7 Hz (single oscillatory theta mode at 4.71-5.13 Hz).
 
-| Script | Data | NX_ANN | Status |
-|--------|------|--------|--------|
-| `encoder_baseline_standalone.py` | baseline (no MSD) | 0 | TESTED locally, works |
-| `encoder_msd_standalone.py` | MSD | 2 | Written, not yet run |
+**Evidence**: `multisine_frequency_range_baseline.m` (created this session) computes eigendecomposition of the 6-state baseline. Output confirmed by user running in MATLAB:
+- One oscillatory mode at 4.71 Hz (Y=0.3) to 5.13 Hz (Y=0.0)
+- Bode plots confirm flat/rolling-off response above 7 Hz
+- Recommended: f_low=1, f_high=7 Hz
 
-### Baseline result (local run):
-- Velocities: encoder beats analytical (dq2: 5x better, dq3: 8x better)
-- Positions: encoder slightly worse than analytical (analytical is exact: P_inv@y = 0 error)
-- I/O check: 1-step NRMS < 0.1% (pipeline-compatible)
-- Velocity verification: Python central-diff matches MATLAB within 0.77%
-- Training: 200 epochs, 115s, converges at ~epoch 60
+**Fix applied**: Lines 101-107 of `generate_multisine_data.m`:
+```matlab
+if USE_MSD
+    f_high = 200;  % MSD resonance at ~150 Hz
+else
+    f_high = 7;    % baseline: single oscillatory mode at ~5 Hz
+end
+```
 
-### Script features (both):
-- Target states computed in Python (P_inv@y + central finite-diff), not from MATLAB directly
-- CHECK 1: velocity verification (Python vs MATLAB)
-- CHECK 2: I/O check (one RK4 step)
-- MSD additionally: CHECK 3 augmented state correlation with delta_a
-- Plots: loss, comparison (logical + stage), difference (logical + stage), NRMS bar
-- All plots show NRMS and RMS (with SI prefix) in legend
-- Coordinate names: logical (X, theta, Y, dX, dtheta, dY), stage (x1, x2, Y, dx1, dx2, dY)
-- Saves: .pt weights, .json results, .npz trajectories
+**Status**: Code changed, baseline data NOT yet regenerated with correct f_high. Existing data in `data/gantry/matlab/multisine/baseline/` was generated with f_high=200 and is useless.
 
-### Shell script updated
-`scripts/gantry/encoder/run_encoder_validation.sh`:
-- step0_init → encoder_baseline → encoder_msd → (step1_pipeline | step2_pipeline)
+---
+
+## Problem 2: Yaw/diff limit too loose (FIXED in code)
+
+**Root cause**: `lim.diff = sin(0.1) * Lb` = 72.4 mm. Should be 6 mm per `generate_data_correct_max_theta.m`.
+
+**Fix applied**: Line 94: `lim.diff = 6e-3;`
+
+---
+
+## Problem 3: X_anti_amp too large (FIXED in code)
+
+**Fix applied** (matching `generate_data_correct_max_theta.m`):
+- T4: 0.030 -> 0.0025
+- T7: 0.030 -> 0.0025
+- T8: 0.020 -> 0.0018
+- E1: 0.015 -> 0.0013
+
+---
+
+## Problem 4: Force cap broken (NEEDS REWORK)
+
+**What we tried**: Added a 40% force cap (`amp_max = min(amp_max, 0.40 * min(traj_rms(traj_rms > 0))`). This failed because `min` picks up near-zero channels. T2, T3, T4 all got `amp_max = 0 N` (no multisine at all).
+
+**Root cause**: Single scalar `amp_max` applied to all 3 channels, but trajectory force varies per channel. `min` picks the weakest channel.
+
+**Agreed approach**: Per-channel amplitude scaling:
+```matlab
+for j = 1:3
+    if traj_rms(j) > threshold  % active channel
+        amp_ch(j) = min(amp_hw, 0.40 * traj_rms(j));
+    else                         % inactive channel
+        amp_ch(j) = 0;           % don't excite unused channels
+    end
+end
+f(:,j) = amp_ch(j) * f_tiled(:,j);  % per-channel scaling
+```
+
+**Design decision**: Inactive channels (traj RMS ~ 0) get zero multisine. Rationale: trajectories are designed with intent (T2/T3 isolate X dynamics at fixed Y). Adding Y excitation would perturb the scheduling variable and confound LPV identification. `generate_data_correct_max_theta.m` does the same via explicit `ms_modes` per trajectory.
+
+**`generate_cached_multisine.m` already supports per-channel `amp_rms`** (line 9: "scalar or (1 x n_ch)"). Infrastructure exists, just not used yet.
+
+**Status**: Current force cap code in `generate_multisine_data.m` (lines 244-253) needs to be replaced with per-channel logic. NOT yet implemented.
+
+---
+
+## Problem 5: Supervisor feedback — not enough data
+
+Supervisor said current dataset is insufficient for identification. Only 10 trajectories (T1-T8 train, V1 val, E1 test), each ~2 seconds at 20 kHz.
+
+**To address**: Need more trajectories, and/or longer trajectories, and/or more diverse operating conditions.
+
+---
+
+## Problem 6: Supervisor feedback — need oscillations
+
+Current trajectories are point-to-point moves (ramp up, hold, ramp down). No sustained oscillatory motion. Supervisor explicitly said to add oscillations.
+
+**To address**: Add trajectory profiles with back-and-forth / oscillatory motion (e.g., repeated sinusoidal sweeps, multi-period point-to-point cycles). This would also help with Problem 8.
+
+---
+
+## Problem 7: Too much dead time in trajectories
+
+Each trajectory has 0.5s hold at start + 0.5s hold at end + the motion phase. For short motions, the hold periods dominate. Most of the data samples are "no movement," wasting data budget.
+
+**To address**: Reduce hold times and/or design trajectories with continuous motion (oscillations solve this naturally).
+
+---
+
+## Problem 8: Downsampling validation (BLOCKED on data regeneration)
+
+Script `scripts/gantry/parameter-diagnostics/downsampling_rk4_validation.py` exists and runs, but:
+- First run used LTI model (wrong), rewritten to use LPV (`Gantry_State_Block(Y_op=None)`)
+- Takes several minutes locally, cancelled by user
+- Should be run after baseline data is regenerated with correct f_high
+- With f_high=7 Hz, minimum viable sampling rate should be much lower than with 200 Hz data
+
+---
+
+## Scripts created/modified this session
+
+| Script | Action | Status |
+|--------|--------|--------|
+| `scripts/gantry/encoder/system_dynamics_analysis.m` | Created | Done — Nyquist bounds for baseline + MSD, saves JSON |
+| `scripts/gantry/parameter-diagnostics/downsampling_rk4_validation.py` | Created | Done — LPV downsampling sweep, not yet run on correct data |
+| `Matlab-scripts/Augmentation/diagnostics/multisine_frequency_range_baseline.m` | Created | Done — baseline freq range analysis, confirmed f_high=7 |
+| `Matlab-scripts/Augmentation/data/generate_multisine_data.m` | Modified | Partially done — f_high, lim.diff, X_anti_amp fixed; force cap needs rework |
+
+---
+
+## Execution order for next session
+
+1. **Fix force cap** (Problem 4): Replace single-scalar cap with per-channel logic
+2. **Regenerate baseline data**: Run `generate_multisine_data.m` (USE_MSD=false) in MATLAB
+3. **Verify plots**: Check force levels and position effects look reasonable
+4. **Design oscillatory trajectories** (Problems 5, 6, 7): Plan new trajectory profiles
+5. **Run downsampling validation** (Problem 8): On regenerated data, locally or on cluster
 
 ---
 
@@ -103,29 +135,11 @@ Since they share no parameters, the augmented states stay at ~0.
 
 | File | Role |
 |------|------|
-| `scripts/gantry/encoder/encoder_baseline_standalone.py` | Encoder standalone, baseline data |
-| `scripts/gantry/encoder/encoder_msd_standalone.py` | Encoder standalone, MSD data (NX_ANN=2) |
-| `scripts/gantry/encoder/run_encoder_validation.sh` | SLURM runner for all encoder scripts |
-| `model_augmentation/utils/torch_nets.py:244-338` | LinearInitEncoderWrapper (phys + ann) |
-| `model_augmentation/fit_systems/pre_encoder.py:191-300` | linear_encoder_init (Wb matrices) |
-| `scripts/gantry/encoder_initialisation/interconnect_fit.py:318-530` | Jan's reference: how he wires encoder → pipeline |
-| `model_augmentation/fit_systems/blocks.py:639-820` | Gantry_State_Block (RK4 + LFR) |
-| `model_augmentation/systems/gantry_ss.py` | P matrix, Cd, physical parameters |
-
-### Literature
-- `literature/hoekstra2025_lfr-augmentation-ejc.pdf` — Eq. 8 (encoder ResNet), Eq. 16-17 (Wb init from O_n), Eq. 35 (pre-training loss)
-- `literature/drenth2025_lpv-lfr-thesis.pdf` — full derivation and MSD examples
-
----
-
-## Open question for next session
-
-The user wants 6+2 to outperform 6 in standalone. For this to work, the architecture needs to allow gradient flow to augmented states. Options:
-
-1. **Shared-layer architecture**: Replace two separate networks with one MLP that outputs 8 states. Physical state loss trains shared hidden layers → augmented outputs get meaningful hidden representations. But: loses the clean model-based initialization on the linear part.
-
-2. **I/O loss addition**: Add a secondary loss term: feed encoder states through one RK4 step, compare y_hat vs y_measured. This creates a gradient path for augmented states (since the state model could benefit from knowing MSD state). This is essentially a lightweight version of the pipeline.
-
-3. **Accept pipeline-only**: Augmented states only make sense in the full pipeline. Standalone validates the 6 physical states; pipeline validates the 6+2.
-
-The user explicitly does NOT want to supervise on delta_a (unknown in practice). They want to see the encoder discover MSD dynamics from I/O data alone.
+| `Matlab-scripts/Augmentation/data/generate_multisine_data.m` | Main data generation script (toggle USE_MSD) |
+| `Matlab-scripts/parameter-recovery/generate_data_correct_max_theta.m` | Reference for correct limits and per-mode amplitudes |
+| `Matlab-scripts/Augmentation/diagnostics/multisine_frequency_range_baseline.m` | Baseline frequency range analysis (f_high=7) |
+| `Matlab-scripts/Augmentation/diagnostics/multisine_frequency_range_MSD.m` | MSD frequency range analysis (f_high~165) |
+| `Matlab-scripts/Augmentation/diagnostics/generate_cached_multisine.m` | Multisine generation (supports per-channel amp_rms) |
+| `scripts/gantry/parameter-diagnostics/downsampling_rk4_validation.py` | Python downsampling sweep |
+| `simulations/gantry_subnet/diagnostics/system_dynamics.json` | Nyquist bounds from MATLAB |
+| `data/gantry/matlab/multisine/baseline/` | Baseline multisine data (currently useless, needs regeneration) |
