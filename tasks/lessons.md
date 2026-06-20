@@ -149,6 +149,15 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
+### Rule: Validate with the actual pipeline model and representative data, not a simplified proxy
+
+**Trigger**: When building a diagnostic or validation for a pipeline parameter (sampling rate, window length, integration steps, etc.)
+**Rule**: Use the same model the pipeline actually uses (e.g., LPV nonlinear), not a simplified proxy (e.g., LTI linearization). Choose test data that exercises the full operating range, not data tailored to make the proxy valid.
+**Why**: Built a downsampling validation using the LTI linearization at Y_op=0, then chose a Y=0 trajectory to match the linearization point. The real pipeline uses the LPV model with Y-sweeping data. The LTI test missed the coupling between Y-scheduling and sampling rate entirely.
+**How to apply**: Before writing a diagnostic, ask: "Which model does the pipeline use? Does the test data cover the operating range the pipeline sees?" If the diagnostic uses a different model or narrower data, it is not testing the right thing.
+
+---
+
 ### Rule: Do not iterate on matplotlib for block diagrams; use text or TikZ instead
 
 **Trigger**: When the user asks for a block diagram, architecture overview, or signal flow figure
