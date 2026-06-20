@@ -241,6 +241,102 @@ class HybridGantryEncoder(nn.Module):
             return x_phys_norm
 
 
+class LinearInitEncoderWrapper(nn.Module):
+    """Wraps linear_encoder_init (physical states) + zero-init ANN (augmented states).
+
+    linear_encoder_init outputs nx_phys states initialized from the baseline
+    model's reconstructability map (Hoekstra 2026, Eq. 16-17). All weights are
+    trainable (nn.Parameter). The ANN adds NX_ANN zero-initialized augmented
+    states, matching the HybridGantryEncoder structure but with full trainability
+    on the physical states.
+
+    THEORY: Encoder architecture is the ResNet from Hoekstra 2026 Eq. 8:
+        x_k = W_psi_y @ y_hist + W_psi_u @ u_hist + psi_tilde(y_hist, u_hist)
+    where W matrices are initialized from reconstructability theory and
+    psi_tilde is a zero-init ANN for nonlinear corrections.
+
+    Convention fix: normalize_linear_ss_matrices produces Wb_psi_y/Wb_psi_u
+    for pure-scaled data (x/std_x, u/std_u, y/std_y). But the pipeline feeds
+    mean-subtracted data ((u-u_mean)/std_u, (y-y0)/std_y). This wrapper
+    converts pipeline -> pure-scaled before the linear map, and pure-scaled ->
+    pipeline after, using registered buffers (constant, no gradients).
+    """
+    def __init__(self, phys_encoder, nx_ann, nb, nu, na, ny,
+                 n_nodes_per_layer=16, n_hidden_layers=2, activation=nn.Tanh,
+                 u_mean=None, std_u=None, y0=None, ystd=None,
+                 x_mean=None, std_x=None):
+        super().__init__()
+        self.phys_encoder = phys_encoder  # linear_encoder_init instance
+        self.nx_ann = nx_ann
+
+        # --- Convention-fix buffers ---
+        # When provided, forward() undoes mean subtraction before the linear map
+        # and converts the output to pipeline convention.
+        if u_mean is not None and std_u is not None:
+            # Offset tiled over history: (nb * nu,)
+            u_off = torch.tensor(
+                (np.asarray(u_mean).flatten() / np.asarray(std_u).flatten()),
+                dtype=torch.float32).repeat(nb)
+            self.register_buffer('u_offset', u_off)
+        else:
+            self.u_offset = None
+
+        if y0 is not None and ystd is not None:
+            y_off = torch.tensor(
+                (np.asarray(y0).flatten() / np.asarray(ystd).flatten()),
+                dtype=torch.float32).repeat(na)
+            self.register_buffer('y_offset', y_off)
+        else:
+            self.y_offset = None
+
+        if x_mean is not None and std_x is not None:
+            x_off = torch.tensor(
+                (np.asarray(x_mean).flatten() / np.asarray(std_x).flatten()),
+                dtype=torch.float32)
+            self.register_buffer('x_offset', x_off)
+        else:
+            self.x_offset = None
+
+        if nx_ann > 0:
+            nu_tup = (nu,) if isinstance(nu, int) else nu
+            ny_tup = (ny,) if isinstance(ny, int) else ny
+            n_in = nb * np.prod(nu_tup, dtype=int) + na * np.prod(ny_tup, dtype=int)
+            self.ann = zero_init_feed_forward_nn(
+                n_in=n_in, n_out=nx_ann,
+                n_nodes_per_layer=n_nodes_per_layer,
+                n_hidden_layers=n_hidden_layers,
+                activation=activation,
+            )
+        else:
+            self.ann = None
+
+    def forward(self, upast, ypast):
+        # Flatten to 2D: linear_encoder_init expects (batch, flat) not (batch, T, ch)
+        u_flat = upast.reshape(upast.shape[0], -1)
+        y_flat = ypast.reshape(ypast.shape[0], -1)
+
+        # Convention fix: pipeline (mean-sub) -> pure-scaled (what Wb matrices expect)
+        if self.u_offset is not None:
+            u_flat = u_flat + self.u_offset
+        if self.y_offset is not None:
+            y_flat = y_flat + self.y_offset
+
+        x_phys = self.phys_encoder(u_flat, y_flat)  # (batch, nx_phys), pure-scaled
+
+        # Convention fix: pure-scaled -> pipeline (what the rest of the model expects)
+        if self.x_offset is not None:
+            x_phys = x_phys - self.x_offset
+
+        if self.ann is not None:
+            # ANN sees original pipeline-convention data for nonlinear corrections
+            u_orig = upast.reshape(upast.shape[0], -1)
+            y_orig = ypast.reshape(ypast.shape[0], -1)
+            net_in = torch.cat([u_orig, y_orig], dim=1)
+            x_ann = self.ann(net_in)  # (batch, nx_ann)
+            return torch.cat([x_phys, x_ann], dim=1)
+        return x_phys
+
+
 class positive_default_encoder_net(nn.Module):
     def __init__(self, nb, nu, na, ny, nx, n_nodes_per_layer=64, n_hidden_layers=2, activation=nn.Tanh):
         super(positive_default_encoder_net, self).__init__()
