@@ -132,11 +132,11 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
-### Rule: Verification/diagnostic tools must not require the thing they are verifying
+### Rule: Verification/diagnostic tools must not require the thing they are verifying, and must use the minimal evaluation path
 **Trigger**: When building a test, diagnostic, or verification script for a component or pipeline
-**Rule**: The diagnostic must be able to run independently of the fully completed pipeline. If the purpose is to verify component X works, the script must construct X from scratch and test it, not require a successful run of the full pipeline that includes X. For example: an encoder diagnostic must build and briefly train its own model, not load a fully trained model from a prior multi-hour run.
-**Why**: Built an encoder diagnostic that required loading a trained model, but the whole point was to verify the encoder works before committing to a full training run. The user had to point out this was backwards twice.
-**How to apply**: Before designing any diagnostic, ask: "Can I run this in minutes without any prior artifacts?" If the answer is no, restructure so the diagnostic is self-contained.
+**Rule**: (1) The diagnostic must be able to run independently of the fully completed pipeline. If the purpose is to verify component X works, the script must construct X from scratch and test it, not require a successful run of the full pipeline that includes X. (2) Use the minimal evaluation that tests the component directly. Do not route through the full pipeline when the component can be called in isolation. For example: to test encoder init quality, call the encoder on I/O windows and compare to ground truth states. Do NOT run `apply_experiment` (full sequential model simulation), which is 1000x slower and tests the model+encoder together, not the encoder alone.
+**Why**: (1) Built an encoder diagnostic that required loading a trained model, but the whole point was to verify the encoder works before committing to a full training run. (2) Used `apply_experiment` (200k sequential timesteps) to test encoder initialization quality at different sampling rates. The encoder init is a linear map from I/O windows to states, testable with a single matrix multiply in milliseconds. The full simulation made the 20 kHz evaluation hang for minutes.
+**How to apply**: Before writing any evaluation, ask: "What is the minimal call that tests THIS component?" If you are importing or calling machinery beyond the component under test, you are doing it wrong.
 
 ---
 
@@ -155,6 +155,15 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 **Rule**: Use the same model the pipeline actually uses (e.g., LPV nonlinear), not a simplified proxy (e.g., LTI linearization). Choose test data that exercises the full operating range, not data tailored to make the proxy valid.
 **Why**: Built a downsampling validation using the LTI linearization at Y_op=0, then chose a Y=0 trajectory to match the linearization point. The real pipeline uses the LPV model with Y-sweeping data. The LTI test missed the coupling between Y-scheduling and sampling rate entirely.
 **How to apply**: Before writing a diagnostic, ask: "Which model does the pipeline use? Does the test data cover the operating range the pipeline sees?" If the diagnostic uses a different model or narrower data, it is not testing the right thing.
+
+---
+
+### Rule: Model discretization accuracy and encoder/observer quality have separate sampling rate requirements
+
+**Trigger**: When choosing a sampling rate for training based on a downsampling or discretization validation
+**Rule**: A passing downsampling validation (model simulation NRMS < threshold) only confirms the state-transition model is accurate at that rate. It does NOT confirm the encoder initialization, observer, or state reconstruction will work at that rate. Before committing to a sampling rate, verify BOTH: (1) model discretization accuracy (downsampling validation), and (2) encoder initialization quality (evaluate state NRMS at that rate before training). These can have very different cutoff rates. The encoder init quality threshold must be derived from the native-rate (e.g. 20 kHz) encoder init as a reference baseline, not from an arbitrary number. Sweep sampling rates for encoder init, compare each against native rate, and pick the rate where degradation is acceptable.
+**Why**: (1) Downsampling validation showed 200 Hz passes (0.82% NRMS). Committed to 200 Hz for the full diagnostic sweep. Encoder init at 200 Hz produced q2 NRMS = 2.078 (unusable), while at 400 Hz it was 0.052. Wasted a diagnostic run and had to backtrack. (2) Then used an arbitrary threshold of 0.5 for the pre-flight gate instead of comparing against the native-rate encoder init quality. The proper reference is always the native-rate result.
+**How to apply**: First compute encoder init at native rate (the gold standard). Then sweep downsampled rates and report quality relative to native. Do not invent thresholds.
 
 ---
 

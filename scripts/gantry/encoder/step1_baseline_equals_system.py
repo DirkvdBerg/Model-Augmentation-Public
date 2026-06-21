@@ -57,7 +57,7 @@ ny = 3
 Y_OP = None  # LPV self-scheduled
 
 FS_ORIG = 20000
-FS_NEW = 4000
+FS_NEW = 400  # HEURISTIC: 10x lower than original 4 kHz; update after downsampling validation
 D = FS_ORIG // FS_NEW
 TS_NEW = 1.0 / FS_NEW
 
@@ -72,32 +72,34 @@ nb = na
 na_right = 1  # required by linear_encoder_init (reconstructability needs y(k))
 nb_right = 1
 
-# Training hyperparameters (justified from Jan's meeting advice)
+# Training hyperparameters
 HP = dict(
     NX_ANN=0,              # no augmented states: baseline = system
     n_nodes_per_layer=16,
     n_hidden_layers=2,
     up_sample=2,
-    nf=20,                 # HEURISTIC: Jan: "problem might be really easy", start small
+    nf=20,                 # HEURISTIC: ~2 periods of 5 Hz mode at 50 Hz sampling
     batch_size=128,        # HEURISTIC: Jan: "take less number of batch sizes"
-    lr=1e-5,               # HEURISTIC: Jan: "train with low learning rate"
-    epochs=50,
+    lr=1e-3,               # HEURISTIC: diagnostic_nf_lr.py confirmed convergence at 1e-3
+    epochs=100,
 )
 
-# Data
-TRAJ_DIR = os.path.join(PROJECT_ROOT, 'data', 'gantry', 'matlab', 'multisine', 'baseline')
+# Data (baseline-v2: oscillatory + repeated p2p, 10s trajectories, f_high=7 Hz)
+TRAJ_DIR = os.path.join(PROJECT_ROOT, 'data', 'gantry', 'matlab', 'multisine', 'baseline-v2')
 
 TRAIN_FILES = [
-    'T1_Y_sweep_conservative.mat',
-    'T2_X_sym_Y030.mat',
+    'T1_Y_osc.mat',
+    'T2_X_sym_Y_sweep.mat',
     'T3_X_sym_Y000.mat',
-    'T4_X_antisym_Y020.mat',
-    'T5_X_sym_Y_sweep.mat',
-    'T6_Y_sweep_aggressive.mat',
-    'T7_X_antisym_Y_sweep.mat',
-    'T8_X_sym_anti_Y_sweep.mat',
+    'T4_X_sym_Y030.mat',
+    'T5_theta_Y_coupling.mat',
+    'T6_lissajous_XY.mat',
+    'T7_full_MIMO.mat',
+    'T8_multi_amp.mat',
+    'T9_Y_sweep_repeated.mat',
+    'T10_multi_axis_repeated.mat',
 ]
-VAL_FILE = 'V1_X_sym_Y_mid_sweep.mat'
+VAL_FILES = ['V1_osc_Y025.mat', 'V2_p2p_Y020.mat']
 
 # Output
 OUT_DIR = os.path.join(PROJECT_ROOT, 'simulations', 'gantry_subnet', 'encoder')
@@ -222,6 +224,14 @@ def build_model(hp, norm):
         activation=torch.nn.Tanh,
     )
     ic.add_block(ann_block)
+
+    # Freeze ANN block: baseline = system means zero mismatch, so ANN
+    # correction must stay at zero.  Without freezing, the encoder and ANN
+    # co-adapt to a non-physical state representation (output loss drops
+    # but internal states diverge from ground truth).
+    if NX_ANN == 0:
+        for p in ann_block.parameters():
+            p.requires_grad = False
 
     ic.connect_block_signals(ann_block, ["x", "u"], ["xp"])
     ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
@@ -386,9 +396,9 @@ def plot_nrms_bar(nrms_dict, title, out_path):
 def plot_loss_curves(fit_sys, out_path):
     """Plot training and validation loss curves."""
     fig, ax = plt.subplots(figsize=(10, 5))
-    if hasattr(fit_sys, 'Loss_train') and fit_sys.Loss_train:
+    if hasattr(fit_sys, 'Loss_train') and len(fit_sys.Loss_train) > 0:
         ax.plot(fit_sys.Loss_train, label='train')
-    if hasattr(fit_sys, 'Loss_val') and fit_sys.Loss_val:
+    if hasattr(fit_sys, 'Loss_val') and len(fit_sys.Loss_val) > 0:
         ax.plot(fit_sys.Loss_val, label='val')
     ax.set_xlabel('Epoch')
     ax.set_ylabel('Loss')
@@ -416,11 +426,12 @@ def main():
     # --- Load data ---
     print(f'\nLoading data from: {TRAJ_DIR}')
     train_data = [load_mat(f) for f in TRAIN_FILES]
-    val_u, val_y, val_x_logical = load_mat(VAL_FILE)
+    val_data = [load_mat(f) for f in VAL_FILES]
 
     for i, (fname, (u, y, x)) in enumerate(zip(TRAIN_FILES, train_data)):
         print(f'  T{i+1} ({fname}): u={u.shape}, y={y.shape}, x={x.shape}')
-    print(f'  Val ({VAL_FILE}): u={val_u.shape}, y={val_y.shape}, x={val_x_logical.shape}')
+    for fname, (u, y, x) in zip(VAL_FILES, val_data):
+        print(f'  Val ({fname}): u={u.shape}, y={y.shape}, x={x.shape}')
 
     # --- Normalization ---
     norm = compute_normalization(train_data)
@@ -429,7 +440,9 @@ def main():
     print(f'  std_u = {norm["std_u"].flatten()}')
 
     # --- Analytical baseline (reference, does not change with training) ---
-    print('\n--- Analytical baseline (P_inv + FD) ---')
+    # Evaluate on first validation file
+    val_u, val_y, val_x_logical = val_data[0]
+    print(f'\n--- Analytical baseline (P_inv + FD) on {VAL_FILES[0]} ---')
     nrms_ana, x_analytical = compute_analytical_baseline(val_y, val_x_logical, norm)
     rms_ana_phys = compute_rms_error(x_analytical, val_x_logical)
     print(f'  {"State":<6s}  {"NRMS":>12s}  {"RMS err":>12s}  {"Unit":<5s}')
@@ -443,12 +456,20 @@ def main():
         for u, y, _ in train_data
     ]
     train_sys_data = deepSI.System_data_list(train_list)
+    # Use first val file for deepSI validation during training
     val_sys_data = deepSI.System_data(u=val_u, y=val_y, dt=TS_NEW)
 
     # --- Build model ---
     print('\nBuilding model...')
     fit_sys = build_model(HP, norm)
-    fit_sys.init_model(sys_data=train_sys_data, auto_fit_norm=False)
+    # Pass optimizer_kwargs to init_model, NOT to fit().
+    # fit() skips optimizer creation when init_model_done=True,
+    # so optimizer_kwargs passed to fit() are silently ignored.
+    fit_sys.init_model(
+        sys_data=train_sys_data,
+        auto_fit_norm=False,
+        optimizer_kwargs={'lr': HP['lr']},
+    )
     fit_sys.hfn.to(DTYPE_PT)
 
     n_params = 0
@@ -485,24 +506,33 @@ def main():
         epochs=HP['epochs'],
         auto_fit_norm=False,
         loss_kwargs={'nf': HP['nf']},
-        optimizer_kwargs={'lr': HP['lr']},
         validation_measure=val_measure,
         list_val_measures=list_val_measures,
     )
 
     # --- Evaluate AFTER training (best checkpoint) ---
     fit_sys.checkpoint_load_system(name='_best')
-    print('\n--- Encoder quality AFTER training (best checkpoint) ---')
-    nrms_post, x_enc_post, x_gt_post, cheat_n = evaluate_encoder_states(
-        fit_sys, val_sys_data, val_x_logical, norm)
-    rms_post_phys = compute_rms_error(x_enc_post, x_gt_post)
-    print(f'  {"State":<6s}  {"NRMS":>12s}  {"RMS err":>12s}  {"Unit":<5s}')
-    print(f'  {"-"*6}  {"-"*12}  {"-"*12}  {"-"*5}')
-    for i, name in enumerate(STATE_NAMES):
-        print(f'  {name:<6s}  {nrms_post[i]:>12.4e}  {rms_post_phys[i]:>12.4e}  {PHYS_UNITS[i]:<5s}')
 
-    # --- Pass/fail ---
-    max_nrms_post = np.max(nrms_post)
+    for vi, (vf, (vu, vy, vx)) in enumerate(zip(VAL_FILES, val_data)):
+        vsd = deepSI.System_data(u=vu, y=vy, dt=TS_NEW)
+        print(f'\n--- Encoder quality AFTER training on {vf} ---')
+        nrms_post, x_enc_post, x_gt_post, cheat_n = evaluate_encoder_states(
+            fit_sys, vsd, vx, norm)
+        rms_post_phys = compute_rms_error(x_enc_post, x_gt_post)
+        print(f'  {"State":<6s}  {"NRMS":>12s}  {"RMS err":>12s}  {"Unit":<5s}')
+        print(f'  {"-"*6}  {"-"*12}  {"-"*12}  {"-"*5}')
+        for i, name in enumerate(STATE_NAMES):
+            print(f'  {name:<6s}  {nrms_post[i]:>12.4e}  {rms_post_phys[i]:>12.4e}  {PHYS_UNITS[i]:<5s}')
+
+        # Store first val file results for plots
+        if vi == 0:
+            nrms_post_v1 = nrms_post
+            x_enc_post_v1 = x_enc_post
+            x_gt_post_v1 = x_gt_post
+            cheat_n_v1 = cheat_n
+
+    # --- Pass/fail (on first val file) ---
+    max_nrms_post = np.max(nrms_post_v1)
     max_nrms_ana = np.max(nrms_ana)
     print(f'\nMax NRMS encoder (after training): {max_nrms_post:.4e}')
     print(f'Max NRMS analytical baseline:      {max_nrms_ana:.4e}')
@@ -517,6 +547,11 @@ def main():
         print('FAIL: encoder NRMS too high, investigate pipeline')
 
     # --- Save results ---
+    nrms_post = nrms_post_v1
+    x_enc_post = x_enc_post_v1
+    x_gt_post = x_gt_post_v1
+    cheat_n = cheat_n_v1
+
     results = dict(
         hp=HP,
         cheat_n=int(cheat_n),
@@ -524,8 +559,8 @@ def main():
         nrms_init={name: float(nrms_init[i]) for i, name in enumerate(STATE_NAMES)},
         nrms_post={name: float(nrms_post[i]) for i, name in enumerate(STATE_NAMES)},
         nrms_analytical={name: float(nrms_ana[i]) for i, name in enumerate(STATE_NAMES)},
-        loss_train=getattr(fit_sys, 'Loss_train', []),
-        loss_val=getattr(fit_sys, 'Loss_val', []),
+        loss_train=getattr(fit_sys, 'Loss_train', np.array([])).tolist(),
+        loss_val=getattr(fit_sys, 'Loss_val', np.array([])).tolist(),
     )
     json_path = os.path.join(OUT_DIR, 'step1_results.json')
     with open(json_path, 'w') as f:

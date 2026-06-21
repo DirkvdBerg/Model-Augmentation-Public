@@ -35,8 +35,7 @@ CONFIG = "baseline"  # Toggle: "baseline" or "msd"
 
 FS_ORIG = 20000  # THEORY: original sample rate (Hz), from main.m line 164
 # THEORY: integer divisors of 20000 for alias-free decimation (ZOH inputs)
-# Transition region for baseline f_high=7 Hz (Nyquist=14 Hz)
-ALL_FS_NEW = [100, 80, 50, 40, 25, 20]
+ALL_FS_NEW = [4000, 2000, 1000, 500, 400, 250, 200, 100, 80, 50]
 # HEURISTIC: 1% conservative bound for acceptable discretization error
 NRMS_THRESHOLD = 0.01
 # Reference uses high up_sample to approximate continuous-time integration

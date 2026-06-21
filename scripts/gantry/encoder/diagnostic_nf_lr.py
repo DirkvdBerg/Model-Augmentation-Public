@@ -1,16 +1,19 @@
 """
 diagnostic_nf_lr.py
 -------------------
-Pipeline validation: sweep (nf, lr) to check whether the linear encoder
-initialization is preserved or destroyed after a few training epochs.
+Two-stage diagnostic for baseline encoder pipeline validation:
 
-If NO combination preserves the initialization, the pipeline has a bug.
-If some combinations work, those are viable hyperparameters.
+Stage 1: Encoder init quality vs sampling rate
+    Sweeps sampling rates. For each rate, builds the encoder and evaluates
+    it directly: sliding I/O windows -> batched encoder forward -> NRMS vs
+    x_logical. No model simulation. Selects the lowest rate where degradation
+    vs native (20 kHz) is acceptable.
 
-Uses baseline-v2 data downsampled to 50 Hz (guessed; update FS_NEW after
-running the downsampling validation script).
-
-Structure follows step1_baseline_equals_system.py for model building.
+Stage 2: nf x lr grid sweep at selected rate
+    Trains for N_DIAG_EPOCHS epochs per (nf, lr) combination. After each
+    epoch, evaluates encoder state quality directly (same direct forward
+    pass, not open-loop simulation). If states degrade for ALL combinations,
+    output MSE alone cannot constrain this system's states.
 
 Usage:
     conda run -n GraduationProject python scripts/gantry/encoder/diagnostic_nf_lr.py
@@ -57,9 +60,13 @@ ny = 3
 Y_OP = None  # LPV self-scheduled
 
 FS_ORIG = 20000
-FS_NEW = 50       # HEURISTIC: guessed; update after downsampling validation
-D = FS_ORIG // FS_NEW
-TS_NEW = 1.0 / FS_NEW
+
+# Stage 1: Encoder init sampling rate sweep
+FS_SWEEP = [20000, 4000, 2000, 1000, 500, 400, 200]
+# HEURISTIC: max acceptable worst-state degradation ratio vs native rate.
+# Auto-selects the lowest passing rate for Stage 2. Inspect the printed
+# table and override fs_selected manually if the threshold is too tight/loose.
+ENCODER_INIT_MAX_RATIO = 5.0
 
 DTYPE_NP = np.float32
 DTYPE_PT = torch.float32
@@ -77,14 +84,15 @@ HP_FIXED = dict(
     NX_ANN=0,
     n_nodes_per_layer=16,
     n_hidden_layers=2,
-    up_sample=2,
+    up_sample=1,       # Validated: downsampling Test B, up_sample=1 sufficient at 400 Hz (NRMS=3.4e-5)
     batch_size=128,
 )
 
-# Diagnostic grid
-NF_VALUES = [5, 10, 20, 40, 80]
-LR_VALUES = [1e-3, 1e-4, 1e-5, 1e-6]
-N_DIAG_EPOCHS = 5
+# Stage 2: nf/lr diagnostic grid
+NF_VALUES = [20, 40, 80, 160, 200]
+LR_VALUES = [5e-4, 1e-4, 5e-5]
+N_DIAG_EPOCHS = 10
+Q2_EARLY_STOP = 10.0  # abort combination if q2 ratio exceeds this
 
 # Data (baseline-v2)
 TRAJ_DIR = os.path.join(
@@ -116,12 +124,12 @@ os.makedirs(OUT_DIR, exist_ok=True)
 # Data loading
 # =============================================================================
 
-def load_mat(filename):
-    """Load u, y, x_logical from .mat file, downsample to FS_NEW."""
+def load_mat(filename, downsample=1):
+    """Load u, y, x_logical from .mat file, downsample by given factor."""
     d = loadmat(os.path.join(TRAJ_DIR, filename), squeeze_me=True)
-    u = d['u_total'][::D].astype(DTYPE_NP)
-    y = d['y'][::D].astype(DTYPE_NP)
-    x_logical = d['x_logical'][::D].astype(DTYPE_NP)
+    u = d['u_total'][::downsample].astype(DTYPE_NP)
+    y = d['y'][::downsample].astype(DTYPE_NP)
+    x_logical = d['x_logical'][::downsample].astype(DTYPE_NP)
     return u, y, x_logical
 
 
@@ -146,10 +154,10 @@ def compute_normalization(train_data):
 
 
 # =============================================================================
-# Build model (same as step1_baseline_equals_system.py)
+# Build model
 # =============================================================================
 
-def build_model(hp, norm):
+def build_model(hp, norm, ts):
     """Build interconnect + SSE_Interconnect with linear_encoder_init."""
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
@@ -170,7 +178,7 @@ def build_model(hp, norm):
 
     phy_block = Gantry_State_Block(
         Y_op=Y_OP, std_x=std_x, std_u=std_u,
-        x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
+        x_mean=x_mean, u_mean=u_mean, Ts=ts,
         up_sample=hp['up_sample'],
     ).to(DTYPE_PT)
     out_block = Linear_Output_Block(C=Cd_norm, D=Dd_np)
@@ -185,6 +193,11 @@ def build_model(hp, norm):
         activation=torch.nn.Tanh,
     )
     ic.add_block(ann_block)
+
+    # Freeze ANN: baseline = system, no mismatch correction needed
+    if NX_ANN == 0:
+        for p in ann_block.parameters():
+            p.requires_grad = False
 
     ic.connect_block_signals(ann_block, ["x", "u"], ["xp"])
     ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
@@ -209,7 +222,7 @@ def build_model(hp, norm):
     fit_sys.norm.ystd = ystd
 
     # --- Encoder: linear_encoder_init (Hoekstra 2026 Eq. 16-17) ---
-    Ad, Bd, Cd_dt, Dd_dt = gantry_linearize_and_discretize(dt=TS_NEW)
+    Ad, Bd, Cd_dt, Dd_dt = gantry_linearize_and_discretize(dt=ts)
 
     sys_data_with_x = deepSI.System_data(u=norm['u_all'], y=norm['y_all'])
     sys_data_with_x.x = norm['x_all']
@@ -239,65 +252,257 @@ def build_model(hp, norm):
 
 
 # =============================================================================
+# Encoder quality evaluation -- direct forward pass, no simulation
+# =============================================================================
+
+STATE_NAMES = ['q1', 'q2', 'q3', 'dq1', 'dq2', 'dq3']
+
+# Encoder was built with nb=nb+nb_right, na=na+na_right (see build_model).
+# These constants define the window shape expected by encoder.forward().
+_NB_WIN = nb + nb_right   # 26
+_NA_WIN = na + na_right   # 26
+_WIN_START = max(_NB_WIN, _NA_WIN) - 1  # = 25: first timestep with a full window
+
+
+def evaluate_encoder_direct(encoder, val_u, val_y, val_x, norm):
+    """Evaluate encoder quality via direct sliding-window forward pass.
+
+    The encoder is a static map: x_hat = encoder(u_window, y_window).
+    For each timestep t >= _WIN_START, build the I/O window, call the encoder,
+    compare the output to x_logical[t], and compute per-state NRMS.
+
+    No model simulation is performed -- this isolates encoder quality from
+    model propagation error.
+
+    Args:
+        encoder: LinearInitEncoderWrapper (from fit_sys.encoder)
+        val_u:   (N, nu) raw input array
+        val_y:   (N, ny) raw output array
+        val_x:   (N, NX_PHYS) ground truth physical states
+        norm:    normalization dict from compute_normalization()
+
+    Returns:
+        nrms: (NX_PHYS,) per-state NRMS in physical units
+    """
+    u_mean = norm['u_mean'].flatten()   # (nu,)
+    std_u  = norm['std_u'].flatten()    # (nu,)
+    y0     = norm['y0']                 # (ny,)
+    ystd   = norm['ystd']               # (ny,)
+    x_mean = norm['x_mean'].flatten()   # (NX_PHYS,)
+    std_x  = norm['std_x'].flatten()    # (NX_PHYS,)
+
+    # Pipeline-normalized inputs: (u - u_mean)/std_u, (y - y0)/ystd
+    u_norm = (val_u - u_mean) / std_u  # (N, nu)
+    y_norm = (val_y - y0)    / ystd    # (N, ny)
+
+    # Vectorized sliding windows -- no Python loop.
+    # sliding_window_view on (N, ch) with window (win, ch) gives (N-win+1, 1, win, ch).
+    # After reshape: (N-win+1, win, ch). Window i covers u_norm[i : i+win, :].
+    u_wins = np.lib.stride_tricks.sliding_window_view(
+        u_norm, (_NB_WIN, nu)).reshape(-1, _NB_WIN, nu)  # (N-_WIN_START, _NB_WIN, nu)
+    y_wins = np.lib.stride_tricks.sliding_window_view(
+        y_norm, (_NA_WIN, ny)).reshape(-1, _NA_WIN, ny)  # (N-_WIN_START, _NA_WIN, ny)
+
+    # sliding_window_view returns a read-only view; copy before converting to tensor
+    u_batch = torch.tensor(u_wins.copy(), dtype=DTYPE_PT)  # (T, _NB_WIN, nu)
+    y_batch = torch.tensor(y_wins.copy(), dtype=DTYPE_PT)  # (T, _NA_WIN, ny)
+
+    encoder.eval()
+    with torch.no_grad():
+        # encoder.forward() flattens internally; output is pipeline-normalized:
+        # x_enc = (x_phys - x_mean) / std_x
+        x_enc = encoder(u_batch, y_batch).numpy()  # (T, NX_PHYS)
+
+    # Un-normalize to physical units
+    x_phys = x_enc * std_x + x_mean  # (T, NX_PHYS)
+
+    # Window i covers u_norm[i:i+_NB_WIN], so the corresponding timestep is
+    # t = i + _NB_WIN - 1 = i + _WIN_START. For i=0: t=_WIN_START=25.
+    x_gt = val_x[_WIN_START:]         # (N-_WIN_START, NX_PHYS)
+    T = min(len(x_phys), len(x_gt))
+    x_phys = x_phys[:T]
+    x_gt   = x_gt[:T]
+
+    rms_err = np.sqrt(np.mean((x_phys - x_gt) ** 2, axis=0))  # (NX_PHYS,)
+    rms_gt  = np.sqrt(np.mean(x_gt ** 2, axis=0))              # (NX_PHYS,)
+    return rms_err / (rms_gt + 1e-12)                          # (NX_PHYS,)
+
+
+# =============================================================================
 # Main
 # =============================================================================
 
 def main():
-    print('=' * 70)
-    print('Diagnostic: nf x lr grid for baseline encoder pipeline validation')
-    print('=' * 70)
-    print(f'FS_NEW = {FS_NEW} Hz (D = {D})')
-    print(f'nf values: {NF_VALUES}')
-    print(f'lr values: {LR_VALUES}')
-    print(f'Epochs per combination: {N_DIAG_EPOCHS}')
-    print(f'Grid size: {len(NF_VALUES)} x {len(LR_VALUES)} = '
-          f'{len(NF_VALUES) * len(LR_VALUES)} runs\n')
+    print('=' * 70, flush=True)
+    print('Diagnostic: encoder init sweep + nf x lr grid', flush=True)
+    print('=' * 70, flush=True)
 
-    # --- Load data ---
+    # =================================================================
+    # STAGE 1: Encoder init quality vs sampling rate
+    # =================================================================
+    print('\n' + '=' * 70, flush=True)
+    print('STAGE 1: Encoder init quality vs sampling rate', flush=True)
+    print(f'Rates: {FS_SWEEP}', flush=True)
+    print(f'Max ratio threshold: {ENCODER_INIT_MAX_RATIO}x (HEURISTIC -- inspect table)', flush=True)
+    print('=' * 70, flush=True)
+
+    sweep_nrms = {}
+
+    for fs in FS_SWEEP:
+        d = FS_ORIG // fs
+        ts = 1.0 / fs
+
+        np.random.seed(SEED)
+        torch.manual_seed(SEED)
+
+        # Load training data (for normalization) and validation data
+        train_data = [load_mat(f, d) for f in TRAIN_FILES]
+        val_u, val_y, val_x = load_mat(VAL_FILE, d)
+        norm = compute_normalization(train_data)
+
+        t0 = time.time()
+        model = build_model(HP_FIXED, norm, ts)
+
+        # Direct encoder eval: no init_model, no apply_experiment, no simulation.
+        # The encoder is a static map set in build_model -- call it directly.
+        nrms = evaluate_encoder_direct(model.encoder, val_u, val_y, val_x, norm)
+        elapsed = time.time() - t0
+        sweep_nrms[fs] = nrms
+        del model
+
+        nrms_str = '  '.join(f'{v:.3e}' for v in nrms)
+        print(f'  fs={fs:5d} Hz (D={d:3d}): [{nrms_str}]  ({elapsed:.1f}s)', flush=True)
+
+    # --- Print comparison table ---
+    ref_nrms = sweep_nrms[FS_ORIG]
+    print(flush=True)
+    header = f'  {"fs [Hz]":>8s} |'
+    for name in STATE_NAMES:
+        header += f' {name + " NRMS":>11s} {name + " ratio":>10s} |'
+    header += ' worst ratio'
+    print(header, flush=True)
+    print('  ' + '-' * (len(header) - 2), flush=True)
+
+    fs_selected = None
+    for fs in FS_SWEEP:
+        nrms = sweep_nrms[fs]
+        ratios = nrms / (ref_nrms + 1e-12)
+        worst = np.max(ratios)
+
+        row = f'  {fs:8d} |'
+        for i in range(len(STATE_NAMES)):
+            row += f' {nrms[i]:11.3e} {ratios[i]:9.2f}x |'
+        row += f' {worst:9.2f}x'
+
+        if fs == FS_ORIG:
+            row += '  (reference)'
+        elif worst <= ENCODER_INIT_MAX_RATIO:
+            row += '  OK'
+        else:
+            row += '  FAIL'
+
+        print(row, flush=True)
+
+    # Select lowest passing rate (ascending sort so we pick the slowest-possible rate)
+    for fs in sorted(FS_SWEEP):
+        ratios = sweep_nrms[fs] / (ref_nrms + 1e-12)
+        if np.max(ratios) <= ENCODER_INIT_MAX_RATIO:
+            fs_selected = fs
+            break
+
+    if fs_selected is None:
+        print('\nERROR: No sampling rate passed the encoder init threshold.', flush=True)
+        print('Only the native rate works. Inspect the table above and consider', flush=True)
+        print('raising ENCODER_INIT_MAX_RATIO or using FS_NEW=20000 for Stage 2.', flush=True)
+        return
+
+    d_sel = FS_ORIG // fs_selected
+    ts_sel = 1.0 / fs_selected
+
+    print(f'\nSelected: fs = {fs_selected} Hz '
+          f'(lowest rate with worst ratio <= {ENCODER_INIT_MAX_RATIO}x)', flush=True)
+
+    # Save Stage 1 results immediately -- before Stage 2 starts -- so a Stage 2
+    # crash does not lose the sweep data.
+    sweep_json = {
+        'fs_sweep': FS_SWEEP,
+        'reference_fs': FS_ORIG,
+        'max_ratio_threshold': ENCODER_INIT_MAX_RATIO,
+        'selected_fs': fs_selected,
+        'results': {
+            str(fs): {
+                'nrms': {name: float(sweep_nrms[fs][i])
+                         for i, name in enumerate(STATE_NAMES)},
+                'ratios': {name: float(sweep_nrms[fs][i] / (ref_nrms[i] + 1e-12))
+                           for i, name in enumerate(STATE_NAMES)},
+            }
+            for fs in FS_SWEEP
+        },
+    }
+    stage1_json_path = os.path.join(OUT_DIR, 'diagnostic_stage1_sweep.json')
+    with open(stage1_json_path, 'w') as f:
+        json.dump(sweep_json, f, indent=2)
+    print(f'\nStage 1 saved: {stage1_json_path}', flush=True)
+
+    # Guard: Stage 2 pre-allocates all training windows as one array.
+    # At high sampling rates this causes OOM. If the selected rate exceeds
+    # FS_STAGE2_MAX, print a warning and stop -- inspect Stage 1 results
+    # and raise ENCODER_INIT_MAX_RATIO or accept a higher rate manually.
+    FS_STAGE2_MAX = 2000  # HEURISTIC: ~40k windows at 400 Hz is fine; 200k+ OOMs
+    if fs_selected > FS_STAGE2_MAX:
+        print(f'\nWARNING: fs_selected={fs_selected} Hz exceeds FS_STAGE2_MAX={FS_STAGE2_MAX} Hz.', flush=True)
+        print('Stage 2 would OOM pre-allocating training windows at this rate.', flush=True)
+        print('Inspect the Stage 1 table above to understand which state is driving', flush=True)
+        print('the degradation, then adjust ENCODER_INIT_MAX_RATIO or FS_STAGE2_MAX.', flush=True)
+        print('Stopping after Stage 1.', flush=True)
+        return
+
+    # =================================================================
+    # STAGE 2: nf x lr sweep at selected rate
+    # =================================================================
+    print('\n' + '=' * 70, flush=True)
+    print(f'STAGE 2: nf x lr sweep at fs = {fs_selected} Hz', flush=True)
+    print(f'nf values: {NF_VALUES}', flush=True)
+    print(f'lr values: {LR_VALUES}', flush=True)
+    print(f'Epochs per combination: {N_DIAG_EPOCHS}', flush=True)
+    print(f'Grid size: {len(NF_VALUES)} x {len(LR_VALUES)} = '
+          f'{len(NF_VALUES) * len(LR_VALUES)} runs', flush=True)
+    print('=' * 70, flush=True)
+
+    # --- Load data at selected rate ---
     np.random.seed(SEED)
     torch.manual_seed(SEED)
 
-    print(f'Loading data from: {TRAJ_DIR}')
-    train_data = [load_mat(f) for f in TRAIN_FILES]
-    val_u, val_y, val_x_logical = load_mat(VAL_FILE)
+    train_data = [load_mat(f, d_sel) for f in TRAIN_FILES]
+    val_u, val_y, val_x_logical = load_mat(VAL_FILE, d_sel)
 
-    for i, (fname, (u, y, x)) in enumerate(zip(TRAIN_FILES, train_data)):
-        print(f'  {fname}: u={u.shape}, y={y.shape}')
-    print(f'  Val ({VAL_FILE}): u={val_u.shape}, y={val_y.shape}')
+    print(f'\nData at {fs_selected} Hz:', flush=True)
+    for fname, (u, y, x) in zip(TRAIN_FILES, train_data):
+        print(f'  {fname}: u={u.shape}, y={y.shape}', flush=True)
+    print(f'  Val ({VAL_FILE}): u={val_u.shape}, y={val_y.shape}', flush=True)
 
-    # --- Normalization ---
     norm = compute_normalization(train_data)
-    print(f'\nstd_x = {norm["std_x"].flatten()}')
-    print(f'std_u = {norm["std_u"].flatten()}')
+    print(f'\nstd_x = {norm["std_x"].flatten()}', flush=True)
+    print(f'std_u = {norm["std_u"].flatten()}', flush=True)
 
-    # --- Build deepSI System_data ---
     train_list = [
-        deepSI.System_data(u=u, y=y, dt=TS_NEW)
+        deepSI.System_data(u=u, y=y, dt=ts_sel)
         for u, y, _ in train_data
     ]
     train_sys_data = deepSI.System_data_list(train_list)
-    val_sys_data = deepSI.System_data(u=val_u, y=val_y, dt=TS_NEW)
+    val_sys_data = deepSI.System_data(u=val_u, y=val_y, dt=ts_sel)
 
     # --- Sweep ---
     results = {}
-
-    print()
-    print('=' * 70)
-    print(f'{"nf":>5s} | {"lr":>8s} | {"init":>10s} | '
-          f'{"ep1":>10s} | {"ep1/init":>8s} | '
-          f'{"ep5":>10s} | {"ep5/init":>8s} | {"verdict":<12s} | {"time":>5s}')
-    print('-' * 90)
+    lr_colors = ['tab:red', 'tab:orange', 'tab:blue']
+    init_nrms_ref = None  # encoder init NRMS at selected rate (for plot reference line)
 
     for nf in NF_VALUES:
         for lr in LR_VALUES:
             np.random.seed(SEED)
             torch.manual_seed(SEED)
 
-            # Fresh model with same linear encoder init
-            fit_sys = build_model(HP_FIXED, norm)
-            # Pass optimizer_kwargs to init_model, NOT to fit().
-            # fit() skips optimizer creation when init_model_done=True,
-            # so optimizer_kwargs passed to fit() are silently ignored.
+            fit_sys = build_model(HP_FIXED, norm, ts_sel)
             fit_sys.init_model(
                 sys_data=train_sys_data,
                 auto_fit_norm=False,
@@ -307,179 +512,321 @@ def main():
 
             val_measure = f'{nf}-step-RMS'
 
+            # --- Epoch 0: encoder init quality (direct eval, no simulation) ---
+            nrms_0 = evaluate_encoder_direct(
+                fit_sys.encoder, val_u, val_y, val_x_logical, norm)
+            q2_init_val = float(nrms_0[1])
+            state_curves = {name: [float(nrms_0[i])]
+                           for i, name in enumerate(STATE_NAMES)}
+
+            if init_nrms_ref is None:
+                init_nrms_ref = nrms_0.copy()
+
+            # --- Print header ---
+            print('\n' + '=' * 100, flush=True)
+            print(f'nf={nf}, lr={lr:.0e}', flush=True)
+            print('-' * 100, flush=True)
+            header = f'{"epoch":>5s} | {"val_loss":>10s}'
+            for name in STATE_NAMES:
+                header += f' | {name:>9s}'
+            print(header, flush=True)
+            print('-' * 100, flush=True)
+
+            # Epoch 0 row
+            row = f'{"init":>5s} | {"":>10s}'
+            for i in range(len(STATE_NAMES)):
+                row += f' | {nrms_0[i]:9.3e}'
+            print(row, flush=True)
+
+            # --- Train epoch by epoch ---
+            # deepSI fit() interprets epochs as total cumulative count, not additional.
+            # Calling fit(epochs=k) trains to epoch k. Pass k=1,2,...,N sequentially.
             t0 = time.time()
-            fit_sys.fit(
-                train_sys_data=train_sys_data,
-                val_sys_data=val_sys_data,
-                batch_size=HP_FIXED['batch_size'],
-                epochs=N_DIAG_EPOCHS,
-                auto_fit_norm=False,
-                loss_kwargs={'nf': nf},
-                validation_measure=val_measure,
-                verbose=False,
-            )
+            early_stopped = False
+            for epoch in range(1, N_DIAG_EPOCHS + 1):
+                fit_sys.fit(
+                    train_sys_data=train_sys_data,
+                    val_sys_data=val_sys_data,
+                    batch_size=HP_FIXED['batch_size'],
+                    epochs=epoch,
+                    auto_fit_norm=False,
+                    loss_kwargs={'nf': nf},
+                    validation_measure=val_measure,
+                    verbose=False,
+                )
+
+                # Direct encoder eval after this epoch
+                nrms_ep = evaluate_encoder_direct(
+                    fit_sys.encoder, val_u, val_y, val_x_logical, norm)
+                for i, name in enumerate(STATE_NAMES):
+                    state_curves[name].append(float(nrms_ep[i]))
+
+                # Print epoch row
+                ep_loss = float(fit_sys.Loss_val[-1])
+                row = f'{epoch:5d} | {ep_loss:10.4e}'
+                for i in range(len(STATE_NAMES)):
+                    row += f' | {nrms_ep[i]:9.3e}'
+
+                # Early stopping: q2 ratio check
+                q2_now = float(nrms_ep[1])
+                q2_ratio_now = q2_now / q2_init_val if q2_init_val > 0 else float('inf')
+                if q2_ratio_now > Q2_EARLY_STOP:
+                    row += f'  EARLY STOP (q2 {q2_ratio_now:.1f}x)'
+                    print(row, flush=True)
+                    early_stopped = True
+                    break
+
+                print(row, flush=True)
+
             elapsed = time.time() - t0
 
-            # Loss_val[0] = initial (before training), [1:] = after each epoch
-            loss_val = np.array(fit_sys.Loss_val)
-            init_loss = float(loss_val[0])
-            ep1_loss = float(loss_val[1]) if len(loss_val) > 1 else float('nan')
-            ep5_loss = float(loss_val[-1]) if len(loss_val) > 1 else float('nan')
+            # Loss curve from deepSI: one entry per training epoch (no epoch-0 entry)
+            loss_curve = [float(l) for l in fit_sys.Loss_val]
 
-            ratio_ep1 = ep1_loss / init_loss if init_loss > 0 else float('inf')
-            ratio_ep5 = ep5_loss / init_loss if init_loss > 0 else float('inf')
+            # --- Verdict ---
+            q2_init = state_curves['q2'][0]
+            q2_final = state_curves['q2'][-1]
+            q2_ratio = q2_final / q2_init if q2_init > 0 else float('inf')
 
-            # Verdict
-            if ratio_ep1 > 2.0:
-                verdict = 'JUMP'
-            elif ratio_ep5 < 1.0:
-                verdict = 'CONVERGING'
-            elif ratio_ep5 < 1.5:
+            if q2_ratio < 0.8:
+                verdict = 'BETTER'
+            elif q2_ratio < 1.2:
                 verdict = 'STABLE'
             else:
-                verdict = 'DRIFTING'
+                verdict = 'WORSE'
+
+            print(f'verdict: {verdict} (q2 {q2_ratio:.2f}x, '
+                  f'{q2_init:.3e} -> {q2_final:.3e}, {elapsed:.1f}s)', flush=True)
 
             results[(nf, lr)] = {
-                'init_loss': init_loss,
-                'loss_curve': loss_val.tolist(),
-                'ratio_ep1': ratio_ep1,
-                'ratio_ep5': ratio_ep5,
+                'loss_curve': loss_curve,
+                'state_curves': state_curves,
+                'q2_ratio': q2_ratio,
                 'verdict': verdict,
                 'elapsed_s': elapsed,
             }
 
-            print(f'{nf:5d} | {lr:8.0e} | {init_loss:10.4e} | '
-                  f'{ep1_loss:10.4e} | {ratio_ep1:8.2f} | '
-                  f'{ep5_loss:10.4e} | {ratio_ep5:8.2f} | '
-                  f'{verdict:<12s} | {elapsed:5.1f}s')
+    # =================================================================
+    # Summary
+    # =================================================================
+    print('\n' + '=' * 70, flush=True)
+    print('SUMMARY (by state quality)', flush=True)
+    print('=' * 70, flush=True)
 
-    # --- Summary ---
-    print('\n' + '=' * 70)
-    print('SUMMARY')
-    print('=' * 70)
-
-    converging = [(k, v) for k, v in results.items() if v['verdict'] == 'CONVERGING']
+    better = [(k, v) for k, v in results.items() if v['verdict'] == 'BETTER']
     stable = [(k, v) for k, v in results.items() if v['verdict'] == 'STABLE']
-    jumping = [(k, v) for k, v in results.items() if v['verdict'] == 'JUMP']
+    worse  = [(k, v) for k, v in results.items() if v['verdict'] == 'WORSE']
 
-    if converging:
-        print(f'\nCONVERGING ({len(converging)}):')
-        for (nf, lr), v in converging:
+    if better:
+        print(f'\nBETTER ({len(better)}) - states improved:', flush=True)
+        for (nf, lr), v in sorted(better, key=lambda x: x[1]['q2_ratio']):
+            q2c = v['state_curves']['q2']
             print(f'  nf={nf:3d}, lr={lr:.0e}  '
-                  f'init={v["init_loss"]:.4e}  ep5={v["loss_curve"][-1]:.4e}  '
-                  f'ratio={v["ratio_ep5"]:.2f}')
+                  f'q2: {q2c[0]:.3e} -> {q2c[-1]:.3e}  '
+                  f'({v["q2_ratio"]:.2f}x)', flush=True)
     if stable:
-        print(f'\nSTABLE ({len(stable)}):')
+        print(f'\nSTABLE ({len(stable)}) - states unchanged:', flush=True)
         for (nf, lr), v in stable:
+            q2c = v['state_curves']['q2']
             print(f'  nf={nf:3d}, lr={lr:.0e}  '
-                  f'init={v["init_loss"]:.4e}  ep5={v["loss_curve"][-1]:.4e}  '
-                  f'ratio={v["ratio_ep5"]:.2f}')
-    if jumping:
-        print(f'\nJUMP ({len(jumping)}):')
-        for (nf, lr), v in jumping:
+                  f'q2: {q2c[0]:.3e} -> {q2c[-1]:.3e}  '
+                  f'({v["q2_ratio"]:.2f}x)', flush=True)
+    if worse:
+        print(f'\nWORSE ({len(worse)}) - states degraded:', flush=True)
+        for (nf, lr), v in sorted(worse, key=lambda x: x[1]['q2_ratio'],
+                                  reverse=True):
+            q2c = v['state_curves']['q2']
             print(f'  nf={nf:3d}, lr={lr:.0e}  '
-                  f'init={v["init_loss"]:.4e}  ep1={v["loss_curve"][1]:.4e}  '
-                  f'ratio={v["ratio_ep1"]:.2f}')
+                  f'q2: {q2c[0]:.3e} -> {q2c[-1]:.3e}  '
+                  f'({v["q2_ratio"]:.2f}x)', flush=True)
 
-    if not converging and not stable:
-        print('\nNO combination preserved the initialization.')
-        print('This indicates a pipeline bug (gradient flow, block connections,')
-        print('coordinate transform, or normalization issue).')
-    else:
-        print(f'\n{len(converging) + len(stable)} of {len(results)} combinations '
-              f'preserved the initialization.')
+    if not better and not stable:
+        print('\nNO combination improved or preserved state quality.', flush=True)
+        print('Output MSE alone cannot constrain states for this system.', flush=True)
+        print('Consider adding state regularization to the loss.', flush=True)
 
-    # --- Save JSON ---
+    # =================================================================
+    # Save JSON (both stages)
+    # =================================================================
     json_results = {
-        'config': {
-            'fs_new': FS_NEW, 'na': na, 'nb': nb,
+        'stage1_encoder_init_sweep': sweep_json,
+        'stage2_config': {
+            'fs_selected': fs_selected,
+            'up_sample': HP_FIXED['up_sample'],
+            'na': na, 'nb': nb,
             'nf_values': NF_VALUES, 'lr_values': LR_VALUES,
             'n_epochs': N_DIAG_EPOCHS, 'batch_size': HP_FIXED['batch_size'],
             'train_files': TRAIN_FILES, 'val_file': VAL_FILE,
         },
-        'results': {
+        'stage2_results': {
             f'nf={nf}_lr={lr:.0e}': v for (nf, lr), v in results.items()
         },
     }
     json_path = os.path.join(OUT_DIR, 'diagnostic_nf_lr.json')
     with open(json_path, 'w') as f:
         json.dump(json_results, f, indent=2)
-    print(f'\nSaved: {json_path}')
+    print(f'\nSaved: {json_path}', flush=True)
 
-    # --- Heatmap plot ---
+    # =================================================================
+    # Plot 1: Heatmaps (loss ratio + q2 ratio)
+    # =================================================================
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-    for ax_idx, (metric, label) in enumerate([
-        ('ratio_ep1', 'Loss ratio epoch 1 / init'),
-        ('ratio_ep5', 'Loss ratio epoch 5 / init'),
-    ]):
-        grid = np.zeros((len(NF_VALUES), len(LR_VALUES)))
-        for i, nf in enumerate(NF_VALUES):
-            for j, lr in enumerate(LR_VALUES):
-                grid[i, j] = results[(nf, lr)][metric]
+    # Panel 1: loss ratio (end/start)
+    grid_loss = np.zeros((len(NF_VALUES), len(LR_VALUES)))
+    for i, nf in enumerate(NF_VALUES):
+        for j, lr in enumerate(LR_VALUES):
+            lc = results[(nf, lr)]['loss_curve']
+            grid_loss[i, j] = lc[-1] / lc[0] if len(lc) >= 2 and lc[0] > 0 else 1.0
 
-        ax = axes[ax_idx]
-        im = ax.imshow(
-            grid, cmap='RdYlGn_r', aspect='auto',
-            vmin=0.5, vmax=3.0,
-        )
-        ax.set_xticks(range(len(LR_VALUES)))
-        ax.set_xticklabels([f'{lr:.0e}' for lr in LR_VALUES])
-        ax.set_yticks(range(len(NF_VALUES)))
-        ax.set_yticklabels([str(nf) for nf in NF_VALUES])
-        ax.set_xlabel('Learning rate')
-        ax.set_ylabel('nf (rollout horizon)')
-        ax.set_title(label)
+    ax = axes[0]
+    im = ax.imshow(grid_loss, cmap='RdYlGn_r', aspect='auto', vmin=0.0, vmax=2.0)
+    ax.set_xticks(range(len(LR_VALUES)))
+    ax.set_xticklabels([f'{lr:.0e}' for lr in LR_VALUES])
+    ax.set_yticks(range(len(NF_VALUES)))
+    ax.set_yticklabels([str(nf) for nf in NF_VALUES])
+    ax.set_xlabel('Learning rate')
+    ax.set_ylabel('nf (rollout horizon)')
+    ax.set_title('Loss ratio (end / start)')
+    for i in range(len(NF_VALUES)):
+        for j in range(len(LR_VALUES)):
+            val = grid_loss[i, j]
+            color = 'white' if val > 1.5 else 'black'
+            ax.text(j, i, f'{val:.2f}', ha='center', va='center',
+                    fontsize=9, color=color, fontweight='bold')
+    fig.colorbar(im, ax=ax, shrink=0.8)
 
-        # Annotate cells
-        for i in range(len(NF_VALUES)):
-            for j in range(len(LR_VALUES)):
-                val = grid[i, j]
-                color = 'white' if val > 2.0 else 'black'
-                ax.text(j, i, f'{val:.2f}', ha='center', va='center',
-                        fontsize=9, color=color, fontweight='bold')
+    # Panel 2: q2 NRMS ratio (final/init)
+    grid_q2 = np.zeros((len(NF_VALUES), len(LR_VALUES)))
+    for i, nf in enumerate(NF_VALUES):
+        for j, lr in enumerate(LR_VALUES):
+            grid_q2[i, j] = results[(nf, lr)]['q2_ratio']
 
-        fig.colorbar(im, ax=ax, shrink=0.8)
+    ax = axes[1]
+    im = ax.imshow(grid_q2, cmap='RdYlGn_r', aspect='auto', vmin=0.0, vmax=5.0)
+    ax.set_xticks(range(len(LR_VALUES)))
+    ax.set_xticklabels([f'{lr:.0e}' for lr in LR_VALUES])
+    ax.set_yticks(range(len(NF_VALUES)))
+    ax.set_yticklabels([str(nf) for nf in NF_VALUES])
+    ax.set_xlabel('Learning rate')
+    ax.set_ylabel('nf (rollout horizon)')
+    ax.set_title('q2 (theta) NRMS ratio (final / init)')
+    for i in range(len(NF_VALUES)):
+        for j in range(len(LR_VALUES)):
+            val = grid_q2[i, j]
+            color = 'white' if val > 3.0 else 'black'
+            ax.text(j, i, f'{val:.2f}', ha='center', va='center',
+                    fontsize=9, color=color, fontweight='bold')
+    fig.colorbar(im, ax=ax, shrink=0.8)
 
     fig.suptitle(
-        f'Baseline encoder diagnostic (fs={FS_NEW} Hz, {N_DIAG_EPOCHS} epochs)',
+        f'Baseline encoder diagnostic (fs={fs_selected} Hz, '
+        f'{N_DIAG_EPOCHS} epochs)',
         fontsize=13,
     )
     fig.tight_layout()
     plot_path = os.path.join(OUT_DIR, 'diagnostic_nf_lr_heatmap.png')
     fig.savefig(plot_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f'Saved: {plot_path}')
+    print(f'Saved: {plot_path}', flush=True)
 
-    # --- Loss curves plot ---
+    # =================================================================
+    # Plot 2: Loss curves per nf
+    # loss_curve has one entry per training epoch (epochs 1..N).
+    # x-axis starts at 1 to match the state curve epoch numbering.
+    # =================================================================
     fig, axes = plt.subplots(
         len(NF_VALUES), 1, figsize=(10, 3 * len(NF_VALUES)), sharex=True,
     )
-    colors = ['tab:red', 'tab:orange', 'tab:blue', 'tab:green']
 
     for i, nf in enumerate(NF_VALUES):
         ax = axes[i]
         for j, lr in enumerate(LR_VALUES):
             curve = results[(nf, lr)]['loss_curve']
-            ax.plot(range(len(curve)), curve, 'o-', color=colors[j],
+            # epochs 1..len(curve); range(1, len+1) aligns with state curve x-axis
+            ax.plot(range(1, len(curve) + 1), curve, 'o-', color=lr_colors[j],
                     label=f'lr={lr:.0e}', markersize=4, linewidth=1.2)
         ax.set_ylabel(f'nf={nf}\nVal loss')
         ax.set_yscale('log')
         ax.legend(fontsize=7, loc='upper right')
         ax.grid(True, alpha=0.3)
 
-    axes[-1].set_xlabel('Validation step (0 = init, 1..N = after epoch)')
-    fig.suptitle(
-        f'Loss curves per (nf, lr) (fs={FS_NEW} Hz)',
-        fontsize=13,
-    )
+    axes[-1].set_xlabel('Epoch')
+    fig.suptitle(f'Loss curves (fs={fs_selected} Hz)', fontsize=13)
     fig.tight_layout()
     curve_path = os.path.join(OUT_DIR, 'diagnostic_nf_lr_curves.png')
     fig.savefig(curve_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
-    print(f'Saved: {curve_path}')
+    print(f'Saved: {curve_path}', flush=True)
 
-    print('\nDone.')
+    # =================================================================
+    # Plot 3: q2 state evolution per nf
+    # state_curves has N+1 entries: index 0 = init, indices 1..N = post-epoch.
+    # =================================================================
+    fig, axes = plt.subplots(
+        len(NF_VALUES), 1, figsize=(10, 3 * len(NF_VALUES)), sharex=True,
+    )
+
+    for i, nf in enumerate(NF_VALUES):
+        ax = axes[i]
+        for j, lr in enumerate(LR_VALUES):
+            q2_curve = results[(nf, lr)]['state_curves']['q2']
+            ax.plot(range(len(q2_curve)), q2_curve, 'o-', color=lr_colors[j],
+                    label=f'lr={lr:.0e}', markersize=4, linewidth=1.2)
+        # Reference line: encoder init NRMS at selected rate (direct eval)
+        if init_nrms_ref is not None:
+            ax.axhline(y=float(init_nrms_ref[1]), color='green',
+                       linestyle='--', alpha=0.5, linewidth=1,
+                       label='init (direct)')
+        ax.set_ylabel(f'nf={nf}\nq2 NRMS')
+        ax.set_yscale('log')
+        ax.legend(fontsize=7, loc='upper left')
+        ax.grid(True, alpha=0.3)
+
+    axes[-1].set_xlabel('Epoch (0 = init)')
+    fig.suptitle(
+        f'q2 (theta) state quality (fs={fs_selected} Hz)', fontsize=13)
+    fig.tight_layout()
+    state_path = os.path.join(OUT_DIR, 'diagnostic_nf_lr_states.png')
+    fig.savefig(state_path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f'Saved: {state_path}', flush=True)
+
+    # =================================================================
+    # Plot 4: Encoder init quality vs sampling rate
+    # =================================================================
+    fig, ax = plt.subplots(figsize=(10, 5))
+    fs_sorted = sorted(FS_SWEEP)
+    state_colors = ['tab:blue', 'tab:red', 'tab:green',
+                    'tab:cyan', 'tab:orange', 'tab:purple']
+
+    for i, name in enumerate(STATE_NAMES):
+        ratios = [sweep_nrms[fs][i] / (ref_nrms[i] + 1e-12)
+                  for fs in fs_sorted]
+        ax.plot(fs_sorted, ratios, 'o-', color=state_colors[i],
+                label=name, markersize=5, linewidth=1.5)
+
+    ax.axhline(y=ENCODER_INIT_MAX_RATIO, color='black', linestyle='--',
+               alpha=0.5, linewidth=1, label=f'threshold ({ENCODER_INIT_MAX_RATIO}x)')
+    ax.axvline(x=fs_selected, color='green', linestyle=':',
+               alpha=0.7, linewidth=1.5, label=f'selected ({fs_selected} Hz)')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlabel('Sampling rate [Hz]')
+    ax.set_ylabel('NRMS ratio vs native (20 kHz)')
+    ax.set_title('Encoder init quality degradation vs sampling rate')
+    ax.legend(fontsize=8)
+    ax.grid(True, alpha=0.3)
+    ax.set_xticks(fs_sorted)
+    ax.set_xticklabels([str(f) for f in fs_sorted], rotation=45)
+
+    fig.tight_layout()
+    sweep_path = os.path.join(OUT_DIR, 'encoder_init_vs_fs.png')
+    fig.savefig(sweep_path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f'Saved: {sweep_path}', flush=True)
+
+    print('\nDone.', flush=True)
 
 
 if __name__ == '__main__':
