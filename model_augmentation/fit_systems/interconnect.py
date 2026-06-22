@@ -76,7 +76,7 @@ class Interconnect(nn.Module):
         for ix in range(0, self.n_output_signals):
             output_signals.append(torch.zeros((self.nb, self.output_signal_sizes[ix], 1), device=x.device, dtype=x.dtype))
 
-        # Move connection matrices to input device/dtype if needed (lazy, once)
+        # CHANGED: propagate device/dtype so pipeline works on GPU and with float16/float32
         if self.array_connection_matrices[0][0].device != x.device or self.array_connection_matrices[0][0].dtype != x.dtype:
             for i in range(len(self.array_connection_matrices)):
                 for j in range(len(self.array_connection_matrices[i])):
@@ -461,6 +461,7 @@ class SSE_Interconnect(SS_encoder_general):
             y_predict, self.state = self.hfn(self.state, actions) # type: ignore
         return y_predict.numpy()
     
+    # CHANGED: added fit() method replacing deepSI's original — supports multi-trajectory, sqrt loss, concurrent validation
     def fit(self, train_sys_data, val_sys_data, epochs=30, n_its=None, batch_size=256, loss_kwargs={}, \
             auto_fit_norm=True, validation_measure='sim-NRMS', optimizer_kwargs={}, its_per_val='epoch', concurrent_val=False, cuda=False, \
             timeout=None, verbose=2, sqrt_train=True, num_workers_data_loader=0, print_full_time_profile=False, scheduler_kwargs={}, list_val_measures=[]):

@@ -39,6 +39,17 @@ Read `tasks/lessons.md` before any work. Rules there are active constraints, not
 - `tasks/handoff.md`: archive full content to `archive/sessions/YYYY-MM-DD-handoff.md`, then trim file to open blockers only.
 - `tasks/todo.md`: move any completed sections/tasks to `archive/sessions/YYYY-MM-DD-todo.md`, then remove them from the live file.
 
+## Tracking Additions to `model_augmentation/`
+The framework in `model_augmentation/` is Jan's original code. Additions are marked with three mechanisms — use these to instantly see what is ours:
+
+| Situation | Marker | Grep |
+|-----------|--------|------|
+| New class or function in a modified file | `@added` decorator | `grep -r "@added" model_augmentation/` |
+| Entire new file | `__project_origin__ = "added"` at module top | `grep -r "__project_origin__" model_augmentation/` |
+| Changed block inside an existing class/function | `# CHANGED: <reason>` inline | `grep -r "# CHANGED:" model_augmentation/` |
+
+**Rule:** whenever new code is added to `model_augmentation/`, apply the appropriate marker before committing.
+
 ## Signal Processing & System Identification Code
 Any numerical formula, constant, or threshold in signal processing, experiment design, or system identification code **must carry an inline label before it can be written**:
 - `# THEORY: <source>` — formula derived directly from literature; source, variable, and context must all match

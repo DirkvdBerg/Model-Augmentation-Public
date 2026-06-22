@@ -1,3 +1,5 @@
+__project_origin__ = "added"  # entire file is project-specific, not Jan's original framework
+
 """
 gantry_linearization.py
 -----------------------

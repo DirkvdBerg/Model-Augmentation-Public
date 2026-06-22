@@ -1,3 +1,5 @@
+__project_origin__ = "added"  # entire file is project-specific, not Jan's original framework
+
 from deepSI.system_data.system_data import hist_future_dataset, System_data
 import numpy as np
 

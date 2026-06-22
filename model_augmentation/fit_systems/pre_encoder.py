@@ -11,6 +11,7 @@ import torch
 import numpy as np
 
 from model_augmentation.utils.deepSI_corrections import fixed_System_data_norm
+from model_augmentation.utils.utils import added
 
 
 ## deepSI corrections
@@ -99,6 +100,7 @@ class System_data_with_x(System_data):
         return uhist, yhist, ufuture, yfuture, xfuture
 
 
+@added
 class System_data_norm_with_x(fixed_System_data_norm):
     """A utility to normalize system_data before fitting or usage
 
@@ -188,6 +190,7 @@ class System_data_norm_with_x(fixed_System_data_norm):
             )
 
 
+@added
 class linear_encoder_init(nn.Module):
     def __init__(
         self,

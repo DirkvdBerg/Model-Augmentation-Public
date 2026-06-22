@@ -2,6 +2,10 @@ from torch import nn, Tensor
 import torch
 import numpy as np
 
+from model_augmentation.utils.utils import added
+
+
+@added
 class linear_encoder_net(nn.Module):
     def __init__(self, nb, nu, na, ny, nx, n_nodes_per_layer=64, n_hidden_layers=2, activation=nn.Tanh):
         super(linear_encoder_net, self).__init__()
@@ -74,6 +78,7 @@ class linear_mapping(nn.Module):
     def forward(self,x):
             return self.net_lin(x)
         
+@added
 class zero_init_linear_mapping(nn.Module):
     def __init__(self, n_in=6, n_out=5, n_nodes_per_layer=64, n_hidden_layers=2, activation=nn.Tanh):
         #linear + non-linear part 
@@ -112,6 +117,7 @@ class zero_init_feed_forward_nn(nn.Module): #a simple MLP
     def forward(self,X):
         return self.net(X)
     
+@added
 class zero_init_resnet(nn.Module): #a simple MLP
     def __init__(self,n_in=6, n_out=5, n_nodes_per_layer=64, n_hidden_layers=2, activation=nn.Tanh):
         super(zero_init_resnet,self).__init__()
@@ -171,6 +177,7 @@ class unit_variance_feed_forward_nn(nn.Module): #a simple MLP
     def forward(self,X):
         return self.net(X)
     
+@added
 class HybridGantryEncoder(nn.Module):
     """Hybrid encoder: analytical physical states + learned augmented states.
 
@@ -241,6 +248,7 @@ class HybridGantryEncoder(nn.Module):
             return x_phys_norm
 
 
+@added
 class LinearInitEncoderWrapper(nn.Module):
     """Wraps linear_encoder_init (physical states) + zero-init ANN (augmented states).
 

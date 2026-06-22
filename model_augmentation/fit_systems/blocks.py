@@ -6,7 +6,7 @@ from deepSI.system_data import System_data
 from torch import Tensor, nn
 
 from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn
-from model_augmentation.utils.utils import to_tensor
+from model_augmentation.utils.utils import to_tensor, added
 
 
 class Block(nn.Module):
@@ -97,6 +97,7 @@ class Linear_State_Block(Block):
         return w
 
 
+@added
 class Linear_Output_Block(Block):
     def __init__(
         self, C=torch.empty((0, 0)), D=torch.empty((0, 0)), *args, **kwargs
@@ -530,6 +531,7 @@ class Parameterized_MSD_State_Block(Discrete_Nonlinear_Function_Block):
         return w
 
 
+@added
 class Nonlinear_MSD_State_Block(Discrete_Nonlinear_Function_Block):
     def __init__(
         self, Ts=0.02, std_x=np.ones((4, 1)), std_u=1, up_sample=10, *args, **kwargs
@@ -636,6 +638,7 @@ class Nonlinear_MSD_State_Block(Discrete_Nonlinear_Function_Block):
 # physical_output_model_block = Nonlinear_MSD_Output_Block()
 
 
+@added
 class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
     """
     Gantry continuous-time ODE integrated with RK4, using the LFR rational structure.

@@ -3,6 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from deepSI import system_data
 
+
+def added(obj):
+    """Marks this class or function as added by this project (not Jan's original framework).
+    Grep: grep -r "@added" model_augmentation/
+    """
+    return obj
+
+
+@added
 def to_tensor(input) -> torch.Tensor:
     if isinstance(input, type(None)):
         return None
@@ -155,6 +164,7 @@ def selection_matrix(ix, n):
     E[np.arange(len(ix)), ix] = 1
     return torch.Tensor(E)
 
+@added
 def compute_noisy_y_from_SNR(y_true, SNR):
     P_true = np.mean(y_true**2)
     E = np.power(10, SNR/10)
