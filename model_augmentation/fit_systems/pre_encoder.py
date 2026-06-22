@@ -190,7 +190,6 @@ class System_data_norm_with_x(fixed_System_data_norm):
             )
 
 
-@added
 class linear_encoder_init(nn.Module):
     def __init__(
         self,

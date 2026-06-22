@@ -167,6 +167,15 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
+### Rule: Verify code ownership against git history before placing @added markers
+
+**Trigger**: When marking a class or function with `@added` in `model_augmentation/`
+**Rule**: Before adding `@added`, check that the class did NOT exist in the "Revert back to Jan's original code" commit (`6d69f6b`). Run `git show 6d69f6b:model_augmentation/...py | grep "class Foo"` to confirm. Do not rely on the current state of the file -- markers can be placed incorrectly.
+**Why**: Marked `linear_encoder_init` as `@added` (our code) when it already existed in Jan's original. The error was only caught when the user pointed it out.
+**How to apply**: For any file in `model_augmentation/`, check the 6d69f6b commit before placing any ownership marker.
+
+---
+
 ### Rule: Do not iterate on matplotlib for block diagrams; use text or TikZ instead
 
 **Trigger**: When the user asks for a block diagram, architecture overview, or signal flow figure
