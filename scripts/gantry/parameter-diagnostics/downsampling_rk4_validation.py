@@ -15,6 +15,7 @@ import os
 import sys
 import time
 from datetime import datetime
+from math import gcd
 
 import matplotlib
 matplotlib.use("Agg")
@@ -22,6 +23,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from scipy.io import loadmat
+from scipy.signal import resample_poly
 
 # ── Path setup ──────────────────────────────────────────────────────────
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,22 +33,39 @@ sys.path.insert(0, PROJECT_ROOT)
 from model_augmentation.fit_systems.blocks import Gantry_State_Block
 
 # ── Configuration ───────────────────────────────────────────────────────
-CONFIG = "baseline"  # Toggle: "baseline" or "msd"
+# Toggle: "baseline" or "msd_narrowband"
+CONFIG = "msd_narrowband"
 
 FS_ORIG = 20000  # THEORY: original sample rate (Hz), from main.m line 164
-# THEORY: integer divisors of 20000 for alias-free decimation (ZOH inputs)
-ALL_FS_NEW = [4000, 2000, 1000, 500, 400, 250, 200, 100, 80, 50]
 # HEURISTIC: 1% conservative bound for acceptable discretization error
 NRMS_THRESHOLD = 0.01
 # Reference uses high up_sample to approximate continuous-time integration
 REF_UP_SAMPLE = 20
 
-# T7: full MIMO (X sym + X anti + Y sweep), excites all modes + LPV scheduling
-MAT_FILE = "T7_full_MIMO.mat"
+# Per-config settings: data path, MAT file, JSON dynamics key, and rates to sweep.
+# Rates that are NOT integer divisors of FS_ORIG (i.e. 3000, 6000 Hz) use
+# resample_poly for decimation.  All others use stride decimation.
+CONFIGS = {
+    "baseline": {
+        "data_dir": os.path.join(
+            PROJECT_ROOT, "data", "gantry", "matlab", "multisine", "baseline-v2"
+        ),
+        "mat_file": "T7_full_MIMO.mat",
+        "json_key": "baseline",
+        # Only exact divisors of 20000 in this range:
+        "sweep_rates": [500, 1000, 2000, 4000, 5000],
+    },
+    "msd_narrowband": {
+        "data_dir": os.path.join(
+            PROJECT_ROOT, "data", "gantry", "matlab", "multisine", "m50", "narrowband"
+        ),
+        "mat_file": "T7_full_MIMO.mat",
+        "json_key": "msd",   # MSD poles for Nyquist marker (fa≈150 Hz → f_nyquist≈300 Hz)
+        # 3000 and 6000 are not exact divisors of 20000 → resampled via resample_poly
+        "sweep_rates": [500, 1000, 2000, 3000, 4000, 5000, 6000],
+    },
+}
 
-DATA_DIR = os.path.join(
-    PROJECT_ROOT, "data", "gantry", "matlab", "multisine", "baseline-v2"
-)
 OUT_DIR = os.path.join(
     PROJECT_ROOT, "simulations", "gantry_subnet", "diagnostics"
 )
@@ -69,6 +88,21 @@ def compute_nrms_range(x_sim, x_ref, channel_names):
         else:
             nrms[name] = float(np.sqrt(np.mean(err**2)) / rng)
     return nrms
+
+
+def decimate_signal(sig, fs_orig, fs_new):
+    """Downsample sig (N, C) from fs_orig to fs_new.
+
+    Uses stride for exact integer divisors; resample_poly (anti-aliased,
+    rational ratio) for non-integer cases like 20000→3000 or 20000→6000.
+    """
+    if fs_orig % fs_new == 0:
+        D = fs_orig // fs_new
+        return sig[::D]
+    g = gcd(int(fs_orig), int(fs_new))
+    up   = int(fs_new)   // g
+    down = int(fs_orig)  // g
+    return resample_poly(sig, up, down, axis=0)
 
 
 def compute_normalization(u_stage, x_logical):
@@ -133,14 +167,8 @@ def run_lpv_sweep(u_stage, x_logical, sweep_rates, std_x, std_u, x_mean, u_mean)
     print(f"  Reference done ({time.time() - t0:.1f}s)\n")
 
     for fs_new in sweep_rates:
-        if fs_new == FS_ORIG:
-            # Compare FS_ORIG with up_sample=1 vs reference (up_sample=REF_UP_SAMPLE)
-            D = 1
-        else:
-            D = FS_ORIG // fs_new
-
-        u_ds = u_stage[::D]
-        x_ref = x_ref_hi[::D]
+        u_ds  = decimate_signal(u_stage,  FS_ORIG, fs_new)
+        x_ref = decimate_signal(x_ref_hi, FS_ORIG, fs_new)
 
         t0 = time.time()
         block = Gantry_State_Block(
@@ -168,17 +196,29 @@ def run_lpv_sweep(u_stage, x_logical, sweep_rates, std_x, std_u, x_mean, u_mean)
 # Test B: RK4 sub-step sweep
 # =====================================================================
 def run_rk4_sweep(u_stage, x_ref_hi, test_rates, std_x, std_u, x_mean, u_mean):
-    """Sweep up_sample at each test rate, return nested dict."""
-    UP_SAMPLES = [1, 2, 5, 10, 20]
+    """Sweep up_sample at each test rate, return nested dict.
+
+    Tests up_sample = 1..4.  up_sample=20 is the hidden reference (continuous-time
+    approximation); it is not plotted but used to compute NRMS.
+
+    Why up_sample may not improve monotonically:
+      - At HIGH fs (e.g. 5000 Hz), h=Ts is already tiny; all errors are near
+        machine epsilon.  The ordering of up_sample=1..4 vs. 20 is numerical noise.
+      - At LOW fs with high-frequency inputs (e.g. 500 Hz + 150 Hz multisine),
+        ZOH input aliasing dominates.  More sub-steps can't recover aliased content.
+      - Monotonic improvement only shows up at intermediate rates where integration
+        error (not input aliasing) is the main source.
+    """
+    UP_SAMPLES_TEST = [1, 2, 3, 4]
     results = {}
 
     for fs_new in test_rates:
-        D = FS_ORIG // fs_new
-        u_ds = u_stage[::D]
-        x_ref = x_ref_hi[::D]
+        u_ds  = decimate_signal(u_stage,  FS_ORIG, fs_new)
+        x_ref = decimate_signal(x_ref_hi, FS_ORIG, fs_new)
 
+        # Simulate test variants + hidden reference (up_sample=20)
         sims = {}
-        for us in UP_SAMPLES:
+        for us in UP_SAMPLES_TEST + [20]:
             t0 = time.time()
             block = Gantry_State_Block(
                 Y_op=None, std_x=std_x, std_u=std_u,
@@ -191,12 +231,13 @@ def run_rk4_sweep(u_stage, x_ref_hi, test_rates, std_x, std_u, x_mean, u_mean):
                 std_x, std_u, x_mean, u_mean,
             )
             elapsed = time.time() - t0
-            print(f"  fs={fs_new:6d} Hz  up_sample={us:2d}  ({elapsed:.1f}s)")
+            label = " [ref]" if us == 20 else ""
+            print(f"  fs={fs_new:6d} Hz  up_sample={us:2d}{label}  ({elapsed:.1f}s)")
 
         # Reference: up_sample=20 at this rate
         x_ref_rk4 = sims[20]
         rate_results = {}
-        for us in UP_SAMPLES:
+        for us in UP_SAMPLES_TEST:
             nrms = compute_nrms_range(sims[us], x_ref_rk4, STATE_NAMES)
             max_nrms = max(nrms.values())
             status = "PASS" if max_nrms < NRMS_THRESHOLD else "FAIL"
@@ -234,40 +275,62 @@ def plot_downsampling_sweep(sweep_results, f_nyquist, f_practical, config):
     ax.grid(True, which="both", alpha=0.3)
     ax.invert_xaxis()
 
-    path = os.path.join(OUT_DIR, "downsampling_nrms_vs_fs.png")
+    path = os.path.join(OUT_DIR, f"downsampling_nrms_vs_fs_{config}.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"  Saved {path}")
 
 
 def plot_rk4_sweep(rk4_results):
-    """Plot NRMS vs up_sample for each test rate."""
+    """Plot NRMS vs up_sample (1..4 vs ref=20) for each rate.
+
+    Non-monotonic appearance at high fs is expected: errors are near float
+    precision and ordering is noise, not physics.  At low fs dominated by
+    ZOH input aliasing, up_sample has little effect for the same reason.
+    """
     rates = sorted(rk4_results.keys())
     n_rates = len(rates)
     if n_rates == 0:
         return
 
-    fig, axes = plt.subplots(1, n_rates, figsize=(5 * n_rates, 5), squeeze=False)
+    # Two rows: top = per-channel lines, bottom = max-channel summary
+    fig, axes = plt.subplots(2, n_rates, figsize=(4 * n_rates, 8), squeeze=False)
     for i, fs_new in enumerate(rates):
-        ax = axes[0, i]
         rate_data = rk4_results[fs_new]
         up_samples = sorted(rate_data.keys())
         channels = list(rate_data[up_samples[0]].keys())
+        max_vals = [max(rate_data[us].values()) for us in up_samples]
 
+        # Top: per-channel
+        ax = axes[0, i]
         for ch in channels:
             vals = [rate_data[us][ch] for us in up_samples]
             ax.plot(up_samples, vals, "o-", label=ch, markersize=4)
-
-        ax.axhline(NRMS_THRESHOLD, color="k", ls="--", alpha=0.5)
-        ax.set_xlabel("up_sample (RK4 sub-steps)")
+        ax.axhline(NRMS_THRESHOLD, color="k", ls="--", alpha=0.5, label="threshold")
+        ax.set_xlabel("up_sample")
         ax.set_ylabel("NRMS vs up_sample=20")
         ax.set_title(f"fs={fs_new} Hz")
+        ax.set_xticks(up_samples)
         ax.set_yscale("log")
-        ax.legend(fontsize=7)
+        ax.legend(fontsize=6, ncol=2)
         ax.grid(True, which="both", alpha=0.3)
 
-    fig.suptitle("RK4 sub-step sweep (LPV)")
-    path = os.path.join(OUT_DIR, "rk4_substep_nrms.png")
+        # Bottom: max channel
+        ax2 = axes[1, i]
+        ax2.plot(up_samples, max_vals, "s-", color="black", markersize=5, label="max channel")
+        ax2.axhline(NRMS_THRESHOLD, color="k", ls="--", alpha=0.5)
+        ax2.set_xlabel("up_sample")
+        ax2.set_ylabel("max NRMS")
+        ax2.set_xticks(up_samples)
+        ax2.set_yscale("log")
+        ax2.grid(True, which="both", alpha=0.3)
+
+    fig.suptitle(
+        f"RK4 sub-step sweep (LPV, {CONFIG}) — reference = up_sample=20\n"
+        "Non-monotonic at high fs = float-precision noise; at low fs = ZOH aliasing dominates",
+        fontsize=9,
+    )
+    path = os.path.join(OUT_DIR, f"rk4_substep_nrms_{CONFIG}.png")
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"  Saved {path}")
@@ -278,29 +341,32 @@ def plot_rk4_sweep(rk4_results):
 # =====================================================================
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
-    print(f"Config: {CONFIG}\n")
+    cfg = CONFIGS[CONFIG]
+    data_dir   = cfg["data_dir"]
+    mat_file   = cfg["mat_file"]
+    json_key   = cfg["json_key"]
+    sweep_rates = cfg["sweep_rates"]
+
+    print(f"Config: {CONFIG}")
+    print(f"  Data: {data_dir}/{mat_file}")
+    print(f"  Rates: {sweep_rates}\n")
 
     # ── 1. Load system dynamics JSON ────────────────────────────────
     with open(JSON_PATH) as f:
         dyn = json.load(f)
 
-    cfg_key = "baseline" if CONFIG == "baseline" else "msd"
-    f_nyquist = dyn[cfg_key]["f_nyquist_hz"]
-    f_practical = dyn[cfg_key]["f_practical_hz"]
+    f_nyquist   = dyn[json_key]["f_nyquist_hz"]
+    f_practical = dyn[json_key]["f_practical_hz"]
     print(f"  f_nyquist   = {f_nyquist:.1f} Hz")
-    print(f"  f_practical = {f_practical:.1f} Hz")
-
-    # Filter sweep: go slightly below Nyquist to show breakdown
-    sweep_rates = [fs for fs in ALL_FS_NEW if fs >= f_nyquist / 2]
-    print(f"  Sweep rates: {sweep_rates}\n")
+    print(f"  f_practical = {f_practical:.1f} Hz\n")
 
     # ── 2. Load reference data ──────────────────────────────────────
-    mat_path = os.path.join(DATA_DIR, MAT_FILE)
+    mat_path = os.path.join(data_dir, mat_file)
     d = loadmat(mat_path, squeeze_me=True)
-    u_stage = d["u_total"].astype(np.float64)     # (N, 3) at 20 kHz
+    u_stage   = d["u_total"].astype(np.float64)    # (N, 3) at 20 kHz
     x_logical = d["x_logical"].astype(np.float64)  # (N, 6) at 20 kHz
     N_orig = u_stage.shape[0]
-    print(f"  Loaded {MAT_FILE}: {N_orig} samples at {FS_ORIG} Hz "
+    print(f"  Loaded {mat_file}: {N_orig} samples at {FS_ORIG} Hz "
           f"({N_orig / FS_ORIG:.2f} s)\n")
 
     # ── 3. Normalization (from full-rate data) ──────────────────────
@@ -321,15 +387,13 @@ def main():
     print(f"\n  Lowest passing rate: {lowest_passing} Hz "
           f"(threshold={NRMS_THRESHOLD})\n")
 
-    # ── 5. Test B: RK4 sub-step sweep ──────────────────────────────
-    rk4_results = {}
-    if passing:
-        test_rates = sorted(passing)[:3]
-        print(f"=== Test B: RK4 sub-step sweep at {test_rates} ===")
-        rk4_results = run_rk4_sweep(
-            u_stage, x_ref_hi, test_rates, std_x, std_u, x_mean, u_mean,
-        )
-        print()
+    # ── 5. Test B: RK4 sub-step sweep (all sweep rates) ────────────
+    # Run on every rate so we can see where up_sample=1..4 matters.
+    print(f"=== Test B: RK4 sub-step sweep (up_sample=1..4 vs ref=20) at all rates ===")
+    rk4_results = run_rk4_sweep(
+        u_stage, x_ref_hi, sweep_rates, std_x, std_u, x_mean, u_mean,
+    )
+    print()
 
     # ── 6. Save JSON results ────────────────────────────────────────
     print("=== Saving results ===")
@@ -341,37 +405,36 @@ def main():
         "nrms_threshold": NRMS_THRESHOLD,
         "ref_up_sample": REF_UP_SAMPLE,
         "nrms_formula": "rms(err) / (max(ref) - min(ref)) per channel",
-        "data_file": MAT_FILE,
+        "data_file": mat_file,
         "lowest_passing_fs": lowest_passing,
         "sweep": {str(k): v for k, v in sweep_results.items()},
         "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
-    sweep_path = os.path.join(OUT_DIR, "downsampling_sweep.json")
+    sweep_path = os.path.join(OUT_DIR, f"downsampling_sweep_{CONFIG}.json")
     with open(sweep_path, "w") as f:
         json.dump(sweep_json, f, indent=2)
     print(f"  Saved {sweep_path}")
 
-    if rk4_results:
-        rk4_json = {
-            "config": CONFIG,
-            "reference_up_sample": 20,
-            "nrms_formula": "rms(err) / (max(ref) - min(ref)) per channel",
-            "sweep": {
-                str(fs): {str(us): v for us, v in rate_data.items()}
-                for fs, rate_data in rk4_results.items()
-            },
-            "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        }
-        rk4_path = os.path.join(OUT_DIR, "rk4_substep_sweep.json")
-        with open(rk4_path, "w") as f:
-            json.dump(rk4_json, f, indent=2)
-        print(f"  Saved {rk4_path}")
+    rk4_json = {
+        "config": CONFIG,
+        "reference_up_sample": 20,
+        "up_samples_tested": [1, 2, 3, 4],
+        "nrms_formula": "rms(err) / (max(ref) - min(ref)) per channel",
+        "sweep": {
+            str(fs): {str(us): v for us, v in rate_data.items()}
+            for fs, rate_data in rk4_results.items()
+        },
+        "generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    rk4_path = os.path.join(OUT_DIR, f"rk4_substep_sweep_{CONFIG}.json")
+    with open(rk4_path, "w") as f:
+        json.dump(rk4_json, f, indent=2)
+    print(f"  Saved {rk4_path}")
 
     # ── 7. Plots ────────────────────────────────────────────────────
     print("\n=== Generating plots ===")
     plot_downsampling_sweep(sweep_results, f_nyquist, f_practical, CONFIG)
-    if rk4_results:
-        plot_rk4_sweep(rk4_results)
+    plot_rk4_sweep(rk4_results)
 
     print("\nDone.")
 
