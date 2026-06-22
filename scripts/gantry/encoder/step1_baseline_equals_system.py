@@ -66,21 +66,31 @@ DTYPE_PT = torch.float32
 
 SEED = 42
 
+# Encoder evaluation method: 'direct' = sliding-window batch forward pass (pure encoder
+# quality, no model propagation error). 'apply_experiment' = full simulation from t=0
+# (encoder + model, errors compound). Direct matches the diagnostic script.
+EVAL_METHOD = 'direct'
+
 # HEURISTIC: Jan's rule of thumb for encoder history length
 na = 4 * NX_PHYS + 1  # = 25
 nb = na
 na_right = 1  # required by linear_encoder_init (reconstructability needs y(k))
 nb_right = 1
 
+# Window sizes seen by encoder.forward()
+_NB_WIN    = nb + nb_right    # 26
+_NA_WIN    = na + na_right    # 26
+_WIN_START = max(_NB_WIN, _NA_WIN) - 1  # = 25  (first valid timestep)
+
 # Training hyperparameters
 HP = dict(
     NX_ANN=0,              # no augmented states: baseline = system
     n_nodes_per_layer=16,
     n_hidden_layers=2,
-    up_sample=2,
-    nf=20,                 # HEURISTIC: ~2 periods of 5 Hz mode at 50 Hz sampling
+    up_sample=1,           # validated: downsampling Test B, up_sample=1 sufficient at 400 Hz
+    nf=20,                 # HEURISTIC: Jan's rule ~0.1s/Ts = 40; nf=20 validated BETTER in diagnostic
     batch_size=128,        # HEURISTIC: Jan: "take less number of batch sizes"
-    lr=1e-3,               # HEURISTIC: diagnostic_nf_lr.py confirmed convergence at 1e-3
+    lr=1e-4,               # validated: diagnostic_nf_lr_400hz.py nf=20 lr=1e-4 → BETTER (0.70x)
     epochs=100,
 )
 
@@ -322,6 +332,61 @@ def evaluate_encoder_states(fit_sys, val_sys_data, x_logical_val, norm):
 
 
 # =============================================================================
+# Encoder quality evaluation -- direct forward pass, no simulation
+# =============================================================================
+
+def evaluate_encoder_direct(fit_sys, val_u, val_y, val_x_logical, norm):
+    """Evaluate encoder quality via direct sliding-window forward pass.
+
+    No model simulation — isolates encoder quality from model propagation.
+    Matches the evaluation method used in diagnostic_nf_lr_400hz.py.
+
+    Returns: nrms (NX_PHYS,), x_enc_phys (T, NX_PHYS), x_gt (T, NX_PHYS), win_start (int)
+    """
+    u_mean = norm['u_mean'].flatten()
+    std_u  = norm['std_u'].flatten()
+    y0     = norm['y0']
+    ystd   = norm['ystd']
+    x_mean = norm['x_mean'].flatten()
+    std_x  = norm['std_x'].flatten()
+
+    u_norm = (val_u - u_mean) / std_u
+    y_norm = (val_y - y0) / ystd
+
+    u_wins = np.lib.stride_tricks.sliding_window_view(
+        u_norm, (_NB_WIN, nu)).reshape(-1, _NB_WIN, nu)
+    y_wins = np.lib.stride_tricks.sliding_window_view(
+        y_norm, (_NA_WIN, ny)).reshape(-1, _NA_WIN, ny)
+
+    u_batch = torch.tensor(u_wins.copy(), dtype=DTYPE_PT)
+    y_batch = torch.tensor(y_wins.copy(), dtype=DTYPE_PT)
+
+    fit_sys.encoder.eval()
+    with torch.no_grad():
+        x_enc = fit_sys.encoder(u_batch, y_batch).numpy()
+
+    x_phys = x_enc * std_x + x_mean
+    x_gt   = val_x_logical[_WIN_START:]
+    T = min(len(x_phys), len(x_gt))
+    x_phys = x_phys[:T]
+    x_gt   = x_gt[:T]
+
+    rms_err = np.sqrt(np.mean((x_phys - x_gt) ** 2, axis=0))
+    rms_gt  = np.sqrt(np.mean(x_gt ** 2, axis=0))
+    nrms    = rms_err / (rms_gt + 1e-12)
+
+    return nrms, x_phys, x_gt, _WIN_START
+
+
+def _eval_states(fit_sys, val_u, val_y, val_x_logical, val_sys_data, norm):
+    """Dispatch to EVAL_METHOD."""
+    if EVAL_METHOD == 'direct':
+        return evaluate_encoder_direct(fit_sys, val_u, val_y, val_x_logical, norm)
+    else:
+        return evaluate_encoder_states(fit_sys, val_sys_data, val_x_logical, norm)
+
+
+# =============================================================================
 # Plotting
 # =============================================================================
 
@@ -412,6 +477,25 @@ def plot_loss_curves(fit_sys, out_path):
     print(f'Saved: {out_path}')
 
 
+def plot_state_evolution(state_curves, nrms_init, title, out_path):
+    """NRMS per state vs epoch, with horizontal init reference line."""
+    epochs = list(range(1, len(next(iter(state_curves.values()))) + 1))
+    fig, axes = plt.subplots(NX_PHYS, 1, figsize=(10, 2.2 * NX_PHYS), sharex=True)
+    for i, (ax, name) in enumerate(zip(axes, STATE_NAMES)):
+        ax.plot(epochs, state_curves[name], 'b-o', markersize=3, linewidth=1, label='per epoch')
+        ax.axhline(nrms_init[i], color='orange', linestyle='--', linewidth=1, label='init')
+        ax.set_ylabel(f'{name} NRMS')
+        ax.set_yscale('log')
+        ax.legend(fontsize=7, loc='upper right')
+        ax.grid(True, alpha=0.3)
+    axes[-1].set_xlabel('Epoch')
+    fig.suptitle(title)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f'Saved: {out_path}')
+
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -420,8 +504,16 @@ def main():
     print('=' * 70)
     print('Step 1: Baseline = system (no MSD), converge to noise floor')
     print('=' * 70)
-    print(f'HP: lr={HP["lr"]}, nf={HP["nf"]}, batch_size={HP["batch_size"]}, '
-          f'epochs={HP["epochs"]}')
+    print(f'  FS_NEW       = {FS_NEW} Hz  (D={D}, Ts={TS_NEW*1000:.2f} ms)')
+    print(f'  na / nb      = {na} / {nb}  (encoder history = {na * TS_NEW * 1000:.1f} ms)')
+    print(f'  na_right     = {na_right},  nb_right = {nb_right}')
+    print(f'  nf           = {HP["nf"]}  ({HP["nf"] * TS_NEW * 1000:.1f} ms prediction horizon)')
+    print(f'  lr           = {HP["lr"]:.0e}')
+    print(f'  batch_size   = {HP["batch_size"]}')
+    print(f'  epochs       = {HP["epochs"]}')
+    print(f'  up_sample    = {HP["up_sample"]}')
+    print(f'  NX_ANN       = {HP["NX_ANN"]}  (ANN frozen)')
+    print(f'  EVAL_METHOD  = {EVAL_METHOD}')
 
     # --- Load data ---
     print(f'\nLoading data from: {TRAJ_DIR}')
@@ -482,33 +574,55 @@ def main():
     print(f'Total trainable parameters: {n_params}')
 
     # --- Evaluate BEFORE training ---
-    print('\n--- Encoder quality BEFORE training ---')
-    nrms_init, x_enc_init, x_gt_init, cheat_n = evaluate_encoder_states(
-        fit_sys, val_sys_data, val_x_logical, norm)
+    print(f'\n--- Encoder quality BEFORE training (EVAL_METHOD={EVAL_METHOD}) ---')
+    nrms_init, x_enc_init, x_gt_init, cheat_n = _eval_states(
+        fit_sys, val_u, val_y, val_x_logical, val_sys_data, norm)
     rms_init_phys = compute_rms_error(x_enc_init, x_gt_init)
     print(f'  {"State":<6s}  {"NRMS":>12s}  {"RMS err":>12s}  {"Unit":<5s}')
     print(f'  {"-"*6}  {"-"*12}  {"-"*12}  {"-"*5}')
     for i, name in enumerate(STATE_NAMES):
         print(f'  {name:<6s}  {nrms_init[i]:>12.4e}  {rms_init_phys[i]:>12.4e}  {PHYS_UNITS[i]:<5s}')
 
-    # --- Train ---
-    # HEURISTIC: validation_measure = nf-step-RMS (Jan's pattern, line 543)
-    list_val_measures = [f'{i}-step-RMS' for i in [1, 5, 20]]
+    # --- Train with per-epoch state tracking ---
+    # HEURISTIC: validation_measure = nf-step-RMS (Jan's pattern)
     val_measure = f'{HP["nf"]}-step-RMS'
 
     print(f'\nTraining: {HP["epochs"]} epochs, validation_measure={val_measure}')
-    print(f'Additional measures: {list_val_measures}')
+    print(f'Per-epoch state tracking via EVAL_METHOD={EVAL_METHOD}')
 
-    fit_sys.fit(
-        train_sys_data=train_sys_data,
-        val_sys_data=val_sys_data,
-        batch_size=HP['batch_size'],
-        epochs=HP['epochs'],
-        auto_fit_norm=False,
-        loss_kwargs={'nf': HP['nf']},
-        validation_measure=val_measure,
-        list_val_measures=list_val_measures,
-    )
+    hdr = f'{"epoch":>5s} | {"val_loss":>10s}'
+    for name in STATE_NAMES:
+        hdr += f' | {name:>10s}'
+    print('\n' + hdr)
+    print('-' * len(hdr))
+
+    # Print init row
+    row = f'{"init":>5s} | {"":>10s}'
+    for i in range(NX_PHYS):
+        row += f' | {nrms_init[i]:>10.3e}'
+    print(row, flush=True)
+
+    state_curves = {name: [] for name in STATE_NAMES}
+
+    for epoch in range(1, HP['epochs'] + 1):
+        fit_sys.fit(
+            train_sys_data=train_sys_data,
+            val_sys_data=val_sys_data,
+            batch_size=HP['batch_size'],
+            epochs=epoch,
+            auto_fit_norm=False,
+            loss_kwargs={'nf': HP['nf']},
+            validation_measure=val_measure,
+            verbose=0,
+        )
+        ep_loss = float(fit_sys.Loss_val[-1])
+        nrms_ep, _, _, _ = _eval_states(fit_sys, val_u, val_y, val_x_logical, val_sys_data, norm)
+        for i, name in enumerate(STATE_NAMES):
+            state_curves[name].append(float(nrms_ep[i]))
+        row = f'{epoch:5d} | {ep_loss:10.4e}'
+        for i in range(NX_PHYS):
+            row += f' | {nrms_ep[i]:>10.3e}'
+        print(row, flush=True)
 
     # --- Evaluate AFTER training (best checkpoint) ---
     fit_sys.checkpoint_load_system(name='_best')
@@ -516,8 +630,8 @@ def main():
     for vi, (vf, (vu, vy, vx)) in enumerate(zip(VAL_FILES, val_data)):
         vsd = deepSI.System_data(u=vu, y=vy, dt=TS_NEW)
         print(f'\n--- Encoder quality AFTER training on {vf} ---')
-        nrms_post, x_enc_post, x_gt_post, cheat_n = evaluate_encoder_states(
-            fit_sys, vsd, vx, norm)
+        nrms_post, x_enc_post, x_gt_post, cheat_n = _eval_states(
+            fit_sys, vu, vy, vx, vsd, norm)
         rms_post_phys = compute_rms_error(x_enc_post, x_gt_post)
         print(f'  {"State":<6s}  {"NRMS":>12s}  {"RMS err":>12s}  {"Unit":<5s}')
         print(f'  {"-"*6}  {"-"*12}  {"-"*12}  {"-"*5}')
@@ -561,6 +675,7 @@ def main():
         nrms_analytical={name: float(nrms_ana[i]) for i, name in enumerate(STATE_NAMES)},
         loss_train=getattr(fit_sys, 'Loss_train', np.array([])).tolist(),
         loss_val=getattr(fit_sys, 'Loss_val', np.array([])).tolist(),
+        state_curves=state_curves,
     )
     json_path = os.path.join(OUT_DIR, 'step1_results.json')
     with open(json_path, 'w') as f:
@@ -607,6 +722,11 @@ def main():
         os.path.join(OUT_DIR, 'step1_nrms_bar.png'))
 
     plot_loss_curves(fit_sys, os.path.join(OUT_DIR, 'step1_loss.png'))
+
+    plot_state_evolution(
+        state_curves, nrms_init,
+        f'Step 1: State NRMS per epoch (EVAL_METHOD={EVAL_METHOD})',
+        os.path.join(OUT_DIR, 'step1_state_evolution.png'))
 
 
 if __name__ == '__main__':

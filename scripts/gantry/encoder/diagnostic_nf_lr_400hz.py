@@ -19,6 +19,7 @@ Usage:
     conda run -n GraduationProject python scripts/gantry/encoder/diagnostic_nf_lr_400hz.py
 """
 
+import argparse
 import os
 import sys
 import json
@@ -329,6 +330,23 @@ def compute_verdict(nrms_init, nrms_final):
 
 
 # =============================================================================
+# CLI
+# =============================================================================
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        '--task_idx', type=int, default=None,
+        help='Grid task index (0 to N_combos-1) for SLURM array jobs. '
+             'Omit to run all combinations sequentially.',
+    )
+    return parser.parse_args()
+
+
+# =============================================================================
 # Main
 # =============================================================================
 
@@ -342,6 +360,23 @@ def main():
     print(f'  N_DIAG_EPOCHS = {N_DIAG_EPOCHS}', flush=True)
     print(f'  Grid: {len(NF_VALUES)} x {len(LR_VALUES)} = '
           f'{len(NF_VALUES) * len(LR_VALUES)} runs', flush=True)
+
+    # ── SLURM array / single-task filtering ──────────────────────────────────
+    args = parse_args()
+    all_combos = [(nf, lr) for nf in NF_VALUES for lr in LR_VALUES]
+    if args.task_idx is not None:
+        if not (0 <= args.task_idx < len(all_combos)):
+            raise ValueError(
+                f'--task_idx {args.task_idx} out of range [0, {len(all_combos) - 1}]'
+            )
+        _task_nf, _task_lr = all_combos[args.task_idx]
+        run_set = {(_task_nf, _task_lr)}
+        single_task = True
+        print(f'  [SLURM task {args.task_idx}]  nf={_task_nf}, lr={_task_lr:.0e}',
+              flush=True)
+    else:
+        run_set = None   # run everything
+        single_task = False
 
     # Print reference values so the output is self-contained
     print(flush=True)
@@ -390,6 +425,8 @@ def main():
 
     for nf in NF_VALUES:
         for lr in LR_VALUES:
+            if run_set is not None and (nf, lr) not in run_set:
+                continue
             np.random.seed(SEED)
             torch.manual_seed(SEED)
 
@@ -485,6 +522,42 @@ def main():
                 'early_stopped':   early_stopped,
                 'elapsed_s':       elapsed,
             }
+
+    # =========================================================================
+    # Single-task (SLURM array) path: save partial JSON and exit
+    # =========================================================================
+    if single_task:
+        nf, lr = all_combos[args.task_idx]
+        partial = {
+            'task_idx': args.task_idx,
+            'nf': nf,
+            'lr': lr,
+            'key': f'nf={nf}_lr={lr:.0e}',
+            'config': {
+                'fs_new': FS_NEW, 'ts': ts,
+                'nf_values': NF_VALUES, 'lr_values': LR_VALUES,
+                'n_epochs': N_DIAG_EPOCHS,
+                'na': na, 'nb': nb, 'na_right': na_right, 'nb_right': nb_right,
+                'obs_states':   [STATE_NAMES[i] for i in OBS_IDX],
+                'unobs_states': [STATE_NAMES[i] for i in UNOBS_IDX],
+                'train_files': TRAIN_FILES, 'val_file': VAL_FILE,
+            },
+            'result': {
+                'loss_curve':      results[(nf, lr)]['loss_curve'],
+                'state_curves':    results[(nf, lr)]['state_curves'],
+                'verdict':         results[(nf, lr)]['verdict'],
+                'worst_obs_ratio': results[(nf, lr)]['worst_obs_ratio'],
+                'early_stopped':   results[(nf, lr)]['early_stopped'],
+                'elapsed_s':       results[(nf, lr)]['elapsed_s'],
+            },
+        }
+        partial_path = os.path.join(
+            OUT_DIR, f'diagnostic_nf_lr_400hz_task_{args.task_idx:02d}.json')
+        with open(partial_path, 'w') as f:
+            json.dump(partial, f, indent=2)
+        print(f'\nSaved partial: {partial_path}', flush=True)
+        print('Done (single task).', flush=True)
+        return
 
     # =========================================================================
     # Summary
