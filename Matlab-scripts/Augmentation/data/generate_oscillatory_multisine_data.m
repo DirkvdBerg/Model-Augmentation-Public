@@ -47,11 +47,14 @@
 clear; clc; close all;
 
 %% ── MODE TOGGLE ─────────────────────────────────────────────────────────
-USE_MSD = false;  % true = augmented (baseline + hidden MSD)
+USE_MSD = true;  % true = augmented (baseline + hidden MSD)
                    % false = baseline (rigid payload, no MSD)
 MA_FRAC = 0.50;    % mass fraction of hidden MSD (only used when USE_MSD = true)
                    % 0.10 = default (saves to multisine/)
                    % 0.50 = heavy MSD  (saves to multisine/m50/)
+MULTISINE_BAND = 'narrowband';  % 'broadband'  = [1, 200] Hz (full coverage)
+                                % 'narrowband' = [130, 180] Hz (targets MSD resonance only)
+                                % (only applies when USE_MSD = true)
 
 addpath(genpath(fullfile(pwd, 'kamtin-fp-model', '03 Simulink gantry')))
 addpath(fullfile(pwd, 'Matlab-scripts', 'Augmentation'))
@@ -106,7 +109,13 @@ lim.force_rms  = [916,  916,  656];  % [N] RMS
 % ── Multisine frequency band
 f_low  = 1;    % [Hz] fundamental of 1-second period
 if USE_MSD
-    f_high = 200;  % [Hz] covers MSD resonance at ~150 Hz + margin (from diagnostics/multisine_frequency_range_MSD.m)
+    switch MULTISINE_BAND
+        case 'broadband'
+            f_high = 200;  % [Hz] covers MSD resonance at ~150 Hz + margin (from diagnostics/multisine_frequency_range_MSD.m)
+        case 'narrowband'
+            f_low  = 130;  % [Hz] lower edge: fa=150 Hz, zeta=0.05 -> 3dB BW ~16 Hz, margin to 130 Hz
+            f_high = 180;  % [Hz] upper edge: symmetric margin above fa
+    end
 else
     f_high = 7;    % [Hz] single oscillatory mode at ~5 Hz (from diagnostics/multisine_frequency_range_baseline.m)
 end
@@ -118,6 +127,9 @@ if USE_MSD
     else
         out_dir = fullfile(pwd, 'data', 'gantry', 'matlab', 'multisine', ...
                            sprintf('m%d', round(ma_frac*100)));
+    end
+    if strcmp(MULTISINE_BAND, 'narrowband')
+        out_dir = fullfile(out_dir, 'narrowband');
     end
 else
     out_dir = fullfile(pwd, 'data', 'gantry', 'matlab', 'multisine', 'baseline-v2');
