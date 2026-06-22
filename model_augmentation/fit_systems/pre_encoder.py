@@ -299,7 +299,145 @@ class linear_encoder_init(nn.Module):
             return x
         else:
             return x + self.net(torch.cat((uhist.view(uhist.size(0), -1), yhist.view(yhist.size(0), -1)), dim=1))
-        
+
+
+
+@added
+class linear_encoder_init_aug(nn.Module):
+    """Extension of Jan's linear_encoder_init to augmented states, implementing
+    Hoekstra 2026 Eq. 8 for the dynamic augmentation case (nx_aug > 0).
+
+    W^b rows (physical states): theory-initialized from reconstructability map,
+        Eq. 16-17. Identical to linear_encoder_init when nx_aug=0.
+    W^a rows (augmented states): randomly initialized, Eq. 8.
+    Shared nonlinear correction net: one network for all nx+nx_aug outputs,
+        zero-init final layer (paper Section 4.3).
+
+    When nx_aug=0, output and weights are numerically identical to
+    linear_encoder_init with the same parameters (collapse property).
+    """
+
+    def __init__(
+        self,
+        A,
+        B,
+        C,
+        D,
+        nx,
+        nu,
+        ny,
+        na,
+        nb,
+        nx_aug=0,
+        n_nodes_per_layer=64,
+        n_hidden_layers=2,
+        activation=nn.Tanh,
+        flag_linear_only=False,
+    ):
+        super(linear_encoder_init_aug, self).__init__()
+
+        self.nu = nu
+        self.ny = ny
+        self.nx = nx
+        self.nx_aug = nx_aug
+        self.na = na
+        self.nb = nb
+        self.flag_linear_only = flag_linear_only
+
+        assert na == nb, "only na=nb is implemented for linear encoder init"
+        n = na
+
+        # --- W^b: theory-initialized from reconstructability map (Jan's original, verbatim) ---
+        # THEORY: Hoekstra 2026 Eq. 10 -- Gamma_n is the Toeplitz matrix T_n of Markov
+        # parameters [D, CB, CAB, ..., CA^{n-1}B]
+        Gamma_n = np.zeros(((n + 1) * ny, (n + 1) * nu))
+        for i in range(n + 1):
+            for j in range(i, n + 1):
+                flipped_i = n - i
+                flipped_j = n - j
+                if i != j:
+                    Gamma_n[
+                        flipped_i * ny : (flipped_i + 1) * ny,
+                        flipped_j * nu : (flipped_j + 1) * nu,
+                    ] = C @ np.linalg.matrix_power(A, j - i - 1) @ B
+                else:
+                    Gamma_n[
+                        flipped_i * ny : (flipped_i + 1) * ny,
+                        flipped_j * nu : (flipped_j + 1) * nu,
+                    ] = D
+
+        # THEORY: Hoekstra 2026 Eq. 10 -- O_n is the observability matrix [C; CA; ...; CA^n]
+        O_n = np.zeros(((n + 1) * ny, nx))
+        for i in range(n + 1):
+            O_n[i * ny : (i + 1) * ny, :] = C @ np.linalg.matrix_power(A, i)
+        O_inv = np.linalg.pinv(O_n)
+
+        # THEORY: Hoekstra 2026 Eq. 13-14 -- A^n and r_n (input-to-state convolution)
+        A_n = np.linalg.matrix_power(A, n)
+        gamma_n = np.zeros((nx, (n + 1) * nu))
+        for i in range(0, n):
+            gamma_n[:, i * nu : (i + 1) * nu] = np.linalg.matrix_power(A, n - i - 1) @ B
+
+        # THEORY: Hoekstra 2026 Eq. 17 -- W^b_{psi,y} = A^n O_n^{-1}
+        self.Wb_psi_y = nn.Parameter(
+            torch.tensor(A_n @ O_inv, dtype=torch.float32)
+        )
+        # THEORY: Hoekstra 2026 Eq. 16 -- W^b_{psi,u} = -A^n O_n^{-1} T_n + r_n
+        self.Wb_psi_u = nn.Parameter(
+            torch.tensor(-A_n @ O_inv @ Gamma_n + gamma_n, dtype=torch.float32)
+        )
+
+        # --- W^a: randomly initialized for augmented state rows (Eq. 8) ---
+        # HEURISTIC: paper states W^a is randomly initialized but does not specify
+        # the distribution or scale. Using PyTorch default kaiming_uniform_ as the
+        # standard random init convention for weight matrices.
+        wa_y = torch.empty(nx_aug, (n + 1) * ny)
+        wa_u = torch.empty(nx_aug, (n + 1) * nu)
+        nn.init.kaiming_uniform_(wa_y)
+        nn.init.kaiming_uniform_(wa_u)
+        self.Wa_psi_y = nn.Parameter(wa_y)
+        self.Wa_psi_u = nn.Parameter(wa_u)
+
+        # --- Shared nonlinear correction net (Eq. 8, psi_tilde) ---
+        # Output size is nx + nx_aug (all states); zero-init final layer (Section 4.3)
+        if not self.flag_linear_only:
+            self.n_in = nu * (nb + 1) + ny * (na + 1)
+            self.n_out = nx + nx_aug
+            seq = [nn.Linear(self.n_in, n_nodes_per_layer), activation()]
+            assert n_hidden_layers > 0
+            for i in range(n_hidden_layers - 1):
+                seq.append(nn.Linear(n_nodes_per_layer, n_nodes_per_layer))
+                seq.append(activation())
+            final_layer = nn.Linear(n_nodes_per_layer, self.n_out)
+            seq.append(final_layer)
+            self.net = nn.Sequential(*seq)
+            nn.init.constant_(final_layer.bias, val=0.0)
+            nn.init.constant_(final_layer.weight, val=0.0)
+
+    def forward(self, uhist, yhist):
+        if len(uhist.size()) <= 2:
+            uhist_mod = uhist.view(uhist.size(0), self.nu * (self.nb + 1), 1)
+            state_has_correct_dimension = False
+        else:
+            state_has_correct_dimension = True
+
+        if len(yhist.size()) <= 2:
+            yhist_mod = yhist.view(yhist.size(0), self.ny * (self.na + 1), 1)
+
+        # Physical states from W^b (Eq. 16-17), augmented states from W^a (Eq. 8)
+        x_b = self.Wb_psi_u @ uhist_mod + self.Wb_psi_y @ yhist_mod  # (batch, nx, 1)
+        x_a = self.Wa_psi_u @ uhist_mod + self.Wa_psi_y @ yhist_mod  # (batch, nx_aug, 1)
+        x = torch.cat([x_b, x_a], dim=1)                             # (batch, nx+nx_aug, 1)
+
+        if not state_has_correct_dimension:
+            x = x.view(-1, self.nx + self.nx_aug)
+
+        if self.flag_linear_only:
+            return x
+        else:
+            return x + self.net(
+                torch.cat((uhist.view(uhist.size(0), -1), yhist.view(yhist.size(0), -1)), dim=1)
+            )
 
 
 class SS_pre_encoder(SS_encoder_general):
