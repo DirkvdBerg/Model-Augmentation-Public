@@ -22,6 +22,12 @@ Bash: `conda run -n GraduationProject python ...`. User manual: `conda activate 
 | Self-improvement ruleset | `tasks/lessons.md` |
 | Session handoff | `tasks/handoff.md` |
 | Archived docs | `archive/` |
+| **Telica data schema** (columns, signals, folder structure) | `docs/kamtin-telica-schema.md` |
+
+## Data Access Policy
+- `kamtin-data/Data Telica/` is blocked via `.claudeignore` — **never attempt to read files there**.
+- For all column names, signal meanings, unit conversions, and file structure: read `docs/kamtin-telica-schema.md`.
+- Do NOT use `Bash` to cat/head/grep files in `kamtin-data/Data Telica/`.
 
 ## Multi-Agent Ownership
 | File(s) | Claude | Codex |
