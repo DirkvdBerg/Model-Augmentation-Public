@@ -13,10 +13,10 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from model_augmentation.utils.utils import *
-from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn, HybridGantryEncoder, LinearInitEncoderWrapper
+from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn, HybridGantryEncoder
 from model_augmentation.fit_systems.interconnect import *
 from model_augmentation.fit_systems.blocks import *
-from model_augmentation.fit_systems.pre_encoder import linear_encoder_init
+from model_augmentation.fit_systems.pre_encoder import linear_encoder_init_aug
 from model_augmentation.systems.gantry_ss import Cd, Dd, P
 from model_augmentation.systems.gantry_linearization import gantry_linearize_and_discretize
 from model_augmentation.utils.utils import normalize_linear_ss_matrices
@@ -150,7 +150,7 @@ std_x  = x_all.std(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP) + 1e-8
 std_u  = u_all.std(axis=0).reshape(nu, 1).astype(DTYPE_NP) + 1e-8
 u_mean = u_all.mean(axis=0).reshape(nu, 1).astype(DTYPE_NP)
 ystd   = y_all.std(axis=0).astype(DTYPE_NP) + 1e-8
-y0     = (Cd.numpy() @ x_mean.flatten()).astype(DTYPE_NP)
+y0     = y_all.mean(axis=0).astype(DTYPE_NP)
 
 # Cd_norm[i,j] = Cd[i,j] * std_x[j] / ystd[i]
 Cd_norm = Cd.numpy() * std_x.flatten()[None, :] / ystd[:, None]  # (3, 6)
@@ -168,22 +168,30 @@ os.makedirs(save_dir, exist_ok=True)
 ## build_model / train_model
 ## ═══════════════════════════════════════════════════════════════════════════════
 
+def _get_encoder_dims(hp):
+    """Return (na, nb, na_right, nb_right) consistent with build_model logic."""
+    if ENCODER_INIT == 'linear_map':
+        na = 4 * NX_PHYS + 1
+        nb = na
+        na_right = 1
+        nb_right = 1
+    else:
+        na = hp.get('na_nb', 2 * (NX_PHYS + hp['NX_ANN']) + 1)
+        nb = na
+        na_right = 0
+        nb_right = 0
+    return na, nb, na_right, nb_right
+
+
 def build_model(hp):
     """Build interconnect + SSE_Interconnect from hp dict, return fit_sys (untrained)."""
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
 
     # Encoder history: for linear_map, use Jan's 4*nx+1 rule; otherwise time-based
-    if ENCODER_INIT == 'linear_map':
-        na = 4 * NX_PHYS + 1  # HEURISTIC: Jan's rule of thumb, never needed more (25 for nx=6)
-        nb = na
-    else:
-        na = hp.get('na_nb', 2 * nxd + 1)
-        nb = hp.get('na_nb', 2 * nxd + 1)
-
-    # na_right=1 for linear_map: reconstructability map needs y(k) in the window
-    na_right = 1 if ENCODER_INIT == 'linear_map' else 0
-    nb_right = 1 if ENCODER_INIT == 'linear_map' else 0
+    # HEURISTIC: Jan's rule of thumb na=4*nx+1=25 for nx=6; na_right=1 needed so
+    # reconstructability map can use y(k) to compute x(k).
+    na, nb, na_right, nb_right = _get_encoder_dims(hp)
 
     ic = Interconnect(nxd, nu, ny, debugging=False)
 
@@ -251,21 +259,19 @@ def build_model(hp):
         Ad_bar, Bd_bar, Cd_bar, Dd_bar = normalize_linear_ss_matrices(
             Ad, Bd, Cd_dt, Dd_dt, sys_data_with_x)
 
-        phys_encoder = linear_encoder_init(
+        # CHANGED: D-055 -- single encoder replaces linear_encoder_init + LinearInitEncoderWrapper.
+        # na/nb passed without right extension: W^b is built for (na+1) timesteps, and
+        # the SSE_Interconnect window with na_right=1 gives exactly (na+1) timesteps.
+        # Convention fix (D-017) applied natively via u_mean/std_u/y0/ystd/x_mean/std_x.
+        fit_sys.encoder = linear_encoder_init_aug(
             A=Ad_bar, B=Bd_bar, C=Cd_bar, D=Dd_bar,
             nx=NX_PHYS, nu=nu, ny=ny, na=na, nb=nb,
+            nx_aug=NX_ANN,
             n_nodes_per_layer=hp['n_nodes_per_layer'],
             n_hidden_layers=hp['n_hidden_layers'],
             flag_linear_only=False,
-        )
-
-        fit_sys.encoder = LinearInitEncoderWrapper(
-            phys_encoder=phys_encoder,
-            nx_ann=NX_ANN,
-            nb=nb + nb_right, nu=nu, na=na + na_right, ny=ny,
-            n_nodes_per_layer=hp['n_nodes_per_layer'],
-            n_hidden_layers=hp['n_hidden_layers'],
-            u_mean=u_mean, std_u=std_u, y0=y0, ystd=ystd,
+            u_mean=u_mean, std_u=std_u,
+            y0=y0, ystd=ystd,
             x_mean=x_mean, std_x=std_x,
         ).to(DTYPE_PT)
 
@@ -355,8 +361,7 @@ def evaluate_and_save(fit_sys, hp, rid):
     """Load best checkpoint, simulate, compute NRMS, plot, save."""
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
-    na = hp.get('na_nb', 2 * nxd + 1)
-    nb = hp.get('na_nb', 2 * nxd + 1)
+    na, nb, na_right, nb_right = _get_encoder_dims(hp)
 
     # Save model
     if save_flag:
@@ -526,8 +531,7 @@ def state_recovery_diagnostic(fit_sys, hp, rid, max_windows=2000):
     """
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
-    na = hp.get('na_nb', 2 * nxd + 1)
-    nb = hp.get('na_nb', 2 * nxd + 1)
+    na, nb, na_right, nb_right = _get_encoder_dims(hp)
     fit_sys.eval()
 
     # True physical states reconstructed from val measurements
@@ -547,8 +551,8 @@ def state_recovery_diagnostic(fit_sys, hp, rid, max_windows=2000):
     k0 = max(na, nb) + 1                                      # +1 so k-1 exists for the lag column
     stride = max(1, (N - k0) // max_windows)                  # HEURISTIC: cap window count to bound memory
     k_ix = np.arange(k0, N, stride)
-    ypast = np.stack([yn[k - na:k] for k in k_ix])            # (Nk, na, ny)
-    upast = np.stack([un[k - nb:k] for k in k_ix])            # (Nk, nb, nu)
+    ypast = np.stack([yn[k - na : k + na_right] for k in k_ix])  # (Nk, na+na_right, ny)
+    upast = np.stack([un[k - nb : k + nb_right] for k in k_ix])  # (Nk, nb+nb_right, nu)
     with torch.no_grad():
         x_hat = fit_sys.encoder(
             torch.tensor(upast, dtype=DTYPE_PT),
