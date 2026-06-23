@@ -1,6 +1,6 @@
 """
-diagnostic_nf_lr.py
--------------------
+diag_nf_lr.py
+-------------
 Two-stage diagnostic for baseline encoder pipeline validation:
 
 Stage 1: Encoder init quality vs sampling rate
@@ -16,7 +16,7 @@ Stage 2: nf x lr grid sweep at selected rate
     output MSE alone cannot constrain this system's states.
 
 Usage:
-    conda run -n GraduationProject python scripts/gantry/encoder/diagnostic_nf_lr.py
+    conda run -n GraduationProject python scripts/gantry/encoder-baseline/diagnostics/diag_nf_lr.py
 """
 
 import os
@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt
 
 # --- Project root ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..', '..'))
 sys.path.insert(0, PROJECT_ROOT)
 
 from model_augmentation.utils.utils import (

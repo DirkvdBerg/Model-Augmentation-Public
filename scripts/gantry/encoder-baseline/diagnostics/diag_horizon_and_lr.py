@@ -1,6 +1,6 @@
 """
-encoder_diagnostic.py
----------------------
+diag_horizon_and_lr.py
+----------------------
 Fast diagnostic for encoder I/O validation on baseline data.
 
 Two diagnostics:
@@ -12,7 +12,7 @@ Two diagnostics:
 No full training. Runs locally in ~5-10 min.
 
 Usage:
-    conda run -n GraduationProject python scripts/gantry/encoder/encoder_diagnostic.py
+    conda run -n GraduationProject python scripts/gantry/encoder-baseline/diagnostics/diag_horizon_and_lr.py
 """
 
 import os
@@ -28,7 +28,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..', '..'))
 sys.path.insert(0, PROJECT_ROOT)
 
 import deepSI

@@ -1,14 +1,14 @@
 """
-collect_diagnostic_nf_lr_400hz.py
-----------------------------------
-Merge per-task partial JSONs written by diagnostic_nf_lr_400hz.py --task_idx N
+collect_nf_lr_400hz.py
+----------------------
+Merge per-task partial JSONs written by diag_nf_lr_400hz.py --task_idx N
 into the combined JSON + heatmap + curve + state plots.
 
 Run after all SLURM array tasks have completed:
-    conda run -n GraduationProject python scripts/gantry/encoder/collect_diagnostic_nf_lr_400hz.py
+    conda run -n GraduationProject python scripts/gantry/encoder-baseline/runners/collect_nf_lr_400hz.py
 
 Optionally restrict to a subset of tasks:
-    ... collect_diagnostic_nf_lr_400hz.py --tasks 0 1 2 3 4
+    ... collect_nf_lr_400hz.py --tasks 0 1 2 3 4
 """
 
 import argparse
@@ -23,7 +23,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..', '..'))
 
 OUT_DIR = os.path.join(
     PROJECT_ROOT, 'simulations', 'gantry_subnet', 'diagnostics',

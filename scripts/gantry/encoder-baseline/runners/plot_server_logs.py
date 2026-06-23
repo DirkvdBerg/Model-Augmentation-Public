@@ -19,8 +19,8 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-LOG_DIR = Path(__file__).parents[3] / "simulations" / "server-output"
-OUT_DIR = Path(__file__).parents[3] / "simulations" / "gantry_subnet" / "encoder"
+LOG_DIR = Path(__file__).parents[4] / "simulations" / "server-output"
+OUT_DIR = Path(__file__).parents[4] / "simulations" / "gantry_subnet" / "encoder"
 
 LOGS = {
     ('nf20', 'direct'):           LOG_DIR / "step1_baseline_equals_system_67696.log",

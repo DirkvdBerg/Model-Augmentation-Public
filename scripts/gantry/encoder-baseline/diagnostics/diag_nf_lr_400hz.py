@@ -1,6 +1,6 @@
 """
-diagnostic_nf_lr_400hz.py
---------------------------
+diag_nf_lr_400hz.py
+-------------------
 nf x lr grid diagnostic at native 400 Hz initialization and training.
 
 Goal: find which (nf, lr) combinations allow output loss to converge
@@ -16,7 +16,7 @@ q1, q3, dq1, dq3. q2 and dq2 are fundamentally unobservable at 400 Hz
 (NRMS > 100 even at init) and are tracked but excluded from the verdict.
 
 Usage:
-    conda run -n GraduationProject python scripts/gantry/encoder/diagnostic_nf_lr_400hz.py
+    conda run -n GraduationProject python scripts/gantry/encoder-baseline/diagnostics/diag_nf_lr_400hz.py
 """
 
 import argparse
@@ -33,7 +33,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..', '..'))
 sys.path.insert(0, PROJECT_ROOT)
 
 from model_augmentation.utils.utils import (

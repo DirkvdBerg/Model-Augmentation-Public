@@ -1,6 +1,6 @@
 """
-step1b_encoder_regression.py
-----------------------------
+step1b_direct_regression.py
+---------------------------
 Encoder verification Step 1b: direct regression test (baseline = system).
 
 Isolated encoder test: train the encoder directly to minimize
@@ -12,7 +12,7 @@ from I/O history.
 Complements step1_baseline_equals_system.py (full pipeline test).
 
 Usage:
-    conda run -n GraduationProject python scripts/gantry/encoder/step1b_encoder_regression.py
+    conda run -n GraduationProject python scripts/gantry/encoder-baseline/verification/step1b_direct_regression.py
 """
 
 import os
@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 
 # --- Project root ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..', '..'))
 sys.path.insert(0, PROJECT_ROOT)
 
 import deepSI

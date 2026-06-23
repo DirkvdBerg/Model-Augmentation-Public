@@ -1,6 +1,6 @@
 """
-diagnostic_lambda.py
---------------------
+diag_lambda.py
+--------------
 Two-part diagnostic for the baseline encoder with physical state regularization.
 
 Part 1 -- Mismatch measurement (no training):
@@ -20,7 +20,7 @@ Part 2 -- Lambda sweep (20 kHz init, 400 Hz training):
     without preventing output loss convergence.
 
 Usage:
-    conda run -n GraduationProject python scripts/gantry/encoder/diagnostic_lambda.py
+    conda run -n GraduationProject python scripts/gantry/encoder-baseline/diagnostics/diag_lambda.py
 """
 
 import os
@@ -38,7 +38,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..', '..'))
 sys.path.insert(0, PROJECT_ROOT)
 
 from model_augmentation.utils.utils import (

@@ -7,8 +7,8 @@
 #   task 9=(160,5e-4) task 10=(160,1e-4) task 11=(160,5e-5)
 #   task 12=(200,5e-4) task 13=(200,1e-4) task 14=(200,5e-5)
 #
-# Submit:  sbatch run_diagnostic_nf_lr_400hz.sh
-# Collect: python scripts/gantry/encoder/collect_diagnostic_nf_lr_400hz.py
+# Submit:  sbatch scripts/gantry/encoder-baseline/runners/run_nf_lr_400hz.sh
+# Collect: python scripts/gantry/encoder-baseline/runners/collect_nf_lr_400hz.py
 #
 # Watch task N live:  tail -f ~/logs/augmentation/encoder/diagnostic_nf_lr_400hz_<JOBID>_N.out
 #SBATCH -J diagnostic-nf-lr-400hz
@@ -49,7 +49,7 @@ echo "cpus_per_task=${SLURM_CPUS_PER_TASK}"
 date
 echo ""
 
-python -u scripts/gantry/encoder/diagnostic_nf_lr_400hz.py \
+python -u scripts/gantry/encoder-baseline/diagnostics/diag_nf_lr_400hz.py \
     --task_idx "${SLURM_ARRAY_TASK_ID}" \
     2>&1 | tee "${LOGDIR}/diagnostic_nf_lr_400hz_${TAG}.log"
 

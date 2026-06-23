@@ -1,6 +1,6 @@
 """
-diagnose_normalization.py
--------------------------
+diag_normalization.py
+---------------------
 Diagnose why linear_encoder_init velocity NRMS is poor (~0.5) while
 positions are near-perfect (~5e-5).
 
@@ -23,7 +23,7 @@ Checks:
 Uses T3 (Y=0) where the LTI linearization is exact.
 
 Usage:
-    conda run -n GraduationProject python scripts/gantry/encoder/diagnose_normalization.py
+    conda run -n GraduationProject python scripts/gantry/encoder-baseline/diagnostics/diag_normalization.py
 """
 
 import os
@@ -32,7 +32,7 @@ import numpy as np
 from scipy.io import loadmat
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..', '..'))
 sys.path.insert(0, PROJECT_ROOT)
 
 import deepSI

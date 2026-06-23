@@ -1,6 +1,6 @@
 """
-step0_init_diagnostic.py
-------------------------
+step0_check_encoder_init.py
+---------------------------
 Encoder verification Step 0: check initialization quality (no training).
 
 Tests whether linear_encoder_init produces states close to ground truth
@@ -13,7 +13,7 @@ Both are compared against x_logical from the .mat files.
 If init NRMS >> 1e-3, debug normalization/matrices/windowing before proceeding.
 
 Usage:
-    conda run -n GraduationProject python scripts/gantry/encoder/step0_init_diagnostic.py
+    conda run -n GraduationProject python scripts/gantry/encoder-baseline/verification/step0_check_encoder_init.py
 """
 
 import os
@@ -27,7 +27,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..', '..'))
 sys.path.insert(0, PROJECT_ROOT)
 
 import deepSI
