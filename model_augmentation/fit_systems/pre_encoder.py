@@ -442,14 +442,13 @@ class linear_encoder_init_aug(nn.Module):
             self.register_buffer('x_off', torch.tensor(x_off).view(-1, 1))  # (nx, 1)
 
     def forward(self, uhist, yhist):
-        if len(uhist.size()) <= 2:
-            uhist_mod = uhist.view(uhist.size(0), self.nu * (self.nb + 1), 1)
-            state_has_correct_dimension = False
-        else:
-            state_has_correct_dimension = True
-
-        if len(yhist.size()) <= 2:
-            yhist_mod = yhist.view(yhist.size(0), self.ny * (self.na + 1), 1)
+        # CHANGED: D-055 -- always reshape to (batch, n_flat, 1) so D-055 offsets
+        # can be added unconditionally. Jan's original only ran this block for 2D
+        # inputs (state_has_correct_dimension=False), leaving uhist_mod undefined
+        # for 3D inputs -- a latent crash if the encoder is ever called with 3D tensors.
+        state_has_correct_dimension = len(uhist.size()) > 2
+        uhist_mod = uhist.view(uhist.size(0), self.nu * (self.nb + 1), 1)
+        yhist_mod = yhist.view(yhist.size(0), self.ny * (self.na + 1), 1)
 
         # CHANGED: D-055 -- apply convention fix before W^b/W^a (pipeline -> pure-scaled)
         if self.fix_enabled:
@@ -467,8 +466,10 @@ class linear_encoder_init_aug(nn.Module):
 
         x = torch.cat([x_b, x_a], dim=1)                             # (batch, nx+nx_aug, 1)
 
-        if not state_has_correct_dimension:
-            x = x.view(-1, self.nx + self.nx_aug)
+        # Always flatten to (batch, nx+nx_aug) before ANN addition.
+        # Jan's original only flattened for 2D inputs; 3D inputs left x as
+        # (batch, nx, 1) which caused a shape mismatch with the 2D ANN output.
+        x = x.view(-1, self.nx + self.nx_aug)
 
         if self.flag_linear_only:
             return x
