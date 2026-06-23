@@ -304,7 +304,13 @@ for i = 1:numel(trajs)
     % HEURISTIC: each channel's multisine RMS = 40% of that channel's
     % trajectory-only RMS force. Inactive channels get 10% of the strongest
     % active channel to ensure MIMO identifiability (all channels excited).
-    force_cap_frac  = 0.40;   % HEURISTIC: 40% of trajectory effort per channel
+    % HEURISTIC: narrowband [130-180 Hz] has no overlap with trajectory content,
+    % so 40% of traj RMS would dominate; 5% still gives ~2-10 µm delta_a via Q=10 MSD amplification (D-056)
+    if strcmp(MULTISINE_BAND, 'narrowband')
+        force_cap_frac = 0.05;
+    else
+        force_cap_frac = 0.40;  % broadband: competes with trajectory at same frequencies
+    end
     inactive_frac   = 0.10;   % HEURISTIC: 10% of dominant channel for inactive
     active_thresh   = 1.0;    % HEURISTIC: [N RMS] below this = inactive channel
     traj_rms = rms(u0_fb);    % (1x3) per channel
@@ -319,6 +325,15 @@ for i = 1:numel(trajs)
     if max(amp_ch) > 0
         inactive_floor = inactive_frac * max(amp_ch);
         amp_ch(amp_ch == 0) = inactive_floor;
+    end
+
+    % Narrowband MIMO floor: all channels get at least force_cap_frac * max(traj_rms).
+    % Ensures weak channels (e.g. X in Y-only, Y in X-only experiments) are excited
+    % proportionately to the dominant channel. Low-intensity experiments (T1, T5)
+    % will still have small amplitudes — accepted, as those cover scheduling range
+    % rather than MSD identification. (D-057)
+    if strcmp(MULTISINE_BAND, 'narrowband')
+        amp_ch = max(amp_ch, force_cap_frac * max(traj_rms));
     end
 
     % Scale multisine per channel
