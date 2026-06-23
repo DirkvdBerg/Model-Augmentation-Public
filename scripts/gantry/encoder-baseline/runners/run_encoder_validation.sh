@@ -83,7 +83,7 @@ print_summary "encoder_msd"
 # --- Steps 1 & 2 pipeline: training (run in parallel) ---
 echo "=== Steps 1 & 2 pipeline: training (parallel) ==="
 run_step "step1_baseline" \
-    "scripts/gantry/encoder/step1_baseline_equals_system.py" &
+    "scripts/gantry/encoder-baseline/verification/encoder_baseline_full_pipeline.py" &
 PID1=$!
 
 run_step "step2_msd" \

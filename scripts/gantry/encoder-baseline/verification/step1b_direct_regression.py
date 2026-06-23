@@ -9,7 +9,7 @@ without any state equation, rollout, or output block. This is a pure test
 of whether the encoder architecture + initialization can reconstruct states
 from I/O history.
 
-Complements step1_baseline_equals_system.py (full pipeline test).
+Complements encoder_baseline_full_pipeline.py (full pipeline test).
 
 Usage:
     conda run -n GraduationProject python scripts/gantry/encoder-baseline/verification/step1b_direct_regression.py
