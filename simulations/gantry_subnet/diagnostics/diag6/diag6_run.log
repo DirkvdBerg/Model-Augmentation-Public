@@ -1,0 +1,79 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+======================================================================
+diag6: Normalization fix encoder comparison
+  Encoder A: no fix   Encoder B: D-017 fix (local wrapper)
+  NX_AUG=0, NA=NB=25, NF=15, FS=400 Hz, N_EPOCHS=10
+======================================================================
+
+--- LTI system at Y_op=0 ---
+  max |eig(Ad)| = 1.000000
+
+--- Loading data (T4_X_sym_Y030.mat, V1_osc_Y025.mat) ---
+C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\nn\init.py:511: UserWarning: Initializing zero-element tensors is a no-op
+  warnings.warn("Initializing zero-element tensors is a no-op")
+  Train: 4400 samples   Val: 4400 samples  (at 400 Hz)
+  Normalized matrices computed from training data stats
+  max |eig(Ad_bar)| = 1.000000
+  x_mean      = [-0.   0.   0.3  0.  -0.  -0. ]
+  std_x       = [5.220e-02 0.000e+00 0.000e+00 6.574e-01 5.000e-04 1.000e-04]
+  y0          = [ 0.  -0.   0.3]
+  ystd        = [0.0522 0.0522 0.    ]
+  u_mean      = [ 0.0005 -0.0014  0.0007]
+  std_u       = [1.874780e+02 2.613942e+02 1.129000e-01]
+  ||y0/ystd||_inf   = 147101.4062   (bias from y-mean)
+  ||u_m/std_u||_inf = 0.0061   (bias from u-mean)
+
+  Encoder parameters: 15534  (ANN seed=42)
+
+--- Building window datasets ---
+  Train: 4360 windows    Val: 4360 windows
+
+======================================================================
+PART 1: Static NRMS at initialisation  (no training)
+======================================================================
+  Ground truth: x_norm = (x - x_mean) / std_x  (pipeline convention)
+  Encoder A sees: (y-y0)/ystd  but W^b expects y/ystd -> BIAS
+  Encoder B adds back y0/ystd, u_mean/std_u before W^b -> corrected
+
+  Channel   NRMS A (no fix)    NRMS B (fix)   ratio A/B
+  ------  ----------------  --------------  ----------
+  q1                0.0008          0.0008        1.00
+  q2              368.8315        368.8302        1.00
+  q3                0.0000          0.0000        1.00
+  dq1               0.0055          0.0055        1.00
+  dq2             132.3299        132.3289        1.00
+  dq3               0.0048          0.0048        1.00
+
+  Mean position NRMS:  A=122.9441   B=122.9437
+  Mean velocity NRMS:  A=44.1134   B=44.1131
+
+--- Part 1 checks ---
+  [FAIL] !! S1: pos NRMS A > 5x B  (A=122.9441 B=122.9437)
+  [FAIL] !! S2: Encoder B mean pos NRMS < 0.50  (122.9437)
+  [PASS]    S3: |vel NRMS A - vel NRMS B| < 0.30  (A=44.1134 B=44.1131)
+
+======================================================================
+PART 2: Training comparison  (10 epochs, LR=0.0001)
+  Rollout: linear (A_bar/B_bar/C_bar/D_bar) -- no Gantry_State_Block
+======================================================================
+
+  Epoch 0  loss_A=1.8994e+01  loss_B=1.8994e+01
+           pos_NRMS_A=122.9441  pos_NRMS_B=122.9437
+  Epoch   1  loss_A=4.1556e+08  loss_B=1.2648e+03  pos_NRMS_A=3504.2297  pos_NRMS_B=127.0645
+  Epoch   5  loss_A=8.8754e+08  loss_B=1.1450e+01  pos_NRMS_A=5555.1372  pos_NRMS_B=123.0193
+  Epoch  10  loss_A=8.0140e+08  loss_B=9.5547e+00  pos_NRMS_A=5865.8872  pos_NRMS_B=122.8558
+
+--- Part 2 checks ---
+  [PASS]    T1: B epoch-0 val loss < A  (A=1.8994e+01 B=1.8994e+01)
+  [PASS]    T2: B final pos NRMS <= A * 2.0  (A=5865.8873 B=122.8558)
+  [PASS]    T3: A pos NRMS after training (report only)  (init=122.9441 -> final=5865.8873 (worsened))
+
+  Saved C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\diagnostics\diag6\diag6_init_nrms.png
+  Saved C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\diagnostics\diag6\diag6_training_curves.png
+
+==================================================
+  4/6 checks passed  (2 failed)
+  Results saved to C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\diagnostics\diag6\diag6_results.json
