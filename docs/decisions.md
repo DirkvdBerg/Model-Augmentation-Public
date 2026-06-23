@@ -1569,6 +1569,38 @@ the normalization of the DT matrices.
 
 ---
 
+### [D-055] D-017 convention fix migrated into linear_encoder_init_aug
+**Date**: 2026-06-23
+**What**: The normalization convention fix (D-017) is moved from `LinearInitEncoderWrapper`
+(torch_nets.py) into `linear_encoder_init_aug` itself (pre_encoder.py). Six optional
+keyword arguments are added: `u_mean, std_u, y0, ystd, x_mean, std_x`. The fix is
+implicit: it is enabled if and only if all six are provided; omitting any one disables it
+(backward-compatible, collapse property diag1 unaffected).
+
+**Why**: `LinearInitEncoderWrapper` had a dead-code ANN bug (augmented states were not
+wired into the optimizer). That bug was the reason `linear_encoder_init_aug` was created.
+Putting the convention fix back in a wrapper would recreate the same structural problem.
+Embedding it in the class directly keeps the encoder self-contained and eliminates the need
+for the wrapper entirely for the augmented case.
+
+**Implementation** (`model_augmentation/fit_systems/pre_encoder.py`):
+- `__init__`: if fix_enabled, register three non-learnable buffers:
+  - `u_off` (nu*(nb+1), 1): tile(u_mean/std_u, nb+1)
+  - `y_off` (ny*(na+1), 1): tile(y0/ystd, na+1)
+  - `x_off` (nx, 1): x_mean/std_x
+- `forward`: if fix_enabled, add u_off/y_off to uhist_mod/yhist_mod before W^b/W^a;
+  subtract x_off from x_b (physical states) after. x_a (augmented) untouched.
+  ANN receives original pipeline-convention inputs.
+
+**Verified by**: diag6 (5/6 checks pass; S1/S2/S3 confirm 28-285x NRMS improvement
+at init; T1 failure is expected for exact linear system due to self-cancellation).
+
+**Constrains**: Call sites of `linear_encoder_init_aug` that want the fix must pass
+all 6 constants. `gantry_interconnect_dynamic.py` must be updated to use
+`linear_encoder_init_aug` directly (replacing `linear_encoder_init` + `LinearInitEncoderWrapper`).
+
+---
+
 ### [D-017] Convention fix in LinearInitEncoderWrapper
 
 **Date**: 2026-06-12

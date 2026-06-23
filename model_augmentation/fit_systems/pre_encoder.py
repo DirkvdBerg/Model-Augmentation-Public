@@ -333,6 +333,12 @@ class linear_encoder_init_aug(nn.Module):
         n_hidden_layers=2,
         activation=nn.Tanh,
         flag_linear_only=False,
+        # CHANGED: D-055 -- optional D-017 convention fix parameters
+        # When all six are provided, forward() converts pipeline (mean-sub) I/O
+        # to pure-scaled before W^b/W^a and back to pipeline convention after.
+        u_mean=None, std_u=None,
+        y0=None, ystd=None,
+        x_mean=None, std_x=None,
     ):
         super(linear_encoder_init_aug, self).__init__()
 
@@ -414,6 +420,27 @@ class linear_encoder_init_aug(nn.Module):
             nn.init.constant_(final_layer.bias, val=0.0)
             nn.init.constant_(final_layer.weight, val=0.0)
 
+        # CHANGED: D-055 -- register convention-fix buffers (no gradient, move with .to(device))
+        # THEORY: D-017 -- W^b maps y/ystd -> x/std_x (pure-scaled); pipeline feeds
+        # (y-y0)/ystd and expects (x-x_mean)/std_x. Fix: add mean ratios before W^b,
+        # subtract x_mean/std_x from physical-state output.
+        self.fix_enabled = all(
+            v is not None for v in [u_mean, std_u, y0, ystd, x_mean, std_x]
+        )
+        if self.fix_enabled:
+            u_off = np.tile(
+                (np.asarray(u_mean).flatten() / np.asarray(std_u).flatten()).astype(np.float32),
+                nb + 1,
+            )
+            y_off = np.tile(
+                (np.asarray(y0).flatten() / np.asarray(ystd).flatten()).astype(np.float32),
+                na + 1,
+            )
+            x_off = (np.asarray(x_mean).flatten() / np.asarray(std_x).flatten()).astype(np.float32)
+            self.register_buffer('u_off', torch.tensor(u_off).view(-1, 1))  # (nu*(nb+1), 1)
+            self.register_buffer('y_off', torch.tensor(y_off).view(-1, 1))  # (ny*(na+1), 1)
+            self.register_buffer('x_off', torch.tensor(x_off).view(-1, 1))  # (nx, 1)
+
     def forward(self, uhist, yhist):
         if len(uhist.size()) <= 2:
             uhist_mod = uhist.view(uhist.size(0), self.nu * (self.nb + 1), 1)
@@ -424,9 +451,20 @@ class linear_encoder_init_aug(nn.Module):
         if len(yhist.size()) <= 2:
             yhist_mod = yhist.view(yhist.size(0), self.ny * (self.na + 1), 1)
 
+        # CHANGED: D-055 -- apply convention fix before W^b/W^a (pipeline -> pure-scaled)
+        if self.fix_enabled:
+            uhist_mod = uhist_mod + self.u_off
+            yhist_mod = yhist_mod + self.y_off
+
         # Physical states from W^b (Eq. 16-17), augmented states from W^a (Eq. 8)
         x_b = self.Wb_psi_u @ uhist_mod + self.Wb_psi_y @ yhist_mod  # (batch, nx, 1)
         x_a = self.Wa_psi_u @ uhist_mod + self.Wa_psi_y @ yhist_mod  # (batch, nx_aug, 1)
+
+        # CHANGED: D-055 -- subtract x_mean/std_x from physical states only (pure-scaled -> pipeline)
+        # x_a (augmented) is not touched: no physical x_mean/std_x for learned states.
+        if self.fix_enabled:
+            x_b = x_b - self.x_off
+
         x = torch.cat([x_b, x_a], dim=1)                             # (batch, nx+nx_aug, 1)
 
         if not state_has_correct_dimension:
@@ -435,6 +473,7 @@ class linear_encoder_init_aug(nn.Module):
         if self.flag_linear_only:
             return x
         else:
+            # ANN receives original pipeline-convention inputs (no offset) -- D-017 intent
             return x + self.net(
                 torch.cat((uhist.view(uhist.size(0), -1), yhist.view(yhist.size(0), -1)), dim=1)
             )
