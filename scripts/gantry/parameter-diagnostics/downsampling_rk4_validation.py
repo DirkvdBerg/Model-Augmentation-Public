@@ -39,8 +39,9 @@ CONFIG = "msd_narrowband"
 FS_ORIG = 20000  # THEORY: original sample rate (Hz), from main.m line 164
 # HEURISTIC: 1% conservative bound for acceptable discretization error
 NRMS_THRESHOLD = 0.01
-# Reference uses high up_sample to approximate continuous-time integration
-REF_UP_SAMPLE = 20
+# At 20 kHz, h=50 µs — already 133× smaller than the 150 Hz MSD period.
+# up_sample=1 is accurate enough as reference; no sub-stepping needed here.
+REF_UP_SAMPLE = 1
 
 # Per-config settings: data path, MAT file, JSON dynamics key, and rates to sweep.
 # Rates that are NOT integer divisors of FS_ORIG (i.e. 3000, 6000 Hz) use
@@ -209,16 +210,17 @@ def run_rk4_sweep(u_stage, x_ref_hi, test_rates, std_x, std_u, x_mean, u_mean):
       - Monotonic improvement only shows up at intermediate rates where integration
         error (not input aliasing) is the main source.
     """
-    UP_SAMPLES_TEST = [1, 2, 3, 4]
+    UP_SAMPLES_TEST = [1]   # compare against reference up_sample=2
+    REF_UP_SAMPLE_B = 2    # within-rate reference: 2 sub-steps per timestep
     results = {}
 
     for fs_new in test_rates:
         u_ds  = decimate_signal(u_stage,  FS_ORIG, fs_new)
         x_ref = decimate_signal(x_ref_hi, FS_ORIG, fs_new)
 
-        # Simulate test variants + hidden reference (up_sample=20)
+        # Simulate test variants + reference (up_sample=2)
         sims = {}
-        for us in UP_SAMPLES_TEST + [20]:
+        for us in UP_SAMPLES_TEST + [REF_UP_SAMPLE_B]:
             t0 = time.time()
             block = Gantry_State_Block(
                 Y_op=None, std_x=std_x, std_u=std_u,
@@ -231,11 +233,11 @@ def run_rk4_sweep(u_stage, x_ref_hi, test_rates, std_x, std_u, x_mean, u_mean):
                 std_x, std_u, x_mean, u_mean,
             )
             elapsed = time.time() - t0
-            label = " [ref]" if us == 20 else ""
+            label = " [ref]" if us == REF_UP_SAMPLE_B else ""
             print(f"  fs={fs_new:6d} Hz  up_sample={us:2d}{label}  ({elapsed:.1f}s)")
 
-        # Reference: up_sample=20 at this rate
-        x_ref_rk4 = sims[20]
+        # Reference: up_sample=2 at this rate
+        x_ref_rk4 = sims[REF_UP_SAMPLE_B]
         rate_results = {}
         for us in UP_SAMPLES_TEST:
             nrms = compute_nrms_range(sims[us], x_ref_rk4, STATE_NAMES)
@@ -417,8 +419,8 @@ def main():
 
     rk4_json = {
         "config": CONFIG,
-        "reference_up_sample": 20,
-        "up_samples_tested": [1, 2, 3, 4],
+        "reference_up_sample": 2,
+        "up_samples_tested": [1],
         "nrms_formula": "rms(err) / (max(ref) - min(ref)) per channel",
         "sweep": {
             str(fs): {str(us): v for us, v in rate_data.items()}
