@@ -7,6 +7,7 @@ __pycache__/
 .vscode/
 .pytest_cache/
 .mypy_cache/
+.claude/worktrees/
 
 # docs/pdfs you want excluded
 SCRIPTS_GUIDE.md
