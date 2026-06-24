@@ -98,7 +98,7 @@ HP = dict(
     nf=20,                 # HEURISTIC: Jan's rule ~0.1s/Ts = 40; nf=20 validated BETTER in diagnostic
     batch_size=128,        # HEURISTIC: Jan: "take less number of batch sizes"
     lr=1e-4,               # validated: diagnostic_nf_lr_400hz.py nf=20 lr=1e-4 → BETTER (0.70x)
-    epochs=2,
+    epochs=30,
 )
 
 # Data (baseline-v2: oscillatory + repeated p2p, 10s trajectories, f_high=7 Hz)
@@ -475,8 +475,9 @@ def plot_loss_curves(loss_train, loss_val, out_path):
     """Plot manually-collected training and validation loss curves."""
     epochs = list(range(1, len(loss_val) + 1))
     fig, ax = plt.subplots(figsize=(10, 5))
-    if loss_train:
-        ax.plot(epochs, loss_train, label='train')
+    if loss_train and any(l is not None for l in loss_train):
+        train_plot = [l if l is not None else np.nan for l in loss_train]
+        ax.plot(epochs, train_plot, label='train')
     if loss_val:
         ax.plot(epochs, loss_val,   label='val')
     ax.set_xlabel('Epoch')
@@ -696,7 +697,7 @@ def main():
             verbose=0,
         )
         ep_val_loss   = float(fit_sys.Loss_val[-1])
-        ep_train_loss = float(fit_sys.Loss_train[-1]) if len(fit_sys.Loss_train) > 0 else float('nan')
+        ep_train_loss = float(fit_sys.Loss_train[-1]) if len(fit_sys.Loss_train) > 0 else None
         loss_val_history.append(ep_val_loss)
         loss_train_history.append(ep_train_loss)
 
