@@ -64,8 +64,8 @@ N_OPTUNA_TRIALS = 40
 OPTUNA_STUDY_NAME = "gantry_subnet_augmented"
 
 # --- Time-based horizons (converted to samples via TS_NEW) ---
-NF_SECONDS   = 0.100   # [s] rollout horizon (~1x MSD settling time, tau_msd=19ms, 5*tau=95ms)
-NANB_SECONDS = 0.025   # [s] encoder history (~4 MSD periods at 158 Hz)
+NF_SECONDS = 0.100   # [s] rollout horizon (5*tau_msd, tau=1/(zeta*wn)=20ms, 5tau=100ms)
+# THEORY: na=nb=nxd*2+1 (Jan's standard; nxd=NX_PHYS+NX_ANN encoder history)
 
 # --- Default hyperparameters (used when USE_OPTUNA=False) ---
 DEFAULT_HP = dict(
@@ -74,11 +74,15 @@ DEFAULT_HP = dict(
     n_hidden_layers=2,
     up_sample=2,
     nf=max(1, int(NF_SECONDS / TS_NEW)),
-    na_nb=max(1, int(NANB_SECONDS / TS_NEW)),
+    na_nb=0,          # set below via Jan's formula
     batch_size=256,
-    lr=5e-4,
-    epochs=50,
+    lr=1e-4,
+    epochs=10,
 )
+DEFAULT_HP['na_nb'] = (NX_PHYS + DEFAULT_HP['NX_ANN']) * 2 + 1   # THEORY: nxd*2+1 (Jan's standard)
+
+# Diagnostic interval: run aug-state R2 snapshot every N epochs during training
+DIAG_INTERVAL = 10
 
 ## ═══════════════════════════════════════════════════════════════════════════════
 ## Data loading (run once)
@@ -119,10 +123,37 @@ def load_traj(filename):
         dt=TS_NEW,
     )
 
+def load_mat_aug(filename):
+    """Load u, y, x_logical, delta_a, vdelta_a from augmented simulation mat file.
+
+    Used for diagnostics only (not for training). Returns:
+      u         (N, nu)   plant input [N]
+      y         (N, ny)   plant output [m]
+      x_logical (N, 6)    physical states from augmented sim [m, m/s]
+      x_aug     (N, 2)    [delta_a, vdelta_a] -- vdelta_a via backward FD
+    """
+    d = loadmat(os.path.join(TRAJ_DIR, filename), squeeze_me=True)
+    u         = _load_u(d)[::D].astype(DTYPE_NP)
+    y         = d['y'][::D].astype(DTYPE_NP)
+    x_logical = d['x_logical'][::D].astype(DTYPE_NP)    # (N, 6)
+    delta_a   = d['delta_a'][::D].astype(DTYPE_NP)      # (N,)
+    # HEURISTIC: backward FD for velocity -- O(Ts) accurate, consistent with x_logical convention
+    vdelta_a      = np.zeros_like(delta_a)
+    vdelta_a[1:]  = (delta_a[1:] - delta_a[:-1]) * FS_NEW
+    vdelta_a[0]   = vdelta_a[1]
+    x_aug = np.stack([delta_a, vdelta_a], axis=1)       # (N, 2)
+    return u, y, x_logical, x_aug
+
 train_list = [load_traj(f) for f in TRAIN_FILES]
 train_data = deepSI.System_data_list(train_list)
 val_data   = load_traj(VAL_FILE)
 test_data  = load_traj(TEST_FILE)
+
+# Load augmented ground-truth fields for validation trajectory (diagnostics only)
+_, _, val_x_logical, val_x_aug = load_mat_aug(VAL_FILE)
+print(f'Loaded val augmented GT: x_logical={val_x_logical.shape}  '
+      f'delta_a std={val_x_aug[:,0].std():.3e} m  '
+      f'vdelta_a std={val_x_aug[:,1].std():.3e} m/s')
 
 print(f'Loaded {len(train_list)} training trajectories, 1 val, 1 test')
 for i, (f, t) in enumerate(zip(TRAIN_FILES, train_list)):
@@ -357,7 +388,7 @@ def compute_gradient_norms(fit_sys, hp):
     return grad_norms, group_norms
 
 
-def evaluate_and_save(fit_sys, hp, rid):
+def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
     """Load best checkpoint, simulate, compute NRMS, plot, save."""
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
@@ -391,9 +422,16 @@ def evaluate_and_save(fit_sys, hp, rid):
     x_enc_ann[cheat_n:]  = x_enc_norm[NX_PHYS:nxd, :].T
 
     nrms_enc = np.sqrt(((y_hat_enc[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0)) / ystd
-    print('\n=== Encoder-initialised sim-NRMS ===')
-    for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
-        print(f'  {lbl}: {nrms_enc[ch]:.4f}')
+    if baseline_nrms is not None:
+        print('\n=== Sim-NRMS comparison: augmented model vs baseline FP ===')
+        for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
+            improv = 100.0 * (baseline_nrms[ch] - nrms_enc[ch]) / (baseline_nrms[ch] + 1e-12)
+            print(f'  {lbl}:  augmented={nrms_enc[ch]:.4f}  baseline_FP={baseline_nrms[ch]:.4f}'
+                  f'  improvement={improv:+.1f}%')
+    else:
+        print('\n=== Encoder-initialised sim-NRMS ===')
+        for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
+            print(f'  {lbl}: {nrms_enc[ch]:.4f}')
 
     ann_rms_enc = np.sqrt((x_enc_ann[cheat_n:] ** 2).mean(axis=0))
     print('\n=== ANN latent state RMS ===')
@@ -477,6 +515,41 @@ def evaluate_and_save(fit_sys, hp, rid):
     fig3.tight_layout()
     fig3.savefig(os.path.join(save_dir, f'gantry_ann_states_{rid}.png'), dpi=150)
 
+    # Plot 4: Training convergence (loss + R2_linmap) — only when diag_conv available
+    if diag_conv is not None and len(diag_conv['epochs']) > 0:
+        fig4, (ax4a, ax4b) = plt.subplots(1, 2, figsize=(12, 4))
+
+        # Left: loss curves with baseline FP NRMS as horizontal reference
+        ax4a.semilogy(epoch_id_full, loss_val_full,   color='C0', label='Val loss')
+        ax4a.semilogy(epoch_id_full, loss_train_full, color='C1', linestyle='--',
+                      alpha=0.7, label='Train loss')
+        if baseline_nrms is not None:
+            ch_colors = ['C2', 'C3', 'C4']
+            for ch, (lbl, col) in enumerate(zip(['X1', 'X2', 'Y '], ch_colors)):
+                ax4a.axhline(baseline_nrms[ch], color=col, linestyle=':', lw=1.2,
+                             label=f'Baseline FP {lbl}={baseline_nrms[ch]:.4f}')
+        ax4a.set_xlabel('Epoch'); ax4a.set_ylabel('sim-RMS')
+        ax4a.set_title('Loss + baseline reference')
+        ax4a.legend(fontsize=7); ax4a.grid(True, which='both')
+
+        # Right: R2_linmap for each augmented state channel over epochs
+        aug_labels_short = ['delta_a', 'vdelta_a']
+        conv_epochs = diag_conv['epochs']
+        conv_r2lin  = diag_conv['r2_linmap']   # (n_chunks, NX_ANN)
+        for ch in range(hp['NX_ANN']):
+            lbl = aug_labels_short[ch] if ch < len(aug_labels_short) else f'x_ann[{ch}]'
+            ax4b.plot(conv_epochs, conv_r2lin[:, ch], marker='o', ms=4, label=lbl)
+        ax4b.axhline(0.0, color='k', lw=0.5, linestyle='--')
+        ax4b.axhline(1.0, color='k', lw=0.5, linestyle=':')
+        ax4b.set_xlabel('Epoch'); ax4b.set_ylabel('R2_linmap')
+        ax4b.set_title('Aug state convergence (R2_linmap vs delta_a)')
+        ax4b.legend(fontsize=8); ax4b.grid(True)
+        ax4b.set_ylim([-0.1, 1.05])
+
+        fig4.suptitle(f'Training convergence (NX_ANN={NX_ANN})')
+        fig4.tight_layout()
+        fig4.savefig(os.path.join(save_dir, f'gantry_convergence_{rid}.png'), dpi=150)
+
     plt.close('all')
 
     # ── Results npz ─────────────────────────────────────────────────────────
@@ -508,6 +581,12 @@ def evaluate_and_save(fit_sys, hp, rid):
         if HAS_ORACLE:
             save_dict['y_hat_xlog'] = y_hat_xlog
             save_dict['nrms_xlog'] = nrms_xlog
+        if diag_conv is not None:
+            save_dict['diag_conv_epochs']    = diag_conv['epochs']
+            save_dict['diag_conv_r2_raw']    = diag_conv['r2_raw']
+            save_dict['diag_conv_r2_linmap'] = diag_conv['r2_linmap']
+        if baseline_nrms is not None:
+            save_dict['baseline_nrms'] = baseline_nrms
         np.savez(os.path.join(save_dir, f'gantry_results_{rid}.npz'), **save_dict)
         print(f'Saved results: gantry_results_{rid}.npz')
 
@@ -534,12 +613,8 @@ def state_recovery_diagnostic(fit_sys, hp, rid, max_windows=2000):
     na, nb, na_right, nb_right = _get_encoder_dims(hp)
     fit_sys.eval()
 
-    # True physical states reconstructed from val measurements
-    # (same construction as the normalization statistics above)
-    pos_logical = (P_inv_T @ val_data.y.T).T                  # (N,3) THEORY: q = inv(P^T) y (measurement equation)
-    vel_logical = np.diff(pos_logical, axis=0) * fs           # HEURISTIC: backward FD, exact only for noise-free data
-    vel_logical = np.vstack([vel_logical[:1], vel_logical])   # (N,3)
-    x_true = np.hstack([pos_logical, vel_logical]).astype(DTYPE_NP)          # (N,6)
+    # True physical states from augmented simulation mat file (more accurate than P_inv+FD)
+    x_true = val_x_logical.astype(DTYPE_NP)                                  # (N,6) x_logical from mat
     x_true_norm = (x_true - x_mean.flatten()) / std_x.flatten()              # (N,6)
 
     # Encoder estimates. deepSI hist convention (na_right=0): ypast = y[k-na:k],
@@ -587,11 +662,186 @@ def state_recovery_diagnostic(fit_sys, hp, rid, max_windows=2000):
     print('  R2_linmap low              -> information absent from encoder state;')
     print('  R2_raw_lag1 > R2_raw       -> encoder aligned to k-1 (one-sample lag)')
 
+    # --- Augmented state R2 vs delta_a / vdelta_a ---
+    r2_aug_raw, r2_aug_lin = aug_state_r2(fit_sys, hp)
+    aug_labels = ['delta_a  ', 'vdelta_a ']
+    aug_notes  = ['(mat file)', '(FD estimate)']
+    print('\n=== Augmented state R2 vs saved GT (delta_a/vdelta_a from mat file) ===')
+    print(f'  {"state":<12s}  {"R2_raw":>10s}  {"R2_linmap":>10s}  note')
+    for ch in range(hp['NX_ANN']):
+        lbl  = aug_labels[ch] if ch < len(aug_labels) else f'x_ann[{ch}]'
+        note = aug_notes[ch]  if ch < len(aug_notes)  else ''
+        print(f'  {lbl}  {r2_aug_raw[ch]:+10.4f}  {r2_aug_lin[ch]:+10.4f}  {note}')
+    print('  R2_linmap ~ 1 -> augmented state captured MSD dynamics')
+    print('  R2_linmap ~ 0 -> augmented state did not learn delta_a')
+
     if save_flag:
         np.savez(os.path.join(save_dir, f'gantry_state_recovery_{rid}.npz'),
                  r2_raw=r2_raw, r2_lin=r2_lin, r2_lag=r2_lag,
-                 W=W, k_ix=k_ix, x_hat=x_hat, x_true_norm=xt)
+                 W=W, k_ix=k_ix, x_hat=x_hat, x_true_norm=xt,
+                 r2_aug_raw=r2_aug_raw, r2_aug_lin=r2_aug_lin)
         print(f'Saved state recovery diagnostic: gantry_state_recovery_{rid}.npz')
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## compute_baseline_fp_nrms
+## ═══════════════════════════════════════════════════════════════════════════════
+
+def compute_baseline_fp_nrms(hp):
+    """Simulate baseline FP model (no MSD, no ANN) on val data.
+
+    Runs Gantry_State_Block alone (zero ANN contribution) starting from the
+    true initial state (val_x_logical[0] from the augmented simulation mat file).
+    Compares to val_data.y which contains the augmented simulation output
+    (y WITH MSD effect). The NRMS gap measures how much the hidden MSD
+    degrades the baseline-only prediction -- the trained augmented model must
+    beat this to justify augmentation.
+
+    Returns:
+        nrms_baseline  (ny,)  per-channel NRMS
+        y_hat_baseline (N, ny) simulated y in physical units [m]
+    """
+    phy_block = Gantry_State_Block(
+        Y_op=Y_OP, std_x=std_x, std_u=std_u,
+        x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
+        up_sample=hp['up_sample'],
+    ).to(DTYPE_PT)
+    phy_block.eval()
+
+    # Start from true initial state (from augmented sim mat file)
+    x0_phys   = val_x_logical[0].astype(DTYPE_NP)
+    x_norm_np = (x0_phys - x_mean.flatten()) / std_x.flatten()  # (NX_PHYS,)
+
+    u_val_norm = ((val_data.u - u_mean.flatten()) / std_u.flatten()).astype(DTYPE_NP)
+
+    y_hat_list = []
+    with torch.no_grad():
+        for t in range(len(val_data.u)):
+            u_norm_np = u_val_norm[t]
+
+            # Output: y_norm = Cd_norm @ x_norm + Dd_np @ u_norm (Dd_np ~ 0)
+            y_norm = Cd_norm @ x_norm_np + Dd_np @ u_norm_np   # (ny,)
+            y_phys = y_norm * ystd + y0
+            y_hat_list.append(y_phys)
+
+            # State transition: x_{k+1} = phy_block(x_k, u_k)
+            x_t = torch.tensor(x_norm_np, dtype=DTYPE_PT).view(1, NX_PHYS, 1)
+            u_t = torch.tensor(u_norm_np, dtype=DTYPE_PT).view(1, nu, 1)
+            z   = torch.cat([x_t, u_t], dim=1)     # (1, NX_PHYS+nu, 1)
+            x_norm_next = phy_block(z)              # (1, NX_PHYS, 1) or (1, NX_PHYS)
+            x_norm_np = x_norm_next.view(NX_PHYS).cpu().numpy()
+
+    y_hat = np.array(y_hat_list, dtype=DTYPE_NP)   # (N, ny)
+    y_ref  = val_data.y
+    nrms   = np.sqrt(((y_hat - y_ref)**2).mean(axis=0)) / ystd
+
+    print('\n=== Baseline FP model sim-NRMS (no MSD, reference to beat) ===')
+    for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
+        print(f'  {lbl}: {nrms[ch]:.4f}')
+
+    return nrms, y_hat
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## aug_state_r2  (lightweight, reused during convergence tracking)
+## ═══════════════════════════════════════════════════════════════════════════════
+
+def aug_state_r2(fit_sys, hp):
+    """Encoder augmented state R2 vs delta_a / vdelta_a from mat file.
+
+    Runs the encoder on strided validation windows and computes:
+      R2_raw    -- direct comparison (encoder output vs normalized GT)
+      R2_linmap -- best affine map from ALL encoder outputs to GT channel
+                   (catches arbitrary scale/offset, shows information content)
+
+    Both quantities returned as arrays of shape (NX_ANN,).
+    """
+    NX_ANN = hp['NX_ANN']
+    na, nb, na_right, nb_right = _get_encoder_dims(hp)
+    fit_sys.eval()
+
+    val_norm = fit_sys.norm.transform(val_data)
+    yn = np.ascontiguousarray(val_norm.y, dtype=DTYPE_NP)
+    un = np.ascontiguousarray(val_norm.u, dtype=DTYPE_NP)
+    N  = len(yn)
+    k0 = max(na, nb) + 1
+    stride = max(1, (N - k0) // 2000)    # HEURISTIC: cap to ~2000 windows for speed
+    k_ix = np.arange(k0, N, stride)
+
+    ypast = np.stack([yn[k - na : k + na_right] for k in k_ix])
+    upast = np.stack([un[k - nb : k + nb_right] for k in k_ix])
+    with torch.no_grad():
+        x_hat = fit_sys.encoder(
+            torch.tensor(upast, dtype=DTYPE_PT),
+            torch.tensor(ypast, dtype=DTYPE_PT),
+        ).numpy()   # (Nk, NX_PHYS + NX_ANN)
+
+    x_ann = x_hat[:, NX_PHYS:]                    # (Nk, NX_ANN)
+
+    # Normalize GT so encoder (dimensionless) and GT are on comparable axes
+    gt_raw  = val_x_aug[k_ix]                     # (Nk, NX_ANN) physical units
+    gt_mean = gt_raw.mean(axis=0)
+    gt_std  = gt_raw.std(axis=0) + 1e-8
+    gt_norm = (gt_raw - gt_mean) / gt_std          # (Nk, NX_ANN) normalized
+
+    def _r2(ref, est):
+        ss_res = ((ref - est)**2).sum(axis=0)
+        ss_tot = ((ref - ref.mean(axis=0))**2).sum(axis=0)
+        return 1.0 - ss_res / (ss_tot + 1e-12)
+
+    r2_raw = _r2(gt_norm, x_ann)
+
+    # Best affine map: gt_norm ~ [x_ann_all_channels, 1] @ W (per GT channel)
+    # THEORY: ordinary least squares -- uses all NX_ANN encoder channels jointly
+    A_aug = np.hstack([x_ann, np.ones((len(x_ann), 1), dtype=DTYPE_NP)])
+    W_aug, *_ = np.linalg.lstsq(A_aug, gt_norm, rcond=None)
+    r2_lin = _r2(gt_norm, A_aug @ W_aug)
+
+    return r2_raw, r2_lin
+
+
+## ═══════════════════════════════════════════════════════════════════════════════
+## train_model_with_diagnostics
+## ═══════════════════════════════════════════════════════════════════════════════
+
+def train_model_with_diagnostics(fit_sys, hp):
+    """Train in DIAG_INTERVAL-epoch chunks; record aug-state R2 at each checkpoint.
+
+    Calls train_model() repeatedly, runs aug_state_r2() after each chunk.
+    Returns bestfit (float) and diag_conv dict with convergence arrays.
+    """
+    total_epochs = hp['epochs']
+    n_chunks  = max(1, total_epochs // DIAG_INTERVAL)
+    remainder = total_epochs % DIAG_INTERVAL
+
+    diag_epochs  = []
+    diag_r2_raw  = []
+    diag_r2_lin  = []
+
+    print(f'\nTraining {total_epochs} epochs in {n_chunks} chunks of {DIAG_INTERVAL} '
+          f'(+{remainder} remainder), NX_ANN={hp["NX_ANN"]}')
+
+    for chunk in range(n_chunks):
+        epochs_this = DIAG_INTERVAL + (remainder if chunk == n_chunks - 1 else 0)
+        bestfit = train_model(fit_sys, hp, epochs=epochs_this)
+
+        fit_sys.eval()
+        r2_raw, r2_lin = aug_state_r2(fit_sys, hp)
+        epoch_now = int(fit_sys.epoch_id[-1]) if len(fit_sys.epoch_id) > 0 else (chunk + 1) * epochs_this
+        diag_epochs.append(epoch_now)
+        diag_r2_raw.append(r2_raw.copy())
+        diag_r2_lin.append(r2_lin.copy())
+
+        r2_str = '  '.join([f'{hp_name}={r2_lin[i]:+.4f}'
+                            for i, hp_name in enumerate(['delta_a', 'vdelta_a'][:hp['NX_ANN']])])
+        print(f'  [epoch {epoch_now:4d}]  bestfit={bestfit:.5f}  R2_linmap: {r2_str}')
+
+    diag_conv = dict(
+        epochs   = np.array(diag_epochs),
+        r2_raw   = np.array(diag_r2_raw),     # (n_chunks, NX_ANN)
+        r2_linmap= np.array(diag_r2_lin),     # (n_chunks, NX_ANN)
+    )
+    return bestfit, diag_conv
 
 
 ## ═══════════════════════════════════════════════════════════════════════════════
@@ -729,7 +979,7 @@ else:
     print(f"  USE_HYBRID_ENCODER: {USE_HYBRID_ENCODER}")
     print(f"  save_dir:           {save_dir}")
     print(f"  NF_SECONDS:         {NF_SECONDS}")
-    print(f"  NANB_SECONDS:       {NANB_SECONDS}")
+    print(f"  na_nb (samples):    {DEFAULT_HP['na_nb']}  ({DEFAULT_HP['na_nb']/FS_NEW*1000:.2f} ms)")
     print(f"  Sampling rate:      {FS_NEW} Hz (D={D})")
     print(f"  Dtype:              {'float64' if USE_F64 else 'float32'}")
     print(f"  USE_OPTUNA:         {USE_OPTUNA}")
@@ -741,10 +991,14 @@ else:
     np.random.seed(SEED)
     torch.manual_seed(SEED)
     fit_sys = build_model(DEFAULT_HP)
-    bestfit = train_model(fit_sys, DEFAULT_HP)
+
+    print('\nComputing baseline FP NRMS (fixed reference, no MSD)...')
+    baseline_nrms, _ = compute_baseline_fp_nrms(DEFAULT_HP)
+
+    bestfit, diag_conv = train_model_with_diagnostics(fit_sys, DEFAULT_HP)
     print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
 
-    evaluate_and_save(fit_sys, DEFAULT_HP, run_id)
+    evaluate_and_save(fit_sys, DEFAULT_HP, run_id, diag_conv=diag_conv, baseline_nrms=baseline_nrms)
     state_recovery_diagnostic(fit_sys, DEFAULT_HP, run_id)
 
     # Gradient norm snapshot (after evaluation, non-critical)
