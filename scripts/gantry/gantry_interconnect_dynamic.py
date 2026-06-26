@@ -231,20 +231,22 @@ def build_model(hp):
         x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
         up_sample=hp['up_sample'],
     ).to(DTYPE_PT)
-    # CHANGED: output augmentation -- y = Cd@x_phys + C_aug@x_aug (D-065).
-    # Gradient path: loss -> y -> C_aug -> x_aug -> ANN. Never passes through
-    # A_phys integrators (|z|=1 at 4kHz, diag14). Without this, ANN->x_aug is
-    # unobservable because y=Cd@x_phys ignores x_aug (diag11 T1: ANN grad=0).
-    # Parameterized so C_aug trains jointly with the ANN.
-    # HEURISTIC: C_aug[2,0]=1e-2 (Y <- delta_a): absorber primarily displaces
-    # Y axis; 1e-2 keeps the init contribution sub-percent of normalized output
-    # (ANN is zero-init, encoder x_aug is O(1) normalized). Verified by diag15.
+    # CHANGED: two-block output (D-065, corrected per Jan's journal pattern diag17).
+    # out_phys = Linear_Output_Block        -> Cd_norm in register_buffer, cannot train.
+    # out_aug  = Parameterized_Linear_Output_Block -> only C_aug is nn.Parameter.
+    # Both connect additively to y (Interconnect default for output signals, diag17).
+    # Previous impl used Parameterized(C=[Cd_norm|C_aug_init]) which made Cd_norm an
+    # nn.Parameter -> Cd drifted, causing 272x val blowup in 5 steps (diag17 T0).
+    # HEURISTIC: C_aug_init[2,0]=1e-2 (Y <- delta_a): absorber primarily displaces
+    # Y axis; 1e-2 keeps init contribution sub-percent of normalized output. diag15.
     C_aug_init = np.zeros((ny, NX_ANN), dtype=DTYPE_NP)
     C_aug_init[2, 0] = 1e-2   # HEURISTIC: Y <- delta_a
-    C_full     = np.hstack([Cd_norm, C_aug_init])         # (ny, nxd)
-    out_block  = Parameterized_Linear_Output_Block(C=C_full, D=Dd_np, flag_loss_reg=False)
+    out_phys = Linear_Output_Block(C=Cd_norm, D=Dd_np)
+    out_aug  = Parameterized_Linear_Output_Block(
+        C=C_aug_init, D=np.zeros((ny, nu), dtype=DTYPE_NP), flag_loss_reg=False)
     ic.add_block(phy_block)
-    ic.add_block(out_block)
+    ic.add_block(out_phys)
+    ic.add_block(out_aug)
 
     _act = torch.nn.Identity if ANN_ACTIVATION == 'linear' else torch.nn.Tanh
     AUG_IX = np.arange(NX_PHYS, nxd)   # augmented state indices [6, 7]
@@ -266,8 +268,12 @@ def build_model(hp):
     ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
     ic.connect_block_signals(phy_block, ["u"], [])
     ic.connect_signals(phy_block, "xp", "additive", expansion_matrix(PHY_IX, nxd))
-    ic.connect_signals("x", out_block, "concat", selection_matrix(np.arange(nxd), nxd))  # CHANGED: full x (was PHY_IX)
-    ic.connect_block_signals(out_block, ["u"], ["y"])
+    # Physical: x_phys + u -> y (additive)
+    ic.connect_signals("x", out_phys, "concat", selection_matrix(PHY_IX, nxd))
+    ic.connect_block_signals(out_phys, ["u"], ["y"])
+    # Augmented: x_aug + u -> y (additive; D_aug init=zeros so u contribution starts at 0)
+    ic.connect_signals("x", out_aug, "concat", selection_matrix(AUG_IX, nxd))
+    ic.connect_block_signals(out_aug, ["u"], ["y"])
 
     fit_sys = SSE_Interconnect(
         interconnect=ic, na=na, nb=nb,
