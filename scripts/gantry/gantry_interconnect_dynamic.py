@@ -231,13 +231,25 @@ def build_model(hp):
         x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
         up_sample=hp['up_sample'],
     ).to(DTYPE_PT)
-    out_block = Linear_Output_Block(C=Cd_norm, D=Dd_np)
+    # CHANGED: output augmentation -- y = Cd@x_phys + C_aug@x_aug (D-065).
+    # Gradient path: loss -> y -> C_aug -> x_aug -> ANN. Never passes through
+    # A_phys integrators (|z|=1 at 4kHz, diag14). Without this, ANN->x_aug is
+    # unobservable because y=Cd@x_phys ignores x_aug (diag11 T1: ANN grad=0).
+    # Parameterized so C_aug trains jointly with the ANN.
+    # HEURISTIC: C_aug[2,0]=1e-2 (Y <- delta_a): absorber primarily displaces
+    # Y axis; 1e-2 keeps the init contribution sub-percent of normalized output
+    # (ANN is zero-init, encoder x_aug is O(1) normalized). Verified by diag15.
+    C_aug_init = np.zeros((ny, NX_ANN), dtype=DTYPE_NP)
+    C_aug_init[2, 0] = 1e-2   # HEURISTIC: Y <- delta_a
+    C_full     = np.hstack([Cd_norm, C_aug_init])         # (ny, nxd)
+    out_block  = Parameterized_Linear_Output_Block(C=C_full, D=Dd_np, flag_loss_reg=False)
     ic.add_block(phy_block)
     ic.add_block(out_block)
 
     _act = torch.nn.Identity if ANN_ACTIVATION == 'linear' else torch.nn.Tanh
+    AUG_IX = np.arange(NX_PHYS, nxd)   # augmented state indices [6, 7]
     ann_block = Static_ANN_Block(
-        nz=nxd + nu, nw=nxd,
+        nz=nxd + nu, nw=NX_ANN,         # CHANGED: nw=NX_ANN (was nxd) — ANN outputs only to augmented states
         n_nodes_per_layer=hp['n_nodes_per_layer'],
         n_hidden_layers=hp['n_hidden_layers'],
         net=zero_init_feed_forward_nn,
@@ -245,11 +257,16 @@ def build_model(hp):
     )
     ic.add_block(ann_block)
 
-    ic.connect_block_signals(ann_block, ["x", "u"], ["xp"])
+    # CHANGED: route ANN output only to augmented state rows [NX_PHYS:nxd] via expansion_matrix,
+    # matching Jan's journal approach (msd_ndof_interconnect_fit.py line 203-208).
+    # Previously connect_block_signals routed ANN to all nxd states, allowing the ANN to
+    # corrupt physical state dynamics and destabilise the near-unit-circle gantry eigenvalues.
+    ic.connect_block_signals(ann_block, ["x", "u"], [])
+    ic.connect_signals(ann_block, "xp", "additive", expansion_matrix(AUG_IX, nxd))
     ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
     ic.connect_block_signals(phy_block, ["u"], [])
     ic.connect_signals(phy_block, "xp", "additive", expansion_matrix(PHY_IX, nxd))
-    ic.connect_signals("x", out_block, "concat", selection_matrix(PHY_IX, nxd))
+    ic.connect_signals("x", out_block, "concat", selection_matrix(np.arange(nxd), nxd))  # CHANGED: full x (was PHY_IX)
     ic.connect_block_signals(out_block, ["u"], ["y"])
 
     fit_sys = SSE_Interconnect(
