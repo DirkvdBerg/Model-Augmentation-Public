@@ -445,16 +445,19 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
     x_enc_ann[cheat_n:]  = x_enc_norm[NX_PHYS:nxd, :].T
 
     nrms_enc = np.sqrt(((y_hat_enc[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0)) / ystd
+    rms_enc  = nrms_enc * ystd   # [m]
     if baseline_nrms is not None:
+        rms_baseline = baseline_nrms * ystd   # [m]
         print('\n=== Sim-NRMS comparison: augmented model vs baseline FP ===')
         for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
             improv = 100.0 * (baseline_nrms[ch] - nrms_enc[ch]) / (baseline_nrms[ch] + 1e-12)
-            print(f'  {lbl}:  augmented={nrms_enc[ch]:.4f}  baseline_FP={baseline_nrms[ch]:.4f}'
-                  f'  improvement={improv:+.1f}%')
+            print(f'  {lbl}:  augmented={nrms_enc[ch]:.4f} ({rms_enc[ch]*1e6:.1f} µm)  '
+                  f'baseline_FP={baseline_nrms[ch]:.4f} ({rms_baseline[ch]*1e6:.1f} µm)  '
+                  f'improvement={improv:+.1f}%')
     else:
         print('\n=== Encoder-initialised sim-NRMS ===')
         for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
-            print(f'  {lbl}: {nrms_enc[ch]:.4f}')
+            print(f'  {lbl}: {nrms_enc[ch]:.4f}  ({rms_enc[ch]*1e6:.1f} µm)')
 
     ann_rms_enc = np.sqrt((x_enc_ann[cheat_n:] ** 2).mean(axis=0))
     print('\n=== ANN latent state RMS ===')
@@ -758,9 +761,10 @@ def compute_baseline_fp_nrms(hp):
     y_ref  = val_data.y
     nrms   = np.sqrt(((y_hat - y_ref)**2).mean(axis=0)) / ystd
 
+    rms = nrms * ystd   # [m]
     print('\n=== Baseline FP model sim-NRMS (no MSD, reference to beat) ===')
     for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
-        print(f'  {lbl}: {nrms[ch]:.4f}')
+        print(f'  {lbl}: {nrms[ch]:.4f}  ({rms[ch]*1e6:.1f} µm)')
 
     return nrms, y_hat
 
