@@ -77,7 +77,7 @@ DEFAULT_HP = dict(
     na_nb=0,          # set below via Jan's formula
     batch_size=256,
     lr=1e-4,
-    epochs=10,
+    epochs=40,
 )
 DEFAULT_HP['na_nb'] = (NX_PHYS + DEFAULT_HP['NX_ANN']) * 2 + 1   # THEORY: nxd*2+1 (Jan's standard)
 
@@ -202,9 +202,9 @@ os.makedirs(save_dir, exist_ok=True)
 def _get_encoder_dims(hp):
     """Return (na, nb, na_right, nb_right) consistent with build_model logic."""
     if ENCODER_INIT == 'linear_map':
-        na = 4 * NX_PHYS + 1
+        na = hp.get('na_nb', 2 * (NX_PHYS + hp['NX_ANN']) + 1)  # THEORY: nxd*2+1 (Jan's standard)
         nb = na
-        na_right = 1
+        na_right = 1   # reconstructability map uses y(k), so window is [k-na, k]
         nb_right = 1
     else:
         na = hp.get('na_nb', 2 * (NX_PHYS + hp['NX_ANN']) + 1)
@@ -219,9 +219,8 @@ def build_model(hp):
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
 
-    # Encoder history: for linear_map, use Jan's 4*nx+1 rule; otherwise time-based
-    # HEURISTIC: Jan's rule of thumb na=4*nx+1=25 for nx=6; na_right=1 needed so
-    # reconstructability map can use y(k) to compute x(k).
+    # Encoder history: na=nb=nxd*2+1 (Jan's standard, nxd=NX_PHYS+NX_ANN).
+    # For linear_map, na_right=1 so reconstructability map can use y(k) to compute x(k).
     na, nb, na_right, nb_right = _get_encoder_dims(hp)
 
     ic = Interconnect(nxd, nu, ny, debugging=False)
@@ -524,7 +523,9 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
     fig2.tight_layout()
     fig2.savefig(os.path.join(save_dir, f'gantry_simulation_{rid}.png'), dpi=150)
 
-    # Plot 3: ANN latent state trajectories
+    # Plot 3: ANN latent state trajectories vs ground-truth absorber states
+    aug_gt_labels  = ['delta_a [m]', 'vdelta_a [m/s]']
+    aug_gt_names   = ['delta_a', 'vdelta_a']
     if NX_ANN == 1:
         fig3, axes3 = plt.subplots(1, 1, figsize=(12, 3), sharex=True)
         axes3 = [axes3]
@@ -532,12 +533,25 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
         fig3, axes3 = plt.subplots(NX_ANN, 1, figsize=(12, 4), sharex=True)
     for ch, ax in enumerate(axes3):
         ax.plot(t_val, x_enc_ann[:, ch], 'C0', lw=0.8,
-                label=f'Encoder-init (RMS={ann_rms_enc[ch]:.2e})')
+                label=f'x_ann[{NX_PHYS+ch}] (RMS={ann_rms_enc[ch]:.2e})')
         ax.axvspan(t_val[0], cheat_t, alpha=0.10, color='steelblue')
         ax.axvline(cheat_t, color='steelblue', linestyle='--', lw=0.8)
-        ax.set_ylabel(f'x[{NX_PHYS+ch}]'); ax.legend(fontsize=7); ax.grid(True)
+        ax.set_ylabel(f'x[{NX_PHYS+ch}] (dim-less)', color='C0')
+        ax.tick_params(axis='y', labelcolor='C0')
+        if ch < len(aug_gt_labels):
+            ax2 = ax.twinx()
+            ax2.plot(t_val, val_x_aug[:, ch], 'C1', lw=0.8, alpha=0.7,
+                     label=f'GT {aug_gt_names[ch]}')
+            ax2.set_ylabel(aug_gt_labels[ch], color='C1')
+            ax2.tick_params(axis='y', labelcolor='C1')
+            lines1, labs1 = ax.get_legend_handles_labels()
+            lines2, labs2 = ax2.get_legend_handles_labels()
+            ax.legend(lines1 + lines2, labs1 + labs2, fontsize=7, loc='upper right')
+        else:
+            ax.legend(fontsize=7)
+        ax.grid(True)
     axes3[-1].set_xlabel('Time [s]')
-    fig3.suptitle(f'ANN latent states x[{NX_PHYS}:{nxd}] (dimensionless)')
+    fig3.suptitle(f'ANN latent states x[{NX_PHYS}:{nxd}] vs GT absorber (dimensionless vs physical)')
     fig3.tight_layout()
     fig3.savefig(os.path.join(save_dir, f'gantry_ann_states_{rid}.png'), dpi=150)
 
@@ -588,6 +602,7 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
             epoch_id=epoch_id_full, loss_val=loss_val_full, loss_train=loss_train_full,
             # Per-channel metrics
             nrms_enc=nrms_enc, x_enc_phys=x_enc_phys, x_enc_ann=x_enc_ann,
+            val_x_aug=val_x_aug,
             # Normalization constants (for reconstruction)
             std_x=std_x, x_mean=x_mean, std_u=std_u, u_mean=u_mean,
             ystd=ystd, y0=y0, Cd_norm=Cd_norm, Dd_np=Dd_np,
