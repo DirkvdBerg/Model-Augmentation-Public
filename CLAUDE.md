@@ -1,5 +1,15 @@
 # CLAUDE.md — Project Reference
 
+## Code Quote Verification (MANDATORY)
+Before quoting any code from an external file with a specific line number claim:
+1. Write the intended quote to `/tmp/quote.txt` via Bash
+2. Run: `conda run -n GraduationProject python scripts/verify_quote.py <file> <start> <end> /tmp/quote.txt`
+3. The shell output MUST appear in the conversation BEFORE the quote
+4. Only proceed if the script prints MATCH OK — never quote if MISMATCH
+5. Never use Mode A (no quote file) for making claims — that is not verification
+
+The user can re-run the same command with `! python scripts/verify_quote.py ...` to independently verify.
+
 ## Hard Constraints
 - `kamtin-fp-model/` — READ ONLY, never modify. All Python must conform to it.
 - Log design decisions in `docs/decisions.md` BEFORE implementing non-trivial choices.
