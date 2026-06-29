@@ -1601,6 +1601,103 @@ all 6 constants. `gantry_interconnect_dynamic.py` must be updated to use
 
 ---
 
+### [D-056] Narrowband multisine amplitude uses 5% of trajectory RMS, not 40%
+**Date**: 2026-06-23
+**What**: When `MULTISINE_BAND == 'narrowband'` (130–180 Hz), `force_cap_frac` is 0.05 instead of 0.40.
+**Why**: The 40% heuristic was calibrated for broadband excitation where the multisine overlaps with trajectory frequency content (1–7 Hz or 1–200 Hz). For narrowband at 130–180 Hz, the trajectory has zero spectral content, so 40% of trajectory RMS forces is applied entirely in a band where it has no competition — causing the multisine to dominate the total force. The MSD resonance provides Q=10 amplification, so 5% (~10–30 N RMS) still yields 2–10 µm of delta_a, which is measurable. Using 40% produced 100–200 N RMS of narrowband force, far exceeding what is needed.
+**Ruled out**: Absolute cap (Option B) — depends on knowing force levels per experiment in advance. Target delta_a SNR (Option C) — requires noise floor characterisation not yet done.
+**Constrains**: If `force_cap_frac` is ever made a parameter, narrowband must remain at 5% unless delta_a SNR is verified to be sufficient at lower amplitudes.
+
+---
+
+### [D-057] Narrowband MIMO floor = force_cap_frac × max(traj_rms)
+**Date**: 2026-06-23
+**What**: After the per-channel 5% rule and inactive_frac, apply `amp_ch = max(amp_ch, force_cap_frac * max(traj_rms))` in narrowband mode only.
+**Why**: The per-channel 5% rule undersizes weak channels when one channel dominates (e.g. T1 Y-only: X channels get 0.1 N; T3 X-only: Y channel gets 1.1 N). The floor referenced to the dominant channel's RMS keeps all channels proportionate to the experiment's overall intensity without arbitrary constants. Acknowledged: T1/T5 still give small amplitudes (~0.6–0.95 N) and negligible MSD excitation (~20–30 nm delta_a), accepted because those experiments cover scheduling range, not MSD identification.
+**Ruled out**: Absolute floor (5 N) — arbitrary constant with no physical grounding. Per-channel skip based on symmetric-mode activity — excluded anti-symmetric excitation incorrectly.
+**Constrains**: T3, T4, T7, T10 carry the MSD identification burden. T1, T5 contribute scheduling and coupling data only.
+
+---
+
+---
+
+### [D-058] Telica real-data verification reads .log directly, no .mat conversion
+**Date**: 2026-06-23
+**What**: `telica_loader.py` reads Telica `iter*.log` files directly and returns
+`(u, q1, fs)` matching `precompute._load_trajectory`'s contract. `run_telica_param_recovery.py`
+monkey-patches `precompute._load_trajectory` and `compute_rmse_baseline_metrics` before
+calling `train_param_recovery.train()` without modifying either original file.
+**Why**: Converting to intermediate `.mat` files adds a redundant step with no benefit — Python
+can read the `.log` files directly. Monkey-patching keeps both original scripts untouched.
+**Ruled out**: (1) Intermediate `.mat` conversion — unnecessary overhead. (2) Adding a Telica
+entry to `_DATASETS` in `train_param_recovery.py` — modifies a shared file for a single use case.
+**Constrains**: The loader must always return `(u, q1, fs)` with shapes `(1, T, 3)`, `(T, 3)`,
+`float`. If `precompute._load_trajectory` signature changes, `telica_loader.py` must match it.
+
+### [D-059] Telica force input is MF30 kept in raw ci units; I_max unknown without Telica.mat
+**Date**: 2026-06-23 (corrected 2026-06-23)
+**What**: `u = MF30 × 1.0` (raw ci) is used as the plant input. `_CI_TO_AMP = 1.0` — no
+conversion to Amperes. MF30 is the total current command (feedback + feedforward + cogging,
+after KF60 saturation).
+**Why**: `I_max = M82/100` (AccurET §23.2) is stored in `Telica.mat`, which is not in the repo.
+Without I_max the formula `I[A] = MF30 × I_max/32768` cannot be evaluated. The factor
+`1/481.882` (earlier logged) comes from the **old 5-column** Telica log format (commented out
+at MATLAB line 438); the active MATLAB code does **not** convert MF30 at all. The ci scale
+folds uniformly into all recovered mass/stiffness/damping parameters; NRMSE is position-based
+and is unaffected by the force-unit scale.
+**Ruled out**: (1) `1/481.882` (old 5-column format, not applicable to current logs).
+(2) Estimating I_max from drive specs (AccurET 400 15/40A → I_max≈40A gives ~49 A from raw
+MF30 values, which is physically impossible, confirming the estimate is wrong without Telica.mat).
+(3) Using `MF30 - MF230` as feedforward-only — valid only when cogging is off and saturation
+confirmed absent, which cannot be verified from the log files alone.
+**Constrains**: Recovered parameter values are in `[unit] × I_max/32768` — not in SI.
+Physical values recoverable once `Telica.mat` provides I_max.
+
+### [D-060] Structural validation criterion: NRMSE with 15%/30% thresholds from SEM literature
+**Date**: 2026-06-23
+**What**: Post-training evaluation computes NRMSE = RMSE / std(q1_measured) × 100% per channel.
+Decision rule: < 15% = structure compatible; > 30% = structural mismatch or force-signal problem;
+15-30% = ambiguous, inspect trajectory plot.
+**Why**: NRMSE is the scale-independent metric recommended for simulation error method (SEM)
+structural validation. Thresholds from Schoukens & Ljung (2011) and Paduart et al. (2018).
+Absolute RMSE [m] alone is not interpretable without knowing trajectory amplitude.
+**Ruled out**: Absolute RMSE threshold — depends on motion amplitude which varies per operating point.
+**Constrains**: NRMSE is computed against the full-trajectory simulation, not per-segment training loss.
+
+### [D-061] Telica native sampling rate = 10 kHz from AccurET PLTI; timestamps discarded
+**Date**: 2026-06-23
+**What**: `_NATIVE_FS = 10_000.0` Hz (fixed constant). Raw `.log` timestamps are discarded.
+Synthetic time axis is built from sample index: `t = arange(N) / _NATIVE_FS`, exactly matching
+MATLAB `runFDILCAllHostSwLog.m` line 92. Upsampling to `_FS_TARGET = 20_000.0` Hz is done by
+linear interpolation, matching MATLAB `interp1` default.
+**Why**: AccurET manual §1 (page 18): position-loop PLTI = 50 µs → FsHz = 1/(2×PLTI) = 10 kHz.
+Raw `.log` timestamps are host-side reception times (non-uniform artefact — burst at ~66 kHz
+during the first 125 ms, then ~200 Hz). Inferring fs from these timestamps gives ~411 Hz,
+which is wrong by a factor of 24. MATLAB explicitly discards them (line 92).
+**Ruled out**: Inferring fs from median timestamp difference — produces wildly wrong rate due
+to non-uniform host logging. Reading `_NATIVE_FS` from a header field — no such field exists.
+**Constrains**: Any code that processes Telica `.log` files must use `_NATIVE_FS = 10_000` Hz
+and build synthetic timestamps from sample index. Raw timestamps must never be used for resampling.
+
+### [D-062] Motion detection threshold 1e-9 µm; ILC data has no meaningful standstill to trim
+**Date**: 2026-06-23
+**What**: `_find_motion_start` uses threshold `> 1e-9` (post µm→m conversion, so effectively
+1e-15 m). In the ILC experiment, M0 has quantization noise ±0.012 µm from sample 1, triggering
+detection at sample index 1. Pre-motion samples to keep: `max(0, 1 - 500) = 0` → `trim_start = 0`
+→ all data is kept (T = 32 856 samples at 20 kHz = 1.64 s).
+**Why**: MATLAB `runFDILCAllHostSwLog.m` line 100 uses threshold `> 0` (any deviation from M0[0]).
+Python `> 1e-9` is equivalent: both trigger at sample 1 due to quantization noise. MATLAB then
+computes `startIdx = 1 - 500 - 1 = -499` (1-indexed); `(1:-499)=[]` is an empty range → nothing
+deleted. Python replicates: `trim_start = max(0, 1 - 500) = 0`. The ILC experiment parks the
+gantry at a fixed absolute setpoint; the relative M0 signal is near-zero throughout with only
+quantization noise — there is no true standstill period to discard.
+**Ruled out**: Threshold 0.5 µm (old version) — triggers at sample ~8218 (mid-ramp), discarding
+valid ILC data. Threshold 0 (exact MATLAB match) — identical outcome in practice because float
+quantization noise is always > 0.
+**Constrains**: If a different Telica log has a genuine standstill (non-ILC trajectory), the
+threshold still works: quantization noise will again trigger at sample ~1, and the 500-sample
+pre-motion window will be preserved. The logic is therefore general.
+
 ### [D-017] Convention fix in LinearInitEncoderWrapper
 
 **Date**: 2026-06-12
@@ -1629,5 +1726,56 @@ doesn't work because it assumes perfect pure-scaled reconstruction, which doesn'
 to LTI model error). Modifying `normalize_linear_ss_matrices` itself (would break other users).
 
 **Constrains**: All call sites of `LinearInitEncoderWrapper` must pass the 6 normalization
-constants. Old call sites (without constants) still work — convention fix is skipped when
+constants. Old call sites (without constants) still work -- convention fix is skipped when
 constants are None (backward compatible).
+
+---
+
+### [D-063] Epoch-0 diagnostic thresholds for augmented encoder (diag8)
+
+**Date**: 2026-06-23
+
+**Decision**: `diag8_aug_encoder_init.py` uses absolute NRMS thresholds for physical channels,
+and reports augmented channels (delta_a, vdelta_a) without a pass/fail check.
+
+Revised checks:
+- C1: all physical NRMS < 1.0 (encoder in-signal range)
+- C2: all velocity NRMS < 0.5 (W^b gives reasonable velocity estimates)
+- C3: output is finite (no NaN/Inf)
+- C4: all position NRMS < 0.2 (position tracking with ANN perturbation)
+
+**Why**: The original checks compared against `1.1 * max(analytical)` and `1.5 * analytical_pos`.
+The analytical P_inv baseline is kinematically exact -- positions are computed directly from y
+via P_inv, giving NRMS near machine zero. Any absolute threshold relative to that value is
+trivially violated by the ANN random-weight perturbation on W^b. Specifically, q3 analytical
+NRMS = 0.0 exactly, making `1.5 * 0.0 = 0` an impossible pass criterion.
+
+For the augmented channels (delta_a, vdelta_a): W^a is randomly initialized. delta_a signal
+std = 84 µm. Any random output will give NRMS >> 1. Checking NRMS < 1.0 at epoch 0 is
+testing a property that only emerges after training, not a property of initialization.
+
+**Ruled out**: Relative thresholds vs analytical; augmented-channel NRMS checks at epoch 0.
+
+**Constrains**: When comparing across training iterations, delta_a NRMS should decrease
+below 1.0. If it does not after training, it indicates W^a failed to learn the MSD state.
+The diag8 results (.npz file) can serve as the epoch-0 baseline for this comparison.
+
+---
+
+### [D-064] Encoder history na_nb = nxd*2+1 (Jan's standard formula)
+**Date**: 2026-06-23
+**What**: `na_nb` in `DEFAULT_HP` set to `(NX_PHYS + NX_ANN) * 2 + 1 = 17` samples (4.25 ms at 4 kHz), replacing the previous time-based `NANB_SECONDS = 0.025` (100 samples, 25 ms).
+**Why**: Jan's reference implementations (`msd_ndof_interconnect_dynamic.py`, `msd_ndof_interconnect_fit.py`) both use `na = nb = nxd * 2 + 1` as the principled minimum. The factor of 2 provides a margin over the observability lower bound (nxd outputs needed to reconstruct nxd states). Using a physically-motivated time window was longer than necessary and inconsistent with Jan's pipeline.
+**Ruled out**: `NANB_SECONDS = 0.025 s` (100 samples) — not principled; more than 6× Jan's formula without justification. Longer windows are not needed because W^b initialization already gives a good physical state estimate from short history.
+**Constrains**: If `NX_ANN` changes in `DEFAULT_HP`, `na_nb` updates automatically via the formula. The Optuna search range for `na_nb` should also be anchored around this formula, not a fixed sample count.
+
+---
+
+### [D-065] Output augmentation: y = Cd@x_phys + C_aug@x_aug with trainable C_aug
+**Date**: 2026-06-25
+**What**: Changed output equation from `y = Cd@x_phys` to `y = Cd@x_phys + C_aug@x_aug`. Replaced `Linear_Output_Block(C=Cd_norm)` with `Parameterized_Linear_Output_Block(C=[Cd_norm|C_aug_init], flag_loss_reg=False)` and changed the state selection from `PHY_IX` to `np.arange(nxd)` (all states).
+**Why**: Two constraints blocked training. Constraint 1: gantry has 2 DT poles exactly at |z|=1 (K[q1]=K[q3]=0, rigid-body integrators). ANN routed to any physical state row amplifies ~400x over nf=400 BPTT rollout, producing 800-1634x blowup in 1 gradient step (diag13). Constraint 2: with ANN routed to x_aug only and y=Cd@x_phys, the ANN output is unobservable -- (A_aug, C_aug=0) forms an unobservable pair, ANN gradient is identically zero (diag11 T1). Output augmentation resolves both: the gradient path loss->y->C_aug->x_aug->ANN never passes through A_phys, so Constraint 1 is bypassed. C_aug nonzero gives ANN a gradient path, resolving Constraint 2. Verified by diag15: T1 ANN grad = 3.5e-4 (vs 0 before), T2 val ratio = 1.03x at nf=400 (vs 800-1634x before).
+**Why Jan's approach (ANN->all states) does not apply**: Jan's MSD has min(1-|z|) = 4.4e-3 (all springs nonzero), amplification = 4.4x at nf=400. Gantry min(1-|z|) = 0 exactly, amplification = 400x. Jan's default is architecturally safe for MSD and architecturally unsafe for the gantry (diag14).
+**C_aug initialization**: `C_aug_init[2,0] = 1e-2` (Y channel receives delta_a weakly). Absorber is coupled to Y axis. Scale 1e-2 keeps the init ANN contribution sub-percent of normalized output. C_aug is trainable (`nn.Parameter` via `Parameterized_Linear_Output_Block`) so it grows during training.
+**Ruled out**: (1) ANN->velocity rows [3,4,5]+x_aug: velocities also near-unit-circle; T_vel test showed 836x blowup (diag13). (2) Fixed C_aug (register_buffer): ANN signal stays at 3.5e-4 permanently; C_aug must be trainable. (3) Gradient clipping: clip was inactive at nf=400 (grad_norm 0.26 < max_norm 1.0), so clipping cannot prevent the eigenvalue-amplification blowup (diag13 T_clip: 1634x with clip).
+**Constrains**: The 5-step stability test (diag15 T3) showed +14% val degradation when training on 1 trajectory. This is encoder overfitting to a single trajectory, not architectural instability -- the ANN gradient (3.5e-4) is 10000x smaller than the encoder gradient (3.67). Full training on all 8 trajectories is required to assess real convergence. Monitor C_aug magnitude during training: if it stays near 1e-2 after many epochs, the ANN/encoder may not be learning the absorber dynamics.
