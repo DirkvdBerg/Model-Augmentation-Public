@@ -43,8 +43,8 @@ Dots are replaced with underscores in MATLAB structs → `BHL_GTRX1_M0`.
 |---------|--------------------------------------|----------|------------------------|
 | `M0`    | Reference / setpoint position        | µm (raw counts × 1e-6) | metres |
 | `M2`    | Position error (tracking error)      | µm (raw counts × 1e-6) | metres |
-| `MF230` | Feedforward signal, 230 Hz filter    | raw current counts | A (× 1/481.882) |
-| `MF30`  | Feedforward signal, 30 Hz filter     | raw current counts | A (× 1/481.882) |
+| `MF230` | Feedforward signal, 230 Hz filter    | A (already in Amperes) | F[N] = MF230 × Kt |
+| `MF30`  | Total current command, 30 Hz filter  | A (already in Amperes) | F[N] = MF30 × Kt  |
 
 ### Full column list (25 columns)
 
@@ -114,6 +114,26 @@ kamtin-data/Data Telica/
         ├── xpos_-135_ypos120/
         └── xpos_-210_ypos-40/
 ```
+
+---
+
+## Unit conversions (confirmed from Telica.mat + runFDILCAllHostSwLog.m)
+
+| Signal | Raw unit | Conversion | Result |
+|--------|----------|------------|--------|
+| M0, M2 | µm (integer counts) | × 1e-6 | metres |
+| MF30, MF230 | A (already Amperes) | × Kt [N/A] | Newtons |
+
+Motor force constants (from `Telica.mat → MachineParam.Axes.{X,Y}.ElectronicHardwareInfo.Motor.MotorForceConst.Value`):
+- `Kt_X = 109 N/A` (applies to GTRX1 and GTRX2)
+- `Kt_Y = 77.6 N/A` (applies to GTRY)
+
+Native logging rate: **10,000 Hz** (from `FsHz = 1/(2×TsSec)` where `TsSec = 5e-5 s`, MATLAB line 30).  
+The `SamplingFrequency = 20000` in Telica.mat is the controller loop rate, not the logging rate.  
+Data is upsampled to 20 kHz via linear interpolation to match the simulation pipeline.
+
+Note: the 481.882 factor in `runFDILCAllHostSwLog.m` line 326 converts A→current-increments (ci)
+when **writing** the feedforward lookup table. It does NOT apply when reading the logged MF30/MF230 signals.
 
 ---
 
