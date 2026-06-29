@@ -38,6 +38,8 @@ if _HERE not in sys.path:
 import matplotlib
 matplotlib.use('Agg')   # non-interactive backend — safe for headless runs
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter as _FuncFormatter
+from datetime import datetime
 import torch
 
 from telica_loader import load_telica_log
@@ -52,6 +54,7 @@ from lpv_lfr_baseline.core.physics import P as _P, ts as _ts
 # Start with a single operating point and a single iteration file.
 # Change OP_FOLDER to switch operating point.
 OP_FOLDER = 'xpos_-60_ypos-40'
+OP_LABEL  = 'x = \u221260 mm,  y = \u221240 mm'   # update when OP_FOLDER changes
 
 _DATA_ROOT = os.path.join(
     _ROOT, 'kamtin-data', 'Data Telica', '06 40 mm XL 80 mm YL', 'train', OP_FOLDER
@@ -116,10 +119,106 @@ tr.W                 = None    # full segment per BPTT step
 
 # ── Training ──────────────────────────────────────────────────────────────────
 
-def _post_eval(block, traj_spec):
+# ── Plot helpers ──────────────────────────────────────────────────────────────
+
+def _apply_sci_fmt(ax):
+    """Format y-axis ticks as e-notation (e.g. 1.23e-04) in metres."""
+    ax.yaxis.set_major_formatter(_FuncFormatter(lambda x, _: f'{x:.2e}'))
+
+
+def _plot_loss_curve(save_dir, traj_id):
+    """Load history from the latest .pt in save_dir and plot training loss."""
+    import glob as _glob
+    pt_files = _glob.glob(os.path.join(save_dir, 'lfr_param_recovery_*.pt'))
+    if not pt_files:
+        print('  [loss curve] No .pt file found — skipping.')
+        return
+    latest_pt  = max(pt_files, key=os.path.getmtime)
+    data       = torch.load(latest_pt, map_location='cpu', weights_only=False)
+    history    = data.get('history', [])
+    run_id_pt  = data.get('run_id', 'unknown')
+    if not history:
+        print('  [loss curve] history key missing in .pt — skipping.')
+        return
+
+    epochs = [h['epoch']    for h in history]
+    losses = [h['mse_loss'] for h in history]
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.plot(epochs, losses, color='tab:blue', linewidth=1.0)
+    ax.set_xlabel('Epoch')
+    ax.set_ylabel('Normalised MSE loss')
+    ax.set_title(f'Training loss — {traj_id}')
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+
+    fig_path = os.path.join(save_dir, f'loss_curve_{traj_id}_{run_id_pt}.png')
+    fig.savefig(fig_path, dpi=150, bbox_inches='tight')
+    print(f'  Loss curve saved: {fig_path}')
+    plt.close(fig)
+
+
+def _plot_traj_comparison(t_s, q1_eval, y_sim, rmse_ch, nrmse_ch, rmse_tot,
+                           axes_lbl, traj_id, save_dir, metric, label, run_id):
+    """Trajectory comparison (Measured vs FP model).  metric: 'RMS' | 'NRMS'."""
+    fig, axs = plt.subplots(3, 1, figsize=(12, 8), sharex=True)
+    for i, lbl in enumerate(axes_lbl):
+        axs[i].plot(t_s.numpy(), q1_eval[:, i].numpy(),
+                    label='Measured', color='tab:blue', linewidth=0.8)
+        axs[i].plot(t_s.numpy(), y_sim[:, i].numpy(),
+                    label='FP model (sim)', color='tab:orange',
+                    linewidth=0.8, linestyle='--')
+        axs[i].set_ylabel(f'{lbl} [m]')
+        if metric == 'RMS':
+            axs[i].set_title(f'{lbl}: RMS = {rmse_ch[i].item():.2e} m', fontsize=9)
+        else:
+            axs[i].set_title(f'{lbl}: NRMSE = {nrmse_ch[i]:.1f}%', fontsize=9)
+        axs[i].legend(loc='upper right', fontsize=8)
+        axs[i].grid(True, alpha=0.3)
+        _apply_sci_fmt(axs[i])
+    axs[-1].set_xlabel('Time [s]')
+    fig.suptitle(
+        f'Telica gantry \u2014 {OP_LABEL} \u2014 {traj_id}\n'
+        f'{label.capitalize()}  |  Overall RMS = {rmse_tot:.2e} m'
+    )
+    fig.tight_layout()
+    fig_path = os.path.join(save_dir, f'trajectory_{metric}_{label}_{traj_id}_{run_id}.png')
+    fig.savefig(fig_path, dpi=150, bbox_inches='tight')
+    print(f'  Trajectory {metric} ({label}) saved: {fig_path}')
+    plt.close(fig)
+
+
+def _plot_residual(t_s, diff, rmse_ch, nrmse_ch, rmse_tot,
+                   axes_lbl, traj_id, save_dir, metric, label, run_id):
+    """Residual (y_sim − measured) per channel.  metric: 'RMS' | 'NRMS'."""
+    fig, axs = plt.subplots(3, 1, figsize=(12, 8), sharex=True)
+    for i, lbl in enumerate(axes_lbl):
+        axs[i].plot(t_s.numpy(), diff[:, i].numpy(),
+                    color='tab:red', linewidth=0.8, label='Residual')
+        axs[i].axhline(0, color='k', linewidth=0.5, linestyle='--')
+        axs[i].set_ylabel(f'{lbl} [m]')
+        if metric == 'RMS':
+            axs[i].set_title(f'{lbl}: RMS = {rmse_ch[i].item():.2e} m', fontsize=9)
+        else:
+            axs[i].set_title(f'{lbl}: NRMSE = {nrmse_ch[i]:.1f}%', fontsize=9)
+        axs[i].grid(True, alpha=0.3)
+        _apply_sci_fmt(axs[i])
+    axs[-1].set_xlabel('Time [s]')
+    fig.suptitle(
+        f'Residual \u2014 Telica gantry \u2014 {OP_LABEL} \u2014 {traj_id}\n'
+        f'{label.capitalize()}  |  Overall RMS = {rmse_tot:.2e} m'
+    )
+    fig.tight_layout()
+    fig_path = os.path.join(save_dir, f'residual_{metric}_{label}_{traj_id}_{run_id}.png')
+    fig.savefig(fig_path, dpi=150, bbox_inches='tight')
+    print(f'  Residual {metric} ({label}) saved: {fig_path}')
+    plt.close(fig)
+
+
+def _post_eval(block, traj_spec, label='best', run_id='unknown'):
     """
-    Compute per-channel NRMSE and save a trajectory comparison plot.
-    Called after tr.train() returns.
+    Compute per-channel RMS/NRMSE and save trajectory + residual plots.
+    label: 'baseline' (initial params) | 'best' (trained params).
 
     NRMSE thresholds (Schoukens & Ljung, Mech. Sys. Signal Process. 25(7), 2011;
                       Paduart et al., arXiv:1804.10758, 2018):
@@ -132,7 +231,7 @@ def _post_eval(block, traj_spec):
     traj_id  = traj_spec['id']
 
     print(f'\n{"=" * 60}')
-    print(f'Post-training structural validation  [{traj_id}]')
+    print(f'Structural validation  [{traj_id}]  [{label}]')
     print(f'{"=" * 60}')
 
     # Load full trajectory (fresh, undecomposed into segments)
@@ -146,7 +245,7 @@ def _post_eval(block, traj_spec):
 
     ts_tensor = torch.tensor(float(_ts), dtype=dtype)
 
-    # Simulate full trajectory open-loop with trained parameters
+    # Simulate full trajectory open-loop
     result = _run_no_grad(block, x0, u_eval, ts_tensor)
     y_sim  = result.Y[0].detach()   # (T, 3)  [m]
 
@@ -155,55 +254,64 @@ def _post_eval(block, traj_spec):
     y_sim   = y_sim[:T]
     q1_eval = q1_eval[:T]
 
-    # Per-channel RMSE and NRMSE
-    diff     = y_sim - q1_eval                                   # (T, 3)
-    rmse_ch  = diff.pow(2).mean(dim=0).sqrt()                    # (3,)  [m]
-    sigma_ch = q1_eval.std(dim=0).clamp(min=1e-9)               # (3,)  [m]
+    # Per-channel RMS and NRMSE
+    diff     = y_sim - q1_eval                                   # (T, 3)  [m]
+    rmse_ch  = diff.pow(2).mean(dim=0).sqrt()                    # (3,)    [m]
+    sigma_ch = q1_eval.std(dim=0).clamp(min=1e-9)               # (3,)    [m]
     # THEORY: NRMSE = RMSE / std(y_measured) × 100%
     #         (Schoukens & Ljung 2011 — scale-independent structural metric)
     nrmse_ch = (rmse_ch / sigma_ch * 100.0).tolist()            # [%]
-    rmse_tot = float(diff.pow(2).mean().sqrt().item())
+    rmse_tot = float(diff.pow(2).mean().sqrt().item())           # [m]
 
     axes_lbl = ['X1', 'X2', 'Y']
-    print(f'\n  {"Ch":<4}  {"RMSE [m]":>12}  {"NRMSE [%]":>10}  Verdict')
-    print(f'  {"-"*4}  {"-"*12}  {"-"*10}  {"-"*12}')
+    print(f'\n  {"Ch":<4}  {"RMS [m]":>14}  {"NRMSE [%]":>10}  Verdict')
+    print(f'  {"-"*4}  {"-"*14}  {"-"*10}  {"-"*12}')
     for i, lbl in enumerate(axes_lbl):
         n = nrmse_ch[i]
         verdict = 'GOOD (<15%)' if n < 15 else ('AMBIGUOUS' if n < 30 else 'POOR (>30%)')
-        print(f'  {lbl:<4}  {rmse_ch[i].item():>12.4e}  {n:>10.2f}  {verdict}')
-    print(f'\n  Overall RMSE : {rmse_tot:.4e} m')
-    print(f'  Thresholds   : NRMSE < 15% compatible | > 30% structural mismatch')
+        print(f'  {lbl:<4}  {rmse_ch[i].item():>14.4e}  {n:>10.2f}  {verdict}')
+    print(f'\n  Overall RMS : {rmse_tot:.4e} m')
+    print(f'  Thresholds  : NRMSE < 15% compatible | > 30% structural mismatch')
 
-    # ── Trajectory comparison plot ────────────────────────────────────────────
+    # ── Save eval data for replotting without rerunning ───────────────────────
     t_s = torch.arange(T).float() / fs
-
-    fig, axs = plt.subplots(3, 1, figsize=(12, 8), sharex=True)
-    for i, lbl in enumerate(axes_lbl):
-        axs[i].plot(t_s.numpy(), q1_eval[:, i].numpy() * 1e3,
-                    label='Measured', color='tab:blue', linewidth=0.8)
-        axs[i].plot(t_s.numpy(), y_sim[:, i].numpy() * 1e3,
-                    label='FP model (sim)', color='tab:orange',
-                    linewidth=0.8, linestyle='--')
-        axs[i].set_ylabel(f'{lbl} [mm]')
-        axs[i].set_title(f'{lbl}: NRMSE = {nrmse_ch[i]:.1f}%', fontsize=9)
-        axs[i].legend(loc='upper right', fontsize=8)
-        axs[i].grid(True, alpha=0.3)
-    axs[-1].set_xlabel('Time [s]')
-    fig.suptitle(
-        f'FP model vs Telica — {OP_FOLDER} — {traj_id}\n'
-        f'Overall RMSE = {rmse_tot:.4e} m  '
-        f'(X1: {nrmse_ch[0]:.1f}%  X2: {nrmse_ch[1]:.1f}%  Y: {nrmse_ch[2]:.1f}%)'
-    )
-    fig.tight_layout()
-
     os.makedirs(_SAVE_DIR, exist_ok=True)
-    fig_path = os.path.join(_SAVE_DIR, f'trajectory_comparison_{traj_id}.png')
-    fig.savefig(fig_path, dpi=150, bbox_inches='tight')
-    print(f'\n  Trajectory plot saved: {fig_path}')
-    plt.close(fig)
+    eval_data_path = os.path.join(_SAVE_DIR, f'eval_data_{label}_{traj_id}_{run_id}.pt')
+    torch.save({
+        't_s':      t_s,
+        'q1_eval':  q1_eval,
+        'y_sim':    y_sim,
+        'diff':     diff,
+        'rmse_ch':  rmse_ch,
+        'nrmse_ch': nrmse_ch,
+        'rmse_tot': rmse_tot,
+        'fs':       fs,
+        'label':    label,
+        'traj_id':  traj_id,
+        'run_id':   run_id,
+        'axes_lbl': axes_lbl,
+    }, eval_data_path)
+    print(f'  Eval data saved: {eval_data_path}')
+
+    # ── Plots ─────────────────────────────────────────────────────────────────
+    _plot_traj_comparison(t_s, q1_eval, y_sim, rmse_ch, nrmse_ch, rmse_tot,
+                          axes_lbl, traj_id, _SAVE_DIR, 'RMS',  label, run_id)
+    _plot_traj_comparison(t_s, q1_eval, y_sim, rmse_ch, nrmse_ch, rmse_tot,
+                          axes_lbl, traj_id, _SAVE_DIR, 'NRMS', label, run_id)
+    _plot_residual(t_s, diff, rmse_ch, nrmse_ch, rmse_tot,
+                   axes_lbl, traj_id, _SAVE_DIR, 'RMS',  label, run_id)
+    _plot_residual(t_s, diff, rmse_ch, nrmse_ch, rmse_tot,
+                   axes_lbl, traj_id, _SAVE_DIR, 'NRMS', label, run_id)
 
 
 if __name__ == '__main__':
+    run_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
+
+    # Baseline evaluation — initial (untrained) parameters
+    _init_block = _lfr_pb.ParameterizedLFRBlock(RMSE_baseline=1.0).to(dtype=tr.DTYPE)
+    _post_eval(_init_block, TRAJ_SPECS[0], label='baseline', run_id=run_id)
+    del _init_block
+
     block = tr.train(
         epochs=tr.EPOCHS,
         lr=tr.LR,
@@ -212,5 +320,6 @@ if __name__ == '__main__':
         norm_mode=tr.NORM_MODE,
     )
 
+    _plot_loss_curve(_SAVE_DIR, TRAJ_SPECS[0]['id'])
     # Evaluate the first (and typically only) training trajectory
-    _post_eval(block, TRAJ_SPECS[0])
+    _post_eval(block, TRAJ_SPECS[0], label='best', run_id=run_id)
