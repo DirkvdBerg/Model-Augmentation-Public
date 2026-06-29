@@ -67,6 +67,12 @@ TRAJ_SPECS = (
 
 # ── Patches ───────────────────────────────────────────────────────────────────
 
+# 0. Use TRUE Kamtin params as init (not detuned +-10% which only makes sense for
+#    simulation recovery tests). Patching the module-level name takes effect for all
+#    subsequent ParameterizedLFRBlock instantiations, including the one inside tr.train().
+import lpv_lfr_baseline.blocks.lfr_param_block as _lfr_pb
+_lfr_pb._DETUNED_PARAMS = _lfr_pb._TRUE_PARAMS
+
 # 1. Replace .mat loader with .log loader — same (u, q1, fs) return contract.
 _precompute._load_trajectory = load_telica_log
 
@@ -99,13 +105,13 @@ tr.DATASET       = f'telica_{OP_FOLDER}'
 #         ts_eff = _ts × 1 = 1/20000 s, matching the simulation pipeline.
 tr.FS_NEW            = 20_000
 tr.SEGMENT_LEN       = 650     # same as simulation default; reduce if trajectory too short
-tr.EPOCHS            = 5
-tr.LR                = 1e-3
+tr.EPOCHS            = 80
+tr.LR                = 1e-1
 tr.VALIDATION_INTERVAL = None  # no val set → LR scheduler disabled
 tr.NORM_MODE         = 'global'
 tr.FULL_COVERAGE     = True
 tr.OVERLAP_FRACTION  = 0.0
-tr.SPLIT_REG_WEIGHT  = 1e-2
+tr.SPLIT_REG_WEIGHT  = 0.0   # no regularization toward Kamtin params on real hardware
 tr.W                 = None    # full segment per BPTT step
 
 # ── Training ──────────────────────────────────────────────────────────────────
@@ -193,12 +199,18 @@ def _post_eval(block, traj_spec):
     os.makedirs(_SAVE_DIR, exist_ok=True)
     fig_path = os.path.join(_SAVE_DIR, f'trajectory_comparison_{traj_id}.png')
     fig.savefig(fig_path, dpi=150, bbox_inches='tight')
-    print(f'\n  Trajectory plot saved → {fig_path}')
+    print(f'\n  Trajectory plot saved: {fig_path}')
     plt.close(fig)
 
 
 if __name__ == '__main__':
-    block = tr.train()
+    block = tr.train(
+        epochs=tr.EPOCHS,
+        lr=tr.LR,
+        save_dir=_SAVE_DIR,
+        split_reg_weight=0.0,
+        norm_mode=tr.NORM_MODE,
+    )
 
     # Evaluate the first (and typically only) training trajectory
     _post_eval(block, TRAJ_SPECS[0])
