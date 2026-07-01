@@ -81,8 +81,17 @@ DEFAULT_HP = dict(
 )
 DEFAULT_HP['na_nb'] = (NX_PHYS + DEFAULT_HP['NX_ANN']) * 2 + 1   # THEORY: nxd*2+1 (Jan's standard)
 
-# Diagnostic interval: run aug-state R2 snapshot every N epochs during training
-DIAG_INTERVAL = 10
+# Curriculum nf schedule (CHyLL arXiv:2512.10117 protocol): (nf, epochs, validation_measure).
+# Windowed validation matches training nf so train/val loss are comparable at each stage.
+# Final sim-RMS stage continues training using dynamics learned at nf=400.
+NF_CURRICULUM = [
+    (25,   5, '25-step-average-RMS'),
+    (50,   5, '50-step-average-RMS'),
+    (100,  5, '100-step-average-RMS'),
+    (200,  5, '200-step-average-RMS'),
+    (400, 10, '400-step-average-RMS'),
+    (400, 10, 'sim-RMS'),
+]
 
 ## ═══════════════════════════════════════════════════════════════════════════════
 ## Data loading (run once)
@@ -239,10 +248,9 @@ def build_model(hp):
     ic.add_block(out_phys)
 
     _act = torch.nn.Identity if ANN_ACTIVATION == 'linear' else torch.nn.Tanh
-    AUG_IX     = np.arange(NX_PHYS, nxd)                                      # [6, 7]
-    VEL_AUG_IX = np.concatenate([np.arange(NX_PHYS // 2, NX_PHYS), AUG_IX])  # [3,4,5,6,7]
+    AUG_IX = np.arange(NX_PHYS, nxd)                                          # [6, 7]
     ann_block = Static_ANN_Block(
-        nz=nxd + nu, nw=len(VEL_AUG_IX),  # CHANGED: Model B — vel rows [3,4,5] + aug [6,7]
+        nz=nxd + nu, nw=nxd,  # CHANGED: full-state routing — all nxd rows (Jan's method)
         n_nodes_per_layer=hp['n_nodes_per_layer'],
         n_hidden_layers=hp['n_hidden_layers'],
         net=zero_init_feed_forward_nn,
@@ -250,13 +258,10 @@ def build_model(hp):
     )
     ic.add_block(ann_block)
 
-    # CHANGED: Model B — ANN output to velocity rows [3,4,5] + aug rows [6,7].
-    # Position rows [0,1,2] excluded: gantry K=0 gives pure integrators at position level;
-    # additive correction there accumulates without bound (gradient O(T^2), no restoring force).
-    # Velocity rows are stable: damping C gives eigenvalue z=1-C*Ts/m < 1; gradient bounded.
-    # Verified: diag_gradient_routing 27x stronger ANN grad vs C_aug routing on real data.
-    ic.connect_block_signals(ann_block, ["x", "u"], [])
-    ic.connect_signals(ann_block, "xp", "additive", expansion_matrix(VEL_AUG_IX, nxd))
+    # CHANGED: revert to Jan's full-state routing (msd_ndof_interconnect_dynamic.py:91).
+    # K=0 instability addressed via curriculum nf (CHyLL arXiv:2512.10117): short nf lets
+    # ANN learn absorber dynamics; increasing nf forces zero-mean corrections that don't drift.
+    ic.connect_block_signals(ann_block, ["x", "u"], ["xp"])
     ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
     ic.connect_block_signals(phy_block, ["u"], [])
     ic.connect_signals(phy_block, "xp", "additive", expansion_matrix(PHY_IX, nxd))
@@ -339,20 +344,20 @@ def build_model(hp):
     return fit_sys
 
 
-def train_model(fit_sys, hp, epochs=None):
-    """Train fit_sys for given epochs. Supports continuation (call multiple times)."""
+def train_model(fit_sys, hp, epochs=None, nf=None, validation_measure=None):
+    """Train fit_sys for given epochs. nf and validation_measure override hp defaults."""
     fit_sys.fit(
         train_sys_data=train_data, val_sys_data=val_data,
         batch_size=hp['batch_size'], epochs=epochs or hp['epochs'],
         auto_fit_norm=False,
-        loss_kwargs={'nf': hp['nf']},
+        loss_kwargs={'nf': nf if nf is not None else hp['nf']},
         optimizer_kwargs={'lr': hp['lr']},
-        validation_measure="sim-RMS",
+        validation_measure=validation_measure if validation_measure is not None else 'sim-RMS',
     )
     return fit_sys.bestfit
 
 
-## ═══════════════════════════════════════════════════════════════════════════════
+## ══════════════════════════════════════════════════════════════════════════════
 ## evaluate_and_save
 ## ═══════════════════════════════════════════════════════════════════════════════
 
@@ -838,41 +843,39 @@ def aug_state_r2(fit_sys, hp):
 ## ═══════════════════════════════════════════════════════════════════════════════
 
 def train_model_with_diagnostics(fit_sys, hp):
-    """Train in DIAG_INTERVAL-epoch chunks; record aug-state R2 at each checkpoint.
+    """Train through NF_CURRICULUM stages; record aug-state R2 after each stage.
 
-    Calls train_model() repeatedly, runs aug_state_r2() after each chunk.
-    Returns bestfit (float) and diag_conv dict with convergence arrays.
+    Each stage (nf, epochs, validation_measure) in NF_CURRICULUM trains at rollout
+    length nf with matching windowed validation so train/val loss are comparable.
+    Final sim-RMS stage continues training toward the full-trajectory regime using
+    the absorber dynamics already learned at nf=400.
     """
-    total_epochs = hp['epochs']
-    n_chunks  = max(1, total_epochs // DIAG_INTERVAL)
-    remainder = total_epochs % DIAG_INTERVAL
-
     diag_epochs  = []
     diag_r2_raw  = []
     diag_r2_lin  = []
+    total_epochs_done = 0
 
-    print(f'\nTraining {total_epochs} epochs in {n_chunks} chunks of {DIAG_INTERVAL} '
-          f'(+{remainder} remainder), NX_ANN={hp["NX_ANN"]}')
-
-    for chunk in range(n_chunks):
-        epochs_this = DIAG_INTERVAL + (remainder if chunk == n_chunks - 1 else 0)
-        bestfit = train_model(fit_sys, hp, epochs=epochs_this)
+    print(f'\nCurriculum training: {len(NF_CURRICULUM)} stages, NX_ANN={hp["NX_ANN"]}')
+    for s_idx, (s_nf, s_epochs, s_val) in enumerate(NF_CURRICULUM):
+        print(f'\n  [Stage {s_idx+1}/{len(NF_CURRICULUM)}] '
+              f'nf={s_nf}  epochs={s_epochs}  val={s_val}')
+        bestfit = train_model(fit_sys, hp, epochs=s_epochs, nf=s_nf, validation_measure=s_val)
+        total_epochs_done += s_epochs
 
         fit_sys.eval()
         r2_raw, r2_lin = aug_state_r2(fit_sys, hp)
-        epoch_now = int(fit_sys.epoch_id[-1]) if len(fit_sys.epoch_id) > 0 else (chunk + 1) * epochs_this
-        diag_epochs.append(epoch_now)
+        diag_epochs.append(total_epochs_done)
         diag_r2_raw.append(r2_raw.copy())
         diag_r2_lin.append(r2_lin.copy())
 
-        r2_str = '  '.join([f'{hp_name}={r2_lin[i]:+.4f}'
-                            for i, hp_name in enumerate(['delta_a', 'vdelta_a'][:hp['NX_ANN']])])
-        print(f'  [epoch {epoch_now:4d}]  bestfit={bestfit:.5f}  R2_linmap: {r2_str}')
+        r2_str = '  '.join([f'{name}={r2_lin[i]:+.4f}'
+                            for i, name in enumerate(['delta_a', 'vdelta_a'][:hp['NX_ANN']])])
+        print(f'    bestfit={bestfit:.5f}  R2_linmap: {r2_str}')
 
     diag_conv = dict(
         epochs   = np.array(diag_epochs),
-        r2_raw   = np.array(diag_r2_raw),     # (n_chunks, NX_ANN)
-        r2_linmap= np.array(diag_r2_lin),     # (n_chunks, NX_ANN)
+        r2_raw   = np.array(diag_r2_raw),
+        r2_linmap= np.array(diag_r2_lin),
     )
     return bestfit, diag_conv
 
