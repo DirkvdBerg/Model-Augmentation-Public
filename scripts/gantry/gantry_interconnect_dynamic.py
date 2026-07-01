@@ -77,7 +77,7 @@ DEFAULT_HP = dict(
     na_nb=0,          # set below via Jan's formula
     batch_size=256,
     lr=1e-4,
-    epochs=40,
+    epochs=20,
 )
 DEFAULT_HP['na_nb'] = (NX_PHYS + DEFAULT_HP['NX_ANN']) * 2 + 1   # THEORY: nxd*2+1 (Jan's standard)
 
@@ -230,27 +230,19 @@ def build_model(hp):
         x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
         up_sample=hp['up_sample'],
     ).to(DTYPE_PT)
-    # CHANGED: two-block output (D-065, corrected per Jan's journal pattern diag17).
-    # out_phys = Linear_Output_Block        -> Cd_norm in register_buffer, cannot train.
-    # out_aug  = Parameterized_Linear_Output_Block -> only C_aug is nn.Parameter.
-    # Both connect additively to y (Interconnect default for output signals, diag17).
-    # Previous impl used Parameterized(C=[Cd_norm|C_aug_init]) which made Cd_norm an
-    # nn.Parameter -> Cd drifted, causing 272x val blowup in 5 steps (diag17 T0).
-    # HEURISTIC: C_aug_init[2,0]=1e-2 (Y <- delta_a): absorber primarily displaces
-    # Y axis; 1e-2 keeps init contribution sub-percent of normalized output. diag15.
-    C_aug_init = np.zeros((ny, NX_ANN), dtype=DTYPE_NP)
-    C_aug_init[2, 0] = 1e-2   # HEURISTIC: Y <- delta_a
+    # CHANGED: Model B routing — single physical output block only.
+    # C_aug / Parameterized_Linear_Output_Block removed: diag_gradient_routing confirms
+    # near-zero C_aug init (Frobenius ~1e-2) chokes ANN gradient by same factor.
+    # ANN corrections now reach y through the fixed Cd_norm path via velocity rows.
     out_phys = Linear_Output_Block(C=Cd_norm, D=Dd_np)
-    out_aug  = Parameterized_Linear_Output_Block(
-        C=C_aug_init, D=np.zeros((ny, nu), dtype=DTYPE_NP), flag_loss_reg=False)
     ic.add_block(phy_block)
     ic.add_block(out_phys)
-    ic.add_block(out_aug)
 
     _act = torch.nn.Identity if ANN_ACTIVATION == 'linear' else torch.nn.Tanh
-    AUG_IX = np.arange(NX_PHYS, nxd)   # augmented state indices [6, 7]
+    AUG_IX     = np.arange(NX_PHYS, nxd)                                      # [6, 7]
+    VEL_AUG_IX = np.concatenate([np.arange(NX_PHYS // 2, NX_PHYS), AUG_IX])  # [3,4,5,6,7]
     ann_block = Static_ANN_Block(
-        nz=nxd + nu, nw=NX_ANN,         # CHANGED: nw=NX_ANN (was nxd) — ANN outputs only to augmented states
+        nz=nxd + nu, nw=len(VEL_AUG_IX),  # CHANGED: Model B — vel rows [3,4,5] + aug [6,7]
         n_nodes_per_layer=hp['n_nodes_per_layer'],
         n_hidden_layers=hp['n_hidden_layers'],
         net=zero_init_feed_forward_nn,
@@ -258,21 +250,19 @@ def build_model(hp):
     )
     ic.add_block(ann_block)
 
-    # CHANGED: route ANN output only to augmented state rows [NX_PHYS:nxd] via expansion_matrix,
-    # matching Jan's journal approach (msd_ndof_interconnect_fit.py line 203-208).
-    # Previously connect_block_signals routed ANN to all nxd states, allowing the ANN to
-    # corrupt physical state dynamics and destabilise the near-unit-circle gantry eigenvalues.
+    # CHANGED: Model B — ANN output to velocity rows [3,4,5] + aug rows [6,7].
+    # Position rows [0,1,2] excluded: gantry K=0 gives pure integrators at position level;
+    # additive correction there accumulates without bound (gradient O(T^2), no restoring force).
+    # Velocity rows are stable: damping C gives eigenvalue z=1-C*Ts/m < 1; gradient bounded.
+    # Verified: diag_gradient_routing 27x stronger ANN grad vs C_aug routing on real data.
     ic.connect_block_signals(ann_block, ["x", "u"], [])
-    ic.connect_signals(ann_block, "xp", "additive", expansion_matrix(AUG_IX, nxd))
+    ic.connect_signals(ann_block, "xp", "additive", expansion_matrix(VEL_AUG_IX, nxd))
     ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
     ic.connect_block_signals(phy_block, ["u"], [])
     ic.connect_signals(phy_block, "xp", "additive", expansion_matrix(PHY_IX, nxd))
     # Physical: x_phys + u -> y (additive)
     ic.connect_signals("x", out_phys, "concat", selection_matrix(PHY_IX, nxd))
     ic.connect_block_signals(out_phys, ["u"], ["y"])
-    # Augmented: x_aug + u -> y (additive; D_aug init=zeros so u contribution starts at 0)
-    ic.connect_signals("x", out_aug, "concat", selection_matrix(AUG_IX, nxd))
-    ic.connect_block_signals(out_aug, ["u"], ["y"])
 
     fit_sys = SSE_Interconnect(
         interconnect=ic, na=na, nb=nb,
