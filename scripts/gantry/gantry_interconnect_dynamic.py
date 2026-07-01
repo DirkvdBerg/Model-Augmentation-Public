@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import deepSI
 from scipy.io import loadmat
+import time
 from datetime import datetime
 import matplotlib
 matplotlib.use('Agg')
@@ -843,41 +844,43 @@ def aug_state_r2(fit_sys, hp):
 ## ═══════════════════════════════════════════════════════════════════════════════
 
 def train_model_with_diagnostics(fit_sys, hp):
-    """Train through NF_CURRICULUM stages; record aug-state R2 after each stage.
+    """Train through NF_CURRICULUM stages; record aug-state R2 after each stage."""
+    total_epochs = sum(s[1] for s in NF_CURRICULUM)
+    diag_epochs, diag_r2_raw, diag_r2_lin = [], [], []
+    done_epochs, stage_times = 0, []
 
-    Each stage (nf, epochs, validation_measure) in NF_CURRICULUM trains at rollout
-    length nf with matching windowed validation so train/val loss are comparable.
-    Final sim-RMS stage continues training toward the full-trajectory regime using
-    the absorber dynamics already learned at nf=400.
-    """
-    diag_epochs  = []
-    diag_r2_raw  = []
-    diag_r2_lin  = []
-    total_epochs_done = 0
+    print(f'\nCurriculum: {len(NF_CURRICULUM)} stages  {total_epochs} total epochs  NX_ANN={hp["NX_ANN"]}')
+    for s_idx, (s_nf, s_ep, s_val) in enumerate(NF_CURRICULUM):
+        print(f'  Stage {s_idx+1}: nf={s_nf:<5} {s_ep} ep  {s_val}')
 
-    print(f'\nCurriculum training: {len(NF_CURRICULUM)} stages, NX_ANN={hp["NX_ANN"]}')
-    for s_idx, (s_nf, s_epochs, s_val) in enumerate(NF_CURRICULUM):
-        print(f'\n  [Stage {s_idx+1}/{len(NF_CURRICULUM)}] '
-              f'nf={s_nf}  epochs={s_epochs}  val={s_val}')
-        bestfit = train_model(fit_sys, hp, epochs=s_epochs, nf=s_nf, validation_measure=s_val)
-        total_epochs_done += s_epochs
+    for s_idx, (s_nf, s_ep, s_val) in enumerate(NF_CURRICULUM):
+        print(f'\n[Stage {s_idx+1}/{len(NF_CURRICULUM)}] nf={s_nf}  epochs={s_ep}  val={s_val}')
+        t0 = time.time()
+        bestfit = train_model(fit_sys, hp, epochs=s_ep, nf=s_nf, validation_measure=s_val)
+        stage_t = time.time() - t0
+        stage_times.append(stage_t)
+        done_epochs += s_ep
 
         fit_sys.eval()
         r2_raw, r2_lin = aug_state_r2(fit_sys, hp)
-        diag_epochs.append(total_epochs_done)
+        diag_epochs.append(done_epochs)
         diag_r2_raw.append(r2_raw.copy())
         diag_r2_lin.append(r2_lin.copy())
 
-        r2_str = '  '.join([f'{name}={r2_lin[i]:+.4f}'
-                            for i, name in enumerate(['delta_a', 'vdelta_a'][:hp['NX_ANN']])])
-        print(f'    bestfit={bestfit:.5f}  R2_linmap: {r2_str}')
+        r2_str = '  '.join([f'{n}={r2_lin[i]:+.4f}'
+                            for i, n in enumerate(['delta_a', 'vdelta_a'][:hp['NX_ANN']])])
+        remaining = total_epochs - done_epochs
+        eta_s = (sum(stage_times) / done_epochs) * remaining
+        eta_str = f'{eta_s/60:.1f} min' if eta_s < 3600 else f'{eta_s/3600:.1f} h'
+        print(f'  Stage {s_idx+1}/{len(NF_CURRICULUM)} done | '
+              f'{done_epochs}/{total_epochs} ep | {stage_t:.0f}s | ETA ~{eta_str} | '
+              f'bestfit={bestfit:.5f}  R2_linmap: {r2_str}')
 
-    diag_conv = dict(
+    return bestfit, dict(
         epochs   = np.array(diag_epochs),
         r2_raw   = np.array(diag_r2_raw),
         r2_linmap= np.array(diag_r2_lin),
     )
-    return bestfit, diag_conv
 
 
 ## ═══════════════════════════════════════════════════════════════════════════════
