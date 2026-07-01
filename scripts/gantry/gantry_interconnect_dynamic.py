@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from model_augmentation.utils.utils import *
-from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn, HybridGantryEncoder
+from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn
 from model_augmentation.fit_systems.interconnect import *
 from model_augmentation.fit_systems.blocks import *
 from model_augmentation.fit_systems.pre_encoder import linear_encoder_init_aug
@@ -33,12 +33,9 @@ MODE = 'multisine'
 NX_PHYS = 6   # physical states: q1, q2, q3, dq1, dq2, dq3
 nu  = 3
 ny  = 3
-Y_OP = None   # None = LPV self-scheduled; float = frozen operating point [m]
 # Encoder: 'linear_map' = Hoekstra 2026 reconstructability init (trainable);
-#          'hybrid' = analytical physical + learned augmented (detached);
 #          'default' = standard deepSI learned encoder
 ENCODER_INIT = 'linear_map'
-USE_HYBRID_ENCODER = (ENCODER_INIT == 'hybrid')
 ANN_ACTIVATION = 'tanh'    # 'tanh' = nonlinear ANN (default); 'linear' = Identity activation (Jan's ECC setup)
 SEED = 42
 
@@ -59,16 +56,11 @@ DTYPE_PT = torch.float64 if USE_F64 else torch.float32
 save_flag = True
 run_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
 
-# --- Optuna hyperparameter search ---
-USE_OPTUNA = False
-N_OPTUNA_TRIALS = 40
-OPTUNA_STUDY_NAME = "gantry_subnet_augmented"
-
 # --- Time-based horizons (converted to samples via TS_NEW) ---
 NF_SECONDS = 0.100   # [s] rollout horizon (5*tau_msd, tau=1/(zeta*wn)=20ms, 5tau=100ms)
 # THEORY: na=nb=nxd*2+1 (Jan's standard; nxd=NX_PHYS+NX_ANN encoder history)
 
-# --- Default hyperparameters (used when USE_OPTUNA=False) ---
+# --- Default hyperparameters ---
 DEFAULT_HP = dict(
     NX_ANN=2,
     n_nodes_per_layer=16,
@@ -236,14 +228,12 @@ def build_model(hp):
     ic = Interconnect(nxd, nu, ny, debugging=False)
 
     phy_block = Gantry_State_Block(
-        Y_op=Y_OP, std_x=std_x, std_u=std_u,
+        Y_op=None, std_x=std_x, std_u=std_u,
         x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
         up_sample=hp['up_sample'],
     ).to(DTYPE_PT)
-    # CHANGED: Model B routing — single physical output block only.
-    # C_aug / Parameterized_Linear_Output_Block removed: diag_gradient_routing confirms
-    # near-zero C_aug init (Frobenius ~1e-2) chokes ANN gradient by same factor.
-    # ANN corrections now reach y through the fixed Cd_norm path via velocity rows.
+    # CHANGED: C_aug / Parameterized_Linear_Output_Block removed — diag_gradient_routing
+    # confirms near-zero C_aug init (Frobenius ~1e-2) chokes ANN gradient by same factor.
     out_phys = Linear_Output_Block(C=Cd_norm, D=Dd_np)
     ic.add_block(phy_block)
     ic.add_block(out_phys)
@@ -324,19 +314,8 @@ def build_model(hp):
             x_mean=x_mean, std_x=std_x,
         ).to(DTYPE_PT)
 
-    elif ENCODER_INIT == 'hybrid':
-        fit_sys.encoder = HybridGantryEncoder(
-            nb=nb, nu=nu, na=na, ny=ny, nx=nxd,
-            P_inv_T=P_inv_T, y0=y0, ystd=ystd,
-            x_mean=x_mean.flatten(), std_x=std_x.flatten(),
-            fs=fs, NX_PHYS=NX_PHYS,
-            n_nodes_per_layer=hp['n_nodes_per_layer'],
-            n_hidden_layers=hp['n_hidden_layers'],
-        ).to(DTYPE_PT)
-    # else: ENCODER_INIT == 'default' — let SSE_Interconnect create its own
-
     fit_sys.init_model(sys_data=train_data, auto_fit_norm=False)
-    if ENCODER_INIT in ('hybrid', 'linear_map'):
+    if ENCODER_INIT == 'linear_map':
         fit_sys.hfn.to(DTYPE_PT)
     else:
         for net in (fit_sys.encoder, fit_sys.hfn):
@@ -611,7 +590,7 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
             # Config metadata
             hp=json.dumps(hp),
             config=json.dumps(dict(
-                MODE=MODE, USE_HYBRID_ENCODER=USE_HYBRID_ENCODER,
+                MODE=MODE, ENCODER_INIT=ENCODER_INIT,
                 ANN_ACTIVATION=ANN_ACTIVATION, FS_NEW=FS_NEW, D=D,
                 FS_ORIG=FS_ORIG, SEED=SEED,
             )),
@@ -692,7 +671,7 @@ def state_recovery_diagnostic(fit_sys, hp, rid, max_windows=2000):
     labels = ['q1 ', 'q2 ', 'q3 ', 'dq1', 'dq2', 'dq3']
     print('\n=== State recovery diagnostic (D-053) ===')
     print(f'  {len(k_ix)} windows (stride {stride}), na=nb={na}, '
-          f'encoder={"hybrid" if USE_HYBRID_ENCODER else "default"}')
+          f'encoder={ENCODER_INIT}')
     print('  channel   R2_raw      R2_linmap   R2_raw_lag1')
     for ch in range(NX_PHYS):
         print(f'  {labels[ch]}     {r2_raw[ch]:+10.4f}  {r2_lin[ch]:+10.4f}  {r2_lag[ch]:+10.4f}')
@@ -740,7 +719,7 @@ def compute_baseline_fp_nrms(hp):
         y_hat_baseline (N, ny) simulated y in physical units [m]
     """
     phy_block = Gantry_State_Block(
-        Y_op=Y_OP, std_x=std_x, std_u=std_u,
+        Y_op=None, std_x=std_x, std_u=std_u,
         x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
         up_sample=hp['up_sample'],
     ).to(DTYPE_PT)
@@ -843,18 +822,42 @@ def aug_state_r2(fit_sys, hp):
 ## train_model_with_diagnostics
 ## ═══════════════════════════════════════════════════════════════════════════════
 
-def train_model_with_diagnostics(fit_sys, hp):
-    """Train through NF_CURRICULUM stages; record aug-state R2 after each stage."""
+def train_model_with_diagnostics(fit_sys, hp, resume_ckpt=None, checkpoint_dir=None):
+    """Train through NF_CURRICULUM stages; record aug-state R2 after each stage.
+
+    resume_ckpt : base path (no extension) of a prior checkpoint to resume from.
+    checkpoint_dir : directory for per-stage checkpoints; None = no saving.
+    """
     total_epochs = sum(s[1] for s in NF_CURRICULUM)
     diag_epochs, diag_r2_raw, diag_r2_lin = [], [], []
     done_epochs, stage_times = 0, []
+    start_stage = 0
+    bestfit = float('inf')
+
+    # --- Resume ---
+    if resume_ckpt is not None:
+        meta = np.load(resume_ckpt + '.npz', allow_pickle=True)
+        fit_sys.load_state_dict(torch.load(resume_ckpt + '.pt', map_location='cpu'))
+        start_stage  = int(meta['stage_done']) + 1
+        done_epochs  = int(meta['done_epochs'])
+        bestfit      = float(meta['bestfit'])
+        stage_times  = list(meta['stage_times'])
+        diag_epochs  = list(meta['diag_epochs'])
+        diag_r2_raw  = [meta['diag_r2_raw'][i]  for i in range(len(meta['diag_r2_raw']))]
+        diag_r2_lin  = [meta['diag_r2_linmap'][i] for i in range(len(meta['diag_r2_linmap']))]
+        print(f'Resumed from {resume_ckpt}  (stages 1–{start_stage} done, {done_epochs} ep)')
 
     print(f'\nCurriculum: {len(NF_CURRICULUM)} stages  {total_epochs} total epochs  NX_ANN={hp["NX_ANN"]}')
     for s_idx, (s_nf, s_ep, s_val) in enumerate(NF_CURRICULUM):
-        print(f'  Stage {s_idx+1}: nf={s_nf:<5} {s_ep} ep  {s_val}')
+        tag = '(done)' if s_idx < start_stage else ''
+        print(f'  Stage {s_idx+1}: nf={s_nf:<5} {s_ep} ep  {s_val}  {tag}')
 
     for s_idx, (s_nf, s_ep, s_val) in enumerate(NF_CURRICULUM):
+        if s_idx < start_stage:
+            continue
+
         print(f'\n[Stage {s_idx+1}/{len(NF_CURRICULUM)}] nf={s_nf}  epochs={s_ep}  val={s_val}')
+        fit_sys.bestfit = float('inf')  # reset so each stage tracks its own best checkpoint
         t0 = time.time()
         bestfit = train_model(fit_sys, hp, epochs=s_ep, nf=s_nf, validation_measure=s_val)
         stage_t = time.time() - t0
@@ -870,11 +873,29 @@ def train_model_with_diagnostics(fit_sys, hp):
         r2_str = '  '.join([f'{n}={r2_lin[i]:+.4f}'
                             for i, n in enumerate(['delta_a', 'vdelta_a'][:hp['NX_ANN']])])
         remaining = total_epochs - done_epochs
-        eta_s = (sum(stage_times) / done_epochs) * remaining
+        eta_s = (sum(stage_times) / done_epochs) * remaining if done_epochs > 0 else 0
         eta_str = f'{eta_s/60:.1f} min' if eta_s < 3600 else f'{eta_s/3600:.1f} h'
         print(f'  Stage {s_idx+1}/{len(NF_CURRICULUM)} done | '
               f'{done_epochs}/{total_epochs} ep | {stage_t:.0f}s | ETA ~{eta_str} | '
               f'bestfit={bestfit:.5f}  R2_linmap: {r2_str}')
+
+        # --- Checkpoint ---
+        if checkpoint_dir is not None:
+            ckpt_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}_stage{s_idx+1}')
+            torch.save(fit_sys.state_dict(), ckpt_base + '.pt')
+            np.savez(ckpt_base + '.npz',
+                     stage_done    = np.array(s_idx),
+                     done_epochs   = np.array(done_epochs),
+                     bestfit       = np.array(bestfit),
+                     stage_times   = np.array(stage_times),
+                     diag_epochs   = np.array(diag_epochs),
+                     diag_r2_raw   = np.array(diag_r2_raw),
+                     diag_r2_linmap= np.array(diag_r2_lin),
+                     hp            = np.array(json.dumps(hp)),
+                     NF_CURRICULUM = np.array(json.dumps(NF_CURRICULUM)),
+                     orig_run_id   = np.array(run_id),
+            )
+            print(f'  Checkpoint: {ckpt_base}')
 
     return bestfit, dict(
         epochs   = np.array(diag_epochs),
@@ -884,168 +905,52 @@ def train_model_with_diagnostics(fit_sys, hp):
 
 
 ## ═══════════════════════════════════════════════════════════════════════════════
-## Optuna objective
-## ═══════════════════════════════════════════════════════════════════════════════
-
-OPTUNA_EPOCHS      = 30   # total epochs per trial
-OPTUNA_CHUNK_SIZE  = 10   # epochs per pruning checkpoint
-
-def objective(trial):
-    hp = dict(
-        NX_ANN            = trial.suggest_categorical("NX_ANN", [2, 4]),
-        n_nodes_per_layer = trial.suggest_categorical("n_nodes_per_layer", [64, 128, 256]),
-        n_hidden_layers   = trial.suggest_int("n_hidden_layers", 1, 3),
-        na_nb             = trial.suggest_int("na_nb", 10, 50, step=5),
-        nf                = trial.suggest_int("nf", 50, 500, step=50),
-        batch_size        = trial.suggest_categorical("batch_size", [1000, 2000, 4000]),
-        lr                = trial.suggest_float("lr", 5e-5, 5e-3, log=True),
-        epochs            = OPTUNA_EPOCHS,
-    )
-
-    print(f"\n{'='*70}")
-    print(f"Trial {trial.number}")
-    for k, v in hp.items():
-        print(f"  {k}: {v}")
-    print(f"{'='*70}")
-
-    trial_seed = SEED + trial.number
-    np.random.seed(trial_seed)
-    torch.manual_seed(trial_seed)
-
-    try:
-        fit_sys = build_model(hp)
-
-        n_chunks = OPTUNA_EPOCHS // OPTUNA_CHUNK_SIZE
-        for chunk in range(n_chunks):
-            train_model(fit_sys, hp, epochs=OPTUNA_CHUNK_SIZE)
-
-            trial.report(fit_sys.bestfit, chunk)
-            if trial.should_prune():
-                print(f"  Trial {trial.number} PRUNED at chunk {chunk+1}/{n_chunks}")
-                raise optuna.TrialPruned()
-
-    except optuna.TrialPruned:
-        raise
-    except Exception as e:
-        print(f"Trial {trial.number} FAILED: {e}")
-        return float('inf')
-
-    print(f"\nTrial {trial.number} finished: bestfit = {fit_sys.bestfit:.6f}")
-    return fit_sys.bestfit
-
-
-## ═══════════════════════════════════════════════════════════════════════════════
 ## Main
 ## ═══════════════════════════════════════════════════════════════════════════════
 
-if USE_OPTUNA:
-    import optuna
-    from optuna.samplers import TPESampler
+print(f"\nConfiguration:")
+print(f"  MODE:           {MODE}")
+print(f"  ENCODER_INIT:   {ENCODER_INIT}")
+print(f"  ANN_ACTIVATION: {ANN_ACTIVATION}")
+print(f"  save_dir:       {save_dir}")
+print(f"  NF_SECONDS:     {NF_SECONDS}")
+print(f"  na_nb (samples): {DEFAULT_HP['na_nb']}  ({DEFAULT_HP['na_nb']/FS_NEW*1000:.2f} ms)")
+print(f"  Sampling rate:  {FS_NEW} Hz (D={D})")
+print(f"  Dtype:          {'float64' if USE_F64 else 'float32'}")
+print(f"\nDefault hyperparameters (may be overridden by checkpoint):")
+for k, v in DEFAULT_HP.items():
+    print(f"  {k}: {v}")
 
-    def next_study_name(base_name, directory):
-        """Return base_name if no DB exists, else base_name_v2, _v3, etc."""
-        version = 1
-        while True:
-            name = base_name if version == 1 else f"{base_name}_v{version}"
-            db = os.path.join(directory, f"optuna_{name}.db")
-            if not os.path.exists(db):
-                return name
-            version += 1
-
-    study_name = next_study_name(OPTUNA_STUDY_NAME, save_dir)
-    db_path = os.path.join(save_dir, f"optuna_{study_name}.db")
-    storage = f"sqlite:///{db_path}"
-
-    study = optuna.create_study(
-        study_name=study_name,
-        storage=storage,
-        sampler=TPESampler(seed=SEED),
-        pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=0),
-        direction="minimize",
-    )
-
-    print(f"\nOptuna study '{study_name}' - {N_OPTUNA_TRIALS} trials")
-    print(f"DB: {db_path}\n")
-
-    study.optimize(objective, n_trials=N_OPTUNA_TRIALS)
-
-    # ── Summary ─────────────────────────────────────────────────────────────
-    print(f"\n{'='*70}")
-    print(f"OPTUNA STUDY COMPLETE - {len(study.trials)} trials")
-    print(f"{'='*70}")
-    print(f"Best trial:  #{study.best_trial.number}")
-    print(f"Best value:  {study.best_value:.6f}")
-    print(f"Best params:")
-    for k, v in study.best_params.items():
-        print(f"  {k}: {v}")
-
-    print(f"\nAll trials (sorted by value):")
-    for t in sorted(study.trials, key=lambda t: t.value if t.value is not None else float('inf')):
-        status = "OK" if t.value is not None and t.value < float('inf') else "FAIL"
-        val_str = f"{t.value:.6f}" if t.value is not None else "None"
-        state = t.state.name
-        print(f"  #{t.number:3d}  val={val_str}  [{state}]  {t.params}")
-
-    # Save CSV and best params JSON (before retrain, so results survive SLURM timeout)
-    df = study.trials_dataframe()
-    csv_path = os.path.join(save_dir, f'optuna_trials_{run_id}.csv')
-    df.to_csv(csv_path, index=False)
-    print(f"\nSaved trials CSV: {csv_path}")
-
-    best_params_path = os.path.join(save_dir, f'optuna_best_params_{run_id}.json')
-    with open(best_params_path, 'w') as f:
-        json.dump(dict(
-            best_trial=study.best_trial.number,
-            best_value=study.best_value,
-            best_params=study.best_params,
-        ), f, indent=2)
-    print(f"Saved best params: {best_params_path}")
-
-    # ── Retrain best and do full evaluation ─────────────────────────────────
-    best_hp = {**study.best_params, 'epochs': 200}
-    print(f"\nRetraining best configuration for {best_hp['epochs']} epochs...")
-    np.random.seed(SEED + study.best_trial.number)
-    torch.manual_seed(SEED + study.best_trial.number)
-    fit_sys = build_model(best_hp)
-    train_model(fit_sys, best_hp)
-    evaluate_and_save(fit_sys, best_hp, f"optuna_best_{run_id}")
-    state_recovery_diagnostic(fit_sys, best_hp, f"optuna_best_{run_id}")
-
+resume_ckpt = os.environ.get('RESUME_CHECKPOINT')  # e.g. /path/to/gantry_ckpt_68458_stage3
+if resume_ckpt:
+    _meta = np.load(resume_ckpt + '.npz', allow_pickle=True)
+    hp = json.loads(str(_meta['hp']))
+    print(f'\nResuming checkpoint: {resume_ckpt}')
+    print(f'  Saved hp: {hp}')
 else:
-    # ── Single run with default hyperparameters ─────────────────────────────
-    print(f"\nConfiguration:")
-    print(f"  MODE:               {MODE}")
-    print(f"  USE_HYBRID_ENCODER: {USE_HYBRID_ENCODER}")
-    print(f"  save_dir:           {save_dir}")
-    print(f"  NF_SECONDS:         {NF_SECONDS}")
-    print(f"  na_nb (samples):    {DEFAULT_HP['na_nb']}  ({DEFAULT_HP['na_nb']/FS_NEW*1000:.2f} ms)")
-    print(f"  Sampling rate:      {FS_NEW} Hz (D={D})")
-    print(f"  Dtype:              {'float64' if USE_F64 else 'float32'}")
-    print(f"  USE_OPTUNA:         {USE_OPTUNA}")
-    print(f"  ANN_ACTIVATION:     {ANN_ACTIVATION}")
-    print(f"\nHyperparameters:")
-    for k, v in DEFAULT_HP.items():
-        print(f"  {k}: {v}")
+    hp = DEFAULT_HP
 
-    np.random.seed(SEED)
-    torch.manual_seed(SEED)
-    fit_sys = build_model(DEFAULT_HP)
+np.random.seed(SEED)
+torch.manual_seed(SEED)
+fit_sys = build_model(hp)
 
-    print('\nComputing baseline FP NRMS (fixed reference, no MSD)...')
-    baseline_nrms, _ = compute_baseline_fp_nrms(DEFAULT_HP)
+print('\nComputing baseline FP NRMS (fixed reference, no MSD)...')
+baseline_nrms, _ = compute_baseline_fp_nrms(hp)
 
-    bestfit, diag_conv = train_model_with_diagnostics(fit_sys, DEFAULT_HP)
-    print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
+ckpt_dir = save_dir if save_flag else None
+bestfit, diag_conv = train_model_with_diagnostics(
+    fit_sys, hp, resume_ckpt=resume_ckpt, checkpoint_dir=ckpt_dir)
+print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
 
-    evaluate_and_save(fit_sys, DEFAULT_HP, run_id, diag_conv=diag_conv, baseline_nrms=baseline_nrms)
-    state_recovery_diagnostic(fit_sys, DEFAULT_HP, run_id)
+evaluate_and_save(fit_sys, hp, run_id, diag_conv=diag_conv, baseline_nrms=baseline_nrms)
+state_recovery_diagnostic(fit_sys, hp, run_id)
 
-    # Gradient norm snapshot (after evaluation, non-critical)
-    try:
-        grad_norms, group_norms = compute_gradient_norms(fit_sys, DEFAULT_HP)
-        if save_flag:
-            np.savez(os.path.join(save_dir, f'gantry_grad_norms_{run_id}.npz'),
-                     grad_norms=json.dumps(grad_norms),
-                     group_norms=json.dumps(group_norms))
-    except Exception as e:
-        print(f"Warning: gradient norm computation failed: {e}")
+# Gradient norm snapshot (after evaluation, non-critical)
+try:
+    grad_norms, group_norms = compute_gradient_norms(fit_sys, hp)
+    if save_flag:
+        np.savez(os.path.join(save_dir, f'gantry_grad_norms_{run_id}.npz'),
+                 grad_norms=json.dumps(grad_norms),
+                 group_norms=json.dumps(group_norms))
+except Exception as e:
+    print(f"Warning: gradient norm computation failed: {e}")
