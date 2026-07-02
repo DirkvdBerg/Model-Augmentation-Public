@@ -70,21 +70,9 @@ DEFAULT_HP = dict(
     na_nb=0,          # set below via Jan's formula
     batch_size=256,
     lr=1e-4,
-    epochs=20,
+    epochs=100,
 )
 DEFAULT_HP['na_nb'] = (NX_PHYS + DEFAULT_HP['NX_ANN']) * 2 + 1   # THEORY: nxd*2+1 (Jan's standard)
-
-# Curriculum nf schedule (CHyLL arXiv:2512.10117 protocol): (nf, epochs, validation_measure).
-# Windowed validation matches training nf so train/val loss are comparable at each stage.
-# Final sim-RMS stage continues training using dynamics learned at nf=400.
-NF_CURRICULUM = [
-    (25,   5, '25-step-average-RMS'),
-    (50,   5, '50-step-average-RMS'),
-    (100,  5, '100-step-average-RMS'),
-    (200,  5, '200-step-average-RMS'),
-    (400, 10, '400-step-average-RMS'),
-    (400, 10, 'sim-RMS'),
-]
 
 ## ═══════════════════════════════════════════════════════════════════════════════
 ## Data loading (run once)
@@ -189,7 +177,8 @@ y0     = y_all.mean(axis=0).astype(DTYPE_NP)
 Cd_norm = Cd.numpy() * std_x.flatten()[None, :] / ystd[:, None]  # (3, 6)
 Dd_np   = Dd.numpy()                                               # (3, 3)
 
-PHY_IX = np.arange(NX_PHYS)   # [0,1,2,3,4,5]
+PHY_IX   = np.arange(NX_PHYS)        # [0,1,2,3,4,5]
+STIFF_IX = np.array([1, 4, 6, 7])   # Theta pos/vel + absorber pos/vel (K>0 only)
 
 _encoder_tag = ENCODER_INIT
 save_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'simulations',
@@ -239,9 +228,8 @@ def build_model(hp):
     ic.add_block(out_phys)
 
     _act = torch.nn.Identity if ANN_ACTIVATION == 'linear' else torch.nn.Tanh
-    AUG_IX = np.arange(NX_PHYS, nxd)                                          # [6, 7]
     ann_block = Static_ANN_Block(
-        nz=nxd + nu, nw=nxd,  # CHANGED: full-state routing — all nxd rows (Jan's method)
+        nz=nxd + nu, nw=len(STIFF_IX),  # D-068: stiff routing — 4 outputs at K>0 rows only
         n_nodes_per_layer=hp['n_nodes_per_layer'],
         n_hidden_layers=hp['n_hidden_layers'],
         net=zero_init_feed_forward_nn,
@@ -249,10 +237,10 @@ def build_model(hp):
     )
     ic.add_block(ann_block)
 
-    # CHANGED: revert to Jan's full-state routing (msd_ndof_interconnect_dynamic.py:91).
-    # K=0 instability addressed via curriculum nf (CHyLL arXiv:2512.10117): short nf lets
-    # ANN learn absorber dynamics; increasing nf forces zero-mean corrections that don't drift.
-    ic.connect_block_signals(ann_block, ["x", "u"], ["xp"])
+    # D-068: stiff routing — corrections placed only at K>0 rows (Theta + absorber).
+    # X and Y axis rows (0,3,2,5) excluded: K=0 integrators accumulate without restoring force.
+    ic.connect_block_signals(ann_block, ["x", "u"], [])
+    ic.connect_signals(ann_block, "xp", "additive", expansion_matrix(STIFF_IX, nxd))
     ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
     ic.connect_block_signals(phy_block, ["u"], [])
     ic.connect_signals(phy_block, "xp", "additive", expansion_matrix(PHY_IX, nxd))
@@ -823,84 +811,71 @@ def aug_state_r2(fit_sys, hp):
 ## ═══════════════════════════════════════════════════════════════════════════════
 
 def train_model_with_diagnostics(fit_sys, hp, resume_ckpt=None, checkpoint_dir=None):
-    """Train through NF_CURRICULUM stages; record aug-state R2 after each stage.
+    """Train for hp['epochs'] epochs with sim-RMS validation; record aug-state R2 after.
 
     resume_ckpt : base path (no extension) of a prior checkpoint to resume from.
-    checkpoint_dir : directory for per-stage checkpoints; None = no saving.
+    checkpoint_dir : directory for checkpoint; None = no saving.
     """
-    total_epochs = sum(s[1] for s in NF_CURRICULUM)
     diag_epochs, diag_r2_raw, diag_r2_lin = [], [], []
-    done_epochs, stage_times = 0, []
-    start_stage = 0
+    done_epochs = 0
     bestfit = float('inf')
 
     # --- Resume ---
     if resume_ckpt is not None:
         meta = np.load(resume_ckpt + '.npz', allow_pickle=True)
         fit_sys.load_state_dict(torch.load(resume_ckpt + '.pt', map_location='cpu'))
-        start_stage  = int(meta['stage_done']) + 1
-        done_epochs  = int(meta['done_epochs'])
-        bestfit      = float(meta['bestfit'])
-        stage_times  = list(meta['stage_times'])
-        diag_epochs  = list(meta['diag_epochs'])
-        diag_r2_raw  = [meta['diag_r2_raw'][i]  for i in range(len(meta['diag_r2_raw']))]
-        diag_r2_lin  = [meta['diag_r2_linmap'][i] for i in range(len(meta['diag_r2_linmap']))]
-        print(f'Resumed from {resume_ckpt}  (stages 1–{start_stage} done, {done_epochs} ep)')
+        done_epochs = int(meta['done_epochs'])
+        bestfit     = float(meta['bestfit'])
+        diag_epochs = list(meta['diag_epochs'])
+        diag_r2_raw = [meta['diag_r2_raw'][i]  for i in range(len(meta['diag_r2_raw']))]
+        diag_r2_lin = [meta['diag_r2_linmap'][i] for i in range(len(meta['diag_r2_linmap']))]
+        print(f'Resumed from {resume_ckpt}  ({done_epochs} epochs done)')
 
-    print(f'\nCurriculum: {len(NF_CURRICULUM)} stages  {total_epochs} total epochs  NX_ANN={hp["NX_ANN"]}')
-    for s_idx, (s_nf, s_ep, s_val) in enumerate(NF_CURRICULUM):
-        tag = '(done)' if s_idx < start_stage else ''
-        print(f'  Stage {s_idx+1}: nf={s_nf:<5} {s_ep} ep  {s_val}  {tag}')
+    epochs_remaining = hp['epochs'] - done_epochs
+    print(f'\nTraining: nf={hp["nf"]}  epochs={hp["epochs"]}  val=sim-RMS  NX_ANN={hp["NX_ANN"]}')
+    if done_epochs > 0:
+        print(f'  Resuming: {done_epochs} done, {epochs_remaining} remaining')
 
-    for s_idx, (s_nf, s_ep, s_val) in enumerate(NF_CURRICULUM):
-        if s_idx < start_stage:
-            continue
+    fit_sys.bestfit = float('inf')
+    t0 = time.time()
+    bestfit = train_model(fit_sys, hp,
+                          epochs=epochs_remaining,
+                          nf=hp['nf'],
+                          validation_measure='sim-RMS')
+    elapsed = time.time() - t0
+    done_epochs = hp['epochs']
 
-        print(f'\n[Stage {s_idx+1}/{len(NF_CURRICULUM)}] nf={s_nf}  epochs={s_ep}  val={s_val}')
-        fit_sys.bestfit = float('inf')  # reset so each stage tracks its own best checkpoint
-        t0 = time.time()
-        bestfit = train_model(fit_sys, hp, epochs=s_ep, nf=s_nf, validation_measure=s_val)
-        stage_t = time.time() - t0
-        stage_times.append(stage_t)
-        done_epochs += s_ep
+    fit_sys.eval()
+    r2_raw, r2_lin = aug_state_r2(fit_sys, hp)
+    diag_epochs.append(done_epochs)
+    diag_r2_raw.append(r2_raw.copy())
+    diag_r2_lin.append(r2_lin.copy())
 
-        fit_sys.eval()
-        r2_raw, r2_lin = aug_state_r2(fit_sys, hp)
-        diag_epochs.append(done_epochs)
-        diag_r2_raw.append(r2_raw.copy())
-        diag_r2_lin.append(r2_lin.copy())
+    r2_str = '  '.join([f'{n}={r2_lin[i]:+.4f}'
+                        for i, n in enumerate(['delta_a', 'vdelta_a'][:hp['NX_ANN']])])
+    print(f'Training done | {done_epochs} ep | {elapsed:.0f}s | '
+          f'bestfit={bestfit:.5f}  R2_linmap: {r2_str}')
 
-        r2_str = '  '.join([f'{n}={r2_lin[i]:+.4f}'
-                            for i, n in enumerate(['delta_a', 'vdelta_a'][:hp['NX_ANN']])])
-        remaining = total_epochs - done_epochs
-        eta_s = (sum(stage_times) / done_epochs) * remaining if done_epochs > 0 else 0
-        eta_str = f'{eta_s/60:.1f} min' if eta_s < 3600 else f'{eta_s/3600:.1f} h'
-        print(f'  Stage {s_idx+1}/{len(NF_CURRICULUM)} done | '
-              f'{done_epochs}/{total_epochs} ep | {stage_t:.0f}s | ETA ~{eta_str} | '
-              f'bestfit={bestfit:.5f}  R2_linmap: {r2_str}')
-
-        # --- Checkpoint ---
-        if checkpoint_dir is not None:
-            ckpt_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}_stage{s_idx+1}')
-            torch.save(fit_sys.state_dict(), ckpt_base + '.pt')
-            np.savez(ckpt_base + '.npz',
-                     stage_done    = np.array(s_idx),
-                     done_epochs   = np.array(done_epochs),
-                     bestfit       = np.array(bestfit),
-                     stage_times   = np.array(stage_times),
-                     diag_epochs   = np.array(diag_epochs),
-                     diag_r2_raw   = np.array(diag_r2_raw),
-                     diag_r2_linmap= np.array(diag_r2_lin),
-                     hp            = np.array(json.dumps(hp)),
-                     NF_CURRICULUM = np.array(json.dumps(NF_CURRICULUM)),
-                     orig_run_id   = np.array(run_id),
-            )
-            print(f'  Checkpoint: {ckpt_base}')
+    # --- Checkpoint ---
+    if checkpoint_dir is not None:
+        ckpt_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}')
+        torch.save(fit_sys.state_dict(), ckpt_base + '.pt')
+        np.savez(ckpt_base + '.npz',
+                 done_epochs    = np.array(done_epochs),
+                 bestfit        = np.array(bestfit),
+                 elapsed        = np.array(elapsed),
+                 diag_epochs    = np.array(diag_epochs),
+                 diag_r2_raw    = np.array(diag_r2_raw),
+                 diag_r2_linmap = np.array(diag_r2_lin),
+                 hp             = np.array(json.dumps(hp)),
+                 orig_run_id    = np.array(run_id),
+        )
+        print(f'  Checkpoint: {ckpt_base}')
 
     return bestfit, dict(
-        epochs   = np.array(diag_epochs),
-        r2_raw   = np.array(diag_r2_raw),
-        r2_linmap= np.array(diag_r2_lin),
+        epochs    = np.array(diag_epochs),
+        r2_raw    = np.array(diag_r2_raw),
+        r2_linmap = np.array(diag_r2_lin),
     )
 
 
