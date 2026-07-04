@@ -36,7 +36,7 @@ ny  = 3
 # Encoder: 'linear_map' = Hoekstra 2026 reconstructability init (trainable);
 #          'default' = standard deepSI learned encoder
 ENCODER_INIT = 'linear_map'
-ANN_ACTIVATION = 'tanh'    # 'tanh' = nonlinear ANN (default); 'linear' = Identity activation (Jan's ECC setup)
+ANN_ACTIVATION = 'linear'  # 'linear' = Identity activation (Jan's ECC setup, D-071); 'tanh' = nonlinear ANN
 SEED = 42
 
 # --- Resampling ---
@@ -144,6 +144,13 @@ _, _, val_x_logical, val_x_aug = load_mat_aug(VAL_FILE)
 print(f'Loaded val augmented GT: x_logical={val_x_logical.shape}  '
       f'delta_a std={val_x_aug[:,0].std():.3e} m  '
       f'vdelta_a std={val_x_aug[:,1].std():.3e} m/s')
+
+# Test-set (E1) ground truth for the generalization baseline (D-071)
+try:
+    _, _, test_x_logical, test_x_aug = load_mat_aug(TEST_FILE)
+except KeyError as e:
+    print(f'WARNING: test file lacks augmented GT fields ({e}); skipping test baseline')
+    test_x_logical = None
 
 print(f'Loaded {len(train_list)} training trajectories, 1 val, 1 test')
 for i, (f, t) in enumerate(zip(TRAIN_FILES, train_list)):
@@ -329,6 +336,14 @@ def train_model(fit_sys, hp, epochs=None, nf=None, validation_measure=None):
 ## evaluate_and_save
 ## ═══════════════════════════════════════════════════════════════════════════════
 
+def r2_per_channel(ref, est):
+    """Per-channel coefficient of determination between reference and estimate."""
+    # THEORY: R^2 = 1 - SS_res/SS_tot (standard OLS); 1e-12 guards constant channels
+    ss_res = ((ref - est) ** 2).sum(axis=0)
+    ss_tot = ((ref - ref.mean(axis=0)) ** 2).sum(axis=0)
+    return 1.0 - ss_res / (ss_tot + 1e-12)
+
+
 def compute_gradient_norms(fit_sys, hp):
     """Single forward+backward pass on training data, return gradient norms per parameter group."""
     fit_sys.train()
@@ -373,7 +388,9 @@ def compute_gradient_norms(fit_sys, hp):
     return grad_norms, group_norms
 
 
-def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
+def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None,
+                      baseline_test_nrms=None, baseline_encinit_nrms=None,
+                      baseline_test_encinit_nrms=None):
     """Load best checkpoint, simulate, compute NRMS, plot, save."""
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
@@ -410,8 +427,9 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
     rms_enc  = nrms_enc * ystd   # [m]
     if baseline_nrms is not None:
         rms_baseline = baseline_nrms * ystd   # [m]
-        print('\n=== Sim-NRMS: augmented vs baseline FP ===')
+        print('\n=== Sim-NRMS + RMS: augmented vs baseline FP ===')
         print(f"  {'':4s}  {'augmented':>22s}  {'baseline FP':>22s}  {'improve':>8s}")
+        print(f"  {'':4s}  {'(NRMS':>11s} {'RMS [m])':>11s}  {'(NRMS':>11s} {'RMS [m])':>11s}")
         for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
             improv = 100.0 * (baseline_nrms[ch] - nrms_enc[ch]) / (baseline_nrms[ch] + 1e-12)
             print(f"  {lbl}:  {nrms_enc[ch]:.4f}  {rms_enc[ch]:.3e} m"
@@ -427,14 +445,66 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
     for ch in range(NX_ANN):
         print(f'  x[{NX_PHYS+ch}]: enc={ann_rms_enc[ch]:.4e}')
 
-    # ── x_logical-initialised simulation (oracle baseline) ──────────────────
-    if hasattr(val_data, 'x') and val_data.x is not None:
+    # ── Rollout aug-state R2 vs GT absorber (closed-loop simulation) ─────────
+    # Complements the encoder-based R2 (D-053/aug_state_r2): this tests whether
+    # the MODEL's simulated x[6:7] trajectories track delta_a, i.e. whether the
+    # augmented states became the absorber in rollout. Activation-agnostic.
+    r2_roll_raw, r2_roll_lin = None, None
+    try:
+        x_ann_roll = x_enc_ann[cheat_n:]                    # (N-cheat_n, NX_ANN) simulated
+        gt_roll    = val_x_aug[cheat_n:]                    # (N-cheat_n, NX_ANN) physical
+        gt_norm = (gt_roll - gt_roll.mean(axis=0)) / (gt_roll.std(axis=0) + 1e-8)
+
+        r2_roll_raw = r2_per_channel(gt_norm, x_ann_roll)
+        # THEORY: ordinary least squares — best affine map from all rollout aug channels
+        A_roll = np.hstack([x_ann_roll, np.ones((len(x_ann_roll), 1), dtype=DTYPE_NP)])
+        W_roll, *_ = np.linalg.lstsq(A_roll, gt_norm, rcond=None)
+        r2_roll_lin = r2_per_channel(gt_norm, A_roll @ W_roll)
+
+        aug_names = ['delta_a ', 'vdelta_a']
+        print('\n=== Rollout aug-state R2 vs GT (closed-loop simulation) ===')
+        for ch in range(NX_ANN):
+            lbl = aug_names[ch] if ch < len(aug_names) else f'x_ann[{ch}]'
+            print(f'  {lbl}  R2_raw={r2_roll_raw[ch]:+.4f}  R2_linmap={r2_roll_lin[ch]:+.4f}')
+        print('  R2_linmap ~ 1 -> simulated aug states carry the absorber dynamics;')
+        print('  R2_linmap ~ 0 -> aug states unused in rollout (encoder R2 tests encoder only)')
+    except Exception as e:
+        print(f'Warning: rollout aug-state R2 failed: {e}')
+
+    # ── Test-set simulation (E1, unseen excitation) — generalization (D-071) ─
+    nrms_test  = None
+    y_hat_test = None
+    try:
+        fit_sys.hfn.reset_saved_signals()
+        test_result = fit_sys.apply_experiment(test_data)
+        y_hat_test  = test_result.y
+        tc = test_result.cheat_n
+        nrms_test = np.sqrt(((y_hat_test[tc:] - test_data.y[tc:]) ** 2).mean(axis=0)) / ystd
+        print('\n=== Test-set (E1) sim-NRMS + RMS — generalization to unseen excitation ===')
+        if baseline_test_nrms is not None:
+            print(f"  {'':4s}  {'augmented':>22s}  {'baseline FP':>22s}  {'improve':>8s}")
+            print(f"  {'':4s}  {'(NRMS':>11s} {'RMS [m])':>11s}  {'(NRMS':>11s} {'RMS [m])':>11s}")
+            for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
+                improv = 100.0 * (baseline_test_nrms[ch] - nrms_test[ch]) / (baseline_test_nrms[ch] + 1e-12)
+                print(f'  {lbl}:  {nrms_test[ch]:.4f}  {nrms_test[ch]*ystd[ch]:.3e} m'
+                      f'    {baseline_test_nrms[ch]:.4f}  {baseline_test_nrms[ch]*ystd[ch]:.3e} m'
+                      f'    {improv:+.1f}%')
+        else:
+            for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
+                print(f'  {lbl}:  {nrms_test[ch]:.4f}  {nrms_test[ch]*ystd[ch]:.3e} m')
+    except Exception as e:
+        print(f'Warning: test-set (E1) evaluation failed: {e}')
+
+    # ── x_logical-initialised simulation (model from TRUE x0, D-072) ────────
+    # Symmetric counterpart to the true-x0 baseline: isolates model quality from
+    # encoder quality. Seeded from val_x_logical (val_data.x is never set by load_traj).
+    if val_x_logical is not None:
         val_norm = fit_sys.norm.transform(val_data)
         u_val_norm = torch.tensor(np.ascontiguousarray(val_norm.u), dtype=DTYPE_PT)
 
         x_xlog = torch.zeros(1, nxd)
         x_xlog[0, :NX_PHYS] = torch.tensor(
-            (val_data.x[0] - x_mean.flatten()) / std_x.flatten(), dtype=DTYPE_PT)
+            (val_x_logical[0] - x_mean.flatten()) / std_x.flatten(), dtype=DTYPE_PT)
 
         y_xlog_list = []
         with torch.no_grad():
@@ -443,10 +513,11 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
                 y_xlog_list.append(y_t.squeeze().numpy())
         y_hat_xlog = np.array(y_xlog_list) * ystd + y0
 
-        nrms_xlog = np.sqrt(((y_hat_xlog - y_ref) ** 2).mean(axis=0)) / ystd
-        print('\n=== x_logical-initialised sim-NRMS ===')
+        # Averaged from cheat_n like the encoder-init model metric (D-072 alignment)
+        nrms_xlog = np.sqrt(((y_hat_xlog[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0)) / ystd
+        print('\n=== Model, true-x0 init: sim-NRMS + RMS ===')
         for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
-            print(f'  {lbl}: {nrms_xlog[ch]:.4f}')
+            print(f'  {lbl}: {nrms_xlog[ch]:.4f}  {nrms_xlog[ch] * ystd[ch]:.3e} m')
         HAS_ORACLE = True
     else:
         print('\n=== x_logical-initialised simulation skipped (no state data) ===')
@@ -474,10 +545,10 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
     for ch, (ax, lab) in enumerate(zip(axes2, ch_labels)):
         ax.plot(t_val, y_ref[:, ch], 'k', lw=0.8, label='Reference')
         ax.plot(t_val, y_hat_enc[:, ch], 'C0', lw=0.9,
-                label=f'Encoder-init (NRMS={nrms_enc[ch]:.3f})')
+                label=f'Encoder-init (NRMS={nrms_enc[ch]:.3f}, RMS={rms_enc[ch]:.2e} m)')
         if HAS_ORACLE:
             ax.plot(t_val, y_hat_xlog[:, ch], 'C1', lw=0.9, linestyle='--',
-                    label=f'x_logical-init (NRMS={nrms_xlog[ch]:.3f})')
+                    label=f'x_logical-init (NRMS={nrms_xlog[ch]:.3f}, RMS={nrms_xlog[ch]*ystd[ch]:.2e} m)')
         enc_lbl = f'Encoder warmup ({cheat_n} samples)' if ch == 0 else '_nolegend_'
         ax.axvspan(t_val[0], cheat_t, alpha=0.10, color='steelblue', label=enc_lbl)
         ax.axvline(cheat_t, color='steelblue', linestyle='--', lw=0.8)
@@ -528,10 +599,11 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
         ax4a.semilogy(epoch_id_full, loss_train_full, color='C1', linestyle='--',
                       alpha=0.7, label='Train loss')
         if baseline_nrms is not None:
-            ch_colors = ['C2', 'C3', 'C4']
-            for ch, (lbl, col) in enumerate(zip(['X1', 'X2', 'Y '], ch_colors)):
-                ax4a.axhline(baseline_nrms[ch], color=col, linestyle=':', lw=1.2,
-                             label=f'Baseline FP {lbl}={baseline_nrms[ch]:.4f}')
+            # Aggregate sim-RMS [m]: same formula as the plotted validation loss,
+            # so the reference line and the curve share units (NRMS lines were not comparable).
+            rms_agg_baseline = float(np.sqrt(np.mean((baseline_nrms * ystd) ** 2)))
+            ax4a.axhline(rms_agg_baseline, color='C2', linestyle=':', lw=1.2,
+                         label=f'Baseline FP sim-RMS={rms_agg_baseline:.2e} m')
         ax4a.set_xlabel('Epoch'); ax4a.set_ylabel('sim-RMS')
         ax4a.set_title('Loss + baseline reference')
         ax4a.legend(fontsize=7); ax4a.grid(True, which='both')
@@ -564,8 +636,9 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
             u_val=val_data.u,
             # Loss curves
             epoch_id=epoch_id_full, loss_val=loss_val_full, loss_train=loss_train_full,
-            # Per-channel metrics
-            nrms_enc=nrms_enc, x_enc_phys=x_enc_phys, x_enc_ann=x_enc_ann,
+            # Per-channel metrics (rms_* = nrms_* x ystd, [m])
+            nrms_enc=nrms_enc, rms_enc=rms_enc,
+            x_enc_phys=x_enc_phys, x_enc_ann=x_enc_ann,
             val_x_aug=val_x_aug,
             # Normalization constants (for reconstruction)
             std_x=std_x, x_mean=x_mean, std_u=std_u, u_mean=u_mean,
@@ -592,6 +665,24 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None):
             save_dict['diag_conv_r2_linmap'] = diag_conv['r2_linmap']
         if baseline_nrms is not None:
             save_dict['baseline_nrms'] = baseline_nrms
+            save_dict['baseline_rms']  = baseline_nrms * ystd
+        if nrms_test is not None:
+            save_dict['nrms_test']  = nrms_test
+            save_dict['rms_test']   = nrms_test * ystd
+            save_dict['y_hat_test'] = y_hat_test
+            save_dict['y_test_ref'] = test_data.y
+        if r2_roll_lin is not None:
+            save_dict['r2_rollout_raw']    = r2_roll_raw
+            save_dict['r2_rollout_linmap'] = r2_roll_lin
+        if baseline_test_nrms is not None:
+            save_dict['baseline_test_nrms'] = baseline_test_nrms
+            save_dict['baseline_test_rms']  = baseline_test_nrms * ystd
+        if baseline_encinit_nrms is not None:
+            save_dict['baseline_encinit_nrms'] = baseline_encinit_nrms
+            save_dict['baseline_encinit_rms']  = baseline_encinit_nrms * ystd
+        if baseline_test_encinit_nrms is not None:
+            save_dict['baseline_test_encinit_nrms'] = baseline_test_encinit_nrms
+            save_dict['baseline_test_encinit_rms']  = baseline_test_encinit_nrms * ystd
         np.savez(os.path.join(save_dir, f'gantry_results_{rid}.npz'), **save_dict)
         print(f'Saved results: gantry_results_{rid}.npz')
 
@@ -642,12 +733,6 @@ def state_recovery_diagnostic(fit_sys, hp, rid, max_windows=2000):
     xt   = x_true_norm[k_ix]                                  # x_true(k)
     xt_l = x_true_norm[k_ix - 1]                              # x_true(k-1)
 
-    def r2_per_channel(ref, est):
-        # THEORY: coefficient of determination R^2 = 1 - SS_res/SS_tot (standard OLS regression)
-        ss_res = ((ref - est) ** 2).sum(axis=0)
-        ss_tot = ((ref - ref.mean(axis=0)) ** 2).sum(axis=0)
-        return 1.0 - ss_res / ss_tot
-
     r2_raw = r2_per_channel(xt,   x_hat[:, :NX_PHYS])
     r2_lag = r2_per_channel(xt_l, x_hat[:, :NX_PHYS])
 
@@ -692,8 +777,16 @@ def state_recovery_diagnostic(fit_sys, hp, rid, max_windows=2000):
 ## compute_baseline_fp_nrms
 ## ═══════════════════════════════════════════════════════════════════════════════
 
-def compute_baseline_fp_nrms(hp):
-    """Simulate baseline FP model (no MSD, no ANN) on val data.
+def compute_baseline_fp_nrms(hp, data=None, x0_phys=None, x0_norm=None,
+                             start_ix=0, avg_from=0, label='val'):
+    """Simulate baseline FP model (no MSD, no ANN) on val data (default) or given data.
+
+    Initialization (D-072):
+      x0_phys  physical initial state (default: true x0 from val_x_logical) — 'true x0'
+      x0_norm  normalized initial state (overrides x0_phys) — for encoder-init baselines
+      start_ix simulate from data sample start_ix onward (encoder init estimates x(k0))
+      avg_from average the error only from this sample of the simulated window
+               (aligns with the model metric, which excludes the encoder warm-up)
 
     Runs Gantry_State_Block alone (zero ANN contribution) starting from the
     true initial state (val_x_logical[0] from the augmented simulation mat file).
@@ -706,6 +799,9 @@ def compute_baseline_fp_nrms(hp):
         nrms_baseline  (ny,)  per-channel NRMS
         y_hat_baseline (N, ny) simulated y in physical units [m]
     """
+    if data is None:
+        data = val_data
+
     phy_block = Gantry_State_Block(
         Y_op=None, std_x=std_x, std_u=std_u,
         x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
@@ -713,15 +809,20 @@ def compute_baseline_fp_nrms(hp):
     ).to(DTYPE_PT)
     phy_block.eval()
 
-    # Start from true initial state (from augmented sim mat file)
-    x0_phys   = val_x_logical[0].astype(DTYPE_NP)
-    x_norm_np = (x0_phys - x_mean.flatten()) / std_x.flatten()  # (NX_PHYS,)
+    # Initial state: normalized estimate (encoder-init) or physical true x0 (D-072)
+    if x0_norm is not None:
+        x_norm_np = np.asarray(x0_norm, dtype=DTYPE_NP).flatten()  # (NX_PHYS,)
+    else:
+        if x0_phys is None:
+            x0_phys = val_x_logical[0]
+        x0_phys   = np.asarray(x0_phys, dtype=DTYPE_NP)
+        x_norm_np = (x0_phys - x_mean.flatten()) / std_x.flatten()  # (NX_PHYS,)
 
-    u_val_norm = ((val_data.u - u_mean.flatten()) / std_u.flatten()).astype(DTYPE_NP)
+    u_val_norm = ((data.u[start_ix:] - u_mean.flatten()) / std_u.flatten()).astype(DTYPE_NP)
 
     y_hat_list = []
     with torch.no_grad():
-        for t in range(len(val_data.u)):
+        for t in range(len(u_val_norm)):
             u_norm_np = u_val_norm[t]
 
             # Output: y_norm = Cd_norm @ x_norm + Dd_np @ u_norm (Dd_np ~ 0)
@@ -736,14 +837,18 @@ def compute_baseline_fp_nrms(hp):
             x_norm_next = phy_block(z)              # (1, NX_PHYS, 1) or (1, NX_PHYS)
             x_norm_np = x_norm_next.view(NX_PHYS).cpu().numpy()
 
-    y_hat = np.array(y_hat_list, dtype=DTYPE_NP)   # (N, ny)
-    y_ref  = val_data.y
-    nrms   = np.sqrt(((y_hat - y_ref)**2).mean(axis=0)) / ystd
+    y_hat = np.array(y_hat_list, dtype=DTYPE_NP)   # (N-start_ix, ny)
+    y_ref  = data.y[start_ix:]
+    nrms   = np.sqrt(((y_hat[avg_from:] - y_ref[avg_from:])**2).mean(axis=0)) / ystd
 
     rms = nrms * ystd   # [m]
-    print('\n=== Baseline FP model sim-NRMS (no MSD, reference to beat) ===')
+    # THEORY: deepSI System_data.RMS — sqrt(mean sq. error over all samples AND channels)
+    rms_agg = float(np.sqrt(np.mean(rms ** 2)))
+    print(f'\n=== Baseline FP model ({label}, no MSD, reference to beat) ===')
+    print(f"  {'':4s}  {'NRMS':>8s}  {'RMS':>11s}")
     for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
-        print(f'  {lbl}:  {nrms[ch]:.4f}  {rms[ch]:.3e} m')
+        print(f'  {lbl}:  {nrms[ch]:8.4f}  {rms[ch]:.3e} m')
+    print(f'  aggregate sim-RMS (same formula as validation loss): {rms_agg:.4e} m')
 
     return nrms, y_hat
 
@@ -790,18 +895,13 @@ def aug_state_r2(fit_sys, hp):
     gt_std  = gt_raw.std(axis=0) + 1e-8
     gt_norm = (gt_raw - gt_mean) / gt_std          # (Nk, NX_ANN) normalized
 
-    def _r2(ref, est):
-        ss_res = ((ref - est)**2).sum(axis=0)
-        ss_tot = ((ref - ref.mean(axis=0))**2).sum(axis=0)
-        return 1.0 - ss_res / (ss_tot + 1e-12)
-
-    r2_raw = _r2(gt_norm, x_ann)
+    r2_raw = r2_per_channel(gt_norm, x_ann)
 
     # Best affine map: gt_norm ~ [x_ann_all_channels, 1] @ W (per GT channel)
     # THEORY: ordinary least squares -- uses all NX_ANN encoder channels jointly
     A_aug = np.hstack([x_ann, np.ones((len(x_ann), 1), dtype=DTYPE_NP)])
     W_aug, *_ = np.linalg.lstsq(A_aug, gt_norm, rcond=None)
-    r2_lin = _r2(gt_norm, A_aug @ W_aug)
+    r2_lin = r2_per_channel(gt_norm, A_aug @ W_aug)
 
     return r2_raw, r2_lin
 
@@ -823,7 +923,12 @@ def train_model_with_diagnostics(fit_sys, hp, resume_ckpt=None, checkpoint_dir=N
     # --- Resume ---
     if resume_ckpt is not None:
         meta = np.load(resume_ckpt + '.npz', allow_pickle=True)
-        fit_sys.load_state_dict(torch.load(resume_ckpt + '.pt', map_location='cpu'))
+        # D-070: SSE_Interconnect has no state_dict; checkpoint holds component state_dicts
+        ckpt = torch.load(resume_ckpt + '.pt', map_location='cpu')
+        fit_sys.hfn.load_state_dict(ckpt['hfn'])
+        fit_sys.encoder.load_state_dict(ckpt['encoder'])
+        if 'optimizer' in ckpt:
+            fit_sys.optimizer.load_state_dict(ckpt['optimizer'])
         done_epochs = int(meta['done_epochs'])
         bestfit     = float(meta['bestfit'])
         diag_epochs = list(meta['diag_epochs'])
@@ -845,8 +950,25 @@ def train_model_with_diagnostics(fit_sys, hp, resume_ckpt=None, checkpoint_dir=N
     elapsed = time.time() - t0
     done_epochs = hp['epochs']
 
+    # --- Checkpoint weights first: diagnostics below must not be able to lose them (D-070)
+    ckpt_base = None
+    if checkpoint_dir is not None:
+        ckpt_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}')
+        # SSE_Interconnect is a deepSI System (no state_dict); save its torch components
+        torch.save({
+            'hfn':       fit_sys.hfn.state_dict(),
+            'encoder':   fit_sys.encoder.state_dict(),
+            'optimizer': fit_sys.optimizer.state_dict(),
+        }, ckpt_base + '.pt')
+        print(f'  Checkpoint weights: {ckpt_base}.pt')
+
     fit_sys.eval()
-    r2_raw, r2_lin = aug_state_r2(fit_sys, hp)
+    try:
+        r2_raw, r2_lin = aug_state_r2(fit_sys, hp)
+    except Exception as e:
+        print(f'Warning: aug_state_r2 failed ({e}); recording NaN')
+        r2_raw = np.full(hp['NX_ANN'], np.nan)
+        r2_lin = np.full(hp['NX_ANN'], np.nan)
     diag_epochs.append(done_epochs)
     diag_r2_raw.append(r2_raw.copy())
     diag_r2_lin.append(r2_lin.copy())
@@ -856,10 +978,8 @@ def train_model_with_diagnostics(fit_sys, hp, resume_ckpt=None, checkpoint_dir=N
     print(f'Training done | {done_epochs} ep | {elapsed:.0f}s | '
           f'bestfit={bestfit:.5f}  R2_linmap: {r2_str}')
 
-    # --- Checkpoint ---
-    if checkpoint_dir is not None:
-        ckpt_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}')
-        torch.save(fit_sys.state_dict(), ckpt_base + '.pt')
+    # --- Checkpoint metadata (weights already saved above) ---
+    if ckpt_base is not None:
         np.savez(ckpt_base + '.npz',
                  done_epochs    = np.array(done_epochs),
                  bestfit        = np.array(bestfit),
@@ -870,7 +990,7 @@ def train_model_with_diagnostics(fit_sys, hp, resume_ckpt=None, checkpoint_dir=N
                  hp             = np.array(json.dumps(hp)),
                  orig_run_id    = np.array(run_id),
         )
-        print(f'  Checkpoint: {ckpt_base}')
+        print(f'  Checkpoint meta: {ckpt_base}.npz')
 
     return bestfit, dict(
         epochs    = np.array(diag_epochs),
@@ -909,15 +1029,57 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 fit_sys = build_model(hp)
 
-print('\nComputing baseline FP NRMS (fixed reference, no MSD)...')
-baseline_nrms, _ = compute_baseline_fp_nrms(hp)
+print('\nComputing baseline FP RMS/NRMS (fixed reference, no MSD)...')
+_na, _nb, _na_right, _nb_right = _get_encoder_dims(hp)
+K0 = max(_na, _nb)   # first sample with a full encoder window (~ model cheat_n)
+
+
+def _encoder_init_state(data):
+    """Untrained linear-map encoder estimate of x(K0) from the first I/O window (D-072).
+
+    Runs BEFORE training, so fit_sys.encoder is still the pure reconstructability
+    map built from the baseline linearization — a baseline-only quantity.
+    """
+    dn = fit_sys.norm.transform(data)
+    yp = np.ascontiguousarray(dn.y, dtype=DTYPE_NP)[K0 - _na: K0 + _na_right][None]
+    up = np.ascontiguousarray(dn.u, dtype=DTYPE_NP)[K0 - _nb: K0 + _nb_right][None]
+    with torch.no_grad():
+        x0 = fit_sys.encoder(torch.tensor(up, dtype=DTYPE_PT),
+                             torch.tensor(yp, dtype=DTYPE_PT)).numpy()[0]
+    return x0[:NX_PHYS]
+
+
+# True-x0 (oracle) baselines — error averaged from K0 to match the model metric (D-072)
+baseline_nrms, _ = compute_baseline_fp_nrms(hp, avg_from=K0, label='val, true x0')
+if test_x_logical is not None:
+    baseline_test_nrms, _ = compute_baseline_fp_nrms(
+        hp, data=test_data, x0_phys=test_x_logical[0], avg_from=K0,
+        label='test E1, true x0')
+else:
+    baseline_test_nrms = None
+
+# Encoder-init baselines — same init information as the model, no oracle (D-072).
+# Only meaningful for the linear_map encoder (untrained = reconstructability map).
+if ENCODER_INIT == 'linear_map':
+    baseline_encinit_nrms, _ = compute_baseline_fp_nrms(
+        hp, x0_norm=_encoder_init_state(val_data), start_ix=K0,
+        label='val, encoder-init (untrained linear map)')
+    baseline_test_encinit_nrms, _ = compute_baseline_fp_nrms(
+        hp, data=test_data, x0_norm=_encoder_init_state(test_data), start_ix=K0,
+        label='test E1, encoder-init (untrained linear map)')
+else:
+    baseline_encinit_nrms = None
+    baseline_test_encinit_nrms = None
 
 ckpt_dir = save_dir if save_flag else None
 bestfit, diag_conv = train_model_with_diagnostics(
     fit_sys, hp, resume_ckpt=resume_ckpt, checkpoint_dir=ckpt_dir)
 print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
 
-evaluate_and_save(fit_sys, hp, run_id, diag_conv=diag_conv, baseline_nrms=baseline_nrms)
+evaluate_and_save(fit_sys, hp, run_id, diag_conv=diag_conv, baseline_nrms=baseline_nrms,
+                  baseline_test_nrms=baseline_test_nrms,
+                  baseline_encinit_nrms=baseline_encinit_nrms,
+                  baseline_test_encinit_nrms=baseline_test_encinit_nrms)
 state_recovery_diagnostic(fit_sys, hp, run_id)
 
 # Gradient norm snapshot (after evaluation, non-critical)
