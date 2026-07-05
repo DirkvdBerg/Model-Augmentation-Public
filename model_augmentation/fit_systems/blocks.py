@@ -769,13 +769,19 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         return x
 
     def _mats(self):
-        # Hook: parameter-dependent matrices used by deriv(). The joint-estimation
+        # Hook: parameter-dependent quantities used by deriv(). The joint-estimation
         # subclass overrides this to supply per-forward rebuilt tensors (D-076).
-        return self.K_mat, self.C_mat, self.A_combined
+        # The LPV branch also consumes the M(Y)-rational structure (mh, alpha, beta,
+        # gamma_, N0, N1, N2); these become trainable once masses are estimated, so
+        # they flow through the hook too (D-077) instead of being read as buffers.
+        return (self.K_mat, self.C_mat, self.A_combined,
+                self.mh, self.alpha, self.beta, self.gamma_,
+                self.N0, self.N1, self.N2)
 
     def deriv(self, x: Tensor, u: Tensor) -> Tensor:
         # x: (batch, 6, 1) normalised   u: (batch, 3, 1) normalised
-        K_mat, C_mat, A_combined = self._mats()
+        (K_mat, C_mat, A_combined,
+         mh, alpha, beta, gamma_, N0, N1, N2) = self._mats()
 
         # --- denormalise -------------------------------------------------
         x_phys = x * self.std_x + self.x_mean   # (batch, 6, 1)
@@ -802,13 +808,13 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
             a = (self.N_op @ fnet.T).T / self.d_op            # (batch, 3)
         else:
             Y   = x2[:, 2]                                     # (batch,)
-            dY  = self.mh * (self.alpha * self.gamma_ - self.beta ** 2
-                             + 2 * self.beta * self.mh * Y
-                             + self.mh * (self.alpha - self.mh) * Y ** 2)  # (batch,)
+            dY  = mh * (alpha * gamma_ - beta ** 2
+                        + 2 * beta * mh * Y
+                        + mh * (alpha - mh) * Y ** 2)          # (batch,)
             Y_r = Y.unsqueeze(0)                               # (1, batch)
-            n0f = self.N0 @ fnet.T                             # (3, batch)
-            n1f = self.N1 @ fnet.T                             # (3, batch)
-            n2f = self.N2 @ fnet.T                             # (3, batch)
+            n0f = N0 @ fnet.T                                  # (3, batch)
+            n1f = N1 @ fnet.T                                  # (3, batch)
+            n2f = N2 @ fnet.T                                  # (3, batch)
             a   = (n0f + Y_r * (n1f + Y_r * n2f)).T / dY[:, None]  # (batch, 3)  Horner
             Y_val = Y[:, None]                                 # (batch, 1)
 
@@ -831,19 +837,30 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
 @added
 class Parameterized_Gantry_State_Block(Gantry_State_Block):
     """
-    Gantry_State_Block with trainable damping/stiffness scalars (joint estimation, D-076).
+    Gantry_State_Block with ALL physical parameters trainable (joint estimation,
+    D-076/D-077). Mirrors lpv_lfr_baseline/train_param_recovery exactly:
 
-    Trainable vector (5,): [kb_sum, cg1, cg2, cy, cb_sum], stored as
-    log_params = nn.Parameter(zeros) meaning log(theta / params_init):
-    positivity by construction (D-035) and all parameters start at 1 in
-    normalized space (MEET-02 centering, uniform Adam gradient scaling).
+      * 14 RAW physical scalars are log-reparameterized (D-035) and trained
+        individually: kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d.
+        Positivity by construction guarantees M(Y) > 0 for all Y (invertibility
+        proof, D-077), zero-init in log space -> start at params_init, uniform
+        Adam gradient scaling.
+      * Only Lb stays frozen -- it defines the coordinate frame (enters P), not
+        the M(Y) rational structure.
 
-    Masses/inertias/geometry stay frozen, so every M(Y)-derived parent buffer
-    (N0/N1/N2, Horner d(Y) constants) remains valid. Only K, C and the Ax part
-    of A_combined depend on the trainable scalars; they are rebuilt once per
-    timestep in nonlinear_function() via gantry_ss.build_G_matrix_entries
-    (kept autograd-safe for exactly this call) and consumed by the parent's
-    RK4 loop through the _mats() hook.
+    Because masses are trainable, the ENTIRE M(Y)-rational structure
+    (alpha/beta/gamma, N0/N1/N2, d0, M1, M2) and K, C are rebuilt from the
+    parameters once per timestep in nonlinear_function() via the gantry_ss
+    builders (kept autograd-safe for exactly this call) and handed to the parent
+    RK4 loop through the widened _mats() hook.
+
+    Reporting exposes only the 10 data-identifiable quantities (kb_sum, cg1,
+    cg2, cy, cb_sum, mh, m_total, m_diff, J_eff, d) -- see identifiable_
+    combinations()/param_table(). The raw splits kb1/kb2, cb1/cb2, Jb/Jh and
+    the individual mass components are trained but NOT separately trusted (flat
+    directions, held near params_init by the param_loss anchor). m_diff is
+    signed and is a DERIVED readout of the individually-logged m1, m2 -- it is
+    never itself a parameter. "Train raw, trust combinations" (D-077).
 
     param_loss(): Lambda-weighted L2 toward params_init in physical space,
     Lambda = RMSE_baseline / params_init (D-034). Picked up by
@@ -856,32 +873,37 @@ class Parameterized_Gantry_State_Block(Gantry_State_Block):
         see PARAM_RMSE_BASELINE in gantry_interconnect_dynamic.py.
     flag_loss_reg : bool
         Disable to drop the regularization term (param_loss() returns 0.0).
-    params_init : array-like (5,), optional
-        Override of the nominal initial values -- used by the detuned
-        recovery diagnostic (scripts/gantry/diag_joint_estimation.py).
-        Regularization anchors to THESE values.
+    params_init : array-like (14,), optional
+        Override of the nominal initial values -- used by the detuned recovery
+        diagnostic. Regularization anchors to THESE values. Order = PARAM_NAMES.
     """
 
-    PARAM_NAMES = ["kb_sum", "cg1", "cg2", "cy", "cb_sum"]
+    PARAM_NAMES = ["kb1", "kb2", "cg1", "cg2", "cy", "cb1", "cb2",
+                   "mh", "m1", "m2", "mb", "Jb", "Jh", "d"]
 
     def __init__(self, RMSE_baseline: float = 1.0, flag_loss_reg: bool = True,
                  params_init=None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         from model_augmentation.systems.gantry_ss import (
-            kb1 as _kb1, kb2 as _kb2, cg1 as _cg1, cg2 as _cg2,
-            cy as _cy, cb1 as _cb1, cb2 as _cb2, Lb as _Lb,
-            M1 as _M1, M2 as _M2,
+            kb1 as _kb1, kb2 as _kb2, cg1 as _cg1, cg2 as _cg2, cy as _cy,
+            cb1 as _cb1, cb2 as _cb2, mh as _mh, m1 as _m1, m2 as _m2,
+            mb as _mb, Jb as _Jb, Jh as _Jh, d as _d, Lb as _Lb,
+            build_poly_constants as _build_poly,
             build_G_matrix_entries as _build_G,
         )
-        self._build_G = _build_G   # plain attribute (module-level fn, picklable)
+        # Plain attributes (module-level fns, picklable) — the autograd-safe
+        # builders called with the trainable parameters each forward.
+        self._build_poly = _build_poly
+        self._build_G = _build_G
 
         if params_init is None:
-            params_init = torch.stack([_kb1 + _kb2, _cg1, _cg2, _cy, _cb1 + _cb2])
-        params_init = to_tensor(params_init).reshape(5).clone()
+            params_init = torch.stack([_kb1, _kb2, _cg1, _cg2, _cy, _cb1, _cb2,
+                                       _mh, _m1, _m2, _mb, _Jb, _Jh, _d])
+        params_init = to_tensor(params_init).reshape(14).clone()
 
         # log(theta/params_init): zeros -> start exactly at params_init (D-035)
-        self.log_params = nn.Parameter(torch.zeros(5, dtype=params_init.dtype))
+        self.log_params = nn.Parameter(torch.zeros(14, dtype=params_init.dtype))
         self.register_buffer("params_init", params_init)
         # Lambda[i] = RMSE_baseline / params_init[i]  (D-034)
         self.register_buffer(
@@ -889,28 +911,25 @@ class Parameterized_Gantry_State_Block(Gantry_State_Block):
             torch.as_tensor(RMSE_baseline, dtype=params_init.dtype) / params_init)
         self.flag_loss_reg = flag_loss_reg
 
-        # Constant pieces of the A_combined rebuild (masses frozen):
-        # d0 = det(M0) = mh*(alpha*gamma - beta^2); M1, M2 depend on mh only.
-        self.register_buffer(
-            "d0", (self.mh * (self.alpha * self.gamma_ - self.beta ** 2)).clone())
-        self.register_buffer("M1_mat", _M1.clone())
-        self.register_buffer("M2_mat", _M2.clone())
-        self.register_buffer("Lb", _Lb.clone())
+        self.register_buffer("Lb", _Lb.clone())   # frozen: coordinate frame only
 
-        # Per-forward rebuilt tensors, set in nonlinear_function()
-        self._K_cur = None
-        self._C_cur = None
-        self._A_cur = None
+        # Per-forward rebuilt structure, set in nonlinear_function(); the parent's
+        # nominal mh/alpha/.../N0 buffers are shadowed by these and go unused.
+        self._cur = None
 
     def _recover_params(self) -> Tensor:
         """Physical parameters: params_init * exp(log_params), clamped > 0 (D-035)."""
         return (self.params_init * torch.exp(self.log_params)).clamp(min=1e-6)
 
     def _build_KC(self, p: Tensor):
-        """Differentiable K(theta), C(theta) -- same structure as gantry_ss K, C."""
-        kb_sum, cg1, cg2, cy, cb_sum = p
+        """Differentiable K(theta), C(theta) -- same structure as gantry_ss K, C.
+        Uses only the identifiable sums kb1+kb2, cb1+cb2 (matrices never depend
+        on the individual splits)."""
+        (kb1, kb2, cg1, cg2, cy, cb1, cb2,
+         mh, m1, m2, mb, Jb, Jh, d) = p
         z = p.new_zeros(())
         Lb = self.Lb
+        kb_sum, cb_sum = kb1 + kb2, cb1 + cb2
         K = torch.stack([
             torch.stack([z, z,      z]),
             torch.stack([z, kb_sum, z]),
@@ -923,21 +942,43 @@ class Parameterized_Gantry_State_Block(Gantry_State_Block):
         ])
         return K, C
 
+    @staticmethod
+    def _build_M1M2(mh: Tensor):
+        """M1, M2 coefficients of M(Y) -- depend on mh only (gantry_ss M1, M2)."""
+        z = mh.new_zeros(())
+        M1 = torch.stack([
+            torch.stack([z,   -mh,  z]),
+            torch.stack([-mh,  z,   z]),
+            torch.stack([z,    z,   z]),
+        ])
+        M2 = torch.stack([
+            torch.stack([z,   z,   z]),
+            torch.stack([z,   mh,  z]),
+            torch.stack([z,   z,   z]),
+        ])
+        return M1, M2
+
     def nonlinear_function(self, z: Tensor):
-        # Rebuild parameter-dependent matrices once per timestep; all RK4
-        # substeps of the parent loop reuse them via the _mats() hook.
-        K, C = self._build_KC(self._recover_params())
-        _, _, _, A_combined = self._build_G(
-            self.N0, self.d0, self.M1_mat, self.M2_mat, K, C)
-        self._K_cur, self._C_cur, self._A_cur = K, C, A_combined
+        # Rebuild the full M(Y) rational structure once per timestep from the
+        # current parameters; every RK4 substep reuses it via the _mats() hook.
+        p = self._recover_params()
+        (kb1, kb2, cg1, cg2, cy, cb1, cb2,
+         mh, m1, m2, mb, Jb, Jh, d) = p
+        alpha, beta, gamma_, N0, N1, N2 = self._build_poly(
+            m1, m2, mb, mh, Jb, Jh, self.Lb, d)
+        d0 = mh * (alpha * gamma_ - beta ** 2)          # det(M0)
+        M1, M2 = self._build_M1M2(mh)
+        K, C = self._build_KC(p)
+        _, _, _, A_combined = self._build_G(N0, d0, M1, M2, K, C)
+        self._cur = (K, C, A_combined, mh, alpha, beta, gamma_, N0, N1, N2)
         return super().nonlinear_function(z)
 
     def _mats(self):
-        if self._A_cur is None:
+        if self._cur is None:
             raise RuntimeError(
                 "Parameterized_Gantry_State_Block.deriv() must be reached via "
-                "nonlinear_function(), which rebuilds K/C/A_combined first.")
-        return self._K_cur, self._C_cur, self._A_cur
+                "nonlinear_function(), which rebuilds the M(Y) structure first.")
+        return self._cur
 
     def param_loss(self):
         """Lambda-weighted L2 toward params_init in physical space (D-034)."""
@@ -948,6 +989,52 @@ class Parameterized_Gantry_State_Block(Gantry_State_Block):
             self.Lambda * p, self.Lambda * self.params_init, reduction="sum")
 
     def physical_params(self) -> dict:
-        """Current physical parameter values as {name: float}."""
+        """Current RAW physical parameter values as {name: float} (14 scalars)."""
         vals = self._recover_params().detach()
         return {n: vals[i].item() for i, n in enumerate(self.PARAM_NAMES)}
+
+    # ------------------------------------------------------------------
+    # Reporting: the 10 data-identifiable combinations (D-077). Raw params are
+    # trained; only these are trusted. m_diff is signed (derived from m1, m2).
+    # ------------------------------------------------------------------
+    _IDENT_ORDER = ["kb_sum", "cg1", "cg2", "cy", "cb_sum", "mh",
+                    "m_total", "m_diff", "J_eff", "d"]
+
+    @staticmethod
+    def _combos_from_raw(p: dict, Lb: float) -> dict:
+        return {
+            "kb_sum":  p["kb1"] + p["kb2"],
+            "cg1":     p["cg1"],
+            "cg2":     p["cg2"],
+            "cy":      p["cy"],
+            "cb_sum":  p["cb1"] + p["cb2"],
+            "mh":      p["mh"],
+            "m_total": p["m1"] + p["m2"] + p["mb"],
+            "m_diff":  p["m1"] - p["m2"],                       # signed
+            "J_eff":   p["Jb"] + p["Jh"] + (p["m1"] + p["m2"]) * Lb ** 2 / 4,
+            "d":       p["d"],
+        }
+
+    def identifiable_combinations(self) -> dict:
+        """The 10 trusted combinations from the current raw parameters."""
+        return self._combos_from_raw(self.physical_params(), self.Lb.item())
+
+    def param_table(self) -> str:
+        """True / init / learned comparison of the 10 identifiable combinations."""
+        from model_augmentation.systems import gantry_ss as _gss
+        Lb = self.Lb.item()
+        true_raw = {n: getattr(_gss, n).item() for n in self.PARAM_NAMES}
+        det_raw = {n: self.params_init[i].item()
+                   for i, n in enumerate(self.PARAM_NAMES)}
+        true_c = self._combos_from_raw(true_raw, Lb)
+        det_c = self._combos_from_raw(det_raw, Lb)
+        lrn_c = self.identifiable_combinations()
+        hdr = (f"{'Quantity':<10}{'True':>12}{'Init':>12}"
+               f"{'Learned':>12}{'delta%':>10}")
+        lines = ["  Identifiable combinations (raw trained, combos trusted):",
+                 hdr, "-" * 56]
+        for n in self._IDENT_ORDER:
+            t, i, l = true_c[n], det_c[n], lrn_c[n]
+            dp = (l - t) / t * 100 if abs(t) > 1e-12 else float("nan")
+            lines.append(f"{n:<10}{t:>12.4f}{i:>12.4f}{l:>12.4f}{dp:>+9.2f}%")
+        return "\n".join(lines)

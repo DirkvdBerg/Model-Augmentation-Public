@@ -231,12 +231,13 @@ def build_model(hp):
     ic = Interconnect(nxd, nu, ny, debugging=False)
 
     if JOINT_ESTIMATION:
-        # D-076: trainable [kb_sum, cg1, cg2, cy, cb_sum] via log-reparam
+        # D-077: all 14 raw physical params trainable via log-reparam.
+        # PARAM_INIT_DETUNE, when set, is a 14-vector aligned to PARAM_NAMES.
         _pi = None
         if PARAM_INIT_DETUNE is not None:
-            from model_augmentation.systems.gantry_ss import kb1, kb2, cg1, cg2, cy, cb1, cb2
-            _nominal = np.array([float(kb1 + kb2), float(cg1), float(cg2),
-                                 float(cy), float(cb1 + cb2)])
+            from model_augmentation.systems import gantry_ss as _gss
+            _names = Parameterized_Gantry_State_Block.PARAM_NAMES
+            _nominal = np.array([float(getattr(_gss, n)) for n in _names])
             _pi = _nominal * np.asarray(PARAM_INIT_DETUNE, dtype=float)
         phy_block = Parameterized_Gantry_State_Block(
             Y_op=None, std_x=std_x, std_u=std_u,
@@ -436,7 +437,7 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None,
     fit_sys.checkpoint_load_system(name='_best')
     fit_sys.eval()
 
-    # ── Joint estimation report (D-076, present only when the param block is used)
+    # ── Joint estimation report (D-076/D-077, present only when the param block is used)
     _pblocks = [m for m in fit_sys.hfn.connected_blocks if hasattr(m, 'physical_params')]
     params_init_np = None
     params_learned_np = None
@@ -444,7 +445,12 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None,
         _pb = _pblocks[0]
         params_init_np = _pb.params_init.detach().cpu().numpy().copy()
         params_learned_np = np.array([_pb.physical_params()[n] for n in _pb.PARAM_NAMES])
-        print('\n=== Joint estimation: physical parameters (best checkpoint) ===')
+        # Trusted view: the 10 identifiable combinations (raw are trained, combos
+        # are what the data can determine -- D-077).
+        print('\n=== Joint estimation: identifiable combinations (best checkpoint) ===')
+        print(_pb.param_table())
+        # Diagnostic view: all 14 raw params (splits held near init by param_loss).
+        print('\n=== Joint estimation: raw parameters (init vs learned) ===')
         print(f"  {'param':8s} {'init':>12s} {'learned':>12s} {'delta':>9s}")
         for _i, _n in enumerate(_pb.PARAM_NAMES):
             _d = 100.0 * (params_learned_np[_i] - params_init_np[_i]) / params_init_np[_i]
