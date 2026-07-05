@@ -768,8 +768,14 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
             x = x + (k1 + 2 * k2 + 2 * k3 + k4) / 6
         return x
 
+    def _mats(self):
+        # Hook: parameter-dependent matrices used by deriv(). The joint-estimation
+        # subclass overrides this to supply per-forward rebuilt tensors (D-076).
+        return self.K_mat, self.C_mat, self.A_combined
+
     def deriv(self, x: Tensor, u: Tensor) -> Tensor:
         # x: (batch, 6, 1) normalised   u: (batch, 3, 1) normalised
+        K_mat, C_mat, A_combined = self._mats()
 
         # --- denormalise -------------------------------------------------
         x_phys = x * self.std_x + self.x_mean   # (batch, 6, 1)
@@ -784,8 +790,8 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
 
         # --- net logical force -------------------------------------------
         # fnet = -K@q - C@qdot + u_logical
-        fnet = (-(x2[:, :3] @ self.K_mat.T)
-                - (x2[:, 3:] @ self.C_mat.T)
+        fnet = (-(x2[:, :3] @ K_mat.T)
+                - (x2[:, 3:] @ C_mat.T)
                 + u_log)                 # (batch, 3)
 
         # --- LFR loop solve: a = N(Y)/d(Y) @ fnet -----------------------
@@ -815,8 +821,133 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         # --- state update through G (NOT directly from a) ---------------
         # xdot = Ax@x + Bw@w + Bu@u_log   (fused via A_combined)
         combined  = torch.cat([x2, w, u_log], dim=-1)   # (batch, 15)
-        xdot_phys = combined @ self.A_combined.T         # (batch, 6)
+        xdot_phys = combined @ A_combined.T              # (batch, 6)
 
         # --- renormalise and restore trailing dim -----------------------
         xdot = (xdot_phys / self.std_x_1d).unsqueeze(-1)  # (batch, 6, 1)
         return xdot
+
+
+@added
+class Parameterized_Gantry_State_Block(Gantry_State_Block):
+    """
+    Gantry_State_Block with trainable damping/stiffness scalars (joint estimation, D-076).
+
+    Trainable vector (5,): [kb_sum, cg1, cg2, cy, cb_sum], stored as
+    log_params = nn.Parameter(zeros) meaning log(theta / params_init):
+    positivity by construction (D-035) and all parameters start at 1 in
+    normalized space (MEET-02 centering, uniform Adam gradient scaling).
+
+    Masses/inertias/geometry stay frozen, so every M(Y)-derived parent buffer
+    (N0/N1/N2, Horner d(Y) constants) remains valid. Only K, C and the Ax part
+    of A_combined depend on the trainable scalars; they are rebuilt once per
+    timestep in nonlinear_function() via gantry_ss.build_G_matrix_entries
+    (kept autograd-safe for exactly this call) and consumed by the parent's
+    RK4 loop through the _mats() hook.
+
+    param_loss(): Lambda-weighted L2 toward params_init in physical space,
+    Lambda = RMSE_baseline / params_init (D-034). Picked up by
+    SSE_Interconnect_ParamLoss via its hasattr sweep.
+
+    Parameters
+    ----------
+    RMSE_baseline : float
+        Loss-scale reference for Lambda (D-034). Pipeline value is measured,
+        see PARAM_RMSE_BASELINE in gantry_interconnect_dynamic.py.
+    flag_loss_reg : bool
+        Disable to drop the regularization term (param_loss() returns 0.0).
+    params_init : array-like (5,), optional
+        Override of the nominal initial values -- used by the detuned
+        recovery diagnostic (scripts/gantry/diag_joint_estimation.py).
+        Regularization anchors to THESE values.
+    """
+
+    PARAM_NAMES = ["kb_sum", "cg1", "cg2", "cy", "cb_sum"]
+
+    def __init__(self, RMSE_baseline: float = 1.0, flag_loss_reg: bool = True,
+                 params_init=None, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        from model_augmentation.systems.gantry_ss import (
+            kb1 as _kb1, kb2 as _kb2, cg1 as _cg1, cg2 as _cg2,
+            cy as _cy, cb1 as _cb1, cb2 as _cb2, Lb as _Lb,
+            M1 as _M1, M2 as _M2,
+            build_G_matrix_entries as _build_G,
+        )
+        self._build_G = _build_G   # plain attribute (module-level fn, picklable)
+
+        if params_init is None:
+            params_init = torch.stack([_kb1 + _kb2, _cg1, _cg2, _cy, _cb1 + _cb2])
+        params_init = to_tensor(params_init).reshape(5).clone()
+
+        # log(theta/params_init): zeros -> start exactly at params_init (D-035)
+        self.log_params = nn.Parameter(torch.zeros(5, dtype=params_init.dtype))
+        self.register_buffer("params_init", params_init)
+        # Lambda[i] = RMSE_baseline / params_init[i]  (D-034)
+        self.register_buffer(
+            "Lambda",
+            torch.as_tensor(RMSE_baseline, dtype=params_init.dtype) / params_init)
+        self.flag_loss_reg = flag_loss_reg
+
+        # Constant pieces of the A_combined rebuild (masses frozen):
+        # d0 = det(M0) = mh*(alpha*gamma - beta^2); M1, M2 depend on mh only.
+        self.register_buffer(
+            "d0", (self.mh * (self.alpha * self.gamma_ - self.beta ** 2)).clone())
+        self.register_buffer("M1_mat", _M1.clone())
+        self.register_buffer("M2_mat", _M2.clone())
+        self.register_buffer("Lb", _Lb.clone())
+
+        # Per-forward rebuilt tensors, set in nonlinear_function()
+        self._K_cur = None
+        self._C_cur = None
+        self._A_cur = None
+
+    def _recover_params(self) -> Tensor:
+        """Physical parameters: params_init * exp(log_params), clamped > 0 (D-035)."""
+        return (self.params_init * torch.exp(self.log_params)).clamp(min=1e-6)
+
+    def _build_KC(self, p: Tensor):
+        """Differentiable K(theta), C(theta) -- same structure as gantry_ss K, C."""
+        kb_sum, cg1, cg2, cy, cb_sum = p
+        z = p.new_zeros(())
+        Lb = self.Lb
+        K = torch.stack([
+            torch.stack([z, z,      z]),
+            torch.stack([z, kb_sum, z]),
+            torch.stack([z, z,      z]),
+        ])
+        C = torch.stack([
+            torch.stack([cg1 + cg2,            (cg1 - cg2) * Lb / 2,                z]),
+            torch.stack([(cg1 - cg2) * Lb / 2, cb_sum + (cg1 + cg2) * Lb ** 2 / 4,  z]),
+            torch.stack([z,                    z,                                   cy]),
+        ])
+        return K, C
+
+    def nonlinear_function(self, z: Tensor):
+        # Rebuild parameter-dependent matrices once per timestep; all RK4
+        # substeps of the parent loop reuse them via the _mats() hook.
+        K, C = self._build_KC(self._recover_params())
+        _, _, _, A_combined = self._build_G(
+            self.N0, self.d0, self.M1_mat, self.M2_mat, K, C)
+        self._K_cur, self._C_cur, self._A_cur = K, C, A_combined
+        return super().nonlinear_function(z)
+
+    def _mats(self):
+        if self._A_cur is None:
+            raise RuntimeError(
+                "Parameterized_Gantry_State_Block.deriv() must be reached via "
+                "nonlinear_function(), which rebuilds K/C/A_combined first.")
+        return self._K_cur, self._C_cur, self._A_cur
+
+    def param_loss(self):
+        """Lambda-weighted L2 toward params_init in physical space (D-034)."""
+        if not self.flag_loss_reg:
+            return 0.0
+        p = self._recover_params()
+        return nn.functional.mse_loss(
+            self.Lambda * p, self.Lambda * self.params_init, reduction="sum")
+
+    def physical_params(self) -> dict:
+        """Current physical parameter values as {name: float}."""
+        vals = self._recover_params().detach()
+        return {n: vals[i].item() for i, n in enumerate(self.PARAM_NAMES)}

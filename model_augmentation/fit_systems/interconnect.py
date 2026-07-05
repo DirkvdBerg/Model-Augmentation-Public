@@ -13,6 +13,7 @@ from copy import deepcopy
 from deepSI.fit_systems.fit_system import print_array_byte_size, My_Simple_DataLoader, Tictoctimer, loop_dataset
 
 from model_augmentation.utils.utils import detect_algebraic_loop
+from model_augmentation.utils.utils import added  # CHANGED: marker for project-added classes (D-076)
 from model_augmentation.fit_systems.blocks import Block, Parameterized_Linear_Output_Block, Parameterized_MSD_State_Block, Parameterized_Linear_State_Block
 from model_augmentation.utils.deepSI_corrections import fixed_System_data_norm
 
@@ -715,5 +716,32 @@ class SSE_Interconnect(SS_encoder_general):
             self.checkpoint_load_system(name='_best')
         except FileNotFoundError:
             print('no best checkpoint found keeping last')
-        if verbose: 
+        if verbose:
             print(f'Loaded model with best known validation {validation_measure} of {self.bestfit:6.4} which happened on epoch {best_it} (epoch_id={self.epoch_id[-1] if len(self.epoch_id)>0 else 0:.2f})')
+
+
+@added
+class SSE_Interconnect_ParamLoss(SSE_Interconnect):
+    """
+    SSE_Interconnect with generic parameter-regularization pickup (D-076).
+
+    Drop-in replacement: loss() = SSE_Interconnect.loss() + sum of param_loss()
+    over all connected blocks that expose it (hasattr sweep). Exact no-op when
+    no block exposes param_loss, so it can be used unconditionally.
+
+    Reimplementation of the D-032 idea (lpv_lfr_baseline lfr_fit_system);
+    deliberately not imported from there to avoid a cross-pipeline dependency.
+
+    Caveat: the parent loss() already adds regularization for Jan's
+    Parameterized_Linear_State_Block / Parameterized_Linear_Output_Block /
+    Parameterized_MSD_State_Block via isinstance checks. Combining one of
+    those blocks with this class would count its penalty twice. This pipeline
+    never uses them; do not mix.
+    """
+
+    def loss(self, uhist, yhist, ufuture, yfuture, **Loss_kwargs):
+        loss_theta = 0
+        for m in self.hfn.connected_blocks:  # type: ignore
+            if hasattr(m, "param_loss"):
+                loss_theta = loss_theta + m.param_loss()
+        return super().loss(uhist, yhist, ufuture, yfuture, **Loss_kwargs) + loss_theta

@@ -37,6 +37,13 @@ ny  = 3
 #          'default' = standard deepSI learned encoder
 ENCODER_INIT = 'linear_map'
 ANN_ACTIVATION = 'linear'  # 'linear' = Identity activation (Jan's ECC setup, D-071); 'tanh' = nonlinear ANN
+JOINT_ESTIMATION = True   # D-076: True = trainable damping/stiffness scalars in the physics block
+PARAM_RMSE_BASELINE = 0.01 # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
+# D-076 run design: None = start at true values (run T: measures absorber-induced bias).
+# List of 5 factors on [kb_sum, cg1, cg2, cy, cb_sum] = detuned start (run D: recovery test);
+# [1.10, 1.10, 0.90, 1.10, 0.90] reproduces the lpv_lfr_baseline detuning signs (D-076).
+# NOTE: param_loss anchors to the (possibly detuned) INIT values -- Jan's prior semantics.
+PARAM_INIT_DETUNE = None
 SEED = 42
 
 # --- Resampling ---
@@ -70,7 +77,7 @@ DEFAULT_HP = dict(
     na_nb=0,          # set below via Jan's formula
     batch_size=256,
     lr=1e-4,
-    epochs=100,
+    epochs=5,
 )
 DEFAULT_HP['na_nb'] = (NX_PHYS + DEFAULT_HP['NX_ANN']) * 2 + 1   # THEORY: nxd*2+1 (Jan's standard)
 
@@ -223,11 +230,27 @@ def build_model(hp):
 
     ic = Interconnect(nxd, nu, ny, debugging=False)
 
-    phy_block = Gantry_State_Block(
-        Y_op=None, std_x=std_x, std_u=std_u,
-        x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
-        up_sample=hp['up_sample'],
-    ).to(DTYPE_PT)
+    if JOINT_ESTIMATION:
+        # D-076: trainable [kb_sum, cg1, cg2, cy, cb_sum] via log-reparam
+        _pi = None
+        if PARAM_INIT_DETUNE is not None:
+            from model_augmentation.systems.gantry_ss import kb1, kb2, cg1, cg2, cy, cb1, cb2
+            _nominal = np.array([float(kb1 + kb2), float(cg1), float(cg2),
+                                 float(cy), float(cb1 + cb2)])
+            _pi = _nominal * np.asarray(PARAM_INIT_DETUNE, dtype=float)
+        phy_block = Parameterized_Gantry_State_Block(
+            Y_op=None, std_x=std_x, std_u=std_u,
+            x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
+            up_sample=hp['up_sample'],
+            RMSE_baseline=PARAM_RMSE_BASELINE,
+            params_init=_pi,
+        ).to(DTYPE_PT)
+    else:
+        phy_block = Gantry_State_Block(
+            Y_op=None, std_x=std_x, std_u=std_u,
+            x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
+            up_sample=hp['up_sample'],
+        ).to(DTYPE_PT)
     # CHANGED: C_aug / Parameterized_Linear_Output_Block removed — diag_gradient_routing
     # confirms near-zero C_aug init (Frobenius ~1e-2) chokes ANN gradient by same factor.
     out_phys = Linear_Output_Block(C=Cd_norm, D=Dd_np)
@@ -255,7 +278,10 @@ def build_model(hp):
     ic.connect_signals("x", out_phys, "concat", selection_matrix(PHY_IX, nxd))
     ic.connect_block_signals(out_phys, ["u"], ["y"])
 
-    fit_sys = SSE_Interconnect(
+    # D-076: ParamLoss subclass used unconditionally — exact no-op when no
+    # block exposes param_loss (i.e. identical to SSE_Interconnect for
+    # JOINT_ESTIMATION=False).
+    fit_sys = SSE_Interconnect_ParamLoss(
         interconnect=ic, na=na, nb=nb,
         na_right=na_right, nb_right=nb_right,
         e_net_kwargs={
@@ -409,6 +435,20 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None,
     loss_train_full = fit_sys.Loss_train.copy()
     fit_sys.checkpoint_load_system(name='_best')
     fit_sys.eval()
+
+    # ── Joint estimation report (D-076, present only when the param block is used)
+    _pblocks = [m for m in fit_sys.hfn.connected_blocks if hasattr(m, 'physical_params')]
+    params_init_np = None
+    params_learned_np = None
+    if _pblocks:
+        _pb = _pblocks[0]
+        params_init_np = _pb.params_init.detach().cpu().numpy().copy()
+        params_learned_np = np.array([_pb.physical_params()[n] for n in _pb.PARAM_NAMES])
+        print('\n=== Joint estimation: physical parameters (best checkpoint) ===')
+        print(f"  {'param':8s} {'init':>12s} {'learned':>12s} {'delta':>9s}")
+        for _i, _n in enumerate(_pb.PARAM_NAMES):
+            _d = 100.0 * (params_learned_np[_i] - params_init_np[_i]) / params_init_np[_i]
+            print(f'  {_n:8s} {params_init_np[_i]:12.4f} {params_learned_np[_i]:12.4f} {_d:+8.2f}%')
 
     # ── Encoder-initialised simulation ──────────────────────────────────────
     fit_sys.hfn.reset_saved_signals()
@@ -654,6 +694,9 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None,
                 MODE=MODE, ENCODER_INIT=ENCODER_INIT,
                 ANN_ACTIVATION=ANN_ACTIVATION, FS_NEW=FS_NEW, D=D,
                 FS_ORIG=FS_ORIG, SEED=SEED,
+                JOINT_ESTIMATION=JOINT_ESTIMATION,
+                PARAM_RMSE_BASELINE=PARAM_RMSE_BASELINE,
+                PARAM_INIT_DETUNE=PARAM_INIT_DETUNE,
             )),
         )
         if HAS_ORACLE:
@@ -683,6 +726,9 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None,
         if baseline_test_encinit_nrms is not None:
             save_dict['baseline_test_encinit_nrms'] = baseline_test_encinit_nrms
             save_dict['baseline_test_encinit_rms']  = baseline_test_encinit_nrms * ystd
+        if params_learned_np is not None:
+            save_dict['params_init']    = params_init_np
+            save_dict['params_learned'] = params_learned_np
         np.savez(os.path.join(save_dir, f'gantry_results_{rid}.npz'), **save_dict)
         print(f'Saved results: gantry_results_{rid}.npz')
 
@@ -925,6 +971,11 @@ def train_model_with_diagnostics(fit_sys, hp, resume_ckpt=None, checkpoint_dir=N
         meta = np.load(resume_ckpt + '.npz', allow_pickle=True)
         # D-070: SSE_Interconnect has no state_dict; checkpoint holds component state_dicts
         ckpt = torch.load(resume_ckpt + '.pt', map_location='cpu')
+        # D-076: JE checkpoints carry log_params; pre-JE checkpoints cannot resume a JE run
+        if JOINT_ESTIMATION and not any('log_params' in k for k in ckpt['hfn']):
+            raise RuntimeError(
+                'RESUME_CHECKPOINT points at a pre-JE checkpoint (no log_params); '
+                'JOINT_ESTIMATION runs must start from fresh checkpoints (D-076)')
         fit_sys.hfn.load_state_dict(ckpt['hfn'])
         fit_sys.encoder.load_state_dict(ckpt['encoder'])
         if 'optimizer' in ckpt:
