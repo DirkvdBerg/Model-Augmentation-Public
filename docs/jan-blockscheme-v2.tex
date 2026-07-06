@@ -41,9 +41,9 @@
 % f_aug leaves S lower-right, drops into the Theta sum
 \draw[->] ($(S.east)+(0,-0.18)$) -- (2.0,3.32) -- (tsum.north);
 \node at (2.42,2.3) {\scriptsize $f_{\mathrm{aug}}$};
-% g_aug leaves S upper-right, drops onto the xbar line
-\draw[->] ($(S.east)+(0,0.18)$) -- (3.4,3.68) -- (3.4,2.0);
-\node at (3.82,2.85) {\scriptsize $g_{\mathrm{aug}}$};
+% g_aug leaves S upper-right and drops straight down into the bus-bar (xbar row)
+\draw[->] ($(S.east)+(0,0.18)$) -- (5.0,3.68) -- (5.0,2.0);
+\node at (4.7,2.95) {\scriptsize $g_{\mathrm{aug}}$};
 
 % ===== f_base fan: middle line X aligned with f_base output; Theta up, Y down =====
 \draw[->] (fbase.east) -- (5.0,0);                 % X line, straight, aligned with f_base
@@ -51,19 +51,18 @@
 \draw[-] (-2.2,-1.0) -- (-2.2,1.0);                % fan bar
 \draw[->] (-2.2,1.0) -- (tsum.west);
 \node at (-1.6,1.28) {\scriptsize $\Theta$};
-\draw[-] (tsum.east) -- (5.0,1.0);
+\draw[->] (tsum.east) -- (5.0,1.0);
 \draw[->] (-2.2,-1.0) -- (5.0,-1.0);
 \node at (-1.6,-0.72) {\scriptsize $Y$};
 
-% ===== xbar line, produced solely by g_aug =====
-\draw[-] (3.4,2.0) -- (5.0,2.0);
+% ===== xbar row: g_aug drops straight into the bus-bar, no separate line =====
 
 % ===== bundle: concatenation bus-bar (NOT a sum) =====
 \draw[line width=1.3pt] (5.0,-1.0) -- (5.0,2.0);
 \node[jn] at (5.0,2.0) {}; \node[jn] at (5.0,1.0) {};
 \node[jn] at (5.0,0) {}; \node[jn] at (5.0,-1.0) {};
 \draw[-] (5.0,0.5) -- (6.4,0.5);
-\node[above] at (5.8,0.55) {\scriptsize $\hat{x}_{k+1}$};
+\node[above] at (5.95,0.55) {\scriptsize $\hat{x}_{k+1}=[\tilde{x};\bar{x}]$};
 
 % ===== feedback with z^-1 on the bottom return line =====
 \node[small] (delay) at (-1,-5.2) {$z^{-1}$\\{\scriptsize delay}};
