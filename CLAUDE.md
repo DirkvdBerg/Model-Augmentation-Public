@@ -32,7 +32,8 @@ Bash: `conda run -n GraduationProject python ...`. User manual: `conda activate 
 | Self-improvement ruleset | `tasks/lessons.md` |
 | Session handoff | `tasks/handoff.md` |
 | Archived docs | `archive/` |
-| **Telica data schema** (columns, signals, folder structure) | `docs/kamtin-telica-schema.md` |
+| **Telica data schema** (columns, signals, folder structure, **train/val/test split**, parameter + controller files) | `docs/kamtin-telica-schema.md` |
+| **Gantry augmentation problem log** (K=0, horizon mismatch, all failure modes + diagnostics) | `docs/gantry-augmentation-problem-log.md` |
 
 ## Data Access Policy
 - `kamtin-data/Data Telica/` is blocked via `.claudeignore` — **never attempt to read files there**.
