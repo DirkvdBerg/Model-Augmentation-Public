@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  6 JUL 2026 22:19
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  6 JUL 2026 22:47
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -549,37 +549,42 @@ Package hyperref Info: Link coloring OFF on input line 40.
 \@outlinefile=\write3
 \openout3 = `jan-augmentation-writeup.out'.
 
-LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 5
-0.
 
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                \hskip 10.95pt
+(hyperref)                replaced by space on input line 49.
+
+LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 5
+2.
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OML+lmm on input line 5
-0.
+2.
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-50.
+52.
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-50.
+52.
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 50.
+(Font)              <10.95> on input line 52.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 50.
+(Font)              <8> on input line 52.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 50.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 50.
+(Font)              <6> on input line 52.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 52.
 
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd
@@ -588,7 +593,7 @@ File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 50.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 52.
 
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
@@ -599,37 +604,27 @@ File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                \hskip 10.95pt
-(hyperref)                replaced by space on input line 61.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                \hskip 10.95pt
-(hyperref)                replaced by space on input line 130.
+(hyperref)                replaced by space on input line 129.
 
 [1
 
 {C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users/2
 0203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ec.enc}{C:/Users/20
-203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/202
-03253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}{C:/Users/
+203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}{C:/Users
+/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/
 20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathsy.enc}{C:/Use
 rs/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathex.enc}]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                \hskip 10.95pt
-(hyperref)                replaced by space on input line 191.
+(hyperref)                replaced by space on input line 207.
 
 [2]
-<jan-blockscheme-v2.pdf, id=63, 530.3072pt x 382.90453pt>
+<jan-blockscheme-v2.pdf, id=64, 530.3072pt x 382.90453pt>
 File: jan-blockscheme-v2.pdf Graphic file (type pdf)
 <use jan-blockscheme-v2.pdf>
-Package pdftex.def Info: jan-blockscheme-v2.pdf  used on input line 251.
+Package pdftex.def Info: jan-blockscheme-v2.pdf  used on input line 267.
 (pdftex.def)             Requested size: 472.31595pt x 341.04686pt.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                \hskip 10.95pt
-(hyperref)                replaced by space on input line 254.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
@@ -637,9 +632,13 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                replaced by space on input line 270.
 
 [3 <./jan-blockscheme-v2.pdf>]
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 2
-93.
 
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                \hskip 10.95pt
+(hyperref)                replaced by space on input line 286.
+
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 3
+09.
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -654,13 +653,13 @@ d.
 (rerunfilecheck)             Checksum: F05B20BE6FB49BD09BEE8FAE8887C94A;1277.
  ) 
 Here is how much of TeX's memory you used:
- 13986 strings out of 467867
- 222333 string characters out of 5416882
- 698118 words of memory out of 5000000
- 42550 multiletter control sequences out of 15000+600000
- 686373 words of font info for 127 fonts, out of 8000000 for 9000
+ 13988 strings out of 467867
+ 222334 string characters out of 5416882
+ 694319 words of memory out of 5000000
+ 42551 multiletter control sequences out of 15000+600000
+ 686290 words of font info for 126 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,11n,79p,1023b,466s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,9n,79p,1023b,463s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/
 cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/publi
 c/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/
@@ -686,9 +685,9 @@ cal/Programs/MiKTeX/fonts/type1/public/lm/lmr8.pfb><C:/Users/20203253/AppData/L
 ocal/Programs/MiKTeX/fonts/type1/public/lm/lmsy10.pfb><C:/Users/20203253/AppDat
 a/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy8.pfb><C:/Users/20203253/AppD
 ata/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on jan-augmentation-writeup.pdf (4 pages, 340707 bytes).
+Output written on jan-augmentation-writeup.pdf (4 pages, 341379 bytes).
 PDF statistics:
- 219 PDF objects out of 1000 (max. 8388607)
- 30 named destinations out of 1000 (max. 500000)
+ 224 PDF objects out of 1000 (max. 8388607)
+ 33 named destinations out of 1000 (max. 500000)
  34862 words of extra memory for PDF output out of 35830 (max. 10000000)
 
