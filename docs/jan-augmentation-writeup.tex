@@ -32,13 +32,13 @@
 
 % ---------------------------------------------------------------------------
 \section*{Notation}
-\begin{tabular}{@{}ll@{}}
+\begin{tabular}{@{}l p{0.66\linewidth}@{}}
 $\xb \in \mathbb{R}^6$ & baseline state $[q_1,q_2,q_3,\dot q_1,\dot q_2,\dot q_3]$, logical coords (Eq.~2)\\
 $\xa \in \mathbb{R}^2$ & added states, targeting $[\delta_a,\dot\delta_a]$ (Sec.~2)\\
 $\xh = [\xb^\top\ \xa^\top]^\top \in \mathbb{R}^8$ & full model state (Eq.~3)\\
 $u,\ y \in \mathbb{R}^3$ & stage input (forces $F_1,F_2,F_y$), stage output (positions $X_1,X_2,Y$) \\
 $Y = q_3$ & scheduling variable \\
-$\fb,\hb$ & baseline state-transition / output; \ $\fa,\ga,\ha$ augmentation functions (Table~1)\\
+$\fb,\hb,\fa,\ga,\ha$ & baseline and augmentation functions (Eq.~2, Table~1)\\
 \end{tabular}
 
 % ---------------------------------------------------------------------------
@@ -68,9 +68,9 @@ continuous-time equations of motion are
 \end{equation}
 with (here $m_h = m_{h,\mathrm{rigid}}$, so $m_h{+}m_a = 10.1$):
 \begin{align*}
-  m_{\mathrm{t}} &= m_1{+}m_2{+}m_b{+}m_h{+}m_a, &
+  m_{\mathrm{t}} &= m_1{+}m_2{+}m_b{+}m_h{+}m_a, \\
   s &= (m_1{-}m_2)\tfrac{L_b}{2} - (m_h{+}m_a)Y - \hl{m_a(L_0{+}\delta_a)}, \\
-  J &= J_b{+}J_h{+}(m_1{+}m_2)\tfrac{L_b^2}{4} + (m_h{+}m_a)d^2 + m_h Y^2 + \hl{m_a(Y{+}L_0{+}\delta_a)^2}. &&
+  J &= J_b{+}J_h{+}(m_1{+}m_2)\tfrac{L_b^2}{4} + (m_h{+}m_a)d^2 + m_h Y^2 + \hl{m_a(Y{+}L_0{+}\delta_a)^2}.
 \end{align*}
 Discretized (RK4) this is the truth $x_{k+1} = f(x_k,u_k)$, $y_k = h(x_k)$ of Eq.~1.
 The highlighted terms are the absorber's coupling: through the mass matrix it enters the
@@ -91,11 +91,9 @@ the MATLAB). Its matrices are ($s_0$, $J_0$ are $s$, $J$ of Section~1 at $m_a{=}
     s_0 & J_0 & -m_h d \\
     0 & -m_h d & m_h
   \end{bmatrix},
-  \quad
-  s_0 = (m_1{-}m_2)\tfrac{L_b}{2}{-}m_h Y,
-  \quad
-  J_0 = J_b{+}J_h{+}(m_1{+}m_2)\tfrac{L_b^2}{4}{+}m_h d^2{+}m_h Y^2 ,
 \end{equation}
+with $s_0 = (m_1{-}m_2)\tfrac{L_b}{2}{-}m_h Y$ and
+$J_0 = J_b{+}J_h{+}(m_1{+}m_2)\tfrac{L_b^2}{4}{+}m_h d^2{+}m_h Y^2$.
 \begin{equation}
   \small
   C =

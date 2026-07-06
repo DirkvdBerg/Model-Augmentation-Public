@@ -17,12 +17,18 @@ speak his language. Four rules, in priority order:
 2. **System and baseline at the same explicit level.** Both are given as the actual
    `M`, `C`, `K` matrices taken directly from `Matlab-scripts/Augmentation`. No stubs,
    no Lagrangian energy sketch, no "paste from MATLAB later." The matrices exist; use them.
-3. **Augmentation in the paper's model form, not the code's plumbing.** State it as the
-   Table 1 *dynamic parallel* structure: `f_base`, `f_aug`, `g_aug`, `h_base`. Then say
-   in words what each is for the gantry. Do NOT write expansion/selection matrices,
-   `STIFF_IX` index sets, RK4 substeps, or the encoder derivation. Those are the
-   implementation, not the model, and they are what made the last draft unreadable.
-4. **Surface the problem.** One boxed "open questions" block so Jan sees exactly what to
+3. **Show the augmentation as components + interconnection, not an abstract Table 1
+   echo.** Jan's framework is blocks wired by an interconnection, so the section must
+   show (a) OUR blocks (each = one of his roles + the function it computes), (b) the
+   routing between them (a small block scheme in his Fig. 1 style, plus words), and
+   (c) the dynamic-parallel model that results. Restating Table 1 in adjectives teaches
+   Jan nothing; showing our actual `f_base` (the gantry block), our actual network
+   `N_θ`, and how the interconnect splits `N_θ` into his `f_aug`/`g_aug` is the point.
+   Still no expansion-matrix code, no `STIFF_IX`, no RK4 substeps in the main text.
+4. **Block scheme rules.** One minimal TikZ diagram (NOT matplotlib), Fig. 1 style,
+   labels only, no math inside the boxes. It carries the topology/routing; the formulas
+   carry the content. If it starts encoding dimensions or equations, it has failed.
+5. **Surface the problem.** One boxed "open questions" block so Jan sees exactly what to
    look at (normalization source, informativeness of the added states, the `f_aug`
    routing restriction).
 
@@ -80,34 +86,56 @@ MATLAB). Give the exact `M(Y)`, `C`, `K` (3×3). Then:
 - Mass conserved: baseline uses full `mh = 10.1`; truth splits `mh = mh_rigid + m_a`.
   So truth − baseline is only the absorber.
 
-## Section 3: Augmentation, paper Eq. 3 + Table 1 (dynamic parallel)
+## Section 3: Augmentation, how we use the framework (paper Eq. 3-4, Table 1)
 
-State it as the paper's *dynamic parallel* row of Table 1, verbatim structure:
+Jan's framework = blocks + interconnection. So the section has three parts:
+components, interconnection, resulting model. This replaces the abstract Table 1 echo.
+
+### 3a. Components (our blocks)
+
+A table: our block, the paper role it plays, the function it computes.
+
+| Our block | Role (paper) | What it computes |
+|-----------|--------------|------------------|
+| Gantry state block (`Gantry_State_Block`) | `f_base` | `x̃_{k+1} = RK4[ M(Y)^{-1}(P^⊤u - Cq̇ - Kq) ]` (matrices from Sec. 2) |
+| ANN block (`Static_ANN_Block`) | learning component | `w = N_θ(x̂,u) = W₂ tanh(W₁[x̂;u] + b₁) + b₂ ∈ R⁴` |
+| Output block (`Linear_Output_Block`) | `h_base` | `ŷ = C̄_d x̃ + D_d u` |
+
+This is where we show we IMPLEMENTED the gantry: `f_base` is our own gantry block, shown
+as its function, not a generic `f_base`.
+
+### 3b. Interconnection (the routing = how we use his framework)
+
+A minimal block scheme (TikZ, Fig. 1 style, labels only) plus a few words:
+- encoder `ψ` sets the initial state `x̂_{k|k}` (Eq. 5c);
+- the ANN reads the full state and input, `z = [x̂; u]`;
+- its 4 outputs are added into the state: `w₁,w₂` onto the `Θ` baseline rows `(q₂, q̇₂)`,
+  `w₃,w₄` onto the two added states `x̄`;
+- the gantry block updates the 6 baseline states from `[x̃; u]`;
+- the output block reads `ŷ` from `[x̃; u]`.
+
+This is a fixed-interconnection special case of the general LFR form (Eq. 4); one line
+saying so, do not expand `S`.
+
+### 3c. Resulting model (dynamic parallel, Table 1)
+
+Derived from 3a + 3b, so the equations now explain rather than quote:
 
 ```
-x̃_{k+1} = f_base(x̃_k, u_k) + f_aug(x̃_k, x̄_k, u_k)     (correct the baseline states)
-x̄_{k+1} = g_aug(x̃_k, x̄_k, u_k)                          (drive the added states)
-ŷ_k     = h_base(x̃_k, u_k) = C̄_d x̃_k + D_d u_k          (h_aug = 0)
+x̃_{k+1} = f_base(x̃,u) + f_aug ,   f_aug = [w₁,w₂] on the Θ rows, 0 elsewhere
+x̄_{k+1} = g_aug = [w₃,w₄]
+ŷ       = C̄_d x̃ + D_d u           (h_aug = 0)
 ```
+So `f_aug` and `g_aug` are the two slices of our single network `N_θ`. The model is
+simulated: `ψ` sets `x̂_{k|k}`, the recursion is rolled out, the loss compares `ŷ` to
+`y` (Eq. 5a).
 
-The model is simulated: `ψ` sets `x̂_{k|k}` from past I/O (Eq. 5c), then the recursion
-runs for the horizon and the loss compares `ŷ` to `y` (Eq. 5a). Show that loop once.
-
-What each function is for the gantry (in words, plus the design choice + reason):
-
-- `f_base` = the baseline gantry map (Section 2).
-- `f_aug` = correction to the baseline states, **nonzero only on the `Θ` components**
-  (rotational position/velocity). Reason: `X`, `Y` are pure integrators (`K = 0`); an
-  additive correction there diverges. (Flag honestly: the true coupling also reaches
-  `X`, `Y`, so whether this restriction is adequate is an open question.)
-- `g_aug` = the dynamics of the two added states `x̄` (targeting `δ_a, δ̇_a`).
-- `h_aug = 0`: no learned output term; the output is 100% baseline.
-- `f_aug`, `g_aug` are realized by one `tanh` network (implementation note, one line).
-  `tanh` needed: the `Y`-scheduled coupling requires bilinear `Y·δ_a` terms a linear
-  map cannot form.
-
-Optional: one line noting this is a special case of the general LFR form (Eq. 4) with a
-fixed interconnection `S`. Do not expand `S`; the three lines above are clearer.
+Design choices (state as properties, each one line):
+- `Θ`-only routing of `f_aug`. Reason: `X`, `Y` are pure integrators (`K = 0`), additive
+  correction there diverges. Flag honestly: true coupling also reaches `X`, `Y` (open Q).
+- 2 added states = the absorber DOF `[δ_a, δ̇_a]`.
+- `tanh`: the `Y`-scheduled coupling needs bilinear `Y·δ_a` terms a linear map cannot form.
+- `h_aug = 0`: output is 100% baseline; all learning is in the state.
 
 ## Section 4: Normalization, paper Eq. 9
 
@@ -137,7 +165,11 @@ for the gantry parameters; do not re-derive.
 
 ## Immediate next actions
 
-1. Rewrite the `.tex` (`docs/jan-augmentation-writeup.tex`) to this structure: paste the
-   exact `M(Y,δ_a)`, `C₄`, `K₄` (truth) and `M(Y)`, `C`, `K` (baseline) from the MATLAB;
-   augmentation as the Table 1 three lines; drop all expansion matrices / index sets.
-2. Confirm the `f_aug` = "Θ only" description is how we want to present the routing.
+1. Build the block scheme first, as its own standalone TikZ file, and iterate on the
+   figure alone until it is clean (Fig. 1 style, labels only). Do not touch the document
+   until the figure is right.
+2. Rewrite Section 3 of the `.tex` to the 3a/3b/3c structure (components table,
+   interconnection + the figure, resulting model), replacing the current abstract
+   Table 1 echo. System/baseline/normalization/training sections stay as they are.
+3. Status of decisions: routing presented as `Θ`-only with the honest open-question flag
+   (confirmed). `tanh` nonlinear (confirmed). `h_aug = 0` (confirmed).
