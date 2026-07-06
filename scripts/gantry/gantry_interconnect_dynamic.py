@@ -103,8 +103,14 @@ TRAIN_FILES = [
     'T9_aprbs_30.mat', 'T10_aprbs_60.mat', 'T11_aprbs_100.mat', 'T12_aprbs_yaw.mat',
     'T13_lissajous.mat', 'T14_lissajous_yaw.mat',
 ]
-VAL_FILE  = 'V1_standstill_Yp10.mat'   # V2-V4 also generated; single val slot uses V1
-TEST_FILE = 'E1_resonance_sweep.mat'   # E2-E4 also generated; single test slot uses E1
+VAL_FILES = [
+    'V1_standstill_Yp10.mat', 'V2_aprbs_Ylow.mat',
+    'V3_ysweep_Yp10.mat', 'V4_lissajous_Ym10.mat',
+]
+TEST_FILES = [
+    'E1_resonance_sweep.mat', 'E2_multisine_Yp22.mat',
+    'E3_aprbs_above.mat', 'E4_multisine_off.mat',
+]
 
 def _load_u(d):
     """Return plant input u_total [F_X1, F_X2, F_Y] from the generated mat file."""
@@ -140,8 +146,8 @@ def load_mat_aug(filename):
     return u, y, x_logical, x_aug
 
 train_list = [load_traj(f) for f in TRAIN_FILES]
-val_data   = load_traj(VAL_FILE)
-test_data  = load_traj(TEST_FILE)
+val_list   = [load_traj(f) for f in VAL_FILES]
+test_list  = [load_traj(f) for f in TEST_FILES]
 
 ## ------------- Add output noise (Jan's ECC convention, D-078) -------------
 if SNR is not None:
@@ -149,30 +155,30 @@ if SNR is not None:
     elif SNR == 55: sigma_n = 2.5e-4
     elif SNR == 60: sigma_n = 1.4e-4
     else: raise ValueError('SNR must be 50, 55, 60 or None')
-    for sd in train_list:
+    for sd in train_list + val_list + test_list:
         sd.y = sd.y + np.random.normal(0, sigma_n, sd.y.shape).astype(DTYPE_NP)
-    val_data.y  = val_data.y  + np.random.normal(0, sigma_n, val_data.y.shape).astype(DTYPE_NP)
-    test_data.y = test_data.y + np.random.normal(0, sigma_n, test_data.y.shape).astype(DTYPE_NP)
     print(f'Added output noise: SNR={SNR} dB, sigma_n={sigma_n:.2e} m (noise floor)')
 else:
     sigma_n = None
 
-train_data = deepSI.System_data_list(train_list)   # build after noising the trajectories
+train_data    = deepSI.System_data_list(train_list)   # build after noising
+val_ckpt_data = deepSI.System_data_list(val_list)     # checkpoint selection over all V1-V4
+val_data  = val_list[0]     # primary val record (V1) for GT-based diagnostics/plots
+test_data = test_list[0]    # primary test record (E1) for GT-based diagnostics/baselines
 
-# Load augmented ground-truth fields for validation trajectory (diagnostics only)
-_, _, val_x_logical, val_x_aug = load_mat_aug(VAL_FILE)
+# Augmented ground-truth fields for the PRIMARY val/test records (diagnostics only)
+_, _, val_x_logical, val_x_aug = load_mat_aug(VAL_FILES[0])
 print(f'Loaded val augmented GT: x_logical={val_x_logical.shape}  '
       f'delta_a std={val_x_aug[:,0].std():.3e} m  '
       f'vdelta_a std={val_x_aug[:,1].std():.3e} m/s')
 
-# Test-set (E1) ground truth for the generalization baseline (D-071)
 try:
-    _, _, test_x_logical, test_x_aug = load_mat_aug(TEST_FILE)
+    _, _, test_x_logical, test_x_aug = load_mat_aug(TEST_FILES[0])
 except KeyError as e:
     print(f'WARNING: test file lacks augmented GT fields ({e}); skipping test baseline')
     test_x_logical = None
 
-print(f'Loaded {len(train_list)} training trajectories, 1 val, 1 test')
+print(f'Loaded {len(train_list)} train, {len(val_list)} val, {len(test_list)} test trajectories')
 for i, (f, t) in enumerate(zip(TRAIN_FILES, train_list)):
     print(f'  T{i+1}: {t.u.shape[0]} samples  ({f})')
 
@@ -362,7 +368,7 @@ def build_model(hp):
 def train_model(fit_sys, hp, epochs=None, nf=None, validation_measure=None):
     """Train fit_sys for given epochs. nf and validation_measure override hp defaults."""
     fit_sys.fit(
-        train_sys_data=train_data, val_sys_data=val_data,
+        train_sys_data=train_data, val_sys_data=val_ckpt_data,
         batch_size=hp['batch_size'], epochs=epochs or hp['epochs'],
         auto_fit_norm=False,
         loss_kwargs={'nf': nf if nf is not None else hp['nf']},
@@ -1154,6 +1160,15 @@ ckpt_dir = save_dir if save_flag else None
 bestfit, diag_conv = train_model_with_diagnostics(
     fit_sys, hp, resume_ckpt=resume_ckpt, checkpoint_dir=ckpt_dir)
 print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
+
+# Full test-set generalization NRMS over all held-out records (E1-E4)
+print('Test-set NRMS per record (avg from K0):')
+_test_nrms = []
+for _f, _td in zip(TEST_FILES, test_list):
+    _yh = fit_sys.apply_experiment(_td).y
+    _test_nrms.append(np.sqrt(((_yh[K0:] - _td.y[K0:]) ** 2).mean(axis=0)) / ystd)
+    print(f'  {_f}: {_test_nrms[-1]}')
+print(f'  mean: {np.mean(_test_nrms, axis=0)}')
 
 evaluate_and_save(fit_sys, hp, run_id, diag_conv=diag_conv, baseline_nrms=baseline_nrms,
                   baseline_test_nrms=baseline_test_nrms,
