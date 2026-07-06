@@ -35,42 +35,37 @@
 \node[jn] at (-7.3,0) {};
 \node[jn] at (-7.3,-3.5) {};
 
-% ===== router: ann -> S -> rail with two straight drops =====
+% ===== router: two SEPARATE arrows out of S (f_aug, g_aug) =====
 \draw[->] (ann.east) -- (S.west);
-\draw[-]  (S.east) -- (4.2,3.5);           % output rail
-\node[jn] at (2.0,3.5) {};
-\node[jn] at (3.4,3.5) {};
+\node[sum] (tsum) at (2.0,1.0) {$+$};
+\draw[->] (S.east) -- (2.0,3.5) -- (tsum.north);   % f_aug: separate arrow to the Theta sum
+\node at (2.42,2.35) {\scriptsize $f_{\mathrm{aug}}$};
+\draw[->] (S.east) -- (3.4,3.5) -- (3.4,2.0);      % g_aug: separate arrow to the xbar line
+\node at (3.82,2.75) {\scriptsize $g_{\mathrm{aug}}$};
 
-% ===== f_base fan into Theta / X / Y state lines =====
-\draw[-] (fbase.east) -- (-2.2,0);
-\draw[-] (-2.2,-0.6) -- (-2.2,1.2);        % fan bar
-\node[sum] (tsum) at (2.0,1.2) {$+$};
-\draw[->] (-2.2,1.2) -- (tsum.west);
-\node at (-1.6,1.45) {\scriptsize $\Theta$};
-\draw[->] (2.0,3.5) -- (tsum.north);        % f_aug drop
-\node at (2.42,2.45) {\scriptsize $f_{\mathrm{aug}}$};
-\draw[-] (tsum.east) -- (5.0,1.2);
-\draw[->] (-2.2,0.3)  -- (5.0,0.3);
-\node at (-1.6,0.55) {\scriptsize $X$};
-\draw[->] (-2.2,-0.6) -- (5.0,-0.6);
-\node at (-1.6,-0.35) {\scriptsize $Y$};
+% ===== f_base fan: middle line X aligned with f_base output; Theta up, Y down =====
+\draw[->] (fbase.east) -- (5.0,0);                 % X line, straight, aligned with f_base
+\node at (-1.6,0.28) {\scriptsize $X$};
+\draw[-] (-2.2,-1.0) -- (-2.2,1.0);                % fan bar
+\draw[->] (-2.2,1.0) -- (tsum.west);
+\node at (-1.6,1.28) {\scriptsize $\Theta$};
+\draw[-] (tsum.east) -- (5.0,1.0);
+\draw[->] (-2.2,-1.0) -- (5.0,-1.0);
+\node at (-1.6,-0.72) {\scriptsize $Y$};
 
 % ===== xbar line, produced solely by g_aug =====
-\draw[->] (3.4,3.5) -- (3.4,2.3);           % g_aug drop
-\node at (3.82,2.9) {\scriptsize $g_{\mathrm{aug}}$};
-\draw[-] (3.4,2.3) -- (5.0,2.3);
-\node at (4.35,2.55) {\scriptsize $\bar{x}$};
+\draw[-] (3.4,2.0) -- (5.0,2.0);
 
 % ===== bundle: concatenation bus-bar (NOT a sum) =====
-\draw[line width=1.3pt] (5.0,-0.6) -- (5.0,2.3);
-\node[jn] at (5.0,2.3) {}; \node[jn] at (5.0,1.2) {};
-\node[jn] at (5.0,0.3) {}; \node[jn] at (5.0,-0.6) {};
-\draw[-] (5.0,0.85) -- (6.4,0.85);
-\node[above] at (5.7,0.9) {\scriptsize $\hat{x}_{k+1}$};
+\draw[line width=1.3pt] (5.0,-1.0) -- (5.0,2.0);
+\node[jn] at (5.0,2.0) {}; \node[jn] at (5.0,1.0) {};
+\node[jn] at (5.0,0) {}; \node[jn] at (5.0,-1.0) {};
+\draw[-] (5.0,0.5) -- (6.4,0.5);
+\node[above] at (5.8,0.55) {\scriptsize $\hat{x}_{k+1}$};
 
 % ===== feedback with z^-1 on the bottom return line =====
 \node[small] (delay) at (-1,-5.2) {$z^{-1}$\\{\scriptsize delay}};
-\draw[-]  (6.4,0.85) -- (6.4,-5.2);
+\draw[-]  (6.4,0.5) -- (6.4,-5.2);
 \draw[-]  (6.4,-5.2) -- (delay.east);
 \draw[->] (delay.west) -- (-7.3,-5.2) -- (-7.3,-3.5);
 \node[jn] at (-7.3,-3.5) {};

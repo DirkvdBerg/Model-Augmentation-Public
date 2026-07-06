@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  6 JUL 2026 16:33
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  6 JUL 2026 16:40
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -587,7 +587,7 @@ L3 programming layer <2026-01-19>
 Here is how much of TeX's memory you used:
  14088 strings out of 467867
  293851 string characters out of 5416882
- 694311 words of memory out of 5000000
+ 691506 words of memory out of 5000000
  42723 multiletter control sequences out of 15000+600000
  630448 words of font info for 50 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -604,7 +604,7 @@ ata/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/202
 r8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsf
 onts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/
 public/amsfonts/cm/cmsy7.pfb>
-Output written on jan-blockscheme-v2.pdf (1 page, 111155 bytes).
+Output written on jan-blockscheme-v2.pdf (1 page, 110907 bytes).
 PDF statistics:
  59 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
