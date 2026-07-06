@@ -1,0 +1,38 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\diag_joint_estimation.py", line 535, in <module>
+    results2 = [check_C(), check_D()]
+                           ^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\diag_joint_estimation.py", line 446, in check_D
+    t_fixed = time_batches(fit_ref)
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\diag_joint_estimation.py", line 442, in time_batches
+    loss.backward()
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\_tensor.py", line 581, in backward
+    torch.autograd.backward(
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\autograd\__init__.py", line 347, in backward
+    _engine_run_backward(
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\autograd\graph.py", line 825, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn
+
+ERROR conda.cli.main_run:execute(47): `conda run python -u scripts/gantry/diag_joint_estimation.py` failed. (See above for error)
+[capture] reference exists, NOT overwriting: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\..\..\simulations\gantry_subnet\diagnostics\joint_estimation\ref_fixed_block.npz
+[A0] fixed block vs pre-refactor reference: max|diff|=0.000e+00 (tol 1e-07)  PASS
+[A1] parameterized@nominal vs fixed block: max|diff|=0.000e+00 (tol 2e-06)  PASS
+[B] FD vs autograd (float64, eps=1e-06, 10-step rollout):
+    kb_sum  autograd=+6.733014e-04  fd=+6.733013e-04  rel_err=4.92e-08
+    cg1     autograd=-1.106881e-04  fd=-1.106880e-04  rel_err=2.48e-07
+    cg2     autograd=-9.724402e-05  fd=-9.724403e-05  rel_err=1.76e-07
+    cy      autograd=-1.286688e-04  fd=-1.286688e-04  rel_err=6.87e-08
+    cb_sum  autograd=-4.721657e-04  fd=-4.721657e-04  rel_err=4.73e-08
+[B] finite=True  nonzero=True  max_rel_err=2.48e-07 (tol 1e-05)  PASS
+Results written: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\..\..\simulations\gantry_subnet\diagnostics\joint_estimation\gate1_results.json
+GATE 1: PASS
+Initializing encoder network...
+[C] loss integration: subclass=1.26821680e+04  parent+param_loss=1.26821680e+04  param_loss=5.257e-06  rel_diff=4.15e-10  PASS
+
