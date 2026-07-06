@@ -1,0 +1,99 @@
+% Block scheme v2: axis-explicit state update + router (selector S).
+% Shows the augmentation touches only the Theta (stiffness) state and the added xbar,
+% not X/Y and not the output. Style: Hoekstra et al. (2025) Fig. 1.
+% Compile: pdflatex jan-blockscheme-v2.tex
+\documentclass[border=12pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, calc}
+\usepackage{amsmath}
+
+\begin{document}
+\begin{tikzpicture}[>=Latex, font=\footnotesize,
+  block/.style={draw, rounded corners, minimum width=26mm, minimum height=12mm, align=center},
+  rblock/.style={draw, rounded corners, minimum width=13mm, minimum height=11mm, align=center},
+  small/.style={draw, rounded corners, minimum width=15mm, minimum height=10mm, align=center},
+  sum/.style={draw, circle, minimum size=7mm, inner sep=0pt},
+  jn/.style={circle, fill, minimum size=3pt, inner sep=0pt}]
+
+% ===== blocks =====
+\node[block]  (ann)   at (-4.2, 3.5)  {$\phi_{\mathrm{aug}}$ (ANN)\\{\scriptsize learning component}};
+\node[block]  (fbase) at (-4.2, 0)    {$f_{\mathrm{base}}$\\{\scriptsize gantry state block}};
+\node[block]  (hbase) at (-4.2,-3.5)  {$h_{\mathrm{base}}$\\{\scriptsize output (baseline)}};
+\node[rblock] (S)     at (-0.6, 3.5)  {$S$\\{\scriptsize router}};
+
+% ===== encoder =====
+\node[block, minimum width=15mm] (enc) at (-10,0) {$\psi$\\{\scriptsize encoder}};
+\draw[<-] (enc.west) -- ++(-1.3,0) node[left]{$u_{<k},\,y_{<k}$};
+
+% ===== state bus =====
+\draw[thick] (-7.3,-3.5) -- (-7.3,3.5);
+\node[above left=0pt] at (-7.3,3.5) {$\hat{x}_k$};
+\draw[->] (enc.east) -- (-7.3,0) node[pos=0.6,above]{\scriptsize init};
+\draw[->] (-7.3,3.5) -- (ann.west)   node[pos=0.58,above]{\scriptsize $\tilde{x},\bar{x},u$};
+\draw[->] (-7.3,0)   -- (fbase.west) node[pos=0.45,above]{\scriptsize $\tilde{x},u$};
+\draw[->] (-7.3,-3.5)-- (hbase.west) node[pos=0.45,above]{\scriptsize $\tilde{x},u$};
+\node[jn] at (-7.3,0) {};
+\node[jn] at (-7.3,-3.5) {};
+
+% ===== router: ann -> S -> rail with two straight drops =====
+\draw[->] (ann.east) -- (S.west);
+\draw[-]  (S.east) -- (4.2,3.5);           % output rail
+\node[jn] at (2.0,3.5) {};
+\node[jn] at (3.4,3.5) {};
+
+% ===== f_base fan into Theta / X / Y state lines =====
+\draw[-] (fbase.east) -- (-2.2,0);
+\draw[-] (-2.2,-0.6) -- (-2.2,1.2);        % fan bar
+\node[sum] (tsum) at (2.0,1.2) {$+$};
+\draw[->] (-2.2,1.2) -- (tsum.west);
+\node at (-1.6,1.45) {\scriptsize $\Theta$};
+\draw[->] (2.0,3.5) -- (tsum.north);        % f_aug drop
+\node at (2.42,2.45) {\scriptsize $f_{\mathrm{aug}}$};
+\draw[-] (tsum.east) -- (5.0,1.2);
+\draw[->] (-2.2,0.3)  -- (5.0,0.3);
+\node at (-1.6,0.55) {\scriptsize $X$};
+\draw[->] (-2.2,-0.6) -- (5.0,-0.6);
+\node at (-1.6,-0.35) {\scriptsize $Y$};
+
+% ===== xbar line, produced solely by g_aug =====
+\draw[->] (3.4,3.5) -- (3.4,2.3);           % g_aug drop
+\node at (3.82,2.9) {\scriptsize $g_{\mathrm{aug}}$};
+\draw[-] (3.4,2.3) -- (5.0,2.3);
+\node at (4.35,2.55) {\scriptsize $\bar{x}$};
+
+% ===== bundle: concatenation bus-bar (NOT a sum) =====
+\draw[line width=1.3pt] (5.0,-0.6) -- (5.0,2.3);
+\node[jn] at (5.0,2.3) {}; \node[jn] at (5.0,1.2) {};
+\node[jn] at (5.0,0.3) {}; \node[jn] at (5.0,-0.6) {};
+\draw[-] (5.0,0.85) -- (6.4,0.85);
+\node[above] at (5.7,0.9) {\scriptsize $\hat{x}_{k+1}$};
+
+% ===== feedback with z^-1 on the bottom return line =====
+\node[small] (delay) at (-1,-5.2) {$z^{-1}$\\{\scriptsize delay}};
+\draw[-]  (6.4,0.85) -- (6.4,-5.2);
+\draw[-]  (6.4,-5.2) -- (delay.east);
+\draw[->] (delay.west) -- (-7.3,-5.2) -- (-7.3,-3.5);
+\node[jn] at (-7.3,-3.5) {};
+\node[below] at (-4.3,-5.2) {\scriptsize $\hat{x}_k$ (delayed)};
+
+% ===== output readout: yhat = h_base (+) h_aug, h_aug = 0 =====
+\node[sum] (osum) at (0,-3.5) {$+$};
+\draw[->] (hbase.east) -- (osum.west) node[pos=0.5,above]{\scriptsize $h_{\mathrm{base}}$};
+\draw[->, dashed] (0,-2.4) -- (osum.north);
+\node at (1.15,-2.55) {\scriptsize $h_{\mathrm{aug}}=0$};
+\draw[->] (osum.east) -- (2.0,-3.5) node[right]{$\hat{y}_k$};
+
+% ===== legend + notes =====
+\node[anchor=north west, align=left] at (-10.0,-6.4) {%
+  $\begin{aligned}
+    \tilde{x}_{k+1} &= f_{\mathrm{base}}(\tilde{x}_k,u_k) + f_{\mathrm{aug}}(\tilde{x}_k,\bar{x}_k,u_k)
+       \quad(\text{$f_{\mathrm{aug}}$ on the $\Theta$ rows only})\\
+    \bar{x}_{k+1}    &= g_{\mathrm{aug}}(\tilde{x}_k,\bar{x}_k,u_k)\\
+    \hat{y}_k        &= h_{\mathrm{base}}(\tilde{x}_k,u_k) \qquad (h_{\mathrm{aug}}=0)
+  \end{aligned}$};
+\node[anchor=north west, align=left] at (-10.0,-8.35) {%
+  {\scriptsize $S$ routes the ANN output to state rows: $f_{\mathrm{aug}}\!\to\!\Theta$ (stiffness), $g_{\mathrm{aug}}\!\to\!\bar{x}$.
+   $X,Y$ excluded (no stiffness, $K=0$). \ $\hat{x}=[\tilde{x};\bar{x}]$; $\bar{x}=$ added states (absorber $\delta_a,\dot\delta_a$).}};
+
+\end{tikzpicture}
+\end{document}
