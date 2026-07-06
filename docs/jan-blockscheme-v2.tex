@@ -77,18 +77,7 @@
 \node at (1.15,-2.55) {\scriptsize $h_{\mathrm{aug}}=0$};
 \draw[->] (osum.east) -- (2.0,-3.5) node[right]{$\hat{y}_k$};
 
-% ===== legend + notes =====
-\node[anchor=north west, align=left] at (-10.0,-9.6) {%
-  $\begin{aligned}
-    \tilde{x}_{k+1} &= f_{\mathrm{base}}(\tilde{x}_k,u_k) + f_{\mathrm{aug}}(\tilde{x}_k,\bar{x}_k,u_k)
-       \quad(\text{$f_{\mathrm{aug}}$ on the $\Theta$ rows only})\\
-    \bar{x}_{k+1}    &= g_{\mathrm{aug}}(\tilde{x}_k,\bar{x}_k,u_k)\\
-    \hat{y}_k        &= h_{\mathrm{base}}(\tilde{x}_k,u_k) \qquad (h_{\mathrm{aug}}=0)
-  \end{aligned}$};
-\node[anchor=north west, align=left] at (-10.0,-11.5) {%
-  {\scriptsize $\psi$ initializes the state once at each rollout start $k_i$; the $z^{-1}$ loop propagates it for the remaining steps.
-   $S$ routes the ANN output to state rows: $f_{\mathrm{aug}}\!\to\!\Theta$ (stiffness), $g_{\mathrm{aug}}\!\to\!\bar{x}$;
-   $X,Y$ excluded (no stiffness, $K=0$). \ $\hat{x}=[\tilde{x};\bar{x}]$; $\bar{x}=$ added states (absorber $\delta_a,\dot\delta_a$).}};
+% ===== legend removed: the equations and routing notes live in the writeup prose =====
 
 \end{tikzpicture}
 \end{document}
