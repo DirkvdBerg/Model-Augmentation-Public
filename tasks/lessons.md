@@ -48,10 +48,10 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
-### Rule: Only modify files the user explicitly asked to modify
-**Trigger**: When noticing that a related file is stale, incorrect, or inconsistent with new work
-**Rule**: Do not modify any file that was not explicitly requested. Flag the inconsistency to the user in text and ask if they want it updated. This applies to all files: docs, notes, scripts, tests, everything.
-**Why**: Updated sysid-experiment-design-notes.md because it was stale relative to the new inject_ref script — but user did not ask for this. Extended from earlier rule about docs: the problem is any unsolicited file edit, not just documentation.
+### Rule: Only modify files the user explicitly asked to modify, and only to the extent asked
+**Trigger**: When noticing that a related file is stale, incorrect, or inconsistent with new work; or when a small authorized edit tempts a larger cleanup of the same file
+**Rule**: Do not modify any file that was not explicitly requested. Flag the inconsistency to the user in text and ask if they want it updated. This applies to all files: docs, notes, scripts, tests, everything. The scope limit applies WITHIN a file too: authorization for a specific addition (e.g. "document the split") is not authorization to rewrite the rest of the file, fold in pending corrections, or add related files. If the message also contains a discussion request, give the discussion first; do not lead with the file work.
+**Why**: (1) Updated sysid-experiment-design-notes.md because it was stale relative to the new inject_ref script, but user did not ask for this. (2) User asked to "discuss train/validation/test" plus "document the supervisor's split folder and reference it in CLAUDE.md"; response rewrote the entire kamtin-telica-schema.md (controller tables, timing notes, signal semantics), moved a script into the repo, and put the discussion last. User reaction: "I have no clue wtf youre doing." A previously declined offer ("want me to update the stale doc?") does not become authorized by a narrower later request.
 
 ---
 
@@ -71,29 +71,38 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 
 ---
 
-### Rule: Verify that a theory rule's derivation context matches the application context before implementing it
-**Trigger**: When implementing a numerical rule or threshold cited from literature or lecture notes
-**Rule**: Check that the context in which the rule was derived matches the current application. A THEORY label is not sufficient if the rule comes from a different identification paradigm (e.g., FRF estimation vs. BPTT training). If contexts differ, flag it explicitly — do not implement the rule as if it applies.
-**Why**: Implemented "N ≥ 10 × τ_set,95" segment length rule from Lecture 9, which is derived for non-parametric FRF estimation (transients must settle before corrupting spectral estimates). Applied it to BPTT gradient-based training, where the criterion has no direct equivalent. The result (15722 samples at 1000 Hz = 15.7 s) exceeded available trajectory lengths and was physically meaningless for training.
-**How to apply**: Before writing `# THEORY: <source>` and implementing a formula, ask: "Was this rule derived for the same identification method being used here (FRF, PEM, BPTT, etc.)?" If not, flag the mismatch explicitly to the user before implementing.
+### Rule: Verify that a theory rule's derivation context matches the application context before implementing or citing it
+**Trigger**: When implementing a numerical rule or threshold cited from literature or lecture notes, or when presenting literature findings as design recommendations in discussion
+**Rule**: Check that the context in which the rule was derived matches the current application. A THEORY label is not sufficient if the rule comes from a different identification paradigm (e.g., FRF estimation vs. BPTT training). The noise setting is part of the context: noise-motivated arguments (SNR budgets, averaging over periods or realizations, BLA variance estimation) do not transfer to noiseless simulation data, where repetition adds zero information and realizations matter only for split independence and coverage diversity. If contexts differ, flag it explicitly, do not present the rule as if it applies.
+**Why**: (1) Implemented "N ≥ 10 × τ_set,95" segment length rule from Lecture 9, derived for non-parametric FRF estimation, in a BPTT training context; result was physically meaningless. (2) Repeatedly presented noise-based arguments (SNR levels, period averaging, realization variance) as design drivers for the gantry data generation although the current phase is noiseless Simulink simulation; user had to correct the frame explicitly.
+**How to apply**: Before writing `# THEORY: <source>`, or citing a literature finding as a recommendation, ask: "Was this derived for the same identification method AND the same noise setting as here?" If not, flag the mismatch or omit the finding.
 
 ---
 
-### Rule: Use the user's exact technical term, do not substitute a related concept
+### Rule: Use the user's exact technical term or specified procedure, do not substitute a related one
 
-**Trigger**: When a user names a specific technical concept (e.g. "additional unmodeled states", "reference injection", "state-space order")
-**Rule**: Implement or document exactly that concept. Do not silently map it to a related but different concept (e.g. "unmodeled dynamics", "trust band on frequency"). If you think the user's term maps to something different, flag the mismatch explicitly and ask -- do not proceed with the substitution.
-**Why**: User said "additional states not modelled" (state-space augmentation -- extra state variables the model does not have). Output substituted "unmodeled dynamics / trust band" (a frequency-domain concept). These are different: one is about model order, the other is about frequency coverage. The substitution was invisible and wrong.
-**How to apply**: Before writing any design entry or code, re-read the user's exact words. If your output uses a different term, stop and verify equivalence first.
+**Trigger**: When a user names a specific technical concept OR specifies a procedure/metric (e.g. "validation must use the same measure as training"), and a related-but-different one is easier to implement
+**Rule**: Implement or document exactly that concept/procedure. Do not silently map it to a related one, and do not substitute an "equivalent" because it already exists in the framework. If substituting, flag it as a RISK in chat at decision time (a note in decisions.md is not enough) and get explicit agreement; when the substitution's assumption later fails, revert to the user's spec rather than patching around it.
+**Why**: (1) User said "additional states not modelled" (state-space augmentation); output substituted "unmodeled dynamics / trust band" (frequency-domain). (2) User specified "validation for training should use the same method as training" (windowed loss on held-out data); implementation kept the framework's full-trajectory open-loop RMSE instead (deviation noted only inside D-075). On real data that metric is dominated by friction drift no parameter can reduce, so it degraded monotonically, collapsed the LR scheduler to 1e-5 by epoch 360, and made checkpoint selection meaningless (run 68775). The user's specified selector would not have had this failure mode.
+**How to apply**: Before writing any design entry or code, re-read the user's exact words. If your output uses a different term or procedure, stop, state the difference in chat, and get agreement first.
 
 ---
 
-### Rule: In a nonparametric analysis, derive all outputs from empirical data — never from the parametric model
+### Rule: In an empirical/real-data context, derive all verification quantities from the real data, never from the parametric model
 
-**Trigger**: When computing any output quantity (time constant, resonance frequency, bandwidth, sampling rate) in a context explicitly framed as nonparametric or empirical
-**Rule**: Do not compute that quantity from the parametric model (e.g. eigenvalues of A_c, eig(A_c), model matrices). Derive it from the observed data (e.g. Ŝ(jω) from FFT(u_total)/FFT(f_sim), Ĝ(jω) from FFT(q1)/FFT(u_total), resonance peaks from |Ĝ|). This rule has been violated repeatedly — it is non-negotiable.
-**Why**: User has corrected this mistake multiple times across the session. Every time a parametric fallback is suggested (eig(A_c) for fs_new, eigenvalues for f_osc_min, A_c for τ_max), it defeats the entire purpose: the nonparametric approach must work on hardware where the model is unknown or wrong.
-**How to apply**: Before writing ANY formula or code in a nonparametric analysis step, check: does this reference a model matrix, eigenvalue, or analytical model quantity? If yes, STOP. Replace with the equivalent quantity read from Ŝ or Ĝ estimated from probe data. No exceptions.
+**Trigger**: When computing any output quantity (time constant, resonance frequency, bandwidth, sampling rate) in a context framed as nonparametric or empirical; OR when designing a diagnostic/tuning procedure for a real-data pipeline (hyperparameters, window lengths, learning rates, identifiability); OR when defining an acceptance threshold or noise floor that must be defensible in the thesis or transfer to hardware
+**Rule**: Do not compute that quantity from the parametric model (eigenvalues, model matrices), and do not ground a diagnostic's verdict in model-generated synthetic data. Derive it from the observed data (empirical FRFs, loss slices on real data, descent behavior on real data). A synthetic self-test answers "is my loss setup sound under a correct model class", which is NOT the question in a real-data verification phase; the model class is known to be wrong there (that is the point). This rule has been violated repeatedly; it is non-negotiable.
+**Why**: User has corrected this mistake multiple times. (1) Parametric fallbacks suggested repeatedly in the nonparametric experiment-design phase (eig(A_c) for fs_new, A_c for tau_max). (2) Proposed a window/learning-rate diagnostic centered on synthetic self-test data (model simulating itself) during the Telica real-data verification; user: "we should use the real data, that's the entire point of this verification with real data." (3) Proposed an oracle-model floor (baseline vs oracle NRMS) to set the noise level / acceptance threshold, and re-offered it as a fallback even after noting a model-derived reference is less defensible; user: "i dont think i can defend your oracle method ... determine it from the data." An acceptance threshold or noise floor must come from a data-derived, standard estimate (measured noise), never from the true/oracle model, which does not exist on hardware.
+**How to apply**: Before writing ANY formula, code, or diagnostic design in an empirical phase, check: does this reference a model matrix, eigenvalue, analytical model quantity, or model-generated data as ground truth? If yes, STOP and replace with the equivalent measurement on the real data (loss sensitivity/slices, empirical FRF, descent probes). No exceptions.
+
+---
+
+### Rule: A degenerate identification has multiple physical explanations; never call one "impossible"
+
+**Trigger**: When a fit/identification determines a lumped quantity that could arise from more than one physical cause (e.g. F = m*a is degenerate between mass scale and force scale), and one interpretation seems obviously wrong
+**Rule**: Present ALL physically-consistent interpretations and state that the data alone cannot distinguish them; name the external reference that would (a datasheet, a mechanical drawing, a units definition, an independent measurement). Do NOT declare a value "impossible" or pin the result on your preferred cause. In particular, do not assume the FP-model parameters equal the real machine's: the model may describe a DIFFERENT or earlier system, so a recovered parameter far from the model's nominal can simply be the real machine's true value (i.e. parameter recovery working, not a bug).
+**Why**: The Telica linear identification found the effective moving mass at ~half the FP-model nominal (26 vs 54 kg, consistent across 11 datasets). Output declared the real mass being half "impossible (it's a known machine)" and pinned it on a ~2x force-units bug. User corrected: "this is not impossible" and "different system" -- the kamtin-fp-model masses come from main.m (a simulation of possibly a different gantry) and need not match the real Telica hardware. F = m*a cannot separate "real mass is lighter" from "force under-scaled"; asserting one over-commits and, worse, frames a possibly-correct recovery as a failure.
+**How to apply**: When a recovered value deviates strongly from the model nominal, list the interpretations (real parameter differs / input scale wrong / structural), say the fit cannot decide, and ask for the external reference (machine spec, units definition). Treat "recovered != model nominal" as possibly the model being wrong for this system, not automatically a data bug.
 
 ---
 
@@ -182,3 +191,62 @@ When a rule fires repeatedly and proves its value, consider promoting it to `CLA
 **Rule**: Do not use matplotlib. It cannot produce readable block diagrams: text overflows boxes, labels overlap arrows, and each fix creates new collisions. After 5+ iterations the result was still unreadable. Instead, offer (1) a clear text/markdown description, or (2) a TikZ/LaTeX source file. Only use matplotlib for data plots (time series, spectra, loss curves).
 **Why**: Spent an entire session iterating on matplotlib box-and-arrow code. Every fix (bigger boxes, moved labels, shaded regions) created new overlap problems. The user correctly called the result unreadable and asked for a text description instead.
 **How to apply**: When the user asks for a diagram, respond in text first. If a figure file is needed, suggest TikZ or draw.io. Never start a matplotlib block diagram script.
+
+---
+
+### Rule: Keep operational scaffolding out of experiment scripts
+
+**Trigger**: When adding run-management tooling (test hooks, env-var modes, rehearsal switches) to a script whose purpose is a scientific experiment
+**Rule**: Do not embed operational hooks in the experiment file, and do not remove or alter existing user-visible behavior (progress bars, log output, prints) based on own judgment that it is "noise". Verbal approval of a goal ("make sure it won't crash") is not approval of scaffolding inside the script. Offer the tooling as a manual procedure or separate mechanism, and if the user hesitates about an implementation ("I don't know if I like this"), treat that as rejection and remove it — do not defend the design.
+**Why**: Two incidents in one session on `gantry_interconnect_dynamic.py`. (1) Implemented a SMOKE_TEST env hook after the user approved "smoke test" in a list; on seeing the code the user rejected it twice. (2) Suppressed the tqdm progress bar under SLURM (verbose=1) judging the 7000-line log as noise; the user relied on the bar to monitor long runs. The experiment file should contain only what the experiment needs, and its visible output belongs to the user.
+
+---
+
+### Rule: A fix is not delivered until the deployed copy has it — give a verification command
+
+**Trigger**: When fixing a file that the user runs on another machine (cluster, remote repo copy)
+**Rule**: State explicitly and prominently that the fix only exists locally until re-synced, and give a one-line command the user can run on the deployment side to verify which version they have (e.g. `grep -n "<removed line>" <file>`). When the same complaint returns, first establish WHICH copy ran before re-diagnosing the code.
+**Why**: The tqdm-suppression revert was made locally; the user launched two cluster jobs from a stale copy and concluded twice that the fix was never made ("wtf have you done to the code"). One sync-verification command in the original fix message would have prevented both rounds. Note the changes were also uncommitted, making git-based sync silently miss them.
+
+---
+
+### Rule: End long analytical answers with a compact summary
+
+**Trigger**: When a response is a long analysis, overview, or multi-part explanation
+**Rule**: After the detailed overview, close with a short summary block (a few bullets or sentences) stating the bottom line, what is being proposed, and the next action.
+**Why**: User explicitly requested this ("can you start giving a small summary after the overview") after several long analytical replies in the gantry augmentation discussion. Long answers without a distilled ending force the user to re-extract the conclusion.
+
+---
+
+### Rule: Scope implementation effort only after checking all pipelines for existing components
+
+**Trigger**: When estimating effort or listing "required changes" for adding a capability
+**Rule**: Before declaring any change necessary, search ALL project pipelines (`model_augmentation/`, `lpv_lfr_baseline/`, `scripts/gantry/real-data-verification/`) for an existing implementation of that capability. List a change as needed only after confirming it is absent everywhere.
+**Why**: Listed a `# CHANGED` edit to Jan's `interconnect.py` as required for generic `param_loss` support, while `lpv_lfr_baseline/blocks/lfr_fit_system.py` (D-032) already provided exactly that hook as a non-invasive subclass. The user caught it ("joint estimation should already have been implemented in Jan's framework right?"). This project has three parallel pipelines; capabilities are often already built in a sibling pipeline.
+**How to apply**: Before writing a change list, grep the whole repo for the key symbol (e.g. `param_loss`), not just the directory being edited.
+
+---
+
+### Rule: When a model structure is known but one scalar is missing, identify the scalar -- do not approximate the structure away
+
+**Trigger**: When a known model (filter, controller, conversion chain) has one unknown parameter and data is available to identify it
+**Rule**: Use least-squares or a similar regression on available calibration data to identify the missing scalar. Do not replace the model with a simpler proxy (static gain, RMS ratio) to avoid the identification step. A static gain is not the same as the original filter and removes the frequency-shaping that may be essential.
+**Why**: User corrected a proposal to replace the real IIR feedback controller (Filter1 × Filter2) with a per-axis static gain to work around an unknown input scale. The correct action is to identify the scale from iter0 data (where feedforward=0 and MF30=K(M2) exactly) via LS, then use the full IIR in CLOE.
+**How to apply**: When a chain is fully specified except for one scalar, write `scale = <h, MF30> / <h, h>` where `h = model_without_scale(input)`. Do not discard the model structure.
+
+---
+
+### Rule: Quote a parameter value from the script that actually wrote the consumed data, not a sibling/prototype
+
+**Trigger**: When reporting a physical parameter, constant, or config value that feeds a downstream pipeline (e.g. a data-generation parameter used by the Python training data)
+**Rule**: Before quoting the value, confirm the script you read is the one that actually produced the data file the pipeline consumes. Repos often have multiple scripts sharing the same variable name (a prototype/analysis script and the real generator) with DIFFERENT values. Trace which script `save`s the `.mat`/data file that the consumer loads, and quote from that one. A script the user names as "the model" may be a standalone prototype, not the generator of the data in use.
+**Why**: Asserted the hidden-MSD natural frequency was `fa = 400 Hz`, read from `main_augmentation.m` (which the user pointed to as "the code the Simulink model uses"). That script is a standalone prototype; the actual training `.mat` files were written by `generate_oscillatory_multisine_data.m` and `generate_trajectory_data_without_multisine.m`, both of which use `fa = 150 Hz`. The narrowband multisine (130-180 Hz) in the generator corroborated 150 Hz. Confidently presenting 400 Hz as the truth-system parameter was wrong and the user caught it.
+**How to apply**: For any data-derived parameter, grep all candidate scripts for the variable, find which one calls `save`/writes the file the pipeline reads, and quote that. If two scripts disagree, flag the inconsistency rather than picking one silently.
+
+---
+
+### Rule: Weigh a proposed acceptance threshold by its defensibility, not only its technical validity
+
+**Trigger**: When a user or supervisor proposes a success criterion / threshold and you are tempted to counter with an alternative reference
+**Rule**: Treat the threshold's defensibility as a first-class property: is it a model-free / information-theoretic bound, is it standard in the field, does it transfer to the real-data setting where no oracle exists? A hard, universally-accepted bound (e.g. the noise floor) is more defensible than a technically-equivalent but model-dependent, simulation-only reference (e.g. an oracle-model floor), even when both are numerically valid. Do not present the model-dependent alternative as strictly superior just because it needs no extra setup.
+**Why**: Argued the oracle-sim floor was a cleaner target than Jan's noise floor because it needs no noise. The user's and Jan's point was that the noise floor is easier to JUSTIFY as a threshold: it is a model-free information-theoretic limit, universally accepted, and transfers to real data. Defensibility, not just numerical validity, is what makes a threshold usable in a thesis.

@@ -1,6 +1,7 @@
 # Task Tracking
 
 _Step 1 (Frozen LTI Baseline) completed and archived to `archive/sessions/2026-04-03-todo-step1.md`._
+_Tasks 2.1, 2.3, 3b.1 and the 2026-06-10 code-review section archived to `archive/sessions/2026-07-02-todo.md`._
 
 ---
 
@@ -73,16 +74,6 @@ Comparison chain steps (supervisor-confirmed):
 2. Frozen LTI vs q1        — shows frozen M(Y) error on top of discretization
 3. LPV vs frozen LTI vs q1 — gap = LPV benefit from Y-varying inertia
 4. LPV vs q (Simscape)     — augmentation target (Coriolis + Coulomb gap)
-
-### Task 2.1 — Decisions and method ✅
-- [x] Tóth (2010) assessed via assess-paper skill
-- [x] Method chosen: frozen-at-sampling-instant ZOH for validation; augmented matrix_exp for training
-- [x] Drenth (2025) assessed — Architecture 1 confirmed, SSE_Interconnect unchanged
-- [x] Augmented matrix exponential formula documented (D-015)
-- [x] D-012 updated with quasi-LPV dynamic dependence caveat: Tóth states ZOH is "only reasonable
-      for static dependence"; our system has dynamic dependence (Y=x(3)); residual intra-sample
-      error accepted as small due to 220:1 timescale separation (ΔY ≤ 0.125 mm/sample).
-      Exact Tóth quotes and Assumptions 1 & 2 added. Numerical confirmation deferred to Task 2.5.
 
 ### Task 2.2 — MATLAB export scripts
 **Files**: `Matlab-scripts/export_lpv_matrices.m`, `Matlab-scripts/export_lpv_sim.m`
@@ -264,36 +255,6 @@ transient is NOT trimmed -- it is additional valid data (Y is changing during it
 - **What this proves:** matrix_exp ZOH formula and ode45 CT integration agree to numerical precision
 - **What this does NOT prove:** model quality vs physical reality (need y_lpv vs q_simscape next)
 - Script: `scripts/gantry/gantry_lpv_compare.py`, output: `simulations/lpv_zoh/`
-
-### Task 2.3 — Torch reimplementation ✅
-**Files**: `scripts/gantry/gantry_lpv_torch.py`, `scripts/gantry/gantry_lpv_sim_torch.py`
-
-This is a **full torch reimplementation** of `gantry_discrete_ss` — NOT a wrapper around it.
-Every value (physical parameters, M(Y), A_c, B_c, P transform) is defined as a torch tensor
-from the start so that gradients flow through the entire computation. The only structural
-difference from `gantry_ss.py` is the numerical backend: `cont2discrete` is replaced by
-`torch.linalg.matrix_exp` on the 9×9 augmented matrix (required for differentiability and
-to handle singular A_c — see D-015).
-
-Defining everything in torch from the start (not converting from numpy) also means physical
-parameters (mb, mh, m1, m2, ...) can optionally be made trainable later with no refactoring.
-
-- [x] Implement `gantry_lpv_matrices_torch(Y: torch.Tensor, fs: torch.Tensor = _DEFAULT_FS)`
-      - All physical parameters defined as `torch.tensor` scalars (float64)
-      - M(Y), C_mat, K built as torch tensors using tensor arithmetic
-      - A_c(Y), B_c(Y) assembled as torch tensors
-      - Stage coordinate transform P as torch tensor; B_c_stage = B_c @ P, C_c_stage = P.T @ C_c
-      - 9x9 augmented matrix: `M_aug[:6,:6] = A_c; M_aug[:6,6:] = B_c_stage`
-      - `EM = torch.linalg.matrix_exp(M_aug * ts)`
-      - Returns A_d=EM[:6,:6], B_d=EM[:6,6:], C_c_stage (constant), D=zeros — all torch tensors
-      - fs changed from float to torch.Tensor for consistency; module-level `_DEFAULT_FS` buffer
-- [x] Add `__main__` block in `gantry_lpv_torch.py`: torch vs scipy < 1e-10 at Y=0.3 (actual 5.5e-15)
-- [x] Implement `GantryLPVSimulator(nn.Module)` in `gantry_lpv_sim_torch.py`
-      - `forward(x0, u)`: self-scheduling loop p[k]=x[k][2], list+torch.stack, out-of-place updates
-      - `simulate(x0, u)`: torch.no_grad wrapper around forward()
-      - C_d computed once in __init__ (constant, no Y-dependence), registered as buffer
-      - `__main__` block: Test 1 (frozen Y free-response vs scipy, error 5.5e-15 PASS),
-        Test 2 (BPTT gradient test, grad norm 2.24e2 PASS)
 
 ### Task 2.4 — Validation: Python vs MATLAB matrix comparison
 **File**: `scripts/gantry/gantry_lpv_validate.py`
@@ -639,14 +600,6 @@ able to estimate global model -- about experiment design."
 
 ---
 
-### Task 3b.1 — Decisions logged ✅
-- [x] Parameter set chosen and identifiability justified (D-030)
-- [x] File structure decided (D-031)
-- [x] SSE_Interconnect integration strategy decided (D-032)
-- [x] Data strategy decided: Option A MATLAB, Option B future (D-033)
-
----
-
 ### Task 3b.2 — Implement `lpv_lfr_baseline/lfr_param_block.py`
 
 **Trainable scalars** (nn.Parameter, 10 total):
@@ -754,28 +707,6 @@ Next meeting: April 9, afternoon (online or on campus), supervisor preference co
 ---
 
 _Step 3c (speed optimization, reverted) and Task 3b.4b (multi-traj loss fix, done) archived to `archive/sessions/2026-06-10-todo.md`._
-
----
-
-## Code Review and Encoder Fix (2026-06-10) ✅
-
-**Code review**: Physics, normalization, wiring, data loading all verified correct against
-MATLAB ground truth and Jan's reference. No bugs found in those areas.
-
-**Hybrid encoder off-by-one**: Found and fixed in `HybridGantryEncoder.forward()`
-(torch_nets.py). The encoder assumed `ypast[:,-1]` was y[k] but deepSI convention
-(`na_right=0`) means it's y[k-1]. Fixed with linear extrapolation of both position and
-velocity using three history samples. Verified by `verify_encoder_lag.py`: all 6 channels
-now align to x(k), R2 > 0.997. Decision D-053.
-
-**State recovery diagnostic**: `state_recovery_diagnostic()` appended to
-`gantry_interconnect_dynamic.py`, called after `evaluate_and_save` in both main paths.
-Reports R2_raw, R2_linmap (OLS), R2_raw_lag1 per channel. Verified with synthetic test.
-
-**Default encoder**: Not a bug. The dynamic-parallel ANN corrects all 8 derivative channels,
-so output-only loss does not pin states 3:6 to physical velocities. Theta has near-zero
-output weight. The R2 linmap diagnostic will distinguish basis rotation from lost information
-after a training run.
 
 ---
 
@@ -890,6 +821,105 @@ Also include the physics-only baseline from Phase 2 as reference (no encoder, no
 - The PBH observability test scripts exist in `Matlab-scripts/Augmentation/diagnostics/`.
   Should we run them first to get an analytical answer on theta observability before
   spending compute on training runs?
+
+---
+
+## Telica Training: Remaining Items (2026-07-04)
+
+_CLOE-prerequisite diagnostics (C.1-C.3, resolved 2026-07-03 per D-069/D-073/D-074) and the
+completed train/val/test split wiring (D-075) archived to `archive/sessions/2026-07-04-todo.md`._
+
+- [ ] Server run: sync dFeedbackControllersTelica_ba.mat + Telica 1.mat, then launch
+- [ ] NOTE: measured epoch time on laptop CPU is ~5 min (11 gradient steps x 650 BPTT samples,
+      batch 22); 40 epochs + validation ~= 4 h laptop. Expect faster on server (GPU preload built in).
+
+---
+
+## Joint Estimation — Parameterized Gantry Block (2026-07-04, D-076)
+
+**Goal**: trainable damping+stiffness `[kb_sum, cg1, cg2, cy, cb_sum]` in the multisine pipeline
+(`gantry_interconnect_dynamic.py`); machinery reusable for the absorber gray-box block (Option A).
+Diagnostics are part of the phases; each gate blocks the next phase. Full design in D-076.
+
+### Phase 0 — Bookkeeping
+- [x] D-076 logged in docs/decisions.md
+- [x] This plan added to tasks/todo.md
+
+### Phase 1 — Block + Gate 1 (DONE 2026-07-04)
+- [x] 1.1 Reference capture BEFORE any code change -> `ref_fixed_block.npz` (100x64x6 rollout, seeded)
+- [x] 1.2 Parent refactor: `_mats()` hook in `Gantry_State_Block` (verified behavior-neutral: A0)
+- [x] 1.3 `Parameterized_Gantry_State_Block` (@added, below parent in blocks.py)
+- [x] 1.4 Gate 1 PASS: A0 max|diff| = 0.0 (bitwise), A1 max|diff| = 0.0 (bitwise),
+      B all 5 grads finite/nonzero, FD-vs-autograd max rel err 2.5e-7 (tol 1e-5).
+      Results: `simulations/gantry_subnet/diagnostics/joint_estimation/gate1_results.json`
+
+### Phase 2 — Trainer + Gate 2 (DONE 2026-07-05)
+- [x] 2.1 `SSE_Interconnect_ParamLoss` in `interconnect.py` (@added delegating loss + one
+      `# CHANGED:` import line)
+- [x] 2.2 Gate 2 PASS: C exact (rel diff 4e-10); D recovery with state-readout harness:
+      gap ratios kb_sum 0.000, cg1 0.211, cg2 0.189, cy 0.001, cb_sum 0.055 (pass <= 0.5).
+      Forward overhead of param block: +11.7% (fwd+bwd 1.09 s/batch at nf=100, batch 128).
+      Results: gate2_results.json; logs gate_run*.log (attempts 1-2 preserved).
+- [x] FINDING (Phase 3/4 input, discuss with Jan): with position-only outputs, short-window
+      BPTT and a co-trained encoder, the ENCODER absorbs parameter error (params practically
+      unidentifiable: attempt 1 = checkpoint trap best@epoch0 under sim-RMS val, the known
+      K=0 horizon mismatch; attempt 2 = loss down 1000x with params frozen at init). Also:
+      param_loss anchored to the INIT values pins params there once the MSE landscape
+      flattens. Real JE runs need deliberate design: windowed validation, encoder
+      warm-start/freeze or longer nf, and awareness that reg anchors to init.
+
+### Phase 3 — Script flag + rehearsal (DONE 2026-07-05)
+- [x] 3.1 `gantry_interconnect_dynamic.py`: `JOINT_ESTIMATION` flag (gates block class only),
+      `PARAM_RMSE_BASELINE = 0.01` (# HEURISTIC, jobs 68675/68676; verified = Jan's own
+      RMSE_baseline pattern, cf. his hardcoded 0.2 in Parameterized_MSD_State_Block),
+      unconditional `SSE_Interconnect_ParamLoss`, param table + npz fields
+      (`params_init`/`params_learned` + flags in config json), pre-JE resume guard
+- [x] 3.2 Rehearsals passed (epochs=1/nf=10, reverted after): flag ON exit 0 with param table,
+      npz fields, `log_params` in checkpoint; flag OFF exit 0 with LOCAL anchor
+      0.00056488684 == flag-ON value bit-exact (cluster anchor 6.4948e-4 not reproducible
+      locally: cluster used the finite-diff normalization fallback, local has
+      baseline_states.npz). Logs: diagnostics/joint_estimation/rehearsal_on|off.log
+- [ ] NOTE cluster sync: commit first; verify deployed copy with
+      `grep -n "JOINT_ESTIMATION" scripts/gantry/gantry_interconnect_dynamic.py` and
+      `grep -n "class Parameterized_Gantry_State_Block" model_augmentation/fit_systems/blocks.py`
+      and `grep -n "class SSE_Interconnect_ParamLoss" model_augmentation/fit_systems/interconnect.py`
+
+### Phase 4 — Runs (decision point; run design agreed 2026-07-05)
+- [x] Run design: pilot pair on cluster at 5 epochs (~2.5 h each), then full 30-epoch versions
+      if pilots are clean. Run T = `JOINT_ESTIMATION=True`, `PARAM_INIT_DETUNE=None` (start at
+      TRUE values; drift measures absorber-induced parameter bias; reg anchors AT truth).
+      Run D = same + `PARAM_INIT_DETUNE=[1.10,1.10,0.90,1.10,0.90]` (lpv_lfr_baseline detuning
+      signs; in-pipeline recovery test; NOTE reg anchors at the DETUNED init — Jan's prior
+      semantics, honest hardware simulation). Both otherwise identical to 68675 (seed, ANN,
+      nf=400, sim-RMS val) for comparability.
+- [x] `PARAM_INIT_DETUNE` knob added to gantry_interconnect_dynamic.py; verified via
+      build_model: detuned block init = [4372.5, 15.95, 18.27, 11.0, 16.2] exactly (PASS)
+- [ ] Commit (scoped D-076 arc) -> sync -> verify greps (above) -> launch pilots T and D
+- [ ] Align routing question (Option A/B, P1 ladder) with Jan (draft note prepared 2026-07-05);
+      no-ANN bias ablation (R-B) decided AFTER Jan reply — may be superseded by Option A
+
+### Joint Estimation v2 — all 14 raw physical params (2026-07-05, D-077)
+**Goal**: extend the block from 5 damping/stiffness sums to ALL 14 raw physical params
+(mirror `train_param_recovery`: train raw, trust the 10 identifiable combinations). Enabled
+by the M(Y)-invertibility proof (positive params -> PD for all Y).
+- [x] Block: parent `_mats()` hook widened 3 -> 10 (carries mh/alpha/beta/gamma_/N0/N1/N2);
+      child rewritten to 14 raw log-params with full per-timestep M(Y) rebuild
+      (`build_poly_constants` + `build_G_matrix_entries`); `identifiable_combinations()` /
+      `param_table()` report the 10 combos; `m_diff` signed, derived from logged m1,m2.
+- [x] Gate 1 PASS: A0/A1 bitwise 0.0 (full nominal rebuild exact); B all 14 grads under
+      gradcheck-style atol+rtol tol; NEW check M `max|M·N/d - I|=6.66e-16`, `min eig 2.97>0`
+      over 200 positive-orthant samples.
+- [x] Gate 2 PASS: C rel 1.16e-9; D recovered ALL 10 combinations (v1 subset <=0.141 gated;
+      masses mh 0.001 / m_total 0.000 / m_diff 0.002 (signed +1.59->-0.496) / J_eff 0.028 /
+      d 0.000 reported). Overhead: fwd +15.9% vs fixed; fwd+bwd 1.49 s/batch (+37% vs v1 in
+      isolation, less in the full pipeline).
+- [x] Script: `build_model` 14-nominal from `gantry_ss` + `param_table()` report; validated
+      via no-train build rehearsal (params_init exact, combination table correct).
+- [x] D-077 logged (design + gate results).
+- [ ] Commit the D-076/D-077 arc (scoped) -> cluster sync -> verify greps.
+- [ ] Phase 4 run design now uses a 14-vector `PARAM_INIT_DETUNE` (aligned to PARAM_NAMES);
+      Run T = None (start at truth), Run D = 14-vector detune. Runtime ~+15-40% over v1
+      depending on ANN/window share.
 
 ---
 
