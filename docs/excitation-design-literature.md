@@ -240,8 +240,28 @@ which may document the F1Tenth data-generation maneuvers directly (e.g. in a REA
 script) without needing the paper text.
 
 **New open verification tasks:**
-- Fetch and read arXiv:2602.17297 in full (F1Tenth excitation/maneuver details), or check
-  the GitHub repo above.
+- ~~Fetch and read arXiv:2602.17297 in full (F1Tenth excitation/maneuver details)~~
+  RESOLVED 2026-07-06: Sections 6-7 read; F1Tenth uses NO injected signal, coverage via
+  2 reference classes x 12-level velocity ladder, record-level splits, contiguous-segment
+  validation. Full extraction in `docs/excitation-recipe-extraction.md` (VERIFIED).
+
+---
+
+## 10. Targeted delta-gap round (2026-07-06, post-extraction)
+
+One sharp search per surviving delta of `docs/data-generation-design-draft.md`.
+
+| Reference | Link | Status | Relevance |
+|-----------|------|--------|-----------|
+| LPV identification literature: local (frozen-scheduling) experiments cannot capture DYNAMIC dependence (dependence on scheduling-signal derivatives); global experiments with varying scheduling required. Surfaced across local-vs-global LPV id sources; canonical treatment expected in Toth, *Modeling and Identification of LPV Systems*, Springer 2010 — LOCAL COPY: `literature/books/Toth_2010_[12]_LPVModelingIdentificationBook.pdf` | https://www.researchgate.net/publication/229058056 ; local book | PLAUSIBLE (claim consistent across sources; exact chapter/theorem to be pulled from the local book) | Upgrades the Y-rate-coverage requirement (draft Section 2) from HEURISTIC to THEORY once the book section is quoted: frozen-Y data alone provably cannot identify Ydot-dependent terms of a quasi-LPV model. |
+| ISO 7626-2 (1986/2015): maximum sweep-rate formula for slowly swept sine FRF measurement; rule of thumb S_max proportional to (3 dB bandwidth)^2. Gloth & Sinapius (2004) analyze/extend it | https://www.researchgate.net/figure/Determination-of-the-maximum-sweep-rate-in-accordance-with-ISO-7626-2_tbl4_372744884 ; https://www.sciencedirect.com/science/article/abs/pii/S0888327003000876 | VERIFIED that the standard prescribes a max sweep rate; exact constant PLAUSIBLE until standard/paper read | Replaces the placeholder sweep-rate bound for the cross-class test: an ISO standard is maximally defensible (defensibility lesson). For fa~157 Hz, Q~10: BW ~16 Hz, BW^2 ~250 Hz^2; placeholder 10 Hz/s stays conservative. |
+| "Multisine excitations — new developments and applications in modal analysis" (Guillaume et al.); "MUMI: Multisine for multiple input systems" toolbox; "Force appropriation of nonlinear structures" (arXiv 1801.00813) | https://researchgate.net/publication/266354752 ; https://www.researchgate.net/publication/356752942 ; https://arxiv.org/pdf/1801.00813 | PLAUSIBLE (metadata consistent, not read) | MIMO multisine practice: mutually independent/orthogonal periodic multisines per input channel is standard in modal analysis; force-appropriation vector design cares about modal force vector geometry. Supports the multi-channel simultaneous-excitation element; still no constraint-budgeting precedent (Delta 4 stays HEURISTIC). |
+| "Application-Oriented Input Spectrum Design in Closed-Loop Identification," Applied Sciences 13(11):6552 (MDPI); least-costly identification line (Bombois et al.) | https://www.mdpi.com/2076-3417/13/11/6552 ; https://hal.science/hal-00756344v1/document | PLAUSIBLE (not read) | Formal home for the delivered-spectrum question: external-excitation spectrum design accounting for closed-loop sensitivity, LMI-based. FIM/noise-motivated machinery (does not transfer literally to noiseless phase), but citable as the formal analog of GATE 4's measure-S_i-and-pre-emphasize logic. |
+
+**Net effect on the delta list:** Delta 3 (Y-rate coverage) upgradeable to THEORY via the
+locally available Toth 2010 book; Delta 8 sweep rate gets an ISO anchor; Delta 4
+(yaw-budget coordinate design) remains genuinely uncited after four search rounds and
+stays HEURISTIC; GATE 4 gets a formal literature analog.
 - If the logical-coordinate multisine design is adopted, log it explicitly as `# HEURISTIC`
   per CLAUDE.md's signal-processing labeling rule, citing Section 9.2's negative result as
   the reason no `# THEORY` label applies.

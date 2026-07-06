@@ -4,6 +4,39 @@ Deliverable: a short (about 2 page) note, concept + equations, that states the
 data-generating system, the baseline we augment, and the augmentation, so Jan can
 check the setup. Clean-sheet, no code listings, no em-dashes.
 
+## STATUS / HANDOFF (2026-07-06)
+
+Where we are: **Section 3 is DONE.** The `jan-blockscheme-v2.pdf` figure is integrated
+into `docs/jan-augmentation-writeup.tex` (compiles, 4 pages) as the Interconnection
+subsection, wrapped by a Components table (3a) and the Resulting-model equations (3c).
+The whole writeup was reread end to end and the top Notation table now declares
+`phi_aug`, `w`, `psi`. Sections 1, 2, 4, 5, 6 are in shape. NOTE the old
+`docs/Gantry-Augmentation-Formula-Derivation.tex` is a different, stale, code-annotated
+doc -- do NOT use it.
+
+Notation decisions locked when rebuilding Section 3 (2026-07-06): the ANN is written as
+`phi_aug` to match the figure (not `N_theta`); its internals are named only (a `tanh`
+feedforward network, output `w in R^4`, zero-initialised so `phi_aug ~ 0` at start), with
+NO `W_1/W_2` layer matrices -- the real net is 2 hidden layers x 64, so the outline's
+single-layer sketch would misstate depth. Lowercase `w` is kept as Jan's LFR channel
+signal (Eq. 4); it is genuine paper notation. See `docs/decisions.md`.
+
+Next action: writeup is review-ready. Remaining open items are the three boxed questions
+for Jan (normalization source, informativeness of added states, `f_aug` -> Theta
+routing restriction), not writeup mechanics.
+
+What the finished figure already shows (so the prose must match it, not re-explain it):
+one state `x̂=[x̃;x̄]`; encoder `ψ` sets the initial condition of the `z^{-1}` register
+**once per rollout** (`x̂_{k_i|k_i}`), the loop propagates each step; `φ_aug (ANN) -> S
+(router)` splits into `f_aug -> Θ` (summed with `f_base`, stiffness rows only) and
+`g_aug -> x̄` (added states, no baseline); `X,Y` pass through untouched (K=0);
+concatenation bus-bar -> `x̂_{k+1}`; output `ŷ = h_base`, `h_aug = 0`.
+
+Decisions locked (do not relitigate): dynamic parallel; nonlinear `tanh` (linear was
+worse, and the Y-scheduled coupling needs bilinear `Y·δ_a` terms); `h_aug=0` is correct
+(output map is known exactly, keeps interpretability); routing to Θ+absorber only,
+presented honestly with the "true coupling also hits X,Y" open question for Jan.
+
 ---
 
 ## 0. What to focus on (read this first)
@@ -165,11 +198,10 @@ for the gantry parameters; do not re-derive.
 
 ## Immediate next actions
 
-1. Build the block scheme first, as its own standalone TikZ file, and iterate on the
-   figure alone until it is clean (Fig. 1 style, labels only). Do not touch the document
-   until the figure is right.
-2. Rewrite Section 3 of the `.tex` to the 3a/3b/3c structure (components table,
-   interconnection + the figure, resulting model), replacing the current abstract
-   Table 1 echo. System/baseline/normalization/training sections stay as they are.
-3. Status of decisions: routing presented as `Θ`-only with the honest open-question flag
-   (confirmed). `tanh` nonlinear (confirmed). `h_aug = 0` (confirmed).
+1. DONE: block scheme built and iterated to clean -> `docs/jan-blockscheme-v2.tex`.
+2. TODO: rewrite Section 3 of `docs/jan-augmentation-writeup.tex` to the 3a/3b/3c
+   structure (components table, interconnection = the v2 figure, resulting model),
+   replacing the abstract Table 1 echo. Include `jan-blockscheme-v2` as the figure.
+   Sections 1/2/4/5/6 already in shape; reread end-to-end after Section 3.
+3. Decisions locked (see STATUS block at top): dynamic parallel; `tanh`; `h_aug=0`;
+   `Θ`+absorber routing with the honest open-question flag.
