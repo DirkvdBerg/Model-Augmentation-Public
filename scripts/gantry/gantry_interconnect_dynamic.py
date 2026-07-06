@@ -26,8 +26,8 @@ from model_augmentation.utils.utils import normalize_linear_ss_matrices
 ## Configuration
 ## ═══════════════════════════════════════════════════════════════════════════════
 
-# --- Data source: 'trajectories' or 'multisine' ---
-MODE = 'multisine'
+# --- Track: 'joint' (broadband [1,200] Hz) or 'augmentation' (narrowband [130,180] Hz) ---
+MODE = 'joint'
 
 # --- Fixed model constants ---
 NX_PHYS = 6   # physical states: q1, q2, q3, dq1, dq2, dq3
@@ -36,14 +36,18 @@ ny  = 3
 # Encoder: 'linear_map' = Hoekstra 2026 reconstructability init (trainable);
 #          'default' = standard deepSI learned encoder
 ENCODER_INIT = 'linear_map'
-ANN_ACTIVATION = 'linear'  # 'linear' = Identity activation (Jan's ECC setup, D-071); 'tanh' = nonlinear ANN
-JOINT_ESTIMATION = True   # D-076: True = trainable damping/stiffness scalars in the physics block
+ANN_ACTIVATION = 'tanh'  # 'linear' = Identity activation (Jan's ECC setup, D-071); 'tanh' = nonlinear ANN
+JOINT_ESTIMATION = False  # D-076: True = trainable damping/stiffness scalars; OFF for the D-078 noise-floor runs
 PARAM_RMSE_BASELINE = 0.01 # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
 # D-076 run design: None = start at true values (run T: measures absorber-induced bias).
 # List of 5 factors on [kb_sum, cg1, cg2, cy, cb_sum] = detuned start (run D: recovery test);
 # [1.10, 1.10, 0.90, 1.10, 0.90] reproduces the lpv_lfr_baseline detuning signs (D-076).
 # NOTE: param_loss anchors to the (possibly detuned) INIT values -- Jan's prior semantics.
 PARAM_INIT_DETUNE = None
+# PARAM_INIT_DETUNE = [1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90, 0.90, 1.10, 0.90, 1.10, 0.90, 0.90, 1.10]
+# --- Output noise (Jan's ECC noise-floor convention, D-078) ---
+# sigma_n = rms(y) * 10^(-SNR/20); reaching sigma_n on val sim-RMS = acceptance floor.
+SNR = 50   # dB: 50/55/60 -> sigma_n 4.5e-4/2.5e-4/1.4e-4 m (rms(y)~0.142 m); None = noiseless
 SEED = 42
 
 # --- Resampling ---
@@ -88,29 +92,23 @@ DEFAULT_HP['na_nb'] = (NX_PHYS + DEFAULT_HP['NX_ANN']) * 2 + 1   # THEORY: nxd*2
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
-DATA_SUBDIR = 'multisine' if MODE == 'multisine' else 'trajectories'
 TRAJ_DIR = os.path.join(os.path.dirname(__file__), '..', '..',
-                        'data', 'gantry', 'matlab', DATA_SUBDIR)
+                        'data', 'gantry', 'matlab', 'trajectory', MODE)
 print(f'Data dir ({MODE}): {TRAJ_DIR}')
 
 TRAIN_FILES = [
-    'T1_Y_sweep_conservative.mat',
-    'T2_X_sym_Y030.mat',
-    'T3_X_sym_Y000.mat',
-    'T4_X_antisym_Y020.mat',
-    'T5_X_sym_Y_sweep.mat',
-    'T6_Y_sweep_aggressive.mat',
-    'T7_X_antisym_Y_sweep.mat',
-    'T8_X_sym_anti_Y_sweep.mat',
+    'T1_standstill_Ym30.mat', 'T2_standstill_Ym15.mat', 'T3_standstill_Y000.mat',
+    'T4_standstill_Yp15.mat', 'T5_standstill_Yp30.mat',
+    'T6_ysweep_slow.mat', 'T7_ysweep_fast.mat', 'T8_ysweep_xmix.mat',
+    'T9_aprbs_30.mat', 'T10_aprbs_60.mat', 'T11_aprbs_100.mat', 'T12_aprbs_yaw.mat',
+    'T13_lissajous.mat', 'T14_lissajous_yaw.mat',
 ]
-VAL_FILE  = 'V1_X_sym_Y_mid_sweep.mat'
-TEST_FILE = 'E1_X_sym_anti_Y_low_offset_sweep.mat'
+VAL_FILE  = 'V1_standstill_Yp10.mat'   # V2-V4 also generated; single val slot uses V1
+TEST_FILE = 'E1_resonance_sweep.mat'   # E2-E4 also generated; single test slot uses E1
 
 def _load_u(d):
-    """Return plant input: 'u_total' for multisine data, 'u' for trajectory data."""
-    if 'u_total' in d:
-        return d['u_total']
-    return d['u']
+    """Return plant input u_total [F_X1, F_X2, F_Y] from the generated mat file."""
+    return d['u_total']
 
 def load_traj(filename):
     d = loadmat(os.path.join(TRAJ_DIR, filename), squeeze_me=True)
@@ -142,9 +140,24 @@ def load_mat_aug(filename):
     return u, y, x_logical, x_aug
 
 train_list = [load_traj(f) for f in TRAIN_FILES]
-train_data = deepSI.System_data_list(train_list)
 val_data   = load_traj(VAL_FILE)
 test_data  = load_traj(TEST_FILE)
+
+## ------------- Add output noise (Jan's ECC convention, D-078) -------------
+if SNR is not None:
+    if   SNR == 50: sigma_n = 4.5e-4
+    elif SNR == 55: sigma_n = 2.5e-4
+    elif SNR == 60: sigma_n = 1.4e-4
+    else: raise ValueError('SNR must be 50, 55, 60 or None')
+    for sd in train_list:
+        sd.y = sd.y + np.random.normal(0, sigma_n, sd.y.shape).astype(DTYPE_NP)
+    val_data.y  = val_data.y  + np.random.normal(0, sigma_n, val_data.y.shape).astype(DTYPE_NP)
+    test_data.y = test_data.y + np.random.normal(0, sigma_n, test_data.y.shape).astype(DTYPE_NP)
+    print(f'Added output noise: SNR={SNR} dB, sigma_n={sigma_n:.2e} m (noise floor)')
+else:
+    sigma_n = None
+
+train_data = deepSI.System_data_list(train_list)   # build after noising the trajectories
 
 # Load augmented ground-truth fields for validation trajectory (diagnostics only)
 _, _, val_x_logical, val_x_aug = load_mat_aug(VAL_FILE)
@@ -650,6 +663,9 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None,
             rms_agg_baseline = float(np.sqrt(np.mean((baseline_nrms * ystd) ** 2)))
             ax4a.axhline(rms_agg_baseline, color='C2', linestyle=':', lw=1.2,
                          label=f'Baseline FP sim-RMS={rms_agg_baseline:.2e} m')
+        if sigma_n is not None:
+            ax4a.axhline(sigma_n, color='r', linestyle='--', lw=1.2,
+                         label=f'Noise floor sigma_n={sigma_n:.2e} m')
         ax4a.set_xlabel('Epoch'); ax4a.set_ylabel('sim-RMS')
         ax4a.set_title('Loss + baseline reference')
         ax4a.legend(fontsize=7); ax4a.grid(True, which='both')
@@ -690,6 +706,9 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None,
             std_x=std_x, x_mean=x_mean, std_u=std_u, u_mean=u_mean,
             ystd=ystd, y0=y0, Cd_norm=Cd_norm, Dd_np=Dd_np,
             P_matrix=P.numpy(),
+            # Output-noise floor (D-078): SNR in dB, sigma_n [m]; -1/0.0 = noiseless
+            noise_snr=np.array(SNR if SNR is not None else -1),
+            noise_sigma=np.array(sigma_n if sigma_n is not None else 0.0),
             # Model dimensions
             cheat_n=np.array(cheat_n), dt=np.array(val_data.dt),
             na=np.array(na), nb=np.array(nb), nf=np.array(hp['nf']),
@@ -699,7 +718,7 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None,
             config=json.dumps(dict(
                 MODE=MODE, ENCODER_INIT=ENCODER_INIT,
                 ANN_ACTIVATION=ANN_ACTIVATION, FS_NEW=FS_NEW, D=D,
-                FS_ORIG=FS_ORIG, SEED=SEED,
+                FS_ORIG=FS_ORIG, SEED=SEED, SNR=SNR,
                 JOINT_ESTIMATION=JOINT_ESTIMATION,
                 PARAM_RMSE_BASELINE=PARAM_RMSE_BASELINE,
                 PARAM_INIT_DETUNE=PARAM_INIT_DETUNE,
@@ -1064,6 +1083,9 @@ print(f"\nConfiguration:")
 print(f"  MODE:           {MODE}")
 print(f"  ENCODER_INIT:   {ENCODER_INIT}")
 print(f"  ANN_ACTIVATION: {ANN_ACTIVATION}")
+print(f"  JOINT_ESTIM:    {JOINT_ESTIMATION}")
+print(f"  SNR (noise):    {SNR if SNR is not None else 'None (noiseless)'}"
+      + (f"  ->  sigma_n={sigma_n:.2e} m" if sigma_n is not None else ""))
 print(f"  save_dir:       {save_dir}")
 print(f"  NF_SECONDS:     {NF_SECONDS}")
 print(f"  na_nb (samples): {DEFAULT_HP['na_nb']}  ({DEFAULT_HP['na_nb']/FS_NEW*1000:.2f} ms)")
