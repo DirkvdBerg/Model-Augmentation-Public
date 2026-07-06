@@ -90,7 +90,12 @@
       "WebFetch(domain:dx.doi.org)",
       "Bash(python3 -c ':*)",
       "Bash(dir C:\\\\Users\\\\20203253\\\\OneDrive - TU Eindhoven\\\\Graduation Project\\\\Baseline FP model\\\\Baseline-LPV-Augmentation\\\\lpv_lfr_baseline:*)",
-      "mcp__ide__executeCode"
+      "mcp__ide__executeCode",
+      "WebFetch(domain:www.cambridge.org)",
+      "WebFetch(domain:www.researchgate.net)",
+      "WebFetch(domain:www.sciencedirect.com)",
+      "WebFetch(domain:rpg.ifi.uzh.ch)",
+      "WebFetch(domain:www.mdpi.com)"
     ]
   }
 }
