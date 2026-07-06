@@ -35,13 +35,15 @@
 \node[jn] at (-7.3,0) {};
 \node[jn] at (-7.3,-3.5) {};
 
-% ===== router: two SEPARATE arrows out of S (f_aug, g_aug) =====
+% ===== router: two SEPARATE arrows out of S, leaving at different heights =====
 \draw[->] (ann.east) -- (S.west);
 \node[sum] (tsum) at (2.0,1.0) {$+$};
-\draw[->] (S.east) -- (2.0,3.5) -- (tsum.north);   % f_aug: separate arrow to the Theta sum
-\node at (2.42,2.35) {\scriptsize $f_{\mathrm{aug}}$};
-\draw[->] (S.east) -- (3.4,3.5) -- (3.4,2.0);      % g_aug: separate arrow to the xbar line
-\node at (3.82,2.75) {\scriptsize $g_{\mathrm{aug}}$};
+% f_aug leaves S lower-right, drops into the Theta sum
+\draw[->] ($(S.east)+(0,-0.18)$) -- (2.0,3.32) -- (tsum.north);
+\node at (2.42,2.3) {\scriptsize $f_{\mathrm{aug}}$};
+% g_aug leaves S upper-right, drops onto the xbar line
+\draw[->] ($(S.east)+(0,0.18)$) -- (3.4,3.68) -- (3.4,2.0);
+\node at (3.82,2.85) {\scriptsize $g_{\mathrm{aug}}$};
 
 % ===== f_base fan: middle line X aligned with f_base output; Theta up, Y down =====
 \draw[->] (fbase.east) -- (5.0,0);                 % X line, straight, aligned with f_base
