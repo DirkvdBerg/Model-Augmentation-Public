@@ -19,6 +19,86 @@ Decisions are logged here before implementation. Each entry states what was deci
 
 ## Decisions
 
+### [D-077] Residual-force diagnostic: dominant model mismatch is inertial-scale (~2x), not friction
+**Date**: 2026-07-05
+**What**: New real-data diagnostic `scripts/gantry/real-data-verification/diag_residual_force.py`
+computes the generalized force the FP model cannot account for from measured motion and
+measured applied force: `f_missing = u_applied - [M(Y) qdd + C qd + K q]`, using the model's
+own physics matrices (physics.py) and Savitzky-Golay smoothing differentiation for qd, qdd.
+Least-squares decomposition of f_missing over moving samples onto [M qdd, qd, sign(qd)] gives,
+consistently across 3 operating points (R^2 = 0.997-0.999):
+  inertial-scale s = 1 + a:  X ~ 0.48-0.51,  Y ~ 0.65   (dominant term)
+  viscous b:  ~60-100 N/(m/s) on X1 and Y, ~10 on X2
+  Coulomb c:  ~27-66 N  (present but secondary; below the 136/98 N static-friction spec)
+So the FP model's inertial force M(Y) qdd is ~2x (X) / ~1.5x (Y) larger than the applied
+MF30*Kt force needed to produce the observed acceleration. Coordinate frame is validated
+(corr between model force and applied force 0.93-0.99).
+**Why (interpretation, HYPOTHESIS not yet committed)**: M qdd = force is degenerate between
+"applied force under-scaled" and "model inertia too large". A pure global current-unit error
+(RMS/peak sqrt(2), or x2) would give the SAME scale on all axes; the axis-dependent s (X~0.5,
+Y~0.65) instead points at the MF30->N conversion (Kt = MotorForceConst = 109 N/Arms X, 77.6 Y)
+possibly being wrong per axis / per motor topology (X rails have multiple sub-motors). This
+would corrupt all open-loop training (model driven by mis-scaled force) and explains why
+parameter recovery kept trying to halve the masses (compensating the scale error) and why the
+optimum is horizon-dependent. Overturns the prior "dominant residual is friction -> go to
+augmentation" framing (superseded pending verification).
+**Ruled out**: Friction as the primary gap (it is real but secondary, ~30-65 N vs the ~100%
+inertial-scale residual). Accepting the e-1 m open-loop error as purely structural before
+checking the force-input units.
+**Constrains**: Before any further parameter-recovery training, verify the MF30 -> N force
+conversion (Kt units: Arms vs peak vs per-motor; number of sub-motors per axis; any amplifier
+factor). If the force scale is wrong, fixing it may remove most of the open-loop error without
+friction augmentation. Open question for Kamtin: exact definition/units of MF30 and Kt.
+**Update (2026-07-05) -- CONFIRMED by linear identification** (`diag_linear_identification.py`,
+globally-optimal linear-in-parameters inverse-dynamics fit on all 11 training ops, no training):
+the data determines the identifiable mass lumps at ~HALF nominal, rock-solid consistent across
+every operating point independently: m_total = 26.2 kg (nom 53.8, ratio 0.49; per-op 26.1-26.4),
+mh = 5.9 kg (nom 10.1, ratio 0.59). Adding Coulomb columns changes the residual 24.1% -> 24.0%
+and assigns only 2-4 N (vs 98/136 N spec), so FRICTION IS RULED OUT as the primary gap (this
+refines/overturns the residual-diagnostic's earlier friction reading, which came from allowing
+only a single scalar on the nominal inertia per axis). Since M*qdd = force, half-mass <=> half-
+force: the applied force u = MF30*Kt is ~2x too small. The clean factor of ~2, consistent across
+all ops, plus Telica.mat showing each X rail split into L+R sub-axes, points to force being
+under-counted by the sub-motor count (true force ~ N_submotors * MF30 * Kt). Verdict: the data
+is clean and useful but NOT directly fittable by the physical baseline until the force scale is
+fixed. Cheap confirmation available: scale applied force by ~2 (or per-axis sub-motor count) and
+re-run the linear ID -- m_total should jump to ~53.8 and the residual drop. Other params
+(damping/stiffness) are unidentifiable from this data (cond ~2.5e15; rotation mode barely
+excited, X1=X2 commanded together) -- only the mass lumps are determined, and they show the 2x.
+**Correction (2026-07-05, user)**: the earlier "force is ~2x too small" framing OVER-COMMITTED.
+F = m*a is degenerate: the data determining m_total ~ 26 kg is equally consistent with (a) the
+real Telica moving mass genuinely being ~26 kg -- the kamtin-fp-model masses come from main.m,
+a simulation of possibly a DIFFERENT/earlier gantry, so they need not match the real hardware
+(user: "different system") -- or (b) a ~2x force-input scale/units error. The fit cannot
+distinguish them. If (a), the data IS directly fittable and parameter recovery is WORKING (it
+found the real mass); the "half" is the correct value, not a bug. Resolve with an EXTERNAL
+reference: the real Telica moving-mass spec / mechanical drawing vs the main.m assumed masses,
+and the MF30/Kt units definition. Do not treat "recovered != model nominal" as automatically a
+data error.
+
+### [D-076] Telica validation selector rewired to windowed loss (same measure as training)
+**Date**: 2026-07-05
+**What**: `run_telica_param_recovery.py` monkeypatches `tr._full_traj_eval` with
+`_windowed_val_eval`: sigma-normalized MSE on teacher-forced windows (length SEGMENT_LEN) of
+the held-out VAL_SPECS trajectories, returning (normalized-RMS, entries) with the same call
+signature so the scheduler, best-checkpoint selection, and both sync/async eval paths are
+untouched. Global sigma computed once from the validation q1.
+**Why**: The user specified validation should use the same method as training; the framework
+default (full-trajectory OPEN-LOOP RMSE) was kept instead (deviation noted only in D-075). On
+real data that OL metric is dominated by friction/force-scale drift on the K=0 double-integrator
+axes, which no parameter can reduce, so in run 68775 it rose monotonically from epoch 0,
+collapsed the ReduceLROnPlateau LR to 1e-5 by epoch 360, and selected epoch 0 (nominal) as
+"best". The windowed metric measures the same short-horizon fit training optimizes, on held-out
+operating points, so scheduler and selection now track a quantity that can actually improve.
+**Ruled out**: Full-trajectory OL as selector (structural drift makes it monotone-degrading);
+metres RMS without sigma normalization (Y channel dominates, ignores X fit, differs from
+training's per-channel weighting). Closed-loop metric as selector (deployment-relevant but adds
+the controller to every eval; kept for FINAL assessment only).
+**Constrains**: Validation numbers are now a dimensionless normalized RMS, not metres (printed
+`eval_rmse` column relabeled in intent). Final assessment still reports full-trajectory OL and
+closed-loop separately. A windowed-val improvement does NOT imply small full-trajectory or
+closed-loop error while the D-077 force-scale/friction gap remains.
+
 ### [D-001] Target system is the ASMPT dual-gantry (García-Herreros et al.)
 **Date**: 2026-03-16
 **What**: The sole target system for this project is the ASMPT dual-gantry stage modeled by García-Herreros et al.
@@ -1665,6 +1745,9 @@ Absolute RMSE [m] alone is not interpretable without knowing trajectory amplitud
 **Constrains**: NRMSE is computed against the full-trajectory simulation, not per-segment training loss.
 
 ### [D-061] Telica native sampling rate = 10 kHz from AccurET PLTI; timestamps discarded
+**SUPERSEDED by D-073 (2026-07-03)**: the iter logs are 20 kHz native; the controller-notch
+fingerprint contradicts the 1/(2*PLTI) formula for these files. Kept for the still-valid
+part: raw .log timestamps are host-side reception artefacts and must never be used.
 **Date**: 2026-06-23
 **What**: `_NATIVE_FS = 10_000.0` Hz (fixed constant). Raw `.log` timestamps are discarded.
 Synthetic time axis is built from sample index: `t = arange(N) / _NATIVE_FS`, exactly matching
@@ -1779,3 +1862,214 @@ The diag8 results (.npz file) can serve as the epoch-0 baseline for this compari
 **C_aug initialization**: `C_aug_init[2,0] = 1e-2` (Y channel receives delta_a weakly). Absorber is coupled to Y axis. Scale 1e-2 keeps the init ANN contribution sub-percent of normalized output. C_aug is trainable (`nn.Parameter` via `Parameterized_Linear_Output_Block`) so it grows during training.
 **Ruled out**: (1) ANN->velocity rows [3,4,5]+x_aug: velocities also near-unit-circle; T_vel test showed 836x blowup (diag13). (2) Fixed C_aug (register_buffer): ANN signal stays at 3.5e-4 permanently; C_aug must be trainable. (3) Gradient clipping: clip was inactive at nf=400 (grad_norm 0.26 < max_norm 1.0), so clipping cannot prevent the eigenvalue-amplification blowup (diag13 T_clip: 1634x with clip).
 **Constrains**: The 5-step stability test (diag15 T3) showed +14% val degradation when training on 1 trajectory. This is encoder overfitting to a single trajectory, not architectural instability -- the ANN gradient (3.5e-4) is 10000x smaller than the encoder gradient (3.67). Full training on all 8 trajectories is required to assess real convergence. Monitor C_aug magnitude during training: if it stays near 1e-2 after many epochs, the ANN/encoder may not be learning the absorber dynamics.
+
+---
+
+### [D-078] Noise-floor acceptance criterion for the augmentation benchmark (Jan's SNR method, pinned to the baseline residual)
+**Date**: 2026-07-05
+**What**: Define "good enough" for the augmentation on the multisine pipeline via Jan's output-noise convention (`msd_ndof_interconnect_dynamic.py`: `sigma_n = rms(y) * 10^(-SNR/20)`, noise added to `y`, floor = `sigma_n` plotted as a horizontal line the val RMS descends to). Added measurement noise per output channel; success = augmented val sim-RMS reaches the noise floor `sigma_n`. Chosen level: **SNR = 50 dB** primary, sweep **55 and 60 dB** to locate the plateau. Signal levels backed out of run 68676's baseline table (`std(y) = RMS_error / NRMS`): X1 0.060 m, X2 0.065 m, Y 0.230 m. Resulting per-channel floor at 50 dB: `sigma_n` = X1 1.9e-4, X2 2.0e-4, Y 7.3e-4 m; aggregate val sim-RMS floor = **4.5e-4 m** (aggregate confirmed to be `sqrt(mean of per-channel MS)`, matches the printed 5.175e-4). Runs are **JOINT_ESTIMATION off** and use the **linear** augmentation (D-071), so parameter fitting cannot soak up the residual and a memoryless shortcut cannot fake the absorber's dynamic contribution. Noise is injected in **Python at the output** (reproducible, sweepable, exactly measurement noise), NOT in the MATLAB generator.
+**Why**: In noiseless simulation there is no acceptance line: error can crawl toward 0 indefinitely (Jan: numerically sensitive, slow), and any value hit has a smaller one below it, so there is no pass/fail. Random noise cannot be predicted by any model and does not average out of the error, and neither does uncaptured deterministic content, so the error bottoms at `sqrt(unmodeled_deterministic^2 + noise^2)`: reaching `sigma_n` certifies all learnable signal (incl. the absorber) was captured to below the noise; plateauing above it quantifies the uncaptured content (the D-068 closed-Y-row routing ceiling) in absolute NRMS. The SNR is pinned to the measured baseline residual (NRMS ~0.0031-0.0037 val -> crossover 49.4 dB) so the floor sits BELOW the unmodeled content: at SNR 50 the baseline lands at 1.53x the floor (cannot reach without improving), the current augmentation at 1.19x (nearly there), giving a clean, falsifiable, achievable separation. The noise does not make learning easier; it converts an open-ended optimization into a bounded one with a known optimum, which is the entire value.
+**Ruled out**: (1) Oracle-model floor (baseline-vs-oracle NRMS as the target): numerically valid but model-dependent, simulation-only, and not defensible (no oracle exists on hardware) - user rejected it explicitly; a threshold must be model-free and data-derived (lessons.md). (2) Jan's low SNRs 20/30 (floors 10%/3.2%): far ABOVE our baseline residual (~0.3-0.4%), so the untrained baseline already sits on the floor - reaching it is trivial and proves nothing. His grid is calibrated to his deliberately under-modeled 2-DOF-approx-3-DOF baseline; our near-perfect FP baseline needs SNR ~50. (3) 40 dB (Jan's loose "40 dB ofzoiets"): floor NRMS 0.01, still above the val residual, uninformative for our system; it is at best a top anchor. (4) A dedicated SNR helper function: the level is a two-line inline op (per-channel `sigma_n`), wrapping it is scaffolding (lessons.md: no operational scaffolding in the experiment script). (5) Estimating `sigma_n` from the data via the standard nonparametric methods (period variance, non-excited multisine lines; Pintelon & Schoukens): correct for REAL measured data where noise exists and is unknown, but the current phase is a NOISELESS simulation where there is nothing to estimate - those estimators belong to the future real-gantry phase, and the simulator's role there is to validate the estimator (inject known `sigma_n`, repeated periods, confirm recovery). (6) Injecting noise in the MATLAB generator: process/closed-loop noise is not what the floor criterion needs (open-loop pipeline) and baking one realization into the dataset loses reproducibility/sweepability.
+**Constrains**: Output-floor is necessary but NOT sufficient for the state-interpretability claim (the augmented states could carry the absorber in a rotated basis, or a nonlinear correction could fake part of it), so the full acceptance test stays TWO-AXIS: output val sim-RMS reaching `sigma_n` AND augmented-state R2_linmap vs the oracle absorber (>~0.9), the latter measured NOISELESS (noise only lowers the achievable R2 ceiling). The linear augmentation couples the two axes on Y (a memoryless linear map cannot add the absorber's pole pair), so a run that reaches the Y floor should also raise R2_linmap; if it reaches the floor with R2 still ~0, the routing (Option A/B) is binding. Per-channel `sigma_n` is mandatory (X1/X2/Y amplitudes differ ~4x, MEET-05); a single global SNR would give three different effective SNRs. Numbers derive from run 68676, which is a JE-ON pilot: the baseline table is JE-independent (nominal params) so the floor is solid, but the augmented clean error (2.94e-4, the 1.19x) must be re-confirmed on a JE-OFF linear run before claiming the separation. Margin note: at SNR 50 the floor is only ~1.15x below the baseline content (tight); SNR 55 (aggregate floor ~2.5e-4 m) gives cleaner headroom and is the safer primary if the 50 dB separation proves borderline in practice.
+
+### [D-077] Joint estimation v2: all 14 raw physical parameters trainable (train raw, trust combinations)
+**Date**: 2026-07-05
+**What**: `Parameterized_Gantry_State_Block` extended from the 5 damping/stiffness sums (D-076 v1) to ALL 14 raw physical scalars, mirroring `lpv_lfr_baseline/train_param_recovery.py` exactly. `PARAM_NAMES = [kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d]`, each log-reparameterized (D-035) and detuned individually; only `Lb` stays frozen (it defines the coordinate frame via P, not the M(Y) rational structure). Because masses are now trainable, `nonlinear_function()` rebuilds the ENTIRE M(Y) structure per timestep from the parameters: `gantry_ss.build_poly_constants` -> alpha/beta/gamma/N0/N1/N2, `d0 = mh(alpha*gamma - beta^2)`, M1/M2 from mh, K/C from the stiffness/damping (using only the identifiable sums kb1+kb2, cb1+cb2), then `build_G_matrix_entries` -> A_combined. The parent `_mats()` hook is widened from `(K, C, A_combined)` to also carry `(mh, alpha, beta, gamma_, N0, N1, N2)`, and `deriv()`'s LPV branch reads all of them from the hook instead of as buffers (behavior-neutral for the fixed block, A0-guarded). Reporting (`identifiable_combinations()`, `param_table()`) exposes only the 10 data-identifiable quantities [kb_sum, cg1, cg2, cy, cb_sum, mh, m_total, m_diff, J_eff, d]; `m_diff = m1 - m2` is a SIGNED derived readout of the individually-logged (positive) m1, m2 — never itself a parameter.
+**Why**: v1 froze masses to keep M(Y) constant and dodge the invertibility question. The Task 3.1 proof (D-077 companion) shows M(Y) is positive-definite for ALL Y provided every mass/inertia/geometry scalar > 0, which the log-parameterization guarantees by construction — so all 14 can be trained safely. Training the raw params does not "mess up" training even though only combinations are trusted: the non-identifiable splits (kb1 vs kb2, cb1 vs cb2, mass flat direction) are FLAT (zero data-gradient) and rest at their `param_loss` anchor; only the identifiable combinations receive gradient signal. "Train raw, trust combinations" is exactly the train_param_recovery design; the combination view is a reporting choice applied after training, not a parameterization constraint.
+**Ruled out**: parameterizing the combinations directly (m_diff is signed — cannot be logged; unnecessary because it is derived from logged m1, m2); keeping a 5-vs-14 selector flag (speculative flexibility against minimal — freezing a subset can be a future flag if ever needed); a 5-param and 14-param class coexisting (v1 superseded, its results preserved in D-076); mutating parent buffers in the child to inject trainable matrices (breaks autograd/state_dict — the `_mats()` hook is the clean seam); rebuilding once per forward instead of per timestep (needs a forward-boundary hook Jan's step-by-step block calling does not cleanly provide; the redundancy is only the ~10% overhead and A1/gate measure it).
+**Constrains**: Runtime ~+10% over v1 (est. ~+20% over the fixed block; the M-gate/D-timing measure the exact figure before any long run). Gate updated: A1 now also validates the full nominal M(Y) rebuild; B covers all 14 log_params; NEW check M samples the positive parameter orthant and asserts `M(Y) @ N(Y)/d(Y) = I` (inverse-consistency, off-nominal transcription guard) AND `eig(M(Y)) > 0` (PD, proof realization). Check D judges recovery on the 10 identifiable combinations: the well-conditioned subset {kb_sum, cg1, cg2, cy, cb_sum} is gated <= 0.5 (regression vs v1), mass combos are reported and only guarded against divergence (their identifiability from short data is the open run-design question, not a correctness gate). Same scientific-scope caveat as D-076: on this benchmark FP params are true by construction, so v2 JE is machinery validation + bias-demonstration, not a fix for the absorber output-reachability issue.
+**Gate results (2026-07-05)**: Gate 1 PASS — A0 and A1 bitwise 0.0 (the full nominal M(Y) rebuild reproduces the fixed block exactly); B PASS on all 14 params under the gradcheck-style tolerance `|auto-fd| <= atol(1e-9) + rtol(1e-5)|fd|` (pure-relative would fail only on Jh, gradient ~2.7e-7, where autograd and central-difference agree to 4 sig figs — a roundoff floor, not an error; A1 + the M-check independently verify the Jb/Jh path); NEW check M PASS — `max|M·N/d - I| = 6.66e-16`, `min eig(M) = 2.97 > 0` over 200 positive-orthant samples x 7 Y (inverse-consistency + PD verified off-nominal). Gate 2 PASS — C loss integration rel 1.16e-9; D recovery on the state-readout config (C=I, flag_loss_reg=False) recovered ALL 10 identifiable combinations, not just the gated v1 subset: kb_sum 0.008, cg1 0.141, cg2 0.052, cy 0.019, cb_sum 0.033 (gate <= 0.5), and the reported masses mh 0.001, m_total 0.000, m_diff 0.002 (detuned +1.59 -> learned -0.4961, truth -0.5, signed), J_eff 0.028, d 0.000 gap-ratio. **Measured overhead**: parameterized-block forward +15.9% vs the fixed block (v1 was +11.7%, so ~+4% forward vs v1); fwd+bwd 1.49 s/batch vs v1's 1.09 s (+37% on the training step in isolation, because backprop through the per-timestep mass rebuild is costlier than forward alone — smaller net effect in the real pipeline where the ANN/encoder/longer windows dilute the physics-block share). Script edits (14-nominal `build_model` derivation from `gantry_ss`, `param_table()` report) validated via a no-train `build_model` rehearsal: params_init exact, combination table correct. Flag-off anchor (JE=False initial validation sim-RMS 6.4948e-4) is guaranteed unchanged by A0 (fixed-block deriv bitwise identical) and by the JE=False path not touching any new code; not re-run. Artifacts: `simulations/gantry_subnet/diagnostics/joint_estimation/` (gate1/gate2 JSON, gate_v2*.log).
+
+### [D-076] Joint estimation in the multisine pipeline: Parameterized_Gantry_State_Block + generic param_loss trainer
+**Date**: 2026-07-04
+**What**: Three additions enabling joint estimation of physical parameters in `gantry_interconnect_dynamic.py`:
+(1) `Parameterized_Gantry_State_Block` in `model_augmentation/fit_systems/blocks.py`, placed directly below `Gantry_State_Block` (mirroring Jan's fixed/parameterized adjacency, marked `@added`). Subclass with trainable vector `[kb_sum, cg1, cg2, cy, cb_sum]` stored as `log_params = nn.Parameter(zeros)` meaning log(theta/params_init) (D-035 positivity, MEET-02 centering: all params start at 1 in normalized space); regularization `param_loss()` with `Lambda = RMSE_baseline / params_init` toward `params_init` in physical space (D-034); `params_init` constructor override exists for detuned recovery tests. Per timestep the block rebuilds K and C (`torch.stack` construction, pattern copied from `lpv_lfr_baseline/blocks/lfr_param_block.py`, NOT imported) and `A_combined` via `gantry_ss.build_G_matrix_entries` — the functions kept autograd-safe for exactly this call. The parent `Gantry_State_Block` gains a ~3-line `_mats()` hook returning `(K_mat, C_mat, A_combined)` read by `deriv()`, so the child overrides matrices without duplicating the deriv kernel. New child buffers: `d0`, `M1`, `M2`.
+(2) `SSE_Interconnect_ParamLoss` in `model_augmentation/fit_systems/interconnect.py` (`@added`): delegating `loss()` = `super().loss(...) + sum(m.param_loss())` over blocks exposing `param_loss` (hasattr sweep). Reimplementation of the D-032 idea from `lpv_lfr_baseline/blocks/lfr_fit_system.py`; deliberately NOT imported from there (no cross-pipeline dependency — user decision 2026-07-04). Used unconditionally in the script: exact no-op when no block exposes `param_loss`. Documented caveat: would double-count Jan's `Parameterized_Linear_*` blocks if ever combined (never used in this pipeline).
+(3) `JOINT_ESTIMATION` flag in `gantry_interconnect_dynamic.py` gating ONLY the block class; `PARAM_RMSE_BASELINE = 0.01` constant (HEURISTIC: measured initial sqrt-loss of jobs 68675/68676); flag-guarded learned-vs-nominal parameter printout plus `params_init`/`params_learned` fields in the results npz; clear error when `RESUME_CHECKPOINT` points at a pre-JE checkpoint while the flag is on.
+**Why**: Joint estimation machinery is the prerequisite for the gray-box absorber path (Option A applies the same log_params/param_loss pattern to a 3-scalar absorber block) and for real hardware where nominal parameters are uncertain. v1 trains damping+stiffness only: none of these enter M(Y), so every M(Y)-derived parent buffer (N0/N1/N2, Horner d(Y) constants, M0inv, Bw, Bu) stays constant and valid, and the Task 3.1 M(Y)-invertibility proof is untouched. Sums (kb_sum, cb_sum) are parameterized directly because only the sums are identifiable (flat-ridge analysis in lfr_param_block).
+**Ruled out**: importing `LFRFitSystem` from `lpv_lfr_baseline` (wrong dependency direction); a new module or experiment script inside `model_augmentation/` (experiments live in `scripts/`, blocks belong beside their fixed siblings); duplicating `deriv` in the child (~35-line maintenance hazard, replaced by the `_mats()` hook); hand-assembled Ax/Bw/Bu in the child (second copy of the G-matrix math, replaced by reusing `build_G_matrix_entries`); in-script Lambda auto-calibration (`set_RMSE_baseline` machinery is operational scaffolding — a measured constant with provenance suffices; log-space centering makes Lambda scale non-critical); flag-gating the trainer class (delegation makes the subclass a provable no-op when unused).
+**Constrains**: Verification gates precede any full run; diagnostic results go to `simulations/gantry_subnet/diagnostics/joint_estimation/`. Gate 1 (after block): A0 = refactored fixed block reproduces a reference batch captured BEFORE the refactor; A1 = parameterized block at `log_params=0` matches the fixed block (~1e-6 float32); B = finite-difference vs autograd gradients for all 5 params (float64). Gate 2 (after trainer): C = one `loss()` call equals MSE + param_loss on a minimal no-ANN interconnect; D = mini recovery on self-generated absorber-free data (fixed block, nominal params, real multisine u), `params_init` detuned ±10%, pass = gap to nominal shrinks ≥50% for all 5 params; it/s from D doubles as the runtime-overhead measurement. Then the manual 1-epoch rehearsal (D-071 procedure) with the flag on, and the flag-off anchor check (initial validation sim-RMS must remain exactly 6.4948e-4). Scientific scope note: in THIS benchmark the FP parameters are true by construction, so JE of FP params serves machinery validation and bias-demonstration ablation only — it cannot address the absorber state-learning issue (output reachability unchanged) and is expected to bias parameters if trained on absorber-containing data. JE runs start from fresh checkpoints (old .pt files lack `log_params`).
+**Gate results (2026-07-05)**: Gate 1 PASS (A0 and A1 bitwise 0.0; B max FD-vs-autograd rel err 2.5e-7). Gate 2 PASS with a redesigned check D: two recorded failed attempts showed that the ORIGINAL check-D configuration could not isolate the machinery — (attempt 1, random default encoder + sim-RMS validation) the K=0 horizon-mismatch checkpoint trap restored epoch 0 and all 15 epochs went into encoder learning; (attempt 2, Hoekstra-style encoder + windowed validation) the co-trained encoder absorbed the loss (down 1000x with parameters frozen at init; nominal and detuned params gave IDENTICAL initial loss 2.0921, proving the loss was encoder-driven). Final check D therefore isolates parameter learning: synthetic output = full state (C = I), exact parameter-free readout encoder, flag_loss_reg=False (check C separately proves the regularization path, exact to rel 4e-10). Result: gap ratios kb_sum 0.000, cg1 0.211, cg2 0.189, cy 0.001, cb_sum 0.055 (pass <= 0.5); parameterized-block forward overhead +11.7% (fwd+bwd 1.09 s/batch, nf=100, batch 128). **Run-design findings for real JE (input to Phase 3/4 and the Jan discussion)**: (1) with position-only outputs, short-window BPTT and a co-trained encoder, physical parameters are practically unidentifiable — the encoder compensates; (2) param_loss anchored to the init values actively pins parameters there once the MSE landscape flattens; (3) windowed validation is mandatory on this plant (sim-RMS checkpoint selection reproduces the documented horizon-mismatch trap even without an ANN). Artifacts: `simulations/gantry_subnet/diagnostics/joint_estimation/` (gate1/gate2 JSON, gate_run*.log including the failed attempts).
+
+### [D-075] Telica train/validation/test wiring: supervisor's split, iter0+iter8, SEGMENT_LEN 650 confirmed
+**Date**: 2026-07-04
+**What**: `run_telica_param_recovery.py` switched from single-trajectory to the supervisor's
+split (folders under `06 40 mm XL 80 mm YL/`, split by operating point): TRAIN = 11 OPs x
+{iter0, iter8} = 22 trajectories; VALIDATION = 2 OPs x {iter0, iter8} = 4; TEST = 2 OPs x
+{iter0, iter8, iterTEST} = 6, final evaluation only. IDs T1a..T11b / V1a..V2b / E1a..E2T
+(a = iter0, b = iter8, T = iterTEST); `tr._traj_set_tag` is monkeypatched to '22traj' to
+keep the checkpoint filename inside the Windows 260-char path limit. EPOCHS = 40,
+VALIDATION_INTERVAL = 5, SEGMENT_LEN = 650 (re-picked consciously per D-073: 32.5 ms at
+the true 20 kHz spans 6+ periods of the ~200 Hz servo band and 27 periods of the 845 Hz
+notch resonance), NORM_MODE 'global', FULL_COVERAGE, no overlap. Final evaluation loops
+open-loop AND closed-loop (`_post_eval` + `_post_eval_cl`) over a train sample (T1a/T1b),
+all validation and all test trajectories.
+**Why**: iterations within an OP share the same reference and differ only in feedforward;
+iter0 (feedback-dominated, transient-rich) and iter8 (converged ILC, smooth) are the two
+extreme input spectra; the 7 in between are near-duplicates (5x cost, little information).
+Operating-point diversity, not iteration count, drives LPV identifiability. iter6_1.log
+(redo artifact) excluded.
+**Deviation from the stated plan**: the framework's built-in validation
+(`_full_traj_eval`) is a FULL-TRAJECTORY OPEN-LOOP RMSE on the validation trajectories,
+not the windowed training measure. It is controller-free and it is the metric we
+ultimately care about for OL quality, so checkpoint selection and LR scheduling use it
+as-is rather than adding a windowed-validation code path.
+**Ruled out**: all ~110 iterations (redundant, ~5x runtime); iter0-only (single input
+character); windowed validation implementation (extra code path in the training script
+for marginal benefit).
+**Constrains**: Runtime estimate revised: FULL_COVERAGE gives ~13 gradient steps/epoch at
+batch 22 (not one batch of 294), so an epoch is ~30-40 s CPU; 40 epochs + 9 validation
+passes = roughly 30-45 min training, plus ~30-60 min for the 12 OL + 12 CL final
+evaluations. TEST trajectories are also evaluated open-loop by tr.train()'s own Step 4
+at the very end (after best-checkpoint restore); they never influence training.
+
+### [D-074] Closed-loop validation added to run_telica_param_recovery.py; training stays open loop
+**Date**: 2026-07-03
+**What**: Three additions, no change to the training path: (1) `telica_loader.load_telica_log_cl`
+returns r [m], q1 [m], u_ff [N] ((MF30-MF230)*Kt) and logged i_fb [A] (MF230) on the same
+grid/trim as the training loader. (2) New `telica_controller.py`: `TelicaFeedbackController`,
+per-sample direct-form-II-transposed stepper for the LX1/LX2/LY controllers from
+`dFeedbackControllersTelica_ba.mat` (exported from the supervisor's zpk file); self-test
+verifies bit-exactness vs scipy lfilter and replays iter0 (corr 0.96-0.97 against logged
+MF230; known amplitude offsets: time-domain LS 1.16/1.33/3.55, coherent-band 0.74/1.08/1.23
+per D-073, attributed to an unmodeled rail decoupling transform). (3) `_post_eval_cl` +
+`_run_closed_loop` appended to the runner: initial condition only, then full trajectory with
+u = u_ff + Kt * K(r - y_model) stepped through rk4_step under no_grad; reports the same
+RMS/NRMSE table as the open-loop eval plus a feedback-current plot with a built-in wiring
+check (controller fed with measured error vs logged MF230). Called for baseline and best in
+`__main__`, next to the open-loop evals.
+**Why**: Supervisor decision: train open loop (windowed BPTT parallelizes; a controller in
+the training loop forces one long sequential rollout), validate closed loop (the
+control-relevant metric; a model is good if it behaves like the plant inside the same loop).
+Timing convention: controller acts on the same-sample error, no computational delay; the
+output has no feedthrough (y = Cy x), so the loop is well-posed.
+**Ruled out**: CLOE training (controller inside the gradient path): runtime and complexity
+not justified while open-loop windowed training suffices; everything learned here (loader,
+controller module, conventions) is reusable if it becomes necessary. Closed-loop-only
+validation: CL suppresses model error inside the bandwidth, so it must always be read next
+to the open-loop numbers.
+**Constrains**: CL numbers are only comparable between models evaluated with the same
+controller file. Smoke test (untrained Kamtin-parameter block on iter0): the loop diverges
+(~3 m RMS), which is the expected verdict for a plant-mismatched model under the real
+controller, not a wiring bug (the replay check inside the same run is clean).
+**Verified (diag_cl_correctness.py, 2026-07-03)**: (1) controller bit-exact vs MATLAB
+filter(tfdata) on the original zpk (0.0 deviation; the 2.15e-5 deviation vs lsim is
+MATLAB-internal tf-vs-ss conditioning of the unit-circle integrator poles); (2) perfect-model
+test: same-x0 repeat exact, rebuilt-x0 NRMSE 0.006-0.03% with a gain-scaled (stable)
+controller; (3) OL replay of the CL force reproduces CL positions exactly; (4) timing: the
+logged MF230 lags K(logged M2) by a BROAD ~2.5 ms correlation maximum; a 2.5 ms in-loop delay
+is physically impossible (the ~300 Hz-crossover loop would be unstable), so it is a
+logging-path artifact and the zero-delay loop is correct; (5) all six controllers marginally
+stable by design (integrator poles at |z|=1 within zpk rounding 6e-8), logged currents max
+~6.1 A vs 27.9 A peak limit, so no saturation modeling needed; controller tuning consistent
+across iterations and operating points (replay corr/scale identical on train and validation
+positions).
+
+### [D-073] Telica iter logs are 20 kHz native; loader upsampling removed (supersedes D-061)
+**Date**: 2026-07-03
+**What**: `telica_loader.py` now uses `fs_native = 1/SamplingTime = 20000 Hz` and performs
+no resampling (a guard raises if native rate and pipeline rate ever diverge). The previous
+chain (assume 10 kHz native, linearly upsample 2x to 20 kHz, D-061) stretched the time axis
+by a factor 2: every Telica training and evaluation before this date fitted a plant with
+2x slowed dynamics and is not comparable to later runs.
+**Why**: Controller-notch fingerprint (`diag_controller_fingerprint.py`). The real Telica
+controllers (dFeedbackControllersTelica.mat from the supervisor, 6x6 diagonal zpk at
+Ts = 5e-5 s; axis order confirmed by supervisor: LX1, LX2, LY, RX1, RX2, RY) have notches
+at fixed normalized frequencies of the 20 kHz DSP. In the iter0 empirical FRF
+(M2 -> MF230, exact controller I/O pair since feedforward = 0), the X1 notch appears at
+normalized frequency 0.10 of the LOG, exactly where LX1 has it under the 20 kHz
+interpretation; under the 10 kHz interpretation it would appear at 0.20, where the data
+shows nothing. Shape residuals: X1 3.2 dB (20 kHz) vs 5.5 dB (10 kHz); gain scales at
+20 kHz: X1 0.74, X2 1.08, Y 1.23. Telica.mat SamplingFrequency description ("The number
+of samples logged per second" = 20000) agrees. Figures:
+`simulations/gantry_subnet/diagnostics/controller_fingerprint/`.
+**Ruled out**: FsHz = 1/(2*TsSec) = 10 kHz from runFDILCAllHostSwLog.m line 30 (basis of
+D-061): that formula belongs to a different logging configuration; the data itself
+contradicts it for the iter*.log files.
+**Constrains**: All pre-2026-07-03 Telica training results are invalidated for comparison.
+`SEGMENT_LEN = 650` samples now means 32.5 ms instead of 65 ms: re-pick consciously before
+the next training run. Diagnostic scripts hardcoding `_FS_NATIVE = 10_000`
+(diag_cloe_signals.py) predate this finding. Remaining gain offsets (0.74/1.08/1.23) and
+corr ~0.97 are consistent with a decoupling transform around the SISO controllers
+(rail cross-coupling), acceptable for closed-loop validation. Related earlier decisions
+D-069 (diagnostics) and the AeroPro finding (Telica.mat MachineType = "AeroProCoC").
+
+### [D-072] Baseline comparison matrix: oracle-x0 and encoder-init baselines, revived oracle model sim, aligned averaging windows
+**Date**: 2026-07-03
+**What**: Four changes to `gantry_interconnect_dynamic.py` making every baseline/model comparison a well-posed cell of a matrix {baseline FP, augmented model} x {true x0, encoder init}: (1) `compute_baseline_fp_nrms` gains `x0_norm`, `start_ix`, `avg_from` parameters. (2) NEW encoder-init baseline: the baseline FP is seeded with the state estimated by the UNTRAINED `linear_encoder_init_aug` (Hoekstra reconstructability map W^b, built from the baseline's own linearization) from the first measured I/O window, simulating from sample k0=max(na,nb); computed for val and E1, printed with explicit labels distinguishing 'true x0' from 'encoder-init', stored in the results npz. Using the untrained map is deliberate: before training it is purely baseline-derived (no co-training with the augmented dynamics), so 'baseline + linear init' is well-defined; the trained encoder would not be. (3) The x_logical-initialised model simulation (augmented model from true x0) is revived: it was dead code because it checked `val_data.x` which `load_traj` never sets; it now seeds from `val_x_logical[0]` (always loaded). Its NRMS is now averaged over `[cheat_n:]` like the encoder-init model metric. (4) All baseline averaging windows aligned to k0 (`avg_from=k0` for oracle baselines, `start_ix=k0` for encoder-init), removing the ~0.2% asymmetry where the baseline was averaged over all N samples but the model over N-cheat_n.
+**Why**: The pre-existing comparison was baseline(true x0, full window) vs model(encoder init, cheat_n window) — biased in the baseline's favor. Conservative for improvement claims, but on the K=0 axes initial-state errors do not decay (they integrate into position drift over the full horizon), so the bias understates the model-vs-baseline gap by an encoder-quality-dependent amount rather than a negligible one. The completed matrix separates model quality (true-x0 vs true-x0) from encoder contribution (model true-x0 vs model encoder-init) from realistic end-to-end performance (encoder-init vs encoder-init).
+**Constrains**: Oracle baseline NRMS values shift slightly vs earlier logs (averaging now starts at k0). k0=max(na,nb) may differ from deepSI's cheat_n by one sample — negligible and documented here rather than plumbed through.
+
+### [D-071] Linear parallel augmentation experiment (Jan's ECC config) + E1 generalization evaluation + smoke-test hook
+**Date**: 2026-07-02
+**What**: (1) `ANN_ACTIVATION` default switched from 'tanh' to 'linear' (Identity activation, Jan's `linear_parallel` ECC configuration) for the next training run. (2) `evaluate_and_save` extended with a test-set (E1) simulation: per-channel NRMS plus baseline-FP comparison on the unseen excitation; `compute_baseline_fp_nrms` generalized with `(data, x0_phys, label)` arguments so the baseline can be computed on E1 as well. (3) ~~`SMOKE_TEST=1` environment hook~~ — implemented, then REMOVED at user request (no operational scaffolding in the experiment script). The rehearsal is now a manual procedure: before a long submission, temporarily set epochs=1/nf=10, run the script end-to-end once (fresh + resume), revert, submit. Both rehearsals were executed on 2026-07-03 and passed (exit 0), validating the D-070 checkpoint save, the resume load, and the E1 evaluation.
+**Why**: Run 68597 (tanh ANN, D-068 routing) improved aggregate val sim-RMS by ~43% vs the baseline FP but R2_linmap(delta_a) stayed at 0: the ANN compensates memorylessly from the instantaneous state instead of learning the absorber. A tanh static correction can imitate much of the absorber effect; a LINEAR static correction cannot add the missing pole pair, so any error reduction at the absorber resonance must flow through the two augmented states. The hidden absorber is itself LTI (Y-scheduling enters only via the fixed LPV FP block that propagates the corrections downstream), so a linear augmentation is the correct residual class, not a restriction. The E1 evaluation separates compensation from captured dynamics: a memoryless compensator tuned to training-excitation correlations degrades on unseen excitation, a learned oscillator transfers.
+**Ruled out (for now, staged behind this run)**: (1) Gray-box absorber via `Parameterized_Linear_State_Block`: guarantees state meaning by construction but changes the model class and touches the D-068 routing question (reopening the Y row); escalation if the linear run keeps R2 near 0, after consulting Jan. (2) LPV-linear augmentation (correction linear in [x,u] with coefficients affine in Y): restores scheduling without adding dynamics; refinement if states learn but an error gap vs the tanh run remains. (3) Supervised x_aug loss on saved delta_a ground truth: simulation-only scaffold, does not transfer to real data.
+**Constrains**: The outcome is diagnostic in both directions: R2 rises means the memoryless shortcut was the blocker; R2 stays near 0 means the closed Y injection row (D-068) is binding and the gray-box path becomes necessary rather than optional. Full capture of the MSD effect is structurally impossible while the Y row is closed (the absorber force reaches Y only via the Theta inertial coupling M0[1,2]=-mh*d, with collateral X1/X2 cost). The augmented loop has exactly zero gradient at init (zero-init final layer), so use more epochs than 30 for this run.
+
+### [D-070] Weights-only training checkpoints via component state_dicts, saved before diagnostics
+**Date**: 2026-07-02
+**What**: Four changes to `train_model`/`train_model_with_diagnostics` in `gantry_interconnect_dynamic.py`: (1) Checkpoint save changed from `torch.save(fit_sys.state_dict(), ...)` to a dict of component state_dicts `{'hfn': ..., 'encoder': ..., 'optimizer': ...}`. `SSE_Interconnect` inherits from deepSI `System` (not `nn.Module`) and has no `state_dict`; only `fit_sys.hfn` (Interconnect) and `fit_sys.encoder` are torch modules, and together they hold all trainable parameters. (2) Resume path loads these component dicts into the model built by `build_model(hp)`; optimizer state included so Adam moments continue instead of restarting. (3) The `.pt` checkpoint is written immediately after `fit()` returns, BEFORE `aug_state_r2`, and the diagnostic is wrapped in try/except (NaN placeholders on failure), so no post-training step can lose the weights. (4) ~~`fit()` called with `verbose=1` under SLURM~~ — implemented, then REVERTED on 2026-07-03 at user request: the tqdm progress bar is how long cluster runs are monitored (ETA, it/s); log length is not a defect.
+**Why**: SLURM job 68597 (30 epochs, 11 h, first successful D-068 run) crashed at the old save line with `AttributeError: 'SSE_Interconnect' object has no attribute 'state_dict'` after training completed. Because the save ran before `evaluate_and_save`, all artifacts (model save, results npz, plots, state recovery diagnostic) were lost; the best weights survived only in deepSI's internal `~/.deepSI/checkpoints/SSE_Interconnect_<code>_best.pth`. The resume path (`fit_sys.load_state_dict`) had the same bug and would have failed on first use.
+**Ruled out**: `fit_sys.save_system()` whole-object pickle (`torch.save(self, file)`): works and is already used in `evaluate_and_save` for the final model, but deepSI's own docstring warns it is "quite unstable for long term storage or switching between versions", and it would replace the build-then-restore resume design rather than fit into it.
+**Constrains**: Checkpoint `.pt` format is now the component dict; resume requires `build_model` with the same hp (already guaranteed: hp is read from the checkpoint `.npz` meta). No backward compatibility needed: the old save line never executed successfully, so no old-format checkpoints exist.
+
+### [D-069] Controller reconstruction gain mismatch: three diagnostics before CLOE
+**Date**: 2026-07-02
+**What**: Three diagnostic scripts in `scripts/gantry/real-data-verification/` to resolve the
+11-22x amplitude mismatch between the documented controller chain (M2[um] x 1024 cnt/um ->
+Filter1 -> Filter2 -> x AmplifierGain 0.002075 A/DAC) and the logged feedback current MF230:
+(1) `diag_log_rate.py`: resolves the log-rate ambiguity (10 kHz per D-061 vs 20 kHz per
+Telica.mat SamplingFrequency description "The number of samples logged per second") by
+locating known filter features (notches, integrator slope) in the empirical M2 -> MF230 FRF
+on the normalized frequency axis. A filter feature at normalized frequency nu (designed at
+20 kHz) appears at nu in the log FRF if the log is at 20 kHz, at 2*nu if decimated to 10 kHz.
+No timestamps used (D-061 forbids them).
+(2) `diag_frf_controller.py`: extracts the controller actually active during the FRF campaign
+via K_eff = G^-1 (S^-1 - I) from frfPlant [cnt/dac] and frfSensitivity in Telica.mat
+(THEORY: S = (I+GK)^-1, Skogestad & Postlethwaite 2005 Ch. 2). Compares K_eff against
+Filter1*Filter2 per frequency. This is excitation-based and free of the closed-loop
+correlation concern; a flat ratio identifies the missing per-channel gain and its value.
+(3) `diag_iteretel_decode.py`: dumps the full column schema of iterETEL.log and iter0.log
+(iter0 has 25 columns, only 13 identified so far; DatalogListVarMapping lists 25 ETEL
+channels including X_HIGS_INPUT/X_HIGS_OUTPUT, X_FB_OUTPUT, X_ENC_POS, X_DAC) and runs
+conditional analyses: HIGS input/output scatter (gain-mode slope) and raw-unit chain checks.
+**Why**: Telica.mat is now fully read (MATLAB batch confirmed a single top-level variable);
+no additional scale parameter exists in it. The mismatch is real (reproduced independently in
+MATLAB with native filter()). The DatalogListVarMapping names HIGS blocks in the servo loop:
+a HIGS (hybrid integrator-gain system) between error and filters acts approximately as a
+per-channel constant gain, which fits every observation (corr near 1, constant ratio per
+axis, different ratio per axis). A static-gain workaround was rejected (lessons.md): the
+missing element must be identified, not approximated away.
+**Ruled out**: LS scale from iter0 time-domain fit as the final answer: it conflates the
+missing gain with rate misapplication effects (11x at 10 kHz native vs 22x at 20 kHz
+upsampled shows the estimate is method-dependent). Asking Kamtin first: these diagnostics
+use data already on disk and can fully resolve the question; ask only if they fail.
+**Constrains**: CLOE implementation is gated on the missing gain being explained and
+reproduced (reconstruction matching MF230 in iter0 within a few percent). Results go to
+`simulations/gantry_subnet/diagnostics/`.
+
+### [D-068] Route ANN only to states with spring stiffness (Jan's state_augment_specific_states)
+**Date**: 2026-07-01
+**What**: Change `build_model()` in `gantry_interconnect_dynamic.py` to route ANN corrections only to state rows with K > 0, instead of all `nxd` rows. For the gantry: `STIFF_IX = [1, 4, 6, 7]` (Theta position, Theta velocity, delta_a, vdelta_a). ANN output width changes from `nxd=8` to `len(STIFF_IX)=4`. Implementation uses `expansion_matrix(STIFF_IX, nxd)` per Jan's `state_augment_specific_states` API.
+**Why**: Jan confirmed K=0 gantry axes (X, Y) cause ANN correction accumulation and suggested this fix. X (index 0,3) and Y (index 2,5) have K=0 — additive corrections accumulate without restoring force (O(N) drift). Theta (index 1,4) has kb1+kb2 stiffness; absorber states (index 6,7) have absorber spring. Routing only to K>0 states eliminates drift at the source. This is the physically motivated fix within Jan's framework.
+**Ruled out**: (1) Full-state routing (D-067): K=0 axes accumulate drift — existing failure mode. (2) Velocity-only routing (D-066): velocity corrections still integrate to position drift under K=0. (3) Aug-only routing (D-065): C_aug gradient dead zone.
+**Constrains**: ANN output dim becomes 4. Absorber-to-X/Y coupling is not directly captured (X/Y rows excluded). First test should use single-stage sim-RMS to confirm K=0 blowup is eliminated before revisiting curriculum design.
+
+### [D-067] Revert to Jan's full-state routing + curriculum nf training
+**Date**: 2026-07-01
+**What**: Reverted `gantry_interconnect_dynamic.py` from Model B (velocity+aug rows) back to Jan's full-state routing (`connect_block_signals(ann_block, ["x","u"], ["xp"])`), matching `msd_ndof_interconnect_dynamic.py:91`. ANN `nw` reverted from 5 back to `nxd=8`. `VEL_AUG_IX` removed. `DIAG_INTERVAL` replaced by `NF_CURRICULUM`: a 6-stage curriculum schedule `(nf, epochs, validation_measure)` progressing 25→50→100→200→400 (windowed) → 400 (sim-RMS). `train_model` signature extended with optional `nf` and `validation_measure` overrides. `train_model_with_diagnostics` iterates `NF_CURRICULUM`, logging R2_linmap after each stage.
+**Why**: Model B training failed: best checkpoint = epoch 0 (untrained) on all 20 epochs. Root cause is the K=0 + training/validation horizon mismatch: ANN learns velocity corrections that reduce nf=400 training loss but cause O(N_val/nf)=20× larger position drift on full 8000-sample validation. Excluding position rows from routing does not fix this — velocity corrections still integrate to unbounded position drift under K=0. Full-state routing is correct (same as Jan's working MSD implementation); the K=0 instability is addressed via curriculum nf. Literature precedent: CHyLL (arXiv:2512.10117) shows direct training at long nf diverges while curriculum converges; Farina & Piroddi (2011) establishes sub-sequence length as critical hyperparameter; Uy et al. (arXiv:2212.01418) demonstrates rollout training suppresses drift on marginally stable systems.
+**Why curriculum fixes K=0**: At small nf, position drift per window O(nf·ε·Ts) is small — ANN learns absorber oscillation. Absorber displacement is physically zero-mean, so correctly learned corrections are also zero-mean and don't cause net long-horizon drift. Increasing nf progressively forces the ANN to maintain zero-mean corrections. Final sim-RMS stage continues training using dynamics already learned at nf=400, not just evaluates — the model adapts to the full-trajectory regime.
+**Ruled out**: (1) nf=1000+ windowed validation — more expensive than sim-RMS (7M vs 8k steps). (2) Stay with Model B — doesn't fix K=0 drift, only fixes C_aug dead zone. (3) Increase nf to 8000 directly — computationally infeasible, equivalent to CHyLL failure mode. (4) Series augmentation — excluded per project scope.
+**Constrains**: NF_CURRICULUM controls all training. Optuna objective unaffected (uses `train_model` directly). Model B (D-066) is superseded.
+
+### [D-066] Model B routing: ANN → velocity rows [3,4,5] + aug rows [6,7]; C_aug removed
+**Date**: 2026-06-30
+**What**: Replaced D-065 C_aug routing with Model B routing in `gantry_interconnect_dynamic.py`. Changes: (1) `Parameterized_Linear_Output_Block` and C_aug removed; output is `Linear_Output_Block(Cd_norm)` only. (2) `VEL_AUG_IX = [3,4,5,6,7]` defined. (3) ANN `nw` changed from `NX_ANN=2` to `len(VEL_AUG_IX)=5`. (4) `expansion_matrix(AUG_IX, nxd)` → `expansion_matrix(VEL_AUG_IX, nxd)`. ANN input unchanged (sees full state + u).
+**Why**: D-065 C_aug routing has a gradient dead zone by construction. C_aug is initialized near-zero (Frobenius norm = 1e-2). The gradient chain Loss→y→C_aug@x_aug→x_aug→ANN scales with ‖C_aug‖_F ≈ 0, so the ANN receives no learning signal. Confirmed by `diag_gradient_routing.py` on real gantry data: Model A (C_aug) ANN grad = 1.04e-2, Model B (vel routing) ANN grad = 2.85e-1, ratio 27x. This is the root cause of R²≈0 from diag12.
+**Why velocity rows are safe (contra D-065 ruling)**: D-065 ruled out velocity routing citing "836x blowup (diag13)". That test used a non-zero-initialized ANN at long nf=400 rollout. Model B is safe at epoch 0 because ANN is zero-initialized: correction starts at 0, so initial position drift is zero. Velocity states have stable eigenvalue z=1-C*Ts/m < 1 (C>0 for gantry). Gradient of position loss w.r.t. velocity correction converges to Ts·m/C as T→∞ — a finite bound, not O(T²) as for position-row routing. `diag_spring_stiffness.py` confirms K=0 position routing gives O(T²) gradient growth; velocity routing is structurally bounded.
+**Why position rows remain excluded**: Gantry X/Y/bridge axes have K=0 (no spring stiffness). DT position eigenvalue z=1 exactly. Additive correction to position accumulates without restoring force: gradient O(T) unbounded (confirmed `diag_spring_stiffness.py`). No spring stiffness can be added — this is the physical system.
+**Literature**: Tustin-Net (Pozzoli et al. 2019/2020), van Esch et al. 2024 — multiple independent groups converged on ANN injection at force/velocity level, never at position level, for systems with integrating modes.
+**Ruled out**: (1) C_aug routing (D-065): gradient dead zone, ANN learns nothing. (2) Full-state parallel (Jan's default): position rows give unbounded gradient at K=0. (3) CT force injection via LFR deriv(): gradient 7.89e-4, ~500x weaker than Model B (two CT integrations vs one DT). (4) Series-in (identity init): 177x stronger gradient but comes from position modification path — same drift risk.
+**Constrains**: Output is now solely through fixed Cd_norm (no trainable C_aug). ANN must cause sufficient position change via the velocity→position integration for the loss signal to drive learning. The aug states [6,7] still exist and receive ANN correction — they are free latent states for any unmodeled dynamics the ANN discovers. First training run needed to confirm R² improvement.

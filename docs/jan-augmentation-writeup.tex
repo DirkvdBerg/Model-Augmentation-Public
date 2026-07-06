@@ -1,0 +1,211 @@
+% Gantry model augmentation: setup for review by Jan Hoekstra.
+% Notation follows Hoekstra et al. (2025), "Learning-based model augmentation with LFRs".
+% Compile: pdflatex jan-augmentation-writeup.tex . No code listings on purpose.
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{amsmath, amssymb, bm}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{xcolor}
+\usepackage{parskip}
+\usepackage{enumitem}
+\setlist{nosep, leftmargin=1.4em}
+
+\newcommand{\hl}[1]{\colorbox{yellow!35}{$\displaystyle #1$}}
+\newcommand{\xb}{\tilde{x}}   % baseline state
+\newcommand{\xa}{\bar{x}}     % added state
+\newcommand{\xh}{\hat{x}}     % full model state
+\newcommand{\yh}{\hat{y}}
+\newcommand{\Cbar}{\bar{C}_d}
+\newcommand{\fb}{f_{\mathrm{base}}}
+\newcommand{\hb}{h_{\mathrm{base}}}
+\newcommand{\fa}{f_{\mathrm{aug}}}
+\newcommand{\ga}{g_{\mathrm{aug}}}
+\newcommand{\ha}{h_{\mathrm{aug}}}
+
+\begin{document}
+
+\begin{center}
+  {\large\bfseries Gantry model augmentation: setup for review}\\[2pt]
+  Dirk van den Berg \quad\textbullet\quad \today \\[2pt]
+  {\small Notation follows Hoekstra et al.\ (2025). Equation numbers in parentheses refer to that paper.}
+\end{center}
+
+% ---------------------------------------------------------------------------
+\section*{Notation}
+\begin{tabular}{@{}ll@{}}
+$\xb \in \mathbb{R}^6$ & baseline state $[q_1,q_2,q_3,\dot q_1,\dot q_2,\dot q_3]$, logical coords (Eq.~2)\\
+$\xa \in \mathbb{R}^2$ & added states, targeting $[\delta_a,\dot\delta_a]$ (Sec.~2)\\
+$\xh = [\xb^\top\ \xa^\top]^\top \in \mathbb{R}^8$ & full model state (Eq.~3)\\
+$u,\ y \in \mathbb{R}^3$ & stage input (forces $F_1,F_2,F_y$), stage output (positions $X_1,X_2,Y$) \\
+$Y = q_3$ & scheduling variable \\
+$\fb,\hb$ & baseline state-transition / output; \ $\fa,\ga,\ha$ augmentation functions (Table~1)\\
+\end{tabular}
+
+% ---------------------------------------------------------------------------
+\section{System: the data-generating truth \quad (Eq.~1)}
+
+An 8-state gantry with a hidden tuned-mass absorber. Coordinates
+$q = [X,\ \Theta,\ Y,\ \delta_a]^\top$; the hidden mass $m_a$ sits at
+$Y{+}L_0{+}\delta_a$ on the cross-beam with spring $k_a$ and damper $c_a$. The
+continuous-time equations of motion are
+\begin{equation}
+  M(Y,\delta_a)\,\ddot q = \begin{bmatrix} P^\top u \\ 0 \end{bmatrix}
+    - C_4\,\dot q - K_4\,q ,
+\end{equation}
+\begin{equation}
+  \small
+  M(Y,\delta_a) =
+  \begin{bmatrix}
+    m_{\mathrm{t}} & s & 0 & 0 \\
+    s & J & -(m_h{+}m_a)d & -m_a d \\
+    0 & -(m_h{+}m_a)d & m_h{+}m_a & m_a \\
+    0 & -m_a d & m_a & m_a
+  \end{bmatrix},
+  \quad
+  C_4 = \begin{bmatrix} C & 0 \\ 0 & c_a \end{bmatrix},
+  \quad
+  K_4 = \begin{bmatrix} K & 0 \\ 0 & k_a \end{bmatrix},
+\end{equation}
+with (here $m_h = m_{h,\mathrm{rigid}}$, so $m_h{+}m_a = 10.1$):
+\begin{align*}
+  m_{\mathrm{t}} &= m_1{+}m_2{+}m_b{+}m_h{+}m_a, &
+  s &= (m_1{-}m_2)\tfrac{L_b}{2} - (m_h{+}m_a)Y - \hl{m_a(L_0{+}\delta_a)}, \\
+  J &= J_b{+}J_h{+}(m_1{+}m_2)\tfrac{L_b^2}{4} + (m_h{+}m_a)d^2 + m_h Y^2 + \hl{m_a(Y{+}L_0{+}\delta_a)^2}. &&
+\end{align*}
+Discretized (RK4) this is the truth $x_{k+1} = f(x_k,u_k)$, $y_k = h(x_k)$ of Eq.~1.
+The highlighted terms are the absorber's coupling: through the mass matrix it enters the
+$X$, $\Theta$, $Y$ accelerations (it is not a single-axis spring). Parameters:
+$m_a = 0.10\,m_h = 1.01$ kg, $f_a = 150$ Hz with $k_a = m_a(2\pi f_a)^2$,
+$\zeta_a = 0.05$ with $c_a = 2\zeta_a\sqrt{k_a m_a}$, $L_0 = 0.10$ m.
+
+% ---------------------------------------------------------------------------
+\section{Baseline: the model we augment \quad (Eq.~2)}
+
+The same system with $m_a \to 0$, which recovers the 3-DOF gantry exactly (verified in
+the MATLAB). Its matrices are ($s_0$, $J_0$ are $s$, $J$ of Section~1 at $m_a{=}0$):
+\begin{equation}
+  \small
+  M(Y) =
+  \begin{bmatrix}
+    m_1{+}m_2{+}m_b{+}m_h & s_0 & 0 \\
+    s_0 & J_0 & -m_h d \\
+    0 & -m_h d & m_h
+  \end{bmatrix},
+  \quad
+  s_0 = (m_1{-}m_2)\tfrac{L_b}{2}{-}m_h Y,
+  \quad
+  J_0 = J_b{+}J_h{+}(m_1{+}m_2)\tfrac{L_b^2}{4}{+}m_h d^2{+}m_h Y^2 ,
+\end{equation}
+\begin{equation}
+  \small
+  C =
+  \begin{bmatrix}
+    c_{g1}{+}c_{g2} & (c_{g1}{-}c_{g2})\tfrac{L_b}{2} & 0 \\
+    (c_{g1}{-}c_{g2})\tfrac{L_b}{2} & c_{b1}{+}c_{b2}{+}(c_{g1}{+}c_{g2})\tfrac{L_b^2}{4} & 0 \\
+    0 & 0 & c_y
+  \end{bmatrix},
+  \quad
+  K = \begin{bmatrix} 0 & 0 & 0 \\ 0 & k_{b1}{+}k_{b2} & 0 \\ 0 & 0 & 0 \end{bmatrix}.
+\end{equation}
+With $M(Y)\ddot q = P^\top u - C\dot q - K q$, implemented as an LPV linear-fractional
+representation ($M(Y)^{-1} = N(Y)/d(Y)$) and RK4-discretized, the baseline is
+\begin{equation}
+  \xb_{k+1} = \fb(\xb_k, u_k)\quad(\text{Eq.\ 2a}),
+  \qquad
+  \tilde{y}_k = \hb(\xb_k, u_k) = \Cbar\,\xb_k + D_d\,u_k \quad(\text{Eq.\ 2b}).
+\end{equation}
+Mass is conserved: the baseline uses the full payload $m_h = 10.1$; the truth splits it
+as $m_h = m_{h,\mathrm{rigid}} + m_a = 9.09 + 1.01$. Hence (truth $-$ baseline) is only
+the absorber.
+
+The output map is frozen first-principles: $C_d = [\,P^\top\ |\ 0_{3\times3}\,]$ (positions
+only), $P = \left[\begin{smallmatrix} 1 & 1 & 0\\ \tfrac{L_b}{2} & -\tfrac{L_b}{2} & 0\\ 0 & 0 & 1\end{smallmatrix}\right]$,
+$D_d = 0$, normalized to $\Cbar[i,j] = C_d[i,j]\,\sigma_{x,j}/\sigma_{y,i}$.
+
+% ---------------------------------------------------------------------------
+\section{Augmentation: dynamic parallel \quad (Eq.~3, Table~1)}
+
+We use the \emph{dynamic parallel} structure of Table~1:
+\begin{align}
+  \xb_{k+1} &= \fb(\xb_k, u_k) + \fa(\xb_k, \xa_k, u_k) & &\text{(correct the baseline states)}\\
+  \xa_{k+1} &= \ga(\xb_k, \xa_k, u_k) & &\text{(drive the added states)}\\
+  \yh_k &= \hb(\xb_k, u_k) = \Cbar\,\xb_k + D_d u_k & &(\ha = 0)
+\end{align}
+The model is a simulation: the encoder sets the initial state
+$\xh_{k|k} = \psi(u_{k-n_b:k},\,y_{k-n_a:k})$ (Eq.~5c), the recursion above is rolled out
+over the horizon, and $\yh$ is compared to $y$ in the loss (Eq.~5a).
+
+For the gantry, each function and our design choice:
+\begin{itemize}
+  \item $\fb$: the baseline gantry map (Section~2).
+  \item $\fa$: correction to the baseline states, \textbf{nonzero only on the $\Theta$
+        components} (rotational position and velocity). Reason: the $X$ and $Y$
+        coordinates are pure integrators ($K = 0$), so an additive correction there
+        accumulates without a restoring force and diverges.
+  \item $\ga$: the dynamics of the two added states $\xa$, targeting $[\delta_a,\dot\delta_a]$.
+  \item $\ha = 0$: no learned output term; the output stays $100\%$ baseline.
+  \item $\fa,\ga$ are realized by a single feedforward network with $\tanh$ activation.
+        $\tanh$ is required because the $Y$-scheduled coupling needs bilinear terms such
+        as $Y\!\cdot\!\delta_a$, which a linear (identity) map cannot form.
+\end{itemize}
+This is a fixed-interconnection special case of the general LFR form (Eq.~4).
+
+% ---------------------------------------------------------------------------
+\section{Normalization \quad (Eq.~9)}
+
+Inputs and outputs are scaled to zero mean and unit variance ($T_u$, $T_y$). For the
+state scaling $T_x$, Eq.~9 prescribes $\sigma_x$ from the \emph{baseline model's}
+simulated states. We instead take
+\begin{equation}
+  \hl{\sigma_x \ \text{from the data}}:\quad
+  x_{\text{log}} = \big[\,P^{-\top} y,\ \ \mathrm{diff}(P^{-\top} y)\,f_s\,\big],
+  \qquad \sigma_x = \mathrm{std}(x_{\text{log}}),
+\end{equation}
+i.e.\ from finite-differenced logical states of the measured (truth) output. The encoder's
+linear-model normalization does use baseline-simulated states, so two state-statistics
+sources coexist. This is a deviation from Eq.~9 and a candidate baseline-vs-data mismatch
+(most likely on the finite-difference velocity scale).
+
+% ---------------------------------------------------------------------------
+\section{Training objective and target \quad (Eq.~5)}
+
+Encoder, augmentation, and (optionally) baseline parameters are estimated by minimizing
+the truncated multi-step simulation loss
+\begin{equation}
+  V_{\mathrm{trunc}} = \frac{1}{2N(T{+}1)}\sum_{i=1}^{N}\sum_{\ell=0}^{T-1}
+  \big\| \yh_{k_i+\ell\,|\,k_i} - y_{k_i+\ell} \big\|_2^2 .
+\end{equation}
+Acceptance target: noiseless first, then reach the output-noise floor
+$\sigma_n = \mathrm{rms}(y)\,10^{-\mathrm{SNR}/20}$ on the validation simulation RMS.
+
+% ---------------------------------------------------------------------------
+\begin{center}
+\fbox{\begin{minipage}{0.95\linewidth}
+\textbf{Open questions for Jan}
+\begin{itemize}
+  \item Normalization: $\sigma_x$ from data vs.\ baseline-model states (Eq.~9). Is this a
+        problem, and should the physical block and encoder share one source?
+  \item Are the added states $\xa$ informative, i.e.\ do they track $\delta_a$ (augment,
+        not replace), or does the error drop while $\xa$ stays arbitrary?
+  \item Is restricting $\fa$ to the $\Theta$ components adequate, given the true coupling
+        also reaches $X$ and $Y$ through $M(Y,\delta_a)$?
+\end{itemize}
+\end{minipage}}
+\end{center}
+
+% ---------------------------------------------------------------------------
+\section*{Appendix: parameter values}
+
+\begin{tabular}{@{}llll@{}}
+$m_1 = 10.2$ & $m_2 = 10.7$ & $m_b = 22.8$ & $m_h = 10.1$ \\
+$J_b = 1.0$ & $J_h = 0.05$ & $L_b = 0.725$ & $d = 0.1$ \\
+$c_{g1} = 14.5$ & $c_{g2} = 20.3$ & $c_y = 10$ & $c_{b1}=c_{b2}=9$ \\
+$k_{b1}=k_{b2}=1987.5$ & $m_a = 1.01$ & $m_{h,\mathrm{rigid}} = 9.09$ & $L_0 = 0.10$ \\
+$f_a = 150$ Hz & $\zeta_a = 0.05$ & $k_a = m_a(2\pi f_a)^2$ & $c_a = 2\zeta_a\sqrt{k_a m_a}$ \\
+\end{tabular}
+\\[3pt]
+{\small Units: masses [kg], inertias [kg\,m$^2$], lengths [m], viscous damping
+[N/(m/s)] or [Nm/(rad/s)], stiffness [N/m] or [Nm/rad]. Gantry parameters as in the
+Garcia/Jasper baseline.}
+
+\end{document}

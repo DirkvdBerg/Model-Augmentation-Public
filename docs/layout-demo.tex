@@ -1,0 +1,232 @@
+% layout-demo.tex
+% Compile with: pdflatex layout-demo.tex
+% Purpose: compare 3 formula+code layout options before writing the full derivation doc.
+% All examples use the same real formula (physical state transition) and real code lines.
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{amsmath, amssymb}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\tcbuselibrary{listings, skins, breakable}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{parskip}
+\usepackage{booktabs}
+\usepackage{caption}
+
+% ── Python listing style ──────────────────────────────────────────────────────
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{keywordcolor}{RGB}{0,0,180}
+\definecolor{commentcolor}{RGB}{80,120,80}
+\definecolor{stringcolor}{RGB}{160,0,0}
+
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{keywordcolor}\bfseries,
+  commentstyle=\color{commentcolor}\itshape,
+  stringstyle=\color{stringcolor},
+  showstringspaces=false,
+  breaklines=true,
+  frame=none,
+  backgroundcolor=\color{codebg},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=6pt,
+  xleftmargin=12pt,
+}
+
+% ── tcolorbox styles for Option B ─────────────────────────────────────────────
+\tcbset{
+  formulabox/.style={
+    enhanced,
+    colback=white,
+    colframe=black!50,
+    arc=2pt,
+    boxrule=0.5pt,
+    left=6pt, right=6pt, top=4pt, bottom=4pt,
+  },
+  codebox/.style={
+    enhanced,
+    colback=codebg,
+    colframe=black!50,
+    arc=2pt,
+    boxrule=0.5pt,
+    top=0pt, bottom=0pt, left=0pt, right=0pt,
+    listing only,
+    listing options={style=python, numbers=left, xleftmargin=12pt},
+  },
+  pairedbox/.style={
+    enhanced,
+    breakable,
+    colback=white,
+    colframe=black!60,
+    arc=3pt,
+    boxrule=0.6pt,
+    fonttitle=\small\ttfamily,
+    attach boxed title to top left={yshift=-2mm, xshift=4mm},
+    boxed title style={colback=black!70, colframe=black!70, arc=2pt, boxrule=0pt,
+                        left=4pt, right=4pt},
+    coltitle=white,
+  },
+}
+
+% ── Convenience command: inline filename ──────────────────────────────────────
+\newcommand{\file}[1]{\texttt{\small #1}}
+
+% =============================================================================
+\begin{document}
+
+\title{\textbf{Layout Demo} \\[4pt]
+       \large Formula + Code Pairing: Three Options}
+\author{}
+\date{}
+\maketitle
+
+\noindent
+Each option shows the \textit{same} formula and \textit{same} code lines so the visual
+difference is the only variable. The formula is the physical state transition in the
+augmented model; the code is from \file{gantry\_interconnect\_dynamic.py}.
+
+\bigskip
+\hrule
+\bigskip
+
+% =============================================================================
+\section*{Option A \quad Equation + shaded code block, stacked}
+
+Plain equation environment, then an \texttt{lstlisting} block with a shaded background
+and a title line showing filename and line numbers. Minimal packages (only
+\texttt{listings} + \texttt{xcolor}).
+
+% ── Formula ──
+\begin{equation}
+  \hat{x}^{\mathrm{phys}}_{k+1}
+  = f_{\mathrm{LPV}}\!\bigl(
+      S_{\mathrm{phys}}\,\hat{x}_k,\;
+      \hat{u}_k
+    \bigr)
+  \label{eq:phys_transition}
+\end{equation}
+
+where $S_{\mathrm{phys}} = \texttt{selection\_matrix(PHY\_IX, nxd)}$ selects the six
+physical-state rows of $\hat{x}_k$, and the output $\hat{x}^{\mathrm{phys}}_{k+1}$ is
+written back into those rows via $E_{\mathrm{phys}} = \texttt{expansion\_matrix(PHY\_IX, nxd)}$.
+
+% ── Code ──
+\begin{lstlisting}[
+  style=python,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{codeframe},
+  title={\small\ttfamily gantry\_interconnect\_dynamic.py \quad lines 267--269},
+  captionpos=t,
+  firstnumber=267,
+]
+ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
+ic.connect_block_signals(phy_block, ["u"], [])
+ic.connect_signals(phy_block, "xp", "additive", expansion_matrix(PHY_IX, nxd))
+\end{lstlisting}
+
+\bigskip
+\hrule
+\bigskip
+
+% =============================================================================
+\section*{Option B \quad \texttt{tcolorbox} split panel}
+
+A two-part colored box: white top panel for the formula, gray bottom panel for the code.
+The title on the right identifies the source file. Requires \texttt{tcolorbox}.
+
+% ── Paired box ──
+\begin{tcolorbox}[
+  pairedbox,
+  title={gantry\_interconnect\_dynamic.py \quad lines 267--269},
+]
+% top: formula
+\vspace{2pt}
+\begin{equation*}
+  \hat{x}^{\mathrm{phys}}_{k+1}
+  = f_{\mathrm{LPV}}\!\bigl(
+      S_{\mathrm{phys}}\,\hat{x}_k,\;
+      \hat{u}_k
+    \bigr)
+\end{equation*}
+\vspace{-4pt}
+
+\noindent\small
+$S_{\mathrm{phys}}$: \texttt{selection\_matrix(PHY\_IX, nxd)}
+\hfill
+$E_{\mathrm{phys}}$: \texttt{expansion\_matrix(PHY\_IX, nxd)}
+
+\tcblower % ── bottom: code ──
+\begin{lstlisting}[style=python, firstnumber=267, numbers=left, xleftmargin=12pt]
+ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
+ic.connect_block_signals(phy_block, ["u"], [])
+ic.connect_signals(phy_block, "xp", "additive", expansion_matrix(PHY_IX, nxd))
+\end{lstlisting}
+\end{tcolorbox}
+
+\bigskip
+\hrule
+\bigskip
+
+% =============================================================================
+\section*{Option C \quad Numbered equation with matching implementation label}
+
+Standard numbered equation, then a titled code block whose number echoes the equation.
+Works well with cross-referencing (\texttt{impl.~\ref{eq:phys_transition_c}}).
+
+% ── Formula ──
+\begin{equation}
+  \hat{x}^{\mathrm{phys}}_{k+1}
+  = f_{\mathrm{LPV}}\!\bigl(
+      S_{\mathrm{phys}}\,\hat{x}_k,\;
+      \hat{u}_k
+    \bigr)
+  \label{eq:phys_transition_c}
+\end{equation}
+
+% ── Code ──
+\begin{lstlisting}[
+  style=python,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{codeframe},
+  title={%
+    \small\textbf{impl.\,\ref*{eq:phys_transition_c}}\quad
+    \ttfamily gantry\_interconnect\_dynamic.py \quad lines 267--269},
+  captionpos=t,
+  firstnumber=267,
+]
+ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
+ic.connect_block_signals(phy_block, ["u"], [])
+ic.connect_signals(phy_block, "xp", "additive", expansion_matrix(PHY_IX, nxd))
+\end{lstlisting}
+
+\bigskip
+\hrule
+\bigskip
+
+% =============================================================================
+\section*{Candidate sections for the full document}
+
+Once you pick a layout style, the full derivation doc will contain these sections
+in this order:
+
+\begin{enumerate}
+  \item Augmented state partitioning $\hat{x}_k = [x^\mathrm{phys}_k;\, x^\mathrm{aug}_k]$
+  \item State transition -- physical block (LPV gantry)
+  \item State transition -- augmented block (ANN)
+  \item Output equation (two-block additive)
+  \item Normalisation ($C_{d,\mathrm{norm}}$, $\bar{u}$, $\bar{y}$)
+  \item Encoder initialisation (reconstructability map, Eqs.\ 16--17)
+  \item Training objective (truncated multi-step loss)
+\end{enumerate}
+
+\end{document}

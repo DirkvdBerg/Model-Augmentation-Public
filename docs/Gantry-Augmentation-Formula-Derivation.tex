@@ -1,0 +1,896 @@
+% Gantry-Augmentation-Formula-Derivation.tex
+% Compile: pdflatex Gantry-Augmentation-Formula-Derivation.tex  (twice for refs)
+%
+% Sections follow the execution order of build_model() in
+% gantry_interconnect_dynamic.py, so the document can be read alongside the code.
+%
+% Layout: equation(s) -> prose explaining each symbol -> exact code snippet.
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{amsmath, amssymb, bm}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{parskip}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+\usepackage{caption}
+\usepackage{microtype}
+
+% ── Python listing style ──────────────────────────────────────────────────────
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codeframe}{RGB}{180,180,180}
+\definecolor{keywordcolor}{RGB}{0,0,160}
+\definecolor{commentcolor}{RGB}{60,110,60}
+\definecolor{stringcolor}{RGB}{150,0,0}
+\definecolor{numbercolor}{RGB}{100,100,100}
+
+\lstdefinestyle{py}{
+  language=Python,
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{keywordcolor}\bfseries,
+  commentstyle=\color{commentcolor}\itshape,
+  stringstyle=\color{stringcolor},
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=true,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{codeframe},
+  backgroundcolor=\color{codebg},
+  numbers=left,
+  numberstyle=\tiny\color{numbercolor},
+  numbersep=8pt,
+  xleftmargin=14pt,
+  captionpos=t,
+}
+
+% ── Shorthand ────────────────────────────────────────────────────────────────
+\newcommand{\file}[1]{\texttt{\small #1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\mat}[1]{\bm{#1}}
+\newcommand{\norm}[1]{\bar{#1}}
+
+% ── Helper: code block title ─────────────────────────────────────────────────
+% Usage: \codetitle{filename}{lines}
+\newcommand{\codetitle}[2]{\small\texttt{#1}\quad lines #2}
+
+% =============================================================================
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries Gantry Augmentation: Formula Derivation}\\[6pt]
+  {\large Mapping from mathematical description to implementation}\\[4pt]
+  {\small Sections follow the execution order of \file{build\_model()} in
+  \file{scripts/gantry/gantry\_interconnect\_dynamic.py}}
+\end{center}
+
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Normalization}
+\label{sec:norm}
+
+Normalization is computed once from training data \emph{before}
+\code{build\_model()} is called.
+Two distinct normalization objects exist and serve different purposes;
+both are used throughout all later sections.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{I/O normalization (deepSI \texttt{norm})}
+
+The encoder and loss function operate on zero-mean, unit-variance signals.
+Given the concatenated training inputs $u \in \mathbb{R}^{N \times n_u}$
+and outputs $y \in \mathbb{R}^{N \times n_y}$, the statistics are:
+
+\begin{equation}
+  \mu_u = \frac{1}{N}\sum_k u_k, \quad
+  \sigma_u = \operatorname{std}(u), \quad
+  \mu_y = \frac{1}{N}\sum_k y_k, \quad
+  \sigma_y = \operatorname{std}(y).
+  \label{eq:io_stats}
+\end{equation}
+
+The normalized signals used everywhere in training are:
+
+\begin{equation}
+  \hat{u}_k = \frac{u_k - \mu_u}{\sigma_u}, \qquad
+  \hat{y}_k = \frac{y_k - \mu_y}{\sigma_y}.
+  \label{eq:io_norm}
+\end{equation}
+
+These statistics are stored on \code{fit\_sys.norm} and applied automatically
+by deepSI before any encoder or loss call.
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{gantry\_interconnect\_dynamic.py}{166--184}},
+  firstnumber=166]
+u_all = np.concatenate([t.u for t in train_list])
+y_all = np.concatenate([t.y for t in train_list])
+
+fs = 1.0 / train_list[0].dt
+P_inv_T = np.linalg.inv(P.numpy().T).astype(DTYPE_NP)  # stage -> logical
+x_logical_list = []
+for t in train_list:
+    pos_logical = (P_inv_T @ t.y.T).T        # (N, 3) stage -> logical
+    vel_logical = np.diff(pos_logical, axis=0) * fs  # (N-1, 3)
+    vel_logical = np.vstack([vel_logical[:1], vel_logical])  # (N, 3)
+    x_logical_list.append(np.hstack([pos_logical, vel_logical]))  # (N, 6)
+x_all = np.concatenate(x_logical_list)
+
+x_mean = x_all.mean(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP)
+std_x  = x_all.std(axis=0).reshape(NX_PHYS, 1).astype(DTYPE_NP) + 1e-8
+std_u  = u_all.std(axis=0).reshape(nu, 1).astype(DTYPE_NP) + 1e-8
+u_mean = u_all.mean(axis=0).reshape(nu, 1).astype(DTYPE_NP)
+ystd   = y_all.std(axis=0).astype(DTYPE_NP) + 1e-8
+y0     = y_all.mean(axis=0).astype(DTYPE_NP)
+\end{lstlisting}
+
+The training data positions $y \in \mathbb{R}^3$ are measured in
+\emph{stage} coordinates (hardware frame).
+The FP model operates in \emph{logical} (decoupled) coordinates $q \in \mathbb{R}^3$.
+The decoupling matrix $P$ relates them; here it is used as:
+
+\begin{equation}
+  q = \underbrace{P^{-\top}}_{\substack{\text{stage} \\ \to\,\text{logical}}}\, y^{\mathrm{stage}},
+  \qquad
+  \dot{q} \approx \frac{\Delta q}{\Delta t}\quad\text{(finite difference at } f_s\text{)}.
+  \label{eq:p_pos}
+\end{equation}
+
+This is the only place the P-transform is applied to \emph{outputs}
+(positions, used here to build state statistics).
+In the physical block (Section~\ref{sec:phys}), $P$ is applied to
+\emph{inputs} (forces) in the opposite direction.
+
+Note that $(\mu_x, \sigma_x)$ are derived from
+\emph{approximate} logical states reconstructed from measurements via
+\eqref{eq:p_pos} and finite-difference velocity.
+These are used for state normalization and for the physical matrix
+normalization below; they are not directly exposed to deepSI's norm object.
+
+The I/O statistics are then written to \code{fit\_sys.norm} inside
+\code{build\_model()}:
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{gantry\_interconnect\_dynamic.py}{287--290}},
+  firstnumber=287]
+fit_sys.norm.u0   = u_mean.flatten()
+fit_sys.norm.ustd = std_u.flatten()
+fit_sys.norm.y0   = y0
+fit_sys.norm.ystd = ystd
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Physical matrix normalization (\texttt{Cd\_norm})}
+
+The known FP output matrix $C_d \in \mathbb{R}^{n_y \times n_x}$ (from the
+MATLAB model) relates physical states to physical outputs:
+$y = C_d x + D_d u$.
+To use it inside the interconnect, which operates on normalized signals,
+$C_d$ is rescaled element-wise so that
+$\hat{y} = \bar{C}_d \hat{x} + D_d \hat{u}$
+holds in normalized coordinates:
+
+\begin{equation}
+  \bar{C}_d[i,j] = C_d[i,j] \cdot \frac{\sigma_{x,j}}{\sigma_{y,i}}.
+  \label{eq:cd_norm}
+\end{equation}
+
+The derivation: substituting $x = \hat{x} \cdot \sigma_x + \mu_x$ and
+$y = \hat{y} \cdot \sigma_y + \mu_y$ into $y = C_d x + D_d u$ and
+collecting the normalized terms gives \eqref{eq:cd_norm},
+assuming $\mu_y \approx C_d \mu_x + D_d \mu_u$ (satisfied at the training
+data operating point).
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{gantry\_interconnect\_dynamic.py}{187--188}},
+  firstnumber=187]
+Cd_norm = Cd.numpy() * std_x.flatten()[None, :] / ystd[:, None]  # (3, 6)
+Dd_np   = Dd.numpy()                                               # (3, 3)
+\end{lstlisting}
+
+$D_d$ does not require rescaling because it maps normalized input
+$\hat{u}$ to normalized output $\hat{y}$ directly: the $\sigma_u / \sigma_y$
+factors cancel with the deepSI normalization already applied to $u$ and $y$.
+
+% =============================================================================
+\section{Augmented State Partitioning}
+\label{sec:states}
+
+The combined model state stacks the physical states from the FP model
+and the latent states learned by the ANN:
+
+\begin{equation}
+  \hat{x}_k =
+  \begin{bmatrix} x_k^{\mathrm{phys}} \\ x_k^{\mathrm{aug}} \end{bmatrix}
+  \in \mathbb{R}^{n_{xd}}, \quad
+  n_{xd} = n_{x,\mathrm{phys}} + n_{x,\mathrm{ann}}.
+  \label{eq:state_partition}
+\end{equation}
+
+For the gantry: $n_{x,\mathrm{phys}} = 6$ (positions $q_1, q_2, q_3$ and
+velocities $\dot{q}_1, \dot{q}_2, \dot{q}_3$ in logical coordinates) and
+$n_{x,\mathrm{ann}} = 2$ (targeting absorber displacement $\delta_a$ and
+velocity $\dot{\delta}_a$), giving $n_{xd} = 8$.
+
+Two index arrays select the respective rows from $\hat{x}_k$:
+
+\begin{equation}
+  I_{\mathrm{phys}} = \{0,1,2,3,4,5\}, \qquad
+  I_{\mathrm{aug}}  = \{6,7\}.
+  \label{eq:index_sets}
+\end{equation}
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{gantry\_interconnect\_dynamic.py}{190, 219--220, 251}},
+  firstnumber=190]
+PHY_IX = np.arange(NX_PHYS)   # [0,1,2,3,4,5]
+\end{lstlisting}
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{gantry\_interconnect\_dynamic.py}{219--220, 251}},
+  firstnumber=219]
+NX_ANN = hp['NX_ANN']
+nxd = NX_PHYS + NX_ANN
+\end{lstlisting}
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{gantry\_interconnect\_dynamic.py}{251}},
+  firstnumber=251]
+AUG_IX = np.arange(NX_PHYS, nxd)   # augmented state indices [6, 7]
+\end{lstlisting}
+
+These index sets are used throughout the interconnect wiring
+(Section~\ref{sec:wiring}) as \code{selection\_matrix} and
+\code{expansion\_matrix} arguments.
+
+% =============================================================================
+\section{Physical State Transition}
+\label{sec:phys}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Continuous-time ODE}
+
+The gantry FP model is an LPV rational system in logical coordinates.
+The state is $x = [q^\top,\, \dot{q}^\top]^\top \in \mathbb{R}^6$
+with $q = [q_1, q_2, q_3]^\top$ the logical positions.
+The scheduling variable is $Y = q_3$ (cross-beam position).
+
+The continuous-time derivative is computed in three steps.
+
+\textbf{Step 1: net logical force.}
+Stage-coordinate inputs $u \in \mathbb{R}^3$ are transformed to
+logical forces via the decoupling matrix $P$, and the spring-damper
+restoring force is subtracted:
+
+\begin{equation}
+  f_{\mathrm{net}} = -K q - C \dot{q}
+    + \underbrace{P^\top u_{\mathrm{stage}}}_{\substack{\text{stage forces} \\ \to\,\text{logical forces}}},
+  \label{eq:fnet}
+\end{equation}
+
+where $K \in \mathbb{R}^{3\times 3}$ is the stiffness matrix and
+$C \in \mathbb{R}^{3\times 3}$ is the damping matrix (both diagonal for the
+gantry in logical coordinates).
+Here $P^\top$ transforms stage-coordinate actuator forces into the
+decoupled logical force frame, the inverse direction of \eqref{eq:p_pos}.
+
+\textbf{Step 2: LFR rational acceleration.}
+The inverse mass matrix is represented as a rational polynomial in $Y$:
+$M^{-1}(Y) = N(Y) / d(Y)$, with $N(Y) = N_0 + N_1 Y + N_2 Y^2$
+(polynomial matrix, Horner form) and
+$d(Y) = m_h(\alpha\gamma - \beta^2 + 2\beta m_h Y + m_h(\alpha - m_h)Y^2)$
+(scalar polynomial, determinant of $M(Y)$).
+The logical acceleration is:
+
+\begin{equation}
+  a = \frac{N(Y)}{d(Y)}\, f_{\mathrm{net}}.
+  \label{eq:lfr_accel}
+\end{equation}
+
+\textbf{Step 3: LFR signal routing and state derivative.}
+The LFR latent signals are formed as $z = [a;\, Ya]$ and
+$w = Y z$, capturing the $Y$-dependent coupling.
+The full state derivative is then:
+
+\begin{equation}
+  \dot{x} = A_x x + B_w w + B_u u_{\mathrm{log}}
+           = A_{\mathrm{combined}}\, [x;\, w;\, u_{\mathrm{log}}],
+  \label{eq:ode}
+\end{equation}
+
+where $A_{\mathrm{combined}}$ fuses $A_x$, $B_w$, $B_u$ into a single
+matrix multiplication, avoiding separate matrix-vector products per substep.
+All matrices are computed once from physical parameters at construction time
+and stored as frozen buffers (not trainable).
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{model\_augmentation/fit\_systems/blocks.py}{771--822} -- \texttt{Gantry\_State\_Block.deriv()}},
+  firstnumber=771]
+def deriv(self, x: Tensor, u: Tensor) -> Tensor:
+    # x: (batch, 6, 1) normalised   u: (batch, 3, 1) normalised
+
+    # --- denormalise -------------------------------------------------
+    x_phys = x * self.std_x + self.x_mean   # (batch, 6, 1)
+    u_phys = u * self.std_u + self.u_mean      # (batch, 3, 1)
+
+    # Work in 2D (batch, n) to match LFR signal-flow convention.
+    x2 = x_phys.squeeze(-1)          # (batch, 6)
+    u2 = u_phys.squeeze(-1)          # (batch, 3)
+
+    # --- P transform: stage forces -> logical forces -----------------
+    u_log = u2 @ self.P_mat.T        # (batch, 3)
+
+    # --- net logical force -------------------------------------------
+    # fnet = -K@q - C@qdot + u_logical
+    fnet = (-(x2[:, :3] @ self.K_mat.T)
+            - (x2[:, 3:] @ self.C_mat.T)
+            + u_log)                 # (batch, 3)
+
+    # --- LFR loop solve: a = N(Y)/d(Y) @ fnet -----------------------
+    if self.Y_op is not None:
+        Y_val = self.Y_op                                  # Python scalar
+        a = (self.N_op @ fnet.T).T / self.d_op            # (batch, 3)
+    else:
+        Y   = x2[:, 2]                                     # (batch,)
+        dY  = self.mh * (self.alpha * self.gamma_ - self.beta ** 2
+                         + 2 * self.beta * self.mh * Y
+                         + self.mh * (self.alpha - self.mh) * Y ** 2)
+        Y_r = Y.unsqueeze(0)                               # (1, batch)
+        n0f = self.N0 @ fnet.T                             # (3, batch)
+        n1f = self.N1 @ fnet.T                             # (3, batch)
+        n2f = self.N2 @ fnet.T                             # (3, batch)
+        a   = (n0f + Y_r * (n1f + Y_r * n2f)).T / dY[:, None]  # Horner
+        Y_val = Y[:, None]                                 # (batch, 1)
+
+    # --- LFR latent signals -----------------------------------------
+    z = torch.cat([a, Y_val * a], dim=-1)   # (batch, 6)
+    w = Y_val * z                            # (batch, 6)  w = Delta(Y).z
+
+    # --- state update through G (NOT directly from a) ---------------
+    combined  = torch.cat([x2, w, u_log], dim=-1)   # (batch, 15)
+    xdot_phys = combined @ self.A_combined.T         # (batch, 6)
+
+    # --- renormalise and restore trailing dim -----------------------
+    xdot = (xdot_phys / self.std_x_1d).unsqueeze(-1)  # (batch, 6, 1)
+    return xdot
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{RK4 discretization with upsampling}
+
+To accurately integrate the continuous ODE at the training sample rate
+$T_s$, each sample step is divided into $N_{\mathrm{up}}$ equal substeps
+of size $h = T_s / N_{\mathrm{up}}$.
+Standard fourth-order Runge-Kutta is applied at each substep:
+
+\begin{align}
+  k_1^{(s)} &= h \cdot f\!\left(x^{(s)},\, u\right), \notag \\
+  k_2^{(s)} &= h \cdot f\!\left(x^{(s)} + \tfrac{1}{2}k_1^{(s)},\, u\right), \notag \\
+  k_3^{(s)} &= h \cdot f\!\left(x^{(s)} + \tfrac{1}{2}k_2^{(s)},\, u\right), \notag \\
+  k_4^{(s)} &= h \cdot f\!\left(x^{(s)} + k_3^{(s)},\, u\right), \notag \\
+  x^{(s+1)} &= x^{(s)} + \frac{k_1^{(s)} + 2k_2^{(s)} + 2k_3^{(s)} + k_4^{(s)}}{6},
+  \label{eq:rk4}
+\end{align}
+
+for $s = 0, \ldots, N_{\mathrm{up}}-1$, with $x^{(0)} = x_k$ (normalized state
+at sample $k$).
+The discrete-time state is $x_{k+1}^{\mathrm{phys}} = x^{(N_{\mathrm{up}})}$.
+The input $u$ is held constant across all substeps (zero-order hold).
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{model\_augmentation/fit\_systems/blocks.py}{757--769} -- \texttt{Gantry\_State\_Block.nonlinear\_function()}},
+  firstnumber=757]
+def nonlinear_function(self, z: Tensor):
+    assert z.size(1) == self.nx + self.nu
+    x = z[:, : self.nx, :]
+    u = z[:, self.nx :, :]
+
+    for i in range(self.up_sample):
+        k1 = (self.Ts / self.up_sample) * self.deriv(x, u)
+        k2 = (self.Ts / self.up_sample) * self.deriv(x + k1 / 2, u)
+        k3 = (self.Ts / self.up_sample) * self.deriv(x + k2 / 2, u)
+        k4 = (self.Ts / self.up_sample) * self.deriv(x + k3, u)
+        x = x + (k1 + 2 * k2 + 2 * k3 + k4) / 6
+    return x
+\end{lstlisting}
+
+\code{up\_sample} is a hyperparameter (default 2 at $f_s = 4000\,\mathrm{Hz}$),
+set in \code{DEFAULT\_HP}. The block receives $z = [\hat{x}^{\mathrm{phys}},\, \hat{u}]$
+from the interconnect (see Section~\ref{sec:wiring}).
+
+% =============================================================================
+\section{Output Equation}
+\label{sec:output}
+
+The model output is the sum of two additive contributions:
+one from the frozen physical model and one from the learned augmentation.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Physical output block (frozen)}
+
+The physical output is a fixed linear map from normalized physical states
+and normalized input to normalized output:
+
+\begin{equation}
+  \hat{y}_k^{\mathrm{phys}} = \bar{C}_d\, \hat{x}_k^{\mathrm{phys}}
+                             + D_d\, \hat{u}_k.
+  \label{eq:y_phys}
+\end{equation}
+
+$\bar{C}_d$ is the physically derived, normalized C matrix from
+\eqref{eq:cd_norm}.
+It is stored in a \code{register\_buffer} and is \textbf{not} a trainable
+parameter: it is the FP model knowledge locked in place.
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{model\_augmentation/fit\_systems/blocks.py}{119--124} -- \texttt{Linear\_Output\_Block.forward()}},
+  firstnumber=119]
+def forward(self, z: Tensor):
+    assert z.size(1) == self.nx + self.nu
+    x = z[:, : self.nx, :]
+    u = z[:, self.nx :, :]
+    w = torch.matmul(self.C, x) + torch.matmul(self.D, u)  # type: ignore
+    return w
+\end{lstlisting}
+
+Note: \code{self.C} and \code{self.D} are \code{register\_buffer}
+(set at construction), not \code{nn.Parameter}.
+They move with \code{.to(device)} but receive no gradient.
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{gantry\_interconnect\_dynamic.py}{243}},
+  firstnumber=243]
+out_phys = Linear_Output_Block(C=Cd_norm, D=Dd_np)
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Augmented output block (learned)}
+
+The augmented output maps the learned latent states to the same output
+space, also linearly:
+
+\begin{equation}
+  \hat{y}_k^{\mathrm{aug}} = C_{\mathrm{aug}}\, \hat{x}_k^{\mathrm{aug}}
+                            + D_{\mathrm{aug}}\, \hat{u}_k,
+  \label{eq:y_aug}
+\end{equation}
+
+where $C_{\mathrm{aug}} \in \mathbb{R}^{n_y \times n_{x,\mathrm{ann}}}$
+and $D_{\mathrm{aug}} \in \mathbb{R}^{n_y \times n_u}$ are
+\code{nn.Parameter} and are updated during training.
+Here $C_{\mathrm{aug}}$ is stored as \code{nn.Parameter}, so unlike the
+physical block it \textbf{does} receive gradients.
+The difference in implementation is the only way to see which output
+contribution is frozen and which is learned.
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{model\_augmentation/fit\_systems/blocks.py}{213--218} -- \texttt{Parameterized\_Linear\_Output\_Block.forward()}},
+  firstnumber=213]
+def forward(self, z: Tensor):
+    assert z.size(1) == self.nx + self.nu
+    x = z[:, : self.nx, :]
+    u = z[:, self.nx :, :]
+    w = torch.matmul(self.C, x) + torch.matmul(self.D, u)
+    return w
+\end{lstlisting}
+
+The forward pass is identical to \code{Linear\_Output\_Block}, but
+\code{self.C} and \code{self.D} are declared as \code{nn.Parameter}
+(lines 202--203 in \file{blocks.py}).
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{gantry\_interconnect\_dynamic.py}{241--245}},
+  firstnumber=241]
+C_aug_init = np.zeros((ny, NX_ANN), dtype=DTYPE_NP)
+C_aug_init[2, 0] = 1e-2   # HEURISTIC: Y <- delta_a
+out_phys = Linear_Output_Block(C=Cd_norm, D=Dd_np)
+out_aug  = Parameterized_Linear_Output_Block(
+    C=C_aug_init, D=np.zeros((ny, nu), dtype=DTYPE_NP), flag_loss_reg=False)
+\end{lstlisting}
+
+$C_{\mathrm{aug}}$ is initialized near zero; only the $Y \leftarrow \delta_a$
+entry is set to $10^{-2}$ as a physical prior (the absorber primarily displaces
+the Y axis).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Combined output}
+
+Both output blocks connect \emph{additively} to the single output signal $\hat{y}$:
+
+\begin{equation}
+  \hat{y}_k = \hat{y}_k^{\mathrm{phys}} + \hat{y}_k^{\mathrm{aug}}
+            = \bar{C}_d\, \hat{x}_k^{\mathrm{phys}}
+            + D_d\, \hat{u}_k
+            + C_{\mathrm{aug}}\, \hat{x}_k^{\mathrm{aug}}
+            + D_{\mathrm{aug}}\, \hat{u}_k.
+  \label{eq:y_combined}
+\end{equation}
+
+The additive wiring is specified in the interconnect (see
+Section~\ref{sec:wiring}, lines 271--275).
+
+% =============================================================================
+\section{ANN Augmented State Dynamics}
+\label{sec:ann}
+
+The augmented states evolve according to a feedforward ANN
+that takes the full combined state and normalized input:
+
+\begin{equation}
+  x_{k+1}^{\mathrm{aug}} = \phi_{\mathrm{ann}}\!\left(\hat{x}_k,\, \hat{u}_k\right),
+  \quad \phi_{\mathrm{ann}} : \mathbb{R}^{n_{xd}+n_u} \to \mathbb{R}^{n_{x,\mathrm{ann}}}.
+  \label{eq:ann_dyn}
+\end{equation}
+
+The input dimension is $n_{xd} + n_u = 8 + 3 = 11$.
+Taking the \emph{full} state $\hat{x}_k$ (not only $x_k^{\mathrm{aug}}$)
+as input allows the ANN to condition the augmented dynamics on the
+current physical state, for example coupling the absorber velocity
+to the gantry velocity.
+
+The output dimension is $n_{x,\mathrm{ann}} = 2$: only the augmented
+state rows are updated by the ANN.
+The ANN is initialized with zero output weights so the augmented
+dynamics start at zero and grow only as training drives them.
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{gantry\_interconnect\_dynamic.py}{251--258}},
+  firstnumber=251]
+AUG_IX = np.arange(NX_PHYS, nxd)   # augmented state indices [6, 7]
+ann_block = Static_ANN_Block(
+    nz=nxd + nu, nw=NX_ANN,         # CHANGED: nw=NX_ANN -- ANN outputs only to augmented states
+    n_nodes_per_layer=hp['n_nodes_per_layer'],
+    n_hidden_layers=hp['n_hidden_layers'],
+    net=zero_init_feed_forward_nn,
+    activation=_act,
+)
+\end{lstlisting}
+
+The \code{Static\_ANN\_Block.forward()} evaluates the network on its
+flattened input $z \in \mathbb{R}^{n_{xd}+n_u}$ and returns $w \in \mathbb{R}^{n_{x,\mathrm{ann}}}$.
+The output is then placed into the augmented state rows of
+$\hat{x}_{k+1}$ via an expansion matrix (Section~\ref{sec:wiring}).
+
+% =============================================================================
+\section{Interconnect Signal Wiring}
+\label{sec:wiring}
+
+The \code{Interconnect} class implements the LFR interconnection matrix
+$\mathbf{S}$ from Hoekstra et al.\ (2025, Eq.\ 4).
+Each \code{connect\_signals} call specifies one block of $\mathbf{S}$
+via a connection method (\texttt{concat} or \texttt{additive}) and
+an optional routing matrix.
+
+The five wiring rules that define the full augmented model are:
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{gantry\_interconnect\_dynamic.py}{265--275}},
+  firstnumber=265]
+# CHANGED: route ANN output only to augmented state rows [NX_PHYS:nxd]
+ic.connect_block_signals(ann_block, ["x", "u"], [])
+ic.connect_signals(ann_block, "xp", "additive", expansion_matrix(AUG_IX, nxd))
+ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
+ic.connect_block_signals(phy_block, ["u"], [])
+ic.connect_signals(phy_block, "xp", "additive", expansion_matrix(PHY_IX, nxd))
+# Physical: x_phys + u -> y (additive)
+ic.connect_signals("x", out_phys, "concat", selection_matrix(PHY_IX, nxd))
+ic.connect_block_signals(out_phys, ["u"], ["y"])
+# Augmented: x_aug + u -> y (additive; D_aug init=zeros so u contribution starts at 0)
+ic.connect_signals("x", out_aug, "concat", selection_matrix(AUG_IX, nxd))
+ic.connect_block_signals(out_aug, ["u"], ["y"])
+\end{lstlisting}
+
+Reading each rule against the formulas:
+
+\begin{itemize}
+  \item \textbf{Lines 265--266} implement \eqref{eq:ann_dyn}:
+    the ANN receives the full state $\hat{x}_k$ and $\hat{u}_k$ as input,
+    and its output is added into rows $I_{\mathrm{aug}}$ of $\hat{x}_{k+1}$
+    via \code{expansion\_matrix(AUG\_IX, nxd)}.
+    This matrix is $E_{\mathrm{aug}} \in \mathbb{R}^{n_{xd} \times n_{x,\mathrm{ann}}}$
+    with ones at rows $I_{\mathrm{aug}}$ and zeros elsewhere.
+
+  \item \textbf{Lines 267--269} implement \eqref{eq:ode} in discrete time:
+    the physical block receives only rows $I_{\mathrm{phys}}$ of $\hat{x}_k$
+    via \code{selection\_matrix(PHY\_IX, nxd)}, plus $\hat{u}_k$,
+    and its RK4 output is added into rows $I_{\mathrm{phys}}$ of $\hat{x}_{k+1}$.
+
+  \item \textbf{Lines 270--272} implement the physical output \eqref{eq:y_phys}:
+    rows $I_{\mathrm{phys}}$ of $\hat{x}_k$ and $\hat{u}_k$ feed
+    \code{out\_phys}, whose result is added to $\hat{y}_k$.
+
+  \item \textbf{Lines 273--275} implement the augmented output \eqref{eq:y_aug}:
+    rows $I_{\mathrm{aug}}$ of $\hat{x}_k$ and $\hat{u}_k$ feed
+    \code{out\_aug}, whose result is added to $\hat{y}_k$.
+\end{itemize}
+
+The \code{Interconnect.init\_forward()} method topologically sorts these
+rules into an acyclic computation order before the first forward pass,
+ensuring no algebraic loops exist.
+
+% =============================================================================
+\section{Encoder Initialization}
+\label{sec:encoder}
+
+The encoder maps a window of past inputs and outputs to the current state:
+
+\begin{equation}
+  \hat{x}_{k|k} = \psi_\theta\!\left(
+    \hat{y}_{k-n_a}^{k},\;
+    \hat{u}_{k-n_b}^{k}
+  \right),
+  \label{eq:encoder}
+\end{equation}
+
+where the window length $n_a = n_b = 2 n_{xd} + 1$ follows Jan's standard
+(rule: history must span at least twice the state dimension).
+With $n_a = n_b$ and \code{na\_right=1}, the window includes the current
+step $k$ so the reconstructability map can use $\hat{y}_k$ to estimate $\hat{x}_k$.
+
+The encoder is structured as (Hoekstra 2026, Eq.\ 8):
+
+\begin{equation}
+  \hat{x}_{k|k} =
+  \underbrace{W_{\psi,y}^b\, \hat{y}_{k-n_a}^{k}
+            + W_{\psi,u}^b\, \hat{u}_{k-n_b}^{k}}_{\text{physical states (theory init)}}
+  \;\oplus\;
+  \underbrace{W_{\psi,y}^a\, \hat{y}_{k-n_a}^{k}
+            + W_{\psi,u}^a\, \hat{u}_{k-n_b}^{k}}_{\text{augmented states (random init)}}
+  \;+\;
+  \underbrace{\tilde{\psi}_{\tilde{\theta}}\!\left(\hat{y}_{k-n_a}^{k},\, \hat{u}_{k-n_b}^{k}\right)}_{\text{shared nonlinear correction}}.
+  \label{eq:encoder_full}
+\end{equation}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Physical state rows: reconstructability map}
+
+For a linearized LTI model $(A, B, C, D)$ operating in normalized coordinates,
+the $n$-step ahead output can be written as (encoder paper Eq.\ 10):
+
+\begin{equation}
+  \begin{bmatrix} y_{k+n} \\ \vdots \\ y_k \end{bmatrix}
+  = \mathcal{O}_n\, x_{b,k}
+  + \mathcal{T}_n\, \begin{bmatrix} u_{k+n} \\ \vdots \\ u_k \end{bmatrix},
+  \label{eq:obs_eqn}
+\end{equation}
+
+where $\mathcal{O}_n \in \mathbb{R}^{(n+1)n_y \times n_x}$ is the extended
+observability matrix and $\mathcal{T}_n$ is the Toeplitz matrix of Markov
+parameters (also written $\Gamma_n$ in the code):
+
+\begin{equation}
+  \mathcal{O}_n =
+  \begin{bmatrix} CA^n \\ CA^{n-1} \\ \vdots \\ C \end{bmatrix}, \qquad
+  \mathcal{T}_n \;\text{(block lower-triangular, entries } CA^{j-i-1}B, D\text{)}.
+  \label{eq:On_Tn}
+\end{equation}
+
+Inverting \eqref{eq:obs_eqn} for $x_{b,k-n}$ and substituting into
+the $n$-step shifted state equation
+$x_{b,k} = A^n x_{b,k-n} + r_n u_{k-n}^k$
+(encoder paper Eq.\ 14) gives:
+
+\begin{equation}
+  x_{b,k} = \underbrace{A^n \mathcal{O}_n^{-1}}_{W_{\psi,y}^b}\, y_{k-n}^{k}
+           + \underbrace{\left(-A^n \mathcal{O}_n^{-1} \mathcal{T}_n + r_n\right)}_{W_{\psi,u}^b}\,
+             u_{k-n}^k,
+  \label{eq:reconstruct}
+\end{equation}
+
+where $r_n = [A^{n-1}B, A^{n-2}B, \ldots, B, 0]$ is the input convolution
+vector and $\mathcal{O}_n^{-1}$ denotes the Moore-Penrose pseudoinverse.
+These are the theory-initialized encoder weights (Hoekstra 2026,
+Eqs.\ 16--17).
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{model\_augmentation/fit\_systems/pre\_encoder.py}{359--394} -- \texttt{linear\_encoder\_init\_aug.\_\_init\_\_()}},
+  firstnumber=359]
+# THEORY: Hoekstra 2026 Eq. 10 -- Gamma_n is the Toeplitz matrix T_n
+Gamma_n = np.zeros(((n + 1) * ny, (n + 1) * nu))
+for i in range(n + 1):
+    for j in range(i, n + 1):
+        flipped_i = n - i
+        flipped_j = n - j
+        if i != j:
+            Gamma_n[
+                flipped_i * ny : (flipped_i + 1) * ny,
+                flipped_j * nu : (flipped_j + 1) * nu,
+            ] = C @ np.linalg.matrix_power(A, j - i - 1) @ B
+        else:
+            Gamma_n[
+                flipped_i * ny : (flipped_i + 1) * ny,
+                flipped_j * nu : (flipped_j + 1) * nu,
+            ] = D
+
+# THEORY: Hoekstra 2026 Eq. 10 -- O_n is the observability matrix [C; CA; ...; CA^n]
+O_n = np.zeros(((n + 1) * ny, nx))
+for i in range(n + 1):
+    O_n[i * ny : (i + 1) * ny, :] = C @ np.linalg.matrix_power(A, i)
+O_inv = np.linalg.pinv(O_n)
+
+# THEORY: Hoekstra 2026 Eq. 13-14 -- A^n and r_n (input-to-state convolution)
+A_n = np.linalg.matrix_power(A, n)
+gamma_n = np.zeros((nx, (n + 1) * nu))
+for i in range(0, n):
+    gamma_n[:, i * nu : (i + 1) * nu] = np.linalg.matrix_power(A, n - i - 1) @ B
+
+# THEORY: Hoekstra 2026 Eq. 17 -- W^b_{psi,y} = A^n O_n^{-1}
+self.Wb_psi_y = nn.Parameter(
+    torch.tensor(A_n @ O_inv, dtype=torch.float32)
+)
+# THEORY: Hoekstra 2026 Eq. 16 -- W^b_{psi,u} = -A^n O_n^{-1} T_n + r_n
+self.Wb_psi_u = nn.Parameter(
+    torch.tensor(-A_n @ O_inv @ Gamma_n + gamma_n, dtype=torch.float32)
+)
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Augmented state rows: random initialization}
+
+The augmented state rows $W_{\psi,y}^a$ and $W_{\psi,u}^a$ have no
+physical prior and are initialized randomly (Kaiming uniform):
+
+\begin{equation}
+  W_{\psi,y}^a \in \mathbb{R}^{n_{x,\mathrm{ann}} \times (n_a+1)n_y}, \quad
+  W_{\psi,u}^a \in \mathbb{R}^{n_{x,\mathrm{ann}} \times (n_b+1)n_u}.
+  \label{eq:Wa}
+\end{equation}
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{model\_augmentation/fit\_systems/pre\_encoder.py}{400--405}},
+  firstnumber=400]
+wa_y = torch.empty(nx_aug, (n + 1) * ny)
+wa_u = torch.empty(nx_aug, (n + 1) * nu)
+nn.init.kaiming_uniform_(wa_y)
+nn.init.kaiming_uniform_(wa_u)
+self.Wa_psi_y = nn.Parameter(wa_y)
+self.Wa_psi_u = nn.Parameter(wa_u)
+\end{lstlisting}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Convention fix (D-017)}
+
+The reconstructability map \eqref{eq:reconstruct} was derived for
+\emph{pure-scaled} signals $y / \sigma_y$ and $u / \sigma_u$.
+The deepSI pipeline feeds \emph{mean-subtracted} signals
+$(y - \mu_y)/\sigma_y$ and $(u - \mu_u)/\sigma_u$.
+Before applying $W^b$ and $W^a$, the window vectors are shifted back
+to pure-scaled convention by adding $\mu_y/\sigma_y$ and $\mu_u/\sigma_u$,
+and after applying $W^b$ the physical-state offset $\mu_x/\sigma_x$ is
+subtracted to return to the pipeline convention:
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{model\_augmentation/fit\_systems/pre\_encoder.py}{444--480} -- \texttt{linear\_encoder\_init\_aug.forward()}},
+  firstnumber=444]
+def forward(self, uhist, yhist):
+    state_has_correct_dimension = len(uhist.size()) > 2
+    uhist_mod = uhist.view(uhist.size(0), self.nu * (self.nb + 1), 1)
+    yhist_mod = yhist.view(yhist.size(0), self.ny * (self.na + 1), 1)
+
+    # CHANGED: D-055 -- apply convention fix before W^b/W^a (pipeline -> pure-scaled)
+    if self.fix_enabled:
+        uhist_mod = uhist_mod + self.u_off
+        yhist_mod = yhist_mod + self.y_off
+
+    # Physical states from W^b (Eq. 16-17), augmented states from W^a (Eq. 8)
+    x_b = self.Wb_psi_u @ uhist_mod + self.Wb_psi_y @ yhist_mod  # (batch, nx, 1)
+    x_a = self.Wa_psi_u @ uhist_mod + self.Wa_psi_y @ yhist_mod  # (batch, nx_aug, 1)
+
+    # CHANGED: D-055 -- subtract x_mean/std_x from physical states only
+    if self.fix_enabled:
+        x_b = x_b - self.x_off
+
+    x = torch.cat([x_b, x_a], dim=1)                             # (batch, nx+nx_aug, 1)
+    x = x.view(-1, self.nx + self.nx_aug)
+
+    if self.flag_linear_only:
+        return x
+    else:
+        return x + self.net(
+            torch.cat((uhist.view(uhist.size(0), -1), yhist.view(yhist.size(0), -1)), dim=1)
+        )
+\end{lstlisting}
+
+The buffers \code{u\_off}, \code{y\_off}, \code{x\_off} are computed at
+construction time from $\mu_u/\sigma_u$, $\mu_y/\sigma_y$, $\mu_x/\sigma_x$
+and tiled to match the full window length.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Normalized system matrices}
+
+The linearized gantry model is obtained at $T_s$ via
+\code{gantry\_linearize\_and\_discretize()}, yielding
+$(A_d, B_d, C_d^{dt}, D_d^{dt})$.
+These are then normalized so that all encoder weight formulas
+\eqref{eq:reconstruct}--\eqref{eq:Wa} operate in the same normalized
+space as the interconnect:
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{gantry\_interconnect\_dynamic.py}{295--313}},
+  firstnumber=295]
+Ad, Bd, Cd_dt, Dd_dt = gantry_linearize_and_discretize(dt=TS_NEW)
+
+sys_data_with_x = deepSI.System_data(u=u_all, y=y_all)
+sys_data_with_x.x = x_phys_all
+
+Ad_bar, Bd_bar, Cd_bar, Dd_bar = normalize_linear_ss_matrices(
+    Ad, Bd, Cd_dt, Dd_dt, sys_data_with_x)
+\end{lstlisting}
+
+The normalized matrices $(\bar{A}_d, \bar{B}_d, \bar{C}_d, \bar{D}_d)$
+are passed to \code{linear\_encoder\_init\_aug} as the $(A, B, C, D)$
+arguments, so $\mathcal{O}_n$, $\mathcal{T}_n$, and $r_n$ are all
+computed in normalized state-input-output space.
+
+% =============================================================================
+\section{Training Objective}
+\label{sec:loss}
+
+Training minimizes the multi-step simulation loss (Hoekstra et al.\ 2025,
+Eq.\ 5; Beintema et al.\ 2023).
+For a batch of $N$ subsegments of length $T$ starting at randomly chosen
+times $k_i$, the truncated loss is:
+
+\begin{equation}
+  V_{\mathrm{trunc}}(\theta) =
+  \frac{1}{2N(T+1)} \sum_{i=1}^{N} \sum_{\ell=0}^{T-1}
+  \left\| \hat{y}_{k_i+\ell|k_i} - y_{k_i+\ell} \right\|_2^2,
+  \label{eq:loss}
+\end{equation}
+
+where $\hat{y}_{k_i+\ell|k_i}$ is simulated from the encoder-initialized
+state $\hat{x}_{k_i|k_i} = \psi_\theta(\hat{y}_{k_i-n_a}^{k_i}, \hat{u}_{k_i-n_b}^{k_i})$
+by rolling out the interconnect for $T$ steps:
+$(\hat{y}_{k+\ell+1|k}, \hat{x}_{k+\ell+1|k}) = \phi_\theta(\hat{x}_{k+\ell|k}, u_{k+\ell})$.
+
+The parameter vector $\theta = (\theta_{\mathrm{aug}}, \theta_{\mathrm{enc}})$
+contains both the augmentation parameters
+($C_{\mathrm{aug}}$, $D_{\mathrm{aug}}$, ANN weights) and the encoder
+parameters ($W^b$, $W^a$, nonlinear net weights).
+All are optimized jointly by Adam.
+
+\begin{lstlisting}[style=py,
+  title={\codetitle{model\_augmentation/fit\_systems/interconnect.py}{432--456} -- \texttt{SSE\_Interconnect.loss()}},
+  firstnumber=432]
+def loss(self, uhist, yhist, ufuture, yfuture, **Loss_kwargs):
+    x = self.encoder(uhist, yhist) #initialize Nbatch number of states
+    errors = []
+    for y, u in zip(torch.transpose(yfuture,0,1), torch.transpose(ufuture,0,1)):
+        yhat, x = self.hfn(x, u)
+        errors.append(nn.functional.mse_loss(y, yhat))
+    loss_MSE = torch.mean(torch.stack(errors))
+
+    has_theta_loss = False
+    loss_theta = 0
+    for m in self.hfn.connected_blocks:
+        if isinstance(m, Parameterized_Linear_State_Block):
+            loss_theta = loss_theta + m.param_loss()
+            has_theta_loss = True
+        elif isinstance(m, Parameterized_Linear_Output_Block):
+            loss_theta = loss_theta + m.param_loss()
+            has_theta_loss = True
+        elif isinstance(m, Parameterized_MSD_State_Block):
+            loss_theta = loss_theta + nn.functional.mse_loss(
+                m.Lambda * m.params, m.Lambda * m.init_params, reduction="sum")
+            has_theta_loss = True
+    if has_theta_loss:
+        return loss_MSE + loss_theta
+    else:
+        return loss_MSE
+\end{lstlisting}
+
+The inner loop iterates over $T$ future steps (\code{nf} in the code),
+computes the MSE at each step, and averages.
+For the current setup \code{flag\_loss\_reg=False} on \code{out\_aug},
+so \code{param\_loss()} returns zero and the total loss reduces to
+$V_{\mathrm{trunc}}$ alone.
+The rollout horizon is set by \code{nf = int(0.1\,\mathrm{s} / T_s)}
+(five settling time constants of the gantry).
+
+\end{document}
