@@ -19,6 +19,198 @@ Decisions are logged here before implementation. Each entry states what was deci
 
 ## Decisions
 
+### [D-086] E1 sinesweep tapered with a fade envelope; delta_a panel added to the plot
+**Date**: 2026-07-06
+**What**: (1) `make_sinesweep` (E1) now applies a 0.5 s half-cosine fade-in/out to the chirp
+amplitude over the active window, instead of switching the 34 N / 130 Hz force on and off
+abruptly. (2) `gtd_plot_record` gains a 5th full-width row showing the hidden MSD displacement
+delta_a (in micrometres), present whenever the MSD is simulated.
+**Why**: The un-tapered chirp slammed the resting system on and off, kicking all modes and
+producing large onset/offset transients ("peaks at the start and end of the envelopes") that
+buried the actual swept response. The steady-state Y-position response to a ~150 Hz force is only
+~micrometres (F/(m*omega^2)), correct physics but uninterpretable in the raw position plot, and
+the resonance signature lives in delta_a, which was not plotted. With the taper the response
+shows a clean resonance bulge where the sweep crosses ~150-157 Hz; the delta_a panel makes that
+bulge directly visible. Sweep rate (5 Hz/s) is slow enough for the Q~10 mode (settling ~0.02 s
+vs ~3 s in the resonance band).
+**Ruled out**: Leaving the chirp un-tapered (transients dominate, not presentable). Hardcoding a
+resonance-crossing marker at 150/157 Hz in the plot (the coupled peak is uncertain; left to the
+viewer's eye on the delta_a bulge).
+**Constrains**: The fade slightly lowers the active-window RMS below the nominal amp_frac*A_Y
+(faded ends carry less energy); pack() still reports the nominal RMS. E1's multisine-row RMS on
+the plot reads low anyway because RMS is over the full 12 s record while the sweep fills only the
+10 s active window.
+
+### [D-085] Save full 8-state augmented ground truth; vdelta_a by differentiation; 4x3 force plot
+**Date**: 2026-07-06
+**What**: (1) `gtd_save_record` now saves the full augmented state for encoder pre-training:
+`x_logical` (6 baseline states, logical coords) plus `x_aug = [delta_a, vdelta_a]` (the 2 MSD
+states), where `vdelta_a = gradient(delta_a, ts)`. Previously only `delta_a` (7 of 8 states).
+(2) `gtd_plot_record` splits the forces into three separately-scaled rows (total / feedback /
+multisine) in a 4x3 grid (positions + 3 force types), so the ~30 N multisine is visible instead
+of buried under the ~300 N feedback.
+**Why**: The hidden MSD is second-order, so the true augmented state has 8 components; encoder
+pre-training (Donor A/B save true states) needs both delta_a and its velocity. Velocities are
+obtained by differentiation to match the reference generators, which pull only positions
+(q_aug, delta_a) from the model To Workspace and differentiate all velocities; noiseless 20 kHz
+data makes gradient exact. Overlaying total/feedback/multisine on one axis hid the small
+multisine on moving records; per-type rows fix it.
+**Ruled out**: Routing vdelta_a to a new To Workspace block (the model is ours, in
+Matlab-scripts/Augmentation, not read-only, so it is possible, but it would be the only
+velocity in the schema coming from the model rather than differentiation, an inconsistency for
+no accuracy gain in noiseless sim). Adding a force PSD panel (deferred by user: revisit once the
+multisine is not visually noisy).
+**Constrains**: Baseline states saved in LOGICAL coordinates (project convention: reference
+generators save x_logical + stage-coord y); if the training pipeline expects stage-coord states,
+both old and new data would need transforming. amp_rms has mixed units [N, N*m, N] (A_anti is a
+torque, D-080), documented in the save header.
+
+### [D-084] A_anti sized as a modest fixed torque capped by the yaw budget, not sized to fill it
+**Date**: 2026-07-06
+**What**: `gtd_size_anti_amp` now returns `A_anti = min(cfg.A_anti, budget_cap)`, where
+`cfg.A_anti = 0.5*A_sym*Lb` (a fixed torque chosen so the anti channel contributes the same
+per-rail force RMS as the symmetric channel) and `budget_cap = yaw_budget / yaw_peak_per_unit`.
+The 2 mm yaw budget is a CEILING that can only scale A_anti down, never a target to fill.
+Reverses the original D-081 implementation, which set `A_anti = yaw_budget / yaw_peak` (fill).
+**Why**: Filling the 2 mm budget in the augmentation band (130-180 Hz) demanded kilonewtons of
+anti force, because moving real mass 2 mm at ~150 Hz costs force ~ omega^2 (order of magnitude:
+2 mm yaw at 150 Hz => ~9000 N*m => ~thousands of N per rail). Observed on T9: FX1/FX2 > 1000 N
+while FY ~ 150 N (the mirror-image X-only signature of a dominant anti channel). Worse, the
+anti/yaw channel excites the theta mode, not the Y-axis hidden MSD, so the force was both huge
+and irrelevant to the augmentation target. The forces still passed `gtd_enforce_limits` because
+1-2 kN is within the TELICA hardware ceiling [2000,2000,1420] N; the limit check is "won't break
+the machine", not "sensible excitation", which is why activation-based sizing (GATE-2) is needed.
+**Ruled out**: Filling the budget (original). Driving anti to zero (kept a modest level for MIMO
+identifiability, but it is now cheap and could be zeroed for the augmentation track later).
+**Constrains**: A_sym=40, A_Y=30 N remain GATE-2 defaults, still unvalidated by a delta_a
+activation diagnostic. The cap essentially never binds at 130-180 Hz (modest torque produces
+microns of yaw), so anti force is now comparable to sym force rather than kilonewtons.
+
+### [D-083] Phase 4 Simulink integration: base-workspace contact contained in `gtd_run_simulation`
+**Date**: 2026-07-06
+**What**: The generator's Simulink call runs through `gtd_run_simulation`, which pushes every
+model input to the BASE workspace via `assignin` and launches the run with
+`evalin('base','sim(...)')`, then fetches `q_aug`/`delta_a` (MSD) or `q1` (baseline). It runs the
+model twice for the MSD case (with and without multisine, informativeness baseline), swapping `mh`
+to `mh_rigid` during each run. `gtd_enforce_limits` does the hard limit check + proportional
+scale-down on the LINEAR closed loop (lsim), before Simulink; the scaled force is what gets
+simulated. `gtd_save_record` writes the spec-1.12 schema. The driver `generate_trajectory_data.m`
+is a thin loop; validation records run in the same loop (distinct seeds already give independent
+realizations).
+**Why**: Simulink resolves block variables from the base workspace, not a calling function's
+locals, so a pure function with local inputs would be invisible to `sim()`. Containing all base
+contact in one function keeps the rest pure and the driver thin, instead of making the whole
+driver a base-workspace monolith.
+**Ruled out**: `Simulink.SimulationInput`/`setVariable` (needs every model variable enumerated and
+the output-return config confirmed; not verifiable here). Inlining the sim in the driver script
+(reproduces the monolith). A pure `gtd_run_simulation` with local variables (invisible to `sim`).
+**Constrains**: The base variables the `gantry_additional_state_2025a` model references are
+inferred from the working `generate_oscillatory_multisine_data.m`; `push_params` sends a superset.
+If `sim` errors "Undefined variable X", add X to `push_params`. Assumed model outputs: `q_aug`,
+`delta_a` (MSD); `q1` (baseline). `gtd_check_sim` smoke-tests one record to surface a missing name
+before the full run.
+
+### [D-082] Section 3 of Jan writeup: ANN presented as `phi_aug`, name-only (no `W_1/W_2`)
+**Date**: 2026-07-06
+**What**: Rebuilding Section 3 of `docs/jan-augmentation-writeup.tex` around the finished
+`jan-blockscheme-v2.pdf` figure (components table 3a / figure interconnection 3b /
+dynamic-parallel model 3c). Two notation choices: (1) the learning component is written
+`phi_aug` to match the figure, not `N_theta` from the outline; (2) its internals are named
+only, as a `tanh` feedforward network with output `w in R^4`, zero-initialised so
+`phi_aug ~ 0` at start, with NO explicit `W_1/W_2` layer matrices.
+**Why**: (1) The figure is locked/done and is the section centrepiece; text must agree with
+it, so `phi_aug` wins over `N_theta`. (2) `Static_ANN_Block` builds a `zero_init_feed_forward_nn`
+with 2 hidden layers x 64 nodes; the outline's single-hidden-layer sketch
+`w = W_2 tanh(W_1[.]+b_1)+b_2` would misstate the depth, which Jan could catch. Lowercase `w`
+is kept because it is Jan's genuine LFR interconnection-channel signal (Eq. 4), used verbatim
+in the framework code (`blocks.py` `forward(z)->w`, `nz/nw`); capital `W_1,W_2` are not paper
+notation and were dropped.
+**Ruled out**: `N_theta` symbol (would force a `phi_aug == N_theta` aside or a figure edit);
+the `W_1/W_2` single-layer formula (wrong depth, introduces non-paper symbols).
+**Constrains**: The top Notation table now declares `phi_aug`, `w`, `psi`. Any future change to
+the ANN architecture must keep the "name-only, paper-altitude" presentation unless Jan asks for
+internals. Writeup compiles to 4 pages.
+
+### [D-081] Multisine layer: purpose-built `gtd_make_multisine` with IFFT synthesis and yaw-budget A_anti sizing
+**Date**: 2026-07-06
+**What**: `gtd_make_multisine` generates the injected stage force per record. Design points:
+(1) It is self-contained, NOT a refactor of the shared `generate_cached_multisine` (reversing
+the Phase-3 outline), because the per-channel constrained crest-factor scoring does not fit that
+helper's joint-selection contract, and the old script still depends on it unchanged.
+(2) Synthesis is by IFFT (`ifft(X,'symmetric')` with unit-magnitude random-phase in-band bins),
+not the explicit cosine sum: at period = record the grid is df = fs/N = 1/12 Hz with ~2388 lines,
+so cosine-sum is O(N*F) ~ 5e8/signal (minutes); IFFT is O(N log N).
+(3) Crest-factor selection keeps the best of `cfg.n_ms_candidates` (=30) random draws per logical
+channel: f_sym/f_Y scored on their own signal (stage force is a uniform scaling), f_anti scored
+on the closed-loop yaw response via the SISO transfer `H_yaw = [1 -1 0]*sys_cl*([1;-1;0]/Lb)`
+(the same P^{-1} anti column verified in D-080).
+(4) `gtd_size_anti_amp` sizes A_anti (a torque, N*m) so the anti-driven peak |X1-X2| equals the
+2 mm yaw budget exactly (linear loop). Sym/Y coupling into yaw (M_op off-diagonals ~5%) is left
+to the 2 mm margin of the 6 mm budget (spec 1.8) and the hard 6 mm enforced downstream in Phase 4.
+(5) Realizations cached per record keyed by seed/band/period/Y_op/n_cand.
+**Why**: Period = record and fine df make synthesis the cost bottleneck; IFFT removes it. Scoring
+f_anti on the yaw response (not raw CF) is what the spec's "CF on the constrained coordinate"
+requires, since the anti channel is yaw-budget-limited. A torque-unit A_anti follows directly
+from D-080.
+**Ruled out**: Refactoring `generate_cached_multisine` (contract mismatch, shared-helper risk).
+Cosine-sum synthesis (too slow at period=record). Sizing A_anti on total yaw including sym/Y
+coupling (unnecessary; the budget margin covers it, and the hard limit is enforced in Phase 4).
+**Constrains**: A_sym=40, A_Y=30 N remain GATE-2 defaults (unvalidated). Phase 4 `gtd_enforce_limits`
+must still check the full stage force and total 6 mm yaw and scale down if needed. The multisine
+spans the full 12 s record (including holds); only the E1 sinesweep is confined to the active window.
+
+### [D-080] Logical->stage force transform is P^{-1} (f_anti is a yaw torque), not the naive f_sym +/- f_anti
+**Date**: 2026-07-06
+**What**: The multisine is designed in logical (generalized) force channels [f_sym, f_anti, f_Y]
+and injected into the plant as stage rail forces via `gtd_logical_to_stage`, which applies
+**F_stage = P^{-1} f_logical**: F_X1 = 0.5*f_sym + f_anti/Lb, F_X2 = 0.5*f_sym - f_anti/Lb,
+F_Y = f_Y. Derived from the plant convention (sys = P'*G*P, q_stage = P'*q_logical) by
+virtual-work invariance (force map is the dual of the position map). Verified 5 independent
+ways in `gtd_check_transform`: P^{-1} vs analytic inverse; f_sym -> equal rails; f_anti ->
+opposite rails scaled 1/Lb; F_stage.q_stage = F_logical.q_logical; and DC consistency with the
+actual built plant (injecting through the transform into the stage plant equals injecting into
+the logical plant).
+**Why**: The spec placeholder (F_X1 = f_sym + f_anti) is wrong two ways: it over-scales the
+symmetric force by 2x, and it adds a torque to a force. Logical coordinate 2 is the tilt angle
+theta ~ (X1-X2)/Lb, so its conjugate force f_anti is a yaw TORQUE [N*m]; dividing by Lb is what
+makes it a rail force [N]. Getting this wrong silently corrupts the entire yaw budget and the
+anti-symmetric channel, and a shape-only check would not catch it (lessons rule).
+**Ruled out**: The naive shape-based map f_sym +/- f_anti (mis-normalized, dimensionally
+invalid). Assuming P' or P instead of P^{-1} for forces (P' is the position map, not the force
+map).
+**Constrains**: `gtd_size_anti_amp` sizes A_anti in torque units [N*m] and must apply the same
+P^{-1} before checking the 2 mm |X1-X2| budget. Any amplitude specified "per logical channel"
+(spec 1.7: A_sym, A_Y in N; A_anti in N*m) is pre-transform; force-limit and yaw checks are
+post-transform on stage forces.
+
+### [D-079] Trajectory-data generator rewritten as modular `gtd_*` functions with three reference shapes
+**Date**: 2026-07-06
+**What**: The new gantry trajectory-data generator (spec `docs/trajectory-generation-spec-draft.md`)
+is built as a set of single-responsibility functions in `Matlab-scripts/Augmentation/data/`
+(`gtd_config`, `gtd_build_records`, `gtd_build_plant`, `gtd_make_reference`, `gtd_validate_ref`,
+plus later `gtd_make_multisine`, `gtd_run_simulation`, `gtd_enforce_limits`, `gtd_save_record`,
+and a thin `generate_trajectory_data.m` driver), replacing the 830-line monolith
+`generate_oscillatory_multisine_data.m`. The 22 records (T1-14, V1-4, E1-4) collapse to THREE
+reference shapes: `standstill`, `oscillatory`, `aprbs`. Ladder limits are derived from `cfg.lim`
+(training top T11 = 75% of the enforced limits, test E3 = 90%). Each mode writes to its own
+top-level folder: `data/gantry/matlab/trajectory/<joint|augmentation>/<m50|baseline>/`.
+**Why**: The spec is a redesign (fixed-absolute amplitudes, period=record multisine,
+logical-coordinate transform, 22-record table), not a delta on the old script. Separating
+concerns makes each piece independently verifiable in MATLAB (the P-transform gate and the
+Simulink integration become isolated checkpoints), which matters because the assistant cannot
+run MATLAB. Y-sweep and lissajous are the same sinusoidal-sum builder with different parameters,
+and E1's sinesweep is a standstill motion with a swept excitation, so six spec "classes" reduce
+to three motion shapes with no loss.
+**Ruled out**: (1) Minimal edit of the existing monolith, rejected because the amplitude
+strategy inverts and the trajectory table/timing are rewritten, so a diff-only adaptation would
+be more error-prone than a clean decomposition. (2) One reference builder per spec class (six),
+rejected as redundant. (3) Hardcoding the ladder numbers, rejected in favour of deriving them
+from `cfg.lim` so the enforced limits are the single source of truth.
+**Constrains**: Downstream modules read `cfg` and the `records` struct array; the P force
+transform stays a derive-and-verify step (D-... / spec 7.5) before `gtd_make_multisine`.
+Interpretations pending user confirmation: APRBS X_anti is active only for T12/T14 (off for
+T9-T11); APRBS `Y_op` = midpoint of the record's Y range; V2 uses the T10 (60%) jerkTime.
+
 ### [D-077] Residual-force diagnostic: dominant model mismatch is inertial-scale (~2x), not friction
 **Date**: 2026-07-05
 **What**: New real-data diagnostic `scripts/gantry/real-data-verification/diag_residual_force.py`
