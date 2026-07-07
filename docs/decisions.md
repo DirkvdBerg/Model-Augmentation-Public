@@ -19,6 +19,75 @@ Decisions are logged here before implementation. Each entry states what was deci
 
 ## Decisions
 
+### [D-088] Context system: control-reasoning reference doc + CLAUDE.md identity/stance sections
+**Date**: 2026-07-07
+**What**: (1) New reference doc `docs/control-reasoning.md`: project identity, three-pipeline
+map with signal chains, plan-vs-code status table, expanded 8-item control reasoning checklist,
+Lambda-vs-Pi interpretability section (standalone-baseline negation test, the three thesis
+extensions to the Gyorok method), identifiable-combination table, diagnosis-order pointer.
+(2) CLAUDE.md gains two always-on sections placed after Hard Constraints: "Project Identity"
+(thesis one-liner + three-pipeline table) and "Control Engineering Stance" (8-item checklist as
+one-liners, closing pointer to the doc). Compressions elsewhere (quote-verification 10 -> 3
+lines, ownership table -> 2 lines, workflow subagent-trigger block dropped) keep net size
+roughly flat. (3) Key File Map extended with the two key training scripts, the new doc, the
+research plan PDF, and the literature folders.
+**Why**: CLAUDE.md contained process rules but no domain identity and no control-engineering
+stance; every session re-derived the project framing from scattered docs and tended to answer
+from generic ML knowledge instead of control/system-identification reasoning. Checklists
+transfer to future sessions (and to smaller models) better than prose. Keeping depth in one
+on-demand doc (~2.5k tokens when read) instead of always-on context avoids instruction
+saturation.
+**Ruled out**: (1) Expanded reasoning content directly in CLAUDE.md: saturates always-on
+context and degrades compliance with all other rules. (2) Duplicating the problem log's
+failure detail in the new doc: drift liability; the log stays the single owner, the doc only
+points. (3) Hook-based stance enforcement: stronger mechanism, deferred until file-based
+guidance proves insufficient.
+**Constrains**: Rule ownership split: behavioral rules and incident history live in
+`tasks/lessons.md`; the domain checklist lives in CLAUDE.md as one-liners; expansions live
+only in `docs/control-reasoning.md`. Project Identity holds slow-changing facts only; phase
+state stays in `tasks/todo.md`. Restructuring a pipeline now requires updating CLAUDE.md's
+pipeline table and Section 2 of the doc.
+
+### [D-087] ZOH-consistent input resampling (block mean) + interior-sample true-x0 init
+**Date**: 2026-07-07
+**What**: Two data-conditioning fixes in `gantry_interconnect_dynamic.py`. (1) Downsampling of
+the plant force 20 kHz -> FS_NEW uses the per-interval block mean (`u[:n*D].reshape(n, D, nu).mean(axis=1)`)
+instead of point sampling `u[::D]`; outputs and states stay point-sampled (`y[::D]`, exact for
+states). (2) All "true x0" open-loop simulations (the x_logical-init model sim in
+`evaluate_and_save` and the true-x0 baselines in the main block) start from the interior sample
+K0 = cheat_n with state `x_logical[K0]`, instead of sample 0.
+**Why**: The slide-21 "open-loop problem" (meeting 07-07) decomposes exactly into these two
+artifacts, amplified by the K=0 axes (any low-frequency input/init error integrates into a
+permanent offset tau*dv, tau = m/c: X 1.55 s, Y 1.01 s; verified to 3 digits by dv injection).
+(a) ~75%: `u_total` is ZOH at 20 kHz (discrete controller), so the exact FS_NEW input is the
+mean force per hold interval (impulse equivalence); `u[::D]` leaves a nonzero-mean force error.
+V1 baseline-only open-loop offset: Y -3.47e-4 m / X +6.1e-5 m with `[::D]`, -2.8e-9 / -3.0e-8 m
+with block mean (and -2.7e-9 / -2.7e-7 m at native D=1). (b) ~25%: `gtd_save_record.m` computes
+`qdot_logical` with `gradient()`, one-sided at sample 0; V1 starts at rest yet stored v0 is
+[9.5e-6, -6.2e-5, -1.05e-4], contributing tau*dv = -1.06e-4 m on Y. Interior samples carry
+central differences at 20 kHz (accurate on noiseless positions). Evidence:
+`scripts/gantry/augmentation-error/diag_openloop_x0.py`, `diag_onestep_residual.py`; artifacts
+in `simulations/gantry_subnet/diagnostics/` (openloop_x0_V1, onestep_residual_V1,
+openloop_x0_V1_20kHz, openloop_x0_V1_4kHz_uavg). Sum of the two contributions matches the
+observed offsets within 1% (Y: -1.01e-4 + -3.47e-4 = -4.48e-4 vs -4.46e-4 observed).
+**Comparison to Jan's ECC MSD method** (`scripts/ecc_2025/msd_ndof_data_generation_dynamic.py`):
+Jan has no resampling step at all — the discrete truth system is simulated at the model rate
+(dt=0.02 both), so data and model share one ZOH convention by construction; and he discards the
+first multisine period (`train[Ntrain:]`), so no simulation ever starts on a cold-start sample.
+This decision restores those two invariants for the gantry pipeline, where the truth is a
+continuous Simulink plant logged at 20 kHz.
+**Ruled out**: (1) `scipy.signal.decimate` on u — an IIR anti-alias filter distorts an
+already-ZOH signal; block mean is exact, not an approximation. (2) Filtering y — states are
+point-sampled exactly; filtering would inject phase error. (3) Zeroing v0 at sample 0 —
+assumes at-rest records, fails for sweep records; interior-sample init needs no assumption.
+(4) Regenerating data with logged Simulink states — valid long-term fix for
+`gtd_save_record.m`, but not needed once sims start at K0; defer to next data regeneration.
+**Constrains**: All baseline and sim-RMS numbers change (improve); results from runs before
+this decision are not comparable. The x_logical-init sim now starts at cheat_n (same instant
+as encoder-init — cleaner comparison; its saved `y_hat_xlog` is NaN before cheat_n). The
+encoder-init velocity error remains a separate open item (needs the cluster run npz:
+`x_enc_phys[cheat_n]` vs mat `x_logical[cheat_n]`).
+
 ### [D-086] E1 sinesweep tapered with a fade envelope; delta_a panel added to the plot
 **Date**: 2026-07-06
 **What**: (1) `make_sinesweep` (E1) now applies a 0.5 s half-cosine fade-in/out to the chirp

@@ -37,7 +37,7 @@ ny  = 3
 #          'default' = standard deepSI learned encoder
 ENCODER_INIT = 'linear_map'
 ANN_ACTIVATION = 'tanh'  # 'linear' = Identity activation (Jan's ECC setup, D-071); 'tanh' = nonlinear ANN
-JOINT_ESTIMATION = True  # D-076: True = trainable damping/stiffness scalars; OFF for the D-078 noise-floor runs
+JOINT_ESTIMATION = False  # D-076: True = trainable damping/stiffness scalars; OFF for the D-078 noise-floor runs
 PARAM_RMSE_BASELINE = 0.01 # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
 # D-076 run design: None = start at true values (run T: measures absorber-induced bias).
 # List of 5 factors on [kb_sum, cg1, cg2, cy, cb_sum] = detuned start (run D: recovery test);
@@ -47,7 +47,7 @@ PARAM_RMSE_BASELINE = 0.01 # HEURISTIC: measured initial sqrt-loss, jobs 68675/6
 PARAM_INIT_DETUNE = [1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90, 0.90, 1.10, 0.90, 1.10, 0.90, 0.90, 1.10]
 # --- Output noise (Jan's ECC noise-floor convention, D-078) ---
 # sigma_n = rms(y) * 10^(-SNR/20); reaching sigma_n on val sim-RMS = acceptance floor.
-SNR = 50   # dB: 50/55/60 -> sigma_n 4.5e-4/2.5e-4/1.4e-4 m (rms(y)~0.142 m); None = noiseless
+SNR = None   # dB: 50/55/60 -> sigma_n 4.5e-4/2.5e-4/1.4e-4 m (rms(y)~0.142 m); None = noiseless (supervisor 07-07: make it work without noise first)
 SEED = 42
 
 # --- Resampling ---
@@ -124,11 +124,29 @@ def _load_u(d):
     """Return plant input u_total [F_X1, F_X2, F_Y] from the generated mat file."""
     return d['u_total']
 
+
+def _resample_u(u):
+    """Downsample the plant force FS_ORIG -> FS_NEW by per-hold-interval block mean.
+
+    # THEORY: u_total is ZOH at FS_ORIG (discrete 20 kHz controller), so the exact
+    # input for a ZOH model at FS_NEW is the mean force over each TS_NEW hold
+    # interval (impulse equivalence). Point sampling u[::D] leaves a nonzero-mean
+    # force error that the K=0 axes integrate into a permanent offset tau*dv
+    # (tau=m/c): V1 open-loop settled at Y -3.5e-4 m / X +6e-5 m; block mean
+    # collapses this to ~3e-9 / 3e-8 m (diag_openloop_x0.py, D-087).
+    """
+    if D == 1:
+        return u
+    n = u.shape[0] // D
+    return u[:n * D].astype(np.float64).reshape(n, D, u.shape[1]).mean(axis=1)
+
+
 def load_traj(filename):
     d = loadmat(os.path.join(TRAJ_DIR, filename), squeeze_me=True)
+    u = _resample_u(_load_u(d)).astype(DTYPE_NP)
     return deepSI.System_data(
-        u=_load_u(d)[::D].astype(DTYPE_NP),
-        y=d['y'][::D].astype(DTYPE_NP),
+        u=u,
+        y=d['y'][::D][:len(u)].astype(DTYPE_NP),   # states: point sampling is exact (D-087)
         dt=TS_NEW,
     )
 
@@ -142,10 +160,11 @@ def load_mat_aug(filename):
       x_aug     (N, 2)    [delta_a, vdelta_a] -- vdelta_a via backward FD
     """
     d = loadmat(os.path.join(TRAJ_DIR, filename), squeeze_me=True)
-    u         = _load_u(d)[::D].astype(DTYPE_NP)
-    y         = d['y'][::D].astype(DTYPE_NP)
-    x_logical = d['x_logical'][::D].astype(DTYPE_NP)    # (N, 6)
-    delta_a   = d['delta_a'][::D].astype(DTYPE_NP)      # (N,)
+    u         = _resample_u(_load_u(d)).astype(DTYPE_NP)     # block mean (D-087)
+    N         = len(u)
+    y         = d['y'][::D][:N].astype(DTYPE_NP)
+    x_logical = d['x_logical'][::D][:N].astype(DTYPE_NP)     # (N, 6)
+    delta_a   = d['delta_a'][::D][:N].astype(DTYPE_NP)       # (N,)
     # HEURISTIC: backward FD for velocity -- O(Ts) accurate, consistent with x_logical convention
     vdelta_a      = np.zeros_like(delta_a)
     vdelta_a[1:]  = (delta_a[1:] - delta_a[:-1]) * FS_NEW
@@ -575,16 +594,21 @@ def evaluate_and_save(fit_sys, hp, rid, diag_conv=None, baseline_nrms=None,
         val_norm = fit_sys.norm.transform(val_data)
         u_val_norm = torch.tensor(np.ascontiguousarray(val_norm.u), dtype=DTYPE_PT)
 
+        # D-087: seed from the interior sample cheat_n, not sample 0 — the stored
+        # qdot at sample 0 is a one-sided gradient() artifact (V1 starts at rest yet
+        # v0 != 0, worth tau*dv = -1e-4 m on Y); interior samples carry central
+        # differences. Also starts at the same instant as the encoder-init sim.
         x_xlog = torch.zeros(1, nxd)
         x_xlog[0, :NX_PHYS] = torch.tensor(
-            (val_x_logical[0] - x_mean.flatten()) / std_x.flatten(), dtype=DTYPE_PT)
+            (val_x_logical[cheat_n] - x_mean.flatten()) / std_x.flatten(), dtype=DTYPE_PT)
 
         y_xlog_list = []
         with torch.no_grad():
-            for t in range(len(u_val_norm)):
+            for t in range(cheat_n, len(u_val_norm)):
                 y_t, x_xlog = fit_sys.hfn(x_xlog, u_val_norm[t:t+1])
                 y_xlog_list.append(y_t.squeeze().numpy())
-        y_hat_xlog = np.array(y_xlog_list) * ystd + y0
+        y_hat_xlog = np.full((len(y_ref), ny), np.nan, dtype=DTYPE_NP)
+        y_hat_xlog[cheat_n:] = np.array(y_xlog_list) * ystd + y0
 
         # Averaged from cheat_n like the encoder-init model metric (D-072 alignment)
         nrms_xlog = np.sqrt(((y_hat_xlog[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0)) / ystd
@@ -874,7 +898,7 @@ def compute_baseline_fp_nrms(hp, data=None, x0_phys=None, x0_norm=None,
                (aligns with the model metric, which excludes the encoder warm-up)
 
     Runs Gantry_State_Block alone (zero ANN contribution) starting from the
-    true initial state (val_x_logical[0] from the augmented simulation mat file).
+    true state (callers pass x_logical[K0], the first interior sample, D-087).
     Compares to val_data.y which contains the augmented simulation output
     (y WITH MSD effect). The NRMS gap measures how much the hidden MSD
     degrades the baseline-only prediction -- the trained augmented model must
@@ -1142,12 +1166,14 @@ def _encoder_init_state(data):
     return x0[:NX_PHYS]
 
 
-# True-x0 (oracle) baselines — error averaged from K0 to match the model metric (D-072)
-baseline_nrms, _ = compute_baseline_fp_nrms(hp, avg_from=K0, label='val, true x0')
+# True-x0 (oracle) baselines — start at interior sample K0 (D-087: sample-0 qdot is a
+# one-sided FD artifact); simulated window matches the model metric (D-072).
+baseline_nrms, _ = compute_baseline_fp_nrms(
+    hp, x0_phys=val_x_logical[K0], start_ix=K0, label='val, true x0 @K0')
 if test_x_logical is not None:
     baseline_test_nrms, _ = compute_baseline_fp_nrms(
-        hp, data=test_data, x0_phys=test_x_logical[0], avg_from=K0,
-        label='test E1, true x0')
+        hp, data=test_data, x0_phys=test_x_logical[K0], start_ix=K0,
+        label='test E1, true x0 @K0')
 else:
     baseline_test_nrms = None
 
