@@ -11,12 +11,15 @@
 
 clear; clc; close all;
 
-TRACK   = 'augmentation';        % 'joint' (broadband [1,200]) | 'augmentation' (narrowband [130,180])
+TRACK   = 'joint';        % 'joint' (broadband [1,200]) | 'augmentation' (narrowband [130,180])
 USE_MSD = true;           % true = augmented (baseline + hidden MSD), false = baseline
-MA_FRAC = 0.50;           % hidden-MSD mass fraction
+MA_FRAC = 0.10;           % hidden-MSD mass fraction
 PLOT    = true;          % true = save a positions+forces PNG per record to figures/
-SELECT  = 'T9';             % id prefix filter; '' = all. e.g. 'T9' -> T9*, 'T1' -> T1,T10-T14,
+SHOW    = true;          % true = also display each figure on screen (not only save)
+SELECT  = '';             % id prefix filter; '' = all. e.g. 'T9' -> T9*, 'T1' -> T1,T10-T14,
                           % 'E' -> all test, {'T3','E1'} -> those prefixes. Errors if no match.
+% Figures are shown on screen when SHOW is true OR a subset is selected; a full
+% batch with SHOW=false saves PNGs without opening windows.
 
 cfg     = gtd_config(TRACK, USE_MSD, MA_FRAC);
 records = gtd_build_records(cfg);
@@ -49,7 +52,7 @@ for k = 1:numel(records)
     out = gtd_run_simulation(rec, r, t, f_safe, plant, cfg);
     out.amp = chk.scale * ms.A;
     gtd_save_record(out, rec, cfg);
-    if PLOT, gtd_plot_record(out, rec, cfg, ~isempty(SELECT)); end   % show on screen for a selected subset
+    if PLOT, gtd_plot_record(out, rec, cfg, SHOW || ~isempty(SELECT)); end   % show on screen if SHOW or a subset
 
     if cfg.use_msd
         fprintf('  delta_a rms with/without = %.3e / %.3e (%.1fx) | force peak [%.0f %.0f %.0f] N\n', ...

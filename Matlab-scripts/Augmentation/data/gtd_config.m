@@ -90,7 +90,12 @@ function cfg = gtd_config(TRACK, USE_MSD, MA_FRAC)
     % ── Multisine amplitude design (logical channels; f_anti is a torque) ───
     cfg.A_sym           = 40;     % [N]   HEURISTIC / GATE-2 default (symmetric force RMS)
     cfg.A_Y             = 30;     % [N]   HEURISTIC / GATE-2 default (Y force RMS)
-    cfg.yaw_budget      = 2e-3;   % [m]   multisine share of the 6 mm yaw (HEURISTIC, spec 1.8)
+    % Anti target as a TORQUE [N*m], set so the anti channel contributes the same
+    % per-rail force RMS as the symmetric channel: A_anti/Lb = 0.5*A_sym.
+    % This is a modest fixed level; the 2 mm yaw budget is a CEILING that can only
+    % scale it down (see gtd_size_anti_amp), never a target to fill. HEURISTIC.
+    cfg.A_anti          = 0.5 * cfg.A_sym * cfg.Lb;   % [N*m]
+    cfg.yaw_budget      = 2e-3;   % [m]   multisine share of the 6 mm yaw ceiling (HEURISTIC, spec 1.8)
     cfg.n_ms_candidates = 30;     % crest-factor selection: keep the best of N random draws
 
     % ── TRACK -> multisine band map ─────────────────────────────────────────

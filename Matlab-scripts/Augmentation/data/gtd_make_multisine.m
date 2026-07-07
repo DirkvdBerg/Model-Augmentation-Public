@@ -81,13 +81,23 @@ function x = synth(bins, N)
 end
 
 function ms = make_sinesweep(record, cfg)
-% Linear force chirp on f_Y over the active window (E1). RMS-matched to A_Y.
+% Linear force chirp on f_Y over the active window (E1), tapered at both ends.
     N = cfg.N_record;  n_a = cfg.n_active;  t_a = (0:n_a-1)' * cfg.ts;
     b   = record.p.sweep_band;  f0 = b(1);  f1 = b(2);  T = t_a(end);
-    amp = record.p.amp_frac * cfg.A_Y * sqrt(2);           % peak; RMS = amp_frac*A_Y
+    amp = record.p.amp_frac * cfg.A_Y * sqrt(2);           % peak; RMS ~ amp_frac*A_Y
     phase = 2*pi * (f0*t_a + (f1 - f0)/(2*T) * t_a.^2);    % linear instantaneous freq
+
+    % Half-cosine fade in/out (0.5 s) so the chirp does not slam the system on/off.
+    % An abrupt start/stop kicks all modes -> large onset/offset transients that bury
+    % the resonance response. Same taper idea as make_ref_oscillatory.
+    n_fade = round(0.5 / cfg.ts);
+    win = ones(n_a, 1);
+    ramp = 0.5 * (1 - cos(pi * (0:n_fade-1)' / n_fade));
+    win(1:n_fade)         = ramp;
+    win(end-n_fade+1:end) = flipud(ramp);
+
     f_logical = zeros(N, 3);
-    f_logical(cfg.n_hold + (1:n_a), 3) = amp * sin(phase); % on f_Y, active window only
+    f_logical(cfg.n_hold + (1:n_a), 3) = amp * win .* sin(phase);   % on f_Y, active window
     f_stage = gtd_logical_to_stage(f_logical, cfg);
     ms = pack(f_stage, [0, 0, amp/sqrt(2)], struct('excitation','sinesweep', 'band',b));
 end

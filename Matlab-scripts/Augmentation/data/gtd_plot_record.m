@@ -4,11 +4,17 @@ function gtd_plot_record(out, record, cfg, show)
 %   cfg.fig_dir. With show=true the figure is left open on screen (used when
 %   generating a selected subset); with show=false (default) it is rendered
 %   off-screen and closed, so a full batch does not open 22 windows.
-%   Two rows of three channels:
-%     row 1  stage positions [X1, X2, Y]: reference r_sim vs response y
-%     row 2  stage forces   [FX1, FX2, FY]: total = feedback u_fb + multisine f_sim
-%   No conclusions asserted in titles (lessons rule): the signals and the limit
-%   line are shown; the reader judges.
+%   Layout: 4 (or 5) rows x 3 channels [X1/FX1, X2/FX2, Y/FY]
+%     row 1  stage positions: reference r_sim vs response y
+%     row 2  total force      (u_fb + f_sim)
+%     row 3  feedback force    (trajectory tracking)
+%     row 4  multisine force   (injected excitation)
+%     row 5  hidden MSD delta_a (full width) -- only when the MSD is present;
+%            for E1 the resonance shows as a bulge where the sweep crosses ~150 Hz
+%   Forces are split by TYPE with independent y-scales per row, so the small
+%   injected multisine is visible instead of being crushed under the feedback.
+%   No conclusions asserted in titles (lessons rule): the signals are shown; the
+%   reader judges.
 
     if nargin < 4, show = false; end
 
@@ -24,10 +30,13 @@ function gtd_plot_record(out, record, cfg, show)
     col_ref = [0.0 0.45 0.74]; col_resp = [0.85 0.33 0.10];
     col_fb  = [0.47 0.67 0.19]; col_ms   = [0.49 0.18 0.56];
 
+    has_da = isfield(out, 'da_with') && ~isempty(out.da_with);
+    nrows  = 4 + has_da;
+
     vis = 'off'; if show, vis = 'on'; end
-    fig = figure('Name', record.id, 'Position', [60 60 1500 720], ...
+    fig = figure('Name', record.id, 'Position', [60 20 1500 190*nrows], ...
                  'Color', 'w', 'Visible', vis);
-    tl = tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+    tl = tiledlayout(nrows, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
 
     % Row 1: positions, reference vs response
     for ch = 1:3
@@ -40,15 +49,34 @@ function gtd_plot_record(out, record, cfg, show)
         title(pos_lbl{ch});
     end
 
-    % Row 2: forces, total decomposed into feedback + multisine
-    for ch = 1:3
-        nexttile(3 + ch); hold on
-        plot(t, uft(:,ch), 'Color', col_resp, 'LineWidth', 0.9, 'DisplayName', 'total');
-        plot(t, ufb(:,ch), 'Color', col_fb,   'LineWidth', 0.7, 'DisplayName', 'feedback');
-        plot(t, ums(:,ch), 'Color', col_ms,   'LineWidth', 0.7, 'DisplayName', 'multisine');
-        ylabel([frc_lbl{ch} ' [N]']); xlabel('Time [s]'); grid on
-        if ch == 1, legend('Location','best','FontSize',8); end
-        title(frc_lbl{ch});
+    % Rows 2-4: forces split by type (total / feedback / multisine), each row
+    % autoscaled independently so the multisine is visible on its own scale.
+    force_rows = {uft, 'total', col_resp; ufb, 'feedback', col_fb; ums, 'multisine', col_ms};
+    for rw = 1:3
+        U = force_rows{rw,1}; name = force_rows{rw,2}; col = force_rows{rw,3};
+        for ch = 1:3
+            nexttile(3*rw + ch); hold on
+            plot(t, U(:,ch), 'Color', col, 'LineWidth', 0.7);
+            ylabel(sprintf('%s [N]', frc_lbl{ch})); grid on
+            if rw < 3, set(gca, 'XTickLabel', []); else, xlabel('Time [s]'); end
+            if ch == 1, title(sprintf('%s force', name)); end
+            % delivered stage-force RMS + peak, top-right (see D-085 discussion)
+            text(0.98, 0.95, sprintf('RMS %.0f / pk %.0f N', rms(U(:,ch)), max(abs(U(:,ch)))), ...
+                 'Units','normalized', 'HorizontalAlignment','right', 'VerticalAlignment','top', ...
+                 'FontSize', 7, 'BackgroundColor', [1 1 1 0.6]);
+        end
+    end
+
+    % Row 5: hidden MSD displacement delta_a (full width), in micrometres
+    if has_da
+        da = 1e6 * double(out.da_with);
+        nexttile([1 3]); hold on
+        plot(t, da, 'Color', [0.30 0.30 0.30], 'LineWidth', 0.7);
+        ylabel('\delta_a [\mum]'); xlabel('Time [s]'); grid on
+        title('hidden MSD displacement \delta_a');
+        text(0.98, 0.95, sprintf('RMS %.2f / pk %.2f \\mum', rms(da), max(abs(da))), ...
+             'Units','normalized', 'HorizontalAlignment','right', 'VerticalAlignment','top', ...
+             'FontSize', 7, 'BackgroundColor', [1 1 1 0.6]);
     end
 
     title(tl, sprintf('%s  |  %s  |  %s  |  seed %d', ...
