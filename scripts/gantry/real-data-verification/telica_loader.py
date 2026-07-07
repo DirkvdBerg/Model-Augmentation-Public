@@ -16,9 +16,15 @@ Signal units in the raw log file:
     M0, M2    : um (micrometres).  pos[m] = raw * 1e-6
     MF30, MF230: already in Amperes.  F[N] = I[A] * Kt[N/A]
 
-Native logging rate: 10 kHz (runFDILCAllHostSwLog.m line 30:
-    FsHz = 1/(2*TsSec) where TsSec = 5e-5 s).
-The output is upsampled to 20 kHz to match the simulation pipeline.
+Native logging rate: 20 kHz (= 1/SamplingTime, Telica.mat SamplingFrequency
+    "The number of samples logged per second" = 20000). Confirmed empirically:
+    the notch of the real LX1 controller (dFeedbackControllersTelica.mat,
+    designed at 20 kHz) appears at the SAME normalized frequency in the
+    iter0 log FRF, which is only possible if the log samples are consecutive
+    20 kHz DSP samples. See D-073 and
+    simulations/gantry_subnet/diagnostics/controller_fingerprint/.
+    The earlier 10 kHz assumption (D-061, FsHz = 1/(2*TsSec)) stretched the
+    time axis by 2x and is superseded. No resampling is performed.
 
 Conversion source:
     Kt_X = 109 N/A, Kt_Y = 77.6 N/A  (Telica.mat Axes.X/Y.Motor.MotorForceConst)
@@ -32,7 +38,6 @@ import numpy as np
 import pandas as pd
 import torch
 from scipy.io import loadmat
-from scipy.interpolate import interp1d
 
 # -- Load motor force constants from Telica.mat -------------------------------
 
@@ -47,10 +52,12 @@ def _load_telica_params():
     ax  = mp.Axes
     kt_x      = float(ax.X.ElectronicHardwareInfo.Motor.MotorForceConst.Value)
     kt_y      = float(ax.Y.ElectronicHardwareInfo.Motor.MotorForceConst.Value)
-    # THEORY: FsHz = 1/(2*TsSec) from runFDILCAllHostSwLog.m line 30.
-    #         SamplingTime = 5e-5 s -> FsHz = 1/(2*5e-5) = 10000 Hz.
+    # THEORY: fs_native = 1/SamplingTime = SamplingFrequency.Value = 20000 Hz
+    #         (Telica.mat: "The number of samples logged per second").
+    #         Empirical confirmation via controller-notch fingerprint: D-073.
+    #         The old FsHz = 1/(2*TsSec) = 10 kHz (D-061) is superseded.
     ts_sec    = float(ax.X.SamplingTime.Value)
-    fs_native = 1.0 / (2.0 * ts_sec)
+    fs_native = 1.0 / ts_sec
     return kt_x, kt_y, fs_native
 
 _KT_X, _KT_Y, _NATIVE_FS = _load_telica_params()
@@ -146,8 +153,8 @@ def load_telica_log(path: str, dtype=torch.float64):
     raw = raw.dropna(axis=1, how='all')
 
     # -- 2. Native sampling rate ----------------------------------------------
-    # THEORY: FsHz = 1/(2*TsSec) = 10 kHz (runFDILCAllHostSwLog.m line 30).
-    fs_native = _NATIVE_FS   # 10000 Hz
+    # THEORY: fs_native = 1/SamplingTime = 20 kHz (Telica.mat; D-073).
+    fs_native = _NATIVE_FS   # 20000 Hz
 
     # -- 3. Extract M0, M2, MF30 for the BHL beam head -----------------------
     bh = _BEAM_HEAD
@@ -173,23 +180,67 @@ def load_telica_log(path: str, dtype=torch.float64):
     # THEORY: F[N] = MF30[A] * Kt[N/A]  (MF30 logged in Amperes, see module doc)
     u_raw = MF30 * _A_TO_N             # [N]
 
-    # -- 6. Upsample 10 kHz -> 20 kHz ----------------------------------------
-    # THEORY: matches MATLAB interp1 upsample (runFDILCAllHostSwLog.m line 117).
-    N_trim   = len(q1_raw)
-    t_orig_s = np.arange(N_trim) / fs_native
-    t_end_s  = t_orig_s[-1]
-    t_new_s  = np.arange(0.0, t_end_s + 1.0 / _FS_TARGET, 1.0 / _FS_TARGET)
-    t_new_s  = t_new_s[t_new_s <= t_end_s]
-
-    interp_q1 = interp1d(t_orig_s, q1_raw, axis=0, kind='linear',
-                         bounds_error=False, fill_value=(q1_raw[0], q1_raw[-1]))
-    interp_u  = interp1d(t_orig_s, u_raw,  axis=0, kind='linear',
-                         bounds_error=False, fill_value=(u_raw[0],  u_raw[-1]))
-    q1_20k = interp_q1(t_new_s)
-    u_20k  = interp_u(t_new_s)
+    # -- 6. No resampling: native rate IS the pipeline rate (D-073) -----------
+    # The log samples are consecutive 20 kHz DSP samples; the old 2x upsample
+    # (10 kHz assumption, D-061) stretched the time axis and is removed.
+    if fs_native != _FS_TARGET:
+        raise ValueError(
+            f'Native rate {fs_native} Hz != pipeline rate {_FS_TARGET} Hz; '
+            f'resampling was removed per D-073 -- revisit if this triggers.')
 
     # -- 7. Convert to tensors ------------------------------------------------
-    u_tensor  = torch.tensor(u_20k,  dtype=dtype).unsqueeze(0)  # (1, T, 3)
-    q1_tensor = torch.tensor(q1_20k, dtype=dtype)               # (T, 3)
+    u_tensor  = torch.tensor(u_raw,  dtype=dtype).unsqueeze(0)  # (1, T, 3)
+    q1_tensor = torch.tensor(q1_raw, dtype=dtype)               # (T, 3)
 
     return u_tensor, q1_tensor, _FS_TARGET
+
+
+def load_telica_log_cl(path: str, dtype=torch.float64):
+    """
+    Closed-loop evaluation variant of load_telica_log (D-074).
+
+    Same file reading, trimming and unit conventions as load_telica_log, but
+    returns the signals the closed-loop simulation needs. The training
+    contract of load_telica_log is untouched.
+
+    Returns dict with keys:
+        r     : (T, 3) tensor  reference position [m]         M0 * 1e-6
+        q1    : (T, 3) tensor  measured position [m]          (M0 - M2) * 1e-6
+        u_ff  : (T, 3) tensor  ILC feedforward force [N]      (MF30 - MF230) * Kt
+        i_fb  : (T, 3) tensor  logged feedback current [A]    MF230
+        fs    : float          20000.0
+    Note: tracking error in meters = r - q1 = M2 * 1e-6.
+    """
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f'Telica log not found: {path}')
+
+    with open(path, 'r') as fh:
+        header_line = fh.readline()
+    cols = _clean_header(header_line)
+    raw = pd.read_csv(path, sep='\t', header=None, names=cols,
+                      skiprows=1, engine='python', index_col=False)
+    raw = raw.dropna(axis=1, how='all')
+
+    bh = _BEAM_HEAD
+    M0    = raw[[f'{bh}_{ax}_M0'    for ax in _AXES]].to_numpy(dtype=np.float64)
+    M2    = raw[[f'{bh}_{ax}_M2'    for ax in _AXES]].to_numpy(dtype=np.float64)
+    MF30  = raw[[f'{bh}_{ax}_MF30'  for ax in _AXES]].to_numpy(dtype=np.float64)
+    MF230 = raw[[f'{bh}_{ax}_MF230' for ax in _AXES]].to_numpy(dtype=np.float64)
+
+    motion_idx  = _find_motion_start(M0)
+    pre_samples = max(0, int(round(_PRE_MOTION_MS * _NATIVE_FS / 1000.0)))
+    trim_start  = max(0, motion_idx - pre_samples)
+    M0, M2, MF30, MF230 = (M0[trim_start:], M2[trim_start:],
+                           MF30[trim_start:], MF230[trim_start:])
+
+    r_m    = M0 * _DPI_TO_M                    # [m]
+    q1_m   = (M0 - M2) * _DPI_TO_M             # [m]
+    u_ff_n = (MF30 - MF230) * _A_TO_N          # [N]
+
+    return {
+        'r':    torch.tensor(r_m,    dtype=dtype),
+        'q1':   torch.tensor(q1_m,   dtype=dtype),
+        'u_ff': torch.tensor(u_ff_n, dtype=dtype),
+        'i_fb': torch.tensor(MF230,  dtype=dtype),
+        'fs':   _FS_TARGET,
+    }
