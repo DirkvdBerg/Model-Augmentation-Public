@@ -27,7 +27,7 @@ from model_augmentation.utils.utils import normalize_linear_ss_matrices
 ## ═══════════════════════════════════════════════════════════════════════════════
 
 # --- Track: 'joint' (broadband [1,200] Hz) or 'augmentation' (narrowband [130,180] Hz) ---
-MODE = 'joint'
+MODE = 'augmentation'
 
 # --- Fixed model constants ---
 NX_PHYS = 6   # physical states: q1, q2, q3, dq1, dq2, dq3
@@ -37,14 +37,14 @@ ny  = 3
 #          'default' = standard deepSI learned encoder
 ENCODER_INIT = 'linear_map'
 ANN_ACTIVATION = 'tanh'  # 'linear' = Identity activation (Jan's ECC setup, D-071); 'tanh' = nonlinear ANN
-JOINT_ESTIMATION = False  # D-076: True = trainable damping/stiffness scalars; OFF for the D-078 noise-floor runs
+JOINT_ESTIMATION = True  # D-076: True = trainable damping/stiffness scalars; OFF for the D-078 noise-floor runs
 PARAM_RMSE_BASELINE = 0.01 # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
 # D-076 run design: None = start at true values (run T: measures absorber-induced bias).
 # List of 5 factors on [kb_sum, cg1, cg2, cy, cb_sum] = detuned start (run D: recovery test);
 # [1.10, 1.10, 0.90, 1.10, 0.90] reproduces the lpv_lfr_baseline detuning signs (D-076).
 # NOTE: param_loss anchors to the (possibly detuned) INIT values -- Jan's prior semantics.
-PARAM_INIT_DETUNE = None
-# PARAM_INIT_DETUNE = [1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90, 0.90, 1.10, 0.90, 1.10, 0.90, 0.90, 1.10]
+#PARAM_INIT_DETUNE = None
+PARAM_INIT_DETUNE = [1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90, 0.90, 1.10, 0.90, 1.10, 0.90, 0.90, 1.10]
 # --- Output noise (Jan's ECC noise-floor convention, D-078) ---
 # sigma_n = rms(y) * 10^(-SNR/20); reaching sigma_n on val sim-RMS = acceptance floor.
 SNR = 50   # dB: 50/55/60 -> sigma_n 4.5e-4/2.5e-4/1.4e-4 m (rms(y)~0.142 m); None = noiseless
@@ -57,6 +57,14 @@ if FS_NEW is None:
     FS_NEW = FS_ORIG
 D       = FS_ORIG // FS_NEW
 TS_NEW  = 1.0 / FS_NEW
+
+# --- Training-window stride ---
+# Keep every STRIDE-th BPTT window start instead of every sample. Consecutive
+# windows overlap by nf-1 samples, so this drops near-duplicate windows: STRIDE x
+# fewer training samples with ~full trajectory coverage kept (not a downsample --
+# the sampling rate stays FS_NEW). Native deepSI knob (SS_encoder_general
+# .make_training_data reads loss_kwargs['stride']). STRIDE=1 = every window.
+STRIDE  = 5
 
 # --- Dtype ---
 USE_F64  = False
@@ -81,7 +89,7 @@ DEFAULT_HP = dict(
     na_nb=0,          # set below via Jan's formula
     batch_size=256,
     lr=1e-4,
-    epochs=5,
+    epochs=10,
 )
 DEFAULT_HP['na_nb'] = (NX_PHYS + DEFAULT_HP['NX_ANN']) * 2 + 1   # THEORY: nxd*2+1 (Jan's standard)
 
@@ -371,7 +379,7 @@ def train_model(fit_sys, hp, epochs=None, nf=None, validation_measure=None):
         train_sys_data=train_data, val_sys_data=val_ckpt_data,
         batch_size=hp['batch_size'], epochs=epochs or hp['epochs'],
         auto_fit_norm=False,
-        loss_kwargs={'nf': nf if nf is not None else hp['nf']},
+        loss_kwargs={'nf': nf if nf is not None else hp['nf'], 'stride': STRIDE},
         optimizer_kwargs={'lr': hp['lr']},
         validation_measure=validation_measure if validation_measure is not None else 'sim-RMS',
     )
