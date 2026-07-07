@@ -64,7 +64,7 @@ TS_NEW  = 1.0 / FS_NEW
 # fewer training samples with ~full trajectory coverage kept (not a downsample --
 # the sampling rate stays FS_NEW). Native deepSI knob (SS_encoder_general
 # .make_training_data reads loss_kwargs['stride']). STRIDE=1 = every window.
-STRIDE  = 5
+STRIDE  = 10
 
 # --- Dtype ---
 USE_F64  = False
@@ -1146,7 +1146,6 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 fit_sys = build_model(hp)
 
-print('\nComputing baseline FP RMS/NRMS (fixed reference, no MSD)...')
 _na, _nb, _na_right, _nb_right = _get_encoder_dims(hp)
 K0 = max(_na, _nb)   # first sample with a full encoder window (~ model cheat_n)
 
@@ -1166,6 +1165,21 @@ def _encoder_init_state(data):
     return x0[:NX_PHYS]
 
 
+# D-089: capture untrained-encoder x0 estimates now (must happen before fit()
+# trains the encoder); the four slow baseline sims run post-training — nothing
+# in training consumes them, and they don't touch fit_sys or the RNG stream.
+if ENCODER_INIT == 'linear_map':
+    x0_encinit_val  = _encoder_init_state(val_data)
+    x0_encinit_test = _encoder_init_state(test_data)
+else:
+    x0_encinit_val = x0_encinit_test = None
+
+ckpt_dir = save_dir if save_flag else None
+bestfit, diag_conv = train_model_with_diagnostics(
+    fit_sys, hp, resume_ckpt=resume_ckpt, checkpoint_dir=ckpt_dir)
+print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
+
+print('\nComputing baseline FP RMS/NRMS (fixed reference, no MSD)...')
 # True-x0 (oracle) baselines — start at interior sample K0 (D-087: sample-0 qdot is a
 # one-sided FD artifact); simulated window matches the model metric (D-072).
 baseline_nrms, _ = compute_baseline_fp_nrms(
@@ -1178,22 +1192,17 @@ else:
     baseline_test_nrms = None
 
 # Encoder-init baselines — same init information as the model, no oracle (D-072).
-# Only meaningful for the linear_map encoder (untrained = reconstructability map).
-if ENCODER_INIT == 'linear_map':
+# x0 vectors were captured pre-training from the untrained reconstructability map (D-089).
+if x0_encinit_val is not None:
     baseline_encinit_nrms, _ = compute_baseline_fp_nrms(
-        hp, x0_norm=_encoder_init_state(val_data), start_ix=K0,
+        hp, x0_norm=x0_encinit_val, start_ix=K0,
         label='val, encoder-init (untrained linear map)')
     baseline_test_encinit_nrms, _ = compute_baseline_fp_nrms(
-        hp, data=test_data, x0_norm=_encoder_init_state(test_data), start_ix=K0,
+        hp, data=test_data, x0_norm=x0_encinit_test, start_ix=K0,
         label='test E1, encoder-init (untrained linear map)')
 else:
     baseline_encinit_nrms = None
     baseline_test_encinit_nrms = None
-
-ckpt_dir = save_dir if save_flag else None
-bestfit, diag_conv = train_model_with_diagnostics(
-    fit_sys, hp, resume_ckpt=resume_ckpt, checkpoint_dir=ckpt_dir)
-print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
 
 # Full test-set generalization NRMS over all held-out records (E1-E4)
 print('Test-set NRMS per record (avg from K0):')
