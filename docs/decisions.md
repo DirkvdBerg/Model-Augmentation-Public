@@ -19,6 +19,369 @@ Decisions are logged here before implementation. Each entry states what was deci
 
 ## Decisions
 
+### [D-101] Pass hp['lr'] into init_model in build_model — the configured learning rate was silently ignored (every gantry run trained at Adam default 1e-3)
+**Date**: 2026-07-08
+**What**: One-line change in `scripts/gantry/gantry_dynamic/model.py:build_model`:
+`fit_sys.init_model(sys_data=..., auto_fit_norm=False)` becomes
+`fit_sys.init_model(sys_data=..., auto_fit_norm=False, optimizer_kwargs={'lr': hp['lr']})`.
+**Why**: The learning rate knob was disconnected. `build_model` calls `init_model`, which creates
+the optimizer (`interconnect.py:425` -> `init_optimizer` -> `Adam(parameters)` with no `lr` ->
+**Adam default 1e-3**) and sets `init_model_done=True`. Later `train_model` (model.py:185) calls
+`fit(..., optimizer_kwargs={'lr': hp['lr']})`, but `fit` only consumes `optimizer_kwargs` inside the
+`if init_model_done==False` branch (interconnect.py:548); the `else` branch just runs
+`_check_and_refresh_optimizer_if_needed()` (a CUDA-graph health check, fit_system.py:520) which never
+touches lr. So `hp['lr']=1e-4` (config `cfg.lr`) was silently dropped and **every gantry augmentation
+run — real pipeline and all historical run-table entries — trained at 1e-3, 10x the intended rate.**
+Discovered when a Theta-only lr sweep (`diag_theta_lr_sweep.py`, lr in {1e-5,1e-6,1e-7} then
+{1e-10,1e-12,1e-13}) produced **bit-identical** loss curves across all lrs (val sim-RMS
+0.006071/0.001105/0.002977 at It 1/2/3 regardless of lr) — proof the lr never reached the optimizer.
+Strong candidate cause for the "even Theta blows up after init" instability: the effective step was
+10x too large, matching the supervisor's "learning step too high can blow up NN, last 0".
+**Ruled out**: (a) `param_groups` lr override after `build_model` in each caller — works but must be
+repeated in every entry point and diagnostic, and hides the real fix. (b) Editing Jan's `fit()` to
+honor `optimizer_kwargs` when `init_model_done` — touches shared framework code affecting MSD/Bouc-Wen/
+all systems, higher blast radius; the wrong assumption actually lives in OUR `build_model` (it creates
+the optimizer early, then relies on `fit` to set lr). (c) Not calling `init_model` in `build_model` and
+deferring to `fit` — `build_model` must init the nets so the post-build encoder-init x0 capture and
+baseline sims work; deferring breaks those. Chosen fix passes lr where the optimizer is actually
+created, in our own code, minimal diff.
+**Constrains**: (1) All callers (`gantry_interconnect_dynamic.py`, `diag_theta_lr_sweep.py`,
+`diag_xy_routing_blowup.py`) set `hp['lr']`/`cfg.lr` before `build_model`, so this single fix repairs
+all of them. (2) `hp['lr']` MUST be set before `build_model`; setting it only via `fit`'s
+`optimizer_kwargs` remains dead — do not rely on it. (3) **All prior gantry run-table results were at
+lr=1e-3, not their stated lr; re-interpret accordingly and re-run any lr-sensitive conclusion.**
+(4) The sibling pipelines (`lpv_lfr_baseline/`, `scripts/gantry/real-data-verification/`) likely share
+the `init_model`-before-`fit` pattern and the same stranded-lr bug — audit separately before trusting
+their lr settings.
+
+### [D-100] Unified config: all parameters in one RunConfig; hp is a derived view (supersedes the D-092 split)
+**Date**: 2026-07-08
+**What**: `RunConfig` now holds EVERY user-tunable parameter, including the model/training
+hyperparameters that D-092 had left in a separate `default_hp(cfg)` dict (`nx_ann`,
+`n_nodes_per_layer`, `n_hidden_layers`, `up_sample`, `batch_size`, `lr`, `epochs`,
+`nf_seconds`). The entry file `gantry_interconnect_dynamic.py` constructs one object with all
+fields visible. `nf` and `na_nb` are derived properties (from `nf_seconds`/`ts_new` and Jan's
+`(nx_phys+nx_ann)*2+1` rule) with optional direct overrides `nf_override` / `na_nb_override`
+(None = derive). `cfg.hp` is a read-only property returning the legacy dict (exact keys/order),
+so the ~67 `hp['...']` call sites, the checkpoint `.npz` meta, the results-npz `config`/`hp`
+JSON, and resume are all unchanged. `default_hp(cfg)` remains as a one-line backward-compat
+accessor returning `cfg.hp` (used by `diag_xy_routing_blowup.py`); the entry file and
+`gantry_optuna.py` now use `cfg.hp` directly.
+**Why**: The D-092 split left the setting surface in two places; the user could not set all
+parameters from the entry file and found the separate dict messy ("why is this still a separate
+dict compared to all the parameters?"). One object, one place, one source of truth.
+**Verification**: Stage A re-run bit-exact vs the unchanged legacy copy after the change
+(`cfg.hp` byte-identical to old `default_hp` incl. JSON; all model tensors, both RNG streams,
+66626 training windows, and first-batch loss hex `0x1.5ddeac0p-21` identical). Behavior-preserving.
+**Ruled out**: (1) Plain dict of all params in the entry file (no dataclass) -- loses the frozen
+guarantee and derived properties. (2) Keeping two objects both edited in the entry file -- still
+two things to reconcile. (3) Making `nf`/`na_nb` plain settable numbers -- loses the physical
+`5*tau` default and Jan's-rule default; the override fields cover the "set directly" need.
+**Constrains**: `cfg.hp` key set/order remains the frozen checkpoint/npz contract. New tunables
+go on `RunConfig` as fields; if they belong in the persisted hp dict, add them to the `hp`
+property in the same key position.
+
+### [D-099] Anti-aliasing is a non-issue for the simulated dataset; keep asymmetric resampling (block-mean u, point-sample y/states)
+**Date**: 2026-07-08
+**What**: Empirically scoped the supervisor's anti-aliasing concern (07-07) with
+`scripts/gantry/augmentation-error/diag_downsample_spectra.py` — 20 kHz Welch PSDs of
+`y`, `x_logical` (6 ch), `delta_a`, and `u_total` over the worst-case records
+(E1_resonance_sweep, E3_aprbs_above, E4_multisine_off, T11_aprbs_100, V1) in BOTH modes.
+Metric: fraction of power above the new Nyquist (2 kHz). Result: **every signal is band-limited
+far below 2 kHz.** Worst-case `frac_above`: `y`/states = 2.5e-8, and — critically —
+`u_total` = ~4e-14 (machine floor). All PSDs roll off steeply and hit a flat numerical/solver
+noise floor by ~500 Hz, ~15 decades of headroom below Nyquist. Decision: **do NOT add
+`resample_poly`/`decimate` to the simulation pipeline; keep point-sampling `y`/states (exact
+here) and keep the block-mean for `u` unchanged.**
+**Why**: Point sampling folds only the energy above 2 kHz — which is absent — so "point sampling
+is exact" (data.py:101) is now verified to ≤2.5e-8, not assumed. The block-mean `u` fix (D-087)
+is retained but its justification is corrected: `u_total` has NO HF content either, so its benefit
+is NOT anti-aliasing — it is a DC/area-consistency (impulse-equivalent ZOH reduction) effect that
+matters only because the K=0 axes are open-loop integrators that accumulate any systematic
+force-mean offset. This also **falsifies the handoff premise** that "the 20 kHz ZOH controller
+puts step-harmonic energy far above 2 kHz in u": the controller force is smooth (band-limited
+excitation), not a sample-rate square wave.
+**Ruled out**: (a) Switching everything to one `resample_poly` — adds filter transients, edge
+effects and u/y group-delay bookkeeping for zero measured benefit, and risks reintroducing a u/y
+phase mismatch. (b) Replacing block-mean-u with plain `[::D]` — would reintroduce the D-087 open-loop
+drift (Y −3.5e-4 m). (c) FIR-decimating the FD-derived velocity states — perturbs the fragile
+boundary velocities used for interior-K0 seeding for no benefit.
+**Constrains**: The anti-alias machinery belongs to the **real-data (Telica) pipeline**, not the
+simulation pipeline. Real logs carry measurement noise, quantization, and true HF resonances that
+WILL alias under `[::D]` and MUST be anti-alias filtered (`scipy.signal.resample_poly`, same
+zero/linear-phase filter on u and y) before decimation. This conclusion is data-specific to the
+noiseless simulation; re-scope with the same diagnostic if the sim excitation band or FS_ORIG changes.
+
+**Measurement noise does NOT change this conclusion (supervisor 2026-07-08).** The noise model is
+**measurement noise only, added post-hoc to the output, NOT injected through the closed loop** —
+identical to Jan's ECC SNR convention (`msd_ndof_interconnect_dynamic.py:46-47`,
+`train_data.y += np.random.normal(0, sigma_n, ...)`). Implementation:
+`data.py:150-151` adds `sd.y = sd.y + N(0, sigma_n)` **after decimation, at the 4 kHz working rate,
+on the measured output `y` only** (`sigma_n = rms(y)·10^(-SNR/20)`, the acceptance floor, D-078).
+Direct supervisor instruction: *"only measurement noise. DONT ADD IN THE CLOSED-LOOP. SHOULD NOT GO
+THROUGH THE CLOSED-LOOP. Same as how jan does it with his SNR."*
+
+Consequence for the anti-alias filter (the reason this is recorded here): because the noise is
+generated at the 4 kHz working rate and never passes through the loop or the 20 kHz plant, it is
+**white only up to the 4 kHz Nyquist by construction — it has no energy above 2 kHz to fold.** So
+turning SNR on does NOT reintroduce an aliasing problem and does NOT require `resample_poly` in the
+simulation pipeline. **D-099 holds unchanged with measurement noise on.** The ONLY scenario that
+would reactivate the anti-alias requirement is noise injected *before* decimation (at 20 kHz, or
+in-loop) — which the supervisor has explicitly ruled out for this simulation and which remains a
+real-data (Telica) concern only. Future sessions: do not add an anti-alias filter to the sim
+pipeline "because we added noise"; the noise is post-decimation output noise and is band-limited by
+construction.
+
+### [D-098] Wire the oracle into evaluation tables/error-trace + per-record coverage; cache deferred
+**Date**: 2026-07-07
+**What**: `evaluation.py` now runs the FP+MSD oracle (D-097) on the val and test records (true-x0,
+interior-K0 seed, `hp['up_sample']`, pipeline rate) and shows it as a labeled reference column in
+the A-tables and a dotted line on the error-trace plot; oracle NRMS/RMS/trajectory added to the
+results npz (conditional keys). `_print_same_init_comparison` generalized to take a list of
+reference columns (true-x0 baseline + oracle). Entry `main()` prints per-record augmented NRMS
+over BOTH val and test (was test only). Step 6 of `docs/eval-restructure-plan.md`.
+**Why**: The oracle bounds the achievable error (best-case augmentation) and is shown on the same
+rate/up_sample footing as baseline/augmented (fairness), but as a true-x0 REFERENCE, not a same-init
+"+%" target (the encoder cannot observe the absorber). Per-record coverage surfaces where
+augmentation helps/hurts across the operating range, not just on V1/E1.
+**Ruled out / DEFERRED -- the reference cache**: The plan's shared trajectory cache (fingerprint-keyed,
+append-only) for the training-independent references is DEFERRED. Rationale: D-089 moved all baseline
+sims to AFTER training, so there is no longer a pre-training wait; the true-x0 baseline + oracle sims
+total ~10-30 s and run once post-training. Caching would save that only on repeat runs of an identical
+config, at the cost of fingerprint-correctness / stale-cache risk (the exact class flagged as
+dangerous for a fair comparison). Low value now, non-trivial risk -> not implemented; revisit only if
+per-run eval time becomes a real bottleneck.
+**Constrains**: Oracle failure is caught and reported (never breaks eval). npz gains optional
+`nrms_oracle`, `rms_oracle`, `y_hat_oracle`, `nrms_oracle_test`. The error-trace baseline/oracle
+lines are now present; the NRMS-summary bar figure remains optional/unimplemented (per-record numbers
+print to the log). This completes the eval-restructure plan (Steps 1-6 = D-093..D-098).
+
+### [D-097] Python 8-state FP+MSD oracle model (gantry_dynamic/oracle.py)
+**Date**: 2026-07-07
+**What**: New `gantry_dynamic/oracle.py`: the FP baseline plus the true hidden absorber, an RK4
+port of `Matlab-scripts/Augmentation/gantrySystemExtended.m` (state `[X,Th,Y,da, dX,dTh,dY,vda]`,
+nonlinear M(Y,da), logical-coordinate force). Simulates a record open-loop from the true interior
+state and returns the stage-coordinate output + delta_a. MSD params from ma_frac=0.10
+(project_gantry_msd_params; the mat does not store them): ma=1.01, mh_rigid=9.09, fa=150,
+ka=ma*(2pi*fa)^2, ca=2*0.05*sqrt(ka*ma), L0=0.10. Step 5 of `docs/eval-restructure-plan.md`.
+**Why**: A best-case "augmentation target" reference: how well the FP + true absorber reproduces
+the data. Makes "augmented sitting on baseline" read as "ANN did nothing" and bounds the achievable
+error. Verified before wiring in (`scripts/gantry/augmentation-error/diag_oracle_vs_data.py`):
+native 20 kHz isolates model correctness (delta_a ratio 3.4e-5, X 0.02, Y 0.19 -> model is exact);
+pipeline-matched 4 kHz/up_sample=2/block-mean-u confirms fairness at run conditions (delta_a 0.5%,
+Y RMSE 2e-6 m vs baseline ~2e-4 m, ~100x below baseline). Two D-087-consistent facts baked in:
+seed from an interior sample (sample-0 qdot is a one-sided gradient() artifact); up_sample=1 is
+already converged at 20 kHz (up_sample=4 identical), residual is the ZOH-force replay limit.
+**Ruled out**: Reading the MATLAB plant at run time (no MATLAB dependency in the Python pipeline);
+adding ma_frac to RunConfig (kept as an oracle-module constant, documented, single source);
+finer up_sample/native rate in the pipeline oracle (fairness: it MUST match cfg.up_sample and
+cfg.fs_new like baseline/augmented; only the standalone diagnostic goes finer -- lessons.md).
+**Constrains**: Oracle uses `hp['up_sample']` and `cfg` rate, block-mean u, interior-K0 seeding
+-- identical footing to the same-init comparison (D-094). Wiring into the tables/error-trace and
+the reference cache is D-098 (Step 6). As a true-x0 reference it is a labeled row, not a same-init
+"+%" target (the encoder cannot observe the absorber states).
+
+### [D-096] Diagnostic plots: dotted nf-RMS on the loss plot, error-trace, error-spectrum, plots/ subtree
+**Date**: 2026-07-07
+**What**: `evaluation.py:_make_plots` now (1) routes all figures into a per-run `plots/` subtree
+(`plots/val/` for record-specific ones); (2) adds the **val nf-window RMS as a dotted line** on the
+loss convergence plot next to the solid sim-RMS selector and dashed train loss (y-axis relabeled
+RMS [m]; the two val curves are the same deepSI physical-meter unit, D-095); (3) adds an
+**error-vs-time** plot (residual `y_model - y_data` per axis, augmented encoder-init and true-x0
+init) that reveals sub-mm drift/absorber structure the overlay hides; (4) adds a **Y error
+spectrum** marking the 130-180 Hz absorber band and ~157 Hz resonance. Step 4 of
+`docs/eval-restructure-plan.md`.
+**Why**: The existing overlay hides a 4e-4 m residual on a 0.24 m axis; the error trace makes it
+visible (ramp=drift, oscillation=absorber). The Y spectrum is direct absorber evidence: if
+augmentation removes the ~157 Hz peak, the ANN learned it (with the ANN at zero it is fully
+present). The dotted nf-RMS answers "good on the training horizon while full-traj rises?"
+**Ruled out**: Separate metric-over-epochs figure (folded into the loss plot); baseline/oracle
+lines on the error trace and the val+test NRMS-summary bars (deferred to Step 6 - they need the
+cached baseline trajectory and per-record coverage sims not yet plumbed into `_make_plots`).
+**Constrains**: nf-RMS plotting aligns to the tail of `epoch_id_full` (resume-safe). Existing PNG
+filenames are unchanged, only relocated to `plots/`. Step 6 adds the baseline/oracle error-trace
+lines and the coverage summary.
+
+### [D-095] Per-epoch nf-window RMS diagnostic alongside the sim-RMS selector
+**Date**: 2026-07-07
+**What**: `training.py` records a second validation curve during training: the nf-window RMS (same
+nf as training, encoder re-init per window), alongside the framework's full-traj sim-RMS. deepSI
+validates once per epoch via `self.cal_validation_error` (concurrent_val=False), so a temporary
+instance wrapper (`_install_nf_val_probe`) piggybacks the extra metric into `fit_sys.Loss_val_nf`
+and returns the selector value untouched. Restored after training. Returned via the diag dict for
+plotting (Step 4). Step 3 of `docs/eval-restructure-plan.md`.
+**Why**: The sim-RMS selector currently picks epoch 0 (training makes full-traj worse). The
+nf-window curve measures what training actually optimizes (its 0.1 s horizon), distinguishing
+"wrong selector / horizon" (nf-RMS improves while sim-RMS rises) from "not learning" (both rise).
+Both metrics are deepSI physical-meter RMS (`'sim-RMS'` -> `System_data.RMS`; nf via
+`n_step_error(mode='RMS')`), so they are directly comparable. **Selection and `bestfit` are
+untouched** (the wrapper returns the original selector value); this is diagnostic only.
+**Ruled out**: Changing the selector to windowed now (deferred until the curves are seen);
+epoch-by-epoch fit loop (invasive, risks framework state); probe `stride=cfg.stride`
+(~40x sim cost). Chose non-overlapping windows `stride=nf` (~1 sim-pass; the average windowed RMS
+is near-invariant to stride, more windows only reduce estimator variance).
+**Constrains**: Adds ~one sim-pass to per-epoch validation time (acceptable; diagnostic). Valid
+for `concurrent_val=False` (our config); the wrapper would not propagate to concurrent-val remote
+workers. On resume, `Loss_val_nf` covers only this call's epochs (tail of `Loss_val`); Step-4
+plotting aligns to the tail. `n_step_error` runs under `torch.no_grad()`; failures record NaN and
+never break training.
+
+### [D-094] Same-init augmented-vs-baseline reporting + RMS/NRMS + verdict + grouped output
+**Date**: 2026-07-07
+**What**: `evaluation.py:evaluate_and_save` now compares the augmented model (encoder-init) against
+the **encoder-init** baseline (`baseline_encinit_nrms`), not the true-x0 baseline; the true-x0
+baseline is kept as a labeled reference column. Every metric prints both **RMS [m]** and
+**NRMS [-]**. A **verdict** line is printed first (ANN active? via aug-state RMS; same-init
+improvement %). Output is grouped under section headers (A. Model / B. Encoder / C. Augmentation /
+D. Training health; B and D headers added in `main()` before `state_recovery_diagnostic` and the
+grad-norm block). Step 2 of `docs/eval-restructure-plan.md`.
+**Why**: The prior table paired augmented (encoder-init) against the true-x0 baseline (different
+init), so its "+77%" was an initialization artifact, not the ANN — provably 100% artifact when the
+ANN is at zero (augmented == encoder-init baseline exactly). Same-init pairing isolates the ANN's
+actual contribution (currently +0.0%, honest). RMS[m] is the physical/defensible quantity
+(compares to the noise floor sigma_n); NRMS enables cross-channel comparison. Reporting-only: no
+sims added (both baselines already computed in `main()`), plots and the results npz unchanged
+(still receive the true-x0 `baseline_nrms`).
+**Ruled out**: Dropping the true-x0 baseline (keeps value as an oracle-init reference); computing a
+single "+%" across mixed inits (the artifact being fixed).
+**Constrains**: When the ANN starts learning, the headline % reflects the ANN alone; the oracle
+column (D-097) and per-record coverage (D-098) extend this same table. Falls back to the true-x0
+baseline for the comparison when `baseline_encinit_nrms` is absent (non-linear_map encoder).
+
+### [D-093] Per-run output subfolder + config.json snapshot
+**Date**: 2026-07-07
+**What**: Entry `main()` writes all run artifacts to `save_dir(cfg)/<run_id>/` instead of
+`save_dir(cfg)/`. `save_dir(cfg)` stays the run FAMILY dir (reserved as the shared reference-cache
+home, D-098). A `config.json` (`config_json_dict(cfg)` + `hp` + `run_id`) is written at the run
+folder root. Step 1 of the eval-restructure plan (`docs/eval-restructure-plan.md`).
+**Why**: Runs currently drop model/npz/plots/checkpoint into one shared folder with `run_id` baked
+into every filename — hard to browse, archive, or delete a single run. `sdir` already threads into
+training (checkpoint_dir), `evaluate_and_save`, `state_recovery_diagnostic`, and the grad-norm save,
+so the subfolder is a one-line change; nothing else moves. `RESUME_CHECKPOINT` is a full path, so
+resume is unaffected. config.json makes each run self-documenting at a glance.
+**Ruled out**: Per-run folder inside filenames only (status quo — cluttered); writing config.json to
+the family dir (would be overwritten per run).
+**Constrains**: Downstream steps write into the run folder; the shared reference cache (D-098) lives
+in the family dir `save_dir(cfg)`, not the run folder. A run that crashes still creates its folder.
+
+### [D-092] Behavior-preserving restructure of gantry_interconnect_dynamic.py into a package
+**Date**: 2026-07-07
+**What**: `scripts/gantry/gantry_interconnect_dynamic.py` (1231 lines) is restructured into a
+package `scripts/gantry/gantry_dynamic/` (config, data, model, baselines, diagnostics,
+evaluation, training) plus a thin entry file at the unchanged path holding the run knobs and
+`main()` under a `__main__` guard. Config boundary: a frozen `RunConfig` dataclass carries
+experiment identity (MODE, SNR, STRIDE, FS_NEW, ENCODER_INIT, ...; serialized to the npz
+`config` JSON); `hp` stays a plain dict with exactly the current keys (incl. `up_sample`)
+because it is JSON-round-tripped in checkpoints and results npz, and resume of existing
+checkpoints must keep working. Module-level globals (~20) become two explicit objects
+(`DataBundle`, `Norm`) passed as parameters. Duplications factored: shared encoder-window
+builder, shared stepwise open-loop rollout, shared affine-map R2. `evaluate_and_save` splits
+into metrics / plots / npz-save internals with identical orchestration order. Checkpoint I/O
+extracted from `train_model_with_diagnostics`; formats frozen. Importers
+`gantry_optuna.py` and `diag_nf100_fullrouting.py` updated to the new API. The restructure is
+strictly behavior-preserving: numerics, RNG consumption order, D-087 data conditioning,
+the training call, prints, plot files, and all npz/checkpoint keys are unchanged.
+**Why**: The monolith made nothing importable or testable (importing it triggered a full
+training run at import time; D-091's preflight had to duplicate `build_model` for exactly
+this reason), config was split over ~15 module constants plus DEFAULT_HP with an unclear
+boundary, and a ~330-line `evaluate_and_save` mixed four concerns. The user explicitly chose
+the restructure and accepts losing diff-comparability with Jan's ECC reference script; this
+supersedes the lessons.md "preserve the reference-script skeleton" rule for this file only.
+**Verification**: Stage A (mandatory): harness monkeypatches the deepSI `fit` entry to
+capture, at the training call, the fit kwargs, normalization constants, full hfn+encoder
+state_dicts, np/torch RNG states, and a deterministic first-batch loss; old vs new must match
+bit-exactly (`np.array_equal`, no tolerance). Stage B (recommended): end-to-end 1-epoch CPU
+run of both versions, comparing all output npz files key-by-key. Harness lives in the session
+scratchpad, not the repo.
+**Outcome (verified 2026-07-08)**: Stage A passed bit-exactly (all fit kwargs, 4 norm
+constants, 27 hfn tensors, 13 encoder tensors, numpy+torch RNG states, 66626 training windows,
+first-batch loss to identical float hex). Full-config confirmation on the cluster: job 69124
+(old code) vs 69125 (refactored), both 10 epochs / nf=400 on the same node. Every printed
+training loss and Val sim-RMS (It 260 -> 2600), bestfit=0.00017, R2_linmap
+(delta_a=+0.0060, vdelta_a=+0.1640), and all downstream NRMS/RMS/baseline/state-recovery/
+gradient-norm tables were identical. Only differences: job-id in filenames, wall-clock seconds
+(20232 vs 20369 s), time-profile percentages (measurement noise), one tqdm/print interleaving
+artifact, and a cosmetic path string (old `scripts/gantry/../../data`, new abspath-collapsed
+`data` -- same resolved location).
+**Ruled out**: (1) Single-file restructure with `main()`: fixes side effects but keeps a
+1200-line file (user chose the package). (2) Converting `hp` to a dataclass: breaks the
+JSON/npz/checkpoint contract and resume of existing checkpoints. (3) Moving `up_sample` out
+of `hp`: same contract reason. (4) Keeping the old file as a legacy sibling in the repo:
+git history + scratchpad snapshot suffice.
+**Constrains**: The pipeline is now multi-file; cluster syncs must include the whole
+`scripts/gantry/gantry_dynamic/` directory. Diagnostic scripts that previously copied
+config/normalization blocks "verbatim from gantry_interconnect_dynamic.py" should import
+from `gantry_dynamic` instead going forward. npz keys, checkpoint `.pt`/`.npz` layout, and
+the `hp` dict keys remain a frozen contract for any future edit. The D-088 pipeline-table
+rule applies: entry-point path is unchanged, so CLAUDE.md needs no edit.
+
+### [D-091] WITHDRAWN — Pre-flight gate script for augmentation training runs
+**Date**: 2026-07-07
+**Status**: Withdrawn same day. The script was written but never run; the user rejected it
+on review ("I'm not sure about this preflight script" -> remove). `scripts/gantry/preflight.py`
+deleted; the CLAUDE.md run-discipline rule now references D-090 only. The entry below is kept
+as the design record in case the idea returns (e.g. before the Aspect 3 beta sweeps).
+**What**: New standalone diagnostic `scripts/gantry/preflight.py`, run before committing a
+cluster training job. Four checks with PASS/WARN/FAIL verdicts, results printed and saved as
+JSON to `simulations/gantry_subnet/diagnostics/`: (1) measurability: baseline FP residual on
+V1 (true-x0 open-loop sim) vs the D-078 noise floor sigma_n; (2) gradient routing: one
+forward+backward at epoch 0 on a small batch, per-group gradient norms (encoder / hfn),
+calibrated against the documented dead-zone incident (ANN grad 1.04e-2 dead vs 2.85e-1
+healthy, diag_gradient_routing); (3) encoder-init quality at FS_NEW vs the 20 kHz native
+reference (per-channel state NRMS of the untrained reconstructability map); (4) absorber
+excitation: delta_a std per training record (delta_a ~ 0 means nothing to learn). Checks 1
+and 2 survive the hardware transition (data-derived); checks 3 and 4 are marked
+simulation-only (they need ground-truth states / delta_a).
+**Why**: Three documented incidents wasted cluster runs on conditions checkable before
+launch (C_aug dead zone, 200 Hz encoder-init trap, job 68458). Consolidating the fragments
+into one pre-launch gate converts prose checklist items (CLAUDE.md stance,
+control-reasoning Section 7) into an executable that a session cannot forget to apply.
+**Ruled out**: (1) Importing `build_model` from `gantry_interconnect_dynamic.py`: the
+training script executes at module level (data loading + training), so importing it runs it;
+a __main__ guard refactor would restructure the experiment file (rejected per the
+no-scaffolding lesson). The preflight duplicates the minimal build per the diagnostic
+independence lesson (construct the component from scratch). (2) Hard thresholds from
+invented numbers: verdicts are calibrated on documented incident values and labeled
+HEURISTIC, or expressed relative to the native-rate reference (encoder check).
+**Constrains**: Config constants (MODE, FS_NEW, SNR, hp) are duplicated from the training
+script header and must be kept in sync manually; the script prints the values it used so a
+mismatch is visible. Preflight is advisory: a FAIL does not block anything mechanically.
+
+### [D-090] Hypothesis-per-run discipline for training runs
+**Date**: 2026-07-07
+**What**: Every training run with a new hypothesis or new config gets a row in the run table
+(`docs/gantry-augmentation-problem-log.md`, Section 12) BEFORE launch, stating the hypothesis
+the run tests; the outcome is added to the same row after the run. Trivial re-runs (same
+hypothesis, same config) do not get rows. Enforced via a one-line Workflow rule in CLAUDE.md
+and a convention note at the top of the run table.
+**Why**: The run table is the registry of dead hypotheses; when it is stale, sessions
+re-derive and re-test failure hypotheses that are already answered. Writing the hypothesis
+before launch forces every run to be a falsifiable experiment, and the maintained table
+becomes the experimental narrative for the thesis (writing phase W21-23). Near-zero cost.
+**Ruled out**: A separate run-log file: the problem log Section 12 table already exists and
+is referenced; a second location would split the history.
+**Constrains**: Launching a run without a hypothesis row is a process violation; sessions
+asked to launch runs must add the row first.
+
+### [D-089] Baseline FP sims moved post-training; untrained-encoder x0 captured pre-training
+**Date**: 2026-07-07
+**What**: In `gantry_interconnect_dynamic.py`, the four full-record baseline simulations
+(`compute_baseline_fp_nrms`: val/test x true-x0/encoder-init) move from before
+`train_model_with_diagnostics` to directly after it. Pre-training, only the untrained-encoder
+initial-state estimates are captured (`_encoder_init_state`, one no-grad forward per record);
+the encoder-init baseline sims consume those captured vectors post-training.
+**Why**: The four sims are ~2 min each (~8-10 min before the first epoch), delaying visible
+training start on the cluster; nothing in training consumes their results (they feed only
+`evaluate_and_save` and the convergence plot). Correctness: `compute_baseline_fp_nrms` builds
+its own fresh `Gantry_State_Block` and never touches `fit_sys`; the sims draw no randomness, and
+the encoder capture stays at the same pre-training point in the RNG stream — training and all
+reported numbers are bit-identical to the previous ordering.
+**Ruled out**: Skip-flag / env hook (operational scaffolding in an experiment script,
+lessons.md); disk cache with config fingerprint (deferred — only pays off on repeat configs and
+the encoder-init cache key is fragile); batching the four sims (optimization, separate concern).
+**Constrains**: Log order becomes training -> baselines -> test NRMS -> evaluation. A run that
+crashes during training leaves no baseline numbers in its log.
+
 ### [D-088] Context system: control-reasoning reference doc + CLAUDE.md identity/stance sections
 **Date**: 2026-07-07
 **What**: (1) New reference doc `docs/control-reasoning.md`: project identity, three-pipeline
