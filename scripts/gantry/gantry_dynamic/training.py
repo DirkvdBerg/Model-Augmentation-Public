@@ -43,6 +43,37 @@ def load_checkpoint(fit_sys, base_path, joint_estimation):
     return meta
 
 
+def _install_nf_val_probe(fit_sys, hp):
+    """Piggyback an nf-window RMS on each epoch's validation (D-095).
+
+    deepSI validates once per epoch through `self.cal_validation_error`
+    (concurrent_val=False path). We wrap that instance method: return the
+    selector value untouched, and also record the nf-window RMS (same nf as
+    training, encoder re-init per window) into `fit_sys.Loss_val_nf`, aligned
+    with `fit_sys.Loss_val`. Physical-meter RMS (mode='RMS'), so it is directly
+    comparable to the 'sim-RMS' selector. Non-overlapping windows (stride=nf)
+    keep the probe at ~one sim-pass. Returns the original method to restore.
+    """
+    nf = hp['nf']
+    probe_stride = max(1, nf)   # non-overlapping windows -> ~one sim-pass cost
+    fit_sys.Loss_val_nf = []
+    orig = fit_sys.cal_validation_error
+
+    def wrapped(val_sys_data, validation_measure='sim-NRMS'):
+        sel = orig(val_sys_data, validation_measure=validation_measure)  # selector, untouched
+        try:
+            with torch.no_grad():
+                e = fit_sys.n_step_error(val_sys_data, nf=nf, stride=probe_stride,
+                                         mode='RMS', mean_channels=True)
+            fit_sys.Loss_val_nf.append(float(np.mean(e)))
+        except Exception:
+            fit_sys.Loss_val_nf.append(float('nan'))
+        return sel
+
+    fit_sys.cal_validation_error = wrapped
+    return orig
+
+
 def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
                                  resume_ckpt=None, checkpoint_dir=None, run_id=None):
     """Train for hp['epochs'] epochs with sim-RMS validation; record aug-state R2 after.
@@ -71,12 +102,23 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
 
     fit_sys.bestfit = float('inf')
     t0 = time.time()
-    bestfit = train_model(fit_sys, hp, cfg, data,
-                          epochs=epochs_remaining,
-                          nf=hp['nf'],
-                          validation_measure='sim-RMS')
+    # D-095: piggyback the nf-window RMS diagnostic; selection stays full-traj sim-RMS.
+    _orig_cve = _install_nf_val_probe(fit_sys, hp)
+    try:
+        bestfit = train_model(fit_sys, hp, cfg, data,
+                              epochs=epochs_remaining,
+                              nf=hp['nf'],
+                              validation_measure='sim-RMS')
+    finally:
+        fit_sys.cal_validation_error = _orig_cve   # restore always
+    loss_val_nf = np.array(getattr(fit_sys, 'Loss_val_nf', []), dtype=float)
     elapsed = time.time() - t0
     done_epochs = hp['epochs']
+
+    _fin = loss_val_nf[np.isfinite(loss_val_nf)] if loss_val_nf.size else loss_val_nf
+    if _fin.size:
+        print(f'  val nf-window RMS ({hp["nf"]}-step): first={loss_val_nf[0]:.4e}  '
+              f'best={_fin.min():.4e}  last={loss_val_nf[-1]:.4e} [m]  (sim-RMS selector unchanged)')
 
     # --- Checkpoint weights first: diagnostics below must not be able to lose them (D-070)
     ckpt_base = None
@@ -116,7 +158,8 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
         print(f'  Checkpoint meta: {ckpt_base}.npz')
 
     return bestfit, dict(
-        epochs    = np.array(diag_epochs),
-        r2_raw    = np.array(diag_r2_raw),
-        r2_linmap = np.array(diag_r2_lin),
+        epochs      = np.array(diag_epochs),
+        r2_raw      = np.array(diag_r2_raw),
+        r2_linmap   = np.array(diag_r2_lin),
+        loss_val_nf = loss_val_nf,   # D-095: per-epoch nf-window RMS (aligns with Loss_val tail)
     )

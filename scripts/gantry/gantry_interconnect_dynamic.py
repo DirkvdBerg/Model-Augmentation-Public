@@ -18,8 +18,8 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from gantry_dynamic.config import RunConfig, default_hp, save_dir
-from gantry_dynamic.data import load_datasets, compute_normalization, TEST_FILES
+from gantry_dynamic.config import RunConfig, default_hp, save_dir, config_json_dict
+from gantry_dynamic.data import load_datasets, compute_normalization, VAL_FILES, TEST_FILES
 from gantry_dynamic.model import build_model, get_encoder_dims
 from gantry_dynamic.baselines import compute_baseline_fp_nrms
 from gantry_dynamic.diagnostics import (
@@ -57,7 +57,8 @@ CFG = RunConfig(
 def main():
     cfg = CFG
     run_id = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
-    sdir = save_dir(cfg)
+    # D-093: per-run subfolder; save_dir(cfg) stays the family dir (shared cache home, D-098).
+    sdir = os.path.join(save_dir(cfg), run_id)
     os.makedirs(sdir, exist_ok=True)
 
     # Seed before data/noise (matches the pre-refactor top-of-module seeding).
@@ -93,6 +94,11 @@ def main():
         print(f'  Saved hp: {hp}')
     else:
         hp = default_hp_dict
+
+    # D-093: self-documenting run folder — config + resolved hp.
+    if cfg.save_flag:
+        with open(os.path.join(sdir, 'config.json'), 'w') as _f:
+            json.dump({**config_json_dict(cfg), 'hp': hp, 'run_id': run_id}, _f, indent=2)
 
     # Seed again before model construction (matches pre-refactor second seeding).
     np.random.seed(cfg.seed)
@@ -142,23 +148,31 @@ def main():
         baseline_encinit_nrms = None
         baseline_test_encinit_nrms = None
 
-    # Full test-set generalization NRMS over all held-out records (E1-E4)
-    print('Test-set NRMS per record (avg from K0):')
-    _test_nrms = []
-    for _f, _td in zip(TEST_FILES, data.test_list):
-        _yh = fit_sys.apply_experiment(_td).y
-        _test_nrms.append(np.sqrt(((_yh[K0:] - _td.y[K0:]) ** 2).mean(axis=0)) / norm.ystd)
-        print(f'  {_f}: {_test_nrms[-1]}')
-    print(f'  mean: {np.mean(_test_nrms, axis=0)}')
+    # Per-record augmented NRMS coverage over all held-out records (D-098).
+    def _per_record_nrms(files, sdlist, tag):
+        print(f'{tag} NRMS per record (augmented, avg from K0):')
+        rows = []
+        for _f, _td in zip(files, sdlist):
+            _yh = fit_sys.apply_experiment(_td).y
+            rows.append(np.sqrt(((_yh[K0:] - _td.y[K0:]) ** 2).mean(axis=0)) / norm.ystd)
+            print(f'  {_f}: {rows[-1]}')
+        print(f'  mean: {np.mean(rows, axis=0)}')
+        return rows
+
+    _per_record_nrms(VAL_FILES, data.val_list, 'Validation-set')
+    _per_record_nrms(TEST_FILES, data.test_list, 'Test-set')
 
     evaluate_and_save(fit_sys, hp, run_id, cfg, data, norm, sdir,
                       diag_conv=diag_conv, baseline_nrms=baseline_nrms,
                       baseline_test_nrms=baseline_test_nrms,
                       baseline_encinit_nrms=baseline_encinit_nrms,
                       baseline_test_encinit_nrms=baseline_test_encinit_nrms)
+
+    print('\n== B. ENCODER QUALITY ==')   # D-094 output grouping
     state_recovery_diagnostic(fit_sys, hp, run_id, cfg, data, norm, sdir)
 
     # Gradient norm snapshot (after evaluation, non-critical)
+    print('\n== D. TRAINING HEALTH ==')   # D-094 output grouping
     try:
         grad_norms, group_norms = compute_gradient_norms(fit_sys, hp, cfg, data)
         if cfg.save_flag:

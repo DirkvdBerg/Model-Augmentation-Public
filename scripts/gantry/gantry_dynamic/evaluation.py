@@ -20,6 +20,7 @@ from .config import RunConfig, config_json_dict
 from .model import get_encoder_dims
 from .baselines import stepwise_rollout
 from .diagnostics import r2_per_channel, best_affine_r2
+from . import oracle as _oracle
 
 
 def capture_loss_history(fit_sys, cfg: RunConfig, save_dir, rid):
@@ -61,6 +62,46 @@ def report_joint_estimation(fit_sys):
     return params_init_np, params_learned_np
 
 
+def _print_same_init_comparison(title, nrms_aug, nrms_base, ystd,
+                                base_label='baseline FP (enc-init)', refs=None):
+    """Same-init augmented-vs-baseline table (D-094/D-098).
+
+    Improvement % is aug-vs-base at the SAME init. `refs` is a list of
+    (label, nrms) reference columns (true-x0 baseline, oracle FP+MSD) shown as
+    RMS[m] with no % (different init -- reference only). NRMS = RMS/ystd.
+    """
+    refs = [(lbl, v) for (lbl, v) in (refs or []) if v is not None]
+    print(f'\n{title}')
+    print(f"  base = {base_label}"
+          + (''.join(f'   ref[{i}] = {lbl}' for i, (lbl, _) in enumerate(refs)) if refs else ''))
+    print(f"  {'':4s} {'aug RMS[m]':>11s} {'aug NRMS':>9s}  "
+          f"{'base RMS[m]':>11s} {'base NRMS':>9s} {'aug/base':>9s}"
+          + ''.join(f"   {'ref['+str(i)+'] RMS':>13s}" for i in range(len(refs))))
+    for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
+        if nrms_base is not None:
+            improv = 100.0 * (nrms_base[ch] - nrms_aug[ch]) / (nrms_base[ch] + 1e-12)
+            base_s = f"{nrms_base[ch]*ystd[ch]:>11.3e} {nrms_base[ch]:>9.4f} {improv:>+8.1f}%"
+        else:
+            base_s = f"{'-':>11s} {'-':>9s} {'-':>9s}"
+        ref_s = ''.join(f"   {v[ch]*ystd[ch]:>13.3e}" for (_, v) in refs)
+        print(f"  {lbl:4s} {nrms_aug[ch]*ystd[ch]:>11.3e} {nrms_aug[ch]:>9.4f}  {base_s}{ref_s}")
+
+
+def _oracle_nrms(u_stage, x_logical, x_aug, cfg, up_sample, start_ix, y_ref, ystd):
+    """Run the FP+MSD oracle open-loop and return (nrms, y_hat_oracle). D-098.
+
+    Reference only (true-x0 init; the encoder cannot observe the absorber). Runs at
+    the pipeline rate and up_sample so it is on the same footing as baseline/aug.
+    """
+    try:
+        y_hat, _ = _oracle.oracle_open_loop(u_stage, x_logical, x_aug, cfg, up_sample, start_ix)
+        nrms = np.sqrt(((y_hat[start_ix:] - y_ref[start_ix:]) ** 2).mean(axis=0)) / ystd
+        return nrms, y_hat
+    except Exception as e:
+        print(f'Warning: oracle sim failed: {e}')
+        return None, None
+
+
 def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
                       diag_conv=None, baseline_nrms=None,
                       baseline_test_nrms=None, baseline_encinit_nrms=None,
@@ -96,23 +137,40 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
 
     nrms_enc = np.sqrt(((y_hat_enc[cheat_n:] - y_ref[cheat_n:]) ** 2).mean(axis=0)) / ystd
     rms_enc  = nrms_enc * ystd   # [m]
-    if baseline_nrms is not None:
-        rms_baseline = baseline_nrms * ystd   # [m]
-        print('\n=== Sim-NRMS + RMS: augmented vs baseline FP ===')
-        print(f"  {'':4s}  {'augmented':>22s}  {'baseline FP':>22s}  {'improve':>8s}")
-        print(f"  {'':4s}  {'(NRMS':>11s} {'RMS [m])':>11s}  {'(NRMS':>11s} {'RMS [m])':>11s}")
-        for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
-            improv = 100.0 * (baseline_nrms[ch] - nrms_enc[ch]) / (baseline_nrms[ch] + 1e-12)
-            print(f"  {lbl}:  {nrms_enc[ch]:.4f}  {rms_enc[ch]:.3e} m"
-                  f"    {baseline_nrms[ch]:.4f}  {rms_baseline[ch]:.3e} m"
-                  f"    {improv:+.1f}%")
-    else:
-        print('\n=== Encoder-initialised sim-NRMS ===')
-        for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
-            print(f'  {lbl}:  {nrms_enc[ch]:.4f}  {rms_enc[ch]:.3e} m')
+    ann_rms_enc = np.sqrt((x_enc_ann[cheat_n:] ** 2).mean(axis=0))  # early: needed for the verdict
 
-    ann_rms_enc = np.sqrt((x_enc_ann[cheat_n:] ** 2).mean(axis=0))
-    print('\n=== ANN latent state RMS ===')
+    # ── Oracle FP+MSD reference (D-098): best-case, true-x0 init, pipeline rate ──
+    nrms_oracle, y_hat_oracle = _oracle_nrms(
+        val_data.u, val_x_logical, val_x_aug, cfg, hp['up_sample'], cheat_n, y_ref, ystd)
+
+    # ── Verdict (D-094) ───────────────────────────────────────────────────────
+    # Same-init comparison: augmented (encoder-init) vs the encoder-init baseline,
+    # NOT the true-x0 baseline (different init -> its % is an init artifact).
+    _base_si  = baseline_encinit_nrms if baseline_encinit_nrms is not None else baseline_nrms
+    _base_lbl = 'baseline FP (enc-init)' if baseline_encinit_nrms is not None else 'baseline FP (true-x0)'
+    _ref_si   = baseline_nrms if (baseline_encinit_nrms is not None and baseline_nrms is not None) else None
+    ann_active = bool(np.nanmax(ann_rms_enc) > 1e-9) if NX_ANN > 0 else False
+    print('\n' + '=' * 72)
+    print(f"VERDICT (run {rid}): ANN {'ACTIVE' if ann_active else 'inactive (aug states ~0)'}")
+    if _base_si is not None:
+        _si = [100.0 * (_base_si[c] - nrms_enc[c]) / (_base_si[c] + 1e-12) for c in range(ny)]
+        print('  augmentation vs baseline (same init): '
+              + '  '.join(f'{l} {_si[c]:+.1f}%' for c, l in enumerate(['X1', 'X2', 'Y'])))
+    print('=' * 72)
+
+    # A. MODEL QUALITY -- validation (encoder-init; aug vs baseline same init)
+    if _base_si is not None:
+        _print_same_init_comparison(
+            '== A. MODEL QUALITY: validation (V1) ==',
+            nrms_enc, _base_si, ystd, base_label=_base_lbl,
+            refs=[('baseline FP (true-x0)', _ref_si), ('oracle FP+MSD (true-x0)', nrms_oracle)])
+    else:
+        print('\n== A. MODEL QUALITY: validation (V1), encoder-init ==')
+        for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
+            print(f'  {lbl}: RMS {rms_enc[ch]:.3e} m  NRMS {nrms_enc[ch]:.4f}')
+
+    print('\n== C. AUGMENTATION / ABSORBER ==')
+    print('=== ANN latent state RMS ===')
     for ch in range(NX_ANN):
         print(f'  x[{NX_PHYS+ch}]: enc={ann_rms_enc[ch]:.4e}')
 
@@ -143,24 +201,32 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
     # ── Test-set simulation (E1, unseen excitation) — generalization (D-071) ─
     nrms_test  = None
     y_hat_test = None
+    nrms_oracle_test = None   # D-098: set inside the try when GT states are present
     try:
         fit_sys.hfn.reset_saved_signals()
         test_result = fit_sys.apply_experiment(test_data)
         y_hat_test  = test_result.y
         tc = test_result.cheat_n
         nrms_test = np.sqrt(((y_hat_test[tc:] - test_data.y[tc:]) ** 2).mean(axis=0)) / ystd
-        print('\n=== Test-set (E1) sim-NRMS + RMS — generalization to unseen excitation ===')
-        if baseline_test_nrms is not None:
-            print(f"  {'':4s}  {'augmented':>22s}  {'baseline FP':>22s}  {'improve':>8s}")
-            print(f"  {'':4s}  {'(NRMS':>11s} {'RMS [m])':>11s}  {'(NRMS':>11s} {'RMS [m])':>11s}")
-            for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
-                improv = 100.0 * (baseline_test_nrms[ch] - nrms_test[ch]) / (baseline_test_nrms[ch] + 1e-12)
-                print(f'  {lbl}:  {nrms_test[ch]:.4f}  {nrms_test[ch]*ystd[ch]:.3e} m'
-                      f'    {baseline_test_nrms[ch]:.4f}  {baseline_test_nrms[ch]*ystd[ch]:.3e} m'
-                      f'    {improv:+.1f}%')
+        # Oracle reference on the test record (true-x0 init), when GT states are available.
+        nrms_oracle_test = None
+        if data.test_x_logical is not None and data.test_x_aug is not None:
+            nrms_oracle_test, _ = _oracle_nrms(
+                test_data.u, data.test_x_logical, data.test_x_aug, cfg, hp['up_sample'],
+                tc, test_data.y, ystd)
+        # Same-init (D-094): aug vs encoder-init baseline; true-x0 baseline as reference.
+        _tbase = baseline_test_encinit_nrms if baseline_test_encinit_nrms is not None else baseline_test_nrms
+        _tlbl  = 'baseline FP (enc-init)' if baseline_test_encinit_nrms is not None else 'baseline FP (true-x0)'
+        _tref  = baseline_test_nrms if (baseline_test_encinit_nrms is not None and baseline_test_nrms is not None) else None
+        if _tbase is not None:
+            _print_same_init_comparison(
+                '== A. MODEL QUALITY: test (E1, unseen excitation) ==',
+                nrms_test, _tbase, ystd, base_label=_tlbl,
+                refs=[('baseline FP (true-x0)', _tref), ('oracle FP+MSD (true-x0)', nrms_oracle_test)])
         else:
+            print('\n== A. MODEL QUALITY: test (E1), encoder-init ==')
             for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
-                print(f'  {lbl}:  {nrms_test[ch]:.4f}  {nrms_test[ch]*ystd[ch]:.3e} m')
+                print(f'  {lbl}: RMS {nrms_test[ch]*ystd[ch]:.3e} m  NRMS {nrms_test[ch]:.4f}')
     except Exception as e:
         print(f'Warning: test-set (E1) evaluation failed: {e}')
 
@@ -211,6 +277,8 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
         cheat_n=cheat_n, cheat_t=cheat_t, x_enc_ann=x_enc_ann, ann_rms_enc=ann_rms_enc,
         val_x_aug=val_x_aug, diag_conv=diag_conv, baseline_nrms=baseline_nrms,
         norm=norm, sigma_n=data.sigma_n,
+        loss_val_nf=(diag_conv.get('loss_val_nf') if diag_conv is not None else None),  # D-095/Step 4
+        y_hat_oracle=y_hat_oracle,   # D-098: FP+MSD oracle reference line on the error trace
     )
 
     # ── Results npz ─────────────────────────────────────────────────────────
@@ -227,6 +295,13 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
             baseline_test_encinit_nrms=baseline_test_encinit_nrms,
             params_init_np=params_init_np, params_learned_np=params_learned_np,
         )
+        # D-098: oracle FP+MSD reference (conditionally, like the other optional keys).
+        if nrms_oracle is not None:
+            save_dict['nrms_oracle']  = nrms_oracle
+            save_dict['rms_oracle']   = nrms_oracle * ystd
+            save_dict['y_hat_oracle'] = y_hat_oracle
+        if nrms_oracle_test is not None:
+            save_dict['nrms_oracle_test'] = nrms_oracle_test
         np.savez(os.path.join(save_dir, f'gantry_results_{rid}.npz'), **save_dict)
         print(f'Saved results: gantry_results_{rid}.npz')
 
@@ -234,20 +309,30 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
 def _make_plots(save_dir, rid, cfg, hp, nxd, epoch_id_full, loss_val_full, loss_train_full,
                 t_val, y_ref, y_hat_enc, nrms_enc, rms_enc, HAS_ORACLE, y_hat_xlog, nrms_xlog,
                 cheat_n, cheat_t, x_enc_ann, ann_rms_enc, val_x_aug, diag_conv, baseline_nrms,
-                norm, sigma_n):
+                norm, sigma_n, loss_val_nf=None, y_hat_oracle=None):
     NX_PHYS = cfg.nx_phys
     NX_ANN = hp['NX_ANN']
     ystd = norm.ystd
 
-    # Plot 1: Loss convergence
+    # Step 4: all figures go into a per-run plots/ subtree.
+    plot_dir = os.path.join(save_dir, 'plots')
+    val_dir  = os.path.join(plot_dir, 'val')
+    os.makedirs(val_dir, exist_ok=True)
+
+    # Plot 1: Loss convergence. Val full-traj sim-RMS (solid) + val nf-window RMS (dotted,
+    # same units: both deepSI physical-meter RMS, D-095); train loss (dashed) as reference.
     fig1, ax1 = plt.subplots(figsize=(7, 3.5))
-    ax1.semilogy(epoch_id_full, loss_val_full,   color='C0', label='Val loss')
+    ax1.semilogy(epoch_id_full, loss_val_full,   color='C0', label='Val sim-RMS (selector)')
+    if loss_val_nf is not None and len(loss_val_nf) > 0:
+        _n = min(len(epoch_id_full), len(loss_val_nf))   # resume-safe: align to the tail
+        ax1.semilogy(epoch_id_full[-_n:], np.asarray(loss_val_nf)[-_n:], color='C0',
+                     linestyle=':', label=f'Val nf-RMS ({hp["nf"]}-step)')
     ax1.semilogy(epoch_id_full, loss_train_full, color='C1', linestyle='--', alpha=0.7, label='Train loss')
-    ax1.set_xlabel('Epoch'); ax1.set_ylabel('sim-RMS')
+    ax1.set_xlabel('Epoch'); ax1.set_ylabel('RMS [m]')
     ax1.set_title(f'Loss convergence - dynamic parallel (NX_ANN={NX_ANN})')
-    ax1.legend(); ax1.grid(True, which='both')
+    ax1.legend(fontsize=7); ax1.grid(True, which='both')
     fig1.tight_layout()
-    fig1.savefig(os.path.join(save_dir, f'gantry_val_loss_{rid}.png'), dpi=150)
+    fig1.savefig(os.path.join(plot_dir, f'gantry_val_loss_{rid}.png'), dpi=150)
 
     # Plot 2: Validation simulation
     ch_labels = ['X1 [m]', 'X2 [m]', 'Y [m]']
@@ -266,7 +351,7 @@ def _make_plots(save_dir, rid, cfg, hp, nxd, epoch_id_full, loss_val_full, loss_
     axes2[-1].set_xlabel('Time [s]')
     fig2.suptitle(f'Validation simulation - dynamic parallel (NX_ANN={NX_ANN})')
     fig2.tight_layout()
-    fig2.savefig(os.path.join(save_dir, f'gantry_simulation_{rid}.png'), dpi=150)
+    fig2.savefig(os.path.join(plot_dir, f'gantry_simulation_{rid}.png'), dpi=150)
 
     # Plot 3: ANN latent state trajectories vs ground-truth absorber states
     aug_gt_labels  = ['delta_a [m]', 'vdelta_a [m/s]']
@@ -298,7 +383,7 @@ def _make_plots(save_dir, rid, cfg, hp, nxd, epoch_id_full, loss_val_full, loss_
     axes3[-1].set_xlabel('Time [s]')
     fig3.suptitle(f'ANN latent states x[{NX_PHYS}:{nxd}] vs GT absorber (dimensionless vs physical)')
     fig3.tight_layout()
-    fig3.savefig(os.path.join(save_dir, f'gantry_ann_states_{rid}.png'), dpi=150)
+    fig3.savefig(os.path.join(plot_dir, f'gantry_ann_states_{rid}.png'), dpi=150)
 
     # Plot 4: Training convergence (loss + R2_linmap) — only when diag_conv available
     if diag_conv is not None and len(diag_conv['epochs']) > 0:
@@ -337,7 +422,50 @@ def _make_plots(save_dir, rid, cfg, hp, nxd, epoch_id_full, loss_val_full, loss_
 
         fig4.suptitle(f'Training convergence (NX_ANN={NX_ANN})')
         fig4.tight_layout()
-        fig4.savefig(os.path.join(save_dir, f'gantry_convergence_{rid}.png'), dpi=150)
+        fig4.savefig(os.path.join(plot_dir, f'gantry_convergence_{rid}.png'), dpi=150)
+
+    # Plot 5: error-vs-time (diagnostic). The overlay (Plot 2) hides sub-mm structure on a
+    # 0.24 m axis; the residual y_model - y_data reveals it. Ramp = drift, oscillation =
+    # absorber, flat = fine. (Baseline/oracle lines added in Step 6.)
+    err_enc = y_hat_enc - y_ref                                    # augmented (encoder-init) residual
+    fig5, axes5 = plt.subplots(3, 1, figsize=(12, 7), sharex=True)
+    for ch, (ax, lab) in enumerate(zip(axes5, ch_labels)):
+        ax.plot(t_val, err_enc[:, ch], 'C0', lw=0.8, label='augmented (encoder-init)')
+        if HAS_ORACLE:
+            ax.plot(t_val, y_hat_xlog[:, ch] - y_ref[:, ch], 'C1', lw=0.8, linestyle='--',
+                    label='augmented (true-x0 init)')
+        if y_hat_oracle is not None:
+            ax.plot(t_val, y_hat_oracle[:, ch] - y_ref[:, ch], 'C2', lw=0.8, linestyle=':',
+                    label='oracle FP+MSD (true-x0)')
+        ax.axhline(0, color='k', lw=0.5)
+        ax.axvspan(t_val[0], cheat_t, alpha=0.10, color='steelblue')
+        ax.axvline(cheat_t, color='steelblue', linestyle='--', lw=0.8)
+        ax.set_ylabel(f'{lab} error'); ax.grid(True)
+        if ch == 0:
+            ax.legend(fontsize=7, loc='upper left')
+    axes5[-1].set_xlabel('Time [s]')
+    fig5.suptitle('Validation residual y_model - y_data (ramp=drift, oscillation=absorber)')
+    fig5.tight_layout()
+    fig5.savefig(os.path.join(val_dir, f'V1_error_trace_{rid}.png'), dpi=150)
+
+    # Plot 6: error spectrum of the Y residual. The absorber lives at ~157 Hz (band 130-180);
+    # if augmentation removes it, this peak flattens. (With the ANN at zero it is fully present.)
+    r_y = err_enc[cheat_n:, 2]
+    r_y = r_y[np.isfinite(r_y)]
+    if r_y.size > 8:
+        dt = float(t_val[1] - t_val[0])
+        freq = np.fft.rfftfreq(r_y.size, dt)
+        mag  = np.abs(np.fft.rfft(r_y * np.hanning(r_y.size))) / r_y.size
+        fig6, ax6 = plt.subplots(figsize=(8, 3.5))
+        ax6.semilogy(freq, mag + 1e-30, 'C0', lw=0.8, label='Y residual spectrum')
+        ax6.axvspan(130, 180, alpha=0.12, color='orange', label='absorber band 130-180 Hz')
+        ax6.axvline(157, color='r', linestyle='--', lw=0.8, label='resonance ~157 Hz')
+        ax6.set_xlim(0, min(freq[-1], 400))
+        ax6.set_xlabel('Frequency [Hz]'); ax6.set_ylabel('|Y error| [m]')
+        ax6.set_title('Y residual spectrum - is the absorber left in the error?')
+        ax6.legend(fontsize=7); ax6.grid(True, which='both')
+        fig6.tight_layout()
+        fig6.savefig(os.path.join(val_dir, f'V1_error_spectrum_{rid}.png'), dpi=150)
 
     plt.close('all')
 
