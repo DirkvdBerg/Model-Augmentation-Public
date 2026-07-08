@@ -170,7 +170,11 @@ def build_model(hp, cfg: RunConfig, data, norm):
             x_mean=x_mean, std_x=std_x,
         ).to(DTYPE_PT)
 
-    fit_sys.init_model(sys_data=data.train_data, auto_fit_norm=False)
+    # CHANGED: pass lr at optimizer creation. init_model builds the optimizer here;
+    # fit()'s optimizer_kwargs are ignored once init_model_done=True, so without this
+    # every run trained at Adam's default 1e-3 instead of hp['lr'] (D-101).
+    fit_sys.init_model(sys_data=data.train_data, auto_fit_norm=False,
+                       optimizer_kwargs={'lr': hp['lr']})
     if cfg.encoder_init == 'linear_map':
         fit_sys.hfn.to(DTYPE_PT)
     else:
