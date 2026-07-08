@@ -55,6 +55,7 @@ CFG = RunConfig(
     stride=10,                    # keep every STRIDE-th BPTT window (STRIDE=1 = every window)
     use_f64=False,
     save_flag=True,
+    nf_probe_print=True,          # print per-epoch train/val nf-window RMS [m] (D-095)
     # --- Model + training hyperparameters ---
     nx_ann=2,
     n_nodes_per_layer=16,

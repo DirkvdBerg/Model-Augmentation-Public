@@ -278,6 +278,7 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
         val_x_aug=val_x_aug, diag_conv=diag_conv, baseline_nrms=baseline_nrms,
         norm=norm, sigma_n=data.sigma_n,
         loss_val_nf=(diag_conv.get('loss_val_nf') if diag_conv is not None else None),  # D-095/Step 4
+        loss_train_nf=(diag_conv.get('loss_train_nf') if diag_conv is not None else None),  # D-102
         y_hat_oracle=y_hat_oracle,   # D-098: FP+MSD oracle reference line on the error trace
     )
 
@@ -309,7 +310,7 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
 def _make_plots(save_dir, rid, cfg, hp, nxd, epoch_id_full, loss_val_full, loss_train_full,
                 t_val, y_ref, y_hat_enc, nrms_enc, rms_enc, HAS_ORACLE, y_hat_xlog, nrms_xlog,
                 cheat_n, cheat_t, x_enc_ann, ann_rms_enc, val_x_aug, diag_conv, baseline_nrms,
-                norm, sigma_n, loss_val_nf=None, y_hat_oracle=None):
+                norm, sigma_n, loss_val_nf=None, loss_train_nf=None, y_hat_oracle=None):
     NX_PHYS = cfg.nx_phys
     NX_ANN = hp['NX_ANN']
     ystd = norm.ystd
@@ -319,20 +320,36 @@ def _make_plots(save_dir, rid, cfg, hp, nxd, epoch_id_full, loss_val_full, loss_
     val_dir  = os.path.join(plot_dir, 'val')
     os.makedirs(val_dir, exist_ok=True)
 
-    # Plot 1: Loss convergence. Val full-traj sim-RMS (solid) + val nf-window RMS (dotted,
-    # same units: both deepSI physical-meter RMS, D-095); train loss (dashed) as reference.
+    # Plot 1: Loss convergence, all physical meters (D-095/D-102). Val full-traj sim-RMS
+    # (solid, selector) + val nf-window RMS (dotted) + train nf-window RMS (dashed, same nf
+    # horizon). Directly comparable: train-vs-val gap = generalization; val nf-vs-sim gap =
+    # long-rollout drift. The normalized deepSI train loss lives in its own figure below.
     fig1, ax1 = plt.subplots(figsize=(7, 3.5))
     ax1.semilogy(epoch_id_full, loss_val_full,   color='C0', label='Val sim-RMS (selector)')
     if loss_val_nf is not None and len(loss_val_nf) > 0:
         _n = min(len(epoch_id_full), len(loss_val_nf))   # resume-safe: align to the tail
         ax1.semilogy(epoch_id_full[-_n:], np.asarray(loss_val_nf)[-_n:], color='C0',
                      linestyle=':', label=f'Val nf-RMS ({hp["nf"]}-step)')
-    ax1.semilogy(epoch_id_full, loss_train_full, color='C1', linestyle='--', alpha=0.7, label='Train loss')
+    if loss_train_nf is not None and len(loss_train_nf) > 0:
+        _m = min(len(epoch_id_full), len(loss_train_nf))
+        ax1.semilogy(epoch_id_full[-_m:], np.asarray(loss_train_nf)[-_m:], color='C1',
+                     linestyle='--', alpha=0.8, label=f'Train nf-RMS ({hp["nf"]}-step)')
     ax1.set_xlabel('Epoch'); ax1.set_ylabel('RMS [m]')
     ax1.set_title(f'Loss convergence - dynamic parallel (NX_ANN={NX_ANN})')
     ax1.legend(fontsize=7); ax1.grid(True, which='both')
     fig1.tight_layout()
     fig1.savefig(os.path.join(plot_dir, f'gantry_val_loss_{rid}.png'), dpi=150)
+
+    # Plot 1b: deepSI training loss on its own axis. This is the NORMALIZED, per-batch
+    # sqrt-MSE the optimizer minimizes -- NOT physical meters, so it is kept separate from
+    # the meter figure above to avoid a units-mismatched y-axis.
+    figT, axT = plt.subplots(figsize=(7, 3.5))
+    axT.semilogy(epoch_id_full, loss_train_full, color='C1', linestyle='--', label='Train loss (sqrt-MSE)')
+    axT.set_xlabel('Epoch'); axT.set_ylabel('train loss (normalized)')
+    axT.set_title(f'Training loss - dynamic parallel (NX_ANN={NX_ANN})')
+    axT.legend(fontsize=7); axT.grid(True, which='both')
+    figT.tight_layout()
+    figT.savefig(os.path.join(plot_dir, f'gantry_train_loss_{rid}.png'), dpi=150)
 
     # Plot 2: Validation simulation
     ch_labels = ['X1 [m]', 'X2 [m]', 'Y [m]']

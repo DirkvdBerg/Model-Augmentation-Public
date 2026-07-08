@@ -43,34 +43,73 @@ def load_checkpoint(fit_sys, base_path, joint_estimation):
     return meta
 
 
-def _install_nf_val_probe(fit_sys, hp):
-    """Piggyback an nf-window RMS on each epoch's validation (D-095).
+def _noop_cve(*args, **kwargs):
+    """Placeholder restored when a checkpointed _NfProbe is unpickled (D-095)."""
+    return None
+
+
+def _restore_noop_cve():
+    """Unpickle target for _NfProbe: yields the _noop_cve callable (not None)."""
+    return _noop_cve
+
+
+class _NfProbe:
+    """Per-epoch train+val nf-window RMS piggybacked on validation (D-095).
 
     deepSI validates once per epoch through `self.cal_validation_error`
-    (concurrent_val=False path). We wrap that instance method: return the
-    selector value untouched, and also record the nf-window RMS (same nf as
-    training, encoder re-init per window) into `fit_sys.Loss_val_nf`, aligned
-    with `fit_sys.Loss_val`. Physical-meter RMS (mode='RMS'), so it is directly
-    comparable to the 'sim-RMS' selector. Non-overlapping windows (stride=nf)
-    keep the probe at ~one sim-pass. Returns the original method to restore.
-    """
-    nf = hp['nf']
-    probe_stride = max(1, nf)   # non-overlapping windows -> ~one sim-pass cost
-    fit_sys.Loss_val_nf = []
-    orig = fit_sys.cal_validation_error
+    (concurrent_val=False path). This wraps that instance method: return the
+    selector value untouched, and additionally record the nf-window RMS (same nf
+    as training, encoder re-init per window, physical meters via mode='RMS') for
+    BOTH a train trajectory and the val data into `fit_sys.Loss_train_nf` /
+    `Loss_val_nf`, aligned with `fit_sys.Loss_val`. Non-overlapping windows
+    (stride=nf) keep each probe at ~one sim-pass.
 
-    def wrapped(val_sys_data, validation_measure='sim-NRMS'):
-        sel = orig(val_sys_data, validation_measure=validation_measure)  # selector, untouched
+    A module-level class (not a closure) so `checkpoint_save_system`'s
+    `torch.save(self.__dict__)` can pickle `fit_sys` while the probe is installed;
+    `__reduce__` serialises it back to a no-op (the probe is transient and
+    re-installed each fit). Compare train vs val nf-RMS to read generalization
+    (train low/val high) vs long-rollout drift (both bounded, sim-RMS grows).
+    """
+
+    def __init__(self, fit_sys, orig, nf, train_sd, val_sd, do_print=True):
+        self.fit_sys = fit_sys
+        self.orig = orig
+        self.nf = nf
+        self.stride = max(1, nf)
+        self.train_sd = train_sd
+        self.val_sd = val_sd
+        self.do_print = do_print
+        fit_sys.Loss_train_nf = []
+        fit_sys.Loss_val_nf = []
+
+    def _nf_rms(self, sd):
         try:
             with torch.no_grad():
-                e = fit_sys.n_step_error(val_sys_data, nf=nf, stride=probe_stride,
-                                         mode='RMS', mean_channels=True)
-            fit_sys.Loss_val_nf.append(float(np.mean(e)))
+                e = self.fit_sys.n_step_error(sd, nf=self.nf, stride=self.stride,
+                                              mode='RMS', mean_channels=True)
+            return float(np.mean(e))
         except Exception:
-            fit_sys.Loss_val_nf.append(float('nan'))
+            return float('nan')
+
+    def __call__(self, val_sys_data, validation_measure='sim-NRMS'):
+        sel = self.orig(val_sys_data, validation_measure=validation_measure)  # selector, untouched
+        tr = self._nf_rms(self.train_sd)
+        vl = self._nf_rms(self.val_sd)
+        self.fit_sys.Loss_train_nf.append(tr)
+        self.fit_sys.Loss_val_nf.append(vl)
+        if self.do_print:
+            print(f'    [nf-probe] train nf-RMS={tr:.4e}   val nf-RMS={vl:.4e} [m]  (@nf={self.nf})')
         return sel
 
-    fit_sys.cal_validation_error = wrapped
+    def __reduce__(self):
+        return (_restore_noop_cve, ())
+
+
+def _install_nf_val_probe(fit_sys, hp, cfg, train_sd, val_sd):
+    """Install an `_NfProbe` on `fit_sys.cal_validation_error`; return the original to restore."""
+    orig = fit_sys.cal_validation_error
+    fit_sys.cal_validation_error = _NfProbe(
+        fit_sys, orig, hp['nf'], train_sd, val_sd, do_print=cfg.nf_probe_print)
     return orig
 
 
@@ -102,8 +141,8 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
 
     fit_sys.bestfit = float('inf')
     t0 = time.time()
-    # D-095: piggyback the nf-window RMS diagnostic; selection stays full-traj sim-RMS.
-    _orig_cve = _install_nf_val_probe(fit_sys, hp)
+    # D-095: piggyback the nf-window RMS diagnostic (train + val); selection stays full-traj sim-RMS.
+    _orig_cve = _install_nf_val_probe(fit_sys, hp, cfg, data.train_list[0], data.val_ckpt_data)
     try:
         bestfit = train_model(fit_sys, hp, cfg, data,
                               epochs=epochs_remaining,
@@ -111,7 +150,8 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
                               validation_measure='sim-RMS')
     finally:
         fit_sys.cal_validation_error = _orig_cve   # restore always
-    loss_val_nf = np.array(getattr(fit_sys, 'Loss_val_nf', []), dtype=float)
+    loss_val_nf   = np.array(getattr(fit_sys, 'Loss_val_nf', []), dtype=float)
+    loss_train_nf = np.array(getattr(fit_sys, 'Loss_train_nf', []), dtype=float)
     elapsed = time.time() - t0
     done_epochs = hp['epochs']
 
@@ -119,6 +159,10 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
     if _fin.size:
         print(f'  val nf-window RMS ({hp["nf"]}-step): first={loss_val_nf[0]:.4e}  '
               f'best={_fin.min():.4e}  last={loss_val_nf[-1]:.4e} [m]  (sim-RMS selector unchanged)')
+    _fintr = loss_train_nf[np.isfinite(loss_train_nf)] if loss_train_nf.size else loss_train_nf
+    if _fintr.size:
+        print(f'  train nf-window RMS ({hp["nf"]}-step): first={loss_train_nf[0]:.4e}  '
+              f'best={_fintr.min():.4e}  last={loss_train_nf[-1]:.4e} [m]')
 
     # --- Checkpoint weights first: diagnostics below must not be able to lose them (D-070)
     ckpt_base = None
@@ -161,5 +205,6 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
         epochs      = np.array(diag_epochs),
         r2_raw      = np.array(diag_r2_raw),
         r2_linmap   = np.array(diag_r2_lin),
-        loss_val_nf = loss_val_nf,   # D-095: per-epoch nf-window RMS (aligns with Loss_val tail)
+        loss_val_nf   = loss_val_nf,    # D-095: per-epoch val nf-window RMS (aligns with Loss_val tail)
+        loss_train_nf = loss_train_nf,  # D-095: per-epoch train nf-window RMS (same horizon, meters)
     )

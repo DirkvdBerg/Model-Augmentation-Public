@@ -52,6 +52,7 @@ class RunConfig:
     stride: int = 10               # keep every STRIDE-th BPTT window (STRIDE=1 = every window)
     use_f64: bool = False
     save_flag: bool = True
+    nf_probe_print: bool = True    # print per-epoch train/val nf-window RMS (D-095 probe); runtime-only, not in hp
 
     # ═══ Model + training hyperparameters (were the default_hp dict) ══════════
     nx_ann: int = 2                # augmented (ANN) latent states
