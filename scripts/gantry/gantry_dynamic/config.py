@@ -1,13 +1,13 @@
 """Run configuration for the gantry augmentation training pipeline.
 
-Config boundary (frozen contract):
-  * RunConfig  -- experiment identity, edited at the top of the entry file and
-                  serialized to the results-npz `config` JSON. Slow-changing.
-  * hp (dict)  -- checkpoint-persisted hyperparameters. Stays a plain dict with
-                  the exact current keys because it is JSON-round-tripped in the
-                  results npz and the checkpoint `.npz` meta, and resume of
-                  existing checkpoints must keep working. `up_sample` lives here
-                  for the same reason (checkpoint format frozen).
+Single source of truth: `RunConfig` holds EVERY user-tunable parameter (both the
+experiment knobs and the model/training hyperparameters). The entry file
+constructs one object with all fields visible. Derived quantities (d, ts_new,
+nf, na_nb, dtype, and the `hp` dict) are read-only properties.
+
+`cfg.hp` is a derived dict view with the exact legacy keys/order. It exists only
+because the downstream functions and the checkpoint/npz JSON round-trip consume a
+dict; it is NOT a second place to edit parameters. Edit the RunConfig fields.
 """
 __project_origin__ = "added"
 
@@ -26,10 +26,9 @@ REPO_ROOT = os.path.abspath(os.path.join(_PKG_DIR, '..', '..', '..'))
 
 @dataclass(frozen=True)
 class RunConfig:
+    # ═══ Experiment identity ══════════════════════════════════════════════════
     # --- Track: 'joint' (broadband [1,200] Hz) or 'augmentation' (narrowband [130,180] Hz) ---
     mode: str = 'augmentation'
-
-    # --- Encoder / ANN / joint-estimation switches ---
     # encoder_init: 'linear_map' = Hoekstra 2026 reconstructability init (trainable);
     #               'default' = standard deepSI learned encoder
     encoder_init: str = 'linear_map'
@@ -42,34 +41,37 @@ class RunConfig:
     # NOTE: param_loss anchors to the (possibly detuned) INIT values -- Jan's prior semantics.
     param_init_detune: Optional[List[float]] = field(default_factory=lambda: [
         1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90, 0.90, 1.10, 0.90, 1.10, 0.90, 0.90, 1.10])
-
     # --- Output noise (Jan's ECC noise-floor convention, D-078) ---
     # sigma_n = rms(y) * 10^(-SNR/20); reaching sigma_n on val sim-RMS = acceptance floor.
     snr: Optional[int] = None   # dB: 50/55/60; None = noiseless (supervisor 07-07: make it work without noise first)
     seed: int = 42
 
-    # --- Resampling ---
+    # ═══ Sampling / data conditioning ═════════════════════════════════════════
     fs_orig: int = 20000
     fs_new: Optional[int] = 4000   # None = no downsampling (use fs_orig)
-
-    # --- Training-window stride (native deepSI knob; STRIDE=1 = every window) ---
-    stride: int = 10
-
-    # --- Dtype ---
+    stride: int = 10               # keep every STRIDE-th BPTT window (STRIDE=1 = every window)
     use_f64: bool = False
-
-    # --- Utility ---
     save_flag: bool = True
 
-    # --- Time-based horizon (converted to samples via ts_new) ---
-    nf_seconds: float = 0.100   # [s] rollout horizon (5*tau_msd, tau=1/(zeta*wn)=20ms, 5tau=100ms)
+    # ═══ Model + training hyperparameters (were the default_hp dict) ══════════
+    nx_ann: int = 2                # augmented (ANN) latent states
+    n_nodes_per_layer: int = 16
+    n_hidden_layers: int = 2
+    up_sample: int = 2             # model discretization sub-steps per Ts
+    batch_size: int = 256
+    lr: float = 1e-4
+    epochs: int = 10
+    nf_seconds: float = 0.100      # [s] rollout horizon (5*tau_msd, tau=1/(zeta*wn)=20ms, 5tau=100ms)
+    # Optional direct overrides (None = derive). Set a number to bypass the formula.
+    nf_override: Optional[int] = None      # None -> nf = nf_seconds / ts_new
+    na_nb_override: Optional[int] = None   # None -> na_nb = (nx_phys + nx_ann)*2 + 1 (Jan's rule)
 
-    # --- Fixed model dimensions ---
+    # ═══ Fixed model dimensions ═══════════════════════════════════════════════
     nx_phys: int = 6   # physical states: q1, q2, q3, dq1, dq2, dq3
     nu: int = 3
     ny: int = 3
 
-    # ---- Derived quantities ----
+    # ───────────────────────── Derived quantities ────────────────────────────
     @property
     def fs_new_hz(self) -> int:
         return self.fs_orig if self.fs_new is None else self.fs_new
@@ -90,23 +92,38 @@ class RunConfig:
     def dtype_pt(self):
         return torch.float64 if self.use_f64 else torch.float32
 
+    @property
+    def nf(self) -> int:
+        if self.nf_override is not None:
+            return self.nf_override
+        return max(1, int(self.nf_seconds / self.ts_new))
+
+    @property
+    def na_nb(self) -> int:
+        if self.na_nb_override is not None:
+            return self.na_nb_override
+        # THEORY: na=nb=nxd*2+1 (Jan's standard; nxd=NX_PHYS+NX_ANN encoder history)
+        return (self.nx_phys + self.nx_ann) * 2 + 1
+
+    @property
+    def hp(self) -> dict:
+        """Derived hyperparameter dict with the legacy keys/order (checkpoint + npz contract)."""
+        return dict(
+            NX_ANN=self.nx_ann,
+            n_nodes_per_layer=self.n_nodes_per_layer,
+            n_hidden_layers=self.n_hidden_layers,
+            up_sample=self.up_sample,
+            nf=self.nf,
+            na_nb=self.na_nb,
+            batch_size=self.batch_size,
+            lr=self.lr,
+            epochs=self.epochs,
+        )
+
 
 def default_hp(cfg: RunConfig) -> dict:
-    """Default hyperparameter dict (checkpoint-persisted; keys are a frozen contract)."""
-    hp = dict(
-        NX_ANN=2,
-        n_nodes_per_layer=16,
-        n_hidden_layers=2,
-        up_sample=2,
-        nf=max(1, int(cfg.nf_seconds / cfg.ts_new)),
-        na_nb=0,          # set below via Jan's formula
-        batch_size=256,
-        lr=1e-4,
-        epochs=10,
-    )
-    # THEORY: na=nb=nxd*2+1 (Jan's standard; nxd=NX_PHYS+NX_ANN encoder history)
-    hp['na_nb'] = (cfg.nx_phys + hp['NX_ANN']) * 2 + 1   # THEORY: nxd*2+1 (Jan's standard)
-    return hp
+    """Backward-compat accessor for the derived hp dict; edit RunConfig fields, not this."""
+    return cfg.hp
 
 
 def save_dir(cfg: RunConfig) -> str:

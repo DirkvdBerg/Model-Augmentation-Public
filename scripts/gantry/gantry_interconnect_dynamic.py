@@ -18,7 +18,7 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from gantry_dynamic.config import RunConfig, default_hp, save_dir, config_json_dict
+from gantry_dynamic.config import RunConfig, save_dir, config_json_dict
 from gantry_dynamic.data import load_datasets, compute_normalization, VAL_FILES, TEST_FILES
 from gantry_dynamic.model import build_model, get_encoder_dims
 from gantry_dynamic.baselines import compute_baseline_fp_nrms
@@ -29,11 +29,15 @@ from gantry_dynamic.evaluation import evaluate_and_save
 from gantry_dynamic.training import train_model_with_diagnostics
 
 ## ═══════════════════════════════════════════════════════════════════════════════
-## Run knobs -- edit here. Field docs live on RunConfig in gantry_dynamic/config.py.
+## ALL run parameters -- edit here. Field docs live on RunConfig in
+## gantry_dynamic/config.py. Derived values (cfg.d, cfg.ts_new, cfg.nf, cfg.na_nb,
+## cfg.hp) are computed from these fields; nf/na_nb can be pinned via
+## nf_override / na_nb_override.
 ## ═══════════════════════════════════════════════════════════════════════════════
 
 CFG = RunConfig(
-    # --- Track: 'joint' (broadband [1,200] Hz) or 'augmentation' (narrowband [130,180] Hz) ---
+    # --- Experiment identity ---
+    # Track: 'joint' (broadband [1,200] Hz) or 'augmentation' (narrowband [130,180] Hz)
     mode='augmentation',
     # 'linear_map' = Hoekstra 2026 reconstructability init (trainable); 'default' = deepSI learned encoder
     encoder_init='linear_map',
@@ -45,12 +49,23 @@ CFG = RunConfig(
                        0.90, 1.10, 0.90, 1.10, 0.90, 0.90, 1.10],
     snr=None,                     # dB: 50/55/60; None = noiseless (supervisor 07-07)
     seed=42,
+    # --- Sampling / data conditioning ---
     fs_orig=20000,
     fs_new=4000,                  # None = no downsampling (use fs_orig)
     stride=10,                    # keep every STRIDE-th BPTT window (STRIDE=1 = every window)
     use_f64=False,
     save_flag=True,
-    nf_seconds=0.100,             # [s] rollout horizon (5*tau_msd)
+    # --- Model + training hyperparameters ---
+    nx_ann=2,
+    n_nodes_per_layer=16,
+    n_hidden_layers=2,
+    up_sample=2,
+    batch_size=256,
+    lr=1e-4,
+    epochs=10,
+    nf_seconds=0.100,             # [s] rollout horizon (5*tau_msd); nf = nf_seconds / ts_new
+    # nf_override=None,           # set an int to pin nf directly (bypasses nf_seconds)
+    # na_nb_override=None,        # set an int to pin encoder history (bypasses Jan's rule)
 )
 
 
@@ -67,7 +82,7 @@ def main():
     data = load_datasets(cfg)
     norm = compute_normalization(cfg, data)
 
-    default_hp_dict = default_hp(cfg)
+    default_hp_dict = cfg.hp
 
     print(f"\nConfiguration:")
     print(f"  MODE:           {cfg.mode}")

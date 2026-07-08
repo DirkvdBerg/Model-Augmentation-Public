@@ -20,7 +20,7 @@ from optuna.samplers import TPESampler
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from gantry_dynamic.config import RunConfig, default_hp, save_dir
+from gantry_dynamic.config import RunConfig, save_dir
 from gantry_dynamic.data import load_datasets, compute_normalization
 from gantry_dynamic.model import build_model, train_model
 from gantry_dynamic.evaluation import evaluate_and_save
@@ -42,7 +42,7 @@ np.random.seed(CFG.seed)
 torch.manual_seed(CFG.seed)
 DATA = load_datasets(CFG)
 NORM = compute_normalization(CFG, DATA)
-DEFAULT_HP = default_hp(CFG)
+DEFAULT_HP = CFG.hp
 
 
 def next_study_name(base_name, directory):

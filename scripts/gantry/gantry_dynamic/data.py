@@ -84,6 +84,9 @@ def _resample_u(u, cfg: RunConfig):
     # force error that the K=0 axes integrate into a permanent offset tau*dv
     # (tau=m/c): V1 open-loop settled at Y -3.5e-4 m / X +6e-5 m; block mean
     # collapses this to ~3e-9 / 3e-8 m (diag_openloop_x0.py, D-087).
+    # NB (D-099): this is a DC/area-consistency effect, NOT anti-aliasing --
+    # u_total is band-limited well below the 2 kHz Nyquist (frac_above ~4e-14,
+    # diag_downsample_spectra.py), so there is no HF energy to fold.
     """
     D = cfg.d
     if D == 1:
@@ -98,7 +101,7 @@ def load_traj(filename, cfg: RunConfig):
     u = _resample_u(_load_u(d), cfg).astype(cfg.dtype_np)
     return deepSI.System_data(
         u=u,
-        y=d['y'][::D][:len(u)].astype(cfg.dtype_np),   # states: point sampling is exact (D-087)
+        y=d['y'][::D][:len(u)].astype(cfg.dtype_np),   # point sampling exact: y band-limited << 2 kHz (D-087; verified D-099, frac_above 2.5e-8)
         dt=cfg.ts_new,
     )
 
