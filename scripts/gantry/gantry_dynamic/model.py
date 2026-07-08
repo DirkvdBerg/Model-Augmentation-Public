@@ -25,7 +25,9 @@ from model_augmentation.utils.utils import normalize_linear_ss_matrices
 from .config import RunConfig, REPO_ROOT
 
 PHY_IX   = np.arange(6)             # [0,1,2,3,4,5]  (NX_PHYS physical states)
-STIFF_IX = np.array([1, 4, 6, 7])   # Theta pos/vel + absorber pos/vel (K>0 only)
+# ANN routing rows are configured via cfg.ann_route_ix (default (1,4,6,7) = Theta
+# pos/vel + absorber pos/vel, K>0 only; D-068). State layout (logical coords):
+#   [X, Theta, Y, dX, dTheta, dY, delta_a, vdelta_a] = idx 0..7.
 
 
 def get_encoder_dims(hp, cfg: RunConfig):
@@ -57,6 +59,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
 
     NX_ANN = hp['NX_ANN']
     nxd = NX_PHYS + NX_ANN
+    route_ix = np.asarray(cfg.ann_route_ix)   # ANN correction rows (D-068 default (1,4,6,7))
 
     # Encoder history: na=nb=nxd*2+1 (Jan's standard, nxd=NX_PHYS+NX_ANN).
     # For linear_map, na_right=1 so reconstructability map can use y(k) to compute x(k).
@@ -94,7 +97,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
 
     _act = torch.nn.Identity if cfg.ann_activation == 'linear' else torch.nn.Tanh
     ann_block = Static_ANN_Block(
-        nz=nxd + nu, nw=len(STIFF_IX),  # D-068: stiff routing — 4 outputs at K>0 rows only
+        nz=nxd + nu, nw=len(route_ix),  # D-068: ANN outputs, one per routed row (cfg.ann_route_ix)
         n_nodes_per_layer=hp['n_nodes_per_layer'],
         n_hidden_layers=hp['n_hidden_layers'],
         net=zero_init_feed_forward_nn,
@@ -105,7 +108,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
     # D-068: stiff routing — corrections placed only at K>0 rows (Theta + absorber).
     # X and Y axis rows (0,3,2,5) excluded: K=0 integrators accumulate without restoring force.
     ic.connect_block_signals(ann_block, ["x", "u"], [])
-    ic.connect_signals(ann_block, "xp", "additive", expansion_matrix(STIFF_IX, nxd))
+    ic.connect_signals(ann_block, "xp", "additive", expansion_matrix(route_ix, nxd))
     ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
     ic.connect_block_signals(phy_block, ["u"], [])
     ic.connect_signals(phy_block, "xp", "additive", expansion_matrix(PHY_IX, nxd))
