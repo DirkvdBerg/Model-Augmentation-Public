@@ -52,7 +52,7 @@ CFG = RunConfig(
     # --- Sampling / data conditioning ---
     fs_orig=20000,
     fs_new=4000,                  # None = no downsampling (use fs_orig)
-    stride=10,                    # keep every STRIDE-th BPTT window (STRIDE=1 = every window)
+    stride=100,                   # keep every STRIDE-th BPTT window; 100 matches 69399 (fewer windows -> ~10x faster epoch)
     use_f64=False,
     save_flag=True,
     nf_probe_print=True,          # print per-epoch train/val nf-window RMS [m] (D-095)
@@ -63,10 +63,10 @@ CFG = RunConfig(
     ann_route_ix=(0, 1, 2, 3, 4, 5, 6, 7),
     n_nodes_per_layer=16,
     n_hidden_layers=2,
-    up_sample=2,
+    up_sample=1,
     batch_size=256,
-    lr=1e-4,
-    epochs=10,
+    lr=1e-7,                       # de-confound 69399: correct lr for K=0 X/Y routing (was 1e-4; 69399 ran at 1e-3, D-101)
+    epochs=5,
     nf_seconds=0.100,             # [s] rollout horizon (5*tau_msd); nf = nf_seconds / ts_new
     # nf_override=None,           # set an int to pin nf directly (bypasses nf_seconds)
     # na_nb_override=None,        # set an int to pin encoder history (bypasses Jan's rule)
