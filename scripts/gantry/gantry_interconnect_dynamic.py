@@ -42,8 +42,12 @@ CFG = RunConfig(
     # 'linear_map' = Hoekstra 2026 reconstructability init (trainable); 'default' = deepSI learned encoder
     encoder_init='linear_map',
     ann_activation='tanh',        # 'linear' = Identity (Jan's ECC, D-071); 'tanh' = nonlinear ANN
-    joint_estimation=False,       # D-076: True = trainable damping/stiffness scalars
+    joint_estimation=True,        # D-076: True = trainable damping/stiffness scalars (orth shakedown, 07-12)
     param_rmse_baseline=0.01,     # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
+    # Orthogonal-projection penalty (docs/orthogonal-projection-plan.md; D-111 basis).
+    # beta_center = V_MSE/E_drift = 1e-4/2.15e-1 (D7.9, measured 07-12). First entry-file
+    # run triggers one fresh ~6 min basis build at up_sample=1 (cached thereafter).
+    orth_beta=4.66e-4,
     # None = start at true values (run T); 14-vector aligned to PARAM_NAMES = detuned start (run D, D-076).
     param_init_detune=[1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90,
                        0.90, 1.10, 0.90, 1.10, 0.90, 0.90, 1.10],
@@ -60,13 +64,15 @@ CFG = RunConfig(
     nx_ann=2,
     # ANN routing rows: (1,4,6,7)=Theta+absorber (D-068); (0,1,2,3,4,5,6,7)=X+Theta+Y+absorber.
     # WARNING: X/Y (K=0) routing needs lr ~1e-7, not 1e-4, or it diverges after init (D-101/D-102).
-    ann_route_ix=(0, 1, 2, 3, 4, 5, 6, 7),
+    ann_route_ix=(1,4,6,7),
     n_nodes_per_layer=16,
     n_hidden_layers=2,
     up_sample=1,
     batch_size=256,
-    lr=1e-7,                       # de-confound 69399: correct lr for K=0 X/Y routing (was 1e-4; 69399 ran at 1e-3, D-101)
-    epochs=5,
+    lr=1e-5,                       # Theta-routing rate (D-101 era; smoke 07-12 healthy at 1e-5).
+                                   # NB: 1e-7 is the K=0 X/Y routing value -- restore it when
+                                   # switching ann_route_ix back to (0..7) (D-101/D-102).
+    epochs=1,                      # entry-file shakedown (user 07-12); ~30 for the real Step 10 pair
     nf_seconds=0.100,             # [s] rollout horizon (5*tau_msd); nf = nf_seconds / ts_new
     # nf_override=None,           # set an int to pin nf directly (bypasses nf_seconds)
     # na_nb_override=None,        # set an int to pin encoder history (bypasses Jan's rule)
