@@ -45,18 +45,34 @@ from gantry_dynamic.training import train_model_with_diagnostics, _install_nf_va
 from gantry_dynamic.evaluation import evaluate_and_save
 from gantry_dynamic.diagnostics import state_recovery_diagnostic
 
-# ── Search knobs (the only tunables) ─────────────────────────────────────────
-# ORTH-PROJECTION SMOKE RUN (2026-07-12, plan Step 9 via optuna per user; D-111 basis).
-# Single trial, no search: joint estimation (detuned start) + Theta routing +
-# orth penalty at beta_center=4.66e-4 (D7.9: V_MSE/E_drift = 1e-4 / 2.15e-1).
-# Judged ONLY on loss-component health (run-table row, problem log Sect. 12):
-# (1) mse / param_loss / V_orth all finite every chunk; (2) V_orth responds to
-# training (changes once the ANN moves; exactly 0 at zero-init is correct);
-# (3) no optimizer collapse (train nf-RMS not rising monotonically -> lr ok).
-# Model quality is explicitly NOT judged here. lr=1e-5 = Theta-routing rate
-# (D-101 era); WATCH: if train nf-RMS rises from epoch 1 -> lr overshoot.
-# First build_model call triggers a fresh ~6 min penalty-basis build at the
-# DETUNED theta_bar (D7.5; cache key includes theta_bar + states='data').
+# ── MODE ─────────────────────────────────────────────────────────────────────
+MODE = 'curriculum'   # 'curriculum' = warm-started nf-ladder (base X+Theta+Y learning run, 2026-07-12);
+                      # 'orth_smoke' = the previous orth-projection single-trial run (preserved below)
+
+# ── NF CURRICULUM (MODE='curriculum'): warm-started ladder, ONE fit_sys ───────
+# Supervisors recommended increasing nf; the ANN is not learning at nf=400 because
+# the FP residual there is near the floor (problem log Sect. 7 weak-signal). Longer
+# nf accumulates more absorber signal (Sect. 8) -> real gradient. This is a CURRICULUM,
+# not a search: nf has no interior optimum, so each rung trains at a longer nf,
+# WARM-STARTED from the previous rung's trained weights (build_model ONCE; after fit()
+# reloads _best under the sim-RMS selector, we reload _last to recover the trained
+# weights, proven in make_drift_checkpoint.py). lr is FIXED at CFG.lr (per-rung lr is
+# ignored by fit once init_model_done, D-101); overshoot handled REACTIVELY by watching
+# the per-epoch train nf-RMS print, not scheduled (user 2026-07-12).
+# WATCH (pre-declared): do train nf-RMS (windows) and full sim-RMS improve TOGETHER, or
+# SPLIT? Split = drift is separate from signal (d8-d12) and needs Layer 2 on top; the
+# nf climb at lr=1e-7 is also the clean never-run test of nf-conditioning (69399 was
+# confounded by the lr bug).
+NF_LADDER = [        # (nf, epochs) warm-started in order; ~26 epochs total, budget 12h
+    (400,  8),
+    (800,  7),
+    (1600, 6),
+    (2000, 5),       # trim if memory/wall-clock exceed budget; nf=4000 stays off (566MB wall)
+]
+
+# ── Search / orth-smoke knobs (MODE != 'curriculum') ──────────────────────────
+# ORTH-PROJECTION SMOKE RUN (2026-07-12): joint estimation (detuned) + Theta routing
+# + orth penalty at beta_center=4.66e-4. Judged on loss-component health only.
 N_TRIALS        = 1           # single config, no search
 OPTUNA_EPOCHS   = 5           # smoke horizon
 CHUNK_SIZE      = 5           # one chunk = the whole run
@@ -67,14 +83,24 @@ FINAL_EPOCHS    = 5           # short final (full-val) pass: yields the joint pa
 STUDY_BASE_NAME = "gantry_orth_smoke"
 
 # ── Regime: set once, single source of truth (mirrors the entry file's CFG) ──
-CFG = RunConfig(
-    ann_route_ix=(1, 4, 6, 7),   # Theta+absorber: the approved machinery-validation routing (D-103 guard)
-    stride=100,                  # large -> fast smoke (user 07-12)
-    nf_seconds=0.100,            # nf = 400
-    joint_estimation=True,       # negation only exists with trainable theta
-    # param_init_detune: RunConfig default 14-vector (+-10%) -> detuned start (run-D style)
-    orth_beta=4.66e-4,           # beta_center (D7.9 layer 1, measured 2026-07-12)
-)
+if MODE == 'curriculum':
+    CFG = RunConfig(
+        ann_route_ix=(0, 1, 2, 3, 4, 5, 6, 7),  # FULL X+Theta+Y: the deliverable routing (D-103)
+        stride=100,                             # large -> fast epochs (consistent with prior runs)
+        lr=1e-7,                                # K=0 routing rate (override the 1e-4 default!)
+        joint_estimation=False,                 # free ANN: base learning run, no negation
+        param_init_detune=None,                 # nominal theta: correct baseline, ANN learns the residual
+        # orth_beta default 0.0 = off: no penalty-basis build (~6 min skipped)
+    )
+else:
+    CFG = RunConfig(
+        ann_route_ix=(1, 4, 6, 7),   # Theta+absorber: the approved machinery-validation routing (D-103 guard)
+        stride=100,                  # large -> fast smoke (user 07-12)
+        nf_seconds=0.100,            # nf = 400
+        joint_estimation=True,       # negation only exists with trainable theta
+        # param_init_detune: RunConfig default 14-vector (+-10%) -> detuned start (run-D style)
+        orth_beta=4.66e-4,           # beta_center (D7.9 layer 1, measured 2026-07-12)
+    )
 
 RUN_ID = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
 SDIR   = save_dir(CFG)
@@ -212,7 +238,63 @@ def _save_search_figures(study, out_dir, rid):
         print(f"Warning: search-figure plotting failed: {e}")
 
 
-if __name__ == '__main__':
+def run_curriculum_main():
+    """Warm-started nf curriculum on ONE fit_sys (base X+Theta+Y learning run).
+
+    build_model ONCE, then climb NF_LADDER. Each rung warm-starts from the previous
+    rung's TRAINED weights: fit() reloads _best at its end (=possibly epoch 0 under the
+    sim-RMS selector on the drift route), so after each rung we reload _last to recover
+    the actually-trained weights before the next rung (proven in make_drift_checkpoint.py).
+    lr is fixed at CFG.lr (per-rung lr is ignored by fit once init_model_done, D-101);
+    overshoot is watched via the per-epoch train nf-RMS print, not scheduled.
+    """
+    curr_dir = os.path.join(SDIR, f'curriculum_{RUN_ID}')
+    os.makedirs(curr_dir, exist_ok=True)
+    print(f"\n{'='*70}\nNF CURRICULUM  routing={CFG.ann_route_ix}  lr={CFG.lr:.1e}  "
+          f"ladder={NF_LADDER}\n  -> {curr_dir}\n{'='*70}")
+
+    np.random.seed(CFG.seed)
+    torch.manual_seed(CFG.seed)
+    fit_sys = build_model(CFG.hp, CFG, DATA, NORM)   # built ONCE; warm-started across rungs
+
+    for rung, (nf, epochs) in enumerate(NF_LADDER):
+        cfg_r = dataclasses.replace(CFG, nf_override=nf, epochs=epochs)
+        hp = cfg_r.hp
+        print(f"\n{'-'*70}\nRUNG {rung}: nf={nf} ({nf*CFG.ts_new:.2f}s)  epochs={epochs}  "
+              f"lr={CFG.lr:.1e}  routing={CFG.ann_route_ix}\n{'-'*70}")
+        fit_sys.bestfit = float('inf')   # per-rung _best; _last = this rung's final weights
+        _orig = _install_nf_val_probe(fit_sys, hp, cfg_r, SEARCH_TRAIN, DATA.val_ckpt_data)
+        try:
+            train_model(fit_sys, hp, cfg_r, DATA, epochs=epochs, nf=nf)
+        finally:
+            fit_sys.cal_validation_error = _orig
+        # Recover the trained weights (fit reloaded _best) so the next rung warm-starts.
+        fit_sys.checkpoint_load_system(name='_last')
+        # The nf-probe (D-095) was pickled into _last as _noop_cve (returns None);
+        # checkpoint_load_system replaces __dict__ wholesale, so it shadows the real
+        # cal_validation_error. The next rung's probe would then wrap a None-returning
+        # function -> validation() crashes on `bestfit >= None`. Drop the instance
+        # attr so lookup falls back to the class method (System_torch.cal_validation_error).
+        fit_sys.__dict__.pop('cal_validation_error', None)
+        tr = np.array(getattr(fit_sys, 'Loss_train_nf', []), dtype=float)
+        vl = np.array(getattr(fit_sys, 'Loss_val_nf', []), dtype=float)
+        if tr.size and vl.size:
+            print(f"  [rung {rung} summary] train nf-RMS {tr[0]:.4e} -> {tr[-1]:.4e}   "
+                  f"val nf-RMS {vl[0]:.4e} -> {vl[-1]:.4e}  (@nf={nf})")
+        torch.save(fit_sys.__dict__, os.path.join(curr_dir, f'rung{rung}_nf{nf}_last.pth'))
+
+    # Final deliverable evaluation on the FULL validation set + figures.
+    DATA.val_ckpt_data = _FULL_VAL_CKPT
+    final_cfg = dataclasses.replace(CFG, nf_override=NF_LADDER[-1][0], epochs=NF_LADDER[-1][1])
+    rid = f'curriculum_{RUN_ID}'
+    try:
+        evaluate_and_save(fit_sys, final_cfg.hp, rid, final_cfg, DATA, NORM, curr_dir)
+    except Exception as e:
+        print(f"evaluate_and_save failed ({e}); rung checkpoints are saved in {curr_dir}.")
+    print(f"\nCurriculum complete -> {curr_dir}")
+
+
+def run_search_main():
     study_name = next_study_name(STUDY_BASE_NAME, SDIR)
     storage    = f"sqlite:///{os.path.join(SDIR, f'optuna_{study_name}.db')}"
     # GridSampler for a DETERMINISTIC nf sweep (2026-07-11): TPE + 3 trials could repeat an nf and miss one;
@@ -263,3 +345,7 @@ if __name__ == '__main__':
     evaluate_and_save(fit_sys, best_cfg.hp, best_rid, best_cfg, DATA, NORM, final_dir,
                       diag_conv=diag_conv)
     state_recovery_diagnostic(fit_sys, best_cfg.hp, best_rid, best_cfg, DATA, NORM, final_dir)
+
+
+if __name__ == '__main__':
+    (run_curriculum_main if MODE == 'curriculum' else run_search_main)()
