@@ -19,6 +19,416 @@ Decisions are logged here before implementation. Each entry states what was deci
 
 ## Decisions
 
+### [D-115] drift-visual f03 becomes the oracle / baseline / encoder decomposition
+**Date**: 2026-07-15
+**What**: f03 gains a third curve: the oracle (FP + true MSD, true x0, `oracle_open_loop` with the
+central-difference vdelta_a seed of OE-1) at the pipeline's exact ts/up_sample (fairness rule,
+D-097). Three curves, one change per pair: oracle@true-x0 (discretization floor, Y rms 9.2e-6),
+baseline@true-x0 (floor + absorber effect = the ANN target, Y rms 7.3e-4), baseline@untrained-
+encoder-x0 (deployment init, Y rms 2.1e-4 -- the encoder absorbs part of the residual into its
+state estimate). Data added to the existing `f03.npz` by a one-off deterministic patch script
+(scratchpad, mirrors the permanent `gen_real()` block; manifest records the patch) to avoid
+rerunning the ~10 min full generation for one 2-min sim. `gen_fake`/`gen_reuse` carry the same
+`err_oracle_*` keys (reuse maps demo1's `stage_F`/`log_F`).
+**Why**: The user's proposal: the old f03 (true-x0 vs encoder-x0 only) raised the first-thought
+question "is the model or input bad?" at the +0.8 mm parked Y offset. The oracle answers it in
+the figure: same model + absorber = floor, so the gap IS the absorber effect.
+**Ruled out**: full regeneration (identical outputs except f03; wastes the baseline + free-run
+sims); separate fourth figure (3 curves fit the panel budget and keep one decomposition in one
+place).
+**Constrains**: The oracle is a sim-only diagnostic reference, never an acceptance threshold
+(standing rule). Deck oracle numbers differ from the run log's ref[1] (9.0e-5): the deck uses
+the OE-1 central-diff seed; state this when comparing.
+
+### [D-114] drift-visual deck regenerates from run 71167's rescued `_last` checkpoint
+**Date**: 2026-07-15
+**What**: Implemented `SOURCE=real` in `scripts/gantry/drift-visual/generate_data.py` and pointed
+`config.py`'s `CKPT` at `simulations/gantry_subnet/augmentation_linear_map/71167/gantry_drift_71167_last.pth`
+(`CKPT_TAG = gantry_drift_71167_last`). That file is run 71167's end-of-training (drifted) model,
+rescued from the cluster's `~/.deepSI/checkpoints/SSE_Interconnect_OrthLoss_5i7INg_last.pth` and
+identified by mtime (Jul 15 01:17 = fit end) plus content fingerprint (`bestfit` =
+0.000166137600899674 = 71167's initial validation sim-RMS; 20 epochs). `gen_real()` reuses the
+proven drift-demo machinery (demo3 shadow free-run, demo1 baseline decomposition, f5 horizon
+computation) and regenerates all deck npz from this one checkpoint; the f07 universality bank is
+the reused 9-checkpoint bank with 71167 appended as a measured 10th member. `SOURCE=reuse` keeps
+its own tag (`gantry_drift_last`) so old-checkpoint arrays are never mislabeled with the new tag.
+**Why**: The prior deck checkpoint (`gantry_drift_last.pth`, Optuna 69399 trial 3: 5 epochs,
+lr 1.49e-8, stride 100) was a deliberately rough rescue. Run 71167 is the purpose-built drift-deck
+run (20 epochs, lr 1e-7, stride 10, nf=400) with monotone window-loss descent (train nf-RMS
+3.81e-5 -> 3.33e-5 m). The run folder's own artifacts (`gantry_ckpt_71167.pt`, `gantry_71167`) are
+useless for the deck: fit reloads `_best` at the end, and `_best` = epoch 0 = zero-output ANN
+(run-log VERDICT: "ANN inactive", +0.0% vs baseline).
+**Ruled out**: (1) Using `gantry_ckpt_71167.pt` — epoch-0 weights, no drift to show. (2) Retraining
+locally to recreate `_last` — hours of compute for a file that already existed on the cluster.
+**Constrains**: `gen_real()` refuses to run (hard exit) if the loaded ANN's captured output is
+identically zero, so an epoch-0/`_best`-type checkpoint can never silently produce a "no drift"
+deck. Every manifest entry and provenance footer cites run 71167.
+
+### [D-113] Independent nf window-length sweep (grid) instead of extending the warm-started curriculum
+**Date**: 2026-07-13
+**What**: Reconfigured `gantry_optuna.py` to `MODE='nf_sweep'` — a GridSampler over `nf ∈ {800, 1600, 2400, 3200}` at FIXED `lr=1e-7`, full X+Θ+Y routing `[0..7]`, free ANN (`joint=False`, nominal θ, no orth). Each nf is a self-contained trial built FRESH from the encoder init (no warm-start), 8 epochs each; the best nf is retrained 8 epochs on the full val set with the state-recovery diagnostic. Reuses the existing `run_search_main`/`objective` grid path (the previous orth-smoke config in the `MODE != 'curriculum'` branch was repointed to this regime).
+**Why**: The warm-started curriculum (70903) showed full-sim val RMS improving monotonically with nf across rungs (1.9e-3 → 8.3e-4 → 4.6e-4) but never beating the epoch-0 encoder-init baseline (8.0e-5), and rung 0 (nf=400) actively *degraded* the init before longer rungs clawed back. Warm-starting confounds "longer window helps" with "recovering from rung-0 self-degradation." Independent per-nf trials from the same init isolate the window-length effect and directly test whether ANY window lets a trained ANN beat the 8.0e-5 init. Grid search is safe from the cross-rung `cal_validation_error` bug (below) because `objective` restores the real selector in `finally` each chunk and never reloads a checkpoint between trials.
+**Also fixed**: the curriculum path crashed nondeterministically at rung ≥1 with `TypeError: '>=' not supported between float and NoneType`. Cause: the D-095 nf-probe pickles into `_last.pth` as `_noop_cve` (returns None); `checkpoint_load_system` replaces `__dict__` wholesale, so after the inter-rung reload the next rung's probe wrapped a None-returning selector. Fix: `fit_sys.__dict__.pop('cal_validation_error', None)` after `checkpoint_load_system('_last')` restores the class method. (deepSI's `cal_validation_error` masks this by constructing but never raising its final `NotImplementedError`, so an unmatched measure returns None silently.)
+**Ruled out**: (1) Extending the curriculum ladder to longer nf — faster to a long window but keeps the recovery confound (user chose independent). (2) Including nf=400 — 70903 already shows it degrades. (3) Warm-starting each grid trial from the previous — reintroduces the confound.
+**Constrains**: The sweep answers window-length capability only at lr=1e-7 / full routing / free ANN. If no nf beats 8.0e-5, the conclusion is that window length alone does not make the ANN improve on the encoder init (points to the drift/negation problem needing a separate mechanism, not a bigger window). Runs on CPU (cluster); nf=3200 training arrays ~0.5 GB.
+
+### [D-112] Telica pipeline anchored to the machine's own parameters: datasheet masses pinned, per-axis force scale on Kt, loader repointed to Telica 1.mat
+**Date**: 2026-07-12
+**What**: Three coupled changes to the real-data parameter-recovery pipeline.
+(1) `telica_loader.py` reads Kt and fs from `kamtin-data/Telica 1.mat` (the user-designated
+machine-parameter export; values identical to the previous source: Kt_X 109, Kt_Y 77.6 N/Arms,
+fs 20 kHz). `kamtin-data/Telica.mat` is off-limits per user instruction (2026-07-12).
+(2) Force conversion gains a per-axis scale: `_A_TO_N = [Kt_X, Kt_X, Kt_Y] * _S_FORCE` with
+`_S_FORCE = [3.469, 3.469, 3.202]` (HEURISTIC). Derivation: reconciling the linear-ID mass
+lumps (diag_linear_identification.py, 2026-07-05: m_total 26.229 kg, mh 5.933 kg) against the
+ETEL TELICA datasheet (ASME-YGNN-08-0750-0800W3 v1.0) moving masses (X-moving 91.0 kg,
+Y-moving 19 kg) gives s_X = 91.0/26.229 = 3.469, s_Y = 19.0/5.933 = 3.202 -- near-identical
+across axes despite different motors, the signature of a global conversion factor. A factor 2
+of it is machine-config documented: `Telica 1.mat` `Motor.SubAxes` lists a forcer PAIR per
+logged channel (X1-L/X1-R, X2-L/X2-R, Y-L/Y-R), so one logged ampere drives two forcers. The
+residual ~1.73/1.60 (candidate: sqrt(3) three-phase current convention; 2*sqrt(3) = 3.464
+matches s_X within 0.2%) is an open question posed to Kamtin: "is logged MF30 per sub-axis,
+and in what convention relative to Kt = 109 N/Arms?"
+(3) `run_telica_param_recovery.py` initializes at a datasheet-anchored parameter set instead
+of Kamtin nominals: mh = 19.0 (THEORY: datasheet Y-moving mass, incl. 1.7 kg Z stage, excl.
+payload), m1/m2/mb = 16.81/17.63/37.56 (THEORY: sum = 91-19 = 72 kg; HEURISTIC: split by
+Kamtin proportions, split not on datasheet), cg1 = cg2 = 136, cy = 98 N/(m/s) (HEURISTIC:
+spec maxima, "dynamic friction maximal value", upper bounds, trainable). kb/cb/J/d/Lb keep
+Kamtin values (not on the datasheet). `_TRUE_PARAMS` is patched to the same dict so the
+param_table % columns read "deviation from datasheet init". Also `checkpoint_interval=10`
+is passed to `tr.train()` (the old default 100 with EPOCHS=40 wrote zero checkpoints, so a
+post-training crash lost the parameters).
+**Why**: The datasheet ruled out the "machine is lighter" branch of the D-077 degeneracy (the
+real machine is 1.7x HEAVIER than Kamtin nominals), and made the mass deficit near-identical
+on both axes, flipping the leading hypothesis to a global force underscale. Adopting datasheet
+masses without the force scale would be self-defeating: training would drag the masses back
+down the degenerate m/F direction toward the 26 kg the data demands.
+**Ruled out**: Keeping Kamtin masses (contradicted by datasheet); treating 26 kg as the real
+mass (contradicted by datasheet); oracle/model-based scale derivation (scale comes from data
++ manufacturer spec only); changing `lpv_lfr_baseline/` itself (all patches live in the
+wrapper/loader, simulation pipeline untouched).
+**Constrains**: Masses are now PINNED constants (manufacturer spec), not recovered -- report
+them as such; the recoverable content shifts to damping/stiffness/inertia in correct units.
+`_S_FORCE` changes force units in ALL consumers of `telica_loader` (training, closed-loop
+eval, diagnostics); results before/after D-112 are not comparable. Run hypothesis for the
+next launch: with datasheet-anchored init + force scale, the windowed validation floor drops
+and recovered parameters stay physical (masses no longer trainable targets of the scale
+error). If Kamtin's unit answer contradicts `_S_FORCE`, replace the HEURISTIC with the
+documented constant and rerun.
+
+### [D-111] Orthogonal-projection penalty states are DATA-DERIVED (P^-T y + FD), not FP-simulated; the paper's simulated-states fallback is rejected on measurement
+**Date**: 2026-07-12
+**What**: The penalty point set for the Gyorok orthogonal-projection regularizer
+(`gantry_dynamic/orth_penalty.py`) evaluates the regressor at states reconstructed
+from measured outputs (q = P^-T y exact static inversion, qdot by finite
+differencing -- the data.py construction), NOT at states from an FP rollout at
+theta_bar. Cache key carries states='data' so pre-revision rollout caches can
+never load.
+**Why (measured)**: The paper's fallback for "no full-state measurement" (GYOROK
+p. 7: forward-simulate the FP model) silently assumes the rollout stays near the
+data manifold. On the gantry's marginally stable K=0 axes over 48k-sample records
+at a 10%-detuned theta_bar this fails: step7b measured worst-case
+negation-signature leakage 0.164 and subspace rotation 56.7 deg. The ablation
+step7c (same detuned linearization point, truth-manifold states) isolates the
+contributors: state drift dominates; with correct states the theta_bar-only
+leakage is 3.8e-3..1.7e-2 (matching the pre-stated curvature prediction band)
+and rotation 11.1 deg. Data-derived states eliminate the dominant contributor
+while staying truth-free, and realize the paper's PRIMARY setting (Sect. 3
+full-state measurement; their code x_meas=True builds the basis from measured
+states) -- our y is not x, but x is a known static kinematic function of y,
+a case the paper's binary framing does not name.
+**Constrains**: Remark-2-style per-epoch basis recompute stays a documented
+escalation only (trigger: Stage C shows theta drifting far enough that the
+measured ~1.7e-2 leakage grows); precompute-once economics retained (one ~6 min
+Jacobian pass, cached). Real-data phase must rerun the step7c-style check at the
+actual noise level (FD velocities amplify noise) and may need central
+differences/smoothing. Worst-case caveat on record: a drift aligned exactly with
+the worst principal direction would leak ~sin(11 deg) ~ 0.19; random-direction
+floors say such alignment is thin.
+
+### [D-110] Extended R5 literature rounds (Directions 10-11) CONCLUDED: the gap holds at primary-read depth; the R5 evidence file is complete; next gate is the supervisor checkpoint, not more search
+**Date**: 2026-07-12
+**What**: Two post-D-108 targeted search rounds are concluded and documented in `docs/ml-for-control-search-sweep.md`
+(Direction 10: corrupted-scheduling/unmeasurable-premise/estimated-parameters; Direction 11: broadened
+non-TU/e search -- dissertations, NASA/aerospace qLPV, gain-scheduling "hidden coupling", scheduling tubes).
+Primary-read this round: Piga-Cox-Toth-Laurain Automatica 2015 (flagship, author PDF); Ichalal et al. MED 2012;
+Verhoek LPV-SUBNET self- vs external scheduling; Schuet et al. NASA AIAA 2021 GP-qLPV; Cox PhD thesis
+(scheduling-noise sections + future work); Hanema CDC 2016 (full) + Automatica 2017 (targeted). PDFs archived:
+`literature/corrupted-scheduling/`, `literature/theses-lpv-lineage/`, `literature/aerospace-qlpv/`.
+**Outcome (the R5 evidence file)**:
+1. **Gap CONFIRMED at primary-read depth, now from inside the supervisors' lineage**: Cox thesis §11.3.1
+   delimits the corrupted-scheduling machinery to white/independent/identification-time scheduling noise and
+   declares colored/correlated cases OPEN; our R5 corruption (deterministic, growing, self-generated, at
+   inference) is the extreme of the declared-open cases.
+2. **Three independent communities converge on the same analysis pattern** -- "bounded scheduling deviation =>
+   bounded detune": Cox Ch. 3 bounded-rate-of-variation LMIs; NASA parasitic-term-as-uncertainty (Schuet
+   §III.B); Hanema scheduling tubes. **All three obtain the bound from a stability/control premise the
+   open-loop free-run lacks** (asymptotic stability / frozen-point closed loop / controlled contractivity).
+   Consequence: the R4->R5 detune argument is writable, but ONLY as a FINITE-HORIZON (12 s validation window)
+   set-propagation bound; no asymptotic claim is possible on the marginal pole. This mirrors D-107 in the
+   literature's own structure: the bounds exist because a controller exists.
+3. **Layer-3 vocabulary and precedent secured**: Verhoek LPV-SUBNET defines self- AND external scheduling as
+   standard formulations (exogenous Y is not a hack); Hanema's LPV-C/A/O taxonomy frames the decision; the
+   tube community's own motivating case is a position-scheduled motion system (quotable).
+4. **Layer-2 premise independently supported**: Schuet §II.G ("uncertainty ... depends only on where the data
+   is observed, not what data is observed") + the d12 measurement (DC direction loss-neutral on the training
+   distribution).
+**Why concluded**: every remaining read (Verhoek thesis chapters, Shin non-trim, Rugh-Shamma/Lhachemi hidden
+coupling) is depth reserve, gated on decisions only the supervisor can make: (a) is empirical R4 acceptable
+as the deliverable; (b) exogenous/de-drifted vs self-scheduled Y (the R5 keystone). Searching further before
+those decisions repeats the menu-multiplication failure mode (lessons: interrogate the requirement set).
+**Constrains**: no new search rounds until the supervisor checkpoint; hidden-coupling/Lhachemi read fires
+ONLY if the decision is "self-scheduling must stay". The next artifact is the supervisor-meeting brief.
+
+### [D-109] DC-visibility probe (d8): forward-only loss-visibility curve on the trained drifted checkpoint; ANN mean measured on the training distribution (windowed passes), not the drifted free-run
+**Date**: 2026-07-11
+**What**: New diagnostic `scripts/gantry/diagnostics-drift/d8_dc_visibility_horizon.py`. Question it answers:
+at what evaluation horizon nf does the drift-driving slow ANN force become VISIBLE to the windowed RMS loss?
+Method (forward simulation only, no BPTT, so the nf=4000 566 MB training wall does not apply): (1) run the
+trained checkpoint over non-overlapping encoder-re-initialized windows (d7 S1a pattern) at nf=400, capturing
+the ANN output (d6 shadow pattern) and computing its per-routed-row time-mean; (2) re-run the same windows at
+nf in {400, 1000, 2000, 4000} twice, model as-is vs model with that fixed mean vector subtracted from the ANN
+output; (3) the visibility curve is Delta-RMS(nf) = windowed RMS(full) - windowed RMS(debiased), judged
+against the across-window standard error. Object: `gantry_drift_last.pth` (made 2026-07-09, AFTER the D-101
+lr fix of 2026-07-08; config lr=1.49e-8, nf=1400, 20 epochs, cropped val, X+Theta+Y routing). It is a genuine
+trained drifting instance but NOT the 07-11 de-confound config (lr=1e-7, nf=400), whose checkpoint was never
+saved (its _best reverted to epoch 0); rerunning `make_drift_checkpoint.py` with LR=1e-7 NF=400 can regenerate
+that object if the result proves config-sensitive.
+**Why the mean is measured on the WINDOWED (near-truth) passes, not the drifted free-run (d6's choice)**: the
+probe asks what the TRAINING loss can see and correct; the loss only ever sees the model on encoder-re-seeded
+windows near the true trajectory, so the bias expressed there is the one training could act on. The free-run
+mean (d6) additionally contains detune/drift-fed-back contributions that no windowed loss could ever see.
+**Ruled out**: (1) answering the visibility question by TRAINING at nf=2000+ (566 MB BPTT wall, hours);
+(2) a velocity/acceleration-domain metric (LAST RESORT, gated); (3) judging visibility on the full free-run
+RMS (that is the 12 s deliverable metric, already known to degrade; the question is about the WINDOWED loss).
+**Constrains**: if Delta-RMS stays below ~2x standard error up to nf=4000, brute-force nf is dead on this
+hardware and Layer 2 (data-silent projection) is the primary route; if Delta-RMS is significant at nf<=1000,
+a moderate-nf run becomes a live option (cost to be checked with the user before any launch).
+**OUTCOME (2026-07-11, same day)**: a THIRD case occurred — Delta is significantly NEGATIVE (the DC-carrying
+model fits the windows BETTER: paired -2.0/-2.2 SE at nf=400, same sign through nf=2000). The windowed loss
+REWARDS the drift driver at every feasible horizon, so moderate-nf training is refuted by SIGN, not cost.
+Follow-up `d9_dc_compensation_shape.py` identified WHAT the DC compensates: the encoder's dY init bias
+(+2.7e-4 m/s, present in the UNTRAINED encoder = init-scheme property), re-created at every window by the
+re-init training geometry. Full mechanism + caveats: `docs/drift-diagnosis-status.md` §3b. Direction (no
+decision entry yet): fix the encoder dY init at the source; Layer 2 stays as insurance.
+
+### [D-108] Literature search CONCLUDED: no published method meets the 5 requirements; gap confirmed by a 2025 authoritative survey
+**Date**: 2026-07-11
+**What**: Concluded the exhaustive ML-for-control literature search (docs/ml-for-control-search-sweep.md
+Directions 1-8; docs/literature-search-conclusion.md). No published method satisfies all FIVE requirements
+(knowledge-free, friction-permitting/expressive, marginal-preserving, non-drifting, scheduling-integrity=R5).
+This is CONFIRMED not only by our multi-community search (dissipativity/passivity/NI, rollout-stability/
+exposure-bias, bias/IV estimation, LPV+ML, hybrid identifiability, symmetry, corrupted-scheduling) but by a
+comprehensive 2025 survey: Sivaranjani, Shi, Atanasov, Gupta, Allgower et al., "Control-Oriented System
+Identification" (arXiv:2512.06315), which states embedding complex control-relevant properties via
+identifiable parameterizations "remains an open challenge" (§4.1) and names property-preserving time-varying/
+LPV identification as future work (§7.3), citing our supervisors' group (Verhoek LPV) as the state of the art.
+**Why**: The user pursued the literature route to find a matching method. It paid off as a NEGATIVE result:
+the gap is genuine and now CITABLE to an authoritative survey -> the contribution (learned, LPV self-scheduled,
+marginal-preserving, friction-permitting, non-drifting-EMPIRICAL, R5-scheduling-integrity forward augmentation)
+sits in an explicitly-open area. Search saturation reached (multi-angle + survey convergence).
+**Ruled out**: (1) Continuing BROAD keyword search — diminishing returns, authoritative endpoint reached.
+(2) Claiming any found method solves it — none meets all 5 (structural methods sacrifice R2/R3; expressive
+methods give no structural guarantee = the impossibility; none native to free-integrator + drifting-self-
+scheduling R5). (3) Presenting the negative as "proven nonexistent" — it is "confirmed open per the 2025
+survey", the honest framing for a negative.
+**Constrains**: Remaining literature work is TARGETED, not broad: (a) verify+quote the paywalled corrupted-
+scheduling flagship (Automatica 2015) for R5; (b) primary-read Verhoek LPV consistency (2204.04060) to
+localize the contribution. Then value shifts to BUILDING (D-107 empirical layers: long-horizon conditioning +
+data-silent projection + de-drifted/exogenous Y-scheduling) and FRAMING against the survey. The contribution
+is the ASSEMBLY + the R4 (empirical no-drift) and R5 (scheduling-integrity) handling, not a new structural
+guarantee (impossibility). Full record: docs/literature-search-conclusion.md.
+
+### [D-107] Stay OPEN-LOOP; reject closed-loop (it hides a bad model); the drift must be SOLVED not hidden
+**Date**: 2026-07-11
+**What**: Direction decision for the X/Y augmentation-drift problem, captured in full in
+`docs/open-loop-solution-decision.md`. (1) Closed-loop evaluation/deployment is REJECTED as the solution: the
+servo bounds position for any model, so it HIDES a spurious model DC / bad fit (certifies the loop, not the
+model). (2) The OPEN-LOOP free-run metric is KEPT because it EXPOSES drift and bad fits (a feature); this is
+why velocity-domain and closed-loop (both change/remove the metric so drift stops showing) are demoted. (3)
+The drift must be SOLVED (remove the spurious DC from the model), verified by the open-loop metric, not hidden.
+(4) Under open-loop + position-domain + full expressivity, requirement 4 (non-drift) can only be EMPIRICAL
+(the expressivity-XOR-structural-guarantee impossibility). (5) The sole admissible open-loop path is the
+ESTIMATION route: data-silent regularization (= Gyorok orthogonal projection re-aimed at the unexcited
+subspace, so in-framework and = the thesis contribution) + horizon conditioning (multiple shooting +
+continuity) + re-excitation + grey-box friction. (6) FIRST step = a CLEAN position-domain re-run at the
+correct post-D-101 lr with conditioning, because the main "conditioning fails" evidence (Optuna 69399) is
+confounded by the lr bug (all trials ran at lr=1e-3).
+**Why**: User: closed-loop "will just hide a bad model"; Jan's framework is open-loop; supervisors named
+velocity-domain a last resort and their stance on closed-loop is unknown, so closed-loop is not assumed
+acceptable. Keeping the open-loop metric is the honest judge of solve-vs-hide.
+**Ruled out**: (1) Closed-loop as the solution (hides defects). (2) Velocity/acceleration-domain loss
+(LAST RESORT, changes the metric; needs explicit go-ahead). (3) Structural constraints
+(dissipativity/net-impulse/contraction/NI) — restrict the class, reject friction or the marginal mode, or
+need a closed-loop partner (see `docs/dissipativity-limits.md`, `docs/augmentation-literature-verdict.md`).
+**Constrains**: All further drift work stays open-loop, position-domain, in Jan's framework, and must SOLVE
+(not hide). Req 4 is accepted as empirical, not structural. The next experiment is the clean lr-corrected
+position-domain re-run with conditioning; do not conclude "conditioning fails" from 69399. If that fails, add
+the data-silent projection. Full detail + document index: `docs/open-loop-solution-decision.md` and
+`docs/drift-diagnosis-status.md` §0.
+
+### [D-106] Marginal-native dissipativity theory EXISTS (cyclo-passivity, EIP, Casimirs) — corrects "semidefinite-storage unworked", but none bounds POSITION; contribution narrows to the learned/forward/LPV realization + criterion-4 coupling
+**Date**: 2026-07-10
+**What**: Primary-read of two classical marginal-dissipativity papers (user challenge: "there is more theory
+on the dissipative method"): **van der Schaft "Cyclo-dissipativity revisited" (arXiv:2003.10143)** and
+**Simpson-Porco / Hines-Arcak-Packard Equilibrium-Independent (dissipativity/passivity) (arXiv:1709.06986;
+Automatica 2011)**, plus PH-Casimir and shifted/Krasovskii passivity as leads. Documented in
+`docs/passivity-augmentation-literature.md` **§H** and `docs/drift-diagnosis-status.md` **§5m
+(marginal-native dissipativity subsection + scorecard row D3)**. Findings: (a) **cyclo-passivity is the
+INDEFINITE-storage relaxation** — verbatim p.6 "we do not yet require S to be nonnegative or bounded from
+below"; Def 3.1 `∮ s dt ≥ 0` for `x(T)=x(0)`; **but Remark 3.4: "only INSTABILITY results can be inferred"**
+(indefinite storage → no boundedness/Lyapunov conclusion). (b) **EID/EIP characterizes the continuum-of-
+equilibria case** — Def 3.2 requires a nonnegative storage per equilibrium for EVERY `x̄∈EΣ`, with `EΣ=X`
+when m=n (every state an equilibrium = free integrator); but stability rests on an incremental condition and
+does NOT bound the free coordinate.
+**Why**: This CORRECTS a second over-claim (after the nonlinear-NI one, D-104): the docs repeatedly called
+the "semidefinite/marginal-preserving dissipativity notion" unworked-out (§5b, §5e, §5j). It is NOT —
+cyclo-passivity/EID/Casimirs are mature, classical, citable theory for the marginal/continuum-equilibrium
+case. The over-claim was an artifact of keeping the "learned/neural" keyword in prior searches.
+**Ruled out**: (1) Continuing to present marginal-storage dissipativity as an unsolved theory gap — false.
+(2) Treating cyclo-passivity/EID as a solution to the drift — they PERMIT/CHARACTERIZE the marginal mode
+(criterion 3) but explicitly do NOT bound POSITION (criterion 4); cyclo gives "only instability results".
+This is the same §5j fact from the classical side: passivity of any flavour bounds velocity/kinetic-energy,
+not position on a free integrator.
+**Constrains**: The four-requirements verdict is UNCHANGED — still no single published method meets all four;
+D remains the only family that can (with the extra criterion-4 layer). The contribution narrows AGAIN and is
+better-founded: the marginal-preserving STORAGE RELAXATION (crit 3) = REUSE (EID/cyclo/Casimir, classical) +
+the NI free-body theory (D-104); the LEARNED realization + FORWARD augmentation + LPV + POSITION-bound layer
+(crit 4, via net-impulse Route B or NI) = the genuine invention. Thesis proofs 2-3 (§5e) should CITE
+EID/cyclo for the marginal-storage language rather than claim to invent it. New leads (Casimir, shifted/
+Krasovskii, Neural Energy-Casimir 2112.03339, PHAST 2602.17998) are `[verify-at-source]`, not primary-read.
+
+### [D-105] Re-frame the X/Y drift as an IDENTIFIABILITY (unexcited null-direction) problem, not primarily a stability problem — four solution families, not one
+**Date**: 2026-07-10
+**What**: Re-stated the X/Y free-integrator drift solution-neutrally (docs/drift-diagnosis-status.md **§5m**):
+the rigid-body (DC/net-impulse) direction of the learned residual is a NULL/UNEXCITED direction of the
+training objective (narrowband zero-mean multisine → no DC information; 0.1 s window → no slow-mode
+information), while the free integrator makes the deliverable unboundedly sensitive to exactly that
+direction. This is an ill-posed-inverse / "parameter drift along an unexcited direction" problem (the
+founding problem of robust adaptive control), NOT fundamentally a dissipativity problem. Decomposed the
+solution space into FOUR families: (A) pin the null direction with a prior [Tikhonov-in-null-space,
+adaptive-control drift mods σ/e-mod/projection, Bayesian stable-kernel, **our own Györök orthogonal
+projection = a null-space regularizer**, Lavretsky-Gibson projection ON DISK]; (A-phys) physically-structured
+residual-force prior [latent restoring-force / GP latent-force, Rogers-Friis 2109.10681; switching-GP for
+friction 2303.03858]; (B) remove the direction from the hypothesis space [integrator factoring/Tustin-net,
+our validated bounded-impulse block, Kuntz-Rawlings integrating-mode-LMI arXiv:2406.03760]; (D)
+knowledge-free structural guarantee [dissipativity/passivity/NI — the ONLY family deeply searched in §5-§5L].
+**Why**: The prior §5 search was anchored on family D (passivity/NI) and concluded "no method exists" — an
+artifact of the narrow keyword. Re-derived from the diagnosis, sim-drift is a Problem-1 (ESTIMATION)
+pathology best attacked with estimation tools (A/B/C) FIRST; passivity/NI is Problem-2 (knowledge-free
+real-data) INSURANCE, not the primary sim fix. This INVERTS the §5 PRIMARY/SUPPORTING ranking for the sim
+phase. Crucially, families A/B are mature literatures with boundedness/consistency PROOFS (σ-mod, projection,
+stable-kernel, integrating-LMI, bounded-impulse) — they meet the user's "no random heuristic" bar, which
+family-D-only searching had made look unreachable. We also already OWN two family-A tools (Györök projection
++ Lavretsky-Gibson projection) that were mis-filed as interpretability/steering rather than as the
+null-direction pin they structurally are.
+**Ruled out**: (1) Continuing to treat passivity/NI as the PRIMARY sim-drift fix — mis-scoped; it is
+real-data insurance (D-104 sharpened the gap; this scopes it). (2) Concluding "no principled method exists" —
+false, it was a keyword artifact. (3) Any tuned-constant heuristic (ε-damping floor, soft mean-penalty) —
+already rejected (§5j) and unnecessary given the proven family-A/B options.
+**Constrains**: The novel contribution shrinks to the real-data case where the unexcited direction ALSO
+carries genuine friction DC (family-A pinning would suppress signal → needs grey-box friction in `f_base` or
+a family-D permit-dissipative-DC guarantee) — smaller and better-supported than "invent neural NI." All new
+cites (Pillonetto-Ljung PNAS 2023, Rogers-Friis MSSP 2022, Kuntz-Rawlings IEEE TAC 2025, switching-GP
+2303.03858, adaptive drift mods) are `[verify-at-source]` leads, not yet primary-read. Does not change the
+buildable plan (§5g) or D-103/D-104; it re-scopes which family leads for SIM vs REAL data and surfaces two
+already-owned tools.
+
+### [D-104] Passivity-augmentation literature: verified at primary source; the theory-gap is the LEARNED realization, not the NI theory
+**Date**: 2026-07-10
+**What**: An independent adversarial verification pass (brief `docs/fable-review-brief.md`) opened every
+on-disk PDF in `literature/passivity-augmentation/`, extracted full text, and checked every
+`[extract-verify]` / `[online-*]` claim in `docs/passivity-augmentation-literature.md` and the gap synthesis
+in `docs/drift-diagnosis-status.md` §5e/§5j/§5L. Results recorded as a new section
+**`passivity-augmentation-literature.md` §G** (per-item CONFIRMED/CORRECTED/REFUTED with exact page/prop
+locations) and a **§5L VERIFICATION ADDENDUM** in the drift doc. The load-bearing claims are CONFIRMED:
+DiLaR-PINN's stability theorem (**Prop 3, p.4**) requires an ISS baseline (excludes our non-ISS free
+integrator); RENs enforces contraction w.r.t. a **strictly** PD metric `P≻0` with incremental passivity
+JOINT with contraction and NO marginal variant; Mabrok 2014 is LTI-only free-body NI; NINODE is a
+controller re-imposing a strict DC gain; §5j's O(√T) / bounded-impulse math is correct.
+**One over-claim CORRECTED**: "NI theory is LTI-only / nonlinear-NI semidefinite-storage is unworked-out"
+is REFUTED — nonlinear NI with positive-**semidefinite** storage and poles at the origin exists analytically
+(Shi-Petersen-Vladimirov **arXiv:2011.14610 Def 1**; Ghallab-Petersen **arXiv:2201.00144**). The central gap
+claim (no **learned** dissipative **forward** augmentation preserves a pole at the origin with bounded
+position) **HOLDS** after on-disk + web red-team, but its rationale is re-scoped.
+**Why**: The thesis contribution must be stated as **"bring the existing nonlinear-NI free-body
+semidefinite-storage theory into a LEARNED parallel forward augmentation in the LPV-LFR/SUBNET framework"**,
+NOT "invent nonlinear-NI free-body theory." This is narrower, defensible, and gives a citable classical
+foundation (Shi-Petersen-Vladimirov Def 1) to build the learned block on — de-risking the Phase-T theory
+work. It also fixes a real risk: presenting an existing analytical result as our own invention would not
+survive a supervisor/examiner check.
+**Ruled out**: (1) Leaving the "NI is LTI-only" framing — falsified by the on-disk PDF, would misrepresent
+the contribution. (2) Treating the gap as refuted — no learned falsifier found on disk or by web search
+(2404.12554 "Learning Stable and Passive NODEs" uses PD storage → attractor; 2309.16032 likewise; nonlinear
+NI papers are analytical controllers). (3) Citing the LuGre-PINN "not passive by construction" as a paper
+quote — it is an inference ("passive"/"dissipative" appear 0× in 2504.12441).
+**Constrains**: All future thesis text and slides must use the re-scoped contribution statement (learned +
+forward + LPV realization of an existing nonlinear-NI free-body theory). DiLaR-PINN must be cited as
+Long-Solak-Ajoudani (IIT, IFAC 2026). The `[disk]` §A framework quotes (Hoekstra/Drenth/Gyorok) were NOT
+re-verified in this pass and remain re-verify-before-thesis. Does not change the buildable plan (§5g Phases
+0–6) or D-103; it sharpens the Phase-T theory framing only.
+
+### [D-103] HARD CONSTRAINT: the ANN must route to X and Y (not Theta-only) — the augmented system's coupling cannot be captured without them
+**Date**: 2026-07-08
+**What**: The augmentation routing MUST include the X and Y axes (full routing
+`ann_route_ix=(0,1,2,3,4,5,6,7)` or at least X/Y rows in addition to Theta+absorber).
+**Theta-only routing `(1,4,6,7)` (D-068) is NOT an acceptable end state**, even though it trains
+without drift. Supervisor/user directive (2026-07-08): "only theta routing is not acceptable the
+augmented system has coupling we cant capture it without X and Y."
+**Why**: The truth system's added dynamics couple into the X and Y responses; an augmentation that can
+only write corrections to Theta and the absorber states cannot represent that coupled X/Y behaviour, so
+Theta-only is structurally insufficient regardless of how cleanly it trains. This **overrides** the
+earlier reasoning (mine) that "the MSD coupling into X/Y already flows through the baseline M(Y), so the
+ANN need not route to X/Y" — that argument is rejected as the design basis: the LEARNED component itself
+must have X/Y authority.
+**Ruled out**: Reverting to Theta+absorber routing to avoid the K=0 free-integrator drift. It removes the
+drift but also removes the ability to capture the coupled X/Y dynamics, which is the whole point of the
+augmentation. Trading the requirement away to make training easy is not allowed.
+**Constrains**: The K=0 X/Y drift (val sim-RMS diverges on long free-run, best=epoch 0; see the 69374
+run) must be solved **with X/Y kept in the routing**, never by dropping them. Admissible directions:
+velocity-/acceleration-fit loss (take the integrator out of the error path), nf-curriculum with
+per-stage lr (let the loss see and penalise the drift), DC-free/open-loop excitation + a drift guardrail
+on the free-integrator channels. lr tuning alone is NOT a fix (D-101/D-102 runs: no lr gives
+learning-without-drift on free integrators). Do not propose or default to Theta-only in any plan,
+diagnostic, or search. Supersedes the D-068 exclusion of X/Y as a permanent choice: D-068's routing
+remains only a controlled diagnostic baseline, not the deliverable.
+
+### [D-102] nf-window probe reports train AND val (physical meters), prints per epoch, and is checkpoint-safe (extends D-095)
+**Date**: 2026-07-08
+**What**: Rewrote the D-095 nf-window val probe in `gantry_dynamic/training.py` to (1) also compute a
+**train** nf-window RMS (one extra `n_step_error(mode='RMS')` per epoch on `data.train_list[0]`),
+(2) **print** `    [nf-probe] train nf-RMS=… val nf-RMS=… [m] (@nf=…)` each epoch, gated by a new
+`RunConfig.nf_probe_print` toggle (default True, visible in `gantry_interconnect_dynamic.py`'s CFG),
+and (3) fix a latent pickle crash by making the probe a module-level `_NfProbe` class with
+`__reduce__ -> _restore_noop_cve` instead of a local closure. `train_model_with_diagnostics` prints a
+train nf-RMS summary line and returns `loss_train_nf` alongside `loss_val_nf`.
+**Why**: The user wanted the per-epoch train/val nf-RMS (physical meters, same nf horizon as training)
+visible during real gantry runs, matching what the diagnostics print — so generalization gap (train
+low / val high) vs long-rollout drift (both bounded, sim-RMS grows) is readable live, not only in the
+end-of-run figure. The train quantity is NOT redundant with deepSI's `sqrt loss`: that is normalized,
+per-batch, sqrt-of-mean-MSE, whereas the probe is physical meters, full non-overlapping pass, directly
+comparable to the val nf-RMS and the sim-RMS selector. The pickle fix is mandatory in production: the
+old D-095 closure would crash `checkpoint_save_system` (`torch.save(self.__dict__)` -> "Can't pickle
+local object '_install_nf_val_probe.<locals>.wrapped'") the moment a checkpoint saves on val improvement
+— a latent bug that only stayed hidden because no probed real run happened to improve+checkpoint. A
+module-level class with `__reduce__` returning `(_restore_noop_cve, ())` serialises the transient probe
+back to the `_noop_cve` callable (verified: pickles OK, restores a callable not None); the probe is
+re-installed each fit and restored in the `finally`, so the no-op placeholder is never actually called.
+**Ruled out**: (a) Print val nf-RMS only, read `sqrt loss` as "train" — rejected: normalized/per-batch,
+not comparable to val meters (user explicitly asked for train nf-RMS on the same footing). (b) Keep the
+closure and no-op `checkpoint_save_system` like the diagnostics do — the real pipeline needs
+checkpointing for its val-sim-RMS model selection, so disabling it is not acceptable. (c)
+`functools.partial`/bound-method probe — would pickle the train/val trajectories into every checkpoint,
+bloating them; the `__reduce__` no-op keeps checkpoints clean. (d) Compute train nf-RMS over the full
+`train_list` — costlier per epoch; `train_list[0]` is a representative single-pass, consistent with the
+val probe cost.
+**Constrains**: (1) `_install_nf_val_probe` signature is now `(fit_sys, hp, cfg, train_sd, val_sd)`;
+callers (`training.py`, `diag_theta_lr_sweep.py`) updated. The two diagnostics that define their own
+local `_install_dual_nf_probe` are unaffected. (2) `nf_probe_print` is a runtime-only field — NOT in
+`cfg.hp`, so it does not touch the checkpoint/npz hp contract. (3) The probe adds ~one extra windowed
+train pass per epoch; negligible vs the full-sim validation (~75% of epoch time), but note it if epoch
+timing is analysed.
+
 ### [D-101] Pass hp['lr'] into init_model in build_model — the configured learning rate was silently ignored (every gantry run trained at Adam default 1e-3)
 **Date**: 2026-07-08
 **What**: One-line change in `scripts/gantry/gantry_dynamic/model.py:build_model`:

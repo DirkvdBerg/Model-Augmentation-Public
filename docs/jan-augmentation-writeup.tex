@@ -46,35 +46,26 @@
 \end{center}
 \vspace{0.4em}
 
-\section*{Notation}
-\begin{tabular}{@{}l p{0.66\linewidth}@{}}
-$\xb \in \R^6$ & baseline state $[q_1,q_2,q_3,\dot q_1,\dot q_2,\dot q_3]$, logical coordinates (Eq.~2)\\
-$\xa \in \R^2$ & added states, targeting $[\delta_a,\dot\delta_a]$ (Sec.~2)\\
-$\xh = [\xb^\top\ \xa^\top]^\top \in \R^8$ & full model state (Eq.~3)\\
-$u,\ y \in \R^3$ & stage input (forces $F_1,F_2,F_y$), stage output (positions $X_1,X_2,Y$)\\
-$Y = q_3$ & scheduling variable\\
-$\fb,\hb,\fa,\ga,\ha$ & baseline and augmentation functions (Eq.~2, Table~1)\\
-$\phi_{\mathrm{aug}},\ w$ & learning component (ANN) and its output $w$, the LFR interconnection signal (Eq.~4)\\
-$\psi$ & encoder, sets the initial state from past inputs and outputs (Eq.~5c)\\
-\end{tabular}
-
 \section{Baseline: the model we augment \quad (Eq.~2)}
 
-The baseline is the three degree-of-freedom rigid gantry. With generalized coordinates
-$q = [X,\ \Theta,\ Y]^\top$ and state $\xb = [q^\top\ \dot q^\top]^\top \in \R^6$, the
-equations of motion are
+\noindent\textbf{Coordinates and state.}
 \begin{equation}
-  M(Y)\,\ddot q + C\,\dot q + K\,q = P^\top u .
+  q = [\,X,\Theta,Y\,]^\top , \qquad
+  \xb = [\,X,\Theta,Y,\dot X,\dot\Theta,\dot Y\,]^\top \in \R^6 ,
+  \label{eq:baseline-state}
+\end{equation}
+with $\xb$ the state of the three degree-of-freedom rigid gantry and $Y$ the scheduling
+variable.
+
+\medskip\noindent\textbf{Equations of motion.}
+\begin{equation}
+  M(Y)\,\ddot q + C\,\dot q + K\,q = P^\top u ,
   \label{eq:baseline-eom}
 \end{equation}
-Using the constants
-\begin{equation}
-  \alpha := m_1{+}m_2{+}m_b{+}m_h , \qquad
-  \beta  := \tfrac{(m_1-m_2)L_b}{2} , \qquad
-  \gamma := J_b{+}J_h{+}\tfrac{(m_1+m_2)L_b^2}{4}{+}m_h d^2 ,
-  \label{eq:baseline-consts}
-\end{equation}
-the inertia matrix is
+with $u = [\,F_1,F_2,F_y\,]^\top \in \R^3$ the stage forces and $P$ the force map
+(Eq.~\ref{eq:baseline-out}).
+
+\medskip\noindent\textbf{Inertia matrix.}
 \begin{equation}
   M(Y) =
   \begin{bmatrix}
@@ -84,7 +75,15 @@ the inertia matrix is
   \end{bmatrix},
   \label{eq:baseline-M}
 \end{equation}
-and the damping and stiffness matrices are
+with the constants
+\begin{equation}
+  \alpha := m_1{+}m_2{+}m_b{+}m_h , \qquad
+  \beta  := \tfrac{(m_1-m_2)L_b}{2} , \qquad
+  \gamma := J_b{+}J_h{+}\tfrac{(m_1+m_2)L_b^2}{4}{+}m_h d^2 .
+  \label{eq:baseline-consts}
+\end{equation}
+
+\medskip\noindent\textbf{Damping and stiffness.}
 \begin{equation}
   C =
   \begin{bmatrix}
@@ -103,17 +102,17 @@ and the damping and stiffness matrices are
 \end{equation}
 
 \medskip\noindent\textbf{Assumption A.}\quad
-$M(Y)$ is nonsingular over the operating range, so $M(Y)^{-1}$ exists. This holds because
-$M(Y)$ is the positive-definite inertia matrix for all physically admissible parameters.
+$M(Y)$ is nonsingular over the operating range, so $M(Y)^{-1}$ exists (positive-definite
+inertia for all physically admissible parameters).
 
-\medskip
-Discretized with RK4, the baseline is the state-transition and output pair
+\medskip\noindent\textbf{Discrete-time form.}
 \begin{equation}
   \xb_{k+1} = \fb(\xb_k, u_k)\ \ (\text{Eq.\ 2a}) , \qquad
   \yh_k = \hb(\xb_k, u_k) = \Cbar\,\xb_k + D_d\,u_k\ \ (\text{Eq.\ 2b}) ,
   \label{eq:baseline-io}
 \end{equation}
-where the output selects the stage positions,
+with $\yh = [\,X_1,X_2,Y\,]^\top$ the stage positions, obtained by RK4 discretization; the
+output selects positions through
 \begin{equation}
   C_d = \big[\, P^\top \ \big|\ 0_{3\times3} \,\big] , \qquad
   P =
@@ -129,14 +128,24 @@ and $\Cbar$ is $C_d$ after input/output normalization (Section~\ref{sec:norm}).
 
 \section{System: the data-generating truth \quad (Eq.~1)}
 
-The truth adds a hidden tuned-mass absorber (mass $m_a$, relative displacement
-$\delta_a$) to the baseline. With $q = [X,\ \Theta,\ Y,\ \delta_a]^\top$,
+\noindent\textbf{Coordinates and state.}
 \begin{equation}
-  M(Y,\delta_a)\,\ddot q + C_4\,\dot q + K_4\,q = \begin{bmatrix} P^\top u \\ 0 \end{bmatrix} .
+  q = [\,X,\Theta,Y,\delta_a\,]^\top , \qquad
+  x = [\,q^\top\ \dot q^\top\,]^\top \in \R^8 ,
+  \label{eq:sys-state}
+\end{equation}
+with the truth adding a hidden tuned-mass absorber (mass $m_a$, relative displacement
+$\delta_a$) to the baseline.
+
+\medskip\noindent\textbf{Equations of motion.}
+\begin{equation}
+  M(Y,\delta_a)\,\ddot q + C_4\,\dot q + K_4\,q = \begin{bmatrix} P^\top u \\ 0 \end{bmatrix} ,
   \label{eq:sys-eom}
 \end{equation}
-The payload splits as $m_h = \mhr + m_a$, a rigid part $\mhr$ and the absorber $m_a$; the
-baseline of Section~1 uses the full payload $m_h$. The inertia matrix is
+with the payload split $m_h = \mhr + m_a$ (rigid part $\mhr$, absorber $m_a$); the baseline of
+Section~1 uses the full payload $m_h$, and the zero force row is the unactuated absorber.
+
+\medskip\noindent\textbf{Inertia matrix.}
 \begin{equation}
   M(Y,\delta_a) =
   \begin{bmatrix}
@@ -153,7 +162,7 @@ with
   s   &= \tfrac{(m_1-m_2)L_b}{2} - (\mhr{+}m_a)Y - m_a(L_0{+}\delta_a) , \label{eq:sys-consts}\\
   J   &= J_b{+}J_h{+}\tfrac{(m_1+m_2)L_b^2}{4} + (\mhr{+}m_a)d^2 + \mhr Y^2 + m_a(Y{+}L_0{+}\delta_a)^2 . \notag
 \end{align}
-The damping and stiffness matrices append the absorber to the baseline diagonal,
+\medskip\noindent\textbf{Damping and stiffness.}
 \begin{equation}
   C_4 =
   \begin{bmatrix}
@@ -172,7 +181,9 @@ The damping and stiffness matrices append the absorber to the baseline diagonal,
   \end{bmatrix}.
   \label{eq:sys-CK}
 \end{equation}
-The absorber is tuned by
+with the absorber $(c_a,k_a)$ appended to the baseline diagonal.
+
+\medskip\noindent\textbf{Absorber.}
 \begin{equation}
   \begin{aligned}
     & m_a = 0.10\,m_h = 1.01 , \quad
@@ -184,9 +195,14 @@ The absorber is tuned by
   \end{aligned}
   \label{eq:sys-absorber}
 \end{equation}
-Discretized with RK4, this is the truth $x_{k+1} = f(x_k,u_k)$, $y_k = h(x_k)$ of Eq.~1.
-Through $M(Y,\delta_a)$ the absorber couples into the $X$, $\Theta$, $Y$ accelerations; the
-baseline is recovered as $m_a \to 0$.
+
+\medskip\noindent\textbf{Discrete-time form.}
+\begin{equation}
+  x_{k+1} = f(x_k,u_k) , \qquad y_k = h(x_k) \quad (\text{Eq.\ 1}) ,
+  \label{eq:sys-io}
+\end{equation}
+with RK4 discretization; through $M(Y,\delta_a)$ the absorber couples into the $X,\Theta,Y$
+accelerations, and the baseline is recovered as $m_a \to 0$.
 
 \section{Augmentation: dynamic parallel \quad (Eq.~3, Table~1)}
 
