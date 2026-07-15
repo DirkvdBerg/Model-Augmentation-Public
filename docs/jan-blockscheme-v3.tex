@@ -1,0 +1,97 @@
+% Block scheme v3: axis-explicit state update + router (selector S).
+% Shows the augmentation touches only the Theta (stiffness) state and the added xbar,
+% not X/Y and not the output. Style: Hoekstra et al. (2025) Fig. 1.
+% v3: u comes from a setpoint generator (exogenous input), not from the state bus.
+% Compile: pdflatex jan-blockscheme-v3.tex
+\documentclass[border=12pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, calc}
+\usepackage{amsmath}
+
+\begin{document}
+\begin{tikzpicture}[>=Latex, font=\footnotesize,
+  block/.style={draw, rounded corners, minimum width=26mm, minimum height=12mm, align=center},
+  rblock/.style={draw, rounded corners, minimum width=13mm, minimum height=11mm, align=center},
+  small/.style={draw, rounded corners, minimum width=15mm, minimum height=10mm, align=center},
+  sum/.style={draw, circle, minimum size=7mm, inner sep=0pt},
+  jn/.style={circle, fill, minimum size=3pt, inner sep=0pt}]
+
+% ===== blocks =====
+\node[block]  (ann)   at (-4.2, 3.5)  {$\phi_{\mathrm{aug}}$ (ANN)\\{\scriptsize learning component}};
+\node[block]  (fbase) at (-4.2, 0)    {$f_{\mathrm{base}}$\\{\scriptsize gantry state block}};
+\node[block]  (hbase) at (-4.2,-3.5)  {$h_{\mathrm{base}}$\\{\scriptsize output (baseline)}};
+\node[rblock] (S)     at (-0.6, 3.5)  {$S$\\{\scriptsize router}};
+\node[block, minimum width=18mm] (ref) at (-9.0, 5.2) {setpoint\\{\scriptsize generator}};
+
+% ===== state bus (fed from the register/delay output) =====
+\draw[thick] (-7.3,-4.7) -- (-7.3,3.5);
+\node[above left=0pt] at (-7.3,3.5) {$\hat{x}_k$};
+\draw[->] (-7.3,3.5) -- (ann.west)   node[pos=0.58,above]{\scriptsize $\tilde{x},\bar{x}$};
+\draw[->] (-7.3,0)   -- (fbase.west) node[pos=0.45,above]{\scriptsize $\tilde{x}$};
+\draw[->] (-7.3,-3.5)-- (hbase.west) node[pos=0.45,above]{\scriptsize $\tilde{x}$};
+\node[jn] at (-7.3,0) {};
+\node[jn] at (-7.3,-3.5) {};
+
+% ===== setpoint bus: exogenous input u_k, generated (not fed back from data/state) =====
+\draw[-] (ref.south) -- (-9.0,-7.75);
+\node[right] at (-9.0,4.35) {\scriptsize $u_k$};
+\draw[->] (-9.0,3.2)  -- ($(ann.west)+(0,-0.3)$)   node[pos=0.85,below]{\scriptsize $u$};
+\draw[->] (-9.0,-0.3) -- ($(fbase.west)+(0,-0.3)$) node[pos=0.85,below]{\scriptsize $u$};
+\draw[->] (-9.0,-3.8) -- ($(hbase.west)+(0,-0.3)$) node[pos=0.85,below]{\scriptsize $u$};
+\node[jn] at (-9.0,3.2) {};
+\node[jn] at (-9.0,-0.3) {};
+\node[jn] at (-9.0,-3.8) {};
+
+% ===== router: two SEPARATE arrows out of S, leaving at different heights =====
+\draw[->] (ann.east) -- (S.west);
+\node[sum] (tsum) at (2.0,1.0) {$+$};
+% f_aug leaves S lower-right, drops into the Theta sum
+\draw[->] ($(S.east)+(0,-0.18)$) -- (2.0,3.32) -- (tsum.north);
+\node at (2.42,2.3) {\scriptsize $f_{\mathrm{aug}}$};
+% g_aug leaves S upper-right and drops straight down into the bus-bar (xbar row)
+\draw[->] ($(S.east)+(0,0.18)$) -- (5.0,3.68) -- (5.0,2.0);
+\node at (4.7,2.95) {\scriptsize $g_{\mathrm{aug}}$};
+
+% ===== f_base fan: middle line X aligned with f_base output; Theta up, Y down =====
+\draw[->] (fbase.east) -- (5.0,0);                 % X line, straight, aligned with f_base
+\node at (-1.6,0.28) {\scriptsize $X$};
+\draw[-] (-2.2,-1.0) -- (-2.2,1.0);                % fan bar
+\draw[->] (-2.2,1.0) -- (tsum.west);
+\node at (-1.6,1.28) {\scriptsize $\Theta$};
+\draw[->] (tsum.east) -- (5.0,1.0);
+\draw[->] (-2.2,-1.0) -- (5.0,-1.0);
+\node at (-1.6,-0.72) {\scriptsize $Y$};
+
+% ===== xbar row: g_aug drops straight into the bus-bar, no separate line =====
+
+% ===== bundle: concatenation bus-bar (NOT a sum) =====
+\draw[line width=1.3pt] (5.0,-1.0) -- (5.0,2.0);
+\node[jn] at (5.0,2.0) {}; \node[jn] at (5.0,1.0) {};
+\node[jn] at (5.0,0) {}; \node[jn] at (5.0,-1.0) {};
+\draw[-] (5.0,0.5) -- (6.4,0.5);
+\node[above] at (5.95,0.55) {\scriptsize $\hat{x}_{k+1}=[\tilde{x};\bar{x}]$};
+
+% ===== state register z^-1 at the base of the bus; encoder sets its initial condition =====
+\node[small] (delay) at (-7.3,-5.2) {$z^{-1}$\\{\scriptsize delay}};
+% running input: the next state, fed back from the right (each step)
+\draw[-]  (6.4,0.5) -- (6.4,-5.2);
+\draw[->] (6.4,-5.2) -- (delay.east);
+\node at (0.2,-4.95) {\scriptsize $\hat{x}_{k+1}$ (each step $k$)};
+% encoder below, feeding the initial-condition (bottom) port -- fires once per rollout
+\node[block, minimum width=15mm] (enc) at (-7.3,-7.9) {$\psi$\\{\scriptsize encoder}};
+% u history taps the setpoint bus; y history comes from the measured data
+\draw[->] (-9.0,-7.75) -- ($(enc.west)+(0,0.15)$) node[pos=0.35,above]{\scriptsize $u_{<k}$};
+\draw[<-] ($(enc.west)+(0,-0.15)$) -- ++(-2.0,0) node[left]{$y_{<k}$};
+\draw[->] (enc.north) -- (delay.south) node[pos=0.5,right]{\scriptsize $\hat{x}_{k_i|k_i}$ (init, once per rollout)};
+
+% ===== output readout: yhat = h_base (+) h_aug, h_aug = 0 =====
+\node[sum] (osum) at (0,-3.5) {$+$};
+\draw[->] (hbase.east) -- (osum.west) node[pos=0.5,above]{\scriptsize $h_{\mathrm{base}}$};
+\draw[->, dashed] (0,-2.4) -- (osum.north);
+\node at (1.15,-2.55) {\scriptsize $h_{\mathrm{aug}}=0$};
+\draw[->] (osum.east) -- (2.0,-3.5) node[right]{$\hat{y}_k$};
+
+% ===== legend removed: the equations and routing notes live in the writeup prose =====
+
+\end{tikzpicture}
+\end{document}
