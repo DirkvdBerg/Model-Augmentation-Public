@@ -46,7 +46,11 @@ from gantry_dynamic.evaluation import evaluate_and_save
 from gantry_dynamic.diagnostics import state_recovery_diagnostic
 
 # ── MODE ─────────────────────────────────────────────────────────────────────
-MODE = 'curriculum'   # 'curriculum' = warm-started nf-ladder (base X+Theta+Y learning run, 2026-07-12);
+MODE = 'zeromean'     # 'zeromean' = INTERVENTIONAL zero-mean-pin run (G9, 2026-07-14): single fresh
+                      #   nf=400 run with the K=0 zero-mean penalty attached -- prevention test.
+                      # 'nf_sweep' = INDEPENDENT window-length sweep (grid, 2026-07-13): each nf trained
+                      #   fresh from the encoder init at fixed lr=1e-7, full routing -- no warm-start.
+                      # 'curriculum' = warm-started nf-ladder (base X+Theta+Y learning run, 2026-07-12);
                       # 'orth_smoke' = the previous orth-projection single-trial run (preserved below)
 
 # ── NF CURRICULUM (MODE='curriculum'): warm-started ladder, ONE fit_sys ───────
@@ -70,20 +74,23 @@ NF_LADDER = [        # (nf, epochs) warm-started in order; ~26 epochs total, bud
     (2000, 5),       # trim if memory/wall-clock exceed budget; nf=4000 stays off (566MB wall)
 ]
 
-# ── Search / orth-smoke knobs (MODE != 'curriculum') ──────────────────────────
-# ORTH-PROJECTION SMOKE RUN (2026-07-12): joint estimation (detuned) + Theta routing
-# + orth penalty at beta_center=4.66e-4. Judged on loss-component health only.
-N_TRIALS        = 1           # single config, no search
-OPTUNA_EPOCHS   = 5           # smoke horizon
-CHUNK_SIZE      = 5           # one chunk = the whole run
-LR_LOW, LR_HIGH = 1e-5, 1e-5  # FIXED lr=1e-5: Theta-routing rate (D-101 era)
-NF_LOW, NF_HIGH, NF_STEP = 400, 400, 1000     # FIXED nf=400
+# ── Search knobs (MODE != 'curriculum') ───────────────────────────────────────
+# NF WINDOW-LENGTH SWEEP (2026-07-13): independent grid over nf at FIXED lr=1e-7,
+# full X+Theta+Y routing, free ANN. Each nf is a self-contained trial built fresh
+# from the encoder init (no warm-start), so the effect of window length is isolated
+# from the curriculum's recovery-from-degradation confound (70903). Question: can a
+# trained ANN at any window length beat the epoch-0 encoder-init sim-RMS (8.0e-5)?
+N_TRIALS        = 4           # = #grid points (GridSampler exhausts the grid)
+OPTUNA_EPOCHS   = 8           # per-nf budget (matches 70903 rung depth)
+CHUNK_SIZE      = 8           # one chunk = the whole per-nf run (no mid-run pruning needed at fixed lr)
+LR_LOW, LR_HIGH = 1e-7, 1e-7  # FIXED lr=1e-7: K=0 (X/Y) routing rate (D-101/D-102)
+NF_LOW, NF_HIGH, NF_STEP = 800, 3200, 800     # grid {800, 1600, 2400, 3200}
 SEARCH_VAL_SAMPLES = 8000     # trials validate on one cropped val (see swap below); full val for final
-FINAL_EPOCHS    = 5           # short final (full-val) pass: yields the joint param table
-STUDY_BASE_NAME = "gantry_orth_smoke"
+FINAL_EPOCHS    = 8           # final (full-val) pass on the best nf: figures + state-recovery diag
+STUDY_BASE_NAME = "gantry_nf_sweep"
 
 # ── Regime: set once, single source of truth (mirrors the entry file's CFG) ──
-if MODE == 'curriculum':
+if MODE in ('curriculum', 'nf_sweep', 'zeromean'):
     CFG = RunConfig(
         ann_route_ix=(0, 1, 2, 3, 4, 5, 6, 7),  # FULL X+Theta+Y: the deliverable routing (D-103)
         stride=100,                             # large -> fast epochs (consistent with prior runs)
@@ -93,13 +100,16 @@ if MODE == 'curriculum':
         # orth_beta default 0.0 = off: no penalty-basis build (~6 min skipped)
     )
 else:
+    # nf_sweep regime = the 70903 curriculum regime, but nf is swept per trial (grid)
+    # instead of climbed as a warm-started ladder. nf itself is set by nf_override in
+    # objective(); the value here is unused.
     CFG = RunConfig(
-        ann_route_ix=(1, 4, 6, 7),   # Theta+absorber: the approved machinery-validation routing (D-103 guard)
-        stride=100,                  # large -> fast smoke (user 07-12)
-        nf_seconds=0.100,            # nf = 400
-        joint_estimation=True,       # negation only exists with trainable theta
-        # param_init_detune: RunConfig default 14-vector (+-10%) -> detuned start (run-D style)
-        orth_beta=4.66e-4,           # beta_center (D7.9 layer 1, measured 2026-07-12)
+        ann_route_ix=(0, 1, 2, 3, 4, 5, 6, 7),  # FULL X+Theta+Y: the deliverable routing (D-103)
+        stride=100,                             # large -> fast epochs (consistent with 70903)
+        lr=1e-7,                                # K=0 routing rate (override the 1e-4 default!)
+        joint_estimation=False,                 # free ANN: base learning run, no negation
+        param_init_detune=None,                 # nominal theta: correct baseline, ANN learns the residual
+        # orth_beta default 0.0 = off: no penalty-basis build
     )
 
 RUN_ID = os.environ.get('SLURM_JOB_ID') or datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -198,8 +208,26 @@ def objective(trial):
         print(f"Trial {trial.number} FAILED: {e}")
         return float('inf')
 
-    print(f"Trial {trial.number}: bestfit (val sim-RMS) = {fit_sys.bestfit:.6f}")
-    return fit_sys.bestfit
+    # Persist this trial's TRAINED weights (2026-07-13, for the drift-demo DC checks):
+    # fit()'s end-of-fit _best reload leaves fit_sys at the best checkpoint, which is
+    # epoch 0 (= zero-init ANN, useless for dissection) whenever training only degrades
+    # sim-RMS on the drift route. Reload _last first, then save the full __dict__
+    # (make_drift_checkpoint.py pattern; d6/demo scripts load it via
+    # fit_sys.__dict__ = torch.load(...)). bestfit is captured BEFORE the reload so the
+    # returned objective value is untouched.
+    bf_final = fit_sys.bestfit
+    try:
+        ckpt_dir = os.path.join(SDIR, f'trial_ckpts_{RUN_ID}')
+        os.makedirs(ckpt_dir, exist_ok=True)
+        fit_sys.checkpoint_load_system(name='_last')
+        ck = os.path.join(ckpt_dir, f"trial{trial.number}_nf{nf}_lr{lr:.0e}_last.pth")
+        torch.save(fit_sys.__dict__, ck)
+        print(f"  saved _last checkpoint -> {ck}")
+    except Exception as e:
+        print(f"  WARNING: _last checkpoint save failed ({e}); weights only in ~/.deepSI/checkpoints/")
+
+    print(f"Trial {trial.number}: bestfit (val sim-RMS) = {bf_final:.6f}")
+    return bf_final
 
 
 def _save_search_figures(study, out_dir, rid):
@@ -347,5 +375,47 @@ def run_search_main():
     state_recovery_diagnostic(fit_sys, best_cfg.hp, best_rid, best_cfg, DATA, NORM, final_dir)
 
 
+def run_zeromean_main():
+    """G9 interventional run (plan doc §14.3): train the 70903-rung-0 config FRESH with the
+    K=0 zero-mean pin attached. Control = 70903 rung 0 / 71013 trial 3 (already run).
+    Pre-declared predictions (run-table row, problem log §12): dY |mean|/rms 0.997 -> ~0;
+    free-run at/below the no-ANN level; window fit within ~2% of the unpinned control."""
+    from gantry_dynamic.zeromean_pin import build_zeromean_pin
+    out_dir = os.path.join(SDIR, f'zeromean_{RUN_ID}')
+    os.makedirs(out_dir, exist_ok=True)          # cluster: folders may not exist yet
+    cfg_z = dataclasses.replace(CFG, nf_override=400, epochs=8)
+    hp = cfg_z.hp
+    print(f"\n{'='*70}\nZERO-MEAN PIN RUN  routing={cfg_z.ann_route_ix}  lr={cfg_z.lr:.1e}  "
+          f"nf=400  epochs=8\n  -> {out_dir}\n{'='*70}")
+    np.random.seed(CFG.seed)
+    torch.manual_seed(CFG.seed)
+    fit_sys = build_model(hp, cfg_z, DATA, NORM)
+    pin = build_zeromean_pin(cfg_z, DATA, NORM)
+    fit_sys.orth_penalty = pin                   # existing hook; no framework edits
+    from model_augmentation.fit_systems.blocks import Static_ANN_Block as _SAB
+    _ann = next(m for m in fit_sys.hfn.connected_blocks if isinstance(m, _SAB))
+    print(f'  [pin] means at init (zero-init ANN, expect 0): {pin.row_means(_ann)}')
+    _orig = _install_nf_val_probe(fit_sys, hp, cfg_z, SEARCH_TRAIN, DATA.val_ckpt_data)
+    try:
+        train_model(fit_sys, hp, cfg_z, DATA, epochs=8)
+    finally:
+        fit_sys.cal_validation_error = _orig
+    bf = fit_sys.bestfit
+    fit_sys.checkpoint_load_system(name='_last')  # trained weights (fit reloads _best)
+    fit_sys.__dict__.pop('cal_validation_error', None)
+    means = pin.row_means(_ann)
+    print(f'\n  [pin] trained K=0 output means (pinned cols {pin.route_cols}): {means}')
+    print(f'  [pin] final V_pin = {float(pin(_ann)):.3e}   bestfit(sim-RMS) = {bf:.6e}')
+    ck = os.path.join(out_dir, 'zeromean_nf400_last.pth')
+    torch.save(fit_sys.__dict__, ck)
+    print(f'  saved _last checkpoint -> {ck}')
+    tr = np.array(getattr(fit_sys, 'Loss_train_nf', []), dtype=float)
+    vl = np.array(getattr(fit_sys, 'Loss_val_nf', []), dtype=float)
+    if tr.size:
+        print(f'  [summary] train nf-RMS {tr[0]:.4e} -> {tr[-1]:.4e}   '
+              f'val nf-RMS {vl[0]:.4e} -> {vl[-1]:.4e}')
+
+
 if __name__ == '__main__':
-    (run_curriculum_main if MODE == 'curriculum' else run_search_main)()
+    {'curriculum': run_curriculum_main,
+     'zeromean': run_zeromean_main}.get(MODE, run_search_main)()
