@@ -1,0 +1,2 @@
+number,value,datetime_start,datetime_complete,duration,params_lr,params_nf,system_attrs_grid_id,system_attrs_search_space,state
+0,9.899922588374466e-05,2026-07-12 16:21:00.027580,2026-07-12 16:52:47.535185,0 days 00:31:47.507605,1e-05,400,0,"{'lr': [1e-05], 'nf': [400]}",COMPLETE
