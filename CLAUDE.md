@@ -46,6 +46,18 @@ Deep version with incidents and file pointers: `docs/control-reasoning.md`.
 ## Python Environment
 Bash: `conda run -n GraduationProject python ...`. User manual: `conda activate GraduationProject`.
 
+**Running scripts (MANDATORY live-output convention):** any script expected to run more than a few
+seconds (training, sims, diagnostics) MUST be launched so its progress streams live and does not block:
+- Launch with `run_in_background: true` AND unbuffered streaming:
+  `PYTHONIOENCODING=utf-8 PYTHONUNBUFFERED=1 conda run --no-capture-output -n GraduationProject python -u <script>`.
+  Plain `conda run` block-buffers stdout (nothing appears until the process exits); `--no-capture-output`
+  + `python -u` + `PYTHONUNBUFFERED=1` makes each print appear live.
+- Read the streamed output from the job's `.output` file (grep/tail for the signal lines), and tell the
+  user that path so they can `! tail -n 30 "<path>"` it themselves.
+- `conda run python -c` cannot take a multi-line `-c` arg (newline error): write the snippet to a temp
+  file in the scratchpad and run that file instead.
+- Quick (<~5 s) checks (compile/import) may run foreground; the convention above is for real runs.
+
 ## Key File Map
 | What | Where |
 |------|-------|
