@@ -25,6 +25,8 @@ Provides:
 All tensors are dtype=torch.float32.
 """
 
+import os
+
 import torch
 
 _D = torch.float32
@@ -96,6 +98,19 @@ C[2, 2] = cy
 # ----------------------------------------------------------------------
 K = _z.clone()
 K[1, 1] = kb1 + kb2
+
+# DIAGNOSTIC (pole-perturbation, gantry-zero-mean): env-gated artificial stiffness on the X (row 0)
+# and Y (row 2) integrator axes. Default 0.0 -> EXACT ground-truth main.m behaviour (poles at z=1).
+# GANTRY_KX_ART / GANTRY_KY_ART > 0 [N/m] moves those poles to z=1-delta (lambda<1), restoring
+# geometric BPTT-sensitivity decay. Read at import: the probe MUST set the env before importing the
+# pipeline. Flows consistently into BOTH K_mat (fnet, blocks.py:799) and A_combined (Ax, blocks.py:830)
+# because both are built from this K below. HEURISTIC: diagnostic knob, not a physical parameter.
+_kx_art = float(os.environ.get("GANTRY_KX_ART", "0.0"))
+_ky_art = float(os.environ.get("GANTRY_KY_ART", "0.0"))
+if _kx_art:
+    K[0, 0] = torch.tensor(_kx_art, dtype=_D)
+if _ky_art:
+    K[2, 2] = torch.tensor(_ky_art, dtype=_D)
 
 # ----------------------------------------------------------------------
 # Coordinate transform P  (from main.m lines 98-100)
