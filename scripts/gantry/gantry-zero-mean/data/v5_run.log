@@ -1,0 +1,24 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+v5_dc_null_counterfactual | does nulling the K=0 DC remove drift at no fit cost?
+WARNING: baseline_states.npz not found, using finite-diff states for normalization
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_04fdce928d32.npz (Q (40308, 11), 6718 points)
+[demo_common] pipeline built in 6s (slim load: 14 train files, snr=None, na=nb=17, K0=17)
+  full DC (masked to K=0 rows): X=-5.023e-07  Y=+1.181e-06  dX=+7.957e-07  dY=-8.816e-06
+  L(alpha): 40 windows of ~400 steps | D(alpha): 3 records x 8000 steps
+  alpha=0.00 | L=3.2508e-07 (L/L0=1.000) | drift X=8.666e-04 Y=6.682e-03 Theta=3.544e-06
+  alpha=0.25 | L=3.2945e-07 (L/L0=1.013) | drift X=7.007e-04 Y=6.804e-03 Theta=4.338e-06
+  alpha=0.50 | L=3.3452e-07 (L/L0=1.029) | drift X=5.348e-04 Y=7.985e-03 Theta=5.206e-06
+  alpha=0.75 | L=3.4043e-07 (L/L0=1.047) | drift X=4.336e-04 Y=9.166e-03 Theta=6.100e-06
+  alpha=1.00 | L=3.4706e-07 (L/L0=1.068) | drift X=3.794e-04 Y=1.198e-02 Theta=7.006e-06
+  ANN-OFF (baseline) | L_off=3.6220e-07 | drift X=3.745e-04 Y=1.325e-04
+
+  === VERDICT ===
+  fit cost of nulling DC:  L(1)/L(0) = 1.068  (flat ~1.0 => option B is ~free; >1 => DC load-bearing)
+  drift removed X: 8.666e-04 -> 3.794e-04  (0.44x; baseline 3.745e-04)
+  drift removed Y: 6.682e-03 -> 1.198e-02  (1.79x; baseline 1.325e-04)
+  => DC PARTLY LOAD-BEARING or drift not DC-only -- see tradeoff curve
+
+  figure -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\gantry-zero-mean\figures\v5_dc_null_counterfactual.png | data -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\gantry-zero-mean\data\v5_dc_null_counterfactual.npz
