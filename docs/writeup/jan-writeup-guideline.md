@@ -1,6 +1,6 @@
 # Guideline: Jan augmentation writeup (self-accountability)
 
-Rules I hold myself to when writing or editing `docs/jan-augmentation-writeup.tex`.
+Rules I hold myself to when writing or editing `docs/writeup/jan-augmentation-writeup.tex`.
 Reread this before every edit pass. Verify against the self-check at the bottom before
 telling Dirk it is done. This exists because an earlier draft was rejected as messy and
 noisy; these rules remove my discretion so the same failures cannot recur.

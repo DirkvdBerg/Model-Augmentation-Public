@@ -7,7 +7,7 @@ check the setup. Clean-sheet, no code listings, no em-dashes.
 ## STATUS / HANDOFF (2026-07-06)
 
 Where we are: **Section 3 is DONE.** The `jan-blockscheme-v2.pdf` figure is integrated
-into `docs/jan-augmentation-writeup.tex` (compiles, 4 pages) as the Interconnection
+into `docs/writeup/jan-augmentation-writeup.tex` (compiles, 4 pages) as the Interconnection
 subsection, wrapped by a Components table (3a) and the Resulting-model equations (3c).
 The whole writeup was reread end to end and the top Notation table now declares
 `phi_aug`, `w`, `psi`. Sections 1, 2, 4, 5, 6 are in shape. NOTE the old
@@ -198,8 +198,8 @@ for the gantry parameters; do not re-derive.
 
 ## Immediate next actions
 
-1. DONE: block scheme built and iterated to clean -> `docs/jan-blockscheme-v2.tex`.
-2. TODO: rewrite Section 3 of `docs/jan-augmentation-writeup.tex` to the 3a/3b/3c
+1. DONE: block scheme built and iterated to clean -> `docs/writeup/jan-blockscheme-v2.tex`.
+2. TODO: rewrite Section 3 of `docs/writeup/jan-augmentation-writeup.tex` to the 3a/3b/3c
    structure (components table, interconnection = the v2 figure, resulting model),
    replacing the abstract Table 1 echo. Include `jan-blockscheme-v2` as the figure.
    Sections 1/2/4/5/6 already in shape; reread end-to-end after Section 3.
