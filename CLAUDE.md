@@ -66,14 +66,15 @@ seconds (training, sims, diagnostics) MUST be launched so its progress streams l
 | Augmentation training entry point | `scripts/gantry/gantry_interconnect_dynamic.py` |
 | Baseline parameter recovery entry point | `lpv_lfr_baseline/scripts/train_param_recovery.py` |
 | Literature PDFs (Jan's papers in `augmentation/`, projection in `Orthogonality/`) | `literature/` + `docs/references.md` |
+| **Literature search procedure** (deep-research skill) | `.claude/skills/deep-research/SKILL.md` |
 | FP model — MATLAB ground truth | `kamtin-fp-model/` |
 | Augmentation framework | `model_augmentation/fit_systems/` |
 | Reference benchmarks | `scripts/` |
 | FP model structure | `docs/fp-model-structure.md` |
 | FP ↔ augmentation interface | `docs/fp-augmentation-interface.md` |
+| **Supervisor write-up + all its figures** (block scheme, training objective, normalisation; shared notation + figure style) | `docs/writeup/` (start at `docs/writeup/README.md`) |
 | Design decisions log | `docs/decisions.md` |
 | Session tasks | `tasks/todo.md` |
-| Self-improvement ruleset | `tasks/lessons.md` |
 | Session handoff | `tasks/handoff.md` |
 | Archived docs | `archive/` |
 | **Telica data schema** (columns, signals, folder structure, **train/val/test split**, parameter + controller files) | `docs/kamtin-telica-schema.md` |
@@ -88,8 +89,16 @@ seconds (training, sims, diagnostics) MUST be launched so its progress streams l
 Claude: read/write on `tasks/`, `docs/`, `CLAUDE.md`, `.claude/settings.json`; read + propose only on `CODEX.md`. Codex: the reverse.
 Neither ever writes `kamtin-fp-model/`. Proposals go in `tasks/handoff.md` under `### Proposed improvements for [Claude/Codex]`.
 
-## Step 0 — Every Session
-Read `tasks/lessons.md` before any work. Rules there are active constraints, not suggestions.
+## Standing Rules (always active)
+These are constraints, not suggestions (D-122).
+- **Answer before code.** On a question, shared context, or a problem: respond in text first. No tools, no edits until the user confirms direction.
+- **Modify only what was asked.** Only the files, and the parts within a file, explicitly requested. Flag stale siblings in text and ask.
+- **Use the user's exact term.** Implement the concept/file/metric they named; never silently substitute a "more correct" sibling. "Don't touch `<file>`" means no reads and no writes on it.
+- **Respect session boundaries.** When the user says work happens in a new/other session, prepare the handoff. Do not do that work here.
+- **Commit after direction is given.** Once a direction is confirmed, execute. Do not re-request approval you already hold.
+- **One recommendation.** On "what next", give exactly one concrete action with rationale, not an option menu.
+- **No em-dashes** in any output: not the Unicode character, not `---`, not `--`. Applies to prose, LaTeX, code comments, and text inside figures.
+- **Removing a rule needs justification.** An edit that deletes or weakens a user-authored rule must justify it in the same message, check the intent still holds, offer a softened rewrite, and flag the conflict of interest when it constrains your own behavior.
 
 ## Archival Rules (on read)
 - `tasks/handoff.md`: archive full content to `archive/sessions/YYYY-MM-DD-handoff.md`, then trim file to open blockers only.
@@ -115,8 +124,8 @@ No label = do not implement yet. Literature validates only if the formula, varia
 
 ## Workflow
 - **Plan mode** for any task with 3+ steps or architectural decisions. Stop and re-plan if something goes sideways.
-- **Subagents:** use an Explore subagent for broad fan-out searches (unknown location, many files, multiple naming conventions). Do not spawn for targeted lookups; inline search by the context-holding session is cheaper and better informed.
-- **Self-improvement:** after any user correction, apply the 3-criteria gate (generalizable + actionable + novel) and update `tasks/lessons.md`. Merge, do not append duplicates.
+- **Subagents (codebase):** use an Explore subagent for broad fan-out searches (unknown location, many files, multiple naming conventions). Do not spawn for targeted lookups; inline search by the context-holding session is cheaper and better informed.
+- **Literature / web deep research (D-121):** any request to find, survey, or fetch academic papers ("state of the art on X", "find papers on Y", "who cites Z", related-work sweeps) MUST invoke the `deep-research` skill (`.claude/skills/deep-research/SKILL.md`) — not ad-hoc `WebSearch`. This includes **document-driven** research ("read `docs/<file>.md` and research it", "is this novel", a pasted problem statement), where the skill's step 0 (FRAME) is mandatory before any query. Run it in subagents, one per independent seed paper or sub-question; a single lookup stays inline. Every run returns the skill's mandatory **Research Log**; its *Suggested skill fix* line is how the procedure gets revised. Rationale: keyword search measurably fails on control topics (control publishes in IFAC/CDC/ECC/ACC + Elsevier/IEEE, and authors rename concepts between papers), so the skill enumerates by author ID and citation edge instead of matching keywords.
 - **Verification:** never mark a task complete without proving it works.
 - **Run discipline (D-090):** every training run with a new hypothesis or config gets a row in the run table (`docs/gantry-augmentation-problem-log.md`, Section 12) BEFORE launch stating the hypothesis it tests; add the outcome after.
 - **Task flow:** plan to `tasks/todo.md` -> check in with user -> implement -> mark complete -> log decisions to `docs/decisions.md`.

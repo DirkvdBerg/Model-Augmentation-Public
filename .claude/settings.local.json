@@ -132,7 +132,10 @@
       "Bash(C:/Users/20203253/AppData/Local/anaconda3/envs/GraduationProject/python.exe C:/Users/20203253/AppData/Local/Temp/claude/C--Users-20203253-OneDrive---TU-Eindhoven-Graduation-Project-Baseline-FP-model-Baseline-LPV-Augmentation/e3fc1af8-17db-41c0-9ce7-4da9673f3969/scratchpad/v6_smoke.py)",
       "Bash(PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8 V6_LS=off,1.0 V6_EPOCHS=4 V6_SEED=0 conda run --no-capture-output -n GraduationProject python -u scripts/gantry/gantry-zero-mean/v6_lipschitz_sweep.py)",
       "Bash(tee \"scripts/gantry/gantry-zero-mean/data/v6_run.log\")",
-      "Bash(tee \"scripts/gantry/gantry-zero-mean/data/v6_run2.log\")"
+      "Bash(tee \"scripts/gantry/gantry-zero-mean/data/v6_run2.log\")",
+      "Bash(PYTHONIOENCODING=utf-8 conda run --no-capture-output -n GraduationProject python -c \"import ast; ast.parse\\(open\\('scripts/gantry/ARTBP/train_artbp.py',encoding='utf-8'\\).read\\(\\)\\); print\\('PY OK'\\)\")",
+      "Bash(bash -n scripts/gantry/ARTBP/runners/run_gate2.sh)",
+      "Bash(PYTHONIOENCODING=utf-8 conda run --no-capture-output -n GraduationProject python \"C:\\\\Users\\\\20203253\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-20203253-OneDrive---TU-Eindhoven-Graduation-Project-Baseline-FP-model-Baseline-LPV-Augmentation\\\\237df9f7-5713-472e-a062-c9cc9af0782e\\\\scratchpad\\\\val_sim_smoke.py\")"
     ]
   }
 }
