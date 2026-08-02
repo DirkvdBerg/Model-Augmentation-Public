@@ -185,7 +185,7 @@ def evaluate(ic, W, batch=256, max_windows=None):
     rms         RMS output error over all windows and steps           [m]
     dc_scatter  std ACROSS windows of the per-window mean error       [m]
     """
-    n = len(W) if max_windows is None else min(len(W), max_windows)
+    n = len(W) if not max_windows else min(len(W), max_windows)
     sel_all = np.linspace(0, len(W) - 1, n).astype(int)
     se = torch.zeros(3, dtype=torch.float64)
     cnt = 0
@@ -324,7 +324,8 @@ def main():
     ap.add_argument('--batch', type=int, default=CFG.batch_size)
     ap.add_argument('--stride', type=int, default=CFG.stride)
     ap.add_argument('--val-stride', type=int, default=400, dest='val_stride')
-    ap.add_argument('--val-windows', type=int, default=256, dest='val_windows')
+    ap.add_argument('--val-windows', type=int, default=0, dest='val_windows',
+                    help='0 = every val window')
     ap.add_argument('--no-cog', action='store_true', dest='no_cog')
     ap.add_argument('--f64', action='store_true')
     ap.add_argument('--probe', action='store_true',

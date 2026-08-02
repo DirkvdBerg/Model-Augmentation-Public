@@ -137,12 +137,330 @@ but not to dominate. Section 3 measures what it actually does.
 
 ## 3. Task item (i): the per-window target check
 
-_(in progress)_
+`diag_window_target.py`, `V1_standstill_Yp10` and `V3_ysweep_Yp10`, 476 windows of
+`nf = 400` (0.100 s) on a stride-100 start grid, 4 kHz, block-mean input,
+`up_sample = 1`, CoG-corrected baseline, float64. Three seeding arms on ONE start grid so
+the numbers are directly comparable: `record` (today's `x_logical[s]`, finite-difference
+velocities), `exact` (this experiment), and `freerun` (one continuous run from the rest IC,
+chunked on the same windows).
+
+### 3.1 The result, V1
+
+```
+state   unit       record seed     exact seed       free run  exact/free     gain
+X       m           3.3000e-08     1.2703e-08     7.6940e-08        0.17     2.6x
+Theta   rad         4.7928e-07     4.7217e-07     4.1339e-09      114.22     1.0x
+Y       m           1.0273e-04     1.0278e-04     3.1469e-08     3266.24     1.0x
+dX      m/s         6.4943e-07     2.2495e-07     5.7877e-09       38.87     2.9x
+dTheta  rad/s       8.8896e-06     8.8952e-06     1.1686e-07       76.12     1.0x
+dY      m/s         2.0241e-03     2.0251e-03     3.1155e-05       65.00     1.0x
+```
+
+V3 is the same to within 10 % on every entry (`Y 1.0532e-04` against `1.0527e-04`, free run
+`4.488e-08`), so this is not one record's accident.
+
+### 3.2 The acceptance criterion is FAILED on five of six states
+
+**X passes and passes well** (`0.17x` the free-run floor, and `1.27e-08` against the
+handoff's `9.147e-08` 20 kHz figure). **Every other state is 39x to 3266x above its floor.**
+
+**And the exact velocities bought nothing where it matters.** The `gain` column is the whole
+story: replacing the record's finite-difference velocity rows with the truth's own
+integrator states improves X by `2.6x` and dX by `2.9x`, and improves Theta, Y, dTheta and
+dY by **`1.0x`, i.e. not at all**. The Y per-window scatter is `1.0278e-04 m` from the exact
+IC against `1.0273e-04 m` from the finite-difference IC. Those are the same number.
+
+This **falsifies the handoff's section 5 assumption.** F1's zero-mean result does not survive
+per-window re-seeding from the exact physical IC. It was right to be listed as an assumption.
+
+### 3.3 The free-run floor is real, and it is the 20 kHz figure
+
+The `freerun` column reproduces the coulomb-offset config-B numbers at a different rate, a
+different integrator setting and a different (CoG-corrected) baseline:
+
+```
+              this run, 4 kHz     coulomb-offset, 20 kHz
+X               7.694e-08              9.147e-08
+Theta           4.134e-09              3.730e-09
+Y               3.147e-08              2.979e-08
+```
+
+So the floor is a property of the model mismatch and not of the measurement, and the
+velocity floors, which were never measured before, are
+
+```
+dX  5.788e-09 m/s      dTheta  1.169e-07 rad/s      dY  3.116e-05 m/s
+```
+
+derived the same way (free run at the exact IC, per-window means, same window grid), as
+handoff section 10 requires them to be before use.
+
+### 3.4 Three by-products worth keeping
+
+**float32 is not the limit.** The dtype training actually runs in changes the exact-seed
+scatter by less than 0.01 % on every state. It does inflate the free-run floor on Y
+(`3.15e-08 -> 9.85e-08` on V1, `4.49e-08 -> 5.57e-07` on V3), which is round-off accumulating
+over a 12 s single-precision rollout, but the per-window quantity is untouched. No reason to
+pay for float64 training.
+
+**The CoG correction earns its place on the re-seeded arms and only there.**
+
+```
+state       exact CoG on   exact CoG off     free CoG on    free CoG off
+X             1.2703e-08      6.0257e-07      7.6940e-08      1.0073e-08
+dX            2.2495e-07      1.2268e-05      5.7877e-09      1.7556e-07
+Y             1.0278e-04      1.0278e-04      3.1469e-08      3.1474e-08
+```
+
+On the per-window arm the correction is worth `47x` on X and `55x` on dX, which is what
+"stops polluting the X and Theta rows" means quantitatively. On Y it changes nothing to five
+digits, exactly as the row structure predicts (the `L0` terms never enter the Y row). On the
+continuous free run it makes X position `7.6x` worse while making dX `30x` better; that is
+consistent with coulomb-offset F4's finding that the correction is not a fix for a settled
+offset, and it is why the correction is applied here as confound removal and nothing else.
+
+**The free run is NOT zero-mean on X and dX.** Newey-West HAC t on the free-run per-window
+means: X `t = 11.44` (bias `1.20e-07 m`), dX `t = 31.41` (bias `2.12e-08 m/s`), while Y is
+`t = 1.29` and dY `t = -0.13`. Coulomb-offset F4 reported `|t| < 1.3` on six axis/record
+combinations, but those were X, Theta and Y positions on the UNCORRECTED baseline. With the
+CoG term in, the X free run acquires a small significant drift. The exact-seed arm is
+zero-mean on every state (`|t| <= 0.21` on V1, `<= 0.67` on V3), so F4's headline claim
+survives where it was made; the new X free-run bias is a property of the corrected baseline
+and is `1.2e-07 m` in size, three decades below the quantity this experiment is about.
+
+---
+
+## 4. Why the target is still dirty: the mechanism
+
+`diag_dc_mechanism.py`, `V1_standstill_Yp10`, same 476 windows.
+
+### 4.1 The per-window DC is the absorber initial condition, with the predicted slope
+
+Regression of the measured per-window mean error on `[delta_a(s), vdelta_a(s)]`, the truth's
+absorber state at the window start:
+
+```
+state          R^2    corr vda     slope vda     predicted    ratio
+X           0.8252      0.9082    5.4154e-07           --       --
+Theta       1.0000      0.9998    2.2158e-05           --       --
+Y           1.0000     -0.9998   -4.8236e-03   -5.0000e-03    0.965
+dX          0.9955      0.9977    1.0532e-05           --       --
+dTheta      0.9959      0.9979    4.1655e-04           --       --
+dY          0.9999     -0.9999   -9.5024e-02   -1.0000e-01    0.950
+```
+
+`R^2 = 1.0000` on Y and `0.9999` on dY, and the fitted slopes match the closed form to
+3.5 % and 5 %. The closed form is not fitted: a missing absorber momentum `vdelta_a(0)` is a
+velocity deficit `(ma/mh)*vdelta_a(0)` on the payload row, and on a `K = 0` axis it
+integrates, so the mean over an `nf`-window is `-(ma/mh)*vdelta_a(0)*nf*ts/2` on Y and
+`-(ma/mh)*vdelta_a(0)` on dY. This is the coulomb-offset thread's F3 (`corr -1.000`, slope
+to 3 %) reproduced independently, but now per window rather than once, on all six states,
+and with the CoG-corrected baseline.
+
+X is the exception at `R^2 = 0.825`, and X is also the one state that already passed the
+acceptance criterion. Its residual DC is `1.27e-08 m`, three decades below the floor-relevant
+scale, so what is left there is not worth attributing.
+
+### 4.2 The decisive control: the truth model against itself
+
+The same window grid, the same integrator, the TRUTH's own 8-state model on both arms, and
+the only difference is the absorber initial condition:
+
+```
+state        T8 exact-8   T6 abs zeroed  baseline exact-6  T6 / baseline
+X            5.3130e-09      1.2703e-08        1.2703e-08          1.000
+Theta        5.1401e-10      4.7216e-07        4.7217e-07          1.000
+Y            1.7350e-08      1.0278e-04        1.0278e-04          1.000
+dX           1.4395e-08      2.2494e-07        2.2495e-07          1.000
+dTheta       5.7684e-07      8.8951e-06        8.8952e-06          1.000
+dY           1.3194e-07      2.0258e-03        2.0251e-03          1.000
+```
+
+**T8**: re-seeded from the complete 8-state IC, the per-window scatter collapses to the
+integrator floor on every state. So the window grid, the statistics and the re-seeding
+procedure are sound. Per-window re-seeding is not intrinsically dirty.
+
+**T6**: the same truth model, re-seeded from the exact SIX states with the absorber zeroed,
+reproduces the baseline's scatter to **1.000 on every one of the six states, to four
+digits**. There is no baseline model in that arm at all: no CoG term, no LFR realization, no
+6-vs-8-state mismatch. The entire per-window DC is the absorber initial condition and
+nothing else.
+
+T6 is a measurement of the mechanism, not an implementation of the "seed rows 6-7" fix the
+handoff rejected in section 8. It runs on the TRUTH's own absorber coordinates, where they
+mean what they say. The model's latent rows 6-7 are not touched anywhere in this file.
+
+### 4.3 What this does to the experiment's premise
+
+The handoff's framing was: remove the initialisation confounds and the target becomes clean,
+so a failure to learn must be structural. The first half of that is now false. Removing the
+encoder and the finite-difference velocities leaves the target **as dirty as it was**, on
+every state except X, because the confound that dominates was never an encoder problem: the
+model has no absorber state to initialise, so no initialisation procedure whatsoever can
+remove it. An encoder that reconstructed the six physical states perfectly would land exactly
+on this experiment's numbers.
+
+That is a stronger statement than the handoff anticipated, and it changes what the encoder
+thread can hope for. `docs/dc-accumulation-*` and the F6 result (`vDelta_a` recoverable from
+the encoder's inputs at `R^2 = 1.0000`) say the information is there to be had; this says
+that recovering it into rows 6-7 is worth nothing while those rows are overwritten every
+step (G6). The two are the same finding seen from opposite ends.
+
+---
+
+## 5. Is the correction even a function of what the ANN can see?
+
+`diag_static_representability.py`, `V1_standstill_Yp10`, 47999 samples. The object measured
+is `Delta(k) = x6_truth(k+1) - Phi_base(x6_truth(k), u(k))` in normalised state units: the
+`xp` contribution the ANN would have to make, at that step, for the model to be exact given
+a correct current state. The ANN's input is `z = [x_norm (8), u_norm (3)]` with rows 6-7
+identically zero (G6), so eleven columns of which nine carry information.
+
+```
+L  R^2 of Delta on z            overall 0.879342
+   per state  X 0.9647  Theta 0.9664  Y 0.8692  dX 0.7835  dTheta 0.9454  dY 0.8793
+A  R^2 of Delta on [z, da, vda] overall 0.999994
+   per state  X 0.9649  Theta 0.9670  Y 0.9999  dX 0.7938  dTheta 0.9633  dY 1.0000
+C  R^2 of the CONTROL on z      overall 1.000000
+N  nearest-neighbour consistency over the 5 % closest pairs in z (median pair distance
+   4.427e-02 against 1.051e-01 over all pairs)
+     Delta   2.1434        control 0.0769
+```
+
+Three readings, and the third is the one that generalises.
+
+**Most of the correction IS learnable.** `R^2 = 0.879` of the ideal per-step correction is a
+linear function of the ANN's own inputs, before any nonlinearity is allowed. A static ANN can
+therefore be expected to reduce the in-window fit error, which is the bulk of the training
+loss. This is a prediction for the training arm, registered before it runs.
+
+**What is missing is exactly the absorber state.** Adding `[delta_a, vdelta_a]` takes the
+overall `R^2` from `0.879` to `0.999994`, and on the two rows that carry the DC it goes
+`0.8692 -> 0.9999` (Y) and `0.8793 -> 1.0000` (dY). Nothing else is missing. Nothing else
+needs to be.
+
+**No static function of `z` can supply it, whatever its capacity.** Pairs of samples that are
+near-duplicates in `z` (median distance 2.4x closer than typical) have `Delta` values that
+differ by 2.14 in units where 1.0 is "as different as two random samples". A continuous
+`f(z)` must return near-equal outputs for near-equal inputs, so this falsifies every static
+map from `z`, not just linear ones and not just this architecture. The control target, which
+is a static function of `z` by construction, scores `0.0769` on the identical machinery, so
+the test is not passing for the wrong reason. (Caveat on the exact value: the metric pools
+the six rows and is dominated by dY, whose scale is largest; the defensible statement is the
+28x separation between `Delta` and the control, not the number 2.14 itself.)
+
+### 5.1 The record class matters, and it matters a lot
+
+The same measurement on `T9_aprbs_30`, a broadband training record:
+
+```
+              V1 (narrowband 130-180 Hz)   T9 (aprbs, broadband)
+L  Delta on z            0.879342                 0.032856
+A  Delta on [z, da, vda] 0.999994                 0.999994
+N  Delta / control       2.1434 / 0.0769          1.8272 / 0.1438
+```
+
+On the narrowband standstill record most of the correction is statically representable,
+because in a narrow band the absorber state is close to a fixed linear function of the
+payload state and a static map of the current state can proxy it. On broadband excitation
+that proxy collapses: `R^2 = 0.033`. Both records land on `0.999994` once the absorber state
+is supplied, so the missing quantity is identical; what changes is how well the current state
+stands in for it. The training set is five standstill records, three Y-sweeps, four APRBS and
+two Lissajous, so it is a mixture and the ANN cannot lean on the narrowband proxy throughout.
+
+### 5.2 The capacity test, and its own caveat
+
+```
+                        R^2 train    R^2 val
+V1  Delta                  0.3511     0.3730
+V1  control                0.9999     0.9999
+T9  Delta                  0.0372    -0.0423
+T9  control                0.9998     0.9999
+```
+
+Identical architecture (the pipeline's own 2x16 tanh `zero_init_feed_forward_nn`), identical
+optimizer, identical 3000-step budget, identical 80/20 split. The static control reaches
+four nines on both records; the real correction reaches `0.37` and `-0.04`. **The
+architecture is not the limit.**
+
+**Caveat, stated because it is against the reading**: on V1 the MLP's `0.373` is BELOW the
+plain linear least squares' `0.879`, so the MLP fit is not converged and its `Delta` number
+is a lower bound, not an estimate of what the architecture could reach. What survives the
+caveat is the comparison, not the level: the same budget that leaves `Delta` at `0.37`
+takes the control to `0.9999`. The honest conclusion is "capacity and budget are not what
+separates these two targets", not "the ANN can only reach 0.37".
+
+---
+
+## 6. Task item (ii): the training arm
+
+### 6.1 The decision to run it, and why
+
+Handoff section 10 says that if the target is dirty, diagnose first and then decide. The
+diagnosis (sections 4 and 5) says the corruption is not a defect in this code: it is the
+absorber initial condition, it is deterministic, and it is fully characterised. The arm was
+run anyway, for four reasons. It is task item (ii) and it is cheap at stride 100. A
+mechanism argument that is never confronted with a run is weaker than one that is. The static
+analysis makes two falsifiable predictions about the run (P1, P2 in the run-log row), so the
+run is a test of the analysis rather than a fishing trip. And whether the ANN does active
+HARM under a clean IC is a genuinely open question that no static analysis can answer.
+
+### 6.2 What the loss actually consists of, measured before launch
+
+ANN-off val, `nf = 400` free run from the exact IC over V1-V4:
+
+```
+val nf-RMS            7.1698e-05 m       per channel  X1 3.533e-07  X2 3.863e-07  Y 1.2420e-04
+val per-window DC     2.700e-07 / 2.903e-07 / 1.0790e-04 m
+```
+
+The Y channel is 300x the X channels and carries essentially the whole metric. And its shape
+identifies it: a per-window error that is a pure ramp `a*t` has RMS `a*T/sqrt(3)` and mean
+`a*T/2`, so mean/RMS must be `sqrt(3)/2 = 0.866`. Measured: `1.0790e-04 / 1.2420e-04 =
+0.869`. The ramp slope predicted from the absorber momentum is
+`a = (ma/mh)*std(vdelta_a) = 0.1 * 2.1653e-02 = 2.165e-03 m/s`, giving an RMS of
+`a*0.1/sqrt(3) = 1.25e-04 m` against the measured `1.242e-04`.
+
+**So the training loss under a true initial condition is, to within a few per cent, entirely
+the absorber initial-condition ramp.** That is the sharpest form of the section 3 result: it
+is not that the target is somewhat corrupted, it is that under exact 6-state initialisation
+the target IS the absorber IC error.
+
+### 6.3 The learning-rate probe
+
+10 updates per arm. The STAGE 1 lesson (a 10-update probe cannot rank a 2600-update run)
+applies and is why this is reported as a screen, not a ranking.
+
+```
+lr      step 0 train MSE   step 1        step 9        val vs ANN off
+1e-7    1.139229e-07       1.182759e-07  1.185691e-07  +0.69 %
+1e-5    1.139229e-07       5.452921e-05  1.866650e-05  +332.6 %
+1e-3    1.139229e-07       7.996051e-01  1.405187e-01  +27832.9 %
+```
+
+The step-1 jump scales with lr, which is the signature coulomb-offset section 11.4 predicted
+and did not get to test at more than one rate: Adam's update is gradient-normalised, so a
+zero-initialised final layer takes a full `lr`-sized step no matter how small its gradient
+is. At `1e-3` that is a `7e+06x` loss increase in one update. Two mitigations exist (a warmup,
+or plain SGD whose first step is proportional to the gradient) and NEITHER is tested here,
+because both add a mechanism the pipeline does not have and this experiment already carries
+enough changes.
+
+`1e-7` is the pipeline's own documented rate for `(0..7)` routing (D-101/D-102) and is the
+primary arm; `1e-6` is run as a bracket.
+
+### 6.4 Result
+
+_(in flight)_
 
 ---
 
 ## 9. Running state
 
 - A1-A3 done, gates C1a-C5 all pass.
-- Exact-truth cache for all 22 records: running.
-- Item (i) and the training arm: pending.
+- Exact-truth cache: all 22 records, worst X replay residual in the `e-9` range.
+- Item (i) done. **The acceptance criterion FAILS on five of six states, and the section 5
+  assumption is falsified.** Diagnosis in flight (`diag_dc_mechanism.py`,
+  `diag_static_representability.py`).
+- Training arm: not launched. The decision is deferred to section 4's outcome, per handoff
+  section 10 paragraph 2.
