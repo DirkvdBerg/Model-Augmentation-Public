@@ -137,8 +137,8 @@ but not to dominate. Section 3 measures what it actually does.
 
 ## 3. Task item (i): the per-window target check
 
-`diag_window_target.py`, `V1_standstill_Yp10` and `V3_ysweep_Yp10`, 476 windows of
-`nf = 400` (0.100 s) on a stride-100 start grid, 4 kHz, block-mean input,
+`diag_window_target.py`, all four validation records (one per excitation class), 476 windows
+of `nf = 400` (0.100 s) each on a stride-100 start grid, 4 kHz, block-mean input,
 `up_sample = 1`, CoG-corrected baseline, float64. Three seeding arms on ONE start grid so
 the numbers are directly comparable: `record` (today's `x_logical[s]`, finite-difference
 velocities), `exact` (this experiment), and `freerun` (one continuous run from the rest IC,
@@ -156,8 +156,19 @@ dTheta  rad/s       8.8896e-06     8.8952e-06     1.1686e-07       76.12     1.0
 dY      m/s         2.0241e-03     2.0251e-03     3.1155e-05       65.00     1.0x
 ```
 
-V3 is the same to within 10 % on every entry (`Y 1.0532e-04` against `1.0527e-04`, free run
-`4.488e-08`), so this is not one record's accident.
+and the `gain` column (record seed / exact seed, i.e. what the analytic velocities bought)
+across all four classes:
+
+```
+                        X     Theta       Y       dX   dTheta      dY     Y exact/free
+V1 standstill        2.6x      1.0x    1.0x     2.9x     1.0x    1.0x         3266
+V2 aprbs             1.2x      1.0x    1.0x     1.2x     1.0x    1.0x          230
+V3 ysweep            2.1x      1.0x    1.0x     2.2x     1.0x    1.0x         2347
+V4 lissajous         1.7x      1.0x    1.0x     1.4x     1.0x    1.0x          657
+```
+
+The pattern is identical on every excitation class: the exact velocities buy a factor on X
+and dX and exactly nothing on Theta, Y, dTheta, dY. This is not one record's accident.
 
 ### 3.2 The acceptance criterion is FAILED on five of six states
 
