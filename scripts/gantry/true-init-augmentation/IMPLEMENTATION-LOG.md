@@ -239,6 +239,43 @@ zero-mean on every state (`|t| <= 0.21` on V1, `<= 0.67` on V3), so F4's headlin
 survives where it was made; the new X free-run bias is a property of the corrected baseline
 and is `1.2e-07 m` in size, three decades below the quantity this experiment is about.
 
+### 3.5 A shorter training window does not rescue it either
+
+The obvious response to sections 3 and 4 is that `nf = 400` is what makes the ramp large, so
+a shorter horizon would give a cleaner target. `diag_nf_sweep.py` measures that, on V1, 200
+windows per horizon, each horizon compared against the free run **at the same horizon** so
+the window length itself is not the confound.
+
+```
+    nf   [ms]    Y DC exact    Y DC free   DC ratio   Y RMS exact   Y RMS free  RMS ratio   DC/RMS
+    25    6.2    6.7403e-06   1.9412e-07       34.7    8.5516e-06   2.1252e-06        4.0    0.788
+    50   12.5    1.3110e-05   1.8108e-07       72.4    1.5536e-05   2.1584e-06        7.2    0.844
+   100   25.0    2.6075e-05   1.2483e-07      208.9    3.0288e-05   2.2192e-06       13.6    0.861
+   200   50.0    5.3265e-05   6.2937e-08      846.3    6.1904e-05   2.1854e-06       28.3    0.860
+   400  100.0    1.0699e-04   3.1908e-08     3353.2    1.2335e-04   2.1988e-06       56.1    0.867
+   800  200.0    2.0212e-04   1.4785e-08    13671.3    2.3187e-04   2.1820e-06      106.3    0.872
+  1600  400.0    3.9775e-04   8.5484e-09    46529.0    4.5261e-04   2.1988e-06      206.8    0.879
+```
+
+Three things fall out.
+
+**The signal is flat and small.** The free-run in-window Y RMS is `2.19e-06 m` at every
+horizon from 6 ms to 400 ms. That is the absorber's ongoing contribution, the thing the ANN
+is meant to learn, and it does not grow with the window because it is a bounded oscillation.
+
+**The corruption grows linearly with the horizon**, because it is a ramp: `1.23e-04 m` at
+`nf = 400`, `56x` the signal, and `4.53e-04 m` at `nf = 1600`.
+
+**And `DC/RMS` stays pinned at the pure-ramp value.** A ramp `a*t` over `[0, T]` has
+`mean/RMS = sqrt(3)/2 = 0.866`. Measured: `0.788` at `nf = 25` rising to `0.879` at
+`nf = 1600`. So even at 6 ms the per-window error is 79 % ramp.
+
+**Consequence.** Bringing the IC error down to the signal level would need
+`nf ~ 400/56 = 7` samples, i.e. `1.75 ms`, against an absorber period of `6.7 ms`. There is
+no horizon that both contains one oscillation of the thing to be learned and is short enough
+for the initial-condition error not to dominate it. Shortening `nf` trades the ramp against
+the ring-down at a fixed, unfavourable rate; it does not escape.
+
 ---
 
 ## 4. Why the target is still dirty: the mechanism
