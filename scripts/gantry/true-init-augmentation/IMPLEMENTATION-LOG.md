@@ -403,6 +403,63 @@ separates these two targets", not "the ANN can only reach 0.37".
 
 ---
 
+### 5.2b CORRECTION: the augmented partition IS a recurrence, and this changes the claim
+
+Found while writing section 6 and load-bearing, so it is stated before the conclusions rest
+on it.
+
+`model.py:131` wires the ANN's input as `connect_block_signals(ann_block, ["x","u"], [])`
+with **no selection matrix**, unlike the physical block and the output block which both get
+`selection_matrix(PHY_IX, nxd)`. So the ANN reads all `nxd = 8` state rows, 6-7 included
+(`nz = nxd + nu = 11`, which is what the diagnostics print), and `model.py:132` routes its
+output back into those same rows. The augmented partition is therefore a learnable nonlinear
+**recurrence**
+
+```
+x_aug(k+1) = h_ann( x_phys(k), x_aug(k), u(k) )
+```
+
+not a state "rebuilt from scratch by a static feedforward net every sample", which is how
+`scripts/gantry/coulomb-offset/IMPLEMENTATION-LOG.md` section 12.2 words it. That folder is
+read-only for this task, so the correction is recorded here.
+
+**What this does and does not change.** Gate G6's `x_aug = 0.000000e+00` is an
+INITIALISATION result: the zero-initialised final layer makes the ANN output exactly zero,
+so the recurrence is dead-beat and its Jacobian is exactly zero at init. Sections 4 and 5
+set rows 6-7 to zero, which is exactly right for the model as initialised and as trained
+here, and it is what the training arms actually start from. But the sentence "no static
+`f(z)` can supply the correction" is a statement about **the model while those rows stay
+zero**, not about the model class. A trained ANN could in principle carry the absorber state
+in rows 6-7. So the section 8 verdict is narrower than "persistence is structural": the
+model starts at an exact dead-beat corner and has to learn its way out from zero.
+
+**And that is measurable, so it was measured.** `diag_aug_state_activity.py`, `V1`, 64
+windows, on the checkpoints as they stood:
+
+```
+checkpoint                   |x_aug| rms   |x_aug| max   J gain mean   J gain max  R2 vs [da,vda]
+(untrained)                   0.0000e+00    0.0000e+00    0.0000e+00   0.0000e+00          0.0000
+main_lr1e-7_last  (7 epochs)  5.9634e-08    1.5171e-07    1.0268e-08   1.1072e-08          0.1482
+main_lr1e-6_last  (7 epochs)  2.2912e-06    6.5442e-06    1.7493e-06   1.8713e-06          0.1481
+main_lr1e-5_last  (3 epochs)  7.0200e-05    3.1265e-04    7.5729e-05   7.9356e-05          0.1296
+```
+
+`J gain` is the largest singular value of `d x_aug(k+1) / d x_aug(k)`: the recurrence gain
+the ANN has actually built. A lightly damped 150 Hz oscillator at 4 kHz needs
+`|lambda| ~ 0.99`. Measured `1e-08` to `8e-05`, four to eight decades short, and it tracks
+the learning rate linearly rather than tracking anything about the data. `R^2` of the best
+affine map from `x_aug` to the truth's `[delta_a, vdelta_a]` is `0.13` to `0.15`, so what
+little the rows carry is not the absorber.
+
+**Consequence for the Györök proposal, and it is a different argument from the one in the
+coulomb-offset log.** That log argued the framework HAS the object and we omitted it. The
+measurement says something sharper: the object exists in our wiring, but its gain is
+initialised at exactly zero and Adam moves a weight by at most `lr` per step, so reaching
+`|lambda| ~ 0.99` from `0` needs of order `1/lr` consistent updates. The parameterisation
+`A = alpha_bar * sigma_A * A_bar` with `sigma_A = sigmoid(alpha)` starts at
+`sigmoid(0) = 0.5`, i.e. it starts the only dynamic path at order 1 instead of at zero. The
+value is in where it starts, not only in that it exists.
+
 ### 5.3 The one-line version: the information is in the window, not in the sample
 
 `diag_absorber_observability.py`. Two least-squares fits of the truth's absorber state, on
