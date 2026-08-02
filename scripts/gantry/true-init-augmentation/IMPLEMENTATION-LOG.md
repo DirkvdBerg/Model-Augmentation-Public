@@ -392,6 +392,42 @@ separates these two targets", not "the ANN can only reach 0.37".
 
 ---
 
+### 5.3 The one-line version: the information is in the window, not in the sample
+
+`diag_absorber_observability.py`. Two least-squares fits of the truth's absorber state, on
+identical data, with a held-out tail (70/30, the 30 % is the end of the record, not
+interleaved). `inst` is what the ANN sees: `[x_phys(k) (6), u(k) (3)]`, with rows 6-7 omitted
+because they are identically zero. `window` is what the encoder sees:
+`y[k-17..k]` and `u[k-17..k]`, `na = nb = 17` being Jan's `2*(nx_phys+nx_ann)+1`.
+
+```
+record                target      inst train   inst test   window train  window test
+V1_standstill_Yp10    delta_a         0.8687      0.8713         1.0000       1.0000
+                      vdelta_a        0.4781      0.4899         1.0000       1.0000
+V2_aprbs_Ylow         delta_a         0.1370      0.0889         1.0000       1.0000
+                      vdelta_a        0.0843      0.0970         1.0000       1.0000
+V3_ysweep_Yp10        delta_a         0.0500      0.0045         1.0000       1.0000
+                      vdelta_a        0.3030      0.2868         1.0000       1.0000
+V4_lissajous_Ym10     delta_a         0.0396      0.0538         1.0000       1.0000
+                      vdelta_a        0.3034      0.2641         1.0000       1.0000
+```
+
+**From an 18-sample window the absorber state is recoverable exactly, on every record class,
+out of sample, by ordinary least squares.** That independently reproduces the coulomb-offset
+thread's F6 (`R^2 = 1.0000`).
+
+**From the instantaneous state and input it is not.** `vdelta_a`, the quantity that sets the
+entire per-window DC, is 49 % explained on the narrowband standstill record and 10 to 29 %
+on the other three.
+
+So the thread reduces to one sentence. *The information the augmentation needs is present in
+the encoder's inputs and absent from the ANN's inputs, and the only rows that could carry it
+from one to the other are overwritten to exactly zero every step.* Encoder work cannot fix
+that, because the encoder is already able to see it; a bigger ANN cannot fix it, because the
+signal is not in its input; only giving the augmented partition its own dynamics can.
+
+---
+
 ## 6. Task item (ii): the training arm
 
 ### 6.1 The decision to run it, and why
@@ -452,6 +488,69 @@ primary arm; `1e-6` is run as a bracket.
 ### 6.4 Result
 
 _(in flight)_
+
+---
+
+## 7. Proposed amendment to D-130, DRAFTED ONLY
+
+`docs/decisions.md` is deliberately NOT edited. The handoff forbids amending D-130 with
+nobody available to approve it (its section 12), so the text is parked here.
+
+D-130 says the `W^a` dead zone "follows from the wiring, not from a hyperparameter" and calls
+it structural. Two measurements now bear on that, and they pull in opposite directions.
+
+**The word "structural" is wrong, and that was already established.** `verify_rezero_gate.py`
+(coulomb-offset section 11) measured that the plain zero-init recovers `W^a` gradient at
+optimizer step 1: `dL/dW_final = <dL/dw, h>` is non-zero even at `W_final = 0`, so the final
+layer moves on the first step and the input-Jacobian is alive on the second. Measured
+`|g W^a|` goes `0.000000e+00 -> 1.586e-05` between step 0 and step 1. The dead zone is a
+one-step transient. That refutation is a month older than this session and D-130 has not yet
+been amended for it.
+
+**But the conclusion D-130 draws survives, for a different reason, and this session is what
+supplies it.** D-130's operative claim is that the augmented rows are inconsequential. That
+remains true, and it is not about gradient at all:
+
+- the propagated `x_aug` is exactly `0.000000e+00` at every step, because `model.py:132`
+  connects only the ANN to rows 6-7 and there is no identity path from `x` (gate G6);
+- so the ANN is a static map of `z = [x_phys, 0, 0, u]`;
+- and the correction it would have to produce is provably not a function of that `z`
+  (section 5: `R^2` 0.879 / 0.033 on `z`, 0.999994 once `[delta_a, vdelta_a]` are added,
+  and a nearest-neighbour test that rules out every static map);
+- so filling rows 6-7 correctly at window start would change nothing, because they are
+  overwritten before they are used.
+
+**Proposed replacement wording for the "Why" of finding (1):**
+
+> The dead zone at step 0 follows from the wiring (`h_base` and `f_base` are both wired with
+> `selection_matrix(PHY_IX, nxd)`, `model.py:123` and `:127`, and the ANN's final layer is
+> zero-initialised, `torch_nets.py:113-114`, so its input-Jacobian is exactly zero at
+> initialisation). It is a ONE-STEP TRANSIENT, not a structural barrier: `dL/dW_final =
+> <dL/dw, h>` is non-zero at `W_final = 0`, so the final layer moves at step 1 and the
+> Jacobian is alive at step 2 (measured, `verify_rezero_gate.py`, `|g W^a|` `0.000000e+00 ->
+> `1.586e-05`). What IS structural is downstream of the gradient: nothing but the ANN writes
+> rows 6-7, so the propagated `x_aug` is identically zero (gate G6) and the ANN is a static
+> map of the physical state and the input. The correction it must produce is not a function
+> of those (`scripts/gantry/true-init-augmentation/`, section 5), so the augmented rows are
+> inconsequential whatever the encoder puts in them. The fix is therefore autonomous
+> dynamics on the augmented partition (the Györök contracting `A_aug`), not encoder
+> initialisation and not a gate.
+
+**Proposed addition to "Ruled out":**
+
+> (e) "Initialising the encoder's augmented rows well would make the augmented states
+> useful" - refuted independently of any encoder: seeding the six physical states EXACTLY,
+> with analytic rather than finite-difference velocities, leaves the per-window DC scatter at
+> 1.0x its previous value on Y, Theta, dTheta and dY, because the DC is the absorber initial
+> condition and the model has no state that survives one step in which to carry it
+> (`true-init-augmentation/IMPLEMENTATION-LOG.md` sections 3-4).
+
+**Proposed addition to "Constrains":**
+
+> Any claim that an initialisation improvement will reduce the per-window DC must first show
+> that the augmented partition retains state across a step. Until it does, the per-window DC
+> is `-(ma/mh)*vdelta_a(0)*nf*ts/2` on Y regardless of how the physical rows are initialised
+> (`R^2 = 1.0000`, measured on 476 windows).
 
 ---
 

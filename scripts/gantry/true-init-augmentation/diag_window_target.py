@@ -64,7 +64,12 @@ from model_augmentation.systems.gantry_ss import P as _P   # noqa: E402
 P_np = _P.numpy().astype(np.float64)
 OUT = os.path.join(REPO, 'simulations', 'gantry_subnet', 'diagnostics')
 
-RECORDS = ('V1_standstill_Yp10', 'V3_ysweep_Yp10')
+# All four validation records, one per excitation class: narrowband standstill,
+# APRBS, Y-sweep, Lissajous. Section 5 of the log measures that the class changes
+# how much of the correction is statically representable by a factor of 27, so a
+# single record would not have been enough.
+RECORDS = ('V1_standstill_Yp10', 'V2_aprbs_Ylow',
+           'V3_ysweep_Yp10', 'V4_lissajous_Ym10')
 NF = 400                 # 0.100 s at 4 kHz -- the training window
 STRIDE = 100             # window-start grid
 K0 = 17                  # max(na, nb) = 2*(6+2)+1, the pipeline's first usable sample
