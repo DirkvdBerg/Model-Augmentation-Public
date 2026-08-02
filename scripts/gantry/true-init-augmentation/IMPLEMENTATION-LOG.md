@@ -103,13 +103,14 @@ writes rows 6-7, so `x_aug(k+1) = h_ann(x_phys(k), x_aug(k), u(k))` is a genuine
 recurrence. Gate G6's `0.000000e+00` is an **initialisation** result, not a structural one.
 
 What is measured is that training does not leave that corner. The recurrence gain, the
-largest singular value of `d x_aug(k+1)/d x_aug(k)`, is `0.0` untrained and `1.03e-08`,
-`1.75e-06`, `7.57e-05` at lr `1e-7`, `1e-6`, `1e-5`. A lightly damped 150 Hz absorber at
-4 kHz needs `|lambda| ~ 0.99`. It is four to eight decades short and scales with the learning
-rate rather than with the data. Coordinate pinning is not implicated (rows 6-7 carry
-essentially nothing to pin: `R^2` of the best affine map to the truth's absorber state is
-`0.13-0.15`). Capacity is not implicated (the same architecture, optimizer and budget fits a
-static control target to `R^2 = 0.9999`).
+largest singular value of `d x_aug(k+1)/d x_aug(k)`, is `0.0` untrained and, at the end of
+the three arms, `5.16e-08`, `1.02e-05`, `1.57e-04` at lr `1e-7`, `1e-6`, `1e-5`. A lightly
+damped 150 Hz absorber at 4 kHz needs `|lambda| ~ 0.99`. It is four to seven decades short
+and scales with the learning rate rather than with the data. Coordinate pinning is not
+implicated (rows 6-7 do end up carrying something, `|x_aug| ~ 1e-04` against exactly zero at
+init, but `R^2` of the best affine map onto the truth's absorber state is `0.11-0.16`, so
+there is nothing there to pin). Capacity is not implicated (the same architecture, optimizer
+and budget fits a static control target to `R^2 = 0.9999`).
 
 That sharpens the Györök `A_aug` case in a way the earlier reading did not: the object is
 already in our wiring, but its gain is initialised at exactly zero, and Adam moves a weight

@@ -43,7 +43,15 @@ handoff's scope); noted here so it is not mistaken for an oversight.
 - [x] C2 Validation = windowed free run from the exact IC, in metres, plus the per-window DC
       scatter. ANN-off value is exact (`max|w| = 0.000e+00` at init, measured).
 - [x] C3 Row written before launch, and amended before the third arm was added.
-- [ ] C4 Three lr arms (1e-7, 1e-6, 1e-5), 90 epochs each. In flight.
+- [x] C4 Three lr arms (1e-7, 1e-6, 1e-5). Killed externally at 47/47/43 of 90 epochs;
+      recovered from `runlogs/` by `harvest_runs.py`, both checkpoints survived per arm.
+      **The ANN does not learn.** Best `-0.25 / -0.65 / -0.82 %` against an exact ANN-off
+      value while `91 / 91 / 93 %` of all validation points sit ABOVE it; the Y per-window
+      DC improves by at most `1.40 %`. **And the 12 s free run from the exact rest IC
+      degrades `253x` to `3575x` on the same checkpoint that improved the windowed metric
+      by `0.82 %`**, which eliminates initialisation as an explanation of the 120x horizon
+      gap for the first time.
+- [x] C6 Backlog item 1 (the 12 s free-run arm) done, on all four val records.
 - [x] C5 Attribution: `diag_static_representability.py`, `diag_absorber_observability.py` and
       `diag_aug_state_activity.py`. Includes a CORRECTION to my own reading: the augmented
       partition is a learnable recurrence, not a from-scratch rebuild, so G6 is an
@@ -51,7 +59,7 @@ handoff's scope); noted here so it is not mistaken for an oversight.
       a damped 150 Hz absorber needs.
 
 ### D. Reporting
-- [ ] D1 `IMPLEMENTATION-LOG.md`; section 0 written last, once the arms land.
+- [x] D1 `IMPLEMENTATION-LOG.md` complete, opening with `## 0. Read this first`.
 - [x] D2 D-130 amendment DRAFTED in the folder log, section 7. `docs/decisions.md` untouched.
 - [x] D3 Committing increments on `Augmentation`. No push, no PR.
 - [x] D4 `make_figures.py` -> `figures/true_init_summary.png` (three panels). Palette
