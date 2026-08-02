@@ -13,49 +13,49 @@ Not run: the todo/handoff archival sweep (would churn ~1000 stale lines and is o
 handoff's scope); noted here so it is not mistaken for an oversight.
 
 ### A. Infrastructure
-- [ ] A1 Create `scripts/gantry/true-init-augmentation/` + open the implementation log.
-- [ ] A2 `truth_exact.py`: exact 8-state truth in Python (RK4, 20 kHz, from the rest IC
-      `[0,0,Y_op,0,0,0,0,0]`), decimated to 4 kHz. Gives ANALYTIC velocities (integrator
-      states), not `gradient()` finite differences. Gate: reproduces the record's positions
-      at or below the known `5.37e-10 m` X level.
-- [ ] A3 `plant_cog.py`: LFR baseline with the truth's static mass distribution at
-      `delta_a = 0`. Derive the corrected `N0,N1,N2` and `d(Y)` analytically (the LFR
-      rational form survives the correction; only `M[0,1]`, `M[1,1]` change).
-      Gates: (a) `ma_cog = 0` reproduces the parent bit-identically;
-      (b) `N_cog(Y)/d_cog(Y) == inv(M_cog(Y))` over a Y sweep;
-      (c) cross-realization vs the collapsed 3-DOF `M3(Y, cog=True)`.
+- [x] A1 Folder created, `IMPLEMENTATION-LOG.md` open.
+- [x] A2 `data_exact.py` (named this, not `truth_exact.py`): exact 8-state truth by 20 kHz
+      RK4 from the rest IC, decimated to 4 kHz. Gate C5 PASS, X `5.3692e-10 m` on V1,
+      independently reproducing the coulomb-offset figure; worst across 22 records is `e-9`.
+- [x] A3 `plant_cog.py` + `check_plant_cog.py`. C1a `2.2e-16` (constants), C1b `1.3e-07`
+      (= one float32 epsilon, which is what `gantry_ss` stores), C2 `4.4e-16`, C3 `8.9e-16`,
+      C4 `8.5e-03` (not a no-op), C5 PASS. C3 caught a real bug in the independent checker.
 
 ### B. Task item (i) — per-window target check (no training)
-- [ ] B1 Free-run floor at THIS configuration (4 kHz, block-mean u, exact IC at t=0,
-      chunked into 0.100 s windows) for ALL SIX physical states. Velocity thresholds are
-      not in the literature; derive and state them before use (handoff section 10).
-- [ ] B2 `diag_window_target.py`: re-seed each window from the exact 6-state truth IC over a
-      grid of starts, roll the baseline forward `nf = 400`, report per-window mean and
-      scatter on all six states. Arms: CoG off / CoG on, float64 / float32.
-- [ ] B3 Verdict against the acceptance criterion (Y `2.979e-08`, X `9.147e-08`,
-      Theta `3.730e-09` from the 20 kHz free run, plus the B1 floors). If any state lands
-      materially above its floor: diagnose (code defect vs genuine property of per-window
-      re-seeding), record, do not stop.
-- [ ] B4 Second record class for error bars (backlog item 2, pulled forward if cheap).
+- [x] B1 Free-run floors measured at THIS configuration, all six states. Positions reproduce
+      the 20 kHz figures (X `7.69e-08` vs `9.15e-08`, Theta `4.13e-09` vs `3.73e-09`,
+      Y `3.15e-08` vs `2.98e-08`); velocity floors, new: dX `5.79e-09`, dTheta `1.17e-07`,
+      dY `3.12e-05`.
+- [x] B2 `diag_window_target.py`, three seeding arms on one grid, CoG on/off, f64/f32.
+- [x] B3 **CRITERION FAILED on five of six states.** X passes at `0.17x` the floor; Theta
+      `114x`, Y `3266x`, dX `39x`, dTheta `76x`, dY `65x` above. The exact velocities buy
+      `2.6x` on X and `2.9x` on dX and `1.0x` on Theta/Y/dTheta/dY. **Handoff section 5
+      assumption falsified.** Not a code defect: `diag_dc_mechanism.py` shows `R^2 = 1.0000`
+      on `[delta_a(s), vdelta_a(s)]` with the unfitted closed-form slope, and the TRUTH model
+      re-seeded from its complete 8-state IC collapses to the floor while the same model with
+      the absorber zeroed reproduces the baseline scatter to `1.000` on all six states.
+- [x] B4 All four validation records (standstill / aprbs / ysweep / lissajous). Same pattern.
 
 ### C. Task item (ii) — training arm
-- [ ] C1 `true_init_train.py`: pipeline mirror with the SUBNET encoder REPLACED by the exact
-      6-state truth IC per window (rows 6-7 stay at zero, never seeded: handoff section 8).
-      Encoder bypass via a `make_training_data`/`loss` override in the new folder; nothing
-      in `model_augmentation/` is modified.
-- [ ] C2 Validation measure consistent with the true-init target (windowed free run from the
-      exact IC), so checkpoint selection is not made on an encoder metric that no longer exists.
-- [ ] C3 Hypothesis row in `docs/gantry-augmentation-problem-log.md` section 12 BEFORE launch
-      (run-discipline rule, not overridden by section 15).
-- [ ] C4 Run ANN-on vs ANN-off on the same seeds; report whether the ANN learns.
-- [ ] C5 Attribute the outcome to one of the section-8 candidates (persistence / coordinate
-      pinning / capacity). Do NOT implement either fix.
+- [x] C1 `true_init_train.py`. Interconnect assembled directly from `model.py:96-138` and
+      trained with an explicit loop, rather than subclassing deepSI's `fit()` around a
+      deleted encoder. `model_augmentation/` untouched.
+- [x] C2 Validation = windowed free run from the exact IC, in metres, plus the per-window DC
+      scatter. ANN-off value is exact (`max|w| = 0.000e+00` at init, measured).
+- [x] C3 Row written before launch, and amended before the third arm was added.
+- [ ] C4 Three lr arms (1e-7, 1e-6, 1e-5), 90 epochs each. In flight.
+- [x] C5 Attribution: `diag_static_representability.py`, `diag_absorber_observability.py` and
+      `diag_aug_state_activity.py`. Includes a CORRECTION to my own reading: the augmented
+      partition is a learnable recurrence, not a from-scratch rebuild, so G6 is an
+      initialisation result. Measured recurrence gain `1e-08` to `8e-05` against the `~0.99`
+      a damped 150 Hz absorber needs.
 
 ### D. Reporting
-- [ ] D1 `IMPLEMENTATION-LOG.md` written as the work happens, opening with
-      `## 0. Read this first`.
-- [ ] D2 Draft (do NOT apply) the D-130 amendment inside the new folder's log.
-- [ ] D3 Commit working increments on `Augmentation`. No push, no PR.
+- [ ] D1 `IMPLEMENTATION-LOG.md`; section 0 written last, once the arms land.
+- [x] D2 D-130 amendment DRAFTED in the folder log, section 7. `docs/decisions.md` untouched.
+- [x] D3 Committing increments on `Augmentation`. No push, no PR.
+- [x] D4 `make_figures.py` -> `figures/true_init_summary.png` (three panels). Palette
+      validated with the dataviz checker, all six checks PASS.
 
 ---
 
