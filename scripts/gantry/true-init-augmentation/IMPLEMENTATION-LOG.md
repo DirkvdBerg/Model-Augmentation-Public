@@ -7,8 +7,102 @@ Written as the work happened, including the parts that did not work.
 
 ## 0. Read this first
 
-_(filled in at the end of the session; see section 9 for the running state while the run is
-in flight)_
+### What was run
+
+Six diagnostics and three training arms, all on the frictionless `augmentation` dataset at
+the pipeline's own 4 kHz, with two changes against the current pipeline and nothing else:
+the SUBNET encoder is replaced by the truth's six physical states with **analytic**
+velocities (integrator states of a 20 kHz RK4 replay of the 8-state truth from the rest IC,
+not `gradient()` finite differences), and the baseline carries the truth's static mass
+distribution at `delta_a = 0` (a CoG-corrected LFR block, gates C1a-C5 all pass). The
+model's augmented rows 6-7 start at zero and are never seeded, per handoff section 8.
+
+### The numbers, against the section 10 criterion
+
+**The criterion is FAILED on five of the six physical states, and the handoff's section 5
+assumption is falsified.** Per-window re-seeding from the exact 6-state IC gives, on V1:
+
+```
+state       exact seed     free-run floor     ratio     gain over the record's FD velocities
+X          1.2703e-08       7.6940e-08        0.17          2.6x     PASSES
+Theta      4.7217e-07       4.1339e-09      114.22          1.0x
+Y          1.0278e-04       3.1469e-08     3266.24          1.0x
+dX         2.2495e-07       5.7877e-09       38.87          2.9x
+dTheta     8.8952e-06       1.1686e-07       76.12          1.0x
+dY         2.0251e-03       3.1155e-05       65.00          1.0x
+```
+
+The free-run floors reproduce the 20 kHz figures the handoff quotes (X `7.69e-08` vs
+`9.15e-08`, Theta `4.13e-09` vs `3.73e-09`, Y `3.15e-08` vs `2.98e-08`); the three velocity
+floors are new and were derived the same way before being used. The pattern holds on all
+four validation records (standstill, APRBS, Y-sweep, Lissajous).
+
+**The exact velocities bought `2.6x` on X and `2.9x` on dX and exactly nothing on Theta, Y,
+dTheta and dY.** The Y per-window DC scatter is `1.0278e-04 m` from the exact IC against
+`1.0273e-04 m` from the record's finite differences. Those are the same number. The `3507x`
+gap this experiment was meant to close by construction did not close.
+
+### Mechanism, established four ways
+
+1. **Regression.** Each window's mean error against the truth's `[delta_a(s), vdelta_a(s)]`:
+   `R^2 = 1.0000` on Y and `0.9999` on dY, with fitted slopes matching the **unfitted**
+   closed forms `-(ma/mh)*nf*Ts/2` and `-(ma/mh)` to 3.5 % and 5 %.
+2. **The truth model against itself.** Re-seeded per window from its complete 8-state IC it
+   collapses to the integrator floor (`Y 1.735e-08`). The same model re-seeded from the
+   exact six states with the absorber zeroed reproduces the baseline's scatter to **1.000 on
+   every state, to four digits.** No baseline, no CoG term and no LFR realization is involved
+   in the residual at all.
+3. **Observability.** The absorber state is recoverable from the encoder's 18-sample window
+   at `R^2 = 1.0000` out of sample on every record class, and from the instantaneous
+   `[x_phys(k), u(k)]` the ANN reads at `R^2 = 0.10` to `0.49`.
+4. **Horizon.** The signal is flat at `2.19e-06 m` in-window RMS from 6 ms to 400 ms while
+   the initial-condition ramp grows linearly with the horizon (`4x` the signal at `nf = 25`,
+   `56x` at `nf = 400`), with `mean/RMS` pinned at the pure-ramp `sqrt(3)/2` throughout. No
+   horizon both contains one absorber oscillation and keeps the IC error subdominant.
+
+So the target's corruption is not a defect in this code and not an encoder problem. It is
+that the truth has eight states and the model has six that can be initialised. **An encoder
+that reconstructed the six physical states perfectly would land exactly on these numbers.**
+
+### Which section 8 candidate the results implicate
+
+**Persistence, with an important qualification I got wrong at first and corrected in section
+5.2b.** The augmented partition is not a static scratchpad: the ANN reads all eight state
+rows (`connect_block_signals(ann_block, ["x","u"], [])` carries no selection matrix) and
+writes rows 6-7, so `x_aug(k+1) = h_ann(x_phys(k), x_aug(k), u(k))` is a genuine learnable
+recurrence. Gate G6's `0.000000e+00` is an **initialisation** result, not a structural one.
+
+What is measured is that training does not leave that corner. The recurrence gain, the
+largest singular value of `d x_aug(k+1)/d x_aug(k)`, is `0.0` untrained and `1.03e-08`,
+`1.75e-06`, `7.57e-05` at lr `1e-7`, `1e-6`, `1e-5`. A lightly damped 150 Hz absorber at
+4 kHz needs `|lambda| ~ 0.99`. It is four to eight decades short and scales with the learning
+rate rather than with the data. Coordinate pinning is not implicated (rows 6-7 carry
+essentially nothing to pin: `R^2` of the best affine map to the truth's absorber state is
+`0.13-0.15`). Capacity is not implicated (the same architecture, optimizer and budget fits a
+static control target to `R^2 = 0.9999`).
+
+That sharpens the Györök `A_aug` case in a way the earlier reading did not: the object is
+already in our wiring, but its gain is initialised at exactly zero, and Adam moves a weight
+by at most `lr` per step, so reaching `0.99` from `0` needs of order `1/lr` consistent
+updates. `A = alpha_bar * sigmoid(alpha) * A_bar` starts that gain at `0.5`. The value is in
+where it starts, not only in that it exists.
+
+### What was assumed
+
+- That the pipeline's `oracle.py` 8-state EOM is the data-generating plant. Verified under
+  D-097 and re-verified here: the replay reproduces the records' own positions to
+  `5.37e-10 m` on X (V1), worst `e-9` across 22 records.
+- That the absorber parameters are `ma_frac = 0.10`, `L0 = 0.10 m`, `fa = 150 Hz`,
+  `zeta = 0.05`. Fitted from the data in a prior session, not re-derived here.
+- That `route_ix = (0..7)` stays, per D-103. Nothing measured here forces otherwise.
+- That `lr = 1e-7` is the right rate. It is the pipeline's documented value for this routing
+  and the lr probe screened three rates over 10 updates only, which is too short to rank a
+  2340-update run (the STAGE 1 lesson). Two arms were added to bracket it.
+
+### What is still open
+
+Section 8. The largest item is that nothing here tests the fix; the handoff puts it out of
+scope and that is respected.
 
 ---
 
