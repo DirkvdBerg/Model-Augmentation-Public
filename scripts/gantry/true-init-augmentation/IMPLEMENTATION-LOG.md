@@ -108,7 +108,7 @@ scope and that is respected.
 
 ## 1. What was built
 
-Four new files, all in `scripts/gantry/true-init-augmentation/`. Nothing under
+All new files are in `scripts/gantry/true-init-augmentation/`. Nothing under
 `model_augmentation/`, `kamtin-fp-model/` or `scripts/gantry/coulomb-offset/` was touched.
 
 | File | Role |
@@ -117,8 +117,20 @@ Four new files, all in `scripts/gantry/true-init-augmentation/`. Nothing under
 | `plant_cog.py` | `Gantry_State_Block_CoG`: the LFR baseline carrying the truth's static mass distribution at `delta_a = 0`. The corrected `N0,N1,N2` and `d(Y)` are derived, not fitted. |
 | `check_plant_cog.py` | gates C1a-C5 |
 | `precompute_exact.py` | caches the exact truth for all 22 records |
-| `diag_window_target.py` | task item (i): the per-window target check |
+| `diag_window_target.py` | task item (i): the per-window target check, three seeding arms |
+| `diag_dc_mechanism.py` | section 4: what the residual DC actually is |
+| `diag_static_representability.py` | section 5: is the correction a function of the ANN's inputs |
+| `diag_absorber_observability.py` | section 5.3: window versus sample |
+| `diag_aug_state_activity.py` | section 5.2b: did training leave the dead-beat corner |
+| `diag_nf_sweep.py` | section 3.5: does a shorter horizon rescue the target |
+| `diag_zeromean_cog.py` | section 3.4b: zero-mean on both baselines, all six states |
 | `true_init_train.py` | task item (ii): the training arm, encoder replaced by the exact IC |
+| `eval_freerun.py` | the 12 s free-run arm on a trained checkpoint |
+| `make_figures.py` | `figures/true_init_summary.png` |
+
+Diagnostic JSON goes to `simulations/gantry_subnet/diagnostics/true_init_*.json`, per the
+project convention. The exact-truth caches under `figures/_exact_*.npz` are regenerable and
+are gitignored.
 
 ### 1.1 The exact initial condition, and why it is not `x_logical`
 
@@ -432,11 +444,11 @@ absorber state at the window start:
 
 ```
 state          R^2    corr vda     slope vda     predicted    ratio
-X           0.8252      0.9082    5.4154e-07           --       --
-Theta       1.0000      0.9998    2.2158e-05           --       --
+X           0.8252      0.9082    5.4154e-07          n/a      n/a
+Theta       1.0000      0.9998    2.2158e-05          n/a      n/a
 Y           1.0000     -0.9998   -4.8236e-03   -5.0000e-03    0.965
-dX          0.9955      0.9977    1.0532e-05           --       --
-dTheta      0.9959      0.9979    4.1655e-04           --       --
+dX          0.9955      0.9977    1.0532e-05          n/a      n/a
+dTheta      0.9959      0.9979    4.1655e-04          n/a      n/a
 dY          0.9999     -0.9999   -9.5024e-02   -1.0000e-01    0.950
 ```
 
