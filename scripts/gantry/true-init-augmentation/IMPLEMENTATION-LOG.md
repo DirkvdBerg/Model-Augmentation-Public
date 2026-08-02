@@ -64,6 +64,36 @@ So the target's corruption is not a defect in this code and not an encoder probl
 that the truth has eight states and the model has six that can be initialised. **An encoder
 that reconstructed the six physical states perfectly would land exactly on these numbers.**
 
+### The training arm: it does not learn, and it does something worse
+
+Three learning-rate arms (`1e-7`, `1e-6`, `1e-5`), killed externally at 47/47/43 of 90
+epochs, so 1222/1222/1118 Adam updates instead of 2340. Recovered from the streamed logs
+(`runlogs/`, `harvest_runs.py`); the per-epoch `_last` checkpoints survived because they were
+written every epoch on purpose.
+
+```
+    lr  updates      ANN off         best   best %  final %  worst %  DC_Y best %   |w| final
+ 1e-07     1222   6.8486e-05   6.8312e-05    -0.25     1.02     1.59        -0.28    1.80e-06
+ 1e-06     1222   6.8486e-05   6.8037e-05    -0.65     2.16     8.54        -0.62    4.78e-05
+ 1e-05     1118   6.8486e-05   6.7924e-05    -0.82    -0.16   167.08        -1.40    4.17e-04
+```
+
+The best point of the best arm is `0.82 %` below ANN-off, while **91 %, 91 % and 93 % of all
+validation points sit above it**. The Y per-window DC, the quantity the static analysis says
+cannot be touched, improves by at most `1.40 %` over all three runs: `1.03e-04 m` before and
+`1.03e-04 m` after. So P1 is a null in substance and P2 is confirmed.
+
+**And the 12 s free run degrades by `253x` to `3575x` on the same checkpoint** (V1
+`1.30e-06 -> 4.52e-03 m`). The free-run per-window DC on Y goes `3.56e-07 -> 4.24e-03 m`, a
+factor `11900`: the ANN's small non-zero-mean output has nothing to relax it on a `K = 0`
+row, so 48000 steps integrate what 400 steps hide.
+
+**That last result is the one to carry forward.** The 120x train/select horizon gap has been
+shown twice before with a confound each time (run 71167 had the encoder; the STAGE 1 black
+box had no informed `x0`). Here the initial condition is exact by construction and the split
+reproduces at full strength, so **initialisation is eliminated as an explanation of the
+horizon gap.**
+
 ### Which section 8 candidate the results implicate
 
 **Persistence, with an important qualification I got wrong at first and corrected in section
@@ -776,7 +806,109 @@ primary arm; `1e-6` is run as a bracket.
 
 ### 6.4 Result
 
-_(in flight)_
+**The runs were killed externally at roughly half their epoch budget** (47, 47 and 43 of 90),
+by something outside this session. They are not lost: `_last` was written every epoch,
+deliberately, because D-130 was written from a run whose trained weights survived only in a
+`_last` artefact. `harvest_runs.py` recovers the series from the streamed logs, which are
+kept in `runlogs/`. So what follows is 1222, 1222 and 1118 Adam updates rather than the 2340
+that were budgeted, and that limitation is stated wherever it matters.
+
+```
+    lr  epochs  updates      ANN off         best   best %  final %  worst %  DC_Y best %   |w| final
+ 1e-07      47     1222   6.8486e-05   6.8312e-05    -0.25     1.02     1.59        -0.28    1.80e-06
+ 1e-06      47     1222   6.8486e-05   6.8037e-05    -0.65     2.16     8.54        -0.62    4.78e-05
+ 1e-05      43     1118   6.8486e-05   6.7924e-05    -0.82    -0.16   167.08        -1.40    4.17e-04
+```
+
+Percentages are against each run's own ANN-off value, which is exact rather than approximate
+(`max|w| = 0.000e+00` at init, measured, so the untrained model IS the baseline).
+
+**P1, "val nf-RMS improves", is satisfied only in the most technical sense and should be
+read as a null.** The best point of the best arm is `0.82 %` below ANN-off. Meanwhile
+**91 %, 91 % and 93 % of all validation points sit ABOVE the ANN-off value**, the `1e-6` arm
+peaks `8.5 %` worse and the `1e-5` arm peaks `167 %` worse. A metric that a model beats on
+7 % of its checkpoints by under one per cent has not been learned; it has been jittered.
+
+**P2, "the Y per-window DC does not improve materially", is confirmed.** The best DC
+improvement over the whole of all three runs is `1.40 %`, on the arm whose ANN output is
+largest. The DC is `1.03e-04 m` and it stays `1.03e-04 m`.
+
+**P3 therefore holds**, and section 5.2b's measurement says why in the sharpest possible
+form. Re-run on the final checkpoints:
+
+```
+checkpoint                   |x_aug| rms   |x_aug| max   J gain mean   J gain max  R2 vs [da,vda]
+(untrained)                   0.0000e+00    0.0000e+00    0.0000e+00   0.0000e+00          0.0000
+main_lr1e-7_last              3.4297e-07    5.5798e-07    5.1617e-08   5.6430e-08          0.1135
+main_lr1e-6_last              9.0050e-06    3.4561e-05    1.0155e-05   1.0837e-05          0.1553
+main_lr1e-5_last              1.0234e-04    4.7123e-04    1.5656e-04   1.6424e-04          0.1359
+main_lr1e-5_best              8.1944e-05    3.7377e-04    1.0735e-04   1.1248e-04          0.1317
+```
+
+After 1118 updates at the largest usable learning rate the recurrence gain is `1.57e-04`
+against the `~0.99` a damped 150 Hz absorber needs, and it is still tracking the learning
+rate linearly rather than tracking the data. The augmented rows do carry something by the end
+(`|x_aug| ~ 1e-04`, up from exactly zero) but `R^2` of the best affine map onto the truth's
+`[delta_a, vdelta_a]` is `0.13`, so what they carry is not the absorber.
+
+**Honest limits on this arm.**
+
+- Half the budgeted updates. Doubling them moves an Adam random walk by `sqrt(2)`, which does
+  not close a four-decade gap, but the series is what it is and the truncation is stated.
+- One seed per arm. The `+-1 %` band the arms wander in is not resolved against seed noise,
+  which is precisely why the reading rests on the 91-93 % figure and on P2 rather than on the
+  sign of a `0.8 %` best point.
+- Neither a warmup nor plain SGD was tried, and both would defuse the first-update Adam
+  artefact that forces the learning rate down in the first place. That is the most obvious
+  thing this arm did not test.
+- `nf = 400` and `stride = 100` throughout, so nothing here speaks to a different horizon
+  beyond what section 3.5 measured without training.
+
+### 6.5 The 12 s free-run arm, and it is the most important number here
+
+Backlog item 1. Whole-record free run from the exact rest IC (no encoder, no initialisation
+error of any kind), ANN off against the best checkpoint of the `1e-5` arm, all four
+validation records.
+
+```
+record                arm         RMS [m]           X1           X2            Y     win DC Y
+V1_standstill_Yp10    off      1.2979e-06   4.3280e-08   4.3026e-08   2.2472e-06   3.5573e-07
+V1_standstill_Yp10    on       4.5155e-03   1.3458e-04   1.3442e-04   7.8187e-03   4.2381e-03
+                      ratio     3479.02   DEGRADES
+V2_aprbs_Ylow         off      2.1459e-06   2.0149e-06   2.0152e-06   2.3861e-06   5.8202e-07
+V2_aprbs_Ylow         on       5.4212e-04   8.1702e-05   8.1667e-05   9.3185e-04   9.2863e-04
+                      ratio      252.64   DEGRADES
+V3_ysweep_Yp10        off      1.3602e-06   4.5577e-08   4.5381e-08   2.3550e-06   3.9330e-07
+V3_ysweep_Yp10        on       4.8624e-03   1.2306e-04   1.2291e-04   8.4201e-03   4.4681e-03
+                      ratio     3574.84   DEGRADES
+V4_lissajous_Ym10     off      3.1762e-06   2.6254e-06   2.6252e-06   4.0597e-06   1.6299e-06
+V4_lissajous_Ym10     on       9.9342e-04   3.5441e-05   3.5257e-05   1.7199e-03   7.9547e-04
+                      ratio      312.76   DEGRADES
+```
+
+**The same checkpoint improves the 0.100 s windowed metric by `0.82 %` and degrades the 12 s
+free run by `253x` to `3575x`.** It was selected as "best" on the windowed metric. That is
+the 120x train/select horizon gap (D-129) in its purest available form: **no encoder, no
+initialisation error, an exactly known initial condition, and the split reproduces at full
+strength anyway.**
+
+This matters beyond this task. The gap has been demonstrated twice before and each time a
+confound survived: run 71167 had the encoder in the loop, and the STAGE 1 black box removed
+the baseline but kept the encoder and had no informed `x0`. Here the initialisation is exact
+by construction, so **initialisation is eliminated as an explanation of the horizon gap.**
+
+The mechanism is visible in the numbers rather than inferred. The ANN's output is
+`|w| ~ 4e-04` in normalised state units per step, and it writes the K = 0 rows directly. A
+non-zero-mean component of that output has nothing to relax it, so 48000 steps integrate it:
+the free-run per-window DC on Y goes from `3.56e-07 m` (ANN off) to `4.24e-03 m` (ANN on),
+a factor of `11900`. The windowed loss cannot see it, because inside 400 steps the same DC
+contributes only 1/120 as much displacement. This is the DC-accumulation picture that
+`docs/dc-accumulation-*` and MS12 built, now reproduced with the initialisation confound
+removed.
+
+**Also worth recording: the ANN-off free-run RMS from the exact rest IC is `1.30e-06` to
+`3.18e-06 m` across the four records.** That is what the CoG-corrected baseline is worth over
+12 s with a correct initial condition, and it is the number an augmentation has to beat.
 
 ---
 
@@ -879,5 +1011,9 @@ remains true, and it is not about gradient at all:
   six states, and the handoff's section 5 assumption is falsified.**
 - Mechanism identified three independent ways (section 4) and the representability question
   answered without training (section 5).
-- Training arm: three lr arms running, 90 epochs each. Section 6.4 is filled in when they
-  land.
+- Training arm: three lr arms, killed externally at 47/47/43 of 90 epochs. Series recovered
+  from `runlogs/` by `harvest_runs.py`; both checkpoints survived for every arm. Sections 6.4
+  and 6.5 are the result. **Not restarted**: the series is flat within `+-2 %` over 1200
+  updates and doubling an Adam random walk moves it by `sqrt(2)`, which does not close a
+  four-decade recurrence-gain gap. The truncation is stated wherever a number depends on it.
+- Session complete.

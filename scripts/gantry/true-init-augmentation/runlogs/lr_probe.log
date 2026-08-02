@@ -1,0 +1,141 @@
+########## lr=1e-7 ##########
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=2.186e-05 m  vdelta_a std=2.160e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+
+True-init augmentation run probe_1e-7
+  nf 400 (0.1 s)  stride 100  k0 17  batch 256  lr 1e-07  epochs 20  dtype f32  CoG ON
+  routing (0, 1, 2, 3, 4, 5, 6, 7)  nx_ann 2  net 2x16 tanh
+  6664 train windows, 476 val windows
+  ANN output at init, max |w| = 0.000e+00  (exactly zero: ANN-off == untrained)
+
+  [ANN off] val nf-RMS 7.169794e-05 m   per channel ['3.533e-07', '3.863e-07', '1.242e-04']
+  [ANN off] val per-window DC scatter [m] ['2.700e-07', '2.903e-07', '1.079e-04']
+    step   0  train MSE 1.139229e-07  sqrt 3.375246e-04  |g ANN| 1.185e-02
+    step   1  train MSE 1.182759e-07  sqrt 3.439126e-04  |g ANN| 2.751e-02
+    step   2  train MSE 1.296347e-07  sqrt 3.600482e-04  |g ANN| 1.357e-02
+    step   3  train MSE 1.386502e-07  sqrt 3.723576e-04  |g ANN| 1.686e-02
+    step   4  train MSE 1.526647e-07  sqrt 3.907233e-04  |g ANN| 2.166e-02
+    step   5  train MSE 1.450298e-07  sqrt 3.808277e-04  |g ANN| 1.712e-02
+    step   6  train MSE 1.278380e-07  sqrt 3.575444e-04  |g ANN| 9.866e-03
+    step   7  train MSE 1.303169e-07  sqrt 3.609943e-04  |g ANN| 8.814e-03
+    step   8  train MSE 1.460595e-07  sqrt 3.821773e-04  |g ANN| 2.397e-02
+    step   9  train MSE 1.185691e-07  sqrt 3.443386e-04  |g ANN| 2.032e-02
+  ep   0  train sqrtMSE 3.634504e-04  val nf-RMS 7.219035e-05 m  (+0.69 % vs ANN off)  |g| 2.03e-02  max|W| 3.01e-01      73 s
+
+  ANN off  val nf-RMS 7.169794e-05 m
+  ANN on   val nf-RMS 7.169794e-05 m  (best at epoch -1)
+  VERDICT: no improvement   ratio on/off = 1.0000
+  wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\diagnostics\true_init_train_probe_1e-7.json
+########## lr=1e-5 ##########
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=2.186e-05 m  vdelta_a std=2.160e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+
+True-init augmentation run probe_1e-5
+  nf 400 (0.1 s)  stride 100  k0 17  batch 256  lr 1e-05  epochs 20  dtype f32  CoG ON
+  routing (0, 1, 2, 3, 4, 5, 6, 7)  nx_ann 2  net 2x16 tanh
+  6664 train windows, 476 val windows
+  ANN output at init, max |w| = 0.000e+00  (exactly zero: ANN-off == untrained)
+
+  [ANN off] val nf-RMS 7.169794e-05 m   per channel ['3.533e-07', '3.863e-07', '1.242e-04']
+  [ANN off] val per-window DC scatter [m] ['2.700e-07', '2.903e-07', '1.079e-04']
+    step   0  train MSE 1.139229e-07  sqrt 3.375246e-04  |g ANN| 1.185e-02
+    step   1  train MSE 5.452921e-05  sqrt 7.384389e-03  |g ANN| 2.950e+00
+    step   2  train MSE 4.312937e-06  sqrt 2.076761e-03  |g ANN| 4.690e-01
+    step   3  train MSE 2.070305e-05  sqrt 4.550061e-03  |g ANN| 1.708e+00
+    step   4  train MSE 3.248973e-05  sqrt 5.699977e-03  |g ANN| 2.254e+00
+    step   5  train MSE 1.883896e-05  sqrt 4.340387e-03  |g ANN| 1.743e+00
+    step   6  train MSE 3.101169e-06  sqrt 1.761014e-03  |g ANN| 6.164e-01
+    step   7  train MSE 3.467234e-06  sqrt 1.862051e-03  |g ANN| 5.820e-01
+    step   8  train MSE 1.374958e-05  sqrt 3.708043e-03  |g ANN| 1.424e+00
+    step   9  train MSE 1.866650e-05  sqrt 4.320475e-03  |g ANN| 1.736e+00
+  ep   0  train sqrtMSE 4.122770e-03  val nf-RMS 3.101975e-04 m  (+332.64 % vs ANN off)  |g| 1.74e+00  max|W| 3.01e-01      53 s
+
+  ANN off  val nf-RMS 7.169794e-05 m
+  ANN on   val nf-RMS 7.169794e-05 m  (best at epoch -1)
+  VERDICT: no improvement   ratio on/off = 1.0000
+  wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\diagnostics\true_init_train_probe_1e-5.json
+########## lr=1e-3 ##########
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=2.186e-05 m  vdelta_a std=2.160e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+
+True-init augmentation run probe_1e-3
+  nf 400 (0.1 s)  stride 100  k0 17  batch 256  lr 0.001  epochs 20  dtype f32  CoG ON
+  routing (0, 1, 2, 3, 4, 5, 6, 7)  nx_ann 2  net 2x16 tanh
+  6664 train windows, 476 val windows
+  ANN output at init, max |w| = 0.000e+00  (exactly zero: ANN-off == untrained)
+
+  [ANN off] val nf-RMS 7.169794e-05 m   per channel ['3.533e-07', '3.863e-07', '1.242e-04']
+  [ANN off] val per-window DC scatter [m] ['2.700e-07', '2.903e-07', '1.079e-04']
+    step   0  train MSE 1.139229e-07  sqrt 3.375246e-04  |g ANN| 1.185e-02
+    step   1  train MSE 7.996051e-01  sqrt 8.942064e-01  |g ANN| 4.757e+02
+    step   2  train MSE 4.760088e-02  sqrt 2.181763e-01  |g ANN| 5.289e+01
+    step   3  train MSE 1.172190e-01  sqrt 3.423726e-01  |g ANN| 9.051e+01
+    step   4  train MSE 2.008651e-01  sqrt 4.481798e-01  |g ANN| 1.225e+02
+    step   5  train MSE 2.232200e-01  sqrt 4.724616e-01  |g ANN| 1.206e+02
+    step   6  train MSE 1.201530e-01  sqrt 3.466310e-01  |g ANN| 5.503e+01
+    step   7  train MSE 1.304779e-01  sqrt 3.612172e-01  |g ANN| 3.920e+01
+    step   8  train MSE 1.499618e-01  sqrt 3.872490e-01  |g ANN| 8.045e+01
+    step   9  train MSE 1.405187e-01  sqrt 3.748582e-01  |g ANN| 7.280e+01
+  ep   0  train sqrtMSE 4.392746e-01  val nf-RMS 2.002734e-02 m  (+27832.93 % vs ANN off)  |g| 7.28e+01  max|W| 3.06e-01      46 s
+
+  ANN off  val nf-RMS 7.169794e-05 m
+  ANN on   val nf-RMS 7.169794e-05 m  (best at epoch -1)
+  VERDICT: no improvement   ratio on/off = 1.0000
+  wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\diagnostics\true_init_train_probe_1e-3.json
