@@ -242,10 +242,11 @@ def train(args):
 
     # ANN-off reference: the zero-initialised final layer makes the ANN output
     # exactly zero, so the untrained model IS the baseline. Verified, not assumed.
+    # A fixed probe batch drawn from real training windows, so `|w|` below is the
+    # ANN's output on states it actually sees rather than on a made-up point.
+    zprobe = torch.cat([Wtr.X0[0][k0:k0 + 64], Wtr.U[0][k0:k0 + 64]], dim=1).to(dtype)
     with torch.no_grad():
-        z = torch.zeros(4, cfg.nx_phys + cfg.nx_ann + cfg.nu, dtype=dtype)
-        z[:, 2] = 0.1
-        w0 = float(ann.net(z).abs().max())
+        w0 = float(ann.net(zprobe).abs().max())
     print(f'  ANN output at init, max |w| = {w0:.3e}  '
           f'{"(exactly zero: ANN-off == untrained)" if w0 == 0.0 else "NOT ZERO"}')
 
@@ -283,17 +284,30 @@ def train(args):
                     break
         ic.eval()
         v = evaluate(ic, Wva, batch=args.batch, max_windows=args.val_windows)
+        # max|W| over ALL parameters is dominated by the RANDOM hidden layers and
+        # says nothing about whether the ANN's output has moved. The two numbers
+        # that do are the final layer's norm (zero at init by construction) and
+        # the ANN's actual output on a fixed probe batch.
+        wfin = float(torch.linalg.vector_norm(ann.net.net[-1].weight))
+        with torch.no_grad():
+            wout = float(ann.net(zprobe).abs().max())
         wmax = float(max(p.abs().max() for p in ann.parameters()))
         hist.append(dict(epoch=ep, train_mse=acc / max(seen, 1), val=v,
-                         ann_wmax=wmax, grad=gn))
+                         ann_wmax=wmax, w_final_norm=wfin, ann_out_max=wout, grad=gn))
         flag = ''
+        # ALWAYS save _last. D-130 was written from a run whose best checkpoint was
+        # epoch 0, so the trained weights survived only in a _last artefact; without
+        # one, a run that never beats its own epoch 0 leaves nothing to inspect.
+        torch.save(ann.state_dict(), os.path.join(SDIR, f'ann_{run_id}_last.pt'))
         if v['rms'] < best['rms']:
             best = dict(rms=v['rms'], epoch=ep, val=v)
             flag = '  <-- best'
             torch.save(ann.state_dict(), os.path.join(SDIR, f'ann_{run_id}_best.pt'))
         print(f'  ep {ep:3d}  train sqrtMSE {(acc/max(seen,1))**0.5:.6e}  '
-              f'val nf-RMS {v["rms"]:.6e} m  ({100*(v["rms"]/base["rms"]-1):+.2f} % vs ANN off)'
-              f'  |g| {gn:.2e}  max|W| {wmax:.2e}  {time.time()-t0:6.0f} s{flag}')
+              f'val nf-RMS {v["rms"]:.6e} m  ({100*(v["rms"]/base["rms"]-1):+.2f} %)'
+              f'  DC_Y {v["dc_scatter"][2]:.4e} ({100*(v["dc_scatter"][2]/base["dc_scatter"][2]-1):+.2f} %)'
+              f'  |g| {gn:.2e}  |W_fin| {wfin:.2e}  |w| {wout:.2e}'
+              f'  {time.time()-t0:6.0f} s{flag}')
         if args.probe:
             break
 
