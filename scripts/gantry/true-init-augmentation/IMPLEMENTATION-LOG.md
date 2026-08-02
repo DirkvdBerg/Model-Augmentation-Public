@@ -565,12 +565,36 @@ remains true, and it is not about gradient at all:
 
 ---
 
+## 8. What is still open
+
+1. **Whether a learnable contracting `A_aug` fixes it.** Everything here points at it and
+   nothing here tests it. The handoff puts it out of scope (its section 2) and that is
+   respected. What this session adds to the case is that the requirement is now a
+   measurement rather than an inference: the augmentation needs a state that survives a
+   step, because the quantity it must reproduce is `R^2 = 1.0000` explained by
+   `[delta_a, vdelta_a]` and `R^2 <= 0.49` by anything instantaneous.
+2. **The X and dX rows.** They are the two states the exact velocities did improve, and X is
+   the only state that meets the acceptance criterion. Their residual DC is `1.27e-08 m` and
+   `2.25e-07 m/s`, is only 83 % explained by the absorber state, and has not been attributed.
+   It is three decades below the Y scale so it was not chased.
+3. **The free-run X bias with the CoG correction on.** `t = 11.44`, bias `1.20e-07 m`.
+   New, small, and not explained. It appears only on the continuous free run, not on the
+   re-seeded arms, and only with the correction applied.
+4. **The `1e-5` arm's first-epoch excursion.** Whether it is the Adam-over-zero-init
+   artefact alone or something the routing adds was not separated. A warmup arm or an SGD
+   arm would separate them and neither was run.
+5. **Real data.** Everything here is the frictionless `augmentation` simulation dataset. The
+   Karnopp dataset and the Telica logs were not touched.
+
+---
+
 ## 9. Running state
 
 - A1-A3 done, gates C1a-C5 all pass.
 - Exact-truth cache: all 22 records, worst X replay residual in the `e-9` range.
-- Item (i) done. **The acceptance criterion FAILS on five of six states, and the section 5
-  assumption is falsified.** Diagnosis in flight (`diag_dc_mechanism.py`,
-  `diag_static_representability.py`).
-- Training arm: not launched. The decision is deferred to section 4's outcome, per handoff
-  section 10 paragraph 2.
+- Item (i) done on all four validation records. **The acceptance criterion FAILS on five of
+  six states, and the handoff's section 5 assumption is falsified.**
+- Mechanism identified three independent ways (section 4) and the representability question
+  answered without training (section 5).
+- Training arm: three lr arms running, 90 epochs each. Section 6.4 is filled in when they
+  land.
