@@ -218,6 +218,35 @@ own constants.
 different folder, same number to three digits. Across all 22 records the worst X replay
 residual is in the `e-9` range.
 
+### 2.0b The training arm's model IS the pipeline's model
+
+`true_init_train.py` assembles the interconnect directly rather than calling
+`gantry_dynamic/model.py::build_model`, which is a reasonable choice (the encoder, the
+multiple-shooting subclass, the orth penalty, the ReZero gate and the Lipschitz cap all
+become dead weight once the encoder is deleted) and also a way to silently train a different
+model. `check_model_equivalence.py` closes that: both models built from the same
+`RunConfig` and the same `Norm`, the ANN weights copied across so only structure can differ,
+then rolled 400 steps from the same state with the same input.
+
+```
+E1 ANN at zero init          max|dy| 0.000e+00  rel 0.000e+00  PASS
+                             x_aug at segment end: ref |x| 0.000e+00, max|diff| 0.000e+00
+E2 ANN perturbed off zero    max|dy| 0.000e+00  rel 0.000e+00  PASS
+                             x_aug at segment end: ref |x| 2.800e-03, max|diff| 0.000e+00
+```
+
+Bit-identical, not merely close. E2 exists because E1 alone would pass against a model with
+the ANN wired to nothing: with the output identically zero the entire augmentation path is
+invisible. That is the same trap as T2 in the coulomb-offset log, a gate passing because the
+thing under test vanished.
+
+**E2 also independently confirms section 5.2b.** Perturbing only the ANN's final layer takes
+the propagated `x_aug` at segment end from exactly `0.000e+00` to `2.800e-03`. The augmented
+rows are not structurally dead; they are dead at initialisation.
+
+The gate is run with `cog=False`, because the CoG correction is our change and must not be
+smuggled into an equivalence claim. It has its own gates, C1a-C5.
+
 ### 2.1 How wrong the record's finite-difference velocities actually are
 
 Measured on `V1_standstill_Yp10`, exact truth vs `x_logical[:, 3:]`:
