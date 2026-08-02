@@ -324,14 +324,63 @@ continuous free run it makes X position `7.6x` worse while making dX `30x` bette
 consistent with coulomb-offset F4's finding that the correction is not a fix for a settled
 offset, and it is why the correction is applied here as confound removal and nothing else.
 
-**The free run is NOT zero-mean on X and dX.** Newey-West HAC t on the free-run per-window
-means: X `t = 11.44` (bias `1.20e-07 m`), dX `t = 31.41` (bias `2.12e-08 m/s`), while Y is
-`t = 1.29` and dY `t = -0.13`. Coulomb-offset F4 reported `|t| < 1.3` on six axis/record
-combinations, but those were X, Theta and Y positions on the UNCORRECTED baseline. With the
-CoG term in, the X free run acquires a small significant drift. The exact-seed arm is
-zero-mean on every state (`|t| <= 0.21` on V1, `<= 0.67` on V3), so F4's headline claim
-survives where it was made; the new X free-run bias is a property of the corrected baseline
-and is `1.2e-07 m` in size, three decades below the quantity this experiment is about.
+**The free run is NOT zero-mean on X and dX.** See section 3.4b, which measures this on both
+baselines because the question of whether the CoG correction causes it is not answerable from
+the CoG-ON arm alone.
+
+### 3.4b Zero-mean, on which states, and does the CoG correction change it
+
+`diag_zeromean_cog.py`. Newey-West HAC t on the 476 per-window means, both baselines, both
+records, all six states. Added after the first pass because `diag_window_target.py` stored
+bias and t only for the CoG-ON arms.
+
+**Per-window re-seeding from the exact IC is zero-mean on every state, with and without the
+correction.**
+
+```
+exact-seed t         CoG ON (V1 / V3)        CoG off (V1 / V3)
+X                     0.09 /  0.56            0.09 / -1.19
+Theta                 0.11 /  0.67            0.51 /  0.66
+Y                    -0.09 / -0.66           -0.09 / -0.66
+dX                    0.21 /  0.49            0.09 / -1.22
+dTheta                0.20 /  0.64            0.08 /  0.72
+dY                   -0.12 / -0.68           -0.12 / -0.68
+```
+
+Every value is inside `|t| < 2`, and the record-seed arm is the same (`|t| <= 1.84`). **This
+is the important half of the result and it is easy to read the wrong way round.** The short
+windows are as clean in the MEAN as the 12 s free run is; what they are not is clean in the
+VARIANCE, and the variance is what corrupts the training target. Coulomb-offset F4 said "it
+is variance, not bias" for the K0-seeded case; that survives exact initialisation, on all six
+states, unchanged.
+
+**On the 12 s free run the answer depends on the correction.**
+
+```
+free-run t           CoG ON (V1 / V3)        CoG off (V1 / V3)
+X                    11.44 / 10.71          -11.70 / -14.46
+Theta                 2.30 /  2.06            0.37 /   0.12
+Y                     1.29 /  0.10            1.29 /   0.06
+dX                   31.41 / 23.87           -0.65 /  -0.10
+dTheta                0.04 /  0.07            0.19 /  -0.04
+dY                   -0.13 / -0.01           -0.13 /  -0.01
+```
+
+Without the correction, five of six states are zero-mean and only X is not. With it, X and dX
+are not and Theta goes marginal. So the correction does **not create** the X free-run bias,
+which is there either way, but it **flips its sign and amplifies it about 7x**
+(`-1.61e-08 m`, `t = -11.70` -> `+1.20e-07 m`, `t = +11.44`) and it **does create** the dX
+bias outright (`t = -0.65 -> +31.41`), i.e. with the correction X no longer settles but is
+still drifting at the end of the record.
+
+**Two caveats, so this is not over-read.** The sizes are `1e-08` to `1e-07 m` over 12 s,
+three decades below the `1.03e-04 m` this task is about. And it does not contradict
+coulomb-offset F4's `|t| < 1.3`: that was measured at 20 kHz where the X free-run floor is
+`9.1e-08 m`, and against config A's `6.3e-07 m` per-window X scatter a `1.6e-08 m` bias is
+not resolvable. This refines F4, it does not overturn it. The operational consequence is that
+the CoG correction should be used as the handoff frames it, confound removal for the
+RE-SEEDED arms where it is worth `47x` on X, and not carried into a free-run claim without
+this caveat attached.
 
 ### 3.5 A shorter training window does not rescue it either
 
@@ -765,9 +814,14 @@ remains true, and it is not about gradient at all:
    the only state that meets the acceptance criterion. Their residual DC is `1.27e-08 m` and
    `2.25e-07 m/s`, is only 83 % explained by the absorber state, and has not been attributed.
    It is three decades below the Y scale so it was not chased.
-3. **The free-run X bias with the CoG correction on.** `t = 11.44`, bias `1.20e-07 m`.
-   New, small, and not explained. It appears only on the continuous free run, not on the
-   re-seeded arms, and only with the correction applied.
+3. **The free-run X bias.** Measured on both baselines (section 3.4b): X is non-zero-mean on
+   the 12 s free run with AND without the CoG correction, and the correction flips its sign
+   and amplifies it 7x while creating a dX bias that was not there. Sizes are `1e-08` to
+   `1e-07 m`. The mechanism is not established. The plausible candidate is the truth's
+   `-ma*delta_a` X-Theta coupling and its `ma*2*(Y+L0)*delta_a` inertia term, which are
+   first order in an oscillating `delta_a` and therefore rectify into a slow force on a
+   `K = 0` axis; the corrected baseline has the `L0` part and not the `delta_a` part, so it
+   changes which way the rectification points. Not tested.
 4. **The `1e-5` arm's first-epoch excursion.** Whether it is the Adam-over-zero-init
    artefact alone or something the routing adds was not separated. A warmup arm or an SGD
    arm would separate them and neither was run.
