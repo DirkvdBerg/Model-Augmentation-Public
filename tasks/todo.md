@@ -5,6 +5,60 @@ _Tasks 2.1, 2.3, 3b.1 and the 2026-06-10 code-review section archived to `archiv
 
 ---
 
+## ACTIVE 2026-08-02 — True-init augmentation: can the ANN learn the absorber at all?
+
+Handoff: `tasks/handoffs/2026-08-02-true-init-augmentation.md`. Autonomous session (section 15).
+Running log: `scripts/gantry/true-init-augmentation/IMPLEMENTATION-LOG.md`.
+Not run: the todo/handoff archival sweep (would churn ~1000 stale lines and is outside the
+handoff's scope); noted here so it is not mistaken for an oversight.
+
+### A. Infrastructure
+- [ ] A1 Create `scripts/gantry/true-init-augmentation/` + open the implementation log.
+- [ ] A2 `truth_exact.py`: exact 8-state truth in Python (RK4, 20 kHz, from the rest IC
+      `[0,0,Y_op,0,0,0,0,0]`), decimated to 4 kHz. Gives ANALYTIC velocities (integrator
+      states), not `gradient()` finite differences. Gate: reproduces the record's positions
+      at or below the known `5.37e-10 m` X level.
+- [ ] A3 `plant_cog.py`: LFR baseline with the truth's static mass distribution at
+      `delta_a = 0`. Derive the corrected `N0,N1,N2` and `d(Y)` analytically (the LFR
+      rational form survives the correction; only `M[0,1]`, `M[1,1]` change).
+      Gates: (a) `ma_cog = 0` reproduces the parent bit-identically;
+      (b) `N_cog(Y)/d_cog(Y) == inv(M_cog(Y))` over a Y sweep;
+      (c) cross-realization vs the collapsed 3-DOF `M3(Y, cog=True)`.
+
+### B. Task item (i) — per-window target check (no training)
+- [ ] B1 Free-run floor at THIS configuration (4 kHz, block-mean u, exact IC at t=0,
+      chunked into 0.100 s windows) for ALL SIX physical states. Velocity thresholds are
+      not in the literature; derive and state them before use (handoff section 10).
+- [ ] B2 `diag_window_target.py`: re-seed each window from the exact 6-state truth IC over a
+      grid of starts, roll the baseline forward `nf = 400`, report per-window mean and
+      scatter on all six states. Arms: CoG off / CoG on, float64 / float32.
+- [ ] B3 Verdict against the acceptance criterion (Y `2.979e-08`, X `9.147e-08`,
+      Theta `3.730e-09` from the 20 kHz free run, plus the B1 floors). If any state lands
+      materially above its floor: diagnose (code defect vs genuine property of per-window
+      re-seeding), record, do not stop.
+- [ ] B4 Second record class for error bars (backlog item 2, pulled forward if cheap).
+
+### C. Task item (ii) — training arm
+- [ ] C1 `true_init_train.py`: pipeline mirror with the SUBNET encoder REPLACED by the exact
+      6-state truth IC per window (rows 6-7 stay at zero, never seeded: handoff section 8).
+      Encoder bypass via a `make_training_data`/`loss` override in the new folder; nothing
+      in `model_augmentation/` is modified.
+- [ ] C2 Validation measure consistent with the true-init target (windowed free run from the
+      exact IC), so checkpoint selection is not made on an encoder metric that no longer exists.
+- [ ] C3 Hypothesis row in `docs/gantry-augmentation-problem-log.md` section 12 BEFORE launch
+      (run-discipline rule, not overridden by section 15).
+- [ ] C4 Run ANN-on vs ANN-off on the same seeds; report whether the ANN learns.
+- [ ] C5 Attribute the outcome to one of the section-8 candidates (persistence / coordinate
+      pinning / capacity). Do NOT implement either fix.
+
+### D. Reporting
+- [ ] D1 `IMPLEMENTATION-LOG.md` written as the work happens, opening with
+      `## 0. Read this first`.
+- [ ] D2 Draft (do NOT apply) the D-130 amendment inside the new folder's log.
+- [ ] D3 Commit working increments on `Augmentation`. No push, no PR.
+
+---
+
 ## Step 2: LPV Extension — Frozen-at-sampling-instant ZOH
 
 **Goal**: Implement and validate the discrete-time LPV model where A(Y), B(Y) vary with

@@ -1,0 +1,3 @@
+# Regenerable caches: exact-truth replays (precompute_exact.py) and window means.
+_exact_*.npz
+_winmeans_*.npz
