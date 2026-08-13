@@ -1,0 +1,330 @@
+% Adding the MATLAB feedback controller to the gantry derivation.
+% Notation follows docs/writeup/jan-augmentation-writeup.tex. House style follows
+% docs/writeup/jan-writeup-guideline.md. Compile: pdflatex controller-in-derivation.tex
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.75em}{}
+\titlespacing*{\section}{0pt}{1.4ex plus .2ex minus .2ex}{0.9ex}
+\titlespacing*{\subsection}{0pt}{1.0ex plus .2ex minus .2ex}{0.5ex}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\xb}{\tilde{x}}
+\newcommand{\yh}{\hat{y}}
+\newcommand{\Cfb}{C_{\mathrm{fb}}}
+\newcommand{\Gop}{G_{\mathrm{op}}}
+\newcommand{\So}{S_{\mathrm{o}}}
+\newcommand{\Si}{S_{\mathrm{i}}}
+\newcommand{\Cnorm}{C_{\mathrm{n}}}
+\newcommand{\fms}{f_{\mathrm{ms}}}
+\newcommand{\ufb}{u_{\mathrm{fb}}}
+
+\setlist{nosep, leftmargin=1.4em}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries Adding the feedback controller to the derivation}\\[0.4em]
+  {\large Dirk van den Berg}\\[0.2em]
+  {\small Notation follows \texttt{docs/writeup/jan-augmentation-writeup.tex}. Every equation
+  here is realised in \texttt{verify\_controller.py} and gated against the generated records.}
+\end{center}
+\vspace{0.4em}
+
+\section{Purpose and scope}
+
+The trajectory records are generated in closed loop and replayed open loop. This note writes the
+controller that closes that loop as an explicit transfer function, so that the loop can be
+carried through the derivation as equations rather than as a MATLAB object. Section~\ref{sec:ctrl}
+gives the controller, Section~\ref{sec:loop} solves the loop, Section~\ref{sec:conseq} states
+what the loop does and does not change about the model comparison, and Section~\ref{sec:gate}
+reports the numerical gate.
+
+\medskip\noindent\textbf{Symbols that clash with the baseline.}\quad The baseline write-up already
+uses $C$ for the damping matrix of Eq.~(5) there and $K$ for the stiffness matrix. The controller
+and its normalisation gain therefore take different symbols in this note:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+symbol & meaning & clashes with \\
+\midrule
+$\Cfb(z)$ & discrete feedback controller, $3\times3$ diagonal & $C$, damping matrix \\
+$\Cnorm(s)$ & the shared normalised controller shape & \\
+$\kappa_j$ & per-channel normalisation gain & $K$, stiffness matrix \\
+$\omega_{\mathrm{b}}$ & design bandwidth in rad/s & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Where the controller attaches}
+
+The measured output of the baseline is the vector of stage positions,
+\begin{equation}
+  q = [\,X,\Theta,Y\,]^\top , \qquad
+  \yh = P^\top q = [\,X_1,X_2,Y\,]^\top , \qquad
+  P =
+  \begin{bmatrix}
+    1 & 1 & 0 \\[1mm]
+    \tfrac{L_b}{2} & -\tfrac{L_b}{2} & 0 \\[1mm]
+    0 & 0 & 1
+  \end{bmatrix} ,
+  \label{eq:frame}
+\end{equation}
+and the controller acts on $\yh$, that is, in the \emph{stage} frame. This fixes the frame for
+everything that follows: the loop is diagonal in stage coordinates and the logical frame appears
+only inside the plant. The plant seen by the loop is therefore the stage-to-stage map
+\begin{equation}
+  G(s) : u \mapsto \yh , \qquad
+  M(Y)\,\ddot q + C\,\dot q + K\,q = P^\top u , \qquad \yh = P^\top q ,
+  \label{eq:plant}
+\end{equation}
+with $u = [\,F_1,F_2,F_y\,]^\top$ the stage forces of the baseline write-up.
+
+\section{The design plant is frozen}
+
+The controller is designed once per record on a \emph{frozen} operating point $Y_{\mathrm{op}}$
+and with the \emph{full} payload mass $m_h$, so it is linear time invariant even though the plant
+is not. Write
+\begin{equation}
+  M_{\mathrm{op}} =
+  \begin{bmatrix}
+    \alpha                            & \beta - m_h Y_{\mathrm{op}}                & 0 \\[2mm]
+    \beta - m_h Y_{\mathrm{op}}       & \gamma + m_h Y_{\mathrm{op}}^2             & -m_h d \\[2mm]
+    0                                 & -m_h d                                     & m_h
+  \end{bmatrix},
+  \label{eq:Mop}
+\end{equation}
+with $\alpha,\beta,\gamma$ the constants of the baseline write-up. The design plant in state
+space, stage in and stage out, is
+\begin{equation}
+  A_{\mathrm{op}} =
+  \begin{bmatrix}
+    0_{3\times3} & I_3 \\[2mm]
+    -M_{\mathrm{op}}^{-1}K & -M_{\mathrm{op}}^{-1}C
+  \end{bmatrix},
+  \qquad
+  B_{\mathrm{op}} =
+  \begin{bmatrix}
+    0_{3\times3} \\[2mm]
+    M_{\mathrm{op}}^{-1}P
+  \end{bmatrix},
+  \qquad
+  C_{\mathrm{op}} =
+  \begin{bmatrix}
+    P^\top & 0_{3\times3}
+  \end{bmatrix},
+  \label{eq:designss}
+\end{equation}
+and $\Gop(z)$ is \eqref{eq:designss} discretised with a zero-order hold at the sample time
+$t_s = 5\cdot10^{-5}$~s. Note that $\Gop$ is the \emph{rigid} baseline: it carries neither the
+absorber of the truth nor the payload split, so it is a design model only.
+
+\section{The controller in closed form}
+\label{sec:ctrl}
+
+Let $f_{\mathrm{b}} = 100$~Hz be the design bandwidth and $\omega_{\mathrm{b}} = 2\pi
+f_{\mathrm{b}}$. All three channels share one shape, a series-form PID built from a lag-type
+integrator, a lead-lag pair and a first-order roll-off:
+\begin{equation}
+  \Cnorm(s) =
+  \underbrace{\frac{s + \omega_{\mathrm{b}}/6}{s}}_{\text{integrator}} \cdot
+  \underbrace{\frac{s + \omega_{\mathrm{b}}/3}{s + 3\omega_{\mathrm{b}}}}_{\text{lead-lag}} \cdot
+  \underbrace{\frac{10\,\omega_{\mathrm{b}}}{s + 10\,\omega_{\mathrm{b}}}}_{\text{roll-off}}
+  = \frac{10\,\omega_{\mathrm{b}}\,(s + \omega_{\mathrm{b}}/6)(s + \omega_{\mathrm{b}}/3)}
+         {s\,(s + 3\omega_{\mathrm{b}})(s + 10\,\omega_{\mathrm{b}})} .
+  \label{eq:cnorm}
+\end{equation}
+The plant enters the design through one scalar per channel only. The gain is fixed by requiring
+unit open-loop magnitude at the bandwidth,
+\begin{equation}
+  \kappa_j = \frac{1}{\big|\,G^{\mathrm{c}}_{\mathrm{op},jj}(i\omega_{\mathrm{b}})\,
+                       \Cnorm(i\omega_{\mathrm{b}})\,\big|} ,
+  \qquad j = 1,2,3 ,
+  \label{eq:kappa}
+\end{equation}
+where $G^{\mathrm{c}}_{\mathrm{op}}$ is the continuous-time design plant of \eqref{eq:designss}, so that
+$f_{\mathrm{b}}$ is the $0$~dB crossover of each loop by construction. The applied controller is
+the Tustin discretisation of the three scaled shapes,
+\begin{equation}
+  \Cfb(z) = \diag\big(\kappa_1\Cnorm(s),\ \kappa_2\Cnorm(s),\ \kappa_3\Cnorm(s)\big)
+  \Big|_{\,s \,=\, \frac{2}{t_s}\frac{z-1}{z+1}} .
+  \label{eq:cfb}
+\end{equation}
+
+\medskip\noindent\textbf{Consequence of \eqref{eq:kappa}.}\quad The only $Y_{\mathrm{op}}$
+dependence of the controller is through the three numbers $|G^{\mathrm{c}}_{\mathrm{op},jj}
+(i\omega_{\mathrm{b}})|$. Between the two design points used by the records this moves $\kappa_1$
+by about $5\%$ and $\kappa_3$ by less than $0.1\%$, so the controller is very nearly the same
+object at every operating point.
+
+\section{The loop, solved}
+\label{sec:loop}
+
+The generator forms the error against a reference $r$ and adds the injected multisine $\fms$ at
+the plant input:
+\begin{equation}
+  e = r - \yh , \qquad
+  \ufb = \Cfb\,e , \qquad
+  u = \ufb + \fms , \qquad
+  \yh = \Gop\,u .
+  \label{eq:loopdef}
+\end{equation}
+Substituting the first three into the fourth and collecting $\yh$,
+\begin{equation}
+  \yh = \Gop\big(\Cfb (r - \yh) + \fms\big)
+  \quad\Longleftrightarrow\quad
+  \big(I + \Gop\Cfb\big)\,\yh = \Gop\big(\Cfb\,r + \fms\big) .
+  \label{eq:collect}
+\end{equation}
+Define the single excitation that the loop actually sees, together with the output and input
+sensitivities,
+\begin{equation}
+  w := \Cfb\,r + \fms , \qquad
+  \So := \big(I + \Gop\Cfb\big)^{-1} , \qquad
+  \Si := \big(I + \Cfb\Gop\big)^{-1} .
+  \label{eq:sens}
+\end{equation}
+Then \eqref{eq:collect} gives the output directly,
+\begin{equation}
+  \yh = \So\,\Gop\,w = \So\,\Gop\,\Cfb\,r \;+\; \So\,\Gop\,\fms .
+  \label{eq:ycl}
+\end{equation}
+For the applied force, substitute \eqref{eq:ycl} back into \eqref{eq:loopdef},
+\begin{equation}
+  u = \Cfb\,r - \Cfb\,\So\,\Gop\,w + \fms
+    = \big(I - \Cfb\,\So\,\Gop\big)\,w ,
+  \label{eq:ustep}
+\end{equation}
+and apply the push-through identity
+\begin{equation}
+  I - \Cfb\big(I + \Gop\Cfb\big)^{-1}\Gop = \big(I + \Cfb\Gop\big)^{-1} ,
+  \label{eq:pushthrough}
+\end{equation}
+which follows by left-multiplying both sides by $(I + \Cfb\Gop)$ and cancelling. This yields the
+compact form
+\begin{equation}
+  \boxed{\;u = \Si\,\big(\Cfb\,r + \fms\big) , \qquad
+         \yh = \So\,\Gop\,\big(\Cfb\,r + \fms\big) . \;}
+  \label{eq:closedform}
+\end{equation}
+Equation~\eqref{eq:closedform} is the closed-loop form of the system identification course,
+Lecture~11, in which the reference enters through the controller and a second excitation enters
+at the plant input. The course writes $y = G\So r + \So v$ with a noise term $v$; here $v = 0$,
+because the records are generated by a noiseless simulation.
+
+\section{What the loop changes, and what it does not}
+\label{sec:conseq}
+
+\subsection{The applied force is the reference shaped by the loop}
+
+By \eqref{eq:closedform} the recorded force is $u = \Si\Cfb\,r + \Si\fms$. The factor $\Cfb$
+contains an integrator, so $\Si\Cfb\,r$ carries large low-frequency content whenever the
+reference moves. This is the origin of the low-frequency content of the closed-loop records: it
+is not disturbance and not an artefact, it is the first term of \eqref{eq:closedform}. The
+open-loop records remove it by setting $r = 0$ and $\Cfb = 0$, leaving $u = \fms$.
+
+\subsection{Replaying a recorded force open loop is exact}
+
+The relation $\yh = \Gop u$ in \eqref{eq:loopdef} holds pointwise regardless of what produced
+$u$. Hence replaying a recorded $u$ through the same plant without a controller reproduces the
+recorded $\yh$ exactly, and no term of \eqref{eq:closedform} is neglected by doing so. The loop
+determines \emph{which} $u$ was applied, not whether the replay is valid. Any discrepancy seen in
+such a replay is therefore a property of the model used for the replay, not of the missing
+controller.
+
+\subsection{Model error inside the loop, exactly}
+
+Let $G$ be the truth and $\hat G$ a candidate model, and let $\Delta := G - \hat G$. Driven open
+loop by the same recorded force $u$, the output error is
+\begin{equation}
+  e_{\mathrm{ol}} = \big(G - \hat G\big)\,u = \Delta\,\Si\,w .
+  \label{eq:eol}
+\end{equation}
+Run instead inside the same loop from the same reference, both outputs take the form
+\eqref{eq:ycl} with their own sensitivity, and the difference collapses exactly:
+\begin{equation}
+  e_{\mathrm{cl}}
+  = \big(I + G\Cfb\big)^{-1}G\,w - \big(I + \hat G\Cfb\big)^{-1}\hat G\,w
+  = \So\,\Delta\,\hat S_{\mathrm{o}}\,w ,
+  \qquad \hat S_{\mathrm{o}} := \big(I + \hat G\Cfb\big)^{-1} ,
+  \label{eq:ecl}
+\end{equation}
+which is an identity, not a linearisation: expand the middle expression over the common
+denominators and the cross terms $G\Cfb\hat G$ cancel. Comparing \eqref{eq:eol} and
+\eqref{eq:ecl}, both carry one sensitivity factor on the right, and the closed-loop error carries
+one \emph{additional} factor $\So$ on the left. The loop therefore rescales the model error by
+$\So$; it does not create it and it does not remove it.
+
+\medskip\noindent\textbf{The rescaling is not a suppression in the band of interest.} Evaluating
+$\So$ on the frozen design loop gives
+
+\begin{center}
+\begin{tabular}{lrrrrrrr}
+\toprule
+$f$ [Hz] & 1 & 10 & 50 & 100 & 150 & 180 & 500 \\
+\midrule
+$\sigma_{\max}(\So)$, $Y_{\mathrm{op}} = 0.10$~m & 0.0004 & 0.0214 & 1.0544 & 1.6695 & 1.7983 & 1.8043 & 1.1438 \\
+$\sigma_{\max}(\So)$, $Y_{\mathrm{op}} = 0.00$~m & 0.0004 & 0.0217 & 1.0807 & 1.6569 & 1.7937 & 1.8076 & 1.1450 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The loop attenuates strongly only below roughly $45$~Hz. Above that there is a
+sensitivity peak of about $1.8$ which spans the whole band $[130,180]$~Hz used for the
+augmentation excitation, and in particular the absorber frequency $f_a = 150$~Hz. Closing the
+loop around the comparison would therefore \emph{amplify} the discrepancy of interest by roughly
+a factor $1.8$, while suppressing the low-frequency part of it by two to three decades. Neither
+effect improves the measurement of the absorber, so \eqref{eq:ecl} is an argument for keeping the
+comparison open loop, not for restoring the controller.
+
+\section{Numerical gate}
+\label{sec:gate}
+
+Equations~\eqref{eq:cnorm} to \eqref{eq:cfb} were implemented from the formulas alone, with no
+MATLAB object and no exported matrices, and applied to the stored $r - \yh$ of two closed-loop
+records. The result is compared against the stored $\ufb$ that MATLAB produced. Relative errors
+are integrated over $[0,200]$~Hz.
+
+\begin{center}
+\begin{tabular}{llrrr}
+\toprule
+record & channel & $\ufb$ rms [N] & residual rms [N] & relative, $\le 200$~Hz \\
+\midrule
+\texttt{V1\_standstill\_Yp10} & $X_1$ & 28.63 & $9.01\cdot10^{-7}$ & $4.53\cdot10^{-9}$ \\
+\texttt{V1\_standstill\_Yp10} & $X_2$ & 29.17 & $9.03\cdot10^{-7}$ & $4.69\cdot10^{-9}$ \\
+\texttt{V1\_standstill\_Yp10} & $Y$   & 24.28 & $6.90\cdot10^{-1}$ & $4.78\cdot10^{-4}$ \\
+\texttt{T10\_aprbs\_60}       & $X_1$ & 157.59 & $1.78\cdot10^{-1}$ & $1.27\cdot10^{-4}$ \\
+\texttt{T10\_aprbs\_60}       & $X_2$ & 161.03 & $1.83\cdot10^{-1}$ & $1.28\cdot10^{-4}$ \\
+\texttt{T10\_aprbs\_60}       & $Y$   & 80.37 & $2.61\cdot10^{-1}$ & $2.05\cdot10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The spread across rows is set by storage, not by the formulas. The records store
+$\ufb$, $\yh$ and $r$ in single precision while MATLAB computed $\ufb$ in double, and the
+relative error tracks the float32 quantisation step of the stored position rather than the size
+of the signal: the two rows whose stage positions sit at zero, and whose quantisation step is
+therefore $9\cdot10^{-13}$~m, agree to $4.5\cdot10^{-9}$, while every row with a step four
+decades larger degrades by three to four decades. The residual spectra are flat, which is the
+signature of quantisation; a wrong pole, zero, gain or discretisation would place structure at
+the frequency it got wrong.
+
+\medskip\noindent\textbf{Conclusion.}\quad Equations~\eqref{eq:cnorm} to \eqref{eq:cfb} are the
+controller that generated the records, and \eqref{eq:closedform} may be used in the derivation
+as an exact description of how that controller shaped the data.
+
+\end{document}
