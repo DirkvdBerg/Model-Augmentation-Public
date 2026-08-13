@@ -202,6 +202,28 @@ def compute_normalization(cfg: RunConfig, data: DataBundle) -> Norm:
     x_logical_list = []
     for t in train_list:
         pos_logical = (P_inv_T @ t.y.T).T        # (N, 3) stage -> logical
+        # Velocity scale from a first difference of the decimated positions.
+        # NOISELESS: exact. Measured against the stored 20 kHz central-difference
+        # x_logical, the resulting std_x agrees to 3 decimals on every channel, because
+        # a std is dominated by low-frequency content where a first difference is
+        # accurate. Nothing to fix while cfg.snr is None.
+        # WITH OUTPUT NOISE: unusable as-is. Differencing white position noise gives
+        # # THEORY: var of a first difference of white noise = 2*sigma_n^2, so
+        # sigma_v = sigma_n*sqrt(2)*fs = 0.79 m/s at sigma_n=1.4e-4 (SNR 60), against
+        # true velocity stds of 0.008 to 0.48. Measured std_x inflation vs the 20 kHz
+        # reference: SNR 60 -> dX 2.7x, dTheta 193x, dY 1.9x; SNR 55 -> 4.6x/344x/3.1x;
+        # SNR 50 -> 8.1x/619x/5.4x. dTheta is worst because P^-T amplifies that channel
+        # by 1.95 while its true std is only 0.008. std_x scales both the encoder
+        # matrices and the Gantry_State_Block denormalisation (D-119), so this silently
+        # re-frames the encoder per noise level and makes SNR arms incomparable.
+        # Before any run with cfg.snr set, do one of:
+        #   (a) derive these statistics from the PRE-NOISE signals (SNR-independent, and
+        #       bit-identical to today when snr is None), or freeze them to a stored
+        #       calibration record for the real-data case. Preferred.
+        #   (b) low-pass the POSITIONS before differencing. Buys only sqrt(D) (0.79 ->
+        #       0.354 m/s) and does NOT recover dTheta, whose true velocity content sits
+        #       inside the 130-180 Hz band where the differentiated noise dominates.
+        #       Partial mitigation, not a fix.
         vel_logical = np.diff(pos_logical, axis=0) * fs  # (N-1, 3)
         vel_logical = np.vstack([vel_logical[:1], vel_logical])  # (N, 3)
         x_logical_list.append(np.hstack([pos_logical, vel_logical]))  # (N, 6)
