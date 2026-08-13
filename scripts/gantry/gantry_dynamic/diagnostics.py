@@ -168,7 +168,24 @@ def compute_gradient_norms(fit_sys, hp, cfg: RunConfig, data):
     """Single forward+backward pass on training data, return gradient norms per parameter group."""
     DTYPE_PT = cfg.dtype_pt
     fit_sys.train()
-    data_train = fit_sys.make_training_data(fit_sys.norm.transform(data.train_data), nf=hp['nf'])
+    # CHANGED (2026-07-29): pass `stride`, which was missing. deepSI's
+    # make_training_data does `stride = Loss_kwargs.get('stride', 1)`, so omitting
+    # it built EVERY window instead of every cfg.stride-th, and then kept 256.
+    # Two consequences, both real:
+    #   MEMORY. Training at nf=6400/stride=100 builds 5824 windows (855 MB). At
+    #   stride=1 that is ~582,000 windows, ~86 GB, against a 32 GB job. This
+    #   SIGKILLed the T1 rungs nf=1600, 3200 and 6400 at the very end of the run,
+    #   after training and the per-record NRMS had completed, so all three lost
+    #   their results.json. 400 and 800 were under the limit and survived.
+    #   MEANING. The slice below takes the FIRST batch_size windows. At stride=1
+    #   those are offsets 0,1,2,... of record 1, i.e. 256 near-identical windows
+    #   overlapping by nf-1 samples, so the gradient norm was measured on an
+    #   almost degenerate sample. With the training stride they span 100x more
+    #   data. Numbers reported by this function before this date, on long-horizon
+    #   runs, describe that degenerate sample.
+    # Verified by preflight/check_grad_norm_stride.py.
+    data_train = fit_sys.make_training_data(fit_sys.norm.transform(data.train_data),
+                                            nf=hp['nf'], stride=cfg.stride)
     batch_size = min(hp['batch_size'], len(data_train[0]))
     batch = [torch.tensor(d[:batch_size], dtype=DTYPE_PT) for d in data_train]
 

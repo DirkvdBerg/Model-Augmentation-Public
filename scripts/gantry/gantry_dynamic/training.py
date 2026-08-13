@@ -81,6 +81,30 @@ class _NfProbe:
         self.do_print = do_print
         fit_sys.Loss_train_nf = []
         fit_sys.Loss_val_nf = []
+        # Joint/orth probe state (user 07-12: live recovery + negation meters).
+        # Nominal combos computed ONCE; sim-study meter -- on real data the
+        # reference must become params_init (no nominal truth exists there).
+        self._pblock = next((m for m in fit_sys.hfn.connected_blocks
+                             if hasattr(m, 'identifiable_combinations')), None)
+        self._combo_nom = None
+        if self._pblock is not None:
+            from model_augmentation.systems import gantry_ss as _gss
+            _true_raw = {n: getattr(_gss, n).item() for n in self._pblock.PARAM_NAMES}
+            self._combo_nom = self._pblock._combos_from_raw(_true_raw,
+                                                            self._pblock.Lb.item())
+            # Per-combo error scale: |nominal|, EXCEPT m_diff.
+            # HEURISTIC: m_diff = m1-m2 has near-zero nominal (-0.5 kg vs ~10 kg
+            # masses); relative-to-itself error dominates the RMS meaninglessly
+            # (run 70783: -418% -> combo-err 132%). Scale by the mean actuator
+            # mass instead, so a 10% detune reads ~20% on m_diff, not 418%.
+            self._combo_scale = {n: abs(t) for n, t in self._combo_nom.items()
+                                 if abs(t) > 1e-12}
+            self._combo_scale['m_diff'] = 0.5 * (_true_raw['m1'] + _true_raw['m2'])
+        if self._pblock is not None or getattr(fit_sys, 'orth_penalty', None) is not None:
+            fit_sys.Probe_combo_err = []
+            fit_sys.Probe_orth_frac = []
+            fit_sys.Probe_V_orth = []
+            fit_sys.Probe_param_loss = []
 
     def _nf_rms(self, sd):
         try:
@@ -91,6 +115,49 @@ class _NfProbe:
         except Exception:
             return float('nan')
 
+    def _joint_probe(self):
+        """One line: recovery + negation meters. Cost: scalars + one batched ANN
+        forward over the fixed penalty points (measured 0.03 s, plan Step 3).
+        combo part requires a parameterized block (joint runs); orth part only
+        an attached penalty (also fires for joint=False + orth_observe)."""
+        fs = self.fit_sys
+        combo_err, worst, rels = float('nan'), None, {}
+        if self._pblock is not None:
+            # combo-err: RMS scaled error of the 10 identifiable combos vs nominal
+            # (scale = |nominal| per combo; m_diff uses the mass scale -- __init__).
+            combos = self._pblock.identifiable_combinations()
+            rels = {n: (combos[n] - self._combo_nom[n]) / s
+                    for n, s in self._combo_scale.items()}
+            combo_err = float(np.sqrt(np.mean([r ** 2 for r in rels.values()])))
+            worst = max(rels, key=lambda n: abs(rels[n]))
+        # orth meters: available when a penalty object is attached (beta>0 or observe).
+        pen = getattr(fs, 'orth_penalty', None)
+        frac, v_orth = float('nan'), float('nan')
+        if pen is not None:
+            from model_augmentation.fit_systems.blocks import Static_ANN_Block
+            ann = next(m for m in fs.hfn.connected_blocks
+                       if isinstance(m, Static_ANN_Block))
+            with torch.no_grad():
+                w = ann(pen.Z_pts)
+                f = w[:, pen.route_cols, 0].reshape(-1)
+                f2 = float(torch.linalg.vector_norm(f) ** 2)
+                q2 = float(torch.linalg.vector_norm(pen.Q.T @ f) ** 2)
+            frac = q2 / f2 if f2 > 1e-30 else float('nan')   # n/a while ANN ~ 0
+            v_orth = pen.beta * q2
+        pl = sum(float(m.param_loss()) for m in fs.hfn.connected_blocks
+                 if hasattr(m, 'param_loss'))
+        fs.Probe_combo_err.append(combo_err)
+        fs.Probe_orth_frac.append(frac)
+        fs.Probe_V_orth.append(v_orth)
+        fs.Probe_param_loss.append(pl)
+        if self.do_print:
+            frac_s = f'{frac:.3f}' if np.isfinite(frac) else 'n/a (ANN~0)'
+            combo_s = (f'combo-err {100*combo_err:.2f}% (worst {worst} '
+                       f'{100*rels[worst]:+.1f}%)' if worst is not None
+                       else 'combo-err n/a (theta frozen)')
+            print(f'    [joint-probe] {combo_s} | orth-frac {frac_s} | '
+                  f'V_orth {v_orth:.3e} | param_loss {pl:.3e}')
+
     def __call__(self, val_sys_data, validation_measure='sim-NRMS'):
         sel = self.orig(val_sys_data, validation_measure=validation_measure)  # selector, untouched
         tr = self._nf_rms(self.train_sd)
@@ -99,6 +166,12 @@ class _NfProbe:
         self.fit_sys.Loss_val_nf.append(vl)
         if self.do_print:
             print(f'    [nf-probe] train nf-RMS={tr:.4e}   val nf-RMS={vl:.4e} [m]  (@nf={self.nf})')
+        if (self._pblock is not None
+                or getattr(self.fit_sys, 'orth_penalty', None) is not None):
+            try:
+                self._joint_probe()
+            except Exception as e:
+                print(f'    [joint-probe] failed (non-fatal): {e}')
         return sel
 
     def __reduce__(self):

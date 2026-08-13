@@ -18,11 +18,13 @@ from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn
 from model_augmentation.fit_systems.interconnect import *
 from model_augmentation.fit_systems.blocks import *
 from model_augmentation.fit_systems.pre_encoder import linear_encoder_init_aug
+from model_augmentation.fit_systems.orth_projection import SSE_Interconnect_OrthLoss
+from model_augmentation.fit_systems.multiple_shooting import SSE_Interconnect_MultipleShooting
 from model_augmentation.systems.gantry_ss import Cd, Dd, P
 from model_augmentation.systems.gantry_linearization import gantry_linearize_and_discretize
 from model_augmentation.utils.utils import normalize_linear_ss_matrices
 
-from .config import RunConfig, REPO_ROOT
+from .config import RunConfig
 
 PHY_IX   = np.arange(6)             # [0,1,2,3,4,5]  (NX_PHYS physical states)
 # ANN routing rows are configured via cfg.ann_route_ix (default (1,4,6,7) = Theta
@@ -105,6 +107,27 @@ def build_model(hp, cfg: RunConfig, data, norm):
     )
     ic.add_block(ann_block)
 
+    # ReZero-style gate: zero ANN OUTPUT at init WITHOUT a zero output PROJECTION, so the branch
+    # F(z) is live and the gate alpha receives gradient at step 1 (arXiv:2003.04887; the degenerate
+    # zero-projection-plus-zero-gate saddle is arXiv:2607.16568). Addresses the W^a dead zone
+    # (D-130, gate G1).
+    if os.environ.get('ANN_REZERO_GATE'):
+        from .rezero_gate import apply_rezero_gate
+        _alpha = apply_rezero_gate(ann_block.net)
+        print(f"[rezero] final layer re-initialised + zero scalar gate (alpha={float(_alpha):.1f}); "
+              f"ANN output is still exactly zero at init")
+
+    # REMOVED (2026-08-13): the D-118 Lipschitz-cap hook (env ANN_LIPSCHITZ -> apply_lipschitz_cap)
+    # used to sit here. It was a one-off experiment hook in the production model builder, and the
+    # experiment is closed: the only run that ever set it (boae5mdee, 2026-07-18/19,
+    # problem-log line 606) found L=1.0 NON-BINDING (the trained ANN's natural Lipschitz is ~1e-2),
+    # so the sweep was inconclusive and the signal pointed to the passivity route, not magnitude
+    # capping. `lipschitz.py` is kept: to re-run the sweep, call apply_lipschitz_cap on the ANN
+    # block from the sweep script AFTER build_model returns, e.g.
+    #   ann = next(m for m in fit_sys.hfn.connected_blocks if isinstance(m, Static_ANN_Block))
+    #   apply_lipschitz_cap(ann.net, L)
+    # An experiment hook belongs in the experiment script, not in every run's build path.
+
     # D-068: stiff routing — corrections placed only at K>0 rows (Theta + absorber).
     # X and Y axis rows (0,3,2,5) excluded: K=0 integrators accumulate without restoring force.
     ic.connect_block_signals(ann_block, ["x", "u"], [])
@@ -119,7 +142,28 @@ def build_model(hp, cfg: RunConfig, data, norm):
     # D-076: ParamLoss subclass used unconditionally — exact no-op when no
     # block exposes param_loss (i.e. identical to SSE_Interconnect for
     # JOINT_ESTIMATION=False).
-    fit_sys = SSE_Interconnect_ParamLoss(
+    # CHANGED (orth-projection D7.1): OrthLoss subclass of ParamLoss, same
+    # unconditional-no-op pattern; identical to ParamLoss while orth_penalty
+    # stays None (attached below only when cfg.orth_beta > 0).
+    # CHANGED (multiple shooting D-127): MultipleShooting subclass of OrthLoss, same
+    # unconditional-no-op pattern; identical to OrthLoss while n_seg==1 and
+    # defect_weight==0 (the defaults), so every existing run is bit-identical.
+    #
+    # STATUS (2026-08-13): multiple shooting is NOT USED by any production training run.
+    # cfg defaults are n_seg=1, defect_weight=0, defect_acc_weight=0, i.e. the no-op path
+    # (verified bit-identical by coulomb-offset/verify_ms_class.py, contract E4). It is kept
+    # only because the diagnostic scripts below construct cfg with n_seg>1 and read the
+    # fit_sys attributes set here:
+    #   coulomb-offset/{verify_ms_class,verify_ms_gradient,diag_mean_defect}.py
+    #   pysynth-data/{check_defect_sees_failure(MS6),check_coherent_defect,
+    #                 check_defect_gradient(MS8),check_grad_vs_freerun,measure_defect_split}.py
+    #   drift-isolation/t3_true_y_scheduling/build_t3.py  (guards on n_seg==1)
+    # CANDIDATE FOR REMOVAL: if those diagnostics are retired, drop the five fit_sys.defect*/
+    # n_seg assignments and the print below, revert this base class to
+    # SSE_Interconnect_OrthLoss, and remove n_seg/defect_* from RunConfig (config.py) plus the
+    # nf/nf_seg split. Do NOT remove it piecemeal: the base class swap is unconditional, so
+    # reverting it means re-checking the orth path against the ParamLoss no-op contract.
+    fit_sys = SSE_Interconnect_MultipleShooting(
         interconnect=ic, na=na, nb=nb,
         na_right=na_right, nb_right=nb_right,
         e_net_kwargs={
@@ -127,6 +171,17 @@ def build_model(hp, cfg: RunConfig, data, norm):
             "n_hidden_layers": hp['n_hidden_layers'],
         },
     )
+    fit_sys.n_seg         = cfg.n_seg
+    fit_sys.defect_weight = cfg.defect_weight
+    fit_sys.defect_acc_weight = cfg.defect_acc_weight
+    fit_sys.defect_norm   = cfg.defect_norm
+    fit_sys.defect_scale  = (None if cfg.defect_scale is None else
+                             torch.as_tensor(cfg.defect_scale, dtype=DTYPE_PT))
+    if cfg.n_seg > 1 and (cfg.defect_weight != 0.0 or cfg.defect_acc_weight != 0.0):
+        print(f'Multiple shooting ON (D-127): n_seg={cfg.n_seg} x nf_seg={cfg.nf_seg} '
+              f'= nf {cfg.nf} ({cfg.n_seg * cfg.nf_seconds:.2f} s objective, '
+              f'{cfg.nf_seconds:.2f} s gradient path) | '
+              f'defect_weight={cfg.defect_weight:g} norm={cfg.defect_norm}')
 
     # Manual normalisation: Gantry_State_Block is nonlinear, auto_fit_norm=True would break this.
     fit_sys.norm.u0   = u_mean.flatten()
@@ -139,20 +194,13 @@ def build_model(hp, cfg: RunConfig, data, norm):
         # THEORY: Hoekstra 2026 Eq. 16-17 — initialize encoder from reconstructability map
         Ad, Bd, Cd_dt, Dd_dt = gantry_linearize_and_discretize(dt=TS_NEW)
 
-        # Build System_data_with_x for normalization (needs state trajectories)
-        baseline_npz_path = os.path.join(
-            REPO_ROOT, 'data', 'gantry',
-            'baseline_simulations', f'{cfg.mode}_LPV', 'baseline_states.npz')
-        if os.path.exists(baseline_npz_path):
-            bl = np.load(baseline_npz_path, allow_pickle=True)
-            x_phys_all = np.concatenate(bl['x_train_phys'])
-        else:
-            # Fallback: use the finite-diff states from the data loading section
-            x_phys_all = norm.x_all
-            print("WARNING: baseline_states.npz not found, using finite-diff states for normalization")
-
+        # D-119: the state scaling baked into the encoder matrices must come from
+        # the same array that defines x_mean/std_x (norm.x_all), because the D-055
+        # x_off subtraction (pre_encoder.py) and the Gantry_State_Block denorm both
+        # use norm.std_x; any other std source (the old baseline_states.npz) puts
+        # the encoder in a different state frame than the rollout.
         sys_data_with_x = deepSI.System_data(u=norm.u_all, y=norm.y_all)
-        sys_data_with_x.x = x_phys_all
+        sys_data_with_x.x = norm.x_all
 
         Ad_bar, Bd_bar, Cd_bar, Dd_bar = normalize_linear_ss_matrices(
             Ad, Bd, Cd_dt, Dd_dt, sys_data_with_x)
@@ -183,6 +231,14 @@ def build_model(hp, cfg: RunConfig, data, norm):
     else:
         for net in (fit_sys.encoder, fit_sys.hfn):
             net.to(DTYPE_PT)
+
+    # Orthogonal-projection penalty (D7.1/D7.4): attached when enabled OR in
+    # observe mode (orth_observe: beta may be 0; the loss path skips at beta==0,
+    # so a beta=0 control keeps the proven no-op loss while the [joint-probe]
+    # orth-frac meter can observe). fit_sys.orth_penalty stays None otherwise.
+    if cfg.orth_beta > 0 or cfg.orth_observe:
+        from .orth_penalty import build_orth_penalty
+        fit_sys.orth_penalty = build_orth_penalty(cfg, data, norm)
 
     return fit_sys
 

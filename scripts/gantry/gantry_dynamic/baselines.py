@@ -31,7 +31,8 @@ def stepwise_rollout(step_fn, x0, u_seq):
 
 
 def compute_baseline_fp_nrms(hp, cfg: RunConfig, data, norm, data_sd=None, x0_phys=None,
-                             x0_norm=None, start_ix=0, avg_from=0, label='val'):
+                             x0_norm=None, start_ix=0, avg_from=0, label='val',
+                             phy_block=None):
     """Simulate baseline FP model (no MSD, no ANN) on val data (default) or given data.
 
     Initialization (D-072):
@@ -40,6 +41,11 @@ def compute_baseline_fp_nrms(hp, cfg: RunConfig, data, norm, data_sd=None, x0_ph
       start_ix simulate from data sample start_ix onward (encoder init estimates x(k0))
       avg_from average the error only from this sample of the simulated window
                (aligns with the model metric, which excludes the encoder warm-up)
+      phy_block optional pre-built state block. None (default) = plain
+               Gantry_State_Block at nominal theta (behavior unchanged).
+               Pass a trained Parameterized_Gantry_State_Block to run the FP
+               model STANDALONE with learned theta_hat — the negation test
+               (orthogonal-projection plan Step 10, D7.9 layer 2).
 
     Runs Gantry_State_Block alone (zero ANN contribution) starting from the
     true state (callers pass x_logical[K0], the first interior sample, D-087).
@@ -63,11 +69,12 @@ def compute_baseline_fp_nrms(hp, cfg: RunConfig, data, norm, data_sd=None, x0_ph
     if data_sd is None:
         data_sd = data.val_data
 
-    phy_block = Gantry_State_Block(
-        Y_op=None, std_x=std_x, std_u=std_u,
-        x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
-        up_sample=hp['up_sample'],
-    ).to(DTYPE_PT)
+    if phy_block is None:
+        phy_block = Gantry_State_Block(
+            Y_op=None, std_x=std_x, std_u=std_u,
+            x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
+            up_sample=hp['up_sample'],
+        ).to(DTYPE_PT)
     phy_block.eval()
 
     # Initial state: normalized estimate (encoder-init) or physical true x0 (D-072)
