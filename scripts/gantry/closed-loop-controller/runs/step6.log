@@ -1,0 +1,37 @@
+================================================================================================
+STEP 6: closed-loop training, controller in the model, ANN -> all eight states
+================================================================================================
+ann_route_ix (0, 1, 2, 3, 4, 5, 6, 7)   nf 400   stride 10   lr 1e-03   n_its 20000   its_per_val 1000
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_04fdce928d32.npz (Q (40308, 11), 6718 points)
+[demo_common] pipeline built in 4s (slim load: 14 train files, snr=None, na=nb=17, K0=17)
+ANN output width 8 (one per routed row)
+controller bank: n_FB 9, distinct Y_op train [-0.3, -0.15, 0.0, 0.15, 0.3] / val [-0.22, -0.1, 0.1]
+lr set on 2 optimizer param groups -> [0.001, 0.001]
+pre-flight: picklable   [7s]
+    [cl-val] closed-loop sim-RMS 2.186603e-06 m   per record [2.185e-06 2.198e-06 2.176e-06 2.187e-06]
+
+UNTRAINED closed-loop sim-RMS: 2.1866026634e-06 m
+oracle floor (cl_headroom.py): ~2.81e-08 m, i.e. 77.8x headroom
+
+------------------------------------------------------------------------------------------------
+Model already initilized (init_model_done=True), skipping initilizing of the model, the norm and the creation of the optimizer
+Size of the training array =  637.9 MB
+N_training_samples = 66626, batch_size = 256, N_batch_updates_per_epoch = 260
+    [cl-val] closed-loop sim-RMS 2.186603e-06 m   per record [2.185e-06 2.198e-06 2.176e-06 2.187e-06]
+(0,)
+Initial Validation sim-RMS= 2.186602663362536e-06
+&&&&&&&&&&&&& Encountered a NaN value in the training loss at it 81, breaking from loop &&&&&&&&&&
+Loaded model with best known validation sim-RMS of 2.187e-06 which happened on epoch 0 (epoch_id=0.00)
+------------------------------------------------------------------------------------------------
+
+================================================================================================
+RESULT
+================================================================================================
+untrained            2.1866026634e-06 m
+trained              2.1866026634e-06 m   +0.0000 %
+trained, ANN forced 0 2.1866026634e-06 m   +0.0000 %
+ANN contribution     +0.0000 %   (total minus encoder-only)
+oracle floor         ~2.81e-08 m; fraction of headroom closed 0.00 %
+val series (1 points): 2.1866e-06
+
+wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-controller\runs\step6_result.json   [2324s]

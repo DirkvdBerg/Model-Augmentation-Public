@@ -1,0 +1,6 @@
+============================================================================================
+STEP 4 GATES: closed-loop training loss
+============================================================================================
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_332172b4b41c.npz (Q (20154, 11), 6718 points)
+records ['T1_standstill_Ym30', 'T2_standstill_Ym15', 'T3_standstill_Y000', 'T4_standstill_Yp15']
+nf = 100, na = 17, nb = 17, na_right = 1, nb_right = 1   [6s]

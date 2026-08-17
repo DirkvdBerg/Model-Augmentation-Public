@@ -1,0 +1,32 @@
+================================================================================================
+LR PROBE: is the improvement rate-limited, budget-limited, or structural?
+================================================================================================
+fixed budget 300 iterations (0.40 epochs), nf 100, 4 train records
+
+================================================================================================
+lr = 1e-04
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_332172b4b41c.npz (Q (20154, 11), 6718 points)
+  untrained: val 2.3138002234e-06   ANN |W_first| 2.3437e+00  |W_last| 0.0000e+00
+(0,)
+(0,)
+  trained  : val 2.3057414182e-06   improvement +0.3483 %
+  ANN off  : val 2.3057414182e-06   improvement +0.3483 %  <- residual is NOT the ANN
+  ANN |W_first| 2.3437e+00 -> 2.3437e+00   |W_last| 0.0000e+00 -> 5.5665e-05
+  train loss 2.5890e-10 -> 2.5890e-10
+
+================================================================================================
+lr = 1e-03
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_332172b4b41c.npz (Q (20154, 11), 6718 points)
+  untrained: val 2.3138002234e-06   ANN |W_first| 2.3437e+00  |W_last| 0.0000e+00
+(0,)
+(0,)
+  trained  : val 2.3057414182e-06   improvement +0.3483 %
+  ANN off  : val 2.3057414182e-06   improvement +0.3483 %  <- residual is NOT the ANN
+  ANN |W_first| 2.3437e+00 -> 2.3437e+00   |W_last| 0.0000e+00 -> 5.5665e-05
+  train loss 2.5890e-10 -> 2.5890e-10
+
+================================================================================================
+lr = 1e-02
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_332172b4b41c.npz (Q (20154, 11), 6718 points)
+  untrained: val 2.3138002234e-06   ANN |W_first| 2.3437e+00  |W_last| 0.0000e+00
+(0,)

@@ -1,0 +1,78 @@
+====================================================================================================
+STEP 3 GATES: closed-loop validation and baselines
+====================================================================================================
+rate 4000 Hz, ts 2.500000e-04 s
+
+building the interconnect ...
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_332172b4b41c.npz (Q (20154, 11), 6718 points)
+[demo_common] pipeline built in 6s (slim load: 14 train files, snr=None, na=nb=17, K0=17)
+nx = 8, K0 = 17, na = 17, nb = 17, na_right = 1, nb_right = 1   [6s]
+fs.norm: u0 (3,)  ustd (3,)
+controller bank: n_FB = 9, records ['V1_standstill_Yp10', 'V2_aprbs_Ylow', 'V3_ysweep_Yp10', 'V4_lissajous_Ym10'], Y_op [0.1, -0.22, 0.1, -0.1]
+
+----------------------------------------------------------------------------------------------------
+G9  FROZEN ENCODER   (the baseline reference must not drift during training)
+    live encoder x0 moved by   5.5449e-02  (must be > 0: the perturbation took effect)
+    frozen encoder x0 moved by 0.0000e+00  (must be exactly 0)
+    PASS
+    live encoder restored, x0 differs from pre-perturbation by 0.0000e+00 (must be 0)
+
+----------------------------------------------------------------------------------------------------
+V1-V4, free run from k0 = 17, rms error [m] per channel
+At init the ANN is exactly zero, so MODEL == encoder-init BASELINE by construction.
+
+  V1_standstill_Yp10  Y_op +0.10  N = 48000
+    encoder-init open   rms [m]      [9.4257e-07 9.1925e-07 2.0721e-04]   agg 1.1964e-04
+    encoder-init closed rms [m]      [4.1503e-07 3.7686e-07 3.7428e-06]   agg 2.1850e-06
+    true-x0      open   rms [m]      [1.0514e-03 1.0514e-03 7.2137e-03]   agg 4.2524e-03
+    true-x0      closed rms [m]      [4.2389e-07 3.7747e-07 3.7473e-06]   agg 2.1882e-06
+    encoder-init closed / open       [   0.4403    0.4100    0.0181]
+
+  V2_aprbs_Ylow  Y_op -0.22  N = 48000
+    encoder-init open   rms [m]      [3.4075e-04 3.5741e-04 1.0721e-04]   agg 2.9175e-04
+    encoder-init closed rms [m]      [3.3584e-07 4.0954e-07 3.7696e-06]   agg 2.1977e-06
+    true-x0      open   rms [m]      [1.6088e-03 1.6139e-03 1.9017e-03]   agg 1.7136e-03
+    true-x0      closed rms [m]      [3.3783e-07 4.2173e-07 3.7696e-06]   agg 2.1986e-06
+    encoder-init closed / open       [   0.0010    0.0011    0.0352]
+
+  V3_ysweep_Yp10  Y_op +0.10  N = 48000
+    encoder-init open   rms [m]      [2.1061e-04 2.1061e-04 2.0753e-05]   agg 1.7238e-04
+    encoder-init closed rms [m]      [4.0423e-07 3.6991e-07 3.7297e-06]   agg 2.1764e-06
+    true-x0      open   rms [m]      [1.7292e-03 1.7292e-03 2.6095e-04]   agg 1.4199e-03
+    true-x0      closed rms [m]      [4.0551e-07 3.7870e-07 3.7300e-06]   agg 2.1772e-06
+    encoder-init closed / open       [   0.0019    0.0018    0.1797]
+
+  V4_lissajous_Ym10  Y_op -0.10  N = 48000
+    encoder-init open   rms [m]      [3.3950e-05 3.6799e-05 1.2789e-04]   agg 7.9292e-05
+    encoder-init closed rms [m]      [3.6887e-07 3.8712e-07 3.7508e-06]   agg 2.1874e-06
+    true-x0      open   rms [m]      [2.5968e-03 2.5968e-03 6.3491e-03]   agg 4.2347e-03
+    true-x0      closed rms [m]      [3.7500e-07 4.0267e-07 3.7556e-06]   agg 2.1914e-06
+    encoder-init closed / open       [   0.0109    0.0105    0.0293]
+
+----------------------------------------------------------------------------------------------------
+G7  SELF-CONSISTENCY   (ANN exactly zero at init => model == encoder-init baseline)
+    closed-loop MODEL    score 2.1866026634e-06 m
+    closed-loop BASELINE score 2.1866718909e-06 m
+    relative difference        3.166e-05
+    FAIL   (the two paths use different objects and must still agree exactly)
+
+----------------------------------------------------------------------------------------------------
+G8  SELECTOR INSTALLED   (moves SELECTION, not just reporting)
+    fs.cal_validation_error is ClosedLoopValidator
+    returned 2.186603e-06  finite=True
+    PASS
+    original restored
+
+----------------------------------------------------------------------------------------------------
+G10 LOOP SIGNATURE   (the D-139 waterbed must survive onto the free run)
+    V1 closed/open (expect > 1)      [   0.4403    0.4100    0.0181]
+    V2 closed/open (expect < 1)      [   0.0010    0.0011    0.0352]
+    FAIL   (V1 in the So peak, V2 well inside the loop bandwidth)
+
+====================================================================================================
+G10 loop signature           FAIL
+G7 self-consistency          FAIL
+G8 selector installed        PASS
+G9 frozen encoder            PASS
+====================================================================================================
+STEP 3 HAS FAILURES   [3165s]

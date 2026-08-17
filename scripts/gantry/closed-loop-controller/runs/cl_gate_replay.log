@@ -1,0 +1,74 @@
+============================================================================================
+STEP 2 GATES: closed-loop path
+============================================================================================
+rate 4000 Hz, ts 2.500000e-04 s, dtype float32
+
+building the interconnect (loads the train set, takes minutes) ...
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_332172b4b41c.npz (Q (20154, 11), 6718 points)
+[demo_common] pipeline built in 8s (slim load: 14 train files, snr=None, na=nb=17, K0=17)
+built  nx = 8 (6 phys + 2 ann), K0 = 17   [8s]
+ANN forced to exactly zero: the augmented model IS the baseline
+
+--------------------------------------------------------------------------------------------
+G1  NO FEEDTHROUGH   (model.py:140 wires u into out_phys, so this is not free)
+    max |y(x, u=0) - y(x, u=1e3*randn)|  =  0.000e+00
+    PASS   (must be EXACTLY zero; anything else is an algebraic loop)
+
+--------------------------------------------------------------------------------------------
+G2  AFFINE OUTPUT MAP   (lets the rollout cost ONE hfn call per step)
+    C (3, 8)   b (3,)
+    max abs err on random states  0.000e+00   relative  0.000e+00
+    PASS
+
+--------------------------------------------------------------------------------------------
+G3  OUTPUT PATH FROZEN   ((C, b) are captured as constants)
+    trainable params on the output block: 0
+    per-block trainable counts: {'Gantry_State_Block': 0, 'Linear_Output_Block': 0, 'Static_ANN_Block': 532}
+    PASS   (nonzero would mean freezing C, b cuts the gradient)
+
+--------------------------------------------------------------------------------------------
+G4  UNITS   (G6 CANNOT catch this: with the ANN off, e = 0 so u_fb = 0 identically)
+    n_FB = 9, distinct Y_op [-0.22, 0.1]
+    norm.ystd  [3.2329e-02 3.2335e-02 1.9013e-01] m
+    norm.std_u [1.1003e+02 1.1162e+02 6.2828e+01] N
+    e = 1e-4 m -> u_fb normalised      [6.9403e+00 8.0123e+00 6.8075e+00]
+    expected physical Dc @ e [N]       [7.6363e+02 8.9432e+02 4.2770e+02]
+    round-trip relative error          [0.000e+00 6.825e-08 0.000e+00]
+    PASS
+
+--------------------------------------------------------------------------------------------
+G5/G6  REPLAY against D-139 (rms error [m] from sample 0, per channel)
+
+  V1_standstill_Yp10   Y_op +0.10   N = 48000 (12.00 s)
+    open   loop rms [m]                [2.9919e-08 2.9953e-08 2.2597e-06]
+      D-139 reference                  [2.9920e-08 2.9950e-08 2.2600e-06]
+      ratio to reference               [   1.0000    1.0001    0.9998]
+    closed loop rms [m]                [4.1495e-07 3.7678e-07 3.7421e-06]
+      D-139 reference                  [4.1490e-07 3.7680e-07 3.7420e-06]
+      ratio to reference               [   1.0001    0.9999    1.0000]
+    closed / open                      [  13.8688   12.5792    1.6561]
+    xc final norm 2.6773e-05  (0 would mean the controller never moved)
+    G5 open PASS     G6 closed PASS   (tol factor 2.0 both ways)
+
+  V2_aprbs_Ylow   Y_op -0.22   N = 48000 (12.00 s)
+    open   loop rms [m]                [2.1538e-04 2.4156e-04 4.5966e-05]
+      D-139 reference                  [2.1540e-04 2.4160e-04 4.5970e-05]
+      ratio to reference               [   0.9999    0.9998    0.9999]
+    closed loop rms [m]                [3.3560e-07 4.0933e-07 3.7685e-06]
+      D-139 reference                  [3.3560e-07 4.0940e-07 3.7690e-06]
+      ratio to reference               [   1.0000    0.9998    0.9999]
+    closed / open                      [   0.0016    0.0017    0.0820]
+    xc final norm 3.3893e-05  (0 would mean the controller never moved)
+    G5 open PASS     G6 closed PASS   (tol factor 2.0 both ways)
+
+============================================================================================
+G1                           PASS
+G2                           PASS
+G3                           PASS
+G4                           PASS
+G5 V1_standstill_Yp10        PASS
+G5 V2_aprbs_Ylow             PASS
+G6 V1_standstill_Yp10        PASS
+G6 V2_aprbs_Ylow             PASS
+============================================================================================
+STEP 2 PASSED   [520s]

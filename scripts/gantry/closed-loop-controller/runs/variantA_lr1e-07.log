@@ -1,0 +1,114 @@
+P2  sample-rate comparison of the frozen design loop, f_bw = 100 Hz
+
+Y_op = 0.10 m
+  rate     1 Hz       10 Hz      50 Hz      100 Hz     150 Hz     180 Hz     500 Hz    
+  20 kHz   0.0004     0.0214     1.0544     1.6695     1.7983     1.8043     1.1438    
+  4 kHz    0.0004     0.0214     1.0816     1.8362     2.0738     2.0506     1.1230    
+  phase margin [deg] and crossover [Hz]:
+  20 kHz   PM [ 37.43  37.42  37.16]   fc [ 100.00  100.00  100.00]
+  4 kHz    PM [ 33.83  33.82  33.57]   fc [ 100.04  100.04  100.04]
+           phase-margin shift [ 3.59  3.59  3.59] deg   tol 5   ok
+  sigma_max(So) at 150 Hz: 1.7983 -> 2.0738, relative change 15.32 %   tol 10 %   FLAG
+
+Y_op = 0.00 m
+  rate     1 Hz       10 Hz      50 Hz      100 Hz     150 Hz     180 Hz     500 Hz    
+  20 kHz   0.0004     0.0217     1.0807     1.6569     1.7937     1.8076     1.1450    
+  4 kHz    0.0004     0.0217     1.1098     1.8277     2.0711     2.0590     1.1239    
+  phase margin [deg] and crossover [Hz]:
+  20 kHz   PM [ 37.42  37.44  37.16]   fc [ 100.00  100.00  100.00]
+  4 kHz    PM [ 33.83  33.85  33.57]   fc [ 100.04  100.04  100.04]
+           phase-margin shift [ 3.59  3.59  3.59] deg   tol 5   ok
+  sigma_max(So) at 150 Hz: 1.7937 -> 2.0711, relative change 15.46 %   tol 10 %   FLAG
+
+P2a table produced. Record the rate decision in docs/decisions.md before implementing
+A, B or C at a rate other than 20 kHz.
+loading datasets at 4000 Hz ...
+Data dir (augmentation): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=2.186e-05 m  vdelta_a std=2.160e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  nf = 400 samples (100.0 ms), na_nb = 17, stride = 10
+computing baseline FP NRMS (no MSD, no ANN) ...
+
+=== Baseline FP model (val, true x0 @K0, no MSD, reference to beat) ===
+            NRMS          RMS
+  X1:    0.0001  4.185e-06 m
+  X2:    0.0001  4.190e-06 m
+  Y :    0.0039  7.326e-04 m
+  aggregate sim-RMS (same formula as validation loss): 4.2299e-04 m
+  baseline NRMS vector: [0.000129 0.00013  0.003853]
+==============================================================================
+VARIANT A   epochs=4 nf=400 stride=10 lr=1e-07  -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-controller\runs\variant_A_lr1e-07_Yop+0.00
+  class: SSE_Interconnect_MultipleShooting
+
+=== Baseline FP model (val, encoder-init (untrained linear map) -- THE reference to beat, no MSD, reference to beat) ===
+            NRMS          RMS
+  X1:    0.0000  9.573e-07 m
+  X2:    0.0000  9.343e-07 m
+  Y :    0.0011  2.121e-04 m
+  aggregate sim-RMS (same formula as validation loss): 1.2244e-04 m
+Model already initilized (init_model_done=True), skipping initilizing of the model, the norm and the creation of the optimizer
+Size of the training array =  637.4 MB
+N_training_samples = 66626, batch_size = 256, N_batch_updates_per_epoch = 260
+(0,)
+Initial Validation sim-RMS= 0.00016634909843560308
+(0,)
+It  260, sqrt loss 0.001172, Val sim-RMS 0.005914, Time Loss: 72.4%, data: 0.0%, val: 27.6%,  5.5 sec/batch
+(0,)
+It  520, sqrt loss 0.001164, Val sim-RMS 0.005746, Time Loss: 72.5%, data: 0.1%, val: 27.5%,  5.4 sec/batch
+(0,)
+It  780, sqrt loss 0.001159, Val sim-RMS 0.01002, Time Loss: 72.5%, data: 0.1%, val: 27.4%,  5.4 sec/batch
+(0,)
+It 1040, sqrt loss 0.001154, Val sim-RMS 0.008261, Time Loss: 72.6%, data: 0.1%, val: 27.3%,  5.4 sec/batch
+Loaded model with best known validation sim-RMS of 0.0001663 which happened on epoch 0 (epoch_id=0.00)
+  wall 5948.1 s (5948.1 s/epoch)   train loss [nan]
+Saved model: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-controller\runs\variant_A_lr1e-07_Yop+0.00\gantry_variant_A_lr1e-07_Yop+0.00
+
+========================================================================
+VERDICT (run variant_A_lr1e-07_Yop+0.00): ANN inactive (aug states ~0)
+  augmentation vs baseline (same init): X1 +0.0%  X2 +0.0%  Y +0.0%
+========================================================================
+
+== A. MODEL QUALITY: validation (V1) ==
+  base = baseline FP (enc-init)   ref[0] = baseline FP (true-x0)   ref[1] = oracle FP+MSD (true-x0)
+        aug RMS[m]  aug NRMS  base RMS[m] base NRMS  aug/base      ref[0] RMS      ref[1] RMS
+  X1     9.573e-07    0.0000    9.573e-07    0.0000     +0.0%       4.185e-06       5.885e-07
+  X2     9.343e-07    0.0000    9.343e-07    0.0000     +0.0%       4.190e-06       5.879e-07
+  Y      2.121e-04    0.0011    2.121e-04    0.0011     +0.0%       7.326e-04       9.023e-05
+
+== C. AUGMENTATION / ABSORBER ==
+=== ANN latent state RMS ===
+  x[6]: enc=0.0000e+00
+  x[7]: enc=0.0000e+00
+
+=== Rollout aug-state R2 vs GT (closed-loop simulation) ===
+  delta_a   R2_raw=+0.0000  R2_linmap=+0.0000
+  vdelta_a  R2_raw=+0.0000  R2_linmap=+0.0000
+  R2_linmap ~ 1 -> simulated aug states carry the absorber dynamics;
+  R2_linmap ~ 0 -> aug states unused in rollout (encoder R2 tests encoder only)
+
+== A. MODEL QUALITY: test (E1), encoder-init ==
+  X1: RMS 1.943e-08 m  NRMS 0.0000
+  X2: RMS 1.897e-08 m  NRMS 0.0000
+  Y : RMS 1.565e-06 m  NRMS 0.0000
+
+=== Model, true-x0 init: sim-NRMS + RMS ===
+  X1: 0.0001  4.185e-06 m
+  X2: 0.0001  4.190e-06 m
+  Y : 0.0039  7.326e-04 m
+Saved results: gantry_results_variant_A_lr1e-07_Yop+0.00.npz
+==============================================================================
+done. per-variant evaluation printed above; JSON in train_variants_result_A_lr1e-07_Yop+0.00.json

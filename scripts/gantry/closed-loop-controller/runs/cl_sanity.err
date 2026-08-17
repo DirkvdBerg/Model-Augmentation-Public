@@ -1,0 +1,19 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-controller\cl_sanity.py", line 99, in <module>
+    fs.fit(train_data, val_data, n_its=N_ITS, batch_size=256,
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\model_augmentation\fit_systems\interconnect.py", line 597, in fit
+    validation(train_loss=float('nan'), time_elapsed_total=extra_t) #also sets current model to cuda
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\model_augmentation\fit_systems\interconnect.py", line 534, in validation
+    self.checkpoint_save_system()
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\fit_systems\fit_system.py", line 496, in checkpoint_save_system
+    torch.save(self.__dict__, file)
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\serialization.py", line 850, in save
+    _save(
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\serialization.py", line 1088, in _save
+    pickler.dump(obj)
+AttributeError: Can't pickle local object 'make_fns.<locals>.step_fn'

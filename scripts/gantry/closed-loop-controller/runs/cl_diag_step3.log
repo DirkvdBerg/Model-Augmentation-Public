@@ -1,0 +1,29 @@
+building ...
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_332172b4b41c.npz (Q (20154, 11), 6718 points)
+built [6s]
+
+========================================================================================
+D1  G7 ROOT CAUSE
+========================================================================================
+ANN output on random inputs: max abs = 0.000e+00  (exactly 0 => paths must agree)
+encoder params live vs frozen: max abs diff = 0.000e+00
+  V1_standstill_Yp10     dx0 1.049e-05   traj max|diff| 1.788e-07   first differing sample 0
+  V2_aprbs_Ylow          dx0 9.534e-07   traj max|diff| 1.192e-06   first differing sample 0
+  V3_ysweep_Yp10         dx0 3.815e-06   traj max|diff| 4.768e-07   first differing sample 5
+  V4_lissajous_Ym10      dx0 9.555e-07   traj max|diff| 9.537e-07   first differing sample 0
+
+========================================================================================
+D2  IS THE CLOSED-LOOP METRIC BLIND?
+========================================================================================
+Perturb the ANN final layer by increasing amounts and watch the closed-loop score.
+A metric that cannot see a deliberately broken model cannot select a good one.
+
+perturbation   closed-loop score ratio to baseline
+0e+00          2.186603e-06     1.0000          
+1e-04          2.201283e-06     1.0067          
+1e-03          2.588047e-06     1.1836          
+1e-02          1.245964e-05     5.6982          
+1e-01          9.981475e-05     45.6483         
+1e+00          1.047398e-03     479.0070        
+
+restored. [4433s]

@@ -1,0 +1,37 @@
+============================================================================================
+CLOSED-LOOP HEADROOM: baseline (no MSD) against oracle (FP + true MSD)
+============================================================================================
+rate 4000 Hz, up_sample 1, start K0 = 17, same integrator both arms
+
+V1_standstill_Yp10  Y_op +0.10  N = 47983
+    baseline (no MSD) rms [m]  [4.1503e-07 3.7686e-07 3.7428e-06]   agg 2.1850e-06
+    oracle (FP + MSD) rms [m]  [2.5804e-08 2.3437e-08 3.4747e-08]   agg 2.8416e-08
+    headroom factor per ch     [   16.084    16.080   107.716]   agg    76.893
+
+V2_aprbs_Ylow  Y_op -0.22  N = 47983
+    baseline (no MSD) rms [m]  [3.3560e-07 4.0938e-07 3.7692e-06]   agg 2.1975e-06
+    oracle (FP + MSD) rms [m]  [2.1297e-08 2.5191e-08 3.5084e-08]   agg 2.7803e-08
+    headroom factor per ch     [   15.758    16.251   107.433]   agg    79.037
+
+V3_ysweep_Yp10  Y_op +0.10  N = 47983
+    baseline (no MSD) rms [m]  [4.0419e-07 3.6981e-07 3.7294e-06]   agg 2.1763e-06
+    oracle (FP + MSD) rms [m]  [2.5372e-08 2.3224e-08 3.4419e-08]   agg 2.8093e-08
+    headroom factor per ch     [   15.931    15.924   108.354]   agg    77.466
+
+V4_lissajous_Ym10  Y_op -0.10  N = 47983
+    baseline (no MSD) rms [m]  [3.6881e-07 3.8713e-07 3.7508e-06]   agg 2.1874e-06
+    oracle (FP + MSD) rms [m]  [2.3730e-08 2.4844e-08 3.4734e-08]   agg 2.8206e-08
+    headroom factor per ch     [   15.542    15.582   107.989]   agg    77.552
+
+============================================================================================
+SUMMARY   headroom = baseline / oracle, closed loop, same harness
+============================================================================================
+record                 baseline agg oracle agg   factor     per-channel factor X1 X2 Y
+V1_standstill_Yp10     2.1850e-06   2.8416e-08   76.893       16.084   16.080  107.716
+V2_aprbs_Ylow          2.1975e-06   2.7803e-08   79.037       15.758   16.251  107.433
+V3_ysweep_Yp10         2.1763e-06   2.8093e-08   77.466       15.931   15.924  108.354
+V4_lissajous_Ym10      2.1874e-06   2.8206e-08   77.552       15.542   15.582  107.989
+
+headroom factor across records: 76.893 to 79.037
+Open-loop reference for scale: 2.35x on Y (handoff s6).
+[51s]

@@ -1,0 +1,43 @@
+============================================================================================
+SANITY RUN: closed-loop training through deepSI fit()
+============================================================================================
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_332172b4b41c.npz (Q (20154, 11), 6718 points)
+train ['T1_standstill_Ym30', 'T2_standstill_Ym15', 'T3_standstill_Y000', 'T4_standstill_Yp15']
+val   ['V1_standstill_Yp10'] (truncated to 6000 samples)
+loss = closed loop (xc = 0 per window, Remark 5.4), selection = closed-loop sim-RMS
+nf 100, n_its 300, its_per_val 100, lr 1e-03   [6s]
+pre-flight: fit_sys.__dict__ is picklable
+
+--------------------------------------------------------------------------------------------
+Model already initilized (init_model_done=True), skipping initilizing of the model, the norm and the creation of the optimizer
+Size of the training array =  518.8 MB
+N_training_samples = 191536, batch_size = 256, N_batch_updates_per_epoch = 748
+    [cl-val] closed-loop sim-RMS 2.313800e-06 m   per record [2.314e-06]
+(0,)
+Initial Validation sim-RMS= 2.3138002234190935e-06
+    [cl-val] closed-loop sim-RMS 2.311667e-06 m   per record [2.312e-06]
+(0,)
+########## New lowest validation loss achieved ########### sim-RMS = 2.3116665488487342e-06
+It  100, sqrt loss 1.617e-05, Val sim-RMS 2.312e-06, Time Loss: 90.7%, data: 0.1%, val: 9.2%,  1.7 sec/batch
+    [cl-val] closed-loop sim-RMS 2.308469e-06 m   per record [2.308e-06]
+(0,)
+########## New lowest validation loss achieved ########### sim-RMS = 2.3084687654773006e-06
+It  200, sqrt loss 1.608e-05, Val sim-RMS 2.308e-06, Time Loss: 90.0%, data: 0.1%, val: 9.9%,  1.6 sec/batch
+    [cl-val] closed-loop sim-RMS 2.305741e-06 m   per record [2.306e-06]
+(0,)
+########## New lowest validation loss achieved ########### sim-RMS = 2.305741418240359e-06
+It  300, sqrt loss 1.602e-05, Val sim-RMS 2.306e-06, Time Loss: 89.8%, data: 0.1%, val: 10.0%,  1.5 sec/batch
+Loaded model with best known validation sim-RMS of 2.306e-06 which happened on epoch 300 (epoch_id=0.40)
+--------------------------------------------------------------------------------------------
+
+train loss series: 2.6136e-10 2.6136e-10 2.5864e-10 2.5671e-10
+val   loss series: 2.3138e-06 2.3117e-06 2.3085e-06 2.3057e-06
+validator history: 2.3138e-06 2.3117e-06 2.3085e-06 2.3057e-06
+
+============================================================================================
+S1  train loss decreases          PASS   (first 2.6136e-10 -> best 2.5671e-10)
+S2  everything finite             PASS
+S3  val score finite and moving   PASS   (spread 8.059e-09)
+S4  best checkpoint is not the untrained model  PASS   (argmin at validation 3 of 4)
+============================================================================================
+SANITY PASSED   [477s]

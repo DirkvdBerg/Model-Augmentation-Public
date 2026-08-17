@@ -1,0 +1,82 @@
+====================================================================================================
+STEP 3 GATES: closed-loop validation and baselines
+====================================================================================================
+rate 4000 Hz, ts 2.500000e-04 s
+
+building the interconnect ...
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_332172b4b41c.npz (Q (20154, 11), 6718 points)
+[demo_common] pipeline built in 6s (slim load: 14 train files, snr=None, na=nb=17, K0=17)
+nx = 8, K0 = 17, na = 17, nb = 17, na_right = 1, nb_right = 1   [6s]
+fs.norm: u0 (3,)  ustd (3,)
+controller bank: n_FB = 9, records ['V1_standstill_Yp10', 'V2_aprbs_Ylow', 'V3_ysweep_Yp10', 'V4_lissajous_Ym10'], Y_op [0.1, -0.22, 0.1, -0.1]
+
+----------------------------------------------------------------------------------------------------
+G9  FROZEN ENCODER   (the baseline reference must not drift during training)
+    live encoder x0 moved by   5.5449e-02  (must be > 0: the perturbation took effect)
+    frozen encoder x0 moved by 0.0000e+00  (must be exactly 0)
+    PASS
+    live encoder restored, x0 differs from pre-perturbation by 0.0000e+00 (must be 0)
+
+----------------------------------------------------------------------------------------------------
+V1-V4, free run from k0 = 17, rms error [m] per channel
+At init the ANN is exactly zero, so MODEL == encoder-init BASELINE by construction.
+
+  V1_standstill_Yp10  Y_op +0.10  N = 48000
+    encoder-init open   rms [m]      [9.4257e-07 9.1925e-07 2.0721e-04]   agg 1.1964e-04
+    encoder-init closed rms [m]      [4.1503e-07 3.7686e-07 3.7428e-06]   agg 2.1850e-06
+    true-x0      open   rms [m]      [4.1852e-06 4.1904e-06 7.3262e-04]   agg 4.2299e-04
+    true-x0      closed rms [m]      [4.1504e-07 3.7687e-07 3.7429e-06]   agg 2.1851e-06
+    encoder-init closed / open       [   0.4403    0.4100    0.0181]
+
+  V2_aprbs_Ylow  Y_op -0.22  N = 48000
+    encoder-init open   rms [m]      [3.4075e-04 3.5741e-04 1.0721e-04]   agg 2.9175e-04
+    encoder-init closed rms [m]      [3.3584e-07 4.0954e-07 3.7696e-06]   agg 2.1977e-06
+    true-x0      open   rms [m]      [2.1516e-04 2.4173e-04 8.3935e-05]   agg 1.9302e-04
+    true-x0      closed rms [m]      [3.3563e-07 4.0948e-07 3.7694e-06]   agg 2.1976e-06
+    encoder-init closed / open       [   0.0010    0.0011    0.0352]
+
+  V3_ysweep_Yp10  Y_op +0.10  N = 48000
+    encoder-init open   rms [m]      [2.1061e-04 2.1061e-04 2.0753e-05]   agg 1.7238e-04
+    encoder-init closed rms [m]      [4.0423e-07 3.6991e-07 3.7297e-06]   agg 2.1764e-06
+    true-x0      open   rms [m]      [1.5641e-05 1.5639e-05 2.9272e-04]   agg 1.6948e-04
+    true-x0      closed rms [m]      [4.0420e-07 3.6982e-07 3.7295e-06]   agg 2.1764e-06
+    encoder-init closed / open       [   0.0019    0.0018    0.1797]
+
+  V4_lissajous_Ym10  Y_op -0.10  N = 48000
+    encoder-init open   rms [m]      [3.3950e-05 3.6799e-05 1.2789e-04]   agg 7.9292e-05
+    encoder-init closed rms [m]      [3.6887e-07 3.8712e-07 3.7508e-06]   agg 2.1874e-06
+    true-x0      open   rms [m]      [3.5397e-05 3.7558e-05 1.1786e-03]   agg 6.8112e-04
+    true-x0      closed rms [m]      [3.6880e-07 3.8712e-07 3.7508e-06]   agg 2.1874e-06
+    encoder-init closed / open       [   0.0109    0.0105    0.0293]
+
+----------------------------------------------------------------------------------------------------
+G7  SELF-CONSISTENCY, decomposed
+    live encoder, ANN live   2.185051471315e-06
+    live encoder, ANN off    2.185051471315e-06
+    frozen encoder, ANN off  2.185030098190e-06
+    G7a  ANN live vs off       rel 0.000e+00   (MUST be exactly 0)
+    G7b  live vs deepcopy enc  rel 9.782e-06   (float32 floor, measured)
+    G7a PASS     G7b PASS
+
+----------------------------------------------------------------------------------------------------
+G8  SELECTOR INSTALLED   (moves SELECTION, not just reporting)
+    fs.cal_validation_error is ClosedLoopValidator
+    returned 2.186603e-06  finite=True
+    PASS
+    original restored
+
+----------------------------------------------------------------------------------------------------
+G10 INITIALISATION INSENSITIVITY   (replaces the waterbed test, which was wrong here)
+    open   loop enc-init vs true-x0 spread [  1.11810   0.40731   0.01694   1.58290]
+    closed loop enc-init vs true-x0 spread [  0.00003   0.00005   0.00004   0.00000]
+    reduction factor                 [  36672.2    7644.4     392.7  371415.6]
+    PASS   (closed-loop spread under 1 %, and at least 10x tighter than open loop)
+
+====================================================================================================
+G10 init insensitivity       PASS
+G7a ANN live==off            PASS
+G7b encoder numerics         PASS
+G8 selector installed        PASS
+G9 frozen encoder            PASS
+====================================================================================================
+STEP 3 PASSED   [3022s]

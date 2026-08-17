@@ -1,0 +1,30 @@
+============================================================================================
+STEP 4 GATES: closed-loop training loss
+============================================================================================
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_332172b4b41c.npz (Q (20154, 11), 6718 points)
+records ['T1_standstill_Ym30', 'T2_standstill_Ym15', 'T3_standstill_Y000', 'T4_standstill_Yp15']
+nf = 100, na = 17, nb = 17, na_right = 1, nb_right = 1   [5s]
+
+production arrays 4, closed-loop arrays 5 (the extra one is rec_ix)
+window count: production 191536, closed-loop 191536, per-record [47884, 47884, 47884, 47884]
+
+--------------------------------------------------------------------------------------------
+G12 rec_ix ALIGNMENT   (checked by CONTENT, not by counting)
+    probed 200 windows, mismatched 0
+    PASS   (a mismatch means the wrong Cfb on most windows)
+
+--------------------------------------------------------------------------------------------
+G11 EXACT NO-OP   (loop disabled => production loss)
+    production loss (open loop)      1.644063729600e-07
+    new loss, loop DISABLED          1.644063587491e-07
+    new loss, loop ENABLED           4.078474502567e-10
+    |disabled - production| / prod   8.644e-08
+    PASS   (anything else means something OTHER than the loop changed)
+
+--------------------------------------------------------------------------------------------
+G14 CONTROLLER ACTIVE   (closed must differ from open, or the loop is inert)
+    |closed - open| / open           9.975e-01
+    PASS
+
+--------------------------------------------------------------------------------------------
+G13 GRADIENT   (finite, and reaching the ANN through the loop)
