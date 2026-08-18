@@ -1,0 +1,197 @@
+% Minimal note: the given feedback controller, and how it is implemented in the augmentation
+% training loop. The controller itself is not our design (ruleOfThumb.m, read-only FP model).
+% Compile: pdflatex controller-implementation.tex   (twice, for the equation references)
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+
+\titleformat{\section}{\large\bfseries}{\thesection}{0.7em}{}
+\titlespacing*{\section}{0pt}{1.6ex plus .2ex}{0.8ex}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Cfb}{C_{\mathrm{fb}}}
+\newcommand{\Cnorm}{C_{\mathrm{n}}}
+\newcommand{\wb}{\omega_{\mathrm{b}}}
+\newcommand{\fms}{f_{\mathrm{ms}}}
+\newcommand{\ufb}{u_{\mathrm{fb}}}
+\newcommand{\udata}{u_{\mathrm{d}}}
+\newcommand{\umodel}{u_{\mathrm{m}}}
+\newcommand{\ydata}{y_{\mathrm{d}}}
+\newcommand{\ymodel}{y_{\mathrm{m}}}
+\newcommand{\Yop}{Y_{\mathrm{op}}}
+\newcommand{\Tu}{T_{u}}
+\newcommand{\Ty}{T_{y}}
+
+\setlist{nosep, leftmargin=1.4em}
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}
+  {\Large\bfseries Implementing the feedback controller in the training loop}\\[0.3em]
+  {\normalsize Dirk van den Berg}
+\end{center}
+\vspace{0.3em}
+
+\noindent The trajectory records were generated with a feedback controller in the loop, so the
+same controller has to be present when the model is simulated during training. This note gives
+the controller (Section~1), wraps it around the first principles model (Section~2), rearranges
+that loop into the form actually used (Section~3), and states how it is placed in the training
+code (Section~4).
+
+\medskip\noindent\emph{Notation.}\quad $C$ and $K$ are the damping and stiffness matrices of the
+baseline, so the controller and its design gain take the symbols $\Cfb$ and $\kappa_j$.
+$C_{\mathrm{d}}$ is the output matrix of the discrete model. $\Tu = \diag(u_{\mathrm{std}})$ and
+$\Ty = \diag(y_{\mathrm{std}})$ are the input and output normalisations.
+
+\section{The controller (given)}
+
+The controller is not our design. It is \texttt{ruleOfThumb.m} of the read-only first principles
+model, applied per channel to the stage-frame design plant
+$\mathrm{sys}(\Yop) = P^{\top} G(M_{\mathrm{op}}(\Yop), C_{\mathrm{damp}}, K)\, P$, frozen at the
+record's operating point. With $\wb = 2\pi f_{\mathrm{bw}}$ and $f_{\mathrm{bw}} = 100$~Hz:
+\begin{align}
+  \Cnorm(s) &=
+  \underbrace{\frac{s + \wb/6}{s}}_{\texttt{int}} \cdot
+  \underbrace{\frac{s + \wb/3}{s + 3\wb}}_{\texttt{leadlag}} \cdot
+  \underbrace{\frac{10\,\wb}{s + 10\,\wb}}_{\texttt{lowpass}} ,
+  \label{eq:cnorm}\\[1mm]
+  \kappa_j &= \frac{1}{\bigl|\,\mathrm{sys}_{jj}(i\wb)\,\Cnorm(i\wb)\,\bigr|} ,
+  \qquad j = 1,2,3 ,
+  \label{eq:kappa}\\[1mm]
+  \Cfb(z) &= \diag\bigl(\kappa_1\Cnorm,\ \kappa_2\Cnorm,\ \kappa_3\Cnorm\bigr)
+  \Bigr|_{\,s \,=\, \frac{2}{T_s}\frac{z-1}{z+1}} .
+  \label{eq:cfb}
+\end{align}
+Only the diagonal entries $\mathrm{sys}_{jj}$ are used, so $\Cfb$ is diagonal in the stage frame,
+and the plant enters only through the three numbers $|\mathrm{sys}_{jj}(i\wb)|$, so $\Cfb$ can be
+rebuilt at any $\Yop$ at negligible cost. What the implementation needs is its state-space
+realisation, three states per channel and biproper:
+\begin{equation}
+  \Cfb : \quad
+  x_{c,k+1} = A_c\,x_{c,k} + B_c\,e_{c,k} ,
+  \qquad
+  \ufb{}_{,k} = C_c\,x_{c,k} + D_c\,e_{c,k} ,
+  \qquad
+  x_c \in \R^{9} ,\quad D_c \neq 0 .
+  \label{eq:cfbss}
+\end{equation}
+
+\section{Wrapping it around the first principles model}
+
+The model is discrete time in normalised coordinates, and its output has no feedthrough:
+\begin{equation}
+  x_{k+1} = f(x_k, u_k) ,
+  \qquad
+  y_k = h(x_k) = C_{\mathrm{d}}\,x_k + b ,
+  \qquad
+  \frac{\partial h}{\partial u} = 0 ,
+  \qquad
+  x \in \R^{8},\; u,y \in \R^{3} .
+  \label{eq:model}
+\end{equation}
+Closing \eqref{eq:cfbss} around \eqref{eq:model} is the direct implementation: the controller is
+driven by the tracking error of the \emph{model} output against the reference, and its force is
+injected at the model input alongside the multisine,
+\begin{equation}
+  \begin{aligned}
+    \ymodel{}_{,k} &= h(x_k) , \\
+    e_{c,k}        &= r_k - \Ty\,\ymodel{}_{,k} , \\
+    \ufb{}_{,k}    &= C_c\,x_{c,k} + D_c\,e_{c,k} , \\
+    u_k            &= \Tu^{-1}\bigl(\ufb{}_{,k} + \fms{}_{,k}\bigr) , \\
+    x_{k+1}        &= f(x_k,\, u_k) , \\
+    x_{c,k+1}      &= A_c\,x_{c,k} + B_c\,e_{c,k} .
+  \end{aligned}
+  \label{eq:direct}
+\end{equation}
+The controller was designed in physical units, so $\Ty$ takes the model output to metres and
+$\Tu^{-1}$ takes the resulting force back to normalised input. The order of the six lines is not a
+choice. By \eqref{eq:cfbss} the controller is biproper, so $\ufb{}_{,k}$ needs $e_{c,k}$ and the
+model output must be formed first; by \eqref{eq:model} the model output does not depend on $u_k$,
+so the loop closes without an algebraic loop, at one model evaluation per step.
+
+\section{The residual form, which is what is used}
+
+Equation \eqref{eq:direct} needs the reference $r$ and the injected multisine $\fms$ of each
+record. Both are stored, so \eqref{eq:direct} is runnable, but both then have to be carried
+through the batching alongside the input and output. They can be removed. The record was
+generated by the same controller around the machine, so writing the machine loop and the model
+loop \eqref{eq:direct} side by side,
+\begin{equation}
+  \udata = \Cfb\bigl(r - \ydata\bigr) + \fms ,
+  \qquad
+  \umodel = \Cfb\bigl(r - \ymodel\bigr) + \fms ,
+  \label{eq:twoloops}
+\end{equation}
+and subtracting, with $r$ and $\fms$ identical in both and $\Cfb$ linear, they cancel:
+\begin{equation}
+  \boxed{\;
+    \umodel{}_{,k} \;=\; \udata{}_{,k} \;+\; \Cfb\bigl(\ydata - \ymodel\bigr)_k \;}
+  \label{eq:residual}
+\end{equation}
+The controller now filters the difference between the recorded and the modelled output, and its
+force is a correction on the recorded input. Nothing but $\udata$ and $\ydata$ is required, which
+is exactly what the loader returns. Realised in the same order as \eqref{eq:direct}:
+\begin{equation}
+  \begin{aligned}
+    \ymodel{}_{,k} &= h(x_k) , \\
+    e_{c,k}        &= \Ty\bigl(\ydata{}_{,k} - \ymodel{}_{,k}\bigr) , \\
+    \ufb{}_{,k}    &= C_c\,x_{c,k} + D_c\,e_{c,k} , \\
+    u_k            &= \udata{}_{,k} + \Tu^{-1}\,\ufb{}_{,k} , \\
+    x_{k+1}        &= f(x_k,\, u_k) , \\
+    x_{c,k+1}      &= A_c\,x_{c,k} + B_c\,e_{c,k} ,
+  \end{aligned}
+  \qquad
+  \begin{aligned}
+    &x_{\tau|\tau} = \mathrm{encoder}(\cdot) , \\[0.5mm]
+    &x_{c,\tau|\tau} = 0 .
+  \end{aligned}
+  \label{eq:recursion}
+\end{equation}
+The input mean does not appear, because $\Tu^{-1}\ufb$ is an increment on $\udata$ rather than an
+absolute input.
+
+\section{The controller is a separate training block}
+
+Equation \eqref{eq:recursion} steps two subsystems in sequence. It is not the joined form, which
+would carry $z = [\,x^{\top}\ x_c^{\top}\,]^{\top} \in \R^{17}$ and the single map
+\begin{equation}
+  z_{k+1} =
+  \begin{bmatrix}
+    f\Bigl(x_k,\; \udata{}_{,k} + \Tu^{-1}\bigl(C_c x_{c,k}
+      + D_c \Ty(\ydata{}_{,k} - h(x_k))\bigr)\Bigr) \\[2mm]
+    A_c\,x_{c,k} + B_c\,\Ty\bigl(\ydata{}_{,k} - h(x_k)\bigr)
+  \end{bmatrix} .
+  \label{eq:joined}
+\end{equation}
+In the separate form the trainable parameters enter only through the model,
+$\theta \in \{f, h\}$, while $(A_c, B_c, C_c, D_c)$ are constant. Two consequences:
+\begin{enumerate}
+  \item The model state stays at $n_x = 8$ rather than $17$ and, with $x_{c,\tau|\tau} = 0$, the
+        encoder never has to reconstruct a controller state. The Jacobian of the first principles
+        block is unchanged, since $\Cfb$ acts as a linear filter with fixed coefficients.
+  \item $\Cfb$ may differ per record. It is rebuilt at each record's $\Yop$ through
+        \eqref{eq:kappa}, nine distinct instances across the 22 records, selected inside the batch
+        by a per-sample record index. The joined form \eqref{eq:joined} would have to be rebuilt
+        for every record.
+\end{enumerate}
+
+\medskip\noindent\textbf{The one approximation.}\quad Everything above is an identity except
+$x_{c,\tau|\tau} = 0$. In the residual form the controller filters $\ydata - \ymodel$, which does
+not exist before the truncated window opens, because the model trajectory starts at $\tau$. Zero
+is the unique value for which the correction in \eqref{eq:residual} vanishes when the model is
+exact. What it costs is integral memory: $\Cnorm$ has a pole at $s = 0$, so $\Cfb$ has a pole at
+$z = 1$ and never forgets DC, while the validation free run accumulates $x_c$ over the whole
+record. That asymmetry is measured, not argued.
+
+\end{document}

@@ -1,0 +1,7 @@
+parsed 9 train-loss points, 13 validation points
+wrote step6_curves.png
+wrote step6_attribution.png
+wrote step6_headroom.png
+
+using checkpoint FitSys_ClosedLoop_Go1qTA_best.pth
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_04fdce928d32.npz (Q (40308, 11), 6718 points)

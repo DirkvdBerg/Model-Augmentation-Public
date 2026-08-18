@@ -1,0 +1,91 @@
+% One slide: the given feedback controller, and the five steps that put it in the training loop.
+% Compile: pdflatex controller-slide.tex   (twice)
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usetheme{default}
+\usecolortheme{seahorse}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize items}[circle]
+\setbeamertemplate{enumerate items}[default]
+\setbeamerfont{frametitle}{size=\large}
+\setbeamercolor{block title}{bg=structure!20,fg=black}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{microtype}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Cfb}{C_{\mathrm{fb}}}
+\newcommand{\Cnorm}{C_{\mathrm{n}}}
+\newcommand{\wb}{\omega_{\mathrm{b}}}
+\newcommand{\udata}{u_{\mathrm{d}}}
+\newcommand{\umodel}{u_{\mathrm{m}}}
+\newcommand{\ydata}{y_{\mathrm{d}}}
+\newcommand{\ymodel}{y_{\mathrm{m}}}
+\newcommand{\Yop}{Y_{\mathrm{op}}}
+
+\begin{document}
+
+\begin{frame}{Closing the loop in training}
+
+\begin{columns}[T,onlytextwidth]
+
+%---------------------------------------------------------------- left
+\begin{column}{0.43\textwidth}
+\begin{block}{The controller}
+\scriptsize
+\begin{itemize}\setlength\itemsep{0.2em}
+  \item Three independent SISO loops, one per stage axis $X_1, X_2, Y$, diagonal in the stage
+        frame
+  \item Loop shaping: integrator, lead-lag, first-order roll-off, $100$~Hz bandwidth
+  \item Rule of thumb from the FP model: the shape fixes the phase margin, one gain per channel
+        puts crossover at $100$~Hz
+  \vspace{-0.2em}
+  \item Tustin discretised, order 3 per channel, so 9 states
+\end{itemize}
+\vspace{0.2em}
+{\scriptsize
+\begin{align*}
+  \Cnorm(s) &= \frac{s+\wb/6}{s}\cdot\frac{s+\wb/3}{s+3\wb}\cdot\frac{10\wb}{s+10\wb} \\[-0.2em]
+  \kappa_j  &= \frac{1}{\bigl|\mathrm{sys}_{jj}(i\wb)\,\Cnorm(i\wb)\bigr|},
+               \quad \wb = 2\pi f_{\mathrm{bw}}
+\end{align*}}
+\vspace{-1.2em}
+\end{block}
+\end{column}
+
+%---------------------------------------------------------------- right
+\begin{column}{0.55\textwidth}
+\begin{block}{How it works in training}
+\scriptsize
+\begin{enumerate}\setlength\itemsep{0.25em}
+  \item \textbf{Take it as a filter.} $(A_c,B_c,C_c,D_c)$, 9 states, fixed coefficients.
+  \item \textbf{Wrap it around the model.} Error is reference minus model output, controller force
+        injected at the model input.
+  \item \textbf{Subtract the machine loop.} Reference and multisine are identical in both and
+        cancel:
+        \vspace{-0.3em}
+        \[
+          \umodel = \udata + \Cfb\,\bigl(\ydata - \ymodel\bigr)
+        \]
+        \vspace{-1.1em}
+        \\ so training needs only the recorded input and output.
+  \item \textbf{Fix the order.} Model output first.
+  \item \textbf{Keep it separate.} Not part of the model state, so $n_x$ stays $8$, and $\Cfb$ is
+        rebuilt per record at that record's $\Yop$.
+\end{enumerate}
+\end{block}
+\end{column}
+
+\end{columns}
+
+\vspace{0.4em}
+{\footnotesize
+Only approximation: controller state reset to zero at each window start.}
+
+\end{frame}
+
+\end{document}

@@ -1,0 +1,44 @@
+parsed 9 train-loss points, 13 validation points
+wrote step6_curves.png
+wrote step6_attribution.png
+  ANN-off attribution (not plotted): per record, forcing the trained ANN output to zero
+    V1   untrained 2.1850e-06  ANN-off 2.1850e-06  -> encoder-only change -0.002 %
+    V2   untrained 2.1975e-06  ANN-off 2.1980e-06  -> encoder-only change -0.022 %
+    V3   untrained 2.1764e-06  ANN-off 2.1765e-06  -> encoder-only change -0.004 %
+    V4   untrained 2.1873e-06  ANN-off 2.1875e-06  -> encoder-only change -0.008 %
+wrote step6_headroom.png
+
+using checkpoint FitSys_ClosedLoop_Go1qTA_best.pth
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_04fdce928d32.npz (Q (40308, 11), 6718 points)
+  rolling V1_standstill_Yp10 trained ...
+  rolling V1_standstill_Yp10 init (ANN off) ...
+  wrote step6_traj_V1_standstill_Yp10.png
+  wrote step6_spectrum_V1_standstill_Yp10.png
+  band-limited error rms [m]  (V1_standstill_Yp10)
+    ch   band                     untrained    trained      reduction %
+    X1   < 130 Hz                 2.2084e-08   2.6643e-08     -20.65
+    X1   130-180 Hz (absorber)    4.1675e-07   2.6352e-07     +36.77
+    X1   > 180 Hz                 1.3408e-08   1.3848e-08      -3.29
+    X2   < 130 Hz                 2.0691e-08   2.3240e-08     -12.32
+    X2   130-180 Hz (absorber)    3.7805e-07   2.3339e-07     +38.26
+    X2   > 180 Hz                 1.2524e-08   1.1702e-08      +6.56
+    Y    < 130 Hz                 1.6006e-07   1.9737e-07     -23.31
+    Y    130-180 Hz (absorber)    3.7516e-06   2.3361e-06     +37.73
+    Y    > 180 Hz                 1.5502e-07   1.4877e-07      +4.04
+  rolling V2_aprbs_Ylow trained ...
+  rolling V2_aprbs_Ylow init (ANN off) ...
+  wrote step6_traj_V2_aprbs_Ylow.png
+  wrote step6_spectrum_V2_aprbs_Ylow.png
+  band-limited error rms [m]  (V2_aprbs_Ylow)
+    ch   band                     untrained    trained      reduction %
+    X1   < 130 Hz                 1.0466e-07   1.0246e-07      +2.10
+    X1   130-180 Hz (absorber)    3.2837e-07   2.2327e-07     +32.00
+    X1   > 180 Hz                 1.1276e-08   1.1722e-08      -3.95
+    X2   < 130 Hz                 1.3496e-07   1.5186e-07     -12.52
+    X2   130-180 Hz (absorber)    3.9795e-07   2.6601e-07     +33.16
+    X2   > 180 Hz                 1.2493e-08   1.3549e-08      -8.46
+    Y    < 130 Hz                 1.7211e-07   7.6335e-07    -343.52
+    Y    130-180 Hz (absorber)    3.8426e-06   2.4718e-06     +35.67
+    Y    > 180 Hz                 1.3204e-07   1.5557e-07     -17.83
+
+figures in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-controller\figures

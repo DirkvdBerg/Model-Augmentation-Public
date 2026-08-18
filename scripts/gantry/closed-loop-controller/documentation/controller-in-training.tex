@@ -1,0 +1,290 @@
+% The rule-of-thumb controller as formulas, and its attachment to the first principles model
+% inside the augmentation training loop.
+% Notation follows docs/writeup/jan-augmentation-writeup.tex and the sibling note
+% scripts/gantry/closed-loop-controller/controller-in-derivation.tex.
+% Compile: pdflatex controller-in-training.tex
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.75em}{}
+\titlespacing*{\section}{0pt}{1.4ex plus .2ex minus .2ex}{0.9ex}
+\titlespacing*{\subsection}{0pt}{1.0ex plus .2ex minus .2ex}{0.5ex}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\Cfb}{C_{\mathrm{fb}}}
+\newcommand{\Cnorm}{C_{\mathrm{n}}}
+\newcommand{\wb}{\omega_{\mathrm{b}}}
+\newcommand{\fms}{f_{\mathrm{ms}}}
+\newcommand{\ufb}{u_{\mathrm{fb}}}
+\newcommand{\udata}{u_{\mathrm{data}}}
+\newcommand{\umodel}{u_{\mathrm{model}}}
+\newcommand{\ydata}{y_{\mathrm{data}}}
+\newcommand{\ymodel}{y_{\mathrm{model}}}
+\newcommand{\Yop}{Y_{\mathrm{op}}}
+\newcommand{\Tu}{T_{u}}
+\newcommand{\Ty}{T_{y}}
+
+\setlist{nosep, leftmargin=1.4em}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries The feedback controller in the training loop}\\[0.4em]
+  {\large Dirk van den Berg}\\[0.2em]
+  {\small Section~\ref{sec:formulas} writes the MATLAB rule-of-thumb controller as formulas.
+  Section~\ref{sec:attach} attaches it to the first principles model. Section~\ref{sec:block}
+  states that it is a separate training block.}
+\end{center}
+\vspace{0.6em}
+
+\noindent\textbf{Symbols.}\quad The baseline write-up already uses $C$ for the damping matrix and
+$K$ for the stiffness matrix, and the sibling note \texttt{controller-in-derivation.tex} uses
+$S_{\mathrm{o}}$ for the output sensitivity. The controller, its design gain and the normalisation
+matrices therefore take different symbols here.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+symbol & meaning & would clash with \\
+\midrule
+$\Cfb(z)$        & discrete feedback controller, $3\times3$ diagonal & $C$, damping matrix \\
+$\Cnorm(s)$      & the shared normalised controller shape            & \\
+$\kappa_j$       & per-channel normalisation gain                    & $K$, stiffness matrix \\
+$\wb$            & design bandwidth in rad/s                         & \\
+$C_{\mathrm{d}}$ & output matrix of the discrete model               & $C$, damping matrix \\
+$\Tu,\ \Ty$      & input and output normalisation, diagonal          & $S_{\mathrm{o}}$, sensitivity \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{The rule-of-thumb controller as formulas}
+\label{sec:formulas}
+
+The controller is not our design. It is \texttt{ruleOfThumb.m} of the read-only first principles
+model, called once per channel from \texttt{gtd\_build\_plant.m}. This section writes each line of
+that function as a formula.
+
+\subsection{The design plant}
+
+The controller is designed on a plant that is stage in and stage out, frozen at the record's
+operating point $\Yop$ and carrying the full payload mass, so that it is linear time invariant
+even though the true plant is not:
+\begin{equation}
+  \mathrm{sys}(\Yop) \;=\; P^{\top}\,
+  G\bigl(M_{\mathrm{op}}(\Yop),\, C_{\mathrm{damp}},\, K\bigr)\, P ,
+  \qquad
+  P =
+  \begin{bmatrix}
+    1 & 1 & 0 \\[1mm]
+    \tfrac{L_b}{2} & -\tfrac{L_b}{2} & 0 \\[1mm]
+    0 & 0 & 1
+  \end{bmatrix} .
+  \label{eq:sys}
+\end{equation}
+The loop is therefore diagonal in the \emph{stage} frame $[\,X_1, X_2, Y\,]$, and the logical
+frame appears only inside $\mathrm{sys}$. Only the three diagonal channels
+$\mathrm{sys}_{jj}(s)$, $j = 1,2,3$, are ever used.
+
+\subsection{The shape}
+
+Let $f_{\mathrm{bw}} = 100$~Hz and $\wb = 2\pi f_{\mathrm{bw}}$. All three channels share one
+shape, built from the three factors of \texttt{ruleOfThumb.m}:
+\begin{equation}
+  \underbrace{\frac{s+\wb/6}{s}}_{\texttt{int}}
+  \qquad
+  \underbrace{\frac{s+\wb/3}{s+3\wb}}_{\texttt{leadlag}}
+  \qquad
+  \underbrace{\frac{10\,\wb}{s+10\,\wb}}_{\texttt{lowpass}}
+  \label{eq:factors}
+\end{equation}
+\begin{equation}
+  \Cnorm(s)
+  \;=\;
+  \frac{10\,\wb\,\bigl(s+\tfrac{1}{6}\wb\bigr)\bigl(s+\tfrac{1}{3}\wb\bigr)}
+       {s\,\bigl(s+3\wb\bigr)\bigl(s+10\,\wb\bigr)} .
+  \label{eq:cnorm}
+\end{equation}
+
+\subsection{The gain}
+
+The plant enters the design through one scalar per channel only. The gain is fixed by requiring
+unit open-loop magnitude at the bandwidth,
+\begin{equation}
+  \kappa_j \;=\; \frac{1}{\bigl|\,\mathrm{sys}_{jj}(i\wb)\,\Cnorm(i\wb)\,\bigr|} ,
+  \qquad j = 1,2,3 ,
+  \label{eq:kappa}
+\end{equation}
+so that $f_{\mathrm{bw}}$ is the $0$~dB crossover of each loop by construction. Equation
+\eqref{eq:kappa} is the entire $\Yop$ dependence of the controller: three numbers.
+
+\subsection{The discretisation}
+
+\begin{equation}
+  C_j(z) \;=\; \kappa_j\,\Cnorm(s)\Bigr|_{\,s \,=\, \frac{2}{T_s}\frac{z-1}{z+1}} ,
+  \qquad
+  \Cfb(z) \;=\; \diag\bigl(C_1(z),\, C_2(z),\, C_3(z)\bigr) .
+  \label{eq:cfb}
+\end{equation}
+
+\subsection{The realisation used in the loop}
+
+Each channel is of order three, so the block diagonal realisation has nine states. It is
+biproper:
+\begin{equation}
+  \Cfb : \quad
+  \begin{aligned}
+    x_{c,k+1} &= A_c\,x_{c,k} + B_c\,e_{c,k} , \\
+    \ufb{}_{,k}   &= C_c\,x_{c,k} + D_c\,e_{c,k} ,
+  \end{aligned}
+  \qquad
+  x_c \in \R^{9} , \qquad D_c \neq 0 .
+  \label{eq:cfbss}
+\end{equation}
+
+\section{Attaching the controller to the first principles model}
+\label{sec:attach}
+
+\subsection{The model}
+
+The augmented baseline in discrete time, normalised coordinates, with the first principles block
+on the physical rows and the learned block added on the routed rows:
+\begin{equation}
+  x_{k+1} = f(x_k, u_k) ,
+  \qquad
+  y_k = h(x_k) = C_{\mathrm{d}}\,x_k + b ,
+  \qquad
+  x \in \R^{8},\; u \in \R^{3},\; y \in \R^{3} .
+  \label{eq:model}
+\end{equation}
+The output map is affine in the state and has no feedthrough,
+\begin{equation}
+  \frac{\partial h}{\partial u} \;=\; 0
+  \qquad (D_{\mathrm{d}} = 0) .
+  \label{eq:Dd}
+\end{equation}
+
+\subsection{The residual form}
+
+The record was generated by the machine loop, and the same controller is closed around the model
+from the same reference and the same injected multisine:
+\begin{equation}
+  \udata = \Cfb\bigl(r - \ydata\bigr) + \fms ,
+  \qquad
+  \umodel = \Cfb\bigl(r - \ymodel\bigr) + \fms .
+  \label{eq:twoloops}
+\end{equation}
+Subtracting the two, with $r$ and $\fms$ common to both and $\Cfb$ linear,
+\begin{equation}
+  \boxed{\;
+    \umodel{}_{,k}
+    \;=\;
+    \udata{}_{,k}
+    \;+\;
+    \Cfb\bigl(\ydata - \ymodel\bigr)_k \; }
+  \label{eq:residual}
+\end{equation}
+Neither $r$ nor $\fms$ survives the subtraction, so the training loop needs only the recorded
+input and the recorded output.
+
+\subsection{The stepped recursion}
+
+With $\Tu = \diag(u_{\mathrm{std}})$ and $\Ty = \diag(y_{\mathrm{std}})$ the normalisation
+matrices, equation \eqref{eq:residual} is realised as
+\begin{equation}
+  \begin{aligned}
+    \ymodel{}_{,k} &= h(x_k) , \\
+    e_{c,k}        &= \Ty\bigl(\ydata{}_{,k} - \ymodel{}_{,k}\bigr) , \\
+    \ufb{}_{,k}    &= C_c\,x_{c,k} + D_c\,e_{c,k} , \\
+    u_k            &= \udata{}_{,k} + \Tu^{-1}\,\ufb{}_{,k} , \\
+    x_{k+1}        &= f(x_k,\, u_k) , \\
+    x_{c,k+1}      &= A_c\,x_{c,k} + B_c\,e_{c,k} ,
+  \end{aligned}
+  \qquad
+  \begin{aligned}
+    &x_{\tau|\tau}   = \mathrm{encoder}\bigl(u_{\tau-n_b:\tau+n_{b,r}},\;
+                                             y_{\tau-n_a:\tau+n_{a,r}}\bigr) , \\[1mm]
+    &x_{c,\tau|\tau} = 0 .
+  \end{aligned}
+  \label{eq:recursion}
+\end{equation}
+The error $e_{c}$ is in metres and $\ufb$ is in newtons, so the two normalisation matrices convert
+into and out of the physical units the controller was designed in. The input mean does not appear
+because $\Tu^{-1}\ufb$ is an increment on the recorded input.
+
+\medskip\noindent\textbf{The ordering of \eqref{eq:recursion} is forced.}
+\begin{itemize}
+  \item $D_c \neq 0$ in \eqref{eq:cfbss}: the controller output at step $k$ depends on the error
+        at step $k$, so $\ymodel{}_{,k}$ has to be computed before $u_k$.
+  \item $D_{\mathrm{d}} = 0$ in \eqref{eq:Dd}: the model output at step $k$ does not depend on
+        $u_k$, so the loop closes without an algebraic loop, at one model evaluation per step.
+\end{itemize}
+
+\section{The controller is a separate training block}
+\label{sec:block}
+
+Equation \eqref{eq:recursion} steps two subsystems in sequence rather than joining them into one
+state vector. The alternative, joining the controller into the interconnect, would carry the
+augmented state $z = [\,x^{\top}\; x_c^{\top}\,]^{\top} \in \R^{17}$ and the single map
+\begin{equation}
+  z_{k+1} =
+  \begin{bmatrix}
+    f\Bigl(x_k,\;\udata{}_{,k}
+      + \Tu^{-1}\bigl(C_c x_{c,k} + D_c\,\Ty(\ydata{}_{,k} - h(x_k))\bigr)\Bigr) \\[2mm]
+    A_c\,x_{c,k} + B_c\,\Ty\bigl(\ydata{}_{,k} - h(x_k)\bigr)
+  \end{bmatrix} .
+  \label{eq:joined}
+\end{equation}
+The separate form was chosen. In it the trainable parameters enter only through the model,
+\begin{equation}
+  \theta \;\text{ appears only in }\; f \;\text{ and }\; h ,
+  \qquad
+  (A_c, B_c, C_c, D_c) \;\text{ constant} ,
+  \label{eq:theta}
+\end{equation}
+with four consequences:
+\begin{enumerate}
+  \item The model state stays at $n_x = 8$ rather than $17$, so the encoder keeps its width and
+        its meaning.
+  \item The encoder never has to reconstruct a controller state. By \eqref{eq:recursion},
+        $x_{c,\tau|\tau} = 0$, so there is nothing to encode.
+  \item The Jacobian of the first principles block with respect to $\theta$ is not premultiplied
+        by the normalisation and controller matrices of \eqref{eq:joined}. Gradients still pass
+        through $\Cfb$, but only as a linear filter with fixed coefficients.
+  \item $\Cfb$ may differ per record. It is rebuilt at each record's $\Yop$ through
+        \eqref{eq:sys} and \eqref{eq:kappa}, giving nine distinct instances across the
+        22 records, selected inside the batch by a per-sample record index. The joined form
+        \eqref{eq:joined} would have to be rebuilt for every record.
+\end{enumerate}
+
+\subsection{The one approximation}
+
+Everything above is an identity except the initial condition $x_{c,\tau|\tau} = 0$. In the
+residual form the controller filters $\ydata - \ymodel$, which does not exist before the
+truncated window opens at $\tau$, because the model trajectory starts at $\tau$. The value is
+therefore a definition rather than an estimate of an unknown, and zero is the unique choice for
+which the correction term in \eqref{eq:residual} vanishes identically when the model is exact.
+
+What it costs is integral memory. $\Cnorm$ has a pole at $s = 0$, so $\Cfb$ has a pole at $z = 1$
+and never forgets DC: run continuously, $x_c$ converges to the constant force that nulls the DC
+part of the model error, while resetting it at every window start discards that. The validation
+free run does accumulate it over the whole record, so the reset is a training against validation
+asymmetry, and it is measured rather than argued.
+
+\section{Verification}
+
+[figures]
+
+\end{document}

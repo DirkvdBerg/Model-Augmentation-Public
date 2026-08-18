@@ -1,0 +1,17 @@
+parsed 9 train-loss points, 13 validation points
+wrote step6_curves.png
+wrote step6_attribution.png
+wrote step6_headroom.png
+
+using checkpoint FitSys_ClosedLoop_Go1qTA_best.pth
+[orth] loaded cached penalty basis: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\augmentation_linear_map\orth_cache\orth_04fdce928d32.npz (Q (40308, 11), 6718 points)
+  rolling V1_standstill_Yp10 trained ...
+  rolling V1_standstill_Yp10 init (ANN off) ...
+  wrote step6_traj_V1_standstill_Yp10.png
+  wrote step6_spectrum_V1_standstill_Yp10.png
+  rolling V2_aprbs_Ylow trained ...
+  rolling V2_aprbs_Ylow init (ANN off) ...
+  wrote step6_traj_V2_aprbs_Ylow.png
+  wrote step6_spectrum_V2_aprbs_Ylow.png
+
+figures in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-controller\figures

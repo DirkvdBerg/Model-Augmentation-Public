@@ -208,6 +208,153 @@ if REFS:
 else:
     print('L4  SKIPPED: run export_record_reference.m in MATLAB to enable it.\n')
 
+# ---------------------------------------------------------------- L5
+# THE TRAINING RATE. Everything above runs at 20 kHz because that is the rate MATLAB generated
+# the records at. The training loop steps Cfb at cfg.ts_new = 1/4000 s (D-141) and builds it by
+# re-discretising the same continuous design in Python, so before this section the object the
+# loop actually steps had never been compared against MATLAB at any level. L1 is the test that
+# proves a formula rather than a simulation, so it is the one repeated here.
+#
+# Comparing the two implementations to EACH OTHER at 4 kHz gives 2.7e-10, i.e. worse than the
+# 9.6e-12 the same comparison gives at 20 kHz, and a two-way comparison cannot say which side
+# moved. So a third reference is used: the bilinear transform applied to the same double-valued
+# continuous coefficients in EXACT rational arithmetic (fractions.Fraction, no rounding at all).
+# Measured against it: MATLAB lands at 7e-14 at BOTH rates, while scipy's cont2discrete lands at
+# 5e-12 at 20 kHz and 2.1e-10 at 4 kHz. The formula is therefore right and the whole gap is
+# scipy's numerator arithmetic, which degrades as 2/ts approaches the design frequencies (at
+# 20 kHz 2/ts = 40000 rad/s dominates every other term in the expansion; at 4 kHz it is 8000,
+# comparable to 10w = 6283, so the alternating-sign sums cancel far more).
+#
+# Three things are checked, and they fail differently:
+#   L5   THE FORMULA. MATLAB's 4 kHz coefficients against exact rational arithmetic. This is the
+#        claim plan section 10 makes ("L1 coefficients <= 1e-11, both rates") and it is the only
+#        one of the three that a wrong formula could fail.
+#   L5py THE IMPLEMENTATION THE LOOP USES. scipy's cont2discrete against the same exact
+#        reference, with its error attributed: if |scipy - MATLAB| tracks |scipy - exact| then
+#        the two-way gap IS scipy's rounding and nothing else. Tolerance is one decade above
+#        the measured floor, not a number chosen to make it pass.
+#   L5ss THE REALISATION. loss_variants.controller_ss, i.e. tf2ss per channel assembled
+#        block-diagonally, driven against MATLAB's own exported (A,B,C,D) at 4 kHz on the same
+#        input. Different state bases are expected and allowed; the input-output response is
+#        what must agree, and D must agree exactly since it is basis independent.
+#
+# 2.1e-10 relative on the controller coefficients is far below anything the training path can
+# resolve: it runs in float32, whose epsilon is 1.2e-07, i.e. three decades coarser.
+TOL_L5, TOL_L5PY = 1e-11, 1e-9
+
+
+def _bilinear_exact(num, den, ts):
+    """(b, a) of num(s)/den(s) under s = (2/ts)(z-1)/(z+1), in exact rational arithmetic.
+
+    Every input is a double and Fraction(float) is exact, so the only approximation left is the
+    inputs themselves. That makes this the reference both implementations are measured against.
+    """
+    from fractions import Fraction as Fr
+
+    def pmul(p, q):
+        r = [Fr(0)] * (len(p) + len(q) - 1)
+        for i, a_ in enumerate(p):
+            for j_, b_ in enumerate(q):
+                r[i + j_] += a_ * b_
+        return r
+
+    def padd(p, q):
+        n = max(len(p), len(q))
+        p = [Fr(0)] * (n - len(p)) + list(p)
+        q = [Fr(0)] * (n - len(q)) + list(q)
+        return [a_ + b_ for a_, b_ in zip(p, q)]
+
+    def ppow(p, k):
+        r = [Fr(1)]
+        for _ in range(k):
+            r = pmul(r, p)
+        return r
+
+    c = Fr(2) / Fr(ts)
+    m = max(len(num), len(den)) - 1
+
+    def subst(poly):                       # descending coefficients, as np.poly1d
+        deg = len(poly) - 1
+        out = [Fr(0)]
+        for i, coef in enumerate(poly):
+            k = deg - i
+            out = padd(out, pmul([Fr(coef)],
+                                 pmul(ppow(pmul([c], [Fr(1), Fr(-1)]), k),
+                                      ppow([Fr(1), Fr(1)], m - k))))
+        return out
+    b_, a_ = subst(num), subst(den)
+    return ([float(v / a_[0]) for v in b_], [float(v / a_[0]) for v in a_])
+
+
+if 'num4k' in dm:
+    print('L5  TRAINING RATE, 1/4000 s  (the rate the loop steps Cfb at, D-141)')
+    ts_tr = float(dm['ts_train'].ravel()[0])
+    from p2_rate_compare import build_cfb_at
+    from verify_controller import cnorm_coeffs
+    cfb4, kappa4 = build_cfb_at(Y_op, ts_tr)
+    cnum, cden = cnorm_coeffs()
+
+    e5m = e5py = e5two = e5d = e5p = e5z = 0.0
+    for j in range(3):
+        cn, cd = dm['num4k'], dm['den4k']
+        nm = np.asarray(cn[j, 0] if cn.shape[1] == 1 else cn[0, j], float).ravel()
+        dn = np.asarray(cd[j, 0] if cd.shape[1] == 1 else cd[0, j], float).ravel()
+        b, a = cfb4[j]
+        nm_n, dn_n = nm / dn[0], dn / dn[0]
+        b_n, a_n = b / a[0], a / a[0]
+        b_ex, a_ex = _bilinear_exact([kappa4[j] * v for v in cnum], list(cden), ts_tr)
+        e5m = max(e5m, relerr(nm_n, b_ex))                   # MATLAB vs exact: the formula
+        e5py = max(e5py, relerr(b_n, b_ex))                  # scipy vs exact: the implementation
+        e5two = max(e5two, relerr(nm_n, b_n))                # the two-way gap being explained
+        e5d = max(e5d, relerr(dn_n, a_ex))
+        e5p = max(e5p, relerr(np.sort_complex(np.roots(dn)), np.sort_complex(np.roots(a))))
+        e5z = max(e5z, relerr(np.sort_complex(np.roots(nm)), np.sort_complex(np.roots(b))))
+    print('  ts = %.12g s, %d Hz   (kappa is a frequency-response scalar: rate independent)'
+          % (ts_tr, round(1 / ts_tr)))
+    print('  MATLAB vs exact rational   numerator %.3e   denominator %.3e' % (e5m, e5d))
+    print('  scipy  vs exact rational   numerator %.3e' % e5py)
+    print('  the two-way gap            numerator %.3e   zeros %.3e   poles %.3e'
+          % (e5two, e5z, e5p))
+    attributed = abs(e5two - e5py) <= 0.5 * max(e5py, 1e-300)
+    print('  attribution: two-way %.3e vs scipy-vs-exact %.3e -> %s'
+          % (e5two, e5py,
+             'the gap IS scipy\'s rounding' if attributed else
+             'UNEXPLAINED: the two-way gap is not scipy\'s distance from exact'))
+    results['L5'] = (max(e5m, e5d), TOL_L5)
+    results['L5py'] = (e5py if attributed else max(e5py, e5two), TOL_L5PY)
+    print('  L5   (formula, MATLAB vs exact) %.3e   %s'
+          % (max(e5m, e5d), 'PASS' if max(e5m, e5d) < TOL_L5 else 'FAIL'))
+    print('  L5py (scipy implementation)     %.3e   %s'
+          % (results['L5py'][0], 'PASS' if results['L5py'][0] < TOL_L5PY else 'FAIL'))
+
+    # the realisation the training path uses, against MATLAB's, on one deterministic signal
+    from loss_variants import controller_ss
+    A4 = np.asarray(dm['A4k'], float); B4 = np.asarray(dm['B4k'], float)
+    C4 = np.asarray(dm['C4k'], float); D4 = np.asarray(dm['D4k'], float)
+    Ap, Bp, Cp_, Dp = controller_ss(Y_op, ts_tr)
+
+    rng = np.random.default_rng(0)
+    N5 = 4000
+    t5 = np.arange(N5) * ts_tr
+    e5 = np.column_stack([
+        1e-4 * (t5 < 0.1)
+        + 1e-5 * np.sin(2 * np.pi * 150 * t5 + c)
+        + 1e-6 * rng.standard_normal(N5) for c in range(3)])
+    u_m = ss_rollout(A4, B4, C4, D4, e5)
+    u_p = ss_rollout(Ap, Bp, Cp_, Dp, e5)
+    e5r = np.array([relerr(u_p[:, j], u_m[:, j]) for j in range(3)])
+    e5D = relerr(np.diag(Dp), np.diag(D4))
+    print('  diag(D) MATLAB [%s] N/m' % ' '.join('%.6e' % v for v in np.diag(D4)))
+    print('          python [%s] N/m' % ' '.join('%.6e' % v for v in np.diag(Dp)))
+    print('          rel err %.3e   (D is basis independent, so this is exact or wrong)' % e5D)
+    print('  response, our tf2ss realisation vs MATLAB ss  [%.3e %.3e %.3e]' % tuple(e5r))
+    results['L5ss'] = (max(e5r.max(), e5D), TOL_L3)
+    print('  L5ss worst %.3e   %s\n' % (max(e5r.max(), e5D),
+                                        'PASS' if max(e5r.max(), e5D) < TOL_L3 else 'FAIL'))
+else:
+    print('L5  SKIPPED: controller_export.mat predates the 4 kHz export; re-run '
+          'export_controller.m.\n')
+
 # ---------------------------------------------------------------- figure
 # Four rows, one confirmation per row, so each claim can be checked on its own:
 #   1  frequency response of C_j(z), MATLAB against the formula, overlaid
@@ -298,9 +445,10 @@ print('wrote %s\n' % os.path.join(outdir, 'controller_exactness.png'))
 # ---------------------------------------------------------------- verdict
 print('=' * 74)
 LABEL = {'L1': 'coefficients', 'L2': 'realisation', 'L3': 'end to end',
-         'L4': 'record, num/den', 'L4ss': 'record, same real.'}
+         'L4': 'record, num/den', 'L4ss': 'record, same real.',
+         'L5': '4 kHz formula', 'L5py': '4 kHz scipy c2d', 'L5ss': '4 kHz realisation'}
 ok = True
-for name in ('L1', 'L2', 'L3', 'L4', 'L4ss'):
+for name in ('L1', 'L2', 'L3', 'L4', 'L4ss', 'L5', 'L5py', 'L5ss'):
     if name not in results:
         continue
     val, tol = results[name]

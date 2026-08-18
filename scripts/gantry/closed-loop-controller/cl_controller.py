@@ -1,12 +1,15 @@
-"""The controller as a subsystem, and the one closed-loop rollout both paths call.
+"""Which record got which controller, and the design rule that built it. Gantry side only.
+
+MIGRATION step 7: the rollout, the `ControllerBank` and the units gate have MOVED to
+`model_augmentation/fit_systems/closed_loop.py`, which was always the plan (D-141: implement in
+`scripts/gantry/` first, lift as a move rather than a rewrite). What stays here is the part the
+framework must never learn: the map from a record to its operating point, and the `ruleOfThumb`
+design rule that turns an operating point into a controller. `build_controller_bank` is the
+boundary between the two.
 
 D-140 settled the placement: `Cfb` is a SEPARATE subsystem stepped alongside the model, not a
 block whose 9 states join the interconnect state vector. D-141 settled the implementation: 4 kHz,
-`scripts/gantry/` first, per-record controller carried by an explicit index.
-
-Nothing here imports the fit system, the gantry model, or deepSI. It takes a state-step callable
-and returns trajectories, so it can be lifted into `model_augmentation/fit_systems/` later as a
-move rather than a rewrite (D-141).
+per-record controller carried by an explicit index.
 
 THE FORM
 --------
@@ -26,9 +29,10 @@ STEP ORDER, and why it is forced
 --------------------------------
 The plant has no feedthrough (`D_d = 0`), so `y_model[k]` depends on the state only and is
 computable before the input. The controller IS biproper: Tustin gives `Dc != 0`, measured at
-`diag [2.844e+06 2.914e+06 1.509e+06]` N/m at `Y_op = 0`. So the order below is the only one that
-closes the loop without an algebraic loop, and it is the same order `gtd_run_simulation.m` and
-`closed_loop.py` use:
+`diag [8.055e+06 8.253e+06 4.275e+06]` N/m at `Y_op = 0` AND `ts = 1/4000` s, the rate this
+module's `ControllerBank` is built at. So the order below is the only one that closes the loop
+without an algebraic loop, and it is the same order `gtd_run_simulation.m` and `closed_loop.py`
+use:
 
     y_model[k] = h(x[k])
     e[k]       = y_data[k] - y_model[k]                     PHYSICAL [m]
@@ -37,21 +41,26 @@ closes the loop without an algebraic loop, and it is the same order `gtd_run_sim
     x[k+1]     = step(x[k], u_cl[k])
     xc[k+1]    = Ac xc[k] + Bc e[k]
 
-`ClosedLoopLossMixin` calls the model twice per step to work around this ordering. Here the model
-is called once, which halves the FP-plus-ANN forward cost per step.
+The framework's rollout calls the model ONCE per step, using `Interconnect.output_only`
+for `y = h(x)`. Its predecessor called it twice to work around the ordering, which doubled
+the FP-plus-ANN forward cost of every step.
 
-UNITS
------
-The model works in normalised coordinates; `Cfb` is physical, m -> N. Kessels does the same thing
-in (5.13c)-(5.13d): the tracking error and the controller are physical and the scaling `S_u` is
-applied to the controller output at the point it enters the model. So the residual is
-denormalised, filtered, and the resulting force renormalised as an INCREMENT (the input mean
-cancels for an increment, which is why `u_mean` does not appear).
+`Dc` IS RATE DEPENDENT, so always quote it with its `ts`. Tustin sends `z = inf` to the FINITE
+frequency `s = 2/ts`, so `Dc_jj = kappa_j * Cnorm(2/ts)`, and `Cnorm` is rolling off above
+`10*w_b = 6283` rad/s:
 
-WARNING, the units cannot be checked by the zero-ANN replay gate. With the ANN forced to zero the
-model reproduces the record, so `e = 0` and `u_fb = 0` identically and ANY scale factor on `Cfb`
-is multiplied by zero. The gate passes regardless. Units need a separate gate with a perturbed
-initial state so that `e != 0`; see `check_units` below.
+    ts = 5e-5  (20 kHz, the RECORD rate)     2/ts = 40000    Cnorm = 0.1307
+    ts = 1/4000 (4 kHz, the TRAINING rate)   2/ts =  8000    Cnorm = 0.3701
+
+a factor 2.832, which is exactly `8.055e6 / 2.844e6`. D-140's `diag [2.844e+06 2.914e+06
+1.509e+06]` in `docs/decisions.md` and the problem log is the 20 kHz value and is correct THERE:
+that work verified `Cfb` against the stored records, which are 20 kHz. The training loop steps
+at `cfg.ts_new` (D-141) and gets the 4 kHz value. The ordering argument is unaffected either
+way, since `Dc != 0` at every rate; only the magnitude differs. Verified against MATLAB at BOTH
+rates by `test_controller_exact.py` (L1 and L5).
+
+UNITS. The framework's `ControllerBank` folds the normalisation into B, C and D once at
+construction and its `check_units` unfolds them to verify, so nothing here converts per step.
 
 PER-RECORD Cfb
 --------------
@@ -101,130 +110,30 @@ def y_op_for(filename):
     return RECORD_Y_OP[stem]
 
 
-class ControllerBank(torch.nn.Module):
-    """The distinct `Cfb` instances for a set of records, gathered per batch element.
+def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32):
+    """The framework's ControllerBank for a set of records, plus each record's row in it.
 
-    Holds one stacked (A, B, C, D) per DISTINCT Y_op, not one per record, because several records
-    share an operating point (T6-T14 are all at 0.00). Records map onto that small set.
+    THIS is the boundary the framework never crosses. Everything gantry-specific stays on this
+    side: which record sits at which `Y_op` (RECORD_Y_OP), the `ruleOfThumb` design rule, the
+    frozen design plant and the Tustin discretisation (`controller_ss`). What crosses is four
+    stacked matrices and an integer per record. `model_augmentation/` never learns what `Y_op` is.
 
-    Buffers, not parameters: the controller is known exactly (D-140) and is never trained. They
-    are registered as buffers so `.to(device)`, `.float()`/`.double()` and `state_dict()` carry
-    them with the model.
+    One bank over WHATEVER list it is given, indexed globally. Build it over all records once and
+    slice the row list per split: the controller belongs to a trajectory, and train versus
+    validation is a property of the split, not an axis of the controller. Two banks existed only
+    because the old index was a position in a per-list array, so 0 meant T1 in one context and V1
+    in the other.
+
+    Returns (bank, rows, y_ops_unique) with rows[i] the controller row of record_names[i].
     """
-
-    def __init__(self, record_names, ts, dtype=torch.float32, ystd=None, std_u=None):
-        """record_names: ordered list of record file names; index i is that record's rec_ix.
-
-        ystd  (ny,)  normalised -> physical output scale [m], the pipeline's own norm.ystd
-        std_u (nu,)  physical -> normalised input scale [N], the pipeline's own norm.std_u
-        """
-        super().__init__()
-        self.record_names = [os.path.basename(str(n)).replace('.mat', '') for n in record_names]
-        self.ts = float(ts)
-
-        y_ops = [y_op_for(n) for n in self.record_names]
-        uniq = sorted(set(y_ops))
-        self.y_ops_unique = uniq
-        # rec_ix -> row in the stacked controller tensors
-        self.register_buffer('rec_to_ctrl',
-                             torch.tensor([uniq.index(v) for v in y_ops], dtype=torch.long))
-
-        As, Bs, Cs, Ds = [], [], [], []
-        for Y_op in uniq:
-            A, B, C, D = controller_ss(Y_op, self.ts)
-            As.append(A); Bs.append(B); Cs.append(C); Ds.append(D)
-        T = lambda M: torch.tensor(np.asarray(M, float), dtype=dtype)   # noqa: E731
-        self.register_buffer('A', torch.stack([T(M) for M in As]))      # (K, nc, nc)
-        self.register_buffer('B', torch.stack([T(M) for M in Bs]))      # (K, nc, ny)
-        self.register_buffer('C', torch.stack([T(M) for M in Cs]))      # (K, nu, nc)
-        self.register_buffer('D', torch.stack([T(M) for M in Ds]))      # (K, nu, ny)
-        self.nc = self.A.shape[-1]
-
-        if ystd is None or std_u is None:
-            raise ValueError('ystd and std_u are required: the residual is denormalised before '
-                             'the controller and the force renormalised after it, and getting '
-                             'this wrong silently rescales the loop (see UNITS in the docstring)')
-        self.register_buffer('ystd', T(np.asarray(ystd).ravel()))
-        self.register_buffer('stdu', T(np.asarray(std_u).ravel()))
-
-    def gather(self, rec_ix):
-        """(A, B, C, D) for each element of a batch of record indices."""
-        row = self.rec_to_ctrl[rec_ix]
-        return self.A[row], self.B[row], self.C[row], self.D[row]
-
-    def zero_state(self, batch, dtype=None, device=None):
-        return torch.zeros(batch, self.nc,
-                           dtype=self.A.dtype if dtype is None else dtype,
-                           device=self.A.device if device is None else device)
-
-    def step(self, xc, y_err_norm, ctrl):
-        """One controller step, batched.
-
-        xc          (batch, nc)      controller state
-        y_err_norm  (batch, ny)      y_data - y_model, NORMALISED
-        ctrl        gathered (A, B, C, D), each (batch, ...)
-
-        Returns (u_fb_norm, xc_next), the feedback force as a NORMALISED input increment.
-        """
-        A, B, C, D = ctrl
-        e = y_err_norm * self.ystd                                   # -> physical [m]
-        u_fb = torch.einsum('bij,bj->bi', C, xc) + torch.einsum('bij,bj->bi', D, e)   # [N]
-        xc_next = torch.einsum('bij,bj->bi', A, xc) + torch.einsum('bij,bj->bi', B, e)
-        return u_fb / self.stdu, xc_next                             # -> normalised increment
-
-
-def rollout(step_fn, out_fn, u_data, y_data, x0, bank, ctrl, xc0=None):
-    """The single closed-loop rollout. Training windows and validation free runs both call this.
-
-    step_fn(x, u) -> x_next      one model step, NORMALISED coordinates
-    out_fn(x)     -> y           model output from state only (requires D_d = 0), NORMALISED
-    u_data        (batch, nf, nu) recorded plant input, NORMALISED
-    y_data        (batch, nf, ny) recorded output, NORMALISED
-    x0            (batch, nx)     initial model state, e.g. from the encoder
-    bank          ControllerBank
-    ctrl          gathered (A, B, C, D) for this batch
-    xc0           (batch, nc) or None for zero (the window-start default, see THE FORM)
-
-    Returns (y_pred, x_final, xc_final) with y_pred (batch, nf, ny), NORMALISED.
-    """
-    nf = u_data.shape[1]
-    x = x0
-    xc = bank.zero_state(u_data.shape[0], dtype=u_data.dtype, device=u_data.device) \
-        if xc0 is None else xc0
-    ys = []
-    for t in range(nf):
-        y_model = out_fn(x)                                  # D_d = 0: state only
-        ys.append(y_model)
-        u_fb, xc = bank.step(xc, y_data[:, t] - y_model, ctrl)
-        x = step_fn(x, u_data[:, t] + u_fb)
-    return torch.stack(ys, dim=1), x, xc
-
-
-def open_loop_rollout(step_fn, out_fn, u_data, x0):
-    """The same rollout with the loop OPEN, for the side-by-side the gates need."""
-    nf = u_data.shape[1]
-    x = x0
-    ys = []
-    for t in range(nf):
-        ys.append(out_fn(x))
-        x = step_fn(x, u_data[:, t])
-    return torch.stack(ys, dim=1), x
-
-
-def check_units(bank, rec_ix=0, e_phys=1e-4):
-    """Units gate. The zero-ANN replay gate CANNOT catch a scale error (see UNITS above).
-
-    Drives the controller with a known PHYSICAL residual for one step from rest, so the output is
-    exactly `Dc @ e_phys`, and checks the value that comes back after renormalisation.
-    Returns (u_fb_norm, u_fb_phys_expected, rel_err) per channel.
-    """
-    ix = torch.tensor([rec_ix], dtype=torch.long)
-    ctrl = bank.gather(ix)
-    ny = bank.ystd.shape[0]
-    e = torch.full((1, ny), float(e_phys), dtype=bank.A.dtype)
-    xc = bank.zero_state(1)
-    u_norm, _ = bank.step(xc, e / bank.ystd, ctrl)            # feed a physical residual
-    expect = (ctrl[3][0] @ e[0])                              # Dc @ e, from rest
-    got = u_norm[0] * bank.stdu
-    rel = (got - expect).abs() / expect.abs().clamp_min(1e-30)
-    return u_norm[0].detach().numpy(), expect.detach().numpy(), rel.detach().numpy()
+    from model_augmentation.fit_systems.closed_loop import ControllerBank as _Bank
+    names = [os.path.basename(str(n)).replace('.mat', '') for n in record_names]
+    y_ops = [y_op_for(n) for n in names]
+    uniq = sorted(set(y_ops))
+    rows = [uniq.index(v) for v in y_ops]
+    # One (A, B, C, D) per DISTINCT operating point, not per record: several records share one
+    # (T6-T14 are all at 0.00), and rebuilding the same controller per record would put identical
+    # rows in the stack and make the gather wider for nothing.
+    mats = [controller_ss(Y_op, float(ts)) for Y_op in uniq]
+    A, B, C, D = (np.stack([np.asarray(m[k], float) for m in mats]) for k in range(4))
+    return _Bank(A, B, C, D, ystd=ystd, std_u=std_u, dtype=dtype), rows, uniq

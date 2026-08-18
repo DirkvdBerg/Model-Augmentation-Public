@@ -94,9 +94,36 @@ function export_controller()
 
     u_test = lsim(Cfb, e_test);                        % the reference response, double
 
+    % ── the SAME controller at the TRAINING rate ────────────────────────────
+    % Every check above runs at the record rate, 20 kHz, because that is what MATLAB
+    % produced. The training loop steps Cfb at cfg.ts_new = 1/4000 s and re-discretises it
+    % in Python (p2_rate_compare.build_cfb_at), so until this export existed the object the
+    % loop actually steps was never compared against MATLAB at all. Same construction as
+    % ruleOfThumb.m, same kappa (kappa is a frequency-response scalar and does NOT depend
+    % on ts), only c2d's sample time differs.
+    %
+    % Dc IS rate dependent: tustin maps z = inf to the finite s = 2/ts, so
+    % Dc_jj = kappa_j*Cnorm(2/ts) and the 4 kHz value is ~2.83x the 20 kHz one. That factor
+    % is the thing this export lets Python check rather than assert.
+    ts_train = 1/4000;
+    num4k = cell(3, 1);  den4k = cell(3, 1);  chan = cell(1, 3);
+    for j = 1:3
+        Cj = c2d(kappa(j)*Cnorm, ts_train, 'tustin');
+        [nj, dj] = tfdata(Cj, 'v');
+        num4k{j} = nj(:).';  den4k{j} = dj(:).';
+        chan{j} = Cj;
+    end
+    C4ss = ss(blkdiag(chan{:}));                       % the 3-in 3-out diagonal controller
+    fprintf('4 kHz: %d states, diag(D) = [%.6e %.6e %.6e] N/m\n', ...
+        size(C4ss.A, 1), diag(C4ss.D));
+
     % ── save ────────────────────────────────────────────────────────────────
     S = struct();
     S.num = num;            S.den = den;
+    S.num4k = num4k;        S.den4k = den4k;
+    S.ts_train = ts_train;
+    S.A4k = C4ss.A;         S.B4k = C4ss.B;
+    S.C4k = C4ss.C;         S.D4k = C4ss.D;
     S.kappa = kappa;        S.sysjj = sysjj;
     S.A = Cfb.A;            S.B = Cfb.B;
     S.C = Cfb.C;            S.D = Cfb.D;
