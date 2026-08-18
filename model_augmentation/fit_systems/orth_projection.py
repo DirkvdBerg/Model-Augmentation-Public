@@ -45,6 +45,12 @@ class OrthProjectionPenalty(nn.Module):
         Pipeline dtype for the buffers (D7.7: Q computed in f64, cast here).
     """
 
+    # Note on beta scale (D7.6): the penalty is added per batch, UNDIVIDED,
+    # unlike [REPO] fit_system.py which divides by N_batch_updates_per_epoch.
+    # Any constant scale is absorbed by the swept beta, but that makes a beta
+    # value non-transferable across changes in batch count, point-set stride,
+    # dataset size, or routed-row count. Re-derive beta_center after any of
+    # those change.
     def __init__(self, Q, Z_pts, route_cols, beta, dtype=torch.float32):
         super().__init__()
         self.register_buffer("Q", torch.as_tensor(Q, dtype=dtype))

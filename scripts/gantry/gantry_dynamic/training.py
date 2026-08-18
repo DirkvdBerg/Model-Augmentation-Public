@@ -43,37 +43,33 @@ def load_checkpoint(fit_sys, base_path, joint_estimation):
     return meta
 
 
-def _noop_cve(*args, **kwargs):
-    """Placeholder restored when a checkpointed _NfProbe is unpickled (D-095)."""
-    return None
-
-
-def _restore_noop_cve():
-    """Unpickle target for _NfProbe: yields the _noop_cve callable (not None)."""
-    return _noop_cve
-
-
 class _NfProbe:
-    """Per-epoch train+val nf-window RMS piggybacked on validation (D-095).
+    """Per-epoch train+val nf-window RMS recorded alongside validation (D-095).
 
-    deepSI validates once per epoch through `self.cal_validation_error`
-    (concurrent_val=False path). This wraps that instance method: return the
-    selector value untouched, and additionally record the nf-window RMS (same nf
-    as training, encoder re-init per window, physical meters via mode='RMS') for
-    BOTH a train trajectory and the val data into `fit_sys.Loss_train_nf` /
-    `Loss_val_nf`, aligned with `fit_sys.Loss_val`. Non-overlapping windows
-    (stride=nf) keep each probe at ~one sim-pass.
+    deepSI validates once per epoch through `cal_validation_error`. This records the nf-window RMS
+    (same nf as training, encoder re-init per window, physical meters via mode='RMS') for BOTH a
+    train trajectory and the val data into `fit_sys.Loss_train_nf` / `Loss_val_nf`, aligned with
+    `fit_sys.Loss_val`. Non-overlapping windows (stride=nf) keep each probe at ~one sim-pass.
+    Compare train vs val nf-RMS to read generalization (train low/val high) against long-rollout
+    drift (both bounded while sim-RMS grows).
 
-    A module-level class (not a closure) so `checkpoint_save_system`'s
-    `torch.save(self.__dict__)` can pickle `fit_sys` while the probe is installed;
-    `__reduce__` serialises it back to a no-op (the probe is transient and
-    re-installed each fit). Compare train vs val nf-RMS to read generalization
-    (train low/val high) vs long-rollout drift (both bounded, sim-RMS grows).
+    # CHANGED (closed-loop seam): this was a MONKEY PATCH on `fit_sys.cal_validation_error`,
+    # installed on every production run, wrapping the original and returning its value untouched.
+    # It is now an entry in `fit_sys.validation_probes`, called for its side effects only.
+    # Three things go away with the patch:
+    #   - the ordering hazard. Two different patches wanted the same attribute (this one and the
+    #     closed-loop validator), and whichever was installed LAST decided checkpoint selection.
+    #     A probe cannot decide selection any more: the seam ignores its return value.
+    #   - the `__reduce__` no-op. A patched bound method cannot be pickled, and
+    #     `checkpoint_save_system` does `torch.save(self.__dict__)` at every validation, so the
+    #     class had to serialise itself back into a placeholder. A declared attribute needs none
+    #     of that.
+    #   - the try/finally restore, and the silent failure when a checkpoint reload replaced
+    #     `__dict__` and dropped the patched method without anyone noticing.
     """
 
-    def __init__(self, fit_sys, orig, nf, train_sd, val_sd, do_print=True):
+    def __init__(self, fit_sys, nf, train_sd, val_sd, do_print=True):
         self.fit_sys = fit_sys
-        self.orig = orig
         self.nf = nf
         self.stride = max(1, nf)
         self.train_sd = train_sd
@@ -158,8 +154,8 @@ class _NfProbe:
             print(f'    [joint-probe] {combo_s} | orth-frac {frac_s} | '
                   f'V_orth {v_orth:.3e} | param_loss {pl:.3e}')
 
-    def __call__(self, val_sys_data, validation_measure='sim-NRMS'):
-        sel = self.orig(val_sys_data, validation_measure=validation_measure)  # selector, untouched
+    def __call__(self, fit_sys, val_sys_data, value):
+        """validation_probes entry: side effects only, `value` is read-only here."""
         tr = self._nf_rms(self.train_sd)
         vl = self._nf_rms(self.val_sd)
         self.fit_sys.Loss_train_nf.append(tr)
@@ -172,18 +168,14 @@ class _NfProbe:
                 self._joint_probe()
             except Exception as e:
                 print(f'    [joint-probe] failed (non-fatal): {e}')
-        return sel
-
-    def __reduce__(self):
-        return (_restore_noop_cve, ())
 
 
 def _install_nf_val_probe(fit_sys, hp, cfg, train_sd, val_sd):
-    """Install an `_NfProbe` on `fit_sys.cal_validation_error`; return the original to restore."""
-    orig = fit_sys.cal_validation_error
-    fit_sys.cal_validation_error = _NfProbe(
-        fit_sys, orig, hp['nf'], train_sd, val_sd, do_print=cfg.nf_probe_print)
-    return orig
+    """Append an `_NfProbe` to `fit_sys.validation_probes`; return the previous tuple to restore."""
+    prev = fit_sys.validation_probes
+    fit_sys.validation_probes = tuple(prev) + (
+        _NfProbe(fit_sys, hp['nf'], train_sd, val_sd, do_print=cfg.nf_probe_print),)
+    return prev
 
 
 def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
@@ -215,14 +207,14 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
     fit_sys.bestfit = float('inf')
     t0 = time.time()
     # D-095: piggyback the nf-window RMS diagnostic (train + val); selection stays full-traj sim-RMS.
-    _orig_cve = _install_nf_val_probe(fit_sys, hp, cfg, data.train_list[0], data.val_ckpt_data)
+    _prev_probes = _install_nf_val_probe(fit_sys, hp, cfg, data.train_list[0], data.val_ckpt_data)
     try:
         bestfit = train_model(fit_sys, hp, cfg, data,
                               epochs=epochs_remaining,
                               nf=hp['nf'],
                               validation_measure='sim-RMS')
     finally:
-        fit_sys.cal_validation_error = _orig_cve   # restore always
+        fit_sys.validation_probes = _prev_probes   # restore always
     loss_val_nf   = np.array(getattr(fit_sys, 'Loss_val_nf', []), dtype=float)
     loss_train_nf = np.array(getattr(fit_sys, 'Loss_train_nf', []), dtype=float)
     elapsed = time.time() - t0

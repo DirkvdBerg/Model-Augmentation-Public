@@ -171,6 +171,87 @@ class Interconnect(nn.Module):
 
         if self.debugging: print("Output signal dependencies: " + str(self.output_ix_sorted_input_ix_dependencies))
 
+        # CHANGED (closed-loop seam): resolve the OUTPUT's dependency cone once, here, so
+        # output_only() is a fixed short list rather than a graph traversal per call. Doing this
+        # lazily per timestep would cost more than the forward it replaces.
+        self.output_cone = self._signal_cone(1)
+        if self.debugging: print("Output cone: " + str(self.output_cone))
+
+    # CHANGED (closed-loop seam): added, see output_only().
+    def _signal_cone(self, target_output_ix):
+        '''Output-signal indices that must be computed to obtain output signal `target_output_ix`.
+
+        Walks the dependency graph backwards: output signal k needs input signals
+        `output_ix_sorted_input_ix_dependencies[k]`, and an input signal j >= 2 is produced by
+        block j-2 from output signal j (signals 0 and 1 are x and u, which are given). Returned in
+        `order_output_signal_computation` order so evaluation is a straight loop.
+        '''
+        needed, stack = set(), [target_output_ix]
+        while stack:
+            k = stack.pop()
+            if k in needed:
+                continue
+            needed.add(k)
+            for j in self.output_ix_sorted_input_ix_dependencies[k]:
+                if j >= 2 and j not in needed:
+                    stack.append(j)
+        return tuple(k for k in self.order_output_signal_computation if k in needed)
+
+    # CHANGED (closed-loop seam): added. A closed-loop rollout needs y = h(x) BEFORE it can form
+    # u, while forward() returns (y, x_next) together. Without this a rollout must call the model
+    # twice per timestep, which doubles the FP-plus-ANN forward cost of every step; that is what
+    # the predecessor implementation did.
+    def output_only(self, x, u=None):
+        '''y from the output signal's dependency cone alone, without advancing the state.
+
+        On the gantry model the cone is one block: y <- signal 3 <- (x, u), so this costs one
+        Linear_Output_Block forward and a matmul and touches neither the ANN nor the state block.
+        That is the real saving, not the avoidance of a second call.
+
+        `u` defaults to zeros. The wiring DOES route u into the output block
+        (connect_block_signals(out_phys, ["u"], ["y"])), so a feedthrough is permitted by the
+        graph and D_d = 0 holds only because the block's own coefficients are zero on those
+        columns. That is why the numerical no-feedthrough gate is not redundant with a structural
+        argument and must be kept: this default is an assumption the gate checks, not a fact the
+        graph guarantees.
+        '''
+        if len(x.size()) <= 2:
+            x = x.view(x.size(0), self.nx, 1)
+        nb = x.size(0)
+        if u is None:
+            u = torch.zeros((nb, self.nu, 1), device=x.device, dtype=x.dtype)
+        elif len(u.size()) <= 2:
+            u = u.view(nb, self.nu, 1)
+
+        if not self.initialized_forward_function:
+            self.init_forward()
+            self.initialized_forward_function = True
+        self.nb = nb
+
+        if self.array_connection_matrices[0][0].device != x.device or self.array_connection_matrices[0][0].dtype != x.dtype:
+            for i in range(len(self.array_connection_matrices)):
+                for j in range(len(self.array_connection_matrices[i])):
+                    self.array_connection_matrices[i][j] = \
+                        self.array_connection_matrices[i][j].to(device=x.device, dtype=x.dtype)
+
+        input_signals = [x, u]
+        output_signals = []
+        for ix in range(2, self.n_input_signals):
+            input_signals.append(torch.zeros((nb, self.input_signal_sizes[ix], 1), device=x.device, dtype=x.dtype))
+        for ix in range(0, self.n_output_signals):
+            output_signals.append(torch.zeros((nb, self.output_signal_sizes[ix], 1), device=x.device, dtype=x.dtype))
+
+        for output_signal_ix in self.output_cone:
+            for input_signal_ix in self.output_ix_sorted_input_ix_dependencies[output_signal_ix]:
+                output_signals[output_signal_ix] += torch.matmul(self.array_connection_matrices[output_signal_ix][input_signal_ix], input_signals[input_signal_ix])
+            if output_signal_ix >= 2:
+                input_signals[output_signal_ix] = self.connected_blocks[output_signal_ix-2].forward(output_signals[output_signal_ix])
+
+        y = output_signals[1]
+        if self.ny == 1: y = y.view(nb)
+        if self.ny >= 2: y = y.view(nb, self.ny)
+        return y
+
     def init_connection_matrices(self, output_signal_ix, signal_connections):
         if self.debugging: print("Connection matrices for " + self.convert_signal_ix_to_name(output_signal_ix, "output"))
 
@@ -385,6 +466,23 @@ class modified_encoder_net(nn.Module):
         return self.net(net_in)
 
 class SSE_Interconnect(SS_encoder_general):
+    # CHANGED (closed-loop seam): how the model is DRIVEN during a loss rollout is a value on the
+    # instance, not a position in the ParamLoss -> OrthLoss -> MultipleShooting chain. None is the
+    # open-loop default and an exact no-op; a simulator object is attached after construction,
+    # exactly as `orth_penalty` already is (D7.1/D7.8). Declared as a CLASS attribute on purpose:
+    # a checkpoint pickled before this existed still resolves it through the class instead of
+    # raising, and `checkpoint_load_system`'s `self.__dict__ = torch.load(...)` cannot silently
+    # drop it the way it drops a patched bound method.
+    simulator = None
+
+    # CHANGED (closed-loop seam): declared extension point for DIAGNOSTICS during validation.
+    # Two different concerns were riding on `cal_validation_error`: SELECTION, the scalar that
+    # decides the best checkpoint, and diagnostics whose return value is discarded. Only the first
+    # belongs on the simulator. Probes are called for their side effects and CANNOT replace the
+    # value, so the ordering hazard disappears by construction: previously whichever of two
+    # monkey patches was installed last decided selection.
+    validation_probes = ()
+
     def __init__(self, na=5, nb=5, \
                  interconnect=Interconnect, e_net=modified_encoder_net,   e_net_kwargs={}, na_right=0, nb_right=0):
 
@@ -430,14 +528,50 @@ class SSE_Interconnect(SS_encoder_general):
 
         self.hfn.init_model(sys_data) # type: ignore
 
+    # CHANGED (closed-loop seam): the rollout is extracted from loss() into an overridable method.
+    # It was the one thing buried in the middle of loss() with no seam, which is why the closed
+    # loop previously had to override loss() wholesale and re-add param_loss and the orthogonality
+    # penalty by hand in three files. A fourth hand-written copy is how the thesis contribution
+    # gets silently dropped from the objective.
+    def simulate(self, x, ufuture, yfuture=None, **Loss_kwargs):
+        '''Roll the model forward from x. Returns (y_pred, x_final), y_pred (batch, nf, ny).
+
+        Overridable seam: a subclass or an attached simulator that changes HOW the model is
+        driven (closed loop, teacher forcing, a different integrator) replaces this and inherits
+        every loss term unchanged. yfuture is passed so a driven rollout can use it; the open-loop
+        default ignores it.
+
+        The final state is returned because a rollout produces it and a caller may need it:
+        multiple shooting forms its defect from exactly this state at each segment boundary, and
+        without it that class would need its own rollout, i.e. a second implementation of the one
+        thing this seam exists to keep singular. Callers that only want the prediction drop it.
+        '''
+        if self.simulator is not None:
+            return self.simulator(self, x, ufuture, yfuture, **Loss_kwargs)
+        hfn = self.hfn                       # bound once: nf Module.__getattr__ calls otherwise
+        ys = []
+        for u in ufuture.unbind(1):          # ONE dispatch for all nf views, not nf selects
+            yhat, x = hfn(x, u) # type: ignore
+            ys.append(yhat)
+        return torch.stack(ys, dim=1), x
+
     def loss(self, uhist, yhist, ufuture, yfuture, **Loss_kwargs):
         x = self.encoder(uhist, yhist) #initialize Nbatch number of states # type: ignore
-        errors = []
-        for y, u in zip(torch.transpose(yfuture,0,1), torch.transpose(ufuture,0,1)): #iterate over time
-            yhat, x = self.hfn(x, u) # type: ignore
-            errors.append(nn.functional.mse_loss(y, yhat)) #calculate error after taking n-steps
-        loss_MSE = torch.mean(torch.stack(errors))
-        
+        y_pred, _ = self.simulate(x, ufuture, yfuture, **Loss_kwargs)
+        # CHANGED (closed-loop seam, step 2b): ONE mse_loss over the stacked prediction, replacing
+        # a mean over nf per-timestep mse_loss values. Identical in value because every timestep
+        # has the same element count, and MEASURED to be so: the difference is exactly 0.000e+00
+        # on both reference arms. The gradient differs by one float32 ulp on the largest entries
+        # (1 - cos = 6.1e-15) because the reduction order changes, which is 15 orders inside the
+        # batch-to-batch scatter SGD already works with (1 - cos ~ 1.2).
+        #
+        # This is one dispatch and one autograd node instead of nf plus a stack and a mean, and
+        # the backward pass is over half of a training step, so the nf forward nodes deleted here
+        # take nf backward nodes with them. Step 2a kept the old reduction precisely so that this
+        # change could be made on its own, with its own evidence, rather than hidden inside the
+        # seam extraction.
+        loss_MSE = nn.functional.mse_loss(yfuture, y_pred)
+
         has_theta_loss = False
         loss_theta = 0
         for m in self.hfn.connected_blocks: # type: ignore
@@ -456,6 +590,34 @@ class SSE_Interconnect(SS_encoder_general):
         else:
             return loss_MSE
     
+    # CHANGED (closed-loop seam): make_training_data and cal_validation_error become seams. Both
+    # are inherited from deepSI (SS_encoder_general and System_fittable respectively); these are
+    # plain overrides in our file that call super() and then delegate, so the installed deepSI
+    # package is NOT edited. With no simulator attached both are exact no-ops.
+    def make_training_data(self, sys_data, **Loss_kwargs):
+        '''deepSI's training arrays, plus whatever the attached simulator needs per window.'''
+        data = super().make_training_data(sys_data, **Loss_kwargs)
+        if self.simulator is not None and hasattr(self.simulator, 'augment_training_data'):
+            return self.simulator.augment_training_data(data, sys_data, self, **Loss_kwargs)
+        return data
+
+    def cal_validation_error(self, val_sys_data, validation_measure='sim-NRMS'):
+        '''The scalar fit() minimises over epochs, plus side-effect-only diagnostic probes.
+
+        A driven rollout cannot be expressed as an `apply_experiment`: that interface drives the
+        model with u in and y out, one step at a time, and cannot carry `y_data`, which a
+        closed-loop free run needs to form the residual. deepSI's own docstring anticipates the
+        override ("User given callback. (overwrite this function?)"). Hence a seam here rather
+        than a patched attribute.
+        '''
+        if self.simulator is not None and hasattr(self.simulator, 'validation_error'):
+            value = self.simulator.validation_error(self, val_sys_data, validation_measure)
+        else:
+            value = super().cal_validation_error(val_sys_data, validation_measure)
+        for probe in self.validation_probes:
+            probe(self, val_sys_data, value)      # side effects only, value never replaced
+        return value
+
     def measure_act_multi(self,actions):
         actions = torch.tensor(np.array(actions), dtype=torch.float32) #(N,...)
         with torch.no_grad():
@@ -617,10 +779,32 @@ class SSE_Interconnect(SS_encoder_general):
                 if cuda:
                     train_batch = [b.cuda() for b in train_batch]
                 t.toc('data get')
+                # CHANGED (closed-loop seam): arrays a simulator asked make_training_data to
+                # append are passed to loss() BY NAME, not positionally. deepSI's convention is
+                # `self.loss(*train_batch)`, which forced every loss() in the chain to carry a
+                # *sim_args it did not use and only forwarded, and which produced a TypeError on
+                # the first optimizer step that no batch-level gate could see. This is the only
+                # call site in the path we run, so the convention is ours to fix here.
+                batch_kwargs = dict(loss_kwargs)
+                if len(train_batch) > 4:
+                    names = getattr(self.simulator, 'extra_array_names', ())
+                    if len(names) != len(train_batch) - 4:
+                        raise RuntimeError(
+                            'the training data carries %d array(s) beyond deepSI\'s four but the '
+                            'simulator names %d of them (%s). make_training_data and '
+                            'extra_array_names must agree, or an array reaches loss() unnamed.'
+                            % (len(train_batch) - 4, len(names), names))
+                    clash = set(names) & set(loss_kwargs)
+                    if clash:
+                        raise RuntimeError(
+                            'simulator array name(s) %s collide with loss_kwargs of the same name; '
+                            'one would silently overwrite the other' % sorted(clash))
+                    batch_kwargs.update(zip(names, train_batch[4:]))
+
                 def closure(backward=True):
                     t.toc('optimizer start')
                     t.tic('loss')
-                    Loss = self.loss(*train_batch, **loss_kwargs)
+                    Loss = self.loss(*train_batch[:4], **batch_kwargs)
                     t.toc('loss')
                     if backward:
                         t.tic('zero_grad')
