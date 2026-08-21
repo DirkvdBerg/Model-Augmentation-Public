@@ -1,0 +1,190 @@
+diff --git a/scripts/gantry/gantry_dynamic/evaluation.py b/scripts/gantry/gantry_dynamic/evaluation.py
+index a847d28..16e30ec 100644
+--- a/scripts/gantry/gantry_dynamic/evaluation.py
++++ b/scripts/gantry/gantry_dynamic/evaluation.py
+@@ -35,7 +35,16 @@ def capture_loss_history(fit_sys, cfg: RunConfig, save_dir, rid):
+     epoch_id_full   = fit_sys.epoch_id.copy()
+     loss_val_full   = fit_sys.Loss_val.copy()
+     loss_train_full = fit_sys.Loss_train.copy()
++    # Probe histories too: checkpoint_load_system replaces fit_sys.__dict__, so
++    # the '_best' reload would truncate them to checkpoint time (run 70783:
++    # verdict showed 'final nan' although the log measured 0.258).
++    _probes = {k: list(getattr(fit_sys, k)) for k in
++               ('Loss_train_nf', 'Loss_val_nf', 'Probe_combo_err',
++                'Probe_orth_frac', 'Probe_V_orth', 'Probe_param_loss')
++               if hasattr(fit_sys, k)}
+     fit_sys.checkpoint_load_system(name='_best')
++    for _k, _v in _probes.items():
++        setattr(fit_sys, _k, _v)
+     fit_sys.eval()
+     return epoch_id_full, loss_val_full, loss_train_full
+ 
+@@ -54,14 +63,72 @@ def report_joint_estimation(fit_sys):
+         print('\n=== Joint estimation: identifiable combinations (best checkpoint) ===')
+         print(_pb.param_table())
+         # Diagnostic view: all 14 raw params (splits held near init by param_loss).
+-        print('\n=== Joint estimation: raw parameters (init vs learned) ===')
+-        print(f"  {'param':8s} {'init':>12s} {'learned':>12s} {'delta':>9s}")
++        # NB: drift-init = movement FROM THE INIT VALUES (the detuned start when
++        # param_init_detune is set) -- 0.00% means NO learning, NOT a truth match.
++        # Truth comparison lives in the combinations table above (run 70783 misread).
++        print('\n=== Joint estimation: raw parameters (learned vs init -- drift, not truth) ===')
++        print(f"  {'param':8s} {'init':>12s} {'learned':>12s} {'drift-init':>10s}")
+         for _i, _n in enumerate(_pb.PARAM_NAMES):
+             _d = 100.0 * (params_learned_np[_i] - params_init_np[_i]) / params_init_np[_i]
+-            print(f'  {_n:8s} {params_init_np[_i]:12.4f} {params_learned_np[_i]:12.4f} {_d:+8.2f}%')
++            print(f'  {_n:8s} {params_init_np[_i]:12.4f} {params_learned_np[_i]:12.4f} {_d:+9.2f}%')
+     return params_init_np, params_learned_np
+ 
+ 
++def standalone_baseline_test(fit_sys, hp, cfg: RunConfig, data, norm):
++    """Standalone-baseline test: the negation detector (plan Step 10, D7.9 layer 2).
++
++    Strip the ANN: simulate the FP model ALONE on the primary val and test
++    records (true-x0 @K0 init, same convention as the existing baselines,
++    D-072/D-087) with three parameter vectors:
++      theta_hat   the trained block's learned parameters (in-place, read-only)
++      theta_init  the run's anchor (deepcopy with log_params zeroed)
++      theta_0     nominal (plain Gantry_State_Block, default path)
++    Negation signature ([GYOROK] Table 1): NRMS(theta_hat) >> NRMS(theta_0)
++    while the augmented model fits well. Truth-free: uses only the learned
++    parameters and held-out data — the selector quantity for the beta sweep.
++
++    Returns {tag: {nrms_hat, nrms_init, nrms_nominal}} or None (not a joint run).
++    """
++    from copy import deepcopy
++    from .baselines import compute_baseline_fp_nrms
++
++    pblocks = [m for m in fit_sys.hfn.connected_blocks if hasattr(m, 'physical_params')]
++    if not pblocks:
++        return None
++    blk_hat = pblocks[0]
++    blk_init = deepcopy(blk_hat)
++    with torch.no_grad():
++        blk_init.log_params.data.zero_()          # theta = params_init anchor
++
++    na, nb, _, _ = get_encoder_dims(hp, cfg)
++    K0 = max(na, nb)
++    agg = lambda n: float(np.sqrt(np.mean((n * norm.ystd) ** 2)))   # deepSI RMS formula
++
++    print('\n== E. STANDALONE-BASELINE TEST (negation detector, plan Step 10) ==')
++    out = {}
++    for tag, sd, xlog in (('val',  data.val_data,  data.val_x_logical),
++                          ('test', data.test_data, data.test_x_logical)):
++        if xlog is None:
++            continue
++        x0 = xlog[K0]
++        n_hat, _ = compute_baseline_fp_nrms(
++            hp, cfg, data, norm, data_sd=sd, x0_phys=x0, start_ix=K0,
++            label=f'{tag}, STANDALONE theta_hat (ANN stripped)', phy_block=blk_hat)
++        n_init, _ = compute_baseline_fp_nrms(
++            hp, cfg, data, norm, data_sd=sd, x0_phys=x0, start_ix=K0,
++            label=f'{tag}, STANDALONE theta_init (anchor)', phy_block=blk_init)
++        n_nom, _ = compute_baseline_fp_nrms(
++            hp, cfg, data, norm, data_sd=sd, x0_phys=x0, start_ix=K0,
++            label=f'{tag}, nominal theta_0')
++        r_nom, r_init = agg(n_hat) / agg(n_nom), agg(n_hat) / agg(n_init)
++        print(f'  [{tag}] aggregate sim-RMS [m]:  theta_hat {agg(n_hat):.4e}   '
++              f'theta_init {agg(n_init):.4e}   nominal {agg(n_nom):.4e}')
++        print(f'  [{tag}] ratios:  hat/nominal = {r_nom:.3f}   hat/init = {r_init:.3f}   '
++              f'(>>1 vs nominal = negation; <1 vs init = recovery)')
++        out[tag] = dict(nrms_hat=n_hat, nrms_init=n_init, nrms_nominal=n_nom)
++    return out
++
++
+ def _print_same_init_comparison(title, nrms_aug, nrms_base, ystd,
+                                 base_label='baseline FP (enc-init)', refs=None):
+     """Same-init augmented-vs-baseline table (D-094/D-098).
+@@ -122,6 +189,15 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
+ 
+     params_init_np, params_learned_np = report_joint_estimation(fit_sys)
+ 
++    # Standalone-baseline (negation) test — joint runs only; None otherwise.
++    # Guarded: a harness fault may cost this section, never the run's evaluation.
++    standalone = None
++    if params_learned_np is not None:
++        try:
++            standalone = standalone_baseline_test(fit_sys, hp, cfg, data, norm)
++        except Exception as e:
++            print(f'Warning: standalone-baseline test failed (non-fatal): {e}')
++
+     # ── Encoder-initialised simulation ──────────────────────────────────────
+     fit_sys.hfn.reset_saved_signals()
+     sim_result = fit_sys.apply_experiment(val_data)
+@@ -156,6 +232,19 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
+         _si = [100.0 * (_base_si[c] - nrms_enc[c]) / (_base_si[c] + 1e-12) for c in range(ny)]
+         print('  augmentation vs baseline (same init): '
+               + '  '.join(f'{l} {_si[c]:+.1f}%' for c, l in enumerate(['X1', 'X2', 'Y'])))
++    # Joint-run verdict lines: recovery trajectory + standalone (negation) ratios.
++    _pce = getattr(fit_sys, 'Probe_combo_err', None)
++    if _pce:
++        _pof = getattr(fit_sys, 'Probe_orth_frac', [float('nan')])
++        print(f'  recovery: combo-err {100*_pce[0]:.2f}% -> {100*_pce[-1]:.2f}%   '
++              f'orth-frac final {_pof[-1]:.3f}')
++    if params_learned_np is not None and standalone is not None:
++        _agg = lambda n: float(np.sqrt(np.mean((n * ystd) ** 2)))
++        for _tag, _d in standalone.items():
++            print(f'  standalone [{_tag}]: hat/nominal '
++                  f'{_agg(_d["nrms_hat"])/_agg(_d["nrms_nominal"]):.3f}   '
++                  f'hat/init {_agg(_d["nrms_hat"])/_agg(_d["nrms_init"]):.3f}   '
++                  f'(>>1 vs nominal = negation)')
+     print('=' * 72)
+ 
+     # A. MODEL QUALITY -- validation (encoder-init; aug vs baseline same init)
+@@ -282,6 +371,37 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
+         y_hat_oracle=y_hat_oracle,   # D-098: FP+MSD oracle reference line on the error trace
+     )
+ 
++    # Joint-probe trajectory figure (joint runs only): recovery + negation meters.
++    if _pce:
++        try:
++            _ep = np.arange(1, len(_pce) + 1)
++            figJ, axJ = plt.subplots(figsize=(8, 4))
++            axJ.plot(_ep, 100 * np.asarray(_pce), 'C0-o', ms=4,
++                     label='combo-err vs nominal [%]')
++            axJ.set_xlabel('epoch'); axJ.set_ylabel('combo-err [%]', color='C0')
++            axJ.tick_params(axis='y', labelcolor='C0')
++            axJ.grid(True)
++            _pof_arr = np.asarray(getattr(fit_sys, 'Probe_orth_frac', []), dtype=float)
++            if _pof_arr.size and np.any(np.isfinite(_pof_arr)):
++                axJ2 = axJ.twinx()
++                axJ2.plot(_ep[:len(_pof_arr)], _pof_arr, 'C1-s', ms=4,
++                          label='orth-frac (ANN in baseline span)')
++                axJ2.set_ylabel('orth-frac [0..1]', color='C1')
++                axJ2.tick_params(axis='y', labelcolor='C1')
++                axJ2.set_ylim([-0.02, 1.02])
++                _l1, _b1 = axJ.get_legend_handles_labels()
++                _l2, _b2 = axJ2.get_legend_handles_labels()
++                axJ.legend(_l1 + _l2, _b1 + _b2, fontsize=8)
++            else:
++                axJ.legend(fontsize=8)
++            axJ.set_title('Joint-probe: parameter recovery + negation meter per epoch')
++            figJ.tight_layout()
++            figJ.savefig(os.path.join(save_dir, 'plots', f'gantry_joint_probe_{rid}.png'),
++                         dpi=150)
++            plt.close(figJ)
++        except Exception as e:
++            print(f'Warning: joint-probe figure failed: {e}')
++
+     # ── Results npz ─────────────────────────────────────────────────────────
+     if cfg.save_flag:
+         save_dict = _build_save_dict(
+@@ -296,6 +416,18 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
+             baseline_test_encinit_nrms=baseline_test_encinit_nrms,
+             params_init_np=params_init_np, params_learned_np=params_learned_np,
+         )
++        # Joint-probe per-epoch trajectories (conditionally, joint runs only).
++        if _pce:
++            save_dict['probe_combo_err']  = np.asarray(_pce, dtype=float)
++            save_dict['probe_orth_frac']  = np.asarray(getattr(fit_sys, 'Probe_orth_frac', []), dtype=float)
++            save_dict['probe_v_orth']     = np.asarray(getattr(fit_sys, 'Probe_V_orth', []), dtype=float)
++            save_dict['probe_param_loss'] = np.asarray(getattr(fit_sys, 'Probe_param_loss', []), dtype=float)
++        # Standalone-baseline test keys (conditionally, joint runs only).
++        if standalone is not None:
++            for _tag, _d in standalone.items():
++                save_dict[f'standalone_{_tag}_nrms_hat']     = _d['nrms_hat']
++                save_dict[f'standalone_{_tag}_nrms_init']    = _d['nrms_init']
++                save_dict[f'standalone_{_tag}_nrms_nominal'] = _d['nrms_nominal']
+         # D-098: oracle FP+MSD reference (conditionally, like the other optional keys).
+         if nrms_oracle is not None:
+             save_dict['nrms_oracle']  = nrms_oracle
