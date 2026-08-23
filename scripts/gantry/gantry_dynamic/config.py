@@ -60,7 +60,7 @@ class RunConfig:
     #   [X, Theta, Y, dX, dTheta, dY, delta_a, vdelta_a] = idx 0..7.
     #   (1,4,6,7)=Theta+absorber (D-068 default, K>0 only); (0..7)=X+Theta+Y+absorber.
     #   NOTE: routing to K=0 rows (X/Y: 0,2,3,5) needs a much smaller lr (~1e-7) -- D-101/D-102.
-    ann_route_ix: tuple = (1, 4, 6, 7)
+    ann_route_ix: tuple = (0, 1, 2, 3, 4, 5, 6, 7)
     n_nodes_per_layer: int = 16
     n_hidden_layers: int = 2
     up_sample: int = 2             # model discretization sub-steps per Ts
