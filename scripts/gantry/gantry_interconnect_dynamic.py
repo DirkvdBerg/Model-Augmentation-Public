@@ -64,7 +64,7 @@ CFG = RunConfig(
     nx_ann=2,
     # ANN routing rows: (1,4,6,7)=Theta+absorber (D-068); (0,1,2,3,4,5,6,7)=X+Theta+Y+absorber.
     # WARNING: X/Y (K=0) routing needs lr ~1e-7, not 1e-4, or it diverges after init (D-101/D-102).
-    ann_route_ix=(1,4,6,7),
+    ann_route_ix=(0,1,2,3,4,5,6,7),
     n_nodes_per_layer=16,
     n_hidden_layers=2,
     up_sample=1,
