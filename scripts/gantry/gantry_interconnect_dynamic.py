@@ -130,6 +130,33 @@ def main():
     torch.manual_seed(cfg.seed)
     fit_sys = build_model(hp, cfg, data, norm)
 
+    # ── close the known controller around the model ──────────────────────────────────
+    # Without this, interconnect.py's `simulator = None` default (line 476) is in force and the
+    # loss is the OPEN-loop rollout. Setting it routes loss() through the closed-loop rollout
+    # (interconnect.py:549) and appends ctrl_ix to the training arrays (:600), so the objective
+    # becomes the same one cl_train.py trains on and `bestfit` becomes the V1-V4 closed-loop
+    # free-run RMS in metres.
+    #
+    # The gantry-specific bank (Y_op -> controller row per record) lives in scripts/gantry/ by
+    # design and cannot move into the framework: closed_loop.py's header states it "does NOT know
+    # what a gantry is ... receives stacked (A, B, C, D) matrices and an integer row index per
+    # window, and that is all". The import is LOCAL so this file still runs open loop if
+    # closed-loop-controller/ is absent, rather than failing at import time.
+    # closed-loop-controller/core/ holds a self-contained COPY of the six modules the training
+    # path needs (cl_pipeline -> cl_controller -> loss_variants -> p2_rate_compare, so_filter ->
+    # verify_controller). Pointing at core/ rather than the parent keeps this entry point off the
+    # 43 diagnostic scripts in that folder. See core/README.md for provenance and the one edit.
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    'closed-loop-controller', 'core'))
+    from cl_pipeline import build_closed_loop                  # noqa: E402
+    from gantry_dynamic.data import TRAIN_FILES                # noqa: E402
+    # Keyword-only by design: build_closed_loop's docstring records that swapping train_files and
+    # val_files "attaches the wrong controller to every record, produces a plausible loss".
+    fit_sys.simulator = build_closed_loop(
+        fit_sys, norm, cfg,
+        train_files=TRAIN_FILES, val_files=VAL_FILES, val_data=data.val_ckpt_data)
+    # ─────────────────────────────────────────────────────────────────────────────────
+
     _na, _nb, _na_right, _nb_right = get_encoder_dims(hp, cfg)
     K0 = max(_na, _nb)   # first sample with a full encoder window (~ model cheat_n)
 
