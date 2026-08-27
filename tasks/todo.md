@@ -5,6 +5,211 @@ _Tasks 2.1, 2.3, 3b.1 and the 2026-06-10 code-review section archived to `archiv
 
 ---
 
+## ACTIVE 2026-08-25 - Residual BLA implemented; one arm in flight
+
+Handoff executed: `tasks/handoffs/2026-08-24-residual-bla-initialisation.md`.
+Findings: D-162, D-163, D-164, `DISCUSSION-POINTS.md` section N.
+Code: `BLA/bla_residual.py`, `BLA/bla_loop.py`, `BLA/bla_fit.py`, `BLA/run_bla_arm.py`.
+Artefacts: `BLA/runs/bla_residual.{json,npz}`, `BLA/runs/bla_poles.json`,
+`BLA/runs/bla_posterior_42/run_summary.json`.
+
+### Done
+- [x] PLAN phase 2 estimator repointed from `G_{f->y}` to the residual, at the model rate, with
+      zero samples discarded (gate 2) and the excitation gate passing on all six records (gate 1).
+- [x] The replay loop removed analytically rather than left in the estimate (D-162), which is the
+      correction D-153 called for and did not have.
+- [x] PLAN phase 3 fit, order sweep and cross-record posterior. Dominant pair `157.9045 Hz`,
+      sd `0.0054 Hz`, held-out V1 within `0.2` sd. Gate 3 withdrawn as unfalsifiable and replaced
+      (D-163).
+- [x] Adam `eps = 1e-16` plumbed without touching `gantry_dynamic/config.py` or `model.py`.
+
+### Results at the 09:00 deadline (260 updates each, epoch 1)
+- [x] **BLA-posterior `nx_aug = 2`**: pooled V1-V4 `1.2687696e-06 m`, `F = 0.186`.
+- [x] **BLA-bank `nx_aug = 8`**: pooled V1-V4 `1.1936629e-06 m`, `F = 0.266`.
+- [x] Untrained `2.1865622e-06`, bit-identical between the two arms, so D-072 equality holds at
+      both `nx_aug`.
+- [x] **Three eliminations at matched everything**: pole provenance (BLA equals ARX to five
+      digits), Adam `eps` (a 4x rate effect, not a better plateau), and state count (`5.9 %` on
+      RMS, though it does move `F` from `0.186` to `0.266`).
+
+### Open, in order
+- [x] **Budget tested and eliminated.** Posterior arm completed `520/520`: checkpoint sim-RMS
+      `1.231200848e-06` against `1.268789843e-06` at 260, i.e. `3.0 %` for a doubled budget, at the
+      budget where F5 reaches `3.790189e-07`. All four candidates now fall.
+- [ ] **Recover the pooled V1-V4 number for the 520-update checkpoint.** Training finished but both
+      processes were killed at session teardown during scoring; `best.pth` survives and rescoring
+      was relaunched into `runs/bla_posterior_42/epoch2_score.json`. Read it there.
+- [ ] **Decide whether to re-run the bank arm.** It was killed at batch `519/520` of epoch 2 and
+      deepSI checkpoints only at the epoch boundary, so its 520-update point is LOST. About `9 h`
+      to recover. Given the posterior's `3.0 %` over the same doubling it is unlikely to change the
+      conclusion; it would only add the matched-count point to the write-up.
+- [ ] **Next real experiment**, now that initialisation, optimizer, count and budget are all
+      eliminated: `AUDIT.md` section 10's identified-`B_r` against a norm-matched random `B`,
+      holding bank, route, seed, data and budget fixed. That targets the input map, which is one of
+      the three structural differences left.
+- [ ] The spread-versus-repeated control. Still not run by anything, and this plan did not run it
+      either: the measured posterior is narrower than one DFT bin, so a BLA-derived spread bank
+      does not exist. `AUDIT.md` section 10's identified-`B_r` against norm-matched random `B` is
+      the smallest discriminating experiment and is unaffected by tonight's work.
+- [ ] The nonlinear-distortion split. Needs PLAN Route A (`M` realisations); not measured, and the
+      thesis must say so rather than imply the question was answered.
+
+---
+
+## ACTIVE 2026-08-19 — Closed-loop plateau: optimiser closed, objective is next
+
+Handoff executed: `tasks/handoffs/2026-08-18-closed-loop-training-plateau.md`.
+Findings: D-147, D-148. Run-table rows: "D-147 RETRAIN", "OPTIMISER INTERVENTIONS",
+"CAPABILITY AND CEILING". Artefacts: `scripts/gantry/closed-loop-controller/runs/cl_*.{log,json}`.
+Archival sweep of this file still not run, for the reason recorded in the 2026-08-02 section.
+
+### Done
+- [x] Section 8 answered. Training-window error measured for the first time: 21.1x the
+      per-window floor, no train/val gap, window ~ free run. Horizon and generalisation are OUT.
+- [x] The plateau is real and was already in run 76573's `.out`: 12 epochs completed, best at
+      validation 2, ten flat validations after. The 3-point series in its JSON is a
+      checkpoint-reload artefact, not a truncated run.
+- [x] Optimiser side closed: `eps` floor found and fixed, gradients shown to be signal not noise,
+      `lr` shown not to be the constraint, and three optimisers shown to land in one basin.
+- [x] Capability ceiling measured: the class CAN represent the correction (per-row scaling), and
+      a planted model closes 82 % of the headroom against training's 36.7 %.
+- [x] `W^a` traced to our own assumption with no source in `hoekstra2026encoder`; comment in
+      `pre_encoder.py` and the `docs/references.md` row corrected.
+
+### Next, in order
+- [x] N1 **Branch picked: HORIZON.** `cl_nf_sweep.py`, no training. Discrimination between the
+      planted (correct) model and the trained one, both on the encoder init the objective actually
+      uses: **1.25x at nf=400 (0.1 s), 1.65x at 800, 2.18x at 1600, 2.54x at 3200 (0.8 s)**,
+      against 3.34x on the free run. The planted model's window error falls 54 % with length
+      (transient-dominated, amortises); the trained model's is flat at 6.6 % (persistent). At
+      nf=400 both are dominated by the same transient, so the loss can barely tell them apart.
+      D-148 finding 8. Do NOT use the ratio-to-floor for this question: the floor amortises like
+      the planted model and hides the effect (10.20 -> 13.12, which reads backwards).
+- [x] N1d **What Jan does, read from his code (D-148 finding 11).** His closest example
+      (`scripts/ecc_2025/msd_ndof_interconnect_dynamic.py`) has OUR structure, 3-DOF truth against
+      a 2-DOF baseline with 2 AUGMENTED states, and trains with the DEFAULT random encoder,
+      `nf = 200`, 2 epochs, sim-RMS: no burn-in, no defect, no multiple shooting, no pre-encoder.
+      His pre-encoder (`msd_ndof_pre_encoder.py`) IS the separation idea, supervised on the TRUE
+      state at `nf = 1` then transplanted, but that script has `sys_dof = FP_dof = 2`, i.e.
+      `nx_aug = 0`, so it was never applied to augmented states. Same gap as the paper.
+      **Why his setup tolerates it is NOT window length**: `Ts = 0.02`, `nf = 200` is a 4.0 s
+      window, slowest `|lambda| = 0.9956` gives tau = 4.5 s and 4-tau settling of 18 s, i.e. 449 %
+      of his window, so his transient does not wash out either. The difference is the SIZE of the
+      initial error: his states are observable and his encoder trains from step one, ours has 2
+      latent rows from a frozen random map with zero gradient. Our controller HELPS (20 ms
+      settling where the open-loop poles are at 1). **Consequence: we cannot copy his supervised
+      pre-encoder, because the latent coordinate has no ground truth and `x_aug` would be oracle
+      information; the defect term is the unsupervised version of the same idea.**
+- [x] N1b **BURN-IN BEATS THE HORIZON ROUTE, and unblocks N2.** `cl_burnin_sweep.py`, no training.
+      Discrimination at nf=400: **1.249x today -> 3.312x at K=100 (`W^a` random) -> 3.400x with
+      `W^a` = 0**, against 2.54x for nf=3200 and 3.34x for the 12 s free run. Not scoring the
+      first 100 samples (25 ms, matching the loop's ~20 ms settling) recovers the FULL free-run
+      discrimination at nf=400. Motivation: 88 % of the planted model's window loss is startup
+      transient against 15 % of the trained one's, and the planted model has 3.9x more startup
+      energy BECAUSE it uses its latent states, so the loss penalises a model for using them.
+      D-148 finding 9. `w_burn = 0.1` costs discrimination (3.400x -> 2.995x): keeping an explicit
+      initialisation criterion is a real trade, not free.
+- [ ] **N1c THE RUN. Implement burn-in and train.** Three lines behind `cfg.burn_in`, default 0,
+      exact no-op: the loss reduces over the whole window today, burn-in is
+      `mse_loss(yfuture[:, K:], y_pred[:, K:])`. Config: `K = 100`, `w_burn = 0`, `W^a = 0`,
+      `eps = 1e-16`, `lr = 1e-7`, 2 epochs. Judge on three things, fixed now: training-window RMS
+      against today's `1.5038e-06` best; whether the free run passes the `1.3934e-06` plateau; and
+      the ENCODER's parameter delta, because with `w_burn = 0` it loses its explicit criterion and
+      the sweep says nothing about whether it degrades over a run.
+- [ ] **N2 THE ENCODER CRITERION, and it is the other half of the fix.** Burn-in works AROUND the
+      encoder; it does not fix it. The multiple-shooting DEFECT term does:
+      `defects.append(x_node - x)` penalises the encoder's estimate at time `s` against what the
+      dynamics rolled forward to `s`, gradient into both, and **needs no ground truth for the
+      latent coordinate**, which dissolves the gauge problem. It also self-resolves the init
+      chicken-and-egg: with the ANN output at zero the rolled-forward latent is zero, so the defect
+      drives the encoder's latent output to zero, i.e. it discovers `W^a = 0` on its own and then
+      tracks the ANN's coordinate as it develops. **CORRECTION recorded 2026-08-19 (D-148 finding
+      10): multiple shooting is NOT a horizon device on this rig.** `multiple_shooting.py`
+      RE-ENCODES at every segment start (`x = x_node`), so `n_seg = 8` x `nf_seg = 400` contains
+      eight transients, one per 400 samples, exactly today's density; the 2.54x at `nf = 3200`
+      came from ONE transient per 3200. It would have returned roughly today's 1.25x, which is why
+      it has never improved anything. Use it for the defect, not for length.
+      **The `xc`-at-segment-boundary question therefore returns, but now with a leaning**: a
+      segment that starts from a re-encoded state is a fresh short experiment, so `xc = 0` is the
+      consistent choice by the same argument D-142 makes for a window start. Still a stated
+      decision, and it needs a gate against the `n_seg = 1` no-op. Original framing: The target is ~0.8 s of
+      objective. At 4 kHz that is nf=3200 of BPTT depth, inside the refuted regime (divergent at
+      900, Ribeiro `O(N^3)` within-segment). Multiple shooting buys it without depth,
+      `n_seg = 8` x `nf_seg = 400`, and `multiple_shooting.py` already implements it, but it
+      RAISES with a simulator attached precisely because this was never decided (D-144). The
+      D-142 `xc = 0` argument is about a WINDOW start and does not settle a SEGMENT start. Both
+      readings are defensible and they are different objectives, which is why the code refuses to
+      guess. Once decided: implement, gate against the n_seg=1 no-op, then train at ~0.8 s.
+- [ ] N2-alt Warm-start each window from the previous one, so only the first window in a record
+      pays the transient. Cheaper than multiple shooting and needs no segment-boundary decision,
+      but it makes the batch order meaningful and breaks the shuffled-window assumption the data
+      loader is built on. Fallback if N2 stalls.
+- [ ] N2b (deprioritised by N1, keep for later) Band- or record-normalised error. The trained
+      model is 3.9x worse in the motion band at a cost of 0.5 points of RMS, so the loss does
+      give that away, but it is now a second-order fix rather than the first one to try.
+- [ ] N2c A 1 kHz MODEL rate is a second route to the same horizon (0.8 s is nf=800 there) and
+      composes with N2. The CONTROLLER cannot follow: `p2_rate_compare.py` at
+      `CL_RATES=20000,4000,2000,1000` gives `sigma_max(So)` at 150 Hz of 1.7983 (20 kHz) ->
+      2.0738 (4 kHz, +15.3 %) -> 2.5867 (2 kHz, +43.8 %) -> 4.9401 (1 kHz, +174.7 %), with
+      phase-margin shifts 3.59 / 8.08 / 17.12 deg against a 5 deg tolerance. **2 kHz and 1 kHz
+      both FAIL both criteria, so the controller stays at 4 kHz**; the design's roll-off pole at
+      10*w_b = 1000 Hz is at Nyquist at 2 kHz and above it at 1 kHz, where no discretisation can
+      represent it (Tustin warps it to ~402 Hz). A 1 kHz model inside a 4 kHz loop is expressible
+      (`ControllerBank` takes any ts) but introduces three semantics that must be stated and
+      gated: where the controller steps relative to the model sub-steps, that `y_data` forks into
+      two grids, and that the augmentation then acts at 1 kHz on a 150 Hz mode.
+- [ ] N3 Excitation, acting on the same weakness from the data side: every training record
+      carries only the 130-180 Hz multisine plus the motion profile (`gtd_config.m:106-107`), so
+      out-of-band damage is free. Broadband content in TRAINING (not only in the E-records)
+      would price it automatically.
+- [ ] **N4 PERMANENT `eps` FIX? Open question, needs a decision.** Today it is `CL_ADAM_EPS`, an
+      opt-in env flag on the closed-loop runner only, while another session has independently added
+      `cfg.eps_theta = 1e-16` for the `log_params` group (P1-e). So the same mechanism is now
+      addressed twice, in two places, with two scopes, and neither is the default. Three things to
+      settle: (a) does it become a `cfg` field applied in `build_model` for every run, rather than
+      a runner flag; (b) `CL_ADAM_EPS` sets `eps` on ALL param groups AFTER `build_model` and
+      therefore silently overrides P1-e's per-group value, which is harmless today (both `1e-16`,
+      and `lr_theta` defaults to None so the theta group does not exist in our runs) but is a
+      latent bug the first time someone wants different values; (c) whether it belongs in
+      `model_augmentation/` at all, since the mechanism is generic to any closed-loop or otherwise
+      small-residual objective and is not gantry-specific. Evidence for making it permanent:
+      D-148 finding 1, 139/600 -> 600/600 trainable, gradients confirmed to be signal. Evidence
+      against making it silent: it changes the optimiser for every historical comparison, and every
+      learning-rate conclusion in the run table predates it.
+- [ ] **N4b `W^a`: kaiming or zero? Open question, and neither has a source.** The paper defines
+      `W^a` (Eq. 8) but initialises only `W^b`, and its own experiment has `nx_aug = 0`, so there
+      is no literature answer. Ours is `kaiming_uniform_(a=0)`, `U(+/-0.333)` for `fan_in = 54`,
+      which is also 2.45x wider than the `nn.Linear` default the old comment claimed to follow.
+      Measured: zero is worth 1.59x on the window metric under today's objective and 2.7 % under
+      burn-in, and it matches what `HybridGantryEncoder` and `LinearInitEncoderWrapper` already do.
+      Only two points tested. Untested and worth a thought before deciding: a SMALL random init
+      (kaiming scaled down), or a `W^a` initialised from something informative rather than
+      arbitrary. Note the interaction: if `w_burn > 0` is kept, `W^a` matters again (2.995x against
+      2.408x), so this decision is coupled to N1c's `w_burn` choice and should be taken after it.
+- [ ] N5 Decide `W^a`, now a MUCH smaller decision than it was this morning. Under today's
+      objective it is worth 1.59x on the window metric (`1.207e-06` -> `7.616e-07`, 90.7 % of the
+      achievable gap). Under burn-in it is worth 2.7 % (3.400x against 3.312x at `K = 100`),
+      because its entire benefit was reducing the startup transient and burn-in stops scoring
+      that. Recommendation: adopt zero anyway, since it is free, better at every `K`, and makes
+      the live encoder agree with `HybridGantryEncoder` and `LinearInitEncoderWrapper`. It matters
+      again only if `w_burn > 0` is kept (2.995x against 2.408x).
+- [ ] N6 Commit decision for today's files. `origin/Augmentation` is current and the migration is
+      committed, so only `closed_loop.py`, `cl_train.py`, `cl_validation.py`, `cl_headroom.py`,
+      `cl_capability.py`, `cl_band_split.py`, `rezero_gate.py`, `model.py`, `pre_encoder.py`,
+      `runners/run_cl_train.sh` and the three docs are outstanding. `config.py`, `model.py`,
+      `evaluation.py` and `orth_penalty.py` carry CONCURRENT work from another session (P1/P1-e),
+      so the section-12 warning about the shared files is now live rather than hypothetical.
+
+### Not planned, and why
+- Free run with `W^a = 0`: already bounded. The planted model's free run moves only 1.3 % between
+  a random `W^a` and the TRUE latent state, so any init sits inside that band. The latent
+  initialisation matters for the training objective, not for the reported metric.
+- More epochs, more `lr`, another optimiser: D-148 finding 3.
+- Continuing run D (per-row gates): still descending but 50 % above the basin the others reach in
+  one epoch, decay rate already halved, so 2 to 3.5 h to test a best case of matching them.
+
+---
+
 ## ACTIVE 2026-08-02 — True-init augmentation: can the ANN learn the absorber at all?
 
 Handoff: `tasks/handoffs/2026-08-02-true-init-augmentation.md`. Autonomous session (section 15).

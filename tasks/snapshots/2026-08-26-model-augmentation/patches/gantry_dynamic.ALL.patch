@@ -1,0 +1,367 @@
+diff --git a/scripts/gantry/gantry_dynamic/config.py b/scripts/gantry/gantry_dynamic/config.py
+index 1eb0b6f..760878a 100644
+--- a/scripts/gantry/gantry_dynamic/config.py
++++ b/scripts/gantry/gantry_dynamic/config.py
+@@ -61,6 +61,35 @@ class RunConfig:
+     #   (1,4,6,7)=Theta+absorber (D-068 default, K>0 only); (0..7)=X+Theta+Y+absorber.
+     #   NOTE: routing to K=0 rows (X/Y: 0,2,3,5) needs a much smaller lr (~1e-7) -- D-101/D-102.
+     ann_route_ix: tuple = (0, 1, 2, 3, 4, 5, 6, 7)
++    # ═══ Augmented-state recurrence (D-160) ═══════════════════════════════════
++    # OFF by default, so every run predating D-160 reproduces bit-identically.
++    # When True, build_model installs AugmentedDynamics on the augmented rows:
++    #     x_a[k+1] = A_aa x_a[k] + Gamma B z[k] + alpha F(z)[aug]
++    # Without it nothing writes rows nx_phys.., so x_a = 0 for every k and the
++    # augmented states are measurably dead (ablation 1.0002x, F = 0.0007).
++    aug_dynamics: bool = False
++    # Pole placement, at the MODEL rate, one entry per conjugate pair. There is
++    # deliberately NO default: the objective freezes the poles (C6/T3; motion
++    # under 0.15 Hz in 520 updates), so whatever is installed is what is kept,
++    # and placing them is a decision that must be justified per D-160. Supply
++    # them from an identification of the closed-loop residual; build_model
++    # REFUSES if aug_dynamics is on and these are empty.
++    aug_rho: tuple = ()
++    aug_theta: tuple = ()
++    aug_train_A: bool = True       # optimise (nu_log, theta); see D-160 on why it barely matters
++    aug_train_B: bool = True       # optimise the input map B
++    # Explicit ownership selector.  `aug_dynamics=True` remains a backwards-compatible alias for
++    # `linear_ab`, so historical launch scripts and checkpoints keep running unchanged.
++    aug_state_method: str = 'none'  # 'none' | 'linear_ab' | 'kessels_extension'
++    writer_linear_bypass: bool = False
++    writer_hidden_widths: Optional[List[int]] = None  # None -> published [3*n_in, 3*n_out]
++    writer_initialization: str = 'matched_project'    # or 'kessels_small'
++    writer_small_init_std: float = 1e-5
++    xa_coordinate_mode: str = 'kessels_raw'           # or 'normalized_similarity'
++    writer_io_scaling: str = 'project_mean_std'       # or 'kessels_fp_range'
++    aug_history_length: Optional[int] = None           # None -> na_nb strict-past samples
++    controller_mode: str = 'project_residual'
++    validation_records_role: str = 'checkpoint_validation'
+     n_nodes_per_layer: int = 16
+     n_hidden_layers: int = 2
+     up_sample: int = 2             # model discretization sub-steps per Ts
+@@ -163,6 +192,40 @@ class RunConfig:
+             epochs=self.epochs,
+         )
+ 
++    @property
++    def resolved_aug_state_method(self) -> str:
++        """Resolve the legacy D-160 boolean without changing old launch behaviour."""
++        return 'linear_ab' if self.aug_state_method == 'none' and self.aug_dynamics else self.aug_state_method
++
++    def __post_init__(self):
++        methods = ('none', 'linear_ab', 'kessels_extension')
++        if self.aug_state_method not in methods:
++            raise ValueError(f'aug_state_method must be one of {methods}')
++        if self.resolved_aug_state_method == 'kessels_extension':
++            if self.nx_ann <= 0 or self.nx_ann % 2:
++                raise ValueError('kessels_extension requires positive even nx_ann')
++            if self.aug_dynamics or self.aug_rho or self.aug_theta:
++                raise ValueError('kessels_extension is incompatible with legacy aug_dynamics/pole settings')
++            if self.xa_coordinate_mode not in ('kessels_raw', 'normalized_similarity'):
++                raise ValueError('undeclared Kessels q/v coordinate mode')
++            if self.writer_io_scaling not in ('project_mean_std', 'kessels_fp_range'):
++                raise ValueError('undeclared Kessels writer I/O scaling mode')
++            if self.writer_initialization not in ('matched_project', 'kessels_small'):
++                raise ValueError('unknown Kessels writer initialization')
++            if self.controller_mode not in ('native_kessels', 'reconstructed_4k', 'project_residual'):
++                raise ValueError('unknown Kessels controller mode')
++            if self.controller_mode != 'project_residual':
++                raise ValueError(
++                    'the production loader currently exposes only u,y; native/reconstructed Kessels '
++                    'controller modes require verified r_sim/u_FF loader support and are refused')
++            if self.validation_records_role not in ('checkpoint_validation', 'final_test'):
++                raise ValueError('validation_records_role must be checkpoint_validation or final_test')
++            if self.writer_hidden_widths is not None:
++                if len(self.writer_hidden_widths) != 2 or min(self.writer_hidden_widths) <= 0:
++                    raise ValueError('writer_hidden_widths must contain two positive integers')
++            if self.aug_history_length is not None and self.aug_history_length <= 0:
++                raise ValueError('aug_history_length must be positive')
++
+ 
+ def default_hp(cfg: RunConfig) -> dict:
+     """Backward-compat accessor for the derived hp dict; edit RunConfig fields, not this."""
+@@ -188,4 +251,14 @@ def config_json_dict(cfg: RunConfig) -> dict:
+         ORTH_POINT_STRIDE=cfg.orth_point_stride,
+         ORTH_RANK_TOL=cfg.orth_rank_tol,
+         ORTH_OBSERVE=cfg.orth_observe,
++        AUG_STATE_METHOD=cfg.resolved_aug_state_method,
++        WRITER_LINEAR_BYPASS=cfg.writer_linear_bypass,
++        WRITER_HIDDEN_WIDTHS=cfg.writer_hidden_widths,
++        WRITER_INITIALIZATION=cfg.writer_initialization,
++        WRITER_SMALL_INIT_STD=cfg.writer_small_init_std,
++        XA_COORDINATE_MODE=cfg.xa_coordinate_mode,
++        WRITER_IO_SCALING=cfg.writer_io_scaling,
++        AUG_HISTORY_LENGTH=cfg.aug_history_length,
++        CONTROLLER_MODE=cfg.controller_mode,
++        VALIDATION_RECORDS_ROLE=cfg.validation_records_role,
+     )
+diff --git a/scripts/gantry/gantry_dynamic/model.py b/scripts/gantry/gantry_dynamic/model.py
+index 301f4b5..e4effc5 100644
+--- a/scripts/gantry/gantry_dynamic/model.py
++++ b/scripts/gantry/gantry_dynamic/model.py
+@@ -48,6 +48,35 @@ def get_encoder_dims(hp, cfg: RunConfig):
+     return na, nb, na_right, nb_right
+ 
+ 
++def _augmented_drive_slice(phy_block, data, norm, cfg, nxd, nx_phys, dtype, n=2000):
++    """The correction net's ACTUAL input `z = [x, u]` over a training slice, at initialisation.
++
++    Used only to SCALE the augmented input map (Schoukens ECC 2021 Sec. IV: states normalised to
++    unit standard deviation). At init the augmented model IS the baseline (D-072), so the physical
++    part of `z` is exactly what the frozen physical block produces from the recorded input, which
++    is why rolling that block forward is the right slice and no encoder or closed loop is needed.
++    The augmented columns are left at zero: `B` masks them, so they cannot affect the drive.
++
++    `n = 2000` is 0.5 s at the 4 kHz model rate, i.e. about 79 periods of the absorber mode, which
++    is ample for a standard deviation. The recursion is sequential so it costs a few seconds; it
++    runs once per build and never during training.
++    """
++    u = np.asarray(data.train_data.u, dtype=np.float64)[:n]
++    # norm.u_mean / norm.std_u are stored as COLUMN vectors (nu, 1); ravel so they broadcast
++    # against the (N, nu) record rather than transposing it
++    u_n = (u - np.asarray(norm.u_mean).ravel()) / np.asarray(norm.std_u).ravel()
++    Z = np.zeros((len(u_n), nxd + cfg.nu), dtype=np.float64)
++    # the block's convention is (batch, nx + nu, 1); see Gantry_State_Block.nonlinear_function
++    x = torch.zeros((1, nx_phys, 1), dtype=dtype)
++    with torch.no_grad():
++        for k in range(len(u_n)):
++            uk = torch.as_tensor(u_n[k], dtype=dtype).reshape(1, -1, 1)
++            Z[k, :nx_phys] = x.reshape(-1).cpu().numpy()
++            Z[k, nxd:] = u_n[k]
++            x = phy_block(torch.cat([x, uk], dim=1))
++    return Z
++
++
+ def build_model(hp, cfg: RunConfig, data, norm):
+     """Build interconnect + SSE_Interconnect from hp dict, return fit_sys (untrained)."""
+     NX_PHYS = cfg.nx_phys
+@@ -62,6 +91,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
+     NX_ANN = hp['NX_ANN']
+     nxd = NX_PHYS + NX_ANN
+     route_ix = np.asarray(cfg.ann_route_ix)   # ANN correction rows (D-068 default (1,4,6,7))
++    aug_state_method = cfg.resolved_aug_state_method
+ 
+     # Encoder history: na=nb=nxd*2+1 (Jan's standard, nxd=NX_PHYS+NX_ANN).
+     # For linear_map, na_right=1 so reconstructability map can use y(k) to compute x(k).
+@@ -98,25 +128,144 @@ def build_model(hp, cfg: RunConfig, data, norm):
+     ic.add_block(out_phys)
+ 
+     _act = torch.nn.Identity if cfg.ann_activation == 'linear' else torch.nn.Tanh
+-    ann_block = Static_ANN_Block(
++    legacy_ann_block = Static_ANN_Block(
+         nz=nxd + nu, nw=len(route_ix),  # D-068: ANN outputs, one per routed row (cfg.ann_route_ix)
+         n_nodes_per_layer=hp['n_nodes_per_layer'],
+         n_hidden_layers=hp['n_hidden_layers'],
+         net=zero_init_feed_forward_nn,
+         activation=_act,
+     )
++    ann_block = legacy_ann_block
++    kessels_block = None
++    physical_route_ix = route_ix
++    physical_head_equivalence = None
++
++    if aug_state_method == 'kessels_extension':
++        from model_augmentation.fit_systems.kessels_extension import (
++            KesselsExtensionBlock, split_physical_ann)
++        aug_ix = np.arange(NX_PHYS, nxd)
++        missing = [int(j) for j in aug_ix if j not in route_ix.tolist()]
++        if missing:
++            raise ValueError('kessels_extension requires every augmented row in ann_route_ix; '
++                             f'missing {missing}')
++        physical_route_ix = route_ix[route_ix < NX_PHYS]
++        if not len(physical_route_ix):
++            raise ValueError('kessels_extension requires at least one retained physical correction row')
++        physical_positions = [int(np.where(route_ix == j)[0][0]) for j in physical_route_ix]
++        ann_block, physical_head_equivalence = split_physical_ann(
++            legacy_ann_block, physical_positions)
++        if cfg.writer_initialization == 'kessels_small':
++            # Declared liveness control: the existing project reader is not Kessels l_w1, so this
++            # is intentionally labelled inspired rather than a full published initialization.
++            _last = [m for m in ann_block.net.modules() if isinstance(m, torch.nn.Linear)][-1]
++            torch.nn.init.normal_(_last.weight, mean=0.0, std=cfg.writer_small_init_std)
++            torch.nn.init.normal_(_last.bias, mean=0.0, std=cfg.writer_small_init_std)
++
++        n_in = nxd + nu
++        multiplier = np.ones(n_in, dtype=np.float64)
++        offset = np.zeros(n_in, dtype=np.float64)
++        writer_scaling_evidence = {
++            'mode': cfg.writer_io_scaling,
++            'fit_records': list(getattr(__import__('gantry_dynamic.data', fromlist=['TRAIN_FILES']),
++                                        'TRAIN_FILES')),
++        }
++        if cfg.writer_io_scaling == 'kessels_fp_range':
++            x_range = np.ptp(np.asarray(norm.x_all, dtype=np.float64), axis=0)
++            u_range = np.ptp(np.asarray(norm.u_all, dtype=np.float64), axis=0)
++            if (not np.isfinite(x_range).all() or not np.isfinite(u_range).all()
++                    or np.any(x_range == 0.0) or np.any(u_range == 0.0)):
++                raise ValueError('kessels_fp_range refuses zero or nonfinite T1--T14 range')
++            # Outer state/input coordinates are (raw-mean)/std.  This affine adapter yields
++            # raw/range, i.e. Kessels' pure diagonal range scaling without centering.
++            multiplier[:NX_PHYS] = np.asarray(norm.std_x).reshape(-1) / x_range
++            offset[:NX_PHYS] = np.asarray(norm.x_mean).reshape(-1) / x_range
++            multiplier[nxd:] = np.asarray(norm.std_u).reshape(-1) / u_range
++            offset[nxd:] = np.asarray(norm.u_mean).reshape(-1) / u_range
++            writer_scaling_evidence.update(
++                x_range=x_range.tolist(), u_range=u_range.tolist(),
++                equation='scaled=(outer_normalized*std+mean)/(max-min)',
++                inverse_equation='outer_normalized=(scaled*(max-min)-mean)/std',
++            )
++        else:
++            writer_scaling_evidence['equation'] = 'identity on repository normalized [x_b,x_a,u]'
++            writer_scaling_evidence['inverse_equation'] = 'identity'
++
++        kessels_block = KesselsExtensionBlock(
++            nx_phys=NX_PHYS, n_aug=NX_ANN, nu=nu, sample_time=TS_NEW,
++            coordinate_mode=cfg.xa_coordinate_mode,
++            writer_io_scaling=cfg.writer_io_scaling,
++            writer_input_multiplier=multiplier, writer_input_offset=offset,
++            writer_linear_bypass=cfg.writer_linear_bypass,
++            writer_hidden_widths=cfg.writer_hidden_widths,
++            writer_initialization=cfg.writer_initialization,
++            small_init_std=cfg.writer_small_init_std, dtype=DTYPE_PT,
++        )
++
+     ic.add_block(ann_block)
++    if kessels_block is not None:
++        ic.add_block(kessels_block)
+ 
+     # ReZero-style gate: zero ANN OUTPUT at init WITHOUT a zero output PROJECTION, so the branch
+     # F(z) is live and the gate alpha receives gradient at step 1 (arXiv:2003.04887; the degenerate
+     # zero-projection-plus-zero-gate saddle is arXiv:2607.16568). Addresses the W^a dead zone
+     # (D-130, gate G1).
++    if aug_state_method == 'kessels_extension' and os.environ.get('ANN_REZERO_GATE'):
++        raise ValueError(
++            'ANN_REZERO_GATE is not a declared Kessels initialization mode; unset it and use '
++            'writer_initialization=matched_project or kessels_small explicitly')
+     if os.environ.get('ANN_REZERO_GATE'):
+         from .rezero_gate import apply_rezero_gate
+         _alpha = apply_rezero_gate(ann_block.net)
+         print(f"[rezero] final layer re-initialised + zero scalar gate (alpha={float(_alpha):.1f}); "
+               f"ANN output is still exactly zero at init")
+ 
++    # CHANGED (D-160): install the augmented-state recurrence, so x_a is DRIVEN at init instead of
++    # being identically zero. Without it nothing writes rows nx_phys.. (the readout's augmented
++    # columns are zero and the ANN output is zero), the ANN's read weights on those columns get
++    # zero gradient forever, and the states are measurably dead: ablation 1.0002x, F = 0.0007
++    # (BLA-Augmentation/RESULTS.md:298). OFF by default, so every prior run reproduces.
++    if aug_state_method == 'linear_ab':
++        if NX_ANN <= 0:
++            raise ValueError('aug_dynamics needs nx_ann > 0')
++        _aug_ix = list(range(NX_PHYS, NX_PHYS + NX_ANN))
++        _missing = [j for j in _aug_ix if j not in route_ix.tolist()]
++        if _missing:
++            raise ValueError('aug_dynamics requires the augmented rows to be routed; '
++                             'ann_route_ix is missing %s' % _missing)
++        if not len(cfg.aug_rho) or not len(cfg.aug_theta):
++            # REFUSAL, not a default. The poles do not move during training (C6/T3; measured
++            # motion under 0.15 Hz over 520 updates), so a silent default would silently decide
++            # the result. D-160 requires them to come from an identification of the residual.
++            raise ValueError(
++                'aug_dynamics is on but aug_rho/aug_theta are empty. The augmented poles are '
++                'frozen by the objective, so placing them decides the outcome and there is no '
++                'defensible default; supply them from an identification (D-160).')
++        from model_augmentation.fit_systems.augmented_dynamics import (
++            OUTPUT_ZERO, AugmentedDynamics, draw_input_map, empirical_input_scale)
++        _nz = nxd + nu
++        _aug_out_pos = [int(np.where(route_ix == j)[0][0]) for j in _aug_ix]
++        _B = draw_input_map(NX_ANN, _nz, _aug_ix, seed=cfg.seed + 161)
++        # Scale B so x_a has unit std under the REAL driving signal, per Schoukens ECC 2021
++        # Sec. IV ("normalized such that each of the states has a standard deviation equal to 1").
++        # Z is built from the frozen physical block on a slice of training input, which is what the
++        # correction net actually sees at init because the model IS the baseline there. Replaces
++        # Orvieto's sqrt(1 - rho^2), whose white-input premise does not hold for this z.
++        _Z = _augmented_drive_slice(phy_block, data, norm, cfg, nxd, NX_PHYS, DTYPE_PT)
++        _B, _std0 = empirical_input_scale(_B, cfg.aug_rho, cfg.aug_theta, _Z)
++        ann_block.net = AugmentedDynamics(
++            ann_block.net, _aug_out_pos, _aug_ix,
++            rho=cfg.aug_rho, theta=cfg.aug_theta, B=_B,
++            gamma_on_B=False, gate_mode=OUTPUT_ZERO,
++            train_A=cfg.aug_train_A, train_B=cfg.aug_train_B,
++            dtype=DTYPE_PT).to(DTYPE_PT)
++        print('[aug-dyn] input map scaled to unit x_a std; pre-scale std per pair %s'
++              % np.array2string(_std0, precision=4))
++        print('[aug-dyn] %d augmented states, %d pole pairs, rows %s -> ANN output cols %s'
++              % (NX_ANN, NX_ANN // 2, _aug_ix, _aug_out_pos))
++        for _r in ann_block.net.pole_table(TS_NEW):
++            print('          pair %d: rho %.6f  f_d %.4f Hz  zeta %.5f'
++                  % (_r['pair'], _r['rho'], _r['f_d_hz'], _r['zeta']))
++
+     # REMOVED (2026-08-13): the D-118 Lipschitz-cap hook (env ANN_LIPSCHITZ -> apply_lipschitz_cap)
+     # used to sit here. It was a one-off experiment hook in the production model builder, and the
+     # experiment is closed: the only run that ever set it (boae5mdee, 2026-07-18/19,
+@@ -131,7 +280,11 @@ def build_model(hp, cfg: RunConfig, data, norm):
+     # D-068: stiff routing — corrections placed only at K>0 rows (Theta + absorber).
+     # X and Y axis rows (0,3,2,5) excluded: K=0 integrators accumulate without restoring force.
+     ic.connect_block_signals(ann_block, ["x", "u"], [])
+-    ic.connect_signals(ann_block, "xp", "additive", expansion_matrix(route_ix, nxd))
++    ic.connect_signals(ann_block, "xp", "additive", expansion_matrix(physical_route_ix, nxd))
++    if kessels_block is not None:
++        ic.connect_block_signals(kessels_block, ["x", "u"], [])
++        ic.connect_signals(kessels_block, "xp", "additive",
++                           expansion_matrix(np.arange(NX_PHYS, nxd), nxd))
+     ic.connect_signals("x", phy_block, "concat", selection_matrix(PHY_IX, nxd))
+     ic.connect_block_signals(phy_block, ["u"], [])
+     ic.connect_signals(phy_block, "xp", "additive", expansion_matrix(PHY_IX, nxd))
+@@ -177,6 +330,21 @@ def build_model(hp, cfg: RunConfig, data, norm):
+     fit_sys.defect_norm   = cfg.defect_norm
+     fit_sys.defect_scale  = (None if cfg.defect_scale is None else
+                              torch.as_tensor(cfg.defect_scale, dtype=DTYPE_PT))
++    fit_sys.aug_state_method = aug_state_method
++    fit_sys.physical_route_rows = tuple(int(i) for i in physical_route_ix)
++    if kessels_block is not None:
++        fit_sys.kessels_manifest = kessels_block.manifest()
++        fit_sys.kessels_manifest.update({
++            'physical_route_rows': list(fit_sys.physical_route_rows),
++            'physical_route_departure': 'retained project ANN may write physical position rows',
++            'controller_mode': cfg.controller_mode,
++            'controller_fidelity': 'project residual replay; not exact native-Kessels data flow',
++            'validation_records_role': cfg.validation_records_role,
++            'physical_history_end': 'k0', 'augmented_history_end': 'k0-1',
++            'augmented_history_signals': ['u', 'y'],
++        })
++        fit_sys.writer_scaling_evidence = writer_scaling_evidence
++        fit_sys.physical_head_equivalence = physical_head_equivalence
+     if cfg.n_seg > 1 and (cfg.defect_weight != 0.0 or cfg.defect_acc_weight != 0.0):
+         print(f'Multiple shooting ON (D-127): n_seg={cfg.n_seg} x nf_seg={cfg.nf_seg} '
+               f'= nf {cfg.nf} ({cfg.n_seg * cfg.nf_seconds:.2f} s objective, '
+@@ -209,7 +377,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
+         # na/nb passed without right extension: W^b is built for (na+1) timesteps, and
+         # the SSE_Interconnect window with na_right=1 gives exactly (na+1) timesteps.
+         # Convention fix (D-017) applied natively via u_mean/std_u/y0/ystd/x_mean/std_x.
+-        fit_sys.encoder = linear_encoder_init_aug(
++        legacy_encoder = linear_encoder_init_aug(
+             A=Ad_bar, B=Bd_bar, C=Cd_bar, D=Dd_bar,
+             nx=NX_PHYS, nu=nu, ny=ny, na=na, nb=nb,
+             nx_aug=NX_ANN,
+@@ -220,6 +388,32 @@ def build_model(hp, cfg: RunConfig, data, norm):
+             y0=y0, ystd=ystd,
+             x_mean=x_mean, std_x=std_x,
+         ).to(DTYPE_PT)
++        if kessels_block is None:
++            fit_sys.encoder = legacy_encoder
++        else:
++            from model_augmentation.fit_systems.kessels_extension import (
++                HoekstraPhysicalEncoder, KesselsAugmentedEncoder, KesselsCompositeEncoder)
++            physical_encoder = HoekstraPhysicalEncoder(legacy_encoder).to(DTYPE_PT)
++            with torch.no_grad():
++                _up = torch.linspace(-1, 1, 5 * (nb + 1) * nu, dtype=DTYPE_PT).reshape(5, nb + 1, nu)
++                _yp = torch.linspace(1, -1, 5 * (na + 1) * ny, dtype=DTYPE_PT).reshape(5, na + 1, ny)
++                _old_xb = legacy_encoder(_up, _yp)[:, :NX_PHYS]
++                _new_xb = physical_encoder(_up, _yp)
++                _enc_eq = torch.equal(_old_xb, _new_xb)
++                _enc_diff = float((_old_xb - _new_xb).abs().max())
++            if not _enc_eq:
++                raise RuntimeError('physical encoder split-copy equivalence failed')
++            aug_history_length = cfg.aug_history_length or na
++            augmented_encoder = KesselsAugmentedEncoder(
++                nu=nu, ny=ny, n_history=aug_history_length, n_aug=NX_ANN,
++                initialization=cfg.writer_initialization,
++                small_init_std=cfg.writer_small_init_std, dtype=DTYPE_PT,
++            )
++            fit_sys.encoder = KesselsCompositeEncoder(
++                physical_encoder, augmented_encoder).to(DTYPE_PT)
++            fit_sys.kessels_manifest['aug_history_length'] = aug_history_length
++            fit_sys.kessels_manifest['physical_encoder_copy_equivalence'] = {
++                'bitwise_equal': _enc_eq, 'max_abs_difference': _enc_diff}
+ 
+     # CHANGED: pass lr at optimizer creation. init_model builds the optimizer here;
+     # fit()'s optimizer_kwargs are ignored once init_model_done=True, so without this

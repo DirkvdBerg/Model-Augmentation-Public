@@ -30,18 +30,23 @@ pushable record of those changes so the result is not lost, without staging eith
 It is the one file carrying both tracks. Line numbers are into
 `patches/scripts_gantry_gantry_dynamic_model.py.patch`:
 
+**REGENERATED 2026-08-22** after `AUG_LRU_FREEZE` and `ENC_WA_FREEZE` were added (both env-gated,
+OFF by default, D-072 no-op verified at `0.000e+00 PASS`,
+`transient-investigation/runs/d072_noop_check_freezegates.json`). Line numbers below are into the
+CURRENT patch and were re-derived after that edit; the patch is re-verified against `4cdb7c1`.
+
 | patch lines | hunk | owner |
 |-|-|-|
 | 9-83 | `class AugLRUBypass` | this track (D-150/D-151) |
-| 85-126 | `def lru_band_from_artifact` | this track (D-150 band recipe) |
-| 128-170 | `get_encoder_dims` + `AUG_LRU_NA_NB` pin | this track (2026-08-21) |
+| 85-124 | `def lru_band_from_artifact` | this track (D-150 band recipe) |
+| 125-170 | `get_encoder_dims` + `AUG_LRU_NA_NB` pin | this track (2026-08-21) |
 | **172-217** | **`find_log_params`, `split_param_group`** | **other session (P1)** |
 | 218-231 | the `[aug-lag]` print in `build_model` | this track |
-| 232-322 | the `ANN_REZERO_GATE` block and the whole `AUG_LRU` block | this track |
-| 323-351 | `ENC_WA_ZERO` | this track |
-| **352-358** | **`if cfg.lr_theta is not None: split_param_group(...)`** | **other session (P1)** |
+| 232-334 | the `ANN_REZERO_GATE` block, the whole `AUG_LRU` block, and `AUG_LRU_FREEZE` | this track |
+| 335-376 | `ENC_WA_ZERO` and `ENC_WA_FREEZE` | this track |
+| **377-383** | **`if cfg.lr_theta is not None: split_param_group(...)`** | **other session (P1)** |
 
-So: to keep only this track's `model.py`, drop patch lines 172-217 and 352-358. Note that dropping
+So: to keep only this track's `model.py`, drop patch lines 172-217 and 377-383. Note that dropping
 them also requires dropping `cfg.lr_theta` / `cfg.eps_theta` from `config.py`, or `build_model` will
 reference fields that do not exist.
 

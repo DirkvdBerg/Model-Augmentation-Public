@@ -1,0 +1,48 @@
+--- a/scripts/gantry/gantry_dynamic/model.py
++++ b/scripts/gantry/gantry_dynamic/model.py
+@@ -168,12 +168,45 @@
+         # whole __dict__ at every validation, so it would kill any real run at its first checkpoint.
+         _alpha = apply_rezero_gate(ann_block.net, per_row=_per_row, as_module=True)
+         print(f"[rezero] final layer re-initialised + zero "
+               f"{'per-row' if _per_row else 'scalar'} gate "
+               f"(alpha shape {tuple(_alpha.shape)}, max {float(_alpha.abs().max()):.1f}); "
+               f"ANN output is still exactly zero at init")
++
++    # ---- INITIALISATION SCALE. The one lever section 9 of the 2026-08-19 handoff leaves open. ----
++    # CHANGED (ANN_INIT_SCALE, 2026-08-19): this whole block is new and is a SINGLE contiguous
++    # addition, default-off (`ANN_INIT_SCALE` unset or 1 is a bit-identical no-op). To revert,
++    # delete from this banner to the closing `print(...)` below; nothing outside it was touched.
++    # A patch of exactly this hunk is kept at `scripts/gantry/gantry_dynamic/patches/
++    # 2026-08-19-ann-init-scale.patch` so the revert does not depend on reading the comment.
++    # WHY IT IS AN INITIALISATION KNOB AND NOT A TRAINING KNOB, arithmetically. `cl_reachability.py`
++    # measured the trained ANN at |w| = 3.42 and a known-better DYNAMIC solution at |w| = 10.87,
++    # separated by a 34.83x loss barrier with an exactly orthogonal gradient. Adam's per-parameter
++    # step is bounded by lr, so at lr = 1e-7 over 3 epochs x 260 iterations = 780 updates no run can
++    # travel more than 7.8e-05 per weight, i.e. |dw| <= 1.9e-03 over all 600. A larger weight norm
++    # can therefore only be START ed from, never reached.
++    # HEURISTIC: s is a plain multiplier on every ANN weight and bias, chosen so that s * 3.42
++    # brackets 10.87 (s = 3.18). No literature source; it is the direct translation of the measured
++    # norm gap into an init, and the falsifier is whether the free run moves off 1.3934e-06 at all.
++    # The ReZero gate's alpha is EXCLUDED, so with ANN_REZERO_GATE set the ANN output is still
++    # exactly zero at init and the D-072 baseline-equality contract is untouched.
++    _init_scale = float(os.environ.get('ANN_INIT_SCALE', 0) or 0)
++    if _init_scale and _init_scale != 1.0:
++        with torch.no_grad():
++            _named = list(ann_block.net.named_parameters())
++            _n0 = float(torch.sqrt(sum((p ** 2).sum() for _, p in _named)))
++            _scaled = 0
++            for _nm, _p in _named:
++                if _nm.split('.')[-1] == 'alpha':
++                    continue
++                _p.mul_(_init_scale)
++                _scaled += _p.numel()
++            _n1 = float(torch.sqrt(sum((p ** 2).sum() for _, p in _named)))
++        print(f"[ann-init] ANN_INIT_SCALE={_init_scale:g} applied to {_scaled} of "
++              f"{sum(p.numel() for _, p in _named)} ANN parameters (alpha excluded); "
++              f"|w| {_n0:.4f} -> {_n1:.4f}  (planted reference 10.87)")
+ 
+     # REMOVED (2026-08-13): the D-118 Lipschitz-cap hook (env ANN_LIPSCHITZ -> apply_lipschitz_cap)
+     # used to sit here. It was a one-off experiment hook in the production model builder, and the
+     # experiment is closed: the only run that ever set it (boae5mdee, 2026-07-18/19,
+     # problem-log line 606) found L=1.0 NON-BINDING (the trained ANN's natural Lipschitz is ~1e-2),
+     # so the sweep was inconclusive and the signal pointed to the passivity route, not magnitude
