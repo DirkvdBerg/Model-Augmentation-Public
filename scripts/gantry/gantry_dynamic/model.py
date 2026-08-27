@@ -221,11 +221,16 @@ def build_model(hp, cfg: RunConfig, data, norm):
             x_mean=x_mean, std_x=std_x,
         ).to(DTYPE_PT)
 
-    # CHANGED: pass lr at optimizer creation. init_model builds the optimizer here;
+    # CHANGED: pass lr and eps at optimizer creation. init_model builds the optimizer here;
     # fit()'s optimizer_kwargs are ignored once init_model_done=True, so without this
-    # every run trained at Adam's default 1e-3 instead of hp['lr'] (D-101).
+    # every run trained at Adam's defaults instead of the declared values (D-101/D-148).
     fit_sys.init_model(sys_data=data.train_data, auto_fit_norm=False,
-                       optimizer_kwargs={'lr': hp['lr']})
+                       optimizer_kwargs={'lr': hp['lr'], 'eps': cfg.adam_eps})
+    eps_values = {float(group['eps']) for group in fit_sys.optimizer.param_groups}
+    if eps_values != {float(cfg.adam_eps)}:
+        raise RuntimeError(
+            f'Adam eps mismatch after optimizer construction: config={cfg.adam_eps}, '
+            f'optimizer={sorted(eps_values)}')
     if cfg.encoder_init == 'linear_map':
         fit_sys.hfn.to(DTYPE_PT)
     else:
@@ -245,12 +250,20 @@ def build_model(hp, cfg: RunConfig, data, norm):
 
 def train_model(fit_sys, hp, cfg: RunConfig, data, epochs=None, nf=None, validation_measure=None):
     """Train fit_sys for given epochs. nf and validation_measure override hp defaults."""
+    # A resumed optimizer carries its own parameter-group settings. Refuse a silent
+    # fallback to a checkpoint's/default epsilon when the run declares another value.
+    eps_values = {float(group['eps']) for group in fit_sys.optimizer.param_groups}
+    if eps_values != {float(cfg.adam_eps)}:
+        raise RuntimeError(
+            f'Adam eps mismatch before training: config={cfg.adam_eps}, '
+            f'optimizer={sorted(eps_values)}. Resume with the checkpoint epsilon or '
+            'start a fresh optimizer.')
     fit_sys.fit(
         train_sys_data=data.train_data, val_sys_data=data.val_ckpt_data,
         batch_size=hp['batch_size'], epochs=epochs or hp['epochs'],
         auto_fit_norm=False,
         loss_kwargs={'nf': nf if nf is not None else hp['nf'], 'stride': cfg.stride},
-        optimizer_kwargs={'lr': hp['lr']},
+        optimizer_kwargs={'lr': hp['lr'], 'eps': cfg.adam_eps},
         validation_measure=validation_measure if validation_measure is not None else 'sim-RMS',
     )
     return fit_sys.bestfit

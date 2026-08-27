@@ -45,6 +45,12 @@ class RunConfig:
     # sigma_n = rms(y) * 10^(-SNR/20); reaching sigma_n on val sim-RMS = acceptance floor.
     snr: Optional[int] = None   # dB: 50/55/60; None = noiseless (supervisor 07-07: make it work without noise first)
     seed: int = 42
+    # --- Training-loss rollout: closed loop (known controller wrapped around the model)
+    #     or open loop (plant input replayed from the record). This selects the OBJECTIVE,
+    #     not just a diagnostic: closed loop routes loss() through interconnect.py's
+    #     closed-loop rollout and `bestfit` becomes the V1-V4 closed-loop free-run RMS.
+    #     False leaves interconnect.py's `simulator = None` default in force (open loop).
+    closed_loop: bool = True
 
     # ═══ Sampling / data conditioning ═════════════════════════════════════════
     fs_orig: int = 20000
@@ -66,6 +72,10 @@ class RunConfig:
     up_sample: int = 2             # model discretization sub-steps per Ts
     batch_size: int = 256
     lr: float = 1e-4
+    # Explicit because the augmented writer can have 1e-11..1e-14 gradients; Adam's
+    # 1e-8 default then suppresses its effective step. Kept out of `hp` so the legacy
+    # checkpoint hyperparameter schema/order remains unchanged.
+    adam_eps: float = 1e-8
     epochs: int = 10
     nf_seconds: float = 0.100      # [s] SEGMENT length (5*tau_msd, tau=1/(zeta*wn)=20ms, 5tau=100ms)
     # Optional direct overrides (None = derive). Set a number to bypass the formula.
@@ -188,4 +198,11 @@ def config_json_dict(cfg: RunConfig) -> dict:
         ORTH_POINT_STRIDE=cfg.orth_point_stride,
         ORTH_RANK_TOL=cfg.orth_rank_tol,
         ORTH_OBSERVE=cfg.orth_observe,
+        # Appended, not inserted: the pre-refactor key order above is load-bearing
+        # for old npz readers. CLOSED_LOOP records which objective the run used --
+        # without it an open-loop and a closed-loop run are indistinguishable in the
+        # saved metadata, and their `bestfit` numbers are not comparable.
+        CLOSED_LOOP=cfg.closed_loop,
+        # Appended for backward compatibility with readers that rely on the old order.
+        ADAM_EPS=cfg.adam_eps,
     )
