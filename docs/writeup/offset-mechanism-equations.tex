@@ -1,0 +1,90 @@
+% offset-mechanism-equations.tex
+%
+% v2: reduced to the two corrections and nothing else. The full difference (Delta M,
+%     the absorber column, K=0 and the two closed forms) moved to
+%     offset-mechanism-derivation.tex, which this file does not depend on.
+% v1: contained both; the mixture obscured the simple statement.
+%
+% THIS IS A FRAGMENT, not a standalone document. It uses \mhr from
+% jan-augmentation-writeup.tex and is meant to be pulled in with
+%     \input{offset-mechanism-equations}
+% Preview it with offset-mechanism-preview.tex. Requires amsmath.
+%
+% Supports SHOWCASE_offset_mechanism_<record> in scripts/gantry/msd-offset/figures/.
+
+\subsection{What the baseline is missing, as two corrections}
+
+The baseline treats the payload as a single rigid mass $m_h$ sitting at $Y$. In reality it is
+two things: a rigid part $\mhr$ at $Y$, and an absorber mass $m_a$ on a spring whose rest
+position is a distance $L_0$ further out, at $Y+L_0$. The split conserves the total,
+$m_h = \mhr + m_a$. Two independent corrections follow, and neither touches the damping or
+stiffness matrices, so those are the same in both models throughout.
+
+\paragraph{Starting point.} Of the baseline's three equations, the two that matter here are
+%
+\begin{align}
+  X:\quad & m_t\,\ddot X + M_{12}\,\ddot\Theta + (\text{damping}) = F_X , \label{eq:fix-baseX}\\
+  Y:\quad & m_h\,\ddot Y - m_h d\,\ddot\Theta + c_y \dot Y = F_Y , \label{eq:fix-baseY}
+\end{align}
+%
+where $M_{12} = \tfrac{(m_1-m_2)L_b}{2} - m_h Y$ is the coefficient that couples twisting to
+sideways motion.
+
+\paragraph{Fix 1: put the payload's mass where it really is.} Wherever the payload's position
+enters the mass matrix, substitute the correctly split moments,
+%
+\begin{equation}
+  m_h Y \;\longrightarrow\; \mhr Y + m_a(Y{+}L_0) ,
+  \qquad
+  m_h Y^2 \;\longrightarrow\; \mhr Y^2 + m_a(Y{+}L_0)^2 .
+  \label{eq:fix1-substitution}
+\end{equation}
+%
+Only two coefficients move as a result,
+%
+\begin{equation}
+  M_{12} \;\longrightarrow\; M_{12} - m_a L_0 ,
+  \qquad
+  M_{22} \;\longrightarrow\; M_{22} + m_a\bigl[2YL_0 + L_0^2\bigr] .
+  \label{eq:fix1}
+\end{equation}
+%
+Nothing is added: the model keeps its three coordinates and three equations, and two numbers are
+corrected. The size of the correction is a first moment of mass,
+$m_a L_0 = 0.101\,\mathrm{kg\,m}$, which divided by $m_h = 10.1\,\mathrm{kg}$ is a
+$1\,\mathrm{cm}$ error in the assumed position of the payload's centre of mass.
+
+\paragraph{Fix 2: give the model the wobbling mass.} Add one term to the $Y$ equation and one
+new equation for the absorber coordinate $\delta_a$,
+%
+\begin{align}
+  Y:\quad & m_h \ddot Y + \underbrace{m_a \ddot\delta_a}_{\text{new}}
+            - m_h d\,\ddot\Theta + c_y \dot Y = F_Y , \label{eq:fix2-y}\\[1mm]
+  \delta_a:\quad & m_a\bigl(\ddot Y + \ddot\delta_a - d\,\ddot\Theta\bigr)
+            + c_a \dot\delta_a + k_a \delta_a = 0 . \label{eq:fix2-absorber}
+\end{align}
+%
+The new equation is just a mass on a spring: $\ddot Y + \ddot\delta_a - d\,\ddot\Theta$ is the
+absorber's acceleration in space, and its inertia is balanced by its own spring $k_a$ and damper
+$c_a$. No external force reaches it, hence the zero on the right.
+
+\paragraph{Why each fixes one axis.} The two corrections act on disjoint equations:
+%
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+  Fix 1, eq.~\eqref{eq:fix1} & changes rows $X$ and $\Theta$ only
+    & so the $Y$ row is untouched and $Y$ is unaffected \\
+  Fix 2, eq.~\eqref{eq:fix2-y}--\eqref{eq:fix2-absorber} & changes rows $Y$ and $\delta_a$ only
+    & so the $X$ row is untouched and $X$ is unaffected \\
+\end{tabular}
+\end{center}
+%
+Neither correction can reach the other's axis. This is why removing one of them cancels the
+offset on exactly one output and leaves the other unchanged to six digits, rather than
+approximately: the dissociation is structural, not numerical.
+
+Both corrections do perturb the $\Theta$ row, through $M_{22}$ and through
+$-m_a d\,\ddot\Theta$ respectively, yet $\Theta$ develops no offset. The reason is that $\Theta$
+is the only sprung axis, $K_{22} = k_{b1}{+}k_{b2} > 0$, while $K_{11} = K_{33} = 0$: an error
+on $X$ or $Y$ has nothing to restore it and accumulates, whereas on $\Theta$ it decays. That
+contrast is what identifies the mechanism, and it is the control row of the figure.

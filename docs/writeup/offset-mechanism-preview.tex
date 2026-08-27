@@ -1,0 +1,61 @@
+% offset-mechanism-preview.tex
+%
+% v1: preview wrapper for offset-mechanism-equations.tex, which is a FRAGMENT and
+%     produces no PDF on its own. This file exists only so the fragment can be read
+%     and checked before it is pulled into jan-augmentation-writeup.tex.
+%
+% It duplicates NO notation. Cross-references to eq:baseline-eom, eq:sys-eom and
+% eq:sys-consts are resolved with xr against the parent's .aux, so the equation
+% numbers shown here are the parent's real ones. The single \mhr definition below
+% mirrors the parent because a macro cannot be imported through xr.
+%
+% Build (from this directory), parent first so its .aux exists:
+%     pdflatex jan-augmentation-writeup.tex
+%     pdflatex offset-mechanism-preview.tex
+%     pdflatex offset-mechanism-preview.tex      % second pass resolves refs
+%
+% The authoritative home of this content is jan-augmentation-writeup.tex via
+%     \input{offset-mechanism-equations}
+% Delete this wrapper once the fragment is inputted there.
+
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xr}
+
+\externaldocument{jan-augmentation-writeup}
+
+\newcommand{\mhr}{m_{h,\mathrm{r}}}   % mirrors jan-augmentation-writeup.tex
+
+% Preview cosmetic only: the fragment uses \subsection because it will sit inside a
+% section of the parent. Standalone that renders as "0.1", so number them plainly.
+\renewcommand{\thesubsection}{\arabic{subsection}}
+
+\title{Preview: the baseline-versus-truth model difference and the open-loop offset}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-10mm}
+
+\begin{sloppypar}
+\noindent\textit{Preview only. Equation numbers such as \textup{(\ref{eq:sys-eom})} point into}
+\texttt{jan-augmentation-writeup.tex} \textit{and resolve through its} \texttt{.aux}\textit{.
+Supports the figure} \texttt{SHOWCASE\_offset\_mechanism} \textit{in}
+\texttt{scripts/gantry/} \texttt{msd-offset/figures/}.
+\end{sloppypar}
+
+\bigskip
+
+\input{offset-mechanism-equations}
+
+\bigskip
+\input{offset-mechanism-derivation}
+
+\end{document}

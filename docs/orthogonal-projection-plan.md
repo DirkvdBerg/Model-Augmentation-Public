@@ -444,9 +444,12 @@ Conventions for every step:
 
 ### Step 5: Y-coverage map (D5)
 - Build: bin the point set by Y (>= 8 bins over the training sweep), per-bin
-  stacked regressor Phi_tilde^(b), residual
-  rho_b = ||(I - Q Q^T) Phi_tilde^(b)||_F / ||Phi_tilde^(b)||_F and principal
-  angles vs span(Q).
+  stacked regressor Phi_tilde^(b), and the ROW-SPACE leave-one-bin-out
+  residual rho_b_LOO (see D5 [FORMULA CORRECTION 2026-07-12]: the
+  column-space rho_b originally specified here is a support-fraction
+  artifact, not a coverage measure, and rho_b_LOO replaces it as the
+  criterion). The column-space rho_b and principal angles vs span(Q) are
+  still computed and reported, for the record only.
 - Goal achieved when: the rho_b map is produced and reported, including bins
   nearest the held-out Y positions. This step INFORMS (data design, penalty
   point-set decimation in Sect. 5.1) but does not block: a large rho_b in some

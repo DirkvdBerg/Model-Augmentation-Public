@@ -1,0 +1,128 @@
+% offset-mechanism-panels.tex
+%
+% v1: the four columns of SHOWCASE_offset_mechanism_<record> stated as red-pen edits
+%     to the baseline matrices, and nothing else. No dynamics, no closed forms, no
+%     attribution argument. Companions:
+%       offset-mechanism-equations.tex   the same two fixes written as equation edits
+%                                        per row, plus the disjoint-rows argument
+%       offset-mechanism-derivation.tex  the formal Delta M, K = 0 and the two closed forms
+%     This file overlaps offset-mechanism-equations.tex on purpose: that one is organised
+%     by fix, this one is organised by figure panel. Input at most one of them.
+%
+% THIS IS A FRAGMENT, not a standalone document. It uses \mhr from
+% jan-augmentation-writeup.tex and is meant to be pulled in with
+%     \input{offset-mechanism-panels}
+% Preview it with offset-mechanism-preview.tex. Requires amsmath.
+%
+% Supports SHOWCASE_offset_mechanism_<record> in scripts/gantry/msd-offset/figures/.
+
+\subsection{What each panel of the showcase figure changes}
+\label{sec:offset-panels}
+
+The four columns of the showcase figure are four versions of the same model, differing only
+in the edits below. All four are driven by the same recorded input, and every curve is that
+version's open-loop simulation error against the recorded output.
+
+\paragraph{Panel 1, \textit{baseline}.}
+Three coordinates $q = [X,\ \Theta,\ Y]^\top$ obeying $M\ddot q + C\dot q + K q = F$. Writing
+$m_t = m_1{+}m_2{+}m_b{+}m_h$, $\;b = \tfrac{(m_1-m_2)L_b}{2}$ and
+$J = J_b{+}J_h{+}\tfrac{(m_1+m_2)L_b^2}{4} + m_h d^2$,
+%
+\begin{equation}
+  M_{\mathrm{base}} =
+  \begin{bmatrix}
+    m_t        & b - m_h Y     & 0      \\
+    b - m_h Y  & J + m_h Y^2   & -m_h d \\
+    0          & -m_h d        & m_h
+  \end{bmatrix},
+  \qquad
+  K_{\mathrm{base}} = \operatorname{diag}\bigl(0,\ k_{b1}{+}k_{b2},\ 0\bigr),
+  \label{eq:panel-baseline}
+\end{equation}
+%
+with $C_{\mathrm{base}}$ the usual matrix in $c_{g1},c_{g2},c_{b1},c_{b2},c_y$.
+
+\paragraph{Panel 2, \textit{+ centre-of-mass term}.}
+Split the payload as $m_h = \mhr + m_a$ and place $m_a$ at $Y + L_0$ instead of at $Y$, that is,
+%
+\begin{equation}
+  m_h Y \;\longrightarrow\; \mhr Y + m_a (Y{+}L_0),
+  \qquad
+  m_h Y^2 \;\longrightarrow\; \mhr Y^2 + m_a (Y{+}L_0)^2 .
+  \label{eq:panel-substitution}
+\end{equation}
+%
+Exactly two entries of $M$ move as a result, and nothing else in the model does:
+%
+\begin{equation}
+  M_{12} \;\longrightarrow\; \underbrace{b - m_h Y}_{\text{baseline}} - \; m_a L_0 ,
+  \qquad
+  M_{22} \;\longrightarrow\; \underbrace{J + m_h Y^2}_{\text{baseline}}
+          + \; m_a\bigl[2 Y L_0 + L_0^2\bigr] .
+  \label{eq:panel-fix1}
+\end{equation}
+%
+$C$ and $K$ are untouched, the model keeps three coordinates, and no state is added. The size of
+the edit is a first moment of mass, $m_a L_0 = 0.101\,\mathrm{kg\,m}$, which over
+$m_h = 10.1\,\mathrm{kg}$ is a $1\,\mathrm{cm}$ error in the assumed position of the payload's
+centre of mass.
+
+\paragraph{Panel 3, \textit{+ absorber}.}
+Leave $M$, $C$ and $K$ as \eqref{eq:panel-baseline} has them and add a fourth coordinate
+$\delta_a$, the absorber's displacement relative to the payload. Each matrix gains one row and
+one column:
+%
+\begin{equation}
+  M =
+  \left[\begin{array}{ccc|c}
+    \multicolumn{3}{c|}{\multirow{3}{*}{$M_{\mathrm{base}}$}} & 0      \\
+    \multicolumn{3}{c|}{}                                     & -m_a d \\
+    \multicolumn{3}{c|}{}                                     & m_a    \\ \hline
+    0 & -m_a d & m_a                                          & m_a
+  \end{array}\right],
+  \quad
+  C =
+  \left[\begin{array}{ccc|c}
+    \multicolumn{3}{c|}{\multirow{3}{*}{$C_{\mathrm{base}}$}} & 0 \\
+    \multicolumn{3}{c|}{}                                     & 0 \\
+    \multicolumn{3}{c|}{}                                     & 0 \\ \hline
+    0 & 0 & 0                                                 & c_a
+  \end{array}\right],
+  \quad
+  K =
+  \left[\begin{array}{ccc|c}
+    \multicolumn{3}{c|}{\multirow{3}{*}{$K_{\mathrm{base}}$}} & 0 \\
+    \multicolumn{3}{c|}{}                                     & 0 \\
+    \multicolumn{3}{c|}{}                                     & 0 \\ \hline
+    0 & 0 & 0                                                 & k_a
+  \end{array}\right].
+  \label{eq:panel-fix2}
+\end{equation}
+%
+So $M_{Y\delta_a} = M_{\delta_a\delta_a} = m_a$ and $M_{\Theta\delta_a} = -m_a d$, while
+$M_{X\delta_a} = 0$: the absorber has no direct path to $X$. The input $F$ still enters only the
+first three rows, so no external force reaches the absorber.
+
+\paragraph{Panel 4, \textit{+ both}.}
+Both edits at once, \eqref{eq:panel-fix1} and \eqref{eq:panel-fix2}. This is the true $8$-state
+plant, so this panel also shows the truth model's own residual against the recorded data.
+
+\paragraph{The two edits are of different kinds.}
+%
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+  \textit{Panel} & \textit{What changed} & \textit{Size of the model} \\[0.6mm]
+  + centre-of-mass term & two numbers in $M$ & $3\times 3$, unchanged \\
+  + absorber            & one new coordinate, one new row and column & $4\times 4$ \\
+\end{tabular}
+\end{center}
+%
+Panel 2 corrects a \emph{parameter}; panel 3 adds a \emph{state}. Neither can do the other's job,
+which is why each panel removes the offset on one axis and leaves the other one unchanged.
+
+\paragraph{One caveat, for a reader who opens the code.}
+The coefficient $M_{12}$ of the full plant carries $-m_a(L_0 + \delta_a)$, not $-m_a L_0$. Panel 3
+sets $L_0 = 0$ and therefore retains $-m_a \delta_a$, so its upper-left $3\times 3$ block equals
+$M_{\mathrm{base}}$ only up to terms in $\delta_a$. Since $\delta_a$ has an rms of
+$22\,\mu\mathrm{m}$ against $L_0 = 0.10\,\mathrm{m}$, that residual is worth $0.16\,\%$ and panel
+3 reproduces the baseline $X$ offset to the quoted $100.00\,\%$ regardless.

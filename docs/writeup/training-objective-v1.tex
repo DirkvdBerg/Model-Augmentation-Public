@@ -62,20 +62,25 @@
 %% PANEL (b): inside one training window     (local x in ms; 110 ms -> 10.5 cm)
 %% ==========================================================================
 \begin{scope}[xshift=0.6cm, yshift=-5.28cm, x=0.09545cm]
-  \node[ttl] at (0,2.98) {(b) inside one training window};
+  \node[ttl] at (0,3.14) {(b) inside one training window};
+  % Signal definitions live on the rows themselves (units) and in the right-hand
+  % annotation (channels): this header band sits inside the wedge and has no room.
 
   % encoder window (18 samples = 4.5 ms) and rollout extent, both to scale
   \fill[band] (0,-1.05) rectangle (4.5,2.18);
   \draw[dashed, thin, grey] (104.5,-1.05) -- (104.5,2.18);
 
-  \draw[thin] (2.25,2.18) -- (2.25,2.44);
-  \node[ann, anchor=west] at (4.0,2.44)
-    {encoder window: $n_a=n_b=17$, 18 samples of $u$ \emph{and} $y$, 4.5 ms};
+  % Lines kept short: the right wedge line reaches only x ~9.9 cm at this height.
+  \draw[thin] (2.25,2.18) -- (2.25,2.38);
+  \node[ann, anchor=west] at (4.0,2.38)
+    {encoder window: 18 samples of $u$ \emph{and} $y$ (4.5 ms)\\
+     $n_a=n_b=17$; \ $\psi$ trained jointly, on this same loss};
 
   % --- u row -------------------------------------------------------------
   \draw[thick] plot[domain=0:104.5, samples=600] (\x, {\utrace{\x}});
-  \node[anchor=east, font=\scriptsize] at (-3,1.75) {$u$};
-  \node[ann, anchor=west] at (107,1.75) {$u$ drives the\\whole window};
+  \node[anchor=east, font=\scriptsize] at (-3,1.75) {$u$ [N]};
+  \node[ann, anchor=west] at (107,1.80)
+    {$u=[F_{X_1},F_{X_2},F_{Y}]$,\\stage frame; drives\\the whole window};
 
   % --- model chain row ---------------------------------------------------
   \node[small] (psi) at (2.25,0.95) {$\psi$\\{\scriptsize encoder}};
@@ -83,18 +88,25 @@
   \draw[->] (2.25,0.40) -- (psi.south);
   \draw[->, thick] (psi.east) -- (104.5,0.95);
   \node[anc, anchor=south, inner sep=2pt] at (58,1.00)
-    {$\hat x_k$, then \textbf{open loop}: $f_{\mathrm{base}}+f_{\mathrm{aug}}$ only, no $y$ enters};
+    {$\hat x_{k|k}$, then \textbf{open loop}: $f_{\mathrm{base}}+f_{\mathrm{aug}}$ and
+     $g_{\mathrm{aug}}$, no $y$ enters};
 
   % --- y row: measured (thick) vs model (thin), residual sticks ----------
   \draw[thick] plot[domain=0:104.5, samples=600] (\x, {\ydata{\x}});
   \draw[thin]  plot[domain=4.5:104.5, samples=580] (\x, {\ymodel{\x}});
-  \node[anchor=east, font=\scriptsize] at (-3,0.15) {$y$};
+  \node[anchor=east, font=\scriptsize] at (-3,0.15) {$y$ [m]};
   \foreach \s in {8,16.5,25,33.5,42,50.5,59,67.5,76,84.5,93,101.5}{
     \pgfmathsetmacro{\ya}{\ydata{\s}}
     \pgfmathsetmacro{\yb}{\ymodel{\s}}
     \draw[thin] (\s,\ya) -- (\s,\yb);}
-  \node[ann, anchor=west] at (107,0.05)
-    {$y$ measured (thick)\\$\hat y$ model (thin)\\ticks: the $n_f$ residuals};
+  % Legend, not inline labels: the two traces are ~1 mm apart and oscillate, so there is
+  % nowhere to place a label on the curve (figure-style.md S7, the "too dense" case).
+  \node[ann, anchor=west] at (107,0.28)
+    {$y$ measured (thick)\\$\hat y_{k+t|k}$ model (thin)};
+  % The residual CAN be direct-labelled: one leader to one tick.
+  \draw[thin] (101.5,0.126) -- (107,-0.30);
+  \node[ann, anchor=west] at (107,-0.34)
+    {$y_{k+t}-\hat y_{k+t|k}$,\\one per sample,\\$n_f$ of them};
   \node[ann, anchor=west, text=black!55] at (0,-0.64)
     {$y$ is an \emph{input} to $\psi$ inside the band, and a \emph{target} only after it};
 
@@ -111,9 +123,10 @@
   % --- the loss ----------------------------------------------------------
   \node[anchor=west, inner sep=0pt] at (0,-3.12)
     {$\displaystyle \mathcal{L}=\frac{1}{n_f\,n_y}\sum_{t=0}^{n_f-1}
-      \big\lVert y_{k+t}-\hat y_{k+t}\big\rVert_2^2$};
-  \node[ann, anchor=west] at (52,-3.12)
-    {$n_y=3$ positions, in normalised units.\\
+      \big\lVert y_{k+t}-\hat y_{k+t|k}\big\rVert_2^2$};
+  \node[ann, anchor=west] at (54,-3.12)
+    {$n_y=3$ positions, in normalised units, averaged over the batch.\\
+     The $|k$ matters: every window re-estimates its own $\hat x_{k|k}$.\\
      No state term, no velocity term, no penalty active in this run.};
 \end{scope}
 
@@ -123,27 +136,30 @@
 \begin{scope}[yshift=-10.75cm]
   \node[ttl] at (0,1.15) {(c) what the loss can reach};
 
+  % Two partitions at once: v4's xtilde/xbar underneath, "what h_base reads" on top.
   \node[anchor=west, inner sep=0pt] at (0,0.28)
     {$\hat x_k=\Big[\,
-      \underbrace{X\ \ \Theta\ \ Y}_{\text{3 positions}}\ \ \
-      \underbrace{{\color{black!55}\dot X\ \ \dot\Theta\ \ \dot Y\ \ \delta_a\ \ \dot\delta_a}}
-                 _{{\color{black!55}\text{5 rows with no path to }\hat y}}
+      \underbrace{\overbrace{X\ \ \Theta\ \ Y}^{\text{read by }h_{\mathrm{base}}}\ \ \
+        {\color{black!55}\dot X\ \ \dot\Theta\ \ \dot Y}}_{\tilde x}
+      \ \ \ \
+      \underbrace{{\color{black!55}\delta_a\ \ \dot\delta_a}}_{\bar x}
       \,\Big]^{\!\top}$};
 
-  \draw[->] (6.15,0.35) -- (6.75,0.35);
-  \node[small] (hb) at (7.55,0.35) {$h_{\mathrm{base}}$};
-  \draw[->] (hb.east) -- (8.95,0.35);
-  \node[anchor=west, font=\scriptsize] at (9.00,0.35) {$\hat y=[X_1,X_2,Y]$};
-  \draw[->] (11.55,0.35) -- (12.05,0.35);
-  \node[anchor=west] at (12.10,0.35) {$\mathcal{L}$};
+  \draw[->] (7.05,0.35) -- (7.65,0.35);
+  \node[small] (hb) at (8.45,0.35) {$h_{\mathrm{base}}$};
+  \draw[->] (hb.east) -- (9.85,0.35);
+  \node[anchor=west, font=\scriptsize] at (9.90,0.35) {$\hat y_k=[X_1,X_2,Y]$ [m]};
+  \draw[->] (12.85,0.35) -- (13.35,0.35);
+  \node[anchor=west] at (13.40,0.35) {$\mathcal{L}$};
 
-  \node[ann, anchor=north west, text=black!55] at (1.55,-0.55)
-    {$C=[\,P^{\!\top}\;|\;0\,]$ and $h_{\mathrm{aug}}=0$, so no velocity and no augmented state
-     is ever compared to data.\\
-     The velocity rows are still used: their scaling comes from finite-differenced $y$, and
-     that same scaling seeds the encoder\\
-     initialisation. They are constrained only through their effect on future positions
-     inside the $n_f$ rollout.};
+  \node[ann, anchor=north west, text=black!55] at (1.55,-0.62)
+    {$C=[\,P^{\!\top}\;|\;0\,]$ in SI (its normalised form $C_{\mathrm{n}}$ is in the
+     coordinates figure) and $h_{\mathrm{aug}}=0$, so no velocity\\
+     and no augmented state is ever compared to data. The velocity rows are still used:
+     their scaling comes from\\
+     finite-differenced $y$, and that same scaling seeds the encoder initialisation. They are
+     constrained only through\\
+     their effect on future positions inside the $n_f$ rollout.};
 \end{scope}
 
 \end{tikzpicture}

@@ -19,6 +19,640 @@ Decisions are logged here before implementation. Each entry states what was deci
 
 ## Decisions
 
+### [D-166] The 2 kHz and 1 kHz downsampling arms are rejected on the loop gate; the P2a table at four rates
+**Date**: 2026-08-27
+
+**What**: 1 kHz and 2 kHz are rejected as closed-loop training rates. 4 kHz (D-141) stands. The
+decision rests on the phase-margin gate of `p2_rate_compare.py`, run for the first time with all
+four arms (`CL_RATES=20000,4000,2000,1000`). No data-side test was needed, because the loop gate
+already disqualifies both candidates.
+
+**The P2a table** (frozen design loop, `f_bw = 100` Hz, reference 20 kHz). `sigma_max(So)`:
+
+| `Y_op` | rate | 1 Hz | 10 Hz | 50 Hz | 100 Hz | 150 Hz | 180 Hz | 500 Hz |
+|-|-|-|-|-|-|-|-|-|
+| 0.10 | 20 kHz | 0.0004 | 0.0214 | 1.0544 | 1.6695 | 1.7983 | 1.8043 | 1.1438 |
+| 0.10 | 4 kHz | 0.0004 | 0.0214 | 1.0816 | 1.8362 | 2.0738 | 2.0506 | 1.1230 |
+| 0.10 | 2 kHz | 0.0004 | 0.0214 | 1.1153 | 2.1066 | 2.5867 | 2.4289 | 1.0603 |
+| 0.10 | 1 kHz | 0.0004 | 0.0214 | 1.1793 | 2.9965 | 4.9401 | 2.9735 | n/a |
+| 0.00 | 20 kHz | 0.0004 | 0.0217 | 1.0807 | 1.6569 | 1.7937 | 1.8076 | 1.1450 |
+| 0.00 | 4 kHz | 0.0004 | 0.0217 | 1.1098 | 1.8277 | 2.0711 | 2.0590 | 1.1239 |
+| 0.00 | 2 kHz | 0.0004 | 0.0217 | 1.1457 | 2.0990 | 2.5907 | 2.4484 | 1.0606 |
+| 0.00 | 1 kHz | 0.0004 | 0.0217 | 1.2144 | 2.9865 | 5.0467 | 3.0175 | n/a |
+
+The 500 Hz entry is `n/a` at 1 kHz because it is Nyquist. Phase margin and crossover, identical to
+two decimals at both operating points:
+
+| rate | PM [deg] (X1, X2, Y) | fc [Hz] | PM shift vs 20 kHz | gate (tol 5 deg) | `So` at 150 Hz vs 20 kHz | gate (tol 10 %) |
+|-|-|-|-|-|-|-|
+| 20 kHz | 37.43 / 37.42 / 37.16 | 100.00 | ref | ref | ref | ref |
+| 4 kHz | 33.83 / 33.82 / 33.57 | 100.04 | 3.59 | ok | +15.3 % / +15.5 % | FLAG |
+| 2 kHz | 29.35 / 29.34 / 29.08 | 100.17 | 8.08 | FLAG | +43.8 % / +44.4 % | FLAG |
+| 1 kHz | 20.31 / 20.30 / 20.05 | 100.70 | 17.12 | FLAG | +174.7 % / +181.4 % | FLAG |
+
+**Why the phase-margin gate is the decisive one and the `So` gate is not**: D-141 accepted 4 kHz
+*while it flagged* at +15.3 %, explicitly as "a known, stated bias" rather than a hidden one, and
+D-142 then measured the consequence and found it working in the augmentation's favour (the 77-79x
+closed-loop headroom exists *because* `sigma_max(So) = 2.07` amplifies the absorber mismatch at
+130-180 Hz). So the 10 % `So` tolerance has never functioned as an admissibility gate in this
+project; it reports the size of a bias that is then priced separately. The 5 degree phase-margin
+tolerance is the gate 4 kHz actually passed, and it is the one 2 kHz and 1 kHz fail, by 1.6x and
+3.4x respectively.
+
+**Why the degradation is exactly what it should be, which is what makes the rejection safe**: the
+measured PM shifts of 3.59, 8.08 and 17.12 degrees are reproduced to two decimals by the ZOH
+half-sample lag `180 * fc / fs` differenced against the 20 kHz arm: `180*100/4000 - 180*100/20000
+= 3.6`, `9.0 - 0.9 = 8.1`, `18.0 - 0.9 = 17.1`. The loss is therefore pure sample-delay phase lag,
+smooth and predictable, not a Tustin-warping pathology at the `10*w_b = 1000` Hz roll-off pole.
+That pole's Tustin image walks `+0.729 -> +0.120 -> -0.222 -> -0.517` across the four rates, so at
+2 kHz it sits on Nyquist and at 1 kHz above it, but that is not what breaks the loop. Reading the
+rejection as a delay result rather than a discretisation-artefact result means no anti-alias or
+alternative-discretisation fix recovers these rates: at `fc = 100` Hz, a 5 degree budget caps the
+rate from below at roughly 3.5 kHz regardless of method.
+
+**Why the `So` peak at 150 Hz is the second, independent reason**: 150 Hz is `cfg.fa`, the hidden
+MSD frequency (`gtd_config.m:50`), i.e. exactly the mode the augmentation exists to learn. Going
+from 1.80 (20 kHz) to 4.94 (1 kHz) changes by 2.75x how heavily the training objective weights
+that mode relative to the loop that generated the data. Combined with D-142's finding that the
+headroom is a waterbed effect at this frequency, changing the rate does not merely add numerical
+error, it rescales the quantity being selected on.
+
+**Ruled out**: (1) **Keeping `Cfb` at 20 kHz around a 1-2 kHz model.** `ClosedLoopSimulator` steps
+`xc` once per model step, so this needs a multirate inner loop plus interpolated `y_model` and
+`y_data` at 20 kHz inside every window, a real change to `closed_loop.py`. It is also aimed at the
+wrong target: in the residual form `u_plant = u_data + Cfb*(y_data - y_model)` the recorded
+`u_data` already carries the true 20 kHz feedback, so `Cfb` at the training rate is a correction
+operator shaping the objective, not a reproduction of the data-generating controller. Matching it
+exactly was never the requirement; matching its shaping over 130-180 Hz was, and that is what the
+table measures. (2) **Re-tuning the controller at the lower rate** to recover phase margin. That
+makes the training loop a different loop by design rather than by discretisation, and every
+closed-loop number on record (D-139, D-140, D-142) is referenced to the frozen `ruleOfThumb`
+design. (3) **The data-side aliasing and discretisation-floor tests**, not because they are wrong
+but because they are now moot; they were the expensive gate and the cheap gate already closed the
+question. Recorded here in case the rate question reopens: the current decimation is deliberately
+naive (`y[::D]` point sampling, per-hold block mean on `u`, `gantry_dynamic/data.py:78-104`), and
+its justification is a `frac_above` measured at the **2 kHz** Nyquist (4e-14 on `u`, 2.5e-8 on
+`y`). That justification does not transfer to a 500 Hz Nyquist and the truth sim has Coulomb
+friction, which is broadband, so any future sub-4 kHz proposal must re-measure it
+(`scripts/gantry/augmentation-error/diag_downsample_spectra.py`) before point sampling is trusted.
+
+**Constrains**: `cfg.fs_new = 4000` stays. Any future proposal to change the closed-loop training
+rate runs `p2_rate_compare.py` with that rate in `CL_RATES` and clears the 5 degree phase-margin
+tolerance *before* any training job is launched, and states its `sigma_max(So)` bias at 150 Hz as
+D-141 did rather than treating the FLAG as a pass or a fail. The `4x` wall-clock saving that
+motivated the question (`nf = nf_seconds / ts_new`, so 400 steps at 4 kHz against 100 at 1 kHz)
+must be found somewhere other than the sample rate. One thing the table does NOT say: it is a
+frozen-design-loop calculation on the baseline plant, so it prices the loop, not the data, and it
+is silent on aliasing and on the 150 Hz mode's own discretisation. Those stay open questions for
+any rate below 4 kHz, listed under "ruled out" above.
+
+### [D-165] PLAN phase 5 gate 1 compares two different metrics; the `1e-6` tolerance was never achievable
+**Date**: 2026-08-25
+
+**What**: the D-072 reference `2.186601103417735e-06` is **deepSI's sim-RMS on
+`data.val_ckpt_data`**, printed as `Initial Validation sim-RMS` at the start of `fit`. The number
+every arm reports as its untrained score is `validation_metrics`' POOLED free run over the four
+full V1-V4 records, `2.1865622e-06`. Those are different objects, and PLAN phase 5 gate 1 asks for
+them to agree to `1e-6` relative. They differ by `1.78e-05`.
+
+**Why it matters**: the gate is the attribution gate. Its job is to prove the transplant is a no-op
+at initialisation, which it is: the offset is reproduced bit-for-bit on two independent launches
+and is IDENTICAL at `nx_aug = 2` and `nx_aug = 8`, so it is a property of the metric pair and not
+of the augmented block. Enforced literally at `1e-6` the gate refuses every correct run, which is
+what a first launch of `run_bla_arm.py` did before the tolerance was corrected.
+
+**What was done**: tolerance set to `1e-4`, with the deviation against BOTH references recorded in
+every run summary (`d072_rel_dev` and `rel_dev_vs_arms_i_ii_iii`). `1e-4` is two orders above the
+measured cross-metric offset and four orders below the effect the gate exists to catch, since a
+readout that does not start at zero moves this metric by tens of percent.
+
+**Ruled out**: changing the reference to a pooled value. It is the correct fix and it was not made,
+because `2.186601103417735e-06` is quoted across `DISCUSSION-POINTS.md`, the run table and the
+handoffs, and silently redefining it would invalidate the comparability those numbers exist for.
+
+**Constrains**: anyone tightening this gate must first replace the reference with a pooled one and
+say so. Quoting `2.186601103417735e-06` next to a pooled RMS without the note above is comparing
+two metrics.
+
+### [D-163] PLAN acceptance gate 3 is withdrawn as stated and replaced by cross-record agreement
+**Date**: 2026-08-25
+
+**What**: The handoff's gate 3, "the zero of the plant FRF must not move between the direct and
+indirect estimates by more than one bin", is not a valid gate and is not implemented as one. What
+is implemented instead: the dominant in-band pair is identified INDEPENDENTLY on five training
+records with five different phase realisations and five different `Y`, and on one held-out record,
+and the estimator passes only if they agree to within their own scatter.
+
+**Why**: the gate watches a feature theory does not protect. In MIMO
+`(P S)_{22} = sum_j P_{2j} S_{j2}`, which is not `P_{22} S_{22}`, so the zero of a single ELEMENT
+is not feedback-invariant and the `149.0833 -> 147.0833 Hz` move that failed the gate is the
+expected behaviour, not an estimator defect. The invariant that IS protected is the transmission
+zero, `det(P S) = det(P) det(S)` with `det(S) = 1/det(I + P C)` having no zeros; but measured on
+all six records, `|det G|` of the indirect estimate has its minimum at the band edge, i.e. the
+baseline has no transmission zero inside `130-180 Hz` and the protected feature does not exist
+here. A gate on a feature that either is not invariant or is not present cannot fail informatively.
+
+**Measured on the replacement**: `157.9045 Hz` mean over the five training records, standard
+deviation `0.0054 Hz`; `zeta` mean `0.052762`, standard deviation `0.000035`; held-out
+`V1_standstill_Yp10` at `157.9035 Hz`, `0.0009 Hz` from the training mean, i.e. `0.2` training
+standard deviations. Both quantities from the withdrawn gate are still reported in the artefact.
+
+**Ruled out**: (1) Keeping the element-notch gate and tuning the estimator until it passes: it
+would have driven the estimator away from correctness towards a MIMO artefact. (2) Gating on
+`|det G|`: implemented first, then withdrawn when the minimum turned out to sit at the band edge on
+every record.
+
+**Constrains**: the estimator's validity claim now rests on reproducibility across records, so any
+future run that uses fewer than two independent records cannot make it.
+
+### [D-161] The pole identification is consistent ONLY because the simulation is noiseless; what breaks on Telica, and the remedies
+**Date**: 2026-08-23
+**Status**: FORWARD CONSTRAINT. Recorded before the noisy case is attempted, so the simulation result is not later mistaken for evidence of transfer.
+
+**What**: `gantry_dynamic/pole_init.py` fits the closed-loop residual `r = y - y_baseline` by DIRECT
+least squares on the logged `u`. That is consistent here and it is **not** consistent on real data.
+Every claim about the identification made on the augmentation simulation is therefore a claim about
+the noiseless case only, and none of it transfers without one of the remedies below.
+
+**Why it is consistent here.** The direct method is biased in closed loop when the noise is
+correlated with the input THROUGH the loop. The augmentation data is noiseless by default
+(`snr=None`; output noise is opt-in per D-078), so `r` is deterministic model mismatch rather than
+a noise realisation and that mechanism is absent. Measured 2026-08-23 on `T3_standstill_Y000`, top
+modal pairs of the shared-denominator fit at every order `na` in `{8, 12, 16, 20, 24, 28}`:
+**`157.89-157.90 Hz`, `zeta 0.0527-0.0528`**, against the plant's `158.1139 Hz` and `zeta_a = 0.05`
+from `gtd_config.m`. That is `0.014 %` in frequency and `+5 %` in damping, at every order.
+
+**A correction that is NOT needed here and was measured to hurt.** Regressing on the effective
+closed-loop drive `u + C_fb(r)` instead of the logged `u` moves the estimate to **`163.55 Hz`,
+`zeta 0.100`**, i.e. `3.4 %` off in frequency and twice the true damping. The "obvious" closed-loop
+correction is actively harmful in the noiseless case. It was asserted as necessary twice in the
+session that wrote this entry, both times without measurement, and both times wrongly.
+
+**What breaks once noise is present**, each with what it costs and what it is evidenced by:
+
+| # | failure | evidence |
+|-|-|-|
+| 1 | **Closed-loop bias of the direct method.** With measurement noise the input carries a component correlated with the residual through `C_fb`, and least squares becomes inconsistent. This is the classical result, not a conjecture | Ljung; Forssell and Ljung, "Closed-loop Identification Revisited", `literature/closed-loop-id/forssell1998_cl_revisited_liu2021.pdf` (report LiTH-ISY-R-2021; **mangled text layer, do not quote from it**) |
+| 2 | **The residual stops being pure model mismatch.** On real data the baseline PARAMETERS are estimates from the recovery work, so `r` contains parameter mismatch as well as omitted dynamics, and the identified pole is a mixture | `cl_residual_spectrum.py` `residual_for` docstring states this as a known seam |
+| 3 | **`x0` is not available** as a true state; positions are measured and velocities come from numerical differentiation. **MEASURED 2026-08-23 and it does NOT break: see the resolution below** | same docstring |
+| 4 | **The fit may refuse outright.** `fit_reduce.py` already hits this on its noisy condition: out-of-sample free-run VAF `-0.0136`, i.e. worse than the zero predictor, reported as "the residual is not a linear object on this data" | D-159 |
+| 5 | **Damping estimates degrade first, and damping is the memory ingredient.** Even noiseless, peak picking on the power spectrum is already `+16.6 %` on `zeta` because a half-power width carries the input spectrum's shape; noise widens peaks further and biases the same way | measured 2026-08-23, `cl_residual_spectrum.json` `0.05829` against `0.05` |
+| 6 | **A BLA is not available as a fallback.** `pintelon2020_bla-feedback-process-noise` extends BLA theory to feedback AND process noise, so feedback is not the obstacle, but the technique rests on "specially designed periodic excitation signals called random phase multisines and periodic noise". Telica runs a jerk-limited point-to-point move of 40 mm X and 80 mm Y with `Y` sweeping inside every record, so the plant is not LTI over it, and the ILC iterations "differ only in feedforward" and are not realisations | `docs/kamtin-telica-schema.md`; abstract verified `MATCH OK` 2026-08-23 |
+| 7 | **Excitation may not reach the modes at all.** A jerk-limited move concentrates its power below a few tens of Hz. If the unmodelled dynamics sit in the hundreds of Hz, no estimator recovers them because nothing excited them. This is an experiment-design problem and it bites before the estimator choice does | inference from the schema, NOT measured |
+
+**Resolution of item 3, measured 2026-08-23, and it is a POSITIVE result.** `residual_for` seeds the
+baseline rollout with `x_log[K0]`, the true logical state from the `.mat` file. That was the only
+oracle dependency anywhere in the pole-placement chain. Measured on `T3_standstill_Y000`, identified
+mode nearest the absorber, `n_pairs = 2`:
+
+| `x0` construction | `f_d` [Hz] | `zeta` | `rho` | free-run VAF |
+|-|-|-|-|-|
+| oracle `x_log[K0]` (what runs today) | 157.8937 | 0.05276 | 0.986982 | 99.907 |
+| **measured positions + central difference** | **157.8937** | **0.05276** | **0.986982** | 99.902 |
+| measured positions + 5-point difference | 157.8937 | 0.05276 | 0.986982 | 99.902 |
+| perturbed `1.1 * x_log[K0]` | 157.8939 | 0.05275 | 0.986983 | 99.906 |
+| zero | 57.3640 | 0.45014 | 0.955594 | 99.889 |
+| positions kept, velocities ZEROED | 136.5785 | 0.48511 | 0.887794 | 99.884 |
+
+Identical to seven digits under the real-data construction, even though the differentiated velocity
+is off by `76 %` on one channel. **So the chain is portable: it needs logged `u`, logged `y`, the
+baseline model and the known controller, and no true state.**
+
+Two things this also corrects. The docstring's argument, that an `x0` error "decays into the first
+transient" so dropping `K0` samples suffices, is **false**: the `zero` and `velocities-zeroed` rows
+are catastrophically wrong at `K0 = 17`, plausibly because the plant carries `K = 0` double
+integrators and the controller has integrator poles at `|z| = 1` by design, so the correction
+transient far outlasts 17 samples and the fit models the transient instead of the absorber. What is
+true is the weaker and sufficient statement that a *reasonable* `x0` suffices; a `10 %` error is
+harmless and differentiation is well inside that.
+
+Remaining caveat, NOT measured: differentiation amplifies noise, so on real data the velocity
+estimate degrades with the measurement noise this entry is about. The structural portability is
+settled; the noisy case is not.
+
+**Remedies, in the order they should be tried**:
+(a) **Instrumental variables.** Already implemented as
+`scripts/gantry/BLA-Augmentation/probe_d8_residual_fit.py::fit_shared_denominator_iv`, so this is a
+wiring job rather than new code. IV is the standard first answer to correlated regressors.
+(b) **Two-stage closed-loop identification.** `vandenhof-schrama-1993-automatica-twostage.pdf`,
+Automatica 29(6):1523-1527, verified on disk: an indirect method that estimates the plant
+consistently from closed-loop data "even in the situation where the model of the noise disturbance
+on the data is not accurate". That last clause is the one that matters here, because we do not have
+a noise model for Telica.
+(c) **Dedicated experiments.** If (a) and (b) both refuse, the honest conclusion is that the data
+does not support the identification, and the ask is machine time from ASMPT for periodic multisine
+excitation at frozen operating points. That is an experiment-design request, not a modelling fix,
+and it should be raised early rather than after (a) and (b) have failed.
+
+**Ruled out**: (1) using `u + C_fb(r)` as the regressor, measured worse above; (2) treating the
+noiseless result as evidence of transfer, which is the specific error this entry exists to prevent;
+(3) switching to peak picking, which is worse on damping and gets worse under noise.
+
+**Constrains**: (a) Any Telica arm must state which of (a)/(b)/(c) it used, and a Telica result
+produced by the direct method is void. (b) D-160's estimator comparison table is labelled as
+noiseless and must not be quoted for the real system. (c) The noise gate already exists as
+`CL_RS_NOISE_SIGMA` in `cl_residual_spectrum.py`, so the cheapest next measurement is to re-run the
+identification with data-derived noise injected and record where it breaks; that is a simulation
+experiment and it should precede any Telica attempt.
+
+### [D-160] The augmented-state initialisation follows Schoukens ECC 2021: an explicit live linear part, initialised from a linear approximation of the residual
+**Date**: 2026-08-23
+**Status**: SPECIFICATION. No arm below has run. Written before implementation per the standing rule.
+**Supersedes**: the first version of D-160, written the same day, which framed this as "a BLA of the residual". That framing was wrong twice. What the repo computes is a parametric ARX/IV fit, not a BLA in the Pintelon-Schoukens sense; and the governing citation is not the BLA literature but `schoukens2021_improved-init-state-space-ANN_ECC` (`arXiv:2103.14516`), which specifies this exact construction.
+
+**What**: The minimal addition to Jan's framework is one block whose STRUCTURE and INITIALISATION both come from Schoukens ECC 2021, the generalised residual state-space neural network (gR-SS-NN) of its Eq. (5):
+
+    Schoukens Eq. (5):  x(k+1) = [A B] [x(k); u(k)] + W~x sigma(W~fx x + W~fu u + b~f) + b~x
+    ours:               x_a[k+1] = A_aa x_a[k] + B_u z[k] + F(z[k])
+
+Every element carries a quote verified `MATCH OK` by `verify_pdf_quote.py <pdf> any <quotefile>` on 2026-08-23:
+
+| element | Schoukens ECC 2021, verified |
+|-|-|
+| the scheme as a whole | "Some of the neural network weights are initialized starting from a linear approximation of the nonlinear system, while others are initialized using random values or zeros." |
+| **explicit live linear part** (`B_u`, our step 1) | "It is illustrated in this paper that, together with an improved initialization, the inclusion of the explicit linear part improves the estimation of the SS-NN model significantly." |
+| **poles from an identification** (our step 3) | "The linear state-space matrices are directly used to initialize the A, B, C, D matrices in eq. (5)." |
+| **zero output projection over random inner layers**, i.e. the harness default, and NO gate | "This paper proposes to do this the other way around, random weights in the nonlinear layer and zero weights in the linear layers, works better in the benchmark examples"; and the reason, "random weights and biases in the nonlinear layer generates a pool of nonlinearly transformed outputs which the estimator can pick from using the linear weights during optimization" |
+| **`B_u` scaled to unit `x_a` std, measured** | "The state-space matrices of the linear approximate model are normalized such that each of the states has a standard deviation equal to 1" |
+
+**Amendment 2026-08-23, same day, after implementation: `gamma` and `alpha` are removed.** The first
+version of this entry carried Orvieto's `Gamma = sqrt(1 - rho^2)` on the input map and a Bachlechner
+ReZero scalar gate. Both are redundant against the citation above and both are gone from the default
+path.
+* **`alpha`**: Schoukens Sec. IV.2 specifies a ZERO OUTPUT PROJECTION over random inner layers,
+  which is exactly `zero_init_feed_forward_nn` and needs no gate. ReZero is strictly weaker here:
+  it makes ONE scalar live at step one where the zero projection makes the whole of `W_out` live,
+  and `dL/dW_out = <dL/dw, sigma(z)>` with `sigma(z)` containing `x_a`, so the readout starts
+  learning to USE the augmented states at the first update and only because they are driven.
+  ReZero was introduced for the D-130 `W^a` dead zone and does not fix that either: `W^a` is
+  gradient-free at step one under both schemes. `GATE_ZERO` is retained only as a comparison arm.
+  This also moves us TOWARD arm 2, which used the harness's zero projection.
+* **`gamma`**: exact for a WHITE unit-variance input and our `z` is not white, being dominated by
+  the `[0, 40] Hz` motion island plus the `[130, 180] Hz` excitation island (`cl_band_split.py` off
+  `gtd_config.m`). It is also nearly vacuous once the poles come from an identification, since every
+  pair then carries the same damping. Replaced by `empirical_input_scale`, which measures
+  `std(x_a)` under the real drive and rescales `B`; exact in one shot because the recurrence is
+  linear in `B`. Measured effect at build time: the raw `U(-1,1)` draw put `x_a` at **`33.98x`**
+  unit variance, which saturates `tanh` on those input columns. This also closes the confound
+  `augmented-states/README.md` section 7 records as open, that driven-state RMS differed by up to
+  `10x` across arms so "right pole" and "louder pole" were not separated.
+  **Risk carried forward:** arm 2 used a TUNED constant `AUG_LRU_B = 0.377` (the class D-158 bans).
+  Unit `x_a` std is principled and `0.377` is not, but the two have not been shown to land in a
+  similar place. If a trained result disappoints, check this first; the build prints the pre-scale
+  std so the comparison is recoverable.
+
+**Elements beyond the three steps, stated so the count is honest.** `empirical_input_scale` is a
+fourth element, cited but not one of the three; it is argued as part of step 1 because a live input
+path that puts `x_a` at `34x` unit variance is not usable. The `rho` clamp to `[eps, 1-eps]` has NO
+citation: `exp(-exp(nu_log))` returns exactly `1.0` below `nu_log ~ -45` and exactly `0.0` above
+`+45` in float64, so "stable by construction" was true in exact arithmetic and false as implemented.
+It is numerical hygiene, not method, and must not be presented as method.
+
+The paper's own benchmarks are Bouc-Wen and Wiener-Hammerstein, the same two carried in `scripts/`. It also reads the explicit linear part as "a generalized form of a so-called residual network or resNet", which is the same condition Hoekstra states as "the learning functions are ResNets" (D-151).
+
+This replaces three separate ad-hoc justifications with one paper by a supervisor of this project. Orvieto (`|lambda|` near 1, stable exponential parameterisation), Bachlechner (ReZero) and Hoekstra (p10, Eq. 31) remain as the parameterisation-level citations; Schoukens 2021 is the structural and procedural one.
+
+**Which residual is identified.** `r_k = y_k - y_baseline,k`, formed in the loop the machine actually runs, which `cl_residual_spectrum.residual_for` already computes from logged `u`, logged `y` and the baseline alone, with no oracle, and whose header states the same path runs on real data. NOT the open-loop `rho = y - P0 u` that `fit_reduce.py` uses. Measured this session with `loop_sensitivity.py`: `smax(So)` is `3.5e-04` at 1 Hz, `2.1e-02` at 10 Hz and **`1.81` at 157.89 Hz**, so the loop suppresses the setpoint-motion band by `47x` to `2800x` and AMPLIFIES the absorber band. The open-loop residual is `1.224e-04` against the closed-loop `2.187e-06`, a factor 56, and that factor is almost entirely content the objective never sees. Identifying the open-loop residual points the fit at the wrong part of the spectrum.
+
+**Estimator: parametric (ARX/IV), not a BLA, and this is a transfer decision.** Telica cannot supply a BLA. `pintelon2020_bla-feedback-process-noise` confirms feedback is not the obstacle (it extends BLA to feedback and process noise) but states the technique rests on "specially designed periodic excitation signals called random phase multisines and periodic noise". Per `docs/kamtin-telica-schema.md` the Telica excitation is a point-to-point move of 40 mm X and 80 mm Y, non-periodic and non-stationary, and `Y` (the scheduling variable) sweeps within every record so the plant is not LTI over it. The ILC iterations `iter0..iter8` are not realisations either: they "differ only in feedforward", which changes deliberately. A parametric fit needs none of that and runs unchanged on both simulation and machine.
+
+Measured comparison of estimators on `T3_standstill_Y000` (a TRAINING record; validation records are not used to choose an initialisation):
+
+| estimate | `f_n` [Hz] | err | `zeta` | err |
+|-|-|-|-|-|
+| truth (`fa = 150` coupled to `mh_rigid`) | 158.1139 | | 0.05000 | |
+| peak picking (`cl_residual_spectrum.json`) | 158.2031 | `+0.056 %` | 0.05829 | `+16.6 %` |
+| **parametric ARX, modal (D-159)** | 157.9884 | `-0.079 %` | 0.05247 | `+4.9 %` |
+| FRF ratio on the excited lines | 156.8176 | `-0.820 %` | 0.04336 | `-13.3 %` |
+
+The FRF was expected to beat peak picking on damping and did not, because it used the logged `u` in a closed-loop residual without instrumenting, used Levy's biased criterion with no Sanathanan-Koerner iteration, and fitted order 2/2 across 578 lines. The parametric route wins on both axes and already exists. No further estimator work is warranted in simulation: the errors above are all far inside what already works, since arm 2's own poles span `-36 %` to `+40 %` in damping and up to `6.1 Hz` in frequency.
+
+**Deliberate departure from Schoukens 2021.** He initialises `A, B, C, D` from the linear model; we take only `A_aa` and keep `B_u` random per Hoekstra p10. Reason: D-158 refuses the fitted input map as `NONCAUSAL_IDENTIFICATION_COORDINATES`, and the `[u, x_b]` regressor split is unidentifiable in open loop. The departure is one-directional (we use less of the identification than he does) and must be stated, not hidden.
+
+**Arms.** Seeds 42/43/44, `--route-all --stride 10 --epochs 2` (522 updates, matched to the overnight arms' 520), `na_nb = 17` pinned, physical baseline frozen. Reported per arm and seed: pooled closed-loop free-run RMS over complete V1-V4, `rms_per_channel_m`, and D-157's `F` on both ablation surfaces with the ratio beside it.
+
+* **B1**, `nx_aug` = the sizing rule's output, poles exactly as identified. This is D-159's NOT-DECIDED (a), "whether one exactly placed pair matches the four-pole random bank", which no arm has ever run. It is a live candidate rather than a formality: the pole we would install is more accurate than any of arm 2's four.
+* **B2**, four distinct pairs: the identified pair plus three spread across `2 zeta_hat f_hat`. **The spreading rule is unsourced** and D-159 records `zeta_hat * f_hat` as a conjecture with zero literature hits. It runs as an experimental factor and is never quoted as method.
+* **C**, control, no identification: four pairs evenly spaced on `[130, 180] Hz` at `r = 0.99`, deterministic. Not a candidate method (see Ruled out 2), only a saturation check.
+
+**Sizing.** `nx_aug` from the identification, not from arm 2. D-156's tolerance `eps` (split-half `H-infinity` disagreement) survives; its `2 sum_{k>r} sigma_k <= eps` bound does not, because that is a balanced-truncation bound and D-159 went modal. Repair: smallest even order whose MEASURED modal-truncation `H2` error is `<= eps`. Treat the result as a FLOOR: the absorber is one pair, so the rule plausibly returns `nx_aug = 2`, which is arm 1's known failure (`F = 0.03`). B1 against B2 is what decides whether the floor suffices.
+
+**Why any of this is needed at all.** The objective freezes the poles, so they must be placed rather than learned: with the true mode planted C6 measures `dL/d(nu_log) < 0` on 7 of 8 batches, T3 proves the damping term is strictly positive under every non-negative weighting, and both trained arms moved their poles under `0.15 Hz` in 520 updates. And plain Jan cannot start at all: nothing writes rows `6..13`, so `x_a = 0` for every `k`, the ANN's read weights on `x_a` have zero gradient and its write path has no downstream effect. Measured `1.0002x`, `F = 0.0007` (A0, `BLA-Augmentation/RESULTS.md:298`).
+
+Measured this session, the problem is also two to four decades harder than the benchmark Jan's zero-init design was demonstrated on. Unmodelled fraction `RMS(baseline error)/RMS(y)`: ECC MSD (3-DOF cubic against its linear BLA) **`20.5 %`**; gantry open loop **`0.121 %`**; gantry closed loop, our scoring surface, **`0.00217 %`**. That is `170x` like-for-like and `9450x` on the metric.
+
+**Ruled out**:
+(1) **The full-disk draw** (`RANDOM_LRU`, `capacity_runs.sh` idx 3-8). Computed at the exact seeds it would use: closest of four poles to the mode is `930.8 / 120.9 / 1009.9 Hz` at seeds 42/43/44, max radius `0.735 / 0.920 / 0.856` against arm 2's `0.985-0.992`. Neither memory nor span. `P(one of four pairs has r > 0.98 within 10 Hz of the mode) = 1.6e-03`. About 27 CPU-hours to confirm arithmetic. Its premise that `[0,1]` is "Orvieto's own default" is also wrong: Lemma 3.2 is stated for a ring `[r_min, r_max]`, `[0,1]` is the Glorot-equivalence baseline, and §3.3 tunes away from it ("increasing `r_min` closer to 1", `r_max` up to `0.99`) with Table 2 listing `+ Ring Init` as a separate improving row.
+(2) **Orvieto Ring Init as the method.** Fixes the radius, leaves placement: with `r in [0.98, 0.999]` and unbounded phase, `P(one of four pairs within 8 Hz of the mode) = 3.2 %`. Cited and insufficient.
+(3) **Placing poles across the excitation band as the method.** Kept as arm C only. `gtd_config.m` confines the injected multisine to `[130, 180] Hz`, a band chosen around `fa = 150 Hz`, so it does not avoid using knowledge of the absorber location; it moves that knowledge from a stated identification into the experiment design, where it is implicit and harder to defend, and it does not transfer to Telica where the band must be found first.
+(4) **Residual weighting of the objective** (T3).
+(5) **`EXACT_REPLICATED`** and any construction repeating one pole.
+(6) **`na_nb != 17`** (C1).
+
+**Constrains**: (a) `B_u` is mandatory whenever the block is on, consistent with D-159's `F2_no_Ba`. (b) Every arm reports `F` per D-157; the `2.0x` ablation threshold in `tasks/handoffs/2026-08-23-minimal-augmented-state-implementation.md` section 10 is superseded and must not be used. (c) The `2 zeta_hat f_hat` spreading rule stays an experimental factor until B1 against B2 gives it a result; if B1 matches B2, drop the rule rather than defend it. (d) If arm C matches B2, that is evidence that placement inside the band is saturated (consistent with C7) and it strengthens the identification result rather than replacing it, because C does not transfer. (e) Nothing lands in `model_augmentation/` until an arm has exercised it, and then only with the `@added` / `__project_origin__` / `# CHANGED` marker and a citation per element. (f) The word "BLA" must not be used for the parametric fit anywhere in the write-up or in `scripts/gantry/BLA-Augmentation/`; the directory name is now a misnomer and should be flagged wherever it is cited. (g) `literature/identification/ljung1999_mem.pdf` is Ljung, "Model Validation and Model Error Modeling", LiTH-ISY-R-2125, NOT *System Identification: Theory for the User*, which is not on disk; `forssell1998_cl_revisited_liu2021.pdf` has a mangled text layer and its `2021` is report number LiTH-ISY-R-2021, not a year.
+
+### [D-159] Replace balanced reduction with modal selection in the BLA route; pole geometry is a validated surrogate, the band width is not yet a rule
+**Date**: 2026-08-23
+**Supersedes**: the first version of D-159, written the same day, whose central premise (that BSP at order 4 would have retained the 158 Hz mode) was falsified by measurement within hours. That version also carried a rate-conversion conjecture that is false and a magnitude argument that is withdrawn. Both are recorded in the amendments to sections 5.9, 9.8 and 9.11 of `docs/augmented-state-attribution-2026-08-23.md`.
+**What**: One decision, plus two things explicitly NOT decided.
+DECIDED: **`fit_reduce.py` selects the retained pair(s) modally from the unreduced fit and no longer balance-reduces.** `balanced_sp` is kept and reachable via `FIT_REDUCE_REDUCTION=bsp` so the recorded artefact reproduces, but the default path is modal selection. The order still comes from the existing Hankel-tail rule; the reported error becomes the measured relative `H2` error of the modal truncation, because the `2*sum(sigma)` bound is a balanced-truncation bound and does not apply to a modal one.
+NOT DECIDED (a): whether one exactly placed pair matches the four-pole random bank. No arm has ever run it. The modal-selection arm IS that experiment.
+NOT DECIDED (b): whether `zeta_hat * f_hat` is a usable band rule on Telica. It gives a width, not a warrant: a poorly identified friction or parameter-mismatch pole has a mathematically defined damping width without representing omitted dynamics worth modelling.
+**Why**: Balanced singular perturbation returns `Ar = A11 + A12 (I - A22)^-1 A21`, a Schur complement, so its poles are not a subset of the unreduced spectrum. Measured on a read-only reconstruction of the normalised differenced clean ARX-28 fit: unreduced nearest pole `157.9884 Hz` (`zeta 0.05247`), BSP order 2 `5.0405 Hz`, order 4 two pairs at `~5.0400 Hz`, order 6 those plus `496.79 Hz`. **BSP retains the absorber mode at no tested order.** The mode is in every fit and in no reduced model, so the identification is not what failed and a larger order does not fix it. Modal selection retains the identified pair by construction, at `d ~ 0.008` from truth against `d = 0.047` for the best of the 24 poles ever drawn randomly.
+Supporting, and independent of the reduction question: pole geometry is causal at fixed drive. Over the F4 family, where `B_a` is bit-identical and only pole frequency (F4a) or only pole radius (F4b) changes against arm-2 seed 0, `|B(lambda*)|` of `0.0062 / 0.6949 / 0.9242 / 0.9896` orders the ablation ratios `5.2081x / 1.9381x / 1.0255x / 1.0139x`, four of four with zero free parameters. On `band_draw_probe.json`, eight in-band and eight full-circle single-pair draws with no training and a linear readout are completely separated (exact permutation `p = 7.8e-5`), with `Pearson(d, 1-R^2) = +0.960` over all sixteen. And `F2_no_Ba` keeps the good poles with every pair inert (`1.0150, 1.0114, 1.0096, 1.0098`), which is the precondition in CONFIRMED `EVIDENCE.md` claim 4 that the states feeding a zero read-out must be excited, so `B_a` stays mandatory whenever `AUG_LRU` is on.
+**Status of the mechanism**: `|B(lambda*)|` is a **surrogate**, not a proven achievable error or ceiling for this architecture. The identity is exact for scalar Hardy-`H2` approximation with free residues over an infinite horizon; the trained block has real conjugate pairs, fixed random vector `B_a`, finite records, a nonlinear jointly trained readout and closed-loop feedback. The literature agrees only to that strength: Toth 2010 eq. (2.61) PDF p65 (`MATCH OK`) names the quantity the **Kolmogorov measure**, and Toth/Heuberger/Van den Hof, Automatica 45(6):1359-1370, 2009 p4 (`MATCH OK`) states a bound and a proportionality, never an equality for one target pole. The `zeta*f0` band half-width has **no source at all** (zero arXiv and OpenAlex hits) and is a conjecture with a cheap synthetic falsifier.
+**Ruled out**: (a) Hypothesis 7.1(a), Y-dependence of the target: `(M^-1)_44 = (mh+ma)/(mh*ma)` identically in `gantrySystemExtended.m`, so `f_n = fa*sqrt(mh_total/mh_rigid) = 158.113883 Hz` at every `Y` and every absorber deflection. Dead for this simulated plant. (b) "Use the fit for the band, keep the spanning draw" (5.10): it keeps the insurance and discards the information. (c) A larger BSP order as the fix, falsified above. (d) A resonant-gain account of why `W^a` cannot matter: `gamma = sqrt(1-r^2)` cancels the resonant gain by design, and the encoder-to-input state-RMS ratio is measured at `1.56x`, not the `178x` derived. (e) An Adam-drift account of `W^a`'s motion, superseded by 7.2's horizon derivation and `wa_freerun_probe.json`.
+**Constrains**: `fit_reduce`'s reported reduction error must be the measured modal-truncation error, not the Hankel tail, since the two are different quantities. Any claim that a band width generalises to Telica must first establish that the residual contains a target worth hitting; `fit_reduce`'s own noisy-condition refusal (out-of-sample VAF `-0.0136`, "the residual is not a linear object on this data") is current evidence that it may not. Open and not decided: what sets the 2.5x spread across seeds once every draw already represents the mode to `|B| <= 0.0066` (9.6), and why a random `W^a` costs `2.1x` in training when post-hoc substitution costs `1.27%` (9.8). Both are located negatives, both appear only during training and in no post-hoc probe, and neither is explained here.
+
+### [D-158] Phase B wiring: new-code augmented block, live linear bypass, `B_xb` zero-init trainable, ReZero on the shared net
+**Date**: 2026-08-23
+**What**: The BLA-Augmentation Phase B block is NEW code in `scripts/gantry/BLA-Augmentation/aug_block.py`, applied by the arm runner after `build_model`; one env-gated hook (`BLA_ARM_SPEC`) in `cl_train.py` (an experiment script); the only production file touched is the approved restore of `model_augmentation/fit_systems/closed_loop.py`. Block equation `x_a' = A_aa x_a + B_u u~ + B_xb x_b~ + gated NL`, with `A_aa` in the stable exponential parameterisation, trainable. A1: Orvieto Lemma 3.2 full-disk default (`[0,1]`, phase `2 pi u`; EVIDENCE claim 29), `B` ~ `U(-1,1)` (claim 9) with Orvieto `gamma`. A2: reduced fitted realisation, ZOH rate-converted, no `gamma` on the fitted `B_u`. `W^a` Xavier both arms (D-155). Full reasoning and Telica-portability audit: `scripts/gantry/BLA-Augmentation/DESIGN.md` D9.
+**Why**: D7's amendment showed `C_r = 0` plus a zero-initialised shared final layer makes `dL/dx_a` exactly zero; claim 27 (linear component live, NL zeroed) plus claim 28 (ReZero) restore trainability while D-072 holds bit-exactly. The `B_r`-on-`u`-alone regression is resolved by derivation: open loop, `x_b = F(q) u` exactly, so the `[u, x_b]` regressor split is unidentifiable; the `x_b -> x_a` path is kept structurally, zero-initialised, trainable - no random scale constant returns.
+**Ruled out**: (1) restoring the snapshot `model.py` gate collection (ten env gates in the production build path); (2) a random `B_xb` with a tuned scale (`AUG_LRU_B = 0.377` class, banned); (3) fitting the residual with `x_b` as a measured input (collinear regressors, non-unique split); (4) Jan's composite-condition baseline equality in place of the gate (does not give bit-exact D-072).
+**Constrains**: arms A1/A2 share `nx_aug` (D5's output) and every training hyperparameter (lr `1e-5`, Adam eps `1e-16`, stride 10, `na_nb = 17` pinned, serial validation, 4 epochs max); nothing here goes into `model_augmentation/` beyond the approved restore.
+**Addendum 2026-08-22 (D1 reopened, user correction)**: A2's `(A_r, B_u)` provenance is the contested open-loop residual construction. A2 runs (the pole gate gives it something installable) but is a simulation result only and NOT evidence of transfer; no Telica-portability argument is written on top of it, and the audit in DESIGN.md D9 is a checklist, not such an argument. On the real system the ordering is fit the baseline, then augment. The same contested-provenance label applies to D-156's `eps` as computed on fits of the open-loop residual: the RULE (split-half H-infinity disagreement) is construction-agnostic, the NUMBER produced tonight is not.
+
+### [D-157] The ablation threshold is replaced by the improvement-fraction criterion `F`, with a noise-draw significance floor
+**Date**: 2026-08-23
+**What**: The `2.0x` (C8) and `1.02` (`probe_arm_ablation.py`) ablation thresholds are retired. Verdicts use `F = (RMS_ablated - RMS_trained) / (RMS_untrained - RMS_trained)`, the fraction of the arm's own improvement undone by removing `x_a`. `F > 1/2` = load-bearing (the majority of the learning went through `x_a` - the semantic boundary of the claim under test, not a tuned constant); `F` indistinguishable from 0 = dead. Under noise, significance is data-derived: `RMS_ablated` must lie outside the observed range of `RMS_trained` over `K = 3` independent validation-noise re-draws (`K` reported).
+**Why**: the user ruled out heuristics; the handoff mandates replacing the threshold by a measured spread before use. Retrospective calibration: arm 2 `F = 0.88`, arm 1 `F = 0.03`, planted oracle `F = 0.93` - the criterion reproduces every recorded verdict without carrying the constants.
+**Ruled out**: keeping either constant; per-record spread as the floor (conflates record heterogeneity with measurement noise).
+**Constrains**: every Phase B arm reports `F` (both ablation surfaces) next to its RMS; a good RMS with `F` near 0 is a negative.
+
+### [D-156] D5's `eps` is the split-half `H-infinity` disagreement of the residual fit; the VAF coupling is withdrawn
+**Date**: 2026-08-23
+**What**: `eps := max_w sigma_max(G^(1)(e^jw) - G^(2)(e^jw))` over the record's FFT grid, where `G^(1)`, `G^(2)` are the same estimator at the same settings on the two disjoint record halves D8 defined. `nx_aug = min{even r : 2 sum_{k>r} sigma_k <= eps}`; if no such `r`, the code refuses.
+**Why**: the previous coupling (an `H-infinity` tolerance tied to a VAF difference) was flagged as underived in DESIGN.md D5 and no identity connects the two norms. The split-half disagreement is a measured realisation of the identification uncertainty in exactly the bound's norm, is constant-free (grid = the record's own FFT bins), and is computable on Telica. Deep-research (2026-08-23) confirmed no published rule ties `eps` to identification uncertainty (EVIDENCE claim 31; Forgione p9 budgets a measured test degradation with an underived "1%"), so this is recorded as our own derivation in EVIDENCE.md's Derivations table, never cited as literature.
+**Ruled out**: Forgione's 1% fit-index budget (their constant, underived); Gavish-Donoho `2.858 * y_med` (i.i.d.-noise data matrix theory, does not transfer to Hankel singular values); picking a tolerance.
+**Constrains**: `nx_aug` is an output of the resolved rule, identical in A1 and A2; a result using an unresolved `eps` is void per the handoff's acceptance criterion.
+
+### [D-155] `W^a` is random by Xavier: the D-152 refutation does not survive contact with the whole page
+**Date**: 2026-08-22
+**What**: `W^a` is initialised **random, by Xavier**, per `hoekstra2026lfrfp` Eq. (31). `ENC_WA_ZERO`
+is retired as a design question. Full reasoning: `scripts/gantry/BLA-Augmentation/DESIGN.md` D7;
+verified quotes: `EVIDENCE.md` claim 9.
+**Why**: D-152 correctly found that Eq. (31) specifies Xavier, then argued we should still zero
+`W^a` "by refutation of the source on its own terms", using the encoder paper's Eq. (7)
+(`x_bar = E[x | u_hist, y_hist]`, which is zero when the readout is zero). **That argument reads
+Eq. (7) as an initialisation rule. It is not one.** Eq. (7) states what the encoder *approximates*,
+i.e. what training drives it toward. The initialisation rule is Eq. (31), and the paper says of the
+loss that fits the baseline encoder: *"The loss function (30) is no longer considered after
+initialisation."* Three independent sources now say the same thing: `schoukens2020lfr` eq. (8)
+(input path random, output path zero, on the same page as eq. (7)'s zeros); `schoukens2021ssnn_init`
+Table II gR-SS-NN column (hidden weights `U(-1,1)/sqrt(n)`, biases `U(-1,1)`, only the linear output
+layers zero); and `hoekstra2026lfrfp` p10 (*"All matrices not required to set the baseline model
+behaviour at initialisation (29) have all elementsmof the matrix initialised randomly ...
+m∼U(−1,1)"*). **`ENC_WA_ZERO` is a departure from Hoekstra, not an instance of it**, and it is the
+departure that produces the D-130 dead zone: `schoukens2021ssnn_init` Sect. IV-B.2 (D-152's own
+claim 4, CONFIRMED) identifies **both** layers zero as the untrainable case, which is exactly what
+`4cdb7c1` had.
+**Ruled out**: (1) Zeroing `W^a` (D-152's conclusion): superseded above. (2) Deriving `W^a` from the
+residual model's observability, the way `W^b` comes from the baseline's (`hoekstra2026encoderinit`
+Eqs. 16-17): **undefined, not merely unsupported.** That construction needs
+`O_n^r = [C_r; C_r A_r; ...]^{-1}`, and the design discards `C_r`, so `O_n^r` is identically zero and
+has no inverse. A design cannot both discard `C_r` and derive `W^a` from it. (3) Keeping
+`kaiming_uniform_`: Eq. (31) says Xavier, a different initialiser at a different scale.
+**Constrains**: (a) D-152's *citation corrections* stand in full and are unaffected; only its
+`W^a = 0` conclusion is superseded. (b) The comment that ships must say Xavier per Eq. (31), with no
+refutation clause. (c) **D-072 must be re-verified bit-identically after this change and before any
+training**: a random `W^a` gives a non-zero `x_a(0)`, and baseline equality then rests entirely on
+`C_r = 0` plus the zero-initialised ANN final layer.
+
+### [D-154] The rigid-body integrators must be excluded from the residual model, and this is an identifiability condition
+**Date**: 2026-08-22
+**What**: In the additive split `P = P0 + Delta`, the residual model `Delta` is constrained
+**strictly stable with no pole at the origin**. The rigid-body poles are NOT put into `Delta`
+(which is what the wafer-stage literature does for a *full-plant* fit) and low-frequency lines are
+NOT discarded as the primary remedy. Full reasoning: `BLA-Augmentation/DESIGN.md` D4.
+**Why**: `vanderhulst2025additive` (IEEE L-CSS 9:547-552, 2025) p2, verified at the PDF, states of
+an additive model structure: *"where at most one submodel may include li > 0 poles at the origin"*
+and *"where the Ai(p) polynomials are stable, i.e., all roots lie in the left-half plane"*. `P0`
+owns the `1/s^2`, so `Delta` may have none. **This is a uniqueness condition**: if both terms may
+carry integrators, rigid-body content can be traded between baseline and augmentation at zero cost
+in fit, which is the negation failure mode this project already tracks, arriving as an
+identifiability statement rather than as a training pathology. `voorhoeve2021positiondep` p6
+(*"n0 = 2 nrb poles are located at s = 0, by factoring out the rigid body dynamics"*) points the
+**opposite** way, but it constrains a full plant, not an additive residual; a design reading only
+that paper would do the wrong thing.
+**Measured, not argued**: the unconstrained shared-denominator fit of the open-loop residual returns
+`rho(A_r) = 1.00003` at every order from `na = 8` upward, i.e. a near-integrator reproducing the
+drift. The Hankel Gramians then do not exist, so the balanced-truncation order rule is unevaluable
+at every order that fits. At 1x Telica sigma it is worse: `rms(rho)` rises from `1e-06..1e-03` m to
+`2.4e-03..3.3e-02` m - **8.5 nm of sensor noise becomes 3-33 mm of residual** - because
+`-C_fb(v)` is injected as a force into an open-loop double integrator. Order then buys nothing:
+out-of-sample VAF is `0.94` at `na = 2` and `0.94` at `na = 28`.
+**Ruled out**: (1) Factoring `s^2` INTO the residual model (`voorhoeve2021positiondep`): wrong
+object. (2) Discarding lines below 20 Hz as the rationale (`vanderhulst2025waferstage` p4): the
+practice is real but its stated reason is closed-loop FRF measurement quality, *"as the rigid-body
+behavior is poorly captured at lower frequencies in the measurement"*, which is not our reason and
+must not be attributed to that paper. Available as a fallback. (3) Leaving it to the
+orthogonal-projection penalty: the penalty currently has `dV_orth/dp = 0` for every augmented
+parameter, and an exact degeneracy should be removed at the estimator anyway.
+**Constrains**: `nx_aug` cannot be determined until this is applied - the balanced-truncation rule
+needs a stable realisation. The recommended route is to fit `(1 - q^-1)^2 rho`, which keeps the
+least-squares structure; it is specified and **not yet run**.
+
+### [D-153] The residual the prototype fitted was the open-loop residual filtered by the baseline's own sensitivity
+**Date**: 2026-08-22
+**What**: Every residual-BLA number recorded before today - `157.8946 Hz`, `zeta = 0.05257`,
+`n_A = 28`, the `-12.0 Hz/m` Y locus, the noise sweep, and the band recipe's
+`[149.90234, 164.06250] Hz` - was computed on `S rho`, not on the residual. They are marked as
+predating this check and are not carried into any later decision without recomputation. The one
+exception, argued below, is the mode **location**.
+**Why**: `cl_residual_spectrum.residual_for` calls `cl_headroom.closed_loop_run`, which at every
+sample forms `e = y_data[k] - y_model[k]`, runs the controller on it, and applies
+`u = u_data[k] + C_fb e`. **The baseline is inside an auxiliary tracking loop driven to follow the
+recorded output.** Frozen-Y LTI algebra: `y_m = P0(u_d + C(y_d - y_m))` gives
+`r = y_d - y_m = (I + P0 C)^{-1} (y_d - P0 u_d) = S rho`. Measured on three records by
+`BLA-Augmentation/probe_d1_residual_identity.py`, which realises `S rho` without ever forming `S`:
+`|r - S rho| / |r|` is `0.24 %` to `52 %` (the residual IS the LPV departure), and the suppression
+`rms(rho)/rms(r)` spans **`10.1` to `642.0`**. Decisively, `rms(rho)` varies over three orders of
+magnitude across records while `rms(r)` is nearly constant at `~3.7e-07` (X) and `~3.7e-06` (Y) in
+all nine record-channels: **a tracking loop drives its error to its own floor regardless of the
+disturbance, so the prototype was measuring the auxiliary loop's floor.** This violates the explicit
+side condition of the project's own sympy-verified ratio derivation ("only with the baseline
+simulated open loop on the recorded input") and the handoff's own do-not list.
+**What survives**: the mode **location**. `S` multiplies `rho`, and multiplication cannot move a
+pole of `rho`, so `157.8946 Hz` remains evidence that a lightly damped mode near `157.89 Hz` is in
+the residual. The 28th-order **realisation** does not survive: `r`'s poles are
+`poles(rho) ∪ poles(S)`, and `poles(S)` are the closed-loop poles of `(P0, C_fb)`, so taking `A_r`
+wholesale would plant auxiliary-loop poles into the augmented block.
+**Also measured, separately**: the controller replay check D1 was written for
+(`verify_cfb_against_records.py`) comes back **clean** on standstill and y-sweep records - at or
+below the float32 storage floor once the `z = 1` integrator ramp is removed - and **`6x` to `18x`
+over the floor on the APRBS records**, at `~10^-3` relative to `rms(u_fb)`. Per `sugie2020dualyoula`
+Remark 2, `K != K_hat` puts `(K - K_hat) y` into the regressor and correlates it with the noise;
+at `10^-3` that is a real but second-order contaminant. **It is not what invalidates the numbers.**
+**Ruled out**: dividing the recorded `r` by `S` after the fact. The suppression is record-dependent
+by a factor of 64 and `S` is itself Y-scheduled, so there is no fixed factor; and the point of the
+open-loop arm is that it costs one extra call with a zeroed controller, through the same integrator.
+**Constrains**: (a) all Phase A fitting is of `rho`; (b) D-154 exists because `rho` drifts and `S`
+was hiding it - `S` has zeros at `P0`'s poles, i.e. at the double integrators; (c) anything in
+`docs/gantry-augmentation-problem-log.md` or the handoff's "established and verified" table that
+cites a residual-BLA number is established about `S rho`.
+
+### [D-152] The `W^a` random initialisation DOES have a literature source; we depart from it by refutation, not by absence
+**Date**: 2026-08-22
+**What**: A citation correction, RECORDED here and not applied to the code this session (the user's instruction: `model_augmentation/` stays unmodified while the attribution runs are in flight). `model_augmentation/fit_systems/pre_encoder.py:422` reads `# HEURISTIC, with no literature source: kaiming_uniform_ on both blocks.` **That is false.** Hoekstra, Gyorok, Verhoek, Toth, Schoukens, arXiv:2602.17297 (`literature/closed-loop-id/hoekstra2026_lfr-augmentation-fp-models.pdf`), **p.9 Sec. 5.4.2 Eq. (31)**, verified at the PDF, states of the augmented-state encoder block: *"where the weights and biases of psi_aug are initialised by the Xavier approach"*, and **p.10 Sec. 5.4.3** adds *"All matrices not required to set the baseline behaviour at initialisation (29) have all elements m of the matrix initialised randomly ... m ~ U(-1,1)."* A random `W^a` is therefore Hoekstra's stated convention. A **second** error, found in the same reading and not previously recorded: the source specifies **Xavier** (Glorot) while our code calls `nn.init.kaiming_uniform_`, which is a different initialiser at a different scale. So the comment denies a source that exists AND the code does not implement the convention that source specifies.
+**Why we still zero `W^a`**: by refutation of the source on its own terms, not by absence of one. Hoekstra's encoder paper, arXiv:2602.13108 (`literature/augmentation/Encoder initialisation methods in the model augmentation setting.pdf`), **p.3 Eq. (7)**, verified at the PDF, defines the encoder as approximating `x_bar_k = E_e[x_k | u^{k-1}_{k-n}, y^{k-1}_{k-n}]` and calls it "an unbiased estimator of `x_k`". Under D-072 the augmented readout is **exactly zero**, so at initialisation `x_a` cannot influence `y` and the window carries no information about it; Eq. (7)'s conditional expectation collapses to the unconditional one, and the only value consistent with baseline equality is `0`. A random `W^a` is not an unbiased estimator of anything at initialisation, it is an arbitrary O(1) functional of the window injected into a state the output cannot see.
+**Ruled out**: (1) Leaving the comment as written. It is the kind of error that survives into a thesis, and "no literature source" invites a reviewer who knows Eq. (31) to conclude we did not read the paper. (2) Silently switching `kaiming_uniform_` to Xavier to match the source: the whole point of `ENC_WA_ZERO` is that the initial value should be zero, so matching the random convention more faithfully is the wrong repair. (3) Applying the fix now: `pre_encoder.py` is one of the two files the attribution runs are running against, and editing it mid-factorial would put a different source file behind the later arms.
+**Constrains**: (a) Wherever the `W^a` block ships in a clean `model_augmentation/` implementation, the comment must read "Hoekstra's stated convention (arXiv:2602.17297 p.9 Sec. 5.4.2 Eq. (31)), refuted here by his own arXiv:2602.13108 p.3 Eq. (7) under D-072", never "no literature source". (b) `scripts/gantry/gantry_dynamic/model.py`'s `ENC_WA_ZERO` comment block repeats the same wrong claim and takes the same correction. (c) `docs/references.md` line 47 asserts "Our `W^a` init is therefore an assumption with no literature source"; that sentence is wrong and is superseded by this entry. (d) The F3 arm that wins in the ablation determines only the VALUE, not this provenance text; the correction applies whichever arm wins.
+**Related**: a second, smaller provenance correction found in the same pass, in `gantry_dynamic/model.py` rather than in `model_augmentation/`: the comment `# THEORY: Orvieto et al. ICML 2023 Sec. 3.3 -- nu_log = log(-log r), theta_log = log th.` is right about `nu_log` and wrong about `theta_log`. Orvieto Sec. 3.3 p.8 gives `lambda_j = exp(-exp(nu_j^log) + i theta_j)`: the magnitude is exponentiated, the phase is learned directly. The extra exponential on the phase is ours (it keeps the frequency strictly positive so a conjugate pair cannot collapse onto the real axis mid-training) and must be labelled `# HEURISTIC:`. Full provenance table, including the confirmed Lemma 3.2 radius draw and the Eq. (7) / footnote-9 `gamma`, in `tasks/ablation-2026-08-22-what-earned-its-place.md` step 4.
+
+### [D-151] Restore the input path into the augmented states: a non-zero `B_a` injection, readout still exactly zero
+**Date**: 2026-08-20
+**What**: An env-gated (`AUG_LRU_B=<scale>`) extension of the D-150 `AugLRUBypass` in `scripts/gantry/gantry_dynamic/model.py`. The augmented rows become `x_a,k+1 = A_aa x_a,k + gamma * (B_a z + NL(z))` with `z = [x, u]` the ANN input, `B_a` drawn i.i.d. `N(0, 1/nz)` from a seeded generator and scaled by the env value. The columns of `B_a` on the augmented states themselves are forced to zero, so `B_a` cannot feed `x_a` back into `x_a` and the pole stays exactly the band-initialised `A_aa`. Rows 0-5 of the ANN output are untouched and still exactly zero at initialisation. Default OFF, so every existing run reproduces.
+**Why**: measured 2026-08-20 (`transient-investigation/calibrate_lambda_defect.py`, `probe_input_injection.py`). At initialisation `gamma * NL = 0`, so `x_a` is an autonomous ringing that nothing drives, and rows 0-5 are exactly zero, so nothing observes it. Consequences, all measured: `||grad||` from `L_settled` is EXACTLY `0.0000e+00` on both `W^a` and `nu_log`/`theta_log`, i.e. neither the augmented encoder block nor the pole can be trained by the output loss; and the multiple-shooting defect, the only term that does reach them, is degenerate on the augmented rows, because with `x_a` undriven `d_a,j = enc_a(psi_j) - A_aa^nf_seg enc_a(psi_{j-1})` is minimised by `enc_a == 0`. The shrinkage is confirmed rather than argued: `<grad_{W^a} L_defect, W^a> = +1.983` (positive, so descent reduces `||W^a||`), and under defect-only Adam at the `lr_enc = 1e-4` of the epoch-1 run both `L_defect` and `RMS(enc_a)` fall about 2.3 % per 15 updates on matched batches, i.e. roughly halving within one epoch's 416 updates. This is the mechanism behind the epoch-1 result (validation 2.8x worse) and behind Arm F's `rho` "holding" at 0.9920, which held because it was frozen, not because training endorsed it.
+**Why this is a restoration, not an invention**: Hoekstra `arXiv:2602.17297` Section 5.4 initialises the augmentation with the NONLINEAR component zeroed and the LINEAR component live (`phi_aug(z_a) = 0 + W_a z_a`, Condition (b) "the learning functions are ResNets"), and randomises every LFR matrix not needed for baseline equality (`m ~ U(-1,1)`); his augmented encoder block is a Xavier draw with no target (Eq. 31), which our `kaiming_uniform_` `W^a` already matches. Jan's own code carries both variants: `identity_init_simple_res_net` (`torch_nets.py:40`, `net_lin` identity-initialised plus a zero MLP) and `zero_init_feed_forward_nn` (`torch_nets.py:97`, zero final layer, no linear skip). The gantry build passes the latter, which zeroes the input path into `x_a` as a side effect of enforcing baseline equality. `B_a` restores the property Jan's initialisation has, by the one route that does not disturb D-150's pole or D-072.
+**D-072 status**: preserved, verified bit-exactly. `y` reads `x_a` only through ANN rows 0-5, which stay exactly zero, so the injection cannot move the output at initialisation. Measured in one process with the gate off then on: validation free-run RMS `2.186601103417735e-06` both times, bit-identical and per-record identical, matching the D-072 reference.
+**Scale**: `AUG_LRU_B` is the multiplier on the `N(0, 1/nz)` draw. # HEURISTIC: the reference value 0.377 was measured on this dataset (seed 0, `nz = 11`) as the scale putting `RMS(x_a)` equal to `RMS(x_phys)` in normalised coordinates, an engineering choice that the augmented state be neither negligible nor dominant, with no literature source. It is data-derived per dataset and must be re-measured, never carried across datasets as a constant.
+**Ruled out**: (1) switching the block to `identity_init_simple_res_net`, whose `nn.init.eye_` linear part would write `x_6, x_7` straight through (`A_aa = I`, unstable, discarding the D-150 band) and put non-zero entries on rows 0-5, breaking D-072; (2) letting `B_a` act on the augmented columns of `z`, which would add a feedback term to the pole and void the LRU stability guarantee; (3) weakening D-072 with an epsilon readout, which attacks observability directly but is the user's decision and not taken here; (4) keeping the multiple-shooting defect as the route to `W^a`, whose descent direction is measured shrinkage in the undriven case and whose gradient explodes by 21x to 1056x per group once the injection is live, pushing the balancing weight to about `1e-10`.
+**Constrains**: the gate must stay OFF by default. `AUG_LRU_B` requires `AUG_LRU`. Checkpoints from injected runs carry `B_a` in the ANN block and reload only into a build with the same gate and scale. `rho(A_aa)` is the pole of the augmented block in isolation and stops being a pole of the model once `B_a` and the readout are both live, so the band claim must be phrased accordingly. The secondary acceptance criterion "`rho(A_aa)` above 0.5" is superseded: a model with `x_a == 0` passes it. Replace with `RMS(x_a)` non-negligible against the physical states AND the readout's augmented columns non-zero.
+
+### [D-150] Split `f_aug` from `g_aug`: a stable linear bypass on the augmented rows, ring-initialised from a data-derived frequency BAND
+**Date**: 2026-08-19
+**What**: An env-gated (`AUG_LRU=1`) change to the ANN parameterisation in `scripts/gantry/gantry_dynamic/model.py`. The ANN's `zero_init_feed_forward_nn` is wrapped so that its output rows split into the two functions Hoekstra's S-DP structure keeps separate (`arXiv:2602.17297` Table 1): rows 0-5 (`f_aug`, the correction into the physical states) stay exactly zero at initialisation, and rows 6-7 (`g_aug`, the augmented states' own update) become `x_a,k+1 = A_aa x_a,k + gamma * NL(x,u)[6:8]` with `NL` zero at initialisation and `A_aa` live. `A_aa` is a trainable 2x2 rotation-scaling block held in the LRU stable exponential parameterisation `lambda = exp(-exp(nu) + j exp(theta_log))` with input normalisation `gamma = sqrt(1 - abs(lambda)^2)` (Orvieto et al., ICML 2023). Its eigenvalues are ring-initialised over a BAND read at build time from `runs/cl_residual_spectrum.json`: theta spans the frequency range of the dominant strong (over 10 dB above floor, `zeta_ok`) residual peaks across all records and channels, and the annulus radius spans the per-peak `rho = exp(-zeta*wn*Ts)` range from the same set. No frequency, damping or radius constant is written into code.
+**Why**: measured 2026-08-19 (`cl_aug_spectrum.py`, `cl_latent_init_test.py`): `rho(A_aa)` is exactly 0 at initialisation and 2.9e-10 after training against 0.976 for the planted model that closes 82 % of the headroom, because one shared zero-initialised output layer produces both `f_aug` and `g_aug`, so zeroing it for D-072 baseline equality destroys the augmented dynamics as a side effect. Restoring a live `A_aa` removes the 34.83x loss barrier entirely (1.00x, monotone descent) and makes the readout gradient carry `x_a` information (cos with `x_a` blanked drops from +1.000000 to +0.464718). A single MLP output row cannot realise a target `A_aa` (asked 0.98 at 159 Hz, got 0.649 at 38.5 Hz), which is the measured argument for a linear bypass where `A_aa = A` exactly.
+**Why a BAND and not a mode**: the real Telica campaign provably cannot supply an identified resonance (`telica_plant_frf.py`: identifiable band under 83 Hz on X, under 55 Hz on Y, no plant resonance supported in 10-8000 Hz), so a mode-based initialisation would work in simulation and have nothing to run on at the machine. The LRU result is precisely that the eigenvalue DISTRIBUTION at initialisation decides learnability, so the recipe is a distribution over a band; where a mode is identifiable (simulation) the band collapses toward it and the point estimate is recovered as a special case.
+**D-072 status**: preserved structurally. Rows 0-5 of the ANN output are exactly zero at initialisation and `y = C x[0:6] + D u` never reads rows 6-7, so the augmented model IS the baseline at t=0. The known cost: `dL/dA_aa` is zero at step 1 and unlocks from step 2, forced by exact baseline equality. The epsilon-readout variant that trains from step 1 weakens D-072 and is the user's decision, not taken here.
+**Ruled out**: (1) solving `W_out[6:8,:]` for a target Jacobian, measured to miss by 2.5x in rho and 4x in frequency; (2) `ANN_INIT_SCALE`, cannot move `A_aa` off zero; (3) hard-coding 158-159 Hz or rho 0.9856, oracle-adjacent in simulation and undefined on Telica; (4) a frozen (non-trainable) `A_aa`, unrecoverable if the band is wrong; (5) an unconstrained trainable `A_aa` matrix, loses the guaranteed `abs(lambda) < 1` during training that the exponential parameterisation gives by construction.
+**Constrains**: the recorded LRU limitation stands: `lambda = exp(-exp(nu))` maps onto the OPEN unit disk, acceptable for a parallel augmentation (the integrators live in the baseline) and not for a black-box arm. The gate must stay OFF by default so every existing run reproduces. Runs made with `AUG_LRU=1` checkpoint extra parameters (`nu_log`, `theta_log`) inside the ANN block and reload only into a pipeline built with the same gate. The band derivation reads a residual-spectrum artefact; on datasets where no strong peak exists the build refuses with instructions to supply an explicit band from loop-bandwidth and sample-rate requirements rather than silently defaulting.
+
+### [D-149] New data track `joint_lowf`: the multisine band starts at the record fundamental, not 1 Hz
+**Date**: 2026-08-19
+**What**: A new TRACK in `Matlab-scripts/Augmentation/data/gtd_config.m`, `joint_lowf`, identical to `joint` in every respect except `cfg.f_low = 1/cfg.t_record` (0.0833 Hz) instead of 1 Hz. `cfg.f_high` stays 200 Hz, `t_record` stays 12 s, record table, seeds and amplitudes unchanged. Because `cfg.out_dir` is keyed on TRACK and `cfg.fig_dir` derives from it, the new track writes to `data/gantry/matlab/trajectory/joint_lowf/` and its own `figures/` subfolder, so **nothing in `joint/` is overwritten**. All 22 records to be generated. An `otherwise` branch was added to the same switch, because an unrecognised TRACK previously left `f_low`/`f_high` undefined and failed later inside the multisine synthesis.
+**Why**: the baseline model has two REAL poles, first-order corners rather than resonances, at the coast-down time constants `tau_X = (m1+m2+mb+mh)/(cg1+cg2) = 1.546 s` and `tau_Y = mh/cy = 1.010 s`, i.e. corners near 0.103 and 0.158 Hz. These are the same constants D-087 already cites for the open-loop offset problem. They sit BELOW the `joint` band, and measurement shows the band cannot see them: deleting both poles entirely changes the FRF over 1-200 Hz by a **median of 0.56 %**, against the ~1.5 % accuracy achieved by `lpm_frf.py`. Consequences: `frf_to_ss.py` cannot fit them (order 8 returns an unstable spurious pole, so order 7 was selected), the black-box initialisation gets pure integrators where the truth settles with a 1.5 s constant, and `cg1+cg2` and `cy` are weakly identifiable as physical parameters, which matters directly once joint estimation estimates them.
+**Why 1/t_record specifically, and why not lower**: `gtd_make_multisine.m:53-55` places lines on exact FFT bins (`bins = round(freqs/df)+1`), and at `t_record = 12 s`, `fs = 20 kHz` the spacing is `df = 0.08333 Hz`. The fundamental is therefore the lowest bin that exists. Setting `f_low` to 0.05 or 0.07 snaps to the same bin set and gains nothing. The lever for more margin is `t_record`, which the user has deferred. Sensitivity at the bins this buys, measured as deviation from a pure double integrator: 0.0833 Hz gives -4.02 dB and **+51.0 deg**, 0.1667 Hz +31.7 deg, 0.25 Hz +22.4 deg. Large signatures, so identification should work, but there is exactly **one line below each corner** and it is the fundamental, which has a single period in the record and no period-to-period averaging. Marginal rather than comfortable; if these two poles later fit badly, revisit `t_record` (20 s gives `df = 0.05` exactly and three lines below the Y corner) before touching the estimator.
+**Band justified from the BASELINE, not the truth**: `plant.py:53` sets `_C3, _K3 = _C4[:3,:3]`, so the 6-state baseline carries the same `cg1`, `cg2`, `cy` as the truth and predicts these corners itself. The truth pole values (0.1029, 0.1576 Hz) are used only as a post-hoc diagnostic. Designing the band from the truth would tune the experiment to the answer and would not transfer to hardware.
+**Ruled out**: (1) Modifying `joint` in place: destroys a working dataset and every result measured on it. (2) Lengthening `t_record` to 60-120 s: my first proposal, withdrawn. It was derived from a cycles-counting heuristic appropriate to a resonance, not to a first-order lag, and the sensitivity numbers above show 12 s already carries a large signature. (3) Amplitude shaping from the start: deferred, see below. (4) Standstill records only: cheaper, but a half-populated track invites later mixing of records across folders, and joint estimation wants the full set.
+**Open risk, flat spectrum**: the spectrum stays flat in step one. Open-loop worst-case estimates put the lowest Y line at 103 mm rms and total Y usage at 85.7 % of stroke. These records are closed loop and the controller suppresses low frequency hard, so the true figure should be far lower, and `gtd_enforce_limits.m` checks the actual simulated signals. **If it trips on Y, the fix is displacement shaping in `gtd_make_multisine.m:synth()`** (weight each line so predicted displacement is capped; a 10 mm cap gives 0.234 N on X and 0.059 N on Y at the lowest line against the flat 0.816 and 0.612), and the track then differs from `joint` by two things rather than one, which must be recorded here.
+**Constrains**: `joint` and `joint_lowf` are **siblings, not nested**. Changing `f_low` changes which lines exist, so the multisine realisations differ throughout and the datasets are not comparable record-by-record. Everything measured on `joint` remains valid for `joint`; a model trained on one must not be evaluated on the other without saying so. `lpm_frf.py`'s `TRACK` constant selects the folder and must be set deliberately.
+
+### [D-148] BLA estimation moves from time-domain N4SID to a frequency-domain, per-line-weighted chain
+**Date**: 2026-08-19
+**What**: `bla_init.py`'s `fit_bla` (deepSI `SS_linear`, i.e. N4SID on the normalised time record, `SS_f` swept and selected on `Vn`) is superseded as the BLA estimator. The replacement chain, in order: (1) decimate `u` with the SAME zero-phase FIR used for `y`, or fit at the 4 kHz native rate; (2) estimate the FRF nonparametrically by the local polynomial method, which models the transient term alongside the FRF; (3) fit the parametric model on the FRF with a **per-frequency-line** weight, factoring the rigid-body poles out instead of estimating them, and discarding the lowest frequency lines; (4) for the Y-dependence, fit per-Y-band BLAs in zero-pole-gain form and parameterise each pole, zero and gain as a polynomial in Y. Full literature basis and citations: `scripts/gantry/ann-blackbox/BLA-LITERATURE.md`.
+**Why**: the current estimator misses both resonant pairs. Measured (`server-results/paired_bla76176.out:32`): `|eig(A)| = [0.999986, 0.999977, 0.999213, 0.998775, 0.896084, 0.896084, 0.291552, 0.07701]` against a frozen truth of `[1, 1, 0.999192, 0.998763, 0.996625 (5.12 Hz pair), 0.936582 (157.9 Hz pair)]`. `frf_diagnostic.py` (run 2026-08-19, `results/frf_diagnostic/summary.json`) attributes the miss: T10 carries **-17.1 to -22.6 dB** of INPUT power at 157.9 Hz relative to 5.1 Hz, so the absorber is well driven, but only **-73.1 to -85.1 dB** of OUTPUT power, so its share of the output energy is order 1e-8. N4SID truncates on Hankel singular values, which is an energy ranking, so the mode is discarded by construction. The cure in the literature is not a tuning change but a different estimator: the frequency-domain cost is normalised per frequency line rather than per time sample (Schoukens, Vaes, Pintelon, IEEE CSM 36(3):38-69, 2016, arXiv:1804.09587, Eq. 11), and Pintelon and Schoukens 2012, Sec. 13.11.2 states that the frequency domain has no problem with plants whose poles lie on or outside the unit circle. **CORRECTION, 2026-08-19, after reading the sources in full:** an earlier version of this entry said Bauer and Ljung (Automatica 38(5):763-773, 2002) show the subspace row weighting acts as a frequency weighting, "which is the theory statement of the observed failure". That claim came from metadata and did not survive reading the paper. Bauer and Ljung prove that the CCA weighting minimises the ASYMPTOTIC VARIANCE under noise; they mention a frequency-weighted choice only in passing, citing Bauer's 1998 thesis. More importantly, both that paper and Gustafsson (Automatica 38(3):433-443, 2002) assume in their Section 2 / Assumption A1 that **all eigenvalues of A lie strictly inside the unit circle**, and additionally assume a white or quasi-stationary input and a noise process. Our plant has two poles exactly ON the unit circle, our input is a clock-held APRBS, and our simulation is noiseless. **The subspace-weighting theory therefore does not reach our problem on three independent grounds, and that is itself the argument for leaving the time-domain estimator rather than tuning it.** Gustafsson's pre-filtering is also of the INSTRUMENT vector, not of u and y, and his Section 7.2 states it has basically no effect when past outputs are included in the instruments, which is deepSI's `SS_linear` case. Marginal stability is not an obstacle in this domain: Pintelon and Schoukens 2012, Sec. 13.11.2 states that the frequency domain has no problem with unstable plants because the transfer function is evaluated only on a grid, with coincident lines dropped or regularized; our poles at z=1 are exactly that case. Rigid-body handling is taken from the motion-control literature (Voorhoeve et al., IEEE TCST 29(1):194-206, 2021: factor the rigid-body dynamics out, fix `2*n_rb` poles at s=0, inverse-magnitude clipped weighting; van der Hulst et al., IFAC 59(17):67-72, 2025: discard lines below the band where rigid-body behaviour is poorly captured).
+**Why the weight is a HEURISTIC, not THEORY**: the literature's per-line weight is the total variance (noise plus stochastic nonlinear distortion), estimated from period-to-period and realisation-to-realisation scatter. Our data is a **noiseless** simulation and, at frozen Y, linear, so both variances are identically zero and the weight degenerates to 0/0. The substitute is a relative-error weight (divide by the squared magnitude of the measured FRF). No paper states that substitution for the noiseless case, so it carries `# HEURISTIC:` per the repo's signal-processing labelling rule.
+**On the `u`/`y` decimation mismatch, TESTED AND NOT THE CAUSE (added 2026-08-19 after the fact)**: `data.py:29-30` decimates `u` by a block mean and `y` by a zero-phase FIR, which costs 0.54 dB and 28 degrees of uncompensated u-versus-y phase at 157.9 Hz. This was initially recorded here as a defect to fix first. `bla_decimation_test.py` measured four conventions and **falsified that**: the absorber is missed by essentially the same distance in every one, so `data.py` is NOT changed and D-087 stands.
+
+| variant | fs | u | y | dist to absorber | dist to 5.12 Hz pair |
+|-|-|-|-|-|-|
+| A, current | 800 | block mean | zero-phase FIR | 9.19e-01 | 4.02e-02 |
+| B, matched filters | 800 | zero-phase FIR | zero-phase FIR | no stable BLA in the SS_f grid | - |
+| C, D-087 as written | 800 | block mean | point-sampled | 8.87e-01 | 4.02e-02 |
+| D, native, no 2nd decimation | 4000 | - | - | no stable BLA in the SS_f grid | - |
+
+**What the test found instead, and it is more useful than the hypothesis it killed.** The BLA's spare states go to near-Nyquist artefacts, not to the physical resonances. Variant A's pole list is four good slow modes plus a pair at **341.5 Hz** and a single pole at **400.0 Hz, exactly Nyquist**; variant C moves that pair to 303 Hz. The zero-phase FIR applied to `y` is non-causal and has no causal pole-zero realisation, so a causal BLA cannot represent it and produces near-Nyquist junk while trying. Second finding: **the 5.12 Hz pair is missed too**, by 4.02e-02, which is the full distance from the real axis, so the nearest BLA pole to it is real. The BLA has no complex pole at either physical resonance. Third: variant C recovers the integrators 20x more accurately than A (9.93e-07 versus 1.76e-05 from z=1). Fourth: at 4 kHz the whole `SS_F_GRID` is rejected by deepSI's own explosion guard, because the poles crowd z=1, so a 4 kHz arm needs a different grid before it can be used as a control.
+**Constrains (added)**: `data.py` stays as it is and D-087 stands unmodified. Any future 4 kHz arm must first widen or replace `SS_F_GRID` in `bla_init.py`. The near-Nyquist artefact is now the leading secondary hypothesis for where the two spare states go, and the frequency-domain chain should be evaluated on whether it stops spending states there.
+**Ruled out**: (1) keeping N4SID and only changing the selection criterion from `Vn` to a free-run score: `Vn` is not the root cause, the energy ranking is, and no selection rule recovers a mode the truncation removed. (2) Blaming the excitation and regenerating data first: step 0 measured the input spectrum and the absorber is driven at -17 to -23 dB, so an APRBS-to-multisine swap alone would not have fixed it. The sinc-squared clock-period argument (5SMB0 Lecture 9 p16-19) is real but not binding here. (3) Blaming the LPV scheduling: BLTI theory predicts a single global BLA is a record-weighted average of the frozen responses that lands inside the Y-locus and drops no mode, and only the 5 Hz pair moves with Y (4.83 to 5.12 Hz) while the absorber is Y-invariant to six digits. (4) Forcing `SS_A_stability`: already ruled out in `bla_init.py`, it drags the poles to 0.90-0.975 and a stable BLA is the wrong model for a plant with free integrators.
+**ADDENDUM 2026-08-19, naming, and it changes what the thesis may claim.** The model this chain produces is fitted on STANDSTILL records at one frozen Y, while the network trains on APRBS records whose trajectories sweep Y. The BLA is defined as the mean-square-optimal LTI approximation **for a given input class**, so that model is **not a BLA** and must not be called one. Both were estimated (`bla_vs_frozen.py`, `results/bla_vs_frozen/summary.json`), z-plane distance to the frozen truth pole at 800 Hz:
+
+| arm | absorber | slow pair | unstable |
+|-|-|-|-|
+| BLA of the training input class (APRBS + lissajous, Y -0.30 to +0.30 m) | 1.86e-02 | 4.03e-02, missing | 1, at \|z\|=1.286 |
+| frozen point (T3 standstill, Y=0, periodic) | 9.08e-06 | 6.75e-04 | 0 |
+| time-domain N4SID BLA, for scale | 9.19e-01 | 4.02e-02 | n/a |
+
+Two separable effects: changing only the ESTIMATOR (time domain to frequency domain, same input class) buys ~50x on the absorber; changing the INPUT CLASS as well buys another ~2000x plus the slow mode plus stability. **Decision: report the training-class fit as the BLA, and call the frozen-point model a frequency-domain linear model at a frozen operating point**, which is the same kind of object Hoekstra et al. 2026 initialise from (local linearisation of the baseline at an equilibrium). The defensible claim is that the BLA of the training data cannot represent the plant's resonant structure while a frozen-point model can.
+**Also corrected here**: an earlier version of this entry, and of `BLA-LITERATURE.md` and `references.md`, said Marconato et al. 2014 shows linear initialisation is inadequate for MLP-type nets "regardless of quality". The paper compares two initialisation SCHEMES at a fixed linear model and never varies the linear model's quality, so it cannot support that. Whether a better linear model helps is open, and is what the paired arms measure.
+**Constrains**: `bla_init.py`'s `apply_bla_init` keeps its interface (the bypass write and the encoder map are unchanged); only the source of `A, B, C` changes. Any new numerical weight or threshold in the new estimator must carry `# THEORY:` or `# HEURISTIC:` before it is written. The paired retraining arms must report convergence speed and run-to-run spread, not only best validation, because that is what the initialisation literature consistently measures (Schoukens, ECC 2021; Hoekstra et al. 2026) and therefore what the thesis claim has to be. Per-Y-band BLA work is gated on the global BLA first reproducing both resonant pairs.
+
+### [D-148] The ceiling is not the optimiser: three optimisers land in one basin, a 4x better point exists in the same function class, and the objective barely tells them apart
+**Date**: 2026-08-19
+**What**: Four training runs, a capability test and a band split, all on the D-147 harness. The conclusion is negative in a useful way: **every optimiser-side defect found today was real, was fixed, and changed nothing about where training stops.** Work moves to the objective. Three defects are recorded here because they are genuine and must not be re-found; two results are recorded because they bound what is achievable.
+
+**1. Adam's `eps` is a floor on a closed-loop objective, and it silently froze 77 % of the ANN.** Adam's step is `lr*|g|/(|g|+eps)`, so `eps` is a threshold below which it stops normalising. The closed-loop loss sits at `2.2e-10` because the loop already makes the normalised residual small, and the gradients that come with it are `1e-11` to `1e-14` on the hidden layers against `1e-5` to `1e-7` on the output layers. With the PyTorch default `eps = 1e-8` the interior of both nets therefore moved at `lr/1000` while the readout moved at `lr`. MEASURED after 3 epochs: **139 of 600 ANN parameters moved, and the 139 are exactly the output layer (16x8+8 = 136)**; the hidden layers moved `1.0e-08` on weights of `0.30`, below float32 resolution (`1.5e-08`). The encoder is the same: `Wa_psi_y` and `Wa_psi_u` moved **0 of 108** entries. So the augmentation was a 136-parameter linear readout of frozen random features, and every earlier statement about "the ANN plateaus" was a statement about that, not about the augmentation. Nobody chose this: `torch.optim.Adam` defaults to `eps=1e-8`, deepSI's `init_optimizer` forwards kwargs unchanged (`fit_system.py:119-125`), Jan's `interconnect.py:523` passes only `lr`, and our `build_model` likewise. It is specific to a well-conditioned plant loop producing an ill-conditioned optimisation.
+**The gradients are signal, not float32 noise**, which is the objection that had to be cleared before touching `eps`: per-tensor cosine between DISJOINT batches is **0.9988 to 0.9996 on the hidden layers**, the same as the output layer's 0.9994, and `Wa_psi_y` at `6e-15` still gives 0.98. `cos(full batch, mean of its two halves)` is **1.0000** everywhere, so rounding contributes nothing. `eps = 1e-16` (`CL_ADAM_EPS`) then makes 600/600 and 2908/3130 parameters train.
+**Effect on the result: none.** `+36.19 %` against `+36.13 %` at one epoch.
+
+**2. Raising the learning rate is not the constraint either, and the `1e-3` NaN needs re-reading.** At `eps = 1e-16`, `lr = 1e-5` ran a full epoch with no NaN, 46x more parameter travel, and a slightly WORSE result (`+35.82 %`). Note what this does to D-101/D-102: the `1e-3` NaN that pinned this pipeline at `1e-7` happened under the `eps` imbalance, where the readout ran at full `lr` into the K = 0 rows while the network behind it was frozen. **Every learning-rate conclusion in the run table predates the fix and is not safe to carry forward.**
+
+**3. THE BASIN, which is the actual finding.** At 260 updates from the same initialisation, the fixed-batch loss lands at `1.0246e-10` (`eps 1e-8`, `lr 1e-7`), `1.0137e-10` (`eps 1e-16`, `lr 1e-7`) and `1.0251e-10` (`eps 1e-16`, `lr 1e-5`): **within 1.1 % of each other across 100x in learning rate and 4.3x in the number of live parameters.** Three genuinely different optimisers converge to one point in one epoch and then go sideways. That is a property of the objective and the parameterisation, not of the optimiser, and it is why the remaining optimiser levers were dropped.
+
+**4. The function class is NOT the limit, but its output parameterisation is.** `cl_capability.py` regresses the SAME architecture onto the exactly computable target `phi_true(x,u) - phi_base(x,u)` (RK4 of `plant.deriv8` minus the model's own `Gantry_State_Block`, same `Ts` and `up_sample`, so discretisation cancels). Two arms differing ONLY in output parameterisation: as-parameterised today fails the two latent rows outright (`1-R^2` **0.98** and **0.91**, i.e. no better than the mean) while per-row output scaling fits them to **`9.6e-05`** and **`1.5e-04`**, and also fixes `dTh` (0.17 -> `1.7e-04`) and `dX` (0.30 -> `6.1e-04`). Cause, measured: **the eight required corrections span NINE DECADES** in normalised state units, from `3.9e-08` on X to `1.03` on the absorber latents, out of one shared output layer. Rows 6-7 are O(1) because no block but the ANN writes them, so the ANN carries the absorber's entire state evolution. X is unfittable in both arms and that is an artefact, not a finding: its target is below the float32 rounding of the baseline step it is a difference of.
+
+**5. THE CEILING, and it beats training by 3.3x.** The regressed weights planted into the model score **`4.177e-07` m free run** (encoder-init; `4.122e-07` from the true `x0`), against untrained `2.1866e-06`, trained `1.3934e-06` and the oracle `2.81e-08`. That is **82 % of the free-run headroom closed against training's 36.7 %**, in the same function class, on the same data. Diagnostic ceiling ONLY: the target is built from `x_aug`, so this must never become a deliverable initialisation.
+
+**6. The objective barely ranks it.** On the free run the planted model is 3.3x better than the trained one. On the training WINDOW, the quantity the loss minimises, it is **1.26x** better, or 1.99x with `W^a = 0`. The free run pays a bad initial state once in 48000 samples; the window pays it at 1666 window starts. Even with the TRUE latent state at every start the planted model scores `7.160e-07` on windows against `4.122e-07` on the free run, so 41 % of the window penalty is the latent initialisation and the remaining 1.7x is horizon.
+
+**7. Combining everything makes it worse, so far.** `eps 1e-16` + per-row ReZero gates + `W^a = 0` + `lr 1e-5`, 2 epochs: loss `2.1788e-10 -> 1.7039e-10 -> 1.5392e-10`, free run `+19.56 %`. It is the ONLY configuration still descending at the end of its budget, and it is still 50 % above the basin the others reach in one epoch. Its own decay rate has halved between epochs, so reaching them would take 5 to 10 more epochs (2 to 3.5 h) for a best case of matching rather than beating. Not pursued.
+
+**8. N1, THE HORIZON SWEEP: the objective is not short of optimisation, it is short of SIGHT.** `cl_nf_sweep.py`, no training, both models scored on the SAME init policy (the encoder as it actually is) over the same window grid:
+
+| nf | seconds | planted (correct) | trained | discrimination |
+|-|-|-|-|-|
+| 400 | 0.1 | `1.2068e-06` | `1.5072e-06` | **1.25x** |
+| 800 | 0.2 | `8.7262e-07` | `1.4392e-06` | 1.65x |
+| 1600 | 0.4 | `6.4894e-07` | `1.4154e-06` | 2.18x |
+| 3200 | 0.8 | `5.5332e-07` | `1.4071e-06` | **2.54x** |
+| free run | 12 | `4.177e-07` | `1.3934e-06` | 3.34x |
+
+**Lengthening the objective from 0.1 s to 0.8 s DOUBLES its ability to distinguish a correct augmentation from the one training finds**, heading toward the free run's 3.34x. The mechanism is in the two columns separately: the planted model's window error falls **54 %** with length because its error is TRANSIENT-dominated and amortises, while the trained model's is **flat at 6.6 %** because its error is PERSISTENT. At `nf = 400` both are dominated by the same transient, so the loss sees them as nearly equal and has almost no gradient reason to prefer the correct one. That is why every optimiser in finding 3 lands in the same basin.
+**A statistic that misleads here, recorded so it is not repeated**: with the latent init held perfect, the planted model's ratio to the per-window FLOOR gets WORSE with nf (10.20 at 400 to 13.12 at 3200), which reads as an argument against horizon. It is not: the floor amortises the same way the planted model does (`xc = 0` at every window start is its entire error), so the floor comparison hides precisely the effect under test. Model-against-model is the correct statistic for a discrimination question.
+**CORRECTED BY FINDING 10**: this finding's own conclusion, that the fix is "effective length via multiple shooting", is WRONG. Multiple shooting re-encodes at every segment start, so it preserves the transient DENSITY and cannot buy what the `nf = 3200` column shows. The horizon reading of the table stands; the proposed remedy does not.
+
+**9. THE FIX: do not SCORE the startup transient. `K = 100` at `nf = 400` recovers the FULL free-run discrimination, and beats an 8x longer window.** Finding 8 said the excess mean-square scales as `1/n`, which is a fixed startup transient being diluted rather than an error that persists. Decomposed at `nf = 400`, using each model's own settled level: **88 % of the planted (correct) model's window loss is transient, against 15 % of the trained one's.** The objective grades a good model almost entirely on its initial state and a bad one mostly on its dynamics. The transient is an INITIALISATION error, not a model error: the planted model has **3.9x more startup energy** (`5.13e-10` against `1.32e-10` m^2 samples) precisely because it USES its latent states and the encoder cannot initialise them, so the current loss **penalises a model for using its augmented states**, 1666 times per epoch.
+`cl_burnin_sweep.py`, no training, four rollouts re-reduced over the grid, objective `V = w_burn*||e over [0,K)||^2 + ||e over [K,nf)||^2`:
+
+| `W^a` | K | `w_burn` | planted | trained | discrimination |
+|-|-|-|-|-|-|
+| random | 0 | 0 | `1.2068e-06` | `1.5072e-06` | **1.249x** (today) |
+| zero | 0 | 0 | `7.6156e-07` | `1.5041e-06` | 1.975x |
+| random | 100 | 0 | `4.2060e-07` | `1.3932e-06` | **3.312x** |
+| zero | 100 | 0 | `4.0972e-07` | `1.3932e-06` | **3.400x** |
+| zero | 200 | 0 | `4.0764e-07` | `1.3909e-06` | 3.412x |
+| zero | 100 | 0.1 | `4.7015e-07` | `1.4080e-06` | 2.995x |
+
+against `nf = 3200` (0.8 s) at 2.54x and the 12 s free run at 3.34x. **Discarding the first 100 samples of each window recovers the full free-run discrimination AT `nf = 400`, and beats an eight-times-longer window**, because length dilutes the transient while burn-in removes it. `K = 100` is 25 ms, which lands on the ~20 ms settling implied by the loop's 100 Hz crossover and 33.8 degree phase margin, i.e. two independent routes to the same number.
+**Three consequences.** (a) **The `xc`-at-segment-boundary decision is no longer blocking**: multiple shooting was the route to 0.8 s of objective, and burn-in gets more than that at `nf = 400` with no extra gradient depth, no rate change and no new semantics. It stays available and stays unvalidated (it has never improved a production result and has only ever run open loop). (b) **`W^a` stops mattering**, exactly as predicted from the overlap: 1.975x against 1.249x at `K = 0`, but 3.400x against 3.312x at `K = 100`. Adopt zero anyway, since it is free, better at every `K`, and makes the live encoder agree with `HybridGantryEncoder` and `LinearInitEncoderWrapper`. (c) **An explicit initialisation term costs real discrimination**: `w_burn = 0.1` drops 3.400x to 2.995x with `W^a = 0` and to 2.408x with the random one. So keeping the encoder an explicitly-trained object is a stated trade with numbers on both sides, and zeroing `W^a` recovers most of what it costs.
+**What this does NOT prove**: discrimination is a proxy. It says the loss can now RANK the right answer, not that training will FIND it, and with `w_burn = 0` the encoder loses its explicit criterion, which costs nothing in discrimination but says nothing about whether it degrades over a run. Both need one training run, judged on the training-window RMS, on whether the free run passes `1.39e-06`, and on the encoder's parameter delta.
+
+**Ruled out**: (a) more epochs, more learning rate, or a different optimiser, by finding 3; (b) capacity or architecture change, by finding 4, which shows the class can represent the correction once the outputs are scaled; (c) **weighting as the FIRST move**, by finding 8: the discrimination problem is horizon, so band- or record-normalised weighting is a second-order fix and not the one to try first. Note this SUPERSEDES the reading in D-147 and in finding 8's own premise that "horizon work is premature": D-147 correctly ruled out horizon as the explanation for the ERROR LEVEL (train window ~ free run, no train/val gap), and finding 8 shows horizon IS the explanation for the objective's DISCRIMINATION. Those are different questions and both answers stand.
+**10. CORRECTION: multiple shooting could never have delivered the horizon benefit, because it RE-ENCODES at every segment start. And its defect term is the ENCODER fix, which burn-in is not.** Findings 8 and 9 first framed multiple shooting as the route to a 0.8 s objective without BPTT depth. Reading `multiple_shooting.py` refutes that:
+
+```
+x_node = self.encoder(ufuture[:, s-nb : s+nb_right], yfuture[:, s-na : s+na_right])
+defects.append(x_node - x)      # gradient into the encoder AND back through segment j-1
+x = x_node                      # the segment starts from the ENCODER, not from the rollout
+```
+
+Every segment is re-initialised by the encoder, so `n_seg = 8` x `nf_seg = 400` produces 3200 samples containing EIGHT startup transients, i.e. **one per 400 samples, exactly the density we have today**. The 2.54x that finding 8 measured at `nf = 3200` came from ONE transient per 3200 samples. Multiple shooting holds the density fixed and would return roughly today's 1.25x. **This is consistent with the user's observation that it has never improved anything, and it retires it as a horizon device.**
+**What it IS, and this matters more**: `defects.append(x_node - x)` penalises the disagreement between the encoder's estimate at time `s` and what the dynamics rolled forward to `s`, with gradient into both. That is a direct encoder criterion, and it has the property that makes it usable here: **it needs no ground truth for the latent coordinate.** It does not require the latent to be `delta_a`; it requires the estimate to match whatever coordinate the ANN has chosen, which dissolves the gauge problem that made the planted latent test a diagnostic only. It also resolves the initialisation chicken-and-egg: with the ANN output at zero the latent rows have no dynamics, so the rolled-forward latent is zero and the defect drives the encoder's latent output toward zero, which is the `W^a = 0` that finding 9 measured as better, discovered automatically and then tracked as the ANN's coordinate develops.
+
+**THE TWO-PART FRAMING, which supersedes "burn-in is the fix":**
+
+| | fixes | mechanism | evidence |
+|-|-|-|-|
+| **burn-in** | the DYNAMICS criterion | stop grading the ANN on an initialisation error it cannot fix | finding 9: discrimination 1.249x -> 3.400x at `K = 100` |
+| **defect term** | the ENCODER criterion | grade the encoder on agreeing with the dynamics, no ground truth needed | not yet measured on this rig |
+
+**Neither substitutes for the other.** Burn-in alone leaves the encoder untrained, which is a real objection and it stands: it is a workaround for the encoder, not a fix for it. The defect alone leaves the dynamics criterion still 88 % transient for a correct model. The `xc`-at-segment-boundary question therefore returns, but for a better reason than horizon, and with a leaning: if a segment exists to carry a defect term and starts from a re-encoded state, `xc = 0` is the consistent choice, because the segment is being treated as a fresh short experiment exactly as a window start is (D-142).
+
+**11. WHAT JAN ACTUALLY DOES, read from his code, and why it does not transfer.** The closest example in the repo is `scripts/ecc_2025/msd_ndof_interconnect_dynamic.py`, and it has OUR STRUCTURE: true system 3-DOF, FP baseline 2-DOF, dynamic parallel augmentation, so `nxd = 6` of which **4 physical and 2 AUGMENTED**, ANN writing all rows with a zero-init net. His training call is
+
+```
+fit_sys = SSE_Interconnect(interconnect, na=nxd*2+1, nb=nxd*2+1, e_net_kwargs={"n_nodes_per_layer":16})
+fit_sys.fit(..., batch_size=2000, epochs=2, loss_kwargs={'nf':200}, validation_measure="sim-RMS")
+```
+
+i.e. **default RANDOM encoder, joint training, nf = 200, two epochs, and nothing whatsoever for the augmented-state initialisation.** No burn-in, no defect, no multiple shooting, no pre-encoder.
+**The separation idea IS his**, in `msd_ndof_pre_encoder.py`: `SS_pre_encoder` fitted at `nf = 1` for 100 epochs with `validation_measure="1-step-RMS"` against `System_data_with_x(x=train_data.x/std_x, ...)`, i.e. SUPERVISED ON THE TRUE STATE, then transplanted (`fit_sys.encoder = encoder_sys.encoder`) and trained jointly at `nf = 200` for 500 epochs. **But that script sets `sys_dof = FP_dof = 2`, so `nx_aug = 0`.** The pre-encoder was never applied to the augmented-state case, exactly as `hoekstra2026encoder`'s own experiment is a static augmentation with `nx_aug = 0` (D-148 finding relating to `W^a`, and the `references.md` row). **Two independent artefacts, the code and the paper, leave the same case uncovered.**
+**Why his setup tolerates what ours does not, and it is NOT the window length.** Measured from `data/mass_spring_damper/msd_2dof.mat`: `Ts = 0.02 s`, so `nf = 200` is a **4.0 s** window; discrete eigenvalues `0.9723, 0.9723, 0.9956, 0.9956`, slowest time constant **4.5 s**, so a 4-tau settling is 18 s, i.e. **449 % of his window**. His initial-state error does not wash out inside a window either; on that axis he is worse off than we are (our 25 ms settling in a 100 ms window is 25 %). The difference is the SIZE of the initial error, not its decay rate: his states are observable from the output history and his encoder is trained on all of them from step one, while our latent rows come from a frozen random map with exactly zero gradient at initialisation (D-130) producing an arbitrary O(1) value. Our controller HELPS here: it supplies 20 ms of settling where the gantry open loop has poles at exactly 1 and never settles.
+**Consequence for the design.** His answer to "the encoder needs help" is a supervised stage against the true state. We cannot copy it: the latent coordinate has no ground truth and no fixed gauge, and using `x_aug` would be oracle information that a "the method learns the physics" claim cannot rest on. **The defect term is the unsupervised version of the same idea**, tying the encoder to whatever coordinate the ANN has chosen instead of to an external target we do not have. Same intent as his pre-encoder, no oracle.
+
+**Next**: implement burn-in and run it, because it is three lines and tests a measured hypothesis. `cfg.burn_in` defaults to 0 and is an exact no-op, since the loss currently reduces over the whole window and burn-in is `mse_loss(yfuture[:, K:], y_pred[:, K:])`. Configuration: `K = 100`, `w_burn = 0`, `W^a = 0`, `eps = 1e-16`, `lr = 1e-7`, 2 epochs. Then the defect term as the encoder criterion, which needs the `xc` decision and a gate against the `n_seg = 1` no-op. Do NOT describe burn-in alone as the fix.
+**Constrains**: `CL_ADAM_EPS` sets `eps` on ALL param groups AFTER `build_model`, so it silently overrides the per-group `eps_theta` that P1-e sets on the `log_params` group. Harmless today (both `1e-16`, and `lr_theta` defaults to None so the theta group does not exist in these runs) but it must be guarded before the first joint closed-loop run. The per-row gate must use the `as_module` form: `torch.nn.utils.parametrize` cannot be pickled and `checkpoint_save_system` writes the whole `__dict__` at every validation, which is why `ANN_REZERO_GATE` had never survived a real run.
+
+### [D-147] The training-window diagnostic is measured IN the closed loop, not with the D-095 nf-probe, and it forces `concurrent_val = False`
+**Date**: 2026-08-18
+**What**: The handoff's next action was "attach the D-095 `_NfProbe` to `cl_train.py`" to record the training-window error. That probe cannot answer the question it was attached for, so a closed-loop window probe is added instead and the D-095 probe is kept alongside it as a second, contrasting number. Three consequences, all decided here: (1) `ClosedLoopNfProbe` (`cl_validation.py`) measures the nf-window RMS through `closed_loop_window_rms` (`model_augmentation/fit_systems/closed_loop.py`), which re-uses `closed_loop_rollout` and deepSI's own window grid; (2) attaching any probe forces `concurrent_val = False` unless explicitly overridden; (3) the probe keeps its OWN history, and `cl_train.py` reads it from the probe object rather than from `fit_sys`.
+**Why (1)**: `_NfProbe._nf_rms` calls `fit_sys.n_step_error`, which is deepSI's (`systems/system.py:311`) and drives the model through `measure_act_multi`, i.e. `hfn(x, u)` with the recorded input and no `y_data`. That is the OPEN loop. The training loss is a CLOSED-loop rollout, so the D-095 number is not the training-window error at all; reading it as one would repeat variant B exactly, an objective optimised in one loop and judged in another. The new probe uses the same rollout, the same encoder re-init per window, the same `xc = 0` and the same window starts as the loss, so "does the model fit its own training window" is asked in the loop the window is trained in. It reduces to a physical RMS over all windows, samples and channels (`sqrt(mean(e**2))`), not to the mean over per-step RMS values that `_NfProbe` reports, because the first is the quantity the oracle floor is computed in and the second is not comparable to anything.
+**Why (2)**: with `concurrent_val = True` deepSI runs `cal_validation_error` in a subprocess on a `deepcopy` and the child returns only `(Loss_val, Loss_train, batch_id, time, epoch_id, bestfit)` (`fit_system.py:617-636`). Every probe side effect is written in the child and thrown away, so the diagnostic would silently record nothing. Measured cost of giving up the overlap: run 76573 did 12 epochs with in-process validation in **1h43** on the cluster, so the serial path is affordable and the handoff's "order of a day" estimate is a local-machine number.
+**Why (3)**: `fit()` ends with `checkpoint_load_system('_best')`, which does `self.__dict__ = torch.load(file)` (`fit_system.py:501`). Everything a probe wrote onto `fit_sys` is replaced by the BEST checkpoint's snapshot. This is not hypothetical: it is why `step6_result_76573.json` records a three-point validation series for a run that completed all twelve epochs and printed twelve `[cl-val]` lines. A probe that only writes to `fit_sys` loses every validation after the best one.
+**What the run-76573 log already settles**: the series is `2.1866, 1.3966, 1.3934, 1.3939, 1.3936, 1.3941, 1.3952, 1.3943, 1.3950, 1.3958, 1.3955, 1.3966, 1.3948` (x1e-06 m, untrained first). The run FINISHED, the best is validation 2 of 12, and the remaining ten oscillate inside +/-0.2 %. **The plateau is real and was already on the record**; section 5's "assumed but not verified" is closed by reading the `.out`, not by a new run. The training loss moves with it: sqrt-loss `1.383e-05` after epoch 1 to `1.310e-05` after epoch 12, i.e. **5.3 % over eleven epochs**, so the optimiser is stalling on its OWN objective, not only on the free-run selector.
+**Ruled out**: (a) the one-line `_NfProbe` attachment from the handoff, for the reason above; it is still attached, but as the open-loop contrast, and it is labelled as such in the output. (b) Making the probe write through the concurrent path by returning extra arrays: that means changing deepSI's `_worker` protocol, i.e. editing the installed package, for a diagnostic. (c) Computing the per-window floor in a separate script: the floor must be computed on exactly the window grid the probe uses, and `window_starts` is the single definition of that grid, so it stays in the same run.
+**Constrains**: `closed_loop_window_rms` and `closed_loop_free_run_rms` must stay the only two scoring paths, both on `closed_loop_rollout`; a third would be the defect D-144 removed. Any future probe must keep its own history or state that it only survives to the best checkpoint. `window_starts` is now the one derivation of deepSI's window grid and `window_controller_index` counts the same range; changing either without the other silently misaligns the controller assignment.
+
 ### [D-146] `concurrent_val = True` becomes the default for closed-loop training
 **Date**: 2026-08-18
 **What**: `cl_train.py` runs deepSI's concurrent validation by default (`CL_CONCURRENT=0` disables). Validation of each epoch happens in a subprocess while training continues, instead of halting the training loop.

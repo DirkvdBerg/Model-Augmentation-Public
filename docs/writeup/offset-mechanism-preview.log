@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  31 JUL 2026 00:02
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  31 JUL 2026 00:09
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**./jan-augmentation-writeup.tex
-(jan-augmentation-writeup.tex
+**./offset-mechanism-preview.tex
+(offset-mechanism-preview.tex
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/base\article.cls
@@ -249,52 +249,6 @@ File: microtype.cfg 2026/03/01 v3.2d microtype main configuration file (RS)
 )
 LaTeX Info: Redefining \microtypesetup on input line 3065.
 )
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/enumitem\enumitem.st
-y
-Package: enumitem 2025/02/06 v3.11 Customized lists
-\labelindent=\skip59
-\enit@outerparindent=\dimen177
-\enit@toks=\toks28
-\enit@inbox=\box57
-\enit@count@id=\count305
-\enitdp@description=\count306
-)
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/titlesec\titlesec.st
-y
-Package: titlesec 2025/01/04 v2.17 Sectioning titles
-\ttl@box=\box58
-\beforetitleunit=\skip60
-\aftertitleunit=\skip61
-\ttl@plus=\dimen178
-\ttl@minus=\dimen179
-\ttl@toksa=\toks29
-\titlewidth=\dimen180
-\titlewidthlast=\dimen181
-\titlewidthfirst=\dimen182
-)
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/graphics\graphicx.st
-y
-Package: graphicx 2024/12/31 v1.2e Enhanced LaTeX Graphics (DPC,SPQR)
-
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/graphics\graphics.st
-y
-Package: graphics 2024/08/06 v1.4g Standard LaTeX Graphics (DPC,SPQR)
- (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/graphics\trig.sty
-Package: trig 2023/12/02 v1.11 sin cos tan (DPC)
-)
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/graphics-cfg\graphic
-s.cfg
-File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
-)
-Package graphics Info: Driver file: pdftex.def on input line 106.
-
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/graphics-def\pdftex.
-def
-File: pdftex.def 2025/09/29 v1.2d Graphics/color driver for pdftex
-))
-\Gin@req@height=\dimen183
-\Gin@req@width=\dimen184
-)
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\hyperref.st
 y
 Package: hyperref 2026-01-29 v7.01p Hypertext links for LaTeX
@@ -346,16 +300,16 @@ Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 sty
 Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
 ))
-\c@section@level=\count307
+\c@section@level=\count305
 )
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/stringenc\stringen
 c.sty
 Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO
 )
 )
-\@linkdim=\dimen185
-\Hy@linkcounter=\count308
-\Hy@pagecounter=\count309
+\@linkdim=\dimen177
+\Hy@linkcounter=\count306
+\Hy@pagecounter=\count307
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\pd1enc.def
 File: pd1enc.def 2026-01-29 v7.01p Hyperref: PDFDocEncoding definition (HO)
@@ -366,7 +320,7 @@ Now handling font encoding PD1 ...
 y
 Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
 )
-\Hy@SavedSpaceFactor=\count310
+\Hy@SavedSpaceFactor=\count308
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\puenc.def
 File: puenc.def 2026-01-29 v7.01p Hyperref: PDF Unicode definition (HO)
@@ -380,14 +334,14 @@ Package hyperref Info: Plain pages OFF on input line 4216.
 Package hyperref Info: Backreferencing OFF on input line 4221.
 Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
 Package hyperref Info: Bookmarks ON on input line 4468.
-\c@Hy@tempcnt=\count311
+\c@Hy@tempcnt=\count309
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/url\url.sty
 \Urlmuskip=\muskip18
 Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 )
 LaTeX Info: Redefining \url on input line 4807.
-\XeTeXLinkMargin=\dimen186
+\XeTeXLinkMargin=\dimen178
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/bitset\bitset.sty
 Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
@@ -397,9 +351,9 @@ alc.sty
 Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
 )
 ))
-\Fld@menulength=\count312
-\Field@Width=\dimen187
-\Fld@charsize=\dimen188
+\Fld@menulength=\count310
+\Field@Width=\dimen179
+\Fld@charsize=\dimen180
 Package hyperref Info: Hyper figures OFF on input line 6084.
 Package hyperref Info: Link nesting OFF on input line 6089.
 Package hyperref Info: Hyper index ON on input line 6092.
@@ -407,16 +361,16 @@ Package hyperref Info: backreferencing OFF on input line 6099.
 Package hyperref Info: Link coloring OFF on input line 6104.
 Package hyperref Info: Link coloring with OCG OFF on input line 6109.
 Package hyperref Info: PDF/A mode OFF on input line 6114.
-\Hy@abspage=\count313
-\c@Item=\count314
-\c@Hfootnote=\count315
+\Hy@abspage=\count311
+\c@Item=\count312
+\c@Hfootnote=\count313
 )
 Package hyperref Info: Driver (autodetected): hpdftex.
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\hpdftex.def
 File: hpdftex.def 2026-01-29 v7.01p Hyperref driver for pdfTeX
-\Fld@listcount=\count316
-\c@bookmark@seq@number=\count317
+\Fld@listcount=\count314
+\c@bookmark@seq@number=\count315
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/rerunfilecheck\rerun
 filecheck.sty
@@ -429,9 +383,14 @@ Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
 Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
 84.
 )
-\Hy@SectionHShift=\skip62
+\Hy@SectionHShift=\skip59
 )
-LaTeX Font Info:    Trying to load font information for T1+lmr on input line 40
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/tools\xr.sty
+Package: xr 2024-12-22 v6.00 eXternal References (DPC)
+)
+Package xr Info: IMPORTING LABELS FROM jan-augmentation-writeup.aux on input li
+ne 33.
+LaTeX Font Info:    Trying to load font information for T1+lmr on input line 43
 .
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmr.fd
@@ -440,28 +399,28 @@ File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-
 pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count318
-) (jan-augmentation-writeup.aux)
-\openout1 = `jan-augmentation-writeup.aux'.
+\l__color_backend_stack_int=\count316
+) (offset-mechanism-preview.aux)
+\openout1 = `offset-mechanism-preview.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 40.
-LaTeX Font Info:    ... okay on input line 40.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 40.
-LaTeX Font Info:    ... okay on input line 40.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 40.
-LaTeX Font Info:    ... okay on input line 40.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 40.
-LaTeX Font Info:    ... okay on input line 40.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 40.
-LaTeX Font Info:    ... okay on input line 40.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 40.
-LaTeX Font Info:    ... okay on input line 40.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 40.
-LaTeX Font Info:    ... okay on input line 40.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 40.
-LaTeX Font Info:    ... okay on input line 40.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 40.
-LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 43.
+LaTeX Font Info:    ... okay on input line 43.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -497,13 +456,62 @@ LaTeX Font Info:    ... okay on input line 40.
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-LaTeX Info: Redefining \microtypecontext on input line 40.
-Package microtype Info: Applying patch `item' on input line 40.
-Package microtype Info: Applying patch `toc' on input line 40.
-Package microtype Info: Applying patch `eqnum' on input line 40.
-Package microtype Info: Applying patch `footnote' on input line 40.
-Package microtype Info: Applying patch `verbatim' on input line 40.
-LaTeX Info: Redefining \microtypesetup on input line 40.
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/graphics\graphicx.st
+y
+Package: graphicx 2024/12/31 v1.2e Enhanced LaTeX Graphics (DPC,SPQR)
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/graphics\graphics.st
+y
+Package: graphics 2024/08/06 v1.4g Standard LaTeX Graphics (DPC,SPQR)
+ (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/graphics\trig.sty
+Package: trig 2023/12/02 v1.11 sin cos tan (DPC)
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/graphics-cfg\graphic
+s.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
+)
+Package graphics Info: Driver file: pdftex.def on input line 106.
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/graphics-def\pdftex.
+def
+File: pdftex.def 2025/09/29 v1.2d Graphics/color driver for pdftex
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/context/base/mkii\supp-pdf
+.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count317
+\scratchdimen=\dimen181
+\scratchbox=\box57
+\nofMPsegments=\count318
+\nofMParguments=\count319
+\everyMPshowfont=\toks28
+\MPscratchCnt=\count320
+\MPscratchDim=\dimen182
+\MPnumerator=\count321
+\makeMPintoPDFobject=\count322
+\everyMPtoPDFconversion=\toks29
+)))
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/epstopdf-pkg\epstopd
+f-base.sty
+Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
+Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
+85.
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/00miktex\epstopdf-sy
+s.cfg
+File: epstopdf-sys.cfg 2021/03/18 v2.0 Configuration of epstopdf for MiKTeX
+))
+\Gin@req@height=\dimen183
+\Gin@req@width=\dimen184
+)
+LaTeX Info: Redefining \microtypecontext on input line 43.
+Package microtype Info: Applying patch `item' on input line 43.
+Package microtype Info: Applying patch `toc' on input line 43.
+Package microtype Info: Applying patch `eqnum' on input line 43.
+Package microtype Info: Applying patch `footnote' on input line 43.
+Package microtype Info: Applying patch `verbatim' on input line 43.
+LaTeX Info: Redefining \microtypesetup on input line 43.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
@@ -519,72 +527,42 @@ Package microtype Info: No adjustment of character kerning.
 File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman 
 (RS)
 )
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/context/base/mkii\supp-pdf
-.mkii
-[Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count319
-\scratchdimen=\dimen189
-\scratchbox=\box59
-\nofMPsegments=\count320
-\nofMParguments=\count321
-\everyMPshowfont=\toks30
-\MPscratchCnt=\count322
-\MPscratchDim=\dimen190
-\MPnumerator=\count323
-\makeMPintoPDFobject=\count324
-\everyMPtoPDFconversion=\toks31
-)
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/epstopdf-pkg\epstopd
-f-base.sty
-Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
-Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
-85.
-
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/00miktex\epstopdf-sy
-s.cfg
-File: epstopdf-sys.cfg 2021/03/18 v2.0 Configuration of epstopdf for MiKTeX
-))
-Package hyperref Info: Link coloring OFF on input line 40.
- (jan-augmentation-writeup.out) (jan-augmentation-writeup.out)
+Package hyperref Info: Link coloring OFF on input line 43.
+ (offset-mechanism-preview.out) (offset-mechanism-preview.out)
 \@outlinefile=\write3
-\openout3 = `jan-augmentation-writeup.out'.
+\openout3 = `offset-mechanism-preview.out'.
 
+LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 4
+5.
 
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                \hskip 10.95pt
-(hyperref)                replaced by space on input line 49.
-
-LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 5
-2.
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OML+lmm on input line 5
-2.
+LaTeX Font Info:    Trying to load font information for OML+lmm on input line 4
+5.
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-52.
+45.
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-52.
+45.
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 52.
+(Font)              <12> on input line 45.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 52.
+(Font)              <8> on input line 45.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 52.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 52.
+(Font)              <6> on input line 45.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 45.
 
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd
@@ -593,7 +571,7 @@ File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 52.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 45.
 
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
@@ -602,92 +580,65 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
 
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                \hskip 10.95pt
-(hyperref)                replaced by space on input line 129.
+LaTeX Warning: No \author given.
 
-[1
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 4
+9.
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmtt.fd
+File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
+)
+Package microtype Info: Loading generic protrusion settings for font family
+(microtype)             `lmtt' (encoding: T1).
+(microtype)             For optimal results, create family-specific settings.
+(microtype)             See the microtype manual for details.
+
+(offset-mechanism-equations.tex
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <10.95> on input line 17.
+ [1
 
 {C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users/2
 0203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ec.enc}{C:/Users/20
 203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}{C:/Users
 /20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/
 20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathsy.enc}{C:/Use
-rs/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathex.enc}]
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                \hskip 10.95pt
-(hyperref)                replaced by space on input line 207.
-
-[2]
-<jan-blockscheme-v4.pdf, id=64, 526.89548pt x 431.27423pt>
-File: jan-blockscheme-v4.pdf Graphic file (type pdf)
-<use jan-blockscheme-v4.pdf>
-Package pdftex.def Info: jan-blockscheme-v4.pdf  used on input line 267.
-(pdftex.def)             Requested size: 472.31595pt x 386.60991pt.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                \hskip 10.95pt
-(hyperref)                replaced by space on input line 270.
-
-[3 <./jan-blockscheme-v4.pdf>]
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                \hskip 10.95pt
-(hyperref)                replaced by space on input line 286.
-
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 3
-09.
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\ts1lmr.fd
-File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-)
-[4{C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ts1.en
-c}] (jan-augmentation-writeup.aux)
+rs/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathex.enc}]) (
+offset-mechanism-derivation.tex [2]) [3]
+(offset-mechanism-preview.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
-Package rerunfilecheck Info: File `jan-augmentation-writeup.out' has not change
+Package rerunfilecheck Info: File `offset-mechanism-preview.out' has not change
 d.
-(rerunfilecheck)             Checksum: F05B20BE6FB49BD09BEE8FAE8887C94A;1277.
+(rerunfilecheck)             Checksum: 515E0ABA58B374EEFDE2B99E0AD4BF19;775.
  ) 
 Here is how much of TeX's memory you used:
- 13988 strings out of 467867
- 222382 string characters out of 5416882
- 694319 words of memory out of 5000000
- 42551 multiletter control sequences out of 15000+600000
- 686290 words of font info for 126 fonts, out of 8000000 for 9000
+ 13461 strings out of 467867
+ 214507 string characters out of 5416882
+ 677190 words of memory out of 5000000
+ 42008 multiletter control sequences out of 15000+600000
+ 689929 words of font info for 140 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,9n,79p,1023b,466s stack positions out of 10000i,1000n,20000p,200000b,200000s
-<C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/
-cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/publi
-c/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/
-type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/Mi
-KTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/
-Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppD
-ata/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/202
-03253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:
-/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cm
-r8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsf
-onts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/
-public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/f
-onts/type1/public/lm/lmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTe
-X/fonts/type1/public/lm/lmbx12.pfb><C:/Users/20203253/AppData/Local/Programs/Mi
-KTeX/fonts/type1/public/lm/lmex10.pfb><C:/Users/20203253/AppData/Local/Programs
-/MiKTeX/fonts/type1/public/lm/lmmi10.pfb><C:/Users/20203253/AppData/Local/Progr
-ams/MiKTeX/fonts/type1/public/lm/lmmi6.pfb><C:/Users/20203253/AppData/Local/Pro
-grams/MiKTeX/fonts/type1/public/lm/lmmi8.pfb><C:/Users/20203253/AppData/Local/P
-rograms/MiKTeX/fonts/type1/public/lm/lmr10.pfb><C:/Users/20203253/AppData/Local
-/Programs/MiKTeX/fonts/type1/public/lm/lmr12.pfb><C:/Users/20203253/AppData/Loc
-al/Programs/MiKTeX/fonts/type1/public/lm/lmr6.pfb><C:/Users/20203253/AppData/Lo
-cal/Programs/MiKTeX/fonts/type1/public/lm/lmr8.pfb><C:/Users/20203253/AppData/L
-ocal/Programs/MiKTeX/fonts/type1/public/lm/lmsy10.pfb><C:/Users/20203253/AppDat
-a/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy8.pfb><C:/Users/20203253/AppD
-ata/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on jan-augmentation-writeup.pdf (4 pages, 343968 bytes).
+ 75i,16n,79p,1023b,474s stack positions out of 10000i,1000n,20000p,200000b,200000s
+<C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10
+.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmb
+x12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/
+lmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/
+lm/lmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/publ
+ic/lm/lmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/pu
+blic/lm/lmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/
+public/lm/lmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type
+1/public/lm/lmr17.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/ty
+pe1/public/lm/lmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/t
+ype1/public/lm/lmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/
+type1/public/lm/lmri10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fon
+ts/type1/public/lm/lmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/
+fonts/type1/public/lm/lmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTe
+X/fonts/type1/public/lm/lmtt10.pfb>
+Output written on offset-mechanism-preview.pdf (3 pages, 265947 bytes).
 PDF statistics:
- 224 PDF objects out of 1000 (max. 8388607)
- 33 named destinations out of 1000 (max. 500000)
- 34862 words of extra memory for PDF output out of 35830 (max. 10000000)
+ 156 PDF objects out of 1000 (max. 8388607)
+ 27 named destinations out of 1000 (max. 500000)
+ 33305 words of extra memory for PDF output out of 35830 (max. 10000000)
 

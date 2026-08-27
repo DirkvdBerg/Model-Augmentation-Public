@@ -1,0 +1,125 @@
+% offset-mechanism-derivation.tex
+%
+% v1: the formal counterpart to offset-mechanism-equations.tex. That file states the two
+%     corrections in the simplest form that is still exact; this one gives the complete
+%     model difference and the two closed forms for the offset it produces. Split out
+%     2026-07-31 because mixing the two obscured the simple statement.
+%
+% THIS IS A FRAGMENT. It uses \mhr and the labels eq:baseline-eom, eq:sys-eom,
+% eq:sys-consts from jan-augmentation-writeup.tex, and eq:fix1-substitution and
+% eq:fix2-absorber from offset-mechanism-equations.tex, which must be \input first.
+% Preview both together with offset-mechanism-preview.tex. Requires amsmath.
+%
+% Numbers quoted below come from:
+%   simulations/gantry_subnet/diagnostics/msd_offset_x_closed_form.json
+%   simulations/gantry_subnet/diagnostics/msd_offset_plant_ablation.json
+%   simulations/gantry_subnet/diagnostics/msd_offset_figures_V1_standstill_Yp10.json  (F2)
+
+\subsection{The difference in full}
+
+The baseline \eqref{eq:baseline-eom} and the truth \eqref{eq:sys-eom} are driven by the same
+input and share the coordinates $X,\Theta,Y$. On those three coordinates the damping and
+stiffness matrices agree exactly,
+%
+\begin{equation}
+  \bigl[C_4\bigr]_{1:3,\,1:3} = C ,
+  \qquad
+  \bigl[K_4\bigr]_{1:3,\,1:3} = K ,
+  \label{eq:diff-CK}
+\end{equation}
+%
+so the entire difference between the models sits in the mass matrix, and it is exactly what the
+substitution \eqref{eq:fix1-substitution} and the added row \eqref{eq:fix2-absorber} put there.
+Writing $M_{\mathrm b}(Y)$ for the baseline $M(Y)$ of \eqref{eq:baseline-eom}, evaluated at the
+full payload $m_h = \mhr + m_a$, and using $s$ and $J$ of \eqref{eq:sys-consts},
+%
+\begin{equation}
+  \Delta M(Y,\delta_a)
+  \;:=\;
+  \bigl[M(Y,\delta_a)\bigr]_{1:3,\,1:3} - M_{\mathrm b}(Y)
+  \;=\;
+  \begin{bmatrix}
+    0 & -m_a(L_0{+}\delta_a) & 0 \\[2mm]
+    -m_a(L_0{+}\delta_a) & m_a\bigl[2Y(L_0{+}\delta_a) + (L_0{+}\delta_a)^2\bigr] & 0 \\[2mm]
+    0 & 0 & 0
+  \end{bmatrix} .
+  \label{eq:diff-dM}
+\end{equation}
+%
+The four vanishing entries are not an approximation: the payload split conserves total mass, so
+$\Delta M_{11}$, $\Delta M_{13}$, $\Delta M_{23}$ and $\Delta M_{33}$ are identically zero, and
+at DC the $Y$ axis sees the same inertia as the baseline. The truth carries in addition the
+absorber column, for which the baseline has no coordinate at all,
+%
+\begin{equation}
+  M_{24} = -m_a d , \quad M_{34} = M_{44} = m_a , \quad
+  \bigl[C_4\bigr]_{44} = c_a , \quad \bigl[K_4\bigr]_{44} = k_a .
+  \label{eq:diff-absorber}
+\end{equation}
+%
+Equations \eqref{eq:diff-dM} and \eqref{eq:diff-absorber} are the \emph{complete} difference
+between the two models. Both are proportional to $m_a$, which is why the baseline is recovered
+as $m_a \to 0$ with $m_h$ restored.
+
+\subsection{Why a permanent offset rather than a transient}
+\label{sec:offset-permanent}
+
+The stiffness matrix of both models has
+%
+\begin{equation}
+  K_{11} = K_{33} = 0 , \qquad K_{22} = k_{b1}{+}k_{b2} > 0 ,
+  \label{eq:diff-K}
+\end{equation}
+%
+so $X$ and $Y$ are marginally stable, with two continuous poles at the origin, while $\Theta$ is
+sprung. Integrating a row with no stiffness once in time turns an accumulated impulse into a
+permanent position shift,
+%
+\begin{equation}
+  c \, \Delta q(\infty) \;=\; \int_{t_0}^{\infty}\!\Delta F \, \mathrm{d}t .
+  \label{eq:diff-impulse}
+\end{equation}
+%
+Applying \eqref{eq:diff-impulse} to each axis gives a closed form per channel, with nothing
+fitted.
+
+\paragraph{$X$.} Row 1 of $C$ and $K$ is common to both models and
+$\Delta M_{11} = \Delta M_{13} = 0$, so the only perturbing force on the $X$ equation is
+$-\Delta M_{12}\ddot\Theta = m_a(L_0{+}\delta_a)\ddot\Theta$. The constant part integrates to a
+boundary term,
+%
+\begin{equation}
+  (c_{g1}{+}c_{g2})\,\Delta X(\infty)
+  \;=\; m_a L_0 \bigl[\dot\Theta(T) - \dot\Theta(t_0)\bigr] ,
+  \label{eq:diff-Xoffset}
+\end{equation}
+%
+a slope of $m_a L_0/(c_{g1}{+}c_{g2}) = 2.902\times10^{-3}\,\mathrm{s}$. The
+$\delta_a$-dependent part of $\Delta M_{12}$ is not modelled here and is measured at
+$0.16\,\%$ of the offset.
+
+\paragraph{$Y$.} Every coefficient of row 3 is constant in both models, and the
+$-m_h d\,\ddot\Theta$ term is identical in the two and cancels, leaving $m_a\ddot\delta_a$.
+Integrating once, the baseline is short of the truth by exactly the absorber's momentum,
+%
+\begin{equation}
+  c_y\,\Delta Y(\infty) \;=\; m_a \dot\delta_a(t_0) ,
+  \label{eq:diff-Yoffset}
+\end{equation}
+%
+a slope of $m_a/c_y = 0.101\,\mathrm{s}$. The $Y$ offset is therefore an initial-condition
+effect and not a transfer-function one, consistent with $\Delta M$ having an identically zero
+third row and column in \eqref{eq:diff-dM}.
+
+\paragraph{$\Theta$.} Both entries of $\Delta M$ act on the $\Theta$ row, but $K_{22} > 0$, so a
+state error there decays instead of accumulating. This is the control that separates the
+mechanism from the magnitude of $\Delta M$: the same perturbation produces no offset on the one
+axis that has a spring.
+
+Against $40$ seed instants of the standstill record, \eqref{eq:diff-Xoffset} and
+\eqref{eq:diff-Yoffset} reproduce the measured settled offsets with $R^2 = 0.999931$ and
+$R^2 = 1.000000$ respectively, in both cases against an unfitted line.
+Equation~\eqref{eq:diff-Xoffset} is leading order rather than an identity, because $M_{12}$
+depends on $Y$; on a record with sustained $Y$ motion the neglected coupling is not small and
+the fit fails, whereas \eqref{eq:diff-Yoffset}, whose row has constant coefficients, holds on
+both records.

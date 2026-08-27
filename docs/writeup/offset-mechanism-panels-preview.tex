@@ -1,0 +1,55 @@
+% offset-mechanism-panels-preview.tex
+%
+% v1: standalone wrapper around offset-mechanism-panels.tex, which is a FRAGMENT and
+%     produces no PDF on its own. This file exists so the panel description can be
+%     handed over as a self-contained PDF.
+%
+% Unlike offset-mechanism-preview.tex it needs no xr: the fragment cross-references
+% only its own equations, so nothing points into jan-augmentation-writeup.tex and the
+% parent does not have to be built first. The \mhr definition below mirrors the parent
+% because a macro cannot be imported through xr.
+%
+% multirow is required by the bordered 4x4 matrices in panel 3.
+%
+% Build (from this directory), twice so the \eqref numbers resolve:
+%     pdflatex offset-mechanism-panels-preview.tex
+%     pdflatex offset-mechanism-panels-preview.tex
+%
+% The authoritative home of the content is jan-augmentation-writeup.tex via
+%     \input{offset-mechanism-panels}
+% Delete this wrapper once the fragment is inputted there.
+
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{multirow}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\mhr}{m_{h,\mathrm{r}}}   % mirrors jan-augmentation-writeup.tex
+
+% Cosmetic only: the fragment uses \subsection because it will sit inside a section of
+% the parent. Standalone that renders as "0.1", so number it plainly.
+\renewcommand{\thesubsection}{\arabic{subsection}}
+
+\title{The four panels of the open-loop offset figure,\\ as edits to the baseline model}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-10mm}
+
+\noindent\textit{Supports the showcase offset-mechanism figure in}
+\texttt{scripts/gantry/} \texttt{msd-offset/figures/}\textit{, one file per record. This states
+only what each panel changes. The reason a missing term becomes a permanent offset, and the
+two closed forms that predict its size, are in} \texttt{offset-mechanism-derivation.tex}.
+
+\bigskip
+
+\input{offset-mechanism-panels}
+
+\end{document}

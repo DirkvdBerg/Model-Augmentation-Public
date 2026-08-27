@@ -264,7 +264,18 @@ velocity-binned decomposition, with bin slopes running `+28738, -9912, -765, -58
 regression; the physical reading ("the residual needs more damping, not less") is not
 supported at bin level and is dominated by the two extreme-velocity bins.
 
-### C-8. The windowed loss is not flat in the DC direction. VERIFIED, grade effectively SINGLE.
+### C-8. The windowed loss is not flat in the DC direction. VERIFIED, **grade upgraded 2026-07-26 late: now confirmed on TWO independent rigs.**
+
+> **ADDENDUM (later session, 2026-07-26 late).** A6
+> (`scripts/gantry/pysynth-data/a6_dc_resistance_per_axis.py`,
+> `results/A6_dc_resistance.json`) re-measured this on the **production path** -- 8 states,
+> routing `(0..7)`, MSD data, **encoder live** rather than absent -- and obtained
+> `d2L/db2` = X **`7.064e+04`**, Y `3.387e+04`, against this entry's null-rig X
+> `7.084e+04`, Y `3.542e+04`. Agreement **0.3%** on X and 4% on Y, across different rig,
+> script, data and encoder condition. A6 used an h-sweep with a 20% adjacent-agreement
+> acceptance rule and reported Theta / dTheta as UNRESOLVED rather than quoting noise
+> (its v1, at a single `h`, returned a NEGATIVE curvature on the Theta control and is
+> void). This is now one of the better-replicated claims in the repository.
 
 `scripts/gantry/drift-diagnostics/data/D1_zeroinit_2d_seed{0,1,2}.json`, frozen rig
 `e1b0511a4c`, perfect-match null, routing `(3,4,5)`, `nf = 400`:
@@ -340,6 +351,79 @@ MS3 and which C-2 shows is exactly the axis the failure lives on. And two of the
 (`adam_1e-05`, `sgd_1e-07`) recorded only one epoch, so they are truncated. The artifact is
 real and readable; the conclusion it supports is "not reproducible at 52 updates", which is
 already known.
+
+---
+
+---
+
+## 2b. ADDENDUM, later session 2026-07-26 (evening): five further verified entries
+
+Added after this document was written. Same grading rules. **All are 1 seed.**
+
+### C-12. The DC hurts BOTH objectives. VERIFIED, grade SINGLE. *The sharpest new fact.*
+
+`pysynth-data/a7_pairing_test.py`, `results/A7_pairing_test.json`. Windowed **training** loss
+(the objective actually minimised, never previously measured for these arms), `nf = 400`,
+40 windows, training record T1, checkpoint `gantry_drift_71167_last.pth`:
+
+| arm | windowed loss (0.1 s) | vs FULL |
+|---|---|---|
+| FULL | `7.1019e-07` | -- |
+| MEAN-ONLY | `7.9367e-07` | 1.1175x |
+| **MEAN-REMOVED** | **`6.8889e-07`** | **0.9700x** |
+| ANN-OFF | `7.4722e-07` | 1.0521x |
+
+**Removing the DC makes the TRAINING objective 3% better**, and the DC alone is worse than
+no ANN at all. Combined with C-3, the DC costs 3% on the windowed loss AND 2.7x on the 12 s
+free run: **it is bad for both, so it is not an optimisation trade-off.** The pre-declared
+prediction (that the DC is cheap because paired with a compensating term) was REFUTED.
+
+### C-13. It is not exposure bias. VERIFIED, grade SINGLE.
+
+`results/A8_exposure_bias.json`. Per-row ANN output mean along the FREE RUN versus on
+ENCODER-ANCHORED training windows: ratio Y `1.00`, dX `1.00`, dY `0.98`, aug0 `1.00`,
+aug1 `0.99`. **The DC is identical where the model is trained and where it is deployed**, so
+off-distribution extrapolation is excluded.
+
+### C-14. The DC is not entangled with the useful fit. VERIFIED, grade SINGLE.
+
+`results/A9_entanglement.json`. Twelve small steps descending `sum_r (mean_r)^2` in WEIGHT
+space (not output-space surgery): `||mean||` `1.7874e-04 -> 1.5941e-04` (0.892x) while the
+windowed loss also fell, `2.0921e-07 -> 1.9582e-07` (0.936x). **Weight space can express
+"same shape, less mean", and doing so improves the objective.** Caveat: measured on V1 with
+12 windows, so part of the 6.4% may be generalisation rather than descent; C-12's 3% is on
+training data and points the same way.
+
+### C-15. A MINIMAL REPRODUCTION EXISTS. VERIFIED, grade SINGLE. *Practically the most useful entry.*
+
+`pysynth-data/k_sweep_minimal.py`, `results/K_sweep_minimal.json`. One damped mass
+(`m=1`, `c=0.65`, `tau=1.54 s`), one 150 Hz sinusoid as the unmodelled residual, a
+600-parameter MLP on the velocity row, **windows initialised from the TRUE state so there is
+no encoder**, `nf=400`, Adam `lr=1e-4`, 1500 steps. At `K = 0`: windowed loss **`0.943x`**
+ANN-off while the 4 s free run is **`1.713x`** ANN-off.
+
+**Measured NOT necessary for the failure:** the SUBNET encoder, LPV scheduling, MIMO /
+P-transform, the coupled 8-state absorber, and the augmented latent states.
+**Measured necessary:** the integrator. Free-run harm ratio `1.713` (K=0) -> `1.059`
+(`wn=1 Hz`) -> `0.998` (`wn=10 Hz`).
+
+**Marginality participates in the acquisition, it is not only an amplifier:** the ANN output
+mean runs `1.15e-05` (K=0) to `6.87e-09` (`wn=10 Hz`), three orders down. An earlier claim
+in this session that marginality is "an amplifier, not a cause" was over-read from the
+`wn=1 Hz` arm alone and is withdrawn.
+
+**Honest limit:** reproduces the SHAPE at `1.713x` against the production path's `58.9x`, a
+~35x magnitude gap, so **no absolute number transfers between testbed and pipeline**. Its
+value is as a screen at MINUTES per arm against HOURS on the real pipeline.
+
+### C-16. The augmented latent states decay; they are not a second integrator. VERIFIED, grade SINGLE.
+
+`results/A5_aug_states.json`, 12 s free run of `gantry_drift_71167_last.pth`. `aug0`
+`-3.802e-01 -> -9.221e-05`, `aug1` `+3.539e-01 -> +1.038e-04`, slopes `+4.3e-06` and
+`-4.9e-06` per s, both bounded and ending 3 orders below the dY state span
+(`-2.474e-02 .. +3.556e-02`). They start large because the encoder's `W^a` rows are random
+kaiming (`diag18`: `x_a rms 1.76/1.66`) and decay away. Their high **output** purity
+(`0.956`/`0.886`, C-3) is a near-constant output into states that do not accumulate it.
 
 ---
 
@@ -452,6 +536,30 @@ are marked YES. Both are in the two newest framing documents. That is the patter
 
 ---
 
+### 4b. ADDENDUM (later session, 2026-07-26 evening): four more, three of them that session's own
+
+| claim | what refuted it | notes |
+|---|---|---|
+| "the DC direction is FLAT in the training loss" (`flat-direction-problem-2026-07-26.md` link 3) | C-8 + A6: curvature `7.06e+04` on two independent rigs | The refuting run (`curvature_sensitivity.py`, 2026-07-24) PRE-REGISTERED this exact hypothesis and refuted it. It was quoted correctly earlier the same day, then contradicted hours later in the same session |
+| "the DC is cheap because PAIRED with a compensating term" | C-12: the pair is not the cheapest arm; MEAN-REMOVED is | Pre-declared prediction, refuted by its own test |
+| "the loss under-weights Y by 34x, which explains the Y-specific DC" | A6: ratio `2.086`, not `34.589`. `std_x` EQUALS `ystd` per channel (`compute_normalization` derives `x_all` from `y`), so the two normalisations cancel and there is NO differential axis weighting | Proposed and refuted within one hour |
+| "adjoint / dual-weighted-residual re-weighting is the fix" (`narrowband-literature-sweep` §2.4) | A3: `\|G\|^2` ratio DC to 150 Hz = **`2.27e+12`** | Disqualified for a long-horizon POSITION functional -- it would suppress the 150 Hz absorber by twelve orders. A different quantity of interest may survive |
+
+### 4c. A propagation error worth recording
+
+`docs/drift-conclusions-2026-07-25.md` C4 ruled ARTBP out on theory (Beatson and Adams at
+`|lambda| = 1`). The five converged 20-epoch ARTBP runs in C-6 are dated **2026-07-23** and
+therefore PRE-DATE every document that rules ARTBP out. On 2026-07-26 that ruling was
+carried, unchecked, into the anti-scope of **two** further research briefs
+(`flat-direction-problem-2026-07-26.md` §4 and `dc-accumulation-research-brief-2026-07-26.md`
+§3), and two literature sweeps were run against it. **So the only intervention ever measured
+against the real deliverable at production step count, showing a 4 to 6x drift reduction,
+was actively excluded from the search twice in one day.** The lesson is the one this
+document's method already states: a kill is only as good as the arm that produced it, and
+the arm must be looked at.
+
+---
+
 ## 5. Void runs
 
 Attempted measurements whose own control failed, or which produced no usable number. Their
@@ -472,6 +580,21 @@ numbers must not be quoted. Keeping them listed is what stops them being re-run.
 | **R2 SGD lr sweep (TASK 6)** | is there an SGD lr that learns without drifting | Reported confounded by its author: non-robust Adam reference (`+18%` to `-13%` on a window-sample change), underpowered windows, and an anti-damping injection that destabilises the truth |
 | **v6b binding Lipschitz sweep** | binding caps `L in {0.1, 0.01, 0.001}` | Both shards stopped mid-second-config; the completed configs showed no cap can bind (natural Lipschitz `~5.1e-4`). Verdict stands on the first configs; the sweep itself is partial. `v6b_shardA/B.log` exist with no `.npz` |
 | **v7 optimizer 4-way** | Adam / SGD / AdamW / DC-pin at matched lr | `v7_optimizer_comparison.npz` does not exist. `v7_run.log` ends mid-run at step 150 of the `adamw` arm. Only a figure survives |
+
+---
+
+### 5b. ADDENDUM (later session, 2026-07-26 evening): four more void runs
+
+| run | what was attempted | why it is void |
+|---|---|---|
+| **MS8** | gradient alignment against `theta_deg - theta_init` | cosines `+0.0001 / +0.0057 / +0.0054`, **all below chance** (`1/sqrt(600) = 0.041`) INCLUDING the control. The reference is an Adam-ACCUMULATED DISPLACEMENT, not a gradient |
+| **MS9** | gradient alignment against the free-run gradient at `H = 4000` (1 s) | pre-registered control required `cos(g_fit, g_free) <= ~0` (C-1 shows the windowed loss makes the free run 127x worse); measured **`+0.4588`**. A DC error is 144x weaker at 1 s than at 12 s, so **the diagnostic sat inside the same horizon blind spot it was built to measure** |
+| **MS10** | finite-difference probe, one step along each candidate's gradient | run at `alpha` far outside the linear regime: a single step gave `+59331x` on the 12 s error where production's 5200 steps give 127x. The RANDOM control also hurt (`+2335x`), so the ordering carries no information |
+| **A6 v1** | per-axis DC resistance at a single `h = 1e-6` | returned a **NEGATIVE** curvature on the Theta control, impossible at a minimum: noise-limited. Superseded by the h-swept v2 in C-8 |
+
+Three of these four were caught by their **own pre-registered controls** rather than by
+inspection. That is the mechanism working, not four wasted runs -- but note MS9's lesson
+specifically: **a diagnostic must not share the blind spot it is built to measure.**
 
 ---
 
@@ -533,6 +656,60 @@ numbers must not be quoted. Keeping them listed is what stops them being re-run.
 * MS7 rerun: the script exists, the artifact is corrupt (§8).
 * The loss-versus-selector normalisation mismatch (normalised MSE against raw metres):
   flagged as the cheapest open item on 07-26 and still unchecked.
+
+---
+
+### 6b. ADDENDUM (later session, 2026-07-26 evening): the tension that outranks the rest
+
+**Is the DC the failure, or only correlated with it?** C-3 (MS12) finds eight constants
+reproduce **112.8%** of the 12 s error, i.e. the DC is sufficient. C-6's `H_max = 3200` arm
+lands its endpoint DC **inside** ARTBP's pre-registered `+-3e-7` band while its free-run
+drift is still **47.9x**, i.e. the DC was removed and the drift was not. Different models,
+so not yet a contradiction -- but **until this is resolved, "the DC is the failure" is not
+safe**, and a large part of the 2026-07-26 reasoning rests on it. This is the cheapest
+high-value item on the list: both artifacts are on disk.
+
+**Why the DC is acquired at all is now unexplained.** Six candidate mechanisms are measured
+false: the loss is blind to it (C-8, A6); the loss rewards it (C-12); it is paired with a
+compensator (C-12); it is exposure bias (C-13); it is entangled with the useful fit (C-14);
+it is a transient more steps would remove (C-2's dose response -- it GROWS with steps).
+Meanwhile the objective strictly prefers the mean-removed network, the loss optimum in that
+direction is `b* ~ 6.9e-10` against a parked `~3.5e-08` (51x, C-8), and the required
+parameter change is ~`1e-6` against an Adam budget of ~`5.2e-4`.
+
+**A continuation run was left running.** `pysynth-data/b0_continue_training.py` resumes
+`gantry_drift_71167_last.pth` for ~1000 further steps, tracking `||ANN mean||` per epoch and
+the 12 s free run every 5. Its readings are pre-declared in the script. Note the session that
+launched it expected it to REFUTE its own non-convergence hypothesis, because C-2's dose
+response has the failure growing with steps.
+
+---
+
+### 6c. Document status, so the next reader does not re-inherit a dead framing
+
+| document | status |
+|---|---|
+| `docs/results-log-2026-07-26.md` | **STANDS.** Numbers only, no interpretation, by design |
+| `docs/dc-accumulation-research-brief-2026-07-26.md` | **STANDS in framing**, but its section 3 anti-scope wrongly excludes ARTBP -- see 4c |
+| `docs/narrowband-objective-problem-2026-07-26.md` section 5 | **VOID.** Superseded the same day |
+| `docs/flat-direction-problem-2026-07-26.md` sections 2-3 | **VOID.** Links 3 and 4 both measured non-probative or false |
+| `docs/multiple-shooting-sweep-2026-07-25.md` | stands; its own critique ("derive before writing code") was correct and was ignored |
+
+**Literature status.** Three sweeps exist:
+`narrowband-literature-sweep`, `flat-direction-literature-sweep`, and
+`dc-accumulation-literature-sweep` (the newest, and the only one framed on the refutation
+table). The newest contributes two constructive items the project does not hold:
+**level-set teleportation** (Mishkin, Bietti, Gower, AISTATS 2025) which directly targets
+C-14's "a descent direction exists that Adam does not take", and a **panel-econometrics
+theorem** (Liao, Mei, Shi, `arXiv:2410.09825`) predicting that at a local unit root the
+estimator distortion loses its horizon dependence entirely -- which retrodicts the `nf`
+800-3200 sweep finding the offset at every horizon.
+
+**Caveat capping all three:** Google Scholar returned empty to every agent in two of the
+sweeps, including control queries. Scholar is the only full-text-indexed route, so **every
+novelty and gap claim in all three is titles-and-abstracts only and is provisional.**
+One open check: the Liao mapping requires a per-window fitted nuisance constant, and the
+minimal reproduction (C-15) has none -- true-state init -- yet still fails.
 
 ---
 
@@ -676,6 +853,29 @@ would be cheap to: the numbers are already on disk.
 
 ---
 
+### 8b. ADDENDUM (later session, 2026-07-26 evening)
+
+**Everything added in 2b, 4b, 5b and 6b is 1 seed**, below this project's 3-seed floor,
+with one exception: C-8's curvature is now confirmed on two independent rigs (0.3% on X).
+
+Two entries carry weaker samples than their prominence suggests. C-12's "the objective
+penalises the DC" uses **40 windows of one training record**, and C-14's "not entangled"
+uses **12 windows of one validation record**, both against a 6664-window training bank.
+They agree with each other and with the two-rig curvature, but neither is a
+full-distribution statement.
+
+C-15's minimal reproduction is the most useful new asset and the most easily over-read: it
+reproduces the failure's SHAPE at `1.713x` against the production path's `58.9x`. **No
+absolute number transfers between them.** Its value is speed -- minutes per arm against
+hours -- which makes it a screen, not evidence.
+
+Finally, the session that produced these additions killed **three of its own hypotheses**
+(flat direction, pairing, the normalisation link) and had **four runs voided by their own
+controls**. That is the intended behaviour of pre-registration rather than a failure rate,
+but it should calibrate how much weight any single-session conclusion here carries.
+
+---
+
 ## 9. Provenance
 
 Artifacts I opened and checked directly for this document:
@@ -702,3 +902,135 @@ spot-checked by me for the claims I use them for (`passive-augmentation`,
 
 **Everything here is read-only.** No training was run and no file outside this document was
 modified.
+
+---
+
+## 10. ADDENDUM, 2026-07-26 night: the dc-accumulation campaign, steps 0-3
+
+Appended, not merged. Nothing above this line was edited. Same grading rules.
+
+### C-17. The C-6 ARTBP table reproduces; the framing around it does not. VERIFIED, grade SINGLE.
+
+`dc-accumulation/step3_recompute_artbp.py`, read-only over
+`scripts/gantry/ARTBP/data/*.npz`. Full table and horizons in
+`results-log-2026-07-26.md` §11 and `results/step3_artbp_recompute.json`.
+
+The magnitudes C-6 quotes are right. Four things around them are not, and all four are
+readable off the same arrays C-6 was built from.
+
+1. **A sixth converged run exists**, `poly6 h1600 b256 ep8` in `ARTBP/data/72659/`, in no
+   document including C-6. It is the **only** arm carrying both a `_best.pt` and a `_last.pt`
+   checkpoint, which is what made step 0 possible at all. Best trained epoch 12 s
+   `1.9716e-03`, drift `12.7x`, held-out 0.1 s nf-RMS `5.9475e-05`.
+2. **Three arms store no epoch-0 row.** `len(val_sim_traj) == epochs` for `fixed/geom/poly6
+   h1600 ep20`, against `epochs + 1` for the rest; they pre-date `train_artbp.py:199-200`.
+   Every "`x` epoch-0" ratio C-6 quotes for those three arms is **borrowed from a different
+   run**, which C-6 does not say.
+3. **The borrowed reference is not arm-invariant.** `h3200` and `h6400` store
+   `1.846056547947228e-04` bit-identical, but the `ep8 h1600` arm stores
+   `2.239589812234044e-04`, because it ran `val_n = 2` against the others' 4. That is a
+   different validation set, so the two are different metrics rather than a disagreement —
+   but it is a **21% swing** on every G1 ratio, decided by a config field the three older
+   files do not record at all. Step 0's control resolves which applies (below).
+4. **`best_val_sim` and `drift_ratio` describe different models, in all six arms.** The drift
+   eval runs after the training loop on the live final weights (`train_artbp.py:251-291`);
+   `best_val_sim` is a per-epoch minimum. Best trained epoch vs epoch the drift was measured
+   on: `19/20, 5/20, 7/20, 7/8, 6/10, 14/20`. C-6 and `step3_artbp_benchmark.md` place both
+   in one row as though one model produced them. **`geom`'s headline pairing — "best 12 s
+   `1.7588e-03`, drift `22.1x`" — is a 5th-epoch model quoted next to a 20th-epoch model.**
+
+Also: the ANN-off drift denominator is not a fixed reference (`_roll(..., off=True)` keeps
+each arm's own trained encoder), though it empirically takes only 2 distinct values, 2.8%
+apart. And the per-record spread inside the drift ratio is large — `ep8`'s Y ratios are
+`1.584 / 32.980 / 3.509` on T1/T3/T5 — so a 3-record mean of a 20x-spread quantity is
+carrying more weight in these tables than it can bear.
+
+**The bar to beat, restated on a single model.** Taking the final-model triple, which is the
+only internally consistent one (`dc_endpoint`, `val_sim_last` and `drift_ratio` are all the
+endpoint): `geom h1600` = 12 s `5.8958e-03`, drift `22.1x`; `poly6 h1600 ep20` = 12 s
+`3.9420e-03`, drift `13.5x`. On the best-epoch basis `geom` is `1.7588e-03`. The two bases
+disagree by 3.4x on `geom`, so **which basis a future candidate is scored on must be fixed
+before it is run, not after.**
+
+None of this overturns C-6's conclusion. ARTBP at `H_max = 1600` really does cut the
+first-epoch collapse by ~10x and the drift by 4-6x at ~2% windowed cost, and it really is
+still 9-11x epoch 0. It remains the benchmark and it remains not a fix. The anti-scope in
+`dc-accumulation-research-brief-2026-07-26.md` §3 has been corrected in place.
+
+### C-18. The minimal testbed ports faithfully. Control only, grade SINGLE.
+
+`dc-accumulation/step1_testbed.py --configs C0 --seeds 0` reproduces C-15 exactly: free-run
+harm `1.713x`, windowed `0.943`, ANN output mean `+1.1500e-05`. 0.0% deviation.
+
+Recorded because the first port did **not**: it returned `4.871x`. `make_data` ends with
+`u = u - u.mean()`, so lengthening the data array to make room for encoder history shifts
+the input by a constant, and on a `K = 0` plant that is not a small perturbation. This is
+the same class of harness confound that voided MS4, and it was caught only because the
+control was pinned to a published number rather than to a plausible one.
+
+### C-19. STEP 0 GATE ANSWERED: the DC is the failure, not a correlate. VERIFIED, grade SINGLE.
+
+`dc-accumulation/step0_dc_sufficiency.py`, `results/step0_dc_sufficiency.json`. Numbers in
+`results-log-2026-07-26.md` §13. MS12's four-arm decomposition, re-run on three ARTBP
+checkpoints on the rig that trained them, one record (V1), one horizon (12 s).
+
+**Control passed both legs** (0.064% and 0.133%), so the rows are readable, and it
+incidentally settles C-17 point 3: the two stored epoch-0 values are two different metrics
+(4 val records vs 2), not a disagreement.
+
+On all three ARTBP arms the per-row mean alone reproduces **98.7-99.5%** of the 12 s error,
+and removing it collapses the model to **0.868-1.264x** of its own ANN-OFF floor. This is
+**cleaner than on 71167**, where MEAN-ONLY was 112.8% and MEAN-REMOVED still 37.2% and 22x
+floor. C-3 generalises. The 6b tension is closed and step 4's DC-targeting candidates are
+correctly aimed.
+
+**My pre-declared discriminator was refuted by its own test, and I am recording that rather
+than quietly substituting the analysis that worked.** Reading (c) predicted the ARTBP
+`Z_pts` dY operator and the MS12 along-trajectory operator would ORDER the checkpoints
+differently. They do not: both rank `h3200 ep6 < h1600 ep7 < h1600 ep8`.
+
+**What does resolve C-6's low-DC/high-drift arm is a magnitude decomposition, computed after
+the fact and therefore graded as post-hoc, not pre-registered.** The `dY` row carries only
+**0.77% / 0.95% / 1.76%** of `||traj mean||` on the three arms; the DC lives on `aug0` and
+`aug1` (`h3200 ep6`: `aug0 +2.408e-05`, `aug1 +1.292e-05` against `dY -4.883e-07`). On 71167
+the same figure is 0.63%. ARTBP's `dc` (`train_artbp.py:226`) and its pre-registered `±3e-7`
+band (`ARTBP/README.md:136`) watch **one row of eight, carrying 1-2% of the DC norm.** So
+C-6's "the DC was removed and the drift was not" is not supported by its own artifact: only
+the `dY` component was ever measured, and the other 98% was never in the band's scope. The
+two claims were never in contradiction.
+
+Consequence for any future DC work: **`dc_endpoint` in the ARTBP `.npz` files is not a
+measure of "the DC"**, and no arm should be scored on it alone.
+
+### C-20. A trained model that beats its own initialisation, once its DC is removed. VERIFIED, grade SINGLE, and NOT yet deployable.
+
+Incidental to C-19 and it outranks the gate question. §6 item 1 states that after seventeen
+days "no run in this repository has ever produced a trained model that beats its own encoder
+initialisation on the deployment metric."
+
+`poly6 h1600 ep8 LAST` (epoch 8), MEAN-REMOVED, record V1, **12 s**: `1.038413e-04 m`
+against an ANN-OFF floor of `1.196380e-04 m` = **`0.868x`**, i.e. 13 percent better than the
+initialisation. The same model at FULL is `4.190942e-03` = `35.03x` floor.
+
+So the ARTBP-trained network **has** learned something useful on the deployment metric. The
+entire net-destructive effect is the constant. That is a much stronger form of C-14
+("weight space can express same-shape-less-mean") and of C-12 ("the DC hurts both
+objectives"): here the useful part is not merely present, it is worth 13 percent against the
+init.
+
+**Three limits, none of them small.**
+1. The removed constant was computed **along the same V1 free run it is then scored on**. This
+   is output-space surgery with a constant fitted on the evaluation record, so it is not a
+   deployable model. C-13 (`A8`) measured the free-run and training-window DC agreeing to
+   0.98-1.00, which suggests a train-computed constant would land close, but that is an
+   inference, not this measurement.
+2. 1 seed, 1 record, one checkpoint. Below the project floor.
+3. It is `_last`, not `_best`; the `_best` (epoch 7) arm gives `1.264x`, i.e. still above the
+   floor. The 0.868x is one epoch of one arm.
+
+**The cheap run that would settle it:** recompute the per-row mean on the TRAINING windows,
+subtract that fixed constant, and re-score the 12 s free run on V1-V4. If it holds, the
+deliverable question that §6 item 1 calls "never answered affirmatively" has a first
+affirmative answer, and the fix family narrows to "estimate and subtract the constant" rather
+than "prevent it forming". If it does not hold, the 0.868x was fitted-on-the-test-record and
+must be withdrawn.
