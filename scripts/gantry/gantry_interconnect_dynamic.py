@@ -37,26 +37,33 @@ from gantry_dynamic.training import train_model_with_diagnostics
 
 CFG = RunConfig(
     # --- Experiment identity ---
-    # Track: 'joint' (broadband [1,200] Hz) or 'augmentation' (narrowband [130,180] Hz)
-    mode='augmentation',
+    # Track: 'joint' (broadband [1,200] Hz) or 'augmentation' (narrowband [130,180] Hz).
+    # Doubles as the dataset folder key (data/gantry/matlab/trajectory/<mode>) and the
+    # save_dir / orth-basis-cache key. 'augmentation_ma50' = augmentation band with the
+    # 50/50 payload/hidden-MSD mass split (MA_FRAC=0.50 in generate_trajectory_data.m).
+    mode='augmentation_ma50',
     # 'linear_map' = Hoekstra 2026 reconstructability init (trainable); 'default' = deepSI learned encoder
     encoder_init='linear_map',
     ann_activation='tanh',        # 'linear' = Identity (Jan's ECC, D-071); 'tanh' = nonlinear ANN
-    joint_estimation=True,        # D-076: True = trainable damping/stiffness scalars (orth shakedown, 07-12)
+    joint_estimation=False,        # D-076: True = trainable damping/stiffness scalars (orth shakedown, 07-12)
     param_rmse_baseline=0.01,     # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
     # Orthogonal-projection penalty (docs/orthogonal-projection-plan.md; D-111 basis).
     # beta_center = V_MSE/E_drift = 1e-4/2.15e-1 (D7.9, measured 07-12). First entry-file
     # run triggers one fresh ~6 min basis build at up_sample=1 (cached thereafter).
     orth_beta=4.66e-4,
     # None = start at true values (run T); 14-vector aligned to PARAM_NAMES = detuned start (run D, D-076).
-    param_init_detune=[1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90,
-                       0.90, 1.10, 0.90, 1.10, 0.90, 0.90, 1.10],
+    param_init_detune=None,
+    # param_init_detune=[1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90,
+    #                    0.90, 1.10, 0.90, 1.10, 0.90, 0.90, 1.10],
     snr=None,                     # dB: 50/55/60; None = noiseless (supervisor 07-07)
     seed=42,
+    # Training-loss rollout. True = closed loop (known controller around the model, the
+    # cl_train.py objective); False = open loop (recorded plant input replayed).
+    closed_loop=True,
     # --- Sampling / data conditioning ---
     fs_orig=20000,
     fs_new=4000,                  # None = no downsampling (use fs_orig)
-    stride=100,                   # keep every STRIDE-th BPTT window; 100 matches 69399 (fewer windows -> ~10x faster epoch)
+    stride=10,                   # keep every STRIDE-th BPTT window; 100 matches 69399 (fewer windows -> ~10x faster epoch)
     use_f64=False,
     save_flag=True,
     nf_probe_print=True,          # print per-epoch train/val nf-window RMS [m] (D-095)
@@ -72,7 +79,8 @@ CFG = RunConfig(
     lr=1e-5,                       # Theta-routing rate (D-101 era; smoke 07-12 healthy at 1e-5).
                                    # NB: 1e-7 is the K=0 X/Y routing value -- restore it when
                                    # switching ann_route_ix back to (0..7) (D-101/D-102).
-    epochs=1,                      # entry-file shakedown (user 07-12); ~30 for the real Step 10 pair
+    adam_eps=1e-16,                # D-148: keep 1e-11..1e-14 augmented-writer gradients live.
+    epochs=5,                      # entry-file shakedown (user 07-12); ~30 for the real Step 10 pair
     nf_seconds=0.100,             # [s] rollout horizon (5*tau_msd); nf = nf_seconds / ts_new
     # nf_override=None,           # set an int to pin nf directly (bypasses nf_seconds)
     # na_nb_override=None,        # set an int to pin encoder history (bypasses Jan's rule)
@@ -99,10 +107,12 @@ def main():
     print(f"  ENCODER_INIT:   {cfg.encoder_init}")
     print(f"  ANN_ACTIVATION: {cfg.ann_activation}")
     print(f"  JOINT_ESTIM:    {cfg.joint_estimation}")
+    print(f"  LOSS ROLLOUT:   {'closed loop' if cfg.closed_loop else 'open loop'}")
     print(f"  SNR (noise):    {cfg.snr if cfg.snr is not None else 'None (noiseless)'}"
           + (f"  ->  sigma_n={data.sigma_n:.2e} m" if data.sigma_n is not None else ""))
     print(f"  save_dir:       {sdir}")
     print(f"  NF_SECONDS:     {cfg.nf_seconds}")
+    print(f"  ADAM_EPS:       {cfg.adam_eps:.1e}")
     print(f"  na_nb (samples): {default_hp_dict['na_nb']}  "
           f"({default_hp_dict['na_nb']/cfg.fs_new_hz*1000:.2f} ms)")
     print(f"  Sampling rate:  {cfg.fs_new_hz} Hz (D={cfg.d})")
@@ -130,31 +140,39 @@ def main():
     torch.manual_seed(cfg.seed)
     fit_sys = build_model(hp, cfg, data, norm)
 
-    # ── close the known controller around the model ──────────────────────────────────
-    # Without this, interconnect.py's `simulator = None` default (line 476) is in force and the
-    # loss is the OPEN-loop rollout. Setting it routes loss() through the closed-loop rollout
-    # (interconnect.py:549) and appends ctrl_ix to the training arrays (:600), so the objective
-    # becomes the same one cl_train.py trains on and `bestfit` becomes the V1-V4 closed-loop
-    # free-run RMS in metres.
+    # ── close the known controller around the model (cfg.closed_loop) ────────────────
+    # cfg.closed_loop = False leaves interconnect.py's `simulator = None` default (line 476)
+    # in force and the loss is the OPEN-loop rollout. Setting the simulator routes loss()
+    # through the closed-loop rollout (interconnect.py:549) and appends ctrl_ix to the
+    # training arrays (:600), so the objective becomes the same one cl_train.py trains on
+    # and `bestfit` becomes the V1-V4 closed-loop free-run RMS in metres. The two `bestfit`
+    # numbers are therefore NOT comparable across the toggle.
     #
     # The gantry-specific bank (Y_op -> controller row per record) lives in scripts/gantry/ by
     # design and cannot move into the framework: closed_loop.py's header states it "does NOT know
     # what a gantry is ... receives stacked (A, B, C, D) matrices and an integer row index per
-    # window, and that is all". The import is LOCAL so this file still runs open loop if
-    # closed-loop-controller/ is absent, rather than failing at import time.
+    # window, and that is all". The import is LOCAL so an open-loop run never touches
+    # closed-loop-controller/ at all. It is NOT a fallback: with cfg.closed_loop = True and the
+    # folder absent this raises ImportError rather than silently degrading to open loop, because
+    # a run that quietly optimizes a different objective than the config states is worse than a
+    # run that stops.
     # closed-loop-controller/core/ holds a self-contained COPY of the six modules the training
     # path needs (cl_pipeline -> cl_controller -> loss_variants -> p2_rate_compare, so_filter ->
     # verify_controller). Pointing at core/ rather than the parent keeps this entry point off the
     # 43 diagnostic scripts in that folder. See core/README.md for provenance and the one edit.
-    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                    'closed-loop-controller', 'core'))
-    from cl_pipeline import build_closed_loop                  # noqa: E402
-    from gantry_dynamic.data import TRAIN_FILES                # noqa: E402
-    # Keyword-only by design: build_closed_loop's docstring records that swapping train_files and
-    # val_files "attaches the wrong controller to every record, produces a plausible loss".
-    fit_sys.simulator = build_closed_loop(
-        fit_sys, norm, cfg,
-        train_files=TRAIN_FILES, val_files=VAL_FILES, val_data=data.val_ckpt_data)
+    if cfg.closed_loop:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        'closed-loop-controller', 'core'))
+        from cl_pipeline import build_closed_loop                  # noqa: E402
+        from gantry_dynamic.data import TRAIN_FILES                # noqa: E402
+        # Keyword-only by design: build_closed_loop's docstring records that swapping train_files
+        # and val_files "attaches the wrong controller to every record, produces a plausible loss".
+        fit_sys.simulator = build_closed_loop(
+            fit_sys, norm, cfg,
+            train_files=TRAIN_FILES, val_files=VAL_FILES, val_data=data.val_ckpt_data)
+        print('\nLoss rollout: CLOSED loop (known controller wrapped around the model)')
+    else:
+        print('\nLoss rollout: OPEN loop (plant input replayed; simulator = None)')
     # ─────────────────────────────────────────────────────────────────────────────────
 
     _na, _nb, _na_right, _nb_right = get_encoder_dims(hp, cfg)
