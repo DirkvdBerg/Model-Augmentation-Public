@@ -32,8 +32,12 @@ function cfg = gtd_config(TRACK, USE_MSD, MA_FRAC)
     root     = fileparts(fileparts(fileparts(here)));   % repo root
     cfg.root = root;
     addpath(genpath(fullfile(root, 'kamtin-fp-model', '03 Simulink gantry')));
-    addpath(fullfile(root, 'Matlab-scripts', 'Augmentation'));
-    addpath(fullfile(root, 'Matlab-scripts', 'Augmentation', 'diagnostics'));
+    % CHANGED (open-loop variant): point at THIS folder, not Matlab-scripts/Augmentation.
+    % The verbatim copy inherited the parent's paths, which would silently resolve
+    % gantrySystemExtended.m and the diagnostics to the frozen folder.
+    olroot = fileparts(here);                            % .../Augmentation-no-controller
+    addpath(olroot);
+    addpath(fullfile(olroot, 'diagnostics'));
 
     % ── Physical parameters (identical to generate_oscillatory_multisine_data.m) ─
     cfg.mb=22.8; cfg.mh=10.1; cfg.m1=10.2; cfg.m2=10.7; cfg.Jb=1.0; cfg.Jh=0.05;
@@ -103,47 +107,51 @@ function cfg = gtd_config(TRACK, USE_MSD, MA_FRAC)
         switch TRACK
             case 'joint'        % broadband [1,200] Hz: theta_base + ANN everywhere
                 cfg.f_low = 1;    cfg.f_high = 200;
-            case 'joint_lowf'   % as 'joint' but extended down to the record fundamental
-                % WHY: the baseline model has two REAL poles (first-order corners, not
-                % resonances) at cX/MX and cY/MY, i.e. the coast-down time constants
-                % tau_X = (m1+m2+mb+mh)/(cg1+cg2) = 1.55 s and tau_Y = mh/cy = 1.01 s.
-                % Those corners sit near 0.10 and 0.16 Hz, BELOW the 'joint' band, so a fit
-                % to [1,200] Hz cannot see them: deleting them changes the FRF over that band
-                % by only ~0.6 % median, under the ~1.5 % accuracy achieved. They matter for
-                % long-horizon settling and for recovering cg1+cg2 and cy as physical
-                % parameters in joint estimation.
-                % The band start is justified from the BASELINE model's predicted corners,
-                % not from the truth poles, so the experiment design is not tuned to the
-                % answer. 1/t_record is the FUNDAMENTAL and therefore the lowest bin that
-                % exists: gtd_make_multisine places lines on exact FFT bins, so with
-                % t_record = 12 s nothing below 0.0833 Hz is reachable. Asking for a lower
-                % f_low snaps to the same bin set and gains nothing; the lever for more
-                % margin is t_record, not f_low.
-                % Caveat carried deliberately: this gives exactly ONE line below each
-                % corner, and it is the fundamental, which has a single period in the record
-                % and no period-to-period averaging. Marginal but far better than none.
-                cfg.f_low = 1/cfg.t_record;   cfg.f_high = 200;
             case 'augmentation' % narrowband [130,180] Hz: HEURISTIC, targets fa=150 +/- margin
                 cfg.f_low = 130;  cfg.f_high = 180;
-            otherwise
-                % Without this, an unrecognised TRACK leaves f_low/f_high UNDEFINED and the
-                % failure surfaces much later as a confusing error inside the multisine
-                % synthesis rather than here.
-                error('gtd_config:unknownTrack', ...
-                      ['Unknown TRACK ''%s''. Valid tracks with USE_MSD = true: ' ...
-                       '''joint'', ''joint_lowf'', ''augmentation''.'], TRACK);
         end
     else
         cfg.f_low = 1;    cfg.f_high = 7;   % baseline: single ~5 Hz structural mode
     end
 
+    % ── Open-loop generation (this folder only) ─────────────────────────────
+    % No reference, no controller, no feedforward: u_total IS the applied stage
+    % force. Construction follows generate_openloop_record.m (proven on this
+    % plant) and scripts/ecc_2025/msd_ndof_data_generation_dynamic.py (Jan).
+    cfg.openloop     = true;
+    % Excitation amplitude is specified directly in STAGE coordinates here,
+    % [F_X1, F_X2, F_Y] RMS, not as the logical [A_sym, A_anti, A_Y] triple the
+    % closed-loop path uses: open loop there is no yaw-budget constraint to size
+    % A_anti against, and stage RMS is the quantity the force limit applies to.
+    cfg.ol_A_rms     = [40, 40, 30];   % [N] HEURISTIC: 2x the OL1 record, to be
+                                       % settled by the probe (drift scales ~A^2)
+    cfg.ol_n_periods = 2;              % periods KEPT in the saved record
+    cfg.ol_n_discard = 1;              % periods simulated and then thrown away.
+    % Jan's construction (msd_ndof_data_generation_dynamic.py:41-70) generates
+    % periods+1 and drops the first. Measured on the OT3 probe, one period of 6 s
+    % is the right amount: it holds 99.7 % of the Y rectification drift and 97.6 %
+    % of the X drift, and the AC content of the kept periods matches the discarded
+    % one to 0.1 %. That is the free-integrator settling time, tau_Y = mh/cy =
+    % 1.01 s and tau_X = (m1+m2+mb+mh)/(cg1+cg2) = 1.55 s, so 6 s is 6 and 3.9 time
+    % constants respectively. NOTE this is NOT a periodic steady state: K11 = K33 = 0
+    % means position never has one. What settles is the rectified drift RATE.
+    % Total simulated length is (ol_n_periods + ol_n_discard) * t_record/ol_n_periods,
+    % so the SAVED record is still cfg.t_record long and comparable to the
+    % closed-loop records.
+    cfg.ol_ode45_tol = 0.1;            % [s] window for the RK4-vs-ode45 fidelity check.
+                                       % Shorter than the 0.5 s of
+                                       % generate_openloop_record.m because the
+                                       % periodic construction puts 301 lines in
+                                       % the band instead of 51, so each ode45
+                                       % right-hand side costs 6x more.
+
     % ── Output directory: separate top-level folder per mode (user requirement) ─
-    % Data folder is per track (joint / augmentation). Baseline (no MSD) gets a
-    % subfolder so it never collides with the augmented data.
+    % Data folder is per track (joint / augmentation), under openloop/ so it can
+    % never collide with the closed-loop trajectory/<track>/ records.
     if USE_MSD
-        cfg.out_dir = fullfile(root, 'data', 'gantry', 'matlab', 'trajectory', TRACK);
+        cfg.out_dir = fullfile(root, 'data', 'gantry', 'matlab', 'trajectory', 'openloop', TRACK);
     else
-        cfg.out_dir = fullfile(root, 'data', 'gantry', 'matlab', 'trajectory', TRACK, 'baseline');
+        cfg.out_dir = fullfile(root, 'data', 'gantry', 'matlab', 'trajectory', 'openloop', TRACK, 'baseline');
     end
     cfg.fig_dir = fullfile(cfg.out_dir, 'figures');   % per-record PNGs (separate from .mat)
 end

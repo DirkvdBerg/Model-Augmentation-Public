@@ -56,8 +56,15 @@ function [q_aug, da] = run_once(f, cfg, tend)
     evalin('base', sprintf('sim(''%s'', %.12g);', cfg.mdl, tend));
     if cfg.use_msd, assignin('base', 'mh', cfg.mh); end
     if cfg.use_msd
+        % q_aug is the output of the 'Extended ODE' block (gantrySystemExtended.m,
+        % 8-state), whose own absorber state Simulink logs as delta_a_ode. The plain
+        % 'delta_a' variable is outport 4 of the Simscape Multibody 'Single H-gantry'
+        % subsystem, i.e. a DIFFERENT plant (it retains the Coriolis/centrifugal terms
+        % that gantrySystemExtended drops by freezing M), so pairing it with q_aug made
+        % the saved record internally inconsistent. Read the ODE's own state instead.
+        % gtd_save_record derives vdelta_a as gradient(da, ts), so it follows this fix.
         q_aug = evalin('base', 'q_aug');
-        da    = evalin('base', 'delta_a');
+        da    = evalin('base', 'delta_a_ode');
     else
         q_aug = evalin('base', 'q1');
         da    = zeros(size(q_aug,1), 1);
