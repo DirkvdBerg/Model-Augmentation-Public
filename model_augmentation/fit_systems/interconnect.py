@@ -465,6 +465,43 @@ class modified_encoder_net(nn.Module):
         net_in = torch.cat([upast.view(upast.shape[0],-1),ypast.view(ypast.shape[0],-1)],axis=1) # type: ignore
         return self.net(net_in)
 
+@added
+class Dtype_DataLoader(My_Simple_DataLoader):
+    """My_Simple_DataLoader that keeps the training arrays at the MODEL's dtype.
+
+    deepSI's `My_Simple_DataLoader.__init__` (fit_system.py:684) does
+
+        self.data = [torch.as_tensor(d, dtype=torch.float32) for d in data]
+
+    i.e. it hard-casts every training array to float32. With `use_f64=True` the model is
+    float64 and the first batch then raises "expected scalar type Double but found Float".
+    This is the ONLY thing that blocks the float64 toggle in the training path: the whole
+    pipeline (data, norm, encoder, controller bank, rollout) already builds and runs in
+    float64, which cl_direct_vs_residual.py:181-183 exercises via build_pipeline(use_f64=True).
+
+    WHY THE PARENT CONSTRUCTOR IS BYPASSED rather than called-then-recast. `super().__init__`
+    truncates to float32 first, so a later `.to(float64)` would widen float32 VALUES back into
+    a float64 container: the extra digits are already gone and the run would carry float32
+    precision while reporting float64. The float32 round-trip has to not happen at all, so the
+    tensors are built at the target dtype directly. The rest of the parent's state (ids, rng,
+    batch_size) is reproduced verbatim, including its seed=0 rng (the `seed` argument is unused
+    upstream too -- kept in the signature so this stays a drop-in replacement).
+
+    Integer arrays are left alone: the closed-loop seam appends `ctrl_ix`, a per-window integer
+    row index into the controller bank (closed_loop.py:407), and casting that to a float dtype
+    would break the gather it feeds.
+    """
+
+    def __init__(self, data, batch_size=32, seed=0, dtype=torch.float32):
+        def _conv(d):
+            t = torch.as_tensor(d)                 # always a tensor: the parent returns tensors
+            return t.to(dtype) if t.is_floating_point() else t   # ints keep their own dtype
+        self.data = [_conv(d) for d in data]
+        self.ids = np.arange(len(data[0]), dtype=int)
+        self.rng = np.random.default_rng(0)
+        self.batch_size = batch_size
+
+
 class SSE_Interconnect(SS_encoder_general):
     # CHANGED (closed-loop seam): how the model is DRIVEN during a loss rollout is a value on the
     # instance, not a position in the ParamLoss -> OrthLoss -> MultipleShooting chain. None is the
@@ -750,7 +787,13 @@ class SSE_Interconnect(SS_encoder_general):
             data_train_loader = DataLoader(data_train, batch_size=batch_size, drop_last=True, shuffle=True, \
                                    num_workers=num_workers_data_loader, persistent_workers=persistent_workers)
         else: #add my basic DataLoader
-            data_train_loader = My_Simple_DataLoader(data_train, batch_size=batch_size) #is quite a bit faster for low data situations
+            # CHANGED: Dtype_DataLoader instead of My_Simple_DataLoader, which hard-casts the
+            # training arrays to float32 and makes use_f64=True raise on the first batch. The
+            # dtype is read off the model rather than passed in, so this stays correct if the
+            # system is cast after construction (model.py casts hfn/encoder with .to(DTYPE_PT)).
+            _model_dtype = next(self.hfn.parameters()).dtype
+            data_train_loader = Dtype_DataLoader(data_train, batch_size=batch_size,
+                                                 dtype=_model_dtype) #is quite a bit faster for low data situations
 
         if concurrent_val:
             self.remote_start(val_sys_data, validation_measure)

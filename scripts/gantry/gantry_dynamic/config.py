@@ -77,6 +77,13 @@ class RunConfig:
     # checkpoint hyperparameter schema/order remains unchanged.
     adam_eps: float = 1e-8
     epochs: int = 10
+    # Hard cap on BATCH UPDATES, overriding epochs. None = epochs decide (fit computes
+    # n_its = N_batch_updates_per_epoch * epochs, interconnect.py:778). Set an int for a
+    # smoke test: a float64 A/B needs tens of updates to show whether the loss moves, not
+    # 5 epochs at 260 updates each. Runtime-only, deliberately NOT in `hp`, so it never
+    # enters the checkpoint hyperparameter schema and a capped run stays resumable as a
+    # normal one.
+    n_its: Optional[int] = None
     nf_seconds: float = 0.100      # [s] SEGMENT length (5*tau_msd, tau=1/(zeta*wn)=20ms, 5tau=100ms)
     # Optional direct overrides (None = derive). Set a number to bypass the formula.
     nf_override: Optional[int] = None      # None -> nf_seg = nf_seconds / ts_new

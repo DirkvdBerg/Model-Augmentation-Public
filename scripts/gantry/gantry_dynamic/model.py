@@ -219,6 +219,11 @@ def build_model(hp, cfg: RunConfig, data, norm):
             u_mean=u_mean, std_u=std_u,
             y0=y0, ystd=ystd,
             x_mean=x_mean, std_x=std_x,
+            # CHANGED: build the reconstructability map AT the pipeline dtype. The trailing
+            # .to(DTYPE_PT) casts the module, but casting float32 Parameters up to float64
+            # does not restore digits already discarded, so with use_f64=True the encoder init
+            # would carry float32 accuracy inside a float64 run.
+            dtype=DTYPE_PT,
         ).to(DTYPE_PT)
 
     # CHANGED: pass lr and eps at optimizer creation. init_model builds the optimizer here;
@@ -261,6 +266,17 @@ def train_model(fit_sys, hp, cfg: RunConfig, data, epochs=None, nf=None, validat
     fit_sys.fit(
         train_sys_data=data.train_data, val_sys_data=data.val_ckpt_data,
         batch_size=hp['batch_size'], epochs=epochs or hp['epochs'],
+        # CHANGED: expose fit's existing n_its cap (interconnect.py:778). None keeps the
+        # epochs-derived value, i.e. an exact no-op for every run that does not set it.
+        n_its=cfg.n_its,
+        # its_per_val defaults to 'epoch', which fit resolves to N_batch_updates_per_epoch
+        # (260 here), so a capped run of e.g. 40 updates would never validate and report
+        # nothing. Validate ONCE, at the cap. Not more often: one validation is a closed-loop
+        # free run over the whole val set (4 records x 48000 samples, ~192k sequential
+        # single-threaded steps, measured ~6 min), so it costs more than the 40 updates it
+        # would be measuring. Start-and-end is what a smoke test needs. Untouched (and
+        # therefore 'epoch') whenever n_its is None.
+        its_per_val=(cfg.n_its if cfg.n_its else 'epoch'),
         auto_fit_norm=False,
         loss_kwargs={'nf': nf if nf is not None else hp['nf'], 'stride': cfg.stride},
         optimizer_kwargs={'lr': hp['lr'], 'eps': cfg.adam_eps},

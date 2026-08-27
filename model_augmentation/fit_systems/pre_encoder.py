@@ -339,6 +339,12 @@ class linear_encoder_init_aug(nn.Module):
         u_mean=None, std_u=None,
         y0=None, ystd=None,
         x_mean=None, std_x=None,
+        # CHANGED: dtype of the constructed reconstructability map. The map A^n O_n^{-1} is
+        # computed in numpy float64; building the Parameters as float32 and letting the caller
+        # widen them afterwards with .to(float64) (model.py:222) does NOT recover the lost
+        # digits, so a use_f64=True run would silently carry a float32-accurate encoder init.
+        # Default float32 keeps every existing call site bit-identical.
+        dtype=torch.float32,
     ):
         super(linear_encoder_init_aug, self).__init__()
 
@@ -386,11 +392,11 @@ class linear_encoder_init_aug(nn.Module):
 
         # THEORY: Hoekstra 2026 Eq. 17 -- W^b_{psi,y} = A^n O_n^{-1}
         self.Wb_psi_y = nn.Parameter(
-            torch.tensor(A_n @ O_inv, dtype=torch.float32)
+            torch.tensor(A_n @ O_inv, dtype=dtype)   # CHANGED: was hard-coded float32
         )
         # THEORY: Hoekstra 2026 Eq. 16 -- W^b_{psi,u} = -A^n O_n^{-1} T_n + r_n
         self.Wb_psi_u = nn.Parameter(
-            torch.tensor(-A_n @ O_inv @ Gamma_n + gamma_n, dtype=torch.float32)
+            torch.tensor(-A_n @ O_inv @ Gamma_n + gamma_n, dtype=dtype)   # CHANGED: was float32
         )
 
         # --- W^a: randomly initialized for augmented state rows (Eq. 8) ---
@@ -428,15 +434,19 @@ class linear_encoder_init_aug(nn.Module):
             v is not None for v in [u_mean, std_u, y0, ystd, x_mean, std_x]
         )
         if self.fix_enabled:
+            # CHANGED: the three offsets follow `dtype` too. These are D-017 convention offsets
+            # (mean-sub <-> pure-scaled); at float32 they quantise the mean removal, which is
+            # exactly the step that protects the small AC signal riding on a large DC offset.
+            _np_dtype = np.float64 if dtype == torch.float64 else np.float32
             u_off = np.tile(
-                (np.asarray(u_mean).flatten() / np.asarray(std_u).flatten()).astype(np.float32),
+                (np.asarray(u_mean).flatten() / np.asarray(std_u).flatten()).astype(_np_dtype),
                 nb + 1,
             )
             y_off = np.tile(
-                (np.asarray(y0).flatten() / np.asarray(ystd).flatten()).astype(np.float32),
+                (np.asarray(y0).flatten() / np.asarray(ystd).flatten()).astype(_np_dtype),
                 na + 1,
             )
-            x_off = (np.asarray(x_mean).flatten() / np.asarray(std_x).flatten()).astype(np.float32)
+            x_off = (np.asarray(x_mean).flatten() / np.asarray(std_x).flatten()).astype(_np_dtype)
             self.register_buffer('u_off', torch.tensor(u_off).view(-1, 1))  # (nu*(nb+1), 1)
             self.register_buffer('y_off', torch.tensor(y_off).view(-1, 1))  # (ny*(na+1), 1)
             self.register_buffer('x_off', torch.tensor(x_off).view(-1, 1))  # (nx, 1)

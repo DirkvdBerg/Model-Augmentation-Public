@@ -64,7 +64,12 @@ CFG = RunConfig(
     fs_orig=20000,
     fs_new=4000,                  # None = no downsampling (use fs_orig)
     stride=10,                   # keep every STRIDE-th BPTT window; 100 matches 69399 (fewer windows -> ~10x faster epoch)
-    use_f64=False,
+    # True: closed-loop rollout in float64. cl_direct_vs_residual T4 measured the float32
+    # numerical gap at nf=400 as 1.4% of the model error with the ANN OFF, but 835% with the
+    # ANN at gain 1e-2 (D-118's measured trained Lipschitz) and 867% at 1e-1, i.e. the ratio is
+    # gain-independent once the loop is nonlinear. In float32 the noise the ANN induces is ~8.5x
+    # the correction it applies, so the gradient is noise. T3 measured float64 as 1.9e9x cleaner.
+    use_f64=True,
     save_flag=True,
     nf_probe_print=True,          # print per-epoch train/val nf-window RMS [m] (D-095)
     # --- Model + training hyperparameters ---
@@ -81,6 +86,9 @@ CFG = RunConfig(
                                    # switching ann_route_ix back to (0..7) (D-101/D-102).
     adam_eps=1e-16,                # D-148: keep 1e-11..1e-14 augmented-writer gradients live.
     epochs=5,                      # entry-file shakedown (user 07-12); ~30 for the real Step 10 pair
+    n_its=40,                      # SMOKE TEST: cap at 40 batch updates (vs 260/epoch) to A/B
+                                   # float32 against float64 in minutes. Set back to None for a
+                                   # real run; None = epochs decide, an exact no-op.
     nf_seconds=0.100,             # [s] rollout horizon (5*tau_msd); nf = nf_seconds / ts_new
     # nf_override=None,           # set an int to pin nf directly (bypasses nf_seconds)
     # na_nb_override=None,        # set an int to pin encoder history (bypasses Jan's rule)
