@@ -1,0 +1,58 @@
+diff --git a/model_augmentation/fit_systems/pre_encoder.py b/model_augmentation/fit_systems/pre_encoder.py
+index 8aebf44..86905b8 100644
+--- a/model_augmentation/fit_systems/pre_encoder.py
++++ b/model_augmentation/fit_systems/pre_encoder.py
+@@ -393,10 +393,49 @@ class linear_encoder_init_aug(nn.Module):
+             torch.tensor(-A_n @ O_inv @ Gamma_n + gamma_n, dtype=torch.float32)
+         )
+ 
+-        # --- W^a: randomly initialized for augmented state rows (Eq. 8) ---
+-        # HEURISTIC: paper states W^a is randomly initialized but does not specify
+-        # the distribution or scale. Using PyTorch default kaiming_uniform_ as the
+-        # standard random init convention for weight matrices.
++        # --- W^a: the augmented-state rows of Eq. 8. THE INITIALISATION IS OURS ALONE. ---
++        # CORRECTED 2026-08-19 after reading the source. The previous comment here claimed "paper
++        # states W^a is randomly initialized but does not specify the distribution or scale". That
++        # is not what the paper says, and the difference matters because it changes this from
++        # "following the paper loosely" to "an assumption with no source".
++        #
++        # WHAT hoekstra2026encoder ACTUALLY SAYS (Hoekstra, Gyorok, Toth, Schoukens, "Encoder
++        # initialisation methods in the model augmentation setting", arXiv:2602.13108v1, 2026-02-13;
++        # literature/augmentation/Encoder initialisation methods in the model augmentation
++        # setting.pdf):
++        #   * Eq. 8 DEFINES W^a_{psi,y} and W^a_{psi,u} as the linear parts "utilised for
++        #     reconstructing the augmented states". The symbol is his; this class implements it.
++        #   * Every initialisation the paper derives is for W^b ONLY: model-based Eqs. 16-17,
++        #     the noise-model extension Eqs. 28-29, the local-linearisation route for nonlinear
++        #     baselines Eqs. 31-32, and the data-based LLS / ANN fits Eqs. 33-35. All of them come
++        #     from the BASELINE's reconstructability, and the baseline has no augmented states to
++        #     reconstruct, so none of them can produce a W^a. This is a structural gap, not an
++        #     omission.
++        #   * Its own experiment (Sec. 4.3, Eq. 37) is a STATIC parallel augmentation with
++        #     nx_aug = 0, so W^a appears in no result in the paper. Its headline finding, that
++        #     encoder initialisation changes convergence SPEED but not final accuracy (Figs. 2-3),
++        #     is therefore measured in the one case where there is no augmented state to initialise
++        #     and does NOT transfer to dynamic augmentation.
++        #   * The zero-initialisation the paper DOES specify is the final layer of the learning
++        #     components (f_aug and psi_tilde), i.e. `zero_init_feed_forward_nn` below. Not W^a.
++        #
++        # HEURISTIC, with no literature source: kaiming_uniform_ on both blocks.
++        # Note the scale, which the old comment got wrong twice over. `nn.init.kaiming_uniform_`
++        # with its default a=0 gives U(+/- sqrt(6/fan_in)); `nn.Linear`'s actual default is
++        # kaiming_uniform_(a=sqrt(5)), i.e. U(+/- sqrt(1/fan_in)), which is 2.45x NARROWER. So this
++        # is not "the PyTorch default" it claimed to be. For the gantry (fan_in = 54) the bound is
++        # 0.333, measured on the live model as max|Wa_psi_y| = 0.325.
++        #
++        # WHY THE CHOICE IS LOAD-BEARING, measured 2026-08-19 on the closed-loop run:
++        #   * x_a = W^a_{psi,u} u_hist + W^a_{psi,y} y_hist is then an arbitrary O(1) functional of
++        #     the window, dominated by the position and force content; the absorber's ~1e-6 m
++        #     signature in y does not survive it at a usable scale.
++        #   * W^a receives exactly 0.000e+00 gradient at initialisation (D-130) and moved 0 of 108
++        #     entries in three epochs, so the arbitrary value is permanent.
++        #   * The repo's other two encoders, HybridGantryEncoder and LinearInitEncoderWrapper, take
++        #     their augmented states from a zero-init ANN instead, i.e. x_a = 0. Two contradictory
++        #     conventions for the same quantity live in this codebase; this one is the outlier.
++        # Changing this is a stated design decision to be measured, not a bug fix.
+         wa_y = torch.empty(nx_aug, (n + 1) * ny)
+         wa_u = torch.empty(nx_aug, (n + 1) * nu)
+         nn.init.kaiming_uniform_(wa_y)

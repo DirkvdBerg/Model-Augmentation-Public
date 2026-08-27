@@ -1,0 +1,34 @@
+diff --git a/scripts/gantry/gantry_dynamic/orth_penalty.py b/scripts/gantry/gantry_dynamic/orth_penalty.py
+index f35472d..c825f0a 100644
+--- a/scripts/gantry/gantry_dynamic/orth_penalty.py
++++ b/scripts/gantry/gantry_dynamic/orth_penalty.py
+@@ -66,6 +66,7 @@ def _cache_path(cfg: RunConfig, theta_bar) -> str:
+                    theta=[round(float(t), 10) for t in theta_bar],
+                    rank_tol=cfg.orth_rank_tol, nx_ann=cfg.nx_ann,
+                    na_nb=cfg.na_nb,
++                   snr=cfg.snr,     # states derive from sd.y, which data.py noises in place
+                    states='data')   # D-111: excludes pre-revision rollout caches
+     key = hashlib.sha1(json.dumps(payload, sort_keys=True).encode()).hexdigest()[:12]
+     cdir = os.path.join(save_dir(cfg), 'orth_cache')
+@@ -158,6 +159,21 @@ def _compute(cfg: RunConfig, data, norm, theta_bar, verbose=True):
+ 
+ def build_orth_penalty(cfg: RunConfig, data, norm, verbose=True) -> OrthProjectionPenalty:
+     """Load-or-build the penalty for this configuration (cached, D7.4)."""
++    if cfg.snr is not None:
++        # The D-111 states come from sd.y, and data.py adds output noise to
++        # sd.y IN PLACE. Differencing noisy positions injects
++        # # THEORY: var of a first difference of white noise = 2*sigma_n^2, so
++        # sigma_v = sigma_n*sqrt(2)*fs = 0.79 m/s at SNR 60, against true
++        # velocity stds of 0.008 to 0.48 m/s -- the velocity rows of the basis
++        # would be noise. data.py blocks on the same construction for
++        # compute_normalization; this path must block too rather than build a
++        # silently meaningless basis. Fix: derive the penalty states from the
++        # PRE-NOISE signals (data.py remedy (a)), then lift this guard.
++        raise NotImplementedError(
++            f'orth penalty basis is not defined for cfg.snr={cfg.snr}: D-111 '
++            'states are built from sd.y, which data.py noises in place, and '
++            'the FD velocity amplifies that noise past the true signal. '
++            'Derive states from the pre-noise signals first (data.py remedy (a)).')
+     theta_bar = theta_bar_for(cfg)
+     path = _cache_path(cfg, theta_bar)
+     if os.path.exists(path):

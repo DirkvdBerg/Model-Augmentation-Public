@@ -1,0 +1,121 @@
+diff --git a/model_augmentation/fit_systems/closed_loop.py b/model_augmentation/fit_systems/closed_loop.py
+index cad2490..20a5c77 100644
+--- a/model_augmentation/fit_systems/closed_loop.py
++++ b/model_augmentation/fit_systems/closed_loop.py
+@@ -495,9 +495,15 @@ class ClosedLoopSimulator:
+         return float(np.sqrt(np.mean(np.asarray(per_record) ** 2)))
+ 
+ 
+-def closed_loop_free_run_rms(fit_sys, sys_data, bank, ctrl_row, k0=None):
++def closed_loop_free_run_rms(fit_sys, sys_data, bank, ctrl_row, k0=None, return_error=False):
+     """One record: encoder-init, closed-loop free run, error in metres. (per_channel, aggregate).
+ 
++    `return_error=True` appends the residual TIME SERIES `e` (N-k0, ny) to the tuple. Added so a
++    spectral diagnostic can ask where in frequency the error sits without rebuilding the
++    normalise -> encoder-window -> rollout -> denormalise chain: that chain is the thing this
++    function exists to keep singular, and a diagnostic with its own copy is how the copies start.
++    The scalar path is untouched, so the selection number cannot move because of this argument.
++
+     The scoring path, in ONE place. `validation_error` is a loop over this plus a quadratic mean,
+     and any diagnostic that wants the same number calls this rather than rebuilding the
+     normalise -> encoder-window -> rollout -> denormalise -> rms chain. That chain existed twice
+@@ -534,4 +540,98 @@ def closed_loop_free_run_rms(fit_sys, sys_data, bank, ctrl_row, k0=None):
+     # floating point, which would cost bit-identity against the recorded selection scalar for no
+     # reason at all.
+     mse_per_channel = np.mean(e ** 2, axis=0)
+-    return np.sqrt(mse_per_channel), float(np.sqrt(np.mean(mse_per_channel)))
++    out = (np.sqrt(mse_per_channel), float(np.sqrt(np.mean(mse_per_channel))))
++    return out + (e,) if return_error else out
++
++
++def window_starts(n_samples, na, nb, nf, na_right=0, nb_right=0, stride=1):
++    """The window start indices `to_hist_future_data` produces, i.e. deepSI's `kmid`.
++
++    ONE derivation of the window grid. `window_controller_index` counts exactly this range to
++    assign a controller per window, and a diagnostic that wants to measure the model ON the
++    windows it is trained on has to land on the same grid or it is measuring something else.
++    deepSI loops `for k in range(k0 + k0_right, len(u) + 1, stride)` and takes `kmid = k -
++    k0_right` (`system_data.py:322-329`), so this is that range shifted, written as an actual
++    `range` so it cannot drift from deepSI's own loop.
++    """
++    k0, k0_right = max(na, nb), max(nf, na_right, nb_right)
++    return np.arange(k0 + k0_right, n_samples + 1, stride, dtype=np.int64) - k0_right
++
++
++def make_window_tensors(fit_sys, sys_data, nf, starts, dtype=None):
++    """(uhist, yhist, ufuture, yfuture) for `starts`, NORMALISED, as tensors.
++
++    Same slicing as deepSI's `to_hist_future_data`: `uhist = u[s-nb : s+nb_right]`,
++    `yhist = y[s-na : s+na_right]`, `ufuture = u[s : s+nf]`, `yfuture = y[s : s+nf]`. Built here
++    rather than by calling `to_hist_future_data` because that builds EVERY window of a record and
++    a diagnostic wants a chosen few; the slicing convention is the same one and is asserted
++    against the real training arrays by `WindowControllerIndex.verify_by_content`.
++    """
++    norm = fit_sys.norm
++    na, nb = fit_sys.na, fit_sys.nb
++    na_r = getattr(fit_sys, 'na_right', 0)
++    nb_r = getattr(fit_sys, 'nb_right', 0)
++    dtype = next(fit_sys.hfn.parameters()).dtype if dtype is None else dtype
++    np_dtype = np.float64 if dtype == torch.float64 else np.float32
++    rv = lambda a: np.asarray(a).ravel()                                    # noqa: E731
++
++    un = ((sys_data.u - rv(norm.u0)) / rv(norm.ustd)).astype(np_dtype)
++    yn = ((sys_data.y - rv(norm.y0)) / rv(norm.ystd)).astype(np_dtype)
++    s = np.asarray(starts, dtype=np.int64)[:, None]
++    take = lambda a, ix: torch.as_tensor(np.ascontiguousarray(a[ix]), dtype=dtype)   # noqa: E731
++    return (take(un, s + np.arange(-nb, nb_r)),
++            take(yn, s + np.arange(-na, na_r)),
++            take(un, s + np.arange(nf)),
++            take(yn, s + np.arange(nf)))
++
++
++def closed_loop_window_rms(fit_sys, sys_data, bank, ctrl_row, nf, stride=None,
++                           batch_max=256, starts=None):
++    """One record: the TRAINING objective's error on nf-sample windows, in metres.
++
++    The window analogue of `closed_loop_free_run_rms`, and it exists because the free-run number
++    and the training number answer different questions: whether the model GENERALISES over
++    48000 samples, and whether it FITS the 400-sample window the loss is actually computed on.
++
++    Identical to the training loss in everything that defines the objective: the same
++    `closed_loop_rollout`, the same encoder re-initialisation at each window start, the same
++    `xc = 0`, the same window grid (`window_starts`). It differs only in what it does with the
++    residual, reducing it to a physical RMS over all windows, samples and channels instead of a
++    normalised MSE, so that it is directly comparable to the free-run selector and to a per-window
++    oracle floor computed in metres.
++
++    NOT deepSI's `n_step_error`, which is the same shape of quantity in the OPEN loop: it drives
++    the model through `measure_act_multi`, i.e. `hfn(x, u)`, and never sees `y_data`, so it cannot
++    form the residual the loop is closed on (D-147).
++
++    stride defaults to nf, i.e. non-overlapping windows, which covers the record once.
++    Returns (per_channel_rms, aggregate, n_windows), the first two in metres.
++    """
++    na, nb = fit_sys.na, fit_sys.nb
++    na_r = getattr(fit_sys, 'na_right', 0)
++    nb_r = getattr(fit_sys, 'nb_right', 0)
++    if starts is None:
++        starts = window_starts(len(sys_data.u), na, nb, nf, na_r, nb_r,
++                               nf if stride is None else stride)
++    starts = np.asarray(starts, dtype=np.int64)
++    if starts.size == 0:
++        raise ValueError('record of %d samples is too short for one nf = %d window at na = %d, '
++                         'nb = %d' % (len(sys_data.u), nf, na, nb))
++    ystd = np.asarray(fit_sys.norm.ystd).ravel()
++    sse = np.zeros(len(ystd), dtype=np.float64)
++    n_pts = 0
++    for i0 in range(0, len(starts), batch_max):
++        chunk = starts[i0:i0 + batch_max]
++        uh, yh, uf, yf = make_window_tensors(fit_sys, sys_data, nf, chunk)
++        ix = torch.full((len(chunk),), int(ctrl_row), dtype=torch.long)
++        with torch.no_grad():
++            x0 = fit_sys.encoder(uh, yh)
++            y_pred, _, _ = closed_loop_rollout(fit_sys.hfn, fit_sys.hfn.output_only,
++                                               uf, yf, x0, bank, ix)
++            e = (y_pred - yf).cpu().numpy().astype(np.float64) * ystd     # (W, nf, ny) [m]
++        sse += np.sum(e ** 2, axis=(0, 1))
++        n_pts += e.shape[0] * e.shape[1]
++    mse_per_channel = sse / n_pts
++    # Reduced exactly as `closed_loop_free_run_rms` does, from the per-channel MSE rather than
++    # from the per-channel RMS, so the two numbers are the same kind of number.
++    return np.sqrt(mse_per_channel), float(np.sqrt(np.mean(mse_per_channel))), len(starts)

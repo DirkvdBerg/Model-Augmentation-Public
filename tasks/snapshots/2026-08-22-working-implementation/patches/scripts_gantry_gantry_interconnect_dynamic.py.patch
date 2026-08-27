@@ -1,0 +1,57 @@
+diff --git a/scripts/gantry/gantry_interconnect_dynamic.py b/scripts/gantry/gantry_interconnect_dynamic.py
+index 7daf328..06a82b6 100644
+--- a/scripts/gantry/gantry_interconnect_dynamic.py
++++ b/scripts/gantry/gantry_interconnect_dynamic.py
+@@ -42,21 +42,23 @@ CFG = RunConfig(
+     # 'linear_map' = Hoekstra 2026 reconstructability init (trainable); 'default' = deepSI learned encoder
+     encoder_init='linear_map',
+     ann_activation='tanh',        # 'linear' = Identity (Jan's ECC, D-071); 'tanh' = nonlinear ANN
+-    joint_estimation=True,        # D-076: True = trainable damping/stiffness scalars (orth shakedown, 07-12)
++    # ANN-capability isolation run (user 07-12): CAN the ANN learn the absorber at
++    # maximal step budget, no joint-estimation confound? joint=False -> plain block
++    # at NOMINAL theta; target = pure absorber residual. Penalty OFF, meter ON.
++    joint_estimation=False,       # D-076: True = trainable damping/stiffness scalars
+     param_rmse_baseline=0.01,     # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
+-    # Orthogonal-projection penalty (docs/orthogonal-projection-plan.md; D-111 basis).
+-    # beta_center = V_MSE/E_drift = 1e-4/2.15e-1 (D7.9, measured 07-12). First entry-file
+-    # run triggers one fresh ~6 min basis build at up_sample=1 (cached thereafter).
+-    orth_beta=4.66e-4,
++    orth_beta=0.0,                # penalty OFF for this run (no confound)
++    orth_observe=True,            # ...but the orth-frac meter WATCHES the free ANN
++                                  # (negation-tendency baseline for Step 10)
+     # None = start at true values (run T); 14-vector aligned to PARAM_NAMES = detuned start (run D, D-076).
+-    param_init_detune=[1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90,
+-                       0.90, 1.10, 0.90, 1.10, 0.90, 0.90, 1.10],
++    # None here: clean baseline at true params for the drift deck (baseline-error figure at the floor).
++    param_init_detune=None,
+     snr=None,                     # dB: 50/55/60; None = noiseless (supervisor 07-07)
+     seed=42,
+     # --- Sampling / data conditioning ---
+     fs_orig=20000,
+     fs_new=4000,                  # None = no downsampling (use fs_orig)
+-    stride=100,                   # keep every STRIDE-th BPTT window; 100 matches 69399 (fewer windows -> ~10x faster epoch)
++    stride=10,                    # keep every STRIDE-th BPTT window; 10 = denser sampling (~10x more windows/epoch than 100) for a cleaner drift-deck checkpoint
+     use_f64=False,
+     save_flag=True,
+     nf_probe_print=True,          # print per-epoch train/val nf-window RMS [m] (D-095)
+@@ -64,15 +66,15 @@ CFG = RunConfig(
+     nx_ann=2,
+     # ANN routing rows: (1,4,6,7)=Theta+absorber (D-068); (0,1,2,3,4,5,6,7)=X+Theta+Y+absorber.
+     # WARNING: X/Y (K=0) routing needs lr ~1e-7, not 1e-4, or it diverges after init (D-101/D-102).
+-    ann_route_ix=(1,4,6,7),
++    ann_route_ix=(0,1,2,3,4,5,6,7),  # X+Theta+Y+absorber: K=0 X/Y routing IS the drift phenomenon (D-103)
+     n_nodes_per_layer=16,
+     n_hidden_layers=2,
+     up_sample=1,
+     batch_size=256,
+-    lr=1e-5,                       # Theta-routing rate (D-101 era; smoke 07-12 healthy at 1e-5).
+-                                   # NB: 1e-7 is the K=0 X/Y routing value -- restore it when
+-                                   # switching ann_route_ix back to (0..7) (D-101/D-102).
+-    epochs=1,                      # entry-file shakedown (user 07-12); ~30 for the real Step 10 pair
++    lr=1e-7,                       # X/Y (K=0) routing rate (D-101/D-102); 1e-3 diverges after init.
++                                   # OVERSHOOT TRIPWIRE: if train nf-RMS RISES from epoch 1
++                                   # in the [nf-probe] print, kill the run and drop to 1e-8.
++    epochs=20,                     # drift-deck checkpoint (user 07-14)
+     nf_seconds=0.100,             # [s] rollout horizon (5*tau_msd); nf = nf_seconds / ts_new
+     # nf_override=None,           # set an int to pin nf directly (bypasses nf_seconds)
+     # na_nb_override=None,        # set an int to pin encoder history (bypasses Jan's rule)

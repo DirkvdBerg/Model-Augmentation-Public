@@ -1,0 +1,95 @@
+diff --git a/scripts/gantry/gantry_dynamic/rezero_gate.py b/scripts/gantry/gantry_dynamic/rezero_gate.py
+index be55398..e73b191 100644
+--- a/scripts/gantry/gantry_dynamic/rezero_gate.py
++++ b/scripts/gantry/gantry_dynamic/rezero_gate.py
+@@ -44,14 +44,26 @@ from torch.nn.utils.parametrize import register_parametrization
+ 
+ 
+ class _Gate(nn.Module):
+-    """Multiplies a tensor by a shared scalar. Owns alpha only if `alpha` is None."""
++    """Multiplies a tensor by a shared gain. Owns alpha only if `alpha` is None.
++
++    # CHANGED (per-row gates, 2026-08-19): `n_out > 0` makes alpha a VECTOR with one gain per
++    # output row instead of one scalar for the whole branch. Reason, measured rather than assumed:
++    # the eight corrections this ANN must produce span NINE DECADES in normalised state units
++    # (X 3.9e-08 to the absorber latents at 1.0, `cl_capability.py`), and one shared output layer
++    # cannot serve both ends. Regressing the SAME architecture onto the exact target fits the
++    # latent rows to 1-R^2 = 9.6e-05 when each row carries its own scale and FAILS them outright
++    # (0.98, i.e. no better than the mean) when it does not. A per-row gain is the learnable
++    # version of that scale: it is not read off the true absorber, so it carries no oracle
++    # information, and each row's gain gets its own gradient `dL/dalpha_i = <dL/dw_i, F_i(z)>`.
++    # Still exactly zero at initialisation, so the augmented model still equals the baseline there.
++    """
+ 
+-    def __init__(self, alpha: nn.Parameter = None):
++    def __init__(self, alpha: nn.Parameter = None, n_out: int = 0):
+         super().__init__()
+         if alpha is None:
+             # THEORY: ReZero (Bachlechner et al. 2021) gates each branch with a single
+             # zero-initialised scalar parameter.
+-            self.alpha = nn.Parameter(torch.zeros(()))
++            self.alpha = nn.Parameter(torch.zeros(n_out) if n_out else torch.zeros(()))
+         else:
+             # Hide the shared Parameter from this module's registry (a list is not traversed by
+             # nn.Module), so it is owned by exactly one parametrization and appears once in
+@@ -63,10 +75,44 @@ class _Gate(nn.Module):
+         return self.alpha if hasattr(self, 'alpha') else self._shared[0]
+ 
+     def forward(self, W: torch.Tensor) -> torch.Tensor:
+-        return self.gate * W
++        g = self.gate
++        # A per-row alpha must broadcast down the OUTPUT dimension of the final Linear, which is
++        # dim 0 of its (n_out, n_in) weight and dim 0 of its (n_out,) bias. Without the unsqueeze
++        # the weight would broadcast along the INPUT dimension instead, silently gating the wrong
++        # axis whenever n_in happens to equal n_out.
++        if g.ndim == 1 and W.ndim == 2:
++            return g[:, None] * W
++        return g * W
++
++
++class _OutputGate(nn.Module):
++    """`alpha * x`, applied AFTER the final Linear instead of to its weight and bias.
++
++    # CHANGED (2026-08-19): the parametrization form below CANNOT BE PICKLED. torch raises
++    # "Serialization of parametrized modules is only supported through state_dict()", and deepSI's
++    # `checkpoint_save_system` does `torch.save(self.__dict__)` at every improved validation, so a
++    # parametrized ANN kills any real training run at its first checkpoint. That is presumably why
++    # ANN_REZERO_GATE never appeared in a production run: it was only ever exercised by the 6-step
++    # gradient probe, which never checkpoints.
++    #
++    # Gating the OUTPUT is the same function: (alpha W) h + alpha b = alpha (W h + b). It costs one
++    # extra module in the Sequential and one extra state_dict key, and it pickles like anything
++    # else. The parametrization path is kept for `verify_rezero_gate.py`, which compares against
++    # the recorded control arm and must not change.
++    """
++
++    def __init__(self, n_out: int = 0):
++        super().__init__()
++        self.alpha = nn.Parameter(torch.zeros(n_out) if n_out else torch.zeros(()))
++
++    def forward(self, x: torch.Tensor) -> torch.Tensor:
++        # alpha is (n_out,) or scalar and x is (..., n_out), so this broadcasts over the OUTPUT
++        # dimension, which is the one the per-row scale belongs to.
++        return self.alpha * x
+ 
+ 
+-def apply_rezero_gate(net_module: nn.Module, std: float = None) -> nn.Parameter:
++def apply_rezero_gate(net_module: nn.Module, std: float = None,
++                      per_row: bool = False, as_module: bool = False) -> nn.Parameter:
+     """Re-initialise the final Linear of an MLP normally, then gate it with a zero scalar.
+ 
+     `net_module` is the `zero_init_feed_forward_nn` (it carries `.net`, an `nn.Sequential` whose
+@@ -95,7 +141,12 @@ def apply_rezero_gate(net_module: nn.Module, std: float = None) -> nn.Parameter:
+             nn.init.normal_(final.weight, mean=0.0, std=float(std))
+             nn.init.zeros_(final.bias)
+ 
+-    gate_w = _Gate()
++    n_out = final.out_features if per_row else 0
++    if as_module:
++        gate = _OutputGate(n_out)
++        seq.append(gate)              # nn.Sequential stays an nn.Sequential; one extra key
++        return gate.alpha
++    gate_w = _Gate(n_out=n_out)
+     register_parametrization(final, 'weight', gate_w)
+     register_parametrization(final, 'bias', _Gate(gate_w.alpha))
+     return gate_w.alpha

@@ -1,0 +1,54 @@
+diff --git a/scripts/gantry/gantry_dynamic/config.py b/scripts/gantry/gantry_dynamic/config.py
+index 74fb257..58c639e 100644
+--- a/scripts/gantry/gantry_dynamic/config.py
++++ b/scripts/gantry/gantry_dynamic/config.py
+@@ -58,9 +58,12 @@ class RunConfig:
+     nx_ann: int = 2                # augmented (ANN) latent states
+     # ANN correction routing: rows the ANN writes into. State layout (logical):
+     #   [X, Theta, Y, dX, dTheta, dY, delta_a, vdelta_a] = idx 0..7.
+-    #   (1,4,6,7)=Theta+absorber (D-068 default, K>0 only); (0..7)=X+Theta+Y+absorber.
++    #   (1,4,6,7)=Theta+absorber (D-068 diagnostic, K>0 only); (0..7)=X+Theta+Y+absorber.
+     #   NOTE: routing to K=0 rows (X/Y: 0,2,3,5) needs a much smaller lr (~1e-7) -- D-101/D-102.
+-    ann_route_ix: tuple = (1, 4, 6, 7)
++    #   Default is the D-103 deliverable routing (all states). Scripts that relied on
++    #   the former (1,4,6,7) default without setting ROUTE explicitly now run under
++    #   full routing and will not reproduce their logged numbers.
++    ann_route_ix: tuple = (0, 1, 2, 3, 4, 5, 6, 7)
+     n_nodes_per_layer: int = 16
+     n_hidden_layers: int = 2
+     up_sample: int = 2             # model discretization sub-steps per Ts
+@@ -103,6 +106,27 @@ class RunConfig:
+                                     # [joint-probe] orth-frac meter observes WITHOUT penalizing
+                                     # (loss path skips at beta==0 -- beta=0 control stays a no-op)
+ 
++    # ═══ Physical-parameter learning rate (P1, implementation-plan/DECISIONS.md) ═══
++    # Separate optimizer group for log_params. None = one rate for everything
++    # (pre-P1 behaviour, bit-identical). The ANN needs ~1e-5 for K=0 routing
++    # stability (D-101/D-102) while theta needs large RELATIVE steps: at 1e-5 x
++    # 130 steps theta travels 0.13% of log space against a 10% detune, 75x short.
++    # 1e-3 is not a guess: train_param_recovery.py:143-155 recovers these same 14
++    # parameters, same log-reparameterization, from the same +-10% detune to 1e-7
++    # at LR=1e-3. No literature rule exists for this split (STATUS.md G7a: across
++    # six papers in the ancestry "parameter group" occurs zero times).
++    lr_theta: Optional[float] = None
++    # Adam eps for the log_params group ONLY (P1-e). Applied only when lr_theta is
++    # set, so runs without P1 are untouched. The PyTorch default 1e-8 is a FLOOR on
++    # the physical parameters, not a safeguard: measured |dL/dlog_params| runs
++    # 9.6e-13 to 2.6e-8, so the step lr*|g|/(|g|+eps) is attenuated by 9.6e-5 to
++    # 1.4e-2 on the stiffness/damping coordinates while the masses keep 0.47-0.72.
++    # At 1e-16 every coordinate steps at lr (measured, T1-p1-lr-theta.md L1c).
++    # NOTE this removes a stabiliser: if a coordinate's gradient reaches genuine
++    # zero the step becomes lr*sign(numerical noise). Approved by the user
++    # 2026-08-18 without the per-epoch |g| distribution first.
++    eps_theta: float = 1e-16
++
+     # ═══ Fixed model dimensions ═══════════════════════════════════════════════
+     nx_phys: int = 6   # physical states: q1, q2, q3, dq1, dq2, dq3
+     nu: int = 3
+@@ -188,4 +212,6 @@ def config_json_dict(cfg: RunConfig) -> dict:
+         ORTH_POINT_STRIDE=cfg.orth_point_stride,
+         ORTH_RANK_TOL=cfg.orth_rank_tol,
+         ORTH_OBSERVE=cfg.orth_observe,
++        LR_THETA=cfg.lr_theta,   # P1: None = single optimizer group (pre-P1 behaviour)
++        EPS_THETA=cfg.eps_theta,  # P1-e: Adam eps for the log_params group only
+     )
