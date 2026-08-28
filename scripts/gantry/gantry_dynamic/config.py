@@ -113,17 +113,41 @@ class RunConfig:
     defect_scale: Optional[List[float]] = None
 
     # ═══ Orthogonal-projection regularization (docs/orthogonal-projection-plan.md D7) ═══
-    orth_beta: float = 0.0          # 0 = off (exact no-op, D7.2); >0 adds beta*||Q^T f_ANN||^2
+    # CHANGED (2026-08-28): `orth` is THE switch and `orth_beta` is the strength. Previously
+    # beta doubled as both, so "is orth on" was a magnitude to interpret rather than a flag to
+    # read, and `orth_observe` sat next to it looking like the enable it never was. A boolean
+    # cannot be misread. The contradictory state (switch on, strength zero) is rejected in
+    # __post_init__ rather than silently running as off, so the config can never claim an
+    # objective the run does not optimize.
+    # `orth_observe` (attach the basis WITHOUT penalizing, so the [joint-probe] orth-frac meter
+    # could watch a free ANN) is REMOVED: it was a third state whose only purpose was
+    # measurement, and it cost the full basis build to get. Reinstate it as a diagnostic if the
+    # inert-penalty measurement is needed again.
+    orth: bool = False              # is the penalty in the loss? False = no object, no basis build
+    orth_beta: float = 4.66e-4      # STRENGTH only, must be > 0. Ignored when orth=False.
+                                    # beta_center = V_MSE/E_drift (D7.9, measured 07-12)
     orth_point_stride: int = 100    # penalty point-set decimation (Step 5 coverage verified at 100)
     orth_rank_tol: float = 1e-12    # numerical-rank truncation of Q (plan Sect. 2.2 step 5)
-    orth_observe: bool = False      # attach the penalty object with beta possibly 0 so the
-                                    # [joint-probe] orth-frac meter observes WITHOUT penalizing
-                                    # (loss path skips at beta==0 -- beta=0 control stays a no-op)
 
     # ═══ Fixed model dimensions ═══════════════════════════════════════════════
     nx_phys: int = 6   # physical states: q1, q2, q3, dq1, dq2, dq3
     nu: int = 3
     ny: int = 3
+
+    # ───────────────────────── Validation ────────────────────────────────────
+    def __post_init__(self):
+        """Reject configs whose flags and behaviour would disagree.
+
+        Runs on construction AND on dataclasses.replace, so a config derived from this one
+        cannot reach a contradictory state either. Assigns nothing, so frozen=True holds.
+        """
+        if self.orth and self.orth_beta <= 0:
+            raise ValueError(
+                'orth=True with orth_beta=%r is not a state. `orth` is the switch and '
+                '`orth_beta` is the strength: set orth=False to disable the penalty, or give '
+                'orth_beta a positive value. (Before 2026-08-28 beta doubled as the switch, so '
+                'orth_beta=0.0 meant off; that spelling is gone precisely because it let a '
+                'config look enabled while running as off.)' % (self.orth_beta,))
 
     # ───────────────────────── Derived quantities ────────────────────────────
     @property
@@ -204,7 +228,10 @@ def config_json_dict(cfg: RunConfig) -> dict:
         ORTH_BETA=cfg.orth_beta,
         ORTH_POINT_STRIDE=cfg.orth_point_stride,
         ORTH_RANK_TOL=cfg.orth_rank_tol,
-        ORTH_OBSERVE=cfg.orth_observe,
+        # CHANGED (2026-08-28): ORTH_OBSERVE removed with the field. ORTH is appended below
+        # rather than replacing it in place, because the key order above is load-bearing for
+        # old npz readers. ORTH_BETA alone no longer says whether the penalty was applied:
+        # a run with orth=False still carries a positive beta that did nothing.
         # Appended, not inserted: the pre-refactor key order above is load-bearing
         # for old npz readers. CLOSED_LOOP records which objective the run used --
         # without it an open-loop and a closed-loop run are indistinguishable in the
@@ -212,4 +239,5 @@ def config_json_dict(cfg: RunConfig) -> dict:
         CLOSED_LOOP=cfg.closed_loop,
         # Appended for backward compatibility with readers that rely on the old order.
         ADAM_EPS=cfg.adam_eps,
+        ORTH=cfg.orth,
     )

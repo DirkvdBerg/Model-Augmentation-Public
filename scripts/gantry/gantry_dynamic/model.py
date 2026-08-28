@@ -144,7 +144,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
     # JOINT_ESTIMATION=False).
     # CHANGED (orth-projection D7.1): OrthLoss subclass of ParamLoss, same
     # unconditional-no-op pattern; identical to ParamLoss while orth_penalty
-    # stays None (attached below only when cfg.orth_beta > 0).
+    # stays None (attached below only when cfg.orth is True).
     # CHANGED (multiple shooting D-127): MultipleShooting subclass of OrthLoss, same
     # unconditional-no-op pattern; identical to OrthLoss while n_seg==1 and
     # defect_weight==0 (the defaults), so every existing run is bit-identical.
@@ -242,11 +242,13 @@ def build_model(hp, cfg: RunConfig, data, norm):
         for net in (fit_sys.encoder, fit_sys.hfn):
             net.to(DTYPE_PT)
 
-    # Orthogonal-projection penalty (D7.1/D7.4): attached when enabled OR in
-    # observe mode (orth_observe: beta may be 0; the loss path skips at beta==0,
-    # so a beta=0 control keeps the proven no-op loss while the [joint-probe]
-    # orth-frac meter can observe). fit_sys.orth_penalty stays None otherwise.
-    if cfg.orth_beta > 0 or cfg.orth_observe:
+    # Orthogonal-projection penalty (D7.1/D7.4): attached when cfg.orth is set.
+    # fit_sys.orth_penalty stays None otherwise, which is the exact no-op of D7.2.
+    # CHANGED (2026-08-28): gated on the boolean `cfg.orth`, not on `cfg.orth_beta > 0`.
+    # __post_init__ guarantees beta > 0 whenever orth is True, so the attached penalty is
+    # always a real one; the observe branch (attach with beta possibly 0) is gone with the
+    # field. `orth=False` also skips the basis build, which the observe mode always paid for.
+    if cfg.orth:
         from .orth_penalty import build_orth_penalty
         fit_sys.orth_penalty = build_orth_penalty(cfg, data, norm)
 

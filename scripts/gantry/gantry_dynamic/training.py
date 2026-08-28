@@ -115,7 +115,7 @@ class _NfProbe:
         """One line: recovery + negation meters. Cost: scalars + one batched ANN
         forward over the fixed penalty points (measured 0.03 s, plan Step 3).
         combo part requires a parameterized block (joint runs); orth part only
-        an attached penalty (also fires for joint=False + orth_observe)."""
+        an attached penalty, i.e. cfg.orth, independently of joint estimation)."""
         fs = self.fit_sys
         combo_err, worst, rels = float('nan'), None, {}
         if self._pblock is not None:

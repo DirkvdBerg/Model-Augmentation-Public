@@ -59,21 +59,22 @@ CFG = RunConfig(
     joint_estimation=False,        # D-076: True = trainable damping/stiffness scalars (orth shakedown, 07-12)
     param_rmse_baseline=0.01,     # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
     # Orthogonal-projection penalty (docs/orthogonal-projection-plan.md; D-111 basis).
-    # beta_center = V_MSE/E_drift = 1e-4/2.15e-1 (D7.9, measured 07-12). First entry-file
-    # run triggers one fresh ~6 min basis build at up_sample=1 (cached thereafter).
+    # `orth` is the switch, `orth_beta` the strength; orth=True with beta<=0 raises rather than
+    # running as off (config.py __post_init__). orth=False skips the penalty AND its basis
+    # build. First run with orth=True triggers one fresh ~6 min basis build at up_sample=1
+    # (cached thereafter), so toggling this off is also the cheap path.
+    # beta_center = V_MSE/E_drift = 1e-4/2.15e-1 (D7.9, measured 07-12).
     # MEASURED 2026-08-27 (79502/79503, joint_estimation=False): this penalty is ACTIVE but
-    # INERT. It is gated on orth_beta alone, never on joint_estimation, so it does apply with
+    # INERT. It is gated on `orth` alone, never on joint_estimation, so it does apply with
     # theta frozen -- but the probe reads orth-frac 0.000 and V_orth 1e-14..1e-12 (already
     # beta-weighted, orth_projection.py:11) against a fit loss of order 1e-9+, so it is ~0.01%
     # of the loss. Its gradient is 2*beta*Q Q^T f_ANN, and orth-frac ~ 0 means that is ~0 too.
     # I.e. the ANN's correction already lies almost entirely OUTSIDE the baseline's parameter
-    # span without the penalty pushing it there.
+    # span without the penalty pushing it there. NOTE: that measurement was taken in the
+    # removed orth_observe mode (basis attached, penalty zero). Reproducing it now needs a
+    # diagnostic that attaches the basis directly, not a config toggle.
+    orth=True,
     orth_beta=4.66e-4,
-    # Set orth_beta=0 AND orth_observe=True for provably zero penalty while KEEPING the
-    # orth-frac / V_orth meter. With orth_beta=0 and orth_observe=False the penalty object is
-    # never attached (model.py:249) and the meter goes silent, which is how you lose the
-    # evidence that the term is inert.
-    orth_observe=False,
     # None = start at true values (run T); 14-vector aligned to PARAM_NAMES = detuned start (run D, D-076).
     param_init_detune=None,
     # param_init_detune=[1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90,
@@ -170,6 +171,11 @@ def main():
     print(f"  ANN_ACTIVATION: {cfg.ann_activation}")
     print(f"  JOINT_ESTIM:    {cfg.joint_estimation}")
     print(f"  LOSS ROLLOUT:   {'closed loop' if cfg.closed_loop else 'open loop'}")
+    # A run must state whether the orth penalty is in its objective. Without this line the
+    # only evidence at launch is whether a basis build happens, which is not something you
+    # can read off a log with confidence.
+    print(f"  ORTH:           " + (f"ON  (beta={cfg.orth_beta:.3e})" if cfg.orth
+                                   else "OFF (no penalty, no basis build)"))
     print(f"  SNR (noise):    {cfg.snr if cfg.snr is not None else 'None (noiseless)'}"
           + (f"  ->  sigma_n={data.sigma_n:.2e} m" if data.sigma_n is not None else ""))
     print(f"  save_dir:       {sdir}")
