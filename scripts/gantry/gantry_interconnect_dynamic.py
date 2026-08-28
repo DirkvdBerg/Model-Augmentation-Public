@@ -19,7 +19,7 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from gantry_dynamic.config import RunConfig, save_dir, config_json_dict
+from gantry_dynamic.config import RunConfig, save_dir, config_json_dict, git_provenance
 from gantry_dynamic.data import load_datasets, compute_normalization, VAL_FILES, TEST_FILES
 from gantry_dynamic.model import build_model, get_encoder_dims
 from gantry_dynamic.baselines import compute_baseline_fp_nrms
@@ -165,26 +165,41 @@ def main():
 
     default_hp_dict = cfg.hp
 
+    # Grouped by what each setting DETERMINES, because that is how two runs get compared:
+    # you ask "same objective? same model? same data?", not "same alphabetical order?".
+    # Hand-written rather than generated from RunConfig, deliberately: the value here is the
+    # density ("20000 -> 4000 Hz (D=5)", "(CAPPED)"), which a generic dumper cannot produce.
+    # Completeness of the DURABLE record is guaranteed elsewhere, by config.py's
+    # _assert_json_coverage; this banner is the human-readable view, not the evidence.
+    detune = 'true values' if cfg.param_init_detune is None else \
+             f'detuned ({len(cfg.param_init_detune)}-vector)'
     print(f"\nConfiguration:")
-    print(f"  MODE:           {cfg.mode}")
-    print(f"  ENCODER_INIT:   {cfg.encoder_init}")
-    print(f"  ANN_ACTIVATION: {cfg.ann_activation}")
-    print(f"  JOINT_ESTIM:    {cfg.joint_estimation}")
-    print(f"  LOSS ROLLOUT:   {'closed loop' if cfg.closed_loop else 'open loop'}")
-    # A run must state whether the orth penalty is in its objective. Without this line the
-    # only evidence at launch is whether a basis build happens, which is not something you
-    # can read off a log with confidence.
-    print(f"  ORTH:           " + (f"ON  (beta={cfg.orth_beta:.3e})" if cfg.orth
-                                   else "OFF (no penalty, no basis build)"))
-    print(f"  SNR (noise):    {cfg.snr if cfg.snr is not None else 'None (noiseless)'}"
-          + (f"  ->  sigma_n={data.sigma_n:.2e} m" if data.sigma_n is not None else ""))
-    print(f"  save_dir:       {sdir}")
-    print(f"  NF_SECONDS:     {cfg.nf_seconds}")
-    print(f"  ADAM_EPS:       {cfg.adam_eps:.1e}")
-    print(f"  na_nb (samples): {default_hp_dict['na_nb']}  "
-          f"({default_hp_dict['na_nb']/cfg.fs_new_hz*1000:.2f} ms)")
-    print(f"  Sampling rate:  {cfg.fs_new_hz} Hz (D={cfg.d})")
-    print(f"  Dtype:          {'float64' if cfg.use_f64 else 'float32'}")
+    print(f"  PROVENANCE:  git {git_provenance()}")
+    print(f"               run_id {run_id}   save={cfg.save_flag}")
+    print(f"               {sdir}")
+    print(f"  DATA:        {cfg.mode}   {cfg.fs_orig} -> {cfg.fs_new_hz} Hz (D={cfg.d})   "
+          f"stride={cfg.stride}")
+    print(f"               nf={cfg.nf} ({cfg.nf_seconds} s)   "
+          f"na_nb={default_hp_dict['na_nb']} ({default_hp_dict['na_nb']/cfg.fs_new_hz*1000:.2f} ms)"
+          f"   batch={cfg.batch_size}")
+    print(f"  MODEL:       encoder={cfg.encoder_init}   ann={cfg.ann_activation}   "
+          f"nx_ann={cfg.nx_ann}   {cfg.n_nodes_per_layer}x{cfg.n_hidden_layers}   "
+          f"up_sample={cfg.up_sample}")
+    # ann_route_ix is a HARD constraint (D-103: route to X and Y, never Theta-only) and was
+    # invisible in every log until now. Two runs differing only here are different experiments.
+    print(f"               ann_route_ix={tuple(cfg.ann_route_ix)}")
+    print(f"  OBJECTIVE:   rollout={'closed loop' if cfg.closed_loop else 'open loop'}   "
+          + (f"orth=ON (beta={cfg.orth_beta:.3e})" if cfg.orth
+             else "orth=OFF (no penalty, no basis build)"))
+    print(f"               joint={cfg.joint_estimation}   param_init={detune}   "
+          f"noise={cfg.snr if cfg.snr is not None else 'None (noiseless)'}"
+          + (f" -> sigma_n={data.sigma_n:.2e} m" if data.sigma_n is not None else ""))
+    # n_its silently overrides epochs, so a capped smoke run would otherwise be
+    # indistinguishable in the log from a full run of the same config.
+    print(f"  OPTIM:       lr={cfg.lr:g}   adam_eps={cfg.adam_eps:.1e}   "
+          f"epochs={cfg.epochs}"
+          + (f"   n_its={cfg.n_its} (CAPPED)" if cfg.n_its is not None else "")
+          + f"   seed={cfg.seed}   {'float64' if cfg.use_f64 else 'float32'}")
     print(f"\nDefault hyperparameters (may be overridden by checkpoint):")
     for k, v in default_hp_dict.items():
         print(f"  {k}: {v}")
@@ -201,7 +216,8 @@ def main():
     # D-093: self-documenting run folder — config + resolved hp.
     if cfg.save_flag:
         with open(os.path.join(sdir, 'config.json'), 'w') as _f:
-            json.dump({**config_json_dict(cfg), 'hp': hp, 'run_id': run_id}, _f, indent=2)
+            json.dump({**config_json_dict(cfg, git=git_provenance()),
+                       'hp': hp, 'run_id': run_id}, _f, indent=2)
 
     # Seed again before model construction (matches pre-refactor second seeding).
     np.random.seed(cfg.seed)

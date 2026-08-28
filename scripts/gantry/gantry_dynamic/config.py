@@ -11,8 +11,10 @@ dict; it is NOT a second place to edit parameters. Edit the RunConfig fields.
 """
 __project_origin__ = "added"
 
+import functools
 import os
-from dataclasses import dataclass, field
+import subprocess
+from dataclasses import dataclass, field, fields
 from typing import Optional, List
 
 import numpy as np
@@ -216,8 +218,66 @@ def save_dir(cfg: RunConfig) -> str:
                         f'{cfg.mode}_{cfg.encoder_init}')
 
 
-def config_json_dict(cfg: RunConfig) -> dict:
-    """Config metadata for the results npz -- exact keys and order of the pre-refactor dump."""
+@functools.lru_cache(maxsize=1)
+def git_provenance() -> str:
+    """Which code produced this run: '0bded3d Augmentation dirty:302 diff:3b437e0c'.
+
+    The config says what was asked for; this says what was running. Without it a log six
+    months old cannot be tied to a version of the code.
+
+    The DIFF HASH is the part that earns its keep. A bare 'dirty' flag is the same string on
+    every run of a working tree that stays dirty for a month, i.e. no information. Hashing
+    `git diff HEAD` makes two runs from one commit with different uncommitted work
+    distinguishable: same SHA and same diff hash means the tracked code was identical.
+    Untracked files do NOT affect it; hashing the whole worktree would, and is not worth the
+    runtime.
+
+    Cached because the code cannot change mid-run, so the four subprocesses (one of them
+    `git diff` over the whole tree) are paid once however often this is called. NOT called at
+    import: `config_json_dict` takes the string as an argument so importing this module never
+    shells out.
+    """
+    def _git(*args):
+        return subprocess.run(('git',) + args, cwd=REPO_ROOT, capture_output=True,
+                              text=True, check=True).stdout.strip()
+    try:
+        sha = _git('rev-parse', '--short', 'HEAD')
+        branch = _git('rev-parse', '--abbrev-ref', 'HEAD')
+        n_dirty = len([ln for ln in _git('status', '--porcelain').splitlines() if ln.strip()])
+        if not n_dirty:
+            return '%s %s clean' % (sha, branch)
+        diff = subprocess.run(('git', 'diff', 'HEAD'), cwd=REPO_ROOT,
+                              capture_output=True, check=True)
+        h = subprocess.run(('git', 'hash-object', '--stdin'), cwd=REPO_ROOT,
+                           input=diff.stdout, capture_output=True, check=True)
+        return '%s %s dirty:%d diff:%s' % (sha, branch, n_dirty,
+                                           h.stdout.decode().strip()[:8])
+    except Exception as e:
+        # A run outside a checkout (cluster tarball, extracted archive) must still run.
+        return 'unavailable (%s)' % type(e).__name__
+
+
+# RunConfig fields deliberately NOT in config.json, each with the reason it is safe to omit.
+# Everything else must appear, enforced at import by _assert_json_coverage below.
+_JSON_EXEMPT = (
+    'nx_phys', 'nu', 'ny',      # fixed model dimensions; cannot vary between runs
+    'fs_new',                   # recorded RESOLVED as FS_NEW (None means fs_orig)
+    'nf_override',              # effect is visible in the recorded NF
+    'na_nb_override',           # effect is visible in the recorded NA_NB
+)
+
+
+def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
+    """Config metadata for the results npz -- exact keys and order of the pre-refactor dump.
+
+    PURE function of its arguments: `git` is passed IN rather than queried here, so importing
+    this module never shells out and the import-time coverage check below is free. The entry
+    point passes `git=git_provenance()`.
+
+    Keys are hand-written, not derived from field names, because they are a contract with
+    readers of old npz files: deriving them would turn every future field rename into a silent
+    schema change. Completeness is enforced instead by _assert_json_coverage.
+    """
     return dict(
         MODE=cfg.mode, ENCODER_INIT=cfg.encoder_init,
         ANN_ACTIVATION=cfg.ann_activation, FS_NEW=cfg.fs_new_hz, D=cfg.d,
@@ -240,4 +300,57 @@ def config_json_dict(cfg: RunConfig) -> dict:
         # Appended for backward compatibility with readers that rely on the old order.
         ADAM_EPS=cfg.adam_eps,
         ORTH=cfg.orth,
+        # Added 2026-08-28. These all change what a run IS and none of them was recorded,
+        # so runs that differed in any of them were indistinguishable in the saved metadata:
+        #   ANN_ROUTE_IX  which state rows the ANN writes (D-103: X and Y, never Theta-only)
+        #   N_ITS         batch-update cap; a capped smoke run otherwise reads as a full one
+        #   STRIDE        window decimation, i.e. how many training samples exist
+        #   STATE_LAYOUT  the model/training hyperparameters not already in `hp`
+        ANN_ROUTE_IX=list(cfg.ann_route_ix),
+        STRIDE=cfg.stride,
+        N_ITS=cfg.n_its,
+        NF_SECONDS=cfg.nf_seconds,
+        USE_F64=cfg.use_f64,
+        SAVE_FLAG=cfg.save_flag,
+        NF_PROBE_PRINT=cfg.nf_probe_print,
+        NX_ANN=cfg.nx_ann,
+        N_NODES_PER_LAYER=cfg.n_nodes_per_layer,
+        N_HIDDEN_LAYERS=cfg.n_hidden_layers,
+        UP_SAMPLE=cfg.up_sample,
+        BATCH_SIZE=cfg.batch_size,
+        LR=cfg.lr,
+        EPOCHS=cfg.epochs,
+        NF=cfg.nf,
+        NA_NB=cfg.na_nb,
+        # Multiple shooting (D-127). n_seg=1 with both weights 0 is an exact no-op, which is
+        # exactly why a non-default has to be visible.
+        N_SEG=cfg.n_seg,
+        DEFECT_WEIGHT=cfg.defect_weight,
+        DEFECT_ACC_WEIGHT=cfg.defect_acc_weight,
+        DEFECT_NORM=cfg.defect_norm,
+        DEFECT_SCALE=cfg.defect_scale,
+        # Which CODE ran, as opposed to what it was asked to do. None when the caller did not
+        # look it up; the entry point passes git_provenance().
+        GIT=git,
     )
+
+
+def _assert_json_coverage():
+    """Every RunConfig field is recorded in config.json, or exempted with a reason.
+
+    Runs at import, so adding a field to RunConfig without deciding how it is logged fails
+    immediately and names the field, instead of producing runs whose metadata quietly omits
+    it. This is why config_json_dict can stay hand-written: the keys remain a stable contract
+    while completeness is still guaranteed.
+
+    Free: config_json_dict is pure and is called here without `git`, so no subprocess runs.
+    """
+    recorded = {k.lower() for k in config_json_dict(RunConfig())}
+    missing = {f.name for f in fields(RunConfig)} - recorded - set(_JSON_EXEMPT)
+    if missing:
+        raise ImportError(
+            'RunConfig fields missing from config.json: %s. Add each to config_json_dict, '
+            'or to _JSON_EXEMPT with the reason it is safe to omit.' % sorted(missing))
+
+
+_assert_json_coverage()
