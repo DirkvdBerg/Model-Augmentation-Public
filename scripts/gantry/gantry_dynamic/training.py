@@ -15,6 +15,7 @@ import torch
 from .config import RunConfig
 from .model import train_model
 from .diagnostics import aug_state_r2
+from model_augmentation.fit_systems.interconnect import WindowErrorStats
 
 
 def save_checkpoint_weights(fit_sys, base_path):
@@ -44,14 +45,30 @@ def load_checkpoint(fit_sys, base_path, joint_estimation):
 
 
 class _NfProbe:
-    """Per-epoch train+val nf-window RMS recorded alongside validation (D-095).
+    """Per-epoch nf-window error statistics, train and val, recorded alongside validation (D-095).
 
-    deepSI validates once per epoch through `cal_validation_error`. This records the nf-window RMS
-    (same nf as training, encoder re-init per window, physical meters via mode='RMS') for BOTH a
-    train trajectory and the val data into `fit_sys.Loss_train_nf` / `Loss_val_nf`, aligned with
-    `fit_sys.Loss_val`. Non-overlapping windows (stride=nf) keep each probe at ~one sim-pass.
-    Compare train vs val nf-RMS to read generalization (train low/val high) against long-rollout
-    drift (both bounded while sim-RMS grows).
+    CHANGED (2026-08-28): both numbers came from deepSI's `System.n_step_error`, the last deepSI
+    call on the training path, and both were wrong for the comparison they invited:
+      - it drives the model through `measure_act_multi`, i.e. OPEN LOOP always, never
+        `self.simulate`. In a closed-loop run it measured a different system than the one being
+        optimised, printed next to a closed-loop `bestfit`, unlabelled;
+      - the train side was ONE trajectory, `train_list[0]` = T1_standstill_Ym30, the least
+        excited record, standing in for 14;
+      - it returned `np.mean` over the n = 1..nf growth curve, not the RMS over an nf window;
+      - and each side cost a full extra pass per epoch.
+
+    Now: the TRAIN statistics come from `fit_sys.loss_stats`, accumulated inside loss() over
+    every training window of all 14 trajectories, through whatever rollout the run uses, at no
+    extra compute. The VAL statistics come from ONE fixed 256-window batch through
+    `fit_sys.simulate`, so both sides are in the run's own loop mode by construction.
+
+    That val number is worth its ~1/260-of-an-epoch because it DECOMPOSES the reading:
+    train-nf vs val-nf is generalisation at fixed horizon, val-nf vs val-sim is horizon at fixed
+    generalisation, and train-nf vs val-sim (the only comparison available before) is both at once.
+
+    The train row is a RUNNING MEAN over weights that moved during the epoch, not a snapshot. For
+    the mismatch reading the bias is conservative: it reads slightly high, which makes the gap
+    look smaller, so it cannot manufacture a mismatch that is not there.
 
     # CHANGED (closed-loop seam): this was a MONKEY PATCH on `fit_sys.cal_validation_error`,
     # installed on every production run, wrapping the original and returning its value untouched.
@@ -68,15 +85,35 @@ class _NfProbe:
     #     `__dict__` and dropped the patched method without anyone noticing.
     """
 
-    def __init__(self, fit_sys, nf, train_sd, val_sd, do_print=True):
+    N_VAL_WINDOWS = 256      # a tight RMS estimate; all windows costs ~7x for no more precision
+
+    def __init__(self, fit_sys, nf, cfg, val_sd, do_print=True):
         self.fit_sys = fit_sys
         self.nf = nf
-        self.stride = max(1, nf)
-        self.train_sd = train_sd
-        self.val_sd = val_sd
         self.do_print = do_print
         fit_sys.Loss_train_nf = []
         fit_sys.Loss_val_nf = []
+
+        # Train side: statistics accumulate inside loss() over every training window, so there is
+        # nothing to build here and no extra rollout. Attaching the object IS the switch.
+        fit_sys.loss_stats = WindowErrorStats(fit_sys.norm.ystd, dtype=cfg.dtype_pt)
+
+        # Val side: ONE fixed batch, drawn once. Fixed and not resampled per epoch, because a
+        # changing window set puts selection noise on top of the learning signal and the two
+        # cannot be separated afterwards.
+        self._val_stats_obj = WindowErrorStats(fit_sys.norm.ystd, dtype=cfg.dtype_pt)
+        self._val_batch, self._val_kwargs = None, {}
+        try:
+            d = fit_sys.make_training_data(fit_sys.norm.transform(val_sd), nf=nf, stride=nf)
+            n = min(self.N_VAL_WINDOWS, len(d[0]))
+            ix = np.random.default_rng(cfg.seed).choice(len(d[0]), size=n, replace=False)
+            cols = [torch.as_tensor(np.asarray(a)[ix], dtype=cfg.dtype_pt) for a in d]
+            self._val_batch = tuple(cols[:4])
+            # Arrays a simulator asked for travel BY NAME, the same convention fit() uses.
+            names = getattr(fit_sys.simulator, 'extra_array_names', ())
+            self._val_kwargs = dict(zip(names, cols[4:]))
+        except Exception as e:
+            print(f'    [nf val  ] window batch unavailable (non-fatal): {e}')
         # Joint/orth probe state (user 07-12: live recovery + negation meters).
         # Nominal combos computed ONCE; sim-study meter -- on real data the
         # reference must become params_init (no nominal truth exists there).
@@ -102,14 +139,35 @@ class _NfProbe:
             fit_sys.Probe_V_orth = []
             fit_sys.Probe_param_loss = []
 
-    def _nf_rms(self, sd):
+    def _val_stats(self):
+        """The fixed val window batch, through the SAME rollout the loss uses.
+
+        `fit_sys.simulate` and not `closed_loop_free_run_rms`: the mode then follows the attached
+        simulator exactly as the loss does, so a closed-loop run gives closed-loop numbers and an
+        open-loop run open-loop ones, with no branch here and no second rollout to drift.
+        """
+        if self._val_batch is None:
+            return None
+        uh, yh, uf, yf = self._val_batch
         try:
             with torch.no_grad():
-                e = self.fit_sys.n_step_error(sd, nf=self.nf, stride=self.stride,
-                                              mode='RMS', mean_channels=True)
-            return float(np.mean(e))
-        except Exception:
-            return float('nan')
+                x = self.fit_sys.encoder(uh, yh)
+                y_pred, _ = self.fit_sys.simulate(x, uf, yf, **self._val_kwargs)
+            self._val_stats_obj.reset()
+            self._val_stats_obj.update(y_pred, yf)
+            return self._val_stats_obj.summary()
+        except Exception as e:
+            print(f'    [nf val  ] failed (non-fatal): {e}')
+            return None
+
+    @staticmethod
+    def _fmt(tag, s):
+        return ('    [nf %-5s] rms %.3e  chan %s  grow %s  bias %s  (%d win)'
+                % (tag, s['rms'],
+                   '/'.join('%.1e' % v for v in s['chan']),
+                   ('%.2fx' % s['grow']) if np.isfinite(s['grow']) else 'n/a',
+                   '/'.join('%+.1e' % v for v in s['bias']),
+                   s['n_win']))
 
     def _joint_probe(self):
         """One line: recovery + negation meters. Cost: scalars + one batched ANN
@@ -156,12 +214,30 @@ class _NfProbe:
 
     def __call__(self, fit_sys, val_sys_data, value):
         """validation_probes entry: side effects only, `value` is read-only here."""
-        tr = self._nf_rms(self.train_sd)
-        vl = self._nf_rms(self.val_sd)
-        self.fit_sys.Loss_train_nf.append(tr)
-        self.fit_sys.Loss_val_nf.append(vl)
+        # Train: read and RESET, so each line covers the windows trained since the last
+        # validation rather than the whole run.
+        tr_s = fit_sys.loss_stats.summary() if fit_sys.loss_stats is not None else None
+        if fit_sys.loss_stats is not None:
+            fit_sys.loss_stats.reset()
+        va_s = self._val_stats()
+        self.fit_sys.Loss_train_nf.append(tr_s['rms'] if tr_s else float('nan'))
+        self.fit_sys.Loss_val_nf.append(va_s['rms'] if va_s else float('nan'))
         if self.do_print:
-            print(f'    [nf-probe] train nf-RMS={tr:.4e}   val nf-RMS={vl:.4e} [m]  (@nf={self.nf})')
+            if tr_s:
+                print(self._fmt('train', tr_s))
+            if va_s:
+                print(self._fmt('val', va_s))
+            # The comparison, stated rather than left as arithmetic. `value` is the 12 s free-run
+            # sim-RMS that selects the checkpoint, so both ratios are against the same scalar and
+            # each is labelled with what it confounds.
+            if np.isfinite(value):
+                parts = []
+                if va_s and va_s['rms'] > 0:
+                    parts.append('%.2fx val_nf (horizon)' % (value / va_s['rms']))
+                if tr_s and tr_s['rms'] > 0:
+                    parts.append('%.2fx train_nf (horizon+gen)' % (value / tr_s['rms']))
+                if parts:
+                    print('    [nf gap  ] val_sim %.3e = %s' % (value, ' = '.join(parts)))
         if (self._pblock is not None
                 or getattr(self.fit_sys, 'orth_penalty', None) is not None):
             try:
@@ -170,11 +246,21 @@ class _NfProbe:
                 print(f'    [joint-probe] failed (non-fatal): {e}')
 
 
-def _install_nf_val_probe(fit_sys, hp, cfg, train_sd, val_sd):
+def _install_nf_val_probe(fit_sys, hp, cfg, val_sd):
     """Append an `_NfProbe` to `fit_sys.validation_probes`; return the previous tuple to restore."""
     prev = fit_sys.validation_probes
-    fit_sys.validation_probes = tuple(prev) + (
-        _NfProbe(fit_sys, hp['nf'], train_sd, val_sd, do_print=cfg.nf_probe_print),)
+    probe = _NfProbe(fit_sys, hp['nf'], cfg, val_sd, do_print=cfg.nf_probe_print)
+    fit_sys.validation_probes = tuple(prev) + (probe,)
+    if cfg.nf_probe_print:
+        mode = 'closed loop' if getattr(fit_sys, 'simulator', None) is not None else 'open loop'
+        print(f"\n[nf] rms = RMS over nf={hp['nf']} ({cfg.nf_seconds:.3f} s) windows, "
+              f"{mode}, metres")
+        print('     chan = per-channel X/Theta/Y | grow = RMS(last step)/RMS(first) | '
+              'bias = mean residual')
+        print(f'     train = all windows since the last validation, running mean | '
+              f'val = {probe.N_VAL_WINDOWS} fixed windows, snapshot')
+        print('     metre weighting is NOT the objective\'s, which weights channels by 1/ystd^2;')
+        print('     numbers are not comparable ACROSS loop modes, the [nf gap] ratios are')
     return prev
 
 
@@ -207,7 +293,7 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
     fit_sys.bestfit = float('inf')
     t0 = time.time()
     # D-095: piggyback the nf-window RMS diagnostic (train + val); selection stays full-traj sim-RMS.
-    _prev_probes = _install_nf_val_probe(fit_sys, hp, cfg, data.train_list[0], data.val_ckpt_data)
+    _prev_probes = _install_nf_val_probe(fit_sys, hp, cfg, data.val_ckpt_data)
     try:
         bestfit = train_model(fit_sys, hp, cfg, data,
                               epochs=epochs_remaining,

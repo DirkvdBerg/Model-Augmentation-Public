@@ -975,6 +975,75 @@ class SSE_Interconnect_ParamLoss(SSE_Interconnect):
 
 
 @added
+class WindowErrorStats:
+    """Residual statistics over the loss rollout's nf-step windows, in physical units.
+
+    The rollout that loss() performs IS an nf-step prediction over every training window, so the
+    error statistics below are a by-product of work already done: four detached reductions on a
+    tensor that already exists. The alternative, and what this replaces, was a second open-loop
+    pass per epoch that recomputed a worse version of the same thing.
+
+    Because it accumulates SQUARES and takes the root once, `rms` is the exact RMS over every
+    window it saw, not an average of per-window RMS values. Those differ (Jensen), and the
+    per-window average is systematically smaller.
+
+    DELIBERATELY NOT AN nn.Module. deepSI builds its optimizer parameter groups by scanning the
+    fit-system for modules, so a module reachable both through `hfn` and through an attribute
+    here puts every one of its parameters in two groups and Adam refuses to construct. Holding
+    only tensors and floats keeps this object invisible to that scan.
+
+    Units: `ystd` converts the normalised residual to metres, which is what makes these numbers
+    comparable with a sim-RMS. Note that metres is NOT the objective's weighting, which weights
+    each channel by 1/ystd**2; the two coincide only if ystd is equal across channels.
+    """
+
+    def __init__(self, ystd, dtype=None, device=None):
+        y = torch.as_tensor(np.asarray(ystd, dtype=float).ravel())
+        self.ystd = y.to(dtype=dtype, device=device) if dtype is not None else y
+        self.reset()
+
+    def reset(self):
+        self._sq = 0.0           # sum e^2, all elements
+        self._sq_ch = None       # sum e^2 per channel
+        self._sum_ch = None      # sum e   per channel (the bias the RMS hides)
+        self._sq_first = 0.0     # sum e^2 at the first step of the window
+        self._sq_last = 0.0      # sum e^2 at the last step
+        self._n = 0              # elements contributing to _sq
+        self._n_win = 0          # windows seen
+        self._n_step = 0         # elements contributing to _sq_first / _sq_last
+
+    @torch.no_grad()
+    def update(self, y_pred, y_true):
+        """Accumulate one batch. y_pred, y_true: (batch, nf, ny), NORMALISED."""
+        e = (y_pred - y_true).detach() * self.ystd.to(y_pred.dtype)
+        sq = e * e
+        sq_ch = sq.sum(dim=(0, 1))
+        self._sq += float(sq.sum())
+        self._sq_ch = sq_ch if self._sq_ch is None else self._sq_ch + sq_ch
+        s_ch = e.sum(dim=(0, 1))
+        self._sum_ch = s_ch if self._sum_ch is None else self._sum_ch + s_ch
+        self._sq_first += float(sq[:, 0, :].sum())
+        self._sq_last += float(sq[:, -1, :].sum())
+        self._n += e.numel()
+        self._n_win += e.shape[0]
+        self._n_step += e.shape[0] * e.shape[2]
+
+    def summary(self):
+        """rms and per-channel rms [m], the within-window growth ratio, and the bias [m]."""
+        if not self._n:
+            return None
+        rms = (self._sq / self._n) ** 0.5
+        chan = ((self._sq_ch / (self._n // self._sq_ch.numel())) ** 0.5).tolist()
+        bias = (self._sum_ch / (self._n // self._sum_ch.numel())).tolist()
+        first = (self._sq_first / self._n_step) ** 0.5
+        last = (self._sq_last / self._n_step) ** 0.5
+        # Growth ACROSS the window: >1 means the error is still opening up at the horizon the
+        # loss stops at, which is the window-mismatch signal that needs no validation data.
+        grow = (last / first) if first > 0 else float('nan')
+        return dict(rms=rms, chan=chan, bias=bias, grow=grow, n_win=self._n_win)
+
+
+@added
 class SSE_Interconnect_Composed(SSE_Interconnect):
     """MSE plus composed penalty terms, in ONE class instead of a subclass per feature.
 
@@ -997,6 +1066,7 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
     """
 
     orth_penalty = None     # class default; instance attribute set by the pipeline (D7.1/D7.8)
+    loss_stats = None       # ditto: a WindowErrorStats, or None for no statistics at all
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1025,6 +1095,11 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
         x = self.encoder(uhist, yhist)                                    # type: ignore
         y_pred, _ = self.simulate(x, ufuture, yfuture, **Loss_kwargs)
         L = nn.functional.mse_loss(yfuture, y_pred)
+        # Window error statistics, from the rollout that just happened. Accumulated HERE, before
+        # the penalties, so the reported error is the fit error and does not move when orth or
+        # joint estimation is toggled. None = no statistics, an exact no-op.
+        if self.loss_stats is not None:
+            self.loss_stats.update(y_pred, yfuture)
         blocks = self.hfn.connected_blocks                                # type: ignore
         # Parameter regularisation, anchored to each block's init values (Jan's prior semantics).
         # Empty when no block is parameterised, i.e. the joint_estimation=False case.

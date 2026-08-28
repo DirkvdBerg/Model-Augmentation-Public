@@ -1416,3 +1416,135 @@ arguments and the gradient-norm diagnostic dies with
 `loss() takes 5 positional arguments but 6 were given`. `fit()` was updated for this
 (`interconnect.py:832-850`, extra arrays passed BY NAME); this call site was not. One-call-site
 fix, unrelated to the chain collapse, and it would fail identically without `MultipleShooting`.
+
+---
+
+## PLAN 2026-08-28 — Window-error statistics from the loss; retire both `n_step_error` probes
+
+### Why the current `[nf-probe]` line is wrong
+
+Both numbers on it come from deepSI's `System.n_step_error`, the ONLY remaining deepSI call on the
+training path. Everything else (fit loop, loss, rollout, validation) is ours. Consequences:
+
+- **train nf-RMS is open-loop, always**, because `n_step_error` drives the model with recorded
+  inputs through `measure_act_multi` and never touches `self.simulate`. In a closed-loop run it
+  measures a different system than the one being optimised, while `bestfit` is closed-loop. The
+  log shows an open-loop meter beside a closed-loop selection criterion, unlabelled.
+- **train nf-RMS is ONE trajectory**, `data.train_list[0]` = `T1_standstill_Ym30`, the least
+  excited record in the set, standing in for 14.
+- **It is `np.mean` over the n = 1..nf error-growth curve**, not the RMS over an nf window.
+- **val nf-RMS is a fourth thing measured a fourth way** (open loop, mean-over-horizons,
+  non-overlapping `stride=nf` windows) and no decision depends on it: selection uses val sim-RMS.
+
+Each probe also costs a full extra pass per epoch to recompute something the loss already has.
+
+### The number that was being thrown away
+
+`loss()` already rolls nf=400 steps from an encoder-initialised state, over every training window
+of all 14 trajectories, THROUGH `self.simulate`. So it is already in the run's own loop mode:
+closed-loop run gives a closed-loop number, open-loop run an open-loop one, with no branch,
+because it IS the objective. It is discarded because the loss reduces to a normalised scalar with
+the penalties folded in.
+
+`sqrt` of the accumulated fit MSE is the exact RMS over those windows. Not an estimate: every
+batch has the same element count, so the mean of per-batch MSEs is the MSE over all windows
+pooled. Accumulate the squares, take `sqrt` once at the end.
+
+Coverage is 66560 of 66626 windows per epoch: deepSI drops the `66626 % 256 = 66` remainder, and
+reshuffles, so the dropped windows differ each epoch.
+
+### The five statistics, all free
+
+`e = (y_pred - yfuture) * ystd`, shape `(batch, nf, ny)`, already materialised. Four detached
+reductions over ~0.3M elements against 400 model steps per window:
+
+| statistic | reduction | what it answers |
+|-|-|-|
+| `rms` [m] | `sum(e**2)` | is the training window learning |
+| `chan` [m] | `sum(e**2)` over (b,t) | which axis carries it (D-103 routing) |
+| `grow` | `sum(e**2)` at t=0 and t=nf-1 | does error grow across the window: window mismatch WITHOUT needing validation |
+| `bias` [m] | `sum(e)` over (b,t) | DC/offset the RMS hides (drift history) |
+| `param_loss`, `V_orth` | already computed in `loss()` | stop `sqrt loss` being an opaque mixture |
+
+METRES, decided: comparability with the 12 s val sim-RMS is the point. Note in the legend that the
+metre weighting is NOT the objective's, which weights channels by `1/ystd**2`.
+
+### Validation: one fixed batch, not the old probe
+
+Keeping a val nf number is worth ~1/260 of an epoch's forward work because it DECOMPOSES the
+comparison:
+
+- `train-nf` vs `val-nf` -> generalisation, horizon held fixed
+- `val-nf` vs `val-sim` -> horizon, generalisation held fixed
+- `train-nf` vs `val-sim` -> what you can read today: both at once, indistinguishable
+
+FIXED windows, chosen once with a seeded RNG, never resampled. Resampling per epoch puts
+window-selection noise on top of the learning signal and the two cannot be separated afterwards.
+256 windows over V1-V4 is already a tight RMS estimate; using all of them costs ~0.7% and buys
+nothing.
+
+### Implementation
+
+1. **`WindowErrorStats`** in `interconnect.py`, `@added`. A PLAIN object, deliberately not an
+   `nn.Module`: deepSI builds optimizer parameter groups by scanning the fit-system for modules,
+   and holding a module in two places is what produced
+   `ValueError: some parameters appear in more than one parameter group` during the composed-class
+   work. Methods: `reset()`, `update(y_pred, yfuture)`, `summary()`.
+2. **Composition, not a subclass.** `loss_stats = None` declared on `SSE_Interconnect_Composed`
+   beside `orth_penalty`, plus two lines in `loss()`:
+   `if self.loss_stats is not None: self.loss_stats.update(y_pred, yfuture)`.
+   `None` is an exact no-op. Accumulated BEFORE the penalties, so the number does not move when
+   orth or joint estimation is toggled.
+3. **`_WindowProbe` replaces `_NfProbe`** in `training.py`. Builds the val windows once in
+   `__init__` via `make_training_data(..., stride=nf)` and keeps a fixed 256-window subset. On
+   each validation it calls **`fit_sys.simulate(...)`** under `no_grad`, feeds a second
+   `WindowErrorStats`, then reads and resets `fit_sys.loss_stats` for the train side.
+   Calling `simulate` rather than `closed_loop_free_run_rms` is what makes open loop work with NO
+   branch: mode follows the attached simulator, exactly as the loss does.
+4. **Print.** Legend once before `fit()`; three lines per validation, same field order on both
+   rows so a column reads down the epochs, and window counts on each row so a capped `n_its` run
+   cannot be misread as a full one. The third line states the two ratios and labels what each
+   confounds, so the mismatch reading is in the log rather than in the reader's head.
+5. **Delete** `_nf_rms` and both `n_step_error` calls. `Loss_train_nf` / `Loss_val_nf` keep their
+   names and still feed the npz at `training.py:218-219`; only their contents improve.
+
+### Print format
+
+```
+[nf] rms = RMS over nf=400 (0.100 s) windows, closed loop, metres
+     chan = per-channel X/Theta/Y | grow = RMS(last step)/RMS(first) | bias = mean residual
+     train = all windows this epoch, running mean | val = 256 fixed windows, snapshot
+     metre weighting is NOT the objective's (which weights channels by 1/ystd^2)
+
+  [nf train] rms 1.234e-06  chan 1.1e-06/2.0e-07/8.8e-07  grow 3.4x  bias +2.1e-08  (66560 win)
+  [nf val  ] rms 1.551e-06  chan 1.4e-06/2.6e-07/9.1e-07  grow 3.9x  bias +3.0e-08  (256 win)
+  [nf gap  ] val_sim 4.20e-06 = 2.7x val_nf (horizon) = 3.4x train_nf (horizon+gen)
+```
+
+The legend prints the ACTUAL mode. Numbers are not comparable across modes: a closed-loop rollout
+is driven by `y_data` through the controller, which suppresses the residual, so closed-loop `rms`
+is systematically smaller for the same model. The `[nf gap]` RATIOS are comparable across modes,
+since both terms move together.
+
+### Known limitations, to state in the log rather than fix
+
+- **Running mean, not a snapshot.** The train row averages over weights that moved during the
+  epoch, so it is the RMS over the windows AS TRAINED. The bias is conservative for the mismatch
+  reading: it reads slightly high, which makes the val/train gap look SMALLER, so it cannot
+  manufacture a mismatch that is not there. At lr=1e-6 over 260 updates it is small anyway.
+- **`train-nf` vs `val-sim` mixes horizon and generalisation.** Isolating horizon alone needs a
+  12 s free run on the TRAINING records, ~2.5% of an epoch, explicitly ruled out. `val-nf` is what
+  makes the decomposition possible without paying that.
+
+### Gates
+
+1. `loss_stats = None` leaves loss and gradient bit-identical to today (the no-op contract).
+2. `stats.rms` equals an independently computed `sqrt(mean((e*ystd)**2))` on the same batch,
+   EXACTLY. Also assert on real data that averaging per-batch RMS values gives a DIFFERENT and
+   smaller number, so the Jensen trap stays caught by a test rather than by memory.
+3. `grow`, `bias` and per-channel checked against a synthetic residual with known values.
+4. Open-loop run (`simulator = None`) produces numbers through the open-loop rollout, and they
+   differ from the closed-loop ones on the same weights.
+5. No duplicate optimizer parameter groups, and `fit_sys.__dict__` still pickles (deepSI does
+   `torch.save(self.__dict__)` at every validation).
+6. Measured per-batch overhead, so "no extra compute" is a number and not a claim.
