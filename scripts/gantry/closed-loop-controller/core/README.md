@@ -1,3 +1,15 @@
+# `core/` -- SUPERSEDED 2026-08-28. Reference only, not on any live path.
+
+> The training path no longer imports this folder. `gantry_interconnect_dynamic.py` now uses
+> `scripts/gantry/gantry_dynamic/controller.py`, one module holding the same five layers
+> (FP constants, `ruleOfThumb`, tf-to-ss, `RECORD_Y_OP`, bank + `build_closed_loop`) with no
+> `sys.path` insert and no diagnostics on the import chain. Verified bit-identical: the bank
+> built over all 22 records at 4 kHz matches this chain's to `max|new - old| = 0` on `M_state`,
+> `M_error`, `ystd` and `stdu`, with the same 9 distinct controllers and the same `physical_D`.
+> The files below are kept so that equivalence can be re-checked. Do not import them.
+>
+> Everything after this line describes the pre-2026-08-28 arrangement.
+
 # `core/` -- the closed-loop modules the TRAINING path needs, and nothing else
 
 Created 2026-08-26. This folder is a **copy**, not a move. The originals stay in the parent

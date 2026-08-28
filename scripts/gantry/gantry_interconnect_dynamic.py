@@ -12,6 +12,7 @@ import os
 import sys
 import json
 from datetime import datetime
+from dataclasses import replace
 
 import numpy as np
 import torch
@@ -39,9 +40,19 @@ CFG = RunConfig(
     # --- Experiment identity ---
     # Track: 'joint' (broadband [1,200] Hz) or 'augmentation' (narrowband [130,180] Hz).
     # Doubles as the dataset folder key (data/gantry/matlab/trajectory/<mode>) and the
-    # save_dir / orth-basis-cache key. 'augmentation_ma50' = augmentation band with the
-    # 50/50 payload/hidden-MSD mass split (MA_FRAC=0.50 in generate_trajectory_data.m).
-    mode='augmentation_ma50',
+    # save_dir / orth-basis-cache key.
+    #   'augmentation'         MA_FRAC=0.10
+    #   'augmentation_ma50'    MA_FRAC=0.50
+    #   'augmentation_ma50_a5' MA_FRAC=0.50 AND 5x excitation (AMP_SCALE=5 in
+    #                          generate_trajectory_data.m). Measured 2026-08-27: delta_a scales
+    #                          exactly 5.00x, no record hit the limiter, and the augmentation
+    #                          target is 91.1 N of which 99.4% is absorber dynamics (the rest
+    #                          is the static L0 centre-of-mass offset).
+    # NOTE gtd_config sets mh_rigid = mh - ma, so the total below-absorber rigid mass is
+    # conserved. That explains the insensitive rigid response, but absorber dynamics are not
+    # globally invariant to mass ratio. The 50/50 intervention is closed because it reduced the
+    # measured augmentation signal, not because the ratio is absent from the dynamics.
+    mode='augmentation_ma50_a5',
     # 'linear_map' = Hoekstra 2026 reconstructability init (trainable); 'default' = deepSI learned encoder
     encoder_init='linear_map',
     ann_activation='tanh',        # 'linear' = Identity (Jan's ECC, D-071); 'tanh' = nonlinear ANN
@@ -50,7 +61,19 @@ CFG = RunConfig(
     # Orthogonal-projection penalty (docs/orthogonal-projection-plan.md; D-111 basis).
     # beta_center = V_MSE/E_drift = 1e-4/2.15e-1 (D7.9, measured 07-12). First entry-file
     # run triggers one fresh ~6 min basis build at up_sample=1 (cached thereafter).
+    # MEASURED 2026-08-27 (79502/79503, joint_estimation=False): this penalty is ACTIVE but
+    # INERT. It is gated on orth_beta alone, never on joint_estimation, so it does apply with
+    # theta frozen -- but the probe reads orth-frac 0.000 and V_orth 1e-14..1e-12 (already
+    # beta-weighted, orth_projection.py:11) against a fit loss of order 1e-9+, so it is ~0.01%
+    # of the loss. Its gradient is 2*beta*Q Q^T f_ANN, and orth-frac ~ 0 means that is ~0 too.
+    # I.e. the ANN's correction already lies almost entirely OUTSIDE the baseline's parameter
+    # span without the penalty pushing it there.
     orth_beta=4.66e-4,
+    # Set orth_beta=0 AND orth_observe=True for provably zero penalty while KEEPING the
+    # orth-frac / V_orth meter. With orth_beta=0 and orth_observe=False the penalty object is
+    # never attached (model.py:249) and the meter goes silent, which is how you lose the
+    # evidence that the term is inert.
+    orth_observe=False,
     # None = start at true values (run T); 14-vector aligned to PARAM_NAMES = detuned start (run D, D-076).
     param_init_detune=None,
     # param_init_detune=[1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90,
@@ -64,35 +87,66 @@ CFG = RunConfig(
     fs_orig=20000,
     fs_new=4000,                  # None = no downsampling (use fs_orig)
     stride=10,                   # keep every STRIDE-th BPTT window; 100 matches 69399 (fewer windows -> ~10x faster epoch)
-    # True: closed-loop rollout in float64. cl_direct_vs_residual T4 measured the float32
-    # numerical gap at nf=400 as 1.4% of the model error with the ANN OFF, but 835% with the
-    # ANN at gain 1e-2 (D-118's measured trained Lipschitz) and 867% at 1e-1, i.e. the ratio is
-    # gain-independent once the loop is nonlinear. In float32 the noise the ANN induces is ~8.5x
-    # the correction it applies, so the gradient is noise. T3 measured float64 as 1.9e9x cleaner.
-    use_f64=True,
+    # KEEP False. cl_direct_vs_residual T4 does show a large float32 ROLLOUT sensitivity once
+    # the ANN is active (gap/err 1.4% at gain 0, but 835% at 1e-2 and 867% at 1e-1, i.e.
+    # gain-independent once the loop is nonlinear), which looked like a reason to switch.
+    # It is not: cl_update_precision.py ran 40 updates in each dtype from identical parameters
+    # on identical batches and got cos(dtheta_32, dtheta_64) = 0.999042 with |dtheta| ratio
+    # 1.0048. Adam's per-parameter normalisation absorbs the rollout noise, so the UPDATE is
+    # unaffected. float64 costs runtime and buys nothing here. The toggle works if ever needed.
+    use_f64=False,
     save_flag=True,
     nf_probe_print=True,          # print per-epoch train/val nf-window RMS [m] (D-095)
     # --- Model + training hyperparameters ---
     nx_ann=2,
     # ANN routing rows: (1,4,6,7)=Theta+absorber (D-068); (0,1,2,3,4,5,6,7)=X+Theta+Y+absorber.
-    # WARNING: X/Y (K=0) routing needs lr ~1e-7, not 1e-4, or it diverges after init (D-101/D-102).
+    # WARNING: X/Y (K=0) routing cannot use the old 1e-5 rate. The controlled short sweep favors
+    # 1e-6, but no completed five-epoch run has yet established its long-run behavior.
     ann_route_ix=(0,1,2,3,4,5,6,7),
     n_nodes_per_layer=16,
     n_hidden_layers=2,
     up_sample=1,
     batch_size=256,
-    lr=1e-5,                       # Theta-routing rate (D-101 era; smoke 07-12 healthy at 1e-5).
-                                   # NB: 1e-7 is the K=0 X/Y routing value -- restore it when
-                                   # switching ann_route_ix back to (0..7) (D-101/D-102).
+    # MEASURED 2026-08-27, do not raise without re-measuring. With ann_route_ix=(0..7) the
+    # old 1e-5 (a Theta-routing value that was never lowered when the routing changed, exactly
+    # as the WARNING above says) makes the model WORSE from step one. Controlled 40-update
+    # sweep, identical batches, common start asserted (cl_update_lr.py):
+    #     1e-5 -> 1.684x worse | 1e-6 -> 0.606x BETTER | 1e-7 -> 0.675x better
+    # Server A/B agrees: 79502 (1e-5) degraded val nf-RMS 2.5x, 79503 (1e-7) 1.6x.
+    # CONSEQUENCE: 79421, 79422, and 79502 used 1e-5 and are contaminated. Run 79503 used
+    # 1e-7 and still degraded, so lowering the rate was necessary but not sufficient. None is
+    # a valid 1e-6 baseline for the paired dataset test.
+    lr=1e-6,
     adam_eps=1e-16,                # D-148: keep 1e-11..1e-14 augmented-writer gradients live.
     epochs=5,                      # entry-file shakedown (user 07-12); ~30 for the real Step 10 pair
-    n_its=40,                      # SMOKE TEST: cap at 40 batch updates (vs 260/epoch) to A/B
-                                   # float32 against float64 in minutes. Set back to None for a
-                                   # real run; None = epochs decide, an exact no-op.
+    n_its=None,                    # None = epochs decide (exact no-op). Set an int to cap BATCH
+                                   # UPDATES for a smoke test; model.py then also shortens
+                                   # its_per_val, because one validation is a ~6 min closed-loop
+                                   # free run over V1-V4 and would otherwise dwarf the updates.
     nf_seconds=0.100,             # [s] rollout horizon (5*tau_msd); nf = nf_seconds / ts_new
     # nf_override=None,           # set an int to pin nf directly (bypasses nf_seconds)
     # na_nb_override=None,        # set an int to pin encoder history (bypasses Jan's rule)
 )
+
+# Dataset-learnability paired experiment. These two optional overrides let every
+# arm import the same entry file while varying only the preregistered dataset and
+# common seed. They are deliberately narrow so an accidental environment variable
+# cannot change any other run parameter.
+_dataset_ab_mode = os.environ.get('DATASET_AB_MODE')
+_dataset_ab_seed = os.environ.get('DATASET_AB_SEED')
+if _dataset_ab_mode is not None:
+    if _dataset_ab_mode not in {'augmentation_ma50', 'augmentation_ma50_a5'}:
+        raise ValueError(
+            'DATASET_AB_MODE must be augmentation_ma50 or augmentation_ma50_a5, '
+            f'got {_dataset_ab_mode!r}')
+    CFG = replace(CFG, mode=_dataset_ab_mode)
+if _dataset_ab_seed is not None:
+    try:
+        _dataset_ab_seed_int = int(_dataset_ab_seed)
+    except ValueError as exc:
+        raise ValueError(
+            f'DATASET_AB_SEED must be an integer, got {_dataset_ab_seed!r}') from exc
+    CFG = replace(CFG, seed=_dataset_ab_seed_int)
 
 
 def main():
@@ -159,19 +213,16 @@ def main():
     # The gantry-specific bank (Y_op -> controller row per record) lives in scripts/gantry/ by
     # design and cannot move into the framework: closed_loop.py's header states it "does NOT know
     # what a gantry is ... receives stacked (A, B, C, D) matrices and an integer row index per
-    # window, and that is all". The import is LOCAL so an open-loop run never touches
-    # closed-loop-controller/ at all. It is NOT a fallback: with cfg.closed_loop = True and the
-    # folder absent this raises ImportError rather than silently degrading to open loop, because
-    # a run that quietly optimizes a different objective than the config states is worse than a
-    # run that stops.
-    # closed-loop-controller/core/ holds a self-contained COPY of the six modules the training
-    # path needs (cl_pipeline -> cl_controller -> loss_variants -> p2_rate_compare, so_filter ->
-    # verify_controller). Pointing at core/ rather than the parent keeps this entry point off the
-    # 43 diagnostic scripts in that folder. See core/README.md for provenance and the one edit.
+    # window, and that is all". The import is LOCAL so an open-loop run never touches the
+    # controller module at all.
+    # CHANGED (2026-08-28): the whole gantry side is now ONE module, gantry_dynamic/controller.py,
+    # sitting in the same package as config/data/model/training. What this replaces was a
+    # sys.path.insert onto closed-loop-controller/core/, itself a verbatim COPY of six modules in
+    # the parent folder, taken so the training path would not sit downstream of the 43 diagnostic
+    # scripts there. Both the copy and the path hack are gone; those files are kept for reference
+    # and are no longer imported by anything on this path.
     if cfg.closed_loop:
-        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                        'closed-loop-controller', 'core'))
-        from cl_pipeline import build_closed_loop                  # noqa: E402
+        from gantry_dynamic.controller import build_closed_loop    # noqa: E402
         from gantry_dynamic.data import TRAIN_FILES                # noqa: E402
         # Keyword-only by design: build_closed_loop's docstring records that swapping train_files
         # and val_files "attaches the wrong controller to every record, produces a plausible loss".
