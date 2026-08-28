@@ -14,7 +14,7 @@ from deepSI.fit_systems.fit_system import print_array_byte_size, My_Simple_DataL
 
 from model_augmentation.utils.utils import detect_algebraic_loop
 from model_augmentation.utils.utils import added  # CHANGED: marker for project-added classes (D-076)
-from model_augmentation.fit_systems.blocks import Block, Parameterized_Linear_Output_Block, Parameterized_MSD_State_Block, Parameterized_Linear_State_Block
+from model_augmentation.fit_systems.blocks import Block, Parameterized_Linear_Output_Block, Parameterized_MSD_State_Block, Parameterized_Linear_State_Block, Static_ANN_Block  # CHANGED: Static_ANN_Block for SSE_Interconnect_Composed's orth term
 from model_augmentation.utils.deepSI_corrections import fixed_System_data_norm
 
 class Interconnect(nn.Module):
@@ -972,3 +972,71 @@ class SSE_Interconnect_ParamLoss(SSE_Interconnect):
             if hasattr(m, "param_loss"):
                 loss_theta = loss_theta + m.param_loss()
         return super().loss(uhist, yhist, ufuture, yfuture, **Loss_kwargs) + loss_theta
+
+
+@added
+class SSE_Interconnect_Composed(SSE_Interconnect):
+    """MSE plus composed penalty terms, in ONE class instead of a subclass per feature.
+
+    Replaces the ParamLoss -> OrthLoss -> MultipleShooting chain, in which every optional loss
+    term was a subclass, so the deepest link was instantiated whether or not its feature was on,
+    the chain order became load-bearing, and removing a middle link was a breaking change. How
+    the model is penalised is a VALUE here, not a position in a chain: the same rule `simulator`
+    and `orth_penalty` already follow, and the reason closing the loop needed no fourth subclass.
+    Any combination of the terms works, and a feature that is off contributes nothing.
+
+    Deliberately does NOT call super().loss(). The parent picks up param_loss for three block
+    types by isinstance and the sweep below finds them again by hasattr, so delegating would
+    count them twice: the documented caveat on SSE_Interconnect_ParamLoss. Forming the objective
+    in one place removes the caveat rather than restating it. The price is that the parent's
+    inline handling of Parameterized_MSD_State_Block is not inherited either, which __init__
+    turns into an error rather than a silently missing term.
+
+    The rollout is NOT duplicated: it goes through the `simulate` seam, so an attached simulator
+    (the closed loop) drives this class exactly as it drives the others.
+    """
+
+    orth_penalty = None     # class default; instance attribute set by the pipeline (D7.1/D7.8)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        blocks = tuple(self.hfn.connected_blocks)                         # type: ignore
+
+        unsupported = sorted({type(m).__name__ for m in blocks
+                              if isinstance(m, Parameterized_MSD_State_Block)})
+        if unsupported:
+            raise TypeError(
+                '%s does not expose a param_loss() method: SSE_Interconnect regularises it INLINE '
+                'inside its own loss(), and this class deliberately does not call that loss. Its '
+                'theta term would therefore vanish from the objective without any error, which is '
+                'the one failure this class must not have. Use SSE_Interconnect for models '
+                'containing it, or give the block a param_loss() method.' % unsupported)
+
+        # Resolved ONCE: the block set is fixed at construction, so scanning it inside loss()
+        # would repeat the same two searches on every batch for an answer that cannot change.
+        # INDICES, not module references: deepSI builds its optimizer parameter groups by
+        # scanning this object for nn.Modules, so holding a block here as well as in hfn makes
+        # every one of its parameters appear in two groups and Adam refuses to construct.
+        self._param_ix = tuple(i for i, m in enumerate(blocks) if hasattr(m, 'param_loss'))
+        self._ann_ix = next((i for i, m in enumerate(blocks)
+                             if isinstance(m, Static_ANN_Block)), None)
+
+    def loss(self, uhist, yhist, ufuture, yfuture, **Loss_kwargs):
+        x = self.encoder(uhist, yhist)                                    # type: ignore
+        y_pred, _ = self.simulate(x, ufuture, yfuture, **Loss_kwargs)
+        L = nn.functional.mse_loss(yfuture, y_pred)
+        blocks = self.hfn.connected_blocks                                # type: ignore
+        # Parameter regularisation, anchored to each block's init values (Jan's prior semantics).
+        # Empty when no block is parameterised, i.e. the joint_estimation=False case.
+        for i in self._param_ix:
+            L = L + blocks[i].param_loss()
+        # Orthogonal projection (D7.1/D7.2). Attachment IS the switch: RunConfig rejects
+        # orth=True with beta<=0, so an attached penalty always has a non-zero weight and there
+        # is no second condition to test here.
+        if self.orth_penalty is not None:
+            if self._ann_ix is None:
+                raise RuntimeError(
+                    'an orth penalty is attached but this interconnect has no Static_ANN_Block: '
+                    'the penalty is a function of the ANN output and has nothing to act on.')
+            L = L + self.orth_penalty(blocks[self._ann_ix])
+        return L

@@ -1274,3 +1274,145 @@ Notes and action items from meeting with TUe + ASMPT supervisors. Items are flag
 - **Action**: review identifiability theory for the specific parameter set; check which
   parameter combinations appear only as sums in M(Y) and whether the trajectory excitation
   is rich enough to separate them
+
+---
+
+## PLAN 2026-08-28 — Composed fit-system class: retire the subclass chain in the main pipeline
+
+### The problem
+
+`model.py:166` builds `SSE_Interconnect_MultipleShooting`, the deepest link of a four-class
+chain in which every optional loss term is a subclass:
+
+```
+SSE_Interconnect                 Jan's. encoder + simulate seam + mse_loss + isinstance param_loss
+  SSE_Interconnect_ParamLoss     OURS (@added, interconnect.py:950). generic hasattr param_loss
+    SSE_Interconnect_OrthLoss    OURS (orth_projection.py, __project_origin__ = "added")
+      SSE_Interconnect_MultipleShooting   OURS (multiple_shooting.py, same)
+```
+
+Consequences in the runs we actually do:
+
+- `MultipleShooting` is inert at `n_seg=1` with both defect weights 0 (`multiple_shooting.py:171-173`,
+  verified bit-identical by `coulomb-offset/verify_ms_class.py`), and with a simulator attached it
+  RAISES (`:183-189`). In a closed-loop run it is unreachable code in the objective's inheritance path.
+- `OrthLoss` is a four-line pass-through whenever `orth=False`.
+- `ParamLoss` contributes nothing whenever `joint_estimation=False`, since only
+  `Parameterized_*` blocks expose `param_loss`.
+
+So the class named after a feature is instantiated whether or not the feature is on, the chain
+order is load-bearing, and adding a feature means adding a link. This is the pattern the
+closed-loop work already rejected (composition over inheritance): `simulator = None` and
+`orth_penalty = None` are declared class attributes set on the instance, precisely so the closed
+loop did NOT become a fifth subclass.
+
+The chain is entirely OURS. Jan's structure is `SSE_Interconnect` alone, and his benchmarks
+(`scripts/bouc_wen/`, `scripts/cascaded_tanks/`, `scripts/ecc_2025/`) import that class directly.
+Collapsing the chain restores Jan's structure rather than departing from it.
+
+### The design
+
+ONE new class, subclassing Jan's `SSE_Interconnect`, whose `loss()` is the sum of three composed
+terms. No `super().loss()` call, so Jan's `isinstance` pickup never runs alongside our sweep.
+
+```
+loss = mse_loss(yfuture, y_pred)
+     + sum(m.param_loss() for m in hfn.connected_blocks if hasattr(m, 'param_loss'))
+     + orth_penalty(ann)          when attached and beta != 0
+```
+
+- Both optional terms are already composed objects (`orth_penalty` is a declared attribute;
+  `param_loss` is a method on the blocks), so nothing is re-implemented and there is no fourth
+  copy of the objective.
+- `joint_estimation` and `orth` become independent: any of the four combinations works, and
+  turning one off drops one term rather than leaving an inert class in the chain.
+- The rollout is NOT duplicated: it goes through the existing `simulate` seam, so the closed loop
+  keeps working through `fit_sys.simulator` with no change.
+
+Accepted duplication: the three-line encoder / simulate / mse opening exists in Jan's `loss()` and
+in ours. Rejected the alternative (extract an `mse_term()` seam in Jan's file) because nothing is
+being REPLACED here, unlike `simulate`, so a new seam is more churn than it saves.
+
+### The MSD guard (this is the non-trivial part)
+
+"Use our param_loss, not Jan's" is a NARROWING, not a pure simplification. Jan's `isinstance`
+chain (`interconnect.py:612-628`) handles `Parameterized_MSD_State_Block` INLINE:
+
+```python
+loss_theta + nn.functional.mse_loss(m.Lambda * m.params, m.Lambda * m.init_params, reduction="sum")
+```
+
+and that block defines NO `param_loss` method (verified: zero matches in its class body). A
+`hasattr` sweep therefore skips it and the theta term silently disappears.
+
+Irrelevant to the gantry, which builds `Parameterized_Gantry_State_Block` (`model.py:81`, has the
+method). But a silently missing term in the objective is the worst failure available here, so:
+
+**the new class raises if any connected block is a `Parameterized_MSD_State_Block`**, naming the
+block and saying to use `SSE_Interconnect` instead. Three lines. Same principle as `orth=True`
+with `beta<=0` raising, and as the closed-loop validator refusing a `validation_measure` it does
+not implement.
+
+### What is NOT touched
+
+- `SSE_Interconnect` (Jan's): unchanged. His benchmarks import it directly and cannot be affected.
+- `ParamLoss` / `OrthLoss` / `MultipleShooting`: left in place, frozen. They have 12, 12 and 20
+  consumers among the gantry diagnostics. Same treatment as `closed-loop-controller/`: kept and
+  readable, not on the live path.
+- `model_augmentation/` gains one class; nothing existing changes behaviour.
+
+### Verification gates, in order
+
+1. **Four-way bit identity on a fixed batch.** New class vs today's `SSE_Interconnect_MultipleShooting`,
+   same weights and same batch, for all four combinations of `joint_estimation` x `orth`.
+   Requirement: `max|new - old| == 0` on the loss value, and `1 - cos == 0` on the gradient.
+   This is the gate that proves the collapse changed nothing.
+2. **The guard fires** on a model containing a `Parameterized_MSD_State_Block`, and does NOT fire
+   on the gantry model.
+3. **Closed-loop path intact**: `fit_sys.simulator` still drives the rollout, `ctrl_ix` still
+   arrives by name (`interconnect.py:832-850`), one smoke run at `n_its=5` completes.
+4. **Checkpoint round trip**: save and reload with the new class. Class identity changes, so a
+   checkpoint written by the old class must either load or fail loudly, never silently mis-resume.
+
+### Open, decide before implementing
+
+- **Name.** `SSE_Interconnect_Composed` proposed, deliberately not named after any feature, since
+  feature-named classes are what this removes.
+- **Placement.** `interconnect.py` next to `ParamLoss` with an `@added` marker, following the
+  convention already in that file. A separate module needs explicit permission (no-new-files rule).
+### DECIDED 2026-08-28 (user): multiple shooting leaves the config entirely
+
+`n_seg` and the four `defect_*` fields are REMOVED, not left dead. Rationale as for `orth_observe`:
+a config field that cannot change the run is worse than no field, and `config.json` must not record
+knobs the run cannot honour.
+
+Concretely:
+
+- `config.py`: drop `n_seg`, `defect_weight`, `defect_acc_weight`, `defect_norm`, `defect_scale`;
+  drop the five matching keys from `config_json_dict`. `_assert_json_coverage` then passes with no
+  new exemption, because the fields are gone from both sides.
+- `config.py`: **collapse the `nf` / `nf_seg` split.** `nf` is currently `n_seg * nf_seg`; with
+  `n_seg` gone, `nf` is just the derived segment length, so the two properties become one. This is
+  the only part of the removal that changes a value used everywhere (`hp['nf']`), so keep the name
+  `nf` and verify `cfg.nf` is unchanged for the production config before and after.
+- `model.py`: drop the five `fit_sys.n_seg` / `defect_*` assignments and the print, and swap the
+  base class to the new composed class.
+
+Blast radius, measured: **30 scripts** outside `gantry_dynamic/` pass one of these fields into a
+`RunConfig`, and they fail loudly at import, exactly as the `orth_observe` removal did. Several
+`transient-investigation/` probes also compute their own `nf_seg = NF // N_SEG` locally, which is
+their own arithmetic and is unaffected. Out of scope by the same standing decision that scoped out
+`closed-loop-controller/`: only `gantry_interconnect_dynamic.py` and its pipeline are supported.
+
+Add a fifth verification gate: **`cfg.nf` is numerically identical before and after the
+`nf`/`nf_seg` collapse** for the production config, since `hp['nf']` sets the training horizon and
+a silent change there would alter every run while looking like a refactor.
+
+### Separate, do not fold in
+
+`diagnostics.py:193` calls `fit_sys.loss(*batch, nf=hp['nf'])`, the pre-closed-loop convention.
+With a simulator attached `make_training_data` returns five arrays, so this passes six positional
+arguments and the gradient-norm diagnostic dies with
+`loss() takes 5 positional arguments but 6 were given`. `fit()` was updated for this
+(`interconnect.py:832-850`, extra arrays passed BY NAME); this call site was not. One-call-site
+fix, unrelated to the chain collapse, and it would fail identically without `MultipleShooting`.

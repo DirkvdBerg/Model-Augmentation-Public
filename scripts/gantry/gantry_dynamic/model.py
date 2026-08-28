@@ -18,8 +18,7 @@ from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn
 from model_augmentation.fit_systems.interconnect import *
 from model_augmentation.fit_systems.blocks import *
 from model_augmentation.fit_systems.pre_encoder import linear_encoder_init_aug
-from model_augmentation.fit_systems.orth_projection import SSE_Interconnect_OrthLoss
-from model_augmentation.fit_systems.multiple_shooting import SSE_Interconnect_MultipleShooting
+from model_augmentation.fit_systems.interconnect import SSE_Interconnect_Composed
 from model_augmentation.systems.gantry_ss import Cd, Dd, P
 from model_augmentation.systems.gantry_linearization import gantry_linearize_and_discretize
 from model_augmentation.utils.utils import normalize_linear_ss_matrices
@@ -139,31 +138,13 @@ def build_model(hp, cfg: RunConfig, data, norm):
     ic.connect_signals("x", out_phys, "concat", selection_matrix(PHY_IX, nxd))
     ic.connect_block_signals(out_phys, ["u"], ["y"])
 
-    # D-076: ParamLoss subclass used unconditionally — exact no-op when no
-    # block exposes param_loss (i.e. identical to SSE_Interconnect for
-    # JOINT_ESTIMATION=False).
-    # CHANGED (orth-projection D7.1): OrthLoss subclass of ParamLoss, same
-    # unconditional-no-op pattern; identical to ParamLoss while orth_penalty
-    # stays None (attached below only when cfg.orth is True).
-    # CHANGED (multiple shooting D-127): MultipleShooting subclass of OrthLoss, same
-    # unconditional-no-op pattern; identical to OrthLoss while n_seg==1 and
-    # defect_weight==0 (the defaults), so every existing run is bit-identical.
-    #
-    # STATUS (2026-08-13): multiple shooting is NOT USED by any production training run.
-    # cfg defaults are n_seg=1, defect_weight=0, defect_acc_weight=0, i.e. the no-op path
-    # (verified bit-identical by coulomb-offset/verify_ms_class.py, contract E4). It is kept
-    # only because the diagnostic scripts below construct cfg with n_seg>1 and read the
-    # fit_sys attributes set here:
-    #   coulomb-offset/{verify_ms_class,verify_ms_gradient,diag_mean_defect}.py
-    #   pysynth-data/{check_defect_sees_failure(MS6),check_coherent_defect,
-    #                 check_defect_gradient(MS8),check_grad_vs_freerun,measure_defect_split}.py
-    #   drift-isolation/t3_true_y_scheduling/build_t3.py  (guards on n_seg==1)
-    # CANDIDATE FOR REMOVAL: if those diagnostics are retired, drop the five fit_sys.defect*/
-    # n_seg assignments and the print below, revert this base class to
-    # SSE_Interconnect_OrthLoss, and remove n_seg/defect_* from RunConfig (config.py) plus the
-    # nf/nf_seg split. Do NOT remove it piecemeal: the base class swap is unconditional, so
-    # reverting it means re-checking the orth path against the ParamLoss no-op contract.
-    fit_sys = SSE_Interconnect_MultipleShooting(
+    # CHANGED (2026-08-28): one composed class, replacing the
+    # ParamLoss -> OrthLoss -> MultipleShooting chain. Rationale in the class docstring
+    # (model_augmentation/fit_systems/interconnect.py). Those three are untouched and still
+    # importable for the ~20 diagnostics that build them directly; Jan's benchmarks use plain
+    # SSE_Interconnect and are unaffected. Multiple shooting left RunConfig with the chain
+    # (D-127 retired), so there are no n_seg / defect_* attributes to set here any more.
+    fit_sys = SSE_Interconnect_Composed(
         interconnect=ic, na=na, nb=nb,
         na_right=na_right, nb_right=nb_right,
         e_net_kwargs={
@@ -171,17 +152,6 @@ def build_model(hp, cfg: RunConfig, data, norm):
             "n_hidden_layers": hp['n_hidden_layers'],
         },
     )
-    fit_sys.n_seg         = cfg.n_seg
-    fit_sys.defect_weight = cfg.defect_weight
-    fit_sys.defect_acc_weight = cfg.defect_acc_weight
-    fit_sys.defect_norm   = cfg.defect_norm
-    fit_sys.defect_scale  = (None if cfg.defect_scale is None else
-                             torch.as_tensor(cfg.defect_scale, dtype=DTYPE_PT))
-    if cfg.n_seg > 1 and (cfg.defect_weight != 0.0 or cfg.defect_acc_weight != 0.0):
-        print(f'Multiple shooting ON (D-127): n_seg={cfg.n_seg} x nf_seg={cfg.nf_seg} '
-              f'= nf {cfg.nf} ({cfg.n_seg * cfg.nf_seconds:.2f} s objective, '
-              f'{cfg.nf_seconds:.2f} s gradient path) | '
-              f'defect_weight={cfg.defect_weight:g} norm={cfg.defect_norm}')
 
     # Manual normalisation: Gantry_State_Block is nonlinear, auto_fit_norm=True would break this.
     fit_sys.norm.u0   = u_mean.flatten()
