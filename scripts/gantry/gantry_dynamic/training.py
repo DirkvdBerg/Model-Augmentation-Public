@@ -103,6 +103,20 @@ class _NfProbe:
         # cannot be separated afterwards.
         self._val_stats_obj = WindowErrorStats(fit_sys.norm.ystd, dtype=cfg.dtype_pt)
         self._val_batch, self._val_kwargs = None, {}
+        # CHANGED (2026-08-31, run 80468): `make_training_data` routes through the attached
+        # simulator's `augment_training_data`, and `WindowControllerIndex` holds the TRAINING
+        # record rows. Handing it the VALIDATION records tripped its own guard ("the simulator
+        # was given 14 per-record controller rows but the training data has 4 records") and the
+        # whole val probe was silently lost on every closed-loop run. The guard is right; it was
+        # being asked the wrong question. Swap the rows for the duration of this one call.
+        # `val_records` is (label, sys_data, ctrl_row) in the order `val_sd` was built, which is
+        # exactly the order this call needs, and `verify_by_content` still runs inside `build`,
+        # so a genuine misalignment would still raise rather than pass quietly.
+        _sim = getattr(fit_sys, 'simulator', None)
+        _saved_rows = None
+        if _sim is not None and hasattr(_sim, 'indexer') and getattr(_sim, 'val_records', None):
+            _saved_rows = _sim.indexer.record_rows
+            _sim.indexer.record_rows = [int(r) for _, _, r in _sim.val_records]
         try:
             d = fit_sys.make_training_data(fit_sys.norm.transform(val_sd), nf=nf, stride=nf)
             n = min(self.N_VAL_WINDOWS, len(d[0]))
@@ -114,6 +128,9 @@ class _NfProbe:
             self._val_kwargs = dict(zip(names, cols[4:]))
         except Exception as e:
             print(f'    [nf val  ] window batch unavailable (non-fatal): {e}')
+        finally:
+            if _saved_rows is not None:
+                _sim.indexer.record_rows = _saved_rows
         # Joint/orth probe state (user 07-12: live recovery + negation meters).
         # Nominal combos computed ONCE; sim-study meter -- on real data the
         # reference must become params_init (no nominal truth exists there).
@@ -257,8 +274,14 @@ def _install_nf_val_probe(fit_sys, hp, cfg, val_sd):
               f"{mode}, metres")
         print('     chan = per-channel X/Theta/Y | grow = RMS(last step)/RMS(first) | '
               'bias = mean residual')
+        # Report what the probe ACTUALLY has. The header used to claim the fixed val batch
+        # unconditionally, so a run whose batch failed to build still printed "256 fixed
+        # windows" and then never emitted an [nf val] line.
+        _val_state = ('%d fixed windows, snapshot' % probe.N_VAL_WINDOWS
+                      if probe._val_batch is not None else
+                      'UNAVAILABLE (batch failed to build; no [nf val] line will appear)')
         print(f'     train = all windows since the last validation, running mean | '
-              f'val = {probe.N_VAL_WINDOWS} fixed windows, snapshot')
+              f'val = {_val_state}')
         print('     metre weighting is NOT the objective\'s, which weights channels by 1/ystd^2;')
         print('     numbers are not comparable ACROSS loop modes, the [nf gap] ratios are')
     return prev
