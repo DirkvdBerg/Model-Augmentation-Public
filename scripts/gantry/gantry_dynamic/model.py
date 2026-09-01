@@ -25,6 +25,17 @@ from model_augmentation.utils.utils import normalize_linear_ss_matrices
 
 from .config import RunConfig
 
+# torch.compile backend for the training rollout. THE single conditional this codebase allows
+# between two implementations (docs/pytorch-optimization-guidelines.md), which is why it is a
+# module constant and not a config field: `inductor` is the only backend that FUSES kernels and
+# therefore the only one that reduces the ~254 ops per timestep. Measured alternatives, all on
+# blade1: `aot_eager` 0.52x (traces without codegen, pure overhead) and `cudagraphs` 0.02x (per
+# step capture is the wrong granularity for a callable invoked 12000 times in a loop).
+# `inductor` needs a C++ compiler and CUDA capability >= 7.0, so it cannot run on the Windows
+# development PC (no MSVC) or on its Quadro P2000 (sm_61). WHICH MODE is a run parameter and
+# lives on RunConfig.compile_mode.
+COMPILE_BACKEND = 'inductor'
+
 PHY_IX   = np.arange(6)             # [0,1,2,3,4,5]  (NX_PHYS physical states)
 # ANN routing rows are configured via cfg.ann_route_ix (default (1,4,6,7) = Theta
 # pos/vel + absorber pos/vel, K>0 only; D-068). State layout (logical coords):
@@ -199,7 +210,34 @@ def build_model(hp, cfg: RunConfig, data, norm):
     # CHANGED: pass lr and eps at optimizer creation. init_model builds the optimizer here;
     # fit()'s optimizer_kwargs are ignored once init_model_done=True, so without this
     # every run trained at Adam's defaults instead of the declared values (D-101/D-148).
-    fit_sys.init_model(sys_data=data.train_data, auto_fit_norm=False,
+    # CHANGED (D-169, job 80714): the model is BUILT on the CPU even when cfg.device='cuda', and
+    # train_model moves it for the duration of fit() only.
+    #
+    # It used to be built directly on the device, which quietly made everything between
+    # build_model and train_model GPU code. It is not: gantry_interconnect_dynamic.py:339-340
+    # calls encoder_init_state, which constructs its inputs with torch.tensor(...) on the CPU and
+    # feeds them to fit_sys.encoder. On a CUDA build that raises inside pre_encoder.py at
+    # `uhist_mod + self.u_off`. The same argument applies after fit() returns, which is why the
+    # matching .cpu() at the end of train_model exists.
+    #
+    # Three call sites touch fit_sys before training (build_closed_loop, encoder_init_state x2)
+    # and none of them wants a GPU, so the transition belongs around fit(), not around the build.
+    # Moving after the optimizer is constructed is safe: nn.Module._apply rebinds param.data in
+    # place, so the optimizer's parameter references stay valid, and Adam's state is allocated
+    # lazily on the first step, by then on the right device.
+    #
+    # Availability is still checked HERE rather than in RunConfig.__post_init__: a config is
+    # constructed for inspection on machines without a GPU, but a run that asked for one and
+    # silently got the CPU would be 30x slower and its config.json would claim otherwise. Checking
+    # at build time also fails the run before the window array is built, not after.
+    if cfg.device == 'cuda' and not torch.cuda.is_available():
+        raise RuntimeError(
+            'device="cuda" was requested but torch.cuda.is_available() is False. Falling back to '
+            'the CPU is deliberately NOT done: the run would be slower by more than an order of '
+            'magnitude while config.json recorded DEVICE=cuda, and the two would be compared as '
+            'if they were the same experiment. Check the SLURM allocation (--gres=gpu:1) or set '
+            'device="cpu" explicitly.')
+    fit_sys.init_model(sys_data=data.train_data, device='cpu', auto_fit_norm=False,
                        optimizer_kwargs={'lr': hp['lr'], 'eps': cfg.adam_eps})
     eps_values = {float(group['eps']) for group in fit_sys.optimizer.param_groups}
     if eps_values != {float(cfg.adam_eps)}:
@@ -235,6 +273,14 @@ def train_model(fit_sys, hp, cfg: RunConfig, data, epochs=None, nf=None, validat
             f'Adam eps mismatch before training: config={cfg.adam_eps}, '
             f'optimizer={sorted(eps_values)}. Resume with the checkpoint epsilon or '
             'start a fresh optimizer.')
+    # CHANGED (D-169, job 80714): the ONE place the model goes to the GPU, paired with the .cpu()
+    # after fit() returns. Everything outside this pair -- the pre-training encoder-init capture,
+    # the post-training baselines and the ~20 diagnostics -- is CPU and NumPy by construction, and
+    # stays that way without a single device-aware branch. Validation runs INSIDE fit(), so it
+    # happens on the GPU: measured 162 s there (80713) against the ~6 min this file's older
+    # comment records for the CPU, because the free run is batched over the 4 records.
+    if cfg.device == 'cuda':
+        fit_sys.cuda()
     fit_sys.fit(
         train_sys_data=data.train_data, val_sys_data=data.val_ckpt_data,
         batch_size=hp['batch_size'], epochs=epochs or hp['epochs'],
@@ -248,10 +294,26 @@ def train_model(fit_sys, hp, cfg: RunConfig, data, epochs=None, nf=None, validat
         # single-threaded steps, measured ~6 min), so it costs more than the 40 updates it
         # would be measuring. Start-and-end is what a smoke test needs. Untouched (and
         # therefore 'epoch') whenever n_its is None.
-        its_per_val=(cfg.n_its if cfg.n_its else 'epoch'),
+        # CHANGED (D-169): cadence now configurable. None keeps 'epoch', the historical default,
+        # so this is an exact no-op unless cfg.its_per_val is set. n_its keeps precedence for the
+        # reason above: a capped smoke test must validate at its cap, not never.
+        its_per_val=(cfg.n_its if cfg.n_its else (cfg.its_per_val or 'epoch')),
         auto_fit_norm=False,
         loss_kwargs={'nf': nf if nf is not None else hp['nf'], 'stride': cfg.stride},
         optimizer_kwargs={'lr': hp['lr'], 'eps': cfg.adam_eps},
+        # CHANGED (D-169): fit's own device flag. It drives two things init_model cannot: the
+        # per-batch move (interconnect.py:823) and the cpu()/cuda() flip around each validation
+        # (:716,:734). Without it a CUDA model would be fed CPU batches on the first update.
+        cuda=(cfg.device == 'cuda'),
         validation_measure=validation_measure if validation_measure is not None else 'sim-RMS',
     )
+    # CHANGED (D-169, job 80708): the other half of the pair above. Post-training evaluation and
+    # the diagnostics are eager and mix in NumPy arrays, and every one of them was written when a
+    # CPU model was guaranteed: fit() used to flip to the CPU around each validation and simply
+    # leave it there. That guarantee is gone now that the flip is suppressed while a simulator is
+    # attached (interconnect.py::fit), so state it once, here, rather than making twenty
+    # diagnostics device-aware for no benefit. Free: training is over, and nothing downstream is
+    # faster on the GPU.
+    if cfg.device == 'cuda':
+        fit_sys.cpu()
     return fit_sys.bestfit

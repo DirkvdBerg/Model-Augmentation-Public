@@ -19,7 +19,8 @@ import matplotlib.pyplot as plt
 from .config import RunConfig, config_json_dict
 from .model import get_encoder_dims
 from .baselines import stepwise_rollout
-from .diagnostics import r2_per_channel, best_affine_r2
+from .diagnostics import (r2_per_channel, best_affine_r2, heldout_affine_r2,
+                          best_single_channel_r2)
 from . import oracle as _oracle
 
 
@@ -181,18 +182,24 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
     r2_roll_raw, r2_roll_lin = None, None
     try:
         x_ann_roll = x_enc_ann[cheat_n:]                    # (N-cheat_n, NX_ANN) simulated
-        gt_roll    = val_x_aug[cheat_n:]                    # (N-cheat_n, NX_ANN) physical
+        gt_roll    = val_x_aug[cheat_n:]                    # (N-cheat_n, 2) physical
         gt_norm = (gt_roll - gt_roll.mean(axis=0)) / (gt_roll.std(axis=0) + 1e-8)
 
-        r2_roll_raw = r2_per_channel(gt_norm, x_ann_roll)
+        # CHANGED (2026-09-01): same NX_ANN-vs-GT-width fix as diagnostics.aug_state_r2. GT is
+        # [delta_a, vdelta_a], 2-wide always; NX_ANN is the model's latent width. This site was
+        # already inside a try/except, so at NX_ANN=8 it printed a broadcast warning and no
+        # numbers rather than crashing.
+        r2_roll_raw = best_single_channel_r2(x_ann_roll, gt_norm, DTYPE_NP)
         # best affine map from all rollout aug channels
         W_roll, r2_roll_lin = best_affine_r2(x_ann_roll, gt_norm, DTYPE_NP)
+        r2_roll_ho = heldout_affine_r2(x_ann_roll, gt_norm, DTYPE_NP)
 
         aug_names = ['delta_a ', 'vdelta_a']
         print('\n=== Rollout aug-state R2 vs GT (closed-loop simulation) ===')
-        for ch in range(NX_ANN):
-            lbl = aug_names[ch] if ch < len(aug_names) else f'x_ann[{ch}]'
-            print(f'  {lbl}  R2_raw={r2_roll_raw[ch]:+.4f}  R2_linmap={r2_roll_lin[ch]:+.4f}')
+        for ch in range(len(r2_roll_lin)):
+            lbl = aug_names[ch] if ch < len(aug_names) else f'gt[{ch}]'
+            print(f'  {lbl}  R2_best1={r2_roll_raw[ch]:+.4f}  '
+                  f'R2_linmap={r2_roll_lin[ch]:+.4f}  R2_ho={r2_roll_ho[ch]:+.4f}')
         print('  R2_linmap ~ 1 -> simulated aug states carry the absorber dynamics;')
         print('  R2_linmap ~ 0 -> aug states unused in rollout (encoder R2 tests encoder only)')
     except Exception as e:
@@ -426,9 +433,13 @@ def _make_plots(save_dir, rid, cfg, hp, nxd, epoch_id_full, loss_val_full, loss_
         # Right: R2_linmap for each augmented state channel over epochs
         aug_labels_short = ['delta_a', 'vdelta_a']
         conv_epochs = diag_conv['epochs']
-        conv_r2lin  = diag_conv['r2_linmap']   # (n_chunks, NX_ANN)
-        for ch in range(hp['NX_ANN']):
-            lbl = aug_labels_short[ch] if ch < len(aug_labels_short) else f'x_ann[{ch}]'
+        # CHANGED (2026-09-01): (n_chunks, 2), the GT width -- NOT NX_ANN. Same misconception as
+        # aug_state_r2; it never fired only because the NaN fallback in training.py used to be
+        # NX_ANN-wide, so the mismatch was masked whenever the diagnostic failed and would have
+        # surfaced the moment it succeeded.
+        conv_r2lin  = diag_conv['r2_linmap']   # (n_chunks, 2)
+        for ch in range(conv_r2lin.shape[1]):
+            lbl = aug_labels_short[ch] if ch < len(aug_labels_short) else f'gt[{ch}]'
             ax4b.plot(conv_epochs, conv_r2lin[:, ch], marker='o', ms=4, label=lbl)
         ax4b.axhline(0.0, color='k', lw=0.5, linestyle='--')
         ax4b.axhline(1.0, color='k', lw=0.5, linestyle=':')

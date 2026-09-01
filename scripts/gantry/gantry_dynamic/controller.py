@@ -242,4 +242,30 @@ def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, verbos
               % (cfg.ts_new, round(1 / cfg.ts_new), bank.nc))
         print('[closed loop] diag(Dc) physical [%s] N/m'
               % ' '.join('%.4e' % v for v in bank.physical_D()[0].diagonal()))
-    return ClosedLoopSimulator(bank, train_rows, val_records)
+    # CHANGED (D-169): cfg.checkpoint_chunk reaches the rollout here. The bank itself is left on
+    # the CPU: closed_loop_rollout re-homes it to the data's device on first use, which is the
+    # only thing that survives deepSI's per-validation cpu()/cuda() flip.
+    #
+    # CHANGED (D-169): compilation is built HERE, where `fs` is already in hand, and handed to the
+    # simulator rather than substituted for `fs.hfn` -- see ClosedLoopSimulator.__init__ for why
+    # that distinction is what keeps validation and the diagnostics eager.
+    #
+    # BOTH callables are compiled. torch.compile(module) returns an OptimizedModule that proxies
+    # attribute access, so `.output_only` on it is still the uncompiled bound method; compiling
+    # only the module would leave the rollout half compiled and roughly halve the speedup.
+    compiled = None
+    if cfg.compile_mode is not None:
+        import torch                                                    # noqa: E402
+        from .model import COMPILE_BACKEND                              # noqa: E402
+        compiled = (
+            torch.compile(fs.hfn, backend=COMPILE_BACKEND, mode=cfg.compile_mode,
+                          fullgraph=True),
+            torch.compile(fs.hfn.output_only, backend=COMPILE_BACKEND, mode=cfg.compile_mode,
+                          fullgraph=True),
+        )
+        if verbose:
+            print('[closed loop] training rollout COMPILED: backend=%s mode=%s fullgraph=True'
+                  % (COMPILE_BACKEND, cfg.compile_mode))
+            print('[closed loop] validation and diagnostics stay EAGER (they use fs.hfn directly)')
+    return ClosedLoopSimulator(bank, train_rows, val_records,
+                               checkpoint_chunk=cfg.checkpoint_chunk, compiled=compiled)

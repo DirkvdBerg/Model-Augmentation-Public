@@ -165,6 +165,17 @@ class _NfProbe:
         """
         if self._val_batch is None:
             return None
+        # CHANGED (D-169, job 80706): the batch is built once on the CPU. It used to match the
+        # model by accident, because fit() flipped the model to CPU before every validation; with
+        # that flip gone the model stays on its training device and the probe died with
+        # "cuda:0 and cpu". Home it once, then it stays resident: the window set is fixed by
+        # design and re-used at every validation, so this is one transfer for the whole run.
+        # `fit_sys.parameters` is deepSI's LIST of optimizer parameters, not nn.Module.parameters();
+        # ask the module that actually holds the weights.
+        _dev = next(self.fit_sys.hfn.parameters()).device
+        if self._val_batch[0].device != _dev:
+            self._val_batch = tuple(t.to(_dev) for t in self._val_batch)
+            self._val_kwargs = {k: v.to(_dev) for k, v in self._val_kwargs.items()}
         uh, yh, uf, yf = self._val_batch
         try:
             with torch.no_grad():
@@ -270,7 +281,11 @@ def _install_nf_val_probe(fit_sys, hp, cfg, val_sd):
     fit_sys.validation_probes = tuple(prev) + (probe,)
     if cfg.nf_probe_print:
         mode = 'closed loop' if getattr(fit_sys, 'simulator', None) is not None else 'open loop'
-        print(f"\n[nf] rms = RMS over nf={hp['nf']} ({cfg.nf_seconds:.3f} s) windows, "
+        # The horizon in seconds is derived from the nf actually in force, not from
+        # `cfg.nf_seconds`. The two part company whenever `nf_override` is set (config.py:257):
+        # nf_seconds is the REQUESTED horizon and the override wins, so a 3 s run at nf=12000 was
+        # labelling every line below it "0.100 s".
+        print(f"\n[nf] rms = RMS over nf={hp['nf']} ({hp['nf'] * cfg.ts_new:.3f} s) windows, "
               f"{mode}, metres")
         print('     chan = per-channel X/Theta/Y | grow = RMS(last step)/RMS(first) | '
               'bias = mean residual')
@@ -347,17 +362,23 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
 
     fit_sys.eval()
     try:
-        r2_raw, r2_lin = aug_state_r2(fit_sys, hp, cfg, data, norm)
+        # CHANGED (2026-09-01): three values, each of width 2 (the ABSORBER dimension), not
+        # NX_ANN. `diag_r2_raw` keeps its name for checkpoint-resume compatibility (:307) but now
+        # holds R2_best1; see best_single_channel_r2 for why the old statistic was dropped.
+        r2_raw, r2_lin, _r2_ho = aug_state_r2(fit_sys, hp, cfg, data, norm)
     except Exception as e:
         print(f'Warning: aug_state_r2 failed ({e}); recording NaN')
-        r2_raw = np.full(hp['NX_ANN'], np.nan)
-        r2_lin = np.full(hp['NX_ANN'], np.nan)
+        # Width 2, matching a successful call. The old np.full(NX_ANN, nan) is why plot 4 never
+        # crashed at NX_ANN=8: the failure path happened to produce the width the plot expected,
+        # so the mismatch only surfaced once the diagnostic worked.
+        r2_raw = np.full(2, np.nan)
+        r2_lin = np.full(2, np.nan)
     diag_epochs.append(done_epochs)
     diag_r2_raw.append(r2_raw.copy())
     diag_r2_lin.append(r2_lin.copy())
 
     r2_str = '  '.join([f'{n}={r2_lin[i]:+.4f}'
-                        for i, n in enumerate(['delta_a', 'vdelta_a'][:hp['NX_ANN']])])
+                        for i, n in enumerate(['delta_a', 'vdelta_a'][:len(r2_lin)])])
     print(f'Training done | {done_epochs} ep | {elapsed:.0f}s | '
           f'bestfit={bestfit:.5f}  R2_linmap: {r2_str}')
 

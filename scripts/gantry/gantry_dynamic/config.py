@@ -15,7 +15,7 @@ import functools
 import os
 import subprocess
 from dataclasses import dataclass, field, fields
-from typing import Optional, List
+from typing import Optional, List, Union
 
 import numpy as np
 import torch
@@ -62,6 +62,59 @@ class RunConfig:
     save_flag: bool = True
     nf_probe_print: bool = True    # print per-epoch train/val nf-window RMS (D-095 probe); runtime-only, not in hp
 
+    # ═══ Execution (D-169) ════════════════════════════════════════════════════
+    # WHERE the rollout runs. A device STRING, not a bool: 'gpu=True' cannot say which device,
+    # and every framework seam downstream already speaks torch device strings
+    # (init_model(device=...), Interconnect.forward's device re-homing).
+    #
+    # Only 'cpu' and 'cuda' are accepted, NOT 'cuda:N'. Card selection on the cluster is SLURM's
+    # job via CUDA_VISIBLE_DEVICES, which makes the allocated card 'cuda'; honouring 'cuda:N'
+    # here would additionally require editing deepSI's fit(), whose batch move is a bare
+    # `.cuda()` (interconnect.py:823).
+    #
+    # NOT A SECOND IMPLEMENTATION. The rollout, loss, encoder and controller are pure batched
+    # tensor ops and run unchanged on both devices; this field only decides where tensors are
+    # created. There is no `if device == 'cuda'` branch in any hot path, deliberately: two
+    # implementations of the physics is how a CPU diagnostic and a GPU training run stop being
+    # the same experiment (docs/pytorch-optimization-guidelines.md, "no conditional compilation").
+    #
+    # Recorded in config.json because CPU and GPU runs are NOT bit-identical: float32 reduction
+    # order differs, so two runs differing only in this field track each other but do not agree
+    # to the last digit.
+    device: str = 'cpu'
+    # Rollout steps per gradient-checkpoint segment; 0 = off (store the whole graph).
+    #
+    # Deliberately NOT derived from `device`. It is a function of nf, not of hardware: at
+    # nf = 12000 the un-checkpointed BPTT graph is ~25 GB at batch 512 and does not fit on CPU
+    # either. Deriving it from the device would make the CPU run silently attempt the 25 GB.
+    #
+    # EXACT, not an approximation: the segment boundaries are NOT detached, so the gradient
+    # still spans all nf steps (contrast truncated BPTT/ARTBP, which detaches and changes the
+    # objective). Cost is one extra forward per segment, about +33% compute, for roughly
+    # nf/chunk times less activation memory.
+    checkpoint_chunk: int = 0
+    # torch.compile mode for the TRAINING rollout. None = eager (the default; nothing compiles).
+    #
+    # MEASURED on blade1 (RTX 2080 Ti), batch 512, chunk 0, nf 200 -- jobs 80610/80634/80652:
+    #   eager                     14.6 - 15.1 ms/step
+    #   inductor                   5.4 -  6.0 ms   ~2.6x   (fusion only)
+    #   inductor reduce-overhead   2.1 -  2.4 ms   ~6.5x   (fusion + CUDA graphs)  <- use this
+    #   inductor max-autotune      2.2 -  2.3 ms   ~6.8x   but WORSE in float64 (1.09x vs 1.04x)
+    #                                                      and ~10x slower to compile
+    # At nf = 12000 that is ~1300 +/- 100 batch updates in a 10 h wall, against the nf = 400
+    # pipeline's 1300, i.e. the same training budget at a 30x longer horizon.
+    #
+    # NOT A FEATURE FLAG. It is a recorded run parameter like `device`: a compiled run and an
+    # eager one are not bit-identical (max|dg| = 7.5e-10, job 80610), so config.json has to say
+    # which ran. There is no `if compiled:` branch in any hot path; the simulator holds a
+    # compiled callable or it does not.
+    #
+    # Only the TRAINING rollout is affected. `fit_sys.hfn` is never replaced, so the validation
+    # free run and every diagnostic keep using the eager module -- which matters because deepSI's
+    # fit() moves the model to the CPU around each validation (interconnect.py:716,734) and a
+    # compiled callable would recompile per device, twice an epoch.
+    compile_mode: Optional[str] = None
+
     # ═══ Model + training hyperparameters (were the default_hp dict) ══════════
     nx_ann: int = 2                # augmented (ANN) latent states
     # ANN correction routing: rows the ANN writes into. State layout (logical):
@@ -86,6 +139,17 @@ class RunConfig:
     # enters the checkpoint hyperparameter schema and a capped run stays resumable as a
     # normal one.
     n_its: Optional[int] = None
+    # Batch updates between validations, handed straight to fit(). None (the default) means
+    # 'epoch', i.e. the exact behaviour this pipeline has always had. An int is a number of
+    # UPDATES, deepSI's own unit for this argument, so no epoch-length arithmetic is duplicated
+    # here and there is nothing to drift out of sync. At batch 512 an epoch is 130 updates, so
+    # 650 validates every 5 epochs. NOTE the meaning therefore moves with batch_size.
+    # WHY it is worth exposing: one validation is a closed-loop free run over V1-V4 (4 x 48000
+    # samples, batch one, eager) costing ~162 s, against 65 s of training per epoch on the GPU
+    # (80713). Validating every epoch spends 70% of the wall on validation. That was invisible on
+    # the CPU, where an epoch cost ~1300 s and the same validation was 11% of it. n_its still
+    # takes precedence in model.py, so a capped smoke test keeps validating at its cap.
+    its_per_val: Optional[Union[int, str]] = None
     nf_seconds: float = 0.100      # [s] SEGMENT length (5*tau_msd, tau=1/(zeta*wn)=20ms, 5tau=100ms)
     # Optional direct overrides (None = derive). Set a number to bypass the formula.
     nf_override: Optional[int] = None      # None -> nf = nf_seconds / ts_new
@@ -141,6 +205,47 @@ class RunConfig:
                 'orth_beta a positive value. (Before 2026-08-28 beta doubled as the switch, so '
                 'orth_beta=0.0 meant off; that spelling is gone precisely because it let a '
                 'config look enabled while running as off.)' % (self.orth_beta,))
+        # D-169. Rejected here rather than at first use: a typo ('gpu', 'CUDA', 'cuda:0') would
+        # otherwise surface deep in init_model, or worse run on the CPU while the log says
+        # otherwise. Availability is NOT checked here, only spelling: a RunConfig is constructed
+        # for inspection on machines without a GPU, and the real check belongs where the model
+        # is built (model.py).
+        if self.device not in ('cpu', 'cuda'):
+            raise ValueError(
+                "device=%r is not accepted. Use 'cpu' or 'cuda'. Per-card selection ('cuda:1') "
+                "is deliberately not supported: on the cluster SLURM sets CUDA_VISIBLE_DEVICES "
+                "so the allocated card IS 'cuda', and honouring an index here would also "
+                "require changing deepSI's fit(), whose batch move is a bare .cuda()."
+                % (self.device,))
+        if self.checkpoint_chunk < 0:
+            raise ValueError(
+                'checkpoint_chunk=%r is not a length. Use 0 to store the whole rollout graph, '
+                'or a positive number of steps per checkpointed segment.'
+                % (self.checkpoint_chunk,))
+        if self.compile_mode not in (None, 'default', 'reduce-overhead', 'max-autotune'):
+            raise ValueError(
+                "compile_mode=%r is not a torch.compile mode. Use None (eager), or one of "
+                "'default', 'reduce-overhead', 'max-autotune'. Measured best on this pipeline: "
+                "'reduce-overhead' (~6.5x, jobs 80610/80634/80652)." % (self.compile_mode,))
+        if self.compile_mode is not None and self.device != 'cuda':
+            raise ValueError(
+                "compile_mode=%r with device=%r. Compilation is only wired for CUDA: the "
+                "measured backend is inductor+CUDA graphs, and on CPU it would compile a "
+                "different (C++/OpenMP) path that has never been benchmarked here. Set "
+                "device='cuda' or compile_mode=None." % (self.compile_mode, self.device))
+        # Caught here rather than in fit(): deepSI compares its_per_val against an update counter,
+        # so a stray string ('epochs', '5') would never match and validation would simply never
+        # run. The failure is a run with no checkpoint selection at all, which looks like a
+        # training result until you notice bestfit never moved.
+        if not (self.its_per_val is None or self.its_per_val == 'epoch'
+                or (isinstance(self.its_per_val, int) and not isinstance(self.its_per_val, bool)
+                    and self.its_per_val >= 1)):
+            raise ValueError(
+                "its_per_val=%r is neither a cadence nor None. Use None (= 'epoch', the default), "
+                "the string 'epoch', or a positive int number of BATCH UPDATES between "
+                "validations. At batch_size=%r one epoch is N_training_samples // batch_size "
+                "updates, so the int moves with the batch size."
+                % (self.its_per_val, self.batch_size))
 
     # ───────────────────────── Derived quantities ────────────────────────────
     @property
@@ -302,6 +407,7 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
         ANN_ROUTE_IX=list(cfg.ann_route_ix),
         STRIDE=cfg.stride,
         N_ITS=cfg.n_its,
+        ITS_PER_VAL=cfg.its_per_val,
         NF_SECONDS=cfg.nf_seconds,
         USE_F64=cfg.use_f64,
         SAVE_FLAG=cfg.save_flag,
@@ -315,6 +421,17 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
         EPOCHS=cfg.epochs,
         NF=cfg.nf,
         NA_NB=cfg.na_nb,
+        # Appended 2026-08-31 (D-169). DEVICE is recorded because CPU and GPU runs are not
+        # bit-identical (float32 reduction order), so it is part of what a run IS, not a
+        # scheduling detail. CHECKPOINT_CHUNK does not change the gradient, but it does change
+        # peak memory and runtime, and a run that OOMed at 0 versus one that survived at 200 is
+        # otherwise indistinguishable in the saved metadata.
+        DEVICE=cfg.device,
+        CHECKPOINT_CHUNK=cfg.checkpoint_chunk,
+        # A compiled run is ~6.5x faster and NOT bit-identical to eager (max|dg| = 7.5e-10,
+        # job 80610). Two runs differing only here are the same experiment numerically but not
+        # byte-for-byte, so the metadata has to record which one ran.
+        COMPILE_MODE=cfg.compile_mode,
         # N_SEG / DEFECT_* removed 2026-08-28 with the fields themselves (D-127 retired).
         # Old npz files still carry these keys; new ones do not, which is the honest record:
         # the run had no such knob to honour.

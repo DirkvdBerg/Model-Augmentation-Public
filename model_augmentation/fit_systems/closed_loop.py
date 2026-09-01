@@ -59,8 +59,11 @@ coordinates. See there for why this does not weaken the units gate.
 """
 __project_origin__ = "added"
 
+import time
+
 import numpy as np
 import torch
+import torch.utils.checkpoint      # CHANGED (D-169): chunked BPTT, see closed_loop_rollout
 
 # `DiscreteController` appears in the design sketch as "one biproper LTI controller as a batched
 # state-space step". It is not written, deliberately: it would be the K = 1 special case of
@@ -209,7 +212,29 @@ class ControllerBank(torch.nn.Module):
         return u_norm[0].detach().numpy(), expect.detach().numpy(), rel.detach().numpy()
 
 
-def closed_loop_rollout(hfn, output_only, u_data, y_data, x0, bank, ctrl_ix, xc0=None):
+def _rollout_segment(hfn, output_only, step, ctrl, u_seg, y_seg, x, xc):
+    """@added (D-169). The timestep loop, over ONE contiguous segment of the horizon.
+
+    Extracted from `closed_loop_rollout` verbatim so that a segment can be handed to
+    `torch.utils.checkpoint` as a single callable. It is the ONLY place the loop body lives:
+    the un-checkpointed path calls this once over the whole horizon, so there is no second
+    implementation that could drift from the checkpointed one.
+
+    Returns (y_seg_pred, x_final, xc_final).
+    """
+    ys = []
+    # unbind(1) is ONE dispatch for all nf views; indexing per timestep is nf separate selects.
+    for u_t, y_t in zip(u_seg.unbind(1), y_seg.unbind(1)):
+        # THEORY: Kessels (2025) Eq. (5.13d), p157 -- the controller error is formed against the
+        # MODEL output, e_hat = r_bar - y_hat. Here in residual form, so it is y_data - y_model.
+        y_model = output_only(x)                       # D_d = 0: state only
+        ys.append(y_model)
+        u_fb, xc = step(xc, y_t - y_model, ctrl)
+        _, x = hfn(x, u_t + u_fb)
+    return torch.stack(ys, dim=1), x, xc
+
+
+def closed_loop_rollout(hfn, output_only, u_data, y_data, x0, bank, ctrl_ix, xc0=None, chunk=0):
     """THE closed-loop rollout. Training, validation and checkpoint selection all call this one.
 
     hfn          the model step, (x, u) -> (y, x_next), NORMALISED
@@ -220,9 +245,20 @@ def closed_loop_rollout(hfn, output_only, u_data, y_data, x0, bank, ctrl_ix, xc0
     bank         ControllerBank
     ctrl_ix      (batch,) long, the controller row per batch element
     xc0          (batch, nc) or None for zero; see below
+    chunk        CHANGED (D-169): steps per gradient-checkpoint segment; 0 = off (exact no-op)
 
     Returns (y_pred, x_final, xc_final), y_pred (batch, nf, ny), NORMALISED.
     """
+    # CHANGED (D-169): re-home the bank to the data's device. `ClosedLoopSimulator` is a plain
+    # object, not an nn.Module, so the bank it holds is NOT a submodule of fit_sys and does NOT
+    # move with fit_sys.cuda()/.cpu(). deepSI's fit() flips the model to CPU for every validation
+    # and back to CUDA afterwards (interconnect.py:716,734), so a bank pinned at build time would
+    # be on the wrong device for half the run. Same pattern, and same reason, as
+    # Interconnect.forward re-homing its connection matrices to x.device. Once per rollout, not
+    # per timestep. dtype is deliberately NOT synced: the bank is built at the pipeline dtype and
+    # a silent widening would hide a real mismatch.
+    if bank.M_state.device != u_data.device:
+        bank.to(u_data.device)
     # Bound once: these are attribute lookups inside an nf-iteration loop otherwise, and
     # nn.Module.__getattr__ walks _parameters, _buffers and _modules on every hit.
     step = bank.step
@@ -239,17 +275,30 @@ def closed_loop_rollout(hfn, output_only, u_data, y_data, x0, bank, ctrl_ix, xc0
     xc = bank.zero_state(u_data.shape[0], dtype=u_data.dtype,
                          device=u_data.device) if xc0 is None else xc0
 
-    x = x0
-    ys = []
-    # unbind(1) is ONE dispatch for all nf views; indexing per timestep is nf separate selects.
-    for u_t, y_t in zip(u_data.unbind(1), y_data.unbind(1)):
-        # THEORY: Kessels (2025) Eq. (5.13d), p157 -- the controller error is formed against the
-        # MODEL output, e_hat = r_bar - y_hat. Here in residual form, so it is y_data - y_model.
-        y_model = output_only(x)                       # D_d = 0: state only
-        ys.append(y_model)
-        u_fb, xc = step(xc, y_t - y_model, ctrl)
-        _, x = hfn(x, u_t + u_fb)
-    return torch.stack(ys, dim=1), x, xc
+    nf = u_data.shape[1]
+    # CHANGED (D-169): chunked BPTT. Skipped when off, when one chunk covers the horizon, and
+    # under no_grad -- there is no graph to trade away there, and checkpoint would only add a
+    # warning and a redundant forward to every validation free run.
+    if not chunk or chunk >= nf or not torch.is_grad_enabled():
+        return _rollout_segment(hfn, output_only, step, ctrl, u_data, y_data, x0, xc)
+
+    # EXACT, not truncated. x and xc cross the segment boundary WITHOUT .detach(), so the
+    # gradient still spans all nf steps; checkpoint re-enters the graph on the backward pass and
+    # recomputes each segment's interior from the boundary state it saved. This is the whole
+    # difference from truncated BPTT (which detaches, and changes the objective). What is traded
+    # is memory for one extra forward per segment: peak activations become one segment's worth
+    # instead of the horizon's, at about +33% compute.
+    x, ys = x0, []
+    for s in range(0, nf, chunk):
+        y_seg, x, xc = torch.utils.checkpoint.checkpoint(
+            _rollout_segment, hfn, output_only, step, ctrl,
+            u_data[:, s:s + chunk], y_data[:, s:s + chunk], x, xc,
+            use_reentrant=False)
+        ys.append(y_seg)
+    # cat over nf/chunk segments, not nf timesteps: the per-step stack already happened inside
+    # each segment. The concatenated prediction is a graph output and is retained either way,
+    # since the loss needs every timestep; it is the INTERIORS that checkpointing frees.
+    return torch.cat(ys, dim=1), x, xc
 
 
 def window_controller_index(sys_data, record_ctrl_rows, na, nb, nf, na_right, nb_right, stride):
@@ -410,8 +459,32 @@ class ClosedLoopSimulator:
     # augment_training_data disagree, fit() raises rather than letting an array arrive unnamed.
     extra_array_names = ('ctrl_ix',)
 
-    def __init__(self, bank, train_ctrl_rows, val_records=()):
+    def __init__(self, bank, train_ctrl_rows, val_records=(), checkpoint_chunk=0,
+                 compiled=None):
         self.bank = bank
+        # CHANGED (D-169): (hfn, output_only) compiled with torch.compile, or None for eager.
+        #
+        # Held HERE rather than substituted for `fit_sys.hfn`, deliberately. Everything else that
+        # rolls out -- `closed_loop_free_run_rms_batch`, the ~20 diagnostics -- reaches for
+        # `fit_sys.hfn` directly, so leaving that attribute alone keeps every one of them eager by
+        # construction, with no routing logic and nothing to keep in sync. That matters because a
+        # compiled callable reached from the validation path would be re-entered under no_grad and
+        # (before the fit() guard below) on a different device, either of which forces a recompile.
+        # Job 80695 measured that cost directly: 599.56 s and 795.69 s for the first update after a
+        # device flip, against a 3.30 s eager baseline. fit() no longer flips when a simulator is
+        # attached (interconnect.py::fit, `_flip_for_validation`), and this split keeps the
+        # remaining validation traffic away from the compiled artefact regardless.
+        #
+        # Compiling BOTH members is required: torch.compile(module) returns an OptimizedModule
+        # that proxies attribute access, so `.output_only` on it is still the UNcompiled bound
+        # method and the rollout would silently run half compiled.
+        self._compiled = compiled
+        self._t_hist = []          # per-update wall times, for the recompile detector below
+        # CHANGED (D-169): steps per gradient-checkpoint segment for the TRAINING rollout.
+        # Held here rather than passed through loss_kwargs because it is a property of how this
+        # rollout is executed, not of the objective: fit() forwards loss_kwargs to
+        # make_training_data as well, where a memory-schedule knob has no meaning. 0 = off.
+        self.checkpoint_chunk = int(checkpoint_chunk)
         self.train_ctrl_rows = [int(r) for r in train_ctrl_rows]
         # The deepSI window bookkeeping is a collaborator, not a responsibility of this class.
         # See WindowControllerIndex for why.
@@ -419,6 +492,21 @@ class ClosedLoopSimulator:
         self.val_records = [(str(n), sd, int(r)) for n, sd, r in val_records]
         self._val_checked = False
         self.last_window_counts = None
+
+    # CHANGED (D-169, job 80706): compiled artefacts are a CACHE, not state, and must not be
+    # serialised. deepSI checkpoints the whole system with `torch.save(self.__dict__)`
+    # (fit_system.py::checkpoint_save_system), which reaches this object through
+    # `fit_sys.simulator`; pickling a torch.compile wrapper then fails on the function it wraps
+    # ("Can't pickle Interconnect.output_only: it's not the same object as ..."), because pickle
+    # stores functions by qualified-name reference and the lookup no longer returns that object.
+    # Dropping it keeps checkpoints portable and costs nothing: build_closed_loop recompiles.
+    # Note that fit() reloads the best checkpoint when training ends, so the returned system's
+    # simulator comes back eager. That is after the last update, and the post-training diagnostics
+    # are eager by construction anyway.
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state['_compiled'] = None
+        return state
 
     # ---- training -----------------------------------------------------------------------
     def __call__(self, fit_sys, x, ufuture, yfuture, ctrl_ix=None, **kw):
@@ -431,9 +519,58 @@ class ClosedLoopSimulator:
         # purpose: carrying it across a boundary is only meaningful for multiple shooting, where
         # whether xc resets at a segment start is an unanswered modelling question, and that
         # combination is refused rather than guessed (see SSE_Interconnect_MultipleShooting).
-        y_pred, x_final, _ = closed_loop_rollout(fit_sys.hfn, fit_sys.hfn.output_only,
-                                                 ufuture, yfuture, x, self.bank, ctrl_ix.long())
+        # CHANGED (D-169): route to the compiled pair only when it is VALID to do so.
+        #
+        # `is_cuda`: the compiled kernels are CUDA kernels. deepSI validates on the CPU, so a CPU
+        #     call here would trigger a per-device recompile.
+        # `is_grad_enabled`: the only no_grad caller through this seam is training.py's _NfProbe,
+        #     which runs DURING validation. It now runs on the TRAINING device (its batch follows
+        #     the model since job 80706), so `is_cuda` no longer catches it and this condition is
+        #     what keeps it eager. Both are kept: is_cuda still guards a CPU run.
+        #
+        # This is not a second implementation of the rollout selected by a flag (which
+        # docs/pytorch-optimization-guidelines.md forbids): it is one rollout, handed whichever
+        # callable is legal for the tensors it was given.
+        use_c = (self._compiled is not None and ufuture.is_cuda and torch.is_grad_enabled())
+        if use_c:
+            hfn, out_fn = self._compiled
+            # Required by mode='reduce-overhead'. Without it CUDA graphs never reach the replay
+            # fast path, PyTorch warns ("Unable to hit fast path of CUDAGraphs because of
+            # pending, uninvoked backwards"), and the run silently proceeds at inductor-only
+            # speed: ~2.6x instead of ~6.5x. Measured, jobs 80610 and 80634.
+            torch.compiler.cudagraph_mark_step_begin()
+        else:
+            hfn, out_fn = fit_sys.hfn, fit_sys.hfn.output_only
+
+        _t0 = time.perf_counter()
+        y_pred, x_final, _ = closed_loop_rollout(hfn, out_fn,
+                                                 ufuture, yfuture, x, self.bank, ctrl_ix.long(),
+                                                 chunk=self.checkpoint_chunk)
+        if use_c:
+            # CUDA graphs reuse their memory pool, so anything retained past the next invocation
+            # would point at overwritten memory. Cloning the two outputs that leave this method
+            # is the cheap way to make that impossible for every downstream caller.
+            y_pred, x_final = y_pred.clone(), x_final.clone()
+        self._note_update_time(time.perf_counter() - _t0)
         return y_pred, x_final
+
+    def _note_update_time(self, dt):
+        """Print a line when one update takes far longer than usual: a RECOMPILE detector.
+
+        A Dynamo recompile costs 12-150 s against a ~25 s update at nf=12000, and it is otherwise
+        SILENT -- the run completes, just slower, and nothing in the log says why. The most likely
+        trigger is deepSI's CPU/CUDA flip around validation reaching a compiled callable, which
+        the routing above is designed to prevent; this is the instrument that says whether it
+        worked. One perf_counter per UPDATE (not per timestep), so the cost is nil.
+        """
+        h = self._t_hist
+        if len(h) >= 8:
+            med = sorted(h[-32:])[len(h[-32:]) // 2]
+            if dt > 5 * med:
+                print(f'  [compile] update took {dt:.1f} s against a {med:.2f} s median: '
+                      f'likely a torch.compile RECOMPILE. If this repeats around validations, '
+                      f'a compiled callable is being invoked on the wrong device.', flush=True)
+        h.append(dt)
 
     def augment_training_data(self, data, sys_data, fit_sys, **kw):
         """Append whatever the rollout needs per window. Delegated, see WindowControllerIndex."""
@@ -487,8 +624,12 @@ class ClosedLoopSimulator:
         if not self._val_checked:
             self._check_val_records(val_sys_data)
         sdl = val_sys_data.sdl if hasattr(val_sys_data, 'sdl') else [val_sys_data]
-        per_record = [closed_loop_free_run_rms(fit_sys, sd, self.bank, row)[1]
-                      for sd, (_, _, row) in zip(sdl, self.val_records)]
+        # CHANGED (D-169): ONE rollout over all records instead of one per record. The validation
+        # set is 4 x 48000 samples; sequentially that is 192k timesteps each at batch one, and the
+        # rollout is dispatch-bound, so batch one pays the full per-step price for a quarter of
+        # the work. Same chain, same numbers, ~4x less wall time (measured ~6 min before).
+        _, per_record = closed_loop_free_run_rms_batch(
+            fit_sys, sdl, self.bank, [row for (_, _, row) in self.val_records])
         self.last_per_record = per_record
         # THEORY: deepSI aggregates a multi-record sim-RMS in System_data_list.RMS as
         # weighted_mean([sd.RMS(sdo) for ...]), i.e. the ARITHMETIC mean of the per-record RMS
@@ -502,14 +643,32 @@ class ClosedLoopSimulator:
                                 weights=[len(sd.u) for sd in sdl]))
 
 
-def closed_loop_free_run_rms(fit_sys, sys_data, bank, ctrl_row, k0=None):
-    """One record: encoder-init, closed-loop free run, error in metres. (per_channel, aggregate).
+def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, k0=None):
+    """@added (D-169). N records scored in ONE rollout. Returns (per_channel_list, aggregate_list).
 
-    The scoring path, in ONE place. `validation_error` is a loop over this plus a quadratic mean,
-    and any diagnostic that wants the same number calls this rather than rebuilding the
-    normalise -> encoder-window -> rollout -> denormalise -> rms chain. That chain existed twice
-    after the rollout itself was unified, which is the same defect one level up: two
-    implementations that agree today and drift the first time one of them is touched.
+    THE scoring path. `closed_loop_free_run_rms` is the one-record case of this, and
+    `validation_error` calls it once for the whole validation set instead of looping. There is
+    still exactly one normalise -> encoder-window -> rollout -> denormalise -> rms chain, which is
+    the invariant the single-record docstring was protecting; batching it does not add a second.
+
+    WHY. Scoring 4 records one at a time is 4 x 48000 = 192k SEQUENTIAL steps, each a batch of
+    one. The rollout cost is dominated by per-timestep dispatch, not by arithmetic (see
+    ControllerBank's class docstring), so a batch of one pays the full dispatch price for 1/N of
+    the work. Stacking the records makes it 48k steps at batch N: same arithmetic, same numbers,
+    N times fewer Python iterations and kernel launches. Measured ~6 min per validation before.
+
+    Records are grouped by post-k0 length and one rollout is run per group. Padding to a common
+    length is deliberately NOT done: a padded tail would enter the free run, and the controller
+    would integrate the model's response to invented data before the score is taken.
+
+    NOT BIT-IDENTICAL TO THE OLD PER-RECORD LOOP, and that is a deliberate trade. Batching changes
+    BLAS blocking, so float32 sums reassociate: measured max RELATIVE difference 2.6e-10 on the
+    aggregate (scratchpad val_batch_equiv.py), i.e. ~1000x inside float32 eps, against epoch-to-
+    epoch `bestfit` changes of order percent. Selection is therefore unaffected in practice, but
+    a `bestfit` from this path is not bit-comparable with one recorded before 2026-08-31. The
+    single-record case IS still bit-identical, because a group of one takes the same BLAS path as
+    before; the 4-group case in that script confirms the difference comes from batch width and
+    not from this code.
 
     k0 defaults to max(na, nb), the first sample at which the encoder window is complete.
     """
@@ -518,27 +677,70 @@ def closed_loop_free_run_rms(fit_sys, sys_data, bank, ctrl_row, k0=None):
     na_r = getattr(fit_sys, 'na_right', 0)
     nb_r = getattr(fit_sys, 'nb_right', 0)
     k0 = max(na, nb) if k0 is None else k0
-    dtype = next(fit_sys.hfn.parameters()).dtype
+    _p = next(fit_sys.hfn.parameters())
+    dtype = _p.dtype
+    # CHANGED (D-169): every tensor built here follows the MODEL's device. Previously they were
+    # created on the CPU unconditionally, which is correct only because deepSI's fit() happens to
+    # call self.cpu() before validating (interconnect.py:716). Any other caller on a CUDA model
+    # (a diagnostic, a probe, a future validator that does not flip the device) would have hit a
+    # device mismatch. Reading it off the model keeps the two in step by construction.
+    device = _p.device
     np_dtype = np.float64 if dtype == torch.float64 else np.float32
     rv = lambda a: np.asarray(a).ravel()                                    # noqa: E731
+    T = lambda a: torch.as_tensor(np.ascontiguousarray(a), dtype=dtype, device=device)  # noqa: E731
 
-    un = ((sys_data.u - rv(norm.u0)) / rv(norm.ustd)).astype(np_dtype)
-    yn = ((sys_data.y - rv(norm.y0)) / rv(norm.ystd)).astype(np_dtype)
-    uh = torch.as_tensor(np.ascontiguousarray(un[None, k0 - nb:k0 + nb_r]), dtype=dtype)
-    yh = torch.as_tensor(np.ascontiguousarray(yn[None, k0 - na:k0 + na_r]), dtype=dtype)
-    with torch.no_grad():
-        x0 = fit_sys.encoder(uh, yh)
-        u_t = torch.as_tensor(np.ascontiguousarray(un[None, k0:]), dtype=dtype)
-        y_t = torch.as_tensor(np.ascontiguousarray(yn[None, k0:]), dtype=dtype)
-        y_pred, _, _ = closed_loop_rollout(fit_sys.hfn, fit_sys.hfn.output_only,
-                                           u_t, y_t, x0, bank,
-                                           torch.tensor([int(ctrl_row)], dtype=torch.long))
-    y_phys = y_pred[0].cpu().numpy() * rv(norm.ystd) + rv(norm.y0)
-    e = y_phys - np.asarray(sys_data.y)[k0:]
-    # The aggregate is formed from the per-channel MSE, not from the per-channel RMS, so that it
-    # is `sqrt(mean(mean(e**2)))` exactly as before this was extracted. Taking sqrt per channel and
-    # squaring it back would be the same number in exact arithmetic and a different one in
-    # floating point, which would cost bit-identity against the recorded selection scalar for no
-    # reason at all.
-    mse_per_channel = np.mean(e ** 2, axis=0)
-    return np.sqrt(mse_per_channel), float(np.sqrt(np.mean(mse_per_channel)))
+    if len(sdl) != len(ctrl_rows):
+        raise RuntimeError(
+            'closed_loop_free_run_rms_batch got %d records and %d controller rows. They are '
+            'positional: a length mismatch means some record would be scored through another '
+            "record's controller, which produces a plausible number and no error."
+            % (len(sdl), len(ctrl_rows)))
+
+    un = [((sd.u - rv(norm.u0)) / rv(norm.ustd)).astype(np_dtype) for sd in sdl]
+    yn = [((sd.y - rv(norm.y0)) / rv(norm.ystd)).astype(np_dtype) for sd in sdl]
+
+    groups = {}
+    for i, u in enumerate(un):
+        groups.setdefault(len(u) - k0, []).append(i)
+
+    per_channel = [None] * len(sdl)
+    aggregate = [None] * len(sdl)
+    for ixs in groups.values():
+        uh = T(np.stack([un[i][k0 - nb:k0 + nb_r] for i in ixs]))
+        yh = T(np.stack([yn[i][k0 - na:k0 + na_r] for i in ixs]))
+        with torch.no_grad():
+            x0 = fit_sys.encoder(uh, yh)
+            u_t = T(np.stack([un[i][k0:] for i in ixs]))
+            y_t = T(np.stack([yn[i][k0:] for i in ixs]))
+            # chunk is not passed: this runs under no_grad, where closed_loop_rollout takes the
+            # un-checkpointed path anyway. Stated here so the omission reads as a decision.
+            y_pred, _, _ = closed_loop_rollout(
+                fit_sys.hfn, fit_sys.hfn.output_only, u_t, y_t, x0, bank,
+                torch.tensor([int(ctrl_rows[i]) for i in ixs], dtype=torch.long, device=device))
+        y_pred = y_pred.cpu().numpy()
+        for j, i in enumerate(ixs):
+            y_phys = y_pred[j] * rv(norm.ystd) + rv(norm.y0)
+            e = y_phys - np.asarray(sdl[i].y)[k0:]
+            # The aggregate is formed from the per-channel MSE, not from the per-channel RMS, so
+            # that it is `sqrt(mean(mean(e**2)))` exactly as before this was extracted. Taking
+            # sqrt per channel and squaring it back would be the same number in exact arithmetic
+            # and a different one in floating point, which would cost bit-identity against the
+            # recorded selection scalar for no reason at all.
+            mse_per_channel = np.mean(e ** 2, axis=0)
+            per_channel[i] = np.sqrt(mse_per_channel)
+            aggregate[i] = float(np.sqrt(np.mean(mse_per_channel)))
+    return per_channel, aggregate
+
+
+def closed_loop_free_run_rms(fit_sys, sys_data, bank, ctrl_row, k0=None):
+    """One record: encoder-init, closed-loop free run, error in metres. (per_channel, aggregate).
+
+    CHANGED (D-169): now the one-record case of `closed_loop_free_run_rms_batch` rather than a
+    separate implementation. Kept as the public single-record entry point because the ~20
+    diagnostics that score one record call it by this name and should not have to wrap a list.
+
+    k0 defaults to max(na, nb), the first sample at which the encoder window is complete.
+    """
+    per_channel, aggregate = closed_loop_free_run_rms_batch(
+        fit_sys, [sys_data], bank, [ctrl_row], k0)
+    return per_channel[0], aggregate[0]

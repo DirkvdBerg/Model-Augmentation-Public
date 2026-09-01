@@ -40,6 +40,48 @@ class Interconnect(nn.Module):
         self.first_step_eval = True
         self.save_signals = False
 
+    # CHANGED (D-169): make `array_connection_matrices` follow the module's device and dtype.
+    #
+    # They are a plain nested LIST of tensors, not registered buffers, so `.cuda()`, `.cpu()` and
+    # `.to(dtype)` never touched them. Until now that was papered over by the per-call
+    # `.to(device=x.device, dtype=x.dtype)` checks in forward() and output_only(), which re-home
+    # them lazily on the next call.
+    #
+    # WHY THAT IS NOT GOOD ENOUGH. deepSI's fit() moves the model to the CPU around every
+    # validation (interconnect.py:716,734), and the FIRST validation runs before training even
+    # starts (:802). So on a CUDA run the matrices are sitting on the CPU when the first training
+    # step is traced, `.to(device=...)` becomes a real CPU->CUDA copy inside the graph, and the
+    # CPU tensor enters it as an input. inductor then disqualifies CUDA graphs for the whole
+    # rollout:
+    #     "skipping cudagraphs due to cpu device (primals_2) ... in output_only"
+    # `mode='reduce-overhead'` silently degrades to plain `inductor`, ~2.6x instead of ~6.5x, with
+    # no error and no recompile. Measured on blade1, job 80688.
+    #
+    # `_apply` is what .to()/.cuda()/.cpu()/.float()/.double() all funnel through, so overriding
+    # it once covers every one of them. NOT gated on CUDA: this is "keep these tensors in sync
+    # with the module", which is correct on every device. It also makes `use_f64` work by the
+    # normal `.to(dtype)` route instead of depending on the lazy per-call heal.
+    #
+    # The per-call checks in forward() and output_only() are deliberately LEFT IN PLACE. With this
+    # override they never have work to do (`.to()` on a tensor already on the target device
+    # returns that same tensor, so nothing enters the graph), and keeping them preserves the
+    # self-healing behaviour that the ~20 diagnostics building an Interconnect by hand may rely on.
+    def _apply(self, fn, *args, **kwargs):
+        out = super()._apply(fn, *args, **kwargs)
+        acm = getattr(self, 'array_connection_matrices', None)
+        if acm is not None:
+            self.array_connection_matrices = [[fn(t) for t in row] for row in acm]
+        return out
+
+    # CHANGED (D-169): the device/dtype the connection matrices should live at.
+    # Read off the module's own tensors rather than stored, so it cannot go stale. Falls back to
+    # the CPU default when the model holds no tensors yet, which is the state `init_forward` runs
+    # in for a bare Interconnect built by a diagnostic.
+    def _module_device_dtype(self):
+        for t in itertools.chain(self.parameters(), self.buffers()):
+            return t.device, (t.dtype if t.is_floating_point() else None)
+        return None, None
+
     def init_model(self, sys_data):
         # x, u = make_tensors_from_sys_data(sys_data)
         # return
@@ -159,7 +201,15 @@ class Interconnect(nn.Module):
             computable_elements = np.argwhere(np.sum(connection_interconnect_matrix, axis=1)==0).flatten()
             for element in computable_elements:
                 if element not in self.order_output_signal_computation:
-                    self.order_output_signal_computation.append(element)
+                    # CHANGED (D-169): int(), not the raw numpy scalar. `computable_elements` comes
+                    # from np.argwhere(...).flatten(), so these were numpy.int64. This list is the
+                    # loop variable of forward()'s main loop, where `if output_signal_ix >= 2`
+                    # then branches on a numpy scalar -- which torch.compile cannot trace, one
+                    # `generic_jump NumpyNdarrayVariable` graph break PER OUTPUT SIGNAL
+                    # (measured: 11 breaks / 12 graphs in Interconnect.forward before this).
+                    # A numpy.int64 and a Python int index a list and compare identically, so this
+                    # cannot change any result; it only lets Dynamo specialise the branch away.
+                    self.order_output_signal_computation.append(int(element))
                     connection_interconnect_matrix[:,element] = 0
 
         if self.debugging: print("Order of computation: " + str(self.order_output_signal_computation))
@@ -176,6 +226,18 @@ class Interconnect(nn.Module):
         # lazily per timestep would cost more than the forward it replaces.
         self.output_cone = self._signal_cone(1)
         if self.debugging: print("Output cone: " + str(self.output_cone))
+
+        # CHANGED (D-169): place the matrices on the module's device/dtype NOW.
+        # `init_forward` is lazy (it runs on the first forward, :69-71) and builds these on the
+        # CPU, so on a CUDA model they would start life on the wrong device and only be corrected
+        # by the per-call heal -- which is exactly the state that costs CUDA graphs their fast
+        # path. `_apply` keeps them in sync from here on; this puts them in sync to begin with.
+        _dev, _dt = self._module_device_dtype()
+        if _dev is not None:
+            self.array_connection_matrices = [
+                [t.to(device=_dev, dtype=_dt) if (_dt is not None and t.is_floating_point())
+                 else t.to(device=_dev) for t in row]
+                for row in self.array_connection_matrices]
 
     # CHANGED (closed-loop seam): added, see output_only().
     def _signal_cone(self, target_output_ix):
@@ -712,8 +774,33 @@ class SSE_Interconnect(SS_encoder_general):
         The default checkpoint location is "C:/Users/USER/AppData/Local/deepSI/checkpoints" for windows and ~/.deepSI/checkpoints/ for unix like.
         These can be loaded manually using sys.load_checkpoint("_best") or "_last". (For this to work the sys.unique_code needs to be set to the correct string)
         '''
+        # CHANGED (D-169): the model no longer round-trips to the CPU for validation when a
+        # simulator is attached.
+        #
+        # MEASURED COST OF THE ROUND TRIP (job 80695, blade1, nf=200, compiled with
+        # mode='reduce-overhead'): the first training update AFTER a flip took 599.56 s and
+        # 795.69 s, against a 3.30 s / 3.07 s eager baseline. Every flip forces Dynamo to
+        # recompile, and 599.56/200 = 3.00 s and 795.69/200 = 3.98 s per timestep suggests it
+        # recompiles on EVERY invocation until the guards restabilise, not once -- in which case
+        # the cost scales with nf and would be hours per flip at nf = 12000. `.cpu()` and
+        # `.cuda()` REPLACE the parameter tensors, which is what invalidates the guards.
+        #
+        # The flip was never needed on this path: ClosedLoopSimulator.validation_error builds its
+        # tensors on the model's own device (closed_loop.py, closed_loop_free_run_rms_batch), so
+        # validation runs correctly wherever the model already is. deepSI's OWN validators go
+        # through apply_experiment and do assume the CPU, hence the guard rather than a deletion.
+        # It keys on WHICH VALIDATOR is in use, not on device, and there is no device branch in
+        # any hot path.
+        #
+        # Numerically this changes nothing: the same job measured the compiled arm's loss
+        # trajectory and all three validation scores as identical to eager across the flips. The
+        # flip was purely a performance fault, and an expensive one.
+        _flip_for_validation = getattr(self, 'simulator', None) is None
+
         def validation(train_loss=None, time_elapsed_total=None):
-            self.eval(); self.cpu()
+            self.eval()
+            if _flip_for_validation:
+                self.cpu()
             Loss_val = self.cal_validation_error(val_sys_data, validation_measure=validation_measure)
             self.Loss_val.append(Loss_val)
             temp_loss_stack = np.array([])
@@ -721,7 +808,6 @@ class SSE_Interconnect(SS_encoder_general):
                 loss_val = self.cal_validation_error(val_sys_data, validation_measure=val_measure)
                 temp_loss_stack = np.hstack((temp_loss_stack, loss_val))
                 # print(loss_val)
-            print( temp_loss_stack.T.shape)
             self.multi_loss_val = np.append(self.multi_loss_val, temp_loss_stack.T)
             
             self.Loss_train.append(train_loss)
@@ -730,8 +816,12 @@ class SSE_Interconnect(SS_encoder_general):
             self.epoch_id.append(self.epoch_counter)
             if self.bestfit>=Loss_val:
                 self.bestfit = Loss_val
+                # CHANGED (D-169): with `_flip_for_validation` False the model is still on its
+                # training device here, so this writes CUDA tensors. Reading them back on a
+                # CPU-only machine needs map_location; the project's own loader passes it
+                # (gantry_dynamic/training.py::load_checkpoint).
                 self.checkpoint_save_system()
-            if cuda: 
+            if cuda and _flip_for_validation:
                 self.cuda()
             self.train()
             return Loss_val
@@ -1015,7 +1105,13 @@ class WindowErrorStats:
     @torch.no_grad()
     def update(self, y_pred, y_true):
         """Accumulate one batch. y_pred, y_true: (batch, nf, ny), NORMALISED."""
-        e = (y_pred - y_true).detach() * self.ystd.to(y_pred.dtype)
+        # CHANGED (D-169, job 80708): follow y_pred's DEVICE as well as its dtype. This object is
+        # deliberately not an nn.Module (see the class docstring), so `.cuda()` never moves `ystd`
+        # and it stays on the CPU for the life of the run. That was invisible while fit() flipped
+        # the model to the CPU before every validation; with the flip gone, both instances of this
+        # class -- fit_sys.loss_stats and the val probe's own -- meet CUDA tensors here.
+        # The accumulators below are all derived from `e`, so they follow automatically.
+        e = (y_pred - y_true).detach() * self.ystd.to(device=y_pred.device, dtype=y_pred.dtype)
         sq = e * e
         sq_ch = sq.sum(dim=(0, 1))
         self._sq += float(sq.sum())

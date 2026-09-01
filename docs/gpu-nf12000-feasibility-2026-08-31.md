@@ -1,5 +1,28 @@
 # GPU feasibility for a 3 s training horizon (nf = 12000)
 
+> **SUPERSEDED 2026-09-01 by `scripts/gantry/GPU/README.md`.** This document is the reasoning as it
+> stood BEFORE anything was measured, and its central figures are wrong. It is kept because the
+> argument structure survived even where the numbers did not, and because the size of the errors is
+> itself worth a record. Do not quote a number from here.
+>
+> | This doc claimed | Measured |
+> |---|---|
+> | ~140 ops/timestep | **2404** (62 of them matmuls) |
+> | `t_step` ~3.4 ms | **15.0 ms** eager, **2.12 ms** compiled |
+> | nf = 12000 in ~7 h | **28-35 h** eager; ~10 h compiled |
+> | window arrays 145 TB | **145 GB** (a 1000x unit error) |
+> | 4 kB/sample/step | **~590 B** |
+> | checkpointing mandatory | **turned OFF**; it costs 1.8x and ~3.5 GB fits an 11 GB card |
+> | batch 4096, stride 1 | **batch 512, stride 10** |
+> | `use_f64` untouched | **`True`**; float64 measured free (0-4%) |
+> | A100 relevant if float64 | **irrelevant**; P2000 and 2080 Ti give the same `t_step` to 0.3% |
+>
+> What survived: the pipeline is dispatch-bound (measured 8.8 us/op); `t_step` is independent of
+> batch (measured flat over 64x); the A100 is not worth queuing for; and `T = U x nf x t_step` is the
+> equation that governs everything. What the document MISSED entirely is the finding that mattered
+> most: `Interconnect.forward` had 11 graph breaks and could not be compiled at all, which is where
+> the 6.5x actually came from.
+
 **Question.** Can `scripts/gantry/gantry_interconnect_dynamic.py` train at `nf_seconds = 3.0`
 (nf = 12000 at 4 kHz), on all 14 train and 4 validation trajectories, for 5 epochs, inside a
 10 hour wall, by moving to GPU?
@@ -134,9 +157,26 @@ nodes**; chunk 100 buys back ~1.6 GB if needed.
 
 Two hard requirements that follow:
 
-- The raw dataset is 18 records x 48000 x 6 floats = ~20 MB. Keep all of it resident on the GPU and slice
-  windows as **views**. Materialising 504k windows of length 12000 would be ~9.5 TB.
 - The batch load into a static buffer costs ~3 ms against a ~40 s update, i.e. free.
+- **The window arrays must stop being materialised.** `deepSI_corrections.py::to_hist_future_data`
+  currently builds `uhist/yhist/ufuture/yfuture` as dense `np.array` of shape `(N_windows, nf, 3)`:
+
+  | Config | `ufuture` + `yfuture`, materialised |
+  |---|---|
+  | now: nf 400, stride 10, 66,626 windows | ~0.64 GB (why this has never been hit) |
+  | nf 12000, stride 10, 50,376 windows | ~14.5 GB (fits system RAM, not GPU) |
+  | nf 12000, stride 1, 503,762 windows | ~145 GB (fits nowhere) |
+
+  This is **not** a property of the problem. The information content of the training set is 16 MB
+  (14 x 48000 x 3, for `u` and `y`); the 14.5 GB is that same 16 MB copied 1,200 times, because at
+  nf = 12000 stride 10 each sample lies in `nf/stride = 1200` overlapping windows. Hold the records
+  once on the GPU plus a `(N_windows,)` start-index vector, and materialise only the current batch:
+  `4096 x 12000 x 3 x 4 B = 590 MB`, which is the figure the table above assumes. Standard
+  index-instead-of-copy, but it touches the framework's data path: `to_hist_future_data`,
+  `interconnect.py::Dtype_DataLoader`, the `N_training_samples` count in `fit()`, and both checks in
+  `closed_loop.py::WindowControllerIndex`. The content check there must be kept; its own docstring
+  records that it caught an off-by-one that trained windows inside the wrong controller loop without
+  crashing.
 
 ---
 
