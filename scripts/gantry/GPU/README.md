@@ -364,3 +364,189 @@ time Part 2 compiles no CPU tensor can enter the graph. `flip_safety` compiles *
 validation, which puts them back. One root cause explains both the failure and the non-failure, and
 the `_apply` fix makes the ordering irrelevant. The benchmark numbers were never wrong; they were
 measured in the lucky ordering.
+
+---
+
+## 13. The device-ownership bug class, and the audit that closed it (jobs 80706-80713)
+
+Everything in Sections 2 to 10 was measured by **benchmarks** that call `closed_loop_rollout`
+directly. The first attempt to run the real `fit()` compiled on CUDA failed three times, each with
+a different symptom and all with one cause.
+
+**The cause.** `nn.Module._apply` walks `_parameters`, `_buffers` and `_modules`. A tensor held as a
+plain Python attribute is invisible to it and stays on the CPU forever. That was harmless while
+`fit()` flipped the model to the CPU before every validation, because everything matched by
+accident. Removing the flip (below) exposed the whole class at once.
+
+**Why it took three jobs.** Each crash was fixed as it appeared, which found symptoms rather than
+the class. The fix was to stop patching and enumerate: walk the object graph from `fit_sys` and
+classify every tensor by *how it is held*, which is device-independent and therefore exact without
+a GPU. Run **before and after a step**, because holders created during a step are invisible to a
+walk taken before one.
+
+| holder | count | status |
+|---|---|---|
+| `hfn.array_connection_matrices[i][j]` | 16 | handled by the `_apply` override + re-home at the end of `init_forward` |
+| `hfn.signal_connections[i].connection_matrix` | 3 | inert: consumed only by `init_forward` (`:355-400`), never in the per-step forward |
+| `loss_stats.ystd`, `_val_stats_obj.ystd` | 2 | fixed: `WindowErrorStats.update` now follows `y_pred`'s device as well as its dtype |
+| `loss_stats._sq_ch/_sum_ch` + the probe's | 4 | automatic: derived from `e`, so they inherit the device |
+| `_val_batch[0..3]`, `_val_kwargs['ctrl_ix']` | 5 | fixed: homed once at first use in `_NfProbe._val_stats` |
+
+**20 of the 30 did not exist before a step ran.** A pre-step inspection could not have found them.
+
+**The three failures and their fixes:**
+
+1. **80706, `PicklingError: Can't pickle Interconnect.output_only`.** `checkpoint_save_system` does
+   `torch.save(self.__dict__)`, which reaches the simulator and its `torch.compile` wrappers;
+   pickle stores functions by qualified-name reference and the lookup no longer returns that
+   object. Fix: `ClosedLoopSimulator.__getstate__` drops `_compiled`, because compiled code is a
+   cache and `build_closed_loop` regenerates it. Unit-tested, including that `__getstate__` copies
+   rather than mutating, so saving mid-run does not decompile the live simulator.
+2. **80708, `[nf val] failed: cuda:0 and cpu`** then the same in `loss_stats`. The probe batch and
+   `WindowErrorStats.ystd`, per the table above.
+3. **80714 (local), `IndexError: index 8 is out of bounds`.** Not a device bug: `ann_route_ix` must
+   have `6 + nx_ann` rows and is hand-maintained. See Sect. 15.
+
+**The `fit()` flip, removed.** deepSI's `validation()` called `self.cpu()` before validating and
+`self.cuda()` after. Job 80695 measured the first training update after each flip at **599.56 s and
+795.69 s** against a 3.30 s eager baseline: `.cpu()`/`.cuda()` rebind the parameter tensors, so
+Dynamo recompiles every time. The loss trajectory and all validation scores were identical to eager,
+so it was purely a performance fault. `fit()` now skips the flip when a simulator is attached
+(`_flip_for_validation`). Validation therefore runs on the **training device**, eager.
+
+**End-to-end verification (80713), the first compiled CUDA run through the real `fit()`:**
+
+```
+per-update s: 2.31 26.96 472.67 0.71 0.51 0.49 0.49 ... 0.50 0.49 0.49 0.50
+                   ^compile ^CUDA-graph capture    ^18 steady-state samples
+```
+
+0.50 s/update at nf = 400, batch 512, float64, `nx_ann=2`. No recompile after warm-up, checkpoint
+saved and reloaded, probe reporting on-device, post-training diagnostics matching the CPU
+(`R2_linmap +0.5483 / +0.3418`, identical).
+
+---
+
+## 14. At the real horizon (job 80712, nf = 12000, batch 512, chunk 0)
+
+**Memory, measured rather than extrapolated: 3767 MB peak against 10.6 GB usable.** Checkpointing
+stays off at nf = 12000 with 2.8x headroom, and the 1.8x penalty held in reserve (Sect. 5) is not
+needed. At 591 B/sample/step, batch 1024 projects to ~7.3 GB and would still fit.
+
+**Speed:**
+
+| | `t_step` | vs eager | peak | compile | accuracy | updates/10 h |
+|---|---|---|---|---|---|---|
+| eager | 17.190 ms | - | 3767 MB | - | - | 174 |
+| `inductor` | 6.428 ms | 2.67x | 3556 MB | 87.7 s | `max\|dg\|=2.3e-10` vs `\|g\|=4.13e-04` | 466 |
+| `reduce-overhead` | **never completed** | | | **> 50 min** | | |
+
+**The `reduce-overhead` result is the important one, and it is negative.** The job was killed at its
+1.5 h wall with the mode still compiling. The timing loop itself is 2-3 min at that horizon, so
+essentially all of it was CUDA-graph capture.
+
+Capture cost scales steeply with graph size, which two independent measurements now show:
+
+| | capture |
+|---|---|
+| nf = 400, `nx_ann=2` 16x2 (80713) | 473 s |
+| nf = 400, `nx_ann=8` 24x3 (80717) | 1723 s |
+| nf = 12000, `nx_ann=2` 16x2 (80712) | > 3000 s, unfinished |
+
+Naive scaling from 473 s by the 30x horizon gives ~4 h, which would be 40% of a 10 h wall for an
+unknown gain. Hence the split recommendation in Sect. 1. Note also that `TORCHINDUCTOR_CACHE_DIR`
+caches **codegen**, not capture: a rerun pays capture again.
+
+---
+
+## 15. Where the device transition belongs (job 80717)
+
+The move to CUDA used to happen in `init_model`, i.e. at model **build** time. That quietly made
+everything between `build_model` and `train_model` GPU code, which it is not:
+`gantry_interconnect_dynamic.py:339-340` calls `encoder_init_state`, which builds its inputs with
+`torch.tensor(...)` on the CPU and feeds them to `fit_sys.encoder`. On a CUDA build that raises in
+`pre_encoder.py:465` at `uhist_mod + self.u_off`.
+
+Enumerating every call that touches `fit_sys` between build and training gives exactly three, and
+none of them wants a GPU:
+
+| line | call | needs GPU |
+|---|---|---|
+| :324 | `build_closed_loop` | no; `torch.compile` traces lazily at first call |
+| :339, :340 | `encoder_init_state` x2 | no; the crash site |
+
+So the pipeline has three phases and only the middle one is GPU work:
+
+```
+build + pre-training diagnostics   CPU
+  fit_sys.cuda()  ──────────────
+training + validation              GPU
+  fit_sys.cpu()   ──────────────
+post-training evaluation           CPU
+```
+
+Implemented as one `.cuda()` / `.cpu()` pair in `train_model` bracketing `fit()`, with
+`init_model(device='cpu')`. Cost: 40 small tensors moved twice per run, sub-millisecond. Moving
+after the optimiser is constructed is safe because `_apply` rebinds `param.data` in place, keeping
+the optimiser's references valid, and Adam's state is allocated lazily on the first step.
+
+**A side benefit, confirmed in 80717.** Initialisation now runs on the CPU exactly as it did in the
+CPU sweep, and the untrained starting point matches to four digits: `[nf val] rms 1.555e-05` against
+`first=1.5554e-05` in jobs 80501/80555/80557. The GPU run is a fair continuation of that sweep
+rather than a different experiment.
+
+**Related trap, not device-related.** `ann_route_ix` must have `6 + nx_ann` entries and is a
+hand-maintained constant: `(0..7)` for `nx_ann=2`, `(0..13)` for `nx_ann=8`. Changing `nx_ann`
+without it crashes in `expansion_matrix`. A validator in `RunConfig.__post_init__` would turn that
+into a message before the data load; not yet added.
+
+---
+
+## 16. What this buys the training, and the cost inversion it exposes
+
+**Validation is now the dominant per-epoch cost.** Measured in 80713: one validation is ~162 s
+(15.2% of 2132 s across two), against 65 s of training per epoch at batch 512. On the CPU an epoch
+cost ~1300 s and the same validation was ~11% of it, so this inversion is new and is created by the
+speedup itself.
+
+| cadence | s/epoch | epochs in 10 h |
+|---|---|---|
+| every epoch | 227 | 156 |
+| every 5 (`its_per_val=650`) | 97 | 364 |
+| every 10 | 82 | 470 |
+
+Hence the new `its_per_val` config field (`None` = `'epoch'`, the historical default; an int is a
+number of **batch updates**, deepSI's own unit, so no epoch arithmetic is duplicated). Against the
+18 epochs the CPU sweep managed in 6.4 h, that is 5x to 13x more epochs depending on cadence.
+
+**Concurrent validation was considered and rejected.** deepSI supports it
+(`fit(concurrent_val=True)`, a `multiprocessing.Process` fed by `deepcopy(self)` over a `Pipe`), but
+the probes then run in the worker and their accumulated state is discarded: `Loss_val_nf`, the
+orth/joint series and the end-of-training summary all go empty, while the printed lines survive.
+The payoff is bounded by the validation share above, and most of it is recovered for free by the
+cadence knob. Also, our GPU training is host-dispatch-bound, so a CPU validation worker would
+compete for the same cores.
+
+**Why more epochs is the right thing to buy.** The 2026-08-31 CPU sweep (80498-80557, nf = 400,
+18 epochs, batch 256) says the runs were budget-limited, not capacity-limited:
+
+| job | `nx_ann` | net | `na_nb` | lr | best val sim-RMS | best epoch |
+|---|---|---|---|---|---|---|
+| 80498 | 2 | 16x2 | 17 | 1e-6 | 8.256e-06 | 18 (last) |
+| 80502 | 2 | 24x3 | 17 | 1e-6 | 8.358e-06 | 18 (last) |
+| 80499 | 8 | 16x2 | 29 | 1e-6 | 7.850e-06 | 18 (last) |
+| 80500 | 8 | 16x3 | 29 | 1e-6 | 8.384e-06 | 18 (last) |
+| 80501 | 8 | 24x3 | 29 | 1e-6 | 7.748e-06 | 18 (last) |
+| 80554 | 2 | 16x2 | 17 | 1e-5 | 7.464e-06 | 18 (last) |
+| 80555 | 8 | 24x3 | 29 | 1e-5 | 3.763e-06 | 18 (last) |
+| 80557 | 8 | 24x3 | 29 | 1e-4 | 3.074e-06 | 17, then worse |
+
+Six of eight took their best at the **final** epoch, monotonically. Learning rate is worth 2.7x;
+capacity is worth 6% at lr = 1e-6 and 2x at lr = 1e-5, i.e. capacity only pays once the rate can use
+it. The lr = 1e-4 run oscillates between validations (3.68e-06 to 1.355e-05), which is gradient
+noise at batch 256, not bias.
+
+**Precision is not the limiter at nf = 400.** The best Y-channel residual is 6.1e-06 m against the
+measured float32 Y floor of 2.18e-08 m (Sect. 8), a margin of ~280x. A precision floor would also be
+indifferent to learning rate, and this is not: outcomes span 8.4e-06 to 3.1e-06 across rates. Keep
+`use_f64=False` at this horizon; the float64 case in Sect. 8 is about the 12000-step rollout.
