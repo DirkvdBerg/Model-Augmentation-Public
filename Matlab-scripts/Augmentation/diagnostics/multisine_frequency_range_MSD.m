@@ -19,15 +19,32 @@
 
 clear; clc; close all;
 
+%% 0. TOGGLE -----------------------------------------------------------------
+% MA_FRAC is the hidden-MSD mass fraction and it MOVES THE MODE THIS SCRIPT
+% RECOMMENDS A BAND FOR. The absorber is not at its standalone fa = 150 Hz: the
+% payload is a free mass, so the coupled root is the free-free two-mass one,
+%     f = fa * sqrt(1 + ma/mh_rigid)
+% which is 158.11 Hz at 0.10 and 212.13 Hz at 0.50. Set this to the SAME value
+% that generated the dataset you are reasoning about:
+%     data/gantry/matlab/trajectory/{augmentation, joint}        -> 0.10
+%     data/gantry/matlab/trajectory/*_ma50*                      -> 0.50
+% It was hard-coded at 0.10 and never revisited when the ma50 datasets were
+% generated, so their multisine bands ([130,180] and [.,200]) sit BELOW the
+% mode: measured input at the absorber is 45 to 57 dB down on those records.
+MA_FRAC = 0.50;
+% ---------------------------------------------------------------------------
+
 %% 1. Parameters (identical to generate_trajectory_data_without_multisine.m)
 mb=22.8; m1=10.2; m2=10.7; Jb=1.0; Jh=0.05;
 cg1=14.5; cg2=20.3; cy=10; cb1=9; cb2=9;
 kb1=1987.5; kb2=1987.5; Lb=0.725; d=0.1;
 
 mh_total = 10.1;
-ma_frac  = 0.10;
-ma       = ma_frac * mh_total;              % 1.01 kg
+ma_frac  = MA_FRAC;                         % see section 0
+ma       = ma_frac * mh_total;              % 1.01 kg at 0.10, 5.05 kg at 0.50
 mh       = mh_total - ma;                   % 9.09 kg (rigid, as gantrySystemExtended expects)
+fprintf('ma_frac = %.2f  ->  ma = %.3f kg, mh_rigid = %.3f kg, ', ma_frac, ma, mh);
+fprintf('coupled absorber = %.2f Hz\n', 150*sqrt(1 + ma/mh));
 L0       = 0.10;                            % equilibrium offset [m]
 fa       = 150;                             % MSD natural frequency [Hz]
 ka       = ma * (2*pi*fa)^2;               % MSD spring stiffness [N/m]

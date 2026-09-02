@@ -6,8 +6,9 @@ function cfg = gtd_config(TRACK, USE_MSD, MA_FRAC)
 %   timing, the enforced hardware-limit struct, and the TRACK -> band map.
 %   Pure configuration: no simulation, no file writes.
 %
-%   TRACK    'joint' | 'augmentation'   selects the multisine band and the
-%                                       output folder (the two modes are kept
+%   TRACK    'joint' | 'joint_lowf' | 'augmentation'
+%                                       selects the multisine band and the
+%                                       output folder (the modes are kept
 %                                       in separate top-level folders).
 %   USE_MSD  true  = augmented plant (baseline + hidden MSD on the payload)
 %            false = baseline plant (rigid payload)
@@ -24,7 +25,13 @@ function cfg = gtd_config(TRACK, USE_MSD, MA_FRAC)
     switch TRACK
         case 'joint',        cfg.track_id = 0;
         case 'augmentation', cfg.track_id = 1;
-        otherwise, error('gtd_config:track', 'TRACK must be ''joint'' or ''augmentation''.');
+        % track_id only seeds the per-record RNG (gtd_build_records: 100*track_id + k),
+        % so a distinct id is what gives joint_lowf its own multisine realisations
+        % rather than reusing joint's. Added with the band case below (D-149), which
+        % this validator predates and would otherwise reject before it is reached.
+        case 'joint_lowf',   cfg.track_id = 2;
+        otherwise, error('gtd_config:track', ...
+                         'TRACK must be ''joint'', ''joint_lowf'' or ''augmentation''.');
     end
 
     % ── Paths (robust to the caller's cwd; repo root is 3 levels up) ─────────

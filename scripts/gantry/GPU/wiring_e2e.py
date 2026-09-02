@@ -49,6 +49,12 @@ _c = os.environ.get('E2E_COMPILE', 'reduce-overhead')
 COMPILE = None if _c.lower() in ('', 'none', 'eager', 'off') else _c
 USE_F64 = os.environ.get('E2E_F64', '1') not in ('0', 'false', 'False')
 NF      = int(os.environ.get('E2E_NF', 400))
+# The window array is built by the pure-Python `stride != 1` path (system_data.py:316-330), which
+# holds the list of per-window slices AND the output array at peak. Its size scales as nf/stride,
+# so at nf=12000 the production stride of 10 projects to ~36 GB, ~72 GB transiently, which does not
+# fit a 64 GB node. Raising stride costs nothing real there: two windows 10 samples apart share
+# 11990 of 12000 samples. stride 80 gives ~4.5 GB.
+STRIDE  = int(os.environ.get('E2E_STRIDE', entry.CFG.stride))
 BATCH   = int(os.environ.get('E2E_BATCH', 512))
 ITS     = int(os.environ.get('E2E_ITS', 2))
 
@@ -62,7 +68,7 @@ if DEVICE == 'cuda' and not torch.cuda.is_available():
     print("device=cuda requested but no CUDA available (need sbatch --gres=gpu:1)")
     sys.exit(1)
 print(f"  device={DEVICE}  compile_mode={COMPILE!r}  use_f64={USE_F64}  "
-      f"nf={NF}  batch={BATCH}  n_its={ITS}")
+      f"nf={NF}  batch={BATCH}  n_its={ITS}  stride={STRIDE}")
 if DEVICE == 'cuda':
     print(f"  GPU {torch.cuda.get_device_properties(0).name}")
 
@@ -70,12 +76,21 @@ torch.manual_seed(42)
 np.random.seed(42)
 cfg = replace(entry.CFG, orth=False, device=DEVICE, compile_mode=COMPILE, use_f64=USE_F64,
               checkpoint_chunk=0, nf_override=NF, batch_size=BATCH, n_its=ITS,
-              stride=entry.CFG.stride, save_flag=False)
+              stride=STRIDE, save_flag=False)
+_t_build = time.perf_counter()
 data = load_datasets(cfg)
 norm = compute_normalization(cfg, data)
 fs = build_model(cfg.hp, cfg, data, norm)
 fs.simulator = build_closed_loop(fs, norm, cfg, train_files=TRAIN_FILES, val_files=VAL_FILES,
                                  val_data=data.val_ckpt_data, verbose=True)
+
+# Build time is itself a measurement at long horizons: it is on the critical path of every launch
+# and nothing else reports it.
+print(f"\n  data load + window build: {time.perf_counter() - _t_build:.1f} s")
+if DEVICE == 'cuda':
+    print(f"  GPU allocated after build: "
+          f"{torch.cuda.memory_allocated() / 2**20:.1f} MB")
+    torch.cuda.reset_peak_memory_stats()
 
 print("\n-- wiring, before training --")
 print(f"  simulator._compiled is None : {fs.simulator._compiled is None}"
@@ -96,6 +111,9 @@ elapsed = time.perf_counter() - t0
 
 banner("RESULT")
 print(f"  completed in {elapsed:.1f} s   bestfit = {bestfit:.6e}")
+if DEVICE == 'cuda':
+    print(f"  peak GPU since build: {torch.cuda.max_memory_allocated() / 2**20:.1f} MB "
+          f"of {torch.cuda.get_device_properties(0).total_memory / 2**20:.0f} MB")
 hist = getattr(fs.simulator, '_t_hist', [])
 if hist:
     print(f"  updates timed: {len(hist)}   "
