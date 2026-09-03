@@ -37,6 +37,17 @@ def capture_loss_history(fit_sys, cfg: RunConfig, save_dir, rid):
     loss_val_full   = fit_sys.Loss_val.copy()
     loss_train_full = fit_sys.Loss_train.copy()
     fit_sys.checkpoint_load_system(name='_best')
+    # CHANGED (D-169, job 80746): restore the post-training CPU contract that the line above
+    # breaks. deepSI's checkpoint_load_system is `self.__dict__ = torch.load(file)`
+    # (fit_system.py:501) -- a wholesale replacement with no map_location, not a
+    # load_state_dict -- so a checkpoint written by fit() while the model was on the GPU puts
+    # CUDA modules straight back onto fit_sys and silently undoes train_model's closing
+    # .cpu(). The next apply_experiment then feeds it CPU tensors (deepSI builds uhist/yhist
+    # with plain torch.tensor) and dies in pre_encoder at `uhist_mod + self.u_off`.
+    # Unconditional, NOT gated on cfg.device: the device here comes from the checkpoint file,
+    # so a GPU-trained checkpoint restored inside a device='cpu' run needs this too. No-op
+    # when the model is already on the CPU.
+    fit_sys.cpu()
     fit_sys.eval()
     return epoch_id_full, loss_val_full, loss_train_full
 
