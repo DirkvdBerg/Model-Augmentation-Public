@@ -155,6 +155,71 @@ class RunConfig:
     nf_override: Optional[int] = None      # None -> nf = nf_seconds / ts_new
     na_nb_override: Optional[int] = None   # None -> na_nb = (nx_phys + nx_ann)*2 + 1 (Jan's rule)
 
+    # ═══ L-BFGS polish phase (D-171) ══════════════════════════════════════════
+    # A terminal quasi-Newton phase, staged AFTER Adam in the same run, matching the recipe this
+    # project's method descends from: Bemporad's jax_sysid and Drenth's thesis both run a fixed
+    # number of Adam iterations then a MAXIMUM number of L-BFGS-B iterations. `lbfgs=False` is an
+    # exact no-op; the Adam path is bit-identical to a run from before this existed.
+    #
+    # The switch point is a fixed number and NOT an adaptive trigger. That is measured, not
+    # assumed: Jiang et al. (FUSE, arXiv:2503.04204) built all three candidates -- fixed epochs, a
+    # gradient-norm threshold, and a loss-decrease threshold -- and report "the epoch-based
+    # criterion slightly outperforms the other two. Hence, we use this simple criterion."
+    lbfgs: bool = False
+    # In L-BFGS ITERATIONS, not epochs. Deliberately not called epochs: for Drenth an epoch and a
+    # full-batch iteration are the same thing, here an Adam epoch is N//batch_size minibatch
+    # updates while one L-BFGS iteration is a single step on the fixed batch that itself costs
+    # several closure evaluations through the line search. A MAXIMUM: the tolerances below are
+    # expected to end the phase first, exactly as Drenth writes "a maximum of 4000 epochs".
+    lbfgs_max_iter: int = 500
+    lbfgs_inner_iter: int = 20      # iterations per opt.step() call = logging + guard granularity
+    lbfgs_history: int = 50         # m. 50 matches jax_sysid and Drenth; torch's default is 100.
+    # Size of the ONE fixed batch the phase optimises. 0 = every window (Drenth's full-batch
+    # setting). It must be FIXED: L-BFGS builds curvature from y = g(x+s) - g(x), and Byrd et al.
+    # (SIOPT 2016) and Bollapragada et al. (ICML 2018) both rule out differencing gradients taken
+    # on different samples. This is also why the phase cannot live inside deepSI's fit() loop.
+    # MEASURED, job 81463 on a 24 GB Quadro RTX 6000 at nf=400: one closure costs ~4.1 s
+    # regardless of window count (the rollout is dispatch-bound) and 0.66 MB/window of peak
+    # activation memory in float64, half that in float32. So the batch axis is nearly free in
+    # time and the only limit is the card: 16384 windows is ~10.8 GB, the full 66612-window set
+    # would be ~44 GB. Take as many windows as fit.
+    # `lbfgs_chunk` trades that memory back for time at a LINEAR rate and is usually the wrong
+    # call here; `checkpoint_chunk` also applies for free, since the phase rolls out through the
+    # same attached simulator.
+    lbfgs_windows: int = 16384
+    # Windows per gradient-accumulation chunk inside one closure. None = one chunk (today's
+    # behaviour). The accumulated gradient is EXACT, not an approximation, so this trades ~nothing
+    # for a factor `n_windows/chunk` less peak activation memory. Required if lbfgs_windows=0
+    # (full batch, Drenth's setting), which cannot fit in one graph at any interesting nf.
+    lbfgs_chunk: Optional[int] = None
+    # Termination. NOT torch's defaults (1e-7 / 1e-9), which are meaningless against a loss of
+    # order 1e-9: measured 1.29e-9 on the job-81262 checkpoint, so the defaults would end the
+    # phase at iteration one.
+    #
+    # `tol_change` IS APPLIED ABSOLUTELY by torch, in three places inside one step()
+    # (`gtd > -tol`, `max|t*d| <= tol`, `|loss - prev_loss| < tol`). Against a loss of 1.15e-9,
+    # 1e-14 is a RELATIVE 8.7e-6, so it is still loose and it, not `lbfgs_max_iter`, is what ends
+    # each block: job 81655 averaged about two iterations per 20-iteration block after the second
+    # (D-174). That is the right behaviour for a production polish, which should stop when it
+    # stops. The DIAGNOSTIC use of the phase, asking whether the training loss keeps falling at
+    # all, wants `lbfgs_tol_change=0.0` (which disables all three, leaving tol_grad and the cap)
+    # with a smaller `lbfgs_max_iter`, because it wants iterations rather than an early exit.
+    lbfgs_tol_grad: float = 1e-12
+    lbfgs_tol_change: float = 1e-14
+    # Parameter groups (names from deepSI's parameters_with_names) to hold fixed. Empty by
+    # default: Drenth polishes his whole vector, scheduling-map network included, and his free
+    # initial states theta_x0 are the precedent for including our encoder. ('encoder',) is the
+    # documented FALLBACK if the line search stalls, because under one shared step size the
+    # encoder is the block most likely to be badly scaled (D-171).
+    lbfgs_freeze: tuple = ()
+    lbfgs_time_budget_s: Optional[int] = None
+    # Relative worsening tolerated on the negation meters before the phase is rolled back.
+    lbfgs_meter_rel_tol: float = 1e-3
+    # Which phase a RESUMED run enters. 'adam' = today's behaviour (finish the remaining epochs,
+    # then polish if lbfgs=True). 'lbfgs' = skip Adam and polish the restored weights directly.
+    # Only meaningful with RESUME_CHECKPOINT set; the entry point enforces that.
+    start_phase: str = 'adam'
+
     # ═══ Multiple shooting: REMOVED 2026-08-28 (D-127 retired) ════════════════
     # `n_seg`, `defect_weight`, `defect_acc_weight`, `defect_norm` and `defect_scale` are gone
     # with SSE_Interconnect_MultipleShooting, which this pipeline no longer builds. They were
@@ -246,6 +311,46 @@ class RunConfig:
                 "validations. At batch_size=%r one epoch is N_training_samples // batch_size "
                 "updates, so the int moves with the batch size."
                 % (self.its_per_val, self.batch_size))
+        # D-171. Each of these is a state the phase cannot run in, caught here rather than deep
+        # inside the phase where a long Adam run would already have been spent.
+        if self.start_phase not in ('adam', 'lbfgs'):
+            raise ValueError(
+                "start_phase=%r is not a phase. Use 'adam' (train, then polish if lbfgs=True) or "
+                "'lbfgs' (skip Adam and polish a resumed checkpoint directly)."
+                % (self.start_phase,))
+        if self.start_phase == 'lbfgs' and not self.lbfgs:
+            raise ValueError(
+                "start_phase='lbfgs' with lbfgs=False leaves nothing to run: Adam is skipped and "
+                "the polish is disabled. Set lbfgs=True, or start_phase='adam'.")
+        if self.lbfgs:
+            if self.lbfgs_windows < 0:
+                raise ValueError(
+                    'lbfgs_windows=%r is not a count. Use 0 for every window (full batch) or a '
+                    'positive number of windows.' % (self.lbfgs_windows,))
+            if self.lbfgs_inner_iter < 1:
+                raise ValueError(
+                    'lbfgs_inner_iter=%r must be at least 1; it is the number of L-BFGS '
+                    'iterations per opt.step() call.' % (self.lbfgs_inner_iter,))
+            if self.lbfgs_max_iter < self.lbfgs_inner_iter:
+                raise ValueError(
+                    'lbfgs_max_iter=%r is below lbfgs_inner_iter=%r, so one step() call would '
+                    'already exceed the cap. Raise the cap or lower the inner count.'
+                    % (self.lbfgs_max_iter, self.lbfgs_inner_iter))
+            if self.lbfgs_chunk is not None and self.lbfgs_chunk < 1:
+                raise ValueError(
+                    'lbfgs_chunk=%r is not a chunk size. Use None for a single chunk, or a '
+                    'positive number of windows per gradient-accumulation chunk.'
+                    % (self.lbfgs_chunk,))
+            if self.lbfgs_windows == 0 and self.lbfgs_chunk is None:
+                raise ValueError(
+                    'lbfgs_windows=0 (full batch) with lbfgs_chunk=None would hold one autograd '
+                    'graph over every window and cannot fit at any interesting nf. Set '
+                    'lbfgs_chunk to a number of windows per accumulation chunk; the accumulated '
+                    'gradient is exact, so this changes cost and not the result.')
+            if self.lbfgs_history < 1:
+                raise ValueError(
+                    'lbfgs_history=%r is not a memory length. Drenth and jax_sysid use 50.'
+                    % (self.lbfgs_history,))
 
     # ───────────────────────── Derived quantities ────────────────────────────
     @property
@@ -351,8 +456,18 @@ def git_provenance() -> str:
         return '%s %s dirty:%d diff:%s' % (sha, branch, n_dirty,
                                            h.stdout.decode().strip()[:8])
     except Exception as e:
-        # A run outside a checkout (cluster tarball, extracted archive) must still run.
-        return 'unavailable (%s)' % type(e).__name__
+        # A run outside a checkout (cluster tarball, extracted archive) must still run, but it
+        # must not end up with NO provenance: job 81655 is a full training run whose only record
+        # of the code that produced it is 'unavailable (CalledProcessError)'. The environment is
+        # the fallback, and it is the runner's job to fill it (`export GIT_SHA=$(git -C ... rev-parse
+        # --short HEAD)` before sbatch), because the submitting host has the checkout even when
+        # the compute node does not.
+        env = os.environ.get('GIT_SHA') or os.environ.get('GIT_COMMIT')
+        if env:
+            return '%s (from the environment; git not usable here: %s)' % (
+                env.strip(), type(e).__name__)
+        return ('unavailable (%s) and no GIT_SHA in the environment: this run has NO code '
+                'provenance' % type(e).__name__)
 
 
 # RunConfig fields deliberately NOT in config.json, each with the reason it is safe to omit.
@@ -435,6 +550,21 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
         # N_SEG / DEFECT_* removed 2026-08-28 with the fields themselves (D-127 retired).
         # Old npz files still carry these keys; new ones do not, which is the honest record:
         # the run had no such knob to honour.
+        # Appended 2026-09-04 (D-171). The polish phase changes the weights a run ends with, so
+        # every knob of it is part of what the run IS. LBFGS=False makes the rest inert but they
+        # are still recorded, exactly as ORTH_BETA is on an orth=False run.
+        LBFGS=cfg.lbfgs,
+        LBFGS_MAX_ITER=cfg.lbfgs_max_iter,
+        LBFGS_INNER_ITER=cfg.lbfgs_inner_iter,
+        LBFGS_HISTORY=cfg.lbfgs_history,
+        LBFGS_WINDOWS=cfg.lbfgs_windows,
+        LBFGS_CHUNK=cfg.lbfgs_chunk,
+        LBFGS_TOL_GRAD=cfg.lbfgs_tol_grad,
+        LBFGS_TOL_CHANGE=cfg.lbfgs_tol_change,
+        LBFGS_FREEZE=list(cfg.lbfgs_freeze),
+        LBFGS_TIME_BUDGET_S=cfg.lbfgs_time_budget_s,
+        LBFGS_METER_REL_TOL=cfg.lbfgs_meter_rel_tol,
+        START_PHASE=cfg.start_phase,
         # Which CODE ran, as opposed to what it was asked to do. None when the caller did not
         # look it up; the entry point passes git_provenance().
         GIT=git,

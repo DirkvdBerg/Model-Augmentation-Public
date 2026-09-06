@@ -66,7 +66,12 @@ def _cache_path(cfg: RunConfig, theta_bar) -> str:
                    theta=[round(float(t), 10) for t in theta_bar],
                    rank_tol=cfg.orth_rank_tol, nx_ann=cfg.nx_ann,
                    na_nb=cfg.na_nb,
-                   states='data')   # D-111: excludes pre-revision rollout caches
+                   states='data',   # D-111: excludes pre-revision rollout caches
+                   # The key must record WHICH velocity reconstruction built the states,
+                   # not only that they are data-derived. Without this the central-FD
+                   # change of 2026-09-04 would silently load a forward-FD cache and do
+                   # nothing, with no error and no way to tell from the logs.
+                   vel='central-fd')
     key = hashlib.sha1(json.dumps(payload, sort_keys=True).encode()).hexdigest()[:12]
     cdir = os.path.join(save_dir(cfg), 'orth_cache')
     os.makedirs(cdir, exist_ok=True)
@@ -74,12 +79,28 @@ def _cache_path(cfg: RunConfig, theta_bar) -> str:
 
 
 def _x_logical_from_data(sd) -> np.ndarray:
-    """Data-derived [q, qdot]: P^-T on y + forward-FD velocities (as data.py)."""
+    """Data-derived [q, qdot]: P^-T on y + CENTRAL-FD velocities.
+
+    CHANGED (2026-09-04): central difference replaces the forward difference this used
+    to share with `data.py`. STATUS 3.4 measured the forward difference 12x worse than
+    central on the dTheta channel, and the damping columns of Phi depend on exactly that
+    channel while already sitting in the fragile tail (v[8], v[9]). This affects the
+    PENALTY BASIS only. `data.py:227` still uses the forward difference and is left
+    alone deliberately: it feeds `std_x`, which scales the encoder matrices and the
+    state-block denormalisation (D-119), so changing it renormalises the whole pipeline
+    and makes every logged run incomparable. That is a separate decision.
+
+    # THEORY: central difference is O(h^2) accurate against O(h) for the one-sided form
+    # (standard finite-difference truncation orders). Endpoints keep the one-sided value,
+    # which is the only choice available there and matches the previous behaviour.
+    """
     fs = 1.0 / sd.dt
     P_inv_T = np.linalg.inv(P.numpy().T).astype(np.float64)
     pos = (P_inv_T @ sd.y.T).T
-    vel = np.diff(pos, axis=0) * fs
-    vel = np.vstack([vel[:1], vel])
+    vel = np.empty_like(pos)
+    vel[1:-1] = (pos[2:] - pos[:-2]) * (fs / 2.0)      # central, interior
+    vel[0] = (pos[1] - pos[0]) * fs                     # one-sided, first sample
+    vel[-1] = (pos[-1] - pos[-2]) * fs                  # one-sided, last sample
     return np.hstack([pos, vel])
 
 

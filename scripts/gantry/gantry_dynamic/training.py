@@ -1,7 +1,11 @@
 """Training orchestration with per-run diagnostics and checkpoint I/O.
 
-Checkpoint formats (`.pt` component state_dicts, `.npz` meta keys) and the
-D-076 pre-JE resume guard are a frozen contract, unchanged from pre-refactor.
+The `.pt` component-state_dict format and the D-076 pre-JE resume guard are unchanged from
+pre-refactor. The `.npz` meta is APPEND-ONLY: every pre-existing key keeps its name, dtype and
+position, and D-171 added `lbfgs_outcome`, `optimizer_state_dropped`, `start_phase`,
+`resumed_from` and `resumed_at_epoch` after them, so old readers are unaffected. The `.pt`
+gained one conditional: the `optimizer` key is omitted when the Adam state would not match the
+weights beside it (see `save_checkpoint_weights`), which both loading routes already tolerate.
 """
 __project_origin__ = "added"
 
@@ -16,31 +20,290 @@ from .config import RunConfig
 from .model import train_model
 from .diagnostics import aug_state_r2
 from model_augmentation.fit_systems.interconnect import WindowErrorStats
+from model_augmentation.fit_systems.lbfgs_polish import PolishSpec, lbfgs_polish
 
 
-def save_checkpoint_weights(fit_sys, base_path):
-    """Save the torch components (SSE_Interconnect is a deepSI System, no state_dict). D-070."""
-    torch.save({
-        'hfn':       fit_sys.hfn.state_dict(),
-        'encoder':   fit_sys.encoder.state_dict(),
-        'optimizer': fit_sys.optimizer.state_dict(),
-    }, base_path + '.pt')
+def _json_safe(obj):
+    """numpy scalars out of the outcome dict, so json.dumps cannot fail on the meta write."""
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        return float(obj)
+    return obj
 
 
-def load_checkpoint(fit_sys, base_path, joint_estimation):
-    """Restore weights + optimizer from a checkpoint; return the meta npz handle."""
-    meta = np.load(base_path + '.npz', allow_pickle=True)
-    # D-070: SSE_Interconnect has no state_dict; checkpoint holds component state_dicts
-    ckpt = torch.load(base_path + '.pt', map_location='cpu')
-    # D-076: JE checkpoints carry log_params; pre-JE checkpoints cannot resume a JE run
-    if joint_estimation and not any('log_params' in k for k in ckpt['hfn']):
+def save_checkpoint_weights(fit_sys, base_path, include_optimizer=True):
+    """Save the torch components (SSE_Interconnect is a deepSI System, no state_dict). D-070.
+
+    `include_optimizer=False` omits the Adam state. Two cases call for it (D-171):
+
+    * an ACCEPTED polish. The phase never touches `fit_sys.optimizer`, so writing it next to
+      polished weights would pair `exp_avg` and `exp_avg_sq` describing the PRE-polish point with
+      parameters that have since moved. Nothing in this pipeline reads them today (a resume into
+      the polish ignores the optimizer state by design), but a later `start_phase='adam'` resume
+      would silently restart Adam with moments belonging to a point it is no longer at.
+    * a `start_phase='lbfgs'` run, where no Adam phase ran at all and the optimizer is the one
+      `init_model` built, with `state` still empty. An empty state is inert but reads as a real
+      one; the state that matches those weights lives in the checkpoint they came from.
+
+    Omitting is safe on both loading routes: `resolve_checkpoint` uses `ckpt.get('optimizer')`
+    and `load_checkpoint` skips a None. A resumed Adam then starts with a fresh optimizer at the
+    polished point, which is the honest state, and matches the decision not to persist the
+    L-BFGS state either.
+    """
+    payload = {
+        'hfn':     fit_sys.hfn.state_dict(),
+        'encoder': fit_sys.encoder.state_dict(),
+    }
+    if include_optimizer:
+        payload['optimizer'] = fit_sys.optimizer.state_dict()
+    torch.save(payload, base_path + '.pt')
+
+
+def resolve_checkpoint(base_path):
+    """Normalise EITHER checkpoint format to (hfn_sd, encoder_sd, optim_sd_or_None, meta).
+
+    Two formats exist in this project and both are legitimate resume sources (D-171):
+
+    | on disk                              | written by                                    |
+    |--------------------------------------|-----------------------------------------------|
+    | `<base>.pt` + `<base>.npz`           | `save_checkpoint_weights` below, per run      |
+    | `<...>_best.pth`                     | deepSI's `checkpoint_save_system`, per        |
+    |                                      | validation, from inside `fit()`               |
+
+    The second is `torch.save(self.__dict__)` of the whole system, so its `hfn` and `encoder`
+    entries are live MODULES rather than state dicts. It is the only format available for a run
+    that was killed mid-training or whose result folder was not copied back, which is exactly
+    when a resume-into-polish is wanted.
+
+    `map_location='cpu'` on both: with D-169's validation flip suppressed, deepSI writes CUDA
+    tensors into `_best.pth`, and those must still load on a CPU-only machine.
+    """
+    pair_pt, pair_npz = base_path + '.pt', base_path + '.npz'
+    if os.path.exists(pair_pt) and os.path.exists(pair_npz):
+        ckpt = torch.load(pair_pt, map_location='cpu')
+        meta = np.load(pair_npz, allow_pickle=True)
+        return ckpt['hfn'], ckpt['encoder'], ckpt.get('optimizer'), meta, 'pair'
+
+    # Three spellings of the same file, all natural, and job 81500 died because only one was
+    # accepted. deepSI writes `<class>_<code><suffix>.pth` with suffix in {_best, _last}, so the
+    # "base" a user copies off disk may be the full path, the path minus `.pth`, or the deepSI
+    # name without the suffix. Appending `_best.pth` unconditionally turned
+    # `..._p2LPDA_best` into `..._p2LPDA_best_best.pth`.
+    # `_last` is NOT tried automatically: silently falling back to the last iterate when the best
+    # is missing would swap the experiment without saying so. Name it explicitly to use it.
+    candidates = [base_path] if base_path.endswith('.pth') else [
+        base_path + '.pth',            # base is the file minus its extension
+        base_path + '_best.pth',       # base is the deepSI name, suffix omitted
+    ]
+    whole = next((c for c in candidates if os.path.exists(c)), None)
+    if whole is not None:
+        d = torch.load(whole, map_location='cpu', weights_only=False)
+        meta = {
+            'done_epochs': np.array(int(round(float(d.get('epoch_counter', 0))))),
+            'bestfit': np.array(float(d.get('bestfit', float('inf')))),
+            'diag_epochs': np.array([]), 'diag_r2_raw': np.array([]),
+            'diag_r2_linmap': np.array([]),
+        }
+        # The pickled system carries a LIVE Adam object, so its moments are recoverable. An
+        # earlier version returned None here and the docstring claimed this format "has no state
+        # dict at all", which is simply wrong: `d['optimizer']` is an optimizer, and asking it
+        # for a state dict is all that was ever needed. The consequence of that mistake was that
+        # resuming Adam from a `_best.pth` silently restarted with zeroed moments (D-173).
+        _opt = d.get('optimizer')
+        _opt_sd = _opt.state_dict() if _opt is not None and hasattr(_opt, 'state_dict') else None
+        return d['hfn'].state_dict(), d['encoder'].state_dict(), _opt_sd, meta, 'whole'
+
+    raise FileNotFoundError(
+        'no checkpoint at %r. Tried the pair %r + %r, and the deepSI whole-system dump(s): %s'
+        % (base_path, pair_pt, pair_npz, ', '.join(repr(c) for c in candidates)))
+
+
+def load_optimizer_moments(optimizer, saved):
+    """Restore an optimizer's MOMENT ESTIMATES while keeping this run's hyperparameters (D-173).
+
+    A torch optimizer state dict stores two unrelated things together:
+
+      `state`        the per-parameter moments (`step`, `exp_avg`, `exp_avg_sq`). This is what
+                     "continue Adam" means, and it is what a resume wants.
+      `param_groups` the hyperparameters (`lr`, `betas`, `eps`, `weight_decay`) alongside the
+                     parameter index lists that map `state` onto real parameters.
+
+    `Optimizer.load_state_dict` restores BOTH, so a plain resume silently adopts the
+    checkpoint's learning rate and epsilon and ignores `cfg.lr` / `cfg.adam_eps`. Two runs
+    launched from the same config then train at different rates, and `config.json` records the
+    one that did not happen. That has been true of every resume this project has ever done, not
+    only of the L-BFGS work.
+
+    This takes the settings from the LIVE optimizer and the mapping plus moments from the saved
+    one. It still goes through `load_state_dict`, deliberately: that is what resolves saved
+    indices onto live `Parameter` objects and casts the moment tensors onto each parameter's
+    device and dtype. Assigning `optimizer.state` directly would have to reimplement both.
+    """
+    live = optimizer.state_dict()
+    if len(live['param_groups']) != len(saved['param_groups']):
+        raise RuntimeError(
+            'optimizer parameter groups do not match: this run has %d, the checkpoint has %d. '
+            'The moments cannot be mapped onto these parameters.'
+            % (len(live['param_groups']), len(saved['param_groups'])))
+    merged = {**saved, 'param_groups': [
+        {**live_g, 'params': saved_g['params']}
+        for live_g, saved_g in zip(live['param_groups'], saved['param_groups'])
+    ]}
+    optimizer.load_state_dict(merged)
+
+
+def _assert_same_architecture(target_sd, ckpt_sd, what):
+    """Raise NAMING the mismatch, instead of letting load_state_dict raise a wall of keys.
+
+    Resuming a checkpoint into a config with a different `nx_ann`, width or depth is the mistake
+    a resume-into-polish workflow invites (the meeting fixture alone holds an nx_ann=8 and an
+    nx_ann=2 run), and torch's own message is a page long and does not say which knob differs.
+    """
+    missing = sorted(set(target_sd) - set(ckpt_sd))
+    extra = sorted(set(ckpt_sd) - set(target_sd))
+    shape = [(k, tuple(target_sd[k].shape), tuple(ckpt_sd[k].shape))
+             for k in sorted(set(target_sd) & set(ckpt_sd))
+             if tuple(target_sd[k].shape) != tuple(ckpt_sd[k].shape)]
+    if not (missing or extra or shape):
+        return
+    parts = []
+    if shape:
+        parts.append('%d shape mismatch(es), first 3: %s'
+                     % (len(shape), '; '.join('%s config%s != ckpt%s' % s for s in shape[:3])))
+    if missing:
+        parts.append('%d key(s) the config expects and the checkpoint lacks, first 3: %s'
+                     % (len(missing), missing[:3]))
+    if extra:
+        parts.append('%d key(s) the checkpoint has and the config does not, first 3: %s'
+                     % (len(extra), extra[:3]))
+    raise RuntimeError(
+        'checkpoint does not match this config for %s: %s. The usual cause is a different '
+        'nx_ann / n_nodes_per_layer / n_hidden_layers than the run that wrote it.'
+        % (what, '; '.join(parts)))
+
+
+def infer_arch_from_hfn(hfn_sd, nx_phys=6, nu=3):
+    """Read (nx_ann, n_nodes_per_layer, n_hidden_layers) OFF a checkpoint's ANN block.
+
+    A checkpoint fixes the architecture that produced it. Anything that loads one therefore has
+    to take the architecture FROM it, not from whatever `CFG` happens to be checked out: job
+    81461 failed exactly that way, building a 16x2 nx_ann=2 model from the cluster's entry file
+    and then trying to load the 24x3 nx_ann=8 weights of job 81262 into it.
+
+    The ANN is `Static_ANN_Block.net.net`, an `nn.Sequential` of Linear/activation pairs, so the
+    Linear weights sit at even indices and carry everything needed:
+        first weight shape (n_nodes, n_in)  ->  n_nodes, and n_in = nx_phys + nx_ann + nu
+        number of Linear layers             ->  n_hidden_layers + 1 (the output layer)
+
+    Verified on both meeting checkpoints: p2LPDA gives (24, 17) over four Linears, i.e.
+    nx_ann = 17 - 6 - 3 = 8 with 3 hidden layers; tINZQQ/hcfOLA give (16, 11) over three, i.e.
+    nx_ann = 2 with 2 hidden layers.
+    """
+    import re
+    pat = re.compile(r'\.net\.net\.(\d+)\.weight$')
+    layers = {}
+    for k, v in hfn_sd.items():
+        m = pat.search(k)
+        if m and getattr(v, 'ndim', 0) == 2:
+            layers[int(m.group(1))] = tuple(v.shape)
+    if not layers:
+        raise RuntimeError(
+            'no ANN Linear weights (`*.net.net.<i>.weight`) in this checkpoint, so its '
+            'architecture cannot be inferred. Keys seen: %s' % (sorted(hfn_sd)[:6],))
+    idx = sorted(layers)
+    n_nodes, n_in = layers[idx[0]]
+    nx_ann = int(n_in) - nx_phys - nu
+    if nx_ann < 0:
+        raise RuntimeError(
+            'inferred nx_ann=%d from an ANN input width of %d with nx_phys=%d, nu=%d; the '
+            'checkpoint does not match this model family.' % (nx_ann, n_in, nx_phys, nu))
+    return nx_ann, int(n_nodes), len(idx) - 1
+
+
+def config_for_checkpoint(cfg, hfn_sd):
+    """`cfg` with the architecture replaced by the checkpoint's own, and nothing else touched.
+
+    `ann_route_ix` follows, because it must cover the interconnected state (nx_phys + nx_ann);
+    `na_nb` is derived by the same rule and needs no help.
+    """
+    from dataclasses import replace
+    nx_ann, n_nodes, n_hidden = infer_arch_from_hfn(hfn_sd, cfg.nx_phys, cfg.nu)
+    return replace(cfg, nx_ann=nx_ann, n_nodes_per_layer=n_nodes, n_hidden_layers=n_hidden,
+                   ann_route_ix=tuple(range(cfg.nx_phys + nx_ann)))
+
+
+def _assert_same_dtype(fit_sys, hfn_sd):
+    """Refuse to load a checkpoint whose dtype differs from the run's.
+
+    PRECISION MUST STAY COHERENT ACROSS THE PHASES AND ACROSS A RESUME. Silently casting a
+    float32 checkpoint into a float64 model works (load_state_dict converts) and produces a run
+    whose two halves are not comparable: the loss series changes scale below the 7th digit, the
+    stored `bestfit` was computed in the other precision, and the polish's accept/reject decision
+    is then made across a dtype change rather than across the optimiser.
+
+    Measured spread for such a change on this project: sim-RMS 5.774376e-06 against 5.774347e-06,
+    i.e. 0.005%. Small next to the ~0.3% acceptance bar, and still a systematic bias in exactly
+    the comparison the phase exists to make.
+
+    float64 is essentially free on this workload (job 81463: ~4.1 s per closure in both dtypes,
+    2x memory), so the right way to get a float64 polish is a float64 TRAINING run, not a cast at
+    the resume boundary.
+    """
+    want = next(fit_sys.hfn.parameters()).dtype
+    got = next((v.dtype for v in hfn_sd.values()
+                if torch.is_tensor(v) and v.is_floating_point()), None)
+    if got is not None and got != want:
+        raise RuntimeError(
+            'checkpoint dtype %s does not match this run\'s %s. Precision must stay coherent: '
+            'set use_f64=%s to match the checkpoint, or retrain at %s from scratch. Casting here '
+            'would make the pre- and post-phase numbers incomparable, which is the one comparison '
+            'the polish phase exists to make.'
+            % (got, want, got == torch.float64, want))
+
+
+def load_checkpoint(fit_sys, base_path, joint_estimation, start_phase='adam'):
+    """Restore weights (+ Adam state on an 'adam' start) from either format; return the meta."""
+    hfn_sd, enc_sd, optim_sd, meta, fmt = resolve_checkpoint(base_path)
+    _assert_same_dtype(fit_sys, hfn_sd)
+    # D-076: JE checkpoints carry log_params; pre-JE checkpoints cannot resume a JE run.
+    # Applied to the NORMALISED state dict, so it protects both formats identically.
+    if joint_estimation and not any('log_params' in k for k in hfn_sd):
         raise RuntimeError(
             'RESUME_CHECKPOINT points at a pre-JE checkpoint (no log_params); '
             'JOINT_ESTIMATION runs must start from fresh checkpoints (D-076)')
-    fit_sys.hfn.load_state_dict(ckpt['hfn'])
-    fit_sys.encoder.load_state_dict(ckpt['encoder'])
-    if 'optimizer' in ckpt:
-        fit_sys.optimizer.load_state_dict(ckpt['optimizer'])
+    _assert_same_architecture(fit_sys.hfn.state_dict(), hfn_sd, 'hfn')
+    _assert_same_architecture(fit_sys.encoder.state_dict(), enc_sd, 'encoder')
+    fit_sys.hfn.load_state_dict(hfn_sd)
+    fit_sys.encoder.load_state_dict(enc_sd)
+    # On a 'lbfgs' start Adam never runs, so its moments are irrelevant and are not restored.
+    # On an 'adam' start they ARE restored, moments only: `load_optimizer_moments` keeps this
+    # run's lr/eps/betas rather than adopting the checkpoint's (D-173).
+    if optim_sd is not None and start_phase == 'adam':
+        load_optimizer_moments(fit_sys.optimizer, optim_sd)
+        print("  Adam moment estimates restored; lr/eps/betas come from this run's config.")
+    print(f'  Checkpoint format: {fmt}')
+    # STATE the fresh-optimizer case instead of proceeding silently. A checkpoint written after an
+    # accepted polish carries no Adam moments on purpose (save_checkpoint_weights), and resuming
+    # Adam from it is legitimate but is NOT a continuation of the previous Adam trajectory:
+    # `exp_avg_sq` sets the per-parameter step size and starts from zero here, so the first
+    # updates are sized by the bias correction rather than by history. Whoever wanted the exact
+    # continuation wants the pre-polish file instead, and would otherwise never know it existed.
+    if start_phase == 'adam' and optim_sd is None:
+        _dropped = bool(meta['optimizer_state_dropped']) \
+            if 'optimizer_state_dropped' in getattr(meta, 'files', []) else None
+        print('  NOTE: this checkpoint carries NO Adam optimizer state'
+              + (' (recorded as deliberate: optimizer_state_dropped=True)' if _dropped
+                 else ' (whole-system format: deepSI stores a live optimizer, not a state dict)'
+                 if fmt == 'whole' else '')
+              + '.\n        Adam will start from fresh moment estimates at these weights. That is'
+                ' correct for\n        polished weights, but it is NOT a continuation of the'
+                ' earlier Adam trajectory.\n        For that, resume'
+                ' `gantry_ckpt_<run_id>_pre_lbfgs`, which keeps the matching state.')
     return meta
 
 
@@ -134,6 +397,14 @@ class _NfProbe:
         # Joint/orth probe state (user 07-12: live recovery + negation meters).
         # Nominal combos computed ONCE; sim-study meter -- on real data the
         # reference must become params_init (no nominal truth exists there).
+        # Augmented-state magnitude probe. Two ints rather than the whole cfg: this adds no
+        # coupling beyond the state layout it needs. `x_aug` is a LEARNED latent with an
+        # arbitrary scale, so this is reported in the normalized frame only, which is the frame
+        # the orth penalty's `x_aug = 0` slice lives in. The comparison against the true
+        # absorber is the aug-state R2 diagnostic, not this.
+        self._nx_phys, self._nx_ann = cfg.nx_phys, cfg.nx_ann
+        self._xa_stats = None
+
         self._pblock = next((m for m in fit_sys.hfn.connected_blocks
                              if hasattr(m, 'identifiable_combinations')), None)
         self._combo_nom = None
@@ -177,10 +448,21 @@ class _NfProbe:
             self._val_batch = tuple(t.to(_dev) for t in self._val_batch)
             self._val_kwargs = {k: v.to(_dev) for k, v in self._val_kwargs.items()}
         uh, yh, uf, yf = self._val_batch
+        self._xa_stats = None
         try:
             with torch.no_grad():
                 x = self.fit_sys.encoder(uh, yh)
-                y_pred, _ = self.fit_sys.simulate(x, uf, yf, **self._val_kwargs)
+                # The final state was already computed and discarded here. It is the augmented
+                # state at the END of the rollout, i.e. where it is largest, having accumulated
+                # from the encoder's initial value. That is the point to read off the T4
+                # leakage curve, which measured alignment 0.0011/0.0107/0.0256/0.0406 at
+                # ||x_aug|| = 0.01/0.1/0.3/1.0. Never logged before; severity of the
+                # x_aug = 0 slice hole is unmeasured without it.
+                y_pred, x_end = self.fit_sys.simulate(x, uf, yf, **self._val_kwargs)
+            if self._nx_ann:
+                xa = x_end[:, self._nx_phys:self._nx_phys + self._nx_ann]
+                n = xa.norm(dim=1)
+                self._xa_stats = (float(n.mean()), float(n.std()), float(n.max()))
             self._val_stats_obj.reset()
             self._val_stats_obj.update(y_pred, yf)
             return self._val_stats_obj.summary()
@@ -266,6 +548,10 @@ class _NfProbe:
                     parts.append('%.2fx train_nf (horizon+gen)' % (value / tr_s['rms']))
                 if parts:
                     print('    [nf gap  ] val_sim %.3e = %s' % (value, ' = '.join(parts)))
+            if self._xa_stats is not None:
+                m, s, mx = self._xa_stats
+                print('    [x_aug   ] ||x_aug|| end-of-rollout  mean %.3e  std %.3e  max %.3e'
+                      % (m, s, mx))
         if (self._pblock is not None
                 or getattr(self.fit_sys, 'orth_penalty', None) is not None):
             try:
@@ -302,21 +588,142 @@ def _install_nf_val_probe(fit_sys, hp, cfg, val_sd):
     return prev
 
 
+def _gantry_meters(fit_sys):
+    """The gantry's meters for the polish acceptance rule: `combo_err`, `orth_frac`, `V_orth`.
+
+    Everything here needs to know what a gantry is, so it reaches the phase through the framework
+    function's `meters_fn` hook rather than as an import inside `model_augmentation/`.
+    `lbfgs_polish.generic_meters` keeps only `param_loss`, which is duck-typed on the block API.
+
+    CHANGED (D-176): `orth_frac` and `V_orth` moved here from `generic_meters`, which computed
+    them by reaching into `fit_sys.orth_penalty` and isinstance-testing for `Static_ANN_Block`.
+    That put a second definition of an ACCEPTANCE-GATING metric inside the framework, beside the
+    one in `_joint_probe` above. The arithmetic is unchanged, so the acceptance rule is unchanged.
+
+    Mirrors `_NfProbe.__init__` and `_joint_probe` above, including the `m_diff` scale
+    heuristic. Deliberately a separate function rather than a refactor of the probe: the probe
+    is on the training path and this is not.
+    """
+    m = {}
+    blocks = getattr(getattr(fit_sys, 'hfn', None), 'connected_blocks', ())
+
+    # `orth_frac` is the fraction of the learned correction lying in the baseline's parameter
+    # span, i.e. the negating part; `V_orth` is the penalty that fraction would carry.
+    pen = getattr(fit_sys, 'orth_penalty', None)
+    if pen is not None:
+        from model_augmentation.fit_systems.blocks import Static_ANN_Block
+        ann = next((b for b in blocks if isinstance(b, Static_ANN_Block)), None)
+        if ann is not None:
+            with torch.no_grad():
+                w = ann(pen.Z_pts)
+                f = w[:, pen.route_cols, 0].reshape(-1)
+                f2 = float(torch.linalg.vector_norm(f) ** 2)
+                q2 = float(torch.linalg.vector_norm(pen.Q.T @ f) ** 2)
+            m['orth_frac'] = q2 / f2 if f2 > 1e-30 else float('nan')
+            m['V_orth'] = float(pen.beta) * q2
+
+    pblock = next((b for b in blocks if hasattr(b, 'identifiable_combinations')), None)
+    if pblock is None:
+        return m
+    from model_augmentation.systems import gantry_ss as _gss
+    true_raw = {n: getattr(_gss, n).item() for n in pblock.PARAM_NAMES}
+    nom = pblock._combos_from_raw(true_raw, pblock.Lb.item())
+    scale = {n: abs(v) for n, v in nom.items() if abs(v) > 1e-12}
+    # HEURISTIC (as in _NfProbe): m_diff = m1-m2 has a near-zero nominal, so a relative error
+    # against itself is meaningless; scale it by the mean actuator mass instead.
+    scale['m_diff'] = 0.5 * (true_raw['m1'] + true_raw['m2'])
+    combos = pblock.identifiable_combinations()
+    rels = [(combos[n] - nom[n]) / s for n, s in scale.items()]
+    m['combo_err'] = float(np.sqrt(np.mean([r ** 2 for r in rels])))
+    return m
+
+
+def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan')):
+    """The D-171 phase, with the device round-trip and the gantry meter wired in.
+
+    Returns the outcome dict, or None when `cfg.lbfgs` is off (an exact no-op).
+
+    The device flip lives here rather than in `model.py::train_model` so that BOTH entry paths
+    reach the phase identically: a normal run arrives with the model back on the CPU
+    (`model.py` line ~317), and a `start_phase='lbfgs'` resume never called `fit()` at all, so
+    the model is still on the CPU it was built on (`model.py`, `init_model(device='cpu')`).
+    """
+    if not cfg.lbfgs:
+        return None
+    print('\n[lbfgs] polish phase (D-171): Adam is done, quasi-Newton from here')
+    # ONE place where the flat RunConfig fields become the framework's spec object. Adding a knob
+    # touches RunConfig, config_json_dict and this mapping, and nothing else.
+    spec = PolishSpec(
+        n_windows=cfg.lbfgs_windows, max_iter=cfg.lbfgs_max_iter,
+        inner_iter=cfg.lbfgs_inner_iter, history_size=cfg.lbfgs_history,
+        tol_grad=cfg.lbfgs_tol_grad, tol_change=cfg.lbfgs_tol_change,
+        freeze=tuple(cfg.lbfgs_freeze), meter_rel_tol=cfg.lbfgs_meter_rel_tol,
+        time_budget_s=cfg.lbfgs_time_budget_s, chunk=cfg.lbfgs_chunk, seed=cfg.seed)
+    if cfg.device == 'cuda':
+        fit_sys.cuda()
+        # The caching allocator is holding a pool shaped by Adam's batch-512 graphs, and the
+        # phase is about to ask for a very differently shaped one (16384 windows in a single
+        # graph). Releasing the cached blocks first costs a few milliseconds and removes a
+        # fragmentation-driven OOM that would otherwise land at the END of a training run.
+        torch.cuda.empty_cache()
+    try:
+        return lbfgs_polish(
+            fit_sys, data.train_data,
+            loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride}, spec=spec,
+            val_sys_data=data.val_ckpt_data,
+            # `bestfit` IS the pre-phase sim-RMS and fit() has already paid for it, so reusing it
+            # saves a ~162 s closed-loop free run. ONLY in the same-run case, though.
+            #
+            # On a `start_phase='lbfgs'` resume the number comes from the CHECKPOINT, and it was
+            # produced by a different run: possibly another device, another dtype (a float32
+            # checkpoint polished at use_f64=True is the intended workflow) and the compiled
+            # rollout rather than this one. Measured spread across such a change: 5.774376e-06
+            # against 5.774347e-06, i.e. 0.005%. That is 20x below the ~0.3% acceptance bar set by
+            # run 81262's own validation noise, so it would not flip a clear result, but it is a
+            # systematic bias in exactly the comparison the phase exists to make. Pay the 162 s
+            # and measure both sides with one code path.
+            val_before=(bestfit if (np.isfinite(bestfit) and cfg.start_phase != 'lbfgs')
+                        else None),
+            validation_measure='sim-RMS',
+            meters_fn=_gantry_meters, verbose=True)
+    finally:
+        if cfg.device == 'cuda':
+            fit_sys.cpu()
+
+
 def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
                                  resume_ckpt=None, checkpoint_dir=None, run_id=None):
     """Train for hp['epochs'] epochs with sim-RMS validation; record aug-state R2 after.
 
-    resume_ckpt : base path (no extension) of a prior checkpoint to resume from.
+    resume_ckpt : base path (no extension, or a `.pth`) of a prior checkpoint to resume from.
     checkpoint_dir : directory for checkpoint; None = no saving.
+
+    With `cfg.lbfgs` set, an L-BFGS polish phase runs after Adam (D-171), and
+    `cfg.start_phase='lbfgs'` skips Adam entirely to polish a resumed checkpoint.
     """
     diag_epochs, diag_r2_raw, diag_r2_lin = [], [], []
     done_epochs = 0
+    resumed_at_epoch = -1                  # -1 = not a resume
+    lbfgs_outcome = None
+
+    # deepSI names its own checkpoints `<class>_<unique_code>_{best,last}.pth`, where `name` is a
+    # property over `unique_code` (`systems/system.py:79`) and `unique_code` defaults to a random
+    # `token_urlsafe(4)` (`system.py:54`). Those are the files `fit()` writes at every improving
+    # validation and at the end, and until now they carried NO run identity: D-169 had to
+    # fingerprint `SSE_Interconnect_Composed_DjS6ow` back to job 81088 by content.
+    # `run_id` is the SLURM job id, or a timestamp when there is none, and it is unique, so it is
+    # simply the better code. One assignment, no deepSI edit: the directory
+    # (`~/.deepSI/checkpoints`) is unchanged, only the file name.
+    if run_id:
+        fit_sys.unique_code = str(run_id)
     bestfit = float('inf')
 
     # --- Resume ---
     if resume_ckpt is not None:
-        meta = load_checkpoint(fit_sys, resume_ckpt, cfg.joint_estimation)
+        meta = load_checkpoint(fit_sys, resume_ckpt, cfg.joint_estimation,
+                               start_phase=cfg.start_phase)
         done_epochs = int(meta['done_epochs'])
+        resumed_at_epoch = done_epochs      # the switch point actually used (D-171)
         bestfit     = float(meta['bestfit'])
         diag_epochs = list(meta['diag_epochs'])
         diag_r2_raw = [meta['diag_r2_raw'][i]  for i in range(len(meta['diag_r2_raw']))]
@@ -333,16 +740,26 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
     # D-095: piggyback the nf-window RMS diagnostic (train + val); selection stays full-traj sim-RMS.
     _prev_probes = _install_nf_val_probe(fit_sys, hp, cfg, data.val_ckpt_data)
     try:
-        bestfit = train_model(fit_sys, hp, cfg, data,
-                              epochs=epochs_remaining,
-                              nf=hp['nf'],
-                              validation_measure='sim-RMS')
+        if cfg.start_phase == 'lbfgs':
+            # D-171: resume straight into the polish. The nf probe above is still installed and
+            # `bestfit` keeps the resumed value, so the phase's own before/after validation is
+            # measured against the checkpoint that produced it.
+            print('  start_phase=lbfgs: skipping Adam, polishing the resumed weights directly')
+        else:
+            bestfit = train_model(fit_sys, hp, cfg, data,
+                                  epochs=epochs_remaining,
+                                  nf=hp['nf'],
+                                  validation_measure='sim-RMS')
     finally:
         fit_sys.validation_probes = _prev_probes   # restore always
     loss_val_nf   = np.array(getattr(fit_sys, 'Loss_val_nf', []), dtype=float)
     loss_train_nf = np.array(getattr(fit_sys, 'Loss_train_nf', []), dtype=float)
     elapsed = time.time() - t0
-    done_epochs = hp['epochs']
+    # D-171: on a polish-only resume no epoch was trained, so the count must stay where the
+    # checkpoint left it. Claiming hp['epochs'] here would make a 30-minute polish look like a
+    # full training run to every reader of the meta, including a later resume.
+    if cfg.start_phase != 'lbfgs':
+        done_epochs = hp['epochs']
 
     _fin = loss_val_nf[np.isfinite(loss_val_nf)] if loss_val_nf.size else loss_val_nf
     if _fin.size:
@@ -350,15 +767,60 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
               f'best={_fin.min():.4e}  last={loss_val_nf[-1]:.4e} [m]  (sim-RMS selector unchanged)')
     _fintr = loss_train_nf[np.isfinite(loss_train_nf)] if loss_train_nf.size else loss_train_nf
     if _fintr.size:
-        print(f'  train nf-window RMS ({hp["nf"]}-step): first={loss_train_nf[0]:.4e}  '
-              f'best={_fintr.min():.4e}  last={loss_train_nf[-1]:.4e} [m]')
+        # first/last come from the FINITE entries. The train row is a running mean over the
+        # windows seen since the previous validation, so the entry written at the pre-training
+        # validation has no windows behind it and is NaN by construction; printing the raw [0]
+        # made every log open with `first=nan` and invited a hunt for a numerical problem that
+        # was never there. `n` is stated when leading entries were dropped, so the row cannot
+        # silently claim more measurements than it has.
+        _skipped = int(loss_train_nf.size - _fintr.size)
+        print(f'  train nf-window RMS ({hp["nf"]}-step): first={_fintr[0]:.4e}  '
+              f'best={_fintr.min():.4e}  last={_fintr[-1]:.4e} [m]'
+              + (f'  ({_fintr.size} finite of {loss_train_nf.size}; the pre-training entry has '
+                 f'no windows behind it)' if _skipped else ''))
+
+    # --- L-BFGS polish (D-171), between Adam and the checkpoint ---------------------------
+    # The PRE-polish weights are written first, for the same reason D-070 writes weights before
+    # the diagnostics: a crash inside the phase must not be able to lose the Adam result. It also
+    # leaves the unpolished/polished pair on disk, which is the A/B this phase has to justify.
+    if cfg.lbfgs and checkpoint_dir is not None:
+        pre_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}_pre_lbfgs')
+        save_checkpoint_weights(fit_sys, pre_base)
+        np.savez(pre_base + '.npz', done_epochs=np.array(done_epochs),
+                 bestfit=np.array(bestfit), hp=np.array(json.dumps(hp)),
+                 orig_run_id=np.array(run_id))
+        print(f'  Pre-polish checkpoint: {pre_base}.pt')
+    lbfgs_outcome = run_lbfgs_polish(fit_sys, hp, cfg, data, bestfit=bestfit)
+    if lbfgs_outcome is not None and lbfgs_outcome.get('accepted'):
+        # The phase only changes the weights when it improves the same selector fit() used, so
+        # bestfit follows it. On a rollback nothing moved and bestfit is untouched.
+        # The ATTRIBUTE follows too: `fit_sys.bestfit` is what deepSI's own reporting and any
+        # later reader of the system reach for, and leaving it at the pre-polish value would make
+        # the object disagree with the checkpoint written from it two lines below.
+        bestfit = lbfgs_outcome['val_after']
+        fit_sys.bestfit = bestfit
 
     # --- Checkpoint weights first: diagnostics below must not be able to lose them (D-070)
     ckpt_base = None
+    # Two reasons to omit the Adam state, both "the file should say nothing rather than something
+    # empty or wrong":
+    #   polished    -> the weights moved past the moments (see save_checkpoint_weights)
+    #   lbfgs start -> no Adam ran in THIS job. load_checkpoint deliberately does not restore the
+    #                  optimizer on a polish-only resume, so `fit_sys.optimizer` is the one
+    #                  init_model built, with `state` still empty because torch allocates moments
+    #                  lazily on the first step. Writing that would look like a real Adam state
+    #                  for these weights; the one that actually matches them is in the SOURCE
+    #                  checkpoint.
+    _polished = bool(lbfgs_outcome is not None and lbfgs_outcome.get('accepted'))
+    _no_adam_ran = (cfg.start_phase == 'lbfgs')
+    _drop_optimizer = _polished or _no_adam_ran
     if checkpoint_dir is not None:
         ckpt_base = os.path.join(checkpoint_dir, f'gantry_ckpt_{run_id}')
-        save_checkpoint_weights(fit_sys, ckpt_base)
-        print(f'  Checkpoint weights: {ckpt_base}.pt')
+        save_checkpoint_weights(fit_sys, ckpt_base, include_optimizer=not _drop_optimizer)
+        _why = ('weights were polished' if _polished else
+                'no Adam phase ran in this job' if _no_adam_ran else '')
+        print(f'  Checkpoint weights: {ckpt_base}.pt'
+              + (f'  (Adam state omitted: {_why})' if _drop_optimizer else ''))
 
     fit_sys.eval()
     try:
@@ -393,6 +855,16 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
                  diag_r2_linmap = np.array(diag_r2_lin),
                  hp             = np.array(json.dumps(hp)),
                  orig_run_id    = np.array(run_id),
+                 # D-171 provenance. Without these a polished checkpoint is indistinguishable
+                 # from an Adam-only one, and the switch point that produced it is unrecorded.
+                 lbfgs_outcome  = np.array(json.dumps(_json_safe(lbfgs_outcome))),
+                 # Says the omission was DELIBERATE, so a reader does not diagnose a truncated
+                 # file. Records the ACTUAL omission, not just the polish case, or the flag and
+                 # the file would disagree on a rolled-back polish-only resume.
+                 optimizer_state_dropped = np.array(_drop_optimizer),
+                 start_phase    = np.array(cfg.start_phase),
+                 resumed_from   = np.array('' if resume_ckpt is None else str(resume_ckpt)),
+                 resumed_at_epoch = np.array(resumed_at_epoch),
         )
         print(f'  Checkpoint meta: {ckpt_base}.npz')
 

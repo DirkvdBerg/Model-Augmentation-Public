@@ -1,0 +1,72 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Loading data and normalisation for run 81262 ...
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+Loading checkpoint SSE_Interconnect_Composed_p2LPDA_best.pth ...
+  nx = 14 (nx_ann = 8)   bestfit = 5.7744e-06
+  4 validation records, 48000 samples each
+
+Rolling out 48 windows of 100 steps (3 variants each) and accumulating Psi ...
+  window 12/48
+  window 24/48
+  window 36/48
+  window 48/48
+
+==============================================================================
+TEST 1  rank of Psi, in both ambient spaces
+==============================================================================
+  PER-WINDOW  Psi_w is 6x14.  rank: min 6  median 6  max 6   (n_x = 6)
+  -> span(Psi_w) = R^6 in every window. A per-window projection is the
+     IDENTITY, so the per-window condition of affine_leakage Part D is
+     VACUOUS, not merely restrictive. That framing was in the wrong space.
+  STACKED     Psi is 288x14.  numerical rank 10   (ambient 288)
+              sigma ratio kept: 1.85e-07, spectrum spans 1.883e+01 .. 2.907e-19
+  -> span(Q) is 10 of 288 dimensions, a genuine
+     restriction. This is the space a deployable penalty must live in.
+
+==============================================================================
+TEST 2  leakage ratio on the trained checkpoint
+==============================================================================
+  ||dx||                    = 2.5508e+00   (normalised state units)
+  r_state = ||dx_state||/||dx||       =    0.9050   <- fraction of the ANN effect flowing through x_aug
+  r_leak  = ||Q^T dx_state||/||dx||   =    0.7447   <- HEADLINE: unconstrained in-span part
+  r_total = ||Q^T dx||/||dx||         =    0.7278   <- total in-span fraction, for scale
+  in-span fraction OF the state path  =    0.8229
+
+  per-window r_state: median 0.8443  p90 2.4617  max 9.1118
+  per-window r_leak : median 0.2046  p90 0.8686  max 2.1007
+  concentration     : top 1 window = 17.6% of ||dx||^2, top 5 = 48.0%, top 10 = 63.9%
+
+  NULL   analytic chance level sqrt(10/288)        =    0.1863
+         randomisation, per-window norms preserved  =    0.1928  (p95 0.2830)
+         observed r_leak / null mean                =      3.86x
+         -> the alignment is NOT chance. The trained network places its
+            state-path contribution inside the parameter subspace far more
+            than an unrelated signal of the same shape would.
+
+  CAVEATS, binding on how these numbers may be quoted:
+   * run 81262 has orth=OFF and joint=False, so this is the UNREGULARISED
+     network. It measures how much leakage training produces when nothing
+     opposes it, which is the right baseline but is not a test of the penalty.
+   * open-loop rollout from data-derived x0 with x_aug = 0; the training loss
+     was closed loop. Category: data-computable (Rule 1).
+
+wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonality\code\leakage_measure.json

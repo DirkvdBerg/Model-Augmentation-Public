@@ -1029,10 +1029,25 @@ class SSE_Interconnect(SS_encoder_general):
         
         self.Loss_val, self.Loss_train, self.batch_id, self.time, self.epoch_id = np.array(self.Loss_val), np.array(self.Loss_train), np.array(self.batch_id), np.array(self.time), np.array(self.epoch_id)
         self.checkpoint_save_system(name='_last')
+        # CHANGED (D-172): keep this run's OWN history across the best-checkpoint restore.
+        # `checkpoint_load_system` is `self.__dict__ = torch.load(file)` (fit_system.py:501), a
+        # wholesale replacement, so the line below does not merely restore the best WEIGHTS: it
+        # also substitutes the loss history as it stood at the best epoch, discarding everything
+        # measured after it. The system this returns then silently disagrees with itself, holding
+        # a full run's weights-selection outcome and a truncated record of how it got there.
+        # Two bugs came out of that, both in code written to work around it rather than fix it:
+        # `evaluation.py::capture_loss_history` re-read `_last.pth` from disk to recover state
+        # this process held moments earlier, and that reload ALSO put stale weights back onto the
+        # system, which after an accepted L-BFGS polish (D-171) meant every post-run diagnostic
+        # silently reported the unpolished model.
+        # Restoring the three arrays afterwards is all that is needed: the returned system then
+        # has the best weights AND the complete history, which is what every reader assumes.
+        _history = (self.epoch_id.copy(), self.Loss_val.copy(), self.Loss_train.copy())
         try:
             self.checkpoint_load_system(name='_best')
         except FileNotFoundError:
             print('no best checkpoint found keeping last')
+        self.epoch_id, self.Loss_val, self.Loss_train = _history
         if verbose:
             print(f'Loaded model with best known validation {validation_measure} of {self.bestfit:6.4} which happened on epoch {best_it} (epoch_id={self.epoch_id[-1] if len(self.epoch_id)>0 else 0:.2f})')
 

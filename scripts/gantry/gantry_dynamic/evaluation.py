@@ -1,9 +1,15 @@
-"""Evaluation: best-checkpoint simulation, metrics, four plots, and the npz save.
+"""Evaluation: simulation of the trained system, metrics, four plots, and the npz save.
 
 `evaluate_and_save` keeps its pre-refactor orchestration order exactly; the
 internals are factored into capture_loss_history / report_joint_estimation /
 _make_plots / _build_save_dict. The npz key set, names, conditional inclusion,
 and dtypes are a frozen contract.
+
+It no longer RELOADS the best checkpoint before simulating: `fit()` already returns
+the best-validating weights, and reloading them here silently discarded an accepted
+L-BFGS polish (D-172). One consequence for readers of the npz: the loss-history
+arrays are now the full run rather than the history truncated at the best epoch, so
+they can be longer than in older files. Keys, names and dtypes are unchanged.
 """
 __project_origin__ = "added"
 
@@ -20,36 +26,30 @@ from .config import RunConfig, config_json_dict
 from .model import get_encoder_dims
 from .baselines import stepwise_rollout
 from .diagnostics import (r2_per_channel, best_affine_r2, heldout_affine_r2,
-                          best_single_channel_r2)
+                          best_single_channel_r2, zeroed_ann_validation)
 from . import oracle as _oracle
 
 
 def capture_loss_history(fit_sys, cfg: RunConfig, save_dir, rid):
-    """Save the model, then capture the FULL loss history before best-checkpoint restore."""
+    """Save the model and return this run's loss history, reading it off `fit_sys`.
+
+    It used to reconstruct the history from `_last.pth` and then reload `_best.pth` to undo that.
+    Both loads are gone: `fit()` now keeps its own history across the best-checkpoint restore
+    (D-172), so there is nothing to reconstruct, and the `_best` reload was silently replacing
+    the weights, which after an accepted L-BFGS polish meant every diagnostic below reported the
+    unpolished model.
+
+    `fit_sys.eval()` stays: that is a property this function is expected to establish.
+    """
     if cfg.save_flag:
         model_path = os.path.join(save_dir, f'gantry_{rid}')
         fit_sys.save_system(model_path)
         print(f'Saved model: {model_path}')
 
-    # Capture full loss history before best-checkpoint restore truncates it.
-    fit_sys.checkpoint_load_system(name='_last')
-    epoch_id_full   = fit_sys.epoch_id.copy()
-    loss_val_full   = fit_sys.Loss_val.copy()
-    loss_train_full = fit_sys.Loss_train.copy()
-    fit_sys.checkpoint_load_system(name='_best')
-    # CHANGED (D-169, job 80746): restore the post-training CPU contract that the line above
-    # breaks. deepSI's checkpoint_load_system is `self.__dict__ = torch.load(file)`
-    # (fit_system.py:501) -- a wholesale replacement with no map_location, not a
-    # load_state_dict -- so a checkpoint written by fit() while the model was on the GPU puts
-    # CUDA modules straight back onto fit_sys and silently undoes train_model's closing
-    # .cpu(). The next apply_experiment then feeds it CPU tensors (deepSI builds uhist/yhist
-    # with plain torch.tensor) and dies in pre_encoder at `uhist_mod + self.u_off`.
-    # Unconditional, NOT gated on cfg.device: the device here comes from the checkpoint file,
-    # so a GPU-trained checkpoint restored inside a device='cpu' run needs this too. No-op
-    # when the model is already on the CPU.
-    fit_sys.cpu()
     fit_sys.eval()
-    return epoch_id_full, loss_val_full, loss_train_full
+    return (np.asarray(fit_sys.epoch_id).copy(),
+            np.asarray(fit_sys.Loss_val).copy(),
+            np.asarray(fit_sys.Loss_train).copy())
 
 
 def report_joint_estimation(fit_sys):
@@ -74,6 +74,25 @@ def report_joint_estimation(fit_sys):
     return params_init_np, params_learned_np
 
 
+def _ratio_str(aug, base, pct_band=10.0):
+    """`aug` against `base` as a percentage when that is meaningful, else as a FACTOR.
+
+    A percentage is a readable statement of an improvement or a modest regression. It stops being
+    one the moment the two differ by orders of magnitude: run 81655 printed `-433601.9%` on the
+    validation table and `-1759463680.0%` on the test one, which carries no more information than
+    "very much worse" and reads like a formatting bug. Outside the band the factor is printed
+    instead, which is the form a reader can actually use.
+    """
+    base = float(base)
+    aug = float(aug)
+    if not np.isfinite(aug) or not np.isfinite(base) or abs(base) < 1e-30:
+        return 'n/a'
+    r = aug / base
+    if 1.0 / pct_band <= r <= pct_band:
+        return '%+.1f%%' % (100.0 * (base - aug) / base)
+    return '%.2gx worse' % r if r > 1 else '%.2gx better' % (1.0 / r)
+
+
 def _print_same_init_comparison(title, nrms_aug, nrms_base, ystd,
                                 base_label='baseline FP (enc-init)', refs=None):
     """Same-init augmented-vs-baseline table (D-094/D-098).
@@ -87,14 +106,14 @@ def _print_same_init_comparison(title, nrms_aug, nrms_base, ystd,
     print(f"  base = {base_label}"
           + (''.join(f'   ref[{i}] = {lbl}' for i, (lbl, _) in enumerate(refs)) if refs else ''))
     print(f"  {'':4s} {'aug RMS[m]':>11s} {'aug NRMS':>9s}  "
-          f"{'base RMS[m]':>11s} {'base NRMS':>9s} {'aug/base':>9s}"
+          f"{'base RMS[m]':>11s} {'base NRMS':>9s} {'aug/base':>14s}"
           + ''.join(f"   {'ref['+str(i)+'] RMS':>13s}" for i in range(len(refs))))
     for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
         if nrms_base is not None:
-            improv = 100.0 * (nrms_base[ch] - nrms_aug[ch]) / (nrms_base[ch] + 1e-12)
-            base_s = f"{nrms_base[ch]*ystd[ch]:>11.3e} {nrms_base[ch]:>9.4f} {improv:>+8.1f}%"
+            base_s = (f"{nrms_base[ch]*ystd[ch]:>11.3e} {nrms_base[ch]:>9.4f} "
+                      f"{_ratio_str(nrms_aug[ch], nrms_base[ch]):>14s}")
         else:
-            base_s = f"{'-':>11s} {'-':>9s} {'-':>9s}"
+            base_s = f"{'-':>11s} {'-':>9s} {'-':>14s}"
         ref_s = ''.join(f"   {v[ch]*ystd[ch]:>13.3e}" for (_, v) in refs)
         print(f"  {lbl:4s} {nrms_aug[ch]*ystd[ch]:>11.3e} {nrms_aug[ch]:>9.4f}  {base_s}{ref_s}")
 
@@ -118,7 +137,11 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
                       diag_conv=None, baseline_nrms=None,
                       baseline_test_nrms=None, baseline_encinit_nrms=None,
                       baseline_test_encinit_nrms=None):
-    """Load best checkpoint, simulate, compute NRMS, plot, save."""
+    """Simulate the trained system, compute NRMS, plot, save.
+
+    No longer loads a checkpoint: `fit()` already returns the best-validating weights, and
+    reloading them here silently discarded an accepted L-BFGS polish (D-172).
+    """
     NX_PHYS = cfg.nx_phys
     ny = cfg.ny
     NX_ANN = hp['NX_ANN']
@@ -161,23 +184,63 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
     _base_si  = baseline_encinit_nrms if baseline_encinit_nrms is not None else baseline_nrms
     _base_lbl = 'baseline FP (enc-init)' if baseline_encinit_nrms is not None else 'baseline FP (true-x0)'
     _ref_si   = baseline_nrms if (baseline_encinit_nrms is not None and baseline_nrms is not None) else None
-    ann_active = bool(np.nanmax(ann_rms_enc) > 1e-9) if NX_ANN > 0 else False
+    # CHANGED (D-177): the LABEL, not the test. `ann_active` is `max(latent RMS) > 1e-9`, which
+    # says the augmented states are non-zero and nothing more; it cannot distinguish states that
+    # carry the absorber from states that carry noise. Run 81655 read ACTIVE with a rollout
+    # R2_linmap of +0.11. Whether the criterion should become a contribution test (the rollout R2
+    # in section C) is a change to D-094 and is left open deliberately; what is fixed here is a
+    # banner that implied more than it measured.
+    ann_nonzero = bool(np.nanmax(ann_rms_enc) > 1e-9) if NX_ANN > 0 else False
     print('\n' + '=' * 72)
-    print(f"VERDICT (run {rid}): ANN {'ACTIVE' if ann_active else 'inactive (aug states ~0)'}")
+    print(f"VERDICT (run {rid}): aug states "
+          + (f"NON-ZERO (max latent RMS {np.nanmax(ann_rms_enc):.2e}); section C says whether "
+             f"they carry the absorber" if ann_nonzero else "~0 (the ANN does nothing)"))
     if _base_si is not None:
-        _si = [100.0 * (_base_si[c] - nrms_enc[c]) / (_base_si[c] + 1e-12) for c in range(ny)]
-        print('  augmentation vs baseline (same init): '
-              + '  '.join(f'{l} {_si[c]:+.1f}%' for c, l in enumerate(['X1', 'X2', 'Y'])))
+        print('  open-loop free run vs baseline (same init): '
+              + '  '.join(f'{l} {_ratio_str(nrms_enc[c], _base_si[c])}'
+                          for c, l in enumerate(['X1', 'X2', 'Y'])))
     print('=' * 72)
 
-    # A. MODEL QUALITY -- validation (encoder-init; aug vs baseline same init)
+    # ── The CLOSED-loop control (D-177) ──────────────────────────────────────
+    # The one comparison the report was missing: the selector, measured again on the same records
+    # through the same seam, with the learned block silenced. Everything below this point is open
+    # loop and therefore cannot answer "what did the augmentation buy in the loop it was trained
+    # in". The device flip mirrors run_lbfgs_polish: the diagnostics are CPU by construction
+    # (D-169) and a closed-loop free run is the one of them worth ~162 s on the GPU instead.
+    _sel = getattr(fit_sys, 'bestfit', float('nan'))
+    if cfg.device == 'cuda':
+        fit_sys.cuda()
+    try:
+        _sel_zeroed = zeroed_ann_validation(fit_sys, data.val_ckpt_data)
+    except Exception as e:                       # a control must never break the report
+        print(f'Warning: closed-loop ANN-zeroed control failed ({e}); recording NaN')
+        _sel_zeroed = float('nan')
+    finally:
+        if cfg.device == 'cuda':
+            fit_sys.cpu()
+    print('\n== A0. CLOSED-LOOP SELECTOR (the measure this run was selected on) ==')
+    print(f"  {'model':<22s} sim-RMS {_sel:.6e} m")
+    print(f"  {'ANN silenced (control)':<22s} sim-RMS {_sel_zeroed:.6e} m"
+          + ('' if not (np.isfinite(_sel) and np.isfinite(_sel_zeroed) and _sel_zeroed > 0)
+             else f'   -> the learned block is worth {_ratio_str(_sel, _sel_zeroed)}'))
+    print('  control = these weights with the ANN output layer zeroed, NOT the baseline FP model:')
+    print('  the encoder still initialises the augmented states and they still evolve.')
+
+    # A. OPEN-LOOP FREE RUN -- validation (encoder-init; aug vs baseline same init)
+    # CHANGED (D-177): titled MODEL QUALITY until run 81655 showed why that misleads. Everything
+    # in this section comes from `fit_sys.apply_experiment`, deepSI's OPEN-loop free run, while
+    # training and selection are closed loop (`simulator.validation_error`). The two are not
+    # comparable and 81655's log carried both, six orders apart, with nothing saying so. The
+    # section is kept because the comparison inside it is honest: baseline and augmented model
+    # meet the same open-loop test, and a model that diverges there when the baseline does not is
+    # telling you something real about what the ANN added.
     if _base_si is not None:
         _print_same_init_comparison(
-            '== A. MODEL QUALITY: validation (V1) ==',
+            '== A. OPEN-LOOP FREE RUN: validation (V1)   [selection is CLOSED loop] ==',
             nrms_enc, _base_si, ystd, base_label=_base_lbl,
             refs=[('baseline FP (true-x0)', _ref_si), ('oracle FP+MSD (true-x0)', nrms_oracle)])
     else:
-        print('\n== A. MODEL QUALITY: validation (V1), encoder-init ==')
+        print('\n== A. OPEN-LOOP FREE RUN: validation (V1), encoder-init ==')
         for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
             print(f'  {lbl}: RMS {rms_enc[ch]:.3e} m  NRMS {nrms_enc[ch]:.4f}')
 
@@ -238,11 +301,11 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
         _tref  = baseline_test_nrms if (baseline_test_encinit_nrms is not None and baseline_test_nrms is not None) else None
         if _tbase is not None:
             _print_same_init_comparison(
-                '== A. MODEL QUALITY: test (E1, unseen excitation) ==',
+                '== A. OPEN-LOOP FREE RUN: test (E1)   [selection is CLOSED loop] ==',
                 nrms_test, _tbase, ystd, base_label=_tlbl,
                 refs=[('baseline FP (true-x0)', _tref), ('oracle FP+MSD (true-x0)', nrms_oracle_test)])
         else:
-            print('\n== A. MODEL QUALITY: test (E1), encoder-init ==')
+            print('\n== A. OPEN-LOOP FREE RUN: test (E1), encoder-init ==')
             for ch, lbl in enumerate(['X1', 'X2', 'Y ']):
                 print(f'  {lbl}: RMS {nrms_test[ch]*ystd[ch]:.3e} m  NRMS {nrms_test[ch]:.4f}')
     except Exception as e:

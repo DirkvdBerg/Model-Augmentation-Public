@@ -60,6 +60,7 @@ coordinates. See there for why this does not weaken the units gate.
 __project_origin__ = "added"
 
 import time
+from contextlib import contextmanager
 
 import numpy as np
 import torch
@@ -480,6 +481,7 @@ class ClosedLoopSimulator:
         # method and the rollout would silently run half compiled.
         self._compiled = compiled
         self._t_hist = []          # per-update wall times, for the recompile detector below
+        self._t_hist_n = None      # the window count those times belong to; see _note_update_time
         # CHANGED (D-169): steps per gradient-checkpoint segment for the TRAINING rollout.
         # Held here rather than passed through loss_kwargs because it is a property of how this
         # rollout is executed, not of the objective: fit() forwards loss_kwargs to
@@ -507,6 +509,24 @@ class ClosedLoopSimulator:
         state = self.__dict__.copy()
         state['_compiled'] = None
         return state
+
+    @contextmanager
+    def eager(self):
+        """Run through the UNCOMPILED pair for the duration, then restore.
+
+        The compiled pair is private to this class (see `__init__`), so switching it off is this
+        class's business rather than a caller's. `lbfgs_polish._eager` delegates here instead of
+        assigning `_compiled` from outside.
+
+        A no-op when nothing is compiled, which after any `fit()` is the normal state: the best
+        checkpoint reload at the end of training returns an unpickled simulator and
+        `__getstate__` above drops the artefact.
+        """
+        saved, self._compiled = self._compiled, None
+        try:
+            yield
+        finally:
+            self._compiled = saved
 
     # ---- training -----------------------------------------------------------------------
     def __call__(self, fit_sys, x, ufuture, yfuture, ctrl_ix=None, **kw):
@@ -551,25 +571,39 @@ class ClosedLoopSimulator:
             # would point at overwritten memory. Cloning the two outputs that leave this method
             # is the cheap way to make that impossible for every downstream caller.
             y_pred, x_final = y_pred.clone(), x_final.clone()
-        self._note_update_time(time.perf_counter() - _t0)
+        self._note_update_time(time.perf_counter() - _t0, ufuture.shape[0])
         return y_pred, x_final
 
-    def _note_update_time(self, dt):
+    def _note_update_time(self, dt, n_win):
         """Print a line when one update takes far longer than usual: a RECOMPILE detector.
 
         A Dynamo recompile costs 12-150 s against a ~25 s update at nf=12000, and it is otherwise
-        SILENT -- the run completes, just slower, and nothing in the log says why. The most likely
-        trigger is deepSI's CPU/CUDA flip around validation reaching a compiled callable, which
-        the routing above is designed to prevent; this is the instrument that says whether it
-        worked. One perf_counter per UPDATE (not per timestep), so the cost is nil.
+        SILENT -- the run completes, just slower, and nothing in the log says why. One
+        perf_counter per UPDATE (not per timestep), so the cost is nil.
+
+        THE HISTORY BELONGS TO ONE BATCH SIZE, which is what `n_win` is for. A median is only a
+        baseline for updates of the same shape: job 81655 compared the L-BFGS polish's
+        16384-window closures against the training median at 512 and printed fourteen alarms for
+        a run in which nothing was compiled at all. On a shape change the history is dropped and
+        rebuilt, which costs the eight updates the detector needs to arm again and is the right
+        trade for not crying wolf. `fit()` uses `N // batch_size` updates per epoch, so every
+        training batch has the same shape and this fires once, when another phase takes over.
+
+        The message states the observation and offers the device flip as ONE candidate cause,
+        rather than asserting it: that was the original suspicion (deepSI's CPU/CUDA flip around
+        validation reaching a compiled callable), and it is not the only way an update can be
+        slow.
         """
+        if n_win != self._t_hist_n:
+            self._t_hist_n, self._t_hist = n_win, []
         h = self._t_hist
         if len(h) >= 8:
             med = sorted(h[-32:])[len(h[-32:]) // 2]
             if dt > 5 * med:
-                print(f'  [compile] update took {dt:.1f} s against a {med:.2f} s median: '
-                      f'likely a torch.compile RECOMPILE. If this repeats around validations, '
-                      f'a compiled callable is being invoked on the wrong device.', flush=True)
+                print(f'  [compile] update took {dt:.1f} s against a {med:.2f} s median at '
+                      f'{int(n_win)} windows: possibly a torch.compile RECOMPILE. If it repeats '
+                      f'around validations, check whether a compiled callable is reached on the '
+                      f'wrong device.', flush=True)
         h.append(dt)
 
     def augment_training_data(self, data, sys_data, fit_sys, **kw):

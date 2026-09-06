@@ -336,3 +336,49 @@ def encoder_init_state(fit_sys, sysdata, K0, na, nb, na_right, nb_right, cfg: Ru
         x0 = fit_sys.encoder(torch.tensor(up, dtype=DTYPE_PT),
                              torch.tensor(yp, dtype=DTYPE_PT)).numpy()[0]
     return x0[:cfg.nx_phys]
+
+
+def zeroed_ann_validation(fit_sys, val_data, validation_measure='sim-RMS'):
+    """The selector, measured again with the learned block SILENCED. D-177.
+
+    Runs `fit_sys.cal_validation_error`, so it goes through exactly the seam training and
+    checkpoint selection use: with a simulator attached that is `simulator.validation_error`, a
+    CLOSED-loop free run scored in metres over the same records. Same loop mode, same data, same
+    code path; the only difference is the ANN.
+
+    WHY THIS EXISTS. Every baseline in the post-run report is open loop
+    (`apply_experiment`), so the number the whole run is selected on has no reference in its own
+    loop mode. Run 81655 ended at sim-RMS 5.766972e-06 with nothing to compare it against, which
+    means neither its 50 Adam epochs nor its L-BFGS phase could be said to have improved anything
+    against a model without an augmentation.
+
+    HOW IT SILENCES THE BLOCK. The ANN's OUTPUT layer is zeroed, so `w = net(z)` is exactly 0 for
+    every input and the block contributes nothing through any route. Weights are restored
+    bit-exactly in a `finally`, so this is observationally free: no patched forward, no second
+    model, no rebuild.
+
+    WHAT IT IS NOT. This is the trained model with the block silenced, NOT the baseline FP model
+    in closed loop. The encoder still initialises the augmented states from the data, and those
+    states still evolve under whatever linear part the interconnection gives them. The question
+    it answers is "what does the learned block buy inside the loop", which is the one the report
+    cannot currently answer. Returns NaN when there is no ANN block to silence.
+    """
+    from model_augmentation.fit_systems.blocks import Static_ANN_Block
+    ann = next((b for b in getattr(fit_sys.hfn, 'connected_blocks', ())
+                if isinstance(b, Static_ANN_Block)), None)
+    if ann is None:
+        return float('nan')
+    last = [m for m in ann.net.net if isinstance(m, nn.Linear)][-1]
+    saved_w = last.weight.detach().clone()
+    saved_b = None if last.bias is None else last.bias.detach().clone()
+    with torch.no_grad():
+        last.weight.zero_()
+        if last.bias is not None:
+            last.bias.zero_()
+    try:
+        return float(fit_sys.cal_validation_error(val_data, validation_measure))
+    finally:
+        with torch.no_grad():
+            last.weight.copy_(saved_w)
+            if saved_b is not None:
+                last.bias.copy_(saved_b)
