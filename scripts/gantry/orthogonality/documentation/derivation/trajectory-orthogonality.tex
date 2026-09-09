@@ -1,0 +1,650 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=27mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,bm}
+\usepackage{booktabs,longtable,array}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{url}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+\newcommand{\R}{\mathbb R}
+\newcommand{\D}{\mathrm D}
+\newcommand{\ran}{\operatorname{range}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\orth}{\operatorname{orth}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\blkdiag}{\operatorname{blkdiag}}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\full}{\mathrm{full}}
+\newcommand{\off}{\mathrm{off}}
+\newcommand{\clamp}{\mathrm{clamped}}
+\newcommand{\stopgrad}{\operatorname{stopgrad}}
+\newcommand{\code}[1]{\nolinkurl{#1}}
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{example}[proposition]{Example}
+\newtheorem{assumption}[proposition]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[proposition]{Remark}
+\title{From one-step orthogonal regularization to a\newline
+fixed-reference closed-loop trajectory penalty\newline
+for dynamic model augmentation}
+\author{Master's thesis working derivation\\Eindhoven University of Technology}
+\date{Implementation and evidence inspected: 9 September 2026; derivation revised the same day}
+\begin{document}
+\maketitle
+\begin{abstract}
+A dynamic augmentation can change physical outputs through both an immediate correction and learned states that are read out later. A regularizer evaluated only at zero learned state does not observe all these paths. We derive a finite-window extension of the stacked orthogonal-projection principle of Gy\"or\"ok et al. The penalized vector is the difference between full and augmentation-off closed-loop predictions. Its reference subspace is formed from full-predictor physical sensitivities after eliminating the actual physical-initialization encoder as a local nuisance. Learned-state initialization remains trainable and belongs to the augmentation. We establish the projection identities, a local least-squares displacement result, and the exact selective gradient and chunked implementation. At a fixed point of the selective update the displacement result is the Gauss-Newton sensitivity of the jointly fitted physical parameters to the augmentation, which gives the selective gradient routing its justification; the conditions for this reading are listed and the resulting bound is evaluated at the measured reference spectrum. These results hold for smooth finite-horizon nonlinear predictors. They do not imply true-parameter recovery, hard orthogonality at finite penalty weight, or separation of all attainable neural tangent directions. An appendix reconciles the derivation with the inspected implementation and its available verification evidence.
+\end{abstract}
+\tableofcontents
+
+\section{Question, scope and notation}
+The objective is to discourage the learned augmentation from supplying output changes that supported physical-parameter changes can supply in the same experiment. The experiment here is a residual closed-loop prediction on measured windows. It is not an open-loop simulation, and the controller's reaction is part of the output effect being regularized.
+
+The term \emph{physical direction} has a precise, local meaning: it is a column-space direction of the derivative of the selected predictor with respect to physical parameters. It need not represent a physically missing effect, nor does a chosen reference checkpoint define the physical truth. The motivation is physical interpretability; the implemented mathematical guarantee is narrower.
+
+We use $x=\col(\tilde x,a)$, where $\tilde x\in\R^6$ comprises normalized physical states and $a=\bar x\in\R^{n_a}$ comprises learned states. The controller state is $x_c$. Physical log parameters are $\lambda\in\R^{14}$, augmentation parameters are $\eta$, and physical-initialization encoder parameters are $\xi_p$. The full parameter tuple is $q=(\lambda,\eta,\xi_p)$; $q_0$ denotes the frozen reference. $\dagger$ denotes the Moore--Penrose pseudoinverse and $\orth(B)$ an orthonormal basis of the supported column space of $B$. Exact algebra uses exact rank; numerical truncation is addressed separately.
+
+The selected regularization windows form a fixed set $\mathcal G$ of size $n_W$. Each has $n_f$ simulated samples, $b$ unscored initial samples, $T=n_f-b>0$ scored samples, and $n_y=3$ outputs. Thus $N=n_W Tn_y$ is the scalar output count. Training minibatches need not equal $\mathcal G$.
+
+Propositions below are elementary derivations under stated assumptions, not new general linear-algebra theorems. Model-dependent matrices and diagnostics are \emph{data-computable}: they require measured records and a model, not simulation truth. Parameter errors against known truth are validation quantities only. Historical example checks are distinguished from general proofs in Appendix~\ref{sec:evidence}. The estimator reading of Section~\ref{sec:estimator} is the one result that concerns the training update rather than the penalty alone; it is a single-reader derivation and is marked as such in Appendix~\ref{sec:evidence}.
+
+\section{What is inherited from Gy\"or\"ok}
+\subsection{Projection of a stacked one-step correction}
+Gy\"or\"ok et al. use an additive state-space model
+\begin{equation}\label{eq:original-model}
+ \hat x_{k+1}=f_\theta(\hat x_k,u_k)+f^{\mathrm{ANN}}_\eta(\hat x_k,u_k),
+ \qquad \hat y_k=h_\theta(\hat x_k,u_k).
+\end{equation}
+Their fitting criterion is multistep, and they explicitly discuss encoder initialization when states are unmeasured. The ANN in this construction is a static map of the current state and input; it has no separate learned recurrent state. These facts appear in Sections~2.1--2.2, Eqs.~(3)--(4), local PDF pp.~3 to 4, of the inspected 2025 paper~\cite{gyorok2025}.
+
+For a baseline linear in its parameters, $f_\theta(x,u)=\phi(x,u)\theta$, fix evaluation pairs $(x_i,u_i)$ and stack
+\begin{equation}\label{eq:original-stack}
+ \Phi=\col_i\phi(x_i,u_i),\qquad
+ n_\eta=\col_i f^{\mathrm{ANN}}_\eta(x_i,u_i),\qquad
+ Q_\Phi=\orth(\Phi).
+\end{equation}
+All output rows at all evaluation pairs participate in one column space. The projection penalty is
+\begin{equation}\label{eq:original-penalty}
+ V_{\rm G}=\beta_{\rm G}\norm{Q_\Phi Q_\Phi^\top n_\eta}_2^2
+           =\beta_{\rm G}\norm{Q_\Phi^\top n_\eta}_2^2.
+\end{equation}
+The equality follows from $Q_\Phi^\top Q_\Phi=I$. This is the construction of Eqs.~(9)--(14) in Section~3, local PDF p.~6, of~\cite{gyorok2025}; Section~4 of that paper begins with Eq.~(15). It penalizes only the aligned component. Calling it ``pointwise'' here refers to the \emph{one-step evaluations that are stacked}; it does not mean a separate projection at every time or point.
+
+\subsection{The nonlinear regressor includes an offset}
+For nonlinear parameter dependence, the paper expands at $\bar\theta$ while holding the evaluation pairs fixed:
+\begin{align}
+ f_\theta(x_i,u_i)&\simeq J_i\theta+c_i,
+ &J_i&=\left.\partial_\theta f_\theta(x_i,u_i)\right|_{\bar\theta},\label{eq:taylorG}\\
+ c_i&=f_{\bar\theta}(x_i,u_i)-J_i\bar\theta,
+ &\widetilde\Phi&=[\,\col_iJ_i\quad\col_ic_i\,].\label{eq:offsetG}
+\end{align}
+The basis is then built from $\widetilde\Phi$, not merely from $\col_iJ_i$: see Eqs.~(15)--(19), local PDF p.~7, in~\cite{gyorok2025}. The appended vector represents an affine offset, even though its coefficient in the Taylor model is fixed to one. Remark~2 on local PDF p.~7 discusses updating the projection matrix with current state estimates at each epoch, and the first paragraph of p.~8 discusses updating the linearization point at each iteration versus fixing it at the nominal parameters.
+
+Our method retains the stacked projection principle but makes three substantive changes: it projects a \emph{closed-loop output difference}, uses derivatives of the \emph{full augmented predictor}, and profiles physical-initialization freedom. It also deliberately omits the affine-offset column because its declared target is parameter \emph{variation}. Consequently, setting $n_a=0$ does not by itself recover Eq.~\eqref{eq:original-penalty}. Literal equivalence additionally requires matching the evaluated map, regressor including any offset, metric, evaluation set and normalization.
+
+Finite-time physical-output subspaces and frozen SVD bases also appear in Kon et al., Eqs.~(15)--(23), local PDF p.~4, of the inspected preprint~\cite{kon2023}. Their observation on the same page that recursively updating the basis ``does not yield different results from a fixed initialization in practice'' is an experimental statement about a static feedforward map; it does not establish adequacy of a frozen basis for this gantry. Thus neither stacking nor freezing alone is the contribution claimed here.
+
+\subsection{Why the successor's recovery theorem is separate}
+The 2026 orthogonal-by-construction formulation uses a projected learning component in an input--output model~\cite{gyorok2026}. In the inspected arXiv v3, Condition~4, Eq.~(17), requires $\Phi^\top\Delta=0$ for the true missing term on the data; Theorem~7 also invokes Assumption~1, full column rank of the regressor, and Assumption~6, exact recovery of the data-generating relations on the training data. Its proof on PDF p.~4, Eq.~(21), yields the physical error through $(\Phi^\top\Phi)^{-1}\Phi^\top\Delta$. Section~4.2 of the same paper (PDF p.~4) further argues that the standard additive structure admits a larger worst-case baseline-parameter error than the orthogonal construction even when Condition~4 fails; that statement concerns its own linear-in-parameters input--output parametrization. Neither result transfers to the present finite, selectively differentiated recurrent penalty, whose baseline is nonlinear in the parameters, whose learning component carries state, and whose initial states come from an encoder. Publication metadata and inspected-version locators are distinguished in the bibliography.
+
+\section{The additional-state path that the zero slice misses}
+Consider an affine augmentation with physical correction and latent update
+\begin{equation}\label{eq:affine}
+ w_p=L\tilde x+Ka+Mu+c,\qquad
+ a^+=F\tilde x+Ga+Hu+g.
+\end{equation}
+At a fixed set with $a=0$, the stacked physical correction contains $L,M,c$ but no $K$. Its derivative with respect to every entry of $K$ is exactly zero. Therefore any fixed-basis penalty built only from these physical corrections supplies no gradient to $K$. This is a structural counterexample to coverage of the zero slice. It remains a counterexample for a richer model family that contains this affine case; it does not assert that every nonlinear parameter sharing pattern has identical uncoupled weights.
+
+For the restricted triangular affine dynamics $\tilde x^+=A\tilde x+Ka$ and $a^+=Ga+g_i$, with no physical-to-latent feedback and initially zero contribution, direct substitution gives
+\begin{equation}\label{eq:kernel}
+ d_{x,T}^{\rm lat}=\sum_{i=0}^{T-2}\Lambda_T(i)g_i,
+ \qquad
+ \Lambda_T(i)=\sum_{j=i+1}^{T-1}A^{T-1-j}KG^{j-1-i}.
+\end{equation}
+Indeed $g_i$ first appears in $a_{i+1}$, is propagated to $a_j$ by $G^{j-1-i}$, enters $\tilde x_{j+1}$ through $K$, then propagates to $\tilde x_T$ through $A^{T-1-j}$. Initial latent state adds $\sum_{j=0}^{T-1}A^{T-1-j}KG^j a_0$. Equation~\eqref{eq:kernel} is exact for this restricted model. With $F\ne0$, nonlinearities, or feedback, the complete joint recurrence replaces this expression; it is not the exact kernel of the general gantry ANN.
+
+\begin{example}[A delayed path detected by the trajectory penalty]\label{ex:latent}
+Let $x_{k+1}=\theta u_k+Ka_k$, $a_{k+1}=g$, $x_0=a_0=0$, and $u_0=0,u_1=1$. Score $p=\col(x_1,x_2)$, with no nuisance encoder. Then
+\[
+ p_\full=\begin{bmatrix}0\\\theta+Kg\end{bmatrix},\quad
+ p_\off=\begin{bmatrix}0\\\theta\end{bmatrix},\quad
+ S=\begin{bmatrix}0\\1\end{bmatrix},\quad
+ d=\begin{bmatrix}0\\Kg\end{bmatrix}.
+\]
+The zero-slice physical correction is identically zero. In contrast the trajectory penalty is $V=\beta K^2g^2/2$, with $\partial_KV=\beta Kg^2$ and $\partial_gV=\beta K^2g$. This proves detection of this delayed contribution, not universal nonzero gradients: a genuinely absent path or a stationary configuration can give zero gradients correctly.
+\end{example}
+
+Propagation is a distinct issue. If a one-step stack $v$ satisfies $Q^\top v=0$, and $\mathcal T$ transports that stack into a trajectory contribution, orthogonality to a trajectory basis $Q_T$ requires $Q_T^\top\mathcal T v=0$. The former implies the latter for all such $v$ if and only if
+\begin{equation}
+ Q_T^\top\mathcal T(I-QQ^\top)=0.
+\end{equation}
+This preservation condition is not automatic, even with $K=0$. It is not the additional-state-specific result. The rollout construction below deals with both issues by evaluating the effect after propagation.
+
+\section{The actual nonlinear closed-loop experiment}\label{sec:predictor}
+\subsection{Coordinates, physical map and routing}
+The normalized physical state has order $[X,\Theta,Y,\dot X,\dot\Theta,\dot Y]$. Write
+\begin{equation}\label{eq:normalization}
+ x_{\rm SI}=D_x\tilde x+\mu_x,\quad
+ u_{\rm SI}=D_u u+\mu_u,\quad y_{\rm SI}=D_y y+\mu_y.
+\end{equation}
+These fixed training-data scalings also specify the Euclidean output metric used below. Physical output is computed by the production output block, not by taking the first three entries of $\tilde x$; in the current linear output map $\hat y=C_n\tilde x$ with zero input feedthrough. Means and coordinate transforms must match that block.
+
+The trainable physical coordinates are implemented as
+\begin{equation}\label{eq:logparam}
+ \theta_i(\lambda)=\max\{\theta_{{\rm init},i}\exp(\lambda_i),10^{-6}\}.
+\end{equation}
+Their order is $k_{b1},k_{b2},c_{g1},c_{g2},c_y,c_{b1},c_{b2},m_h,m_1,m_2,m_b,J_b,J_h,d$. Here $d$ in this list is a physical scalar; elsewhere $d(q)$ denotes the contribution vector. Smooth proofs exclude clamp boundaries and require nonsingular physical solves. A clamped coordinate has zero sensitivity on its active branch; this is not evidence of structural nonidentifiability.
+
+Away from the clamp, $\partial_{\lambda_i}p=\theta_i\partial_{\theta_i}p$ is a relative sensitivity. A consistent change of physical units therefore does not change this column. This does not imply invariance under arbitrary log-coordinate changes: for $\lambda'=T_\lambda\lambda$, $S'=ST_\lambda^{-1}$ has the same exact range but can have different singular values and truncated rank. At checkpoint 81757 the verification report records every physical parameter at its initial value, the smallest being $5\times10^{-2}$, four orders of magnitude above the clamp, so the smoothness premise holds at that reference. It must be re-checked at any reference whose physical parameters have been trained.
+
+The reported physical combination map is
+\begin{equation}\label{eq:combos}
+ \begin{aligned}
+ \kappa(\theta)=\big(&k_{b1}+k_{b2},c_{g1},c_{g2},c_y,c_{b1}+c_{b2},m_h,\\
+ &m_1+m_2+m_b,m_1-m_2,J_b+J_h+(m_1+m_2)L_b^2/4,d\big)^\top.
+ \end{aligned}
+\end{equation}
+This is the code's combination map, and the inspected implementation does factor through it: the rational mass structure is built from $m_1+m_2+m_b+m_h$, $(m_1-m_2)L_b/2$, $J_b+J_h+(m_1+m_2)L_b^2/4$, $m_h$ and $d$, and the stiffness and damping matrices from $k_{b1}+k_{b2}$, $c_{b1}+c_{b2}$, $c_{g1}$, $c_{g2}$ and $c_y$, with $L_b$ fixed. Since the encoder initialization is independent of $\lambda$, the chain rule gives $S_\lambda=S_\kappa\D_\lambda\kappa$; because $\D_\lambda\kappa$ has full row rank ten, $\ran S_\lambda=\ran S_\kappa$ and $\rank S_\lambda=\rank S_\kappa\le10$. The measured rank ten of Appendix~\ref{sec:evidence} is therefore the structural maximum, not merely consistent with it. The independent FP structural records remain the verification source for the combination map itself. The implementation differentiates all fourteen log coordinates and retains supported singular directions. It does not silently invert a fourteen-dimensional physical information matrix.
+
+Let $f_\lambda$ be the actual normalized discrete physical map, evaluated by RK4 with the configured substeps of the LFR dynamics. Its scheduler is the denormalized third state $Y=\mu_{x,3}+D_{x,33}\tilde x_3$ in LPV mode. Every integration substage includes
+\begin{equation}\label{eq:schedule}
+ \D_{\tilde x} f_c(\tilde x,u,Y(\tilde x),\theta)
+ =\partial_{\tilde x}f_c\big|_Y+\partial_Y f_c\,\D_{\tilde x}Y.
+\end{equation}
+Freezing the scheduler omits a first-order path. Movement of this derivative under subsequent finite parameter changes is a separate remainder/reference-drift issue. Fixed-operating-point mode is a different configured map.
+
+More explicitly, let $v_\lambda(z,u)$ be the normalized continuous LFR right-hand side, including denormalization of $z,u$, the force transform, the rational $M(Y)^{-1}$ evaluation, and division of physical state derivatives by $D_x$. For $n_s$ configured substeps and $\Delta=T_s/n_s$, each substep is
+\begin{align}
+ k_1&=v_\lambda(z,u),& k_2&=v_\lambda(z+\Delta k_1/2,u),\nonumber\\
+ k_3&=v_\lambda(z+\Delta k_2/2,u),& k_4&=v_\lambda(z+\Delta k_3,u),\nonumber\\
+ z^+&=z+\tfrac{\Delta}{6}(k_1+2k_2+2k_3+k_4).\label{eq:rk4}
+\end{align}
+Composing these substeps defines $f_\lambda$. The ANN correction in Eq.~\eqref{eq:gantry} is added once to the resulting discrete state, not inserted as a continuous force at every RK4 substage. Consequently its units and Jacobians are those of a normalized discrete state correction.
+
+With ANN output $w\in\R^{n_o}$ and fixed routing $B_r=\col(B_{r,p},B_{r,a})$, the configured additive architecture is
+\begin{align}
+ w_k&=N_{\eta_d}(\col(\tilde x_k,a_k,\hat u_k)),\nonumber\\
+ \tilde x_{k+1}&=f_\lambda(\tilde x_k,\hat u_k)+B_{r,p}w_k,
+ &a_{k+1}&=B_{r,a}w_k.\label{eq:gantry}
+\end{align}
+The latent output replaces the next latent state. For full routing, $n_o=6+n_a$, giving fourteen outputs when $n_a=8$. This is configuration-dependent: the current default has $n_a=2$. Optional wrappers or extra trainable paths require a new routing/ownership audit, not an assumed fourteen-row network. Any active scalar ANN scaling is included in $N_{\eta_d}$.
+
+\subsection{Controller recurrence and initialization}
+For each window the selected known controller is fixed, with normalized matrices
+\begin{equation}
+ A_c=A_c^{\rm SI},\quad B_c=B_c^{\rm SI}D_y,\quad
+ C_c=D_u^{-1}C_c^{\rm SI},\quad D_c=D_u^{-1}D_c^{\rm SI}D_y.
+\end{equation}
+The scored predictor follows
+\begin{align}
+ \hat y_k&=h(\tilde x_k),&e_k&=y_k-\hat y_k,\nonumber\\
+ \hat u_k&=u_k+C_c x_{c,k}+D_c e_k,&
+ x_{c,k+1}&=A_c x_{c,k}+B_c e_k.\label{eq:controller}
+\end{align}
+Output precedes the plant update, so nonzero controller feedthrough creates no algebraic loop when the plant feedthrough is zero. Controller selection is exogenous to the predicted trajectory.
+
+The residual form follows from subtracting $u=C_{\rm fb}(r-y)+u^{\rm ff}$ from $\hat u=C_{\rm fb}(r-\hat y)+u^{\rm ff}$ for the same linear controller, with the residual controller state representing the difference of controller states. Production initializes this residual state to zero at each window. Equivalence to a reference-driven experiment requires compatible controller initial states; it is not an unconditional reconstruction of the machine's unknown state. Closed-loop encoder-based augmentation already appears in Kessels, Chapter~5, Eqs.~(5.12)--(5.13d)~\cite{kessels2025}, in a reference-driven form with a known feedforward; his Remark~5.4 (printed p.~157) instead reconstructs the controller state from the record under a zero value at the record start. The residual algebra and the per-window zero reset used here are stated explicitly because they differ from that form.
+
+Each intervention has its own evolving $x_c$, driven by its own prediction error. Reusing the full rollout's controller trajectory in the off rollout would define a different quantity. Measurement noise in $y$ also enters the simulated controller. The finite-record algebra still holds with that realized noise, but this fact is not a statistical unbiasedness or consistency result.
+
+\subsection{Encoder ownership}
+For a fixed measured history $H_w$, initialize
+\begin{equation}\label{eq:encoder}
+ \tilde x_{w,0}=e_p(H_w;\xi_p),\qquad
+ a_{w,0}=e_a(H_w;\eta_a),\qquad x_{c,w,0}=0,
+ \qquad \eta=(\eta_d,\eta_a).
+\end{equation}
+The inspected split encoder uses separate linear maps and separate nonlinear branches:
+\begin{align}
+ e_p&=W_{b,u}\tilde u_H+W_{b,y}\tilde y_H-o_x+n_p(H;\xi_p),\nonumber\\
+ e_a&=W_{a,u}\tilde u_H+W_{a,y}\tilde y_H+n_a(H;\eta_a).\label{eq:encoderbranches}
+\end{align}
+Here history offsets and $o_x$ are fixed buffers when the offset correction is enabled; they vanish when it is disabled. The nonlinear branches use the original flattened normalized histories. Linear-only mode omits $n_p,n_a$.
+
+The conversion copies the original common hidden layers into two independent branches and copies the corresponding final output rows. It preserves initial encoder outputs for the supported architecture, but changes parameter sharing for future training. Consequently all paired experimental arms must use the same conversion. The latent initializer is trainable under both data and penalty updates. Profiling it as nuisance would explicitly remove a part of the augmentation we intend to regularize.
+
+\subsection{Interventions and stacking}
+For ANN output index $j$ with routed state index $r_j$, use masks
+\begin{equation}
+ m_j^\full=1,\qquad m_j^\off=0,\qquad
+ m_j^\clamp=\mathbf1\{r_j<6\},
+\end{equation}
+and replace $w_k$ in Eq.~\eqref{eq:gantry} by $\diag(m)w_k$. Full mode uses the learned $a_0$; off and clamped modes use $a_0=0$, keeping the same physical initialization. Under Eq.~\eqref{eq:gantry}, clamped latent states stay zero. This must be checked for any wrapper containing additional state writes.
+
+Let $p_m(q)\in\R^N$ flatten $\hat y_{w,k}^m$ in window, time, channel order for $k=b,\ldots,n_f-1$. Burn-in removes scored rows, not transitions or their derivatives. Define the exact nonlinear intervention effects
+\begin{equation}\label{eq:effects}
+ d=p_\full-p_\off,\quad d_{\rm lat}=p_\full-p_\clamp,\quad
+ d_{\rm dir}=p_\clamp-p_\off,\quad d=d_{\rm lat}+d_{\rm dir}.
+\end{equation}
+This decomposition is an exact vector identity and an intervention-dependent attribution. It is not a unique additive decomposition of nonlinear mechanisms. In particular, $d_{\rm lat}$ includes downstream changes in physical state, direct ANN correction and controller action caused by retaining learned states.
+
+The off predictor is the augmentation-disabled model at the \emph{current jointly trained} physical parameters and physical initializer. It is not a separately fitted physics-only reference. Thus $d$ measures an ablation effect at fixed current parameter values, not improvement over an independently calibrated physical model. Sharing the physical initial value does not cancel its propagated influence:
+\begin{equation}\label{eq:encoder-effect-dependence}
+ \D_{\xi_p}d=\D_{\xi_p}p_\full-\D_{\xi_p}p_\off,
+\end{equation}
+which generally is nonzero because the two dynamics propagate initialization differently.
+
+Stacking is essential to preserve selectivity. A separate sensitivity span at a single six-state sample can fill $\R^6$; its projector is then the identity and its penalty reduces to a size penalty on that sample. A low-dimensional physical span in $\R^N$ instead leaves a potentially large orthogonal complement. All geometry below lives in this common scored output stack, never in separate per-step state spaces.
+
+On $\mathcal G$ the output MSE is $N^{-1}\norm{y_\mathcal G-p_\full(q)}^2$. The training base loss evaluates the same scoring rule on its own minibatch and may also contain configured parameter anchors or the older one-step penalty. Primary comparisons in the plan require these extra terms off; their absence must be established from the run configuration rather than inferred from the new hook. Section~\ref{sec:estimator} states what the difference between the training stack and $\mathcal G$ costs for the estimator interpretation of the penalty.
+
+\section{Sensitivities through the full recurrent predictor}\label{sec:sensitivity}
+\begin{assumption}\label{ass:smooth}
+Histories, future measured records, normalization, controller assignments and scoring rows are fixed. The finite rollout and encoder are continuously differentiable in a neighborhood of $q_0$; for second-order bounds they are twice continuously differentiable there. Parameter groups in Eq.~\eqref{eq:encoder} are disjoint. No active clamp boundary, singular solve or changing discrete routing is crossed.
+\end{assumption}
+Let $\chi_k=\col(\tilde x_k,a_k,x_{c,k})$ and substitute the controller into the plant to obtain $\chi_{k+1}=\mathcal F_k(\chi_k;q)$. For any group $t\in\{\lambda,\eta,\xi_p\}$, differentiation gives
+\begin{equation}\label{eq:recurrence}
+ T_{k+1}^{t}=\mathcal A_kT_k^t+\mathcal B_k^t,
+ \quad \mathcal A_k=\partial_\chi\mathcal F_k,
+ \quad \mathcal B_k^t=\partial_t\mathcal F_k,
+ \quad \D_t\hat y_k=\mathcal H_kT_k^t+\partial_t h_k.
+\end{equation}
+Partial derivatives hold $\chi_k$ fixed. Initial $T_0^t$ is obtained from Eq.~\eqref{eq:encoder}. Repeated application of the chain rule proves Eq.~\eqref{eq:recurrence} exactly as a derivative identity; the model need not be LTI.
+
+To expose the controller and latent paths, let $P(\tilde x,a,\hat u)=f_\lambda+B_{r,p}N$ and $Z(\tilde x,a,\hat u)=B_{r,a}N$, and let $H=\partial_{\tilde x}h$. Then
+\begin{equation}\label{eq:jointjac}
+ \mathcal A_k=
+ \begin{bmatrix}
+ P_x-P_uD_cH&P_a&P_uC_c\\
+ Z_x-Z_uD_cH&Z_a&Z_uC_c\\
+ -B_cH&0&A_c
+ \end{bmatrix}_k.
+\end{equation}
+Thus $P_a$ is the local latent-to-physical map $K$, while $Z_a$ is the local latent persistence map $G$. These are Jacobian blocks of the shared nonlinear ANN, not necessarily separately stored matrices. Iterating Eq.~\eqref{eq:recurrence} includes their delayed effects and the feedback response.
+
+Stacking the scored derivatives at $q_0$ defines
+\begin{equation}\label{eq:SRE}
+ S_0=\D_\lambda p_\full(q_0),\qquad
+ R_0=\D_\eta p_\full(q_0),\qquad
+ E_0=\D_{\xi_p}p_\full(q_0).
+\end{equation}
+Under a bounded second derivative on the perturbation segment,
+\begin{equation}\label{eq:remainder}
+ p_\full(q_0+\delta q)=p_\full(q_0)+S_0\delta\lambda+R_0\delta\eta+E_0\delta\xi_p+r,
+ \qquad \norm r\le\tfrac12 M\norm{\delta q}^2.
+\end{equation}
+$M$ can depend strongly on horizon. This bound is not an infinite-horizon stability statement. The finite difference $d(q)$ in Eq.~\eqref{eq:effects} is evaluated by two actual nonlinear rollouts, not approximated by Eq.~\eqref{eq:remainder}.
+
+Because $p_\full=p_\off+d$,
+\begin{equation}\label{eq:full-off-s}
+ S_\full=S_\off+\D_\lambda d.
+\end{equation}
+The chosen geometry describes a physical-parameter change \emph{inside the augmented predictor}. This can differ from standalone-baseline physics. For example, $p_\off(\lambda)=(\lambda,0)^\top$ and $d(\lambda,\eta)=(0,\lambda\eta)^\top$ yield $S_\off=(1,0)^\top$ and $S_\full=(1,1)^\top$ at $(1,1)$: a correction orthogonal to the former is not orthogonal to the latter. Using $S_\off$ is a meaningful alternative design, not a interchangeable implementation of Eq.~\eqref{eq:SRE}.
+
+If the reference network already represents parameter-like effects, its derivatives can influence $S_0$ and hence the selected target. This is reference dependence, not proof that the penalty locks in prior substitution or prevents future substitution. No assumption of physically correct reference parameters is needed for the projection identities. Such an assumption, or evidence connecting the reference to a defined calibration target, would be needed for stronger physical-recovery interpretations. Compare reference choices and full/off sensitivities on common rows before making those interpretations.
+
+\section{Eliminating physical-initialization freedom}\label{sec:profiling}
+Suppress the reference subscript temporarily. For an arbitrary fixed target residual $b_y$, physical increment $v$ and encoder increment $z$, consider
+\begin{equation}\label{eq:localLS}
+ \min_{v,z}\norm{b_y-Sv-Ez-d}_2^2.
+\end{equation}
+Here $d$ is treated as a fixed additive output vector and $S,E$ are frozen. This defines a local affine comparison; it is not the original nonlinear joint optimization.
+
+Eliminating linear nuisance variables by pseudoinverse projection is classical least-squares algebra, closely related to the variable-projection treatment of separable nonlinear least squares by Golub and Pereyra~\cite{golub1973}. Here we eliminate encoder increments in an already linearized problem; we do not run their complete nonlinear variable-projection algorithm. Calling this a profile \emph{likelihood} would additionally require a specified probabilistic observation model. The proof is included to expose the assumptions, not to claim novelty for nuisance elimination.
+
+\begin{proposition}[Encoder elimination]\label{prop:profile}
+Let $Q_E=\orth(E)$ and $M_E=I-Q_EQ_E^\top=I-EE^\dagger$. For any $v$ and $d$,
+\begin{equation}\label{eq:profileidentity}
+ \min_z\norm{b_y-Sv-Ez-d}^2=\norm{M_E(b_y-Sv-d)}^2.
+\end{equation}
+\end{proposition}
+\begin{proof}
+Decompose $b_y-Sv-d$ into its orthogonal projection onto $\ran E$ and its orthogonal complement. The former can be represented by $Ez$; the latter cannot. Squared norms add, proving the minimum without requiring $E$ to have full column rank.
+\end{proof}
+Define the profiled physical sensitivity and its basis by
+\begin{equation}\label{eq:Q}
+ \bar S_0=M_{E_0}S_0,\qquad Q_0=\orth(\bar S_0),\qquad P_0=Q_0Q_0^\top.
+\end{equation}
+Physical directions already explainable by the physical initializer are not protected by this basis. A zero profiled rank leaves no protection target on this experiment. Equal raw and profiled ranks mean no entire supported direction was lost; they do not mean zero encoder overlap or unchanged conditioning.
+
+In particular, every contribution in $\ran E_0$ is unpenalized. Profiling chooses to exclude this ambiguity from the protection target; it does not eliminate the ambiguity from training. Monitor the nuisance component $\norm{Q_{E_0}^\top d}$ alongside the profiled diagnostics. The physical initializer remains free to move under the base loss, and the corresponding current nuisance space can also move. Equation~\eqref{eq:encoder-effect-dependence} explains why this is not resolved merely by sharing the initial value between interventions.
+
+\subsection{Computing the actual shared encoder space}
+Because $\xi_p$ enters the full predictor only through the physical initial state,
+\begin{equation}\label{eq:chainencoder}
+ E_w=\Gamma_wJ_w,\qquad
+ \Gamma_w=\D_{\tilde x_{w,0}}p_{\full,w}\in\R^{Tn_y\times6},\qquad
+ J_w=\D_{\xi_p}e_p(H_w)\in\R^{6\times n_{\xi_p}}.
+\end{equation}
+Hence $E=\blkdiag_w(\Gamma_w)\col_wJ_w$. Each window has six physical initial-state directions, but globally $\Gamma$ has $6n_W$ columns. Six simultaneous tangent labels across independent windows suffice to compute the blocks; this computational batching does not create a six-dimensional global nuisance space.
+
+\begin{proposition}[Compressed nuisance basis]\label{prop:compression}
+Let $U_w=\orth(\Gamma_w)$, $r_w=\rank\Gamma_w$, $C_w=U_w^\top\Gamma_w$ and
+\begin{equation}\label{eq:compression}
+ U_G=\blkdiag_w U_w,\qquad Z=\col_w(C_wJ_w),\qquad U_Z=\orth(Z).
+\end{equation}
+Then $E=U_G Z$ and $Q_E=U_GU_Z$ is an orthonormal basis for $\ran E$.
+\end{proposition}
+\begin{proof}
+Since $U_w$ spans $\Gamma_w$, $U_w C_w=\Gamma_w$. Applying this blockwise proves the factorization. The nonempty columns of $U_G$ are orthonormal because the window row supports are disjoint. Thus $(U_GU_Z)^\top U_GU_Z=I$, and multiplication by $U_G$ maps $\ran Z$ isometrically onto $\ran E$.
+\end{proof}
+$Z$ has $r_G=\sum_w r_w\le6n_W$ rows rather than $N$ rows. Neither dense $E$ nor dense $U_G$ is needed: expand $Q_E$ blockwise. This saves relative to the output-by-encoder matrix $E$; when $r_w=6$, $Z$ has the same dimensions as the stacked $J_w$. It does not eliminate storage or differentiation of the encoder Jacobian.
+
+Allowing independent free physical initial states replaces $\ran E$ by $\ran\Gamma$, a containing space. It is an upper bound on the nuisance freedom, not generally the same model. The rank bound $\rank E\le\min(n_{\xi_p},6n_W,N)$ is not an overlap estimate: even a low-dimensional nuisance space can align perfectly with a physical direction. Likewise $P_{\epsilon E}=P_E$ for $\epsilon\ne0$, so small encoder sensitivities alone do not justify ignoring them.
+
+\subsection{Finite precision is part of the implemented definition}\label{sec:rank}
+The implemented SVD first truncates each $\Gamma_w$, then $Z$, using $\sigma_i>\max(\tau_a,\tau_r\sigma_1)$. The physical basis is obtained from the numerically profiled $\bar S$ using
+\begin{equation}\label{eq:threshold}
+ \sigma_i(\bar S)>\max\{\tau_a,\tau_r\norm{LS}_2,\tau_r\sigma_1(\bar S)\},
+\end{equation}
+with $L=I$ in the plain MSE metric, so that $\norm{LS}_2=\norm S_2$ on the gantry. The pre-profiling scale prevents a nearly annihilated $\bar S$ from being called full rank merely relative to its own tiny norm. It can also exclude a real but weak surviving direction. The retained span is therefore a numerically supported span, not an exact structural-rank certificate.
+
+In the current training builder $\tau_r=\max(\tau_{\rm cfg},10\epsilon_{\rm model})$. The factor ten is a heuristic margin, not a proved bound on nonlinear rollout differentiation error. Jacobians are computed at model precision, then cast to NumPy float64 for SVD; casting cannot recover derivatives lost in float32. This differs from the plan's preferred float64 reference evaluation. The bases are subsequently cast to the training dtype/device.
+
+With truncation, Proposition~\ref{prop:compression} applies to the retained factor approximation, which need not equal a single truncated SVD of the original $E$. Exact profiling is invariant under any invertible change $\xi'_p=T_\xi\xi_p$, since $E'=ET_\xi^{-1}$ has the same range. Relative singular-value thresholding need not share this invariance. Report spectra, dtype and tolerance sweeps; compare resulting projectors under coordinate rescalings. No universal conditioning or invariance guarantee is claimed for the heuristic.
+
+\section{The penalty and its conditional mathematical meaning}\label{sec:penalty}
+The implemented MSE-normalized regularizer is
+\begin{equation}\label{eq:V}
+ \boxed{V(q)=\frac{\beta}{N}\norm{Q_0^\top\big(p_\full(q)-p_\off(q)\big)}_2^2.}
+\end{equation}
+$Q_0$ is fixed while $d(q)$ is reevaluated at current parameters. For the unweighted normalized MSE no dense weight matrix is needed. Relative to a sum-convention penalty on the same stack, $\beta_{\rm MSE}=N\beta_{\rm sum}$ gives the same value and gradient. A number called $\beta$ is uninterpretable without its normalization and stack.
+
+\begin{proposition}[What zero penalty means]\label{prop:zero}
+In exact arithmetic, $Q_0^\top M_{E_0}=Q_0^\top$. For $\beta>0$,
+\begin{equation}\label{eq:zero}
+ V(q)=0\quad\Longleftrightarrow\quad
+ d(q)\perp\ran(M_{E_0}S_0).
+\end{equation}
+\end{proposition}
+\begin{proof}
+Columns of $Q_0$ lie in $\ran M_{E_0}$, and $M_{E_0}$ is symmetric and idempotent. Therefore $M_{E_0}Q_0=Q_0$. The nonnegative squared norm in Eq.~\eqref{eq:V} vanishes exactly when all inner products with those basis columns vanish.
+\end{proof}
+Numerically this is orthogonality to the retained reference basis within arithmetic tolerance. A finite penalty does not ensure that its optimizer reaches this zero set.
+
+\begin{proposition}[Displacement in a frozen local fit]\label{prop:bias}
+In Eq.~\eqref{eq:localLS}, take the minimum-norm physical least-squares increment after profiling $E$. The difference with and without fixed contribution $d$ is
+\begin{equation}\label{eq:displacement}
+ v_d-v_0=-\bar S^\dagger M_Ed.
+\end{equation}
+For positive rank this displacement vanishes if and only if $Q^\top d=0$, and
+\begin{equation}\label{eq:bound}
+ \norm{v_d-v_0}\le
+ \frac{\norm{Q^\top d}}{\sigma_{\min}^{+}(\bar S)}.
+\end{equation}
+On independent physical coordinates with full profiled column rank the physical minimizer is unique, so the minimum-norm qualification is unnecessary.
+\end{proposition}
+\begin{proof}
+Proposition~\ref{prop:profile} gives $v_d=\bar S^\dagger M_E(b_y-d)$ and $v_0=\bar S^\dagger M_Eb_y$. Subtract them. A reduced SVD $\bar S=U\Sigma V^\top$ gives the difference $-V\Sigma^{-1}U^\top M_Ed$. Because $V\Sigma^{-1}$ is injective on the retained coordinates, this vector is zero exactly when $U^\top M_Ed=U^\top d=0$. Its norm is bounded by $\norm{U^\top d}/\sigma_{\min}^{+}(\bar S)$.
+\end{proof}
+Componentwise, along the $i$th right singular vector of $\bar S$ the displacement equals $-(u_i^\top d)/\sigma_i$, so the bound is attained when $d$ aligns with the weakest retained direction; these per-direction quantities are data-computable and belong next to the reported spectrum. The result holds for an arbitrary fixed $b_y$, so it is not limited to noiseless records. As stated it compares \emph{two frozen affine fitting problems with the same $S,E$}. Section~\ref{sec:estimator} shows that the same operator is the Gauss-Newton sensitivity of the physical parameters fitted by the selective update, which makes it a statement about the estimator and not only about a frozen comparison, under the conditions listed there. It does not identify $v_0$ with truth, replace $S_\full$ by $S_\off$, or prove an unconditional bias formula for nonlinear joint training.
+
+
+\subsection{The displacement as the sensitivity of the selective estimator}\label{sec:estimator}
+Let $J$ be the base prediction loss of Section~\ref{sec:update}, evaluated on a fixed stack of $N_B$ scored rows with the parameter anchors switched off, and write $w=\col(\lambda,\xi_p)$. A fixed point $q^\star=(w^\star,\eta^\star)$ of the selective update satisfies $\nabla_wJ(q^\star)=0$ and $\nabla_\eta(J+V)(q^\star)=0$. The first condition says that the physical and nuisance parameters are a stationary point of the base loss given the augmentation; nothing about the penalty enters it. On that stack let $S,E,R$ be the derivatives of Eq.~\eqref{eq:SRE} at $q^\star$, let $M_E$ and $\bar S=M_ES$ be as in Section~\ref{sec:profiling}, and let $e=y_B-p_\full(q^\star)$ be the residual.
+
+\begin{proposition}[Sensitivity of the fitted physical parameters]\label{prop:estimator}
+Suppose Assumption~\ref{ass:smooth} holds at $q^\star$, that $\nabla^2_{ww}J(q^\star)$ is nonsingular on the space of independent physical coordinates and supported nuisance coordinates, and that $\bar S$ has full column rank in independent physical coordinates. Then there is a locally unique smooth map $\eta\mapsto\hat w(\eta)=\col(\hat\lambda(\eta),\hat\xi_p(\eta))$ with $\hat w(\eta^\star)=w^\star$ and $\nabla_wJ(\hat w(\eta),\eta)=0$, and
+\begin{equation}\label{eq:ift}
+ \D_\eta\hat w=-\big[\nabla^2_{ww}J\big]^{-1}\nabla^2_{w\eta}J,
+\end{equation}
+with
+\begin{align}
+ \nabla^2_{ww}J&=\tfrac{2}{N_B}\Big([S\ E]^\top[S\ E]-\textstyle\sum_ie_i\nabla^2_{ww}p_i\Big),\label{eq:hess-ww}\\
+ \nabla^2_{w\eta}J&=\tfrac{2}{N_B}\Big([S\ E]^\top R-\textstyle\sum_ie_i\nabla^2_{w\eta}p_i\Big).\label{eq:hess-weta}
+\end{align}
+Dropping the residual-weighted second derivatives (the Gauss-Newton approximation), the physical block of every solution of the resulting least-squares system is
+\begin{equation}\label{eq:gn-sensitivity}
+ \D_\eta\hat\lambda\simeq-\bar S^\dagger M_ER=-\bar S^\dagger M_E\,\D_\eta d ,
+\end{equation}
+the operator of Proposition~\ref{prop:bias} applied to the tangent of the contribution, whatever the rank of $E$.
+\end{proposition}
+\begin{proof}
+Equation~\eqref{eq:ift} is the implicit function theorem for $\nabla_wJ=0$; the Hessian blocks follow by differentiating $\nabla_wJ=-\tfrac2{N_B}[S\ E]^\top e$. Under the Gauss-Newton approximation, for each direction $u$ the sensitivity $\D_\eta\hat w\,u$ minimizes $\norm{[S\ E]\col(v,z)+Ru}^2$ over $(v,z)$. By Proposition~\ref{prop:profile} the physical block $v$ of any such minimizer minimizes $\norm{M_ERu+\bar Sv}^2$, whose minimizer is unique and equal to $-\bar S^\dagger M_ERu$ when $\bar S$ has full column rank. Independence of $p_\off$ from $\eta$ gives $R=\D_\eta p_\full=\D_\eta d$.
+\end{proof}
+Four consequences follow, each conditional on the hypotheses of the proposition.
+
+\emph{Derivative versus finite displacement.} Along a path $\eta(s)$ from the augmentation-off point $\eta_\off$, where $d=0$, the total derivative of $d$ is $\dot d=\D_\eta d\,\dot\eta+\D_\lambda d\,\dot{\hat\lambda}+\D_{\xi_p}d\,\dot{\hat\xi}_p$. Substituting Eq.~\eqref{eq:gn-sensitivity} and integrating by parts,
+\begin{equation}\label{eq:path}
+ \hat\lambda(\eta)-\hat\lambda(\eta_\off)=-\bar S^\dagger M_E\,d(\eta)
+ +\int_0^1\Big[\tfrac{\rm d}{{\rm d}s}\big(\bar S^\dagger M_E\big)\,d
+ +\bar S^\dagger M_E\big(\D_\lambda d\,\dot{\hat\lambda}+\D_{\xi_p}d\,\dot{\hat\xi}_p\big)\Big]{\rm d}s ,
+\end{equation}
+where the leading term uses the geometry at $\eta$ and the integrands are evaluated along the path. The first correction is the motion of the geometry; the second contains $\D_\lambda d=S_\full-S_\off$ from Eq.~\eqref{eq:full-off-s} and $\D_{\xi_p}d$ from Eq.~\eqref{eq:encoder-effect-dependence}, multiplied by the physical and nuisance displacement rates, and is therefore second order in the size of the augmentation. For an affine predictor both corrections vanish and the formula of Proposition~\ref{prop:bias} is exact; in general it is the first-order integrated sensitivity.
+
+\emph{Routing.} Under full routing a fixed point satisfies $\nabla_\lambda J=-\nabla_\lambda V=-\tfrac{2\beta}{N}(S_\full-S_\off)^\top P_0d$, which is generically nonzero by Eq.~\eqref{eq:full-off-s}: even with $Q_0$ frozen, the penalty moves the physical parameters through the contribution. Under the selective routing of Eq.~\eqref{eq:routed} that term is identically zero, so the physical estimate is always the base-loss fit given the augmentation and the penalty acts on it only through $\eta$, by Eq.~\eqref{eq:gn-sensitivity}. This is the justification for the routing: it separates what the data determine about the physics from what the penalty determines about the augmentation.
+
+\emph{The objective the routed update approximates.} Let $\Phi(\eta)=(J+V)(\hat w(\eta),\eta)$. Because $\nabla_wJ=0$ along $\hat w$,
+\begin{equation}\label{eq:hypergradient}
+ \frac{{\rm d}\Phi}{{\rm d}\eta}=\nabla_\eta J+\nabla_\eta V+(\D_\eta\hat w)^\top\nabla_wV .
+\end{equation}
+The routed field of Eq.~\eqref{eq:routed} is the first two terms. The neglected term contains $\nabla_wV=\tfrac{2\beta}{N}(\D_wd)^\top P_0d$ and vanishes on the zero set $P_0d=0$, so the routed update is the first-order hypergradient of the bilevel problem whose inner level fits $w$ to the data. The example of Section~\ref{sec:update} shows only that the routed field is not a gradient field on the joint parameter space. Convergence of the single-timescale implementation is not established, and neither is existence of a fixed point.
+
+\emph{What the penalty curvature prices.} At the zero set with no drift ($Q_q=Q_0$ on the same stack), Eq.~\eqref{eq:hessian} gives curvature $\tfrac{2\beta}{N}\norm{Q_0^\top Rv}^2$ in direction $v$, while Eq.~\eqref{eq:gn-sensitivity} gives $\D_\eta\hat\lambda\,v=-\bar S^\dagger M_ERv$, which vanishes exactly when $Q_0^\top Rv=0$ because $Q_0^\top M_E=Q_0^\top$ and $\bar S^\dagger$ is injective on $\ran Q_0$. The soft penalty therefore adds curvature exactly in the augmentation directions that displace the physical fit to first order, and in no others.
+
+\paragraph{Conditions and their status.}
+\begin{enumerate}
+\item A fixed point of the selective update is reached. Not established (Section~\ref{sec:update}).
+\item $\bar S$ has full column rank in the ten identifiable coordinates on the stack the base loss uses. Measured as rank ten on the two-window geometry set (Appendix~\ref{sec:evidence}), not on the training stack.
+\item Gauss-Newton validity: the residual-weighted terms in Eqs.~\eqref{eq:hess-ww} and~\eqref{eq:hess-weta} are small against $[S\ E]^\top[S\ E]$. Data-computable by comparing exact and Gauss-Newton Hessian-vector products; not measured.
+\item $p_\off$ is independent of $\eta$. Verified (Appendix~\ref{sec:evidence}).
+\item The base loss and the penalty act on the same stack, or $\mathcal G$ is representative of the training stack. Section~\ref{sec:predictor} records that the sets differ; the proposition then constrains the displacement on the training stack with the training-stack geometry, and the penalty on $\mathcal G$ controls it only through the relation between the two stacks. Not established.
+\item The parameter anchors are off; see the anchored variant below.
+\item Geometry drift: the sensitivity uses the current $\bar S$ and $M_E$ while the penalty uses the frozen $Q_0$; Eq.~\eqref{eq:relative-drift} bridges the two and becomes load-bearing rather than diagnostic.
+\end{enumerate}
+Minibatch stochasticity and the optimizer's preconditioning do not change the fixed points of the routed field, only the path to them.
+
+\paragraph{Anchored variant.}
+If the base loss contains the configured anchor $\sum_i\Lambda_i^2(\theta_i-\theta_{{\rm init},i})^2$ with $\Lambda_i=\varrho/\theta_{{\rm init},i}$, its Hessian in log coordinates at the initial values is $A=2\varrho^2I$ and Eq.~\eqref{eq:gn-sensitivity} becomes
+\begin{equation}\label{eq:ridge}
+ \D_\eta\hat\lambda\simeq-\Big(\bar S^\top\bar S+\tfrac{N_B}{2}A\Big)^{-1}\bar S^\top M_ER ,
+\end{equation}
+so along the $i$th right singular vector of $\bar S$ the response is scaled by $\sigma_i^2/(\sigma_i^2+N_B\varrho^2)$ relative to the unanchored one. With the recorded scale $\varrho=10^{-2}$ the anchor curvature per log coordinate is $2\times10^{-4}$, against a data curvature $2\sigma_1^2/N$ of $1.4\times10^{-7}$ on the strongest direction of the two-window reference. Both are per-entry quantities, so the ratio does not shrink with more data: an anchored joint run cannot move the physical parameters in any direction, no displacement in it can be attributed to the augmentation, and the penalty has nothing to protect. This is why the anchor-off policy of Appendix~\ref{sec:implementation} is a prerequisite rather than a preference. The anchor's own bias toward $\theta_{\rm init}$ is a separate error and is not what the penalty addresses.
+
+\paragraph{What the bound says at the measured reference.}
+On the two-window reference of Appendix~\ref{sec:evidence} the retained spectrum of $\bar S$ runs from $\sigma_1=1.3\times10^{-2}$ to $\sigma_{10}=2.8\times10^{-6}$, the aligned fraction is $\ell=0.54$, and the contribution has a per-entry root-mean-square value of about $1.2\times10^{-4}$ in the four-window record, so the aligned amplitude at the reference is of order $3\times10^{-3}$. The per-direction displacement $(u_i^\top d)/\sigma_i$ then allows a log-parameter displacement of about $0.25$ on the strongest direction and about $10^3$ on the weakest: at the reference the bound guarantees nothing. A one-percent guarantee on the strongest direction requires an aligned amplitude of $1.3\times10^{-4}$, a per-entry root-mean-square value of $2.7\times10^{-6}$, an order of magnitude below the residual root-mean-square value of $3.5\times10^{-5}$ at that checkpoint. The weak directions cannot be protected by any realistic penalty weight; whether the strong ones can is the question the strength selection of Section~\ref{sec:diagnostics} must answer. The ten per-direction quantities are data-computable and should be reported with the spectrum in every run.
+
+\subsection{Selection can differ from physical recovery}
+\begin{example}[True discrepancy transferred into a physical parameter]\label{ex:recovery-failure}
+Let noiseless data be $y=\theta^\star+\delta$, with model $p_\full=\theta+a$ and $p_\off=\theta$. There is no encoder nuisance, $Q_0=1$, and $N=1$. Take
+\begin{equation}\label{eq:bias-example}
+ J=(y-\theta-a)^2,\qquad V=\beta a^2,\qquad\beta>0.
+\end{equation}
+The unique joint minimizer is $a=0$, $\theta=\theta^\star+\delta$: both nonnegative terms are then zero. The selective stationarity equations give the same result, since $\partial_\theta J=0$ first implies $y-\theta-a=0$, and $\partial_a(J+V)=0$ then implies $a=0$. The recovered physical parameter is wrong whenever $\delta\ne0$, despite perfect prediction and zero aligned contribution. At $\beta=0$ all pairs with $\theta+a=y$ fit equally well; the data alone did not identify the intended decomposition.
+\end{example}
+
+\begin{remark}[The direction of the recovery error]\label{rem:recovery-target}
+For a full-column-rank affine physical map and an unrestricted additive output discrepancy, write $y=S\theta^\star+\Delta$, $p=S\theta+d$, and $V=\beta\norm{P_Sd}^2$. For any $\beta>0$ a zero-loss solution is
+\begin{equation}\label{eq:aligned-truth}
+ \hat\theta=\theta^\star+S^\dagger\Delta,\qquad
+ \hat d=(I-P_S)\Delta.
+\end{equation}
+It is the unique physical minimizer: projecting a zero-data-error, zero-penalty decomposition onto $\ran S$ fixes $S\hat\theta=P_Sy$. Thus the aligned true discrepancy is assigned to the physical model. With a fixed linear nuisance $E$, the same conclusion holds in independent supported coordinates after replacing $S,\Delta$ by $M_ES,M_E\Delta$. This is a structural example with an explicitly unrestricted discrepancy family, not a theorem about the nonlinear ANN's attainable effects or optimizer convergence.
+\end{remark}
+Finite regularization discourages aligned correction; it does not prohibit it in general. Equations~\eqref{eq:bias-example}--\eqref{eq:aligned-truth} show a setting where the physical model can absorb that correction exactly and selection moves the parameters away from truth. Conversely $S^\top\Delta=0$ removes this particular error in this affine setting, consistent with the distinct recovery assumptions discussed in Section~2.3. Describing the gantry's missing dynamics as an absorber does not establish its alignment with the measured, closed-loop, encoder-profiled span. Under noisy data, zero systematic discrepancy projection alone is also insufficient for a general statistical unbiasedness result.
+
+\subsection{Checking whether the local comparison is informative}\label{sec:local-validity}
+The displacement in Proposition~\ref{prop:bias} is a local diagnostic, not permission to apply an arbitrarily large parameter step. For a specified full perturbation $v=(v_\lambda,v_\eta,v_\xi)$, put $\mathcal J_0=[S_0\ R_0\ E_0]$ and evaluate
+\begin{align}
+ r(h;v)&=p_\full(q_0+hv)-p_\full(q_0)-h\mathcal J_0v,\label{eq:directional-remainder}\\
+ \epsilon_{\rm lin}(h;v)&=
+ \frac{\norm{r(h;v)}}{\norm{h\mathcal J_0v}},
+ \qquad \norm{h\mathcal J_0v}>0.\label{eq:linearization-ratio}
+\end{align}
+These are data-computable by nonlinear rollouts and JVPs. Evaluate several perturbation sizes, including changes representative of training, with a denominator above the numerical floor. If the first-order change vanishes, report the absolute remainder instead of this ratio. Include the nuisance increment as well as the physical increment when testing a profiled least-squares step. A small physical increment alone says nothing about a large accompanying encoder or augmentation increment.
+
+Equation~\eqref{eq:remainder} bounds the numerator by $Mh^2\norm v^2/2$ when its assumptions hold. In the same fixed affine inverse, an unmodeled output remainder $r$ can change the minimum-norm physical increment by at most $\norm{M_Er}/\sigma_{\min}^+(\bar S)$. This last statement is an amplification bound for the frozen inverse, not a bound on the nonlinear optimizer's final error. Report remainder, predicted output change and sensitivity conditioning together. No horizon-uniform curvature bound or quantified gantry linearization radius has been established here.
+
+\subsection{Value versus attainable variation}
+Under off-independence, $\D_\eta d=R$. Setting $d(\eta)=\eta s$ with $S=s\ne0$ and $E=0$ gives $d(0)=0$ and $\nabla_\eta V(0)=0$, while $R=s$ exactly coincides with the physical tangent. Thus even perfect current value orthogonality does not remove substitution directions from the model family.
+
+At $Q_0^\top d=0$, holding physical and nuisance parameters fixed, the exact augmentation Hessian is
+\begin{equation}\label{eq:hessian}
+ \nabla_\eta^2V=\frac{2\beta}{N}R^\top P_0R.
+\end{equation}
+Residual-weighted second derivatives vanish at this point. The soft penalty adds curvature against certain directions rather than forbidding them.
+
+For comparison, take independent physical coordinates with profiled full rank, put $\bar R=M_E R$, and $M_{[E,R]}=I-[E\ R][E\ R]^\dagger$. Then
+\begin{equation}\label{eq:tangent}
+ H_{\rm phys}=S^\top M_{[E,R]}S
+ =\bar S^\top(I-\bar R\bar R^\dagger)\bar S.
+\end{equation}
+For any $v$, $v^\top H_{\rm phys}v=\norm{M_{[E,R]}Sv}^2$. Hence $H_{\rm phys}\succ0$ is equivalent to no first-order cancellation with a nonzero physical increment; equivalently $\ran\bar S\cap\ran\bar R=\{0\}$. Orthogonality of these ranges is sufficient and stronger than necessary. For raw fourteen-coordinate $S$, its existing nullspace must be removed before testing positive definiteness. Equation~\eqref{eq:tangent} is a separate capability diagnostic, not a consequence or an implemented constraint of Eq.~\eqref{eq:V}.
+
+An exact hard condition $Q_0^\top d=0$ enforced only at one parameter tuple still does not change the ambient $R$. A fixed-basis identity holding over every admissible nearby augmentation setting can instead be differentiated along admissible paths to obtain $Q_0^\top\D_\eta d\,\dot\eta=0$. Such constrained paths or an orthogonal parametrization are different algorithms. Nor does an informal $\beta\to\infty$ argument establish convergence of the current selective update.
+
+\section{The selective update actually implemented}\label{sec:update}
+Let $J_{\mathcal B}(q)$ be the production base loss for a training minibatch. Before the optimizer applies its own moment/preconditioning rule, the assembled gradients are
+\begin{equation}\label{eq:routed}
+ g_\lambda=\nabla_\lambda J_\mathcal B,\qquad
+ g_{\xi_p}=\nabla_{\xi_p}J_\mathcal B,\qquad
+ g_\eta=\nabla_\eta J_\mathcal B+\nabla_\eta V.
+\end{equation}
+All three parameter groups are jointly trained. ``Frozen physical parameters'' here means only while evaluating the \emph{additional penalty gradient}; it does not mean frozen throughout training.
+
+The hook temporarily disables gradients for $\lambda,\xi_p$, detaches the physical initializer output, retains the live latent initializer, evaluates off under no-grad, and differentiates full. This computes the required partial derivative because the off predictor is independent of every augmentation parameter under the declared intervention. Both rollouts still use current physical parameter values; off is recomputed, not cached across updates. Future architectures violating off-independence require differentiation through both rollouts for $\nabla_\eta d$.
+
+The full rollout retains derivatives through latent persistence, latent readout, physical state propagation, scheduler and controller. Freezing parameter leaves must not detach intermediate physical states. In particular, the latent-initializer penalty gradient is
+\begin{equation}\label{eq:latentinitgrad}
+ \nabla_{\eta_a}V=\frac{2\beta}{N}
+ \sum_w J_{a,w}^\top\Omega_w^\top (P_0d)_w,
+ \qquad J_{a,w}=\D_{\eta_a}e_a(H_w),\quad
+ \Omega_w=\D_{a_{w,0}}p_{\full,w}.
+\end{equation}
+Equation~\eqref{eq:latentinitgrad} is a direct chain-rule target for a finite-difference and production-autograd check. A tiny gradient can reflect conditioning, cancellation or a weak path; magnitude alone is not a correctness test.
+
+The routing in Eq.~\eqref{eq:routed} avoids a direct penalty update of physical and nuisance parameters. It does not make $V$ mathematically independent of them and does not prevent their data-loss updates from changing $d$ or the current sensitivity span. Section~\ref{sec:estimator} quantifies the remaining coupling: at a fixed point the physical parameters respond to the augmentation through Eq.~\eqref{eq:gn-sensitivity} and through nothing else.
+
+\begin{example}[A selective field without a scalar potential]
+Take $p_\off=\lambda$, $p_\full=\lambda+\lambda\eta$, $Q_0=1$, $N=1$. Then $V=\beta\lambda^2\eta^2$. The added field is $h=(0,2\beta\lambda^2\eta)^\top$. Its mixed derivatives are $\partial_\lambda h_\eta=4\beta\lambda\eta$ and $\partial_\eta h_\lambda=0$. On a neighborhood where the former is nonzero no twice differentiable scalar potential generates this field. Nonzero $\partial_\lambda V$ alone would not have proved this. The field is nevertheless the first-order hypergradient of a scalar objective on $\eta$ once $\lambda$ and $\xi_p$ are eliminated through the base-loss stationarity (Section~\ref{sec:estimator}); the missing potential is a property of the joint parameter space, not evidence that the update is ill posed.
+\end{example}
+Thus proofs for minimizers of $J+V$ do not automatically license Eq.~\eqref{eq:routed}. With a fixed base dataset its formal stationarity conditions are $\nabla_{\lambda,\xi_p}J=0$ and $\nabla_\eta(J+V)=0$; neither existence of such points nor convergence to them is established here. A full-gradient comparison would test a separate algorithmic choice.
+
+\subsection{Exact chunking of the fixed stack}\label{sec:chunk}
+Partition the fixed stack into window blocks $b$, with row blocks $Q_b$ and $d_b$. Then
+\begin{equation}\label{eq:chunk}
+ r=\sum_bQ_b^\top d_b,\quad V=\frac{\beta}{N}r^\top r,\quad
+ \nabla_\eta V=\frac{2\beta}{N}\sum_b(\D_\eta d_b)^\top Q_b r.
+\end{equation}
+Pass one computes $r$ without a graph. Pass two recomputes each $d_b$ and backpropagates
+\begin{equation}\label{eq:surrogate}
+ s_b=\frac{2\beta}{N}\stopgrad(r)^\top Q_b^\top d_b.
+\end{equation}
+Summed gradients equal Eq.~\eqref{eq:chunk}. The summed surrogate \emph{values} equal $2V$ at the recomputation point, so report $V$ from pass one, not the surrogate sum. Parameters, stochastic state, gates and window ordering must be identical between passes; no optimizer step occurs between chunks.
+
+In general $\norm{\sum_bQ_b^\top d_b}^2\ne\sum_b\norm{Q_b^\top d_b}^2$: the latter drops cross terms, even if $Q_b$ are row restrictions of the same global basis. Recomputing separate bases per minibatch changes the geometry as well. The implementation's row chunking supports identity or diagonal weights. Dense weights mixing chunks require a different multiplication strategy. This restriction is immaterial for the present scalar-normalized MSE.
+
+The production closure performs base forward, zero-grad, base backward, then the wrapped optimizer call adds the penalty gradient before its update. Placing penalty backward in the base-loss forward would let the subsequent zero-grad erase it. The inspected seam refuses unsupported optimizer/execution cases, including L-BFGS, AMP and concurrent validation. Those are implementation restrictions, not limitations of the projection identity.
+
+\section{Diagnostics, selection and the remaining scientific test}\label{sec:diagnostics}
+With $\bar d=M_{E_0}d$, the core reports unnormalized amplitudes
+\begin{equation}\label{eq:metrics}
+ a_\parallel=\norm{Q_0^\top\bar d},\quad
+ a_\perp=\norm{(I-P_0)\bar d},\quad
+ \ell=\frac{a_\parallel}{\norm{\bar d}}.
+\end{equation}
+When the denominator is numerically zero, $\ell$ is undefined, not evidence of useful separation. RMS amplitudes are obtained by dividing $a_\parallel,a_\perp$ by $\sqrt N$ and must be labeled as such. Uniform shrinkage reduces both amplitudes while leaving a defined ratio unchanged. Report the raw contribution norm too, because profiling can remove a large component.
+
+Apply these diagnostics separately to $d,d_{\rm lat},d_{\rm dir}$, retaining their projected vectors. Equation~\eqref{eq:effects} allows $Q_0^\top d_{\rm lat}=-Q_0^\top d_{\rm dir}\ne0$ even when $V=0$. Therefore total orthogonality is not separate latent-route orthogonality. Relative latent-state magnitude is also unsuitable: the consistent coordinate change $a'=Ta$, $e'_a=Te_a$, $N'_a(\tilde x,a',u)=T N_a(\tilde x,T^{-1}a',u)$ and $N'_p(\tilde x,a',u)=N_p(\tilde x,T^{-1}a',u)$ preserves all physical outputs. For scalar scaling $T=cI$, the affine readout becomes $K'=K/c$. Output intervention effects are invariant under this complete coordinate transformation; $\norm a$ and parameter-gradient magnitudes need not be.
+
+For current geometry $P_q$ rebuilt on the same rows and with the same profiling policy,
+\begin{equation}\label{eq:drift}
+ \norm{P_qd}\le\norm{P_0d}+\norm{P_q-P_0}_2\norm d.
+\end{equation}
+This follows from the triangle inequality. It motivates reporting reference and current aligned amplitudes, ranks and projector distance. Principal angles alone can miss a rank change. Geometry refresh is a separate training choice; monitoring current geometry does not refresh the frozen penalty. Under the estimator reading of Section~\ref{sec:estimator} the displacement at a fixed point is governed by the current geometry while the penalty controls the reference-aligned amplitude, so $\delta_P$ enters the guarantee and not only the monitoring.
+
+For $d\ne0$, an actionable relative version is
+\begin{equation}\label{eq:relative-drift}
+ \rho_q\le\rho_0+\delta_P,\qquad
+ \rho_j=\frac{\norm{P_jd}}{\norm d},\quad
+ \delta_P=\norm{P_q-P_0}_2.
+\end{equation}
+A sufficient certificate for a declared target $\rho_q\le\varepsilon$ is $\rho_0+\delta_P\le\varepsilon$. The condition $\delta_P\ll\rho_0$ is not generally necessary; at exact reference orthogonality it would demand zero drift even when a small nonzero current overlap is acceptable. Measure $\rho_q$ directly where feasible, because the bound can be conservative. The $\rho_j$ use a common raw denominator and differ from the profiled ratio $\ell$ in Eq.~\eqref{eq:metrics}.
+
+The raw $\norm d$ in Eq.~\eqref{eq:drift} is intentional. If the nuisance projector changes, $P_qQ_{E_0}$ need not vanish: a contribution removed by reference profiling can become visible to current geometry. Replacing $d$ by $M_{E_0}d$ in that bound requires an additional condition, such as keeping the nuisance projector fixed for both physical spaces.
+
+The current $\beta$ is a chosen constant, not a selected optimum. Bolderman's Eq.~(38) scales a physical-parameter anchor; it does not select this orthogonality weight~\cite{bolderman2023}. That source's separate network-regularization tuning discussion on pp.~19--20 uses an L-curve over twenty logarithmically spaced values spanning twenty-six decades. The lineage's own experience is that the orthogonality coefficient is not delicate: Remark~1 of~\cite{gyorok2025} (local PDF p.~6) states that often only a small amount of orthogonal regularization is needed and that a wide range of $\beta$ values spanning several orders of magnitude can be chosen, and \cite{kon2023} (p.~4) reports that $\lambda=10^{-1}$ works well for most problems while acknowledging the trade-off. These are experimental statements about static maps; they answer the objection of~\cite{gyorok2026} (pp.~2 and~9) that selecting the coefficient may not be intuitive only to the extent that the present dynamic, encoder-initialized setting behaves like theirs, which is untested. Applying an L-curve to the present prediction-error/aligned-effect tradeoff is a data-computable design proposal, not a derived selection theorem for the selectively routed optimizer. If no stable corner occurs, a predeclared validation criterion is needed; simulation truth cannot choose a deployable weight.
+
+The planned matched comparisons are no trajectory penalty, Eq.~\eqref{eq:V}, raw size $\beta\norm d^2/N$, and profiled size $\beta\norm{M_{E_0}d}^2/N$, with identical parameter ownership and gradient routing. Projection has a larger zero set than size regularization whenever the profiled output complement is nontrivial, but usefulness requires the ANN to realize relevant corrections in that complement. A smaller parameter error by itself does not distinguish directional selection from suppression of augmentation. These efficacy claims require paired training, appropriate strength selection, multiple seeds and prediction checks. Statistical behavior under measurement noise, excitation changes and controller changes remains distinct from verifying finite-record derivatives.
+
+A large ambient complement is not evidence that useful corrections in it are reachable by a causal recurrent ANN. Nor does a small $a_\parallel$ alone establish success: it can reflect shrinkage, nuisance allocation or route cancellation. The smoke geometry's dimensions imply a raw nullspace of dimension $2400-10=2390$; after removing its twelve nuisance directions, the orthogonal complement inside the profiled space has dimension $2400-12-10=2378$. These are consequences of the reported numerical ranks, not measurements of useful neural capacity. Matching rank ten to the structural bound is a consistency check, not an independent proof of that bound.
+
+\subsection{A controlled-discrepancy validation experiment}\label{sec:bias-validation}
+Before interpreting physical recovery, use a small full-column-rank physical regressor $S$ with two physical coordinates and enough output rows to leave a nontrivial complement. Construct
+\begin{equation}\label{eq:controlled-discrepancy}
+ y=S\theta^\star+\Delta,\qquad
+ \Delta=Sc+\Delta_\perp,\qquad S^\top\Delta_\perp=0.
+\end{equation}
+The choice of $S,c,\Delta_\perp$ is a designed structural example; error relative to $\theta^\star$ is truth-requiring validation only. In the unrestricted affine reference case, Eq.~\eqref{eq:aligned-truth} predicts $\hat\theta-\theta^\star=c$ for every positive $\beta$, and $\hat d=\Delta_\perp$. Therefore a flat positive-weight sweep can be the correct analytic answer, not a failed experiment. The unregularized case may have nonunique decompositions.
+
+First verify that analytic reference, then instantiate the same question in a small dynamic closed-loop predictor with trainable latent initialization and the specified gradient routing. Compare orthogonal ($c=0$), mixed, and fully aligned ($\Delta_\perp=0$) discrepancies, with matched total discrepancy magnitude where possible. Use paired starts, no/projection/size controls and a declared strength grid. Report prediction error, physical displacement, aligned and orthogonal amplitudes, nuisance contribution and current/reference geometry. Add an encoder-nuisance variant explicitly rather than silently changing the reference problem. This is a proposed experiment, not a completed result or a simulation-truth-based selection rule for deployment. It tests a recovery failure mechanism; it cannot by itself decide usefulness on the real gantry.
+
+For held-out windows, $Q_0$ from the training stack cannot simply multiply a new output stack: its rows identify specific windows and samples, even if dimensions happen to match. Build a separate evaluation basis on those held-out rows at the same frozen parameter reference, with the same metric and profiling policy, and label it as held-out reference geometry. Evaluate current geometry there separately. Neither evaluation basis is used for training or selected using held-out truth.
+
+\appendix
+\section{Equation-to-implementation map and discrepancies}\label{sec:implementation}
+This is an inspection snapshot, not a second live implementation specification. Repository HEAD was \code{c938877d73066b00f3873d5021c0615a1e2aae14}; the worktree contained modified and untracked files. The accompanying \code{inspection-manifest.json} fingerprints the inspected sources, since a commit alone does not identify them. Five of those sources (the geometry core, the reference builder, the encoder split, the environment module and the GPU ladder script) were modified after the inspection and are untracked, so the manifest identifies the inspected versions but not the current tree. The rows below were re-read against the current tree for the geometry core, the hook, the adapter, the builder, the physical block, the closed-loop simulator and the training seam on 9 September 2026; the environment module and the GPU ladder script were not re-read. Paths below are repository-relative.
+
+\small
+\begin{longtable}{p{.20\textwidth}p{.73\textwidth}}
+\toprule Object & Inspected implementation \\ \midrule\endhead
+Physical map and parameters, Eqs.~\eqref{eq:logparam}--\eqref{eq:schedule} & \path{model_augmentation/fit_systems/blocks.py}: \code{Parameterized_Gantry_State_Block}, \code{_recover_params}, \code{_combos_from_raw}, inherited RK4/LFR map.\\
+Routing and output & \path{scripts/gantry/gantry_dynamic/model.py}; \path{model_augmentation/fit_systems/interconnect.py}: composed interconnect, \code{output_only}.\\
+Controller, Eq.~\eqref{eq:controller} & \path{model_augmentation/fit_systems/closed_loop.py}: \code{ControllerBank}, \code{closed_loop_rollout}; current output evaluated before stepping.\\
+Encoder, Eqs.~\eqref{eq:encoder}--\eqref{eq:encoderbranches} & \path{scripts/gantry/orthogonality/gantry/encoder_split.py}: \code{split_encoder}, \code{SplitEncoderInitAug}, physical and latent parameter groups.\\
+Effects, Eq.~\eqref{eq:effects} & \path{scripts/gantry/orthogonality/gantry/adapter.py}: \code{ann_gate}, \code{scored_stack}, \code{contributions}, \code{score}.\\
+Derivatives, Eqs.~\eqref{eq:SRE}, \eqref{eq:chainencoder} & Same adapter: \code{physical_jacobian} uses forward JVPs; \code{initial_state_jacobians} batches initial-state directions; \code{encoder_jacobians} differentiates the encoder alone.\\
+Geometry, Eqs.~\eqref{eq:Q}, \eqref{eq:compression}, \eqref{eq:threshold} & \path{model_augmentation/fit_systems/trajectory_orth_projection.py}: \code{TrajectoryProjectionGeometry}, \code{compressed_nuisance_basis}.\\
+Penalty and metrics, Eqs.~\eqref{eq:V}, \eqref{eq:metrics} & Same core: \code{penalty_mse}, \code{contribution_metrics}. The metrics use Euclidean norms, not RMS.\\
+Selective/chunked gradient, Eqs.~\eqref{eq:routed}, \eqref{eq:chunk} & \path{model_augmentation/fit_systems/trajectory_penalty_hook.py}: \code{_contribution}, \code{__call__}; core \code{ProjectedResidualAccumulator} receives $\beta/N$.\\
+Training lifecycle & \path{model_augmentation/fit_systems/interconnect.py}: \code{SSE_Interconnect_Composed}, optimizer closure wrapper and checkpoint save/load. Adapter \code{rebind} refreshes loaded encoder/ANN/physics references and cached hook groups.\\
+Reference construction & \path{scripts/gantry/gantry_dynamic/traj_orth.py}: \code{build_traj_penalty}, \code{_cache_key}, \code{save_geometry}, \code{load_geometry}.\\
+\bottomrule
+\end{longtable}
+\normalsize
+
+Several implementation qualifications must accompany the clean equations:
+\begin{enumerate}
+\item The plan prefers float64 reference sensitivities. The training builder differentiates at model precision and then casts for SVD, with the heuristic tolerance described in Section~\ref{sec:rank}. This is a substantive numerical choice, not equivalent to float64 evaluation.
+\item The compressed path returns the spectrum of $Z$ in its information dictionary, while constructing geometry with a supplied $Q_E$ sets the core's $\mathrm{sv}_E$ field to an empty array. The builder saves compressed information separately. An empty core spectrum is therefore not a measurement of zero nuisance sensitivity; both artifact components are needed.
+\item The reference is the actual model supplied at construction, not automatically a calibrated physical optimum. The key hashes the checkpoint file, encoder state, normalization, controller contents/assignments, selected identifiers and configuration. It does not itself establish equality between every live model tensor and that checkpoint or hash every window tensor. Stronger content-provenance checks at cache construction/reuse remain appropriate.
+\item Loading a geometry artifact replaces its metadata with load/extra metadata. The projector may be restored while the metadata schema differs from the in-memory build. Distinguish reference-content provenance from load provenance.
+\item The plan's primary anchor-off policy is not enforced merely by attaching the trajectory hook. The composed base loss still adds configured \code{param_loss} terms and can carry the original pointwise regularizer. The parameterized physical block enables the anchor by default and the model builder does not pass the flag, so a joint run carries it unless it is switched off explicitly; with the recorded scale $\varrho=10^{-2}$ the anchor pins the physical parameters in every direction (Section~\ref{sec:estimator}). The verification environment recorded the anchor as enabled, which does not affect $S$ or $E$; the one-update record does not state it, and the checker does not switch it off. Every experiment must record these switches.
+\item The physical-JVP route functionally substitutes parameters and calls the shared closed-loop recurrence directly, whereas ordinary adapter scoring calls \code{fit_sys.simulate}. They share the recurrence, but compiled dispatch need not be identical. Eager parity does not certify compiled gradients.
+\item Frozen geometry and regularization windows intentionally survive model checkpoint reloads. Module references and optimizer ownership must be rebound to loaded objects. The same-process restoration checks do not alone prove that a fresh process reconstructs the complete reference experiment.
+\end{enumerate}
+
+Gate buffers are nonpersistent and exception-restored. A graph-bearing forward followed by activation-checkpoint recomputation must replay the same mask, not an intervening global mask. Identical full/off outputs at a special parameter value are not a gate test. The stale-reference defect previously gated an obsolete ANN while retaining the non-full zero latent initialization; it changed the intervention and did not necessarily make the difference vanish.
+
+\section{Evidence, checks and scope}\label{sec:evidence}
+The live evidence owners are
+\path{scripts/gantry/orthogonality/documentation/gaps.md} and
+\path{scripts/gantry/orthogonality/documentation/proofs/trajectory-orthogonality-verification-2026-09-08.md}, including its later addenda. The older plan still labels several subsequently implemented items as open. Conversely, a completed small check must not be promoted to a general gantry result.
+
+\small
+\begin{longtable}{p{.29\textwidth}p{.32\textwidth}p{.30\textwidth}}
+\toprule Statement & Basis & Status and limit \\ \midrule\endhead
+Zero slice misses $K$ & Eq.~\eqref{eq:affine}; affine leakage records & Structural counterexample; not all nonlinear parameter-sharing patterns.\\
+Delayed readout enters the effect & Eqs.~\eqref{eq:kernel}, \eqref{eq:recurrence}, \eqref{eq:jointjac} & Derived; special kernel versus general derivative clearly separated.\\
+Profiling and compressed basis & Propositions~\ref{prop:profile}--\ref{prop:compression} & Exact algebra; numerical truncation separately qualified.\\
+Zero penalty, local displacement and estimator sensitivity & Propositions~\ref{prop:zero}, \ref{prop:bias} and \ref{prop:estimator} & Exact for the frozen affine problem; Gauss-Newton sensitivity of the selective estimator under the conditions listed in Section~\ref{sec:estimator}; the estimator reading is a single-reader hand derivation with no independent re-derivation and no numerical confirmation executed; not truth recovery.\\
+Encoder and nonlinear derivative examples & \path{code/trajectory_ownership_geometry.py} and \path{code/trajectory_ownership_geometry.m}, relative to the orthogonality folder & Report records independently transcribed small cases. Witness ranks are not universal symbolic ranks.\\
+Production compressed construction & \code{test_trajectory_projection.py}, check \code{v3b_compressed_nuisance}; Python reference check \code{A5b} & Exercises the shared function against explicit $E$, including rank-deficient/zero blocks. Independent CAS alone did not catch its former implementation defect.\\
+Geometry and chunk gradient checks & Core test script and penalty-hook tests & Small numerical implementation checks; new rerun results in accompanying validation record.\\
+Gantry geometry & Report Section~3.5 and \path{results/20260908_diag2/gantry_nominal.json} & Data-computable measurement: two windows, $N=2400$, float64 CPU, checkpoint 81757, whose physical parameters were nominal and untrained (joint estimation off in that run); ranks $10$ before/after profiling and nuisance rank $12$; the parameter anchor was enabled in that environment, which does not affect $S$ or $E$. Not pilot coverage or tangent separation.\\
+One production optimizer update & Report Addendum~1; \code{check_update.py} & Reported exact agreement with independently assembled penalty/gradient for its eager CPU configuration. The record does not state whether the parameter anchor was part of its base loss; the checker does not switch it off and the block enables it by default. This document does not rerun that gantry experiment.\\
+Checkpoint resume & Report Addendum~2; content and ownership assertions & Same-process CPU reproducibility with retained hook/reference. Not estimator correctness or full fresh-process resume.\\
+Compiled/GPU training & \code{run_gpu_ladder.py} exists & No completed compiled/GPU result established by this inspection. Code availability is not validation.\\
+Latent initialization penalty reachability & Eq.~\eqref{eq:latentinitgrad}; dedicated latent probe & General chain rule derived; dedicated probe completion not established in the inspected report.\\
+Noise and efficacy & Report remaining questions, planned paired controls & Perturbed arm and selected-weight efficacy remain unestablished.\\
+\bottomrule
+\end{longtable}
+\normalsize
+
+The corrected resume checker compares optimizer state before any optional repair, and compares frozen geometry and context by content. Its current \code{restored_clean} summary still omits the group-hyperparameter flag and parameter-name-set difference from its decision, although separate assertions report failures. Corruption cases repaired before subsequent training cannot be used to conclude that an \emph{unrepaired} trajectory comparison would miss those same optimizer defects. These are evidence/reporting qualifications, not alterations of Eq.~\eqref{eq:V}.
+
+Required future efficacy evidence concerns suppression of aligned contribution on the intended geometry set, retention of useful orthogonal correction relative to matched size controls, and performance on held-out measured records. If first-order non-substitution is claimed, Eq.~\eqref{eq:tangent} additionally needs evaluation in supported physical coordinates with controlled numerical solve accuracy. No amount of checkpoint parity substitutes for that scientific question.
+
+\section{Source and build notes}
+The 2025 paper was read from the local file named \emph{Hoekstra -- Orthogonal projection-based regularization for efficient model.pdf}; its title page identifies Gy\"or\"ok as first author and arXiv:2501.05842v2. Local PDF pages 1--13 differ from the published PMLR pages 166--178. Equation locators above refer to the inspected copy. The 2026 local PDF is arXiv:2511.01321v3, dated 9 January 2026; theorem locators refer to that version, with the published journal DOI recorded separately. Kon and Bolderman locators likewise identify the inspected preprints. Kessels locators use printed thesis pages; the repository file includes a portal cover, so PDF page numbers should not be inferred from a fixed historical offset; for the pages inspected (printed 145 to 148 and 156 to 157) the PDF page is the printed page plus 27. On 9 September 2026 every equation, theorem, remark, page and version locator cited from the five local PDFs was compared directly against the files, and the Golub and Pereyra entry against the Crossref record (SIAM Journal on Numerical Analysis 10(2), pp.~413 to 432); the one correction was the section number for Eqs.~(9) to (14) of~\cite{gyorok2025}.
+
+This document imports no H$_2$/Stein theorem, no hard-constrained optimization guarantee and no assertion of global novelty. Their possible relation to the method is a separate research question. The mathematical tools actually used are the finite-rollout chain rule, Taylor expansion, SVD, orthogonal projection, pseudoinverse least squares and nuisance elimination.
+
+Upload this file and \code{trajectory-orthogonality.bib} to Overleaf; select this file as the main document and pdfLaTeX as compiler. No repository paths are needed to compile: implementation paths are textual references. The local validation record distinguishes newly executed checks from inspected historical results.
+\bibliographystyle{plainnat}
+\bibliography{trajectory-orthogonality}
+\end{document}

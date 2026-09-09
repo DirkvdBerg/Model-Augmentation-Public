@@ -1,0 +1,103 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+============================================================================================
+GANTRY VERIFICATION LADDER [nominal]
+Category: data-computable throughout. No simulation truth is read anywhere in this suite.
+============================================================================================
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[closed loop] one bank over 18 records, 8 distinct controllers, Y_op [-0.3, -0.22, -0.15, -0.1, 0.0, 0.1, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\gantry_dynamic\training.py:88: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(pair_pt, map_location='cpu')
+[env] checkpoint gantry_ckpt_81757 format=pair dtype->torch.float64 (4 conversion keys absent from the checkpoint: ['Lambda', 'Lb', 'log_params', 'params_init'])
+{
+ "nx_phys": 6,
+ "nx_ann": 8,
+ "nu": 3,
+ "ny": 3,
+ "nf": 400,
+ "burn_in": 0,
+ "na": 29,
+ "stride": 10,
+ "ann_n_outputs": 14,
+ "route_cols_physical": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "route_cols_latent": [
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13
+ ],
+ "physical_block": "Parameterized_Gantry_State_Block",
+ "controller_n_states": 9,
+ "controller_n_rows": 8,
+ "dtype": "torch.float64"
+}
+[windows] 2 windows from 2 records (per-record counts [1, 1]), nf=400, stride=10
+
+[P0] physical-block and encoder conversions
+  [PASS] P0 physical_block_conversion_parity   max |dy| / |y| = 5.337e-11
+  [PASS] P0 no_active_parameter_clamp   theta/theta_init in [1.000000, 1.000000], min theta = 5.0000e-02 against the 1e-6 floor
+
+[V0] ownership
+  [PASS] V0 encoder_conversion_output_parity   max abs 0.000e+00, max rel 0.000e+00
+  [PASS] V0 encoder_groups_disjoint_by_identity   xi_p 6774 scalars, eta_a 7184 scalars
+  [PASS] V0 parameter_groups_disjoint   {'physical': 14, 'augmentation': 9166, 'encoder': 6774}
+  [PASS] V0 perturb_augmentation_leaves_physical_initial_state_fixed   watched change 0.000e+00, own change 4.568e-02
+  [PASS] V0 perturb_encoder_leaves_latent_initial_state_fixed   watched change 0.000e+00, own change 3.204e-02
+
+[V1] production simulator parity and interventions
+  [PASS] V1 scored_loss_matches_production   production 6.115724508266e-10, adapter 6.115724508266e-10, rel 0.00e+00
+  [PASS] V1 gate_restored_on_exception   gate after exception = [1.0, 1.0, 1.0, 1.0]...
+  [PASS] V1 gate_default_is_full
+  [PASS] V1 intervention_decomposition_identity   max |d - d_lat - d_dir| / |d| = 0.00e+00
+  [PASS] V1 latent_route_is_nonzero   |d| 5.0144e-03  |d_lat| 3.2913e-03  |d_dir| 6.8855e-03
+  [PASS] V1 clamped_latent_state_is_zero_everywhere   max |a_k| over 400 steps = 0.000e+00
+  [PASS] V1 off_independent_of_every_augmentation_parameter   18 tensors perturbed, max |dp_off| = 0.000e+00
+  [PASS] V1 off_has_no_autograd_dependence_on_eta   max |d(sum p_off)/d eta| = 0.000e+00
+
+[V2] derivatives against directional finite differences
+  [PASS] V2 physical_directional_derivative   best over steps 0.0001:5.07e-08, 1e-05:6.35e-07, 1e-06:6.65e-06
+  [PASS] V2 augmentation_directional_derivative   best over steps 0.0001:5.48e-05, 1e-05:5.51e-07, 1e-06:1.87e-09
+  [PASS] V2 encoder_directional_derivative   best over steps 0.0001:3.62e-04, 1e-05:3.62e-06, 1e-06:6.11e-08
+  [compile] update took 12.7 s against a 1.18 s median at 2 windows: possibly a torch.compile RECOMPILE. If it repeats around validations, check whether a compiled callable is reached on the wrong device.
+  [compile] update took 12.5 s against a 1.18 s median at 2 windows: possibly a torch.compile RECOMPILE. If it repeats around validations, check whether a compiled callable is reached on the wrong device.
+  [compile] update took 12.6 s against a 1.21 s median at 2 windows: possibly a torch.compile RECOMPILE. If it repeats around validations, check whether a compiled callable is reached on the wrong device.
+  [compile] update took 12.6 s against a 1.21 s median at 2 windows: possibly a torch.compile RECOMPILE. If it repeats around validations, check whether a compiled callable is reached on the wrong device.
+  [compile] update took 12.2 s against a 1.21 s median at 2 windows: possibly a torch.compile RECOMPILE. If it repeats around validations, check whether a compiled callable is reached on the wrong device.
+  [compile] update took 12.7 s against a 1.21 s median at 2 windows: possibly a torch.compile RECOMPILE. If it repeats around validations, check whether a compiled callable is reached on the wrong device.
+  [PASS] V2 initialisation_chain_rule_E_eq_Gamma_J   best over steps 0.0001:2.25e-05, 1e-05:2.25e-07, 1e-06:1.08e-08
+  [PASS] V2 xi_p_enters_only_through_initial_state   max |dp| with x_0 held = 0.000e+00
+  [PASS] V2 negative_control_controller_path   relative change 2.437e+01 against a derivative check floor of 5.07e-08
+
+[V3] geometry, ranks and robustness
+ERROR conda.cli.main_run:execute(47): `conda run python -u scripts/gantry/orthogonality/verify.py --suite gantry --windows 2 --records 0 8 --out scripts/gantry/orthogonality/results/20260908_run` failed. (See above for error)

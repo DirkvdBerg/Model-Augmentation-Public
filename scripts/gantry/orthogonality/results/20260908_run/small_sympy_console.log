@@ -1,0 +1,93 @@
+============================================================================================
+TRAJECTORY ORTHOGONALITY, REVISED OWNERSHIP -- small mathematical reference cases
+SymPy engine. RULES.md category: STRUCTURAL. Not gantry evidence, not Telica evidence.
+============================================================================================
+
+[A1] closed-loop sensitivity recurrence vs direct differentiation
+  [PASS] L1 A1.recurrence_equals_direct[lambda]
+  [PASS] L1 A1.recurrence_equals_direct[eta]
+  [PASS] L1 A1.recurrence_equals_direct[xi_p]
+  [PASS] L1 A1.recurrence_equals_direct[lambda,off]
+  [PASS] L1 A2.negctrl_controller_path_detected
+
+[A2] the three derivative paths are individually present
+  [PASS] L1 A2.physical_state_path
+  [PASS] L1 A2.output_parameter_path
+  [PASS] L1 A2.latent_state_path
+  [PASS] L1 A2.controller_path
+
+[A3] trainable latent initialisation
+  [PASS] L1 A3.latent_init_reaches_output
+  [PASS] L1 A3.latent_init_absent_from_off
+  [PASS] L1 A3.latent_init_absent_from_clamped
+  [PASS] L1 A3.clamped_latent_state_is_null_at_every_step
+  [PASS] L1 A3.latent_init_chain_rule
+
+[A4] E_w = Gamma_w J_w, and E = blockdiag(Gamma_w) stack(J_w)
+  [PASS] L1 A4.E_equals_Gamma_J
+  [PASS] L1 A4.xip_only_through_initial_state
+  [PASS] L2 A4.rank_bound   rank(E)=3, rank(stack J_w)=3 at witness 0
+
+[A5] compressed encoder range construction against explicit E
+  [PASS] L2 A5.factorisation_E_eq_UG_Z   max abs 1.137e-13, shapes U_G (9, 6) Z (6, 3) vs E (9, 3)
+  [PASS] L2 A5.UG_orthonormal   max abs 6.661e-16
+  [PASS] L2 A5.compressed_projector_equals_explicit   rank compressed 3, rank explicit 3, projector max-diff 5.482e-16
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+  [PASS] L2 A5b.production_function_matches_reference_and_explicit_E   rank 3 vs reference 3 vs explicit 3; distance to reference 0.000e+00, to explicit 5.482e-16
+  [PASS] L2 A5b.production_per_window_ranks   ranks_w [2, 2, 2], r_G 6, Z [6, 3]
+  [PASS] L3 A5.nuisance_range_coordinate_invariance   8 diagonal rescalings log-spaced in [0.1,10], worst projector diff 1.221e-15
+
+[A6] profiling, projection identities and the plain-MSE scaling
+  [PASS] L2 A6.ME_symmetric_idempotent
+  [PASS] L2 A6.QT_ME_equals_QT
+  [PASS] L2 A6.QE_orthogonal_Q
+  [PASS] L1 A6.mse_scaling   N = 9, V_mse 3.404034e+01, V_sum 3.063631e+02
+  [PASS] L1 A6.value_orthogonality_equivalence
+
+[A7] rank-deficient physical coordinates and encoder overlap
+  [PASS] L1 A7.structural_null_direction
+  [PASS] L2 A7.rank_S_raw   rank(S) before profiling 3, rank(Sbar) after profiling 3, sv(Sbar) [4.112e+01 2.212e+01 2.979e+00 5.541e-16]
+  [PASS] L2 A7.encoder_overlap_removes_a_physical_direction   r_bar 3 -> 2; sv(Sbar_overlap) [2.344e+01 3.017e+00 7.199e-13 1.010e-15]
+  [PASS] L2 A7.projector_scale_invariance
+
+[A8] exact two-pass window chunking
+  [PASS] L2 A8.residual_splits_over_chunks
+  [PASS] L2 A8.per_chunk_penalty_is_a_different_objective   stacked 3.404034e+01 vs per-chunk 5.735746e+01
+  [PASS] L2 A8.cross_chunk_cancellation_exists   ||sum|| 1.041e-17, sum of norms 1.106e-01
+
+[A9] parameter ownership of the off intervention and of the penalty gradient
+  [PASS] L1 A9.off_independent_of[Kk]
+  [PASS] L1 A9.off_independent_of[Ff]
+  [PASS] L1 A9.off_independent_of[Gg]
+  [PASS] L1 A9.off_independent_of[Pp]
+  [PASS] L1 A9.off_independent_of[ca]
+  [PASS] L1 A9.off_equals_full_at_zero_augmentation
+  [PASS] L1 A9.clamped_equals_off_at_zero_direct_route
+  [PASS] L1 A9.full_equals_clamped_at_zero_readout
+  [PASS] L1 A9.decomposition_identity
+
+[A10] penalty gradients: ownership, latent initialisation, mixed derivative
+  [PASS] L1 A10.penalty_gradient_reaches_latent_init
+  [PASS] L1 A10.penalty_gradient_reaches[Kk]
+  [PASS] L1 A10.penalty_gradient_reaches[Ff]
+  [PASS] L1 A10.penalty_gradient_reaches[Gg]
+  [PASS] L1 A10.penalty_gradient_reaches[Pp]
+  [PASS] L1 A10.penalty_has_nonzero_physical_derivative
+  [PASS] L1 A10.mixed_derivative_witness
+
+[A11] interpretation counterexamples (retained deliberately)
+  [PASS] L2 A11.zero_value_overlap_with_nonzero_tangent_overlap   ||Q^T d_perp|| 1.659e-14, ||Q^T R|| 3.027e+01
+  [PASS] L2 A11.projected_routes_are_not_additive   ||Q^T d_lat|| 2.604e+01 + ||Q^T d_dir|| 6.446e+00 = 3.248e+01 against ||Q^T d_total|| 2.878e+01; at this checkpoint the total EXCEEDS both routes, so these numbers do NOT exhibit cancellation
+  [PASS] L2 A11.route_cancellation_is_realisable_in_this_geometry   alpha -0.0800 gives 6.100e+00 against ||Q^T d_dir|| 6.446e+00, a factor 9.464e-01
+  [PASS] L1 A11.finite_beta_is_not_exact_orthogonality
+  [PASS] L1 A11.noiseless_examples_do_not_prove_recovery
+
+[A12] analytic derivatives against central finite differences
+  [PASS] L3 A12.finite_difference_agreement   kap1 3.14e-12, kap2 2.54e-11, nu 2.97e-11, sig 1.43e-10, Kk 1.71e-12, Ff 1.22e-11, Gg 1.62e-12, Pp 8.51e-12, ca 6.63e-12, xp1 1.54e-10, xp2 2.97e-11, xp3 8.43e-11
+
+============================================================================================
+57 passed, 0 failed, 0 undecided, 183.6 s
+wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonality\code\trajectory_ownership_geometry\trajectory_ownership_geometry_sympy.json

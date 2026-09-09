@@ -1,0 +1,77 @@
+\begin{thebibliography}{6}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Bolderman et~al.(2023)Bolderman, Butler, Koekebakker, van Horssen,
+  Kamidi, Spaan-Burke, Strijbosch, and Lazar]{bolderman2023}
+Max Bolderman, Hans Butler, Sjirk Koekebakker, Eelco van Horssen, Ramidin
+  Kamidi, Theresa Spaan-Burke, Nard Strijbosch, and Mircea Lazar.
+\newblock Physics-guided neural networks for feedforward control with
+  input-to-state-stability guarantees.
+\newblock arXiv:2301.08568v2, 2023.
+\newblock URL \url{https://arxiv.org/abs/2301.08568v2}.
+\newblock Inspected preprint dated 11 September 2023; Eq. (19), Remark 3.1, Eq.
+  (38), and tuning discussion on pp. 19--20. Repository catalogs the later
+  publication as Bolderman 2024.
+
+\bibitem[Golub and Pereyra(1973)]{golub1973}
+G.~H. Golub and V.~Pereyra.
+\newblock The differentiation of pseudo-inverses and nonlinear least squares
+  problems whose variables separate.
+\newblock \emph{SIAM Journal on Numerical Analysis}, 10\penalty0 (2):\penalty0
+  413--432, 1973.
+\newblock \doi{10.1137/0710036}.
+\newblock URL \url{https://epubs.siam.org/doi/10.1137/0710036}.
+\newblock Publisher abstract and metadata inspected; cited as background for
+  elimination of linear variables, not as a theorem for the present recurrent
+  selective update.
+
+\bibitem[Gy{\"o}r{\"o}k et~al.(2026)Gy{\"o}r{\"o}k, Schoukens, P{\'e}ni, and
+  T{\'o}th]{gyorok2026}
+Bendeg{\'u}z~M. Gy{\"o}r{\"o}k, Maarten Schoukens, Tam{\'a}s P{\'e}ni, and
+  Roland T{\'o}th.
+\newblock Orthogonal-by-construction augmentation of physics-based
+  input--output models.
+\newblock \emph{IFAC Journal of Systems and Control}, 35:\penalty0 100376,
+  2026.
+\newblock \doi{10.1016/j.ifacsc.2026.100376}.
+\newblock URL \url{https://doi.org/10.1016/j.ifacsc.2026.100376}.
+\newblock Theorem and page locators verified against local arXiv:2511.01321v3,
+  9 January 2026; final-publication numbering not substituted.
+
+\bibitem[Gy{\"o}r{\"o}k et~al.(2025)Gy{\"o}r{\"o}k, Hoekstra, Kon, Peni,
+  Schoukens, and Toth]{gyorok2025}
+Bendeguz~Mate Gy{\"o}r{\"o}k, Jan~H. Hoekstra, Johan Kon, Tamas Peni, Maarten
+  Schoukens, and Roland Toth.
+\newblock Orthogonal projection-based regularization for efficient model
+  augmentation.
+\newblock In \emph{Proceedings of the 7th Annual Learning for Dynamics \&
+  Control Conference}, volume 283 of \emph{Proceedings of Machine Learning
+  Research}, pages 166--178. PMLR, 2025.
+\newblock URL \url{https://proceedings.mlr.press/v283/gyorok25a.html}.
+\newblock Inspected local copy: arXiv:2501.05842v2, 22 April 2025, PDF pp.
+  1--13; cited equation locators refer to this copy.
+
+\bibitem[Kessels(2025)]{kessels2025}
+B.~M. Kessels.
+\newblock \emph{{AI}-based Model Updating for Nonlinear Dynamical Systems}.
+\newblock PhD thesis, Eindhoven University of Technology, 2025.
+\newblock URL
+  \url{https://research.tue.nl/files/349778618/20250206_Kessels_hf.pdf}.
+\newblock Chapter 5, printed pp. 156--157, Eqs. (5.12)--(5.13d); local
+  publisher PDF inspected.
+
+\bibitem[Kon et~al.(2023)Kon, de~Vos, Bruijnen, van~de Wijdeven, Heertjes, and
+  Oomen]{kon2023}
+Johan Kon, Naomi de~Vos, Dennis Bruijnen, Jeroen van~de Wijdeven, Marcel
+  Heertjes, and Tom Oomen.
+\newblock Learning for precision motion of an interventional {X}-ray system:
+  Add-on physics-guided neural network feedforward control.
+\newblock arXiv:2303.07994v2, 2023.
+\newblock URL \url{https://arxiv.org/abs/2303.07994v2}.
+\newblock Inspected preprint, 28 March 2023; Eqs. (15)--(23), PDF p. 4.
+
+\end{thebibliography}

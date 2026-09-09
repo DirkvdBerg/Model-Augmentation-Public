@@ -1,0 +1,30 @@
+\contentsline {section}{\numberline {1}Question, scope and notation}{2}{section.1}%
+\contentsline {section}{\numberline {2}What is inherited from Gy\"or\"ok}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Projection of a stacked one-step correction}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}The nonlinear regressor includes an offset}{3}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Why the successor's recovery theorem is separate}{4}{subsection.2.3}%
+\contentsline {section}{\numberline {3}The additional-state path that the zero slice misses}{4}{section.3}%
+\contentsline {section}{\numberline {4}The actual nonlinear closed-loop experiment}{5}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Coordinates, physical map and routing}{5}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Controller recurrence and initialization}{6}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Encoder ownership}{7}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Interventions and stacking}{7}{subsection.4.4}%
+\contentsline {section}{\numberline {5}Sensitivities through the full recurrent predictor}{8}{section.5}%
+\contentsline {section}{\numberline {6}Eliminating physical-initialization freedom}{9}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Computing the actual shared encoder space}{9}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Finite precision is part of the implemented definition}{10}{subsection.6.2}%
+\contentsline {section}{\numberline {7}The penalty and its conditional mathematical meaning}{10}{section.7}%
+\contentsline {subsection}{\numberline {7.1}The displacement as the sensitivity of the selective estimator}{11}{subsection.7.1}%
+\contentsline {paragraph}{Conditions and their status.}{13}{section*.2}%
+\contentsline {paragraph}{Anchored variant.}{13}{section*.3}%
+\contentsline {paragraph}{What the bound says at the measured reference.}{14}{section*.4}%
+\contentsline {subsection}{\numberline {7.2}Selection can differ from physical recovery}{14}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Checking whether the local comparison is informative}{14}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Value versus attainable variation}{15}{subsection.7.4}%
+\contentsline {section}{\numberline {8}The selective update actually implemented}{15}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Exact chunking of the fixed stack}{16}{subsection.8.1}%
+\contentsline {section}{\numberline {9}Diagnostics, selection and the remaining scientific test}{17}{section.9}%
+\contentsline {subsection}{\numberline {9.1}A controlled-discrepancy validation experiment}{18}{subsection.9.1}%
+\contentsline {section}{\numberline {A}Equation-to-implementation map and discrepancies}{19}{appendix.A}%
+\contentsline {section}{\numberline {B}Evidence, checks and scope}{20}{appendix.B}%
+\contentsline {section}{\numberline {C}Source and build notes}{22}{appendix.C}%

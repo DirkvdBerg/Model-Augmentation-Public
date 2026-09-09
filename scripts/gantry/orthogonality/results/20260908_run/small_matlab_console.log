@@ -1,0 +1,26 @@
+  [PASS] L1 M1.recurrence_equals_direct[lambda]
+  [PASS] L1 M1.recurrence_equals_direct[eta]
+  [PASS] L1 M1.recurrence_equals_direct[xi_p]
+  [PASS] L1 M1.recurrence_equals_direct[lambda,off]
+  [PASS] L1 M1.negctrl_controller_path_detected
+  [PASS] L1 M2.off_independent_of[Kk]
+  [PASS] L1 M2.off_independent_of[Ff]
+  [PASS] L1 M2.off_independent_of[Gg]
+  [PASS] L1 M2.off_independent_of[Pp]
+  [PASS] L1 M2.off_independent_of[ca]
+  [PASS] L1 M2.clamped_independent_of_latent_init
+  [PASS] L1 M2.clamped_latent_state_null
+  [PASS] L1 M2.full_equals_off_at_zero_gains
+  [PASS] L1 M2.clamped_equals_off_at_zero_direct
+  [PASS] L1 M2.full_equals_clamped_at_zero_readout
+  [PASS] L1 M3.E_equals_Gamma_J
+  [PASS] L1 M3.xip_only_through_initial_state
+  [PASS] L1 M4.latent_init_chain_rule
+  [PASS] L1 M4.latent_init_reaches_output
+  [PASS] L1 M5.structural_null_direction
+  [PASS] L1 M6.penalty_gradient_reaches_latent_init
+  [PASS] L1 M6.penalty_has_nonzero_physical_derivative
+  [PASS] L1 M6.mixed_derivative_witness
+
+23 passed, 0 failed, 0 undecided, 37.0 s
+wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonality\code\trajectory_ownership_geometry\trajectory_ownership_geometry_matlab.json

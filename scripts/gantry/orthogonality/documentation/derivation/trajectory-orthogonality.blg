@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99e
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: trajectory-orthogonality.aux
+Reallocating 'name_of_file' (item size: 1) to 9 items.
+The style file: plainnat.bst
+Reallocating 'name_of_file' (item size: 1) to 25 items.
+Database file #1: trajectory-orthogonality.bib
+You've used 6 entries,
+            2773 wiz_defined-function locations,
+            641 strings with 7310 characters,
+and the built_in function-call counts, 3483 in all, are:
+= -- 316
+> -- 259
+< -- 4
++ -- 87
+- -- 81
+* -- 304
+:= -- 560
+add.period$ -- 33
+call.type$ -- 6
+change.case$ -- 44
+chr.to.int$ -- 6
+cite$ -- 12
+duplicate$ -- 123
+empty$ -- 223
+format.name$ -- 89
+if$ -- 715
+int.to.chr$ -- 1
+int.to.str$ -- 1
+missing$ -- 3
+newline$ -- 52
+num.names$ -- 24
+pop$ -- 79
+preamble$ -- 1
+purify$ -- 39
+quote$ -- 0
+skip$ -- 111
+stack$ -- 0
+substring$ -- 87
+swap$ -- 18
+text.length$ -- 2
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 66
+warning$ -- 0
+while$ -- 24
+width$ -- 0
+write$ -- 113
