@@ -643,3 +643,15 @@ def _build_save_dict(cfg, data, norm, hp, na, nb, y_ref, y_hat_enc, t_val,
         save_dict['params_init']    = params_init_np
         save_dict['params_learned'] = params_learned_np
     return save_dict
+
+
+def per_record_nrms(fit_sys, files, sdlist, norm, K0: int, tag: str) -> list:
+    """@added (2026-09-15). Per-record augmented NRMS over held-out records (D-098)."""
+    print(f'{tag} NRMS per record (augmented, avg from K0):')
+    rows = []
+    for _f, _td in zip(files, sdlist):
+        _yh = fit_sys.apply_experiment(_td).y
+        rows.append(np.sqrt(((_yh[K0:] - _td.y[K0:]) ** 2).mean(axis=0)) / norm.ystd)
+        print(f'  {_f}: {rows[-1]}')
+    print(f'  mean: {np.mean(rows, axis=0)}')
+    return rows

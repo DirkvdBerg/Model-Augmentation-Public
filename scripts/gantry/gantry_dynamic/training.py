@@ -875,3 +875,70 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
         loss_val_nf   = loss_val_nf,    # D-095: per-epoch val nf-window RMS (aligns with Loss_val tail)
         loss_train_nf = loss_train_nf,  # D-095: per-epoch train nf-window RMS (same horizon, meters)
     )
+
+
+def resolve_resume_hp(cfg: RunConfig, default_hp: dict, resume_ckpt) -> dict:
+    """@added (2026-09-15). The hp a resumed run actually trains with (D-179).
+
+    Moved out of the entry point: this is POLICY, not a run choice. THE CHECKPOINT OWNS THE
+    ARCHITECTURE, THIS RUN OWNS EVERYTHING ELSE. Taking `epochs` from the checkpoint made job
+    81262 skip Adam entirely (`epochs: 350`, `done_epochs: 350` -> zero remaining); taking `lr`
+    from it trained at the checkpoint rate while config.json recorded this run's.
+
+    `_assert_same_architecture` below remains the real enforcement; taking the five structural
+    keys from the checkpoint is what makes the run WORK rather than fail on key mismatches.
+    """
+    # D-171: 'lbfgs' means "polish a restored checkpoint", so without one there is nothing to
+    # polish and nothing to train either. Caught here rather than in RunConfig.__post_init__,
+    # because the checkpoint is an environment variable and a config must stay constructible
+    # for inspection without it.
+    if cfg.start_phase == 'lbfgs' and not resume_ckpt:
+        raise RuntimeError(
+            "start_phase='lbfgs' needs RESUME_CHECKPOINT: it skips Adam and polishes restored "
+            "weights, so with no checkpoint the run would polish a freshly initialised model.")
+    if resume_ckpt:
+        # D-179: THE CHECKPOINT OWNS THE ARCHITECTURE, THIS RUN OWNS EVERYTHING ELSE.
+        #
+        # `hp` used to be taken wholesale from the checkpoint's `.npz`, and two of its keys are
+        # not properties of the weights at all. `epochs` is the worse one:
+        # `train_model_with_diagnostics` computes `epochs_remaining = hp['epochs'] - done_epochs`,
+        # so resuming job 81262 (`epochs: 350`, `done_epochs: 350`) gave ZERO remaining epochs and
+        # skipped Adam silently, whatever `cfg.epochs` said. `lr` is the same class of defect one
+        # level up from D-173: `init_model` builds Adam with `hp['lr']`, so a resumed run trained
+        # at the CHECKPOINT's rate while config.json recorded this run's.
+        #
+        # The five keys below are STRUCTURAL: any other value makes `load_state_dict` fail, so the
+        # checkpoint must own them. Everything else (`nf`, `batch_size`, `lr`, `epochs`) is this
+        # run's, which also makes "resume these weights and train at a longer horizon" simply
+        # work. `_assert_same_architecture` remains the real enforcement; taking these from the
+        # checkpoint is what makes the run WORK rather than fail with a wall of key mismatches.
+        _STRUCTURAL = ('NX_ANN', 'n_nodes_per_layer', 'n_hidden_layers', 'na_nb', 'up_sample')
+        print(f'\nResuming checkpoint: {resume_ckpt}')
+        if os.path.exists(resume_ckpt + '.npz'):
+            _meta = np.load(resume_ckpt + '.npz', allow_pickle=True)
+            _saved_hp = json.loads(str(_meta['hp']))
+            hp = {**default_hp,
+                  **{k: _saved_hp[k] for k in _STRUCTURAL if k in _saved_hp}}
+            # The diff, not a mode flag, is the safety mechanism: it names every field where the
+            # two disagree, so a changed OBJECTIVE is visible rather than hidden behind a boolean.
+            print('  hp: architecture from the checkpoint, everything else from this config')
+            _diff = [(k, _saved_hp[k], hp[k]) for k in hp
+                     if k in _saved_hp and _saved_hp[k] != hp[k]]
+            for _k, _was, _now in _diff:
+                print(f'      {_k:<20s} checkpoint {_was!r:>10s}  ->  this run {_now!r}'
+                      + ('   [OBJECTIVE CHANGE]' if _k in ('nf', 'batch_size') else ''))
+            if not _diff:
+                print('      (identical on every field)')
+        else:
+            hp = default_hp
+            print('  No .npz alongside it (deepSI whole-system format); using this config\'s hp')
+            # Nothing in that format records the horizon it was trained at, so there is no diff to
+            # print and no guard on the objective; the architecture is still caught by
+            # training.py::_assert_same_architecture.
+            print(f"  hp from THIS config: nf={hp['nf']} stride={cfg.stride} "
+                  f"na_nb={hp['na_nb']}. If the checkpoint was trained at another nf, the "
+                  f"resumed run optimises a different objective than the one that made it.")
+        print(f'  start_phase: {cfg.start_phase}')
+    else:
+        hp = default_hp
+    return hp

@@ -115,3 +115,41 @@ def compute_baseline_fp_nrms(hp, cfg: RunConfig, data, norm, data_sd=None, x0_ph
     print(f'  aggregate sim-RMS (same formula as validation loss): {rms_agg:.4e} m')
 
     return nrms, y_hat
+
+
+def compute_all_baselines(hp, cfg: RunConfig, data, norm, K0: int,
+                          x0_encinit_val=None, x0_encinit_test=None) -> dict:
+    """@added (2026-09-15). The four fixed-reference FP baselines, moved out of the entry point.
+
+    Returns the keyword arguments `evaluate_and_save` takes, so a missing test set or a
+    non-linear_map encoder stays a None in one place instead of four.
+    """
+    print('\nComputing baseline FP RMS/NRMS (fixed reference, no MSD)...')
+    # True-x0 (oracle) baselines — start at interior sample K0 (D-087: sample-0 qdot is a
+    # one-sided FD artifact); simulated window matches the model metric (D-072).
+    baseline_nrms, _ = compute_baseline_fp_nrms(
+        hp, cfg, data, norm, x0_phys=data.val_x_logical[K0], start_ix=K0, label='val, true x0 @K0')
+    if data.test_x_logical is not None:
+        baseline_test_nrms, _ = compute_baseline_fp_nrms(
+            hp, cfg, data, norm, data_sd=data.test_data, x0_phys=data.test_x_logical[K0],
+            start_ix=K0, label='test E1, true x0 @K0')
+    else:
+        baseline_test_nrms = None
+
+    # Encoder-init baselines — same init information as the model, no oracle (D-072).
+    # x0 vectors were captured pre-training from the untrained reconstructability map (D-089).
+    if x0_encinit_val is not None:
+        baseline_encinit_nrms, _ = compute_baseline_fp_nrms(
+            hp, cfg, data, norm, x0_norm=x0_encinit_val, start_ix=K0,
+            label='val, encoder-init (untrained linear map)')
+        baseline_test_encinit_nrms, _ = compute_baseline_fp_nrms(
+            hp, cfg, data, norm, data_sd=data.test_data, x0_norm=x0_encinit_test, start_ix=K0,
+            label='test E1, encoder-init (untrained linear map)')
+    else:
+        baseline_encinit_nrms = None
+        baseline_test_encinit_nrms = None
+
+    return dict(baseline_nrms=baseline_nrms,
+                baseline_test_nrms=baseline_test_nrms,
+                baseline_encinit_nrms=baseline_encinit_nrms,
+                baseline_test_encinit_nrms=baseline_test_encinit_nrms)

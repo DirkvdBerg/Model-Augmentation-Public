@@ -22,12 +22,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gantry_dynamic.config import RunConfig, save_dir, config_json_dict, git_provenance
 from gantry_dynamic.data import load_datasets, compute_normalization, VAL_FILES, TEST_FILES
 from gantry_dynamic.model import build_model, get_encoder_dims
-from gantry_dynamic.baselines import compute_baseline_fp_nrms
+from gantry_dynamic.baselines import compute_all_baselines
 from gantry_dynamic.diagnostics import (
     state_recovery_diagnostic, compute_gradient_norms, encoder_init_state,
+    print_run_banner,
 )
-from gantry_dynamic.evaluation import evaluate_and_save
-from gantry_dynamic.training import train_model_with_diagnostics
+from gantry_dynamic.evaluation import evaluate_and_save, per_record_nrms
+from gantry_dynamic.training import train_model_with_diagnostics, resolve_resume_hp
 
 ## ═══════════════════════════════════════════════════════════════════════════════
 ## ALL run parameters -- edit here. Field docs live on RunConfig in
@@ -37,43 +38,17 @@ from gantry_dynamic.training import train_model_with_diagnostics
 ## ═══════════════════════════════════════════════════════════════════════════════
 
 CFG = RunConfig(
-    # --- Experiment identity ---
-    # Track: 'joint' (broadband [1,200] Hz) or 'augmentation' (narrowband [130,180] Hz).
-    # Doubles as the dataset folder key (data/gantry/matlab/trajectory/<mode>) and the
-    # save_dir / orth-basis-cache key.
-    #   'augmentation'         MA_FRAC=0.10
-    #   'augmentation_ma50'    MA_FRAC=0.50
-    #   'augmentation_ma50_a5' MA_FRAC=0.50 AND 5x excitation (AMP_SCALE=5 in
-    #                          generate_trajectory_data.m). Measured 2026-08-27: delta_a scales
-    #                          exactly 5.00x, no record hit the limiter, and the augmentation
-    #                          target is 91.1 N of which 99.4% is absorber dynamics (the rest
-    #                          is the static L0 centre-of-mass offset).
-    # NOTE gtd_config sets mh_rigid = mh - ma, so the total below-absorber rigid mass is
-    # conserved. That explains the insensitive rigid response, but absorber dynamics are not
-    # globally invariant to mass ratio. The 50/50 intervention is closed because it reduced the
-    # measured augmentation signal, not because the ratio is absent from the dynamics.
-    mode='augmentation_ma50_a5',
+    # D-188: band [140,230] holds BOTH the 212.13 Hz free-free pole and the 150 Hz
+    # anti-resonance; AMP_SCALE=6 is the largest unscaled value, zeta_a=0.03 the JPE floor.
+    mode='augmentation_ma50_b140-230_a6_z03',
     # 'linear_map' = Hoekstra 2026 reconstructability init (trainable); 'default' = deepSI learned encoder
     encoder_init='linear_map',
     ann_activation='tanh',        # 'linear' = Identity (Jan's ECC, D-071); 'tanh' = nonlinear ANN
     joint_estimation=False,        # D-076: True = trainable damping/stiffness scalars (orth shakedown, 07-12)
     param_rmse_baseline=0.01,     # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
-    # Orthogonal-projection penalty (docs/orthogonal-projection-plan.md; D-111 basis).
-    # `orth` is the switch, `orth_beta` the strength; orth=True with beta<=0 raises rather than
-    # running as off (config.py __post_init__). orth=False skips the penalty AND its basis
-    # build. First run with orth=True triggers one fresh ~6 min basis build at up_sample=1
-    # (cached thereafter), so toggling this off is also the cheap path.
-    # beta_center = V_MSE/E_drift = 1e-4/2.15e-1 (D7.9, measured 07-12).
-    # MEASURED 2026-08-27 (79502/79503, joint_estimation=False): this penalty is ACTIVE but
-    # INERT. It is gated on `orth` alone, never on joint_estimation, so it does apply with
-    # theta frozen -- but the probe reads orth-frac 0.000 and V_orth 1e-14..1e-12 (already
-    # beta-weighted, orth_projection.py:11) against a fit loss of order 1e-9+, so it is ~0.01%
-    # of the loss. Its gradient is 2*beta*Q Q^T f_ANN, and orth-frac ~ 0 means that is ~0 too.
-    # I.e. the ANN's correction already lies almost entirely OUTSIDE the baseline's parameter
-    # span without the penalty pushing it there. NOTE: that measurement was taken in the
-    # removed orth_observe mode (basis attached, penalty zero). Reproducing it now needs a
-    # diagnostic that attaches the basis directly, not a config toggle.
-    orth=True,
+    # D7.1/D-111. False = no penalty object and no basis build. The Gyorok 2025
+    # regularisation has its own entry point: orthogonality/Gyorok/train_gyorok.py.
+    orth=False,
     orth_beta=4.66e-4,
     # None = start at true values (run T); 14-vector aligned to PARAM_NAMES = detuned start (run D, D-076).
     param_init_detune=None,
@@ -88,6 +63,9 @@ CFG = RunConfig(
     fs_orig=20000,
     fs_new=4000,                  # None = no downsampling (use fs_orig)
     stride=10,                   # keep every STRIDE-th BPTT window; 100 matches 69399 (fewer windows -> ~10x faster epoch)
+    # D-178: samples dropped from the SCORE at each window start. 0 = the pre-D-178
+    # objective, bit-identically. K=100 (25 ms) is the loop settling time, not a fit.
+    burn_in=0,
     # KEEP False. cl_direct_vs_residual T4 does show a large float32 ROLLOUT sensitivity once
     # the ANN is active (gap/err 1.4% at gain 0, but 835% at 1e-2 and 867% at 1e-1, i.e.
     # gain-independent once the loop is nonlinear), which looked like a reason to switch.
@@ -95,38 +73,102 @@ CFG = RunConfig(
     # on identical batches and got cos(dtheta_32, dtheta_64) = 0.999042 with |dtheta| ratio
     # 1.0048. Adam's per-parameter normalisation absorbs the rollout noise, so the UPDATE is
     # unaffected. float64 costs runtime and buys nothing here. The toggle works if ever needed.
+    # SCOPE (D-171): that measurement is about ADAM, and its stated mechanism is Adam's
+    # per-parameter normalisation absorbing the rollout noise. An L-BFGS phase has no such
+    # normalisation and forms its curvature from y = g(x+s) - g(x), a difference of two nearly
+    # equal gradients, which is catastrophic cancellation that gets worse as the phase succeeds;
+    # the strong-Wolfe line search must resolve loss differences of a relative 1e-6 or below on a
+    # loss of order 1e-9, at the edge of float32's ~7 digits. So a run with lbfgs=True wants
+    # use_f64=True.
+    #
+    # COHERENCE IS THE RULE, and it outranks the preference above. One dtype for the Adam phase,
+    # the polish phase, and any checkpoint being resumed. training.py::_assert_same_dtype REFUSES
+    # a resume across a dtype change rather than casting silently, because the phase's whole
+    # output is a before/after comparison and a cast puts a dtype change inside it.
+    # CONSEQUENCE: an existing float32 checkpoint (all three in meeting-07-09-2026) is polished at
+    # float32. To polish at float64, retrain at float64 -- which job 81463 measured as costing
+    # nothing in time on this workload, ~4.1 s per closure in either dtype, 2x memory.
     use_f64=False,
+    # D-169: 'cpu' or 'cuda'. NOT bit-identical across the two (float32 reduction order),
+    # which is why DEVICE is in config.json. The win needs a larger batch_size with it.
+    device='cuda',
+    # Steps per gradient-checkpoint segment; 0 = off. EXACT (boundaries are not detached, the
+    # gradient still spans all nf steps), unlike truncated BPTT. Required above roughly nf = 2000:
+    # at nf = 12000, batch 512 the un-checkpointed graph is ~25 GB and does not fit on CPU either.
+    # Costs ~+33% compute for ~nf/chunk times less activation memory.
+    checkpoint_chunk=0,
+    # D-169: torch.compile mode for the TRAINING rollout only; None = eager.
+    # 'reduce-overhead' measured ~6.5x; validation and diagnostics stay eager.
+    compile_mode='reduce-overhead',
     save_flag=True,
     nf_probe_print=True,          # print per-epoch train/val nf-window RMS [m] (D-095)
-    # --- Model + training hyperparameters ---
-    nx_ann=2,
+    # D-189: capacity only pays once the rate can use it (2x at lr=1e-5, 6% at 1e-6).
+    nx_ann=8,
     # ANN routing rows: (1,4,6,7)=Theta+absorber (D-068); (0,1,2,3,4,5,6,7)=X+Theta+Y+absorber.
     # WARNING: X/Y (K=0) routing cannot use the old 1e-5 rate. The controlled short sweep favors
     # 1e-6, but no completed five-epoch run has yet established its long-run behavior.
-    ann_route_ix=(0,1,2,3,4,5,6,7),
-    n_nodes_per_layer=16,
-    n_hidden_layers=2,
+    # 14 rows, not 8: with nx_ann=8 the interconnected state is 6 baseline + 8 augmented. The
+    # sweep runs that used nx_ann=8 (80499-80501, 80555, 80557) all logged ann_route_ix=(0..13);
+    # leaving the 8-row tuple here would silently route only part of the state.
+    ann_route_ix=tuple(range(14)),
+    n_nodes_per_layer=24,
+    n_hidden_layers=3,
     up_sample=1,
-    batch_size=256,
-    # MEASURED 2026-08-27, do not raise without re-measuring. With ann_route_ix=(0..7) the
-    # old 1e-5 (a Theta-routing value that was never lowered when the routing changed, exactly
-    # as the WARNING above says) makes the model WORSE from step one. Controlled 40-update
-    # sweep, identical batches, common start asserted (cl_update_lr.py):
-    #     1e-5 -> 1.684x worse | 1e-6 -> 0.606x BETTER | 1e-7 -> 0.675x better
-    # Server A/B agrees: 79502 (1e-5) degraded val nf-RMS 2.5x, 79503 (1e-7) 1.6x.
-    # CONSEQUENCE: 79421, 79422, and 79502 used 1e-5 and are contaminated. Run 79503 used
-    # 1e-7 and still degraded, so lowering the rate was necessary but not sufficient. None is
-    # a valid 1e-6 baseline for the paired dataset test.
-    lr=1e-6,
+    # 512, not 256. Two reasons, both measured. (1) The batch axis is nearly free on the GPU: the
+    # rollout is dispatch-bound, so t_step is flat in batch over this range, and 80713 measured
+    # 0.50 s/update at 512. (2) The sweep's failure mode at a usable rate is gradient NOISE, not
+    # bias: 80557 (lr=1e-4, batch 256) oscillated 3.68e-06 <-> 1.355e-05 between validations.
+    # Doubling the batch halves that variance, which is what makes the rate below usable.
+    batch_size=512,
+    # D-189/D-148: 1e-5 is the rate at which added capacity pays. X/Y (K=0) routing
+    # cannot use the old 1e-5 blindly; see the problem log's run table before changing.
+    lr=1e-5,
     adam_eps=1e-16,                # D-148: keep 1e-11..1e-14 augmented-writer gradients live.
-    epochs=5,                      # entry-file shakedown (user 07-12); ~30 for the real Step 10 pair
+    # Wall-clock budget, not a convergence criterion. n_its below silently overrides it.
+    epochs=400,
+    # Batch UPDATES between validations; None = 'epoch' (the historical default). 650 = every 5
+    # epochs at batch 512 (130 updates/epoch). On the GPU one validation costs ~162 s against 65 s
+    # of training per epoch, so validating every epoch would spend 70% of the wall on validation
+    # and cut a 10 h run from ~364 epochs to ~156. MOVES WITH batch_size: change that and this
+    # number no longer means 5 epochs.
+    its_per_val=650,
     n_its=None,                    # None = epochs decide (exact no-op). Set an int to cap BATCH
-                                   # UPDATES for a smoke test; model.py then also shortens
-                                   # its_per_val, because one validation is a ~6 min closed-loop
-                                   # free run over V1-V4 and would otherwise dwarf the updates.
-    nf_seconds=0.100,             # [s] rollout horizon (5*tau_msd); nf = nf_seconds / ts_new
-    # nf_override=None,           # set an int to pin nf directly (bypasses nf_seconds)
-    # na_nb_override=None,        # set an int to pin encoder history (bypasses Jan's rule)
+    # [s] rollout horizon; nf = nf_seconds / ts_new. 0.100 s = 5*tau_msd.
+    nf_seconds=0.100,
+    # D-171: polish phase after Adam. Wants use_f64=True (no Adam normalisation to
+    # absorb float32 rollout noise), but dtype COHERENCE across phases outranks that.
+    lbfgs=True,
+    # Outer polish iterations; inner_iter is the strong-Wolfe budget per step.
+    lbfgs_max_iter=100,
+    lbfgs_inner_iter=20,
+    lbfgs_history=50,             # m; 50 = jax_sysid and Drenth. torch defaults to 100.
+    # Windows in the polish batch. L-BFGS needs one FIXED batch: same batch, same
+    # weights, same loss, or the line search is inconsistent.
+    lbfgs_windows=16384,
+    # Windows per chunk, None = one stack. MEMORY ONLY; value and gradient unchanged.
+    lbfgs_chunk=None,
+    # Measured on the job-81262 checkpoint: the loss is ~1.29e-9, so torch's defaults
+    # (1e-7 / 1e-9) would end the phase at iteration one.
+    lbfgs_tol_grad=1e-12,
+    # CHANGED for the freeze pair: 1e-14 -> 0.0, the diagnostic setting named in config.py.
+    # torch applies tolerance_change ABSOLUTELY, in three places inside one step()
+    # (`gtd > -tol`, `max|t*d| <= tol`, `|loss - prev_loss| < tol`). On a loss of 1.15e-09 the
+    # production 1e-14 is a RELATIVE 8.7e-06, which is what ended each of job 81655's blocks
+    # after about two iterations. That is correct for a production polish and wrong for THIS
+    # experiment, which asks whether the training loss keeps falling and therefore needs the
+    # phase to iterate rather than exit. 0.0 disables all three, leaving tol_grad and the cap.
+    lbfgs_tol_change=0.0,
+    # Parameter groups held fixed during the polish; () = the whole vector.
+    lbfgs_freeze=(),
+    lbfgs_time_budget_s=None,
+    lbfgs_meter_rel_tol=1e-3,
+    # 'adam' = normal run, and with RESUME_CHECKPOINT set it CONTINUES that run's Adam phase
+    # (D-173 restores the moments) before polishing. 'lbfgs' = skip Adam and polish the restored
+    # weights directly; that spelling requires RESUME_CHECKPOINT, enforced in main().
+    # CHANGED BACK for the burn-in screen: 'adam'. The freeze pair (81692/81693) is done and its
+    # question is answered; this run trains, and `lbfgs=True` runs the polish at the end of the
+    # SAME job, so the burn-in objective is exercised by both phases without a second launch.
+    start_phase='adam',
 )
 
 # Dataset-learnability paired experiment. These two optional overrides let every
@@ -149,6 +191,34 @@ if _dataset_ab_seed is not None:
             f'DATASET_AB_SEED must be an integer, got {_dataset_ab_seed!r}') from exc
     CFG = replace(CFG, seed=_dataset_ab_seed_int)
 
+# Encoder-freeze pair (D-175). Same narrow form and the same reason as the two above: the two
+# arms differ ONLY in which parameters the polish may move, and editing this file between the
+# launches is how a paired experiment silently stops being paired. The arm that ran is recorded
+# in config.json as LBFGS_FREEZE, because the override rewrites CFG before it is serialised.
+# Burn-in pair (D-178), same narrow form and the same reason as the overrides above: the two arms
+# differ ONLY in whether the window's startup transient is scored, and the arm that ran is
+# recorded in config.json as BURN_IN. An integer rather than named arms, because unlike the
+# freeze this knob has a meaningful range and a sweep over K is a likely follow-up; the
+# construction check in RunConfig.__post_init__ rejects anything outside [0, nf).
+_burn_in_ab = os.environ.get('BURN_IN_AB')
+if _burn_in_ab is not None:
+    try:
+        _burn_in_ab_int = int(_burn_in_ab)
+    except ValueError as exc:
+        raise ValueError(
+            'BURN_IN_AB is the number of samples dropped from the score at each window start, '
+            f'so it must be an integer; got {_burn_in_ab!r}') from exc
+    CFG = replace(CFG, burn_in=_burn_in_ab_int)
+
+_lbfgs_ab_freeze = os.environ.get('LBFGS_AB_FREEZE')
+if _lbfgs_ab_freeze is not None:
+    _freeze_arms = {'none': (), 'encoder': ('encoder',)}
+    if _lbfgs_ab_freeze not in _freeze_arms:
+        raise ValueError(
+            'LBFGS_AB_FREEZE selects the arm of the encoder-freeze pair and must be '
+            f'"none" (control, the whole vector) or "encoder", got {_lbfgs_ab_freeze!r}')
+    CFG = replace(CFG, lbfgs_freeze=_freeze_arms[_lbfgs_ab_freeze])
+
 
 def main():
     cfg = CFG
@@ -165,53 +235,10 @@ def main():
 
     default_hp_dict = cfg.hp
 
-    # Grouped by what each setting DETERMINES, because that is how two runs get compared:
-    # you ask "same objective? same model? same data?", not "same alphabetical order?".
-    # Hand-written rather than generated from RunConfig, deliberately: the value here is the
-    # density ("20000 -> 4000 Hz (D=5)", "(CAPPED)"), which a generic dumper cannot produce.
-    # Completeness of the DURABLE record is guaranteed elsewhere, by config.py's
-    # _assert_json_coverage; this banner is the human-readable view, not the evidence.
-    detune = 'true values' if cfg.param_init_detune is None else \
-             f'detuned ({len(cfg.param_init_detune)}-vector)'
-    print(f"\nConfiguration:")
-    print(f"  PROVENANCE:  git {git_provenance()}")
-    print(f"               run_id {run_id}   save={cfg.save_flag}")
-    print(f"               {sdir}")
-    print(f"  DATA:        {cfg.mode}   {cfg.fs_orig} -> {cfg.fs_new_hz} Hz (D={cfg.d})   "
-          f"stride={cfg.stride}")
-    print(f"               nf={cfg.nf} ({cfg.nf_seconds} s)   "
-          f"na_nb={default_hp_dict['na_nb']} ({default_hp_dict['na_nb']/cfg.fs_new_hz*1000:.2f} ms)"
-          f"   batch={cfg.batch_size}")
-    print(f"  MODEL:       encoder={cfg.encoder_init}   ann={cfg.ann_activation}   "
-          f"nx_ann={cfg.nx_ann}   {cfg.n_nodes_per_layer}x{cfg.n_hidden_layers}   "
-          f"up_sample={cfg.up_sample}")
-    # ann_route_ix is a HARD constraint (D-103: route to X and Y, never Theta-only) and was
-    # invisible in every log until now. Two runs differing only here are different experiments.
-    print(f"               ann_route_ix={tuple(cfg.ann_route_ix)}")
-    print(f"  OBJECTIVE:   rollout={'closed loop' if cfg.closed_loop else 'open loop'}   "
-          + (f"orth=ON (beta={cfg.orth_beta:.3e})" if cfg.orth
-             else "orth=OFF (no penalty, no basis build)"))
-    print(f"               joint={cfg.joint_estimation}   param_init={detune}   "
-          f"noise={cfg.snr if cfg.snr is not None else 'None (noiseless)'}"
-          + (f" -> sigma_n={data.sigma_n:.2e} m" if data.sigma_n is not None else ""))
-    # n_its silently overrides epochs, so a capped smoke run would otherwise be
-    # indistinguishable in the log from a full run of the same config.
-    print(f"  OPTIM:       lr={cfg.lr:g}   adam_eps={cfg.adam_eps:.1e}   "
-          f"epochs={cfg.epochs}"
-          + (f"   n_its={cfg.n_its} (CAPPED)" if cfg.n_its is not None else "")
-          + f"   seed={cfg.seed}   {'float64' if cfg.use_f64 else 'float32'}")
-    print(f"\nDefault hyperparameters (may be overridden by checkpoint):")
-    for k, v in default_hp_dict.items():
-        print(f"  {k}: {v}")
+    print_run_banner(cfg, default_hp_dict, data, run_id, sdir)
 
     resume_ckpt = os.environ.get('RESUME_CHECKPOINT')  # e.g. /path/to/gantry_ckpt_68458_stage3
-    if resume_ckpt:
-        _meta = np.load(resume_ckpt + '.npz', allow_pickle=True)
-        hp = json.loads(str(_meta['hp']))
-        print(f'\nResuming checkpoint: {resume_ckpt}')
-        print(f'  Saved hp: {hp}')
-    else:
-        hp = default_hp_dict
+    hp = resolve_resume_hp(cfg, default_hp_dict, resume_ckpt)
 
     # D-093: self-documenting run folder — config + resolved hp.
     if cfg.save_flag:
@@ -274,50 +301,14 @@ def main():
         checkpoint_dir=ckpt_dir, run_id=run_id)
     print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
 
-    print('\nComputing baseline FP RMS/NRMS (fixed reference, no MSD)...')
-    # True-x0 (oracle) baselines — start at interior sample K0 (D-087: sample-0 qdot is a
-    # one-sided FD artifact); simulated window matches the model metric (D-072).
-    baseline_nrms, _ = compute_baseline_fp_nrms(
-        hp, cfg, data, norm, x0_phys=data.val_x_logical[K0], start_ix=K0, label='val, true x0 @K0')
-    if data.test_x_logical is not None:
-        baseline_test_nrms, _ = compute_baseline_fp_nrms(
-            hp, cfg, data, norm, data_sd=data.test_data, x0_phys=data.test_x_logical[K0],
-            start_ix=K0, label='test E1, true x0 @K0')
-    else:
-        baseline_test_nrms = None
+    baselines = compute_all_baselines(hp, cfg, data, norm, K0,
+                                      x0_encinit_val, x0_encinit_test)
 
-    # Encoder-init baselines — same init information as the model, no oracle (D-072).
-    # x0 vectors were captured pre-training from the untrained reconstructability map (D-089).
-    if x0_encinit_val is not None:
-        baseline_encinit_nrms, _ = compute_baseline_fp_nrms(
-            hp, cfg, data, norm, x0_norm=x0_encinit_val, start_ix=K0,
-            label='val, encoder-init (untrained linear map)')
-        baseline_test_encinit_nrms, _ = compute_baseline_fp_nrms(
-            hp, cfg, data, norm, data_sd=data.test_data, x0_norm=x0_encinit_test, start_ix=K0,
-            label='test E1, encoder-init (untrained linear map)')
-    else:
-        baseline_encinit_nrms = None
-        baseline_test_encinit_nrms = None
-
-    # Per-record augmented NRMS coverage over all held-out records (D-098).
-    def _per_record_nrms(files, sdlist, tag):
-        print(f'{tag} NRMS per record (augmented, avg from K0):')
-        rows = []
-        for _f, _td in zip(files, sdlist):
-            _yh = fit_sys.apply_experiment(_td).y
-            rows.append(np.sqrt(((_yh[K0:] - _td.y[K0:]) ** 2).mean(axis=0)) / norm.ystd)
-            print(f'  {_f}: {rows[-1]}')
-        print(f'  mean: {np.mean(rows, axis=0)}')
-        return rows
-
-    _per_record_nrms(VAL_FILES, data.val_list, 'Validation-set')
-    _per_record_nrms(TEST_FILES, data.test_list, 'Test-set')
+    per_record_nrms(fit_sys, VAL_FILES, data.val_list, norm, K0, 'Validation-set')
+    per_record_nrms(fit_sys, TEST_FILES, data.test_list, norm, K0, 'Test-set')
 
     evaluate_and_save(fit_sys, hp, run_id, cfg, data, norm, sdir,
-                      diag_conv=diag_conv, baseline_nrms=baseline_nrms,
-                      baseline_test_nrms=baseline_test_nrms,
-                      baseline_encinit_nrms=baseline_encinit_nrms,
-                      baseline_test_encinit_nrms=baseline_test_encinit_nrms)
+                      diag_conv=diag_conv, **baselines)
 
     print('\n== B. ENCODER QUALITY ==')   # D-094 output grouping
     state_recovery_diagnostic(fit_sys, hp, run_id, cfg, data, norm, sdir)

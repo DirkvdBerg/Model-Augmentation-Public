@@ -12,7 +12,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from .config import RunConfig
+from .config import RunConfig, git_provenance
 from .model import get_encoder_dims
 
 
@@ -382,3 +382,62 @@ def zeroed_ann_validation(fit_sys, val_data, validation_measure='sim-RMS'):
             last.weight.copy_(saved_w)
             if saved_b is not None:
                 last.bias.copy_(saved_b)
+
+
+def print_run_banner(cfg: RunConfig, hp: dict, data, run_id: str, sdir: str) -> None:
+    """@added (2026-09-15). The human-readable run banner, moved out of the entry point.
+
+    Reporting, so it lives with the rest of the reporting. The DURABLE record is
+    config.json, whose completeness config.py::_assert_json_coverage guarantees;
+    this is the view a human reads while the run starts.
+    """
+    # Grouped by what each setting DETERMINES, because that is how two runs get compared:
+    # you ask "same objective? same model? same data?", not "same alphabetical order?".
+    # Hand-written rather than generated from RunConfig, deliberately: the value here is the
+    # density ("20000 -> 4000 Hz (D=5)", "(CAPPED)"), which a generic dumper cannot produce.
+    # Completeness of the DURABLE record is guaranteed elsewhere, by config.py's
+    # _assert_json_coverage; this banner is the human-readable view, not the evidence.
+    detune = 'true values' if cfg.param_init_detune is None else \
+             f'detuned ({len(cfg.param_init_detune)}-vector)'
+    print(f"\nConfiguration:")
+    print(f"  PROVENANCE:  git {git_provenance()}")
+    print(f"               run_id {run_id}   save={cfg.save_flag}")
+    print(f"               {sdir}")
+    print(f"  DATA:        {cfg.mode}   {cfg.fs_orig} -> {cfg.fs_new_hz} Hz (D={cfg.d})   "
+          f"stride={cfg.stride}")
+    print(f"               nf={cfg.nf} ({cfg.nf_seconds} s)   "
+          f"na_nb={hp['na_nb']} ({hp['na_nb']/cfg.fs_new_hz*1000:.2f} ms)"
+          f"   batch={cfg.batch_size}")
+    print(f"  MODEL:       encoder={cfg.encoder_init}   ann={cfg.ann_activation}   "
+          f"nx_ann={cfg.nx_ann}   {cfg.n_nodes_per_layer}x{cfg.n_hidden_layers}   "
+          f"up_sample={cfg.up_sample}")
+    # ann_route_ix is a HARD constraint (D-103: route to X and Y, never Theta-only) and was
+    # invisible in every log until now. Two runs differing only here are different experiments.
+    print(f"               ann_route_ix={tuple(cfg.ann_route_ix)}")
+    print(f"  OBJECTIVE:   rollout={'closed loop' if cfg.closed_loop else 'open loop'}   "
+          + (f"orth=ON (beta={cfg.orth_beta:.3e})" if cfg.orth
+             else "orth=OFF (no penalty, no basis build)"))
+    print(f"               joint={cfg.joint_estimation}   param_init={detune}   "
+          f"noise={cfg.snr if cfg.snr is not None else 'None (noiseless)'}"
+          + (f" -> sigma_n={data.sigma_n:.2e} m" if data.sigma_n is not None else ""))
+    # n_its silently overrides epochs, so a capped smoke run would otherwise be
+    # indistinguishable in the log from a full run of the same config.
+    print(f"  OPTIM:       lr={cfg.lr:g}   adam_eps={cfg.adam_eps:.1e}   "
+          f"epochs={cfg.epochs}"
+          + (f"   n_its={cfg.n_its} (CAPPED)" if cfg.n_its is not None else "")
+          + f"   seed={cfg.seed}   {'float64' if cfg.use_f64 else 'float32'}")
+    # D-169. Both belong in the banner for the same reason ann_route_ix does: they change what a
+    # run IS. `device` because CPU and GPU are not bit-identical, `checkpoint_chunk` because a run
+    # that OOMed and one that survived otherwise read identically here.
+    print(f"  EXEC:        device={cfg.device}"
+          + (f" ({torch.cuda.get_device_name(0)})" if cfg.device == 'cuda'
+             and torch.cuda.is_available() else "")
+          + ("   checkpoint=OFF (whole rollout graph)" if not cfg.checkpoint_chunk
+             else f"   checkpoint_chunk={cfg.checkpoint_chunk} "
+                  f"({-(-cfg.nf // cfg.checkpoint_chunk)} segments of nf={cfg.nf})"))
+    print(f"               compile={cfg.compile_mode or 'OFF (eager)'}"
+          + ("   [training rollout only; validation + diagnostics stay eager]"
+             if cfg.compile_mode else ""))
+    print(f"\nDefault hyperparameters (may be overridden by checkpoint):")
+    for k, v in hp.items():
+        print(f"  {k}: {v}")
