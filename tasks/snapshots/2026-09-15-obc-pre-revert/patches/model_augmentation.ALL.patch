@@ -1,0 +1,527 @@
+diff --git a/model_augmentation/fit_systems/blocks.py b/model_augmentation/fit_systems/blocks.py
+index 0c44e8b..01f4631 100644
+--- a/model_augmentation/fit_systems/blocks.py
++++ b/model_augmentation/fit_systems/blocks.py
+@@ -49,6 +49,18 @@ class Static_ANN_Block(Block):
+             n_hidden_layers=n_hidden_layers,
+             activation=activation,
+         )
++        # CHANGED: per-output intervention gate for the trajectory-orthogonality method
++        # (scripts/gantry/orthogonality/documentation/plan/..., Sect. 4.3). It selects the
++        # 'full' / 'off' / 'clamped' rollouts by masking ANN OUTPUT COLUMNS, which is what
++        # `route_ix` indexes, without touching weights, wrapping the module or rebuilding the
++        # interconnect.
++        #
++        # NON-PERSISTENT and all-ones: it is absent from `state_dict()`, so no checkpoint gains
++        # a key and every existing checkpoint still loads; loading initialises full mode, as the
++        # specification requires. A BUFFER and not a Parameter: it is an intervention, never
++        # trained. Multiplying by exactly 1.0 is exact in IEEE arithmetic, so the default path
++        # is bit-identical to every run before this existed.
++        self.register_buffer('out_gate', torch.ones(self.nw), persistent=False)
+ 
+     def forward(self, z: Tensor):
+         # print(self.name + " forward called for w" + str(self.block_ix))
+@@ -57,6 +69,9 @@ class Static_ANN_Block(Block):
+         # z_scaled = torch.matmul(self.D_z, z)
+ 
+         w = self.net(z.view(-1, self.nz))
++        if self.out_gate.device != w.device or self.out_gate.dtype != w.dtype:
++            self.out_gate = self.out_gate.to(device=w.device, dtype=w.dtype)
++        w = w * self.out_gate
+         return w.view(-1, self.nw, 1)
+         # return torch.matmul(self.D_yw, w.view(-1,self.nw,1))
+ 
+@@ -980,6 +995,33 @@ class Parameterized_Gantry_State_Block(Gantry_State_Block):
+                 "nonlinear_function(), which rebuilds the M(Y) structure first.")
+         return self._cur
+ 
++    # CHANGED: `_cur` is a PER-FORWARD CACHE and must never be serialised.
++    #
++    # Found 2026-09-08 by the first training run that built a geometry and then hit a
++    # validation checkpoint:
++    #
++    #     NotImplementedError: Cannot access storage of TensorWrapper
++    #
++    # `_cur` is a plain attribute, so it sits in this module's `__dict__` and `torch.save` walks
++    # it. After a `torch.func.jvp` or `jacrev` -- which is how the trajectory-orthogonality
++    # geometry differentiates this block -- the cached matrices are functorch `TensorWrapper`
++    # duals, and those have no storage to pickle. Every subsequent checkpoint then dies, which
++    # for deepSI means the FIRST validation.
++    #
++    # This is the "stale `_cur` cache" hazard the orthogonality specification warns about
++    # (Sect. 3.2), arriving by a route the warning did not name: not a stale VALUE served to a
++    # later forward, but a stale TYPE outliving the transform that made it. Dropping it from the
++    # state is correct independently of that: it is rebuilt on every `nonlinear_function` call,
++    # so a saved copy is never read, and it needlessly enlarged every checkpoint.
++    def __getstate__(self):
++        state = dict(self.__dict__)
++        state['_cur'] = None
++        return state
++
++    def __setstate__(self, state):
++        self.__dict__.update(state)
++        self._cur = None
++
+     def param_loss(self):
+         """Lambda-weighted L2 toward params_init in physical space (D-034)."""
+         if not self.flag_loss_reg:
+diff --git a/model_augmentation/fit_systems/interconnect.py b/model_augmentation/fit_systems/interconnect.py
+index 2540a41..c1a6724 100644
+--- a/model_augmentation/fit_systems/interconnect.py
++++ b/model_augmentation/fit_systems/interconnect.py
+@@ -1178,6 +1178,22 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
+ 
+     orth_penalty = None     # class default; instance attribute set by the pipeline (D7.1/D7.8)
+     loss_stats = None       # ditto: a WindowErrorStats, or None for no statistics at all
++    # @added. The TRAJECTORY orthogonality penalty, which is NOT a loss term and therefore is not
++    # in the sweep below. It is a gradient contribution applied between the base backward and the
++    # optimizer update; see `fit()` and `trajectory_penalty_hook.py`. None = the feature is off
++    # and `fit()` delegates straight to the parent, so a run without it is bit-identical.
++    traj_penalty = None
++    # Backing field for the `optimizer` property below. A class-level default so a checkpoint
++    # pickled before the property existed still resolves it, exactly as `orth_penalty` and
++    # `burn_in` do.
++    _optimizer = None
++    _traj_wrapping = False
++    _traj_hook_calls = 0
++    _traj_steps = 0
++    # Samples excluded from the SCORE at the start of every window (D-178). 0 = score the whole
++    # window, bit-identically to the pre-D-178 objective. Same class-attribute reasoning as the
++    # two above: a checkpoint pickled before this existed still resolves it through the class.
++    burn_in = 0
+ 
+     def __init__(self, *args, **kwargs):
+         super().__init__(*args, **kwargs)
+@@ -1205,10 +1221,28 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
+     def loss(self, uhist, yhist, ufuture, yfuture, **Loss_kwargs):
+         x = self.encoder(uhist, yhist)                                    # type: ignore
+         y_pred, _ = self.simulate(x, ufuture, yfuture, **Loss_kwargs)
+-        L = nn.functional.mse_loss(yfuture, y_pred)
++        # BURN-IN (D-178): score from sample `burn_in` onward. The window is transient-dominated
++        # at nf=400 -- every run's `[nf]` line reports grow = RMS(last)/RMS(first) between 0.46
++        # and 0.81, i.e. the error DECAYS across the window -- so scoring the start pays the
++        # optimiser to sharpen x_0, which a 12 s free run pays once and forgets. Measured by
++        # rescoring (cl_burnin_sweep.py): discrimination 1.249x -> 3.400x at K=100, against
++        # 2.54x for an 8x longer window. Time is dim 1; `burn_in = 0` skips the branch entirely
++        # and is bit-identical to the objective every run before this used.
++        if self.burn_in:
++            y_pred_scored, yfuture_scored = y_pred[:, self.burn_in:], yfuture[:, self.burn_in:]
++            if yfuture_scored.shape[1] == 0:
++                raise ValueError(
++                    'burn_in=%d leaves nothing to score in an nf=%d window. It is a number of '
++                    'SAMPLES discarded at the window start and must be smaller than nf.'
++                    % (self.burn_in, yfuture.shape[1]))
++        else:
++            y_pred_scored, yfuture_scored = y_pred, yfuture
++        L = nn.functional.mse_loss(yfuture_scored, y_pred_scored)
+         # Window error statistics, from the rollout that just happened. Accumulated HERE, before
+         # the penalties, so the reported error is the fit error and does not move when orth or
+         # joint estimation is toggled. None = no statistics, an exact no-op.
++        # DELIBERATELY the FULL window, not the scored slice (D-178): `grow` is the evidence that
++        # motivates burn-in, and a diagnostic that moved with the knob it justifies is worthless.
+         if self.loss_stats is not None:
+             self.loss_stats.update(y_pred, yfuture)
+         blocks = self.hfn.connected_blocks                                # type: ignore
+@@ -1225,4 +1259,312 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
+                     'an orth penalty is attached but this interconnect has no Static_ANN_Block: '
+                     'the penalty is a function of the ANN output and has nothing to act on.')
+             L = L + self.orth_penalty(blocks[self._ann_ix])
+-        return L
+\ No newline at end of file
++        return L
++
++    # @added. The TRAJECTORY penalty seam.
++    #
++    # WHY IT IS HERE AND NOT IN loss(). The parent's training closure is
++    #
++    #     Loss = self.loss(...)  ->  self.optimizer.zero_grad()  ->  Loss.backward()
++    #
++    # so anything backwarded inside `loss()` is wiped by the closure's own `zero_grad` a moment
++    # later. That is measured, not feared: `checks_v6.check_accumulation_hook_survives_zero_grad`
++    # runs both orders and the wrong one loses the penalty entirely. The specification's ordering
++    # (Sect. 8.1) is zero_grad; backward J_base; accumulate eta-only gradients; clip; step.
++    #
++    # WHY IT IS A CLOSURE WRAPPER AND NOT A COPY OF fit(). The closure is defined inside the
++    # parent's `fit()`, so a subclass cannot reach it without duplicating that ~100-line loop,
++    # and a duplicate would drift from Jan's. Instead this override wraps the optimizer's `step`
++    # so that `fit()` still passes ITS closure to what it believes is the optimizer, and the
++    # wrapper interposes the accumulation between that closure returning and the update being
++    # applied. Jan's `fit()` is not modified.
++    #
++    # THE REFRESH HAZARD, fixed 2026-09-08 after review. The first version wrapped
++    # `self.optimizer` BEFORE calling `super().fit()`. The parent may then REPLACE the optimizer:
++    # `init_model` constructs one when `init_model_done` is False, and
++    # `_check_and_refresh_optimizer_if_needed` calls `_refresh_optimizer`, which does
++    # `self.optimizer = optimizer_new` (deepSI fit_system.py:527-531) on a system loaded from a
++    # file. Either path drops the wrapper, and the penalty then silently never fires -- on a
++    # RESUME, which is exactly when it would be least noticed. The wrapper is now installed
++    # through a property, so any assignment to `self.optimizer` re-wraps, and the step count is
++    # reconciled against the hook's call count at the end of fit rather than assumed.
++    # THE CHECKPOINT SEAM deepSI ACTUALLY USES, and it is not `__getstate__`.
++    #
++    # Found 2026-09-08 on the second real training run. `checkpoint_save_system` does
++    # `torch.save(self.__dict__, file)` -- it pickles a PLAIN DICT, so the object's
++    # `__getstate__` is never called and the exclusion added for it was inert. The run died with
++    # "Can't pickle local object 'run_arm.<locals>.observer'", one layer deeper than the first
++    # time and for the same underlying reason: the penalty hook must not be in a checkpoint.
++    #
++    # `checkpoint_load_system` is the mirror hazard and is worse, because it fails SILENTLY:
++    # `self.__dict__ = torch.load(file)` REPLACES the dictionary wholesale, so a system that
++    # loads its best checkpoint -- which deepSI does at the END of every fit -- would come back
++    # without `traj_penalty` and without `_optimizer`. The first is a training-time object that
++    # the caller still holds a reference to; the second would make the very next fit refuse to
++    # start. Both are carried across the replacement here.
++    _TRAJ_UNPICKLABLE = ('traj_penalty',)
++    # Counters that must SURVIVE deepSI's end-of-fit `self.__dict__ = torch.load(...)`.
++    # They live in __dict__ like everything else, so the load silently reset them to whatever
++    # was in the checkpoint -- which was written at the FIRST validation, before any step. The
++    # end-of-fit reconciliation then reported "no optimizer step" on a run that had taken three.
++    # A bookkeeping bug, but one that made a correct run look broken, which is the same
++    # category as the false alarm it replaced.
++    _TRAJ_COUNTERS = ('_traj_wrapping', '_traj_hook_calls', '_traj_steps')
++
++    def checkpoint_save_system(self, *args, **kwargs):
++        stash = {k: self.__dict__.pop(k) for k in self._TRAJ_UNPICKLABLE
++                 if k in self.__dict__}
++        try:
++            return super().checkpoint_save_system(*args, **kwargs)
++        finally:
++            self.__dict__.update(stash)
++
++    def checkpoint_load_system(self, *args, **kwargs):
++        stash = {k: self.__dict__.get(k)
++                 for k in self._TRAJ_UNPICKLABLE + self._TRAJ_COUNTERS}
++        out = super().checkpoint_load_system(*args, **kwargs)
++        # The load replaced __dict__; put back what was never saved, and re-run the legacy
++        # optimizer migration, because a file written before the property existed carries
++        # `optimizer` rather than `_optimizer`.
++        opt = self.__dict__.pop('optimizer', None)
++        if opt is not None and self.__dict__.get('_optimizer') is None:
++            self.__dict__['_optimizer'] = opt
++        for k, v in stash.items():
++            if v is not None:
++                self.__dict__[k] = v
++        # RE-WRAP AFTER A LOAD, if one happens while a fit is in progress.
++        #
++        # deepSI loads the best checkpoint at the END of every fit, and `self.__dict__ = ...`
++        # installs a freshly unpickled optimizer that carries no wrapper. Two consequences, and
++        # the second is the one that matters:
++        #
++        #   - the end-of-fit reconciliation saw an unwrapped optimizer and reported the run
++        #     INVALID even though every step had had the penalty applied (3 of 3). A false alarm
++        #     on a correct run is not harmless: it is the kind of thing that gets a guard deleted
++        #   - a load DURING a fit -- which deepSI also does -- would have silently unwrapped the
++        #     optimizer and trained the remainder without the penalty. That one is real, and it
++        #     is the failure the property exists to prevent, arriving by the one route the
++        #     property does not see.
++        #
++        # Re-wrapping here closes both. It is gated on `_traj_wrapping` so a load outside a fit
++        # leaves a plain optimizer, which is what a caller inspecting a restored system expects.
++        # REBIND THE ADAPTER BEFORE ANYTHING ELSE TOUCHES IT.
++        #
++        # Restoring the hook object is not enough, and this was a real defect: the hook's adapter
++        # caches the encoder, the ANN block and the physical block as SNAPSHOTS taken when it was
++        # built. This load has just replaced every one of them inside a system object whose
++        # identity is unchanged, so without rebinding the adapter drives the NEW dynamics through
++        # `fit_sys.simulate` while gating the OLD ANN block and owning the OLD parameters. The
++        # gating half of the interventions then applies to a module outside the rollout, so the
++        # penalty is computed for a DIFFERENT, unspecified intervention, and gradients land on
++        # orphaned tensors. Note it does not simply vanish: `scored_stack` zeros the latent
++        # initialisation for non-full modes regardless of the gate, so `d` generally stays
++        # nonzero. Nothing raises, and the reported value still looks reasonable.
++        hook = self.traj_penalty
++        ad = getattr(hook, 'adapter', None) if hook is not None else None
++        if ad is not None and hasattr(ad, 'rebind'):
++            ad.rebind(self)
++            if hasattr(ad, 'assert_bound'):
++                ad.assert_bound()
++            # The hook's cached group list, if it holds one, is stale for the same reason.
++            if getattr(hook, '_groups', None) is not None:
++                hook._groups = ad.parameter_groups()
++        if (getattr(self, '_traj_wrapping', False) and self.traj_penalty is not None
++                and self.__dict__.get('_optimizer') is not None):
++            self._wrap_optimizer_step(self.__dict__['_optimizer'])
++        return out
++
++    def __getstate__(self):
++        """Keep the trajectory penalty OUT of the checkpoint.
++
++        Found 2026-09-08 by the first real training run, which died at the first validation:
++
++            AttributeError: Can't pickle local object 'run_arm.<locals>.logged'
++
++        deepSI's `checkpoint_save_system` pickles `self.__dict__` wholesale, and `traj_penalty`
++        is in it. That is wrong on three counts, of which the crash is the least important:
++
++          - the hook holds an ADAPTER, which holds the window tensors, the environment and the
++            model itself, so the checkpoint would balloon and contain the training data
++          - it holds the frozen GEOMETRY, which is already persisted as its own artifact with
++            its own provenance. Two copies is one too many, and the checkpoint's copy carries no
++            provenance at all
++          - a checkpoint carrying a live penalty object cannot be loaded anywhere the adapter
++            cannot be imported
++
++        The penalty is training-time state, not model state: it is reattached by
++        `train_orth.py` from the geometry artifact. Dropping it here also removes the pickling
++        constraint from anything a caller attaches to the hook, such as live meters.
++        """
++        state = dict(self.__dict__)
++        state.pop('traj_penalty', None)
++        return state
++
++    def __setstate__(self, state):
++        """Migrate a checkpoint pickled BEFORE `optimizer` became a property.
++
++        Added 2026-09-08 after review. `optimizer` is now a data descriptor on the class, and a
++        data descriptor SHADOWS an instance `__dict__` entry of the same name. A system pickled
++        before this change carries `__dict__['optimizer']`, so after unpickling `self.optimizer`
++        would resolve through the property to `self._optimizer`, which is None: the restored
++        optimizer would be silently LOST and `fit` would refuse to start (or, worse, a caller
++        that tolerates None would train without the moments it thought it had). The stale entry
++        is moved into the backing field and removed.
++        """
++        opt = state.pop('optimizer', None)
++        if opt is not None and state.get('_optimizer') is None:
++            state['_optimizer'] = opt
++        self.__dict__.update(state)
++        # `traj_penalty` was deliberately not saved (see __getstate__); fall back to the class
++        # default so a restored system is a plain one until a penalty is reattached.
++        self.__dict__.pop('traj_penalty', None)
++
++    @property
++    def optimizer(self):
++        return self._optimizer
++
++    @optimizer.setter
++    def optimizer(self, opt):
++        self._optimizer = opt
++        if opt is not None and getattr(self, 'traj_penalty', None) is not None \
++                and getattr(self, '_traj_wrapping', False):
++            self._wrap_optimizer_step(opt)
++
++    _TRAJ_ALLOWED_OPTIMIZERS = (torch.optim.Adam, torch.optim.AdamW, torch.optim.SGD,
++                                torch.optim.RMSprop, torch.optim.Adagrad)
++
++    def _assert_optimizer_supported(self, opt):
++        """Validate EVERY optimizer this seam accepts, not just the one `fit` started with.
++
++        Added 2026-09-08 after review. The rejection used to live at the top of `fit()`, so a
++        REPLACEMENT optimizer -- which is the whole reason the property exists -- was wrapped
++        without being checked. An L-BFGS refresh would then have been accepted mid-run by the
++        very mechanism added to make refreshes safe.
++
++        Allow-list rather than deny-list: an optimizer nobody has reasoned about is refused, and
++        the failure names it. A deny-list silently accepts whatever is added to torch next.
++        """
++        if isinstance(opt, torch.optim.LBFGS):
++            raise RuntimeError(
++                'L-BFGS is REFUSED with the trajectory penalty. Its line search evaluates the '
++                'closure several times per step and picks a step length from the returned '
++                'BASE-LOSS values, while the gradient it descends has an eta-only penalty term '
++                'added. Those are two different objectives, so the search is inconsistent '
++                'regardless of whether accumulation is skipped on the no-backward evaluations: '
++                'suppressing it there hides the inconsistency rather than repairing it.')
++        if not isinstance(opt, self._TRAJ_ALLOWED_OPTIMIZERS):
++            raise RuntimeError(
++                '%s has not been analysed against the trajectory penalty and is refused. The '
++                'seam assumes one closure evaluation per step whose gradients the update then '
++                'consumes directly; an optimizer that re-evaluates, or that rescales gradients, '
++                'breaks the ordering contract of spec Sect. 8.1. Allowed: %s.'
++                % (type(opt).__name__,
++                   ', '.join(c.__name__ for c in self._TRAJ_ALLOWED_OPTIMIZERS)))
++        return opt
++
++    def _wrap_optimizer_step(self, opt):
++        if getattr(opt, '_traj_wrapped', False):
++            return opt
++        self._assert_optimizer_supported(opt)
++        hook = self.traj_penalty
++        real_step = opt.step
++        outer = self
++
++        def step_with_penalty(closure=None, **step_kwargs):
++            if closure is None:
++                # No closure means no base backward in this call, so there is nothing to
++                # accumulate ON TOP OF and the ordering contract does not apply. Refused rather
++                # than silently skipped: a caller in that shape is not running this method.
++                raise RuntimeError(
++                    'the trajectory penalty is attached but the optimizer was stepped without a '
++                    'closure. The penalty gradient must be added after the base backward and '
++                    'before the update, and there is no base backward to follow here.')
++
++            def wrapped(*c_args, **c_kwargs):
++                loss = closure(*c_args, **c_kwargs)
++                backward = (c_args[0] if c_args else c_kwargs.get('backward', True))
++                if backward:
++                    hook(outer)
++                    outer._traj_hook_calls += 1
++                return loss
++
++            outer._traj_steps += 1
++            return real_step(wrapped, **step_kwargs)
++
++        opt.step = step_with_penalty
++        opt._traj_wrapped = True
++        opt._traj_real_step = real_step
++        return opt
++
++    @staticmethod
++    def _unwrap_optimizer_step(opt):
++        if opt is not None and getattr(opt, '_traj_wrapped', False):
++            opt.step = opt._traj_real_step
++            del opt._traj_wrapped, opt._traj_real_step
++
++    def fit(self, *args, **kwargs):
++        if self.traj_penalty is None:
++            return super().fit(*args, **kwargs)
++
++        # UNSUPPORTED MODES FAIL HERE, LOUDLY. The specification's warning is that a mode which
++        # merely LOOKS supported is worse than one that is refused: the run completes and its
++        # objective is not the declared one.
++        opt = getattr(self, '_optimizer', None)
++        if opt is None:
++            raise RuntimeError(
++                'the trajectory penalty is attached but no optimizer exists yet. Call '
++                'init_model() before fit(): the parent would otherwise construct the optimizer '
++                'itself midway through fit, and the geometry was built against a specific '
++                'parameter set (the converted encoder), so an optimizer created later may not '
++                'own the same parameters.')
++        self._assert_optimizer_supported(opt)
++        if kwargs.get('concurrent_val'):
++            raise RuntimeError(
++                'concurrent_val is REFUSED with the trajectory penalty: the penalty is evaluated '
++                'on a fixed window set through the same model, and a concurrent validation '
++                'thread mutating or moving that model mid-accumulation has not been analysed.')
++        if getattr(self, 'scaler', None) is not None:
++            raise RuntimeError(
++                'automatic mixed precision is REFUSED with the trajectory penalty: the base '
++                'gradients are scaled and the penalty gradient added here would not be, so the '
++                'two would enter the update at different scales. Start from the verified '
++                'non-AMP path (spec Sect. 8.1).')
++
++        self._traj_wrapping = True
++        self._traj_hook_calls = 0
++        self._traj_steps = 0
++        calls0 = self.traj_penalty.calls
++        self._wrap_optimizer_step(opt)
++        try:
++            return super().fit(*args, **kwargs)
++        finally:
++            self._traj_wrapping = False
++            cur = getattr(self, '_optimizer', None)
++            # RECONCILIATION, and it has to be done THIS way round. Counting hook calls against
++            # `_traj_steps` cannot detect a lost wrapper, because `_traj_steps` is incremented
++            # inside the wrapper: if the wrapper goes, BOTH counters stay at zero and the
++            # mismatch test passes vacuously. That was the first version of this guard and the
++            # regression test in `test_fit_override.py` caught it being useless.
++            #
++            # What actually detects it is the state of the optimizer the fit ENDED with: if it
++            # is not the wrapped one, the property failed to re-wrap a replacement and some
++            # portion of the run trained without the penalty it reports.
++            lost = cur is not None and not getattr(cur, '_traj_wrapped', False)
++            self._unwrap_optimizer_step(cur)
++            done = self.traj_penalty.calls - calls0
++            if lost:
++                raise RuntimeError(
++                    'the optimizer this fit ended with was NOT the wrapped one, so the '
++                    'trajectory penalty stopped being applied at some point during the run '
++                    '(%d applications recorded). The parent replaces `self.optimizer` on a '
++                    'resumed system (deepSI _refresh_optimizer), and the property that re-wraps '
++                    'it did not fire. The run is INVALID: part of it optimised a different '
++                    'objective than the one it reports.' % done)
++            if self._traj_steps and done != self._traj_steps:
++                raise RuntimeError(
++                    'the trajectory penalty fired %d time(s) across %d optimizer step(s). They '
++                    'must match; a shortfall means some steps were taken without it.'
++                    % (done, self._traj_steps))
++            if self._traj_steps == 0:
++                print('[traj-orth] WARNING: fit() completed without a single optimizer step, so '
++                      'the penalty was never applied.')
+\ No newline at end of file
+diff --git a/model_augmentation/systems/gantry_linearization.py b/model_augmentation/systems/gantry_linearization.py
+index f832901..19db183 100644
+--- a/model_augmentation/systems/gantry_linearization.py
++++ b/model_augmentation/systems/gantry_linearization.py
+@@ -20,8 +20,26 @@ where
+ 
+ Note: Ac equals Ax from build_G_matrix_entries **only at Y_op=0** where Bw@w
+ vanishes (w depends on Y * z, and z depends on Y, so at Y=0 the LFR feedback
+-is zero). For Y_op != 0, the frozen-Y linearization must account for the LFR
+-loop gain, which is not implemented here.
++is zero).
++
++CHANGED (D-167): Y_op != 0 IS now implemented, and the earlier claim that it "must account for
++the LFR loop gain" was wrong as stated. The LFR is a REALISATION of M(Y)^{-1} with constant
++matrices plus a feedback path; it is not extra dynamics. Freezing Y lets M(Y)^{-1} be evaluated
++in the closed form the LFR itself encodes,
++
++    M(Y)^{-1} = N(Y) / d(Y),
++    N(Y) = N0 + Y N1 + Y^2 N2                                  (gantry_ss.build_poly_constants)
++    d(Y) = mh (alpha gamma - beta^2 + 2 beta mh Y + mh (alpha - mh) Y^2)
++
++so the frozen-Y linearisation is simply
++
++    Ac(Y) = [[0, I], [-M(Y)^{-1} K, -M(Y)^{-1} C]],   Bu(Y) = [[0], [M(Y)^{-1}]]
++
++with Bu in LOGICAL forces, exactly as build_G_matrix_entries defines it. Verified against the
++pipeline's own Gantry_State_Block by central-difference Jacobian at Y = -0.36 .. +0.36:
++max|Ad_fd - Ad_zoh| = 6.2e-09 to 9.6e-09, no worse off-centre than at Y = 0.
++At Y = 0 the polynomial reduces to N0/d0 term by term, so this path is numerically identical to
++the previous one and the change is an exact no-op wherever it is already used.
+ """
+ 
+ import numpy as np
+@@ -40,33 +58,37 @@ def gantry_linearize_and_discretize(dt: float, Y_op: float = 0.0):
+     dt : float
+         Discrete-time sample period [s], e.g. 1/4000 for FS_NEW = 4 kHz.
+     Y_op : float
+-        Frozen operating point for q3 [m]. Currently only Y_op=0.0 is
+-        supported (the equilibrium where the LFR feedback vanishes).
++        Frozen operating point for q3 [m]. Any value in the machine's operating
++        range is supported (D-167); the model is well posed wherever d(Y) != 0,
++        which over the measured range Y in [-0.36, +0.36] holds with a large
++        margin (min d(Y) = 2062, min eig M(Y) = 3.74).
+ 
+     Returns
+     -------
+     Ad, Bd, Cd, Dd : np.ndarray
+         Discrete-time state-space matrices (float64).
+     """
+-    if Y_op != 0.0:
+-        raise NotImplementedError(
+-            "Frozen-Y linearization at Y_op != 0 not implemented yet. "
+-            "At Y_op != 0, the LFR feedback loop contributes to the "
+-            "linearization and must be accounted for."
+-        )
+-
+     # --- Compute CT matrices from gantry_ss ---
+-    # THEORY: build_poly_constants gives N0 for M0^{-1} = N0/d0
++    # THEORY: build_poly_constants gives N0, N1, N2 for M(Y)^{-1} = N(Y)/d(Y)
+     alpha, beta, gamma, N0, N1, N2 = gss.build_poly_constants(
+         gss.m1, gss.m2, gss.mb, gss.mh, gss.Jb, gss.Jh, gss.Lb, gss.d
+     )
+-    # THEORY: d0 = det(M0) = mh * (alpha*gamma - beta^2)
+-    d0 = gss.mh * (alpha * gamma - beta ** 2)
+-
+-    # THEORY: build_G_matrix_entries returns Ax = [[0, I]; [-M0inv@K, -M0inv@C]]
+-    # and Bu = [[0]; [M0inv @ P]]  (input in logical coordinates)
++    # CHANGED (D-167): the FROZEN-Y numerator and denominator, evaluated in the same torch dtype
++    # flow as before so that Y_op = 0 reduces term by term to the previous N0 / d0 and the change
++    # is an exact no-op there. THEORY: lpv_lfr_baseline/core/lfr_forward.py:70-76.
++    #   d(Y) = mh (alpha gamma - beta^2 + 2 beta mh Y + mh (alpha - mh) Y^2)
++    #   N(Y) = N0 + Y N1 + Y^2 N2
++    dY = gss.mh * (alpha * gamma - beta ** 2
++                   + 2 * beta * gss.mh * Y_op
++                   + gss.mh * (alpha - gss.mh) * Y_op ** 2)
++    NY = N0 + Y_op * N1 + Y_op ** 2 * N2
++
++    # THEORY: build_G_matrix_entries returns Ax = [[0, I]; [-Minv@K, -Minv@C]]
++    # and Bu = [[0]; [Minv]]  (input in logical coordinates). It takes the numerator and the
++    # denominator as arguments and forms Minv = N/d internally, so passing the frozen-Y pair
++    # gives the frozen-Y linearisation with no second implementation of the same algebra.
+     Ax, _Bw, Bu, _A_combined = gss.build_G_matrix_entries(
+-        N0, d0, gss.M1, gss.M2, gss.K, gss.C
++        NY, dY, gss.M1, gss.M2, gss.K, gss.C
+     )
+ 
+     Ac = Ax.numpy().astype(np.float64)  # (6, 6)
