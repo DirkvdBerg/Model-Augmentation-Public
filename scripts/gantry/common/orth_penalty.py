@@ -45,7 +45,7 @@ from model_augmentation.fit_systems.blocks import Parameterized_Gantry_State_Blo
 from model_augmentation.fit_systems.orth_projection import OrthProjectionPenalty
 from model_augmentation.systems.gantry_ss import P
 
-from .config import RunConfig, save_dir
+from gantry_dynamic.config import RunConfig, save_dir
 
 _F64 = torch.float64
 

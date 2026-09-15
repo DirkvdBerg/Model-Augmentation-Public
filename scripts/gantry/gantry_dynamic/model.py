@@ -122,7 +122,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
     # zero-projection-plus-zero-gate saddle is arXiv:2607.16568). Addresses the W^a dead zone
     # (D-130, gate G1).
     if os.environ.get('ANN_REZERO_GATE'):
-        from .rezero_gate import apply_rezero_gate
+        from common.rezero_gate import apply_rezero_gate
         _alpha = apply_rezero_gate(ann_block.net)
         print(f"[rezero] final layer re-initialised + zero scalar gate (alpha={float(_alpha):.1f}); "
               f"ANN output is still exactly zero at init")
@@ -257,8 +257,26 @@ def build_model(hp, cfg: RunConfig, data, norm):
     # always a real one; the observe branch (attach with beta possibly 0) is gone with the
     # field. `orth=False` also skips the basis build, which the observe mode always paid for.
     if cfg.orth:
-        from .orth_penalty import build_orth_penalty
+        from common.orth_penalty import build_orth_penalty
         fit_sys.orth_penalty = build_orth_penalty(cfg, data, norm)
+
+    # Burn-in (D-178), attached the same way and for the same reason: 0 is the exact no-op, so
+    # this line changes nothing for every run before it existed.
+    #
+    # The assert is NOT ceremony. The slice lives in `SSE_Interconnect_Composed.loss`, which
+    # re-implements the reduction rather than calling `super().loss()`; the base class's own
+    # `loss` therefore ignores `burn_in` entirely. Setting the attribute on a system built from
+    # any other class would leave a run silently optimising the OLD objective while its
+    # config.json claimed BURN_IN=100, which is a wrong experiment rather than a crash. Checked
+    # against the class, not the instance, because the attribute would otherwise appear to exist
+    # the moment we set it.
+    if cfg.burn_in and not any('burn_in' in k.__dict__ for k in type(fit_sys).__mro__):
+        raise RuntimeError(
+            'burn_in=%d was requested but %s declares no `burn_in`, so its loss() cannot honour '
+            'it and the run would silently optimise the full window while config.json recorded '
+            'the burn-in. The slice lives in SSE_Interconnect_Composed.loss (D-178).'
+            % (cfg.burn_in, type(fit_sys).__name__))
+    fit_sys.burn_in = cfg.burn_in
 
     return fit_sys
 

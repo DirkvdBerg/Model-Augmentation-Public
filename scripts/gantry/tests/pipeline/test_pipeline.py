@@ -311,6 +311,17 @@ class TestConfigValidation(unittest.TestCase):
     def test_defaults_are_a_no_op(self):
         self.assertFalse(self.cfg.lbfgs)
         self.assertEqual(self.cfg.start_phase, 'adam')
+        self.assertEqual(self.cfg.burn_in, 0)          # D-178: the pre-D-178 objective
+
+    def test_burn_in_must_leave_something_to_score(self):
+        replace(self.cfg, burn_in=self.cfg.nf - 1)     # legal, one sample scored
+        for bad in (-1, self.cfg.nf, self.cfg.nf + 1):
+            with self.assertRaises(ValueError, msg='burn_in=%r was accepted' % bad):
+                replace(self.cfg, burn_in=bad)
+
+    def test_burn_in_reaches_config_json(self):
+        from gantry_dynamic.config import config_json_dict
+        self.assertEqual(config_json_dict(replace(self.cfg, burn_in=100))['BURN_IN'], 100)
 
     def test_bad_start_phase(self):
         with self.assertRaises(ValueError):
@@ -682,6 +693,66 @@ class TestPolishAgainstFixture(unittest.TestCase):
         self.assertEqual(b.n_chunks, 4)
         self.assertTrue(torch.equal(torch.cat([c[0] for c in a]),
                                     torch.cat([c[0] for c in b])))
+
+    # ---- burn-in (D-178) ------------------------------------------------------------------------
+
+    def test_burn_in_zero_is_the_old_objective_bit_exactly(self):
+        """The default must not perturb a single run that predates the knob."""
+        uh, yh, uf, yf, kw, _w = next(iter(FixedBatch(
+            self.fit_sys, self.data.train_data, self.lk, 16, 42, verbose=False)))
+        self.fit_sys.burn_in = 0
+        with torch.no_grad():
+            a = float(self.fit_sys.loss(uh, yh, uf, yf, **kw))
+            b = float(self.fit_sys.loss(uh, yh, uf, yf, **kw))
+        self.assertEqual(a, b, 'the loss is not even reproducible; the rest of this means nothing')
+        self.assertTrue(np.isfinite(a))
+
+    def test_burn_in_scores_exactly_the_slice(self):
+        """`burn_in=K` must equal the MSE over [K, nf), computed independently of the loss."""
+        import torch.nn.functional as F
+        uh, yh, uf, yf, kw, _w = next(iter(FixedBatch(
+            self.fit_sys, self.data.train_data, self.lk, 16, 42, verbose=False)))
+        K = 100
+        try:
+            with torch.no_grad():
+                x = self.fit_sys.encoder(uh, yh)
+                y_pred, _ = self.fit_sys.simulate(x, uf, yf, **kw)
+                want = float(F.mse_loss(yf[:, K:], y_pred[:, K:]))
+                self.fit_sys.burn_in = K
+                got = float(self.fit_sys.loss(uh, yh, uf, yf, **kw))
+        finally:
+            self.fit_sys.burn_in = 0
+        # This fixture has orth OFF and joint estimation OFF, so loss() is the MSE alone.
+        self.assertAlmostEqual(got, want, delta=abs(want) * 1e-9,
+                               msg='burn_in did not score exactly [K, nf)')
+
+    def test_burn_in_changes_the_loss(self):
+        """A burn-in that changed nothing would be a silent no-op, which is the failure to fear."""
+        uh, yh, uf, yf, kw, _w = next(iter(FixedBatch(
+            self.fit_sys, self.data.train_data, self.lk, 16, 42, verbose=False)))
+        try:
+            with torch.no_grad():
+                self.fit_sys.burn_in = 0
+                full = float(self.fit_sys.loss(uh, yh, uf, yf, **kw))
+                self.fit_sys.burn_in = 100
+                scored = float(self.fit_sys.loss(uh, yh, uf, yf, **kw))
+        finally:
+            self.fit_sys.burn_in = 0
+        self.assertNotEqual(full, scored)
+        # grow < 1 on this pipeline, i.e. the window error DECAYS, so dropping the transient must
+        # LOWER the score. That is the whole premise of D-178 and it is checked, not assumed.
+        self.assertLess(scored, full, 'the window is not transient-dominated on this fixture')
+
+    def test_burn_in_past_the_window_raises(self):
+        uh, yh, uf, yf, kw, _w = next(iter(FixedBatch(
+            self.fit_sys, self.data.train_data, self.lk, 16, 42, verbose=False)))
+        try:
+            self.fit_sys.burn_in = uf.shape[1] + 1
+            with self.assertRaises(ValueError):
+                with torch.no_grad():
+                    self.fit_sys.loss(uh, yh, uf, yf, **kw)
+        finally:
+            self.fit_sys.burn_in = 0
 
     # ---- the phase ------------------------------------------------------------------------------
 

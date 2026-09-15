@@ -62,7 +62,7 @@ class ZeroMeanPin(nn.Module):
 
 def build_zeromean_pin(cfg, data, norm, beta=BETA_DEFAULT, stride=100, verbose=True):
     """Z_pts from the training records (data-derived states, x_aug=0, normalized u)."""
-    from .orth_penalty import _x_logical_from_data   # same state construction (D-111)
+    from common.orth_penalty import _x_logical_from_data  # same construction (D-111)
     xs, us = [], []
     for sd in data.train_list:
         xl = _x_logical_from_data(sd)                                  # (N,6) physical

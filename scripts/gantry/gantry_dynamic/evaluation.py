@@ -27,7 +27,7 @@ from .model import get_encoder_dims
 from .baselines import stepwise_rollout
 from .diagnostics import (r2_per_channel, best_affine_r2, heldout_affine_r2,
                           best_single_channel_r2, zeroed_ann_validation)
-from . import oracle as _oracle
+from common import oracle as _oracle
 
 
 def capture_loss_history(fit_sys, cfg: RunConfig, save_dir, rid):

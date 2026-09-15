@@ -58,6 +58,20 @@ class RunConfig:
     fs_orig: int = 20000
     fs_new: Optional[int] = 4000   # None = no downsampling (use fs_orig)
     stride: int = 10               # keep every STRIDE-th BPTT window (STRIDE=1 = every window)
+    # ═══ Objective (D-178) ════════════════════════════════════════════════════
+    # Samples discarded from the SCORE at the start of every training window. 0 = score the whole
+    # window and is bit-identical to every run before D-178; a non-zero value is a DIFFERENT
+    # objective, so runs across the two are not comparable on training loss (BURN_IN is recorded
+    # in config.json so they are at least distinguishable).
+    # WHY IT EXISTS: at nf=400 the window is transient-dominated. Every `[nf]` line of every run
+    # reports grow = RMS(last step)/RMS(first) between 0.46 and 0.81, i.e. the error DECAYS across
+    # the window, so scoring the start pays the optimiser to sharpen x_0 -- which a 12 s free run
+    # pays once at t=0 and forgets. Jobs 81692/81693 measured the consequence directly: the
+    # encoder produced ~85% of an L-BFGS phase's loss reduction and only ~47% of its free-run
+    # gain, 6.6x less efficient per unit of loss than the hfn's share.
+    # AFFECTS TRAINING ONLY. `simulator.validation_error` never calls `loss()`, so selection, the
+    # 12 s free run and every diagnostic are untouched by construction rather than by a flag.
+    burn_in: int = 0
     use_f64: bool = False
     save_flag: bool = True
     nf_probe_print: bool = True    # print per-epoch train/val nf-window RMS (D-095 probe); runtime-only, not in hp
@@ -263,6 +277,14 @@ class RunConfig:
         Runs on construction AND on dataclasses.replace, so a config derived from this one
         cannot reach a contradictory state either. Assigns nothing, so frozen=True holds.
         """
+        # D-178. Checked HERE, once, rather than per batch inside the loss: `nf` is a property of
+        # this config, so the only place the two can disagree is at construction.
+        if not 0 <= self.burn_in < self.nf:
+            raise ValueError(
+                'burn_in=%r is not a valid number of samples for an nf=%d window. It is how many '
+                'samples at the START of each window are excluded from the SCORE, so it must be '
+                'at least 0 (score everything, the pre-D-178 objective) and strictly less than '
+                'nf, or there is nothing left to score.' % (self.burn_in, self.nf))
         if self.orth and self.orth_beta <= 0:
             raise ValueError(
                 'orth=True with orth_beta=%r is not a state. `orth` is the switch and '
@@ -521,6 +543,7 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
         #   STATE_LAYOUT  the model/training hyperparameters not already in `hp`
         ANN_ROUTE_IX=list(cfg.ann_route_ix),
         STRIDE=cfg.stride,
+        BURN_IN=cfg.burn_in,        # D-178: 0 = the pre-D-178 objective; non-zero = a different one
         N_ITS=cfg.n_its,
         ITS_PER_VAL=cfg.its_per_val,
         NF_SECONDS=cfg.nf_seconds,
@@ -564,6 +587,8 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
         LBFGS_FREEZE=list(cfg.lbfgs_freeze),
         LBFGS_TIME_BUDGET_S=cfg.lbfgs_time_budget_s,
         LBFGS_METER_REL_TOL=cfg.lbfgs_meter_rel_tol,
+        # Appended 2026-09-08. The TRAJECTORY penalty is a different regulariser from ORTH_*
+        # above, not a variant of it, so it gets its own keys rather than overloading those.
         START_PHASE=cfg.start_phase,
         # Which CODE ran, as opposed to what it was asked to do. None when the caller did not
         # look it up; the entry point passes git_provenance().
