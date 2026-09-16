@@ -36,13 +36,19 @@ class RunConfig:
     encoder_init: str = 'linear_map'
     # ann_activation: 'linear' = Identity activation (Jan's ECC setup, D-071); 'tanh' = nonlinear ANN
     ann_activation: str = 'tanh'
-    joint_estimation: bool = False  # D-076: True = trainable damping/stiffness scalars
+    joint_estimation: bool = False  # D-076: True = train physical parameters
+    # CHANGED (D-191): choose the coordinates used when joint_estimation=True.
+    physics_parameterization: str = 'raw'  # 'raw' (14 scalars) or 'reduced' (10 combinations)
     param_rmse_baseline: float = 0.01  # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
     # D-076 run design: None = start at true values (run T: measures absorber-induced bias).
     # A 14-vector aligned to PARAM_NAMES = detuned start (run D: recovery test).
     # NOTE: param_loss anchors to the (possibly detuned) INIT values -- Jan's prior semantics.
     param_init_detune: Optional[List[float]] = field(default_factory=lambda: [
         1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90, 0.90, 1.10, 0.90, 1.10, 0.90, 0.90, 1.10])
+    # HEURISTIC (D-191): multiplicative initialization factors in COMBO_NAMES order.
+    # This is separate from param_init_detune so raw gauge choices cannot alter the requested
+    # perturbation of an identifiable combination. None starts at the nominal combinations.
+    combo_init_detune: Optional[List[float]] = None
     # --- Output noise (Jan's ECC noise-floor convention, D-078) ---
     # sigma_n = rms(y) * 10^(-SNR/20); reaching sigma_n on val sim-RMS = acceptance floor.
     snr: Optional[int] = None   # dB: 50/55/60; None = noiseless (supervisor 07-07: make it work without noise first)
@@ -277,6 +283,28 @@ class RunConfig:
         Runs on construction AND on dataclasses.replace, so a config derived from this one
         cannot reach a contradictory state either. Assigns nothing, so frozen=True holds.
         """
+        if self.physics_parameterization not in ('raw', 'reduced'):
+            raise ValueError("physics_parameterization must be 'raw' or 'reduced', got %r"
+                             % (self.physics_parameterization,))
+        if self.param_init_detune is not None and len(self.param_init_detune) != 14:
+            raise ValueError('param_init_detune must contain 14 raw-parameter factors')
+        if self.combo_init_detune is not None and len(self.combo_init_detune) != 10:
+            raise ValueError('combo_init_detune must contain 10 identifiable-combination factors')
+        for _name, _factors in (('param_init_detune', self.param_init_detune),
+                                ('combo_init_detune', self.combo_init_detune)):
+            if (_factors is not None
+                    and (not np.isfinite(_factors).all() or np.any(np.asarray(_factors) <= 0))):
+                raise ValueError(f'{_name} factors must be finite and positive')
+        if (self.joint_estimation and self.physics_parameterization == 'reduced'
+                and self.param_init_detune is not None):
+            raise ValueError(
+                'Reduced joint estimation cannot use param_init_detune. Set it to None and use '
+                'combo_init_detune so detuning is defined in the identifiable coordinates.')
+        if (self.joint_estimation and self.physics_parameterization == 'raw'
+                and self.combo_init_detune is not None):
+            raise ValueError(
+                'Raw joint estimation cannot use combo_init_detune. Set it to None and use '
+                'param_init_detune for the fourteen raw coordinates.')
         # D-178. Checked HERE, once, rather than per batch inside the loss: `nf` is a property of
         # this config, so the only place the two can disagree is at construction.
         if not 0 <= self.burn_in < self.nf:
@@ -518,8 +546,10 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
         ANN_ACTIVATION=cfg.ann_activation, FS_NEW=cfg.fs_new_hz, D=cfg.d,
         FS_ORIG=cfg.fs_orig, SEED=cfg.seed, SNR=cfg.snr,
         JOINT_ESTIMATION=cfg.joint_estimation,
+        PHYSICS_PARAMETERIZATION=cfg.physics_parameterization,
         PARAM_RMSE_BASELINE=cfg.param_rmse_baseline,
         PARAM_INIT_DETUNE=cfg.param_init_detune,
+        COMBO_INIT_DETUNE=cfg.combo_init_detune,
         ORTH_BETA=cfg.orth_beta,
         ORTH_POINT_STRIDE=cfg.orth_point_stride,
         ORTH_RANK_TOL=cfg.orth_rank_tol,

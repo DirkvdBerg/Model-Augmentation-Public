@@ -270,12 +270,13 @@ def load_checkpoint(fit_sys, base_path, joint_estimation, start_phase='adam'):
     """Restore weights (+ Adam state on an 'adam' start) from either format; return the meta."""
     hfn_sd, enc_sd, optim_sd, meta, fmt = resolve_checkpoint(base_path)
     _assert_same_dtype(fit_sys, hfn_sd)
-    # D-076: JE checkpoints carry log_params; pre-JE checkpoints cannot resume a JE run.
-    # Applied to the NORMALISED state dict, so it protects both formats identically.
-    if joint_estimation and not any('log_params' in k for k in hfn_sd):
+    # CHANGED (D-191): raw JE checkpoints carry log_params; reduced JE checkpoints carry
+    # free_params. The exact architecture check below rejects cross-parameterization resumes.
+    if joint_estimation and not any(
+            k.endswith(('log_params', 'free_params')) for k in hfn_sd):
         raise RuntimeError(
-            'RESUME_CHECKPOINT points at a pre-JE checkpoint (no log_params); '
-            'JOINT_ESTIMATION runs must start from fresh checkpoints (D-076)')
+            'RESUME_CHECKPOINT points at a pre-JE checkpoint (no physical parameter vector); '
+            'JOINT_ESTIMATION runs must start from a matching JE checkpoint')
     _assert_same_architecture(fit_sys.hfn.state_dict(), hfn_sd, 'hfn')
     _assert_same_architecture(fit_sys.encoder.state_dict(), enc_sd, 'encoder')
     fit_sys.hfn.load_state_dict(hfn_sd)

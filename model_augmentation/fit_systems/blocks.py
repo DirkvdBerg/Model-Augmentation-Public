@@ -850,47 +850,13 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
 
 
 @added
-class Parameterized_Gantry_State_Block(Gantry_State_Block):
+class _Trainable_Gantry_State_Block(Gantry_State_Block):
     """
-    Gantry_State_Block with ALL physical parameters trainable (joint estimation,
-    D-076/D-077). Mirrors lpv_lfr_baseline/train_param_recovery exactly:
+    Shared trainable gantry transition mechanics (D-191).
 
-      * 14 RAW physical scalars are log-reparameterized (D-035) and trained
-        individually: kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d.
-        Positivity by construction guarantees M(Y) > 0 for all Y (invertibility
-        proof, D-077), zero-init in log space -> start at params_init, uniform
-        Adam gradient scaling.
-      * Only Lb stays frozen -- it defines the coordinate frame (enters P), not
-        the M(Y) rational structure.
-
-    Because masses are trainable, the ENTIRE M(Y)-rational structure
-    (alpha/beta/gamma, N0/N1/N2, d0, M1, M2) and K, C are rebuilt from the
-    parameters once per timestep in nonlinear_function() via the gantry_ss
-    builders (kept autograd-safe for exactly this call) and handed to the parent
-    RK4 loop through the widened _mats() hook.
-
-    Reporting exposes only the 10 data-identifiable quantities (kb_sum, cg1,
-    cg2, cy, cb_sum, mh, m_total, m_diff, J_eff, d) -- see identifiable_
-    combinations()/param_table(). The raw splits kb1/kb2, cb1/cb2, Jb/Jh and
-    the individual mass components are trained but NOT separately trusted (flat
-    directions, held near params_init by the param_loss anchor). m_diff is
-    signed and is a DERIVED readout of the individually-logged m1, m2 -- it is
-    never itself a parameter. "Train raw, trust combinations" (D-077).
-
-    param_loss(): Lambda-weighted L2 toward params_init in physical space,
-    Lambda = RMSE_baseline / params_init (D-034). Picked up by
-    SSE_Interconnect_ParamLoss via its hasattr sweep.
-
-    Parameters
-    ----------
-    RMSE_baseline : float
-        Loss-scale reference for Lambda (D-034). Pipeline value is measured,
-        see PARAM_RMSE_BASELINE in gantry_interconnect_dynamic.py.
-    flag_loss_reg : bool
-        Disable to drop the regularization term (param_loss() returns 0.0).
-    params_init : array-like (14,), optional
-        Override of the nominal initial values -- used by the detuned recovery
-        diagnostic. Regularization anchors to THESE values. Order = PARAM_NAMES.
+    Subclasses only define the trainable coordinates and `_recover_params()`.
+    The full M(Y)-rational matrix rebuild and the existing fused RK4 transition
+    remain here so raw and reduced parameterizations execute the same hot path.
     """
 
     PARAM_NAMES = ["kb1", "kb2", "cg1", "cg2", "cy", "cb1", "cb2",
@@ -917,13 +883,11 @@ class Parameterized_Gantry_State_Block(Gantry_State_Block):
                                        _mh, _m1, _m2, _mb, _Jb, _Jh, _d])
         params_init = to_tensor(params_init).reshape(14).clone()
 
-        # log(theta/params_init): zeros -> start exactly at params_init (D-035)
-        self.log_params = nn.Parameter(torch.zeros(14, dtype=params_init.dtype))
         self.register_buffer("params_init", params_init)
-        # Lambda[i] = RMSE_baseline / params_init[i]  (D-034)
-        self.register_buffer(
-            "Lambda",
-            torch.as_tensor(RMSE_baseline, dtype=params_init.dtype) / params_init)
+        if not torch.isfinite(params_init).all() or torch.any(params_init <= 0):
+            raise ValueError("params_init must contain 14 finite positive raw parameters")
+        # CHANGED (D-191): subclasses build the regularizer in their own coordinates.
+        self._RMSE_baseline = float(RMSE_baseline)
         self.flag_loss_reg = flag_loss_reg
 
         self.register_buffer("Lb", _Lb.clone())   # frozen: coordinate frame only
@@ -931,10 +895,6 @@ class Parameterized_Gantry_State_Block(Gantry_State_Block):
         # Per-forward rebuilt structure, set in nonlinear_function(); the parent's
         # nominal mh/alpha/.../N0 buffers are shadowed by these and go unused.
         self._cur = None
-
-    def _recover_params(self) -> Tensor:
-        """Physical parameters: params_init * exp(log_params), clamped > 0 (D-035)."""
-        return (self.params_init * torch.exp(self.log_params)).clamp(min=1e-6)
 
     def _build_KC(self, p: Tensor):
         """Differentiable K(theta), C(theta) -- same structure as gantry_ss K, C.
@@ -991,7 +951,7 @@ class Parameterized_Gantry_State_Block(Gantry_State_Block):
     def _mats(self):
         if self._cur is None:
             raise RuntimeError(
-                "Parameterized_Gantry_State_Block.deriv() must be reached via "
+                "A trainable gantry block deriv() must be reached via "
                 "nonlinear_function(), which rebuilds the M(Y) structure first.")
         return self._cur
 
@@ -1021,14 +981,6 @@ class Parameterized_Gantry_State_Block(Gantry_State_Block):
     def __setstate__(self, state):
         self.__dict__.update(state)
         self._cur = None
-
-    def param_loss(self):
-        """Lambda-weighted L2 toward params_init in physical space (D-034)."""
-        if not self.flag_loss_reg:
-            return 0.0
-        p = self._recover_params()
-        return nn.functional.mse_loss(
-            self.Lambda * p, self.Lambda * self.params_init, reduction="sum")
 
     def physical_params(self) -> dict:
         """Current RAW physical parameter values as {name: float} (14 scalars)."""
@@ -1061,22 +1013,259 @@ class Parameterized_Gantry_State_Block(Gantry_State_Block):
         """The 10 trusted combinations from the current raw parameters."""
         return self._combos_from_raw(self.physical_params(), self.Lb.item())
 
+    def _initial_identifiable_combinations(self) -> dict:
+        raw = {n: self.params_init[i].item() for i, n in enumerate(self.PARAM_NAMES)}
+        return self._combos_from_raw(raw, self.Lb.item())
+
+    def _combination_training_label(self) -> str:
+        return "raw coordinates trained, combinations trusted"
+
     def param_table(self) -> str:
         """True / init / learned comparison of the 10 identifiable combinations."""
         from model_augmentation.systems import gantry_ss as _gss
         Lb = self.Lb.item()
         true_raw = {n: getattr(_gss, n).item() for n in self.PARAM_NAMES}
-        det_raw = {n: self.params_init[i].item()
-                   for i, n in enumerate(self.PARAM_NAMES)}
         true_c = self._combos_from_raw(true_raw, Lb)
-        det_c = self._combos_from_raw(det_raw, Lb)
+        det_c = self._initial_identifiable_combinations()
         lrn_c = self.identifiable_combinations()
         hdr = (f"{'Quantity':<10}{'True':>12}{'Init':>12}"
                f"{'Learned':>12}{'delta%':>10}")
-        lines = ["  Identifiable combinations (raw trained, combos trusted):",
+        lines = [f"  Identifiable combinations ({self._combination_training_label()}):",
                  hdr, "-" * 56]
         for n in self._IDENT_ORDER:
             t, i, l = true_c[n], det_c[n], lrn_c[n]
             dp = (l - t) / t * 100 if abs(t) > 1e-12 else float("nan")
             lines.append(f"{n:<10}{t:>12.4f}{i:>12.4f}{l:>12.4f}{dp:>+9.2f}%")
         return "\n".join(lines)
+
+
+@added
+class Parameterized_Gantry_State_Block(_Trainable_Gantry_State_Block):
+    """Gantry block with all fourteen raw physical scalars trainable (D-076/D-077).
+
+    Each raw scalar uses the positive coordinate
+    ``params_init * exp(log_params)``. Only the ten combinations reported by
+    :meth:`identifiable_combinations` are identifiable from the state transition.
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.log_params = nn.Parameter(torch.zeros(14, dtype=self.params_init.dtype))
+        # THEORY (D-034): normalize each physical displacement by its initial value.
+        self.register_buffer(
+            "Lambda",
+            torch.as_tensor(self._RMSE_baseline, dtype=self.params_init.dtype)
+            / self.params_init)
+
+    def _recover_params(self) -> Tensor:
+        """Physical parameters in the fourteen raw coordinates."""
+        return (self.params_init * torch.exp(self.log_params)).clamp(min=1e-6)
+
+    def param_loss(self):
+        """Lambda-weighted L2 toward ``params_init`` in raw parameter space."""
+        if not self.flag_loss_reg:
+            return 0.0
+        p = self._recover_params()
+        return nn.functional.mse_loss(
+            self.Lambda * p, self.Lambda * self.params_init, reduction="sum")
+
+    def estimation_parameters(self):
+        """Names, initial values, and current values in the trained coordinates."""
+        return (tuple(self.PARAM_NAMES), self.params_init.detach(),
+                self._recover_params().detach(), "raw (gauge-dependent)")
+
+
+@added
+class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
+    """Gantry physical block parameterized by the TEN identifiable combinations (D-190).
+
+    It is a sibling of `Parameterized_Gantry_State_Block`. Both share the exact
+    transition implementation, while each registers only its own trainable coordinates.
+
+    WHY TEN. The map from the fourteen raw scalars to `(M0, M1, M2, C, K)` factors exactly
+    through the ten quantities of `_combos_from_raw`, and the stacked parameter Jacobian of the
+    RK4 transition has rank 10 and nullity 4 (stable from rtol `1e-4` to `1e-14`, gap factor
+    `7.9e12`). The four flat directions are `kb1-kb2`, `cb1-cb2`, and a two-dimensional family
+    whose difference is `Jb-Jh`. Carrying them into a pseudo-inverse buys four numerically
+    meaningless columns and a worse condition number.
+
+    COORDINATES. `free_params` is a ten-vector, zero at `combo_init`. Nine combinations are
+    parameterized in LOG, which keeps them positive and improves the condition number on the
+    identifiable range by a factor 52 over physical coordinates (180 against 9360). `m_diff =
+    m1 - m2` is SIGNED (nominally -0.5 kg) so no log coordinate exists for it; it uses a
+    relative linear coordinate `m_diff = m_diff_init * (1 + free)`, which matches the log
+    coordinate's scaling to first order so the Jacobian columns stay comparably scaled.
+    # HEURISTIC: the relative-linear coordinate for the one signed combination is a conditioning
+    # choice, not a result from literature. Its only requirements are that free zero gives the
+    # initial value and that its column scale matches the log columns.
+
+    POSITIVITY IS NOT ADMISSIBILITY. Positivity of each of the ten does NOT imply `M(Y) > 0` over
+    the scheduling range. `admissibility()` checks the two conditions that matter,
+    `min eig M(Y) > 0` and `d(Y) != 0`; it is the caller's to run, and the forward pass does not
+    police it.
+
+    THE GAUGE. `_recover_params` returns a raw fourteen-vector through `gauge_section`, which
+    fixes `mb` at its initial value, splits `Jb:Jh` at the initial ratio and sets `kb1 = kb2`,
+    `cb1 = cb2`. This is a GAUGE FIXING, never an estimate. It exists so that the single source of
+    truth for the LFR constants, `gantry_ss.build_poly_constants`, is called unchanged: that
+    function reads `m1, m2, mb, Jb, Jh` only through `alpha`, `beta` and `gamma`, all three of
+    which are functions of the combinations alone, so the split cancels exactly. Feeding a
+    different gauge at the same combinations therefore leaves the transition unchanged, which
+    `implementation/01-reduced/` measures rather than assumes. Raw values from
+    `physical_params()` are gauge-dependent and must be labelled as such; report
+    `identifiable_combinations()`.
+    """
+
+    COMBO_NAMES = ["kb_sum", "cg1", "cg2", "cy", "cb_sum", "mh",
+                   "m_total", "m_diff", "J_eff", "d"]
+    M_DIFF_IX = 7
+
+    def __init__(self, combo_init=None, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        raw_init = self.params_init
+        if combo_init is None:
+            # In float64 regardless of the block's dtype. `m_total` and `J_eff` are sums of
+            # same-order quantities, so forming them at float32 and upcasting afterwards loses
+            # about 1e-7 relative, which reaches the velocity rows of the transition as a 2.3e-11
+            # absolute difference from the raw block: a thousand times the criterion. Measured in
+            # `implementation/01-reduced/`. This does not rescue a block CONSTRUCTED in float32,
+            # whose `combo_init` storage is float32 either way; build in float64 from the start,
+            # which is what `params_init` being a float64 tensor achieves.
+            combo_init = self.combos_of(raw_init.double(), float(self.Lb))
+        combo_init = to_tensor(combo_init).reshape(10).to(raw_init.dtype).clone()
+        if not torch.isfinite(combo_init).all() or torch.any(combo_init == 0):
+            raise ValueError("combo_init must contain 10 finite nonzero combinations")
+        _positive = torch.cat((combo_init[:self.M_DIFF_IX],
+                               combo_init[self.M_DIFF_IX + 1:]))
+        if torch.any(_positive <= 0):
+            raise ValueError("all combinations except signed m_diff must be positive")
+
+        self.free_params = nn.Parameter(torch.zeros(10, dtype=raw_init.dtype))
+        self.register_buffer("combo_init", combo_init)
+        # Lambda[i] = RMSE_baseline / combo_init[i], the D-034 weighting carried to the reduced
+        # coordinates. `m_diff` is signed, so the magnitude is taken.
+        self.register_buffer(
+            "Lambda_combo",
+            torch.as_tensor(self._RMSE_baseline, dtype=raw_init.dtype) / combo_init.abs())
+        self.register_buffer("_m_diff_mask", torch.arange(10) == self.M_DIFF_IX)
+
+    # ------------------------------------------------------------------ coordinates
+    @staticmethod
+    def combos_of(raw: Tensor, Lb) -> Tensor:
+        """The ten combinations of a raw fourteen-vector, as a TENSOR (autograd safe).
+
+        Same quantities and order as `_combos_from_raw`, which takes a dict of floats and is the
+        reporting path. This is the tensor path; `implementation/01-reduced/` asserts they agree.
+        """
+        (kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d) = raw
+        Lb = torch.as_tensor(Lb, dtype=raw.dtype, device=raw.device)
+        return torch.stack([
+            kb1 + kb2, cg1, cg2, cy, cb1 + cb2, mh,
+            m1 + m2 + mb, m1 - m2,
+            Jb + Jh + (m1 + m2) * Lb ** 2 / 4, d,
+        ])
+
+    @staticmethod
+    def gauge_section(combo: Tensor, raw_init: Tensor, Lb) -> Tensor:
+        """One raw fourteen-vector per combination ten-vector. A GAUGE FIXING, not an estimate.
+
+        `mb` at its initial value, `Jb:Jh` at the initial ratio, `kb1 = kb2`, `cb1 = cb2`. It is
+        an exact section: `combos_of(gauge_section(v)) == v`.
+        """
+        kb_sum, cg1, cg2, cy, cb_sum, mh, m_total, m_diff, J_eff, d = combo
+        Lb = torch.as_tensor(Lb, dtype=combo.dtype, device=combo.device)
+        mb = raw_init[10]
+        Jb0, Jh0 = raw_init[11], raw_init[12]
+        m_sum = m_total - mb                          # m1 + m2
+        J_sum = J_eff - m_sum * Lb ** 2 / 4           # Jb + Jh
+        r = Jb0 / (Jb0 + Jh0)
+        half = combo.new_tensor(0.5)
+        return torch.stack([
+            kb_sum * half, kb_sum * half, cg1, cg2, cy, cb_sum * half, cb_sum * half,
+            mh, (m_sum + m_diff) / 2, (m_sum - m_diff) / 2, mb.expand_as(mh),
+            J_sum * r, J_sum * (1 - r), d,
+        ])
+
+    def recover_combinations(self) -> Tensor:
+        """The ten combinations at the current free coordinate. Nine log, `m_diff` linear."""
+        return torch.where(
+            self._m_diff_mask,
+            self.combo_init * (1.0 + self.free_params),
+            self.combo_init * torch.exp(self.free_params),
+        )
+
+    def _recover_params(self) -> Tensor:
+        """Raw fourteen-vector in the declared gauge. Not clamped like the raw sibling.
+
+        The parent clamps at `1e-6` because it trains the raw scalars and needs each positive for
+        `M(Y) > 0`. Here the trained quantities are the combinations and the raw values are a
+        gauge artefact that reaches the model only through `alpha`, `beta`, `gamma`, `mh`, `d` and
+        the `C`, `K` entries. Clamping them would break the exactness of the section for no
+        benefit, and would not be the admissibility condition anyway: that is `admissibility()`.
+        """
+        return self.gauge_section(self.recover_combinations(), self.params_init, self.Lb)
+
+    # ------------------------------------------------------------------ admissibility
+    def admissibility(self, y_range=(-0.30, 0.30), n: int = 201):
+        """`min eig M(Y)` and `min abs d(Y)` over the scheduling range.
+
+        The two conditions the forward pass needs, neither of which positivity of the ten
+        combinations implies: `M(Y)` positive definite so the interconnection is well posed, and
+        the LFR denominator `d(Y)` away from zero so the rational form is finite. Returns a dict
+        and leaves the decision to the caller.
+        """
+        p = self._recover_params()
+        (kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d) = p
+        alpha, beta, gamma_, N0, N1, N2 = self._build_poly(m1, m2, mb, mh, Jb, Jh, self.Lb, d)
+        M1, M2 = self._build_M1M2(mh)
+        z = p.new_zeros(())
+        M0 = torch.stack([
+            torch.stack([alpha, beta, z]),
+            torch.stack([beta, gamma_ + mh * d ** 2, -mh * d]),
+            torch.stack([z, -mh * d, mh]),
+        ])
+        Ys = torch.linspace(float(y_range[0]), float(y_range[1]), n,
+                            dtype=p.dtype, device=p.device)
+        MY = (M0.unsqueeze(0) + M1.unsqueeze(0) * Ys[:, None, None]
+              + M2.unsqueeze(0) * (Ys ** 2)[:, None, None])
+        eigs = torch.linalg.eigvalsh((MY + MY.transpose(1, 2)) / 2)
+        dY = mh * (alpha * gamma_ - beta ** 2 + 2 * beta * mh * Ys
+                   + mh * (alpha - mh) * Ys ** 2)
+        i_e, i_d = int(eigs.min(dim=1).values.argmin()), int(dY.abs().argmin())
+        return {
+            "min_eig_M": float(eigs.min()),
+            "min_eig_M_at_Y": float(Ys[i_e]),
+            "min_abs_d": float(dY.abs().min()),
+            "min_abs_d_at_Y": float(Ys[i_d]),
+            "admissible": bool(eigs.min() > 0 and dY.abs().min() > 0),
+        }
+
+    # ------------------------------------------------------------------ reporting
+    def param_loss(self):
+        """Lambda-weighted L2 toward `combo_init` in COMBINATION space (D-034, D-190)."""
+        if not self.flag_loss_reg:
+            return 0.0
+        v = self.recover_combinations()
+        return nn.functional.mse_loss(
+            self.Lambda_combo * v, self.Lambda_combo * self.combo_init, reduction="sum")
+
+    def identifiable_combinations(self) -> dict:
+        """The ten trusted combinations. Here they are the parameters, not a readout."""
+        vals = self.recover_combinations().detach()
+        return {n: vals[i].item() for i, n in enumerate(self.COMBO_NAMES)}
+
+    def _initial_identifiable_combinations(self) -> dict:
+        return {n: self.combo_init[i].item() for i, n in enumerate(self.COMBO_NAMES)}
+
+    def _combination_training_label(self) -> str:
+        return "identifiable coordinates trained"
+
+    def physical_params(self) -> dict:
+        """Raw fourteen scalars IN THE DECLARED GAUGE. Not estimates. See the class docstring."""
+        return super().physical_params()
+
+    def estimation_parameters(self):
+        """Names, initial values, and current values in identifiable coordinates."""
+        return (tuple(self.COMBO_NAMES), self.combo_init.detach(),
+                self.recover_combinations().detach(), "identifiable combinations")

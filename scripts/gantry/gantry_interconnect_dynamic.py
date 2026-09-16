@@ -45,15 +45,19 @@ CFG = RunConfig(
     encoder_init='linear_map',
     ann_activation='tanh',        # 'linear' = Identity (Jan's ECC, D-071); 'tanh' = nonlinear ANN
     joint_estimation=False,        # D-076: True = trainable damping/stiffness scalars (orth shakedown, 07-12)
+    # CHANGED (D-191): joint estimation uses the ten identifiable combinations directly.
+    physics_parameterization='reduced',
     param_rmse_baseline=0.01,     # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
     # D7.1/D-111. False = no penalty object and no basis build. The Gyorok 2025
     # regularisation has its own entry point: orthogonality/Gyorok/train_gyorok.py.
     orth=False,
     orth_beta=4.66e-4,
-    # None = start at true values (run T); 14-vector aligned to PARAM_NAMES = detuned start (run D, D-076).
+    # Raw detuning is disabled for the reduced block.
     param_init_detune=None,
-    # param_init_detune=[1.10, 1.10, 1.10, 0.90, 1.10, 0.90, 0.90,
-    #                    0.90, 1.10, 0.90, 1.10, 0.90, 0.90, 1.10],
+    # HEURISTIC (D-191): 10% perturbations in COMBO_NAMES order:
+    # [kb_sum, cg1, cg2, cy, cb_sum, mh, m_total, m_diff, J_eff, d].
+    combo_init_detune=[1.10, 1.10, 0.90, 1.10, 0.90,
+                       0.90, 1.10, 1.10, 0.90, 1.10],
     snr=None,                     # dB: 50/55/60; None = noiseless (supervisor 07-07)
     seed=42,
     # Training-loss rollout. True = closed loop (known controller around the model, the

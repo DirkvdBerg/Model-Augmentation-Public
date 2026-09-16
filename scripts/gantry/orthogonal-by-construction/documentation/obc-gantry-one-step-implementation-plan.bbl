@@ -1,0 +1,39 @@
+\begin{thebibliography}{3}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Gy{\"o}r{\"o}k et~al.(2026)Gy{\"o}r{\"o}k, Schoukens, P{\'e}ni, and
+  T{\'o}th]{gyorok2026obc}
+Bendeg{\'u}z~M. Gy{\"o}r{\"o}k, Maarten Schoukens, Tam{\'a}s P{\'e}ni, and
+  Roland T{\'o}th.
+\newblock Orthogonal-by-construction augmentation of physics-based input-output
+  models.
+\newblock \emph{IFAC Journal of Systems and Control}, 35:\penalty0 100376,
+  2026.
+\newblock \doi{10.1016/j.ifacsc.2026.100376}.
+\newblock URL \url{https://doi.org/10.1016/j.ifacsc.2026.100376}.
+\newblock Equation, lemma and theorem locators verified against
+  arXiv:2511.01321v3, 9 January 2026; final-publication numbering not
+  substituted.
+
+\bibitem[Hoekstra et~al.(2025)Hoekstra, Verhoek, T{\'o}th, and
+  Schoukens]{hoekstra2025lfr}
+Jan~H. Hoekstra, Chris Verhoek, Roland T{\'o}th, and Maarten Schoukens.
+\newblock Learning-based model augmentation with {LFRs}.
+\newblock \emph{European Journal of Control}, 86:\penalty0 101304, 2025.
+\newblock \doi{10.1016/j.ejcon.2025.101304}.
+\newblock URL \url{https://doi.org/10.1016/j.ejcon.2025.101304}.
+
+\bibitem[Hoekstra et~al.(2026)Hoekstra, Gy{\"o}r{\"o}k, T{\'o}th, and
+  Schoukens]{hoekstra2026fp}
+Jan~H. Hoekstra, Bendeg{\'u}z~M. Gy{\"o}r{\"o}k, Roland T{\'o}th, and Maarten
+  Schoukens.
+\newblock Learning-based augmentation of first-principle models: A linear
+  fractional representation-based approach.
+\newblock \emph{arXiv preprint arXiv:2602.17297}, 2026.
+\newblock URL \url{https://arxiv.org/abs/2602.17297}.
+
+\end{thebibliography}

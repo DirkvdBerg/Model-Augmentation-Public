@@ -2,8 +2,9 @@
 
 `evaluate_and_save` keeps its pre-refactor orchestration order exactly; the
 internals are factored into capture_loss_history / report_joint_estimation /
-_make_plots / _build_save_dict. The npz key set, names, conditional inclusion,
-and dtypes are a frozen contract.
+_make_plots / _build_save_dict. Existing npz keys, conditional inclusion, and
+dtypes are a frozen contract. D-191 adds `param_names` beside the existing
+joint-estimation arrays because those arrays can now use raw or reduced coordinates.
 
 It no longer RELOADS the best checkpoint before simulating: `fit()` already returns
 the best-validating weights, and reloading them here silently discarded an accepted
@@ -53,25 +54,33 @@ def capture_loss_history(fit_sys, cfg: RunConfig, save_dir, rid):
 
 
 def report_joint_estimation(fit_sys):
-    """Joint estimation report (D-076/D-077); returns (params_init_np, params_learned_np)."""
-    _pblocks = [m for m in fit_sys.hfn.connected_blocks if hasattr(m, 'physical_params')]
+    """Report and return the coordinates actually optimized by the physical block."""
+    _pblocks = [m for m in fit_sys.hfn.connected_blocks
+                if hasattr(m, 'estimation_parameters')]
+    param_names = None
     params_init_np = None
     params_learned_np = None
     if _pblocks:
         _pb = _pblocks[0]
-        params_init_np = _pb.params_init.detach().cpu().numpy().copy()
-        params_learned_np = np.array([_pb.physical_params()[n] for n in _pb.PARAM_NAMES])
-        # Trusted view: the 10 identifiable combinations (raw are trained, combos
-        # are what the data can determine -- D-077).
+        param_names, _init, _learned, _coordinate_label = _pb.estimation_parameters()
+        params_init_np = _init.cpu().numpy().copy()
+        params_learned_np = _learned.cpu().numpy().copy()
         print('\n=== Joint estimation: identifiable combinations (best checkpoint) ===')
         print(_pb.param_table())
-        # Diagnostic view: all 14 raw params (splits held near init by param_loss).
-        print('\n=== Joint estimation: raw parameters (init vs learned) ===')
+        if hasattr(_pb, 'admissibility'):
+            with torch.no_grad():
+                _adm = _pb.admissibility()
+            print('  admissibility: min eig M(Y) = %.6g at Y = %+.3f m; '
+                  'min abs d(Y) = %.6g at Y = %+.3f m; %s'
+                  % (_adm['min_eig_M'], _adm['min_eig_M_at_Y'],
+                     _adm['min_abs_d'], _adm['min_abs_d_at_Y'],
+                     'PASS' if _adm['admissible'] else 'FAIL'))
+        print(f'\n=== Joint estimation: {_coordinate_label} (init vs learned) ===')
         print(f"  {'param':8s} {'init':>12s} {'learned':>12s} {'delta':>9s}")
-        for _i, _n in enumerate(_pb.PARAM_NAMES):
+        for _i, _n in enumerate(param_names):
             _d = 100.0 * (params_learned_np[_i] - params_init_np[_i]) / params_init_np[_i]
             print(f'  {_n:8s} {params_init_np[_i]:12.4f} {params_learned_np[_i]:12.4f} {_d:+8.2f}%')
-    return params_init_np, params_learned_np
+    return param_names, params_init_np, params_learned_np
 
 
 def _ratio_str(aug, base, pct_band=10.0):
@@ -155,7 +164,7 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
 
     epoch_id_full, loss_val_full, loss_train_full = capture_loss_history(fit_sys, cfg, save_dir, rid)
 
-    params_init_np, params_learned_np = report_joint_estimation(fit_sys)
+    param_names, params_init_np, params_learned_np = report_joint_estimation(fit_sys)
 
     # ── Encoder-initialised simulation ──────────────────────────────────────
     fit_sys.hfn.reset_saved_signals()
@@ -375,7 +384,8 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
             r2_roll_raw=r2_roll_raw, r2_roll_lin=r2_roll_lin,
             baseline_test_nrms=baseline_test_nrms, baseline_encinit_nrms=baseline_encinit_nrms,
             baseline_test_encinit_nrms=baseline_test_encinit_nrms,
-            params_init_np=params_init_np, params_learned_np=params_learned_np,
+            param_names=param_names, params_init_np=params_init_np,
+            params_learned_np=params_learned_np,
         )
         # D-098: oracle FP+MSD reference (conditionally, like the other optional keys).
         if nrms_oracle is not None:
@@ -579,7 +589,7 @@ def _build_save_dict(cfg, data, norm, hp, na, nb, y_ref, y_hat_enc, t_val,
                      diag_conv, baseline_nrms, nrms_test, y_hat_test,
                      r2_roll_raw, r2_roll_lin, baseline_test_nrms,
                      baseline_encinit_nrms, baseline_test_encinit_nrms,
-                     params_init_np, params_learned_np):
+                     param_names, params_init_np, params_learned_np):
     from model_augmentation.systems.gantry_ss import P
     NX_PHYS = cfg.nx_phys
     ystd = norm.ystd
@@ -640,6 +650,7 @@ def _build_save_dict(cfg, data, norm, hp, na, nb, y_ref, y_hat_enc, t_val,
         save_dict['baseline_test_encinit_nrms'] = baseline_test_encinit_nrms
         save_dict['baseline_test_encinit_rms']  = baseline_test_encinit_nrms * ystd
     if params_learned_np is not None:
+        save_dict['param_names']   = np.asarray(param_names)
         save_dict['params_init']    = params_init_np
         save_dict['params_learned'] = params_learned_np
     return save_dict

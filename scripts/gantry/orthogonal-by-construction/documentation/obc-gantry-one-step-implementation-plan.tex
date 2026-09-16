@@ -1,0 +1,472 @@
+% Standalone implementation plan.
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\R}{\mathbb R}
+\newcommand{\col}{\operatorname{col}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\title{Implementation plan for one-step orthogonal augmentation of the gantry model}
+\author{Eindhoven University of Technology}
+\date{16 September 2026}
+
+\begin{document}
+\maketitle
+
+\section{Objective and scope}
+
+The first implementation concerns orthogonality in one evaluation of the
+gantry plant state equation. The existing physical-plus-augmentation state
+structure is retained; no delay-coordinate state is introduced. This follows
+the dynamic parallel state augmentation structure of Hoekstra et
+al.~\cite{hoekstra2025lfr,hoekstra2026fp} and transfers the projection idea of
+Gy\"or\"ok et al.~\cite{gyorok2026obc} to the physical-state transition.
+
+The construction does not impose orthogonality of a multistep input--output or
+closed-loop Jacobian. The controller and state propagation determine the
+operating points visited during training, but their derivatives are excluded
+from the first condition. Fixed-basis, scheduling-approximation, moving-state,
+and multistep variants are retained as conditional follow-up experiments, not
+as part of the first implementation.
+
+\section{One-step model}
+
+Let
+\begin{equation}
+    \hat x_k=\col(x_{b,k},x_{a,k}),
+    \qquad
+    x_{b,k}\in\R^{n_b},\quad x_{a,k}\in\R^{n_a},
+    \label{eq:state-partition}
+\end{equation}
+where \(x_b\) is the physical baseline state and \(x_a\) is the additional
+learned state. The discrete-time augmented model is
+\begin{equation}
+\boxed{
+\begin{aligned}
+    x_{b,k+1}
+    &=f_{\mathrm{base}}^d(\vartheta_b,x_{b,k},u_k)
+      +f_{\mathrm{aug}}^b(\theta_a,\hat x_k,u_k),\\
+    x_{a,k+1}
+    &=f_{\mathrm{aug}}^a(\theta_a,\hat x_k,u_k),\\
+    \hat y_k&=h_{\mathrm{base}}(x_{b,k},u_k).
+\end{aligned}}
+\label{eq:model}
+\end{equation}
+The superscripts \(b\) and \(a\) denote the rows written to the baseline and
+augmentation states. They are two outputs of the same learning component.
+
+The baseline defines no transition in the additional-state rows. Its parameter
+directions therefore have the form
+\begin{equation}
+    \bar\phi_{b,k}=\begin{bmatrix}\phi_{b,k}\\0\end{bmatrix}.
+    \label{eq:zero-block}
+\end{equation}
+Consequently,
+\begin{equation}
+    \bar\phi_{b,k}^{\top}
+    \begin{bmatrix}0\\f_{\mathrm{aug},k}^a\end{bmatrix}=0.
+    \label{eq:auto-orthogonal}
+\end{equation}
+The update \(f_{\mathrm{aug}}^a\) is therefore orthogonal to the baseline by
+definition. Only \(f_{\mathrm{aug}}^b\) is projected.
+
+\section{Fixed one-step reference set}
+
+The reference set contains every valid encoder window in the complete training
+dataset. Let \(\theta_e^{\mathrm{ref}}\) be the encoder parameters at the start
+of the OBC training stage. For window \(k\), use the measured positions and
+estimate the unmeasured velocities once with this encoder:
+\begin{equation}
+    x_{b,k}^{\mathrm{ref}}
+    =\col\!\left(
+       q_k^{\mathrm{meas}},
+       \widehat{\dot q}_k^{\,\mathrm{ref}}
+      \right),
+    \qquad
+    \widehat{\dot q}_k^{\,\mathrm{ref}}
+    =\psi_{\theta_e^{\mathrm{ref}}}^{v}
+      (y_{k-n_y:k},u_{k-n_u:k}),
+    \qquad
+    x_{a,k}^{\mathrm{ref}}=0.
+    \label{eq:reference-state}
+\end{equation}
+The additional-state zero is a hard initialization, not a trainable encoder
+output.
+
+The training pipeline uses the residual closed-loop input
+\begin{equation}
+\begin{aligned}
+    \hat y_k^{\mathrm{ref}}
+    &=h_{\mathrm{base}}(x_{b,k}^{\mathrm{ref}},u_k^{\mathrm{data}}),\\
+    e_k^{\mathrm{ref}}
+    &=y_k^{\mathrm{data}}-\hat y_k^{\mathrm{ref}},\\
+    u_{\mathrm{cl},k}^{\mathrm{ref}}
+    &=u_k^{\mathrm{data}}
+      +C_cx_{c,k}^{\mathrm{ref}}+D_ce_k^{\mathrm{ref}}.
+\end{aligned}
+\label{eq:reference-controller}
+\end{equation}
+The controller state is initialized exactly as in a training window. The fixed
+one-step reference set is
+\begin{equation}
+\boxed{
+    \mathcal Z_{\mathrm{ref}}
+    =\left\{
+      (x_{b,k}^{\mathrm{ref}},0,u_{\mathrm{cl},k}^{\mathrm{ref}})
+      :k\in\mathcal I_{\mathrm{train}}
+      \right\}.
+}
+\label{eq:reference-set}
+\end{equation}
+Each element of \(\mathcal Z_{\mathrm{ref}}\) is an independent one-step plant
+evaluation. The reference states are not recursively propagated when defining
+the first constraint. They form only the fixed evaluation grid used to build
+the orthogonality basis. They do not replace the states in the closed-loop
+training rollout, and training may continue to update the encoder.
+
+The controller selects \(u_{\mathrm{cl},k}^{\mathrm{ref}}\), but this input is
+held fixed when differentiating the plant. In particular, the construction uses
+\begin{equation}
+    \left.
+    \frac{\partial f_{\mathrm{base}}^d}{\partial\vartheta_b}
+    \right|_{u=u_{\mathrm{cl},k}^{\mathrm{ref}}},
+    \label{eq:partial-derivative}
+\end{equation}
+not the total derivative through
+\(u_{\mathrm{cl},k}^{\mathrm{ref}}\). This keeps the condition at the one-step
+plant-equation level.
+
+\section{Baseline parameter space}
+
+\subsection{Reduced physical parameters}
+
+Before constructing the basis, replace the fourteen raw parameters by the
+structurally identifiable combinations
+\begin{equation}
+    \vartheta_b=T(\theta_b).
+    \label{eq:parameter-reduction}
+\end{equation}
+Only these combined parameters are included in the orthogonalization. The raw,
+redundant parameter columns are not retained. The stacked reduced basis must
+satisfy
+\begin{equation}
+    \operatorname{rank}(J_b^{\mathrm n})=n_{\vartheta_b},
+    \label{eq:full-column-rank}
+\end{equation}
+where $n_{\vartheta_b}=\dim(\vartheta_b)$. Verify this condition numerically
+from the singular values before training. If it fails, first determine whether
+another parameter combination is required or whether the training experiment
+does not excite that direction. Do not proceed by projecting the original
+rank-deficient parameterization.
+
+\subsection{Exact regressor or local sensitivity}
+
+Gy\"or\"ok's construction assumes the exact representation
+\begin{equation}
+    f_{\mathrm{base}}(z_k;\theta_b)=\phi(z_k)\theta_b.
+    \label{eq:gyorok-regressor}
+\end{equation}
+If the selected gantry transition admits
+\begin{equation}
+    f_{\mathrm{base}}^d(\vartheta_b,x_b,u)
+    =f_0^d(x_b,u)+\phi_b(x_b,u)\vartheta_b,
+    \label{eq:exact-regressor}
+\end{equation}
+then set \(\phi_{b,k}=\phi_b(x_{b,k}^{\mathrm{ref}},
+u_{\mathrm{cl},k}^{\mathrm{ref}})\) and apply Gy\"or\"ok's projection directly.
+
+For the full nonlinear RK4 transition, the inverse mass matrix and
+parameter-dependent RK4 stages generally prevent
+Eq.~\eqref{eq:exact-regressor}. In that case, choose a parameter evaluation
+point \(\bar\vartheta_b\) and use
+\begin{equation}
+    J_{b,k}
+    =\left.
+      \frac{\partial f_{\mathrm{base}}^d
+      (\vartheta_b,x_{b,k}^{\mathrm{ref}},u_{\mathrm{cl},k}^{\mathrm{ref}})}
+      {\partial\vartheta_b}
+      \right|_{\vartheta_b=\bar\vartheta_b}.
+    \label{eq:local-sensitivity}
+\end{equation}
+This is a local Taylor extension: \(J_{b,k}\) spans the tangent directions of
+the nonlinear baseline at \(\bar\vartheta_b\). The orthogonality statement is
+exact relative to this selected tangent space, but local relative to the full
+nonlinear baseline family.
+
+\section{Primary treatment of the scheduling variable}
+
+The primary construction retains the current self-scheduling value
+\begin{equation}
+    Y_k^{\mathrm{ref}}=[x_{b,k}^{\mathrm{ref}}]_3
+    \label{eq:scheduling-value}
+\end{equation}
+at every reference point. Hence the baseline basis is evaluated over the
+training range of \(Y\), rather than only at \(Y=0\).
+The primary implementation evaluates this dependence directly:
+\begin{equation}
+    J_{b,k}^{\mathrm{exact}\,Y}
+    =J_b(\bar\vartheta_b,x_{b,k}^{\mathrm{ref}},
+         u_{\mathrm{cl},k}^{\mathrm{ref}},Y_k^{\mathrm{ref}}).
+    \label{eq:exact-y}
+\end{equation}
+No Taylor approximation in \(Y\) is used in the first experiment.
+
+\section{Normalization, routing and stacking}
+
+Perform the projection in the normalized physical-state coordinates used by
+the training loss. With
+\begin{equation}
+    x_b^{\mathrm n}=S_b^{-1}(x_b-\mu_b),
+\end{equation}
+use
+\begin{equation}
+    J_{b,k}^{\mathrm n}=S_b^{-1}J_{b,k},
+    \qquad
+    f_{\mathrm{aug},k}^{b,\mathrm n}
+    =S_b^{-1}f_{\mathrm{aug},k}^b.
+    \label{eq:normalized-contributions}
+\end{equation}
+If the ANN writes only selected physical rows, apply the same row selection to
+both quantities before projection. The subtraction must not introduce writes
+outside the rows allowed by the implemented routing.
+
+Stack the one-step quantities vertically over all \(N\) reference windows:
+\begin{equation}
+    J_b^{\mathrm n}
+    =\begin{bmatrix}J_{b,1}^{\mathrm n}\\ \vdots\\J_{b,N}^{\mathrm n}\end{bmatrix},
+    \qquad
+    F_{\mathrm{aug}}^{b,\mathrm n}
+    =\begin{bmatrix}
+       f_{\mathrm{aug},1}^{b,\mathrm n}\\ \vdots\\
+       f_{\mathrm{aug},N}^{b,\mathrm n}
+      \end{bmatrix}.
+    \label{eq:stacks}
+\end{equation}
+This is a dataset stack, not a product of state-transition Jacobians. The same
+parameter displacement acts at every reference point.
+
+\section{Primary epoch-wise projection}
+
+Under the full-column-rank condition in Eq.~\eqref{eq:full-column-rank}, follow
+Gy\"or\"ok's Eqs.~(8)--(11) and define
+\begin{equation}
+\begin{aligned}
+    \theta_{\mathrm{aux}}
+    &=(J_b^{\mathrm n})^\dagger F_{\mathrm{aug}}^{b,\mathrm n}\\
+    &=\bigl((J_b^{\mathrm n})^\top J_b^{\mathrm n}\bigr)^{-1}
+      (J_b^{\mathrm n})^\top F_{\mathrm{aug}}^{b,\mathrm n},\\
+    \widetilde F_{\mathrm{aug}}^{b,\mathrm n}
+    &=F_{\mathrm{aug}}^{b,\mathrm n}
+      -J_b^{\mathrm n}\theta_{\mathrm{aux}}.
+\end{aligned}
+\label{eq:projection}
+\end{equation}
+At every projection refresh,
+\begin{equation}
+    \boxed{
+    (J_b^{\mathrm n})^\top
+    \widetilde F_{\mathrm{aug}}^{b,\mathrm n}=0.}
+    \label{eq:orthogonality}
+\end{equation}
+For a chosen parameter evaluation point \(\bar\vartheta_b\), the pointwise
+correction used by the model is
+\begin{equation}
+    \widetilde f_{\mathrm{aug}}^{b,\mathrm n}(\hat x,u)
+    =f_{\mathrm{aug}}^{b,\mathrm n}(\hat x,u)
+     -J_b^{\mathrm n}(\bar\vartheta_b,x_b,u)
+      \theta_{\mathrm{aux}}.
+    \label{eq:pointwise-correction}
+\end{equation}
+
+Keep \(\mathcal Z_{\mathrm{ref}}\), \(\theta_e^{\mathrm{ref}}\), and
+\(x_{a,k}^{\mathrm{ref}}=0\) fixed. At the beginning of epoch \(r\), set
+\begin{equation}
+    \bar\vartheta_b=\widehat\vartheta_b^{(r)}
+\end{equation}
+and:
+\begin{enumerate}
+    \item reconstruct \(J_b^{\mathrm n,(r)}\) over the complete fixed
+          reference set;
+    \item verify its full column rank and monitor its singular values;
+    \item evaluate the current ANN over the same reference set;
+    \item compute \(\theta_{\mathrm{aux}}^{(r)}\) using
+          Eq.~\eqref{eq:projection};
+    \item hold \(J_b^{\mathrm n,(r)}\) and
+          \(\theta_{\mathrm{aux}}^{(r)}\) fixed within the epoch.
+\end{enumerate}
+Measure the residual again at the end of the epoch. Orthogonality is exact at
+the refresh and may drift as the model changes within the epoch. This update is
+part of the primary method because the nonlinear baseline begins from a
+10\%-detuned parameter vector and its local tangent can change during training.
+
+\section{Required experiments and metrics}
+
+Use identical data, initialization, controller, normalization, optimizer and
+random seed for the two required runs:
+\begin{enumerate}
+    \item augmented model without OBC;
+    \item augmented model with the primary epoch-wise one-step OBC method.
+\end{enumerate}
+
+Report:
+\begin{itemize}
+    \item rank, singular values and condition number of the reduced basis;
+    \item the normalized orthogonality residual
+    \begin{equation}
+        r_\perp=
+        \frac{\|(J_b^{\mathrm n})^\top
+        \widetilde F_{\mathrm{aug}}^{b,\mathrm n}\|_F}
+        {\|J_b^{\mathrm n}\|_F
+         \|\widetilde F_{\mathrm{aug}}^{b,\mathrm n}\|_F+\varepsilon};
+    \end{equation}
+    \item the fraction of the raw ANN contribution in the baseline space
+    \begin{equation}
+        r_{\mathrm{overlap}}
+        =\frac{\|J_b^{\mathrm n}(J_b^{\mathrm n})^\dagger
+        F_{\mathrm{aug}}^{b,\mathrm n}\|_F}
+        {\|F_{\mathrm{aug}}^{b,\mathrm n}\|_F+\varepsilon};
+    \end{equation}
+    \item recovery of the reduced physical parameter combinations, including
+    \begin{equation}
+        e_{\vartheta}
+        =\frac{\|\widehat\vartheta_b-\vartheta_b^{\mathrm{true}}\|_2}
+        {\|\vartheta_b^{\mathrm{true}}\|_2};
+    \end{equation}
+    \item the error of each identifiable parameter combination;
+    \item one-step prediction error;
+    \item closed-loop training, validation and free-simulation error.
+\end{itemize}
+
+The movement of the baseline space is monitored without another training run:
+\begin{equation}
+    r_J^{(r)}
+    =\frac{\|J_b^{\mathrm n,(r)}-J_b^{\mathrm n,(0)}\|_F}
+    {\|J_b^{\mathrm n,(0)}\|_F+\varepsilon},
+    \label{eq:basis-drift-initial}
+\end{equation}
+and
+\begin{equation}
+    r_{J,\mathrm{step}}^{(r)}
+    =\frac{\|J_b^{\mathrm n,(r)}-J_b^{\mathrm n,(r-1)}\|_F}
+    {\|J_b^{\mathrm n,(r-1)}\|_F+\varepsilon}.
+    \label{eq:basis-drift-step}
+\end{equation}
+The first quantity measures total drift from the detuned initialization; the
+second shows whether the basis has settled between successive epochs.
+
+The existing open-loop recorded-input FP baseline remains a plant-replay
+diagnostic. Add a controller-wrapped FP baseline, with the ANN disabled and the
+same encoder information and scoring convention, for a fair comparison with
+the closed-loop trained augmented model.
+
+\section{Decision criteria}
+
+\begin{center}
+\begin{tabular}{L{0.27\linewidth}L{0.34\linewidth}L{0.27\linewidth}}
+\toprule
+Observation & Interpretation & Action \\
+\midrule
+\(r_\perp\) is not near numerical zero after projection &
+The primary projection is implemented incorrectly &
+Debug before adding variants \\
+\(r_J^{(r)}\) remains small &
+The initial and current baseline tangents are similar &
+Do not prioritize a fixed-basis run \\
+\(r_J^{(r)}\) becomes large &
+The initial tangent becomes stale &
+Run the fixed-basis comparison if needed \\
+Orthogonality holds but parameter recovery remains poor &
+The selected one-step space or reference grid may be insufficient &
+Use the oracle or reference-grid diagnostic \\
+Parameter recovery improves but multistep performance does not &
+Accumulated propagation is the likely remaining issue &
+Investigate multistep sensitivity \\
+Exact-\(Y\) evaluation is practical and effective &
+A scheduling approximation is unnecessary &
+Do not run Taylor-\(Y\) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Conditional follow-up experiments}
+
+The following comparisons are retained, but are run only when the primary
+results identify a reason for them.
+
+\begin{enumerate}
+    \item \textbf{Exact linear-in-parameter transition basis.} If an exact
+    representation of the form in Eq.~\eqref{eq:exact-regressor} is available,
+    compare it with the local-sensitivity basis. This separates errors caused
+    by local parameter linearization from the one-step OBC principle itself.
+
+    \item \textbf{Fixed initial basis.} Retain
+    \(J_b^{\mathrm n,(0)}\) throughout training, while recomputing
+    \begin{equation}
+        \theta_{\mathrm{aux}}^{(r)}
+        =(J_b^{\mathrm n,(0)})^\dagger
+          F_{\mathrm{aug}}^{b,\mathrm n,(r)}
+    \end{equation}
+    from the current ANN at every epoch. This tests the relevance of the drift
+    measured by Eqs.~\eqref{eq:basis-drift-initial}--
+    \eqref{eq:basis-drift-step}.
+
+    \item \textbf{Oracle parameter point.} Set
+    \(\bar\vartheta_b=\vartheta_b^{\mathrm{true}}\) for diagnosis only. This
+    tests whether parameter-point mismatch explains poor separation; it is not
+    a deployable training method.
+
+    \item \textbf{Taylor approximation in \(Y\).} If direct evaluation of
+    Eq.~\eqref{eq:exact-y} is impractical, compare it with
+    \begin{equation}
+        J_{b,k}^{\mathrm{Taylor}\,Y}
+        =J_b(\cdot,Y^\star)
+         +\left.\frac{\partial J_b}{\partial Y}\right|_{Y^\star}
+          (Y_k^{\mathrm{ref}}-Y^\star),
+        \qquad Y^\star=0.
+    \end{equation}
+
+    \item \textbf{Moving reference states.} Reconstruct the reference grid
+    with the current encoder only if the fixed initially encoded velocities
+    prove inadequate. This changes the orthogonality domain as well as the
+    parameter tangent and must be assessed separately.
+
+    \item \textbf{Multistep state-transition orthogonality.} Introduce products
+    of transition Jacobians only when the one-step separation works but errors
+    emerge through recursive propagation.
+
+    \item \textbf{Closed-loop input--output orthogonality.} Include controller
+    and output sensitivities only if multistep closed-loop overlap remains the
+    identified problem. This is the more complex alternative described in the
+    supervisor feedback.
+\end{enumerate}
+
+\section{Claims retained after implementation}
+
+The implementation may claim only that:
+\begin{itemize}
+    \item the additional-state update is orthogonal by the zero baseline block;
+    \item the corrected physical-state contribution is orthogonal to the
+          selected one-step baseline basis at each projection refresh;
+    \item a sensitivity basis represents a local parameter tangent at
+          its selected parameter evaluation point;
+    \item closed-loop and multistep performance are empirical evaluation
+          results, not consequences of Eq.~\eqref{eq:orthogonality}.
+\end{itemize}
+Gy\"or\"ok's parameter-recovery, consistency, covariance and stability results
+do not transfer automatically to the nonlinear, marginally stable, closed-loop
+gantry model.
+
+\bibliographystyle{plainnat}
+\bibliography{obc-io-additional-state-chapter}
+
+\end{document}

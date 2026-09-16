@@ -80,21 +80,36 @@ def build_model(hp, cfg: RunConfig, data, norm):
     ic = Interconnect(nxd, nu, ny, debugging=False)
 
     if cfg.joint_estimation:
-        # D-077: all 14 raw physical params trainable via log-reparam.
-        # PARAM_INIT_DETUNE, when set, is a 14-vector aligned to PARAM_NAMES.
-        _pi = None
-        if cfg.param_init_detune is not None:
-            from model_augmentation.systems import gantry_ss as _gss
-            _names = Parameterized_Gantry_State_Block.PARAM_NAMES
-            _nominal = np.array([float(getattr(_gss, n)) for n in _names])
-            _pi = _nominal * np.asarray(cfg.param_init_detune, dtype=float)
-        phy_block = Parameterized_Gantry_State_Block(
+        # CHANGED (D-191): detune and train in the selected coordinate system. Coordinate
+        # conversion happens once here and never inside the RK4 loop.
+        from model_augmentation.systems import gantry_ss as _gss
+        _names = Parameterized_Gantry_State_Block.PARAM_NAMES
+        _nominal = torch.stack([getattr(_gss, n) for n in _names]).to(DTYPE_PT)
+        _common = dict(
             Y_op=None, std_x=std_x, std_u=std_u,
             x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
-            up_sample=hp['up_sample'],
-            RMSE_baseline=cfg.param_rmse_baseline,
-            params_init=_pi,
-        ).to(DTYPE_PT)
+            up_sample=hp['up_sample'], RMSE_baseline=cfg.param_rmse_baseline,
+        )
+        if cfg.physics_parameterization == 'reduced':
+            _combo = Reduced_Gantry_State_Block.combos_of(_nominal, _gss.Lb)
+            if cfg.combo_init_detune is not None:
+                _combo = _combo * _combo.new_tensor(cfg.combo_init_detune)
+            phy_block = Reduced_Gantry_State_Block(
+                params_init=_nominal, combo_init=_combo, **_common).to(DTYPE_PT)
+        else:
+            _raw_init = _nominal
+            if cfg.param_init_detune is not None:
+                _raw_init = _raw_init * _raw_init.new_tensor(cfg.param_init_detune)
+            phy_block = Parameterized_Gantry_State_Block(
+                params_init=_raw_init, **_common).to(DTYPE_PT)
+        if hasattr(phy_block, 'admissibility'):
+            # CHANGED (D-191): one construction-time check, outside the simulation hot path.
+            with torch.no_grad():
+                _admissibility = phy_block.admissibility()
+            if not _admissibility['admissible']:
+                raise ValueError(
+                    'Reduced gantry initialization is not admissible over the scheduling range: '
+                    f'{_admissibility}')
     else:
         phy_block = Gantry_State_Block(
             Y_op=None, std_x=std_x, std_u=std_u,
