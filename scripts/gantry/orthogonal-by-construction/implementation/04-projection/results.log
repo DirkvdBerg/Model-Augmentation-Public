@@ -1,0 +1,79 @@
+==============================================================================
+STAGE 4 -- the projection: does it remove the baseline component exactly?
+==============================================================================
+  M = 256 construction evaluations, routing (0, 1, 2, 3, 4, 5, 6, 7), n_p = 6, n_a = 2, float64
+  basis rank 11/11 at rcond 1e-10, condition number 6.5934e+00
+  criterion: scale-free residual at or below 1e-12
+  stacked physical write: shape (1536,), norm 3.930403e+01
+
+--- T1  orthogonality residual on the construction evaluations, FULL rank ---
+  coefficient a: [ 5.31192481e+01 -3.87720212e+02 -3.84195843e+02  1.58194026e+03
+ -3.57264257e+02 -3.67804850e+02  4.19871496e+02 -1.35507210e+03
+  5.35943357e+01 -2.35844307e+02  9.37816150e-02]
+  norm(F' G~)                     = 2.931010e-14
+  norm(F) norm(G~)                = 2.957674e+02
+  SCALE-FREE RESIDUAL             = 9.9099e-17   MET (<= 1e-12)
+  investigation prototype achieved  1.96e-14
+
+--- T2  the same at deliberately REDUCED rank ---
+  "Reduced rank" has to mean a GENUINELY rank-deficient basis, one with a zero
+  singular value, which is what the any-rank proposition of the derivation is about.
+  Rank deficiency then costs only the uniqueness of the coefficient. Truncating a
+  NONZERO singular value is a different operation, measured separately below.
+
+  (a) GENUINE deficiency, a duplicated column (span unchanged, one sigma = 0):
+    basis                                rank      residual    norm(G~)/norm(G)
+    full [J | c]                           11    9.9099e-17              0.9731
+    column 3 duplicated                    11    7.2071e-17              0.9731
+    columns 3 and 7 duplicated             11    1.2012e-16              0.9731
+    a column zeroed                        10    6.0964e-18              0.9737
+  genuine rank deficiency, residual 7.2071e-17   MET (<= 1e-12)
+
+  (b) ARTIFICIAL truncation of NONZERO singular values, for the record:
+         rcond   rank      residual    norm(G~)/norm(G)
+         1e-10     11    9.9099e-17              0.9731
+         1e-02     11    9.9099e-17              0.9731
+         1e-01     11    9.9099e-17              0.9731
+         3e-01      9    2.0261e-04              0.9737
+         6e-01      8    1.3097e-02              0.9742
+  Truncating a nonzero sigma_i leaves exactly that direction in the residual, so
+  exactness is LOST, not preserved. The any-rank guarantee covers genuine deficiency
+  only. That is an argument for the column scaling of stage 2, which is what keeps a
+  sigma_0-relative cutoff from discarding genuine directions in the first place.
+
+--- T3  the identity g~ = (I - P) g against an independent projector ---
+  QR projector vs pseudo-inverse subtraction: max rel difference 3.1116e-16
+
+--- T4  the additional-state write passes through UNCHANGED ---
+  ANN columns writing ADDITIONAL-state rows [6, 7]: max abs change = 0.000e+00   (exactly 0.0 expected)
+  ANN columns writing PHYSICAL rows [0, 1, 2, 3, 4, 5]: max abs change = 1.123e+00   (nonzero, or the projection did nothing)
+  No special case produces this. The basis has no additional-state rows, so the
+  coefficient never sees g_a and the subtraction has nothing to write there.
+
+--- T5  the stacked sum vanishes, the PER-SAMPLE product does not ---
+  per-sample norm(F_k' g~_k): median 3.2230e-01, min 3.5400e-03, max 1.5861e+00
+  stacked sum norm(F' G~)   : 2.9310e-14
+  ratio median per-sample to stacked sum: 1.10e+13
+  Only the SUM vanishes. No claim may be worded pointwise; the source displays the
+  block structure per data point in its Eq. (40) and that display is wrong.
+
+--- T6  rho before and after, ON and OFF the construction evaluations ---
+    point set                            rho before   rho after   frozen residual
+    the construction evaluations             0.2305      0.0000        1.1111e-16
+    a foreign designed set, seed 11          0.3295      0.1434        3.6060e-02
+    a foreign set, 4x latent scale           0.3319      0.1456        3.6628e-02
+    a narrower Y range, frozen-ish           0.2269      0.1009        4.1513e-03
+  The first row is the guarantee: exact on the frozen set. The others are the honest
+  report: away from it the construction removes part, not all. rho is reported, never
+  a raw inner product, which is dominated by the offset direction.
+
+--- T7  the wrapper against the stacked algebra, computed by hand ---
+  coefficient a, wrapper vs hand: max abs difference 0.000e+00
+  output, wrapper vs hand: max abs 3.331e-16, relative 1.064e-16
+  (the wrapper uses ONE directional jvp, the hand path the full [J | c] matvec;
+   agreeing to round-off is the evidence those are the same object)
+  flag OFF: max abs (wrapper - ANN) = 0.0e+00, exactly equal = True
+
+==============================================================================
+STAGE 4 VERDICT: scale-free residual 9.9099e-17 at full rank against a criterion of 1e-12 -- MET
+==============================================================================

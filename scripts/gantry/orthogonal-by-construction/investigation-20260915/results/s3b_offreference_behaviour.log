@@ -1,0 +1,81 @@
+
+==============================================================================
+A  Singular spectrum of the stacked regressor: the offset column dominates
+==============================================================================
+  sigma, parameter columns only: [3.044e-03 2.061e-03 1.060e-03 7.855e-04 6.264e-04 2.359e-04 1.935e-04 9.765e-05 4.366e-05 2.768e-05 3.359e-19 2.670e-19 1.989e-20 9.713e-21]
+  sigma, with the offset column: [3.141e+00 3.043e-03 2.054e-03 1.060e-03 7.854e-04 6.256e-04 2.306e-04 1.932e-04 8.084e-05 3.414e-05 2.562e-05 1.273e-17 1.446e-18 1.188e-20 7.089e-21]
+  sigma_max(with offset) / sigma_max(parameters only) = 1.032e+03
+  The offset column is the nominal one-step transition f(theta_bar), whose
+  position rows are q + Ts*qdot, order 0.3 m. Every parameter column is a
+  derivative of that map, order 1e-3 or less. So the affine protected set is
+  numerically dominated by ONE direction that is not a parameter direction.
+  Consequence: a pinv cutoff stated relative to sigma_0 is a cutoff relative to
+  the offset column, and at rcond >= 1e-4 it would silently discard REAL
+  parameter directions.
+    rcond 1e-02: rank(with offset) =  1   rank(parameters only) =  9
+    rcond 1e-04: rank(with offset) =  6   rank(parameters only) = 10
+    rcond 1e-06: rank(with offset) = 11   rank(parameters only) = 10
+    rcond 1e-08: rank(with offset) = 11   rank(parameters only) = 10
+    rcond 1e-10: rank(with offset) = 11   rank(parameters only) = 10
+    rcond 1e-12: rank(with offset) = 11   rank(parameters only) = 10
+
+==============================================================================
+B  Reference-set size sweep, with and without the offset column
+==============================================================================
+  rho_eval before projection is the baseline number every row is compared to.
+  rho(eval; G) with offset    = 0.431230
+  rho(eval; G) without offset = 0.429541
+
+    M_ref   offset  rho_ref(after)  rho_eval(after)  ||Gtil||/||G||
+       32     True        0.000000         0.382674          0.9766
+       32    False        0.000000         0.387344          0.9795
+       64     True        0.000000         0.397524          0.9833
+       64    False        0.000000         0.392486          0.9818
+      256     True        0.000000         0.306009          0.9477
+      256    False        0.000000         0.299182          0.9464
+     1024     True        0.000000         0.289871          0.9427
+     1024    False        0.000000         0.284320          0.9419
+
+  Reading: rho_ref is ~0 by construction at every size. rho_eval is the
+  quantity that decides the method. Compare it to the unprojected rho above.
+
+==============================================================================
+C  Scheduling coverage of the reference set
+==============================================================================
+             Y range  rho_eval(after)  ||Gtil||/||G||
+         (-0.3, 0.3)         0.306009          0.9477
+       (-0.15, 0.15)         0.334572          0.9574
+       (-0.05, 0.05)         0.352649          0.9642
+          (0.0, 0.0)         0.355812          0.9654
+
+==============================================================================
+D  Control: the reference set IS the evaluation set
+==============================================================================
+  If rho_eval stays near zero here and not in B, the gap is generalization of
+  the frozen coefficient, not a defect of the projector.
+    Phi_eval: shape (288, 15) rank 11/15 at rcond 1e-10; largest discarded / sigma0 = 4.05e-18
+  rho_eval(after), reference = evaluation = 3.673e-14
+  ||G_tilde|| / ||G||                     = 0.9022
+
+==============================================================================
+E  Is the off-reference gap a property of the ANN or of the regressor?
+==============================================================================
+  Replace the random ANN write by a write that is EXACTLY in the baseline span
+  (a genuine parameter direction). A coefficient fitted on one point set must
+  then transfer to any other, because the same theta explains both.
+  rho(eval; G_in_span) before = 1.000000   (must be 1)
+  ||G_in - Phi_eval a|| / ||G_in|| at the EVALUATION points = 1.763e-14
+  VERDICT: a write that lies in the baseline span is removed at ANY point set,
+  because the fitted coefficient recovers the true parameter direction. The
+  off-reference gap in B is therefore specific to a write that is NOT in the
+  span: there the coefficient is a least-squares artefact of the reference
+  points and carries no meaning elsewhere.
+
+==============================================================================
+F  The operational question: does the projection reduce what the baseline could absorb?
+==============================================================================
+  Reported as rho_eval(after) / rho_eval(before) at the best configuration of B.
+  best row: M = 1024, offset = False, rho_eval(after) = 0.284320
+  rho_eval(before) = 0.429541   ratio = 0.662
+
+wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-by-construction\investigation-20260915\results\s3b_tables.json

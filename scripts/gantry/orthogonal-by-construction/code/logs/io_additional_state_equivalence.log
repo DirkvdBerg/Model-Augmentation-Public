@@ -1,0 +1,21 @@
+IO / delay-state additional-state verification
+MATLAB 25.1.0.2973910 (R2025a) Update 1; Symbolic Math Toolbox 25.1
+PASS 1: arbitrary one-step IO / SS transition
+PASS 2: output timing is newest NEXT history slot
+PASS 3: unprojected additional-state model
+PASS 4: shift rows orthogonal to learned write
+PASS 5: IO and SS auxiliary coefficients identical
+PASS 6: IO stacked orthogonality
+PASS 7: SS stacked orthogonality
+PASS 8: full baseline transition orthogonality
+PASS 9: differentiated projection
+PASS 10: rank-deficient coefficient equivalence
+PASS 11: rank-deficient orthogonality
+PASS 12.1: free simulation output/history/latent equality
+PASS 12.2: free simulation output/history/latent equality
+PASS 12.3: free simulation output/history/latent equality
+PASS 12.4: free simulation output/history/latent equality
+PASS 13: measured-history predictor equivalence
+PASS 14: stochastic history injection
+PASS 15: measured and predicted feedback are not interchangeable
+ALL CHECKS PASSED. Physical gantry equivalence and statistical theorems not tested.

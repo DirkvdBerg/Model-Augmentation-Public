@@ -1,0 +1,32 @@
+==============================================================================
+Reference set identity: the discriminating arms
+==============================================================================
+  initial combination error: mean 0.1122, max 0.3000
+
+  arm                                                  fit  combo mean  combo max   rho(G)  orth ratio
+  init (no training)                                     -      0.1122     0.3000        -           -
+  C subtraction, ref = same, offset = True       1.912e-04      0.4175     2.1666   0.0000    3.03e-13
+  C subtraction, ref = same, offset = False      1.354e-04      0.5272     2.5686   0.0000    3.69e-15
+  C subtraction, ref = foreign, offset = True    1.765e-04      0.4070     2.0451   0.4311    2.35e-01
+  C subtraction, ref = foreign, offset = False   1.390e-04      0.5150     2.3821   0.3462    1.70e-01
+
+  per-combination relative error, mean over 3 seeds
+  combination      INIT     ref=same off=True    ref=same off=False  ref=foreign off=True ref=foreign off=False
+  kb_sum        0.1000                0.0003                0.0004                0.0006                0.0007
+  cg1           0.2500                0.6086                0.8433                0.6598                0.9052
+  cg2           0.2000                0.4242                0.6104                0.4291                0.6431
+  cy            0.3000                1.2736                1.2310                1.2443                1.1918
+  cb_sum        0.0000                1.7898                2.5686                1.6657                2.3821
+  mh            0.0800                0.0005                0.0004                0.0001                0.0001
+  m_total       0.0417                0.0097                0.0060                0.0108                0.0062
+  m_diff        0.0000                0.0644                0.0092                0.0560                0.0192
+  J_eff         0.0000                0.0004                0.0002                0.0003                0.0003
+  d             0.1500                0.0034                0.0028                0.0032                0.0013
+
+  seed spread of the combination mean error:
+    C subtraction, ref = same, offset = True     sd = 1.5645e-01
+    C subtraction, ref = same, offset = False    sd = 8.4586e-04
+    C subtraction, ref = foreign, offset = True  sd = 1.5460e-01
+    C subtraction, ref = foreign, offset = False sd = 4.1744e-03
+
+wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-by-construction\investigation-20260915\results\s3d_tables.json

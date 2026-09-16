@@ -1,0 +1,66 @@
+==============================================================================
+STAGE 2 -- empirical rank of the reduced stacked Jacobian
+==============================================================================
+  designed point set, Y swept over (-0.3, 0.3), float64
+  criterion: rank(J) == 10 at every rtol 1e-4..1e-14, gap > 1e+06
+
+  J shape (1536, 10), c shape (1536, 1), F = [J | c] shape (1536, 11)
+
+--- T1  rank and spectrum of J (10 columns), COLUMN-SCALED ---
+  singular values / sigma_0: 1.000e+00  9.796e-01  7.740e-01  7.295e-01  7.113e-01  6.988e-01  6.709e-01  6.588e-01  2.841e-01  2.221e-01
+  rank at rtol: 1e-04: 10,  1e-06: 10,  1e-08: 10,  1e-10: 10,  1e-12: 10,  1e-14: 10
+  condition number 4.5024e+00
+  gap last kept to first discarded: inf   (inf means nothing was discarded, i.e. full column rank)
+  smallest singular value is 2.221e-01 of sigma_0, which is 1.01e+15 x the float64 epsilon
+  rank 10 at EVERY rtol: True
+
+--- T2  rank and spectrum of [J | c] (11 columns), COLUMN-SCALED ---
+  singular values / sigma_0: 1.000e+00  9.802e-01  9.038e-01  7.438e-01  7.265e-01  7.099e-01  6.833e-01  6.609e-01  4.794e-01  2.838e-01  1.517e-01
+  rank at rtol: 1e-04: 11,  1e-06: 11,  1e-08: 11,  1e-10: 11,  1e-12: 11,  1e-14: 11
+  condition number 6.5934e+00
+  fraction of the offset column OUTSIDE span(J): 0.5839
+
+--- T3  the offset hazard: cutoff against sigma_0 UNSCALED vs COLUMN-SCALED ---
+  column norms: parameter columns 3.725e-04 to 5.469e-02, offset column 7.733e+00
+  offset column / largest parameter column = 141.4 x
+       rcond   rank UNSCALED    rank COLUMN-SCALED
+       1e-02               1                    11
+       1e-04               8                    11
+       1e-06              11                    11
+       1e-08              11                    11
+       1e-10              11                    11
+       1e-14              11                    11
+  the unscaled column reproduces the documented failure; the scaled column is what
+  the library uses, and is why a sigma_0-relative cutoff is legitimate there.
+
+--- T4  sensitivity to the point count ---
+         M   rank(J)   rank([J|c])       cond(J)   sigma_min/sigma_0
+        32        10            11    4.9360e+00          2.0259e-01
+        64        10            11    4.7528e+00          2.1040e-01
+       256        10            11    4.5024e+00          2.2210e-01
+      1024        10            11    4.5687e+00          2.1888e-01
+
+--- T5  sensitivity to column scaling ---
+    variant                            rank          cond
+    unscaled (reduced/log coords)        10    4.5024e+00
+    unit-column                          10    4.5024e+00
+    columns x 1e6                        10    4.5024e+00
+    one column x 1e6                     10    4.5024e+00
+  rank is invariant to column scaling because the report scales columns first;
+  the condition number of the SCALED matrix is likewise invariant. That is the point.
+
+--- T6  the additional-state rows of the basis ---
+  stacking all n_p + n_a = 8 rows; the baseline writes no additional-state update, so those rows are structurally zero.
+  max abs value on the additional-state rows: 0.000e+00   (exactly 0.0 expected)
+
+--- T7  the rank-loss policy ---
+  full basis: rank 11, rank_loss = False
+  duplicated-column basis: rank 10, rank_loss = True
+    LOG: [obc] basis rank 10/11 at rcond 1e-10; discarded singular values (column-scaled, relative to sigma_0): [6.396956499598292e-17]
+    LOG: [obc] principal angles to the previous epoch span [rad]: max 2.107e-08, min 0.000e+00
+    LOG: [obc] RANK LOSS: rank 10 below the expected 11. The protected set has shrunk, so directions the baseline can represent are no longer being removed from the learned write. Policy is "report": continuing on the REDUCED span.
+  on_rank_loss = "abort" raised RankLossAbort: True
+
+==============================================================================
+STAGE 2 VERDICT: rank(J) = 10 at every rtol 1e-4..1e-14: True. rank([J|c]) = 11 (expected 11). MET
+==============================================================================

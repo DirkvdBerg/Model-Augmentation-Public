@@ -1,0 +1,63 @@
+=== surrogate_obc_symbolic ===
+
+Reference points [p v u] (baseline-only rollout, latent state = 0 at every point):
+[    0,      0,   1]
+[    0,   1/20,  -1]
+[1/200, -1/800, 1/2]
+ 
+Extended regressor Phi_tilde (6x4):
+[      0,       0,            0,                 0]
+[      0,       0,        -1/40,              1/10]
+[      0,       0,            0,             1/200]
+[      0,       0,      41/1600,           -21/400]
+[      0,       0,            0,           39/8000]
+[-1/4010, -1/4010, -3925/321602, 6191209/128640800]
+ 
+offset column identically zero? 0  (0 expected: the offset is a real column)
+
+  [PASS] columns of t1 and t2 are identical (rank deficiency, exact)
+  rank(Phi_tilde) = 3 of 4 columns
+
+--- CHECK 1: orthogonality of the construction at the true (deficient) rank
+  [PASS] Phi_tilde' * G_tilde = 0 on the reference set
+  ||G_eta_ref|| (unprojected, for scale) = (W11/200 - W12/800 + W14/2 + b1)^2 + (W14 + b1)^2 + (W12/20 - W14 + b1)^2
+
+--- CHECK 2: reduction to Gyorok Eqs. (8), (10), (11)
+  [PASS] Eq. (10) equals G - A*Eq.(8), i.e. the two forms coincide
+  [PASS] Eq. (11): A' * G_tilde = 0
+
+--- CHECK 3: the fitted coefficient is blind to the whole latent path
+  [PASS] d eta_aux / d W13 (a -> physical) = 0
+  [PASS] d eta_aux / d W21 = 0
+  [PASS] d eta_aux / d W22 = 0
+  [PASS] d eta_aux / d W23 = 0
+  [PASS] d eta_aux / d W24 = 0
+  [PASS] d eta_aux / d b2 (-> latent row) = 0
+  d(learned physical write)/dW13 along a trajectory = [0; ak]  (nonzero when a ~= 0)
+
+--- CHECK 4: one-step orthogonality does not survive accumulation
+  [PASS] the learned write is exactly zero on Z_ref, so Phi' * G_tilde = 0 holds trivially
+  learned contribution to the stacked output d_out = 
+                                                                                                        0
+                                                                                                        0
+                                                                                                        0
+                                                                                             (w13*w21)/50
+                                                                                 (112459*w13*w21)/1921000
+(w13*w21*(392956795147553736*w13*w21 + 42239352762204643237))/(176721849436000*(19272*w13*w21 + 2090789))
+ 
+  baseline output parameter sensitivity S (6x3) = 
+[                                                   0,                                                    0,                                                         0]
+[                                                   0,                                                    0,                                                         0]
+[                                             -1/1100,                                              -1/1100,                                                  -13/9680]
+[                                          -107/40150,                                           -107/40150,                                           68989/464262480]
+[                          -11579168543/2222447642250,                           -11579168543/2222447642250,                            3424002701401/2855400730762800]
+[-164303083913404104332327/19430409212811294092224500, -164303083913404104332327/19430409212811294092224500, 105414025092904655336563021/37446284634929925974535056400]
+ 
+  S' * d_out = 
+      -(w13*w21*(17655079194423504439293098227194546574296*w13*w21 + 1902493314734791843475743969587848763812159))/(686755570277260959369282877462076400000*(19272*w13*w21 + 2090789))
+      -(w13*w21*(17655079194423504439293098227194546574296*w13*w21 + 1902493314734791843475743969587848763812159))/(686755570277260959369282877462076400000*(19272*w13*w21 + 2090789))
+(w13*w21*(3383666800022030045367644790051563132712696*w13*w21 + 364334489573594058620726419201315546581976339))/(441171778346112440298827320481637879360000*(19272*w13*w21 + 2090789))
+ 
+  identically zero? 0  -> PASS: nonzero, so the one-step condition is NOT sufficient at the output
+
+=== done ===

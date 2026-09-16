@@ -1,0 +1,100 @@
+
+==============================================================================
+Setup
+==============================================================================
+  learned block: 600 parameters, reads (x_p, x_a, u), writes 8 rows (6 physical + 2 latent)
+  reference set: 64 designed points, Y swept over (-0.3, 0.3)
+  off-reference set: 48 independent points, same Y range
+    Phi_ref (log coords, with offset): shape (384, 15) rank 11/15 at rcond 1e-10; largest discarded / sigma0 = 3.74e-17
+  sigma spectrum head/tail = [3.85361087e+00 4.35123297e-03 2.37020102e-03] ... [3.23784457e-05 1.44289142e-16 5.10787956e-19 3.79201758e-20
+ 9.09177842e-22]
+
+==============================================================================
+T1  Exactness on the reference set, residual off it
+==============================================================================
+  ||Phi_ref^T G||      = 2.329456e-02   (unprojected)
+  ||Phi_ref^T G_tilde|| = 3.074006e-14   ratio = 1.320e-12
+  ||G|| = 2.628921e-02   ||G_tilde|| = 2.217605e-02   ||Phi_ref eta_aux|| = 1.411897e-02
+  (the three norms are reported together so a cancellation is visible, not just a small inner product)
+
+  OFF the reference set (independent points):
+  ||Phi_traj^T G||      = 2.874783e-03
+  ||Phi_traj^T G_tilde|| = 1.429541e-02   ratio = 4.973e+00
+  VERDICT: exact on the reference set (1.3e-12), a 4.97x reduction off it. The construction is exact only where it is fitted.
+    Phi_ref narrow Y in [-0.05, 0.05]: shape (384, 15) rank 11/15 at rcond 1e-10; largest discarded / sigma0 = 6.76e-17
+  narrow-Y reference set -> off-reference ratio = 5.584e+00 (wide-Y gave 4.973e+00)
+
+==============================================================================
+T2  Rank-deficient coefficient equivalence
+==============================================================================
+  null space of Phi_ref has dimension 4
+  ||eta_aux2 - eta_aux|| = 3.700e+00   ||Phi(eta_aux2 - eta_aux)|| = 6.541e-16
+  lstsq solution vs pinv solution: ||d coef|| = 7.416e+01   ||d projected write|| = 2.440e+00
+  VERDICT: the coefficient is non-unique; the projected write is unique. Rank deficiency costs uniqueness of eta_aux and nothing else.
+
+==============================================================================
+T3  Derivative identity, and the detached-gradient control
+==============================================================================
+  ||Phi^T dG/d eta||                     = 4.489780e-02   (no projection)
+  ||Phi^T dG_tilde/d eta||, through      = 2.020614e-13   ratio to raw = 4.500e-12
+  ||Phi^T dG_tilde/d eta||, detached     = 4.489780e-02   ratio to raw = 1.000e+00
+  ||dG_tilde/d eta - (I - P) dG/d eta||  = 3.875e-17 (Prop. 5.2 of the derivation)
+  VERDICT: differentiating THROUGH the coefficient is required. Detaching it leaves the Jacobian non-orthogonal at the same magnitude as no projection.
+
+==============================================================================
+T4  Per-sample versus stacked block structure (G26 Eq. (40))
+==============================================================================
+  per-sample ||phi_k^T J_f,k||: min 3.643e-04  median 1.875e-03  max 4.508e-03
+  stacked  ||sum_k phi_k^T J_f,k|| = 2.021e-13
+  ratio stacked / median per-sample = 1.078e-10
+  FINDING: the orthogonality is a STACKED identity. G26 Eq. (40) displays it
+  per data point ('for all data points in D_N'), which does not hold; only the
+  sum in Eq. (38) is block diagonal. The conclusion of Theorem 18 is unaffected
+  because only the sum enters, but the per-sample display is incorrect.
+
+==============================================================================
+T5  Approximation error for a controlled parameter displacement
+==============================================================================
+  How much of a FINITE baseline change f(theta0 + delta) - f(theta0) lies
+  outside the protected affine span? (the span protects the tangent, not the
+  whole rational family)
+   ||delta||_rel    ||resid||/||df||     slope
+         1.0e-04           4.318e-06          
+         3.0e-04           1.295e-05      1.00
+         1.0e-03           4.318e-05      1.00
+         3.0e-03           1.295e-04      1.00
+         1.0e-02           4.316e-04      1.00
+         3.0e-02           1.294e-03      1.00
+         1.0e-01           4.300e-03      1.00
+  (slope near 1 is expected for the RELATIVE residual of a second-order error
+   against a first-order signal: ||resid|| ~ ||delta||^2 while ||df|| ~ ||delta||.)
+
+==============================================================================
+T6  Protected span: expansion point, scheduling coverage, coordinates
+==============================================================================
+  ranks: physical 11, normalized 11, log 11
+  max principal angle physical vs log        = 4.470e-08 rad
+  max principal angle physical vs normalized = 4.470e-08 rad
+  VERDICT: the protected span is INVARIANT to the parameter coordinate choice
+  (any invertible reparameterization), because it is the span of the tangent
+  directions plus the nominal transition. Only the conditioning of eta_aux moves.
+
+  expansion point sensitivity (perturbed nominal parameter sets):
+    ||delta||_rel = 0.01: max principal angle to the nominal span = 1.473e-03 rad, rank 11
+    ||delta||_rel = 0.05: max principal angle to the nominal span = 7.324e-03 rad, rank 11
+    ||delta||_rel = 0.20: max principal angle to the nominal span = 2.872e-02 rad, rank 11
+
+  scheduling coverage sensitivity (reference set Y range):
+    Y in      (-0.3, 0.3): rank 11, off-reference residual ratio 4.973e+00
+    Y in    (-0.15, 0.15): rank 11, off-reference residual ratio 5.450e+00
+    Y in    (-0.05, 0.05): rank 11, off-reference residual ratio 5.584e+00
+    Y in       (0.0, 0.0): rank 11, off-reference residual ratio 5.438e+00
+
+==============================================================================
+T7  Does the offset column enlarge the protected set at RK4 fidelity?
+==============================================================================
+  rank without offset = 10, with offset = 11
+  component of the offset column OUTSIDE the parameter span, relative = 5.697805e-01
+  VERDICT: the offset column adds a genuine direction (yes); the protected set is strictly larger.
+
+wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-by-construction\investigation-20260915\results\s3_tables.json

@@ -1,0 +1,71 @@
+==============================================================================
+STAGE 3 -- is the affine basis a second-order Taylor expansion?
+==============================================================================
+  256 designed points, float64, displacement in the reduced FREE coordinate
+  criterion: log-log slope 2.0 +/- 0.1 over a decade
+  reference scale: max abs state increment = 8.068635e-03
+  sanity: max abs (c - f(vartheta_bar)) = 0.000e+00  (the offset IS the nominal transition)
+
+--- T3  where the round-off floor is ---
+             s       abs error    rel to increment
+      1.00e-08      1.1102e-16          1.3760e-14
+      3.16e-08      1.1102e-16          1.3760e-14
+      1.00e-07      1.1102e-16          1.3760e-14
+      3.16e-07      2.2204e-16          2.7519e-14
+      1.00e-06      2.2204e-16          2.7519e-14
+      3.16e-06      2.3315e-15          2.8895e-13
+      1.00e-05      2.3370e-14          2.8964e-12
+      3.16e-05      2.3415e-13          2.9019e-11
+      1.00e-04      2.3411e-12          2.9015e-10
+      3.16e-04      2.3411e-11          2.9015e-09
+      1.00e-03      2.3409e-10          2.9013e-08
+      3.16e-03      2.3404e-09          2.9006e-07
+      1.00e-02      2.3387e-08          2.8985e-06
+      3.16e-02      2.3334e-07          2.8919e-05
+      1.00e-01      2.3169e-06          2.8715e-04
+  measured floor (smallest error over the four smallest displacements): 1.110e-16
+  the fit window 1e-03 .. 1e-01 predicts a smallest error near 2.317e-10, which is 2.1e+06 x the floor
+
+--- T1  log-log slope over random displacement directions (THE CRITERION) ---
+    direction                 1.0e-03    1.8e-03    3.2e-03    5.6e-03    1.0e-02    1.8e-02    3.2e-02    5.6e-02    1.0e-01     slope
+    random 0                 7.83e-10   2.48e-09   7.83e-09   2.48e-08   7.83e-08   2.47e-07   7.81e-07   2.46e-06   7.74e-06    1.9978
+    random 1                 3.37e-10   1.06e-09   3.36e-09   1.06e-08   3.36e-08   1.06e-07   3.34e-07   1.05e-06   3.27e-06    1.9945
+    random 2                 6.89e-10   2.18e-09   6.89e-09   2.18e-08   6.88e-08   2.17e-07   6.84e-07   2.15e-06   6.73e-06    1.9956
+    random 3                 1.86e-10   5.90e-10   1.86e-09   5.89e-09   1.86e-08   5.89e-08   1.86e-07   5.88e-07   1.85e-06    1.9991
+    random 4                 3.27e-10   1.03e-09   3.27e-09   1.03e-08   3.27e-08   1.04e-07   3.28e-07   1.04e-06   3.29e-06    2.0012
+
+    coordinate                1.0e-03    1.8e-03    3.2e-03    5.6e-03    1.0e-02    1.8e-02    3.2e-02    5.6e-02    1.0e-01     slope
+    kb_sum                   2.59e-09   8.20e-09   2.59e-08   8.21e-08   2.60e-07   8.24e-07   2.62e-06   8.35e-06   2.68e-05    2.0061
+    cg1                      8.94e-11   2.83e-10   8.95e-10   2.83e-09   8.97e-09   2.84e-08   9.04e-08   2.88e-07   9.25e-07    2.0061
+    cg2                      1.23e-10   3.88e-10   1.23e-09   3.89e-09   1.23e-08   3.90e-08   1.24e-07   3.95e-07   1.27e-06    2.0061
+    cy                       6.33e-11   2.00e-10   6.34e-10   2.01e-09   6.35e-09   2.01e-08   6.40e-08   2.04e-07   6.55e-07    2.0061
+    cb_sum                   3.07e-11   9.70e-11   3.07e-10   9.72e-10   3.08e-09   9.76e-09   3.10e-08   9.88e-08   3.17e-07    2.0061
+    mh                       1.25e-09   3.95e-09   1.25e-08   3.95e-08   1.25e-07   3.93e-07   1.24e-06   3.88e-06   1.21e-05    1.9940
+    m_total                  2.48e-10   7.83e-10   2.48e-09   7.83e-09   2.48e-08   7.83e-08   2.47e-07   7.80e-07   2.46e-06    1.9985
+    m_diff                   1.29e-12   4.07e-12   1.29e-11   4.07e-11   1.29e-10   4.07e-10   1.29e-09   4.07e-09   1.29e-08    2.0001
+    J_eff                    3.77e-09   1.19e-08   3.77e-08   1.19e-07   3.76e-07   1.19e-06   3.73e-06   1.17e-05   3.65e-05    1.9940
+    d                        4.84e-10   1.53e-09   4.84e-09   1.53e-08   4.85e-08   1.54e-07   4.90e-07   1.57e-06   5.05e-06    2.0078
+
+  slopes: min 1.9940, max 2.0078, mean 2.0009, max deviation from 2.0 0.0078
+
+--- T2  the neglected term, relative to the state increment ---
+             s       abs error    rel to increment    rel to the linear term
+      1.00e-03      2.3409e-10          2.9013e-08                2.2641e-04
+      1.78e-03      7.4020e-10          9.1738e-08                4.0259e-04
+      3.16e-03      2.3404e-09          2.9006e-07                7.1581e-04
+      5.62e-03      7.3990e-09          9.1701e-07                1.2726e-03
+      1.00e-02      2.3387e-08          2.8985e-06                2.2619e-03
+      1.78e-02      7.3895e-08          9.1583e-06                4.0191e-03
+      3.16e-02      2.3334e-07          2.8919e-05                7.1366e-03
+      5.62e-02      7.3598e-07          9.1215e-05                1.2658e-02
+      1.00e-01      2.3169e-06          2.8715e-04                2.2409e-02
+
+--- T4  the approximation is the BASIS, never the prediction ---
+  at a 5 percent displacement, exact nonlinear transition and affine surrogate differ
+  by 5.8222e-07, i.e. 7.22e-05 of the state increment.
+  The rollout keeps the exact transition; only the BASIS comes from the expansion.
+  A model that substituted the surrogate would carry exactly this error at every step.
+
+==============================================================================
+STAGE 3 VERDICT: slopes in [1.9940, 2.0078] against 2.0 +/- 0.1 -- MET
+==============================================================================

@@ -1,0 +1,44 @@
+=== gantry_euler_regressor_structure ===
+
+one Euler step built: 6 physical rows, M(Y)^-1 kept rational, Y = q3
+
+  [PASS] CLAIM A: baseline parameter Jacobian is exactly zero on the additional-state rows
+  so on those rows the condition reads "orthogonal to zero": no constraint at all
+
+--- CLAIM B: exact parameter-column dependencies (structural rank deficiency)
+  [PASS] column(kb1) - column(kb2) = 0
+  [PASS] column(cb1) - column(cb2) = 0
+  [PASS] column(Jb) - column(Jh) = 0
+  three exact dependencies -> rank(Phi) <= 11 of 14, at ANY number of points
+
+--- CLAIM C: the offset column is nonzero
+  offset identically zero? 0  (expected 0: the column is real and must be kept)
+  offset (symbolic in the state and input) =
+                                                                                                                                                                                         q1 + qd1/20000
+                                                                                                                                                                                         q2 + qd2/20000
+                                                                                                                                                                                         q3 + qd3/20000
+(3244628500*qd1 + 7565*u1 + 7565*u2 - 3232000000*q2*q3 - 2040705*q3*qd2 + 11716*q3*u1 - 11716*q3*u2 + 1616*q3*u3 + 10597728000*q3^2*qd1 + 32320*q3^2*u1 + 32320*q3^2*u2)/(5000*(2120192*q3^2 + 649077))
+                                   (3236717055*qd2 - 13728000000*q2 + 49764*u1 - 49764*u2 + 6864*u3 - 3232000*q3*qd1 + 32320*q3*u1 + 32320*q3*u2 + 10600960000*q3^2*qd2)/(5000*(2120192*q3^2 + 649077))
+                                (1638841756695*qd3 + 1256541*u1 - 1256541*u2 + 16226925*u3 + 816080*q3*u1 + 816080*q3*u2 + 5353219776000*q3^2*qd3 + 53004800*q3^2*u3)/(2525000*(2120192*q3^2 + 649077))
+ 
+--- CLAIM D: achieved rank of the stacked extended regressor
+  stacked extended regressor is 36x15
+  exact rank = 11 of 15 columns (14 parameters + 1 offset)
+  deficiency = 4, consistent with the three dependencies of claim B
+  => Gyorok Assumption 1 (full column rank) FAILS on the real model.
+     Orthogonality survives this; uniqueness of the fitted coefficient does not.
+
+--- CLAIM E: where the deficiency sits
+  rank of the 14 parameter columns alone = 10  (deficiency 4)
+  rank with the offset column appended   = 11
+  the offset column is OUTSIDE the parameter span: it adds a real direction, so
+  extending the regressor with it genuinely enlarges the protected set.
+  project-documented identifiable count = 10; symbolic parameter rank = 10
+  rank of the mass columns m1,m2,mb alone = 3 of 3
+  null space of the parameter block has 4 directions:
+    1) -1*kb1 1*kb2 = 0
+    2) -1*cb1 1*cb2 = 0
+    3) -1/2*m1 -1/2*m2 1*mb 841/6400*Jb = 0
+    4) -1/2*m1 -1/2*m2 1*mb 841/6400*Jh = 0
+
+=== done ===

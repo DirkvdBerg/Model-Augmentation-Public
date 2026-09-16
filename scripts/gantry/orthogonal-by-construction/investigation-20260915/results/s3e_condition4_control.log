@@ -1,0 +1,37 @@
+==============================================================================
+Truth construction, and the Condition 4 check
+==============================================================================
+  rho(Phi; delta_friction) = 0.946486   -> Condition 4 VIOLATED, this is the 3c and 3d truth
+  rho(Phi; delta_orth)     = 2.656e-15   -> Condition 4 SATISFIED by construction, this is the 3e truth
+  ||delta_orth|| / ||delta_friction|| = 0.3227
+  ||truth - baseline(theta_init)|| = 1.0176e-03
+  ||delta_orth||                   = 1.4274e-04
+
+==============================================================================
+Arms, truth = baseline(theta_true) + delta_orth
+==============================================================================
+  arm                                        fit  combo mean  combo max   rho(G)  residual recovered
+  init (no training)                   1.018e-03      0.1122     0.3000        -                   -
+  A no projection                      1.428e-04      0.0825     0.2732   0.9200             -0.4422
+  B 2025 penalty beta=1e2              2.113e-04      0.0978     0.3013   0.0346              0.0307
+  C 2026 exact subtraction             1.403e-04      0.0206     0.1684   0.0000              0.0590
+
+  per-combination relative error, mean over 3 seeds
+  combination      INIT             A             B             C
+  kb_sum        0.1000        0.0031        0.0026        0.0004
+  cg1           0.2500        0.2116        0.2065        0.0097
+  cg2           0.2000        0.1800        0.1745        0.0037
+  cy            0.3000        0.2732        0.2817        0.1684
+  cb_sum        0.0000        0.0005        0.0006        0.0029
+  mh            0.0800        0.0031        0.0019        0.0007
+  m_total       0.0417        0.0239        0.0362        0.0095
+  m_diff        0.0000        0.1209        0.2578        0.0085
+  J_eff         0.0000        0.0011        0.0027        0.0005
+  d             0.1500        0.0077        0.0137        0.0021
+
+  seed spread of the combination mean error:
+    A no projection                    sd = 9.9087e-03
+    B 2025 penalty beta=1e2            sd = 1.0224e-02
+    C 2026 exact subtraction           sd = 1.0021e-03
+
+wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-by-construction\investigation-20260915\results\s3e_tables.json

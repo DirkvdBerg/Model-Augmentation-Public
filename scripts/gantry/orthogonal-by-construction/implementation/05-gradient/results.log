@@ -1,0 +1,89 @@
+==============================================================================
+STAGE 5 -- the gradient through the subtraction
+==============================================================================
+  M = 64 construction evaluations, 32 evaluation points, 128 ANN parameters, float64
+  basis rank 11/11
+  criterion: central-difference agreement at or below 1e-06; latent rows exactly 0.0; the detached control must be WORSE than 1e-04
+
+--- T1  autograd against an independent central difference (THE CRITERION) ---
+  gradient norm: autograd 1.345535e+04, central difference 1.345535e+04
+  RELATIVE 2-NORM DIFFERENCE = 1.8122e-09   MET (<= 1e-06)
+  worst per-parameter relative difference = 3.8812e-04
+
+--- T2  the additional-state columns are untouched, EXACTLY ---
+  ANN columns [6, 7]: max abs subtraction = 0.0e+00, exactly zero = True
+
+--- T3  THE DETACHED CONTROL, which must FAIL ---
+  differentiated through     norm(F' dG~/deta) = 6.7069e-14
+  DETACHED (the control)     norm(F' dG~/deta) = 5.8173e+01
+  no projection at all       norm(F' dG/deta)  = 5.8173e+01
+
+  ratio detached to unprojected: 1.000000   (1.0 means detaching buys exactly nothing)
+  ratio through to unprojected : 1.1529e-15
+  the control FAILS as required: True
+  Detaching leaves the forward output identical and destroys the gradient property.
+  This is why differentiating through the coefficient is not optional.
+
+--- T4  the identity dG~/deta = (I - P) dG/deta ---
+  four random parameter directions, relative difference between dG~/deta and
+  (I - P) dG/deta: 1.051e-10, 2.801e-10, 6.518e-11, 6.423e-11
+  (the floor here is the central-difference floor, near 1e-8, not autograd round-off)
+
+--- T5  no gradient reaches the physical parameters through the basis ---
+  d loss / d free_params = None
+  The basis is built under no_grad at a detached expansion point and held for the
+  epoch, so the physical parameters receive nothing through it. This is the ONE
+  deliberate approximation in the gradient and it is verified here, not asserted.
+  (the physical block still receives gradient through the ROLLOUT in a real model;
+   this block is evaluated pointwise, so there is no rollout path to carry it)
+
+--- T6  the latent path: what the FROZEN reference set does to d a / d eta_lat ---
+  Proposition 7.1: with a baseline-only reference set the latent-path parameters get
+  EXACTLY 0.000000e+00 sensitivity, because the latent-to-physical map is multiplied by
+  zero where x_a = 0. The handoff expects candidate (a) to dissolve this, on the ground
+  that rollout-drawn evaluation points carry nonzero x_a already. Measured below, that
+  expectation holds for the VALUE of the coefficient and FAILS for its GRADIENT, and
+  the reason is the freeze rather than the point set.
+
+  (a) the GRADIENT, with the reference set FROZEN, which is the shipped design:
+    construction evaluations                            latent-path     all params
+    prescribed points, x_a scale 1.0                   0.000000e+00   8.933448e+08
+    rollout 1 step, x_a from the network               0.000000e+00   6.264043e+07
+    rollout 2 steps, x_a from the network              0.000000e+00   6.000253e+06
+    rollout 2 steps, x_a FORCED to zero                0.000000e+00   6.624056e+06
+  Exactly zero in EVERY row, the rollout rows included. A frozen point set is data:
+  the latent output rows write ANN columns 6 and 7 only, the coefficient is fitted from
+  the PHYSICAL columns, and with the points detached there is no remaining path.
+
+  (b) the same with the reference points left ATTACHED, as the DIAGNOSTIC that
+      isolates the freeze as the cause (this is NOT the shipped design):
+    construction evaluations                            latent-path     all params
+    rollout 1 step, attached                           5.487669e+05   6.769074e+07
+    rollout 2 steps, attached                          7.356420e+04   6.630395e+06
+    rollout 2 steps, attached, x_a forced to zero      0.000000e+00   7.204934e+06
+
+  (c) the VALUE of the coefficient DOES depend on the latent content of the points:
+    norm(a with x_a from the network - a with x_a forced to zero) / norm(a) = 1.5658e-01
+    so the rollout-drawn points are not cosmetic; they change what is subtracted.
+
+  READING. The handoff expected candidate (a) to dissolve the latent blindness. Half
+  of that holds: the coefficient VALUE depends on the latent content of the reference
+  points, by the amount in (c). The other half does not: d a / d eta_lat is EXACTLY
+  zero under the shipped design, and (b) shows why -- it is the FREEZE, not the choice
+  of points. And the freeze is not negotiable: the derivation rules out fitting the
+  coefficient along the live trajectory precisely because the correction at step k
+  would then depend on the learned writes at later steps, i.e. on the future.
+  Stated carefully, because it is easy to overstate. The latent WRITE g_a is
+  deliberately NOT orthogonalized and that is correct: the baseline defines no
+  additional-state update, so the basis has zero rows there and there is nothing to be
+  orthogonal TO. The physical write DEPENDENCE on the additional states IS projected,
+  because the subtraction is evaluated at the actual rollout point with x_a included.
+  What is exactly zero is narrower than either: only the sensitivity of the FITTED
+  COEFFICIENT to the latent-path weights, the coefficient being fitted once per pass
+  from a frozen snapshot. The projection is still applied in full at every point.
+  So the limitation is real but small, and it does not change the design: the
+  alternative is ruled out on causality.
+
+==============================================================================
+STAGE 5 VERDICT: central difference 1.8122e-09 (<= 1e-06), latent rows exactly 0.0, detached control fails as required -- MET
+==============================================================================

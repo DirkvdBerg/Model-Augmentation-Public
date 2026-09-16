@@ -1,0 +1,42 @@
+  detuning applied to theta_init: {'cg1': 1.25, 'cg2': 0.8, 'cy': 1.3, 'kb1': 1.1, 'kb2': 1.1, 'mh': 1.08, 'mb': 0.92, 'd': 1.15}
+  ||truth - baseline(theta_true)||  (the residual to learn) = 4.4227e-04
+  ||truth - baseline(theta_init)||  (total initial error)   = 1.0640e-03
+  ratio: the parameter error is 2.4x the unmodelled residual, so both components have something to do
+    Phi_ref at theta_bar = theta_init: shape (1536, 15) rank 11/15 at rcond 1e-10; largest discarded / sigma0 = 2.31e-17
+  G26 Condition 4 check on this data set: ||Phi^T delta|| / (||Phi|| ||delta||) = 5.1684e-01
+  rho(Phi_d; delta) = 0.9465  -> the friction is 94.6 percent absorbable by the baseline tangent set, so Condition 4 does NOT hold and Theorem 7 does not apply
+
+==============================================================================
+Arms
+==============================================================================
+  initial combination error: mean 0.1122  max 0.3000
+  arm                                        fit   combo mean   combo max  rho(learned)
+  init (no training)                   1.064e-03       0.1122      0.3000             -
+  A no projection                      1.630e-04       0.0891      0.4565        0.9555   [65 s]
+  B 2025 penalty beta=1e0              2.069e-04       0.1565      1.0211        0.9237   [63 s]
+  B 2025 penalty beta=1e2              4.033e-04       0.0886      0.3654        0.0927   [63 s]
+  B 2025 penalty beta=1e4              5.697e-04       0.1063      0.3009        0.0008   [65 s]
+  C 2026 exact subtraction             1.765e-04       0.4070      2.0451        0.4311   [62 s]
+
+  per-combination relative error, mean over 3 seeds
+  combination       Aprojec       Bbeta=1       Bbeta=1       Bbeta=1       Csubtra
+  kb_sum            0.0120        0.0018        0.0042        0.0419        0.0006
+  cg1               0.1727        0.0223        0.2133        0.2499        0.6598
+  cg2               0.1165        0.0884        0.1678        0.1998        0.4291
+  cy                0.4565        1.0211        0.3654        0.3009        1.2443
+  cb_sum            0.0157        0.1094        0.0111        0.0002        1.6657
+  mh                0.0072        0.0014        0.0046        0.0669        0.0001
+  m_total           0.0242        0.0371        0.0329        0.0225        0.0108
+  m_diff            0.0433        0.2702        0.0619        0.0001        0.0560
+  J_eff             0.0105        0.0026        0.0029        0.0357        0.0003
+  d                 0.0324        0.0109        0.0215        0.1452        0.0032
+  INIT              0.1500        0.1500        0.1500        0.1500        0.1500
+
+  seed spread of the combination mean error:
+    A no projection                    sd = 4.6283e-03
+    B 2025 penalty beta=1e0            sd = 4.9037e-03
+    B 2025 penalty beta=1e2            sd = 8.8934e-04
+    B 2025 penalty beta=1e4            sd = 1.6879e-05
+    C 2026 exact subtraction           sd = 1.5460e-01
+
+wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-by-construction\investigation-20260915\results\s3c_tables.json

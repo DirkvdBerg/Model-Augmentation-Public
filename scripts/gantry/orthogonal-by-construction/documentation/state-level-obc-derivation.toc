@@ -1,0 +1,22 @@
+\contentsline {section}{\numberline {1}Scope, and what the level means}{2}{section.1}%
+\contentsline {paragraph}{Notation.}{2}{section*.2}%
+\contentsline {section}{\numberline {2}What is inherited}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Orthogonality holds at any rank}{3}{subsection.2.1}%
+\contentsline {section}{\numberline {3}The state equation, with the baseline separated}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}The baseline regressor and its offset}{4}{subsection.3.1}%
+\contentsline {section}{\numberline {4}The orthogonality condition for this structure}{4}{section.4}%
+\contentsline {subsection}{\numberline {4.1}A per-step condition is unusable}{4}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}The condition, and why it sees only the physical rows}{4}{subsection.4.2}%
+\contentsline {section}{\numberline {5}The by-construction parameterization}{5}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Why the coefficient cannot be fitted along the trajectory}{5}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}The construction}{5}{subsection.5.2}%
+\contentsline {section}{\numberline {6}What the additional states do}{6}{section.6}%
+\contentsline {section}{\numberline {7}The zero slice: a defect of the obvious reference set}{6}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Candidate repairs}{7}{subsection.7.1}%
+\contentsline {section}{\numberline {8}One step is not enough for the output}{7}{section.8}%
+\contentsline {section}{\numberline {9}Reduction to the published construction}{8}{section.9}%
+\contentsline {section}{\numberline {10}Assumptions of the source that our setting breaks}{8}{section.10}%
+\contentsline {section}{\numberline {11}Verification record}{9}{section.11}%
+\contentsline {paragraph}{Surrogate, \nolinkurl {surrogate\_obc\_symbolic.m}.}{9}{section*.3}%
+\contentsline {paragraph}{Real equations at Euler fidelity, \nolinkurl {gantry\_euler\_regressor\_structure.m}.}{9}{section*.4}%
+\contentsline {paragraph}{Not verified here.}{10}{section*.5}%

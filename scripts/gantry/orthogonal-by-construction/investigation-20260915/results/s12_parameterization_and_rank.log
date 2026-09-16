@@ -1,0 +1,135 @@
+nominal theta (14) = {'kb1': 1987.5, 'kb2': 1987.5, 'cg1': 14.5, 'cg2': 20.299999, 'cy': 10.0, 'cb1': 9.0, 'cb2': 9.0, 'mh': 10.1, 'm1': 10.2, 'm2': 10.7, 'mb': 22.799999, 'Jb': 1.0, 'Jh': 0.05, 'd': 0.1}
+Lb = 0.7250000238418579   Ts = 5e-05   up_sample = 10   Y range = (-0.3, 0.3)
+
+==============================================================================
+S0  Standalone model verified against the production block
+==============================================================================
+  block vs standalone: rel 2-norm difference = 1.748e-07 (float32 block vs float64 here)
+  verdict: OK (float32 block against float64 reimplementation)
+  min eig M(Y) over [-0.3, 0.3] = 3.736287 kg at Y = +0.006 m
+  verdict: M(Y) positive definite over the documented range: True
+
+==============================================================================
+S1a  Is the explicit transition linear in any finite parameter set?
+==============================================================================
+  det M(Y) =
+   ⎛                                                                           ↪
+mh⋅⎝4⋅Jb⋅m₁ + 4⋅Jb⋅m₂ + 4⋅Jb⋅mb + 4⋅Jb⋅mh + 4⋅Jh⋅m₁ + 4⋅Jh⋅m₂ + 4⋅Jh⋅mb + 4⋅Jh ↪
+────────────────────────────────────────────────────────────────────────────── ↪
+                                                                               ↪
+
+↪            2            2            2            2            2             ↪
+↪ ⋅mh + 4⋅L_b ⋅m₁⋅m₂ + L_b ⋅m₁⋅mb + L_b ⋅m₁⋅mh + L_b ⋅m₂⋅mb + L_b ⋅m₂⋅mh + 4⋅L ↪
+↪ ──────────────────────────────────────────────────────────────────────────── ↪
+↪                                4                                             ↪
+
+↪                                 2            2            2      ⎞
+↪ _b⋅Y⋅m₁⋅mh - 4⋅L_b⋅Y⋅m₂⋅mh + 4⋅Y ⋅m₁⋅mh + 4⋅Y ⋅m₂⋅mh + 4⋅Y ⋅mb⋅mh⎠
+↪ ──────────────────────────────────────────────────────────────────
+↪                                                                   
+
+  det M(Y) free symbols: ['Jb', 'Jh', 'L_b', 'Y', 'm1', 'm2', 'mb', 'mh']
+  -> the denominator depends on the parameters ['Jb', 'Jh', 'L_b', 'm1', 'm2', 'mb', 'mh']
+  VERDICT H1a: ACCEPTED. The explicit velocity rows are p/q with q carrying the
+  unknowns, so no exact finite linear-in-unknown-combinations representation of
+  the explicit one-step map exists. Any linear surrogate is a local expansion.
+
+  cross-check det M(0) - mh*(alpha*gamma - beta^2) = 0
+  (gantry_ss.build_poly_constants uses gamma WITHOUT mh*d^2; the identity above
+   confirms that convention reproduces det M0 exactly.)
+
+==============================================================================
+S1b  The implicit force balance IS exactly linear in lumped coefficients
+==============================================================================
+  residual(lumped, substituted back) - residual(raw) = [0, 0, 0]
+  identity holds: True
+  residual is affine in every lumped coefficient (all 2nd derivatives zero): True
+  number of lumped coefficients = 11 (A, B, G, MH, MD, MD2, CG1, CG2, CBs, CY, KBs)
+  ADMISSIBILITY CONSTRAINTS (the embedding is exact but REDUNDANT):
+    MH appears in M0[2,2], M1[0,1], M1[1,0] and M2[1,1] and must be the SAME scalar;
+    MD^2 = MD2 * MH   (since MD = mh*d, MD2 = mh*d^2  =>  MD^2 = mh^2 d^2 = MH*MD2);
+    A, G, MH > 0 and M(Y) > 0 over the scheduling range.
+  Estimating MD and MD2 as free coefficients breaks MD^2 = MH*MD2 and leaves the
+  physical (mh, d) unrecoverable; it is 11 coefficients for 10 degrees of freedom.
+  VERDICT H1b: ACCEPTED with the redundancy constraint named.
+  NOTE on the estimator: this residual is M(Y) times the acceleration error, so
+  least squares on r weights the three logical channels by M(Y) and needs qddot.
+  It is a different estimand from output prediction; see decision-report.md.
+
+==============================================================================
+S2  Parameter Jacobian of the RK4 transition: rank and null space
+==============================================================================
+  physical coords, 24 designed points, endogenous Y: shape (144, 14)  rank=10 at rel tol 1e-08
+    sigma = [5.071e-03 1.274e-03 1.215e-04 5.908e-05 1.084e-05 8.915e-06 6.790e-06 2.094e-06 1.688e-06 5.416e-07 6.841e-20 2.456e-20 7.093e-22 1.072e-37]
+    sigma[9]/sigma[0] = 1.068e-04   sigma[10]/sigma[0] = 1.349e-17   gap factor = 7.916e+12
+
+  rank threshold sweep (physical coords):
+    rel tol 1e-04 -> rank 10
+    rel tol 1e-06 -> rank 10
+    rel tol 1e-08 -> rank 10
+    rel tol 1e-10 -> rank 10
+    rel tol 1e-12 -> rank 10
+    rel tol 1e-14 -> rank 10
+
+  coordinate comparison (rank is invariant, conditioning is not):
+    physical    rank 10  cond(on range) = 9.364e+03  sigma0 = 5.071e-03  sigma[9] = 5.416e-07
+    normalized  rank 10  cond(on range) = 1.798e+02  sigma0 = 2.798e-03  sigma[9] = 1.556e-05
+    log         rank 10  cond(on range) = 1.798e+02  sigma0 = 2.798e-03  sigma[9] = 1.556e-05
+
+  central-difference cross-check (physical coords), relative step sweep:
+    h_rel 1e-03: ||J_fd - J_ad||/||J_ad|| = 2.903e-08   rank(J_fd) = 10
+    h_rel 1e-04: ||J_fd - J_ad||/||J_ad|| = 1.018e-08   rank(J_fd) = 10
+    h_rel 1e-05: ||J_fd - J_ad||/||J_ad|| = 8.045e-08   rank(J_fd) = 11
+    h_rel 1e-06: ||J_fd - J_ad||/||J_ad|| = 9.784e-07   rank(J_fd) = 11
+    h_rel 1e-07: ||J_fd - J_ad||/||J_ad|| = 7.677e-06   rank(J_fd) = 12
+
+  predicted null directions (from the algebra of build_matrices):
+    kb1 - kb2
+    cb1 - cb2
+    -m1/2 - m2/2 + mb + (Lb^2/4) Jb
+    -m1/2 - m2/2 + mb + (Lb^2/4) Jh
+
+  numerical null space dimension = 4
+  principal angles predicted vs numerical null space [rad] = [0.000e+00 0.000e+00 2.581e-08 2.581e-08]
+  max principal angle = 2.581e-08 rad
+  VERDICT: predicted and numerical null spaces AGREE
+
+  exact invariance: perturb along a null direction, compare matrices and the transition at INDEPENDENT points
+    null dir 0 eps=1e-03: max |dM,dC,dK| = 0.000e+00   max |dx_next| = 0.000e+00   max |d combo| = 0.000e+00
+    null dir 0 eps=1e-01: max |dM,dC,dK| = 0.000e+00   max |dx_next| = 0.000e+00   max |d combo| = 0.000e+00
+    null dir 1 eps=1e-03: max |dM,dC,dK| = 0.000e+00   max |dx_next| = 0.000e+00   max |d combo| = 0.000e+00
+    null dir 1 eps=1e-01: max |dM,dC,dK| = 0.000e+00   max |dx_next| = 0.000e+00   max |d combo| = 0.000e+00
+    null dir 2 eps=1e-03: max |dM,dC,dK| = 0.000e+00   max |dx_next| = 0.000e+00   max |d combo| = 0.000e+00
+    null dir 2 eps=1e-01: max |dM,dC,dK| = 0.000e+00   max |dx_next| = 0.000e+00   max |d combo| = 0.000e+00
+    null dir 3 eps=1e-03: max |dM,dC,dK| = 0.000e+00   max |dx_next| = 0.000e+00   max |d combo| = 0.000e+00
+    null dir 3 eps=1e-01: max |dM,dC,dK| = 4.441e-16   max |dx_next| = 0.000e+00   max |d combo| = 4.441e-16
+
+  converse: perturb each of the 10 combinations and confirm an independent response
+    sigma of d x_next / d combo = [4.316e-03 7.600e-04 1.242e-04 3.278e-05 6.879e-06 5.743e-06 4.775e-06 1.589e-06 1.165e-06 3.247e-07]
+    rank = 10 of 10   cond = 1.329e+04
+
+  rank across three admissible nominal parameter sets and two reference grids:
+    set 0 grid 0: min eig M =   4.4510  rank = 10  max angle to predicted null = 3.942e-08 rad
+    set 0 grid 1: min eig M =   4.4510  rank = 10  max angle to predicted null = 1.490e-08 rad
+    set 1 grid 0: min eig M =   3.9577  rank = 10  max angle to predicted null = 3.650e-08 rad
+    set 1 grid 1: min eig M =   3.9577  rank = 10  max angle to predicted null = 3.942e-08 rad
+    set 2 grid 0: min eig M =   3.5725  rank = 10  max angle to predicted null = 2.107e-08 rad
+    set 2 grid 1: min eig M =   3.5725  rank = 10  max angle to predicted null = 1.490e-08 rad
+
+==============================================================================
+S1c  Scheduling conventions: endogenous, exogenous/measured, frozen
+==============================================================================
+  reference scale: max |x_next - x| over the designed points = 1.742e-03
+  frozen Y = +0.00: max |x_next(endo) - x_next(frozen)| = 2.295e-04   relative to state increment = 1.317e-01
+  frozen Y = +0.15: max |x_next(endo) - x_next(frozen)| = 1.557e-04   relative to state increment = 8.936e-02
+  frozen Y = +0.30: max |x_next(endo) - x_next(frozen)| = 2.081e-04   relative to state increment = 1.195e-01
+  exogenous Y held at x[2] of the INITIAL state: max difference to endogenous = 1.326e-08
+  (nonzero because the endogenous convention re-reads Y at every RK4 stage and
+   every substep, blocks.py:778-784 and 825; an exogenous/measured Y is held.)
+  round-off floor (same computation twice) = 0.000e+00
+
+  can a scheduling mismatch mimic a parameter mismatch?
+  fraction of the frozen-Y error explained by the 14 parameter tangents = 0.1079
+  residual 2-norm / total = 9.4450e-01
+
+wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-by-construction\investigation-20260915\results\s12_tables.json

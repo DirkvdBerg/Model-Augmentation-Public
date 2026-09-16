@@ -1,0 +1,30 @@
+==============================================================================
+STAGE 0c -- the rollout needs ONE directional derivative, not the Jacobian
+==============================================================================
+  batch 512, float64, CPU, torch 2.5.1, threads 6
+
+  identity check   max abs (J @ a) = 1.137579e-02
+  jvp(f, v0, a) vs J @ a   max rel diff = 4.575e-16
+
+  --- seconds per call at batch 512 ---
+  plain block step                            0.005625      1.00x
+  (iv)  jacfwd, full 10-column J              0.080285     14.27x   <- avoided in the rollout
+  (vii) jvp, ONE direction a                  0.047710      8.48x   <- what the rollout pays
+
+  plain step forward + backward               0.014370      1.00x
+  (viii) jvp with grad-carrying a, + backward  0.060153      4.19x of plain fwd+bwd
+
+  --- cost of one nf = 400 window at batch 512 ---
+  rollout, steps only                               2.250 s
+  + one jvp per step (the subtraction)             21.334 s   ( 9.48x)
+  + full Jacobian per step (what 0b priced)        34.364 s   (15.27x)
+
+  the construction evaluations, built ONCE per epoch under no_grad:
+    M =    32 points     0.0050 s
+    M =    64 points     0.0100 s
+    M =   256 points     0.0401 s
+    M =  1024 points     0.1606 s
+
+  --- verdict ---
+  8.48x: even the single directional derivative is expensive. Price the analytic route (b) before building the projection.
+==============================================================================

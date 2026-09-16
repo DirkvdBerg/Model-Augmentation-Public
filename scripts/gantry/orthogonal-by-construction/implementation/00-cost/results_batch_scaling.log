@@ -1,0 +1,21 @@
+==============================================================================
+STAGE 0d -- per-operation or per-element? batch scaling of the Jacobian cost
+==============================================================================
+  float64, CPU, torch 2.5.1, threads 6
+  production batch is 256 (config.py batch_size)
+
+   batch    step [s]   jvp 1 dir    ratio   jacfwd 10    ratio     fwd+bwd     jvp f+b    ratio
+      64    0.003540    0.046480   13.13x    0.077600   21.92x    0.014563    0.059433    4.08x
+     256    0.004873    0.044004    9.03x    0.074184   15.22x    0.017751    0.056622    3.19x
+     512    0.004695    0.045751    9.74x    0.083380   17.76x    0.018488    0.059729    3.23x
+    2048    0.007919    0.069582    8.79x    0.131581   16.62x    0.032456    0.102132    3.15x
+
+  --- reading ---
+  jvp/step ratio: 13.13x at batch 64 -> 8.79x at batch 2048
+  the ratio FALLS with batch: the cost is per-OPERATION (transform wrapper and the per-call M(Y) rebuild), not per-element. The production ratio is the one at the production batch, and an analytic implementation would attack exactly this overhead.
+
+  AT THE PRODUCTION BATCH 256, which is the number the design is judged on:
+    forward only:        one jvp is 9.03x a plain step
+    forward + backward:  3.19x, i.e. a training step costs that much more with the subtraction than without
+    one nf = 400 window: 7.10 s -> 22.65 s
+==============================================================================

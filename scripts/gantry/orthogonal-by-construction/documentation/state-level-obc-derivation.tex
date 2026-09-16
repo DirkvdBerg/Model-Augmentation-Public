@@ -1,0 +1,564 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=27mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,bm}
+\usepackage{booktabs,longtable,array}
+\usepackage{url}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+\newcommand{\R}{\mathbb R}
+\newcommand{\ran}{\operatorname{range}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\code}[1]{\nolinkurl{#1}}
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{lemma}[proposition]{Lemma}
+\newtheorem{example}[proposition]{Example}
+\newtheorem{assumption}[proposition]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[proposition]{Remark}
+\newtheorem{decision}[proposition]{Decision}
+
+\title{Orthogonal-by-construction augmentation\newline
+at the level of the state equation,\newline
+for an augmentation carrying additional states}
+\author{Master's thesis working derivation\\Eindhoven University of Technology}
+\date{11 September 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Gy\"or\"ok et al.\ (2026) parameterize an additive augmentation so that the learned component is
+orthogonal to the baseline by construction, with no trade-off weight, and prove that the
+resulting parameter Jacobian is block structured. Their model class is discrete-time
+input--output with a baseline linear in its parameters and a static learning component. This note
+carries the construction to the level of the state equation, for a baseline that is rational in
+its parameters and self-scheduled, and for a learning component that carries its own additional
+states. Four results. The condition on the augmented state map reduces, with no modelling choice,
+to a condition on the learned write into the physical rows alone, because the baseline contributes
+an identically zero block on the additional-state rows. Orthogonality holds at any rank, so the
+rank deficiency of our regressor costs the uniqueness of the auxiliary coefficient and nothing
+else. A coefficient frozen on an auxiliary point set makes the construction causal inside the
+recursion and retains exactly the property the block-Jacobian argument needs. And, against the
+construction, if that point set is the baseline-only rollout then the auxiliary coefficient is
+provably independent of every weight on the latent path, so the projection charges nothing there;
+separately, the one-step condition is not sufficient for non-overlap of the accumulated output.
+Every step marked \emph{verified} was checked in exact symbolic arithmetic, on a minimal surrogate
+and on the real gantry equations at explicit-Euler fidelity. Scripts and logs are named in
+Section~\ref{sec:verif}.
+\end{abstract}
+
+\tableofcontents
+
+\section{Scope, and what the level means}
+
+Gy\"or\"ok's model class is discrete-time input--output: the regressor argument is a vector of
+lagged measured inputs and outputs. Our plant model is a state-space LPV--LFR description, and
+recasting it as an input--output model is the expensive path. The supervisors' direction is
+therefore to impose the same orthogonality on the right-hand side of the state equation. The two
+functions whose outputs are made orthogonal are the two state-update contributions that add up,
+not the measured output. What the state-level condition does and does not say about the measured
+output over a horizon is the subject of Section~\ref{sec:nonprop}, and it is a limitation of the
+condition rather than an alternative reading of it.
+
+Three items are out of scope and named so that they are not read into what follows: the value of
+any penalty weight, since the construction has none; the existing fixed-reference trajectory
+penalty, which is a verified method answering a different question and is not replaced here; and
+the input--output level.
+
+\paragraph{Notation.}
+Physical state $x_p\in\R^{n_p}$ with $n_p=6$, additional states $x_a\in\R^{n_a}$ with $n_a=2$ by
+default, $x=\col(x_p,x_a)\in\R^{n_x}$, input $u\in\R^{n_u}$ with $n_u=3$, output $y\in\R^{n_y}$
+with $n_y=3$. Physical parameters $\theta\in\R^{n_\theta}$ with $n_\theta=14$, augmentation
+parameters $\eta$, encoder parameters $\rho$. Selection and routing:
+$E_p=\begin{bmatrix}I_{n_p}&0\end{bmatrix}^\top\in\R^{n_x\times n_p}$, and the routing expansion
+splits as $R=\col(R_p,R_a)$ with $R_p\in\R^{n_p\times n_w}$ and $R_a\in\R^{n_a\times n_w}$. The
+default configuration routes all $n_x$ rows, so $R_p=\begin{bmatrix}I_{n_p}&0\end{bmatrix}$ and
+$R_a=\begin{bmatrix}0&I_{n_a}\end{bmatrix}$. The identity $E_p^\top R=R_p$ is used repeatedly.
+
+\section{What is inherited}\label{sec:inherited}
+
+For a baseline $\hat y_k=\phi(x_k)\theta_b$ linear in its parameters, and a static learning
+component, stack over the estimation set and write $\Phi=\col_k\phi(x_k)$ and
+$F_\eta=\col_k f^{\mathrm{ANN}}(x_k)$. The published construction is
+\begin{align}
+ \theta_{\mathrm{aux}}&=(\Phi^\top\Phi)^{-1}\Phi^\top F_\eta, \label{eq:g8}\\
+ \widetilde F_\eta&=\bigl[I-\Phi(\Phi^\top\Phi)^{-1}\Phi^\top\bigr]F_\eta,\label{eq:g10}\\
+ \Phi^\top\widetilde F_\eta&=0,\label{eq:g11}
+\end{align}
+which are Eqs.~(8), (10) and (11) of the paper, its Lemma~3 being \eqref{eq:g11}. At prediction
+time the coefficient is frozen and the correction $\phi(x_k)\hat\theta_{\mathrm{aux}}$ is applied
+at the current point, which is its Eq.~(13) and is what the released implementation does.
+
+Two features of the source decide everything below, and both are easily missed.
+
+\begin{remark}[The paper permits an auxiliary evaluation set]\label{rem:aux}
+Immediately after Lemma~3 the paper states that $\theta_{\mathrm{aux}}$ may be built from any
+auxiliary evaluation of the regressor, on a synthetically generated set or on a subset of the
+estimation data, and that using the whole training set is a convenience rather than a restriction.
+The freeze of Section~\ref{sec:construction} is therefore licensed by the source, not invented
+here.
+\end{remark}
+
+\begin{remark}[What the block-Jacobian result actually needs]\label{rem:thm18}
+The proof of the paper's Theorem~18 forms
+$\psi_k=\begin{bmatrix}\phi(x_k)&J_f(x_k)\end{bmatrix}$ with
+$J_f=\partial\widetilde f^{\mathrm{ANN}}/\partial\theta_a$ and argues
+$\phi^\top J_f=0$, whence $\psi_k^\top\psi_k$ is block diagonal. That argument is
+$J_f=(I-P_\Phi)\,\partial F_\eta/\partial\theta_a$ together with $\Phi^\top(I-P_\Phi)=0$, and it
+is valid precisely because $P_\Phi$ does not depend on $\theta_a$. It does \emph{not} require
+exactness against a regressor recomputed at the current iterate. A frozen projector is therefore
+admissible for the block structure, and this is what makes Section~\ref{sec:construction}
+possible.
+\end{remark}
+
+\subsection{Orthogonality holds at any rank}
+
+Assumption~1 of the paper requires $\rank\Phi=n_\theta$. Ours fails that by construction. The
+orthogonality statement survives regardless, and it is worth separating the two.
+
+\begin{proposition}[Normal equations, any rank]\label{prop:anyrank}
+Let $\Phi\in\R^{m\times n}$ and $G\in\R^{m}$ be arbitrary, and let $\lambda$ be any solution of
+the normal equations $\Phi^\top\Phi\lambda=\Phi^\top G$. Then $\widetilde G=G-\Phi\lambda$
+satisfies $\Phi^\top\widetilde G=0$.
+\end{proposition}
+\begin{proof}
+$\Phi^\top\widetilde G=\Phi^\top G-\Phi^\top\Phi\lambda=0$ by the normal equations. A solution
+exists for every $G$, since $\Phi^\top G\in\ran(\Phi^\top)=\ran(\Phi^\top\Phi)$.
+\end{proof}
+
+\begin{remark}
+Rank deficiency makes $\lambda$ non-unique, and the pseudo-inverse of the released code selects
+the minimum-norm solution. It does not repair the deficiency. What is lost with Assumption~1 is
+the uniqueness argument of the paper's Theorem~7 and its Eq.~(21), not the orthogonality.
+\emph{Verified}: Proposition~\ref{prop:anyrank} was checked on the surrogate at its true
+deficient rank, and Eqs.~\eqref{eq:g8} to \eqref{eq:g11} were reproduced term for term on a
+generic full-rank regressor.
+\end{remark}
+
+\section{The state equation, with the baseline separated}\label{sec:state}
+
+The physical block reads $x_p$ and $u$ and writes the physical rows; the learned block reads the
+\emph{full} state, additional states included, and writes the routed rows; the output block reads
+$x_p$ and $u$ only. Hence
+\begin{equation}\label{eq:model}
+\boxed{
+\begin{aligned}
+ x_p(k+1)&=f_\theta\bigl(x_p(k),u(k)\bigr)\;+\;R_p\,g_\eta\bigl(x_p(k),x_a(k),u(k)\bigr),\\
+ x_a(k+1)&=\phantom{f_\theta\bigl(x_p(k),u(k)\bigr)\;+\;}R_a\,g_\eta\bigl(x_p(k),x_a(k),u(k)\bigr),\\
+ y(k)&=C\,x_p(k)+D\,u(k),\\
+ x(0)&=e_\rho\bigl(y(-1),\dots,u(-1),\dots\bigr).
+\end{aligned}}
+\end{equation}
+Four things to notice, each used later. The second row carries \emph{no} baseline term: the
+baseline defines no equation for the additional states, so on that row there is nothing for a
+learned contribution to overlap with. The learned block appears in both rows with the same
+parameters $\eta$, so the two writes are not independent. The third row does not read $x_a$, so
+the entire influence of the additional states on anything observable is routed through $R_pg_\eta$
+at a later step. The fourth row contains parameters that appear nowhere else, so any condition
+imposed on the first two rows is silent about the encoder.
+
+Compactly, with $F_\theta(x,u)=E_pf_\theta(x_p,u)$ and $R=\col(R_p,R_a)$,
+\begin{equation}\label{eq:compact}
+ x(k+1)=F_\theta\bigl(x(k),u(k)\bigr)+R\,g_\eta\bigl(x(k),u(k)\bigr).
+\end{equation}
+
+\subsection{The baseline regressor and its offset}
+
+Our baseline is rational in $\theta$ through $M(Y)^{-1}$ and then integrated, so $f_\theta$ is not
+linear in $\theta$ and no exact $\phi$ exists. Expand at a fixed $\bar\theta$ with the evaluation
+pair held fixed, which is the device the predecessor paper uses for nonlinear parameter dependence:
+\begin{align}
+ \Phi_p(x_p,u)&=\left.\frac{\partial f_\theta(x_p,u)}{\partial\theta}\right|_{\bar\theta}
+   \in\R^{n_p\times n_\theta},
+ &c(x_p,u)&=f_{\bar\theta}(x_p,u)-\Phi_p(x_p,u)\bar\theta\in\R^{n_p},\label{eq:taylor}\\
+ \widetilde\Phi_p&=\begin{bmatrix}\Phi_p&c\end{bmatrix}\in\R^{n_p\times(n_\theta+1)}.
+ &&\label{eq:extreg}
+\end{align}
+
+\begin{remark}[The offset column is not cosmetic]\label{rem:offset}
+The supervisors' condition is that the learned output be orthogonal to \emph{the output of the
+physics-based function}. For a baseline linear in its parameters, that set and the span of the
+parameter sensitivities coincide, which is why the paper can use $\Phi$ directly. Ours is rational
+in $\theta$, so they differ, and the faithful object is the affine set
+$\ran\widetilde\Phi_p$, the nominal transition included. A contribution that cancels the
+baseline's nominal response is charged under $\widetilde\Phi_p$ and is \emph{not} charged under
+$\Phi_p$ alone. This is a deliberate departure from the earlier decision, recorded for the
+trajectory penalty, to keep parameter-variation directions only; that method's declared target is
+the parameter-displacement functional, this one's is non-overlap of the maps. \emph{Verified} on
+the real gantry equations: the offset column is nonzero and lies outside the span of the fourteen
+parameter columns, so appending it strictly enlarges the protected set. The price is that the
+protected set now depends on the state origin, whereas parameter derivatives do not.
+\end{remark}
+
+\section{The orthogonality condition for this structure}\label{sec:condition}
+
+\subsection{A per-step condition is unusable}
+
+Stacking the full $n_x$ rows at a single step fails in both blocks at once. On the additional-state
+rows the basis is identically zero, so nothing is constrained. On the physical rows,
+$\widetilde\Phi_p$ has $n_\theta+1=15$ columns against $n_p=6$ rows, so it generically spans
+$\R^{6}$, its orthogonal complement is $\{0\}$, and a per-step projection would force
+$R_pg_\eta\equiv0$. The condition can only be a condition over a set of evaluation points. This is
+why the source stacks.
+
+\subsection{The condition, and why it sees only the physical rows}
+
+Fix an evaluation set $\mathcal Z=\{(x_p(i),x_a(i),u(i))\}_{i=1}^{M}$ and stack the regressor of
+the \emph{augmented} map \eqref{eq:compact} together with the learned write:
+\begin{equation}\label{eq:stacks}
+ \Psi=\col_i E_p\widetilde\Phi_p\bigl(x_p(i),u(i)\bigr)\in\R^{n_xM\times(n_\theta+1)},
+ \qquad
+ W_\eta=\col_i R\,g_\eta\bigl(x(i),u(i)\bigr)\in\R^{n_xM}.
+\end{equation}
+
+\begin{proposition}[The condition decouples onto the physical rows]\label{prop:decouple}
+With $\Psi$ and $W_\eta$ as in \eqref{eq:stacks},
+\begin{equation}\label{eq:decouple}
+ \Psi^\top W_\eta=\sum_{i=1}^{M}\widetilde\Phi_p(i)^\top E_p^\top R\,g_\eta(i)
+                 =\sum_{i=1}^{M}\widetilde\Phi_p(i)^\top R_p\,g_\eta(i),
+\end{equation}
+so the inner product does not involve $R_ag_\eta$ at all. Moreover any correction $\Psi\lambda$
+writes into the physical rows only.
+\end{proposition}
+\begin{proof}
+Immediate from $E_p^\top R=R_p$ and $\Psi\lambda=\col_iE_p\widetilde\Phi_p(i)\lambda$.
+\end{proof}
+
+\begin{remark}
+This is the precise content of the informal statement that on the additional-state rows the
+condition reads ``orthogonal to zero''. It is not a modelling choice to restrict the condition to
+the physical write: the structure of \eqref{eq:model} does it. \emph{Verified} on the real gantry
+equations: the parameter Jacobian of the augmented map is exactly zero on the additional-state
+rows, as an identity in the state and the input.
+\end{remark}
+
+Accordingly, define the physical-row stacks
+\begin{equation}\label{eq:phistack}
+ \Phi_{\mathcal Z}=\col_i\widetilde\Phi_p\bigl(x_p(i),u(i)\bigr)\in\R^{n_pM\times(n_\theta+1)},
+ \qquad
+ G_\eta=\col_i R_p\,g_\eta\bigl(x(i),u(i)\bigr)\in\R^{n_pM},
+\end{equation}
+and state the condition.
+
+\begin{decision}[State-level orthogonality condition]\label{dec:cond}
+The augmentation is orthogonal to the baseline on $\mathcal Z$ when, for $\eta_{\mathrm{aux}}$
+solving $\Phi_{\mathcal Z}^\top\Phi_{\mathcal Z}\eta_{\mathrm{aux}}=\Phi_{\mathcal Z}^\top G_\eta$,
+\begin{equation}\label{eq:cond}
+ \Phi_{\mathcal Z}^\top\widetilde G_\eta=0,
+ \qquad \widetilde G_\eta=G_\eta-\Phi_{\mathcal Z}\eta_{\mathrm{aux}}.
+\end{equation}
+\end{decision}
+
+By Proposition~\ref{prop:anyrank} this holds at any rank. By Proposition~\ref{prop:decouple} it
+constrains the learned physical write only.
+
+\section{The by-construction parameterization}\label{sec:construction}
+
+\subsection{Why the coefficient cannot be fitted along the trajectory}
+
+If $\mathcal Z$ is the training rollout then $x(i)$ depends on $\eta$, so
+$\Phi_{\mathcal Z}$ does; worse, a coefficient fitted over a window depends on the learned writes
+at later steps in that window, which depend on the coefficient. The correction at step $k$ would
+be a function of the future. There is no exact fix inside one forward pass. The source never meets
+this because its learning component is static.
+
+\subsection{The construction}
+
+Let $\mathcal Z_{\mathrm{ref}}$ be a point set fixed before the pass, and abbreviate
+$\Phi_{\mathrm{ref}}=\Phi_{\mathcal Z_{\mathrm{ref}}}$ and
+$K_{\mathrm{ref}}$ for any fixed left inverse solving the normal equations, both constant in
+$\eta$ and $\theta$. Parameterize
+\begin{equation}\label{eq:construction}
+\boxed{
+\begin{aligned}
+ \eta_{\mathrm{aux}}(\eta)&=K_{\mathrm{ref}}\,
+   \col_i R_p\,g_\eta\bigl(x_{\mathrm{ref}}(i),u_{\mathrm{ref}}(i)\bigr),\\
+ x_p(k+1)&=f_\theta\bigl(x_p(k),u(k)\bigr)+R_p\,g_\eta\bigl(x(k),u(k)\bigr)
+           -\widetilde\Phi_p\bigl(x_p(k),u(k)\bigr)\,\eta_{\mathrm{aux}}(\eta),\\
+ x_a(k+1)&=R_a\,g_\eta\bigl(x(k),u(k)\bigr),\\
+ y(k)&=C\,x_p(k)+D\,u(k).
+\end{aligned}}
+\end{equation}
+The coefficient is a function of $\eta$ alone, computed once per pass, so the recursion is causal
+and the map remains differentiable in $\eta$. The correction is evaluated at the \emph{current}
+point and scaled by the \emph{frozen} coefficient, which is the form of the source's Eq.~(13).
+There is no trade-off parameter.
+
+\begin{proposition}[Exactness on the reference set]\label{prop:exact}
+On $\mathcal Z_{\mathrm{ref}}$, the projected write of \eqref{eq:construction} satisfies
+$\Phi_{\mathrm{ref}}^\top\widetilde G_\eta=0$ exactly, for every $\eta$ and at any rank.
+\end{proposition}
+\begin{proof}
+Proposition~\ref{prop:anyrank} with $\Phi=\Phi_{\mathrm{ref}}$ and $G=G_\eta$ evaluated on
+$\mathcal Z_{\mathrm{ref}}$.
+\end{proof}
+
+\begin{proposition}[The block structure survives the freeze]\label{prop:block}
+Let $P_{\mathrm{ref}}=\Phi_{\mathrm{ref}}K_{\mathrm{ref}}$ be the associated projector. On
+$\mathcal Z_{\mathrm{ref}}$,
+\begin{equation}
+ \frac{\partial}{\partial\eta}\Bigl[G_\eta-\Phi_{\mathrm{ref}}\eta_{\mathrm{aux}}(\eta)\Bigr]
+ =(I-P_{\mathrm{ref}})\frac{\partial G_\eta}{\partial\eta},
+ \qquad\text{hence}\qquad
+ \Phi_{\mathrm{ref}}^\top\frac{\partial\widetilde G_\eta}{\partial\eta}=0 .
+\end{equation}
+\end{proposition}
+\begin{proof}
+$K_{\mathrm{ref}}$ is constant, so
+$\partial(\Phi_{\mathrm{ref}}\eta_{\mathrm{aux}})/\partial\eta
+=P_{\mathrm{ref}}\,\partial G_\eta/\partial\eta$; then
+$\Phi_{\mathrm{ref}}^\top(I-P_{\mathrm{ref}})=0$ by Proposition~\ref{prop:anyrank} applied
+columnwise.
+\end{proof}
+
+\begin{remark}
+Proposition~\ref{prop:block} is the requirement identified in Remark~\ref{rem:thm18}, in our
+notation. Two consequences for implementation. Differentiating \emph{through}
+$\eta_{\mathrm{aux}}$ is not optional: treating it as a constant in the backward pass destroys the
+property the construction exists to provide. And the guarantee is a statement about
+$\mathcal Z_{\mathrm{ref}}$; along the training trajectory the residual
+$\Phi_{\mathrm{traj}}^\top\widetilde G_\eta$ is not zero and its size is an empirical quantity of
+the run. The honest claim is: orthogonal by construction with respect to the frozen reference set,
+and approximately orthogonal elsewhere by an amount that must be measured.
+\end{remark}
+
+\section{What the additional states do}\label{sec:additional}
+
+\begin{enumerate}
+\item \textbf{They are the unconstrained part.} By Proposition~\ref{prop:decouple} the projector
+acts as the identity on the $x_a$ block: no component of $R_ag_\eta$ is ever subtracted, at any
+evaluation point, under any freeze.
+\item \textbf{That is their intended role.} Those rows are where the learned component may carry
+memory longer than one step, which is what the baseline provably cannot represent and therefore
+what cannot be an overlap. Leaving them unconstrained is the correct design.
+\item \textbf{Gauge invariance, as a correctness check.} Under $x_a\mapsto Vx_a$ with $V$
+invertible, absorbed into the input and output weights of the learned block, $\Phi_{\mathrm{ref}}$
+is unchanged and \eqref{eq:cond} is unchanged. The additional states are an arbitrary coordinate
+system; a condition that constrained them would have to depend on that choice.
+\item \textbf{Two things the construction does not do}, and they are the substance of
+Sections~\ref{sec:zeroslice} and \ref{sec:nonprop}: the fitted coefficient can be blind to the
+entire latent path, and the one-step condition does not control the accumulated output.
+\end{enumerate}
+
+\section{The zero slice: a defect of the obvious reference set}\label{sec:zeroslice}
+
+The natural choice of $\mathcal Z_{\mathrm{ref}}$ is the closed-loop rollout of the baseline
+alone, learned block gated off, which is the point set already specified elsewhere in this
+project. In that rollout nothing writes the additional states, so $x_a\equiv0$ after the first
+step. That choice is fatal to the part of the condition that matters most here.
+
+\begin{proposition}[The frozen coefficient is blind to the latent path]\label{prop:zeroslice}
+Suppose $x_a(i)=0$ for all $i$ in $\mathcal Z_{\mathrm{ref}}$. Let $\eta_{\mathrm{lat}}$ collect
+every parameter of $g_\eta$ that acts only on the $x_a$ argument or only on the $R_a$ output
+block. Then
+\begin{equation}
+ \frac{\partial\,\eta_{\mathrm{aux}}}{\partial\,\eta_{\mathrm{lat}}}=0
+ \qquad\text{and}\qquad
+ \frac{\partial\,G_\eta}{\partial\,\eta_{\mathrm{lat}}}=0 ,
+\end{equation}
+while the same parameters change the learned physical write at any trajectory point with
+$x_a(k)\neq0$.
+\end{proposition}
+\begin{proof}
+$G_\eta$ depends on $g_\eta$ only through $R_pg_\eta(x_p(i),0,u(i))$. Parameters acting on the
+$x_a$ argument are multiplied by $x_a(i)=0$, and parameters acting on the $R_a$ block are
+annihilated by $R_p$. Hence both derivatives vanish, and $\eta_{\mathrm{aux}}$, a fixed linear
+map of $G_\eta$, inherits it. Off the reference set, $\partial(R_pg_\eta)/\partial\eta_{\mathrm{lat}}$
+contains the factor $x_a(k)$.
+\end{proof}
+
+\emph{Verified} on the surrogate: all six latent-path parameters give an exactly zero derivative
+of the fitted coefficient, while the physical write has derivative $x_a(k)$ with respect to the
+latent-to-physical weight.
+
+\begin{remark}[Consequence, with a verdict]
+The projection subtracts nothing from the latent path, so the construction is not merely silent
+about the $x_a$ rows, it is silent about the part of the \emph{physical} write that the additional
+states produce. This invalidates any claim that the construction controls the augmentation's use
+of its own states. It is a defect of the reference set, not of the condition.
+\end{remark}
+
+\subsection{Candidate repairs}
+
+\begin{enumerate}
+\item[(R1)] \textbf{Designed auxiliary set.} Draw $x_a$ over a designed region rather than from a
+rollout, which Remark~\ref{rem:aux} permits explicitly. Causal and independent of $\eta$. Cost:
+the points leave the data manifold, so the protected set describes a designed region, and the
+region has to be justified.
+\item[(R2)] \textbf{Lagged rollout.} Take $\mathcal Z_{\mathrm{ref}}$ from the augmented rollout
+of the \emph{previous} epoch, refreshed between epochs. Within a pass the set is fixed, so
+Propositions~\ref{prop:exact} and \ref{prop:block} hold exactly; the latent states are live, so
+Proposition~\ref{prop:zeroslice} does not apply. Cost: the set depends on $\eta$ across epochs,
+making the scheme a fixed-point iteration whose convergence is not established here. The
+predecessor paper contemplates exactly this refresh for its projection matrix.
+\item[(R3)] \textbf{Accept and declare.} Keep the baseline-only set and claim only non-overlap of
+the instantaneous physical write at zero latent state.
+\end{enumerate}
+
+\begin{decision}[Recommended]
+(R2), with (R1) as an independent check that the result does not depend on the refresh. (R2)
+is the only candidate that keeps the evaluation points on the data manifold while making the
+latent path visible, and it preserves both propositions within a pass, which is where the
+block-structure argument lives.
+\end{decision}
+
+\section{One step is not enough for the output}\label{sec:nonprop}
+
+Along a rollout of \eqref{eq:construction}, with $A(k)$ the state Jacobian of the closed augmented
+map,
+\begin{align}
+ S(k+1)&=A(k)S(k)+E_p\Phi_p(k),
+ &\frac{\partial y(k)}{\partial\theta}&=C\,E_p^\top S(k),\label{eq:Srec}\\
+ T(k+1)&=A(k)T(k)+R\,\frac{\partial \widetilde g}{\partial\eta},
+ &\frac{\partial y(k)}{\partial\eta}&=C\,E_p^\top T(k).\label{eq:Trec}
+\end{align}
+Condition \eqref{eq:cond} does not transfer through \eqref{eq:Srec} and \eqref{eq:Trec}, for three
+independent reasons: the accumulation mixes time steps through $A(k)$, and orthogonality at equal
+time says nothing about cross-time terms; $C$ retains $n_y=3$ of the $n_p=6$ physical rows, and
+orthogonality in $\R^{6}$ is not preserved by a projection; and the additional-state write is
+unconstrained yet enters $T$ through $R_a$ and returns to the physical rows through $A(k)$.
+
+\begin{example}[One-step condition exact, output contribution not orthogonal]\label{ex:nonprop}
+On the surrogate of Section~\ref{sec:verif}, take the sparsest live latent path: the position feeds
+the additional state with weight $w_{21}$, the additional state feeds the physical velocity row
+with weight $w_{13}$, all other weights zero. On the baseline-only reference set the learned write
+is \emph{identically zero}, so \eqref{eq:cond} holds exactly and trivially. Rolling out six steps,
+the learned contribution to the stacked output is nonzero from the fourth sample on, beginning
+$\tfrac{1}{50}w_{13}w_{21}$ and
+$\tfrac{112459}{1921000}w_{13}w_{21}$, and its inner product with the baseline output parameter
+sensitivity is a nonzero rational function of $w_{13}w_{21}$. \emph{Verified} symbolically.
+\end{example}
+
+\begin{remark}[Claim wording]
+The state-level condition is necessary and not sufficient for non-overlap of the accumulated
+output. What it does buy is the removal of the one-step overlap, so the flat direction of the
+source's Example~2, in which a learned linear layer trades off against the baseline parameters, is
+eliminated at the level of the one-step augmented map. No wording may assert that the construction
+prevents the augmentation from reproducing or negating baseline dynamics over a horizon.
+\end{remark}
+
+\section{Reduction to the published construction}\label{sec:reduction}
+
+Three reductions are required, and the third is the level gap, named rather than hidden.
+
+\begin{proposition}\label{prop:reduction}
+Set $n_a=0$; route all physical rows, so $R_p=I_{n_p}$; let the baseline be linear in $\theta$, so
+$c=0$ and $\widetilde\Phi_p=\Phi_p$ exactly; take $C=I$, $D=0$ with a one-step predictor and
+measured states in place of the encoder; and take
+$\mathcal Z_{\mathrm{ref}}$ to be the estimation set. Then \eqref{eq:model} becomes
+$x(k+1)=\Phi_p(x(k),u(k))\theta+g_\eta(x(k),u(k))$, which is the source's Eq.~(5) under
+$\phi\mapsto\Phi_p$ and $F_\eta\mapsto G_\eta$, and \eqref{eq:construction} together with
+Decision~\ref{dec:cond} becomes \eqref{eq:g8}, \eqref{eq:g10} and \eqref{eq:g11} term for term,
+with the inverse replaced by any normal-equations solution as in
+Proposition~\ref{prop:anyrank}.
+\end{proposition}
+
+\begin{remark}
+Without the third reduction the source's stacked object is the measured output and ours is the
+state update, and those are not the same object. A derivation that claimed reduction without
+naming it would be overstating the correspondence.
+\end{remark}
+
+\section{Assumptions of the source that our setting breaks}\label{sec:assumptions}
+
+Each row carries a verdict, never a bare caveat.
+
+\begin{longtable}{@{}p{0.30\linewidth}p{0.62\linewidth}@{}}
+\toprule
+\textbf{Assumption} & \textbf{Our setting, and the verdict}\\
+\midrule
+\endhead
+Baseline linear in the parameters, Eq.~(2)
+& Rational in $\theta$ through $M(Y)^{-1}$, then integrated. \emph{Weakens to} orthogonality
+against the affine tangent set at $\bar\theta$. Theorem~7 does not transfer. The offset column of
+Remark~\ref{rem:offset} restores the nominal response, at the price of dependence on the state
+origin.\\
+Regressor argument is a measured lagged input--output vector
+& Ours are unmeasured states. This is the extension the source's conclusion names as open.
+\emph{Weakens to} a condition relative to a chosen reference set, and introduces a dependence of
+the regressor on $\bar\theta$ that the source does not have.\\
+No encoder
+& $\rho$ appears in no row the condition touches. \emph{Invalidates} coverage of a contribution
+injected purely through $x(0)$.\\
+Static learning component
+& Ours carries $n_a$ states with no baseline equation. On that block the guarantee is
+\emph{absent}, and with Section~\ref{sec:nonprop} this \emph{invalidates} horizon-level
+non-overlap claims. With a baseline-only reference set, Section~\ref{sec:zeroslice} further
+\emph{invalidates} control of the latent path until (R2) or (R1) is adopted.\\
+No recursion
+& \emph{Weakens} the property from ``with respect to the current trajectory'' to ``with respect to
+the frozen reference set''. The block-structure argument survives, by
+Proposition~\ref{prop:block}.\\
+Assumption~1, $\rank\Phi=n_\theta$
+& Fails structurally. \emph{Verified}: the parameter block has rank $10$ of $14$, and $11$ of $15$
+with the offset column. \emph{Weakens to} uniqueness on $\ran\Phi^\top$ only; orthogonality
+unaffected, by Proposition~\ref{prop:anyrank}.\\
+Condition~4, $\Phi^\top\Delta=0$ on the data
+& $\Delta$ is unknown outside simulation, so Theorem~7 cannot be invoked. \emph{Weakens to} the
+error expression of Eq.~(21) plus the comparative statement under the source's Assumption~8.\\
+$\Sigma_e$ diagonal, for Theorem~18
+& Noiseless simulation has no noise term; closed-loop channels are not known to be uncorrelated.
+\emph{Weakens to} block diagonality of $\Psi^\top\Psi$ without the covariance conclusion.\\
+Conditions~11 and~14, stable predictor and persistency of excitation
+& The augmented rollout is marginally stable on the two integrator axes. \emph{Invalidates} the
+consistency results. The source's Remark~13 points at stable-by-design parameterizations.\\
+A frozen basis transfers
+& $\widetilde\Phi_p$ depends on the scheduling variable, and held-out scheduling positions are a
+validation axis. \emph{Weakens to} exactness over the range the reference set visits; mitigation
+is to span the operating range by design.\\
+One-step prediction cost
+& Ours is free-run with multiple shooting. \emph{Weakens} nothing in the condition, which never
+referred to the cost, but removes comparability with the source's numerical results.\\
+\bottomrule
+\end{longtable}
+
+\section{Verification record}\label{sec:verif}
+
+All arithmetic below is exact rational or symbolic. Scripts and logs live in
+\code{scripts/gantry/orthogonal-by-construction/code/}.
+
+\paragraph{Surrogate, \code{surrogate\_obc\_symbolic.m}.}
+Two physical states, one additional state, three parameters of which two enter only as a sum and
+one enters rationally, self-scheduled on a state, routing to the velocity row and the latent row,
+an output keeping the position and discarding the velocity, and a learning component affine in its
+weights. Confirms: the exact column dependency and the resulting deficient rank;
+Proposition~\ref{prop:anyrank} at that rank; Proposition~\ref{prop:reduction} against
+\eqref{eq:g8} to \eqref{eq:g11}; Proposition~\ref{prop:zeroslice} for all six latent-path
+parameters; and Example~\ref{ex:nonprop}.
+
+\paragraph{Real equations at Euler fidelity, \code{gantry\_euler\_regressor\_structure.m}.}
+The true $M(Y)=M_0+M_1Y+M_2Y^2$ with $M(Y)^{-1}$ kept rational, all fourteen parameters, one
+explicit Euler step, self-scheduled on the third state. Explicit Euler replaces the integrator of
+the implementation deliberately: it changes none of the structural properties checked, and keeps
+the expressions tractable. Confirms Proposition~\ref{prop:decouple} on the real model, the three
+exact column dependencies as identities in the state and the input, and the offset column being
+nonzero and outside the parameter span.
+
+\begin{remark}[An identifiability finding, to be reconciled]
+The null space of the parameter block has four directions, not three. Besides the two expected
+pairs it contains
+\begin{equation}
+ -\tfrac{1}{2}\bigl(\delta m_1+\delta m_2\bigr)+\delta m_b+\tfrac{L_b^2}{4}\,\delta J=0,
+\end{equation}
+for $J$ either inertia, whose difference recovers the expected inertia pair. So the inertia sum is
+identifiable only in combination with the mass sum through
+$J_b+J_h+\tfrac{L_b^2}{4}(m_1+m_2)$, which is exactly the entry of $M_0$ they share. The
+project's documented set of ten identifiable quantities lists the inertia sum on its own. The two
+statements concern different objects, a one-step map with the full state visible against a
+trajectory read through the output matrix, so this is not yet a contradiction. It should be
+reconciled before either is quoted in the thesis.
+\end{remark}
+
+\paragraph{Not verified here.} The size of the trajectory residual of
+Proposition~\ref{prop:block}, which decides whether the frozen construction behaves like a
+construction or like a weak penalty in practice; the achieved rank on real data rather than at
+designed points; and everything downstream of a training run, since no implementation of
+\eqref{eq:construction} exists.
+
+\end{document}

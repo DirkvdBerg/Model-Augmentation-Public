@@ -1,0 +1,87 @@
+==============================================================================
+STAGE 1 -- reduced ten-combination block against the raw fourteen-scalar block
+==============================================================================
+  Ts = 2.500000e-04 s, up_sample = 2, Y_op = None (LPV), float64, CPU
+  criterion: relative difference below 1e-12 over at least 24 designed points
+
+--- T7  the trainable parameter ---
+  reduced block parameters: ['free_params']
+  free_params shape (10,)
+  the parent fourteen-dimensional log coordinate is GONE from parameters and buffers
+  state_dict keys mentioning log_params: []   (expected none)
+
+--- T1  tensor combination map against the reporting path ---
+    kb_sum     3975.00000000
+    cg1          14.50000000
+    cg2          20.29999924
+    cy           10.00000000
+    cb_sum       18.00000000
+    mh           10.10000038
+    m_total      43.69999886
+    m_diff       -0.50000000
+    J_eff         3.79639076
+    d             0.10000000
+  max abs difference to _combos_from_raw = 0.000e+00
+
+--- T2  the gauge section is an exact section ---
+    nominal                          max REL (combos(section(v)) - v) = 0.000e+00
+    displaced x1.3                   max REL (combos(section(v)) - v) = 2.220e-15
+    displaced, m_diff sign flipped   max REL (combos(section(v)) - v) = 9.516e-16
+
+--- T3  reduced vs raw transition at the nominal parameters (THE CRITERION) ---
+  256 points, Y swept over (-0.3, 0.3)
+  max abs state increment (reference scale) = 8.068635e-03
+  max abs (reduced - raw)                   = 0.000000e+00
+  RELATIVE                                  = 0.000e+00   MET (< 1e-12)
+
+  per-Y breakdown over the designed sweep:
+       Y [m]    max abs diff      relative
+     -0.3000      0.0000e+00     0.000e+00
+     -0.2739      0.0000e+00     0.000e+00
+     -0.2478      0.0000e+00     0.000e+00
+     -0.2217      0.0000e+00     0.000e+00
+     -0.1957      0.0000e+00     0.000e+00
+     -0.1696      0.0000e+00     0.000e+00
+     -0.1435      0.0000e+00     0.000e+00
+     -0.1174      0.0000e+00     0.000e+00
+     -0.0913      0.0000e+00     0.000e+00
+     -0.0652      0.0000e+00     0.000e+00
+     -0.0391      0.0000e+00     0.000e+00
+     -0.0130      0.0000e+00     0.000e+00
+      0.0130      0.0000e+00     0.000e+00
+      0.0391      0.0000e+00     0.000e+00
+      0.0652      0.0000e+00     0.000e+00
+      0.0913      0.0000e+00     0.000e+00
+      0.1174      0.0000e+00     0.000e+00
+      0.1435      0.0000e+00     0.000e+00
+      0.1696      0.0000e+00     0.000e+00
+      0.1957      0.0000e+00     0.000e+00
+      0.2217      0.0000e+00     0.000e+00
+      0.2478      0.0000e+00     0.000e+00
+      0.2739      0.0000e+00     0.000e+00
+      0.3000      0.0000e+00     0.000e+00
+
+--- T4  the same at DISPLACED combinations ---
+      displacement    max abs diff      relative
+               1%      5.5511e-17     6.911e-15
+               5%      0.0000e+00     0.000e+00
+              20%      0.0000e+00     0.000e+00
+              50%      6.9389e-18     1.017e-15
+
+--- T5  gauge invariance: a DIFFERENT gauge, the same combinations ---
+  If the arbitrary split entered the model these would differ. The reference is the
+  nominal gauge (mb = 22.8, Jb:Jh = 1.0:0.05).
+    gauge                                 max abs diff      relative
+    mb = 5.0, Jb:Jh unchanged               0.0000e+00     0.000e+00   (relative combination difference 0.0e+00)
+    mb = 40.0, Jb:Jh unchanged              0.0000e+00     0.000e+00   (relative combination difference 0.0e+00)
+    mb unchanged, Jb:Jh = 1:1               0.0000e+00     0.000e+00   (relative combination difference 0.0e+00)
+    mb = 1.0, Jb:Jh = 1:9                   0.0000e+00     0.000e+00   (relative combination difference 0.0e+00)
+
+--- T6  admissibility over the scheduling range ---
+    nominal    min eig M(Y) =     3.7363 kg at Y = +0.006 m,  min abs d(Y) =   2.0625e+03 at Y = +0.003 m,  admissible = True
+    +20% all   min eig M(Y) =     4.5292 kg at Y = +0.003 m,  min abs d(Y) =   3.7581e+03 at Y = +0.003 m,  admissible = True
+    -20% all   min eig M(Y) =     3.0748 kg at Y = +0.003 m,  min abs d(Y) =   1.1319e+03 at Y = +0.003 m,  admissible = True
+
+==============================================================================
+STAGE 1 VERDICT: relative difference 0.000e+00 against a criterion of 1e-12 -- MET
+==============================================================================

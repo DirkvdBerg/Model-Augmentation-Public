@@ -1,0 +1,526 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,array}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+\newcommand{\R}{\mathbb R}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\src}{\mathrm{src}}
+\newcommand{\refset}{\mathrm{ref}}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\title{A stepwise additional-state extension of Gy\"or\"ok's IO model\\and its orthogonal delay-state realization}
+\author{Working derivation --- Graduation project, TU Eindhoven}
+\date{15 September 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+We first realize a finite-history input--output predictor using fixed delay-state routing. We then add learned memory and extend the stacked orthogonal projection to the combined state equation. An isometric output insertion and zero baseline additional-state rows imply that the enlarged projection reduces exactly to projecting the complete learned output correction. The learned-memory update remains unchanged by subtraction. The result concerns reference-set state-transition evaluations in Euclidean coordinates; statistical and stability guarantees are not inferred.
+\end{abstract}
+
+\section{Scope, notation and attribution}
+The main source is the fixed arXiv v2 manuscript of Gy\"or\"ok et al.\ \cite{G26}, denoted G26. Source equation numbers are stated in prose; all equations below have independent local numbering. The delay-state realization is our explicit rewriting. Additional learned states and the extended projection propositions are our derivation. These delay states are stored signals, not physical gantry positions or velocities.
+
+We retain G26's output dimension, lag orders, baseline parameter vector and auxiliary coefficient. Table~\ref{tab:notation} distinguishes these from the symbols needed for our realization and extension. Dimensions of projection matrices are introduced when they are defined, rather than mixed into the initial notation table.
+G26 uses both an explicit baseline parameter dimension and a shortened matrix-dimension notation. We use the explicit form consistently. Our learned parameters \(\eta\) correspond to G26's \(\theta_{\mathrm a}\) before extension; the auxiliary coefficient retains its source symbol and depends on learned parameters during training. The output lag order \(n_{\mathrm a}\) is distinct from the learned-state dimension \(n_{x_a}\).
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{lll}\toprule
+Symbol & Meaning & Relation to G26\\\midrule
+\(n_{\mathrm y}\) & Output dimension & Retained\\
+\(n_{\mathrm a}\) & Number of past output samples & Retained lag order\\
+\(n_{\mathrm b}\) & Number of past input samples & Retained lag order\\
+\(x_k\) & IO regressor, including current input & Retained\\
+\(\theta_b\) & Baseline parameter vector & Retained\\
+\(n_{\theta_{\mathrm b}}\) & Baseline parameter dimension & Explicit form of source shorthand\\
+\(\theta_{\mathrm{aux}}\) & Shared projection coefficient & Retained\\\midrule
+\(n_{\mathrm u}\) & Input dimension & Explicit dimension convention here\\
+\(s_k\) & Stored IO history, excluding current input & Delay-state realization\\
+\(n_s\) & Dimension of stored history & Delay-state realization\\
+\(x_{a,k}\) & Additional learned state & Our extension\\
+\(n_{x_a}\) & Additional learned-state dimension & Our extension\\
+\(\xi_k\) & Combined history and learned state & Our extension\\
+\(\eta\) & Learned parameters of the two update maps & Our convention\\
+\bottomrule\end{tabular}
+\caption{Source notation and explicitly introduced notation.}\label{tab:notation}
+\end{table}
+\section{From IO history to a delay-state realization}
+\subsection*{Step 1: Separate history from the current input}
+G26, Eq.\ (1), defines a measured-output process using a finite IO regressor:
+\begin{equation}\label{eq:process}
+y_k=f(x_k)+e_k.
+\end{equation}
+Writing G26's Eq.\ (1) regressor with its signal entries explicit gives
+\begin{equation}\label{eq:sourceregressor}
+x_k=\col\bigl(y_{k-1},\ldots,y_{k-n_{\mathrm a}},
+u_k,u_{k-1},\ldots,u_{k-n_{\mathrm b}}\bigr).
+\end{equation}
+For our delay-state realization, we separate the current input from that regressor and store only the past signals. Its output history ends at the preceding sample and its input regressor includes the current external input. We retain the source output and past-input lag orders, assume both are at least one for the main routing proof, and define
+\begin{equation}\label{eq:history}
+s_k=\col(y_{k-1},\ldots,y_{k-n_{\mathrm a}},u_{k-1},\ldots,u_{k-n_{\mathrm b}})\in\R^{n_s},
+\qquad n_s=n_{\mathrm a}n_{\mathrm y}+n_{\mathrm b}n_{\mathrm u}.
+\end{equation}
+Comparing \eqref{eq:sourceregressor} with \eqref{eq:history}, the history state contains the past signals, while the current input remains external. We write the same baseline function using those two arguments:
+\begin{equation}\label{eq:adaptation}
+\begin{aligned}
+\phi(s_k,u_k)&:=\phi_{\src}(x_k)\\
+&=\phi_{\src}\!\left(\col\bigl(y_{k-1},\ldots,y_{k-n_{\mathrm a}},
+u_k,u_{k-1},\ldots,u_{k-n_{\mathrm b}}\bigr)\right).
+\end{aligned}
+\end{equation}
+This is our change of argument notation, not an additional equation or assumption from G26. No prediction information is added or discarded; the current input is still used. The generic baseline function notation below follows this same ordering of signal entries.
+The source regressor dimension and our history dimension are different:
+\begin{equation}\label{eq:regressordimension}
+n_{\mathrm x}=n_s+n_{\mathrm u}
+=n_{\mathrm a}n_{\mathrm y}+(n_{\mathrm b}+1)n_{\mathrm u}.
+\end{equation}
+Here the subscript on the source matrix function in \eqref{eq:adaptation} only distinguishes its original argument convention; it does not introduce a different baseline.
+
+\subsection*{Step 2: State the baseline predictor}
+Corresponding to G26, Eq.\ (2), the baseline is
+\begin{equation}\label{eq:baselineIO}
+\hat y_k=\phi(s_k,u_k)\theta_b,\qquad \theta_b\in\R^{n_{\theta_{\mathrm b}}}.
+\end{equation}
+Linearity is in the parameters; the matrix function can depend nonlinearly on signals. No state or input linearization has been performed.
+
+\subsection*{Step 3: Construct the fixed shift and insertion matrices}
+Let the shift matrices have entries
+\begin{equation}\label{eq:shifts}
+(S_{n_{\mathrm a}})_{ij}=\begin{cases}1&i=j+1,\\0&\text{otherwise},\end{cases}
+\qquad S_{n_{\mathrm a}}\in\R^{n_{\mathrm a}\times n_{\mathrm a}},
+\end{equation}
+and define \(S_{n_{\mathrm b}}\) in the same way. With the first coordinate vectors of the indicated lengths, set
+\begin{equation}\label{eq:routing}
+\begin{aligned}
+A&=\diag(S_{n_{\mathrm a}}\otimes I_{n_{\mathrm y}},S_{n_{\mathrm b}}\otimes I_{n_{\mathrm u}}),\\
+B_x&=\begin{bmatrix}e_1^{(n_{\mathrm a})}\otimes I_{n_{\mathrm y}}\\0_{n_{\mathrm b}n_{\mathrm u}\times n_{\mathrm y}}\end{bmatrix},&
+B_u&=\begin{bmatrix}0_{n_{\mathrm a}n_{\mathrm y}\times n_{\mathrm u}}\\e_1^{(n_{\mathrm b})}\otimes I_{n_{\mathrm u}}\end{bmatrix}.
+\end{aligned}
+\end{equation}
+The history update for an output sample to be stored is
+\begin{equation}\label{eq:storage}
+s_{k+1}=As_k+B_u u_k+B_xv_k.
+\end{equation}
+The shift moves older samples down one slot. The two insertion matrices independently write the current input and the new output. Their disjoint routing gives
+\begin{equation}\label{eq:routingidentities}
+B_x^\top B_x=I_{n_{\mathrm y}},\qquad B_x^\top A=0,\qquad B_x^\top B_u=0.
+\end{equation}
+These identities follow because the newest-output rows of the shift and input insertion are zero, and the output insertion copies each output coordinate once.
+
+Bonassi et al.\ \cite[Section II, Eqs.\ (1)--(3)]{B22} and Seel et al.\ \cite[Eq.\ (2), Eqs.\ (6)--(9)]{S21} provide structural precedent. Their predictor uses the next output index with the current input; ours uses G26's current prediction index with the current input. Shifting their output index alone would shift the last input index too. Consequently, \eqref{eq:routing} is constructed for our chosen timing, rather than claimed to be an identical reindexing of their complete models. Their MPC stability theorems are not used.
+
+For scalar signals and two output delays and one input delay, the construction becomes
+\begin{equation}\label{eq:example}
+s_k=\begin{bmatrix}y_{k-1}\\y_{k-2}\\u_{k-1}\end{bmatrix},\quad
+A=\begin{bmatrix}0&0&0\\1&0&0\\0&0&0\end{bmatrix},\quad
+B_x=\begin{bmatrix}1\\0\\0\end{bmatrix},\quad B_u=\begin{bmatrix}0\\0\\1\end{bmatrix}.
+\end{equation}
+Direct substitution shows what is stored:
+\begin{equation}\label{eq:examplenext}
+s_{k+1}=\begin{bmatrix}v_k\\y_{k-1}\\u_k\end{bmatrix}.
+\end{equation}
+
+\subsection*{Step 4: Specify feedback and current-output timing}
+Two uses of the same routing must be distinguished:
+\begin{equation}\label{eq:feedback}
+v_k=\begin{cases}\hat y_k&\text{recursive deterministic simulation},\\y_k&\text{measured-history prediction}.\end{cases}
+\end{equation}
+For the remainder of the main state equations, history symbols denote recursively stored values after an initial history has been supplied. The baseline realization is
+\begin{equation}\label{eq:baselineSS}
+\boxed{\begin{aligned}
+s_{k+1}&=As_k+B_u u_k+B_x\phi(s_k,u_k)\theta_b,\\
+\hat y_k&=\phi(s_k,u_k)\theta_b.
+\end{aligned}}
+\end{equation}
+The output-slot timing is
+\begin{equation}\label{eq:selection}
+B_x^\top s_k=v_{k-1},\qquad B_x^\top s_{k+1}=v_k.
+\end{equation}
+Selecting the newest slot of the current state therefore selects the previous output, not the current prediction. The current output map remains the predictor function.
+Recursive simulation may use prescribed inputs or a common causal controller. This bookkeeping distinction does not imply any closed-loop stability property.
+
+\subsection*{Step 5: Add G26's learned output correction}
+Writing the adapted G26, Eq.\ (3), correction with a superscript to mark the stage without additional learned states gives
+\begin{equation}\label{eq:additiveIO}
+\hat y_k=\phi(s_k,u_k)\theta_b+g_{y,\eta}^{(0)}(s_k,u_k).
+\end{equation}
+Its recursive realization is
+\begin{equation}\label{eq:additiveSS}
+s_{k+1}=As_k+B_u u_k+B_x\phi(s_k,u_k)\theta_b
++B_xg_{y,\eta}^{(0)}(s_k,u_k).
+\end{equation}
+G26 specifies a feedforward learned function after Eq.\ (3). There is no separate learned-state recursion in that model. Nevertheless, predicted-output feedback in \eqref{eq:additiveSS} already creates recurrence in simulation. Additional states will supply extra learned memory.
+Before extension, our learned function uses the same explicit regressor as the source:
+\begin{equation}\label{eq:learnedmapping}
+g_{y,\eta}^{(0)}(s_k,u_k)
+=f_{\theta_{\mathrm a}}^{\mathrm{ANN}}(x_k),
+\qquad \eta=\theta_{\mathrm a}.
+\end{equation}
+
+\section{The original stacked orthogonal construction}
+\subsection*{Step 6: Define reference function evaluations}
+On selected history/input pairs, corresponding to G26, Eq.\ (5), define
+\begin{equation}\label{eq:originalstacks}
+\begin{aligned}
+\Phi&=\col_{i=1}^N\phi(s_i^{\refset},u_i^{\refset})\in\R^{Nn_{\mathrm y}\times n_{\theta_{\mathrm b}}},\\
+G_\eta^{(0)}&=\col_{i=1}^N g_{y,\eta}^{(0)}(s_i^{\refset},u_i^{\refset})\in\R^{Nn_{\mathrm y}},\\
+\hat Y_{\refset}&=\Phi\theta_b+G_\eta^{(0)}.
+\end{aligned}
+\end{equation}
+G26 uses estimation histories and also permits an auxiliary synthetic set or a subset after Lemma 3. These are function evaluations at declared arguments; they need not be samples of the model's current free-running trajectory. The full one-step state equation remains \eqref{eq:additiveSS}; only the writes needed for projection are stacked.
+
+\subsection*{Step 7: Separate rank from realization}
+G26, Eqs.\ (6)--(7), combines distinguishability of the baseline function with data informativity and assumes
+\begin{equation}\label{eq:rank}
+\rank(\Phi)=n_{\theta_{\mathrm b}},\qquad Nn_{\mathrm y}\ge n_{\theta_{\mathrm b}}.
+\end{equation}
+Full column rank permits the displayed normal-matrix inverse and a unique baseline least-squares coefficient. Neither predictor evaluation nor delay routing needs an inverse. Rank deficiency thus does not prevent realization, but can prevent identification of individual baseline coefficients.
+
+\subsection*{Step 8: Subtract the baseline-representable component}
+The adapted full-rank expression corresponding to G26, Eq.\ (8), is
+\begin{equation}\label{eq:sourceaux}
+\theta_{\mathrm{aux}}=(\Phi^\top\Phi)^{-1}\Phi^\top G_\eta^{(0)}.
+\end{equation}
+We explicitly generalize to the Moore--Penrose convention at any rank:
+\begin{equation}\label{eq:originalprojection}
+\begin{aligned}
+\theta_{\mathrm{aux}}&=\Phi^\dagger G_\eta^{(0)},& P_\Phi&=\Phi\Phi^\dagger,\\
+D_\eta^{(0)}&=G_\eta^{(0)}-\Phi \theta_{\mathrm{aux}}=(I_{Nn_{\mathrm y}}-P_\Phi)G_\eta^{(0)}.
+\end{aligned}
+\end{equation}
+The product defining the projector is the Euclidean projection onto the baseline column space. Its complementary range is the null space of the transpose, so the counterpart of G26, Lemma 3, Eq.\ (11), is
+\begin{equation}\label{eq:originalorthogonality}
+\boxed{\Phi^\top D_\eta^{(0)}=0.}
+\end{equation}
+This condition protects all sampled baseline parameter directions:
+\begin{equation}\label{eq:meaning}
+(\Phi b)^\top D_\eta^{(0)}=0\quad\text{for every }b\in\R^{n_{\theta_{\mathrm b}}},
+\qquad \sum_{i=1}^N\phi_i^\top d_i^{(0)}=0.
+\end{equation}
+The summed products can cancel; individual products need not vanish. It is stronger than orthogonality to just one baseline vector at a chosen parameter value.
+The correspondence to the source's stacked notation is
+\begin{equation}\label{eq:sourcestackmapping}
+G_\eta^{(0)}=F_{\theta_{\mathrm a}}^{\mathrm{ANN}},\qquad
+D_\eta^{(0)}=\tilde F_{\theta_{\mathrm a}}^{\mathrm{ANN}},\qquad
+\Phi^\top\tilde F_{\theta_{\mathrm a}}^{\mathrm{ANN}}=0.
+\end{equation}
+The final identity is G26's Eq.\ (11); the reference evaluations must be the same on both sides of this correspondence.
+
+The pointwise corrected function and its consistent realization are
+\begin{equation}\label{eq:originalcorrected}
+\begin{aligned}
+d_\eta^{(0)}(s,u)&=g_{y,\eta}^{(0)}(s,u)-\phi(s,u)\theta_{\mathrm{aux}},\\
+\hat y_k&=\phi(s_k,u_k)\theta_b+d_\eta^{(0)}(s_k,u_k),\\
+s_{k+1}&=As_k+B_u u_k+B_x\hat y_k.
+\end{aligned}
+\end{equation}
+The same corrected output must appear in the output equation and the history feedback.
+
+\subsection*{Step 9: Show output insertion preserves projection}
+Before adding learned-state rows, define
+\begin{equation}\label{eq:preinsertion}
+M_0=I_N\otimes B_x,\qquad \Phi_{\mathrm{SS}}=M_0\Phi,
+\qquad G_{\mathrm{SS}}=M_0G_\eta^{(0)}.
+\end{equation}
+Output insertion is an isometry by \eqref{eq:routingidentities}; hence
+\begin{equation}\label{eq:preisometry}
+M_0^\top M_0=I_{Nn_{\mathrm y}},\quad
+\Phi_{\mathrm{SS}}^\top G_{\mathrm{SS}}=\Phi^\top G_\eta^{(0)},\quad
+\rank(\Phi_{\mathrm{SS}})=\rank(\Phi).
+\end{equation}
+The coefficient also remains the same at any rank:
+\begin{equation}\label{eq:precoefficient}
+\Phi_{\mathrm{SS}}^\dagger G_{\mathrm{SS}}=\Phi^\dagger G_\eta^{(0)}.
+\end{equation}
+The isometry lemma proved in Step 14 justifies this without inverting a singular normal matrix.
+
+\subsection*{Step 10: Distinguish training from deployment}
+During differentiable training, the auxiliary coefficient is recomputed when the learned parameters change. It is shared across reference evaluations, not freely optimized or independently fitted at each sample. After fitting, the adapted G26, Eq.\ (13), deployment expression is
+\begin{equation}\label{eq:deploymentoriginal}
+\hat y_k=\phi(s_k,u_k)\hat\theta_b
++g_{y,\hat\eta}^{(0)}(s_k,u_k)-\phi(s_k,u_k)\hat\theta_{\mathrm{aux}}.
+\end{equation}
+The fitted coefficient is fixed during deployment. Evaluation is causal given the current state and input; exact aggregate orthogonality remains guaranteed on its construction set. Appendix~\ref{sec:derivatives} states the gradient policy precisely.
+
+\section{Our additional learned-state extension}
+\subsection*{Step 11: Introduce learned memory in IO form}
+Choose an additional-state dimension and initialization:
+\begin{equation}\label{eq:initiallatent}
+x_{a,k}\in\R^{n_{x_a}},\qquad x_{a,0}=\bar x_a
+\quad\text{or}\quad x_{a,0}=\mathcal E_\eta(\text{declared initial data}).
+\end{equation}
+Our first model-class extension is
+\begin{equation}\label{eq:extendedIO}
+\boxed{\begin{aligned}
+\hat y_k&=\phi(s_k,u_k)\theta_b+g_{y,\eta}(s_k,u_k,x_{a,k}),\\
+x_{a,k+1}&=g_{a,\eta}(s_k,u_k,x_{a,k}).
+\end{aligned}}
+\end{equation}
+The learned maps have domains and codomains
+\begin{equation}\label{eq:mapdimensions}
+g_{y,\eta}:\R^{n_s+n_{\mathrm u}+n_{x_a}}\to\R^{n_{\mathrm y}},\qquad
+g_{a,\eta}:\R^{n_s+n_{\mathrm u}+n_{x_a}}\to\R^{n_{x_a}}.
+\end{equation}
+Both read the old states and current input. The written architecture does not directly feed the same-step predicted output into the learned-memory update, so it needs no algebraic loop. The two maps may share parameters. The baseline predictor stays unchanged; the correction now reads learned memory. Memory is learned through its update rather than stored as literal signal delays.
+
+\subsection*{Step 12: Stack the history and learned-state updates}
+Define the enlarged state and substitute \eqref{eq:extendedIO} into the history update:
+\begin{equation}\label{eq:combinedstate}
+\xi_k=\col(s_k,x_{a,k})\in\R^{n_s+n_{x_a}}.
+\end{equation}
+Separate baseline and learned transition contributions as follows:
+\begin{equation}\label{eq:extendedSS}
+\boxed{\begin{aligned}
+\xi_{k+1}&=F_b(\xi_k,u_k;\theta_b)+F_a(\xi_k,u_k;\eta),\\
+F_b(\xi,u;\theta_b)&=\begin{bmatrix}As+B_u u+B_x\phi(s,u)\theta_b\\0_{n_{x_a}}\end{bmatrix},\\
+F_a(\xi,u;\eta)&=\begin{bmatrix}B_xg_{y,\eta}(s,u,x_a)\\g_{a,\eta}(s,u,x_a)\end{bmatrix},\\
+\hat y_k&=\phi(s_k,u_k)\theta_b+g_{y,\eta}(s_k,u_k,x_{a,k}).
+\end{aligned}}
+\end{equation}
+The zero lower baseline block is our assignment: the baseline supplies no next-state contribution to learned coordinates. It does not mean that learned coordinates remain zero. A residual learned update can be represented within the learned function; assigning a separate known latent baseline would change this decomposition. The complete output correction includes the latent readout, with no extra third output term required.
+
+\subsection*{Step 13: Declare the extended reference evaluations}
+For the main proof select fixed tuples:
+\begin{equation}\label{eq:extendedreferences}
+\mathcal Z_{\refset}=\{(s_i^{\refset},u_i^{\refset},x_{a,i}^{\refset})\}_{i=1}^N.
+\end{equation}
+Reuse the history/input basis stack from \eqref{eq:originalstacks}, and define
+\begin{equation}\label{eq:extendedcoefficient}
+G_{y,\eta}=\col_{i=1}^N g_{y,\eta}(s_i^{\refset},u_i^{\refset},x_{a,i}^{\refset}),
+\qquad \theta_{\mathrm{aux}}=\Phi^\dagger G_{y,\eta}.
+\end{equation}
+This coefficient belongs to the extended model and generally differs from the earlier coefficient. Compute it before a recursive simulation, keep it shared during that simulation, and recompute it consistently during optimization. Freeze its fitted value for deployment.
+Nonzero representative additional states can improve coverage. Zero additional-state references are algebraically valid, but may miss corrections that vanish on that slice. Reference refresh is a design option, not a theorem requirement. Parameter-dependent latent references driven by measured histories are also possible, as Appendix~\ref{sec:derivatives} explains.
+
+\subsection*{Step 14: Prove zero-block reduction and coefficient equivalence}
+At each reference tuple, abbreviate function evaluations with a sample subscript. Define
+\begin{equation}\label{eq:samplebasis}
+K_i=\begin{bmatrix}B_x\phi_i\\0_{n_{x_a}\times n_{\theta_{\mathrm b}}}\end{bmatrix},\qquad
+w_{\eta,i}=\begin{bmatrix}B_xg_{y,\eta,i}\\g_{a,\eta,i}\end{bmatrix}.
+\end{equation}
+The first matrix is the partial derivative of the baseline transition with respect to baseline parameters at fixed arguments. It is not a total rollout derivative. Define the insertion and stacks:
+\begin{equation}\label{eq:augmentedstacks}
+\begin{aligned}
+E&=\begin{bmatrix}B_x\\0_{n_{x_a}\times n_{\mathrm y}}\end{bmatrix},&M_N&=I_N\otimes E,\\
+\Psi&=\col_{i=1}^N K_i=M_N\Phi,&\mathcal G_\eta&=\col_{i=1}^N w_{\eta,i}.
+\end{aligned}
+\end{equation}
+\begin{proposition}[Zero-block reduction]\label{prop:zero}
+In the stated Euclidean coordinates,
+\begin{equation}\label{eq:extraction}
+E^\top E=I_{n_{\mathrm y}},\qquad M_N^\top M_N=I_{Nn_{\mathrm y}},\qquad
+M_N^\top\mathcal G_\eta=G_{y,\eta},
+\end{equation}
+and consequently
+\begin{equation}\label{eq:zeroreduction}
+\Psi^\top\mathcal G_\eta=\Phi^\top G_{y,\eta}.
+\end{equation}
+\end{proposition}
+\begin{proof}
+The first identity follows from \eqref{eq:routingidentities}, and the second follows by the Kronecker product. At each tuple the extraction is
+\begin{equation}\label{eq:sampleextraction}
+E^\top w_{\eta,i}=B_x^\top B_xg_{y,\eta,i}+0^\top g_{a,\eta,i}=g_{y,\eta,i}.
+\end{equation}
+Stacking establishes extraction; multiplication by the baseline stack establishes \eqref{eq:zeroreduction}.
+\end{proof}
+\begin{lemma}[Isometric pseudoinverse]\label{lem:isometry}
+For any matrix with the stated dimensions, isometric insertion gives
+\begin{equation}\label{eq:isometricinverse}
+(M_N\Phi)^\dagger=\Phi^\dagger M_N^\top.
+\end{equation}
+\end{lemma}
+\begin{proof}
+Let the rank be positive, denoted by \(\rho\), and take a compact singular value decomposition:
+\begin{equation}\label{eq:svd}
+\Phi=U_\rho\Sigma_\rho V_\rho^\top,\qquad
+(M_NU_\rho)^\top(M_NU_\rho)=I_\rho.
+\end{equation}
+Thus insertion preserves the nonzero singular values and supplies orthonormal left singular vectors. Its pseudoinverse is
+\begin{equation}\label{eq:svdinverse}
+(M_N\Phi)^\dagger=V_\rho\Sigma_\rho^{-1}U_\rho^\top M_N^\top
+=\Phi^\dagger M_N^\top.
+\end{equation}
+At zero rank both pseudoinverses are zero, giving the same identity.
+\end{proof}
+Proposition~\ref{prop:zero} and Lemma~\ref{lem:isometry} give the coefficient equivalence at every rank:
+\begin{equation}\label{eq:coefficientidentity}
+\boxed{\Psi^\dagger\mathcal G_\eta=\Phi^\dagger G_{y,\eta}=\theta_{\mathrm{aux}}.}
+\end{equation}
+This establishes that output-coordinate and enlarged-state projections use the same coefficient.
+
+\subsection*{Step 15: Apply the projection to the extended model}
+Define the complete corrected output contribution:
+\begin{equation}\label{eq:extendedcorrection}
+d_\eta(s,u,x_a)=g_{y,\eta}(s,u,x_a)-\phi(s,u)\theta_{\mathrm{aux}}.
+\end{equation}
+The final corrected IO model and its realization are
+\begin{equation}\label{eq:finalIO}
+\boxed{\begin{aligned}
+\hat y_k&=\phi(s_k,u_k)\theta_b+d_\eta(s_k,u_k,x_{a,k}),\\
+x_{a,k+1}&=g_{a,\eta}(s_k,u_k,x_{a,k}).
+\end{aligned}}
+\end{equation}
+\begin{equation}\label{eq:finalSS}
+\boxed{\begin{aligned}
+\xi_{k+1}&=F_b(\xi_k,u_k;\theta_b)+\widetilde F_a(\xi_k,u_k;\eta),\\
+\widetilde F_a(\xi,u;\eta)&=\begin{bmatrix}B_xd_\eta(s,u,x_a)\\g_{a,\eta}(s,u,x_a)\end{bmatrix},\\
+\hat y_k&=\phi(s_k,u_k)\theta_b+d_\eta(s_k,u_k,x_{a,k}).
+\end{aligned}}
+\end{equation}
+\begin{proposition}[Exact extended orthogonality]\label{prop:projection}
+On the declared reference set, the corrected learned transition stack satisfies
+\begin{equation}\label{eq:finalidentity}
+\boxed{\begin{aligned}
+\widetilde{\mathcal G}_\eta&=\mathcal G_\eta-\Psi \theta_{\mathrm{aux}}
+=(I-\Psi\Psi^\dagger)\mathcal G_\eta,\\
+\Psi^\top\widetilde{\mathcal G}_\eta
+&=\Phi^\top(G_{y,\eta}-\Phi\Phi^\dagger G_{y,\eta})=0.
+\end{aligned}}
+\end{equation}
+\end{proposition}
+\begin{proof}
+Use \eqref{eq:coefficientidentity} for the state projector. The subtraction and its orthogonality reduce to
+\begin{equation}\label{eq:subtractionblocks}
+\widetilde{\mathcal G}_\eta=\col_i\begin{bmatrix}B_x(g_{y,\eta,i}-\phi_i \theta_{\mathrm{aux}})\\g_{a,\eta,i}\end{bmatrix},
+\qquad \Phi^\top(I-\Phi\Phi^\dagger)=0.
+\end{equation}
+Proposition~\ref{prop:zero} completes the proof.
+\end{proof}
+Only the output/history rows receive subtraction. All current learned-memory dependence in the output correction participates. The lower learned update is numerically unchanged by projection at fixed parameters and arguments. Its parameters can still change during joint optimization, including through shared parameters and prediction loss. Its orthogonality to zero does not impose a separate constraint on memory values or dynamics.
+
+\subsection*{Step 16: Verify full baseline-transition orthogonality here}
+The fixed bookkeeping contribution at a reference tuple is
+\begin{equation}\label{eq:bookkeeping}
+b_i=\begin{bmatrix}As_i+B_u u_i\\0_{n_{x_a}}\end{bmatrix},\qquad F_{b,i}=b_i+K_i\theta_b.
+\end{equation}
+By \eqref{eq:routingidentities}, its inner product with each corrected write is zero. Consequently,
+\begin{equation}\label{eq:fullbaseline}
+\begin{aligned}
+b_i^\top\widetilde F_{a,i}&=0,\\
+\boxed{\sum_{i=1}^N F_{b,i}^\top\widetilde F_{a,i}}
+&=\theta_b^\top\Phi^\top D_{y,\eta}=\boxed{0},\qquad
+D_{y,\eta}=G_{y,\eta}-\Phi \theta_{\mathrm{aux}}.
+\end{aligned}
+\end{equation}
+This additional statement is specific to the displayed Euclidean routing. The primary projection protects the baseline parameter span; arbitrary physical baselines need not have bookkeeping terms orthogonal to the correction.
+
+\section{Equivalence and interpretation}
+\subsection*{Step 17: Prove extended IO/SS representation equivalence}
+\begin{proposition}[Exact realization]\label{prop:equivalence}
+For matching initial histories, learned-state initialization, parameters, input rule and auxiliary coefficient, the extended IO recursion and its delay-state realization generate identical predictions and states at every finite step on which the evaluations are defined.
+\end{proposition}
+\begin{proof}
+Initially the stored histories and learned states coincide. Suppose they coincide at a given sample. Both forms then evaluate the same baseline, corrected output function and learned update at the same arguments. The predicted output and next learned state coincide. The routing equation writes that predicted output and current input into precisely the history needed at the next sample. Induction completes the claim. The proof also applies before projection, and to a matching specified causal coefficient schedule. A common causal controller supplies equal inputs when its initialization and information agree.
+\end{proof}
+No extra rank, stability or observability hypothesis is needed for this identity, beyond the stated initialization, timing, feedback and well-defined evaluations. Adding memory first changes the model class; realizing that extended model is then an exact rewriting. Measured-history versions also agree if both store observations, as detailed in Appendix~\ref{sec:noise}.
+
+\subsection*{Step 18: Interpret the reference-set guarantee}
+The additional states affect the current prediction through
+\begin{equation}\label{eq:memorypath}
+x_{a,k}\longrightarrow g_{y,\eta}(s_k,u_k,x_{a,k})\longrightarrow\hat y_k.
+\end{equation}
+Both the next learned state and newly stored predicted output affect later predictions. This is compatible with \eqref{eq:finalidentity}: the definition concerns stacked state-function evaluations, not propagated output responses. Orthogonality of accumulated output effects is a different property that we do not impose. The projection identity alone does not transfer G26's parameter-recovery, consistency or covariance theorems, establish stable learned dynamics, or identify unique latent coordinates.
+
+The proof uses the direct-sum Euclidean geometry. Compatible block-diagonal metrics retain zero lower-block overlap, but weighted output/history metrics require a matching weighted projection. Cross blocks between history and learned coordinates can make learned-memory writes enter the condition. Rescaling coordinates requires transforming the metric to preserve the original geometry. Those alternatives are not required by this construction.
+
+\subsection*{Step 19: Recover the original construction}
+Remove all learned-state coordinates and the learned-memory equation:
+\begin{equation}\label{eq:reduction}
+n_{x_a}=0,\qquad g_{y,\eta}(s,u)=g_{y,\eta}^{(0)}(s,u).
+\end{equation}
+With measured estimation histories as references, the output predictor, stacks, coefficient, subtraction and fitted deployment expression recover the adapted G26, Eqs.\ (3), (5), (8)--(11) and (13). At full rank the pseudoinverse becomes the source inverse. The remaining routing realizes that predictor under the declared feedback convention. This is a reduction of model functions, not a new statistical theorem.
+
+\appendix
+\section{Projection gradients and reference generation}\label{sec:derivatives}
+For fixed reference coordinates and a basis independent of learned parameters, correct differentiation gives
+\begin{equation}\label{eq:derivatives}
+\begin{aligned}
+D_{y,\eta}&=(I-P_\Phi)G_{y,\eta},\\
+\partial_\eta \theta_{\mathrm{aux}}&=\Phi^\dagger\partial_\eta G_{y,\eta},\\
+\partial_\eta D_{y,\eta}&=(I-P_\Phi)\partial_\eta G_{y,\eta},\\
+\Phi^\top\partial_\eta D_{y,\eta}&=0.
+\end{aligned}
+\end{equation}
+Recomputing the coefficient numerically but stopping its gradient preserves the forward orthogonal value while generally supplying a different derivative. These are reference-evaluation derivative identities, not total free-run output sensitivity or covariance identities.
+
+Fixed latent tuples are sufficient, not necessary. With measured histories held fixed, one can generate a latent sequence from a causal encoder and
+\begin{equation}\label{eq:measuredlatent}
+x_{a,i+1}(\eta)=g_{a,\eta}(s_i^{\refset},u_i^{\refset},x_{a,i}(\eta)).
+\end{equation}
+For the written architecture this recursion does not read the corrected predicted output. It can therefore be evaluated before computing the coefficient. The basis remains fixed while the correction stack depends on learned parameters through the memory sequence. Equation~\eqref{eq:derivatives} still holds with total derivatives of that stack when encoder and recursion dependencies are differentiated consistently.
+In free simulation the subtraction changes later history arguments. Constructing a coefficient on that same corrected trajectory is implicit unless a separate procedure is specified. This does not make all dynamic reference constructions impossible. If reference histories or the basis move with trainable quantities, their derivative terms must also be included; pseudoinverse differentiation at rank changes needs separate care.
+
+\section{Rank deficiency and numerical projection}
+The Moore--Penrose convention selects the minimum-norm least-squares coefficient. Other minimizing coefficients differ by null-space vectors:
+\begin{equation}\label{eq:nullspace}
+a'=\theta_{\mathrm{aux}}+v,\qquad \Phi v=0,\qquad \Phi a'=\Phi \theta_{\mathrm{aux}}.
+\end{equation}
+They give the same subtraction on references, but may differ at new points:
+\begin{equation}\label{eq:extrapolation}
+d'_\eta(s,u,x_a)-d_\eta(s,u,x_a)=-\phi(s,u)v.
+\end{equation}
+For a simple example, a reference row and an unseen row can be
+\begin{equation}\label{eq:rankexample}
+\Phi=\begin{bmatrix}1&1\end{bmatrix},\qquad v=\begin{bmatrix}1\\-1\end{bmatrix},
+\qquad \phi_*=\begin{bmatrix}1&0\end{bmatrix},\qquad \Phi v=0,\quad\phi_*v=1.
+\end{equation}
+Reference rank deficiency need not be structural function-class rank deficiency. A pseudoinverse does not itself resolve baseline parameter ambiguity. A truncated SVD protects the retained span exactly; dropping small nonzero singular values generally gives only approximate orthogonality to the original matrix. Ridge inverses generally do not form exact orthogonal projectors.
+
+\section{Measured-history feedback and noise}\label{sec:noise}
+For a predictor with the current learned state, measured-history updating is
+\begin{equation}\label{eq:observedupdate}
+\begin{aligned}
+\hat y_k&=\phi(s_k,u_k)\theta_b+d_\eta(s_k,u_k,x_{a,k}),\\
+s_{k+1}&=As_k+B_u u_k+B_xy_k,\\
+x_{a,k+1}&=g_{a,\eta}(s_k,u_k,x_{a,k}).
+\end{aligned}
+\end{equation}
+Replacing the observation by a prediction changes feedback. Separately, for a declared generative process, storage directly implies
+\begin{equation}\label{eq:noisebaseline}
+y_k=H(s_k,u_k)+e_k,\qquad
+s_{k+1}=As_k+B_u u_k+B_xH(s_k,u_k)+B_xe_k.
+\end{equation}
+An additional-state generative extension can similarly be defined:
+\begin{equation}\label{eq:noiselatent}
+\begin{aligned}
+y_k&=H(s_k,u_k,x_{a,k})+e_k,\\
+\xi_{k+1}&=\begin{bmatrix}As_k+B_u u_k+B_xH(s_k,u_k,x_{a,k})\\g_{a,\eta}(s_k,u_k,x_{a,k})\end{bmatrix}
++\begin{bmatrix}B_xe_k\\0_{n_{x_a}}\end{bmatrix}.
+\end{aligned}
+\end{equation}
+This is storage algebra for that declared process. It does not assume an imperfect fitted predictor generates the measured data exactly, and it is not copied from the MPC sources' stochastic models.
+
+\section{Verification evidence and mathematical review}
+The existing script \path{../code/io_additional_state_equivalence.m} and its log \path{../code/logs/io_additional_state_equivalence.log} were inspected. The log reports 18 passed symbolic checks on 14 September 2026 in MATLAB R2025a Update 1 and Symbolic Math Toolbox 25.1. Those checks cover scalar output, two output delays, one input delay, two learned states, shared learned parameters, projection, rank deficiency, timing, four simulation steps, measured feedback and noise storage. The script was not rerun for this manuscript. The handoff also reports an earlier multi-output SymPy audit; that report is supporting history, not a new run here. Finite unrolling supports Proposition~\ref{prop:equivalence}, whose induction supplies the general finite-step argument.
+
+The handoff's main projection equations require no mathematical change. Its independent dimension symbols have been replaced by source-aligned notation. The original source regressor is retained explicitly; only its current-input-excluding history state has a new name. The following qualifications are made explicit after independent source inspection. First, the prose after G26, Eq.\ (8), omits the transpose on the last matrix in its description of the pseudoinverse; Eq.\ (8) itself has the correct transpose and is followed here. Second, the realization references support routing structure, not complete model equivalence obtained by an output-index shift alone. Third, the SVD proof uses a separate rank symbol, avoiding reuse of the learned-state dimension. Fourth, the bibliography identifies the exact extended Bonassi manuscript used for equation anchors. Zero-history cases are outside the main proof: no past input can be handled by empty input-history blocks and zero input insertion, whereas no output history requires a separate treatment or redundant output storage to retain the insertion isometry.
+
+No symbolic evidence here establishes physical gantry equivalence, encoder accuracy, estimator consistency, covariance separation, or closed-loop stability. The demonstrated contribution is the additional-state model extension and its exact reference-set projection reduction in delay coordinates.
+
+\begin{thebibliography}{9}
+\bibitem{G26} B. M. Gy\"or\"ok, M. Schoukens, T. P\'eni, and R. T\'oth,
+\emph{Orthogonal-by-construction augmentation of physics-based input-output models},
+arXiv:2511.01321v2, 6 January 2026. Equation anchors refer to this version.
+\url{https://arxiv.org/html/2511.01321v2}.
+Journal publication: \emph{IFAC Journal of Systems and Control}, vol.\ 35,
+article 100376, March 2026, doi:10.1016/j.ifacsc.2026.100376.
+\bibitem{B22} F. Bonassi, J. Xie, M. Farina, and R. Scattolini,
+\emph{An Offset-Free Nonlinear MPC scheme for systems learned by Neural NARX models},
+arXiv:2203.16290v4, 13 January 2023, extended manuscript.
+The first-page footer identifies the CDC 2022 article, pp.\ 2123--2128,
+doi:10.1109/CDC51059.2022.9992362.
+\url{https://arxiv.org/abs/2203.16290}.
+\bibitem{S21} K. Seel, E. I. Gr\o tli, S. Moe, J. T. Gravdahl, and K. Y. Pettersen,
+\emph{Neural Network-Based Model Predictive Control with Input-to-State Stability},
+American Control Conference, 2021, pp.\ 3556--3563.
+\url{https://doi.org/10.23919/ACC50511.2021.9483190}.
+Equation anchors refer to the local manuscript's second PDF page.
+\end{thebibliography}
+\end{document}

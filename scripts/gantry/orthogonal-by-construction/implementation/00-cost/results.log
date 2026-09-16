@@ -1,0 +1,29 @@
+==============================================================================
+STAGE 0 -- per-timestep parameter Jacobian cost
+==============================================================================
+  settings: Ts = 2.500000e-04 s, up_sample = 2, Y_op = None (LPV), batch = 512, float64, CPU
+  torch 2.5.1, threads 6
+  theta_bar (raw 14)  = [1.98750000e+03 1.98750000e+03 1.45000000e+01 2.02999992e+01
+ 1.00000000e+01 9.00000000e+00 9.00000000e+00 1.01000004e+01
+ 1.01999998e+01 1.06999998e+01 2.27999992e+01 1.00000000e+00
+ 5.00000007e-02 1.00000001e-01]
+  vartheta_bar (10)   = [ 3.97500000e+03  1.45000000e+01  2.02999992e+01  1.00000000e+01
+  1.80000000e+01  1.01000004e+01  4.36999989e+01 -5.00000000e-01
+  3.79639076e+00  1.00000001e-01]
+
+  gauge section round-trip  max |combos(section(v)) - v| = 0.000e+00
+  reduced path at free = 0 vs raw step: max |diff| = 5.421e-20 (state increment scale 9.170e-03)
+
+  --- timings, seconds per call at batch 512 ---
+  (i)   plain block step                     0.004345
+  (ii)  vmap(jacfwd) over 10 reduced dirs    0.122347   ratio  28.16x
+  (iii) vmap(jacfwd) over 14 raw dirs        0.113631   ratio  26.15x
+
+  --- extrapolation to one nf = 400 window at batch 512 ---
+  baseline rollout, steps only                   1.738 s
+  + 10-direction Jacobian at every step         50.677 s   (29.16x)
+  + 14-direction Jacobian at every step         47.190 s   (27.15x)
+
+  --- verdict ---
+  ratio 28.16x > 4x: candidate (a) is expensive. Consider the analytic Jacobian (b) before building the projection, OR restrict the construction evaluations to a strided subset of the rollout.
+==============================================================================

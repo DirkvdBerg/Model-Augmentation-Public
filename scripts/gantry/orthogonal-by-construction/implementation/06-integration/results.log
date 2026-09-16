@@ -1,0 +1,53 @@
+==============================================================================
+STAGE 6 -- integration: does the seam hold inside a real Interconnect?
+==============================================================================
+  HARD CAPS (handoff Sect. 12): batch 8, nf 50, 20 optimizer steps, CPU, float64
+  This is a SEAM test. Nothing here is a result about learning.
+
+--- T1  FLAG-OFF BIT-IDENTITY over a recursive rollout (THE CRITERION) ---
+  50 recursive steps at batch 8
+  output sequence: torch.equal = True, max abs difference 0.0e+00
+  final state    : torch.equal = True, max abs difference 0.0e+00
+  BIT-IDENTICAL: True
+
+--- T2  the wrapper does not duplicate the physical block into its state_dict ---
+  wrapper state_dict keys: ['ann.net.net.0.weight', 'ann.net.net.0.bias', 'ann.net.net.2.weight', 'ann.net.net.2.bias', 'ann.net.net.4.weight', 'ann.net.net.4.bias']
+  keys belonging to the physical block: []   (expected none)
+  interconnect parameter count 610, expected 610 (ANN + 10 reduced physical): True
+
+--- T3  CHECKPOINT ROUND-TRIP after a jacfwd over the physical block ---
+  basis built (rank 11); phy_b._cur is now None
+  torch.save + torch.load succeeded in 0.023 s, 34 keys, 18108 bytes
+  reloaded model, flag OFF, reproduces the flag-off rollout: True
+  (the `_cur` drop in __getstate__ is what makes this work; without it torch.save
+   raises NotImplementedError: Cannot access storage of TensorWrapper)
+
+--- T4  a capped recursive rollout with the flag ON ---
+  flag ON  rollout: 2.422 s, output finite = True, max abs y = 2.6092e+00
+  flag OFF rollout: 0.194 s
+  wall cost of the seam: 12.50x
+  the correction is doing something: max abs (y_on - y_off) = 1.5345e+00
+
+--- T5  a capped optimizer smoke test, 20 steps ---
+    step   0  loss 8.653461e-02  grad norm 1.6451e+01  free_params max abs 1.000e-04
+    step   5  loss 2.786208e-02  grad norm 6.8892e+00  free_params max abs 5.705e-04
+    step  10  loss 1.691000e-02  grad norm 4.0924e+00  free_params max abs 1.017e-03
+    step  15  loss 1.369019e-02  grad norm 4.7033e+00  free_params max abs 1.338e-03
+    step  19  loss 9.585213e-03  grad norm 2.3735e+00  free_params max abs 1.436e-03
+  20 steps in 91.4 s (4.57 s/step at batch 8, nf 50)
+  loss first 8.653461e-02 -> last 9.585213e-03, all finite = True
+  The loss is NOT evidence of anything: 20 steps against a synthetic target at batch 8.
+  What this shows is that the seam survives backward, the optimizer and the rebuild.
+
+--- T6  the cost of the seam at the capped size ---
+  the coefficient is refitted at EVERY timestep, so the graph holds one
+  ANN-over-M subgraph per step: nf 50 x M 64 = 3200 ANN evaluations
+  per rollout, on top of 50 directional derivatives.
+  forward-only wall ratio (T4):       12.50x
+  forward+backward, per step (T5):    4.57 s
+  stage 0 measured 3.19x at the production batch 256; at batch 8 the
+  per-operation overhead is a larger share, so this ratio is an upper bound.
+
+==============================================================================
+STAGE 6 VERDICT: flag-off bit-identity over 50 recursive steps (torch.equal TRUE on both the output sequence and the final state), checkpoint round-trip after jacfwd OK, capped smoke test ran -- MET
+==============================================================================

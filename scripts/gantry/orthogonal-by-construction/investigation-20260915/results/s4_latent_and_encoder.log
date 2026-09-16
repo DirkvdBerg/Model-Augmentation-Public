@@ -1,0 +1,79 @@
+  learned-block parameter layout:
+    l1.weight    indices [   0,  176)  shape (16, 11)
+    l1.bias      indices [ 176,  192)  shape (16,)
+    l2.weight    indices [ 192,  448)  shape (16, 16)
+    l2.bias      indices [ 448,  464)  shape (16,)
+    l3.weight    indices [ 464,  592)  shape (8, 16)
+    l3.bias      indices [ 592,  600)  shape (8,)
+
+  eta_lat: 66 of 600 parameters (latent input columns of layer 1, latent output rows and biases of layer 3)
+
+==============================================================================
+T1  Sensitivity of the frozen coefficient to the latent-path parameters
+==============================================================================
+    Phi_ref: shape (768, 15) rank 11/15 at rcond 1e-10; largest discarded / sigma0 = 6.10e-17
+  R2 latent RMS = 1.3856e+00, R1 latent RMS = 5.8720e-01
+
+  reference policy                            ||d eta_aux / d eta_lat||   ||d eta_aux / d eta||
+  baseline-only (x_a = 0)                                  0.000000e+00            4.001084e+02
+  R1 designed latent set                                   3.834515e+01            3.902253e+02
+  R2 lagged augmented rollout (surrogate)                  1.016613e+02            3.437433e+02
+
+  VERDICT: with the baseline-only set the coefficient derivative along every
+  latent-path parameter is exactly zero, reproducing Prop. 7.1 on the real
+  gantry regressor rather than on the surrogate. R1 and R2 both restore it.
+
+==============================================================================
+T2  The same parameters DO move the physical write where x_a != 0
+==============================================================================
+  ||d(R_p g)/d eta_lat|| at x_a = 0        = 0.000000e+00
+  ||d(R_p g)/d eta_lat|| at live x_a       = 3.196412e-02
+  So a projection fitted at x_a = 0 charges nothing for a physical write that
+  the additional states produce. The defect is in the reference set, not in the
+  condition, and R2 is the cheapest repair that keeps the points on the data
+  manifold.
+
+==============================================================================
+T3  Latent gauge invariance
+==============================================================================
+  physical rows: max |difference| = 1.084e-18
+  latent rows:   max |w_gauge - V w_ref| = 3.553e-15
+  The physical write, and therefore the stacked condition, is unchanged; the
+  latent write transforms exactly as the gauge demands. A condition that
+  constrained the latent rows would depend on an arbitrary coordinate choice.
+
+==============================================================================
+T4  Encoder: can an initial-state change stand in for a parameter change?
+==============================================================================
+  trajectory: T = 200 samples at Ts = 5e-05 s (10.0 ms), input RMS = 48.8 N
+  d y / d theta (log)    shape (600, 14)  rank 10  cond(on range) 4.156e+04
+    sigma = [1.245e-04 5.179e-05 2.023e-05 3.287e-06 2.482e-06 2.831e-07 1.590e-07 2.650e-08 1.282e-08 2.994e-09 1.241e-20 4.176e-21 4.864e-22 1.800e-23]
+  d y / d x0             shape (600, 6)  rank  6  cond(on range) 9.740e+02
+    sigma = [20.    14.142  7.13   0.058  0.041  0.021]
+  joint [theta, x0]      shape (600, 20)  rank 15  cond(on range) 1.895e+09
+    sigma = [2.000e+01 1.414e+01 7.130e+00 5.755e-02 4.062e-02 2.053e-02 2.155e-05 3.506e-06 2.438e-06 1.652e-06 1.255e-06 7.216e-08 3.798e-08 1.177e-08 1.055e-08 1.414e-09 3.546e-16 1.646e-19 1.040e-20
+ 1.474e-22]
+
+  fraction of each parameter-tangent direction that the 6 initial-state
+  directions can reproduce over this window:
+    kb1   0.9546
+    kb2   0.9546
+    cg1   0.9859
+    cg2   0.9961
+    cy    0.9898
+    cb1   0.9890
+    cb2   0.9890
+    mh    0.9846
+    m1    0.9990
+    m2    0.9725
+    mb    0.9971
+    Jb    0.9977
+    Jh    0.9977
+    d     0.9907
+
+  Reading: a value near 1 means an initial-state error is indistinguishable
+  from that parameter error over this window, so encoder freedom and that
+  parameter compete. A value near 0 means they do not. This is a statement about
+  THIS window length and excitation, not a universal encoder verdict.
+
+wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-by-construction\investigation-20260915\results\s4_tables.json

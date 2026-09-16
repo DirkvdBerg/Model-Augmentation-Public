@@ -1,0 +1,29 @@
+==============================================================================
+STAGE 0b -- how cheap can the per-timestep reduced Jacobian get?
+==============================================================================
+  batch 512, float64, CPU, torch 2.5.1, threads 6
+
+  reference J from vmap(jacfwd(f_single)):  shape (3072, 10), Frobenius norm 1.028594e-01
+  largest reference entry 8.259e-03
+  (iv) jacfwd(batched)   max rel diff vs reference = 2.100e-16
+  (v)  10 x jvp(batched) max rel diff vs reference = 2.100e-16
+
+  --- seconds per call at batch 512 ---
+  plain block step                          0.005226
+  (ii)  vmap(jacfwd(f_single)), 10 dirs     0.119702     22.91x
+  (iv)  jacfwd(f_batched),      10 dirs     0.077173     14.77x
+  (v)   10 x jvp(f_batched)                 0.462715     88.54x
+
+  cheapest exact variant: (iv) jacfwd(batched) at 14.77x a plain step
+
+  --- cost decomposition over one nf = 400 window, batch 512 ---
+  rollout, steps only                             2.090 s
+  APPLY: basis at every step (needed always)     30.869 s   -> total   32.960 s  (15.77x)
+  FIT:   coefficient on stride   1 ( 400 pts)        30.869 s
+  FIT:   coefficient on stride   4 ( 100 pts)         7.717 s
+  FIT:   coefficient on stride  10 (  40 pts)         3.087 s
+  FIT:   coefficient on stride  40 (  10 pts)         0.772 s
+
+  --- verdict ---
+  14.77x above 12x: even the batched variant is expensive. The analytic Jacobian (b) is a prerequisite.
+==============================================================================

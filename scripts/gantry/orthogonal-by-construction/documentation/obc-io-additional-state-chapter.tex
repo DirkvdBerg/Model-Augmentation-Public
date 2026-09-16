@@ -1,0 +1,673 @@
+% ============================================================================
+% STANDALONE WRAPPER. Everything down to the marker "END OF STANDALONE
+% WRAPPER" exists so that this file compiles on its own. Delete this block and
+% the matching one at the end of the file to paste the body into a thesis.
+% ============================================================================
+% CONVENTION (default, change here): top level is \section in the article
+% class, so the body drops into a thesis chapter without renaming.
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,booktabs,array}
+\usepackage{microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\R}{\mathbb R}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\refset}{\mathrm{ref}}
+% CONVENTION (default, change here): theorem environments are declared in this
+% deletable preamble, matching the surrounding project documents.
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\title{An additional-state extension of orthogonal-by-construction\\
+input-output augmentation, and its delay-state realisation}
+\author{Eindhoven University of Technology}
+\date{15 September 2026}
+\begin{document}
+\maketitle
+% ================== END OF STANDALONE WRAPPER (opening) ====================
+
+\section{Setting}\label{sec:setting}
+% CONVENTION (default, change here): equations are numbered continuously and
+% only where they are referred to later; all others use starred environments.
+A physics-based baseline model that is linear in its physical parameters can be extended by a
+learned component fitted alongside it. When the two are fitted together the learned component may
+supply output behaviour that the baseline could have supplied itself, and the physical parameters
+then absorb whatever remains, which is how an augmented model loses the interpretability that
+motivated the baseline. The orthogonal-by-construction approach of
+Gy\"or\"ok et al.~\cite{gyorok2026obc} removes the baseline-representable part of the learned
+correction before that correction is added, so that on a declared reference set the two components
+cannot represent the same thing.
+
+The source construction is stated for discrete-time input-output predictors and this chapter stays
+in those coordinates. The regressor is then built from past inputs and outputs, so it is available
+from data without a state observer, and the finite history is itself a state, so the construction
+can be examined as a state-space object without an observability hypothesis. The delay states
+below are stored signals, not physical positions or velocities.
+
+Inherited from the source are the input-output model class, the stacked basis of baseline
+evaluations, the projection defining the auxiliary coefficient, and the orthogonality it enforces
+on the reference set. Contributed here are the explicit delay-state realisation with its fixed
+routing matrices, the extension of the model class by a learned state carrying its own update, and
+the extension of the projection to the resulting enlarged state equation.
+
+The main result is an exact reduction: isometric output insertion and zero baseline learned-state
+rows make the enlarged projection equivalent to projecting the complete learned output correction,
+at any rank. Additional memory enlarges the model class without requiring a separate subtraction
+on its update rows. The state-level and input-output orthogonality conditions therefore coincide
+in these delay coordinates. Extension to physical state-space baselines without full-state
+measurement is a separate problem identified as future research
+by Gy\"or\"ok et al.~\cite[Sect.~6]{gyorok2026obc}.
+
+\section{The inherited construction}\label{sec:inherited}
+The source model is a measured-output process described through a finite input-output
+regressor:
+\begin{equation*}
+y_k=f(x_k)+e_k,\qquad
+x_k=\col\bigl(y_{k-1},\ldots,y_{k-n_{\mathrm a}},
+u_k,u_{k-1},\ldots,u_{k-n_{\mathrm b}}\bigr).
+\end{equation*}
+The regressor holds \(n_{\mathrm a}\) past outputs together with the current input and
+\(n_{\mathrm b}\) past inputs. Because the realisation of Section~\ref{sec:realisation} stores the
+past signals while the current input arrives from outside, we split the regressor once and keep
+the two resulting arguments for the whole chapter:
+\begin{equation}\label{eq:history}
+s_k=\col(y_{k-1},\ldots,y_{k-n_{\mathrm a}},u_{k-1},\ldots,u_{k-n_{\mathrm b}})\in\R^{n_s},
+\qquad n_s=n_{\mathrm a}n_{\mathrm y}+n_{\mathrm b}n_{\mathrm u},
+\qquad \phi(s_k,u_k):=\phi(x_k).
+\end{equation}
+The two-argument notation retains all prediction information and uses the displayed source
+ordering, with the current input before the past inputs; concatenating the history and current
+input directly would put it last. Both lag orders are assumed at least one for the displayed
+routing blocks; an order-one shift is zero. The baseline predictor is
+linear in its parameters while its matrix function may depend nonlinearly on those signals,
+\begin{equation}\label{eq:baselineIO}
+\hat y_k=\phi(s_k,u_k)\theta_b,\qquad\theta_b\in\R^{n_{\theta_{\mathrm b}}},
+\end{equation}
+and the learned component enters additively as a correction on the output,
+\begin{equation*}
+\hat y_k=\phi(s_k,u_k)\theta_b+g_{y,\eta}^{(0)}(s_k,u_k).
+\end{equation*}
+No state or input linearisation has been performed in \eqref{eq:baselineIO}, and the learned map
+is a feedforward function of the regressor with no recursion of its own.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{ll}\toprule
+Symbol & Meaning\\\midrule
+\(n_{\mathrm y},\ n_{\mathrm u}\) & Output and input dimension\\
+\(n_{\mathrm a},\ n_{\mathrm b}\) & Number of past output and past input samples\\
+\(x_k\) & Input-output regressor, including the current input\\
+\(s_k\in\R^{n_s}\) & Stored history, excluding the current input\\
+\(x_{a,k}\in\R^{n_{x_a}}\) & Learned state\\
+\(\xi_k\) & Combined history and learned state\\
+\(\theta_b\in\R^{n_{\theta_{\mathrm b}}}\) & Baseline parameter vector\\
+\(\eta\) & Parameters of the learned maps\\
+\(\theta_{\mathrm{aux}}\) & Shared projection coefficient\\
+\(N\) & Number of stacked evaluations\\
+\(\dagger\) & Moore-Penrose pseudoinverse\\
+\bottomrule\end{tabular}
+\caption{Notation.}\label{tab:notation}
+\end{table}
+
+The projection is defined on \(N\) declared reference arguments, by stacking the baseline basis
+and the learned correction evaluated there:
+\begin{equation}\label{eq:originalstacks}
+\Phi=\col_{i=1}^N\phi(s_i^{\refset},u_i^{\refset})
+\in\R^{Nn_{\mathrm y}\times n_{\theta_{\mathrm b}}},
+\qquad
+G_\eta^{(0)}=\col_{i=1}^N g_{y,\eta}^{(0)}(s_i^{\refset},u_i^{\refset})\in\R^{Nn_{\mathrm y}}.
+\end{equation}
+These are function evaluations at declared arguments. Estimation histories, an auxiliary
+synthetic set, or a subset of either are all admissible. Reference arguments may also be obtained
+from a declared trajectory-generation procedure; exact orthogonality holds on the evaluations
+used to construct the coefficient and does not automatically hold on other trajectories.
+Combining distinguishability of the
+baseline function with a weakly persistently exciting input sequence, the source assumes
+\begin{equation}\label{eq:rank}
+\rank(\Phi)=n_{\theta_{\mathrm b}},\qquad Nn_{\mathrm y}\ge n_{\theta_{\mathrm b}},
+\end{equation}
+which permits a normal-matrix inverse and a unique baseline least-squares coefficient. Neither
+predictor evaluation nor the routing of Section~\ref{sec:realisation} requires that inverse, so
+failure of \eqref{eq:rank} does not prevent realisation, although it can prevent identification of
+individual baseline coefficients.
+
+The baseline-representable part of the stacked correction is its Euclidean projection onto the
+column space of the basis, and subtracting that part leaves what the baseline cannot reach.
+Written at any rank with the Moore-Penrose convention, in place of the source's full-rank
+inverse~\cite[Eq.~(8)]{gyorok2026obc},
+\begin{equation}\label{eq:originalprojection}
+\theta_{\mathrm{aux}}=\Phi^\dagger G_\eta^{(0)},\qquad
+P_\Phi=\Phi\Phi^\dagger,\qquad
+D_\eta^{(0)}=G_\eta^{(0)}-\Phi\theta_{\mathrm{aux}}=(I_{Nn_{\mathrm y}}-P_\Phi)G_\eta^{(0)}.
+\end{equation}
+The single coefficient \(\theta_{\mathrm{aux}}\) is shared across all reference evaluations rather
+than fitted separately at each one. The complementary range of the projector is the null space of
+the transpose, which gives the orthogonality of the
+construction~\cite[Lemma~3, Eq.~(11)]{gyorok2026obc}:
+\begin{equation}\label{eq:originalorthogonality}
+\boxed{\Phi^\top D_\eta^{(0)}=0.}
+\end{equation}
+The condition protects every baseline output direction reachable by a parameter vector, and it
+does so as an aggregate over the reference set,
+\begin{equation*}
+(\Phi b)^\top D_\eta^{(0)}=0\ \ \text{for every }b\in\R^{n_{\theta_{\mathrm b}}},
+\qquad\sum_{i=1}^N\phi_i^\top d_i^{(0)}=0,
+\end{equation*}
+so the summed products cancel while individual products need not vanish. It is therefore stronger
+than orthogonality to a single baseline vector at one chosen parameter value.
+
+The corrected predictor subtracts pointwise the same quantity that the stack subtracts on the
+reference set,
+\begin{equation}\label{eq:originalcorrected}
+d_\eta^{(0)}(s,u)=g_{y,\eta}^{(0)}(s,u)-\phi(s,u)\theta_{\mathrm{aux}},\qquad
+\hat y_k=\phi(s_k,u_k)\theta_b+d_\eta^{(0)}(s_k,u_k).
+\end{equation}
+After fitting, the coefficient is frozen at its estimated value, so that deployment evaluates
+\begin{equation*}
+\hat y_k=\phi(s_k,u_k)\hat\theta_b+g_{y,\hat\eta}^{(0)}(s_k,u_k)
+-\phi(s_k,u_k)\hat\theta_{\mathrm{aux}}.
+\end{equation*}
+Evaluation is causal given the current regressor, and exact aggregate orthogonality holds on the
+set from which the coefficient was constructed.
+
+\section{The delay-state realisation}\label{sec:realisation}
+The history \eqref{eq:history} is a state, and propagating it needs only fixed matrices whose
+entries are zero or one. With shift matrices
+\begin{equation*}
+(S_{n_{\mathrm a}})_{ij}=\begin{cases}1&i=j+1,\\0&\text{otherwise},\end{cases}
+\qquad S_{n_{\mathrm a}}\in\R^{n_{\mathrm a}\times n_{\mathrm a}},
+\end{equation*}
+with \(S_{n_{\mathrm b}}\) defined in the same way, and with first coordinate vectors of the
+indicated lengths, set
+\begin{equation}\label{eq:routing}
+A=\diag(S_{n_{\mathrm a}}\otimes I_{n_{\mathrm y}},S_{n_{\mathrm b}}\otimes I_{n_{\mathrm u}}),
+\qquad
+B_x=\begin{bmatrix}e_1^{(n_{\mathrm a})}\otimes I_{n_{\mathrm y}}\\
+0_{n_{\mathrm b}n_{\mathrm u}\times n_{\mathrm y}}\end{bmatrix},
+\qquad
+B_u=\begin{bmatrix}0_{n_{\mathrm a}n_{\mathrm y}\times n_{\mathrm u}}\\
+e_1^{(n_{\mathrm b})}\otimes I_{n_{\mathrm u}}\end{bmatrix},
+\end{equation}
+so that the history update for an output sample \(v_k\) to be stored is
+\begin{equation}\label{eq:storage}
+s_{k+1}=As_k+B_uu_k+B_xv_k.
+\end{equation}
+The shift moves older samples down one slot. The two insertion matrices independently write the
+current input and the new output. Their disjoint routing gives the three identities on which
+everything below rests,
+\begin{equation}\label{eq:routingidentities}
+B_x^\top B_x=I_{n_{\mathrm y}},\qquad B_x^\top A=0,\qquad B_x^\top B_u=0,
+\end{equation}
+which hold because the newest-output rows of the shift and of the input insertion are zero, while
+the output insertion copies each output coordinate exactly once. For scalar signals with two
+output delays and one input delay the construction and its effect are
+\begin{equation*}
+s_k=\begin{bmatrix}y_{k-1}\\y_{k-2}\\u_{k-1}\end{bmatrix},\quad
+A=\begin{bmatrix}0&0&0\\1&0&0\\0&0&0\end{bmatrix},\quad
+B_x=\begin{bmatrix}1\\0\\0\end{bmatrix},\quad
+B_u=\begin{bmatrix}0\\0\\1\end{bmatrix},\quad
+s_{k+1}=\begin{bmatrix}v_k\\y_{k-1}\\u_k\end{bmatrix}.
+\end{equation*}
+
+The stored output sample admits two readings, which must be distinguished because they define
+different predictors:
+\begin{equation}\label{eq:feedback}
+v_k=\begin{cases}\hat y_k&\text{recursive deterministic simulation},\\
+y_k&\text{measured-history prediction}.\end{cases}
+\end{equation}
+In the recursive reading, history symbols denote values stored by the recursion itself once an
+initial history has been supplied, and the baseline realisation is
+\begin{equation}\label{eq:baselineSS}
+\boxed{\begin{aligned}
+s_{k+1}&=As_k+B_uu_k+B_x\phi(s_k,u_k)\theta_b,\\
+\hat y_k&=\phi(s_k,u_k)\theta_b.
+\end{aligned}}
+\end{equation}
+Selecting the newest slot returns the previously stored output rather than the current one,
+\begin{equation*}
+B_x^\top s_k=v_{k-1},\qquad B_x^\top s_{k+1}=v_k,
+\end{equation*}
+so the current output is supplied by the predictor function and never read out of the state. The
+same routing carries the corrected predictor of \eqref{eq:originalcorrected}, provided the
+corrected output appears both in the output equation and in the history feedback:
+\begin{equation*}
+s_{k+1}=As_k+B_uu_k+B_x\hat y_k,\qquad
+\hat y_k=\phi(s_k,u_k)\theta_b+d_\eta^{(0)}(s_k,u_k).
+\end{equation*}
+Storing the predicted output already makes the source model recurrent under simulation, so the
+learned states of Section~\ref{sec:memory} supply additional memory rather than the first memory.
+The inputs may be prescribed or generated by a common causal controller.
+
+In the measured reading the stored sample is the observation, which changes the feedback path but
+not the routing,
+\begin{equation*}
+\hat y_k=\phi(s_k,u_k)\theta_b+d_\eta^{(0)}(s_k,u_k),\qquad
+s_{k+1}=As_k+B_uu_k+B_xy_k.
+\end{equation*}
+For a declared generative process the same storage algebra applies to the data-generating signals
+themselves,
+\begin{equation*}
+y_k=H(s_k,u_k)+e_k,\qquad
+s_{k+1}=As_k+B_uu_k+B_xH(s_k,u_k)+B_xe_k,
+\end{equation*}
+which places the noise in the newest-output slot and nowhere else. This is bookkeeping for that
+declared process and does not assert that any fitted predictor generates the measured data.
+
+Realisations of this shape are standard for neural NARX models, and the routing matrices with
+zero-one entries appear in Bonassi et al.~\cite[Sect.~II]{bonassi2022offsetfree} and in Seel et
+al.~\cite[Sect.~III]{seel2021nnmpciss}, the latter also stating the feedback distinction of
+\eqref{eq:feedback}. Their predictors index the output at the next sample while
+\eqref{eq:baselineSS} keeps the current prediction index, and shifting the output index alone
+would shift the last input index with it, so \eqref{eq:routing} is built for the timing used here
+rather than obtained from theirs by reindexing. That the recursion and the realisation agree
+exactly is established in Section~\ref{sec:projection}, once the model class is complete.
+
+\section{Adding learned memory}\label{sec:memory}
+The learning component of Section~\ref{sec:inherited} is a static map of the regressor, so its
+correction at sample \(k\) is fixed by the stored history and the current input. We enlarge the
+model class with an internal state carrying its own update, so that the correction may depend on
+information the finite history does not hold:
+\begin{equation}\label{eq:extendedIO}
+\begin{aligned}
+\hat y_k&=\phi(s_k,u_k)\theta_b+g_{y,\eta}(s_k,u_k,x_{a,k}),\\
+x_{a,k+1}&=g_{a,\eta}(s_k,u_k,x_{a,k}).
+\end{aligned}
+\end{equation}
+The learned parameters \(\eta\) are shared by the two maps, which act between
+\begin{equation*}
+g_{y,\eta}:\R^{n_s+n_{\mathrm u}+n_{x_a}}\to\R^{n_{\mathrm y}},\qquad
+g_{a,\eta}:\R^{n_s+n_{\mathrm u}+n_{x_a}}\to\R^{n_{x_a}}.
+\end{equation*}
+Both read the old states and the current input rather than the same-step predicted output, so the
+pair carries no algebraic loop. Memory is learned through the update in \eqref{eq:extendedIO}
+instead of being stored as further signal delays, and the baseline predictor is untouched.
+
+The learned state requires an initial value, either a fixed vector or the output of a causal
+encoder \(\mathcal E_\eta\) evaluated on declared initial data:
+\begin{equation*}
+x_{a,0}=\bar x_a\qquad\text{or}\qquad x_{a,0}=\mathcal E_\eta(\text{declared initial data}).
+\end{equation*}
+Collecting the stored history and the learned state into the enlarged state
+\begin{equation*}
+\xi_k=\col(s_k,x_{a,k})\in\R^{n_s+n_{x_a}}
+\end{equation*}
+and substituting the output equation of \eqref{eq:extendedIO} into the routing \eqref{eq:storage}
+separates the baseline and the learned transition contributions:
+\begin{equation}\label{eq:extendedSS}
+\boxed{\begin{aligned}
+\xi_{k+1}&=F_b(\xi_k,u_k;\theta_b)+F_a(\xi_k,u_k;\eta),\\
+F_b(\xi,u;\theta_b)&=\begin{bmatrix}As+B_uu+B_x\phi(s,u)\theta_b\\0_{n_{x_a}}\end{bmatrix},
+\qquad
+F_a(\xi,u;\eta)=\begin{bmatrix}B_xg_{y,\eta}(s,u,x_a)\\g_{a,\eta}(s,u,x_a)\end{bmatrix},\\
+\hat y_k&=\phi(s_k,u_k)\theta_b+g_{y,\eta}(s_k,u_k,x_{a,k}).
+\end{aligned}}
+\end{equation}
+The zero lower block is an assignment of the decomposition rather than a claim that the learned
+coordinates stay at zero: a residual form of the learned update is represented inside
+\(g_{a,\eta}\), and declaring a known latent baseline instead would move the split between
+\(F_b\) and \(F_a\). Section~\ref{sec:projection} uses that zero block throughout.
+
+\section{The extended projection}\label{sec:projection}
+The orthogonality definition is applied directly to the two contributions to the enlarged state
+equation. At the \(i\)-th stacked model evaluation, abbreviate
+\(\phi_i=\phi(s_i,u_i)\),
+\(g_{y,\eta,i}=g_{y,\eta}(s_i,u_i,x_{a,i})\), and
+\(g_{a,\eta,i}=g_{a,\eta}(s_i,u_i,x_{a,i})\). Here \(x_{a,i}\) is the learned state already present
+in the model evaluation; it is not a prescribed reference value or an additional item of training
+data. The baseline and learned contributions are
+\begin{equation*}
+K_i=\begin{bmatrix}B_x\phi_i\\0_{n_{x_a}\times n_{\theta_{\mathrm b}}}\end{bmatrix},
+\qquad
+w_{\eta,i}=\begin{bmatrix}B_xg_{y,\eta,i}\\g_{a,\eta,i}\end{bmatrix},
+\end{equation*}
+where \(K_i\) is the partial derivative of the baseline transition with respect to the baseline
+parameters at fixed arguments and not a total rollout derivative. Stacking these and factoring the
+insertion out of the basis,
+\begin{equation}\label{eq:augmentedstacks}
+E=\begin{bmatrix}B_x\\0_{n_{x_a}\times n_{\mathrm y}}\end{bmatrix},\qquad
+M_N=I_N\otimes E,\qquad
+\Psi=\col_{i=1}^NK_i=M_N\Phi,\qquad
+\mathcal G_\eta=\col_{i=1}^Nw_{\eta,i}.
+\end{equation}
+Define the output-correction stack at these same model evaluations by
+\begin{equation*}
+G_{y,\eta}=\col_{i=1}^N g_{y,\eta,i},\qquad
+\theta_{\mathrm{aux}}=\Phi^\dagger G_{y,\eta}.
+\end{equation*}
+No separate set of learned-state reference values is introduced by these definitions.
+
+\begin{proposition}[Zero-block reduction]\label{prop:zero}
+In the stated Euclidean coordinates,
+\begin{equation*}
+E^\top E=I_{n_{\mathrm y}},\qquad M_N^\top M_N=I_{Nn_{\mathrm y}},\qquad
+M_N^\top\mathcal G_\eta=G_{y,\eta},
+\end{equation*}
+and consequently
+\begin{equation}\label{eq:zeroreduction}
+\Psi^\top\mathcal G_\eta=\Phi^\top G_{y,\eta}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+The first identity combines the output-insertion isometry of \eqref{eq:routingidentities} with the
+zero lower block of \(E\), and the second follows from the first by the Kronecker product. At each
+tuple the extraction reads
+\begin{equation*}
+E^\top w_{\eta,i}=B_x^\top B_xg_{y,\eta,i}+0^\top g_{a,\eta,i}=g_{y,\eta,i},
+\end{equation*}
+and stacking gives the third identity. Multiplying it by the baseline stack gives
+\eqref{eq:zeroreduction}.
+\end{proof}
+
+\begin{lemma}[Isometric pseudoinverse]\label{lem:isometry}
+With \(M_N\) as in \eqref{eq:augmentedstacks} and \(\Phi\) of any rank,
+\begin{equation}\label{eq:isometricinverse}
+(M_N\Phi)^\dagger=\Phi^\dagger M_N^\top.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Let the rank \(\rho\) be positive and take a compact singular value decomposition, so that
+\begin{equation*}
+\Phi=U_\rho\Sigma_\rho V_\rho^\top,\qquad
+(M_NU_\rho)^\top(M_NU_\rho)=I_\rho.
+\end{equation*}
+The insertion therefore preserves the nonzero singular values and supplies orthonormal left
+singular vectors, whence
+\begin{equation*}
+(M_N\Phi)^\dagger=V_\rho\Sigma_\rho^{-1}U_\rho^\top M_N^\top=\Phi^\dagger M_N^\top.
+\end{equation*}
+At zero rank both pseudoinverses are zero and the identity holds trivially.
+\end{proof}
+
+Proposition~\ref{prop:zero} and Lemma~\ref{lem:isometry} together give the coefficient equivalence
+at every rank:
+\begin{equation}\label{eq:coefficientidentity}
+\boxed{\Psi^\dagger\mathcal G_\eta=\Phi^\dagger G_{y,\eta}=\theta_{\mathrm{aux}}.}
+\end{equation}
+The enlarged projection therefore requires no additional condition on the learned-state update
+in these coordinates. Its output/history block is projected against the same baseline parameter
+span, while its additional-state rows are absent from that span. The learned state can still
+influence the evaluated output correction and thereby the auxiliary coefficient.
+
+The subtraction defined by that coefficient is applied to the output correction,
+\begin{equation*}
+d_\eta(s,u,x_a)=g_{y,\eta}(s,u,x_a)-\phi(s,u)\theta_{\mathrm{aux}},
+\end{equation*}
+and the corrected model and its realisation are
+\begin{equation}\label{eq:finalIO}
+\boxed{\begin{aligned}
+\hat y_k&=\phi(s_k,u_k)\theta_b+d_\eta(s_k,u_k,x_{a,k}),\\
+x_{a,k+1}&=g_{a,\eta}(s_k,u_k,x_{a,k}),
+\end{aligned}}
+\qquad
+\boxed{\begin{aligned}
+\xi_{k+1}&=F_b(\xi_k,u_k;\theta_b)+\widetilde F_a(\xi_k,u_k;\eta),\\
+\widetilde F_a(\xi,u;\eta)&=\begin{bmatrix}B_xd_\eta(s,u,x_a)\\
+g_{a,\eta}(s,u,x_a)\end{bmatrix}.
+\end{aligned}}
+\end{equation}
+Realising this pair changes nothing that it predicts.
+
+\begin{proposition}[Exact realisation]\label{prop:equivalence}
+For matching initial histories, matching learned-state initialisation, matching parameters,
+matching input rule and a matching auxiliary coefficient or causal coefficient schedule, the
+extended input-output recursion \eqref{eq:finalIO} and its delay-state realisation generate
+identical predictions and identical states at every finite sample at which the evaluations are
+defined.
+\end{proposition}
+
+\begin{proof}
+The stored histories and learned states coincide initially. Assume they coincide at a given
+sample. Both forms then evaluate the same baseline, the same corrected output function and the
+same learned update at the same arguments, so the predicted output and the next learned state
+coincide, and \eqref{eq:storage} writes that output and the current input into precisely the
+entries that \eqref{eq:history} requires at the next sample. Induction on the sample index
+completes the claim. A common causal controller supplies equal inputs whenever its initialisation
+and information agree.
+\end{proof}
+
+No rank, stability or observability hypothesis enters Proposition~\ref{prop:equivalence} beyond
+the stated initialisation, timing, feedback and well-definedness, and the same induction covers
+the model before subtraction. Under the measured reading of \eqref{eq:feedback} both forms store
+observations instead,
+\begin{equation*}
+\hat y_k=\phi(s_k,u_k)\theta_b+d_\eta(s_k,u_k,x_{a,k}),\qquad
+s_{k+1}=As_k+B_uu_k+B_xy_k,\qquad
+x_{a,k+1}=g_{a,\eta}(s_k,u_k,x_{a,k}),
+\end{equation*}
+and for a declared generative process with a latent state the storage algebra of
+Section~\ref{sec:realisation} extends unchanged,
+\begin{equation*}
+y_k=H(s_k,u_k,x_{a,k})+e_k,\qquad
+\xi_{k+1}=\begin{bmatrix}As_k+B_uu_k+B_xH(s_k,u_k,x_{a,k})\\g_{a,\eta}(s_k,u_k,x_{a,k})\end{bmatrix}
++\begin{bmatrix}B_xe_k\\0_{n_{x_a}}\end{bmatrix},
+\end{equation*}
+which again confines the noise to the newest-output slot.
+
+\begin{proposition}[Exact extended orthogonality]\label{prop:projection}
+For the stacked evaluations used to construct the coefficient, the corrected learned transition
+stack satisfies
+\begin{equation}\label{eq:finalidentity}
+\boxed{\begin{aligned}
+\widetilde{\mathcal G}_\eta&=\mathcal G_\eta-\Psi\theta_{\mathrm{aux}}
+=(I-\Psi\Psi^\dagger)\mathcal G_\eta,\\
+\Psi^\top\widetilde{\mathcal G}_\eta
+&=\Phi^\top(G_{y,\eta}-\Phi\Phi^\dagger G_{y,\eta})=0.
+\end{aligned}}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Equation \eqref{eq:coefficientidentity} identifies the state-space projector with the
+output-coordinate one. Blockwise the subtraction and its orthogonality read
+\begin{equation*}
+\widetilde{\mathcal G}_\eta
+=\col_i\begin{bmatrix}B_x(g_{y,\eta,i}-\phi_i\theta_{\mathrm{aux}})\\g_{a,\eta,i}\end{bmatrix},
+\qquad\Phi^\top(I-\Phi\Phi^\dagger)=0,
+\end{equation*}
+and Proposition~\ref{prop:zero} completes the proof.
+\end{proof}
+
+Only the history rows receive a subtraction, so the learned update is numerically unchanged by the
+projection at fixed parameters and arguments, while all dependence of the current output
+correction on the learned state does participate. Its parameters can still move during joint
+optimisation, through shared parameters and through the prediction loss.
+
+A stronger statement holds for this particular routing. Writing the parameter-free part of the
+baseline transition at the \(i\)-th stacked evaluation as
+\begin{equation*}
+b_i=\begin{bmatrix}As_i+B_uu_i\\0_{n_{x_a}}\end{bmatrix},\qquad
+F_{b,i}=b_i+K_i\theta_b,
+\end{equation*}
+the identities \eqref{eq:routingidentities} make its inner product with each corrected learned
+write vanish, so that the complete baseline transition is orthogonal to the complete corrected
+learned transition:
+\begin{equation}\label{eq:fullbaseline}
+b_i^\top\widetilde F_{a,i}=0,\qquad
+\sum_{i=1}^NF_{b,i}^\top\widetilde F_{a,i}=\theta_b^\top\Phi^\top D_{y,\eta}=0,
+\qquad D_{y,\eta}=G_{y,\eta}-\Phi\theta_{\mathrm{aux}}.
+\end{equation}
+The primary projection \eqref{eq:finalidentity} protects the baseline parameter span, whereas
+\eqref{eq:fullbaseline} additionally annihilates the parameter-free bookkeeping term and is
+specific to the displayed routing.
+
+\begin{remark}[Any rank]\label{rem:rank}
+Nothing above assumes \eqref{eq:rank}. The Moore-Penrose convention selects the minimum-norm
+least-squares coefficient; other minimisers differ by a null-space vector and agree on the
+reference set while differing away from it,
+\begin{equation*}
+\theta'=\theta_{\mathrm{aux}}+v,\quad\Phi v=0,\qquad
+\Phi\theta'=\Phi\theta_{\mathrm{aux}},\qquad
+d'_\eta(s,u,x_a)-d_\eta(s,u,x_a)=-\phi(s,u)v.
+\end{equation*}
+One reference row and one unseen row already separate the two minimisers:
+\begin{equation*}
+\Phi=\begin{bmatrix}1&1\end{bmatrix},\qquad
+v=\begin{bmatrix}1\\-1\end{bmatrix},\qquad
+\phi_*=\begin{bmatrix}1&0\end{bmatrix},\qquad
+\Phi v=0,\qquad \phi_*v=1.
+\end{equation*}
+\end{remark}
+
+\begin{remark}[Differentiating through the coefficient]\label{rem:gradients}
+The coefficient is a function of the learned parameters through the correction stack, so it is
+recomputed whenever they change. For evaluation arguments fixed while differentiating the learned
+parameters, the projection differentiates cleanly and the orthogonality is inherited by the
+partial derivative:
+\begin{equation}\label{eq:derivatives}
+\partial_\eta\theta_{\mathrm{aux}}=\Phi^\dagger\partial_\eta G_{y,\eta},\qquad
+\partial_\eta D_{y,\eta}=(I-P_\Phi)\partial_\eta G_{y,\eta},\qquad
+\Phi^\top\partial_\eta D_{y,\eta}=0.
+\end{equation}
+The last identity is an aggregate derivative orthogonality. Writing the derivative evaluations
+as \(J_i\), its meaning is
+\begin{equation*}
+\sum_{i=1}^N\phi_i^\top J_i=0.
+\end{equation*}
+The zero-covariance proof of Gy\"or\"ok et al.~\cite[Thm.~18, Eqs.~(39)--(40)]{gyorok2026obc}
+displays pointwise block diagonality, whereas the stacked construction establishes only the
+summed cross block. That identity makes the corresponding unweighted summed Gram matrix
+block-diagonal; unequal output-channel noise weights require a separately justified weighted
+cross-block identity. The covariance scope is stated in Section~\ref{sec:limits}. If an evaluation
+argument itself depends on \(\eta\), its dependence belongs in a total derivative;
+Equation~\eqref{eq:derivatives} does not silently treat such an argument as fixed.
+\end{remark}
+
+\begin{proposition}[Reduction to the inherited construction]\label{prop:reduction}
+Remove the learned coordinates and the learned memory equation,
+\begin{equation}\label{eq:reduction}
+n_{x_a}=0,\qquad g_{y,\eta}(s,u)=g_{y,\eta}^{(0)}(s,u).
+\end{equation}
+Then the predictor, the stacks, the coefficient, the subtraction and the frozen deployment
+expression of Section~\ref{sec:inherited} are recovered unchanged, and under \eqref{eq:rank} the
+pseudoinverse coincides with the normal-matrix inverse of~\cite[Eq.~(8)]{gyorok2026obc}.
+\end{proposition}
+
+\begin{proof}
+At \eqref{eq:reduction} the insertion of \eqref{eq:augmentedstacks} loses its zero block, so
+\begin{equation*}
+E=B_x,\qquad M_N=I_N\otimes B_x,\qquad \Psi=M_N\Phi,\qquad
+\mathcal G_\eta=M_NG_\eta^{(0)},
+\end{equation*}
+and Proposition~\ref{prop:zero} with Lemma~\ref{lem:isometry} reduce
+\eqref{eq:coefficientidentity} to the coefficient of \eqref{eq:originalprojection} and
+\eqref{eq:finalidentity} to \eqref{eq:originalorthogonality}.
+\end{proof}
+
+This is a reduction of model functions and not a new statistical theorem.
+
+\section{What is and is not established}\label{sec:limits}
+The learned state reaches the current prediction through the correction, and both the next learned
+state and the newly stored output reach later predictions,
+\begin{equation*}
+\begin{aligned}
+x_{a,k}&\longrightarrow g_{y,\eta}(s_k,u_k,x_{a,k})\longrightarrow\hat y_k\longrightarrow s_{k+1},\\
+x_{a,k}&\longrightarrow x_{a,k+1}.
+\end{aligned}
+\end{equation*}
+This is compatible with \eqref{eq:finalidentity}, which concerns stacked state-function
+evaluations and not propagated output responses. Orthogonality of accumulated output effects is a
+different property, and it is not imposed here.
+
+The projection identity does not transfer the source's parameter-recovery, consistency or
+covariance theorems, and does not identify unique latent coordinates. It establishes nothing about
+the empirical benefit of adding memory. In particular, the derivative identity establishes
+aggregate unweighted orthogonality, not pointwise or general noise-weighted orthogonality.
+Even pointwise unweighted orthogonality does not generally survive unequal channel weights;
+the noise-weighted cross block in the source's covariance formula needs its own justification.
+This qualifies the proof's reasoning without establishing that every conclusion of its theorem
+is false. Stability of
+the coupled history--learned-state predictor requires separate
+analysis or an applicable stability certificate. A stable-by-design parametrisation is one
+possible route, discussed by Gy\"or\"ok et al.~\cite[Remark~13]{gyorok2026obc}, who identify extension of
+the cited parametrisations to augmentation as future work. Stability of an isolated learned-state
+update does not automatically establish stability of the coupled predictor. The orthogonality of
+the learned update block to zero in
+\eqref{eq:finalidentity} is not a constraint on memory values or memory dynamics. The recursive
+reading of \eqref{eq:feedback} is bookkeeping and implies no closed-loop stability property; the
+stability theorems of the cited model predictive control work are not used here, and the routing
+is constructed for the timing of \eqref{eq:baselineSS} rather than inherited from those sources.
+
+The proofs use the direct-sum Euclidean geometry of \eqref{eq:augmentedstacks}. Block-diagonal
+metrics compatible with that splitting retain the zero overlap on the learned block, but a
+weighted history metric requires a matching weighted projection, cross blocks between history and
+learned coordinates would let learned-memory writes enter the condition, and rescaling coordinates
+requires transforming the metric to preserve the geometry. Those alternatives are not required by
+the construction and are not analysed. Equation \eqref{eq:fullbaseline} is tied to that routing
+more tightly still: an arbitrary physical baseline need not have its parameter-free transition
+term orthogonal to the correction at all.
+
+A rank deficiency in \eqref{eq:rank} on the stacked evaluations need not be a structural rank deficiency
+of the function class, and the pseudoinverse does not itself resolve baseline parameter ambiguity,
+as Remark~\ref{rem:rank} shows away from the reference set. A truncated singular value
+decomposition protects the retained span exactly while dropping small nonzero singular values
+gives only approximate orthogonality, and ridge inverses do not form exact orthogonal projectors.
+Recomputing the coefficient numerically while stopping its gradient preserves the forward
+orthogonal value but supplies a different derivative than \eqref{eq:derivatives}, whose identities
+concern the construction evaluations and not free-run output sensitivity or covariance. The
+zero-block reduction introduces no prescribed, frozen or separately generated learned-state
+reference values. If histories, learned states or the basis depend on trainable quantities, their
+dependence must be handled consistently when making derivative claims; the algebraic zero-block
+identity itself remains a statement about the displayed state-equation blocks. Pseudoinverse
+differentiation at rank changes needs separate care. Zero-history cases are also excluded from
+Proposition~\ref{prop:equivalence}: an absent input history is handled by empty input blocks and
+zero input insertion, whereas an absent output history requires separate treatment to retain the
+insertion isometry.
+
+Finally, nothing here establishes physical equivalence for a mechanical plant, encoder accuracy,
+estimator consistency, covariance separation or closed-loop stability. What is established is the
+additional-state extension of the model class and the exact reduction of its reference-set
+projection in delay coordinates.
+
+\appendix
+\section{Symbolic verification}\label{sec:verification}
+Selected identities were checked on a polynomial surrogate with scalar output, two output delays,
+one input delay, two learned states and shared learned parameters. The 14 September 2026 run in
+MATLAB R2025a Update 1 with Symbolic Math Toolbox 25.1 recorded eighteen passed checks,
+reproduced in Table~\ref{tab:checks}. The verification records were inspected for this revision;
+the computation was not rerun. These checks support the general proofs rather than verifying
+every claim or every possible learned architecture.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{llc}\toprule
+\# & Check & Outcome\\\midrule
+1 & Arbitrary one-step input-output and state-space transition agree & pass\\
+2 & Output timing is the newest slot of the next history & pass\\
+3 & Unprojected additional-state model & pass\\
+4 & Shift rows orthogonal to the learned write & pass\\
+5 & Input-output and state-space auxiliary coefficients identical & pass\\
+6 & Input-output stacked orthogonality & pass\\
+7 & State-space stacked orthogonality & pass\\
+8 & Full baseline transition orthogonality & pass\\
+9 & Differentiated projection & pass\\
+10 & Rank-deficient coefficient equivalence & pass\\
+11 & Rank-deficient orthogonality & pass\\
+12.1 to 12.4 & Free simulation output, history and latent equality, four steps & pass\\
+13 & Measured-history predictor equivalence & pass\\
+14 & Stochastic history injection & pass\\
+15 & Measured and predicted feedback are not interchangeable & pass\\
+\bottomrule\end{tabular}
+\caption{Symbolic checks and outcomes, eighteen checks in total.}\label{tab:checks}
+\end{table}
+
+Checks 1 and 13 compare symbolic one-step maps, while checks 12.1--12.4 unroll the recursion for
+four steps. They support Proposition~\ref{prop:equivalence}, whose
+induction supplies the general finite-sample argument. Physical equivalence for a mechanical plant
+and the statistical theorems of the source were not tested.
+
+% ================= STANDALONE WRAPPER (closing), delete with the opening ====
+% CONVENTION (user-specified): BibTeX with a companion .bib file.
+\bibliographystyle{plainnat}
+\bibliography{obc-io-additional-state-chapter}
+\end{document}
+% ======================= END OF STANDALONE WRAPPER =========================

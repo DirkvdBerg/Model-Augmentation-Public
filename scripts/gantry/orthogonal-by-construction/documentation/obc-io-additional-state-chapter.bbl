@@ -1,0 +1,45 @@
+\begin{thebibliography}{3}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Bonassi et~al.(2022)Bonassi, Xie, Farina, and
+  Scattolini]{bonassi2022offsetfree}
+Fabio Bonassi, Jing Xie, Marcello Farina, and Riccardo Scattolini.
+\newblock An offset-free nonlinear {MPC} scheme for systems learned by neural
+  {NARX} models.
+\newblock In \emph{Proceedings of the 61st IEEE Conference on Decision and
+  Control}, pages 2123--2128, 2022.
+\newblock \doi{10.1109/CDC51059.2022.9992362}.
+\newblock URL \url{https://arxiv.org/abs/2203.16290}.
+\newblock Section locators verified against the extended manuscript
+  arXiv:2203.16290v4, 13 January 2023.
+
+\bibitem[Gy{\"o}r{\"o}k et~al.(2026)Gy{\"o}r{\"o}k, Schoukens, P{\'e}ni, and
+  T{\'o}th]{gyorok2026obc}
+Bendeg{\'u}z~M. Gy{\"o}r{\"o}k, Maarten Schoukens, Tam{\'a}s P{\'e}ni, and
+  Roland T{\'o}th.
+\newblock Orthogonal-by-construction augmentation of physics-based input-output
+  models.
+\newblock \emph{IFAC Journal of Systems and Control}, 35:\penalty0 100376,
+  2026.
+\newblock \doi{10.1016/j.ifacsc.2026.100376}.
+\newblock URL \url{https://doi.org/10.1016/j.ifacsc.2026.100376}.
+\newblock Equation, lemma and theorem locators verified against
+  arXiv:2511.01321v3, 9 January 2026; final-publication numbering not
+  substituted.
+
+\bibitem[Seel et~al.(2021)Seel, Gr{\o}tli, Moe, Gravdahl, and
+  Pettersen]{seel2021nnmpciss}
+Katrine Seel, Esten~Ingar Gr{\o}tli, Signe Moe, Jan~Tommy Gravdahl, and
+  Kristin~Y. Pettersen.
+\newblock Neural network-based model predictive control with input-to-state
+  stability.
+\newblock In \emph{Proceedings of the 2021 American Control Conference}, pages
+  3556--3563, 2021.
+\newblock \doi{10.23919/ACC50511.2021.9483190}.
+\newblock URL \url{https://doi.org/10.23919/ACC50511.2021.9483190}.
+
+\end{thebibliography}
