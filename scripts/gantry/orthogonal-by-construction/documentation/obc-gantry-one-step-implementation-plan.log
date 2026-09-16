@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  16 SEP 2026 14:19
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  16 SEP 2026 16:12
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -193,6 +193,15 @@ Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
 \@thisruleclass=\count300
 \@lastruleclass=\count301
 \@thisrulewidth=\dimen178
+) (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/tools\array.sty
+Package: array 2025/09/25 v2.6n Tabular extension package (FMi)
+\col@sep=\dimen179
+\ar@mcellbox=\box55
+\extrarowheight=\dimen180
+\NC@list=\toks26
+\extratabsurround=\skip54
+\backup@length=\skip55
+\ar@cellbox=\box56
 )
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/microtype\microtype.
 sty
@@ -203,15 +212,15 @@ y
 Package: etoolbox 2025/10/02 v2.5m e-TeX tools for LaTeX (JAW)
 \etb@tempcnta=\count302
 )
-\MT@toks=\toks26
-\MT@tempbox=\box55
+\MT@toks=\toks27
+\MT@tempbox=\box57
 \MT@count=\count303
 LaTeX Info: Redefining \noprotrusionifhmode on input line 1084.
 LaTeX Info: Redefining \leftprotrusion on input line 1085.
-\MT@prot@toks=\toks27
+\MT@prot@toks=\toks28
 LaTeX Info: Redefining \rightprotrusion on input line 1104.
 LaTeX Info: Redefining \textls on input line 1449.
-\MT@outer@kern=\dimen179
+\MT@outer@kern=\dimen181
 LaTeX Info: Redefining \microtypecontext on input line 2053.
 LaTeX Info: Redefining \textmicrotypecontext on input line 2070.
 \MT@listname@count=\count304
@@ -222,7 +231,7 @@ File: microtype-pdftex.def 2026/03/01 v3.2d Definitions specific to pdftex (RS)
 
 LaTeX Info: Redefining \lsstyle on input line 944.
 LaTeX Info: Redefining \lslig on input line 944.
-\MT@outer@space=\skip54
+\MT@outer@space=\skip56
 )
 Package microtype Info: Loading configuration file microtype.cfg.
 
@@ -234,8 +243,8 @@ LaTeX Info: Redefining \microtypesetup on input line 3065.
 )
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/natbib\natbib.sty
 Package: natbib 2010/09/13 8.31b (PWD, AO)
-\bibhang=\skip55
-\bibsep=\skip56
+\bibhang=\skip57
+\bibsep=\skip58
 LaTeX Info: Redefining \cite on input line 694.
 \c@NAT@ctr=\count305
 )
@@ -304,7 +313,7 @@ c.sty
 Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO
 )
 )
-\@linkdim=\dimen180
+\@linkdim=\dimen182
 \Hy@linkcounter=\count307
 \Hy@pagecounter=\count308
 
@@ -333,7 +342,7 @@ Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
 Package hyperref Info: Bookmarks ON on input line 4468.
 \c@Hy@tempcnt=\count310
 LaTeX Info: Redefining \url on input line 4807.
-\XeTeXLinkMargin=\dimen181
+\XeTeXLinkMargin=\dimen183
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/bitset\bitset.sty
 Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
@@ -344,8 +353,8 @@ Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
 )
 ))
 \Fld@menulength=\count311
-\Field@Width=\dimen182
-\Fld@charsize=\dimen183
+\Field@Width=\dimen184
+\Fld@charsize=\dimen185
 Package hyperref Info: Hyper figures OFF on input line 6084.
 Package hyperref Info: Link nesting OFF on input line 6089.
 Package hyperref Info: Hyper index ON on input line 6092.
@@ -375,9 +384,9 @@ Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
 Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
 84.
 )
-\Hy@SectionHShift=\skip57
+\Hy@SectionHShift=\skip59
 )
-LaTeX Font Info:    Trying to load font information for T1+lmr on input line 21
+LaTeX Font Info:    Trying to load font information for T1+lmr on input line 23
 .
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmr.fd
@@ -390,24 +399,24 @@ File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 ) (obc-gantry-one-step-implementation-plan.aux)
 \openout1 = `obc-gantry-one-step-implementation-plan.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 21.
-LaTeX Font Info:    ... okay on input line 21.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 21.
-LaTeX Font Info:    ... okay on input line 21.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 21.
-LaTeX Font Info:    ... okay on input line 21.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 21.
-LaTeX Font Info:    ... okay on input line 21.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 21.
-LaTeX Font Info:    ... okay on input line 21.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 21.
-LaTeX Font Info:    ... okay on input line 21.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 21.
-LaTeX Font Info:    ... okay on input line 21.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 21.
-LaTeX Font Info:    ... okay on input line 21.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 21.
-LaTeX Font Info:    ... okay on input line 21.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -443,13 +452,13 @@ LaTeX Font Info:    ... okay on input line 21.
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-LaTeX Info: Redefining \microtypecontext on input line 21.
-Package microtype Info: Applying patch `item' on input line 21.
-Package microtype Info: Applying patch `toc' on input line 21.
-Package microtype Info: Applying patch `eqnum' on input line 21.
-Package microtype Info: Applying patch `footnote' on input line 21.
-Package microtype Info: Applying patch `verbatim' on input line 21.
-LaTeX Info: Redefining \microtypesetup on input line 21.
+LaTeX Info: Redefining \microtypecontext on input line 23.
+Package microtype Info: Applying patch `item' on input line 23.
+Package microtype Info: Applying patch `toc' on input line 23.
+Package microtype Info: Applying patch `eqnum' on input line 23.
+Package microtype Info: Applying patch `footnote' on input line 23.
+Package microtype Info: Applying patch `verbatim' on input line 23.
+LaTeX Info: Redefining \microtypesetup on input line 23.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
@@ -465,43 +474,43 @@ Package microtype Info: No adjustment of character kerning.
 File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman 
 (RS)
 )
-Package hyperref Info: Link coloring OFF on input line 21.
+Package hyperref Info: Link coloring OFF on input line 23.
  (obc-gantry-one-step-implementation-plan.out)
 (obc-gantry-one-step-implementation-plan.out)
 \@outlinefile=\write3
 \openout3 = `obc-gantry-one-step-implementation-plan.out'.
 
 LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 2
-3.
+5.
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OML+lmm on input line 2
-3.
+5.
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-23.
+25.
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-23.
+25.
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 23.
+(Font)              <12> on input line 25.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 23.
+(Font)              <8> on input line 25.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 23.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 23.
+(Font)              <6> on input line 25.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 25.
 
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd
@@ -510,7 +519,7 @@ File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 23.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 25.
 
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
@@ -518,90 +527,83 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 43.
- [1
-
-{C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users/2
-0203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ec.enc}{C:/Users/20
-203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/202
-03253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}{C:/Users/
-20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathsy.enc}{C:/Use
-rs/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathex.enc}] [2
-] [3]
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 3
-21.
-
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\ts1lmr.fd
-File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-)
-[4{C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ts1.en
-c}]
-Underfull \hbox (badness 5970) in paragraph at lines 386--386
-\T1/lmr/m/n/10.95 (+20) pa-ram-e-ter re-cov-ery re-
- []
-
-
-Underfull \hbox (badness 2119) in paragraph at lines 389--389
-[]\T1/lmr/m/n/10.95 (+20) Parameter re-cov-ery im-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 392--392
-[]\T1/lmr/m/n/10.95 (+20) Exact-$\OML/lmm/m/it/10.95 Y$ \T1/lmr/m/n/10.95 (+20)
- eval-u-a-tion is
- []
-
-[5] (obc-gantry-one-step-implementation-plan.bbl
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 1
-7.
-
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmtt.fd
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 4
+6.
+ (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <10.95> on input line 46.
 
-[6]) [7] (obc-gantry-one-step-implementation-plan.aux)
+[1
+
+{C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users/2
+0203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ec.enc}{C:/Users/20
+203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}{C:/Users
+/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/
+20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathsy.enc}{C:/Use
+rs/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathex.enc}]
+[2] [3] [4]
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 4
+37.
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\ts1lmr.fd
+File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
+)
+[5]
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <10> on input line 494.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <7> on input line 494.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <5> on input line 494.
+ [6{C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ts1.e
+nc}] [7] (obc-gantry-one-step-implementation-plan.bbl) [8]
+(obc-gantry-one-step-implementation-plan.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
 Package rerunfilecheck Info: File `obc-gantry-one-step-implementation-plan.out'
  has not changed.
-(rerunfilecheck)             Checksum: 431CC3F9A8380D52FB01CB3A89D40689;2562.
+(rerunfilecheck)             Checksum: 4C901DE2B9A479610B7AE1CC193C698D;2629.
  ) 
 Here is how much of TeX's memory you used:
- 12334 strings out of 467867
- 195423 string characters out of 5416882
- 648276 words of memory out of 5000000
- 40894 multiletter control sequences out of 15000+600000
- 675560 words of font info for 124 fonts, out of 8000000 for 9000
+ 12492 strings out of 467867
+ 197738 string characters out of 5416882
+ 650730 words of memory out of 5000000
+ 41005 multiletter control sequences out of 15000+600000
+ 691839 words of font info for 156 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,11n,79p,1038b,573s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,10n,79p,1038b,565s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10
 .pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmb
 x12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/
 lmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/
 lm/lmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/publ
 ic/lm/lmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/pu
-blic/lm/lmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/
-public/lm/lmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type
-1/public/lm/lmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/ty
-pe1/public/lm/lmr17.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/
-type1/public/lm/lmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts
-/type1/public/lm/lmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/font
-s/type1/public/lm/lmri10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/f
-onts/type1/public/lm/lmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTe
-X/fonts/type1/public/lm/lmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiK
-TeX/fonts/type1/public/lm/lmtt10.pfb><C:/Users/20203253/AppData/Local/Programs/
-MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on obc-gantry-one-step-implementation-plan.pdf (7 pages, 336534 
+blic/lm/lmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/
+public/lm/lmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type
+1/public/lm/lmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/ty
+pe1/public/lm/lmr12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/
+type1/public/lm/lmr17.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/font
+s/type1/public/lm/lmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fon
+ts/type1/public/lm/lmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fo
+nts/type1/public/lm/lmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/f
+onts/type1/public/lm/lmri10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTe
+X/fonts/type1/public/lm/lmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/Mi
+KTeX/fonts/type1/public/lm/lmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/
+MiKTeX/fonts/type1/public/lm/lmsy8.pfb><C:/Users/20203253/AppData/Local/Program
+s/MiKTeX/fonts/type1/public/lm/lmtt10.pfb><C:/Users/20203253/AppData/Local/Prog
+rams/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
+Output written on obc-gantry-one-step-implementation-plan.pdf (8 pages, 368470 
 bytes).
 PDF statistics:
- 258 PDF objects out of 1000 (max. 8388607)
- 68 named destinations out of 1000 (max. 500000)
- 27241 words of extra memory for PDF output out of 29859 (max. 10000000)
+ 283 PDF objects out of 1000 (max. 8388607)
+ 72 named destinations out of 1000 (max. 500000)
+ 35441 words of extra memory for PDF output out of 35830 (max. 10000000)
 
