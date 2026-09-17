@@ -1268,6 +1268,12 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
     # coefficient, lives on `hfn.obc_correction` and IS checkpointed. None = the feature is off
     # and loss() is exactly the objective it was before this existed.
     obc = None
+    # @added (D-201). Detached monitoring scalars from the LAST validation synchronisation, or
+    # None when this model has no OBC. Unlike `obc` this IS pickled: it is plain Python numbers,
+    # and the validation probe that reads it runs inside deepSI's concurrent-validation worker,
+    # on a deepcopy from which `obc` has been stripped. A class attribute, so a checkpoint
+    # written before this existed still resolves it.
+    obc_validation_diagnostics = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1313,17 +1319,38 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
                 'or Static_ANN_Block.')
         epoch = int(math.floor(float(getattr(self, 'epoch_counter', 0.0)) + 1e-6))
         with torch.no_grad():
+            built = False
             if refresh_basis:
                 self.obc.refresh(corr.expansion_point(), epoch)
+                built = True
             elif self.obc.basis is None:
                 # The initial validation precedes the first training objective, so no epoch basis
                 # exists yet. Later validations deliberately RETAIN the basis used by the
                 # just-completed epoch even though epoch_counter has reached the next integer;
                 # the next training objective remains responsible for that epoch's refresh.
                 self.obc.refresh(corr.expansion_point(), epoch)
-            theta = self.obc.prediction_coefficient(
+                built = True
+            # @added (D-201). The SAME reference-field pass that solves the fresh coefficient
+            # also returns the monitoring scalars, so validation monitoring costs nothing beyond
+            # the solve D-198 already performs, refreshes no basis of its own, and reports the
+            # post-update model rather than the objective's stale coefficient.
+            theta, diag = self.obc.validation_coefficient(
                 self.hfn.connected_blocks[self._ann_ix])                 # type: ignore
             corr.set_frozen(theta, self.obc.basis.vbar)
+            diag = dict(diag)
+            diag['space'] = getattr(corr, 'space', 'tangent')
+            # From the float64 solve `diag['theta']`, not from the pipeline-dtype `theta`, so
+            # the reported alpha is the same number as the eleventh reported coefficient.
+            diag['alpha'] = diag['theta'][-1] if diag['space'] == 'affine' else None
+            diag['basis_rebuilt_here'] = built
+            diag['epoch'] = epoch
+            # THE ALIGNMENT STAMP, and it is not decoration. Under `concurrent_val` deepSI
+            # DEEPCOPIES this system and validates the copy in a worker process, while the main
+            # process keeps training; `obc` itself is dropped by `__getstate__`, so the probe in
+            # the worker can only read this dict. It travels inside the same copy as the weights
+            # it describes, and the counter lets the probe PROVE that rather than assume it.
+            diag['batch_counter'] = int(getattr(self, 'batch_counter', -1))
+            self.obc_validation_diagnostics = diag
         return True
 
     def loss(self, uhist, yhist, ufuture, yfuture, **Loss_kwargs):

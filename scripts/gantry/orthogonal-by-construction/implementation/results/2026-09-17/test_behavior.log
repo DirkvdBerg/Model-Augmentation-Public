@@ -22,7 +22,8 @@ T4 stacked orthogonality reaches the measured numerical floor
 
 T5 orthogonality after one optimizer update (fresh coefficient) and with the stale one
   |theta_after - theta_before| / |theta| = 1.628e-02
-  r_perp fresh coefficient = 1.4949e-09  (threshold 1.791e-07);  stale coefficient = 2.8386e-03
+  r_perp fresh coefficient = 1.4949e-09  (threshold 1.791e-07);  stale coefficient = 2.8386e-03; validation-synced = 1.4949e-09
+  validation sync matches fresh coefficient: True; objective counter unchanged: True; epoch basis retained: True
   -> MET: T5
 
 T6 additional-state outputs bit-identical with the correction on and off
@@ -69,8 +70,12 @@ T14 the M(Y) rebuild is hoisted out of the timestep loop and changes nothing
 T11 synthetic lifecycle: rank loss retains the previous basis; two consecutive abort
   refresh 1 (rank 9): retained previous = True; refresh 2 (rank 10): accepted = True; refresh 3 (rank 9): retained = True; refresh 4 (rank 9): aborted = True
     [obc] refresh at epoch 4: numerical rank 9 < 10 (tol 1.635e-12). 2 consecutive refreshes lost rank; OBC training readine
-  rank loss at the FIRST build aborts: True; rank loss counter 3
+  rank loss at the FIRST build aborts: True; rank-zero report is finite/clean: True; rank loss counter 3
   -> MET: T11
+
+T15 reference-field cache invalidates when ANN dtype changes on the same device
+  field dtypes: torch.float32 -> torch.float64 -> torch.float32; accepted: True
+  -> MET: T15
 
 ==== summary ====
   T1   MET
@@ -87,3 +92,4 @@ T11 synthetic lifecycle: rank loss retains the previous basis; two consecutive a
   T13  MET
   T14  MET
   T11  MET
+  T15  MET

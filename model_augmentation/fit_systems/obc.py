@@ -434,6 +434,11 @@ class OBCLifecycle:
         self.n_objective_evals = 0
         self.last_theta: Optional[Tensor] = None       # detached float64 copy
         self.last_field_norm: float = float('nan')
+        # @added (D-201). Detached scalars from the LAST validation solve, never from a training
+        # objective. Plain Python numbers only: this dict is read by a validation probe that may
+        # run in deepSI's concurrent-validation worker process, so it must pickle cheaply and
+        # must not retain an autograd graph or a device tensor.
+        self.last_validation_diagnostics: Optional[dict] = None
         self.history: list = []                        # dicts, one per refresh
         self.timing = {'field_and_solve_s': [], 'refresh_s': []}
 
@@ -533,13 +538,57 @@ class OBCLifecycle:
         updated component.  This is deliberately a separate, no-grad path: it must not retain an
         objective graph or increment ``n_objective_evals``/its timing diagnostics.
         """
+        return self._prediction_solve(learning_component, diagnostics=False)[0]
+
+    def validation_coefficient(self, learning_component):
+        """`(theta, diagnostics)` for THIS validation, from ONE reference-field pass (D-201).
+
+        The diagnostics describe the post-update model that validation is about to score, which
+        is the whole point: the coefficient held by the objective that ran before
+        ``optimizer.step`` is stale, and so is every overlap or residual derived from it.
+        Everything is computed from the SAME `F` the coefficient is solved from, so monitoring
+        adds no second reference-set pass, and from the STORED SVD factors, so it refreshes no
+        basis and runs no rollout-path float32 orthogonality test.
+
+        The returned dict holds plain Python numbers only and is also kept on
+        ``last_validation_diagnostics``.
+        """
+        return self._prediction_solve(learning_component, diagnostics=True)
+
+    def _prediction_solve(self, learning_component, diagnostics: bool):
         if self.basis is None:
             raise RuntimeError('OBC prediction coefficient requested before a basis was built.')
         with torch.no_grad():
             F = self.reference_field(learning_component)
             if F.device != self.basis.device:
                 self.basis.to(F.device)
-            return self.basis.coefficient(F).to(self.out_dtype)
+            theta64 = self.basis.coefficient(F)
+            theta = theta64.to(self.out_dtype)
+            if not diagnostics:
+                return theta, None
+            F64 = F.detach().to(torch.float64)
+            field_norm = torch.linalg.vector_norm(F64)
+            # rho_overlap = ||P_B F|| / ||F|| with P_B = U U^T. `U` has ORTHONORMAL columns, so
+            # ||U q|| = ||q|| for q = U^T F and the projected stack is never formed. Equal to
+            # `OBCBasis.r_overlap(F)` up to float64 rounding, at a fraction of its memory.
+            q = self.basis.U.T @ F64
+            rho = float(torch.linalg.vector_norm(q) / (field_norm + 1e-300))
+            # Stored-factor residual: F_tilde = F - B theta through `apply`, then `r_perp`
+            # through `jt`. No ANN evaluation, no rollout, no Gram matrix.
+            F_tilde = F64 - self.basis.apply(theta64)
+            diag = {
+                'theta': [float(v) for v in theta64],
+                'theta_norm': float(torch.linalg.vector_norm(theta64)),
+                'rho_overlap': rho,
+                'r_perp': self.basis.r_perp(F_tilde),
+                'field_norm': float(field_norm),
+                'n_cols': int(self.basis.n_cols),
+                'rank': int(self.basis.rank),
+                'basis_epoch': self.last_refresh_epoch,
+                'n_refresh': int(self.n_refresh),
+            }
+            self.last_validation_diagnostics = diag
+            return theta, diag
 
     # ------------------------------------------------------------------ diagnostics
     def stacked_diagnostics(self, learning_component) -> dict:

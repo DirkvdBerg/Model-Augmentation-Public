@@ -515,13 +515,65 @@ class _NfProbe:
         fs.Probe_orth_frac.append(frac)
         fs.Probe_V_orth.append(v_orth)
         fs.Probe_param_loss.append(pl)
-        if self.do_print:
-            frac_s = f'{frac:.3f}' if np.isfinite(frac) else 'n/a (ANN~0)'
-            combo_s = (f'combo-err {100*combo_err:.2f}% (worst {worst} '
-                       f'{100*rels[worst]:+.1f}%)' if worst is not None
-                       else 'combo-err n/a (theta frozen)')
-            print(f'    [joint-probe] {combo_s} | orth-frac {frac_s} | '
-                  f'V_orth {v_orth:.3e} | param_loss {pl:.3e}')
+        if not self.do_print:
+            return
+        combo_s = (f'combo-err {100*combo_err:.2f}% (worst {worst} '
+                   f'{100*rels[worst]:+.1f}%)' if worst is not None
+                   else 'combo-err n/a (theta frozen)')
+        # CHANGED (D-201): the soft-penalty meters are printed only when a soft penalty is
+        # ATTACHED. They used to be printed unconditionally, so an OBC or a plain joint run --
+        # neither of which has an `orth_penalty` -- reported `orth-frac n/a (ANN~0)` and
+        # `V_orth nan`, naming a cause (a zero ANN field) that had not been measured and could
+        # not have been: nothing had evaluated the field. The by-construction meters below are
+        # a different object and carry their own labels.
+        tail = ''
+        if pen is not None:
+            # `nan` HERE does mean a zero field: `f` was evaluated just above and `f2` is its
+            # squared norm, so the branch is the measurement, not the absence of one.
+            frac_s = f'{frac:.3f}' if np.isfinite(frac) else 'n/a (ANN field norm 0)'
+            tail = f' | orth-frac {frac_s} | V_orth {v_orth:.3e}'
+        print(f'    [joint-probe] {combo_s}{tail} | param_loss {pl:.3e}')
+        if rels:
+            # Point 1 and 2 of the OBC monitoring spec: the ten current combinations and their
+            # signed normalised errors, in the block's own reporting order.
+            order = [n for n in getattr(self._pblock, 'COMBO_NAMES', sorted(rels)) if n in rels]
+            items = [f'{n}={combos[n]:.4e} ({100*rels[n]:+.2f}%)' for n in order]
+            for s in range(0, len(items), 5):
+                print('      [combos] ' + ' | '.join(items[s:s + 5]))
+        self._obc_probe()
+
+    def _obc_probe(self):
+        """The by-construction meters for THIS validation (D-201). Reads only cached scalars.
+
+        Everything printed here was computed by `_sync_prediction_state_for_validation`, from the
+        one reference-field pass that D-198 already makes to re-solve the coefficient after the
+        optimizer step. This method evaluates nothing: no ANN pass, no basis refresh, no
+        float32 rollout-path orthogonality test, no tensor with a graph attached.
+
+        It deliberately does NOT read `fit_sys.obc`. Under `concurrent_val` deepSI validates a
+        deepcopy of the system inside a worker process, and `__getstate__` strips the lifecycle
+        from that copy; the cached dict travels with the weights it describes instead.
+        """
+        fs = self.fit_sys
+        d = getattr(fs, 'obc_validation_diagnostics', None)
+        if d is None:
+            return                                   # no OBC on this run: print nothing
+        # The state these numbers describe must be the state being validated. In the concurrent
+        # path both arrive inside the same deepcopy, so a mismatch means the sync and the probe
+        # saw different models and the numbers must NOT be printed beside this validation.
+        stamp, now = d.get('batch_counter', -1), int(getattr(fs, 'batch_counter', -1))
+        if stamp != now:
+            print('      [obc] STALE: diagnostics were synchronised at batch %s but this '
+                  'validation is at batch %s; not reporting them.' % (stamp, now))
+            return
+        alpha_s = '' if d.get('alpha') is None else ' | alpha %+.4e' % d['alpha']
+        print('      [obc] space %s | basis rank %d/%d (epoch %s%s) | overlap rho %.4f | '
+              'r_perp %.3e'
+              % (d['space'], d['rank'], d['n_cols'], d['basis_epoch'],
+                 ', rebuilt here' if d.get('basis_rebuilt_here') else '',
+                 d['rho_overlap'], d['r_perp']))
+        print('      [obc] ||theta_aux|| %.4e (%d coefficients)%s | ||F_ann|| %.4e'
+              % (d['theta_norm'], len(d['theta']), alpha_s, d['field_norm']))
 
     def __call__(self, fit_sys, val_sys_data, value):
         """validation_probes entry: side effects only, `value` is read-only here."""
