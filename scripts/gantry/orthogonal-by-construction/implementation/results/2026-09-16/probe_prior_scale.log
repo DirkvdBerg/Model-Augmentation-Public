@@ -1,0 +1,94 @@
+device cuda | nf 400 | batch 128 | stride 500 | param_rmse_baseline 0.01
+build + data: 5.6 s; windows in batch 128
+detune in free coordinates (s = 1 is recovery): kb_sum=-0.0953 cg1=-0.0953 cg2=+0.1054 cy=-0.0953 cb_sum=+0.1054 mh=+0.1054 m_total=-0.0953 m_diff=-0.0909 J_eff=+0.1054 d=-0.0953
+Lambda = param_rmse_baseline / |combo_init|: kb_sum=2.287e-06 cg1=6.270e-04 cg2=5.473e-04 cy=9.091e-04 cb_sum=6.173e-04 mh=1.100e-03 m_total=2.080e-04 m_diff=1.818e-02 J_eff=2.927e-03 d=9.091e-02
+
+s = 0.00   window MSE 3.3507e-08   param_loss 0.0000e+00   ||g_prior|| / ||g_data|| = 0.000e+00
+  combo           g_data      g_prior      ratio
+  kb_sum      +1.489e-10   +0.000e+00   0.00e+00
+  cg1         +2.221e-11   +0.000e+00   0.00e+00
+  cg2         -1.487e-11   +0.000e+00   0.00e+00
+  cy          -5.911e-11   +0.000e+00   0.00e+00
+  cb_sum      -1.694e-10   +0.000e+00   0.00e+00
+  mh          -4.760e-08   +0.000e+00   0.00e+00
+  m_total     +3.230e-08   +0.000e+00   0.00e+00
+  m_diff      -1.334e-10   -0.000e+00   0.00e+00
+  J_eff       -1.219e-07   +0.000e+00   0.00e+00
+  d           +3.342e-08   +0.000e+00   0.00e+00
+
+s = 0.10   window MSE 3.1191e-08   param_loss 9.8129e-08   ||g_prior|| / ||g_data|| = 4.932e+01
+  combo           g_data      g_prior      ratio
+  kb_sum      +1.333e-10   -1.879e-06   1.41e+04
+  cg1         +2.206e-11   -1.879e-06   8.52e+04
+  cg2         -1.396e-11   +2.141e-06   1.53e+05
+  cy          -5.319e-11   -1.879e-06   3.53e+04
+  cb_sum      -1.477e-10   +2.141e-06   1.45e+04
+  mh          -4.556e-08   +2.141e-06   4.70e+01
+  m_total     +2.861e-08   -1.879e-06   6.57e+01
+  m_diff      -1.416e-10   -1.818e-06   1.28e+04
+  J_eff       -1.108e-07   +2.141e-06   1.93e+01
+  d           +3.122e-08   -1.879e-06   6.02e+01
+
+s = 0.25   window MSE 2.8073e-08   param_loss 6.1380e-07   ||g_prior|| / ||g_data|| = 1.423e+02
+  combo           g_data      g_prior      ratio
+  kb_sum      +1.117e-10   -4.598e-06   4.12e+04
+  cg1         +2.131e-11   -4.598e-06   2.16e+05
+  cg2         -1.317e-11   +5.481e-06   4.16e+05
+  cy          -4.532e-11   -4.598e-06   1.01e+05
+  cb_sum      -1.192e-10   +5.480e-06   4.60e+04
+  mh          -4.265e-08   +5.480e-06   1.29e+02
+  m_total     +2.328e-08   -4.598e-06   1.97e+02
+  m_diff      -1.535e-10   -4.545e-06   2.96e+04
+  J_eff       -9.499e-08   +5.480e-06   5.77e+01
+  d           +2.809e-08   -4.598e-06   1.64e+02
+
+s = 0.50   window MSE 2.3768e-08   param_loss 2.4599e-06   ||g_prior|| / ||g_data|| = 3.722e+02
+  combo           g_data      g_prior      ratio
+  kb_sum      +7.962e-11   -8.874e-06   1.11e+05
+  cg1         +1.887e-11   -8.874e-06   4.70e+05
+  cg2         -1.326e-11   +1.140e-05   8.60e+05
+  cy          -3.453e-11   -8.874e-06   2.57e+05
+  cb_sum      -8.152e-11   +1.140e-05   1.40e+05
+  mh          -3.817e-08   +1.140e-05   2.99e+02
+  m_total     +1.494e-08   -8.874e-06   5.94e+02
+  m_diff      -1.715e-10   -9.091e-06   5.30e+04
+  J_eff       -7.048e-08   +1.140e-05   1.62e+02
+  d           +2.335e-08   -8.874e-06   3.80e+02
+
+s = 0.75   window MSE 2.0489e-08   param_loss 5.5490e-06   ||g_prior|| / ||g_data|| = 7.612e+02
+  combo           g_data      g_prior      ratio
+  kb_sum      +5.244e-11   -1.285e-05   2.45e+05
+  cg1         +1.532e-11   -1.285e-05   8.38e+05
+  cg2         -1.489e-11   +1.780e-05   1.20e+06
+  cy          -2.618e-11   -1.285e-05   4.91e+05
+  cb_sum      -5.467e-11   +1.780e-05   3.26e+05
+  mh          -3.420e-08   +1.780e-05   5.20e+02
+  m_total     +7.214e-09   -1.285e-05   1.78e+03
+  m_diff      -1.876e-10   -1.364e-05   7.27e+04
+  J_eff       -4.840e-08   +1.780e-05   3.68e+02
+  d           +1.918e-08   -1.285e-05   6.70e+02
+
+s = 1.00   window MSE 1.8128e-08   param_loss 9.8970e-06   ||g_prior|| / ||g_data|| = 1.433e+03
+  combo           g_data      g_prior      ratio
+  kb_sum      +2.971e-11   -1.653e-05   5.56e+05
+  cg1         +1.104e-11   -1.653e-05   1.50e+06
+  cg2         -1.780e-11   +2.469e-05   1.39e+06
+  cy          -1.975e-11   -1.653e-05   8.37e+05
+  cb_sum      -3.701e-11   +2.469e-05   6.67e+05
+  mh          -3.075e-08   +2.469e-05   8.03e+02
+  m_total     +6.456e-11   -1.653e-05   2.56e+05
+  m_diff      -2.015e-10   -1.818e-05   9.02e+04
+  J_eff       -2.876e-08   +2.469e-05   8.59e+02
+  d           +1.556e-08   -1.653e-05   1.06e+03
+
+==== verdict ====
+At the midpoint of the recovery path (s = 0.50) the prior gradient exceeds the data gradient on 10 of 10 combinations: ['kb_sum', 'cg1', 'cg2', 'cy', 'cb_sum', 'mh', 'm_total', 'm_diff', 'J_eff', 'd']
+||g_prior|| / ||g_data|| along the path: s=0.00:0.00e+00 s=0.10:4.93e+01 s=0.25:1.42e+02 s=0.50:3.72e+02 s=0.75:7.61e+02 s=1.00:1.43e+03
+
+READ THIS AS: a combination whose ratio exceeds 1 is held at its DETUNED value by the
+prior, in BOTH arms, for a reason unrelated to the projection. If that list is not
+empty, set param_prior=False in the _SHARED block of gantry_interconnect_dynamic.py
+(or lower param_rmse_baseline until it is) before launching the pair. The choice is
+recorded as PARAM_PRIOR in config.json either way (D-193).
+
+written C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-by-construction\implementation\08-one-step\..\results\2026-09-16\probe_prior_scale.json

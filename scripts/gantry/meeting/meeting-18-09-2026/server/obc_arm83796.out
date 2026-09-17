@@ -1,0 +1,279 @@
+OBC_ARM=obc
+job_id=83796
+node_list=blade3
+cpus_per_task=4
+cuda_visible_devices=0
+Wed Sep 16 11:32:16 PM CEST 2026
+=== GPU info ===
+name, memory.total [MiB], driver_version, compute_cap
+Quadro RTX 6000, 24576 MiB, 590.48.01, 7.5
+=== host CPU (t_step tracks HOST dispatch, not the GPU) ===
+CPU(s):                                  64
+On-line CPU(s) list:                     0-63
+Model name:                              AMD EPYC 7302 16-Core Processor
+Thread(s) per core:                      2
+Core(s) per socket:                      16
+Socket(s):                               2
+NUMA node0 CPU(s):                       0-15,32-47
+NUMA node1 CPU(s):                       16-31,48-63
+=== toolchain (inductor needs gcc and triton) ===
+/usr/bin/gcc
+gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0
+triton 3.1.0
+=== EFFECTIVE imported configuration snapshot (OBC_ARM=obc) ===
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+  adam_eps                   1e-16
+  ann_activation             'tanh'
+  ann_route_ix               (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
+  batch_size                 512
+  burn_in                    0
+  checkpoint_chunk           0
+  closed_loop                True
+  combo_init_detune          [1.1, 1.1, 0.9, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 1.1]
+  compile_mode               'reduce-overhead'
+  device                     'cuda'
+  encoder_init               'linear_map'
+  epochs                     400
+  fs_new                     4000
+  fs_orig                    20000
+  its_per_val                650
+  joint_estimation           True
+  lbfgs                      True
+  lbfgs_chunk                None
+  lbfgs_freeze               ()
+  lbfgs_history              50
+  lbfgs_inner_iter           20
+  lbfgs_max_iter             100
+  lbfgs_meter_rel_tol        0.001
+  lbfgs_time_budget_s        None
+  lbfgs_tol_change           0.0
+  lbfgs_tol_grad             1e-12
+  lbfgs_windows              16384
+  lr                         1e-05
+  mode                       'augmentation_ma50_b140-230_a6_z03'
+  n_hidden_layers            3
+  n_its                      None
+  n_nodes_per_layer          24
+  na_nb_override             None
+  nf_override                None
+  nf_probe_print             True
+  nf_seconds                 0.1
+  nu                         3
+  nx_ann                     8
+  nx_phys                    6
+  ny                         3
+  obc                        True
+  obc_rank_rtol              None
+  obc_ref_chunk              16384
+  obc_refresh                'epoch'
+  orth                       False
+  orth_beta                  0.000466
+  orth_point_stride          100
+  orth_rank_tol              1e-12
+  param_init_detune          None
+  param_prior                False
+  param_rmse_baseline        0.01
+  physics_parameterization   'reduced'
+  save_flag                  True
+  seed                       42
+  snr                        None
+  start_phase                'adam'
+  stride                     10
+  up_sample                  1
+  use_f64                    False
+  DERIVED nf                 400
+  DERIVED na_nb              29
+  DERIVED ts_new             0.00025
+=== D-192 arm obc ===
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation_ma50_b140-230_a6_z03): /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/data/gantry/matlab/trajectory/augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+
+Configuration:
+  PROVENANCE:  git unavailable (CalledProcessError) and no GIT_SHA in the environment: this run has NO code provenance
+               run_id 83796   save=True
+               /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/simulations/gantry_subnet/augmentation_ma50_b140-230_a6_z03_linear_map/83796
+  DATA:        augmentation_ma50_b140-230_a6_z03   20000 -> 4000 Hz (D=5)   stride=10
+               nf=400 (0.1 s)   na_nb=29 (7.25 ms)   batch=512
+  MODEL:       encoder=linear_map   ann=tanh   nx_ann=8   24x3   up_sample=1
+               ann_route_ix=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
+  OBJECTIVE:   rollout=closed loop   orth=OFF (no penalty, no basis build)
+               joint=True   param_init=true values   noise=None (noiseless)
+  OPTIM:       lr=1e-05   adam_eps=1.0e-16   epochs=400   seed=42   float32
+  EXEC:        device=cuda (Quadro RTX 6000)   checkpoint=OFF (whole rollout graph)
+               compile=reduce-overhead   [training rollout only; validation + diagnostics stay eager]
+
+Default hyperparameters (may be overridden by checkpoint):
+  NX_ANN: 8
+  n_nodes_per_layer: 24
+  n_hidden_layers: 3
+  up_sample: 1
+  nf: 400
+  na_nb: 29
+  batch_size: 512
+  lr: 1e-05
+  epochs: 400
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.1 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 671944 reference tuples, refresh=epoch, solve float64, rollout torch.float32
+[closed loop] one bank over 18 records, 8 distinct controllers, Y_op [-0.3, -0.22, -0.15, -0.1, 0.0, 0.1, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[closed loop] training rollout COMPILED: backend=inductor mode=reduce-overhead fullgraph=True
+[closed loop] validation and diagnostics stay EAGER (they use fs.hfn directly)
+
+Loss rollout: CLOSED loop (known controller wrapped around the model)
+
+Training: nf=400  epochs=400  val=sim-RMS  NX_ANN=8
+
+[nf] rms = RMS over nf=400 (0.100 s) windows, closed loop, metres
+     chan = per-channel X/Theta/Y | grow = RMS(last step)/RMS(first) | bias = mean residual
+     train = all windows since the last validation, running mean | val = 256 fixed windows, snapshot
+     metre weighting is NOT the objective's, which weights channels by 1/ystd^2;
+     numbers are not comparable ACROSS loop modes, the [nf gap] ratios are
+Model already initilized (init_model_done=True), skipping initilizing of the model, the norm and the creation of the optimizer
+Size of the training array =  656.1 MB
+N_training_samples = 66612, batch_size = 512, N_batch_updates_per_epoch = 130
+    [nf val  ] rms 2.303e-05  chan 5.3e-06/5.4e-06/3.9e-05  grow 1.71x  bias -1.4e-08/-2.9e-09/-5.3e-08  (256 win)
+    [nf gap  ] val_sim 2.296e-05 = 1.00x val_nf (horizon)
+    [x_aug   ] ||x_aug|| end-of-rollout  mean 0.000e+00  std 0.000e+00  max 0.000e+00
+    [joint-probe] combo-err 9.49% (worst cb_sum -10.0%) | orth-frac n/a (ANN~0) | V_orth nan | param_loss 0.000e+00
+Initial Validation sim-RMS= 2.2964694380789297e-05
+[obc] refresh at epoch 0: vbar=+0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00
+  J: 4031664 x 10, rank 10/10 at tol 2.132e-07 (rtol 8.952e-10), cond 8.9250e+02, build 2.1 s, svd 0.4 s
+  singular values: 2.3813e+02 2.3719e+01 2.3543e+01 1.2411e+01 4.4945e+00 3.4117e+00 2.4568e+00 1.0551e+00 9.2489e-01 2.6681e-01
+  column norms:    kb_sum=4.500e+00 cg1=2.268e+00 cg2=2.570e+00 cy=1.056e+00 cb_sum=9.066e-01 mh=2.323e+01 m_total=1.745e+01 m_diff=2.493e+00 J_eff=2.378e+02 d=2.389e+01
+  largest |column correlations|: cg1~cg2=-0.9817, mh~J_eff=+0.4661, mh~m_total=-0.3717, m_total~J_eff=+0.2145, J_eff~d=-0.1461, m_total~m_diff=-0.1297
+  r_J = 0.000e+00 (vs first basis), r_J_step = 0.000e+00 (vs previous)
+  0%|          | 0/52000 [00:00<?, ?it/s]  0%|          | 0/52000 [01:44<?, ?it/s]
+Traceback (most recent call last):
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/scripts/gantry/gantry_interconnect_dynamic.py", line 371, in <module>
+    main()
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/scripts/gantry/gantry_interconnect_dynamic.py", line 341, in main
+    bestfit, diag_conv = train_model_with_diagnostics(
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/scripts/gantry/gantry_dynamic/training.py", line 750, in train_model_with_diagnostics
+    bestfit = train_model(fit_sys, hp, cfg, data,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/scripts/gantry/gantry_dynamic/model.py", line 330, in train_model
+    fit_sys.fit(
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/model_augmentation/fit_systems/interconnect.py", line 1568, in fit
+    return super().fit(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/model_augmentation/fit_systems/interconnect.py", line 983, in fit
+    training_loss = self.optimizer.step(closure).item()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/optim/optimizer.py", line 487, in wrapper
+    out = func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/optim/optimizer.py", line 91, in _use_grad
+    ret = func(self, *args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/optim/adam.py", line 202, in step
+    loss = closure()
+           ^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/model_augmentation/fit_systems/interconnect.py", line 977, in closure
+    Loss.backward()
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_tensor.py", line 581, in backward
+    torch.autograd.backward(
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/autograd/__init__.py", line 347, in backward
+    _engine_run_backward(
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/autograd/graph.py", line 825, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/autograd/function.py", line 307, in apply
+    return user_fn(self, *args)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 2048, in backward
+    out = call_compiled_backward()
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 1980, in call_compiled_backward
+    out = call_func_at_runtime_with_args(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_functorch/_aot_autograd/utils.py", line 124, in call_func_at_runtime_with_args
+    out = normalize_as_list(f(args))
+                            ^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_dynamo/eval_frame.py", line 632, in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/codecache.py", line 1478, in __call__
+    return self.current_callable(inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/compile_fx.py", line 1008, in run
+    return compiled_fn(new_inputs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 398, in deferred_cudagraphify
+    fn, out = cudagraphify(model, inputs, new_static_input_idxs, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 428, in cudagraphify
+    return manager.add_function(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 2213, in add_function
+    return fn, fn(inputs)
+               ^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 1919, in run
+    out = self._run(new_inputs, function_id)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 2023, in _run
+    return self.run_eager(new_inputs, function_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 2179, in run_eager
+    return node.run(new_inputs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/cudagraph_trees.py", line 644, in run
+    out = self.wrapped_function.model(new_inputs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/torchinductor-cache/l3/cl32yzzw7rfitmbq76imkntjusodacmiwa5mvbyxodwi4wtghfrh.py", line 5974, in call
+    triton_poi_fused_2.run(buf4, buf6, 4096, grid=grid(4096), stream=stream0)
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/runtime/triton_heuristics.py", line 836, in run
+    self.autotune_to_one_config(*args, grid=grid, **kwargs)
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/runtime/triton_heuristics.py", line 729, in autotune_to_one_config
+    timings = self.benchmark_all_configs(*args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/runtime/triton_heuristics.py", line 704, in benchmark_all_configs
+    timings = {
+              ^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/runtime/triton_heuristics.py", line 705, in <dictcomp>
+    launcher: self.bench(launcher, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/runtime/triton_heuristics.py", line 675, in bench
+    return benchmarker.benchmark_gpu(kernel_call, rep=40, fast_flush=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/runtime/benchmarking.py", line 66, in wrapper
+    return fn(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/_inductor/runtime/benchmarking.py", line 201, in benchmark_gpu
+    return self.triton_do_bench(_callable, **kwargs, return_mode="median")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/triton/testing.py", line 107, in do_bench
+    di.synchronize()
+  File "/dataB1/dirk_van_den_berg/conda-envs/GraduationProject/lib/python3.11/site-packages/torch/cuda/__init__.py", line 954, in synchronize
+    return torch._C._cuda_synchronize()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: CUDA error: an illegal memory access was encountered
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+srun: error: blade3: task 0: Exited with exit code 1

@@ -1,0 +1,89 @@
+rig: nf=50 batch=8 N_ref=3360 dtype=torch.float32
+
+T1 coefficient evaluated once per objective
+  objective evals +1, reference-set ANN passes 1, rollout ANN passes 50 (nf=50)
+  -> MET: T1
+
+T2 gradient passes through the coefficient to the ANN weights
+  ||d theta.sum() / d ANN weights|| = 3.7702e+02
+  -> MET: T2
+
+T3 detaching the coefficient changes the ANN gradient
+  loss identical: True (1.362097e-04 vs 1.362097e-04); ||g_att - g_det|| / ||g_att|| = 4.3194e-03, cos = 0.999991
+  -> MET: T3
+
+T4 stacked orthogonality reaches the measured numerical floor
+  r_perp, rollout (float32 JVP) path        = 9.2487e-09
+  r_perp, float64 stored-factor construction = 4.5018e-15
+  r_overlap before projection                = 1.7931e-01   (||F|| = 1.7284e-01)
+  measured float32 floor over 10 random fields: min 1.586e-09 median 2.609e-08 max 5.970e-08
+  acceptance threshold = 3 x max floor = 1.791e-07; for reference kappa*eps: float32 1.047e-04, float64 1.951e-13
+  -> MET: T4
+
+T5 orthogonality after one optimizer update (fresh coefficient) and with the stale one
+  |theta_after - theta_before| / |theta| = 1.628e-02
+  r_perp fresh coefficient = 1.4949e-09  (threshold 1.791e-07);  stale coefficient = 2.8386e-03
+  -> MET: T5
+
+T6 additional-state outputs bit-identical with the correction on and off
+  y equal: True; augmented rows equal: True; physical rows max|diff| = 2.590e-04 (so the correction acts)
+  -> MET: T6
+
+T7 disabled path bit-identical to commit a52dd55 (blocks, Interconnect.forward, closed-loop rollout)
+  torch.float32: block True, transition_from_free==forward True, Interconnect.forward True, closed-loop rollout (nf=50) True
+  torch.float64: block True, transition_from_free==forward True, Interconnect.forward None, closed-loop rollout (nf=50) None
+  -> MET: T7
+
+T8 all ten reduced physical parameters retain nonzero training gradients (OBC on)
+  free_params.grad = -1.641e-07 -1.312e-07 -5.662e-08 -3.482e-07 -2.733e-07 +4.122e-05 +9.121e-05 -7.913e-07 +2.988e-05 +4.980e-05
+  -> MET: T8
+
+T9 save and reload: no functorch wrappers in the block cache; reload reproduces
+  block _cur entries functorch-wrapped: [False, False, False, False, False, False, False, False, False, False]
+  checkpoint 7.2 MB; lifecycle + reference set excluded from it: True; restored on the live system after load: True; hfn replaced by the load: True
+  round trip reproduces (frozen theta path), checkpoint and pickle: True; obc keys in state_dict: ['obc_correction.E', 'obc_correction.vbar', 'obc_correction.theta_frozen']
+  objective after reload runs against the reloaded adapter: True (loss 1.2124e-04)
+  -> MET: T9
+
+T10 ten consecutive objective evaluations cause no recompilation
+  run probe_compile.py first
+  -> NOT MET: T10
+
+T12 hand-written tangent vs torch.func.jvp, through GantryOBCCorrection itself
+  hand vs jvp (torch.float32): 8.668e-11
+  threaded pair vs correction_from_theta: 0.000e+00
+  a DIFFERENT coefficient tracks the jvp too: 8.668e-11
+  additional-state rows of the correction: max 0.000e+00
+  -> MET: T12
+
+T13 the compiled step contains no functorch transform
+  tangent_pair calls during 5 compiled steps: 0 (must be 0)
+  -> MET: T13
+
+T14 the M(Y) rebuild is hoisted out of the timestep loop and changes nothing
+  rebuilds per objective: 51 without the hoist (nf=50), 2 with it
+  loss bit-identical: True (1.2123609486e-04)
+  physical gradient, worst relative change: 3.989e-07 (reduction order only)
+  -> MET: T14
+
+T11 synthetic lifecycle: rank loss retains the previous basis; two consecutive abort
+  refresh 1 (rank 9): retained previous = True; refresh 2 (rank 10): accepted = True; refresh 3 (rank 9): retained = True; refresh 4 (rank 9): aborted = True
+    [obc] refresh at epoch 4: numerical rank 9 < 10 (tol 1.635e-12). 2 consecutive refreshes lost rank; OBC training readine
+  rank loss at the FIRST build aborts: True; rank loss counter 3
+  -> MET: T11
+
+==== summary ====
+  T1   MET
+  T2   MET
+  T3   MET
+  T4   MET
+  T5   MET
+  T6   MET
+  T7   MET
+  T8   MET
+  T9   MET
+  T10  NOT MET
+  T12  MET
+  T13  MET
+  T14  MET
+  T11  MET

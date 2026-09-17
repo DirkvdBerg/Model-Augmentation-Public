@@ -1,0 +1,37 @@
+device: Quadro P2000 sm_61 4.3 GB | torch 2.5.1
+reference set N=3360, basis rank 10, |theta| = 2.629e-01
+
+[rung 1] inductor, mode=reduce-overhead, fullgraph=True
+  inductor FAILED on this host:
+    torch._dynamo.exc.BackendCompilerFailed: backend='inductor' raised:
+    RuntimeError: Found Quadro P2000 which is too old to be supported by the triton GPU compiler, which is used as the backend. Triton only supports devices of CUDA Capability >= 7.0, but your device is of CUDA capability 6.1
+    
+    Set TORCH_LOGS="+dynamo" and TORCHDYNAMO_VERBOSE=1 for more information
+    
+    
+    You can suppress this exception and fall back to eager by setting:
+        import torch._dynamo
+        torch._dynamo.config.suppress_errors = True
+    
+    
+
+[rung 1 contract] backend=aot_eager, fullgraph=True: trace, graph breaks, recompiles
+  explain: graphs 1, graph breaks 0, ops 825
+  compiled OK (first call 12.6 s), max|diff| vs eager 0.000e+00; d xp/d theta vs eager rel 0.000e+00
+  no recompile across: 2 coefficient values, a changed vbar, grad-carrying theta, 10 objectives (incl. one basis refresh); objective times 4.40 3.89 3.95 4.50 4.77 5.01 4.03 4.14 4.50 4.31
+
+[rung 4 reference] central finite difference vs exact JVP (eager, float32 and float64)
+  float32: best relative error over eps sweep 6.563e-04
+  float64: best relative error over eps sweep 7.214e-10
+
+[timing] eager CUDA, batch 512, forward and forward+backward per step
+  off_fwd                  13.3464 ms
+  off_fwd_bwd              43.7122 ms
+  on_fwd                   67.8214 ms
+  on_fwd_bwd               154.8093 ms
+  on_fwd_bwd_theta_grad    158.4735 ms
+  ratio_fwd                5.082x
+  ratio_fwd_bwd            3.542x
+  field+solve (+backward), N=3360: median 0.0034 s
+
+written C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-by-construction\implementation\08-one-step\..\results\2026-09-16\probe_compile.json

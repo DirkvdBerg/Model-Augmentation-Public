@@ -89,6 +89,10 @@ def build_model(hp, cfg: RunConfig, data, norm):
             Y_op=None, std_x=std_x, std_u=std_u,
             x_mean=x_mean, u_mean=u_mean, Ts=TS_NEW,
             up_sample=hp['up_sample'], RMSE_baseline=cfg.param_rmse_baseline,
+            # CHANGED (D-193): the prior is now a DECLARED choice rather than the block's
+            # inherited default. `param_prior=True` passes the value the block already used, so
+            # this line is an exact no-op for every run before it existed.
+            flag_loss_reg=cfg.param_prior,
         )
         if cfg.physics_parameterization == 'reduced':
             _combo = Reduced_Gantry_State_Block.combos_of(_nominal, _gss.Lb)
@@ -102,6 +106,12 @@ def build_model(hp, cfg: RunConfig, data, norm):
                 _raw_init = _raw_init * _raw_init.new_tensor(cfg.param_init_detune)
             phy_block = Parameterized_Gantry_State_Block(
                 params_init=_raw_init, **_common).to(DTYPE_PT)
+        # D-199: the hoisted M(Y) structure is threaded by BOTH arms, so its optional static-address
+        # buffers are attached here rather than in the OBC attach, which only the projected arm
+        # reaches. Off by default; see RunConfig.static_pass_buffers.
+        if cfg.static_pass_buffers:
+            from model_augmentation.fit_systems.obc import StaticPassBuffers
+            phy_block.static_pass = StaticPassBuffers('pass_mats')
         if hasattr(phy_block, 'admissibility'):
             # CHANGED (D-191): one construction-time check, outside the simulation hot path.
             with torch.no_grad():
@@ -292,6 +302,15 @@ def build_model(hp, cfg: RunConfig, data, norm):
             'the burn-in. The slice lives in SSE_Interconnect_Composed.loss (D-178).'
             % (cfg.burn_in, type(fit_sys).__name__))
     fit_sys.burn_in = cfg.burn_in
+
+    # One-step orthogonal-by-construction (D-192), attached the same way as the two above and
+    # for the same reason: `obc=False` attaches nothing, so every seam it uses is inert and the
+    # run is bit-identical to one from before it existed. The attach builds the fixed reference
+    # set from every training sample (CPU, float64 source) and the correction module; the first
+    # basis is built at the first objective evaluation, on the training device.
+    if cfg.obc:
+        from .obc_gantry import attach_obc
+        attach_obc(fit_sys, cfg, data, norm)
 
     return fit_sys
 

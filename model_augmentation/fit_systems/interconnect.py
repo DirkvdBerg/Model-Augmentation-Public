@@ -6,6 +6,7 @@ import numpy as np
 import warnings
 import time
 import itertools
+import math                     # CHANGED (D-192): epoch index for the OBC refresh
 from tqdm.auto import tqdm
 from torch.utils.data import Dataset, DataLoader
 from copy import deepcopy
@@ -39,6 +40,13 @@ class Interconnect(nn.Module):
 
         self.first_step_eval = True
         self.save_signals = False
+        # CHANGED (D-192): the one-step OBC correction, an nn.Module the pipeline attaches
+        # (gantry_dynamic/obc_gantry.py::GantryOBCCorrection) or None. An INSTANCE attribute, not
+        # a class default: nn.Module resolves registered submodules through __getattr__, which a
+        # class attribute of the same name would shadow. Assigning a Module here registers it as
+        # a submodule, so its buffers (vbar, theta_frozen) follow .to()/.cuda(). forward() reads
+        # it with getattr so a checkpoint pickled before this existed still resolves to None.
+        self.obc_correction = None
 
     # CHANGED (D-169): make `array_connection_matrices` follow the module's device and dtype.
     #
@@ -89,7 +97,13 @@ class Interconnect(nn.Module):
         for block in self.connected_blocks:
             block.init_block(torch.empty((0)))
 
-    def forward(self, x: Tensor, u: Tensor):
+    def forward(self, x: Tensor, u: Tensor, obc_pass=None, pass_mats=None):
+        # CHANGED (D-194/D-195): `obc_pass` is the once-per-objective `(mats, dmats)` pair,
+        # passed as a TENSOR-TUPLE ARGUMENT so its graph contract under
+        # torch.compile is explicit (an input, not a mutated attribute). None = no per-objective
+        # coefficient: with a correction attached the module applies its synchronized frozen
+        # coefficient (prediction, validation, diagnostics); without one this argument is inert and the
+        # path is bit-identical to before it existed.
         # reshape state and input tensor dimensions for use in interconnect
         x_size = x.size()
         if len(x.size()) <= 2:
@@ -131,10 +145,29 @@ class Interconnect(nn.Module):
                 output_signals[output_signal_ix] += torch.matmul(self.array_connection_matrices[output_signal_ix][input_signal_ix], input_signals[input_signal_ix])
 
             if output_signal_ix >= 2:
-                input_signals[output_signal_ix] = self.connected_blocks[output_signal_ix-2].forward(output_signals[output_signal_ix]) # offset by two for connected blocks since the progressed state and output are not registered as blocks
+                # CHANGED (D-195): hand the per-pass matrix structure to the ONE block that
+                # declared it wants it. `_pass_mats_ix` is an int fixed at wiring time and
+                # `pass_mats` is an ARGUMENT, so the branch specialises away under torch.compile
+                # instead of being decided from mutable state (the mistake D-194 records).
+                _bi = output_signal_ix - 2
+                if pass_mats is not None and _bi == self._pass_mats_ix:
+                    input_signals[output_signal_ix] = self.connected_blocks[_bi].forward(
+                        output_signals[output_signal_ix], pass_mats)
+                else:
+                    input_signals[output_signal_ix] = self.connected_blocks[_bi].forward(output_signals[output_signal_ix]) # offset by two for connected blocks since the progressed state and output are not registered as blocks
 
         y = output_signals[1]
         xp = output_signals[0]
+
+        # CHANGED (D-192): one-step orthogonal-by-construction subtraction. The attached
+        # correction returns `E_route J_b(vbar, x_b, u) theta` as (nb, nx, 1): a forward-mode JVP
+        # of the physical block's transition in the coefficient direction on the routed physical
+        # rows, exact zeros on the additional-state rows. Applied to the progressed state ONLY;
+        # the output map `y` and `output_only()` are untouched. Nothing runs when no correction
+        # is attached, which keeps every existing model bit-identical.
+        _obc = getattr(self, 'obc_correction', None)
+        if _obc is not None:
+            xp = xp - _obc(x, u, obc_pass)
 
         # save input signals for referencing purpose
         if self.nb == 1 and self.save_signals == True:
@@ -225,6 +258,10 @@ class Interconnect(nn.Module):
         # output_only() is a fixed short list rather than a graph traversal per call. Doing this
         # lazily per timestep would cost more than the forward it replaces.
         self.output_cone = self._signal_cone(1)
+        # CHANGED (D-195): which block accepts a hoisted per-pass matrix structure, resolved once.
+        # None when no block offers one, which is every model that predates this.
+        self._pass_mats_ix = next(
+            (i for i, b in enumerate(self.connected_blocks) if hasattr(b, 'pass_mats')), None)
         if self.debugging: print("Output cone: " + str(self.output_cone))
 
         # CHANGED (D-169): place the matrices on the module's device/dtype NOW.
@@ -648,9 +685,16 @@ class SSE_Interconnect(SS_encoder_general):
         if self.simulator is not None:
             return self.simulator(self, x, ufuture, yfuture, **Loss_kwargs)
         hfn = self.hfn                       # bound once: nf Module.__getattr__ calls otherwise
+        # CHANGED (D-192): the per-objective OBC coefficient rides in Loss_kwargs; the open-loop
+        # rollout hands it to every step. Absent (the default) the call is exactly the old one.
+        obc_pass = Loss_kwargs.get('obc_pass', None)
+        pass_mats = Loss_kwargs.get('pass_mats', None)
         ys = []
         for u in ufuture.unbind(1):          # ONE dispatch for all nf views, not nf selects
-            yhat, x = hfn(x, u) # type: ignore
+            if obc_pass is None and pass_mats is None:
+                yhat, x = hfn(x, u) # type: ignore
+            else:
+                yhat, x = hfn(x, u, obc_pass, pass_mats) # type: ignore
             ys.append(yhat)
         return torch.stack(ys, dim=1), x
 
@@ -716,6 +760,14 @@ class SSE_Interconnect(SS_encoder_general):
         for probe in self.validation_probes:
             probe(self, val_sys_data, value)      # side effects only, value never replaced
         return value
+
+    def _sync_prediction_state_for_validation(self, refresh_basis=False):
+        """Extension point for model state derived from trainable parameters.
+
+        The base implementation is an exact no-op.  Composed systems with OBC override it so
+        validation never observes a coefficient computed before the latest optimizer update.
+        """
+        return False
 
     def measure_act_multi(self,actions):
         actions = torch.tensor(np.array(actions), dtype=torch.float32) #(N,...)
@@ -801,6 +853,10 @@ class SSE_Interconnect(SS_encoder_general):
             self.eval()
             if _flip_for_validation:
                 self.cpu()
+            # An optimizer closure computes derived prediction state BEFORE optimizer.step().
+            # Synchronise it once here, after any device move and before every validation metric
+            # and the checkpoint selected by those metrics. No-op for all pre-existing systems.
+            self._sync_prediction_state_for_validation(refresh_basis=False)
             Loss_val = self.cal_validation_error(val_sys_data, validation_measure=validation_measure)
             self.Loss_val.append(Loss_val)
             temp_loss_stack = np.array([])
@@ -886,6 +942,7 @@ class SSE_Interconnect(SS_encoder_general):
                                                  dtype=_model_dtype) #is quite a bit faster for low data situations
 
         if concurrent_val:
+            self._sync_prediction_state_for_validation(refresh_basis=False)
             self.remote_start(val_sys_data, validation_measure)
             self.remote_send(float('nan'), extra_t)
         else: #start with the initial validation 
@@ -972,6 +1029,7 @@ class SSE_Interconnect(SS_encoder_general):
                 if (it_count+1)%its_per_val==0:
                     if concurrent_val:
                         if self.remote_recv(): #only when it is idle
+                            self._sync_prediction_state_for_validation(refresh_basis=False)
                             self.remote_send(Loss_acc_val_loop/it_counter_per_val_loop, time.time()-start_t+extra_t)
                             Loss_acc_val_loop, it_counter_per_val_loop, val_counter = 0., 0, val_counter + 1
                     else:
@@ -1021,6 +1079,7 @@ class SSE_Interconnect(SS_encoder_general):
             if self.remote_recv(wait=True):
                 if verbose: print('Recv done... ',end='')
                 if it_counter_per_val_loop>0:
+                    self._sync_prediction_state_for_validation(refresh_basis=False)
                     self.remote_send(Loss_acc_val_loop/it_counter_per_val_loop, time.time()-start_t+extra_t)
                     self.remote_recv(wait=True)
             self.remote_close()
@@ -1043,11 +1102,19 @@ class SSE_Interconnect(SS_encoder_general):
         # Restoring the three arrays afterwards is all that is needed: the returned system then
         # has the best weights AND the complete history, which is what every reader assumes.
         _history = (self.epoch_id.copy(), self.Loss_val.copy(), self.Loss_train.copy())
+        _selected_checkpoint = '_best'
         try:
             self.checkpoint_load_system(name='_best')
         except FileNotFoundError:
             print('no best checkpoint found keeping last')
+            _selected_checkpoint = '_last'
         self.epoch_id, self.Loss_val, self.Loss_train = _history
+        # The selected checkpoint carries the epoch-frozen basis point/coefficient used for its
+        # validation.  The returned/reported model instead gets one final basis rebuild at ITS
+        # restored physical parameters and a coefficient from ITS restored ANN.  Persist those
+        # derived buffers back into the selected artifact. Exact no-op without OBC.
+        if self._sync_prediction_state_for_validation(refresh_basis=True):
+            self.checkpoint_save_system(name=_selected_checkpoint)
         if verbose:
             print(f'Loaded model with best known validation {validation_measure} of {self.bestfit:6.4} which happened on epoch {best_it} (epoch_id={self.epoch_id[-1] if len(self.epoch_id)>0 else 0:.2f})')
 
@@ -1194,6 +1261,13 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
     # window, bit-identically to the pre-D-178 objective. Same class-attribute reasoning as the
     # two above: a checkpoint pickled before this existed still resolves it through the class.
     burn_in = 0
+    # @added (D-192). The one-step OBC lifecycle (`model_augmentation.fit_systems.obc.OBCLifecycle`)
+    # or None. It owns the fixed reference set and the per-epoch basis and is TRAINING-TIME state
+    # like `traj_penalty`: excluded from checkpoints (the reference set is the training data) and
+    # reattached by the pipeline. The model-side half, the correction module with its frozen
+    # coefficient, lives on `hfn.obc_correction` and IS checkpointed. None = the feature is off
+    # and loss() is exactly the objective it was before this existed.
+    obc = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1217,9 +1291,75 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
         self._param_ix = tuple(i for i, m in enumerate(blocks) if hasattr(m, 'param_loss'))
         self._ann_ix = next((i for i, m in enumerate(blocks)
                              if isinstance(m, Static_ANN_Block)), None)
+        # @added (D-195). The block whose parameter-dependent structure is constant within a
+        # rollout and can therefore be built ONCE per objective instead of once per timestep.
+        # None for every model that does not offer it, which makes the hoist an exact no-op.
+        self._mats_ix = next((i for i, m in enumerate(blocks) if hasattr(m, 'pass_mats')), None)
+
+    def _sync_prediction_state_for_validation(self, refresh_basis=False):
+        """Pair the frozen prediction coefficient with the current ANN parameters.
+
+        Ordinary validation retains the basis and expansion point used during the just-completed
+        training epoch, but re-solves the coefficient after the optimizer's final update.  The
+        initial validation builds the first basis.  ``refresh_basis=True`` is reserved for the
+        final model after the selected checkpoint has been restored.
+        """
+        if self.obc is None:
+            return False
+        corr = getattr(self.hfn, 'obc_correction', None)                   # type: ignore
+        if corr is None or self._ann_ix is None:
+            raise RuntimeError(
+                'an OBC lifecycle is attached but validation cannot find its correction module '
+                'or Static_ANN_Block.')
+        epoch = int(math.floor(float(getattr(self, 'epoch_counter', 0.0)) + 1e-6))
+        with torch.no_grad():
+            if refresh_basis:
+                self.obc.refresh(corr.expansion_point(), epoch)
+            elif self.obc.basis is None:
+                # The initial validation precedes the first training objective, so no epoch basis
+                # exists yet. Later validations deliberately RETAIN the basis used by the
+                # just-completed epoch even though epoch_counter has reached the next integer;
+                # the next training objective remains responsible for that epoch's refresh.
+                self.obc.refresh(corr.expansion_point(), epoch)
+            theta = self.obc.prediction_coefficient(
+                self.hfn.connected_blocks[self._ann_ix])                 # type: ignore
+            corr.set_frozen(theta, self.obc.basis.vbar)
+        return True
 
     def loss(self, uhist, yhist, ufuture, yfuture, **Loss_kwargs):
         x = self.encoder(uhist, yhist)                                    # type: ignore
+        # D-195: hoist the physical block's parameter-dependent structure out of the timestep
+        # loop. The parameters are constant across a rollout, so rebuilding it nf times repeats
+        # identical work; measured, it is 57 percent of the physical block's cost. Applies to
+        # EVERY joint-estimation run, projected or not, and is skipped entirely when no block
+        # offers it, which keeps every other model bit-identical.
+        if self._mats_ix is not None:
+            Loss_kwargs = dict(
+                Loss_kwargs,
+                pass_mats=self.hfn.connected_blocks[self._mats_ix].pass_mats())   # type: ignore
+        # ONE-STEP OBC (D-192), Gyorok's objective lifecycle: the basis is refreshed at the epoch
+        # boundary at a detached copy of the current physical parameters, and the auxiliary
+        # coefficient is computed exactly ONCE here, from the current ANN on the full reference
+        # set, with autograd through the ANN output, then handed to every rollout timestep as a
+        # tensor argument. It is never cached across optimizer updates and never recomputed
+        # inside the step. `self.obc is None` leaves this method exactly as it was.
+        if self.obc is not None:
+            _corr = getattr(self.hfn, 'obc_correction', None)             # type: ignore
+            if _corr is None or self._ann_ix is None:
+                raise RuntimeError(
+                    'an OBC lifecycle is attached but the interconnect carries no obc_correction '
+                    'module or no Static_ANN_Block; the coefficient would have nothing to act on.')
+            _epoch = int(math.floor(float(getattr(self, 'epoch_counter', 0.0)) + 1e-6))
+            self.obc.maybe_refresh(_epoch, _corr.expansion_point)
+            _theta = self.obc.coefficient(self.hfn.connected_blocks[self._ann_ix])   # type: ignore
+            _corr.set_frozen(_theta, self.obc.basis.vbar)
+            # CHANGED (D-194): build the once-per-objective, state-independent tangent AFTER
+            # set_frozen has updated `vbar`, and THREAD it. It is passed as an argument rather
+            # than stashed on the module because a compiled step must not decide anything from
+            # module attributes: see GantryOBCCorrection.tangent_pair for what that cost.
+            # `tangent_pair` is optional, so a correction module without it still works.
+            _tan = _corr.tangent_pair(_theta) if hasattr(_corr, 'tangent_pair') else _theta
+            Loss_kwargs = dict(Loss_kwargs, obc_pass=_tan)
         y_pred, _ = self.simulate(x, ufuture, yfuture, **Loss_kwargs)
         # BURN-IN (D-178): score from sample `burn_in` onward. The window is transient-dominated
         # at nf=400 -- every run's `[nf]` line reports grow = RMS(last)/RMS(first) between 0.46
@@ -1310,9 +1450,12 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
     # A bookkeeping bug, but one that made a correct run look broken, which is the same
     # category as the false alarm it replaced.
     _TRAJ_COUNTERS = ('_traj_wrapping', '_traj_hook_calls', '_traj_steps')
+    # @added (D-192): the OBC lifecycle holds the reference set (the training data) and the
+    # basis factors; same treatment as the trajectory penalty, for the same three reasons.
+    _OBC_UNPICKLABLE = ('obc', 'obc_reference')
 
     def checkpoint_save_system(self, *args, **kwargs):
-        stash = {k: self.__dict__.pop(k) for k in self._TRAJ_UNPICKLABLE
+        stash = {k: self.__dict__.pop(k) for k in self._TRAJ_UNPICKLABLE + self._OBC_UNPICKLABLE
                  if k in self.__dict__}
         try:
             return super().checkpoint_save_system(*args, **kwargs)
@@ -1321,7 +1464,7 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
 
     def checkpoint_load_system(self, *args, **kwargs):
         stash = {k: self.__dict__.get(k)
-                 for k in self._TRAJ_UNPICKLABLE + self._TRAJ_COUNTERS}
+                 for k in self._TRAJ_UNPICKLABLE + self._OBC_UNPICKLABLE + self._TRAJ_COUNTERS}
         out = super().checkpoint_load_system(*args, **kwargs)
         # The load replaced __dict__; put back what was never saved, and re-run the legacy
         # optimizer migration, because a file written before the property existed carries
@@ -1398,6 +1541,8 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
         """
         state = dict(self.__dict__)
         state.pop('traj_penalty', None)
+        state.pop('obc', None)          # D-192: training-time state, see `obc` above
+        state.pop('obc_reference', None)
         return state
 
     def __setstate__(self, state):
@@ -1418,6 +1563,8 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
         # `traj_penalty` was deliberately not saved (see __getstate__); fall back to the class
         # default so a restored system is a plain one until a penalty is reattached.
         self.__dict__.pop('traj_penalty', None)
+        self.__dict__.pop('obc', None)  # D-192: same rule
+        self.__dict__.pop('obc_reference', None)
 
     @property
     def optimizer(self):

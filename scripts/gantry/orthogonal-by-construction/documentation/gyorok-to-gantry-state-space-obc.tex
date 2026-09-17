@@ -1,0 +1,685 @@
+% Standalone explanatory derivation of the implemented construction.
+% This document describes the production one-step implementation (D-192--D-195).
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=24mm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\range}{\operatorname{range}}
+\newcommand{\T}{\mathsf{T}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\definecolor{baselineblue}{RGB}{28,82,135}
+\definecolor{annorange}{RGB}{196,92,31}
+\definecolor{scopegray}{RGB}{75,75,75}
+
+\title{From Gy\"or\"ok's Input--Output Orthogonal Augmentation\\
+to One-Step State-Space OBC for the Gantry}
+\author{Implementation-aligned derivation}
+\date{17 September 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note derives the gantry's one-step OBC construction from Gy\"or\"ok's
+additive input--output model.  It first translates that model to the gantry's
+physical-plus-augmentation state space.  It then shows
+the local sensitivity substitution required by the nonlinear LPV RK4
+transition and connects each mathematical object to the production code.  The
+result is a stacked, one-step orthogonality condition in normalized routed
+physical-state coordinates.  It is not a multistep or closed-loop
+input--output orthogonality result.
+\end{abstract}
+
+\section*{Source basis and authority}
+
+The input--output-to-state-space derivation in Steps 1--3 follows
+\path{obc-gantry-physical-state-extension.pdf}.  The choice of the local
+parameter tangent, reference stack, SVD subtraction and training lifecycle in
+Steps 4--8 follows \path{obc-gantry-one-step-implementation-plan.pdf}, checked
+against the production implementation.  Where the implementation plan
+predates a later decision, the current code and decisions D-194--D-200 are
+authoritative.  In particular, the production reference set removes two
+boundary samples per record, and the rollout correction uses the exact
+hand-written RK4 forward sensitivity rather than a per-timestep
+\code{torch.func.jvp}.
+
+\section*{Derivation roadmap}
+
+The construction is developed in the following order:
+\begin{enumerate}
+\item state Gy\"or\"ok's original input--output model and subtraction;
+\item identify where the baseline and ANN add in the gantry model;
+\item derive the exact linear-in-parameter state-space analogue;
+\item identify the ANN rows that can overlap with the physical baseline;
+\item replace Gy\"or\"ok's exact regressor by the local RK4 parameter tangent;
+\item construct and stack the fixed one-step reference evaluations;
+\item apply the SVD pseudoinverse subtraction;
+\item insert the correction into the closed-loop rollout;
+\item extend the protected space with the frozen affine-offset column; and
+\item state the exact scope of the resulting orthogonality condition.
+\end{enumerate}
+
+Each step first gives the mathematical operation and then identifies the
+corresponding production code.
+
+\section{Step 1: Gy\"or\"ok's input--output construction}
+
+Gy\"or\"ok denotes the finite-memory input--output regression vector by
+\(x_k\).  To distinguish it from the gantry state later in this note, write it
+as \(x_k^{\mathrm{IO}}\) without changing its meaning.  The additive predictor
+is
+\begin{equation}
+\boxed{
+\widehat y_k
+=
+\underbrace{\phi(x_k^{\mathrm{IO}})\theta_b}_{\text{baseline contribution}}
++
+\underbrace{f_{\theta_a}^{\mathrm{ANN}}(x_k^{\mathrm{IO}})}_{\text{learning contribution}}.
+}
+\label{eq:gyorok-model}
+\end{equation}
+The important structural assumption is that the baseline is exactly linear in
+its parameters:
+\begin{equation}
+f_{\mathrm{base}}(x_k^{\mathrm{IO}};\theta_b)
+=\phi(x_k^{\mathrm{IO}})\theta_b.
+\label{eq:gyorok-linear}
+\end{equation}
+
+Stacking all scalar output entries in the training data gives
+\begin{equation}
+\Phi=\col_{k=1}^{N}\phi(x_k^{\mathrm{IO}})\in\R^{N\times p},
+\qquad
+F_{\theta_a}^{\mathrm{ANN}}
+=\col_{k=1}^{N}f_{\theta_a}^{\mathrm{ANN}}(x_k^{\mathrm{IO}})\in\R^N.
+\end{equation}
+The component of the ANN field that can be represented by the baseline is
+\begin{equation}
+\Phi\theta_{\mathrm{aux}},
+\qquad
+\theta_{\mathrm{aux}}=\Phi^\dagger F_{\theta_a}^{\mathrm{ANN}}.
+\end{equation}
+Gy\"or\"ok subtracts this component:
+\begin{equation}
+\boxed{
+\widetilde F_{\theta_a}^{\mathrm{ANN}}
+=F_{\theta_a}^{\mathrm{ANN}}-\Phi\theta_{\mathrm{aux}}
+=(I-\Phi\Phi^\dagger)F_{\theta_a}^{\mathrm{ANN}}.
+}
+\label{eq:gyorok-projection}
+\end{equation}
+Consequently,
+\begin{equation}
+\boxed{\Phi^\T\widetilde F_{\theta_a}^{\mathrm{ANN}}=0.}
+\label{eq:gyorok-orthogonality}
+\end{equation}
+At a new regression point, the stored coefficient is used as
+\begin{equation}
+\widetilde f_{\theta_a}^{\mathrm{ANN}}(x^{\mathrm{IO}})
+=f_{\theta_a}^{\mathrm{ANN}}(x^{\mathrm{IO}})
+-\phi(x^{\mathrm{IO}})\theta_{\mathrm{aux}}.
+\label{eq:gyorok-prediction}
+\end{equation}
+
+In the reference implementation this lifecycle appears in
+\path{orthogonal-IO-augm-main/orthogonalx_augm/src.py}, class
+\code{IO\_orthogonal\_augmentation}: \(\Phi\) and its solve operator are
+formed outside the objective, while \(\theta_{\mathrm{aux}}\) is recomputed
+from the current ANN inside each objective evaluation.
+
+\clearpage
+\section{Step 2: Locate the addition in the gantry model}
+
+For the gantry, the baseline and ANN do not add directly in the measured
+output equation.  They add in the one-step state transition.  Define
+\begin{equation}
+\widehat x_k=\col(x_{b,k},x_{a,k}),
+\qquad
+x_{b,k}\in\R^6,\quad x_{a,k}\in\R^8,
+\quad \widehat x_k\in\R^{14}.
+\end{equation}
+Here \(x_b=\col(q,\dot q)\) is the physical gantry state and \(x_a\) is the
+learned dynamic state.
+For the gantry,
+\begin{equation}
+q=\col(X,\Theta,Y),
+\qquad
+M(Y;c(v))\ddot q+C(c(v))\dot q+K(c(v))q=Pu,
+\qquad Y=q_3.
+\label{eq:continuous-gantry}
+\end{equation}
+The implemented RK4 integration of
+Eq.~\eqref{eq:continuous-gantry} defines the one-sample physical transition
+\begin{equation}
+x_{b,k+1}=f_{\mathrm{base}}^d(v,x_{b,k},u_k).
+\end{equation}
+
+Lift the physical transition to the complete state coordinates:
+\begin{equation}
+F_{\mathrm{base}}^d(v,\widehat x_k,u_k)
+=
+\begin{bmatrix}
+f_{\mathrm{base}}^d(v,x_{b,k},u_k)\\[1mm]
+0
+\end{bmatrix}.
+\label{eq:lifted-baseline}
+\end{equation}
+Partition the ANN state contribution as
+\begin{equation}
+F_{\mathrm{aug}}(\theta_a,\widehat x_k,u_k)
+=
+\begin{bmatrix}
+f_{\mathrm{aug}}^b(\theta_a,\widehat x_k,u_k)\\[1mm]
+f_{\mathrm{aug}}^a(\theta_a,\widehat x_k,u_k)
+\end{bmatrix}.
+\label{eq:partitioned-ann}
+\end{equation}
+Before OBC, the implemented augmented model is therefore
+\begin{equation}
+\boxed{
+\begin{aligned}
+x_{b,k+1}
+&=f_{\mathrm{base}}^d(v,x_{b,k},u_k)
+  +f_{\mathrm{aug}}^b(\theta_a,\widehat x_k,u_k),\\
+x_{a,k+1}
+&=f_{\mathrm{aug}}^a(\theta_a,\widehat x_k,u_k),\\
+\widehat y_k
+&=h_{\mathrm{base}}(x_{b,k},u_k)
+ =C_d x_{b,k}+D_d u_k.
+\end{aligned}}
+\label{eq:gantry-unprojected}
+\end{equation}
+
+Thus, the state-transition contribution plays the role that the direct output
+contribution plays in Gy\"or\"ok's model.  The ANN has no direct output term in
+Eq.~\eqref{eq:gantry-unprojected}; it affects future outputs through state
+propagation.
+
+\begin{center}
+\begin{tabular}{L{0.39\textwidth}L{0.49\textwidth}}
+\toprule
+\textbf{Gy\"or\"ok input--output model} & \textbf{Gantry state-space adaptation}\\
+\midrule
+Input--output regression vector \(x_k^{\mathrm{IO}}\) & State--input point \((\widehat x_k,u_k)\)\\
+Predicted output \(\widehat y_k\) & Predicted next state \(\widehat x_{k+1}\)\\
+Baseline output contribution & Physical RK4 transition, lifted with zero additional-state rows\\
+ANN output contribution & ANN physical-state and additional-state contributions\\
+Output-space baseline span & One-step physical-transition tangent space\\
+Training-regressor stack & Fixed reference-state stack\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Production code.}
+Equation~\eqref{eq:gantry-unprojected} is wired in
+\path{scripts/gantry/gantry_dynamic/model.py}.  The physical block receives
+\((x_b,u)\) and writes the first six progressed-state rows.  The ANN receives
+\((\widehat x,u)\) and its routed output is added to the progressed state.  The
+physical output block receives only \((x_b,u)\).  The current production entry
+uses \code{nx\_ann=8} and routes the ANN to all fourteen state rows.
+
+The encoder supplies only the initial complete state for an actual rollout,
+\begin{equation}
+\widehat x_{k\mid k}
+=\psi_{\theta_e}(y_{k-n_y:k-1},u_{k-n_u:k-1}).
+\end{equation}
+It is not used to construct the fixed OBC reference set and is not part of the
+pointwise transition projection.
+
+\clearpage
+\section{Step 3: Derive the exact state-space analogue}
+
+Before treating the nonlinear gantry, first make the translation of
+Gy\"or\"ok's algebra exact.  Suppose that the physical state transition were
+affine in identifiable baseline coefficients \(\vartheta_b\):
+\begin{equation}
+f_{\mathrm{base}}^d(\vartheta_b,x_b,u)
+=f_0^d(x_b,u)+\phi_b(x_b,u)\vartheta_b.
+\label{eq:hypothetical-linear-state}
+\end{equation}
+This is the state-equation counterpart of
+Eq.~\eqref{eq:gyorok-linear}.  At evaluation point \(i\), define
+\begin{equation}
+\phi_{b,i}=\phi_b(x_{b,i},u_i),
+\qquad
+f_{\mathrm{aug},i}^b=f_{\mathrm{aug}}^b(\theta_a,\widehat x_i,u_i),
+\qquad
+f_{\mathrm{aug},i}^a=f_{\mathrm{aug}}^a(\theta_a,\widehat x_i,u_i).
+\end{equation}
+The baseline parameter directions and ANN contribution in the complete state
+coordinates are
+\begin{equation}
+\overline\phi_{b,i}
+=
+\begin{bmatrix}
+\phi_{b,i}\\
+0
+\end{bmatrix},
+\qquad
+f_{\mathrm{aug},i}
+=
+\begin{bmatrix}
+f_{\mathrm{aug},i}^b\\
+f_{\mathrm{aug},i}^a
+\end{bmatrix}.
+\label{eq:lifted-exact-directions}
+\end{equation}
+Their overlap is
+\begin{equation}
+\overline\phi_{b,i}^{\T}f_{\mathrm{aug},i}
+=\phi_{b,i}^{\T}f_{\mathrm{aug},i}^b.
+\label{eq:zero-block}
+\end{equation}
+The additional-state rows make no contribution because the baseline direction
+has a zero block there.  Only \(f_{\mathrm{aug}}^b\) can overlap directly with
+the baseline parameter directions.
+
+Now stack the exact state regressors and physical ANN contributions:
+\begin{equation}
+\Phi_b=\col_{i=1}^{N}\phi_{b,i},
+\qquad
+F_{\mathrm{aug}}^b=\col_{i=1}^{N}f_{\mathrm{aug},i}^b.
+\end{equation}
+Applying Gy\"or\"ok's subtraction without any further change would give
+\begin{equation}
+\theta_{\mathrm{aux}}=\Phi_b^\dagger F_{\mathrm{aug}}^b,
+\qquad
+\widetilde F_{\mathrm{aug}}^b
+=F_{\mathrm{aug}}^b-\Phi_b\theta_{\mathrm{aux}},
+\qquad
+\boxed{\Phi_b^\T\widetilde F_{\mathrm{aug}}^b=0.}
+\label{eq:exact-state-obc}
+\end{equation}
+The additional-state update remains unchanged.  This establishes the precise
+state-space version of Gy\"or\"ok's construction under the hypothetical affine
+baseline representation in Eq.~\eqref{eq:hypothetical-linear-state}.
+
+This is only a one-step coordinate statement.  A nonzero learned state can
+later affect \(f_{\mathrm{aug}}^b\), the recursively propagated physical state,
+and the measured output.  Equation~\eqref{eq:exact-state-obc} does not establish
+multistep or input--output orthogonality.
+
+\section{Step 4: Replace the exact regressor by the local gantry tangent}
+
+The gantry transition is nonlinear in its physical parameters: the ten
+identifiable combinations enter the mass, damping and stiffness structure and
+all RK4 stages.  Hence no parameter-independent regressor \(\phi(x,u)\) gives
+the complete transition globally.
+
+The production block trains a dimensionless free-coordinate vector
+\begin{equation}
+v\in\R^{10}.
+\end{equation}
+It maps \(v\) to the identifiable physical combinations
+\begin{equation}
+c(v)=\col(k_{b,\mathrm{sum}},c_{g1},c_{g2},c_y,c_{b,\mathrm{sum}},m_h,
+m_{\mathrm{total}},m_{\mathrm{diff}},J_{\mathrm{eff}},d).
+\end{equation}
+Nine coordinates use \(c_i(v)=c_{i,0}\exp(v_i)\); the signed mass difference
+uses \(m_{\mathrm{diff}}(v)=m_{\mathrm{diff},0}(1+v_i)\).
+
+At a detached epoch expansion point \(\bar v\), define
+\begin{equation}
+\boxed{
+J_{b,k}(\bar v)
+=
+\left.
+\frac{\partial f_{\mathrm{base}}^d(v,x_{b,k},u_k)}{\partial v}
+\right|_{v=\bar v}
+\in\R^{6\times10}.
+}
+\label{eq:local-tangent}
+\end{equation}
+It gives the local expansion
+\begin{equation}
+f_{\mathrm{base}}^d(\bar v+\Delta v,x_b,u)
+\approx
+f_{\mathrm{base}}^d(\bar v,x_b,u)
++J_b(\bar v,x_b,u)\Delta v.
+\end{equation}
+The central methodological substitution is
+\begin{equation}
+\boxed{
+\underbrace{\phi_b(x_{b,k},u_k)}_{\substack{\text{exact state regressor}\\\text{in the affine analogue}}}
+\quad\longrightarrow\quad
+\underbrace{J_{b,k}(\bar v)}_{\substack{\text{local one-step}\\\text{transition sensitivity}}}.
+}
+\label{eq:central-substitution}
+\end{equation}
+
+This substitution preserves the projection algebra, but it does not transfer
+all guarantees proved for an exact parameter-linear input--output model.
+
+\paragraph{Production code.}
+The ten free coordinates and their map are implemented by
+\path{Reduced_Gantry_State_Block}.  The class is defined in
+\begin{center}
+\small\path{model_augmentation/fit_systems/blocks.py}.
+\end{center}
+Its
+\code{transition\_from\_free(v,z)} evaluates the complete normalized RK4
+transition.  The reference basis is differentiated with
+\code{torch.func.jacfwd} by \code{build\_stacked\_sensitivity} in
+\path{model_augmentation/fit_systems/obc.py}.
+
+\clearpage
+\section{Step 5: Construct and stack the fixed reference evaluations}
+
+The construction uses every valid sample from all fourteen training records.
+From measured stage positions,
+\begin{equation}
+q_k^{\mathrm{ref}}=P^{-\T}y_k^{\mathrm{data}}.
+\end{equation}
+The unmeasured velocity is estimated inside each record using
+\begin{equation}
+\widehat{\dot q}_k^{\mathrm{FD}}
+=\frac{-q_{k+2}^{\mathrm{ref}}+8q_{k+1}^{\mathrm{ref}}
+-8q_{k-1}^{\mathrm{ref}}+q_{k-2}^{\mathrm{ref}}}{12T_s}.
+\label{eq:fd}
+\end{equation}
+Two samples are removed at each end of every record, so the stencil never
+crosses a record boundary.  Define
+\begin{equation}
+x_{b,k}^{\mathrm{ref}}
+=\col(q_k^{\mathrm{ref}},\widehat{\dot q}_k^{\mathrm{FD}}),
+\qquad
+x_{a,k}^{\mathrm{ref}}=0,
+\qquad
+u_k^{\mathrm{ref}}=u_k^{\mathrm{data}}.
+\end{equation}
+These tuples are fixed one-step evaluation points, not a simulated trajectory.
+The controller is not differentiated: \(u_k^{\mathrm{ref}}\) is held fixed.
+
+Let \(R_b\in\R^{n_r\times6}\) select the physical rows written by the ANN.
+At every reference point,
+\begin{equation}
+\mathcal J_k
+=R_bJ_{b,k}^{\mathrm n}(\bar v)
+\in\R^{n_r\times10},
+\end{equation}
+and
+\begin{equation}
+g_k(\theta_a)
+=R_b f_{\mathrm{aug}}^{b,\mathrm n}
+(\theta_a,x_{b,k}^{\mathrm{ref}},0,u_k^{\mathrm{ref}})
+\in\R^{n_r}.
+\end{equation}
+The superscript \({\mathrm n}\) emphasizes that both quantities are already
+in the model's normalized state coordinates.
+
+Stack the samples in sample-major order:
+\begin{equation}
+\boxed{
+J
+=\begin{bmatrix}\mathcal J_1\\ \vdots\\ \mathcal J_N\end{bmatrix}
+\in\R^{Nn_r\times10},
+\qquad
+F_{\mathrm{aug}}(\theta_a)
+=\begin{bmatrix}g_1\\ \vdots\\ g_N\end{bmatrix}
+\in\R^{Nn_r}.
+}
+\label{eq:gantry-stacks}
+\end{equation}
+For the production reference set, \(N=671{,}944\) and all six physical rows
+are routed, so
+\begin{equation}
+J\in\R^{4{,}031{,}664\times10}.
+\end{equation}
+
+\paragraph{Production code.}
+Reference construction is in
+\path{scripts/gantry/gantry_dynamic/obc_gantry.py}:
+\code{build\_reference\_set}.  The basis stack is created by
+\code{make\_basis\_builder}; the matching ANN stack is created by
+\code{make\_reference\_field}.  Both use the same physical-row order and
+sample-major flattening.
+
+\clearpage
+\section{Step 6: Apply Gy\"or\"ok's subtraction to the gantry stack}
+
+Factor the stacked tangent directly with an economy SVD:
+\begin{equation}
+J=USV^\T.
+\end{equation}
+The implementation does not invert the Gram matrix.  It computes
+\begin{equation}
+\boxed{
+\theta_{\mathrm{aux}}(\theta_a)
+=J^\dagger F_{\mathrm{aug}}(\theta_a)
+=VS^{-1}U^\T F_{\mathrm{aug}}(\theta_a)
+\in\R^{10}.
+}
+\label{eq:gantry-aux}
+\end{equation}
+The corrected stacked physical ANN field is
+\begin{equation}
+\boxed{
+\widetilde F_{\mathrm{aug}}
+=F_{\mathrm{aug}}-J\theta_{\mathrm{aux}}.
+}
+\label{eq:gantry-corrected-stack}
+\end{equation}
+Therefore,
+\begin{equation}
+\boxed{J^\T\widetilde F_{\mathrm{aug}}=0}
+\label{eq:gantry-orthogonality}
+\end{equation}
+to numerical precision.
+
+The correspondence with Gy\"or\"ok is now explicit:
+\begin{equation}
+\begin{aligned}
+\Phi
+&\longrightarrow J,\\
+\Phi^\dagger F_{\mathrm{ANN}}
+&\longrightarrow J^\dagger F_{\mathrm{aug}},\\
+F_{\mathrm{ANN}}-\Phi\theta_{\mathrm{aux}}
+&\longrightarrow F_{\mathrm{aug}}-J\theta_{\mathrm{aux}}.
+\end{aligned}
+\end{equation}
+
+\paragraph{Production code.}
+\code{OBCBasis.from\_matrix} in
+\path{model_augmentation/fit_systems/obc.py} performs the float64 economy
+SVD.  \code{OBCBasis.coefficient} evaluates
+\(VS^{-1}U^\T F_{\mathrm{aug}}\) without detaching the ANN field, so gradients
+can pass through \(\theta_{\mathrm{aux}}\) to the ANN.
+
+\section{Step 7: Respect the training lifecycle}
+
+At the beginning of epoch \(r\), the code takes a detached copy of the current
+physical free coordinate,
+\begin{equation}
+\bar v^{(r)}=v^{(r)},
+\end{equation}
+rebuilds \(J^{(r)}\), and holds its SVD factors fixed for that epoch.
+
+At every objective evaluation, it evaluates the current ANN on the fixed
+reference set and recomputes
+\begin{equation}
+\theta_{\mathrm{aux}}(\theta_a)
+=(J^{(r)})^\dagger F_{\mathrm{aug}}(\theta_a).
+\end{equation}
+The coefficient is computed once per objective, remains differentiable, and is
+reused at every timestep of that objective's rollout.  It is never reused
+across optimizer updates.
+
+This lifecycle is implemented by \code{OBCLifecycle} in
+\path{model_augmentation/fit_systems/obc.py} and invoked by
+\code{SSE\_Interconnect\_Composed.loss} in
+\path{model_augmentation/fit_systems/interconnect.py}.
+
+\clearpage
+\section{Step 8: Insert the correction into the rollout model}
+
+At an actual rollout point \((\widehat x_k,u_k)\), evaluate the local
+directional correction using the epoch expansion point:
+\begin{equation}
+c_k
+=J_b^{\mathrm n}(\bar v^{(r)},x_{b,k},u_k)
+\theta_{\mathrm{aux}}.
+\end{equation}
+The OBC model executed by the rollout is
+\begin{equation}
+\boxed{
+\begin{aligned}
+x_{b,k+1}
+&=f_{\mathrm{base}}^{d,\mathrm n}(v,x_{b,k},u_k)
+ +f_{\mathrm{aug}}^{b,\mathrm n}(\theta_a,\widehat x_k,u_k)
+ -J_b^{\mathrm n}(\bar v^{(r)},x_{b,k},u_k)\theta_{\mathrm{aux}},\\
+x_{a,k+1}
+&=f_{\mathrm{aug}}^{a,\mathrm n}(\theta_a,\widehat x_k,u_k),\\
+\widehat y_k
+&=h_{\mathrm{base}}(x_{b,k},u_k).
+\end{aligned}}
+\label{eq:corrected-rollout}
+\end{equation}
+
+The controller remains active and determines the inputs encountered during the
+closed-loop rollout.  Its derivative is not part of \(J\) or
+Eq.~\eqref{eq:gantry-orthogonality}.
+
+\paragraph{Current derivative implementation.}
+The mathematical definition of the correction is the directional derivative
+\(J_b\theta_{\mathrm{aux}}\).  Production code evaluates it with the exact
+hand-written forward sensitivity through the RK4 stages.  The
+parameter-to-matrix tangent is formed once per objective and threaded into the
+rollout.  \code{torch.func.jvp} is retained as a test oracle, not used in the
+compiled per-timestep production path.  The relevant implementations are
+\code{GantryOBCCorrection.tangent\_pair} and
+\code{GantryOBCCorrection.forward} in
+\path{scripts/gantry/gantry_dynamic/obc_gantry.py}, together with
+\code{\_rk4\_with\_tangent} in
+\path{model_augmentation/fit_systems/blocks.py}.
+
+The subtraction itself is applied only to the progressed-state signal in
+\code{Interconnect.forward}; the output map is untouched.
+
+\clearpage
+\section{Step 9: Add the affine-offset comparison arm}
+
+The primary implementation protects the ten-column tangent \(J\). Decision
+D-200 adds a separate arm that also protects the frozen baseline transition:
+\begin{equation}
+\boxed{
+B=\begin{bmatrix}J&c\end{bmatrix},\qquad
+c=\col_i R_b f_{\mathrm{base}}^{d,\mathrm n}
+   (\bar v,z_i^{\mathrm{ref}})\in\R^{N_rn_r}.
+}
+\label{eq:affine-basis}
+\end{equation}
+This is the same column space as the centered affine form
+\([J\mid\Gamma]\), because \(\Gamma=c-J\bar v\). Hence
+\begin{equation}
+\range([J\mid c])=\range([J\mid\Gamma]).
+\end{equation}
+The code uses \(c\), since the RK4 forward-sensitivity calculation already
+returns the frozen primal transition.
+
+After column equilibration and a float64 SVD of \(B\), compute
+\begin{equation}
+\begin{bmatrix}a\\ \alpha\end{bmatrix}=B^\dagger F_{\mathrm{aug}},
+\qquad
+\widetilde F_{\mathrm{aug}}=F_{\mathrm{aug}}-Ja-\alpha c,
+\qquad
+B^\T\widetilde F_{\mathrm{aug}}=0.
+\end{equation}
+At an arbitrary rollout state, the implemented correction is
+\begin{equation}
+\boxed{
+J_b(\bar v,x_{b,k},u_k)a
++\alpha f_{\mathrm{base}}^{d,\mathrm n}(\bar v,x_{b,k},u_k).
+}
+\label{eq:affine-runtime}
+\end{equation}
+Both terms use the epoch's frozen \(\bar v\). Using the live physical
+parameters in the second term would evaluate a different column from the one
+used to fit \(\alpha\), so the reference-stack identity would no longer match
+the rollout implementation. The optimized RK4 routine returns the primal and
+directional derivative together; Eq.~\eqref{eq:affine-runtime} therefore adds
+no second RK4 call per timestep.
+
+\paragraph{Production code.}
+Set \code{OBC\_ARM=obc\_affine}. The imported configuration records
+\code{obc=True} and \code{obc\_space='affine'}. The existing
+\code{OBC\_ARM=obc} remains the unscaled ten-column tangent arm.
+
+\clearpage
+\section{Step 10: State precisely what has been established}
+
+The implemented condition is
+\begin{quote}
+The current ANN's stacked one-step contribution in normalized routed physical
+state coordinates is orthogonal to the selected local protected space: the
+ten-dimensional parameter tangent for \code{obc}, or the eleven-column tangent
+plus frozen transition for \code{obc\_affine}. Both are evaluated at the epoch
+expansion point on the fixed reference slice \(x_a=0\).
+\end{quote}
+
+More compactly,
+\begin{equation}
+\boxed{
+J(\bar v;\mathcal Z_{\mathrm{ref}})^\T
+\left[
+F_{\mathrm{aug}}(\theta_a;\mathcal Z_{\mathrm{ref}})
+-J(\bar v;\mathcal Z_{\mathrm{ref}})\theta_{\mathrm{aux}}
+\right]=0.
+}
+\end{equation}
+
+It does \emph{not} establish:
+\begin{itemize}
+\item pointwise orthogonality at every individual reference point;
+\item global orthogonality over the nonlinear physical parameter space;
+\item orthogonality away from the reference slice \(x_a=0\);
+\item orthogonality of recursively propagated or multistep state sensitivities;
+\item closed-loop input--output Jacobian orthogonality;
+\item stability, covariance preservation, consistency, or unique physical
+      parameter recovery under Gy\"or\"ok's theorems.
+\end{itemize}
+
+The construction intentionally follows the requested scope: retain the normal
+physical-plus-augmentation state, introduce no delayed input/output state, and
+first test the regular one-step orthogonalization before considering a
+different level of orthogonality.
+
+\section{One-line derivation chain}
+
+\begin{equation}
+\boxed{
+\begin{gathered}
+\text{Gy\"or\"ok: }\Phi
+\quad\longrightarrow\quad
+\text{gantry: }J
+=\col_k R_b
+\left.\frac{\partial f_{\mathrm{base}}^{d,\mathrm n}}
+{\partial v}\right|_{\bar v,z_k^{\mathrm{ref}}}
+\\[1mm]
+J=USV^\T,
+\qquad
+\theta_{\mathrm{aux}}=VS^{-1}U^\T F_{\mathrm{aug}},
+\\[1mm]
+\widetilde f_{\mathrm{aug},k}^b
+=f_{\mathrm{aug},k}^b
+-J_b(\bar v,x_{b,k},u_k)\theta_{\mathrm{aux}},
+\\[1mm]
+J^\T\widetilde F_{\mathrm{aug}}=0
+\quad\text{on the fixed one-step reference stack.}
+\end{gathered}}
+\end{equation}
+
+\end{document}

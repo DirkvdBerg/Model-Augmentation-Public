@@ -104,6 +104,14 @@ CFG = RunConfig(
     # D-169: torch.compile mode for the TRAINING rollout only; None = eager.
     # 'reduce-overhead' measured ~6.5x; validation and diagnostics stay eager.
     compile_mode='reduce-overhead',
+    # D-199: keep the per-pass tensors (the hoisted M(Y) structure and the OBC pass) at FIXED
+    # addresses so CUDA graphs can replay. MEASURED NEUTRAL, left off. `reduce-overhead` pays a
+    # one-off graph recording at nf=400 either way (55 min with the flag, 61 min without), then
+    # runs at 1.236 s/update with it on (job 83978) against 1.248 s/update with it off (job 83962).
+    # The earlier reading that `reduce-overhead` "never produces an update" was that recording seen
+    # in progress, not a failure. Off is the simpler path; the mechanism stays in the tree because
+    # it is correct (bit-identical loss and gradients), not because it buys anything.
+    static_pass_buffers=False,
     save_flag=True,
     nf_probe_print=True,          # print per-epoch train/val nf-window RMS [m] (D-095)
     # D-189: capacity only pays once the rate can use it (2x at lr=1e-5, 6% at 1e-6).
@@ -129,13 +137,24 @@ CFG = RunConfig(
     lr=1e-5,
     adam_eps=1e-16,                # D-148: keep 1e-11..1e-14 augmented-writer gradients live.
     # Wall-clock budget, not a convergence criterion. n_its below silently overrides it.
-    epochs=400,
-    # Batch UPDATES between validations; None = 'epoch' (the historical default). 650 = every 5
-    # epochs at batch 512 (130 updates/epoch). On the GPU one validation costs ~162 s against 65 s
-    # of training per epoch, so validating every epoch would spend 70% of the wall on validation
-    # and cut a 10 h run from ~364 epochs to ~156. MOVES WITH batch_size: change that and this
-    # number no longer means 5 epochs.
-    its_per_val=650,
+    # 150 at nf=400 and batch 512: 19500 updates x 1.24 s = 6.8 h, plus the one-off CUDA-graph
+    # recording (~1 h) and 15 validations (~2.6 h) = ~10.4 h, inside the runner's 24 h wall WITH
+    # the L-BFGS polish reached. 400 needed 32.8 h: jobs 83962 and 83978 would have been killed
+    # around epoch 290, mid-Adam, so the polish that produces the final parameter values would
+    # never have run and the end-of-run npz and diagnostics would never have been written.
+    epochs=150,
+    # Batch UPDATES between validations; None = 'epoch' (the historical default). 1300 = every 10
+    # epochs at batch 512 (130 updates/epoch). Under `reduce-overhead` at nf=400 one validation
+    # costs 619 s (job 83962: update 649 at 1:15:59, update 650 at 1:26:19) against 1.24 s per
+    # training update, so the old 650 put 80 validations x 619 s = 13.8 h on the clock, more than
+    # the 18 h of training it was measuring. Do NOT read the run's own "val: 11.9%" line as the
+    # cost: that percentage is diluted by the one-off graph recording, which the timer books as
+    # loss time. In steady state the split is 56% stepping to 44% validation.
+    # This also sets the SAMPLE RATE of every curve (Loss_train, Loss_val, the nf-window RMS pair
+    # and Probe_combo_err are all appended in the same validation block) and the checkpoint
+    # cadence, since deepSI only writes on an improving validation. 1300 gives 15 points per run.
+    # MOVES WITH batch_size: change that and this number no longer means 10 epochs.
+    its_per_val=1300,
     n_its=None,                    # None = epochs decide (exact no-op). Set an int to cap BATCH
     # [s] rollout horizon; nf = nf_seconds / ts_new. 0.100 s = 5*tau_msd.
     nf_seconds=0.100,
@@ -222,6 +241,49 @@ if _lbfgs_ab_freeze is not None:
             'LBFGS_AB_FREEZE selects the arm of the encoder-freeze pair and must be '
             f'"none" (control, the whole vector) or "encoder", got {_lbfgs_ab_freeze!r}')
     CFG = replace(CFG, lbfgs_freeze=_freeze_arms[_lbfgs_ab_freeze])
+
+# One-step orthogonal-by-construction arms (D-192/D-200). Same narrow form and the same reason as
+# the overrides above: adjacent arms differ in EXACTLY ONE field, and editing this file between
+# launches is how a controlled experiment silently stops being controlled.
+#
+# _SHARED is what the arms hold in common and is applied identically to both, so it cannot become
+# a difference; _ARMS is the single field that distinguishes them. Both are recorded in
+# config.json (JOINT_ESTIMATION, PARAM_PRIOR, OBC), because the override rewrites CFG before it is
+# serialised, so a log always says which arm ran.
+#
+# A submission WITHOUT OBC_ARM is untouched by this block: the entry file's own CFG above still
+# has joint_estimation=False and obc=False, so every existing runner keeps its behaviour.
+#
+# Submit (see orthogonal-by-construction/runners/run_obc_arm.sh):
+#     OBC_ARM=noproj sbatch ...      joint estimation, no projection
+#     OBC_ARM=obc    sbatch ...      joint estimation, one-step OBC
+#     OBC_ARM=obc_affine sbatch ... one-step OBC with the frozen offset column
+_obc_arm = os.environ.get('OBC_ARM')
+if _obc_arm is not None:
+    _ARMS = {
+        'noproj': dict(obc=False, obc_space='tangent'),
+        'obc': dict(obc=True, obc_space='tangent'),
+        'obc_affine': dict(obc=True, obc_space='affine'),
+    }
+    if _obc_arm not in _ARMS:
+        raise ValueError(
+            'OBC_ARM selects the arm of the D-192 projection pair and must be "noproj" (joint '
+            'estimation, no projection), "obc" (ten-column tangent OBC), or "obc_affine" '
+            f'(eleven-column affine OBC), got {_obc_arm!r}')
+    _SHARED = dict(
+        # The reduced ten-combination block IS the protected space, so both arms train it.
+        # `physics_parameterization='reduced'` and the ten combo_init_detune factors are already
+        # in CFG above and are deliberately NOT repeated here: they are not arm properties.
+        joint_estimation=True,
+        # D-193: DECLARED, not inherited, and MEASURED rather than argued.
+        # probe_prior_scale.py walked the recovery path from the detuned start to the true
+        # combinations and reported ||g_prior|| / ||g_data|| = 49 at ten percent of the way, 372
+        # at the midpoint and 1433 at the true values, with the prior exceeding the data term on
+        # ALL TEN combinations at every point past the start. Left on, it pins both arms at their
+        # detuned parameters and the pair measures the regulariser instead of the projection.
+        param_prior=False,
+    )
+    CFG = replace(CFG, **_SHARED, **_ARMS[_obc_arm])
 
 
 def main():

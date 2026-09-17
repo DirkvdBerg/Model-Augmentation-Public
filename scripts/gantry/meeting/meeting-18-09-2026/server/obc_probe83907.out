@@ -1,0 +1,436 @@
+job_id=83907
+node_list=blade3
+cpus_per_task=4
+cuda_visible_devices=0
+Thu Sep 17 10:00:46 AM CEST 2026
+=== GPU info ===
+name, memory.total [MiB], driver_version, compute_cap
+Quadro RTX 6000, 24576 MiB, 590.48.01, 7.5
+=== host CPU (t_step tracks HOST dispatch, not the GPU) ===
+CPU(s):                                  64
+On-line CPU(s) list:                     0-63
+Model name:                              AMD EPYC 7302 16-Core Processor
+Thread(s) per core:                      2
+Core(s) per socket:                      16
+Socket(s):                               2
+NUMA node0 CPU(s):                       0-15,32-47
+NUMA node1 CPU(s):                       16-31,48-63
+=== toolchain (inductor needs gcc and triton; capability must be >= 7.0) ===
+/usr/bin/gcc
+gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0
+triton 3.1.0
+=== 0. arm wiring: what OBC_ARM actually changes ===
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+entry file  : /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/scripts/gantry/gantry_interconnect_dynamic.py
+dataset augmentation_ma50_b140-230_a6_z03 | seed 42 | nf 400 | batch 512 | lr 1e-05 | epochs 400 | its_per_val 650
+physics     : joint_estimation=True parameterization=reduced param_prior=False (strength 0.01)
+detuning    : [1.1, 1.1, 0.9, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 1.1]
+
+1. a submission without OBC_ARM is unchanged
+   unset -> noproj differs in: {'joint_estimation': (False, True), 'param_prior': (True, False)}
+   PASS: unset default is obc=False, joint_estimation=False
+
+2. the two arms differ in exactly one field
+   noproj -> obc differs in: {'obc': (False, True)}
+   PASS
+
+3. a misspelled arm is refused
+   PASS: OBC_ARM selects the arm of the D-192 projection pair and must be "noproj" (joint estimation, no proj
+
+recorded in config.json per arm:
+   OBC_ARM=noproj  OBC=False ORTH=False JOINT_ESTIMATION=True  PARAM_PRIOR=False  joint estimation of the ten combinations, no projection (the control)
+   OBC_ARM=obc     OBC=True  ORTH=False JOINT_ESTIMATION=True  PARAM_PRIOR=False  the same, with the one-step orthogonal-by-construction subtraction (D-192)
+
+ALL CHECKS PASSED; neither arm was launched.
+=== 1. parameter prior scale (D-193) ===
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+device cuda | nf 400 | batch 128 | stride 500 | param_rmse_baseline 0.01
+build + data: 8.4 s; windows in batch 128
+detune in free coordinates (s = 1 is recovery): kb_sum=-0.0953 cg1=-0.0953 cg2=+0.1054 cy=-0.0953 cb_sum=+0.1054 mh=+0.1054 m_total=-0.0953 m_diff=-0.0909 J_eff=+0.1054 d=-0.0953
+Lambda = param_rmse_baseline / |combo_init|: kb_sum=2.287e-06 cg1=6.270e-04 cg2=5.473e-04 cy=9.091e-04 cb_sum=6.173e-04 mh=1.100e-03 m_total=2.080e-04 m_diff=1.818e-02 J_eff=2.927e-03 d=9.091e-02
+
+s = 0.00   window MSE 3.3507e-08   param_loss 0.0000e+00   ||g_prior|| / ||g_data|| = 0.000e+00
+  combo           g_data      g_prior      ratio
+  kb_sum      +1.488e-10   +0.000e+00   0.00e+00
+  cg1         +2.221e-11   +0.000e+00   0.00e+00
+  cg2         -1.488e-11   +0.000e+00   0.00e+00
+  cy          -5.911e-11   +0.000e+00   0.00e+00
+  cb_sum      -1.694e-10   +0.000e+00   0.00e+00
+  mh          -4.760e-08   +0.000e+00   0.00e+00
+  m_total     +3.230e-08   +0.000e+00   0.00e+00
+  m_diff      -1.334e-10   -0.000e+00   0.00e+00
+  J_eff       -1.219e-07   +0.000e+00   0.00e+00
+  d           +3.342e-08   +0.000e+00   0.00e+00
+
+s = 0.10   window MSE 3.1191e-08   param_loss 9.8129e-08   ||g_prior|| / ||g_data|| = 4.932e+01
+  combo           g_data      g_prior      ratio
+  kb_sum      +1.333e-10   -1.879e-06   1.41e+04
+  cg1         +2.206e-11   -1.879e-06   8.52e+04
+  cg2         -1.397e-11   +2.141e-06   1.53e+05
+  cy          -5.319e-11   -1.879e-06   3.53e+04
+  cb_sum      -1.477e-10   +2.141e-06   1.45e+04
+  mh          -4.556e-08   +2.141e-06   4.70e+01
+  m_total     +2.861e-08   -1.879e-06   6.57e+01
+  m_diff      -1.416e-10   -1.818e-06   1.28e+04
+  J_eff       -1.108e-07   +2.141e-06   1.93e+01
+  d           +3.122e-08   -1.879e-06   6.02e+01
+
+s = 0.25   window MSE 2.8073e-08   param_loss 6.1380e-07   ||g_prior|| / ||g_data|| = 1.423e+02
+  combo           g_data      g_prior      ratio
+  kb_sum      +1.117e-10   -4.598e-06   4.12e+04
+  cg1         +2.130e-11   -4.598e-06   2.16e+05
+  cg2         -1.318e-11   +5.481e-06   4.16e+05
+  cy          -4.532e-11   -4.598e-06   1.01e+05
+  cb_sum      -1.192e-10   +5.480e-06   4.60e+04
+  mh          -4.265e-08   +5.480e-06   1.29e+02
+  m_total     +2.328e-08   -4.598e-06   1.97e+02
+  m_diff      -1.535e-10   -4.545e-06   2.96e+04
+  J_eff       -9.499e-08   +5.480e-06   5.77e+01
+  d           +2.809e-08   -4.598e-06   1.64e+02
+
+s = 0.50   window MSE 2.3769e-08   param_loss 2.4599e-06   ||g_prior|| / ||g_data|| = 3.722e+02
+  combo           g_data      g_prior      ratio
+  kb_sum      +7.962e-11   -8.874e-06   1.11e+05
+  cg1         +1.886e-11   -8.874e-06   4.70e+05
+  cg2         -1.327e-11   +1.140e-05   8.60e+05
+  cy          -3.453e-11   -8.874e-06   2.57e+05
+  cb_sum      -8.152e-11   +1.140e-05   1.40e+05
+  mh          -3.817e-08   +1.140e-05   2.99e+02
+  m_total     +1.494e-08   -8.874e-06   5.94e+02
+  m_diff      -1.715e-10   -9.091e-06   5.30e+04
+  J_eff       -7.048e-08   +1.140e-05   1.62e+02
+  d           +2.335e-08   -8.874e-06   3.80e+02
+
+s = 0.75   window MSE 2.0489e-08   param_loss 5.5490e-06   ||g_prior|| / ||g_data|| = 7.612e+02
+  combo           g_data      g_prior      ratio
+  kb_sum      +5.243e-11   -1.285e-05   2.45e+05
+  cg1         +1.533e-11   -1.285e-05   8.38e+05
+  cg2         -1.489e-11   +1.780e-05   1.20e+06
+  cy          -2.618e-11   -1.285e-05   4.91e+05
+  cb_sum      -5.467e-11   +1.780e-05   3.26e+05
+  mh          -3.420e-08   +1.780e-05   5.20e+02
+  m_total     +7.214e-09   -1.285e-05   1.78e+03
+  m_diff      -1.876e-10   -1.364e-05   7.27e+04
+  J_eff       -4.840e-08   +1.780e-05   3.68e+02
+  d           +1.918e-08   -1.285e-05   6.70e+02
+
+s = 1.00   window MSE 1.8128e-08   param_loss 9.8970e-06   ||g_prior|| / ||g_data|| = 1.433e+03
+  combo           g_data      g_prior      ratio
+  kb_sum      +2.971e-11   -1.653e-05   5.56e+05
+  cg1         +1.103e-11   -1.653e-05   1.50e+06
+  cg2         -1.781e-11   +2.469e-05   1.39e+06
+  cy          -1.975e-11   -1.653e-05   8.37e+05
+  cb_sum      -3.701e-11   +2.469e-05   6.67e+05
+  mh          -3.075e-08   +2.469e-05   8.03e+02
+  m_total     +6.394e-11   -1.653e-05   2.59e+05
+  m_diff      -2.015e-10   -1.818e-05   9.02e+04
+  J_eff       -2.876e-08   +2.469e-05   8.59e+02
+  d           +1.556e-08   -1.653e-05   1.06e+03
+
+==== verdict ====
+At the midpoint of the recovery path (s = 0.50) the prior gradient exceeds the data gradient on 10 of 10 combinations: ['kb_sum', 'cg1', 'cg2', 'cy', 'cb_sum', 'mh', 'm_total', 'm_diff', 'J_eff', 'd']
+||g_prior|| / ||g_data|| along the path: s=0.00:0.00e+00 s=0.10:4.93e+01 s=0.25:1.42e+02 s=0.50:3.72e+02 s=0.75:7.61e+02 s=1.00:1.43e+03
+
+READ THIS AS: a combination whose ratio exceeds 1 is held at its DETUNED value by the
+prior, in BOTH arms, for a reason unrelated to the projection. If that list is not
+empty, set param_prior=False in the _SHARED block of gantry_interconnect_dynamic.py
+(or lower param_rmse_baseline until it is) before launching the pair. The choice is
+recorded as PARAM_PRIOR in config.json either way (D-193).
+
+written /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/scripts/gantry/orthogonal-by-construction/implementation/08-one-step/../results/2026-09-17/probe_prior_scale.json
+=== 2. compile ladder (D-192 sect. 9.7), one rung per process ===
+
+----- rung: reduce-overhead -----
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+==============================================================================
+MODE reduce-overhead | device Quadro RTX 6000 sm_75 25.4 GB | torch 2.5.1
+==============================================================================
+Data dir (augmentation_ma50_b140-230_a6_z03): /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/data/gantry/matlab/trajectory/augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[closed loop] one bank over 18 records, 8 distinct controllers, Y_op [-0.3, -0.22, -0.15, -0.1, 0.0, 0.1, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[closed loop] training rollout COMPILED: backend=inductor mode=reduce-overhead fullgraph=True
+[closed loop] validation and diagnostics stay EAGER (they use fs.hfn directly)
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.1 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 671944 reference tuples, refresh=epoch, solve float64, rollout torch.float32
+build 10.4 s | reference tuples 671944 | windows in batch 512 | production nf 400
+
+[compile] build_closed_loop compiled the pair: True (backend inductor, mode reduce-overhead, fullgraph=True)
+
+[objectives] 7 evaluations at nf 20, batch 512, through ClosedLoopSimulator
+[obc] refresh at epoch 0: vbar=+0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00
+  J: 4031664 x 10, rank 10/10 at tol 2.132e-07 (rtol 8.952e-10), cond 8.9250e+02, build 2.3 s, svd 0.4 s
+  singular values: 2.3813e+02 2.3719e+01 2.3543e+01 1.2411e+01 4.4945e+00 3.4117e+00 2.4568e+00 1.0551e+00 9.2489e-01 2.6681e-01
+  column norms:    kb_sum=4.500e+00 cg1=2.268e+00 cg2=2.570e+00 cy=1.056e+00 cb_sum=9.066e-01 mh=2.323e+01 m_total=1.745e+01 m_diff=2.493e+00 J_eff=2.378e+02 d=2.389e+01
+  largest |column correlations|: cg1~cg2=-0.9817, mh~J_eff=+0.4661, mh~m_total=-0.3717, m_total~J_eff=+0.2145, J_eff~d=-0.1461, m_total~m_diff=-0.1297
+  r_J = 0.000e+00 (vs first basis), r_J_step = 0.000e+00 (vs previous)
+  FAILED at objective 0: torch._dynamo.exc.UserError: Dynamic control flow is not supported at the moment. Please use functorch.experimental.control_flow.cond to explicitly capture the control flow. For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#cond-operands
+
+from user code:
+   File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/model_augmentation/fit_systems/interconnect.py", line 313, in output_only
+    self.init_forward()
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/model_augmentation/fit_systems/interconnect.py", line 217, in init_forward
+    assert not detect_algebraic_loop(directional_signal_connection_matrix)
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/model_augmentation/utils/utils.p
+  (an illegal memory access poisons the CUDA context; this process cannot continue and the next rung runs in its own process)
+written /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/scripts/gantry/orthogonal-by-construction/implementation/08-one-step/../results/2026-09-17/probe_compile_reduce-overhead.json
+srun: error: blade3: task 0: Exited with exit code 1
+rung reduce-overhead FAILED (see above); continuing
+
+----- rung: default -----
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+==============================================================================
+MODE default | device Quadro RTX 6000 sm_75 25.4 GB | torch 2.5.1
+==============================================================================
+Data dir (augmentation_ma50_b140-230_a6_z03): /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/data/gantry/matlab/trajectory/augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[closed loop] one bank over 18 records, 8 distinct controllers, Y_op [-0.3, -0.22, -0.15, -0.1, 0.0, 0.1, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[closed loop] training rollout COMPILED: backend=inductor mode=default fullgraph=True
+[closed loop] validation and diagnostics stay EAGER (they use fs.hfn directly)
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.1 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 671944 reference tuples, refresh=epoch, solve float64, rollout torch.float32
+build 10.6 s | reference tuples 671944 | windows in batch 512 | production nf 400
+
+[compile] build_closed_loop compiled the pair: True (backend inductor, mode default, fullgraph=True)
+
+[objectives] 7 evaluations at nf 20, batch 512, through ClosedLoopSimulator
+[obc] refresh at epoch 0: vbar=+0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00
+  J: 4031664 x 10, rank 10/10 at tol 2.132e-07 (rtol 8.952e-10), cond 8.9250e+02, build 2.3 s, svd 0.4 s
+  singular values: 2.3813e+02 2.3719e+01 2.3543e+01 1.2411e+01 4.4945e+00 3.4117e+00 2.4568e+00 1.0551e+00 9.2489e-01 2.6681e-01
+  column norms:    kb_sum=4.500e+00 cg1=2.268e+00 cg2=2.570e+00 cy=1.056e+00 cb_sum=9.066e-01 mh=2.323e+01 m_total=1.745e+01 m_diff=2.493e+00 J_eff=2.378e+02 d=2.389e+01
+  largest |column correlations|: cg1~cg2=-0.9817, mh~J_eff=+0.4661, mh~m_total=-0.3717, m_total~J_eff=+0.2145, J_eff~d=-0.1461, m_total~m_diff=-0.1297
+  r_J = 0.000e+00 (vs first basis), r_J_step = 0.000e+00 (vs previous)
+  FAILED at objective 0: torch._dynamo.exc.UserError: Dynamic control flow is not supported at the moment. Please use functorch.experimental.control_flow.cond to explicitly capture the control flow. For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#cond-operands
+
+from user code:
+   File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/model_augmentation/fit_systems/interconnect.py", line 313, in output_only
+    self.init_forward()
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/model_augmentation/fit_systems/interconnect.py", line 217, in init_forward
+    assert not detect_algebraic_loop(directional_signal_connection_matrix)
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/model_augmentation/utils/utils.p
+  (an illegal memory access poisons the CUDA context; this process cannot continue and the next rung runs in its own process)
+written /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/scripts/gantry/orthogonal-by-construction/implementation/08-one-step/../results/2026-09-17/probe_compile_default.json
+srun: error: blade3: task 0: Exited with exit code 1
+rung default FAILED (see above); continuing
+
+----- rung: max-autotune -----
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+==============================================================================
+MODE max-autotune | device Quadro RTX 6000 sm_75 25.4 GB | torch 2.5.1
+==============================================================================
+Data dir (augmentation_ma50_b140-230_a6_z03): /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/data/gantry/matlab/trajectory/augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[closed loop] one bank over 18 records, 8 distinct controllers, Y_op [-0.3, -0.22, -0.15, -0.1, 0.0, 0.1, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[closed loop] training rollout COMPILED: backend=inductor mode=max-autotune fullgraph=True
+[closed loop] validation and diagnostics stay EAGER (they use fs.hfn directly)
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.1 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 671944 reference tuples, refresh=epoch, solve float64, rollout torch.float32
+build 10.0 s | reference tuples 671944 | windows in batch 512 | production nf 400
+
+[compile] build_closed_loop compiled the pair: True (backend inductor, mode max-autotune, fullgraph=True)
+
+[objectives] 7 evaluations at nf 20, batch 512, through ClosedLoopSimulator
+[obc] refresh at epoch 0: vbar=+0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00
+  J: 4031664 x 10, rank 10/10 at tol 2.132e-07 (rtol 8.952e-10), cond 8.9250e+02, build 2.3 s, svd 0.4 s
+  singular values: 2.3813e+02 2.3719e+01 2.3543e+01 1.2411e+01 4.4945e+00 3.4117e+00 2.4568e+00 1.0551e+00 9.2489e-01 2.6681e-01
+  column norms:    kb_sum=4.500e+00 cg1=2.268e+00 cg2=2.570e+00 cy=1.056e+00 cb_sum=9.066e-01 mh=2.323e+01 m_total=1.745e+01 m_diff=2.493e+00 J_eff=2.378e+02 d=2.389e+01
+  largest |column correlations|: cg1~cg2=-0.9817, mh~J_eff=+0.4661, mh~m_total=-0.3717, m_total~J_eff=+0.2145, J_eff~d=-0.1461, m_total~m_diff=-0.1297
+  r_J = 0.000e+00 (vs first basis), r_J_step = 0.000e+00 (vs previous)
+  FAILED at objective 0: torch._dynamo.exc.UserError: Dynamic control flow is not supported at the moment. Please use functorch.experimental.control_flow.cond to explicitly capture the control flow. For more information about this error, see: https://pytorch.org/docs/main/generated/exportdb/index.html#cond-operands
+
+from user code:
+   File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/model_augmentation/fit_systems/interconnect.py", line 313, in output_only
+    self.init_forward()
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/model_augmentation/fit_systems/interconnect.py", line 217, in init_forward
+    assert not detect_algebraic_loop(directional_signal_connection_matrix)
+  File "/dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/model_augmentation/utils/utils.p
+  (an illegal memory access poisons the CUDA context; this process cannot continue and the next rung runs in its own process)
+written /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/scripts/gantry/orthogonal-by-construction/implementation/08-one-step/../results/2026-09-17/probe_compile_max-autotune.json
+srun: error: blade3: task 0: Exited with exit code 1
+rung max-autotune FAILED (see above); continuing
+
+----- rung: aot_eager -----
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+==============================================================================
+MODE aot_eager | device Quadro RTX 6000 sm_75 25.4 GB | torch 2.5.1
+==============================================================================
+Data dir (augmentation_ma50_b140-230_a6_z03): /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/data/gantry/matlab/trajectory/augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[closed loop] one bank over 18 records, 8 distinct controllers, Y_op [-0.3, -0.22, -0.15, -0.1, 0.0, 0.1, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.1 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 671944 reference tuples, refresh=epoch, solve float64, rollout torch.float32
+build 10.4 s | reference tuples 671944 | windows in batch 512 | production nf 400
+
+[trace] backend=aot_eager fullgraph=True
+  FAILED: RuntimeError: OBC coefficient requested before any basis was built; call maybe_refresh/refresh first.
+
+written /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/scripts/gantry/orthogonal-by-construction/implementation/08-one-step/../results/2026-09-17/probe_compile_aot_eager.json
+srun: error: blade3: task 0: Exited with exit code 1
+rung aot_eager FAILED (see above); continuing
+
+----- rung: eager -----
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+==============================================================================
+MODE eager | device Quadro RTX 6000 sm_75 25.4 GB | torch 2.5.1
+==============================================================================
+Data dir (augmentation_ma50_b140-230_a6_z03): /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/data/gantry/matlab/trajectory/augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[closed loop] one bank over 18 records, 8 distinct controllers, Y_op [-0.3, -0.22, -0.15, -0.1, 0.0, 0.1, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.1 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 671944 reference tuples, refresh=epoch, solve float64, rollout torch.float32
+build 10.6 s | reference tuples 671944 | windows in batch 512 | production nf 400
+
+[eager] no compilation
+
+[objectives] 7 evaluations at nf 20, batch 512, through ClosedLoopSimulator
+[obc] refresh at epoch 0: vbar=+0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00
+  J: 4031664 x 10, rank 10/10 at tol 2.132e-07 (rtol 8.952e-10), cond 8.9250e+02, build 2.3 s, svd 0.4 s
+  singular values: 2.3813e+02 2.3719e+01 2.3543e+01 1.2411e+01 4.4945e+00 3.4117e+00 2.4568e+00 1.0551e+00 9.2489e-01 2.6681e-01
+  column norms:    kb_sum=4.500e+00 cg1=2.268e+00 cg2=2.570e+00 cy=1.056e+00 cb_sum=9.066e-01 mh=2.323e+01 m_total=1.745e+01 m_diff=2.493e+00 J_eff=2.378e+02 d=2.389e+01
+  largest |column correlations|: cg1~cg2=-0.9817, mh~J_eff=+0.4661, mh~m_total=-0.3717, m_total~J_eff=+0.2145, J_eff~d=-0.1461, m_total~m_diff=-0.1297
+  r_J = 0.000e+00 (vs first basis), r_J_step = 0.000e+00 (vs previous)
+   0      4.59 s  loss 7.055931e-05
+   1      1.49 s  loss 6.119765e-05
+   2      1.44 s  loss 5.477315e-05
+   3      1.47 s  loss 4.948216e-05
+   4      1.45 s  loss 4.461153e-05
+   5      1.47 s  loss 3.990871e-05
+[obc] refresh at epoch 1: vbar=+5.6588e-05 +1.4657e-05 +1.5878e-05 +5.8483e-05 +5.7875e-05 -5.8129e-05 -5.7712e-05 +5.4152e-05 +5.7427e-05 -5.8217e-05
+  J: 4031664 x 10, rank 10/10 at tol 2.132e-07 (rtol 8.952e-10), cond 8.9248e+02, build 1.9 s, svd 0.1 s
+  singular values: 2.3812e+02 2.3717e+01 2.3542e+01 1.2410e+01 4.4945e+00 3.4116e+00 2.4568e+00 1.0550e+00 9.2490e-01 2.6681e-01
+  column norms:    kb_sum=4.500e+00 cg1=2.268e+00 cg2=2.570e+00 cy=1.056e+00 cb_sum=9.066e-01 mh=2.323e+01 m_total=1.745e+01 m_diff=2.493e+00 J_eff=2.378e+02 d=2.389e+01
+  largest |column correlations|: cg1~cg2=-0.9817, mh~J_eff=+0.4661, mh~m_total=-0.3717, m_total~J_eff=+0.2144, J_eff~d=-0.1461, m_total~m_diff=-0.1297
+  r_J = 4.973e-05 (vs first basis), r_J_step = 4.973e-05 (vs previous)
+   6      3.59 s  loss 3.547773e-05  (basis refresh)
+  first call 4.6 s (compile + basis), steady state 1.47 s, refreshes 2
+
+[memory] one update at the PRODUCTION shape: nf 400, batch 512, checkpoint_chunk 0
+  off loss 8.3547e-05   7.24 s   peak 0.95 GB of 25.38 GB
+  [compile] update took 16.8 s against a 0.81 s median at 512 windows: possibly a torch.compile RECOMPILE. If it repeats around validations, check whether a compiled callable is reached on the wrong device.
+  on  loss 8.3745e-05   31.17 s   peak 1.39 GB of 25.38 GB
+  peak on/off 1.46x | update on/off 4.31x | headroom with the correction on 95%
+
+MODE eager: OK
+written /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/scripts/gantry/orthogonal-by-construction/implementation/08-one-step/../results/2026-09-17/probe_compile_eager.json
+
+=== ladder summary ===
+mode               ok         steady s   peak GB on  error
+aot_eager          False             -            -  RuntimeError: OBC coefficient requested before any basis was built; call maybe_refresh/ref
+default            False             -            -  torch._dynamo.exc.UserError: Dynamic control flow is not supported at the moment. Please u
+eager              True           1.47         1.39  
+max-autotune       False             -            -  torch._dynamo.exc.UserError: Dynamic control flow is not supported at the moment. Please u
+reduce-overhead    False             -            -  torch._dynamo.exc.UserError: Dynamic control flow is not supported at the moment. Please u
+
+NO inductor rung survived; fall back to compile_mode=None (eager).
+Thu Sep 17 10:05:19 AM CEST 2026
+done

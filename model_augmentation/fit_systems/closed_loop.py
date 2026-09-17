@@ -213,13 +213,17 @@ class ControllerBank(torch.nn.Module):
         return u_norm[0].detach().numpy(), expect.detach().numpy(), rel.detach().numpy()
 
 
-def _rollout_segment(hfn, output_only, step, ctrl, u_seg, y_seg, x, xc):
+def _rollout_segment(hfn, output_only, step, ctrl, u_seg, y_seg, x, xc, obc_pass=None,
+                     pass_mats=None):
     """@added (D-169). The timestep loop, over ONE contiguous segment of the horizon.
 
     Extracted from `closed_loop_rollout` verbatim so that a segment can be handed to
     `torch.utils.checkpoint` as a single callable. It is the ONLY place the loop body lives:
     the un-checkpointed path calls this once over the whole horizon, so there is no second
     implementation that could drift from the checkpointed one.
+
+    CHANGED (D-194/D-195): `obc_pass`, the once-per-objective `(mats, dmats)` pair, is handed to
+    the model step as a tensor-tuple argument. None = the call the loop always made.
 
     Returns (y_seg_pred, x_final, xc_final).
     """
@@ -231,11 +235,15 @@ def _rollout_segment(hfn, output_only, step, ctrl, u_seg, y_seg, x, xc):
         y_model = output_only(x)                       # D_d = 0: state only
         ys.append(y_model)
         u_fb, xc = step(xc, y_t - y_model, ctrl)
-        _, x = hfn(x, u_t + u_fb)
+        if obc_pass is None and pass_mats is None:
+            _, x = hfn(x, u_t + u_fb)
+        else:
+            _, x = hfn(x, u_t + u_fb, obc_pass, pass_mats)
     return torch.stack(ys, dim=1), x, xc
 
 
-def closed_loop_rollout(hfn, output_only, u_data, y_data, x0, bank, ctrl_ix, xc0=None, chunk=0):
+def closed_loop_rollout(hfn, output_only, u_data, y_data, x0, bank, ctrl_ix, xc0=None, chunk=0,
+                        obc_pass=None, pass_mats=None):
     """THE closed-loop rollout. Training, validation and checkpoint selection all call this one.
 
     hfn          the model step, (x, u) -> (y, x_next), NORMALISED
@@ -281,7 +289,8 @@ def closed_loop_rollout(hfn, output_only, u_data, y_data, x0, bank, ctrl_ix, xc0
     # under no_grad -- there is no graph to trade away there, and checkpoint would only add a
     # warning and a redundant forward to every validation free run.
     if not chunk or chunk >= nf or not torch.is_grad_enabled():
-        return _rollout_segment(hfn, output_only, step, ctrl, u_data, y_data, x0, xc)
+        return _rollout_segment(hfn, output_only, step, ctrl, u_data, y_data, x0, xc,
+                                obc_pass, pass_mats)
 
     # EXACT, not truncated. x and xc cross the segment boundary WITHOUT .detach(), so the
     # gradient still spans all nf steps; checkpoint re-enters the graph on the backward pass and
@@ -293,7 +302,7 @@ def closed_loop_rollout(hfn, output_only, u_data, y_data, x0, bank, ctrl_ix, xc0
     for s in range(0, nf, chunk):
         y_seg, x, xc = torch.utils.checkpoint.checkpoint(
             _rollout_segment, hfn, output_only, step, ctrl,
-            u_data[:, s:s + chunk], y_data[:, s:s + chunk], x, xc,
+            u_data[:, s:s + chunk], y_data[:, s:s + chunk], x, xc, obc_pass, pass_mats,
             use_reentrant=False)
         ys.append(y_seg)
     # cat over nf/chunk segments, not nf timesteps: the per-step stack already happened inside
@@ -529,7 +538,10 @@ class ClosedLoopSimulator:
             self._compiled = saved
 
     # ---- training -----------------------------------------------------------------------
-    def __call__(self, fit_sys, x, ufuture, yfuture, ctrl_ix=None, **kw):
+    def __call__(self, fit_sys, x, ufuture, yfuture, ctrl_ix=None, obc_pass=None,
+                 pass_mats=None, **kw):
+        # CHANGED (D-194/D-195): `obc_pass` is the once-per-objective tangent pair; it is threaded
+        # to the rollout unchanged and reaches the model step as a tensor-tuple argument.
         if ctrl_ix is None:
             raise RuntimeError(
                 'the closed loop was driven without ctrl_ix. make_training_data must supply it as '
@@ -565,7 +577,8 @@ class ClosedLoopSimulator:
         _t0 = time.perf_counter()
         y_pred, x_final, _ = closed_loop_rollout(hfn, out_fn,
                                                  ufuture, yfuture, x, self.bank, ctrl_ix.long(),
-                                                 chunk=self.checkpoint_chunk)
+                                                 chunk=self.checkpoint_chunk,
+                                                 obc_pass=obc_pass, pass_mats=pass_mats)
         if use_c:
             # CUDA graphs reuse their memory pool, so anything retained past the next invocation
             # would point at overwritten memory. Cloning the two outputs that leave this method

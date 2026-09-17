@@ -235,6 +235,21 @@ discrete transition is dominated by identity propagation, so protecting
 \(\Gamma\) can exclude a broad state-like ANN direction unrelated to parameter
 ambiguity. The extended space is the first follow-up comparison.
 
+Decision D-200 implements that comparison using
+\begin{equation}
+    B_b=[J_b\mid c],\qquad
+    c_k=f_{\mathrm{base}}^d(\bar\vartheta_b,z_k).
+    \label{eq:implemented-affine-space}
+\end{equation}
+This is the same protected space as Eq.~\eqref{eq:extended-space}, since
+\(\Gamma=c-J_b\bar\vartheta_b\) and therefore
+\(\operatorname{range}([J_b\mid c])=
+\operatorname{range}([J_b\mid\Gamma])\). The code uses \(c\) because the
+optimized RK4 sensitivity evaluation already returns this primal transition.
+The eleven columns are scaled to unit 2-norm before the float64 SVD; the
+coefficient and all basis products are transformed back to the original
+coordinates. The ten-column arm remains unscaled.
+
 Existing investigation results used the extended eleven-column space
 \([J_b\mid\Gamma]\), not the ten-column primary space. They therefore neither
 establish benefit nor establish harm for Eq.~\eqref{eq:protected-space}.
@@ -409,9 +424,24 @@ point \((\hat x_k,u_k)\), apply
       \theta_{\mathrm{aux}}.
     \label{eq:pointwise-correction}
 \end{equation}
-Evaluate \(J_b\theta_{\mathrm{aux}}\) as one forward-mode JVP of the
-production transition in direction \(\theta_{\mathrm{aux}}\). Leave
-\(f_{\mathrm{aug}}^a\) unchanged.
+Evaluate \(J_b\theta_{\mathrm{aux}}\) with the hand-written forward
+sensitivity of the production RK4 transition (validated against a
+forward-mode JVP). Leave \(f_{\mathrm{aug}}^a\) unchanged.
+
+For the affine arm, write the eleven-entry coefficient as
+\(\theta_{\mathrm{aux}}=(a^\top,\alpha)^\top\) and replace the subtracted
+term in Eq.~\eqref{eq:pointwise-correction} by
+\begin{equation}
+ J_b^{\mathrm n}(\bar\vartheta_b^{(r)},x_{b,k},u_k)a
+ +\alpha f_{\mathrm{base}}^{d,\mathrm n}
+   (\bar\vartheta_b^{(r)},x_{b,k},u_k).
+ \label{eq:affine-pointwise-correction}
+\end{equation}
+The second term uses the frozen expansion point, not the live physical
+parameters: it must be the same column against which \(\alpha\) was fitted.
+The RK4 tangent routine returns the primal transition and directional
+derivative together, so the affine correction still uses one RK4 call per
+corrected step.
 
 The SVD remains outside the transition, but the JVP adds work at every rollout
 timestep. Benchmark its runtime and memory and its interaction with gradient
@@ -429,7 +459,8 @@ Use identical data, initialization, controller, normalization, optimizer and
 random seed for:
 \begin{enumerate}
     \item the jointly estimated augmented model without OBC;
-    \item the jointly estimated augmented model with one-step OBC.
+    \item the jointly estimated augmented model with ten-column tangent OBC;
+    \item the same model with eleven-column affine-offset OBC.
 \end{enumerate}
 Initialize the same ten reduced combinations in both runs. Also report the
 following two FP references separately:
@@ -495,7 +526,7 @@ Interpret the first results using the following pre-committed criteria.
 \toprule
 Observation & Interpretation & Action \\
 \midrule
-Rank below ten & The chosen combinations remain redundant or the data do not
+Rank below the declared dimension (ten for tangent, eleven for affine) & The chosen space is redundant or the data do not
 excite every direction & Resolve the combinations or experiment; do not start
 the recovery comparison \\
 \(r_\perp>\tau_\perp\) & The by-construction implementation is incorrect or

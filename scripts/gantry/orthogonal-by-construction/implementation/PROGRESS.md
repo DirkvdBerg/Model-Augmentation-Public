@@ -595,3 +595,133 @@ subgraph per step; at `nf = 400` and `M = 256` that is 102400 ANN evaluations pe
 the coefficient across the timesteps of one pass is exact, because the parameters do not change
 within a pass, and was left out only because the interconnect offers no pass-boundary hook. If
 memory binds before anything else does, that is the change to make.
+
+
+---
+
+# Stage 8 -- one-step OBC on the production pipeline (D-192) -- 08-one-step/
+
+Handoff `tasks/handoffs/2026-09-16-implement-one-step-obc-fable.md`. Unlike stages 0 to 7 this
+stage runs on the PRODUCTION model (`gantry_dynamic.model.build_model`, closed loop, the
+entry point's config switched to reduced joint estimation) and on the ACTIVE dataset
+`augmentation_ma50_b140-230_a6_z03`, float32 rollout, float64 construction. The remnant
+`obc_projection.py` of stages 2 to 6 was not used.
+
+**Built.** `model_augmentation/fit_systems/obc.py` (`__project_origin__ = "added"`): `OBCBasis`
+(economy SVD, declared rank tolerance, differentiable coefficient, `r_perp`, `r_overlap`,
+`relative_change`), `OBCLifecycle` (once-per-objective coefficient, epoch refresh, rank-loss
+retention, `OBCRankLossAbort`), `build_stacked_sensitivity` (chunked float64 `jacfwd` over the
+batched step), `directional_correction` (the `jvp` reference used by equivalence tests). Gantry side in
+`scripts/gantry/gantry_dynamic/obc_gantry.py` (reference set, `GantryOBCCorrection`,
+`attach_obc`) and `obc_diagnostics.py` (qualification, absorber truth plant with parameters as
+arguments, `rho`). Seams: `Reduced_Gantry_State_Block.transition_from_free(v, z)` (pure, no
+`_cur` write; `_rk4`, `_deriv_with`, `_mats_from_raw` factored out with the same operations),
+`Interconnect.forward(x, u, obc_pass=None)` plus the `obc_correction` submodule,
+`SSE_Interconnect.simulate`, `ClosedLoopSimulator.__call__`, `closed_loop_rollout`,
+`_rollout_segment` (all thread `obc_pass`), `SSE_Interconnect_Composed.loss` (refresh at the
+epoch boundary, coefficient once), D-198 validation synchronization of `theta_frozen`, checkpoint exclusion
+of the lifecycle. Config: `obc`, `obc_refresh`, `obc_ref_chunk`, `obc_rank_rtol` (defaults off,
+recorded in config.json). Three arm configs in `08-one-step/experiment_configs.py`
+(`joint_noproj`, `joint_soft2025`, `joint_obc`); none launched.
+
+**Compile probe** (`probe_compile.py`, Quadro P2000 sm_61, torch 2.5.1). Rung 1 holds under
+Dynamo plus AOTAutograd: one graph, 0 graph breaks, 825 ops; with `error_on_recompile=True` no
+recompile across two coefficient values, a rewritten `vbar` buffer, a grad-carrying coefficient
+and ten objectives through the production simulator seam including one mid-run basis refresh;
+compiled output and `d x_plus / d theta` equal eager to `0.0`. Rung 2 (the argument contract)
+was found by the probe itself, three times: the coefficient, the state and the fed-back input
+must carry `requires_grad=True`, and rank and batch must match the rollout's, which is how
+`fit()` calls the step; each mismatch was a probe-only call shape. Inductor codegen could not
+run here (`Triton only supports devices of CUDA Capability >= 7.0, but your device is of CUDA
+capability 6.1`); that measurement needs the cluster. Rung 4 recorded for reference only:
+central difference against the exact JVP, relative error `6.6e-4` float32, `7.2e-10` float64.
+
+**Behavioral tests** (`test_behavior.py`, CPU float32, nf 50, batch 8, reference stride 200).
+
+| | number | verdict |
+|-|-|-|
+| T1 coefficient once per objective | +1 objective eval, 1 reference-set ANN pass, 50 rollout passes | MET |
+| T2 gradient through the coefficient | norm of `d theta.sum() / d ANN weights` = 3.77e+02 | MET |
+| T3 detaching changes the ANN gradient | loss identical, relative gradient change 4.3e-03, cos 0.999991 | MET |
+| T4 stacked orthogonality at the floor | see the floor paragraph below | MET |
+| T5 after one Adam step | fresh coefficient at the floor, stale coefficient 2.8e-03 | MET |
+| T6 additional-state rows | `torch.equal` on rows 6..13 and on `y`; physical rows differ by 2.6e-04 | MET |
+| T7 disabled path vs commit a52dd55 | block, `transition_from_free == forward`, `Interconnect.forward`, 50-step closed-loop rollout all `torch.equal` (float32; block also float64) | MET |
+| T8 ten physical gradients | all nonzero, 1e-07 to 9e-05 | MET |
+| T9 save / reload | no functorch wrapper in `_cur`; 7 MB checkpoint without lifecycle or reference set; restore on the live system; reload reproduces; objective runs against the reloaded adapter | MET |
+| T10 no recompilation | `results/2026-09-16/probe_compile.log`: 10 objectives, one refresh, no recompile (aot_eager) | MET |
+| T11 synthetic lifecycle | rank 9 retains the previous basis, second consecutive aborts, first-build rank loss aborts | MET |
+
+**Dataset qualification** (`run_qualification.py`, every valid sample: 671,944 tuples, 4,031,664
+rows, 14 x 47,996). Both points rank 10 at the numpy tolerance (rtol 8.95e-10) and at every
+rtol from 1e-4 to 1e-14.
+
+| | nominal | detuned 10 percent (training start) |
+|-|-|-|
+| singular values | 2.15e+02, 2.36e+01, 1.94e+01, 1.15e+01, 3.69, 3.16, 2.37, 9.2e-01, 7.9e-01, 2.8e-01 | 2.38e+02, 2.37e+01, 2.35e+01, 1.24e+01, 4.49, 3.41, 2.46, 1.06, 9.2e-01, 2.7e-01 |
+| condition number | 7.66e+02 | 8.93e+02 |
+| column-normalized condition number | 10.5 | 12.5 |
+| worst column correlation | `cg1 ~ cg2 = -0.977` | `cg1 ~ cg2 = -0.982` |
+| leave-one-record-out | rank 10 for every record; `sigma_min` 0.232 (drop T13) to 0.281 | rank 10 for every record; `sigma_min` 0.221 (drop T13) to 0.267 |
+
+Relative Frobenius distance between the two bases 0.110. Column contributions: `kb_sum` comes
+almost entirely from the two yaw records (T12 0.42, T14 0.58); the damping columns `cg1`, `cg2`
+from T11, T13, T10 (0.25 / 0.32 / 0.16); `cy` from T7, T14, T11; the mass columns from every
+record. No record is indispensable for rank, and no column is carried by a single record. The
+one poorly separated pair is `cg1` against `cg2` (correlation -0.98; the tenth singular value
+is that difference direction, at 1.3e-3 of the largest). Y coverage spans [-0.300, +0.300]
+with mass at the five standstill points and under the sweeps.
+
+**Verdict on the dataset.** Numerically usable rank ten at both points and at every
+leave-one-out; condition number below 1e3 in the block's coordinates. NOT a claim of practical
+joint identifiability: `cg1 - cg2` is separated by one part in 770, and this preflight measured
+structure and conditioning, not estimation error. The training configuration is marked
+"rank-qualified, cg1/cg2 weakly separated".
+
+**Truth plant check and the rho table.** One-step prediction of the recorded next state from the
+reference tuples: D-188 parameters (`ma_frac 0.50, zeta_a 0.03`) relative RMS 1.74e-4;
+`zeta 0.05` 4.4e-4; the `oracle.py` values (`0.10, 0.05`) 7.3e-3. D-188 confirmed and used.
+`rho(B; delta) = ||P_B delta|| / ||delta||`, routed physical rows, normalized coordinates:
+
+| delta | `J` nominal | `[J | Gamma]` nominal | `J` detuned | `[J | Gamma]` detuned |
+|-|-|-|-|-|
+| truth step, recorded absorber state | 0.2003 | 0.2003 | 0.8545 | 0.8545 |
+| truth step, zero absorber state | 0.3723 | 0.3723 | 0.9413 | 0.9413 |
+| recorded next state minus baseline (data) | 0.2067 | 0.2068 | 0.8559 | 0.8559 |
+
+`Gamma` is 0.90 outside `span(J)` and `rank([J | Gamma]) = 11`, yet adding it changes `rho` in
+the fourth decimal: on this data the affine offset does not overlap the discrepancy. At the
+NOMINAL point a fifth of the discrepancy is in the baseline tangent (Condition 4 unfavourable
+but not dominant); at the DETUNED start 85 percent of the discrepancy is in span, because there
+the discrepancy is dominated by the parameter error itself, which is exactly what joint
+estimation is supposed to remove and the projection must leave to the physical block. No
+training conclusion is drawn from this (handoff sect. 5.5).
+
+**Decimation** (diagnostic only; the primary set is complete). Stride 10 / 100 / 1000: rank 10,
+cond 888 / 897 / 1016, scaled-singular-value error 6.8e-3 / 6.5e-3 / 9.7e-2, coefficient of
+the ANN field relative to the full solve 2.0e-3 / 2.3e-2 / 1.9e-1; for random fields the
+decimated coefficient is wrong by factors of 1 to 30. Not adopted.
+
+**Runtime and memory** (full set, CUDA P2000, eager, batch 512): per step forward off 13.0 ms,
+on 72.8 ms (5.6x); forward plus backward off 48.9 ms, on 131.2 ms (2.7x); once-per-objective
+reference pass plus solve 0.020 s forward, 0.090 s with backward; basis refresh 11.3 s (build
+10.6 s, SVD 0.5 s); one update at nf 20 off 0.75 s, on 2.82 s (3.8x); a second run of the same script measured 3.3x per step forward plus backward and 4.0x per update, so the eager ratio on this card is 2.7x to 3.3x per step and 3.8x to 4.0x per update. Memory: reference tuples
+70 MB (172 MB with the diagnostic arrays), basis factors 322.5 MB float64 on the device, retained
+ANN graph after the reference pass 194 MB, peak 1.38 GB. The per-step ratio is the eager
+dispatch-bound figure on a card that cannot run inductor; stage 0 measured 3.19x for a training
+step at the production batch on the CPU, consistent with the 2.7x here.
+
+**Orthogonality floor.** Measured, not assumed, through the ROLLOUT path (float32 ANN write minus the float32 JVP correction with the float64-solved coefficient cast to float32), on random fields with the ANN field's norm and in-span fraction (`r_overlap` 0.179 on the full set). Acceptance = 3 x the worst draw (HEURISTIC c = 3). Decimated set (stride 200, T4): floor 1.5e-9 to 6.0e-8 over ten draws, ANN residual `r_perp` 9.3e-9, float64 stored-factor construction 4.5e-15; after one Adam step the fresh coefficient gives 1.1e-9 and the stale one 2.8e-3 (T5). Full set (671,944 tuples): floor max 4.3e-8 over five draws, ANN residual 5.8e-8, float64 construction 5.6e-17; `kappa * eps` for reference 1.1e-4 float32, 2.0e-13 float64. Within the declared threshold at both scales: the stacked condition holds to float32 rounding on the path training actually runs, and to float64 rounding in the construction.
+
+**Plan changes.** Two, both from the probe: the coefficient argument contract (rung 2) is now
+written into D-192 and the probe; and the basis is built on the device of the live parameters
+with the drift comparison device-safe, after the mid-run refresh in the probe crossed CPU and
+CUDA. One diagnostic correction: the random-field floor must match the ANN field's in-span
+fraction, not only its norm, or it is optimistic by the ratio of the two in-span fractions
+(first run, white fields: max 1.2e-9 against an ANN-field residual of 5.8e-8 on the full set;
+`run_qualification_run1_whitefloor.log`).
+
+**Not established.** No training was run; nothing here says whether the projection helps
+recovery on this plant. Inductor codegen and CUDA graphs with the JVP are untested (host
+limitation). Every orthogonality claim is one-step, stacked over the reference set, local at
+`vbar`, on the slice `x_a = 0`.

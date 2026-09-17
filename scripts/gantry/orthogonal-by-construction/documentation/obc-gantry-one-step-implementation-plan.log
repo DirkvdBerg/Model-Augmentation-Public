@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  16 SEP 2026 16:12
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  17 SEP 2026 19:05
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -547,22 +547,22 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 /20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Users/
 20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathsy.enc}{C:/Use
 rs/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathex.enc}]
-[2] [3] [4]
+[2] [3] [4] [5]
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 4
-37.
+68.
 
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/lm\ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-[5]
+[6{C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ts1.en
+c}]
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 494.
+(Font)              <10> on input line 525.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 494.
+(Font)              <7> on input line 525.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 494.
- [6{C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-ts1.e
-nc}] [7] (obc-gantry-one-step-implementation-plan.bbl) [8]
+(Font)              <5> on input line 525.
+ [7] (obc-gantry-one-step-implementation-plan.bbl) [8]
 (obc-gantry-one-step-implementation-plan.aux)
  ***********
 LaTeX2e <2025-11-01>
@@ -573,13 +573,13 @@ Package rerunfilecheck Info: File `obc-gantry-one-step-implementation-plan.out'
 (rerunfilecheck)             Checksum: 4C901DE2B9A479610B7AE1CC193C698D;2629.
  ) 
 Here is how much of TeX's memory you used:
- 12492 strings out of 467867
- 197738 string characters out of 5416882
- 650730 words of memory out of 5000000
- 41005 multiletter control sequences out of 15000+600000
- 691839 words of font info for 156 fonts, out of 8000000 for 9000
+ 12499 strings out of 467867
+ 197846 string characters out of 5416882
+ 650830 words of memory out of 5000000
+ 41007 multiletter control sequences out of 15000+600000
+ 691922 words of font info for 157 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,10n,79p,1038b,565s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,10n,79p,1038b,539s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10
 .pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmb
 x12.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/
@@ -600,10 +600,10 @@ KTeX/fonts/type1/public/lm/lmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/
 MiKTeX/fonts/type1/public/lm/lmsy8.pfb><C:/Users/20203253/AppData/Local/Program
 s/MiKTeX/fonts/type1/public/lm/lmtt10.pfb><C:/Users/20203253/AppData/Local/Prog
 rams/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on obc-gantry-one-step-implementation-plan.pdf (8 pages, 368470 
+Output written on obc-gantry-one-step-implementation-plan.pdf (8 pages, 371121 
 bytes).
 PDF statistics:
- 283 PDF objects out of 1000 (max. 8388607)
- 72 named destinations out of 1000 (max. 500000)
+ 290 PDF objects out of 1000 (max. 8388607)
+ 75 named destinations out of 1000 (max. 500000)
  35441 words of extra memory for PDF output out of 35830 (max. 10000000)
 

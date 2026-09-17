@@ -1,0 +1,73 @@
+block: Y_op=None, Ts=0.00025, up_sample=1, batch=64, float64
+free  = -0.0073 +0.0393 +0.0473 -0.0557 +0.0845 -0.0447 -0.0178 +0.0616 +0.0069 -0.0841
+dfree = +0.3177 +0.1328 +0.1373 +0.2405 +1.3955 +1.3470 +2.4382 +0.2028 +2.4505 +2.0256
+
+[0] dmats against torch.func.jvp of the parameter-to-matrices map
+    K           primal 0.000e+00   tangent 0.000e+00
+    C           primal 0.000e+00   tangent 0.000e+00
+    A_combined  primal 0.000e+00   tangent 0.000e+00
+    mh          primal 0.000e+00   tangent 0.000e+00
+    alpha       primal 0.000e+00   tangent 0.000e+00
+    beta        primal 0.000e+00   tangent 0.000e+00
+    gamma       primal 0.000e+00   tangent 0.000e+00
+    N0          primal 0.000e+00   tangent 0.000e+00
+    N1          primal 0.000e+00   tangent 0.000e+00
+    N2          primal 0.000e+00   tangent 0.000e+00
+  -> PASS: T0_dmats
+
+[A] per-term tangent of one _deriv_with call against torch.func.jvp
+    fnet       primal 0.000e+00   tangent 0.000e+00   (||tangent|| = 5.971e+01)
+    dY         primal 0.000e+00   tangent 0.000e+00   (||tangent|| = 9.856e+04)
+    a          primal 0.000e+00   tangent 0.000e+00   (||tangent|| = 1.545e+02)
+    z          primal 0.000e+00   tangent 0.000e+00   (||tangent|| = 1.566e+02)
+    w          primal 0.000e+00   tangent 0.000e+00   (||tangent|| = 2.588e+01)
+    xdot_phys  primal 0.000e+00   tangent 0.000e+00   (||tangent|| = 1.545e+02)
+    xdot       primal 0.000e+00   tangent 0.000e+00   (||tangent|| = 1.545e+02)
+  -> PASS: A_per_term
+
+[B] full transition and tangent against torch.func.jvp of transition_from_free
+    primal  0.000e+00
+    tangent 2.359e-17   (||tangent|| = 3.859e-02, ||state increment|| = 2.037e-02)
+  -> PASS: B_end_to_end_jvp
+
+[C] against a central finite difference of the transition (no autodiff)
+    eps 1e-02   relative 4.117e-06
+    eps 1e-03   relative 4.117e-08
+    eps 1e-04   relative 4.162e-10
+    eps 1e-05   relative 8.399e-10
+    eps 1e-06   relative 7.762e-09
+    best over the sweep 4.162e-10. A central difference is O(eps^2) and floors out where round-off takes over;
+    anything below 1e-8 rules out a sign error or a missing term.
+  -> PASS: C_finite_difference
+
+[D] linearity and scaling in the direction
+    additivity 5.328e-16 | homogeneity 6.925e-16 | zero direction gives max|s| = 0.000e+00
+  -> PASS: D_linearity
+
+[E] robustness: 5 point sets x 3 expansion points, worst relative tangent error
+    worst over 15 combinations: 5.369e-17
+  -> PASS: E_robustness
+
+[F] float32 agreement and cost (reported, not gated)
+    float32 hand tangent vs float64 reference: 3.533e-07
+    step, no joint estimation (fixed buffers)   1.4180 ms
+    step, joint estimation (rebuilds M(Y))      3.2340 ms   2.28x  <- joint costs this
+    RK4 alone, matrices given                   1.3807 ms
+    RK4 + hand tangent, fused                   3.4598 ms   2.51x of RK4 alone
+    RK4 + torch.func.jvp                        30.2855 ms   21.94x of RK4 alone
+    ROLLOUT STEP  OBC off 3.2340 ms | OBC on (hand) 6.6938 ms  2.07x | OBC on (jvp) 33.5195 ms  10.36x
+
+[G] frozen Y_op refuses instead of returning an underived tangent
+    raised: the hand-written tangent covers the LPV branch (Y_op=None) only. The frozen-Y branch uses the pr
+  -> PASS: G_frozen_refuses
+
+==== summary ====
+  T0_dmats               PASS
+  A_per_term             PASS
+  B_end_to_end_jvp       PASS
+  C_finite_difference    PASS
+  D_linearity            PASS
+  E_robustness           PASS
+  G_frozen_refuses       PASS
+
+ALL GATES PASS: the hand-written tangent reproduces torch.func.jvp and a finite difference.

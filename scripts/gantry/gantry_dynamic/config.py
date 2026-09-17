@@ -39,6 +39,18 @@ class RunConfig:
     joint_estimation: bool = False  # D-076: True = train physical parameters
     # CHANGED (D-191): choose the coordinates used when joint_estimation=True.
     physics_parameterization: str = 'raw'  # 'raw' (14 scalars) or 'reduced' (10 combinations)
+    # D-193. `param_prior` is THE SWITCH for the D-076 parameter prior and `param_rmse_baseline`
+    # is its STRENGTH, the same split as `orth` / `orth_beta` below and for the same reason: a
+    # magnitude must not double as a flag. True is the default and an exact no-op, because the
+    # block's own `flag_loss_reg` already defaulted to True and `build_model` never overrode it.
+    #
+    # WHAT IT TURNS OFF. `Reduced_Gantry_State_Block.param_loss` is a Lambda-weighted L2 anchored
+    # to `combo_init`, i.e. to the INITIAL combinations, which in a recovery experiment are the
+    # deliberately detuned ones. The prior therefore pulls the parameters back toward the values
+    # the experiment is trying to correct, and its weight (below) was calibrated against a
+    # different objective, so its share of the gradient GROWS as the fit improves. Measure before
+    # choosing: implementation/08-one-step/probe_prior_scale.py.
+    param_prior: bool = True
     param_rmse_baseline: float = 0.01  # HEURISTIC: measured initial sqrt-loss, jobs 68675/68676 (D-076 Lambda scale)
     # D-076 run design: None = start at true values (run T: measures absorber-induced bias).
     # A 14-vector aligned to PARAM_NAMES = detuned start (run D: recovery test).
@@ -271,6 +283,38 @@ class RunConfig:
     orth_point_stride: int = 100    # penalty point-set decimation (Step 5 coverage verified at 100)
     orth_rank_tol: float = 1e-12    # numerical-rank truncation of Q (plan Sect. 2.2 step 5)
 
+    # ═══ One-step orthogonal-by-construction (D-192) ══════════════════════════
+    # `obc` is THE switch. False = no lifecycle object, no reference set, no basis build, and
+    # every seam it touches (Interconnect.forward's `obc_pass`, the rollout argument) is inert:
+    # bit-identical to the pipeline before it existed. True = Gyorok's by-construction
+    # subtraction at the one-step level: the physical ANN rows are projected, over the fixed
+    # reference set of every training sample, out of the space selected by `obc_space` at the
+    # current epoch's expansion point; the coefficient is recomputed once per objective.
+    # Requires joint_estimation=True and physics_parameterization='reduced' (the protected space
+    # IS the ten free coordinates of Reduced_Gantry_State_Block), and orth=False: the 2025 soft
+    # penalty and the 2026 subtraction are two different arms, never one run.
+    obc: bool = False
+    # Protected finite-dimensional space. 'tangent' is range(J), the established ten-column
+    # arm. 'affine' is range([J | f(vbar,z)]): an eleventh frozen-offset column, column-scaled
+    # for the SVD solve. The value is recorded even when obc=False so an arm is reproducible.
+    obc_space: str = 'tangent'
+    # 'epoch' rebuilds the basis at every epoch boundary at the current physical parameters;
+    # 'fixed' builds it once at the first objective (the fixed-initial-basis diagnostic arm).
+    obc_refresh: str = 'epoch'
+    # Reference samples per chunk of the float64 jacfwd basis build. Memory only: the stack is
+    # the same at any chunk size. 16384 keeps the ten-tangent RK4 intermediates near 1 GB.
+    obc_ref_chunk: int = 16384
+    # Numerical-rank tolerance RELATIVE to the largest singular value. None = the numpy
+    # matrix_rank convention max(M, N) * eps64, declared and printed at every refresh.
+    obc_rank_rtol: Optional[float] = None
+    # D-199. Optionally route the per-pass tensors (the hoisted M(Y) structure and OBC pass) through
+    # FIXED-ADDRESS buffers while testing CUDA-graph replay. Measured performance-neutral
+    # (1.236 versus 1.248 s/update), not a demonstrated acceleration. Only relevant with
+    # compile_mode='reduce-overhead'; one copy is made per objective otherwise.
+    # False is the D-194/D-195 behaviour, in which fresh tensors are threaded every objective:
+    # correct, and measured at 525 s then 1472 s per update under reduce-overhead (job 83951).
+    static_pass_buffers: bool = False
+
     # ═══ Fixed model dimensions ═══════════════════════════════════════════════
     nx_phys: int = 6   # physical states: q1, q2, q3, dq1, dq2, dq3
     nu: int = 3
@@ -320,6 +364,37 @@ class RunConfig:
                 'orth_beta a positive value. (Before 2026-08-28 beta doubled as the switch, so '
                 'orth_beta=0.0 meant off; that spelling is gone precisely because it let a '
                 'config look enabled while running as off.)' % (self.orth_beta,))
+        # D-192. The OBC arm is only defined on the reduced joint-estimation model, and it is a
+        # different arm from the 2025 soft penalty; refused here so no config can claim an
+        # objective the run does not optimise.
+        if self.obc:
+            if not (self.joint_estimation and self.physics_parameterization == 'reduced'):
+                raise ValueError(
+                    'obc=True requires joint_estimation=True and physics_parameterization='
+                    "'reduced': the protected space is range(J) of the ten free coordinates of "
+                    'Reduced_Gantry_State_Block, which only exists on that model.')
+            if self.orth:
+                raise ValueError(
+                    'obc=True with orth=True is not an experiment arm: the 2025 soft penalty and '
+                    'the 2026 by-construction subtraction are compared as separate runs (D-192). '
+                    'Set one of them False.')
+        # D-193, same shape as the orth check above: the contradictory state (prior on, strength
+        # zero) is rejected rather than run as off, so a config cannot claim a term it does not
+        # optimise.
+        if self.param_prior and self.param_rmse_baseline <= 0:
+            raise ValueError(
+                'param_prior=True with param_rmse_baseline=%r is not a state. `param_prior` is '
+                'the switch and `param_rmse_baseline` is the strength: set param_prior=False to '
+                'drop the D-076 prior from the objective, or give param_rmse_baseline a positive '
+                'value.' % (self.param_rmse_baseline,))
+        if self.obc_refresh not in ('epoch', 'fixed'):
+            raise ValueError("obc_refresh must be 'epoch' or 'fixed', got %r" % (self.obc_refresh,))
+        if self.obc_space not in ('tangent', 'affine'):
+            raise ValueError("obc_space must be 'tangent' or 'affine', got %r" % (self.obc_space,))
+        if self.obc_ref_chunk < 1:
+            raise ValueError('obc_ref_chunk=%r is not a chunk size' % (self.obc_ref_chunk,))
+        if self.obc_rank_rtol is not None and not (0 < self.obc_rank_rtol < 1):
+            raise ValueError('obc_rank_rtol must be None or in (0, 1), got %r' % (self.obc_rank_rtol,))
         # D-169. Rejected here rather than at first use: a typo ('gpu', 'CUDA', 'cuda:0') would
         # otherwise surface deep in init_model, or worse run on the CPU while the log says
         # otherwise. Availability is NOT checked here, only spelling: a RunConfig is constructed
@@ -620,6 +695,19 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
         # Appended 2026-09-08. The TRAJECTORY penalty is a different regulariser from ORTH_*
         # above, not a variant of it, so it gets its own keys rather than overloading those.
         START_PHASE=cfg.start_phase,
+        # Appended 2026-09-16 (D-192). The one-step OBC subtraction changes the MODEL the run
+        # trains (the physical ANN rows are projected), so every knob of it is part of what a run
+        # is; OBC=False makes the rest inert but they are recorded, exactly as ORTH_* are.
+        # Appended 2026-09-16 (D-193). Whether the D-076 parameter prior was in the objective.
+        # PARAM_RMSE_BASELINE above records only its strength, which a run with the prior off
+        # still carries, exactly as ORTH_BETA does on an orth=False run.
+        PARAM_PRIOR=cfg.param_prior,
+        STATIC_PASS_BUFFERS=cfg.static_pass_buffers,
+        OBC=cfg.obc,
+        OBC_SPACE=cfg.obc_space,
+        OBC_REFRESH=cfg.obc_refresh,
+        OBC_REF_CHUNK=cfg.obc_ref_chunk,
+        OBC_RANK_RTOL=cfg.obc_rank_rtol,
         # Which CODE ran, as opposed to what it was asked to do. None when the caller did not
         # look it up; the entry point passes git_provenance().
         GIT=git,

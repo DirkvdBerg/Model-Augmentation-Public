@@ -397,8 +397,15 @@ def print_run_banner(cfg: RunConfig, hp: dict, data, run_id: str, sdir: str) -> 
     # density ("20000 -> 4000 Hz (D=5)", "(CAPPED)"), which a generic dumper cannot produce.
     # Completeness of the DURABLE record is guaranteed elsewhere, by config.py's
     # _assert_json_coverage; this banner is the human-readable view, not the evidence.
-    detune = 'true values' if cfg.param_init_detune is None else \
-             f'detuned ({len(cfg.param_init_detune)}-vector)'
+    # CHANGED (D-192): the banner predates `obc` and `combo_init_detune`, so every OBC run printed
+    # "param_init=true values" while the ten identifiable combinations started 10 percent detuned.
+    # Jobs 83962 and 83978 both logged that line, and it was false in both.
+    if cfg.param_init_detune is not None:
+        detune = f'detuned ({len(cfg.param_init_detune)}-vector, raw)'
+    elif getattr(cfg, 'combo_init_detune', None) is not None:
+        detune = f'detuned ({len(cfg.combo_init_detune)}-vector, combinations)'
+    else:
+        detune = 'true values'
     print(f"\nConfiguration:")
     print(f"  PROVENANCE:  git {git_provenance()}")
     print(f"               run_id {run_id}   save={cfg.save_flag}")
@@ -414,9 +421,17 @@ def print_run_banner(cfg: RunConfig, hp: dict, data, run_id: str, sdir: str) -> 
     # ann_route_ix is a HARD constraint (D-103: route to X and Y, never Theta-only) and was
     # invisible in every log until now. Two runs differing only here are different experiments.
     print(f"               ann_route_ix={tuple(cfg.ann_route_ix)}")
+    # CHANGED (D-192): same omission on the projection line. An OBC run reported "orth=OFF (no
+    # penalty, no basis build)" while it was rebuilding a rank-10 basis every epoch.
+    if getattr(cfg, 'obc', False):
+        _projection = (f"obc=ON (one-step, space={cfg.obc_space}, "
+                       f"refresh={cfg.obc_refresh})")
+    elif cfg.orth:
+        _projection = f"orth=ON (beta={cfg.orth_beta:.3e})"
+    else:
+        _projection = "orth=OFF, obc=OFF (no penalty, no basis build)"
     print(f"  OBJECTIVE:   rollout={'closed loop' if cfg.closed_loop else 'open loop'}   "
-          + (f"orth=ON (beta={cfg.orth_beta:.3e})" if cfg.orth
-             else "orth=OFF (no penalty, no basis build)"))
+          + _projection)
     print(f"               joint={cfg.joint_estimation}   param_init={detune}   "
           f"noise={cfg.snr if cfg.snr is not None else 'None (noiseless)'}"
           + (f" -> sigma_n={data.sigma_n:.2e} m" if data.sigma_n is not None else ""))

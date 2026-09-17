@@ -253,9 +253,12 @@ class Discrete_Nonlinear_Function_Block(Block):
             "This function should determine normalization matrices Tw and Tiz for the given input data"
         )
 
-    def forward(self, z: Tensor):
+    def forward(self, z: Tensor, mats=None):
+        # CHANGED (D-195): optional per-pass constants, forwarded to `nonlinear_function` only
+        # when supplied. Subclasses that take no `mats` never receive one, because the
+        # Interconnect hands it to the single block that advertises `pass_mats`.
         assert z.size(1) == self.nx + self.nu
-        w = self.nonlinear_function(z)
+        w = self.nonlinear_function(z) if mats is None else self.nonlinear_function(z, mats)
         return w
 
     def nonlinear_function(self, z: Tensor):
@@ -774,12 +777,19 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
         assert z.size(1) == self.nx + self.nu
         x = z[:, : self.nx, :]
         u = z[:, self.nx :, :]
+        # CHANGED (D-192): the RK4 loop and the derivative body take the parameter-dependent
+        # matrix tuple EXPLICITLY (`_rk4`, `_deriv_with`) so the one-step OBC path can integrate
+        # the same transition at a caller-supplied parameter point without writing `_cur`. The
+        # arithmetic below is the same sequence of operations as before, so this path is
+        # bit-identical (verified in orthogonal-by-construction/implementation/08-one-step/).
+        return self._rk4(x, u, self._mats())
 
+    def _rk4(self, x: Tensor, u: Tensor, mats) -> Tensor:
         for i in range(self.up_sample):
-            k1 = (self.Ts / self.up_sample) * self.deriv(x, u)
-            k2 = (self.Ts / self.up_sample) * self.deriv(x + k1 / 2, u)
-            k3 = (self.Ts / self.up_sample) * self.deriv(x + k2 / 2, u)
-            k4 = (self.Ts / self.up_sample) * self.deriv(x + k3, u)
+            k1 = (self.Ts / self.up_sample) * self._deriv_with(x, u, mats)
+            k2 = (self.Ts / self.up_sample) * self._deriv_with(x + k1 / 2, u, mats)
+            k3 = (self.Ts / self.up_sample) * self._deriv_with(x + k2 / 2, u, mats)
+            k4 = (self.Ts / self.up_sample) * self._deriv_with(x + k3, u, mats)
             x = x + (k1 + 2 * k2 + 2 * k3 + k4) / 6
         return x
 
@@ -795,8 +805,16 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
 
     def deriv(self, x: Tensor, u: Tensor) -> Tensor:
         # x: (batch, 6, 1) normalised   u: (batch, 3, 1) normalised
+        return self._deriv_with(x, u, self._mats())
+
+    def _deriv_with(self, x: Tensor, u: Tensor, mats, terms: dict = None) -> Tensor:
+        # CHANGED (D-192): body of `deriv` with the matrix tuple passed in; see nonlinear_function.
+        # CHANGED (D-194): `terms` is a TEST HOOK. Pass a dict and every intermediate is recorded
+        # in it under the same key `_deriv_tangent_with` uses for its tangent, so the two can be
+        # compared TERM BY TERM against torch.func.jvp. None (the default) is a Python constant,
+        # so the branches specialise away under torch.compile and the hot path is unchanged.
         (K_mat, C_mat, A_combined,
-         mh, alpha, beta, gamma_, N0, N1, N2) = self._mats()
+         mh, alpha, beta, gamma_, N0, N1, N2) = mats
 
         # --- denormalise -------------------------------------------------
         x_phys = x * self.std_x + self.x_mean   # (batch, 6, 1)
@@ -846,7 +864,128 @@ class Gantry_State_Block(Discrete_Nonlinear_Function_Block):
 
         # --- renormalise and restore trailing dim -----------------------
         xdot = (xdot_phys / self.std_x_1d).unsqueeze(-1)  # (batch, 6, 1)
+        if terms is not None:
+            terms.update(fnet=fnet, a=a, z=z, w=w, xdot_phys=xdot_phys, xdot=xdot)
+            if self.Y_op is None:
+                terms.update(dY=dY)
         return xdot
+
+    # CHANGED (D-194): the TANGENT of `_deriv_with`, line for line. Read the two side by side;
+    # every statement below is the derivative of the statement above it with the same name.
+    #
+    # WHY THIS EXISTS. `torch.func.jvp` computes the same thing and is the definition, but inside
+    # a torch.compile region inductor miscompiles it into an illegal memory access on every mode
+    # (jobs 83796, 83913), and eager costs 30.47 s per update against 0.77 s for the uncorrected
+    # compiled step. This is plain tensor arithmetic, so it compiles like anything else.
+    #
+    # WHAT IT COMPUTES. Given the state tangent `sx` and the matrix tangent `dmats`, both with
+    # respect to one scalar parameter displacement, it returns d(xdot)/d(that displacement). The
+    # INPUT `u` is held fixed, so its tangent is zero throughout: the baseline sensitivity of the
+    # OBC construction is taken at a fixed recorded input, with no controller derivative (D-192).
+    #
+    # IT IS EXACT. RK4 and this derivative are a fixed composition of smooth operations, so
+    # differentiating the composition term by term is the chain rule, not an approximation. There
+    # is no step size. `test_tangent.py` gates it against `torch.func.jvp` per term.
+    def _deriv_tangent_with(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats,
+                            terms: dict = None) -> Tensor:
+        """The tangent alone. A thin wrapper; `_deriv_both_with` is the implementation."""
+        return self._deriv_both_with(x, sx, u, mats, dmats, sterms=terms)[1]
+
+    # CHANGED (D-194): primal AND tangent in ONE pass. Keeping them separate cost a full extra
+    # evaluation per stage, because the product rules need `fnet`, `a` and `zeta` anyway, so the
+    # primal was computed twice: measured 3.62x a plain step instead of the ~2x this route was
+    # costed at. Four calls per RK4 substep instead of eight.
+    def _deriv_both_with(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats,
+                         terms: dict = None, sterms: dict = None):
+        (K_mat, C_mat, A_combined,
+         mh, alpha, beta, gamma_, N0, N1, N2) = mats
+        (dK, dC, dA_combined,
+         dmh, dalpha, dbeta, dgamma_, dN0, dN1, dN2) = dmats
+
+        if self.Y_op is not None:
+            raise NotImplementedError(
+                'the hand-written tangent covers the LPV branch (Y_op=None) only. The frozen-Y '
+                'branch uses the precomputed N_op/d_op buffers, whose tangent is not derived '
+                'here; returning an unvalidated tangent silently would be worse than refusing. '
+                'The production configuration is Y_op=None (D-192).')
+
+        # --- denormalise. x_mean, std_x, std_u, u_mean are constants; u carries no tangent.
+        s_x2 = (sx * self.std_x).squeeze(-1)             # (batch, 6)
+        x2 = (x * self.std_x + self.x_mean).squeeze(-1)  # (batch, 6)
+        u2 = (u * self.std_u + self.u_mean).squeeze(-1)  # (batch, 3)
+        u_log = u2 @ self.P_mat.T                        # (batch, 3), tangent identically zero
+
+        # --- net logical force: product rule on both the state and the matrices.
+        fnet = -(x2[:, :3] @ K_mat.T) - (x2[:, 3:] @ C_mat.T) + u_log
+        s_fnet = (-(s_x2[:, :3] @ K_mat.T) - (x2[:, :3] @ dK.T)
+                  - (s_x2[:, 3:] @ C_mat.T) - (x2[:, 3:] @ dC.T))
+
+        # --- the LFR denominator d(Y). Y is a STATE (x2[:, 2]), so it carries a tangent too.
+        Y, sY = x2[:, 2], s_x2[:, 2]                     # (batch,)
+        poly = (alpha * gamma_ - beta ** 2
+                + 2 * beta * mh * Y
+                + mh * (alpha - mh) * Y ** 2)
+        s_poly = (dalpha * gamma_ + alpha * dgamma_ - 2 * beta * dbeta
+                  + 2 * (dbeta * mh * Y + beta * dmh * Y + beta * mh * sY)
+                  + (dmh * (alpha - mh) + mh * (dalpha - dmh)) * Y ** 2
+                  + mh * (alpha - mh) * 2 * Y * sY)
+        dY_den = mh * poly                               # == `dY` in _deriv_with
+        s_dY_den = dmh * poly + mh * s_poly
+
+        # --- the Horner numerator, N(Y) fnet.
+        Y_r, sY_r = Y.unsqueeze(0), sY.unsqueeze(0)      # (1, batch)
+        n0f, n1f, n2f = N0 @ fnet.T, N1 @ fnet.T, N2 @ fnet.T          # (3, batch)
+        s_n0f = dN0 @ fnet.T + N0 @ s_fnet.T
+        s_n1f = dN1 @ fnet.T + N1 @ s_fnet.T
+        s_n2f = dN2 @ fnet.T + N2 @ s_fnet.T
+        num = n0f + Y_r * (n1f + Y_r * n2f)                            # (3, batch)
+        s_num = (s_n0f + sY_r * (n1f + Y_r * n2f)
+                 + Y_r * (s_n1f + sY_r * n2f + Y_r * s_n2f))
+
+        # --- a = num / d(Y): quotient rule, written as (s_num - a s_den) / den.
+        a = num.T / dY_den[:, None]                                    # (batch, 3)
+        s_a = (s_num.T - a * s_dY_den[:, None]) / dY_den[:, None]
+
+        # --- the LFR latent signals. Y multiplies a, so both factors carry tangents.
+        Y_val, sY_val = Y[:, None], sY[:, None]                        # (batch, 1)
+        z = torch.cat([a, Y_val * a], dim=-1)
+        s_z = torch.cat([s_a, sY_val * a + Y_val * s_a], dim=-1)
+        w = Y_val * z
+        s_w = sY_val * z + Y_val * s_z
+
+        # --- through G. u_log is constant, so its block of the tangent is zero.
+        combined = torch.cat([x2, w, u_log], dim=-1)                   # (batch, 15)
+        s_combined = torch.cat([s_x2, s_w, torch.zeros_like(u_log)], dim=-1)
+        xdot_phys = combined @ A_combined.T
+        s_xdot_phys = s_combined @ A_combined.T + combined @ dA_combined.T
+
+        xdot = (xdot_phys / self.std_x_1d).unsqueeze(-1)               # (batch, 6, 1)
+        s_xdot = (s_xdot_phys / self.std_x_1d).unsqueeze(-1)           # (batch, 6, 1)
+        if terms is not None:
+            terms.update(fnet=fnet, a=a, z=z, w=w, dY=dY_den,
+                         xdot_phys=xdot_phys, xdot=xdot)
+        if sterms is not None:
+            sterms.update(fnet=s_fnet, a=s_a, z=s_z, w=s_w, dY=s_dY_den,
+                          xdot_phys=s_xdot_phys, xdot=s_xdot)
+        return xdot, s_xdot
+
+    # CHANGED (D-194): RK4 carrying the sensitivity alongside the state. Same stage weights as
+    # `_rk4`, applied to the pair, which is exactly the derivative of `_rk4` because the stage
+    # combination is linear and fixed. ONE integration, not two: each stage advances the pair.
+    def _rk4_with_tangent(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats):
+        h = self.Ts / self.up_sample
+        for _ in range(self.up_sample):
+            d1, e1 = self._deriv_both_with(x, sx, u, mats, dmats)
+            k1, s1 = h * d1, h * e1
+            d2, e2 = self._deriv_both_with(x + k1 / 2, sx + s1 / 2, u, mats, dmats)
+            k2, s2 = h * d2, h * e2
+            d3, e3 = self._deriv_both_with(x + k2 / 2, sx + s2 / 2, u, mats, dmats)
+            k3, s3 = h * d3, h * e3
+            d4, e4 = self._deriv_both_with(x + k3, sx + s3, u, mats, dmats)
+            k4, s4 = h * d4, h * e4
+            x = x + (k1 + 2 * k2 + 2 * k3 + k4) / 6
+            sx = sx + (s1 + 2 * s2 + 2 * s3 + s4) / 6
+        return x, sx
 
 
 @added
@@ -933,10 +1072,9 @@ class _Trainable_Gantry_State_Block(Gantry_State_Block):
         ])
         return M1, M2
 
-    def nonlinear_function(self, z: Tensor):
-        # Rebuild the full M(Y) rational structure once per timestep from the
-        # current parameters; every RK4 substep reuses it via the _mats() hook.
-        p = self._recover_params()
+    def _mats_from_raw(self, p: Tensor):
+        # CHANGED (D-192): the per-timestep matrix rebuild, factored out of nonlinear_function so
+        # the OBC pure transition can call it with a caller-supplied raw vector. Same operations.
         (kb1, kb2, cg1, cg2, cy, cb1, cb2,
          mh, m1, m2, mb, Jb, Jh, d) = p
         alpha, beta, gamma_, N0, N1, N2 = self._build_poly(
@@ -945,8 +1083,37 @@ class _Trainable_Gantry_State_Block(Gantry_State_Block):
         M1, M2 = self._build_M1M2(mh)
         K, C = self._build_KC(p)
         _, _, _, A_combined = self._build_G(N0, d0, M1, M2, K, C)
-        self._cur = (K, C, A_combined, mh, alpha, beta, gamma_, N0, N1, N2)
+        return (K, C, A_combined, mh, alpha, beta, gamma_, N0, N1, N2)
+
+    # CHANGED (D-195): the M(Y) rebuild is a PER-PASS constant, not a per-timestep one.
+    #
+    # The parameters do not change inside a rollout; they change at optimizer steps. Rebuilding
+    # the rational structure on every timestep therefore repeats identical work nf times. Measured
+    # at the production settings: a joint step costs 3.23 ms of which only 1.38 ms is the RK4, so
+    # 57 percent of the physical block is this rebuild.
+    #
+    # `mats` is THREADED IN by the objective when the caller hoists it (see `pass_mats`). None
+    # keeps the old behaviour exactly, so every existing caller, every diagnostic and the whole
+    # non-hoisted path are bit-identical to before this existed.
+    def nonlinear_function(self, z: Tensor, mats=None):
+        self._cur = self._mats_from_raw(self._recover_params()) if mats is None else mats
         return super().nonlinear_function(z)
+
+    # D-199: optionally set by the pipeline to a `StaticPassBuffers` while testing whether the
+    # hoisted structure keeps a FIXED ADDRESS across objectives and cudagraph trees can replay
+    # instead of re-recording. None (the default) threads fresh tensors, which is what every run
+    # before D-199 did. A class attribute, so a checkpoint pickled before this existed resolves it.
+    static_pass = None
+
+    def pass_mats(self):
+        """The M(Y) structure at the CURRENT parameters, to be built once per objective.
+
+        Carries autograd back to the trainable coordinates, so reusing one call across every
+        timestep of a rollout is exact: the timesteps share one graph node and their gradients
+        accumulate into it, which is what they already did separately.
+        """
+        mats = self._mats_from_raw(self._recover_params())
+        return mats if self.static_pass is None else self.static_pass(mats)
 
     def _mats(self):
         if self._cur is None:
@@ -1187,13 +1354,71 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
             J_sum * r, J_sum * (1 - r), d,
         ])
 
-    def recover_combinations(self) -> Tensor:
-        """The ten combinations at the current free coordinate. Nine log, `m_diff` linear."""
+    def combinations_from_free(self, free: Tensor) -> Tensor:
+        """The ten combinations at an EXPLICIT free coordinate `free` (10,). Nine log, `m_diff` linear."""
         return torch.where(
             self._m_diff_mask,
-            self.combo_init * (1.0 + self.free_params),
-            self.combo_init * torch.exp(self.free_params),
+            self.combo_init * (1.0 + free),
+            self.combo_init * torch.exp(free),
         )
+
+    def recover_combinations(self) -> Tensor:
+        """The ten combinations at the current free coordinate. Nine log, `m_diff` linear."""
+        return self.combinations_from_free(self.free_params)
+
+    # CHANGED (D-192): the transition as a PURE function of the free coordinate.
+    def transition_from_free(self, free: Tensor, z: Tensor) -> Tensor:
+        """`x_plus = f_base^d(v, x, u)` at the free coordinate `v = free`, without side effects.
+
+        Same block, same RK4, same matrix rebuild as `nonlinear_function`, but the parameter
+        point is an ARGUMENT and the per-forward cache `_cur` is never written. This is the
+        `step(v, z)` the one-step OBC construction differentiates: `torch.func.jacfwd` over `v`
+        for the reference basis. The production rollout uses the hand-written tangent below;
+        `torch.func.jvp` remains its equivalence-test definition. Keeping transforms off `_cur`
+        keeps functorch wrappers out of the mutable cache (the hazard `__getstate__` above guards
+        against).
+        `z` is the block input `(batch, nx + nu, 1)` in NORMALIZED coordinates; the result is the
+        normalized next physical state `(batch, nx, 1)`.
+        """
+        assert z.size(1) == self.nx + self.nu
+        p = self.gauge_section(self.combinations_from_free(free), self.params_init, self.Lb)
+        mats = self._mats_from_raw(p)
+        return self._rk4(z[:, : self.nx, :], z[:, self.nx :, :], mats)
+
+    # CHANGED (D-194): the ONCE-PER-OBJECTIVE half of the correction.
+    #
+    # The parameter-to-matrices map is STATE-INDEPENDENT: `_mats_from_raw` reads the raw parameter
+    # vector and `Lb`, and never touches x or u. So the whole dependence of the transition on the
+    # parameters factors through this tuple, and its directional derivative can be formed once per
+    # objective and reused at every rollout timestep, instead of being recomputed per step.
+    #
+    # `torch.func.jvp` IS used here, deliberately. This map carries no batch and no state, it runs
+    # OUTSIDE the compiled rollout, and functorch is reliable there (the epoch basis build already
+    # relies on `jacfwd` in the same way). What could not survive compilation is the per-timestep
+    # transform, and that is what `_deriv_tangent_with` replaces.
+    #
+    # `dfree` may carry autograd history: it is the OBC coefficient, a function of the ANN
+    # weights, and the gradient has to reach them through this product (D-192).
+    def mats_and_tangent_from_free(self, free: Tensor, dfree: Tensor):
+        """`(mats, dmats)` at the free coordinate `free`, differentiated in the direction `dfree`."""
+        def _mats(v):
+            return self._mats_from_raw(
+                self.gauge_section(self.combinations_from_free(v), self.params_init, self.Lb))
+        return torch.func.jvp(_mats, (free,), (dfree,))
+
+    # CHANGED (D-194): the PER-STEP half. Same signature shape as `transition_from_free`, but it
+    # returns the transition AND its directional derivative, with no functorch anywhere.
+    def transition_and_tangent_from_free(self, free: Tensor, dfree: Tensor, z: Tensor):
+        """`(x_plus, J(z) dfree)`: the transition and its parameter directional derivative.
+
+        Equivalent to `torch.func.jvp(lambda v: transition_from_free(v, z), (free,), (dfree,))`,
+        which is what `test_tangent.py` checks it against, term by term and end to end. The state
+        tangent starts at zero because `z` is held fixed while the parameters are displaced.
+        """
+        assert z.size(1) == self.nx + self.nu
+        mats, dmats = self.mats_and_tangent_from_free(free, dfree)
+        x, u = z[:, : self.nx, :], z[:, self.nx :, :]
+        return self._rk4_with_tangent(x, torch.zeros_like(x), u, mats, dmats)
 
     def _recover_params(self) -> Tensor:
         """Raw fourteen-vector in the declared gauge. Not clamped like the raw sibling.
