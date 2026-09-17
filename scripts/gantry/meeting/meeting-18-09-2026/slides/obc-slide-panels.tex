@@ -1,0 +1,133 @@
+\documentclass[12pt]{article}
+
+\usepackage[paperwidth=200mm,paperheight=112.5mm,margin=11mm,top=10mm]{geometry}
+\usepackage{amsmath,amssymb,booktabs,array}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\abovedisplayskip}{10pt}
+\setlength{\belowdisplayskip}{10pt}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\T}{\mathsf{T}}
+\DeclareMathOperator{\col}{col}
+\newcommand{\fbase}{f_{\mathrm{base}}}
+\newcommand{\faug}{f_{\mathrm{aug}}}
+\newcommand{\Faug}{F_{\mathrm{aug}}}
+\newcommand{\ANN}{\mathrm{ANN}}
+\newcommand{\panel}[1]{\subsection*{\Large #1}\vspace{2mm}}
+
+\begin{document}
+
+%======================================================================
+\panel{Baseline in state-space form}
+
+With $q=\col(X,\Theta,Y)$, scheduling signal $Y=q_3$ and physical state
+$x_b=\col(q,\dot q)\in\R^{6}$, the LPV baseline
+$M(Y;v)\ddot q+C(v)\dot q+K(v)q=Pu$ is written as
+
+\begin{equation*}
+\dot x_b
+=
+\begin{bmatrix}
+0 & I\\[1mm]
+-M(Y;v)^{-1}K(v) & -M(Y;v)^{-1}C(v)
+\end{bmatrix}
+x_b
++
+\begin{bmatrix}
+0\\[1mm] M(Y;v)^{-1}P
+\end{bmatrix}
+u ,
+\qquad
+y=C_o x_b+D_o u .
+\end{equation*}
+
+RK4 integration over one sample gives the discrete physical transition
+
+\begin{equation*}
+x_{b,k+1}=\fbase^{d}(v,x_{b,k},u_k),
+\qquad
+y_k=C_o x_{b,k}+D_o u_k ,
+\qquad
+v\in\R^{10}.
+\end{equation*}
+
+The free parameter vector $v$ collects the ten identifiable combinations and
+enters $M$, $C$ and $K$ nonlinearly.
+
+\newpage
+%======================================================================
+\panel{Additive augmentation in the state equation}
+
+Physical states $x_{b,k}\in\R^{6}$ and learned states $x_{a,k}\in\R^{8}$ are
+stacked into $\widehat x_k=\col(x_{b,k},x_{a,k})\in\R^{14}$:
+
+\begin{equation*}
+\begin{bmatrix}x_{b,k+1}\\[1.5mm] x_{a,k+1}\end{bmatrix}
+=
+\begin{bmatrix}\fbase^{d}(v,x_{b,k},u_k)\\[1.5mm] 0\end{bmatrix}
++
+\begin{bmatrix}
+\faug^{b}(\theta_a,\widehat x_k,u_k)\\[1.5mm]
+\faug^{a}(\theta_a,\widehat x_k,u_k)
+\end{bmatrix},
+\qquad
+y_k=C_o x_{b,k}+D_o u_k .
+\end{equation*}
+
+Gy\"or\"ok adds the two components in the output equation,
+$\widehat y_k=\varphi(x_k)\theta_b+f^{\ANN}_{\theta_a}(x_k)$ (Eq.~3). Here they
+add in the state equation, and the learning component has no direct output
+term: it reaches $y$ only through state propagation.
+
+\newpage
+%======================================================================
+\panel{Separation of the two components}
+
+With the selectors $S_b=\begin{bmatrix}I_6&0\end{bmatrix}$ and
+$S_a=\begin{bmatrix}0&I_8\end{bmatrix}$, so that $S_bS_b^{\T}=I_6$ and
+$S_bS_a^{\T}=0$, the baseline lifted to the full state is
+
+\begin{equation*}
+F_{\mathrm{base}}^{d}(v,\widehat x_k,u_k)
+=S_b^{\T}\,\fbase^{d}\!\left(v,S_b\widehat x_k,u_k\right).
+\end{equation*}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+ & reads & writes\\
+\midrule
+baseline $\fbase^{d}$ & $x_b$ only & physical rows only\\
+learning component $\Faug$ & $x_b$ and $x_a$ & physical and learned rows\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The baseline is structurally zero on the eight learned-state rows. Those states
+exist only because of the augmentation, and $v$ does not appear in their update.
+
+\newpage
+%======================================================================
+\panel{Where the components can overlap}
+
+Every baseline direction in the full state is of the form $S_b^{\T}w$ with
+$w\in\R^{6}$, so
+
+\begin{equation*}
+\left(S_b^{\T}w\right)^{\!\T}\Faug
+= w^{\T}S_b\Faug
+= w^{\T}\faug^{b}.
+\end{equation*}
+
+The learned-state rows drop out of the inner product. Orthogonality between the
+physics-based and the learning component is therefore a condition on
+$\faug^{b}$ alone, while $\faug^{a}$ stays unconstrained.
+
+This holds for a single state transition. A nonzero $x_a$ still affects
+$\faug^{b}$, the propagated physical state and the output at later samples.
+
+\end{document}
