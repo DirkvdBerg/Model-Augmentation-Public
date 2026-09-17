@@ -1,0 +1,206 @@
+\documentclass[12pt]{article}
+
+\usepackage[paperwidth=200mm,paperheight=112.5mm,margin=11mm,top=10mm]{geometry}
+\usepackage{amsmath,amssymb,booktabs,array}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\abovedisplayskip}{9pt}
+\setlength{\belowdisplayskip}{9pt}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\T}{\mathsf{T}}
+\DeclareMathOperator{\col}{col}
+\DeclareMathOperator{\range}{range}
+\newcommand{\fbase}{f_{\mathrm{base}}}
+\newcommand{\faug}{f_{\mathrm{aug}}}
+\newcommand{\Faug}{F_{\mathrm{aug}}}
+\newcommand{\ANN}{\mathrm{ANN}}
+\newcommand{\xio}{x_k^{\mathrm{IO}}}
+\newcommand{\thaux}{\theta_{\mathrm{aux}}}
+\newcommand{\panel}[1]{\subsection*{\Large #1}\vspace{1mm}}
+
+\begin{document}
+
+%======================================================================
+%======================================================================
+\panel{Gy\"or\"ok: orthogonal by construction}
+
+His baseline is exactly linear in its parameters, so stacking over the data
+set gives $\Phi\in\R^{Nn_y\times n_{\theta_b}}$ with $\widehat Y=\Phi\theta_b
++F^{\ANN}_{\theta_a}$ (Eq.~5), where $\xio$ is the lagged input--output
+regressor. He then defines
+
+\begin{equation*}
+\thaux=\left(\Phi^{\T}\Phi\right)^{-1}\Phi^{\T}F^{\ANN}_{\theta_a},
+\tag{Eq.~8}
+\end{equation*}
+
+\vspace{-2mm}
+\begin{equation*}
+\widetilde F^{\ANN}_{\theta_a}
+=F^{\ANN}_{\theta_a}-\Phi\thaux
+=\left[I-\Phi\left(\Phi^{\T}\Phi\right)^{-1}\Phi^{\T}\right]F^{\ANN}_{\theta_a},
+\tag{Eq.~10}
+\end{equation*}
+
+\vspace{-2mm}
+\begin{equation*}
+\Phi^{\T}\widetilde F^{\ANN}_{\theta_a}=0 .
+\tag{Lemma~3, Eq.~11}
+\end{equation*}
+
+$\thaux\in\R^{n_{\theta_b}}$: the least-squares fit of the ANN output onto
+$\Phi$.
+
+\vspace{1mm}
+$\Phi$ is built once from the training regressors and never changes, since
+$\phi$ does not depend on $\theta_b$. $\thaux$ is recomputed every time the
+loss is evaluated.
+
+\newpage
+%======================================================================
+\panel{The baseline is not linear in its parameters}
+
+Gy\"or\"ok (2025) expands the state transition around a linearization point
+$\bar\theta$:
+
+\begin{equation*}
+f_\theta(x_k,u_k)\approx f_{\bar\theta}(x_k,u_k)
++\Phi_{\bar\theta}(x_k,u_k)\left(\theta-\bar\theta\right),
+\qquad
+\Phi_{\bar\theta}(x_k,u_k)
+=\left.\frac{\partial f_\theta(x_k,u_k)}{\partial\theta}\right|_{\theta=\bar\theta}
+\in\R^{n_x\times n_\theta}.
+\tag{Eq.~15}
+\end{equation*}
+
+Applied to the gantry transition, with the ten physical free parameters $v$ and
+the current estimate $\bar v$:
+
+\begin{equation*}
+\fbase(v,x_{b,k},u_k)\approx\fbase(\bar v,x_{b,k},u_k)
++\Phi_{\bar v}(x_{b,k},u_k)\left(v-\bar v\right),
+\qquad
+\Phi_{\bar v}(x_{b,k},u_k)
+=\left.\frac{\partial \fbase}{\partial v}\right|_{v=\bar v}
+\in\R^{6\times 10}.
+\end{equation*}
+
+Gy\"or\"ok (2025) uses $\Phi_{\bar\theta}$ inside the $\beta$-weighted penalty
+(Eq.~13); here it is the span in the projection of Eq.~8--11.
+
+\newpage
+%======================================================================
+\panel{The reference set that $J$ is built on}
+
+Fixed one-step evaluation points from the training records, not a simulated
+trajectory. Velocities are unmeasured, since $C_y=\begin{bmatrix}P^{\T}&0
+\end{bmatrix}$, so they are reconstructed:
+
+\begin{equation*}
+q_k=P^{-\T}y_k,
+\qquad
+\dot q_k=\frac{-q_{k+2}+8q_{k+1}-8q_{k-1}+q_{k-2}}{12T_s},
+\qquad
+x_{a,k}=0,
+\qquad
+u_k\ \text{recorded}.
+\end{equation*}
+
+Two samples are trimmed at each record end so the stencil never crosses a
+boundary. Stacking sample-major over the routed physical rows,
+
+\begin{equation*}
+J=\col_k J_{b,k}(\bar v)\in\R^{Nn_r\times 10},
+\qquad
+\Faug(\theta_a)=\col_k \faug^{b}(\theta_a,x_{b,k},0,u_k)\in\R^{Nn_r},
+\qquad
+N=671\,944 .
+\end{equation*}
+
+The tuples stay fixed for the whole run. The set has numerical rank ten, so all
+ten parameter directions are excited.
+
+\newpage
+%======================================================================
+\panel{The same construction, with $J$ in place of $\Phi$}
+
+\begin{equation*}
+J=U\Sigma V^{\T},
+\end{equation*}
+
+\vspace{-2mm}
+\begin{equation*}
+\thaux(\theta_a)=J^{\dagger}\Faug(\theta_a)=V\Sigma^{-1}U^{\T}\Faug(\theta_a)
+\in\R^{10},
+\tag{cf.\ Eq.~8}
+\end{equation*}
+
+\vspace{-2mm}
+\begin{equation*}
+\widetilde\Faug=\Faug-J\thaux,
+\tag{cf.\ Eq.~10}
+\end{equation*}
+
+\vspace{-2mm}
+\begin{equation*}
+J^{\T}\widetilde\Faug=0 .
+\tag{cf.\ Eq.~11}
+\end{equation*}
+
+The Gram matrix is never formed; the solve uses the economy SVD in double
+precision. The inner product is the Euclidean one in the model's normalized
+state coordinates.
+
+\newpage
+%======================================================================
+\panel{The correction inside the rollout}
+
+\begin{equation*}
+\begin{aligned}
+x_{b,k+1}&=\fbase(v,x_{b,k},u_k)+\faug^{b}(\theta_a,\widehat x_k,u_k)
+-J_b(\bar v,x_{b,k},u_k)\,\thaux,\\[1mm]
+x_{a,k+1}&=\faug^{a}(\theta_a,\widehat x_k,u_k).
+\end{aligned}
+\end{equation*}
+
+Gy\"or\"ok evaluates his stored coefficient against the regressor at the new
+point, $\widehat y_k=\phi(\xio)\widehat\theta_b+f^{\ANN}(\xio)
+-\phi(\xio)\widehat\thaux$ (Eq.~13). Here $\thaux$ is fitted on the reference
+tuples but applied at the rollout state, with the epoch expansion point
+$\bar v$ frozen in both places.
+
+\vspace{1mm}
+Lifecycle: the reference tuples are fixed for the run; $\bar v$ is detached and
+$J$ rebuilt at each epoch boundary; $\thaux$ is recomputed at every objective
+evaluation and never reused across optimizer updates.
+
+\newpage
+%======================================================================
+\panel{What this establishes}
+
+\begin{equation*}
+\text{established:}\qquad
+J^{\T}\widetilde\Faug=0
+\quad\text{on the fixed reference tuples, at }x_a=0,\ \text{at }\bar v .
+\end{equation*}
+
+\begin{equation*}
+\text{not established:}\qquad
+x_{a,k}\ \longrightarrow\ \faug^{b}
+\ \longrightarrow\ x_{b,k+1}
+\ \longrightarrow\ \cdots\ \longrightarrow\ y_{k+n}
+\end{equation*}
+
+The condition is one-step, stacked, in normalized routed physical-state
+coordinates, against the local ten-parameter tangent at $\bar v$. It is not
+pointwise, not global in $v$, not valid at nonzero $x_a$, and says nothing
+about the accumulated input--output Jacobian after propagation and feedback.
+Gy\"or\"ok's parameter recovery (Theorem~7) needs an exact $\Phi$ and
+Condition~4, $\sum_i\phi^{\T}(\xio)\delta(\xio)=0$, neither of which transfers
+automatically.
+
+\end{document}

@@ -7,8 +7,8 @@
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
-\setlength{\abovedisplayskip}{10pt}
-\setlength{\belowdisplayskip}{10pt}
+\setlength{\abovedisplayskip}{9pt}
+\setlength{\belowdisplayskip}{9pt}
 
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\T}{\mathsf{T}}
@@ -17,46 +17,55 @@
 \newcommand{\faug}{f_{\mathrm{aug}}}
 \newcommand{\Faug}{F_{\mathrm{aug}}}
 \newcommand{\ANN}{\mathrm{ANN}}
-\newcommand{\panel}[1]{\subsection*{\Large #1}\vspace{2mm}}
+\newcommand{\panel}[1]{\subsection*{\Large #1}\vspace{1mm}}
 
 \begin{document}
 
 %======================================================================
 \panel{Baseline in state-space form}
 
-With $q=\col(X,\Theta,Y)$, scheduling signal $Y=q_3$ and physical state
-$x_b=\col(q,\dot q)\in\R^{6}$, the LPV baseline
-$M(Y;v)\ddot q+C(v)\dot q+K(v)q=Pu$ is written as
+Physical state $x_b=\col(q,\dot q)\in\R^{6}$ with $q=\col(X,\Theta,Y)$. The
+scheduling signal is the $Y$ position itself, $Y=q_3$, so the baseline is
+self-scheduled. Written as a first-order system,
+$M(Y;v)\ddot q+C(v)\dot q+K(v)q=Pu$ becomes
 
 \begin{equation*}
 \dot x_b
 =
-\begin{bmatrix}
-0 & I\\[1mm]
+\left[\begin{array}{cc}
+0 & I\\[2.5mm]
 -M(Y;v)^{-1}K(v) & -M(Y;v)^{-1}C(v)
-\end{bmatrix}
+\end{array}\right]
 x_b
 +
-\begin{bmatrix}
-0\\[1mm] M(Y;v)^{-1}P
-\end{bmatrix}
-u ,
-\qquad
-y=C_o x_b+D_o u .
+\left[\begin{array}{c}
+0\\[2.5mm] M(Y;v)^{-1}P
+\end{array}\right]
+u .
 \end{equation*}
 
-RK4 integration over one sample gives the discrete physical transition
+One sample of RK4 gives the discrete transition, and only positions are
+measured:
 
 \begin{equation*}
-x_{b,k+1}=\fbase^{d}(v,x_{b,k},u_k),
+x_{b,k+1}=\fbase(v,x_{b,k},u_k),
 \qquad
-y_k=C_o x_{b,k}+D_o u_k ,
+y_k=C_y x_{b,k}+D_y u_k,
 \qquad
-v\in\R^{10}.
+C_y=\begin{bmatrix}P^{\T} & 0_{3\times 3}\end{bmatrix},
+\qquad
+D_y=0 .
 \end{equation*}
 
-The free parameter vector $v$ collects the ten identifiable combinations and
-enters $M$, $C$ and $K$ nonlinearly.
+The free parameters are the ten identifiable combinations
+
+\begin{equation*}
+v=\col\!\left(k_{b,\Sigma},\,c_{g1},\,c_{g2},\,c_y,\,c_{b,\Sigma},\,m_h,\,
+m_{\mathrm{tot}},\,m_{\Delta},\,J_{\mathrm{eff}},\,d\right)\in\R^{10},
+\end{equation*}
+
+where sums appear because $k_{b1},k_{b2}$ and $c_{b1},c_{b2}$ and $J_b,J_h$ are
+not separately identifiable from the data.
 
 \newpage
 %======================================================================
@@ -68,66 +77,61 @@ stacked into $\widehat x_k=\col(x_{b,k},x_{a,k})\in\R^{14}$:
 \begin{equation*}
 \begin{bmatrix}x_{b,k+1}\\[1.5mm] x_{a,k+1}\end{bmatrix}
 =
-\begin{bmatrix}\fbase^{d}(v,x_{b,k},u_k)\\[1.5mm] 0\end{bmatrix}
+\begin{bmatrix}\fbase(v,x_{b,k},u_k)\\[1.5mm] 0\end{bmatrix}
 +
 \begin{bmatrix}
 \faug^{b}(\theta_a,\widehat x_k,u_k)\\[1.5mm]
 \faug^{a}(\theta_a,\widehat x_k,u_k)
 \end{bmatrix},
+\qquad\qquad
+y_k=C_y x_{b,k}+D_y u_k .
+\end{equation*}
+
+One network provides both contributions, split by row:
+
+\begin{equation*}
+\Faug(\theta_a,\widehat x_k,u_k)
+=\begin{bmatrix}
+\faug^{b}(\theta_a,\widehat x_k,u_k)\\[1.5mm]
+\faug^{a}(\theta_a,\widehat x_k,u_k)
+\end{bmatrix}\in\R^{14},
 \qquad
-y_k=C_o x_{b,k}+D_o u_k .
+\faug^{b}\in\R^{6},
+\qquad
+\faug^{a}\in\R^{8}.
 \end{equation*}
-
-Gy\"or\"ok adds the two components in the output equation,
-$\widehat y_k=\varphi(x_k)\theta_b+f^{\ANN}_{\theta_a}(x_k)$ (Eq.~3). Here they
-add in the state equation, and the learning component has no direct output
-term: it reaches $y$ only through state propagation.
 
 \newpage
 %======================================================================
-\panel{Separation of the two components}
+\panel{Where the two components are added}
 
-With the selectors $S_b=\begin{bmatrix}I_6&0\end{bmatrix}$ and
-$S_a=\begin{bmatrix}0&I_8\end{bmatrix}$, so that $S_bS_b^{\T}=I_6$ and
-$S_bS_a^{\T}=0$, the baseline lifted to the full state is
+Gy\"or\"ok adds them in the output equation,
 
 \begin{equation*}
-F_{\mathrm{base}}^{d}(v,\widehat x_k,u_k)
-=S_b^{\T}\,\fbase^{d}\!\left(v,S_b\widehat x_k,u_k\right).
+\widehat y_k=\phi(x_k)\theta_b+f^{\ANN}_{\theta_a}(x_k),
+\tag{Eq.~3}
 \end{equation*}
 
-\begin{center}
-\begin{tabular}{lll}
-\toprule
- & reads & writes\\
-\midrule
-baseline $\fbase^{d}$ & $x_b$ only & physical rows only\\
-learning component $\Faug$ & $x_b$ and $x_a$ & physical and learned rows\\
-\bottomrule
-\end{tabular}
-\end{center}
+where $x_k$ is the lagged input--output regressor, $\phi(x_k)$ the baseline
+regressor matrix, $\theta_b$ the physical parameters entering it linearly, and
+$\theta_a$ the network weights.
 
-The baseline is structurally zero on the eight learned-state rows. Those states
-exist only because of the augmentation, and $v$ does not appear in their update.
-
-\newpage
-%======================================================================
-\panel{Where the components can overlap}
-
-Every baseline direction in the full state is of the form $S_b^{\T}w$ with
-$w\in\R^{6}$, so
+\vspace{2mm}
+Here they are added in the state equation, so neither component appears in the
+output equation:
 
 \begin{equation*}
-\left(S_b^{\T}w\right)^{\!\T}\Faug
-= w^{\T}S_b\Faug
-= w^{\T}\faug^{b}.
+\left.
+\begin{array}{r}
+\fbase(v,x_{b,k},u_k)\\[1.5mm]
+\faug^{b}(\theta_a,\widehat x_k,u_k)
+\end{array}
+\right\}
+\ \longrightarrow\ x_{b,k+1}
+\ \longrightarrow\ y_{k+1},
+\qquad\qquad
+\fbase,\ \faug^{b}\ \nrightarrow\ y_k .
 \end{equation*}
 
-The learned-state rows drop out of the inner product. Orthogonality between the
-physics-based and the learning component is therefore a condition on
-$\faug^{b}$ alone, while $\faug^{a}$ stays unconstrained.
-
-This holds for a single state transition. A nonzero $x_a$ still affects
-$\faug^{b}$, the propagated physical state and the output at later samples.
 
 \end{document}
