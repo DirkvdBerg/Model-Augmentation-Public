@@ -59,9 +59,11 @@ function records = gtd_build_records_telica(cfg)
     DWELL = 0.30;
 
     % Logical ranges, matching gtd_build_records' Xs_full / Yr_full / Yr_v2.
-    X_full = [-0.10, 0.10];
-    Y_full = [-0.30, 0.30];
-    Y_low  = [-0.30, -0.14];
+    % Y_val_low is Yr_v2 shifted 20 mm so it lands on the held-out residue-0.04
+    % lattice; see the held-out-split block below.
+    X_full    = [-0.10,  0.10];
+    Y_full    = [-0.30,  0.30];
+    Y_val_low = [-0.28, -0.12];
 
     % EVERY record starts at [X_sym, Y] = [0, Y_op], the controller's
     % linearisation point. This is forced, not chosen: gtd_enforce_limits runs
@@ -100,21 +102,53 @@ function records = gtd_build_records_telica(cfg)
     c{end+1} = mk('TP4_telica_ym06',     'train', -0.06, ...
                   pt(TEL, -1, +1, X_full, Y_full, DWELL));
 
+    % ── HELD-OUT SPLIT: validation and test sit on an UNSEEN Y lattice ──────
+    % Every record walks Y_op + k*0.080, so what a record VISITS is decided by
+    % the residue Y_op mod 0.080, not by Y_op itself. Training occupies
+    %     0.00 (TP1, TP2) | 0.02 (TP4) | 0.06 (TP3)
+    % and on the 80 mm circle that leaves exactly ONE well-separated gap,
+    % 0.02 -> 0.06, centred on 0.04. Every other free residue is within 10 mm of
+    % a training one. Validation and test therefore both take residue 0.04, with
+    % DISTINCT Y_op values so each still gets its own controller row.
+    %
+    % Checked in units of 20 mm: training visits {0, +-4, +-8, +-12} and every odd
+    % multiple {+-1, +-3, ... +-15}; validation and test visit {+-2, +-6, +-10, +-14}.
+    % The two sets do not intersect, so every held-out Y sits exactly halfway
+    % between two training Y positions.
+    %
+    % WHY INTERPOLATION AND NOT A HELD-OUT BAND: this mirrors the supervisor's
+    % own Telica split, whose validation and test operating points are held-out
+    % COMBINATIONS inside the training grid, not a held-out region
+    % (docs/kamtin-telica-schema.md: "Both test points lie inside the training
+    % grid (interpolation)"). Validation and test sharing one lattice mirrors
+    % that too: the supervisor's val and test points come from the same grid,
+    % both held out from training.
+    %
+    % NOT HELD OUT, and it cannot be: X always starts at 0 because that is the
+    % limiter's linearisation point, so every record shares the X lattice
+    % {0, +-0.04, +-0.08}. The supervisor held out both xpos and ypos; here only Y
+    % can be held out.
+
     % ── validation ──────────────────────────────────────────────────────────
-    % VP1: Y restricted to the low band with Y_op at its midpoint, matching the
-    % V2_aprbs_Ylow convention (Y_op = midpoint of the record's Y range). -0.22
-    % is on the 80 mm lattice of that band, so -0.30 and -0.14 are both reached
-    % with full strokes.
-    c{end+1} = mk('VP1_telica_ylow',     'val',   -0.22, ...
-                  pt(TEL, +1, +1, X_full, Y_low,  0.40));
-    % VP2: interior Y_op, full range, third dwell value. +0.10 mirrors the Y used
-    % by V1_standstill_Yp10 and V3_ysweep_Yp10, so the validation set keeps a
-    % consistent unseen-Y story across excitation types.
-    c{end+1} = mk('VP2_telica_yp10',     'val',   +0.10, ...
+    % VP1: the low-Y band record, matching the V2_aprbs_Ylow convention
+    % (Y_op = midpoint of the record's Y range). The band is shifted 20 mm from
+    % [-0.30 -0.14] to [-0.28 -0.12] so the residue-0.04 lattice hits BOTH bounds
+    % with full strokes; on the old band it would have reached only two Y points.
+    c{end+1} = mk('VP1_telica_ylow',     'val',   -0.20, ...
+                  pt(TEL, +1, +1, X_full, Y_val_low, 0.40));
+    % VP2: interior Y_op, full range, third dwell value. Traversal [-0.28 +0.28].
+    % Named yp12 for the Y_op it actually carries. +0.12 is NOT the +0.10 of
+    % V1_standstill_Yp10 / V3_ysweep_Yp10: +0.10 sits on residue 0.02, which is
+    % TP4's training lattice, so it would have made this record's dwell
+    % positions a subset of training's. +0.12 is the held-out residue 0.04.
+    c{end+1} = mk('VP2_telica_yp12',     'val',   +0.12, ...
                   pt(TEL, +1, -1, X_full, Y_full, 0.35));
 
     % ── test ────────────────────────────────────────────────────────────────
-    c{end+1} = mk('EP1_telica_test',     'test',   0.00, ...
+    % Same unseen lattice as validation, own Y_op and own dwell. Its Y positions
+    % are therefore seen in VALIDATION but never in TRAINING, which is exactly
+    % the supervisor's arrangement.
+    c{end+1} = mk('EP1_telica_test',     'test',  -0.04, ...
                   pt(TEL, -1, +1, X_full, Y_full, 0.25));
 
     records = [c{:}];

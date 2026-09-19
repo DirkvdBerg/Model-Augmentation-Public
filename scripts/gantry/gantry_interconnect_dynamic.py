@@ -40,7 +40,13 @@ from gantry_dynamic.training import train_model_with_diagnostics, resolve_resume
 CFG = RunConfig(
     # D-188: band [140,230] holds BOTH the 212.13 Hz free-free pole and the 150 Hz
     # anti-resonance; AMP_SCALE=6 is the largest unscaled value, zeta_a=0.03 the JPE floor.
-    mode='augmentation_ma50_b140-230_a6_z03',
+    # D-206: merged dataset. The 22 production records (multisine) COPIED from
+    # augmentation_ma50_b140-230_a6_z03, plus the 7 Telica operational records (no
+    # multisine) copied from augmentation_ma50_z03_telica. Both source folders are left
+    # intact, so each half stays reproducible from its own generator. The merge is legitimate
+    # because the PLANT is identical in both: MA_FRAC=0.50, zeta_a=0.03, same controller; the
+    # only knobs that differ (band, amplitude) shape a multisine the new records do not have.
+    mode='augmentation_ma50_z03_b140-230_a6_telica',
     # 'linear_map' = Hoekstra 2026 reconstructability init (trainable); 'default' = deepSI learned encoder
     encoder_init='linear_map',
     ann_activation='tanh',        # 'linear' = Identity (Jan's ECC, D-071); 'tanh' = nonlinear ANN
@@ -142,7 +148,28 @@ CFG = RunConfig(
     # the L-BFGS polish reached. 400 needed 32.8 h: jobs 83962 and 83978 would have been killed
     # around epoch 290, mid-Adam, so the polish that produces the final parameter values would
     # never have run and the end-of-run npz and diagnostics would never have been written.
-    epochs=150,
+    #
+    # RAISED 150 -> 200 (user, 2026-09-19; asked for 300, then 250, neither fits 24 h).
+    # An epoch is a PASS OVER THE DATA (n_its = N_batch_updates_per_epoch * epochs,
+    # interconnect.py:778), so the D-206 merged dataset changes the arithmetic twice over:
+    #   14 records -> 130 updates/epoch  |  18 records -> 167 updates/epoch
+    # BUDGET FROM THE MEASURED POINT, not from a component model. The note above records
+    # 400 epochs = 32.8 h at 14 records, i.e. 0.082 h/epoch all-in. At 18 records both the
+    # updates per epoch and the validation count scale by 18/14 = 1.286, so 0.105 h/epoch:
+    #     300 ep -> 31.6 h   250 ep -> 26.4 h   220 ep -> 23.2 h   200 ep -> 21.1 h
+    # Only 200 leaves real margin for the L-BFGS polish and the end-of-run writes.
+    # A component build-up (stepping + recording + validation) gives 20.9 h for 250 and looks
+    # affordable, but it is NOT trustworthy: the same build-up gives 25.8 h for the 400-epoch
+    # case that actually took 32.8 h, so it under-predicts by about 27 %.
+    # CONSEQUENCE of overrunning: SLURM kills the job mid-Adam. Checkpoints
+    # survive (written at every improving validation) but the L-BFGS polish never runs, so the
+    # FINAL parameter values, the end-of-run NPZ and the diagnostics are never written. That is
+    # exactly the failure the 400-epoch note above records.
+    # TO GO HIGHER THAN 200, one of: raise `#SBATCH -t` in run_obc_arm.sh to 48:00:00 (check the
+    # molokai partition allows it), or raise its_per_val to 2600 (halves the validation cost but
+    # also halves the checkpoint cadence and the curve sample rate), or set n_its to cap the
+    # update count directly.
+    epochs=200,
     # Batch UPDATES between validations; None = 'epoch' (the historical default). 1300 = every 10
     # epochs at batch 512 (130 updates/epoch). Under `reduce-overhead` at nf=400 one validation
     # costs 619 s (job 83962: update 649 at 1:15:59, update 650 at 1:26:19) against 1.24 s per

@@ -158,6 +158,17 @@ RECORD_Y_OP = {
     'V4_lissajous_Ym10': -0.10,
     'E1_resonance_sweep': 0.00, 'E2_multisine_Yp22': 0.22, 'E3_aprbs_above': 0.00,
     'E4_multisine_off': 0.00,
+    # D-206: Telica-derived operational records, from gtd_build_records_telica.m.
+    # Y_op is BOTH the controller linearisation point and the record's starting Y, and it
+    # fixes which Y lattice the record dwells on (Y_op + k*0.080). Training occupies
+    # residues Y_op mod 0.080 in {0.00, 0.02, 0.06}; validation and test take the held-out
+    # residue 0.04, so their dwell positions are disjoint from training's (verified: 23
+    # training dwell positions, 8 held-out, 0 shared). Do not "tidy" VP2 to +0.10 or EP1 to
+    # 0.00: those sit on training lattices and would destroy the split.
+    'TP1_telica_y000': 0.00, 'TP2_telica_y000_rev': 0.00,
+    'TP3_telica_yp06': 0.06, 'TP4_telica_ym06': -0.06,
+    'VP1_telica_ylow': -0.20, 'VP2_telica_yp12': 0.12,
+    'EP1_telica_test': -0.04,
 }
 
 

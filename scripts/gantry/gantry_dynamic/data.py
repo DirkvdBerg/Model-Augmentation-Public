@@ -18,20 +18,37 @@ from model_augmentation.systems.gantry_ss import Cd, Dd, P
 
 from .config import RunConfig, REPO_ROOT
 
+# D-206: the TP*/VP*/EP* records are Telica-derived operational motion profiles with NO
+# multisine (cycloidal setpoint measured from the real machine; the reference trajectory is
+# the only excitation). They exist because every T*/V*/E* record carries a multisine, so a
+# model trained on them alone extrapolates badly on multisine-free evaluation data.
+#
+# APPENDED, NEVER PREPENDED. VAL_FILES[0] and TEST_FILES[0] are the PRIMARY diagnostic
+# records (load_mat_aug, baselines, GT plots); prepending would silently move every
+# diagnostic off V1/E1.
+#
+# These names only resolve in a dataset folder that HOLDS them. The Telica records are
+# generated into 'augmentation_ma50_z03_telica' and copied alongside the production records
+# into 'augmentation_ma50_z03_b140-230_a6_telica'; cfg.mode must point at the merged folder
+# or load_traj raises FileNotFoundError on the first TP* entry.
 TRAIN_FILES = [
     'T1_standstill_Ym30.mat', 'T2_standstill_Ym15.mat', 'T3_standstill_Y000.mat',
     'T4_standstill_Yp15.mat', 'T5_standstill_Yp30.mat',
     'T6_ysweep_slow.mat', 'T7_ysweep_fast.mat', 'T8_ysweep_xmix.mat',
     'T9_aprbs_30.mat', 'T10_aprbs_60.mat', 'T11_aprbs_100.mat', 'T12_aprbs_yaw.mat',
     'T13_lissajous.mat', 'T14_lissajous_yaw.mat',
+    'TP1_telica_y000.mat', 'TP2_telica_y000_rev.mat',
+    'TP3_telica_yp06.mat', 'TP4_telica_ym06.mat',
 ]
 VAL_FILES = [
     'V1_standstill_Yp10.mat', 'V2_aprbs_Ylow.mat',
     'V3_ysweep_Yp10.mat', 'V4_lissajous_Ym10.mat',
+    'VP1_telica_ylow.mat', 'VP2_telica_yp12.mat',
 ]
 TEST_FILES = [
     'E1_resonance_sweep.mat', 'E2_multisine_Yp22.mat',
     'E3_aprbs_above.mat', 'E4_multisine_off.mat',
+    'EP1_telica_test.mat',
 ]
 
 
