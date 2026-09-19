@@ -1,0 +1,119 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+
+============================================================================================
+SETUP (stride 97, device cuda)
+============================================================================================
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[obc] reference set: 6930 tuples from 14 records (495/495/495/495/495/495/495/495/495/495/495/495/495/495 per record), stride 97, 2.5 s to build
+[obc]   Y coverage: min -0.3000 max +0.3000 mean +0.0042 std 0.1901 m; hot tensors 0.7 MB
+
+============================================================================================
+STEP 2  the addition: a bank of lossless tuned absorbers
+============================================================================================
+  d_i'' + w_i^2 d_i = -b_i^T q'',      f_a = SUM_i b_i k_i d_i,   k_i = m_i w_i^2
+  zeta = 0 is FORCED: a dissipative element can never be orthogonal to the damping
+  family (that condition is a positive quadratic form, with no boundary term and no
+  symmetry escape). d_i is independent of m_i, so f_a is LINEAR in the masses.
+  resonances below the band: [20.0, 40.0, 70.0, 100.0, 125.0] Hz
+  resonances above the band: [255.0, 300.0, 380.0, 520.0, 800.0] Hz
+  mountings: ['Y at centre', 'X at centre', 'yaw only, 1 m arm', 'Y, +0.10 m lever', 'Y, -0.10 m lever', 'X, +0.15 m lever', 'X, -0.15 m lever', '+45 deg X-Y', '-45 deg X-Y', '+45 deg, +0.20 lever', '+45 deg, -0.20 lever', '-45 deg, +0.20 lever']
+[cand] 132 candidates x 6930 tuples, 416.3 s
+
+============================================================================================
+STEP 3a  each candidate through the PRODUCTION block
+============================================================================================
+  The one-step map is affine in u, so a candidate's contribution is
+  Delta_i = step(x, u + P^-1 f_a_i) - step(x, u), evaluated by the same
+  `evaluate_step_rows` the basis is built with. No second integrator.
+
+  132 candidate fields in 3.4 s
+
+============================================================================================
+STEP 3b  the basis, and the ten conditions
+============================================================================================
+    J: 41580 x 10, rank 10/10 at tol 2.021e-10 (rtol 9.233e-12), cond 7.7077e+02, build 0.0 s, svd 0.0 s
+    singular values: 2.1888e+01 2.3810e+00 1.9861e+00 1.1658e+00 3.7405e-01 3.2126e-01 2.4078e-01 9.3197e-02 8.0284e-02 2.8398e-02
+    column norms:    kb_sum=3.744e-01 cg1=1.890e-01 cg2=2.621e-01 cy=8.035e-02 cb_sum=9.157e-02 mh=2.167e+00 m_total=1.818e+00 m_diff=2.437e-01 J_eff=2.186e+01 d=2.011e+00
+    largest |column correlations|: cg1~cg2=-0.9761, mh~m_total=-0.4465, mh~J_eff=+0.4145, m_total~J_eff=+0.2223, J_eff~d=-0.1537, m_total~m_diff=-0.1101
+
+  condition matrix C is (10, 132); column norms of Delta_i span 9.419e-05 to 1.891e+01
+
+  sign structure of C, which governs whether x >= 0 can work at all:
+  condition     #pos     #neg      max |C|     row norm
+  kb_sum          50       82    1.702e-01    2.907e-01
+  cg1             56       76    3.502e-02    5.192e-02
+  cg2             87       45    4.891e-02    9.386e-02
+  cy              62       70    7.876e-03    9.412e-03
+  cb_sum          61       71    3.022e-01    4.945e-01
+  mh              69       63    1.140e+01    1.843e+01
+  m_total         82       50    5.188e+00    8.523e+00
+  m_diff          63       69    1.456e-01    4.120e-01
+  J_eff           69       63    2.798e+02    4.500e+02
+  d               52       80    3.134e+00    6.841e+00
+
+============================================================================================
+STEP 3c  solve  C x = 0,  x >= 0,  maximising the size of the addition
+============================================================================================
+  No Gordan certificate: a nonnegative solution exists. Solving for it.
+  minimum-mass solution, rescaled to a total added mass of 1.010 kg
+  LP solved. 11 of 132 candidates active.
+
+  absorber                        mass [kg]    ||Delta_i||
+  absorber  40.0 Hz Y, +0.10 m lever       0.164929     4.9770e-01
+  absorber  40.0 Hz X, -0.15 m lever       0.022643     2.8662e-01
+  absorber  70.0 Hz yaw only, 1 m arm       0.369398     2.6521e+00
+  absorber  100.0 Hz yaw only, 1 m arm       0.043962     5.1821e+00
+  absorber  100.0 Hz +45 deg, +0.20 lever       0.250793     9.5346e-01
+  absorber  125.0 Hz yaw only, 1 m arm       0.012921     1.3365e+01
+  absorber  255.0 Hz yaw only, 1 m arm       0.046045     1.8912e+01
+  absorber  255.0 Hz Y, +0.10 m lever       0.015658     7.9015e+00
+  absorber  255.0 Hz +45 deg, +0.20 lever       0.029498     7.8328e+00
+  absorber  255.0 Hz +45 deg, -0.20 lever       0.000139     3.4904e+00
+  absorber  380.0 Hz Y, +0.10 m lever       0.054013     2.2544e+00
+
+============================================================================================
+VERIFY  the constructed addition against the production inner product
+============================================================================================
+  ||Delta||            = 1.340204e+00
+  rho* = ||P D||/||D|| = 3.700711e-16        (the current absorber gives 2.05e-01)
+  ||J^T Delta||        = 7.641014e-15
+  predicted combo-err  = 6.679110e-14 %      (the current absorber predicts 4.96 %)
+
+  per-parameter predicted bias, which should be numerically zero:
+    kb_sum    +1.144e-14 %
+    cg1       +1.593e-13 %
+    cg2       +1.225e-13 %
+    cy        +0.000e+00 %
+    cb_sum    -5.921e-14 %
+    mh        +1.759e-14 %
+    m_total   +1.626e-14 %
+    m_diff    -5.312e-15 %
+    J_eff     +0.000e+00 %
+    d         +0.000e+00 %
+
+  VERDICT: the addition IS orthogonal on this data, to numerical precision
+
+[out] wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-by-construction\baseline-and-added-dynamics\orthogonal_addition.json
+
+  NOT YET DONE (step 4): the absorbers were driven by the RECORDED trajectory, so
+  this is the first iterate of a fixed point. Regenerating the data with the bank
+  attached moves q, hence C, hence x. Iterate until the masses stop moving.

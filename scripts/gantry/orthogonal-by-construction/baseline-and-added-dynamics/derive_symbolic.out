@@ -1,0 +1,195 @@
+
+============================================================================================
+1  THE BASELINE, ITS PARAMETER SENSITIVITIES, SYMBOLICALLY
+============================================================================================
+  M(Y), C, K written from gantrySystemExtended.m with the absorber absent.
+  The ten identifiable combinations enter exactly one of the three matrices each,
+  which Sect. 8.2 measured to be exact (bit-exact zeros on the other two).
+
+  dM/d(m_diff), the X-Theta mass coupling. This is the direction the absorber
+  offset ma*L0 corrupts, and the one carrying 98.8 percent of the measured bias:
+⎡     L_b   ⎤
+⎢ 0   ───  0⎥
+⎢      2    ⎥
+⎢           ⎥
+⎢L_b        ⎥
+⎢───   0   0⎥
+⎢ 2         ⎥
+⎢           ⎥
+⎣ 0    0   0⎦
+
+============================================================================================
+2  THE ADDITION, AND THE CONDITION, IN FORMULAS
+============================================================================================
+  f_a = -( M_a qdd + C_a qd + K_a q ),  M_a, C_a, K_a symmetric, 18 unknowns:
+    M_a = a00, a01, a02, a11, a12, a22
+    C_a = b00, b01, b02, b11, b12, b22
+    K_a = c00, c01, c02, c11, c12, c22
+
+  Moments of the operating domain: S0 = E[q q^T], S1 = E[q' q'^T],
+  S2 = E[q'' q''^T], and the stationarity identities
+      E[q q'^T], E[q' q''^T] antisymmetric,    E[q q''^T] = -S1
+  which are Sect. 8.4's integration-by-parts identities in expectation form.
+
+  Ten conditions built. Each is LINEAR in the eighteen unknowns, as claimed:
+    coefficient matrix is (10, 18)
+
+============================================================================================
+3  WHAT COUPLES TO WHAT, READ OFF THE FORMULAS
+============================================================================================
+  With all nine terms carried, the conditions do NOT decouple. An earlier
+  version reported the damping conditions involve C_a alone; that was an
+  artefact of dropping the cross-parity terms and is retracted.
+  Unknowns actually appearing in each damping condition:
+    damp cg1     unknowns: ['a00', 'a01', 'a02', 'a11', 'a12', 'a22', 'b00', 'b01', 'b02', 'b11', 'b12', 'b22', 'c00', 'c01', 'c02', 'c11', 'c12', 'c22']
+    damp cg2     unknowns: ['a00', 'a01', 'a02', 'a11', 'a12', 'a22', 'b00', 'b01', 'b02', 'b11', 'b12', 'b22', 'c00', 'c01', 'c02', 'c11', 'c12', 'c22']
+    damp cy      unknowns: ['a00', 'a01', 'a02', 'a11', 'a12', 'b00', 'b01', 'b02', 'b11', 'b12', 'b22', 'c00', 'c01', 'c02', 'c11', 'c12']
+    damp cb_sum  unknowns: ['a00', 'a01', 'a02', 'a12', 'a22', 'b00', 'b01', 'b02', 'b11', 'b12', 'b22', 'c00', 'c01', 'c02', 'c12', 'c22']
+
+  The cross-parity terms are weighted by the antisymmetric cross-moments T01
+  and T12, so they are small when the domain is near stationary and the matrix
+  products are near symmetric, but they are NOT zero. The whole 10 x 18 system
+  must be solved together.
+
+============================================================================================
+4  SOLVE, with the coefficients evaluated over the operating domain
+============================================================================================
+  The FORMULA is the symbolic one above. Only its ten times eighteen COEFFICIENTS
+  describe where the machine operates, and they are evaluated as domain averages.
+  Two things must be consistent with the empirical condition or the derived addition
+  will not transfer, and both were wrong in a first attempt:
+    (a) W = M(Y)^-T D M(Y)^-1 depends on the SCHEDULING VARIABLE, so it belongs
+        INSIDE the average. Freezing it at one Y left rho* at 5.0e-02.
+    (b) the average must run over the SAME tuples the reference set uses, not a
+        differently trimmed window of the same records.
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  coefficients averaged over 6930 reference tuples, W(Y) inside the average.
+  coefficient matrix 10 x 18. Singular values:
+    [5.777e+05 7.608e+04 1.247e+03 4.403e+01 3.663e+00 1.530e+00 1.377e+00
+ 7.012e-02 5.314e-03 1.227e-04]
+  rank 10, so the admissible addition class has dimension 8.
+
+  A BASIS OF THE ADMISSIBLE CLASS. Every column below is an addition orthogonal to
+  the baseline by construction; any real combination of them is too.
+  entry      basis 0    basis 1    basis 2    basis 3
+  Ma00       -0.0011    -0.0003    -0.0005    -0.0082
+  Ma01        0.0011     0.0003     0.0015     0.0079
+  Ma02       -0.0114    -0.0034    -0.0152    -0.0732
+  Ma11       -0.0000    -0.0000    -0.0000    -0.0000
+  Ma12        0.0002     0.0000     0.0000     0.0002
+  Ma22       -0.0005     0.0001     0.0001     0.0006
+  Ca00       -0.2308    -0.0216    -0.0000    -0.0364
+  Ca01       -0.0920    -0.0097    -0.0002     0.0033
+  Ca02        0.8993     0.0985     0.0013    -0.0396
+  Ca11        0.0196     0.0148     0.0079     0.0367
+  Ca12        0.0075    -0.1065    -0.0002     0.0010
+  Ca22       -0.1078     0.9883    -0.0000     0.0002
+  Ka00       -0.0014    -0.0003     0.9999    -0.0007
+  Ka01        0.0326     0.0030    -0.0006     0.9949
+  Ka02        0.0225     0.0020    -0.0005    -0.0040
+  Ka11        0.0232     0.0037     0.0015     0.0069
+  Ka12        0.3379     0.0361    -0.0003    -0.0191
+  Ka22        0.0336     0.0036    -0.0000    -0.0020
+
+============================================================================================
+5  A PHYSICALLY MEANINGFUL MEMBER
+============================================================================================
+  Pick the member of the class that is purely REACTIVE (C_a = 0, forced anyway by the
+  lossless requirement) and has the smallest Frobenius norm for a fixed size. Solve
+  the damping subsystem first: C_a = 0 satisfies it identically, which is the
+  formula-level statement of why the addition must be lossless.
+
+  lossless subsystem: 10 x 12 in (M_a, K_a), rank 10, so the LOSSLESS admissible
+  class has dimension 2. C_a = 0 is imposed, not hoped for.
+
+  M_a =
+[[ 0.0005  0.0004 -0.004 ]
+ [ 0.0004 -0.      0.    ]
+ [-0.004   0.     -0.0002]]
+  K_a =
+[[ 0.88    0.0708 -0.4521]
+ [ 0.0708 -0.0627  0.0399]
+ [-0.4521  0.0399 -0.1037]]
+
+  residual ||A v|| / ||A|| = 2.666e-20   (machine zero means orthogonal by construction)
+
+============================================================================================
+6  CHECK THE DERIVED FORMULA AGAINST THE EMPIRICAL CONDITION, Eq. (17)
+============================================================================================
+  The derivation targets Eq. (16), an integral against the declared domain
+  measure. Training happens on a finite record, which is Eq. (17). The gap
+  between them is sampling error, and it is exactly what Plumlee and Joseph
+  criticise the prior art for ignoring. Measuring it is not optional.
+
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  reference set: 6930 tuples (stride 97)
+  ||Delta||  = 1.221372e-03
+  rho*       = 5.271241e-02     (the hidden MSD of the current dataset gives 2.05e-01)
+  ||J^T D||  = 1.290271e-04
+
+  The continuous-time coefficients leave a residual. Diagnose it before blaming
+  the derivation: the scale-free orthogonality residual is
+    ||J^T D|| / (||J||_F ||D||) = 4.771e-03
+  so the ten conditions ARE satisfied to that relative accuracy. rho* is larger
+  because it involves (J^T J)^-1, which amplifies whatever is left along the
+  weakly excited parameter directions (cond(J) is about 8e+02). The formula is
+  right; its COEFFICIENTS need the discrete Jacobian, not its continuous limit.
+
+============================================================================================
+7  THE SAME FORMULA, COEFFICIENTS FROM THE PRODUCTION DISCRETE JACOBIAN
+============================================================================================
+  Identical linear system, 10 x 18 in (M_a, C_a, K_a). Only the coefficients change:
+  each is <J_j, Delta_u> for the unit addition u, evaluated through the same block
+  and the same `evaluate_step_rows` the basis is built with. This removes the O(Ts)
+  gap between the continuous condition and the one-step map that training sees.
+
+  lossless subsystem rank 10 of 12, admissible dimension 2
+
+  M_a =
+[[-0.0012  0.0003 -0.0022]
+ [ 0.0003  0.     -0.0003]
+ [-0.0022 -0.0003  0.0028]]
+  K_a =
+[[-0.9899  0.0497  0.0404]
+ [ 0.0497 -0.0809  0.0032]
+ [ 0.0404  0.0032 -0.0971]]
+
+  rho*      = 3.537188e-15   (current dataset absorber: 2.05e-01)
+  ||J^T D|| = 2.082734e-17
+  ||Delta|| = 6.740547e-04

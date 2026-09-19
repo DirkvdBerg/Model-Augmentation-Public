@@ -85,9 +85,12 @@ connection is the one we most want and the one we least expect to exist.
 Rather than designing the input, design the plant's extra dynamics so its contribution is
 orthogonal to the parameter sensitivities for any input. Two specific claims we have derived and
 want checked against the literature:
-  (i) pointwise orthogonality is impossible whenever the number of parameters exceeds the number
-      of generalised coordinates, since the sensitivity vectors then span the coordinate space, so
-      orthogonality must come from cancellation over the record;
+  (i) pointwise orthogonality is impossible whenever the local sensitivity matrix has full ROW
+      rank, `rank S(x) = q`, since the only vector orthogonal to a spanning set is zero, so
+      orthogonality must come from cancellation over the record. (Corrected 2026-09-19: more
+      parameters than coordinates makes full row rank generic but does not imply it. On our system
+      it is now MEASURED: rank 3 of 3 on the three force channels at every sample, worst
+      conditioning 5.7e-04.);
   (ii) a DISSIPATIVE addition always has a strictly positive time-averaged correlation with the
       damping-parameter sensitivities, so exact orthogonality to damping parameters requires a
       LOSSLESS addition.

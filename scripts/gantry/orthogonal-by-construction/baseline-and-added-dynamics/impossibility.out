@@ -1,0 +1,86 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+
+==========================================================================================
+SELF-TEST of the linear map (a sign error here manufactures a false verdict)
+==========================================================================================
+  rows_for vs direct complex evaluation, worst abs error over 400 cases: 1.776e-15
+  PASS
+
+==========================================================================================
+SETUP
+==========================================================================================
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  D = diag(1/std_x[3:6]^2) = [ 19.8189 951.1626   4.38  ]
+  parameters: mh 10.1  d 0.1  Lb 0.725  m_total 43.7  m_diff -0.5  J_eff 3.79639
+
+==========================================================================================
+STRUCTURAL PRELIMINARY: what the parameters CANNOT reach in (M, C, K)
+==========================================================================================
+  dM spans rank 5 of 6 in the symmetric 3x3 space
+  dC spans rank 4 of 6 in the symmetric 3x3 space
+  dK spans rank 1 of 6 in the symmetric 3x3 space
+  so 6-1 + 6-4 + 6-5 = 1 + 2 + 5 = 8 structural directions are unreachable.
+  Unreachable: mass X-Y coupling; damping X-Y and Theta-Y; all of K but the yaw entry.
+  NOTE: unreachable is NOT the same as orthogonal. That is what (*) decides.
+
+==========================================================================================
+THE TEST: null space of the ten matrix conditions (*)
+==========================================================================================
+  A nonzero null space IS the construction. A trivial one PROVES the impossibility.
+
+     Y [m] case1 cplx case2 real  case3 sym       rank    smallest sv
+     -0.30          0          0          0         18     1.9719e-02
+     -0.15          0          0          0         18     1.9839e-02
+      0.00          0          0          0         18     1.9991e-02
+      0.15          0          0          0         18     1.9837e-02
+      0.30          0          0          0         18     1.9713e-02
+
+==========================================================================================
+CONTROL (case 4): the DECLARED-EXCITATION problem, for contrast
+==========================================================================================
+  If orthogonality is required only for ONE given excitation rather than for every
+  excitation, the ten MATRIX conditions collapse to ten SCALAR conditions, because
+  each becomes a single number summed over the record. Ten scalars on eighteen real
+  unknowns leaves an 8-dimensional solution space at least. This is the control: it
+  must be large, or the framing itself is wrong.
+
+  declared-excitation null space dimension: 9 of 18
+
+==========================================================================================
+VERDICT
+==========================================================================================
+  The only G satisfying all ten conditions at every scheduling point is G = 0.
+  IMPOSSIBILITY PROVEN, for this baseline and this parameterisation:
+
+    No linear added dynamics, and no memoryless (M_a, C_a, K_a) perturbation,
+    is orthogonal to the baseline parameter sensitivities for EVERY excitation.
+
+  Consequences, and they are the useful part:
+   1. Orthogonality by construction, independent of the experiment, is NOT
+      available. Any orthogonal addition must come with a declared excitation.
+   2. The contrast with case 4 says where the freedom actually lives: an
+      8-dimensional solution space once the excitation is fixed, against nothing
+      when it is not. Addition design and excitation design are ONE problem.
+   3. This is very likely why Gyorok et al. Sect. 5.2 concede their construction
+      breaks once the regressor carries past outputs and say a different data
+      acquisition would be required. The obstruction is structural, not an
+      artefact of their example.

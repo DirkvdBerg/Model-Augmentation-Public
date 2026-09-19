@@ -1,0 +1,142 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+
+==========================================================================================
+A  THE THREE IDENTITIES, SYMBOLICALLY, WITH THEIR CORRECT BOUNDARY TERMS
+==========================================================================================
+
+I1   qdot^T H q      with H SYMMETRIC
+     d/dt[ (1/2) q^T H q ] - qdot^T H q  =  0
+     => INTEGRAL qdot^T H q dt = (1/2) [ q^T H q ] evaluated at the ENDPOINTS.
+     BOUNDARY CONDITION: the POSITIONS must return, q(T)^T H q(T) = q(0)^T H q(0).
+     *** NOT "qdot = 0 at both ends". The draft justified this identity with the
+     *** wrong condition. Part C measures which one the records actually satisfy.
+
+I1a  the same integrand with H ANTISYMMETRIC is NOT a total derivative
+     (1/2) q^T H_antisym q  =  0   (identically zero, so it cannot be the antiderivative)
+     and the integrand itself is not identically zero, so ONLY the symmetric part of
+     H is annihilated. That is exactly what makes the table a SYMMETRY condition.
+
+I2   qddot^T H q      (any H)
+     d/dt[ qdot^T H q ] - qddot^T H q - qdot^T H qdot  =  0
+     => INTEGRAL qddot^T H q dt = [ qdot^T H q ] - INTEGRAL qdot^T H qdot dt.
+     BOUNDARY CONDITION: qdot = 0 at both ends. The surviving term is a QUADRATIC
+     FORM in velocity, which does not vanish for a generic trajectory.
+
+I3   qddot^T H qdot   with H SYMMETRIC
+     d/dt[ (1/2) qdot^T H qdot ] - qddot^T H qdot  =  0
+     => INTEGRAL qddot^T H qdot dt = (1/2) [ qdot^T H qdot ] at the endpoints.
+     BOUNDARY CONDITION: qdot = 0 at both ends. Correct in the draft.
+
+  A verdict: all three identities verified symbolically
+
+==========================================================================================
+B  THE NINE CELLS: which identity each reduces to, and the H whose symmetry is needed
+==========================================================================================
+
+  Setup. The inner product on the protected rows is, with D = diag(1/std_x[3:6]^2) constant and
+  W = M^-T D M^-1,
+
+      <J_j, Delta>  =  -Ts^2 * SUM_k  r_j(k)^T W f_a(k),
+      r_j = (dM_j) qddot + (dC_j) qdot + (dK_j) q.
+
+  Sect. 8.2 measured that exactly one of the three terms of r_j survives per parameter family,
+  so each cell is a single product. Substituting the three addition types gives the table.
+
+  addition          family term           integrand         H               id  
+  --------------------------------------------------------------------------------------
+  f_a = -K_a q      mass  (dM_j) qddot    qddot^T H q       (dM_j) W K_a    I2  
+                    NOT automatic: leaves -SUM qdot^T H qdot
+  f_a = -K_a q      damping (dC_j) qdot   qdot^T H q        (dC_j) W K_a    I1  
+                    ZERO if H symmetric AND positions return
+  f_a = -K_a q      stiffness (dK) q      q^T H q           (dK) W K_a      --  
+                    NOT automatic: a quadratic form in q
+  f_a = -C_a qdot   mass  (dM_j) qddot    qddot^T H qdot    (dM_j) W C_a    I3  
+                    ZERO if H symmetric AND qdot = 0 at the ends
+  f_a = -C_a qdot   damping (dC_j) qdot   qdot^T H qdot     (dC_j) W C_a    --  
+                    NEVER zero for a dissipative C_a: positive form
+  f_a = -C_a qdot   stiffness (dK) q      q^T H qdot        (dK) W C_a      I1  
+                    ZERO if H symmetric AND positions return
+  f_a = -M_a qddot  mass  (dM_j) qddot    qddot^T H qddot   (dM_j) W M_a    --  
+                    NOT automatic: a quadratic form in qddot
+  f_a = -M_a qddot  damping (dC_j) qdot   qdot^T H qddot    (dC_j) W M_a    I3  
+                    ZERO if H symmetric AND qdot = 0 at the ends
+  f_a = -M_a qddot  stiffness (dK) q      q^T H qddot       (dK) W M_a      I2  
+                    NOT automatic: leaves -SUM qdot^T H qdot
+
+  CORRECTION TO THE DRAFT TABLE. Two cells were justified with the wrong boundary condition:
+  (reactive addition vs the damping family) and (dissipative addition vs the stiffness family)
+  both reduce to I1, which needs the POSITIONS to return, not the velocities to vanish. Their
+  entries in Sect. 8.4 stand, but the hypothesis they rest on is different from the other two
+  zero cells, and it is a weaker one on this data. Part C measures the gap.
+
+  UNCHANGED AND CONFIRMED. The load-bearing cell for the lossless conclusion is
+  (dissipative addition vs the damping family): it is SUM qdot^T (dC_j) W C_a qdot, a quadratic
+  form in velocity with no boundary term and no symmetry escape. For a dissipative C_a it has a
+  fixed sign and cannot vanish. That is the obstruction, and it does not depend on either
+  boundary condition.
+
+
+==========================================================================================
+C  THE IDENTITIES ON THE REAL RECORDS (a discrete sum is not an integral)
+==========================================================================================
+  For each identity: |sum| is the discrete sum times ts, |bdy| is the exact boundary
+  term the identity predicts, and |resid| = |sum - bdy| is the quadrature error.
+  "rel" normalises the residual by the natural scale of the integrand, so it is the
+  fraction of the integrand that does NOT cancel. That fraction is the accuracy any
+  parity construction can achieve on this data.
+
+  --- STANDSTILL (frozen Y)
+  record / identity                 |sum|        |bdy|      |resid|          rel
+  T1_standstill_ I1 qdot^T H q   4.5517e-06   5.1048e-06   5.5310e-07   3.9448e-06
+  T1_standstill_ I2 qddot^T H q   2.5849e-04   4.5571e-04   1.9722e-04   1.1805e-06
+  T1_standstill_ I3 qddot^T H qdot   4.8740e-04   3.2318e-04   1.6422e-04   7.6189e-06
+  T1_standstill_ I1 ANTISYM    2.6246e-06          n/a          n/a   1.8719e-05
+  T2_standstill_ I1 qdot^T H q   9.2161e-08   6.9134e-08   1.6130e-07   2.1526e-06
+  T2_standstill_ I2 qddot^T H q   9.0546e-03   8.8769e-03   1.7769e-04   1.9899e-06
+  T2_standstill_ I3 qddot^T H qdot   3.6903e-07   6.5401e-05   6.5032e-05   2.6123e-06
+  T2_standstill_ I1 ANTISYM    1.1429e-06          n/a          n/a   1.5253e-05
+  T3_standstill_ I1 qdot^T H q   2.8376e-11   4.2059e-11   1.3683e-11   7.1725e-07
+  T3_standstill_ I2 qddot^T H q   1.1303e-02   1.1303e-02   1.2214e-07   5.4659e-06
+  T3_standstill_ I3 qddot^T H qdot   2.1568e-05   8.2722e-05   6.1155e-05   2.4140e-06
+  T3_standstill_ I1 ANTISYM    3.5265e-07          n/a          n/a   1.8486e-02
+  T4_standstill_ I1 qdot^T H q   2.9048e-06   2.1365e-06   7.6833e-07   1.0203e-05
+  T4_standstill_ I2 qddot^T H q   3.8390e-04   8.5998e-04   4.7608e-04   5.5586e-06
+  T4_standstill_ I3 qddot^T H qdot   9.6394e-04   1.0289e-03   6.4968e-05   2.8489e-06
+  T4_standstill_ I1 ANTISYM    2.2836e-06          n/a          n/a   3.0325e-05
+  T5_standstill_ I1 qdot^T H q   9.7382e-06   9.8397e-06   1.0147e-07   7.1603e-07
+  T5_standstill_ I2 qddot^T H q   4.0709e-03   3.8394e-03   2.3146e-04   1.4753e-06
+  T5_standstill_ I3 qddot^T H qdot   1.8973e-05   3.7641e-05   5.6614e-05   2.9938e-06
+  T5_standstill_ I1 ANTISYM    6.4935e-06          n/a          n/a   4.5820e-05
+
+  --- Y-SWEEP
+  record / identity                 |sum|        |bdy|      |resid|          rel
+  T6_ysweep_slow I1 qdot^T H q   7.8513e-10   5.9571e-10   1.8943e-10   2.3740e-10
+  T6_ysweep_slow I2 qddot^T H q   5.3927e-01   5.3927e-01   9.1651e-08   8.2959e-10
+  T6_ysweep_slow I3 qddot^T H qdot   9.6428e-04   1.1874e-03   2.2310e-04   1.5365e-06
+  T6_ysweep_slow I1 ANTISYM    3.2757e-07          n/a          n/a   4.1053e-07
+  T7_ysweep_fast I1 qdot^T H q   6.8213e-10   5.1755e-10   1.6458e-10   6.3230e-11
+  T7_ysweep_fast I2 qddot^T H q   6.0124e+00   6.0124e+00   6.9499e-08   6.4215e-10
+  T7_ysweep_fast I3 qddot^T H qdot   4.4887e-04   3.8080e-04   6.8063e-05   1.4015e-07
+  T7_ysweep_fast I1 ANTISYM    2.1010e-06          n/a          n/a   8.0720e-07
+  T8_ysweep_xmix I1 qdot^T H q   7.7501e-11   1.1777e-10   4.0270e-11   2.7379e-11
+  T8_ysweep_xmix I2 qddot^T H q   1.5290e+00   1.5290e+00   2.0706e-07   1.8621e-09
+  T8_ysweep_xmix I3 qddot^T H qdot   4.5921e-04   4.5359e-04   5.6204e-06   2.0157e-08
+  T8_ysweep_xmix I1 ANTISYM    3.0322e-03          n/a          n/a   2.0616e-03
+
+  READ THIS AS: I3 is the identity the lossless argument does NOT need, I2 is the one
+  that legitimately leaves a quadratic form, and I1 is the one whose boundary term the
+  draft mis-stated. The ANTISYM row is the control: it must be LARGE, because only the
+  symmetric part of H is annihilated. If it were small, the test would be vacuous.
+
+==========================================================================================
+SUMMARY
+==========================================================================================
+  A identities symbolically      : PASS
+  B nine cells reduced           : see the table; TWO cells had the wrong boundary
+    condition in the draft (I1, positions return, not velocities vanish)
+  C identities on the real data  : see the residual columns above
+  The lossless obstruction (dissipative vs damping) needs NO boundary condition and
+  is unaffected by the correction.

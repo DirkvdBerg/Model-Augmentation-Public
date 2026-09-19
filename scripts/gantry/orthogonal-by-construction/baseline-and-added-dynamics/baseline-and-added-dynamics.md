@@ -317,7 +317,185 @@ caveat 4 before reading a strided number as the answer. The script asserts its o
 against `figures/OBC/obc_data.json` iteration 0 before computing anything, so a convention drift in
 the percentage meter fails loudly rather than silently.
 
-## 8. PROPOSED: an experiment design that enforces `Jᵀ Δ* = 0`
+## 8. VERIFIED: what orthogonality requires, in the equations of motion
+
+**Status: the decomposition and the no-go lemma below are MEASURED against the production
+Jacobian (`verify_sensitivity_decomposition.py` / `.out`). The parity table in 8.4 is derived and
+NOT yet verified.**
+
+Provenance, stated plainly because almost none of this came from a source. `J^T Delta = 0`,
+`dtheta = J^+ Delta` and the recovery theorem are Györök et al. 2026 (Condition 4, Eq. 21,
+Theorem 7). That the condition must be *engineered* is their Remark 5 and their Sect. 5.2
+concession. The odd/even parity mechanism is Schoukens et al. 2016. **Everything below that is
+derived here from the gantry's own equations of motion and is cited nowhere**, which is why it is
+measured rather than asserted.
+
+### 8.1 The sensitivity is a regressor signal
+
+At frozen `Y` the baseline is `M q̈ + C q̇ + K q = u_log`, and the parameters enter only through
+`M`, `C`, `K`. Differentiating `q̈ = M^-1 (u_log - C q̇ - K q)`:
+
+```
+d(q̈)/d(theta_j)  =  -M^-1 [ (dM/dtheta_j) q̈  +  (dC/dtheta_j) q̇  +  (dK/dtheta_j) q ]
+```
+
+so, through one RK4 step,
+
+```
+J_j  =  -Ts M^-1 [ (dM_j) q̈ + (dC_j) q̇ + (dK_j) q ] / std_x   + O(Ts^2)     (velocity rows)
+J_j  =  (Ts/2) * that, times std_x[i+3]/std_x[i]               + O(Ts^3)     (position rows)
+```
+
+**Measured (T2, T3).** The leading-order prediction matches the production
+`build_stacked_sensitivity` to `1.55e-03` relative on the velocity rows at the production
+`Ts = 2.5e-04 s`, and the error **halves when `Ts` halves** (rate 2.01, 2.01 over two
+refinements), which is the `O(Ts)` relative convergence the claim predicts. The position rows
+carry the predicted RK4 ratio `(Ts/2) std_x[i+3]/std_x[i]` to within `0.05 %` on all three
+channels at all three sample times. So the decomposition is not an approximation of convenience;
+it is the production Jacobian to measured order.
+
+### 8.2 The ten combinations split five / four / one, exactly
+
+| family | parameters | `r_j` |
+|-|-|-|
+| mass | `mh, m_total, m_diff, J_eff, d` | `(dM_j) q̈` |
+| damping | `cg1, cg2, cy, cb_sum` | `(dC_j) q̇` |
+| stiffness | `kb_sum` | `(dK) q` |
+
+**Measured (T1), exactly and without reconstructing any mass matrix.** Evaluating
+`d(xdot)/d(free_j)` at synthetic states that kill one term at a time: at `q̇ = 0` all four damping
+columns are **bit-exact zero**; at `q = 0` the stiffness column is bit-exact zero; at
+`q = q̇ = 0` with `u != 0` only the five mass columns survive. This is the structural fact the rest
+of the derivation rests on.
+
+### 8.3 The corrected no-go lemma: orthogonality cannot be pointwise
+
+The earlier claim, that more parameters than generalised coordinates forces the sensitivities to
+span the coordinate space, is **too strong** and was corrected by an independent sweep. `p > q`
+makes full row rank generic, it does not imply it. The correct statement is
+
+```
+rank S(x) = q    =>    [ S(x)^T delta(x) = 0  <=>  delta(x) = 0 ]
+```
+
+with `S(x)` the local sensitivity of the protected rows.
+
+**Measured (T4, T4b).** On the reference set `rank S(k) = 6` at **686 of 686** samples, so the
+strict lemma holds, but only marginally: `sigma_6/sigma_1` is about `5e-10`. The reason is 8.1:
+the position rows are nearly *proportional* to their velocity siblings, so to leading order `S(k)`
+has rank three and the extra three directions are `O(Ts^2)` artefacts. That near-null subspace is
+useless to a physical addition, because it consists of perturbations acting mostly on the
+**position** rows, while a force enters the accelerations and carries the same integrator factor
+as the baseline. Restricting to the three velocity rows, which is what a generalised force
+actually determines, gives **rank 3 of 3 at every sample with worst-case
+`sigma_3/sigma_1 = 5.7e-04` and median `1.4e-02`**: robust, not marginal.
+
+**So: no nonzero pointwise-orthogonal force exists on this system, and orthogonality must come
+from cancellation over the record.** That is a measured no-go result, not an assumption, and it is
+what forces the design to be about the addition's *dynamics* rather than the direction its force
+points.
+
+### 8.4 VERIFIED: the parity table, with one correction the check produced
+
+**Status: identities verified symbolically, the nine cells reduced and machine-checked, and the
+identities measured on the real records (`verify_parity_table.py` / `.out`). One boundary
+condition in the draft was wrong and is corrected here.**
+
+Three identities do the work. In continuous time, for constant `H`:
+
+| id | integrand | antiderivative | boundary condition it needs |
+|-|-|-|-|
+| I1 | `q̇^T H q`, `H` symmetric | `(1/2) q^T H q` | **the POSITIONS return** |
+| I2 | `q̈^T H q`, any `H` | `q̇^T H q`, leaving `- sum q̇^T H q̇` | `q̇ = 0` at both ends |
+| I3 | `q̈^T H q̇`, `H` symmetric | `(1/2) q̇^T H q̇` | `q̇ = 0` at both ends |
+
+**The correction.** The draft justified all three with "the records start and end at rest, so
+`q̇ = 0` at both ends". That is right for I2 and I3 and **wrong for I1**, which needs
+`q(T)^T H q(T) = q(0)^T H q(0)`, a condition on positions rather than velocities. Two cells of the
+table rest on I1, so their hypothesis is different from, and weaker than, the other two zero cells.
+For an antisymmetric `H` the antiderivative of I1 is identically zero, which is what makes the
+table a symmetry condition rather than an identity.
+
+Applying these:
+
+| addition | vs mass family | vs damping family | vs stiffness family |
+|-|-|-|-|
+| `f_a = -K_a q` (reactive) | quadratic form, not automatic | **zero** if `(dC_j) W K_a` symmetric | not automatic |
+| `f_a = -C_a q̇` (dissipative) | **zero** if `(dM_j) W C_a` symmetric | quadratic form, **never** zero | **zero** if `(dK) W C_a` symmetric |
+| `f_a = -M_a q̈` (inertial) | quadratic form, not automatic | **zero** if `(dC_j) W M_a` symmetric | not automatic |
+
+with `W = M^-T D M^-1` and `D = diag(1/std_x[3:6]^2)`. Each cell is a single product, because 8.2
+measured that exactly one term of `r_j` survives per family. An addition is automatically
+orthogonal to the families of opposite parity and never to its own. The corollary is that **a
+dissipative addition can never be orthogonal to the damping parameters**, because the term is a
+positive quadratic form in velocity, so exact orthogonality there demands a **lossless** addition.
+
+**Which cell needs which identity** (machine-checked reduction, part B of the verification):
+the two zero cells of the dissipative and inertial rows against the opposite-parity family reduce
+to **I3**, so they need `q̇ = 0` at the ends, which the holds give. The reactive row against the
+damping family, and the dissipative row against the stiffness family, reduce to **I1**, so they
+need the positions to return. The load-bearing cell for the lossless conclusion, dissipative
+against damping, reduces to **neither**: it is a bare quadratic form with no boundary term and no
+symmetry escape, so **the lossless obstruction is unaffected by the correction above.**
+
+**Measured on the real records (part C).** The discrete sums track the continuous identities to
+about `1e-06` relative, so sampling and float32 are not the limit. The zero cells themselves come
+out at roughly `1e-05` to `1e-04` of their Cauchy-Schwarz scale, limited by the boundary terms
+being small rather than zero. That is four orders below the `rho* = 0.205` measured on the current
+plant and well below the numerical floor of section 3, so **if the matrix conditions can be met,
+the parity mechanism delivers orthogonality far below anything the measurement could resolve.**
+
+**One honest caveat the check produced.** For I1 the antisymmetric control is the *same order* as
+the symmetric case on several records. So the two I1 cells are near zero for a generic reason,
+namely that `q` and `q̇` are nearly uncorrelated over a long oscillatory record whatever `H` is,
+rather than because of the symmetry of `H`. The symmetry framing is doing little work there. It
+still does the work for the I3 cells, and the lossless obstruction does not rely on it at all.
+
+**The caveat both the GPT sweep and our own agent raised independently, and it is right.**
+`J^T Delta = 0` is an inner product over a finite sampled trajectory, while dissipativity is a
+supply-rate integral. The two coincide only where the damping sensitivity is proportional to the
+velocity the supply rate pairs with, which 8.2 establishes for the damping family and **not** for
+the mass and stiffness families. So lossless is necessary for the damping block of `J`, not
+sufficient for all of it. The defensible statement is the restricted one:
+
+> For a force-balance baseline in which a damping parameter multiplies a velocity regressor
+> linearly, an added element with strictly positive dissipated energy over the record cannot be
+> orthogonal to that damping regressor.
+
+**Why this becomes a matrix problem rather than a trajectory problem.** Each of the ten conditions
+reduces to a quadratic form `sum_k v^T S_j v`, and a quadratic form vanishes for *every*
+trajectory if and only if the symmetric part of `S_j` is zero. So the ten trajectory conditions
+become **ten algebraic matrix conditions on the addition**, trajectory-free and exact. That is the
+correct level at which to solve, because solving the ten scalar conditions against a realised
+trajectory is implicit (`q` depends on the addition, the feedback and the input) and would give an
+answer valid only for that record.
+
+The remaining design question is then a counting problem: free entries in the addition against ten
+matrix conditions, with a memoryless addition forced to live in the eight-dimensional complement
+of the parameter span in `(M, C, K)`, and a dynamic addition reintroducing spectrum dependence
+through the sign change of its apparent mass at resonance.
+
+### 8.5 What is verified and what is not
+
+| claim | status |
+|-|-|
+| sensitivity decomposition, leading order + `O(Ts)` rate | **measured**, T2 |
+| position rows `O(Ts^2)` with the RK4 ratio | **measured**, T3, within 0.05 % |
+| five / four / one split | **measured exactly**, T1 |
+| no pointwise-orthogonal force exists | **measured**, T4b, rank 3 of 3 everywhere |
+| the three by-parts identities | **verified symbolically**, part A, one boundary condition corrected |
+| the nine cells reduce as claimed | **verified symbolically**, part B |
+| the identities hold on the real records | **measured**, part C, `1e-06` relative quadrature error |
+| zero cells reach `1e-05` to `1e-04` of scale | **measured**, part C, limited by boundary terms |
+| lossless is necessary for the damping family | derived, **not verified**, restricted form above, but it needs no boundary condition |
+| the ten matrix conditions have a solution | **open**, not attempted |
+
+Next, in order: solve the counting problem (free entries in the addition against ten matrix
+conditions), then build a candidate addition and run `measure_delta_orthogonality.py` on it. The
+construction is proved only when that last step returns `rho*` at the `8.75e-04` floor of section 3
+instead of the `0.205` measured on the current plant.
+
+## 9. PROPOSED: an experiment design that enforces `Jᵀ Δ* = 0`
 
 **Status: proposed, not executed.** Nothing below has been run. It is recorded here because it is
 the constructive answer to the measurement in sections 4 and 5, and because the supervisor asked
@@ -328,7 +506,7 @@ The purpose here is the opposite direction: build a dataset in which it holds, s
 can be validated where theory says it must succeed. A failure on such a dataset is then a failure
 of the implementation or the optimiser, never of the plant.
 
-### 8.1 The lever is the excitation, not the plant
+### 9.1 The lever is the excitation, not the plant
 
 Keep the hidden MSD exactly as it is and design the multisine that drives it. On a standstill
 record `Y` is fixed, `M(Y)` is constant, and the baseline is exactly LTI. Both sides of the inner
@@ -345,7 +523,7 @@ with `p(w) = |U(w)|^2` the power spectrum. **The inner product is linear in the 
 independent of the phases.** So `Jᵀ Δ* = 0` is ten linear equations in a few hundred nonnegative
 line amplitudes: a wide feasibility problem, not an overdetermined one.
 
-### 8.2 The design problem
+### 9.2 The design problem
 
 Choose `p(w) >= 0` per line and per logical channel such that
 
@@ -361,7 +539,7 @@ designed amplitude spectrum. Everything else about the dataset generation is unc
 what keeps the realisation physically meaningful: the same Simulink model, the same hidden MSD,
 the same `P` transform and controller, only a different multisine amplitude design.
 
-### 8.3 Prerequisite: `L0 = 0`
+### 9.3 Prerequisite: `L0 = 0`
 
 Do this first, independently of the LP. Section 5 identified `ma * L0` as a constant sitting in the
 same mass-matrix entry as `(m1 - m2) * Lb / 2`, carrying 98.8 percent of the predicted bias. Setting
@@ -369,7 +547,7 @@ same mass-matrix entry as `(m1 - m2) * Lb / 2`, carrying 98.8 percent of the pre
 it is one line in `gtd_config.m`, and it removes the largest structural coupling before the LP has
 to work around it. What remains in that entry is `-ma * da`, which is zero-mean once `L0 = 0`.
 
-### 8.4 What the construction does not give
+### 9.4 What the construction does not give
 
 1. **Exactness needs frozen `Y`.** Build the orthogonal dataset from standstill records at several
    `Y` values, one LTI system each, with the amplitudes of each record as separate design
@@ -386,7 +564,7 @@ to work around it. What remains in that entry is `-ma * da`, which is zero-mean 
    the current dataset the two spans are close (4.96 against 4.76 percent), so this is a small
    correction rather than a blocker.
 
-### 8.5 The cheap decisive step, before any regeneration
+### 9.5 The cheap decisive step, before any regeneration
 
 `design_orthogonal_excitation.py`: compute `c_j(w)` on the exact reference-set window from the
 closed-form baseline and absorber models at `L0 = 0`, solve the LP for the line amplitudes, and

@@ -136,15 +136,40 @@ function dxdt = gantrySystemExtendedCoulomb(u, x, m1, m2, mb, mh, Lb, Jb, Jh, d,
           0,     0,      1];
     cc = [cc1; cc2; ccy];
 
-    % HEURISTIC: V_EPS = (cc1+cc2)/m_total * ts, the velocity dry friction can
-    % remove in ONE integrator step. Below it a rail would be arrested within the
-    % step regardless, so treating it as stuck matches the integrator's own
-    % resolution. It is a numerical detection band, not a physical parameter, and
-    % the perturbation gain moves 4% when it is swept over two decades
+    % THEORY: leine1998 (Leine, van Campen, de Kraker, van den Steen, "Stick-Slip
+    % Vibrations Induced by Alternate Friction Models", Nonlinear Dynamics
+    % 16(1):41-54, 1998, p. 7): "The collocation points of the Runge-Kutta
+    % integration method during the stick mode should all be situated within the
+    % stick band to avoid numerical instability problems of the Karnopp model",
+    % with the band eta required STRICTLY LARGER than the integrator's own
+    % resolution ("eta << v_dr", tolerance smaller than eta).
+    %
+    % (cc1+cc2)/m_total*ts is the velocity dry friction removes in ONE step, i.e.
+    % the fixed-step analogue of Leine's Runge-Kutta tolerance. Using it BARE puts
+    % the band exactly ON Leine's boundary rather than inside it, which is what
+    % V_EPS_MARGIN corrects.
+    %
+    % V_EPS_MARGIN = 3 is MEASURED, not chosen (D-204 amendment, 2026-09-19).
+    % check_leine_collocation.m takes one RK4 step from each of 12000 recorded
+    % states and asks whether all four collocation points of a stuck rail stay in
+    % the band. At margin 1 it is violated by 2 of 6919 stuck-and-held rail-steps
+    % (0.03%), worst excursion 1.849*v_eps. The margin scan gives ZERO violations
+    % from 3 upward (worst ratio 0.993) and stays satisfied at 10, 12, 20, 30, 50.
+    % 3 is therefore the smallest compliant value, and the smallest is wanted: the
+    % band is a detection threshold, so every unit of margin declares more rails
+    % stuck than the physics requires.
+    % NB the criterion governs the STICK MODE only. A rail that BREAKS AWAY leaves
+    % the band as correct physics; counting those as violations reports 3.87% and a
+    % required margin of 11.76 that never converges under the scan.
+    %
+    % It remains a numerical detection band, not a physical parameter: the
+    % perturbation gain moves 4% when it is swept over two decades
     % (diag_karnopp.py: 1.448 / 1.472 / 1.510 at V_EPS/10, V_EPS, V_EPS*10).
-    % At cc = 0 this is exactly 0, which is what makes the no-op gate hold.
+    % At cc = 0 this is exactly 0 for any margin, which is what makes the no-op
+    % gate hold.
+    V_EPS_MARGIN = 3;
     m_total = m1 + m2 + mb + mh + ma;
-    v_eps   = (cc1 + cc2) / m_total * ts;
+    v_eps   = V_EPS_MARGIN * (cc1 + cc2) / m_total * ts;
 
     dx_free      = A*x + B*u;              % frictionless derivative
     a_free       = dx_free(5:8);

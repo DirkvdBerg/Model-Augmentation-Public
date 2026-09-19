@@ -73,7 +73,7 @@ assert(exist('gtd_config', 'file') == 2, ...
 
 % ─────────────────────────── knobs ──────────────────────────────────────────
 TRACK   = 'augmentation';   % must match the dataset being compared against
-MA_FRAC = 0.10;             % hidden absorber mass fraction (unchanged)
+MA_FRAC = 0.50;             % D-204: matches augmentation_ma50_b140-230_a6_z03
 % THEORY: garcia2013 (garcia2013_gantry-decoupling-control.pdf, Table of
 % identified parameters) -- Coulomb friction of actuators X1, X2 and the Y
 % payload, identified by displacing each axis at constant velocity. NOT a knob.
@@ -83,7 +83,11 @@ CCY = 11.60;   % [N]
 % One record by default. V1_standstill_Yp10 is deliberate: it is the record every
 % existing offset number is quoted on, so this dataset is directly comparable.
 % Use {} for all 22, or e.g. {'T6'} for the sliding-regime record.
-SELECT  = {'V1'};
+SELECT  = {'T3'};           % D-204 probe: ONE record before committing 22. T3 is the
+                            % standstill record the band and amplitude were originally
+                            % established on, and standstill is the most stick-prone case,
+                            % so it is the worst case for V_EPS and directly comparable to
+                            % its frictionless counterpart. Use {} for all 22.
 PLOT    = true;
 SHOW    = false;
 FIXED_STEP = [];            % [] = use cfg.ts (5e-5 s). Set explicitly to probe
@@ -109,12 +113,37 @@ cfg.ccy     = CCY;
 % so the two laws can be compared directly and so nothing already quoted against
 % it silently changes underneath.
 cfg.out_dir = fullfile(REPO_ROOT, 'data', 'gantry', 'matlab', 'trajectory', ...
-                       [TRACK '_coulomb_karnopp']);
+                       'augmentation_ma50_b140-230_a6_z03_coulomb');
 % fig_dir must be derived from the NEW out_dir. gtd_config bakes it at config
 % time from the ORIGINAL out_dir, so overriding out_dir alone would leave
 % gtd_plot_record writing PNGs into the baseline folder under identical
 % per-record filenames, silently overwriting that dataset's figures.
 cfg.fig_dir = fullfile(cfg.out_dir, 'figures');
+
+% ── D-204 five-knob port: match augmentation_ma50_b140-230_a6_z03 ───────────
+% Applied AFTER gtd_config for the same reason the production generator does it:
+% the shipped defaults stay intact so every earlier dataset stays reproducible.
+% MA_FRAC is passed to gtd_config above; the remaining three are set here.
+% NOTE none of these touch the stick band. v_eps = margin*(cc1+cc2)/m_total*ts
+% and m_total = m1+m2+mb+mh_rigid+ma = m1+m2+mb+mh is INVARIANT to ma_frac, so
+% the band is identical at 0.10 and 0.50. What they DO change is the
+% acceleration, and therefore how far an RK4 collocation point travels per step,
+% which is what V_EPS actually has to cover. That is why this probe exists.
+BAND_OVERRIDE   = [140, 230];   % holds the 212.13 Hz pole AND the 150 Hz anti-resonance
+AMP_SCALE       = 6;            % largest value at which NO record is scaled down (frictionless
+                                % pre-check; RE-CHECK with friction in the loop, D-204)
+ZETA_A_OVERRIDE = 0.03;         % JPE floor for jointed metal; target scales as 1/zeta_a
+
+fn = sqrt(cfg.ka/cfg.ma)/(2*pi) * sqrt(1 + cfg.ma/(cfg.mh - cfg.ma));
+assert(BAND_OVERRIDE(1) < fn && fn < BAND_OVERRIDE(2), ...
+       'BAND_OVERRIDE [%g %g] does not contain the coupled absorber mode %.2f Hz', ...
+       BAND_OVERRIDE(1), BAND_OVERRIDE(2), fn);
+cfg.f_low = BAND_OVERRIDE(1);  cfg.f_high = BAND_OVERRIDE(2);
+cfg.zeta_a = ZETA_A_OVERRIDE;
+cfg.ca     = 2*cfg.zeta_a*sqrt(cfg.ka*cfg.ma);   % ca is DERIVED from zeta_a in gtd_config
+cfg.A_sym  = AMP_SCALE * cfg.A_sym;
+fprintf('Knob port: band [%g %g] Hz (mode %.2f Hz), amp x%g, zeta_a %.4f, ca %.4f\n', ...
+        cfg.f_low, cfg.f_high, fn, AMP_SCALE, cfg.zeta_a, cfg.ca);
 
 if isempty(FIXED_STEP), FIXED_STEP = cfg.ts; end
 

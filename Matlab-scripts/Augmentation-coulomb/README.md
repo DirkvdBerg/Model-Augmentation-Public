@@ -90,13 +90,17 @@ that separates ordinary RK4 truncation error from the discontinuity specifically
 
 | File | Role |
 |---|---|
-| `gantrySystemExtendedCoulomb.m` | Copy of `Augmentation/gantrySystemExtended.m`; the ONLY change is `u_eff = u - Fc_log` before the unchanged A/B assembly. |
+| `gantrySystemExtendedCoulomb.m` | Copy of `Augmentation/gantrySystemExtended.m`. The A/B assembly is unchanged and the friction enters only as `dxdt = A*x + B*(u - P*F)`, but `F` is NOT a bare `cc.*sign(v)`: it is the set-valued (Karnopp) solution, with a stick band `V_EPS`, a coupled 3x3 solve over the stuck set through the Delassus matrix `G = P'*Minv_B*P`, and breakaway saturation re-solved in an active-set loop. An earlier revision of this row said "the ONLY change is `u_eff = u - Fc_log`", which described the hard-`sign` version this replaced on 2026-08-01. |
 | `check_coulomb_noop.m` | Class A gate, functions only. A1 `cc = 0` bit-identical, A2 `cc > 0` changes the derivative, A3 friction never does positive work, A4 the stage/logical frame trap is detectable. |
 | `check_coulomb_reaches_plant.m` | Class B gate, through Simulink. `cc` must actually reach the integrator, and `cc = 0` must be bit-identical to the original model run at the same fixed step. |
 | `make_coulomb_model.m` | Reproducible builder for the `.slx` copy; appends `cc1/cc2/ccy` as chart PARAMETERS and forces fixed-step `ode4`. |
 | `gantry_additional_state_coulomb_2025a.slx` | The model copy. Built, not hand-edited. |
-| `generate_trajectory_data_coulomb.m` | Production generator. Writes to `data/gantry/matlab/trajectory/augmentation_coulomb/`. |
+| `generate_trajectory_data_coulomb.m` | Production generator. Writes to `data/gantry/matlab/trajectory/augmentation_coulomb_karnopp/` (the `augmentation_coulomb/` folder holds the superseded hard-`sign` run). |
 | `check_step_halving.m` | The `h` vs `h/2` diagnostic above. |
+| `check_garcia_constant_velocity.m` | **Gate 1 (D-204).** Replicates Garcia's own identification experiment: for a prescribed constant-velocity state it SOLVES for the force that holds the velocity, then reads the intercept. Recovers `cc1`, `cc2`, `ccy` separately. Inverts the implementation rather than inspecting it. |
+| `check_friction_invariants.m` | **Gate 2 (D-204).** Coulomb's law at 60k states the plant actually visited. Recovers the friction force from its EFFECT (the `cc=0` minus `cc=Garcia` acceleration difference), then checks bound, slip, stick-held, breakaway and per-rail dissipation. |
+| `check_leine_collocation.m` | **Gate 3 (D-204).** Tests `leine1998`'s published criterion that all four RK4 collocation points stay inside the stick band during stick, and scans the band margin to find the factor that satisfies it. |
+| `coulomb_v_eps.m` | The stick band, parsed from the `V_EPS_MARGIN` line in `gantrySystemExtendedCoulomb.m` so the gates cannot drift from the ODE. Added after exactly that drift occurred: when the margin went 1 -> 3 the gates kept their own copy of the old formula and gate 2 reported a `3.67e+01 N` slip violation that was purely the two definitions disagreeing. |
 
 ## Gate results
 
@@ -104,10 +108,14 @@ that separates ordinary RK4 truncation error from the discontinuity specifically
 |---|---|
 | A1 `cc = 0` reproduces the original EXACTLY | PASS, max abs diff `0.000e+00` |
 | A2 `cc = Garcia` changes the derivative | PASS, min abs diff `1.276e+00` |
-| A3 friction never does positive work | PASS, min `v'*Fc` `1.578e-02` |
+| A3 friction never does positive work | PASS, min `v'*Fc` `1.578e-02`. **QUALIFIED by gate 2 (2026-09-19): this is the SUM over rails, and the per-rail statement is FALSE inside the stick band.** A held rail's force is whatever zeroes its acceleration, so its sign is unrelated to the residual velocity's sign, and holding a rail that still carries `\|v\| < v_eps` does bounded positive work. Bounded by `v_eps*cc_i`; measured worst `5.993e-04 W` against the bound `5.994e-04 W`. Sliding friction does positive work EXACTLY never (`0.000e+00`). The sum cannot see this; A3 is not wrong, it is answering a weaker question. |
 | A4 stage frame differs from logical frame | PASS, min abs diff `1.525e+01` |
 | B1 `cc = 0` bit-identical THROUGH the model | PASS, max abs diff `0.000000e+00 m` |
 | B2 `cc = Garcia` changes the trajectory | PASS, max abs diff `4.099e-06 m` (X `3.923e-06`, Theta `3.886e-06`, Y `4.099e-06`) |
+| **1** Garcia constant-velocity identification | **PASS to machine precision.** `cc1 = 16.800000` (err `3.55e-15`), `cc2 = 18.350000` (err `0.00e+00`), `ccy = 11.600000` (err `0.00e+00`), every affine fit residual at round-off (`1e-16` to `1e-15`), which is what makes the intercept reading valid rather than a curvature artefact. Run at `MA_FRAC = 0.50`. |
+| **1b** frame, from gate 1 rather than from A4 | **PASS, and it is the stronger frame evidence.** `cc1` and `cc2` are recovered SEPARATELY and differ by `1.55 N`, which is impossible unless friction lives in stage coordinates. The E2 Theta intercept is `-0.561875 Nm` against the predicted `Lb/2*(cc1-cc2) = -0.561875`; under a logical-frame law that intercept would be exactly `0`, since the Theta row would take `sign(dTheta) = sign(0)`. |
+| **2** Coulomb's law at visited states | **PASS** (re-run at the 3x band). 60000 states of `V1`. Census: sliding `130398`, stuck and held `36440`, broke away `13162`, **neither `0`** (the failure the joint stuck-set solve exists to prevent). Bound `1.10e-13 N`; slip `F_i = cc_i*sign(v_i)` `1.10e-13 N`; stick-held `|a_stage_i|` `5.50e-16` relative; breakaway `8.88e-14 N`; slip dissipation EXACTLY `0.00e+00 W`; stick dissipation `1.798e-03 W` against its own bound `v_eps*cc2 = 1.798e-03 W`, i.e. the bound is tight and understood. |
+| **3** Leine collocation criterion | **FAIL at the original 1x band, PASS at 3x.** At 1x, 2 of 6919 stuck-and-held rail-steps (`0.03%`) had a collocation point outside the band, worst `1.849 x v_eps`; the margin scan gave `0` violations from `3x` upward and stayed satisfied to `50x`. `V_EPS_MARGIN = 3` was applied to `gantrySystemExtendedCoulomb.m` on 2026-09-19 and the gate re-run: **`0` of `7254` stuck-and-held rail-steps violate, worst ratio `0.993`.** The criterion governs the STICK MODE only, so broken-away rails are excluded; counting them reports `3.87%` and a non-converging required margin of `11.76x`. |
 
 B1 is run with the ORIGINAL model's solver forced to fixed-step `ode4` **in memory only**, closed
 without saving, so B1 and B2 differ in nothing but the chart script. Comparing against the stock
@@ -171,7 +179,16 @@ D-138 pre-registered a `Lb/2*(cc1-cc2) = -0.562 Nm` friction torque deflecting T
 wrong, it was stated for **sustained common-mode X travel**; V1 is a standstill record, so
 `sign(dX1)` and `sign(dX2)` alternate at multisine rate and the mean torque averages to near zero. The
 prediction should be tested on a sweep record (`T6_ysweep_slow`, `T7_ysweep_fast`), where travel holds
-one direction for a long stretch. Untested, not refuted.
+one direction for a long stretch.
+
+**UPDATE 2026-09-19: the STATIC form is now closed, exactly.** Gate 1's E2 experiment holds both X
+rails at a common constant velocity, which is the sustained common-mode travel the prediction was
+stated for, and solves for the force that holds it. The Theta intercept comes out at
+`-0.561875 Nm` against the predicted `Lb/2*(cc1-cc2) = -0.561875 Nm`, to machine precision. So the
+torque is confirmed and the `V1` non-observation is fully explained: on a standstill record
+`sign(dX1)` and `sign(dX2)` alternate at multisine rate and the mean torque averages to near zero.
+What remains open is the DYNAMIC form, i.e. the resulting `~1.4e-4 rad` deflection on a real sweep
+record (`T6_ysweep_slow`), which needs a generation run and has not been done.
 
 ## Two things to expect, neither of which is a bug
 

@@ -1,0 +1,38 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+
+============================================================================================
+SETUP (stride 397)
+============================================================================================
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[obc] reference set: 1694 tuples from 14 records (121/121/121/121/121/121/121/121/121/121/121/121/121/121 per record), stride 397, 3.2 s to build
+[obc]   Y coverage: min -0.3000 max +0.3000 mean +0.0042 std 0.1900 m; hot tensors 0.2 MB
+C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-by-construction\baseline-and-added-dynamics\derive_physical_addition.py:141: DeprecationWarning: __array_wrap__ must accept context and return_scalar arguments (positionally) in the future. (Deprecated NumPy 2.0)
+  self.row_scale = np.maximum(np.abs(self.basis.jt(self.base)).numpy(), 1e-30)
+[setup] basis rank 10/10, cond 7.7974e+02
+
+============================================================================================
+THE ADDITION: three lossless tuned absorbers, dynamic parallel, 6 states
+============================================================================================
+  d_i'' + w_i^2 d_i = -b_i^T q'' ,   f_a = SUM_i b_i m_i w_i^2 d_i
+  b_i = [cos(alpha_i), lever_i, sin(alpha_i)];  free: f_i [Hz], alpha_i, lever_i, m_i
+  zeta = 0 forced by the damping-family obstruction; acyclic, so Hoekstra Condition 1
+  holds, unlike the memoryless M_a q'' solution.

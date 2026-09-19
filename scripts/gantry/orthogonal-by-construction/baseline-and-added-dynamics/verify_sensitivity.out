@@ -1,0 +1,149 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+
+========================================================================================
+SETUP (stride 997, device cuda, Ts = 0.00025 s)
+========================================================================================
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[obc] reference set: 686 tuples from 14 records (49/49/49/49/49/49/49/49/49/49/49/49/49/49 per record), stride 997, 2.7 s to build
+[obc]   Y coverage: min -0.3000 max +0.3000 mean +0.0044 std 0.1894 m; hot tensors 0.1 MB
+
+========================================================================================
+T1  THE FIVE / FOUR / ONE SPLIT, at synthetic states (exact, no mass matrix needed)
+========================================================================================
+
+  qdot = 0, q and u nonzero      -> DAMPING columns must vanish
+    column                 |d(xdot)/d(free_j)|_inf     relative to the largest
+    kb_sum    (K)           3.087852e+00        5.508e-02   
+    cg1       (C)           0.000000e+00        0.000e+00   OK zero
+    cg2       (C)           0.000000e+00        0.000e+00   OK zero
+    cy        (C)           0.000000e+00        0.000e+00   OK zero
+    cb_sum    (C)           0.000000e+00        0.000e+00   OK zero
+    mh        (M)           1.873250e+00        3.341e-02   
+    m_total   (M)           1.636243e+00        2.918e-02   
+    m_diff    (M)           3.296042e-01        5.879e-03   
+    J_eff     (M)           5.606524e+01        1.000e+00   
+    d         (M)           6.991364e+00        1.247e-01   
+
+  q = 0,   qdot and u nonzero    -> STIFFNESS column must vanish
+    column                 |d(xdot)/d(free_j)|_inf     relative to the largest
+    kb_sum    (K)           0.000000e+00        0.000e+00   OK zero
+    cg1       (C)           1.324378e+01        1.952e-01   
+    cg2       (C)           1.734092e+01        2.556e-01   
+    cy        (C)           3.250022e+00        4.790e-02   
+    cb_sum    (C)           2.925020e+00        4.311e-02   
+    mh        (M)           2.693578e+00        3.970e-02   
+    m_total   (M)           3.360744e-01        4.954e-03   
+    m_diff    (M)           1.385269e-01        2.042e-03   
+    J_eff     (M)           6.784380e+01        1.000e+00   
+    d         (M)           1.056257e+01        1.557e-01   
+
+  q = qdot = 0, u nonzero        -> only MASS columns may survive
+    column                 |d(xdot)/d(free_j)|_inf     relative to the largest
+    kb_sum    (K)           0.000000e+00        0.000e+00   OK zero
+    cg1       (C)           0.000000e+00        0.000e+00   OK zero
+    cg2       (C)           0.000000e+00        0.000e+00   OK zero
+    cy        (C)           0.000000e+00        0.000e+00   OK zero
+    cb_sum    (C)           0.000000e+00        0.000e+00   OK zero
+    mh        (M)           1.865093e+00        2.941e-02   
+    m_total   (M)           3.611733e-01        5.695e-03   
+    m_diff    (M)           1.729932e-01        2.728e-03   
+    J_eff     (M)           6.342094e+01        1.000e+00   
+    d         (M)           7.312550e+00        1.153e-01   
+
+  T1 verdict: the 5/4/1 split holds EXACTLY
+
+========================================================================================
+T2  LEADING ORDER  J_discrete  vs  Ts * d(deriv)/d(free),  and its Ts-convergence
+========================================================================================
+  claim: J_j = Ts * d(xdot)/d(free_j) + O(Ts^2), so the relative error must HALVE
+  when Ts halves. A rate, not a tolerance, is the test.
+
+      Ts [s]    rel err vel    rel err pos        pos/vel       rate
+   2.500e-04     1.5515e-03     1.0000e+00     6.7603e-03           
+   1.250e-04     7.7138e-04     1.0000e+00     3.3794e-03       2.01
+   6.250e-05     3.8459e-04     1.0000e+00     1.6895e-03       2.01
+
+  Note the POSITION column: the leading-order prediction for those rows is ZERO
+  (qdot does not depend on theta), so a relative error near 1.0 there is the claim
+  being CONFIRMED, not violated. T3 checks their true size.
+
+========================================================================================
+T3  POSITION ROWS are O(Ts^2), with the RK4 ratio (Ts/2) * std_x[i+3] / std_x[i]
+========================================================================================
+  Ts = 2.500e-04
+    X      measured 8.685306e-04   predicted (Ts/2)*std_x ratio 8.684606e-04   ratio 1.0001
+    Theta  measured 6.765074e-03   predicted (Ts/2)*std_x ratio 6.761858e-03   ratio 1.0005
+    Y      measured 3.141774e-04   predicted (Ts/2)*std_x ratio 3.141374e-04   ratio 1.0001
+  Ts = 1.250e-04
+    X      measured 4.342477e-04   predicted (Ts/2)*std_x ratio 4.342303e-04   ratio 1.0000
+    Theta  measured 3.381724e-03   predicted (Ts/2)*std_x ratio 3.380929e-03   ratio 1.0002
+    Y      measured 1.570787e-04   predicted (Ts/2)*std_x ratio 1.570687e-04   ratio 1.0001
+  Ts = 6.250e-05
+    X      measured 2.171195e-04   predicted (Ts/2)*std_x ratio 2.171152e-04   ratio 1.0000
+    Theta  measured 1.690662e-03   predicted (Ts/2)*std_x ratio 1.690464e-03   ratio 1.0001
+    Y      measured 7.853683e-05   predicted (Ts/2)*std_x ratio 7.853434e-05   ratio 1.0000
+
+========================================================================================
+T4  POINTWISE RANK of S(k), the corrected no-go lemma
+========================================================================================
+  The lemma needs rank S(k) = 6 (full ROW rank). p > q does NOT imply it.
+
+  samples: 686
+  rank histogram: {6: 686}
+  sigma_6 / sigma_1 (per-sample conditioning of S):
+        0% quantile  3.2601e-11
+        1% quantile  8.1759e-11
+       25% quantile  3.0443e-10
+       50% quantile  5.2412e-10
+       75% quantile  8.4849e-10
+      100% quantile  3.3171e-09
+
+  T4 verdict: rank S(k) = 6 at 686 of 686 samples (100.00 %)
+  => full row rank, so the strict lemma holds. But sigma_6/sigma_1 ~ 1e-10 means
+     it holds only MARGINALLY, and that needs explaining before it is used.
+
+========================================================================================
+T4b  THE PHYSICALLY RELEVANT RANK: velocity rows only
+========================================================================================
+  A generalised FORCE is fixed by its three velocity-row components, and its
+  position-row effect is the same O(Ts^2) integrator factor the baseline has (T3).
+  So the pointwise question for a real addition is the rank of the 3 x 10 block.
+
+  rank histogram (max 3): {3: 686}
+  sigma_3 / sigma_1 per sample:
+        0% quantile  5.7217e-04
+        1% quantile  1.4323e-03
+       50% quantile  1.3650e-02
+      100% quantile  2.2888e-01
+
+  T4b verdict: rank = 3 of 3 at 686 of 686 samples (100.00 %), worst conditioning 5.72e-04
+  => the three logical force channels are spanned at EVERY sample, robustly.
+     No nonzero pointwise-orthogonal FORCE exists. The no-go lemma holds for
+     physically realisable additions, and with margin rather than marginally.
+
+========================================================================================
+SUMMARY
+========================================================================================
+  T1 split 5/4/1            : PASS
+  T2 leading order + rate   : see the table above; the rate must approach 2.00
+  T3 position rows O(Ts^2)  : see the ratios above
+  T4 pointwise rank         : see the verdict above
