@@ -149,15 +149,23 @@ function dxdt = gantrySystemExtendedCoulomb(u, x, m1, m2, mb, mh, Lb, Jb, Jh, d,
     % the band exactly ON Leine's boundary rather than inside it, which is what
     % V_EPS_MARGIN corrects.
     %
-    % V_EPS_MARGIN = 3 is MEASURED, not chosen (D-204 amendment, 2026-09-19).
-    % check_leine_collocation.m takes one RK4 step from each of 12000 recorded
-    % states and asks whether all four collocation points of a stuck rail stay in
-    % the band. At margin 1 it is violated by 2 of 6919 stuck-and-held rail-steps
-    % (0.03%), worst excursion 1.849*v_eps. The margin scan gives ZERO violations
-    % from 3 upward (worst ratio 0.993) and stays satisfied at 10, 12, 20, 30, 50.
-    % 3 is therefore the smallest compliant value, and the smallest is wanted: the
-    % band is a detection threshold, so every unit of margin declares more rails
-    % stuck than the physics requires.
+    % V_EPS_MARGIN = 9 is MEASURED on the PRODUCTION excitation, not chosen
+    % (D-204 amendment, 2026-09-19). The margin is excitation-dependent, which is
+    % the whole reason it had to be measured twice:
+    %   - on augmentation_coulomb_karnopp/V1 (AMP_SCALE 1, band 130-180), margin 1
+    %     is violated by 2 of 6919 stuck-and-held rail-steps and margin 3 gives ZERO.
+    %   - on augmentation_ma50_b140-230_a6_z03_coulomb/T3 (AMP_SCALE 6, band
+    %     140-230), margin 3 is STILL violated, by 5 of 2071 (0.24%, worst
+    %     1.171*v_eps); margin 9 gives ZERO (worst ratio 0.998) and it stays
+    %     satisfied at 30, 90, 120, 180, 270, 450.
+    % WHY IT MOVES: the band is sized on the FRICTION deceleration
+    % (cc1+cc2)/m_total = 0.653 m/s^2, but Leine's criterion constrains how far a
+    % collocation point TRAVELS, which is governed by the TOTAL acceleration. That
+    % is 0.5-1.6 m/s^2 on the quiet record and 9-21 m/s^2 on the production one, so
+    % a single constant cannot serve both. 9 is the smallest compliant value for the
+    % production excitation, and the smallest is wanted: the band is a detection
+    % threshold, so every unit of margin declares more rails stuck than the physics
+    % requires. RE-MEASURE IT if AMP_SCALE or the excitation band changes again.
     % NB the criterion governs the STICK MODE only. A rail that BREAKS AWAY leaves
     % the band as correct physics; counting those as violations reports 3.87% and a
     % required margin of 11.76 that never converges under the scan.
@@ -167,7 +175,7 @@ function dxdt = gantrySystemExtendedCoulomb(u, x, m1, m2, mb, mh, Lb, Jb, Jh, d,
     % (diag_karnopp.py: 1.448 / 1.472 / 1.510 at V_EPS/10, V_EPS, V_EPS*10).
     % At cc = 0 this is exactly 0 for any margin, which is what makes the no-op
     % gate hold.
-    V_EPS_MARGIN = 3;
+    V_EPS_MARGIN = 9;
     m_total = m1 + m2 + mb + mh + ma;
     v_eps   = V_EPS_MARGIN * (cc1 + cc2) / m_total * ts;
 

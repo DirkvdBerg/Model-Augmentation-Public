@@ -1,4 +1,4 @@
-function check_friction_invariants()
+function check_friction_invariants(dataset, record, ma_frac)
 %CHECK_FRICTION_INVARIANTS  Gate 2: Coulomb's law holds at every sampled state.
 %
 % D-204, gate 2. Gate 1 validates the friction MAGNITUDE on prescribed
@@ -62,11 +62,16 @@ function check_friction_invariants()
     addpath(genpath(fullfile(REPO_ROOT, 'Matlab-scripts', 'Augmentation')));
     addpath(THIS_DIR);
 
+    % Defaults keep the original call form working; D-204 added the arguments so
+    % the same gate can be pointed at the production-knob friction record.
+    if nargin < 1 || isempty(dataset), dataset = 'augmentation_coulomb_karnopp'; end
+    if nargin < 2 || isempty(record),  record  = 'V1_standstill_Yp10.mat';       end
+    if nargin < 3 || isempty(ma_frac), ma_frac = 0.10;                            end
     REC    = fullfile(REPO_ROOT, 'data', 'gantry', 'matlab', 'trajectory', ...
-                      'augmentation_coulomb_karnopp', 'V1_standstill_Yp10.mat');
+                      dataset, record);
     STRIDE = 4;                       % 240000/4 = 60000 sampled states
 
-    cfg = gtd_config('augmentation', true, 0.10);   % the karnopp record was made at 0.10
+    cfg = gtd_config('augmentation', true, ma_frac);
     CC  = [16.80; 18.35; 11.60];
     mh  = cfg.mh - cfg.ma;
     P   = [1, 1, 0; cfg.Lb/2, -cfg.Lb/2, 0; 0, 0, 1];
