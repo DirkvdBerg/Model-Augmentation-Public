@@ -56,6 +56,17 @@ function cfg = gtd_config(TRACK, USE_MSD, MA_FRAC)
         cfg.L0       = 0.10;                             % equilibrium offset in +Y [m]
         cfg.fa       = 150;                              % THEORY: MSD natural freq [Hz] (model param)
         cfg.ka       = cfg.ma * (2*pi*cfg.fa)^2;         % THEORY: k = m*(2*pi*f)^2
+        % THEORY: JPE Precision Point, "Structural damping properties of mechanical
+        % systems", metal structures WITH JOINTS: zeta = 0.03 - 0.07. 0.05 is the midpoint.
+        % https://www.jpe-innovations.com/precision-point/structural-damping-properties-mechanical-systems/
+        % The jointed case is the right row: the hidden MSD stands for a payload dynamic on a
+        % mount, not a monolithic part (monolithic metal is an order lower, 0.001 - 0.02) and
+        % not a designed tuned-mass damper (deliberately damped, 0.1+).
+        % CONSEQUENCE for experiment design, measured 2026-09-03: the augmentation target peaks
+        % at |Delta| = f*sqrt(1-f) / (2*zeta_a*M*wa^2) with f = ma_frac, verified to 0.25%
+        % against the numerical FRF (3.941e-07 predicted, 3.951e-07 at 211.07 Hz). So the target
+        % scales as 1/zeta_a, and the cited range bounds how far that lever goes: 0.05 -> 0.03
+        % is 1.67x and nothing more without leaving the source behind.
         cfg.zeta_a   = 0.05;
         cfg.ca       = 2*cfg.zeta_a*sqrt(cfg.ka*cfg.ma); % THEORY: c = 2*zeta*sqrt(k*m)
         cfg.mdl      = 'gantry_additional_state_2025a';

@@ -61,7 +61,20 @@ function records = gtd_build_records(cfg)
     c{end+1} = mk('V4_lissajous_Ym10', 'val','oscillatory',-0.10, po(-0.10, 0.07,1.4, 0,0, 0.20,0.5));
 
     % ── E1-E4: test (held out until final evaluation) ───────────────────────
-    c{end+1} = mk('E1_resonance_sweep','test','standstill', 0.00, psweep([130 180], 0.80));
+    % E1's sweep band now FOLLOWS cfg, it is no longer a literal. It used to be [130 180],
+    % the one excitation band in the generator that ignored cfg.f_low/cfg.f_high, so
+    % BAND_OVERRIDE in generate_trajectory_data.m never reached it (gtd_make_multisine.m:86
+    % reads record.p.sweep_band; every other record type reads cfg at line 54). That literal
+    % targets the absorber's STANDALONE fa = 150 Hz, but the mode that exists is the free-free
+    % two-mass root fa*sqrt(1 + ma/mh_rigid): 158.11 Hz at ma_frac = 0.10 and 212.13 Hz at 0.50.
+    % A "resonance sweep" that misses the resonance by 32 Hz and sits on the anti-resonance is
+    % not the record this row is meant to produce.
+    % BACKWARD COMPATIBLE on the track it was written for: TRACK='augmentation' at ma_frac 0.10
+    % with no override gives cfg.f_low/f_high = 130/180, i.e. exactly the old literal.
+    % CHANGES E1 on TRACK='joint'/'joint_lowf', where cfg is [1,200] or [0.083,200] rather than
+    % [130,180]. Records already on disk are untouched; only a regeneration would differ.
+    c{end+1} = mk('E1_resonance_sweep','test','standstill', 0.00, ...
+                  psweep([cfg.f_low cfg.f_high], 0.80));
     c{end+1} = mk('E2_multisine_Yp22', 'test','standstill', 0.22, ps(0.80));
     c{end+1} = mk('E3_aprbs_above',    'test','aprbs',      0.00, pa(lad(base90,1.00), 0.030, Xs_full, Xa_off, Yr_full));
     c{end+1} = mk('E4_multisine_off',  'test','aprbs',      0.00, pnone(pa(lad(base75,1.00), 0.025, Xs_full, Xa_off, Yr_full)));
