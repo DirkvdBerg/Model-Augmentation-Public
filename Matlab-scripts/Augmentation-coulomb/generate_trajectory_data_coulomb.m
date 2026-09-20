@@ -83,7 +83,20 @@ CCY = 11.60;   % [N]
 % One record by default. V1_standstill_Yp10 is deliberate: it is the record every
 % existing offset number is quoted on, so this dataset is directly comparable.
 % Use {} for all 22, or e.g. {'T6'} for the sliding-regime record.
-SELECT  = {'T3'};           % D-204 probe: ONE record before committing 22. T3 is the
+SELECT  = {'E'};            % TEST SET ONLY: E1-E4. The 2026-09-19 batch was stopped
+                            % during record 19/22, leaving T1-T14 and V1-V4 complete on
+                            % disk. This driver has NO RESUME, so re-running the full set
+                            % would regenerate all 22 and discard that work; the prefix
+                            % filter finishes the job instead. Restore {} for a clean
+                            % full regeneration.
+% SELECT  = {};             % FULL SET, 22 records (T1-14 train, V1-4 val, E1-4 test).
+                            % The D-204 probe is done: T3 was generated first at these
+                            % knobs and cleared every prerequisite (gates 1/2/3 pass, the
+                            % limiter never fires, the absorber is not demoted), so the
+                            % batch is now committed. There is no RESUME in this driver,
+                            % so an interrupted run restarts from scratch and T3 is
+                            % regenerated along with the rest.
+% SELECT  = {'T3'};         % D-204 probe form: ONE record before committing 22. T3 is the
                             % standstill record the band and amplitude were originally
                             % established on, and standstill is the most stick-prone case,
                             % so it is the worst case for V_EPS and directly comparable to

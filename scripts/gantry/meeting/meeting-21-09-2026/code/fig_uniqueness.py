@@ -25,11 +25,10 @@ WHAT IS DRAWN. Nothing in `meeting-18-09-2026/` is touched; these are new files.
                      rho = 0. Whatever it reads is the honest statement of how far this dataset
                      is from a recovery guarantee. Paired with the Eq. 21 per-parameter
                      predicted bias, which is the quantity that replaces "parameter error".
-  fig_separation     rho(J; F_ANN), the fraction of each arm's LEARNED component lying inside
-                     the baseline's column span. This is the tractable analogue of the paper's
-                     Fig. 4 (zero covariance): their ANN has 16 neurons and ours has 10871
-                     parameters, so the full asymptotic covariance matrix is not a figure, but
-                     the cross-block vanishing is exactly this overlap going to zero.
+The separation/overlap figure that used to live here has MOVED to `fig_orthogonality.py`, and
+was wrong while it was here: it measured rho against the RAW ANN output, which is the correct
+object only for the no-projection arm. The OBC projection is applied as a correction subtracted
+inside the state transition, so the applied field is `F_ANN - J theta_frozen`. See that file.
 
 EVERYTHING NUMERICAL IS EXISTING, QUALIFIED CODE. `gantry_dynamic/obc_diagnostics.py` already
 implements the 8-state truth one-step discrepancy and the rho table as preflight tools for
@@ -163,7 +162,6 @@ def main():
         del fs
 
     _fig_condition4(plt, tab, rel, names)
-    _fig_separation(plt, overlap)
 
     out = FIGDIR / 'uniqueness_data.json'
     out.write_text(json.dumps(

@@ -1,0 +1,115 @@
+\documentclass[12pt]{article}
+
+\usepackage[paperwidth=200mm,paperheight=112.5mm,margin=11mm,top=10mm]{geometry}
+\usepackage{amsmath,amssymb,booktabs,array}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{graphicx}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\abovedisplayskip}{9pt}
+\setlength{\belowdisplayskip}{9pt}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\T}{\mathsf{T}}
+\DeclareMathOperator{\col}{col}
+\DeclareMathOperator{\range}{range}
+\newcommand{\fbase}{f_{\mathrm{base}}}
+\newcommand{\ANN}{\mathrm{ANN}}
+\newcommand{\thaux}{\theta_{\mathrm{aux}}}
+\newcommand{\Phiv}{\Phi_{\bar v}}
+\newcommand{\Fann}{F^{\ANN}_{\theta_a}}
+\newcommand{\Ftil}{\widetilde F^{\ANN}_{\theta_a}}
+\newcommand{\panel}[1]{\subsection*{\Large #1}\vspace{1mm}}
+
+\begin{document}
+
+%======================================================================
+\panel{Is the learned component orthogonal to the baseline?}
+
+Lemma~3 asks for $\Phi^{\T}\Ftil=0$. The criterion is therefore
+\emph{numerical} zero, not ``small''.
+
+\vspace{1mm}
+$\Ftil$ is the component as it is \emph{applied in the loop}, which for our
+implementation is not the raw network output: the projection is a correction
+subtracted inside the state transition, $x^{+}\!\leftarrow x^{+}-\text{corr}$.
+
+\begin{equation*}
+\Ftil=
+\begin{cases}
+\Fann, & \text{no projection},\\[1mm]
+\Fann-\Phiv\thaux, & \text{tangent arm},\\[1mm]
+\Fann-\left[\Phiv\thaux+\alpha\,\fbase(\bar v,X_b,U)\right], & \text{affine arm}.
+\end{cases}
+\end{equation*}
+
+Two overlaps, both scale free. The first is the share of the learned component
+that the ten physical parameters $v$ could have produced instead; the second is
+its alignment with the baseline's own output, i.e.\ the trained model with the
+ANN silenced. For a single column the projection reduces to a cosine.
+
+\begin{equation*}
+\rho_{\Phi}=\frac{\bigl\|\Phiv\Phiv^{+}\Ftil\bigr\|}{\bigl\|\Ftil\bigr\|},
+\qquad\qquad
+\rho_{f}=\frac{\bigl|\langle \fbase,\Ftil\rangle\bigr|}
+              {\bigl\|\fbase\bigr\|\,\bigl\|\Ftil\bigr\|}.
+\end{equation*}
+
+\newpage
+%======================================================================
+\panel{Measured overlap, per arm}
+
+\begin{center}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+& $\rho_{\Phi}$ & $\rho_{f}$\\
+& \small parameter directions & \small baseline output\\
+\midrule
+no projection      & $\mathbf{0.87}$      & $1.9\cdot10^{-2}$\\
+OBC tangent (10 col) & $8\cdot10^{-8}$    & $1.2\cdot10^{-2}$\\
+OBC affine (11 col)  & $2\cdot10^{-7}$    & $1.4\cdot10^{-8}$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{2mm}
+Without the projection, $87\%$ of the learned component is reproducible by a
+change of the physical parameters. That is the negation mechanism, measured
+rather than argued: those are exactly the directions along which $v$ can drift
+without the fit noticing.
+
+\vspace{1mm}
+The tangent arm removes that share to numerical zero. It leaves
+$\rho_{f}=1.2\cdot10^{-2}$, because $\fbase$ does not lie in
+$\range(\Phiv)$ once the baseline is nonlinear in its parameters. Removing it
+is what the eleventh column of the affine arm is for, and the affine arm does
+remove it.
+
+\vspace{1mm}
+The projection is not a small correction: it discards about two thirds of the
+raw network output, $\|\Fann\|=16.6\to\|\Ftil\|=6.4$ for the tangent arm and
+$10.8\to3.8$ for the affine arm.
+
+\vspace{2mm}
+\footnotesize
+Each arm is evaluated at its own $\bar v$, read from its own checkpoint, over
+the $671\,944$ one-step reference tuples the basis is built from. The single
+column used for $\rho_{f}$ is $\fbase(\bar v,X_b,U)$, the quantity the question
+asks about; slide~4 of 18-09 writes the affine column as
+$\Gamma_{\bar v}=\col_k[\fbase-\Phiv\bar v]$. The two differ by a column already
+inside $\range(\Phiv)$, so $\widetilde\Phi_{\bar v}$ spans the same subspace and
+the projection is identical; only the single-column cosine differs.
+Orthogonality is measured on the reference set, which is where it is
+constructed; behaviour away from it is not measured here.
+
+\newpage
+%======================================================================
+\panel{Backup: the same numbers as a figure}
+
+\begin{center}
+\includegraphics[height=0.74\textheight]{../figures/orthogonality_applied.pdf}
+\end{center}
+
+\end{document}
