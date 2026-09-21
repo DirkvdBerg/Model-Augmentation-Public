@@ -5,11 +5,12 @@
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{graphicx}
+\usepackage{enumitem}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
-\setlength{\abovedisplayskip}{9pt}
-\setlength{\belowdisplayskip}{9pt}
+\setlength{\abovedisplayskip}{8pt}
+\setlength{\belowdisplayskip}{8pt}
 
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\T}{\mathsf{T}}
@@ -28,88 +29,72 @@
 %======================================================================
 \panel{Is the learned component orthogonal to the baseline?}
 
-Lemma~3 asks for $\Phi^{\T}\Ftil=0$. The criterion is therefore
-\emph{numerical} zero, not ``small''.
-
-\vspace{1mm}
-$\Ftil$ is the component as it is \emph{applied in the loop}, which for our
-implementation is not the raw network output: the projection is a correction
-subtracted inside the state transition, $x^{+}\!\leftarrow x^{+}-\text{corr}$.
+Lemma~3 asks for $\Phi^{\T}\Ftil=0$: the criterion is \emph{numerical} zero,
+not ``small''. $\Ftil$ is the component as \emph{applied in the loop}, since
+the projection is subtracted inside the state transition.
 
 \begin{equation*}
 \Ftil=
 \begin{cases}
 \Fann, & \text{no projection},\\[1mm]
-\Fann-\Phiv\thaux, & \text{tangent arm},\\[1mm]
-\Fann-\left[\Phiv\thaux+\alpha\,\fbase(\bar v,X_b,U)\right], & \text{affine arm}.
+\Fann-\Phi\,\thaux,\quad \Phi:=\Phiv, & \text{tangent arm},\\[1mm]
+\Fann-\Phi\,\thaux,\quad \Phi:=\bigl[\,\Phiv\ \ \fbase\,\bigr], & \text{affine arm}.
 \end{cases}
 \end{equation*}
 
-Two overlaps, both scale free. The first is the share of the learned component
-that the ten physical parameters $v$ could have produced instead; the second is
-its alignment with the baseline's own output, i.e.\ the trained model with the
-ANN silenced. For a single column the projection reduces to a cosine.
+\textbf{Per sample, one step.} $\Phiv$ is the Jacobian of \emph{one} transition
+at \emph{one} sample. $\rho$ stacks every sample of every record, but nothing is
+propagated along a trajectory.
 
 \begin{equation*}
-\rho_{\Phi}=\frac{\bigl\|\Phiv\Phiv^{+}\Ftil\bigr\|}{\bigl\|\Ftil\bigr\|},
+\underbrace{\rho_{\Phi}=\frac{\bigl\|\Phiv\Phiv^{+}\Ftil\bigr\|}{\bigl\|\Ftil\bigr\|}}
+           _{\text{share reproducible by }v}
 \qquad\qquad
-\rho_{f}=\frac{\bigl|\langle \fbase,\Ftil\rangle\bigr|}
-              {\bigl\|\fbase\bigr\|\,\bigl\|\Ftil\bigr\|}.
+\underbrace{\rho_{f}=\frac{\bigl|\langle \fbase,\Ftil\rangle\bigr|}
+              {\bigl\|\fbase\bigr\|\,\bigl\|\Ftil\bigr\|}}
+           _{\text{alignment with the baseline output}}
 \end{equation*}
 
 \newpage
 %======================================================================
-\panel{Measured overlap, per arm}
+\panel{Measured overlap, per sample}
 
 \begin{center}
-\begin{tabular}{@{}lcc@{}}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-& $\rho_{\Phi}$ & $\rho_{f}$\\
-& \small parameter directions & \small baseline output\\
+& \multicolumn{2}{c}{$\rho_{\Phi}$} & \multicolumn{2}{c}{$\rho_{f}$}\\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+& train & validation & train & validation\\
 \midrule
-no projection      & $\mathbf{0.87}$      & $1.9\cdot10^{-2}$\\
-OBC tangent (10 col) & $8\cdot10^{-8}$    & $1.2\cdot10^{-2}$\\
-OBC affine (11 col)  & $2\cdot10^{-7}$    & $1.4\cdot10^{-8}$\\
+no projection        & $0.87$            & $0.87$   & $1.9\cdot10^{-2}$ & $4.5\cdot10^{-2}$\\
+OBC tangent (10 col) & $8\cdot10^{-8}$   & $0.33$   & $1.2\cdot10^{-2}$ & $3.5\cdot10^{-3}$\\
+OBC affine (11 col)  & $2\cdot10^{-7}$   & $0.31$   & $1.4\cdot10^{-8}$ & $1.4\cdot10^{-2}$\\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\vspace{2mm}
-Without the projection, $87\%$ of the learned component is reproducible by a
-change of the physical parameters. That is the negation mechanism, measured
-rather than argued: those are exactly the directions along which $v$ can drift
-without the fit noticing.
-
 \vspace{1mm}
-The tangent arm removes that share to numerical zero. It leaves
-$\rho_{f}=1.2\cdot10^{-2}$, because $\fbase$ does not lie in
-$\range(\Phiv)$ once the baseline is nonlinear in its parameters. Removing it
-is what the eleventh column of the affine arm is for, and the affine arm does
-remove it.
+\small
+\begin{itemize}[leftmargin=5mm,itemsep=1.5pt,topsep=1pt]
+\item No projection: $87\%$ of the learned component is reproducible by a
+      change of $v$, on both splits. Negation, measured.
+\item Tangent and affine reach numerical zero on train.
+\item $\thaux$ is solved on the training reference set; orthogonality holds
+      only there.
+\item Still $0.87\to0.31$ on held-out records, a $2.8\times$ reduction.
+\end{itemize}
 
-\vspace{1mm}
-The projection is not a small correction: it discards about two thirds of the
-raw network output, $\|\Fann\|=16.6\to\|\Ftil\|=6.4$ for the tangent arm and
-$10.8\to3.8$ for the affine arm.
-
-\vspace{2mm}
-\footnotesize
-Each arm is evaluated at its own $\bar v$, read from its own checkpoint, over
-the $671\,944$ one-step reference tuples the basis is built from. The single
-column used for $\rho_{f}$ is $\fbase(\bar v,X_b,U)$, the quantity the question
-asks about; slide~4 of 18-09 writes the affine column as
-$\Gamma_{\bar v}=\col_k[\fbase-\Phiv\bar v]$. The two differ by a column already
-inside $\range(\Phiv)$, so $\widetilde\Phi_{\bar v}$ spans the same subspace and
-the projection is identical; only the single-column cosine differs.
-Orthogonality is measured on the reference set, which is where it is
-constructed; behaviour away from it is not measured here.
+{\scriptsize Per sample, at each arm's own $\bar v$: $671\,944$ train and
+$191\,984$ validation one-step samples. In training the basis refreshes every
+epoch and $\thaux$ is re-solved every objective evaluation; here the
+checkpoint's stored $\thaux$ is used, as on unseen data.}
 
 \newpage
 %======================================================================
 \panel{Backup: the same numbers as a figure}
 
 \begin{center}
-\includegraphics[height=0.74\textheight]{../figures/orthogonality_applied.pdf}
+\includegraphics[width=0.96\textwidth]{../figures/orthogonality_applied.pdf}
 \end{center}
 
 \end{document}

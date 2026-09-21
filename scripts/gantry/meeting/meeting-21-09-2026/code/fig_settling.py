@@ -37,30 +37,52 @@ def _save(fig, name):
     print('  wrote %s.{png,pdf}' % (FIGDIR / name))
 
 
-def _panels(plt, d, arms, title, name):
-    """One 3x2 figure: full record left, settling zoom right, for the arms named."""
+def _panels(plt, d, arms, title, name, mode='abs'):
+    """One 3x2 figure: full record left, settling zoom right, for the arms named.
+
+    `mode='err'` draws BOTH columns as MODEL ERROR, `y_hat - y_data`, one trace per arm and no
+    system trace: the full record on the left, the settling zoom on the right. All three
+    channels, not Y alone.
+
+    Two subtractions were possible here and only one of them says anything. `y - r` removes the
+    offset notation matplotlib is forced into by absolute position (`x10^-6` sitting on top of
+    `-1.5513x10^-1`), but `r` is CONSTANT inside a dwell, so subtracting it is a pure axis shift:
+    identical curves, relabelled axis, no new information. `y_hat - y_data` is a different
+    quantity. It is what the rms table reports, it lives at 1e-07 to 1e-06 m, and it is
+    invisible in the absolute view because it sits under traces drawn at 3e-05 m. On its own
+    axis it is the panel that separates the arms.
+
+    Keeping the full record in error form as well shows whether the chosen settling window is
+    representative or unusual, which the absolute view cannot answer.
+    """
     y, r, k0 = d['y_true'], d['r'], int(d['k0'])
     t = (np.arange(len(y)) + k0) / FS
     i0, i1 = pick_window(r)
     twin = (float(t[i0]), float(t[i1 - 1]))
+    err = (mode == 'err')
 
     fig, axes = two_col_axes(plt, 3, figsize=(9.2, 5.4))
     for row, ch in enumerate(CHANNELS):
         for col, sl in ((0, slice(None)), (1, slice(i0, i1))):
             ax = axes[row][col]
-            ax.plot(t[sl], y[sl, row], color=C_DATA, lw=1.4, label='system', zorder=10)
+            if err:
+                ax.axhline(0.0, color=MUTED, lw=0.7, ls=':')
+            else:
+                ax.plot(t[sl], y[sl, row], color=C_DATA, lw=1.4, label='system', zorder=10)
             for a in arms:
                 s = ARMS[a]
-                ax.plot(t[sl], d['yhat_' + a][sl, row], color=s['c'], ls=s['ls'], lw=s['lw'],
+                v = d['yhat_' + a][sl, row] - (y[sl, row] if err else 0.0)
+                ax.plot(t[sl], v, color=s['c'], ls=s['ls'], lw=s['lw'],
                         label=s['label'], zorder=s['z'])
             sci_axis(ax)
-        axes[row][0].set_ylabel('%s [m]' % ch)
+        axes[row][0].set_ylabel('%s error [m]' % ch if err else '%s [m]' % ch)
 
     n_win = len(settling_windows(r))
     finish_columns(axes, t, twin, zoom_note='settling, largest move')
     axes[0][0].legend(loc='upper left', ncol=2, frameon=False, fontsize=7)
-    fig.suptitle('%s   closed loop   %s\n%d settling windows in this record, '
-                 'no multisine (f_sim = 0)' % (RECORD, title, n_win),
+    fig.suptitle('%s   closed loop   %s\n%s%d settling windows in this record, '
+                 'no multisine (f_sim = 0)'
+                 % (RECORD, title, 'model error $\\hat y - y$   ' if err else '', n_win),
                  fontsize=9.5, y=1.015)
     fig.tight_layout()
     _save(fig, name)
@@ -84,6 +106,11 @@ def main():
     for a in ARM_ORDER:
         _panels(plt, d, [a], ARMS[a]['label'], 'settling_%s' % a)
     twin, n_win = _panels(plt, d, ARM_ORDER, 'all arms', 'settling_all')
+
+    # Same five figures with the zoom column as error from the dwell setpoint.
+    for a in ARM_ORDER:
+        _panels(plt, d, [a], ARMS[a]['label'], 'settling_err_%s' % a, mode='err')
+    _panels(plt, d, ARM_ORDER, 'all arms', 'settling_err_all', mode='err')
     print('\nzoom window %.3f to %.3f s, chosen as the dwell after the largest move; '
           '%d settling windows available' % (twin[0], twin[1], n_win))
 

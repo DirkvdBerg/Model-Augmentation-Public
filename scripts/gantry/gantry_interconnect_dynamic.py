@@ -46,7 +46,21 @@ CFG = RunConfig(
     # intact, so each half stays reproducible from its own generator. The merge is legitimate
     # because the PLANT is identical in both: MA_FRAC=0.50, zeta_a=0.03, same controller; the
     # only knobs that differ (band, amplitude) shape a multisine the new records do not have.
-    mode='augmentation_ma50_z03_b140-230_a6_telica',
+    # D-204: the FRICTION twin of that merge. Same 29 records, same names, same plant;
+    # Garcia dry friction (cc1 16.80, cc2 18.35, ccy 11.60 N, Karnopp stick state) is in the
+    # simulated TRUTH ONLY and the baseline stays frictionless, so the augmentation has to
+    # capture it. Both friction halves are copied in from their own generators
+    # (augmentation_ma50_b140-230_a6_z03_coulomb, augmentation_ma50_z03_telica_coulomb),
+    # which are left intact, exactly as D-206 did for the frictionless merge.
+    # HETEROGENEITY WARNING, and it is stronger than in the frictionless merge: the plant is
+    # identical across both halves, but the friction REGIMES are not. The multisine records
+    # run 3-20% stick with the absorber's output contribution PRESERVED (72.6% -> 73.9%);
+    # the Telica records run 74-88% stick with it CUT TO 25% (2.43% -> 0.62%), because
+    # friction damps the acceleration transitions that excite the absorber while the
+    # controller still tracks the large reference (rms|y| identical to four digits).
+    # So this is a more heterogeneous training set than the frictionless merge, by design.
+    # Set back to 'augmentation_ma50_z03_b140-230_a6_telica' for the frictionless arm.
+    mode='augmentation_ma50_z03_b140-230_a6_telica_coulomb',
     # 'linear_map' = Hoekstra 2026 reconstructability init (trainable); 'default' = deepSI learned encoder
     encoder_init='linear_map',
     ann_activation='tanh',        # 'linear' = Identity (Jan's ECC, D-071); 'tanh' = nonlinear ANN

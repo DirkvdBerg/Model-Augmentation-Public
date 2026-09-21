@@ -53,9 +53,17 @@ from fig_common import ARMS, ARM_ORDER, FIGDIR, INK, MUTED, style
 from build import build_arm
 
 SPANS = ['J', 'Gamma', 'J|Gamma']
-SPAN_LABEL = {'J': r'$J$  (parameter directions)',
-              'Gamma': r'$\Gamma$  (baseline output)',
-              'J|Gamma': r'$[J\,|\,\Gamma]$  (both)'}
+# TRAIN is where the projection is constructed; VALIDATION is held out from it. Reported side by
+# side, never averaged together.
+SPLITS = ['train', 'val']
+# Notation follows the 2026-09-18 deck so the slide and the figure cannot disagree: Phi_vbar is
+# the stacked baseline Jacobian, f_base its own output, [Phi | f_base] the extended space. (That
+# deck writes the affine column as Gamma_vbar = col_k[f_base - Phi_vbar vbar]; it differs from
+# f_base by a column already inside range(Phi_vbar), so the SPAN and hence the projection are
+# identical, and only the single-column cosine differs.)
+SPAN_LABEL = {'J': r'$\Phi_{\bar v}$  (parameter directions)',
+              'Gamma': r'$f_{\mathrm{base}}$  (baseline output)',
+              'J|Gamma': r'$[\Phi_{\bar v}\,|\,f_{\mathrm{base}}]$  (both)'}
 SPAN_COLOR = {'J': '#0072B2', 'Gamma': '#009E73', 'J|Gamma': '#CC79A7'}
 
 
@@ -68,8 +76,18 @@ def _rho(B, F, eps=1e-300):
     return float(torch.linalg.vector_norm(proj) / (torch.linalg.vector_norm(F) + eps))
 
 
-def _arm_fields(arm, ref_holder):
-    """(F_applied, J, Gamma) for one arm, all float64, at THAT arm's expansion point."""
+def _arm_fields(arm, ref_holder, split):
+    """(F_raw, F_applied, J, Gamma) for one arm on one SPLIT, at that arm's expansion point.
+
+    TRAIN is where the projection was constructed, so near-zero there confirms the
+    implementation and nothing more. VALIDATION records the projection never saw, so near-zero
+    there is a generalisation result and non-zero is the honest limitation. The two are reported
+    side by side and never merged: merging averages away the only comparison worth making.
+
+    `theta_frozen` is NOT refitted on validation. It is the coefficient the training set
+    produced, and it is what the model actually carries when it runs on unseen data, so applying
+    it at validation points is the faithful thing to measure.
+    """
     from gantry_dynamic.obc_gantry import (build_reference_set, make_basis_builder,
                                            make_float64_block, make_reference_field)
     from model_augmentation.fit_systems.blocks import (Reduced_Gantry_State_Block,
@@ -83,11 +101,13 @@ def _arm_fields(arm, ref_holder):
     ann = next(b for b in fit_sys.hfn.connected_blocks if isinstance(b, Static_ANN_Block))
     corr = getattr(fit_sys.hfn, 'obc_correction', None)
 
-    if ref_holder.get('ref') is None:
-        # One reference set for every arm: it depends only on cfg and norm, which are identical
-        # across the three runs (same MODE, same seed, same normalisation).
-        ref_holder['ref'] = build_reference_set(cfg, norm, cfg.nx_ann, verbose=True)
-    ref = ref_holder['ref']
+    if ref_holder.get(split) is None:
+        # One reference set per split, shared by every arm: it depends only on cfg and norm,
+        # which are identical across the three runs (same MODE, same seed, same normalisation).
+        from build import PINNED_TRAIN, PINNED_VAL
+        files = PINNED_TRAIN if split == 'train' else PINNED_VAL
+        ref_holder[split] = build_reference_set(cfg, norm, cfg.nx_ann, files=files, verbose=True)
+    ref = ref_holder[split]
 
     blk64 = make_float64_block(phy)
     if corr is not None:
@@ -117,8 +137,8 @@ def _arm_fields(arm, ref_holder):
     else:
         F_applied = F - (J @ theta[:J.shape[1]] + theta[-1] * Gamma)
         note = 'F_ANN - (J theta + alpha Gamma)'
-    print('[arm] %-9s space=%-7s applied = %s   ||F_ANN|| = %.4e  ||F_applied|| = %.4e'
-          % (arm, space or '-', note, float(torch.linalg.vector_norm(F)),
+    print('[arm] %-9s %-5s space=%-7s applied = %s   ||F_ANN|| = %.4e  ||F_applied|| = %.4e'
+          % (arm, split, space or '-', note, float(torch.linalg.vector_norm(F)),
              float(torch.linalg.vector_norm(F_applied))))
     del fit_sys
     return F, F_applied, J, Gamma
@@ -131,19 +151,20 @@ def main():
     ref_holder, out = {}, {}
 
     for arm in arms:
-        F_raw, F_app, J, Gamma = _arm_fields(arm, ref_holder)
-        JG = torch.cat([J, Gamma[:, None]], dim=1)
-        rec = {}
-        for span, B in (('J', J), ('Gamma', Gamma[:, None]), ('J|Gamma', JG)):
-            rec[span] = dict(applied=_rho(B, F_app), raw=_rho(B, F_raw))
-        rec['norm_raw'] = float(torch.linalg.vector_norm(F_raw))
-        rec['norm_applied'] = float(torch.linalg.vector_norm(F_app))
-        out[arm] = rec
-        print('       rho(applied):  J %.3e   Gamma %.3e   [J|Gamma] %.3e'
-              % tuple(rec[s]['applied'] for s in SPANS))
-        print('       rho(raw ANN):  J %.3e   Gamma %.3e   [J|Gamma] %.3e'
-              % tuple(rec[s]['raw'] for s in SPANS))
-        del J, Gamma, JG, F_raw, F_app
+        out[arm] = {}
+        for split in SPLITS:
+            F_raw, F_app, J, Gamma = _arm_fields(arm, ref_holder, split)
+            JG = torch.cat([J, Gamma[:, None]], dim=1)
+            rec = {}
+            for span, B in (('J', J), ('Gamma', Gamma[:, None]), ('J|Gamma', JG)):
+                rec[span] = dict(applied=_rho(B, F_app), raw=_rho(B, F_raw))
+            rec['norm_raw'] = float(torch.linalg.vector_norm(F_raw))
+            rec['norm_applied'] = float(torch.linalg.vector_norm(F_app))
+            rec['n_samples'] = int(J.shape[0] // 6)
+            out[arm][split] = rec
+            print('       %-5s rho(applied):  J %.3e   Gamma %.3e   [J|Gamma] %.3e'
+                  % ((split,) + tuple(rec[s]['applied'] for s in SPANS)))
+            del J, Gamma, JG, F_raw, F_app
 
     _draw(plt, out, arms)
     p = FIGDIR / 'orthogonality_data.json'
@@ -153,25 +174,29 @@ def main():
 
 
 def _draw(plt, out, arms):
-    fig, ax = plt.subplots(figsize=(7.4, 3.8))
+    """Two panels, train and validation, on a SHARED log axis so they compare by eye."""
+    fig, axes = plt.subplots(1, 2, figsize=(9.6, 3.9), sharey=True)
     x = np.arange(len(arms))
     w = 0.26
     floor = 1e-17
-    for i, span in enumerate(SPANS):
-        v = [max(out[a][span]['applied'], floor) for a in arms]
-        ax.bar(x + (i - 1) * w, v, w, color=SPAN_COLOR[span], label=SPAN_LABEL[span])
-        for xi, vi in zip(x + (i - 1) * w, v):
-            ax.annotate('%.1e' % vi, (xi, vi), textcoords='offset points', xytext=(0, 2),
-                        ha='center', fontsize=6, rotation=90, color=MUTED)
-    ax.set_yscale('log')
-    ax.set_xticks(x)
-    ax.set_xticklabels([ARMS[a]['label'] for a in arms])
-    ax.set_ylabel(r'$\rho(B;\,F_{\mathrm{applied}})=\|BB^{+}F\|/\|F\|$')
-    ax.axhline(1.0, color=INK, lw=0.8, ls=':')
-    ax.legend(frameon=False, fontsize=7, loc='lower left')
-    ax.set_title('Overlap of the LEARNED component with the baseline, as applied in the loop\n'
-                 'each arm at its own expansion point; 1.0 = entirely explainable by the '
-                 'baseline, 0 = orthogonal', loc='left', fontsize=8.5)
+    title = {'train': 'train  (where the projection is constructed)',
+             'val': 'validation  (held out from it)'}
+    for ax, split in zip(axes, SPLITS):
+        for i, span in enumerate(SPANS):
+            v = [max(out[a][split][span]['applied'], floor) for a in arms]
+            ax.bar(x + (i - 1) * w, v, w, color=SPAN_COLOR[span], label=SPAN_LABEL[span])
+            for xi, vi in zip(x + (i - 1) * w, v):
+                ax.annotate('%.0e' % vi, (xi, vi), textcoords='offset points', xytext=(0, 2),
+                            ha='center', fontsize=5.5, rotation=90, color=MUTED)
+        ax.set_yscale('log')
+        ax.set_xticks(x)
+        ax.set_xticklabels([ARMS[a]['label'] for a in arms], fontsize=7)
+        ax.axhline(1.0, color=INK, lw=0.8, ls=':')
+        n = out[arms[0]][split]['n_samples']
+        ax.set_title('%s\n%d one-step samples' % (title[split], n),
+                     loc='left', fontsize=8, color=MUTED)
+    axes[0].set_ylabel(r'$\rho = \|AA^{+}\widetilde F\| / \|\widetilde F\|$')
+    axes[0].legend(frameon=False, fontsize=7, loc='lower left')
     fig.tight_layout()
     for ext in ('png', 'pdf'):
         fig.savefig(FIGDIR / ('orthogonality_applied.%s' % ext))

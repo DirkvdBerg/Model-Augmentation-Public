@@ -1,0 +1,130 @@
+\documentclass[12pt]{article}
+
+\usepackage[paperwidth=200mm,paperheight=112.5mm,margin=11mm,top=10mm]{geometry}
+\usepackage{amsmath,amssymb,booktabs,array,enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\abovedisplayskip}{9pt}
+\setlength{\belowdisplayskip}{9pt}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\T}{\mathsf{T}}
+\DeclareMathOperator{\col}{col}
+\DeclareMathOperator{\sign}{sign}
+\newcommand{\fbase}{f_{\mathrm{base}}}
+\newcommand{\ftruth}{f_{\mathrm{truth}}}
+\newcommand{\ueff}{u_{\mathrm{eff}}}
+\newcommand{\cc}{c_{\mathrm{c}}}
+\newcommand{\panel}[1]{\subsection*{\Large #1}\vspace{1mm}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\setlist[itemize]{leftmargin=5mm,itemsep=1.2mm,topsep=2mm,parsep=0pt}
+
+\begin{document}
+
+%======================================================================
+\panel{How the friction is added}
+
+Garcia puts dry friction in the generalised force vector, Eq.~(15), one term per
+physical actuator:
+
+\begin{align*}
+F_{X_s}&=(F_1+F_2)-\left[c_{\mathrm{c}1}\sign(\dot X_1)+c_{\mathrm{c}2}\sign(\dot X_2)\right]\\
+F_{\Theta_s}&=\left\{(F_1-F_2)-\left[c_{\mathrm{c}1}\sign(\dot X_1)-c_{\mathrm{c}2}\sign(\dot X_2)\right]\right\}\tfrac{L_b}{2}\\
+F_{Y_s}&=F_y-c_{\mathrm{c}y}\sign(\dot Y)
+\end{align*}
+
+\begin{itemize}
+\item $M(Y)$, $C$, $K$ unchanged. Friction enters at the force node only, never in
+      the Rayleigh dissipation $D$ (Eq.~5), which holds the viscous terms alone.
+\item Arguments are $\sign(\dot X_1),\sign(\dot X_2),\sign(\dot Y)$: rail velocities.
+      Using $(\dot X,\dot\Theta,\dot Y)$ instead is wrong and looks plausible.
+\item $\delta_a$ carries no friction: internal payload DOF, not a rail.
+\item Truth only; the baseline stays frictionless.
+\end{itemize}
+
+\begin{equation*}
+x_{k+1}=\ftruth(x_k,\ueff{}_{,k})
+\qquad\text{against}\qquad
+x_{b,k+1}=\fbase(v,x_{b,k},u_k)
+\end{equation*}
+
+\newpage
+%======================================================================
+\panel{Coulomb's law at zero velocity}
+
+\begin{equation*}
+|v_i|>0:\quad F_i=c_{\mathrm{c}i}\sign(v_i),
+\qquad\qquad
+v_i=0:\quad |F_i|\le c_{\mathrm{c}i}.
+\end{equation*}
+
+\begin{itemize}
+\item Garcia identified at constant velocity: slip force only, no breakaway measured.
+\item $\sign(0)=0$ says a stage at rest has no friction. Not the law.
+\item Hard $\sign$ gives a differential inclusion; its Filippov solution is the stick branch.
+\item No new physical parameter.
+\end{itemize}
+
+\newpage
+%======================================================================
+\panel{Garcia's experiment, replicated}
+
+\begin{align*}
+\text{$Y$, with $X_1,X_2$ blocked:}&\qquad F_y=c_y\dot Y+c_{\mathrm{c}y}\sign(\dot Y)\\
+\text{$X_1,X_2$ synchronised:}&\qquad F_i=c_{\mathrm{g}i}\dot X_i+c_{\mathrm{c}i}\sign(\dot X_i),
+\quad i=1,2
+\end{align*}
+
+\begin{itemize}
+\item Two experiments, each actuator force read separately.
+\item Ours: prescribe constant velocity, solve for the holding force, read the intercept per rail.
+\item $M$ constant $\Rightarrow$ that force is exactly affine in $v$ per sign branch.
+      Slope is viscous and inertial; the intercept is Coulomb.
+\end{itemize}
+
+\newpage
+%======================================================================
+\panel{What it returns}
+
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+ & recovered [N] & Garcia [N] & error \\
+\midrule
+$c_{\mathrm{c}1}$ & $16.800000$ & $16.80$ & $3.6\times10^{-15}$ \\
+$c_{\mathrm{c}2}$ & $18.350000$ & $18.35$ & $0$ \\
+$c_{\mathrm{c}y}$ & $11.600000$ & $11.60$ & $0$ \\
+\bottomrule
+\end{tabular}
+
+\begin{itemize}
+\item Fit residuals at round-off, so the intercept reading is not curvature.
+\item $c_{\mathrm{c}1}\neq c_{\mathrm{c}2}$ recovered separately: only possible in stage
+      coordinates, so this is also the frame check.
+\item A torque returned that was never given:
+      $\tfrac{L_b}{2}(c_{\mathrm{c}1}-c_{\mathrm{c}2})=-0.5619$~Nm, measured $-0.561875$~Nm.
+\end{itemize}
+
+\newpage
+%======================================================================
+\panel{What had to be decided}
+
+\begin{tabular}{@{}L{0.33\textwidth}L{0.55\textwidth}@{}}
+\toprule
+decision & why \\
+\midrule
+Friction in the truth only
+& The augmentation needs something real to account for. Friction in the physics
+block answers a different question. \\[2mm]
+Hard $\sign$, not $\tanh$
+& $\cc\tanh(v/v_0)$ has slope $\cc/v_0$: at $v_0=10^{-3}$ that is $1160\times$
+$c_{\mathrm{g}1}$. Smoothed Coulomb is viscous damping, on the rows
+$c_{\mathrm{g}1},c_{\mathrm{g}2},c_y$ occupy. \\[2mm]
+Garcia's $\cc$ as given, no sweep
+& Fitting a physical constant to the outcome it explains is not a measurement. \\
+\bottomrule
+\end{tabular}
+
+\end{document}
