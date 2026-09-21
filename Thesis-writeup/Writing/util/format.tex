@@ -1,0 +1,29 @@
+% format.tex  --  macros, notation, styling. Swap the class without touching this.
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% ---------------------------------------------------------------- draft switch
+% \drafttrue  -> todo notes visible.   \draftfalse -> submission build.
+\newif\ifdraft
+\drafttrue
+\ifdraft
+  \newcommand{\todo}[1]{\textcolor{red}{[\textbf{TODO:} #1]}}
+  \newcommand{\note}[1]{\textcolor{blue}{[#1]}}
+\else
+  \newcommand{\todo}[1]{}
+  \newcommand{\note}[1]{}
+\fi
+
+% ------------------------------------------------------------ general notation
+% Copied verbatim from scripts/gantry/orthogonal-by-construction/documentation/
+% state-level-obc-derivation.tex so the two documents stay comparable.
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\ran}{\operatorname{range}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\code}[1]{\nolinkurl{#1}}
+
+% ------------------------------------------------------------ paper notation
+% Define the symbols for this paper here, once.
