@@ -1,0 +1,32 @@
+% Page budget: 1.35 pages | Owns: gantry coordinates, first-principles equations, scheduling, LPV-LFR realisation, and physical parameterisation.
+\section{Dual-Gantry System and Physics Baseline}
+
+\subsection{System coordinates and equations of motion}
+\begin{itemize}
+\item Define logical coordinates $q=[X,\Theta,Y]^\top$, stage-force transformation, measured outputs, and the payload operating range \cite{garcia2013model}
+\item Present $M(Y)\ddot q+C\dot q+Kq=u$ and identify where payload position creates structural coupling and rational dependence
+\item Explain the free $X$ and $Y$ integrators caused by zero translational stiffness and why a small velocity bias accumulates into position error
+\item State which physical effects remain outside the baseline, including the hidden flexible mode and dry friction used in validation
+\item Verify $M(Y)$ is invertible throughout the operating range before any rollout or LFR transformation
+\end{itemize}
+\todo{How much hardware description is needed to connect the logical coordinates to the two rails without consuming a full system figure?}
+
+\subsection{Quasi-LPV and LPV-LFR representation}
+\begin{itemize}
+\item Treat measured payload position $Y$ as the endogenous scheduling variable, making the model quasi-LPV \cite{toth2010modeling}
+\item Keep the plant in continuous time and integrate with fixed-step RK4; explain the departure from the research plan's discrete-time ZOH route
+\item Factor the rational $M(Y)^{-1}$ dependence into an LFR with repeated scalar block $\Delta(Y)=YI$ \cite{drenth2025thesis,drenth2025lpvlfr}
+\item Use structural SVD compression to reduce the scheduling loop from six to four channels without changing the input-state map
+\item State the LFR signal dimensions and name the interconnection variables consistently with standard lower-LFR terminology
+\end{itemize}
+\todo{Ask Roland for the preferred name and notation for the compressed internal LFR dimensions currently described informally as $n$ and $m$.}
+
+\subsection{Physical parameters and identifiable combinations}
+\begin{itemize}
+\item Distinguish the fourteen raw parameters from the ten combinations identifiable through the gantry equations
+\item Optimise reduced positive parameter combinations and map them back to interpretable masses, stiffnesses, damping, geometry, and centre-of-mass terms
+\item Show the Jacobian from raw parameters to identifiable combinations; naive parameter merging is not a valid recovery argument
+\item Parameter recovery without augmentation is stated as a verification of the estimation pipeline \note{one sentence}
+\item Use relative combination error as the interpretability metric and disclose the special normalisation required when a combination crosses zero
+\end{itemize}
+\todo{Should the raw-to-reduced Jacobian be printed in the appendix or shown only as rank and singular values?}

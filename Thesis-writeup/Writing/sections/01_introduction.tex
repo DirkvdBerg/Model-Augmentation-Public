@@ -1,0 +1,32 @@
+% Page budget: 1.15 pages | Owns: application motivation, research gap, research question, contributions, and paper map.
+\section{Introduction}
+
+\subsection{Industrial motivation and modelling gap}
+\begin{itemize}
+\item Settling prediction limits throughput in coupled high-precision gantries, so model error has a direct operational cost \cite{garcia2013model}
+\item The physics model exposes masses, stiffnesses, damping, and coupling, but omits position-dependent flexible dynamics that matter for prediction
+\item A black-box model offers flexibility but weakens extrapolation arguments and removes parameters useful for control design, digital twins, and health monitoring
+\item Grey-box dynamic augmentation is the target compromise: preserve the baseline and learn only the missing state dynamics \cite{hoekstra2026lfr}
+\end{itemize}
+\todo{Which industrial benefit should lead: settling prediction, controller design, offline commissioning, or condition monitoring?}
+
+\subsection{Research question and scope}
+\begin{itemize}
+\item Main question: how should a dual-gantry physics model be augmented to improve settling prediction while retaining physical parameter interpretability?
+\item Aspect 1 asks whether the payload-position scheduling should remain explicit in a quasi-LPV baseline rather than frozen LTI models
+\item Aspect 2 asks whether a dynamic parallel augmentation with additional states captures flexible cross-coupling absent from the baseline
+\item Aspect 3 asks what state-level orthogonality can and cannot guarantee during joint estimation
+\item Aspect 4 asks whether the model generalises across operating points and motion profiles relative to a black-box state-space model
+\item Scope separates demonstrated simulation evidence, planned real-machine evaluation, and untested extrapolation beyond the multisine amplitude range
+\end{itemize}
+\todo{Does the approved research-plan wording need to remain verbatim, or may the final question reflect the closed-loop and OBC developments?}
+
+\subsection{Contributions and paper organisation}
+\begin{itemize}
+\item Derive a compact continuous-time LPV-LFR realisation of the dual-gantry baseline with rational dependence on payload position
+\item Extend dynamic parallel LFR augmentation to a closed-loop, self-scheduled state-space setting with learned additional states
+\item Construct state-level orthogonality for the identifiable physical-parameter tangent space and quantify its true-parameter recovery condition
+\item Evaluate predictive fit, physical-parameter error, added-state contribution, generalisation, and black-box performance under matched data
+\item Paper organisation: baseline, augmentation, OBC, setup, results, discussion, conclusion, then supporting derivations
+\end{itemize}
+\todo{Confirm whether references and appendices are excluded from the 12-page IEEE limit and whether TU/e requires front matter beyond the IEEE paper.}

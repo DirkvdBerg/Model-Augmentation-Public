@@ -1,0 +1,33 @@
+% Page budget: 1.55 pages | Owns: negation, OBC derivation, additional-state scope, implementation, and true-parameter condition.
+\section{Interpretability by Orthogonal Construction}
+
+\subsection{Negation and the protected tangent space}
+\begin{itemize}
+\item Joint estimation is non-unique when the ANN can reproduce or cancel changes reachable by physical parameters \cite{gyorok2025l4dc,hoekstra2026lfraug}
+\item Define interpretability as recovery of the ten identifiable physical combinations, not visual plausibility of individual raw parameters
+\item Stack one-step sensitivities $J=\partial f_\theta/\partial\theta$ over a data-derived reference set in normalised state coordinates
+\item Protect the rank-ten tangent space and compare the optional affine-offset column as a separate arm rather than silently changing the definition
+\item Report tangent-space rank, condition number, and correlated sensitivity columns before interpreting parameter recovery
+\end{itemize}
+\todo{Should the thesis call the affine arm a stricter non-negation definition or only a sensitivity analysis around the chosen tangent definition?}
+
+\subsection{State-level orthogonal-by-construction map}
+\begin{itemize}
+\item Project the ANN write into the physical rows with $I-JJ^+$, eliminating the penalty weight used by soft orthogonality regularisation \cite{gyorok2025l4dc}
+\item Freeze the reference basis within each epoch and refresh it as the physical parameters move, keeping the recurrent transition causal
+\item Differentiate through the projection coefficient while treating the stacked basis as constant during each optimisation interval
+\item Orthogonality applies to the physical one-step write; additional-state rows are orthogonal to the baseline by the baseline's zero extension
+\item Additional states still propagate into later physical outputs, so one-step state orthogonality does not imply trajectory-output orthogonality
+\item Separate the no-projection, ten-column tangent, and eleven-column affine arms under matched data, initialisation, and optimisation budgets
+\end{itemize}
+\todo{Is one-step state orthogonality the intended thesis contribution, or must the trajectory-level penalty also appear despite its unresolved weight selection?}
+
+\subsection{Condition for true parameter recovery}
+\begin{itemize}
+\item OBC makes the local decomposition unique, but true recovery additionally requires the real missing dynamics $\Delta^*$ to satisfy $J^\top\Delta^*=0$
+\item Derive the least-squares parameter bias $\hat\theta-\theta^*=J^+\Delta^*$ and define $\rho^*=\|JJ^+\Delta^*\|/\|\Delta^*\|$
+\item Measure $\rho^*=0.205$ for the hidden absorber, so orthogonality fails on the current excitation and zero parameter error is not the valid target
+\item The predicted combination-error floor is 4.96\%, dominated by a mass-imbalance direction sharing the absorber's equilibrium offset
+\item Exact pointwise orthogonality is impossible for a nonzero force on this system; only excitation-averaged orthogonality can be designed
+\end{itemize}
+\todo{Should the proposed orthogonal multisine design be a future-work result, or must it be run before claiming a constructive remedy?}

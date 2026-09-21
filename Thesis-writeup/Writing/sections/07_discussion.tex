@@ -1,0 +1,33 @@
+% Page budget: 0.90 pages | Owns: answers to the research question, interpretation, limitations, departures, and industrial meaning.
+\section{Discussion}
+
+\subsection{Answers to the four research aspects}
+\begin{itemize}
+\item Aspect 1: state whether explicit $Y$ scheduling earns measurable predictive value over frozen LTI baselines
+\item Aspect 2: distinguish the expressive value of dynamic augmentation from the observed trainability of its added states
+\item Aspect 3: conclude that OBC enforces a unique local split but true parameter recovery is conditional on the real discrepancy's orthogonality and optimiser convergence
+\item Aspect 4: compare simulation interpolation, motion-profile transfer, amplitude extrapolation, real-data evidence, and the black-box result without merging them into one score
+\item Interpretability matters when physical parameters support controller redesign or health monitoring, but its practical value must be tied to a named downstream decision
+\end{itemize}
+\todo{Which result is the primary answer if predictive accuracy and parameter recovery favour different arms?}
+
+\subsection{Limitations and lessons}
+\begin{itemize}
+\item Closed-loop feedback improves numerical trainability but can hide plant mismatch, suppress orthogonality overlap, and reward a model that is poor in open loop
+\item Short windows underweight velocity DC bias on free integrators; varying encoder and rollout length is therefore a structural sensitivity test, not routine tuning
+\item One absorber, noiseless simulation, one main seed, and an incomplete friction benchmark limit claims about nonlinear, noisy, and dissipative missing dynamics
+\item Central-difference velocities, force calibration, and the train-validation-test coverage grid bound the credibility of any real-data conclusion
+\item The research plan expected validated real-machine generalisation; any missing Telica result is a departure to disclose, not replace with design documentation
+\item Augmentation versus residual-FRF fitting remains a trade between trajectory-domain nonlinear prediction and a simpler frequency-domain account of missing dynamics
+\end{itemize}
+\todo{Should a cubic-spring benchmark, noise study, and Monte Carlo analysis be completed, or should the thesis explicitly narrow its claims to the measured linear absorber case?}
+
+\subsection{Implications and future work}
+\begin{itemize}
+\item Design excitation so $J^\top\Delta^*=0$ when true parameter recovery, rather than only a unique decomposition, is required
+\item Separate learning rates for physical and neural parameters and compare convergence against the predicted nonzero OBC bias floor
+\item Replace the short-horizon objective or couple windows so integrated velocity bias is visible during training
+\item Repair and rerun the Coulomb benchmark before claiming that the method learns a legitimate nonzero-mean residual
+\item Extend evaluation beyond the multisine range and use machine-relevant trajectories to delimit safe interpolation and extrapolation
+\end{itemize}
+\todo{Which future-work item is a prerequisite for the thesis claim and which genuinely belongs after graduation?}

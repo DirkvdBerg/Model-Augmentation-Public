@@ -1,0 +1,44 @@
+% Page budget: 1.50 pages | Owns: datasets, splits, excitation, preprocessing, comparators, metrics, and experimental protocol.
+\section{Experimental Setup}
+
+\subsection{Simulation benchmark and excitation}
+\begin{itemize}
+\item Generate closed-loop records from the physics baseline plus a truth-only flexible absorber, retaining exact states solely for diagnostics
+\item Use multisine excitation that covers the absorber pole and anti-resonance while respecting position, velocity, yaw, and force limits
+\item Assign independent random multisine phases to training, validation, and test records so equal spectra do not duplicate trajectories
+\item Include multisine-free cycloidal motion profiles matching the measured machine motion to test the operational distribution shift
+\item Treat the Coulomb-friction benchmark as pending because the current friction and frictionless datasets have mismatched excitation amplitudes
+\item State the sample rates, record lengths, number of windows, and total independent motion time rather than quoting overlapping-window count as data volume
+\end{itemize}
+\todo{Is the hidden linear absorber sufficient simulation complexity, or is a truth-only cubic spring required to demonstrate nonlinear augmentation?}
+
+\subsection{Real Telica data and split}
+\begin{itemize}
+\item Use the supervisor-defined split of 11 training, two validation, and two test operating points at 20 kHz
+\item Convert rail positions and currents to logical metres and Newtons; form velocity states by central differences because direct velocity is not logged
+\item Keep all iterations at one operating point in the same split to prevent identical reference trajectories leaking across sets
+\item Describe the $X$ and $Y$ operating-point grid and show whether training covers the interpolation region occupied by both test points
+\item Use iteration 0 for controller checks and later ILC iterations for distinct feedforward conditions without treating them as independent trajectories
+\item Mark real-data training and held-out evaluation as planned until a final reproducible run and force-calibration convention exist
+\end{itemize}
+\todo{Should direct drive velocity be requested, and should coverage be shown as a 2D position grid or a 3D state-input occupancy plot?}
+
+\subsection{Training protocol, comparators, and metrics}
+\begin{itemize}
+\item Match records, seeds, windows, optimiser budget, and checkpoint criterion across baseline-only, unconstrained, tangent-OBC, affine-OBC, and black-box arms
+\item Compare short-horizon normalised RMS used for optimisation with 12 s free-run RMS, BFR, settling error, and per-channel spectra
+\item Report physical combination error, projection overlap, added-state ablations, and encoder-init sensitivity alongside predictive metrics
+\item Give the black-box model enough capacity and horizon to be a capability comparison, while disclosing its failed long-horizon training behaviour
+\item Evaluate interpolation across held-out payload positions, unseen multisine phase, multisine-free motion, and amplitude extrapolation separately
+\item Predeclare expectation, acceptance criterion, verdict, and mechanism for every result rather than presenting isolated scores
+\end{itemize}
+\todo{Are multiple seeds or a Monte Carlo study required, and which uncertainty source should it sample: initialisation, noise, phase, or operating point?}
+
+\subsection{Reproducibility and implementation checks}
+\begin{itemize}
+\item Verify controller reconstruction, coordinate transforms, normalisation, RK4 transition, and LFR equivalence before training
+\item Use the same controller, data conversion, and rollout entry point for training, validation, and checkpoint selection
+\item Record configuration, software precision, seed, dataset identifier, and checkpoint provenance for every reported arm
+\item Keep oracle states and truth parameters out of the trainable pipeline and label every diagnostic that uses them
+\end{itemize}
+\todo{Which implementation checks belong in the main paper, and which should move to the appendix or repository documentation?}

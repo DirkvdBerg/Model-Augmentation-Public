@@ -1,0 +1,49 @@
+% Page budget: 2.90 pages | Owns: all quantitative evidence, figure and table claims, criteria, verdicts, and comparison to the black box.
+\section{Results}
+
+\subsection{Baseline and closed-loop formulation}
+\begin{itemize}
+\item Expectation and criterion: the LPV-LFR and original physics equations agree numerically across the payload range before model-error comparisons are meaningful
+\item Verdict and reason: report inertia invertibility, LFR/RK4 equivalence, and the remaining baseline error caused by the truth-only absorber
+\item Figure: baseline and oracle output errors versus time for representative payload positions; supports the claim that the omitted mode is systematic and position dependent
+\item Table: baseline free-run RMS or BFR for LPV and frozen-LTI models across held-out $Y$; tests the research plan's Aspect 1 rather than assuming LPV superiority
+\item Expectation and criterion: direct and residual closed-loop forms match at numerical precision when controller assumptions hold
+\item Figure: recorded input, controller correction, and model error over one rollout; supports the interpretation that feedback can suppress visible output error while the open-loop model remains wrong
+\end{itemize}
+\todo{The LPV-versus-frozen-LTI comparison is required by the plan but may not yet have a final matched result; run it or narrow Aspect 1 explicitly.}
+
+\subsection{Predictive benefit and additional-state contribution}
+\begin{itemize}
+\item Expectation and criterion: augmentation must reduce held-out long-horizon error, not only the short training loss, relative to the same encoder-initialised baseline
+\item Verdict and reason: report the best validated improvement and the gap between window fit and free-run accuracy caused by integrated velocity bias
+\item Figure: validation RMS against optimiser updates for baseline and augmented arms, with window and 12 s metrics; supports or rejects objective alignment
+\item Figure: error spectra before and after augmentation with absorber pole and anti-resonance marked; tests whether the learned correction targets the missing band
+\item Figure: clamp each additional state and the full added-state vector to zero during rollout; quantifies what the trained latent dynamics add or harm
+\item Table: standard model, no-added-state ablation, zero-initialised latent path, and longer encoder history; connects structure changes to predictive benefit
+\item State the observed weak or harmful added-state contribution as a result if the final run does not reverse it, rather than inferring usefulness from state magnitude
+\end{itemize}
+\todo{Are state Gramians useful for explaining each added state's contribution, or would intervention-based ablation be more direct and less linearisation-dependent?}
+
+\subsection{Parameter interpretability and orthogonality}
+\begin{itemize}
+\item Expectation and criterion: OBC should reduce physical combination error without materially worsening held-out predictive fit relative to unconstrained joint estimation
+\item Verdict and reason: the completed arms reach 7.20\% no projection, 7.69\% tangent OBC, and 8.47\% unfinished affine OBC from a common 9.49\% start, so aggregate recovery does not establish OBC superiority
+\item Figure: validation fit versus combination error over training for all three arms; supports the claim that near-equal fit permits materially different physical parameters
+\item Figure: per-parameter error at matched budget; shows which combinations projection protects and which near-flat directions redistribute error
+\item Table: basis rank, condition, overlap, final and minimum parameter error, and validation RMS; links algorithm health to the recovery verdict
+\item Figure: $\rho^*$ and predicted versus observed parameter bias by singular direction; supports the conditional result that true recovery is limited by non-orthogonal missing physics
+\item Explain why the 4.96\% predicted floor accounts for part of the residual squared error but does not match the observed per-parameter pattern or prove convergence
+\end{itemize}
+\todo{Should the incomplete affine arm be retained, rerun to a matched budget, or reported only as exploratory evidence?}
+
+\subsection{Generalisation and black-box comparison}
+\begin{itemize}
+\item Expectation and criterion: improvement must persist on unseen positions, phases, multisine-free motion, and the real-machine test split without retuning
+\item Verdict and reason: separate completed simulation evidence from pending Telica results and explain any failure by excitation coverage, initialisation, or objective mismatch
+\item Figure: model error over the held-out cycloidal settling move for baseline, augmented model, and black box; supports the application claim on a machine-like trajectory
+\item Table: RMS, BFR, settling error, parameter availability, and training data for baseline, augmented, and black-box models on every held-out domain
+\item Figure: error versus multisine amplitude or state-input distance from the training set; tests extrapolation rather than calling interpolation generalisation
+\item Report the black box's early improvement and later free-run degradation as a negative comparator result if no stable matched run supersedes it
+\item Parameter recovery trajectories from the synthetic verification study are contextual only \note{one sentence}
+\end{itemize}
+\todo{What is the minimum final evidence needed before claiming generalisation: Telica test points, multisine-free simulation, amplitude extrapolation, or all three?}

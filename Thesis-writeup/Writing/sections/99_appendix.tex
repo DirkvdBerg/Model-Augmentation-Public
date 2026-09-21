@@ -1,0 +1,18 @@
+% Page budget: 0.30 pages | Owns: derivation details and reproducibility items needed for audit but not for the main argument.
+\section{Supporting Derivations and Reproducibility}
+
+\subsection{Baseline and LFR details}
+\begin{itemize}
+\item Give the logical-to-stage transformation, expanded inertia matrix, and proof of invertibility over the operating range
+\item List the compressed LPV-LFR matrices and internal signal dimensions needed to reproduce the baseline transition
+\item Provide the raw-to-identifiable parameter map and its Jacobian rank
+\end{itemize}
+\todo{Move these items into supplementary material if appendices count toward the 12-page limit.}
+
+\subsection{OBC and experiment details}
+\begin{itemize}
+\item Derive the stacked projector, rank-deficient pseudoinverse case, epoch refresh, and additional-state zero extension
+\item Derive $J^+\Delta^*$ and list the measured singular-direction contributions to the predicted parameter bias
+\item List dataset identifiers, split membership, hyperparameters, seed, and exact metric definitions for every reported arm
+\end{itemize}
+\todo{Can code and data tables be cited through a repository or DOI instead of spending paper space on full reproducibility metadata?}

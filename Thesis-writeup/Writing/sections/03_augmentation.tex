@@ -1,0 +1,42 @@
+% Page budget: 1.55 pages | Owns: augmentation topology, additional states, encoder, closed-loop objective, and method alternatives.
+\section{Dynamic LPV-LFR Augmentation}
+
+\subsection{Parallel augmentation with additional states}
+\begin{itemize}
+\item Use a dynamic parallel LFR so the learned component adds missing dynamics while the physics state update remains explicit \cite{hoekstra2026lfr}
+\item Partition the model state into six physical states and learned additional states, with the ANN writing both partitions and the output reading physical states only
+\item Explain why dynamic states are needed for an omitted resonance and why static output correction or parameter re-estimation cannot create new poles
+\item Define the state router, ANN inputs, zero output readout at initialisation, and the recurrent path by which additional states affect later physical outputs
+\item The additional-state Jacobian blocks replace any claim that the learned states possess separate explicit $A$ and $B$ matrices
+\end{itemize}
+\todo{How many added states can be justified from the omitted-mode physics rather than selected only by validation performance?}
+
+\subsection{Encoder and state initialisation}
+\begin{itemize}
+\item Initialise each truncated rollout with an encoder using past input-output samples and a model-based linear map for the physical rows \cite{hoekstra2026encoder}
+\item Acknowledge that the published linear initialisation does not determine the additional-state rows, which begin from an unsupported random map
+\item Explain the zero-gradient path into added states at initialisation and the two zero gates that delay their use
+\item Use the exact simulated state for encoder-only diagnosis, but never as information available to the deployable model
+\item Compare encoder-history lengths and ANN capacity because the chosen windows determine reconstructability and startup transients
+\end{itemize}
+\todo{Should the trained encoder remain part of the final model, or should a longer measured-history observer be treated as a separate deliverable?}
+
+\subsection{Closed-loop rollout objective}
+\begin{itemize}
+\item Drive the model with $\hat u_k=u_k+C_{fb}(y_k-\hat y_k)$ so the simulated linear controller reacts to model error as the machine controller did
+\item Derive the residual form from controller linearity only and cite direct closed-loop augmentation as the published fallback for nonlinear controllers \cite{kessels2025ai}
+\item Closed-loop training avoids reconstructing plant and controller states before every window because their prior response is already carried by recorded input
+\item Mark the departure from the research plan's open-loop free-run training and explain that feedback can hide model error and orthogonality overlap
+\item Train on short normalised windows with burn-in, but select and report on long free runs to expose integrated velocity bias
+\end{itemize}
+\todo{Can ASMPT confirm saturation, anti-windup, and within-record controller scheduling, the three assumptions that determine whether the residual form is valid?}
+
+\subsection{Why augmentation rather than competing residual models}
+\begin{itemize}
+\item Parameter refitting cannot represent a missing state and a static correction cannot reproduce flexible memory
+\item A residual FRF or fitted mass line is a useful linear benchmark but does not supply one nonlinear position-dependent state-space model for arbitrary trajectories
+\item Basis-function augmentation would improve transparency but requires choosing the missing physics class in advance and scales poorly across coupled effects
+\item Kessels supplies the closest closed-loop state-extension precedent, while this work adds LPV-LFR structure and an interpretability safeguard \cite{kessels2025ai}
+\item The black-box comparator tests whether retaining the physics baseline adds value beyond model capacity alone
+\end{itemize}
+\todo{Which competing method deserves an implemented benchmark beyond the required black-box model: residual BLA, basis functions, or parameter-only refitting?}
