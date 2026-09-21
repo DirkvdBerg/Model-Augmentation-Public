@@ -27,84 +27,126 @@
 %======================================================================
 \panel{How the friction is added}
 
-Garcia puts dry friction in the generalised force vector, Eq.~(15), one term per
-physical actuator:
+Garcia's force vector in $(X,\Theta,Y)$, Eq.~(6), one Coulomb term per physical actuator:
 
 \begin{align*}
-F_{X_s}&=(F_1+F_2)-\left[c_{\mathrm{c}1}\sign(\dot X_1)+c_{\mathrm{c}2}\sign(\dot X_2)\right]\\
-F_{\Theta_s}&=\left\{(F_1-F_2)-\left[c_{\mathrm{c}1}\sign(\dot X_1)-c_{\mathrm{c}2}\sign(\dot X_2)\right]\right\}\tfrac{L_b}{2}\\
-F_{Y_s}&=F_y-c_{\mathrm{c}y}\sign(\dot Y)
+F_X&=(F_1+F_2)-\left[c_{\mathrm{c}1}\sign(\dot X_1)+c_{\mathrm{c}2}\sign(\dot X_2)\right]\\
+F_\Theta&=\left\{(F_1-F_2)-\left[c_{\mathrm{c}1}\sign(\dot X_1)-c_{\mathrm{c}2}\sign(\dot X_2)\right]\right\}\tfrac{L_b}{2}\\
+F_Y&=F_y-c_{\mathrm{c}y}\sign(\dot Y)
 \end{align*}
-
-\begin{itemize}
-\item $M(Y)$, $C$, $K$ unchanged. Friction enters at the force node only, never in
-      the Rayleigh dissipation $D$ (Eq.~5), which holds the viscous terms alone.
-\item Arguments are $\sign(\dot X_1),\sign(\dot X_2),\sign(\dot Y)$: rail velocities.
-      Using $(\dot X,\dot\Theta,\dot Y)$ instead is wrong and looks plausible.
-\item $\delta_a$ carries no friction: internal payload DOF, not a rail.
-\item Truth only; the baseline stays frictionless.
-\end{itemize}
-
-\begin{equation*}
-x_{k+1}=\ftruth(x_k,\ueff{}_{,k})
-\qquad\text{against}\qquad
-x_{b,k+1}=\fbase(v,x_{b,k},u_k)
-\end{equation*}
 
 \newpage
 %======================================================================
-\panel{Coulomb's law at zero velocity}
+\panel{Why the friction is kept sharp}
 
 \begin{equation*}
 |v_i|>0:\quad F_i=c_{\mathrm{c}i}\sign(v_i),
 \qquad\qquad
 v_i=0:\quad |F_i|\le c_{\mathrm{c}i}.
 \end{equation*}
+\vspace{-4mm}
 
-\begin{itemize}
-\item Garcia identified at constant velocity: slip force only, no breakaway measured.
-\item $\sign(0)=0$ says a stage at rest has no friction. Not the law.
-\item Hard $\sign$ gives a differential inclusion; its Filippov solution is the stick branch.
-\item No new physical parameter.
+At rest friction matches whatever is applied, so $c_{\mathrm{c}i}$ is the threshold to overcome
+before the rail moves at all ($16.8$, $18.35$, $11.6$~N).
+
+\begin{itemize}[itemsep=0.4mm,topsep=1mm]
+\item \textbf{Keep the sharp flip.} A smoothed $\sign$ is just a steep viscous damper, and the
+      baseline already has viscous damping: it would absorb the mismatch. The sharp flip is the
+      part the baseline cannot represent.
+\item \textbf{That forces a choice at $v=0$.} $\sign(0)$ has no value. Setting it to zero
+      removes the threshold, so any force moves the rail. Instead we hold the rail and solve for
+      its friction, capped at $\cc$.
+\item \textbf{Still Garcia's law.} He writes $\sign$ and identifies at constant velocity, so he
+      measures sliding and never treats $v=0$. The stick branch is the Filippov solution of
+      his $\sign$ law, not a change to it.
+\end{itemize}
+
+\newpage
+%======================================================================
+\panel{How it enters our model}
+
+Friction is subtracted from the applied force. The state-space representation is untouched:
+
+\begin{align*}
+\text{frictionless truth:}&\qquad \dot x=A(x)\,x+B(x)\,u\\
+\text{with friction:}&\qquad \dot x=A(x)\,x+B(x)\bigl(u-PF\bigr)
+\end{align*}
+
+\begin{equation*}
+v=P^{\T}\dot q=\col(\dot X_1,\dot X_2,\dot Y),
+\qquad
+P=\left[\begin{smallmatrix}1&1&0\\ L_b/2&-L_b/2&0\\ 0&0&1\end{smallmatrix}\right],
+\qquad
+\begin{aligned}
+|v_i|&>v_\varepsilon: &&F_i=c_{\mathrm{c}i}\sign(v_i)\\
+|v_i|&\le v_\varepsilon: &&F_i\ \text{solved, rail holds},\ |F_i|\le c_{\mathrm{c}i}
+\end{aligned}
+\end{equation*}
+\vspace{-4mm}
+
+$v_\varepsilon$: below it a rail counts as stopped.
+
+\begin{itemize}[itemsep=0.4mm,topsep=1mm]
+\item $M(Y,\delta_a)$, $C$, $K$ untouched, so $A$ and $B$ are the frictionless model's.
+\item $v$ is a rail velocity, not a logical one. Same $P$ as the rest of the pipeline.
+\item $F\in\R^3$: $\delta_a$ is an internal payload DOF, not a rail.
+\item $\cc=0\Rightarrow F=0$, reproducing the frictionless function exactly.
 \end{itemize}
 
 \newpage
 %======================================================================
 \panel{Garcia's experiment, replicated}
 
+His, Section~2.4, with $c_y,c_{\mathrm{g}i}$ the viscous coefficients:
 \begin{align*}
 \text{$Y$, with $X_1,X_2$ blocked:}&\qquad F_y=c_y\dot Y+c_{\mathrm{c}y}\sign(\dot Y)\\
 \text{$X_1,X_2$ synchronised:}&\qquad F_i=c_{\mathrm{g}i}\dot X_i+c_{\mathrm{c}i}\sign(\dot X_i),
 \quad i=1,2
 \end{align*}
+\vspace{-4mm}
 
-\begin{itemize}
-\item Two experiments, each actuator force read separately.
-\item Ours: prescribe constant velocity, solve for the holding force, read the intercept per rail.
-\item $M$ constant $\Rightarrow$ that force is exactly affine in $v$ per sign branch.
-      Slope is viscous and inertial; the intercept is Coulomb.
+Two runs: he reads each actuator force separately, so $c_{\mathrm{c}1}$ and $c_{\mathrm{c}2}$
+come out directly.
+
+Ours: the input is $u=\col(u_X,u_\Theta,u_Y)$, so the rails are mixed. Prescribe the velocity,
+solve for the $u$ that holds it, fit $u$ on $v$ per sign branch.
+\begin{align*}
+\text{E1}\quad \dot Y=v:&\qquad u_Y=c_{\mathrm{c}y}\\
+\text{E2}\quad \dot X_1=\dot X_2=v:&\qquad u_X=c_{\mathrm{c}1}+c_{\mathrm{c}2},
+\qquad u_\Theta=\tfrac{L_b}{2}(c_{\mathrm{c}1}-c_{\mathrm{c}2})\\
+\text{E3}\quad \dot X_1=v,\ \dot X_2=-v:&\qquad u_X=c_{\mathrm{c}1}-c_{\mathrm{c}2},
+\qquad u_\Theta=\tfrac{L_b}{2}(c_{\mathrm{c}1}+c_{\mathrm{c}2})
+\end{align*}
+\vspace{-4mm}
+
+\begin{itemize}[itemsep=0.4mm,topsep=1mm]
+\item Three runs, because $u$ mixes the rails: $c_{\mathrm{c}1},c_{\mathrm{c}2}=$
+      (E2 $\pm$ E3)$/2$ on $u_X$.
+\item With $Y$ and $\delta_a$ held at zero, $M$ is constant, so $u$ is exactly affine in $v$
+      per sign branch. Slope is viscous and inertial; the intercept is Coulomb.
 \end{itemize}
 
 \newpage
 %======================================================================
 \panel{What it returns}
 
-\begin{tabular}{@{}lrrr@{}}
+\begin{tabular}{@{}lrr@{}}
 \toprule
- & recovered [N] & Garcia [N] & error \\
+ & recovered [N] & Garcia [N] \\
 \midrule
-$c_{\mathrm{c}1}$ & $16.800000$ & $16.80$ & $3.6\times10^{-15}$ \\
-$c_{\mathrm{c}2}$ & $18.350000$ & $18.35$ & $0$ \\
-$c_{\mathrm{c}y}$ & $11.600000$ & $11.60$ & $0$ \\
+$c_{\mathrm{c}1}$ & $16.800000$ & $16.80$ \\
+$c_{\mathrm{c}2}$ & $18.350000$ & $18.35$ \\
+$c_{\mathrm{c}y}$ & $11.600000$ & $11.60$ \\
 \bottomrule
 \end{tabular}
 
 \begin{itemize}
-\item Fit residuals at round-off, so the intercept reading is not curvature.
-\item $c_{\mathrm{c}1}\neq c_{\mathrm{c}2}$ recovered separately: only possible in stage
-      coordinates, so this is also the frame check.
-\item A torque returned that was never given:
-      $\tfrac{L_b}{2}(c_{\mathrm{c}1}-c_{\mathrm{c}2})=-0.5619$~Nm, measured $-0.561875$~Nm.
+\item The fit is a perfect straight line, so the number we read off really is the friction.
+\item Both rails came back with their own value, $16.8$ and $18.35$. Only possible if the
+      friction sits on the rails.
+\item A twist appeared that we never specified: geometry predicts
+      $\tfrac{L_b}{2}(c_{\mathrm{c}1}-c_{\mathrm{c}2})=-0.5619$~Nm, the model returned
+      $-0.561875$~Nm.
 \end{itemize}
 
 \newpage
@@ -118,10 +160,6 @@ decision & why \\
 Friction in the truth only
 & The augmentation needs something real to account for. Friction in the physics
 block answers a different question. \\[2mm]
-Hard $\sign$, not $\tanh$
-& $\cc\tanh(v/v_0)$ has slope $\cc/v_0$: at $v_0=10^{-3}$ that is $1160\times$
-$c_{\mathrm{g}1}$. Smoothed Coulomb is viscous damping, on the rows
-$c_{\mathrm{g}1},c_{\mathrm{g}2},c_y$ occupy. \\[2mm]
 Garcia's $\cc$ as given, no sweep
 & Fitting a physical constant to the outcome it explains is not a measurement. \\
 \bottomrule

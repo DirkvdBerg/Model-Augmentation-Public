@@ -7,7 +7,6 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=64gb
 #SBATCH -t 24:00:00
-#SBATCH --signal=USR1@1800
 #SBATCH -o /home/dirk_van_den_berg/logs/augmentation/augmentation-closed-loop/gantry_interconnect_dynamic%j.out
 
 # The full training run on the GPU. Same entry point as the CPU script; the device, the
@@ -38,6 +37,7 @@ conda activate /dataB1/dirk_van_den_berg/conda-envs/GraduationProject
 cd /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation
 
 export PYTHONUNBUFFERED=1
+export PYTHONIOENCODING=utf-8
 
 # Do NOT clear CUDA_VISIBLE_DEVICES here: --gres=gpu:1 sets it to the allocated card, and the
 # config refuses a device index for exactly that reason. Clearing it makes device='cuda' fail.
@@ -50,9 +50,17 @@ export OPENBLAS_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export NUMEXPR_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 # Keep inductor/triton codegen off $HOME (quota) and warm across runs.
-export TORCHINDUCTOR_CACHE_DIR=/dataB1/dirk_van_den_berg/torchinductor-cache
-export TRITON_CACHE_DIR=/dataB1/dirk_van_den_berg/triton-cache
+# KEYED BY OS IMAGE. /dataB1 is shared across every node and the cluster is heterogeneous,
+# so an unkeyed cache lets one node load another's compiled artefacts. Job 85010 died on
+# blade2 (Ubuntu 20.04, GLIBC 2.31) importing a __triton_launcher.so that an earlier A100
+# job had compiled against GLIBC 2.34:
+#   ImportError: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.34' not found
+# Keying on the OS image rather than the hostname keeps same-image nodes sharing a warm cache.
+CACHE_KEY="$(. /etc/os-release; echo "${ID}${VERSION_ID}")-$(uname -m)"
+export TORCHINDUCTOR_CACHE_DIR=/dataB1/dirk_van_den_berg/torchinductor-cache/$CACHE_KEY
+export TRITON_CACHE_DIR=/dataB1/dirk_van_den_berg/triton-cache/$CACHE_KEY
 mkdir -p "$TORCHINDUCTOR_CACHE_DIR" "$TRITON_CACHE_DIR"
+echo "cache_key=${CACHE_KEY}"
 
 echo "job_id=${SLURM_JOB_ID}"
 echo "node_list=${SLURM_JOB_NODELIST}"

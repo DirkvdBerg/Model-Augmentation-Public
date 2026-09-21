@@ -155,8 +155,28 @@ cfg.f_low = BAND_OVERRIDE(1);  cfg.f_high = BAND_OVERRIDE(2);
 cfg.zeta_a = ZETA_A_OVERRIDE;
 cfg.ca     = 2*cfg.zeta_a*sqrt(cfg.ka*cfg.ma);   % ca is DERIVED from zeta_a in gtd_config
 cfg.A_sym  = AMP_SCALE * cfg.A_sym;
+cfg.A_Y    = AMP_SCALE * cfg.A_Y;
+% A_anti is DERIVED from A_sym in gtd_config (A_anti = 0.5*A_sym*Lb, so the anti
+% channel contributes the same per-rail force RMS as the symmetric one), exactly
+% like ca above. Recompute it from the formula rather than scaling the old value.
+%
+% THESE TWO LINES WERE MISSING, and that is the defect this block was fixed for.
+% Scaling A_sym alone left A_Y and A_anti at their gtd_config defaults, so the
+% generated dataset carried amp_rms (240, 14.5, 30) against the frictionless
+% (240, 87, 180): the X_anti and Y multisines were 6x weaker on the friction side.
+% The pair was therefore NOT a controlled comparison, and a baseline-residual plot
+% built on it showed the friction residual coming out SMALLER than the frictionless
+% one (Y ratio 0.14, against the amplitude ratio 30/180 = 0.167) purely because the
+% excitation differed. See generate_trajectory_data.m:170-180, which has carried
+% the correct three-line form and its warning all along.
+cfg.A_anti = 0.5 * cfg.A_sym * cfg.Lb;
 fprintf('Knob port: band [%g %g] Hz (mode %.2f Hz), amp x%g, zeta_a %.4f, ca %.4f\n', ...
         cfg.f_low, cfg.f_high, fn, AMP_SCALE, cfg.zeta_a, cfg.ca);
+% Print the RESULTING amplitudes, not just the scale factor. Logging only
+% AMP_SCALE is what let the defect above survive: the log said "amp x6" while two
+% of three channels were unscaled.
+fprintf('Amplitude override x%g: A_sym=%.1f N  A_Y=%.1f N  A_anti=%.1f N*m\n', ...
+        AMP_SCALE, cfg.A_sym, cfg.A_Y, cfg.A_anti);
 
 if isempty(FIXED_STEP), FIXED_STEP = cfg.ts; end
 

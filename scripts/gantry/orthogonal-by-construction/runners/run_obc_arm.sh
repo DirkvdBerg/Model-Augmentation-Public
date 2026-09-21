@@ -56,10 +56,12 @@
 #   NO "skipping cudagraphs due to cpu"    CUDA graphs kept their fast path
 #   "[nf val ] rms ..."                    the window probe ran (not "failed (non-fatal)")
 #
-# NO --signal=USR1@1800 (the only line dropped from the gantry_interconnect_dynamic_gpu.sh
-# template): nothing installs a SIGUSR1 handler and Python's default action for it is to
-# terminate, so the job would be killed at 23:30 and lose the results NPZ, the baselines and the
-# diagnostics. Checkpoints survive, since they are written at every improving validation.
+# NO --signal=USR1@1800: nothing installs a SIGUSR1 handler and Python's default action for it
+# is to terminate, so the job would be killed at 23:30 and lose the results NPZ, the baselines
+# and the diagnostics. Checkpoints survive, since they are written at every improving validation.
+# (This used to read "the only line dropped from the gantry_interconnect_dynamic_gpu.sh
+# template". That template carried the bug until 2026-09-21, when the line was removed there
+# too, so the two runners no longer differ on this point.)
 
 set -eo pipefail
 
@@ -96,9 +98,19 @@ export OPENBLAS_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export NUMEXPR_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 # Keep inductor/triton codegen off $HOME (quota) and warm across runs.
-export TORCHINDUCTOR_CACHE_DIR=/dataB1/dirk_van_den_berg/torchinductor-cache
-export TRITON_CACHE_DIR=/dataB1/dirk_van_den_berg/triton-cache
+# KEYED BY OS IMAGE. /dataB1 is shared across every node and the cluster is heterogeneous,
+# so an unkeyed cache lets one node load another's compiled artefacts. Job 85010 died on
+# blade2 (Ubuntu 20.04, GLIBC 2.31) importing a __triton_launcher.so that an earlier A100
+# job had compiled against GLIBC 2.34:
+#   ImportError: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.34' not found
+# Keying on the OS image rather than the hostname keeps same-image nodes sharing a warm
+# cache. The first run on each image pays full compilation (about 55 to 61 min of CUDA-graph
+# recording before the second update completes; that is NOT a hang, do not cancel it).
+CACHE_KEY="$(. /etc/os-release; echo "${ID}${VERSION_ID}")-$(uname -m)"
+export TORCHINDUCTOR_CACHE_DIR=/dataB1/dirk_van_den_berg/torchinductor-cache/$CACHE_KEY
+export TRITON_CACHE_DIR=/dataB1/dirk_van_den_berg/triton-cache/$CACHE_KEY
 mkdir -p "$TORCHINDUCTOR_CACHE_DIR" "$TRITON_CACHE_DIR"
+echo "cache_key=${CACHE_KEY}"
 
 echo "OBC_ARM=${OBC_ARM}"
 echo "job_id=${SLURM_JOB_ID}"
