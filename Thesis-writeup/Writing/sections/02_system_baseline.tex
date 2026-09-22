@@ -22,114 +22,96 @@
 % 4. Collect w=Delta(Y)z with Delta(Y)=Y I6 and give the constant block-level G realization with all signal dimensions.
 % 5. Eliminate w and z in a short exactness check to recover the original equation of motion.
 % 6. State the well-posedness condition over the complete scheduling range and relate it to invertibility of M(Y); place the longer proof outside the main text.
-% 7. Only after the conceptual construction, introduce the implemented rational evaluation
-%       M(Y)^(-1)=[N0+Y N1+Y^2 N2]/d(Y),
-%    evaluated in Horner form. Put the explicit Ni entries and determinant coefficients in the appendix or technical supplement.
+% 7. Only after the conceptual construction, mention that the implementation
+%    evaluates the resulting rational expression in Horner form. Put
+%    M(Y)^(-1)=[N0+Y N1+Y^2 N2]/d(Y), the explicit Ni entries, and the
+%    determinant coefficients in the appendix or technical supplement.
 % 8. Close the derivation by stating that the continuous-time vector field is evaluated first and RK4 supplies the sampled transition used in training.
 %
 % DERIVATION WARNING
 % Do not start from v=M(Y)^(-1)f_net. Roland's direct feedback identifies that as a collapsed inverse interpretation, not the standard LFR construction. Prefer the z1,z2,w1,w2 construction above even where older project notes or the inclusion guide use the inverse-first route. Use LPV/Feedback Supervisor/Roland_Toth_Feedback.md as the governing project note and verify terminology against the primary literature.
 % Main text: assumptions, polynomial dependence, direct LFR construction, compact G, exactness, well-posedness statement, and one implementation sentence.
 % Appendix/supplement: expanded M_i and N_i matrices, determinant polynomial, longer invertibility/well-posedness proof, and symbolic verification.
-\section{Dual-Gantry System and Physics Baseline}
+\section{Dual-Drive Gantry System and Physics Baseline}
 
 \subsection{System coordinates and equations of motion}
-\begin{itemize}
-\item Define generalized coordinates $q=[X,\Theta,Y]^\top$, stage-force transformation, measured outputs, and the payload operating range \cite{garcia2013model}
-\item Decision (terminology): call $q=[X,\Theta,Y]^\top$ the generalized coordinates (Euler-Lagrange term; Garcia derives the model this way) and $q_a=[X_1,X_2,Y]^\top$ the actuator coordinates, with $q_a=P^\top q$; define both once next to the figure. Replaces ``logical'', which Roland asked to have explained; ``translational'' does not fit because $\Theta$ is a rotation. Garcia Sec.~2 names the two sets the measured actuator positions and the equivalent coordinates. Code and docs keep ``logical''
-\item Present $M(Y)\ddot q+C\dot q+Kq=u$ and identify where payload position creates structural coupling and rational dependence
-\item Explain the free $X$ and $Y$ integrators caused by zero translational stiffness and why a small velocity bias accumulates into position error
-\item State which physical effects remain outside the baseline, including the hidden flexible mode and dry friction used in validation
-\item Verify $M(Y)$ is invertible throughout the operating range before any rollout or LFR transformation
-\item Decision (well-posedness in the text): one sentence stating that $M(Y)$ is positive definite for every $Y$ when the raw masses and inertias are positive, with the proof (\texttt{LPV\_Mass\_invertible}) in the appendix. For the ten reduced combinations the same property is only stated if joint-estimation or OBC results are reported, because $M(Y)$ is then built from estimated combinations; otherwise it remains an internal check
-\item Figure (new): compact dual-gantry schematic with $X_1$, $X_2$, $X$, $\Theta$, and $Y$; show the coordinate transformation and payload scheduling variable without implementation detail
-\item Decision (figure): draw our own top-view schematic adapted from Garcia Fig.~2 (lumped-parameter model), not a copy (Elsevier copyright) and not a reference only (coordinates must be defined in the paper, and Garcia cannot show the absorber). Show only what the equations use: actuators $X_1$ ($m_1$) and $X_2$ ($m_2$) with $F_{X1}$, $F_{X2}$; cross-arm ($m_b$, $J_b$, $L_b$) on flexible joints ($k_{b1},c_{b1}$ and $k_{b2},c_{b2}$) drawn as torsional spring and damper; payload $m_h$ at $Y$ with offset $d$ and force $F_Y$; coordinate arrows $X$, $\Theta$, $Y$, $X_1$, $X_2$
-\item Decision (figure): draw the absorber in a distinct style (dashed or coloured) labelled simulated plant only, following \texttt{gantrySystemExtended.m}: mass $m_a$ on the payload at offset $L_0$ in $+Y$, moving relative to it along $Y$ through $k_a$ and $c_a$. Section~V refers back to it, so no second system figure. Omit $c_{g1}$, $c_{g2}$, $c_y$ (clutter, already in the equations) and keep friction in the text only. Panel (b) is the loop between $G$ and $\Delta(Y)$
-\end{itemize}
-\todo{How much hardware description is needed to connect the logical coordinates to the two rails without consuming a full system figure?}
-
-The system is a dual-drive H-type gantry stage: two parallel linear actuators
-carry a cross-arm through flexible joints, and a third actuator moves the payload
-along that arm (Fig.~1) \cite{garcia2013model}. The measured actuator coordinates
-are $\qact(t)=[X_1\;X_2\;Y]^\top$, while the equations of motion are written in the
-generalized coordinates $q(t)=[X\;\Theta\;Y]^\top$, collecting cross-arm
-translation, yaw and payload position. Both sets describe the same configuration
-and are related by the constant transformation
+The dual-drive H-type gantry comprises two parallel actuators that carry a
+cross-arm through flexible joints and a third actuator that moves the payload
+along the arm (Fig.~\ref{fig:gantry_lfr}(a)) \cite{garcia2013model}. Let
+$q=[X\;\Theta\;Y]^\top$ denote the generalized coordinates and
+$\qact=[X_1\;X_2\;Y]^\top$ the actuator coordinates. They satisfy
 \begin{equation}
   \qact = P^\top q,
   \qquad
   P = \begin{bmatrix} 1 & 1 & 0 \\ L_b/2 & -L_b/2 & 0 \\ 0 & 0 & 1 \end{bmatrix},
   \label{eq:Ptransform}
 \end{equation}
-so that the actuator forces $\uact$ act as $P\uact$ on the generalized coordinates
-and the measured output is $y=\qact=P^\top q$. This choice of coordinates avoids
-closed kinematic chains and exposes the coupling associated with the non-uniform
-load distribution between the actuators \cite{garcia2013model}.
+and virtual work gives the generalized force $u=P\uact$. This coordinate choice
+avoids a closed kinematic-chain description and exposes the coupling caused by
+the position-dependent load distribution \cite{garcia2013model}. The measured
+output is $\qact=P^\top q$.
 
-The Euler-Lagrange equations of the lumped-parameter model give
+The adopted lumped-parameter model is
 \begin{equation}
   M(Y)\ddot{q}(t) + C\dot{q}(t) + K q(t) = P\uact(t),
   \label{eq:eom}
 \end{equation}
-with the parameter values inherited from the reference implementation of the
-machine. The payload position enters the inertia matrix without derivatives, and
-does so quadratically,
+The payload position enters the inertia matrix without derivatives and does so
+quadratically,
 \begin{equation}
   M(Y) = M_0 + Y M_1 + Y^2 M_2 ,
   \label{eq:Msplit}
 \end{equation}
-where $M_1$ holds only the off-diagonal entries $-m_h$ that couple translation and
-yaw, and $M_2$ the single entry $m_h$ on the yaw diagonal; the full matrices are
-listed in the appendix. Damping and stiffness are constant. Only the yaw
-coordinate carries a restoring stiffness $k_{b1}+k_{b2}$, while the translational
-coordinates carry none, so the baseline contains rigid-body integrators in which a
-small velocity error accumulates into a position drift.
+where $C$ and $K$ are constant. Only the yaw coordinate has a restoring
+stiffness; $X$ and $Y$ are rigid-body coordinates. The expanded matrices and
+the parameter values inherited from the supplied reference implementation are
+reported in the appendix; these parameters were not re-identified in this work.
 
-For positive masses and rotary inertias, $M(Y)\succ 0$ for every $Y\in\R$, which
-the appendix proves with Sylvester's criterion. The inertia matrix is therefore
-invertible over the whole operating range, as the realization of
-Section~\ref{sec:lfr} requires.
+For positive component masses and inertias, $M(Y)\succ0$ for all $Y\in\R$; a
+proof by Sylvester's criterion is given in the appendix. Hence, $M(Y)$ is
+invertible throughout the operating range, as required below.
 
-Several effects are deliberately outside the baseline. Garc\'ia-Herreros et al.
-neglect the vibration of the cross-arm on the elastic support formed by the plates
-that attach it to the actuators, the detent forces of the linear motors, and the
-variation of the friction parameters along the stroke; they separately report a
-37.7 Hz resonance of the supporting structure, which their experiments
-suppress by input shaping rather than model \cite{garcia2013model}. The simulation
-study of this paper introduces its own absorber mode on the payload (shaded in
-Fig.~1) and, in the friction benchmark, dry friction in the data-generating model
-only; neither is represented in the baseline (Section~\ref{sec:setup}).
+The baseline deliberately excludes the effects to be learned by the augmentation.
+In the simulated plant these are a payload-mounted absorber and, for the friction
+benchmark, Coulomb friction. Garc\'ia-Herreros et al. likewise identify unmodelled
+supporting-structure vibration, motor detent forces, and friction variation along
+the stroke \cite{garcia2013model}; these effects are not equated with the synthetic
+absorber used here. \todo{Determine and justify the operating range of $Y$; distinguish
+the mechanical stroke, the simulated-data range, and the range covered by the measured
+ILC records.}
 
-The payload stroke of the machine is $\pm 0.40$ m. The records used here
-cover $Y\in[-0.30,0.30]~\mathrm{m}$, which is the range this study represents.
-\todo{Parameter provenance: state whether the values come from a documented
-identification for this machine or only from the supplied reference
-implementation. Garcia's own identification procedure was not repeated here.}
+\begin{figure*}[t]
+  \centering
+  \begin{subfigure}{0.65\textwidth}
+    \centering
+    \input{figures/gantry_system_with_absorber}
+    \caption{Lumped-parameter gantry and coordinate definitions.}
+    \label{fig:gantry_system}
+  \end{subfigure}%
+  \hfill%
+  \begin{subfigure}{0.33\textwidth}
+    \centering
+    \input{figures/lfr_loop}
+    \caption{Self-scheduled baseline interconnection.}
+    \label{fig:lfr}
+  \end{subfigure}
+  \caption{Physics baseline. (a) Lumped-parameter schematic adapted from the
+  mechanical arrangement in \cite{garcia2013model}; the absorber subsystem is present
+  only in the simulated data-generating plant. (b) The constant interconnection
+  $G$ is closed by $\Dsch(Y)=YI_6$, where $Y$ is a component of the state.}
+  \label{fig:gantry_lfr}
+\end{figure*}
 
 \subsection{Self-scheduled LPV-LFR representation}\label{sec:lfr}
-\begin{itemize}
-\item Treat measured payload position $Y$ as the endogenous scheduling variable, making the model quasi-LPV \cite{toth2010modeling}
-\item Decision (terminology): the running name is self-scheduled LPV-LFR, as in Drenth. Explain it once, where $Y$ is introduced, by copying the research-plan sentence 1:1: ``Since $Y$ is a system state rather than an exogenous signal, the resulting formulation is quasi-LPV \cite{toth2010modeling}'' (Toth Def.~7.2: the scheduling variable is not free). Add that the scheduling map is known, $p=Y$, whereas Drenth estimates it jointly with the model
-\item Keep the plant in continuous time and integrate with fixed-step RK4; explain the departure from the research plan's discrete-time ZOH route
-\item Decision (RK4 placement): Section~II states only the modelling choice, without a number: the baseline stays in continuous time and fixed-step RK4 provides the sampled transition used in training. The step size and substep count belong in Section~V with the other run settings
-\item Decision (exactness): exactness is shown algebraically by closing the loop and recovering the equation of motion. The numerical agreement with the MATLAB reference (\texttt{validate\_lfr.py}) is at most one supporting clause or an appendix line; its main role is to catch sign or indexing errors before exactness is claimed
-\item Derive the LFR directly from $M(Y)=M_0+YM_1+Y^2M_2$ with repeated scalar block $\Delta(Y)=YI_6$; use the rational inverse only as the collapsed implementation form \cite{drenth2025thesis,drenth2025lpvlfr}
-\item Use the full six-channel scheduling loop implemented in the final pipeline; do not claim the experimental SVD compression
-\item State the LFR signal dimensions and name the interconnection variables consistently with standard lower-LFR terminology
-\item Figure (existing, redraw): extract the interconnection between $G$ and $\Delta(Y)$ from \texttt{LFR-derivation-supervisor}; reduce it to one column, label $u,y,w,z$, and state that it is the continuous-time baseline
-\item State that the code evaluates $M(Y)^{-1}=[N_0+YN_1+Y^2N_2]/d(Y)$ in Horner form without making this inverse-first expression the conceptual LFR derivation
-\end{itemize}
-\todo{Confirm the final block notation and six-channel signal dimensions against the implementation and Roland's feedback before writing prose.}
-
-The payload position is a state of the model and not an external signal. Since
-$Y$ is a system state rather than an exogenous signal, the resulting formulation
-is quasi-LPV \cite{toth2010modeling}; the model is self-scheduled, with the known
-scheduling map $p=Y$, whereas \cite{drenth2025lpvlfr} estimates that map jointly
-with the model. Because $M(Y)^{-1}$ is rational in $Y$, no affine state-space
-realization reproduces the dependence exactly, which is what an LFR provides.
+The payload position is both a measured coordinate and a model state. Since $Y$
+is a system state rather than an exogenous signal, the resulting formulation is
+quasi-LPV \cite{toth2010modeling}. It is self-scheduled through the known map
+$p=Y$. The state-space matrices depend rationally on $Y$ through $M(Y)^{-1}$;
+an LFR represents this dependence exactly using a constant interconnection and
+an explicit scheduling block \cite{drenth2025thesis}.
 
 Collecting the net generalized force acting on the inertia,
-$\fnet = P\uact - C\dot{q} - Kq$, and substituting the split \eqref{eq:Msplit}
+$\fnet = u-C\dot{q}-Kq$, and substituting \eqref{eq:Msplit}
 into \eqref{eq:eom} gives
 \begin{equation}
   M_0\,\ddot{q} + M_1 w_1 + M_2 w_2 = \fnet,
@@ -144,59 +126,44 @@ variable acts only through
   w = \Dsch(Y)\,z, \qquad \Dsch(Y) = Y I_6 ,
   \label{eq:delta}
 \end{equation}
-and every remaining relation is parameter independent. The baseline is therefore
-the lower linear fractional transformation $\mathcal{F}_\ell(G,\Dsch(Y))$ of the
-constant realization
+while all remaining relations are independent of $Y$. The direct six-channel
+realization is retained because its two three-dimensional channels correspond
+directly to the linear and quadratic terms in \eqref{eq:Msplit}. The baseline is
+the lower linear fractional transformation $\mathcal{F}_\ell(G,\Dsch(Y))$ of
 \begin{equation}
-  \begin{bmatrix} \dot{x} \\ z \\ y \end{bmatrix}
+  \begin{bmatrix} \dot{x} \\ z \\ q \end{bmatrix}
   =
   \underbrace{\begin{bmatrix}
       A   & B_w    & B_u \\
       C_z & D_{zw} & D_{zu} \\
-      C_y & 0      & 0
+      C_q & 0      & 0
   \end{bmatrix}}_{G}
-  \begin{bmatrix} x \\ w \\ \uact \end{bmatrix},
+  \begin{bmatrix} x \\ w \\ u \end{bmatrix},
   \label{eq:lfr}
 \end{equation}
-shown in Fig.~\ref{fig:lfr}, with state $x=[q^\top\;\dot{q}^\top]^\top$ and dimensions $n_x=6$,
-$n_z=n_w=6$ and $n_u=n_y=3$. All blocks are constant and built from $M_0^{-1}$,
-$M_1$, $M_2$, $C$, $K$ and $P$; they are listed in the appendix. Substituting
+where $x=[q^\top\;\dot{q}^\top]^\top$, $n_x=6$, $n_z=n_w=6$, and
+$n_u=n_q=3$. The matrices in $G$ depend on the physical parameters but not on
+$Y$; their expressions in terms of $M_0^{-1}$, $M_1$, $M_2$, $C$, and $K$ are
+listed in the appendix. The transformations $u=P\uact$ and
+$\qact=P^\top q$ connect this internal realization to the actuator interface.
+Substituting
 \eqref{eq:delta} back into \eqref{eq:latent} returns
 $(M_0+YM_1+Y^2M_2)\ddot{q}=\fnet$, so the realization reproduces \eqref{eq:eom}
-exactly rather than approximating it.
+exactly.
 
-\begin{figure}[t]
-  \centering
-  \input{figures/lfr_loop}
-  \caption{Baseline as a linear fractional representation: the constant part $G$
-  of \eqref{eq:lfr} closed by the scheduling block $\Dsch(Y)=YI_6$, with
-  $z,w\in\R^6$ and $\uact,y\in\R^3$. The payload position $Y$ is a state of $G$,
-  so the model is self-scheduled.}
-  \label{fig:lfr}
-\end{figure}
+The interconnection is well posed when $I-D_{zw}\Dsch(Y)$ is nonsingular for
+every admissible $Y$ \cite{drenth2025thesis}. With $M_0$ invertible, this condition
+is equivalent to nonsingularity of $M(Y)$. The positive-definiteness result above
+therefore establishes well-posedness throughout the operating range.
 
-An LFR is well posed when $I-D_{zw}\Dsch(p)$ is non-singular for every admissible
-scheduling value \cite{drenth2025lpvlfr}. For the realization \eqref{eq:lfr}, and
-with $M_0$ invertible, $I-D_{zw}\Dsch(Y)$ is non-singular if and only if $M(Y)$
-is. Positive definiteness of $M(Y)$ then makes the loop well posed over the entire
-payload range, not only at the operating points visited by the data.
-
-The loop is resolved in closed form rather than by a linear solve at each
-evaluation: with $N_i$ the coefficients of the adjugate of $M(Y)$ and $d(Y)=\det
-M(Y)$,
-\begin{equation}
-  M(Y)^{-1} = \frac{N_0 + Y N_1 + Y^2 N_2}{d(Y)},
-  \label{eq:rational}
-\end{equation}
-evaluated in Horner form. The continuous-time vector field is retained and
-integrated with a fixed-step RK4 scheme, which supplies the sampled transition
-used for training and evaluation; its step size is given in
-Section~\ref{sec:setup}. Holding $Y$ fixed reduces \eqref{eq:lfr} to a local LTI
-model \cite{toth2010modeling}, which provides the frozen-model comparator if the
-matched evaluation of Section~\ref{sec:results} is retained.
-\todo{Output map: the final pipeline measures actuator positions, $C_y=[P^\top\;0]$,
-while the standalone baseline package uses generalized positions, $C_y=[I_3\;0]$.
-Keep $P^\top$ here and make the appendix block list match.}
+The continuous-time mechanical model is retained instead of pre-discretizing a
+set of frozen models. A fixed-step RK4 scheme evaluates the state-dependent
+scheduler at its intermediate stages and supplies the sampled transition used in
+training and evaluation. The sampling interval and number of integration
+substeps are specified in Section~\ref{sec:setup}. The implementation eliminates
+the algebraic loop analytically and evaluates the resulting rational expression
+in Horner form; the coefficient matrices and determinant polynomial are given in
+the appendix.
 
 \subsection{Physical parameters and identifiable combinations}
 \begin{itemize}
@@ -205,5 +172,6 @@ Keep $P^\top$ here and make the appendix block list match.}
 \item Show the Jacobian from raw parameters to identifiable combinations; naive parameter merging is not a valid recovery argument
 \item Use exact-model parameter recovery only as an internal implementation/initialization check; do not allocate a main result to it
 \item Use relative combination error as the interpretability metric and disclose the special normalisation required when a combination crosses zero
+\item Should state that Lh is part of the transformation (P-transform) so we dont identify this one.
 \end{itemize}
 \todo{Should the raw-to-reduced Jacobian be printed in the appendix or shown only as rank and singular values?}
