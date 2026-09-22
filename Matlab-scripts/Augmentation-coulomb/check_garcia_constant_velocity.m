@@ -68,16 +68,30 @@ function check_garcia_constant_velocity()
     pp.cc1 = CC1; pp.cc2 = CC2; pp.ccy = CCY; pp.ts = cfg.ts;
 
     m_total = pp.m1 + pp.m2 + pp.mb + pp.mh + pp.ma;
-    v_eps   = coulomb_v_eps(CC1, CC2, m_total, pp.ts);
+    V_BRK   = coulomb_v_brk(CC1, CC2, m_total, pp.ts);
 
     fprintf('\n=== GATE 1: Garcia constant-velocity identification ===\n');
     fprintf('MA_FRAC 0.50, mh_rigid %.4f kg, m_total %.4f kg\n', pp.mh, m_total);
-    fprintf('stick band v_eps = %.4e m/s\n', v_eps);
+    fprintf('stick band V_BRK = %.4e m/s\n', V_BRK);
 
-    % Velocities: every one is >> v_eps, so all probed rails genuinely slide.
-    V = [1e-3 2e-3 5e-3 1e-2 2e-2 5e-2 1e-1];
-    fprintf('probe speeds %.0e .. %.0e m/s, all > %.0fx v_eps\n\n', ...
-            min(V), max(V), min(V)/v_eps);
+    % Velocities: DERIVED from V_BRK, never hardcoded. Garcia's identification is
+    % a pure SLIDING experiment, so every probe point must sit well outside the
+    % stick band or the affine fit is contaminated by held rails and the intercept
+    % stops being the Coulomb force.
+    %
+    % This grid was [1e-3 ... 1e-1] until D-209. When the band moved from
+    % 2.94e-04 to V_BRK = 2.25e-03 m/s the two slowest points fell INSIDE it, the
+    % fit residuals blew up from ~1e-16 to 6.5-19.6, and every recovered cc came
+    % out roughly half of Garcia's value. The gate correctly reported FAIL; the
+    % defect was the hardcoded grid, not the friction law. Tying the grid to
+    % V_BRK makes that class of failure impossible.
+    %
+    % Top speed stays under the machine's 2 m/s limit (garcia2013 p. 12).
+    V = V_BRK * [10 20 50 100 200 400];
+    assert(min(V) >= 10*V_BRK, 'probe grid entered the stick band');
+    assert(max(V) <= 2.0, 'probe grid exceeds the 2 m/s machine limit');
+    fprintf('probe speeds %.2e .. %.2e m/s, all >= %.0fx V_BRK\n\n', ...
+            min(V), max(V), min(V)/V_BRK);
 
     ok = true;
 

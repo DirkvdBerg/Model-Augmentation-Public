@@ -27,8 +27,8 @@ function check_friction_invariants(dataset, record, ma_frac)
 %                    half of Coulomb's law that a pure sign() model cannot
 %                    violate but a stuck-set SOLVE can, since the solve is free
 %                    to return any force until it is saturated.
-%   I2  SLIP         |v_i| >= v_eps  =>  F_i = cc_i*sign(v_i) exactly.
-%   I3  STICK        |v_i| <  v_eps  =>  either the rail is held, i.e. its stage
+%   I2  SLIP         |v_i| >= V_BRK  =>  F_i = cc_i*sign(v_i) exactly.
+%   I3  STICK        |v_i| <  V_BRK  =>  either the rail is held, i.e. its stage
 %                    acceleration is zero, or it broke away and |F_i| = cc_i.
 %                    A stuck rail that is neither held nor saturated is the
 %                    failure this invariant exists to catch.
@@ -37,14 +37,14 @@ function check_friction_invariants(dataset, record, ma_frac)
 %                    FALSE for the stuck branch:
 %                    I4a SLIP:  v_i*F_i >= 0 strictly. This is Garcia's law and
 %                        it admits no exception.
-%                    I4b STICK: |v_i*F_i| <= v_eps*cc_i. A rail inside the band
+%                    I4b STICK: |v_i*F_i| <= V_BRK*cc_i. A rail inside the band
 %                        is declared stuck and HELD, and its held force is
 %                        whatever zeroes the acceleration, so its sign is
 %                        unrelated to the residual velocity's sign. Holding a
-%                        rail that still carries |v| < v_eps therefore does a
+%                        rail that still carries |v| < V_BRK therefore does a
 %                        bounded amount of positive work. This is the PRICE OF
-%                        THE BAND, not a defect: it is bounded by v_eps*cc, and
-%                        since v_eps scales with ts it vanishes with the step.
+%                        THE BAND, not a defect: it is bounded by V_BRK*cc, and
+%                        since V_BRK scales with ts it vanishes with the step.
 %                    Checked PER RAIL, not only on the sum, because two rails can
 %                    hide a sign error between them in the total. The existing
 %                    A3 gate checks the sum and therefore cannot see either the
@@ -83,7 +83,7 @@ function check_friction_invariants(dataset, record, ma_frac)
     argsF = [base, {0, 0, 0, cfg.ts}];
 
     m_total = cfg.m1 + cfg.m2 + cfg.mb + mh + cfg.ma;
-    [v_eps, v_margin] = coulomb_v_eps(CC(1), CC(2), m_total, cfg.ts);
+    V_BRK = coulomb_v_brk(CC(1), CC(2), m_total, cfg.ts);
 
     fprintf('\n=== GATE 2: friction invariants on visited states ===\n');
     assert(isfile(REC), 'record not found: %s', REC);
@@ -91,7 +91,7 @@ function check_friction_invariants(dataset, record, ma_frac)
     N = size(S.u_total, 1);
     idx = 1:STRIDE:N;
     fprintf('record %s\n', REC);
-    fprintf('%d samples (stride %d of %d), v_eps = %.4e m/s\n\n', numel(idx), STRIDE, N, v_eps);
+    fprintf('%d samples (stride %d of %d), V_BRK = %.4e m/s\n\n', numel(idx), STRIDE, N, V_BRK);
 
     % worst-case trackers
     w_bound = 0; w_slip = 0; w_held = 0; w_break = 0;
@@ -122,7 +122,7 @@ function check_friction_invariants(dataset, record, ma_frac)
             % I1 bound
             w_bound = max(w_bound, abs(F(i)) - CC(i));
 
-            if abs(v_stage(i)) >= v_eps
+            if abs(v_stage(i)) >= V_BRK
                 % I2 slip
                 n_slip = n_slip + 1;
                 w_slip = max(w_slip, abs(F(i) - CC(i)*sign(v_stage(i))));
@@ -130,10 +130,10 @@ function check_friction_invariants(dataset, record, ma_frac)
                 w_diss_slip = max(w_diss_slip, -v_stage(i)*F(i));
             else
                 % I4b stick dissipation: bounded by the band, reported both
-                % absolutely and as a fraction of its own bound v_eps*cc_i
+                % absolutely and as a fraction of its own bound V_BRK*cc_i
                 w_diss_stick     = max(w_diss_stick, abs(v_stage(i)*F(i)));
                 w_diss_stick_rel = max(w_diss_stick_rel, ...
-                                       abs(v_stage(i)*F(i)) / (v_eps*CC(i)));
+                                       abs(v_stage(i)*F(i)) / (V_BRK*CC(i)));
                 % I3 stick: held, or broke away at saturation
                 held  = abs(a_stage(i)) / scale;
                 broke = abs(abs(F(i)) - CC(i));
@@ -162,11 +162,11 @@ function check_friction_invariants(dataset, record, ma_frac)
     ok = pass('I3 stick-held  |a_stage_i| (relative)', w_held, 1e-9, '-')    && ok;
     ok = pass('I3 breakaway   ||F_i| - cc_i|', w_break, 1e-9, 'N')           && ok;
     ok = pass('I4a slip diss.  max(-v_i*F_i)', w_diss_slip, 1e-9, 'W')       && ok;
-    % I4b is a BOUND, not a zero: the band permits |v*F| up to v_eps*cc_i.
-    ok = pass('I4b stick diss. as fraction of v_eps*cc_i', ...
+    % I4b is a BOUND, not a zero: the band permits |v*F| up to V_BRK*cc_i.
+    ok = pass('I4b stick diss. as fraction of V_BRK*cc_i', ...
               w_diss_stick_rel - 1, 1e-9, '-')                               && ok;
     fprintf('     stick |v*F| worst %.3e W against the band bound %.3e W\n', ...
-            w_diss_stick, v_eps*CC(2));
+            w_diss_stick, V_BRK*CC(2));
 
     if n_slip == 0 || n_held == 0
         fprintf('\nINCONCLUSIVE: the sample never exercised both regimes.\n');

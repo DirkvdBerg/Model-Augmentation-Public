@@ -42,7 +42,7 @@ function check_leine_collocation(dataset, record, ma_frac)
 %   - the fraction of stuck rail-steps whose later collocation points leave the
 %     band (Leine violations);
 %   - max |v_stage| over ALL collocation points of a stuck rail, divided by
-%     v_eps. This is the margin factor the band needs to satisfy the criterion.
+%     V_BRK. This is the margin factor the band needs to satisfy the criterion.
 %
 % PASS is defined honestly: a violation fraction of 0 passes outright. A nonzero
 % fraction is NOT scored as a failure of the friction law, because gates 1 and 2
@@ -77,7 +77,7 @@ function check_leine_collocation(dataset, record, ma_frac)
             cfg.ma, cfg.ka, cfg.ca, cfg.L0, CC(1), CC(2), CC(3), cfg.ts};
 
     m_total = cfg.m1 + cfg.m2 + cfg.mb + mh + cfg.ma;
-    [v_eps, v_margin] = coulomb_v_eps(CC(1), CC(2), m_total, cfg.ts);
+    V_BRK = coulomb_v_brk(CC(1), CC(2), m_total, cfg.ts);
 
     fprintf('\n=== GATE 3: Leine collocation criterion ===\n');
     assert(isfile(REC), 'record not found: %s', REC);
@@ -85,7 +85,7 @@ function check_leine_collocation(dataset, record, ma_frac)
     N = size(S.u_total, 1);
     idx = 1:STRIDE:N;
     fprintf('%d RK4 steps from recorded states, h = %.2e s\n', numel(idx), h);
-    fprintf('v_eps = %.4e m/s   (margin %gx the per-step increment)\n\n', v_eps, v_margin);
+    fprintf('V_BRK = %.4e m/s   (D-209 breakaway velocity, lee2020feeddrive)\n\n', V_BRK);
 
     f = @(x, u) gantrySystemExtendedCoulomb(u, x, args{:});
     mh_ = mh; cfg_ = cfg;
@@ -113,14 +113,14 @@ function check_leine_collocation(dataset, record, ma_frac)
         % testing saturation. Counting them together overstates the violation.
         F1 = recover_F(x, u, args, P, mh_, cfg_);
         for i = 1:3
-            if abs(V(i,1)) < v_eps          % inside the band at the first point
+            if abs(V(i,1)) < V_BRK          % inside the band at the first point
                 if abs(abs(F1(i)) - CC(i)) < 1e-9
                     n_broke = n_broke + 1;  % saturated: sliding, not stick mode
                     continue
                 end
                 n_stuck = n_stuck + 1;
                 stuck_by_rail(i) = stuck_by_rail(i) + 1;
-                r = max(abs(V(i,:))) / v_eps;
+                r = max(abs(V(i,:))) / V_BRK;
                 worst_ratio = max(worst_ratio, r);
                 if r > 1
                     n_viol = n_viol + 1;
@@ -140,7 +140,7 @@ function check_leine_collocation(dataset, record, ma_frac)
             viol_by_rail(1), viol_by_rail(2), viol_by_rail(3), n_viol, ...
             100*n_viol/max(1,n_stuck));
 
-    fprintf('worst max|v_stage| over the 4 collocation points = %.3f x v_eps\n', worst_ratio);
+    fprintf('worst max|v_stage| over the 4 collocation points = %.3f x V_BRK\n', worst_ratio);
 
     % ── verdict ────────────────────────────────────────────────────────────
     % CRITERION CHANGED 2026-09-19, and the reason matters more than the numbers.
@@ -199,7 +199,7 @@ function check_leine_collocation(dataset, record, ma_frac)
     else
         fprintf('\nBand is UNDERSIZED. This is a SIZING result, not a friction-law\n');
         fprintf('failure: gates 1 and 2 establish the law independently.\n');
-        margin_scan(S, idx, P, args, h, v_eps, CC, mh_, cfg_);
+        margin_scan(S, idx, P, args, h, V_BRK, CC, mh_, cfg_);
         fprintf('\nGATE 3: FAIL\n\n');
     end
 end
@@ -247,7 +247,7 @@ end
 
 % ===========================================================================
 
-function margin_scan(S, idx, P, args, h, v_eps0, CC, mh, cfg)
+function margin_scan(S, idx, P, args, h, V_BRK0, CC, mh, cfg)
 % The required margin is a FIXED POINT, not a one-shot read: enlarging the band
 % declares more rails stuck, which changes the trajectory of the collocation
 % points and hence the excursions. So the factor is swept rather than inferred
@@ -257,11 +257,11 @@ function margin_scan(S, idx, P, args, h, v_eps0, CC, mh, cfg)
 % hack: the function's own header states ts is "used ONLY to size the stick band
 % V_EPS". The integration step h is unchanged throughout.
     fprintf('\n--- margin scan (band scaled; integration step h unchanged) ---\n');
-    fprintf('  factor   v_eps [m/s]   stuck steps   violations   worst/band\n');
+    fprintf('  factor   V_BRK [m/s]   stuck steps   violations   worst/band\n');
     for g = [1 3 10 12 20 30 50]
         a = args; a{23} = g * args{23};      % ts enters only through V_EPS
         f = @(x, u) gantrySystemExtendedCoulomb(u, x, a{:});
-        ve = g * v_eps0;
+        ve = g * V_BRK0;
         ns = 0; nv = 0; wr = 0;
         for t = idx
             xl = double(S.x_logical(t,:)).';

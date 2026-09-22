@@ -1,0 +1,196 @@
+% ===========================================================================
+% Lumped parameter model of the dual drive H type gantry stage with payload
+% absorber.  Geometry adapted from Garcia-Herreros et al. (2013), Fig. 2;
+% absorber drawn in the style of Hoekstra (2026), Fig. 7.
+%
+% Requires in the preamble:
+%   \usepackage{tikz}
+%   \usetikzlibrary{arrows.meta,calc,decorations.pathmorphing}
+%
+% Conventions
+%   * Coordinates are in drawing units; the x/y keys of the tikzpicture set the
+%     unit, so the drawing scales while the labels keep the document's own font
+%     and size.  At 0.3mm the drawing is 1:1 with Garcia Fig. 2 and the figure
+%     is about 275pt wide, i.e. half of a two column text width (figure*).
+%   * The origin is the cross arm centre of mass (the blue coordinate X).
+%   * Parts on the cross arm are drawn in its rotated frame: u along the beam
+%     (positive to the right), v perpendicular to it.  The measured coordinate
+%     Y points LEFT in this view, so Y = -u, and the absorber, which sits at
+%     +L0 in Y, is drawn to the LEFT of the payload.
+%   * Changing \th (yaw) or \Yp (payload position) moves every attached part,
+%     including its labels.  With \Yp > 0 the absorber ends up between the CoM
+%     and the payload, and the F_Y label then needs a manual nudge.
+%   * Schematic, not to scale: the absorber offset L0 and the mass sizes are
+%     drawn for legibility.  The absorber rides on the payload, so it may
+%     overhang the beam end.
+%
+% \gantrydelta: 1 adds an arrow for the absorber displacement relative to the
+% payload.  Set it before the \input, e.g. \renewcommand{\gantrydelta}{1}.
+% ===========================================================================
+\providecommand{\gantrydelta}{0}
+\begin{tikzpicture}[
+    x=0.3mm, y=0.3mm,                        % original Garcia scale (1 unit
+                                             % = 1pt of Garcia Fig. 2)
+    line width=0.5pt, line cap=round, line join=round,
+    >={Triangle[length=3.4pt,width=2.9pt]},
+    dim/.style={line width=0.4pt, dash pattern=on 3pt off 1.1pt on 0.4pt off 1.1pt},
+    ext/.style={line width=0.35pt},
+    cl/.style={gray!55, line width=0.25pt,
+               dash pattern=on 4pt off 1pt on 0.3pt off 1pt},
+    ref/.style={blue!70, line width=0.3pt, dash pattern=on 1.2pt off 0.8pt},
+    abs/.style={draw=black, fill=black!15, line width=0.5pt}, % absorber: shaded
+    absl/.style={font=\small},                                % k_a, c_a labels
+  ]
+  % ================ parameters ================
+  \def\th{9.25}      % yaw angle Theta [deg]
+  \def\Lb{152.5}     % cross arm length
+  \def\Wb{24.5}      % cross arm width
+  \def\Yp{-18}       % payload position along the cross arm (u); Y = -u
+  \def\Lh{26}        % payload width
+  \def\Hh{24}        % payload height
+  \def\rw{3.7}       % payload wheel radius
+  \def\Wa{20}        % absorber width
+  \def\Ha{20}        % absorber height
+  \def\ga{30}        % spring and damper gap between absorber and payload
+  \def\Mw{34.7}      % actuator mass box size
+  \pgfmathsetmacro\yE{0.5*\Lb*sin(\th)}       % height of the beam ends
+  \pgfmathsetmacro\hb{0.5*\Wb}
+  \pgfmathsetmacro\vh{\hb+2*\rw+0.5*\Hh}      % payload centre height (v)
+  \pgfmathsetmacro\ua{\Yp-0.5*\Lh-\ga-0.5*\Wa}  % absorber centre (u)
+  \pgfmathsetmacro\vY{\vh+0.5*\Hh+30}          % height of the Y dimension line
+  \pgfmathsetmacro\xM{0.5*\Lb*cos(\th)+22.3+0.5*\Mw}  % |x| of actuator centres
+  % Lane for the d dimension and the F_Y arrow: on the CoM side of the payload
+  % and clear of the red Y reference line, so it follows the sign of \Yp.
+  \pgfmathsetmacro\ud{ifthenelse(\Yp<0,9,-9)}
+  \pgfmathsetmacro\sd{ifthenelse(\Yp<0,1,-1)}
+
+  % ===================== cross arm =====================
+  \begin{scope}[rotate=\th]
+    \draw (-\Lb/2,-\hb) rectangle (\Lb/2,\hb);
+    \draw[cl] (-0.57*\Lb,0) -- (0.58*\Lb,0);
+    \coordinate (E1) at ( \Lb/2,0);
+    \coordinate (E2) at (-\Lb/2,0);
+
+    % ==== payload m_h on its wheels ====
+    \draw[fill=white] (\Yp-\Lh/2,\vh-\Hh/2) rectangle (\Yp+\Lh/2,\vh+\Hh/2);
+    \draw (\Yp-7,\hb+\rw) circle (\rw)  (\Yp+7,\hb+\rw) circle (\rw);
+    \node at (\Yp,\vh) {$m_h$};
+
+    % ==== payload absorber: mass m_a, spring k_a, damper c_a ====
+    \pgfmathsetmacro\xa{\ua+0.5*\Wa}          % absorber side attachment
+    \pgfmathsetmacro\xh{\Yp-0.5*\Lh}          % payload side attachment
+    \draw[abs] (\ua-\Wa/2,\vh-\Ha/2) rectangle (\ua+\Wa/2,\vh+\Ha/2);
+    \node at (\ua,\vh) {$m_a$};
+    \pgfmathsetmacro\xc{0.5*(\xa+\xh)}        % centre of the gap
+    % spring k_a on top
+    \draw[decorate, decoration={zigzag, segment length=4, amplitude=3.5,
+          pre length=5, post length=5}] (\xa,\vh+6) -- (\xh,\vh+6);
+    \node[absl, anchor=south, inner sep=1.5pt] at (\xc,\vh+10) {$k_a$};
+    % damper c_a below: rod, filled piston, open cylinder, rod
+    \draw (\xa,\vh-6) -- (\xc+1,\vh-6);
+    \fill (\xc-1.4,\vh-8.6) rectangle (\xc+0.8,\vh-3.4);
+    \draw (\xc-4,\vh-2) -- (\xc+4,\vh-2) -- (\xc+4,\vh-10) -- (\xc-4,\vh-10);
+    \draw (\xc+4,\vh-6) -- (\xh,\vh-6);
+    \node[absl, anchor=north, inner sep=0.5pt]        % tucked up under the
+          at (\xc,\vh-10.9) {$c_a$};                   % cylinder, clear of the beam
+    \ifnum\gantrydelta>0                      % displacement relative to m_h
+      \draw[->] (\ua,\vh+\Ha/2+4.5) -- ++(-14,0);
+      \node[anchor=south east, inner sep=1pt]
+            at (\ua-3,\vh+\Ha/2+5.5) {$\delta_a$};
+    \fi
+
+    % ==== yaw reference at the payload: axis perpendicular to the beam ====
+    \coordinate (P) at (\Yp,-1.5);
+    \draw[ref] (P) -- ++(0,\vY+34);
+
+    % ==== payload force F_Y ====
+    \draw[->] ({\ud+\sd*11},\vh+4) -- ({\Yp+\sd*\Lh/2},\vh+4);
+    \node[inner sep=2pt] at ({\ud+\sd*20},\vh+4) {$F_Y$};
+
+    % ==== d : centreline to payload centre of mass ====
+    \draw[<->] (\ud,0) -- (\ud,\vh);
+    \node[inner sep=2pt] at ({\ud-\sd*4.5},0.78*\vh) {$d$};
+
+    % ==== Y : CoM to payload (red) ====
+    \begin{scope}[red]
+      \draw[dim] (0,\hb+2) -- (0,\vY+6);   % the blue payload axis is the
+                                            % left extension of this dimension
+      \draw[->] (0,\vY) -- (\Yp,\vY);
+      \node[anchor=south] at ({0.5*\Yp},\vY+1) {$Y$};
+    \end{scope}
+
+    % ==== flexible joints and L_b ====
+    \draw[dim] ( \Lb/2,-\hb-2) -- ++(0,-24)   (-\Lb/2,-\hb-2) -- ++(0,-24);
+    \draw[<->] (-\Lb/2,-\hb-18) -- node[pos=0.72, below=1pt] {$L_b$}
+               ( \Lb/2,-\hb-18);
+    \node[anchor=north west, inner sep=2.5pt] at ( \Lb/2,-\hb-19) {$k_{b1},\,c_{b1}$};
+    \node[anchor=north east, inner sep=2.5pt] at (-\Lb/2,-\hb-19) {$k_{b2},\,c_{b2}$};
+  \end{scope}
+
+  % ============ Theta at the payload: vertical reference and arc ============
+  \draw[ref] (P) -- ++(0,{(\vY+34)*cos(\th)});
+  \draw[ref, line width=0.4pt]
+        ($(P)+(90:\vY+22)$) arc[start angle=90, end angle=90+\th, radius=\vY+22];
+  \node[blue, anchor=east, inner sep=2pt]
+        at ($(P)+(90+\th:\vY+24)$) {$\Theta$};
+
+  % ===================== generalized coordinates X, Theta (blue) =============
+  \begin{scope}[blue]
+    \draw[->] (0,-5.2) -- (0,-26);
+    \node[anchor=west, inner sep=2pt] at (1.5,-21) {$X$};
+    \draw (4.6,0) -- (36,0);
+    \draw (32,0) arc[start angle=0, end angle=\th, radius=32];
+    \node[anchor=west, inner sep=2.5pt] at (37,{36*sin(0.5*\th)}) {$\Theta$};
+  \end{scope}
+  % centre of mass m_b
+  \fill[white] (0,0) circle (4.3);
+  \fill (0,0) -- (4.3,0) arc[start angle=0, end angle=-90, radius=4.3] -- cycle
+        (0,0) -- (-4.3,0) arc[start angle=180, end angle=90, radius=4.3] -- cycle;
+  \draw (0,0) circle (4.3);
+  \node[anchor=north east, inner sep=1pt] at (-3.4,-3.4) {$m_b$};
+
+  % ===================== actuators, guides, forces =====================
+  % \s = +1 : actuator 1 (right) ; \s = -1 : actuator 2 (left)
+  \foreach \s/\i in {1/1,-1/2}{
+    \pgfmathsetmacro\y{\s*\yE}                 % row height (symmetric)
+    \coordinate (M\i) at (\s*\xM,\y);
+    \draw (\s*\xM-\Mw/2,\y-\Mw/2) rectangle (\s*\xM+\Mw/2,\y+\Mw/2);
+    \node at (M\i) {$m_\i$};
+
+    % flexible joint: spiral spring between beam end and actuator
+    \pgfmathsetmacro\xs{\s*(0.5*\Lb*cos(\th)+11)}
+    \draw (\xs,\y) -- (E\i);
+    \draw[line width=0.4pt] plot[domain=0:540, samples=100, smooth]  % 1.5 turns
+          ({\xs+(3.4+3.9*\x/540)*cos(90*(1-\s)-\s*(\x-540))},
+           {\y +(3.4+3.9*\x/540)*sin(90*(1-\s)-\s*(\x-540))});
+    \draw (\xs+\s*7.3,\y) -- (\s*\xM-\s*\Mw/2,\y);
+
+    % linear guide: two rollers against a hatched wall
+    \pgfmathsetmacro\xb{\s*(\xM+\Mw/2+5.35)}
+    \draw (\xb,\y+11.6) circle (5.35)  (\xb,\y-11.6) circle (5.35);
+    \draw (\xb+\s*5.6,\y-20) -- (\xb+\s*5.6,\y+20);
+    \foreach \k in {0,...,5}
+      \draw[ext] (\xb+\s*5.6,\y+18-7.5*\k) -- ++(\s*6.5,-6.5);
+
+    % actuator force
+    \draw[->] (\s*\xM,\y+\Mw/2+30) -- (\s*\xM,\y+\Mw/2);
+    \node[anchor=south] at (\s*\xM,\y+\Mw/2+31) {$F_{X\i}$};
+
+    % measured position X_i (red)
+    \pgfmathsetmacro\xr{\s*(\xM+\Mw/2+23.5)}  % clear of the wall hatching
+    \draw[red] (\xr,\y+4.5) -- (\xr,\y-4.5)  (\xr,\y) -- (\xr+\s*5,\y);
+    \draw[red,->] (\xr+\s*5,\y) -- (\xr+\s*5,\y-26);
+    \node[red, anchor=north] at (\xr+\s*5,\y-27) {$X_\i$};
+  }
+
+  % ===================== inertial frame (top view) =====================
+  \begin{scope}[shift={(72,-58)}]
+    \draw[->] (0,-3.2) -- (0,-19);          % x points down
+    \draw[->] (-3.2,0) -- (-19,0);          % y points left
+    \draw[fill=white] (0,0) circle (3.2);   % z into the page: circle with a cross
+    \draw[ext] (-2.26,-2.26) -- (2.26,2.26)  (-2.26,2.26) -- (2.26,-2.26);
+    \node[anchor=east, inner sep=2pt]  at (-19,0.3) {$y$};
+    \node[anchor=west, inner sep=2pt]  at (3.6,0.8) {$z$};
+    \node[anchor=north, inner sep=2pt] at (0,-20)  {$x$};
+  \end{scope}
+\end{tikzpicture}

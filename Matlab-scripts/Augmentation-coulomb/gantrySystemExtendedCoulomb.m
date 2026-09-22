@@ -44,7 +44,7 @@ function dxdt = gantrySystemExtendedCoulomb(u, x, m1, m2, mb, mh, Lb, Jb, Jh, d,
 % Hard sign amplified round-off by a factor of a million, which put a ~1e-6 m
 % floor under every open-loop replay measurement on this dataset. The stick state
 % removes it and restores the sensitivity of the frictionless system. The result
-% moves by 4% when V_EPS is swept over two decades, so it does not rest on the
+% moves by 4% when the band is swept over two decades, so it does not rest on the
 % threshold.
 %
 % Formally: with hard sign the equation is a differential inclusion, not an ODE,
@@ -80,10 +80,13 @@ function dxdt = gantrySystemExtendedCoulomb(u, x, m1, m2, mb, mh, Lb, Jb, Jh, d,
 %
 % Extra parameters beyond the original 19:
 %   cc1, cc2, ccy  Coulomb friction of X1, X2 and the Y payload [N]
-%   ts             integrator step [s], used ONLY to size the stick band V_EPS
+%   ts             integrator step [s]; UNUSED since D-209, kept only so the
+%                  Simulink chart's argument list stays unchanged
 %
-% With cc1 = cc2 = ccy = 0 this function reproduces gantrySystemExtended EXACTLY:
-% V_EPS is then 0, no rail can be stuck, F is identically zero and u_eff = u.
+% With cc1 = cc2 = ccy = 0 this function should reproduce gantrySystemExtended:
+% every stuck rail needs |F| > cc = 0, so all three break away and are assigned
+% cc*sign(.) = 0, giving u_eff = u. Since D-209 the band no longer vanishes with
+% cc, so this rests on the active-set loop rather than on an empty stuck set.
 % check_coulomb_noop.m is the gate.
 %
 % State  x = [X; Theta; Y; delta_a; dX; dTheta; dY; vdelta_a]
@@ -136,48 +139,39 @@ function dxdt = gantrySystemExtendedCoulomb(u, x, m1, m2, mb, mh, Lb, Jb, Jh, d,
           0,     0,      1];
     cc = [cc1; cc2; ccy];
 
-    % THEORY: leine1998 (Leine, van Campen, de Kraker, van den Steen, "Stick-Slip
-    % Vibrations Induced by Alternate Friction Models", Nonlinear Dynamics
-    % 16(1):41-54, 1998, p. 7): "The collocation points of the Runge-Kutta
-    % integration method during the stick mode should all be situated within the
-    % stick band to avoid numerical instability problems of the Karnopp model",
-    % with the band eta required STRICTLY LARGER than the integrator's own
-    % resolution ("eta << v_dr", tolerance smaller than eta).
+    % THE STICK BAND (D-209, 2026-09-22). A physical breakaway velocity, not a
+    % solver quantity. It replaces the pre-D-209 band
+    % V_EPS_MARGIN*(cc1+cc2)/m_total*ts = 2.94e-04 m/s, which scaled with the
+    % integrator step and whose margin had to be re-measured per excitation
+    % (1 -> 3 -> 9 as the multisine changed, and never measured on the
+    % multisine-free Telica profiles at all).
     %
-    % (cc1+cc2)/m_total*ts is the velocity dry friction removes in ONE step, i.e.
-    % the fixed-step analogue of Leine's Runge-Kutta tolerance. Using it BARE puts
-    % the band exactly ON Leine's boundary rather than inside it, which is what
-    % V_EPS_MARGIN corrects.
+    % THEORY: lee2020feeddrive Table 5 p. 2839 -- Stribeck (breakaway) velocity
+    % v_s = 2.25e-3 m/s, identified on a THK SSR20XW LM guide (Sec. 5.1). Bracket,
+    % same paper Sec. 5.2: literature values span 1e-5 to 1e-2 m/s.
     %
-    % V_EPS_MARGIN = 9 is MEASURED on the PRODUCTION excitation, not chosen
-    % (D-204 amendment, 2026-09-19). The margin is excitation-dependent, which is
-    % the whole reason it had to be measured twice:
-    %   - on augmentation_coulomb_karnopp/V1 (AMP_SCALE 1, band 130-180), margin 1
-    %     is violated by 2 of 6919 stuck-and-held rail-steps and margin 3 gives ZERO.
-    %   - on augmentation_ma50_b140-230_a6_z03_coulomb/T3 (AMP_SCALE 6, band
-    %     140-230), margin 3 is STILL violated, by 5 of 2071 (0.24%, worst
-    %     1.171*v_eps); margin 9 gives ZERO (worst ratio 0.998) and it stays
-    %     satisfied at 30, 90, 120, 180, 270, 450.
-    % WHY IT MOVES: the band is sized on the FRICTION deceleration
-    % (cc1+cc2)/m_total = 0.653 m/s^2, but Leine's criterion constrains how far a
-    % collocation point TRAVELS, which is governed by the TOTAL acceleration. That
-    % is 0.5-1.6 m/s^2 on the quiet record and 9-21 m/s^2 on the production one, so
-    % a single constant cannot serve both. 9 is the smallest compliant value for the
-    % production excitation, and the smallest is wanted: the band is a detection
-    % threshold, so every unit of margin declares more rails stuck than the physics
-    % requires. RE-MEASURE IT if AMP_SCALE or the excitation band changes again.
-    % NB the criterion governs the STICK MODE only. A rail that BREAKS AWAY leaves
-    % the band as correct physics; counting those as violations reports 3.87% and a
-    % required margin of 11.76 that never converges under the scan.
+    % A TRANSFER, and reported as one. Garcia identified cc as the INTERCEPT of a
+    % constant-velocity line (garcia2013 p. 12) and measured nothing at low
+    % velocity, so v_brk is not identifiable from our own data. Regimes differ:
+    % lee2020 has mu_v/F_C = 17.2, ours cg1/cc1 = 0.86.
     %
-    % It remains a numerical detection band, not a physical parameter: the
-    % perturbation gain moves 4% when it is swept over two decades
-    % (diag_karnopp.py: 1.448 / 1.472 / 1.510 at V_EPS/10, V_EPS, V_EPS*10).
-    % At cc = 0 this is exactly 0 for any margin, which is what makes the no-op
-    % gate hold.
-    V_EPS_MARGIN = 9;
-    m_total = m1 + m2 + mb + mh + ma;
-    v_eps   = V_EPS_MARGIN * (cc1 + cc2) / m_total * ts;
+    % DETECTION THRESHOLD ONLY, never a smoothing width. The Simscape
+    % `translationalfriction` tanh branch has slope (cc1+cc2)/v_Coul at the origin,
+    % which is an addition to the damping matrix: the logical X row would go from
+    % Garcia's identified 34.8 Ns/m to 3550 at v_brk = 0.1. C4(1:3,1:3) is exactly
+    % P*diag(cg1,cg2,cy)*P' + diag(0,cb1+cb2,0), so the viscous friction already
+    % occupies that matrix and the Coulomb force must stay out of it.
+    %
+    % sign(0) is unreachable for any V_BRK > 0: the slip branch runs only when
+    % ~stuck(i) (|v| >= V_BRK), the breakaway branch only when |F(i)| > cc(i) >= 0.
+    %
+    % NB the band no longer vanishes at cc = 0, so the no-op path now relies on the
+    % active-set loop returning F = 0 rather than on an empty stuck set. Gate A1 is
+    % a regression test, not a physical constraint (D-209).
+    %
+    % `ts` is kept in the signature only to leave the Simulink chart's argument
+    % list unchanged; it no longer enters the band.
+    V_BRK = 2.25e-3;   % [m/s] THEORY: lee2020feeddrive Table 5 p. 2839
 
     dx_free      = A*x + B*u;              % frictionless derivative
     a_free       = dx_free(5:8);
@@ -188,7 +182,7 @@ function dxdt = gantrySystemExtendedCoulomb(u, x, m1, m2, mb, mh, Lb, Jb, Jh, d,
 
     stuck = false(3,1);
     for i = 1:3
-        stuck(i) = abs(v_stage(i)) < v_eps;
+        stuck(i) = abs(v_stage(i)) < V_BRK;
     end
 
     % Slip force ASSIGNED to each rail. For a rail that is sliding from the

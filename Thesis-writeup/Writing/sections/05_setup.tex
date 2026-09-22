@@ -23,6 +23,7 @@
 \item Use only the corrected all-channel Coulomb dataset matched to the frictionless excitation; the earlier mismatched-amplitude merge is superseded
 \item State that output noise is currently disabled; add it only if a level and measurement location can be estimated from Jasper, ILC data, or stationary records
 \item State the sample rates, record lengths, number of windows, and total independent motion time rather than quoting overlapping-window count as data volume
+\item Decision (RK4 value, moved here from Section~II): one reproducibility sentence giving the RK4 step, equal to the sampling period after downsampling the 20~kHz records to 4~kHz, with one substep (entry script: \texttt{fs\_new=4000}, \texttt{up\_sample=1}). Confirm against the \texttt{config.json} of each reported run, since earlier checkpoints may have used another \texttt{up\_sample}
 \item Figure (reuse, no separate asset): let the rebuilt training-objective time strip also identify independent phases, short training windows, encoder history, and the long evaluation horizon
 \end{itemize}
 \todo{Is the hidden linear absorber sufficient simulation complexity, or is a truth-only cubic spring required to demonstrate nonlinear augmentation?}

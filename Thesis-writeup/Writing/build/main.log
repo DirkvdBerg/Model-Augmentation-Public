@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  22 SEP 2026 15:53
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  22 SEP 2026 19:43
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -698,46 +698,46 @@ LaTeX Warning: Citation `garcia2013model' on page 3 undefined on input line 38.
 
 
 LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 4
-6.
+4.
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
+[3]
 
-LaTeX Warning: Citation `toth2010modeling' on page 3 undefined on input line 52
+LaTeX Warning: Citation `toth2010modeling' on page 4 undefined on input line 53
 .
 
 
-LaTeX Warning: Citation `toth2010modeling' on page 3 undefined on input line 53
+LaTeX Warning: Citation `toth2010modeling' on page 4 undefined on input line 54
 .
 
 
-Underfull \hbox (badness 2293) in paragraph at lines 53--54
+Underfull \hbox (badness 2293) in paragraph at lines 54--55
 []\OT1/ptm/m/n/10 (+20) Decision (ter-mi-nol-ogy): the run-ning name is self-
  []
 
-[3]
 
-LaTeX Warning: Citation `drenth2025thesis' on page 4 undefined on input line 55
+LaTeX Warning: Citation `drenth2025thesis' on page 4 undefined on input line 58
 .
 
 
-LaTeX Warning: Citation `drenth2025lpvlfr' on page 4 undefined on input line 55
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 4 undefined on input line 58
 .
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 58--59
+Underfull \hbox (badness 10000) in paragraph at lines 61--62
 []\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, re-draw): ex-tract the in-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 58--59
+Underfull \hbox (badness 10000) in paragraph at lines 61--62
 \OT1/ptm/m/n/10 (+20) ter-con-nec-tion be-tween $\OML/cmm/m/it/10 G$ \OT1/ptm/m
 /n/10 (+20) and $\OT1/cmr/m/n/10 ^^A(\OML/cmm/m/it/10 Y\OT1/cmr/m/n/10 )$ \OT1/
 ptm/m/n/10 (+20) from
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 58--59
+Underfull \hbox (badness 10000) in paragraph at lines 61--62
 \OT1/pcr/m/n/10 LFR-derivation-supervisor\OT1/ptm/m/n/10 (+20) ; re-duce it to
  []
 
@@ -761,10 +761,10 @@ ter,
 LaTeX Warning: Citation `hoekstra2026encoder' on page 4 undefined on input line
  32.
 
-
-LaTeX Warning: Citation `kessels2025ai' on page 4 undefined on input line 44.
-
 [4]
+
+LaTeX Warning: Citation `kessels2025ai' on page 5 undefined on input line 44.
+
 
 LaTeX Warning: Citation `kessels2025ai' on page 5 undefined on input line 59.
 
@@ -779,34 +779,31 @@ LaTeX Warning: Citation `hoekstra2026lfraug' on page 5 undefined on input line
 
 LaTeX Warning: Citation `gyorok2025l4dc' on page 5 undefined on input line 31.
 
-) (sections/05_setup.tex [5]
+[5]) (sections/05_setup.tex
 Underfull \hbox (badness 3460) in paragraph at lines 23--24
 \OT1/ptm/m/n/10 (+20) matched to the fric-tion-less ex-ci-ta-tion; the ear-lier
 
  []
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 60--61
+[6]
+Underfull \hbox (badness 10000) in paragraph at lines 61--62
 []\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, ap-pendix can-di-date): use
  []
 
 
-Underfull \hbox (badness 4819) in paragraph at lines 60--61
+Underfull \hbox (badness 4819) in paragraph at lines 61--62
 \OT1/pcr/m/n/10 controller-chain-v1 \OT1/ptm/m/n/10 (+20) only as an au-dit tra
 il
  []
 
-) (sections/06_results.tex [6]
+) (sections/06_results.tex
 Underfull \hbox (badness 2556) in paragraph at lines 53--54
 \OT1/ptm/m/n/10 (+20) relevant mo-tion, con-troller trans-fer, and quan-ti-fied
 
  []
 
-) (sections/07_discussion.tex
-Underfull \vbox (badness 1540) has occurred while \output is active []
-
- [7])
-(sections/08_conclusion.tex) (sections/99_appendix.tex
+[7]) (sections/07_discussion.tex) (sections/08_conclusion.tex [8])
+(sections/99_appendix.tex
 Underfull \hbox (badness 10000) in paragraph at lines 21--22
 []\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, op-tional): move the de-tailed
  []
@@ -821,7 +818,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 21--22
 \OT1/pcr/m/n/10 coordinates-normalisation-v1 \OT1/ptm/m/n/10 (+20) here af-ter
  []
 
-[8]
+
 Underfull \hbox (badness 10000) in paragraph at lines 30--31
 []\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, op-tional): place
  []
@@ -840,9 +837,7 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[9
-
-] (main.aux)
+[9] (main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
@@ -851,14 +846,8 @@ L3 programming layer <2026-01-19>
 
 LaTeX Warning: There were undefined references.
 
-
-Package rerunfilecheck Warning: File `main.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `main.out':
-(rerunfilecheck)             Before: 88ECED6B0D9F81A1E1651077F4B296DA;8347
-(rerunfilecheck)             After:  97221D1B672232FDC5D1B8F4E71B675F;8349.
+Package rerunfilecheck Info: File `main.out' has not changed.
+(rerunfilecheck)             Checksum: 97221D1B672232FDC5D1B8F4E71B675F;8349.
  ) 
 Here is how much of TeX's memory you used:
  15568 strings out of 467867
@@ -884,7 +873,7 @@ imes/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/ur
 w/times/utmri8a.pfb>
 Output written on "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project
 \Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.
-pdf" (9 pages, 230758 bytes).
+pdf" (9 pages, 233032 bytes).
 PDF statistics:
  287 PDF objects out of 1000 (max. 8388607)
  68 named destinations out of 1000 (max. 500000)

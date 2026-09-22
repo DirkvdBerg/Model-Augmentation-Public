@@ -23,7 +23,7 @@ Overleaf or a supervisor as is.
 Write one section at a time using the `WRITING GUIDE` at the top of its file.
 For each section, inspect sources in this order:
 
-1. Read the research-plan anchor and identify wording that can be preserved, wording that needs a method update, and explicit departures.
+1. Read the research-plan anchor and identify wording that can be preserved, wording that needs a method update, and explicit departures. Reuse research-plan wording where it is accurate and concise; otherwise write new text, concise and to the point. The research plan is a source, not a constraint.
 2. Read `docs/Thesis-documentation/Meeting-audit/candidate-thesis-impact.md` and the relevant theme in `thematic-thesis-audit.md`. Use Quinten's 18 September outline feedback to set priorities: realistic ASMPT motion, settling, controller transfer, justified choices, and final evidence rather than development history.
 3. Read the newest relevant entries in `docs/decisions.md` to establish why the final choices were made. If an experimental choice is still open, keep it open rather than converting supervisor advice into a completed decision.
 4. Audit the final code path to establish what was actually implemented. The main boundaries are:
