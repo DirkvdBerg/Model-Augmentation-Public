@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  22 SEP 2026 19:43
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  22 SEP 2026 20:47
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -522,11 +522,347 @@ cfg
 File: microtype.cfg 2026/03/01 v3.2d microtype main configuration file (RS)
 )
 LaTeX Info: Redefining \microtypesetup on input line 3065.
-)) (util/format.tex)
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/pgf/frontendlayer\ti
+kz.sty
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/pgf/basiclayer\pgf.s
+ty
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\pgfrcs
+.sty
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfu
+til-common.tex
+\pgfutil@everybye=\toks27
+\pgfutil@tempdima=\dimen267
+\pgfutil@tempdimb=\dimen268
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfu
+til-latex.def
+\pgfutil@abb=\box60
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfr
+cs.code.tex
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf\pgf.revision.t
+ex)
+Package: pgfrcs 2025-08-29 v3.1.11a (3.1.11a)
+))
+Package: pgf 2025-08-29 v3.1.11a (3.1.11a)
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/pgf/basiclayer\pgfco
+re.sty
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/pgf/systemlayer\pgfs
+ys.sty
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pg
+fsys.code.tex
+Package: pgfsys 2025-08-29 v3.1.11a (3.1.11a)
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfk
+eys.code.tex
+\pgfkeys@pathtoks=\toks28
+\pgfkeys@temptoks=\toks29
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfk
+eyslibraryfiltered.code.tex
+\pgfkeys@tmptoks=\toks30
+))
+\pgf@x=\dimen269
+\pgf@y=\dimen270
+\pgf@xa=\dimen271
+\pgf@ya=\dimen272
+\pgf@xb=\dimen273
+\pgf@yb=\dimen274
+\pgf@xc=\dimen275
+\pgf@yc=\dimen276
+\pgf@xd=\dimen277
+\pgf@yd=\dimen278
+\w@pgf@writea=\write3
+\r@pgf@reada=\read2
+\c@pgf@counta=\count328
+\c@pgf@countb=\count329
+\c@pgf@countc=\count330
+\c@pgf@countd=\count331
+\t@pgf@toka=\toks31
+\t@pgf@tokb=\toks32
+\t@pgf@tokc=\toks33
+\pgf@sys@id@count=\count332
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pg
+f.cfg
+File: pgf.cfg 2025-08-29 v3.1.11a (3.1.11a)
+)
+Driver file for pgf: pgfsys-pdftex.def
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pg
+fsys-pdftex.def
+File: pgfsys-pdftex.def 2025-08-29 v3.1.11a (3.1.11a)
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pg
+fsys-common-pdf.def
+File: pgfsys-common-pdf.def 2025-08-29 v3.1.11a (3.1.11a)
+)))
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pg
+fsyssoftpath.code.tex
+File: pgfsyssoftpath.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfsyssoftpath@smallbuffer@items=\count333
+\pgfsyssoftpath@bigbuffer@items=\count334
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pg
+fsysprotocol.code.tex
+File: pgfsysprotocol.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+))
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+core.code.tex
+Package: pgfcore 2025-08-29 v3.1.11a (3.1.11a)
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmath.c
+ode.tex
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathut
+il.code.tex)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathpa
+rser.code.tex
+\pgfmath@dimen=\dimen279
+\pgfmath@count=\count335
+\pgfmath@box=\box61
+\pgfmath@toks=\toks34
+\pgfmath@stack@operand=\toks35
+\pgfmath@stack@operation=\toks36
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfu
+nctions.code.tex)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfu
+nctions.basic.code.tex)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfu
+nctions.trigonometric.code.tex)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfu
+nctions.random.code.tex)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfu
+nctions.comparison.code.tex)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfu
+nctions.base.code.tex)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfu
+nctions.round.code.tex)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfu
+nctions.misc.code.tex)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfu
+nctions.integerarithmetics.code.tex)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathca
+lc.code.tex)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfl
+oat.code.tex
+\c@pgfmathroundto@lastzeros=\count336
+))
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfint.co
+de.tex)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+corepoints.code.tex
+File: pgfcorepoints.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@picminx=\dimen280
+\pgf@picmaxx=\dimen281
+\pgf@picminy=\dimen282
+\pgf@picmaxy=\dimen283
+\pgf@pathminx=\dimen284
+\pgf@pathmaxx=\dimen285
+\pgf@pathminy=\dimen286
+\pgf@pathmaxy=\dimen287
+\pgf@xx=\dimen288
+\pgf@xy=\dimen289
+\pgf@yx=\dimen290
+\pgf@yy=\dimen291
+\pgf@zx=\dimen292
+\pgf@zy=\dimen293
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+corepathconstruct.code.tex
+File: pgfcorepathconstruct.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@path@lastx=\dimen294
+\pgf@path@lasty=\dimen295
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+corepathusage.code.tex
+File: pgfcorepathusage.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@shorten@end@additional=\dimen296
+\pgf@shorten@start@additional=\dimen297
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+corescopes.code.tex
+File: pgfcorescopes.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfpic=\box62
+\pgf@hbox=\box63
+\pgf@layerbox@main=\box64
+\pgf@picture@serial@count=\count337
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+coregraphicstate.code.tex
+File: pgfcoregraphicstate.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgflinewidth=\dimen298
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+coretransformations.code.tex
+File: pgfcoretransformations.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@pt@x=\dimen299
+\pgf@pt@y=\dimen300
+\pgf@pt@temp=\dimen301
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+corequick.code.tex
+File: pgfcorequick.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+coreobjects.code.tex
+File: pgfcoreobjects.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+corepathprocessing.code.tex
+File: pgfcorepathprocessing.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+corearrows.code.tex
+File: pgfcorearrows.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfarrowsep=\dimen302
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+coreshade.code.tex
+File: pgfcoreshade.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@max=\dimen303
+\pgf@sys@shading@range@num=\count338
+\pgf@shadingcount=\count339
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+coreimage.code.tex
+File: pgfcoreimage.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+coreexternal.code.tex
+File: pgfcoreexternal.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfexternal@startupbox=\box65
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+corelayers.code.tex
+File: pgfcorelayers.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+coretransparency.code.tex
+File: pgfcoretransparency.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+corepatterns.code.tex
+File: pgfcorepatterns.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgf
+corerdf.code.tex
+File: pgfcorerdf.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)))
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmod
+uleshapes.code.tex
+File: pgfmoduleshapes.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfnodeparttextbox=\box66
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmod
+uleplot.code.tex
+File: pgfmoduleplot.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/pgf/compatibility\pg
+fcomp-version-0-65.sty
+Package: pgfcomp-version-0-65 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@nodesepstart=\dimen304
+\pgf@nodesepend=\dimen305
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/pgf/compatibility\pg
+fcomp-version-1-18.sty
+Package: pgfcomp-version-1-18 2025-08-29 v3.1.11a (3.1.11a)
+))
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\pgffor
+.sty
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\pgfkey
+s.sty
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfk
+eys.code.tex))
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/pgf/math\pgfmath.sty
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmath.c
+ode.tex))
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgff
+or.code.tex
+Package: pgffor 2025-08-29 v3.1.11a (3.1.11a)
+\pgffor@iter=\dimen306
+\pgffor@skip=\dimen307
+\pgffor@stack=\toks37
+\pgffor@toks=\toks38
+))
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/
+tikz\tikz.code.tex
+Package: tikz 2025-08-29 v3.1.11a (3.1.11a)
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries\pgfl
+ibraryplothandlers.code.tex
+File: pgflibraryplothandlers.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgf@plot@mark@count=\count340
+\pgfplotmarksize=\dimen308
+)
+\tikz@lastx=\dimen309
+\tikz@lasty=\dimen310
+\tikz@lastxsaved=\dimen311
+\tikz@lastysaved=\dimen312
+\tikz@lastmovetox=\dimen313
+\tikz@lastmovetoy=\dimen314
+\tikzleveldistance=\dimen315
+\tikzsiblingdistance=\dimen316
+\tikz@figbox=\box67
+\tikz@figbox@bg=\box68
+\tikz@tempbox=\box69
+\tikz@tempbox@bg=\box70
+\tikztreelevel=\count341
+\tikznumberofchildren=\count342
+\tikznumberofcurrentchild=\count343
+\tikz@fig@count=\count344
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmod
+ulematrix.code.tex
+File: pgfmodulematrix.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfmatrixcurrentrow=\count345
+\pgfmatrixcurrentcolumn=\count346
+\pgf@matrix@numberofcolumns=\count347
+)
+\tikz@expandcount=\count348
+
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/
+tikz/libraries\tikzlibrarytopaths.code.tex
+File: tikzlibrarytopaths.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)))
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries\pgfl
+ibraryarrows.meta.code.tex
+File: pgflibraryarrows.meta.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+\pgfarrowinset=\dimen317
+\pgfarrowlength=\dimen318
+\pgfarrowwidth=\dimen319
+\pgfarrowlinewidth=\dimen320
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/
+tikz/libraries\tikzlibrarycalc.code.tex
+File: tikzlibrarycalc.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/
+tikz/libraries\tikzlibrarydecorations.pathmorphing.code.tex
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/
+tikz/libraries\tikzlibrarydecorations.code.tex
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmod
+uledecorations.code.tex
+\pgfdecoratedcompleteddistance=\dimen321
+\pgfdecoratedremainingdistance=\dimen322
+\pgfdecoratedinputsegmentcompleteddistance=\dimen323
+\pgfdecoratedinputsegmentremainingdistance=\dimen324
+\pgf@decorate@distancetomove=\dimen325
+\pgf@decorate@repeatstate=\count349
+\pgfdecorationsegmentamplitude=\dimen326
+\pgfdecorationsegmentlength=\dimen327
+)
+\tikz@lib@dec@box=\box71
+)
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries/deco
+rations\pgflibrarydecorations.pathmorphing.code.tex))) (util/format.tex)
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-
 pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count328
+\l__color_backend_stack_int=\count350
 ) (main.aux)
 \openout1 = `main.aux'.
 
@@ -554,17 +890,17 @@ LaTeX Font Info:    ... okay on input line 20.
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/context/base/mkii\supp-pdf
 .mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count329
-\scratchdimen=\dimen267
-\scratchbox=\box60
-\nofMPsegments=\count330
-\nofMParguments=\count331
-\everyMPshowfont=\toks27
-\MPscratchCnt=\count332
-\MPscratchDim=\dimen268
-\MPnumerator=\count333
-\makeMPintoPDFobject=\count334
-\everyMPtoPDFconversion=\toks28
+\scratchcounter=\count351
+\scratchdimen=\dimen328
+\scratchbox=\box72
+\nofMPsegments=\count352
+\nofMParguments=\count353
+\everyMPshowfont=\toks39
+\MPscratchCnt=\count354
+\MPscratchDim=\dimen329
+\MPnumerator=\count355
+\makeMPintoPDFobject=\count356
+\everyMPtoPDFconversion=\toks40
 )
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/epstopdf-pkg\epstopd
 f-base.sty
@@ -581,8 +917,8 @@ Package caption Info: hyperref package is loaded.
 Package caption Info: End \AtBeginDocument code.
 Package hyperref Info: Link coloring OFF on input line 20.
  (main.out) (main.out)
-\@outlinefile=\write3
-\openout3 = `main.out'.
+\@outlinefile=\write4
+\openout4 = `main.out'.
 
 LaTeX Info: Redefining \microtypecontext on input line 20.
 Package microtype Info: Applying patch `item' on input line 20.
@@ -704,46 +1040,118 @@ File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
 [3]
 
-LaTeX Warning: Citation `toth2010modeling' on page 4 undefined on input line 53
-.
+LaTeX Warning: Citation `garcia2013model' on page 4 undefined on input line 53.
 
 
-LaTeX Warning: Citation `toth2010modeling' on page 4 undefined on input line 54
-.
+
+LaTeX Warning: Citation `garcia2013model' on page 4 undefined on input line 67.
 
 
-Underfull \hbox (badness 2293) in paragraph at lines 54--55
+
+LaTeX Warning: Reference `sec:lfr' on page 4 undefined on input line 91.
+
+
+LaTeX Warning: Citation `garcia2013model' on page 4 undefined on input line 98.
+
+
+
+LaTeX Warning: Reference `sec:setup' on page 4 undefined on input line 101.
+
+
+LaTeX Warning: Citation `toth2010modeling' on page 4 undefined on input line 11
+1.
+
+
+LaTeX Warning: Citation `toth2010modeling' on page 4 undefined on input line 11
+2.
+
+
+Underfull \hbox (badness 2293) in paragraph at lines 112--113
 []\OT1/ptm/m/n/10 (+20) Decision (ter-mi-nol-ogy): the run-ning name is self-
  []
 
 
-LaTeX Warning: Citation `drenth2025thesis' on page 4 undefined on input line 58
-.
+LaTeX Warning: Citation `drenth2025thesis' on page 4 undefined on input line 11
+6.
 
 
-LaTeX Warning: Citation `drenth2025lpvlfr' on page 4 undefined on input line 58
-.
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 4 undefined on input line 11
+6.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 61--62
+Underfull \hbox (badness 10000) in paragraph at lines 119--120
 []\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, re-draw): ex-tract the in-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 61--62
+Underfull \hbox (badness 10000) in paragraph at lines 119--120
 \OT1/ptm/m/n/10 (+20) ter-con-nec-tion be-tween $\OML/cmm/m/it/10 G$ \OT1/ptm/m
 /n/10 (+20) and $\OT1/cmr/m/n/10 ^^A(\OML/cmm/m/it/10 Y\OT1/cmr/m/n/10 )$ \OT1/
 ptm/m/n/10 (+20) from
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 61--62
+Underfull \hbox (badness 10000) in paragraph at lines 119--120
 \OT1/pcr/m/n/10 LFR-derivation-supervisor\OT1/ptm/m/n/10 (+20) ; re-duce it to
  []
 
+
+LaTeX Warning: Citation `toth2010modeling' on page 4 undefined on input line 12
+6.
+
+
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 4 undefined on input line 12
+7.
+
+[4]
+
+LaTeX Warning: Reference `eq:Msplit' on page 5 undefined on input line 132.
+
+
+LaTeX Warning: Reference `eq:eom' on page 5 undefined on input line 133.
+
+
+LaTeX Warning: Reference `fig:lfr' on page 5 undefined on input line 161.
+
+
+LaTeX Warning: Reference `eq:delta' on page 5 undefined on input line 164.
+
+
+LaTeX Warning: Reference `eq:latent' on page 5 undefined on input line 164.
+
+
+LaTeX Warning: Reference `eq:eom' on page 5 undefined on input line 165.
+
+(figures/lfr_loop.tex)
+
+LaTeX Warning: Reference `eq:lfr' on page 5 undefined on input line 174.
+
+
+LaTeX Warning: Reference `eq:lfr' on page 5 undefined on input line 174.
+
+
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 5 undefined on input line 17
+9.
+
+
+LaTeX Warning: Reference `eq:lfr' on page 5 undefined on input line 179.
+
+
+LaTeX Warning: Reference `sec:setup' on page 5 undefined on input line 194.
+
+
+LaTeX Warning: Reference `eq:lfr' on page 5 undefined on input line 194.
+
+
+LaTeX Warning: Citation `toth2010modeling' on page 5 undefined on input line 19
+5.
+
+
+LaTeX Warning: Reference `sec:results' on page 5 undefined on input line 196.
+
 ) (sections/03_augmentation.tex
 
-LaTeX Warning: Citation `hoekstra2026lfr' on page 4 undefined on input line 20.
+LaTeX Warning: Citation `hoekstra2026lfr' on page 5 undefined on input line 20.
 
 
 
@@ -757,35 +1165,35 @@ Underfull \hbox (badness 1924) in paragraph at lines 25--26
 ter,
  []
 
+[5]
 
-LaTeX Warning: Citation `hoekstra2026encoder' on page 4 undefined on input line
+LaTeX Warning: Citation `hoekstra2026encoder' on page 6 undefined on input line
  32.
 
-[4]
 
-LaTeX Warning: Citation `kessels2025ai' on page 5 undefined on input line 44.
+LaTeX Warning: Citation `kessels2025ai' on page 6 undefined on input line 44.
 
 
-LaTeX Warning: Citation `kessels2025ai' on page 5 undefined on input line 59.
+LaTeX Warning: Citation `kessels2025ai' on page 6 undefined on input line 59.
 
 ) (sections/04_obc.tex
 
-LaTeX Warning: Citation `gyorok2025l4dc' on page 5 undefined on input line 19.
+LaTeX Warning: Citation `gyorok2025l4dc' on page 6 undefined on input line 19.
 
 
-LaTeX Warning: Citation `hoekstra2026lfraug' on page 5 undefined on input line 
+LaTeX Warning: Citation `hoekstra2026lfraug' on page 6 undefined on input line 
 19.
 
 
-LaTeX Warning: Citation `gyorok2025l4dc' on page 5 undefined on input line 31.
+LaTeX Warning: Citation `gyorok2025l4dc' on page 6 undefined on input line 31.
 
-[5]) (sections/05_setup.tex
+[6]) (sections/05_setup.tex
 Underfull \hbox (badness 3460) in paragraph at lines 23--24
 \OT1/ptm/m/n/10 (+20) matched to the fric-tion-less ex-ci-ta-tion; the ear-lier
 
  []
 
-[6]
+[7]
 Underfull \hbox (badness 10000) in paragraph at lines 61--62
 []\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, ap-pendix can-di-date): use
  []
@@ -796,13 +1204,13 @@ Underfull \hbox (badness 4819) in paragraph at lines 61--62
 il
  []
 
-) (sections/06_results.tex
+) (sections/06_results.tex [8]
 Underfull \hbox (badness 2556) in paragraph at lines 53--54
 \OT1/ptm/m/n/10 (+20) relevant mo-tion, con-troller trans-fer, and quan-ti-fied
 
  []
 
-[7]) (sections/07_discussion.tex) (sections/08_conclusion.tex [8])
+) (sections/07_discussion.tex) (sections/08_conclusion.tex [9])
 (sections/99_appendix.tex
 Underfull \hbox (badness 10000) in paragraph at lines 21--22
 []\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, op-tional): move the de-tailed
@@ -837,7 +1245,7 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[9] (main.aux)
+[10] (main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
@@ -847,35 +1255,43 @@ L3 programming layer <2026-01-19>
 LaTeX Warning: There were undefined references.
 
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 97221D1B672232FDC5D1B8F4E71B675F;8349.
+(rerunfilecheck)             Checksum: AAAA730E3C5A261EB9AFD183C221C6D5;8349.
  ) 
 Here is how much of TeX's memory you used:
- 15568 strings out of 467867
- 254517 string characters out of 5416882
- 704197 words of memory out of 5000000
- 43849 multiletter control sequences out of 15000+600000
- 688463 words of font info for 335 fonts, out of 8000000 for 9000
+ 26505 strings out of 467867
+ 504154 string characters out of 5416882
+ 911537 words of memory out of 5000000
+ 54545 multiletter control sequences out of 15000+600000
+ 689210 words of font info for 340 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 80i,11n,82p,2025b,573s stack positions out of 10000i,1000n,20000p,200000b,200000s
-<C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/
-cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/publ
-ic/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts
-/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/M
-iKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/
-Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/Ap
-pData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/
-20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb
-><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8
-a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/ut
-mb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times
-/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/t
-imes/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/ur
-w/times/utmri8a.pfb>
+ 89i,14n,97p,2025b,746s stack positions out of 10000i,1000n,20000p,200000b,200000s
+
+pdfTeX warning (dest): name{section*.1} has been referenced but does not exist,
+ replaced by a fixed one
+
+<C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm
+/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public
+/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/
+type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/Mi
+KTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/
+Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/App
+Data/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20
+203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C
+:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/c
+msy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/a
+msfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/typ
+e1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTe
+X/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Loc
+al/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppDat
+a/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/App
+Data/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253
+/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203
+253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
 Output written on "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project
 \Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.
-pdf" (9 pages, 233032 bytes).
+pdf" (10 pages, 281830 bytes).
 PDF statistics:
- 287 PDF objects out of 1000 (max. 8388607)
- 68 named destinations out of 1000 (max. 500000)
- 53025 words of extra memory for PDF output out of 61914 (max. 10000000)
+ 325 PDF objects out of 1000 (max. 8388607)
+ 78 named destinations out of 1000 (max. 500000)
+ 53037 words of extra memory for PDF output out of 61914 (max. 10000000)
 

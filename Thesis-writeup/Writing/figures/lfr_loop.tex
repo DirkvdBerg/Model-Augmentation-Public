@@ -1,0 +1,34 @@
+% LFR interconnection of the baseline: constant G closed by the scheduling block.
+% Adapted from LPV/LFR-derivation-supervisor.tex, relabelled for continuous time
+% and for the gantry scheduling variable Y.
+% Requires: \usepackage{tikz} \usetikzlibrary{arrows.meta}
+\begin{tikzpicture}[
+    >={Latex[length=2.2mm]},
+    line width=0.5pt,
+    block/.style={draw, rectangle, minimum width=15mm, minimum height=11mm},
+    lbl/.style={font=\footnotesize, inner sep=1.5pt},
+  ]
+  \node[block] (G)     at (0,0)    {$G$};
+  \node[block] (D)     at (0,17mm) {$\Dsch(Y)$};
+
+  \pgfmathsetmacro{\po}{2}     % port offset from the block centre [mm]
+  \pgfmathsetmacro{\rx}{16}    % routing distance from the centre [mm]
+
+  % scheduling input
+  \draw[->] (0,34mm) -- (D.north);
+  \node[lbl, left] at (0,31mm) {$Y$};
+
+  % w : Delta -> G  (left branch)
+  \draw[->] (D.west) -- (-\rx mm,17mm) -- (-\rx mm,{\po mm}) -- (-7.5mm,{\po mm});
+  \node[lbl, left] at (-\rx mm,10mm) {$w$};
+
+  % z : G -> Delta  (right branch)
+  \draw[->] (7.5mm,{\po mm}) -- (\rx mm,{\po mm}) -- (\rx mm,17mm) -- (D.east);
+  \node[lbl, right] at (\rx mm,10mm) {$z$};
+
+  % external input and output
+  \draw[->] (-25mm,{-\po mm}) -- (-7.5mm,{-\po mm});
+  \node[lbl, left] at (-25mm,{-\po mm}) {$\uact$};
+  \draw[->] (7.5mm,{-\po mm}) -- (28mm,{-\po mm});
+  \node[lbl, right] at (28mm,{-\po mm}) {$y$};
+\end{tikzpicture}

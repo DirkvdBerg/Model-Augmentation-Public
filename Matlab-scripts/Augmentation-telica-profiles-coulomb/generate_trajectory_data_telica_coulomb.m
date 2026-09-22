@@ -95,7 +95,11 @@ assert(exist('gtd_make_reference_telica', 'file') == 2, ...
 TRACK           = 'augmentation';   % must match the dataset being compared against
 MA_FRAC         = 0.50;             % matches augmentation_ma50_z03_telica
 ZETA_A_OVERRIDE = 0.03;             % JPE floor for jointed metal
-OUT_DIR_NAME    = 'augmentation_ma50_z03_telica_coulomb';
+% D-209: NEW FOLDER. 'augmentation_ma50_z03_telica_coulomb' was generated at the
+% pre-D-209 band (V_EPS_MARGIN 9 -> 2.94e-04 m/s) and is NOT regenerated or
+% overwritten; it stays on disk as the record the 2026-09-21 meeting figures were
+% made from. This folder carries V_BRK = 2.25e-3 m/s.
+OUT_DIR_NAME    = 'augmentation_ma50_z03_telica_coulomb_vbrk225';
 % THEORY: garcia2013 -- Coulomb friction of actuators X1, X2 and the Y payload,
 % identified by displacing each axis at constant velocity. NOT a knob.
 CC1 = 16.80;   % [N]
@@ -111,7 +115,8 @@ PLOT            = true;
 SHOW            = false;
 % TRUE, deliberately: TP1 is already on disk and verified, and regenerating it
 % would discard that. RESUME skips any record whose .mat already exists.
-RESUME          = true;
+RESUME          = false;   % D-209: new empty folder, so RESUME buys nothing and
+                           % false keeps the not-empty guard armed against overwrite.
 FIXED_STEP      = [];               % [] = cfg.ts (5e-5 s)
 % ─────────────────────────────────────────────────────────────────────────────
 

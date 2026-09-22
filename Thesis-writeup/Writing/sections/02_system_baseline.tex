@@ -48,7 +48,65 @@
 \end{itemize}
 \todo{How much hardware description is needed to connect the logical coordinates to the two rails without consuming a full system figure?}
 
-\subsection{Self-scheduled LPV-LFR representation}
+The system is a dual-drive H-type gantry stage: two parallel linear actuators
+carry a cross-arm through flexible joints, and a third actuator moves the payload
+along that arm (Fig.~1) \cite{garcia2013model}. The measured actuator coordinates
+are $\qact(t)=[X_1\;X_2\;Y]^\top$, while the equations of motion are written in the
+generalized coordinates $q(t)=[X\;\Theta\;Y]^\top$, collecting cross-arm
+translation, yaw and payload position. Both sets describe the same configuration
+and are related by the constant transformation
+\begin{equation}
+  \qact = P^\top q,
+  \qquad
+  P = \begin{bmatrix} 1 & 1 & 0 \\ L_b/2 & -L_b/2 & 0 \\ 0 & 0 & 1 \end{bmatrix},
+  \label{eq:Ptransform}
+\end{equation}
+so that the actuator forces $\uact$ act as $P\uact$ on the generalized coordinates
+and the measured output is $y=\qact=P^\top q$. This choice of coordinates avoids
+closed kinematic chains and exposes the coupling associated with the non-uniform
+load distribution between the actuators \cite{garcia2013model}.
+
+The Euler-Lagrange equations of the lumped-parameter model give
+\begin{equation}
+  M(Y)\ddot{q}(t) + C\dot{q}(t) + K q(t) = P\uact(t),
+  \label{eq:eom}
+\end{equation}
+with the parameter values inherited from the reference implementation of the
+machine. The payload position enters the inertia matrix without derivatives, and
+does so quadratically,
+\begin{equation}
+  M(Y) = M_0 + Y M_1 + Y^2 M_2 ,
+  \label{eq:Msplit}
+\end{equation}
+where $M_1$ holds only the off-diagonal entries $-m_h$ that couple translation and
+yaw, and $M_2$ the single entry $m_h$ on the yaw diagonal; the full matrices are
+listed in the appendix. Damping and stiffness are constant. Only the yaw
+coordinate carries a restoring stiffness $k_{b1}+k_{b2}$, while the translational
+coordinates carry none, so the baseline contains rigid-body integrators in which a
+small velocity error accumulates into a position drift.
+
+For positive masses and rotary inertias, $M(Y)\succ 0$ for every $Y\in\R$, which
+the appendix proves with Sylvester's criterion. The inertia matrix is therefore
+invertible over the whole operating range, as the realization of
+Section~\ref{sec:lfr} requires.
+
+Several effects are deliberately outside the baseline. Garc\'ia-Herreros et al.
+neglect the vibration of the cross-arm on the elastic support formed by the plates
+that attach it to the actuators, the detent forces of the linear motors, and the
+variation of the friction parameters along the stroke; they separately report a
+37.7 Hz resonance of the supporting structure, which their experiments
+suppress by input shaping rather than model \cite{garcia2013model}. The simulation
+study of this paper introduces its own absorber mode on the payload (shaded in
+Fig.~1) and, in the friction benchmark, dry friction in the data-generating model
+only; neither is represented in the baseline (Section~\ref{sec:setup}).
+
+The payload stroke of the machine is $\pm 0.40$ m. The records used here
+cover $Y\in[-0.30,0.30]~\mathrm{m}$, which is the range this study represents.
+\todo{Parameter provenance: state whether the values come from a documented
+identification for this machine or only from the supplied reference
+implementation. Garcia's own identification procedure was not repeated here.}
+
+\subsection{Self-scheduled LPV-LFR representation}\label{sec:lfr}
 \begin{itemize}
 \item Treat measured payload position $Y$ as the endogenous scheduling variable, making the model quasi-LPV \cite{toth2010modeling}
 \item Decision (terminology): the running name is self-scheduled LPV-LFR, as in Drenth. Explain it once, where $Y$ is introduced, by copying the research-plan sentence 1:1: ``Since $Y$ is a system state rather than an exogenous signal, the resulting formulation is quasi-LPV \cite{toth2010modeling}'' (Toth Def.~7.2: the scheduling variable is not free). Add that the scheduling map is known, $p=Y$, whereas Drenth estimates it jointly with the model
@@ -62,6 +120,83 @@
 \item State that the code evaluates $M(Y)^{-1}=[N_0+YN_1+Y^2N_2]/d(Y)$ in Horner form without making this inverse-first expression the conceptual LFR derivation
 \end{itemize}
 \todo{Confirm the final block notation and six-channel signal dimensions against the implementation and Roland's feedback before writing prose.}
+
+The payload position is a state of the model and not an external signal. Since
+$Y$ is a system state rather than an exogenous signal, the resulting formulation
+is quasi-LPV \cite{toth2010modeling}; the model is self-scheduled, with the known
+scheduling map $p=Y$, whereas \cite{drenth2025lpvlfr} estimates that map jointly
+with the model. Because $M(Y)^{-1}$ is rational in $Y$, no affine state-space
+realization reproduces the dependence exactly, which is what an LFR provides.
+
+Collecting the net generalized force acting on the inertia,
+$\fnet = P\uact - C\dot{q} - Kq$, and substituting the split \eqref{eq:Msplit}
+into \eqref{eq:eom} gives
+\begin{equation}
+  M_0\,\ddot{q} + M_1 w_1 + M_2 w_2 = \fnet,
+  \qquad
+  w_1 = Y z_1, \quad w_2 = Y z_2,
+  \label{eq:latent}
+\end{equation}
+with the loop signals $z_1=\ddot{q}$ and $z_2=w_1$. Stacking
+$z=[z_1^\top\;z_2^\top]^\top$ and $w=[w_1^\top\;w_2^\top]^\top$, the scheduling
+variable acts only through
+\begin{equation}
+  w = \Dsch(Y)\,z, \qquad \Dsch(Y) = Y I_6 ,
+  \label{eq:delta}
+\end{equation}
+and every remaining relation is parameter independent. The baseline is therefore
+the lower linear fractional transformation $\mathcal{F}_\ell(G,\Dsch(Y))$ of the
+constant realization
+\begin{equation}
+  \begin{bmatrix} \dot{x} \\ z \\ y \end{bmatrix}
+  =
+  \underbrace{\begin{bmatrix}
+      A   & B_w    & B_u \\
+      C_z & D_{zw} & D_{zu} \\
+      C_y & 0      & 0
+  \end{bmatrix}}_{G}
+  \begin{bmatrix} x \\ w \\ \uact \end{bmatrix},
+  \label{eq:lfr}
+\end{equation}
+shown in Fig.~\ref{fig:lfr}, with state $x=[q^\top\;\dot{q}^\top]^\top$ and dimensions $n_x=6$,
+$n_z=n_w=6$ and $n_u=n_y=3$. All blocks are constant and built from $M_0^{-1}$,
+$M_1$, $M_2$, $C$, $K$ and $P$; they are listed in the appendix. Substituting
+\eqref{eq:delta} back into \eqref{eq:latent} returns
+$(M_0+YM_1+Y^2M_2)\ddot{q}=\fnet$, so the realization reproduces \eqref{eq:eom}
+exactly rather than approximating it.
+
+\begin{figure}[t]
+  \centering
+  \input{figures/lfr_loop}
+  \caption{Baseline as a linear fractional representation: the constant part $G$
+  of \eqref{eq:lfr} closed by the scheduling block $\Dsch(Y)=YI_6$, with
+  $z,w\in\R^6$ and $\uact,y\in\R^3$. The payload position $Y$ is a state of $G$,
+  so the model is self-scheduled.}
+  \label{fig:lfr}
+\end{figure}
+
+An LFR is well posed when $I-D_{zw}\Dsch(p)$ is non-singular for every admissible
+scheduling value \cite{drenth2025lpvlfr}. For the realization \eqref{eq:lfr}, and
+with $M_0$ invertible, $I-D_{zw}\Dsch(Y)$ is non-singular if and only if $M(Y)$
+is. Positive definiteness of $M(Y)$ then makes the loop well posed over the entire
+payload range, not only at the operating points visited by the data.
+
+The loop is resolved in closed form rather than by a linear solve at each
+evaluation: with $N_i$ the coefficients of the adjugate of $M(Y)$ and $d(Y)=\det
+M(Y)$,
+\begin{equation}
+  M(Y)^{-1} = \frac{N_0 + Y N_1 + Y^2 N_2}{d(Y)},
+  \label{eq:rational}
+\end{equation}
+evaluated in Horner form. The continuous-time vector field is retained and
+integrated with a fixed-step RK4 scheme, which supplies the sampled transition
+used for training and evaluation; its step size is given in
+Section~\ref{sec:setup}. Holding $Y$ fixed reduces \eqref{eq:lfr} to a local LTI
+model \cite{toth2010modeling}, which provides the frozen-model comparator if the
+matched evaluation of Section~\ref{sec:results} is retained.
+\todo{Output map: the final pipeline measures actuator positions, $C_y=[P^\top\;0]$,
+while the standalone baseline package uses generalized positions, $C_y=[I_3\;0]$.
+Keep $P^\top$ here and make the appendix block list match.}
 
 \subsection{Physical parameters and identifiable combinations}
 \begin{itemize}
