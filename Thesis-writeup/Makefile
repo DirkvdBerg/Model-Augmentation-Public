@@ -22,7 +22,7 @@ $(FIGDIR)/%.pdf: $(SRCDIR)/%.py Results/%.csv
 figures: $(FIGS)
 
 paper: figures
-	cd Writing && latexmk -pdf -outdir=build main.tex
+	cd Writing && latexmk -pdf -synctex=1 -outdir=build main.tex
 
 clean:
 	cd Writing && latexmk -c -outdir=build

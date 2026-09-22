@@ -22,50 +22,30 @@
 \BIBdecl
 
 \bibitem{garcia2013model}
-I.~Garc{\'i}a-Herreros, R.~Coleman, P.-J. Barre, J.~Gomand, and X.~Kestelyn,
-  ``Model-based decoupling control method for dual-drive gantry stages: A case
-  study with experimental validations,'' \emph{Control Engineering Practice},
-  vol.~21, no.~3, pp. 298--307, 2013.
+``Source pending verification,'' citation metadata not yet verified.
 
 \bibitem{hoekstra2026lfr}
-J.~H. Hoekstra, C.~Verhoek, R.~T{\'o}th, and M.~Schoukens, ``Learning-based
-  model augmentation with {LFRs},'' \emph{European Journal of Control},
-  vol.~86, p. 101304, 2025.
+``Source pending verification,'' citation metadata not yet verified.
 
 \bibitem{toth2010modeling}
-R.~T{\'o}th, \emph{Modeling and Identification of Linear Parameter-Varying
-  Systems}.\hskip 1em plus 0.5em minus 0.4em\relax Springer, 2010.
+``Source pending verification,'' citation metadata not yet verified.
 
 \bibitem{drenth2025thesis}
-R.~Drenth, ``Efficient gradient-based learning of {LPV} models with linear
-  fractional representation,'' Master's thesis, Eindhoven University of
-  Technology, 2025.
+``Source pending verification,'' citation metadata not yet verified.
 
 \bibitem{drenth2025lpvlfr}
-R.~Drenth, J.~H. Hoekstra, M.~Schoukens, and R.~T{\'o}th, ``Efficient learning
-  of affine and rational dependency {LPV} models with {LFR},'' in
-  \emph{Proceedings of the IFAC Symposium on System Identification}, 2025.
+``Source pending verification,'' citation metadata not yet verified.
 
 \bibitem{hoekstra2026encoder}
-J.~H. Hoekstra, B.~M. Gy{\"o}r{\"o}k, R.~T{\'o}th, and M.~Schoukens, ``Encoder
-  initialisation methods in the model augmentation setting,'' 2026.
+``Source pending verification,'' citation metadata not yet verified.
 
 \bibitem{kessels2025ai}
-B.~M. Kessels, S.~S. Moosath, R.~H.~B. Fey, and N.~van~de Wouw, ``{AI}-based
-  state extension and augmentation for nonlinear dynamical first-principles
-  models,'' \emph{Nonlinear Dynamics}, vol. 113, no.~14, pp. 17\,335--17\,363,
-  2025.
+``Source pending verification,'' citation metadata not yet verified.
 
 \bibitem{gyorok2025l4dc}
-B.~M. Gy{\"o}r{\"o}k, J.~H. Hoekstra, J.~Kon, T.~P{\'e}ni, M.~Schoukens, and
-  R.~T{\'o}th, ``Orthogonal projection-based regularization for efficient model
-  augmentation,'' in \emph{Proceedings of the 7th Annual Conference on Learning
-  for Dynamics and Control}, ser. Proceedings of Machine Learning Research,
-  vol. 283, 2025, pp. 166--178.
+``Source pending verification,'' citation metadata not yet verified.
 
 \bibitem{hoekstra2026lfraug}
-J.~H. Hoekstra, B.~M. Gy{\"o}r{\"o}k, R.~T{\'o}th, and M.~Schoukens,
-  ``Learning-based augmentation of first-principle models: A linear fractional
-  representation-based approach,'' 2026, submitted to Automatica.
+``Source pending verification,'' citation metadata not yet verified.
 
 \end{thebibliography}
