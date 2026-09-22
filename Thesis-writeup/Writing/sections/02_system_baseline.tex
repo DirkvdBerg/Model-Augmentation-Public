@@ -1,32 +1,71 @@
 % Page budget: 1.35 pages | Owns: gantry coordinates, first-principles equations, scheduling, LPV-LFR realisation, and physical parameterisation.
+% WRITING GUIDE
+% Purpose: Define the physical coordinates and derive the exact continuous-time LPV-LFR baseline used by every later section.
+% Start here: docs/Thesis-documentation/LPV_LFR_Derivation/main.tex.
+% Supporting material: LPV_LFR_internal_loop_Well_posedness, LPV_Mass_invertible, LPV_LFR_Justification_Drenth, and docs/fp-model-structure.md.
+% Mandatory papers: Read Drenth's rational LPV-LFR paper and the LPV-LFR definitions used by Hoekstra before adopting terminology or well-posedness claims.
+% Research-plan anchor: Preserve Aspect 1's explicit position dependence; update the original discretisation wording to the final method.
+% Current decisions: Continuous-time physics, endogenous scheduler Y, fixed-step RK4, and identifiable parameter combinations.
+% Choices to justify: Coordinate frame, Y as scheduler, continuous-time formulation, RK4 step and substeps, full six-channel LFR realization, and reduced physical parameterization. Give the physical or numerical reason for each choice, not only its definition.
+% Implementation audit: Read lpv_lfr_baseline/core/{physics,lfr_matrices,lfr_forward}.py, blocks/lfr_param_block.py, and scripts/validate_lfr.py before finalising equations or claims.
+% Reference check: Verify the original gantry model, LPV definitions, and LFR framework against primary sources; cite the gantry-specific algebra as this project's own derivation.
+% Cautions: The final pipeline uses the full six-channel scheduling loop, not the experimental six-to-four SVD reduction. Resolve the supervisor comment about dual-gantry terminology; do not copy unverified bibliography entries.
+% Planned figures: Physical coordinate schematic and compact interconnection between G and Delta(Y).
+% Section is finished when: The LFR collapses to the original model, well-posedness assumptions are stated, and notation matches Section 03.
+%
+% LPV-LFR DERIVATION ROADMAP
+% 1. Define q=[X,Theta,Y]^T, the force transformation, measured outputs, assumptions, and the admissible range of Y.
+% 2. State M(Y)qdd+Cqd+Kq=f and expose the structural dependence M(Y)=M0+Y M1+Y^2 M2.
+% 3. Construct the LFR directly from the polynomial mass equation:
+%       M0 qdd + M1 w1 + M2 w2 = f_net,
+%       z1=qdd, z2=w1, w1=Y z1, w2=Y z2.
+% 4. Collect w=Delta(Y)z with Delta(Y)=Y I6 and give the constant block-level G realization with all signal dimensions.
+% 5. Eliminate w and z in a short exactness check to recover the original equation of motion.
+% 6. State the well-posedness condition over the complete scheduling range and relate it to invertibility of M(Y); place the longer proof outside the main text.
+% 7. Only after the conceptual construction, introduce the implemented rational evaluation
+%       M(Y)^(-1)=[N0+Y N1+Y^2 N2]/d(Y),
+%    evaluated in Horner form. Put the explicit Ni entries and determinant coefficients in the appendix or technical supplement.
+% 8. Close the derivation by stating that the continuous-time vector field is evaluated first and RK4 supplies the sampled transition used in training.
+%
+% DERIVATION WARNING
+% Do not start from v=M(Y)^(-1)f_net. Roland's direct feedback identifies that as a collapsed inverse interpretation, not the standard LFR construction. Prefer the z1,z2,w1,w2 construction above even where older project notes or the inclusion guide use the inverse-first route. Use LPV/Feedback Supervisor/Roland_Toth_Feedback.md as the governing project note and verify terminology against the primary literature.
+% Main text: assumptions, polynomial dependence, direct LFR construction, compact G, exactness, well-posedness statement, and one implementation sentence.
+% Appendix/supplement: expanded M_i and N_i matrices, determinant polynomial, longer invertibility/well-posedness proof, and symbolic verification.
 \section{Dual-Gantry System and Physics Baseline}
 
 \subsection{System coordinates and equations of motion}
 \begin{itemize}
-\item Define logical coordinates $q=[X,\Theta,Y]^\top$, stage-force transformation, measured outputs, and the payload operating range \cite{garcia2013model}
+\item Define generalized coordinates $q=[X,\Theta,Y]^\top$, stage-force transformation, measured outputs, and the payload operating range \cite{garcia2013model}
+\item Decision (terminology): call $q=[X,\Theta,Y]^\top$ the generalized coordinates (Euler-Lagrange term; Garcia derives the model this way) and $q_a=[X_1,X_2,Y]^\top$ the actuator coordinates, with $q_a=P^\top q$; define both once next to the figure. Replaces ``logical'', which Roland asked to have explained; ``translational'' does not fit because $\Theta$ is a rotation. Garcia Sec.~2 names the two sets the measured actuator positions and the equivalent coordinates. Code and docs keep ``logical''
 \item Present $M(Y)\ddot q+C\dot q+Kq=u$ and identify where payload position creates structural coupling and rational dependence
 \item Explain the free $X$ and $Y$ integrators caused by zero translational stiffness and why a small velocity bias accumulates into position error
 \item State which physical effects remain outside the baseline, including the hidden flexible mode and dry friction used in validation
 \item Verify $M(Y)$ is invertible throughout the operating range before any rollout or LFR transformation
+\item Figure (new): compact dual-gantry schematic with $X_1$, $X_2$, $X$, $\Theta$, and $Y$; show the coordinate transformation and payload scheduling variable without implementation detail
+\item Decision (figure): draw our own top-view schematic adapted from Garcia Fig.~2 (lumped-parameter model), not a copy (Elsevier copyright) and not a reference only (coordinates must be defined in the paper, and Garcia cannot show the absorber). Show only what the equations use: actuators $X_1$ ($m_1$) and $X_2$ ($m_2$) with $F_{X1}$, $F_{X2}$; cross-arm ($m_b$, $J_b$, $L_b$) on flexible joints ($k_{b1},c_{b1}$ and $k_{b2},c_{b2}$) drawn as torsional spring and damper; payload $m_h$ at $Y$ with offset $d$ and force $F_Y$; coordinate arrows $X$, $\Theta$, $Y$, $X_1$, $X_2$
+\item Decision (figure): draw the absorber in a distinct style (dashed or coloured) labelled simulated plant only, following \texttt{gantrySystemExtended.m}: mass $m_a$ on the payload at offset $L_0$ in $+Y$, moving relative to it along $Y$ through $k_a$ and $c_a$. Section~V refers back to it, so no second system figure. Omit $c_{g1}$, $c_{g2}$, $c_y$ (clutter, already in the equations) and keep friction in the text only. Panel (b) is the loop between $G$ and $\Delta(Y)$
 \end{itemize}
 \todo{How much hardware description is needed to connect the logical coordinates to the two rails without consuming a full system figure?}
 
-\subsection{Quasi-LPV and LPV-LFR representation}
+\subsection{Self-scheduled LPV-LFR representation}
 \begin{itemize}
 \item Treat measured payload position $Y$ as the endogenous scheduling variable, making the model quasi-LPV \cite{toth2010modeling}
+\item Decision (terminology): the running name is self-scheduled LPV-LFR, as in Drenth. Explain it once, where $Y$ is introduced, by copying the research-plan sentence 1:1: ``Since $Y$ is a system state rather than an exogenous signal, the resulting formulation is quasi-LPV \cite{toth2010modeling}'' (Toth Def.~7.2: the scheduling variable is not free). Add that the scheduling map is known, $p=Y$, whereas Drenth estimates it jointly with the model
 \item Keep the plant in continuous time and integrate with fixed-step RK4; explain the departure from the research plan's discrete-time ZOH route
-\item Factor the rational $M(Y)^{-1}$ dependence into an LFR with repeated scalar block $\Delta(Y)=YI$ \cite{drenth2025thesis,drenth2025lpvlfr}
-\item Use structural SVD compression to reduce the scheduling loop from six to four channels without changing the input-state map
+\item Derive the LFR directly from $M(Y)=M_0+YM_1+Y^2M_2$ with repeated scalar block $\Delta(Y)=YI_6$; use the rational inverse only as the collapsed implementation form \cite{drenth2025thesis,drenth2025lpvlfr}
+\item Use the full six-channel scheduling loop implemented in the final pipeline; do not claim the experimental SVD compression
 \item State the LFR signal dimensions and name the interconnection variables consistently with standard lower-LFR terminology
+\item Figure (existing, redraw): extract the interconnection between $G$ and $\Delta(Y)$ from \texttt{LFR-derivation-supervisor}; reduce it to one column, label $u,y,w,z$, and state that it is the continuous-time baseline
+\item State that the code evaluates $M(Y)^{-1}=[N_0+YN_1+Y^2N_2]/d(Y)$ in Horner form without making this inverse-first expression the conceptual LFR derivation
 \end{itemize}
-\todo{Ask Roland for the preferred name and notation for the compressed internal LFR dimensions currently described informally as $n$ and $m$.}
+\todo{Confirm the final block notation and six-channel signal dimensions against the implementation and Roland's feedback before writing prose.}
 
 \subsection{Physical parameters and identifiable combinations}
 \begin{itemize}
 \item Distinguish the fourteen raw parameters from the ten combinations identifiable through the gantry equations
 \item Optimise reduced positive parameter combinations and map them back to interpretable masses, stiffnesses, damping, geometry, and centre-of-mass terms
 \item Show the Jacobian from raw parameters to identifiable combinations; naive parameter merging is not a valid recovery argument
-\item Parameter recovery without augmentation is stated as a verification of the estimation pipeline \note{one sentence}
+\item Use exact-model parameter recovery only as an internal implementation/initialization check; do not allocate a main result to it
 \item Use relative combination error as the interpretability metric and disclose the special normalisation required when a combination crosses zero
 \end{itemize}
 \todo{Should the raw-to-reduced Jacobian be printed in the appendix or shown only as rank and singular values?}

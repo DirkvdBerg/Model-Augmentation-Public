@@ -1,0 +1,80 @@
+\subsection{Aspect 3: Identifiability preservation}
+
+\subsection*{Aspect}
+How can practical parameter interpretability be better preserved during data-driven augmentation, compared to unconstrained joint estimation?
+
+\subsubsection{Research method}
+
+This aspect builds on the augmentation structure selected in Aspect 2. In additive model augmentation, a physics-based baseline model is combined with a learning-based correction term. Such additive augmentation is attractive because it retains the baseline model as the nominal physical description while allowing the learning component to compensate for unmodelled effects. At the same time, the literature warns that additive augmentation can become overparameterized: \citet{gyorok2025orthogonal} state that in additive augmentation, the physics-based and machine-learning components are connected in parallel, but that such models are overparametrized and may cause the physics-based part to lose interpretability. They further state that simultaneous tuning of physical and learning-based parameters can result in competing submodels, because the learning part may learn dynamics already represented by the physics-based model, which can lead to unrealistic parameters in the first-principles model and reduced interpretability.
+
+To address this issue, this thesis uses the orthogonal projection-based regularization framework of \citet{gyorok2025orthogonal} as methodological inspiration. In that work, the learning component is penalized for learning known dynamics of the first-principles model by forcing a particular form of orthogonality between the machine-learning and physics-based layers. \citet{gyorok2025orthogonal} explicitly position this contribution as a generalization of the earlier orthogonalization idea of \citet{kon2022orthogonal} to first-principles models that are nonlinear in their parameters. This is relevant here because the baseline dual-gantry model is not assumed to be linear in all physical parameters.
+
+In line with \citet{gyorok2025orthogonal}, this aspect considers joint estimation of the physical parameters and the augmentation parameters, rather than fixing the baseline parameters a priori. \citet{gyorok2025orthogonal} explicitly study the setting in which the objective is to jointly estimate the ANN parameters and the physical parameters, and they motivate this by noting that some physical parameters are only approximately known and that co-estimation can improve prediction performance. Accordingly, the purpose of the regularization in this thesis is not to freeze the baseline model, but to reduce the extent to which the augmentation block explains dynamics that should remain attributed to the physical part.
+
+At the same time, the literature does not provide a ready-made orthogonal-regularization method for the exact setting considered in this thesis. \citet{gyorok2025orthogonal} formulate the method for additive augmentation of nonlinear discrete-time state-space models, whereas this thesis uses an LPV-LFR augmentation setting. \citet{drenth2025thesis} explicitly state that, to the best of the author's knowledge, there is no prior work found in the literature regarding integration of model augmentation methods into an LPV framework. \citet{drenth2025thesis} do provide an LPV-LFR model augmentation framework and show that an LPV-LFR baseline can be augmented with additional states, latent variables, and scheduling variables, and note that parallel augmentation is one admissible choice. However, \citet{drenth2025thesis} do not combine this LPV-LFR augmentation framework with the orthogonal projection-based regularization method of \citet{gyorok2025orthogonal}. Therefore, the use of orthogonal regularization in the present dual-gantry MIMO LPV-LFR setting should be regarded as a methodological development of this thesis, informed by the cited literature rather than directly established by it.
+
+For that reason, this aspect does not claim formal global identifiability guarantees. Instead, identifiability preservation is assessed in a practical sense: whether the augmented model achieves improved predictive performance while the estimated physical parameters remain useful for the standalone baseline model. This evaluation strategy is directly supported by \citet{gyorok2025orthogonal}, who state that when physical and learning-based parameters are co-estimated, the resulting parameter pair allows the first-principles model to be evaluated separately, thereby providing insight into the interpretability of the augmented model. They further report that without regularization, the standalone physics-based part can deteriorate strongly, whereas with orthogonal regularization the method promotes the desired complementarity between baseline and learning components.
+
+Accordingly, the regularized LPV-LFR augmentation method will be compared against an otherwise identical co-estimated augmentation model without orthogonal regularization. The objective of this comparison is not to prove unique decomposition of the dynamics in a theoretical sense, but to determine whether orthogonality-promoting regularization reduces practical parameter drift and better preserves the interpretability of the physical parameters relative to unconstrained co-estimation.
+
+\subsubsection{What will you measure?}
+
+The main outputs of this aspect are:
+
+\textbf{(i) Technical deliverables:}
+\begin{itemize}
+    \item The regularized training objective used for joint estimation of baseline and augmentation parameters
+    \item The implemented orthogonality-promoting penalty used in the selected LPV-LFR augmentation setting
+    \item The adapted implementation of this regularization for the multivariable dual-gantry model
+    \item The estimated baseline and augmentation parameters obtained with and without orthogonal regularization
+\end{itemize}
+
+\textbf{(ii) Practical interpretability assessment:}
+\begin{itemize}
+    \item Prediction accuracy of the full augmented model with orthogonal regularization
+    \item Prediction accuracy of the full augmented model without orthogonal regularization
+    \item Prediction accuracy of the standalone baseline model evaluated using the estimated physical parameters from both approaches
+    \item The extent to which the estimated physical parameters remain close enough to nominal or previously identified values to remain physically interpretable for engineering use
+\end{itemize}
+
+This evaluation is consistent with \citet{gyorok2025orthogonal}, who compare the performance of the full augmented model with the performance of the standalone baseline model using the co-estimated physical parameters, and show that the unregularized case can lead to severe deterioration of the baseline component while the orthogonally regularized case better preserves complementarity.
+
+\subsubsection{What data is needed?}
+
+Experimental data are needed for:
+
+\textbf{(i) Joint estimation:} input-output trajectory data from the ASMPT dual-gantry system for estimating both the baseline physical parameters and the augmentation parameters in the chosen LPV-LFR model structure.
+
+\textbf{(ii) Regularized-versus-unconstrained comparison:} training, validation, and test datasets that allow a fair comparison between co-estimation with and without orthogonal regularization under identical model structures and operating conditions.
+
+\textbf{(iii) Baseline interpretability assessment:} data on which the standalone baseline model can be evaluated using the physical parameters obtained after co-training, following the evaluation principle used by \citet{gyorok2025orthogonal}.
+
+\subsubsection{What resources from ASMPT?}
+
+This aspect requires access to the dual-gantry experimental data used for estimation and evaluation, the baseline model and nominal or previously identified physical parameter values from Aspect 1, and engineering domain knowledge to assess whether the resulting physical parameter values remain plausible for the machine. It also requires the LPV-LFR augmentation implementation from Aspect 2, because the orthogonal regularization studied here is not available as a ready-made method for the specific dual-gantry LPV-LFR setting and must therefore be integrated into that framework as part of this thesis \citep{drenth2025thesis}.
+
+
+@inproceedings{gyorok2025orthogonal,
+  author    = {Bendeg{\'u}z M. Gy{\"o}r{\"o}k and Jan H. Hoekstra and Johan Kon and Tam{\'a}s P{\'e}ni and Maarten Schoukens and Roland T{\'o}th},
+  title     = {Orthogonal Projection-Based Regularization for Efficient Model Augmentation},
+  booktitle = {Proceedings of Machine Learning Research},
+  volume    = {283},
+  pages     = {1--13},
+  year      = {2025},
+  note      = {7th Annual Conference on Learning for Dynamics and Control}
+}
+
+@inproceedings{kon2022orthogonal,
+  author    = {Johan Kon and Dennis Bruijnen and Jeroen van de Wijdeven and Marcel Heertjes and Tom Oomen},
+  title     = {Physics-Guided Neural Networks for Feedforward Control: An Orthogonal Projection-Based Approach},
+  booktitle = {Proceedings of the American Control Conference},
+  pages     = {4377--4382},
+  year      = {2022}
+}
+
+@mastersthesis{drenth2025thesis,
+  author = {Roel Drenth},
+  title  = {Efficient Gradient-Based Learning of LPV Models with Linear Fractional Representation},
+  school = {Eindhoven University of Technology},
+  year   = {2025}
+}

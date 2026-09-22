@@ -50,17 +50,29 @@ CFG = RunConfig(
     # Garcia dry friction (cc1 16.80, cc2 18.35, ccy 11.60 N, Karnopp stick state) is in the
     # simulated TRUTH ONLY and the baseline stays frictionless, so the augmentation has to
     # capture it. Both friction halves are copied in from their own generators
-    # (augmentation_ma50_b140-230_a6_z03_coulomb, augmentation_ma50_z03_telica_coulomb),
+    # (augmentation_ma50_b140-230_a6_z03_coulomb_a6all, augmentation_ma50_z03_telica_coulomb),
     # which are left intact, exactly as D-206 did for the frictionless merge.
-    # HETEROGENEITY WARNING, and it is stronger than in the frictionless merge: the plant is
-    # identical across both halves, but the friction REGIMES are not. The multisine records
-    # run 3-20% stick with the absorber's output contribution PRESERVED (72.6% -> 73.9%);
-    # the Telica records run 74-88% stick with it CUT TO 25% (2.43% -> 0.62%), because
-    # friction damps the acceleration transitions that excite the absorber while the
-    # controller still tracks the large reference (rms|y| identical to four digits).
-    # So this is a more heterogeneous training set than the frictionless merge, by design.
+    # D-207: the multisine half is the CORRECTED one. The superseded merge
+    # 'augmentation_ma50_z03_b140-230_a6_telica_coulomb' carried 22 records whose AMP_SCALE
+    # reached A_sym only, so X_anti and Y ran a 6x weaker multisine (14.5 N*m and 30 N against
+    # 87 and 180) than the frictionless arm they are compared against. Any friction-versus-
+    # frictionless result on that folder measured amplitude, not friction. Do not point `mode`
+    # back at it. The 22 records here are bit-identical to the frictionless merge in amp_rms,
+    # r_sim, f_sim and seed; the 7 Telica records were never affected (excitation='none').
+    # HETEROGENEITY WARNING, and it is stronger than in the frictionless merge, and stronger
+    # again since D-207: the plant is identical across both halves, but the friction REGIMES
+    # are not. The multisine records now run 5-8% stick (T3: X1 7.3, X2 7.9, Y 5.2) with the
+    # absorber's output contribution at 43.9% against 72.6% frictionless; the Telica records
+    # run 74-88% stick with it CUT TO 25% (2.43% -> 0.62%), because friction damps the
+    # acceleration transitions that excite the absorber while the controller still tracks the
+    # large reference (rms|y| identical to four digits). At the corrected amplitudes friction
+    # is a SMALL perturbation on the multisine half (own output effect 12.2/12.7/8.8% relative
+    # rms, was an artefactual 80-89%), which matches the real machine (Telica: Coulomb 1.3-2.2%
+    # of peak actuation) and makes the learning target smaller than the superseded folder
+    # suggested. So this is a more heterogeneous training set than the frictionless merge, by
+    # design, and the gap between its two halves widened rather than closed.
     # Set back to 'augmentation_ma50_z03_b140-230_a6_telica' for the frictionless arm.
-    mode='augmentation_ma50_z03_b140-230_a6_telica_coulomb',
+    mode='augmentation_ma50_z03_b140-230_a6all_telica_coulomb',
     # 'linear_map' = Hoekstra 2026 reconstructability init (trainable); 'default' = deepSI learned encoder
     encoder_init='linear_map',
     ann_activation='tanh',        # 'linear' = Identity (Jan's ECC, D-071); 'tanh' = nonlinear ANN

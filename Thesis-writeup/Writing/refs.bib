@@ -11,14 +11,128 @@
 % DISABLED- prefix instead of the entry sigil so BibTeX skips them as plain text.
 % ---------------------------------------------------------------------------
 
-@misc{garcia2013model,
-  title = {Source pending verification},
-  note  = {Citation metadata not yet verified}
+% ---------------------------------------------------------------------------
+% Copied 1:1 from the research plan's references.bib (user decision 2026-09-22).
+% ---------------------------------------------------------------------------
+
+@techreport{irds2022,
+  title       = {International Roadmap for Devices and Systems: 2022 Edition Executive Summary},
+  institution = {IEEE},
+  year        = {2022},
+  author      = {{International Roadmap for Devices and Systems (IRDS)}},
+}
+
+% CHECK: Crossref lists 10 authors (this entry has 6); pages 2071-2077 missing.
+@inproceedings{workman2021diewafer,
+  author    = {Thomas Workman and Laura Mirkarimi and Jeremy Theil and Gill Fountain and K. M. Bang and Bongsub Lee},
+  title     = {Die to Wafer Hybrid Bonding and Fine Pitch Considerations},
+  booktitle = {2021 IEEE 71st Electronic Components and Technology Conference (ECTC)},
+  year      = {2021},
+  doi       = {10.1109/ECTC32696.2021.00326},
+  publisher = {IEEE}
+}
+
+@article{garcia2013model,
+  author  = {Garc{\'i}a-Herreros, Iv{\'a}n and Kestelyn, Xavier and Gomand, Julien and Coleman, Ralph and Barre, Pierre-Jean},
+  title   = {Model-based decoupling control method for dual-drive gantry stages: A case study with experimental validations},
+  journal = {Control Engineering Practice},
+  volume  = {21},
+  number  = {3},
+  pages   = {298--307},
+  year    = {2013},
+  doi     = {10.1016/j.conengprac.2012.10.010}
+}
+
+@article{teo2007dynamic,
+  author  = {Teo, C. S. and Tan, K. K. and Lim, S. Y. and Huang, S. and Tay, E. B.},
+  title   = {Dynamic Modeling and Adaptive Control of a H-Type Gantry Stage},
+  journal = {Mechatronics},
+  year    = {2007},
+  volume  = {17},
+  number  = {7},
+  pages   = {361--367},
+  doi     = {10.1016/j.mechatronics.2007.04.004}
+}
+
+@article{lambrechts2005trajectory,
+  author  = {Paul Lambrechts and Matthijs Boerlage and Maarten Steinbuch},
+  title   = {Trajectory Planning and Feedforward Design for Electromechanical Motion Systems},
+  journal = {Control Engineering Practice},
+  year    = {2005},
+  volume  = {13},
+  number  = {2},
+  pages   = {145--157},
+  doi     = {10.1016/j.conengprac.2004.02.010}
+}
+
+@article{hwang2024semiconductor,
+  author    = {Joonick Hwang and Sang Do Noh},
+  title     = {Digital Twin-Based Optimization of Operational Parameters for Cluster Tools in Semiconductor Manufacturing},
+  journal   = {IEEE Access},
+  year      = {2024},
+  volume    = {12},
+  pages     = {122078--122100},
+  doi       = {10.1109/ACCESS.2024.3450869},
+  publisher = {IEEE}
+}
+
+% CHECK: ACM Computing Surveys version is online Nov 2022, issue Apr 2023 (vol. 55, no. 4); month = mar is the arXiv v6 date.
+@article{willard2020integrating,
+  author    = {Jared Willard and Xiaowei Jia and Shaoming Xu and Michael Steinbach and Vipin Kumar},
+  title     = {Integrating Scientific Knowledge with Machine Learning for Engineering and Environmental Systems},
+  journal   = {ACM Computing Surveys},
+  volume    = {55},
+  number    = {4},
+  articleno = {66},
+  pages     = {1--37},
+  year      = {2022},
+  month     = mar,
+  doi       = {10.1145/3514228},
+  publisher = {ACM}
+}
+
+@article{noel2018greybox,
+  author  = {J. P. Noël and J. Schoukens},
+  title   = {Grey-box state-space identification of nonlinear mechanical vibrations},
+  journal = {International Journal of Control},
+  volume  = {91},
+  number  = {5},
+  pages   = {1118--1139},
+  year    = {2018},
+  doi     = {10.1080/00207179.2017.1308557}
+}
+
+@phdthesis{kessels2025ai,
+  author = {Kessels, Bart M.},
+  title  = {AI-Based Model Updating for Nonlinear Dynamical Systems},
+  school = {Eindhoven University of Technology},
+  year   = {2025},
+  type   = {PhD thesis},
+  address = {Eindhoven, The Netherlands}
+}
+
+@article{retzler2024,
+  author    = {Retzler, Andr{\'a}s and T{\'o}th, Roland and Schoukens, Maarten 
+               and Beintema, Gerben I. and Weigand, Jonas and No{\"e}l, Jean-Philippe 
+               and Koll{\'a}r, Zsolt and Swevers, Jan},
+  title     = {Learning-based augmentation of physics-based models: an industrial 
+               robot use case},
+  journal   = {Data-Centric Engineering},
+  volume    = {5},
+  pages     = {e12},
+  year      = {2024},
+  doi       = {10.1017/dce.2024.8}
 }
 
 @misc{hoekstra2026lfr,
-  title = {Source pending verification},
-  note  = {Citation metadata not yet verified}
+  author        = {Hoekstra, Jan H. and Györök, Bendegúz M. and Tóth, Roland and Schoukens, Maarten},
+  title         = {Learning-based augmentation of first-principle models: A linear fractional representation-based approach},
+  year          = {2026},
+  eprint        = {2602.17297},
+  archivePrefix = {arXiv},
+  primaryClass  = {eess.SY},
+  note          = {Submitted to Automatica},
+  doi           = {10.48550/arXiv.2602.17297}
 }
 
 @misc{toth2010modeling,
@@ -26,10 +140,10 @@
   note  = {Citation metadata not yet verified}
 }
 
-@misc{drenth2025thesis,
-  title = {Source pending verification},
-  note  = {Citation metadata not yet verified}
-}
+% DISABLED-misc{drenth2025thesis,
+%   title = {Source pending verification},
+%   note  = {Citation metadata not yet verified}
+% }
 
 @misc{drenth2025lpvlfr,
   title = {Source pending verification},
@@ -41,31 +155,16 @@
   note  = {Citation metadata not yet verified}
 }
 
-@misc{kessels2025ai,
-  title = {Source pending verification},
-  note  = {Citation metadata not yet verified}
-}
-
 @misc{gyorok2025l4dc,
   title = {Source pending verification},
   note  = {Citation metadata not yet verified}
 }
 
-@misc{hoekstra2026lfraug,
-  title = {Source pending verification},
-  note  = {Citation metadata not yet verified}
-}
-
-% DISABLED-article{garcia2013model,
-%   author  = {I. Garc{\'i}a-Herreros and R. Coleman and P.-J. Barre and J. Gomand and X. Kestelyn},
-%   title   = {Model-Based Decoupling Control Method for Dual-Drive Gantry Stages: A Case Study With Experimental Validations},
-%   journal = {Control Engineering Practice},
-%   volume  = {21},
-%   number  = {3},
-%   pages   = {298-307},
-%   year    = {2013}
+% DISABLED-misc{hoekstra2026lfraug,
+%   title = {Source pending verification},
+%   note  = {Citation metadata not yet verified}
 % }
-%
+
 % DISABLED-article{hoekstra2026lfr,
 %   author  = {J. H. Hoekstra and C. Verhoek and R. T{\'o}th and M. Schoukens},
 %   title   = {Learning-Based Model Augmentation With {LFRs}},

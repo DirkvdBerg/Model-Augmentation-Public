@@ -1,0 +1,190 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{physics}
+\usepackage{microtype}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{booktabs}
+
+% ------- Section formatting -------
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.75em}{}
+\titlespacing*{\section}{0pt}{1.2ex plus .2ex minus .2ex}{0.8ex}
+\titlespacing*{\subsection}{0pt}{1.0ex plus .2ex minus .2ex}{0.5ex}
+
+% ------- Result box -------
+\newtcolorbox{resultbox}[1]{
+    breakable, enhanced,
+    colback=blue!2, colframe=blue!40!black,
+    boxrule=0.7pt, arc=1.5mm,
+    left=2mm, right=2mm, top=1mm, bottom=1mm,
+    title={\bfseries #1}, coltitle=black,
+    colbacktitle=blue!10, fonttitle=\bfseries
+}
+
+% ------- Warning box -------
+\newtcolorbox{warningbox}[1]{
+    breakable, enhanced,
+    colback=orange!4, colframe=orange!60!black,
+    boxrule=0.7pt, arc=1.5mm,
+    left=2mm, right=2mm, top=1mm, bottom=1mm,
+    title={\bfseries #1}, coltitle=black,
+    colbacktitle=orange!15, fonttitle=\bfseries
+}
+
+% ------- Note box -------
+\newtcolorbox{notebox}[1]{
+    breakable, enhanced,
+    colback=gray!4, colframe=gray!50,
+    boxrule=0.7pt, arc=1.5mm,
+    left=2mm, right=2mm, top=1mm, bottom=1mm,
+    title={\bfseries #1}, coltitle=black,
+    colbacktitle=gray!12, fonttitle=\bfseries
+}
+
+\begin{document}
+
+
+
+\[
+z
+=
+\underbrace{
+\begin{bmatrix}
+- M_0^{-1} K & - M_0^{-1} C \\
+0 & 0
+\end{bmatrix}
+}_{C_z}
+x
++
+\underbrace{
+\begin{bmatrix}
+- M_0^{-1} M_1 & - M_0^{-1} M_2 \\
+I_3 & 0
+\end{bmatrix}
+}_{D_{zw}}
+w
++
+\underbrace{
+\begin{bmatrix}
+M_0^{-1} \\
+0
+\end{bmatrix}
+}_{D_{zu}}
+u
+\]
+
+\[
+w = Y \cdot I_6 \cdot z
+\]
+
+\[
+\Rightarrow
+Y \,
+\underbrace{
+\begin{bmatrix}
+B_w \cdot \begin{bmatrix} C_z & D_{zw} & D_{zu} \end{bmatrix} \\
+I_6 \cdot \begin{bmatrix} C_z & D_{zw} & D_{zu} \end{bmatrix}
+\end{bmatrix}
+}_{U \Sigma V^\top}
+\begin{bmatrix}
+x \\
+w \\
+u
+\end{bmatrix}
+=
+\begin{bmatrix}
+B_w w \\
+w
+\end{bmatrix}
+\]
+
+\[
+\begin{array}{ccccc}
+U & \Sigma & V^\top & \qquad & \Rightarrow \qquad n \leq 6 \text{ singular values (non-zero)} \\[4pt]
+\downarrow & & \downarrow \\[4pt]
+L = U\Sigma^{1/2} & & R = \Sigma^{1/2}V^\top
+\end{array}
+\]
+
+\[
+L =
+\begin{bmatrix}
+L_x \\
+L_z
+\end{bmatrix},
+\qquad
+R =
+\begin{bmatrix}
+R_x & R_w & R_u
+\end{bmatrix}
+\]
+
+%%%%%%%%%%%%%%%%%%%%%
+\\
+\\
+
+\[
+\begin{aligned}
+\tilde z
+&=
+\underbrace{R_x}_{\tilde C_z} x
++
+\underbrace{R_w w}_{\displaystyle \underbrace{R_w L_z}_{\tilde D_{zw}} \tilde w}
++
+\underbrace{R_u}_{\tilde D_{zu}} u
+&&\Rightarrow \text{ new equation to read out } \tilde z
+\\[6pt]
+B_w w
+&=
+\underbrace{L_x}_{\tilde B_w}\,\tilde w
+&&\raisebox{1.8ex}{$\tilde w = Y I_n \tilde z$}
+\end{aligned}
+\]
+\\
+------------------------------------------------------------------------------------------------------------------------------------
+\\
+\[
+\text{possible improvement (if the previous form cannot provide sufficient reduction)}
+\]
+
+\[
+D_{zw} = \hat U \hat \Sigma \hat V^\top
+\]
+
+\[
+S_2 = \hat U \hat \Sigma,
+\qquad
+P = \hat V^\top
+\]
+
+\[
+D_{zw} w = S_2 \hat w,
+\qquad \text{where } \hat w = P w
+\]
+
+\[
+Y D_{zw} z = Y \cdot S_2 \hat z = S_2 \hat w,
+\qquad \text{where } \hat z = P z
+\]
+
+
+\[
+\text{Based on this, the SVD can be taken on}
+\]
+
+\[
+\begin{bmatrix}
+B_w \cdot \begin{bmatrix} C_z & S_2 & D_{zu} \end{bmatrix} \\
+P \cdot \begin{bmatrix} C_z & S_2 & D_{zu} \end{bmatrix}
+\end{bmatrix}
+\]
+
+\end{document}

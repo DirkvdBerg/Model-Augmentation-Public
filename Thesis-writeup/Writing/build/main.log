@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  22 SEP 2026 10:03
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  22 SEP 2026 15:53
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -527,9 +527,7 @@ LaTeX Info: Redefining \microtypesetup on input line 3065.
 pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count328
-)
-(C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model
-\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.aux)
+) (main.aux)
 \openout1 = `main.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 20.
@@ -582,11 +580,7 @@ Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: hyperref package is loaded.
 Package caption Info: End \AtBeginDocument code.
 Package hyperref Info: Link coloring OFF on input line 20.
-
-(C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model
-\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out)
-(C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model
-\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out)
+ (main.out) (main.out)
 \@outlinefile=\write3
 \openout3 = `main.out'.
 
@@ -633,20 +627,206 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 ) (sections/00_abstract.tex) (sections/01_introduction.tex
-Underfull \hbox (badness 3838) in paragraph at lines 20--21
-[]\OT1/ptm/m/n/10 (+20) Scope sep-a-rates demon-strated sim-u-la-tion ev-i-denc
-e,
+
+LaTeX Warning: Citation `garcia2013model' on page 1 undefined on input line 19.
+
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 1 undefined on input line 23.
+
+
+
+LaTeX Warning: Citation `irds2022' on page 1 undefined on input line 28.
+
+
+LaTeX Warning: Citation `workman2021diewafer' on page 1 undefined on input line
+ 28.
+
+
+LaTeX Warning: Citation `garcia2013model' on page 1 undefined on input line 30.
+
+
+
+LaTeX Warning: Citation `teo2007dynamic' on page 1 undefined on input line 30.
+
+
+LaTeX Warning: Citation `lambrechts2005trajectory' on page 1 undefined on input
+ line 30.
+
+
+LaTeX Warning: Citation `hwang2024semiconductor' on page 1 undefined on input l
+ine 32.
+
+[1{C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users
+/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}
+
+
+]
+
+LaTeX Warning: Citation `willard2020integrating' on page 2 undefined on input l
+ine 34.
+
+
+LaTeX Warning: Citation `garcia2013model' on page 2 undefined on input line 34.
+
+
+
+LaTeX Warning: Citation `willard2020integrating' on page 2 undefined on input l
+ine 36.
+
+
+LaTeX Warning: Citation `willard2020integrating' on page 2 undefined on input l
+ine 36.
+
+
+LaTeX Warning: Citation `noel2018greybox' on page 2 undefined on input line 36.
+
+
+
+LaTeX Warning: Citation `noel2018greybox' on page 2 undefined on input line 36.
+
+
+
+LaTeX Warning: Citation `kessels2025ai' on page 2 undefined on input line 36.
+
+
+LaTeX Warning: Citation `retzler2024' on page 2 undefined on input line 38.
+
+[2]) (sections/02_system_baseline.tex
+
+LaTeX Warning: Citation `garcia2013model' on page 3 undefined on input line 38.
+
+
+LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 4
+6.
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
+File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
+)
+
+LaTeX Warning: Citation `toth2010modeling' on page 3 undefined on input line 52
+.
+
+
+LaTeX Warning: Citation `toth2010modeling' on page 3 undefined on input line 53
+.
+
+
+Underfull \hbox (badness 2293) in paragraph at lines 53--54
+[]\OT1/ptm/m/n/10 (+20) Decision (ter-mi-nol-ogy): the run-ning name is self-
  []
 
-) (sections/02_system_baseline.tex [1{C:/Users/20203253/AppData/Local/MiKTeX/fo
-nts/map/pdftex/pdftex.map}{C:/Users/20203253/AppData/Local/Programs/MiKTeX/font
-s/enc/dvips/base/8r.enc}
+[3]
+
+LaTeX Warning: Citation `drenth2025thesis' on page 4 undefined on input line 55
+.
 
 
-]) (sections/03_augmentation.tex [2])
-(sections/04_obc.tex) (sections/05_setup.tex [3]) (sections/06_results.tex
-[4]) (sections/07_discussion.tex) (sections/08_conclusion.tex [5])
-(sections/99_appendix.tex)
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 4 undefined on input line 55
+.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 58--59
+[]\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, re-draw): ex-tract the in-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 58--59
+\OT1/ptm/m/n/10 (+20) ter-con-nec-tion be-tween $\OML/cmm/m/it/10 G$ \OT1/ptm/m
+/n/10 (+20) and $\OT1/cmr/m/n/10 ^^A(\OML/cmm/m/it/10 Y\OT1/cmr/m/n/10 )$ \OT1/
+ptm/m/n/10 (+20) from
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 58--59
+\OT1/pcr/m/n/10 LFR-derivation-supervisor\OT1/ptm/m/n/10 (+20) ; re-duce it to
+ []
+
+) (sections/03_augmentation.tex
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 4 undefined on input line 20.
+
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 25--26
+[]\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, ma-jor re-vi-sion): sim-plify
+ []
+
+
+Underfull \hbox (badness 1924) in paragraph at lines 25--26
+\OT1/pcr/m/n/10 jan-blockscheme-v5 \OT1/ptm/m/n/10 (+20) to base-line, ANN, rou
+ter,
+ []
+
+
+LaTeX Warning: Citation `hoekstra2026encoder' on page 4 undefined on input line
+ 32.
+
+
+LaTeX Warning: Citation `kessels2025ai' on page 4 undefined on input line 44.
+
+[4]
+
+LaTeX Warning: Citation `kessels2025ai' on page 5 undefined on input line 59.
+
+) (sections/04_obc.tex
+
+LaTeX Warning: Citation `gyorok2025l4dc' on page 5 undefined on input line 19.
+
+
+LaTeX Warning: Citation `hoekstra2026lfraug' on page 5 undefined on input line 
+19.
+
+
+LaTeX Warning: Citation `gyorok2025l4dc' on page 5 undefined on input line 31.
+
+) (sections/05_setup.tex [5]
+Underfull \hbox (badness 3460) in paragraph at lines 23--24
+\OT1/ptm/m/n/10 (+20) matched to the fric-tion-less ex-ci-ta-tion; the ear-lier
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 60--61
+[]\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, ap-pendix can-di-date): use
+ []
+
+
+Underfull \hbox (badness 4819) in paragraph at lines 60--61
+\OT1/pcr/m/n/10 controller-chain-v1 \OT1/ptm/m/n/10 (+20) only as an au-dit tra
+il
+ []
+
+) (sections/06_results.tex [6]
+Underfull \hbox (badness 2556) in paragraph at lines 53--54
+\OT1/ptm/m/n/10 (+20) relevant mo-tion, con-troller trans-fer, and quan-ti-fied
+
+ []
+
+) (sections/07_discussion.tex
+Underfull \vbox (badness 1540) has occurred while \output is active []
+
+ [7])
+(sections/08_conclusion.tex) (sections/99_appendix.tex
+Underfull \hbox (badness 10000) in paragraph at lines 21--22
+[]\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, op-tional): move the de-tailed
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 21--22
+\OT1/ptm/m/n/10 (+20) co-or-di-nate and nor-mal-i-sa-tion flow from
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 21--22
+\OT1/pcr/m/n/10 coordinates-normalisation-v1 \OT1/ptm/m/n/10 (+20) here af-ter
+ []
+
+[8]
+Underfull \hbox (badness 10000) in paragraph at lines 30--31
+[]\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, op-tional): place
+ []
+
+)
 (C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model
 \Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.bbl)
 
@@ -660,26 +840,34 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[6
+[9
 
-]
-(C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model
-\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.aux)
+] (main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
-Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 88ECED6B0D9F81A1E1651077F4B296DA;8347.
+
+
+LaTeX Warning: There were undefined references.
+
+
+Package rerunfilecheck Warning: File `main.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `main.out':
+(rerunfilecheck)             Before: 88ECED6B0D9F81A1E1651077F4B296DA;8347
+(rerunfilecheck)             After:  97221D1B672232FDC5D1B8F4E71B675F;8349.
  ) 
 Here is how much of TeX's memory you used:
- 15427 strings out of 467867
- 253176 string characters out of 5416882
- 706537 words of memory out of 5000000
- 43790 multiletter control sequences out of 15000+600000
- 683716 words of font info for 290 fonts, out of 8000000 for 9000
+ 15568 strings out of 467867
+ 254517 string characters out of 5416882
+ 704197 words of memory out of 5000000
+ 43849 multiletter control sequences out of 15000+600000
+ 688463 words of font info for 335 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 80i,11n,82p,1003b,561s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 80i,11n,82p,2025b,573s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/
 cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/publ
 ic/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts
@@ -688,16 +876,17 @@ iKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/
 Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/Ap
 pData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/
 20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb
-><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.
-pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb
-i8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/
-utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/tim
-es/utmri8a.pfb>
+><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8
+a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/ut
+mb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times
+/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/t
+imes/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/ur
+w/times/utmri8a.pfb>
 Output written on "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project
 \Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.
-pdf" (6 pages, 188953 bytes).
+pdf" (9 pages, 230758 bytes).
 PDF statistics:
- 272 PDF objects out of 1000 (max. 8388607)
- 55 named destinations out of 1000 (max. 500000)
- 48425 words of extra memory for PDF output out of 51595 (max. 10000000)
+ 287 PDF objects out of 1000 (max. 8388607)
+ 68 named destinations out of 1000 (max. 500000)
+ 53025 words of extra memory for PDF output out of 61914 (max. 10000000)
 

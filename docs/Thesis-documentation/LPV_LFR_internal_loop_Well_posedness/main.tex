@@ -1,0 +1,265 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{microtype}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.75em}{}
+\titlespacing*{\section}{0pt}{1.4ex plus .2ex minus .2ex}{0.9ex}
+\titlespacing*{\subsection}{0pt}{1.0ex plus .2ex minus .2ex}{0.5ex}
+
+\newcommand{\R}{\mathbb{R}}
+
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{proposition}[lemma]{Proposition}
+
+% https://claude.ai/chat/f423645c-9097-4641-8a72-944cde37aafc
+% https://chatgpt.com/c/69ddf365-c818-8391-bf92-7cd24efe21f7
+% https://chatgpt.com/c/69dcd8b5-0f60-8389-8b66-0e61b882405f
+
+\begin{document}
+\section{Well-posedness of the LPV-LFR internal loop}
+
+In the LPV-LFR framework of Drenth~\cite{drenth2025thesis}, well-posedness of the
+internal interconnection requires that
+\begin{equation}
+    I - D_{zw}\Delta(Y)
+    \quad\text{is nonsingular for all admissible } Y.
+    \label{eq:wp_generic}
+\end{equation}
+We do not invoke Drenth's sufficient condition based on $\rho(D_{zw})<1$.
+Instead, we exploit the block structure of the present realization and prove that
+\eqref{eq:wp_generic} is equivalent to invertibility of the physical inertia matrix
+$M(Y) = M_0 + YM_1 + Y^2M_2$.
+Since $Y$ is a physical coordinate with no intrinsic bound, we establish this
+equivalence globally for all $Y\in\mathbb{R}$.
+
+\subsection{Preliminary: invertibility of \texorpdfstring{$M_0$}{M0}}
+
+From Proposition~\ref{prop:Minvertible}, $M(Y)\succ 0$ for all $Y\in\mathbb{R}$.
+Setting $Y=0$ gives
+\begin{equation}
+    M_0 = M(0) \succ 0,
+    \label{eq:M0pd}
+\end{equation}
+so $M_0$ is invertible and the matrices $M_0^{-1}$ appearing throughout the
+LPV-LFR realization are well-defined.
+
+\subsection{LDU factorization lemma}
+
+The following lemma, which follows directly from block Gaussian elimination
+\cite[p.\,1--2]{schurwiki}, is the only tool required for the proof.
+
+\begin{lemma}[LDU factorization]
+\label{lem:ldu}
+Let
+\[
+    L =
+    \begin{bmatrix}
+        A & B \\ C & D
+    \end{bmatrix}
+\]
+be a block matrix with $D$ invertible.  Define the Schur complement of $D$ in
+$L$ as
+\begin{equation}
+    S := A - BD^{-1}C.
+    \label{eq:schur_def}
+\end{equation}
+Then $L$ admits the factorization
+\begin{equation}
+    L
+    =
+    \underbrace{
+    \begin{bmatrix}
+        I & BD^{-1} \\ 0 & I
+    \end{bmatrix}
+    }_{U}
+    \underbrace{
+    \begin{bmatrix}
+        S & 0 \\ 0 & D
+    \end{bmatrix}
+    }_{\Lambda}
+    \underbrace{
+    \begin{bmatrix}
+        I & 0 \\ D^{-1}C & I
+    \end{bmatrix}
+    }_{V}.
+    \label{eq:ldu}
+\end{equation}
+Since $U$ and $V$ are unit triangular, $\det U = \det V = 1$, and therefore
+\begin{equation}
+    \det L = \det(D)\,\det(S).
+    \label{eq:detschur}
+\end{equation}
+Consequently, $L$ is invertible if and only if both $D$ and $S$ are invertible.
+\end{lemma}
+
+\begin{proof}
+Direct multiplication of the right-hand side of \eqref{eq:ldu}:
+\[
+    U\Lambda V
+    =
+    \begin{bmatrix}
+        S + BD^{-1}C & D \cdot D^{-1}C \cdot 0 + \ldots
+    \end{bmatrix}.
+\]
+Computing each block explicitly:
+\begin{align*}
+    (U\Lambda V)_{11}
+        &= S + BD^{-1}C = (A - BD^{-1}C) + BD^{-1}C = A,\\
+    (U\Lambda V)_{12}
+        &= BD^{-1}D = B,\\
+    (U\Lambda V)_{21}
+        &= D\cdot D^{-1}C = C,\\
+    (U\Lambda V)_{22}
+        &= D,
+\end{align*}
+which recovers $L$ exactly.
+The determinant relation \eqref{eq:detschur} follows because
+$\det L = \det(U)\det(\Lambda)\det(V) = 1\cdot\det(D)\det(S)\cdot 1$.
+\end{proof}
+
+\subsection{Proposition: plant-specific equivalence}
+
+\begin{proposition}
+\label{prop:wellposed}
+For the gantry LPV-LFR realization with
+\begin{equation}
+    D_{zw} =
+    \begin{bmatrix}
+        -M_0^{-1}M_1 & -M_0^{-1}M_2 \\
+        I_3 & 0
+    \end{bmatrix},
+    \qquad
+    \Delta(Y) = YI_6,
+    \label{eq:DzwDelta}
+\end{equation}
+the following equivalence holds for all $Y\in\mathbb{R}$:
+\begin{equation}
+    I - D_{zw}\Delta(Y)\ \text{is invertible}
+    \quad\Longleftrightarrow\quad
+    M(Y)\ \text{is invertible}.
+    \label{eq:mainequiv}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Define $L(Y) := I_6 - D_{zw}\Delta(Y)$.
+Since $\Delta(Y) = YI_6$, direct multiplication gives
+\begin{equation}
+    D_{zw}\Delta(Y)
+    =
+    \begin{bmatrix}
+        -YM_0^{-1}M_1 & -YM_0^{-1}M_2 \\
+        YI_3 & 0
+    \end{bmatrix},
+\end{equation}
+hence
+\begin{equation}
+    L(Y)
+    =
+    \begin{bmatrix}
+        I_3 + YM_0^{-1}M_1 & YM_0^{-1}M_2 \\
+        -YI_3 & I_3
+    \end{bmatrix}
+    =:
+    \begin{bmatrix}
+        A(Y) & B(Y) \\ C(Y) & D(Y)
+    \end{bmatrix}.
+    \label{eq:LY}
+\end{equation}
+The lower-right block is $D(Y) = I_3$, which is invertible for all $Y\in\mathbb{R}$
+and is therefore the natural pivot for Lemma~\ref{lem:ldu}.
+The upper-left block $A(Y) = I_3 + YM_0^{-1}M_1$ has $Y$-dependent invertibility
+and cannot serve as pivot without additional restriction on $Y$.
+
+Since $D(Y) = I_3$ is invertible, Lemma~\ref{lem:ldu} applies and gives:
+$L(Y)$ is invertible if and only if the Schur complement
+\begin{equation}
+    S(Y) := A(Y) - B(Y)D(Y)^{-1}C(Y)
+\end{equation}
+is invertible.  Computing $S(Y)$ with $D(Y)^{-1} = I_3$:
+\begin{align}
+    S(Y)
+    &= \bigl(I_3 + YM_0^{-1}M_1\bigr)
+       - \bigl(YM_0^{-1}M_2\bigr)\bigl(-YI_3\bigr) \notag\\
+    &= I_3 + YM_0^{-1}M_1 + Y^2M_0^{-1}M_2 \notag\\
+    &= M_0^{-1}\bigl(M_0 + YM_1 + Y^2M_2\bigr)
+       \qquad\text{(factoring } M_0^{-1}\text{ from each term)} \notag\\
+    &= M_0^{-1}M(Y).
+    \label{eq:SY}
+\end{align}
+Since $M_0$ is invertible by \eqref{eq:M0pd}, $\det(M_0^{-1})\neq 0$.
+From the determinant relation \eqref{eq:detschur},
+\begin{equation}
+    \det S(Y) = \det(M_0^{-1})\,\det(M(Y)),
+\end{equation}
+so $\det S(Y) = 0$ if and only if $\det M(Y) = 0$.  Therefore
+\begin{equation}
+    S(Y)\ \text{is invertible}
+    \quad\Longleftrightarrow\quad
+    M(Y)\ \text{is invertible}.
+\end{equation}
+Combining with Lemma~\ref{lem:ldu} proves \eqref{eq:mainequiv}.
+\end{proof}
+
+\subsection{Global well-posedness}
+
+The internal loop equation of the LPV-LFR is
+\begin{equation}
+    \bigl(I - D_{zw}\Delta(Y)\bigr)\,z = C_z x + D_{zu} u.
+    \label{eq:loopequation}
+\end{equation}
+By Proposition~\ref{prop:wellposed}, this has a unique solution in $z$ for every
+$x$, $u$, and $Y\in\mathbb{R}$ if and only if $M(Y)$ is invertible for all
+$Y\in\mathbb{R}$.  Since $M(Y)\succ 0$ for all $Y\in\mathbb{R}$ by
+Proposition~\ref{prop:Minvertible}, the realization is globally well-posed.
+
+This is a plant-specific proof of Drenth's necessary-and-sufficient
+well-posedness condition~\eqref{eq:wp_generic}.  Drenth's sufficient
+spectral-radius theorem is not invoked.
+% PASTE SECTION HERE
+
+\newpage
+
+\begin{thebibliography}{9}
+
+\bibitem{drenth2025thesis}
+R.~Drenth,
+``Efficient Gradient-Based Learning of {LPV} Models with Linear Fractional Representation,''
+M.Sc.\ thesis, Eindhoven University of Technology, Sept.\ 2025.
+
+\bibitem{schurwiki}
+Wikipedia contributors,
+``Schur complement,''
+\textit{Wikipedia, The Free Encyclopedia},
+2024.
+\url{https://en.wikipedia.org/wiki/Schur_complement}
+
+\end{thebibliography}
+
+\end{document}
+
+The best match for your derivation is the dedicated monograph cited in the Wikipedia PDF you already uploaded:
+Zhang, F. (Ed.) (2005). The Schur Complement and Its Applications. Numerical Methods and Algorithms, Vol. 4. Springer.
+This is the standard academic reference for exactly the LDU factorization, determinant formula, and invertibility equivalence your proof uses. The Wikipedia article you uploaded cites it directly as reference [2], so the chain is: your proof → Wikipedia PDF → Zhang (2005). Using Zhang (2005) directly is cleaner than citing a Wikipedia article in a thesis.
+The second viable option is:
+Horn, R.A. and Johnson, C.R. (2013). Matrix Analysis, 2nd ed. Cambridge University Press. §0.8.
+Horn & Johnson covers block matrix LDU factorization and the Schur complement as part of standard matrix theory, and you already cite it in Document 2 for Sylvester's criterion. Using the same source in both companion notes would be internally consistent.
+For completeness, Boyd & Vandenberghe, Convex Optimization (2004), Appendix A.5.5 also states the result, but only for symmetric matrices, so it does not cover your general non-symmetric case and should not be used here.
+Recommendation: cite Zhang (2005) for the Schur complement lemma in your well-posedness section, and replace \cite{schurwiki} in the wrapper with:
+@book{zhang2005schur,
+  author    = {Zhang, Fuzhen},
+  title     = {The {Schur} Complement and Its Applications},
+  series    = {Numerical Methods and Algorithms},
+  volume    = {4},
+  publisher = {Springer},
+  year      = {2005},
+  doi       = {10.1007/b105056}
+}

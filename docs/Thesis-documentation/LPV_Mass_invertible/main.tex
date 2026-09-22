@@ -1,0 +1,317 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{physics}
+\usepackage{microtype}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{booktabs}
+
+% ------- Section formatting -------
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.75em}{}
+\titlespacing*{\section}{0pt}{1.2ex plus .2ex minus .2ex}{0.8ex}
+\titlespacing*{\subsection}{0pt}{1.0ex plus .2ex minus .2ex}{0.5ex}
+
+% ------- Result box -------
+\newtcolorbox{resultbox}[1]{
+    breakable, enhanced,
+    colback=blue!2, colframe=blue!40!black,
+    boxrule=0.7pt, arc=1.5mm,
+    left=2mm, right=2mm, top=1mm, bottom=1mm,
+    title={\bfseries #1}, coltitle=black,
+    colbacktitle=blue!10, fonttitle=\bfseries
+}
+
+% ------- Warning box -------
+\newtcolorbox{warningbox}[1]{
+    breakable, enhanced,
+    colback=orange!4, colframe=orange!60!black,
+    boxrule=0.7pt, arc=1.5mm,
+    left=2mm, right=2mm, top=1mm, bottom=1mm,
+    title={\bfseries #1}, coltitle=black,
+    colbacktitle=orange!15, fonttitle=\bfseries
+}
+
+% ------- Note box -------
+\newtcolorbox{notebox}[1]{
+    breakable, enhanced,
+    colback=gray!4, colframe=gray!50,
+    boxrule=0.7pt, arc=1.5mm,
+    left=2mm, right=2mm, top=1mm, bottom=1mm,
+    title={\bfseries #1}, coltitle=black,
+    colbacktitle=gray!12, fonttitle=\bfseries
+}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries Invertibility of the Gantry Inertia Matrix $M(Y)$}\\[0.5em]
+\end{center}
+
+\vspace{0.5em}
+
+\section{Matrix Definition}
+
+The $3\times3$ inertia matrix in logical coordinates $q = [X,\,\Theta,\,Y]^T$, derived from
+the Lagrange--Euler equations for the dual-gantry stage based on García et al \cite{garcia2013model}, is:
+
+\begin{equation}
+    M(Y) = \begin{bmatrix} a & b(Y) & 0 \\ b(Y) & c(Y) & -e \\ 0 & -e & f \end{bmatrix}
+\end{equation}
+with symbolic entries:
+\begin{align}
+    a    &= m_1 + m_2 + m_b + m_h & &\text{(constant)}\\
+    b(Y) &= \tfrac{(m_1 - m_2)L_b}{2} - m_h Y & &\text{(linear in } Y\text{)}\\
+    c(Y) &= J_b + J_h + \tfrac{(m_1+m_2)L_b^2}{4} + m_h d^2 + m_h Y^2 & &\text{(quadratic in }Y\text{)}\\
+    e    &= m_h d & &\text{(constant)}\\
+    f    &= m_h & &\text{(constant)}
+\end{align}
+where $m_1, m_2, m_b, m_h > 0$ are masses, $J_b, J_h > 0$ are rotary inertias,
+and $L_b, d > 0$ are geometric parameters.
+
+\section{Symbolic Proof of Positive Definiteness}
+ $M(Y)$ is symmetric by construction ($M_{12} = M_{21} = b(Y)$, $M_{13} = M_{31} = 0$, $M_{23} = M_{32} = -e$). Since all entries are real, $M(Y)$ is Hermitian. We use Sylvester's criterion, which avoids computing the $Y$-dependent eigenvalues explicitly: a Hermitian matrix is positive definite if and only if all its leading principal minors are strictly positive \cite{horn2012matrix}. 
+% $M(Y)$ is symmetric by construction $(M12 = M21 = b(Y), M13 = M31 = 0, M23 = M32 = -e)$.
+% Since all entries are real, $M(Y)$ is Hermitian. By Sylvester's criterion, a Hermitian matrix is positive definite if and only if all its leading principal minors are strictly positive.
+\subsection{Minor 1}
+
+\begin{equation}
+    D_1 = a = m_1 + m_2 + m_b + m_h > 0
+\end{equation}
+Holds for any combination of positive masses.
+
+\subsection{Minor 2}
+
+\begin{equation}
+    D_2(Y) = a\,c(Y) - b(Y)^2
+\end{equation}
+Expanding the $Y$-dependent terms:
+
+\begin{align}
+    a\,c(Y)  &= a\!\left(c_0 + m_h Y^2\right) = a\,c_0 + a\,m_h Y^2 \\
+    b(Y)^2   &= b_0^2 - 2\,b_0\,m_h Y + m_h^2 Y^2
+\end{align}
+where $b_0 = \tfrac{(m_1-m_2)L_b}{2}$ and $c_0 = J_b + J_h + \tfrac{(m_1+m_2)L_b^2}{4} + m_h d^2$.
+Therefore:
+\begin{equation}
+    D_2(Y) = (a - m_h)\,m_h\, Y^2 + 2\,b_0\,m_h\, Y + (a\,c_0 - b_0^2)
+\end{equation}
+\noindent\textbf{Preliminary bound.}\quad
+We show $(a-m_h)\,c_0 > b_0^2$, needed for the discriminant below.
+Since all terms in $c_0$ are positive:
+\begin{equation}
+    (a-m_h)\,c_0 = (m_1+m_2+m_b)\,c_0 \geq (m_1+m_2)\cdot\frac{(m_1+m_2)L_b^2}{4} = \frac{(m_1+m_2)^2\,L_b^2}{4}
+\end{equation}
+Since $m_1, m_2 > 0$:
+\begin{equation}
+    (m_1+m_2)^2 = (m_1-m_2)^2 + 4\,m_1\,m_2 > (m_1-m_2)^2
+\end{equation}
+Therefore $\tfrac{(m_1+m_2)^2 L_b^2}{4} > \tfrac{(m_1-m_2)^2 L_b^2}{4} = b_0^2$, and hence:
+\begin{equation}
+    (a-m_h)\,c_0 > b_0^2 \label{eq:tighter}
+\end{equation}
+
+\medskip
+\noindent\textbf{Discriminant.}\quad
+$D_2(Y)$ is quadratic in $Y$, whose coefficient of $Y^2$ is positive,
+since $(a-m_h)m_h = (m_1+m_2+m_b)m_h > 0$ for positive masses.
+The sign of the linear term $2b_0 m_h$ depends on the relative masses $m_1, m_2$
+and cannot be determined in general. However, the discriminant is negative,
+as shown:
+\begin{align}
+    \Delta_2 &= 4\,b_0^2\,m_h^2 - 4\,(a-m_h)\,m_h\,(a\,c_0 - b_0^2) \notag\\
+                 &< 4\,(a-m_h)\,m_h\,c_0\,m_h - 4\,(a-m_h)\,m_h\,(a\,c_0 - b_0^2)
+                    \quad \text{(using } b_0^2 < (a-m_h)c_0 \text{)} \notag\\
+                 &= 4\,(a-m_h)\,m_h\,\bigl[c_0\,m_h - a\,c_0 + b_0^2\bigr] \notag\\
+                 &= 4\,(a-m_h)\,m_h\,\bigl[b_0^2 - (a-m_h)\,c_0\bigr] < 0
+\end{align}
+where the last inequality again uses \eqref{eq:tighter}.
+Since \(D_2(Y)\) is a quadratic polynomial in \(Y\) with leading coefficient \((a-m_h)m_h>0\), it defines an upward-opening parabola. Furthermore, \(\Delta_{D_2}<0\), so the equation \(D_2(Y)=0\) has no real solutions. Therefore \(D_2(Y)\) does not intersect the horizontal axis. Because the parabola opens upward, it follows that
+\begin{equation}
+    D_2(Y) > 0 \qquad \text{for all } Y \in \mathbb{R}.
+\end{equation}
+
+\subsection{Minor 3}
+Expanding the determinant along the first row (using \(M_{13}=0\)) gives
+\begin{equation}
+    \det M(Y) = a\,(c(Y)\,f - e^2) - b(Y)\,(b(Y)\,f)
+              = f\,\bigl[a\,c(Y) - b(Y)^2\bigr] - a\,e^2
+              = f\,D_2(Y) - a\,e^2.
+\end{equation}
+Using \(f=m_h\) and \(e=m_h d\),
+\begin{equation}
+    \det M(Y) = m_h\,D_2(Y) - a\,m_h^2 d^2.
+\end{equation}
+% Since \(m_h>0\), \(\det M(Y)\) attains its minimum at the same value of \(Y\) as \(D_2(Y)\). Hence
+% \begin{equation}
+%     \det M(Y) \geq m_h\,D_2^{\min} - a\,m_h^2 d^2.
+% \end{equation}
+Because \(\det M(Y)=m_h D_2(Y)-a m_h^2 d^2\) with \(m_h>0\), it is a positive scaling and constant shift of \(D_2(Y)\). Therefore \(\det M(Y)\) has the same minimizer in \(Y\) as \(D_2(Y)\), and thus
+\begin{equation}
+    \min_Y \det M(Y)=m_h\,D_2^{\min}-a m_h^2 d^2.
+\end{equation}
+Since \(D_2(Y)\) is a quadratic function of \(Y\) with positive leading coefficient, to obtain the minimum value we complete the square. In general, if \(A>0\), then
+\[
+Ay^2+By+C
+=
+A\left(y+\frac{B}{2A}\right)^2
++
+\left(C-\frac{B^2}{4A}\right),
+\]
+so the minimum value is \(C-\frac{B^2}{4A}\). Applying this to \(D_2(Y)\) gives
+\begin{equation}
+    D_2^{\min}
+    = (a\,c_0 - b_0^2) - \frac{b_0^2\,m_h}{a-m_h}
+    = \frac{a\bigl[(a-m_h)c_0 - b_0^2\bigr]}{a-m_h}.
+\end{equation}
+% From the expression for \(D_2(Y)\), its minimum value is
+% \begin{equation}
+%     D_2^{\min}
+%     = (a\,c_0 - b_0^2) - \frac{b_0^2\,m_h}{a-m_h}
+%     = \frac{a\bigl[(a-m_h)c_0 - b_0^2\bigr]}{a-m_h}.
+% \end{equation}
+Therefore,
+\begin{align}
+    m_h\,D_2^{\min} - a\,m_h^2 d^2
+    &= \frac{a\,m_h\bigl[(a-m_h)c_0 - b_0^2\bigr]}{a-m_h} - a\,m_h^2 d^2 \notag\\
+    &= \frac{a\,m_h}{a-m_h}\Bigl[(a-m_h)c_0 - b_0^2 - (a-m_h)m_h d^2\Bigr] \notag\\
+    &= \frac{a\,m_h}{a-m_h}\Bigl[(a-m_h)(c_0 - m_h d^2) - b_0^2\Bigr].
+\end{align}
+Now substitute
+\begin{equation}
+    a-m_h = m_1+m_2+m_b,
+    \qquad
+    c_0 - m_h d^2 = J_b + J_h + \frac{(m_1+m_2)L_b^2}{4},
+    \qquad
+    b_0^2 = \frac{(m_1-m_2)^2L_b^2}{4}.
+\end{equation}
+Then
+\begin{align}
+    (a-m_h)(c_0 - m_h d^2) - b_0^2
+    &= (m_1+m_2+m_b)\left(J_b + J_h + \frac{(m_1+m_2)L_b^2}{4}\right)
+       - \frac{(m_1-m_2)^2L_b^2}{4} \notag\\
+    &= (m_1+m_2+m_b)(J_b+J_h)
+       + \frac{L_b^2}{4}\Bigl[(m_1+m_2+m_b)(m_1+m_2) - (m_1-m_2)^2\Bigr] \notag\\
+    &= (m_1+m_2+m_b)(J_b+J_h)
+       + \frac{L_b^2}{4}\Bigl[4m_1m_2 + m_b(m_1+m_2)\Bigr].
+\end{align}
+All terms on the right-hand side are strictly positive for positive masses, inertias, and geometry parameters. Hence
+\begin{equation}
+    (a-m_h)(c_0 - m_h d^2) - b_0^2 > 0.
+\end{equation}
+Since
+\[
+\frac{a\,m_h}{a-m_h} > 0
+\]
+for positive masses (\(a=m_1+m_2+m_b+m_h>0\) and \(a-m_h=m_1+m_2+m_b>0\)), it follows that
+\begin{equation}
+    m_h\,D_2^{\min} - a\,m_h^2 d^2 > 0.
+\end{equation}
+Therefore,
+\begin{equation}
+    \det M(Y) > 0 \qquad \text{for all } Y \in \mathbb{R}.
+\end{equation}
+
+\medskip
+\begin{resultbox}{Result}
+    $M(Y)$ is \textbf{positive definite}, and therefore invertible for all $Y \in \mathbb{R}$,
+    provided:
+    \[
+        m_1,\, m_2,\, m_b,\, m_h > 0, \qquad J_b,\, J_h > 0, \qquad L_b,\, d > 0.
+    \]
+    % This is a stronger result than needed: invertibility holds everywhere, not only
+    % in the operational range $Y \in [-0.35,\,0.35]$~m.
+\end{resultbox}
+
+% \newpage
+% \section{Numerical Verification}
+
+% Substituting the nominal parameter values from \texttt{main.m}:
+
+% \begin{center}
+% \begin{tabular}{llll}
+% \toprule
+% Parameter & Value & Parameter & Value \\
+% \midrule
+% $m_b$ & $22.8$~kg  & $J_b$ & $1.0$~kg\,m$^2$ \\
+% $m_h$ & $10.1$~kg  & $J_h$ & $0.05$~kg\,m$^2$ \\
+% $m_1$ & $10.2$~kg  & $L_b$ & $0.725$~m \\
+% $m_2$ & $10.7$~kg  & $d$   & $0.1$~m \\
+% \bottomrule
+% \end{tabular}
+% \end{center}
+
+% The three leading principal minors evaluate to:
+
+% \begin{center}
+% \begin{tabular}{lll}
+% \toprule
+% Minor & Symbolic form & Numerical value \\
+% \midrule
+% $D_1$ & $a$ & $53.8$ \\
+% $D_2(Y)$ & $441.37\,Y^2 - 3.661\,Y + 209.65$ & $>0$ for all $Y$ (discriminant $=-370\,009$) \\
+% $D_3(Y)$ & $4457.8\,Y^2 - 36.98\,Y + 2062.5$ & $>0$ for all $Y$ (discriminant $=-36\,755\,083$) \\
+% \bottomrule
+% \end{tabular}
+% \end{center}
+
+% All minors are strictly positive, confirming the symbolic result.
+
+\section{Augmentation Note}
+
+\begin{warningbox}{Parameter constraints during augmentation}
+The invertibility of $M(Y)$ is guaranteed by the proof above, provided all
+masses and rotary inertias remain strictly positive.
+\\
+Since the parameters will need to remain physically meaningful and interpretable, no negative values will be allowed.  Already satisfying the constraint.
+% During model augmentation, if inertia parameters ($m_1, m_2, m_b, m_h, J_b, J_h$) are
+% made trainable, they must be constrained to remain positive to preserve physical
+% interpretability. As long as this physical constraint is enforced, invertibility of
+% $M(Y)$ is automatically guaranteed -- no additional check is required.
+
+% \textbf{Recommendation:} Restrict trainable parameters to damping
+% ($c_{g1}, c_{g2}, c_y, c_{b1}, c_{b2}$) and stiffness ($k_{b1}, k_{b2}$), which
+% enter $C$ and $K$ only and do not affect $M(Y)$. If inertia parameters must be
+% trainable, enforce positivity via a softplus or exponential parameterization.
+\end{warningbox}
+
+\newpage
+\begin{thebibliography}{9}
+\bibitem{garcia2013model}
+I.~Garc{\'i}a-Herreros, X.~Kestelyn, J.~Gomand, R.~Coleman, and P.-J.~Barre,
+``Model-based decoupling control method for dual-drive gantry stages:
+A case study with experimental validations,''
+\textit{Control Engineering Practice}, vol.~21, no.~3, pp.~298--307, 2013.
+doi: 10.1016/j.conengprac.2012.10.010.
+
+\bibitem{horn2012matrix} 
+R.~A. Horn and C.~R. Johnson,
+``Positive definite matrices,''                                                                        
+in \textit{Matrix Analysis}, ch.~7,
+Cambridge University Press, 2012.
+doi: 10.1017/CBO9780511810817.
+\end{thebibliography}
+\end{document}
+@article{garcia2013model,
+  author  = {Garc{\'i}a-Herreros, Iv{\'a}n and Coleman, Ralph and Barre, Pierre-Jean and Gomand, Julien and Kestelyn, Xavier},
+  title   = {Model-based decoupling control method for dual-drive gantry stages: A case study with experimental validations},
+  journal = {Control Engineering Practice},
+  volume  = {21},
+  number  = {3},
+  pages   = {298--307},
+  year    = {2013},
+  doi     = {10.1016/j.conengprac.2012.11.003}
+}
+
+% \bibitem{murray1994}
+% R.~M. Murray, Z.~Li, and S.~S. Sastry,
+% \textit{A Mathematical Introduction to Robotic Manipulation},
+% CRC Press, 1994. Proposition~4.2: the inertia matrix of a mechanical Lagrangian system
+% is symmetric positive definite.

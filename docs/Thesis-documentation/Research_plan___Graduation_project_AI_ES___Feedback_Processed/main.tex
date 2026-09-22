@@ -1,0 +1,210 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc} % Required for inputting international characters
+\usepackage[T1]{fontenc} % Output font encoding for international characters
+\usepackage{a4wide}
+\usepackage{mathpazo} % Palatino font
+
+% \usepackage{enumitem}
+
+
+\usepackage{booktabs,longtable,array,makecell,ragged2e}
+\usepackage[table]{xcolor}
+
+\usepackage{enumitem}
+\newlist{tightitemize}{itemize}{1}
+\setlist[tightitemize,1]{label=\textbullet,nosep,leftmargin=1.2em,topsep=1pt}
+
+% \usepackage{booktabs}
+% \usepackage{longtable}
+% \usepackage{array}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[section]{placeins}
+% \usepackage{natbib}
+\usepackage{eurosym}
+\usepackage{siunitx}
+\usepackage{verbatim}
+\usepackage{listings}
+
+
+\usepackage{pgfgantt}
+\usetikzlibrary{arrows.meta}
+
+\definecolor{barblue}{RGB}{79,129,189}
+\definecolor{bargreen}{RGB}{155,187,89}
+\definecolor{barorange}{RGB}{247,150,70}
+\definecolor{bargray}{RGB}{166,166,166}
+\definecolor{deadlinered}{RGB}{180,40,40}
+
+
+
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{1.2ex plus 0.2ex minus 0.2ex}{0.6ex}
+\titlespacing*{\subsection}{0pt}{1.0ex plus 0.2ex minus 0.2ex}{0.5ex}
+
+\DeclareSIUnit{\EUR}{\text{\euro}}
+\usepackage{float}
+\PassOptionsToPackage{hyphens}{url}\usepackage{hyperref}
+\usepackage{dsfont}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+% \lhead{LHEAD} %kijken toevoegen of niet
+\rhead{TU/e}
+\usepackage{lastpage}
+\cfoot{Page \thepage \;of \pageref{LastPage}}
+
+
+\title{Title}
+%\author{Niek Bongaerts Joost Leliveld Timo Timmermans Dirk van den Berg}
+\date{date}
+
+\begin{document}
+\include{Commands}
+
+\begin{titlepage} % Suppresses displaying the page number on the title page and the subsequent page counts as page 1
+	\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for horizontal lines, change thickness heres
+	
+	\center % Centre everything on the page
+	
+	%------------------------------------------------
+	%	Headings
+	%------------------------------------------------
+	
+	\textsc{\LARGE University of Technology Eindhoven}\\[1.5cm] % Main heading such as the name of your university/college
+	
+	\textsc{\Large Research Plan - Graduation Project AI \& ES}\\[0.5cm] % Major heading such as course name
+	
+	\textsc{\large Department of Electrical Engineering}\\[0.5cm]
+    
+    \textsc{\large Control Systems}\\[0.5cm] % Minor heading such as course title
+	
+	%------------------------------------------------
+	%	Title
+	%------------------------------------------------
+	
+	\HRule\\[0.4cm]
+	
+	{\huge\bfseries Model Augmentation for Dual-Gantry High-Precision Motion System}\\[0.4cm] % Title of your document
+	
+	\HRule\\[1.5cm]
+	
+	%------------------------------------------------
+	%	Author(s)
+	%------------------------------------------------
+	
+	\begin{minipage}{0.4\textwidth}
+		\begin{flushleft}
+			\large
+			\textit{Name}\\ %alphabetic order later
+			Dirk  \textsc{van den Berg}\\
+%			\textsc{}\\
+%			 \textsc{}\\
+%			 \textsc{}
+			
+			
+			
+		\end{flushleft}
+	\end{minipage}
+	~
+	\begin{minipage}{0.4\textwidth}
+		\begin{flushright}
+			\large
+			\textit{Student number}\\
+			1555561 \\
+			
+%			 \\
+%			
+		\end{flushright}
+	\end{minipage}
+	
+	% If you don't want a supervisor, uncomment the two lines below and comment the code above
+	
+	\vfill\vfill\vfill %leave some space
+	
+	{\large\textit{Tue Supervisors}}\\
+	\textsc{Maarten Schoukens} \\
+    \textsc{Roland Toth} \\
+	\textsc{Jan Hoekstra} \\[0.5cm]
+
+    {\large\textit{ASMPT Supervisors}}\\
+    \textsc{Quinten van den Elsen} \\
+    \textsc{Jasper Gerritsen} \\
+	
+	
+	
+	%------------------------------------------------
+	%	Date
+	%------------------------------------------------
+	
+	\vfill\vfill\vfill\vfill\vfill  
+	% Position the date 3/4 down the remaining page
+	
+	{\large\today} % Date, change the \today to a set date if you want to be precise
+	
+	%------------------------------------------------
+	%	Logo
+	%------------------------------------------------
+	
+	% \vfill\vfill\vfill\vfill\vfill\vfill\vfill\vfill\vfill\vfill\vfill
+	% \includegraphics[width=0.5\textwidth]{Figures/TUE_logo.png}\\[3cm] % Include a department/university logo - this will require the graphicx package
+ 
+    %------------------------------------------------
+    %	Logos
+    %------------------------------------------------
+    
+    \vfill\vfill\vfill\vfill\vfill\vfill\vfill\vfill\vfill\vfill\vfill
+    \includegraphics[width=0.4\textwidth]{Figures/TUE_logo.png}
+    \hspace{1.5cm}
+    \includegraphics[width=0.48\textwidth]{Figures/ASMPT_logo.png}\\[3cm]
+	%----------------------------------------------------------------------------------------
+	
+	\vfill % Push the date up 1/4 of the remaining page
+	
+\end{titlepage}
+\thispagestyle{empty}
+\clearpage
+
+\tableofcontents 
+\thispagestyle{empty}
+\clearpage
+\newpage
+\setcounter{page}{1}
+\pagenumbering{arabic}
+
+\section{Background and already obtained results in the topic}
+\input{Sections/Background}
+
+\section{Literature survey}
+\input{Sections/Literature}
+
+\section{Research questions}
+%how can we design feedforward model ...
+\input{Sections/Research_questions}
+
+\section{AI\&ES relevance}
+\input{Sections/Relevance}
+
+\section{Research methods}
+% Probeer settling time wiskundig te specificeren
+
+% closed-loop ID
+% inversion / feedforward
+% precision motion context
+% orthogonality PGNN
+% MIMO/dual-gantry decoupling
+
+\input{Sections/Research_methods}
+
+\section{Expected outcomes of the project}
+% grotendeels herhalen problem statement/research question, verwachten .. verwachten. in de vorm van code. wat wil ASMPT
+\input{Sections/Expected_outcomes}
+
+\section{Time planning}
+
+\input{Sections/Planning}
+
+\newpage
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+\end{document}

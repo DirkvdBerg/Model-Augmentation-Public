@@ -1,0 +1,157 @@
+% Lumped-parameter model of the dual-drive H-type gantry stage
+% Geometry reconstructed from Garcia-Herreros et al. (2013), Fig. 2.
+% Requires: \usepackage{tikz} \usetikzlibrary{arrows.meta,calc}
+%
+% Coordinates: 1 unit = 1 pt of the original figure, origin = cross-arm CoM.
+% Everything on the cross-arm is drawn in its own rotated frame (u along the
+% beam, v perpendicular), so changing \th or \Yp moves all attached parts.
+\begin{tikzpicture}[
+    x=0.3mm, y=0.3mm,                       % overall scale
+    line width=0.45pt, line cap=round, line join=round,
+    >={Triangle[length=3.2pt,width=2.8pt]},
+    lbl/.style={inner sep=0pt, anchor=base west},
+    dim/.style={line width=0.4pt, dash pattern=on 3pt off 1.1pt on 0.4pt off 1.1pt},
+    cl/.style={gray, line width=0.3pt, dash pattern=on 4pt off 1pt on 0.4pt off 1pt},
+    ref/.style={blue!70, line width=0.3pt, dash pattern=on 1.2pt off 0.8pt},
+  ]
+  % ---------------- parameters ----------------
+  \def\th{9.25}      % yaw angle Theta [deg]
+  \def\Lb{152.5}     % cross-arm length
+  \def\Wb{24.5}      % cross-arm width
+  \def\Yp{-42.1}     % payload position along cross-arm (u)
+  \def\Lh{26.5}      % payload length
+  \def\Hh{19.3}      % payload height
+  \def\rw{3.7}       % payload wheel radius
+  \def\Mw{34.7}      % actuator mass box size
+  \def\xMa{121.2}    % x-centre of m1
+  \def\xMb{-117.45}  % x-centre of m2
+  \pgfmathsetmacro\yE{0.5*\Lb*sin(\th)}   % height of beam ends
+  \pgfmathsetmacro\yA{\yE+2.4}     % m1 row height (original is slightly offset)
+  \pgfmathsetmacro\yB{-\yE}        % m2 row height
+  \pgfmathsetmacro\hb{0.5*\Wb}
+  \pgfmathsetmacro\vh{\hb+2*\rw+0.5*\Hh}  % payload centre height (v)
+
+  % ================= cross-arm frame =================
+  \begin{scope}[rotate=\th]
+    % beam + centreline
+    \draw (-\Lb/2,-\hb) rectangle (\Lb/2,\hb);
+    \draw[cl] (-0.56*\Lb,0) -- (0.57*\Lb,0);
+    \coordinate (E1) at (\Lb/2,0);
+    \coordinate (E2) at (-\Lb/2,0);
+
+    % payload m_h with wheels
+    \draw[fill=white] (\Yp-\Lh/2,\vh-\Hh/2) rectangle (\Yp+\Lh/2,\vh+\Hh/2);
+    \draw (\Yp-7.25,\hb+\rw) circle (\rw)  (\Yp+7.25,\hb+\rw) circle (\rw);
+    \node at (\Yp,\vh) {$m_h$};
+
+    % payload axis (dotted blue, perpendicular to beam)
+    \coordinate (P) at (\Yp,-1.5);
+    \draw[ref] (P) -- ++(0,104);
+
+    % d
+    \draw[<->] (\Yp+20.4,0) -- (\Yp+20.4,\vh-0.9);
+    \node[lbl] at (\Yp+22.2,13.7) {$d$};
+
+    % L_h
+    \draw[line width=0.35pt] (\Yp-\Lh/2,\vh+\Hh/2+1) -- ++(0,10)
+                             (\Yp+\Lh/2,\vh+\Hh/2+1) -- ++(0,10);
+    \draw[<->] (\Yp-\Lh/2,\vh+\Hh/2+7) -- (\Yp+\Lh/2,\vh+\Hh/2+7);
+    \node[lbl] at (\Yp-5.1,52.9) {$L_h$};
+
+    % F_y - c_cy sign(Ydot)
+    \draw[->] (\Yp+54.4,\vh-0.5) -- (\Yp+\Lh/2,\vh-0.5);
+    \node[lbl] at (\Yp+27.9,38.7) {$F_y - c_{cy}\,\mathrm{sign}(\dot{Y})$};
+
+    % c_y Ydot
+    \draw[->] (\Yp-26.1,\hb+\rw) -- (\Yp-7.25-\rw,\hb+\rw);
+    \node[lbl] at (\Yp-45.3,15.6) {$c_y\dot{Y}$};
+
+    % Y (red)
+    \begin{scope}[red]
+      \draw[dim] (0,13.7) -- (0,63.3);
+      \draw[line width=0.35pt] (0,64.5) -- ++(0,10.5)  (\Yp+0.6,63.6) -- ++(0,10.5);
+      \draw[->] (0,69) -- (\Yp+0.6,69);
+      \node[lbl] at (\Yp+16.8,75.1) {$Y$};
+    \end{scope}
+
+    % L_b, k_b1 c_b1, k_b2 c_b2
+    \draw[dim] (\Lb/2,-\hb-1.5) -- ++(0,-25.5)  (-\Lb/2,-\hb-2.6) -- ++(0,-25.5);
+    \draw[<->] (-\Lb/2,-30.2) -- (\Lb/2,-30.2);
+    \node[lbl] at (-1.2,-23.7) {$L_b$};
+    \node[lbl] at (75.2,-25.5)  {$k_{b1},\, c_{b1}$};
+    \node[lbl] at (-111.2,-23.1) {$k_{b2},\, c_{b2}$};
+  \end{scope}
+
+  % ---------- yaw reference at the payload (Theta, top) ----------
+  \draw[ref] (P) -- ++(0,102.5);
+  \draw[ref, line width=0.4pt] ($(P)+(90:83)$) arc[start angle=90, end angle=90+\th, radius=83];
+  \node[lbl, blue] at (-53.5,81.2) {$\Theta$};
+
+  % ---------- CoM, X and Theta at CoM ----------
+  \begin{scope}[blue]
+    \draw[->] (0,-5.2) -- (0,-29.2);
+    \draw (4.6,0) -- (46.3,0);
+    \draw (0,0) ++(0:43) arc[start angle=0, end angle=\th, radius=43];
+    \node[lbl] at (48.6,-3.3) {$\Theta$};
+    \node[lbl] at (-4.9,-42.5) {$X$};
+  \end{scope}
+  \fill[white] (0,0) circle (4.3);
+  \fill (0,0) -- (4.3,0) arc[start angle=0, end angle=-90, radius=4.3] -- cycle
+        (0,0) -- (-4.3,0) arc[start angle=180, end angle=90, radius=4.3] -- cycle;
+  \draw (0,0) circle (4.3);
+  \node[lbl] at (-17.1,-8.5) {$m_b$};
+
+  % ================= actuators =================
+  % m1 (right) and m2 (left)
+  \draw (\xMa-\Mw/2,\yA-\Mw/2) rectangle (\xMa+\Mw/2,\yA+\Mw/2);
+  \node at (\xMa,\yA) {$m_1$};
+  \draw (\xMb-\Mw/2,\yB-\Mw/2) rectangle (\xMb+\Mw/2,\yB+\Mw/2);
+  \node at (\xMb,\yB) {$m_2$};
+
+  % torsional springs k_b between beam ends and actuators
+  \foreach \E/\xs/\ys/\xm/\ph/\sg in {E1/89.4/\yA-0.6/\xMa/8/1, E2/-85.8/\yB-2.2/\xMb/168/-1}{
+    \draw (\xs,\ys) -- (\E);
+    \draw[line width=0.4pt] plot[domain=0:540, samples=100, smooth]   % 1.5-turn spiral
+          ({\xs+(3.4+3.9*\x/540)*cos(\ph-\sg*(\x-540))}, {\ys+(3.4+3.9*\x/540)*sin(\ph-\sg*(\x-540))});
+    \draw ($(\xs,\ys)+(\ph:7.3)$) -- (\xm-\sg*\Mw/2,{\ys+7.3*sin(\ph)});
+  }
+
+  % guides: bearings + hatched walls
+  \foreach \xb/\yc/\yw/\sg in {143.8/\yA/\yA+2.3/1, -140.2/\yB/\yB+0.6/-1}{
+    \draw (\xb,\yc+11.6) circle (5.35)  (\xb,\yc-11.6) circle (5.35);
+    \draw (\xb+\sg*5.6,\yw-22.05) -- (\xb+\sg*5.6,\yw+22.05);
+    \foreach \k in {0,...,5}
+      \draw[line width=0.35pt] (\xb+\sg*5.6,\yw+22.05-2.1-7.5*\k) -- ++(\sg*7,-7.5);
+  }
+
+  % actuator forces and viscous friction
+  \draw[->] (\xMa,\yA+51.5) -- (\xMa,\yA+\Mw/2);
+  \node[lbl] at (82,69.1)    {$F_1 - c_{c1}\,\mathrm{sign}(\dot{X}_1)$};
+  \draw[->] (\xMb,\yB+52.4) -- (\xMb,\yB+\Mw/2);
+  \node[lbl] at (-158.9,44.3) {$F_2 - c_{c2}\,\mathrm{sign}(\dot{X}_2)$};
+  \draw[->] (143.8,\yA-51.2) -- (143.8,\yA-17);
+  \node[lbl] at (126.3,-50.9) {$c_{g1}\dot{X}_1$};
+  \draw[->] (-140.2,\yB-51.3) -- (-140.2,\yB-17);
+  \node[lbl] at (-157.6,-80.4) {$c_{g2}\dot{X}_2$};
+
+  % measured positions X1, X2 (red)
+  \begin{scope}[red]
+    \draw (159,\yA+5) -- (159,\yA-4.2)  (159,\yA+0.8) -- (165.9,\yA+0.8);
+    \draw[->] (165.9,\yA+0.8) -- (165.9,\yA-29.3);
+    \node[lbl] at (161.5,-26) {$X_1$};
+    \draw (-154.8,\yB+3.5) -- (-154.8,\yB-5.7)  (-154.8,\yB-0.8) -- (-161.5,\yB-0.8);
+    \draw[->] (-161.5,\yB-0.8) -- (-161.5,\yB-30.8);
+    \node[lbl] at (-165.8,-54.6) {$X_2$};
+  \end{scope}
+
+  % ================= inertial frame =================
+  \begin{scope}[shift={(-0.6,-58)}]
+    \draw[->] (0,-2.6) -- (0,-23.9);
+    \draw[->] (-2.6,0) -- (-23.9,0);
+    \draw[fill=white] (0,0) circle (2.6);
+    \draw[line width=0.35pt] (-1.84,-1.84) -- (1.84,1.84)  (-1.84,1.84) -- (1.84,-1.84);
+    \node[lbl] at (-32.8,-2.6) {$y$};
+    \node[lbl] at (3.3,0.3)    {$z$};
+    \node[lbl] at (-4.1,-32.4) {$x$};
+  \end{scope}
+\end{tikzpicture}

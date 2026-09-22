@@ -1,4 +1,15 @@
 % Page budget: 0.45 pages | Owns: concise answer, supported contribution, limitations, and final takeaway.
+% WRITING GUIDE
+% Purpose: Give the shortest defensible answer to the research question and the practical recommendation that follows.
+% Start here: The final Discussion section and the headline quantitative results from Section 06.
+% Supporting material: Final comparison table and the latest scope decisions in docs/decisions.md.
+% Research-plan anchor: Answer the approved objective substantively without mechanically repeating every research-question label; distinguish achieved contributions from proposed outcomes.
+% Current decisions: State prediction benefit, added-state contribution, OBC guarantee, and black-box comparison only at the level supported by evidence.
+% Implementation audit: Confirm that every named contribution exists in the final code path and every conclusion points to a reported result.
+% Reference check: Normally introduce no new reference; reuse only verified sources already needed to identify the method or research context.
+% Cautions: Add no new method, citation, experiment, or future-work argument here.
+% Planned figures: None.
+% Section is finished when: It contains one direct answer, the central limitation, and one practical recommendation without repeating the discussion.
 \section{Conclusion}
 
 \subsection{Conclusions}
@@ -7,6 +18,8 @@
 \item State whether the learned additional states contributed measurable missing dynamics under the final validated configuration
 \item Conclude that state-level OBC prevents local tangent overlap by construction, while true parameters are recovered only when the physical discrepancy is orthogonal on the chosen excitation
 \item Give the final quantitative trade between prediction error and physical combination error on held-out data
+\item State whether the evidence covers relevant ASMPT motion, settling, controller transfer, or only a narrower simulation validation ladder
 \item Close with the practical recommendation for when ASMPT should use the augmented model and when the baseline or a simpler residual model is safer
+\item Figure plan: no conclusion figure; reserve the space for the final quantitative answer and limitations
 \end{itemize}
 \todo{Rewrite every conclusion bullet after freezing the final result table; no planned or diagnostic result may appear as achieved.}

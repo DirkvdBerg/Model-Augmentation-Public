@@ -1,4 +1,16 @@
 % Page budget: 0.90 pages | Owns: answers to the research question, interpretation, limitations, departures, and industrial meaning.
+% WRITING GUIDE
+% Purpose: Interpret the final evidence, reconcile prediction and interpretability, and state the limits of the conclusions.
+% Start here: The frozen Results section and its acceptance criteria.
+% Supporting material: Quinten's 18 September outline feedback, the Meeting-audit synthesis, docs/closed-loop-training-findings-2026-08-28.md, supervisor-summary-2026-08-30.md, and newer decisions that confirm or supersede them.
+% Research-plan anchor: Answer all four planned aspects and explain why any original expected outcome was not reached or was reformulated.
+% Current decisions: Separate local decomposition uniqueness, true-parameter recovery, closed-loop fit, autonomous prediction, interpolation, and extrapolation.
+% Choices to justify: Which result is primary, which limitations change the answer, and which unsuccessful choices are scientifically informative rather than implementation history.
+% Implementation audit: Recheck every causal explanation against the implemented objective, routing, controller, OBC construction, and diagnostic intervention before stating it as a mechanism.
+% Reference check: Cite literature for general interpretation and known limitations; do not use a citation to replace project evidence for what this implementation did.
+% Cautions: Do not introduce new results; distinguish limitations demonstrated by evidence from plausible future risks.
+% Planned figures: None; interpret figures already introduced.
+% Section is finished when: The main research question has a direct answer and each limitation states exactly which claim it restricts.
 \section{Discussion}
 
 \subsection{Answers to the four research aspects}
@@ -7,7 +19,9 @@
 \item Aspect 2: distinguish the expressive value of dynamic augmentation from the observed trainability of its added states
 \item Aspect 3: conclude that OBC enforces a unique local split but true parameter recovery is conditional on the real discrepancy's orthogonality and optimiser convergence
 \item Aspect 4: compare simulation interpolation, motion-profile transfer, amplitude extrapolation, real-data evidence, and the black-box result without merging them into one score
+\item Treat controller transfer as the industrial digital-twin use case and as a closed-loop distribution shift distinct from operating-range extrapolation
 \item Interpretability matters when physical parameters support controller redesign or health monitoring, but its practical value must be tied to a named downstream decision
+\item Figure plan: introduce no new figure; interpret the architecture, OBC, and result figures already presented instead of adding a summary graphic
 \end{itemize}
 \todo{Which result is the primary answer if predictive accuracy and parameter recovery favour different arms?}
 
@@ -15,7 +29,8 @@
 \begin{itemize}
 \item Closed-loop feedback improves numerical trainability but can hide plant mismatch, suppress orthogonality overlap, and reward a model that is poor in open loop
 \item Short windows underweight velocity DC bias on free integrators; varying encoder and rollout length is therefore a structural sensitivity test, not routine tuning
-\item One absorber, noiseless simulation, one main seed, and an incomplete friction benchmark limit claims about nonlinear, noisy, and dissipative missing dynamics
+\item One strengthened absorber, currently noiseless simulation, a finite neural-seed campaign, and truth-only dry friction bound claims about nonlinear, noisy, and dissipative missing dynamics
+\item State the final seed count and corrected-friction evidence here; do not retain development-era caveats after the final campaign changes them
 \item Central-difference velocities, force calibration, and the train-validation-test coverage grid bound the credibility of any real-data conclusion
 \item The research plan expected validated real-machine generalisation; any missing Telica result is a departure to disclose, not replace with design documentation
 \item Augmentation versus residual-FRF fitting remains a trade between trajectory-domain nonlinear prediction and a simpler frequency-domain account of missing dynamics

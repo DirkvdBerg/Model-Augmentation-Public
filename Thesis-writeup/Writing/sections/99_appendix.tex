@@ -1,4 +1,16 @@
 % Page budget: 0.30 pages | Owns: derivation details and reproducibility items needed for audit but not for the main argument.
+% WRITING GUIDE
+% Purpose: Preserve derivation and reproducibility details required to audit the paper without interrupting its main argument.
+% Start here: Material explicitly deferred from Sections 02, 04, and 05 during page-budget editing.
+% Supporting material: LPV_LFR_internal_loop_Well_posedness, LPV_Mass_invertible, LPV_LFR_Rational_rewrite, current OBC derivations, and final run manifests.
+% Research-plan anchor: Include only technical detail needed to support a retained plan claim or documented departure.
+% Current decisions: Prefer repository or archival references for bulky matrices and configurations when permitted by the examination format.
+% Choices to justify: Numerical tolerances, optimizer settings, architecture details, secondary diagnostics, and any setting omitted from the main method discussion.
+% Implementation audit: Compare all printed matrices, algorithms, parameter maps, and configuration listings directly with the final code that produced the results.
+% Reference check: Keep source-derived results attributed and own derivations labelled; include only bibliography entries whose metadata and supporting content have been verified.
+% Cautions: Verify whether the appendix counts toward the 12-page limit; do not use it as storage for unfinished analysis.
+% Planned figures: Optional normalization and controller-chain audit figures only if equations and prose are insufficient.
+% Section is finished when: Every appendix item is referenced from the main paper and necessary for verification or reproducibility.
 \section{Supporting Derivations and Reproducibility}
 
 \subsection{Baseline and LFR details}
@@ -6,6 +18,7 @@
 \item Give the logical-to-stage transformation, expanded inertia matrix, and proof of invertibility over the operating range
 \item List the compressed LPV-LFR matrices and internal signal dimensions needed to reproduce the baseline transition
 \item Provide the raw-to-identifiable parameter map and its Jacobian rank
+\item Figure (existing, optional): move the detailed coordinate and normalisation flow from \texttt{coordinates-normalisation-v1} here after checking derivative and scaling conventions
 \end{itemize}
 \todo{Move these items into supplementary material if appendices count toward the 12-page limit.}
 
@@ -14,5 +27,6 @@
 \item Derive the stacked projector, rank-deficient pseudoinverse case, epoch refresh, and additional-state zero extension
 \item Derive $J^+\Delta^*$ and list the measured singular-direction contributions to the predicted parameter bias
 \item List dataset identifiers, split membership, hyperparameters, seed, and exact metric definitions for every reported arm
+\item Figure (existing, optional): place \texttt{controller-chain-v1} here only if the controller reconstruction cannot be audited adequately in prose and equations
 \end{itemize}
 \todo{Can code and data tables be cited through a repository or DOI instead of spending paper space on full reproducibility metadata?}

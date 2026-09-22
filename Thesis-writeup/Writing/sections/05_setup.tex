@@ -1,4 +1,17 @@
 % Page budget: 1.50 pages | Owns: datasets, splits, excitation, preprocessing, comparators, metrics, and experimental protocol.
+% WRITING GUIDE
+% Purpose: Make the simulation and real-data evaluation reproducible and define fair comparisons before showing outcomes.
+% Start here: docs/kamtin-telica-schema.md and the final experiment configurations named by the latest decisions.
+% Supporting material: Quinten's 18 September outline feedback, the Meeting-audit synthesis, Decisions D-188 and D-204 to D-208, current data-generation documents, controller verification records, and final run manifests.
+% Research-plan anchor: Preserve the planned interpolation, generalisation, and black-box questions; update datasets, horizons, excitation, and preprocessing to what was actually used.
+% Current decisions: Independent phases, held-out positions, multisine-free motion, truth-only friction or absorber variants, matched budgets, and long-horizon evaluation.
+% Choices to justify: Operating-point grid, ASMPT motion profiles, frequency bands, amplitudes, phase realizations, crest-factor selection, record length, sample rate, split sizes, window sampling, settling interval, primary metric, seed policy, comparator capacity, noise status, and all tuned hyperparameters.
+% Hyperparameter check: Classify each important setting as physics-derived, inherited, validation-tuned, safety-constrained, or compute-constrained; give a sensitivity result for settings that could change the conclusion.
+% Implementation audit: Read gantry_dynamic/{config,data,controller,training,evaluation}.py, the final run configuration, and lpv_lfr_baseline/scripts/data_utils.py for every stated split, unit, horizon, and metric.
+% Reference check: Cite literature for established identification, excitation, and evaluation choices; describe project-specific splits and preprocessing from code without presenting them as literature claims.
+% Cautions: Plans are not evidence; use the corrected matched friction dataset only; do not call a generated profile ASMPT-relevant until its motion parameters are confirmed; keep oracle states outside the trainable pipeline.
+% Planned figures: Reuse the training-horizon strip and show a 2D train, validation, and test operating-point coverage map; use 3D only if the third coordinate communicates additional coverage rather than visual clutter.
+% Section is finished when: Every dataset, split, unit, horizon, comparator, metric, seed policy, and checkpoint rule is unambiguous.
 \section{Experimental Setup}
 
 \subsection{Simulation benchmark and excitation}
@@ -7,32 +20,36 @@
 \item Use multisine excitation that covers the absorber pole and anti-resonance while respecting position, velocity, yaw, and force limits
 \item Assign independent random multisine phases to training, validation, and test records so equal spectra do not duplicate trajectories
 \item Include multisine-free cycloidal motion profiles matching the measured machine motion to test the operational distribution shift
-\item Treat the Coulomb-friction benchmark as pending because the current friction and frictionless datasets have mismatched excitation amplitudes
+\item Use only the corrected all-channel Coulomb dataset matched to the frictionless excitation; the earlier mismatched-amplitude merge is superseded
+\item State that output noise is currently disabled; add it only if a level and measurement location can be estimated from Jasper, ILC data, or stationary records
 \item State the sample rates, record lengths, number of windows, and total independent motion time rather than quoting overlapping-window count as data volume
+\item Figure (reuse, no separate asset): let the rebuilt training-objective time strip also identify independent phases, short training windows, encoder history, and the long evaluation horizon
 \end{itemize}
 \todo{Is the hidden linear absorber sufficient simulation complexity, or is a truth-only cubic spring required to demonstrate nonlinear augmentation?}
 
 \subsection{Real Telica data and split}
 \begin{itemize}
+\item Confirm with Jasper and Dragan which reconstructed ETEL setpoint-generator or ILC-reference motions are operationally representative, including minimum/maximum move, long stroke, acceleration, and dwell
 \item Use the supervisor-defined split of 11 training, two validation, and two test operating points at 20 kHz
 \item Convert rail positions and currents to logical metres and Newtons; form velocity states by central differences because direct velocity is not logged
 \item Keep all iterations at one operating point in the same split to prevent identical reference trajectories leaking across sets
 \item Describe the $X$ and $Y$ operating-point grid and show whether training covers the interpolation region occupied by both test points
 \item Use iteration 0 for controller checks and later ILC iterations for distinct feedforward conditions without treating them as independent trajectories
 \item Mark real-data training and held-out evaluation as planned until a final reproducible run and force-calibration convention exist
+\item Figure (new): 2D operating-point grid with train, validation, and test locations, operating-range boundary, and trajectory classes; add a 3D or pairwise state-input coverage view only if it reveals coverage hidden by the 2D map
 \end{itemize}
-\todo{Should direct drive velocity be requested, and should coverage be shown as a 2D position grid or a 3D state-input occupancy plot?}
+\todo{Freeze the approved operational trajectory set with Jasper and Dragan; should direct drive velocity be requested, and does a third coverage coordinate add information beyond the 2D grid?}
 
 \subsection{Training protocol, comparators, and metrics}
 \begin{itemize}
-\item Match records, seeds, windows, optimiser budget, and checkpoint criterion across baseline-only, unconstrained, tangent-OBC, affine-OBC, and black-box arms
-\item Compare short-horizon normalised RMS used for optimisation with 12 s free-run RMS, BFR, settling error, and per-channel spectra
+\item Match records, neural seeds, windows, optimiser budget, and checkpoint criterion across baseline-only, unconstrained, tangent-OBC, affine-OBC, and black-box arms; treat multisine phase seeds separately
+\item Use physical RMS as the primary candidate metric for tracking and a fixed 200--400 ms post-move settling interval; use NRMS, BFR, or spectra only for a distinct supporting question
 \item Report physical combination error, projection overlap, added-state ablations, and encoder-init sensitivity alongside predictive metrics
-\item Give the black-box model enough capacity and horizon to be a capability comparison, while disclosing its failed long-horizon training behaviour
-\item Evaluate interpolation across held-out payload positions, unseen multisine phase, multisine-free motion, and amplitude extrapolation separately
+\item Give the black-box model validation-selected capacity and horizon so it is a capability comparison rather than an artificially weakened baseline
+\item Evaluate held-out position/phase interpolation, ASMPT-relevant multisine-free motion, controller transfer, and operating-range extrapolation as separate rungs
 \item Predeclare expectation, acceptance criterion, verdict, and mechanism for every result rather than presenting isolated scores
 \end{itemize}
-\todo{Are multiple seeds or a Monte Carlo study required, and which uncertainty source should it sample: initialisation, noise, phase, or operating point?}
+\todo{Decide the primary metric, credible controller-transfer arm, and feasible neural-seed count; do not pool initialization, noise, phase, and operating-point uncertainty.}
 
 \subsection{Reproducibility and implementation checks}
 \begin{itemize}
@@ -40,5 +57,6 @@
 \item Use the same controller, data conversion, and rollout entry point for training, validation, and checkpoint selection
 \item Record configuration, software precision, seed, dataset identifier, and checkpoint provenance for every reported arm
 \item Keep oracle states and truth parameters out of the trainable pipeline and label every diagnostic that uses them
+\item Figure (existing, appendix candidate): use \texttt{controller-chain-v1} only as an audit trail for controller reconstruction and discretisation, not as a main method figure
 \end{itemize}
 \todo{Which implementation checks belong in the main paper, and which should move to the appendix or repository documentation?}

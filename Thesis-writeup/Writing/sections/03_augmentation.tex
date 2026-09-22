@@ -1,4 +1,18 @@
 % Page budget: 1.55 pages | Owns: augmentation topology, additional states, encoder, closed-loop objective, and method alternatives.
+% WRITING GUIDE
+% Purpose: Define the final augmentation architecture and explain how it is trained inside the known feedback loop.
+% Start here: Current implementation decisions D-129, D-140, D-141, D-150, D-151, D-160, D-178, and D-180 in docs/decisions.md.
+% Supporting material: Quinten's 18 September outline feedback, the Meeting-audit synthesis, docs/gantry-augmentation-problem-log.md, closed-loop-training-findings-2026-08-28.md, supervisor-summary-2026-08-30.md, and docs/writeup figures.
+% Mandatory papers: Read Hoekstra's 2025 LFR augmentation paper, the 2026 first-principles augmentation paper, and the encoder-initialization paper before writing this section.
+% Research-plan anchor: Preserve Aspect 2's dynamic parallel augmentation objective; document the departure from open-loop training and earlier state routing.
+% Current decisions: Separate physical and additional states, keep the controller outside the model, score the complete training window without burn-in, and treat added-state dynamics as Jacobian blocks of the shared MLP.
+% Choices to justify: Final reported routing, added-state dimension, ANN width and depth, zero initialization, encoder history, closed-loop objective, rollout length, full-window scoring, and validation horizon. Do not inherit the rationale of a superseded routing experiment.
+% Horizon check: Treat encoder history, scored training window, joint-estimation horizon, and free-run validation horizon separately; relate candidates to relevant stable modes and test sensitivity to slower dynamics and free-integrator accumulation.
+% Implementation audit: Read scripts/gantry/gantry_interconnect_dynamic.py, gantry_dynamic/{model,config,controller,data,training}.py, and model_augmentation/fit_systems/{interconnect,closed_loop,augmented_dynamics,pre_encoder}.py.
+% Reference check: Verify sources for parallel LFR augmentation, encoder initialisation, closed-loop state extension, and any claimed architectural precedent against the original paper or thesis.
+% Cautions: Earlier routing plans are superseded; distinguish the truth-only hidden absorber from learned states; closed-loop fit alone does not prove autonomous plant recovery.
+% Planned figures: Revised augmentation topology, closed-loop residual construction, and one shared training-horizon strip.
+% Section is finished when: Every signal has a defined frame and timing, the RK4 boundary is explicit, and the described architecture matches the final code.
 \section{Dynamic LPV-LFR Augmentation}
 
 \subsection{Parallel augmentation with additional states}
@@ -8,6 +22,8 @@
 \item Explain why dynamic states are needed for an omitted resonance and why static output correction or parameter re-estimation cannot create new poles
 \item Define the state router, ANN inputs, zero output readout at initialisation, and the recurrent path by which additional states affect later physical outputs
 \item The additional-state Jacobian blocks replace any claim that the learned states possess separate explicit $A$ and $B$ matrices
+\item Figure (existing, major revision): simplify \texttt{jan-blockscheme-v5} to baseline, ANN, router, physical states, additional states, and output; remove experiment-specific blocks unless they remain in the final model
+\item Figure change: separate the continuous-time derivative model from one explicit RK4 block at $T_s$, and label the state register by $\hat x_{k+1}\!\rightarrow\!\hat x_k$ so it is not mistaken for a plant delay
 \end{itemize}
 \todo{How many added states can be justified from the omitted-mode physics rather than selected only by validation performance?}
 
@@ -23,11 +39,15 @@
 
 \subsection{Closed-loop rollout objective}
 \begin{itemize}
+\item Motivate the formulation from the industrial constraint that relevant machine data are obtained under feedback; the integrating axes explain the resulting long-horizon sensitivity rather than the existence of the problem
 \item Drive the model with $\hat u_k=u_k+C_{fb}(y_k-\hat y_k)$ so the simulated linear controller reacts to model error as the machine controller did
 \item Derive the residual form from controller linearity only and cite direct closed-loop augmentation as the published fallback for nonlinear controllers \cite{kessels2025ai}
 \item Closed-loop training avoids reconstructing plant and controller states before every window because their prior response is already carried by recorded input
 \item Mark the departure from the research plan's open-loop free-run training and explain that feedback can hide model error and orthogonality overlap
-\item Train on short normalised windows with burn-in, but select and report on long free runs to expose integrated velocity bias
+\item Train on short normalised windows and score the complete window without burn-in, but select and report on long free runs to expose integrated velocity bias
+\item Define controller-transfer validation separately: identify with the training controller, then evaluate a frozen credible alternative controller without calling that change plant extrapolation by itself
+\item Figure (existing, revise): retain the three-part derivation in \texttt{closed-loop-form-v4}, simplify the explanatory text, and make the final residual rollout equation the visual conclusion
+\item Figure (existing template, rebuild): replace the open-loop claim in \texttt{training-objective-v1} with a time strip for encoder history, the fully scored closed-loop rollout, and long-horizon validation
 \end{itemize}
 \todo{Can ASMPT confirm saturation, anti-windup, and within-record controller scheduling, the three assumptions that determine whether the residual form is valid?}
 

@@ -1,4 +1,17 @@
 % Page budget: 1.55 pages | Owns: negation, OBC derivation, additional-state scope, implementation, and true-parameter condition.
+% WRITING GUIDE
+% Purpose: Explain negation, derive the final state-level orthogonal-by-construction map, and delimit its interpretability guarantee.
+% Start here: Decisions D-185, D-190, D-192, D-194, D-198, and D-200 to D-203 in docs/decisions.md.
+% Supporting material: Current state-level OBC derivations under scripts/gantry/orthogonal-by-construction/documentation and their thesis-readiness guidance.
+% Mandatory papers: Read Györök's projection-regularization paper and orthogonal-by-construction paper in full before writing; keep their guarantees and assumptions separate.
+% Research-plan anchor: Preserve Aspect 3's goal of protecting physical interpretability; state clearly how the final construction differs from the proposed regularisation.
+% Current decisions: Reduced identifiable coordinates, data-derived reference tuples, one-step physical-state projection, per-epoch refresh, and a separate affine arm.
+% Choices to justify: Protected parameter coordinates, reference-set construction, projected rows, rank tolerance, tangent versus affine basis, refresh frequency, and treatment of additional states.
+% Implementation audit: Read model_augmentation/fit_systems/obc.py, scripts/gantry/gantry_dynamic/obc_gantry.py, obc_diagnostics.py, and the OBC attachment in model.py before fixing the derivation.
+% Reference check: Verify the original projection method and separate its claims from the state-level, nonlinear-parameter, LPV, and additional-state extensions developed here.
+% Cautions: docs/orthogonal-projection-plan.md describes an older soft-penalty route; one-step state orthogonality is not trajectory-output orthogonality or guaranteed true recovery.
+% Planned figures: New geometric projection figure with a physical and additional-state partition inset; show the remaining uniqueness limitation as clearly as the protected direction.
+% Section is finished when: The protected space, coordinate frame, gradient treatment, added-state scope, and true-recovery condition are explicit.
 \section{Interpretability by Orthogonal Construction}
 
 \subsection{Negation and the protected tangent space}
@@ -8,6 +21,8 @@
 \item Stack one-step sensitivities $J=\partial f_\theta/\partial\theta$ over a data-derived reference set in normalised state coordinates
 \item Protect the rank-ten tangent space and compare the optional affine-offset column as a separate arm rather than silently changing the definition
 \item Report tangent-space rank, condition number, and correlated sensitivity columns before interpreting parameter recovery
+\item Figure (new): geometric decomposition $g=P_Jg+(I-P_J)g$ showing the baseline-aligned correction removed and the orthogonal correction retained
+\item Use the same figure to show that local tangent separation does not imply global, trajectory-level, or latent-state uniqueness
 \end{itemize}
 \todo{Should the thesis call the affine arm a stricter non-negation definition or only a sensitivity analysis around the chosen tangent definition?}
 
@@ -19,6 +34,7 @@
 \item Orthogonality applies to the physical one-step write; additional-state rows are orthogonal to the baseline by the baseline's zero extension
 \item Additional states still propagate into later physical outputs, so one-step state orthogonality does not imply trajectory-output orthogonality
 \item Separate the no-projection, ten-column tangent, and eleven-column affine arms under matched data, initialisation, and optimisation budgets
+\item Figure change: add a small state-partition inset showing projection on physical rows, unrestricted additional-state rows, and their delayed influence through recurrent propagation rather than a direct output path
 \end{itemize}
 \todo{Is one-step state orthogonality the intended thesis contribution, or must the trajectory-level penalty also appear despite its unresolved weight selection?}
 

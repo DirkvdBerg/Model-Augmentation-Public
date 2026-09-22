@@ -1,0 +1,90 @@
+\subsection{Aspect 1: Position-Dependent Baseline Modeling}
+
+\subsection*{Aspect}
+How should the baseline physics model of the dual-gantry system be formulated and converted into a discrete-time LPV state-space model, and when is a frozen LTI comparison meaningful?
+
+\subsubsection{Research method}
+
+The baseline model is taken from \citet{garcia2013model}, who formulate the dual-drive H-type gantry as a lumped-parameter mechanical model in the physically meaningful coordinates $(X,\Theta,Y)$, representing cross-arm translation, yaw rotation, and payload motion. This coordinate choice is adopted because it avoids closed kinematic chains in the kinematic description and directly exposes the coupling associated with non-uniform load distribution between the parallel actuators.
+
+The physical parameters of the baseline model will be identified or tuned following the structured procedure proposed by \citet{garcia2013model}. This starts with isolated Y-axis experiments to estimate payload friction and mass, followed by synchronized $(X_1,X_2)$ experiments to identify the remaining cross-arm and actuator parameters. The resulting model serves as the first-principles baseline for the remainder of the project.
+
+Because García's model contains position-dependent mechanical effects associated with payload position, $Y$ will be investigated as the primary scheduling variable for an LPV reformulation. In addition, the payload-acceleration coupling term identified by \citet{garcia2013model} will be examined for possible feedforward compensation, following the decoupling logic in the same paper, to simplify the subsequent LPV reformulation and reduce the likelihood of dynamic scheduling dependence.
+
+Next, the second-order mechanical model will be rewritten in first-order state-space form. During this reformulation, it will be checked explicitly whether the resulting coefficient matrices depend only on the current value of $Y$ or also on derivatives of the scheduling variable. This distinction is important because the discrete-time LPV discretization framework of \citet{toth2010discretization} assumes static scheduling dependence.
+
+If static scheduling dependence is obtained, the continuous-time LPV model will be converted to a discrete-time LPV state-space representation using the framework of \citet{toth2010discretization}. Since the scheduling variable varies continuously in practice, the zero-order-hold assumption used in the discretization is treated as a modeling approximation whose adequacy will be justified by ensuring the chosen sampling period $T_d$ satisfies Tóth's stability bounds (N-stability radius) and performance criteria for the selected discretization method. If the reformulated model exhibits dynamic scheduling dependence, the standard LPV-ZOH discretization framework is not directly applicable, and alternative discretization treatments must be considered. In addition, frozen LTI models at fixed payload positions will be used as comparison cases, since \citet{toth2010modeling} shows that LPV systems reduce to LTI systems for constant scheduling values.
+
+Finally, the invertibility of the position-dependent mass-related matrix will be checked numerically over the operating range. If regular inversion is possible, a standard LPV state-space formulation will be used. If not, alternative descriptor or DAE-based formulations must be considered.
+
+This validated baseline model with its verified position-dependent structure and discrete-time realization (if applicable) serves as the foundation for Research Question 2, where grey-box augmentation structure will be developed to capture flexible cross-coupling dynamics not represented in the García-Herreros lumped-parameter baseline.
+
+\subsubsection{What will you measure?}
+
+The main outputs of this aspect are:
+
+\textbf{(i) Technical deliverables:}
+\begin{itemize}
+    \item Identified physical parameter values for the García-Herreros baseline
+    \item The resulting continuous-time mechanical model
+    \item The derived first-order LPV reformulation and the determination of whether it exhibits static or dynamic scheduling dependence
+    \item The discrete-time realization (if static dependence is obtained and the discretization framework is applicable)
+    \item Verification of mass-matrix invertibility over the operational Y-range
+\end{itemize}
+
+\textbf{(ii) Baseline validation:}  
+Model quality will be assessed by comparing settling error (maximum deviation from reference trajectory during transient) for:
+\begin{itemize}
+    \item Position-dependent LPV baseline vs.
+    \item Frozen LTI baseline(s) at representative fixed payload positions
+\end{itemize}
+
+This comparison will be performed on experimental data from the ASMPT dual-gantry system covering the operational Y-range and typical motion profiles. The outcome determines whether position-dependent modeling measurably improves settling prediction compared to position-independent alternatives, thereby justifying the LPV modeling approach for subsequent grey-box augmentation (Aspect 2).
+
+\subsubsection{What data is needed?}
+
+Structured experimental data are needed for:
+
+\textbf{(i) Parameter identification:} Isolated Y-axis experiments and synchronized $(X_1,X_2)$ motions as described by \citet{garcia2013model}.
+
+\textbf{(ii) Position-dependence validation:} Trajectory data covering the operational Y-range to assess whether the LPV baseline provides improved settling prediction compared to frozen LTI descriptions.
+
+\textbf{(iii) Frozen model comparison:} Experiments at multiple fixed payload positions across the operational Y-range to enable quantitative comparison between position-dependent and position-independent baseline formulations.
+
+\subsubsection{What resources from ASMPT?}
+
+This aspect requires: existing ASMPT baseline models or parameter information for the dual-gantry system (to inform or validate the García-Herreros baseline), access to the dual-gantry experimental setup for parameter identification and validation experiments, system specifications (masses, inertias, geometric dimensions, friction characteristics), and documentation of the operational Y-range and typical motion profiles.
+
+
+
+@article{garcia2013model,
+  author    = {Iván García-Herreros and Ralph Coleman and Pierre-Jean Barre and Julien Gomand and Xavier Kestelyn},
+  title     = {Model-based decoupling control method for dual-drive gantry stages: A case study with experimental validations},
+  journal   = {Control Engineering Practice},
+  volume    = {21},
+  number    = {3},
+  pages     = {298--307},
+  year      = {2013},
+  publisher = {Elsevier}
+}
+
+@article{toth2010discretization,
+  author  = {Roland Tóth and P. S. C. Heuberger and P. M. J. Van den Hof},
+  title   = {On the discretization of {LPV} state-space representations},
+  journal = {IFAC Proceedings Volumes},
+  volume  = {43},
+  number  = {14},
+  pages   = {1--6},
+  year    = {2010},
+  note    = {Published version based on arXiv preprint}
+}
+
+@book{toth2010modeling,
+  author    = {Roland Tóth},
+  title     = {Modeling and Identification of Linear Parameter-Varying Systems},
+  series    = {Lecture Notes in Control and Information Sciences},
+  volume    = {403},
+  publisher = {Springer},
+  year      = {2010},
+  address   = {Berlin, Heidelberg}
+}

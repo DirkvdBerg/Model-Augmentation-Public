@@ -1,4 +1,16 @@
 % Page budget: 2.90 pages | Owns: all quantitative evidence, figure and table claims, criteria, verdicts, and comparison to the black box.
+% WRITING GUIDE
+% Purpose: Answer the research aspects with frozen quantitative evidence, including negative and conditional results.
+% Start here: Final run artefacts and generated figure data; use docs/gantry-augmentation-problem-log.md only to locate and interpret them.
+% Supporting material: Quinten's 18 September outline feedback, final configuration manifests, checkpoint reports, controller checks, OBC monitoring, ablations, and black-box outputs.
+% Research-plan anchor: Evaluate each promised aspect against its original criterion; name any missing or changed experiment as a departure.
+% Current decisions: Every result states expectation, criterion, verdict, and mechanism under matched data and optimisation budgets.
+% Choices to justify: Comparator capacity, matched budget, checkpoint rule, one primary metric, representative ASMPT motion, settling interval, controller-transfer case, figure aggregation, and treatment of neural seeds separately from phase realizations.
+% Implementation audit: Trace figures and tables to gantry_dynamic/evaluation.py, diagnostics.py, obc_diagnostics.py, lpv_lfr_baseline evaluation scripts, final configs, and saved artefacts.
+% Reference check: Results normally cite methods or benchmark definitions, not external authority for the measured outcome; keep internal provenance in captions, configs, and repository records.
+% Cautions: Do not promote preregistrations, implementation plans, diagnostic-only runs, or superseded numbers to final evidence.
+% Planned figures: Use only the result figures and tables named in the subsection bullets; combine panels where they support one claim.
+% Section is finished when: Every number is reproducible, every comparison is fair, and every claimed mechanism has an intervention or derivation behind it.
 \section{Results}
 
 \subsection{Baseline and closed-loop formulation}
@@ -6,7 +18,7 @@
 \item Expectation and criterion: the LPV-LFR and original physics equations agree numerically across the payload range before model-error comparisons are meaningful
 \item Verdict and reason: report inertia invertibility, LFR/RK4 equivalence, and the remaining baseline error caused by the truth-only absorber
 \item Figure: baseline and oracle output errors versus time for representative payload positions; supports the claim that the omitted mode is systematic and position dependent
-\item Table: baseline free-run RMS or BFR for LPV and frozen-LTI models across held-out $Y$; tests the research plan's Aspect 1 rather than assuming LPV superiority
+\item Table: baseline free-run physical RMS for LPV and frozen-LTI models across held-out $Y$; tests the research plan's Aspect 1 rather than assuming LPV superiority
 \item Expectation and criterion: direct and residual closed-loop forms match at numerical precision when controller assumptions hold
 \item Figure: recorded input, controller correction, and model error over one rollout; supports the interpretation that feedback can suppress visible output error while the open-loop model remains wrong
 \end{itemize}
@@ -38,12 +50,13 @@
 
 \subsection{Generalisation and black-box comparison}
 \begin{itemize}
-\item Expectation and criterion: improvement must persist on unseen positions, phases, multisine-free motion, and the real-machine test split without retuning
+\item Expectation and criterion: improvement must progress from held-out position/phase interpolation to ASMPT-relevant motion, controller transfer, and quantified operating-range extrapolation without retuning
 \item Verdict and reason: separate completed simulation evidence from pending Telica results and explain any failure by excitation coverage, initialisation, or objective mismatch
-\item Figure: model error over the held-out cycloidal settling move for baseline, augmented model, and black box; supports the application claim on a machine-like trajectory
-\item Table: RMS, BFR, settling error, parameter availability, and training data for baseline, augmented, and black-box models on every held-out domain
-\item Figure: error versus multisine amplitude or state-input distance from the training set; tests extrapolation rather than calling interpolation generalisation
+\item Figure: tracking overview plus a dedicated 200--400 ms settling zoom for baseline, augmented model, and black box on an approved operational trajectory
+\item Table: primary RMS, fixed-window settling RMS, parameter availability, and training data for baseline, augmented, and black-box models on every completed validation rung
+\item Figure or table: train with one controller and evaluate the frozen models with a credible changed controller; pair this with a plant-domain check for feedback masking
+\item Figure: error versus multisine amplitude, stroke, acceleration, scheduling position, or state-input distance from the training set; quantify extrapolation rather than calling all held-out data extrapolation
 \item Report the black box's early improvement and later free-run degradation as a negative comparator result if no stable matched run supersedes it
-\item Parameter recovery trajectories from the synthetic verification study are contextual only \note{one sentence}
+\item Aggregate the final learned-model comparison across neural initialization seeds and show a representative, not best, time trace; report phase realizations separately
 \end{itemize}
-\todo{What is the minimum final evidence needed before claiming generalisation: Telica test points, multisine-free simulation, amplitude extrapolation, or all three?}
+\todo{Freeze which validation rungs are complete enough for a final claim; omit rather than speculate about unfinished controller, noise, or hardware experiments.}

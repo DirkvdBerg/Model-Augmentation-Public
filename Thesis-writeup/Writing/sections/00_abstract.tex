@@ -1,9 +1,20 @@
 % Page budget: 0.35 pages | Owns: problem, method, principal evidence, conclusion, and index terms.
+% WRITING GUIDE
+% Purpose: State the problem, final method, strongest quantitative evidence, and supported conclusion.
+% Start here: Write this section only after Sections 06 to 08 and the final result table are frozen.
+% Supporting material: Quinten's 18 September outline feedback, final figures, final metric table, and the latest relevant entries in docs/decisions.md.
+% Research-plan anchor: Preserve the application problem and main research aim; replace expected outcomes by measured outcomes.
+% Current decisions: Report only the final baseline, augmentation, OBC, and black-box comparison actually evaluated; name only the completed rungs of the interpolation, operational-motion, controller-transfer, and extrapolation ladder.
+% Implementation audit: Trace every method label and reported metric back to the final pipeline and evaluation code used for the frozen results.
+% Reference check: Normally cite nothing here; if a citation is essential, verify its metadata and supporting passage before enabling it.
+% Cautions: Do not include planned experiments, diagnostic-only numbers, or unverified citations.
+% Planned figures: None.
+% Section is finished when: Every result is numerical, traceable to the final evaluation, and consistent with the conclusion.
 \begin{abstract}
 \begin{itemize}
 \item Problem: improve settling prediction for a position-dependent dual gantry without surrendering the meaning of its physical parameters
 \item Method: combine a quasi-LPV first-principles baseline, dynamic parallel LFR augmentation, closed-loop rollout training, and state-level orthogonal projection
-\item Evidence: compare baseline, unconstrained augmentation, orthogonal variants, and a black-box model on held-out positions and motion profiles
+\item Evidence: compare baseline, unconstrained augmentation, orthogonal variants, and a black-box model on the completed validation ladder, including relevant motion and settling where available
 \item Main result: report predictive improvement together with the measured limits from short-horizon training, inactive added states, and non-orthogonal true missing dynamics
 \item Conclusion: state when the proposed decomposition is useful and which conditions prevent interpreting it as true parameter recovery
 \end{itemize}

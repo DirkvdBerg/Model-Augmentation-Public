@@ -1,0 +1,91 @@
+\begin{center}
+\footnotesize
+\begin{ganttchart}[
+    x unit=0.31cm,
+    y unit chart=0.58cm,
+    y unit title=0.45cm,
+    vgrid,
+    hgrid,
+    title height=1,
+    title label font=\scriptsize\bfseries,
+    bar height=0.42,
+    milestone height=0.24,
+    milestone top shift=0.08,
+    progress label text={},
+    bar label font=\footnotesize,
+    milestone label font=\scriptsize\bfseries,
+    bar label node/.append style={align=right,text width=4.1cm},
+    milestone label node/.append style={above=1pt},
+    bar/.append style={fill=barblue!70, draw=barblue!90!black},
+    milestone/.append style={fill=deadlinered, draw=deadlinered},
+    link/.style={-Latex, draw=black!55, line width=0.45pt},
+    link bulge=0.35
+]{1}{28}
+
+% Header
+\gantttitle{Graduation project planning}{28} \\
+\gantttitle{Mar}{3}
+\gantttitle{Apr}{4}
+\gantttitle{May}{4}
+\gantttitle{Jun}{5}
+\gantttitle{Jul}{4}
+\gantttitle{Aug}{4}
+\gantttitle{Sep}{4} \\
+\gantttitlelist{1,...,28}{1} \\
+
+% Main bars
+\ganttbar[name=base]{Baseline model\\+ sim.\ verification}{1}{4} \\
+
+\ganttbar[name=aug, bar/.append style={fill=barblue!55, draw=barblue!90!black}]
+{Initial augmentation\\+ sim.\ validation}{4}{8} \\
+
+\ganttbar[name=hw, bar/.append style={fill=bargreen!70, draw=bargreen!90!black}]
+{Hardware commissioning\\+ baseline validation}{6}{9} \\
+
+\ganttbar[name=exp, bar/.append style={fill=barorange!75, draw=barorange!90!black}]
+{Experiment setup}{5}{10} \\
+
+\ganttbar[name=interp, bar/.append style={fill=barblue!45, draw=barblue!90!black}]
+{Interp.-constrained\\augmentation}{9}{13} \\
+
+\ganttbar[name=train, bar/.append style={fill=bargreen!60, draw=bargreen!90!black}]
+{Experimental training\\+ iterative validation}{11}{17} \\
+
+\ganttbar[name=final, bar/.append style={fill=barorange!60, draw=barorange!90!black}]
+{Final validation\\+ comparison}{16}{18} \\
+
+\ganttbar[name=vac, bar/.append style={fill=bargray!70, draw=bargray!90!black}]
+{Vacation / reduced feedback}{19}{20} \\
+
+\ganttbar[name=thesis, bar/.append style={fill=barblue!50, draw=barblue!90!black}]
+{Thesis writing, revision\\+ defense prep}{21}{28} \\
+
+% Deadlines row
+\ganttbar[bar/.append style={draw=none, fill=none}]{Deadlines}{1}{1}
+\ganttmilestone[milestone/.append style={fill=deadlinered, draw=deadlinered}]{D1}{18}
+\ganttmilestone[milestone/.append style={fill=deadlinered, draw=deadlinered}]{D2}{26}
+\ganttmilestone[milestone/.append style={fill=deadlinered, draw=deadlinered}]{D3}{28}
+
+% Dependencies
+\ganttlink{base}{aug}
+\ganttlink{exp}{train}
+\ganttlink{hw}{train}
+\ganttlink{train}{final}
+
+\end{ganttchart}
+\end{center}
+
+\vspace{0.4em}
+
+{\scriptsize
+\textbf{Timeline:} week numbers 1--28 correspond to project weeks (W1--W28); the month header gives calendar context.
+}
+
+\vspace{0.25em}
+
+{\scriptsize
+\textbf{Deadlines:}
+D1 committee composition confirmed before vacation;
+D2 confidentiality procedure completed (approximately Sep~11);
+D3 thesis shared with committee (Sep~27).
+}

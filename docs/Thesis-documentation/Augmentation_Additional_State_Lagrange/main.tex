@@ -1,0 +1,130 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\title{Justification for Hidden Mass Energy Terms}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Justification for $T_{ma}$, $V_\text{spring}$, $\mathcal{D}_\text{damper}$}
+
+\subsection*{Kinetic Energy $T_{ma}$}
+
+Starting from Garc\'ia's own kinetic energy for $m_h$, which follows directly
+from equation~(3) after applying the small-angle simplification
+$\cos\Theta \approx 1$, $\sin\Theta \approx 0$ (Section~2.3):
+%
+\begin{equation}
+    T_{mh} = \frac{1}{2}m_h\left[
+        \left(\dot{X} - Y\dot{\Theta}\right)^2
+        + \left(\dot{Y} - d\dot{\Theta}\right)^2
+    \right] + \frac{1}{2}J_h\dot{\Theta}^2.
+\end{equation}
+%
+The mass $m_h$ sits at position $Y$ along the crossarm, offset $d$
+perpendicular to it. Its absolute velocities in the inertial frame are:
+%
+\begin{align}
+    \dot{x}_{m_h} &= \dot{X} - Y\dot{\Theta}, \\
+    \dot{y}_{m_h} &= \dot{Y} - d\dot{\Theta}.
+\end{align}
+%
+The hidden mass $m_a$ follows the same geometric structure as $m_h$. It sits
+at absolute position $Y + \delta_a$ along the crossarm, where $\delta_a$ is
+the \emph{relative} displacement of $m_a$ from $m_h$. It carries the same
+$d$-offset perpendicular to the crossarm, and moves with $m_h$ plus an
+additional relative velocity $\dot{\delta}_a$:
+%
+\begin{table}[h]
+    \centering
+    \begin{tabular}{lcc}
+        \toprule
+         & $m_h$ & $m_a$ \\
+        \midrule
+        Position along crossarm  & $Y$                             & $Y + \delta_a$                         \\
+        Absolute x-velocity      & $\dot{X} - Y\dot\Theta$         & $\dot{X} - (Y+\delta_a)\dot\Theta$     \\
+        Absolute y-velocity      & $\dot{Y} - d\dot\Theta$         & $\dot{Y} + \dot\delta_a - d\dot\Theta$ \\
+        Rotary inertia           & $J_h$ (physical body)           & none (point mass)                      \\
+        \bottomrule
+    \end{tabular}
+    \caption{Kinematic comparison of $m_h$ and $m_a$ in the inertial frame.
+             The substitutions $Y \to Y + \delta_a$ and
+             $\dot{Y} \to \dot{Y} + \dot\delta_a$ are the only differences.
+             $m_a$ is modelled as a point mass and therefore carries no
+             rotary inertia term.}
+\end{table}
+%
+The kinetic energy of $m_a$ therefore follows directly:
+%
+\begin{equation}
+    T_{ma} = \frac{1}{2}m_a\left[
+        \left(\dot{X} - (Y+\delta_a)\dot{\Theta}\right)^2
+        + \left(\dot{Y} + \dot{\delta}_a - d\dot{\Theta}\right)^2
+    \right].
+\end{equation}
+%
+This is identical in form to $T_{mh}$, with the substitutions
+$Y \to Y + \delta_a$, $\dot{Y} \to \dot{Y} + \dot{\delta}_a$,
+and no rotary inertia term since $m_a$ is a point mass.
+
+\subsection*{Potential Energy $V_\text{spring}$}
+
+The spring of stiffness $k_a$ connects $m_a$ to $m_h$. It stores elastic
+energy proportional to the relative linear displacement $\delta_a$ between
+the two masses. By Hooke's law for a linear spring:
+%
+\begin{equation}
+    V_\text{spring} = \frac{1}{2}k_a\,\delta_a^2.
+\end{equation}
+%
+Since $\delta_a$ is defined as the relative displacement of $m_a$ from $m_h$,
+no additional projection is needed.
+
+\subsection*{Rayleigh Dissipation $\mathcal{D}_\text{damper}$}
+
+The damper of coefficient $c_a$ connects $m_a$ to $m_h$. Following
+Garc\'ia's use of the Rayleigh dissipation formalism (equation~(5)), the
+dissipation function for a linear viscous damper is:
+%
+\begin{equation}
+    \mathcal{D}_\text{damper} = \frac{1}{2}c_a\,\dot{\delta}_a^2,
+\end{equation}
+%
+where $\dot{\delta}_a$ is the relative linear velocity across the damper.
+This is directly analogous to Garc\'ia's $\frac{1}{2}c_y\dot{Y}^2$ term ---
+both are linear viscous dampers with a linear relative velocity coordinate.
+The Rayleigh dissipation function enters the Euler--Lagrange equations as
+$\partial\mathcal{D}/\partial\dot{q}_j$, not as a potential energy.
+
+\subsection*{Extended Energy Expressions}
+
+The three extended energy expressions follow by adding the new terms
+to Garc\'ia's verified baseline:
+%
+\begin{align}
+    T                   &= T_\text{garcia} + T_{ma},                   \\
+    V                   &= V_\text{garcia} + V_\text{spring},           \\
+    \mathcal{D}         &= \mathcal{D}_\text{garcia} + \mathcal{D}_\text{damper}.
+\end{align}
+%
+The equations of motion for the extended 4-DOF system with generalised
+coordinates $q = [X,\,\Theta,\,Y,\,\delta_a]^\top$ are obtained by
+applying the Euler--Lagrange equations:
+%
+\begin{equation}
+    \frac{d}{dt}\frac{\partial T}{\partial \dot{q}_j}
+    - \frac{\partial T}{\partial q_j}
+    + \frac{\partial V}{\partial q_j}
+    + \frac{\partial \mathcal{D}}{\partial \dot{q}_j}
+    = f_j, \qquad q_j \in \{X,\,\Theta,\,Y,\,\delta_a\},
+\end{equation}
+%
+where $f = [F_1+F_2,\;(F_1-F_2)L_b/2,\;F_Y,\;0]^\top$. The zero in the
+last entry reflects that no external force acts directly on the hidden
+mass $m_a$.
+
+\end{document}
