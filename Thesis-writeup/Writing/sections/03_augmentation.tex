@@ -16,6 +16,14 @@
 \section{Dynamic LPV-LFR Augmentation}\label{sec:augmentation}
 
 \subsection{Parallel augmentation with additional states}
+\begin{figure}[t]
+  \centering
+  \input{figures/gantry_system_with_absorber}
+  \caption{Simulated ground-truth system: the baseline of
+  Fig.~\ref{fig:gantry_system} with a payload-mounted absorber. The light-gray
+  elements ($m_a$, $k_a$, $c_a$, $\delta_a$) are absent from the baseline.}
+  \label{fig:gantry_absorber}
+\end{figure}
 \begin{itemize}
 \item Use a dynamic parallel LFR so the learned component adds missing dynamics while the physics state update remains explicit \cite{hoekstra2026lfr}
 \item Partition the model state into six physical states and learned additional states, with the ANN writing both partitions and the output reading physical states only

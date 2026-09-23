@@ -38,11 +38,20 @@
 The physics baseline used in this work is based on the lumped-parameter model of the
 dual-drive gantry developed by Garc\'ia-Herreros et al.~\cite{garcia2013model}.
 The gantry has two actuators that carry a cross-arm and a 
-third actuator that moves the payload along the arm (Fig.~\ref{fig:gantry_lfr}(a)).
-Dynamics not represented by the baseline are treated as model discrepancy and addressed by the augmentation in Section~\ref{sec:augmentation}. 
-In Fig.~\ref{fig:gantry_lfr}(a), the physics baseline components are depicted in black;
-the simulated ground-truth system additionally includes the light-gray absorber.
-Define the actuator forces
+third actuator that moves the payload along the arm (Fig.~\ref{fig:gantry_system}).
+\todo{Does this make sense to put here?:} Dynamics not represented by the baseline are treated as model discrepancy and addressed by the augmentation in Section~\ref{sec:augmentation}.
+\begin{figure}[b]
+  \centering
+  \def\gantryabsorber{0}% baseline only; the absorber version is in Section III
+  \input{figures/gantry_system_with_absorber}
+  \caption{Lumped-parameter gantry schematic adapted from the mechanical
+  arrangement in \cite{garcia2013model}. Red labels denote actuator coordinates
+  and blue labels generalized coordinates.}
+  \label{fig:gantry_system}
+\end{figure}
+% In Fig.~\ref{fig:gantry_lfr}(a), the physics baseline components are depicted in black;
+% the simulated ground-truth system additionally includes the light-gray absorber.
+% Define the actuator forces
 $\uact=[F_{X1}\;F_{X2}\;F_Y]^\top$, the measured positions
 $\qact=[X_1\;X_2\;Y]^\top$, and the generalized coordinates
 $q=[X\;\Theta\;Y]^\top$. Let \(L_b\) denote the cross-arm length between the two flexible joints. 
@@ -69,8 +78,8 @@ nonuniform load distribution explicit \cite{garcia2013model}.
 
 Following Garc\'ia-Herreros et al. \cite{garcia2013model}, the baseline uses \(\cos\Theta\approx1\) 
 and \(\sin\Theta\approx0\) and assumes that the Coriolis and centripetal force term is 
-negligible compared with the inertia, damping, and stiffness forces. The simulated ground-truth model 
-uses the same simplifications. 
+negligible compared with the inertia, damping, and stiffness forces. 
+% The simulated ground-truth model uses the same simplifications. 
 Under these assumptions, the baseline equations of motion are
 \begin{equation}
   M(Y)\ddot{q}(t) + C\dot{q}(t) + K q(t) = P\uact(t),
@@ -109,62 +118,16 @@ K&=
 \end{equation}
 }
 The masses, flexible-joint stiffness and damping coefficients, and geometric
-dimensions are shown in Fig.~\ref{fig:gantry_lfr}(a). Here, $J_b$ and $J_h$
+dimensions are shown in Fig.~\ref{fig:gantry_system}. Here, $J_b$ and $J_h$
 denote the yaw inertias, while $c_{g1}$, $c_{g2}$, and $c_y$ denote the actuator
 damping coefficients. The nominal values are taken from
 \cite[Table~I]{garcia2013model} and listed in Appendix~\ref{app:params} \todo{Not sure if to add this, depends on real data or not; they were not identified on the present Telica machine.}
 To prevent the definition of \(q\) from being parameter-dependent, 
 the cross-arm length \(L_b\) is fixed at the nominal value listed in Appendix~\ref{app:params} 
 rather than treated as a free model parameter.
-
-
-
-The masses, joint coefficients, and geometric parameters are shown in
-Fig.~\ref{fig:gantry_lfr}(a). Here, $J_b$ and $J_h$ are the yaw inertias,
-and $c_{g1}$, $c_{g2}$, and $c_y$ are the actuator damping coefficients.
-The nominal values are taken from \cite[Table~I]{garcia2013model} and listed
-in Appendix~\ref{app:params} \todo{Not sure if to add this, depends on real data or not; they were not identified on the present Telica machine.}
-
-The mass matrix is quadratic in $Y$:
-\begin{equation}
-  M(Y)=M_0+YM_1+Y^2M_2,
-  \label{eq:Msplit}
-\end{equation}
-where $M_0$, $M_1$, and $M_2$ are constant. García-Herreros et al. subsequently
-remove $Y$ when reducing their model to two coordinates; the baseline used here
-retains $Y$ and its coupling with $\Theta$.
-
-In the friction benchmark, Coulomb friction is added to the simulated
-ground-truth model but omitted from the baseline. Supporting-structure
-vibration, detent forces, and stroke-dependent friction reported in
-\cite{garcia2013model} are not included.
 \todo{Determine and justify the operating range of $Y$; distinguish the
 mechanical stroke, simulated-data range, and range covered by the measured
 ILC records.}
-
-\begin{figure*}[t]
-  \centering
-  \begin{subfigure}{0.65\textwidth}
-    \centering
-    \input{figures/gantry_system_with_absorber}
-    \caption{Lumped-parameter gantry and coordinate definitions.}
-    \label{fig:gantry_system}
-  \end{subfigure}%
-  \hfill%
-  \begin{subfigure}{0.33\textwidth}
-    \centering
-    \input{figures/lfr_loop}
-    \caption{Self-scheduled baseline interconnection.}
-    \label{fig:lfr}
-  \end{subfigure}
-  \caption{Physics baseline. (a) Lumped-parameter schematic adapted from the
-  mechanical arrangement in \cite{garcia2013model}; light-gray elements ($m_a$, $k_a$,
-  $c_a$, $\delta_a$) form the absorber, present only in the simulated ground-truth system and
-  absent from the baseline. Red labels denote actuator coordinates and blue labels
-  generalized coordinates. (b) The LTI part
-  $G$ is closed by $\Dsch(Y)=YI_6$, where $Y$ is a component of the state.}
-  \label{fig:gantry_lfr}
-\end{figure*}
 
 \subsection{Self-scheduled LPV-LFR representation}\label{sec:lfr}
 In the LPV representation, $Y$ is the scheduling variable: its measured value
@@ -209,6 +172,14 @@ $C_y=[P^\top\;0]$. Closing $w=\Dsch(Y)z$ and substituting
 \eqref{eq:delta} into \eqref{eq:latent} returns
 $(M_0+YM_1+Y^2M_2)\ddot{q}=\fnet$, so the realization reproduces \eqref{eq:eom}
 exactly.
+
+\begin{figure}[t]
+  \centering
+  \input{figures/lfr_loop}
+  \caption{Self-scheduled baseline interconnection: the LTI part $G$ is closed
+  by $\Dsch(Y)=YI_6$, where $Y$ is a component of the state.}
+  \label{fig:lfr}
+\end{figure}
 
 The interconnection is well posed when $I-D_{zw}\Dsch(Y)$ is nonsingular for
 every admissible $Y$ \cite{drenth2025thesis}. Appendix~\ref{app:params} shows that

@@ -10,8 +10,8 @@
 % Conventions
 %   * Coordinates are in drawing units; the x/y keys of the tikzpicture set the
 %     unit, so the drawing scales while the labels keep the document's own font
-%     and size.  At 0.3mm the drawing is 1:1 with Garcia Fig. 2 and the figure
-%     is about 275pt wide, i.e. half of a two column text width (figure*).
+%     and size.  At 0.3mm the drawing is 1:1 with Garcia Fig. 2 (about 285pt
+%     wide); 0.26mm fits one IEEE column (252pt).
 %   * The origin is the cross arm centre of mass (the blue coordinate X).
 %   * Parts on the cross arm are drawn in its rotated frame: u along the beam
 %     (positive to the right), v perpendicular to it.  The measured coordinate
@@ -27,13 +27,16 @@
 %     grey = absorber (m_a, k_a, c_a, delta_a), present only in the simulated
 %     plant and not in the baseline.  Theta is drawn once, at the CoM.
 %
+% \gantryabsorber: 0 draws the baseline only (Section II), 1 adds the grey
+% absorber (Section III).
 % \gantrydelta: 1 adds an arrow for the absorber displacement relative to the
 % payload.
 % ===========================================================================
+\providecommand{\gantryabsorber}{1}
 \providecommand{\gantrydelta}{1}
 \begin{tikzpicture}[
-    x=0.3mm, y=0.3mm,                        % original Garcia scale (1 unit
-                                             % = 1pt of Garcia Fig. 2)
+    x=0.26mm, y=0.26mm,                      % one column; 0.3mm is 1:1 with
+                                             % Garcia Fig. 2
     line width=0.5pt, line cap=round, line join=round,
     >={Triangle[length=3.4pt,width=2.9pt]},
     dim/.style={line width=0.4pt, dash pattern=on 3pt off 1.1pt on 0.4pt off 1.1pt},
@@ -82,6 +85,7 @@
     % ==== payload absorber: mass m_a, spring k_a, damper c_a ====
     % Drawn entirely in grey: not part of the baseline, only of the simulated
     % data-generating plant.
+    \ifnum\gantryabsorber>0
     \begin{scope}[absc]
     \pgfmathsetmacro\xa{\ua+0.5*\Wa}          % absorber side attachment
     \pgfmathsetmacro\xh{\Yp-0.5*\Lh}          % payload side attachment
@@ -105,6 +109,7 @@
             at (\ua-3,\vh+\Ha/2+5.5) {$\delta_a$};
     \fi
     \end{scope}
+    \fi
 
     % ==== payload force F_Y ====
     \draw[->] ({\ud+\sd*11},\vh+4) -- ({\Yp+\sd*\Lh/2},\vh+4);
@@ -112,7 +117,7 @@
 
     % ==== d : centreline to payload centre of mass ====
     \draw[<->] (\ud,0) -- (\ud,\vh);
-    \node[inner sep=2pt] at ({\ud-\sd*4.5},0.78*\vh) {$d$};
+    \node[inner sep=2pt] at ({\ud+\sd*4.5},0.78*\vh) {$d$};  % away from CoM
 
     % ==== Y : CoM to payload (red) ====
     \begin{scope}[red]
