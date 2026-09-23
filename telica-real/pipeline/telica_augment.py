@@ -75,7 +75,7 @@ def make_cfg():
         device=os.environ.get('DEVICE', 'cuda'),
         compile_mode=(None if os.environ.get('COMPILE_MODE', 'reduce-overhead') == 'none'
                       else os.environ.get('COMPILE_MODE', 'reduce-overhead')),
-        checkpoint_chunk=int(A.get('checkpoint_chunk', 200)),
+        checkpoint_chunk=int(A.get('checkpoint_chunk', 0)),
         nx_ann=int(A['nx_ann']), ann_route_ix=tuple(A['ann_route_ix']),
         n_nodes_per_layer=int(A.get('n_nodes_per_layer', 24)),
         n_hidden_layers=int(A.get('n_hidden_layers', 3)), up_sample=1,
@@ -84,6 +84,17 @@ def make_cfg():
         nf_seconds=float(A['nf_seconds']), lbfgs=False, start_phase='adam',
         param_init_detune=None,
     )
+    arm = os.environ.get('OBC_ARM')
+    if arm:
+        # TR-025: the three arms differ in EXACTLY the projection fields; everything else shared.
+        arms = {'noproj': dict(obc=False, obc_space='tangent'),
+                'obc': dict(obc=True, obc_space='tangent'),
+                'obc_affine': dict(obc=True, obc_space='affine')}
+        if arm not in arms:
+            raise ValueError(f"OBC_ARM must be one of {sorted(arms)}, got {arm!r}")
+        cfg = replace(cfg, joint_estimation=True, physics_parameterization='reduced',
+                      param_prior=False, combo_init_detune=None, param_init_detune=None,
+                      **arms[arm])
     if SMOKE:
         # <= 2 optimizer updates, batch 8, one short window, CPU, eager (handoff G6)
         cfg = replace(cfg, device='cpu', compile_mode=None, checkpoint_chunk=0, batch_size=8,
@@ -147,12 +158,15 @@ def main():
         return
     cfg = make_cfg()
     run = os.environ.get('SLURM_JOB_ID') or time.strftime('%Y%m%d_%H%M%S')
-    sdir = tr_env.out_dir(('g6_smoke_' if SMOKE else 'augment_') + run)
+    arm = os.environ.get('OBC_ARM')
+    sdir = tr_env.out_dir(('g6_smoke_' if SMOKE else 'augment_') + (f'{arm}_' if arm else '') + run)
     redirect_deepsi_workdir(sdir)
     torch.manual_seed(cfg.seed); np.random.seed(cfg.seed)
     t0 = time.time()
     print(f'[augment] smoke={SMOKE} nf={cfg.nf} ({cfg.nf_seconds * 1e3:.1f} ms) batch={cfg.batch_size} '
           f'nx_ann={cfg.nx_ann} route={cfg.ann_route_ix} f64={cfg.use_f64} device={cfg.device}')
+    print(f'[augment] arm={arm or "none (fixed baseline)"} joint_estimation={cfg.joint_estimation} '
+          f'obc={cfg.obc} obc_space={cfg.obc_space} param_prior={cfg.param_prior}')
     kw = dict(max_records=2, max_len=int(os.environ.get('SMOKE_LEN', '6000'))) if SMOKE else {}
     data = load_datasets_real(cfg, **kw)
     if not os.path.isfile(NORM_FILE):
@@ -160,7 +174,8 @@ def main():
     norm = frozen_norm(cfg)
     hp = cfg.hp
     print(f'[augment] data + norm loaded ({time.time() - t0:.0f} s), rss {rss_mb():.0f} MB')
-    fit_sys = build_model_real(hp, cfg, data, norm, baseline_tag='_a2')
+    fit_sys = build_model_real(hp, cfg, data, norm, baseline_tag='_a2',
+                               obc_expected_rank=ann_settings().get('obc_expected_rank'))
     fit_sys.simulator = build_closed_loop_telica(fit_sys, norm, cfg, train_files=data.train_names,
                                                  val_files=data.val_names,
                                                  val_data=data.val_ckpt_data)
@@ -179,6 +194,16 @@ def main():
     print(f'[augment] training done ({time.time() - t0:.0f} s), bestfit {bestfit:.4e} m, '
           f'rss {rss_mb():.0f} MB, peak {peak_rss_mb():.0f} MB', flush=True)
     bank = fit_sys.simulator.bank
+    if cfg.joint_estimation:
+        # TR-025: where the physical parameters ended up, against the G4 start point
+        from friction.karnopp import ReducedGantryFrictionBlockCC
+        phy = next(b for b in fit_sys.hfn.connected_blocks
+                   if isinstance(b, ReducedGantryFrictionBlockCC))
+        names, init, cur, _ = phy.estimation_parameters()
+        out['params'] = {n: dict(g4=float(a), final=float(b), rel=float(b / a - 1))
+                         for n, a, b in zip(names, init, cur)}
+        print('[params] ' + ' | '.join(f'{n} {v["final"]:.4g} ({100 * v["rel"]:+.2f}%)'
+                                       for n, v in out['params'].items()), flush=True)
     output_only_eval(fit_sys, data.val_list, data.val_names, bank, 'validation', out)
     output_only_eval(fit_sys, data.test_list, data.test_names, bank, 'test', out)
     out['peak_rss_mb'] = peak_rss_mb()

@@ -20,7 +20,7 @@ from model_augmentation.fit_systems.blocks import Linear_Output_Block, Static_AN
 from model_augmentation.fit_systems.pre_encoder import linear_encoder_init_aug
 from model_augmentation.systems.gantry_linearization import gantry_linearize_and_discretize
 
-from friction.karnopp import GantryFrictionBlock, rebuild_float64
+from friction.karnopp import GantryFrictionBlock, ReducedGantryFrictionBlockCC, rebuild_float64
 
 BASELINE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                             'baseline')
@@ -31,6 +31,27 @@ def baseline_params(tag):
     """(raw14 dict, cc tuple) of the chosen G4 baseline ('' = attempt 1, '_a2' = attempt 2)."""
     R = json.load(open(os.path.join(BASELINE_DIR, f'recovered_params{tag}.json')))
     return R['raw14'], tuple(R['cc'])
+
+
+def baseline_combos(tag):
+    """The ten identifiable combinations of the G4 baseline (dict)."""
+    return json.load(open(os.path.join(BASELINE_DIR, f'recovered_params{tag}.json')))['combos']
+
+
+def _joint_block(cfg, norm, hp, raw, cc, combos):
+    """TR-025: ten combinations + log cc trainable, starting at the G4 values (no detune)."""
+    names14 = ReducedGantryFrictionBlockCC.PARAM_NAMES
+    params_init = torch.tensor([float(raw[n]) for n in names14], dtype=torch.float64)
+    combo_init = torch.tensor([float(combos[n]) for n in ReducedGantryFrictionBlockCC.COMBO_NAMES],
+                              dtype=torch.float64)
+    phy = ReducedGantryFrictionBlockCC(
+        cc=cc, mode='tanh', params_init=params_init, combo_init=combo_init,
+        RMSE_baseline=cfg.param_rmse_baseline, flag_loss_reg=cfg.param_prior,
+        Y_op=None, std_x=norm.std_x, std_u=norm.std_u, x_mean=norm.x_mean, u_mean=norm.u_mean,
+        Ts=cfg.ts_new, up_sample=hp['up_sample'])
+    phy.combo_ref = dict(combos)          # the drift reference of the training meters (TR-025)
+    phy.cc_ref = list(cc)
+    return phy
 
 
 def _synthetic_sysdata(norm):
@@ -45,7 +66,8 @@ def _synthetic_sysdata(norm):
     return sd
 
 
-def build_model_real(hp, cfg, data, norm, baseline_tag='_a2', fric_mode='tanh'):
+def build_model_real(hp, cfg, data, norm, baseline_tag='_a2', fric_mode='tanh',
+                     obc_ref_stride=1, obc_expected_rank=None):
     NX_PHYS = cfg.nx_phys
     nu, ny = cfg.nu, cfg.ny
     DT = cfg.dtype_pt
@@ -57,9 +79,15 @@ def build_model_real(hp, cfg, data, norm, baseline_tag='_a2', fric_mode='tanh'):
 
     ic = Interconnect(nxd, nu, ny, debugging=False)
     raw, cc = baseline_params(baseline_tag)
-    phy = GantryFrictionBlock(cc=cc, mode=fric_mode, Y_op=None, std_x=norm.std_x,
-                              std_u=norm.std_u, x_mean=norm.x_mean, u_mean=norm.u_mean,
-                              Ts=cfg.ts_new, up_sample=hp['up_sample'])
+    if cfg.joint_estimation:
+        if cfg.physics_parameterization != 'reduced' or fric_mode != 'tanh':
+            raise ValueError('real-data joint estimation is the reduced 13-vector with tanh '
+                             'friction (TR-025)')
+        phy = _joint_block(cfg, norm, hp, raw, cc, baseline_combos(baseline_tag))
+    else:
+        phy = GantryFrictionBlock(cc=cc, mode=fric_mode, Y_op=None, std_x=norm.std_x,
+                                  std_u=norm.std_u, x_mean=norm.x_mean, u_mean=norm.u_mean,
+                                  Ts=cfg.ts_new, up_sample=hp['up_sample'])
     phy = rebuild_float64(phy, p=raw)
     phy.cc_init = torch.as_tensor(cc, dtype=torch.float64).reshape(1, 3).clone()
     # the block stored its normalisation via to_tensor (float32); restore the float64 values so
@@ -107,4 +135,13 @@ def build_model_real(hp, cfg, data, norm, baseline_tag='_a2', fric_mode='tanh'):
                        optimizer_kwargs={'lr': hp['lr'], 'eps': cfg.adam_eps})
     fit_sys.hfn.to(DT)
     fit_sys.burn_in = cfg.burn_in
+    if cfg.joint_estimation:
+        with torch.no_grad():
+            adm = phy.admissibility()
+        if not adm['admissible']:
+            raise ValueError(f'start point not admissible over the scheduling range: {adm}')
+    if cfg.obc:
+        from pipeline.telica_obc import attach_obc_real
+        attach_obc_real(fit_sys, cfg, data, norm, ref_stride=obc_ref_stride,
+                        expected_rank=obc_expected_rank)
     return fit_sys

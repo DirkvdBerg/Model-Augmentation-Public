@@ -79,7 +79,9 @@ A.~Retzler, R.~T{\'o}th, M.~Schoukens, G.~I. Beintema, J.~Weigand, J.-P.
   Engineering}, vol.~5, p. e12, 2024.
 
 \bibitem{toth2010modeling}
-``Source pending verification,'' citation metadata not yet verified.
+R.~T{\'o}th, \emph{Modeling and Identification of Linear Parameter-Varying
+  Systems}, ser. Lecture Notes in Control and Information Sciences.\hskip 1em
+  plus 0.5em minus 0.4em\relax Berlin, Heidelberg: Springer, 2010, vol. 403.
 
 \bibitem{drenth2025thesis}
 R.~Drenth, ``Efficient gradient-based learning of {LPV} models with linear

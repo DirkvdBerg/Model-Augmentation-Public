@@ -409,7 +409,16 @@ class _NfProbe:
         self._pblock = next((m for m in fit_sys.hfn.connected_blocks
                              if hasattr(m, 'identifiable_combinations')), None)
         self._combo_nom = None
-        if self._pblock is not None:
+        _ref = getattr(self._pblock, 'combo_ref', None) if self._pblock is not None else None
+        if _ref is not None:
+            # TELICA-REAL: (TR-025) real data has no nominal truth; drift is measured against the
+            # start point the block carries (the G4 values), as the comment above asks for.
+            self._combo_nom = dict(_ref)
+            _raw0 = {n: self._pblock.params_init[i].item()
+                     for i, n in enumerate(self._pblock.PARAM_NAMES)}
+            self._combo_scale = {n: abs(t) for n, t in self._combo_nom.items() if abs(t) > 1e-12}
+            self._combo_scale['m_diff'] = 0.5 * (_raw0['m1'] + _raw0['m2'])
+        elif self._pblock is not None:
             from model_augmentation.systems import gantry_ss as _gss
             _true_raw = {n: getattr(_gss, n).item() for n in self._pblock.PARAM_NAMES}
             self._combo_nom = self._pblock._combos_from_raw(_true_raw,
@@ -540,6 +549,12 @@ class _NfProbe:
             items = [f'{n}={combos[n]:.4e} ({100*rels[n]:+.2f}%)' for n in order]
             for s in range(0, len(items), 5):
                 print('      [combos] ' + ' | '.join(items[s:s + 5]))
+        if hasattr(self._pblock, 'cc_values'):
+            # TELICA-REAL: (TR-025) the trainable Coulomb levels, against their start values
+            cc_now, cc0 = self._pblock.cc_values(), getattr(self._pblock, 'cc_ref', None)
+            print('      [cc    ] ' + ' | '.join(
+                f'{n}={v:.2f} N' + (f' ({100 * (v / cc0[i] - 1):+.2f}%)' if cc0 else '')
+                for i, (n, v) in enumerate(cc_now.items())))
         self._obc_probe()
 
     def _obc_probe(self):

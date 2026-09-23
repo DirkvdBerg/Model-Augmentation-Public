@@ -28,13 +28,20 @@ def check(label, ok, detail=''):
 
 
 cfg = ta.make_cfg()
-check('20 kHz, no decimation (item 4)', cfg.fs_new is None and abs(cfg.ts_new - 5e-5) < 1e-15,
-      f'ts_new={cfg.ts_new}')
+FS_SET = int(ta.ann_settings().get('fs_train', 20000))
+check('training rate = ann_settings fs_train, 20 kHz or 5 kHz only (item 4, TR-008/TR-022)',
+      abs(1.0 / cfg.ts_new - FS_SET) < 1e-6 and FS_SET in (20000, 5000),
+      f'fs_train={FS_SET} ts_new={cfg.ts_new}')
 check('float64 (TR-013)', cfg.use_f64)
-check('ANN settings from G5 (item 7)', cfg.nx_ann == 2 and tuple(cfg.ann_route_ix) == (3, 4, 5, 6, 7)
-      and cfg.nf == 800, f'nx_ann={cfg.nx_ann} route={cfg.ann_route_ix} nf={cfg.nf}')
+AS = ta.ann_settings()
+check('ANN settings from ann_settings.json (item 7; TR-018/TR-024)',
+      cfg.nx_ann == int(AS['nx_ann']) and tuple(cfg.ann_route_ix) == tuple(AS['ann_route_ix'])
+      and tuple(cfg.ann_route_ix) == tuple([3, 4, 5] + list(range(6, 6 + cfg.nx_ann)))
+      and cfg.nf == int(round(float(AS['nf_seconds']) * FS_SET)),
+      f'nx_ann={cfg.nx_ann} route={cfg.ann_route_ix} nf={cfg.nf} na_nb={cfg.na_nb}')
 check('closed loop, GPU, compiled, chunked', cfg.closed_loop and cfg.device == 'cuda'
-      and cfg.compile_mode == 'reduce-overhead' and cfg.checkpoint_chunk == 200,
+      and cfg.compile_mode == 'reduce-overhead'
+      and cfg.checkpoint_chunk == int(ta.ann_settings()['checkpoint_chunk']),
       f'chunk={cfg.checkpoint_chunk} batch={cfg.batch_size} epochs={cfg.epochs}')
 check('no OBC / orth / joint estimation / zero-mean penalty', not (cfg.obc or cfg.orth
                                                                     or cfg.joint_estimation))
@@ -50,7 +57,7 @@ try:
     refused = False
 except ValueError:
     refused = True
-check('Telica bank refuses a non-20 kHz step (item 1, TR-008)', refused)
+check('Telica bank refuses a 4 kHz step (no controller at that rate; item 1, TR-008/TR-022)', refused)
 import ast                                                             # noqa: E402
 
 

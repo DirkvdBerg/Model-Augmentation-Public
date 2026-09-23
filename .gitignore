@@ -35,3 +35,14 @@ meeting-notes/
 !Thesis-writeup/Writing/figures/*.pdf
 !Thesis-writeup/Writing/figures/*.png
 !Thesis-writeup/Writing/build/main.pdf
+
+# LaTeX output belongs in Thesis-writeup/Writing/build, never beside main.tex.
+/Thesis-writeup/Writing/main.aux
+/Thesis-writeup/Writing/main.bbl
+/Thesis-writeup/Writing/main.blg
+/Thesis-writeup/Writing/main.fdb_latexmk
+/Thesis-writeup/Writing/main.fls
+/Thesis-writeup/Writing/main.log
+/Thesis-writeup/Writing/main.out
+/Thesis-writeup/Writing/main.pdf
+/Thesis-writeup/Writing/main.synctex.gz

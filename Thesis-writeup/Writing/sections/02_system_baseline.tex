@@ -34,51 +34,70 @@
 % Appendix/supplement: expanded M_i and N_i matrices, determinant polynomial, longer invertibility/well-posedness proof, and symbolic verification.
 \section{Dual-Drive Gantry System and Physics Baseline}
 
-\subsection{System coordinates and equations of motion}
-The dual-drive H-type gantry comprises two parallel actuators that carry a
-cross-arm through flexible joints and a third actuator that moves the payload
-along the arm (Fig.~\ref{fig:gantry_lfr}(a)) \cite{garcia2013model}. Let
-$q=[X\;\Theta\;Y]^\top$ denote the generalized coordinates and
-$\qact=[X_1\;X_2\;Y]^\top$ the actuator coordinates. They satisfy
+\subsection{System and first-principles baseline}
+The physics baseline used in this work is based on the lumped-parameter model of the 
+dual-drive gantry developed by García-Herreros et al. \cite{garcia2013model}.
+The gantry has two actuators that carry a cross-arm and a 
+third actuator that moves the payload along the arm (Fig.~\ref{fig:gantry_lfr}(a)).
+Dynamics not represented by the baseline are treated as model discrepancy and addressed by the augmentation in Section~\ref{sec:augmentation}. 
+In figure~\ref{fig:gantry_lfr}(a) the physics baseline components are depicted in black; 
+the simulated ground-truth system additionally includes the light-gray absorber.
+Define the actuator forces
+$\uact=[F_{X1}\;F_{X2}\;F_Y]^\top$, the measured positions
+$\qact=[X_1\;X_2\;Y]^\top$, and the generalized coordinates
+$q=[X\;\Theta\;Y]^\top$. Let \(L_b\) denote the cross-arm length between the two flexible joints. 
+The coordinate and force transformations are
 \begin{equation}
-  \qact = P^\top q,
+  \qact=P^\top q,
   \qquad
-  P = \begin{bmatrix} 1 & 1 & 0 \\ L_b/2 & -L_b/2 & 0 \\ 0 & 0 & 1 \end{bmatrix},
+  u=P\uact,
+  \qquad
+  P=
+  \begin{bmatrix}
+    1 & 1 & 0\\
+    L_b/2 & -L_b/2 & 0\\
+    0 & 0 & 1
+  \end{bmatrix},
   \label{eq:Ptransform}
 \end{equation}
-and virtual work gives the generalized force $u=P\uact$. This coordinate choice
-avoids a closed kinematic-chain description and exposes the coupling caused by
-the position-dependent load distribution \cite{garcia2013model}. The measured
-output is $\qact=P^\top q$.
+where $u$ denotes the generalized force. These coordinates avoid
+a closed kinematic-chain description and expose the position-dependent load
+distribution \cite{garcia2013model}.
 
-The adopted lumped-parameter model is
+
+With the kinematics linearized about \(\Theta=0\) and the Coriolis and centripetal terms neglected, 
+the baseline equations of motion are
 \begin{equation}
   M(Y)\ddot{q}(t) + C\dot{q}(t) + K q(t) = P\uact(t),
   \label{eq:eom}
 \end{equation}
-The payload position enters the inertia matrix without derivatives and does so
-quadratically,
+where $C$ and $K$ are constant, whereas the inertia matrix depends
+quadratically on the payload position:
 \begin{equation}
-  M(Y) = M_0 + Y M_1 + Y^2 M_2 ,
+  M(Y)=M_0+YM_1+Y^2M_2.
   \label{eq:Msplit}
 \end{equation}
-where $C$ and $K$ are constant. Only the yaw coordinate has a restoring
-stiffness; $X$ and $Y$ are rigid-body coordinates. The expanded matrices and
-the parameter values inherited from the supplied reference implementation are
-reported in the appendix; these parameters were not re-identified in this work.
+The payload position changes both the translational--yaw coupling and the yaw
+inertia, which makes $Y$ the scheduling variable. Only $\Theta$ has a restoring
+stiffness; $X$ and $Y$ are rigid-body coordinates. Unlike the final two-coordinate
+simplification in \cite{garcia2013model}, this model retains $Y$ and the symmetric
+$\Theta$--$Y$ inertia coupling of the supplied reference implementation.
 
-For positive component masses and inertias, $M(Y)\succ0$ for all $Y\in\R$; a
-proof by Sylvester's criterion \todo{Check that we actually use Sylvester's criterion...} is given in the appendix. Hence, $M(Y)$ is
-invertible throughout the operating range, as required below.
+The fourteen parameters in $\theta$ comprise four masses, two rotary inertias,
+five viscous damping coefficients, two joint stiffnesses, and the payload offset
+$d$; $L_b$ is fixed by the coordinate transformation. Their nominal values come
+from the ETEL system reported in \cite[Table~I]{garcia2013model}, not from an
+identification of the present Telica machine. They remain fixed except in the
+joint-estimation experiments. Values and units are listed in
+Appendix~\ref{app:params}.
 
 The baseline deliberately excludes the effects to be learned by the augmentation.
-In the simulated plant these are a payload-mounted absorber and, for the friction
-benchmark, Coulomb friction. Garc\'ia-Herreros et al. likewise identify unmodelled
-supporting-structure vibration, motor detent forces, and friction variation along
-the stroke \cite{garcia2013model}; these effects are not equated with the synthetic
-absorber used here. \todo{Determine and justify the operating range of $Y$; distinguish
-the mechanical stroke, the simulated-data range, and the range covered by the measured
-ILC records.}
+The simulated plant adds a payload-mounted absorber; the friction benchmark also
+adds Coulomb friction. These synthetic discrepancies are distinct from the
+supporting-structure vibration, detent forces, and stroke-dependent friction
+reported for the experimental system in \cite{garcia2013model}.
+\todo{Determine and justify the operating range of $Y$; distinguish the mechanical
+stroke, the simulated-data range, and the range covered by the measured ILC records.}
 
 \begin{figure*}[t]
   \centering
@@ -96,22 +115,22 @@ ILC records.}
     \label{fig:lfr}
   \end{subfigure}
   \caption{Physics baseline. (a) Lumped-parameter schematic adapted from the
-  mechanical arrangement in \cite{garcia2013model}; the absorber subsystem is present
-  only in the simulated data-generating plant. (b) The constant interconnection
+  mechanical arrangement in \cite{garcia2013model}; grey elements ($m_a$, $k_a$,
+  $c_a$, $\delta_a$) form the absorber, present only in the simulated plant and
+  absent from the baseline. Red labels denote actuator coordinates and blue labels
+  generalized coordinates. (b) The LTI part
   $G$ is closed by $\Dsch(Y)=YI_6$, where $Y$ is a component of the state.}
   \label{fig:gantry_lfr}
 \end{figure*}
 
 \subsection{Self-scheduled LPV-LFR representation}\label{sec:lfr}
-The payload position is both a measured coordinate and a model state. Since $Y$
-is a system state rather than an exogenous signal, the resulting formulation is
-quasi-LPV \cite{toth2010modeling}. It is self-scheduled through the known map
-$p=Y$. The state-space matrices depend rationally on $Y$ through $M(Y)^{-1}$;
-an LFR represents this dependence exactly using a constant interconnection and
-an explicit scheduling block \cite{drenth2025thesis}.
+The measured state $Y$ schedules the inertia matrix, making the model quasi-LPV
+\cite{toth2010modeling}. The known map $p=Y$ provides self-scheduling. Because
+$M(Y)^{-1}$ depends rationally on $Y$, this dependence is represented by an LTI
+part $G$ interconnected with a scheduling block \cite{drenth2025thesis}.
 
 Collecting the net generalized force acting on the inertia,
-$\fnet = u-C\dot{q}-Kq$, and substituting \eqref{eq:Msplit}
+$\fnet = P\uact-C\dot{q}-Kq$, and substituting \eqref{eq:Msplit}
 into \eqref{eq:eom} gives
 \begin{equation}
   M_0\,\ddot{q} + M_1 w_1 + M_2 w_2 = \fnet,
@@ -128,50 +147,68 @@ variable acts only through
 \end{equation}
 while all remaining relations are independent of $Y$. The direct six-channel
 realization is retained because its two three-dimensional channels correspond
-directly to the linear and quadratic terms in \eqref{eq:Msplit}. The baseline is
-the lower linear fractional transformation $\mathcal{F}_\ell(G,\Dsch(Y))$ of
+directly to the linear and quadratic terms in \eqref{eq:Msplit}. The LTI part is
 \begin{equation}
-  \begin{bmatrix} \dot{x} \\ z \\ q \end{bmatrix}
+  \begin{bmatrix} \dot{x} \\ z \\ \qact \end{bmatrix}
   =
   \underbrace{\begin{bmatrix}
       A   & B_w    & B_u \\
       C_z & D_{zw} & D_{zu} \\
-      C_q & 0      & 0
+      C_y & 0      & 0
   \end{bmatrix}}_{G}
-  \begin{bmatrix} x \\ w \\ u \end{bmatrix},
+  \begin{bmatrix} x \\ w \\ \uact \end{bmatrix},
   \label{eq:lfr}
 \end{equation}
 where $x=[q^\top\;\dot{q}^\top]^\top$, $n_x=6$, $n_z=n_w=6$, and
-$n_u=n_q=3$. The matrices in $G$ depend on the physical parameters but not on
-$Y$; their expressions in terms of $M_0^{-1}$, $M_1$, $M_2$, $C$, and $K$ are
-listed in the appendix. The transformations $u=P\uact$ and
-$\qact=P^\top q$ connect this internal realization to the actuator interface.
-Substituting
-\eqref{eq:delta} back into \eqref{eq:latent} returns
+$n_u=n_y=3$. Here $B_u$ includes the force transformation $P$, and
+$C_y=[P^\top\;0]$. Closing $w=\Dsch(Y)z$ and substituting
+\eqref{eq:delta} into \eqref{eq:latent} returns
 $(M_0+YM_1+Y^2M_2)\ddot{q}=\fnet$, so the realization reproduces \eqref{eq:eom}
 exactly.
 
 The interconnection is well posed when $I-D_{zw}\Dsch(Y)$ is nonsingular for
-every admissible $Y$ \cite{drenth2025thesis}. With $M_0$ invertible, this condition
-is equivalent to nonsingularity of $M(Y)$. The positive-definiteness result above
-therefore establishes well-posedness throughout the operating range.
+every admissible $Y$ \cite{drenth2025thesis}. Appendix~\ref{app:params} shows that
+this is equivalent to nonsingularity of $M(Y)$. Positive component masses and
+inertias give $M(Y)\succ0$ for all $Y\in\R$, so the nominal interconnection is
+well posed.
 
-The continuous-time mechanical model is retained instead of pre-discretizing a
-set of frozen models. A fixed-step RK4 scheme evaluates the state-dependent
-scheduler at its intermediate stages and supplies the sampled transition used in
-training and evaluation. The sampling interval and number of integration
-substeps are specified in Section~\ref{sec:setup}. The implementation eliminates
-the algebraic loop analytically and evaluates the resulting rational expression
-in Horner form; the coefficient matrices and determinant polynomial are given in
-the appendix.
+The continuous-time form preserves the polynomial dependence in
+\eqref{eq:Msplit}; exact discretization would instead introduce a matrix-exponential
+dependence on $Y$. A fixed-step RK4 scheme evaluates $Y$ at its intermediate
+stages and supplies the sampled transition used for training and evaluation. Its
+step size and number of substeps are specified in Section~\ref{sec:setup}; the
+equivalent rational inverse is evaluated in Horner form.
 
-\subsection{Physical parameters and identifiable combinations}
+\subsection{Physical parameters and identifiable combinations}\label{sec:params}
 \begin{itemize}
 \item Distinguish the fourteen raw parameters from the ten combinations identifiable through the gantry equations
-\item Optimise reduced positive parameter combinations and map them back to interpretable masses, stiffnesses, damping, geometry, and centre-of-mass terms
+\item Report recovery in the reduced combinations and state explicitly whether each experiment trains raw or reduced coordinates
 \item Show the Jacobian from raw parameters to identifiable combinations; naive parameter merging is not a valid recovery argument
 \item Use exact-model parameter recovery only as an internal implementation/initialization check; do not allocate a main result to it
-\item Use relative combination error as the interpretability metric and disclose the special normalisation required when a combination crosses zero
-\item Should state that Lh is part of the transformation (P-transform) so we dont identify this one.
+\item Use relative combination error as the interpretability metric and disclose the special normalisation used for the small signed mass-difference combination
+\item State that $L_b$ is fixed in the transformation $P$ and is therefore not identified.
 \end{itemize}
 \todo{Should the raw-to-reduced Jacobian be printed in the appendix or shown only as rank and singular values?}
+
+The fourteen raw physical parameters enter the model only through
+\begin{equation}
+\begin{aligned}
+  \varphi &=[k_{b,\Sigma},\ c_{g1},\ c_{g2},\ c_y,\ c_{b,\Sigma},\ m_h,\
+                    m_\Sigma,\ m_\Delta,\ J_{\mathrm{eff}},\ d]^\top,\\
+  k_{b,\Sigma} &=k_{b1}+k_{b2},\qquad
+  c_{b,\Sigma}=c_{b1}+c_{b2},\\
+  m_\Sigma &=m_1+m_2+m_b,\qquad m_\Delta=m_1-m_2,\\
+  J_{\mathrm{eff}} &=J_b+J_h+\tfrac{L_b^2}{4}(m_1+m_2).
+\end{aligned}
+\label{eq:phi}
+\end{equation}
+The raw-to-model Jacobian has rank ten, so four raw parameter directions do not
+affect the dynamics. Parameter recovery is therefore assessed using $\varphi$;
+individual raw splits are not interpreted without an explicit gauge choice. The
+mapping, null directions, and admissibility condition are derived in
+Appendix~\ref{app:params}. Structural identifiability does not guarantee that a
+finite dataset excites all ten directions; practical recoverability is assessed
+in Section~\ref{sec:setup}.
+\todo{Admissibility is checked at construction and evaluation but is not constrained
+during training. Verify that every reported checkpoint passes and decide whether a
+training-time guard is required.}

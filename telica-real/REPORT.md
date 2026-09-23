@@ -24,6 +24,10 @@ G5 Learnability: PASS, GO, server run warranted: yes. Repeatable/non-repeatable 
 G6 Pipeline: PASS. Smoke test end to end, exactly 2 updates, ANN moved 2.0e-5; peak RAM 676 MB
   (smoke), 1142 MB in-process at the server horizon (probe). server_run.sh written, not submitted:
   80.3 KB/window-step -> batch 256 x 800 steps = 4.1 GB with chunk 200 (16.4 GB unchunked).
+5 kHz (2026-09-23, TR-022): PASS, now the server default. Controller refit at 5 kHz (causal, lag 0)
+  held-out gain 0.9988 / 1.0025 / 1.0013, VAF 0.998 / 0.998 / 0.9996; residual-form identity
+  exact; G4 replay stable 159/159, held-out NRMSE 1.947 (20 kHz 1.952), 3.6x faster; 40 ms = 200
+  steps, 4.1 GB graph at batch 256 without checkpointing.
 Resources: peak tree RAM 1.21 GB (g6_probe), min available RAM 3.56 GB, C: min free 8.50 GB,
   0 watchdog kills (besides the deliberate G0 kill test), 2 augmentation optimizer updates total.
 Next for the user: (1) submit pipeline/runners/server_run.sh (optionally a second arm, e.g.
@@ -230,3 +234,75 @@ Acceptance TR-019 (+ TR-021 for the evidence reading). Runs g6_norm, g6_smoke, g
   compile fails, `COMPILE_MODE=none` runs eager.
 - deepSI's automatic checkpoints are redirected into the run folder (they default to
   `%LOCALAPPDATA%\deepSI`), so the pipeline writes nothing outside `telica-real/outputs/`.
+
+## 5 kHz training rate (TR-022, 2026-09-23): PASS, server default
+Requested by the user to cut server cost. Rule: positions and reference anti-aliased (Butterworth 8,
+2 kHz, zero-phase) and point-sampled, forces and currents block-mean per hold interval (`rate.py`).
+Pre-registered acceptance (A)-(D) in TR-022; runs g3_5k, g3_5k_a2, g3_bank_5k,
+g4_replay_rec_a2_5k, g6_check_5k(_final), g6_probe_5k.
+- **(A) controller at 5 kHz, 2 attempts**: attempt 1 met the gain interval but picked lag -1 (the
+  current leading the error), an alignment artifact of block-mean current against point-sampled
+  error, not causal and so unusable in the loop. Attempt 2, causal lags only: lag 0, held-out gain
+  **0.9988 / 1.0025 / 1.0013** (intervals 1 +- 0.0030 / 0.0088 / 0.0044), held-out VAF
+  0.998 / 0.998 / **0.9996** (Y fits better than at 20 kHz, 0.940).
+- **(B)** residual form returns u_data exactly (0.0); units 1.5e-11 (float64). float32 fails as at
+  20 kHz (input rounding), irrelevant for the float64 pipeline.
+- **(C)** G4 attempt-2 baseline at Ts = 2e-4 s: stable on 159/159 in both forms; held-out
+  NRMSE_direct **1.947** (limit 2.147; 20 kHz 1.952), residual form **1.963** (limit 2.180);
+  iter0 held-out 0.199 / 0.148 / 0.333 (20 kHz 0.198 / 0.148 / 0.376); 57 s against 208 s.
+- **(D)** static checks 11/11 at 5 kHz; forward + backward at nf 200 without an optimizer step;
+  81 KB per window-step; in-process peak 697 MB.
+- **Server**: 40 ms horizon = 200 steps; batch 256 -> ~4.1 GB graph, no checkpointing; stride 5.
+  `FS_TRAIN=20000` restores the 20 kHz path.
+- Machine note: two launches were blocked first, by RAM (1.9 GB available) and then by disk
+  (C: 1.27 GB after the Windows page file grew to 9.3 GB under a 22.9 of 24.9 GB commit load from
+  other applications). Both cleared after the browser was closed. This page-file growth on a
+  nearly full C: is a plausible mechanism for the earlier overnight window closures.
+
+## Friction on vs off, same parameters (user question, 2026-09-23)
+Attempt-2 recovered parameters at 5 kHz, identified controller, all 159 records (run
+g4_replay_rec_a2_nf_5k against g4_replay_rec_a2_5k).
+
+| | With friction (tanh) | Friction off |
+|-|-|-|
+| Held-out NRMSE, direct form (median) | 1.947 | 1.966 |
+| Held-out NRMSE, residual (training) form | 1.963 | 2.007 |
+| Held-out iter0, X1 / X2 / Y | 0.199 / 0.148 / 0.333 | 0.214 / 0.163 / 0.370 |
+| Held-out force NRMSE, X1 / X2 / Y | 0.179 / 0.205 / 0.228 | 0.206 / 0.218 / 0.266 |
+
+Friction lowers the median errors by 1-2 % overall, 7-10 % on the feedback-only iter0 records and
+6-14 % on the force; the residual-form PSD averaged over records is mixed (below 100 Hz the direct
+form has LESS residual power without friction, carried by the large-error records). Caveat: the
+viscous terms were recovered WITH friction in the model, so this isolates the friction term, not a
+refit without friction.
+
+## Absolute RMS of the baselines (run g4_rms_table, 2026-09-23)
+Held-out median, rms(simulated - measured servo error) [nm], X1 / X2 / Y.
+
+| Baseline | Direct form, all iter. | Training (residual) form, all iter. | Direct form, iter0 |
+|-|-|-|-|
+| Recovered + friction, 5 kHz (server default) | 421 / 359 / 236 | 367 / 371 / 200 | 364 / 359 / 208 |
+| Same parameters, friction off, 5 kHz | 428 / 360 / 234 | 380 / 383 / 208 | 392 / 399 / 231 |
+| Recovered + friction, 20 kHz | 423 / 360 / 278 | 368 / 374 / 263 | 362 / 360 / 235 |
+| Datasheet parameters, no friction, 20 kHz | 406 / 386 / 300 | 376 / 351 / 283 | 382 / 378 / 249 |
+| 70821, no friction, 20 kHz | 682 / 998 / 434 | 622 / 905 / 397 | 647 / 930 / 370 |
+| Measured servo error itself | 142 / 195 / 93 | | 1842 / 2436 / 627 |
+
+## Server configuration update (TR-024, 2026-09-23)
+nx_ann = 8 (user decision; G5's order test was inconclusive), routing X, Theta, Y velocity rows + 8
+augmented rows, encoder window 29 samples. `pipeline/runners/server_run.sh` follows the user's working
+GPU runner (partition oahu, existing log folder, `srun --cpu-bind=cores`, toolchain and GPU
+diagnostics). Checked without an optimizer step (runs g6_check_5k_nx8, g6_probe_5k_nx8): static
+checks 11/11, forward + backward at nf 200 runs, 81.7 KB per window-step, so batch 256 needs ~4.2 GB
+of graph. Open risk: float64 speed on a consumer GPU (~1/32 of float32); the log prints the card.
+
+## Projection arms ready (TR-025, 2026-09-23)
+Joint estimation of the ten identifiable combinations plus trainable Coulomb levels (13 directions),
+starting at the G4 values, no prior; cc learns only while sliding (stick-zone mask). Three arms via
+`OBC_ARM` = noproj / obc / obc_affine in `pipeline/runners/server_run.sh`. Gates without any optimizer
+step (run g6_joint_a2), all PASS: friction tangent vs jvp 2.3e-16; exact primal; mask exact per
+evaluation (the unmasked stick-zone share of the cc gradient would be 5.6 / 11.5 / 3.5 %);
+OBC orthogonality 2.2e-13; per-step correction == jvp 6.4e-17; all three arms build and run
+forward + backward. Basis at G4: rank 13/13 (cond 6.1e4; kb_sum and cb_sum barely excited),
+affine 14/14. To compare the arms afterwards: held-out output error (augment_metrics.json), and the
+drift of the 13 parameters from G4 against masses 91 / 19 kg and held friction 86 / 114 / 90 N.

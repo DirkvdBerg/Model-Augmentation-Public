@@ -20,43 +20,43 @@ Warning--I didn't find a database entry for "hoekstra2026lfraug"
 Done.
 You've used 16 entries,
             4024 wiz_defined-function locations,
-            1261 strings with 17110 characters,
-and the built_in function-call counts, 10933 in all, are:
-= -- 891
-> -- 264
-< -- 85
-+ -- 150
-- -- 53
-* -- 520
-:= -- 1669
+            1268 strings with 17266 characters,
+and the built_in function-call counts, 11072 in all, are:
+= -- 908
+> -- 267
+< -- 86
++ -- 151
+- -- 54
+* -- 531
+:= -- 1705
 add.period$ -- 33
 call.type$ -- 16
-change.case$ -- 20
+change.case$ -- 18
 chr.to.int$ -- 189
 cite$ -- 16
-duplicate$ -- 803
-empty$ -- 835
-format.name$ -- 57
-if$ -- 2469
+duplicate$ -- 806
+empty$ -- 850
+format.name$ -- 58
+if$ -- 2503
 int.to.chr$ -- 0
 int.to.str$ -- 16
 missing$ -- 155
 newline$ -- 71
-num.names$ -- 13
-pop$ -- 358
+num.names$ -- 14
+pop$ -- 349
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 835
+skip$ -- 850
 stack$ -- 0
-substring$ -- 486
-swap$ -- 653
-text.length$ -- 22
+substring$ -- 483
+swap$ -- 662
+text.length$ -- 23
 text.prefix$ -- 0
 top$ -- 5
 type$ -- 16
 warning$ -- 0
-while$ -- 42
+while$ -- 43
 width$ -- 18
-write$ -- 170
+write$ -- 173
 (There was 1 warning)

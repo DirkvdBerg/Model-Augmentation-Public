@@ -25,6 +25,9 @@ from model_augmentation.fit_systems.blocks import Gantry_State_Block, Reduced_Ga
 from params import telica_params as tp
 
 MODES = ('karnopp', 'tanh', 'sign', 'none')
+# HEURISTIC (TR-025): cc learns only where |v| > STICK_FACTOR * v0 (tanh(3) = 0.995, i.e. within
+# 0.5 % of the Coulomb level); inside that zone tanh is a numerical stick surrogate, not physics.
+STICK_FACTOR = 3.0
 
 
 def karnopp_stage_force(v_stage: Tensor, a_free_stage: Tensor, G: Tensor, cc: Tensor,
@@ -97,6 +100,10 @@ class FrictionMixin:
         return self.cc_init
 
     def _deriv_with(self, x: Tensor, u: Tensor, mats, terms: dict = None) -> Tensor:
+        # TR-025: a trainable block carries cc as an 11th element of the per-pass structure tuple
+        # so the rollout, the OBC basis and the per-step correction all see the same cc.
+        cc_m = mats[10] if len(mats) > 10 else None
+        mats = mats[:10]
         if self.fric_mode == 'none':
             return super()._deriv_with(x, u, mats, terms)
         # Restated from Gantry_State_Block._deriv_with (vendor blocks.py:810-871) TERM FOR TERM,
@@ -137,7 +144,7 @@ class FrictionMixin:
 
         P = self.P_mat
         v_stage = x2[:, 3:] @ P                                  # P' qdot  (row convention)
-        cc = self.cc_vec()
+        cc = self.cc_vec() if cc_m is None else cc_m
         if self.fric_mode == 'karnopp':
             a_free = _forward(u_log)[:, 3:]
             if self.Y_op is not None:
@@ -152,7 +159,10 @@ class FrictionMixin:
             if census is not None:
                 self.last_census = census
         elif self.fric_mode == 'tanh':
-            F = cc * torch.tanh(v_stage / self.v0)               # D-116 surrogate, HEURISTIC v0
+            # TR-025 stick-zone mask: same forward value; cc gets gradient only while sliding
+            slide = v_stage.abs() > STICK_FACTOR * self.v0
+            cc_g = torch.where(slide, cc, cc.detach())
+            F = cc_g * torch.tanh(v_stage / self.v0)             # D-116 surrogate, HEURISTIC v0
         else:
             F = cc * torch.sign(v_stage)                         # THEORY: garcia2013 Fig. 2
         u_eff = u_log - F @ P.T
@@ -161,6 +171,86 @@ class FrictionMixin:
         if terms is not None:
             terms.update(F_stage=F, u_eff=u_eff, xdot_phys=xdot_phys, xdot=xdot)
         return xdot
+
+
+    def _deriv_both_with(self, x: Tensor, sx: Tensor, u: Tensor, mats, dmats,
+                         terms: dict = None, sterms: dict = None):
+        """Primal AND parameter tangent in one pass (the per-step OBC path, TR-025).
+
+        The parent's term-by-term tangent (vendor blocks.py `_deriv_both_with`, D-194) with the
+        friction force added at both u-sites. tanh law only (Karnopp is not differentiable).
+        `mats`/`dmats` may carry cc / d cc as an 11th element.
+        """
+        if self.fric_mode not in ('tanh', 'none'):
+            raise NotImplementedError('the friction tangent exists for the tanh law only')
+        if self.Y_op is not None:
+            raise NotImplementedError('LPV branch (Y_op=None) only, as the parent')
+        cc = mats[10] if len(mats) > 10 else self.cc_vec()
+        dcc = dmats[10] if len(dmats) > 10 else torch.zeros_like(cc)
+        (K_mat, C_mat, A_combined, mh, alpha, beta, gamma_, N0, N1, N2) = mats[:10]
+        (dK, dC, dA_combined, dmh, dalpha, dbeta, dgamma_, dN0, dN1, dN2) = dmats[:10]
+
+        s_x2 = (sx * self.std_x).squeeze(-1)
+        x2 = (x * self.std_x + self.x_mean).squeeze(-1)
+        u2 = (u * self.std_u + self.u_mean).squeeze(-1)
+        u_log = u2 @ self.P_mat.T
+        P = self.P_mat
+        if self.fric_mode == 'tanh':
+            v_stage = x2[:, 3:] @ P
+            s_v = s_x2[:, 3:] @ P
+            th = torch.tanh(v_stage / self.v0)
+            slide = v_stage.abs() > STICK_FACTOR * self.v0
+            cc_g = torch.where(slide, cc, cc.detach())
+            F = cc_g * th
+            s_F = (torch.where(slide, dcc.expand_as(v_stage), torch.zeros_like(v_stage)) * th
+                   + cc * (1 - th ** 2) * s_v / self.v0)
+        else:
+            F = torch.zeros_like(u_log)
+            s_F = torch.zeros_like(u_log)
+        u_eff = u_log - F @ P.T
+        s_u_eff = -(s_F @ P.T)
+
+        fnet = -(x2[:, :3] @ K_mat.T) - (x2[:, 3:] @ C_mat.T) + u_eff
+        s_fnet = (-(s_x2[:, :3] @ K_mat.T) - (x2[:, :3] @ dK.T)
+                  - (s_x2[:, 3:] @ C_mat.T) - (x2[:, 3:] @ dC.T) + s_u_eff)
+
+        Y, sY = x2[:, 2], s_x2[:, 2]
+        poly = (alpha * gamma_ - beta ** 2 + 2 * beta * mh * Y + mh * (alpha - mh) * Y ** 2)
+        s_poly = (dalpha * gamma_ + alpha * dgamma_ - 2 * beta * dbeta
+                  + 2 * (dbeta * mh * Y + beta * dmh * Y + beta * mh * sY)
+                  + (dmh * (alpha - mh) + mh * (dalpha - dmh)) * Y ** 2
+                  + mh * (alpha - mh) * 2 * Y * sY)
+        dY_den = mh * poly
+        s_dY_den = dmh * poly + mh * s_poly
+
+        Y_r, sY_r = Y.unsqueeze(0), sY.unsqueeze(0)
+        n0f, n1f, n2f = N0 @ fnet.T, N1 @ fnet.T, N2 @ fnet.T
+        s_n0f = dN0 @ fnet.T + N0 @ s_fnet.T
+        s_n1f = dN1 @ fnet.T + N1 @ s_fnet.T
+        s_n2f = dN2 @ fnet.T + N2 @ s_fnet.T
+        num = n0f + Y_r * (n1f + Y_r * n2f)
+        s_num = (s_n0f + sY_r * (n1f + Y_r * n2f)
+                 + Y_r * (s_n1f + sY_r * n2f + Y_r * s_n2f))
+        a = num.T / dY_den[:, None]
+        s_a = (s_num.T - a * s_dY_den[:, None]) / dY_den[:, None]
+
+        Y_val, sY_val = Y[:, None], sY[:, None]
+        z = torch.cat([a, Y_val * a], dim=-1)
+        s_z = torch.cat([s_a, sY_val * a + Y_val * s_a], dim=-1)
+        w = Y_val * z
+        s_w = sY_val * z + Y_val * s_z
+
+        combined = torch.cat([x2, w, u_eff], dim=-1)
+        s_combined = torch.cat([s_x2, s_w, s_u_eff], dim=-1)
+        xdot_phys = combined @ A_combined.T
+        s_xdot_phys = s_combined @ A_combined.T + combined @ dA_combined.T
+        xdot = (xdot_phys / self.std_x_1d).unsqueeze(-1)
+        s_xdot = (s_xdot_phys / self.std_x_1d).unsqueeze(-1)
+        if terms is not None:
+            terms.update(fnet=fnet, a=a, xdot=xdot)
+        if sterms is not None:
+            sterms.update(fnet=s_fnet, a=s_a, xdot=s_xdot)
+        return xdot, s_xdot
 
 
 class GantryFrictionBlock(FrictionMixin, Gantry_State_Block):
@@ -249,3 +339,61 @@ def make_friction_block(Y_op=None, cc=tp.CC, mode='karnopp', ts=tp.TS, up_sample
 def make_plain_block(Y_op=None, ts=tp.TS, up_sample=1, dtype=torch.float64):
     blk = Gantry_State_Block(Y_op=Y_op, Ts=ts, up_sample=up_sample, **_unit_norm())
     return rebuild_float64(blk).to(dtype)
+
+
+class ReducedGantryFrictionBlockCC(FrictionMixin, Reduced_Gantry_State_Block):
+    """TR-025: ten identifiable combinations + log(cc / cc_init) as ONE 13-vector `free_params`.
+
+    Zero free coordinate = the start point (G4 attempt 2). cc travels as the 11th element of the
+    per-pass structure tuple, so `transition_from_free`, `mats_and_tangent_from_free` (the OBC
+    basis and per-step correction) and the training rollout all use the same cc.
+    """
+    N_COMBO = 10
+    CC_NAMES = ['cc1', 'cc2', 'ccy']
+
+    def __init__(self, cc=tp.CC, mode='tanh', v_brk=tp.V_BRK, v0=tp.V0_TANH, **kwargs):
+        super().__init__(**kwargs)
+        self._init_friction(cc, mode, v_brk, v0, trainable_cc=False)   # cc_init buffer
+        dt = self.combo_init.dtype
+        self.free_params = torch.nn.Parameter(torch.zeros(self.N_COMBO + 3, dtype=dt))
+
+    # coordinates
+    def combinations_from_free(self, free: Tensor) -> Tensor:
+        return super().combinations_from_free(free[:self.N_COMBO])
+
+    def cc_from_free(self, free: Tensor) -> Tensor:
+        return (self.cc_init.to(free.dtype) * torch.exp(free[self.N_COMBO:])).reshape(1, 3)
+
+    def cc_vec(self) -> Tensor:
+        return self.cc_from_free(self.free_params)
+
+    def _mats_from_free(self, free: Tensor):
+        raw = self.gauge_section(self.combinations_from_free(free), self.params_init, self.Lb)
+        return tuple(self._mats_from_raw(raw)) + (self.cc_from_free(free),)
+
+    # the block's own step and the OBC interfaces
+    def nonlinear_function(self, z: Tensor, mats=None):
+        self._cur = self._mats_from_free(self.free_params) if mats is None else mats
+        return Gantry_State_Block.nonlinear_function(self, z)
+
+    def pass_mats(self):
+        mats = self._mats_from_free(self.free_params)
+        return mats if self.static_pass is None else self.static_pass(mats)
+
+    def transition_from_free(self, free: Tensor, z: Tensor) -> Tensor:
+        assert z.size(1) == self.nx + self.nu
+        return self._rk4(z[:, : self.nx, :], z[:, self.nx:, :], self._mats_from_free(free))
+
+    def mats_and_tangent_from_free(self, free: Tensor, dfree: Tensor):
+        return torch.func.jvp(self._mats_from_free, (free,), (dfree,))
+
+    # reporting
+    def cc_values(self) -> dict:
+        v = self.cc_vec().detach().reshape(-1)
+        return {n: float(v[i]) for i, n in enumerate(self.CC_NAMES)}
+
+    def estimation_parameters(self):
+        names = tuple(self.COMBO_NAMES) + tuple(self.CC_NAMES)
+        init = torch.cat([self.combo_init, self.cc_init.reshape(-1).to(self.combo_init.dtype)])
+        cur = torch.cat([self.recover_combinations().detach(), self.cc_vec().detach().reshape(-1)])
+        return names, init.detach(), cur, 'identifiable combinations + Coulomb cc'

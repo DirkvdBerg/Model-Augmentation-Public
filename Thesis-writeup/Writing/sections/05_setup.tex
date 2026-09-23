@@ -48,6 +48,8 @@
 \item Match records, neural seeds, windows, optimiser budget, and checkpoint criterion across baseline-only, unconstrained, tangent-OBC, affine-OBC, and black-box arms; treat multisine phase seeds separately
 \item Use physical RMS as the primary candidate metric for tracking and a fixed 200--400 ms post-move settling interval; use NRMS, BFR, or spectra only for a distinct supporting question
 \item Report physical combination error, projection overlap, added-state ablations, and encoder-init sensitivity alongside predictive metrics
+\item Decision (moved from Section~II-C): joint-estimation arms start from the nominal $\varphi$ of the reference implementation detuned by 10\% per combination (\texttt{combo\_init\_detune}, HEURISTIC, D-191), with the nominal-parameter prior disabled (D-193); state it as a run setting with its reason
+\item Practical identifiability (referenced from Section~II-C): report the rank of the stacked one-step transition Jacobian with respect to $\varphi$ on the training data (rank 10, nullity 4 in $\theta$ per the reduced-block docstring), from a saved artefact rather than the docstring
 \item Give the black-box model validation-selected capacity and horizon so it is a capability comparison rather than an artificially weakened baseline
 \item Evaluate held-out position/phase interpolation, ASMPT-relevant multisine-free motion, controller transfer, and operating-range extrapolation as separate rungs
 \item Predeclare expectation, acceptance criterion, verdict, and mechanism for every result rather than presenting isolated scores

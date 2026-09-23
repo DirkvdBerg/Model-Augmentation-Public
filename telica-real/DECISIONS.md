@@ -518,3 +518,98 @@ error -> block-mean MF230), lag in {-1, 0, 1}. Stored as `controller/telica_sos_
     with NO optimizer step (the smoke test's 2 updates are not repeated).
 Up to 3 documented attempts; the frozen normalisation is reused (physical statistics, rate
 independent).
+
+### [TR-023] Watchdog RAM levels lowered for the 5 kHz runs (user-authorised)
+**Date**: 2026-09-23
+**What**: The machine is in daytime use (browser, editor, other sessions) with ~2.0 GB available,
+below the TR-002 kill level of 2.5 GB, so every launch was killed at start. The user authorised
+lowering the level. For the TR-022 runs: `-RamKillGB 0.75 -RamAlertGB 1.25` (disk levels
+unchanged, 2.0 / 3.0 GB). 0.75 GB is kept as a floor for the OS; the runs themselves need
+0.5-1.0 GB. TR-002's levels stay the default of `watchdog.ps1`; the lower ones are passed per run
+and recorded in RUNS.md.
+**TR-022 amendment, attempt 2 (2026-09-23)**: attempt 1 (run g3_5k) passed (A) on every axis
+(held-out gain 0.9988 / 1.0024 / 1.0020) but chose lag -1 everywhere, i.e. the current LEADING the
+error by one 5 kHz sample: non-causal, so it cannot close the loop (`telica_bank` refuses it).
+Mechanism: an alignment artifact of the decimation rule, not controller behaviour. The block-mean
+current of interval [4k, 4k+4) is centred 1.5 fine samples after the point-sampled error at 4k.
+The causal fit is almost as good (train VAF X 0.9978 at both lags, Y 0.9993 at 0 vs 0.9996 at -1).
+Attempt 2 restricts the lag to the causal set {0, 1}; acceptance (A) unchanged.
+
+**TR-022 outcome (2026-09-23): PASS, 5 kHz is the server default.** (A) causal refit, lag 0: held-out
+gain 0.9988 / 1.0025 / 1.0013, VAF 0.998 / 0.998 / 0.9996 (Y better than the 20 kHz 0.940).
+(B) identity 0.0, units 1.5e-11 (float64). (C) stable 159/159 both forms; held-out NRMSE_direct
+1.947 (<= 2.147), residual 1.963 (<= 2.180); iter0 0.199 / 0.148 / 0.333; replay 57 s vs 208 s.
+(D) static checks pass, forward + backward probe runs at nf 200 (81 KB per window-step, peak
+697 MB). Server settings follow (TR-020 re-sized): nf 200 (40 ms), batch 256 -> 4.1 GB graph,
+no checkpointing; stride 5 (the 1 ms spacing of the 20 kHz stride 20); host arrays ~0.2 GB. The
+20 kHz path remains available (`FS_TRAIN=20000`).
+
+### [TR-024] nx_ann = 8 (user decision) and the server runner aligned with the user's GPU template
+**Date**: 2026-09-23
+**What**: (1) nx_ann = 8, the user's choice (G5's order test was inconclusive: the rule floor was 2,
+the recommendation 6). Routing: velocity rows of X, Theta, Y plus all 8 augmented rows
+(`[3, 4, 5, 6, ..., 13]`); encoder window na = nb = 2 (6 + 8) + 1 = 29 samples (5.8 ms at 5 kHz).
+(2) `pipeline/runners/server_run.sh` adopts the conventions of the user's working GPU runner
+(`gantry_interconnect_dynamic` GPU script): partition `oahu`, the existing log folder
+`logs/augmentation/augmentation-closed-loop/`, `srun --cpu-bind=cores`, `NUMEXPR_NUM_THREADS`,
+GPU / host-CPU / toolchain (gcc, triton) diagnostics, the OS-keyed inductor cache, and its sanity
+lines. Carried-over caveat, not measurable here: that template's timing (0.50 s/update, RTX 2080 Ti)
+is float32; consumer GPUs run float64 at ~1/32 of float32, while this loop is dispatch-bound, so the
+float64 penalty on such a card is unknown. The runner prints the card; an A100-class card (full
+float64 rate) is preferred if the partition offers one.
+**Rejected**: keeping nx_ann = 2 in the settings file (the user chose 8); float32 on the server
+(TR-013: the 2-4 nm rounding would be above the encoder resolution).
+
+### [TR-025] Joint estimation + OBC arms on real data: 13 protected directions, stick-zone mask (pre-registered)
+**Date**: 2026-09-23
+**What (user decisions: cc trainable, start at G4, stick-zone mask)**:
+- Trainable block `ReducedGantryFrictionBlockCC`: the ten identifiable combinations (D-190, log
+  coordinates, `m_diff` relative-linear) PLUS `log(cc / cc_G4)` for cc1, cc2, ccy: a 13-vector
+  `free_params`, zero at the G4 attempt-2 values (combos, gauge and cc from
+  `baseline/recovered_params_a2.json`; no detune). cc travels in the per-pass structure tuple as its
+  11th element, so the rollout, the OBC basis (`transition_from_free`) and the per-step correction
+  (`mats_and_tangent_from_free` -> `_rk4_with_tangent`) all see the same cc.
+- Friction law tanh (TR-015) with the STICK-ZONE MASK: `F = cc_g tanh(v / v0)`,
+  `cc_g = where(|v| > 3 v0, cc, cc.detach())` (HEURISTIC factor 3: tanh(3) = 0.995, i.e. the
+  rail is within 0.5 % of the Coulomb level). The forward value is unchanged; cc receives gradient,
+  and a forward-mode tangent, only from sliding samples. The state dependence (d F / d v) is not
+  masked.
+- Hand-written tangent `FrictionMixin._deriv_both_with` (the per-step OBC path, which compiles):
+  the parent's term-by-term tangent plus `s_F = where(mask, d cc, 0) tanh(v/v0) + cc sech^2(v/v0)
+  (P' s_qdot) / v0`, entering at both u-sites.
+- Real-data reference set: every train sample at 5 kHz from [motion - 100 ms, end], q = P^-T y,
+  qdot from the 200 Hz zero-phase low-passed positions (the TR-016 rule; the simulation's
+  fourth-order difference of raw positions is refused on noisy data by its own guard), u the
+  block-mean force, x_a = 0, frozen normalisation.
+- Meters: drift is measured against the G4 values (`combo_ref`), not the `gantry_ss` "truth"
+  (the vendored probe's own comment asks for this on real data); cc printed alongside.
+- Arms via `OBC_ARM` in `pipeline/telica_augment.py`, identical except for the one field:
+  noproj (joint estimation, no projection), obc (13-column tangent), obc_affine (+ frozen offset
+  column); all with param_prior=False, start at G4.
+**Gates, before any server run, no optimizer step (PASS iff all)**:
+(T1) tangent: `transition_and_tangent_from_free` vs `torch.func.jvp` of `transition_from_free` on
+     real reference tuples (sliding and standstill), random 13-direction: max rel. error <= 1e-10
+     (float64);
+(T2) primal: `transition_from_free(free_params, z)` equals the block's own step exactly (0.0);
+(T3) mask: with every rail inside |v| < 3 v0 the cc gradient is exactly 0; with sliding it is
+     nonzero; the stick-zone share of the cc gradient without the mask is reported;
+(T4) OBC orthogonality: after the correction, the ANN field's component along the basis is
+     <= 1e-8 relative (the construction's defining property), measured on the reference set;
+(T5) per arm: the model builds, the basis builds at the G4 point (numerical rank and singular
+     values reported; the lifecycle's `expected_rank` is set to that measured rank and stated),
+     and forward + backward of the loss run.
+**TR-025 T3a amendment (2026-09-23, test design, attempt 2)**: run g6_joint passed T1 (2.3e-16),
+T2 (0.0), T3b, T4a (2.2e-13), T4b (6.4e-17) and T5 (all three arms), but T3a read 2.3 (against
+1.2e5 while sliding) on ONE RK4 STEP started in the stick zone. The mask acts per derivative
+evaluation; an RK4 step evaluates four stages, and with the forces during motion the stage
+velocities leave |v| < 3 v0 within one 2e-4 s step. The pre-registered statement is therefore
+tested where it holds: on single derivative evaluations (`_deriv_with`) at stick-zone states,
+cc gradient exactly 0. The one-step value is reported, not gated.
+**TR-025 outcome (2026-09-23): gates PASS (run g6_joint_a2).** T1 tangent vs jvp 2.3e-16; T2 exact;
+T3a 0.0 per derivative evaluation, T3b nonzero; stick-zone share of the unmasked cc gradient on
+closed-loop windows 5.6 / 11.5 / 3.5 % (X1 / X2 / Y), removed by the mask; T4a orthogonality
+2.2e-13, T4b per-step correction == jvp 6.4e-17; T5 all three arms build and run forward +
+backward. Basis at the G4 point: tangent rank 13/13, cond 6.1e4 (weakest directions kb_sum and
+cb_sum, tiny columns: barely excited by one-way moves, as G4 found); column correlations
+cb_sum~J_eff 0.99, cg1~cg2 -0.99, cc1~cc2 -0.99; affine rank 14/14, scaled cond 71.
+`obc_expected_rank = 13` recorded in ann_settings.json (the lifecycle aborts below it).

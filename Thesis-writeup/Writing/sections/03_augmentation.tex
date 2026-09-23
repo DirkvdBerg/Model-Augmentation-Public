@@ -30,6 +30,8 @@
 \subsection{Encoder and state initialisation}
 \begin{itemize}
 \item Initialise each truncated rollout with an encoder using past input-output samples and a model-based linear map for the physical rows \cite{hoekstra2026encoder}
+\item Why not use the positions and finite difference directly for the known initial states? Clearly state why we have chosen for this.
+\item Why are we augmenting the positions while directly measured? state the reason for this choice.
 \item Acknowledge that the published linear initialisation does not determine the additional-state rows, which begin from an unsupported random map
 \item Explain the zero-gradient path into added states at initialisation and the two zero gates that delay their use
 \item Use the exact simulated state for encoder-only diagnosis, but never as information available to the deployable model
@@ -52,6 +54,7 @@
 \todo{Can ASMPT confirm saturation, anti-windup, and within-record controller scheduling, the three assumptions that determine whether the residual form is valid?}
 
 \subsection{Why augmentation rather than competing residual models}
+\todo{Not sure if I should state that here, whether this section is appropiate.}
 \begin{itemize}
 \item Parameter refitting cannot represent a missing state and a static correction cannot reproduce flexible memory
 \item A residual FRF or fitted mass line is a useful linear benchmark but does not supply one nonlinear position-dependent state-space model for arbitrary trajectories

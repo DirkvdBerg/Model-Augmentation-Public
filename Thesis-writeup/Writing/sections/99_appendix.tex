@@ -22,6 +22,117 @@
 \end{itemize}
 \todo{Move these items into supplementary material if appendices count toward the 12-page limit.}
 
+\subsection{Identifiability of the physical parameters}\label{app:params}
+Table~\ref{tab:nominal_parameters} lists the nominal values used by the baseline.
+They are taken from the ETEL gantry reported by Garc\'ia-Herreros et al.
+\cite[Table~I]{garcia2013model}. Here $\theta$ collects the fourteen table
+entries other than the fixed length $L_b$.
+\begin{table}[t]
+\caption{Nominal baseline parameters.}
+\label{tab:nominal_parameters}
+\centering
+\footnotesize
+\begin{tabular}{@{}ll@{\qquad}ll@{}}
+\toprule
+Parameter & Value & Parameter & Value \\
+\midrule
+$m_1$ & $10.2\,\mathrm{kg}$ & $m_2$ & $10.7\,\mathrm{kg}$ \\
+$m_b$ & $22.8\,\mathrm{kg}$ & $m_h$ & $10.1\,\mathrm{kg}$ \\
+$J_b$ & $1.00\,\mathrm{kg\,m^2}$ & $J_h$ & $0.05\,\mathrm{kg\,m^2}$ \\
+$c_{g1}$ & $14.5\,\mathrm{N\,s/m}$ & $c_{g2}$ & $20.3\,\mathrm{N\,s/m}$ \\
+$c_y$ & $10.0\,\mathrm{N\,s/m}$ & $d$ & $0.10\,\mathrm{m}$ \\
+$c_{b1}$ & $9.0\,\mathrm{N\,m\,s/rad}$ & $c_{b2}$ & $9.0\,\mathrm{N\,m\,s/rad}$ \\
+$k_{b1}$ & $1987.5\,\mathrm{N\,m/rad}$ & $k_{b2}$ & $1987.5\,\mathrm{N\,m/rad}$ \\
+$L_b$ & $0.725\,\mathrm{m}$ & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The dynamics depend on $\theta$ only through the entries of $M_0$, $M_1$, $M_2$, $C$
+and $K$ in \eqref{eq:eom} and \eqref{eq:Msplit}. Omitting zeros and symmetric
+duplicates, these are
+\begin{equation*}
+\begin{aligned}
+  M_0 &: m_1{+}m_2{+}m_b{+}m_h,\quad \tfrac{L_b}{2}(m_1{-}m_2),\\
+      &\quad J_b{+}J_h{+}\tfrac{L_b^2}{4}(m_1{+}m_2){+}m_h d^2,\\
+      &\quad -m_h d,\quad m_h,\\
+  M_1,\,M_2 &: -m_h,\;\; m_h,\\
+  C &: c_{g1}{+}c_{g2},\quad \tfrac{L_b}{2}(c_{g1}{-}c_{g2}),\\
+    &\quad c_{b1}{+}c_{b2}{+}\tfrac{L_b^2}{4}(c_{g1}{+}c_{g2}),\quad c_y,\\
+  K &: k_{b1}{+}k_{b2}.
+\end{aligned}
+\end{equation*}
+Every entry is a function of $\varphi$ in \eqref{eq:phi}. Conversely, $\varphi$ is
+recovered entry by entry:
+\begin{equation*}
+\begin{aligned}
+  m_h &= M_{0,33}, & d &= -M_{0,23}/m_h,\\
+  m_\Sigma &= M_{0,11}-m_h,
+    &m_\Delta &= 2M_{0,12}/L_b,\\
+  J_{\mathrm{eff}} &= M_{0,22}-m_h d^2,\\
+  c_{g1},c_{g2}&:\ C_{11},C_{12},
+    &c_y&=C_{33},\\
+  c_{b,\Sigma}&=C_{22}-\tfrac{L_b^2}{4}(c_{g1}+c_{g2}),
+    &k_{b,\Sigma}&=K_{22}.
+\end{aligned}
+\end{equation*}
+The map from $\varphi$ to the matrices is therefore injective. Twelve entries yield
+ten independent quantities because $M_{0,33}$, $M_{1,12}$ and $M_{2,22}$ all equal
+$\pm m_h$.
+
+The matrices are fixed by input-output data. Since only the yaw coordinate has
+stiffness, every $q=[X_0\;0\;Y_0]^\top$ with $\dot q=0$ and $\uact=0$ is an
+equilibrium. Linearizing \eqref{eq:eom} there, the term
+$(\partial M/\partial Y)\ddot q$ vanishes, so the small-signal model is
+$M(Y_0)\delta\ddot q + C\delta\dot q + K\delta q = P\delta\uact$ with transfer matrix
+$H(s)=P^\top Z(s)^{-1}P$, $Z(s)=M(Y_0)s^2+Cs+K$. As $P$ is invertible,
+$Z(s)=P\,H(s)^{-1}P^\top$, whose polynomial coefficients give $M(Y_0)$, $C$ and $K$.
+Three distinct $Y_0$ then give $M_0$, $M_1$ and $M_2$ from the quadratic
+\eqref{eq:Msplit}.
+
+The four directions of $\theta$ that leave every entry unchanged are
+$\delta k_{b1}=-\delta k_{b2}$, $\delta c_{b1}=-\delta c_{b2}$,
+$\delta J_b=-\delta J_h$, and
+$(\delta m_1,\delta m_2,\delta m_b,\delta J_b)=t\,(-2/L_b^2,\,-2/L_b^2,\,4/L_b^2,\,1)$.
+Accordingly, the Jacobian of the twelve entries with respect to $\theta$ has rank ten
+for every positive $\theta$, which was confirmed symbolically.
+
+Positivity of the reduced coordinates alone does not guarantee that they correspond
+to a positive-definite inertia matrix. With
+$a=L_bm_\Delta/2$, elimination of the $m_h$ block gives
+\begin{equation*}
+  \min_Y\frac{\det M(Y)}{m_h}
+  =(m_\Sigma+m_h)\left(J_{\mathrm{eff}}-\frac{a^2}{m_\Sigma}\right).
+\end{equation*}
+Hence, for positive $m_h$, $m_\Sigma$, and $J_{\mathrm{eff}}$,
+\begin{equation}
+  M(Y)\succ0\ \text{for all }Y\in\R
+  \quad\Longleftrightarrow\quad
+  m_\Sigma J_{\mathrm{eff}}>\frac{L_b^2}{4}m_\Delta^2.
+  \label{eq:admissible}
+\end{equation}
+
+For completeness, let $R=M_0^{-1}$. The LTI matrices in \eqref{eq:lfr} are
+\begin{equation*}
+\begin{aligned}
+A&=\begin{bmatrix}0&I\\-RK&-RC\end{bmatrix}, &
+B_w&=\begin{bmatrix}0&0\\-RM_1&-RM_2\end{bmatrix},\\
+B_u&=\begin{bmatrix}0\\RP\end{bmatrix}, &
+C_z&=\begin{bmatrix}-RK&-RC\\0&0\end{bmatrix},\\
+D_{zw}&=\begin{bmatrix}-RM_1&-RM_2\\I&0\end{bmatrix}, &
+D_{zu}&=\begin{bmatrix}RP\\0\end{bmatrix},\\
+C_y&=\begin{bmatrix}P^\top&0\end{bmatrix}.&&
+\end{aligned}
+\end{equation*}
+Taking the Schur complement of the lower-right identity block gives
+\begin{equation}
+ \det\!\left(I-D_{zw}\Dsch(Y)\right)
+ =\det\!\left(M_0^{-1}M(Y)\right)
+ =\frac{\det M(Y)}{\det M_0},
+ \label{eq:wellposed_identity}
+\end{equation}
+which proves the well-posedness equivalence used in Section~\ref{sec:lfr}.
+
 \subsection{OBC and experiment details}
 \begin{itemize}
 \item Derive the stacked projector, rank-deficient pseudoinverse case, epoch refresh, and additional-state zero extension

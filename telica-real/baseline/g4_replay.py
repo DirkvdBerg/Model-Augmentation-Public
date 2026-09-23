@@ -41,6 +41,11 @@ P70821 = dict(kb1=26672.6169, kb2=26672.6169, cg1=840.8646, cg2=783.7107, cy=664
 
 
 def variant_block():
+    if VARIANT in ('rec_a2_nf', 'rec_a2_nf_5k'):
+        # like-for-like reference: the attempt-2 parameters with friction switched OFF
+        R = json.load(open(os.path.join(HERE, 'recovered_params_a2.json')))
+        return (make_block(raw=R['raw14'], cc=(0.0, 0.0, 0.0), mode='none',
+                           ts=rate.TS5 if FIVE else tp.TS), R['raw14'], [0, 0, 0])
     if VARIANT in ('rec', 'rec_a2', 'rec_a2_5k'):
         tag = '_a2' if VARIANT.startswith('rec_a2') else ''
         R = json.load(open(os.path.join(HERE, f'recovered_params{tag}.json')))

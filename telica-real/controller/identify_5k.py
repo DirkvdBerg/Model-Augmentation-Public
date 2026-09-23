@@ -2,7 +2,7 @@
 
 Init: matched pole-zero map of the 20 kHz identified controller (p -> p^4, z -> z^4, gain matched at
 100 Hz, integrator stays at z = 1). Refined by the TR-011 output-error fit on decimated TRAIN iter0
-(decimated error -> block-mean MF230), lag in {-1, 0, 1}. Held-out val + test iter0: pooled gain
+(decimated error -> block-mean MF230), lag in {0, 1} (TR-022 attempt 2, causal). Held-out val + test iter0: pooled gain
 within 1 +- delta (TR-009 construction). Writes controller/telica_sos_identified_5k.npz and
 outputs/g3_5k/identify_5k.json.
 """
@@ -28,7 +28,7 @@ tr_env.check_no_leak()
 OUT = tr_env.out_dir('g3_5k')
 AX = ('X1', 'X2', 'Y')
 K0 = 250                     # 50 ms at 5 kHz, as TR-011's 1000 samples at 20 kHz (HEURISTIC)
-LAGS = (-1, 0, 1)
+LAGS = (0, 1)                # TR-022 attempt 2: causal lags only (a negative lag cannot close the loop)
 
 
 def load5(recs):

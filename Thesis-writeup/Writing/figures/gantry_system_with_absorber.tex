@@ -23,6 +23,9 @@
 %   * Schematic, not to scale: the absorber offset L0 and the mass sizes are
 %     drawn for legibility.  The absorber rides on the payload, so it may
 %     overhang the beam end.
+%   * Colours: red = measured coordinates, blue = generalized coordinates,
+%     grey = absorber (m_a, k_a, c_a, delta_a), present only in the simulated
+%     plant and not in the baseline.  Theta is drawn once, at the CoM.
 %
 % \gantrydelta: 1 adds an arrow for the absorber displacement relative to the
 % payload.
@@ -37,8 +40,8 @@
     ext/.style={line width=0.35pt},
     cl/.style={gray!55, line width=0.25pt,
                dash pattern=on 4pt off 1pt on 0.3pt off 1pt},
-    ref/.style={blue!70, line width=0.3pt, dash pattern=on 1.2pt off 0.8pt},
-    abs/.style={draw=black, fill=black!15, line width=0.5pt}, % absorber: shaded
+    absc/.style={black!55},                    % absorber colour (not baseline)
+    abs/.style={fill=black!15, line width=0.5pt},             % absorber: shaded
     absl/.style={font=\small},                                % k_a, c_a labels
   ]
   % ================ parameters ================
@@ -77,6 +80,9 @@
     \node at (\Yp,\vh) {$m_h$};
 
     % ==== payload absorber: mass m_a, spring k_a, damper c_a ====
+    % Drawn entirely in grey: not part of the baseline, only of the simulated
+    % data-generating plant.
+    \begin{scope}[absc]
     \pgfmathsetmacro\xa{\ua+0.5*\Wa}          % absorber side attachment
     \pgfmathsetmacro\xh{\Yp-0.5*\Lh}          % payload side attachment
     \draw[abs] (\ua-\Wa/2,\vh-\Ha/2) rectangle (\ua+\Wa/2,\vh+\Ha/2);
@@ -98,9 +104,7 @@
       \node[anchor=south east, inner sep=1pt]
             at (\ua-3,\vh+\Ha/2+5.5) {$\delta_a$};
     \fi
-    % ==== yaw reference at the payload: axis perpendicular to the beam ====
-    \coordinate (P) at (\Yp,-1.5);
-    \draw[ref] (P) -- ++(0,\vY+34);
+    \end{scope}
 
     % ==== payload force F_Y ====
     \draw[->] ({\ud+\sd*11},\vh+4) -- ({\Yp+\sd*\Lh/2},\vh+4);
@@ -112,8 +116,8 @@
 
     % ==== Y : CoM to payload (red) ====
     \begin{scope}[red]
-      \draw[dim] (0,\hb+2) -- (0,\vY+6);   % the blue payload axis is the
-                                            % left extension of this dimension
+      \draw[dim] (0,\hb+2) -- (0,\vY+6)               % extension lines at the
+                 (\Yp,\vh+\Hh/2+2) -- (\Yp,\vY+6);    % CoM and at the payload
       \draw[->] (0,\vY) -- (\Yp,\vY);
       \node[anchor=south] at ({0.5*\Yp},\vY+1) {$Y$};
     \end{scope}
@@ -125,13 +129,6 @@
     \node[anchor=north west, inner sep=2.5pt] at ( \Lb/2,-\hb-19) {$k_{b1},\,c_{b1}$};
     \node[anchor=north east, inner sep=2.5pt] at (-\Lb/2,-\hb-19) {$k_{b2},\,c_{b2}$};
   \end{scope}
-
-  % ============ Theta at the payload: vertical reference and arc ============
-  \draw[ref] (P) -- ++(0,{(\vY+34)*cos(\th)});
-  \draw[ref, line width=0.4pt]
-        ($(P)+(90:\vY+22)$) arc[start angle=90, end angle=90+\th, radius=\vY+22];
-  \node[blue, anchor=east, inner sep=2pt]
-        at ($(P)+(90+\th:\vY+24)$) {$\Theta$};
 
   % ===================== generalized coordinates X, Theta (blue) =============
   \begin{scope}[blue]

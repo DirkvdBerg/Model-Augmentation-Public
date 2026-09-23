@@ -37,3 +37,6 @@ Edits log (every `# TELICA-REAL:` marker):
   controller in float64 inside a float32 rollout (TR-012; a no-op in the float64 pipeline).
 - `gantry_dynamic/training.py`: skips the absorber-GT diagnostic `aug_state_r2` when the data carry
   no ground truth (G6 item 5).
+- `gantry_dynamic/training.py`: the joint probe measures drift against the block's `combo_ref`
+  (the G4 values) when present, instead of the `gantry_ss` simulation truth, and prints the trainable
+  Coulomb levels (TR-025).
