@@ -35,23 +35,25 @@
 \citation{garcia2013model}
 \citation{toth2010modeling}
 \citation{drenth2025thesis}
-\citation{drenth2025thesis}
 \newlabel{eq:damping_stiffness_matrices}{{4}{4}{System and first-principles baseline}{equation.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Self-scheduled LPV-LFR representation}{4}{subsection.2.2}\protected@file@percent }
 \newlabel{sec:lfr}{{\mbox  {II-B}}{4}{Self-scheduled LPV-LFR representation}{subsection.2.2}{}}
-\newlabel{eq:latent}{{5}{4}{Self-scheduled LPV-LFR representation}{equation.5}{}}
-\newlabel{eq:delta}{{6}{4}{Self-scheduled LPV-LFR representation}{equation.6}{}}
-\newlabel{eq:lfr}{{7}{4}{Self-scheduled LPV-LFR representation}{equation.7}{}}
+\newlabel{eq:Msplit}{{5}{4}{Self-scheduled LPV-LFR representation}{equation.5}{}}
+\newlabel{eq:fnet}{{6}{4}{Self-scheduled LPV-LFR representation}{equation.6}{}}
+\newlabel{eq:internal_signals}{{7}{4}{Self-scheduled LPV-LFR representation}{equation.7}{}}
+\newlabel{eq:constant_mass_relation}{{8}{4}{Self-scheduled LPV-LFR representation}{equation.8}{}}
+\newlabel{eq:delta}{{10}{4}{Self-scheduled LPV-LFR representation}{equation.10}{}}
+\newlabel{eq:lfr}{{11}{4}{Self-scheduled LPV-LFR representation}{equation.11}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Self-scheduled baseline interconnection: the LTI part $G$ is closed by $\Delta (Y)=YI_6$, where $Y$ is a component of the state.}}{4}{figure.caption.2}\protected@file@percent }
 \newlabel{fig:lfr}{{2}{4}{Self-scheduled baseline interconnection: the LTI part $G$ is closed by $\Dsch (Y)=YI_6$, where $Y$ is a component of the state}{figure.caption.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Physical parameters and identifiable combinations}{4}{subsection.2.3}\protected@file@percent }
 \newlabel{sec:params}{{\mbox  {II-C}}{4}{Physical parameters and identifiable combinations}{subsection.2.3}{}}
-\newlabel{eq:phi}{{8}{4}{Physical parameters and identifiable combinations}{equation.8}{}}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026encoder}
 \citation{kessels2025ai}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Simulated ground-truth system: the baseline of Fig.~\ref {fig:gantry_system} with a payload-mounted absorber. The light-gray elements ($m_a$, $k_a$, $c_a$, $\delta _a$) are absent from the baseline.}}{5}{figure.caption.3}\protected@file@percent }
 \newlabel{fig:gantry_absorber}{{3}{5}{Simulated ground-truth system: the baseline of Fig.~\ref {fig:gantry_system} with a payload-mounted absorber. The light-gray elements ($m_a$, $k_a$, $c_a$, $\delta _a$) are absent from the baseline}{figure.caption.3}{}}
+\newlabel{eq:phi}{{13}{5}{Physical parameters and identifiable combinations}{equation.13}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {III}Dynamic LPV-LFR Augmentation}{5}{section.3}\protected@file@percent }
 \newlabel{sec:augmentation}{{III}{5}{Dynamic LPV-LFR Augmentation}{section.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Parallel augmentation with additional states}{5}{subsection.3.1}\protected@file@percent }
@@ -66,14 +68,14 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Negation and the protected tangent space}{6}{subsection.4.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}State-level orthogonal-by-construction map}{6}{subsection.4.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Condition for true parameter recovery}{6}{subsection.4.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {V}Experimental Setup}{6}{section.5}\protected@file@percent }
-\newlabel{sec:setup}{{V}{6}{Experimental Setup}{section.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Simulation benchmark and excitation}{6}{subsection.5.1}\protected@file@percent }
 \citation{lee2020feeddrive}
 \citation{lee2020feeddrive}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Experimental Setup}{7}{section.5}\protected@file@percent }
+\newlabel{sec:setup}{{V}{7}{Experimental Setup}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Simulation benchmark and excitation}{7}{subsection.5.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Real Telica data and split}{7}{subsection.5.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Training protocol, comparators, and metrics}{7}{subsection.5.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Reproducibility and implementation checks}{7}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Reproducibility and implementation checks}{8}{subsection.5.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {VI}Results}{8}{section.6}\protected@file@percent }
 \newlabel{sec:results}{{VI}{8}{Results}{section.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-A}}Baseline and closed-loop formulation}{8}{subsection.6.1}\protected@file@percent }
@@ -93,10 +95,26 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {A-A}}Baseline and LFR details}{10}{subsection.Appendix.A.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {A-B}}Identifiability of the physical parameters}{10}{subsection.Appendix.A.2}\protected@file@percent }
 \newlabel{app:params}{{\mbox  {A-B}}{10}{Identifiability of the physical parameters}{subsection.Appendix.A.2}{}}
-\newlabel{eq:admissible}{{9}{10}{Identifiability of the physical parameters}{equation.9}{}}
-\newlabel{eq:wellposed_identity}{{10}{10}{Identifiability of the physical parameters}{equation.10}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {A-C}}OBC and experiment details}{10}{subsection.Appendix.A.3}\protected@file@percent }
+\newlabel{eq:admissible}{{14}{10}{Identifiability of the physical parameters}{equation.14}{}}
 \bibstyle{IEEEtran}
 \bibdata{IEEEabrv,refs}
+\bibcite{garcia2013model}{1}
+\bibcite{hoekstra2026lfr}{2}
+\bibcite{irds2022}{3}
+\bibcite{workman2021diewafer}{4}
+\bibcite{teo2007dynamic}{5}
+\bibcite{lambrechts2005trajectory}{6}
+\bibcite{hwang2024semiconductor}{7}
+\bibcite{willard2020integrating}{8}
+\bibcite{noel2018greybox}{9}
+\bibcite{kessels2025ai}{10}
+\bibcite{retzler2024}{11}
+\bibcite{toth2010modeling}{12}
+\bibcite{drenth2025thesis}{13}
+\bibcite{hoekstra2026encoder}{14}
+\bibcite{gyorok2025l4dc}{15}
+\bibcite{lee2020feeddrive}{16}
+\newlabel{eq:wellposed_identity}{{15}{11}{Identifiability of the physical parameters}{equation.15}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {A-C}}OBC and experiment details}{11}{subsection.Appendix.A.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{References}{11}{section*.6}\protected@file@percent }
 \gdef \@abspage@last{11}

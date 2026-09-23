@@ -51,7 +51,7 @@ third actuator that moves the payload along the arm (Fig.~\ref{fig:gantry_system
 \end{figure}
 % In Fig.~\ref{fig:gantry_lfr}(a), the physics baseline components are depicted in black;
 % the simulated ground-truth system additionally includes the light-gray absorber.
-% Define the actuator forces
+Define the actuator forces
 $\uact=[F_{X1}\;F_{X2}\;F_Y]^\top$, the measured positions
 $\qact=[X_1\;X_2\;Y]^\top$, and the generalized coordinates
 $q=[X\;\Theta\;Y]^\top$. Let \(L_b\) denote the cross-arm length between the two flexible joints. 
@@ -130,31 +130,52 @@ mechanical stroke, simulated-data range, and range covered by the measured
 ILC records.}
 
 \subsection{Self-scheduled LPV-LFR representation}\label{sec:lfr}
-In the LPV representation, $Y$ is the scheduling variable: its measured value
-determines the current inertia matrix. Because $Y$ is also a model state, the
-formulation is quasi-LPV \cite{toth2010modeling} and self-scheduled through the
-known map $p=Y$. The rational dependence of $M(Y)^{-1}$ on $Y$ is represented by an LTI
-part $G$ interconnected with a scheduling block \cite{drenth2025thesis}.
-
-Collecting the net generalized force acting on the inertia,
-$\fnet = P\uact-C\dot{q}-Kq$, and substituting \eqref{eq:Msplit}
-into \eqref{eq:eom} gives
+The position dependence of \eqref{eq:mass_matrix} can be written as
 \begin{equation}
-  M_0\,\ddot{q} + M_1 w_1 + M_2 w_2 = \fnet,
-  \qquad
-  w_1 = Y z_1, \quad w_2 = Y z_2,
-  \label{eq:latent}
+  M(Y)=M_0+YM_1+Y^2M_2,
+  \label{eq:Msplit}
 \end{equation}
-with the loop signals $z_1=\ddot{q}$ and $z_2=w_1$. Stacking
-$z=[z_1^\top\;z_2^\top]^\top$ and $w=[w_1^\top\;w_2^\top]^\top$, the scheduling
-variable acts only through
+where $M_0$, $M_1$, and $M_2$ are constant. The measured payload position $Y$
+is used as the scheduling variable. Because $Y$ is also a model state, the
+representation is self-scheduled, or quasi-LPV \cite{toth2010modeling}.
+
+Define the net generalized force as
 \begin{equation}
-  w = \Dsch(Y)\,z, \qquad \Dsch(Y) = Y I_6 ,
+  \fnet=P\uact-C\dot q-Kq.
+  \label{eq:fnet}
+\end{equation}
+Solving \eqref{eq:eom} for $\ddot q$ introduces the rational dependence
+$M(Y)^{-1}$. Rather than forming this inverse explicitly, the LFR is
+constructed from the mass equation by introducing
+\begin{equation}
+  w_1=Y\ddot q, \qquad w_2=Yw_1=Y^2\ddot q.
+  \label{eq:internal_signals}
+\end{equation}
+The resulting $Y$-independent relation is
+\begin{equation}
+  M_0\ddot q+M_1w_1+M_2w_2=\fnet.
+  \label{eq:constant_mass_relation}
+\end{equation}
+Both products in \eqref{eq:internal_signals} apply the same scalar $Y$ to a
+three-dimensional signal. Defining
+\begin{equation}
+  z=\begin{bmatrix}\ddot q\\w_1\end{bmatrix},
+  \qquad
+  w=\begin{bmatrix}w_1\\w_2\end{bmatrix},
+\end{equation}
+their stacked relation is
+\begin{equation}
+  w=
+  \underbrace{\begin{bmatrix}
+    YI_3&0\\
+    0&YI_3
+  \end{bmatrix}}_{\Dsch(Y)=YI_6}z.
   \label{eq:delta}
 \end{equation}
-while all remaining relations are independent of $Y$. The direct six-channel
-realization is retained because its two three-dimensional channels correspond
-directly to the linear and quadratic terms in \eqref{eq:Msplit}. The LTI part is
+Thus, all dependence on $Y$ is contained in the scheduling block
+$\Dsch(Y)$ \cite{drenth2025thesis}. With
+$x=[q^\top\;\dot q^\top]^\top$, the remaining relations define the constant
+block
 \begin{equation}
   \begin{bmatrix} \dot{x} \\ z \\ \qact \end{bmatrix}
   =
@@ -166,12 +187,17 @@ directly to the linear and quadratic terms in \eqref{eq:Msplit}. The LTI part is
   \begin{bmatrix} x \\ w \\ \uact \end{bmatrix},
   \label{eq:lfr}
 \end{equation}
-where $x=[q^\top\;\dot{q}^\top]^\top$, $n_x=6$, $n_z=n_w=6$, and
-$n_u=n_y=3$. Here $B_u$ includes the force transformation $P$, and
-$C_y=[P^\top\;0]$. Closing $w=\Dsch(Y)z$ and substituting
-\eqref{eq:delta} into \eqref{eq:latent} returns
-$(M_0+YM_1+Y^2M_2)\ddot{q}=\fnet$, so the realization reproduces \eqref{eq:eom}
-exactly.
+The state is expressed in generalized coordinates, whereas the input $\uact$
+and output $\qact$ remain in actuator coordinates to match the applied forces
+and measured positions. The transformations in \eqref{eq:Ptransform} are
+included in $G$, whose matrices are listed in Appendix~\ref{app:params}.
+
+Closing the loop in \eqref{eq:constant_mass_relation} gives
+\begin{equation}
+  M_0\ddot q+YM_1\ddot q+Y^2M_2\ddot q=\fnet,
+\end{equation}
+which, by \eqref{eq:Msplit} and \eqref{eq:fnet}, is equivalent to
+\eqref{eq:eom}.
 
 \begin{figure}[t]
   \centering
@@ -181,18 +207,12 @@ exactly.
   \label{fig:lfr}
 \end{figure}
 
-The interconnection is well posed when $I-D_{zw}\Dsch(Y)$ is nonsingular for
-every admissible $Y$ \cite{drenth2025thesis}. Appendix~\ref{app:params} shows that
-this is equivalent to nonsingularity of $M(Y)$. Positive component masses and
-inertias give $M(Y)\succ0$ for all $Y\in\R$, so the nominal interconnection is
-well posed.
-
-The continuous-time form preserves the polynomial dependence in
-\eqref{eq:Msplit}; exact discretization would instead introduce a matrix-exponential
-dependence on $Y$. A fixed-step RK4 scheme evaluates $Y$ at its intermediate
-stages and supplies the sampled transition used for training and evaluation. Its
-step size and number of substeps are specified in Section~\ref{sec:setup}; the
-equivalent rational inverse is evaluated in Horner form.
+The internal loop is well posed if and only if $M(Y)$ is nonsingular. For
+positive component masses and yaw inertias, $M(Y)$ is positive definite for
+every $Y\in\R$; hence, the nominal interconnection is globally well posed. The
+proof is given in Appendix~\ref{app:params}. The continuous-time model is
+integrated using the fixed-step RK4 scheme specified in
+Section~\ref{sec:setup}.
 
 \subsection{Physical parameters and identifiable combinations}\label{sec:params}
 \begin{itemize}
