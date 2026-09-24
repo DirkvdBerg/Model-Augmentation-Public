@@ -1,0 +1,262 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/Hka1ec5ImoL6yFFzK3jcGKpgrYI</id>
+  <title>arXiv Query: search_query=abs:"multiple shooting" AND abs:"informativity"&amp;id_list=&amp;start=0&amp;max_results=10</title>
+  <updated>2026-09-24T07:47:09Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=abs:%22multiple+shooting%22+AND+abs:%22informativity%22&amp;start=0&amp;max_results=10&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>10</opensearch:itemsPerPage>
+  <opensearch:totalResults>11</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2006.15740v1</id>
+    <title>A Modified Multiple Shooting Algorithm for Parameter Estimation in ODEs Using Adjoint Sensitivity Analysis</title>
+    <updated>2020-06-28T22:58:49Z</updated>
+    <link href="https://arxiv.org/abs/2006.15740v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2006.15740v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>To increase the predictive power of a model, one needs to estimate its unknown parameters. Almost all parameter estimation techniques in ordinary differential equation models suffer from either a small convergence region or enormous computational cost. The method of multiple shooting, on the other hand, takes its place in between these two extremes. The computational cost of the algorithm is mostly due to the calculation of directional derivatives of objective and constraint functions. Here we modify { the} multiple shooting algorithm to use the adjoint method in calculating these derivatives. In the literature, this method is known to be a more stable and computationally efficient way of computing gradients of scalar functions. A predator-prey system is used to show the performance of the method and supply all necessary information for a successful and efficient implementation.</summary>
+    <category term="math.OC" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math.NA" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-06-28T22:58:49Z</published>
+    <arxiv:primary_category term="math.OC"/>
+    <author>
+      <name>Ozgur Aydogmus</name>
+    </author>
+    <author>
+      <name>Ali Hakan Tor</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2409.11649v4</id>
+    <title>Second-Order Constrained Dynamic Optimization</title>
+    <updated>2026-01-02T16:42:21Z</updated>
+    <link href="https://arxiv.org/abs/2409.11649v4" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2409.11649v4" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper provides an overview, analysis, and comparison of second-order dynamic optimization algorithms, i.e., constrained Differential Dynamic Programming (DDP) and Sequential Quadratic Programming (SQP). Although a variety of these algorithms have been proposed and used successfully, there exists a gap in understanding the key differences and advantages, which we aim to provide in this work. For constrained DDP, we choose methods that incorporate nonlinear programming techniques to handle state and control constraints, including Augmented Lagrangian (AL), Interior Point, Primal-Dual Augmented Lagrangian (PDAL), and Alternating Direction Method of Multipliers (ADMM). Both DDP and SQP are provided in single- and multiple-shooting formulations, where constraints that arise from dynamics are encoded implicitly and explicitly, respectively. As a byproduct of the review, we propose a single-shooting PDAL DDP that has more favorable properties than the standard AL variant, such as the robustness to the growth of penalty parameters. We perform extensive numerical experiments on a variety of systems with increasing complexity to investigate the quality of the solutions, the levels of constraint violation, and the sensitivity of final solutions with respect to initialization, as well as targets. The results show that single-shooting PDAL DDP and multiple-shooting SQP are the most robust methods. For multiple-shooting formulation, both DDP and SQP can enjoy informed initial guesses, while the latter appears to be more advantageous in complex systems. It is also worth highlighting that DDP provides favorable computational complexity and feedback gains as a byproduct of optimization as is.</summary>
+    <category term="math.OC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-09-18T02:27:28Z</published>
+    <arxiv:comment>33 pages, 13 figures</arxiv:comment>
+    <arxiv:primary_category term="math.OC"/>
+    <author>
+      <name>Yuichiro Aoyama</name>
+    </author>
+    <author>
+      <name>Oswin So</name>
+    </author>
+    <author>
+      <name>Augustinos D. Saravanos</name>
+    </author>
+    <author>
+      <name>Evangelos A. Theodorou</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/1704.02047v1</id>
+    <title>Multiple Shooting Shadowing for Sensitivity Analysis of Chaotic Dynamical Systems</title>
+    <updated>2017-04-06T23:26:27Z</updated>
+    <link href="https://arxiv.org/abs/1704.02047v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1704.02047v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Sensitivity analysis methods are important tools for research and design with simulations. Many important simulations exhibit chaotic dynamics, including scale-resolving turbulent fluid flow simulations. Unfortunately, conventional sensitivity analysis methods are unable to compute useful gradient information for long-time-averaged quantities in chaotic dynamical systems. Sensitivity analysis with least squares shadowing (LSS) can compute useful gradient information for a number of chaotic systems, including simulations of chaotic vortex shedding and homogeneous isotropic turbulence. However, this gradient information comes at a very high computational cost. This paper presents multiple shooting shadowing (MSS), a more computationally efficient shadowing approach than the original LSS approach. Through an analysis of the convergence rate of MSS, it is shown that MSS can have lower memory usage and run time than LSS.</summary>
+    <category term="nlin.CD" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2017-04-06T23:26:27Z</published>
+    <arxiv:comment>Preprint submitted to the Journal of Computational Physics</arxiv:comment>
+    <arxiv:primary_category term="nlin.CD"/>
+    <author>
+      <name>Patrick J. Blonigan</name>
+    </author>
+    <author>
+      <name>Qiqi Wang</name>
+    </author>
+    <arxiv:doi>10.1016/j.jcp.2017.10.032</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1016/j.jcp.2017.10.032" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.13305v2</id>
+    <title>MPINeuralODE: Multiple-Initial-Condition Physics-Informed Neural ODEs for Globally Consistent Dynamical System Learning</title>
+    <updated>2026-07-06T05:43:11Z</updated>
+    <link href="https://arxiv.org/abs/2605.13305v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.13305v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Neural ordinary differential equations (Neural ODEs) often fit training trajectories while generalizing poorly to unseen initial conditions and long horizons. We propose MPINeuralODE, which combines a soft physics-informed residual with a Multiple-Initial-Condition (MIC) multiple-shooting curriculum whose ingredients are structurally complementary: the physics term anchors the vector-field magnitude on the support that MIC enlarges. We evaluate along three axes: out-of-sample error, long-horizon stability, and Hamiltonian drift, which together expose whether the learned dynamics recover the underlying vector field. On Lotka-Volterra, MPINeuralODE achieves the lowest out-of-sample and long-horizon MSE among data-driven methods, with a 24% reduction over the baseline Neural ODE, while essentially matching the PINN ablation on Hamiltonian drift.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math.DS" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="physics.chem-ph" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-13T10:18:18Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Lake Yang</name>
+    </author>
+    <author>
+      <name>Antonio Malpica-Morales</name>
+    </author>
+    <author>
+      <name>Frank Ioannis Papadakis Wood</name>
+    </author>
+    <author>
+      <name>Serafim Kalliadasis</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2407.18852v1</id>
+    <title>ESDIRK-based nonlinear model predictive control for stochastic differential-algebraic equations</title>
+    <updated>2024-07-26T16:20:36Z</updated>
+    <link href="https://arxiv.org/abs/2407.18852v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2407.18852v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>In this paper, we present a nonlinear model predictive control (NMPC) algorithm for systems modeled by semi-explicit stochastic differential-algebraic equations (DAEs) of index 1. The NMPC combines a continuous-discrete extended Kalman filter (CD-EKF) with an optimal control problem (OCP) for setpoint tracking. We discretize the OCP using direct multiple shooting. We apply an explicit singly diagonal implicit Runge-Kutta (ESDIRK) integration scheme to solve systems of DAEs, both for the one-step prediction in the CD-EKF and in each shooting interval of the discretized OCP. The ESDIRK methods use an iterated internal numerical differentiation approach for precise sensitivity computations. These sensitivities are used to provide accurate gradient information in the OCP and to efficiently integrate the covariance information in the CD-EKF. Subsequently, we present a simulation case study where we apply the NMPC to a simple alkaline electrolyzer stack model. We use the NMPC to track a time-varying setpoint for the stack temperature subject to input bound constraints.</summary>
+    <category term="math.OC" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math.DS" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-07-26T16:20:36Z</published>
+    <arxiv:primary_category term="math.OC"/>
+    <author>
+      <name>Anders Hilmar Damm Christensen</name>
+    </author>
+    <author>
+      <name>Nicola Cantisani</name>
+    </author>
+    <author>
+      <name>John Bagterp Jørgensen</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2205.00754v3</id>
+    <title>A Feasible Sequential Linear Programming Algorithm with Application to Time-Optimal Path Planning Problems</title>
+    <updated>2022-11-30T21:58:55Z</updated>
+    <link href="https://arxiv.org/abs/2205.00754v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2205.00754v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>In this paper, we propose a Feasible Sequential Linear Programming (FSLP) algorithm applied to time-optimal control problems (TOCP) obtained through direct multiple shooting discretization. This method is motivated by TOCP with nonlinear constraints which arise in motion planning of mechatronic systems. The algorithm applies a trust-region globalization strategy ensuring global convergence. For fully determined problems our algorithm provides locally quadratic convergence. Moreover, the algorithm keeps all iterates feasible enabling early termination at suboptimal, feasible solutions. This additional feasibility is achieved by an efficient iterative strategy using evaluations of constraints, i.e., zero-order information. Convergence of the feasibility iterations can be enforced by reduction of the trust-region radius. These feasibility iterations maintain feasibility for general Nonlinear Programs (NLP). Therefore, the algorithm is applicable to general NLPs. We demonstrate our algorithm's efficiency and the feasibility update strategy on a TOCP of an overhead crane motion planning simulation case.</summary>
+    <category term="math.OC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-05-02T08:59:29Z</published>
+    <arxiv:comment>Accepted for publication at the IEEE Conference on Decision and Control 2022 (CDC 22)</arxiv:comment>
+    <arxiv:primary_category term="math.OC"/>
+    <author>
+      <name>David Kiessling</name>
+    </author>
+    <author>
+      <name>Andrea Zanelli</name>
+    </author>
+    <author>
+      <name>Armin Nurkanović</name>
+    </author>
+    <author>
+      <name>Joris Gillis</name>
+    </author>
+    <author>
+      <name>Moritz Diehl</name>
+    </author>
+    <author>
+      <name>Melanie Zeilinger</name>
+    </author>
+    <author>
+      <name>Goele Pipeleers</name>
+    </author>
+    <author>
+      <name>Jan Swevers</name>
+    </author>
+    <arxiv:doi>10.1109/CDC51059.2022.9992661</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1109/CDC51059.2022.9992661" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2405.00061v1</id>
+    <title>Successive Convexification for Nonlinear Model Predictive Control with Continuous-Time Constraint Satisfaction</title>
+    <updated>2024-04-26T07:11:08Z</updated>
+    <link href="https://arxiv.org/abs/2405.00061v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2405.00061v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We propose a nonlinear model predictive control (NMPC) framework based on a direct optimal control method that ensures continuous-time constraint satisfaction and accurate evaluation of the running cost, without compromising computational efficiency. We leverage the recently proposed successive convexification framework for trajectory optimization, where: (1) the path constraints and running cost are equivalently reformulated by augmenting the system dynamics, (2) multiple shooting is used for exact discretization, and (3) a convergence-guaranteed sequential convex programming (SCP) algorithm, the prox-linear method, is used to solve the discretized receding-horizon optimal control problems. The resulting NMPC framework is computationally efficient, owing to its support for warm-starting and premature termination of SCP, and its reliance on first-order information only. We demonstrate the effectiveness of the proposed NMPC framework by means of a numerical example with reference-tracking and obstacle avoidance. The implementation is available at https://github.com/UW-ACL/nmpc-ctcs</summary>
+    <category term="math.OC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-04-26T07:11:08Z</published>
+    <arxiv:primary_category term="math.OC"/>
+    <author>
+      <name>Samet Uzun</name>
+    </author>
+    <author>
+      <name>Purnanand Elango</name>
+    </author>
+    <author>
+      <name>Abhinav G. Kamath</name>
+    </author>
+    <author>
+      <name>Taewan Kim</name>
+    </author>
+    <author>
+      <name>Behcet Acikmese</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2208.08373v1</id>
+    <title>Perceptive Locomotion through Nonlinear Model Predictive Control</title>
+    <updated>2022-08-17T16:09:09Z</updated>
+    <link href="https://arxiv.org/abs/2208.08373v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2208.08373v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Dynamic locomotion in rough terrain requires accurate foot placement, collision avoidance, and planning of the underactuated dynamics of the system. Reliably optimizing for such motions and interactions in the presence of imperfect and often incomplete perceptive information is challenging. We present a complete perception, planning, and control pipeline, that can optimize motions for all degrees of freedom of the robot in real-time. To mitigate the numerical challenges posed by the terrain a sequence of convex inequality constraints is extracted as local approximations of foothold feasibility and embedded into an online model predictive controller. Steppability classification, plane segmentation, and a signed distance field are precomputed per elevation map to minimize the computational effort during the optimization. A combination of multiple-shooting, real-time iteration, and a filter-based line-search are used to solve the formulated problem reliably and at high rate. We validate the proposed method in scenarios with gaps, slopes, and stepping stones in simulation and experimentally on the ANYmal quadruped platform, resulting in state-of-the-art dynamic climbing.</summary>
+    <category term="cs.RO" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-08-17T16:09:09Z</published>
+    <arxiv:primary_category term="cs.RO"/>
+    <author>
+      <name>Ruben Grandia</name>
+    </author>
+    <author>
+      <name>Fabian Jenelten</name>
+    </author>
+    <author>
+      <name>Shaohui Yang</name>
+    </author>
+    <author>
+      <name>Farbod Farshidian</name>
+    </author>
+    <author>
+      <name>Marco Hutter</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2301.00614v2</id>
+    <title>A map-based model predictive control approach for train operation</title>
+    <updated>2023-04-24T08:32:20Z</updated>
+    <link href="https://arxiv.org/abs/2301.00614v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2301.00614v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Trains are a corner stone of public transport and play an important role in daily life. A challenging task in train operation is to avoid skidding and sliding during fast changes of traction conditions, which can, for example, occur due to changing weather conditions, crossings, tunnels or forest entries. The latter depends on local track conditions and can be recorded in a map together with other location-dependent information like speed limits and inclination. In this paper, a model predictive control (MPC) approach is developed. Thanks to the knowledge of future changes of traction conditions, the approach is able to avoid short-term skidding and sliding even under fast changes of traction conditions. In a first step, an optimal reference trajectory is determined by a multiple-shooting approach. In a second step, the reference trajectory is tracked by an MPC setup. The developed method is simulated along a track with fast-changing traction conditions for different scenarios, like changing weather conditions and unexpected delays. In all cases, skidding and sliding is avoided.</summary>
+    <category term="eess.SY" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math.OC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2023-01-02T12:00:47Z</published>
+    <arxiv:comment>6 pages, 7 figures, accepted at ECC 2023</arxiv:comment>
+    <arxiv:primary_category term="eess.SY"/>
+    <author>
+      <name>Michael Hauck</name>
+    </author>
+    <author>
+      <name>Patrick Schmidt</name>
+    </author>
+    <author>
+      <name>Alexander Kobelski</name>
+    </author>
+    <author>
+      <name>Stefan Streif</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2404.16826v1</id>
+    <title>Successive Convexification for Trajectory Optimization with Continuous-Time Constraint Satisfaction</title>
+    <updated>2024-04-25T17:59:47Z</updated>
+    <link href="https://arxiv.org/abs/2404.16826v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2404.16826v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We present successive convexification, a real-time-capable solution method for nonconvex trajectory optimization, with continuous-time constraint satisfaction and guaranteed convergence, that only requires first-order information. The proposed framework combines several key methods to solve a large class of nonlinear optimal control problems: (i) exterior penalty-based reformulation of the path constraints; (ii) generalized time-dilation; (iii) multiple-shooting discretization; (iv) $\ell_1$ exact penalization of the nonconvex constraints; and (v) the prox-linear method, a sequential convex programming (SCP) algorithm for convex-composite minimization. The reformulation of the path constraints enables continuous-time constraint satisfaction even on sparse discretization grids and obviates the need for mesh refinement heuristics. Through the prox-linear method, we guarantee convergence of the solution method to stationary points of the penalized problem and guarantee that the converged solutions that are feasible with respect to the discretized and control-parameterized optimal control problem are also Karush-Kuhn-Tucker (KKT) points. Furthermore, we highlight the specialization of this property to global minimizers of convex optimal control problems, wherein the reformulated path constraints cannot be represented by canonical cones, i.e., in the form required by existing convex optimization solvers. In addition to theoretical analysis, we demonstrate the effectiveness and real-time capability of the proposed framework with numerical examples based on popular optimal control applications: dynamic obstacle avoidance and rocket landing.</summary>
+    <category term="math.OC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2024-04-25T17:59:47Z</published>
+    <arxiv:primary_category term="math.OC"/>
+    <author>
+      <name>Purnanand Elango</name>
+    </author>
+    <author>
+      <name>Dayou Luo</name>
+    </author>
+    <author>
+      <name>Abhinav G. Kamath</name>
+    </author>
+    <author>
+      <name>Samet Uzun</name>
+    </author>
+    <author>
+      <name>Taewan Kim</name>
+    </author>
+    <author>
+      <name>Behçet Açıkmeşe</name>
+    </author>
+  </entry>
+</feed>

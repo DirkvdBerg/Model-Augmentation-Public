@@ -1,0 +1,102 @@
+[wd] launch  out=outputs/R-028
+[wd] command conda run --no-capture-output -n GraduationProject python -u design/screen_b.py
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation_oa_null_b140-230_a6): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_null_b140-230_a6
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=0.000e+00 m  vdelta_a std=0.000e+00 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.3 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+WATCHDOG ALERT available RAM 3.87 GB < 4 GB (tree 1,567 MB)
+[core] augmentation_oa_null_b140-230_a6 stride 1: 671944 tuples, basis rank 10 cond 7.9404e+02, 25.6 s
+
+============================================================================================
+COLUMNS  (671944 tuples, stride 1)
+============================================================================================
+  column    ||Delta_c||  rho alone
+  k_x        1.6833e-03     0.2206
+  k_y        2.7897e-02     0.0470
+  k_xp       6.8157e-03     0.2156
+  gamma      2.0837e+01     0.2740
+  M11Y       9.7423e-02     0.7213
+  M11Y2      2.6331e-02     0.8987
+  M12Y2      5.5375e-01     0.7420
+  M13        1.9836e+00     0.6530
+  M13Y       4.4947e-01     0.7693
+  M13Y2      1.2050e-01     0.4120
+  M22Y       9.3726e+00     0.3963
+  M23Y       8.0974e+00     0.1738
+  M23Y2      2.0340e+00     0.7396
+  M33Y       8.0389e-01     0.1292
+  M33Y2      2.0270e-01     0.7400
+
+============================================================================================
+ROUTE B, PHYSICAL TERMS ONLY  (k_x, k_y, k_xp, gamma: 4 unknowns, 10 conditions)
+============================================================================================
+  singular values of the column-normalised 10 x 4 condition matrix: [6.731 6.545 1.405 0.316]
+  best combination: rho* = 4.5081e-02  (needs < 1e-3)  v = [1.0000e+00 5.2788e-01 2.6590e-01 4.1115e-05]
+
+============================================================================================
+ROUTE B, FULL LEGITIMATE LIBRARY  (15 columns)
+============================================================================================
+  rank 10 of 15 columns: admissible class has dimension 5
+  singular values: [1.245e+02 2.443e+01 5.524e+00 3.392e+00 1.679e+00 1.707e-01 2.111e-02
+ 8.040e-03 5.242e-03 1.368e-03]
+  most-physical member: physical share of coefficient energy 0.788
+  rho* = 5.174e-15   ||Delta|| (scaled to 1.5 x minimum) = 1.2735e+01   (minimum 8.4900e+00)
+  predicted bias J^+ Delta (combo %): kb_sum +1.60e-13  cg1 -6.74e-13  cg2 -4.55e-13  cy -3.73e-13  cb_sum +4.93e-13  mh -1.58e-13  m_total +3.09e-13  m_diff +3.72e-15  J_eff +0.00e+00  d -5.55e-14   m_diff own scale +7.772e-14 %
+  coefficients (unit-force units, scaled):
+    k_x      -3.919348e+03   (normalised -0.3914)
+    k_y      +8.325764e+01   (normalised +0.1378)
+    k_xp     -8.147964e+02   (normalised -0.3295)
+    gamma    -5.759243e-01   (normalised -0.7120)
+    M11Y     -1.152420e+01   (normalised -0.0666)
+    M11Y2    -4.500638e+01   (normalised -0.0703)
+    M12Y2    -2.591241e+00   (normalised -0.0851)
+    M13      +1.600076e+00   (normalised +0.1883)
+    M13Y     +3.042341e+00   (normalised +0.0811)
+    M13Y2    +4.487334e+01   (normalised +0.3208)
+    M22Y     -2.150702e-02   (normalised -0.0120)
+    M23Y     +3.290298e-01   (normalised +0.1581)
+    M23Y2    +6.757351e-02   (normalised +0.0082)
+    M33Y     +3.205574e+00   (normalised +0.1529)
+    M33Y2    -3.860520e+00   (normalised -0.0464)
+
+============================================================================================
+ROUTE B, OA-009 MEMBER  (max ||Delta||^2 / stage-force energy on null(A))
+============================================================================================
+  library only: 11 columns, rank 10, null dim 1
+  rho* = 1.663e-14   ||Delta|| scaled 1.2735e+01   ||Delta||/||f|| gain 4.9872e-05
+  addition stage force on the data: rms [ 62.1   79.32 294.76] N, peak [ 555.9  602.9 1791.2] N
+  predicted bias (combo %) max |.| 4.24e-11, m_diff own -6.71e-12 %
+    M11Y     +8.075861e+01   (normalised +0.0000)
+    M11Y2    +1.979223e+01   (normalised +0.0000)
+    M12Y2    -1.445184e+01   (normalised -0.0000)
+    M13      +2.710348e-01   (normalised +0.0000)
+    M13Y     -5.030786e+00   (normalised -0.0000)
+    M13Y2    -1.754635e+01   (normalised -0.0000)
+    M22Y     -4.404072e-01   (normalised -0.0000)
+    M23Y     +5.870431e+00   (normalised +0.0002)
+    M23Y2    +6.149829e-01   (normalised +0.0000)
+    M33Y     -5.612491e+01   (normalised -0.0002)
+    M33Y2    +3.755338e+00   (normalised +0.0000)
+  round trip through the oa_* arrays: rho* 1.743e-14, ||Delta|| 1.2735e+01 (must match)
+
+[out] outputs/screen_b_R-028_M.json, design/route_b_member_R-028_M.npz  (34 s)
+WATCHDOG SUMMARY exit=0 killed=False duration_s=42.9 samples=9 peak_tree_ws_mb=2,297 min_avail_ram_gb=3.28 min_C_free_gb=8.32 kill_reason=""

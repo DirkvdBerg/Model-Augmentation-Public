@@ -1,0 +1,70 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g3_random
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/init/g3_init.py --arm random
+  mode          'augmentation_ma50_z03_b140-230_a6all_telica_coulomb'
+  fs_new        4000
+  ts_new        0.00025
+  nf            400
+  na_nb         29
+  stride        10
+  burn_in       0
+  batch_size    512
+  epochs        200
+  its_per_val   1300
+  n_its         None
+  seed          42
+  closed_loop   True
+  use_f64       False
+  lr            1e-05
+  adam_eps      1e-16
+  lbfgs         True
+  device        'cpu'   (CFG: 'cuda', local override)
+  compile_mode  None   (CFG: 'reduce-overhead', local override)
+Data dir (augmentation_ma50_z03_b140-230_a6all_telica_coulomb): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.274e-05 m  vdelta_a std=5.127e-02 m/s
+Loaded 18 train, 6 val, 5 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  T15: 48000 samples  (TP1_telica_y000.mat)
+  T16: 48000 samples  (TP2_telica_y000_rev.mat)
+  T17: 48000 samples  (TP3_telica_yp06.mat)
+  T18: 48000 samples  (TP4_telica_ym06.mat)
+Initializing encoder network...
+[closed loop] one bank over 24 records, 12 distinct controllers, Y_op [-0.3, -0.22, -0.2, -0.15, -0.1, -0.06, 0.0, 0.06, 0.1, 0.12, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[bb] arm=random nx=8 na=nb=29 na_right=nb_right=1 params=5286 lr=0.001 eps=1e-08 burn_in=0
+C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\vendor\model_augmentation\fit_systems\closed_loop.py:776: RuntimeWarning: overflow encountered in square
+  mse_per_channel = np.mean(e ** 2, axis=0)
+[wd] t=57s tree=806 MB cpu=8% availRAM=4.13 GB C:free=7.13 GB
+C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\score\cl_score.py:63: RuntimeWarning: overflow encountered in square
+  rms = float(np.sqrt(np.mean(np.mean(e ** 2, axis=0))))
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 780 MB)
+[wd] t=119s tree=793 MB cpu=8% availRAM=4.62 GB C:free=7.14 GB
+[wd] t=181s tree=820 MB cpu=8% availRAM=4.62 GB C:free=7.13 GB
+[wd] t=243s tree=796 MB cpu=8% availRAM=4.33 GB C:free=7.13 GB
+[wd] t=305s tree=785 MB cpu=8% availRAM=4.27 GB C:free=7.11 GB
+   V1_standstill_Yp10.mat   closed nan (UNSTABLE, max|e| inf vs max|y| 1.001e-01)   open 1.0498e-01 (stable)
+   V2_aprbs_Ylow.mat        closed nan (UNSTABLE, max|e| inf vs max|y| 2.962e-01)   open 1.1185e-01 (stable)
+   V3_ysweep_Yp10.mat       closed nan (UNSTABLE, max|e| inf vs max|y| 2.500e-01)   open 1.1899e-01 (stable)
+   V4_lissajous_Ym10.mat    closed nan (UNSTABLE, max|e| inf vs max|y| 3.000e-01)   open 8.7828e-02 (stable)
+   VP1_telica_ylow.mat      closed nan (UNSTABLE, max|e| inf vs max|y| 2.800e-01)   open 9.2074e-02 (stable)
+   VP2_telica_yp12.mat      closed nan (UNSTABLE, max|e| inf vs max|y| 2.800e-01)   open 1.2014e-01 (stable)
+[G3] random: initial closed-loop val sim-RMS nan m (0/6 records stable), open-loop 1.0598e-01 m, validation 22.9 s
+[G3] 85644 training windows (4758 per record); 3 batches of 512
+   batch 0: loss nan (sqrt nan)  |grad| nan  finite False  (24/24 tensors)  fwd 0.6 s, fwd+bwd 1.1 s
+   batch 1: loss nan (sqrt nan)  |grad| nan  finite False  (24/24 tensors)  fwd 0.6 s, fwd+bwd 1.0 s
+   batch 2: loss nan (sqrt nan)  |grad| nan  finite False  (24/24 tensors)  fwd 0.6 s, fwd+bwd 1.1 s
+[G3] random: gradients NOT OK; arm FAIL
+WATCHDOG SUMMARY exit=0 killed=False duration_s=322.8 samples=63 peak_tree_ws_mb=820 min_avail_ram_gb=3.99 min_C_free_gb=7.11 kill_reason=""

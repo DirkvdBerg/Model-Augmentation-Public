@@ -1,0 +1,33 @@
+[run.sh] C: free 7.24 GB before launch of R015_g3_r2
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R015_g3_r2
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/g3_r2.py 
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+  V1_standstill_Yp10 H=400 done [17 s]
+[wd] t=57s tree=662 MB cpu=17% availRAM=4.56 GB C:free=7.24 GB
+  V1_standstill_Yp10 H=4000 done [97 s]
+  V2_aprbs_Ylow H=400 done [104 s]
+[wd] t=120s tree=661 MB cpu=9% availRAM=4.54 GB C:free=7.24 GB
+[wd] t=182s tree=663 MB cpu=33% availRAM=4.59 GB C:free=7.24 GB
+  V2_aprbs_Ylow H=4000 done [173 s]
+  V3_ysweep_Yp10 H=400 done [181 s]
+[wd] t=244s tree=664 MB cpu=33% availRAM=4.52 GB C:free=7.24 GB
+  V3_ysweep_Yp10 H=4000 done [252 s]
+  V4_lissajous_Ym10 H=400 done [259 s]
+[wd] t=306s tree=662 MB cpu=33% availRAM=4.59 GB C:free=7.23 GB
+  V4_lissajous_Ym10 H=4000 done [325 s]
+
+  pooled open-loop free-run RMS [m], V1-V4, 20 starts per record
+  arm                                      H=400 X1/X2/Y                          H=4000 X1/X2/Y
+  U|exact                  1.212e-04 1.426e-04 1.487e-03           3.982e-04 4.784e-04 1.348e-02
+  U|P0                     1.344e-04 1.476e-04 1.454e-04           6.637e-04 7.004e-04 9.910e-04
+  U|G2                     1.263e-04 1.496e-04 1.459e-04           3.358e-04 4.083e-04 9.912e-04
+  PL|exact                 9.471e-08 9.144e-08 1.679e-07           1.138e-07 1.112e-07 1.671e-07
+  PL|P0|random             1.020e-04 9.486e-05 4.634e-03           6.723e-04 7.067e-04 3.432e-02
+  PL|P0|zero               1.000e-04 9.394e-05 1.421e-04           6.012e-04 6.009e-04 9.868e-04
+  PL|G2                    4.437e-07 4.630e-07 5.051e-07           2.217e-06 2.217e-06 3.443e-06
+
+  G3 R2 criterion (planted: G2 <= P0 random and zero, every channel, both H): True
+  saved outputs/g3/r2.json  [325 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=336.5 samples=65 peak_tree_ws_mb=665 min_avail_ram_gb=4.46 min_C_free_gb=7.23 kill_reason=""

@@ -1,0 +1,77 @@
+[run.sh] C: free 7.51 GB before launch of R020_g5_sim_g2refresh_smoke
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R020_g5_sim_g2refresh_smoke
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/runners/sim_arm.py 
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+[sim_arm] ARM=g2refresh DRY=False SMOKE=True mode=augmentation_ma50_b140-230_a6_z03 burn_in=0 nf=20 batch=8 n_its=1 device=cpu
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[closed loop] one bank over 18 records, 8 distinct controllers, Y_op [-0.3, -0.22, -0.15, -0.1, 0.0, 0.1, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[sim_arm] encoder swapped: g2refresh {'deg': 6, 'fit_resid': 1.8389157960087554e-06, 'offset': 0.0}; optimizer rebuilt over 23534 encoder parameters
+
+Training: nf=20  epochs=1  val=sim-RMS  NX_ANN=8
+
+[nf] rms = RMS over nf=20 (0.005 s) windows, closed loop, metres
+     chan = per-channel X/Theta/Y | grow = RMS(last step)/RMS(first) | bias = mean residual
+     train = all windows since the last validation, running mean | val = 256 fixed windows, snapshot
+     metre weighting is NOT the objective's, which weights channels by 1/ystd^2;
+     numbers are not comparable ACROSS loop modes, the [nf gap] ratios are
+Model already initilized (init_model_done=True), skipping initilizing of the model, the norm and the creation of the optimizer
+Size of the training array =  1.9 MB
+N_training_samples = 1680, batch_size = 8, N_batch_updates_per_epoch = 210
+[wd] t=57s tree=774 MB cpu=8% availRAM=4.26 GB C:free=7.51 GB
+[wd] t=119s tree=805 MB cpu=8% availRAM=4.24 GB C:free=7.50 GB
+    [nf val  ] rms 1.913e-05  chan 2.1e-06/2.2e-06/3.3e-05  grow 1.83x  bias -6.6e-08/+7.1e-08/-2.2e-07  (256 win)
+    [nf gap  ] val_sim 2.062e-05 = 1.08x val_nf (horizon)
+    [x_aug   ] ||x_aug|| end-of-rollout  mean 0.000e+00  std 0.000e+00  max 0.000e+00
+Initial Validation sim-RMS= 2.0616664642147953e-05
+  0%|          | 0/1 [00:00<?, ?it/s][refresh] update 0: model-Jacobian map rebuilt (resid 1.9e-06, max affine offset 0.0e+00, 8.9 s)
+[wd] t=181s tree=782 MB cpu=8% availRAM=4.27 GB C:free=7.45 GB
+[wd] t=243s tree=804 MB cpu=8% availRAM=4.38 GB C:free=7.45 GB
+    [nf train] rms 1.516e-05  chan 1.5e-06/1.5e-06/2.6e-05  grow 2.00x  bias +1.9e-07/-1.2e-07/+7.9e-07  (8 win)
+    [nf val  ] rms 1.557e-04  chan 5.3e-05/4.9e-05/2.6e-04  grow 0.43x  bias -3.9e-06/-7.7e-06/-2.1e-06  (256 win)
+    [nf gap  ] val_sim 1.810e-05 = 0.12x val_nf (horizon) = 1.19x train_nf (horizon+gen)
+    [x_aug   ] ||x_aug|| end-of-rollout  mean 0.000e+00  std 0.000e+00  max 0.000e+00
+########## New lowest validation loss achieved ########### sim-RMS = 1.8098777673003497e-05
+It    1, sqrt loss 8.813e-05, Val sim-RMS 1.81e-05, Time Loss: 7.8%, data: 0.0%, val: 92.2%, 117.7 sec/batch
+100%|██████████| 1/1 [01:57<00:00, 117.66s/it]100%|██████████| 1/1 [01:57<00:00, 117.66s/it]
+C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\fit_systems\fit_system.py:501: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.__dict__ = torch.load(file)
+Loaded model with best known validation sim-RMS of 1.81e-05 which happened on epoch 1 (epoch_id=0.00)
+  val nf-window RMS (20-step): first=1.9134e-05  best=1.9134e-05  last=1.5574e-04 [m]  (sim-RMS selector unchanged)
+  train nf-window RMS (20-step): first=1.5165e-05  best=1.5165e-05  last=1.5165e-05 [m]  (1 finite of 2; the pre-training entry has no windows behind it)
+
+[lbfgs] polish phase (D-171): Adam is done, quasi-Newton from here
+  [lbfgs] fixed batch: 1680 of 1680 windows (stride 400 -> 400), 1.9 MB on cpu, 1 chunk(s), extras=('ctrl_ix',)
+[refresh] update 1: model-Jacobian map rebuilt (resid 1.9e-06, max affine offset 3.5e-05, 8.1 s)
+  [lbfgs] determinism check (eager): 2.58782719697592256e-08 vs 2.58782719697592256e-08 -> OK
+  [lbfgs] 25516 parameters in one group, m=50, strong-Wolfe, tol_grad=1.0e-12 tol_change=0.0e+00 (0.0e+00 relative to the opening loss), max 100 iterations, eager rollout
+  [lbfgs] iter   20 (+20 of 20)  (27 closures, 20 s)
+  [lbfgs] iter   37 (+17 of 20)  (53 closures, 31 s)
+[wd] t=305s tree=817 MB cpu=8% availRAM=4.37 GB C:free=7.40 GB
+[wd] t=366s tree=837 MB cpu=8% availRAM=4.29 GB C:free=7.40 GB
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 2.587827e-08 -> 4.403550e-09 | 37 iterations, 53 closures in 144 s
+  [lbfgs] sim-RMS 1.809878e-05 -> 1.117667e-05
+Training done | 1 ep | 230s | bestfit=0.00001  R2_linmap: delta_a=+0.6277  vdelta_a=+0.5820
+[refresh] update 1: model-Jacobian map rebuilt (resid 1.9e-06, max affine offset 3.3e-05, 7.7 s)
+[sim_arm] done: n_updates 1, 399 s -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\outputs\g5\sim_g2refresh_smoke
+WATCHDOG SUMMARY exit=0 killed=False duration_s=404.9 samples=79 peak_tree_ws_mb=919 min_avail_ram_gb=4.22 min_C_free_gb=7.39 kill_reason=""

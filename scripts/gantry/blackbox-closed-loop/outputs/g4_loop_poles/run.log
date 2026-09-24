@@ -1,0 +1,48 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g4_loop_poles
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/init/g4_loop_poles.py 
+Data dir (augmentation_ma50_z03_b140-230_a6all_telica_coulomb): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.274e-05 m  vdelta_a std=5.127e-02 m/s
+Loaded 18 train, 6 val, 5 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  T15: 48000 samples  (TP1_telica_y000.mat)
+  T16: 48000 samples  (TP2_telica_y000_rev.mat)
+  T17: 48000 samples  (TP3_telica_yp06.mat)
+  T18: 48000 samples  (TP4_telica_ym06.mat)
+Initializing encoder network...
+[bb] FRF CT model scripts\gantry\ann-blackbox\results\frf_init_joint_lowf_ma50_a5\frf_init_ss.npz discretised ZOH at 0.00025 s -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\outputs\init\frf_ss_fs4000.npz
+[BLA-frf] loaded frf_ss_fs4000.npz, nx=8
+[BLA-frf] max|eig| = 1.000000, closest pole to z=1: 0.000e+00
+[BLA-frf] |eig| = [1.       1.       0.999675 0.999576 0.999131 0.999131 0.971213 0.971213]
+[BLA-frf] applied, zero_nonlinear=True
+[closed loop] one bank over 24 records, 12 distinct controllers, Y_op [-0.3, -0.22, -0.2, -0.15, -0.1, -0.06, 0.0, 0.06, 0.1, 0.12, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[bb] arm=frf nx=8 na=nb=29 na_right=nb_right=1 params=5286 lr=1e-07 eps=1e-08 burn_in=0
+[poles] controller 0: loop max|z| 0.977613 | d=0.0001: med 4.0336 max 13.3654 unstable 100%  d=1e-05: med 1.1227 max 2.4752 unstable 86%  d=1e-06: med 0.9776 max 1.0361 unstable 4%  d=1e-07: med 0.9776 max 0.9776 unstable 0%
+[poles] controller 1: loop max|z| 0.977663 | d=0.0001: med 4.3013 max 14.1692 unstable 100%  d=1e-05: med 1.1054 max 2.5787 unstable 86%  d=1e-06: med 0.9777 max 1.0321 unstable 5%  d=1e-07: med 0.9777 max 0.9777 unstable 0%
+[poles] controller 2: loop max|z| 0.977673 | d=0.0001: med 3.7507 max 12.9396 unstable 100%  d=1e-05: med 1.1029 max 2.5199 unstable 83%  d=1e-06: med 0.9777 max 1.0261 unstable 2%  d=1e-07: med 0.9777 max 0.9777 unstable 0%
+[poles] controller 3: loop max|z| 0.977695 | d=0.0001: med 4.3446 max 13.6440 unstable 100%  d=1e-05: med 1.1140 max 2.4675 unstable 78%  d=1e-06: med 0.9777 max 1.0074 unstable 4%  d=1e-07: med 0.9777 max 0.9777 unstable 0%
+[poles] controller 4: loop max|z| 0.977710 | d=0.0001: med 3.9690 max 12.3535 unstable 100%  d=1e-05: med 1.1187 max 2.4060 unstable 85%  d=1e-06: med 0.9778 max 1.0162 unstable 5%  d=1e-07: med 0.9777 max 0.9777 unstable 0%
+[poles] controller 5: loop max|z| 0.977716 | d=0.0001: med 3.9353 max 13.1085 unstable 100%  d=1e-05: med 1.1116 max 2.3830 unstable 76%  d=1e-06: med 0.9777 max 1.0181 unstable 2%  d=1e-07: med 0.9777 max 0.9777 unstable 0%
+[poles] controller 6: loop max|z| 0.977719 | d=0.0001: med 3.9613 max 13.6306 unstable 100%  d=1e-05: med 1.1140 max 2.3306 unstable 82%  d=1e-06: med 0.9778 max 1.0200 unstable 2%  d=1e-07: med 0.9777 max 0.9777 unstable 0%
+[poles] controller 7: loop max|z| 0.977713 | d=0.0001: med 4.4040 max 11.9785 unstable 100%  d=1e-05: med 1.0886 max 2.2184 unstable 84%  d=1e-06: med 0.9778 max 1.0209 unstable 4%  d=1e-07: med 0.9777 max 0.9777 unstable 0%
+[poles] controller 8: loop max|z| 0.977706 | d=0.0001: med 4.3917 max 11.9175 unstable 100%  d=1e-05: med 1.1158 max 2.4922 unstable 89%  d=1e-06: med 0.9777 max 1.0298 unstable 2%  d=1e-07: med 0.9777 max 0.9777 unstable 0%
+[poles] controller 9: loop max|z| 0.977698 | d=0.0001: med 4.2833 max 12.8552 unstable 100%  d=1e-05: med 1.1225 max 2.4466 unstable 84%  d=1e-06: med 0.9777 max 1.0167 unstable 3%  d=1e-07: med 0.9777 max 0.9777 unstable 0%
+[poles] controller 10: loop max|z| 0.977688 | d=0.0001: med 4.1346 max 12.8901 unstable 100%  d=1e-05: med 1.1329 max 2.2324 unstable 87%  d=1e-06: med 0.9777 max 1.0135 unstable 2%  d=1e-07: med 0.9777 max 0.9777 unstable 0%
+[poles] controller 11: loop max|z| 0.977602 | d=0.0001: med 4.1338 max 14.7760 unstable 100%  d=1e-05: med 1.1392 max 2.5428 unstable 87%  d=1e-06: med 0.9777 max 1.0287 unstable 2%  d=1e-07: med 0.9776 max 0.9776 unstable 0%
+[poles] open-loop max|eig(A)| 1.000000; |D_k| scale: [5905.766 5895.182 5892.825 5887.634 5883.654 5881.494 5880.149 5881.169
+ 5883.127 5884.464 5886.883 5904.603]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=15.6 samples=3 peak_tree_ws_mb=593 min_avail_ram_gb=4.10 min_C_free_gb=7.04 kill_reason=""

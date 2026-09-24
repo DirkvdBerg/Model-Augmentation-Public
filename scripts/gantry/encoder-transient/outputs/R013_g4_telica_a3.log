@@ -1,0 +1,33 @@
+[run.sh] C: free 7.25 GB before launch of R013_g4_telica_a3
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R013_g4_telica_a3
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/telica/g4_telica_a3.py 
+[records] NOTE train/xpos_-210_ypos-200/iter0: MF230 constant on axes [2]
+  na  7 (1.6 ms) deg 3: train RMS ratio to P0 0.040 0.049 0.037 0.184 0.232 0.171  -> objective 0.1188  [6 s]
+  na 11 (2.4 ms) deg 3: train RMS ratio to P0 0.103 0.130 0.096 0.289 0.364 0.268  -> objective 0.2083  [10 s]
+  na 15 (3.2 ms) deg 3: train RMS ratio to P0 0.197 0.247 0.183 0.394 0.495 0.364  -> objective 0.3133  [14 s]
+  na 21 (4.4 ms) deg 3: train RMS ratio to P0 0.394 0.495 0.365 0.550 0.690 0.508  -> objective 0.5002  [18 s]
+  na 29 (6.0 ms) deg 3: train RMS ratio to P0 0.760 0.957 0.705 0.756 0.947 0.697  -> objective 0.8039  [24 s]
+  chosen na = 7 (train objective)
+
+  [all 15 records (ET-006 rule)] 15 records; bound 6.89e-09 2.06e-08 6.14e-09 4.95e-05 1.53e-04 5.69e-05
+    P0-T 6.786e-06 2.738e-05 2.590e-05 7.247e-03 2.899e-02 2.759e-02
+    RFS  2.633e-07 1.393e-06 8.886e-07 1.313e-03 6.922e-03 4.420e-03   ratio 0.039 0.051 0.034 0.181 0.239 0.160
+    ypos   -200  X 0.038 Theta 0.038 Y 0.050 dX 0.176 dTheta 0.177 dY 0.234
+    ypos   -120  X 0.037 Theta 0.047 Y 0.023 dX 0.171 dTheta 0.222 dY 0.110
+    ypos    -40  X 0.037 Theta 0.057 Y 0.024 dX 0.173 dTheta 0.269 dY 0.110
+    ypos     40  X 0.038 Theta 0.062 Y 0.028 dX 0.178 dTheta 0.293 dY 0.129
+    ypos    120  X 0.044 Theta 0.057 Y 0.032 dX 0.204 dTheta 0.269 dY 0.149
+    verdict: lower on all resolvable True; worst ypos ratio 0.293 -> PASS
+
+  [held-out val + test] 4 records; bound 6.96e-09 2.04e-08 6.11e-09 4.90e-05 1.52e-04 5.67e-05
+    P0-T 6.915e-06 2.649e-05 2.639e-05 7.385e-03 2.805e-02 2.810e-02
+    RFS  2.532e-07 1.469e-06 6.962e-07 1.263e-03 7.301e-03 3.462e-03   ratio 0.037 0.055 0.026 0.171 0.260 0.123
+    ypos   -120  X 0.031 Theta 0.047 Y 0.021 dX 0.146 dTheta 0.223 dY 0.100
+    ypos    -40  X 0.042 Theta 0.055 Y 0.025 dX 0.194 dTheta 0.257 dY 0.117
+    ypos     40  X 0.037 Theta 0.065 Y 0.028 dX 0.174 dTheta 0.306 dY 0.129
+    ypos    120  X 0.035 Theta 0.062 Y 0.029 dX 0.163 dTheta 0.292 dY 0.134
+    verdict: lower on all resolvable True; worst ypos ratio 0.306 -> PASS
+
+  kinematic reference arm (not a candidate), pooled RMS: X 5.17e-09 Theta 1.54e-08 Y 5.07e-09 dX 3.47e-04 dTheta 3.46e-04 dY 4.12e-04
+  saved outputs/telica/g4/g4_telica_a3.json  [24 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=32.2 samples=7 peak_tree_ws_mb=805 min_avail_ram_gb=4.41 min_C_free_gb=7.25 kill_reason=""

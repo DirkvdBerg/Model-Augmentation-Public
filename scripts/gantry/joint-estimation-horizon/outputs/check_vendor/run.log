@@ -1,0 +1,5 @@
+[wd] launch  out=scripts/gantry/joint-estimation-horizon/outputs/check_vendor
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/joint-estimation-horizon/tools/check_vendor.py 
+WATCHDOG ALERT available RAM 3.26 GB < 4 GB (tree 29 MB)
+check_vendor: 140 files, 56 marked patch lines, 0 unmarked differences, 0 sources changed since the copy
+WATCHDOG SUMMARY exit=0 killed=False duration_s=2.6 samples=1 peak_tree_ws_mb=29 min_avail_ram_gb=3.26 min_C_free_gb=6.35 kill_reason=""

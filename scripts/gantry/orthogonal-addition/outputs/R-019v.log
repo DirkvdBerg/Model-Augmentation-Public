@@ -1,0 +1,24 @@
+[wd] launch  out=outputs/R-019v
+[wd] command conda run --no-capture-output -n GraduationProject python -u measure/g4_verdict.py outputs/measure_R-007_null_s1.json outputs/measure_R-019_b_s1.json
+null control augmentation_oa_null_b140-230_a6: ||Delta*|| 0.2800, rho* 0.4377, B = 0.2671 % combo-err, m_diff own -0.0529 %
+
+augmentation_oa_b_b140-230_a6
+  param      b_null %    b_add %    shift %  in band
+  kb_sum       0.0218     0.9490     0.9272  NO
+  cg1          0.0023     0.0104     0.0081  yes
+  cg2          0.0007     0.0817     0.0809  yes
+  cy           0.0173     0.3185     0.3012  NO
+  cb_sum       0.8398    11.7716    10.9318  NO
+  mh           0.0484     3.3893     3.3409  NO
+  m_total      0.0488     3.2632     3.2145  NO
+  m_diff      -0.0025    -0.6143    -0.6118  -   (combo scale)
+  m_diff      -0.0529   -12.8396   -12.7867  NO   (own scale)
+  J_eff        0.0540     0.1643     0.1104  yes
+  d           -0.0026     0.1841     0.1867  yes
+  (i)  max shift, nine params: 10.9318 % vs B 0.2671 %  -> FAIL
+  (ii) m_diff shift own scale: -12.7867 % vs B 0.2671 %  -> FAIL
+  (iii) ||Delta*_add|| 12.7360 vs max(8.49, 5 x 0.2800 = 1.3999)  -> ok
+  rho* 7.8970e-02; combo-err RMS 4.0268 % (null 0.2671 %)
+  [not deciding] J at theta_0: max shift nine 10.8937 %, m_diff own shift -11.9142 %
+  G4 VERDICT: FAIL
+WATCHDOG SUMMARY exit=0 killed=False duration_s=2.7 samples=1 peak_tree_ws_mb=28 min_avail_ram_gb=5.40 min_C_free_gb=10.06 kill_reason=""

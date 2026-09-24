@@ -1,0 +1,223 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/HQ4p1iliUk+P1u2oRVdJbc7osPs</id>
+  <title>arXiv Query: search_query=abs:"multiple shooting" AND abs:"identifiability"&amp;id_list=&amp;start=0&amp;max_results=10</title>
+  <updated>2026-09-24T07:47:22Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=abs:%22multiple+shooting%22+AND+abs:%22identifiability%22&amp;start=0&amp;max_results=10&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>10</opensearch:itemsPerPage>
+  <opensearch:totalResults>8</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2212.13902v2</id>
+    <title>Likelihood-based generalization of Markov parameter estimation and multiple shooting objectives in system identification</title>
+    <updated>2023-01-20T20:34:54Z</updated>
+    <link href="https://arxiv.org/abs/2212.13902v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2212.13902v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper considers the problem of system identification (ID) of linear and nonlinear non-autonomous systems from noisy and sparse data. We propose and analyze an objective function derived from a Bayesian formulation for learning a hidden Markov model with stochastic dynamics. We then analyze this objective function in the context of several state-of-the-art approaches for both linear and nonlinear system ID. In the former, we analyze least squares approaches for Markov parameter estimation, and in the latter, we analyze the multiple shooting approach. We demonstrate the limitations of the optimization problems posed by these existing methods by showing that they can be seen as special cases of the proposed optimization objective under certain simplifying assumptions: conditional independence of data and zero model error. Furthermore, we observe that our proposed approach has improved smoothness and inherent regularization that make it well-suited for system ID and provide mathematical explanations for these characteristics' origins. Finally, numerical simulations demonstrate a mean squared error over 8.7 times lower compared to multiple shooting when data are noisy and/or sparse. Moreover, the proposed approach can identify accurate and generalizable models even when there are more parameters than data or when the underlying system exhibits chaotic behavior.</summary>
+    <category term="eess.SY" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math.DS" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math.OC" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="physics.data-an" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.CO" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-12-20T16:36:23Z</published>
+    <arxiv:primary_category term="eess.SY"/>
+    <author>
+      <name>Nicholas Galioto</name>
+    </author>
+    <author>
+      <name>Alex Arkady Gorodetsky</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2602.22964v2</id>
+    <title>A guided residual search for nonlinear state-space identification</title>
+    <updated>2026-06-10T08:38:34Z</updated>
+    <link href="https://arxiv.org/abs/2602.22964v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2602.22964v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Identifying the parameters of nonlinear state-space models from input-output data typically requires solving a highly non-convex optimization problem, which is prone to slow convergence and suboptimal local solutions. This work improves the reliability and efficiency of the estimation process by decomposing the overall optimization problem into a sequence of tractable subproblems. Starting from a linear baseline model, nonlinear residual dynamics are first estimated using a guided residual search (GRS) and subsequently refined through multiple-shooting optimization. Experiments on two benchmarks show competitive performance with state-of-the-art black-box methods and improved convergence over naive initialization.</summary>
+    <category term="eess.SP" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-02-26T13:01:42Z</published>
+    <arxiv:comment>Code is available at: https://github.com/merijnfloren/guided-residual-search ; published paper in IEEE Xplore: https://ieeexplore.ieee.org/document/11556202</arxiv:comment>
+    <arxiv:primary_category term="eess.SP"/>
+    <author>
+      <name>Merijn Floren</name>
+    </author>
+    <author>
+      <name>Jan Swevers</name>
+    </author>
+    <arxiv:doi>10.1109/LCSYS.2026.3701764</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1109/LCSYS.2026.3701764" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2109.08815v2</id>
+    <title>Probabilistic Inference of Simulation Parameters via Parallel Differentiable Simulation</title>
+    <updated>2022-02-27T01:15:35Z</updated>
+    <link href="https://arxiv.org/abs/2109.08815v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2109.08815v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>To accurately reproduce measurements from the real world, simulators need to have an adequate model of the physical system and require the parameters of the model be identified.
+  We address the latter problem of estimating parameters through a Bayesian inference approach that approximates a posterior distribution over simulation parameters given real sensor measurements. By extending the commonly used Gaussian likelihood model for trajectories via the multiple-shooting formulation, our chosen particle-based inference algorithm Stein Variational Gradient Descent is able to identify highly nonlinear, underactuated systems. We leverage GPU code generation and differentiable simulation to evaluate the likelihood and its gradient for many particles in parallel.
+  Our algorithm infers non-parametric distributions over simulation parameters more accurately than comparable baselines and handles constraints over parameters efficiently through gradient-based optimization. We evaluate estimation performance on several physical experiments. On an underactuated mechanism where a 7-DOF robot arm excites an object with an unknown mass configuration, we demonstrate how our inference technique can identify symmetries between the parameters and provide highly accurate predictions.
+  Project website: https://uscresl.github.io/prob-diff-sim</summary>
+    <category term="cs.RO" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-09-18T03:05:44Z</published>
+    <arxiv:comment>Extended version. To appear at ICRA 2022</arxiv:comment>
+    <arxiv:primary_category term="cs.RO"/>
+    <author>
+      <name>Eric Heiden</name>
+    </author>
+    <author>
+      <name>Christopher E. Denniston</name>
+    </author>
+    <author>
+      <name>David Millard</name>
+    </author>
+    <author>
+      <name>Fabio Ramos</name>
+    </author>
+    <author>
+      <name>Gaurav S. Sukhatme</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2608.18552v2</id>
+    <title>Real-Time Control-Constrained DDP for Underactuated Balancing of Legged Robots</title>
+    <updated>2026-09-03T07:18:44Z</updated>
+    <link href="https://arxiv.org/abs/2608.18552v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2608.18552v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper presents a real-time control-constrained Differential Dynamic Programming (DDP) framework for underactuated legged robots. To address the limitation of classical DDP in handling control constraints, we propose an Accelerated Projected Gradient (APG)-based control-constrained DDP (ABC-DDP), which efficiently computes constrained solutions and identifies active sets without repeated Karush-Kuhn-Tucker (KKT) inversions. A virtual constraint is introduced to integrate control constraints within a feasibility-driven multiple-shooting framework, enabling stable optimization even from dynamically infeasible initializations. The proposed method supports real-time model predictive control (MPC) with short horizons under strong underactuation. Simulation results demonstrate static two-leg standing under external disturbances, along with diverse dynamic motions including slow catwalk, upright walking, and high-speed running within a unified MPC framework. To the best of our knowledge, this is the first demonstration of static two-leg standing of a quadruped robot achieved using real-time finite-horizon MPC.</summary>
+    <category term="cs.RO" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math.OC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-08-19T05:21:27Z</published>
+    <arxiv:comment>This version includes a minor correction to the notation in Eq. (2)</arxiv:comment>
+    <arxiv:primary_category term="cs.RO"/>
+    <arxiv:journal_ref>IEEE Robotics and Automation Letters (RA-L), 2026</arxiv:journal_ref>
+    <author>
+      <name>SeongWon Nam</name>
+    </author>
+    <author>
+      <name>Hyunyong Lee</name>
+    </author>
+    <author>
+      <name>Hansol Kang</name>
+    </author>
+    <author>
+      <name>Jiman Park</name>
+    </author>
+    <author>
+      <name>Yeongwoo Son</name>
+    </author>
+    <author>
+      <name>Bumsu Yi</name>
+    </author>
+    <author>
+      <name>Jaeyoung Oh</name>
+    </author>
+    <author>
+      <name>Hyouk Ryeol Choi</name>
+    </author>
+    <arxiv:doi>10.1109/LRA.2026.3723262</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1109/LRA.2026.3723262" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2012.07721v3</id>
+    <title>Non-linear State-space Model Identification from Video Data using Deep Encoders</title>
+    <updated>2021-05-08T12:06:03Z</updated>
+    <link href="https://arxiv.org/abs/2012.07721v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2012.07721v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Identifying systems with high-dimensional inputs and outputs, such as systems measured by video streams, is a challenging problem with numerous applications in robotics, autonomous vehicles and medical imaging. In this paper, we propose a novel non-linear state-space identification method starting from high-dimensional input and output data. Multiple computational and conceptual advances are combined to handle the high-dimensional nature of the data. An encoder function, represented by a neural network, is introduced to learn a reconstructability map to estimate the model states from past inputs and outputs. This encoder function is jointly learned with the dynamics. Furthermore, multiple computational improvements, such as an improved reformulation of multiple shooting and batch optimization, are proposed to keep the computational time under control when dealing with high-dimensional and large datasets. We apply the proposed method to a video stream of a simulated environment of a controllable ball in a unit box. The study shows low simulation error with excellent long term prediction capability of the model obtained using the proposed method.</summary>
+    <category term="eess.SY" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-12-14T17:14:46Z</published>
+    <arxiv:comment>Accepted to SYSID 2021 (revised with reviewer feedback)</arxiv:comment>
+    <arxiv:primary_category term="eess.SY"/>
+    <author>
+      <name>Gerben Izaak Beintema</name>
+    </author>
+    <author>
+      <name>Roland Toth</name>
+    </author>
+    <author>
+      <name>Maarten Schoukens</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.30990v1</id>
+    <title>Hybrid System Identification of Electric Freight Transition Dynamics via SINDy and Neural ODEs</title>
+    <updated>2026-05-29T08:25:52Z</updated>
+    <link href="https://arxiv.org/abs/2605.30990v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.30990v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The transition to electric heavy-duty freight is constrained by a strong interdependence between vehicle adoption and charging infrastructure deployment. While system dynamics models are well-suited to simulate these socio-technical feedback loops, their reliance on conditional logic and heuristic rules makes the underlying dynamics difficult to interpret mathematically. This limits the direct application of formal systems and control theory. This paper proposes a solution to that problem through a general hybrid system identification framework that extracts a continuous-time analytical surrogate from simulations of complex system dynamics. The approach combines the sparse identification of nonlinear dynamics algorithm with neural ordinary differential equations to form a grey-box model. The first component identifies the dominant interpretable dynamics under causal coupling constraints, while the neural residual captures unmodelled nonlinearities. The framework is trained using multiple shooting over a 40-year horizon. The resulting model reproduces the training trajectories with a normalized root-mean-square error below 4\%, while maintaining reliable predictive accuracy when evaluated on unseen initial conditions.</summary>
+    <category term="math.OC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-29T08:25:52Z</published>
+    <arxiv:primary_category term="math.OC"/>
+    <arxiv:journal_ref>ITSC 2026</arxiv:journal_ref>
+    <author>
+      <name>Alessandro Carli</name>
+    </author>
+    <author>
+      <name>Maret Clement</name>
+    </author>
+    <author>
+      <name>Jonas Mårtensson</name>
+    </author>
+    <author>
+      <name>Anna Pernestål</name>
+    </author>
+    <author>
+      <name>Matthieu Barreau</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2504.12470v1</id>
+    <title>A Frequency-Domain Differential Corrector for Quasi-Periodic Trajectory Design and Analysis</title>
+    <updated>2025-04-16T20:17:58Z</updated>
+    <link href="https://arxiv.org/abs/2504.12470v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2504.12470v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper introduces the Frequency-Domain Differential Corrector (FDDC), a model-agnostic approach for constructing quasi-periodic orbits (QPOs) across a range of dynamical regimes. In contrast to existing methods that explicitly enforce an invariance condition in all frequency dimensions, the FDDC targets dominant spectral components identified through frequency-domain analysis. Leveraging frequency refinement strategies such as Laskar-Numerical Analysis of Fundamental Frequency (L-NAFF) and Gómez-Mondelo-Simó-Collocation (GMS-C), the method enables efficient and scalable generation of high-dimensional QPOs. The FDDC is demonstrated in both single- and multiple-shooting formulations. While the study focuses on the Earth-Moon system, the framework is broadly applicable to other celestial environments. Sample applications include Distant Retrograde Orbits (DROs), Elliptical Lunar Frozen Orbits (ELFOs), and Near Rectilinear Halo Orbits (NRHOs), illustrating constellation design and the recovery of analog solutions in higher-fidelity models. With its model-independent formulation and spectral targeting capabilities, FDDC offers a versatile tool for robust trajectory design and mission planning in complex dynamical systems.</summary>
+    <category term="math.DS" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-04-16T20:17:58Z</published>
+    <arxiv:primary_category term="math.DS"/>
+    <author>
+      <name>Beom Park</name>
+    </author>
+    <author>
+      <name>Kathleen C. Howell</name>
+    </author>
+    <author>
+      <name>Shaun Stewart</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2312.08961v2</id>
+    <title>Contact-Implicit Model Predictive Control: Controlling Diverse Quadruped Motions Without Pre-Planned Contact Modes or Trajectories</title>
+    <updated>2024-10-02T08:55:17Z</updated>
+    <link href="https://arxiv.org/abs/2312.08961v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2312.08961v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper presents a contact-implicit model predictive control (MPC) framework for the real-time discovery of multi-contact motions, without predefined contact mode sequences or foothold positions. This approach utilizes the contact-implicit differential dynamic programming (DDP) framework, merging the hard contact model with a linear complementarity constraint. We propose the analytical gradient of the contact impulse based on relaxed complementarity constraints to further the exploration of a variety of contact modes. By leveraging a hard contact model-based simulation and computation of search direction through a smooth gradient, our methodology identifies dynamically feasible state trajectories, control inputs, and contact forces while simultaneously unveiling new contact mode sequences. However, the broadened scope of contact modes does not always ensure real-world applicability. Recognizing this, we implemented differentiable cost terms to guide foot trajectories and make gait patterns. Furthermore, to address the challenge of unstable initial roll-outs in an MPC setting, we employ the multiple shooting variant of DDP. The efficacy of the proposed framework is validated through simulations and real-world demonstrations using a 45 kg HOUND quadruped robot, performing various tasks in simulation and showcasing actual experiments involving a forward trot and a front-leg rearing motion.</summary>
+    <category term="cs.RO" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2023-12-14T14:09:49Z</published>
+    <arxiv:comment>This is the accepted version for The International Journal of Robotics Research (2024); published version at https://journals.sagepub.com/doi/10.1177/02783649241273645 / Videos at https://youtu.be/SXD4BJIfyoY</arxiv:comment>
+    <arxiv:primary_category term="cs.RO"/>
+    <arxiv:journal_ref>The International Journal of Robotics Research, 44(3): 486-510, 2025</arxiv:journal_ref>
+    <author>
+      <name>Gijeong Kim</name>
+    </author>
+    <author>
+      <name>Dongyun Kang</name>
+    </author>
+    <author>
+      <name>Joon-Ha Kim</name>
+    </author>
+    <author>
+      <name>Seungwoo Hong</name>
+    </author>
+    <author>
+      <name>Hae-Won Park</name>
+    </author>
+    <arxiv:doi>10.1177/02783649241273645</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1177/02783649241273645" title="doi"/>
+  </entry>
+</feed>

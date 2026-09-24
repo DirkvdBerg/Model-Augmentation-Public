@@ -1,0 +1,62 @@
+[run.sh] C: free 7.56 GB before launch of R008_g2_regress
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R008_g2_regress
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/g2_fix.py --tag g2_regress
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+  grids built [10 s]
+  baseline deg  0  map resid max/W 6.37e-03  /corr 1.00e+00  worst RMS ratio to exact 4.569  X 4.54 Theta 3.62 Y 1.00 dX 4.57 dTheta 3.64 dY 1.00
+  baseline deg  1  map resid max/W 6.24e-03  /corr 9.63e-01  worst RMS ratio to exact 3.036  X 1.20 Theta 2.99 Y 1.00 dX 1.16 dTheta 3.04 dY 1.00
+  baseline deg  2  map resid max/W 4.47e-04  /corr 5.31e-02  worst RMS ratio to exact 1.026  X 1.03 Theta 1.01 Y 1.00 dX 1.02 dTheta 1.02 dY 1.00
+  baseline deg  3  map resid max/W 4.17e-04  /corr 5.01e-02  worst RMS ratio to exact 1.018  X 1.00 Theta 1.01 Y 1.00 dX 1.00 dTheta 1.02 dY 1.00
+  baseline deg  4  map resid max/W 3.02e-05  /corr 3.11e-03  worst RMS ratio to exact 1.001  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  baseline deg  5  map resid max/W 2.70e-05  /corr 2.90e-03  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  baseline deg  6  map resid max/W 1.95e-06  /corr 1.87e-04  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  baseline deg  7  map resid max/W 1.67e-06  /corr 1.73e-04  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  baseline deg  8  map resid max/W 1.19e-07  /corr 1.14e-05  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  baseline deg  9  map resid max/W 9.89e-08  /corr 1.05e-05  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  baseline deg 10  map resid max/W 8.08e-09  /corr 8.98e-07  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  planted  deg  0  map resid max/W 4.91e-04  /corr 1.00e+00  worst RMS ratio to exact 345.131  X 36.96 Theta 25.74 Y 6.63 dX 345.13 dTheta 251.30 dY 3.83
+  planted  deg  1  map resid max/W 4.10e-04  /corr 8.89e-01  worst RMS ratio to exact 195.864  X 6.09 Theta 19.75 Y 5.13 dX 51.88 dTheta 195.86 dY 3.08
+  planted  deg  2  map resid max/W 4.35e-05  /corr 6.11e-02  worst RMS ratio to exact 18.300  X 2.24 Theta 1.25 Y 1.03 dX 18.30 dTheta 11.51 dY 1.02
+  planted  deg  3  map resid max/W 2.71e-05  /corr 4.47e-02  worst RMS ratio to exact 6.258  X 1.10 Theta 0.72 Y 0.99 dX 2.69 dTheta 6.26 dY 1.01
+  planted  deg  4  map resid max/W 3.50e-06  /corr 4.26e-03  worst RMS ratio to exact 1.484  X 1.00 Theta 1.00 Y 1.00 dX 1.48 dTheta 1.39 dY 1.00
+  planted  deg  5  map resid max/W 1.71e-06  /corr 2.47e-03  worst RMS ratio to exact 1.203  X 1.00 Theta 1.00 Y 1.00 dX 1.03 dTheta 1.20 dY 1.00
+  planted  deg  6  map resid max/W 2.56e-07  /corr 3.03e-04  worst RMS ratio to exact 1.010  X 1.00 Theta 1.00 Y 1.00 dX 1.01 dTheta 0.99 dY 1.00
+  planted  deg  7  map resid max/W 1.02e-07  /corr 1.38e-04  worst RMS ratio to exact 1.002  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 0.99 dY 1.00
+  planted  deg  8  map resid max/W 1.74e-08  /corr 2.13e-05  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  planted  deg  9  map resid max/W 5.70e-09  /corr 7.73e-06  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  planted  deg 10  map resid max/W 1.10e-09  /corr 1.47e-06  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  degree rule: baseline 2 (True), planted 6 (True)
+  collapse gate (deg 0, baseline source vs pipeline encoder, V1, 47969 windows): {'torch.float32': True, 'torch.float64': True}
+  module vs numpy (planted, V1), RMS diff / RMS error: 4.1e-04 2.7e-03 9.5e-06 4.1e-04 8.2e-04 5.1e-06 1.4e-05 1.1e-05
+  V1_standstill_Yp10: 119 windows [42 s]
+[wd] t=57s tree=939 MB cpu=32% availRAM=4.21 GB C:free=7.56 GB
+  V2_aprbs_Ylow: 119 windows [56 s]
+  V3_ysweep_Yp10: 119 windows [68 s]
+  V4_lissajous_Ym10: 119 windows [80 s]
+
+  arm             RMS[0:400]   RMS[100:]   share    grow   chan X1/X2/Y
+  U|P0            2.0548e-05  2.0766e-05   -2.1%    1.63   3.038e-06 3.063e-06 3.533e-05
+  U|G2            2.0535e-05  2.0766e-05   -2.3%    1.66   2.918e-06 2.970e-06 3.532e-05
+  PL|P0|random    1.6118e-05  1.0799e-06   99.6%    0.01   2.713e-06 3.092e-06 2.761e-05
+  PL|G2           1.1625e-07  1.1628e-07   -0.1%    1.52   1.372e-07 1.288e-07 7.154e-08
+  PL|B0           7.5954e-07  1.2641e-07   97.2%    0.04   9.194e-07 8.934e-07 2.952e-07
+  PL|A|zero       3.0535e-06  1.6862e-07   99.7%    0.01   3.978e-07 4.124e-07 5.258e-06
+  PL|A|random     1.6084e-05  1.0780e-06   99.6%    0.01   2.599e-06 2.980e-06 2.758e-05
+  PL|ABgrid       1.1625e-07  1.1628e-07   -0.1%    1.51   1.372e-07 1.289e-07 7.154e-08
+  PL|exact        1.1638e-07  1.1627e-07    0.2%   17.73   1.372e-07 1.288e-07 7.220e-08
+  discrimination: official_K0 176.648x  official_K100 178.592x  vs_UP0_K0 176.759x  today_K0 1.275x  today_K100 19.230x
+
+  physical-state RMS, pooled over 9 records [P0 | G2 planted | G2 baseline-source]
+    X        1.176e-06  3.385e-08  3.081e-07
+    Theta    6.429e-06  1.924e-07  1.715e-06
+    Y        2.176e-05  6.367e-08  2.172e-05
+    dX       1.203e-03  4.269e-06  3.120e-04
+    dTheta   6.072e-03  3.185e-05  1.673e-03
+    dY       2.784e-02  1.366e-04  2.781e-02
+  worst per-record per-channel ratio G2/P0: 0.2546
+
+  G2 verdict: share -0.1% (<= 30 %: True); discrimination 176.65x (>= 16.35x: True); state worst ratio 0.2546 (< 1: True); collapse {'torch.float32': True, 'torch.float64': True} -> PASS
+  saved outputs/g2/g2_regress.json  [81 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=91.8 samples=18 peak_tree_ws_mb=982 min_avail_ram_gb=4.21 min_C_free_gb=7.56 kill_reason=""

@@ -1,0 +1,30 @@
+[run.sh] C: free 6.01 GB before launch of R033_train_transient_84032
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R033_train_transient_84032
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/ckpt_train_transient.py 
+[r2_ckpt] structure from scripts/gantry/meeting/meeting-18-09-2026/server/useable/84032/config.json: {'joint_estimation': True, 'physics_parameterization': 'reduced', 'combo_init_detune': [1.1, 1.1, 0.9, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 1.1], 'param_init_detune': None, 'param_prior': False, 'ann_activation': 'tanh', 'nx_ann': 8, 'n_nodes_per_layer': 24, 'n_hidden_layers': 3, 'up_sample': 1, 'encoder_init': 'linear_map', 'ann_route_ix': (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), 'na_nb_override': 29}
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\vendor\gantry_dynamic\training.py:88: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(pair_pt, map_location='cpu')
+  T1_standstill_Ym30      119 win  trained encoder: RMS 5.673e-06  share   5.8%  grow 0.68   [12 s]
+  T2_standstill_Ym15      119 win  trained encoder: RMS 5.626e-06  share   3.6%  grow 0.82   [16 s]
+  T3_standstill_Y000      119 win  trained encoder: RMS 5.674e-06  share  -0.1%  grow 0.75   [20 s]
+  T4_standstill_Yp15      119 win  trained encoder: RMS 5.654e-06  share   2.7%  grow 0.89   [24 s]
+  T5_standstill_Yp30      119 win  trained encoder: RMS 5.652e-06  share   5.5%  grow 0.69   [27 s]
+  T6_ysweep_slow          119 win  trained encoder: RMS 5.695e-06  share   3.6%  grow 0.58   [32 s]
+  T7_ysweep_fast          119 win  trained encoder: RMS 5.766e-06  share   4.1%  grow 0.65   [36 s]
+  T8_ysweep_xmix          119 win  trained encoder: RMS 5.748e-06  share   1.3%  grow 0.67   [40 s]
+  T9_aprbs_30             119 win  trained encoder: RMS 5.797e-06  share   2.5%  grow 0.72   [43 s]
+  T10_aprbs_60            119 win  trained encoder: RMS 6.561e-06  share   6.1%  grow 0.70   [47 s]
+[wd] t=57s tree=676 MB cpu=33% availRAM=3.92 GB C:free=6.01 GB
+  T11_aprbs_100           119 win  trained encoder: RMS 7.612e-06  share   4.4%  grow 0.53   [51 s]
+  T12_aprbs_yaw           119 win  trained encoder: RMS 6.452e-06  share   4.0%  grow 0.61   [55 s]
+  T13_lissajous           119 win  trained encoder: RMS 5.821e-06  share   2.9%  grow 0.59   [59 s]
+  T14_lissajous_yaw       119 win  trained encoder: RMS 5.969e-06  share   3.5%  grow 0.68   [63 s]
+
+  POOLED T1-T14, x0 = trained_encoder  RMS 6.0025e-06  RMS[100:] 5.8916e-06  share 3.7%  grow 0.66  (1666 windows)
+
+  POOLED T1-T14, x0 = exact_state      RMS 7.3524e-06  RMS[100:] 5.9001e-06  share 35.6%  grow 655.92  (1666 windows)
+  saved outputs/ckpt_modes/84032_train_transient.json  [63 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=71.7 samples=14 peak_tree_ws_mb=683 min_avail_ram_gb=3.88 min_C_free_gb=6.01 kill_reason=""

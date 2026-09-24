@@ -1,0 +1,46 @@
+[run.sh] C: free 7.38 GB before launch of R025_g5_telica_smoke
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R025_g5_telica_smoke
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/telica/vendor_telica/pipeline/telica_augment.py 
+[augment] smoke=True nf=200 (40.0 ms) batch=8 nx_ann=8 route=(3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13) f64=True device=cpu
+[augment] arm=none (fixed baseline) joint_estimation=False obc=False obc_space=tangent param_prior=False
+[real_data] train 2, val 2, test 2 records at 5000 Hz
+[augment] data + norm loaded (1 s), rss 517 MB
+[et_hook] G4 encoder swapped in: na 7, schedule deg 3, friction cc [82.6, 100.3, 80.5] N, v0 0.001; optimizer rebuilt
+[closed loop] Telica controller (identified_5k), one row, nc = 24, ts = 0.0002 s
+[closed loop] diag(Dc) physical [2.6149e+08 3.1464e+08 2.9371e+08] N/m
+[augment] model built, rss 534 MB
+
+Training: nf=200  epochs=1  val=sim-RMS  NX_ANN=8
+
+[nf] rms = RMS over nf=200 (0.040 s) windows, closed loop, metres
+     chan = per-channel X/Theta/Y | grow = RMS(last step)/RMS(first) | bias = mean residual
+     train = all windows since the last validation, running mean | val = 256 fixed windows, snapshot
+     metre weighting is NOT the objective's, which weights channels by 1/ystd^2;
+     numbers are not comparable ACROSS loop modes, the [nf gap] ratios are
+Model already initilized (init_model_done=True), skipping initilizing of the model, the norm and the creation of the optimizer
+Size of the training array =  117.1 kB
+N_training_samples = 12, batch_size = 8, N_batch_updates_per_epoch = 1
+    [nf val  ] rms 5.076e-07  chan 4.9e-07/5.4e-07/4.9e-07  grow 0.41x  bias +3.5e-08/+4.4e-08/+4.7e-08  (22 win)
+    [nf gap  ] val_sim 2.988e-07 = 0.59x val_nf (horizon)
+    [x_aug   ] ||x_aug|| end-of-rollout  mean 0.000e+00  std 0.000e+00  max 0.000e+00
+Initial Validation sim-RMS= 2.9876122156197417e-07
+  0%|          | 0/1 [00:00<?, ?it/s]    [nf train] rms 4.233e-07  chan 4.2e-07/5.0e-07/3.3e-07  grow 0.72x  bias +8.7e-08/+7.5e-08/+3.5e-08  (8 win)
+    [nf val  ] rms 1.466e-05  chan 9.7e-06/1.2e-05/2.0e-05  grow 0.01x  bias +3.4e-08/+4.2e-08/+4.8e-08  (22 win)
+    [nf gap  ] val_sim 5.065e-07 = 0.03x val_nf (horizon) = 1.20x train_nf (horizon+gen)
+    [x_aug   ] ||x_aug|| end-of-rollout  mean 0.000e+00  std 0.000e+00  max 0.000e+00
+It    1, sqrt loss 5.831e-06, Val sim-RMS 5.065e-07, Time Loss: 14.1%, data: 0.0%, val: 85.9%, 12.7 sec/batch
+100%|██████████| 1/1 [00:12<00:00, 12.65s/it]100%|██████████| 1/1 [00:12<00:00, 12.65s/it]
+C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\fit_systems\fit_system.py:501: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.__dict__ = torch.load(file)
+Loaded model with best known validation sim-RMS of 2.988e-07 which happened on epoch 0 (epoch_id=1.00)
+  val nf-window RMS (200-step): first=5.0763e-07  best=5.0763e-07  last=5.0763e-07 [m]  (sim-RMS selector unchanged)
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\outputs\telica\g6_smoke_20260924_072747\gantry_ckpt_20260924_072747.pt
+Warning: aug_state_r2 failed (no ground-truth augmented states (real data): diagnostic skipped); recording NaN
+Training done | 1 ep | 24s | bestfit=0.00000  R2_linmap: delta_a=+nan  vdelta_a=+nan
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\outputs\telica\g6_smoke_20260924_072747\gantry_ckpt_20260924_072747.npz
+[augment] training done (26 s), bestfit 2.9876e-07 m, rss 561 MB, peak 636 MB
+[eval] validation: median per-axis RMS ratio augmented / baseline-alone [1.0, 1.0, 1.0] over 2 records
+[wd] t=57s tree=637 MB cpu=8% availRAM=4.41 GB C:free=7.38 GB
+[eval] test: median per-axis RMS ratio augmented / baseline-alone [1.0, 1.0, 1.0] over 2 records
+[augment] done: peak rss 636 MB, 72 s -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\outputs\telica\g6_smoke_20260924_072747
+WATCHDOG SUMMARY exit=0 killed=False duration_s=81.9 samples=16 peak_tree_ws_mb=637 min_avail_ram_gb=4.39 min_C_free_gb=7.38 kill_reason=""

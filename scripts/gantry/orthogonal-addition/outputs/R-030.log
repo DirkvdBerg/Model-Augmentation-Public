@@ -1,0 +1,58 @@
+[wd] launch  out=outputs/R-030
+[wd] command conda run --no-capture-output -n GraduationProject python -u design/design_quadratic.py
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation_oa_null_b140-230_a6): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_null_b140-230_a6
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=0.000e+00 m  vdelta_a std=0.000e+00 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.2 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+WATCHDOG ALERT available RAM 3.22 GB < 4 GB (tree 2,178 MB)
+[core] augmentation_oa_null_b140-230_a6 stride 1: 671944 tuples, basis rank 10 cond 7.9404e+02, 25.3 s
+[quad] library K: 17 slots
+WATCHDOG ALERT available RAM 3.56 GB < 4 GB (tree 1,752 MB)
+[wd] t=57s tree=1,752 MB cpu=24% availRAM=3.56 GB C:free=8.30 GB
+  [quad] slot  1/17 K11    done, 15 s
+  [quad] slot  2/17 K11Y   done, 31 s
+  [quad] slot  3/17 K11Y2  done, 46 s
+[wd] t=119s tree=2,022 MB cpu=26% availRAM=3.34 GB C:free=8.30 GB
+  [quad] slot  4/17 K12    done, 62 s
+  [quad] slot  5/17 K12Y   done, 77 s
+  [quad] slot  6/17 K12Y2  done, 92 s
+  [quad] slot  7/17 K13    done, 109 s
+[wd] t=181s tree=2,074 MB cpu=25% availRAM=3.31 GB C:free=8.30 GB
+  [quad] slot  8/17 K13Y   done, 124 s
+  [quad] slot  9/17 K13Y2  done, 139 s
+  [quad] slot 10/17 K22Y   done, 155 s
+  [quad] slot 11/17 K22Y2  done, 171 s
+[wd] t=244s tree=2,023 MB cpu=27% availRAM=3.37 GB C:free=8.30 GB
+  [quad] slot 12/17 K23    done, 186 s
+  [quad] slot 13/17 K23Y   done, 201 s
+  [quad] slot 14/17 K23Y2  done, 217 s
+  [quad] slot 15/17 K33    done, 234 s
+[wd] t=306s tree=2,085 MB cpu=20% availRAM=3.62 GB C:free=8.29 GB
+  [quad] slot 16/17 K33Y   done, 250 s
+  [quad] slot 17/17 K33Y2  done, 265 s
+[quad] start: |F| 2.445e+01 (linear part alone 3.118e+00), size 12.5080
+[quad] SLSQP: Rank-deficient equality constraint subproblem HFTI, 306 it; |F| 2.283e+01, size 12.4864, force energy x94.801 of the start
+[quad] VERIFY start   : predicted shift vs b_null max nine 9.9217 %, m_diff own +4.5255 %, ||Delta_add|| 12.5077, force rms [11.21 12.82  3.  ] N, peak [67.6 75.8  9.6] N
+[quad] VERIFY solution: predicted shift vs b_null max nine 9.2821 %, m_diff own +2.1112 %, ||Delta_add|| 12.4864, force rms [115.53 115.63  40.35] N, peak [400.4 379.7 114.5] N
+  per parameter (solution): kb_sum +0.7306  cg1 +2.5106  cg2 +1.8268  cy +0.1454  cb_sum +9.2821  mh +3.3119  m_total +3.1357  m_diff +0.1010  J_eff +0.1005  d +0.3591
+[out] design/addition_b5K9.mat (346 s)
+WATCHDOG SUMMARY exit=0 killed=False duration_s=354.7 samples=69 peak_tree_ws_mb=2,894 min_avail_ram_gb=2.85 min_C_free_gb=8.29 kill_reason=""

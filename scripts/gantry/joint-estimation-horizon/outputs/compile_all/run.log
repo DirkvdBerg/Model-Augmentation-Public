@@ -1,0 +1,5 @@
+[wd] launch  out=scripts/gantry/joint-estimation-horizon/outputs/compile_all
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/joint-estimation-horizon/tools/compile_all.py 
+WATCHDOG ALERT available RAM 2.81 GB < 4 GB (tree 30 MB)
+compile_all: 8 files, 0 errors
+WATCHDOG SUMMARY exit=0 killed=False duration_s=3.6 samples=1 peak_tree_ws_mb=30 min_avail_ram_gb=2.81 min_C_free_gb=6.36 kill_reason=""

@@ -1,0 +1,139 @@
+[wd] launch  out=outputs/R-009b
+[wd] command conda run --no-capture-output -n GraduationProject python -u design/screen_b.py
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation_oa_null_b140-230_a6): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_null_b140-230_a6
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=0.000e+00 m  vdelta_a std=0.000e+00 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.1 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+WATCHDOG ALERT available RAM 3.57 GB < 4 GB (tree 2,178 MB)
+[core] augmentation_oa_null_b140-230_a6 stride 1: 671944 tuples, basis rank 10 cond 7.9404e+02, 25.3 s
+
+============================================================================================
+COLUMNS  (671944 tuples, stride 1)
+============================================================================================
+WATCHDOG ALERT available RAM 3.27 GB < 4 GB (tree 2,413 MB)
+  column    ||Delta_c||  rho alone
+  k_x        1.6833e-03     0.2206
+  k_y        2.7897e-02     0.0470
+  k_xp       6.8157e-03     0.2156
+  gamma      2.0837e+01     0.2740
+  K11        1.6833e-03     0.2206
+  K11Y       3.8114e-04     0.1531
+  K11Y2      9.5203e-05     0.2009
+  K12        4.8413e-02     0.2048
+  K12Y       8.3722e-03     0.2183
+  K12Y2      1.9282e-03     0.1595
+  K13        1.3893e-02     0.0837
+  K13Y       3.6632e-03     0.0828
+  K13Y2      1.0366e-03     0.0605
+  K22Y       1.6447e-04     0.0632
+  K22Y2      4.0351e-05     0.7591
+  K23        2.6650e-01     0.0485
+  K23Y       6.7292e-02     0.0404
+  K23Y2      1.8506e-02     0.0559
+  K33        2.7897e-02     0.0470
+  K33Y       7.0575e-03     0.0386
+  K33Y2      1.9427e-03     0.0537
+  M11Y       9.7423e-02     0.7213
+  M13        1.9836e+00     0.6530
+  M13Y       4.4947e-01     0.7693
+  M22Y       9.3726e+00     0.3963
+  M23Y       8.0974e+00     0.1738
+  M33Y       8.0389e-01     0.1292
+
+============================================================================================
+ROUTE B, PHYSICAL TERMS ONLY  (k_x, k_y, k_xp, gamma: 4 unknowns, 10 conditions)
+============================================================================================
+  singular values of the column-normalised 10 x 4 condition matrix: [6.731 6.545 1.405 0.316]
+  best combination: rho* = 4.5081e-02  (needs < 1e-3)  v = [1.0000e+00 5.2788e-01 2.6590e-01 4.1115e-05]
+
+============================================================================================
+ROUTE B, FULL LEGITIMATE LIBRARY  (27 columns)
+============================================================================================
+  rank 10 of 27 columns: admissible class has dimension 17
+  singular values: [7.226e+01 1.063e+01 5.232e+00 2.751e+00 2.088e+00 4.656e-01 1.113e-01
+ 4.440e-02 1.054e-02 7.837e-03]
+  most-physical member: physical share of coefficient energy 0.838
+  rho* = 1.031e-14   ||Delta|| (scaled to 1.5 x minimum) = 1.2735e+01   (minimum 8.4900e+00)
+  predicted bias J^+ Delta (combo %): kb_sum -1.03e-13  cg1 +2.70e-11  cg2 +1.95e-11  cy +7.64e-13  cb_sum -4.93e-12  mh +3.34e-13  m_total -1.79e-13  m_diff +5.58e-14  J_eff -1.17e-14  d +0.00e+00   m_diff own scale +1.166e-12 %
+  coefficients (unit-force units, scaled):
+    k_x      +9.941114e+03   (normalised +0.4809)
+    k_y      -8.953122e+02   (normalised -0.7177)
+    k_xp     +1.033762e+03   (normalised +0.2025)
+    gamma    -3.750655e-01   (normalised -0.2246)
+    K11      -1.924291e+03   (normalised -0.0931)
+    K11Y     -2.853639e+03   (normalised -0.0313)
+    K11Y2    -7.567247e+04   (normalised -0.2070)
+    K12      -7.821330e+01   (normalised -0.1088)
+    K12Y     +5.508175e+01   (normalised +0.0133)
+    K12Y2    -7.747889e+02   (normalised -0.0429)
+    K13      -6.008487e+01   (normalised -0.0240)
+    K13Y     +9.482363e+02   (normalised +0.0998)
+    K13Y2    +7.368030e+02   (normalised +0.0219)
+    K22Y     -2.553591e+04   (normalised -0.1207)
+    K22Y2    +1.083080e+04   (normalised +0.0126)
+    K23      +2.337003e+01   (normalised +0.1790)
+    K23Y     +1.654001e+00   (normalised +0.0032)
+    K23Y2    +1.824510e+02   (normalised +0.0970)
+    K33      +1.733047e+02   (normalised +0.1389)
+    K33Y     +1.492462e+01   (normalised +0.0030)
+    K33Y2    +1.129864e+03   (normalised +0.0631)
+    M11Y     +1.294388e+01   (normalised +0.0362)
+    M13      +1.773377e-01   (normalised +0.0101)
+    M13Y     +1.144439e+00   (normalised +0.0148)
+    M22Y     -1.379283e-01   (normalised -0.0371)
+    M23Y     +1.026054e-01   (normalised +0.0239)
+    M33Y     +1.807182e+00   (normalised +0.0417)
+
+============================================================================================
+ROUTE B, OA-009 MEMBER  (max ||Delta||^2 / stage-force energy on null(A))
+============================================================================================
+  library only: 23 columns, rank 10, null dim 13
+  rho* = 2.239e-15   ||Delta|| scaled 1.2735e+01   ||Delta||/||f|| gain 8.7647e-04
+  addition stage force on the data: rms [11.52 13.01  3.49] N, peak [74.6 79.8 19.8] N
+  predicted bias (combo %) max |.| 4.96e-12, m_diff own +5.88e-13 %
+    K11      +2.417652e+01   (normalised +0.0000)
+    K11Y     -1.163920e+02   (normalised -0.0000)
+    K11Y2    -3.607338e+02   (normalised -0.0000)
+    K12      +2.671442e+01   (normalised +0.0001)
+    K12Y     -2.688668e+01   (normalised -0.0000)
+    K12Y2    -1.927636e+03   (normalised -0.0003)
+    K13      -3.001603e+00   (normalised -0.0000)
+    K13Y     +2.517474e+01   (normalised +0.0000)
+    K13Y2    -1.341544e+02   (normalised -0.0000)
+    K22Y     -3.187701e+04   (normalised -0.0004)
+    K22Y2    +9.110865e+03   (normalised +0.0000)
+    K23      -4.841639e+01   (normalised -0.0009)
+    K23Y     -1.287488e+02   (normalised -0.0006)
+    K23Y2    +8.780854e+02   (normalised +0.0011)
+    K33      -1.639662e+01   (normalised -0.0000)
+    K33Y     -4.849198e+01   (normalised -0.0000)
+    K33Y2    +3.257902e+02   (normalised +0.0000)
+    M11Y     -4.204511e-01   (normalised -0.0000)
+    M13      +1.584213e-02   (normalised +0.0000)
+    M13Y     +1.289146e-01   (normalised +0.0000)
+    M22Y     -1.971048e-01   (normalised -0.0001)
+    M23Y     +2.711356e-01   (normalised +0.0002)
+    M33Y     -2.718186e-02   (normalised -0.0000)
+  round trip through the oa_* arrays: rho* 2.159e-15, ||Delta|| 1.2735e+01 (must match)
+
+[out] outputs/screen_b_R-009b_null_s1.json, design/route_b_member_R-009b_null_s1.npz  (38 s)
+WATCHDOG SUMMARY exit=0 killed=False duration_s=46.3 samples=9 peak_tree_ws_mb=2,998 min_avail_ram_gb=2.82 min_C_free_gb=10.93 kill_reason=""

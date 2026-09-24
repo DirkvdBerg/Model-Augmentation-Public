@@ -1,0 +1,9 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g2_loop_check
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/score/g2_loop_check.py 
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\score\g2_loop_check.py", line 20, in <module>
+    import plant                                                               # noqa: E402
+    ^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'plant'
+ERROR conda.cli.main_run:execute(47): `conda run python -u scripts/gantry/blackbox-closed-loop/score/g2_loop_check.py` failed. (See above for error)
+WATCHDOG SUMMARY exit=1 killed=False duration_s=9.6 samples=2 peak_tree_ws_mb=450 min_avail_ram_gb=4.36 min_C_free_gb=7.14 kill_reason=""

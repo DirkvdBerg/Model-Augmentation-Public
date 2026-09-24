@@ -1,0 +1,66 @@
+[run.sh] C: free 10.47 GB before launch of g5a_noiseoff2
+[wd] launch  out=scripts/gantry/closed-loop-noise/outputs/g5a_noiseoff2
+[wd] command matlab -nojvm -sd scripts/gantry/closed-loop-noise/matlab/gen -batch g5a_noiseoff
+LTI System1 sys = Cfb
+Sum3 inputs |+-; Gain4 feeds input 2
+  Gain4 -> To Workspace1, EncoderNoiseSum
+  EncoderNoise -> EncoderNoiseSum
+  EncoderNoiseSum -> Sum3
+saved C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-noise\matlab\gen\gantry_cn_noise_2025a.slx
+cn_gen_multisine: mode off, out C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-noise\outputs\g5a_records
+Amplitude override x6: A_sym=240.0 N  A_Y=180.0 N  A_anti=87.0 N*m
+
+=== 1/1  T3_standstill_Y000  [train] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5a_noiseoff (line 11)] 
+[wd] t=58s tree=3,091 MB cpu=7% availRAM=2.26 GB C:free=10.45 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5a_noiseoff (line 11)] 
+WATCHDOG ALERT available RAM 1.98 GB < 2 GB (tree 3,302 MB)
+WATCHDOG ALERT available RAM 1.99 GB < 2 GB (tree 3,337 MB)
+[wd] t=120s tree=3,337 MB cpu=8% availRAM=1.99 GB C:free=10.41 GB
+WATCHDOG ALERT available RAM 1.84 GB < 2 GB (tree 3,562 MB)
+  stick fraction (|v| < 1e-03 m/s) : X1 7.3%  X2 7.9%  Y 5.2%
+  saved T3_standstill_Y000.mat (121 s)
+
+Done: 1 records in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-noise\outputs\g5a_records
+cn_gen_telica: mode off, out C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-noise\outputs\g5a_records
+
+=== 1/1  TP1_telica_y000  [train] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5a_noiseoff (line 12)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5a_noiseoff (line 12)] 
+[wd] t=182s tree=3,696 MB cpu=9% availRAM=2.52 GB C:free=10.31 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 77.6%  X2 77.5%  Y 73.2%
+  saved TP1_telica_y000.mat (72 s)
+
+Done: 1 records in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-noise\outputs\g5a_records
+G5a T3_standstill_Y000: 17 production fields, 0 differ  -> true
+G5a TP1_telica_y000: 17 production fields, 0 differ  -> true
+G5a PASS true
+WATCHDOG SUMMARY exit=0 killed=False duration_s=233.5 samples=45 peak_tree_ws_mb=3,916 min_avail_ram_gb=1.84 min_C_free_gb=10.24 kill_reason=""

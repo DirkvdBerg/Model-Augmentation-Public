@@ -1,0 +1,28 @@
+[wd] launch  out=outputs/R-011b
+[wd] command conda run --no-capture-output -n GraduationProject python -u derive/d_symbolic.py
+[D1] M(theta), C(theta), K(theta) == gantrySystem.m after substitution: OK
+     mass family   : ['mh', 'm_total', 'm_diff', 'J_eff', 'd']
+     damping family: ['cg1', 'cg2', 'cy', 'cb_sum']
+     stiffness     : ['kb_sum']
+     r_kb_sum   = [0, Theta, 0]
+     r_cg1      = [L_b*Thetad/2 + Xd, L_b*(L_b*Thetad + 2*Xd)/4, 0]
+     r_cg2      = [-L_b*Thetad/2 + Xd, L_b*(L_b*Thetad - 2*Xd)/4, 0]
+     r_cy       = [0, 0, Yd]
+     r_cb_sum   = [0, Thetad, 0]
+     r_mh       = [-Thetadd*Y + Xdd, Thetadd*(Y**2 + d**2) - Xdd*Y - Ydd*d, -Thetadd*d + Ydd]
+     r_m_total  = [Xdd, 0, 0]
+     r_m_diff   = [L_b*Thetadd/2, L_b*Xdd/2, 0]
+     r_J_eff    = [0, Thetadd, 0]
+     r_d        = [0, m_h*(2*Thetadd*d - Ydd), -Thetadd*m_h]
+[D2] each combination enters exactly one of M, C, K; split 5 / 4 / 1: OK
+[D3] d qdd / d theta_j = -M^-1 r_j with qdd = M^-1(u - C qd - K q), all ten: OK
+[D4] <J_j, Delta_phi> = -Ts^2 r_j^T W phi on the velocity rows (shown for m_diff; linear in r_j): OK
+[D5] payload inertia at gamma = 0 is the baseline mh block; d M / d gamma = [[0,0,mh],[0,-2 mh d Y,0],[mh,0,0]]: OK
+[D6] Euler-Lagrange of carrier (M - m b b^T) + absorber (b^T qd + delta_dot), with the gantrySystemOA EOM substituted: residual exactly 0 at 20 random rational points: OK
+[D7] Hessian of k (X - Y Theta)^2 / 2 is k b b^T, slots K11, K12 Y, K22 Y^2: OK
+[D8] baseline slots == columns.BASELINE_SLOTS (12) and the physical terms use none of them: OK
+[D9] each condition r_j^T W phi_a is linear and homogeneous in the addition coefficients: OK
+[D10] integral over [-1,1]^4 of (linear regressor) x (generic quadratic addition) == 0: OK
+
+D_SYMBOLIC ALL OK  (0 checks failed)
+WATCHDOG SUMMARY exit=0 killed=False duration_s=26.3 samples=5 peak_tree_ws_mb=152 min_avail_ram_gb=4.41 min_C_free_gb=11.41 kill_reason=""

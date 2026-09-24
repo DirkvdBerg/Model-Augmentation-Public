@@ -1,0 +1,19 @@
+[wd] launch  out=outputs/R-003
+[wd] command matlab -batch "addpath('matlab'); check_oa_noop"
+A1  addition off: max |OA - gantrySystem| over 200 random states = 0.000e+00  (slot states 0.000e+00)
+A2  Ma0 on alone: max change 7.222e-02
+A2  Ma1 on alone: max change 1.539e-02
+A2  Ca0 on alone: max change 3.033e-02
+A2  Ka0 on alone: max change 1.044e-02
+A2  Ka1 on alone: max change 2.089e-03
+A2  Ka2 on alone: max change 4.177e-04
+A3  coupled Lagrangian residual: carrier 2.956e+01 (rel. to |u|), absorbers 2.738e-11 (rel.)
+A4  stateless residual (M+M_a) qdd + (C+C_a) qd + (K+K_a) q - u: 6.456e-15 (rel.)
+
+CHECK_OA_NOOP  A1 PASS  A2 PASS  A3 FAIL  A4 PASS
+{Error using check_oa_noop (line 105)
+a Class A check failed
+} 
+[wd] t=58s tree=985 MB cpu=5% availRAM=5.16 GB C:free=12.01 GB
+ERROR: MATLAB error Exit Status: 0x00000001
+WATCHDOG SUMMARY exit=1 killed=False duration_s=59.4 samples=12 peak_tree_ws_mb=985 min_avail_ram_gb=5.16 min_C_free_gb=12.01 kill_reason=""

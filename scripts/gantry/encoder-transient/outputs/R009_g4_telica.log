@@ -1,0 +1,37 @@
+[run.sh] C: free 7.56 GB before launch of R009_g4_telica
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R009_g4_telica
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/telica/g4_telica.py 
+Traceback (most recent call last):
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\scipy\io\matlab\_mio.py", line 39, in _open_file
+    return open(file_like, mode), True
+           ^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\20203253\\OneDrive - TU Eindhoven\\Graduation Project\\Baseline FP model\\Baseline-LPV-Augmentation\\scripts\\gantry\\encoder-transient\\telica\\kamtin-data\\Telica 1.mat'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\telica\g4_telica.py", line 30, in <module>
+    from baseline.records import iter_records                        # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\telica\vendor_telica\baseline\records.py", line 10, in <module>
+    from real_data_verification.telica_loader import load_telica_log_full
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\telica\vendor_telica\vendor\real_data_verification\telica_loader.py", line 65, in <module>
+    _KT_X, _KT_Y, _NATIVE_FS = _load_telica_params()
+                               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\telica\vendor_telica\vendor\real_data_verification\telica_loader.py", line 52, in _load_telica_params
+    mat = loadmat(_TELICA_MAT, squeeze_me=True, struct_as_record=False)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\scipy\io\matlab\_mio.py", line 234, in loadmat
+    with _open_file_context(file_name, appendmat) as f:
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\scipy\io\matlab\_mio.py", line 17, in _open_file_context
+    f, opened = _open_file(file_like, appendmat, mode)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\scipy\io\matlab\_mio.py", line 45, in _open_file
+    return open(file_like, mode), True
+           ^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\20203253\\OneDrive - TU Eindhoven\\Graduation Project\\Baseline FP model\\Baseline-LPV-Augmentation\\scripts\\gantry\\encoder-transient\\telica\\kamtin-data\\Telica 1.mat'
+ERROR conda.cli.main_run:execute(47): `conda run python -u scripts/gantry/encoder-transient/telica/g4_telica.py` failed. (See above for error)
+WATCHDOG SUMMARY exit=1 killed=False duration_s=8.1 samples=2 peak_tree_ws_mb=428 min_avail_ram_gb=4.84 min_C_free_gb=7.56 kill_reason=""

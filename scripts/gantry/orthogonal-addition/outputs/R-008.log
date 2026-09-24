@@ -1,0 +1,32 @@
+[wd] launch  out=outputs/R-008
+[wd] command conda run --no-capture-output -n GraduationProject python -u design/screen_a.py
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation_oa_null_b140-230_a6): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_null_b140-230_a6
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=0.000e+00 m  vdelta_a std=0.000e+00 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.6 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+[core] augmentation_oa_null_b140-230_a6 stride 1: 671944 tuples, basis rank 10 cond 7.9404e+02, 26.8 s
+standstill tuples 239980 of 671944; minimum ||Delta|| on them (pro rata) 5.074e+00
+X rms on standstill 5.399e-06 m, Thetad rms 3.307e-02 rad/s, Yd rms 2.551e-02 m/s, |u_log| rms [330.5 146.4 274. ]
+  kappa  ||Delta|| on standstill 2.548e-03 = 5.02e-04 x the minimum;  full set 2.464e+01, rho* unmirrored 0.043
+  cor    ||Delta|| on standstill 2.723e-03 = 5.37e-04 x the minimum;  full set 5.610e-02, rho* unmirrored 0.031
+  const  ||Delta|| on standstill 1.005e+00 = 1.98e-01 x the minimum;  full set 1.696e+00, rho* unmirrored 0.048
+WATCHDOG SUMMARY exit=0 killed=False duration_s=46.9 samples=9 peak_tree_ws_mb=1,567 min_avail_ram_gb=4.37 min_C_free_gb=11.49 kill_reason=""

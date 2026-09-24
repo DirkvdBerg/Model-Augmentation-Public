@@ -1,0 +1,34 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g5_baseline
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/score/g5_baseline.py 
+Data dir (augmentation_ma50_z03_b140-230_a6all_telica_coulomb): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.274e-05 m  vdelta_a std=5.127e-02 m/s
+Loaded 18 train, 6 val, 5 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  T15: 48000 samples  (TP1_telica_y000.mat)
+  T16: 48000 samples  (TP2_telica_y000_rev.mat)
+  T17: 48000 samples  (TP3_telica_yp06.mat)
+  T18: 48000 samples  (TP4_telica_ym06.mat)
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 766 MB)
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 770 MB)
+[wd] t=57s tree=780 MB cpu=33% availRAM=4.03 GB C:free=7.04 GB
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 786 MB)
+WATCHDOG ALERT available RAM 3.95 GB < 4 GB (tree 790 MB)
+[wd] t=119s tree=805 MB cpu=33% availRAM=3.58 GB C:free=7.03 GB
+[G5] FP baseline (grey box epoch 0) val closed-loop sim-RMS 1.476803e-05 m  (V1_standstill_Yp10 2.019e-05, V2_aprbs_Ylow 2.030e-05, V3_ysweep_Yp10 2.058e-05, V4_lissajous_Ym10 2.059e-05, VP1_telica_ylow 3.415e-06, VP2_telica_yp12 3.531e-06)  145 s
+[wd] t=181s tree=773 MB cpu=33% availRAM=3.33 GB C:free=7.03 GB
+[wd] t=243s tree=797 MB cpu=32% availRAM=3.68 GB C:free=6.95 GB
+[G5] FP baseline (grey box epoch 0) test closed-loop sim-RMS 1.145788e-05 m  (E1_resonance_sweep 1.437e-05, E2_multisine_Yp22 1.610e-05, E3_aprbs_above 2.049e-05, E4_multisine_off 2.762e-06, EP1_telica_test 3.571e-06)  144 s
+WATCHDOG SUMMARY exit=0 killed=False duration_s=302.5 samples=59 peak_tree_ws_mb=821 min_avail_ram_gb=3.17 min_C_free_gb=6.95 kill_reason=""

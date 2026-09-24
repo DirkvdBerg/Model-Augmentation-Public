@@ -1,0 +1,13 @@
+[run.sh] C: free 8.27 GB before launch of g5c_cc0
+[wd] launch  out=scripts/gantry/closed-loop-noise/outputs/g5c_cc0
+[wd] command matlab -nojvm -sd scripts/gantry/closed-loop-noise/matlab/gen -batch g5c_cc0
+{Error: File: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP
+model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-noise\matlab\gen\cn_gen_multisine.m Line: 24 Column: 17
+Character vector is not terminated properly.
+
+Error in g5c_cc0 (line 6)
+    cn_gen_multisine('off64', sel, fullfile(cn, 'outputs', 'g5c_cc0_off'), '', true);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+} 
+ERROR: MATLAB error Exit Status: 0x00000001
+WATCHDOG SUMMARY exit=1 killed=False duration_s=10.0 samples=2 peak_tree_ws_mb=632 min_avail_ram_gb=5.09 min_C_free_gb=8.27 kill_reason=""

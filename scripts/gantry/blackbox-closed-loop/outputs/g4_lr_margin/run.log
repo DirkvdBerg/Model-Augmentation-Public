@@ -1,0 +1,124 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g4_lr_margin
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/init/g4_lr_margin.py 
+Data dir (augmentation_ma50_z03_b140-230_a6all_telica_coulomb): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.274e-05 m  vdelta_a std=5.127e-02 m/s
+Loaded 18 train, 6 val, 5 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  T15: 48000 samples  (TP1_telica_y000.mat)
+  T16: 48000 samples  (TP2_telica_y000_rev.mat)
+  T17: 48000 samples  (TP3_telica_yp06.mat)
+  T18: 48000 samples  (TP4_telica_ym06.mat)
+Initializing encoder network...
+[bb] FRF CT model scripts\gantry\ann-blackbox\results\frf_init_joint_lowf_ma50_a5\frf_init_ss.npz discretised ZOH at 0.00025 s -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\outputs\init\frf_ss_fs4000.npz
+[BLA-frf] loaded frf_ss_fs4000.npz, nx=8
+[BLA-frf] max|eig| = 1.000000, closest pole to z=1: 0.000e+00
+[BLA-frf] |eig| = [1.       1.       0.999675 0.999576 0.999131 0.999131 0.971213 0.971213]
+[BLA-frf] applied, zero_nonlinear=True
+[closed loop] one bank over 24 records, 12 distinct controllers, Y_op [-0.3, -0.22, -0.2, -0.15, -0.1, -0.06, 0.0, 0.06, 0.1, 0.12, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[bb] arm=frf nx=8 na=nb=29 na_right=nb_right=1 params=5286 lr=0.001 eps=1e-08 burn_in=0
+[wd] t=57s tree=811 MB cpu=8% availRAM=4.28 GB C:free=7.07 GB
+[wd] t=119s tree=811 MB cpu=8% availRAM=4.23 GB C:free=7.07 GB
+[margin] unperturbed: losses [3.592 3.935 3.912]  val 3.5323e-03  stable 6/6  (131 s)
+C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\score\cl_score.py:63: RuntimeWarning: overflow encountered in square
+  rms = float(np.sqrt(np.mean(np.mean(e ** 2, axis=0))))
+[wd] t=181s tree=804 MB cpu=8% availRAM=4.33 GB C:free=7.07 GB
+[wd] t=243s tree=808 MB cpu=8% availRAM=4.37 GB C:free=7.06 GB
+[margin] delta 1e-03 draw 0: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=304s tree=806 MB cpu=8% availRAM=4.33 GB C:free=7.06 GB
+[wd] t=366s tree=812 MB cpu=8% availRAM=4.38 GB C:free=7.06 GB
+[margin] delta 1e-03 draw 1: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=428s tree=806 MB cpu=8% availRAM=4.32 GB C:free=7.05 GB
+[wd] t=490s tree=817 MB cpu=8% availRAM=4.34 GB C:free=7.05 GB
+[margin] delta 1e-03 draw 2: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=552s tree=815 MB cpu=8% availRAM=4.30 GB C:free=7.05 GB
+[wd] t=614s tree=777 MB cpu=8% availRAM=4.07 GB C:free=6.92 GB
+[margin] delta 3e-04 draw 0: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=676s tree=816 MB cpu=8% availRAM=4.27 GB C:free=7.12 GB
+WATCHDOG ALERT available RAM 3.96 GB < 4 GB (tree 791 MB)
+[wd] t=739s tree=820 MB cpu=8% availRAM=3.88 GB C:free=7.12 GB
+[margin] delta 3e-04 draw 1: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=800s tree=820 MB cpu=8% availRAM=3.56 GB C:free=7.11 GB
+[wd] t=862s tree=781 MB cpu=8% availRAM=3.74 GB C:free=7.11 GB
+[margin] delta 3e-04 draw 2: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=924s tree=782 MB cpu=8% availRAM=3.91 GB C:free=7.11 GB
+[wd] t=986s tree=794 MB cpu=8% availRAM=3.76 GB C:free=7.10 GB
+[margin] delta 1e-04 draw 0: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=1,047s tree=803 MB cpu=8% availRAM=3.81 GB C:free=7.10 GB
+[wd] t=1,109s tree=822 MB cpu=8% availRAM=3.83 GB C:free=7.10 GB
+[margin] delta 1e-04 draw 1: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=1,170s tree=779 MB cpu=8% availRAM=3.95 GB C:free=7.10 GB
+[wd] t=1,232s tree=792 MB cpu=8% availRAM=3.79 GB C:free=7.10 GB
+[margin] delta 1e-04 draw 2: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=1,294s tree=774 MB cpu=8% availRAM=3.95 GB C:free=7.09 GB
+[wd] t=1,356s tree=783 MB cpu=8% availRAM=3.87 GB C:free=7.09 GB
+[margin] delta 3e-05 draw 0: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\numpy\_core\_methods.py:127: RuntimeWarning: overflow encountered in reduce
+  ret = umr_sum(arr, axis, dtype, out, keepdims, where=where)
+WATCHDOG ALERT available RAM 3.95 GB < 4 GB (tree 802 MB)
+[wd] t=1,417s tree=792 MB cpu=8% availRAM=4.00 GB C:free=7.09 GB
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 787 MB)
+[wd] t=1,479s tree=810 MB cpu=8% availRAM=4.08 GB C:free=7.08 GB
+[margin] delta 3e-05 draw 1: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 815 MB)
+WATCHDOG ALERT available RAM 3.96 GB < 4 GB (tree 805 MB)
+[wd] t=1,541s tree=820 MB cpu=8% availRAM=3.91 GB C:free=7.08 GB
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 782 MB)
+WATCHDOG ALERT available RAM 3.95 GB < 4 GB (tree 810 MB)
+[margin] delta 3e-05 draw 2: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=1,603s tree=774 MB cpu=15% availRAM=3.92 GB C:free=7.08 GB
+WATCHDOG ALERT available RAM 3.95 GB < 4 GB (tree 790 MB)
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 821 MB)
+[wd] t=1,664s tree=780 MB cpu=8% availRAM=3.95 GB C:free=7.08 GB
+WATCHDOG ALERT available RAM 3.95 GB < 4 GB (tree 816 MB)
+WATCHDOG ALERT available RAM 3.97 GB < 4 GB (tree 789 MB)
+[margin] delta 1e-05 draw 0: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=1,726s tree=790 MB cpu=8% availRAM=3.95 GB C:free=7.07 GB
+WATCHDOG ALERT available RAM 3.96 GB < 4 GB (tree 808 MB)
+[wd] t=1,788s tree=791 MB cpu=8% availRAM=3.93 GB C:free=7.08 GB
+[margin] delta 1e-05 draw 1: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=1,850s tree=786 MB cpu=8% availRAM=3.88 GB C:free=7.07 GB
+[wd] t=1,912s tree=789 MB cpu=8% availRAM=4.04 GB C:free=7.07 GB
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 817 MB)
+[margin] delta 1e-05 draw 2: losses [nan nan nan]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=1,974s tree=783 MB cpu=11% availRAM=4.03 GB C:free=7.07 GB
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 824 MB)
+[wd] t=2,036s tree=784 MB cpu=8% availRAM=4.02 GB C:free=7.07 GB
+WATCHDOG ALERT available RAM 3.93 GB < 4 GB (tree 797 MB)
+[margin] delta 3e-06 draw 0: losses [2.133e+30 2.926e+30 2.460e+30]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=2,097s tree=782 MB cpu=8% availRAM=3.91 GB C:free=7.06 GB
+[wd] t=2,159s tree=802 MB cpu=8% availRAM=3.82 GB C:free=7.06 GB
+[margin] delta 3e-06 draw 1: losses [6.138e+11 6.322e+11 5.872e+11]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=2,221s tree=806 MB cpu=8% availRAM=3.91 GB C:free=7.06 GB
+[wd] t=2,283s tree=821 MB cpu=8% availRAM=3.92 GB C:free=7.06 GB
+[margin] delta 3e-06 draw 2: losses [inf inf inf]  val nan  stable 0/6  -> UNSTABLE
+[wd] t=2,344s tree=774 MB cpu=8% availRAM=3.88 GB C:free=7.06 GB
+[wd] t=2,406s tree=792 MB cpu=8% availRAM=3.91 GB C:free=7.05 GB
+[margin] delta 1e-06 draw 0: losses [6.668 7.192 7.429]  val 8.7736e-03  stable 6/6  -> ok
+[wd] t=2,468s tree=794 MB cpu=8% availRAM=3.75 GB C:free=7.05 GB
+[wd] t=2,530s tree=806 MB cpu=8% availRAM=3.92 GB C:free=7.05 GB
+[margin] delta 1e-06 draw 1: losses [3.552 3.852 3.907]  val 4.7200e-03  stable 6/6  -> ok
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 798 MB)
+[wd] t=2,591s tree=798 MB cpu=8% availRAM=4.00 GB C:free=7.05 GB
+WATCHDOG ALERT available RAM 3.95 GB < 4 GB (tree 811 MB)
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 803 MB)
+[wd] t=2,653s tree=815 MB cpu=8% availRAM=4.06 GB C:free=7.04 GB
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 803 MB)
+[margin] delta 1e-06 draw 2: losses [32.189 40.912 36.555]  val 3.6777e-02  stable 6/6  -> ok
+[margin] all-draws-stable by delta: {0.001: False, 0.0003: False, 0.0001: False, 3e-05: False, 1e-05: False, 3e-06: False, 1e-06: True}
+[margin] delta* = 1e-06  ->  server lr = 1e-07 (BB-013: delta*/10)
+WATCHDOG SUMMARY exit=0 killed=False duration_s=2,678.7 samples=520 peak_tree_ws_mb=829 min_avail_ram_gb=2.99 min_C_free_gb=6.92 kill_reason=""

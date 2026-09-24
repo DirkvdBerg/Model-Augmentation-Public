@@ -1,0 +1,9 @@
+T1_standstill_Ym30   lines 1081  per-line rank max 1  cond(sum_k XX^H) 1.101  max|coh| off-diag 0.0409
+T2_standstill_Ym15   lines 1081  per-line rank max 1  cond(sum_k XX^H) 1.082  max|coh| off-diag 0.0365
+T3_standstill_Y000   lines 1081  per-line rank max 1  cond(sum_k XX^H) 1.063  max|coh| off-diag 0.0241
+T4_standstill_Yp15   lines 1081  per-line rank max 1  cond(sum_k XX^H) 1.118  max|coh| off-diag 0.0402
+T5_standstill_Yp30   lines 1081  per-line rank max 1  cond(sum_k XX^H) 1.121  max|coh| off-diag 0.0491
+T7_ysweep_fast       lines 1081  per-line rank max 1  cond(sum_k XX^H) 1.082  max|coh| off-diag 0.0374
+T11_aprbs_100        lines 1081  per-line rank max 1  cond(sum_k XX^H) 1.083  max|coh| off-diag 0.0305
+union T1..T5          cond(sum) 1.050
+

@@ -1,0 +1,131 @@
+[run.sh] C: free 7.22 GB before launch of R018_g3_r1_baseline
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R018_g3_r1_baseline
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/g3_r1.py --arm baseline
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+R1 from the G2 encoder, arm baseline, 6 channels, na=29, 167902 train / 9596 val windows, device cuda, float64  [15 s]
+  params 10574
+  epoch 0 weighted val MSE 5.2093e-10
+      1 train 1.2916e-05  val 1.1812e-06  best 5.2093e-10@0  [18 s]
+WATCHDOG ALERT available RAM 3.91 GB < 4 GB (tree 1,253 MB)
+      2 train 2.0204e-07  val 1.2113e-08  best 5.2093e-10@0  [21 s]
+      3 train 4.2925e-09  val 9.9477e-10  best 5.2093e-10@0  [23 s]
+[wd] t=57s tree=1,254 MB cpu=10% availRAM=3.86 GB C:free=7.22 GB
+[wd] t=119s tree=1,253 MB cpu=11% availRAM=3.89 GB C:free=7.22 GB
+     50 train 1.1538e-09  val 1.2746e-10  best 8.3610e-11@32  [142 s]
+[wd] t=181s tree=1,253 MB cpu=10% availRAM=3.90 GB C:free=7.22 GB
+[wd] t=243s tree=1,254 MB cpu=10% availRAM=3.90 GB C:free=7.32 GB
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 1,254 MB)
+    100 train 1.0878e-09  val 6.7760e-10  best 5.8249e-11@77  [267 s]
+[wd] t=304s tree=1,215 MB cpu=10% availRAM=4.10 GB C:free=7.32 GB
+[wd] t=366s tree=1,215 MB cpu=10% availRAM=4.07 GB C:free=7.32 GB
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 1,215 MB)
+    150 train 4.7044e-07  val 6.4320e-08  best 5.1639e-11@114  [393 s]
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+[wd] t=428s tree=1,215 MB cpu=10% availRAM=4.02 GB C:free=7.31 GB
+[wd] t=490s tree=1,215 MB cpu=10% availRAM=4.03 GB C:free=7.31 GB
+    200 train 2.7410e-07  val 1.5614e-07  best 5.1639e-11@114  [518 s]
+[wd] t=552s tree=1,215 MB cpu=10% availRAM=4.03 GB C:free=7.31 GB
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.97 GB < 4 GB (tree 1,215 MB)
+[wd] t=614s tree=1,215 MB cpu=10% availRAM=3.96 GB C:free=7.31 GB
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+    250 train 3.0438e-08  val 1.5777e-08  best 5.1639e-11@114  [644 s]
+WATCHDOG ALERT available RAM 3.97 GB < 4 GB (tree 1,215 MB)
+[wd] t=676s tree=1,215 MB cpu=10% availRAM=3.97 GB C:free=7.31 GB
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+[wd] t=737s tree=1,215 MB cpu=10% availRAM=3.98 GB C:free=7.30 GB
+    300 train 2.0099e-10  val 6.2582e-11  best 4.7133e-11@258  [770 s]
+[wd] t=799s tree=1,215 MB cpu=10% availRAM=3.92 GB C:free=7.30 GB
+[wd] t=861s tree=1,215 MB cpu=10% availRAM=3.99 GB C:free=7.30 GB
+    350 train 4.3732e-10  val 7.1972e-11  best 4.7133e-11@258  [896 s]
+[wd] t=923s tree=1,215 MB cpu=11% availRAM=4.02 GB C:free=7.30 GB
+WATCHDOG ALERT available RAM 3.95 GB < 4 GB (tree 1,215 MB)
+[wd] t=985s tree=1,215 MB cpu=10% availRAM=4.01 GB C:free=7.29 GB
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+    400 train 8.3128e-08  val 1.9410e-06  best 4.4081e-11@390  [1021 s]
+[wd] t=1,047s tree=1,215 MB cpu=10% availRAM=3.96 GB C:free=7.29 GB
+[wd] t=1,109s tree=1,215 MB cpu=10% availRAM=3.96 GB C:free=7.29 GB
+    450 train 3.8395e-09  val 3.2349e-09  best 4.4081e-11@390  [1147 s]
+[wd] t=1,171s tree=1,215 MB cpu=10% availRAM=3.94 GB C:free=7.29 GB
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 1,215 MB)
+[wd] t=1,233s tree=1,215 MB cpu=10% availRAM=4.02 GB C:free=7.29 GB
+WATCHDOG ALERT available RAM 3.95 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.96 GB < 4 GB (tree 1,215 MB)
+    500 train 8.0414e-09  val 1.6920e-08  best 4.3859e-11@499  [1273 s]
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 1,215 MB)
+[wd] t=1,295s tree=1,215 MB cpu=10% availRAM=3.98 GB C:free=7.29 GB
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.96 GB < 4 GB (tree 1,215 MB)
+[wd] t=1,357s tree=1,215 MB cpu=10% availRAM=3.98 GB C:free=7.28 GB
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.97 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 1,215 MB)
+    550 train 2.9721e-08  val 8.5552e-09  best 4.3859e-11@499  [1398 s]
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+[wd] t=1,418s tree=1,215 MB cpu=10% availRAM=3.99 GB C:free=7.28 GB
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 1,215 MB)
+[wd] t=1,480s tree=1,215 MB cpu=10% availRAM=3.96 GB C:free=7.28 GB
+WATCHDOG ALERT available RAM 3.97 GB < 4 GB (tree 1,215 MB)
+    600 train 4.9673e-11  val 4.8772e-11  best 4.3653e-11@598  [1524 s]
+[wd] t=1,542s tree=1,215 MB cpu=10% availRAM=3.95 GB C:free=7.28 GB
+[wd] t=1,604s tree=1,215 MB cpu=11% availRAM=4.01 GB C:free=7.27 GB
+WATCHDOG ALERT available RAM 3.94 GB < 4 GB (tree 1,215 MB)
+    650 train 2.6674e-10  val 6.6413e-11  best 4.3653e-11@598  [1649 s]
+[wd] t=1,666s tree=1,215 MB cpu=10% availRAM=3.74 GB C:free=7.55 GB
+[wd] t=1,728s tree=1,215 MB cpu=10% availRAM=3.89 GB C:free=7.55 GB
+    700 train 9.0897e-08  val 4.0406e-08  best 4.3653e-11@598  [1775 s]
+[wd] t=1,790s tree=1,215 MB cpu=10% availRAM=3.90 GB C:free=7.54 GB
+[wd] t=1,852s tree=1,215 MB cpu=10% availRAM=3.92 GB C:free=7.54 GB
+    750 train 2.5007e-07  val 6.7133e-08  best 4.2300e-11@738  [1900 s]
+[wd] t=1,914s tree=1,215 MB cpu=10% availRAM=3.87 GB C:free=7.54 GB
+[wd] t=1,975s tree=1,215 MB cpu=10% availRAM=3.93 GB C:free=7.54 GB
+WATCHDOG ALERT available RAM 3.97 GB < 4 GB (tree 1,215 MB)
+    800 train 3.6683e-07  val 7.2400e-08  best 4.2300e-11@738  [2026 s]
+[wd] t=2,037s tree=1,215 MB cpu=10% availRAM=4.00 GB C:free=7.54 GB
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 1,215 MB)
+[wd] t=2,099s tree=1,215 MB cpu=10% availRAM=4.03 GB C:free=7.53 GB
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 1,215 MB)
+    850 train 1.1915e-08  val 1.2033e-08  best 4.2300e-11@738  [2152 s]
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+[wd] t=2,161s tree=1,215 MB cpu=10% availRAM=3.99 GB C:free=7.53 GB
+WATCHDOG ALERT available RAM 3.97 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 1,215 MB)
+[wd] t=2,223s tree=1,215 MB cpu=10% availRAM=4.00 GB C:free=7.53 GB
+WATCHDOG ALERT available RAM 3.96 GB < 4 GB (tree 1,215 MB)
+    900 train 4.9069e-07  val 8.5279e-08  best 4.2237e-11@882  [2277 s]
+[wd] t=2,285s tree=1,215 MB cpu=11% availRAM=4.00 GB C:free=7.53 GB
+WATCHDOG ALERT available RAM 3.95 GB < 4 GB (tree 1,215 MB)
+[wd] t=2,347s tree=1,215 MB cpu=10% availRAM=4.03 GB C:free=7.52 GB
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.96 GB < 4 GB (tree 1,215 MB)
+[wd] t=2,409s tree=1,215 MB cpu=10% availRAM=4.00 GB C:free=7.52 GB
+    950 train 2.2633e-10  val 6.9853e-11  best 4.2237e-11@882  [2403 s]
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 1,215 MB)
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,215 MB)
+[wd] t=2,470s tree=1,215 MB cpu=10% availRAM=3.93 GB C:free=7.52 GB
+[wd] t=2,532s tree=1,215 MB cpu=10% availRAM=3.93 GB C:free=7.52 GB
+   1000 train 1.0126e-07  val 1.1775e-08  best 4.2237e-11@882  [2529 s]
+
+  best epoch 882
+  ch          G2 init     trained  headroom   unit   (validation V1-V4)
+  X         3.306e-07   6.704e-08      4.93   m
+  Theta     2.052e-06   2.520e-07      8.14   rad
+  Y         2.161e-05   6.664e-06      3.24   m
+  dX        3.354e-04   5.905e-05      5.68   m/s
+  dTheta    1.892e-03   3.720e-04      5.09   rad/s
+  dY        2.812e-02   1.412e-02      1.99   m/s
+  saved outputs/g3/r1_baseline.json  [2529 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=2,537.3 samples=492 peak_tree_ws_mb=1,254 min_avail_ram_gb=3.54 min_C_free_gb=7.22 kill_reason=""

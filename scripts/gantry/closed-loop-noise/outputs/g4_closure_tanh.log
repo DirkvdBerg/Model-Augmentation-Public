@@ -1,0 +1,42 @@
+[run.sh] C: free 10.74 GB before launch of g4_closure_tanh
+[wd] launch  out=scripts/gantry/closed-loop-noise/outputs/g4_closure_tanh
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/closed-loop-noise/closure/g4_closure.py tanh 16.5 2
+[g4] analytic (tanh): rms [ 9.845 10.392  6.334] nm (measured [ 9.843 10.39   6.336] nm, bootstrap half-width [2.09 2.1  1.63] %)
+[g4] VAR impulse truncated at 11589 lags; generating 30 x 330000 samples
+[wd] t=57s tree=896 MB cpu=8% availRAM=4.33 GB C:free=10.74 GB
+[g4] step 20000/330000 (36 s)
+WATCHDOG ALERT available RAM 3.97 GB < 4 GB (tree 940 MB)
+[wd] t=119s tree=940 MB cpu=8% availRAM=3.97 GB C:free=10.62 GB
+[g4] step 40000/330000 (76 s)
+[g4] step 60000/330000 (112 s)
+[wd] t=181s tree=976 MB cpu=8% availRAM=4.26 GB C:free=10.73 GB
+[g4] step 80000/330000 (149 s)
+[g4] step 100000/330000 (186 s)
+[wd] t=243s tree=1,024 MB cpu=8% availRAM=4.13 GB C:free=10.73 GB
+[g4] step 120000/330000 (223 s)
+[wd] t=305s tree=1,069 MB cpu=8% availRAM=4.02 GB C:free=10.72 GB
+[g4] step 140000/330000 (262 s)
+[g4] step 160000/330000 (297 s)
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,101 MB)
+[wd] t=367s tree=1,112 MB cpu=8% availRAM=3.72 GB C:free=10.70 GB
+[g4] step 180000/330000 (348 s)
+[wd] t=429s tree=1,146 MB cpu=8% availRAM=3.82 GB C:free=10.70 GB
+[g4] step 200000/330000 (401 s)
+[wd] t=491s tree=1,178 MB cpu=8% availRAM=3.81 GB C:free=10.70 GB
+[g4] step 220000/330000 (453 s)
+[g4] step 240000/330000 (493 s)
+[wd] t=553s tree=1,218 MB cpu=8% availRAM=3.88 GB C:free=10.71 GB
+[g4] step 260000/330000 (537 s)
+[wd] t=615s tree=1,260 MB cpu=8% availRAM=4.03 GB C:free=10.69 GB
+[g4] step 280000/330000 (574 s)
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,293 MB)
+[g4] step 300000/330000 (609 s)
+[wd] t=677s tree=1,308 MB cpu=8% availRAM=4.01 GB C:free=10.69 GB
+WATCHDOG ALERT available RAM 3.98 GB < 4 GB (tree 1,312 MB)
+[g4] step 320000/330000 (644 s)
+[g4] simulated rms [ 9.84  10.39   6.334] nm: vs measured [-0.02 -0.01 -0.02] % (tol [4.09 4.1  3.63] %), vs analytic [-0.04 -0.02  0.  ] %
+[g4] bands: simulated inside measured CI [0.977 0.953 0.953] (>= 0.85); analytic inside simulated CI [0.744 0.744 0.767] (>= 0.9)
+[g4] injected v rms [14.97 15.88 10.95] nm; force rms [1.809  2.3617 2.1884] N; controller-state std max 1.305e-02; max stage speed [4.39e-05 4.33e-05 3.81e-05] m/s (v0 1e-3)
+[g4] PASS (a) True (b) True (c) False -> False
+[g4] done in 708 s
+WATCHDOG SUMMARY exit=0 killed=False duration_s=717.1 samples=139 peak_tree_ws_mb=1,382 min_avail_ram_gb=3.71 min_C_free_gb=10.62 kill_reason=""

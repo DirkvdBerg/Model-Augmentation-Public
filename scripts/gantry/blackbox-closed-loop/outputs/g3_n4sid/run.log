@@ -1,0 +1,70 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g3_n4sid
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/init/g3_init.py --arm n4sid
+  mode          'augmentation_ma50_z03_b140-230_a6all_telica_coulomb'
+  fs_new        4000
+  ts_new        0.00025
+  nf            400
+  na_nb         29
+  stride        10
+  burn_in       0
+  batch_size    512
+  epochs        200
+  its_per_val   1300
+  n_its         None
+  seed          42
+  closed_loop   True
+  use_f64       False
+  lr            1e-05
+  adam_eps      1e-16
+  lbfgs         True
+  device        'cpu'   (CFG: 'cuda', local override)
+  compile_mode  None   (CFG: 'reduce-overhead', local override)
+Data dir (augmentation_ma50_z03_b140-230_a6all_telica_coulomb): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.274e-05 m  vdelta_a std=5.127e-02 m/s
+Loaded 18 train, 6 val, 5 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  T15: 48000 samples  (TP1_telica_y000.mat)
+  T16: 48000 samples  (TP2_telica_y000_rev.mat)
+  T17: 48000 samples  (TP3_telica_yp06.mat)
+  T18: 48000 samples  (TP4_telica_ym06.mat)
+Initializing encoder network...
+C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\fit_systems\ss_linear.py:149: UserWarning: could not import control (see github.com/python-control), skipping Kalman filter step
+  warnings.warn('could not import control (see github.com/python-control), skipping Kalman filter step', stacklevel=1, source=None)
+[BLA] SS_f= 40  rejected: AssertionError
+[BLA] SS_f= 30  rejected: AssertionError
+WATCHDOG ALERT available RAM 3.78 GB < 4 GB (tree 1,330 MB)
+[BLA] SS_f= 50  rejected: AssertionError
+[BLA] SS_f= 60  rejected: AssertionError
+[BLA] SS_f= 20  rejected: AssertionError
+WATCHDOG ALERT available RAM 3.15 GB < 4 GB (tree 1,989 MB)
+[BLA] SS_f= 80  rejected: AssertionError
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\init\g3_init.py", line 43, in <module>
+    fs = bb_model.build_blackbox(cfg, data, norm, arm=args.arm, attach=True)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\adapter\bb_model.py", line 97, in build_blackbox
+    apply_init(fit_sys, cfg, arm, verbose=verbose)
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\adapter\bb_model.py", line 127, in apply_init
+    bla_init.apply_bla_init(fit_sys, rec, mode='dyn', zero_nonlinear=True, verbose=verbose)
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\vendor\ann_blackbox\bla_init.py", line 175, in apply_bla_init
+    bla = fit_bla(fit_sys, train_data, nx)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\vendor\ann_blackbox\bla_init.py", line 84, in fit_bla
+    assert best is not None, 'no SS_f in the grid produced a stable BLA'
+           ^^^^^^^^^^^^^^^^
+AssertionError: no SS_f in the grid produced a stable BLA
+ERROR conda.cli.main_run:execute(47): `conda run python -u scripts/gantry/blackbox-closed-loop/init/g3_init.py --arm n4sid` failed. (See above for error)
+WATCHDOG SUMMARY exit=1 killed=False duration_s=50.3 samples=10 peak_tree_ws_mb=1,989 min_avail_ram_gb=3.15 min_C_free_gb=7.11 kill_reason=""

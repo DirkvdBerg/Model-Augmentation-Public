@@ -1,0 +1,13 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g2_random
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/score/g2_transfer.py --arm random
+[G2] arm random: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\ann-blackbox\server-results/paired_random\ann_blackbox_fs800_nf400_s0
+C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\systems\system.py:17: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  return torch.load(file)
+[G2] Y_op (RECORD_Y_OP vs raw record y[0,2]): [('V2_aprbs_Ylow', -0.22, -0.2199999988079071), ('T10_aprbs_60', 0.0, 0.0)]
+[G2] controller at 800 Hz, rows [0, 1] for Y_op [-0.22, 0.0], diag(Dc) [11850915.  9116493.  5105605.] N/m
+[G2] open loop, deepSI path, V2: 8.632398e-02 m (metrics best 8.632398e-02, rel 3.75e-09, tol 1e-3)  3 s
+[G2] harness runs 23 s
+   V2_aprbs_Ylow  open 8.6324e-02 (stable)  closed nan (UNSTABLE)  open/closed nanx  closed per ch [nan nan nan]
+   T10_aprbs_60   open 8.1892e-02 (stable)  closed nan (UNSTABLE)  open/closed nanx  closed per ch [nan nan nan]
+[G2] random: load OK; V2 closed nan vs open (harness) 8.6324e-02, deepSI open 8.6324e-02
+WATCHDOG SUMMARY exit=0 killed=False duration_s=35.4 samples=7 peak_tree_ws_mb=610 min_avail_ram_gb=4.25 min_C_free_gb=7.15 kill_reason=""

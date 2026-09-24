@@ -1,0 +1,984 @@
+[run.sh] C: free 10.45 GB before launch of g5b_twin
+[wd] launch  out=scripts/gantry/closed-loop-noise/outputs/g5b_twin
+[wd] command matlab -nojvm -sd scripts/gantry/closed-loop-noise/matlab/gen -batch g5b_twin
+cn_gen_multisine: mode noise, out C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb_noise_ss
+Amplitude override x6: A_sym=240.0 N  A_Y=180.0 N  A_anti=87.0 N*m
+
+=== 1/22  T1_standstill_Ym30  [train] ===
+  encoder noise: seed 3302868458, rms [15.21 15.68 11.24] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It is not possible to see Simscape
+Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option. Please turn off visualization in the Simscape Multibody: Explorer
+configuration pane of the model 'gantry_cn_noise_2025a' to silence this warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=57s tree=3,058 MB cpu=8% availRAM=2.98 GB C:free=10.42 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 9.5%  X2 8.0%  Y 4.9%
+  saved T1_standstill_Ym30.mat (103 s)
+
+=== 2/22  T2_standstill_Ym15  [train] ===
+[wd] t=120s tree=3,606 MB cpu=9% availRAM=2.48 GB C:free=10.26 GB
+  encoder noise: seed 3575318627, rms [15.29 15.59 11.06] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=182s tree=3,566 MB cpu=9% availRAM=2.54 GB C:free=10.18 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 7.9%  X2 7.7%  Y 5.1%
+  saved T2_standstill_Ym15.mat (76 s)
+
+=== 3/22  T3_standstill_Y000  [train] ===
+  encoder noise: seed 1604893453, rms [15.36 16.34 10.92] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=244s tree=3,604 MB cpu=9% availRAM=2.52 GB C:free=10.06 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 7.3%  X2 7.9%  Y 5.2%
+  saved T3_standstill_Y000.mat (73 s)
+
+=== 4/22  T4_standstill_Yp15  [train] ===
+  encoder noise: seed 1725009736, rms [14.92 16.18 11.16] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=306s tree=3,598 MB cpu=9% availRAM=2.49 GB C:free=9.90 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 7.1%  X2 9.3%  Y 4.8%
+  saved T4_standstill_Yp15.mat (84 s)
+
+=== 5/22  T5_standstill_Yp30  [train] ===
+  encoder noise: seed 2737558022, rms [14.28 15.91 10.87] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=369s tree=3,574 MB cpu=8% availRAM=2.77 GB C:free=9.80 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 7.3%  X2 11.5%  Y 4.7%
+  saved T5_standstill_Yp30.mat (77 s)
+
+=== 6/22  T6_ysweep_slow  [train] ===
+[wd] t=431s tree=3,614 MB cpu=9% availRAM=2.70 GB C:free=9.65 GB
+  encoder noise: seed 3994747064, rms [14.71 15.71 11.39] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=493s tree=3,637 MB cpu=9% availRAM=2.54 GB C:free=9.56 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 8.2%  X2 9.2%  Y 1.0%
+  saved T6_ysweep_slow.mat (76 s)
+
+=== 7/22  T7_ysweep_fast  [train] ===
+  encoder noise: seed 602726692, rms [15.41 16.10 11.21] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=555s tree=3,628 MB cpu=8% availRAM=2.72 GB C:free=9.45 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 8.0%  X2 9.1%  Y 0.9%
+  saved T7_ysweep_fast.mat (74 s)
+
+=== 8/22  T8_ysweep_xmix  [train] ===
+  encoder noise: seed 81484585, rms [15.28 16.19 10.91] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=618s tree=3,604 MB cpu=9% availRAM=2.64 GB C:free=9.30 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 1.8%  X2 1.6%  Y 0.8%
+  saved T8_ysweep_xmix.mat (81 s)
+
+=== 9/22  T9_aprbs_30  [train] ===
+  encoder noise: seed 50656149, rms [14.68 15.52 11.01] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=680s tree=3,633 MB cpu=8% availRAM=2.70 GB C:free=9.28 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 5.6%  X2 6.7%  Y 2.4%
+  saved T9_aprbs_30.mat (78 s)
+
+=== 10/22  T10_aprbs_60  [train] ===
+  encoder noise: seed 2362048656, rms [15.31 15.60 11.17] nm
+[wd] t=742s tree=3,576 MB cpu=7% availRAM=2.73 GB C:free=9.13 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=804s tree=3,595 MB cpu=9% availRAM=2.68 GB C:free=9.04 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 4.9%  X2 5.6%  Y 2.4%
+  saved T10_aprbs_60.mat (75 s)
+
+=== 11/22  T11_aprbs_100  [train] ===
+  encoder noise: seed 3231272736, rms [14.86 16.27 10.75] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=867s tree=3,603 MB cpu=8% availRAM=2.77 GB C:free=8.92 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 5.3%  X2 5.7%  Y 2.8%
+  saved T11_aprbs_100.mat (74 s)
+
+=== 12/22  T12_aprbs_yaw  [train] ===
+  encoder noise: seed 1827294591, rms [14.95 15.82 10.93] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=929s tree=3,595 MB cpu=8% availRAM=2.66 GB C:free=8.76 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 6.8%  X2 6.8%  Y 2.1%
+  saved T12_aprbs_yaw.mat (76 s)
+
+=== 13/22  T13_lissajous  [train] ===
+  encoder noise: seed 3181348253, rms [14.90 15.52 11.33] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=991s tree=3,615 MB cpu=8% availRAM=2.69 GB C:free=8.66 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 1.5%  X2 1.6%  Y 0.9%
+  saved T13_lissajous.mat (76 s)
+
+=== 14/22  T14_lissajous_yaw  [train] ===
+  encoder noise: seed 726768546, rms [14.47 16.02 11.00] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=1,053s tree=3,600 MB cpu=8% availRAM=2.69 GB C:free=8.50 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 1.4%  X2 1.5%  Y 0.9%
+  saved T14_lissajous_yaw.mat (74 s)
+
+=== 15/22  V1_standstill_Yp10  [val] ===
+[wd] t=1,115s tree=3,605 MB cpu=9% availRAM=2.64 GB C:free=8.34 GB
+  encoder noise: seed 3888250056, rms [15.06 15.89 10.81] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=1,177s tree=3,631 MB cpu=9% availRAM=2.63 GB C:free=8.26 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 7.5%  X2 8.9%  Y 4.6%
+  saved V1_standstill_Yp10.mat (77 s)
+
+=== 16/22  V2_aprbs_Ylow  [val] ===
+  encoder noise: seed 1705807363, rms [14.77 15.82 10.88] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=1,239s tree=3,624 MB cpu=8% availRAM=2.63 GB C:free=8.14 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 4.9%  X2 4.1%  Y 3.4%
+  saved V2_aprbs_Ylow.mat (75 s)
+
+=== 17/22  V3_ysweep_Yp10  [val] ===
+  encoder noise: seed 74040993, rms [14.89 15.67 10.67] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=1,302s tree=3,608 MB cpu=9% availRAM=2.65 GB C:free=7.98 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 7.3%  X2 9.5%  Y 1.4%
+  saved V3_ysweep_Yp10.mat (76 s)
+
+=== 18/22  V4_lissajous_Ym10  [val] ===
+  encoder noise: seed 2703629420, rms [15.12 15.98 11.26] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=1,364s tree=3,617 MB cpu=8% availRAM=2.62 GB C:free=7.88 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 1.4%  X2 1.4%  Y 1.0%
+  saved V4_lissajous_Ym10.mat (76 s)
+
+=== 19/22  E1_resonance_sweep  [test] ===
+  encoder noise: seed 2798283595, rms [15.17 15.79 11.10] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=1,426s tree=3,601 MB cpu=9% availRAM=2.64 GB C:free=7.72 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=1,488s tree=3,611 MB cpu=9% availRAM=2.64 GB C:free=7.58 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 100.0%  X2 100.0%  Y 26.7%
+  saved E1_resonance_sweep.mat (78 s)
+
+=== 20/22  E2_multisine_Yp22  [test] ===
+  encoder noise: seed 3861493775, rms [15.21 16.28 11.02] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=1,550s tree=3,641 MB cpu=8% availRAM=2.55 GB C:free=7.52 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 9.9%  X2 13.8%  Y 7.0%
+  saved E2_multisine_Yp22.mat (88 s)
+
+=== 21/22  E3_aprbs_above  [test] ===
+  encoder noise: seed 3647402601, rms [14.93 15.95 11.03] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=1,613s tree=3,596 MB cpu=8% availRAM=2.73 GB C:free=7.42 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 5.2%  X2 5.3%  Y 2.7%
+  saved E3_aprbs_above.mat (86 s)
+
+=== 22/22  E4_multisine_off  [test] ===
+  encoder noise: seed 923538353, rms [15.43 16.32 10.95] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=1,675s tree=3,613 MB cpu=9% availRAM=2.47 GB C:free=7.27 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5b_twin (line 9)] 
+[wd] t=1,737s tree=3,861 MB cpu=15% availRAM=2.34 GB C:free=7.12 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 61.8%  X2 61.6%  Y 43.3%
+  saved E4_multisine_off.mat (72 s)
+
+Done: 22 records in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb_noise_ss
+cn_gen_telica: mode noise, out C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb_noise_ss
+
+=== 1/7  TP1_telica_y000  [train] ===
+  encoder noise: seed 1686979037, rms [14.89 15.68 10.37] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+[wd] t=1,799s tree=3,619 MB cpu=9% availRAM=2.61 GB C:free=7.04 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 77.6%  X2 77.5%  Y 73.2%
+  saved TP1_telica_y000.mat (72 s)
+
+=== 2/7  TP2_telica_y000_rev  [train] ===
+  encoder noise: seed 1992141133, rms [14.94 15.42 10.75] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+[wd] t=1,862s tree=3,681 MB cpu=8% availRAM=2.46 GB C:free=6.93 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 83.7%  X2 84.0%  Y 80.8%
+  saved TP2_telica_y000_rev.mat (80 s)
+
+=== 3/7  TP3_telica_yp06  [train] ===
+  encoder noise: seed 2636700771, rms [15.27 16.39 11.06] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+[wd] t=1,924s tree=3,679 MB cpu=8% availRAM=2.49 GB C:free=6.85 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 87.6%  X2 87.3%  Y 85.1%
+  saved TP3_telica_yp06.mat (71 s)
+
+=== 4/7  TP4_telica_ym06  [train] ===
+  encoder noise: seed 4104514072, rms [14.55 15.82 10.86] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+[wd] t=1,986s tree=3,702 MB cpu=8% availRAM=2.47 GB C:free=6.74 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 77.5%  X2 77.6%  Y 73.2%
+  saved TP4_telica_ym06.mat (71 s)
+
+=== 5/7  VP1_telica_ylow  [val] ===
+  encoder noise: seed 2083959344, rms [15.18 16.16 10.60] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+[wd] t=2,048s tree=3,685 MB cpu=9% availRAM=2.54 GB C:free=6.59 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 82.1%  X2 82.0%  Y 78.6%
+  saved VP1_telica_ylow.mat (72 s)
+
+=== 6/7  VP2_telica_yp12  [val] ===
+  encoder noise: seed 4132323631, rms [15.15 16.03 10.75] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+[wd] t=2,110s tree=3,660 MB cpu=4% availRAM=2.42 GB C:free=6.45 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+[wd] t=2,173s tree=3,714 MB cpu=9% availRAM=2.26 GB C:free=6.37 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 80.0%  X2 80.4%  Y 76.5%
+  saved VP2_telica_yp12.mat (74 s)
+
+=== 7/7  EP1_telica_test  [test] ===
+  encoder noise: seed 2884413619, rms [14.78 16.24 11.04] nm
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5b_twin (line 10)] 
+[wd] t=2,235s tree=3,732 MB cpu=9% availRAM=2.57 GB C:free=6.26 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 74.8%  X2 74.7%  Y 70.1%
+  saved EP1_telica_test.mat (75 s)
+
+Done: 7 records in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb_noise_ss
+G5b done: 29 records in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb_noise_ss
+WATCHDOG SUMMARY exit=0 killed=False duration_s=2,273.7 samples=439 peak_tree_ws_mb=4,030 min_avail_ram_gb=2.20 min_C_free_gb=6.17 kill_reason=""
+[run.sh] C: free 8.98 GB before launch of g5c_ref
+[wd] launch  out=scripts/gantry/closed-loop-noise/outputs/g5c_ref
+[wd] command matlab -nojvm -sd scripts/gantry/closed-loop-noise/matlab/gen -batch g5c_ref
+cn_gen_multisine: mode off64, out C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-noise\outputs\g5c_records
+Amplitude override x6: A_sym=240.0 N  A_Y=180.0 N  A_anti=87.0 N*m
+
+=== 1/8  T1_standstill_Ym30  [train] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It is not possible to see Simscape
+Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option. Please turn off visualization in the Simscape Multibody: Explorer
+configuration pane of the model 'gantry_cn_noise_2025a' to silence this warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+[wd] t=58s tree=3,023 MB cpu=8% availRAM=3.21 GB C:free=8.95 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 9.5%  X2 8.0%  Y 4.9%
+  saved T1_standstill_Ym30.mat (93 s)
+
+=== 2/8  T2_standstill_Ym15  [train] ===
+[wd] t=120s tree=3,568 MB cpu=9% availRAM=2.70 GB C:free=8.80 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+[wd] t=182s tree=3,531 MB cpu=9% availRAM=2.66 GB C:free=8.67 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 7.9%  X2 7.7%  Y 5.1%
+  saved T2_standstill_Ym15.mat (71 s)
+
+=== 3/8  T3_standstill_Y000  [train] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+[wd] t=244s tree=3,446 MB cpu=9% availRAM=3.01 GB C:free=8.60 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 7.3%  X2 7.9%  Y 5.2%
+  saved T3_standstill_Y000.mat (69 s)
+
+=== 4/8  T4_standstill_Yp15  [train] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+[wd] t=306s tree=3,552 MB cpu=8% availRAM=2.84 GB C:free=8.44 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 7.1%  X2 9.3%  Y 4.8%
+  saved T4_standstill_Yp15.mat (67 s)
+
+=== 5/8  T5_standstill_Yp30  [train] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+[wd] t=369s tree=3,555 MB cpu=9% availRAM=2.83 GB C:free=8.29 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 7.3%  X2 11.5%  Y 4.7%
+  saved T5_standstill_Yp30.mat (70 s)
+
+=== 6/8  V1_standstill_Yp10  [val] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+[wd] t=431s tree=3,570 MB cpu=8% availRAM=2.78 GB C:free=8.15 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 7.5%  X2 8.9%  Y 4.6%
+  saved V1_standstill_Yp10.mat (67 s)
+
+=== 7/8  E1_resonance_sweep  [test] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+[wd] t=493s tree=3,554 MB cpu=8% availRAM=2.82 GB C:free=8.02 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 100.0%  X2 100.0%  Y 26.7%
+  saved E1_resonance_sweep.mat (62 s)
+
+=== 8/8  E2_multisine_Yp22  [test] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+[wd] t=555s tree=3,554 MB cpu=9% availRAM=2.78 GB C:free=7.87 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_multisine (line 56)
+In g5c_ref (line 7)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 9.9%  X2 13.8%  Y 7.0%
+  saved E2_multisine_Yp22.mat (68 s)
+
+Done: 8 records in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-noise\outputs\g5c_records
+cn_gen_telica: mode off64, out C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-noise\outputs\g5c_records
+
+=== 1/7  TP1_telica_y000  [train] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+[wd] t=617s tree=3,563 MB cpu=9% availRAM=2.88 GB C:free=7.76 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 77.6%  X2 77.5%  Y 73.2%
+  saved TP1_telica_y000.mat (76 s)
+
+=== 2/7  TP2_telica_y000_rev  [train] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+[wd] t=679s tree=3,583 MB cpu=9% availRAM=2.66 GB C:free=7.63 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+[wd] t=742s tree=3,802 MB cpu=16% availRAM=2.50 GB C:free=7.50 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 83.7%  X2 84.0%  Y 80.8%
+  saved TP2_telica_y000_rev.mat (75 s)
+
+=== 3/7  TP3_telica_yp06  [train] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+[wd] t=804s tree=3,669 MB cpu=8% availRAM=2.75 GB C:free=7.45 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 87.6%  X2 87.3%  Y 85.1%
+  saved TP3_telica_yp06.mat (75 s)
+
+=== 4/7  TP4_telica_ym06  [train] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+[wd] t=866s tree=3,653 MB cpu=9% availRAM=2.75 GB C:free=7.32 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 77.5%  X2 77.6%  Y 73.2%
+  saved TP4_telica_ym06.mat (70 s)
+
+=== 5/7  VP1_telica_ylow  [val] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+[wd] t=928s tree=3,638 MB cpu=9% availRAM=2.71 GB C:free=7.19 GB
+  stick fraction (|v| < 1e-03 m/s) : X1 82.1%  X2 82.0%  Y 78.6%
+  saved VP1_telica_ylow.mat (72 s)
+
+=== 6/7  VP2_telica_yp12  [val] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+[wd] t=991s tree=3,625 MB cpu=9% availRAM=2.69 GB C:free=7.07 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 80.0%  X2 80.4%  Y 76.5%
+  saved VP2_telica_yp12.mat (76 s)
+
+=== 7/7  EP1_telica_test  [test] ===
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 41)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+[wd] t=1,053s tree=3,642 MB cpu=9% availRAM=2.75 GB C:free=6.97 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_cn_noise_2025a' to silence this
+warning.] 
+[> In gtd_run_simulation>run_once (line 69)
+In gtd_run_simulation (line 55)
+In cn_gen_telica (line 45)
+In g5c_ref (line 8)] 
+  stick fraction (|v| < 1e-03 m/s) : X1 74.8%  X2 74.7%  Y 70.1%
+  saved EP1_telica_test.mat (70 s)
+
+Done: 7 records in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-noise\outputs\g5c_records
+[wd] t=1,115s tree=2,977 MB cpu=0% availRAM=3.39 GB C:free=8.29 GB
+WATCHDOG SUMMARY exit=0 killed=False duration_s=1,125.1 samples=217 peak_tree_ws_mb=3,968 min_avail_ram_gb=2.48 min_C_free_gb=6.84 kill_reason=""

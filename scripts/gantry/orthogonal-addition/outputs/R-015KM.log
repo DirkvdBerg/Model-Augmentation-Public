@@ -1,0 +1,61 @@
+[wd] launch  out=outputs/R-015KM
+[wd] command conda run --no-capture-output -n GraduationProject python -u design/correct.py
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation_oa_cabs_b140-230_a6): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_cabs_b140-230_a6
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=0.000e+00 m  vdelta_a std=0.000e+00 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.3 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+[core] augmentation_oa_cabs_b140-230_a6 stride 1: 671944 tuples, basis rank 10 cond 7.6946e+02, 26.4 s
+[corr] measured ||Delta*|| 1.5862e+01; model field of the addition 1.5908e+01; measured minus model 4.1593e+00 (floor + model error)
+[corr] measured target on augmentation_oa_cabs_b140-230_a6 (stride 1): rho* 1.1695e-01  ||Delta|| 1.5862e+01  bias max|.| 1.286e+01 %  m_diff own -9.593e+00 %
+[corr] compensator library: 23 slots (KM)
+WATCHDOG ALERT available RAM 3.66 GB < 4 GB (tree 1,882 MB)
+[corr] after compensator: ||Phi^T D - target|| reduced by 1.42e-12; rho* 6.9347e-04  ||Delta|| 1.7540e+02
+[corr] predicted bias (combo %): kb_sum +2.184e-02  cg1 +2.320e-03  cg2 +7.351e-04  cy +1.729e-02  cb_sum +8.398e-01  mh +4.844e-02  m_total +4.875e-02  m_diff -2.532e-03  J_eff +5.396e-02  d -2.638e-03
+[corr] m_diff own scale -5.291e-02 %
+[corr] compensator stage force rms [249.35 185.29 133.4 ] N peak [1465.5 1236.6  713.8] N | addition before: rms [ 51.69  51.69 374.77] N peak [ 216.7  216.7 1571. ] N
+[corr] ||Delta_comp|| 1.7468e+02 = 99.6 % of ||Delta_addition + Delta_comp|| (model)
+[corr] compensator coefficients:
+    K11      +8.633049e+03
+    K11Y     -8.739461e+03
+    K11Y2    -6.983976e+04
+    K12      +1.894917e+03
+    K12Y     -1.505425e+03
+    K12Y2    -2.999852e+04
+    K13      -2.671892e+02
+    K13Y     -1.101590e+02
+    K13Y2    +5.117179e+03
+    K22Y     +2.544741e+05
+    K22Y2    -1.563601e+05
+    K23      +4.486091e+02
+    K23Y     +5.110266e+02
+    K23Y2    -7.006104e+03
+    K33      +8.719806e+02
+    K33Y     +1.282818e+02
+    K33Y2    -6.002936e+03
+    M11Y     -1.321386e+02
+    M13      -2.395754e+00
+    M13Y     -7.035940e+00
+    M22Y     +8.014124e+00
+    M23Y     -1.256300e+01
+    M33Y     -3.989353e+00
+[out] design/addition_c1_KM.mat
+WATCHDOG SUMMARY exit=0 killed=False duration_s=44.2 samples=9 peak_tree_ws_mb=2,148 min_avail_ram_gb=3.50 min_C_free_gb=10.94 kill_reason=""

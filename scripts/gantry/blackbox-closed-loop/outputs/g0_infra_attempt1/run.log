@@ -1,0 +1,17 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g0_infra
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/score/g0_infra.py 
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\score\g0_infra.py", line 10, in <module>
+    cfg, CFG, entry = common.load_cfg(local=True)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\adapter\common.py", line 59, in load_cfg
+    spec.loader.exec_module(mod)
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\gantry_interconnect_dynamic.py", line 30, in <module>
+    from gantry_dynamic.evaluation import evaluate_and_save, per_record_nrms
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\vendor\gantry_dynamic\evaluation.py", line 31, in <module>
+    from common import oracle as _oracle
+ImportError: cannot import name 'oracle' from 'common' (C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\adapter\common.py)
+ERROR conda.cli.main_run:execute(47): `conda run python -u scripts/gantry/blackbox-closed-loop/score/g0_infra.py` failed. (See above for error)
+WATCHDOG SUMMARY exit=1 killed=False duration_s=10.0 samples=2 peak_tree_ws_mb=402 min_avail_ram_gb=4.33 min_C_free_gb=7.19 kill_reason=""

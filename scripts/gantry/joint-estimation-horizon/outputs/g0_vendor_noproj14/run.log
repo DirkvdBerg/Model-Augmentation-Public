@@ -1,0 +1,40 @@
+[wd] launch  out=scripts/gantry/joint-estimation-horizon/outputs/g0_vendor_noproj14
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/joint-estimation-horizon/tools/g0_epoch0.py --source vendor --arm noproj14
+WATCHDOG ALERT available RAM 3.76 GB < 4 GB (tree 445 MB)
+[g0] entry file      : C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\joint-estimation-horizon\vendor\gantry_interconnect_dynamic.py
+[g0] gantry_dynamic  : C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\joint-estimation-horizon\vendor\gantry_dynamic\__init__.py
+[g0] model_augmentation: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\joint-estimation-horizon\vendor\model_augmentation\__init__.py
+[jh_env] check_no_leak: 27 guarded modules, all inside vendor/
+[g0] cfg: mode=augmentation_ma50_b140-230_a6_z03 joint=True param=reduced detune=[1.1, 1.1, 0.9, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 1.1] prior=False obc=False nf=400 burn_in=0 dtype=torch.float32
+[g0] files: 14 train, 4 val
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[closed loop] one bank over 18 records, 8 distinct controllers, Y_op [-0.3, -0.22, -0.15, -0.1, 0.0, 0.1, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[g0] physical block: Reduced_Gantry_State_Block
+[g0] start combos: {'kb_sum': 4372.5, 'cg1': 15.950001, 'cg2': 18.269999, 'cy': 11.0, 'cb_sum': 16.199999, 'mh': 9.09, 'm_total': 48.069996, 'm_diff': -0.55, 'J_eff': 3.416752, 'd': 0.11}
+[g0] build 4.4 s; validating (closed-loop free run over 4 records) ...
+[wd] t=57s tree=760 MB cpu=8% availRAM=2.90 GB C:free=6.08 GB
+[wd] t=119s tree=780 MB cpu=8% availRAM=2.97 GB C:free=6.06 GB
+[wd] t=181s tree=802 MB cpu=8% availRAM=3.12 GB C:free=6.05 GB
+[g0] validation 173.8 s
+[g0] per record [m]: V1_standstill_Yp10 2.3006839911e-05 V2_aprbs_Ylow 2.2860815079e-05 V3_ysweep_Yp10 2.3022786991e-05 V4_lissajous_Ym10 2.2968350095e-05
+G0 EPOCH0 source=vendor arm=noproj14 Loss_val0=2.296469801877e-05
+[jh_env] check_no_leak: 27 guarded modules, all inside vendor/
+WATCHDOG SUMMARY exit=0 killed=False duration_s=187.2 samples=37 peak_tree_ws_mb=802 min_avail_ram_gb=2.56 min_C_free_gb=6.05 kill_reason=""

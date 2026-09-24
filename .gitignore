@@ -19,6 +19,10 @@ PLAN.md
 *.pt
 *.txt
 
+# ML checkpoints
+*.pth
+*.pt
+
 # benchmark folder
 literature/robot-benchmark-full/
 literature Verification/

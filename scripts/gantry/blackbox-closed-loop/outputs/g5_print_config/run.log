@@ -1,0 +1,71 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g5_print_config
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/runners/train_bb.py --print-config
+WATCHDOG ALERT available RAM 3.96 GB < 4 GB (tree 410 MB)
+BB_ARM=frf  smoke=False
+=== EFFECTIVE configuration (grey box CFG; differences listed) ===
+  adam_eps                   1e-08   <- CFG 1e-16
+  ann_activation             'tanh'
+  ann_route_ix               (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
+  batch_size                 512
+  burn_in                    0
+  checkpoint_chunk           0
+  closed_loop                True
+  combo_init_detune          [1.1, 1.1, 0.9, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 1.1]
+  compile_mode               'reduce-overhead'
+  device                     'cuda'
+  encoder_init               'linear_map'
+  epochs                     200
+  fs_new                     4000
+  fs_orig                    20000
+  its_per_val                1300
+  joint_estimation           False
+  lbfgs                      True
+  lbfgs_chunk                None
+  lbfgs_freeze               ()
+  lbfgs_history              50
+  lbfgs_inner_iter           20
+  lbfgs_max_iter             100
+  lbfgs_meter_rel_tol        0.001
+  lbfgs_time_budget_s        None
+  lbfgs_tol_change           0.0
+  lbfgs_tol_grad             1e-12
+  lbfgs_windows              16384
+  lr                         1e-07   <- CFG 1e-05
+  mode                       'augmentation_ma50_z03_b140-230_a6all_telica_coulomb'
+  n_hidden_layers            3
+  n_its                      None
+  n_nodes_per_layer          24
+  na_nb_override             None
+  nf_override                None
+  nf_probe_print             True
+  nf_seconds                 0.1
+  nu                         3
+  nx_ann                     8
+  nx_phys                    6
+  ny                         3
+  obc                        False
+  obc_rank_rtol              None
+  obc_ref_chunk              16384
+  obc_refresh                'epoch'
+  obc_space                  'tangent'
+  orth                       False
+  orth_beta                  0.000466
+  orth_point_stride          100
+  orth_rank_tol              1e-12
+  param_init_detune          None
+  param_prior                True
+  param_rmse_baseline        0.01
+  physics_parameterization   'reduced'
+  save_flag                  True
+  seed                       42
+  snr                        None
+  start_phase                'adam'
+  static_pass_buffers        False
+  stride                     10
+  up_sample                  1
+  use_f64                    False
+  DERIVED nf                 400
+  DERIVED na_nb              29
+  DERIVED ts_new             0.00025
+  black box: {'arm': 'frf', 'nx': 8, 'f': {'n_hidden_layers': 2, 'n_nodes_per_layer': 8}, 'h': {'n_hidden_layers': 2, 'n_nodes_per_layer': 8}, 'encoder': {'n_hidden_layers': 2, 'n_nodes_per_layer': 16}, 'lr': 1e-07, 'eps': 1e-08, 'na': 29, 'na_right': 1}
+WATCHDOG SUMMARY exit=0 killed=False duration_s=10.8 samples=3 peak_tree_ws_mb=410 min_avail_ram_gb=3.96 min_C_free_gb=6.95 kill_reason=""

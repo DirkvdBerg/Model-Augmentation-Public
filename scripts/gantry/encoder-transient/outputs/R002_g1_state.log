@@ -1,0 +1,22 @@
+[run.sh] C: free 7.6 GB before launch of R002_g1_state
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R002_g1_state
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/g1_state.py 
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+  mode augmentation_ma50_b140-230_a6_z03  dt 0.00025  production na=29  absorber train std da 4.444e-05 m  vda 5.340e-02 m/s
+  consistency gate: planted(ma->0) vs baseline, worst rel diff over 5 Y = 1.17e-07
+  collapse P0(float64) vs pipeline encoder(float32), RMS diff / RMS error: X 1.8e-05 Theta 1.9e-04 Y 3.5e-04 dX 1.5e-06 dTheta 7.4e-06 dY 6.0e-04
+  na=15: maps built [0 s]
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\diagnose\g1_state.py", line 193, in <module>
+    main()
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\diagnose\g1_state.py", line 114, in main
+    xi = maps['AB'].apply(yw1, uw1, np.full(len(yw1), Ym))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\encoder\recon.py", line 142, in apply
+    x0 = yf[m] @ self.Wy[node].T + uf[m] @ self.Wu[node].T
+         ~~~~~~^~~~~~~~~~~~~~~~~
+ValueError: matmul: Input operand 1 has a mismatch in its core dimension 0, with gufunc signature (n?,k),(k,m?)->(n?,m?) (size 90 is different from 48)
+ERROR conda.cli.main_run:execute(47): `conda run python -u scripts/gantry/encoder-transient/diagnose/g1_state.py` failed. (See above for error)
+WATCHDOG SUMMARY exit=1 killed=False duration_s=27.7 samples=6 peak_tree_ws_mb=707 min_avail_ram_gb=4.61 min_C_free_gb=7.59 kill_reason=""

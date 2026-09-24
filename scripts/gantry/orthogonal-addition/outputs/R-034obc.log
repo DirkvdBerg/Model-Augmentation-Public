@@ -1,0 +1,88 @@
+[wd] launch  out=outputs/R-034obc
+[wd] command conda run --no-capture-output -n GraduationProject python -u runners/oa_entry.py
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation_oa_demo_b140-230_a6): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_demo_b140-230_a6
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=0.000e+00 m  vdelta_a std=0.000e+00 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+
+Configuration:
+  PROVENANCE:  git 1ec57c1 Augmentation dirty:430 diff:68f767df
+               run_id 20260924_014018   save=False
+               C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-addition\outputs\sim\augmentation_oa_demo_b140-230_a6_linear_map\20260924_014018
+  DATA:        augmentation_oa_demo_b140-230_a6   20000 -> 4000 Hz (D=5)   stride=100
+               nf=400 (0.1 s)   na_nb=29 (7.25 ms)   batch=512
+  MODEL:       encoder=linear_map   ann=tanh   nx_ann=8   24x3   up_sample=1
+               ann_route_ix=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
+  OBJECTIVE:   rollout=closed loop   obc=ON (one-step, space=tangent, refresh=epoch)
+               joint=True   param_init=detuned (10-vector, combinations)   noise=None (noiseless)
+  OPTIM:       lr=1e-05   adam_eps=1.0e-16   epochs=1   n_its=1 (CAPPED)   seed=42   float32
+  EXEC:        device=cuda (Quadro P2000)   checkpoint=OFF (whole rollout graph)
+               compile=OFF (eager)
+
+Default hyperparameters (may be overridden by checkpoint):
+  NX_ANN: 8
+  n_nodes_per_layer: 24
+  n_hidden_layers: 3
+  up_sample: 1
+  nf: 400
+  na_nb: 29
+  batch_size: 512
+  lr: 1e-05
+  epochs: 1
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.4 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 671944 reference tuples, space=tangent, refresh=epoch, solve float64, rollout torch.float32
+[closed loop] one bank over 18 records, 8 distinct controllers, Y_op [-0.3, -0.22, -0.15, -0.1, 0.0, 0.1, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+
+Loss rollout: CLOSED loop (known controller wrapped around the model)
+
+Training: nf=400  epochs=1  val=sim-RMS  NX_ANN=8
+
+[nf] rms = RMS over nf=400 (0.100 s) windows, closed loop, metres
+     chan = per-channel X/Theta/Y | grow = RMS(last step)/RMS(first) | bias = mean residual
+     train = all windows since the last validation, running mean | val = 256 fixed windows, snapshot
+     metre weighting is NOT the objective's, which weights channels by 1/ystd^2;
+     numbers are not comparable ACROSS loop modes, the [nf gap] ratios are
+Model already initilized (init_model_done=True), skipping initilizing of the model, the norm and the creation of the optimizer
+Size of the training array =  65.6 MB
+N_training_samples = 6664, batch_size = 512, N_batch_updates_per_epoch = 13
+[obc] refresh at epoch 0: vbar=+0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00
+  J: 4031664 x 10, rank 10/10 at tol 2.138e-07 (rtol 8.952e-10), cond 9.2895e+02, build 10.7 s, svd 0.5 s
+  singular values: 2.3884e+02 4.8313e+01 2.5002e+01 1.3646e+01 4.3113e+00 3.2729e+00 2.3715e+00 1.0155e+00 9.2064e-01 2.5711e-01
+  column norms:    kb_sum=4.317e+00 cg1=2.176e+00 cg2=2.466e+00 cy=1.015e+00 cb_sum=9.071e-01 mh=2.574e+01 m_total=1.682e+01 m_diff=2.400e+00 J_eff=2.381e+02 d=5.066e+01
+  largest |column correlations|: cg1~cg2=-0.9811, mh~J_eff=+0.4244, mh~m_total=-0.3074, J_eff~d=-0.2948, m_total~J_eff=+0.2150, mh~d=-0.1564
+  r_J = 0.000e+00 (vs first basis), r_J_step = 0.000e+00 (vs previous)
+WATCHDOG ALERT available RAM 3.97 GB < 4 GB (tree 1,346 MB)
+WATCHDOG ALERT available RAM 3.97 GB < 4 GB (tree 1,346 MB)
+[wd] t=57s tree=1,347 MB cpu=8% availRAM=3.97 GB C:free=7.89 GB
+[wd] t=120s tree=1,348 MB cpu=8% availRAM=3.94 GB C:free=7.89 GB
+[wd] t=182s tree=1,350 MB cpu=8% availRAM=3.95 GB C:free=7.88 GB
+[wd] t=244s tree=1,351 MB cpu=8% availRAM=3.98 GB C:free=7.88 GB
+[wd] t=307s tree=1,354 MB cpu=8% availRAM=3.93 GB C:free=7.88 GB
+[wd] t=369s tree=1,355 MB cpu=8% availRAM=3.87 GB C:free=7.87 GB
+[wd] t=431s tree=1,357 MB cpu=8% availRAM=3.94 GB C:free=7.87 GB
+[wd] t=493s tree=1,359 MB cpu=8% availRAM=3.96 GB C:free=7.87 GB
+[wd] t=556s tree=1,361 MB cpu=8% availRAM=3.89 GB C:free=7.87 GB
+[wd] t=618s tree=1,362 MB cpu=8% availRAM=3.90 GB C:free=7.86 GB
+[wd] t=680s tree=1,307 MB cpu=8% availRAM=4.16 GB C:free=7.86 GB
+WATCHDOG ALERT available RAM 3.97 GB < 4 GB (tree 1,307 MB)
+[wd] t=743s tree=1,308 MB cpu=8% availRAM=3.88 GB C:free=7.86 GB

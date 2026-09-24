@@ -1,0 +1,4 @@
+[wd] launch  out=outputs/R-032a
+[wd] command conda run --no-capture-output -n GraduationProject python -u design/scale_addition.py design/addition_route_b_R-009b_null_s1.mat 0.0824499 design/addition_demo_s1p05.mat
+wrote design/addition_demo_s1p05.mat (x0.0824499)
+WATCHDOG SUMMARY exit=0 killed=False duration_s=2.9 samples=1 peak_tree_ws_mb=29 min_avail_ram_gb=5.23 min_C_free_gb=8.28 kill_reason=""

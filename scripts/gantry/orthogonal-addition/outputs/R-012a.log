@@ -1,0 +1,4 @@
+[wd] launch  out=outputs/R-012a
+[wd] command conda run --no-capture-output -n GraduationProject python -u design/make_absorber.py
+[[5.05 0.   0.   0.  ]] [[942.47779608   1.           1.           1.        ]] [ 0.  -0.1  1. ]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=3.2 samples=1 peak_tree_ws_mb=28 min_avail_ram_gb=5.63 min_C_free_gb=11.36 kill_reason=""

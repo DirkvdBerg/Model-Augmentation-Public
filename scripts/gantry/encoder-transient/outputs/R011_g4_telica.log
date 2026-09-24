@@ -1,0 +1,65 @@
+[run.sh] C: free 7.55 GB before launch of R011_g4_telica
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R011_g4_telica
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/telica/g4_telica.py 
+  [paths] model_augmentation   vendor_telica\vendor\model_augmentation\__init__.py
+  [paths] gantry_dynamic       vendor_telica\vendor\gantry_dynamic\__init__.py
+  [paths] core                 ..\encoder\core.py
+  dt 0.0002 (5 kHz), na 29, window 6.0 ms
+[records] NOTE train/xpos_-210_ypos-200/iter0: MF230 constant on axes [2]
+  15 iter0 records loaded [2 s]
+  pooled velocity-reference bound by fc [m/s, rad/s, m/s]:
+    fc     50 Hz  1.040e-03 3.962e-04 2.297e-03
+    fc    100 Hz  2.099e-04 3.773e-04 3.789e-04
+    fc    200 Hz  8.843e-05 3.520e-04 1.244e-04
+    fc    400 Hz  6.378e-05 1.905e-04 8.731e-05
+    fc    800 Hz  5.236e-05 1.572e-04 6.566e-05
+    fc   1600 Hz  4.935e-05 1.527e-04 5.687e-05
+  chosen fc per velocity channel: [1600.0, 1600.0, 1600.0]
+  position-reference bound (standstill std, logical): 6.876e-09 2.044e-08 6.126e-09
+  deg  0: poly-vs-grid / grid-vs-P0 per channel 1.000 1.000 1.000 1.000 1.000 1.000   map resid 6.8e-03
+  deg  1: poly-vs-grid / grid-vs-P0 per channel 0.599 0.203 0.204 0.602 0.202 0.202   map resid 6.3e-03
+  deg  2: poly-vs-grid / grid-vs-P0 per channel 0.112 0.115 0.116 0.111 0.114 0.114   map resid 6.1e-04
+  deg  3: poly-vs-grid / grid-vs-P0 per channel 0.088 0.019 0.019 0.087 0.019 0.019   map resid 5.1e-04
+  deg  4: poly-vs-grid / grid-vs-P0 per channel 0.009 0.007 0.008 0.009 0.007 0.007   map resid 5.1e-05
+  deg  5: poly-vs-grid / grid-vs-P0 per channel 0.007 0.001 0.001 0.007 0.001 0.001   map resid 4.0e-05
+  deg  6: poly-vs-grid / grid-vs-P0 per channel 0.001 0.001 0.001 0.001 0.001 0.001   map resid 4.0e-06
+  deg  7: poly-vs-grid / grid-vs-P0 per channel 0.001 0.000 0.000 0.001 0.000 0.000   map resid 3.0e-06
+  deg  8: poly-vs-grid / grid-vs-P0 per channel 0.000 0.000 0.000 0.000 0.000 0.000   map resid 3.0e-07
+  deg  9: poly-vs-grid / grid-vs-P0 per channel 0.000 0.000 0.000 0.000 0.000 0.000   map resid 2.1e-07
+  deg 10: poly-vs-grid / grid-vs-P0 per channel 0.000 0.000 0.000 0.000 0.000 0.000   map resid 2.0e-08
+  G2-T degree 3 (rule met: True); scheduling range of the data: Y in [-0.200, 0.200] m
+  train      xpos_-60_ypos-40       n  2419  P0 7.59e-06 2.02e-05 2.47e-05 8.10e-03 2.14e-02 2.64e-02  G2 7.52e-06 1.85e-05 2.46e-05 8.03e-03 1.95e-02 2.62e-02
+  train      xpos_-60_ypos120       n  2405  P0 7.47e-06 2.14e-05 2.53e-05 7.98e-03 2.26e-02 2.69e-02  G2 7.78e-06 1.86e-05 2.55e-05 8.31e-03 1.97e-02 2.72e-02
+  train      xpos_-60_ypos-120      n  2528  P0 7.27e-06 2.43e-05 2.23e-05 7.77e-03 2.58e-02 2.37e-02  G2 7.13e-06 1.75e-05 2.18e-05 7.62e-03 1.86e-02 2.33e-02
+  train      xpos_-60_ypos-200      n  2495  P0 6.86e-06 3.14e-05 1.92e-05 7.33e-03 3.33e-02 2.04e-02  G2 6.71e-06 1.73e-05 1.83e-05 7.17e-03 1.83e-02 1.95e-02
+  train      xpos_-135_ypos40       n  2206  P0 6.59e-06 2.27e-05 2.63e-05 7.04e-03 2.40e-02 2.80e-02  G2 6.70e-06 2.37e-05 2.63e-05 7.15e-03 2.51e-02 2.80e-02
+  train      xpos_-135_ypos-40      n  2206  P0 6.66e-06 2.58e-05 2.40e-05 7.11e-03 2.73e-02 2.55e-02  G2 6.57e-06 2.38e-05 2.38e-05 7.02e-03 2.52e-02 2.53e-02
+  train      xpos_-135_ypos-200     n  2165  P0 6.70e-06 3.87e-05 2.13e-05 7.16e-03 4.10e-02 2.26e-02  G2 6.50e-06 2.25e-05 2.04e-05 6.94e-03 2.38e-02 2.17e-02
+  train      xpos_-210_ypos40       n  2205  P0 7.12e-06 2.92e-05 2.95e-05 7.60e-03 3.09e-02 3.14e-02  G2 7.48e-06 2.98e-05 2.95e-05 7.98e-03 3.15e-02 3.14e-02
+  train      xpos_-210_ypos120      n  3562  P0 6.31e-06 2.83e-05 2.72e-05 6.73e-03 2.99e-02 2.89e-02  G2 7.09e-06 2.78e-05 2.73e-05 7.56e-03 2.95e-02 2.91e-02
+  train      xpos_-210_ypos-120     n  2206  P0 6.79e-06 3.51e-05 2.42e-05 7.25e-03 3.71e-02 2.57e-02  G2 6.61e-06 2.83e-05 2.37e-05 7.06e-03 2.99e-02 2.52e-02
+  train      xpos_-210_ypos-200     n  4164  P0 5.55e-06 2.46e-05 3.15e-05 5.92e-03 2.61e-02 3.36e-02  G2 5.35e-06 1.85e-05 3.26e-05 5.71e-03 1.96e-02 3.47e-02
+  validation xpos_-135_ypos120      n  2296  P0 6.40e-06 2.28e-05 2.86e-05 6.83e-03 2.41e-02 3.04e-02  G2 6.73e-06 2.25e-05 2.88e-05 7.18e-03 2.38e-02 3.07e-02
+  validation xpos_-210_ypos-40      n  2275  P0 6.86e-06 3.11e-05 2.57e-05 7.32e-03 3.30e-02 2.74e-02  G2 6.91e-06 2.97e-05 2.55e-05 7.38e-03 3.14e-02 2.72e-02
+  test       xpos_-135_ypos-120     n  2269  P0 6.63e-06 3.08e-05 2.25e-05 7.08e-03 3.26e-02 2.39e-02  G2 6.44e-06 2.29e-05 2.20e-05 6.88e-03 2.42e-02 2.34e-02
+  test       xpos_-60_ypos40        n  2272  P0 7.71e-06 1.93e-05 2.83e-05 8.23e-03 2.05e-02 3.01e-02  G2 7.82e-06 1.94e-05 2.83e-05 8.35e-03 2.05e-02 3.02e-02
+
+  ch            bound       P0-T       G2-T   G2/P0  resolv     P0 deb     G2 deb
+  X         6.889e-09  6.786e-06  6.860e-06  1.0109    True  6.786e-06  6.860e-06
+  Theta     2.063e-08  2.738e-05  2.298e-05  0.8393    True  2.738e-05  2.298e-05
+  Y         6.136e-09  2.590e-05  2.590e-05  1.0000    True  2.590e-05  2.590e-05
+  dX        4.945e-05  7.247e-03  7.324e-03  1.0106    True  7.247e-03  7.324e-03
+  dTheta    1.529e-04  2.899e-02  2.431e-02  0.8388    True  2.899e-02  2.431e-02
+  dY        5.691e-05  2.759e-02  2.759e-02  1.0000    True  2.759e-02  2.759e-02
+
+  per ypos [mm]: G2/P0 per channel
+    ypos   -200  X 0.9709 Theta 0.6301 Y 1.0093 dX 0.9710 dTheta 0.6298 dY 1.0094
+    ypos   -120  X 0.9756 Theta 0.7664 Y 0.9788 dX 0.9757 dTheta 0.7657 dY 0.9791
+    ypos    -40  X 0.9953 Theta 0.9362 Y 0.9921 dX 0.9952 dTheta 0.9356 dY 0.9922
+    ypos     40  X 1.0269 Theta 1.0243 Y 1.0018 dX 1.0264 dTheta 1.0239 dY 1.0017
+    ypos    120  X 1.0760 Theta 0.9621 Y 1.0074 dX 1.0750 dTheta 0.9622 dY 1.0073
+  encoder velocity noise floor on standstill windows (std): P0 2.63e-05 8.91e-05 5.04e-05  G2 2.70e-05 8.87e-05 5.05e-05
+
+  G4 verdict: resolvable {'X': True, 'Theta': True, 'Y': True, 'dX': True, 'dTheta': True, 'dY': True}; G2 lower on all resolvable: False; worst per-ypos ratio 1.0760 (<= 1.01) -> FAIL
+  saved ..\outputs\telica\g4/g4_telica.json  [8 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=16.6 samples=4 peak_tree_ws_mb=707 min_avail_ram_gb=4.57 min_C_free_gb=7.55 kill_reason=""

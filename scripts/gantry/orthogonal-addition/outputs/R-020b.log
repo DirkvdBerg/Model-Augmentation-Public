@@ -1,0 +1,48 @@
+[wd] launch  out=outputs/R-020b
+[wd] command conda run --no-capture-output -n GraduationProject python -u design/design_u_aware.py
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation_oa_null_b140-230_a6): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_null_b140-230_a6
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=0.000e+00 m  vdelta_a std=0.000e+00 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.1 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+WATCHDOG ALERT available RAM 3.97 GB < 4 GB (tree 1,530 MB)
+[core] augmentation_oa_null_b140-230_a6 stride 1: 671944 tuples, basis rank 10 cond 7.9404e+02, 24.9 s
+[wd] t=57s tree=1,416 MB cpu=8% availRAM=4.20 GB C:free=10.04 GB
+[u-aware] it 0: |residual| 1.419e+02, predicted shift vs b_null: max nine 11.7106 %, m_diff own -12.7497 %, ||Delta_add|| 12.7350, force rms [11.52 13.01  3.49] N
+WATCHDOG ALERT available RAM 3.58 GB < 4 GB (tree 2,162 MB)
+[u-aware] it 1: |residual| 1.268e+02, predicted shift vs b_null: max nine 11.5692 %, m_diff own -1.4830 %, ||Delta_add|| 12.7348, force rms [11.28 13.24  3.81] N
+WATCHDOG ALERT available RAM 3.25 GB < 4 GB (tree 2,162 MB)
+[u-aware] it 2: |residual| 1.059e+02, predicted shift vs b_null: max nine 5.5264 %, m_diff own -25.7793 %, ||Delta_add|| 12.7346, force rms [35.74 37.54 24.42] N
+[wd] t=120s tree=1,439 MB cpu=8% availRAM=4.00 GB C:free=10.03 GB
+[u-aware] it 3: |residual| 6.549e+01, predicted shift vs b_null: max nine 7.3202 %, m_diff own -11.8812 %, ||Delta_add|| 12.7349, force rms [34.44 36.46 21.46] N
+WATCHDOG ALERT available RAM 3.29 GB < 4 GB (tree 2,063 MB)
+[u-aware] it 4: |residual| 9.392e+01, predicted shift vs b_null: max nine 5.4959 %, m_diff own -8.2720 %, ||Delta_add|| 12.7346, force rms [46.47 46.25 22.25] N
+WATCHDOG ALERT available RAM 3.55 GB < 4 GB (tree 2,096 MB)
+[u-aware] it 5: |residual| 6.316e+01, predicted shift vs b_null: max nine 7.0167 %, m_diff own -4.2594 %, ||Delta_add|| 12.7347, force rms [42.79 47.   20.48] N
+WATCHDOG ALERT available RAM 3.49 GB < 4 GB (tree 2,056 MB)
+[wd] t=182s tree=1,439 MB cpu=8% availRAM=4.15 GB C:free=10.04 GB
+[u-aware] it 6: |residual| 5.042e+01, predicted shift vs b_null: max nine 3.5343 %, m_diff own -5.8869 %, ||Delta_add|| 12.7351, force rms [57.48 54.92 23.51] N
+WATCHDOG ALERT available RAM 3.61 GB < 4 GB (tree 2,199 MB)
+[u-aware] it 7: |residual| 5.720e+01, predicted shift vs b_null: max nine 4.9290 %, m_diff own -0.4595 %, ||Delta_add|| 12.7345, force rms [54.66 55.62 22.54] N
+WATCHDOG ALERT available RAM 3.62 GB < 4 GB (tree 2,162 MB)
+[u-aware] it 8: |residual| 4.523e+01, predicted shift vs b_null: max nine 2.7580 %, m_diff own -8.2671 %, ||Delta_add|| 12.7350, force rms [68.64 66.25 26.47] N
+[out] design/addition_b2.mat
+WATCHDOG SUMMARY exit=0 killed=False duration_s=228.3 samples=44 peak_tree_ws_mb=2,199 min_avail_ram_gb=3.23 min_C_free_gb=10.03 kill_reason=""

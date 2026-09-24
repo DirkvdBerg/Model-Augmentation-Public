@@ -1,0 +1,49 @@
+[wd] launch  out=outputs/R-005
+[wd] command matlab -batch "addpath('matlab'); make_oa_model(4); make_oa_model(4, true); check_oa_reaches_plant(1.0)"
+copied C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\kamtin-fp-model\03 Simulink gantry\gantry_2025a.slx
+    -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-addition\matlab\gantry_oa.slx
+Model 'gantry_oa' was exported from R2025b to R2025a. To find blocks that were removed during the export operation, <a href="matlab:slexportprevious.utils.displayReplacedBlocks('gantry_oa')">click here</a>. Save the model to remove this notification.
+WATCHDOG ALERT available RAM 3.75 GB < 4 GB (tree 2,305 MB)
+pruned 23 blocks (q and q2 loops); q1 loop keeps 12 blocks
+chart: gantry_oa/MATLAB Function1
+--- original script ---
+function dxdt = gantrySystemMFile(u,x,m1,m2,mb,mh,Jb,Jh,d,Lb,kb1,kb2,cg1,cg2,cb1,cb2,cy)
+dxdt = gantrySystem(u,x,m1,m2,mb,mh,Lb,Jb,Jh,d,cg1,cg2,cb1,cb2,cy,kb1,kb2); 
+end
+--- new script ---
+function dxdt = gantrySystemMFile(u,x,m1,m2,mb,mh,Jb,Jh,d,Lb,kb1,kb2,cg1,cg2,cb1,cb2,cy, oa_Ma0, oa_Ma1, oa_Ca0, oa_Ka0, oa_Ka1, oa_Ka2, oa_m, oa_w, oa_b0, oa_b1)
+dxdt = zeros(size(x));
+dxdt = gantrySystemOA(u,x,m1,m2,mb,mh,Lb,Jb,Jh,d,cg1,cg2,cb1,cb2,cy,kb1,kb2, oa_Ma0, oa_Ma1, oa_Ca0, oa_Ka0, oa_Ka1, oa_Ka2, oa_m, oa_w, oa_b0, oa_b1);
+end
+  x size "-1" (inherited)
+  dxdt size "-1" (inherited)
+  Integrator feeds: Selector1, MATLAB Function1
+  Integrator IC: [0;0;Y;0;0;0] -> [0;0;Y;0;0;0;zeros(8,1)]
+  Selector1 width: 6 -> 14, indices [1 2 3]
+saved C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-addition\matlab\gantry_oa.slx (REF 0, NS 4); source untouched (bytes 274212, datenum equal)
+copied C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\kamtin-fp-model\03 Simulink gantry\gantry_2025a.slx
+    -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-addition\matlab\gantry_oa_ref.slx
+Model 'gantry_oa_ref' was exported from R2025b to R2025a. To find blocks that were removed during the export operation, <a href="matlab:slexportprevious.utils.displayReplacedBlocks('gantry_oa_ref')">click here</a>. Save the model to remove this notification.
+pruned 23 blocks (q and q2 loops); q1 loop keeps 12 blocks
+saved C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-addition\matlab\gantry_oa_ref.slx (REF 1, NS 4); source untouched (bytes 274212, datenum equal)
+[wd] t=57s tree=3,184 MB cpu=9% availRAM=2.91 GB C:free=11.97 GB
+    [gantry_oa_ref, 1.00 s simulated in 27.6 s wall]
+    [gantry_oa, 1.00 s simulated in 7.4 s wall]
+T3_standstill_Y000  B1 addition off vs gantry_oa_ref q1: max |dq| = 0.000e+00 m  (q rms 1.684e-05)
+    [gantry_oa, 1.00 s simulated in 1.7 s wall]
+    [gantry_oa, 1.00 s simulated in 1.3 s wall]
+T3_standstill_Y000  B2 X spring k = 1000: max |dq| 1.117e-09;  2k: 2.234e-09;  ratio 1.9999
+    [gantry_oa, 1.00 s simulated in 1.5 s wall]
+T3_standstill_Y000  B3 one absorber (0.5 kg, 180 Hz, Y at payload): max |dq| 4.813e-05
+    [gantry_oa_ref, 1.00 s simulated in 1.3 s wall]
+    [gantry_oa, 1.00 s simulated in 1.6 s wall]
+T7_ysweep_fast  B1 addition off vs gantry_oa_ref q1: max |dq| = 0.000e+00 m  (q rms 6.987e-02)
+    [gantry_oa, 1.00 s simulated in 1.3 s wall]
+    [gantry_oa, 1.00 s simulated in 1.3 s wall]
+T7_ysweep_fast  B2 X spring k = 1000: max |dq| 4.633e-10;  2k: 9.266e-10;  ratio 2.0001
+    [gantry_oa, 1.00 s simulated in 1.2 s wall]
+T7_ysweep_fast  B3 one absorber (0.5 kg, 180 Hz, Y at payload): max |dq| 4.811e-05
+original model untouched: 1
+
+CHECK_OA_REACHES_PLANT  PASS
+WATCHDOG SUMMARY exit=0 killed=False duration_s=103.8 samples=20 peak_tree_ws_mb=3,348 min_avail_ram_gb=2.69 min_C_free_gb=11.95 kill_reason=""

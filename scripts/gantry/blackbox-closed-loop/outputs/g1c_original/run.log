@@ -1,0 +1,43 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g1c_original
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/score/g1c_original.py 
+[g1c-orig] modules: {
+ "gantry_dynamic.model": "C:\\Users\\20203253\\OneDrive - TU Eindhoven\\Graduation Project\\Baseline FP model\\Baseline-LPV-Augmentation\\scripts\\gantry\\gantry_dynamic\\model.py",
+ "model_augmentation.fit_systems.closed_loop": "C:\\Users\\20203253\\OneDrive - TU Eindhoven\\Graduation Project\\Baseline FP model\\Baseline-LPV-Augmentation\\model_augmentation\\fit_systems\\closed_loop.py",
+ "common.oracle": "C:\\Users\\20203253\\OneDrive - TU Eindhoven\\Graduation Project\\Baseline FP model\\Baseline-LPV-Augmentation\\scripts\\gantry\\common\\oracle.py"
+}
+Data dir (augmentation_ma50_z03_b140-230_a6all_telica_coulomb): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.274e-05 m  vdelta_a std=5.127e-02 m/s
+Loaded 18 train, 6 val, 5 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  T15: 48000 samples  (TP1_telica_y000.mat)
+  T16: 48000 samples  (TP2_telica_y000_rev.mat)
+  T17: 48000 samples  (TP3_telica_yp06.mat)
+  T18: 48000 samples  (TP4_telica_ym06.mat)
+[closed loop] one bank over 24 records, 12 distinct controllers, Y_op [-0.3, -0.22, -0.2, -0.15, -0.1, -0.06, 0.0, 0.06, 0.1, 0.12, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[wd] t=57s tree=776 MB cpu=33% availRAM=4.03 GB C:free=7.17 GB
+WATCHDOG ALERT available RAM 4.00 GB < 4 GB (tree 778 MB)
+[wd] t=119s tree=798 MB cpu=33% availRAM=4.13 GB C:free=7.17 GB
+[wd] t=182s tree=821 MB cpu=33% availRAM=4.12 GB C:free=7.17 GB
+[g1c-orig] grey box (untrained, CFG) closed-loop val sim-RMS = 1.4768032959e-05 m  (170.3 s)
+   V1_standstill_Yp10.mat   2.018973e-05
+   V2_aprbs_Ylow.mat        2.030120e-05
+   V3_ysweep_Yp10.mat       2.058473e-05
+   V4_lissajous_Ym10.mat    2.058659e-05
+   VP1_telica_ylow.mat      3.414943e-06
+   VP2_telica_yp12.mat      3.531004e-06
+WATCHDOG SUMMARY exit=0 killed=False duration_s=185.1 samples=36 peak_tree_ws_mb=821 min_avail_ram_gb=4.00 min_C_free_gb=7.16 kill_reason=""

@@ -1,0 +1,30 @@
+[wd] launch  out=outputs/R-011
+[wd] command conda run --no-capture-output -n GraduationProject python -u derive/d_symbolic.py
+[D1] M(theta), C(theta), K(theta) == gantrySystem.m after substitution: OK
+     mass family   : ['mh', 'm_total', 'm_diff', 'J_eff', 'd']
+     damping family: ['cg1', 'cg2', 'cy', 'cb_sum']
+     stiffness     : ['kb_sum']
+     r_kb_sum   = [0, Theta, 0]
+     r_cg1      = [L_b*Thetad/2 + Xd, L_b*(L_b*Thetad + 2*Xd)/4, 0]
+     r_cg2      = [-L_b*Thetad/2 + Xd, L_b*(L_b*Thetad - 2*Xd)/4, 0]
+     r_cy       = [0, 0, Yd]
+     r_cb_sum   = [0, Thetad, 0]
+     r_mh       = [-Thetadd*Y + Xdd, Thetadd*(Y**2 + d**2) - Xdd*Y - Ydd*d, -Thetadd*d + Ydd]
+     r_m_total  = [Xdd, 0, 0]
+     r_m_diff   = [L_b*Thetadd/2, L_b*Xdd/2, 0]
+     r_J_eff    = [0, Thetadd, 0]
+     r_d        = [0, m_h*(2*Thetadd*d - Ydd), -Thetadd*m_h]
+[D2] each combination enters exactly one of M, C, K; split 5 / 4 / 1: OK
+[D3] d qdd / d theta_j = -M^-1 r_j with qdd = M^-1(u - C qd - K q), all ten: OK
+[D4] <J_j, Delta_phi> = -Ts^2 r_j^T W phi on the velocity rows (shown for m_diff; linear in r_j): OK
+[D5] payload inertia at gamma = 0 is the baseline mh block; d M / d gamma = [[0,0,mh],[0,-2 mh d Y,0],[mh,0,0]]: OK
+[wd] t=58s tree=185 MB cpu=8% availRAM=4.47 GB C:free=11.48 GB
+[wd] t=121s tree=263 MB cpu=8% availRAM=4.48 GB C:free=11.48 GB
+[wd] t=184s tree=195 MB cpu=8% availRAM=4.59 GB C:free=11.47 GB
+[wd] t=247s tree=201 MB cpu=8% availRAM=4.60 GB C:free=11.47 GB
+[wd] t=310s tree=190 MB cpu=8% availRAM=4.62 GB C:free=11.47 GB
+[wd] t=373s tree=184 MB cpu=8% availRAM=4.30 GB C:free=11.44 GB
+[wd] t=436s tree=184 MB cpu=8% availRAM=4.42 GB C:free=11.43 GB
+[wd] t=499s tree=198 MB cpu=8% availRAM=4.37 GB C:free=11.43 GB
+[wd] t=562s tree=220 MB cpu=8% availRAM=4.54 GB C:free=11.43 GB
+[wd] t=625s tree=257 MB cpu=8% availRAM=4.49 GB C:free=11.42 GB

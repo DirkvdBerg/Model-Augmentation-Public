@@ -1,0 +1,24 @@
+[run.sh] C: free 7.39 GB before launch of R021_g5_sim_burnin_dry
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R021_g5_sim_burnin_dry
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/runners/sim_arm.py 
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\runners\sim_arm.py", line 171, in <module>
+    main()
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\runners\sim_arm.py", line 124, in main
+    cfg = make_cfg()
+          ^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\runners\sim_arm.py", line 48, in make_cfg
+    cfg = replace(cfg, device='cpu', compile_mode=None, checkpoint_chunk=0, batch_size=8,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\dataclasses.py", line 1503, in replace
+    return obj.__class__(**changes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 64, in __init__
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\vendor\gantry_dynamic\config.py", line 356, in __post_init__
+    raise ValueError(
+ValueError: burn_in=100 is not a valid number of samples for an nf=20 window. It is how many samples at the START of each window are excluded from the SCORE, so it must be at least 0 (score everything, the pre-D-178 objective) and strictly less than nf, or there is nothing left to score.
+ERROR conda.cli.main_run:execute(47): `conda run python -u scripts/gantry/encoder-transient/runners/sim_arm.py` failed. (See above for error)
+WATCHDOG SUMMARY exit=1 killed=False duration_s=8.5 samples=2 peak_tree_ws_mb=453 min_avail_ram_gb=4.59 min_C_free_gb=7.39 kill_reason=""

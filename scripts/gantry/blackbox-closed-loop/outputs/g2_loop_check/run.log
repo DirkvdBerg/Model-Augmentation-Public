@@ -1,0 +1,9 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g2_loop_check
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/score/g2_loop_check.py 
+Y_op -0.22  fs    800 Hz   max|z| closed loop: FP plant 0.912447 (stable)   old truth 0.963367 (stable)
+Y_op -0.22  fs   4000 Hz   max|z| closed loop: FP plant 0.977312 (stable)   old truth 0.977314 (stable)
+Y_op -0.22  fs  20000 Hz   max|z| closed loop: FP plant 0.995425 (stable)   old truth 0.995425 (stable)
+Y_op +0.00  fs    800 Hz   max|z| closed loop: FP plant 0.927132 (stable)   old truth 0.964140 (stable)
+Y_op +0.00  fs   4000 Hz   max|z| closed loop: FP plant 0.977469 (stable)   old truth 0.977469 (stable)
+Y_op +0.00  fs  20000 Hz   max|z| closed loop: FP plant 0.995457 (stable)   old truth 0.995457 (stable)
+WATCHDOG SUMMARY exit=0 killed=False duration_s=10.1 samples=2 peak_tree_ws_mb=431 min_avail_ram_gb=4.37 min_C_free_gb=7.14 kill_reason=""

@@ -1,0 +1,53 @@
+[run.sh] C: free 7.56 GB before launch of R005_g2_attempt1
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R005_g2_attempt1
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/g2_fix.py --tag g2_attempt1
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+  grids built [10 s]
+  baseline deg  0  map resid max/W 6.37e-03  /corr 1.00e+00  worst RMS ratio to exact 4.569  X 4.54 Theta 3.62 Y 1.00 dX 4.57 dTheta 3.64 dY 1.00
+  baseline deg  1  map resid max/W 6.24e-03  /corr 9.63e-01  worst RMS ratio to exact 3.036  X 1.20 Theta 2.99 Y 1.00 dX 1.16 dTheta 3.04 dY 1.00
+  baseline deg  2  map resid max/W 4.47e-04  /corr 5.31e-02  worst RMS ratio to exact 1.026  X 1.03 Theta 1.01 Y 1.00 dX 1.02 dTheta 1.02 dY 1.00
+  baseline deg  3  map resid max/W 4.17e-04  /corr 5.01e-02  worst RMS ratio to exact 1.018  X 1.00 Theta 1.01 Y 1.00 dX 1.00 dTheta 1.02 dY 1.00
+  baseline deg  4  map resid max/W 3.02e-05  /corr 3.11e-03  worst RMS ratio to exact 1.001  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  baseline deg  5  map resid max/W 2.70e-05  /corr 2.90e-03  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  baseline deg  6  map resid max/W 1.95e-06  /corr 1.87e-04  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  baseline deg  7  map resid max/W 1.67e-06  /corr 1.73e-04  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  baseline deg  8  map resid max/W 1.19e-07  /corr 1.14e-05  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  baseline deg  9  map resid max/W 9.89e-08  /corr 1.05e-05  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  baseline deg 10  map resid max/W 8.08e-09  /corr 8.98e-07  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  planted  deg  0  map resid max/W 4.91e-04  /corr 1.00e+00  worst RMS ratio to exact 345.131  X 36.96 Theta 25.74 Y 6.63 dX 345.13 dTheta 251.30 dY 3.83
+  planted  deg  1  map resid max/W 4.10e-04  /corr 8.89e-01  worst RMS ratio to exact 195.864  X 6.09 Theta 19.75 Y 5.13 dX 51.88 dTheta 195.86 dY 3.08
+  planted  deg  2  map resid max/W 4.35e-05  /corr 6.11e-02  worst RMS ratio to exact 18.300  X 2.24 Theta 1.25 Y 1.03 dX 18.30 dTheta 11.51 dY 1.02
+  planted  deg  3  map resid max/W 2.71e-05  /corr 4.47e-02  worst RMS ratio to exact 6.258  X 1.10 Theta 0.72 Y 0.99 dX 2.69 dTheta 6.26 dY 1.01
+  planted  deg  4  map resid max/W 3.50e-06  /corr 4.26e-03  worst RMS ratio to exact 1.484  X 1.00 Theta 1.00 Y 1.00 dX 1.48 dTheta 1.39 dY 1.00
+  planted  deg  5  map resid max/W 1.71e-06  /corr 2.47e-03  worst RMS ratio to exact 1.203  X 1.00 Theta 1.00 Y 1.00 dX 1.03 dTheta 1.20 dY 1.00
+  planted  deg  6  map resid max/W 2.56e-07  /corr 3.03e-04  worst RMS ratio to exact 1.010  X 1.00 Theta 1.00 Y 1.00 dX 1.01 dTheta 0.99 dY 1.00
+  planted  deg  7  map resid max/W 1.02e-07  /corr 1.38e-04  worst RMS ratio to exact 1.002  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 0.99 dY 1.00
+  planted  deg  8  map resid max/W 1.74e-08  /corr 2.13e-05  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  planted  deg  9  map resid max/W 5.70e-09  /corr 7.73e-06  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  planted  deg 10  map resid max/W 1.10e-09  /corr 1.47e-06  worst RMS ratio to exact 1.000  X 1.00 Theta 1.00 Y 1.00 dX 1.00 dTheta 1.00 dY 1.00
+  degree rule: baseline 2 (True), planted 6 (True)
+  collapse gate (deg 0, baseline source vs pipeline encoder, V1, 47969 windows): {'torch.float32': True, 'torch.float64': True}
+  module vs numpy (planted, V1), RMS diff / RMS error: 4.1e-04 2.7e-03 9.5e-06 4.1e-04 8.2e-04 5.1e-06 1.4e-05 1.1e-05
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\diagnose\g2_fix.py", line 255, in <module>
+    main()
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\diagnose\g2_fix.py", line 170, in main
+    _, xU = module_phys(enc_U, w['yw'], w['uw'], norm, None)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\diagnose\g2_fix.py", line 53, in module_phys
+    out.append(enc(u, y).double().numpy())
+               ^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\encoder\sched_encoder.py", line 109, in forward
+    return x + corr
+           ~~^~~~~~
+RuntimeError: The size of tensor a (14) must match the size of tensor b (6) at non-singleton dimension 1
+ERROR conda.cli.main_run:execute(47): `conda run python -u scripts/gantry/encoder-transient/diagnose/g2_fix.py --tag g2_attempt1` failed. (See above for error)
+WATCHDOG SUMMARY exit=1 killed=False duration_s=35.1 samples=7 peak_tree_ws_mb=791 min_avail_ram_gb=4.57 min_C_free_gb=7.55 kill_reason=""

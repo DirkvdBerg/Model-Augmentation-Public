@@ -1,0 +1,10 @@
+[wd] launch  out=outputs/R-027sum
+[wd] command conda run --no-capture-output -n GraduationProject python -u measure/scan_summary.py null=outputs/measure_R-007_null_s1.json f150=outputs/measure_R-014_cabs_s1.json f170=outputs/measure_R-027_s170.json f185=outputs/measure_R-027_s185.json f200=outputs/measure_R-027_s200.json f215=outputs/measure_R-027_s215.json
+set          rho*    ||D*||    RMS % mdiff own    kb_sum       cg1       cg2        cy    cb_sum        mh   m_total    m_diff     J_eff         d
+null       0.4377    0.2800    0.267    -0.053    +0.022    +0.002    +0.001    +0.017    +0.840    +0.048    +0.049    -0.003    +0.054    -0.003
+f150       0.1169   15.8623    5.303    -9.593    +0.102    +1.057    +0.653    +6.152    +0.819   +12.858    +8.654    -0.459    -0.592    -0.611
+f170       0.3227   11.1910    9.754   -17.763    +0.204    +2.006    +1.253    +3.927    +1.244   +25.431   +16.730    -0.850    -1.149    -0.339
+f185       0.4041    8.8215    9.262   -16.940    +0.202    +1.918    +1.203    +2.856    +1.370   +24.233   +15.923    -0.811    -1.095    -0.181
+f200       0.4540    7.1353    8.117   -14.996    +0.185    +1.701    +1.069    +2.169    +1.399   +21.240   +13.986    -0.718    -0.965    -0.100
+f215       0.4866    5.9031    6.987   -13.040    +0.165    +1.481    +0.932    +1.711    +1.381   +18.267   +12.062    -0.624    -0.833    -0.057
+WATCHDOG SUMMARY exit=0 killed=False duration_s=2.5 samples=1 peak_tree_ws_mb=29 min_avail_ram_gb=5.41 min_C_free_gb=8.32 kill_reason=""

@@ -1,0 +1,26 @@
+[run.sh] C: free 7.24 GB before launch of R014_patch
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R014_patch
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/tools/apply_vendor_patches.py 
+  skip (already patched)  gantry_dynamic/__init__.py
+  skip (already patched)  gantry_dynamic/config.py
+  skip (already patched)  gantry_dynamic/data.py
+  skip (already patched)  gantry_dynamic/data.py
+  skip (already patched)  gantry_dynamic/data.py
+  skip (already patched)  transient/truth.py
+  skip (already patched)  transient/truth.py
+  skip (already patched)  transient/enc_common.py
+  skip (already patched)  transient/enc_common.py
+  skip (already patched)  transient/enc_common.py
+done
+  skip (already patched)  tr_env.py
+  skip (already patched)  tr_env.py
+  skip (already patched)  vendor/gantry_dynamic/config.py
+telica done
+  skip (already patched)  pipeline/telica_augment.py
+  skip (already patched)  pipeline/telica_augment.py
+telica arm done
+  skip (already patched)  vendor/real_data_verification/telica_loader.py
+telica loader done
+  patched                 pipeline/telica_augment.py
+telica window done
+WATCHDOG SUMMARY exit=0 killed=False duration_s=3.2 samples=1 peak_tree_ws_mb=29 min_avail_ram_gb=5.11 min_C_free_gb=7.24 kill_reason=""

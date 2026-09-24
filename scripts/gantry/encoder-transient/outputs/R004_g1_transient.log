@@ -1,0 +1,24 @@
+[run.sh] C: free 7.59 GB before launch of R004_g1_transient
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R004_g1_transient
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/g1_transient.py 
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+  planted deriv vs truth.Plant8.deriv: worst rel diff 5.15e-17
+  nf=400 K=100 na=29 up_sample=1 ts=0.00025 rows {'V1_standstill_Yp10': 2, 'V2_aprbs_Ylow': 0, 'V3_ysweep_Yp10': 2, 'V4_lissajous_Ym10': 1}
+  V1_standstill_Yp10: 119 windows  [13 s]
+  V2_aprbs_Ylow: 119 windows  [19 s]
+  V3_ysweep_Yp10: 119 windows  [26 s]
+  V4_lissajous_Ym10: 119 windows  [33 s]
+
+  arm              RMS[0:400]   RMS[100:]   share    grow   chan RMS[0:400] X1/X2/Y
+  U|P0             2.0548e-05  2.0766e-05   -2.1%    1.63   3.038e-06 3.063e-06 3.533e-05
+  PL|P0|random     1.6118e-05  1.0799e-06   99.6%    0.01   2.713e-06 3.092e-06 2.761e-05
+  PL|P0|zero       3.1219e-06  1.7400e-07   99.7%    0.01   8.173e-07 8.771e-07 5.273e-06
+  PL|exact         1.1638e-07  1.1627e-07    0.2%   17.73   1.372e-07 1.288e-07 7.220e-08
+  U|exact          2.1115e-05  2.0767e-05    3.3% 3263.07   3.073e-06 3.118e-06 3.631e-05
+  discrimination (W^a random): K=0 1.275x   K=100 19.230x
+  discrimination (W^a zero): K=0 6.582x   K=100 119.345x
+  planted floor / planted K=0 RMS: {'random': np.float64(0.007220289816829964), 'zero': np.float64(0.03727790226104607)}
+  saved outputs/g1/g1_transient.json  [33 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=41.9 samples=9 peak_tree_ws_mb=667 min_avail_ram_gb=4.70 min_C_free_gb=7.59 kill_reason=""

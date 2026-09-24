@@ -1,0 +1,31 @@
+[run.sh] C: free 7.39 GB before launch of R022_g5_sim_g2static_dry
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R022_g5_sim_g2static_dry
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/runners/sim_arm.py 
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+[sim_arm] ARM=g2static DRY=True SMOKE=False mode=augmentation_ma50_b140-230_a6_z03 burn_in=0 nf=20 batch=8 n_its=1 device=cpu
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[closed loop] one bank over 18 records, 8 distinct controllers, Y_op [-0.3, -0.22, -0.15, -0.1, 0.0, 0.1, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[sim_arm] encoder swapped: g2static {'deg': 2}; optimizer rebuilt over 10574 encoder parameters
+[dry] V1 closed loop nf=400: RMS 2.0510e-05  share -3.4%  grow 1.71
+[sim_arm] done: n_updates 0, 10 s -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\outputs\g5\sim_g2static_dry
+WATCHDOG SUMMARY exit=0 killed=False duration_s=15.6 samples=3 peak_tree_ws_mb=587 min_avail_ram_gb=4.45 min_C_free_gb=7.39 kill_reason=""

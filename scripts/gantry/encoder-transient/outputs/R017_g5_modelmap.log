@@ -1,0 +1,16 @@
+[run.sh] C: free 7.23 GB before launch of R017_g5_modelmap
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R017_g5_modelmap
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/g5_modelmap_check.py 
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+  planted: model-Jacobian map built, fit resid 2.56e-07, max affine offset 0.00e+00  [13 s]
+  untrained: model-Jacobian map built, fit resid 1.95e-06, max affine offset 0.00e+00  [22 s]
+  untrained: max |latent-row coefficient| = 0.00e+00 (unobservable latents -> 0 expected)
+  U|G2jac    RMS[0:400] 2.0534e-05  RMS[100:] 2.0766e-05  share -2.3%  grow 1.66
+  PL|G2jac   RMS[0:400] 1.1625e-07  RMS[100:] 1.1628e-07  share -0.0%  grow 1.51
+  discrimination K=0: 176.6x
+  untrained Jacobian map vs G2 baseline ZOH map (V1), RMS diff / ZOH error: 2.09e-01 1.55e-01 9.96e-04 2.14e-01 1.41e-01 7.80e-04
+  planted Jacobian map, V1 state RMS vs exact: 3.29e-08 1.92e-07 6.46e-08 3.68e-06 1.94e-05 1.36e-04 1.65e-07 2.65e-04
+  saved outputs/g5/modelmap_check.json  [34 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=43.4 samples=9 peak_tree_ws_mb=676 min_avail_ram_gb=4.44 min_C_free_gb=7.23 kill_reason=""

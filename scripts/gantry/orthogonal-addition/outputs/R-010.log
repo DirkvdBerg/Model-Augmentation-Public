@@ -1,0 +1,67 @@
+[wd] launch  out=outputs/R-010
+[wd] command conda run --no-capture-output -n GraduationProject python -u design/screen_c.py
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation_oa_null_b140-230_a6): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_null_b140-230_a6
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=0.000e+00 m  vdelta_a std=0.000e+00 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[obc] reference set: 134400 tuples from 14 records (9600/9600/9600/9600/9600/9600/9600/9600/9600/9600/9600/9600/9600/9600 per record), stride 5, 2.1 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 14.0 MB
+[core] augmentation_oa_null_b140-230_a6 stride 5: 134400 tuples, basis rank 10 cond 7.9406e+02, 13.4 s
+[C] band family out [(20.0, 130.0), (240.0, 600.0)], 3 starts, maxfev 800
+[wd] t=58s tree=1,255 MB cpu=33% availRAM=4.52 GB C:free=11.48 GB
+[wd] t=121s tree=1,222 MB cpu=33% availRAM=4.46 GB C:free=11.48 GB
+[wd] t=183s tree=1,258 MB cpu=32% availRAM=4.50 GB C:free=11.47 GB
+[wd] t=246s tree=1,226 MB cpu=33% availRAM=4.57 GB C:free=11.47 GB
+[wd] t=309s tree=1,215 MB cpu=33% availRAM=4.65 GB C:free=11.47 GB
+[wd] t=373s tree=1,221 MB cpu=32% availRAM=4.30 GB C:free=11.44 GB
+[wd] t=435s tree=1,249 MB cpu=33% availRAM=4.41 GB C:free=11.43 GB
+[wd] t=498s tree=1,214 MB cpu=33% availRAM=4.42 GB C:free=11.43 GB
+[wd] t=561s tree=1,207 MB cpu=33% availRAM=4.52 GB C:free=11.43 GB
+  start 0: objective 6.1744e-04 after 800 evaluations, 573 s
+[wd] t=624s tree=1,226 MB cpu=33% availRAM=4.40 GB C:free=11.42 GB
+[wd] t=687s tree=1,197 MB cpu=33% availRAM=4.10 GB C:free=11.42 GB
+[wd] t=749s tree=1,275 MB cpu=33% availRAM=4.50 GB C:free=11.41 GB
+[wd] t=812s tree=1,197 MB cpu=33% availRAM=4.66 GB C:free=11.41 GB
+[wd] t=875s tree=1,178 MB cpu=33% availRAM=4.70 GB C:free=11.40 GB
+[wd] t=938s tree=1,179 MB cpu=33% availRAM=4.67 GB C:free=11.40 GB
+[wd] t=1,000s tree=1,185 MB cpu=33% availRAM=4.61 GB C:free=11.39 GB
+[wd] t=1,063s tree=1,184 MB cpu=33% availRAM=4.41 GB C:free=11.39 GB
+[wd] t=1,126s tree=1,179 MB cpu=33% availRAM=4.63 GB C:free=11.38 GB
+  start 1: objective 1.0014e-03 after 800 evaluations, 539 s
+[wd] t=1,188s tree=1,275 MB cpu=34% availRAM=4.62 GB C:free=11.38 GB
+[wd] t=1,251s tree=1,179 MB cpu=33% availRAM=4.67 GB C:free=11.38 GB
+[wd] t=1,313s tree=1,196 MB cpu=33% availRAM=4.62 GB C:free=11.38 GB
+[wd] t=1,376s tree=1,275 MB cpu=33% availRAM=4.63 GB C:free=11.38 GB
+[wd] t=1,438s tree=1,220 MB cpu=33% availRAM=4.72 GB C:free=11.38 GB
+[wd] t=1,501s tree=1,192 MB cpu=33% availRAM=4.72 GB C:free=11.38 GB
+[wd] t=1,563s tree=1,220 MB cpu=33% availRAM=4.71 GB C:free=11.38 GB
+[wd] t=1,626s tree=1,192 MB cpu=33% availRAM=4.74 GB C:free=11.37 GB
+  start 2: objective 1.9270e-03 after 800 evaluations, 509 s
+
+[C] best: rho* 6.1463e-04 (check 6.1463e-04), masses [ 1.3392e+00  7.6037e+00  3.1357e-01 -4.9122e-03] kg, mount {'k_x': np.float64(-2269.621602), 'k_y': np.float64(11.325139), 'k_xp': np.float64(-487.699602), 'gamma': np.float64(-0.061244)}
+    absorber 0: f 20.00 Hz  alpha -92.5 deg  lever +0.0883 m  mass 1.3392 kg
+    absorber 1: f 397.82 Hz  alpha +112.6 deg  lever -0.1091 m  mass 7.6037 kg
+    absorber 2: f 115.87 Hz  alpha +103.6 deg  lever -0.1800 m  mass 0.3136 kg
+    absorber 3: f 240.00 Hz  alpha +174.5 deg  lever -0.1165 m  mass -0.0049 kg
+    ||Delta|| scaled 5.6953e+00 (minimum 3.7968e+00 at this stride)
+    bias J^+ Delta (combo %): kb_sum +1.10e-02  cg1 -6.48e-01  cg2 -7.55e-01  cy +1.68e-01  cb_sum +1.49e-01  mh -1.00e-04  m_total -4.79e-04  m_diff -1.48e-04  J_eff +4.24e-05  d -4.45e-05  m_diff own -3.097e-03 %
+    total absorber mass 9.252 kg = 91.6 % of the payload
+[out] outputs/screen_c_R-010_c_out.json  (1636 s)
+WATCHDOG SUMMARY exit=0 killed=False duration_s=1,644.3 samples=315 peak_tree_ws_mb=1,312 min_avail_ram_gb=4.03 min_C_free_gb=11.37 kill_reason=""

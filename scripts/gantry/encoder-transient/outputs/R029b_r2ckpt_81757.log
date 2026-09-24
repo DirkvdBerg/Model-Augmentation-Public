@@ -1,0 +1,24 @@
+[run.sh] C: free 6.38 GB before launch of R029b_r2ckpt_81757
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R029b_r2ckpt_81757
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/runners/r2_ckpt.py 
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\vendor\gantry_dynamic\training.py:88: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(pair_pt, map_location='cpu')
+[r2_ckpt] loaded scripts/gantry/meeting/meeting-07-09-2026/server/augmentation_ma50_b140-230_a6_z03_linear_map/81757/gantry_ckpt_81757
+[r2_ckpt] model-Jacobian map of the trained model: resid 1.2e-03, max affine offset 1.1e-01
+[wd] t=58s tree=667 MB cpu=8% availRAM=3.18 GB C:free=6.37 GB
+[r2_ckpt] V1_standstill_Yp10 done [59 s]
+[r2_ckpt] V2_aprbs_Ylow done [90 s]
+[wd] t=120s tree=681 MB cpu=16% availRAM=3.23 GB C:free=6.36 GB
+[r2_ckpt] V3_ysweep_Yp10 done [124 s]
+[wd] t=182s tree=688 MB cpu=17% availRAM=2.65 GB C:free=6.36 GB
+[r2_ckpt] V4_lissajous_Ym10 done [159 s]
+  open loop H=400: exact Y 3.007e-03  P0 Y 2.109e-03  G2model Y 2.388e-03
+  open loop H=4000: exact Y 1.275e-01  P0 Y 1.243e-01  G2model Y 1.289e-01
+  closed loop nf=400 exact    RMS 7.3631e-06  share 38.8%  grow 873.01
+  closed loop nf=400 P0       RMS 5.8303e-06  share 2.6%  grow 0.82
+  closed loop nf=400 G2model  RMS 6.1006e-06  share 10.9%  grow 0.39
+[r2_ckpt] done, 0 optimizer updates, 159 s -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\outputs\g5\r2_ckpt_81757
+WATCHDOG SUMMARY exit=0 killed=False duration_s=185.2 samples=36 peak_tree_ws_mb=689 min_avail_ram_gb=2.65 min_C_free_gb=6.36 kill_reason=""

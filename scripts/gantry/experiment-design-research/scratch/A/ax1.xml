@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/2pj98YQQ1bji1vvrxN5LCwOK/Dc</id>
+  <title>arXiv Query: search_query=ti:"Robust experimental designs for model calibration"&amp;id_list=&amp;start=0&amp;max_results=5</title>
+  <updated>2026-09-24T08:16:22Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=ti:%22Robust+experimental+designs+for+model+calibration%22&amp;start=0&amp;max_results=5&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>5</opensearch:itemsPerPage>
+  <opensearch:totalResults>1</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2008.00547v1</id>
+    <title>Robust Experimental Designs for Model Calibration</title>
+    <updated>2020-08-02T19:31:18Z</updated>
+    <link href="https://arxiv.org/abs/2008.00547v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2008.00547v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>A computer model can be used for predicting an output only after specifying the values of some unknown physical constants known as calibration parameters. The unknown calibration parameters can be estimated from real data by conducting physical experiments. This paper presents an approach to optimally design such a physical experiment. The problem of optimally designing physical experiment, using a computer model, is similar to the problem of finding optimal design for fitting nonlinear models. However, the problem is more challenging than the existing work on nonlinear optimal design because of the possibility of model discrepancy, that is, the computer model may not be an accurate representation of the true underlying model. Therefore, we propose an optimal design approach that is robust to potential model discrepancies. We show that our designs are better than the commonly used physical experimental designs that do not make use of the information contained in the computer model and other nonlinear optimal designs that ignore potential model discrepancies. We illustrate our approach using a toy example and a real example from industry.</summary>
+    <category term="stat.ME" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.AP" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2020-08-02T19:31:18Z</published>
+    <arxiv:comment>25 pages, 10 figures</arxiv:comment>
+    <arxiv:primary_category term="stat.ME"/>
+    <author>
+      <name>Arvind Krishna</name>
+      <arxiv:affiliation>Georgia Institute of Technology</arxiv:affiliation>
+    </author>
+    <author>
+      <name>V. Roshan Joseph</name>
+      <arxiv:affiliation>Georgia Institute of Technology</arxiv:affiliation>
+    </author>
+    <author>
+      <name>Shan Ba</name>
+      <arxiv:affiliation>LinkedIn Corporation</arxiv:affiliation>
+    </author>
+    <author>
+      <name>William A. Brenneman</name>
+      <arxiv:affiliation>Procter &amp; Gamble Company</arxiv:affiliation>
+    </author>
+    <author>
+      <name>William R. Myers</name>
+      <arxiv:affiliation>Procter &amp; Gamble Company</arxiv:affiliation>
+    </author>
+    <arxiv:doi>10.1080/00224065.2021.1930618</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1080/00224065.2021.1930618" title="doi"/>
+  </entry>
+</feed>

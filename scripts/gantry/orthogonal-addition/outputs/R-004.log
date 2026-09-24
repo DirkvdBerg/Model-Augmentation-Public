@@ -1,0 +1,37 @@
+[wd] launch  out=outputs/R-004
+[wd] command matlab -batch "addpath('matlab'); check_oa_noop; make_oa_model(4); check_oa_reaches_plant(1.0)"
+A1  addition off: max |OA - gantrySystem| over 200 random states = 0.000e+00  (slot states 0.000e+00)
+A2  Ma0 on alone: max change 7.222e-02
+A2  Ma1 on alone: max change 1.539e-02
+A2  Ca0 on alone: max change 3.033e-02
+A2  Ka0 on alone: max change 1.044e-02
+A2  Ka1 on alone: max change 2.089e-03
+A2  Ka2 on alone: max change 4.177e-04
+A3  coupled Lagrangian residual: carrier 1.370e-14 (rel. to |u|), absorbers 2.738e-11 (rel.)
+A4  stateless residual (M+M_a) qdd + (C+C_a) qd + (K+K_a) q - u: 6.456e-15 (rel.)
+
+CHECK_OA_NOOP  A1 PASS  A2 PASS  A3 PASS  A4 PASS
+copied C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\kamtin-fp-model\03 Simulink gantry\gantry_2025a.slx
+    -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-addition\matlab\gantry_oa.slx
+Model 'gantry_oa' was exported from R2025b to R2025a. To find blocks that were removed during the export operation, <a href="matlab:slexportprevious.utils.displayReplacedBlocks('gantry_oa')">click here</a>. Save the model to remove this notification.
+WATCHDOG ALERT available RAM 3.88 GB < 4 GB (tree 2,229 MB)
+chart: gantry_oa/MATLAB Function1
+--- original script ---
+function dxdt = gantrySystemMFile(u,x,m1,m2,mb,mh,Jb,Jh,d,Lb,kb1,kb2,cg1,cg2,cb1,cb2,cy)
+dxdt = gantrySystem(u,x,m1,m2,mb,mh,Lb,Jb,Jh,d,cg1,cg2,cb1,cb2,cy,kb1,kb2); 
+end
+--- new script ---
+function dxdt = gantrySystemMFile(u,x,m1,m2,mb,mh,Jb,Jh,d,Lb,kb1,kb2,cg1,cg2,cb1,cb2,cy, oa_Ma0, oa_Ma1, oa_Ca0, oa_Ka0, oa_Ka1, oa_Ka2, oa_m, oa_w, oa_b0, oa_b1)
+dxdt = zeros(size(x));
+dxdt = gantrySystemOA(u,x,m1,m2,mb,mh,Lb,Jb,Jh,d,cg1,cg2,cb1,cb2,cy,kb1,kb2, oa_Ma0, oa_Ma1, oa_Ca0, oa_Ka0, oa_Ka1, oa_Ka2, oa_m, oa_w, oa_b0, oa_b1);
+end
+  x size was "-1", now "-1"
+  dxdt size was "-1", now "-1"
+  Integrator feeds: Selector1, MATLAB Function1
+  Integrator IC: [0;0;Y;0;0;0] -> [0;0;Y;0;0;0;zeros(8,1)]
+  Selector1 width: 6 -> 14, indices [1 2 3]
+saved C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-addition\matlab\gantry_oa.slx (NS = 4, state 6 + 8); source untouched (bytes 274212, datenum equal)
+[wd] t=58s tree=2,699 MB cpu=11% availRAM=3.43 GB C:free=12.00 GB
+Model 'gantry_2025a' was exported from R2025b to R2025a. To find blocks that were removed during the export operation, <a href="matlab:slexportprevious.utils.displayReplacedBlocks('gantry_2025a')">click here</a>. Save the model to remove this notification.
+WATCHDOG KILL available RAM 1.72 GB < 2.5 GB; killing tree of PID 17832 (21 processes, 4,760 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=86.6 samples=17 peak_tree_ws_mb=4,760 min_avail_ram_gb=1.72 min_C_free_gb=11.96 kill_reason="available RAM 1.72 GB < 2.5 GB"

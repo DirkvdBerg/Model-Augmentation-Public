@@ -1,0 +1,136 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/FpJMtEx8eLPz7uOCO9y5HWJFbxY</id>
+  <title>arXiv Query: search_query=abs:"parameter-varying" AND abs:"persistency of excitation"&amp;id_list=&amp;start=0&amp;max_results=20</title>
+  <updated>2026-09-24T08:27:02Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=abs:%22parameter-varying%22+AND+abs:%22persistency+of+excitation%22&amp;start=0&amp;max_results=20&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>20</opensearch:itemsPerPage>
+  <opensearch:totalResults>5</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2211.17182v5</id>
+    <title>Direct Data-Driven State-Feedback Control of Linear Parameter-Varying Systems</title>
+    <updated>2024-12-27T11:39:50Z</updated>
+    <link href="https://arxiv.org/abs/2211.17182v5" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2211.17182v5" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The framework of linear parameter-varying (LPV) systems has shown to be a powerful tool for the design of controllers for complex nonlinear systems using linear tools. In this work, we derive novel methods that allow to synthesize LPV state-feedback controllers directly from only a single sequence of data and guarantee stability and performance of the closed-loop system. We show that if the measured open-loop data from the system satisfies a persistency of excitation condition, then the full open-loop and closed-loop input-scheduling-state behavior can be represented using only the data. With this representation we formulate data-driven analysis and synthesis problems, where the latter yields controllers that guarantee stability and performance in terms of infinite horizon quadratic cost, generalized $\mathcal{H}_2$-norm and $\ell_2$-gain of the closed-loop system. The controllers are synthesized by solving a semi-definite program. Additionally, we provide a synthesis method to handle noisy measurement data. Competitive performance of the proposed data-driven synthesis methods is demonstrated w.r.t. model-based synthesis in multiple simulation studies, including a nonlinear unbalanced disc system.</summary>
+    <category term="eess.SY" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-11-30T17:25:28Z</published>
+    <arxiv:comment>31 pages</arxiv:comment>
+    <arxiv:primary_category term="eess.SY"/>
+    <author>
+      <name>Chris Verhoek</name>
+    </author>
+    <author>
+      <name>Roland Tóth</name>
+    </author>
+    <author>
+      <name>Hossam S. Abbas</name>
+    </author>
+    <arxiv:doi>10.1002/rnc.8073</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1002/rnc.8073" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2506.08366v1</id>
+    <title>Learning event-triggered controllers for linear parameter-varying systems from data</title>
+    <updated>2025-06-10T02:26:31Z</updated>
+    <link href="https://arxiv.org/abs/2506.08366v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2506.08366v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Nonlinear dynamical behaviours in engineering applications can be approximated by linear-parameter varying (LPV) representations, but obtaining precise model knowledge to develop a control algorithm is difficult in practice. In this paper, we develop the data-driven control strategies for event-triggered LPV systems with stability verifications. First, we provide the theoretical analysis of $θ$-persistence of excitation for LPV systems, which leads to the feasible data-based representations. Then, in terms of the available perturbed data, we derive the stability certificates for event-triggered LPV systems with the aid of Petersen's lemma in the sense of robust control, resulting in the computationally tractable semidefinite programmings, the feasible solutions of which yields the optimal gain schedulings. Besides, we generalize the data-driven eventtriggered LPV control methods to the scenario of reference trajectory tracking, and discuss the robust tracking stability accordingly. Finally, we verify the effectiveness of our theoretical derivations by numerical simulations.</summary>
+    <category term="eess.SY" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2025-06-10T02:26:31Z</published>
+    <arxiv:comment>13 pages, 5 figures</arxiv:comment>
+    <arxiv:primary_category term="eess.SY"/>
+    <author>
+      <name>Renjie Ma</name>
+    </author>
+    <author>
+      <name>Su Zhang</name>
+    </author>
+    <author>
+      <name>Wenjie Liu</name>
+    </author>
+    <author>
+      <name>Zhijian Hu</name>
+    </author>
+    <author>
+      <name>Peng Shi</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2103.16160v2</id>
+    <title>Data-Driven Predictive Control for Linear Parameter-Varying Systems</title>
+    <updated>2022-01-24T14:56:04Z</updated>
+    <link href="https://arxiv.org/abs/2103.16160v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2103.16160v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Based on the extension of the behavioral theory and the Fundamental Lemma for Linear Parameter-Varying (LPV) systems, this paper introduces a Data-driven Predictive Control (DPC) scheme capable to ensure reference tracking and satisfaction of Input-Output (IO) constraints for an unknown system under the conditions that (i) the system can be represented in an LPV form and (ii) an informative data-set containing measured IO and scheduling trajectories of the system is available. It is shown that if the data set satisfies a persistence of excitation condition, then a data-driven LPV predictor of future trajectories of the system can be constructed from the IO data set and online measured data. The approach represents the first step towards a DPC solution for nonlinear and time-varying systems due to the potential of the LPV framework to represent them. Two illustrative examples, including reference tracking control of a nonlinear system, are provided to demonstrate that the data-based LPV-DPC scheme, achieves similar performance as LPV model-based predictive control.</summary>
+    <category term="eess.SY" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2021-03-30T08:42:10Z</published>
+    <arxiv:comment>Accepted to 4th IFAC Workshop on Linear Parameter-Varying Systems</arxiv:comment>
+    <arxiv:primary_category term="eess.SY"/>
+    <author>
+      <name>Chris Verhoek</name>
+    </author>
+    <author>
+      <name>Hossam S. Abbas</name>
+    </author>
+    <author>
+      <name>Roland Tóth</name>
+    </author>
+    <author>
+      <name>Sofie Haesaert</name>
+    </author>
+    <arxiv:doi>10.1016/j.ifacol.2021.08.588</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1016/j.ifacol.2021.08.588" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2210.12715v1</id>
+    <title>Adaptive Control with Global Exponential Stability for Parameter-Varying Nonlinear Systems under Unknown Control Gains</title>
+    <updated>2022-10-23T12:31:18Z</updated>
+    <link href="https://arxiv.org/abs/2210.12715v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2210.12715v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>It is nontrivial to achieve exponential stability even for time-invariant nonlinear systems with matched uncertainties and persistent excitation (PE) condition. In this paper, without the need for PE condition, we address the problem of global exponential stabilization of strict-feedback systems with mismatched uncertainties and unknown yet time-varying control gains. The resultant control, embedded with time-varying feedback gains, is capable of ensuring global exponential stability of parametric-strict-feedback systems in the absence of persistence of excitation. By using the enhanced Nussbaum function, the previous results are extended to more general nonlinear systems where the sign and magnitude of the time-varying control gain are unknown. In particular, the argument of the Nussbaum function is guaranteed to be always positive with the aid of nonlinear damping design, which is critical to perform a straightforward technical analysis of the boundedness of the Nussbaum function. Finally, the global exponential stability of parameter-varying strict-feedback systems, the boundedness of the control input and the update rate, and the asymptotic constancy of the parameter estimate are established. Numerical simulations are carried out to verify the effectiveness and benefits of the proposed methods.</summary>
+    <category term="eess.SY" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-10-23T12:31:18Z</published>
+    <arxiv:primary_category term="eess.SY"/>
+    <author>
+      <name>Hefu Ye</name>
+    </author>
+    <author>
+      <name>Haijia Wu</name>
+    </author>
+    <author>
+      <name>Kai Zhao</name>
+    </author>
+    <author>
+      <name>Yongduan Song</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2607.28490v1</id>
+    <title>A subspace approach to data-driven predictive control for linear parameter-varying systems</title>
+    <updated>2026-07-30T16:40:20Z</updated>
+    <link href="https://arxiv.org/abs/2607.28490v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2607.28490v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper presents a subspace data-driven predictive control method for linear parameter-varying (LPV) systems. Starting from an affine LPV state-space model in innovation form, we derive a multi-step predictor that separates the effects of past data, future inputs, scheduling trajectories, and innovations. By projecting this representation onto the row span of lifted input-output-scheduling data, we obtain an asymptotically unbiased data-driven predictor that can be embedded directly in a receding-horizon control problem, without explicitly identifying an LPV model. To make the resulting LPV data-driven predictive control (DDPC) formulation tractable, we introduce an LPV extension of $γ$-DDPC based on an LQ factorization. This formulation fixes the number of online decision variables independently of the length of the dataset. A reduced-order predictor is then proposed to curb the exponential growth of scheduling-dependent regressors, which also relaxes the persistence-of-excitation condition. Simulation studies, including an unbalanced-disk example, show that the proposed controller achieves good tracking performance and, compared to existing LPV DDPC schemes, achieves better robustness to measurement noise and reduced computational cost, making multi-step LPV DDPC practically deployable, even with longer past horizons.</summary>
+    <category term="eess.SY" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-07-30T16:40:20Z</published>
+    <arxiv:comment>16 pages. Submitted to Automatica</arxiv:comment>
+    <arxiv:primary_category term="eess.SY"/>
+    <author>
+      <name>Federico Porcari</name>
+    </author>
+    <author>
+      <name>Chris Verhoek</name>
+    </author>
+    <author>
+      <name>Valentina Breschi</name>
+    </author>
+    <author>
+      <name>Roland Tóth</name>
+    </author>
+    <author>
+      <name>Simone Formentin</name>
+    </author>
+  </entry>
+</feed>

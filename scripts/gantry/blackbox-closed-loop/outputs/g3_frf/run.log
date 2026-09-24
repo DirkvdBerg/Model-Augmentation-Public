@@ -1,0 +1,69 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g3_frf
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/init/g3_init.py --arm frf
+  mode          'augmentation_ma50_z03_b140-230_a6all_telica_coulomb'
+  fs_new        4000
+  ts_new        0.00025
+  nf            400
+  na_nb         29
+  stride        10
+  burn_in       0
+  batch_size    512
+  epochs        200
+  its_per_val   1300
+  n_its         None
+  seed          42
+  closed_loop   True
+  use_f64       False
+  lr            1e-05
+  adam_eps      1e-16
+  lbfgs         True
+  device        'cpu'   (CFG: 'cuda', local override)
+  compile_mode  None   (CFG: 'reduce-overhead', local override)
+Data dir (augmentation_ma50_z03_b140-230_a6all_telica_coulomb): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.274e-05 m  vdelta_a std=5.127e-02 m/s
+Loaded 18 train, 6 val, 5 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  T15: 48000 samples  (TP1_telica_y000.mat)
+  T16: 48000 samples  (TP2_telica_y000_rev.mat)
+  T17: 48000 samples  (TP3_telica_yp06.mat)
+  T18: 48000 samples  (TP4_telica_ym06.mat)
+Initializing encoder network...
+[bb] FRF CT model scripts\gantry\ann-blackbox\results\frf_init_joint_lowf_ma50_a5\frf_init_ss.npz discretised ZOH at 0.00025 s -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\outputs\init\frf_ss_fs4000.npz
+[BLA-frf] loaded frf_ss_fs4000.npz, nx=8
+[BLA-frf] max|eig| = 1.000000, closest pole to z=1: 0.000e+00
+[BLA-frf] |eig| = [1.       1.       0.999675 0.999576 0.999131 0.999131 0.971213 0.971213]
+[BLA-frf] applied, zero_nonlinear=True
+[closed loop] one bank over 24 records, 12 distinct controllers, Y_op [-0.3, -0.22, -0.2, -0.15, -0.1, -0.06, 0.0, 0.06, 0.1, 0.12, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[bb] arm=frf nx=8 na=nb=29 na_right=nb_right=1 params=5286 lr=0.001 eps=1e-08 burn_in=0
+[wd] t=57s tree=755 MB cpu=8% availRAM=4.32 GB C:free=7.11 GB
+[wd] t=119s tree=769 MB cpu=8% availRAM=4.29 GB C:free=7.11 GB
+[wd] t=181s tree=775 MB cpu=8% availRAM=4.36 GB C:free=7.11 GB
+[wd] t=242s tree=787 MB cpu=8% availRAM=4.36 GB C:free=7.11 GB
+   V1_standstill_Yp10.mat   closed 3.7621e-03 (stable, max|e| 2.745e-01 vs max|y| 1.001e-01)   open 1.7077e-01 (stable)
+   V2_aprbs_Ylow.mat        closed 4.6898e-03 (stable, max|e| 5.632e-01 vs max|y| 2.962e-01)   open 2.1482e-01 (stable)
+   V3_ysweep_Yp10.mat       closed 1.7586e-03 (stable, max|e| 2.058e-01 vs max|y| 2.500e-01)   open 3.2836e-01 (stable)
+   V4_lissajous_Ym10.mat    closed 9.2234e-03 (stable, max|e| 9.632e-01 vs max|y| 3.000e-01)   open 1.3642e-01 (stable)
+   VP1_telica_ylow.mat      closed 1.5176e-03 (stable, max|e| 1.726e-01 vs max|y| 2.800e-01)   open 1.4710e-01 (stable)
+   VP2_telica_yp12.mat      closed 2.4250e-04 (stable, max|e| 3.291e-02 vs max|y| 2.800e-01)   open 2.5027e-01 (stable)
+[G3] frf: initial closed-loop val sim-RMS 3.5323e-03 m (6/6 records stable), open-loop 2.0796e-01 m, validation 22.0 s
+[G3] 85644 training windows (4758 per record); 3 batches of 512
+   batch 0: loss 3.5919e+00 (sqrt 1.895e+00)  |grad| 1.6792e+06  finite True  (24/24 tensors)  fwd 0.4 s, fwd+bwd 0.8 s
+   batch 1: loss 3.9353e+00 (sqrt 1.984e+00)  |grad| 1.8421e+06  finite True  (24/24 tensors)  fwd 0.6 s, fwd+bwd 0.9 s
+   batch 2: loss 3.9124e+00 (sqrt 1.978e+00)  |grad| 1.8556e+06  finite True  (24/24 tensors)  fwd 0.5 s, fwd+bwd 0.9 s
+[G3] frf: gradients OK; arm PASS
+WATCHDOG SUMMARY exit=0 killed=False duration_s=299.6 samples=59 peak_tree_ws_mb=819 min_avail_ram_gb=4.26 min_C_free_gb=7.10 kill_reason=""

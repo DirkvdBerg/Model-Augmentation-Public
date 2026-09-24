@@ -1,0 +1,116 @@
+[run.sh] C: free 7.6 GB before launch of R003_g1_state
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R003_g1_state
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/g1_state.py 
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+  mode augmentation_ma50_b140-230_a6_z03  dt 0.00025  production na=29  absorber train std da 4.444e-05 m  vda 5.340e-02 m/s
+  consistency gate: planted(ma->0) vs baseline, worst rel diff over 5 Y = 1.17e-07
+  collapse P0(float64) vs pipeline encoder(float32), RMS diff / RMS error: X 1.8e-05 Theta 1.9e-04 Y 3.5e-04 dX 1.5e-06 dTheta 7.4e-06 dY 6.0e-04
+  na=15: maps built [0 s]
+  interpolation check (mid-node, AB vs exact map), diff / error: 1.3e-03 1.5e-03 5.1e-04 2.7e-03 4.8e-03 2.6e-04 2.6e-04 2.3e-04
+  na=29: maps built [1 s]
+  na=59: maps built [1 s]
+  na=119: maps built [2 s]
+
+  pooled RMS error over 9 records, na=29 [phys units]
+    ch              P0          A          B         AB     op  model    rem  window best na
+    X        1.176e-06  2.951e-07  1.174e-06  3.383e-08   0.97   0.03  0.001   0.000      15
+    Theta    6.429e-06  1.830e-06  7.184e-06  1.933e-07   1.08  -0.08  0.001   0.000      15
+    Y        2.176e-05  2.171e-05  7.519e-07  6.368e-08   0.00   1.00  0.000   0.000      15
+    dX       1.203e-03  2.992e-04  1.202e-03  4.241e-06   0.97   0.03  0.000   0.000      59
+    dTheta   6.072e-03  1.743e-03  6.594e-03  3.206e-05   1.05  -0.05  0.000   0.000      29
+    dY       2.784e-02  2.781e-02  8.384e-04  1.366e-04   0.00   1.00  0.000   0.000      29
+
+  corr(record RMS, mean|Y|)
+    P0|T1-T5  X +0.919 Theta +0.903 Y -0.795 dX +0.923 dTheta +0.904 dY -0.938
+    P0|all9   X +0.883 Theta +0.688 Y -0.644 dX +0.887 dTheta +0.763 dY -0.799
+    A|T1-T5   X -0.955 Theta +0.988 Y -0.918 dX -0.906 dTheta +0.888 dY -0.958
+    A|all9    X -0.908 Theta +0.523 Y -0.883 dX -0.852 dTheta +0.573 dY -0.909
+    B|T1-T5   X +0.984 Theta +0.966 Y +0.956 dX +0.981 dTheta +0.969 dY +0.947
+    B|all9    X +0.977 Theta +0.624 Y +0.526 dX +0.973 dTheta +0.705 dY +0.552
+    AB|T1-T5  X +0.783 Theta -0.855 Y +0.763 dX +0.825 dTheta -0.868 dY -0.704
+    AB|all9   X +0.762 Theta -0.529 Y +0.468 dX +0.196 dTheta +0.142 dY -0.484
+
+  per-record RMS, na=29: P0 / A / B / AB
+    T1_standstill_Ym30     |Y| 0.300
+      X        1.523e-06  2.168e-07  1.860e-06  3.439e-08   std 5.511e-06
+      Theta    5.908e-06  1.709e-06  6.158e-06  1.775e-07   std 2.825e-05
+      Y        2.171e-05  2.162e-05  5.410e-07  6.354e-08   std 1.766e-05
+      dX       1.570e-03  2.363e-04  1.919e-03  3.768e-06   std 5.898e-03
+      dTheta   6.167e-03  1.608e-03  6.397e-03  1.879e-05   std 3.042e-02
+      dY       2.773e-02  2.767e-02  6.625e-04  1.363e-04   std 2.322e-02
+      da/vda B 7.358e-07 1.068e-03  AB 1.641e-07 2.639e-04   std 4.392e-05 5.318e-02
+    T2_standstill_Ym15     |Y| 0.150
+      X        6.870e-07  3.190e-07  1.031e-06  3.214e-08   std 5.148e-06
+      Theta    1.779e-06  1.177e-06  2.345e-06  2.000e-07   std 3.193e-05
+      Y        2.178e-05  2.174e-05  2.129e-07  6.325e-08   std 1.776e-05
+      dX       7.061e-04  3.326e-04  1.062e-03  3.539e-06   std 5.507e-03
+      dTheta   1.931e-03  1.075e-03  2.451e-03  2.131e-05   std 3.429e-02
+      dY       2.786e-02  2.783e-02  2.832e-04  1.373e-04   std 2.331e-02
+      da/vda B 3.183e-07 4.740e-04  AB 1.657e-07 2.663e-04   std 4.416e-05 5.348e-02
+    T3_standstill_Y000     |Y| 0.000
+      X        3.464e-07  3.464e-07  3.243e-08  3.243e-08   std 5.089e-06
+      Theta    7.943e-07  7.943e-07  2.027e-07  2.027e-07   std 3.229e-05
+      Y        2.177e-05  2.177e-05  6.297e-08  6.297e-08   std 1.777e-05
+      dX       3.541e-04  3.541e-04  3.496e-06  3.499e-06   std 5.448e-03
+      dTheta   8.758e-04  8.758e-04  2.141e-05  2.141e-05   std 3.475e-02
+      dY       2.790e-02  2.790e-02  1.370e-04  1.370e-04   std 2.333e-02
+      da/vda B 1.653e-07 2.657e-04  AB 1.653e-07 2.657e-04   std 4.423e-05 5.359e-02
+    T4_standstill_Yp15     |Y| 0.150
+      X        1.275e-06  2.934e-07  9.380e-07  3.384e-08   std 5.425e-06
+      Theta    3.909e-06  1.346e-06  3.114e-06  1.864e-07   std 2.982e-05
+      Y        2.177e-05  2.174e-05  2.780e-07  6.289e-08   std 1.774e-05
+      dX       1.302e-03  2.871e-04  9.536e-04  3.731e-06   std 5.795e-03
+      dTheta   4.138e-03  1.534e-03  3.330e-03  2.002e-05   std 3.195e-02
+      dY       2.785e-02  2.784e-02  3.659e-04  1.366e-04   std 2.330e-02
+      da/vda B 4.031e-07 5.897e-04  AB 1.647e-07 2.648e-04   std 4.412e-05 5.345e-02
+    T5_standstill_Yp30     |Y| 0.300
+      X        1.895e-06  1.982e-07  1.566e-06  3.657e-08   std 5.868e-06
+      Theta    8.528e-06  1.709e-06  7.809e-06  1.579e-07   std 2.534e-05
+      Y        2.165e-05  2.159e-05  6.809e-07  6.441e-08   std 1.766e-05
+      dX       1.923e-03  1.790e-04  1.585e-03  4.031e-06   std 6.259e-03
+      dTheta   8.859e-03  1.882e-03  8.123e-03  1.724e-05   std 2.703e-02
+      dY       2.769e-02  2.765e-02  8.304e-04  1.347e-04   std 2.320e-02
+      da/vda B 9.345e-07 1.356e-03  AB 1.621e-07 2.607e-04   std 4.383e-05 5.310e-02
+    V1_standstill_Yp10     |Y| 0.100
+      X        9.920e-07  3.168e-07  6.517e-07  3.278e-08   std 5.228e-06
+      Theta    2.790e-06  1.184e-06  1.933e-06  1.940e-07   std 3.098e-05
+      Y        2.177e-05  2.176e-05  1.805e-07  6.400e-08   std 1.779e-05
+      dX       1.016e-03  3.167e-04  6.638e-04  3.593e-06   std 5.599e-03
+      dTheta   2.957e-03  1.353e-03  2.090e-03  2.069e-05   std 3.324e-02
+      dY       2.786e-02  2.785e-02  2.625e-04  1.361e-04   std 2.334e-02
+      da/vda B 2.809e-07 4.196e-04  AB 1.642e-07 2.642e-04   std 4.413e-05 5.344e-02
+    V2_aprbs_Ylow          |Y| 0.234
+      X        1.199e-06  2.957e-07  1.545e-06  3.427e-08   std 5.365e-02
+      Theta    1.354e-05  3.605e-06  1.688e-05  2.176e-07   std 3.067e-05
+      Y        2.178e-05  2.167e-05  1.865e-06  6.430e-08   std 4.484e-02
+      dX       1.233e-03  3.052e-04  1.588e-03  5.402e-06   std 3.721e-01
+      dTheta   1.175e-02  3.110e-03  1.456e-02  6.902e-05   std 3.248e-02
+      dY       2.788e-02  2.780e-02  2.007e-03  1.371e-04   std 3.289e-01
+      da/vda B 6.101e-07 1.402e-03  AB 1.650e-07 2.648e-04   std 4.496e-05 5.344e-02
+    V3_ysweep_Yp10         |Y| 0.115
+      X        1.074e-06  3.165e-07  8.053e-07  3.343e-08   std 5.328e-06
+      Theta    3.518e-06  1.176e-06  2.934e-06  1.931e-07   std 3.088e-05
+      Y        2.177e-05  2.174e-05  2.607e-07  6.324e-08   std 9.649e-02
+      dX       1.100e-03  3.135e-04  8.235e-04  3.928e-06   std 5.701e-03
+      dTheta   3.738e-03  1.326e-03  3.139e-03  2.125e-05   std 3.304e-02
+      dY       2.791e-02  2.789e-02  3.457e-04  1.364e-04   std 1.274e-01
+      da/vda B 3.884e-07 5.715e-04  AB 1.648e-07 2.644e-04   std 4.421e-05 5.359e-02
+    V4_lissajous_Ym10      |Y| 0.135
+      X        8.637e-07  3.188e-07  1.040e-06  3.445e-08   std 4.373e-02
+      Theta    6.461e-06  2.166e-06  7.279e-06  2.047e-07   std 3.137e-05
+      Y        2.183e-05  2.179e-05  7.923e-07  6.453e-08   std 1.267e-01
+      dX       8.836e-04  3.281e-04  1.062e-03  5.933e-06   std 3.861e-01
+      dTheta   5.731e-03  1.919e-03  6.405e-03  4.056e-05   std 3.369e-02
+      dY       2.789e-02  2.787e-02  8.660e-04  1.378e-04   std 4.089e-01
+      da/vda B 3.878e-07 7.261e-04  AB 1.661e-07 2.672e-04   std 4.426e-05 5.352e-02
+
+  window sweep, pooled RMS [P0 | AB]
+    na=15  X 8.98e-07|3.06e-08 Theta 3.51e-06|1.73e-07 Y 2.20e-05|1.18e-08 dX 1.50e-03|2.03e-05 dTheta 5.99e-03|1.14e-04 dY 3.68e-02|1.43e-04
+    na=29  X 1.18e-06|3.38e-08 Theta 6.43e-06|1.93e-07 Y 2.18e-05|6.37e-08 dX 1.20e-03|4.24e-06 dTheta 6.07e-03|3.21e-05 dY 2.78e-02|1.37e-04
+    na=59  X 1.05e-06|3.36e-08 Theta 2.04e-05|3.71e-07 Y 2.23e-05|9.53e-08 dX 1.12e-03|3.10e-06 dTheta 9.13e-03|9.74e-05 dY 2.72e-02|1.86e-04
+    na=119 X 1.05e-06|7.69e-08 Theta 8.26e-05|2.70e-06 Y 2.33e-05|3.05e-07 dX 1.11e-03|1.01e-05 dTheta 1.63e-02|3.79e-04 dY 2.69e-02|2.37e-04
+
+  saved C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\outputs\g1\g1_state.json   [30 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=37.4 samples=8 peak_tree_ws_mb=778 min_avail_ram_gb=4.70 min_C_free_gb=7.60 kill_reason=""

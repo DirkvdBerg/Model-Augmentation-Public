@@ -1,0 +1,17 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g2_n4sid
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/score/g2_transfer.py --arm n4sid
+[G2] arm n4sid: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\ann-blackbox\server-results/paired_bla\ann_blackbox_fs800_nf400_s0_bladynz
+C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\systems\system.py:17: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  return torch.load(file)
+[G2] Y_op (RECORD_Y_OP vs raw record y[0,2]): [('V2_aprbs_Ylow', -0.22, -0.2199999988079071), ('T10_aprbs_60', 0.0, 0.0)]
+[G2] controller at 800 Hz, rows [0, 1] for Y_op [-0.22, 0.0], diag(Dc) [11850915.  9116493.  5105605.] N/m
+[G2] open loop, deepSI path, V2: 9.510513e-03 m (metrics best 9.510558e-03, rel 4.73e-06, tol 1e-3)  3 s
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\score\g2_transfer.py", line 114, in <module>
+    tr_ol = cl_score.closed_loop_traces(view, sdl, zb, [0, 0], per_record_ref=ol_per)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\score\cl_score.py", line 64, in closed_loop_traces
+    raise RuntimeError('trace RMS %.6e disagrees with the harness %.6e on record %d'
+RuntimeError: trace RMS 3.678753e-03 disagrees with the harness 3.678595e-03 on record 1
+ERROR conda.cli.main_run:execute(47): `conda run python -u scripts/gantry/blackbox-closed-loop/score/g2_transfer.py --arm n4sid` failed. (See above for error)
+WATCHDOG SUMMARY exit=1 killed=False duration_s=28.0 samples=6 peak_tree_ws_mb=609 min_avail_ram_gb=4.24 min_C_free_gb=7.15 kill_reason=""

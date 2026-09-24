@@ -1,0 +1,21 @@
+[run.sh] C: free 7.6 GB before launch of R001_g0_r0
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R001_g0_r0
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/g0_reproduce.py 
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+  mode augmentation_ma50_b140-230_a6_z03  na=nb=29  nx_ann=8  encoder linear_map  closed_loop True
+  V1_standstill_Yp10       |dq| 6.12e-09 1.91e-10 1.74e-08  tol 1.57e-08 9.30e-08 8.32e-08  PASS
+
+  V1 encoder vs EXACT (vendored)
+    channel         R2      NRMS      RMS err         bias   signal std   unit
+    X           0.9640    0.1897    9.920e-07    2.759e-09    5.228e-06   m
+    Theta       0.9919    0.0901    2.791e-06   -3.353e-10    3.098e-05   rad
+    Y          -0.4979    1.2239    2.177e-05   -2.316e-09    1.779e-05   m
+    dX          0.9671    0.1814    1.016e-03    2.953e-07    5.599e-03   m/s
+    dTheta      0.9921    0.0889    2.957e-03   -8.654e-07    3.324e-02   rad/s
+    dY         -0.4250    1.1937    2.786e-02    2.232e-05    2.334e-02   m/s
+  G0 Y   got 2.1772e-05  D-197 2.18e-05  rel dev 0.127%  OK
+  G0 dY  got 2.7857e-02  D-197 2.79e-02  rel dev 0.156%  OK
+G0 PASS
+WATCHDOG SUMMARY exit=0 killed=False duration_s=16.6 samples=4 peak_tree_ws_mb=632 min_avail_ram_gb=4.57 min_C_free_gb=7.60 kill_reason=""

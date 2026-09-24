@@ -1,0 +1,35 @@
+[run.sh] C: free 7.26 GB before launch of R012_g4_telica_a2
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R012_g4_telica_a2
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/telica/g4_telica_a2.py 
+[records] NOTE train/xpos_-210_ypos-200/iter0: MF230 constant on axes [2]
+  reference as attempt 1: fc [1600.0, 1600.0, 1600.0]  [2 s]
+  recovered-block Jacobian grid built: max affine offset at rest 0.0e+00; cc [ 82.6 100.3  80.5] N, v0 0.001  [7 s]
+  recovered-map degree 3 (rule met True); ratios at that degree 0.070 0.019 0.020 0.069 0.019 0.019
+  RFS module vs numpy map, max rel diff 7.7e-14
+
+  pooled RMS vs reference, 15 records (bound 6.89e-09 2.06e-08 6.14e-09 4.95e-05 1.53e-04 5.69e-05)
+  enc             X      Theta          Y         dX     dTheta         dY
+  P0      6.786e-06  2.738e-05  2.590e-05  7.247e-03  2.899e-02  2.759e-02
+  G2a1    6.860e-06  2.298e-05  2.590e-05  7.324e-03  2.431e-02  2.759e-02
+  R0      5.609e-06  3.134e-05  1.785e-05  5.961e-03  3.289e-02  1.880e-02
+  RS      5.675e-06  2.704e-05  1.801e-05  6.028e-03  2.834e-02  1.896e-02
+  RF0     4.935e-06  3.108e-05  1.692e-05  5.245e-03  3.263e-02  1.782e-02
+  RFS     5.067e-06  2.695e-05  1.713e-05  5.382e-03  2.825e-02  1.804e-02
+  ratio to P0:
+  G2a1       1.0109     0.8393     1.0000     1.0106     0.8388     1.0000
+  R0         0.8266     1.1448     0.6891     0.8226     1.1347     0.6815
+  RS         0.8363     0.9876     0.6952     0.8318     0.9777     0.6874
+  RF0        0.7272     1.1354     0.6530     0.7238     1.1256     0.6459
+  RFS        0.7467     0.9844     0.6612     0.7426     0.9746     0.6539
+
+  per ypos, RFS / P0:
+    ypos   -200  X 0.7257 Theta 0.7316 Y 0.9673 dX 0.7226 dTheta 0.7251 dY 0.9578
+    ypos   -120  X 0.7031 Theta 0.9144 Y 0.4522 dX 0.7001 dTheta 0.9053 dY 0.4465
+    ypos    -40  X 0.7108 Theta 1.1088 Y 0.4530 dX 0.7074 dTheta 1.0977 dY 0.4470
+    ypos     40  X 0.7333 Theta 1.2081 Y 0.5304 dX 0.7290 dTheta 1.1961 dY 0.5237
+    ypos    120  X 0.8430 Theta 1.1056 Y 0.6172 dX 0.8368 dTheta 1.0947 dY 0.6093
+  encoder velocity noise floor on standstill windows: P0 2.63e-05 8.91e-05 5.04e-05  RFS 2.85e-05 1.10e-04 4.92e-05
+
+  G4 attempt 2 verdict: resolvable [True, True, True, True, True, True]; RFS lower on all resolvable: True; worst per-ypos ratio 1.2081 (<= 1.01) -> FAIL
+  saved outputs/telica/g4/g4_telica_a2.json  [15 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=23.1 samples=5 peak_tree_ws_mb=810 min_avail_ram_gb=4.12 min_C_free_gb=7.13 kill_reason=""

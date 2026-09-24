@@ -1,0 +1,69 @@
+[run.sh] C: free 6.04 GB before launch of R032_modes_84032
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R032_modes_84032
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/ckpt_modes.py 
+[r2_ckpt] structure from scripts/gantry/meeting/meeting-18-09-2026/server/useable/84032/config.json: {'joint_estimation': True, 'physics_parameterization': 'reduced', 'combo_init_detune': [1.1, 1.1, 0.9, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 1.1], 'param_init_detune': None, 'param_prior': False, 'ann_activation': 'tanh', 'nx_ann': 8, 'n_nodes_per_layer': 24, 'n_hidden_layers': 3, 'up_sample': 1, 'encoder_init': 'linear_map', 'ann_route_ix': (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), 'na_nb_override': 29}
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\vendor\gantry_dynamic\training.py:88: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(pair_pt, map_location='cpu')
+  poles (f [Hz], zeta, |z|), model step at rest, Ts 0.00025
+
+  Y = -0.30  (affine offset at rest 6.77e-02)
+    TRUE plant (ct)   cond 1.6e+03: 211.9Hz/z0.043
+    untrained model   cond 2.3e+01: 5.2Hz/z0.078
+    TRAINED model     cond 3.7e+01: 57.9Hz/z1.000  1893.7Hz/z0.857  2000.0Hz/z0.790  2000.0Hz/z0.871  2000.0Hz/z0.928
+    trained non-oscillatory / slow poles (f<=5 Hz): |z|1.00002  |z|1.00038  |z|0.21398  |z|0.99915  |z|0.99982  |z|0.99845
+
+  Y = -0.15  (affine offset at rest 6.92e-02)
+    TRUE plant (ct)   cond 1.6e+03: 5.0Hz/z0.091  211.9Hz/z0.043
+    untrained model   cond 2.3e+01: 5.5Hz/z0.083
+    TRAINED model     cond 2.4e+01: 2000.0Hz/z0.799  2000.0Hz/z0.827  2000.0Hz/z0.847  2000.0Hz/z0.866  2000.0Hz/z0.926
+    trained non-oscillatory / slow poles (f<=5 Hz): |z|1.00001  |z|1.00031  |z|0.00139  |z|0.00197  |z|0.22235  |z|0.99923  |z|0.99983  |z|0.99867
+
+  Y = +0.00  (affine offset at rest 6.99e-02)
+    TRUE plant (ct)   cond 1.6e+03: 5.1Hz/z0.092  211.9Hz/z0.043
+    untrained model   cond 2.3e+01: 5.7Hz/z0.085
+    TRAINED model     cond 2.4e+01: 1873.3Hz/z0.828  2000.0Hz/z0.851  2000.0Hz/z0.861  2000.0Hz/z0.924
+    trained non-oscillatory / slow poles (f<=5 Hz): |z|1.00002  |z|1.00020  |z|0.00133  |z|0.00215  |z|0.22450  |z|0.99935  |z|0.99982  |z|0.99911
+
+  Y = +0.10  (affine offset at rest 6.99e-02)
+    TRUE plant (ct)   cond 1.6e+03: 211.9Hz/z0.043
+    untrained model   cond 2.3e+01: 5.6Hz/z0.084
+    TRAINED model     cond 2.7e+01: 1835.4Hz/z0.832  1970.6Hz/z0.860  2000.0Hz/z0.924
+    trained non-oscillatory / slow poles (f<=5 Hz): |z|1.00002  |z|1.00011  |z|0.00130  |z|0.00221  |z|0.22233  |z|0.99946  |z|0.99981  |z|0.99949
+
+  Y = +0.15  (affine offset at rest 6.97e-02)
+    TRUE plant (ct)   cond 1.6e+03: 211.9Hz/z0.043
+    untrained model   cond 2.3e+01: 5.5Hz/z0.083
+    TRAINED model     cond 2.9e+01: 1828.8Hz/z0.834  1945.2Hz/z0.863  2000.0Hz/z0.924
+    trained non-oscillatory / slow poles (f<=5 Hz): |z|1.00000  |z|1.00008  |z|0.00129  |z|0.00223  |z|0.22023  |z|0.99952  |z|0.99981  |z|0.99968
+
+  Y = +0.30  (affine offset at rest 6.86e-02)
+    TRUE plant (ct)   cond 1.6e+03: 211.9Hz/z0.043
+    untrained model   cond 2.3e+01: 5.2Hz/z0.078
+    TRAINED model     cond 2.5e+01: 1844.8Hz/z0.834  1932.6Hz/z0.866  2000.0Hz/z0.924
+    trained non-oscillatory / slow poles (f<=5 Hz): |z|1.00006  |z|0.00127  |z|0.00219  |z|0.21033  |z|0.99969  |z|0.99984  |z|1.00023
+  V1_standstill_Yp10 windows done [12 s]
+  V2_aprbs_Ylow windows done [19 s]
+  V3_ysweep_Yp10 windows done [24 s]
+  V4_lissajous_Ym10 windows done [29 s]
+
+  window-error RMS per band [m], channels X1 / X2 / Y
+    band [Hz]                               trained                           untrained                       correct_floor
+    0-20               1.70e-07  9.91e-08  2.15e-06        6.69e-07  5.73e-07  1.03e-06        2.42e-10  2.49e-10  2.73e-10
+    20-100             1.68e-07  1.60e-07  1.64e-06        3.26e-07  2.69e-07  6.48e-07        9.39e-10  1.09e-09  1.48e-09
+    100-140            1.26e-07  1.13e-07  9.15e-07        4.97e-07  5.08e-07  2.75e-06        1.04e-08  9.40e-09  3.69e-09
+    140-230            4.29e-07  4.21e-07  8.44e-06        5.14e-06  5.32e-06  3.77e-05        1.35e-07  1.27e-07  5.46e-08
+    230-500            2.02e-07  1.99e-07  4.81e-06        7.57e-07  7.87e-07  1.05e-05        2.77e-08  2.61e-08  4.19e-08
+    500-2000           1.18e-08  1.19e-08  4.51e-07        7.94e-10  7.93e-10  3.82e-09        7.92e-10  7.90e-10  3.82e-09
+
+  share of the trained model's window MS per band (X1 / X2 / Y), and trained / untrained RMS
+    0-20        share   9.7%   3.7%   4.5%   trained/untrained 0.254 0.173 2.094
+    20-100      share   9.5%   9.6%   2.6%   trained/untrained 0.515 0.594 2.524
+    100-140     share   5.3%   4.8%   0.8%   trained/untrained 0.254 0.223 0.332
+    140-230     share  61.7%  66.9%  69.4%   trained/untrained 0.083 0.079 0.224
+    230-500     share  13.7%  14.9%  22.5%   trained/untrained 0.267 0.253 0.459
+    500-2000    share   0.0%   0.1%   0.2%   trained/untrained 14.827 15.035 118.011
+  saved outputs/ckpt_modes/84032.json  [29 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=38.0 samples=8 peak_tree_ws_mb=675 min_avail_ram_gb=3.48 min_C_free_gb=6.04 kill_reason=""

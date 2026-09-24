@@ -1,0 +1,223 @@
+[wd] launch  out=outputs/R-001
+[wd] command conda run --no-capture-output -n GraduationProject python -u measure/measure_delta.py
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+
+==========================================================================================
+SETUP  (reference stride 97, device cuda)
+==========================================================================================
+[setup] mode=augmentation_ma50_b140-230_a6_z03  ts_new=0.00025 s  nx_phys=6  nx_ann=8
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[setup] vbar_true reproduces the true combinations to 0.000e+00 (absolute)
+[obc] reference set: 6930 tuples from 14 records (495/495/495/495/495/495/495/495/495/495/495/495/495/495 per record), stride 97, 1.9 s to build
+[obc]   Y coverage: min -0.3000 max +0.3000 mean +0.0042 std 0.1901 m; hot tensors 0.7 MB
+
+==========================================================================================
+CALIBRATION  the detuned start must reproduce obc_data.json iteration 0
+==========================================================================================
+    kb_sum     this script  +10.000 %   obc_data.json  +10.000 %
+    cg1        this script  +10.000 %   obc_data.json  +10.000 %
+    cg2        this script  -10.000 %   obc_data.json  -10.000 %
+    cy         this script  +10.000 %   obc_data.json  +10.000 %
+    cb_sum     this script  -10.000 %   obc_data.json  -10.000 %
+    mh         this script  -10.000 %   obc_data.json  -10.000 %
+    m_total    this script  +10.000 %   obc_data.json  +10.000 %
+    m_diff     this script   -0.478 %   obc_data.json   -0.480 %
+    J_eff      this script  -10.000 %   obc_data.json  -10.000 %
+    d          this script  +10.000 %   obc_data.json  +10.000 %
+    largest disagreement 0.0015 percentage points
+    RMS 9.4880 % against the logged combo_start 9.4880 %
+
+==========================================================================================
+NULL TEST  a baseline trajectory through the same construction
+==========================================================================================
+[null] 56 windows x 400 steps rolled in 9.0 s
+[null] 22176 tuples per variant
+    quantise positions to float32: False
+      ||residual|| / ||next state|| = 8.902e-04
+      per-row RMS residual: {'X': '3.053e-07', 'Theta': '9.504e-05', 'Y': '9.399e-08', 'dX': '5.271e-05', 'dTheta': '2.139e-03', 'dY': '4.073e-05'}
+    quantise positions to float32: True
+      ||residual|| / ||next state|| = 8.906e-04
+      per-row RMS residual: {'X': '3.071e-07', 'Theta': '9.504e-05', 'Y': '9.980e-08', 'dX': '5.701e-05', 'dTheta': '2.139e-03', 'dY': '7.244e-05'}
+    floor RMS: 8.7494e-04 (float32 positions, the realistic one), 8.7455e-04 (float64)
+    FLOOR BIAS: rho_null = 0.9560, J_null^+ Delta_null predicts 0.742 % combo-err
+      kb_sum +0.71  cg1 +0.97  cg2 +0.90  cy -0.20  cb_sum +1.17  mh +0.81  m_total +0.80  m_diff +0.01  J_eff +0.74  d +0.11
+      This is the parameter bias the numerical floor alone would produce. The
+      prediction from Delta* is only meaningful well above it.
+
+==========================================================================================
+DELTA*  the true added dynamics on the reference set
+==========================================================================================
+[delta] 6930 of 6930 tuples carry a valid fourth-order stencil at k+1
+    recorded  ||Delta|| = 1.727567e+00  (8.483e-03 of ||x_next||)   per-row RMS {'X': '4.221e-07', 'Theta': '1.198e-04', 'Y': '5.469e-06', 'dX': '3.381e-04', 'dTheta': '1.117e-02', 'dY': '1.748e-02'}
+    stencil   ||Delta|| = 1.727082e+00  (8.481e-03 of ||x_next||)   per-row RMS {'X': '4.209e-07', 'Theta': '1.198e-04', 'Y': '5.469e-06', 'dX': '3.382e-04', 'dTheta': '1.116e-02', 'dY': '1.749e-02'}
+    null-test RMS (float32-quantised) = 8.749e-04   for comparison
+    signal-to-floor for recorded : 9.7 x
+    signal-to-floor for stencil  : 9.7 x
+
+==========================================================================================
+BASES  J at the true parameters and at the detuned start
+==========================================================================================
+
+[basis @ theta*]  0.2 s
+      J: 41580 x 10, rank 10/10 at tol 2.021e-10 (rtol 9.233e-12), cond 7.7077e+02, build 0.0 s, svd 0.0 s
+      singular values: 2.1888e+01 2.3810e+00 1.9861e+00 1.1658e+00 3.7405e-01 3.2126e-01 2.4078e-01 9.3197e-02 8.0284e-02 2.8398e-02
+      column norms:    kb_sum=3.744e-01 cg1=1.890e-01 cg2=2.621e-01 cy=8.035e-02 cb_sum=9.157e-02 mh=2.167e+00 m_total=1.818e+00 m_diff=2.437e-01 J_eff=2.186e+01 d=2.011e+00
+      largest |column correlations|: cg1~cg2=-0.9761, mh~m_total=-0.4465, mh~J_eff=+0.4145, m_total~J_eff=+0.2223, J_eff~d=-0.1537, m_total~m_diff=-0.1101
+
+[basis @ theta_0 (detuned)]  0.1 s
+      J: 41580 x 10, rank 10/10 at tol 2.238e-10 (rtol 9.233e-12), cond 8.9787e+02, build 0.0 s, svd 0.0 s
+      singular values: 2.4243e+01 2.4265e+00 2.3790e+00 1.2632e+00 4.5608e-01 3.4636e-01 2.4962e-01 1.0721e-01 9.3427e-02 2.7001e-02
+      column norms:    kb_sum=4.566e-01 cg1=2.304e-01 cg2=2.610e-01 cy=1.073e-01 cb_sum=9.139e-02 mh=2.356e+00 m_total=1.763e+00 m_diff=2.533e-01 J_eff=2.421e+01 d=2.452e+00
+      largest |column correlations|: cg1~cg2=-0.9813, mh~J_eff=+0.4696, mh~m_total=-0.3671, m_total~J_eff=+0.2106, J_eff~d=-0.1622, m_total~m_diff=-0.1324
+
+==========================================================================================
+RESULT  rho* and the predicted parameter bias
+==========================================================================================
+
+--- J @ theta*, Delta* (recorded)
+    rho* = ||P Delta||/||Delta|| = 0.200397      ||Delta|| = 1.727567e+00
+    predicted combo-err (RMS over the ten) = 16.674 %
+    m_diff on its own scale (|m1-m2|) = -117.523 %
+    param      predicted %             
+    kb_sum           -5.49 
+    cg1              14.72 
+    cg2              17.30 
+    cy                7.93 
+    cb_sum           44.97 
+    mh                7.71 
+    m_total           7.56 
+    m_diff           -5.62 
+    J_eff             0.55 
+    d                -0.87 
+    singular-direction breakdown (i, sigma_i, |u_i^T Delta|, |c_i|, share of ||dtheta||^2, dominant column):
+       0  sigma 2.1888e+01   |u^T D| 2.0823e-01   |c| 9.5135e-03     0.0 %   J_eff
+       1  sigma 2.3810e+00   |u^T D| 3.4313e-02   |c| 1.4411e-02     0.0 %   mh
+       2  sigma 1.9861e+00   |u^T D| 1.7425e-02   |c| 8.7737e-03     0.0 %   d
+       3  sigma 1.1658e+00   |u^T D| 8.1648e-02   |c| 7.0038e-02     0.4 %   m_total
+       4  sigma 3.7405e-01   |u^T D| 2.2574e-02   |c| 6.0350e-02     0.3 %   kb_sum
+       5  sigma 3.2126e-01   |u^T D| 1.1456e-02   |c| 3.5661e-02     0.1 %   cg2
+       6  sigma 2.4078e-01   |u^T D| 2.5725e-01   |c| 1.0684e+00    85.0 %   m_diff
+       7  sigma 9.3197e-02   |u^T D| 3.8499e-02   |c| 4.1309e-01    12.7 %   cb_sum
+       8  sigma 8.0284e-02   |u^T D| 5.5456e-03   |c| 6.9075e-02     0.4 %   cy
+       9  sigma 2.8398e-02   |u^T D| 3.6531e-03   |c| 1.2864e-01     1.2 %   cg1
+
+--- J @ theta*, Delta* (stencil)
+    rho* = ||P Delta||/||Delta|| = 0.198551      ||Delta|| = 1.727082e+00
+    predicted combo-err (RMS over the ten) = 9.399 %
+    m_diff on its own scale (|m1-m2|) = -117.658 %
+    param      predicted %   observed %
+    kb_sum           -5.47        15.52
+    cg1              14.80        -2.43
+    cg2              17.32        -5.26
+    cy                7.45         2.33
+    cb_sum           11.41        -9.63
+    mh                7.71        -2.35
+    m_total           7.52         0.99
+    m_diff           -5.63        -1.46
+    J_eff             0.53        -4.05
+    d                -0.88        13.90
+    singular-direction breakdown (i, sigma_i, |u_i^T Delta|, |c_i|, share of ||dtheta||^2, dominant column):
+       0  sigma 2.1888e+01   |u^T D| 2.0513e-01   |c| 9.3715e-03     0.0 %   J_eff
+       1  sigma 2.3810e+00   |u^T D| 3.4961e-02   |c| 1.4684e-02     0.0 %   mh
+       2  sigma 1.9861e+00   |u^T D| 1.6867e-02   |c| 8.4928e-03     0.0 %   d
+       3  sigma 1.1658e+00   |u^T D| 8.1222e-02   |c| 6.9673e-02     0.4 %   m_total
+       4  sigma 3.7405e-01   |u^T D| 2.2458e-02   |c| 6.0040e-02     0.3 %   kb_sum
+       5  sigma 3.2126e-01   |u^T D| 1.0980e-02   |c| 3.4179e-02     0.1 %   cg2
+       6  sigma 2.4078e-01   |u^T D| 2.5791e-01   |c| 1.0711e+00    94.1 %   m_diff
+       7  sigma 9.3197e-02   |u^T D| 1.4467e-02   |c| 1.5523e-01     2.0 %   cb_sum
+       8  sigma 8.0284e-02   |u^T D| 5.7221e-03   |c| 7.1274e-02     0.4 %   cy
+       9  sigma 2.8398e-02   |u^T D| 5.1628e-03   |c| 1.8180e-01     2.7 %   cg1
+
+--- J @ theta_0 (detuned), Delta* (recorded)
+    rho* = ||P Delta||/||Delta|| = 0.200416      ||Delta|| = 1.727567e+00
+    predicted combo-err (RMS over the ten) = 16.445 %
+    m_diff on its own scale (|m1-m2|) = -113.721 %
+    param      predicted %             
+    kb_sum           -4.46 
+    cg1              14.54 
+    cg2              19.54 
+    cy                5.28 
+    cb_sum           44.01 
+    mh                6.81 
+    m_total           7.05 
+    m_diff           -5.44 
+    J_eff             0.49 
+    d                -0.67 
+    singular-direction breakdown (i, sigma_i, |u_i^T Delta|, |c_i|, share of ||dtheta||^2, dominant column):
+       0  sigma 2.4243e+01   |u^T D| 2.0793e-01   |c| 8.5769e-03     0.0 %   J_eff
+       1  sigma 2.4265e+00   |u^T D| 3.3206e-02   |c| 1.3685e-02     0.0 %   d
+       2  sigma 2.3790e+00   |u^T D| 3.4406e-02   |c| 1.4463e-02     0.0 %   mh
+       3  sigma 1.2632e+00   |u^T D| 7.5227e-02   |c| 5.9554e-02     0.3 %   m_total
+       4  sigma 4.5608e-01   |u^T D| 2.2090e-02   |c| 4.8435e-02     0.2 %   kb_sum
+       5  sigma 3.4636e-01   |u^T D| 1.0664e-02   |c| 3.0789e-02     0.1 %   cg2
+       6  sigma 2.4962e-01   |u^T D| 2.5801e-01   |c| 1.0336e+00    84.4 %   m_diff
+       7  sigma 1.0721e-01   |u^T D| 7.0892e-03   |c| 6.6126e-02     0.3 %   cy
+       8  sigma 9.3427e-02   |u^T D| 3.8207e-02   |c| 4.0896e-01    13.2 %   cb_sum
+       9  sigma 2.7001e-02   |u^T D| 3.6770e-03   |c| 1.3618e-01     1.5 %   cg1
+
+--- J @ theta_0 (detuned), Delta* (stencil)
+    rho* = ||P Delta||/||Delta|| = 0.198572      ||Delta|| = 1.727082e+00
+    predicted combo-err (RMS over the ten) = 9.377 %
+    m_diff on its own scale (|m1-m2|) = -113.838 %
+    param      predicted %   observed %
+    kb_sum           -4.45        15.52
+    cg1              14.61        -2.43
+    cg2              19.57        -5.26
+    cy                4.93         2.33
+    cb_sum           10.63        -9.63
+    mh                6.81        -2.35
+    m_total           6.99         0.99
+    m_diff           -5.45        -1.46
+    J_eff             0.48        -4.05
+    d                -0.67        13.90
+    singular-direction breakdown (i, sigma_i, |u_i^T Delta|, |c_i|, share of ||dtheta||^2, dominant column):
+       0  sigma 2.4243e+01   |u^T D| 2.0482e-01   |c| 8.4486e-03     0.0 %   J_eff
+       1  sigma 2.4265e+00   |u^T D| 3.2995e-02   |c| 1.3598e-02     0.0 %   d
+       2  sigma 2.3790e+00   |u^T D| 3.5204e-02   |c| 1.4798e-02     0.0 %   mh
+       3  sigma 1.2632e+00   |u^T D| 7.4691e-02   |c| 5.9130e-02     0.3 %   m_total
+       4  sigma 4.5608e-01   |u^T D| 2.1971e-02   |c| 4.8175e-02     0.2 %   kb_sum
+       5  sigma 3.4636e-01   |u^T D| 1.0482e-02   |c| 3.0263e-02     0.1 %   cg2
+       6  sigma 2.4962e-01   |u^T D| 2.5865e-01   |c| 1.0362e+00    93.8 %   m_diff
+       7  sigma 1.0721e-01   |u^T D| 6.0261e-03   |c| 5.6210e-02     0.3 %   cy
+       8  sigma 9.3427e-02   |u^T D| 1.4203e-02   |c| 1.5202e-01     2.0 %   cb_sum
+       9  sigma 2.7001e-02   |u^T D| 5.2610e-03   |c| 1.9484e-01     3.3 %   cg1
+
+==========================================================================================
+R4  oblique prediction with the basis frozen at the detuned start
+==========================================================================================
+    Delta* (recorded): predicted combo-err 16.597 %   cond(J_0^T J) 6.918e+05
+      kb_sum -5.49  cg1 +14.74  cg2 +17.25  cy +6.87  cb_sum +44.88  mh +7.65  m_total +7.53  m_diff -5.63  J_eff +0.55  d -0.91
+    Delta* (stencil): predicted combo-err 9.300 %   cond(J_0^T J) 6.918e+05
+      kb_sum -5.47  cg1 +14.83  cg2 +17.27  cy +6.40  cb_sum +11.35  mh +7.65  m_total +7.48  m_diff -5.64  J_eff +0.53  d -0.91
+
+==========================================================================================
+AGAINST THE OBSERVED obc ARM
+==========================================================================================
+    observed: start 9.49 %, final 7.69 %, minimum 6.98 % (at it 9100)
+    J @ theta*, Delta* (recorded)             16.674 %   INCONCLUSIVE
+    J @ theta*, Delta* (stencil)               9.399 %   INCONCLUSIVE
+    J @ theta_0 (detuned), Delta* (recorded)  16.445 %   INCONCLUSIVE
+    J @ theta_0 (detuned), Delta* (stencil)    9.377 %   INCONCLUSIVE
+    oblique, Delta* (recorded)                16.597 %   INCONCLUSIVE
+    oblique, Delta* (stencil)                  9.300 %   INCONCLUSIVE
+[out] wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-addition\outputs\measure_R-001_orig_s97.json
+WATCHDOG SUMMARY exit=0 killed=False duration_s=40.2 samples=8 peak_tree_ws_mb=912 min_avail_ram_gb=4.68 min_C_free_gb=12.04 kill_reason=""

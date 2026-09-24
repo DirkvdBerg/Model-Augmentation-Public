@@ -1,0 +1,40 @@
+[run.sh] C: free 6.02 GB before launch of R036_swap_84032
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R036_swap_84032
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/ckpt_swap.py 
+[r2_ckpt] structure from scripts/gantry/meeting/meeting-18-09-2026/server/useable/84032/config.json: {'joint_estimation': True, 'physics_parameterization': 'reduced', 'combo_init_detune': [1.1, 1.1, 0.9, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 1.1], 'param_init_detune': None, 'param_prior': False, 'ann_activation': 'tanh', 'nx_ann': 8, 'n_nodes_per_layer': 24, 'n_hidden_layers': 3, 'up_sample': 1, 'encoder_init': 'linear_map', 'ann_route_ix': (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), 'na_nb_override': 29}
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\vendor\gantry_dynamic\training.py:88: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt = torch.load(pair_pt, map_location='cpu')
+  T1_standstill_Ym30 done [24 s]
+  T2_standstill_Ym15 done [41 s]
+[wd] t=57s tree=656 MB cpu=33% availRAM=3.22 GB C:free=6.00 GB
+  T3_standstill_Y000 done [57 s]
+  T4_standstill_Yp15 done [72 s]
+  T5_standstill_Yp30 done [86 s]
+  T6_ysweep_slow done [104 s]
+[wd] t=120s tree=649 MB cpu=32% availRAM=3.45 GB C:free=6.00 GB
+  T7_ysweep_fast done [122 s]
+  T8_ysweep_xmix done [138 s]
+  T9_aprbs_30 done [154 s]
+  T10_aprbs_60 done [170 s]
+[wd] t=182s tree=649 MB cpu=32% availRAM=3.33 GB C:free=5.99 GB
+  T11_aprbs_100 done [189 s]
+  T12_aprbs_yaw done [206 s]
+  T13_lissajous done [225 s]
+[wd] t=245s tree=652 MB cpu=30% availRAM=3.33 GB C:free=5.99 GB
+  T14_lissajous_yaw done [243 s]
+
+  arm                   obj MS  obj share     X1 RMS  X1 share  X2 share      Y RMS  Y share  X1 RMS[100:]
+  ENC                    1.000      12.3%   7.29e-07     41.6%     39.6%   1.03e-05     3.3%      5.57e-07
+  EXACT-PHYS             2.037      56.7%   1.33e-06     82.1%     85.6%   1.26e-05    34.5%      5.61e-07
+  ENC,LAT0               1.076      18.5%   7.90e-07     50.3%     48.4%   1.06e-05     7.5%      5.57e-07
+  EXACT-PHYS,LAT0        2.120      58.4%   1.36e-06     83.1%     86.2%   1.28e-05    36.8%      5.61e-07
+  EXACT-XTH              1.187      26.1%   7.50e-07     45.1%     76.4%   1.04e-05     3.4%      5.56e-07
+  EXACT-Y                1.946      54.7%   1.33e-06     82.0%     82.3%   1.26e-05    34.7%      5.63e-07
+  EXACT-POS              1.023      14.3%   7.63e-07     46.7%     44.5%   1.04e-05     3.4%      5.57e-07
+  EXACT-VEL              2.024      56.4%   1.32e-06     82.0%     85.4%   1.26e-05    34.4%      5.61e-07
+  (obj MS relative to ENC, the checkpoint as trained)
+  [243 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=252.4 samples=49 peak_tree_ws_mb=688 min_avail_ram_gb=2.75 min_C_free_gb=5.99 kill_reason=""

@@ -1,0 +1,96 @@
+[run.sh] C: free 7.54 GB before launch of R007_g3_r1_planted
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R007_g3_r1_planted
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/diagnose/g3_r1.py --arm planted
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+R1 from the G2 encoder, arm planted, 8 channels, na=29, 167902 train / 9596 val windows, device cuda, float64  [20 s]
+  params 15824
+  epoch 0 weighted val MSE 7.2312e-13
+      1 train 5.5341e-05  val 4.2332e-06  best 7.2312e-13@0  [25 s]
+      2 train 8.3774e-07  val 6.5671e-08  best 7.2312e-13@0  [28 s]
+      3 train 1.8866e-08  val 3.0869e-09  best 7.2312e-13@0  [31 s]
+[wd] t=57s tree=1,245 MB cpu=10% availRAM=4.14 GB C:free=7.54 GB
+[wd] t=119s tree=1,209 MB cpu=9% availRAM=4.29 GB C:free=7.54 GB
+[wd] t=181s tree=1,209 MB cpu=10% availRAM=4.27 GB C:free=7.53 GB
+     50 train 2.3121e-06  val 1.6464e-06  best 7.2312e-13@0  [179 s]
+[wd] t=243s tree=1,209 MB cpu=10% availRAM=4.26 GB C:free=7.53 GB
+[wd] t=305s tree=1,210 MB cpu=9% availRAM=4.23 GB C:free=7.53 GB
+    100 train 4.7339e-07  val 4.0180e-07  best 7.2312e-13@0  [336 s]
+[wd] t=367s tree=1,211 MB cpu=10% availRAM=4.29 GB C:free=7.52 GB
+[wd] t=428s tree=1,211 MB cpu=10% availRAM=4.27 GB C:free=7.52 GB
+[wd] t=490s tree=1,211 MB cpu=9% availRAM=4.29 GB C:free=7.52 GB
+    150 train 4.0652e-06  val 3.0699e-07  best 7.2312e-13@0  [493 s]
+[wd] t=552s tree=1,211 MB cpu=10% availRAM=4.28 GB C:free=7.51 GB
+[wd] t=614s tree=1,211 MB cpu=9% availRAM=4.27 GB C:free=7.51 GB
+    200 train 7.4777e-09  val 2.3715e-09  best 7.2312e-13@0  [651 s]
+[wd] t=676s tree=1,211 MB cpu=10% availRAM=4.23 GB C:free=7.51 GB
+[wd] t=738s tree=1,211 MB cpu=10% availRAM=4.44 GB C:free=7.48 GB
+[wd] t=799s tree=1,211 MB cpu=9% availRAM=4.47 GB C:free=7.47 GB
+    250 train 3.6601e-09  val 1.3852e-09  best 7.2312e-13@0  [808 s]
+[wd] t=861s tree=1,211 MB cpu=10% availRAM=4.46 GB C:free=7.47 GB
+[wd] t=923s tree=1,211 MB cpu=10% availRAM=4.36 GB C:free=7.64 GB
+    300 train 4.7084e-07  val 5.9677e-08  best 7.2312e-13@0  [966 s]
+[wd] t=985s tree=1,211 MB cpu=9% availRAM=4.45 GB C:free=7.63 GB
+[wd] t=1,047s tree=1,209 MB cpu=10% availRAM=4.54 GB C:free=7.63 GB
+[wd] t=1,109s tree=1,209 MB cpu=10% availRAM=4.47 GB C:free=7.63 GB
+    350 train 1.4221e-07  val 8.8462e-08  best 7.2312e-13@0  [1124 s]
+[wd] t=1,171s tree=1,209 MB cpu=9% availRAM=4.49 GB C:free=7.62 GB
+[wd] t=1,233s tree=1,209 MB cpu=10% availRAM=4.53 GB C:free=7.62 GB
+    400 train 3.1719e-10  val 1.0906e-10  best 7.2312e-13@0  [1281 s]
+[wd] t=1,295s tree=1,209 MB cpu=10% availRAM=4.51 GB C:free=7.62 GB
+[wd] t=1,357s tree=1,209 MB cpu=9% availRAM=4.46 GB C:free=7.62 GB
+[wd] t=1,419s tree=1,209 MB cpu=10% availRAM=4.47 GB C:free=7.62 GB
+    450 train 1.8401e-07  val 1.6663e-08  best 7.2312e-13@0  [1439 s]
+[wd] t=1,481s tree=1,209 MB cpu=10% availRAM=4.51 GB C:free=7.61 GB
+[wd] t=1,543s tree=1,209 MB cpu=9% availRAM=4.52 GB C:free=7.61 GB
+[wd] t=1,604s tree=1,209 MB cpu=10% availRAM=4.50 GB C:free=7.61 GB
+    500 train 3.8639e-08  val 1.5903e-08  best 7.2312e-13@0  [1596 s]
+[wd] t=1,666s tree=1,209 MB cpu=10% availRAM=4.54 GB C:free=7.61 GB
+[wd] t=1,728s tree=1,209 MB cpu=9% availRAM=4.52 GB C:free=7.61 GB
+    550 train 5.4820e-10  val 1.8615e-10  best 7.2312e-13@0  [1753 s]
+[wd] t=1,790s tree=1,209 MB cpu=10% availRAM=4.40 GB C:free=7.61 GB
+[wd] t=1,852s tree=1,209 MB cpu=10% availRAM=4.51 GB C:free=7.60 GB
+[wd] t=1,914s tree=1,209 MB cpu=9% availRAM=4.57 GB C:free=7.60 GB
+    600 train 1.1036e-08  val 1.4067e-09  best 7.2312e-13@0  [1911 s]
+[wd] t=1,976s tree=1,209 MB cpu=10% availRAM=4.57 GB C:free=7.60 GB
+[wd] t=2,037s tree=1,209 MB cpu=9% availRAM=4.54 GB C:free=7.60 GB
+    650 train 3.1746e-06  val 9.2053e-07  best 7.2312e-13@0  [2068 s]
+[wd] t=2,099s tree=1,209 MB cpu=10% availRAM=4.54 GB C:free=7.60 GB
+[wd] t=2,161s tree=1,209 MB cpu=10% availRAM=4.50 GB C:free=7.60 GB
+[wd] t=2,223s tree=1,210 MB cpu=9% availRAM=4.46 GB C:free=7.60 GB
+    700 train 1.6889e-06  val 1.0385e-06  best 7.2312e-13@0  [2226 s]
+[wd] t=2,285s tree=1,210 MB cpu=10% availRAM=4.44 GB C:free=7.59 GB
+[wd] t=2,347s tree=1,210 MB cpu=10% availRAM=4.35 GB C:free=7.59 GB
+    750 train 6.8018e-08  val 2.0447e-08  best 7.2312e-13@0  [2383 s]
+[wd] t=2,409s tree=1,210 MB cpu=9% availRAM=4.24 GB C:free=7.59 GB
+[wd] t=2,471s tree=1,210 MB cpu=10% availRAM=4.35 GB C:free=7.59 GB
+[wd] t=2,533s tree=1,210 MB cpu=10% availRAM=4.36 GB C:free=7.59 GB
+    800 train 1.5732e-06  val 9.5417e-07  best 7.2312e-13@0  [2540 s]
+[wd] t=2,595s tree=1,210 MB cpu=10% availRAM=4.28 GB C:free=7.59 GB
+[wd] t=2,657s tree=1,210 MB cpu=9% availRAM=4.32 GB C:free=7.58 GB
+    850 train 1.9931e-06  val 1.9865e-07  best 7.2312e-13@0  [2698 s]
+[wd] t=2,719s tree=1,210 MB cpu=10% availRAM=4.28 GB C:free=7.58 GB
+[wd] t=2,781s tree=1,210 MB cpu=10% availRAM=4.34 GB C:free=7.58 GB
+[wd] t=2,842s tree=1,209 MB cpu=9% availRAM=4.28 GB C:free=7.58 GB
+    900 train 5.2986e-06  val 8.3391e-07  best 7.2312e-13@0  [2855 s]
+[wd] t=2,904s tree=1,209 MB cpu=10% availRAM=4.35 GB C:free=7.57 GB
+[wd] t=2,966s tree=1,209 MB cpu=9% availRAM=4.34 GB C:free=7.57 GB
+    950 train 2.5309e-08  val 7.7530e-09  best 7.2312e-13@0  [3013 s]
+[wd] t=3,028s tree=1,209 MB cpu=10% availRAM=4.40 GB C:free=7.57 GB
+[wd] t=3,090s tree=1,209 MB cpu=10% availRAM=4.30 GB C:free=7.57 GB
+[wd] t=3,152s tree=1,209 MB cpu=9% availRAM=4.14 GB C:free=7.57 GB
+   1000 train 8.8091e-07  val 2.1098e-07  best 7.2312e-13@0  [3170 s]
+
+  best epoch 0  <-- training never beat the G2 initialisation
+  ch          G2 init     trained  headroom   unit   (validation V1-V4)
+  X         3.366e-08   3.366e-08      1.00   m
+  Theta     2.023e-07   2.023e-07      1.00   rad
+  Y         6.341e-08   6.341e-08      1.00   m
+  dX        4.841e-06   4.841e-06      1.00   m/s
+  dTheta    4.269e-05   4.269e-05      1.00   rad/s
+  dY        1.374e-04   1.374e-04      1.00   m/s
+  da        1.641e-07   1.641e-07      1.00   m
+  vda       2.659e-04   2.659e-04      1.00   m/s
+  saved outputs/g3/r1_planted.json  [3170 s]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=3,181.3 samples=617 peak_tree_ws_mb=1,245 min_avail_ram_gb=4.04 min_C_free_gb=7.37 kill_reason=""

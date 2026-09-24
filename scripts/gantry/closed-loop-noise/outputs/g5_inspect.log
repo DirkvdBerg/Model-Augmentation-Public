@@ -1,0 +1,43 @@
+[run.sh] C: free 10.67 GB before launch of g5_inspect
+[wd] launch  out=scripts/gantry/closed-loop-noise/outputs/g5_inspect
+[wd] command matlab  -sd scripts/gantry/closed-loop-noise/matlab/inspect -batch inspect_model
+WATCHDOG ALERT available RAM 3.99 GB < 4 GB (tree 1,012 MB)
+=== required files of C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Matlab-scripts\Augmentation-coulomb\generate_trajectory_data_coulomb.m
+  C:\Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Graduation Project - Confidential\First Principal model\kamtin-fp-model\kamtin-fp-model\03 Simulink gantry\functions\getss.m
+  C:\Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Graduation Project - Confidential\First Principal model\kamtin-fp-model\kamtin-fp-model\03 Simulink gantry\functions\ruleOfThumb.m
+  C:\Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Graduation Project - Confidential\First Principal model\kamtin-fp-model\kamtin-fp-model\03 Simulink gantry\functions\thirdOrderSetpointETEL.m
+  Matlab-scripts\Augmentation-coulomb\generate_trajectory_data_coulomb.m
+  Matlab-scripts\Augmentation\data\gtd_build_plant.m
+  Matlab-scripts\Augmentation\data\gtd_build_records.m
+  Matlab-scripts\Augmentation\data\gtd_config.m
+  Matlab-scripts\Augmentation\data\gtd_enforce_limits.m
+  Matlab-scripts\Augmentation\data\gtd_logical_to_stage.m
+  Matlab-scripts\Augmentation\data\gtd_make_multisine.m
+  Matlab-scripts\Augmentation\data\gtd_make_reference.m
+  Matlab-scripts\Augmentation\data\gtd_plot_record.m
+  Matlab-scripts\Augmentation\data\gtd_run_simulation.m
+  Matlab-scripts\Augmentation\data\gtd_save_record.m
+  Matlab-scripts\Augmentation\data\gtd_size_anti_amp.m
+  products: MATLAB, Control System Toolbox, Simulink, Simulink Real-Time, Stateflow
+=== required files of C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Matlab-scripts\Augmentation-telica-profiles-coulomb\generate_trajectory_data_telica_coulomb.m
+  C:\Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Graduation Project - Confidential\First Principal model\kamtin-fp-model\kamtin-fp-model\03 Simulink gantry\functions\getss.m
+  C:\Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Graduation Project - Confidential\First Principal model\kamtin-fp-model\kamtin-fp-model\03 Simulink gantry\functions\ruleOfThumb.m
+  C:\Users\20203253\Documents\School\AI & Engineering systems\2025-2026\Graduation Project - Confidential\First Principal model\kamtin-fp-model\kamtin-fp-model\03 Simulink gantry\functions\thirdOrderSetpointETEL.m
+  Matlab-scripts\Augmentation-telica-profiles-coulomb\generate_trajectory_data_telica_coulomb.m
+  Matlab-scripts\Augmentation-telica-profiles\gtd_build_records_telica.m
+  Matlab-scripts\Augmentation-telica-profiles\gtd_make_reference_telica.m
+  Matlab-scripts\Augmentation\data\gtd_build_plant.m
+  Matlab-scripts\Augmentation\data\gtd_config.m
+  Matlab-scripts\Augmentation\data\gtd_enforce_limits.m
+  Matlab-scripts\Augmentation\data\gtd_logical_to_stage.m
+  Matlab-scripts\Augmentation\data\gtd_make_multisine.m
+  Matlab-scripts\Augmentation\data\gtd_make_reference.m
+  Matlab-scripts\Augmentation\data\gtd_plot_record.m
+  Matlab-scripts\Augmentation\data\gtd_run_simulation.m
+  Matlab-scripts\Augmentation\data\gtd_save_record.m
+  Matlab-scripts\Augmentation\data\gtd_size_anti_amp.m
+  products: MATLAB, Control System Toolbox, Simulink, Simulink Real-Time, Stateflow
+[wd] t=58s tree=1,342 MB cpu=8% availRAM=3.63 GB C:free=10.67 GB
+=== model gantry_additional_state_coulomb_2025a: solver Fixed-step ode4 step 5e-05, StopTime t(end)
+WATCHDOG KILL available RAM 2.49 GB < 2.5 GB; killing tree of PID 21140 (10 processes, 2,744 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=90.4 samples=18 peak_tree_ws_mb=2,744 min_avail_ram_gb=2.49 min_C_free_gb=10.63 kill_reason="available RAM 2.49 GB < 2.5 GB"

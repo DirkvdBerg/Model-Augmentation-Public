@@ -1,0 +1,14 @@
+[run.sh] C: free 7.39 GB before launch of R023_g5_r2ckpt_smoke
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R023_g5_r2ckpt_smoke
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/runners/r2_ckpt.py 
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+[r2_ckpt] model-Jacobian map of the untrained model: resid 1.9e-06, max affine offset 0.0e+00
+[r2_ckpt] V1_standstill_Yp10 done [22 s]
+  open loop H=400: exact Y 1.961e-03  P0 Y 1.647e-04  G2model Y 1.626e-04
+  closed loop nf=400 exact    RMS 2.1062e-05  share 2.0%  grow 3206.58
+  closed loop nf=400 P0       RMS 2.0512e-05  share -3.4%  grow 1.70
+  closed loop nf=400 G2model  RMS 2.0510e-05  share -3.4%  grow 1.71
+[r2_ckpt] done, 0 optimizer updates, 22 s -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\outputs\g5\r2_ckpt_smoke
+WATCHDOG SUMMARY exit=0 killed=False duration_s=31.0 samples=6 peak_tree_ws_mb=688 min_avail_ram_gb=4.37 min_C_free_gb=7.39 kill_reason=""

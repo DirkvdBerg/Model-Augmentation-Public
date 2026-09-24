@@ -1,0 +1,75 @@
+[wd] launch  out=outputs/R-031
+[wd] command conda run --no-capture-output -n GraduationProject python -u design/continuation.py
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Data dir (augmentation_oa_null_b140-230_a6): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_null_b140-230_a6
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=0.000e+00 m  vdelta_a std=0.000e+00 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[obc] reference set: 671944 tuples from 14 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 2.3 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0042 std 0.1901 m; hot tensors 69.9 MB
+WATCHDOG ALERT available RAM 3.42 GB < 4 GB (tree 2,079 MB)
+[core] augmentation_oa_null_b140-230_a6 stride 1: 671944 tuples, basis rank 10 cond 7.9404e+02, 27.4 s
+WATCHDOG ALERT available RAM 3.69 GB < 4 GB (tree 1,876 MB)
+[wd] t=57s tree=1,876 MB cpu=9% availRAM=3.69 GB C:free=8.29 GB
+  [cont] slot  1/17 done, 16 s
+  [cont] slot  2/17 done, 31 s
+  [cont] slot  3/17 done, 47 s
+[wd] t=120s tree=2,000 MB cpu=9% availRAM=3.36 GB C:free=8.28 GB
+  [cont] slot  4/17 done, 63 s
+  [cont] slot  5/17 done, 78 s
+  [cont] slot  6/17 done, 93 s
+  [cont] slot  7/17 done, 109 s
+[wd] t=182s tree=2,132 MB cpu=11% availRAM=3.45 GB C:free=8.28 GB
+  [cont] slot  8/17 done, 125 s
+  [cont] slot  9/17 done, 141 s
+  [cont] slot 10/17 done, 157 s
+  [cont] slot 11/17 done, 173 s
+[wd] t=244s tree=1,755 MB cpu=8% availRAM=3.67 GB C:free=8.28 GB
+  [cont] slot 12/17 done, 189 s
+  [cont] slot 13/17 done, 205 s
+  [cont] slot 14/17 done, 221 s
+  [cont] slot 15/17 done, 237 s
+[wd] t=307s tree=1,756 MB cpu=8% availRAM=3.71 GB C:free=8.28 GB
+  [cont] slot 16/17 done, 252 s
+  [cont] slot 17/17 done, 268 s
+[cont] library K, 17 slots; |c0| 1.417e-12 (0 up to round-off: b_null = Phi_0^+ Delta_null)
+[cont] size   1.000: |F| 1.764e-14, achieved size 1.0000, force rms [18.32 17.05 16.86] N, peak [48.9 51.3 52.5] N
+[cont] size   2.000: |F| 7.641e-02, achieved size 1.9992, force rms [44.73 46.21 14.41] N, peak [155.7 138.5  26.5] N
+[cont] size   3.000: |F| 4.136e-01, achieved size 2.9838, force rms [52.03 55.47 20.91] N, peak [165.3 180.6  38.1] N
+[cont] size   4.000: |F| 8.956e-01, achieved size 3.9136, force rms [61.46 64.41 25.45] N, peak [202.5 210.9  49.6] N
+[cont] size   5.000: |F| 1.447e+00, achieved size 4.7286, force rms [70.95 72.46 28.5 ] N, peak [246.1 230.9  58.3] N
+[cont] size   6.000: |F| 1.976e+00, achieved size 5.3819, force rms [78.87 79.03 30.58] N, peak [283.9 244.1  63.5] N
+[cont] size   7.000: |F| 2.418e+00, achieved size 5.8658, force rms [84.8  83.98 31.96] N, peak [312.3 253.1  66.1] N
+[cont] size   8.000: |F| 2.752e+00, achieved size 6.2042, force rms [88.94 87.49 32.86] N, peak [331.9 261.8  67.4] N
+[cont] size   8.490: |F| 2.879e+00, achieved size 6.3273, force rms [90.44 88.78 33.18] N, peak [338.9 266.5  67.7] N
+WATCHDOG ALERT available RAM 2.91 GB < 4 GB (tree 2,549 MB)
+[cont] VERIFY size 8.490: fresh-Jacobian predicted max shift nine 48.1511 %, m_diff own -3.7662 %, ||Delta_add|| 6.3273
+       per parameter: kb_sum +48.1511  cg1 -9.3320  cg2 -7.0440  cy -1.0972  cb_sum +2.1306  mh +1.4650  m_total +2.3973  m_diff -0.1802  J_eff -0.0447  d +0.0589
+       saved C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-addition\design\addition_cont_K_s8p490.mat
+[cont] size   9.000: |F| 2.988e+00, achieved size 6.4312, force rms [91.71 89.87 33.44] N, peak [344.8 270.5  67.9] N
+[wd] t=369s tree=2,549 MB cpu=14% availRAM=2.92 GB C:free=8.28 GB
+[cont] VERIFY size 9.000: fresh-Jacobian predicted max shift nine 50.3001 %, m_diff own -3.8881 %, ||Delta_add|| 6.4311
+       per parameter: kb_sum +50.3001  cg1 -9.9214  cg2 -7.4865  cy -1.1359  cb_sum +2.2684  mh +1.5191  m_total +2.4871  m_diff -0.1860  J_eff -0.0464  d +0.0610
+       saved C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-addition\design\addition_cont_K_s9p000.mat
+[cont] size  10.000: |F| 3.145e+00, achieved size 6.5772, force rms [93.48 91.42 33.81] N, peak [353.  276.   68.2] N
+[cont] size  11.000: |F| 3.243e+00, achieved size 6.6660, force rms [94.55 92.37 34.02] N, peak [357.9 279.4  68.3] N
+[cont] size  12.000: |F| 3.296e+00, achieved size 6.7143, force rms [95.14 92.88 34.14] N, peak [360.6 281.3  68.3] N
+[cont] size  12.735: |F| 3.315e+00, achieved size 6.7312, force rms [95.34 93.07 34.18] N, peak [361.5 281.9  68.3] N
+[out] 367 s
+WATCHDOG SUMMARY exit=0 killed=False duration_s=376.0 samples=73 peak_tree_ws_mb=2,549 min_avail_ram_gb=2.91 min_C_free_gb=8.28 kill_reason=""

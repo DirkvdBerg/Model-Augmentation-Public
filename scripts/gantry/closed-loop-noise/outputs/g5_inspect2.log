@@ -1,0 +1,363 @@
+[run.sh] C: free 10.72 GB before launch of g5_inspect2
+[wd] launch  out=scripts/gantry/closed-loop-noise/outputs/g5_inspect2
+[wd] command matlab -nojvm -sd scripts/gantry/closed-loop-noise/matlab/inspect -batch inspect_model
+WATCHDOG ALERT available RAM 3.31 GB < 4 GB (tree 1,987 MB)
+=== model gantry_additional_state_coulomb_2025a: solver Fixed-step ode4 step 5e-05, StopTime t(end)
+  [Demux] gantry_additional_state_coulomb_2025a/Demux  
+  [ToWorkspace] gantry_additional_state_coulomb_2025a/Error  e
+  [ToWorkspace] gantry_additional_state_coulomb_2025a/Error1  e1
+  [ToWorkspace] gantry_additional_state_coulomb_2025a/Error2  e2
+  [ToWorkspace] gantry_additional_state_coulomb_2025a/Error3  e3
+  [SubSystem] gantry_additional_state_coulomb_2025a/Extended ODE  
+    [Inport] gantry_additional_state_coulomb_2025a/Extended ODE/u  
+    [Inport] gantry_additional_state_coulomb_2025a/Extended ODE/x  
+    [Demux] gantry_additional_state_coulomb_2025a/Extended ODE/ Demux   
+    [S-Function] gantry_additional_state_coulomb_2025a/Extended ODE/ SFunction   
+    [Terminator] gantry_additional_state_coulomb_2025a/Extended ODE/ Terminator   
+    [Outport] gantry_additional_state_coulomb_2025a/Extended ODE/dxdt  
+  [FromWorkspace] gantry_additional_state_coulomb_2025a/Feedforward  [t,f]
+  [FromWorkspace] gantry_additional_state_coulomb_2025a/Feedforward1  [t,f]
+  [FromWorkspace] gantry_additional_state_coulomb_2025a/Feedforward2  [t,f]
+  [FromWorkspace] gantry_additional_state_coulomb_2025a/Feedforward3  [t,f]
+  [Gain] gantry_additional_state_coulomb_2025a/Gain1  P
+  [Gain] gantry_additional_state_coulomb_2025a/Gain2  P.'
+  [Gain] gantry_additional_state_coulomb_2025a/Gain3  P
+  [Gain] gantry_additional_state_coulomb_2025a/Gain4  P.'
+  [Gain] gantry_additional_state_coulomb_2025a/Gain5  P
+  [Gain] gantry_additional_state_coulomb_2025a/Gain6  P.'
+  [Integrator] gantry_additional_state_coulomb_2025a/Integrator  
+  [Integrator] gantry_additional_state_coulomb_2025a/Integrator1  
+  [Integrator] gantry_additional_state_coulomb_2025a/Integrator2  
+  [SubSystem] gantry_additional_state_coulomb_2025a/LTI System  
+    [Inport] gantry_additional_state_coulomb_2025a/LTI System/u  
+    [SubSystem] gantry_additional_state_coulomb_2025a/LTI System/Input Delay  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System/Input Delay/Inport  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System/Input Delay/TdPort  
+      [VariableTransportDelay] gantry_additional_state_coulomb_2025a/LTI System/Input Delay/Delay  
+      [Saturate] gantry_additional_state_coulomb_2025a/LTI System/Input Delay/TdSat  
+      [Outport] gantry_additional_state_coulomb_2025a/LTI System/Input Delay/Outport  
+    [StateSpace] gantry_additional_state_coulomb_2025a/LTI System/Internal  D.a D.b
+    [SubSystem] gantry_additional_state_coulomb_2025a/LTI System/Output Delay  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System/Output Delay/Inport  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System/Output Delay/TdPort  
+      [VariableTransportDelay] gantry_additional_state_coulomb_2025a/LTI System/Output Delay/Delay  
+      [Saturate] gantry_additional_state_coulomb_2025a/LTI System/Output Delay/TdSat  
+      [Outport] gantry_additional_state_coulomb_2025a/LTI System/Output Delay/Outport  
+    [Outport] gantry_additional_state_coulomb_2025a/LTI System/y  
+  [SubSystem] gantry_additional_state_coulomb_2025a/LTI System1  
+    [Inport] gantry_additional_state_coulomb_2025a/LTI System1/u  
+    [SubSystem] gantry_additional_state_coulomb_2025a/LTI System1/Input Delay  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System1/Input Delay/Inport  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System1/Input Delay/TdPort  
+      [VariableTransportDelay] gantry_additional_state_coulomb_2025a/LTI System1/Input Delay/Delay  
+      [Saturate] gantry_additional_state_coulomb_2025a/LTI System1/Input Delay/TdSat  
+      [Outport] gantry_additional_state_coulomb_2025a/LTI System1/Input Delay/Outport  
+    [StateSpace] gantry_additional_state_coulomb_2025a/LTI System1/Internal  D.a D.b
+    [SubSystem] gantry_additional_state_coulomb_2025a/LTI System1/Output Delay  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System1/Output Delay/Inport  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System1/Output Delay/TdPort  
+      [VariableTransportDelay] gantry_additional_state_coulomb_2025a/LTI System1/Output Delay/Delay  
+      [Saturate] gantry_additional_state_coulomb_2025a/LTI System1/Output Delay/TdSat  
+      [Outport] gantry_additional_state_coulomb_2025a/LTI System1/Output Delay/Outport  
+    [Outport] gantry_additional_state_coulomb_2025a/LTI System1/y  
+  [SubSystem] gantry_additional_state_coulomb_2025a/LTI System2  
+    [Inport] gantry_additional_state_coulomb_2025a/LTI System2/u  
+    [SubSystem] gantry_additional_state_coulomb_2025a/LTI System2/Input Delay  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System2/Input Delay/Inport  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System2/Input Delay/TdPort  
+      [VariableTransportDelay] gantry_additional_state_coulomb_2025a/LTI System2/Input Delay/Delay  
+      [Saturate] gantry_additional_state_coulomb_2025a/LTI System2/Input Delay/TdSat  
+      [Outport] gantry_additional_state_coulomb_2025a/LTI System2/Input Delay/Outport  
+    [StateSpace] gantry_additional_state_coulomb_2025a/LTI System2/Internal  D.a D.b
+    [SubSystem] gantry_additional_state_coulomb_2025a/LTI System2/Output Delay  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System2/Output Delay/Inport  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System2/Output Delay/TdPort  
+      [VariableTransportDelay] gantry_additional_state_coulomb_2025a/LTI System2/Output Delay/Delay  
+      [Saturate] gantry_additional_state_coulomb_2025a/LTI System2/Output Delay/TdSat  
+      [Outport] gantry_additional_state_coulomb_2025a/LTI System2/Output Delay/Outport  
+    [Outport] gantry_additional_state_coulomb_2025a/LTI System2/y  
+  [SubSystem] gantry_additional_state_coulomb_2025a/LTI System3  
+    [Inport] gantry_additional_state_coulomb_2025a/LTI System3/u  
+    [SubSystem] gantry_additional_state_coulomb_2025a/LTI System3/Input Delay  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System3/Input Delay/Inport  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System3/Input Delay/TdPort  
+      [VariableTransportDelay] gantry_additional_state_coulomb_2025a/LTI System3/Input Delay/Delay  
+      [Saturate] gantry_additional_state_coulomb_2025a/LTI System3/Input Delay/TdSat  
+      [Outport] gantry_additional_state_coulomb_2025a/LTI System3/Input Delay/Outport  
+    [StateSpace] gantry_additional_state_coulomb_2025a/LTI System3/Internal  D.a D.b
+    [SubSystem] gantry_additional_state_coulomb_2025a/LTI System3/Output Delay  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System3/Output Delay/Inport  
+      [Inport] gantry_additional_state_coulomb_2025a/LTI System3/Output Delay/TdPort  
+      [VariableTransportDelay] gantry_additional_state_coulomb_2025a/LTI System3/Output Delay/Delay  
+      [Saturate] gantry_additional_state_coulomb_2025a/LTI System3/Output Delay/TdSat  
+      [Outport] gantry_additional_state_coulomb_2025a/LTI System3/Output Delay/Outport  
+    [Outport] gantry_additional_state_coulomb_2025a/LTI System3/y  
+  [SubSystem] gantry_additional_state_coulomb_2025a/MATLAB Function1  
+    [Inport] gantry_additional_state_coulomb_2025a/MATLAB Function1/u  
+    [Inport] gantry_additional_state_coulomb_2025a/MATLAB Function1/x  
+    [Demux] gantry_additional_state_coulomb_2025a/MATLAB Function1/ Demux   
+    [S-Function] gantry_additional_state_coulomb_2025a/MATLAB Function1/ SFunction   
+    [Terminator] gantry_additional_state_coulomb_2025a/MATLAB Function1/ Terminator   
+    [Outport] gantry_additional_state_coulomb_2025a/MATLAB Function1/dxdt  
+  [SubSystem] gantry_additional_state_coulomb_2025a/MATLAB Function2  
+    [Inport] gantry_additional_state_coulomb_2025a/MATLAB Function2/u  
+    [Inport] gantry_additional_state_coulomb_2025a/MATLAB Function2/x  
+    [Demux] gantry_additional_state_coulomb_2025a/MATLAB Function2/ Demux   
+    [S-Function] gantry_additional_state_coulomb_2025a/MATLAB Function2/ SFunction   
+    [Terminator] gantry_additional_state_coulomb_2025a/MATLAB Function2/ Terminator   
+    [Outport] gantry_additional_state_coulomb_2025a/MATLAB Function2/dxdt  
+  [Mux] gantry_additional_state_coulomb_2025a/Mux  
+  [FromWorkspace] gantry_additional_state_coulomb_2025a/Reference  [t,r]
+  [FromWorkspace] gantry_additional_state_coulomb_2025a/Reference1  [t,r]
+  [FromWorkspace] gantry_additional_state_coulomb_2025a/Reference2  [t,r]
+  [FromWorkspace] gantry_additional_state_coulomb_2025a/Reference3  [t,r]
+  [Scope] gantry_additional_state_coulomb_2025a/Scope2  
+  [Selector] gantry_additional_state_coulomb_2025a/Selector1  
+  [Selector] gantry_additional_state_coulomb_2025a/Selector2  
+  [Selector] gantry_additional_state_coulomb_2025a/Selector3  
+  [Selector] gantry_additional_state_coulomb_2025a/Selector5  
+  [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry  
+    [Inport] gantry_additional_state_coulomb_2025a/Single H-gantry/Fx1  
+    [Inport] gantry_additional_state_coulomb_2025a/Single H-gantry/Fx2  
+    [Inport] gantry_additional_state_coulomb_2025a/Single H-gantry/Fy  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/MSD-offset  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/Mass MSD  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/Mechanism Configuration  
+    [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter  
+      [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter/EVAL_KEY  
+      [PMIOPort] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter/input  
+      [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter/output  
+    [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter1  
+      [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter1/EVAL_KEY  
+      [PMIOPort] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter1/input  
+      [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter1/output  
+    [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter2  
+      [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter2/EVAL_KEY  
+      [PMIOPort] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter2/input  
+      [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter2/output  
+    [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter3  
+      [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter3/EVAL_KEY  
+      [PMIOPort] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter3/input  
+      [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter3/output  
+    [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter4  
+      [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter4/EVAL_KEY  
+      [PMIOPort] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter4/input  
+      [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter4/output  
+    [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter5  
+      [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter5/EVAL_KEY  
+      [PMIOPort] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter5/input  
+      [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter5/output  
+    [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter6  
+      [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter6/EVAL_KEY  
+      [PMIOPort] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter6/input  
+      [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter6/output  
+    [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter7  
+      [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter7/EVAL_KEY  
+      [PMIOPort] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter7/input  
+      [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter7/output  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/Prismatic Joint  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/Rigid Transform  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/Rigid Transform1  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/Rigid Transform2  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/Rigid Transform3  
+    [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter  
+      [Inport] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter/input0  
+      [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter/EVAL_KEY  
+      [Ground] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter/input1  
+      [Ground] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter/input2  
+      [PMIOPort] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter/output  
+    [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter1  
+      [Inport] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter1/input0  
+      [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter1/EVAL_KEY  
+      [Ground] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter1/input1  
+      [Ground] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter1/input2  
+      [PMIOPort] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter1/output  
+    [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter2  
+      [Inport] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter2/input0  
+      [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter2/EVAL_KEY  
+      [Ground] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter2/input1  
+      [Ground] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter2/input2  
+      [PMIOPort] gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter2/output  
+    [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/Solver Configuration  
+      [SubSystem] gantry_additional_state_coulomb_2025a/Single H-gantry/Solver Configuration/EVAL_KEY  
+      [PMIOPort] gantry_additional_state_coulomb_2025a/Single H-gantry/Solver Configuration/port  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/Spring Damper  
+    [Sum] gantry_additional_state_coulomb_2025a/Single H-gantry/Sum  |++
+    [Sum] gantry_additional_state_coulomb_2025a/Single H-gantry/Sum1  |++
+    [Sum] gantry_additional_state_coulomb_2025a/Single H-gantry/Sum2  |++
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/Translate by Lb in +Y  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/World Frame  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/X1  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/X1 mass  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/X2 mass  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/X2 planar  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/Y payload  
+    [SimscapeMultibodyBlock] gantry_additional_state_coulomb_2025a/Single H-gantry/Y-beam  
+    [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/x1  
+    [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/x2  
+    [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/y  
+    [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/delta_a  
+    [Outport] gantry_additional_state_coulomb_2025a/Single H-gantry/vdelta_a  
+  [Sum] gantry_additional_state_coulomb_2025a/Sum  ++|
+  [Sum] gantry_additional_state_coulomb_2025a/Sum1  |+-
+  [Sum] gantry_additional_state_coulomb_2025a/Sum2  ++|
+  [Sum] gantry_additional_state_coulomb_2025a/Sum3  |+-
+  [Sum] gantry_additional_state_coulomb_2025a/Sum4  ++|
+  [Sum] gantry_additional_state_coulomb_2025a/Sum5  |+-
+  [Sum] gantry_additional_state_coulomb_2025a/Sum6  ++|
+  [Sum] gantry_additional_state_coulomb_2025a/Sum7  |+-
+  [ToWorkspace] gantry_additional_state_coulomb_2025a/To Workspace  q
+  [ToWorkspace] gantry_additional_state_coulomb_2025a/To Workspace1  q_aug
+  [ToWorkspace] gantry_additional_state_coulomb_2025a/To Workspace2  q2
+  [ToWorkspace] gantry_additional_state_coulomb_2025a/To Workspace3  q1
+  [ToWorkspace] gantry_additional_state_coulomb_2025a/To Workspace4  delta_a
+  [ToWorkspace] gantry_additional_state_coulomb_2025a/To Workspace5  delta_a_ode
+  [ToWorkspace] gantry_additional_state_coulomb_2025a/To Workspace6  vdelta_a
+=== 139 lines (top two levels)
+  gantry_additional_state_coulomb_2025a/Extended ODE/ SFunction  (port 1) -> gantry_additional_state_coulomb_2025a/Extended ODE/ Demux    []
+  gantry_additional_state_coulomb_2025a/Extended ODE/ Demux  (port 1) -> gantry_additional_state_coulomb_2025a/Extended ODE/ Terminator    []
+  gantry_additional_state_coulomb_2025a/Extended ODE/ SFunction  (port 2) -> gantry_additional_state_coulomb_2025a/Extended ODE/dxdt   [dxdt]
+  gantry_additional_state_coulomb_2025a/Extended ODE/x (port 1) -> gantry_additional_state_coulomb_2025a/Extended ODE/ SFunction    []
+  gantry_additional_state_coulomb_2025a/Extended ODE/u (port 1) -> gantry_additional_state_coulomb_2025a/Extended ODE/ SFunction    []
+  gantry_additional_state_coulomb_2025a/MATLAB Function1/ SFunction  (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function1/ Demux    []
+  gantry_additional_state_coulomb_2025a/MATLAB Function1/ Demux  (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function1/ Terminator    []
+  gantry_additional_state_coulomb_2025a/MATLAB Function1/ SFunction  (port 2) -> gantry_additional_state_coulomb_2025a/MATLAB Function1/dxdt   [dxdt]
+  gantry_additional_state_coulomb_2025a/MATLAB Function1/x (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function1/ SFunction    []
+  gantry_additional_state_coulomb_2025a/MATLAB Function1/u (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function1/ SFunction    []
+  gantry_additional_state_coulomb_2025a/MATLAB Function2/ SFunction  (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function2/ Demux    []
+  gantry_additional_state_coulomb_2025a/MATLAB Function2/ Demux  (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function2/ Terminator    []
+  gantry_additional_state_coulomb_2025a/MATLAB Function2/ SFunction  (port 2) -> gantry_additional_state_coulomb_2025a/MATLAB Function2/dxdt   [dxdt]
+  gantry_additional_state_coulomb_2025a/MATLAB Function2/x (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function2/ SFunction    []
+  gantry_additional_state_coulomb_2025a/MATLAB Function2/u (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function2/ SFunction    []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Spring Damper (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Mass MSD   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Spring Damper (port 3) -> gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter7   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter7 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/vdelta_a   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Spring Damper (port 2) -> gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter6   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter6 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/delta_a   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Spring Damper (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/MSD-offset   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Rigid Transform3 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Rigid Transform2   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/World Frame (port 1) ->    []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Mechanism Configuration (port 1) ->    []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/X1 (port 1) ->    []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Translate by Lb in +Y (port 1) ->    []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter5 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/y   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Prismatic Joint (port 2) -> gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter5   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter4 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/x1   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/X1 (port 2) -> gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter4   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter3 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/x2   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/X2 planar (port 2) -> gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter3   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Fx2 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Sum1   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/X1 (port 2) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter2   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Prismatic Joint   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Sign   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Rigid Transform1 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Prismatic Joint   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Sum (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Fx1 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Sum2   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Sign (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Gain   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Sum1 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter1   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Gain1 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Sum1   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Sum2 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter2   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Rigid Transform1 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Y-beam   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/X1 (port 3) -> gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter2   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter1 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Sign1   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Gain (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Sum   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/X1 (port 1) ->    []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/X1 mass (port 1) ->    []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Rigid Transform2 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Prismatic Joint   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Fy (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Sum   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/X2 planar (port 1) ->    []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/X2 mass (port 1) ->    []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Sign1 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Gain1   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/X2 planar (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Translate by Lb in +Y   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/X2 planar (port 3) -> gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter1   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Sign2 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Gain2   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/MSD-offset (port 1) ->    []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Y payload (port 1) ->    []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/X2 planar (port 2) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter1   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Simulink-PS Converter (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Prismatic Joint   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/Gain2 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Sum2   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry/PS-Simulink Converter2 (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry/Sign2   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry (port 4) -> gantry_additional_state_coulomb_2025a/To Workspace4   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry (port 5) -> gantry_additional_state_coulomb_2025a/To Workspace6   []
+  gantry_additional_state_coulomb_2025a/Integrator (port 1) -> gantry_additional_state_coulomb_2025a/Extended ODE   []
+  gantry_additional_state_coulomb_2025a/Integrator (port 1) -> gantry_additional_state_coulomb_2025a/Selector5   []
+  gantry_additional_state_coulomb_2025a/Integrator (port 1) -> gantry_additional_state_coulomb_2025a/Selector1   []
+  gantry_additional_state_coulomb_2025a/Integrator (port 1) -> gantry_additional_state_coulomb_2025a/Selector1 | gantry_additional_state_coulomb_2025a/Selector5   []
+  gantry_additional_state_coulomb_2025a/Integrator (port 1) -> gantry_additional_state_coulomb_2025a/Selector1 | gantry_additional_state_coulomb_2025a/Selector5 | gantry_additional_state_coulomb_2025a/Extended ODE   []
+  gantry_additional_state_coulomb_2025a/Selector5 (port 1) -> gantry_additional_state_coulomb_2025a/To Workspace5   []
+  gantry_additional_state_coulomb_2025a/Gain5 (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function1   []
+  gantry_additional_state_coulomb_2025a/Sum6 (port 1) -> gantry_additional_state_coulomb_2025a/Gain5   []
+  gantry_additional_state_coulomb_2025a/Feedforward3 (port 1) -> gantry_additional_state_coulomb_2025a/Sum6   []
+  gantry_additional_state_coulomb_2025a/Sum7 (port 1) -> gantry_additional_state_coulomb_2025a/LTI System3   []
+  gantry_additional_state_coulomb_2025a/Sum7 (port 1) -> gantry_additional_state_coulomb_2025a/Error3   []
+  gantry_additional_state_coulomb_2025a/Sum7 (port 1) -> gantry_additional_state_coulomb_2025a/Error3 | gantry_additional_state_coulomb_2025a/LTI System3   []
+  gantry_additional_state_coulomb_2025a/Integrator2 (port 1) -> gantry_additional_state_coulomb_2025a/Selector3   []
+  gantry_additional_state_coulomb_2025a/Integrator2 (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function1   []
+  gantry_additional_state_coulomb_2025a/Integrator2 (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function1 | gantry_additional_state_coulomb_2025a/Selector3   []
+  gantry_additional_state_coulomb_2025a/LTI System3 (port 1) -> gantry_additional_state_coulomb_2025a/Sum6   [Feedback]
+  gantry_additional_state_coulomb_2025a/Reference3 (port 1) -> gantry_additional_state_coulomb_2025a/Sum7   []
+  gantry_additional_state_coulomb_2025a/Selector3 (port 1) -> gantry_additional_state_coulomb_2025a/Gain6   []
+  gantry_additional_state_coulomb_2025a/MATLAB Function1 (port 1) -> gantry_additional_state_coulomb_2025a/Integrator2   []
+  gantry_additional_state_coulomb_2025a/Gain6 (port 1) -> gantry_additional_state_coulomb_2025a/Sum7   []
+  gantry_additional_state_coulomb_2025a/Gain6 (port 1) -> gantry_additional_state_coulomb_2025a/To Workspace3   []
+  gantry_additional_state_coulomb_2025a/Gain6 (port 1) -> gantry_additional_state_coulomb_2025a/To Workspace3 | gantry_additional_state_coulomb_2025a/Sum7   []
+  gantry_additional_state_coulomb_2025a/Extended ODE (port 1) -> gantry_additional_state_coulomb_2025a/Integrator   []
+  gantry_additional_state_coulomb_2025a/Gain3 (port 1) -> gantry_additional_state_coulomb_2025a/Extended ODE   []
+  gantry_additional_state_coulomb_2025a/Sum5 (port 1) -> gantry_additional_state_coulomb_2025a/LTI System2   []
+  gantry_additional_state_coulomb_2025a/Sum5 (port 1) -> gantry_additional_state_coulomb_2025a/Error2   []
+  gantry_additional_state_coulomb_2025a/Sum5 (port 1) -> gantry_additional_state_coulomb_2025a/Error2 | gantry_additional_state_coulomb_2025a/LTI System2   []
+  gantry_additional_state_coulomb_2025a/Integrator1 (port 1) -> gantry_additional_state_coulomb_2025a/Selector2   []
+  gantry_additional_state_coulomb_2025a/Integrator1 (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function2   []
+  gantry_additional_state_coulomb_2025a/Integrator1 (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function2 | gantry_additional_state_coulomb_2025a/Selector2   []
+  gantry_additional_state_coulomb_2025a/Selector2 (port 1) -> gantry_additional_state_coulomb_2025a/Gain2   []
+  gantry_additional_state_coulomb_2025a/MATLAB Function2 (port 1) -> gantry_additional_state_coulomb_2025a/Integrator1   []
+  gantry_additional_state_coulomb_2025a/Feedforward2 (port 1) -> gantry_additional_state_coulomb_2025a/Sum4   []
+  gantry_additional_state_coulomb_2025a/Reference2 (port 1) -> gantry_additional_state_coulomb_2025a/Sum5   []
+  gantry_additional_state_coulomb_2025a/Gain2 (port 1) -> gantry_additional_state_coulomb_2025a/Sum5   []
+  gantry_additional_state_coulomb_2025a/Gain2 (port 1) -> gantry_additional_state_coulomb_2025a/To Workspace2   []
+  gantry_additional_state_coulomb_2025a/Gain2 (port 1) -> gantry_additional_state_coulomb_2025a/To Workspace2 | gantry_additional_state_coulomb_2025a/Sum5   []
+  gantry_additional_state_coulomb_2025a/LTI System2 (port 1) -> gantry_additional_state_coulomb_2025a/Sum4   [Feedback]
+  gantry_additional_state_coulomb_2025a/Gain1 (port 1) -> gantry_additional_state_coulomb_2025a/MATLAB Function2   []
+  gantry_additional_state_coulomb_2025a/Sum4 (port 1) -> gantry_additional_state_coulomb_2025a/Gain1   []
+  gantry_additional_state_coulomb_2025a/Reference1 (port 1) -> gantry_additional_state_coulomb_2025a/Sum3   []
+  gantry_additional_state_coulomb_2025a/Gain4 (port 1) -> gantry_additional_state_coulomb_2025a/Sum3   []
+  gantry_additional_state_coulomb_2025a/Gain4 (port 1) -> gantry_additional_state_coulomb_2025a/To Workspace1   []
+  gantry_additional_state_coulomb_2025a/Gain4 (port 1) -> gantry_additional_state_coulomb_2025a/To Workspace1 | gantry_additional_state_coulomb_2025a/Sum3   []
+  gantry_additional_state_coulomb_2025a/Sum2 (port 1) -> gantry_additional_state_coulomb_2025a/Gain3   []
+  gantry_additional_state_coulomb_2025a/Selector1 (port 1) -> gantry_additional_state_coulomb_2025a/Gain4   []
+  gantry_additional_state_coulomb_2025a/Sum3 (port 1) -> gantry_additional_state_coulomb_2025a/LTI System1   []
+  gantry_additional_state_coulomb_2025a/Sum3 (port 1) -> gantry_additional_state_coulomb_2025a/Error1   []
+  gantry_additional_state_coulomb_2025a/Sum3 (port 1) -> gantry_additional_state_coulomb_2025a/Error1 | gantry_additional_state_coulomb_2025a/LTI System1   []
+  gantry_additional_state_coulomb_2025a/Feedforward1 (port 1) -> gantry_additional_state_coulomb_2025a/Sum2   []
+  gantry_additional_state_coulomb_2025a/LTI System1 (port 1) -> gantry_additional_state_coulomb_2025a/Sum2   [Feedback]
+  gantry_additional_state_coulomb_2025a/Sum1 (port 1) -> gantry_additional_state_coulomb_2025a/LTI System   []
+  gantry_additional_state_coulomb_2025a/Sum1 (port 1) -> gantry_additional_state_coulomb_2025a/Error   []
+  gantry_additional_state_coulomb_2025a/Sum1 (port 1) -> gantry_additional_state_coulomb_2025a/Error | gantry_additional_state_coulomb_2025a/LTI System   []
+  gantry_additional_state_coulomb_2025a/LTI System (port 1) -> gantry_additional_state_coulomb_2025a/Sum   [Feedback]
+  gantry_additional_state_coulomb_2025a/Mux (port 1) -> gantry_additional_state_coulomb_2025a/To Workspace   []
+  gantry_additional_state_coulomb_2025a/Mux (port 1) -> gantry_additional_state_coulomb_2025a/Sum1   []
+  gantry_additional_state_coulomb_2025a/Mux (port 1) -> gantry_additional_state_coulomb_2025a/Scope2   []
+  gantry_additional_state_coulomb_2025a/Mux (port 1) -> gantry_additional_state_coulomb_2025a/Scope2 | gantry_additional_state_coulomb_2025a/Sum1 | gantry_additional_state_coulomb_2025a/To Workspace   []
+  gantry_additional_state_coulomb_2025a/Reference (port 1) -> gantry_additional_state_coulomb_2025a/Sum1   []
+  gantry_additional_state_coulomb_2025a/Feedforward (port 1) -> gantry_additional_state_coulomb_2025a/Sum   []
+  gantry_additional_state_coulomb_2025a/Sum (port 1) -> gantry_additional_state_coulomb_2025a/Demux   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry (port 2) -> gantry_additional_state_coulomb_2025a/Mux   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry (port 1) -> gantry_additional_state_coulomb_2025a/Mux   []
+  gantry_additional_state_coulomb_2025a/Demux (port 3) -> gantry_additional_state_coulomb_2025a/Single H-gantry   []
+  gantry_additional_state_coulomb_2025a/Demux (port 2) -> gantry_additional_state_coulomb_2025a/Single H-gantry   []
+  gantry_additional_state_coulomb_2025a/Demux (port 1) -> gantry_additional_state_coulomb_2025a/Single H-gantry   []
+  gantry_additional_state_coulomb_2025a/Single H-gantry (port 3) -> gantry_additional_state_coulomb_2025a/Mux   []
+=== chart gantry_additional_state_coulomb_2025a/Extended ODE
+function dxdt = gantrySystemExtendedMFile(u, x, Lb, kb1, kb2, m1, cy, ma, cg2, cb1, cg1, d, Jh, Jb, mh, m2, ca, mb, cb2, ka, L0, cc1, cc2, ccy, ts)
+dxdt = zeros(8,1);
+dxdt = gantrySystemExtendedCoulomb(u, x, m1, m2, mb, mh, Lb, Jb, Jh, d, cg1, cg2, cb1, cb2, cy, kb1, kb2, ma, ka, ca, L0, cc1, cc2, ccy, ts);
+end
+=== chart gantry_additional_state_coulomb_2025a/MATLAB Function1
+function dxdt = gantrySystemMFile(u,x,m1,m2,mb,mh_original,Jb,Jh,d,Lb,kb1,kb2,cg1,cg2,cb1,cb2,cy)
+dxdt = gantrySystem(u,x,m1,m2,mb,mh_original,Lb,Jb,Jh,d,cg1,cg2,cb1,cb2,cy,kb1,kb2); 
+end
+=== chart gantry_additional_state_coulomb_2025a/MATLAB Function2
+function dxdt = gantrySystemCoriolisCentripetalMFile(u,x,m1,m2,mb,mh,Jb,Jh,d,Lb,kb1,kb2,cg1,cg2,cb1,cb2,cy)
+dxdt = gantrySystemCoriolisCentripetal(u,x,m1,m2,mb,mh,Jb,Jh,d,Lb,kb1,kb2,cg1,cg2,cb1,cb2,cy); 
+end
+WATCHDOG SUMMARY exit=0 killed=False duration_s=40.8 samples=8 peak_tree_ws_mb=2,499 min_avail_ram_gb=2.80 min_C_free_gb=10.69 kill_reason=""

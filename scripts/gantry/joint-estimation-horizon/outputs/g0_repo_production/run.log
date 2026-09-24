@@ -1,0 +1,41 @@
+[wd] launch  out=scripts/gantry/joint-estimation-horizon/outputs/g0_repo_production
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/joint-estimation-horizon/tools/g0_epoch0.py --source repo --arm production
+WATCHDOG ALERT available RAM 3.59 GB < 4 GB (tree 449 MB)
+[g0] entry file      : C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\gantry_interconnect_dynamic.py
+[g0] gantry_dynamic  : C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\gantry_dynamic\__init__.py
+[g0] model_augmentation: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\model_augmentation\__init__.py
+[g0] repo mode: no module from vendor/
+[g0] cfg: mode=augmentation_ma50_z03_b140-230_a6all_telica_coulomb joint=False param=reduced detune=[1.1, 1.1, 0.9, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 1.1] prior=True obc=False nf=400 burn_in=0 dtype=torch.float32
+[g0] files: 18 train, 6 val
+Data dir (augmentation_ma50_z03_b140-230_a6all_telica_coulomb): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.274e-05 m  vdelta_a std=5.127e-02 m/s
+Loaded 18 train, 6 val, 5 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  T15: 48000 samples  (TP1_telica_y000.mat)
+  T16: 48000 samples  (TP2_telica_y000_rev.mat)
+  T17: 48000 samples  (TP3_telica_yp06.mat)
+  T18: 48000 samples  (TP4_telica_ym06.mat)
+[closed loop] one bank over 24 records, 12 distinct controllers, Y_op [-0.3, -0.22, -0.2, -0.15, -0.1, -0.06, 0.0, 0.06, 0.1, 0.12, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[g0] physical block: Gantry_State_Block
+[g0] build 5.8 s; validating (closed-loop free run over 6 records) ...
+[wd] t=57s tree=784 MB cpu=8% availRAM=3.33 GB C:free=6.09 GB
+[wd] t=119s tree=817 MB cpu=8% availRAM=3.44 GB C:free=6.08 GB
+[g0] validation 110.6 s
+[g0] per record [m]: V1_standstill_Yp10 2.0189734641e-05 V2_aprbs_Ylow 2.0301202312e-05 V3_ysweep_Yp10 2.0584726371e-05 V4_lissajous_Ym10 2.0586587198e-05 VP1_telica_ylow 3.4149434214e-06 VP2_telica_yp12 3.5310038129e-06
+G0 EPOCH0 source=repo arm=production Loss_val0=1.476803295949e-05
+WATCHDOG SUMMARY exit=0 killed=False duration_s=125.3 samples=25 peak_tree_ws_mb=820 min_avail_ram_gb=3.00 min_C_free_gb=5.98 kill_reason=""

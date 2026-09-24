@@ -1,0 +1,50 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g3_greybox
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/init/g3_init.py --model gb
+  mode          'augmentation_ma50_z03_b140-230_a6all_telica_coulomb'
+  fs_new        4000
+  ts_new        0.00025
+  nf            400
+  na_nb         29
+  stride        10
+  burn_in       0
+  batch_size    512
+  epochs        200
+  its_per_val   1300
+  n_its         None
+  seed          42
+  closed_loop   True
+  use_f64       False
+  lr            1e-05
+  adam_eps      1e-16
+  lbfgs         True
+  device        'cpu'   (CFG: 'cuda', local override)
+  compile_mode  None   (CFG: 'reduce-overhead', local override)
+Data dir (augmentation_ma50_z03_b140-230_a6all_telica_coulomb): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.274e-05 m  vdelta_a std=5.127e-02 m/s
+Loaded 18 train, 6 val, 5 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  T15: 48000 samples  (TP1_telica_y000.mat)
+  T16: 48000 samples  (TP2_telica_y000_rev.mat)
+  T17: 48000 samples  (TP3_telica_yp06.mat)
+  T18: 48000 samples  (TP4_telica_ym06.mat)
+[closed loop] one bank over 24 records, 12 distinct controllers, Y_op [-0.3, -0.22, -0.2, -0.15, -0.1, -0.06, 0.0, 0.06, 0.1, 0.12, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[G3] 85644 training windows (4758 per record); 3 batches of 512
+   batch 0: loss 1.6068e-08 (sqrt 1.268e-04)  |grad| 1.7322e-04  finite True  (20/20 tensors)  fwd 2.6 s, fwd+bwd 5.9 s
+   batch 1: loss 1.5504e-08 (sqrt 1.245e-04)  |grad| 1.6619e-04  finite True  (20/20 tensors)  fwd 3.1 s, fwd+bwd 6.2 s
+   batch 2: loss 1.5818e-08 (sqrt 1.258e-04)  |grad| 1.6802e-04  finite True  (20/20 tensors)  fwd 3.1 s, fwd+bwd 6.3 s
+WATCHDOG SUMMARY exit=0 killed=False duration_s=33.9 samples=7 peak_tree_ws_mb=970 min_avail_ram_gb=4.07 min_C_free_gb=7.10 kill_reason=""

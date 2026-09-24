@@ -1,0 +1,34 @@
+[wd] launch  out=scripts/gantry/joint-estimation-horizon/outputs/g1_checks
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/joint-estimation-horizon/info/g1_info.py --checks-only --out scripts/gantry/joint-estimation-horizon/outputs/g1_checks
+WATCHDOG ALERT available RAM 3.94 GB < 4 GB (tree 456 MB)
+Data dir (augmentation_ma50_z03_b140-230_a6all_telica_coulomb): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.274e-05 m  vdelta_a std=5.127e-02 m/s
+Loaded 18 train, 6 val, 5 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+  T15: 48000 samples  (TP1_telica_y000.mat)
+  T16: 48000 samples  (TP2_telica_y000_rev.mat)
+  T17: 48000 samples  (TP3_telica_yp06.mat)
+  T18: 48000 samples  (TP4_telica_ym06.mat)
+[g1] mode=augmentation_ma50_z03_b140-230_a6all_telica_coulomb  18 train records  nf-grid 100,200,400,800,1600,3200  dtype torch.float64
+[g1] true combinations: {'kb_sum': 3975.0, 'cg1': 14.5, 'cg2': 20.299999, 'cy': 10.0, 'cb_sum': 18.0, 'mh': 10.1, 'm_total': 43.699999, 'm_diff': -0.5, 'J_eff': 3.796391, 'd': 0.1}
+[g1] ystd [m]: [0.03717188 0.03717595 0.18137548]
+[g1] records: [('T1_standstill_Ym30.mat', 48000), ('T2_standstill_Ym15.mat', 48000), ('T3_standstill_Y000.mat', 48000), ('T4_standstill_Yp15.mat', 48000), ('T5_standstill_Yp30.mat', 48000), ('T6_ysweep_slow.mat', 48000), ('T7_ysweep_fast.mat', 48000), ('T8_ysweep_xmix.mat', 48000), ('T9_aprbs_30.mat', 48000), ('T10_aprbs_60.mat', 48000), ('T11_aprbs_100.mat', 48000), ('T12_aprbs_yaw.mat', 48000), ('T13_lissajous.mat', 48000), ('T14_lissajous_yaw.mat', 48000), ('TP1_telica_y000.mat', 48000), ('TP2_telica_y000_rev.mat', 48000), ('TP3_telica_yp06.mat', 48000), ('TP4_telica_ym06.mat', 48000)]
+[g1] V1 max|y_prod - y_ann_free| = 0.000e+00 (normalised, i.e. fraction of ystd; tol 1e-12) PASS
+[wd] t=57s tree=821 MB cpu=8% availRAM=3.47 GB C:free=6.04 GB
+[g1] V2 forward mode vs central FD, max rel diff per direction (tol 1e-4):
+     x0_0 3.9e-10  x0_1 9.3e-08  x0_2 4.4e-10  x0_3 4.0e-08  x0_4 1.4e-06  x0_5 9.0e-08  kb_sum 3.1e-04  cg1 5.8e-04  cg2 2.0e-04  cy 6.1e-04  cb_sum 7.3e-05  mh 7.8e-07  m_total 5.2e-07  m_diff 2.2e-05  J_eff 3.6e-07  d 1.4e-06 FAIL
+[g1] checks only, done in 90 s
+WATCHDOG SUMMARY exit=0 killed=False duration_s=95.8 samples=19 peak_tree_ws_mb=821 min_avail_ram_gb=3.40 min_C_free_gb=6.04 kill_reason=""

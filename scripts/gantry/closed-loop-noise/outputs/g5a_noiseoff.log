@@ -1,0 +1,16 @@
+[run.sh] C: free 10.5 GB before launch of g5a_noiseoff
+[wd] launch  out=scripts/gantry/closed-loop-noise/outputs/g5a_noiseoff
+[wd] command matlab -nojvm -sd scripts/gantry/closed-loop-noise/matlab/gen -batch g5a_noiseoff
+WATCHDOG ALERT available RAM 3.20 GB < 4 GB (tree 1,991 MB)
+LTI System1 sys = Cfb
+Sum3 inputs |+-; Gain4 feeds input 2
+  Gain4 -> To Workspace1, EncoderNoiseSum
+  EncoderNoise -> EncoderNoiseSum
+  EncoderNoiseSum -> Sum3
+saved C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-noise\matlab\gen\gantry_cn_noise_2025a.slx
+cn_gen_multisine: mode off, out C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\closed-loop-noise\outputs\g5a_records
+Amplitude override x6: A_sym=240.0 N  A_Y=180.0 N  A_anti=87.0 N*m
+
+=== 1/1  T3_standstill_Y000  [train] ===
+WATCHDOG KILL available RAM 2.45 GB < 2.5 GB; killing tree of PID 13132 (10 processes, 2,773 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=38.1 samples=8 peak_tree_ws_mb=2,773 min_avail_ram_gb=2.45 min_C_free_gb=10.46 kill_reason="available RAM 2.45 GB < 2.5 GB"

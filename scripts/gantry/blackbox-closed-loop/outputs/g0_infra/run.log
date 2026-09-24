@@ -1,0 +1,30 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g0_infra
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/score/g0_infra.py 
+[G0.1] 30 vendored-prefix modules loaded, 0 from outside vendor/ []
+       closed_loop.py  -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\vendor\model_augmentation\fit_systems\closed_loop.py
+       controller.py   -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\vendor\gantry_dynamic\controller.py
+       plant.py        -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\vendor\msd_offset\plant.py (TRAJ C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation)
+[G0.2] CFG from C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\gantry_interconnect_dynamic.py (repo entry: True); RunConfig class from gantry_dynamic.config @ C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-closed-loop\vendor\gantry_dynamic\config.py
+       traj_dir C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_z03_b140-230_a6all_telica_coulomb: 18/6/5 records, missing []
+  mode          'augmentation_ma50_z03_b140-230_a6all_telica_coulomb'
+  fs_new        4000
+  ts_new        0.00025
+  nf            400
+  na_nb         29
+  stride        10
+  burn_in       0
+  batch_size    512
+  epochs        200
+  its_per_val   1300
+  n_its         None
+  seed          42
+  closed_loop   True
+  use_f64       False
+  lr            1e-05
+  adam_eps      1e-16
+  lbfgs         True
+  device        'cpu'   (CFG: 'cuda', local override)
+  compile_mode  None   (CFG: 'reduce-overhead', local override)
+[G0.3] 46 vendored .py files compared to their sources; 7 carry patch hunks [('gantry_dynamic\\config.py', 1), ('gantry_dynamic\\__init__.py', 1), ('ann_blackbox\\data.py', 1), ('ann_blackbox\\frf_init.py', 2), ('ann_blackbox\\lpm_frf.py', 2), ('msd_offset\\plant.py', 2), ('common\\__init__.py (vendor-only)', 1)]; 0 unmarked differences []
+[G0] PASS
+WATCHDOG SUMMARY exit=0 killed=False duration_s=9.0 samples=2 peak_tree_ws_mb=448 min_avail_ram_gb=4.30 min_C_free_gb=7.19 kill_reason=""

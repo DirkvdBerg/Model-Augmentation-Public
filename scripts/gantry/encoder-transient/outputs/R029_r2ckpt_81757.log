@@ -1,0 +1,6 @@
+[run.sh] C: free 6.38 GB before launch of R029_r2ckpt_81757
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R029_r2ckpt_81757
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/runners/r2_ckpt.py 
+WATCHDOG ALERT available RAM 2.15 GB < 4 GB (tree 31 MB)
+WATCHDOG KILL available RAM 2.15 GB < 2.5 GB; killing tree of PID 29708 (3 processes, 31 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=1.6 samples=1 peak_tree_ws_mb=31 min_avail_ram_gb=2.15 min_C_free_gb=6.38 kill_reason="available RAM 2.15 GB < 2.5 GB"

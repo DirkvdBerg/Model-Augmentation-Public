@@ -1,0 +1,210 @@
+[wd] launch  out=outputs/R-000a
+[wd] command conda run --no-capture-output -n GraduationProject python -u tools/inspect_slx.py "../../../kamtin-fp-model/03 Simulink gantry/gantry_2025a.slx"
+[slx] 43 members
+
+==== simulink/blockdiagram.xml (2164 chars)
+
+==== simulink/configSet0.xml (51615 chars)
+   FixedStep = auto
+   StopTime = t(end)
+   MaxStep = auto
+
+==== simulink/configSetInfo.xml (161 chars)
+
+==== simulink/stateflow/chart_42.xml (13507 chars)
+
+==== simulink/stateflow/chart_65.xml (13566 chars)
+
+==== simulink/stateflow/machine.xml (608 chars)
+
+==== simulink/systems/system_165.xml (2412 chars)
+   BLOCK Inport                 u                                        SID 165::1
+   BLOCK Inport                 x                                        SID 165::157
+   BLOCK Demux                   Demux                                   SID 165::155
+   BLOCK S-Function              SFunction                               SID 165::154
+   BLOCK Terminator              Terminator                              SID 165::156
+   BLOCK Outport                dxdt                                     SID 165::162
+   LINE 165::1#out:1 -> 165::154#in:1
+   LINE 165::157#out:1 -> 165::154#in:2
+   LINE 165::154#out:2 -> 165::162#in:1
+   LINE 165::155#out:1 -> 165::156#in:1
+   LINE 165::154#out:1 -> 165::155#in:1
+
+==== simulink/systems/system_47.xml (68479 chars)
+   BLOCK Inport                 Fx1                                      SID 50
+   BLOCK Inport                 Fx2                                      SID 48
+   BLOCK Inport                 Fy                                       SID 49
+   BLOCK Gain                   Gain                                     SID 32
+   BLOCK Gain                   Gain1                                    SID 37
+   BLOCK Gain                   Gain2                                    SID 40
+   BLOCK Reference              Mechanism&#xA;Configuration              SID 3
+   BLOCK Reference              PS-Simulink&#xA;Converter                SID 29
+   BLOCK Reference              PS-Simulink&#xA;Converter1               SID 39
+   BLOCK Reference              PS-Simulink&#xA;Converter2               SID 41
+   BLOCK Reference              PS-Simulink&#xA;Converter3               SID 52
+   BLOCK Reference              PS-Simulink&#xA;Converter4               SID 55
+   BLOCK Reference              PS-Simulink&#xA;Converter5               SID 57
+   BLOCK Reference              Prismatic&#xA;Joint                      SID 19
+   BLOCK Reference              Rigid&#xA;Transform                      SID 20
+   BLOCK Reference              Rigid&#xA;Transform1                     SID 21
+   BLOCK Reference              Rigid&#xA;Transform2                     SID 22
+   BLOCK Reference              Rigid&#xA;Transform3                     SID 179
+   BLOCK Signum                 Sign                                     SID 28
+   BLOCK Signum                 Sign1                                    SID 38
+   BLOCK Signum                 Sign2                                    SID 42
+   BLOCK Reference              Simulink-PS&#xA;Converter                SID 24
+   BLOCK Reference              Simulink-PS&#xA;Converter1               SID 26
+   BLOCK Reference              Simulink-PS&#xA;Converter2               SID 35
+   BLOCK Reference              Solver&#xA;Configuration                 SID 2
+   BLOCK Sum                    Sum                                      SID 31
+   BLOCK Sum                    Sum1                                     SID 36
+   BLOCK Sum                    Sum2                                     SID 43
+   BLOCK Reference              Translate by Lb in +Y                    SID 10
+   BLOCK Reference              World Frame                              SID 1
+   BLOCK Reference              X1                                       SID 16
+   BLOCK Reference              X1 mass                                  SID 17
+   BLOCK Reference              X2 mass                                  SID 18
+   BLOCK Reference              X2 planar                                SID 67
+   BLOCK Reference              Y payload                                SID 23
+   BLOCK Reference              Y-beam                                   SID 13
+   BLOCK Outport                x1                                       SID 56
+   BLOCK Outport                x2                                       SID 53
+   BLOCK Outport                y                                        SID 58
+   LINE 41#out:1 -> 42#in:1
+   LINE 40#out:1 -> 43#in:2
+   LINE 42#out:1 -> 40#in:1
+   LINE 38#out:1 -> 37#in:1
+   LINE 49#out:1 -> 31#in:1
+   LINE 32#out:1 -> 31#in:2
+   LINE 39#out:1 -> 38#in:1
+   LINE 43#out:1 -> 35#in:1
+   LINE 37#out:1 -> 36#in:2
+   LINE 36#out:1 -> 26#in:1
+   LINE 28#out:1 -> 32#in:1
+   LINE 50#out:1 -> 43#in:1
+   LINE 31#out:1 -> 24#in:1
+   LINE 29#out:1 -> 28#in:1
+   LINE 48#out:1 -> 36#in:1
+   LINE 52#out:1 -> 53#in:1
+   LINE 55#out:1 -> 56#in:1
+   LINE 57#out:1 -> 58#in:1
+   P Gain = ccy
+   P Gain = cc2
+   P Gain = cc1
+
+==== simulink/systems/system_88.xml (2396 chars)
+   BLOCK Inport                 u                                        SID 88::1
+   BLOCK Inport                 x                                        SID 88::157
+   BLOCK Demux                   Demux                                   SID 88::155
+   BLOCK S-Function              SFunction                               SID 88::154
+   BLOCK Terminator              Terminator                              SID 88::156
+   BLOCK Outport                dxdt                                     SID 88::162
+   LINE 88::1#out:1 -> 88::154#in:1
+   LINE 88::157#out:1 -> 88::154#in:2
+   LINE 88::154#out:2 -> 88::162#in:1
+   LINE 88::155#out:1 -> 88::156#in:1
+   LINE 88::154#out:1 -> 88::155#in:1
+
+==== simulink/systems/system_root.xml (26355 chars)
+   BLOCK Demux                  Demux                                    SID 46
+   BLOCK ToWorkspace            Error                                    SID 68
+   BLOCK ToWorkspace            Error1                                   SID 91
+   BLOCK ToWorkspace            Error2                                   SID 159
+   BLOCK FromWorkspace          Feedforward                              SID 45
+   BLOCK FromWorkspace          Feedforward1                             SID 92
+   BLOCK FromWorkspace          Feedforward2                             SID 160
+   BLOCK Gain                   Gain1                                    SID 161
+   BLOCK Gain                   Gain2                                    SID 162
+   BLOCK Gain                   Gain3                                    SID 148
+   BLOCK Gain                   Gain4                                    SID 149
+   BLOCK Integrator             Integrator                               SID 87
+   BLOCK Integrator             Integrator1                              SID 163
+   BLOCK Reference              LTI System                               SID 66
+   BLOCK Reference              LTI System1                              SID 93
+   BLOCK Reference              LTI System2                              SID 164
+   BLOCK SubSystem              MATLAB Function1                         SID 88
+   BLOCK SubSystem              MATLAB Function2                         SID 165
+   BLOCK Mux                    Mux                                      SID 60
+   BLOCK FromWorkspace          Reference                                SID 63
+   BLOCK FromWorkspace          Reference1                               SID 95
+   BLOCK FromWorkspace          Reference2                               SID 167
+   BLOCK Scope                  Scope2                                   SID 89
+   BLOCK Selector               Selector1                                SID 154
+   BLOCK Selector               Selector2                                SID 172
+   BLOCK SubSystem              Single H-gantry                          SID 47
+   BLOCK Sum                    Sum                                      SID 62
+   BLOCK Sum                    Sum1                                     SID 64
+   BLOCK Sum                    Sum2                                     SID 139
+   BLOCK Sum                    Sum3                                     SID 140
+   BLOCK Sum                    Sum4                                     SID 173
+   BLOCK Sum                    Sum5                                     SID 174
+   BLOCK ToWorkspace            To Workspace                             SID 59
+   BLOCK ToWorkspace            To Workspace1                            SID 141
+   BLOCK ToWorkspace            To Workspace2                            SID 175
+   LINE 47#out:3 -> 60#in:3
+   LINE 46#out:1 -> 47#in:1
+   LINE 46#out:2 -> 47#in:2
+   LINE 46#out:3 -> 47#in:3
+   LINE 47#out:1 -> 60#in:1
+   LINE 47#out:2 -> 60#in:2
+   LINE 62#out:1 -> 46#in:1
+   LINE 45#out:1 -> 62#in:1
+   LINE 63#out:1 -> 64#in:1
+   LINE 60#out:1 -> 89#in:1, 64#in:2, 59#in:1
+   LINE 66#out:1 -> 62#in:2
+   LINE 64#out:1 -> 68#in:1, 66#in:1
+   LINE 93#out:1 -> 139#in:2
+   LINE 92#out:1 -> 139#in:1
+   LINE 140#out:1 -> 91#in:1, 93#in:1
+   LINE 87#out:1 -> 88#in:2, 154#in:1
+   LINE 154#out:1 -> 149#in:1
+   LINE 139#out:1 -> 148#in:1
+   LINE 148#out:1 -> 88#in:1
+   LINE 149#out:1 -> 141#in:1, 140#in:2
+   LINE 88#out:1 -> 87#in:1
+   LINE 95#out:1 -> 140#in:1
+   LINE 173#out:1 -> 161#in:1
+   LINE 161#out:1 -> 165#in:1
+   LINE 164#out:1 -> 173#in:2
+   LINE 162#out:1 -> 175#in:1, 174#in:2
+   LINE 167#out:1 -> 174#in:1
+   LINE 160#out:1 -> 173#in:1
+   LINE 165#out:1 -> 163#in:1
+   LINE 172#out:1 -> 162#in:1
+   LINE 163#out:1 -> 165#in:2, 172#in:1
+   LINE 174#out:1 -> 159#in:1, 164#in:1
+   P InitialCondition = [0;0;Y;0;0;0]
+   P InitialCondition = [0;0;Y;0;0;0]
+   P Indices = [1 2 3]
+   P Indices = [1 2 3]
+   P InputPortWidth = 6
+   P InputPortWidth = 6
+   P VariableName = e
+   P VariableName = e1
+   P VariableName = e2
+   P VariableName = [t,f]
+   P VariableName = [t,f]
+   P VariableName = [t,f]
+   P VariableName = [t,r]
+   P VariableName = [t,r]
+   P VariableName = [t,r]
+   P VariableName = q
+   P VariableName = q1
+   P VariableName = q2
+   P SampleTime = ts
+   P SampleTime = ts
+   P SampleTime = ts
+   P SampleTime = ts
+   P SampleTime = ts
+   P SampleTime = ts
+   P SampleTime = ts
+   P SampleTime = ts
+   P SampleTime = ts
+   P SampleTime = ts
+   P SampleTime = ts
+   P SampleTime = ts
+   P Gain = P
+   P Gain = P.&apos;
+   P Gain = P
+   P Gain = P.&apos;
+WATCHDOG SUMMARY exit=0 killed=False duration_s=2.3 samples=1 peak_tree_ws_mb=29 min_avail_ram_gb=4.67 min_C_free_gb=12.04 kill_reason=""

@@ -1,0 +1,10 @@
+[run.sh] C: free 7.36 GB before launch of R028_g5_telica_hook_check
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R028_g5_telica_hook_check
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/telica/check_hook.py 
+[real_data] train 2, val 2, test 2 records at 5000 Hz
+[et_hook] G4 encoder swapped in: na 7, schedule deg 3, friction cc [82.6, 100.3, 80.5] N, v0 0.001; linear map frozen 1536 params, trainable 2726; optimizer rebuilt
+[check_hook] cfg nf 25 (5.0 ms), na_nb 7; encoder parameters 4262, requires_grad 2726
+[closed loop] Telica controller (identified_5k), one row, nc = 24, ts = 0.0002 s
+[closed loop] diag(Dc) physical [2.6149e+08 3.1464e+08 2.9371e+08] N/m
+[check_hook] closed-loop validation sim-RMS (no update): 2.9876e-07 m; optimizer steps taken: 0
+WATCHDOG SUMMARY exit=0 killed=False duration_s=21.4 samples=5 peak_tree_ws_mb=613 min_avail_ram_gb=4.39 min_C_free_gb=7.36 kill_reason=""

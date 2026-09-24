@@ -1,0 +1,4 @@
+[wd] launch  out=outputs/R-027m200
+[wd] command conda run --no-capture-output -n GraduationProject python -u design/make_absorber.py 200 5.05 design/addition_scan_f200.mat
+design/addition_scan_f200.mat 5.05 200.0 [ 0.  -0.1  1. ]
+WATCHDOG SUMMARY exit=0 killed=False duration_s=2.8 samples=1 peak_tree_ws_mb=29 min_avail_ram_gb=5.39 min_C_free_gb=9.52 kill_reason=""

@@ -1,0 +1,328 @@
+[wd] launch  out=outputs/R-027
+[wd] command matlab -batch "addpath('matlab'); generate_scan({'augmentation_oa_s170','augmentation_oa_s185','augmentation_oa_s200','augmentation_oa_s215'}, {'design/addition_scan_f170.mat','design/addition_scan_f185.mat','design/addition_scan_f200.mat','design/addition_scan_f215.mat'})"
+
+##### scan 1/4: augmentation_oa_s170 <- design/addition_scan_f170.mat
+OA dataset generation
+  model   : gantry_oa (q1 loop = gantrySystemOA, 4 absorber slots)
+  band    : 140 to 230 Hz, A_sym 240.0 N, A_Y 180.0 N, A_anti 87.00 N m
+  out_dir : C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_s170_n14
+  addition: design/addition_scan_f170.mat
+    oa_Ma0  [0 0 0;0 0 0;0 0 0]
+    oa_Ma1  [0 0 0;0 0 0;0 0 0]
+    oa_Ma2  [0 0 0;0 0 0;0 0 0]
+    oa_Ca0  [0 0 0;0 0 0;0 0 0]
+    oa_Ka0  [0 0 0;0 0 0;0 0 0]
+    oa_Ka1  [0 0 0;0 0 0;0 0 0]
+    oa_Ka2  [0 0 0;0 0 0;0 0 0]
+    oa_m    [5.05 0 0 0]
+    oa_w    [1068.14 1 1 1]
+    oa_b0   [0 0 0 0;-0.1 0 0 0;1 0 0 0]
+    oa_b1   [0 0 0 0;0 0 0 0;0 0 0 0]
+Generating 14 records
+
+=== 1/14  T1_standstill_Ym30  [train] seed 101 ===
+WATCHDOG ALERT available RAM 3.65 GB < 4 GB (tree 1,909 MB)
+  force peak [1188 966 641] N | force rms [262.6 259.9 158.9] N | limiter scale 1.000 | 40.4 s
+  saved T1_standstill_Ym30.mat
+
+=== 2/14  T2_standstill_Ym15  [train] seed 102 ===
+[wd] t=58s tree=2,867 MB cpu=12% availRAM=2.87 GB C:free=9.45 GB
+  force peak [1066 1053 607] N | force rms [262.4 259.4 159.6] N | limiter scale 1.000 | 18.0 s
+  saved T2_standstill_Ym15.mat
+
+=== 3/14  T3_standstill_Y000  [train] seed 103 ===
+  force peak [951 1093 606] N | force rms [258.5 264.2 159.5] N | limiter scale 1.000 | 18.0 s
+  saved T3_standstill_Y000.mat
+
+=== 4/14  T4_standstill_Yp15  [train] seed 104 ===
+  force peak [1193 1117 585] N | force rms [261.5 260.5 159.3] N | limiter scale 1.000 | 17.6 s
+  saved T4_standstill_Yp15.mat
+
+=== 5/14  T5_standstill_Yp30  [train] seed 105 ===
+[wd] t=120s tree=2,906 MB cpu=8% availRAM=2.77 GB C:free=9.35 GB
+  force peak [935 1182 560] N | force rms [258.5 265.7 158.2] N | limiter scale 1.000 | 17.9 s
+  saved T5_standstill_Yp30.mat
+
+=== 6/14  T6_ysweep_slow  [train] seed 106 ===
+  force peak [980 1075 549] N | force rms [254.7 260.0 159.1] N | limiter scale 1.000 | 17.1 s
+  saved T6_ysweep_slow.mat
+
+=== 7/14  T7_ysweep_fast  [train] seed 107 ===
+  force peak [1092 1094 567] N | force rms [252.6 263.2 163.7] N | limiter scale 1.000 | 16.6 s
+  saved T7_ysweep_fast.mat
+
+=== 8/14  T8_ysweep_xmix  [train] seed 108 ===
+  force peak [1050 1059 583] N | force rms [266.4 255.4 159.9] N | limiter scale 1.000 | 16.6 s
+  saved T8_ysweep_xmix.mat
+
+=== 9/14  T9_aprbs_30  [train] seed 109 ===
+[wd] t=182s tree=2,913 MB cpu=11% availRAM=2.83 GB C:free=9.25 GB
+  force peak [1205 1023 636] N | force rms [264.8 264.9 161.1] N | limiter scale 1.000 | 19.1 s
+  saved T9_aprbs_30.mat
+
+=== 10/14  T10_aprbs_60  [train] seed 110 ===
+  force peak [1231 1241 742] N | force rms [303.2 302.8 176.8] N | limiter scale 1.000 | 19.5 s
+  saved T10_aprbs_60.mat
+
+=== 11/14  T11_aprbs_100  [train] seed 111 ===
+  force peak [1555 1645 893] N | force rms [383.1 386.0 215.6] N | limiter scale 1.000 | 17.9 s
+  saved T11_aprbs_100.mat
+
+=== 12/14  T12_aprbs_yaw  [train] seed 112 ===
+[wd] t=244s tree=2,834 MB cpu=9% availRAM=2.97 GB C:free=9.20 GB
+  force peak [1300 1179 680] N | force rms [278.0 287.0 174.8] N | limiter scale 1.000 | 18.0 s
+  saved T12_aprbs_yaw.mat
+
+=== 13/14  T13_lissajous  [train] seed 113 ===
+  force peak [1222 1157 605] N | force rms [287.9 286.3 159.4] N | limiter scale 1.000 | 17.0 s
+  saved T13_lissajous.mat
+
+=== 14/14  T14_lissajous_yaw  [train] seed 114 ===
+  force peak [962 1211 616] N | force rms [261.5 271.7 164.3] N | limiter scale 1.000 | 17.3 s
+  saved T14_lissajous_yaw.mat
+
+Done: 14 records in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_s170_n14
+
+##### scan 2/4: augmentation_oa_s185 <- design/addition_scan_f185.mat
+OA dataset generation
+  model   : gantry_oa (q1 loop = gantrySystemOA, 4 absorber slots)
+  band    : 140 to 230 Hz, A_sym 240.0 N, A_Y 180.0 N, A_anti 87.00 N m
+  out_dir : C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_s185_n14
+  addition: design/addition_scan_f185.mat
+    oa_Ma0  [0 0 0;0 0 0;0 0 0]
+    oa_Ma1  [0 0 0;0 0 0;0 0 0]
+    oa_Ma2  [0 0 0;0 0 0;0 0 0]
+    oa_Ca0  [0 0 0;0 0 0;0 0 0]
+    oa_Ka0  [0 0 0;0 0 0;0 0 0]
+    oa_Ka1  [0 0 0;0 0 0;0 0 0]
+    oa_Ka2  [0 0 0;0 0 0;0 0 0]
+    oa_m    [5.05 0 0 0]
+    oa_w    [1162.39 1 1 1]
+    oa_b0   [0 0 0 0;-0.1 0 0 0;1 0 0 0]
+    oa_b1   [0 0 0 0;0 0 0 0;0 0 0 0]
+Generating 14 records
+
+=== 1/14  T1_standstill_Ym30  [train] seed 101 ===
+  force peak [1189 961 724] N | force rms [262.7 260.0 184.8] N | limiter scale 1.000 | 19.5 s
+  saved T1_standstill_Ym30.mat
+
+=== 2/14  T2_standstill_Ym15  [train] seed 102 ===
+[wd] t=307s tree=2,866 MB cpu=12% availRAM=2.93 GB C:free=9.07 GB
+  force peak [1069 1055 678] N | force rms [262.4 259.3 185.5] N | limiter scale 1.000 | 17.5 s
+  saved T2_standstill_Ym15.mat
+
+=== 3/14  T3_standstill_Y000  [train] seed 103 ===
+  force peak [950 1100 688] N | force rms [258.7 264.3 185.3] N | limiter scale 1.000 | 16.2 s
+  saved T3_standstill_Y000.mat
+
+=== 4/14  T4_standstill_Yp15  [train] seed 104 ===
+  force peak [1189 1117 698] N | force rms [261.5 260.8 185.2] N | limiter scale 1.000 | 16.9 s
+  saved T4_standstill_Yp15.mat
+
+=== 5/14  T5_standstill_Yp30  [train] seed 105 ===
+[wd] t=369s tree=2,849 MB cpu=8% availRAM=2.93 GB C:free=8.97 GB
+  force peak [939 1184 646] N | force rms [258.6 266.0 184.0] N | limiter scale 1.000 | 17.3 s
+  saved T5_standstill_Yp30.mat
+
+=== 6/14  T6_ysweep_slow  [train] seed 106 ===
+  force peak [988 1083 642] N | force rms [255.0 260.2 184.8] N | limiter scale 1.000 | 17.3 s
+  saved T6_ysweep_slow.mat
+
+=== 7/14  T7_ysweep_fast  [train] seed 107 ===
+  force peak [1093 1102 652] N | force rms [252.7 263.4 188.8] N | limiter scale 1.000 | 17.3 s
+  saved T7_ysweep_fast.mat
+
+=== 8/14  T8_ysweep_xmix  [train] seed 108 ===
+  force peak [1058 1054 686] N | force rms [266.5 255.5 185.8] N | limiter scale 1.000 | 17.0 s
+  saved T8_ysweep_xmix.mat
+
+=== 9/14  T9_aprbs_30  [train] seed 109 ===
+[wd] t=431s tree=2,851 MB cpu=9% availRAM=2.92 GB C:free=8.84 GB
+  force peak [1206 1031 748] N | force rms [264.9 265.0 186.6] N | limiter scale 1.000 | 16.3 s
+  saved T9_aprbs_30.mat
+
+=== 10/14  T10_aprbs_60  [train] seed 110 ===
+  force peak [1235 1238 839] N | force rms [303.4 302.9 200.4] N | limiter scale 1.000 | 16.6 s
+  saved T10_aprbs_60.mat
+
+=== 11/14  T11_aprbs_100  [train] seed 111 ===
+  force peak [1557 1643 948] N | force rms [383.2 386.1 235.2] N | limiter scale 1.000 | 17.4 s
+  saved T11_aprbs_100.mat
+
+=== 12/14  T12_aprbs_yaw  [train] seed 112 ===
+  force peak [1311 1182 793] N | force rms [278.1 287.0 198.7] N | limiter scale 1.000 | 16.5 s
+  saved T12_aprbs_yaw.mat
+
+=== 13/14  T13_lissajous  [train] seed 113 ===
+[wd] t=493s tree=2,845 MB cpu=12% availRAM=2.94 GB C:free=8.72 GB
+  force peak [1225 1152 721] N | force rms [288.1 286.5 185.2] N | limiter scale 1.000 | 16.7 s
+  saved T13_lissajous.mat
+
+=== 14/14  T14_lissajous_yaw  [train] seed 114 ===
+  force peak [963 1224 722] N | force rms [261.6 271.9 189.4] N | limiter scale 1.000 | 17.7 s
+  saved T14_lissajous_yaw.mat
+
+Done: 14 records in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_s185_n14
+
+##### scan 3/4: augmentation_oa_s200 <- design/addition_scan_f200.mat
+OA dataset generation
+  model   : gantry_oa (q1 loop = gantrySystemOA, 4 absorber slots)
+  band    : 140 to 230 Hz, A_sym 240.0 N, A_Y 180.0 N, A_anti 87.00 N m
+  out_dir : C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_s200_n14
+  addition: design/addition_scan_f200.mat
+    oa_Ma0  [0 0 0;0 0 0;0 0 0]
+    oa_Ma1  [0 0 0;0 0 0;0 0 0]
+    oa_Ma2  [0 0 0;0 0 0;0 0 0]
+    oa_Ca0  [0 0 0;0 0 0;0 0 0]
+    oa_Ka0  [0 0 0;0 0 0;0 0 0]
+    oa_Ka1  [0 0 0;0 0 0;0 0 0]
+    oa_Ka2  [0 0 0;0 0 0;0 0 0]
+    oa_m    [5.05 0 0 0]
+    oa_w    [1256.64 1 1 1]
+    oa_b0   [0 0 0 0;-0.1 0 0 0;1 0 0 0]
+    oa_b1   [0 0 0 0;0 0 0 0;0 0 0 0]
+Generating 14 records
+
+=== 1/14  T1_standstill_Ym30  [train] seed 101 ===
+  force peak [1191 956 780] N | force rms [262.8 260.1 203.3] N | limiter scale 1.000 | 18.8 s
+  saved T1_standstill_Ym30.mat
+
+=== 2/14  T2_standstill_Ym15  [train] seed 102 ===
+[wd] t=555s tree=2,859 MB cpu=9% availRAM=2.96 GB C:free=8.61 GB
+  force peak [1070 1056 731] N | force rms [262.4 259.3 204.0] N | limiter scale 1.000 | 16.5 s
+  saved T2_standstill_Ym15.mat
+
+=== 3/14  T3_standstill_Y000  [train] seed 103 ===
+  force peak [949 1105 747] N | force rms [258.8 264.4 203.9] N | limiter scale 1.000 | 17.9 s
+  saved T3_standstill_Y000.mat
+
+=== 4/14  T4_standstill_Yp15  [train] seed 104 ===
+  force peak [1186 1119 773] N | force rms [261.5 260.9 203.7] N | limiter scale 1.000 | 17.1 s
+  saved T4_standstill_Yp15.mat
+
+=== 5/14  T5_standstill_Yp30  [train] seed 105 ===
+  force peak [941 1186 709] N | force rms [258.6 266.2 202.5] N | limiter scale 1.000 | 17.9 s
+  saved T5_standstill_Yp30.mat
+
+=== 6/14  T6_ysweep_slow  [train] seed 106 ===
+[wd] t=618s tree=2,851 MB cpu=14% availRAM=2.87 GB C:free=8.49 GB
+  force peak [993 1089 716] N | force rms [255.1 260.4 203.3] N | limiter scale 1.000 | 17.5 s
+  saved T6_ysweep_slow.mat
+
+=== 7/14  T7_ysweep_fast  [train] seed 107 ===
+  force peak [1093 1109 731] N | force rms [252.8 263.6 206.9] N | limiter scale 1.000 | 16.9 s
+  saved T7_ysweep_fast.mat
+
+=== 8/14  T8_ysweep_xmix  [train] seed 108 ===
+  force peak [1063 1051 764] N | force rms [266.6 255.6 204.3] N | limiter scale 1.000 | 17.0 s
+  saved T8_ysweep_xmix.mat
+
+=== 9/14  T9_aprbs_30  [train] seed 109 ===
+[wd] t=680s tree=2,857 MB cpu=8% availRAM=2.88 GB C:free=8.38 GB
+  force peak [1207 1036 823] N | force rms [265.0 265.2 204.9] N | limiter scale 1.000 | 16.8 s
+  saved T9_aprbs_30.mat
+
+=== 10/14  T10_aprbs_60  [train] seed 110 ===
+  force peak [1237 1235 904] N | force rms [303.6 303.0 217.6] N | limiter scale 1.000 | 16.9 s
+  saved T10_aprbs_60.mat
+
+=== 11/14  T11_aprbs_100  [train] seed 111 ===
+  force peak [1560 1641 986] N | force rms [383.3 386.3 249.9] N | limiter scale 1.000 | 18.3 s
+  saved T11_aprbs_100.mat
+
+=== 12/14  T12_aprbs_yaw  [train] seed 112 ===
+  force peak [1320 1185 868] N | force rms [278.2 287.0 216.1] N | limiter scale 1.000 | 16.9 s
+  saved T12_aprbs_yaw.mat
+
+=== 13/14  T13_lissajous  [train] seed 113 ===
+[wd] t=742s tree=2,859 MB cpu=9% availRAM=2.91 GB C:free=8.25 GB
+  force peak [1227 1151 799] N | force rms [288.3 286.7 203.6] N | limiter scale 1.000 | 18.4 s
+  saved T13_lissajous.mat
+
+=== 14/14  T14_lissajous_yaw  [train] seed 114 ===
+  force peak [963 1234 793] N | force rms [261.6 272.0 207.5] N | limiter scale 1.000 | 16.6 s
+  saved T14_lissajous_yaw.mat
+
+Done: 14 records in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_s200_n14
+
+##### scan 4/4: augmentation_oa_s215 <- design/addition_scan_f215.mat
+OA dataset generation
+  model   : gantry_oa (q1 loop = gantrySystemOA, 4 absorber slots)
+  band    : 140 to 230 Hz, A_sym 240.0 N, A_Y 180.0 N, A_anti 87.00 N m
+  out_dir : C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_s215_n14
+  addition: design/addition_scan_f215.mat
+    oa_Ma0  [0 0 0;0 0 0;0 0 0]
+    oa_Ma1  [0 0 0;0 0 0;0 0 0]
+    oa_Ma2  [0 0 0;0 0 0;0 0 0]
+    oa_Ca0  [0 0 0;0 0 0;0 0 0]
+    oa_Ka0  [0 0 0;0 0 0;0 0 0]
+    oa_Ka1  [0 0 0;0 0 0;0 0 0]
+    oa_Ka2  [0 0 0;0 0 0;0 0 0]
+    oa_m    [5.05 0 0 0]
+    oa_w    [1350.88 1 1 1]
+    oa_b0   [0 0 0 0;-0.1 0 0 0;1 0 0 0]
+    oa_b1   [0 0 0 0;0 0 0 0;0 0 0 0]
+Generating 14 records
+
+=== 1/14  T1_standstill_Ym30  [train] seed 101 ===
+  force peak [1192 953 821] N | force rms [262.9 260.2 216.7] N | limiter scale 1.000 | 17.4 s
+  saved T1_standstill_Ym30.mat
+
+=== 2/14  T2_standstill_Ym15  [train] seed 102 ===
+[wd] t=804s tree=2,874 MB cpu=9% availRAM=2.94 GB C:free=8.14 GB
+  force peak [1071 1057 772] N | force rms [262.4 259.3 217.4] N | limiter scale 1.000 | 19.4 s
+  saved T2_standstill_Ym15.mat
+
+=== 3/14  T3_standstill_Y000  [train] seed 103 ===
+  force peak [947 1108 789] N | force rms [258.9 264.4 217.2] N | limiter scale 1.000 | 16.7 s
+  saved T3_standstill_Y000.mat
+
+=== 4/14  T4_standstill_Yp15  [train] seed 104 ===
+  force peak [1183 1120 826] N | force rms [261.5 261.0 217.0] N | limiter scale 1.000 | 17.3 s
+  saved T4_standstill_Yp15.mat
+
+=== 5/14  T5_standstill_Yp30  [train] seed 105 ===
+  force peak [943 1187 758] N | force rms [258.7 266.4 215.9] N | limiter scale 1.000 | 17.3 s
+  saved T5_standstill_Yp30.mat
+
+=== 6/14  T6_ysweep_slow  [train] seed 106 ===
+[wd] t=867s tree=2,863 MB cpu=8% availRAM=2.82 GB C:free=8.03 GB
+  force peak [997 1093 771] N | force rms [255.3 260.5 216.6] N | limiter scale 1.000 | 17.5 s
+  saved T6_ysweep_slow.mat
+
+=== 7/14  T7_ysweep_fast  [train] seed 107 ===
+  force peak [1092 1114 786] N | force rms [252.9 263.7 220.0] N | limiter scale 1.000 | 17.8 s
+  saved T7_ysweep_fast.mat
+
+=== 8/14  T8_ysweep_xmix  [train] seed 108 ===
+  force peak [1067 1049 819] N | force rms [266.7 255.6 217.6] N | limiter scale 1.000 | 17.7 s
+  saved T8_ysweep_xmix.mat
+
+=== 9/14  T9_aprbs_30  [train] seed 109 ===
+  force peak [1209 1040 876] N | force rms [265.1 265.3 218.1] N | limiter scale 1.000 | 17.5 s
+  saved T9_aprbs_30.mat
+
+=== 10/14  T10_aprbs_60  [train] seed 110 ===
+[wd] t=929s tree=2,867 MB cpu=11% availRAM=2.87 GB C:free=7.90 GB
+  force peak [1238 1232 950] N | force rms [303.8 303.0 230.1] N | limiter scale 1.000 | 16.9 s
+  saved T10_aprbs_60.mat
+
+=== 11/14  T11_aprbs_100  [train] seed 111 ===
+  force peak [1562 1639 1013] N | force rms [383.3 386.4 260.9] N | limiter scale 1.000 | 18.7 s
+  saved T11_aprbs_100.mat
+
+=== 12/14  T12_aprbs_yaw  [train] seed 112 ===
+  force peak [1327 1187 921] N | force rms [278.3 287.1 228.8] N | limiter scale 1.000 | 17.0 s
+  saved T12_aprbs_yaw.mat
+
+=== 13/14  T13_lissajous  [train] seed 113 ===
+[wd] t=991s tree=2,866 MB cpu=8% availRAM=2.91 GB C:free=7.79 GB
+  force peak [1228 1151 854] N | force rms [288.4 286.8 216.9] N | limiter scale 1.000 | 16.9 s
+  saved T13_lissajous.mat
+
+=== 14/14  T14_lissajous_yaw  [train] seed 114 ===
+  force peak [962 1241 843] N | force rms [261.7 272.1 220.5] N | limiter scale 1.000 | 16.4 s
+  saved T14_lissajous_yaw.mat
+
+Done: 14 records in C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_oa_s215_n14
+WATCHDOG SUMMARY exit=0 killed=False duration_s=1,021.8 samples=197 peak_tree_ws_mb=2,982 min_avail_ram_gb=2.56 min_C_free_gb=7.75 kill_reason=""

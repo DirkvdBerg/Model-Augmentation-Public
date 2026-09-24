@@ -1,0 +1,75 @@
+[run.sh] C: free 7.51 GB before launch of R019_g5_sim_g2refresh_smoke
+[wd] launch  out=scripts/gantry/encoder-transient/outputs/R019_g5_sim_g2refresh_smoke
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/encoder-transient/runners/sim_arm.py 
+  [et_paths] gantry_dynamic       vendor\gantry_dynamic\__init__.py
+  [et_paths] model_augmentation   vendor\model_augmentation\__init__.py
+  [et_paths] truth                vendor\transient\truth.py
+[sim_arm] ARM=g2refresh DRY=False SMOKE=True mode=augmentation_ma50_b140-230_a6_z03 burn_in=0 nf=20 batch=8 n_its=1 device=cpu
+Data dir (augmentation_ma50_b140-230_a6_z03): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\data\gantry\matlab\trajectory\augmentation_ma50_b140-230_a6_z03
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.415e-05 m  vdelta_a std=5.325e-02 m/s
+Loaded 14 train, 4 val, 4 test trajectories
+  T1: 48000 samples  (T1_standstill_Ym30.mat)
+  T2: 48000 samples  (T2_standstill_Ym15.mat)
+  T3: 48000 samples  (T3_standstill_Y000.mat)
+  T4: 48000 samples  (T4_standstill_Yp15.mat)
+  T5: 48000 samples  (T5_standstill_Yp30.mat)
+  T6: 48000 samples  (T6_ysweep_slow.mat)
+  T7: 48000 samples  (T7_ysweep_fast.mat)
+  T8: 48000 samples  (T8_ysweep_xmix.mat)
+  T9: 48000 samples  (T9_aprbs_30.mat)
+  T10: 48000 samples  (T10_aprbs_60.mat)
+  T11: 48000 samples  (T11_aprbs_100.mat)
+  T12: 48000 samples  (T12_aprbs_yaw.mat)
+  T13: 48000 samples  (T13_lissajous.mat)
+  T14: 48000 samples  (T14_lissajous_yaw.mat)
+[closed loop] one bank over 18 records, 8 distinct controllers, Y_op [-0.3, -0.22, -0.15, -0.1, 0.0, 0.1, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[sim_arm] encoder swapped: g2refresh {'deg': 6, 'fit_resid': 1.8389157960087554e-06, 'offset': 0.0}; optimizer rebuilt over 23534 encoder parameters
+
+Training: nf=20  epochs=1  val=sim-RMS  NX_ANN=8
+
+[nf] rms = RMS over nf=20 (0.005 s) windows, closed loop, metres
+     chan = per-channel X/Theta/Y | grow = RMS(last step)/RMS(first) | bias = mean residual
+     train = all windows since the last validation, running mean | val = 256 fixed windows, snapshot
+     metre weighting is NOT the objective's, which weights channels by 1/ystd^2;
+     numbers are not comparable ACROSS loop modes, the [nf gap] ratios are
+Model already initilized (init_model_done=True), skipping initilizing of the model, the norm and the creation of the optimizer
+Size of the training array =  1.9 MB
+N_training_samples = 1680, batch_size = 8, N_batch_updates_per_epoch = 210
+[wd] t=58s tree=769 MB cpu=8% availRAM=4.31 GB C:free=7.51 GB
+[wd] t=119s tree=800 MB cpu=8% availRAM=4.34 GB C:free=7.51 GB
+    [nf val  ] rms 1.913e-05  chan 2.1e-06/2.2e-06/3.3e-05  grow 1.83x  bias -6.6e-08/+7.1e-08/-2.2e-07  (256 win)
+    [nf gap  ] val_sim 2.062e-05 = 1.08x val_nf (horizon)
+    [x_aug   ] ||x_aug|| end-of-rollout  mean 0.000e+00  std 0.000e+00  max 0.000e+00
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\runners\sim_arm.py", line 182, in <module>
+    main()
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\runners\sim_arm.py", line 166, in main
+    bestfit, _ = train_model_with_diagnostics(fit_sys, hp, cfg, data, norm, resume_ckpt=None,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\vendor\gantry_dynamic\training.py", line 802, in train_model_with_diagnostics
+    bestfit = train_model(fit_sys, hp, cfg, data,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\vendor\gantry_dynamic\model.py", line 336, in train_model
+    fit_sys.fit(
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\vendor\model_augmentation\fit_systems\interconnect.py", line 1681, in fit
+    return super().fit(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\vendor\model_augmentation\fit_systems\interconnect.py", line 949, in fit
+    validation(train_loss=float('nan'), time_elapsed_total=extra_t) #also sets current model to cuda
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\vendor\model_augmentation\fit_systems\interconnect.py", line 879, in validation
+    self.checkpoint_save_system()
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\encoder-transient\vendor\model_augmentation\fit_systems\interconnect.py", line 1488, in checkpoint_save_system
+    return super().checkpoint_save_system(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\fit_systems\fit_system.py", line 496, in checkpoint_save_system
+    torch.save(self.__dict__, file)
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\serialization.py", line 850, in save
+    _save(
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\serialization.py", line 1088, in _save
+    pickler.dump(obj)
+AttributeError: Can't pickle local object 'install_refresh.<locals>.loss'
+ERROR conda.cli.main_run:execute(47): `conda run python -u scripts/gantry/encoder-transient/runners/sim_arm.py` failed. (See above for error)
+WATCHDOG SUMMARY exit=1 killed=False duration_s=146.2 samples=29 peak_tree_ws_mb=809 min_avail_ram_gb=4.25 min_C_free_gb=7.51 kill_reason=""

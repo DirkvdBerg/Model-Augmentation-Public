@@ -1,0 +1,24 @@
+[wd] launch  out=scripts/gantry/blackbox-closed-loop/outputs/g4_cost
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/blackbox-closed-loop/score/g4_cost.py 
+  n_windows                                  85644
+  updates_per_epoch                          167
+  epochs                                     200
+  n_updates                                  33400
+  its_per_val                                1300
+  n_validations                              26
+  t_bb_fwdbwd_cpu                            0.8822031021118164
+  t_gb_fwdbwd_cpu                            6.143366893132527
+  ratio_update                               0.1436025419705932
+  t_bb_update_cpu_smoke                      [0.9620693000033498, 1.068839100000332]
+  t_bb_val_cpu                               21.52367673522167
+  t_gb_val_cpu                               147.63245344161987
+  ratio_val                                  0.14579231214722746
+  server_t_update                            0.17749274187565317
+  server_t_val                               90.2454412191338
+  server_hours_adam                          1.6467382162907822
+  server_hours_val                           0.6517726310270774
+  cpu_hours_adam                             9.421158411128191
+  cpu_hours_val                              0.1554487764210454
+  server_hours_total_excl_recording_polish   2.2985108473178597
+  cpu_hours_total_excl_polish                9.576607187549236
+WATCHDOG SUMMARY exit=0 killed=False duration_s=7.4 samples=2 peak_tree_ws_mb=470 min_avail_ram_gb=4.21 min_C_free_gb=7.04 kill_reason=""
