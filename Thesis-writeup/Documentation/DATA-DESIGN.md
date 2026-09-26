@@ -4,11 +4,11 @@ Design on paper only; generation starts after the user approves it (?). Numbers 
 
 ## 0. Notation
 - T_AF: the benchmark truth, physics baseline + Coulomb rail friction + payload absorber (ma 0.50 mh, damping 0.03 through `ZETA_A_OVERRIDE` as in the D-188 datasets, free-free pole 212.13 Hz, anti-resonance 150 Hz; in closed loop the peak sits at 266 Hz, session 1)
-- K1: the one training controller; K2-*: changed controllers, test only (5.11)
+- K1: the one controller of every training, validation and test record, designed once at Y = 0 (not per record, as the current generator does); K2-*: changed controllers, R7 test records only (5.11)
 - max: the datasheet maximum acceleration, X 30 and Y 50 m/s² (user decision 2026-09-26); level L: a = L x max and v = L x 2 m/s unless stated
 - A_prod: the production multisine rms, 240 N symmetric, 87 N m anti, 180 N Y (6x the `gtd_config.m` values, the "a6" datasets; AUDIT M1, session 1)
 - B_tr: the training multisine band, 140 to 390 Hz at A_prod, session 1's proposal (?); no separate parameter band (Q2)
-- N_T: measured Telica noise, `hv_stuck` VAR(512) generator, injected at the encoder inside the loop (D-212); every record its own realisation
+- N_T: a force disturbance d on the motor force inside the loop (plant force = u_ff + u_fb + d), white per 20 kHz sample, stage-axis covariance calibrated so the frictionless linear loop at Y_op = 0 reproduces the measured Telica standstill error, 9.8 / 10.4 / 6.3 nm rms (`Thesis-writeup/Documentation/NOISE-INJECTION.md`); y is the true position, u_total excludes d; every record its own realisation
 - "own": the record has its own multisine phase realisation; "none": no multisine
 - j: peak reference jerk; d: move distance
 - Labels: a range label (I or E per axis) and a density label (dense or sparse), both from section 6; tables give the intended range label
@@ -46,7 +46,8 @@ Design on paper only; generation starts after the user approves it (?). Numbers 
 - One controller K1 for every record except the controller tests (user decision), designed once, not per record (5.11)
 - One truth (T_AF) for every set; control truths only where a result needs them (7.6)
 - Realisations: training and validation in 3 data realisations (new phases and noise; new setpoint draws for moves), used as replicate runs, not pooled; every test record has a noise-only twin (same r and f, new noise) for its floor; every multisine test record a second phase realisation
-- Noise N_T in every record; R5 also uses noise-free twins of its training records, since the recovery condition is derived noise-free (RESULTS-DESIGN S4)
+- Noise N_T in every record; R5 also uses noise-free twins (d = 0) of its training records, since the recovery condition is derived noise-free (RESULTS-DESIGN S4)
+- The noise matches the measured level, not its spectrum: the Telica standstill error is mostly sensor noise, over 90 % above 200 Hz, while a force disturbance moves the mass mostly below about 200 Hz; the thesis calls it "a force disturbance calibrated to the measured error level", not "the Telica noise"
 - Black box: same data, network size and hyperparameters selected on validation (Quinten: no size limit); training effort (time to converge, cost of the search) reported; limitation stated: B_tr targets what the baseline misses, which favours the grey box (TE-B1 partly counters it)
 
 ## 3. The operating-point kind
@@ -212,8 +213,16 @@ Anything the test data contain beyond what training covered, for this machine an
 - Label: E, categorical
 
 ### 5.11 Controller (core, R7)
-- Training and validation K1: the generator's rule-of-thumb diagonal controller in stage coordinates, crossover 100 Hz, designed once at Y = 0 and frozen for every record
-  - why one design: the generator now designs a controller per record at its Y_op (`gtd_build_plant.m`); the rail effective mass ranges 17.2 to 25.7 kg over ±0.30 m over both rails (rigid-baseline hand estimate, high-frequency limit; the absorber adds dynamic mass on the truth below 150 Hz), so per-record gains span a factor of about 1.5: training would hold a family of controllers, and a standstill test at Y 0.39 would bring a gain never trained; the machine also runs one fixed controller per axis (schema)
+- K1 (user decision 2026-09-26): the generator's rule-of-thumb diagonal controller in stage coordinates, crossover 100 Hz, designed once on the plant at Y = 0 and used unchanged in every training, validation and test record; only the K2 records of R7 use another controller
+- Current generator, and why it changes
+  - now: `gtd_build_plant.m` designs a new controller for every record, on the mass matrix at that record's Y_op
+  - the mass each X rail feels depends on where the head sits along the beam: 17.2 to 25.7 kg over ±0.30 m over both rails (rigid-baseline hand estimate, high-frequency limit; the absorber adds dynamic mass on the truth below 150 Hz)
+  - so the per-record gains differ by up to a factor of about 1.5, and the current training data hold a family of controllers, not one
+  - problem 1: "train with one controller, then change it" (Quinten) is then not literally true
+  - problem 2: a test at Y 0.39 m would get a controller with gains never used in training, so Y extrapolation and a controller change would be mixed in one record
+  - problem 3: the real machine runs one fixed controller per axis (`dFeedbackControllersTelica`, schema), not one scheduled on Y
+- With one K1, the loop still changes with Y because the plant changes (realised crossovers below); that is a plant effect, as on the machine, not a controller change
+- Y_op keeps one role only: the linear limit pre-check of `gtd_enforce_limits` linearises the plant at the record's Y_op (and the record starts there, D-206); the controller no longer depends on it
 - Realised loops with one design (hand estimates, approximate)
   - rails, rigid baseline: crossover 74 to 108 Hz over ±0.30 m; on the truth somewhat lower, since the absorber adds dynamic mass below 150 Hz through the yaw lever d and the offset L0; the gate below settles the truth values; about 66 Hz at the heavy rail near 0.39 m (a plant effect of Y extrapolation, not a controller change)
   - Y: below 150 Hz the absorber adds dynamic mass ma / (1 - (f/150)²), so the first Y crossover is about 83 Hz; the closed-loop peak lies at 266 Hz (half-power band about 233 to 299 Hz, session 1)
@@ -252,7 +261,7 @@ Anything the test data contain beyond what training covered, for this machine an
   - per test record: fraction p of samples with d > tau, and median d / tau; one threshold for every test type: the largest p over all validation records, frozen before any test error is read
   - dense if p is at most that threshold, sparse otherwise
   - HEURISTIC, QSAR precedent (Sahigara 2012 Sect. 2.2, 5 neighbours, 95th percentile); the threshold is data-derived (check 8)
-  - the logged u contains the controller's reaction to the noise; at about 10 nm this is negligible for the label
+  - the logged u_total excludes d, but its feedback part reacts to d; at the calibrated sub-newton level this is negligible for the label
 - Expected disagreements, listed before generation: the acceleration E records (range E, force inside the multisine's range, 5.4); the 0.1 mm records (range E, near the origin); TE-K21, K22 (feedforward: controller E, inputs close to K1); the standstill points at ±0.325 m (range E, as near the trained edge as interior points are to theirs)
 - Never the convex hull: it counts empty regions as covered (Schweidtmann 2021 Fig. 5)
 
@@ -351,7 +360,7 @@ Inside the training range, not copies of training records (as V1 to V4, VP1, VP2
 | TF-4 (?) | as above | -0.35 | B_tr, A_prod | the truth is not symmetric in Y (absorber at +L0, m1 ≠ m2) |
 
 - R3 compares the model's frozen-Y response with the truth's best linear approximation at the stated level (Quinten: an FRF is linear, the friction truth is not; friction does not show in it), plus the analytic frictionless FRF as reference
-- Number of periods per record: enough to cover the noise peak at 300 Hz near the 266 Hz closed-loop peak (?)
+- Number of periods per record: set against the noise floor, which with force injection lies mostly below about 200 Hz, under B_tr (?)
 
 ### 7.6 Control truths (Q3)
 | Truth | Records | Results |
@@ -424,7 +433,7 @@ Inside the training range, not copies of training records (as V1 to V4, VP1, VP2
 
 **Open points**
 - B_tr = 140 to 390 Hz at A_prod, session 1's proposal (?)
-- noise location: D-212 injects at the encoder, the controller's input; Quinten's "on the input" is read as that, a force disturbance would be a different model (?)
+- noise: on the input force (`NOISE-INJECTION.md`, agreed 2026-09-26); session 1's floor was computed with encoder noise, so its verdicts, mainly the low-frequency margins for joint estimation (smallest about 13 dB), need rechecking against the force-noise floor before the band and the joint-estimation verdict are final (?)
 - Y origin relative to the beam centre (section 1) (?)
 - the ASMPT profile set from Jasper and Dragan and the K2 set from Quinten: freeze before generation; if timing requires, generate the unaffected core records first (?)
 - f_tr = 0.75 (?); log-strata distances (?); 8 ms as a synthetic jerk value (?); payload source (?); T_OA and T_F (?); absorber-only truth (?); FRF periods (?)
@@ -455,8 +464,24 @@ Inside the training range, not copies of training records (as V1 to V4, VP1, VP2
 - Payload +2 kg: on the rigid head mass only; `gtd_config.m` sets ma = MA_FRAC x mh, which would otherwise grow the absorber (?)
 - Per-record band field for TE-B1 and a sweep law for TE-B2 (?)
 - Seeds: seed = 100 x track_id + record index collides beyond 100 records; a collision-free key (truth, set, record, realisation, twin, signal) with every seed stored in the manifest (?)
-- Noise: `hv_stuck` at the encoder in the loop, 9.8 / 10.4 / 6.3 nm rms measured, over 90 % above 200 Hz with a peak at 300 Hz inside B_tr; signals stored in double; anti-alias before downsampling; D-212 header still PROPOSED, J. accepted the rms approach on 2026-09-25
-- Friction and noise at standstill: D-212 measured a 10 to 45 % larger noise difference on standstill records with Karnopp friction; relevant for TR-S6, S7 and TE-M3, where the rails stick
+- Noise: force disturbance at the plant input (`NOISE-INJECTION.md`), sigma 0.31 / 0.34 / 0.10 N per 20 kHz sample, of which 0.05 / 0.06 / 0.02 N below 300 Hz; the servo-error floor it creates lies mostly below about 200 Hz; d is recorded for diagnostics only, never a model input; signals in double; checks: d = 0 reproduces the records bitwise, a friction-off standstill record reproduces 9.8 / 10.4 / 6.3 nm within 2 %
+- Noise and the loop: calibrated at Y_op = 0 for every record, so the error level varies up to about 30 % on X over Y ±0.30, and it changes under every K2; the noise-only twins give each record and controller its own floor
+- Friction and noise at standstill: Karnopp friction holds a rail at rest below 11 to 18 N, so the sub-newton noise barely moves it; standstill records whose rails stick (TR-S6, S7, VA-S5, S6, TE-M3) carry almost no noise and a floor near zero; at A_prod the rails slide (session 1) and the noise enters
+
+### Implementation to do before generation
+Generator changes the design requires; none of them depends on the open questions of section 9. Every new dataset goes to a new folder, with `cfg.out_dir` and `cfg.fig_dir` both overridden.
+1. One fixed K1: design the controller at Y = 0 in `gtd_build_plant.m`, keep the pre-check plant at the record's Y_op (5.11)
+2. Binding post-simulation check on the simulated truth: peak and rms force, position, velocity and yaw against lim; regenerate a failing record with its multisine scaled down and record the realised level (section 10)
+3. Input-force noise block: a Sum block before the input `u` of the Extended ODE, fed by a From Workspace `d_in`, own seed per record; `d_in` recorded for diagnostics only (`NOISE-INJECTION.md` section 4); d = 0 must reproduce the records bitwise
+4. Per-record acceleration for the ILC-shape records: `gtd_build_records_telica` holds one `TEL` struct; the levels 0.45 and 0.75 max need a per-record field (5.7)
+5. X-only and Y-only routes: `gtd_make_reference_telica` asserts every move equals the stroke on both axes; allow a zero stroke on one axis (5.7)
+6. Explicit setpoint lists: deterministic move sequences with dwell through the existing move machinery (`ref_aprbs`), for TE-Y9, TE-X1, TE-C1 and the ASMPT S-curve records (7.4)
+7. Log-strata move distances in `ref_aprbs`, replacing uniform setpoints (5.6)
+8. Collision-free seed key (truth, set, record, realisation, twin, signal), every seed stored in the manifest; the current `100 x track_id + k` collides beyond 100 records
+9. Per-record band field for TE-B1 and a sweep law for TE-B2 (5.8, 5.10)
+10. Payload on the rigid head mass only: `gtd_config.m` sets ma = MA_FRAC x mh, which would otherwise grow the absorber (5.12)
+11. Acceleration assert: a named exception for TE-A8 in `gtd_check_phaseA`, and a 1 % margin at 1.0 max if the FIR discretisation needs it (section 10)
+12. Controller gate: stability and margins of K1 and every K2 on T_AF over Y up to ±0.39, before any controller record is generated (5.11)
 
 ## 11. Critic points (`CRITIC.md`, first draft) and how they were handled
 1. Labelling rule could not move I to E: two labels, ladder by density, expected disagreements listed (section 6)
@@ -516,7 +541,7 @@ Inside the training range, not copies of training records (as V1 to V4, VP1, VP2
 - Y range, old line and why it changed: the draft said "fallback if the geometry rules out |Y| > 0.3625 m: E points ±0.325, ±0.35, ±0.36 only", from Garcia's cross-arm length (0.725 m, rails at ±0.3625); it is replaced because (1) the datasheet cycle (p. 4) puts the pick station at Y = -0.40 m, so the ends are operational, and (2) Garcia's table also lists a 0.25 m payload, which on a 0.725 m arm limits the head to ±0.24 m and his validation move to ±0.2 m, so the geometry argument taken literally would already exclude the current ±0.30 data; the simulator is stated as a synthetic benchmark (section 1)
 - ILC-shape profiles back in training and validation without multisine, as in the current dataset (TP and VP, D-206), at 0.45 and 0.75 max; the no-multisine patch record TR-P6 is dropped
 - Production multisine level A_prod (6x `gtd_config.m`) and session 1's band; the amplitude axis gains A_prod/6, session 1's stick regime
-- Quinten's comments that change data: R3 as a best linear approximation with its own periodic records (7.5); R5 only with a truly orthogonal addition (T_OA); R1 without augmentation and black box (no data change); black-box size by hyperparameter search on validation, training effort reported; noise inside the simulation (D-212)
-- Noise model: `hv_stuck` in the loop at the encoder, own realisation per record, stored in double (D-212)
+- Quinten's comments that change data: R3 as a best linear approximation with its own periodic records (7.5); R5 only with a truly orthogonal addition (T_OA); R1 without augmentation and black box (no data change); black-box size by hyperparameter search on validation, training effort reported; noise inside the simulation, on the input
+- Noise model: a force disturbance on the motor force, calibrated to the measured error level (`NOISE-INJECTION.md`), replacing the encoder injection of D-212; own realisation per record; the floor moves from mostly above 200 Hz to mostly below it; session 1's floor to be rechecked (section 9)
 - Validation, as in the current dataset (V1 to V4, VP1, VP2): inside the training range but not copies of training records (user decision); the earlier record-for-record mirror is replaced; I2 drops the validation Y (16 points) and the R3 "between" point moves from 0.225 to 0.2 m
 - Baseline vs true system: the generator's limit pre-check runs on the rigid baseline, so a post-simulation check on the simulated truth becomes the binding limit check (section 10); every hand estimate now says which model it uses; 5.1 gives the true system's growth beyond the training edge (coupling +25 / +39 %, yaw inertia +14 / +12 %) beside the baseline's

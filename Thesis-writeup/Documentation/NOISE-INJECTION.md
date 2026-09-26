@@ -1,6 +1,6 @@
 # Noise in the simulated data: level and injection point
 
-Status 2026-09-26: approach fixed; force level not yet computed; dataset not yet generated.
+Status 2026-09-26: approach fixed; force level and correlation computed (section 3); dataset not yet generated.
 
 ## 1. Goal and instruction
 - Goal: a realistic noise level from the Telica data, added in the simulation that generates the training data
@@ -14,16 +14,28 @@ Status 2026-09-26: approach fixed; force level not yet computed; dataset not yet
 - Level (rms): X1 9.8 nm, X2 10.4 nm, Y 6.3 nm
 - Details: `scripts/gantry/closed-loop-noise/REPORT.md` G1; spectrum `outputs/g1_spectra/g1.npz`
 
-## 3. Step 2: from nm to newtons (one number per axis)
+## 3. Step 2: from nm to newtons, with the cross-axis correlation
 - The level is a position error (nm); the input is a force (N), so it needs one conversion
-- Noise force: white, independent per axis [F_X1, F_X2, F_Y], rms sigma_X1, sigma_X2, sigma_Y, held at the 20 kHz controller rate
-- Choose the three sigmas so the simulation's standstill servo error equals the measured level:
-  - linear closed loop of the simulation: Garcia plant (`controller.py` parameters) with the controller Cfb at 20 kHz, Y_op = 0
-  - e = S G d, so the error variance per axis is linear in the three force variances: var(e_i) = sum_j q_ij sigma_j^2, with q_ij the squared impulse-response sum (the H2 gain) from force j to error i
-  - solve this 3 x 3 linear system for sigma_j^2 with var(e) = (9.8, 10.4, 6.3 nm)^2
-- Computed on the linear loop only (friction does not enter the conversion): with Karnopp friction a rail at rest is locked below 11-18 N, and a sub-newton force produces no motion to calibrate against
-- One set of sigmas for all records
-- Result: sigma = (?) / (?) / (?) N, not yet computed
+- Noise force d: white per 20 kHz sample (held at the controller rate), stage axes [F_X1, F_X2, F_Y], correlated across the axes through one 3 x 3 covariance Sd
+- Target: the measured zero-lag error covariance (from `g1.npz`): rms 9.85 / 10.40 / 6.34 nm, correlation X1-X2 -0.08, X1-Y -0.04, X2-Y 0.00
+  - the overall correlation is weak; the strong X1-X2 coherence (up to 0.82) is local to 400-700 Hz
+- Loop used: the simulation's own truth, linearised at rest, friction off (frictionless 8-state plant with the production absorber, `scripts/gantry/transient/code/truth.py`), ZOH at 20 kHz, controller Cfb at 20 kHz (`controller.py`)
+- Method: the error covariance is linear in Sd (discrete Lyapunov equation of the closed loop), so the 3 variances and 3 cross-terms of Sd follow from one 6 x 6 linear solve per Y_op
+- Friction off in this step only: with Karnopp friction a rail at rest is locked below 11-18 N, and a sub-newton force produces no motion to calibrate against
+
+Result at Y_op = 0 (used for all records):
+
+| | X1 | X2 | Y |
+|-|-|-|-|
+| sigma per 20 kHz sample [N] | 0.312 | 0.342 | 0.099 |
+| of which below 300 Hz [N rms] | 0.054 | 0.059 | 0.017 |
+
+- Force covariance Sd [N^2]: [[0.0975, -0.0132, -0.0035], [-0.0132, 0.1167, 0.0010], [-0.0035, 0.0010, 0.0098]]; force correlation X1-X2 -0.12, X1-Y -0.11, X2-Y 0.03; a valid covariance at every Y_op
+- Dependence on Y_op (controller and M(Y) change): sigma 0.29-0.43 / 0.32-0.46 / 0.10 N over Y_op -0.3 to 0.3 m; with the Y_op = 0 forces, records at other Y_op get a correspondingly different error level (up to about 30 % on X) (?)
+- Correlation matters little here: independent axes give the same sigmas within 1 % and error correlations +0.03 / +0.04 / -0.02 instead of -0.08 / -0.04 / 0.00; the full Sd keeps the measured values at no extra cost
+- Checks: the loop built here equals the noise session's simulated loop (`closed-loop-noise/outputs/recipe/recipe.mat`) within 4e-8; a 20 s time-domain run of the linear loop with Sd gives 9.94 / 10.55 / 6.38 nm (+0.9 / +1.4 / +0.6 %) and correlations -0.06 / -0.03 / 0.00
+- Run: `scripts/gantry/noise-training/tests/t6_force_level.py`, result `outputs/t6_force_level/t6.json` (NT-008)
+- Generating d per record: draw w ~ N(0, I) per 20 kHz sample, d = L w with L L^T = Sd (Cholesky), own seed per record
 
 ## 4. Step 3: where it enters the simulation
 - Node: the motor force entering the plant, per stage axis: plant force = u_ff + u_fb + d
@@ -49,6 +61,10 @@ Status 2026-09-26: approach fixed; force level not yet computed; dataset not yet
 ## 7. Known limits (stated, not corrected)
 - The level matches, the spectrum does not: a force moves the mass mostly at low frequency, so the simulated noise sits mainly below ~200 Hz, while Telica's is over 90 % above 200 Hz (mostly sensor noise, not modelled here)
 - At true standstill the simulated Karnopp friction holds the rails, so standstill records carry almost no noise; the real machine shows 10 nm there
+  - why the real machine differs: most of its 10 nm is sensor noise, which needs no motion and is not modelled here; and real friction does not lock hard at nm scale: a held rail behaves as a stiff spring with damping (pre-sliding), so small forces still move it slightly
+  - evidence on Telica (`telica-real` TR-015): Karnopp's hard stick drove a stick-slip limit cycle the machine does not have; a softer (tanh) friction law matched the machine at standstill, 12 / 12 / 8 nm against the measured 11 / 11 / 7 nm
+  - so the limit lies in the simulation's friction model at rest, not in the conversion to force (section 3); sliding records carry the intended level
+  - kept as a stated limit; changing it means changing the friction model of the truth, a separate decision
 - SNR for comparison with Hoekstra et al.: compute afterwards from the data, relative to the servo error; relative to position (mm to cm motion, nm noise) it is ~140 dB and meaningless
 
 ## 8. For training

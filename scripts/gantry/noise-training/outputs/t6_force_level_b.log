@@ -1,0 +1,14 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+measured rms [ 9.848 10.4    6.338] nm, corr X1X2 -0.081 X1Y -0.044 X2Y -0.002
+Y_op -0.30  S_sim check 4.2e-08 | full: psd True, sigma [0.431 0.316 0.099] N, eig [0.00974 0.09722 0.18807] | psd: rms [ 9.85 10.4   6.34] nm corr [-0.081 -0.044 -0.002] | diag: sigma [0.43  0.315 0.1  ] N, corr [ 0.027  0.022 -0.032]
+Y_op -0.15  S_sim check 4.2e-08 | full: psd True, sigma [0.36  0.318 0.099] N, eig [0.00966 0.09555 0.135  ] | psd: rms [ 9.85 10.4   6.34] nm corr [-0.081 -0.044 -0.002] | diag: sigma [0.359 0.316 0.1  ] N, corr [ 0.036  0.029 -0.027]
+Y_op +0.00  S_sim check 4.2e-08 | full: psd True, sigma [0.312 0.342 0.099] N, eig [0.00963 0.09081 0.12347] | psd: rms [ 9.85 10.4   6.34] nm corr [-0.081 -0.044 -0.002] | diag: sigma [0.312 0.34  0.1  ] N, corr [ 0.041  0.036 -0.017]
+Y_op +0.10  S_sim check 4.2e-08 | full: psd True, sigma [0.295 0.371 0.099] N, eig [0.00965 0.08364 0.14125] | psd: rms [ 9.85 10.4   6.34] nm corr [-0.081 -0.044 -0.002] | diag: sigma [0.294 0.37  0.1  ] N, corr [ 0.041  0.04  -0.01 ]
+Y_op +0.15  S_sim check 4.2e-08 | full: psd True, sigma [0.29  0.39  0.099] N, eig [0.00967 0.08162 0.15508] | psd: rms [ 9.85 10.4   6.34] nm corr [-0.081 -0.044 -0.002] | diag: sigma [0.29  0.389 0.1  ] N, corr [ 0.039  0.04  -0.007]
+Y_op +0.22  S_sim check 4.2e-08 | full: psd True, sigma [0.288 0.421 0.099] N, eig [0.00972 0.08084 0.17976] | psd: rms [ 9.85 10.4   6.34] nm corr [-0.081 -0.044 -0.002] | diag: sigma [0.287 0.42  0.1  ] N, corr [ 0.036  0.038 -0.005]
+Y_op +0.30  S_sim check 4.3e-08 | full: psd True, sigma [0.29  0.463 0.1  ] N, eig [0.00979 0.08257 0.2158 ] | psd: rms [ 9.85 10.4   6.34] nm corr [-0.081 -0.044 -0.002] | diag: sigma [0.29  0.462 0.101] N, corr [ 0.03   0.033 -0.003]
+time domain (20 s, Y_op 0, PSD covariance): rms [ 9.94 10.55  6.38] nm, corr [-0.064 -0.032 -0.001]
+T6 done

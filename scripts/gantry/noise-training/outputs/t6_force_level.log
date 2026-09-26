@@ -1,0 +1,13 @@
+[run.sh] C: free 0.18 GB before launch of t6_force_level
+[wd] launch  out=scripts/gantry/noise-training/outputs/t6_force_level
+[wd] command conda run --no-capture-output -n GraduationProject python -u scripts/gantry/noise-training/tests/t6_force_level.py t6_force_level
+WATCHDOG ALERT C: free 0.18 GB < 1.3 GB
+WATCHDOG KILL C: free 0.18 GB < 1 GB; killing tree of PID 13604 (3 processes, 31 MB)
+taskkill.exe : ERROR: The process with PID 8816 (child process of PID 27904) could not be terminated.
+At C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP 
+model\Baseline-LPV-Augmentation\scripts\gantry\noise-training\tools\watchdog.ps1:134 char:9
++         & taskkill.exe /T /F /PID $rootId 2>&1 | Out-Null
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ERROR: The proc... be terminated.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
