@@ -5,6 +5,17 @@ Task: `tasks/handoffs/2026-09-25-closed-loop-excitation-validation.md`. Consumer
 absorber (ma 0.50, zeta 0.03), always. Sections 1 to 7 were written before any computation; section 8b
 lists what changed after it.
 
+One data set. The data are generated once, from the truth under K1; the truth is never detuned. "Nominal" and
+"10 % detuned" (D-191 vector) are two versions of the BASELINE MODEL: the detuned one is the parameter start value of
+joint estimation, not a property of the data (`DATA-DESIGN.md` Q2). Each baseline model is compared with the same
+truth FRF, and the excitation must serve both comparisons on the one data set. Where older sections below say
+"detuned data" or "joint-estimation data", they mean this second comparison, not a second data set.
+
+| comparison (same data, same truth, same K1) | 90 % band (T2) |
+|-|-|
+| nominal baseline model vs Coulomb + MSD | 106 to 297 Hz |
+| 10 % detuned baseline model vs Coulomb + MSD | 106 to 290 Hz |
+
 Paths: every relative path in this file (`figures/`, `outputs/`, `matlab/`, `*.py`) is under
 `scripts/gantry/excitation-closed-loop/`. The document moved here on 2026-09-26.
 
@@ -40,9 +51,11 @@ Done (section 17): T3 and friction coverage on the planned references of `DATA-D
 
 Done (section 18): T4 for the detuned case, gamma 1.27 on the planned data (limit 5), also at the detuned start; the cross-entry gap does not cost separability.
 
+Noise (section 19): the decision is noiseless; the argument that adding noise does not change it is written, but its numbers come from the superseded white-force calibration and MUST BE RECOMPUTED once the shaped noise spectrum exists.
+
 ## 1. What this must establish
 - (a) The multisine band the absorber data must excite: where the nominal baseline and the truth differ in closed loop, above the floor
-- (b) The frequencies the joint-estimation data must excite: per identifiable combination, where a 10 % detuning changes the closed-loop servo error above the floor, and whether two combinations can be told apart
+- (b) The frequencies the same data must excite for joint estimation from the 10 % detuned baseline model: per identifiable combination, where a 10 % detuning changes the closed-loop servo error above the floor, and whether two combinations can be told apart
 - (c) Per record class: does it deliver (a) and (b) in closed loop, with an explicit verdict on the slow motion profiles and on the reference alone (no multisine)
 
 ## 2. Operating-point kind: every condition the closed-loop linearised response depends on
@@ -192,7 +205,7 @@ Figures (`figures/`):
   - the friction mismatch in X (50 to 100 Hz, and below 20 Hz between the rails) is not targeted by this band; the motion records carry it (section 10)
 - Delivered vs injected: in 140 to 230 Hz on the standstill records u_total is 251 / 247 / 117 N rms per stage rail against 170 / 170 / 180 N injected (1.47 / 1.45 / 0.65): feedback reshapes the band
 
-## 10. 10 % detuned baseline vs Coulomb + MSD: the joint-estimation data
+## 10. 10 % detuned baseline model vs Coulomb + MSD: joint estimation on the same data
 - Noiseless, training-loss weighting (J4). Separability per record set; gamma critical 5 to 20; r_i = independent share (1 orthogonal, 0 confounded):
 
 | set | with multisine: gamma, lowest r_i | reference alone: gamma, lowest r_i |
@@ -213,7 +226,7 @@ Figures (`figures/`):
   - Y sweep, Lissajous: the reference-alone detuning signal is 10 to 100x below the unmodelled mismatch at low frequency
   - above about 30 Hz the unmodelled mismatch exceeds the detuning signal in every class, in band by 5 to 10x (absorber)
 - **Answer 1: the reference profile is enough for the low-frequency dynamics when the set holds point-to-point moves**: all ten separable on the reference alone (gamma 1.2 to 1.6), the low-frequency combinations take 96 to 100 % of their information from it, and its signal matches the unmodelled mismatch at 2 to 30 Hz. Smooth sweeps and Lissajous alone are weak (signal 10 to 100x below the mismatch)
-- **Answer 2: the multisine band stays 140 to 230 Hz for the detuned data**: the multisine is needed only for J_eff, cb_sum and d (yaw inertia, yaw damping, payload offset), and 140 to 230 Hz supplies 82 to 98 % of their information; no low-frequency lines are needed. One multisine design serves both data sets
+- **Answer 2: the multisine band stays 140 to 230 Hz for the detuned baseline model**: the multisine is needed only for J_eff, cb_sum and d (yaw inertia, yaw damping, payload offset), and 140 to 230 Hz supplies 82 to 98 % of their information; no low-frequency lines are needed. One multisine design serves both baseline models on the one data set
 - Caveats: noiseless decides identifiability, not precision; standstill records alone are marginal (gamma 6.3); the unmodelled part is larger than the parameter signal above 30 Hz, a bias risk for joint estimation (orthogonality work), not an excitation gap
 - Secondary, with Telica-level noise (J3, measured floor range >= 19.5 Hz): every class as generated detects all ten jointly with at least 12.5 dB; reference alone passes for APRBS and ASMPT (at least 25.7 dB) and fails for sweeps and Lissajous on kb_sum, cg1, cg2, cb_sum (fig. 3)
 
@@ -332,10 +345,15 @@ Runs B6 to B10 (`matlab/bla_truth.m`): Coulomb + MSD truth, K1, Y = -0.30, -0.15
 
 | comparison | 90 % band (T2) | 80 % | 95 % | resolved weight below f_c (references' job) |
 |-|-|-|-|-|
-| nominal vs Coulomb + MSD | 106 to 297 Hz | 111 to 276 Hz | 106 to 323 Hz | 16 % |
-| detuned vs Coulomb + MSD | 106 to 290 Hz | 106 to 267 Hz | 106 to 314 Hz | 21 % |
+| nominal baseline model vs Coulomb + MSD | 106 to 297 Hz | 111 to 276 Hz | 106 to 323 Hz | 16 % |
+| 10 % detuned baseline model vs Coulomb + MSD | 106 to 290 Hz | 106 to 267 Hz | 106 to 314 Hz | 21 % |
 
 - Both comparisons give almost the same band, about 106 to 300 Hz; it holds the dip (150 Hz), the cross-entry notch (208 to 213 Hz over Y) and the closed-loop peak (about 262 Hz)
+- Why the two bands agree, and why this is expected rather than luck:
+  - the lower edge is the K1 crossover (106 Hz), a property of the controller and the plant, the same in both comparisons; the multisine stays above it by design (user)
+  - above the crossover the difference to the truth comes from what both baseline models lack, the absorber (dip 150 Hz, cross-entry notch about 210 Hz, closed-loop peak 264 Hz) and friction; the 10 % detuning is small next to it, so the two difference curves nearly coincide there
+  - the detuning shows mainly near and below the crossover (60 to 100 Hz, section 14): 21 % of the detuned comparison's resolved differences lie below 106 Hz against 16 % for the nominal one; that part is the references' job (section 17), and T4 (section 18) confirms the references carry kb_sum, cg1, cg2, cy and m_total while the band carries J_eff, cb_sum and d
+  - so B_tr = 106 to 297 Hz, which holds both 90 % bands, serves both baseline models on one data set
 - The lower edge is set by the crossover, not by the weight (the resolved weight continues below 106 Hz)
 
 Why the broader band is defensible (discussed with the user)
@@ -446,3 +464,18 @@ Reading, against the criterion
 - T4 passes with a wide margin: gamma 1.27 against 5, the same at the detuned start; the ten combinations are separable on the planned data
 - So the T3 gap (X-Y cross entries and part of the X1 / X2 split unresolved below the crossover) does not cost separability: what the cross entries carry is also carried by entries the data resolve
 - Limits: noiseless and linear-in-parameter (secant sensitivities of +10 %), baseline model only; gamma judges the shape of the ten effects, not their size against friction distortion (that is T3); whether the augmentation can absorb baseline effects is a separate question (negation, projection)
+
+## 19. Why the noiseless decision holds once noise is added (argument; numbers to recompute, 2026-09-26)
+The excitation (B_tr, references) was decided on the noiseless case (user). The data are generated with and without noise; the argument below is why adding noise should not change the decision.
+- The noise is a force at the plant input (`NOISE-INJECTION.md`), the same point where the multisine enters and where a reference acts (as K1 r), so the comparison is a plain force-spectrum ratio
+- In the band: the multisine puts about 170 to 300 N^2/Hz per logical channel into 106 to 297 Hz; the noise is 70 to 80 dB below that
+- Below the crossover: the references deliver about 40 dB more force energy per hertz than the noise at 50 to 106 Hz (training set, 18 records of 12 s)
+- Against the friction distortion: the noise-driven FRF error in the band is about 100x smaller than the friction distortion sigma used in T1 to T3, so the thresholds, and hence T1 to T3, are set by friction, not by noise
+- T4: Brun's gamma uses column-normalised sensitivities; it measures how alike the ten effects are and does not depend on the noise level; noise only widens the parameter standard errors
+- So noise changes the results (floors, parameter accuracy), not which excitation is needed; the with-noise and noise-free data serve the results (R5, floors), not this decision
+
+MUST BE RECOMPUTED before the thesis cites these numbers:
+- The dB figures above are estimates from the SUPERSEDED white-force calibration (sigma 0.312 / 0.342 / 0.099 N per 20 kHz sample, about 0.05 / 0.06 / 0.02 N rms below 300 Hz; `NOISE-INJECTION.md` section 3, "superseded")
+- The agreed calibration is shaped to the measured error spectrum below 300 Hz and puts about 1/9 of that power there (3.4 against about 9.8 nm rms), but it can concentrate it at some frequencies; its force spectrum Phi_d is not computed yet (`NOISE-INJECTION.md` status)
+- To recompute once Phi_d exists: (1) Phi_d against the multisine PSD in 106 to 297 Hz; (2) Phi_d x 216 s against the references' energy spectral density below 106 Hz (`j9_refcov.py`); (3) the noise-driven FRF variance against the friction distortion variance of B6 to B10 per line; the argument holds if (1) and (2) stay above about 20 dB and (3) stays below 1
+- Below about 20 Hz the argument is weakest (the noise model holds its lowest band value there, and the shaped noise is largest at low frequency); that range carries under 1 % of the resolved weight below the crossover (17b)

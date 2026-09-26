@@ -11,11 +11,11 @@ Design on paper only; generation starts after the user approves it (?). Numbers 
   - lines: every 0.5 Hz, 106.0, 106.5, ..., 297.0 Hz (383 lines), i.e. every 6th DFT line of the 12 s record, so the multisine is periodic with 2 s; each logical channel [sym, anti, Y] on all 383 lines with its own random phases, as the current generator does (channels not zippered)
   - level: A_prod per channel, unchanged; 383 lines instead of the current datasets' 1081 (140 to 230 Hz at 1/12 Hz), so 2.8x the power per line
   - lower edge 106 Hz: the highest K1 crossover (first |L_jj| = 1) over the three channels, the five training Y points, the nominal baseline and the measured truth (72 to 106 Hz); the multisine stays out of the controller bandwidth (user)
-  - upper edge 297 Hz: the narrowest band above 106 Hz holding 90 % of the resolved FRF differences to T_AF (|E| > 2.45 sigma, full 3 x 3, averaged over Y = -0.30, -0.15, 0, +0.15, +0.30 with K1); nominal baseline 106 to 297 Hz, 10 % detuned baseline 106 to 290 Hz, so one band serves both; 80 % and 95 % give 111 to 276 and 106 to 323 Hz
+  - upper edge 297 Hz: the narrowest band above 106 Hz holding 90 % of the resolved FRF differences to T_AF (|E| > 2.45 sigma, full 3 x 3, averaged over Y = -0.30, -0.15, 0, +0.15, +0.30 with K1); derived for the nominal baseline model (106 to 297 Hz) and the 10 % detuned baseline model (106 to 290 Hz) separately, one data set for both (Q2); 80 % and 95 % give 111 to 276 and 106 to 323 Hz
   - holds the features: anti-resonance 150 Hz (Y from F_Y), cross-entry notch 208 to 213 Hz over Y (X1 from F_Y), closed-loop peak 264 Hz
   - line density: the narrowest feature, the anti-resonance, is about 9 Hz wide at -3 dB and gets 18 lines, against at least 4 per 3 dB width (Geerardyn, Rolain, Schoukens 2013)
   - confirmed on T_AF with this spectrum (B11: Y = 0, K1, A_prod, 10 realisations): the three features stay at the same frequencies, 33 Hz or more inside the edges; the FRF level moves 2 to 11 % from the broadband measurement because the rails stick less (X 8 % of the time against 12 %); B11 used zippered channels (1.5 Hz per channel) at the same rms per channel, the same band and rail power to first order
-  - below 106 Hz lies 16 % (nominal) and 21 % (detuned) of the resolved differences; that part is the motion references' job, not yet checked on the references of 7.1 (section 9) (?)
+  - below 106 Hz lies 16 % (nominal) and 21 % (detuned) of the resolved differences; that part is the motion references' job, checked on the references of 7.1 (section 7.1, excitation check)
   - replaces the placeholder 140 to 390 Hz and the current datasets' 140 to 230 Hz (`BAND_OVERRIDE` in `generate_trajectory_data_coulomb.m`)
 - N_T: a force disturbance d on the motor force inside the loop (plant force = u_ff + u_fb + d), white per 20 kHz sample, stage-axis covariance calibrated so the frictionless linear loop at Y_op = 0 reproduces the measured Telica standstill error, 9.8 / 10.4 / 6.3 nm rms (`Thesis-writeup/Documentation/NOISE-INJECTION.md`); y is the true position, u_total excludes d; every record its own realisation
 - "own": the record has its own multisine phase realisation; "none": no multisine
@@ -313,6 +313,14 @@ Common to every record unless stated: truth T_AF; controller K1 (one design at Y
   - consequences, not yet resolved (?): the jerk range label (section 6) would be set by the fade steps unless they are excluded or the fade is made smooth in acceleration; with the realised S-curve maximum, TE-A2 (j 2060 / 3340, 5.4) and E6 (j 3090 / 3430) lie inside the trained jerk range, so their jerk-extrapolation labels no longer hold; test S-curve records realise twice their stated amax / T3 on short moves as well
 - Results: training data of every arm; R4 parameters; R5 on the noise-free twins
 - Session 1: every record class excites all ten parameter combinations above the floor, the ILC profiles at 26 dB or more
+- Excitation check of this set (2026-09-26, `EXCITATION-VALIDATION.md` 17 and 18; references built with the generator's functions, K1, B_tr, noiseless, truth T_AF), for the nominal and the 10 % detuned baseline model, both on this one data set:
+  - above the 106 Hz crossover: B_tr holds 90 % of the resolved FRF differences for both baselines (section 0)
+  - below it, the references (T3: difference above 2.45 sigma at the data's own excitation): 70 % (nominal) and 85 % (detuned) of the resolved differences are resolved; the direct entries (X1 from F_X1, X2 from F_X2, Y from F_Y) 70 to 97 %, the X-Y cross entries 0 to 2 %, the X1 / X2 split 32 to 49 %, since only TR-P4 excites yaw and its 25 ms jerk time puts spectral zeros at 40 and 80 Hz
+  - energy above 20 Hz comes from the S-curve moves (89 to 100 %, TR-P3 about 90 %) and the ILC shapes; sweeps, Lissajous and standstill add almost nothing there
+  - friction coverage passes on X1, X2 and Y: both directions, constant speeds 0.5, 1.0, 1.5 m/s (Y also 0.38 and 0.66), about 50 direct reversals and 70 through a dwell per axis, about 195 dwells, speeds 1 mm/s to 1.5 m/s
+  - joint estimation (T4, Brun collinearity of the ten combinations): gamma 1.27 against the limit 5, also at the detuned start; the references alone 1.31, the multisine alone 4.55; the references carry kb_sum, cg1, cg2, cy and m_total (87 to 99 % of their information), B_tr carries J_eff, cb_sum and d (91 to 100 %)
+  - conclusion: the one data set, references plus B_tr, is enough for both baseline models, nominal (prediction) and 10 % detuned (joint estimation); the unresolved cross entries do not cost separability; no reference change is needed
+  - limits: noiseless; one setpoint draw of the S-curve records; below 50 Hz the linear prediction is approximate (friction in motion is not the standstill BLA), which concerns 11 to 14 % of the weight below the crossover
 
 ### 7.2 Validation (6 records, 3 realisations)
 Inside the training range, not copies of training records, as V1 to V4, VP1 and VP2 in the current dataset; own phases, noise and setpoints.
@@ -447,8 +455,17 @@ Designed in section 5, generated and evaluated only if time allows (Quinten: sta
 - The ends are operational (the p. 4 pick station at -0.40 m), so the Y extrapolation test is directly ASMPT-relevant
 
 **Q2. One data set for prediction and joint estimation**
-- One data set; the detuning is a start value of the model, not a property of the data
+- One data set; the detuning is a start value of the baseline model, not a property of the data; the truth is never detuned
+- The band was derived for each baseline model separately, from the FRF differences to the same truth under K1 (`EXCITATION-VALIDATION.md` 16), and the two agree:
+
+| comparison (same data, same truth, same K1) | 90 % band (T2) |
+|-|-|
+| nominal baseline model vs Coulomb + MSD | 106 to 297 Hz |
+| 10 % detuned baseline model vs Coulomb + MSD | 106 to 290 Hz |
+
+- Why they agree: the lower edge is the K1 crossover, the same for both; above it the differences come from what both baseline models lack (absorber, friction), next to which the 10 % detuning is small; the detuning shows mainly near and below the crossover (60 to 100 Hz), where the references carry it (21 % of the detuned comparison's resolved differences lie below 106 Hz against 16 % nominal); B_tr = 106 to 297 Hz holds both bands, so one data set serves both
 - Confirmed by session 1: every record class as generated excites all ten combinations above the floor, and point-to-point references alone reach 29 dB or more; no parameter band is needed; B_tr (106 to 297 Hz, section 0) holds the absorber features and the detuning differences above the crossover, and the same band serves the nominal and the detuned baseline
+- Confirmed for the planned set (7.1, excitation check): the ten combinations are separable, Brun gamma 1.27 (limit 5), also at the detuned start; references and B_tr complement each other
 
 **Q3. Control truths**
 - T_0 kept as the zero point of R5 and for the B-refit exact recovery
@@ -459,7 +476,7 @@ Designed in section 5, generated and evaluated only if time allows (Quinten: sta
 - 1 controller change; 2 acceleration and velocity to the datasheet maximum; 3 position to the stroke ends (pick station); 4 the ASMPT distances once confirmed; 5 payload change and X position after the external questions are settled
 
 **Open points**
-- B_tr decided: 106 to 297 Hz on a 0.5 Hz grid at A_prod (section 0, D-219); open: whether the references of 7.1 cover the resolved differences below 106 Hz (16 % nominal, 21 % detuned) and the friction velocity range (both directions, at least 3 constant-speed levels, reversals, dwell); checked once the references are generated (?)
+- B_tr decided: 106 to 297 Hz on a 0.5 Hz grid at A_prod (section 0, D-219); the references of 7.1 cover the direct differences below 106 Hz and the friction velocity range, and the ten combinations are separable (7.1, excitation check); closed
 - noise: on the input force (`NOISE-INJECTION.md`, agreed 2026-09-26); session 1's floor was computed with encoder noise, so its verdicts, mainly the low-frequency margins for joint estimation (smallest about 13 dB), need rechecking against the force-noise floor before the band and the joint-estimation verdict are final (?)
 - Y origin relative to the beam centre (section 1) (?)
 - the ASMPT profile set from Jasper and Dragan and the K2 set from Quinten: freeze before generation; if timing requires, generate the unaffected core records first (?)
@@ -572,7 +589,8 @@ Generator changes the design requires; none of them depends on the open question
 - Production multisine level A_prod (6x `gtd_config.m`) and session 1's band; the amplitude axis gains A_prod/6, session 1's stick regime
 - Quinten's comments that change data: R3 as a best linear approximation with its own periodic records (7.6); R5 only with a truly orthogonal addition (T_OA); R1 without augmentation and black box (no data change); black-box size by hyperparameter search on validation, training effort reported; noise inside the simulation, on the input
 - Noise model: a force disturbance on the motor force, calibrated to the measured error spectrum below 300 Hz in level and shape (`NOISE-INJECTION.md`, D-218), replacing the encoder injection of D-212; own realisation per record; the floor moves from mostly above 200 Hz to below 300 Hz; session 1's floor to be rechecked (section 9)
-- Multisine band B_tr: 106 to 297 Hz on a 0.5 Hz grid at A_prod (section 0, D-219), from the measured FRF of T_AF with K1 at the five training Y points; replaces the placeholder 140 to 390 Hz; the lower edge is the K1 crossover, so the differences inside the controller bandwidth are left to the references (to check, section 9)
+- Multisine band B_tr: 106 to 297 Hz on a 0.5 Hz grid at A_prod (section 0, D-219), from the measured FRF of T_AF with K1 at the five training Y points; replaces the placeholder 140 to 390 Hz; the lower edge is the K1 crossover, so the differences inside the controller bandwidth are left to the references
+- Excitation check of the training set (7.1): references resolve 70 % (nominal) and 85 % (detuned) of the differences below the crossover, the direct entries but not the X-Y cross entries; friction coverage passes; Brun gamma 1.27 for the ten combinations; no reference change needed
 - Validation, as in the current dataset (V1 to V4, VP1, VP2): inside the training range but not copies of training records (user decision); the earlier record-for-record mirror is replaced
 - First campaign sized like the current dataset (user decision): training 18 records (the two half-level standstill records dropped, the 12 ms jerk time moved onto the 75 % move record), validation 6 records, all 12 s at 20 kHz downsampled to 4 kHz; test 6 interpolation and 6 extrapolation records, each E with one I partner that differs only in the extrapolated axis; everything else deferred (7.5)
 - Baseline vs true system: the generator's limit pre-check runs on the rigid baseline, so a post-simulation check on the simulated truth becomes the binding limit check (section 10); every hand estimate now says which model it uses; 5.1 gives the true system's growth beyond the training edge (coupling +25 / +39 %, yaw inertia +14 / +12 %) beside the baseline's

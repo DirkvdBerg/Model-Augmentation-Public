@@ -1,5 +1,7 @@
 # Independent review of the multisine-band evidence
 
+Note (2026-09-26, added afterwards): there is one data set; "both data sets" below means the two comparisons, nominal and 10 % detuned baseline model, on that one data set. The truth is never detuned (`EXCITATION-VALIDATION.md` intro, `DATA-DESIGN.md` Q2).
+
 Scope: nominal baseline and 10 % detuned baseline against the Coulomb + MSD truth. The frictionless model is treated only as the BLA pipeline gate. This review judges the present evidence in `EXCITATION-VALIDATION.md`; it does not use the Telica noise floor to choose the band.
 
 ## Q1 (nominal): are the closed-loop FRFs a sound basis?
