@@ -1,0 +1,373 @@
+[wd] launch  out=outputs/J2K1
+[wd] command matlab -nojvm -sd ../../.. -batch "addpath('scripts/gantry/excitation-closed-loop/matlab'); bla_truth({'B6','B7','B8','B9','B10'})"
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It is not possible to see Simscape
+Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option. Please turn off visualization in the Simscape Multibody: Explorer
+configuration pane of the model 'gantry_additional_state_coulomb_2025a' to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=58s tree=2,782 MB cpu=3% availRAM=2.68 GB C:free=2.06 GB
+  B6 m=1: stick [0.151 0.129 0.0333]  rms v [0.00648 0.00765 0.0259]  nonperiodic [4.09e-13 4.62e-13 1.86e-12]  (45 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B6 m=2: stick [0.152 0.123 0.038]  rms v [0.00646 0.00764 0.026]  nonperiodic [3.87e-13 4.55e-13 1.81e-12]  (63 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B6 m=3: stick [0.146 0.135 0.0355]  rms v [0.00647 0.00766 0.026]  nonperiodic [3.7e-13 4.23e-13 1.67e-12]  (80 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=121s tree=3,010 MB cpu=9% availRAM=2.52 GB C:free=1.98 GB
+  B6 m=4: stick [0.143 0.122 0.0396]  rms v [0.00648 0.00764 0.0261]  nonperiodic [4.08e-13 4.62e-13 1.84e-12]  (97 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B6 m=5: stick [0.14 0.12 0.0351]  rms v [0.00647 0.00764 0.026]  nonperiodic [3.97e-13 4.45e-13 1.81e-12]  (114 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B6 m=6: stick [0.137 0.121 0.0372]  rms v [0.00645 0.00762 0.0261]  nonperiodic [3.84e-13 4.28e-13 1.66e-12]  (142 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=183s tree=3,033 MB cpu=9% availRAM=2.29 GB C:free=1.90 GB
+  B6 m=7: stick [0.15 0.122 0.0368]  rms v [0.00649 0.00765 0.026]  nonperiodic [4.06e-13 4.58e-13 1.77e-12]  (167 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B6 m=8: stick [0.142 0.126 0.0361]  rms v [0.00649 0.00764 0.026]  nonperiodic [3.82e-13 4.41e-13 1.73e-12]  (184 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B6 m=9: stick [0.145 0.13 0.0345]  rms v [0.00644 0.00763 0.026]  nonperiodic [3.78e-13 4.59e-13 1.9e-12]  (200 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=245s tree=3,031 MB cpu=8% availRAM=2.23 GB C:free=1.83 GB
+  B6 m=10: stick [0.149 0.125 0.0362]  rms v [0.00647 0.00765 0.026]  nonperiodic [3.89e-13 4.39e-13 1.87e-12]  (216 s)
+B6 saved (216 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B7 m=1: stick [0.128 0.126 0.0386]  rms v [0.00718 0.00755 0.026]  nonperiodic [2.77e-13 2.89e-13 9.66e-13]  (17 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B7 m=2: stick [0.141 0.131 0.0341]  rms v [0.00721 0.00758 0.026]  nonperiodic [2.68e-13 2.86e-13 9.52e-13]  (33 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B7 m=3: stick [0.129 0.121 0.0341]  rms v [0.0072 0.00758 0.026]  nonperiodic [2.68e-13 2.99e-13 9.33e-13]  (50 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=308s tree=3,034 MB cpu=10% availRAM=2.28 GB C:free=1.74 GB
+  B7 m=4: stick [0.128 0.118 0.0357]  rms v [0.00718 0.00757 0.026]  nonperiodic [2.73e-13 3e-13 9.26e-13]  (66 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B7 m=5: stick [0.129 0.125 0.0333]  rms v [0.00719 0.00761 0.026]  nonperiodic [2.84e-13 3.06e-13 1.02e-12]  (83 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B7 m=6: stick [0.124 0.131 0.0377]  rms v [0.00719 0.00757 0.0261]  nonperiodic [2.82e-13 2.86e-13 9.76e-13]  (99 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B7 m=7: stick [0.125 0.123 0.0366]  rms v [0.00721 0.00759 0.026]  nonperiodic [2.64e-13 2.88e-13 9.22e-13]  (115 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=370s tree=3,035 MB cpu=10% availRAM=2.25 GB C:free=1.64 GB
+  B7 m=8: stick [0.132 0.126 0.0334]  rms v [0.00718 0.00758 0.026]  nonperiodic [2.77e-13 3.03e-13 9.75e-13]  (132 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B7 m=9: stick [0.134 0.124 0.0355]  rms v [0.00716 0.00756 0.026]  nonperiodic [2.78e-13 3.02e-13 1.01e-12]  (150 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B7 m=10: stick [0.132 0.131 0.0353]  rms v [0.00718 0.00758 0.026]  nonperiodic [2.79e-13 3.02e-13 9.26e-13]  (177 s)
+B7 saved (178 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=432s tree=3,036 MB cpu=9% availRAM=2.15 GB C:free=1.56 GB
+  B8 m=1: stick [0.126 0.145 0.0332]  rms v [0.00794 0.00652 0.026]  nonperiodic [2.96e-13 2.85e-13 9.61e-13]  (28 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B8 m=2: stick [0.13 0.144 0.0387]  rms v [0.00791 0.00652 0.0259]  nonperiodic [2.92e-13 2.49e-13 9.38e-13]  (57 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=495s tree=3,040 MB cpu=9% availRAM=2.36 GB C:free=1.52 GB
+  B8 m=3: stick [0.122 0.146 0.0394]  rms v [0.00791 0.00652 0.026]  nonperiodic [3.07e-13 2.7e-13 9.96e-13]  (85 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B8 m=4: stick [0.12 0.142 0.0354]  rms v [0.00793 0.00653 0.026]  nonperiodic [2.99e-13 3.02e-13 1.01e-12]  (112 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=558s tree=3,049 MB cpu=8% availRAM=2.22 GB C:free=1.47 GB
+  B8 m=5: stick [0.116 0.156 0.0361]  rms v [0.00795 0.00655 0.0261]  nonperiodic [2.98e-13 2.77e-13 9.52e-13]  (139 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B8 m=6: stick [0.121 0.156 0.0354]  rms v [0.00797 0.00657 0.026]  nonperiodic [2.96e-13 2.63e-13 1.02e-12]  (164 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=620s tree=3,062 MB cpu=8% availRAM=1.83 GB C:free=1.42 GB
+  B8 m=7: stick [0.121 0.152 0.0353]  rms v [0.00791 0.00654 0.026]  nonperiodic [3.06e-13 2.7e-13 9.85e-13]  (190 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B8 m=8: stick [0.125 0.159 0.034]  rms v [0.00794 0.00655 0.026]  nonperiodic [2.78e-13 2.74e-13 9.71e-13]  (217 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B8 m=9: stick [0.121 0.144 0.0362]  rms v [0.0079 0.00652 0.026]  nonperiodic [2.9e-13 2.61e-13 9.4e-13]  (240 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=683s tree=3,053 MB cpu=8% availRAM=2.06 GB C:free=1.35 GB
+  B8 m=10: stick [0.128 0.14 0.0328]  rms v [0.00793 0.00652 0.0259]  nonperiodic [3.09e-13 2.95e-13 1.05e-12]  (256 s)
+B8 saved (257 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B9 m=1: stick [0.116 0.157 0.0367]  rms v [0.00783 0.00582 0.026]  nonperiodic [4.1e-13 3.54e-13 1.69e-12]  (16 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B9 m=2: stick [0.126 0.159 0.0379]  rms v [0.00783 0.00579 0.026]  nonperiodic [4.21e-13 3.8e-13 1.76e-12]  (34 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B9 m=3: stick [0.124 0.161 0.0349]  rms v [0.00784 0.00581 0.026]  nonperiodic [4.46e-13 4.15e-13 1.83e-12]  (51 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=745s tree=3,047 MB cpu=8% availRAM=2.01 GB C:free=1.25 GB
+  B9 m=4: stick [0.124 0.154 0.0347]  rms v [0.00782 0.0058 0.026]  nonperiodic [4.12e-13 3.7e-13 1.65e-12]  (67 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B9 m=5: stick [0.121 0.167 0.0374]  rms v [0.00785 0.00581 0.026]  nonperiodic [4.57e-13 3.86e-13 1.81e-12]  (83 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B9 m=6: stick [0.119 0.162 0.0374]  rms v [0.00783 0.00582 0.026]  nonperiodic [4.15e-13 4.17e-13 1.85e-12]  (99 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B9 m=7: stick [0.121 0.158 0.0347]  rms v [0.00782 0.00579 0.026]  nonperiodic [4.46e-13 3.93e-13 1.77e-12]  (115 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=807s tree=3,042 MB cpu=9% availRAM=2.05 GB C:free=1.15 GB
+  B9 m=8: stick [0.121 0.166 0.0369]  rms v [0.00786 0.00584 0.026]  nonperiodic [4.4e-13 4.07e-13 1.75e-12]  (132 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B9 m=9: stick [0.129 0.157 0.0369]  rms v [0.00785 0.00581 0.0259]  nonperiodic [4.59e-13 3.94e-13 1.85e-12]  (148 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B9 m=10: stick [0.124 0.165 0.035]  rms v [0.00783 0.0058 0.0259]  nonperiodic [4.48e-13 3.81e-13 1.77e-12]  (164 s)
+B9 saved (165 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B10 m=1: stick [0.119 0.133 0.0375]  rms v [0.0077 0.00716 0.026]  nonperiodic [2.29e-13 2.18e-13 2.33e-13]  (17 s)
+[wd] t=869s tree=2,991 MB cpu=9% availRAM=2.19 GB C:free=1.05 GB
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B10 m=2: stick [0.123 0.136 0.0358]  rms v [0.00772 0.00717 0.026]  nonperiodic [2.18e-13 2.21e-13 2.38e-13]  (33 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B10 m=3: stick [0.125 0.131 0.0371]  rms v [0.00772 0.00717 0.026]  nonperiodic [2.04e-13 2.07e-13 2.44e-13]  (49 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B10 m=4: stick [0.117 0.136 0.0374]  rms v [0.00772 0.00719 0.026]  nonperiodic [2.1e-13 2.03e-13 2.52e-13]  (65 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=931s tree=3,009 MB cpu=8% availRAM=2.15 GB C:free=0.97 GB
+  B10 m=5: stick [0.118 0.131 0.0372]  rms v [0.0077 0.00717 0.0261]  nonperiodic [2e-13 2.11e-13 2.47e-13]  (81 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B10 m=6: stick [0.12 0.142 0.037]  rms v [0.00775 0.0072 0.0261]  nonperiodic [2.13e-13 2.22e-13 2.34e-13]  (98 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B10 m=7: stick [0.129 0.133 0.0358]  rms v [0.00772 0.00719 0.026]  nonperiodic [2.22e-13 2.1e-13 2.41e-13]  (116 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B10 m=8: stick [0.121 0.13 0.0386]  rms v [0.00772 0.00719 0.0261]  nonperiodic [1.97e-13 1.98e-13 2.45e-13]  (133 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+[wd] t=994s tree=2,998 MB cpu=9% availRAM=1.98 GB C:free=0.88 GB
+  B10 m=9: stick [0.124 0.138 0.0319]  rms v [0.00771 0.00718 0.0261]  nonperiodic [2.15e-13 2.3e-13 2.28e-13]  (151 s)
+[Warning: Multibody Explorer requires Java to be enabled. Please make sure MATLAB is running with Java enabled and with a valid display. It
+is not possible to see Simscape Multibody visualization using Mechanics Explorer when running MATLAB with the -nojvm or -nodisplay option.
+Please turn off visualization in the Simscape Multibody: Explorer configuration pane of the model 'gantry_additional_state_coulomb_2025a'
+to silence this warning.] 
+[> In bla_truth>run_sim (line 134)
+In bla_truth (line 89)] 
+  B10 m=10: stick [0.121 0.131 0.0364]  rms v [0.00771 0.00717 0.0261]  nonperiodic [2.24e-13 2.05e-13 2.47e-13]  (169 s)
+B10 saved (169 s)
+WATCHDOG SUMMARY exit=0 killed=False duration_s=1,032.4 samples=199 peak_tree_ws_mb=3,064 min_avail_ram_gb=1.75 min_C_free_gb=0.85 kill_reason=""

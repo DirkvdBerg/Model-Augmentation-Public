@@ -32,9 +32,11 @@ Not valid, to redo:
 
 Superseded proposals (kept in the text below for the record): features read from the Y to Y entry alone; the unsourced "+/- 3 half-widths" edge rule; 140 to 365 and 140 to 390 Hz; "keep 140 to 230 Hz" (section 9), which the coverage result (section 14) contradicts for the detuned case and for friction in X.
 
-Current proposal (?): one multisine band of 50 to 230 Hz for both data sets, starting where the references stop; not yet checked in the coverage table, and pending the K1 BLA at the training points.
+Current approach (section 15, agreed 2026-09-26): measure the FRF (BLA) of the Coulomb + MSD truth with K1 at the five training Y points, broadband at production level, robust method; take the differences to the nominal and the detuned baseline per Y and averaged over Y. The training multisine stays at or above the controller bandwidth (user); differences inside the bandwidth are the motion references' job. The earlier "50 to 230 Hz" proposal is withdrawn because it puts the multisine inside the bandwidth.
 
-Planned, not run: the Coulomb + MSD BLA with K1 at Y = -0.30, -0.15, +0.15, +0.30 (four MATLAB runs of `matlab/bla_truth.m`, after a change to use K1 everywhere); then figs. 6, 7, 10 with the largest difference over the five points; then the 50 to 230 Hz band and the planned references in the coverage table.
+Done (section 16): the K1 truth FRFs at the five training Y points (B6 to B10) and the band analysis J7: crossover 106 Hz; 90 % band 106 to 297 Hz (nominal) and 106 to 290 Hz (detuned); candidate 106 to 297 Hz on a 0.5 Hz line grid at production rms, confirmed by B11 (features inside the band).
+
+Planned, not run: T3 and the friction velocity-coverage check on the planned references (`DATA-DESIGN.md` 7.1, to be generated first); Brun (T4) only if needed.
 
 ## 1. What this must establish
 - (a) The multisine band the absorber data must excite: where the nominal baseline and the truth differ in closed loop, above the floor
@@ -135,6 +137,9 @@ Run log (all under `tools/wd.sh`; logs in `outputs/<run>.log`; nothing trained, 
 | J4 | noiseless detuning check (`j4_noiseless.py`), 19 records, 53 s; run WITHOUT the watchdog on the user's instruction (C: at 0.22 GB free made the watchdog kill it at launch) |
 | J5 | reference-based prediction (`j5_reference.py`): first gate FAIL (30 to 10000x too high: point-to-point records end elsewhere than they start, the plain DFT saw that jump); with one Hann window on reference, multisine and simulation: see section 14 |
 | J6 | coverage of the FRF differences by references and multisine at Y = 0 (`j6_coverage.py`, fig. 10) |
+| J2c | B6 to B10: K1, five training Y points, M = 10; user: do not let it be killed, so RAM kill off; 17 min, lowest free disk 0.85 GB (OneDrive sync database, not the run); all saved |
+| J7 | band analysis (`j7_band.py`): first version took the last |L| = 1 crossing (264 Hz, the absorber re-crossing on Y), fixed to the first crossing (106 Hz); see section 16 |
+| J2d | B11: confirmation with the candidate spectrum (106 to 297 Hz, 0.5 Hz grid, A_prod, K1, Y = 0, M = 10); RAM and disk kill off, disk monitored by hand; 187 s, saved; comparison `j8_confirm.py` |
 
 ## 8b. Revisions after the plan (2026-09-26)
 - Truth is Coulomb + MSD only (user and supervisor Quinten). The frictionless (MSD-only) truth is kept only as the B0 pipeline gate; every result below uses the Coulomb + MSD records or its BLA
@@ -260,3 +265,116 @@ Figures (`figures/`):
 - Reading: for the absorber the 140 to 230 Hz multisine holds the plant features; for the detuned case and for friction in X the largest FRF differences sit in the uncovered 50 to 140 Hz gap; J4 still found all ten combinations separable there because noiseless small signals suffice
 - Consequence (?): a multisine band of about 50 to 230 Hz would start where the references stop; cost 3 dB per line at the same rms (180 Hz instead of 90 Hz); not yet checked in the table
 - Limits of this section: one Y point (Y = 0); references of the current records, not the planned ones of `DATA-DESIGN.md`; the 40 dB threshold is a heuristic; the gate passes only at 50 to 140 Hz and for Y in band
+
+## 15. FRF measurement approach (agreed with the user, 2026-09-26; supersedes the measurement settings of section 3 for the band decision)
+Purpose: measure the closed-loop FRF of the true system, compare it with the nominal and the 10 % detuned baseline, and read from the differences which frequencies the data must excite.
+
+Set-up
+- Truth: Coulomb + MSD (T_AF), never MSD alone
+- Controller: K1, designed once at Y = 0 and frozen (`DATA-DESIGN.md` 5.11)
+- Operating points: the five training standstill points, Y = -0.30, -0.15, 0, +0.15, +0.30 m (`DATA-DESIGN.md` 5.1); X plays no role, neither model nor truth depends on it
+- Measurement signal: random-phase periodic multisine, 1 Hz to 1 kHz, at the production level A_prod, injected at the plant input; a measurement signal only, not the training excitation, so it also covers the loop-bandwidth region
+- Channels: zippered over the three input channels (one experiment gives all columns, at 1.5 Hz per column; L9 slides 49 to 50); the full 3 x 3 in stage coordinates (inputs F_X1, F_X2, F_Y; outputs X1, X2, Y)
+- Averaging: robust method (L13 slides 48 to 58), 1 transient period discarded, 2 measured periods, M random-phase realisations; M = 10 proposed (the current runs have 4) (?)
+- Result: the differences E_nom = PS_truth - PS_nominal and E_det = PS_truth - PS_detuned per entry and per Y, and averaged over the five Y points (user choice); only differences above the measurement's own uncertainty count
+
+Why the result is a best linear approximation (BLA)
+- Coulomb friction makes the truth nonlinear, so it has no single FRF: the output/input ratio depends on the input
+- The expected FRF over random-phase multisine realisations is the definition of the BLA (L13 slide 42); the spread over realisations is the nonlinear distortion, here friction; noiseless periods differ only by transients (about 1e-12 measured), so all spread is friction
+- The BLA is the same for every excitation with the same power spectrum (L13 slide 46): it holds for A_prod and this spectrum, which is why the level is fixed at the production level
+- The same procedure on a linear system returns its exact FRF with zero spread; the friction-off case B0 confirms the pipeline to 2e-5
+
+Why this basis for the band (lectures 5SMB0, `literature/experiment-design/System-identification/`)
+- The identification cost weights the model error by the input spectrum, int |G_o - G|^2 Phi_u dw, so an FRF difference counts only where the data excite it, and input power belongs where accuracy is needed (resonances, bandwidth) (L9 slide 13)
+- Closed-loop data carry the plant mainly around the crossover (L11 slide 43), which is where the detuning difference peaks (60 to 100 Hz, section 14)
+- Where the FRF uncertainty is too large, add input power at those frequencies (L7 slide 38; L8 slides 50 to 57)
+
+Split between the two excitation sources
+- The training multisine is not placed inside the controller bandwidth (user, 2026-09-26): its lower edge is at or above the realised crossover (rails 74 to 108 Hz, Y about 83 Hz with K1, `DATA-DESIGN.md` 5.11); it targets the differences above it (the absorber: dip near 150 Hz, cross-entry notch near 204 to 224 Hz)
+- Differences inside the bandwidth (detuning part, friction mismatch in X) must come from the motion references (their jerk content); checked afterwards with the reference-coverage method of section 14 on the planned references
+
+State and next steps (not run)
+- `scripts/gantry/excitation-closed-loop/matlab/bla_truth.m` is half-edited and does not run: the case table has the K1 cases B6 to B9 and the controller source, but the simulation helper still takes the old arguments
+- Next, on the user's go: finish the K1 change, set M, run the truth at the four missing Y points (and Y = 0 again if M changes) one at a time, then compute the differences and their averages over Y
+
+### 15b. Thresholds, fixed before the runs (user, 2026-09-26)
+Notation: E(f) = one entry of the difference PS_truth - PS_model (model = nominal or detuned), after averaging over the five Y points; sigma(f) = the standard deviation of the truth FRF from the robust method.
+- T1, resolved difference: |E(f)| > 2.45 sigma(f), the 95 % bound for a complex-valued FRF (L8 slide 47); only resolved differences count in T2 and T3 (the 90 % bound would be 2.15 sigma, derived from the same distribution but not on the slide; 95 % kept)
+- T2, multisine band, per comparison (nominal, detuned):
+  - weight per frequency: the sum over the 9 entries of |E(f)|^2, the model-error term of the identification cost int |G_o - G|^2 Phi_u dw (L9 slide 13); a weight, not a threshold
+  - band: inside the frequencies at or above the controller crossover (user: no training multisine inside the bandwidth), the range that holds at least 90 % of the resolved weight there (HEURISTIC, user-agreed); sensitivity reported at 80 and 95 %
+  - it must include the plant features (the dip near 150 Hz, the cross-entry notch near 204 to 224 Hz)
+  - line density: at least 4 excited lines per 3 dB width of each feature (Geerardyn, Rolain, Schoukens, IEEE TIM 2013)
+  - confirmation: the truth FRF remeasured with the candidate band's own spectrum keeps the features inside the band (the BLA depends on the input spectrum, L13 slide 46)
+- T3, references good enough, below the crossover (user, 2026-09-26): the difference must stay resolved under the excitation the data actually deliver
+  - sigma without noise: the spread of the truth FRF over the phase realisations is friction's nonlinear distortion, which behaves like noise (L13)
+  - rescale sigma to the data's excitation: variance scales as 1 / input power (L7; L11 slide 37), so sigma_data(f) = sigma(f) |U_meas(f)| / |U_ref(f)|, with U_meas the measurement multisine and U_ref the force the planned motion references deliver (the equivalent injection K1 r)
+  - criterion: at every resolved difference below the crossover, |E(f)| > 2.45 sigma_data(f), the same 95 % bound as T1 (L8 slide 47)
+  - caveat (?): friction's distortion itself changes with the excitation level and spectrum (L13), so the 1 / input power rescaling is an approximation
+- T4, deferred (user, 2026-09-26): the claim for now is only that the data excite the detuning differences, judged by T1 to T3; whether separability of the ten combinations is also needed is decided after the results. If it is: collinearity index gamma < 5 with K1, the planned references and the chosen band (noiseless, training-loss weighting, as J4)
+  - source: Brun, Reichert, Kuensch, "Practical identifiability analysis of large environmental simulation models", Water Resources Research 37(4), 2001, DOI 10.1029/2000wr900350; gamma = 1/sqrt(smallest eigenvalue of the column-normalised sensitivity matrix)
+  - caveat: the critical range 5 to 20 is the authors' experience with environmental models, not a derived threshold
+  - why: excitation alone does not show whether two combinations (for example cg1 and cg2) produce distinguishable output changes; gamma does
+- Friction: judged by velocity coverage of the references (directions, speed levels, reversals, dwell), not by T1 to T4; its criterion is still open (?)
+- With noise added later: the FRF criterion sigma < 0.1 |G| in the band (L8 slide 49) can replace T2 and T3
+
+## 16. Results: the multisine band from the K1 FRFs (J7, 2026-09-26)
+Runs B6 to B10 (`matlab/bla_truth.m`): Coulomb + MSD truth, K1, Y = -0.30, -0.15, 0, +0.15, +0.30 m, production level, broadband 1 Hz to 1 kHz, M = 10; not killed (17 min, lowest free disk 0.85 GB; the disk drain during the run was OneDrive's sync database, not the run). Analysis `j7_band.py`, output `outputs/j7_band.json`, figures `fig11_differences_avg.png`, `fig12_band_weight.png`.
+- Periodic to 1e-12 in every case; rails stuck 12 to 17 % (X) and about 3.5 % (Y) at every Y
+- Crossover with K1 (the bandwidth, first |L_jj| = 1): 72 to 106 Hz over channels, Y points and both loops (nominal baseline, measured truth); highest 106.3 Hz (rail X1 at Y = +0.30) -> f_c = 106 Hz
+  - correction made during the analysis: the first version took the last |L| = 1 crossing and got 264 Hz on the truth's Y loop, where the absorber resonance lifts |L| above 1 again; that is not the bandwidth
+  - one truth value (X1 at Y = -0.30, 9 Hz) comes from inverting the measured FRF at low frequency; it does not affect f_c
+
+| comparison | 90 % band (T2) | 80 % | 95 % | resolved weight below f_c (references' job) |
+|-|-|-|-|-|
+| nominal vs Coulomb + MSD | 106 to 297 Hz | 111 to 276 Hz | 106 to 323 Hz | 16 % |
+| detuned vs Coulomb + MSD | 106 to 290 Hz | 106 to 267 Hz | 106 to 314 Hz | 21 % |
+
+- Both comparisons give almost the same band, about 106 to 300 Hz; it holds the dip (150 Hz), the cross-entry notch (208 to 213 Hz over Y) and the closed-loop peak (about 262 Hz)
+- The lower edge is set by the crossover, not by the weight (the resolved weight continues below 106 Hz)
+
+Why the broader band is defensible (discussed with the user)
+- Every part of it carries a resolved difference training will see: 106 to 140 Hz the detuning and friction differences near the crossover; 140 to 230 Hz the absorber's plant features; 230 to 300 Hz the closed-loop peak, the largest difference in the matrix
+- Training fits the closed-loop servo error, which is largest at 230 to 300 Hz; with 140 to 230 Hz only, the model has to extrapolate there
+- Pintelon and Schoukens (2012, p. 152): concentrate power where it informs the model; here that is where the model is wrong
+
+Energy per line: a sparser line grid instead of a narrower band (user concern: spreading the energy over many frequencies)
+- At the records' 1/12 Hz spacing the band has about 2290 lines against about 1080 today: power per line halves (-3.3 dB) at the same rms
+- About 4 lines per 3 dB bandwidth suffice (Geerardyn, Rolain, Schoukens 2013); the narrowest feature (the dip, about 9 Hz at -3 dB) holds about 100 lines at 1/12 Hz
+- Candidate: excite every 6th line, a 0.5 Hz grid: about 18 lines in the dip's width, and about 3x today's power per line despite the wider band; the empty lines show the friction distortion directly (odd-multisine gaps, L13)
+- Candidate training multisine (?): 106 to 297 Hz, 0.5 Hz grid, production rms (240 N sym, 87 N m anti, 180 N Y)
+
+Confirmation (T2, stated before the result): the truth FRF measured with the candidate spectrum itself (case B11: Y = 0, K1, 106 to 297 Hz on the 0.5 Hz grid, A_prod, M = 10), compared with B10 inside the band
+- Pass: the dip, the cross-entry notch and the closed-loop peak stay inside 106 to 297 Hz
+- Reported beside it: the in-band change of the FRF against B10, and the stick fractions (friction regime)
+- If it fails: the 80 % band (111 to 276 Hz) is the fallback, re-checked the same way
+
+Confirmation result (B11, `j8_confirm.py`): PASS
+- Periodic to 4e-14; 127 lines per channel from 106.5 to 295.5 Hz, shared with B10
+- Features with the candidate spectrum (B10 broadband in brackets): dip 150.0 Hz (150.0), notch X1 from F_Y 210.0 Hz (208.5), closed-loop peak 264.0 Hz (264.0); closest to a band edge 33 Hz
+- The FRF itself moves: median change 2 to 11 % per entry (Y from F_Y 2 %, diagonals X 5 %, cross entries about 10 %), beyond 2.45 sigma on 17 to 80 % of the lines
+- Cause: friction regime; with the band-limited input the rails stick less (X 8 to 9 % of the time against 12 to 13 %, Y 2 % against 4 %). This is the BLA's dependence on the input spectrum (L13), not a moved feature
+- Consequence: the band holds; the difference sizes of J7 are for the broadband standstill input and change by about 10 % with the training spectrum. In motion the friction regime differs again (J5, section 14); that is part of T3 on the planned references
+
+## 17. Do the planned references cover what lies below the crossover? T3 and friction coverage (J9, plan written before the run, 2026-09-26)
+Question: below f_c = 106 Hz the multisine does not excite (section 16); 16 % (nominal) and 21 % (detuned) of the resolved differences lie there. Do the 18 training references of `DATA-DESIGN.md` 7.1 excite them (T3), and do they cover the friction velocity range?
+
+References (no simulation; `matlab/ref_planned.m`, output `outputs/j9_refs.mat`)
+- Built with the generator's own shape functions: standstill and sinusoidal paths through `gtd_make_reference`, ILC-shape cycloids through `gtd_make_reference_telica` (per-record level, dwell and directions of 7.1; velocity cap not binding, so the stated peaks 0.76 / 1.38 and 0.59 / 1.07 m/s are reached), S-curve moves with `thirdOrderSetpointETEL` at the 7.1 levels and jerk times
+- S-curve distances from the log strata of `DATA-DESIGN.md` 5.6 (1 to 3, 3 to 10, 10 to 30, 30 to 100, 100 to 300 mm, 300 mm to the range), which the generator does not have yet; details open in 5.6, taken here as (HEURISTIC): each axis cycles through the six strata in shuffled order, log-uniform inside a stratum, random sign, reflected at the range bound, the top stratum up to the largest move that fits; 0.1 s hold between moves as the generator; one setpoint draw
+- Gate before use: realised peak velocities of the sweeps, Lissajous and ILC-shape records equal the 7.1 values within 0.01 m/s; S-curve peaks at or below the level's v, a and j
+
+T3 (section 15b), how it is evaluated
+- Reference as injection: w = K1 r at the plant input, stage coordinates (section 14); logical channels f = P w
+- Reference spectrum without leakage: each record starts and ends at rest, so the difference sequence of r has finite support; R(f) = D(f) / (e^(j 2 pi f dt) - 1), D the DFT of the first difference (exact for f > 0; no window)
+- Excitation compared as energy per hertz (one-sided energy spectral density, summed over the 18 records, averaged over each 1.5 Hz FRF line cell): measurement ESD_meas,c = A_c^2 T_meas / B, with A = (240 N, 87 N m, 180 N) per logical channel, T_meas = 10 realisations x 2 periods x 2 s = 40 s, B = 999 Hz
+- sigma_data^2 = sigma^2 ESD_meas,c / ESD_ref,c per logical column (variance proportional to 1 / input energy, L7, L11 slide 37), then to stage entries as in J7; E and sigma averaged over the five Y points as in J7
+- Pass (T3): at each resolved difference below f_c, |E| > 2.45 sigma_data; reported as the share of the resolved weight below f_c that passes, per comparison, per entry and per band (1 to 20, 20 to 50, 50 to 106 Hz)
+- Known limit, stated before the result: in motion the friction response is not the standstill BLA (J5 over-predicted 4 to 9x at 20 to 50 Hz); below 50 Hz the verdict is approximate and is to be confirmed on the truth where it matters
+
+Friction coverage, from the reference velocities (pass criteria fixed now, per stage axis X1, X2, Y, over the training set)
+- both directions: motion above the stick band (|v| > 1 mm/s, V_BRK of D-209) in each direction
+- at least 3 constant-speed levels per direction: segments with |a| < 0.05 m/s^2 and |v| > 1 mm/s lasting at least 20 ms (HEURISTIC: inertial force at most about 1.6 N on the heaviest rail, 32 kg, against 11.6 to 18.4 N Coulomb; corrected before the run from 0.5 m/s^2, which would count the whole 0.2 Hz Y sweep, peak 0.47 m/s^2, as constant speed), levels distinct by 0.1 m/s or more; reversals through a dwell when the stick-band gap lasts 20 ms or more, else direct (HEURISTIC); basis: Garcia's constant-velocity identification separates Coulomb from viscous friction with several speeds (L9 slide 29 staircase idea)
+- reversals: velocity sign changes, both through a dwell and direct
+- dwell: holds at |v| below the stick band
+- also reported: time share per speed bin, to show the spread of speeds the friction model is fitted on
