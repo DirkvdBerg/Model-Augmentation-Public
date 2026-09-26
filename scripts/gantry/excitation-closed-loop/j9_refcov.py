@@ -220,8 +220,8 @@ for o in range(3):
             ax.set_xlabel('frequency [Hz]')
 h, l = axs[0, 0].get_legend_handles_labels()
 fig.legend(h, l, loc='lower center', ncol=2, frameon=False)
-fig.suptitle('T3: FRF differences below the crossover (%.0f Hz) against the planned references\' resolution; '
-             'shaded 20 to 50 Hz: linear prediction approximate (J5)' % fc, fontsize=7.5)
+fig.suptitle('T3: FRF differences below the %.0f Hz crossover vs the resolution of the planned references\n'
+             '(shaded: 20 to 50 Hz, where the linear prediction is approximate, J5)' % fc, fontsize=7.5)
 fig.tight_layout(rect=(0, 0.06, 1, 1))
 fig.savefig(os.path.join(C.HERE, 'figures', 'fig13_t3_references.png'), dpi=200)
 print('\nwrote outputs/j9_refcov.json, figures/fig13_t3_references.png')

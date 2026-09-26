@@ -1,4 +1,4 @@
-function ref_planned()
+function ref_planned(out20)
 % REF_PLANNED  J9 of EXCITATION-VALIDATION.md (section 17): the 18 training references of
 % DATA-DESIGN.md 7.1, motion only, no simulation, built with the generator's own shape functions:
 %   standstill and sinusoidal paths (TR-S, TR-Y, TR-L)  gtd_make_reference, class standstill / oscillatory
@@ -7,7 +7,9 @@ function ref_planned()
 % The generator does not yet have log strata or per-record ILC kinematics (DATA-DESIGN.md implementation
 % items 4 and 7), so those two are assembled here from the same building blocks.
 % Writes scripts/gantry/excitation-closed-loop/outputs/j9_refs.mat: R (18 x N4 x 3, stage [X1 X2 Y]) at
-% 4 kHz (every 5th sample of the 20 kHz reference), ids, Y_op, dt. Nothing else is written.
+% 4 kHz (every 5th sample of the 20 kHz reference), ids, Y_op, dt.
+% ref_planned(out20) also writes the full 20 kHz references in single precision (the replica's input format)
+% to the file out20 (J10, section 18); nothing else is written.
     here = fileparts(mfilename('fullpath'));
     ex   = fileparts(here);
     repo = fileparts(fileparts(fileparts(ex)));
@@ -54,6 +56,7 @@ function ref_planned()
 
     n = numel(c);  N4 = numel(1:5:cfg.N_record);
     R = zeros(n, N4, 3);  ids = cell(n, 1);  Yop = zeros(n, 1);
+    if nargin >= 1, R20 = zeros(n, cfg.N_record, 3, 'single'); end
     for k = 1:n
         [id, kind, y0, p] = c{k}{:};
         switch kind
@@ -73,10 +76,16 @@ function ref_planned()
         fprintf('%-10s peak v X/Y %.3f / %.3f m/s, a %.2f / %.2f m/s^2, j %.0f / %.0f m/s^3, X_anti %.4f m\n', ...
                 id, max(abs(vl)), max(abs(al)), max(abs(jl)), max(abs(r(:, 1) - r(:, 2))) / 2);
         R(k, :, :) = r(1:5:end, :);  ids{k} = id;  Yop(k) = y0;
+        if nargin >= 1, R20(k, :, :) = single(r); end
     end
     dt = 5 * cfg.ts;
     save(fullfile(ex, 'outputs', 'j9_refs.mat'), 'R', 'ids', 'Yop', 'dt');
     fprintf('saved outputs/j9_refs.mat (%d records, %d samples at %.0f Hz)\n', n, N4, 1/dt);
+    if nargin >= 1
+        ts = cfg.ts;
+        save(out20, 'R20', 'ids', 'Yop', 'ts');
+        fprintf('saved %s (20 kHz, single)\n', out20);
+    end
 end
 
 function p = po(Y_center, A_sym, f_sym, A_anti, f_anti, A_y, f_y)

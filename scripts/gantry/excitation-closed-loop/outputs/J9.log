@@ -1,0 +1,44 @@
+
+nominal baseline vs Coulomb + MSD, below f_c = 106.3 Hz:
+  share of the resolved weight that passes T3: 70.1 %
+  1-20       Hz:   0.9 % of the resolved weight below f_c, of which 100.0 % passes
+  20-50      Hz:  13.6 % of the resolved weight below f_c, of which  83.3 % passes
+  50-106.335 Hz:  85.5 % of the resolved weight below f_c, of which  67.7 % passes
+  per entry (pass share of its resolved weight): X1<-F_X1 70 %, X1<-F_X2 32 %, X1<-F_Y 0 %, X2<-F_X1 36 %, X2<-F_X2 70 %, X2<-F_Y 0 %, Y<-F_X1 0 %, Y<-F_X2 1 %, Y<-F_Y 77 %
+
+detuned baseline vs Coulomb + MSD, below f_c = 106.3 Hz:
+  share of the resolved weight that passes T3: 85.2 %
+  1-20       Hz:   0.6 % of the resolved weight below f_c, of which 100.0 % passes
+  20-50      Hz:  10.5 % of the resolved weight below f_c, of which  84.9 % passes
+  50-106.335 Hz:  88.9 % of the resolved weight below f_c, of which  85.1 % passes
+  per entry (pass share of its resolved weight): X1<-F_X1 78 %, X1<-F_X2 49 %, X1<-F_Y 0 %, X2<-F_X1 49 %, X2<-F_X2 75 %, X2<-F_Y 1 %, Y<-F_X1 1 %, Y<-F_X2 2 %, Y<-F_Y 97 %
+
+reference energy per logical channel [sym, anti, Y], share by record, per band:
+  1-20 Hz: standstill [0. 0. 0.]; Y sweeps [ 0.  0. 16.]; S-curve moves [44. 44. 70.]; Lissajous [54. 54.  6.]; ILC shapes [2. 2. 8.]
+  20-50 Hz: standstill [0. 0. 0.]; Y sweeps [0. 0. 0.]; S-curve moves [ 92. 100.  89.]; Lissajous [0. 0. 0.]; ILC shapes [ 8.  0. 11.]
+  50-106 Hz: standstill [0. 0. 0.]; Y sweeps [0. 0. 0.]; S-curve moves [ 93. 100.  93.]; Lissajous [9.e-02 2.e-04 2.e-01]; ILC shapes [7. 0. 6.]
+median ESD_ref / ESD_meas per band [sym, anti, Y]:
+  1-20 Hz: [4.476e+05 2.707e+02 1.342e+05]
+  20-50 Hz: [32.677  0.219  9.79 ]
+  50-106 Hz: [0.017 0.003 0.004]
+
+friction coverage X1: moving + 24.8 s, - 23.6 s, dwell 131.7 s (196 dwells >= 20 ms); reversals 77 through dwell, 47 direct
+  constant-speed levels + [0.5, 1.0, 1.5]
+  constant-speed levels - [0.5, 1.0, 1.5]
+  time per speed bin [0.001, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0] m/s: + [4.  3.3 5.9 4.9 3.  1.  2.7 0. ] s, - [3.3 2.7 5.6 5.  3.2 1.  2.7 0. ] s
+  criteria: {'both_directions': True, 'three_levels': True, 'reversals_both_kinds': True, 'dwell': True} -> PASS
+
+friction coverage X2: moving + 24.7 s, - 23.5 s, dwell 131.8 s (195 dwells >= 20 ms); reversals 75 through dwell, 47 direct
+  constant-speed levels + [0.5, 1.0, 1.5]
+  constant-speed levels - [0.5, 1.0, 1.5]
+  time per speed bin [0.001, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0] m/s: + [4.  3.2 5.9 4.9 3.  1.  2.7 0. ] s, - [3.3 2.7 5.6 5.  3.2 1.  2.7 0. ] s
+  criteria: {'both_directions': True, 'three_levels': True, 'reversals_both_kinds': True, 'dwell': True} -> PASS
+
+friction coverage Y: moving + 38.5 s, - 39.4 s, dwell 102.1 s (193 dwells >= 20 ms); reversals 69 through dwell, 50 direct
+  constant-speed levels + [0.376, 0.5, 0.66, 1.0, 1.5]
+  constant-speed levels - [0.376, 0.5, 0.66, 1.0, 1.5]
+  time per speed bin [0.001, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0] m/s: + [4.8 5.  8.7 6.2 7.7 3.3 2.7 0. ] s, - [4.8 5.1 9.8 5.9 7.6 3.3 3.  0. ] s
+  criteria: {'both_directions': True, 'three_levels': True, 'reversals_both_kinds': True, 'dwell': True} -> PASS
+
+wrote outputs/j9_refcov.json, figures/fig13_t3_references.png
+

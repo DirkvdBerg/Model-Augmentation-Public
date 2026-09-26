@@ -294,19 +294,23 @@ Common to every record unless stated: truth T_AF; controller K1 (one design at Y
 | ID | Type | Y [m] | X_sym [m] | Kinematics | Multisine | Current equivalent |
 |-|-|-|-|-|-|-|
 | TR-S1 to S5 | standstill | -0.30, -0.15, 0, 0.15, 0.30 | 0 | none | A_prod | T1 to T5 |
-| TR-Y1 to Y3 | Y sweep | 0 ± 0.30 | 0 | 0.2, 0.5, 0.75 Hz: v 0.38, 0.94, 1.41; a 0.5, 3.0, 6.7 | A_prod | T6 to T8 (T8's X overlay dropped) |
-| TR-P1 | move, S-curve (Jasper's generator) | setpoints in ±0.30 | setpoints in ±0.28 | 25 % of max (7.5 / 12.5, v 0.5), T3 36 ms, log-strata distances | A_prod | T9 |
-| TR-P2 | move | ±0.30 | ±0.28 | 50 % (15 / 25, v 1.0), T3 30 ms | A_prod | T10 |
-| TR-P3 | move | ±0.30 | ±0.28 | 75 % (22.5 / 37.5, v 1.5), T3 12 ms (j 1875 / 3125, the trained jerk maximum) | A_prod | T11 |
-| TR-P4 | move with yaw | ±0.30 | ±0.14, X_anti ±1 mm | 50 %, T3 25 ms | A_prod | T12 |
-| TR-L1 | Lissajous | 0.30 at 0.35 Hz (v 0.66) | 0.28 at 0.85 Hz (v 1.50, a 8.0) | | A_prod | T13 (wider in X) |
-| TR-L2 | Lissajous | 0.25 at 0.7 Hz (v 1.10, a 4.8) | 0.08 at 1.5 Hz (v 0.75, a 7.1), X_anti 1 mm at 0.8 Hz | | A_prod | T14 |
+| TR-Y1 to Y3 | Y sweep | 0 ± 0.30 | 0 | 0.2, 0.5, 0.75 Hz: v 0.60, 1.09, 1.41; a 3.8, 8.9, 12.2 (realised with the generator's fade, see below; pure sine 0.38, 0.94, 1.41 and 0.5, 3.0, 6.7) | A_prod | T6 to T8 (T8's X overlay dropped) |
+| TR-P1 | move, S-curve (Jasper's generator) | setpoints in ±0.30 | setpoints in ±0.28 | 25 % of max (7.5 / 12.5, v 0.5), T3 36 ms (j 416 / 694 realised), log-strata distances | A_prod | T9 |
+| TR-P2 | move | ±0.30 | ±0.28 | 50 % (15 / 25, v 1.0), T3 30 ms (j 1000 / 1667 realised) | A_prod | T10 |
+| TR-P3 | move | ±0.30 | ±0.28 | 75 % (22.5 / 37.5, v 1.5), T3 12 ms (j 3750 / 6250 realised, the trained jerk maximum; amax / T3 = 1875 / 3125) | A_prod | T11 |
+| TR-P4 | move with yaw | ±0.30 | ±0.14, X_anti ±1 mm | 50 %, T3 25 ms (j 1200 / 2000 realised) | A_prod | T12 |
+| TR-L1 | Lissajous | 0.30 at 0.35 Hz (v 0.91, a 6.6 realised; pure sine v 0.66) | 0.28 at 0.85 Hz (v 1.50, a 12.8 realised; pure sine a 8.0) | | A_prod | T13 (wider in X) |
+| TR-L2 | Lissajous | 0.25 at 0.7 Hz (v 1.10, a 9.6 realised; pure sine a 4.8) | 0.08 at 1.5 Hz (v 0.75, a 8.7 realised; pure sine a 7.1), X_anti 1 mm at 0.8 Hz | | A_prod | T14 |
 | TR-T1 | ILC-shape sine shuttle, lattice Y_op 0 | -0.24 to 0.24 | inside ±0.10 | 40 / 80 mm, 75 % of max (22.5 / 37.5), v 0.76 / 1.38, dwell 0.30 s | none | TP1 (measured 39.3 / 50.7 replaced) |
 | TR-T2 | as TR-T1, mirrored directions | -0.24 to 0.24 | inside ±0.10 | 45 % (13.5 / 22.5), v 0.59 / 1.07, dwell 0.45 s | none | TP2 |
 | TR-T3 | lattice Y_op +0.06 | -0.26 to 0.30 | inside ±0.10 | 75 %, dwell 0.60 s | none | TP3 |
 | TR-T4 | lattice Y_op -0.06 | -0.30 to 0.26 | inside ±0.10 | 45 %, dwell 0.30 s | none | TP4 |
 
-- Training ranges: Y ±0.30 m, X ±0.28 m, velocity up to 1.5 m/s, acceleration up to 22.5 / 37.5 m/s², jerk up to the realised maximum (about 1875 / 3125 m/s³), move distance 1 mm to 0.6 m, multisine A_prod, controller K1
+- Training ranges: Y ±0.30 m, X ±0.28 m, velocity up to 1.5 m/s, acceleration up to 22.5 / 37.5 m/s², jerk up to the realised S-curve maximum 3750 / 6250 m/s³ (TR-P3), move distance 1 mm to 0.6 m, multisine A_prod, controller K1
+- Realised values (corrected 2026-09-26): the references were built with the generator's own functions and measured (`EXCITATION-VALIDATION.md` 17b, `scripts/gantry/excitation-closed-loop/matlab/ref_planned.m`); two generator properties make them differ from the design values
+  - S-curves: `thirdOrderSetpointETEL` reaches twice amax / T3 on moves too short to reach amax (triangular acceleration; stated in its own header), so every TR-P record realises 2 x amax / T3; the log strata make such moves common
+  - sinusoidal paths (TR-Y, TR-L): the generator multiplies the sine by a 0.5 s half-cosine fade at start and end; its derivatives raise the peak velocity and acceleration of the slow paths (table above) and leave acceleration steps of 0.8 to 3.0 m/s² at the fade edges, which a sampled jerk shows as 1.6e4 to 5.9e4 m/s³ at 20 kHz
+  - consequences, not yet resolved (?): the jerk range label (section 6) would be set by the fade steps unless they are excluded or the fade is made smooth in acceleration; with the realised S-curve maximum, TE-A2 (j 2060 / 3340, 5.4) and E6 (j 3090 / 3430) lie inside the trained jerk range, so their jerk-extrapolation labels no longer hold; test S-curve records realise twice their stated amax / T3 on short moves as well
 - Results: training data of every arm; R4 parameters; R5 on the noise-free twins
 - Session 1: every record class excites all ten parameter combinations above the floor, the ILC profiles at 26 dB or more
 

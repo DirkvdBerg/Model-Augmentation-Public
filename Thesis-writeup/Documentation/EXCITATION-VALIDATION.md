@@ -36,7 +36,9 @@ Current approach (section 15, agreed 2026-09-26): measure the FRF (BLA) of the C
 
 Done (section 16): the K1 truth FRFs at the five training Y points (B6 to B10) and the band analysis J7: crossover 106 Hz; 90 % band 106 to 297 Hz (nominal) and 106 to 290 Hz (detuned); candidate 106 to 297 Hz on a 0.5 Hz line grid at production rms, confirmed by B11 (features inside the band).
 
-Planned, not run: T3 and the friction velocity-coverage check on the planned references (`DATA-DESIGN.md` 7.1, to be generated first); Brun (T4) only if needed.
+Done (section 17): T3 and friction coverage on the planned references of `DATA-DESIGN.md` 7.1, built without simulation: friction PASS; T3 passes 70 % (nominal) and 85 % (detuned) of the resolved weight below the crossover, the diagonal entries resolved, the X-Y cross entries not.
+
+Done (section 18): T4 for the detuned case, gamma 1.27 on the planned data (limit 5), also at the detuned start; the cross-entry gap does not cost separability.
 
 ## 1. What this must establish
 - (a) The multisine band the absorber data must excite: where the nominal baseline and the truth differ in closed loop, above the floor
@@ -140,6 +142,9 @@ Run log (all under `tools/wd.sh`; logs in `outputs/<run>.log`; nothing trained, 
 | J2c | B6 to B10: K1, five training Y points, M = 10; user: do not let it be killed, so RAM kill off; 17 min, lowest free disk 0.85 GB (OneDrive sync database, not the run); all saved |
 | J7 | band analysis (`j7_band.py`): first version took the last |L| = 1 crossing (264 Hz, the absorber re-crossing on Y), fixed to the first crossing (106 Hz); see section 16 |
 | J2d | B11: confirmation with the candidate spectrum (106 to 297 Hz, 0.5 Hz grid, A_prod, K1, Y = 0, M = 10); RAM and disk kill off, disk monitored by hand; 187 s, saved; comparison `j8_confirm.py` |
+| J9ref | the 18 planned training references (`matlab/ref_planned.m`, generator shape functions, no Simulink): 10 s, saved; gate: ILC and S-curve v, a pass; sweeps and Lissajous exceed the 7.1 peaks (generator fade), S-curve jerk 2x (ETEL), see 17b |
+| J9 | T3 and friction coverage (`j9_refcov.py`), seconds; section 17b |
+| J10 | T4 Brun collinearity (`j10_brun.py`; references at 20 kHz from `ref_planned(out20)`, scratchpad): 18 records, 63 s; section 18b |
 
 ## 8b. Revisions after the plan (2026-09-26)
 - Truth is Coulomb + MSD only (user and supervisor Quinten). The frictionless (MSD-only) truth is kept only as the B0 pipeline gate; every result below uses the Coulomb + MSD records or its BLA
@@ -378,3 +383,66 @@ Friction coverage, from the reference velocities (pass criteria fixed now, per s
 - reversals: velocity sign changes, both through a dwell and direct
 - dwell: holds at |v| below the stick band
 - also reported: time share per speed bin, to show the spread of speeds the friction model is fitted on
+
+### 17b. Results (J9, 2026-09-26; `j9_refcov.py`, `outputs/j9_refcov.json`, `outputs/J9.log`, fig. 13)
+Gate (reference construction against the 7.1 table)
+- Passes: ILC shapes (0.757 / 1.382 and 0.586 / 1.070 m/s), S-curve v and a at the level values, sweep TR-Y3 and Lissajous X peaks
+- Fails, generator properties, not the construction:
+  - the generator's 0.5 s half-cosine fade on sinusoidal paths raises the slow ones' peaks (TR-Y1 0.60 m/s and 3.8 m/s^2 against 0.38 and 0.5; TR-Y2 1.09 against 0.94; TR-L1 Y 0.91 against 0.66) and leaves acceleration steps of 1.7 to 3.0 m/s^2 at the fade edges
+  - `thirdOrderSetpointETEL` doubles the jerk on moves that do not reach amax (its own header): TR-P3 3750 / 6246 m/s^3 against the 1875 / 3125 of 7.1, likewise P1, P2, P4
+- Consequence for this check: none; sweeps and Lissajous deliver 0 to 0.2 % of the reference energy above 20 Hz (below); the 7.1 peak values and the trained jerk maximum are corrected in `DATA-DESIGN.md` 7.1 (user, 2026-09-26)
+
+T3: share of the resolved weight below f_c = 106 Hz that the planned references resolve (|E| > 2.45 sigma_data)
+
+| band | share of the resolved weight below f_c (nominal / detuned) | passes, nominal | passes, detuned |
+|-|-|-|-|
+| 1 to 20 Hz | 0.9 / 0.6 % | 100 % | 100 % |
+| 20 to 50 Hz | 13.6 / 10.5 % | 83 % | 85 % |
+| 50 to 106 Hz | 85.5 / 88.9 % | 68 % | 85 % |
+| total | | 70 % | 85 % |
+
+- Per entry (nominal / detuned): diagonals X1, X2 70 to 78 %, Y from F_Y 77 / 97 %; X1 from F_X2 and X2 from F_X1 32 to 49 %; X from F_Y and Y from F_X 0 to 2 %
+- Where the energy comes from, 20 to 106 Hz: S-curve moves 89 to 100 % per channel (TR-P3 alone about 90 % at 30 to 106 Hz), ILC shapes 6 to 11 %; sweeps, Lissajous and standstill about 0. Relative to the FRF measurement the references deliver 10 to 30x its energy per hertz at 20 to 50 Hz (sym, Y) but 0.4 to 2 % at 50 to 106 Hz
+- Yaw is the weak channel: 99 % of its reference energy comes from TR-P4 (the only S-curve record with X_anti, 1 mm), whose jerk time of 25 ms puts spectral zeros at 40 and 80 Hz; that gives the sigma_data peaks in the X-input columns of fig. 13 and most of the shortfall in the X1 / X2 split
+  - the 25 ms follows the jerk-time rule of `DATA-DESIGN.md` 5.5, T3 = (l + 0.5) / f_ring with l = 6: 264 x 0.025 = 6.6, so the 264 Hz closed-loop ringing lies between the zeros at 240 and 280 Hz, as designed
+  - the jerk stage is a moving average of length T3, so the reference spectrum has zeros at every multiple of 1/T3 = 40 Hz (Biagiotti and Melchiorri eq. 34); the rule places one pair of them around 264 Hz and cannot avoid the ones at 40 and 80 Hz, below the crossover, which it does not consider; measured: TR-P4's spectrum falls by a factor 30 to 50 at 39 to 41 and 79 to 81 Hz against the neighbouring frequencies
+  - the sym and Y channels do not show these zeros because records with other jerk times (12, 30, 36 ms) fill each other's zeros; yaw has TR-P4 as its only source
+
+Reading, against the criterion
+- The references resolve the direct (diagonal) differences below the crossover, and those carry most of the weight: 85 % of the detuned case and 70 % of the nominal case pass
+- They do not resolve the X-Y cross-coupling differences below the crossover (X from F_Y, Y from F_X), and they resolve the X1 / X2 split only partly, because only one record excites yaw
+- T3 therefore passes for the diagonal entries and fails for the cross entries; whether the cross-entry gap matters for the ten parameter combinations is exactly what T4 (Brun collinearity) decides; T4 stays deferred until the user decides
+- 50 to 106 Hz, where 86 to 89 % of the weight lies, is inside the range where J5's linear prediction passed its gate (50 to 140 Hz); the 20 to 50 Hz part (11 to 14 % of the weight) is approximate, so a truth confirmation there has low value
+
+Friction coverage: PASS on X1, X2 and Y
+- Both directions: X about 24 s each way, Y about 39 s each way (18 records, 10 s active each)
+- Constant-speed levels, each direction: X 0.5, 1.0, 1.5 m/s; Y 0.38, 0.5, 0.66, 1.0, 1.5 m/s (S-curve cruise, sweep and Lissajous velocity peaks)
+- Reversals: X 75 to 77 through a dwell, 47 direct; Y 69 through a dwell, 50 direct
+- Dwell: about 195 holds of 20 ms or more per axis
+- Speeds spread from 1 mm/s to 1.5 m/s, none above 1.5 m/s (the trained maximum by design)
+- Limit: one setpoint draw of the S-curve records
+
+## 18. T4 for the detuned case: can the planned data separate the ten combinations? (J10, plan written before the run, 2026-09-26)
+Why now: T3 (17b) leaves the X-Y cross entries and part of the X1 / X2 split unresolved below the crossover; T4 decides whether that matters for joint estimation (user: run Brun for the detuned case).
+- Data: the 18 training references of 17 (`matlab/ref_planned.m`, 20 kHz) with the chosen multisine on every record that carries one (106 to 297 Hz, 0.5 Hz grid, A_prod per logical channel, random phases, own seed per record; crest-factor selection skipped, HEURISTIC: it does not change the spectrum); the ILC-shape records without multisine; controller K1; noiseless
+- Sensitivities, as J4: the baseline closed loop (vendored replica) at theta_0 and with each combination +10 %; S_i = e(theta_0 + 10 % on i) - e(theta_0), servo error in metres on the three stage channels, unweighted (the training loss's own weighting); Gram matrix summed over the records (Parseval)
+- Index: Brun, Reichert, Kuensch 2001 Eq. 13, gamma = 1 / sqrt(smallest eigenvalue of the column-normalised Gram matrix); also the independent share r_i = 1 / sqrt((Gn^-1)_ii) per combination and the most collinear pair
+- Pass: gamma < 5 (15b; the lower end of Brun's critical range 5 to 20, the authors' experience, not a derived threshold)
+- Reported beside it: gamma for the references alone (no multisine) and for the multisine alone (standstill records), to show which source separates which combination; and gamma at the detuned start point (sensitivities around theta_0 x D-191 vector), since joint estimation starts there
+
+### 18b. Results (J10, 2026-09-26; `j10_brun.py`, `outputs/j10_brun.json`, `outputs/J10.log`; 18 records, 63 s)
+
+| data | gamma | verdict (< 5) | most collinear pair | lowest r_i |
+|-|-|-|-|-|
+| planned data (references + multisine), at theta_0 | 1.27 | PASS | J_eff / d, -0.28 | J_eff 0.93 |
+| planned data, at the detuned start | 1.27 | PASS | J_eff / d, -0.28 | J_eff 0.92 |
+| references alone | 1.31 | PASS | kb_sum / J_eff, -0.41 | kb_sum, J_eff 0.91 |
+| multisine alone (standstill records) | 4.55 | PASS, near the limit | kb_sum / J_eff, -0.94 | cb_sum 0.29 |
+
+- Where each combination's information comes from (planned data, diagonal Gram): below 106 Hz (references) kb_sum 94 %, cg1, cg2, cy 99 %, m_total 87 %; in 106 to 297 Hz (multisine) J_eff 100 %, cb_sum 92 %, d 91 %, mh 69 %, m_diff 60 %
+- The two sources complement each other: the multisine alone confounds kb_sum, cb_sum, J_eff and the guide dampers (r_i 0.29 to 0.44), the references alone separate all ten, and together every r_i is 0.92 or more
+
+Reading, against the criterion
+- T4 passes with a wide margin: gamma 1.27 against 5, the same at the detuned start; the ten combinations are separable on the planned data
+- So the T3 gap (X-Y cross entries and part of the X1 / X2 split unresolved below the crossover) does not cost separability: what the cross entries carry is also carried by entries the data resolve
+- Limits: noiseless and linear-in-parameter (secant sensitivities of +10 %), baseline model only; gamma judges the shape of the ten effects, not their size against friction distortion (that is T3); whether the augmentation can absorb baseline effects is a separate question (negation, projection)

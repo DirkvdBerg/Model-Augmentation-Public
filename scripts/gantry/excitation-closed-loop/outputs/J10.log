@@ -1,0 +1,56 @@
+[wd] launch  out=outputs/J10
+[wd] command env PYTHONIOENCODING=utf-8 PYTHONUNBUFFERED=1 conda run --no-capture-output -n GraduationProject python -u j10_brun.py C:/Users/20203253/AppData/Local/Temp/claude/C--Users-20203253-OneDrive---TU-Eindhoven-Graduation-Project-Baseline-FP-model-Baseline-LPV-Augmentation/0e381fe6-8c55-43f8-a32d-eec812808224/scratchpad/refs20.mat
+[J10] TR-S_Y-0.30  ms True  moving False 22 sims  2.7 s
+[J10] TR-S_Y-0.15  ms True  moving False 22 sims  2.9 s
+[J10] TR-S_Y+0.00  ms True  moving False 22 sims  2.7 s
+[J10] TR-S_Y+0.15  ms True  moving False 22 sims  3.0 s
+[J10] TR-S_Y+0.30  ms True  moving False 22 sims  2.8 s
+[J10] TR-Y1        ms True  moving True  33 sims  4.3 s
+[J10] TR-Y2        ms True  moving True  33 sims  4.2 s
+[J10] TR-Y3        ms True  moving True  33 sims  4.3 s
+[J10] TR-P1        ms True  moving True  33 sims  4.1 s
+[J10] TR-P2        ms True  moving True  33 sims  4.1 s
+[J10] TR-P3        ms True  moving True  33 sims  4.2 s
+[J10] TR-P4        ms True  moving True  33 sims  4.1 s
+[J10] TR-L1        ms True  moving True  33 sims  4.0 s
+[J10] TR-L2        ms True  moving True  33 sims  4.2 s
+[wd] t=57s tree=646 MB cpu=20% availRAM=3.99 GB C:free=2.74 GB
+[J10] TR-T1        ms False moving True  22 sims  2.8 s
+[J10] TR-T2        ms False moving True  22 sims  2.7 s
+[J10] TR-T3        ms False moving True  22 sims  2.8 s
+[J10] TR-T4        ms False moving True  22 sims  2.8 s
+
+planned data, at theta_0 (T4): gamma 1.27 -> PASS
+  independent share r_i: kb_sum 0.97, cg1 1.00, cg2 1.00, cy 1.00, cb_sum 0.98, mh 0.97, m_total 0.99, m_diff 1.00, J_eff 0.93, d 0.94
+  most collinear pair: J_eff / d, normalised Gram -0.279
+  weakest direction (eigenvector of the smallest eigenvalue): {'kb_sum': -0.382, 'cg1': 0.024, 'cg2': -0.024, 'cy': 0.025, 'cb_sum': 0.004, 'mh': -0.254, 'm_total': 0.128, 'm_diff': -0.06, 'J_eff': -0.663, 'd': -0.574}
+
+planned data, at the detuned start: gamma 1.27 -> PASS
+  independent share r_i: kb_sum 0.96, cg1 1.00, cg2 1.00, cy 1.00, cb_sum 0.98, mh 0.98, m_total 0.99, m_diff 1.00, J_eff 0.92, d 0.94
+  most collinear pair: J_eff / d, normalised Gram -0.279
+  weakest direction (eigenvector of the smallest eigenvalue): {'kb_sum': -0.418, 'cg1': 0.028, 'cg2': -0.023, 'cy': 0.033, 'cb_sum': -0.019, 'mh': -0.213, 'm_total': 0.089, 'm_diff': -0.063, 'J_eff': -0.675, 'd': -0.556}
+
+references alone (no multisine), at theta_0: gamma 1.31 -> PASS
+  independent share r_i: kb_sum 0.91, cg1 1.00, cg2 1.00, cy 1.00, cb_sum 1.00, mh 0.96, m_total 0.97, m_diff 1.00, J_eff 0.91, d 0.98
+  most collinear pair: kb_sum / J_eff, normalised Gram -0.413
+  weakest direction (eigenvector of the smallest eigenvalue): {'kb_sum': -0.691, 'cg1': 0.025, 'cg2': -0.024, 'cy': 0.002, 'cb_sum': -0.005, 'mh': -0.009, 'm_total': 0.012, 'm_diff': -0.009, 'J_eff': -0.711, 'd': 0.127}
+
+multisine alone (standstill records), at theta_0: gamma 4.55 -> PASS
+  independent share r_i: kb_sum 0.33, cg1 0.43, cg2 0.44, cy 0.97, cb_sum 0.29, mh 0.95, m_total 0.99, m_diff 1.00, J_eff 0.32, d 0.89
+  most collinear pair: kb_sum / J_eff, normalised Gram -0.939
+  weakest direction (eigenvector of the smallest eigenvalue): {'kb_sum': 0.332, 'cg1': 0.402, 'cg2': 0.395, 'cy': 0.0, 'cb_sum': -0.673, 'mh': 0.001, 'm_total': -0.012, 'm_diff': -0.002, 'J_eff': 0.343, 'd': 0.017}
+
+information share per combination (diagonal Gram), planned data at theta_0, bands [(0.0, 106.0), (106.0, 297.0), (297.0, 10000.0)] Hz:
+  kb_sum    0.94  0.06  0.00
+  cg1       0.99  0.01  0.00
+  cg2       0.99  0.01  0.00
+  cy        0.99  0.01  0.00
+  cb_sum    0.08  0.92  0.00
+  mh        0.31  0.69  0.00
+  m_total   0.87  0.13  0.00
+  m_diff    0.39  0.60  0.00
+  J_eff     0.00  1.00  0.00
+  d         0.09  0.91  0.00
+
+[J10] wrote outputs/j10_brun.json, 63 s
+WATCHDOG SUMMARY exit=0 killed=False duration_s=67.2 samples=13 peak_tree_ws_mb=734 min_avail_ram_gb=3.99 min_C_free_gb=2.74 kill_reason=""
