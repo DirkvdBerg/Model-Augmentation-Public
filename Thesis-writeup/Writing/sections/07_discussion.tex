@@ -34,6 +34,8 @@
 \item Central-difference velocities, force calibration, and the train-validation-test coverage grid bound the credibility of any real-data conclusion
 \item The research plan expected validated real-machine generalisation; any missing Telica result is a departure to disclose, not replace with design documentation
 \item Augmentation versus residual-FRF fitting remains a trade between trajectory-domain nonlinear prediction and a simpler frequency-domain account of missing dynamics
+\item Pointwise orthogonality is impossible for any nonzero missing force on this gantry: the parameter sensitivity of the three velocity rows has rank 3 at every reference sample (worst $\sigma_3/\sigma_1=5.7\cdot10^{-4}$, earlier absorber dataset), so $J^\top\Delta^*=0$ can only arise from cancellation over the record (Section~IV-C)
+\item Coulomb friction in the truth violates the recovery condition by construction: the $c_{g1}$ sensitivity is proportional to $\dot X_1$ and the friction is $-c_{c1}\operatorname{sign}(\dot X_1)$, so their inner product is $-c_{c1}\sum|\dot X_1|\neq0$ for any moving record (D-204); on T\_AF, OBC gives a unique split, not unbiased combinations
 \end{itemize}
 \todo{Should a cubic-spring benchmark, noise study, and Monte Carlo analysis be completed, or should the thesis explicitly narrow its claims to the measured linear absorber case?}
 

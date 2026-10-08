@@ -1,0 +1,91 @@
+[wd] launch  out=outputs/logs/check_report_copy_obc
+[wd] command conda run --no-capture-output -n GraduationProject python -u check_report_copy.py obc
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=obc noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(8000, 6)  delta_a std=4.879e-05 m  vdelta_a std=6.894e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 8000 samples  (Training/TR-S1_r1.mat)
+  T2: 8000 samples  (Training/TR-S2_r1.mat)
+  T3: 8000 samples  (Training/TR-S3_r1.mat)
+  T4: 8000 samples  (Training/TR-S4_r1.mat)
+  T5: 8000 samples  (Training/TR-S5_r1.mat)
+  T6: 8000 samples  (Training/TR-Y1_r1.mat)
+  T7: 8000 samples  (Training/TR-Y2_r1.mat)
+  T8: 8000 samples  (Training/TR-Y3_r1.mat)
+  T9: 8000 samples  (Training/TR-P1_r1.mat)
+  T10: 8000 samples  (Training/TR-P2_r1.mat)
+  T11: 8000 samples  (Training/TR-P3_r1.mat)
+  T12: 8000 samples  (Training/TR-P4_r1.mat)
+  T13: 8000 samples  (Training/TR-L1_r1.mat)
+  T14: 8000 samples  (Training/TR-L2_r1.mat)
+  T15: 8000 samples  (Training/TR-T1_r1.mat)
+  T16: 8000 samples  (Training/TR-T2_r1.mat)
+  T17: 8000 samples  (Training/TR-T3_r1.mat)
+  T18: 8000 samples  (Training/TR-T4_r1.mat)
+C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\systems\system.py:17: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  return torch.load(file)
+[obc] model 20260928_231124, 6 validation records, OBC correction True
+[wd] t=57s tree=655 MB cpu=8% availRAM=2.40 GB C:free=7.94 GB
+[wd] t=119s tree=656 MB cpu=8% availRAM=2.35 GB C:free=7.94 GB
+[wd] t=182s tree=650 MB cpu=8% availRAM=2.11 GB C:free=7.92 GB
+[wd] t=244s tree=651 MB cpu=8% availRAM=2.14 GB C:free=7.92 GB
+[wd] t=307s tree=655 MB cpu=8% availRAM=2.07 GB C:free=7.91 GB
+[wd] t=369s tree=651 MB cpu=8% availRAM=2.18 GB C:free=7.91 GB
+[wd] t=431s tree=654 MB cpu=8% availRAM=2.30 GB C:free=7.90 GB
+[wd] t=493s tree=657 MB cpu=8% availRAM=2.29 GB C:free=7.89 GB
+[wd] t=556s tree=651 MB cpu=8% availRAM=2.35 GB C:free=7.89 GB
+[wd] t=618s tree=655 MB cpu=8% availRAM=2.46 GB C:free=7.96 GB
+  new path leaves the trained model bitwise unchanged                                    PASS
+[wd] t=680s tree=650 MB cpu=8% availRAM=2.38 GB C:free=7.95 GB
+[wd] t=742s tree=653 MB cpu=8% availRAM=2.15 GB C:free=7.93 GB
+[wd] t=804s tree=656 MB cpu=8% availRAM=2.20 GB C:free=7.93 GB
+[wd] t=867s tree=650 MB cpu=8% availRAM=2.21 GB C:free=7.93 GB
+[wd] t=929s tree=653 MB cpu=8% availRAM=2.18 GB C:free=7.91 GB
+[wd] t=992s tree=648 MB cpu=8% availRAM=1.92 GB C:free=7.90 GB
+[wd] t=1,054s tree=652 MB cpu=8% availRAM=2.16 GB C:free=7.90 GB
+[wd] t=1,116s tree=655 MB cpu=8% availRAM=1.79 GB C:free=7.89 GB
+  old path restored the model bitwise (reference)                                        PASS
+[wd] t=1,179s tree=649 MB cpu=8% availRAM=2.28 GB C:free=7.93 GB
+[wd] t=1,241s tree=652 MB cpu=8% availRAM=2.13 GB C:free=7.92 GB
+[wd] t=1,304s tree=655 MB cpu=8% availRAM=2.35 GB C:free=7.92 GB
+  row 1 unchanged by scoring rows 2 to 4                                                 PASS
+    physics part     old [5.0860e-06 5.0536e-06 3.9880e-05]  new [5.0861e-06 5.0540e-06 3.9869e-05]
+    baseline, start  old [5.0868e-06 5.0545e-06 3.9881e-05]  new [5.0869e-06 5.0549e-06 3.9870e-05]
+    baseline, true   old [3.8685e-06 3.5325e-06 3.7034e-05]  new [3.8680e-06 3.5322e-06 3.7023e-05]
+    trained theta_frozen norm 2.164e-02
+  rows 2 to 4 differ old vs new with the trained theta (the D-227 rows carried -E J theta) PASS
+[wd] t=1,366s tree=651 MB cpu=8% availRAM=2.04 GB C:free=7.90 GB
+[wd] t=1,429s tree=654 MB cpu=8% availRAM=1.90 GB C:free=7.91 GB
+[wd] t=1,492s tree=648 MB cpu=8% availRAM=2.63 GB C:free=7.90 GB
+[wd] t=1,556s tree=650 MB cpu=8% availRAM=2.68 GB C:free=7.90 GB
+[wd] t=1,618s tree=653 MB cpu=8% availRAM=2.86 GB C:free=7.89 GB
+[wd] t=1,680s tree=648 MB cpu=8% availRAM=2.89 GB C:free=7.89 GB
+[wd] t=1,743s tree=652 MB cpu=8% availRAM=2.19 GB C:free=7.88 GB
+[wd] t=1,805s tree=571 MB cpu=8% availRAM=2.69 GB C:free=7.88 GB
+[wd] t=1,867s tree=567 MB cpu=8% availRAM=2.55 GB C:free=7.86 GB
+[wd] t=1,929s tree=570 MB cpu=8% availRAM=2.60 GB C:free=7.91 GB
+[wd] t=1,992s tree=567 MB cpu=8% availRAM=2.53 GB C:free=7.89 GB
+[wd] t=2,054s tree=570 MB cpu=8% availRAM=2.53 GB C:free=7.89 GB
+[wd] t=2,116s tree=467 MB cpu=8% availRAM=2.53 GB C:free=7.87 GB
+[wd] t=2,178s tree=461 MB cpu=8% availRAM=2.55 GB C:free=7.87 GB
+[wd] t=2,241s tree=465 MB cpu=8% availRAM=2.58 GB C:free=7.87 GB
+  doubling theta moves the OLD rows 2 to 4                                               PASS
+  doubling theta leaves the NEW rows 2 to 4 bitwise unchanged                            PASS
+[wd] t=2,303s tree=459 MB cpu=8% availRAM=2.28 GB C:free=7.85 GB
+[wd] t=2,366s tree=461 MB cpu=8% availRAM=2.37 GB C:free=7.85 GB
+[wd] t=2,428s tree=461 MB cpu=8% availRAM=2.48 GB C:free=7.84 GB
+[wd] t=2,490s tree=455 MB cpu=8% availRAM=2.52 GB C:free=7.84 GB
+[wd] t=2,552s tree=458 MB cpu=8% availRAM=2.52 GB C:free=7.89 GB
+[wd] t=2,614s tree=455 MB cpu=8% availRAM=2.50 GB C:free=7.89 GB
+[wd] t=2,676s tree=458 MB cpu=8% availRAM=2.52 GB C:free=7.88 GB
+[wd] t=2,738s tree=457 MB cpu=8% availRAM=2.57 GB C:free=7.87 GB
+  with theta_frozen = 0, old == new bitwise                                              PASS
+  trained model restored after the test                                                  PASS
+
+[obc] ALL PASS (0 failures)
+WATCHDOG SUMMARY exit=0 killed=False duration_s=2,761.9 samples=532 peak_tree_ws_mb=658 min_avail_ram_gb=1.63 min_C_free_gb=7.84 kill_reason=""

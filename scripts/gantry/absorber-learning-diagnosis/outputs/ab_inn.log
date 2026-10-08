@@ -1,0 +1,65 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## AB1 EE fit [f_inn.pt]: 12000 pairs, var(x_a+) 32.298, current |W_a| 1.538
+  current model: EE residual/var 0.681 | A_aa dom |z| 0.211, complex 29 %, band pair 8 % (f 118, zeta 0.99)
+  hidden features: rms per unit [0.36 0.39 0.27 0.21 0.26 0.43 0.18 0.44 0.23 0.21 0.24 0.33 0.23 0.33
+ 0.26 0.23]
+  1. fixed-feature LS ceiling: |W| 20.90 (now 1.538), EE residual/var 0.0577 | A_aa dom |z| 0.935, complex 62 %, band pair 54 % (f 234, zeta 0.14)
+  2. out_a 1e-3
+     upd    50: EE residual/var 0.6335, |W_a| 1.81 | A_aa dom |z| 0.252, complex 25 %, band pair 17 % (f 109, zeta 0.99)
+     upd   100: EE residual/var 0.5890, |W_a| 2.07 | A_aa dom |z| 0.291, complex 25 %, band pair 17 % (f 115, zeta 0.99)
+     upd   250: EE residual/var 0.4745, |W_a| 2.83 | A_aa dom |z| 0.405, complex 29 %, band pair 17 % (f 124, zeta 0.98)
+     upd   500: EE residual/var 0.3356, |W_a| 3.97 | A_aa dom |z| 0.559, complex 29 %, band pair 25 % (f 134, zeta 0.92)
+     upd  1000: EE residual/var 0.1849, |W_a| 5.72 | A_aa dom |z| 0.719, complex 38 %, band pair 29 % (f 163, zeta 0.58)
+     upd  1500: EE residual/var 0.1222, |W_a| 6.89 | A_aa dom |z| 0.828, complex 46 %, band pair 33 % (f 173, zeta 0.13)
+     upd  2000: EE residual/var 0.0972, |W_a| 7.63 | A_aa dom |z| 0.862, complex 50 %, band pair 38 % (f 175, zeta -0.06)
+     upd  2500: EE residual/var 0.0862, |W_a| 8.08 | A_aa dom |z| 0.886, complex 54 %, band pair 46 % (f 164, zeta 0.25)
+     upd  3000: EE residual/var 0.0797, |W_a| 8.39 | A_aa dom |z| 0.884, complex 62 %, band pair 46 % (f 162, zeta 0.19)
+  2. out_a 1e-2
+     upd    50: EE residual/var 0.3243, |W_a| 4.10 | A_aa dom |z| 0.578, complex 29 %, band pair 25 % (f 124, zeta 0.92)
+     upd   100: EE residual/var 0.1767, |W_a| 5.88 | A_aa dom |z| 0.742, complex 33 %, band pair 29 % (f 163, zeta 0.53)
+     upd   250: EE residual/var 0.0892, |W_a| 8.00 | A_aa dom |z| 0.883, complex 54 %, band pair 46 % (f 169, zeta 0.27)
+     upd   500: EE residual/var 0.0723, |W_a| 8.92 | A_aa dom |z| 0.903, complex 62 %, band pair 50 % (f 165, zeta 0.19)
+     upd  1000: EE residual/var 0.0651, |W_a| 10.11 | A_aa dom |z| 0.927, complex 58 %, band pair 50 % (f 196, zeta 0.12)
+     upd  1500: EE residual/var 0.0628, |W_a| 10.86 | A_aa dom |z| 0.943, complex 54 %, band pair 46 % (f 211, zeta 0.06)
+     upd  2000: EE residual/var 0.0615, |W_a| 11.56 | A_aa dom |z| 0.964, complex 54 %, band pair 46 % (f 222, zeta 0.09)
+     upd  2500: EE residual/var 0.0607, |W_a| 12.23 | A_aa dom |z| 0.968, complex 50 %, band pair 46 % (f 215, zeta 0.13)
+     upd  3000: EE residual/var 0.0601, |W_a| 12.86 | A_aa dom |z| 0.965, complex 54 %, band pair 50 % (f 210, zeta 0.10)
+  2. out_a 1e-2 + hidden 1e-3
+     upd    50: EE residual/var 0.0913, |W_a| 3.93 | A_aa dom |z| 0.972, complex 29 %, band pair 29 % (f 206, zeta -0.51)
+     upd   100: EE residual/var 0.0681, |W_a| 4.23 | A_aa dom |z| 0.909, complex 42 %, band pair 38 % (f 206, zeta -0.16)
+     upd   250: EE residual/var 0.0297, |W_a| 5.40 | A_aa dom |z| 0.870, complex 83 %, band pair 83 % (f 204, zeta 0.34)
+     upd   500: EE residual/var 0.0082, |W_a| 6.95 | A_aa dom |z| 0.932, complex 96 %, band pair 96 % (f 217, zeta 0.20)
+     upd  1000: EE residual/var 0.0027, |W_a| 8.16 | A_aa dom |z| 0.936, complex 100 %, band pair 100 % (f 222, zeta 0.18)
+     upd  1500: EE residual/var 0.0024, |W_a| 8.66 | A_aa dom |z| 0.929, complex 100 %, band pair 100 % (f 222, zeta 0.20)
+     upd  2000: EE residual/var 0.0022, |W_a| 9.05 | A_aa dom |z| 0.928, complex 100 %, band pair 100 % (f 223, zeta 0.21)
+     upd  2500: EE residual/var 0.0022, |W_a| 9.38 | A_aa dom |z| 0.929, complex 100 %, band pair 100 % (f 224, zeta 0.20)
+     upd  3000: EE residual/var 0.0021, |W_a| 9.65 | A_aa dom |z| 0.929, complex 100 %, band pair 100 % (f 223, zeta 0.21)
+=== EXIT 0 ===

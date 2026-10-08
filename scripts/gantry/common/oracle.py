@@ -133,3 +133,82 @@ def oracle_open_loop(u_stage, x_logical, x_aug, cfg, up_sample, start_ix):
     y_hat[start_ix:]  = q_stage
     da_hat[start_ix:] = out[:, 3]
     return y_hat, da_hat
+
+
+# ── D-227: the thesis truth, parameterised, in closed loop ──────────────────────────
+# The constants above are the LEGACY augmentation data's absorber (ma_frac 0.10, zeta 0.05, no
+# friction) and stay for its callers. The thesis records store their own truth in meta.truth
+# (Thesis-writeup/Code/Data/generate_thesis_data.m truth_params): absorber ma, ka, ca, L0, the
+# rigid head mass mh_rigid, and the friction law cc_i tanh(g v_i) per stage rail (D-224, D-226).
+
+def truth_from_meta(truth):
+    """Parameters of a thesis record's truth from its meta.truth, or None when its friction law is
+    not one this module implements (only the tanh law; the old Karnopp records get None, never a
+    substitute law). `truth` is a mapping or an object with attributes."""
+    get = (lambda k: truth[k]) if isinstance(truth, dict) else (lambda k: getattr(truth, k))
+    try:
+        law = str(get('friction'))
+    except (KeyError, AttributeError):
+        return None
+    if 'tanh' not in law:
+        return None
+    names = ('m1', 'm2', 'mb', 'mh_rigid', 'ma', 'Jb', 'Jh', 'd', 'Lb', 'L0', 'cg1', 'cg2', 'cy',
+             'cb1', 'cb2', 'kb1', 'kb2', 'ka', 'ca', 'cc1', 'cc2', 'ccy', 'friction_gain')
+    return {k: float(np.asarray(get(k)).ravel()[0]) for k in names}
+
+
+def _deriv_truth(x, u_log, tp):
+    """dxdt of the 8-state thesis truth: gantrySystemExtendedTanh.m (the vendored Coulomb ODE's
+    mass, damping and stiffness, friction cc_i tanh(g v_i) on the stage rails)."""
+    Y, da = x[2], x[3]
+    mh, ma, Lb = tp['mh_rigid'], tp['ma'], tp['Lb']
+    off = (tp['m1'] - tp['m2']) * Lb / 2 - (mh + ma) * Y - ma * tp['L0'] - ma * da
+    M = np.array([
+        [tp['m1'] + tp['m2'] + tp['mb'] + mh + ma, off, 0.0, 0.0],
+        [off, tp['Jb'] + tp['Jh'] + (tp['m1'] + tp['m2']) * Lb ** 2 / 4 + (mh + ma) * tp['d'] ** 2
+              + mh * Y ** 2 + ma * (Y + tp['L0'] + da) ** 2, -(mh + ma) * tp['d'], -ma * tp['d']],
+        [0.0, -(mh + ma) * tp['d'], mh + ma, ma],
+        [0.0, -ma * tp['d'], ma, ma]])
+    cg1, cg2 = tp['cg1'], tp['cg2']
+    C4 = np.array([[cg1 + cg2, (cg1 - cg2) * Lb / 2, 0.0, 0.0],
+                   [(cg1 - cg2) * Lb / 2, tp['cb1'] + tp['cb2'] + (cg1 + cg2) * Lb ** 2 / 4, 0.0, 0.0],
+                   [0.0, 0.0, tp['cy'], 0.0],
+                   [0.0, 0.0, 0.0, tp['ca']]])
+    K4 = np.diag([0.0, tp['kb1'] + tp['kb2'], 0.0, tp['ka']])
+    P = np.array([[1.0, 1.0, 0.0], [Lb / 2, -Lb / 2, 0.0], [0.0, 0.0, 1.0]])
+    cc = np.array([tp['cc1'], tp['cc2'], tp['ccy']])
+    F = cc * np.tanh(tp['friction_gain'] * (P.T @ x[4:7]))          # stage-rail friction
+    q, qd = x[:4], x[4:]
+    qdd = np.linalg.solve(M, _E43 @ (u_log - P @ F) - K4 @ q - C4 @ qd)
+    return np.concatenate([qd, qdd])
+
+
+def oracle_closed_loop(u_stage, y_meas, x0_8, tp, ctrl, ts, up_sample):
+    """The truth in closed loop with the known controller, residual form (D-227).
+
+    Same form as the pipeline's closed-loop rollout (model_augmentation closed_loop.py):
+        y_k = P^T q_k;  e_k = y_meas_k - y_k;  u_fb = C xc + D e;  xc <- A xc + B e;
+        u_k = u_stage_k + u_fb;  x <- RK4 with P u_k held over `up_sample` substeps of ts.
+    u_stage (N, 3) the recorded plant force, y_meas (N, 3) the recorded (measured) output, both
+    physical and from the start sample on; x0_8 the true state there; ctrl = (A, B, C, D) the
+    physical controller at ts. Returns y (N, 3), the truth's stage output.
+    """
+    A, B, Cc, D = (np.asarray(m, dtype=np.float64) for m in ctrl)
+    P = np.array([[1.0, 1.0, 0.0], [tp['Lb'] / 2, -tp['Lb'] / 2, 0.0], [0.0, 0.0, 1.0]])
+    N = len(u_stage)
+    x = np.asarray(x0_8, dtype=np.float64).copy()
+    xc = np.zeros(A.shape[0])
+    y = np.empty((N, 3))
+    h = ts / up_sample
+    for k in range(N):
+        y[k] = P.T @ x[:3]
+        e = np.asarray(y_meas[k], dtype=np.float64) - y[k]
+        u_log = P @ (np.asarray(u_stage[k], dtype=np.float64) + Cc @ xc + D @ e)
+        xc = A @ xc + B @ e
+        for _ in range(up_sample):
+            k1 = _deriv_truth(x, u_log, tp)
+            k2 = _deriv_truth(x + 0.5 * h * k1, u_log, tp)
+            k3 = _deriv_truth(x + 0.5 * h * k2, u_log, tp)
+            k4 = _deriv_truth(x + h * k3, u_log, tp)
+            x = x + (h / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+    return y

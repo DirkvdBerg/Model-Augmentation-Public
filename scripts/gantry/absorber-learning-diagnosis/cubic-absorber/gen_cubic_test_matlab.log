@@ -1,0 +1,23 @@
+ODE in use: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\absorber-learning-diagnosis\cubic-absorber\gantrySystemExtendedTanh.m
+generate_thesis_data: 4 records selected, versions noisy
+
+=== 1/4  I1_r1  [test-I, as TR-P2: S-curve moves, 50 %, T3 30 ms, new phases, noise, setpoints] ===
+  r OK I1_r1       : X1=[-258 +273] X2=[-258 +273] Y=[-297 +288] mm | v 1.000/1.000 m/s a 14.99/25.00 m/s^2 j 1000/1666 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [NaN NaN NaN] nm | stick [4.4 4.4 1.5] % | F peak [0.63 0.61 0.6], rms [0.32 0.32 0.33] of limit | 54.2 + 0.0 MB | 47.8 s
+
+=== 2/4  I3_r1  [test-I, ASMPT sine route, X and Y together, 60 % max, Y inside +-0.20] ===
+  r OK I3_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 960/1456 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [NaN NaN NaN] nm | stick [75.2 73.6 71.3] % | F peak [0.25 0.31 0.23], rms [0.16 0.2 0.16] of limit | 45.4 + 0.0 MB | 43.1 s
+
+=== 3/4  E3_r1  [test-E, I5 at 100 % max (30 / 50 m/s^2), T3 25 ms] ===
+  r OK E3_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.907/1.498 m/s a 29.94/49.98 m/s^2 j 2395/3999 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [NaN NaN NaN] nm | stick [77 75.7 73.3] % | F peak [0.45 0.53 0.39], rms [0.25 0.31 0.23] of limit | 45.9 + 0.0 MB | 45.5 s
+
+=== 4/4  E4_r1  [test-E, I6 with v cap 1.95 m/s] ===
+  r OK E4_r1       : X1=[-250 +250] X2=[-250 +250] Y=[-280 +280] mm | v 1.950/1.950 m/s a 18.00/30.00 m/s^2 j 383/923 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [NaN NaN NaN] nm | stick [54.2 54.2 57.3] % | F peak [0.27 0.31 0.23], rms [0.21 0.25 0.16] of limit | 46.2 + 0.0 MB | 43.9 s
+MANIFEST noisy: 17 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\absorber-learning-diagnosis\cubic-absorber\..\..\..\..\Thesis-writeup\Data\Cubic-absorber-test\Coulomb-tanh-and-MSD\MANIFEST.csv
+
+generate_thesis_data: done
+GEN_CUBIC DONE
+@@CUBIC_DONE@@

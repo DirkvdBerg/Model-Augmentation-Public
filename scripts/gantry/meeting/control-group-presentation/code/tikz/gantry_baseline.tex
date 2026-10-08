@@ -1,0 +1,10 @@
+% The thesis gantry schematic without the absorber. build_tikz.py copies the thesis file
+% Thesis-writeup/Writing/figures/gantry_system_with_absorber.tex next to this wrapper; it is
+% read, never edited.
+\documentclass[border=6pt]{standalone}
+\input{preamble}
+\def\gantryabsorber{0}
+\def\gantrydelta{0}
+\begin{document}
+\input{gantry_system_with_absorber}
+\end{document}

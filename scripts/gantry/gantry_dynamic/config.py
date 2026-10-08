@@ -25,6 +25,36 @@ import torch
 _PKG_DIR  = os.path.dirname(os.path.abspath(__file__))          # scripts/gantry/gantry_dynamic
 REPO_ROOT = os.path.abspath(os.path.join(_PKG_DIR, '..', '..', '..'))
 
+# D-232: how a thesis record reaches FS_NEW (data.py::_record_at_fs_new). Fixed by the D-232
+# measurements, so module constants rather than RunConfig fields; config.json records their
+# effect per run (Y_DECIMATION, RECORD_TRIM). Evidence: scripts/gantry/anti-alias/.
+# The noisy mode carries encoder noise up to 10 kHz: y is anti-alias filtered on the servo error,
+# y_dec = r[::D] + BW(y - r)[::D], BW a zero-phase Butterworth. Every other mode point-samples y.
+ANTI_ALIAS_MODES = ('thesis_taf_noisy', 'thesis_taf_lowpass_noise')
+# HEURISTIC: order 8, fc = 0.8 x the 2 kHz Nyquist of the 4 kHz training rate (TR-022's ratio)
+# THEORY: Butterworth forward-backward magnitude 1/(1 + x^16), x = tan(pi f/fs) / tan(pi fc/fs):
+#   DC gain exactly 1, error 1.7e-12 at 300 Hz and 4.4e-4 at 1 kHz (anti-alias/LITERATURE.md Q3)
+AA_ORDER, AA_FC_HZ = 8, 1600.0
+# Both thesis modes drop AA_TRIM_S at EACH record end (u, y and every field alike), so the noisy
+# and noise-free twins keep identical sample sets (user 2026-09-29).
+TRIM_MODES = ('thesis_taf_noisy', 'thesis_taf_lowpass_noise', 'thesis_taf_noisefree')
+# HEURISTIC: the filter's edge transient lasts at most 4.6 ms (above 0.01 x the in-band noise, all
+# 36 records, anti-alias/end_transient.py), rounded up to whole ms
+AA_TRIM_S = 0.005
+
+
+def y_decimation(cfg) -> str:
+    """The D-232 rule that brings y to FS_NEW in cfg.mode, as recorded in config.json."""
+    if cfg.mode in ANTI_ALIAS_MODES:
+        return 'r + zero-phase Butterworth %d at %.0f Hz on y - r, then [::%d]' % (AA_ORDER, AA_FC_HZ, cfg.d)
+    return 'point sampling [::%d]' % cfg.d
+
+
+def record_trim(cfg) -> int:
+    """Samples dropped at EACH record end at FS_NEW (D-232): loader sample i is the recorded
+    FS_ORIG sample (i + record_trim) * D."""
+    return int(round(AA_TRIM_S * cfg.fs_new_hz)) if cfg.mode in TRIM_MODES else 0
+
 
 @dataclass(frozen=True)
 class RunConfig:
@@ -36,6 +66,13 @@ class RunConfig:
     encoder_init: str = 'linear_map'
     # ann_activation: 'linear' = Identity activation (Jan's ECC setup, D-071); 'tanh' = nonlinear ANN
     ann_activation: str = 'tanh'
+    # D-240: learning function g_aug. ann_arch: 'mlp' = Jan's tanh MLP; 'resnet' = MLP plus linear
+    # bypass W_a (D-239). g_init: 'zero' = final layer all zero; 'live' = added-state rows of the
+    # final weight (resnet: of W_a) keep the nn.Linear fan-in draw. resnet exists only live.
+    ann_arch: str = 'mlp'
+    g_init: str = 'zero'
+    # D-239: W_psi^a of the encoder, independent of g_aug.
+    wa_encoder_init: str = 'legacy_kaiming'
     joint_estimation: bool = False  # D-076: True = train physical parameters
     # CHANGED (D-191): choose the coordinates used when joint_estimation=True.
     physics_parameterization: str = 'raw'  # 'raw' (14 scalars) or 'reduced' (10 combinations)
@@ -71,25 +108,18 @@ class RunConfig:
     #     closed-loop rollout and `bestfit` becomes the V1-V4 closed-loop free-run RMS.
     #     False leaves interconnect.py's `simulator = None` default in force (open loop).
     closed_loop: bool = True
+    # D-227: score a record with its STORED controller gain (E5: K2-g+ = 1.2 K1) in the
+    # post-run report. False (default): every record gets the default K1 and a record stored
+    # with another gain is refused, as before.
+    controller_gain: bool = False
 
     # ═══ Sampling / data conditioning ═════════════════════════════════════════
     fs_orig: int = 20000
     fs_new: Optional[int] = 4000   # None = no downsampling (use fs_orig)
     stride: int = 10               # keep every STRIDE-th BPTT window (STRIDE=1 = every window)
-    # ═══ Objective (D-178) ════════════════════════════════════════════════════
-    # Samples discarded from the SCORE at the start of every training window. 0 = score the whole
-    # window and is bit-identical to every run before D-178; a non-zero value is a DIFFERENT
-    # objective, so runs across the two are not comparable on training loss (BURN_IN is recorded
-    # in config.json so they are at least distinguishable).
-    # WHY IT EXISTS: at nf=400 the window is transient-dominated. Every `[nf]` line of every run
-    # reports grow = RMS(last step)/RMS(first) between 0.46 and 0.81, i.e. the error DECAYS across
-    # the window, so scoring the start pays the optimiser to sharpen x_0 -- which a 12 s free run
-    # pays once at t=0 and forgets. Jobs 81692/81693 measured the consequence directly: the
-    # encoder produced ~85% of an L-BFGS phase's loss reduction and only ~47% of its free-run
-    # gain, 6.6x less efficient per unit of loss than the hfn's share.
-    # AFFECTS TRAINING ONLY. `simulator.validation_error` never calls `loss()`, so selection, the
-    # 12 s free run and every diagnostic are untouched by construction rather than by a flag.
-    burn_in: int = 0
+    # D-222, SMOKE TESTS ONLY: keep the first `truncate_s` seconds of every loaded record so a
+    # launch test validates in seconds instead of minutes. None = whole records (every real run).
+    truncate_s: Optional[float] = None
     use_f64: bool = False
     save_flag: bool = True
     nf_probe_print: bool = True    # print per-epoch train/val nf-window RMS (D-095 probe); runtime-only, not in hp
@@ -182,7 +212,7 @@ class RunConfig:
     # the CPU, where an epoch cost ~1300 s and the same validation was 11% of it. n_its still
     # takes precedence in model.py, so a capped smoke test keeps validating at its cap.
     its_per_val: Optional[Union[int, str]] = None
-    nf_seconds: float = 0.100      # [s] SEGMENT length (5*tau_msd, tau=1/(zeta*wn)=20ms, 5tau=100ms)
+    nf_seconds: float = 0.100      # [s] SEGMENT length; D-220: 9x the slowest closed-loop pole with K1 (11 ms), the loop forgets a force error within ~50 ms
     # Optional direct overrides (None = derive). Set a number to bypass the formula.
     nf_override: Optional[int] = None      # None -> nf = nf_seconds / ts_new
     na_nb_override: Optional[int] = None   # None -> na_nb = (nx_phys + nx_ann)*2 + 1 (Jan's rule)
@@ -251,6 +281,9 @@ class RunConfig:
     # then polish if lbfgs=True). 'lbfgs' = skip Adam and polish the restored weights directly.
     # Only meaningful with RESUME_CHECKPOINT set; the entry point enforces that.
     start_phase: str = 'adam'
+    # D-236: PS2, a data-driven initialisation of the added-state part during the first Adam updates
+    # (model_augmentation/fit_systems/ps2_opening.py). False = the run is exactly what it was.
+    ps2: bool = False
 
     # ═══ Multiple shooting: REMOVED 2026-08-28 (D-127 retired) ════════════════
     # `n_seg`, `defect_weight`, `defect_acc_weight`, `defect_norm` and `defect_scale` are gone
@@ -327,6 +360,18 @@ class RunConfig:
         Runs on construction AND on dataclasses.replace, so a config derived from this one
         cannot reach a contradictory state either. Assigns nothing, so frozen=True holds.
         """
+        if self.ann_arch not in ('mlp', 'resnet') or self.g_init not in ('zero', 'live'):
+            raise ValueError("ann_arch must be 'mlp' or 'resnet' and g_init 'zero' or 'live', got %r, %r"
+                             % (self.ann_arch, self.g_init))
+        if self.ann_arch == 'resnet' and self.g_init != 'live':
+            raise ValueError("ann_arch='resnet' exists only with g_init='live'")
+        if self.wa_encoder_init not in ('legacy_kaiming', 'xavier_uniform_gain1'):
+            raise ValueError(
+                "wa_encoder_init must be 'legacy_kaiming' or 'xavier_uniform_gain1', got %r"
+                % (self.wa_encoder_init,)
+            )
+        if self.wa_encoder_init != 'legacy_kaiming' and self.encoder_init != 'linear_map':
+            raise ValueError('wa_encoder_init applies only when encoder_init is linear_map')
         if self.physics_parameterization not in ('raw', 'reduced'):
             raise ValueError("physics_parameterization must be 'raw' or 'reduced', got %r"
                              % (self.physics_parameterization,))
@@ -349,14 +394,6 @@ class RunConfig:
             raise ValueError(
                 'Raw joint estimation cannot use combo_init_detune. Set it to None and use '
                 'param_init_detune for the fourteen raw coordinates.')
-        # D-178. Checked HERE, once, rather than per batch inside the loss: `nf` is a property of
-        # this config, so the only place the two can disagree is at construction.
-        if not 0 <= self.burn_in < self.nf:
-            raise ValueError(
-                'burn_in=%r is not a valid number of samples for an nf=%d window. It is how many '
-                'samples at the START of each window are excluded from the SCORE, so it must be '
-                'at least 0 (score everything, the pre-D-178 objective) and strictly less than '
-                'nf, or there is nothing left to score.' % (self.burn_in, self.nf))
         if self.orth and self.orth_beta <= 0:
             raise ValueError(
                 'orth=True with orth_beta=%r is not a state. `orth` is the switch and '
@@ -618,7 +655,12 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
     """
     return dict(
         MODE=cfg.mode, ENCODER_INIT=cfg.encoder_init,
-        ANN_ACTIVATION=cfg.ann_activation, FS_NEW=cfg.fs_new_hz, D=cfg.d,
+        ANN_ACTIVATION=cfg.ann_activation,
+        ANN_ARCH=cfg.ann_arch,
+        G_INIT=cfg.g_init,
+        LIVE_G_WEIGHT_INIT='kaiming_uniform_a_sqrt5' if cfg.g_init == 'live' else None,
+        WA_ENCODER_INIT=cfg.wa_encoder_init,
+        FS_NEW=cfg.fs_new_hz, D=cfg.d,
         FS_ORIG=cfg.fs_orig, SEED=cfg.seed, SNR=cfg.snr,
         JOINT_ESTIMATION=cfg.joint_estimation,
         PHYSICS_PARAMETERIZATION=cfg.physics_parameterization,
@@ -648,7 +690,6 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
         #   STATE_LAYOUT  the model/training hyperparameters not already in `hp`
         ANN_ROUTE_IX=list(cfg.ann_route_ix),
         STRIDE=cfg.stride,
-        BURN_IN=cfg.burn_in,        # D-178: 0 = the pre-D-178 objective; non-zero = a different one
         N_ITS=cfg.n_its,
         ITS_PER_VAL=cfg.its_per_val,
         NF_SECONDS=cfg.nf_seconds,
@@ -708,6 +749,13 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
         OBC_REFRESH=cfg.obc_refresh,
         OBC_REF_CHUNK=cfg.obc_ref_chunk,
         OBC_RANK_RTOL=cfg.obc_rank_rtol,
+        TRUNCATE_S=cfg.truncate_s,       # appended (D-222): not None only on a smoke test
+        CONTROLLER_GAIN=cfg.controller_gain,   # appended (D-227)
+        PS2=cfg.ps2,                           # appended (D-236)
+        # Appended (D-232): what the loader did to the recorded data. RECORD_TRIM aligns any output
+        # with the raw .mat record: loader sample i = recorded sample (i + RECORD_TRIM) * D.
+        Y_DECIMATION=y_decimation(cfg),
+        RECORD_TRIM=record_trim(cfg),
         # Which CODE ran, as opposed to what it was asked to do. None when the caller did not
         # look it up; the entry point passes git_provenance().
         GIT=git,

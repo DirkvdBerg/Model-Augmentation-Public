@@ -13,16 +13,88 @@
 % Section is finished when: Every appendix item is referenced from the main paper and necessary for verification or reproducibility.
 \section{Supporting Derivations and Reproducibility}
 
-\subsection{Baseline and LFR details}
-\begin{itemize}
-\item Give the logical-to-stage transformation, expanded inertia matrix, and proof of invertibility over the operating range
-\item List the compressed LPV-LFR matrices and internal signal dimensions needed to reproduce the baseline transition
-\item Provide the raw-to-identifiable parameter map and its Jacobian rank
-\item Figure (existing, optional): move the detailed coordinate and normalisation flow from \texttt{coordinates-normalisation-v1} here after checking derivative and scaling conventions
-\end{itemize}
-\todo{Move these items into supplementary material if appendices count toward the 12-page limit.}
+\subsection{Explicit LPV-LFR realization}\label{app:lfr-details}
+In \eqref{eq:Msplit}, $M_0$ is \eqref{eq:mass_matrix} evaluated at $Y=0$, and
+\begin{equation*}
+ M_1=\begin{bmatrix}0&-m_h&0\\-m_h&0&0\\0&0&0\end{bmatrix},\qquad
+ M_2=\begin{bmatrix}0&0&0\\0&m_h&0\\0&0&0\end{bmatrix}.
+\end{equation*}
+With $a_1$ and $a_2$ from \eqref{eq:lfr_chain} treated as independent signals, solving
+$M_0\ddot q+M_1a_1+M_2a_2=u-C\dot q-Kq$ for $\ddot q$ with $R=M_0^{-1}$ gives
+$\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With $\dot{\tilde x}=\col(\dot q,\ddot q)$,
+$z=\col(\ddot q,a_1)$, and $w=\col(a_1,a_2)$, the LTI part $G$ of
+\eqref{eq:lfr_G}, partitioned as in \cite[Eq.~(6)]{drenth2025lpvlfr}, is
+\begin{equation}
+ \begin{bmatrix}\dot{\tilde x}\\z\\q\end{bmatrix}
+ =
+ \underbrace{\begin{bmatrix}
+  A_x&B_w&B_u\\ C_z&D_{zw}&D_{zu}\\ C_y&D_{yw}&D_{yu}
+ \end{bmatrix}}_{G}
+ \begin{bmatrix}\tilde x\\w\\u\end{bmatrix}.
+ \label{eq:app_G_partition}
+\end{equation}
+with blocks
+{\footnotesize
+\setlength{\arraycolsep}{2.5pt}
+\begin{equation}
+\begin{aligned}
+ A_x&=\begin{bmatrix}0&I_3\\-RK&-RC\end{bmatrix},
+&B_w&=\begin{bmatrix}0&0\\-RM_1&-RM_2\end{bmatrix},
+&B_u&=\begin{bmatrix}0\\R\end{bmatrix},\\
+ C_z&=\begin{bmatrix}-RK&-RC\\0&0\end{bmatrix},
+&D_{zw}&=\begin{bmatrix}-RM_1&-RM_2\\I_3&0\end{bmatrix},
+&D_{zu}&=\begin{bmatrix}R\\0\end{bmatrix},\\
+ C_y&=\begin{bmatrix}I_3&0\end{bmatrix},
+&D_{yw}&=0,
+&D_{yu}&=0.
+\end{aligned}
+\label{eq:app_lfr_blocks}
+\end{equation}
+}
+Here $\tilde x,z,w\in\R^6$ and $u,q\in\R^3$, so $G\in\R^{15\times15}$.
+The actuator frame enters only through $u=P\uact$ and $\qact=P^\top q$ in
+\eqref{eq:Ptransform}.
 
-\subsection{Identifiability of the physical parameters}\label{app:params}
+Substituting $w=\Dsch(Y)z$ into the $z$ equation of
+\eqref{eq:app_G_partition} gives the algebraic loop equation
+$(I_6-D_{zw}\Dsch(Y))z=C_zx+D_{zu}u$. Written out,
+\begin{equation*}
+ \begin{bmatrix}I_3+YRM_1&YRM_2\\-YI_3&I_3\end{bmatrix}
+ \begin{bmatrix}\ddot q\\a_1\end{bmatrix}
+ =\begin{bmatrix}R(u-Kq-C\dot q)\\0\end{bmatrix}.
+\end{equation*}
+The second block row gives $a_1=Y\ddot q$, and the first then gives
+$M(Y)\ddot q=u-C\dot q-Kq$, that is \eqref{eq:eom}, after multiplication by
+$M_0$. The condition of
+\cite[Def.~1]{drenth2025lpvlfr}, that $I_6-D_{zw}\Dsch(Y)$ is nonsingular, is
+therefore the condition that $M(Y)$ is nonsingular: the Schur complement of
+the lower identity block gives
+\begin{equation*}
+\begin{aligned}
+ \det\bigl(I_6-D_{zw}\Dsch(Y)\bigr)
+ &=\det\bigl(I_3+YRM_1+Y^2RM_2\bigr)\\
+ &=\det M(Y)/\det M_0.
+\end{aligned}
+\end{equation*}
+Since $M(Y)$ is nonsingular, the loop is solved in closed form,
+$\ddot q=M(Y)^{-1}(u-C\dot q-Kq)$ with
+\begin{equation*}
+ M(Y)^{-1}=\frac{N_0+YN_1+Y^2N_2}{d(Y)},\qquad d(Y)=\det M(Y),
+\end{equation*}
+where $N_0+YN_1+Y^2N_2=\operatorname{adj}M(Y)$ and $d(Y)$ are both quadratic
+in $Y$.
+The implementation evaluates both polynomials with Horner's scheme.
+\todo{Missing: print $N_0$, $N_1$, $N_2$ and $d(Y)$ explicitly? Candidate: no, appendix budget; the quadratic degree was checked symbolically (sympy, 2026-10-06).}
+
+\todo{Remarks cut from Section~II-B; keep here or drop?}
+\begin{itemize}
+\item $Y^2$ is realized by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2025lpvlfr}
+\item The scheduling map is a known selection of the state ($Y=q_3$), not a learned map as in the self-scheduled models of \cite{drenth2025lpvlfr}
+\item The exact condition $\det M(Y)\neq0$ replaces the sufficient condition of \cite[Thm.~6]{drenth2025lpvlfr}, which needs a scheduling set in the unit ball and $\rho(D_{zw})<1$
+\item Drenth's Def.~1 is stated in discrete time but constrains only the algebraic loop equation, so it applies unchanged in continuous time
+\end{itemize}
+
+\subsection{Nominal physical parameters}\label{app:params}
 Table~\ref{tab:nominal_parameters} lists the nominal values used by the baseline.
 They are taken from the ETEL gantry reported by Garc\'ia-Herreros et al.
 \cite[Table~I]{garcia2013model}. Here $\theta$ collects the fourteen table
@@ -48,69 +120,24 @@ $L_b$ & $0.725\,\mathrm{m}$ & & \\
 \end{tabular}
 \end{table}
 
-The dynamics depend on $\theta$ only through the entries of $M_0$, $M_1$, $M_2$, $C$
-and $K$ in \eqref{eq:eom} and \eqref{eq:Msplit}. Omitting zeros and symmetric
-duplicates, these are
+\subsection{Positive definiteness of the inertia matrix}
+\label{app:lfr-wellposed}
+With $a=L_bm_\Delta/2$, elimination of the $m_h$ block and completion of the square give
 \begin{equation*}
 \begin{aligned}
-  M_0 &: m_1{+}m_2{+}m_b{+}m_h,\quad \tfrac{L_b}{2}(m_1{-}m_2),\\
-      &\quad J_b{+}J_h{+}\tfrac{L_b^2}{4}(m_1{+}m_2){+}m_h d^2,\\
-      &\quad -m_h d,\quad m_h,\\
-  M_1,\,M_2 &: -m_h,\;\; m_h,\\
-  C &: c_{g1}{+}c_{g2},\quad \tfrac{L_b}{2}(c_{g1}{-}c_{g2}),\\
-    &\quad c_{b1}{+}c_{b2}{+}\tfrac{L_b^2}{4}(c_{g1}{+}c_{g2}),\quad c_y,\\
-  K &: k_{b1}{+}k_{b2}.
+  \frac{\det M(Y)}{m_h}
+  &=(m_\Sigma+m_h)(J_{\mathrm{eff}}+m_hY^2)
+    -(a-m_hY)^2\\
+  &=m_\Sigma m_h\left(Y+\frac{a}{m_\Sigma}\right)^2\\
+  &\quad +(m_\Sigma+m_h)
+      \left(J_{\mathrm{eff}}-\frac{a^2}{m_\Sigma}\right).
 \end{aligned}
 \end{equation*}
-Every entry is a function of $\varphi$ in \eqref{eq:phi}. Conversely, $\varphi$ is
-recovered entry by entry:
-\begin{equation*}
-\begin{aligned}
-  m_h &= M_{0,33}, & d &= -M_{0,23}/m_h,\\
-  m_\Sigma &= M_{0,11}-m_h,
-    &m_\Delta &= 2M_{0,12}/L_b,\\
-  J_{\mathrm{eff}} &= M_{0,22}-m_h d^2,\\
-  c_{g1},c_{g2}&:\ C_{11},C_{12},
-    &c_y&=C_{33},\\
-  c_{b,\Sigma}&=C_{22}-\tfrac{L_b^2}{4}(c_{g1}+c_{g2}),
-    &k_{b,\Sigma}&=K_{22}.
-\end{aligned}
-\end{equation*}
-The map from $\varphi$ to the matrices is therefore injective. Twelve entries yield
-ten independent quantities because $M_{0,33}$, $M_{1,12}$ and $M_{2,22}$ all equal
-$\pm m_h$.
-
-The matrices are fixed by input-output data. Since only the yaw coordinate has
-stiffness, every $q=[X_0\;0\;Y_0]^\top$ with $\dot q=0$ and $\uact=0$ is an
-equilibrium. Linearizing \eqref{eq:eom} there, the term
-$(\partial M/\partial Y)\ddot q$ vanishes, so the small-signal model is
-$M(Y_0)\delta\ddot q + C\delta\dot q + K\delta q = P\delta\uact$ with transfer matrix
-$H(s)=P^\top Z(s)^{-1}P$, $Z(s)=M(Y_0)s^2+Cs+K$. As $P$ is invertible,
-$Z(s)=P\,H(s)^{-1}P^\top$, whose polynomial coefficients give $M(Y_0)$, $C$ and $K$.
-Three distinct $Y_0$ then give $M_0$, $M_1$ and $M_2$ from the quadratic
-\eqref{eq:Msplit}.
-
-The four directions of $\theta$ that leave every entry unchanged are
-$\delta k_{b1}=-\delta k_{b2}$, $\delta c_{b1}=-\delta c_{b2}$,
-$\delta J_b=-\delta J_h$, and
-$(\delta m_1,\delta m_2,\delta m_b,\delta J_b)=t\,(-2/L_b^2,\,-2/L_b^2,\,4/L_b^2,\,1)$.
-Accordingly, the Jacobian of the twelve entries with respect to $\theta$ has rank ten
-for every positive $\theta$, which was confirmed symbolically.
-
-Positivity of the reduced coordinates alone does not guarantee that they correspond
-to a positive-definite inertia matrix. With
-$a=L_bm_\Delta/2$, elimination of the $m_h$ block gives
-\begin{equation*}
-  \min_Y\frac{\det M(Y)}{m_h}
-  =(m_\Sigma+m_h)\left(J_{\mathrm{eff}}-\frac{a^2}{m_\Sigma}\right).
-\end{equation*}
-Hence, for positive $m_h$, $m_\Sigma$, and $J_{\mathrm{eff}}$,
-\begin{equation}
-  M(Y)\succ0\ \text{for all }Y\in\R
-  \quad\Longleftrightarrow\quad
-  m_\Sigma J_{\mathrm{eff}}>\frac{L_b^2}{4}m_\Delta^2.
-  \label{eq:admissible}
-\end{equation}
+The $2\times2$ Schur complement has positive leading entry
+$m_\Sigma+m_h$. Sylvester's criterion therefore reduces positive definiteness
+to positivity of the completed-square expression for every $Y$. Hence, for
+positive $m_h$, $m_\Sigma$, and $J_{\mathrm{eff}}$, $M(Y)\succ0$ for all
+$Y\in\R$ if and only if \eqref{eq:lfr_admissibility} holds.
 For the physical parameterization, the difference between the two sides is
 \begin{equation*}
 \begin{aligned}
@@ -121,26 +148,22 @@ For the physical parameterization, the difference between the two sides is
 \end{equation*}
 which is strictly positive for positive component masses and yaw inertias.
 
-For completeness, let $R=M_0^{-1}$. The LTI matrices in \eqref{eq:lfr} are
+In \eqref{eq:mdelta_map}, let
+$b(\theta_{\mathrm{base}})=\rho(2/L_b)\sqrt{m_\Sigma J_{\mathrm{eff}}}$. The offset and scale
+are
 \begin{equation*}
-\begin{aligned}
-A&=\begin{bmatrix}0&I\\-RK&-RC\end{bmatrix}, &
-B_w&=\begin{bmatrix}0&0\\-RM_1&-RM_2\end{bmatrix},\\
-B_u&=\begin{bmatrix}0\\RP\end{bmatrix}, &
-C_z&=\begin{bmatrix}-RK&-RC\\0&0\end{bmatrix},\\
-D_{zw}&=\begin{bmatrix}-RM_1&-RM_2\\I&0\end{bmatrix}, &
-D_{zu}&=\begin{bmatrix}RP\\0\end{bmatrix},\\
-C_y&=\begin{bmatrix}P^\top&0\end{bmatrix}.&&
-\end{aligned}
+ r_0=\frac{m_{\Delta,0}}{b(\theta_{\mathrm{base},0})},\quad
+ \eta_0=\operatorname{atanh}(r_0),\quad
+ s=\frac{m_{\Delta,0}}{b(\theta_{\mathrm{base},0})(1-r_0^2)}.
 \end{equation*}
-Taking the Schur complement of the lower-right identity block gives
-\begin{equation}
- \det\!\left(I-D_{zw}\Dsch(Y)\right)
- =\det\!\left(M_0^{-1}M(Y)\right)
- =\frac{\det M(Y)}{\det M_0},
- \label{eq:wellposed_identity}
-\end{equation}
-which proves the well-posedness equivalence used in Section~\ref{sec:lfr}.
+Here $\eta_0$ makes $\xi_\Delta=0$ reproduce the initial combination, and $s$
+gives $\partial m_\Delta/\partial\xi_\Delta|_0=m_{\Delta,0}$, matching the local
+relative-change scaling of the logarithmic coordinates. The construction
+requires $m_{\Delta,0}\neq0$; a start near zero makes $s$ small and the
+coordinate numerically inert. The exact inverse used for reporting is
+\begin{equation*}
+ \xi_\Delta=\frac{\operatorname{atanh}(m_\Delta/b(\theta_{\mathrm{base}}))-\eta_0}{s}.
+\end{equation*}
 
 \subsection{OBC and experiment details}
 \begin{itemize}

@@ -1,0 +1,75 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Cubic-absorber-test\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.306e-05 m  vdelta_a std=6.446e-02 m/s
+Loaded 9 train, 3 val, 1 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-Y1_r1.mat)
+  T5: 47960 samples  (Training/TR-Y2_r1.mat)
+  T6: 47960 samples  (Training/TR-Y3_r1.mat)
+  T7: 47960 samples  (Training/TR-P1_r1.mat)
+  T8: 47960 samples  (Training/TR-P2_r1.mat)
+  T9: 47960 samples  (Training/TR-P3_r1.mat)
+
+######## PS2 [k3]: mode control, seed 3, head mlp, 600 updates, batch 64, M 30, S1 cap 350; thesis rates out_a 0.001, rest 1e-05; aux 0.001; calibration records [8, 2, 5]
+  [eval    0] phase S3 loss 1.5071e-08 | cal unexplained nan | enc x_a rms 1.680e+00 | |W_out_a| 0.00e+00
+  upd    1 oe 1.4862e-08 | 3.45 s/upd
+  upd    2 oe 2.2918e-08 | 3.96 s/upd
+  upd    3 oe 1.3069e-08 | 4.60 s/upd
+  upd   25 oe 9.4506e-09 | 3.89 s/upd
+  [eval   25] phase S3 loss 9.5093e-09 | cal unexplained nan | enc x_a rms 1.678e+00 | |W_out_a| 5.90e-02
+  upd   50 oe 9.5192e-09 | 3.69 s/upd
+  [eval   50] phase S3 loss 8.8849e-09 | cal unexplained nan | enc x_a rms 1.677e+00 | |W_out_a| 1.32e-01
+  upd   75 oe 8.5412e-09 | 3.61 s/upd
+  [eval   75] phase S3 loss 8.7485e-09 | cal unexplained nan | enc x_a rms 1.676e+00 | |W_out_a| 1.91e-01
+  upd  100 oe 8.1829e-09 | 3.58 s/upd
+  [eval  100] phase S3 loss 8.6452e-09 | cal unexplained nan | enc x_a rms 1.676e+00 | |W_out_a| 2.46e-01
+  upd  125 oe 8.3881e-09 | 3.57 s/upd
+  [eval  125] phase S3 loss 8.5765e-09 | cal unexplained nan | enc x_a rms 1.676e+00 | |W_out_a| 3.00e-01
+  upd  150 oe 8.2499e-09 | 3.56 s/upd
+  [eval  150] phase S3 loss 8.4862e-09 | cal unexplained nan | enc x_a rms 1.676e+00 | |W_out_a| 3.58e-01
+  upd  175 oe 8.1203e-09 | 3.57 s/upd
+  [eval  175] phase S3 loss 8.4635e-09 | cal unexplained nan | enc x_a rms 1.675e+00 | |W_out_a| 4.19e-01
+  upd  200 oe 7.9614e-09 | 3.56 s/upd
+  [eval  200] phase S3 loss 8.4577e-09 | cal unexplained nan | enc x_a rms 1.675e+00 | |W_out_a| 4.81e-01
+  upd  225 oe 8.2774e-09 | 3.55 s/upd
+  [eval  225] phase S3 loss 8.3430e-09 | cal unexplained nan | enc x_a rms 1.674e+00 | |W_out_a| 5.45e-01
+  upd  250 oe 8.2381e-09 | 3.54 s/upd
+  [eval  250] phase S3 loss 8.2507e-09 | cal unexplained nan | enc x_a rms 1.673e+00 | |W_out_a| 6.08e-01
+  upd  275 oe 7.8087e-09 | 3.53 s/upd
+  [eval  275] phase S3 loss 8.2870e-09 | cal unexplained nan | enc x_a rms 1.672e+00 | |W_out_a| 6.74e-01
+  upd  300 oe 7.8045e-09 | 3.54 s/upd
+  [eval  300] phase S3 loss 8.0677e-09 | cal unexplained nan | enc x_a rms 1.671e+00 | |W_out_a| 7.41e-01
+  upd  325 oe 8.0605e-09 | 3.53 s/upd
+  [eval  325] phase S3 loss 8.0151e-09 | cal unexplained nan | enc x_a rms 1.670e+00 | |W_out_a| 8.10e-01
+  upd  350 oe 7.9841e-09 | 3.54 s/upd
+  [eval  350] phase S3 loss 7.9465e-09 | cal unexplained nan | enc x_a rms 1.669e+00 | |W_out_a| 8.79e-01
+  upd  375 oe 7.5523e-09 | 3.53 s/upd
+  [eval  375] phase S3 loss 7.9045e-09 | cal unexplained nan | enc x_a rms 1.668e+00 | |W_out_a| 9.51e-01
+  upd  400 oe 7.3874e-09 | 3.54 s/upd
+  [eval  400] phase S3 loss 7.8109e-09 | cal unexplained nan | enc x_a rms 1.666e+00 | |W_out_a| 1.03e+00
+  upd  425 oe 7.4844e-09 | 3.54 s/upd
+  [eval  425] phase S3 loss 7.8536e-09 | cal unexplained nan | enc x_a rms 1.664e+00 | |W_out_a| 1.11e+00
+  upd  450 oe 7.3028e-09 | 3.54 s/upd
+  [eval  450] phase S3 loss 7.5993e-09 | cal unexplained nan | enc x_a rms 1.662e+00 | |W_out_a| 1.19e+00
+  upd  475 oe 6.9987e-09 | 3.54 s/upd
+  [eval  475] phase S3 loss 7.4165e-09 | cal unexplained nan | enc x_a rms 1.661e+00 | |W_out_a| 1.30e+00
+  upd  500 oe 7.3094e-09 | 3.54 s/upd
+  [eval  500] phase S3 loss 7.3423e-09 | cal unexplained nan | enc x_a rms 1.659e+00 | |W_out_a| 1.41e+00
+  upd  525 oe 7.2525e-09 | 3.54 s/upd
+  [eval  525] phase S3 loss 7.2929e-09 | cal unexplained nan | enc x_a rms 1.656e+00 | |W_out_a| 1.55e+00
+  upd  550 oe 6.6194e-09 | 3.54 s/upd
+  [eval  550] phase S3 loss 8.2277e-09 | cal unexplained nan | enc x_a rms 1.654e+00 | |W_out_a| 1.68e+00
+  upd  575 oe 6.9523e-09 | 3.54 s/upd
+  [eval  575] phase S3 loss 6.7621e-09 | cal unexplained nan | enc x_a rms 1.652e+00 | |W_out_a| 1.81e+00
+  upd  600 oe 6.2068e-09 | 3.54 s/upd
+  [eval  600] phase S3 loss 6.5132e-09 | cal unexplained nan | enc x_a rms 1.649e+00 | |W_out_a| 1.92e+00
+  saved overnight-clean-method/outputs/ps2_k3.pt (S1 end None, S2 residual None)
+=== EXIT 0 ===

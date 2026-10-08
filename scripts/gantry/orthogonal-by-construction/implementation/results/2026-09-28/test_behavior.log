@@ -1,0 +1,95 @@
+rig: nf=50 batch=8 N_ref=4320 dtype=torch.float32
+
+T1 coefficient evaluated once per objective
+  objective evals +1, reference-set ANN passes 1, rollout ANN passes 50 (nf=50)
+  -> MET: T1
+
+T2 gradient passes through the coefficient to the ANN weights
+  ||d theta.sum() / d ANN weights|| = 3.0151e+02
+  -> MET: T2
+
+T3 detaching the coefficient changes the ANN gradient
+  loss identical: True (1.456967e-04 vs 1.456967e-04); ||g_att - g_det|| / ||g_att|| = 6.2363e-03, cos = 0.999981
+  -> MET: T3
+
+T4 stacked orthogonality reaches the measured numerical floor
+  r_perp, rollout (float32 JVP) path        = 6.4223e-08
+  r_perp, float64 stored-factor construction = 1.2695e-15
+  r_overlap before projection                = 1.8591e-01   (||F|| = 1.9702e-01)
+  measured float32 floor over 10 random fields: min 7.277e-10 median 1.322e-08 max 3.683e-08
+  acceptance threshold = 3 x max floor = 1.105e-07; for reference kappa*eps: float32 6.146e-05, float64 1.145e-13
+  -> MET: T4
+
+T5 orthogonality after one optimizer update (fresh coefficient) and with the stale one
+  |theta_after - theta_before| / |theta| = 1.238e-02
+  r_perp fresh coefficient = 1.6533e-08  (threshold 1.105e-07);  stale coefficient = 2.6972e-03; validation-synced = 1.6533e-08
+  validation sync matches fresh coefficient: True; objective counter unchanged: True; epoch basis retained: True
+  -> MET: T5
+
+T6 additional-state outputs bit-identical with the correction on and off
+  y equal: True; augmented rows equal: True; physical rows max|diff| = 3.172e-04 (so the correction acts)
+  -> MET: T6
+
+T7 D-229 changes only the displaced reduced coordinate; disabled seams stay bit-identical
+  torch.float32: block at start True, displaced coordinate changed True, transition_from_free==forward True, Interconnect.forward True, closed-loop rollout (nf=50) True
+  torch.float64: block at start True, displaced coordinate changed True, transition_from_free==forward True, Interconnect.forward None, closed-loop rollout (nf=50) None
+  -> MET: T7
+
+T8 all ten reduced physical parameters retain nonzero training gradients (OBC on)
+  free_params.grad = -1.340e-07 +1.502e-08 -1.972e-07 -3.166e-07 -1.037e-07 +1.749e-04 +4.678e-05 -1.440e-06 +4.040e-05 +2.065e-05
+  -> MET: T8
+
+T9 save and reload: no functorch wrappers in the block cache; reload reproduces
+  block _cur entries functorch-wrapped: [False, False, False, False, False, False, False, False, False, False]
+  checkpoint 10.6 MB; lifecycle + reference set excluded from it: True; restored on the live system after load: True; hfn replaced by the load: True
+  round trip reproduces (frozen theta path), checkpoint and pickle: True; obc keys in state_dict: ['obc_correction.E', 'obc_correction.vbar', 'obc_correction.theta_frozen']
+  objective after reload runs against the reloaded adapter: True (loss 1.2740e-04)
+  -> MET: T9
+
+T10 ten consecutive objective evaluations cause no recompilation
+  from probe_compile_aot_eager.json: ok=True, objectives without recompile=2, refreshes=2, error=None
+  -> MET: T10
+
+T12 hand-written tangent vs torch.func.jvp, through GantryOBCCorrection itself
+  hand vs jvp (torch.float32): 0.000e+00
+  threaded pair vs correction_from_theta: 0.000e+00
+  a DIFFERENT coefficient tracks the jvp too: 0.000e+00
+  additional-state rows of the correction: max 0.000e+00
+  -> MET: T12
+
+T13 the compiled step contains no functorch transform
+  tangent_pair calls during 5 compiled steps: 0 (must be 0)
+  -> MET: T13
+
+T14 the M(Y) rebuild is hoisted out of the timestep loop and changes nothing
+  rebuilds per objective: 51 without the hoist (nf=50), 2 with it
+  loss bit-identical: True (1.2739939848e-04)
+  physical gradient, worst relative change: 3.121e-07 (reduction order only)
+  -> MET: T14
+
+T11 synthetic lifecycle: rank loss retains the previous basis; two consecutive abort
+  refresh 1 (rank 9): retained previous = True; refresh 2 (rank 10): accepted = True; refresh 3 (rank 9): retained = True; refresh 4 (rank 9): aborted = True
+    [obc] refresh at epoch 4: numerical rank 9 < 10 (tol 1.635e-12). 2 consecutive refreshes lost rank; OBC training readine
+  rank loss at the FIRST build aborts: True; rank-zero report is finite/clean: True; rank loss counter 3
+  -> MET: T11
+
+T15 reference-field cache invalidates when ANN dtype changes on the same device
+  field dtypes: torch.float32 -> torch.float64 -> torch.float32; accepted: True
+  -> MET: T15
+
+==== summary ====
+  T1   MET
+  T2   MET
+  T3   MET
+  T4   MET
+  T5   MET
+  T6   MET
+  T7   MET
+  T8   MET
+  T9   MET
+  T10  MET
+  T12  MET
+  T13  MET
+  T14  MET
+  T11  MET
+  T15  MET

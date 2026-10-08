@@ -1,0 +1,85 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+  W^a lr 0.001, EE rows slice(6, 8, None)
+
+######## EE->OE probe [inn]: 600 updates, batch 64, lr 1e-05, lr added 0.001; EE weight decays to 0 at 400
+  [eval     0] loss 1.5133e-08 | added: rho med 0.000, dom 0 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.712e+00 | W^a rel change 0.000 | |W_a| 0.00e+00
+  upd     1 oe 1.4262e-08 ee 3.3479e+00 lam 4.249e-09 inn unexplained 1.0000 | 4.77 s/upd
+  upd     2 oe 2.0028e-08 ee 2.5931e+00 lam 4.239e-09 inn unexplained 1.0004 | 5.39 s/upd
+  upd     3 oe 1.3923e-08 ee 3.5548e+00 lam 4.228e-09 inn unexplained 0.9993 | 5.26 s/upd
+  upd    25 oe 8.7391e-09 ee 3.0185e+00 lam 3.994e-09 inn unexplained 0.9948 | 4.86 s/upd
+  [eval    25] loss 8.9910e-09 | added: rho med 0.028, dom 0 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.576e+00 | W^a rel change 0.065 | |W_a| 1.14e-01
+  upd    50 oe 6.5059e-09 ee 3.6035e+00 lam 3.728e-09 inn unexplained 0.9847 | 4.83 s/upd
+  [eval    50] loss 7.5369e-09 | added: rho med 0.049, dom 0 Hz, complex 8 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 2.088e+00 | W^a rel change 0.138 | |W_a| 2.26e-01
+  upd    75 oe 7.5737e-09 ee 4.6152e+00 lam 3.461e-09 inn unexplained 0.9519 | 4.87 s/upd
+  [eval    75] loss 7.3475e-09 | added: rho med 0.071, dom 0 Hz, complex 8 %, band pair 8 % (f 117, zeta 1.00) | encoder x_a rms 2.404e+00 | W^a rel change 0.225 | |W_a| 3.58e-01
+  upd   100 oe 7.5308e-09 ee 6.0177e+00 lam 3.195e-09 inn unexplained 0.8990 | 4.98 s/upd
+  [eval   100] loss 7.2297e-09 | added: rho med 0.094, dom 0 Hz, complex 17 %, band pair 17 % (f 123, zeta 1.00) | encoder x_a rms 2.654e+00 | W^a rel change 0.303 | |W_a| 4.99e-01
+  upd   125 oe 7.6308e-09 ee 5.5564e+00 lam 2.929e-09 inn unexplained 0.9431 | 4.99 s/upd
+  [eval   125] loss 7.1382e-09 | added: rho med 0.113, dom 0 Hz, complex 25 %, band pair 12 % (f 131, zeta 1.00) | encoder x_a rms 3.001e+00 | W^a rel change 0.370 | |W_a| 6.37e-01
+  upd   150 oe 6.5755e-09 ee 7.3014e+00 lam 2.663e-09 inn unexplained 0.8906 | 5.09 s/upd
+  [eval   150] loss 7.1424e-09 | added: rho med 0.140, dom 0 Hz, complex 25 %, band pair 17 % (f 118, zeta 1.00) | encoder x_a rms 3.086e+00 | W^a rel change 0.417 | |W_a| 7.71e-01
+  upd   175 oe 6.7890e-09 ee 1.1220e+01 lam 2.396e-09 inn unexplained 0.8031 | 5.09 s/upd
+  [eval   175] loss 7.0704e-09 | added: rho med 0.161, dom 0 Hz, complex 33 %, band pair 12 % (f 124, zeta 1.00) | encoder x_a rms 3.159e+00 | W^a rel change 0.447 | |W_a| 8.93e-01
+  upd   200 oe 7.1073e-09 ee 8.1522e+00 lam 2.130e-09 inn unexplained 0.8319 | 5.04 s/upd
+  [eval   200] loss 7.0025e-09 | added: rho med 0.175, dom 0 Hz, complex 38 %, band pair 12 % (f 104, zeta 1.00) | encoder x_a rms 3.172e+00 | W^a rel change 0.467 | |W_a| 1.01e+00
+  upd   225 oe 7.7362e-09 ee 9.0217e+00 lam 1.864e-09 inn unexplained 0.8204 | 4.96 s/upd
+  [eval   225] loss 6.9376e-09 | added: rho med 0.187, dom 0 Hz, complex 42 %, band pair 4 % (f 147, zeta 0.99) | encoder x_a rms 3.207e+00 | W^a rel change 0.489 | |W_a| 1.11e+00
+  upd   250 oe 5.9230e-09 ee 7.2086e+00 lam 1.598e-09 inn unexplained 0.8123 | 4.89 s/upd
+  [eval   250] loss 6.9065e-09 | added: rho med 0.200, dom 0 Hz, complex 46 %, band pair 8 % (f 121, zeta 1.00) | encoder x_a rms 3.258e+00 | W^a rel change 0.519 | |W_a| 1.21e+00
+  upd   275 oe 7.0877e-09 ee 8.4338e+00 lam 1.331e-09 inn unexplained 0.7698 | 4.81 s/upd
+  [eval   275] loss 6.9022e-09 | added: rho med 0.211, dom 27 Hz, complex 58 %, band pair 17 % (f 127, zeta 0.99) | encoder x_a rms 3.390e+00 | W^a rel change 0.546 | |W_a| 1.29e+00
+  upd   300 oe 6.8448e-09 ee 8.3076e+00 lam 1.065e-09 inn unexplained 0.7944 | 4.75 s/upd
+  [eval   300] loss 6.8717e-09 | added: rho med 0.228, dom 46 Hz, complex 62 %, band pair 17 % (f 157, zeta 0.99) | encoder x_a rms 3.491e+00 | W^a rel change 0.572 | |W_a| 1.37e+00
+  upd   325 oe 6.6903e-09 ee 7.3716e+00 lam 7.988e-10 inn unexplained 0.8029 | 4.70 s/upd
+  [eval   325] loss 6.8633e-09 | added: rho med 0.240, dom 59 Hz, complex 58 %, band pair 29 % (f 116, zeta 0.99) | encoder x_a rms 3.538e+00 | W^a rel change 0.591 | |W_a| 1.44e+00
+  upd   350 oe 6.8902e-09 ee 7.2429e+00 lam 5.325e-10 inn unexplained 0.7990 | 4.66 s/upd
+  [eval   350] loss 6.8595e-09 | added: rho med 0.248, dom 69 Hz, complex 58 %, band pair 42 % (f 111, zeta 0.99) | encoder x_a rms 3.592e+00 | W^a rel change 0.605 | |W_a| 1.49e+00
+  upd   375 oe 6.8191e-09 ee 8.4822e+00 lam 2.663e-10 inn unexplained 0.7460 | 4.63 s/upd
+  [eval   375] loss 6.8357e-09 | added: rho med 0.250, dom 70 Hz, complex 58 %, band pair 42 % (f 120, zeta 0.99) | encoder x_a rms 3.635e+00 | W^a rel change 0.614 | |W_a| 1.52e+00
+  upd   400 oe 6.6267e-09 ee 7.8186e+00 lam 0.000e+00 inn unexplained 0.7444 | 4.60 s/upd
+  [eval   400] loss 6.8081e-09 | added: rho med 0.251, dom 73 Hz, complex 58 %, band pair 42 % (f 123, zeta 0.99) | encoder x_a rms 3.649e+00 | W^a rel change 0.618 | |W_a| 1.54e+00
+  upd   425 oe 6.9070e-09 ee 8.0251e+00 lam 0.000e+00 inn unexplained 0.7773 | 4.57 s/upd
+  [eval   425] loss 6.8331e-09 | added: rho med 0.251, dom 73 Hz, complex 58 %, band pair 42 % (f 124, zeta 0.99) | encoder x_a rms 3.651e+00 | W^a rel change 0.619 | |W_a| 1.54e+00
+  upd   450 oe 6.4192e-09 ee 9.6835e+00 lam 0.000e+00 inn unexplained 0.7187 | 4.54 s/upd
+  [eval   450] loss 6.8836e-09 | added: rho med 0.251, dom 73 Hz, complex 62 %, band pair 42 % (f 124, zeta 0.99) | encoder x_a rms 3.651e+00 | W^a rel change 0.619 | |W_a| 1.54e+00
+  upd   475 oe 6.8637e-09 ee 9.6534e+00 lam 0.000e+00 inn unexplained 0.8089 | 4.51 s/upd
+  [eval   475] loss 7.2737e-09 | added: rho med 0.250, dom 74 Hz, complex 62 %, band pair 42 % (f 124, zeta 0.99) | encoder x_a rms 3.650e+00 | W^a rel change 0.619 | |W_a| 1.54e+00
+  upd   500 oe 7.3884e-09 ee 1.0936e+01 lam 0.000e+00 inn unexplained 0.8588 | 4.51 s/upd
+  [eval   500] loss 7.0024e-09 | added: rho med 0.250, dom 74 Hz, complex 62 %, band pair 42 % (f 124, zeta 0.99) | encoder x_a rms 3.644e+00 | W^a rel change 0.619 | |W_a| 1.54e+00
+  upd   525 oe 7.4488e-09 ee 8.4691e+00 lam 0.000e+00 inn unexplained 0.8455 | 4.50 s/upd
+  [eval   525] loss 8.1240e-09 | added: rho med 0.249, dom 75 Hz, complex 67 %, band pair 42 % (f 123, zeta 0.99) | encoder x_a rms 3.632e+00 | W^a rel change 0.618 | |W_a| 1.54e+00
+  upd   550 oe 7.2769e-09 ee 8.7271e+00 lam 0.000e+00 inn unexplained 0.8078 | 4.49 s/upd
+  [eval   550] loss 7.1001e-09 | added: rho med 0.249, dom 82 Hz, complex 62 %, band pair 42 % (f 122, zeta 0.99) | encoder x_a rms 3.613e+00 | W^a rel change 0.617 | |W_a| 1.54e+00
+  upd   575 oe 8.0104e-09 ee 1.0647e+01 lam 0.000e+00 inn unexplained 0.8778 | 4.47 s/upd
+  [eval   575] loss 6.9788e-09 | added: rho med 0.249, dom 82 Hz, complex 62 %, band pair 42 % (f 121, zeta 0.99) | encoder x_a rms 3.599e+00 | W^a rel change 0.616 | |W_a| 1.54e+00
+  upd   600 oe 6.6328e-09 ee 8.5067e+00 lam 0.000e+00 inn unexplained 0.7767 | 4.46 s/upd
+  [eval   600] loss 7.0475e-09 | added: rho med 0.249, dom 80 Hz, complex 62 %, band pair 46 % (f 117, zeta 0.99) | encoder x_a rms 3.588e+00 | W^a rel change 0.616 | |W_a| 1.54e+00
+  saved outputs/f_inn.pt
+=== EXIT 0 ===

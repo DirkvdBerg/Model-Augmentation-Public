@@ -1,0 +1,7 @@
+X1 fc   988 Hz | g fit 2.16e-10 -> rms-matched 2.54e-10 | floor 4.83e-11 m/sqrt(Hz) | 9 s
+X2 fc   973 Hz | g fit 2.61e-10 -> rms-matched 2.73e-10 | floor 4.91e-11 m/sqrt(Hz) | 7 s
+Y  fc  2596 Hz | g fit 6.02e-11 -> rms-matched 5.64e-11 | floor 4.57e-11 m/sqrt(Hz) | 9 s
+X1 rms fitted range: measured 9.85e-09, simulated 9.85e-09 | full: measured 9.85e-09, simulated 9.85e-09
+X2 rms fitted range: measured 1.04e-08, simulated 1.04e-08 | full: measured 1.04e-08, simulated 1.04e-08
+Y  rms fitted range: measured 4.81e-09, simulated 4.82e-09 | full: measured 6.34e-09, simulated 5.48e-09
+figure written

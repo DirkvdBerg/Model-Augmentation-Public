@@ -1,0 +1,36 @@
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## pre-flight [lin_gate1]: 400 updates, lr nets 0.001, lr combinations+encoder 1e-05, batch 512, gate 1, dyn act linear, nf 400; 85572 windows
+  [eval     0] loss 1.5133e-08 | added eig: rho median 0.0000 max 0.0000, angle of max 0.000 rad (0 Hz), complex at 0 % | |W_out| state 0.00e+00 readout 0.00e+00
+  upd     1 loss 1.4189e-08 | grad state 0.00e+00 readout 1.37e-06 static 1.41e-04 phys_params 2.27e-08 encoder 5.23e-06 | 8.4 s/upd
+  upd     2 loss 1.2090e-05 | grad state 2.45e+13 readout 1.70e+14 static 1.18e+15 phys_params 2.70e+11 encoder 2.13e+15 | 8.9 s/upd
+  upd     3 loss 2.2151e-05 | grad state 1.02e+13 readout 9.42e+13 static 4.41e+14 phys_params 1.30e+11 encoder 7.23e+14 | 8.8 s/upd
+  upd    10 loss 8.9742e-05 | grad state 3.18e+27 readout 4.61e+27 static 1.29e+28 phys_params 4.32e+24 encoder 8.36e+28 | 8.1 s/upd
+  upd    20 loss 1.1208e+26 | grad state 3.80e+29 readout 1.09e+30 static 3.25e+29 phys_params 4.63e+27 encoder 1.21e+31 | 8.5 s/upd
+  [eval    25] loss 6.4807e-04 | added eig: rho median 0.0024 max 0.0024, angle of max 1.534 rad (977 Hz), complex at 100 % | |W_out| state 3.09e-02 readout 4.46e-02
+  upd    30 loss 1.8733e+30 | grad state 2.28e+34 readout 5.12e+34 static 1.93e+34 phys_params 3.05e+31 encoder 8.11e+35 | 8.6 s/upd
+  upd    40 loss nan | grad state nan readout nan static nan phys_params nan encoder nan | 8.7 s/upd
+  upd    50 loss nan | grad state nan readout nan static nan phys_params nan encoder nan | 8.5 s/upd

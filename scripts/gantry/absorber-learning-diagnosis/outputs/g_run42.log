@@ -1,0 +1,51 @@
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+  Checkpoint format: whole
+  Training/TR-S1_r1.mat done (48 windows)
+  Training/TR-S2_r1.mat done (48 windows)
+  Training/TR-S3_r1.mat done (48 windows)
+  Training/TR-S4_r1.mat done (48 windows)
+  Training/TR-S5_r1.mat done (48 windows)
+  Training/TR-Y1_r1.mat done (48 windows)
+  Training/TR-Y2_r1.mat done (48 windows)
+  Training/TR-Y3_r1.mat done (48 windows)
+  Training/TR-P1_r1.mat done (48 windows)
+  Training/TR-P2_r1.mat done (48 windows)
+  Training/TR-P3_r1.mat done (48 windows)
+  Training/TR-P4_r1.mat done (48 windows)
+  Training/TR-L1_r1.mat done (48 windows)
+  Training/TR-L2_r1.mat done (48 windows)
+  Training/TR-T1_r1.mat done (48 windows)
+  Training/TR-T2_r1.mat done (48 windows)
+  Training/TR-T3_r1.mat done (48 windows)
+  Training/TR-T4_r1.mat done (48 windows)
+
+######## run 42 (job 86894) arm=u n_a=2: windowed objective, 864 windows, nf 400
+  check: my model mse 5.0889e-09 vs fs.loss mean 5.0889e-09
+          mse all     mse multisine  mse routes | Y rms [m] all   steps 0-40   steps 40-400
+  model   5.0889e-09  6.4582e-09     2.9626e-10 | 2.170e-05      2.158e-05    2.171e-05
+  T1      5.1204e-11  6.5831e-11     6.0002e-15 | 2.139e-06      5.845e-06    1.135e-06
+  T2      1.3533e-09  1.7366e-09     1.1820e-11 | 1.104e-05      3.278e-05    4.021e-06
+  noabs   1.2485e-08  1.6040e-08     4.5330e-11 | 3.412e-05      4.315e-05    3.296e-05

@@ -1,0 +1,42 @@
+E1_r1        thr [0.077 0.085 0.048] nm   end  3.80 ms   start (moving)  4.55 ms   start (hold)  4.55 ms
+E2_r1        thr [0.074 0.08  0.046] nm   end  3.25 ms   start (moving)  2.40 ms   start (hold)  2.25 ms
+E3_r1        thr [0.073 0.08  0.046] nm   end  3.25 ms   start (moving)  2.65 ms   start (hold)  1.85 ms
+E4_r1        thr [0.075 0.081 0.046] nm   end  2.65 ms   start (moving)  2.00 ms   start (hold)  2.00 ms
+E5_r1        thr [0.074 0.08  0.046] nm   end  3.25 ms   start (moving)  2.15 ms   start (hold)  2.00 ms
+E6_r1        thr [0.074 0.079 0.046] nm   end  2.05 ms   start (moving)  2.30 ms   start (hold)  2.45 ms
+I1_r1        thr [0.079 0.084 0.048] nm   end  4.50 ms   start (moving)  4.85 ms   start (hold)  3.95 ms
+I2_r1        thr [0.077 0.085 0.048] nm   end  3.95 ms   start (moving)  4.25 ms   start (hold)  4.55 ms
+I3_r1        thr [0.074 0.08  0.046] nm   end  3.25 ms   start (moving)  2.40 ms   start (hold)  1.60 ms
+I4_r1        thr [0.073 0.079 0.045] nm   end  2.95 ms   start (moving)  2.30 ms   start (hold)  1.80 ms
+I5_r1        thr [0.074 0.081 0.046] nm   end  3.00 ms   start (moving)  2.40 ms   start (hold)  2.05 ms
+I6_r1        thr [0.076 0.082 0.047] nm   end  2.65 ms   start (moving)  2.15 ms   start (hold)  2.00 ms
+TR-L1_r1     thr [0.079 0.086 0.048] nm   end  4.15 ms   start (moving)  4.55 ms   start (hold)  3.60 ms
+TR-L2_r1     thr [0.08  0.086 0.048] nm   end  3.95 ms   start (moving)  4.50 ms   start (hold)  4.20 ms
+TR-P1_r1     thr [0.08  0.085 0.048] nm   end  4.00 ms   start (moving)  3.90 ms   start (hold)  4.55 ms
+TR-P2_r1     thr [0.079 0.085 0.048] nm   end  4.00 ms   start (moving)  3.95 ms   start (hold)  3.85 ms
+TR-P3_r1     thr [0.079 0.085 0.048] nm   end  4.25 ms   start (moving)  4.25 ms   start (hold)  3.85 ms
+TR-P4_r1     thr [0.079 0.085 0.048] nm   end  3.65 ms   start (moving)  3.95 ms   start (hold)  4.20 ms
+TR-S1_r1     thr [0.077 0.085 0.048] nm   end  4.15 ms   start (moving)  4.60 ms   start (hold)  4.20 ms
+TR-S2_r1     thr [0.078 0.085 0.048] nm   end  4.15 ms   start (moving)  4.55 ms   start (hold)  3.85 ms
+TR-S3_r1     thr [0.079 0.084 0.048] nm   end  4.20 ms   start (moving)  4.30 ms   start (hold)  3.65 ms
+TR-S4_r1     thr [0.079 0.084 0.048] nm   end  4.20 ms   start (moving)  4.55 ms   start (hold)  3.95 ms
+TR-S5_r1     thr [0.079 0.083 0.048] nm   end  4.10 ms   start (moving)  4.20 ms   start (hold)  4.60 ms
+TR-T1_r1     thr [0.073 0.08  0.046] nm   end  3.30 ms   start (moving)  2.65 ms   start (hold)  1.70 ms
+TR-T2_r1     thr [0.073 0.079 0.046] nm   end  2.65 ms   start (moving)  2.40 ms   start (hold)  2.00 ms
+TR-T3_r1     thr [0.072 0.08  0.046] nm   end  2.65 ms   start (moving)  2.05 ms   start (hold)  2.15 ms
+TR-T4_r1     thr [0.074 0.08  0.046] nm   end  2.95 ms   start (moving)  2.35 ms   start (hold)  1.65 ms
+TR-Y1_r1     thr [0.078 0.084 0.048] nm   end  4.25 ms   start (moving)  4.50 ms   start (hold)  3.90 ms
+TR-Y2_r1     thr [0.078 0.084 0.048] nm   end  4.10 ms   start (moving)  4.25 ms   start (hold)  4.25 ms
+TR-Y3_r1     thr [0.078 0.085 0.048] nm   end  4.20 ms   start (moving)  4.20 ms   start (hold)  4.25 ms
+VA-L1_r1     thr [0.08  0.086 0.048] nm   end  3.90 ms   start (moving)  3.90 ms   start (hold)  3.60 ms
+VA-P1_r1     thr [0.079 0.086 0.048] nm   end  4.20 ms   start (moving)  4.55 ms   start (hold)  3.90 ms
+VA-S1_r1     thr [0.079 0.084 0.048] nm   end  4.40 ms   start (moving)  4.60 ms   start (hold)  4.50 ms
+VA-T1_r1     thr [0.073 0.079 0.046] nm   end  2.30 ms   start (moving)  2.05 ms   start (hold)  2.00 ms
+VA-T2_r1     thr [0.073 0.079 0.046] nm   end  3.30 ms   start (moving)  2.65 ms   start (hold)  1.60 ms
+VA-Y1_r1     thr [0.079 0.085 0.048] nm   end  4.00 ms   start (moving)  3.95 ms   start (hold)  4.55 ms
+
+== 36 records; largest transient length (|difference| > 0.01 x Q1) ==
+  end cuts            4.50 ms (I1_r1)   peak difference at a cut 768.9 nm
+  start cuts, moving  4.85 ms (I1_r1)
+  start cut, hold     4.60 ms (TR-S5_r1)
+  -> end trim 5 ms

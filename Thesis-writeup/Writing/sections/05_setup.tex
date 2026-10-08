@@ -15,6 +15,13 @@
 \section{Experimental Setup}\label{sec:setup}
 
 \subsection{Simulation benchmark and excitation}
+\begin{figure}[t]
+  \centering
+  \resizebox{\columnwidth}{!}{\input{figures/gantry_system_with_absorber}}
+  \caption{Simulated gantry with a payload-mounted absorber. The light-gray
+  elements $(m_a,k_a,c_a,\delta_a)$ are absent from the baseline.}
+  \label{fig:gantry_absorber}
+\end{figure}
 \begin{itemize}
 \item Generate closed-loop records from the physics baseline plus a truth-only flexible absorber, retaining exact states solely for diagnostics
 \item Use multisine excitation that covers the absorber pole and anti-resonance while respecting position, velocity, yaw, and force limits
@@ -48,8 +55,14 @@
 \item Match records, neural seeds, windows, optimiser budget, and checkpoint criterion across baseline-only, unconstrained, tangent-OBC, affine-OBC, and black-box arms; treat multisine phase seeds separately
 \item Use physical RMS as the primary candidate metric for tracking and a fixed 200--400 ms post-move settling interval; use NRMS, BFR, or spectra only for a distinct supporting question
 \item Report physical combination error, projection overlap, added-state ablations, and encoder-init sensitivity alongside predictive metrics
+\item Values referenced from Section~III (moved 2026-10-06), each with an honest basis (derived, inherited, tuned, compute-limited): encoder history $n$, window length $n_f$ and stride, number of additional states $n_{\bar x}$, network width and depth, model rate
+\item Free-run validation (referenced from Section~III-C): whole records, encoder at the record start and $x^c=0$ once, so model error accumulates over the record unlike in a training window; state the record-length-weighted RMS used for checkpoint selection
 \item Decision (moved from Section~II-C): joint-estimation arms start from the nominal $\varphi$ of the reference implementation detuned by 10\% per combination (\texttt{combo\_init\_detune}, HEURISTIC, D-191), with the nominal-parameter prior disabled (D-193); state it as a run setting with its reason
+\item A parameter prior bounds the drift of the combinations but does not remove the negation flat direction of Section~\ref{sec:obc}; it is off in every arm (D-193)
 \item Practical identifiability (referenced from Section~II-C): report the rank of the stacked one-step transition Jacobian with respect to $\varphi$ on the training data (rank 10, nullity 4 in $\theta$ per the reduced-block docstring), from a saved artefact rather than the docstring
+\item Value (moved from Section~II-C): the margin $\rho=0.99$ in \eqref{eq:mdelta_map}, a HEURISTIC margin inside the admissible region (D-229)
+\item Metric (moved from Section~II-C): relative combination error in $\theta_{\mathrm{base}}$, with the normalisation of the small signed $m_\Delta$ stated explicitly
+\item State per arm whether raw or reduced coordinates are trained; exact-model parameter recovery is an internal implementation check, not a result (moved from Section~II-C)
 \item Give the black-box model validation-selected capacity and horizon so it is a capability comparison rather than an artificially weakened baseline
 \item Evaluate held-out position/phase interpolation, ASMPT-relevant multisine-free motion, controller transfer, and operating-range extrapolation as separate rungs
 \item Predeclare expectation, acceptance criterion, verdict, and mechanism for every result rather than presenting isolated scores
@@ -60,6 +73,8 @@
 \begin{itemize}
 \item Verify controller reconstruction, coordinate transforms, normalisation, RK4 transition, and LFR equivalence before training
 \item Use the same controller, data conversion, and rollout entry point for training, validation, and checkpoint selection
+\item Controller rate (moved from Section~III-C, 2026-10-06): the records are generated with the controller at 20~kHz, the training loop re-discretises it at the 4~kHz model rate (D-141); the residual form of Section~III-C equals the shared-reference loop only for a compatible controller, signals and initial state
+\item Compatibility check for that assumption: run the re-discretised controller on the recorded $r-y$ and compare its feedback force with the recorded one; a rollout with $\hat y=y$ gives $\hat u=u$ by construction and checks nothing
 \item Record configuration, software precision, seed, dataset identifier, and checkpoint provenance for every reported arm
 \item Keep oracle states and truth parameters out of the trainable pipeline and label every diagnostic that uses them
 \item Figure (existing, appendix candidate): use \texttt{controller-chain-v1} only as an audit trail for controller reconstruction and discretisation, not as a main method figure

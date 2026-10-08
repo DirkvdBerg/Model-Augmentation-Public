@@ -1,0 +1,78 @@
+[run] C: free 3.6G before pilot
+[wd] launch  out=logs/pilot
+[wd] command matlab -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data({'TR-S1_r1','TR-Y1_r1','TR-L2_r1','TR-T1_r1','I3_r1','I4_r1','I5_r1','I6_r1','E1_r1','E1_r1_nt1','E5_r1','E6_r1','TF-3_r1'}); addpath('checks'); check_records([{'TR-P3_r1'}, {'TR-S1_r1','TR-Y1_r1','TR-L2_r1','TR-T1_r1','I3_r1','I4_r1','I5_r1','I6_r1','E1_r1','E1_r1_nt1','E5_r1','E6_r1','TF-3_r1'}])"
+generate_thesis_data: 13 records selected, versions noisy + noise-free
+
+=== 1/13  TR-S1_r1  [training, standstill Y -0.30, A_prod multisine] ===
+  r OK TR-S1_r1    : X1=[+0 +0] X2=[+0 +0] Y=[-300 -300] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [8.983 7.106 3.007] nm | stick [10 7.8 2.6] % | F peak [0.42 0.47 0.59], rms [0.25 0.26 0.34] of limit | 47.9 + 42.4 MB | 7.9 s
+
+=== 2/13  TR-Y1_r1  [training, Y sweep 0 +- 0.30 at 0.20 Hz, A_prod] ===
+  r OK TR-Y1_r1    : X1=[+0 +0] X2=[+0 +0] Y=[-300 +300] mm | v 0.000/0.596 m/s a 0.00/3.76 m/s^2 j 0/34807 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [8.113 8.763 2.279] nm | stick [8.5 9 0.6] % | F peak [0.42 0.44 0.56], rms [0.27 0.25 0.36] of limit | 49.7 + 44.2 MB | 7.3 s
+
+=== 3/13  TR-L2_r1  [training, Lissajous Y 0.25 @0.7 Hz, X 0.08 @1.5 Hz, X_anti 1 mm @0.8 Hz, A_prod] ===
+  r OK TR-L2_r1    : X1=[-81 +81] X2=[-81 +81] Y=[-250 +250] mm | v 0.754/1.100 m/s a 8.69/9.56 m/s^2 j 15791/39968 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [5.235 5.192 1.677] nm | stick [1.5 1.4 0.4] % | F peak [0.48 0.53 0.64], rms [0.3 0.31 0.36] of limit | 52.5 + 47.0 MB | 7.2 s
+
+=== 4/13  TR-T1_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.00, 75 % max, dwell 0.30 s, no multisine] ===
+  r OK TR-T1_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-240 +240] mm | v 0.757/1.382 m/s a 22.50/37.50 m/s^2 j 1338/2035 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [649.945 724.764 729.519] nm | stick [75.5 75.4 72.3] % | F peak [0.37 0.4 0.28], rms [0.21 0.23 0.2] of limit | 40.4 + 33.3 MB | 7.0 s
+
+=== 5/13  I3_r1  [test-I, ASMPT sine route, X and Y together, 60 % max, Y inside +-0.20] ===
+  r OK I3_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 960/1456 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [878.917 1028.533 553.819] nm | stick [75.8 74.2 71.6] % | F peak [0.25 0.31 0.23], rms [0.16 0.2 0.16] of limit | 39.5 + 32.9 MB | 7.2 s
+
+=== 6/13  I4_r1  [test-I, ASMPT sine, alternating X-only 40 mm and Y-only 80 mm moves, 60 % max] ===
+  r OK I4_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 957/1456 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [2552.058 2250.144 2809.932] nm | stick [87.1 87 86.3] % | F peak [0.27 0.29 0.23], rms [0.13 0.14 0.11] of limit | 38.2 + 31.7 MB | 7.0 s
+
+=== 7/13  I5_r1  [test-I, ASMPT S-curve route (I3 sequence), 60 % max, vmax 1.5, T3 25 ms] ===
+  r OK I5_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.736/1.359 m/s a 17.99/29.99 m/s^2 j 1439/2399 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [1643.73 1712.824 952.863] nm | stick [75.4 74.5 72.1] % | F peak [0.26 0.32 0.24], rms [0.17 0.22 0.18] of limit | 39.4 + 32.8 MB | 7.1 s
+
+=== 8/13  I6_r1  [test-I, ASMPT sine long strokes 0.50 / 0.56 m, 60 % max, v cap 1.5] ===
+  r OK I6_r1       : X1=[-250 +250] X2=[-250 +250] Y=[-280 +280] mm | v 1.500/1.500 m/s a 18.00/30.00 m/s^2 j 432/1200 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [1171.881 1205.829 2967.618] nm | stick [50.6 50.1 50.7] % | F peak [0.27 0.31 0.23], rms [0.19 0.22 0.14] of limit | 41.2 + 33.5 MB | 7.3 s
+
+=== 9/13  E1_r1  [test-E, standstill Y -0.39, A_prod] ===
+  r OK E1_r1       : X1=[+0 +0] X2=[+0 +0] Y=[-390 -390] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [8.71 8.332 3.829] nm | stick [11.4 8.3 2.3] % | F peak [0.41 0.47 0.48], rms [0.24 0.27 0.34] of limit | 47.9 + 42.4 MB | 7.2 s
+
+=== 10/13  E5_r1  [test-E, I3 under K2-g+ (K1 gains +20 %)] ===
+  r OK E5_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 960/1456 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [1062.417 1133.722 2118.975] nm | stick [75.8 74.7 71.9] % | F peak [0.25 0.31 0.23], rms [0.16 0.2 0.16] of limit | 39.1 + 32.5 MB | 7.2 s
+
+=== 11/13  E6_r1  [test-E, measured ILC move (D-210), exact, on the I3 lattice] ===
+  E6_r1: acceleration assert skipped by name (realised X 39.31, Y 50.66 m/s^2)
+  r OK E6_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 1.001/1.500 m/s a 39.31/50.66 m/s^2 j 3090/3422 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [1326.996 1123.733 1158.908] nm | stick [78.6 76.5 73.1] % | F peak [0.55 0.66 0.38], rms [0.32 0.38 0.25] of limit | 39.5 + 32.9 MB | 7.3 s
+
+=== 12/13  TF-3_r1  [frf, FRF reference, standstill Y +0.350, periodic B_tr multisine (6 periods of 2 s)] ===
+  r OK TF-3_r1     : X1=[+0 +0] X2=[+0 +0] Y=[+350 +350] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [7.498 10.286 4.131] nm | stick [7.6 14.1 1.8] % | F peak [0.51 0.38 0.57], rms [0.27 0.23 0.34] of limit | 47.9 + 42.4 MB | 7.3 s
+
+=== 13/13  E1_r1_nt1  [noise-twin, noise-only twin of E1: same r and f, new noise] ===
+  r OK E1_r1_nt1   : X1=[+0 +0] X2=[+0 +0] Y=[-390 -390] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [NaN NaN NaN] nm | stick [11.4 8.3 2.3] % | F peak [0.41 0.47 0.48], rms [0.24 0.27 0.34] of limit | 47.9 + 0.0 MB | 6.0 s
+MANIFEST noisy: 14 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 13 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+file         C14   C3    C4b   C8    | noise adds rms all f / band [nm]          | target band [3.37 3.7 1.09] nm | MB noisy/free
+TR-P3_r1     PASS  PASS  PASS  PASS  | [6.73 7.65 2.23]     / [6.35 7.16 2.22]     |                   | 49.1 / 43.6 
+TR-S1_r1     PASS  PASS  PASS  PASS  | [8.98 7.11 3.01]     / [8.73 6.67 2.73]     |                   | 47.9 / 42.4 
+TR-Y1_r1     PASS  PASS  PASS  PASS  | [8.11 8.76 2.28]     / [7.53 8.15 2.27]     |                   | 49.7 / 44.2 
+TR-L2_r1     PASS  PASS  PASS  PASS  | [5.23 5.19 1.68]     / [4.41 4.47 1.54]     |                   | 52.5 / 47.0 
+TR-T1_r1     PASS  PASS  PASS  PASS  | [649.94 724.76 729.52] / [622.48 693.8 686.1] |                   | 40.4 / 33.3 
+I3_r1        PASS  PASS  PASS  PASS  | [878.92 1028.53 553.82] / [822.74 963 508.64]  |                   | 39.5 / 32.9 
+I4_r1        PASS  FAIL  PASS  PASS  | [2552.06 2250.14 2809.93] / [2344.9 2106.72 2624.44] |                   | 38.2 / 31.7 
+I5_r1        PASS  PASS  PASS  PASS  | [1643.73 1712.82 952.86] / [1570.59 1638.95 888.06] |                   | 39.4 / 32.8 
+I6_r1        PASS  FAIL  PASS  PASS  | [1171.88 1205.83 2967.62] / [1070.55 1102.92 2748.65] |                   | 41.2 / 33.5 
+E1_r1        PASS  PASS  PASS  PASS  | [8.71 8.33 3.83]     / [8.18 8.12 3.22]     |                   | 47.9 / 42.4 
+E1_r1_nt1    PASS  PASS  PASS  PASS  | [NaN NaN NaN]        / [NaN NaN NaN]        |                   | 47.9 / NaN 
+E5_r1        PASS  PASS  PASS  PASS  | [1062.42 1133.72 2118.97] / [937.25 1003.23 1869.81] |                   | 39.1 / 32.5 
+E6_r1        PASS  PASS  PASS  PASS  | [1327 1123.73 1158.91] / [1194.4 1020.33 1044.76] |                   | 39.5 / 32.9 
+TF-3_r1      PASS  PASS  PASS  PASS  | [7.5 10.29 4.13]     / [6.96 9.71 3.68]     |                   | 47.9 / 42.4 
+C3 / C4b / C8 / C14 on 14 saved records -> FAIL
+WATCHDOG SUMMARY exit=0 killed=False duration_s=231.5 samples=45 peak_tree_ws_mb=3,218 min_avail_ram_gb=2.09 min_C_free_gb=2.09 kill_reason=""

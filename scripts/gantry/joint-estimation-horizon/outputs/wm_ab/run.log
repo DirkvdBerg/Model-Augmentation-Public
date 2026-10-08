@@ -1,0 +1,42 @@
+[wd] launch  out=scripts/gantry/joint-estimation-horizon/outputs/wm_ab
+[wd] command set PYTHONDONTWRITEBYTECODE=1&& conda run --no-capture-output -n GraduationProject python -u scripts/gantry/joint-estimation-horizon/memory/window_memory.py 
+[   0.1 s] K1_Y-0.30: G-A max rel err 4.04e-11 (PASS), max |z| 0.995479637, slowest tau 0.0110 s at 0.00 Hz (zeta 1.000)
+[   0.2 s] K1_Y-0.30: A-full impulse response, 40000 samples (2.0 s)
+[   2.7 s] K1_Y-0.30: line inversions done (A-band, B), period 0.667 s
+[   2.7 s] K1_Y-0.30 white       | A-full T10 0.048 T1 0.479 B(0.1) 0.048 | A-band T10 0.069 T1 >0.60 | B T10 0.075 T1 >0.60 B(0.1) 0.085
+[  21.1 s] K1_Y-0.30 lowpass10   | A-full T10 0.113 T1 1.128 B(0.1) 0.113 | A-band T10 >0.60 T1 >0.60 | B T10 >0.60 T1 >0.60 B(0.1) 0.207
+[  39.3 s] K1_Y-0.30 band106_297 | A-full T10 0.048 T1 0.482 B(0.1) 0.048 | A-band T10 0.070 T1 >0.60 | B T10 0.078 T1 >0.60 B(0.1) 0.087
+  slow poles K1_Y-0.30: tau 0.0110 s, 0.00 Hz, zeta 1.000; tau 0.0107 s, 0.00 Hz, zeta 1.000; tau 0.0105 s, 0.00 Hz, zeta 1.000; tau 0.0060 s, 54.24 Hz, zeta 0.441; tau 0.0047 s, 266.43 Hz, zeta 0.127; tau 0.0044 s, 71.90 Hz, zeta 0.449; tau 0.0024 s, 0.00 Hz, zeta 1.000; tau 0.0022 s, 106.00 Hz, zeta 0.570
+[  39.3 s] K1_Y-0.15: G-A max rel err 4.69e-11 (PASS), max |z| 0.995460432, slowest tau 0.0110 s at 0.00 Hz (zeta 1.000)
+[  39.5 s] K1_Y-0.15: A-full impulse response, 40000 samples (2.0 s)
+[  41.8 s] K1_Y-0.15: line inversions done (A-band, B), period 0.667 s
+[  41.8 s] K1_Y-0.15 white       | A-full T10 0.046 T1 0.462 B(0.1) 0.046 | A-band T10 0.067 T1 >0.60 | B T10 0.073 T1 >0.60 B(0.1) 0.083
+[wd] t=57s tree=212 MB cpu=8% availRAM=6.11 GB C:free=17.30 GB
+[  60.4 s] K1_Y-0.15 lowpass10   | A-full T10 0.112 T1 1.121 B(0.1) 0.112 | A-band T10 >0.60 T1 >0.60 | B T10 >0.60 T1 >0.60 B(0.1) 0.207
+[  79.2 s] K1_Y-0.15 band106_297 | A-full T10 0.045 T1 0.445 B(0.1) 0.045 | A-band T10 0.062 T1 >0.60 | B T10 0.070 T1 >0.60 B(0.1) 0.081
+  slow poles K1_Y-0.15: tau 0.0110 s, 0.00 Hz, zeta 1.000; tau 0.0107 s, 0.00 Hz, zeta 1.000; tau 0.0104 s, 0.00 Hz, zeta 1.000; tau 0.0056 s, 55.25 Hz, zeta 0.460; tau 0.0047 s, 266.54 Hz, zeta 0.127; tau 0.0045 s, 72.03 Hz, zeta 0.443; tau 0.0026 s, 0.00 Hz, zeta 1.000; tau 0.0021 s, 118.10 Hz, zeta 0.545
+[  79.2 s] K1_Y+0.00: G-A max rel err 4.91e-11 (PASS), max |z| 0.995457270, slowest tau 0.0110 s at 0.00 Hz (zeta 1.000)
+[  79.4 s] K1_Y+0.00: A-full impulse response, 40000 samples (2.0 s)
+[  82.0 s] K1_Y+0.00: line inversions done (A-band, B), period 0.667 s
+[  82.0 s] K1_Y+0.00 white       | A-full T10 0.046 T1 0.459 B(0.1) 0.046 | A-band T10 0.066 T1 >0.60 | B T10 0.073 T1 >0.60 B(0.1) 0.083
+[ 101.1 s] K1_Y+0.00 lowpass10   | A-full T10 0.112 T1 1.119 B(0.1) 0.112 | A-band T10 >0.60 T1 >0.60 | B T10 >0.60 T1 >0.60 B(0.1) 0.207
+[wd] t=119s tree=213 MB cpu=8% availRAM=6.09 GB C:free=17.30 GB
+[ 120.4 s] K1_Y+0.00 band106_297 | A-full T10 0.044 T1 0.439 B(0.1) 0.044 | A-band T10 0.061 T1 >0.60 | B T10 0.068 T1 >0.60 B(0.1) 0.080
+  slow poles K1_Y+0.00: tau 0.0110 s, 0.00 Hz, zeta 1.000; tau 0.0107 s, 0.00 Hz, zeta 1.000; tau 0.0104 s, 0.00 Hz, zeta 1.000; tau 0.0055 s, 55.41 Hz, zeta 0.463; tau 0.0047 s, 266.56 Hz, zeta 0.127; tau 0.0045 s, 72.06 Hz, zeta 0.442; tau 0.0026 s, 0.00 Hz, zeta 1.000; tau 0.0021 s, 120.29 Hz, zeta 0.540
+[ 120.4 s] K1_Y+0.15: G-A max rel err 3.43e-11 (PASS), max |z| 0.995469174, slowest tau 0.0110 s at 0.00 Hz (zeta 1.000)
+[ 120.6 s] K1_Y+0.15: A-full impulse response, 40000 samples (2.0 s)
+[ 123.0 s] K1_Y+0.15: line inversions done (A-band, B), period 0.667 s
+[ 123.0 s] K1_Y+0.15 white       | A-full T10 0.047 T1 0.469 B(0.1) 0.047 | A-band T10 0.068 T1 >0.60 | B T10 0.074 T1 >0.60 B(0.1) 0.084
+[ 142.0 s] K1_Y+0.15 lowpass10   | A-full T10 0.112 T1 1.124 B(0.1) 0.112 | A-band T10 >0.60 T1 >0.60 | B T10 >0.60 T1 >0.60 B(0.1) 0.207
+[ 163.2 s] K1_Y+0.15 band106_297 | A-full T10 0.046 T1 0.463 B(0.1) 0.046 | A-band T10 0.066 T1 >0.60 | B T10 0.073 T1 >0.60 B(0.1) 0.084
+  slow poles K1_Y+0.15: tau 0.0110 s, 0.00 Hz, zeta 1.000; tau 0.0107 s, 0.00 Hz, zeta 1.000; tau 0.0105 s, 0.00 Hz, zeta 1.000; tau 0.0058 s, 54.76 Hz, zeta 0.451; tau 0.0047 s, 266.48 Hz, zeta 0.127; tau 0.0044 s, 71.94 Hz, zeta 0.446; tau 0.0025 s, 0.00 Hz, zeta 1.000; tau 0.0021 s, 111.48 Hz, zeta 0.559
+[ 163.2 s] K1_Y+0.30: G-A max rel err 3.94e-11 (PASS), max |z| 0.995500075, slowest tau 0.0111 s at 0.00 Hz (zeta 1.000)
+[ 163.3 s] K1_Y+0.30: A-full impulse response, 40000 samples (2.0 s)
+[ 166.0 s] K1_Y+0.30: line inversions done (A-band, B), period 0.667 s
+[ 166.0 s] K1_Y+0.30 white       | A-full T10 0.050 T1 0.495 B(0.1) 0.049 | A-band T10 0.071 T1 >0.60 | B T10 0.077 T1 >0.60 B(0.1) 0.086
+[wd] t=182s tree=212 MB cpu=8% availRAM=6.11 GB C:free=17.30 GB
+[ 184.4 s] K1_Y+0.30 lowpass10   | A-full T10 0.114 T1 1.137 B(0.1) 0.114 | A-band T10 >0.60 T1 >0.60 | B T10 >0.60 T1 >0.60 B(0.1) 0.207
+[ 203.1 s] K1_Y+0.30 band106_297 | A-full T10 0.052 T1 0.516 B(0.1) 0.052 | A-band T10 0.077 T1 >0.60 | B T10 0.085 T1 >0.60 B(0.1) 0.091
+  slow poles K1_Y+0.30: tau 0.0111 s, 0.00 Hz, zeta 1.000; tau 0.0107 s, 0.00 Hz, zeta 1.000; tau 0.0105 s, 0.00 Hz, zeta 1.000; tau 0.0064 s, 53.11 Hz, zeta 0.423; tau 0.0047 s, 266.35 Hz, zeta 0.127; tau 0.0043 s, 71.84 Hz, zeta 0.455; tau 0.0023 s, 96.23 Hz, zeta 0.584; tau 0.0023 s, 0.00 Hz, zeta 1.000
+[ 203.2 s] wrote C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\joint-estimation-horizon\outputs\wm_ab\window_memory.json
+WATCHDOG SUMMARY exit=0 killed=False duration_s=212.9 samples=42 peak_tree_ws_mb=541 min_avail_ram_gb=5.73 min_C_free_gb=17.29 kill_reason=""

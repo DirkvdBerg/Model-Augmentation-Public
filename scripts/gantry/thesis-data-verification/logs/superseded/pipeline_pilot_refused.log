@@ -1,0 +1,7 @@
+[pipeline 22:11:29] start; RETRIES=60 RETRY_WAIT=120
+[run] another MATLAB is running: refusing to start smoke_nojvm
+[run] another MATLAB is running: refusing to start smoke_jvm
+[pipeline 22:11:30] smoke: no agreement or missing (nojvm '', jvm '') -> keep the JVM
+[run] another MATLAB is running: refusing to start C2_C11_C13_noise_rolloff330
+[run] another MATLAB is running: refusing to start pilot_rolloff330
+[pipeline 22:11:30] done

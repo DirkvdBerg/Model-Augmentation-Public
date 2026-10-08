@@ -1,0 +1,29 @@
+[wd] launch  out=outputs/logs/sweep_S3
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); run_tanh_sweep({'noise-free'}, [100 300 1e3 3e3 1e4], {'Training', 'TR-S3_r1'}); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+
+==== 2026-09-28 12:12:10  TR-S3_r1  gains [100 300 1000 3000 10000] ====
+
+== noise-free  (C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\Training\TR-S3_r1.mat, Y_op +0.00, |d| max 0 N)
+[wd] t=58s tree=1,037 MB cpu=8% availRAM=3.36 GB C:free=12.91 GB
+gate  Karnopp replay vs stored y: max|dq| 0.00e+00 0.00e+00 0.00e+00 m, u_fb rel 4.1e-13 5.4e-13 3.6e-13  (49 s)  PASS
+run   tanh g=100     36 s
+[wd] t=120s tree=1,073 MB cpu=8% availRAM=3.27 GB C:free=12.91 GB
+run   tanh g=300     40 s
+[wd] t=183s tree=1,094 MB cpu=8% availRAM=3.27 GB C:free=12.97 GB
+run   tanh g=1000    36 s
+run   tanh g=3000    36 s
+[wd] t=245s tree=1,111 MB cpu=8% availRAM=3.11 GB C:free=12.96 GB
+run   tanh g=10000   39 s
+dwells scored: 0 (>= 0.1 s, preceded by a move); moving 0.0 % of the record
+
+run            | dwell 2nd-half rms [nm]    | Q4/Q3 max            | reversals/s dwell    | moving rms [um]            | moving vs Karnopp    | moving vs next g     |  lam*h    p2
+Karnopp        |        0        0        0 |   0.00   0.00   0.00 |    0.0    0.0    0.0 |    13.39    12.21     28.5 |  0.000  0.000  0.000 |    NaN    NaN    NaN |    NaN     0
+tanh g=100     |        0        0        0 |   0.00   0.00   0.00 |    0.0    0.0    0.0 |    13.62    12.46    28.54 |  0.053  0.062  0.012 |  0.036  0.042  0.008 |  0.012     0
+tanh g=300     |        0        0        0 |   0.00   0.00   0.00 |    0.0    0.0    0.0 |    13.45    12.29     28.5 |  0.023  0.026  0.005 |  0.017  0.020  0.003 |  0.035     0
+tanh g=1000    |        0        0        0 |   0.00   0.00   0.00 |    0.0    0.0    0.0 |    13.43    12.27     28.5 |  0.014  0.016  0.003 |  0.004  0.006  0.001 |  0.118     0
+tanh g=3000    |        0        0        0 |   0.00   0.00   0.00 |    0.0    0.0    0.0 |    13.42    12.26     28.5 |  0.014  0.017  0.003 |  0.002  0.002  0.001 |  0.354     0
+tanh g=10000   |        0        0        0 |   0.00   0.00   0.00 |    0.0    0.0    0.0 |    13.42    12.26     28.5 |  0.014  0.017  0.004 |    NaN    NaN    NaN |  1.179     0
+reference levels [nm]: measured machine standstill [9.8 10.4 6.3], calibrated noise [3.37 3.696 1.086]
+no moves: the moving columns are over the whole record; dwell columns empty
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=268.0 samples=52 peak_tree_ws_mb=1,118 min_avail_ram_gb=2.96 min_C_free_gb=12.80 kill_reason=""

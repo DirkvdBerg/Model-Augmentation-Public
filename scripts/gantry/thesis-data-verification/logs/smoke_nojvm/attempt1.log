@@ -1,0 +1,7 @@
+[wd] launch  out=logs/smoke_nojvm
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke; fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+JVM running: 0
+WATCHDOG ALERT available RAM 1.41 GB < 1.5 GB (tree 2,806 MB)
+sim 16.3 s, sum|q| 97278.827112667743, sum|da| 10.002701806325771, sum|u| 189683633.50999242
+@@TDG_DONE@@
+[wd] t=58s tree=2,788 MB cpu=0% availRAM=1.35 GB C:free=6.07 GB

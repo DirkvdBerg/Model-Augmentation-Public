@@ -1,0 +1,65 @@
+==============================================================================
+MODE aot_eager | device Quadro P2000 sm_61 4.3 GB | torch 2.5.1
+==============================================================================
+static-address buffers for the per-pass tensors: False
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD
+Loaded val augmented GT: x_logical=(48000, 6)  delta_a std=4.876e-05 m  vdelta_a std=6.890e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 48000 samples  (Training/TR-S1_r1.mat)
+  T2: 48000 samples  (Training/TR-S2_r1.mat)
+  T3: 48000 samples  (Training/TR-S3_r1.mat)
+  T4: 48000 samples  (Training/TR-S4_r1.mat)
+  T5: 48000 samples  (Training/TR-S5_r1.mat)
+  T6: 48000 samples  (Training/TR-Y1_r1.mat)
+  T7: 48000 samples  (Training/TR-Y2_r1.mat)
+  T8: 48000 samples  (Training/TR-Y3_r1.mat)
+  T9: 48000 samples  (Training/TR-P1_r1.mat)
+  T10: 48000 samples  (Training/TR-P2_r1.mat)
+  T11: 48000 samples  (Training/TR-P3_r1.mat)
+  T12: 48000 samples  (Training/TR-P4_r1.mat)
+  T13: 48000 samples  (Training/TR-L1_r1.mat)
+  T14: 48000 samples  (Training/TR-L2_r1.mat)
+  T15: 48000 samples  (Training/TR-T1_r1.mat)
+  T16: 48000 samples  (Training/TR-T2_r1.mat)
+  T17: 48000 samples  (Training/TR-T3_r1.mat)
+  T18: 48000 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 12 distinct controllers, Y_op [-0.3, -0.22, -0.2, -0.15, -0.1, -0.06, 0.0, 0.06, 0.1, 0.12, 0.15, 0.3]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [1.0954e+07 7.6821e+06 4.2935e+06] N/m
+[obc] reference set: 863928 tuples from 18 records (47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996/47996 per record), stride 1, 7.3 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0003 std 0.1812 m; hot tensors 89.8 MB
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 863928 reference tuples, space=tangent, refresh=epoch, solve float64, rollout torch.float32
+eager warm-up done: init_forward complete (initialized_forward_function=True)
+build 19.9 s | reference tuples 863928 | windows in batch 512 | production nf 400
+
+[trace] backend=aot_eager fullgraph=True
+[obc] refresh at epoch 0: vbar=+0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00
+  J: 5183568 x 10, rank 10/10 at tol 3.128e-07 (rtol 1.151e-09), cond 5.1911e+02, build 14.2 s, svd 0.6 s
+  singular values: 2.7181e+02 5.5067e+01 3.1369e+01 1.5225e+01 7.2180e+00 5.3333e+00 3.3197e+00 1.3346e+00 1.0605e+00 5.2361e-01
+  column norms:    kb_sum=5.343e+00 cg1=4.865e+00 cg2=5.359e+00 cy=1.338e+00 cb_sum=1.037e+00 mh=2.999e+01 m_total=2.193e+01 m_diff=3.349e+00 J_eff=2.712e+02 d=5.654e+01
+  largest |column correlations|: cg1~cg2=-0.9868, mh~m_total=-0.4482, mh~J_eff=+0.4006, J_eff~d=-0.2221, m_total~J_eff=+0.1976, m_total~m_diff=-0.1151
+  r_J = 0.000e+00 (vs first basis), r_J_step = 0.000e+00 (vs previous)
+  graphs 1 | graph breaks 0 | ops 1062
+
+[objectives] 11 evaluations at nf 20, batch 512, through ClosedLoopSimulator
+   0     15.66 s  loss 7.927945e-05
+   1      3.13 s  loss 6.598283e-05
+   2      3.50 s  loss 5.752954e-05
+   3      3.01 s  loss 5.093963e-05
+   4      3.75 s  loss 4.623275e-05
+   5      3.93 s  loss 4.178613e-05
+   6      3.53 s  loss 3.799513e-05
+   7      3.01 s  loss 3.427402e-05
+   8      3.49 s  loss 3.074139e-05
+   9      2.98 s  loss 2.758223e-05
+[obc] refresh at epoch 1: vbar=+5.0788e-05 +1.1469e-05 -3.4600e-05 -8.4757e-05 +6.2170e-05 -9.0193e-05 -9.0573e-05 -4.3261e-06 +8.5211e-05 -6.7205e-05
+  J: 5183568 x 10, rank 10/10 at tol 3.128e-07 (rtol 1.151e-09), cond 5.1911e+02, build 14.0 s, svd 0.7 s
+  singular values: 2.7179e+02 5.5060e+01 3.1367e+01 1.5223e+01 7.2173e+00 5.3332e+00 3.3197e+00 1.3343e+00 1.0605e+00 5.2357e-01
+  column norms:    kb_sum=5.343e+00 cg1=4.865e+00 cg2=5.358e+00 cy=1.338e+00 cb_sum=1.037e+00 mh=2.999e+01 m_total=2.193e+01 m_diff=3.349e+00 J_eff=2.712e+02 d=5.653e+01
+  largest |column correlations|: cg1~cg2=-0.9868, mh~m_total=-0.4483, mh~J_eff=+0.4005, J_eff~d=-0.2221, m_total~J_eff=+0.1976, m_total~m_diff=-0.1151
+  r_J = 7.879e-05 (vs first basis), r_J_step = 7.879e-05 (vs previous)
+  10     19.82 s  loss 2.445151e-05  (basis refresh)
+  first call 15.7 s (compile + basis), steady state 3.50 s, refreshes 2
+
+MODE aot_eager: OK
+written C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\orthogonal-by-construction\implementation\08-one-step\..\results\2026-09-28\probe_compile_aot_eager.json

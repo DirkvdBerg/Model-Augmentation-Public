@@ -619,6 +619,12 @@ class SSE_Interconnect(SS_encoder_general):
     # monkey patches was installed last decided selection.
     validation_probes = ()
 
+    # @added (D-236). Declared seam for a TRAINING-TIME phase that acts between optimizer updates
+    # (`ps2_opening.PS2Opening`). fit() calls `training_phase.after_step(self)` once after every
+    # optimizer step. None = no phase, an exact no-op: the loop tests only `is not None`. Like
+    # `simulator`, a CLASS attribute so a checkpoint pickled before this existed still resolves it.
+    training_phase = None
+
     def __init__(self, na=5, nb=5, \
                  interconnect=Interconnect, e_net=modified_encoder_net,   e_net_kwargs={}, na_right=0, nb_right=0):
 
@@ -769,8 +775,31 @@ class SSE_Interconnect(SS_encoder_general):
         """
         return False
 
+    @added
+    def _model_dtype(self):
+        """The dtype of the model's parameters (float32 unless the run set use_f64, D-222)."""
+        p = next(self.hfn.parameters(), None)
+        return p.dtype if p is not None else torch.float32
+
+    @added
+    def init_state_multi(self, sys_data, nf=100, stride=1):
+        """deepSI's SS_encoder_general.init_state_multi with the model's dtype instead of float32.
+
+        deepSI casts the encoder history to float32, so a float64 model failed in every open-loop
+        apply_experiment (D-222 smoke test). Otherwise identical to deepSI's body.
+        """
+        na_right = self.na_right if hasattr(self, 'na_right') else 0
+        nb_right = self.nb_right if hasattr(self, 'nb_right') else 0
+        uhist, yhist = sys_data.to_hist_future_data(na=self.na, nb=self.nb, nf=nf, na_right=na_right,
+                                                    nb_right=nb_right, stride=stride)[:2]
+        dt = self._model_dtype()
+        with torch.no_grad():
+            self.state = self.encoder(torch.tensor(uhist, dtype=dt), torch.tensor(yhist, dtype=dt))
+        return max(self.na, self.nb)
+
     def measure_act_multi(self,actions):
-        actions = torch.tensor(np.array(actions), dtype=torch.float32) #(N,...)
+        # CHANGED (D-222): the model's dtype instead of a hard-coded float32, so float64 runs can simulate.
+        actions = torch.tensor(np.array(actions), dtype=self._model_dtype()) #(N,...)
         with torch.no_grad():
             y_predict, self.state = self.hfn(self.state, actions) # type: ignore
         return y_predict.numpy()
@@ -1012,6 +1041,9 @@ class SSE_Interconnect(SS_encoder_general):
                 if np.isnan(training_loss):
                     if verbose>0: print(f'&&&&&&&&&&&&& Encountered a NaN value in the training loss at it {it_count}, breaking from loop &&&&&&&&&&')
                     break
+                # CHANGED (D-236): the declared training-phase seam; None = the unchanged loop.
+                if self.training_phase is not None:
+                    self.training_phase.after_step(self)
 
                 t.toc('stepping')
                 if self.scheduler:
@@ -1251,16 +1283,11 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
     # and `fit()` delegates straight to the parent, so a run without it is bit-identical.
     traj_penalty = None
     # Backing field for the `optimizer` property below. A class-level default so a checkpoint
-    # pickled before the property existed still resolves it, exactly as `orth_penalty` and
-    # `burn_in` do.
+    # pickled before the property existed still resolves it, exactly as `orth_penalty` does.
     _optimizer = None
     _traj_wrapping = False
     _traj_hook_calls = 0
     _traj_steps = 0
-    # Samples excluded from the SCORE at the start of every window (D-178). 0 = score the whole
-    # window, bit-identically to the pre-D-178 objective. Same class-attribute reasoning as the
-    # two above: a checkpoint pickled before this existed still resolves it through the class.
-    burn_in = 0
     # @added (D-192). The one-step OBC lifecycle (`model_augmentation.fit_systems.obc.OBCLifecycle`)
     # or None. It owns the fixed reference set and the per-epoch basis and is TRAINING-TIME state
     # like `traj_penalty`: excluded from checkpoints (the reference set is the training data) and
@@ -1388,28 +1415,10 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
             _tan = _corr.tangent_pair(_theta) if hasattr(_corr, 'tangent_pair') else _theta
             Loss_kwargs = dict(Loss_kwargs, obc_pass=_tan)
         y_pred, _ = self.simulate(x, ufuture, yfuture, **Loss_kwargs)
-        # BURN-IN (D-178): score from sample `burn_in` onward. The window is transient-dominated
-        # at nf=400 -- every run's `[nf]` line reports grow = RMS(last)/RMS(first) between 0.46
-        # and 0.81, i.e. the error DECAYS across the window -- so scoring the start pays the
-        # optimiser to sharpen x_0, which a 12 s free run pays once and forgets. Measured by
-        # rescoring (cl_burnin_sweep.py): discrimination 1.249x -> 3.400x at K=100, against
-        # 2.54x for an 8x longer window. Time is dim 1; `burn_in = 0` skips the branch entirely
-        # and is bit-identical to the objective every run before this used.
-        if self.burn_in:
-            y_pred_scored, yfuture_scored = y_pred[:, self.burn_in:], yfuture[:, self.burn_in:]
-            if yfuture_scored.shape[1] == 0:
-                raise ValueError(
-                    'burn_in=%d leaves nothing to score in an nf=%d window. It is a number of '
-                    'SAMPLES discarded at the window start and must be smaller than nf.'
-                    % (self.burn_in, yfuture.shape[1]))
-        else:
-            y_pred_scored, yfuture_scored = y_pred, yfuture
-        L = nn.functional.mse_loss(yfuture_scored, y_pred_scored)
+        L = nn.functional.mse_loss(yfuture, y_pred)
         # Window error statistics, from the rollout that just happened. Accumulated HERE, before
         # the penalties, so the reported error is the fit error and does not move when orth or
         # joint estimation is toggled. None = no statistics, an exact no-op.
-        # DELIBERATELY the FULL window, not the scored slice (D-178): `grow` is the evidence that
-        # motivates burn-in, and a diagnostic that moved with the knob it justifies is worthless.
         if self.loss_stats is not None:
             self.loss_stats.update(y_pred, yfuture)
         blocks = self.hfn.connected_blocks                                # type: ignore
@@ -1480,9 +1489,14 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
     # @added (D-192): the OBC lifecycle holds the reference set (the training data) and the
     # basis factors; same treatment as the trajectory penalty, for the same three reasons.
     _OBC_UNPICKLABLE = ('obc', 'obc_reference')
+    # @added (D-236): the training-time phase holds the training records and its own optimiser;
+    # same treatment as `obc`, for the same reasons (not model state; must survive deepSI's
+    # end-of-fit `self.__dict__ = torch.load(...)`).
+    _PHASE_UNPICKLABLE = ('training_phase',)
 
     def checkpoint_save_system(self, *args, **kwargs):
         stash = {k: self.__dict__.pop(k) for k in self._TRAJ_UNPICKLABLE + self._OBC_UNPICKLABLE
+                 + self._PHASE_UNPICKLABLE  # CHANGED (D-236)
                  if k in self.__dict__}
         try:
             return super().checkpoint_save_system(*args, **kwargs)
@@ -1491,7 +1505,8 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
 
     def checkpoint_load_system(self, *args, **kwargs):
         stash = {k: self.__dict__.get(k)
-                 for k in self._TRAJ_UNPICKLABLE + self._OBC_UNPICKLABLE + self._TRAJ_COUNTERS}
+                 for k in self._TRAJ_UNPICKLABLE + self._OBC_UNPICKLABLE + self._TRAJ_COUNTERS
+                 + self._PHASE_UNPICKLABLE}  # CHANGED (D-236)
         out = super().checkpoint_load_system(*args, **kwargs)
         # The load replaced __dict__; put back what was never saved, and re-run the legacy
         # optimizer migration, because a file written before the property existed carries
@@ -1570,6 +1585,7 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
         state.pop('traj_penalty', None)
         state.pop('obc', None)          # D-192: training-time state, see `obc` above
         state.pop('obc_reference', None)
+        state.pop('training_phase', None)   # CHANGED (D-236): training-time state, as `obc`
         return state
 
     def __setstate__(self, state):
@@ -1592,6 +1608,7 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
         self.__dict__.pop('traj_penalty', None)
         self.__dict__.pop('obc', None)  # D-192: same rule
         self.__dict__.pop('obc_reference', None)
+        self.__dict__.pop('training_phase', None)   # CHANGED (D-236): same rule
 
     @property
     def optimizer(self):

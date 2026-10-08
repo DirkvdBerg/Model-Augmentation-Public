@@ -1,0 +1,2 @@
+time,file,version,split,Y_op,K_gain,excitation,scale_pre,scale_post,sim_s,MB,noise_added_nm_X1,noise_added_nm_X2,noise_added_nm_Y,stick_X1,stick_X2,stick_Y,Fpeak_frac_max,Frms_frac_max,plumbing_N
+2026-10-06 21:01:44,TR-T1_r1,noisy+noise-free,Training,0.0000,1.00,none,1.00,1.00,100.9,82.0,10.0908,10.6666,5.5792,74.67,74.47,71.81,0.396,0.228,1.38e-08

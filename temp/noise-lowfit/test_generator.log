@@ -1,0 +1,16 @@
+noise model lowpass, noisy folder name Coulomb-tanh-and-MSD-lowpass-noise
+generate_thesis_data: 1 records selected, versions noisy + noise-free
+
+=== 1/1  TR-T1_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.00, 75 % max, dwell 0.30 s, no multisine] ===
+  r OK TR-T1_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-240 +240] mm | v 0.757/1.382 m/s a 22.50/37.50 m/s^2 j 1338/2035 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [10.091 10.667 5.579] nm | stick [74.7 74.5 71.8] % | F peak [0.37 0.4 0.28], rms [0.21 0.23 0.2] of limit | 46.6 + 35.4 MB | 100.9 s
+MANIFEST noisy: 1 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\temp\noise-lowfit\gen_test\Coulomb-tanh-and-MSD-lowpass-noise\MANIFEST.csv
+MANIFEST noise-free: 1 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\temp\noise-lowfit\gen_test\Coulomb-tanh-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+(1) noise-free TR-T1_r1: FAIL, differs in pair, meta.pair
+(2) noisy TR-T1_r1: post-check pass 1, scale 1.00, noise model lowpass, std v [9.64e-09 1.02e-08 5.44e-09] m
+(3) X1 standstill rms over the fitted range: measured 9.85e-09, simulated 9.92e-09, ratio 1.007 -> PASS
+(3) X2 standstill rms over the fitted range: measured 1.04e-08, simulated 1.04e-08, ratio 1.000 -> PASS
+(3) Y  standstill rms over the fitted range: measured 4.81e-09, simulated 4.84e-09, ratio 1.005 -> PASS
+test_generator: done

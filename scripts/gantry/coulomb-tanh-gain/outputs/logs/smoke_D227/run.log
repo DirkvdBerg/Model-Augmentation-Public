@@ -1,0 +1,288 @@
+[wd] launch  out=../gantry/coulomb-tanh-gain/outputs/logs/smoke_D227
+[wd] command conda run --no-capture-output -n GraduationProject python -u gantry_interconnect_dynamic.py
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisefree start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE
+Data dir (thesis_taf_noisefree): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free
+Loaded val augmented GT: x_logical=(8000, 6)  delta_a std=4.868e-05 m  vdelta_a std=6.872e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 8000 samples  (Training/TR-S1_r1.mat)
+  T2: 8000 samples  (Training/TR-S2_r1.mat)
+  T3: 8000 samples  (Training/TR-S3_r1.mat)
+  T4: 8000 samples  (Training/TR-S4_r1.mat)
+  T5: 8000 samples  (Training/TR-S5_r1.mat)
+  T6: 8000 samples  (Training/TR-Y1_r1.mat)
+  T7: 8000 samples  (Training/TR-Y2_r1.mat)
+  T8: 8000 samples  (Training/TR-Y3_r1.mat)
+  T9: 8000 samples  (Training/TR-P1_r1.mat)
+  T10: 8000 samples  (Training/TR-P2_r1.mat)
+  T11: 8000 samples  (Training/TR-P3_r1.mat)
+  T12: 8000 samples  (Training/TR-P4_r1.mat)
+  T13: 8000 samples  (Training/TR-L1_r1.mat)
+  T14: 8000 samples  (Training/TR-L2_r1.mat)
+  T15: 8000 samples  (Training/TR-T1_r1.mat)
+  T16: 8000 samples  (Training/TR-T2_r1.mat)
+  T17: 8000 samples  (Training/TR-T3_r1.mat)
+  T18: 8000 samples  (Training/TR-T4_r1.mat)
+
+Configuration:
+  PROVENANCE:  git 3e34605 Augmentation dirty:625 diff:d8b3cde7
+               run_id 20260928_145432   save=True
+               C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\thesis_taf_noisefree_linear_map\20260928_145432
+  DATA:        thesis_taf_noisefree   20000 -> 4000 Hz (D=5)   stride=10
+               nf=400 (0.1 s)   na_nb=29 (7.25 ms)   batch=512
+  MODEL:       encoder=linear_map   ann=tanh   nx_ann=2   16x2   up_sample=1
+               ann_route_ix=(0, 1, 2, 3, 4, 5, 6, 7)
+  OBJECTIVE:   rollout=closed loop   orth=OFF, obc=OFF (no penalty, no basis build)
+               joint=True   param_init=detuned (10-vector, combinations)   noise=None (noiseless)
+  OPTIM:       lr=1e-05   adam_eps=1.0e-16   epochs=200   n_its=4 (CAPPED)   seed=1   float64
+  EXEC:        device=cpu   checkpoint=OFF (whole rollout graph)
+               compile=OFF (eager)
+
+Default hyperparameters (may be overridden by checkpoint):
+  NX_ANN: 2
+  n_nodes_per_layer: 16
+  n_hidden_layers: 2
+  up_sample: 1
+  nf: 400
+  na_nb: 29
+  batch_size: 512
+  lr: 1e-05
+  epochs: 200
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [8.0554e+06 8.2528e+06 4.2749e+06] N/m
+
+Loss rollout: CLOSED loop (known controller wrapped around the model)
+
+Training: nf=400  epochs=200  val=sim-RMS  NX_ANN=2
+
+[nf] rms = RMS over nf=400 (0.100 s) windows, closed loop, metres
+     chan = per-channel X/Theta/Y | grow = RMS(last step)/RMS(first) | bias = mean residual
+     train = all windows since the last validation, running mean | val = 256 fixed windows, snapshot
+     metre weighting is NOT the objective's, which weights channels by 1/ystd^2;
+     numbers are not comparable ACROSS loop modes, the [nf gap] ratios are
+Model already initilized (init_model_done=True), skipping initilizing of the model, the norm and the creation of the optimizer
+Size of the training array =  268.7 MB
+N_training_samples = 13644, batch_size = 512, N_batch_updates_per_epoch = 26
+[wd] t=61s tree=970 MB cpu=8% availRAM=2.32 GB C:free=10.44 GB
+    [nf val  ] rms 1.950e-05  chan 4.6e-06/4.5e-06/3.3e-05  grow 1.49x  bias +7.3e-08/+4.1e-08/-1.2e-07  (114 win)
+    [nf gap  ] val_sim 1.720e-05 = 0.88x val_nf (horizon)
+    [x_aug   ] ||x_aug|| end-of-rollout  mean 0.000e+00  std 0.000e+00  max 0.000e+00
+    [joint-probe] combo-err 9.49% (worst m_total +10.0%) | param_loss 0.000e+00
+      [combos] kb_sum=3.5775e+03 (-10.00%) | cg1=1.5950e+01 (+10.00%) | cg2=2.2330e+01 (+10.00%) | cy=1.1000e+01 (+10.00%) | cb_sum=1.6200e+01 (-10.00%)
+      [combos] mh=9.0900e+00 (-10.00%) | m_total=4.8070e+01 (+10.00%) | m_diff=-5.5000e-01 (-0.48%) | J_eff=3.4168e+00 (-10.00%) | d=9.0000e-02 (-10.00%)
+Initial Validation sim-RMS= 1.7202980152109614e-05
+  0%|          | 0/4 [00:00<?, ?it/s] 25%|██▌       | 1/4 [00:08<00:26,  8.89s/it] 50%|█████     | 2/4 [00:20<00:21, 10.68s/it][wd] t=126s tree=1,414 MB cpu=26% availRAM=1.91 GB C:free=10.51 GB
+ 75%|███████▌  | 3/4 [00:34<00:11, 11.95s/it][wd] t=191s tree=983 MB cpu=9% availRAM=2.51 GB C:free=10.50 GB
+    [nf train] rms 1.953e-05  chan 7.2e-06/7.1e-06/3.2e-05  grow 0.36x  bias +6.4e-10/+2.0e-08/+6.0e-08  (2048 win)
+    [nf val  ] rms 1.643e-05  chan 7.1e-06/8.7e-06/2.6e-05  grow 0.25x  bias +4.0e-08/+3.3e-09/-7.3e-08  (114 win)
+    [nf gap  ] val_sim 1.341e-05 = 0.82x val_nf (horizon) = 0.69x train_nf (horizon+gen)
+    [x_aug   ] ||x_aug|| end-of-rollout  mean 5.578e-05  std 1.775e-05  max 1.202e-04
+    [joint-probe] combo-err 9.49% (worst cg1 +10.0%) | param_loss 0.000e+00
+      [combos] kb_sum=3.5774e+03 (-10.00%) | cg1=1.5951e+01 (+10.00%) | cg2=2.2331e+01 (+10.00%) | cy=1.1000e+01 (+10.00%) | cb_sum=1.6201e+01 (-10.00%)
+      [combos] mh=9.0903e+00 (-10.00%) | m_total=4.8068e+01 (+10.00%) | m_diff=-5.5001e-01 (-0.48%) | J_eff=3.4169e+00 (-10.00%) | d=8.9997e-02 (-10.00%)
+########## New lowest validation loss achieved ########### sim-RMS = 1.3409406317585495e-05
+It    4, sqrt loss 0.0001371, Val sim-RMS 1.341e-05, Time Loss: 51.8%, data: 0.0%, val: 48.1%, 23.8 sec/batch
+100%|██████████| 4/4 [01:35<00:00, 31.27s/it]100%|██████████| 4/4 [01:35<00:00, 23.79s/it]
+C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\fit_systems\fit_system.py:501: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.__dict__ = torch.load(file)
+Loaded model with best known validation sim-RMS of 1.341e-05 which happened on epoch 4 (epoch_id=0.15)
+  val nf-window RMS (400-step): first=1.9502e-05  best=1.6426e-05  last=1.6426e-05 [m]  (sim-RMS selector unchanged)
+  train nf-window RMS (400-step): first=1.9526e-05  best=1.9526e-05  last=1.9526e-05 [m]  (1 finite of 2; the pre-training entry has no windows behind it)
+  Pre-polish checkpoint: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\thesis_taf_noisefree_linear_map\20260928_145432\gantry_ckpt_20260928_145432_pre_lbfgs.pt
+
+[lbfgs] polish phase (D-171): Adam is done, quasi-Newton from here
+  [lbfgs] fixed batch: 256 of 13644 windows (stride 10 -> 530), 5.0 MB on cpu, 1 chunk(s), extras=('ctrl_ix',)
+  [lbfgs] determinism check (eager): 1.72331056091934443e-08 vs 1.72331056091934443e-08 -> OK
+  [lbfgs] 5354 parameters in one group, m=50, strong-Wolfe, tol_grad=1.0e-12 tol_change=0.0e+00 (0.0e+00 relative to the opening loss), max 2 iterations, eager rollout
+  [lbfgs] iter    1 (+1 of 1)  (5 closures, 42 s)
+  [lbfgs] iter    2 (+1 of 1)  (7 closures, 57 s)
+[wd] t=255s tree=756 MB cpu=17% availRAM=2.42 GB C:free=10.49 GB
+  [lbfgs] ACCEPTED: accepted
+  [lbfgs] loss 1.723311e-08 -> 1.196185e-08 | 2 iterations, 7 closures in 95 s
+  [lbfgs] sim-RMS 1.340941e-05 -> 1.315604e-05
+  Checkpoint weights: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\thesis_taf_noisefree_linear_map\20260928_145432\gantry_ckpt_20260928_145432.pt  (Adam state omitted: weights were polished)
+Training done | 200 ep | 149s | bestfit=0.00001
+  Checkpoint meta: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\thesis_taf_noisefree_linear_map\20260928_145432\gantry_ckpt_20260928_145432.npz
+
+Training complete. Best validation sim-RMS: 0.000013
+Saved model: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\simulations\gantry_subnet\thesis_taf_noisefree_linear_map\20260928_145432\gantry_20260928_145432
+
+=== Joint estimation: identifiable combinations (best checkpoint) ===
+  Identifiable combinations (identifiable coordinates trained):
+Quantity          True        Init     Learned    delta%
+--------------------------------------------------------
+kb_sum       3975.0000   3577.5000   3577.3616   -10.00%
+cg1            14.5000     15.9500     15.9506   +10.00%
+cg2            20.3000     22.3300     22.3308   +10.00%
+cy             10.0000     11.0000     11.0004   +10.00%
+cb_sum         18.0000     16.2000     16.2006   -10.00%
+mh             10.1000      9.0900      9.0903   -10.00%
+m_total        43.7000     48.0700     48.0681   +10.00%
+m_diff         -0.5000     -0.5500     -0.5500   +10.00%
+J_eff           3.7964      3.4168      3.4169   -10.00%
+d               0.1000      0.0900      0.0900   -10.00%
+  admissibility: min eig M(Y) = 3.37259 at Y = +0.003 m; min abs d(Y) = 1774.95 at Y = +0.003 m; PASS
+
+=== Joint estimation: identifiable combinations (init vs learned) ===
+  param            init      learned     delta
+  kb_sum      3577.5000    3577.3616    -0.00%
+  cg1           15.9500      15.9506    +0.00%
+  cg2           22.3300      22.3308    +0.00%
+  cy            11.0000      11.0004    +0.00%
+  cb_sum        16.2000      16.2006    +0.00%
+  mh             9.0900       9.0903    +0.00%
+  m_total       48.0700      48.0681    -0.00%
+  m_diff        -0.5500      -0.5500    +0.00%
+  J_eff          3.4168       3.4169    +0.00%
+  d              0.0900       0.0900    -0.00%
+[wd] t=318s tree=765 MB cpu=8% availRAM=2.54 GB C:free=10.51 GB
+[wd] t=381s tree=763 MB cpu=8% availRAM=2.46 GB C:free=10.53 GB
+
+== A. CLOSED-LOOP FREE RUN: validation (the selection measure), RMS [m] per record, X1 / X2 / Y ==
+  VA-S1_r1.mat
+    model            5.300e-06  4.528e-06  2.841e-05
+    physics part     5.130e-06  5.111e-06  3.979e-05
+    baseline, start  5.131e-06  5.111e-06  3.979e-05
+    baseline, true   3.874e-06  3.572e-06  3.696e-05
+    oracle           n/a
+  VA-Y1_r1.mat
+    model            5.119e-06  4.167e-06  2.995e-05
+    physics part     4.732e-06  4.748e-06  4.116e-05
+    baseline, start  4.733e-06  4.748e-06  4.116e-05
+    baseline, true   3.619e-06  3.445e-06  3.823e-05
+    oracle           n/a
+  VA-P1_r1.mat
+    model            4.813e-06  4.295e-06  3.030e-05
+    physics part     4.776e-06  4.818e-06  4.074e-05
+    baseline, start  4.777e-06  4.819e-06  4.075e-05
+    baseline, true   3.301e-06  3.581e-06  3.776e-05
+    oracle           n/a
+  VA-L1_r1.mat
+    model            4.557e-06  4.332e-06  3.056e-05
+    physics part     4.351e-06  4.568e-06  4.106e-05
+    baseline, start  4.352e-06  4.569e-06  4.106e-05
+    baseline, true   3.313e-06  3.498e-06  3.812e-05
+    oracle           n/a
+  VA-T1_r1.mat
+    model            4.289e-06  3.616e-06  6.169e-06
+    physics part     4.362e-06  3.502e-06  5.245e-06
+    baseline, start  4.363e-06  3.502e-06  5.245e-06
+    baseline, true   3.050e-06  3.485e-06  3.632e-06
+    oracle           n/a
+  VA-T2_r1.mat
+    model            3.263e-06  3.254e-06  4.269e-06
+    physics part     3.291e-06  3.230e-06  4.043e-06
+    baseline, start  3.292e-06  3.230e-06  4.044e-06
+    baseline, true   2.895e-06  3.193e-06  3.442e-06
+    oracle           n/a
+  [closed-loop report] Test/E5_r1.mat skipped: "record 'E5_r1' was generated with 1.2 x K1; set RunConfig.controller_gain to score it with its own controller (D-227)"
+[wd] t=444s tree=770 MB cpu=8% availRAM=2.31 GB C:free=10.52 GB
+[wd] t=507s tree=770 MB cpu=8% availRAM=2.38 GB C:free=10.51 GB
+
+== A. CLOSED-LOOP FREE RUN: test (the selection measure), RMS [m] per record, X1 / X2 / Y ==
+  I1_r1.mat
+    model            4.690e-06  4.077e-06  2.966e-05
+    physics part     4.398e-06  4.771e-06  4.050e-05
+    baseline, start  4.399e-06  4.772e-06  4.050e-05
+    baseline, true   3.126e-06  3.682e-06  3.750e-05
+    oracle           n/a
+  I2_r1.mat
+    model            4.251e-06  3.730e-06  2.885e-05
+    physics part     3.507e-06  4.385e-06  4.015e-05
+    baseline, start  3.507e-06  4.385e-06  4.015e-05
+    baseline, true   2.779e-06  3.739e-06  3.721e-05
+    oracle           n/a
+  I3_r1.mat
+    model            4.028e-06  3.290e-06  5.840e-06
+    physics part     4.104e-06  3.183e-06  4.830e-06
+    baseline, start  4.105e-06  3.183e-06  4.831e-06
+    baseline, true   2.899e-06  3.227e-06  3.359e-06
+    oracle           n/a
+  I4_r1.mat
+    model            3.399e-06  3.467e-06  4.303e-06
+    physics part     3.442e-06  3.416e-06  3.901e-06
+    baseline, start  3.442e-06  3.416e-06  3.902e-06
+    baseline, true   2.972e-06  3.384e-06  3.063e-06
+    oracle           n/a
+  I5_r1.mat
+    model            4.410e-06  3.334e-06  6.668e-06
+    physics part     4.454e-06  3.160e-06  5.295e-06
+    baseline, start  4.455e-06  3.160e-06  5.296e-06
+    baseline, true   2.902e-06  3.228e-06  3.366e-06
+    oracle           n/a
+  I6_r1.mat
+    model            2.613e-06  2.400e-06  4.096e-06
+    physics part     2.657e-06  2.344e-06  3.763e-06
+    baseline, start  2.658e-06  2.344e-06  3.764e-06
+    baseline, true   2.177e-06  2.313e-06  2.801e-06
+    oracle           n/a
+  E1_r1.mat
+    model            3.547e-06  3.070e-06  2.859e-05
+    physics part     2.793e-06  3.761e-06  4.007e-05
+    baseline, start  2.793e-06  3.761e-06  4.007e-05
+    baseline, true   2.364e-06  3.415e-06  3.713e-05
+    oracle           n/a
+  E2_r1.mat
+    model            3.835e-06  3.361e-06  5.437e-06
+    physics part     3.906e-06  3.250e-06  4.758e-06
+    baseline, start  3.907e-06  3.250e-06  4.758e-06
+    baseline, true   2.892e-06  3.241e-06  3.315e-06
+    oracle           n/a
+  E3_r1.mat
+    model            6.030e-06  3.693e-06  8.294e-06
+    physics part     6.103e-06  3.420e-06  6.604e-06
+    baseline, start  6.104e-06  3.420e-06  6.606e-06
+    baseline, true   3.144e-06  3.488e-06  3.503e-06
+    oracle           n/a
+  E4_r1.mat
+    model            2.546e-06  2.390e-06  3.980e-06
+    physics part     2.582e-06  2.344e-06  3.758e-06
+    baseline, start  2.582e-06  2.344e-06  3.759e-06
+    baseline, true   2.165e-06  2.313e-06  2.911e-06
+    oracle           n/a
+  E5_r1.mat
+    model            n/a
+    physics part     n/a
+    baseline, start  n/a
+    baseline, true   n/a
+    oracle           n/a
+  E6_r1.mat
+    model            7.403e-06  4.236e-06  9.318e-06
+    physics part     7.515e-06  4.030e-06  7.156e-06
+    baseline, start  7.517e-06  4.031e-06  7.158e-06
+    baseline, true   3.489e-06  3.711e-06  3.699e-06
+    oracle           n/a
+
+========================================================================
+VERDICT (run 20260928_145432): closed loop, mean over records of the per-record RMS [m]
+  validation model 1.316e-05 | physics part 1.720e-05 | baseline, start 1.720e-05 | baseline, true 1.576e-05 | oracle nan
+  test       model 8.049e-06 | physics part 9.491e-06 | baseline, start 9.492e-06 | baseline, true 8.149e-06 | oracle nan
+========================================================================
+Saved results: gantry_results_20260928_145432.npz
+
+== B. ENCODER QUALITY ==
+
+=== State recovery diagnostic (D-053) ===
+  2657 windows (stride 3), na=nb=29, encoder=linear_map
+  channel   R2_raw      R2_linmap   R2_raw_lag1
+  q1         -0.1667     +0.6797     -0.2926
+  q2         +0.9700     +0.9932     +0.9290
+  q3         -1.5414     +0.6178     -2.1816
+  dq1        +0.9657     +0.9959     +0.9173
+  dq2        +0.9722     +0.9966     +0.9366
+  dq3        +0.2631     +0.5996     +0.2900
+  R2_linmap ~ 1 & R2_raw low -> basis rotation;
+  R2_linmap low              -> information absent from encoder state;
+  R2_raw_lag1 > R2_raw       -> encoder aligned to k-1 (one-sample lag)
+Saved state recovery diagnostic: gantry_state_recovery_20260928_145432.npz
+
+== D. TRAINING HEALTH ==
+
+=== Gradient norms (single batch, post-training) ===
+  encoder             : 6.7061e-05
+  hfn                 : 5.5616e-05
+WATCHDOG SUMMARY exit=0 killed=False duration_s=526.7 samples=99 peak_tree_ws_mb=1,539 min_avail_ram_gb=1.60 min_C_free_gb=10.44 kill_reason=""

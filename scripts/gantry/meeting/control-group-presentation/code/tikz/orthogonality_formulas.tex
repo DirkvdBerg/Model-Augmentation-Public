@@ -1,0 +1,38 @@
+% Backup slide: the orthogonality formulas in full, notation of the 2026-09-25 meeting.
+% Implementation facts (meeting-21-09-2026/code/fig_orthogonality.py docstring): the correction is
+% subtracted inside the state transition, F_applied = F - Phi c, with c fitted on the training
+% samples (config OBC_REFRESH = epoch) and NOT refitted on held-out data.
+\documentclass[border=10pt]{standalone}
+\input{preamble}
+\newcommand{\T}{\mathsf{T}}
+\begin{document}
+\begin{minipage}{17.5cm}
+\large\color{cink}
+\textbf{Parameter directions}, one per parameter, at every training sample $k$:
+\[
+  \Phi_j[k]=\left.\frac{\partial f_{\mathrm{base}}(x_k,u_k;\theta)}{\partial\theta_j}\right|_{\theta=\bar\theta},
+  \qquad \Phi=\bigl[\,\Phi_1\ \cdots\ \Phi_{10}\,\bigr]
+\]
+\textbf{Orthogonality}, the inner product over the training samples:
+\[
+  \langle\Phi_j,\Delta\rangle=\sum_k \Phi_j[k]^{\T}\Delta[k]=0,\quad j=1,\dots,10
+  \qquad\Longleftrightarrow\qquad \Phi^{\T}\Delta=0
+\]
+\textbf{Why:} refitting the ten parameters to data that contain $\Delta$ moves them by
+\[
+  \hat\theta-\theta^{*}=\bigl(\Phi^{\T}\Phi\bigr)^{-1}\Phi^{\T}\Delta,
+  \qquad\text{which is zero when }\Phi^{\T}\Delta=0
+\]
+\textbf{Projection} of the network output $F$, coefficients fitted on the training samples:
+\[
+  \Delta[k]=F[k]-\Phi[k]\,c,\qquad c=\Phi^{+}F
+  \qquad(\text{on the training samples: }\Delta=(I-\Phi\Phi^{+})F)
+\]
+\textbf{Overlap}, $0$ = orthogonal, $1$ = a parameter change:
+\[
+  \rho=\frac{\|\Phi\Phi^{+}\Delta\|}{\|\Delta\|}
+\]
+{\normalsize\color{cmuted} States normalised per channel. On held-out samples $c$ is not refitted,
+so $\Phi^{\T}\Delta\neq0$ there. Orthogonal projection after Gy\"or\"ok et al.}
+\end{minipage}
+\end{document}

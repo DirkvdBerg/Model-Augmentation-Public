@@ -1,0 +1,15 @@
+[wd] launch  out=outputs/logs/gate_nf
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); run_tanh_sweep({'noise-free'}, []); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+
+==== 2026-09-28 11:54:14  TR-T1_r1  gains [] ====
+
+== noise-free  (C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\Training\TR-T1_r1.mat, Y_op +0.00, |d| max 0 N)
+[wd] t=59s tree=1,019 MB cpu=8% availRAM=3.14 GB C:free=12.85 GB
+gate  Karnopp replay vs stored y: max|dq| 0.00e+00 0.00e+00 0.00e+00 m, u_fb rel 1.6e-11 1.6e-11 2.0e-11  (60 s)  PASS
+dwells scored: 24 (>= 0.1 s, preceded by a move); moving 23.2 % of the record
+
+run            | dwell 2nd-half rms [nm]    | Q4/Q3 max            | reversals/s dwell    | moving rms [um]            | moving vs Karnopp    | moving vs next g     |  lam*h    p2
+Karnopp        | 3.86e+03 4.17e+03 4.82e+03 |   1.05   1.06   1.03 |   39.0   39.0   39.7 |    72.88    76.34    82.21 |  0.000  0.000  0.000 |    NaN    NaN    NaN |    NaN     2
+reference levels [nm]: measured machine standstill [9.8 10.4 6.3], calibrated noise [3.37 3.696 1.086]
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=97.0 samples=19 peak_tree_ws_mb=1,029 min_avail_ram_gb=3.03 min_C_free_gb=12.83 kill_reason=""

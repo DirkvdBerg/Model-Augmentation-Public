@@ -1,0 +1,16 @@
+[wd] launch  out=outputs/logs/noise_shape_B
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); check_encoder_noise('B', false); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+friction gain 1000 s/m, corner 50 Hz, correction diag, tolerance 0.1
+[wd] t=58s tree=1,055 MB cpu=8% availRAM=1.87 GB C:free=12.76 GB
+(B) replica 39 s; axis seeds [3824391106 3807613487 3790835868]; injected v rms [9.633 10.2 6.263] nm
+    band [Hz]        simulated / measured rms    analytic (implemented)    analytic (uncorrected)    analytic (coupled alternative)
+       10 to    50   [0.684 0.71 0.785]           [1 1 1]                   [1 1 1]                   [1 1 1]
+       50 to   100   [0.991 0.967 1.03]           [1 1 1.01]                [0.822 0.837 0.863]       [1 1 1]
+      100 to   300   [1.01 0.993 1]               [1 1 1.01]                [1.07 1.06 0.925]         [1 1 1]
+      300 to  1000   [0.995 1 0.995]              [1 1 1]                   [1.09 1.08 1.08]          [1 1 1]
+     1000 to  9990   [1 0.999 0.999]              [1 1 1]                   [1 1 1.01]                [1 1 1]
+(B) common level above 50 Hz [1 0.998 0.999]; max |band / common - 1| [0.0088 0.0309 0.0299] -> PASS
+    coupled alternative: nonnegativity active at 0 of 119400 bins above the corner
+    total simulated error [9.82 10.34 6.326] nm against measured [9.849 10.4 6.338] nm
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=73.6 samples=14 peak_tree_ws_mb=1,129 min_avail_ram_gb=1.87 min_C_free_gb=12.76 kill_reason=""

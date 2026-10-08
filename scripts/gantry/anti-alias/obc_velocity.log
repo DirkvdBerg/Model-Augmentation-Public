@@ -1,0 +1,49 @@
+[wd] launch  out=obc_velocity_run
+[wd] command conda run --no-capture-output -n GraduationProject python -u obc_velocity.py
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[norm] std_x noisy [0.08313 0.0005  0.18118 0.33679 0.02614 0.4322 ]
+[norm] std_x noisy / noise-free - 1: [0.000171 0.00041  0.000183 0.000417 0.000188 0.000415]  (tolerance 0.01)
+
+[velocity] rms error against the true velocity, relative to its rms (X, Theta, Y logical):
+  truth     [0. 0. 0.]   abs [0. 0. 0.]
+  clean     [1.12730e-05 6.82858e-04 6.10498e-05]   abs [3.797e-06 1.790e-05 2.639e-05]
+  filtered  [5.56122e-05 2.05113e-03 7.59285e-05]   abs [1.873e-05 5.377e-05 3.282e-05]
+  point     [7.37253e-05 2.65880e-03 8.64098e-05]   abs [2.483e-05 6.969e-05 3.735e-05]
+  lowcut    [4.52593e-05 1.85720e-03 9.88860e-05]   abs [1.524e-05 4.868e-05 4.274e-05]
+  true velocity rms [0.3368 0.0262 0.4322]
+[J] truth     1035936 x 10 built (38 s)
+[J] clean     1035936 x 10 built (44 s)
+[wd] t=58s tree=1,174 MB cpu=32% availRAM=2.47 GB C:free=7.76 GB
+[J] filtered  1035936 x 10 built (52 s)
+[J] point     1035936 x 10 built (59 s)
+[J] lowcut    1035936 x 10 built (65 s)
+
+[basis] principal angles (deg) and the largest one as sin; relative J change
+  truth     vs clean  sin(max) 6.43e-04  ||dJ||/||J|| 4.56e-06  angles [3.6867e-02 3.3308e-03 7.2075e-04 6.3355e-04 1.5534e-04 4.0209e-05
+ 1.7766e-05 6.6682e-06 8.5377e-07 0.0000e+00]
+  clean     vs truth  sin(max) 6.43e-04  ||dJ||/||J|| 4.56e-06  angles [3.6867e-02 3.3308e-03 7.2075e-04 6.3354e-04 1.5533e-04 4.0218e-05
+ 1.7725e-05 6.5021e-06 1.2074e-06 0.0000e+00]
+  filtered  vs clean  sin(max) 1.94e-03  ||dJ||/||J|| 1.28e-05  angles [1.1105e-01 3.3946e-03 2.9587e-03 2.5575e-03 1.5781e-03 4.4083e-04
+ 1.2811e-04 2.3568e-05 1.4862e-05 0.0000e+00]
+  filtered  vs truth  sin(max) 2.04e-03  ||dJ||/||J|| 1.36e-05  angles [1.1692e-01 4.2713e-03 3.4419e-03 3.0294e-03 1.5789e-03 4.7060e-04
+ 1.3567e-04 2.9967e-05 1.6064e-05 0.0000e+00]
+  point     vs clean  sin(max) 2.58e-03  ||dJ||/||J|| 1.71e-05  angles [1.4777e-01 4.5375e-03 3.9821e-03 3.4364e-03 2.2040e-03 5.8520e-04
+ 1.7159e-04 3.1739e-05 1.9692e-05 0.0000e+00]
+  point     vs truth  sin(max) 2.65e-03  ||dJ||/||J|| 1.76e-05  angles [1.5199e-01 4.9186e-03 4.5094e-03 4.0329e-03 2.2049e-03 6.0676e-04
+ 1.7688e-04 3.6092e-05 2.0615e-05 0.0000e+00]
+  lowcut    vs clean  sin(max) 1.60e-03  ||dJ||/||J|| 1.06e-05  angles [9.1638e-02 3.2101e-03 2.6312e-03 2.3373e-03 1.4502e-03 3.6653e-04
+ 1.0621e-04 2.1950e-05 1.2920e-05 0.0000e+00]
+  lowcut    vs truth  sin(max) 1.85e-03  ||dJ||/||J|| 1.23e-05  angles [1.0577e-01 5.4991e-03 2.8237e-03 2.5019e-03 1.4530e-03 4.3156e-04
+ 1.2244e-04 3.2522e-05 1.5201e-05 3.9125e-06]
+  cond(J): truth 443  clean 443  filtered 443  point 443  lowcut 443
+
+== verdict (decisive: sin of the largest angle to clean <= 0.01) ==
+  filtered  1.94e-03 -> PASS
+  lowcut    1.60e-03 -> PASS
+  point     2.58e-03 -> PASS
+  norm: max |std_x noisy / noise-free - 1| = 4.17e-04 -> PASS
+done in 69 s
+WATCHDOG SUMMARY exit=0 killed=False duration_s=77.5 samples=15 peak_tree_ws_mb=1,477 min_avail_ram_gb=2.22 min_C_free_gb=7.75 kill_reason=""

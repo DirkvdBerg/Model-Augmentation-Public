@@ -1,0 +1,45 @@
+[run] C: free 3.7G before C2_C11_C13_noise
+[wd] launch  out=logs/C2_C11_C13_noise
+[wd] command matlab -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); check_noise_calibration"
+target band rms (measured, 19.53 to 292.97 Hz): [3.37 3.696 1.086] nm
+C11 Y = -0.390: rel err A 6.55e-17, B 1.66e-17
+C11 Y = +0.000: rel err A 6.55e-17, B 1.66e-18
+C11 Y = +0.350: rel err A 1.31e-16, B 2.60e-17
+C11 truth linearisation = ODE Jacobian -> PASS
+  Y -0.390 draw 1: std d [0.246 0.166 0.0207] N (int Phi_d: [0.25 0.162 0.0207]), rms d below 300 Hz [0.134 0.0895 0.0198] N, var err [0.031 0.051 0.00037]
+C2  Y -0.390: band rms [3.387 3.699 1.082] nm, rel [0.005 0.001 -0.0037] -> PASS | Phi_d peak X1 7.09e-04 N^2/Hz at 344.5 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.9e+01 | multisine over noise in B_tr >= [54.9 57.7 68] dB
+  Y -0.300 draw 1: std d [0.231 0.171 0.0207] N (int Phi_d: [0.231 0.169 0.0207]), rms d below 300 Hz [0.122 0.0929 0.0198] N, var err [0.0045 0.02 0.0023]
+C2  Y -0.300: band rms [3.348 3.703 1.098] nm, rel [-0.0066 0.0022 0.011] -> PASS | Phi_d peak X1 6.15e-04 N^2/Hz at 343.6 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [55.8 57.5 68] dB
+  Y -0.225 draw 1: std d [0.218 0.176 0.0208] N (int Phi_d: [0.217 0.176 0.0207]), rms d below 300 Hz [0.114 0.0967 0.0198] N, var err [0.0076 0.0035 0.0029]
+C2  Y -0.225: band rms [3.369 3.697 1.087] nm, rel [-0.0004 0.00048 0.0016] -> PASS | Phi_d peak X1 5.50e-04 N^2/Hz at 342.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [56.4 57.3 68] dB
+  Y -0.150 draw 1: std d [0.206 0.185 0.0209] N (int Phi_d: [0.205 0.185 0.0207]), rms d below 300 Hz [0.107 0.101 0.0198] N, var err [0.0038 0.0042 0.02]
+C2  Y -0.150: band rms [3.366 3.691 1.076] nm, rel [-0.0011 -0.0013 -0.0089] -> PASS | Phi_d peak X1 4.94e-04 N^2/Hz at 342.2 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [57 56.9 68] dB
+  Y -0.060 draw 1: std d [0.193 0.198 0.0199] N (int Phi_d: [0.192 0.196 0.0207]), rms d below 300 Hz [0.1 0.108 0.0198] N, var err [0.0077 0.027 0.082]
+C2  Y -0.060: band rms [3.386 3.731 1.073] nm, rel [0.0048 0.0097 -0.011] -> PASS | Phi_d peak X1 4.37e-04 N^2/Hz at 341.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [57.7 56.3 68] dB
+  Y -0.050 draw 1: std d [0.194 0.2 0.021] N (int Phi_d: [0.191 0.197 0.0207]), rms d below 300 Hz [0.0994 0.109 0.0198] N, var err [0.032 0.031 0.028]
+C2  Y -0.050: band rms [3.401 3.749 1.081] nm, rel [0.0093 0.014 -0.0047] -> PASS | Phi_d peak X1 4.31e-04 N^2/Hz at 341.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [57.7 56.3 68] dB
+  Y -0.040 draw 1: std d [0.192 0.197 0.0211] N (int Phi_d: [0.19 0.198 0.0207]), rms d below 300 Hz [0.0986 0.109 0.0198] N, var err [0.027 0.016 0.041]
+C2  Y -0.040: band rms [3.357 3.709 1.088] nm, rel [-0.0039 0.0037 0.0025] -> PASS | Phi_d peak X1 4.25e-04 N^2/Hz at 341.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [57.8 56.2 68] dB
+  Y -0.010 draw 1: std d [0.189 0.206 0.021] N (int Phi_d: [0.186 0.203 0.0207]), rms d below 300 Hz [0.0965 0.112 0.0198] N, var err [0.03 0.034 0.029]
+C2  Y -0.010: band rms [3.394 3.732 1.089] nm, rel [0.007 0.0099 0.0027] -> PASS | Phi_d peak X1 4.09e-04 N^2/Hz at 341.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58 56 68] dB
+  Y +0.000 draw 1: std d [0.186 0.203 0.0209] N (int Phi_d: [0.184 0.204 0.0207]), rms d below 300 Hz [0.0958 0.113 0.0198] N, var err [0.018 0.009 0.016]
+C2  Y +0.000: band rms [3.354 3.721 1.08] nm, rel [-0.0047 0.0068 -0.0055] -> PASS | Phi_d peak X1 4.04e-04 N^2/Hz at 341.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58.1 55.9 68] dB
+  Y +0.040 draw 1: std d [0.181 0.21 0.0216] N (int Phi_d: [0.18 0.21 0.0207]), rms d below 300 Hz [0.0932 0.116 0.0198] N, var err [0.016 0.002 0.089]
+C2  Y +0.040: band rms [3.348 3.693 1.092] nm, rel [-0.0066 -0.00081 0.0059] -> PASS | Phi_d peak X1 3.83e-04 N^2/Hz at 341.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58.3 55.6 68] dB
+  Y +0.050 draw 1: std d [0.173 0.207 0.0207] N (int Phi_d: [0.179 0.212 0.0207]), rms d below 300 Hz [0.0925 0.117 0.0198] N, var err [0.06 0.041 0.0022]
+C2  Y +0.050: band rms [3.378 3.737 1.092] nm, rel [0.0024 0.011 0.0054] -> PASS | Phi_d peak X1 3.78e-04 N^2/Hz at 341.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58.4 55.5 68] dB
+  Y +0.060 draw 1: std d [0.178 0.217 0.0207] N (int Phi_d: [0.177 0.213 0.0207]), rms d below 300 Hz [0.0919 0.118 0.0198] N, var err [0.013 0.036 0.0022]
+C2  Y +0.060: band rms [3.427 3.702 1.079] nm, rel [0.017 0.0016 -0.0063] -> PASS | Phi_d peak X1 3.74e-04 N^2/Hz at 341.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58.4 55.4 68] dB
+  Y +0.100 draw 1: std d [0.172 0.219 0.0214] N (int Phi_d: [0.173 0.22 0.0207]), rms d below 300 Hz [0.0895 0.122 0.0198] N, var err [0.0052 0.0037 0.067]
+C2  Y +0.100: band rms [3.393 3.72 1.081] nm, rel [0.0069 0.0067 -0.0046] -> PASS | Phi_d peak X1 3.56e-04 N^2/Hz at 341.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58.6 55.1 68] dB
+  Y +0.150 draw 1: std d [0.169 0.227 0.0206] N (int Phi_d: [0.168 0.228 0.0207]), rms d below 300 Hz [0.0868 0.128 0.0198] N, var err [0.014 0.016 0.015]
+C2  Y +0.150: band rms [3.387 3.69 1.087] nm, rel [0.0051 -0.0016 0.0011] -> PASS | Phi_d peak X1 3.35e-04 N^2/Hz at 341.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58.9 54.7 68] dB
+  Y +0.225 draw 1: std d [0.162 0.246 0.0199] N (int Phi_d: [0.161 0.243 0.0207]), rms d below 300 Hz [0.0832 0.137 0.0198] N, var err [0.01 0.022 0.074]
+C2  Y +0.225: band rms [3.368 3.68 1.089] nm, rel [-0.00064 -0.0043 0.0027] -> PASS | Phi_d peak X1 3.08e-04 N^2/Hz at 342.5 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.9e+01 | multisine over noise in B_tr >= [59.2 54 68] dB
+  Y +0.300 draw 1: std d [0.154 0.257 0.0199] N (int Phi_d: [0.155 0.259 0.0207]), rms d below 300 Hz [0.0805 0.147 0.0198] N, var err [0.02 0.019 0.079]
+C2  Y +0.300: band rms [3.382 3.667 1.079] nm, rel [0.0034 -0.0078 -0.0062] -> PASS | Phi_d peak X1 2.86e-04 N^2/Hz at 343.6 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 2.0e+01 | multisine over noise in B_tr >= [59.3 53.2 68] dB
+  Y +0.350 draw 1: std d [0.155 0.263 0.0208] N (int Phi_d: [0.153 0.271 0.0207]), rms d below 300 Hz [0.0794 0.155 0.0198] N, var err [0.025 0.057 0.012]
+C2  Y +0.350: band rms [3.371 3.714 1.092] nm, rel [0.00023 0.005 0.0059] -> PASS | Phi_d peak X1 2.74e-04 N^2/Hz at 344.4 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 2.0e+01 | multisine over noise in B_tr >= [59.4 52.7 68] dB
+C13 drawn force variance = int Phi_d df within 5 % -> FAIL
+C2  noise calibration, 17 Y_op values, 2 x 12 s each, tol 2 % -> PASS
+WATCHDOG SUMMARY exit=0 killed=False duration_s=228.3 samples=44 peak_tree_ws_mb=3,501 min_avail_ram_gb=2.07 min_C_free_gb=3.01 kill_reason=""

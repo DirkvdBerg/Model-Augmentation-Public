@@ -23,6 +23,19 @@ STAGE 1 -- reduced ten-combination block against the raw fourteen-scalar block
     d             0.10000000
   max abs difference to _combos_from_raw = 0.000e+00
 
+--- T8  constrained-coordinate sensitivity and inverse ---
+  d m_diff / d free_diff = -0.500000000 kg
+  expected m_diff_init   = -0.500000000 kg
+  inverse round trip seed 0: max abs 1.110e-16
+  inverse round trip seed 1: max abs 1.735e-16
+  inverse round trip seed 2: max abs 2.637e-16
+  inverse round trip seed 3: max abs 1.110e-16
+  batched (5, 10) map and inverse equal the row-wise ones
+  start x1.1: max rel |c(0) - c0| = 2.0e-16, d m_diff / d free_diff = -0.550000 kg
+  start x0.9: max rel |c(0) - c0| = 1.2e-16, d m_diff / d free_diff = -0.450000 kg
+  zero m_diff: refused (combo_init must contain 10 finite nonzero combinations)
+  m_diff beyond the bound: refused (initial m_diff lies outside the rho-contracted positive-definite domain)
+
 --- T2  the gauge section is an exact section ---
     nominal                          max REL (combos(section(v)) - v) = 0.000e+00
     displaced x1.3                   max REL (combos(section(v)) - v) = 2.220e-15
@@ -77,10 +90,14 @@ STAGE 1 -- reduced ten-combination block against the raw fourteen-scalar block
     mb unchanged, Jb:Jh = 1:1               0.0000e+00     0.000e+00   (relative combination difference 0.0e+00)
     mb = 1.0, Jb:Jh = 1:9                   0.0000e+00     0.000e+00   (relative combination difference 0.0e+00)
 
---- T6  admissibility over the scheduling range ---
-    nominal    min eig M(Y) =     3.7363 kg at Y = +0.006 m,  min abs d(Y) =   2.0625e+03 at Y = +0.003 m,  admissible = True
-    +20% all   min eig M(Y) =     4.5292 kg at Y = +0.003 m,  min abs d(Y) =   3.7581e+03 at Y = +0.003 m,  admissible = True
-    -20% all   min eig M(Y) =     3.0748 kg at Y = +0.003 m,  min abs d(Y) =   1.1319e+03 at Y = +0.003 m,  admissible = True
+--- T6  admissibility over the scheduling range and at the worst Y ---
+    nominal                  grid min eig  3.7363e+00 at Y = +0.006 m;  Y* =    +0.004 m: min eig  3.7363e+00, det  2.0625e+03
+    +20% all                 grid min eig  4.5287e+00 at Y = +0.006 m;  Y* =    +0.005 m: min eig  4.5287e+00, det  3.7577e+03
+    -20% all                 grid min eig  3.0750e+00 at Y = +0.003 m;  Y* =    +0.003 m: min eig  3.0750e+00, det  1.1320e+03
+    saturated m_diff +       grid min eig  6.8984e-02 at Y = +0.291 m;  Y* =    +0.292 m: min eig  6.8973e-02, det  4.1051e+01
+    saturated m_diff -       grid min eig  6.8984e-02 at Y = -0.291 m;  Y* =    -0.292 m: min eig  6.8973e-02, det  4.1051e+01
+    saturated, Y* far out    grid min eig  9.9401e+00 at Y = +0.300 m;  Y* =   +43.306 m: min eig  5.9718e-03, det  1.1771e+03
+    saturated, Y* far out -  grid min eig  9.9401e+00 at Y = -0.300 m;  Y* =   -43.306 m: min eig  5.9718e-03, det  1.1771e+03
 
 ==============================================================================
 STAGE 1 VERDICT: relative difference 0.000e+00 against a criterion of 1e-12 -- MET

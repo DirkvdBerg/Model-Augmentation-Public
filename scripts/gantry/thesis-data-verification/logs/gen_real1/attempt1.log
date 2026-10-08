@@ -1,0 +1,90 @@
+[wd] launch  out=logs/gen_real1
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('real:1'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+generate_thesis_data: 24 records selected, versions noisy + noise-free
+  removing interrupted write C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\Training\TR-S4_r2_part.mat
+
+=== 1/24  TR-S1_r1  [training, standstill Y -0.30, A_prod multisine] ===
+  skip: already on disk
+
+=== 2/24  TR-S2_r1  [training, standstill Y -0.15, A_prod multisine] ===
+  skip: already on disk
+
+=== 3/24  TR-S3_r1  [training, standstill Y +0.00, A_prod multisine] ===
+  skip: already on disk
+
+=== 4/24  TR-S4_r1  [training, standstill Y +0.15, A_prod multisine] ===
+  skip: already on disk
+
+=== 5/24  TR-S5_r1  [training, standstill Y +0.30, A_prod multisine] ===
+  skip: already on disk
+
+=== 6/24  TR-Y1_r1  [training, Y sweep 0 +- 0.30 at 0.20 Hz, A_prod] ===
+  skip: already on disk
+
+=== 7/24  TR-Y2_r1  [training, Y sweep 0 +- 0.30 at 0.50 Hz, A_prod] ===
+  skip: already on disk
+
+=== 8/24  TR-Y3_r1  [training, Y sweep 0 +- 0.30 at 0.75 Hz, A_prod] ===
+  skip: already on disk
+
+=== 9/24  TR-P1_r1  [training, S-curve moves, log strata, T3 36 ms, A_prod] ===
+  skip: already on disk
+
+=== 10/24  TR-P2_r1  [training, S-curve moves, log strata, T3 30 ms, A_prod] ===
+  skip: already on disk
+
+=== 11/24  TR-P3_r1  [training, S-curve moves, log strata, T3 12 ms, A_prod] ===
+  skip: already on disk
+
+=== 12/24  TR-P4_r1  [training, S-curve moves, log strata, T3 25 ms, A_prod] ===
+  skip: already on disk
+
+=== 13/24  TR-L1_r1  [training, Lissajous Y 0.30 @0.35 Hz, X 0.28 @0.85 Hz, A_prod] ===
+  skip: already on disk
+
+=== 14/24  TR-L2_r1  [training, Lissajous Y 0.25 @0.7 Hz, X 0.08 @1.5 Hz, X_anti 1 mm @0.8 Hz, A_prod] ===
+  skip: already on disk
+
+=== 15/24  TR-T1_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.00, 75 % max, dwell 0.30 s, no multisine] ===
+  skip: already on disk
+
+=== 16/24  TR-T2_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.00, 45 % max, dwell 0.45 s, no multisine] ===
+  skip: already on disk
+
+=== 17/24  TR-T3_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.06, 75 % max, dwell 0.60 s, no multisine] ===
+  skip: already on disk
+
+=== 18/24  TR-T4_r1  [training, ILC-shape sine shuttle, lattice Y_op -0.06, 45 % max, dwell 0.30 s, no multisine] ===
+  skip: already on disk
+
+=== 19/24  VA-S1_r1  [validation, standstill Y +0.10, A_prod] ===
+  r OK VA-S1_r1    : X1=[+0 +0] X2=[+0 +0] Y=[+100 +100] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.48 GB < 1.5 GB (tree 2,866 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [6.287 7.864 3.671] nm | stick [7.6 9.8 2.6] % | F peak [0.44 0.48 0.57], rms [0.26 0.26 0.34] of limit | 48.0 + 42.4 MB | 30.7 s
+
+=== 20/24  VA-Y1_r1  [validation, Y sweep +0.05 +- 0.25 at 0.5 Hz, A_prod] ===
+[wd] t=58s tree=2,826 MB cpu=8% availRAM=1.45 GB C:free=2.86 GB
+  r OK VA-Y1_r1    : X1=[+0 +0] X2=[+0 +0] Y=[-200 +300] mm | v 0.000/0.907 m/s a 0.00/7.40 m/s^2 j 0/49348 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [6.409 7.749 2.538] nm | stick [7.6 8.9 0.5] % | F peak [0.44 0.48 0.65], rms [0.26 0.26 0.36] of limit | 49.8 + 44.2 MB | 18.1 s
+
+=== 21/24  VA-P1_r1  [validation, S-curve moves, log strata, 50 %, T3 30 ms, new draw, A_prod] ===
+  r OK VA-P1_r1    : X1=[-274 +280] X2=[-274 +280] Y=[-212 +299] mm | v 1.000/1.000 m/s a 15.00/25.00 m/s^2 j 1000/1667 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [5.891 7.149 2.74] nm | stick [4.8 5.5 1.5] % | F peak [0.71 0.61 0.73], rms [0.31 0.32 0.37] of limit | 49.2 + 43.7 MB | 18.1 s
+
+=== 22/24  VA-L1_r1  [validation, Lissajous centre -0.05, Y 0.20 @0.7 Hz, X 0.08 @1.5 Hz, A_prod] ===
+  r OK VA-L1_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-250 +150] mm | v 0.754/0.880 m/s a 8.69/7.65 m/s^2 j 15791/31974 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [4.533 5.093 1.412] nm | stick [1.5 1.4 0.5] % | F peak [0.49 0.54 0.61], rms [0.29 0.31 0.36] of limit | 52.3 + 46.8 MB | 18.5 s
+
+=== 23/24  VA-T1_r1  [validation, ILC-shape, held-out lattice Y_op +0.04, 75 % max, no multisine] ===
+  r OK VA-T1_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-280 +280] mm | v 0.757/1.382 m/s a 22.50/37.50 m/s^2 j 1338/2035 m/s^3 (X_sym/Y)
+[wd] t=121s tree=2,891 MB cpu=11% availRAM=1.34 GB C:free=2.46 GB
+  scale pre 1.00 post 1.00 | noise adds rms [1612.865 1962.917 2764.044] nm | stick [80.6 80.6 78.1] % | F peak [0.38 0.4 0.28], rms [0.19 0.21 0.18] of limit | 38.9 + 32.3 MB | 14.1 s
+
+=== 24/24  VA-T2_r1  [validation, ILC-shape, held-out lattice Y_op -0.04, 45 % max, no multisine] ===
+  r OK VA-T2_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-280 +280] mm | v 0.586/1.070 m/s a 13.50/22.50 m/s^2 j 622/951 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [784.419 857.328 539.312] nm | stick [76.3 76.2 73] % | F peak [0.22 0.24 0.17], rms [0.13 0.14 0.12] of limit | 39.6 + 33.0 MB | 14.2 s
+MANIFEST noisy: 36 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 35 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@

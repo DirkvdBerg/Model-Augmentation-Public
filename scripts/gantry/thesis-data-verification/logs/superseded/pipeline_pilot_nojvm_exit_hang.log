@@ -1,0 +1,12 @@
+[pipeline 22:44:33] start; RETRIES=60 RETRY_WAIT=120
+[run] another MATLAB is running: smoke_nojvm waits 120 s
+[run] attempt 2, C: free 6.1G before smoke_nojvm
+[wd] launch  out=logs/smoke_nojvm
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+JVM running: 0
+WATCHDOG ALERT available RAM 1.25 GB < 1.5 GB (tree 2,117 MB)
+WATCHDOG ALERT available RAM 1.41 GB < 1.5 GB (tree 2,642 MB)
+sim 14.3 s, sum|q| 97278.827112667743, sum|da| 10.002701806325771, sum|u| 189683633.50999242
+WATCHDOG ALERT available RAM 1.48 GB < 1.5 GB (tree 2,728 MB)
+WATCHDOG ALERT available RAM 1.44 GB < 1.5 GB (tree 2,724 MB)
+WATCHDOG ALERT available RAM 1.50 GB < 1.5 GB (tree 2,725 MB)

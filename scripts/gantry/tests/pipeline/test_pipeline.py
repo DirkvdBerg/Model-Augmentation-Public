@@ -483,6 +483,15 @@ class TestResolveCheckpoint(unittest.TestCase):
         from gantry_dynamic.training import _assert_same_architecture
         _assert_same_architecture({'w': torch.zeros(8, 4)}, {'w': torch.zeros(8, 4)}, 'hfn')
 
+    def test_architecture_guard_refuses_old_reduced_coordinate(self):
+        from gantry_dynamic.training import _assert_same_architecture
+        target = {'free_params': torch.zeros(10), 'coordinate_version': torch.tensor(2)}
+        checkpoint = {'free_params': torch.zeros(10)}
+        with self.assertRaises(RuntimeError) as e:
+            _assert_same_architecture(target, checkpoint, 'hfn')
+        self.assertIn('coordinate version', str(e.exception))
+        self.assertIn('Pre-D-229', str(e.exception))
+
     @unittest.skipUnless(FIXTURE.exists(), 'whole-system fixture not present')
     def test_whole_system_format(self):
         from gantry_dynamic.training import resolve_checkpoint

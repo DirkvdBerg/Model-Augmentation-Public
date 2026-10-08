@@ -1,0 +1,6 @@
+[run] attempt 1, C: free 3.3G before cubic_gen
+[wd] launch  out=logs/cubic_gen
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\thesis-data-verification'); addpath('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); run('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\absorber-learning-diagnosis\cubic-absorber\gen_cubic.m'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+WATCHDOG ALERT available RAM 0.94 GB < 1.5 GB (tree 46 MB)
+WATCHDOG KILL available RAM 0.94 GB < 1 GB; killing tree of PID 39180 (3 processes, 46 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=2.2 samples=1 peak_tree_ws_mb=46 min_avail_ram_gb=0.94 min_C_free_gb=3.21 kill_reason="available RAM 0.94 GB < 1 GB"

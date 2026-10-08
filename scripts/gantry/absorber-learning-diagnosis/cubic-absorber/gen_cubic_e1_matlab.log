@@ -1,0 +1,11 @@
+ODE in use: C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\absorber-learning-diagnosis\cubic-absorber\gantrySystemExtendedTanh.m
+generate_thesis_data: 1 records selected, versions noisy
+
+=== 1/1  E1_r1  [test-E, standstill Y -0.39, A_prod] ===
+  r OK E1_r1       : X1=[+0 +0] X2=[+0 +0] Y=[-390 -390] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [NaN NaN NaN] nm | stick [10.5 7.7 2.2] % | F peak [0.41 0.47 0.46], rms [0.24 0.27 0.31] of limit | 53.1 + 0.0 MB | 117.9 s
+MANIFEST noisy: 13 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\absorber-learning-diagnosis\cubic-absorber\..\..\..\..\Thesis-writeup\Data\Cubic-absorber-test\Coulomb-tanh-and-MSD\MANIFEST.csv
+
+generate_thesis_data: done
+GEN_CUBIC DONE
+@@CUBIC_DONE@@

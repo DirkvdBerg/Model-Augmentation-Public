@@ -1,0 +1,4 @@
+time,file,version,split,Y_op,K_gain,excitation,scale_pre,scale_post,sim_s,MB,noise_added_nm_X1,noise_added_nm_X2,noise_added_nm_Y,stick_X1,stick_X2,stick_Y,Fpeak_frac_max,Frms_frac_max,plumbing_N
+2026-09-28 20:20:46,TR-S3_r1,noisy+noise-free,Training,0.0000,1.00,multisine,1.00,1.00,73.4,103.8,10.3622,10.8094,6.5636,6.67,7.26,2.16,0.564,0.341,3.34e-10
+2026-09-28 20:21:54,TR-P3_r1,noisy+noise-free,Training,0.0000,1.00,multisine,1.00,1.00,67.4,102.2,10.3561,10.8894,6.5693,4.27,5.25,1.45,0.799,0.432,1.36e-08
+2026-09-28 20:22:59,TR-T1_r1,noisy+noise-free,Training,0.0000,1.00,none,1.00,1.00,64.6,82.0,9.9604,10.5017,6.4118,74.67,74.47,71.81,0.396,0.228,1.38e-08

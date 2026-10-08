@@ -1,0 +1,75 @@
+Ts 0.020 s
+truth 3-DOF (linear part):      1.38 Hz z0.022 |z|0.996  3.56 Hz z0.056 |z|0.975  5.79 Hz z0.091 |z|0.936
+baseline 2-DOF (ideal      ):   1.50 Hz z0.024 |z|0.996  3.77 Hz z0.059 |z|0.972
+baseline 2-DOF (approximate):   1.46 Hz z0.022 |z|0.996  3.67 Hz z0.055 |z|0.975
+
+ideal SNR20 dynamic_parallel_e3000 (nx 6): complex pairs per point {np.int64(2): np.int64(139), np.int64(3): np.int64(161)}
+    0.5- 2.5 Hz: 300 pts, median f 1.40 Hz, zeta 0.020 (p10-p90 0.017 to 0.023), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.56 Hz, zeta 0.056 (p10-p90 0.052 to 0.060), |z| 0.975
+   mean-Jacobian modes: 1.41 Hz z0.020 |z|0.996  3.56 Hz z0.056 |z|0.975  34.57 Hz z0.771 |z|0.035
+
+ideal SNR20 linear_dynamic_parallel_e3000 (nx 6): complex pairs per point {np.int64(2): np.int64(300)}
+    0.5- 2.5 Hz: 300 pts, median f 1.40 Hz, zeta 0.022 (p10-p90 0.022 to 0.022), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.56 Hz, zeta 0.057 (p10-p90 0.057 to 0.057), |z| 0.975
+   mean-Jacobian modes: 1.40 Hz z0.022 |z|0.996  3.56 Hz z0.057 |z|0.975
+
+ideal SNR30 dynamic_parallel_e1000 (nx 6): complex pairs per point {np.int64(2): np.int64(300)}
+    0.5- 2.5 Hz: 300 pts, median f 1.40 Hz, zeta 0.022 (p10-p90 0.021 to 0.024), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.57 Hz, zeta 0.057 (p10-p90 0.055 to 0.059), |z| 0.975
+   mean-Jacobian modes: 1.41 Hz z0.022 |z|0.996  3.57 Hz z0.057 |z|0.975
+
+ideal SNR30 dynamic_parallel_e3000 (nx 6): complex pairs per point {np.int64(2): np.int64(300)}
+    0.5- 2.5 Hz: 300 pts, median f 1.39 Hz, zeta 0.022 (p10-p90 0.018 to 0.026), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.57 Hz, zeta 0.057 (p10-p90 0.055 to 0.059), |z| 0.975
+   mean-Jacobian modes: 1.40 Hz z0.022 |z|0.996  3.57 Hz z0.057 |z|0.975
+
+ideal SNR30 linear_dynamic_parallel_e1000 (nx 6): complex pairs per point {np.int64(2): np.int64(300)}
+    0.5- 2.5 Hz: 300 pts, median f 1.40 Hz, zeta 0.022 (p10-p90 0.022 to 0.022), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.57 Hz, zeta 0.057 (p10-p90 0.057 to 0.057), |z| 0.975
+   mean-Jacobian modes: 1.40 Hz z0.022 |z|0.996  3.57 Hz z0.057 |z|0.975
+
+ideal SNR60 dynamic_parallel_e3000 (nx 6): complex pairs per point {np.int64(3): np.int64(300)}
+    0.5- 2.5 Hz: 300 pts, median f 1.39 Hz, zeta 0.022 (p10-p90 0.021 to 0.024), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.56 Hz, zeta 0.057 (p10-p90 0.056 to 0.058), |z| 0.975
+   mean-Jacobian modes: 1.40 Hz z0.022 |z|0.996  3.57 Hz z0.057 |z|0.975  15.82 Hz z0.319 |z|0.531
+
+ideal SNR60 linear_dynamic_parallel_e3000 (nx 6): complex pairs per point {np.int64(2): np.int64(300)}
+    0.5- 2.5 Hz: 300 pts, median f 1.40 Hz, zeta 0.022 (p10-p90 0.022 to 0.022), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.57 Hz, zeta 0.057 (p10-p90 0.057 to 0.057), |z| 0.975
+   mean-Jacobian modes: 1.40 Hz z0.022 |z|0.996  3.57 Hz z0.057 |z|0.975
+
+approximate SNR20 dynamic_parallel_e3000 (nx 6): complex pairs per point {np.int64(2): np.int64(101), np.int64(3): np.int64(199)}
+    0.5- 2.5 Hz: 300 pts, median f 1.41 Hz, zeta 0.022 (p10-p90 0.018 to 0.025), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.57 Hz, zeta 0.057 (p10-p90 0.052 to 0.061), |z| 0.975
+   mean-Jacobian modes: 1.41 Hz z0.022 |z|0.996  3.58 Hz z0.057 |z|0.974  24.91 Hz z0.741 |z|0.098
+
+approximate SNR20 linear_dynamic_parallel_e3000 (nx 6): complex pairs per point {np.int64(3): np.int64(300)}
+    0.5- 2.5 Hz: 300 pts, median f 1.40 Hz, zeta 0.022 (p10-p90 0.022 to 0.022), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.58 Hz, zeta 0.056 (p10-p90 0.056 to 0.056), |z| 0.975
+    4.7-12.5 Hz: 300 pts, median f 5.92 Hz, zeta 0.100 (p10-p90 0.100 to 0.100), |z| 0.928
+   mean-Jacobian modes: 1.40 Hz z0.022 |z|0.996  3.58 Hz z0.056 |z|0.975  5.92 Hz z0.100 |z|0.928
+
+approximate SNR30 dynamic_parallel_e1000 (nx 6): complex pairs per point {np.int64(3): np.int64(300)}
+    0.5- 2.5 Hz: 300 pts, median f 1.41 Hz, zeta 0.020 (p10-p90 0.013 to 0.025), |z| 0.997
+    2.5- 4.7 Hz: 300 pts, median f 3.58 Hz, zeta 0.055 (p10-p90 0.048 to 0.059), |z| 0.976
+   mean-Jacobian modes: 1.41 Hz z0.019 |z|0.997  3.59 Hz z0.054 |z|0.976  22.31 Hz z0.874 |z|0.086
+
+approximate SNR30 dynamic_parallel_e3000 (nx 6): complex pairs per point {np.int64(2): np.int64(300)}
+    0.5- 2.5 Hz: 300 pts, median f 1.39 Hz, zeta 0.022 (p10-p90 0.019 to 0.026), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.56 Hz, zeta 0.055 (p10-p90 0.052 to 0.059), |z| 0.976
+   mean-Jacobian modes: 1.40 Hz z0.022 |z|0.996  3.56 Hz z0.056 |z|0.975
+
+approximate SNR30 linear_dynamic_parallel_e1000 (nx 6): complex pairs per point {np.int64(2): np.int64(300)}
+    0.5- 2.5 Hz: 300 pts, median f 1.40 Hz, zeta 0.021 (p10-p90 0.021 to 0.021), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.56 Hz, zeta 0.057 (p10-p90 0.057 to 0.057), |z| 0.975
+   mean-Jacobian modes: 1.40 Hz z0.021 |z|0.996  3.56 Hz z0.057 |z|0.975
+
+approximate SNR60 dynamic_parallel_e3000 (nx 6): complex pairs per point {np.int64(2): np.int64(49), np.int64(3): np.int64(251)}
+    0.5- 2.5 Hz: 300 pts, median f 1.39 Hz, zeta 0.022 (p10-p90 0.019 to 0.023), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.56 Hz, zeta 0.057 (p10-p90 0.052 to 0.062), |z| 0.975
+   mean-Jacobian modes: 1.40 Hz z0.022 |z|0.996  3.56 Hz z0.058 |z|0.975  17.59 Hz z0.897 |z|0.138
+
+approximate SNR60 linear_dynamic_parallel_e3000 (nx 6): complex pairs per point {np.int64(2): np.int64(300)}
+    0.5- 2.5 Hz: 300 pts, median f 1.40 Hz, zeta 0.022 (p10-p90 0.022 to 0.022), |z| 0.996
+    2.5- 4.7 Hz: 300 pts, median f 3.57 Hz, zeta 0.057 (p10-p90 0.057 to 0.057), |z| 0.975
+   mean-Jacobian modes: 1.40 Hz z0.022 |z|0.996  3.57 Hz z0.057 |z|0.975

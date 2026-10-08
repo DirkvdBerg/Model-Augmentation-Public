@@ -1,0 +1,28 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Cubic-absorber-test\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.306e-05 m  vdelta_a std=6.446e-02 m/s
+Loaded 9 train, 3 val, 5 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-Y1_r1.mat)
+  T5: 47960 samples  (Training/TR-Y2_r1.mat)
+  T6: 47960 samples  (Training/TR-Y3_r1.mat)
+  T7: 47960 samples  (Training/TR-P1_r1.mat)
+  T8: 47960 samples  (Training/TR-P2_r1.mat)
+  T9: 47960 samples  (Training/TR-P3_r1.mat)
+
+######## D4 rollout consistency of x_a (validation windows: 256)
+  ps2_q0.pt      j=1 0.200 | j=10 0.809 | j=30 0.956 | j=100 1.358
+  ps2_k0.pt      j=1 0.989 | j=10 1.086 | j=30 1.105 | j=100 1.122
+  ps2_q2.pt      j=1 0.176 | j=10 0.619 | j=30 0.842 | j=100 0.820
+  ps2_k2.pt      j=1 1.072 | j=10 1.025 | j=30 1.045 | j=100 1.121
+  ps2_q3.pt      j=1 0.138 | j=10 0.711 | j=30 1.063 | j=100 0.925
+  ps2_k3.pt      j=1 0.972 | j=10 0.985 | j=30 0.993 | j=100 1.022
+=== EXIT 0 ===

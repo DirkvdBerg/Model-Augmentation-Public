@@ -1,0 +1,68 @@
+=== RUN --version noisy --seed 1 --epochs 100 --target e --in64 --dr --lr 1e-2 --its-per-val 399 --batch 256 --stride 25 --timeout 1500 --na-right 1 --out outputs\e\e7_noisy_s1 ===
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[B] 18 train, 6 val records; target e, float64; mean-model per-axis RMS [0.053  0.053  0.1455] m; y_hat = r [1.9176e-05 1.9415e-05 3.0809e-05] m
+Initilizing the model and optimizer
+Size of the training array =  1.3 GB!
+Consider using online_construct=True (in loss_kwargs) or let make_training_data return a Dataset to reduce data-usage
+N_training_samples = 34236, batch_size = 256, N_batch_updates_per_epoch = 133
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-cl-trainable\train_bb_clmap.py", line 161, in <module>
+    main()
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-cl-trainable\train_bb_clmap.py", line 131, in main
+    model.fit(tr, val_sys_data=va, epochs=args.epochs, batch_size=batch,
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\fit_systems\fit_system.py", line 367, in fit
+    validation(train_loss=float('nan'), time_elapsed_total=extra_t) #also sets current model to cuda
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\fit_systems\fit_system.py", line 296, in validation
+    Loss_val = self.cal_validation_error(val_sys_data, validation_measure=validation_measure)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\fit_systems\fit_system.py", line 220, in cal_validation_error
+    val_sys_data_sim = self.apply_experiment(val_sys_data)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\systems\system.py", line 140, in apply_experiment
+    return System_data_list([self.apply_experiment(sd, save_state=save_state) for sd in sys_data])
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\systems\system.py", line 140, in <listcomp>
+    return System_data_list([self.apply_experiment(sd, save_state=save_state) for sd in sys_data])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\systems\system.py", line 151, in apply_experiment
+    k0 = self.init_state(sys_data_norm)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\systems\system.py", line 234, in init_state
+    k0 = self.init_state_multi(sys_data,nf=nf)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\fit_systems\encoders.py", line 291, in init_state_multi
+    self.state = self.encoder(uhist,yhist)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\blackbox-cl-trainable\bbcl\jan_model.py", line 25, in forward
+    return self.net(torch.cat([upast.reshape(upast.shape[0], -1),
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\utils\torch_nets.py", line 39, in forward
+    return self.net_lin(x) + self.net_non_lin(x)
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\nn\modules\linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: mat1 and mat2 shapes cannot be multiplied (1x348 and 360x16)
+=== RUN DONE (exit 1) ===

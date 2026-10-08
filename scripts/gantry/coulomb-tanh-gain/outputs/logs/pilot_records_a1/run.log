@@ -1,0 +1,9 @@
+[wd] launch  out=outputs/logs/pilot_records_a1
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); addpath('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\thesis-data-verification\checks'); check_records({'TR-T1_r1','TR-S3_r1','VA-P1_r1'}, 'C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain\outputs\pilot_data'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+file         C14   C3    C4b   C8    | noise adds rms all f / above corner [nm]  | measured [9.85 10.4 6.34] nm | MB noisy/free
+TR-T1_r1     PASS  PASS  PASS  PASS  | [9.96 10.5 6.41]     / [9.93 10.47 6.4]     |                   | 46.6 / 35.4 
+TR-S3_r1     PASS  PASS  PASS  PASS  | [10.36 10.81 6.56]   / [10.32 10.77 6.55]   |                   | 54.7 / 49.1 
+VA-P1_r1     PASS  PASS  PASS  PASS  | [10.41 11 6.57]      / [10.36 10.96 6.57]   |                   | 54.0 / 48.4 
+C3 / C4b / C8 / C14 on 3 saved records -> PASS
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=32.9 samples=7 peak_tree_ws_mb=938 min_avail_ram_gb=3.75 min_C_free_gb=14.29 kill_reason=""

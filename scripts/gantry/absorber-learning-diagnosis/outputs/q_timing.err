@@ -1,0 +1,49 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\scipy\io\matlab\_mio.py:236: MatReadWarning: Duplicate variable name "None" in stream - replacing previous with new
+Considerscipy.io.matlab.varmats_from_mat to split file into single variable files
+  matfile_dict = MR.get_variables(variable_names)
+Traceback (most recent call last):
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\absorber-learning-diagnosis\q_msd_linear_vs_tanh.py", line 116, in <module>
+    main(a[1], int(a[2]), int(a[3]), int(a[4]), int(a[5]) if len(a) > 5 else 20, a[6] if len(a) > 6 else 'approximate')
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\absorber-learning-diagnosis\q_msd_linear_vs_tanh.py", line 101, in main
+    fs.fit(train_sys_data=train, val_sys_data=val, batch_size=2000, epochs=n, auto_fit_norm=True,
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\model_augmentation\fit_systems\interconnect.py", line 1033, in fit
+    training_loss = self.optimizer.step(closure).item()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\optim\optimizer.py", line 487, in wrapper
+    out = func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\optim\optimizer.py", line 91, in _use_grad
+    ret = func(self, *args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\optim\adam.py", line 202, in step
+    loss = closure()
+           ^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\model_augmentation\fit_systems\interconnect.py", line 1020, in closure
+    Loss = self.loss(*train_batch[:4], **batch_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\model_augmentation\fit_systems\interconnect.py", line 703, in loss
+    y_pred, _ = self.simulate(x, ufuture, yfuture, **Loss_kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\model_augmentation\fit_systems\interconnect.py", line 695, in simulate
+    yhat, x = hfn(x, u) # type: ignore
+              ^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\model_augmentation\fit_systems\interconnect.py", line 157, in forward
+    input_signals[output_signal_ix] = self.connected_blocks[_bi].forward(output_signals[output_signal_ix]) # offset by two for connected blocks since the progressed state and output are not registered as blocks
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\model_augmentation\fit_systems\blocks.py", line 261, in forward
+    w = self.nonlinear_function(z) if mats is None else self.nonlinear_function(z, mats)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\model_augmentation\fit_systems\blocks.py", line 524, in nonlinear_function
+    A = torch.stack((A1, A2, A3, A4))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cpu and cuda:0! (when checking argument for argument tensors in method wrapper_CUDA_cat)

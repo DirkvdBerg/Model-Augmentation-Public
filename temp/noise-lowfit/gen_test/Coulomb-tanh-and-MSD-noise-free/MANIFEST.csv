@@ -1,0 +1,2 @@
+file,version,folder,record,set,block,realisation,twin,twin_of,class,Y_op,controller,excitation,A_sym_N,A_anti_Nm,A_Y_N,scale,seed_ms,seed_sp,noise_seed,pair_file,MB,description
+TR-T1_r1,noise-free,Training,TR-T1,train,training,1,0,,telica,0.0000,K1,none,0.0000,0.0000,0.0000,1.00,4052173881,42131918,NaN,Coulomb-tanh-and-MSD-lowpass-noise/Training/TR-T1_r1.mat,35.4,"ILC-shape sine shuttle, lattice Y_op +0.00, 75 % max, dwell 0.30 s, no multisine"

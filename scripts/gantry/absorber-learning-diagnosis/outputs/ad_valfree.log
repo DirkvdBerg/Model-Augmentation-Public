@@ -1,0 +1,37 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## AD1 free-run validation (sim-RMS, metres), 6 val records
+  [u_u1ctl600.pt, 600 updates] on 1.1450e-05 (per record 1.518e-05 1.608e-05 1.586e-05 1.627e-05 3.262e-06 2.058e-06) | off 1.6683e-05 (per record 2.330e-05 2.402e-05 2.376e-05 2.403e-05 3.123e-06 1.874e-06)
+  [f2_e5.pt, 900 updates] on 3.8042e-06 (per record 4.663e-06 4.909e-06 5.374e-06 5.210e-06 1.597e-06 1.073e-06) | off 1.6693e-05 (per record 2.331e-05 2.404e-05 2.377e-05 2.404e-05 3.117e-06 1.870e-06)
+  [f2_e6.pt, 900 updates] on 9.0539e-06 (per record 8.004e-06 8.636e-06 9.024e-06 9.221e-06 9.628e-06 9.810e-06) | off 1.6674e-05 (per record 2.329e-05 2.402e-05 2.375e-05 2.402e-05 3.103e-06 1.863e-06)
+  [f2_e7.pt, 600 updates] on 3.6194e-06 (per record 4.453e-06 4.594e-06 5.206e-06 4.919e-06 1.502e-06 1.042e-06) | off 1.6671e-05 (per record 2.329e-05 2.402e-05 2.375e-05 2.402e-05 3.088e-06 1.855e-06)
+  [f2_e8.pt, 900 updates] on 6.0273e-06 (per record 6.530e-06 7.267e-06 8.072e-06 7.987e-06 3.301e-06 3.008e-06) | off 1.6686e-05 (per record 2.330e-05 2.403e-05 2.376e-05 2.403e-05 3.116e-06 1.869e-06)
+  [f2_e9.pt, 1100 updates] on 3.7904e-06 (per record 4.642e-06 4.823e-06 5.426e-06 5.317e-06 1.490e-06 1.044e-06) | off 1.6657e-05 (per record 2.328e-05 2.400e-05 2.373e-05 2.401e-05 3.080e-06 1.850e-06)
+=== EXIT 0 ===

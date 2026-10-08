@@ -77,8 +77,7 @@ class linear_mapping(nn.Module):
 
     def forward(self,x):
             return self.net_lin(x)
-        
-@added
+
 class zero_init_linear_mapping(nn.Module):
     def __init__(self, n_in=6, n_out=5, n_nodes_per_layer=64, n_hidden_layers=2, activation=nn.Tanh):
         #linear + non-linear part 
@@ -115,6 +114,93 @@ class zero_init_feed_forward_nn(nn.Module): #a simple MLP
 
 
     def forward(self,X):
+        return self.net(X)
+
+
+@added
+class paper_resnet(nn.Module):
+    """Equation (15) ResNet with S-DP-aware bypass initialization."""
+
+    def __init__(
+        self,
+        n_in=6,
+        n_out=5,
+        n_nodes_per_layer=64,
+        n_hidden_layers=2,
+        activation=nn.Tanh,
+        output_state_indices=(),
+        nx_phys=0,
+    ):
+        super(paper_resnet, self).__init__()
+        self.n_in = n_in
+        self.n_out = n_out
+        if len(output_state_indices) != n_out:
+            raise ValueError(
+                'output_state_indices must contain one state destination per output row: '
+                'got %d indices for %d rows' % (len(output_state_indices), n_out)
+            )
+
+        seq = [nn.Linear(n_in, n_nodes_per_layer), activation()]
+        assert n_hidden_layers > 0
+        for _ in range(n_hidden_layers - 1):
+            seq.append(nn.Linear(n_nodes_per_layer, n_nodes_per_layer))
+            seq.append(activation())
+        final_layer = nn.Linear(n_nodes_per_layer, n_out)
+        seq.append(final_layer)
+        self.net = nn.Sequential(*seq)
+        nn.init.constant_(final_layer.bias, val=0.0)
+        nn.init.constant_(final_layer.weight, val=0.0)
+
+        # Eq. (15) supplies the bias-free bypass. Physical rows remain zero for
+        # baseline equivalence. The live rows use nn.Linear's fan-in scale as an
+        # explicit numerical departure from the paper's U(-1,1), not a stability
+        # constraint or a change to the Xavier encoder initialization.
+        self.W_a = nn.Parameter(torch.zeros(n_out, n_in))
+        with torch.no_grad():
+            for output_row, state_index in enumerate(output_state_indices):
+                if int(state_index) >= int(nx_phys):
+                    nn.init.kaiming_uniform_(self.W_a[output_row:output_row + 1],
+                                            a=5 ** 0.5)
+
+    def forward(self, X):
+        return self.net(X) + torch.nn.functional.linear(X, self.W_a)
+
+
+@added
+class live_g_feed_forward_nn(nn.Module):
+    """zero_init_feed_forward_nn, except the added-state rows of the final weight stay live.
+
+    Same layers and the same random draws as the zero-init MLP (D-240): the added-state rows
+    keep nn.Linear's own draw, while the physical rows and all final biases are zeroed. No
+    extra draw, so at one seed every other parameter equals the zero-init model's. No bypass.
+    """
+
+    def __init__(self, n_in=6, n_out=5, n_nodes_per_layer=64,
+                 n_hidden_layers=2, activation=nn.Tanh,
+                 output_state_indices=(), nx_phys=0):
+        super(live_g_feed_forward_nn, self).__init__()
+        if len(output_state_indices) != n_out:
+            raise ValueError('output_state_indices must contain one destination per output row')
+        self.n_in = n_in
+        self.n_out = n_out
+        seq = [nn.Linear(n_in, n_nodes_per_layer), activation()]
+        assert n_hidden_layers > 0
+        for i in range(n_hidden_layers - 1):
+            seq.append(nn.Linear(n_nodes_per_layer, n_nodes_per_layer))
+            seq.append(activation())
+
+        final_layer = nn.Linear(n_nodes_per_layer, n_out)
+        seq.append(final_layer)
+
+        self.net = nn.Sequential(*seq)
+
+        nn.init.constant_(final_layer.bias, val=0.0)
+        with torch.no_grad():
+            for output_row, state_index in enumerate(output_state_indices):
+                if int(state_index) < int(nx_phys):
+                    final_layer.weight[output_row].zero_()
+
+    def forward(self, X):
         return self.net(X)
     
 @added

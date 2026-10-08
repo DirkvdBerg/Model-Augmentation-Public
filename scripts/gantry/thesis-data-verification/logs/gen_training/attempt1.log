@@ -1,0 +1,97 @@
+[wd] launch  out=logs/gen_training
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('training'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+generate_thesis_data: 54 records selected, versions noisy + noise-free
+
+=== 1/54  TR-S1_r1  [training, standstill Y -0.30, A_prod multisine] ===
+  skip: already on disk
+
+=== 2/54  TR-S2_r1  [training, standstill Y -0.15, A_prod multisine] ===
+  r OK TR-S2_r1    : X1=[+0 +0] X2=[+0 +0] Y=[-150 -150] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.46 GB < 1.5 GB (tree 2,767 MB)
+[wd] t=59s tree=2,904 MB cpu=9% availRAM=1.36 GB C:free=4.88 GB
+  scale pre 1.00 post 1.00 | noise adds rms [6.075 7.791 3.997] nm | stick [8.3 7.1 2.3] % | F peak [0.39 0.44 0.56], rms [0.25 0.27 0.34] of limit | 47.9 + 42.4 MB | 32.9 s
+
+=== 3/54  TR-S3_r1  [training, standstill Y +0.00, A_prod multisine] ===
+  r OK TR-S3_r1    : X1=[+0 +0] X2=[+0 +0] Y=[+0 +0] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [6.784 7.418 2.915] nm | stick [7.5 8 2.3] % | F peak [0.49 0.44 0.56], rms [0.26 0.26 0.34] of limit | 49.1 + 43.6 MB | 18.1 s
+
+=== 4/54  TR-S4_r1  [training, standstill Y +0.15, A_prod multisine] ===
+  r OK TR-S4_r1    : X1=[+0 +0] X2=[+0 +0] Y=[+150 +150] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [6.785 8.886 3.221] nm | stick [7.5 9.7 2.3] % | F peak [0.43 0.44 0.58], rms [0.27 0.25 0.34] of limit | 47.9 + 42.4 MB | 17.8 s
+
+=== 5/54  TR-S5_r1  [training, standstill Y +0.30, A_prod multisine] ===
+  r OK TR-S5_r1    : X1=[+0 +0] X2=[+0 +0] Y=[+300 +300] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [7.872 8.834 2.804] nm | stick [8 12.1 2.2] % | F peak [0.43 0.37 0.53], rms [0.27 0.24 0.34] of limit | 47.9 + 42.4 MB | 18.0 s
+
+=== 6/54  TR-Y1_r1  [training, Y sweep 0 +- 0.30 at 0.20 Hz, A_prod] ===
+  skip: already on disk
+
+=== 7/54  TR-Y2_r1  [training, Y sweep 0 +- 0.30 at 0.50 Hz, A_prod] ===
+  r OK TR-Y2_r1    : X1=[+0 +0] X2=[+0 +0] Y=[-300 +300] mm | v 0.000/1.088 m/s a 0.00/8.88 m/s^2 j 0/59218 m/s^3 (X_sym/Y)
+[wd] t=121s tree=2,798 MB cpu=11% availRAM=1.60 GB C:free=4.45 GB
+  scale pre 1.00 post 1.00 | noise adds rms [6.766 8.138 2.21] nm | stick [8.2 9.5 0.4] % | F peak [0.46 0.47 0.61], rms [0.26 0.26 0.36] of limit | 50.0 + 44.4 MB | 17.5 s
+
+=== 8/54  TR-Y3_r1  [training, Y sweep 0 +- 0.30 at 0.75 Hz, A_prod] ===
+  r OK TR-Y3_r1    : X1=[+0 +0] X2=[+0 +0] Y=[-300 +300] mm | v 0.000/1.414 m/s a 0.00/12.20 m/s^2 j 0/41945 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [7.141 7.842 1.712] nm | stick [8.6 8.7 0.4] % | F peak [0.44 0.55 0.67], rms [0.27 0.25 0.36] of limit | 50.0 + 44.5 MB | 16.9 s
+
+=== 9/54  TR-P1_r1  [training, S-curve moves, log strata, T3 36 ms, A_prod] ===
+  r OK TR-P1_r1    : X1=[-225 +277] X2=[-225 +277] Y=[-264 +292] mm | v 0.500/0.500 m/s a 7.50/12.50 m/s^2 j 417/694 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.48 GB < 1.5 GB (tree 2,873 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [5.791 6.223 2.728] nm | stick [4.1 5.7 1.4] % | F peak [0.49 0.53 0.65], rms [0.28 0.28 0.35] of limit | 49.5 + 44.0 MB | 18.0 s
+
+=== 10/54  TR-P2_r1  [training, S-curve moves, log strata, T3 30 ms, A_prod] ===
+  r OK TR-P2_r1    : X1=[-280 +203] X2=[-280 +203] Y=[-296 +296] mm | v 1.000/1.000 m/s a 15.00/25.00 m/s^2 j 1000/1666 m/s^3 (X_sym/Y)
+[wd] t=185s tree=2,832 MB cpu=9% availRAM=1.48 GB C:free=4.06 GB
+  scale pre 1.00 post 1.00 | noise adds rms [5.834 6.939 2.392] nm | stick [5.1 5.4 1.3] % | F peak [0.65 0.7 0.71], rms [0.31 0.31 0.37] of limit | 49.2 + 43.7 MB | 18.1 s
+
+=== 11/54  TR-P3_r1  [training, S-curve moves, log strata, T3 12 ms, A_prod] ===
+  skip: already on disk
+
+=== 12/54  TR-P4_r1  [training, S-curve moves, log strata, T3 25 ms, A_prod] ===
+  r OK TR-P4_r1    : X1=[-141 +140] X2=[-141 +140] Y=[-286 +300] mm | v 1.000/1.000 m/s a 14.99/25.00 m/s^2 j 1199/1999 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [5.94 6.482 2.018] nm | stick [4.8 5.9 1.5] % | F peak [0.6 0.62 0.67], rms [0.31 0.33 0.37] of limit | 49.3 + 43.7 MB | 17.5 s
+
+=== 13/54  TR-L1_r1  [training, Lissajous Y 0.30 @0.35 Hz, X 0.28 @0.85 Hz, A_prod] ===
+  r OK TR-L1_r1    : X1=[-280 +280] X2=[-280 +280] Y=[-300 +300] mm | v 1.495/0.914 m/s a 12.84/6.57 m/s^2 j 25196/52762 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [4.333 4.812 1.655] nm | stick [1.2 1.4 0.5] % | F peak [0.54 0.55 0.66], rms [0.31 0.31 0.36] of limit | 52.1 + 46.6 MB | 17.2 s
+
+=== 14/54  TR-L2_r1  [training, Lissajous Y 0.25 @0.7 Hz, X 0.08 @1.5 Hz, X_anti 1 mm @0.8 Hz, A_prod] ===
+  skip: already on disk
+
+=== 15/54  TR-T1_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.00, 75 % max, dwell 0.30 s, no multisine] ===
+  skip: already on disk
+
+=== 16/54  TR-T2_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.00, 45 % max, dwell 0.45 s, no multisine] ===
+  r OK TR-T2_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-240 +240] mm | v 0.586/1.070 m/s a 13.50/22.50 m/s^2 j 622/951 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [2267.544 2368.397 3231.069] nm | stick [81 81 78.4] % | F peak [0.22 0.24 0.17], rms [0.12 0.12 0.11] of limit | 39.6 + 32.6 MB | 13.7 s
+
+=== 17/54  TR-T3_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.06, 75 % max, dwell 0.60 s, no multisine] ===
+  r OK TR-T3_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-260 +300] mm | v 0.757/1.382 m/s a 22.50/37.50 m/s^2 j 1338/2035 m/s^3 (X_sym/Y)
+[wd] t=247s tree=2,828 MB cpu=9% availRAM=1.53 GB C:free=3.59 GB
+  scale pre 1.00 post 1.00 | noise adds rms [684.223 801.809 2959.327] nm | stick [86.9 86.6 85] % | F peak [0.32 0.39 0.28], rms [0.15 0.17 0.15] of limit | 38.3 + 31.8 MB | 13.7 s
+
+=== 18/54  TR-T4_r1  [training, ILC-shape sine shuttle, lattice Y_op -0.06, 45 % max, dwell 0.30 s, no multisine] ===
+  r OK TR-T4_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-300 +260] mm | v 0.586/1.070 m/s a 13.50/22.50 m/s^2 j 622/951 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.46 GB < 1.5 GB (tree 2,874 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [1165.72 1577.748 486.429] nm | stick [73.7 73.9 70.4] % | F peak [0.23 0.24 0.17], rms [0.14 0.14 0.13] of limit | 39.5 + 33.0 MB | 13.8 s
+
+=== 19/54  TR-S1_r2  [training, standstill Y -0.30, A_prod multisine] ===
+  r OK TR-S1_r2    : X1=[+0 +0] X2=[+0 +0] Y=[-300 -300] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.44 GB < 1.5 GB (tree 2,833 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [9.574 8.128 3.216] nm | stick [10.9 7.6 2.6] % | F peak [0.43 0.43 0.55], rms [0.25 0.27 0.34] of limit | 47.9 + 42.4 MB | 20.7 s
+
+=== 20/54  TR-S2_r2  [training, standstill Y -0.15, A_prod multisine] ===
+  r OK TR-S2_r2    : X1=[+0 +0] X2=[+0 +0] Y=[-150 -150] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [6.833 7.388 2.326] nm | stick [9.1 8.8 1.9] % | F peak [0.45 0.47 0.55], rms [0.26 0.26 0.34] of limit | 47.9 + 42.4 MB | 19.3 s
+
+=== 21/54  TR-S3_r2  [training, standstill Y +0.00, A_prod multisine] ===
+WATCHDOG ALERT available RAM 1.46 GB < 1.5 GB (tree 2,875 MB)
+[wd] t=310s tree=2,875 MB cpu=9% availRAM=1.46 GB C:free=3.16 GB
+  r OK TR-S3_r2    : X1=[+0 +0] X2=[+0 +0] Y=[+0 +0] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.50 GB < 1.5 GB (tree 2,875 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [7.373 8.074 3.337] nm | stick [8.2 8.2 2.3] % | F peak [0.41 0.48 0.59], rms [0.26 0.26 0.34] of limit | 49.1 + 43.6 MB | 16.8 s
+
+=== 22/54  TR-S4_r2  [training, standstill Y +0.15, A_prod multisine] ===
+  r OK TR-S4_r2    : X1=[+0 +0] X2=[+0 +0] Y=[+150 +150] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.48 GB < 1.5 GB (tree 2,821 MB)

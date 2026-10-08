@@ -1,0 +1,45 @@
+[wd] launch  out=outputs/logs/check_report_copy_u
+[wd] command conda run --no-capture-output -n GraduationProject python -u check_report_copy.py u
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(8000, 6)  delta_a std=4.879e-05 m  vdelta_a std=6.894e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 8000 samples  (Training/TR-S1_r1.mat)
+  T2: 8000 samples  (Training/TR-S2_r1.mat)
+  T3: 8000 samples  (Training/TR-S3_r1.mat)
+  T4: 8000 samples  (Training/TR-S4_r1.mat)
+  T5: 8000 samples  (Training/TR-S5_r1.mat)
+  T6: 8000 samples  (Training/TR-Y1_r1.mat)
+  T7: 8000 samples  (Training/TR-Y2_r1.mat)
+  T8: 8000 samples  (Training/TR-Y3_r1.mat)
+  T9: 8000 samples  (Training/TR-P1_r1.mat)
+  T10: 8000 samples  (Training/TR-P2_r1.mat)
+  T11: 8000 samples  (Training/TR-P3_r1.mat)
+  T12: 8000 samples  (Training/TR-P4_r1.mat)
+  T13: 8000 samples  (Training/TR-L1_r1.mat)
+  T14: 8000 samples  (Training/TR-L2_r1.mat)
+  T15: 8000 samples  (Training/TR-T1_r1.mat)
+  T16: 8000 samples  (Training/TR-T2_r1.mat)
+  T17: 8000 samples  (Training/TR-T3_r1.mat)
+  T18: 8000 samples  (Training/TR-T4_r1.mat)
+C:\Users\20203253\AppData\Local\anaconda3\envs\GraduationProject\Lib\site-packages\deepSI\systems\system.py:17: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  return torch.load(file)
+[u] model 20260928_230134, 6 validation records, OBC correction False
+[wd] t=57s tree=642 MB cpu=8% availRAM=2.02 GB C:free=7.93 GB
+[wd] t=120s tree=643 MB cpu=8% availRAM=1.84 GB C:free=7.92 GB
+  new path leaves the trained model bitwise unchanged                                    PASS
+[wd] t=182s tree=645 MB cpu=8% availRAM=2.23 GB C:free=7.92 GB
+  old path restored the model bitwise (reference)                                        PASS
+  row 1 unchanged by scoring rows 2 to 4                                                 PASS
+    physics part     old [5.0861e-06 5.0540e-06 3.9869e-05]  new [5.0861e-06 5.0540e-06 3.9869e-05]
+    baseline, start  old [5.0869e-06 5.0549e-06 3.9870e-05]  new [5.0869e-06 5.0549e-06 3.9870e-05]
+    baseline, true   old [3.8680e-06 3.5322e-06 3.7023e-05]  new [3.8680e-06 3.5322e-06 3.7023e-05]
+  rows 2 to 4 bitwise equal old vs new (no OBC)                                          PASS
+
+[u] ALL PASS (0 failures)
+WATCHDOG SUMMARY exit=0 killed=False duration_s=239.8 samples=47 peak_tree_ws_mb=650 min_avail_ram_gb=1.70 min_C_free_gb=7.91 kill_reason=""

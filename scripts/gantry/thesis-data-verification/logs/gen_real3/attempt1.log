@@ -1,0 +1,13 @@
+[wd] launch  out=logs/gen_real3
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('real:3'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+WATCHDOG ALERT C: free 1.94 GB < 2 GB
+generate_thesis_data: 24 records selected, versions noisy + noise-free
+
+=== 1/24  TR-S1_r3  [training, standstill Y -0.30, A_prod multisine] ===
+STAGE STOP: disk: 2.06 GB free, record needs ~0.12 GB, reserve 2.0 GB. Stopped before TR-S1_r3.
+MANIFEST noisy: 42 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 41 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=42.9 samples=9 peak_tree_ws_mb=2,440 min_avail_ram_gb=1.82 min_C_free_gb=1.90 kill_reason=""

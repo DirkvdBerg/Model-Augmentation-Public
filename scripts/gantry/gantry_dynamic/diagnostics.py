@@ -37,59 +37,6 @@ def best_affine_r2(X, target, dtype):
     return W, r2_per_channel(target, A @ W)
 
 
-def heldout_affine_r2(X, target, dtype):
-    """@added (2026-09-01). best_affine_r2 fitted on the first half, SCORED on the second.
-
-    WHY. The in-sample R2 of `best_affine_r2` costs X.shape[1]+1 free parameters per target
-    channel, so a wider latent state scores higher for free: 3 parameters at NX_ANN=2 against 9
-    at NX_ANN=8. On the nominal sample count that inflation looks like ~p/n and negligible
-    (9/2086 = 0.004), but these are smooth 4 kHz trajectories with heavy autocorrelation, so the
-    EFFECTIVE sample size is far below the nominal one.
-
-    MEASURED (scratchpad/aug_r2_check.py, Nk = 2086 = job 80557's window count, latent = smooth
-    autocorrelated noise UNRELATED to the ground truth):
-
-        NX_ANN     R2_linmap in-sample     R2 held-out
-             2                   0.018          -0.039
-             8                   0.175          -3.06
-            32                   0.610          -8.84
-
-    So an unrelated 8-wide latent scores R2_linmap = 0.175 for free, two orders of magnitude
-    above the p/n estimate. Reading an NX_ANN=8 R2_linmap against the NX_ANN=2 numbers already on
-    record compares a statistic with a 0.175 floor against one with a 0.018 floor.
-
-    Negative values are expected and carry no magnitude information: below zero simply means the
-    fitted map does not transfer, i.e. no evidence the absorber is in the span. On real records a
-    negative can also reflect an operating-point shift between halves rather than overfitting,
-    since the split is first-half / second-half; treat the SIGN as the result, not the size.
-    """
-    h = len(X) // 2
-    A = lambda Z: np.hstack([Z, np.ones((len(Z), 1), dtype=dtype)])   # noqa: E731
-    W, *_ = np.linalg.lstsq(A(X[:h]), target[:h], rcond=None)
-    return r2_per_channel(target[h:], A(X[h:]) @ W)
-
-
-def best_single_channel_r2(X, target, dtype):
-    """@added (2026-09-01). Per target channel: the best R2 from ANY ONE column of X, affinely
-    scaled.
-
-    REPLACES the old `R2_raw`, which compared latent channel i directly against ground-truth
-    channel i. That pairing has no justification at any width: the latent basis is not
-    identifiable, so channel 0 has no reason to be delta_a. It merely happened not to crash while
-    NX_ANN == 2, where it reported ~0 throughout -- consistent with the statistic being
-    meaningless rather than with the absorber being absent.
-
-    This asks the question the old one was reaching for, "is any single latent state the
-    absorber", and is defined for every width. Together with R2_linmap (is the absorber anywhere
-    in the span) it separates one-state identification from distributed representation.
-    """
-    r2 = np.empty(target.shape[1], dtype=float)
-    for c in range(target.shape[1]):
-        r2[c] = max(best_affine_r2(X[:, [j]], target[:, [c]], dtype)[1][0]
-                    for j in range(X.shape[1]))
-    return r2
-
-
 def encoder_state_estimates(fit_sys, sysdata, na, nb, na_right, nb_right, cfg: RunConfig,
                             max_windows=2000):
     """Run the encoder on strided validation windows -> (k_ix, stride, x_hat).
@@ -113,43 +60,6 @@ def encoder_state_estimates(fit_sys, sysdata, na, nb, na_right, nb_right, cfg: R
             torch.tensor(ypast, dtype=DTYPE_PT),
         ).numpy()                                             # (Nk, nxd)
     return k_ix, stride, x_hat
-
-
-def aug_state_r2(fit_sys, hp, cfg: RunConfig, data, norm):
-    """Encoder augmented state R2 vs delta_a / vdelta_a from mat file.
-
-    Runs the encoder on strided validation windows and computes, PER GROUND-TRUTH CHANNEL:
-      R2_best1  -- best single latent channel, affinely scaled (one state IS the absorber?)
-      R2_linmap -- best affine map from ALL latent channels  (absorber anywhere in the span?)
-      R2_ho     -- R2_linmap fitted on the first half, scored on the second
-
-    CHANGED (2026-09-01): all three are shape (2,), the ABSORBER dimension, not (NX_ANN,).
-    NX_ANN is a hyperparameter (the model's latent width, 2 or 8 in this project); the ground
-    truth is [delta_a, vdelta_a] and is 2-wide always, fixed by the hidden MSD in the
-    data-generating system. Treating them as equal is what produced
-        ValueError: operands could not be broadcast together with shapes (2086,2) (2086,8)
-    at every NX_ANN != 2, killing this diagnostic and everything after it (job 80557).
-    """
-    NX_PHYS = cfg.nx_phys
-    na, nb, na_right, nb_right = get_encoder_dims(hp, cfg)
-    fit_sys.eval()
-
-    k_ix, stride, x_hat = encoder_state_estimates(
-        fit_sys, data.val_data, na, nb, na_right, nb_right, cfg)   # (Nk, NX_PHYS + NX_ANN)
-
-    x_ann = x_hat[:, NX_PHYS:]                    # (Nk, NX_ANN)
-
-    # Normalize GT so encoder (dimensionless) and GT are on comparable axes
-    gt_raw  = data.val_x_aug[k_ix]                # (Nk, 2) physical units: delta_a, vdelta_a
-    gt_mean = gt_raw.mean(axis=0)
-    gt_std  = gt_raw.std(axis=0) + 1e-8
-    gt_norm = (gt_raw - gt_mean) / gt_std          # (Nk, 2) normalized
-
-    r2_best = best_single_channel_r2(x_ann, gt_norm, cfg.dtype_np)
-    W_aug, r2_lin = best_affine_r2(x_ann, gt_norm, cfg.dtype_np)
-    r2_ho = heldout_affine_r2(x_ann, gt_norm, cfg.dtype_np)
-
-    return r2_best, r2_lin, r2_ho
 
 
 def state_recovery_diagnostic(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
@@ -203,38 +113,11 @@ def state_recovery_diagnostic(fit_sys, hp, rid, cfg: RunConfig, data, norm, save
     print('  R2_linmap low              -> information absent from encoder state;')
     print('  R2_raw_lag1 > R2_raw       -> encoder aligned to k-1 (one-sample lag)')
 
-    # --- Augmented state R2 vs delta_a / vdelta_a ---
-    # CHANGED (2026-09-01): guarded. This used to be an unguarded call, so any failure here took
-    # down Section D (gradient norms) and the npz save below with it -- which is exactly what
-    # happened on every NX_ANN=8 run. The sibling call in evaluation.py was already guarded, so
-    # the same fault was a warning there and fatal here.
-    r2_aug_best = r2_aug_lin = r2_aug_ho = None
-    try:
-        r2_aug_best, r2_aug_lin, r2_aug_ho = aug_state_r2(fit_sys, hp, cfg, data, norm)
-    except Exception as e:
-        print(f'\nWarning: aug_state_r2 failed ({type(e).__name__}: {e}); section skipped')
-    if r2_aug_lin is not None:
-        aug_labels = ['delta_a  ', 'vdelta_a ']
-        aug_notes  = ['(mat file)', '(FD estimate)']
-        print('\n=== Augmented state R2 vs saved GT (delta_a/vdelta_a from mat file) ===')
-        print(f'  {"state":<12s}  {"R2_best1":>10s}  {"R2_linmap":>10s}  {"R2_ho":>10s}  note')
-        # Over the GT channels (2), NOT over NX_ANN: see aug_state_r2.
-        for ch in range(len(r2_aug_lin)):
-            lbl  = aug_labels[ch] if ch < len(aug_labels) else f'gt[{ch}]'
-            note = aug_notes[ch]  if ch < len(aug_notes)  else ''
-            print(f'  {lbl}  {r2_aug_best[ch]:+10.4f}  {r2_aug_lin[ch]:+10.4f}  '
-                  f'{r2_aug_ho[ch]:+10.4f}  {note}')
-        print('  R2_best1  ~ 1 -> ONE latent state is the absorber')
-        print('  R2_linmap ~ 1 -> absorber lies in the span of the latent states')
-        print('  R2_ho: held-out; the only column comparable ACROSS NX_ANN (see heldout_affine_r2)')
-
     if cfg.save_flag:
-        # r2_aug_raw is NOT reused as a key: its meaning changed (see best_single_channel_r2),
-        # and silently reusing it would make old and new npz files look comparable.
+        # The added-state R2 keys (r2_aug_*) are gone with D-228: the added states are a gauge.
         np.savez(os.path.join(save_dir, f'gantry_state_recovery_{rid}.npz'),
                  r2_raw=r2_raw, r2_lin=r2_lin, r2_lag=r2_lag,
-                 W=W, k_ix=k_ix, x_hat=x_hat, x_true_norm=xt,
-                 r2_aug_best=r2_aug_best, r2_aug_lin=r2_aug_lin, r2_aug_ho=r2_aug_ho)
+                 W=W, k_ix=k_ix, x_hat=x_hat, x_true_norm=xt)
         print(f'Saved state recovery diagnostic: gantry_state_recovery_{rid}.npz')
 
 
@@ -368,20 +251,14 @@ def zeroed_ann_validation(fit_sys, val_data, validation_measure='sim-RMS'):
                 if isinstance(b, Static_ANN_Block)), None)
     if ann is None:
         return float('nan')
-    last = [m for m in ann.net.net if isinstance(m, nn.Linear)][-1]
-    saved_w = last.weight.detach().clone()
-    saved_b = None if last.bias is None else last.bias.detach().clone()
+    saved_gate = ann.out_gate.detach().clone()
     with torch.no_grad():
-        last.weight.zero_()
-        if last.bias is not None:
-            last.bias.zero_()
+        ann.out_gate.zero_()
     try:
         return float(fit_sys.cal_validation_error(val_data, validation_measure))
     finally:
         with torch.no_grad():
-            last.weight.copy_(saved_w)
-            if saved_b is not None:
-                last.bias.copy_(saved_b)
+            ann.out_gate.copy_(saved_gate)
 
 
 def print_run_banner(cfg: RunConfig, hp: dict, data, run_id: str, sdir: str) -> None:
@@ -418,6 +295,8 @@ def print_run_banner(cfg: RunConfig, hp: dict, data, run_id: str, sdir: str) -> 
     print(f"  MODEL:       encoder={cfg.encoder_init}   ann={cfg.ann_activation}   "
           f"nx_ann={cfg.nx_ann}   {cfg.n_nodes_per_layer}x{cfg.n_hidden_layers}   "
           f"up_sample={cfg.up_sample}")
+    print(f"               ann_arch={cfg.ann_arch}   g_init={cfg.g_init}   "
+          f"wa_encoder_init={cfg.wa_encoder_init}")
     # ann_route_ix is a HARD constraint (D-103: route to X and Y, never Theta-only) and was
     # invisible in every log until now. Two runs differing only here are different experiments.
     print(f"               ann_route_ix={tuple(cfg.ann_route_ix)}")

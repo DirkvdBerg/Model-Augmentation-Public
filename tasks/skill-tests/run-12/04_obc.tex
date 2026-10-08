@@ -1,0 +1,294 @@
+% Page budget: 1.55 pages | Owns: negation, OBC derivation, additional-state scope, implementation, and true-parameter condition.
+% WRITING GUIDE
+% Purpose: Explain negation, derive the final state-level orthogonal-by-construction map, and delimit its interpretability guarantee.
+% Start here: Decisions D-185, D-190, D-192, D-194, D-198, D-202, D-203, D-222, D-229, and D-232 in docs/decisions.md.
+% Supporting material: Current state-level OBC derivations under scripts/gantry/orthogonal-by-construction/documentation and their thesis-readiness guidance.
+% Mandatory papers: Read Györök's projection-regularization paper and orthogonal-by-construction paper in full before writing; keep their guarantees and assumptions separate.
+% Research-plan anchor: Preserve Aspect 3's goal of protecting physical interpretability; state clearly how the final construction differs from the proposed regularisation.
+% Current decisions: Reduced identifiable coordinates, data-derived reference tuples, a tangent-only one-step physical-state projection, per-epoch refresh, and no affine comparison arm.
+% Choices to justify: Protected parameter coordinates, reference-set construction, projected rows, rank tolerance, exclusion of the affine offset, refresh frequency, and treatment of additional states.
+% Implementation audit: Read model_augmentation/fit_systems/obc.py, scripts/gantry/gantry_dynamic/obc_gantry.py, obc_diagnostics.py, and the OBC attachment in model.py before fixing the derivation.
+% Reference check: Verify the original projection method and separate its claims from the state-level, nonlinear-parameter, LPV, and additional-state extensions developed here.
+% Cautions: docs/orthogonal-projection-plan.md describes an older soft-penalty route; one-step state orthogonality is not trajectory-output orthogonality or guaranteed true recovery.
+% Planned figures: New geometric projection figure with a physical and additional-state partition inset; show the remaining uniqueness limitation as clearly as the protected direction.
+% Section is finished when: The protected space, coordinate frame, gradient treatment, added-state scope, and true-recovery condition are explicit.
+\section{Interpretability by Orthogonal Construction}\label{sec:obc}
+
+The split between $f_{\mathrm{base}}$ and $f_{\mathrm{aug}}$ in
+\eqref{eq:aug_transition} is not unique (Section~\ref{sec:aug_structure}), so
+the estimate of $\theta_{\mathrm{base}}$ need not keep its physical meaning.
+We constrain the split by adapting the orthogonal-by-construction (OBC)
+parametrisation of Gy\"or\"ok et al.~\cite{gyorok2026obc} from input-output
+models linear in their parameters to the self-scheduled state equation.
+Section~\ref{sec:obc_negation} identifies the directions the network can
+negate, Section~\ref{sec:obc_map} constructs the correction, and
+Section~\ref{sec:obc_scope} states what the construction guarantees and when
+it recovers the true parameters.
+
+\subsection{Negation in the Augmented State Equation}\label{sec:obc_negation}
+To first order, a change of $\theta_{\mathrm{base}}$ moves the one-step
+transition along the columns of the transition sensitivity
+\begin{equation}
+ \Phi_{\bar\theta}(\tilde x,u)
+ =\left.\frac{\partial f_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x,u)}
+   {\partial\theta_{\mathrm{base}}}\right|_{\theta_{\mathrm{base}}=\bar\theta_{\mathrm{base}}}
+   \in\R^{6\times10},
+\label{eq:obc_sens}
+\end{equation}
+where $\bar\theta_{\mathrm{base}}$ is the expansion point, as
+in~\cite[Eq.~(15)]{gyorok2025l4dc}.
+A learned write can cancel a parameter displacement $\delta\theta$ along these
+columns:
+\begin{equation}
+\begin{aligned}
+ &f_{\mathrm{base}}(\bar\theta_{\mathrm{base}}+\delta\theta,\tilde x,u)
+ +\bigl[f_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x,u)
+ -\Phi_{\bar\theta}(\tilde x,u)\,\delta\theta\bigr]\\
+ &\quad\approx f_{\mathrm{base}}(\bar\theta_{\mathrm{base}},\tilde x,u)
+ +f_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x,u).
+\end{aligned}
+\label{eq:obc_negation}
+\end{equation}
+The data cannot attribute such a direction to either component, so the
+physical estimate depends on the initial parameter
+pair~\cite[Ex.~2]{gyorok2026obc}, \cite[Ex.~1]{gyorok2025l4dc}.
+We call this negation.
+We seek a split whose physical estimate does not depend on that pair.
+
+For the gantry, differentiating \eqref{eq:eom} with respect to the $j$-th
+combination gives the acceleration sensitivity
+\begin{equation}
+ \frac{\partial\ddot q}{\partial\theta_{\mathrm{base},j}}
+ =-M(Y)^{-1}\Bigl[\frac{\partial M(Y)}{\partial\theta_{\mathrm{base},j}}\,\ddot q
+ +\frac{\partial C}{\partial\theta_{\mathrm{base},j}}\,\dot q
+ +\frac{\partial K}{\partial\theta_{\mathrm{base},j}}\,q\Bigr],
+\label{eq:obc_gantry_sens}
+\end{equation}
+which the RK4 step propagates into $\Phi_{\bar\theta}$.
+Combinations in $M(Y)$ act through $\ddot q$, those in $C$ through $\dot q$,
+and $k_{b,\Sigma}$ through $q$.
+A negating write therefore acts as an added inertia, damping or stiffness
+force.
+The factor $M(Y)^{-1}$ makes these directions depend on the payload position.
+
+The protected directions are those of the ten combinations
+$\theta_{\mathrm{base}}$ of Section~\ref{sec:params}, not of the fourteen raw
+parameters.
+The raw parameters have four structural null directions, so their stacked
+sensitivity is rank deficient for any data.
+That violates the rank condition~\cite[Assumption~1]{gyorok2026obc} on which
+the uniqueness of the physical estimate rests.
+Training uses the logarithmic and bounded coordinates of
+Section~\ref{sec:params}.
+Their map to $\theta_{\mathrm{base}}$ has an invertible Jacobian, so the
+sensitivity with respect to them has the same range.
+The correction below depends only on that range and is therefore unchanged.
+
+\subsection{Orthogonal-by-Construction Correction}\label{sec:obc_map}
+For a baseline linear in its parameters, Gy\"or\"ok et al.\ subtract from the
+network output its least-squares fit on the baseline
+regressor~\cite[Eqs.~(8), (9), Lemma~3]{gyorok2026obc}:
+\begin{equation}
+\begin{aligned}
+ \hat Y&=\Phi\theta_{\mathrm{base}}+F-\Phi\theta_{\mathrm{aux}},\qquad
+ \theta_{\mathrm{aux}}=(\Phi^\top\Phi)^{-1}\Phi^\top F,\\
+ 0&=\Phi^\top\bigl(F-\Phi\theta_{\mathrm{aux}}\bigr),
+\end{aligned}
+\label{eq:obc_gyorok}
+\end{equation}
+where $\Phi$ stacks the regressor and $F$ the network output over the
+estimation data.
+The corrected network output has no component that a change of
+$\theta_{\mathrm{base}}$ could produce.
+The orthogonality penalty of~\cite{gyorok2025l4dc} pursues the same aim
+through a weight that trades orthogonality against fit.
+The construction needs no such weight.
+
+We apply \eqref{eq:obc_gyorok} to the six physical rows of the one-step
+transition, which $f_{\mathrm{aug}}$ writes (Section~\ref{sec:aug_structure}).
+The baseline has no linear-in-parameters form, because $f_{\mathrm{base}}$ is
+rational in $\theta_{\mathrm{base}}$ through $M(Y)^{-1}$.
+The regressor is therefore the sensitivity \eqref{eq:obc_sens}, the linear
+term of the first-order expansion of~\cite[Eq.~(15)]{gyorok2025l4dc}.
+That expansion also has an affine offset, which~\cite[Eq.~(18)]{gyorok2025l4dc}
+adds to the protected set.
+We do not protect it, because it multiplies no estimated parameter and does
+not enter the error of the physical estimate (Section~\ref{sec:obc_scope}).
+
+The regressor is evaluated at states, but only the positions are measured.
+Gy\"or\"ok et al.\ evaluate it on measured data~\cite{gyorok2026obc}, and
+\cite[Sec.~3]{gyorok2025l4dc} replaces unmeasured states by a simulation of
+the baseline.
+Such a simulation drifts on the free axes $X$ and $Y$
+(Section~\ref{sec:aug_closed_loop}).
+A coefficient fitted on the training rollout instead would make the
+correction at step $k$ depend on later states of the same window.
+We therefore reconstruct a fixed reference tuple
+$(\tilde x_i,\bar x_i,u_i)$ from every training sample,
+\begin{equation}
+ \tilde x_i=\col(q_i,\dot q_i),\qquad q_i=P^{-\top}y_i,\qquad
+ \bar x_i=0,\qquad i=1,\dots,N,
+\label{eq:obc_tuples}
+\end{equation}
+where $\dot q_i$ is the fourth-order central difference of $q$ within one
+record and $u_i$ is the recorded actuator force.
+The tuples are formed in physical units and normalised as the signals.
+Each tuple carries its measured $Y_i$, so the $Y$-dependent directions are
+sampled over the payload range of the training records.
+The recorded input already contains the feedback action, so the controller
+does not enter.
+Gy\"or\"ok et al.\ permit such an auxiliary evaluation
+set~\cite[Sec.~3.2]{gyorok2026obc}.
+
+On the tuples, the construction becomes
+\begin{equation}
+\begin{aligned}
+ \Phi_{\bar\theta}(\tilde X,U)
+ &=\col\bigl(\Phi_{\bar\theta}(\tilde x_1,u_1),\dots,
+   \Phi_{\bar\theta}(\tilde x_N,u_N)\bigr)\in\R^{6N\times10},\\
+ F_{\mathrm{aug}}
+ &=\col\bigl(f_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x_1,u_1),\dots,
+   f_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x_N,u_N)\bigr),\\
+ \theta_{\mathrm{aux}}&=\Phi_{\bar\theta}(\tilde X,U)^{+}F_{\mathrm{aug}},\\
+ 0&=\Phi_{\bar\theta}(\tilde X,U)^\top
+   \bigl(F_{\mathrm{aug}}-\Phi_{\bar\theta}(\tilde X,U)\,\theta_{\mathrm{aux}}\bigr),\\
+ 0&=\Phi_{\bar\theta}(\tilde X,U)^\top\,
+   \frac{\partial\bigl(F_{\mathrm{aug}}-\Phi_{\bar\theta}(\tilde X,U)\,
+   \theta_{\mathrm{aux}}\bigr)}{\partial\theta_{\mathrm{aug}}},
+\end{aligned}
+\label{eq:obc_ours}
+\end{equation}
+where $\hat x_i=\col(\tilde x_i,\bar x_i)$ and ${}^{+}$ denotes the
+pseudoinverse.
+The last line keeps every gradient step of $\theta_{\mathrm{aug}}$ out of the
+protected range, which is the property behind~\cite[Eq.~(39)]{gyorok2026obc}.
+The fourth line is~\cite[Lemma~3]{gyorok2026obc} on the reference stack and
+holds at any rank.
+A unique physical estimate needs full column
+rank~\cite[Assumption~1]{gyorok2026obc}, which is checked at every rebuild.
+Section~\ref{sec:results} reports the rank and condition number on the
+training data.
+
+The coefficient follows the network, while the stack is held fixed within an
+epoch.
+$\theta_{\mathrm{aux}}$ is recomputed at every objective evaluation and
+differentiated through.
+The stack does not depend on $\theta_{\mathrm{aug}}$, which gives the last
+line of \eqref{eq:obc_ours}.
+A detached coefficient would lose that line.
+Gy\"or\"ok et al.\ update the expansion point at every objective evaluation or
+fix it at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.
+Updating rebuilds the full stack at every evaluation.
+A fixed point does not apply here, because training starts from detuned
+parameters (Section~\ref{sec:setup}).
+We therefore rebuild $\Phi_{\bar\theta}(\tilde X,U)$ at the current
+$\theta_{\mathrm{base}}$ between epochs.
+The stack and $\bar\theta_{\mathrm{base}}$ carry no gradient, so
+$\theta_{\mathrm{base}}$ is updated only through $f_{\mathrm{base}}$.
+
+The corrected augmented model, with the output map of
+\eqref{eq:aug_transition}, is
+\begin{equation}
+\begin{aligned}
+ \begin{bmatrix}\tilde x_{k+1}\\ \bar x_{k+1}\end{bmatrix}
+ &=\begin{bmatrix}f_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x_k,\hat u_k)\\ 0\end{bmatrix}\\
+ &\quad+\begin{bmatrix}f_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x_k,\hat u_k)
+   -\Phi_{\bar\theta}(\tilde x_k,\hat u_k)\,\theta_{\mathrm{aux}}\\
+   g_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x_k,\hat u_k)\end{bmatrix},
+\end{aligned}
+\label{eq:obc_model}
+\end{equation}
+where $\theta_{\mathrm{aux}}$ is the coefficient of the current objective
+evaluation.
+The correction is evaluated at the rollout point with the frozen expansion
+point, as in~\cite[Eq.~(13)]{gyorok2026obc}.
+The baseline sensitivity of the additional states is zero, so
+$g_{\mathrm{aug}}$ is not corrected.
+For prediction, the stack is rebuilt at the trained $\theta_{\mathrm{base}}$.
+$\theta_{\mathrm{aux}}$ is then computed once from the trained network and
+held fixed.
+
+\subsection{Scope and Condition for True Parameter Recovery}\label{sec:obc_scope}
+The guarantee is the orthogonality in \eqref{eq:obc_ours}.
+It holds for the one-step stack over the tuples, not at each tuple.
+It is local in $\theta_{\mathrm{base}}$, because $\Phi_{\bar\theta}$ is the
+tangent at $\bar\theta_{\mathrm{base}}$.
+Its inner product is Euclidean in normalised state coordinates, so the state
+normalisation sets its metric.
+
+The additional states and the output trajectory lie outside the guarantee.
+The tuples lie on $\bar x=0$, so $\theta_{\mathrm{aux}}$ does not see the part
+of $f_{\mathrm{aug}}$ that acts through nonzero additional states.
+The rows $g_{\mathrm{aug}}$ are never corrected.
+They reach the physical rows one step later through $f_{\mathrm{aug}}$.
+The output over a window accumulates these contributions through the
+recursion and the controller.
+One-step state orthogonality therefore does not imply orthogonality of the
+output trajectory.
+The consistency and zero-covariance results
+of~\cite[Thms.~16, 18]{gyorok2026obc} do not transfer to the trained model.
+
+A unique split does not imply recovery of the true parameters.
+Let $\theta^*_{\mathrm{base}}$ be the true parameters and $\Delta^*$ the true
+one-step discrepancy on the tuples,
+\begin{equation}
+ \Delta^*=\col\bigl(\tilde x_{i+1}-f_{\mathrm{base}}(\theta^*_{\mathrm{base}},
+ \tilde x_i,u_i)\bigr)_{i=1}^{N},
+\label{eq:obc_delta}
+\end{equation}
+where the recorded successor $\tilde x_{i+1}$ is reconstructed with the same
+stencil and normalised as the tuples.
+Assume noise-free data and $f_{\mathrm{base}}$ affine in
+$\theta_{\mathrm{base}}$ near $\theta^*_{\mathrm{base}}$.
+Let $\Phi$ be the stack at
+$\bar\theta_{\mathrm{base}}=\theta^*_{\mathrm{base}}$, with full column rank.
+Assume the corrected one-step model reproduces every recorded successor.
+The exact fit and its product with $\Phi^\top$, using \eqref{eq:obc_ours},
+give
+\begin{equation}
+\begin{aligned}
+ \Phi\bigl(\hat\theta_{\mathrm{base}}-\theta^*_{\mathrm{base}}\bigr)
+ +\widetilde F_{\mathrm{aug}}&=\Delta^*,\\
+ \hat\theta_{\mathrm{base}}-\theta^*_{\mathrm{base}}=\Phi^{+}\Delta^*,
+ \qquad
+ \hat\theta_{\mathrm{base}}=\theta^*_{\mathrm{base}}
+ \;&\Longleftrightarrow\;
+ \Phi^\top\Delta^*=0,
+\end{aligned}
+\label{eq:obc_bias}
+\end{equation}
+where $\widetilde F_{\mathrm{aug}}=F_{\mathrm{aug}}-\Phi\theta_{\mathrm{aux}}$
+is the corrected write.
+This is the state-level counterpart
+of~\cite[Thm.~7, Eq.~(21)]{gyorok2026obc}.
+The objective \eqref{eq:aug_loss} is a closed-loop multistep output error, so
+\eqref{eq:obc_bias} is a one-step surrogate, not the bias of the trained model.
+The condition $\Phi^\top\Delta^*=0$ is a sum over the tuples.
+Contributions that are not orthogonal at a single tuple must therefore cancel
+over the records.
+When the structure of the discrepancy is known, the excitation can be
+designed to achieve this~\cite[Remark~5]{gyorok2026obc}.
+
+One overlap measure tests both the recovery condition and the construction.
+For a stacked vector $v$ over the tuples and a stack $B$,
+\begin{equation}
+ \rho(v;B)=\frac{\norm{BB^{+}v}}{\norm{v}},\qquad
+ B\in\bigl\{\Phi,\;\begin{bmatrix}\Phi & F_{\mathrm{base}}\end{bmatrix}\bigr\},
+\label{eq:obc_overlap}
+\end{equation}
+where $F_{\mathrm{base}}=\col\bigl(f_{\mathrm{base}}(\bar\theta_{\mathrm{base}},
+\tilde x_i,u_i)\bigr)_{i=1}^{N}$ and $\Phi$ is the stack at
+$\bar\theta_{\mathrm{base}}$.
+The second stack spans the affine set of~\cite[Eq.~(18)]{gyorok2025l4dc}.
+For $v=\Delta^*$ and $B=\Phi$, $\rho$ is zero exactly when the recovery
+condition holds.
+It needs $\theta^*_{\mathrm{base}}$ and is therefore available in simulation
+only.
+For $v=F_{\mathrm{aug}}$ and $B=\Phi$, $\rho$ is the fraction of the learned
+write that the correction removes.
+The increase of $\rho$ from $B=\Phi$ to the extended stack measures the
+overlap with the nominal baseline response, which the construction leaves
+unprotected.
+Section~\ref{sec:results} tests whether the split is independent of the
+start and, where the condition holds, whether the true parameters are
+recovered.

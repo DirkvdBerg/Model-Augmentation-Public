@@ -309,7 +309,8 @@ class linear_encoder_init_aug(nn.Module):
 
     W^b rows (physical states): theory-initialized from reconstructability map,
         Eq. 16-17. Identical to linear_encoder_init when nx_aug=0.
-    W^a rows (augmented states): randomly initialized, Eq. 8.
+    W^a rows (augmented states): either the original separate Kaiming draws or one
+        combined Xavier-uniform matrix for the paper-style thesis run.
     Shared nonlinear correction net: one network for all nx+nx_aug outputs,
         zero-init final layer (paper Section 4.3).
 
@@ -345,6 +346,9 @@ class linear_encoder_init_aug(nn.Module):
         # digits, so a use_f64=True run would silently carry a float32-accurate encoder init.
         # Default float32 keeps every existing call site bit-identical.
         dtype=torch.float32,
+        # CHANGED: the paper-style thesis run initializes the complete added-state history map
+        # once with Xavier, while the default preserves the original separate Kaiming draws.
+        wa_encoder_init='legacy_kaiming',
     ):
         super(linear_encoder_init_aug, self).__init__()
 
@@ -400,13 +404,24 @@ class linear_encoder_init_aug(nn.Module):
         )
 
         # --- W^a: randomly initialized for augmented state rows (Eq. 8) ---
-        # HEURISTIC: paper states W^a is randomly initialized but does not specify
-        # the distribution or scale. Using PyTorch default kaiming_uniform_ as the
-        # standard random init convention for weight matrices.
-        wa_y = torch.empty(nx_aug, (n + 1) * ny)
-        wa_u = torch.empty(nx_aug, (n + 1) * nu)
-        nn.init.kaiming_uniform_(wa_y)
-        nn.init.kaiming_uniform_(wa_u)
+        _ny_hist = (n + 1) * ny
+        _nu_hist = (n + 1) * nu
+        if wa_encoder_init == 'legacy_kaiming':
+            # HEURISTIC: legacy repository convention, retained for non-paper runs.
+            wa_y = torch.empty(nx_aug, _ny_hist)
+            wa_u = torch.empty(nx_aug, _nu_hist)
+            nn.init.kaiming_uniform_(wa_y)
+            nn.init.kaiming_uniform_(wa_u)
+        elif wa_encoder_init == 'xavier_uniform_gain1':
+            # THEORY: Hoekstra et al. (2026), Eq. (31), prescribes Xavier for psi_aug.
+            # HEURISTIC: uniform, gain 1, and one logical [W_y W_u] draw are the concrete
+            # repository choices because the paper does not specify those details.
+            wa = torch.empty(nx_aug, _ny_hist + _nu_hist, dtype=dtype)
+            nn.init.xavier_uniform_(wa, gain=1.0)
+            wa_y = wa[:, :_ny_hist].clone()
+            wa_u = wa[:, _ny_hist:].clone()
+        else:
+            raise ValueError('unknown wa_encoder_init %r' % (wa_encoder_init,))
         self.Wa_psi_y = nn.Parameter(wa_y)
         self.Wa_psi_u = nn.Parameter(wa_u)
 

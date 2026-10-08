@@ -1,0 +1,10 @@
+[run] C: free 3.7G before C1_model_equivalence
+[wd] launch  out=logs/C1_model_equivalence
+[wd] command matlab -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); check_model_equivalence"
+WATCHDOG ALERT available RAM 1.40 GB < 1.5 GB (tree 4,133 MB)
+model run time: original 107.4 s, generator model 5.9 s
+record: peak |q - r| 0.000331 m, rails stuck (|v|<1e-3) [8.1 7.5 2.3] %
+C1  max|dq| = 0 m, max|d delta_a| = 0 m  -> PASS
+C12 max|u_plant - (u_total + d)|: d = 0 1.18e-08 N, d ~ 1 N white 1.47e-08 N  -> FAIL
+    effect of the 1 N test force on q: rms [3.07e-08 3.15e-08 5.89e-08] m
+WATCHDOG SUMMARY exit=0 killed=False duration_s=154.6 samples=29 peak_tree_ws_mb=4,626 min_avail_ram_gb=1.05 min_C_free_gb=3.55 kill_reason=""

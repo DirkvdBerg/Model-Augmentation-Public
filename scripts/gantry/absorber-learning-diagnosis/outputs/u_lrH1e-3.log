@@ -1,0 +1,42 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## probe [lrH1e-3]: 300 updates, batch 64, lr 1e-05, lr added rows 0.001, init zero (skip scale 1), nf 400
+  multi-horizon: None
+  [eval     0] loss 1.5133e-08 | added: rho med 0.000 max 0.000, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 0.00e+00
+  upd     1 loss 1.4262e-08 | 3.34 s/upd
+  upd     2 loss 2.0028e-08 | 3.56 s/upd
+  upd     3 loss 1.3855e-08 | 3.58 s/upd
+  upd    25 loss 8.6274e-09 | 3.35 s/upd
+  [eval    25] loss 8.8907e-09 | added: rho med 0.002 max 0.004, dom freq med 2000 Hz, complex 33 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 4.92e-02
+  upd    50 loss 6.3808e-09 | 3.30 s/upd
+  [eval    50] loss 7.4669e-09 | added: rho med 0.006 max 0.010, dom freq med 2000 Hz, complex 4 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 9.71e-02
+  upd    75 loss 7.4850e-09 | 3.24 s/upd
+  [eval    75] loss 7.1881e-09 | added: rho med 0.008 max 0.014, dom freq med 2000 Hz, complex 4 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 1.32e-01
+=== EXIT -1 ===

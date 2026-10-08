@@ -1,0 +1,111 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+  ok  RowScaledAdam rows 0-5 == Adam at lr
+  ok  RowScaledAdam rows 6-7 == Adam at lr x factor
+  ok  RowScaledAdam whole tensor == Adam at lr x factor
+  ok  set_factor(1) switches the scaling off
+
+== arm u ==
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+  ok  build_model returns InnovationOpening
+  ok  Jan's ANN untouched (net.net Sequential, last Linear 8 outputs, zero-init)
+  ok  loss without opening == SSE_Interconnect_Composed.loss (1.645400e-08)
+  ok  shifted history == direct history at k+1
+  ok  optimizer eps == cfg.adam_eps
+  ok  no-grad evaluation (validation) does not advance the opening
+[innovation opening] eval 1/5: thesis loss 1.6454e-08, EE 3.9718e+00, INN unexplained 1.0000, weight 0.800
+  ok  opening evaluation 1 advances the counter, loss finite
+  ok  loss = thesis loss x (1 + w (1 + 1)) at evaluation 1 (terms matched to the thesis loss), w = 0.8
+  ok  gradient reaches the ANN added rows
+  ok  evaluation 1: no gradient on W^a (zero-init head and zero readout, by construction)
+  ok  gradient reaches the innovation head
+  ok  the head is non-zero after the first step
+  ok  evaluation 2: gradient reaches the encoder W^a
+[innovation opening] eval 5/5: thesis loss 1.9558e-08, EE 3.6851e+00, INN unexplained 1.0034, weight 0.000
+[innovation opening] phase ended: loss = thesis loss from now on, row lr factor 1
+  ok  after n_open evaluations: counter 5, row factor 1
+  ok  after the opening: loss == thesis loss exactly (1.807057e-08)
+  ok  fresh-process torch.load of the whole system runs (stderr tail:  of your software and request that they upgrade. | Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases. | See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information. | )
+  ok  reloaded system gives the same loss
+
+== arm obc ==
+[thesis run] arm=obc noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+[obc] reference set: 863208 tuples from 18 records (47956/47956/47956/47956/47956/47956/47956/47956/47956/47956/47956/47956/47956/47956/47956/47956/47956/47956 per record), stride 1, 9.1 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0003 std 0.1812 m; hot tensors 138.1 MB
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 863208 reference tuples, space=tangent, refresh=epoch, solve float64, rollout torch.float64
+  ok  build_model returns InnovationOpening
+  ok  Jan's ANN untouched (net.net Sequential, last Linear 8 outputs, zero-init)
+[obc] refresh at epoch 0: vbar=+0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00
+  J: 5179248 x 10, rank 10/10 at tol 3.090e-07 (rtol 1.150e-09), cond 4.7797e+02, build 20.7 s, svd 2.4 s
+  singular values: 2.6867e+02 4.5213e+01 3.1235e+01 1.5114e+01 8.1051e+00 4.3500e+00 3.3040e+00 1.1002e+00 1.0660e+00 5.6210e-01
+  column norms:    kb_sum=4.355e+00 cg1=4.847e+00 cg2=6.525e+00 cy=1.103e+00 cb_sum=1.036e+00 mh=2.980e+01 m_total=2.184e+01 m_diff=3.333e+00 J_eff=2.682e+02 d=4.605e+01
+  largest |column correlations|: cg1~cg2=-0.9868, mh~m_total=-0.4519, mh~J_eff=+0.3980, m_total~J_eff=+0.1968, J_eff~d=-0.1878, m_total~m_diff=-0.1153
+  r_J = 0.000e+00 (vs first basis), r_J_step = 0.000e+00 (vs previous)
+  ok  loss without opening == SSE_Interconnect_Composed.loss (1.645400e-08)
+  ok  shifted history == direct history at k+1
+  ok  optimizer eps == cfg.adam_eps
+  ok  no-grad evaluation (validation) does not advance the opening
+[innovation opening] eval 1/5: thesis loss 1.6454e-08, EE 3.9718e+00, INN unexplained 1.0000, weight 0.800
+  ok  opening evaluation 1 advances the counter, loss finite
+  ok  loss = thesis loss x (1 + w (1 + 1)) at evaluation 1 (terms matched to the thesis loss), w = 0.8
+  ok  gradient reaches the ANN added rows
+  ok  evaluation 1: no gradient on W^a (zero-init head and zero readout, by construction)
+  ok  gradient reaches the innovation head
+  ok  the head is non-zero after the first step
+  ok  evaluation 2: gradient reaches the encoder W^a
+[innovation opening] eval 5/5: thesis loss 1.9560e-08, EE 3.6851e+00, INN unexplained 1.0034, weight 0.000
+[innovation opening] phase ended: loss = thesis loss from now on, row lr factor 1
+  ok  after n_open evaluations: counter 5, row factor 1
+  ok  after the opening: loss == thesis loss exactly (1.807264e-08)
+  ok  fresh-process torch.load of the whole system runs (stderr tail:  of your software and request that they upgrade. | Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases. | See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information. | )
+  ok  reloaded system gives the same loss
+
+ALL CHECKS PASSED
+=== EXIT 0 ===

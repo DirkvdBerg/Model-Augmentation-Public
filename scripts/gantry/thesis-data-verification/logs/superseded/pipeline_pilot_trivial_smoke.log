@@ -1,0 +1,96 @@
+[pipeline 22:12:46] start; RETRIES=60 RETRY_WAIT=120
+[run] attempt 1, C: free 14G before smoke_nojvm
+[wd] launch  out=logs/smoke_nojvm
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+JVM running: 0
+WATCHDOG ALERT available RAM 1.25 GB < 1.5 GB (tree 2,577 MB)
+sim 13.8 s, sum|q| 0, sum|da| 0
+[run] smoke_nojvm finished with code 1 after 1 attempt(s)
+[run] attempt 1, C: free 14G before smoke_jvm
+[wd] launch  out=logs/smoke_jvm
+[wd] command matlab  -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+WATCHDOG ALERT available RAM 1.19 GB < 1.5 GB (tree 711 MB)
+JVM running: 1
+WATCHDOG KILL available RAM 0.69 GB < 1 GB; killing tree of PID 31076 (4 processes, 1,058 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=17.7 samples=4 peak_tree_ws_mb=1,058 min_avail_ram_gb=0.69 min_C_free_gb=13.87 kill_reason="available RAM 0.69 GB < 1 GB"
+[run] killed by the emergency RAM floor; retry in 120 s
+[run] attempt 2, C: free 14G before smoke_jvm
+[wd] launch  out=logs/smoke_jvm
+[wd] command matlab  -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+WATCHDOG ALERT available RAM 1.38 GB < 1.5 GB (tree 709 MB)
+JVM running: 1
+WATCHDOG KILL available RAM 0.76 GB < 1 GB; killing tree of PID 4740 (5 processes, 1,182 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=18.0 samples=4 peak_tree_ws_mb=1,182 min_avail_ram_gb=0.76 min_C_free_gb=13.84 kill_reason="available RAM 0.76 GB < 1 GB"
+[run] killed by the emergency RAM floor; retry in 120 s
+[run] attempt 3, C: free 14G before smoke_jvm
+[wd] launch  out=logs/smoke_jvm
+[wd] command matlab  -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+JVM running: 1
+WATCHDOG ALERT available RAM 0.51 GB < 1.5 GB (tree 1,907 MB)
+WATCHDOG KILL available RAM 0.51 GB < 1 GB; killing tree of PID 20812 (11 processes, 1,907 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=18.3 samples=4 peak_tree_ws_mb=1,907 min_avail_ram_gb=0.51 min_C_free_gb=13.82 kill_reason="available RAM 0.51 GB < 1 GB"
+[run] killed by the emergency RAM floor; retry in 120 s
+[run] attempt 4, C: free 14G before smoke_jvm
+[wd] launch  out=logs/smoke_jvm
+[wd] command matlab  -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+WATCHDOG ALERT available RAM 1.31 GB < 1.5 GB (tree 720 MB)
+JVM running: 1
+WATCHDOG KILL available RAM 0.56 GB < 1 GB; killing tree of PID 8128 (10 processes, 1,623 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=17.8 samples=4 peak_tree_ws_mb=1,623 min_avail_ram_gb=0.56 min_C_free_gb=13.79 kill_reason="available RAM 0.56 GB < 1 GB"
+[run] killed by the emergency RAM floor; retry in 120 s
+[run] attempt 5, C: free 14G before smoke_jvm
+[wd] launch  out=logs/smoke_jvm
+[wd] command matlab  -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+JVM running: 1
+WATCHDOG ALERT available RAM 0.62 GB < 1.5 GB (tree 1,949 MB)
+WATCHDOG KILL available RAM 0.62 GB < 1 GB; killing tree of PID 20524 (11 processes, 1,949 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=18.1 samples=4 peak_tree_ws_mb=1,949 min_avail_ram_gb=0.62 min_C_free_gb=13.75 kill_reason="available RAM 0.62 GB < 1 GB"
+[run] killed by the emergency RAM floor; retry in 120 s
+[run] attempt 6, C: free 14G before smoke_jvm
+[wd] launch  out=logs/smoke_jvm
+[wd] command matlab  -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+JVM running: 1
+WATCHDOG ALERT available RAM 0.95 GB < 1.5 GB (tree 1,610 MB)
+WATCHDOG KILL available RAM 0.95 GB < 1 GB; killing tree of PID 22572 (11 processes, 1,610 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=17.8 samples=4 peak_tree_ws_mb=1,610 min_avail_ram_gb=0.95 min_C_free_gb=13.72 kill_reason="available RAM 0.95 GB < 1 GB"
+[run] killed by the emergency RAM floor; retry in 120 s
+[run] attempt 7, C: free 14G before smoke_jvm
+[wd] launch  out=logs/smoke_jvm
+[wd] command matlab  -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+JVM running: 1
+WATCHDOG ALERT available RAM 0.89 GB < 1.5 GB (tree 1,934 MB)
+WATCHDOG KILL available RAM 0.89 GB < 1 GB; killing tree of PID 20400 (11 processes, 1,934 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=18.4 samples=4 peak_tree_ws_mb=1,934 min_avail_ram_gb=0.89 min_C_free_gb=13.69 kill_reason="available RAM 0.89 GB < 1 GB"
+[run] killed by the emergency RAM floor; retry in 120 s
+[run] attempt 8, C: free 14G before smoke_jvm
+[wd] launch  out=logs/smoke_jvm
+[wd] command matlab  -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+JVM running: 1
+WATCHDOG ALERT available RAM 0.99 GB < 1.5 GB (tree 1,612 MB)
+WATCHDOG KILL available RAM 0.99 GB < 1 GB; killing tree of PID 2596 (11 processes, 1,612 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=17.9 samples=4 peak_tree_ws_mb=1,612 min_avail_ram_gb=0.99 min_C_free_gb=13.66 kill_reason="available RAM 0.99 GB < 1 GB"
+[run] killed by the emergency RAM floor; retry in 120 s
+[run] attempt 9, C: free 14G before smoke_jvm
+[wd] launch  out=logs/smoke_jvm
+[wd] command matlab  -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+JVM running: 1
+WATCHDOG ALERT available RAM 0.96 GB < 1.5 GB (tree 1,932 MB)
+WATCHDOG KILL available RAM 0.96 GB < 1 GB; killing tree of PID 28832 (11 processes, 1,932 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=18.1 samples=4 peak_tree_ws_mb=1,932 min_avail_ram_gb=0.96 min_C_free_gb=13.64 kill_reason="available RAM 0.96 GB < 1 GB"
+[run] killed by the emergency RAM floor; retry in 120 s
+[run] attempt 10, C: free 14G before smoke_jvm
+[wd] launch  out=logs/smoke_jvm
+[wd] command matlab  -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+JVM running: 1
+WATCHDOG ALERT available RAM 0.84 GB < 1.5 GB (tree 1,687 MB)
+WATCHDOG KILL available RAM 0.84 GB < 1 GB; killing tree of PID 17820 (10 processes, 1,687 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=17.8 samples=4 peak_tree_ws_mb=1,687 min_avail_ram_gb=0.84 min_C_free_gb=13.61 kill_reason="available RAM 0.84 GB < 1 GB"
+[run] killed by the emergency RAM floor; retry in 120 s
+[run] attempt 11, C: free 6.2G before smoke_jvm
+[wd] launch  out=logs/smoke_jvm
+[wd] command matlab  -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke"
+JVM running: 1
+WATCHDOG ALERT available RAM 1.00 GB < 1.5 GB (tree 1,910 MB)
+WATCHDOG ALERT available RAM 1.49 GB < 1.5 GB (tree 2,815 MB)
+sim 16.1 s, sum|q| 97278.827112667743, sum|da| 10.002701806325771, sum|u| 189683633.50999242
+WATCHDOG ALERT available RAM 1.43 GB < 1.5 GB (tree 2,744 MB)

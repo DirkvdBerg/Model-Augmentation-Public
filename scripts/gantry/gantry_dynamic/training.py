@@ -18,9 +18,9 @@ import torch
 
 from .config import RunConfig
 from .model import train_model
-from .diagnostics import aug_state_r2
 from model_augmentation.fit_systems.interconnect import WindowErrorStats
 from model_augmentation.fit_systems.lbfgs_polish import PolishSpec, lbfgs_polish
+from model_augmentation.fit_systems.ps2_opening import PS2Opening, PS2Spec
 
 
 def _json_safe(obj):
@@ -106,8 +106,6 @@ def resolve_checkpoint(base_path):
         meta = {
             'done_epochs': np.array(int(round(float(d.get('epoch_counter', 0))))),
             'bestfit': np.array(float(d.get('bestfit', float('inf')))),
-            'diag_epochs': np.array([]), 'diag_r2_raw': np.array([]),
-            'diag_r2_linmap': np.array([]),
         }
         # The pickled system carries a LIVE Adam object, so its moments are recoverable. An
         # earlier version returned None here and the docstring claimed this format "has no state
@@ -164,6 +162,15 @@ def _assert_same_architecture(target_sd, ckpt_sd, what):
     a resume-into-polish workflow invites (the meeting fixture alone holds an nx_ann=8 and an
     nx_ann=2 run), and torch's own message is a page long and does not say which knob differs.
     """
+    target_coord = {int(v) for k, v in target_sd.items() if k.endswith('coordinate_version')}
+    ckpt_coord = {int(v) for k, v in ckpt_sd.items() if k.endswith('coordinate_version')}
+    if target_coord != ckpt_coord:
+        raise RuntimeError(
+            'checkpoint coordinate version does not match this config for %s: config=%s, '
+            'checkpoint=%s. Pre-D-229 reduced-coordinate checkpoints cannot be resumed because '
+            'the same free_params values have a different physical meaning.'
+            % (what, sorted(target_coord), sorted(ckpt_coord)))
+
     missing = sorted(set(target_sd) - set(ckpt_sd))
     extra = sorted(set(ckpt_sd) - set(target_sd))
     shape = [(k, tuple(target_sd[k].shape), tuple(ckpt_sd[k].shape))
@@ -183,7 +190,8 @@ def _assert_same_architecture(target_sd, ckpt_sd, what):
                      % (len(extra), extra[:3]))
     raise RuntimeError(
         'checkpoint does not match this config for %s: %s. The usual cause is a different '
-        'nx_ann / n_nodes_per_layer / n_hidden_layers than the run that wrote it.'
+        'nx_ann / n_nodes_per_layer / n_hidden_layers or parameter coordinate than the run that '
+        'wrote it.'
         % (what, '; '.join(parts)))
 
 
@@ -402,7 +410,7 @@ class _NfProbe:
         # coupling beyond the state layout it needs. `x_aug` is a LEARNED latent with an
         # arbitrary scale, so this is reported in the normalized frame only, which is the frame
         # the orth penalty's `x_aug = 0` slice lives in. The comparison against the true
-        # absorber is the aug-state R2 diagnostic, not this.
+        # absorber is not made at all: the added states are a gauge (D-228).
         self._nx_phys, self._nx_ann = cfg.nx_phys, cfg.nx_ann
         self._xa_stats = None
 
@@ -746,7 +754,7 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan')):
 
 def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
                                  resume_ckpt=None, checkpoint_dir=None, run_id=None):
-    """Train for hp['epochs'] epochs with sim-RMS validation; record aug-state R2 after.
+    """Train for hp['epochs'] epochs with sim-RMS validation (the added-state R2 is gone, D-228).
 
     resume_ckpt : base path (no extension, or a `.pth`) of a prior checkpoint to resume from.
     checkpoint_dir : directory for checkpoint; None = no saving.
@@ -754,7 +762,6 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
     With `cfg.lbfgs` set, an L-BFGS polish phase runs after Adam (D-171), and
     `cfg.start_phase='lbfgs'` skips Adam entirely to polish a resumed checkpoint.
     """
-    diag_epochs, diag_r2_raw, diag_r2_lin = [], [], []
     done_epochs = 0
     resumed_at_epoch = -1                  # -1 = not a resume
     lbfgs_outcome = None
@@ -778,9 +785,6 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
         done_epochs = int(meta['done_epochs'])
         resumed_at_epoch = done_epochs      # the switch point actually used (D-171)
         bestfit     = float(meta['bestfit'])
-        diag_epochs = list(meta['diag_epochs'])
-        diag_r2_raw = [meta['diag_r2_raw'][i]  for i in range(len(meta['diag_r2_raw']))]
-        diag_r2_lin = [meta['diag_r2_linmap'][i] for i in range(len(meta['diag_r2_linmap']))]
         print(f'Resumed from {resume_ckpt}  ({done_epochs} epochs done)')
 
     epochs_remaining = hp['epochs'] - done_epochs
@@ -790,6 +794,18 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
 
     fit_sys.bestfit = float('inf')
     t0 = time.time()
+    # D-236: the PS2 opening of the added-state part, only in a job that starts the Adam phase from
+    # epoch 0 (a resumed run never re-runs it). Attached through the declared seam, detached below.
+    opening = None
+    if cfg.ps2 and done_epochs == 0 and cfg.start_phase == 'adam':
+        spec = PS2Spec(seed=cfg.seed)
+        if os.environ.get('THESIS_SMOKE') == '1':
+            # Launch test only: a phase short enough to pass through S1 and S2 in a few updates.
+            spec = PS2Spec(seed=cfg.seed, eval_every=2, s1_min=0, s1_cap=4, screen_at=-1, screen_max=float('inf'),
+                           n_cal=32, n_snap=256, n_snap_cal=64, s2_batch=64, s2_check=50, s2_min=50, s2_cap=100)
+        opening = PS2Opening.for_pipeline(fit_sys, data, n_xb=cfg.nx_phys, n_a=cfg.nx_ann,
+                                          width=hp['n_nodes_per_layer'], spec=spec)
+        fit_sys.training_phase = opening
     # D-095: piggyback the nf-window RMS diagnostic (train + val); selection stays full-traj sim-RMS.
     _prev_probes = _install_nf_val_probe(fit_sys, hp, cfg, data.val_ckpt_data)
     try:
@@ -805,6 +821,9 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
                                   validation_measure='sim-RMS')
     finally:
         fit_sys.validation_probes = _prev_probes   # restore always
+        fit_sys.training_phase = None              # D-236: nothing of the opening outlives fit()
+    if opening is not None:
+        print('[ps2] summary: %s' % opening.summary_json(), flush=True)
     loss_val_nf   = np.array(getattr(fit_sys, 'Loss_val_nf', []), dtype=float)
     loss_train_nf = np.array(getattr(fit_sys, 'Loss_train_nf', []), dtype=float)
     elapsed = time.time() - t0
@@ -876,26 +895,7 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
               + (f'  (Adam state omitted: {_why})' if _drop_optimizer else ''))
 
     fit_sys.eval()
-    try:
-        # CHANGED (2026-09-01): three values, each of width 2 (the ABSORBER dimension), not
-        # NX_ANN. `diag_r2_raw` keeps its name for checkpoint-resume compatibility (:307) but now
-        # holds R2_best1; see best_single_channel_r2 for why the old statistic was dropped.
-        r2_raw, r2_lin, _r2_ho = aug_state_r2(fit_sys, hp, cfg, data, norm)
-    except Exception as e:
-        print(f'Warning: aug_state_r2 failed ({e}); recording NaN')
-        # Width 2, matching a successful call. The old np.full(NX_ANN, nan) is why plot 4 never
-        # crashed at NX_ANN=8: the failure path happened to produce the width the plot expected,
-        # so the mismatch only surfaced once the diagnostic worked.
-        r2_raw = np.full(2, np.nan)
-        r2_lin = np.full(2, np.nan)
-    diag_epochs.append(done_epochs)
-    diag_r2_raw.append(r2_raw.copy())
-    diag_r2_lin.append(r2_lin.copy())
-
-    r2_str = '  '.join([f'{n}={r2_lin[i]:+.4f}'
-                        for i, n in enumerate(['delta_a', 'vdelta_a'][:len(r2_lin)])])
-    print(f'Training done | {done_epochs} ep | {elapsed:.0f}s | '
-          f'bestfit={bestfit:.5f}  R2_linmap: {r2_str}')
+    print(f'Training done | {done_epochs} ep | {elapsed:.0f}s | bestfit={bestfit:.5f}')
 
     # --- Checkpoint metadata (weights already saved above) ---
     if ckpt_base is not None:
@@ -903,9 +903,6 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
                  done_epochs    = np.array(done_epochs),
                  bestfit        = np.array(bestfit),
                  elapsed        = np.array(elapsed),
-                 diag_epochs    = np.array(diag_epochs),
-                 diag_r2_raw    = np.array(diag_r2_raw),
-                 diag_r2_linmap = np.array(diag_r2_lin),
                  hp             = np.array(json.dumps(hp)),
                  orig_run_id    = np.array(run_id),
                  # D-171 provenance. Without these a polished checkpoint is indistinguishable
@@ -918,13 +915,12 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
                  start_phase    = np.array(cfg.start_phase),
                  resumed_from   = np.array('' if resume_ckpt is None else str(resume_ckpt)),
                  resumed_at_epoch = np.array(resumed_at_epoch),
+                 # D-236: what the PS2 opening did ('' = not used in this job)
+                 ps2_summary    = np.array('' if opening is None else opening.summary_json()),
         )
         print(f'  Checkpoint meta: {ckpt_base}.npz')
 
     return bestfit, dict(
-        epochs      = np.array(diag_epochs),
-        r2_raw      = np.array(diag_r2_raw),
-        r2_linmap   = np.array(diag_r2_lin),
         loss_val_nf   = loss_val_nf,    # D-095: per-epoch val nf-window RMS (aligns with Loss_val tail)
         loss_train_nf = loss_train_nf,  # D-095: per-epoch train nf-window RMS (same horizon, meters)
     )

@@ -1,0 +1,53 @@
+[run] attempt 1, C: free 2.1G before check_records_one_realisation
+[wd] launch  out=logs/check_records_one_realisation
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); check_records; tdg_write_manifest(tdg_config(), tdg_manifest(tdg_config())); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+file         C14   C3    C4b   C8    | noise adds rms all f / band [nm]          | target band [3.37 3.7 1.09] nm | MB noisy/free
+TR-S1_r1     PASS  PASS  PASS  PASS  | [8.33 6.62 3.04]     / [8.08 6.36 2.86]     |                   | 47.9 / 42.4 
+TR-S2_r1     PASS  PASS  PASS  PASS  | [6.07 7.79 4]        / [5.71 7.48 3.52]     |                   | 47.9 / 42.4 
+TR-S3_r1     PASS  PASS  PASS  PASS  | [6.78 7.42 2.92]     / [6.48 7.21 3.03]     |                   | 49.1 / 43.6 
+TR-S4_r1     PASS  PASS  PASS  PASS  | [6.78 8.89 3.22]     / [6.43 8.62 3.18]     |                   | 47.9 / 42.4 
+TR-S5_r1     PASS  PASS  PASS  PASS  | [7.87 8.83 2.8]      / [7.78 8.49 2.68]     |                   | 47.9 / 42.4 
+TR-Y1_r1     PASS  PASS  PASS  PASS  | [7.03 8.65 2.11]     / [6.69 8.05 2.12]     |                   | 49.7 / 44.2 
+TR-Y2_r1     PASS  PASS  PASS  PASS  | [6.77 8.14 2.21]     / [6.37 7.91 2.23]     |                   | 50.0 / 44.4 
+TR-Y3_r1     PASS  PASS  PASS  PASS  | [7.14 7.84 1.71]     / [6.84 7.43 1.67]     |                   | 50.0 / 44.5 
+TR-P1_r1     PASS  PASS  PASS  PASS  | [5.79 6.22 2.73]     / [5.73 6.05 2.92]     |                   | 49.5 / 44.0 
+TR-P2_r1     PASS  PASS  PASS  PASS  | [5.83 6.94 2.39]     / [5.61 6.63 2.52]     |                   | 49.2 / 43.7 
+TR-P3_r1     PASS  PASS  PASS  PASS  | [5.92 6.71 2.2]      / [5.83 6.45 2.1]      |                   | 49.1 / 43.6 
+TR-P4_r1     PASS  PASS  PASS  PASS  | [5.94 6.48 2.02]     / [5.68 6.2 1.88]      |                   | 49.3 / 43.7 
+TR-L1_r1     PASS  PASS  PASS  PASS  | [4.33 4.81 1.65]     / [4 4.47 1.2]         |                   | 52.1 / 46.6 
+TR-L2_r1     PASS  PASS  PASS  PASS  | [4.37 5.17 2.06]     / [4.1 4.5 1.51]       |                   | 52.5 / 47.0 
+TR-T1_r1     PASS  PASS  PASS  PASS  | [827.53 919.24 884.9] / [792.19 880.18 835.72] |                   | 40.4 / 33.3 
+TR-T2_r1     PASS  PASS  PASS  PASS  | [2267.54 2368.4 3231.07] / [2039.14 2119.07 2976.52] |                   | 39.6 / 32.6 
+TR-T3_r1     PASS  PASS  PASS  PASS  | [684.22 801.81 2959.33] / [636.56 738.86 2737.57] |                   | 38.3 / 31.8 
+TR-T4_r1     PASS  PASS  PASS  PASS  | [1165.72 1577.75 486.43] / [1091.16 1480.05 451.85] |                   | 39.5 / 33.0 
+VA-S1_r1     PASS  PASS  PASS  PASS  | [6.29 7.86 3.67]     / [5.99 7.47 3.35]     |                   | 48.0 / 42.4 
+VA-Y1_r1     PASS  PASS  PASS  PASS  | [6.41 7.75 2.54]     / [6.1 7.41 2.33]      |                   | 49.8 / 44.2 
+VA-P1_r1     PASS  PASS  PASS  PASS  | [5.89 7.15 2.74]     / [5.69 6.97 2.76]     |                   | 49.2 / 43.7 
+VA-L1_r1     PASS  PASS  PASS  PASS  | [4.53 5.09 1.41]     / [4.16 4.79 1.35]     |                   | 52.3 / 46.8 
+VA-T1_r1     PASS  PASS  PASS  PASS  | [1612.87 1962.92 2764.04] / [1467.73 1804.11 2530.54] |                   | 38.9 / 32.3 
+VA-T2_r1     PASS  PASS  PASS  PASS  | [784.42 857.33 539.31] / [738.87 803.96 504.12] |                   | 39.6 / 33.0 
+I1_r1        PASS  PASS  PASS  PASS  | [5.93 6.91 1.69]     / [5.47 6.6 1.55]      |                   | 49.4 / 43.9 
+I2_r1        PASS  PASS  PASS  PASS  | [6.89 8.6 2.59]      / [6.63 8.34 2.41]     |                   | 47.9 / 42.4 
+I3_r1        PASS  PASS  PASS  PASS  | [1011.26 1046.39 484.43] / [949.82 982.19 445.77] |                   | 39.5 / 32.9 
+I4_r1        PASS  PASS  PASS  PASS  | [2387.94 2103.32 2510.95] / [2183.04 1941.01 2337.32] |                   | 38.2 / 31.7 
+I5_r1        PASS  PASS  PASS  PASS  | [1501.59 1557.39 678.5] / [1428.45 1486.5 628.55] |                   | 39.4 / 32.8 
+I6_r1        PASS  PASS  PASS  PASS  | [455.14 433.15 913.6] / [426.02 408.03 859.41] |                   | 41.1 / 33.5 
+E1_r1        PASS  PASS  PASS  PASS  | [7.99 7.43 4.49]     / [7.59 7.33 3.88]     |                   | 47.9 / 42.4 
+E2_r1        PASS  PASS  PASS  PASS  | [2136.22 1021.7 2925.38] / [1932.71 972.94 2641.78] |                   | 39.4 / 32.9 
+E3_r1        PASS  PASS  PASS  PASS  | [1907.46 2033.08 2698.89] / [1668.41 1768.15 2497.42] |                   | 39.6 / 33.0 
+E4_r1        PASS  PASS  PASS  PASS  | [514.06 813.03 556.72] / [473.4 769.46 506.17] |                   | 40.9 / 33.8 
+E5_r1        PASS  PASS  PASS  PASS  | [1612.79 1622.85 874.52] / [1468.09 1477.86 770.35] |                   | 39.1 / 32.5 
+E6_r1        PASS  PASS  PASS  PASS  | [1209.62 929.33 783.74] / [1097.45 843.58 730.46] |                   | 39.5 / 32.9 
+TF-1_r1      PASS  PASS  PASS  PASS  | [7.09 7.76 2.18]     / [6.77 7.43 2]        |                   | 47.9 / 42.4 
+TF-3_r1      PASS  PASS  PASS  PASS  | [6.71 9.52 4.52]     / [6.5 9.18 4.09]      |                   | 47.9 / 42.4 
+E1_r1_nt1    PASS  PASS  PASS  PASS  | [NaN NaN NaN]        / [NaN NaN NaN]        |                   | 47.9 / NaN 
+I1_r1_nt1    PASS  PASS  PASS  PASS  | [NaN NaN NaN]        / [NaN NaN NaN]        |                   | 49.4 / NaN 
+I4_r1_nt1    PASS  PASS  PASS  PASS  | [NaN NaN NaN]        / [NaN NaN NaN]        |                   | 38.3 / NaN 
+[wd] t=57s tree=1,068 MB cpu=7% availRAM=2.69 GB C:free=2.03 GB
+E5_r1_nt1    PASS  PASS  PASS  PASS  | [NaN NaN NaN]        / [NaN NaN NaN]        |                   | 39.1 / NaN 
+C3 / C4b / C8 / C14 on 42 saved records -> PASS
+MANIFEST noisy: 42 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 38 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=61.1 samples=12 peak_tree_ws_mb=1,165 min_avail_ram_gb=2.65 min_C_free_gb=2.02 kill_reason=""
+[run] check_records_one_realisation finished with code 0 after 1 attempt(s)

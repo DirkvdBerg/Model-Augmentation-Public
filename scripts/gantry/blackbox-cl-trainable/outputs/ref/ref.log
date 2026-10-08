@@ -1,0 +1,93 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [8.0554e+06 8.2528e+06 4.2749e+06] N/m
+
+== A. CLOSED-LOOP FREE RUN: validation (the selection measure), RMS [m] per record, X1 / X2 / Y ==
+  VA-S1_r1.mat
+    model            5.081e-06  5.051e-06  3.984e-05
+    physics part     5.081e-06  5.051e-06  3.984e-05
+    baseline, start  5.081e-06  5.051e-06  3.984e-05
+    baseline, true   3.864e-06  3.529e-06  3.699e-05
+    oracle           1.374e-07  1.049e-07  9.473e-07
+  VA-Y1_r1.mat
+    model            4.599e-06  4.667e-06  4.121e-05
+    physics part     4.599e-06  4.667e-06  4.121e-05
+    baseline, start  4.599e-06  4.667e-06  4.121e-05
+    baseline, true   3.551e-06  3.450e-06  3.829e-05
+    oracle           1.336e-07  1.210e-07  1.127e-06
+  VA-P1_r1.mat
+    model            4.872e-06  4.689e-06  4.072e-05
+    physics part     4.872e-06  4.689e-06  4.072e-05
+    baseline, start  4.872e-06  4.689e-06  4.072e-05
+    baseline, true   3.370e-06  3.527e-06  3.771e-05
+    oracle           1.297e-07  1.192e-07  9.924e-07
+  VA-L1_r1.mat
+    model            4.375e-06  4.549e-06  4.126e-05
+    physics part     4.375e-06  4.549e-06  4.126e-05
+    baseline, start  4.375e-06  4.549e-06  4.126e-05
+    baseline, true   3.315e-06  3.466e-06  3.833e-05
+    oracle           1.276e-07  1.317e-07  1.047e-06
+  VA-T1_r1.mat
+    model            3.209e-06  1.798e-06  4.135e-06
+    physics part     3.209e-06  1.798e-06  4.135e-06
+    baseline, start  3.209e-06  1.798e-06  4.135e-06
+    baseline, true   1.339e-06  1.454e-06  1.125e-06
+    oracle           7.529e-09  8.148e-09  4.616e-09
+  VA-T2_r1.mat
+    model            1.812e-06  1.104e-06  2.542e-06
+    physics part     1.812e-06  1.104e-06  2.542e-06
+    baseline, start  1.812e-06  1.104e-06  2.542e-06
+    baseline, true   9.080e-07  1.065e-06  9.732e-07
+    oracle           7.332e-09  7.878e-09  4.343e-09
+[ref] noisy trivial [1.918e-05 1.942e-05 3.081e-05] | gb start [3.991e-06 3.643e-06 2.829e-05] | gb true [2.725e-06 2.748e-06 2.557e-05] m
+[thesis run] arm=u noise=noisefree start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [8.0554e+06 8.2528e+06 4.2749e+06] N/m
+
+== A. CLOSED-LOOP FREE RUN: validation (the selection measure), RMS [m] per record, X1 / X2 / Y ==
+  VA-S1_r1.mat
+    model            5.081e-06  5.051e-06  3.984e-05
+    physics part     5.081e-06  5.051e-06  3.984e-05
+    baseline, start  5.081e-06  5.051e-06  3.984e-05
+    baseline, true   3.864e-06  3.529e-06  3.699e-05
+    oracle           1.372e-07  1.045e-07  9.474e-07
+  VA-Y1_r1.mat
+    model            4.599e-06  4.667e-06  4.121e-05
+    physics part     4.599e-06  4.667e-06  4.121e-05
+    baseline, start  4.599e-06  4.667e-06  4.121e-05
+    baseline, true   3.551e-06  3.450e-06  3.829e-05
+    oracle           1.333e-07  1.207e-07  1.127e-06
+  VA-P1_r1.mat
+    model            4.872e-06  4.689e-06  4.072e-05
+    physics part     4.872e-06  4.689e-06  4.072e-05
+    baseline, start  4.872e-06  4.689e-06  4.072e-05
+    baseline, true   3.370e-06  3.527e-06  3.771e-05
+    oracle           1.297e-07  1.188e-07  9.924e-07
+  VA-L1_r1.mat
+    model            4.375e-06  4.549e-06  4.126e-05
+    physics part     4.375e-06  4.549e-06  4.126e-05
+    baseline, start  4.375e-06  4.549e-06  4.126e-05
+    baseline, true   3.315e-06  3.466e-06  3.833e-05
+    oracle           1.273e-07  1.313e-07  1.047e-06
+  VA-T1_r1.mat
+    model            3.209e-06  1.798e-06  4.135e-06
+    physics part     3.209e-06  1.798e-06  4.135e-06
+    baseline, start  3.209e-06  1.798e-06  4.135e-06
+    baseline, true   1.339e-06  1.454e-06  1.125e-06
+    oracle           1.855e-09  2.117e-09  1.891e-09
+  VA-T2_r1.mat
+    model            1.812e-06  1.104e-06  2.542e-06
+    physics part     1.812e-06  1.104e-06  2.542e-06
+    baseline, start  1.812e-06  1.104e-06  2.542e-06
+    baseline, true   9.080e-07  1.065e-06  9.732e-07
+    oracle           8.566e-10  9.755e-10  9.426e-10
+[ref] noisefree trivial [1.918e-05 1.942e-05 3.081e-05] | gb start [3.991e-06 3.643e-06 2.829e-05] | gb true [2.725e-06 2.748e-06 2.557e-05] m
+[ref] floor [7.598e-09 8.172e-09 4.566e-09] m (1577 s)
+=== REF DONE ===

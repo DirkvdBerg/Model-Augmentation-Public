@@ -1,0 +1,36 @@
+% Source asset, adapted from docs/writeup/jan-blockscheme-v4.tex.
+% Current all-row routing, physical/added partitions and explicit RK4 boundary.
+\begin{tikzpicture}[x=1cm,y=1cm,>=Latex,font=\scriptsize,
+ block/.style={draw,rounded corners,align=center,minimum width=18mm,minimum height=8mm},
+ sum/.style={draw,circle,inner sep=0pt,minimum size=5mm},
+ jn/.style={circle,fill,inner sep=0pt,minimum size=2pt}]
+ \node (state) at (0.35,2.1) {$\hat x_k$};
+ \node[block] (base) at (3.0,3.0) {CT LPV-LFR\\RK4: $f_{\mathrm{base}}$};
+ \node[block] (ann) at (3.0,1.55) {shared MLP\\$\phi_{\mathrm{aug}}$};
+ \node[sum] (plus) at (5.2,3.0) {$+$};
+ \node[block,minimum width=12mm] (stack) at (6.75,2.35) {stack\\$\col(\tilde x_{k+1},\bar x_{k+1})$};
+ \node[block] (out) at (3.0,0.05) {fixed output\\$C_n\tilde x_k$};
+ \draw[thick] (1.0,0.05) -- (1.0,3.0);
+ \draw[->] (state.east) -- (1.0,2.1);
+ \draw[->] (1.0,3.0) -- (base.west) node[midway,above] {$\tilde x_k$};
+ \draw[->] (1.0,1.55) -- (ann.west) node[midway,below] {$\hat x_k$};
+ \draw[->] (1.0,0.05) -- (out.west);
+ \node[jn] at (1.0,1.55) {};
+ \draw[->] (base.east) -- (plus.west);
+ \draw[->] (plus.east) -| ($(stack.north)+(-0.25,0)$);
+ \draw[->] (ann.east) -- (5.2,1.55) -- (plus.south);
+ \node[anchor=west,align=left] at (5.25,1.8) {$f_{\mathrm{aug}}$\\all 6 rows};
+ \draw[->] ($(ann.east)+(0,-0.2)$) -- (4.6,1.35)
+   -- (6.5,1.35) -- ($(stack.south)+(-0.25,0)$);
+ \node[below] at (5.65,1.35) {$g_{\mathrm{aug}}$: $n_{x_a}$ rows};
+ \node[block,minimum width=13mm,minimum height=6mm] (reg) at (6.75,-0.8) {state register};
+ \draw[->] (stack.east) -- (8.15,2.35) |- (reg.east);
+ \draw[->] (reg.west) -- (0.35,-0.8) -- (state.south);
+ \draw[->] (out.east) -- (5.15,0.05) node[right] {$\hat y_k$};
+ \node at (0.35,3.8) {$\hat u_k$};
+ \draw (0.65,3.8) -- (1.7,3.8) -- (1.7,1.8);
+ \draw[->] (1.7,3.25) -- ($(base.west)+(0,0.25)$);
+ \draw[->] (1.7,1.8) -- ($(ann.west)+(0,0.25)$);
+ \node[jn] at (1.7,3.25) {};
+ \node[above] at (6.75,3.8) {discrete correction outside RK4};
+\end{tikzpicture}

@@ -1,0 +1,88 @@
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## phase 1 pre-flight [lr1e-5]: 400 updates, lr 1e-05, batch 512, gate 0, nf 400; 85572 windows available
+  [eval     0] loss 1.5133e-08 | added eig: rho median 0.0000 max 0.0000, angle of max 0.000 rad (0 Hz), complex at 0 % | |W_out| state 0.00e+00 readout 0.00e+00
+  upd     1 loss 1.4189e-08 | grad state 0.00e+00 readout 6.31e-07 static 0.00e+00 phys_params 2.27e-08 encoder 5.23e-06 | 12.9 s/upd
+  upd     2 loss 3.1119e-08 | grad state 6.08e-09 readout 1.17e-05 static 0.00e+00 phys_params 2.29e-08 encoder 2.36e-04 | 11.4 s/upd
+  upd     3 loss 1.6333e-08 | grad state 5.18e-09 readout 2.98e-06 static 0.00e+00 phys_params 2.34e-08 encoder 4.95e-05 | 10.6 s/upd
+  upd    10 loss 1.8947e-08 | grad state 3.25e-09 readout 6.98e-06 static 0.00e+00 phys_params 2.28e-08 encoder 1.23e-04 | 9.5 s/upd
+  [compile] update took 2478.8 s against a 4.03 s median at 512 windows: possibly a torch.compile RECOMPILE. If it repeats around validations, check whether a compiled callable is reached on the wrong device.
+  upd    20 loss 1.5256e-08 | grad state 1.00e-08 readout 1.96e-06 static 0.00e+00 phys_params 2.31e-08 encoder 2.99e-05 | 133.7 s/upd
+  [eval    25] loss 1.5248e-08 | added eig: rho median 0.0000 max 0.0001, angle of max 0.088 rad (56 Hz), complex at 12 % | |W_out| state 9.90e-04 readout 7.80e-04
+  upd    30 loss 1.4888e-08 | grad state 1.10e-08 readout 1.37e-06 static 0.00e+00 phys_params 2.31e-08 encoder 2.56e-05 | 91.8 s/upd
+  upd    40 loss 1.4863e-08 | grad state 1.61e-08 readout 1.26e-06 static 0.00e+00 phys_params 2.36e-08 encoder 2.11e-05 | 70.6 s/upd
+  upd    50 loss 1.4316e-08 | grad state 2.10e-08 readout 8.46e-07 static 0.00e+00 phys_params 2.23e-08 encoder 1.64e-05 | 57.8 s/upd
+  [eval    50] loss 1.5014e-08 | added eig: rho median 0.0001 max 0.0002, angle of max 3.142 rad (2000 Hz), complex at 8 % | |W_out| state 2.53e-03 readout 1.49e-03
+  upd    60 loss 1.4543e-08 | grad state 2.62e-08 readout 4.27e-07 static 0.00e+00 phys_params 2.31e-08 encoder 8.06e-06 | 49.6 s/upd
+  upd    70 loss 1.4485e-08 | grad state 3.18e-08 readout 4.22e-07 static 0.00e+00 phys_params 2.30e-08 encoder 8.55e-06 | 43.5 s/upd
+  [eval    75] loss 1.4884e-08 | added eig: rho median 0.0001 max 0.0003, angle of max 3.142 rad (2000 Hz), complex at 8 % | |W_out| state 4.49e-03 readout 2.38e-03
+  upd    80 loss 1.4308e-08 | grad state 3.67e-08 readout 2.13e-07 static 0.00e+00 phys_params 2.27e-08 encoder 4.05e-06 | 38.9 s/upd
+  upd    90 loss 1.5367e-08 | grad state 4.83e-08 readout 1.66e-07 static 0.00e+00 phys_params 2.39e-08 encoder 2.77e-06 | 35.3 s/upd
+  upd   100 loss 1.4677e-08 | grad state 5.14e-08 readout 1.93e-07 static 0.00e+00 phys_params 2.29e-08 encoder 2.36e-06 | 32.5 s/upd
+  [eval   100] loss 1.4770e-08 | added eig: rho median 0.0002 max 0.0005, angle of max 3.142 rad (2000 Hz), complex at 4 % | |W_out| state 6.70e-03 readout 3.62e-03
+  upd   110 loss 1.4998e-08 | grad state 5.99e-08 readout 1.11e-07 static 0.00e+00 phys_params 2.30e-08 encoder 2.45e-06 | 30.2 s/upd
+  upd   120 loss 1.4891e-08 | grad state 6.80e-08 readout 2.05e-07 static 0.00e+00 phys_params 2.27e-08 encoder 1.90e-06 | 28.3 s/upd
+  [eval   125] loss 1.4610e-08 | added eig: rho median 0.0003 max 0.0007, angle of max 3.142 rad (2000 Hz), complex at 4 % | |W_out| state 9.05e-03 readout 5.21e-03
+  upd   130 loss 1.4368e-08 | grad state 7.14e-08 readout 1.80e-07 static 0.00e+00 phys_params 2.20e-08 encoder 2.07e-06 | 26.6 s/upd
+  upd   140 loss 1.4415e-08 | grad state 7.78e-08 readout 1.25e-07 static 0.00e+00 phys_params 2.15e-08 encoder 2.98e-06 | 25.3 s/upd
+  upd   150 loss 1.4046e-08 | grad state 8.09e-08 readout 2.23e-07 static 0.00e+00 phys_params 2.13e-08 encoder 4.71e-06 | 24.3 s/upd
+  [eval   150] loss 1.4413e-08 | added eig: rho median 0.0004 max 0.0008, angle of max 3.142 rad (2000 Hz), complex at 4 % | |W_out| state 1.14e-02 readout 6.96e-03
+  upd   160 loss 1.4142e-08 | grad state 8.49e-08 readout 1.83e-07 static 0.00e+00 phys_params 2.13e-08 encoder 4.39e-06 | 23.3 s/upd
+  upd   170 loss 1.4214e-08 | grad state 8.93e-08 readout 3.74e-07 static 0.00e+00 phys_params 2.07e-08 encoder 7.48e-06 | 22.4 s/upd
+  [eval   175] loss 1.4217e-08 | added eig: rho median 0.0005 max 0.0010, angle of max 3.142 rad (2000 Hz), complex at 4 % | |W_out| state 1.37e-02 readout 8.83e-03
+  upd   180 loss 1.3706e-08 | grad state 8.97e-08 readout 3.06e-07 static 0.00e+00 phys_params 2.04e-08 encoder 2.44e-06 | 21.6 s/upd
+  upd   190 loss 1.3703e-08 | grad state 9.23e-08 readout 4.93e-07 static 0.00e+00 phys_params 1.98e-08 encoder 4.51e-06 | 20.9 s/upd
+  upd   200 loss 1.4166e-08 | grad state 9.81e-08 readout 3.81e-07 static 0.00e+00 phys_params 2.04e-08 encoder 4.95e-06 | 20.3 s/upd
+  [eval   200] loss 1.3946e-08 | added eig: rho median 0.0006 max 0.0012, angle of max 3.142 rad (2000 Hz), complex at 4 % | |W_out| state 1.60e-02 readout 1.07e-02
+  upd   210 loss 1.4213e-08 | grad state 1.03e-07 readout 2.33e-07 static 0.00e+00 phys_params 1.99e-08 encoder 3.71e-06 | 19.7 s/upd
+  upd   220 loss 1.2886e-08 | grad state 9.67e-08 readout 4.69e-07 static 0.00e+00 phys_params 1.80e-08 encoder 3.69e-06 | 19.2 s/upd
+  [eval   225] loss 1.3666e-08 | added eig: rho median 0.0007 max 0.0014, angle of max 3.142 rad (2000 Hz), complex at 4 % | |W_out| state 1.81e-02 readout 1.26e-02
+  upd   230 loss 1.3382e-08 | grad state 1.03e-07 readout 2.09e-07 static 0.00e+00 phys_params 1.85e-08 encoder 4.59e-06 | 18.7 s/upd
+  upd   240 loss 1.3162e-08 | grad state 1.03e-07 readout 2.14e-07 static 0.00e+00 phys_params 1.82e-08 encoder 3.08e-06 | 18.3 s/upd
+  upd   250 loss 1.3320e-08 | grad state 1.01e-07 readout 2.05e-07 static 0.00e+00 phys_params 1.80e-08 encoder 4.21e-06 | 17.9 s/upd
+  [eval   250] loss 1.3468e-08 | added eig: rho median 0.0008 max 0.0016, angle of max 3.142 rad (2000 Hz), complex at 0 % | |W_out| state 2.01e-02 readout 1.43e-02
+  upd   260 loss 1.3467e-08 | grad state 1.03e-07 readout 2.32e-07 static 0.00e+00 phys_params 1.82e-08 encoder 5.36e-06 | 17.6 s/upd
+  upd   270 loss 1.3536e-08 | grad state 1.06e-07 readout 2.68e-07 static 0.00e+00 phys_params 1.78e-08 encoder 3.68e-06 | 17.2 s/upd
+  [eval   275] loss 1.3223e-08 | added eig: rho median 0.0010 max 0.0018, angle of max 3.142 rad (2000 Hz), complex at 0 % | |W_out| state 2.19e-02 readout 1.59e-02
+  upd   280 loss 1.3272e-08 | grad state 1.01e-07 readout 2.15e-07 static 0.00e+00 phys_params 1.75e-08 encoder 4.48e-06 | 16.9 s/upd
+  upd   290 loss 1.2814e-08 | grad state 1.02e-07 readout 5.01e-07 static 0.00e+00 phys_params 1.71e-08 encoder 4.54e-06 | 16.6 s/upd
+  upd   300 loss 1.2559e-08 | grad state 1.00e-07 readout 2.16e-07 static 0.00e+00 phys_params 1.65e-08 encoder 2.38e-06 | 16.3 s/upd
+  [eval   300] loss 1.2991e-08 | added eig: rho median 0.0011 max 0.0020, angle of max 3.142 rad (2000 Hz), complex at 4 % | |W_out| state 2.37e-02 readout 1.74e-02
+  upd   310 loss 1.2940e-08 | grad state 1.02e-07 readout 5.64e-07 static 0.00e+00 phys_params 1.67e-08 encoder 9.65e-06 | 16.1 s/upd
+  upd   320 loss 1.3318e-08 | grad state 1.01e-07 readout 4.63e-07 static 0.00e+00 phys_params 1.68e-08 encoder 7.18e-06 | 15.8 s/upd
+  [eval   325] loss 1.2824e-08 | added eig: rho median 0.0012 max 0.0021, angle of max 3.142 rad (2000 Hz), complex at 4 % | |W_out| state 2.54e-02 readout 1.87e-02
+  upd   330 loss 1.2192e-08 | grad state 9.46e-08 readout 3.13e-07 static 0.00e+00 phys_params 1.51e-08 encoder 3.58e-06 | 15.6 s/upd
+  upd   340 loss 1.2795e-08 | grad state 1.01e-07 readout 1.49e-07 static 0.00e+00 phys_params 1.58e-08 encoder 3.52e-06 | 15.4 s/upd
+  upd   350 loss 1.2924e-08 | grad state 1.01e-07 readout 2.21e-07 static 0.00e+00 phys_params 1.58e-08 encoder 4.36e-06 | 15.2 s/upd
+  [eval   350] loss 1.2604e-08 | added eig: rho median 0.0013 max 0.0023, angle of max 3.142 rad (2000 Hz), complex at 4 % | |W_out| state 2.71e-02 readout 2.00e-02
+  upd   360 loss 1.1640e-08 | grad state 9.00e-08 readout 4.25e-07 static 0.00e+00 phys_params 1.38e-08 encoder 4.39e-06 | 15.0 s/upd
+  upd   370 loss 1.2096e-08 | grad state 9.34e-08 readout 5.25e-07 static 0.00e+00 phys_params 1.47e-08 encoder 4.63e-06 | 14.8 s/upd
+  [eval   375] loss 1.2368e-08 | added eig: rho median 0.0014 max 0.0024, angle of max 3.142 rad (2000 Hz), complex at 4 % | |W_out| state 2.87e-02 readout 2.12e-02
+  upd   380 loss 1.2771e-08 | grad state 1.00e-07 readout 6.16e-07 static 0.00e+00 phys_params 1.47e-08 encoder 5.87e-06 | 14.7 s/upd
+  upd   390 loss 1.1736e-08 | grad state 9.14e-08 readout 4.32e-07 static 0.00e+00 phys_params 1.37e-08 encoder 5.93e-06 | 14.5 s/upd
+  upd   400 loss 1.1837e-08 | grad state 9.05e-08 readout 2.96e-07 static 0.00e+00 phys_params 1.40e-08 encoder 2.77e-06 | 14.3 s/upd
+  [eval   400] loss 1.2168e-08 | added eig: rho median 0.0015 max 0.0025, angle of max 3.142 rad (2000 Hz), complex at 4 % | |W_out| state 3.02e-02 readout 2.25e-02
+  saved outputs/n_phase1_lr1e-5.pt

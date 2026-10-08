@@ -1,0 +1,48 @@
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+  Checkpoint format: whole
+
+######## pole scan, job 86894: member pole |z| 0.9844, 211.8 Hz
+  member loss on 216 windows: 7.4731e-10
+  r 0.0000: 2.521e-08 2.521e-08 2.521e-08 2.521e-08 2.521e-08 2.521e-08 2.521e-08 2.521e-08 2.521e-08 2.521e-08 2.521e-08
+  r 0.3000: 2.238e-08 2.227e-08 2.218e-08 2.213e-08 2.211e-08 2.208e-08 2.206e-08 2.203e-08 2.198e-08 2.191e-08 2.184e-08
+  r 0.6000: 1.570e-08 1.548e-08 1.532e-08 1.526e-08 1.523e-08 1.521e-08 1.520e-08 1.518e-08 1.518e-08 1.522e-08 1.538e-08
+  r 0.8000: 9.529e-09 8.949e-09 8.569e-09 8.465e-09 8.431e-09 8.420e-09 8.430e-09 8.470e-09 8.650e-09 9.072e-09 1.000e-08
+  r 0.9000: 8.938e-09 6.367e-09 4.866e-09 4.447e-09 4.301e-09 4.232e-09 4.239e-09 4.340e-09 4.854e-09 6.013e-09 8.192e-09
+  r 0.9500: 1.095e-08 5.849e-09 3.016e-09 2.200e-09 1.916e-09 1.795e-09 1.838e-09 2.090e-09 3.252e-09 5.530e-09 8.757e-09
+  r 0.9700: 1.239e-08 6.206e-09 2.622e-09 1.531e-09 1.147e-09 9.858e-10 1.059e-09 1.441e-09 3.177e-09 6.285e-09 9.658e-09
+  r 0.9844: 1.395e-08 7.008e-09 2.789e-09 1.435e-09 9.477e-10 7.451e-10 8.537e-10 1.389e-09 3.847e-09 7.843e-09 1.065e-08
+  r 0.9900: 1.479e-08 7.524e-09 3.043e-09 1.574e-09 1.041e-09 8.223e-10 9.541e-10 1.580e-09 4.475e-09 8.956e-09 1.114e-08
+  columns f [Hz]:       150       170       190       200       206       212       218       225       240       260       290
+  loss / member loss:
+  r 0.0000:     33.74     33.74     33.74     33.74     33.74     33.74     33.74     33.74     33.74     33.74     33.74
+  r 0.3000:     29.95     29.80     29.68     29.62     29.58     29.55     29.52     29.48     29.41     29.32     29.22
+  r 0.6000:     21.01     20.71     20.50     20.42     20.39     20.36     20.33     20.32     20.31     20.37     20.58
+  r 0.8000:     12.75     11.97     11.47     11.33     11.28     11.27     11.28     11.33     11.57     12.14     13.39
+  r 0.9000:     11.96      8.52      6.51      5.95      5.76      5.66      5.67      5.81      6.50      8.05     10.96
+  r 0.9500:     14.65      7.83      4.04      2.94      2.56      2.40      2.46      2.80      4.35      7.40     11.72
+  r 0.9700:     16.57      8.30      3.51      2.05      1.53      1.32      1.42      1.93      4.25      8.41     12.92
+  r 0.9844:     18.66      9.38      3.73      1.92      1.27      1.00      1.14      1.86      5.15     10.50     14.26
+  r 0.9900:     19.79     10.07      4.07      2.11      1.39      1.10      1.28      2.11      5.99     11.98     14.90

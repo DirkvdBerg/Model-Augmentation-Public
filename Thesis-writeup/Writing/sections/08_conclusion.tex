@@ -23,3 +23,52 @@
 \item Figure plan: no conclusion figure; reserve the space for the final quantitative answer and limitations
 \end{itemize}
 \todo{Rewrite every conclusion bullet after freezing the final result table; no planned or diagnostic result may appear as achieved.}
+
+
+\subsection{Discussion}
+\begin{itemize}
+    \item Why all states routing.
+    \item why not use the encoder for the orthogonality each epoch instead of finite difference
+    \item why not use the positions since we measure them --> train nn and encoder in combination? not full answer
+    \item black box not fair comparison, no init (BLA) no controller
+\end{itemize}
+
+Thesis
+
+Make a new folder for figures and code of the figures for the paper, and the final dataset that will be used.
+
+
+
+* laten zien met parameters samenvoegen huidige methode niet correct ik moet iets van jacobian of iets laten zien
+* ik heb nog steeds niet netjes uitgewerkt voor LPV-LFR met hoe ik het heb omgeschreven die n m ik kan niet zo goed zeggen hoe het heet
+* verbeterde model met additional states laten zien als ik ze weg haal wat ze toevoegen = op nul zetten. ik weet niet of andere phase multisine validation en test genoeg laat zien hoe goed het werkt.
+* Duidelijk verantwoorden controller. vooral met integrator problem van de plant en dus X en Y geen stijfheid K = 0 daar. kleine integratie error propegeert gwn door, dit zei maarten ook denk dat dit de error is.
+* velocity central difference, why not get direct?
+* Zijn Gramians nuttig om per state te laten zien?
+* Multisine phase uitleggen kunnen we ook bronnen voor gebruiken. dat verschillende train validation en test verschillende multisine phase hebben.
+* Met alleen simulatie is huidige simulatie niet genoeg, cubic spring toevoegen??
+* benefit van mijn closed-loop training method is ook dat ik geen encoder / states er voor hoef te initializen. kessels wel referencen. figuur gebruiken.
+* Jacobian additional states
+* 2d / 3d grid wat jan zei van de data space of ik alles vang van het gebied van telica.
+* Montecarlo simulatie zoals jan?
+* For parameter recovery I had trajectories similar to the paper, currently not used for joint estimation?
+* How well do we extrapolate outside multisine range? what does jan do?
+
+
+
+
+
+Verdedigen
+
+* waarom geen basis functions
+* waarom niet zoals kessels: vooral andere literatuur kunnen zeggen waarom niet dat gebruikt, moet dat?
+* wat is het voordeel van interpreteerbaarheid?--> controller maken, monitor health?
+* waarom niet frf of mass lijn fitten voor de missende dynamica
+* controller surpressses / hides issues such as orthogonality overlap. Byproduct of closed-loop.
+* Hoe verdedig ik augmentation over residual frf fit??
+* Hoeveelheid data kunnen verdedigen
+* Huidige nf window and encoder window, should i run for different lengths?
+* Orthogonality definition and that we orthogonalize additional states with respect to the baseline := 0. additional states propogate, not included in our definition.
+* Kijken decisions.md
+* do i need to justify controller can i say what i got from my supervisor, how to approach these kind of questions?
+

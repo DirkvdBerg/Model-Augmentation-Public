@@ -1,0 +1,27 @@
+[wd] launch  out=logs/gen_noise-twin
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('noise-twin'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+WATCHDOG ALERT C: free 1.97 GB < 2 GB
+generate_thesis_data: 4 records selected, versions noisy + noise-free
+
+=== 1/4  E1_r1_nt1  [noise-twin, noise-only twin of E1: same r and f, new noise] ===
+  skip: already on disk
+
+=== 2/4  I1_r1_nt1  [noise-twin, noise-only twin of I1: same r and f, new noise] ===
+  r OK I1_r1_nt1   : X1=[-258 +273] X2=[-258 +273] Y=[-297 +288] mm | v 1.000/1.000 m/s a 14.99/25.00 m/s^2 j 1000/1666 m/s^3 (X_sym/Y)
+RECORD FAIL I1_r1_nt1: noise twin I1_r1_nt1: generate its record 
+
+=== 3/4  I4_r1_nt1  [noise-twin, noise-only twin of I4: same r and f, new noise] ===
+  r OK I4_r1_nt1   : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 957/1456 m/s^3 (X_sym/Y)
+RECORD FAIL I4_r1_nt1: noise twin I4_r1_nt1: generate its record 
+
+=== 4/4  E5_r1_nt1  [noise-twin, noise-only twin of E5: same r and f, new noise] ===
+  r OK E5_r1_nt1   : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 960/1456 m/s^3 (X_sym/Y)
+RECORD FAIL E5_r1_nt1: noise twin E5_r1_nt1: generate its record 
+
+3 record(s) FAILED, see logs/generation_failures.csv
+MANIFEST noisy: 42 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 41 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=41.3 samples=8 peak_tree_ws_mb=2,473 min_avail_ram_gb=1.63 min_C_free_gb=1.94 kill_reason=""

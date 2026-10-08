@@ -1,0 +1,20 @@
+[wd] launch  out=outputs/logs/repro_a2
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); addpath('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\thesis-data-verification\checks'); generate_thesis_data({'TR-P3_r1','TF-1_r1'}, struct('out_dir', 'C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain\outputs\repro')); check_reproduction('TR-P3_r1', 'C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain\outputs\repro'); check_reproduction('TF-1_r1', 'C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain\outputs\repro'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+WATCHDOG ALERT C: free 1.10 GB < 2 GB
+generate_thesis_data: 2 records selected, versions noisy + noise-free
+
+=== 1/2  TR-P3_r1  [training, S-curve moves, log strata, T3 12 ms, A_prod] ===
+STAGE STOP: disk: 1.15 GB free, record needs ~0.12 GB, reserve 2.0 GB. Stopped before TR-P3_r1.
+
+generate_thesis_data: done
+{Error using load
+Unable to find file or directory 'C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP
+model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain\outputs\repro\Coulomb-tanh-and-MSD\Training\TR-P3_r1.mat'.
+
+Error in check_reproduction (line 22)
+        B = load(fullfile(vers{v,3}, sd, [file '.mat']));
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+} 
+[wd] t=58s tree=2,075 MB cpu=1% availRAM=2.53 GB C:free=1.09 GB
+ERROR: MATLAB error Exit Status: 0x00000001
+WATCHDOG SUMMARY exit=1 killed=False duration_s=59.9 samples=12 peak_tree_ws_mb=2,438 min_avail_ram_gb=2.11 min_C_free_gb=1.07 kill_reason=""

@@ -11,7 +11,8 @@ prints its number and a MET / NOT MET verdict against a stated criterion.
   T4  stacked orthogonality reaches the MEASURED float32 floor
   T5  orthogonality still holds after an optimizer update (and the stale coefficient does not)
   T6  additional-state outputs bit-identical with the correction on and off
-  T7  disabled path bit-identical to the starting commit a52dd55
+  T7  D-229 changes only the reduced coordinate away from its start; the OBC-disabled
+      interconnect and closed-loop seams remain bit-identical
   T8  all ten reduced physical parameters keep nonzero training gradients
   T9  save and reload leave no functorch wrappers in the block cache; reload reproduces
   T10 ten consecutive objective evaluations cause no recompilation (CUDA; aot_eager, see probe)
@@ -227,8 +228,8 @@ def main():
           % (bool(torch.equal(y_on, y_off)), aug_eq, phys_diff))
     verdict('T6', aug_eq and bool(torch.equal(y_on, y_off)) and phys_diff > 0, {'phys_diff': phys_diff})
 
-    # ---- T7 disabled path bit-identical to the starting commit --------------------------
-    print('\nT7 disabled path bit-identical to commit a52dd55 (blocks, Interconnect.forward, closed-loop rollout)')
+    # ---- T7 D-229 coordinate change, all other disabled seams bit-identical ---------------
+    print('\nT7 D-229 changes only the displaced reduced coordinate; disabled seams stay bit-identical')
     hb = head_module('model_augmentation/fit_systems/blocks.py', 'head_blocks')
     hi = head_module('model_augmentation/fit_systems/interconnect.py', 'head_interconnect')
     hc = head_module('model_augmentation/fit_systems/closed_loop.py', 'head_closed_loop')
@@ -237,7 +238,9 @@ def main():
     from model_augmentation.utils.utils import expansion_matrix, selection_matrix
     t7 = {}
     for dt in (torch.float32, torch.float64):
-        # (a) blocks: old vs new Reduced block from the same init, same inputs
+        # (a) D-229 preserves the start exactly but deliberately differs from the old linear map
+        # away from it. Comparing displaced blocks for equality was the pre-D-229 gate and is no
+        # longer a no-op claim; require the intended difference instead.
         gss = __import__('model_augmentation.systems.gantry_ss', fromlist=['x'])
         names = hb.Parameterized_Gantry_State_Block.PARAM_NAMES
         nominal = torch.stack([getattr(gss, n) for n in names]).to(torch.float64)
@@ -248,10 +251,16 @@ def main():
         old_blk = hb.Reduced_Gantry_State_Block(params_init=nominal, combo_init=combo, **common).to(dt)
         new_blk = type(phy)(params_init=nominal, combo_init=combo, **common).to(dt)
         with torch.no_grad():
+            z = torch.randn(64, 9, 1, dtype=dt) * 0.5
+            # D-229 contract: free zero reproduces the start to round-off, 1e-12 relative in
+            # float64 (HEURISTIC 1e-6, about ten ulps, in float32). The direct tanh form is not
+            # bitwise by construction, although it happens to be for the current starts.
+            a, b = old_blk(z), new_blk(z)
+            tol = 1e-12 if dt == torch.float64 else 1e-6
+            eq_blk_start = bool((a - b).abs().max() <= tol * b.abs().max())
             fp = torch.randn(10, dtype=dt) * 0.05
             old_blk.free_params.copy_(fp); new_blk.free_params.copy_(fp)
-            z = torch.randn(64, 9, 1, dtype=dt) * 0.5
-            eq_blk = bool(torch.equal(old_blk(z), new_blk(z)))
+            coordinate_changed = not bool(torch.equal(old_blk(z), new_blk(z)))
             # transition_from_free at the live free coordinate must equal the block forward
             eq_pure = bool(torch.equal(new_blk.transition_from_free(new_blk.free_params, z), new_blk(z)))
         # (b) Interconnect.forward old vs new, sharing the NEW blocks of the production model
@@ -291,9 +300,12 @@ def main():
                 yn, xn, _ = new_rollout(fs.hfn, fs.hfn.output_only, batch[2], batch[3], x0, bank, batch[4].long())
                 fs.hfn.obc_correction = saved
                 eq_roll = bool(torch.equal(yo, yn) and torch.equal(xo, xn))
-        t7[str(dt)] = {'block': eq_blk, 'pure_transition': eq_pure, 'interconnect': eq_ic, 'rollout': eq_roll}
-        print('  %s: block %s, transition_from_free==forward %s, Interconnect.forward %s, closed-loop rollout (nf=%d) %s'
-              % (dt, eq_blk, eq_pure, eq_ic, NF, eq_roll))
+        t7[str(dt)] = {'block_at_start': eq_blk_start, 'coordinate_changed': coordinate_changed,
+                       'pure_transition': eq_pure, 'interconnect': eq_ic, 'rollout': eq_roll}
+        print('  %s: block at start %s, displaced coordinate changed %s, '
+              'transition_from_free==forward %s, Interconnect.forward %s, '
+              'closed-loop rollout (nf=%d) %s'
+              % (dt, eq_blk_start, coordinate_changed, eq_pure, eq_ic, NF, eq_roll))
     verdict('T7', all(v for d_ in t7.values() for v in d_.values() if v is not None), t7)
 
     # ---- T8 physical parameter gradients ---------------------------------------------
@@ -347,11 +359,13 @@ def main():
         print('  no CUDA device here; see probe_compile.py on the training host')
         verdict('T10', False, 'no CUDA')
     else:
-        pj = os.path.join(RESULTS_DIR, 'probe_compile.json')
+        # probe_compile.py writes one file per mode; the aot_eager rung is the one this PC runs.
+        pj = os.path.join(RESULTS_DIR, 'probe_compile_aot_eager.json')
         if os.path.exists(pj):
-            pr = json.load(open(pj))['rung1_aot_eager']
-            print('  from probe_compile.json: ok=%s, objectives=%s, refreshes=%s, error=%s'
-                  % (pr.get('ok'), pr.get('n_objectives_no_recompile'), pr.get('refreshes_during'), pr.get('error')))
+            pr = json.load(open(pj))
+            print('  from %s: ok=%s, objectives without recompile=%s, refreshes=%s, error=%s'
+                  % (os.path.basename(pj), pr.get('ok'), pr.get('objectives_no_recompile'),
+                     pr.get('refreshes'), pr.get('error')))
             verdict('T10', bool(pr.get('ok')), pr)
         else:
             print('  run probe_compile.py first'); verdict('T10', False, 'probe not run')

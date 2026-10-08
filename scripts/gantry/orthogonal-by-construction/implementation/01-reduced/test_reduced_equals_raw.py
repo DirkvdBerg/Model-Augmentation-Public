@@ -16,10 +16,13 @@ function and not merely close. This stage measures that, and three things around
   T5  GAUGE INVARIANCE: a different `mb` and a different `Jb:Jh` split at the SAME combinations
       leave the transition unchanged. This is what makes the gauge a gauge; if it failed, the
       arbitrary split would be entering the model.
-  T6  admissibility over the scheduling range, `min eig M(Y) > 0` and `d(Y) != 0`, which
-      positivity of the ten combinations does not imply
+  T6  admissibility over the scheduling range AND at the analytic worst Y (where det M(Y) is
+      smallest, possibly far outside the grid), including saturation of the D-229 bounded
+      mass-imbalance coordinate in both signs
   T7  that the reduced block's parameter is a ten-vector and the parent's fourteen-dimensional
       log coordinate is gone, so no checkpoint carries untrained tensors
+  T8  the D-229 coordinate has the declared initial sensitivity and an exact inverse, batched and
+      row-wise alike; the +-10 % detuned starts are reproduced; unrepresentable starts are refused
 
 Criterion (handoff Sect. 10): `max abs (x_next(reduced) - x_next(raw)) / max abs (x_next - x)`
 below `1e-12` over at least 24 designed points spanning the scheduling range.
@@ -77,6 +80,7 @@ def main():
     sd = [k for k in red.state_dict() if 'log_params' in k]
     print(f'  state_dict keys mentioning log_params: {sd}   (expected none)')
     assert not sd
+    assert int(red.coordinate_version) == 2
 
     # ---------------------------------------------------------------- T1, T2 the maps
     print('\n--- T1  tensor combination map against the reporting path ---')
@@ -90,6 +94,46 @@ def main():
         print(f'    {n:<9} {a.item():>14.8f}')
     print(f'  max abs difference to _combos_from_raw = {d1:.3e}')
     assert d1 == 0.0
+
+    print('\n--- T8  constrained-coordinate sensitivity and inverse ---')
+    zero = torch.zeros(10, dtype=C.F64)
+    jac = torch.func.jacfwd(red.combinations_from_free)(zero)
+    print(f'  d m_diff / d free_diff = {jac[red.M_DIFF_IX, red.M_DIFF_IX].item():+.9f} kg')
+    print(f'  expected m_diff_init   = {red.combo_init[red.M_DIFF_IX].item():+.9f} kg')
+    assert torch.allclose(jac[red.M_DIFF_IX, red.M_DIFF_IX],
+                          red.combo_init[red.M_DIFF_IX], rtol=1e-14, atol=0)
+    for seed in range(4):
+        free = torch.randn(10, generator=torch.Generator().manual_seed(seed), dtype=C.F64) * 0.2
+        recovered = red.free_from_combinations(red.combinations_from_free(free))
+        err = (recovered - free).abs().max().item()
+        print(f'  inverse round trip seed {seed}: max abs {err:.3e}')
+        assert err < 1e-12
+    batch = torch.randn(5, 10, generator=torch.Generator().manual_seed(9), dtype=C.F64) * 0.2
+    rows = torch.stack([red.combinations_from_free(f) for f in batch])
+    assert torch.allclose(red.combinations_from_free(batch), rows, rtol=1e-14, atol=0), \
+        'batched map != row-wise'
+    assert (red.free_from_combinations(rows) - batch).abs().max().item() < 1e-12
+    print('  batched (5, 10) map and inverse equal the row-wise ones')
+    # the D-222 detuned starts: +-10 % on every combination, m_diff included
+    for sign in (1.0, -1.0):
+        c0 = red.combo_init * (1.0 + 0.1 * sign)
+        blk = C.make_reduced_block(combo_init=c0)
+        j0 = torch.func.jacfwd(blk.combinations_from_free)(zero)
+        e_start = ((blk.combinations_from_free(zero) - c0).abs() / c0.abs()).max().item()
+        print(f'  start x{1 + 0.1 * sign:.1f}: max rel |c(0) - c0| = {e_start:.1e}, '
+              f'd m_diff / d free_diff = {j0[blk.M_DIFF_IX, blk.M_DIFF_IX].item():+.6f} kg')
+        assert e_start < 1e-14
+        assert torch.allclose(j0[blk.M_DIFF_IX, blk.M_DIFF_IX], c0[blk.M_DIFF_IX], rtol=1e-14, atol=0)
+    # starts the coordinate cannot represent are refused at construction
+    for tag, md in (('zero m_diff', 0.0), ('m_diff beyond the bound', 40.0)):
+        c0 = red.combo_init.clone()
+        c0[red.M_DIFF_IX] = md
+        try:
+            C.make_reduced_block(combo_init=c0)
+        except ValueError as exc:
+            print(f'  {tag}: refused ({exc})')
+        else:
+            raise AssertionError(f'{tag} was accepted')
 
     print('\n--- T2  the gauge section is an exact section ---')
     for tag, v in (('nominal', v_tensor),
@@ -147,10 +191,7 @@ def main():
         # the raw block to the gauge preimage of those same combinations.
         v = v_tensor * (1.0 + frac)
         with torch.no_grad():
-            red.free_params.copy_(torch.where(
-                red._m_diff_mask,
-                torch.full((10,), frac, dtype=C.F64),
-                torch.log(v / red.combo_init)))
+            red.free_params.copy_(red.free_from_combinations(v))
             raw_pre = Reduced_Gantry_State_Block.gauge_section(v, theta0, Lb)
             raw.log_params.copy_(torch.log(raw_pre / raw.params_init))
             a = raw(z).squeeze(-1)
@@ -194,17 +235,30 @@ def main():
         assert e < TOL, tag
 
     # ---------------------------------------------------------------- T6 admissibility
-    print('\n--- T6  admissibility over the scheduling range ---')
+    print('\n--- T6  admissibility over the scheduling range and at the worst Y ---')
+    # The guarantee holds for EVERY Y, not only on the +-0.30 m grid. det M(Y) is quadratic in Y
+    # with its minimum at Y* = -Lb m_diff / (2 m_total), which leaves the grid when m_diff nears
+    # the bound and J_eff / m_total grows; so M is also checked at Y* itself.
+    sat = torch.zeros(10, dtype=C.F64)
+    sat[red.M_DIFF_IX] = 1e6
+    wide = torch.zeros(10, dtype=C.F64)
+    wide[red.J_EFF_IX], wide[red.M_TOTAL_IX] = 5.0, -5.0      # J_eff up, m_total down: Y* far out
     for tag, free in (('nominal', torch.zeros(10, dtype=C.F64)),
                       ('+20% all', torch.full((10,), 0.2, dtype=C.F64)),
-                      ('-20% all', torch.full((10,), -0.2, dtype=C.F64))):
+                      ('-20% all', torch.full((10,), -0.2, dtype=C.F64)),
+                      ('saturated m_diff +', sat),
+                      ('saturated m_diff -', -sat),
+                      ('saturated, Y* far out', wide + sat),
+                      ('saturated, Y* far out -', wide - sat)):
         with torch.no_grad():
             red.free_params.copy_(free)
+        c = red.recover_combinations().detach()
+        y_star = float(-red.Lb * c[red.M_DIFF_IX] / (2 * c[red.M_TOTAL_IX]))
         a = red.admissibility()
-        print(f'    {tag:<10} min eig M(Y) = {a["min_eig_M"]:>10.4f} kg at Y = '
-              f'{a["min_eig_M_at_Y"]:+.3f} m,  min abs d(Y) = {a["min_abs_d"]:>12.4e} at Y = '
-              f'{a["min_abs_d_at_Y"]:+.3f} m,  admissible = {a["admissible"]}')
-        assert a['admissible'], tag
+        a_star = red.admissibility(y_range=(y_star, y_star), n=1)
+        print(f'    {tag:<24} grid min eig {a["min_eig_M"]:>11.4e} at Y = {a["min_eig_M_at_Y"]:+.3f} m;'
+              f'  Y* = {y_star:+9.3f} m: min eig {a_star["min_eig_M"]:>11.4e}, det {a_star["min_abs_d"]:>11.4e}')
+        assert a['admissible'] and a_star['admissible'], tag
     with torch.no_grad():
         red.free_params.zero_()
 

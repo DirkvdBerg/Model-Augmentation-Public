@@ -1,0 +1,84 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## EE->OE probe [eeoe]: 600 updates, batch 64, lr 1e-05, lr added 0.001; EE weight decays to 0 at 400
+  [eval     0] loss 1.5133e-08 | added: rho med 0.000, dom 0 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.712e+00 | |W_a| 0.00e+00
+  upd     1 oe 1.4262e-08 ee 8.3713e-01 lam 1.699e-08 | 3.77 s/upd
+  upd     2 oe 2.0028e-08 ee 6.4847e-01 lam 1.695e-08 | 3.81 s/upd
+  upd     3 oe 1.3924e-08 ee 8.9876e-01 lam 1.691e-08 | 3.77 s/upd
+  upd    25 oe 8.7487e-09 ee 8.9599e-01 lam 1.597e-08 | 3.80 s/upd
+  [eval    25] loss 9.0012e-09 | added: rho med 0.029, dom 0 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.708e+00 | |W_a| 1.18e-01
+  upd    50 oe 6.5214e-09 ee 7.0144e-01 lam 1.491e-08 | 3.71 s/upd
+  [eval    50] loss 7.5413e-09 | added: rho med 0.055, dom 0 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.706e+00 | |W_a| 2.28e-01
+  upd    75 oe 7.5835e-09 ee 7.4367e-01 lam 1.384e-08 | 3.79 s/upd
+  [eval    75] loss 7.3538e-09 | added: rho med 0.082, dom 0 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.705e+00 | |W_a| 3.36e-01
+  upd   100 oe 7.5345e-09 ee 5.9519e-01 lam 1.278e-08 | 3.74 s/upd
+  [eval   100] loss 7.2312e-09 | added: rho med 0.107, dom 0 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.704e+00 | |W_a| 4.40e-01
+  upd   125 oe 7.6347e-09 ee 5.5378e-01 lam 1.171e-08 | 3.70 s/upd
+  [eval   125] loss 7.1393e-09 | added: rho med 0.130, dom 0 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.704e+00 | |W_a| 5.33e-01
+  upd   150 oe 6.5778e-09 ee 5.0721e-01 lam 1.065e-08 | 3.65 s/upd
+  [eval   150] loss 7.1463e-09 | added: rho med 0.151, dom 0 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.704e+00 | |W_a| 6.19e-01
+  upd   175 oe 6.7916e-09 ee 5.5531e-01 lam 9.583e-09 | 3.69 s/upd
+  [eval   175] loss 7.0697e-09 | added: rho med 0.172, dom 0 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.703e+00 | |W_a| 7.01e-01
+  upd   200 oe 7.1089e-09 ee 5.3711e-01 lam 8.519e-09 | 3.74 s/upd
+  [eval   200] loss 7.0065e-09 | added: rho med 0.191, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.703e+00 | |W_a| 7.76e-01
+  upd   225 oe 7.7513e-09 ee 5.8234e-01 lam 7.454e-09 | 3.78 s/upd
+  [eval   225] loss 6.9368e-09 | added: rho med 0.208, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.703e+00 | |W_a| 8.45e-01
+  upd   250 oe 5.9265e-09 ee 4.2985e-01 lam 6.389e-09 | 3.75 s/upd
+  [eval   250] loss 6.9043e-09 | added: rho med 0.223, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.703e+00 | |W_a| 9.05e-01
+  upd   275 oe 7.0905e-09 ee 5.0745e-01 lam 5.324e-09 | 3.76 s/upd
+  [eval   275] loss 6.9130e-09 | added: rho med 0.236, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.702e+00 | |W_a| 9.58e-01
+  upd   300 oe 6.8575e-09 ee 4.1883e-01 lam 4.259e-09 | 3.76 s/upd
+  [eval   300] loss 6.8726e-09 | added: rho med 0.248, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.702e+00 | |W_a| 1.00e+00
+  upd   325 oe 6.6855e-09 ee 4.6586e-01 lam 3.194e-09 | 3.78 s/upd
+  [eval   325] loss 6.8638e-09 | added: rho med 0.257, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.700e+00 | |W_a| 1.04e+00
+  upd   350 oe 6.9030e-09 ee 4.0130e-01 lam 2.130e-09 | 3.75 s/upd
+  [eval   350] loss 6.8714e-09 | added: rho med 0.265, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.700e+00 | |W_a| 1.07e+00
+  upd   375 oe 6.8522e-09 ee 4.5866e-01 lam 1.065e-09 | 3.76 s/upd
+  [eval   375] loss 6.8434e-09 | added: rho med 0.270, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.699e+00 | |W_a| 1.09e+00
+  upd   400 oe 6.6472e-09 ee 5.3017e-01 lam 0.000e+00 | 3.73 s/upd
+  [eval   400] loss 6.8204e-09 | added: rho med 0.272, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.698e+00 | |W_a| 1.09e+00
+  upd   425 oe 6.9146e-09 ee 5.3111e-01 lam 0.000e+00 | 3.73 s/upd
+  [eval   425] loss 6.8311e-09 | added: rho med 0.272, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.697e+00 | |W_a| 1.09e+00
+  upd   450 oe 6.4306e-09 ee 3.4404e-01 lam 0.000e+00 | 3.74 s/upd
+  [eval   450] loss 6.8826e-09 | added: rho med 0.272, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.696e+00 | |W_a| 1.09e+00
+  upd   475 oe 6.8759e-09 ee 4.9448e-01 lam 0.000e+00 | 3.74 s/upd
+  [eval   475] loss 7.2667e-09 | added: rho med 0.271, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.694e+00 | |W_a| 1.09e+00
+  upd   500 oe 7.2584e-09 ee 6.1978e-01 lam 0.000e+00 | 3.73 s/upd
+  [eval   500] loss 6.9498e-09 | added: rho med 0.271, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.691e+00 | |W_a| 1.09e+00
+  upd   525 oe 7.2915e-09 ee 5.1512e-01 lam 0.000e+00 | 3.73 s/upd
+  [eval   525] loss 7.6840e-09 | added: rho med 0.271, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.687e+00 | |W_a| 1.09e+00
+  upd   550 oe 7.4486e-09 ee 4.5265e-01 lam 0.000e+00 | 3.72 s/upd
+  [eval   550] loss 7.2771e-09 | added: rho med 0.272, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.675e+00 | |W_a| 1.09e+00
+  upd   575 oe 7.6440e-09 ee 7.3244e-01 lam 0.000e+00 | 3.71 s/upd
+  [eval   575] loss 6.9179e-09 | added: rho med 0.273, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.663e+00 | |W_a| 1.09e+00
+  upd   600 oe 6.6101e-09 ee 4.8836e-01 lam 0.000e+00 | 3.70 s/upd
+  [eval   600] loss 6.9509e-09 | added: rho med 0.273, dom 0 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | encoder x_a rms 1.660e+00 | |W_a| 1.09e+00
+  saved outputs/f_eeoe.pt
+=== EXIT 0 ===

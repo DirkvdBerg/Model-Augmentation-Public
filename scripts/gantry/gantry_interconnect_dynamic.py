@@ -20,14 +20,12 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from gantry_dynamic.config import RunConfig, save_dir, config_json_dict, git_provenance
-from gantry_dynamic.data import load_datasets, compute_normalization, VAL_FILES, TEST_FILES
-from gantry_dynamic.model import build_model, get_encoder_dims
-from gantry_dynamic.baselines import compute_all_baselines
+from gantry_dynamic.data import load_datasets, compute_normalization, traj_dir
+from gantry_dynamic.model import build_model
 from gantry_dynamic.diagnostics import (
-    state_recovery_diagnostic, compute_gradient_norms, encoder_init_state,
-    print_run_banner,
+    state_recovery_diagnostic, compute_gradient_norms, print_run_banner,
 )
-from gantry_dynamic.evaluation import evaluate_and_save, per_record_nrms
+from gantry_dynamic.evaluation import evaluate_and_save
 from gantry_dynamic.training import train_model_with_diagnostics, resolve_resume_hp
 
 ## ═══════════════════════════════════════════════════════════════════════════════
@@ -38,41 +36,13 @@ from gantry_dynamic.training import train_model_with_diagnostics, resolve_resume
 ## ═══════════════════════════════════════════════════════════════════════════════
 
 CFG = RunConfig(
-    # D-188: band [140,230] holds BOTH the 212.13 Hz free-free pole and the 150 Hz
-    # anti-resonance; AMP_SCALE=6 is the largest unscaled value, zeta_a=0.03 the JPE floor.
-    # D-206: merged dataset. The 22 production records (multisine) COPIED from
-    # augmentation_ma50_b140-230_a6_z03, plus the 7 Telica operational records (no
-    # multisine) copied from augmentation_ma50_z03_telica. Both source folders are left
-    # intact, so each half stays reproducible from its own generator. The merge is legitimate
-    # because the PLANT is identical in both: MA_FRAC=0.50, zeta_a=0.03, same controller; the
-    # only knobs that differ (band, amplitude) shape a multisine the new records do not have.
-    # D-204: the FRICTION twin of that merge. Same 29 records, same names, same plant;
-    # Garcia dry friction (cc1 16.80, cc2 18.35, ccy 11.60 N, Karnopp stick state) is in the
-    # simulated TRUTH ONLY and the baseline stays frictionless, so the augmentation has to
-    # capture it. Both friction halves are copied in from their own generators
-    # (augmentation_ma50_b140-230_a6_z03_coulomb_a6all, augmentation_ma50_z03_telica_coulomb),
-    # which are left intact, exactly as D-206 did for the frictionless merge.
-    # D-207: the multisine half is the CORRECTED one. The superseded merge
-    # 'augmentation_ma50_z03_b140-230_a6_telica_coulomb' carried 22 records whose AMP_SCALE
-    # reached A_sym only, so X_anti and Y ran a 6x weaker multisine (14.5 N*m and 30 N against
-    # 87 and 180) than the frictionless arm they are compared against. Any friction-versus-
-    # frictionless result on that folder measured amplitude, not friction. Do not point `mode`
-    # back at it. The 22 records here are bit-identical to the frictionless merge in amp_rms,
-    # r_sim, f_sim and seed; the 7 Telica records were never affected (excitation='none').
-    # HETEROGENEITY WARNING, and it is stronger than in the frictionless merge, and stronger
-    # again since D-207: the plant is identical across both halves, but the friction REGIMES
-    # are not. The multisine records now run 5-8% stick (T3: X1 7.3, X2 7.9, Y 5.2) with the
-    # absorber's output contribution at 43.9% against 72.6% frictionless; the Telica records
-    # run 74-88% stick with it CUT TO 25% (2.43% -> 0.62%), because friction damps the
-    # acceleration transitions that excite the absorber while the controller still tracks the
-    # large reference (rms|y| identical to four digits). At the corrected amplitudes friction
-    # is a SMALL perturbation on the multisine half (own output effect 12.2/12.7/8.8% relative
-    # rms, was an artefactual 80-89%), which matches the real machine (Telica: Coulomb 1.3-2.2%
-    # of peak actuation) and makes the learning target smaller than the superseded folder
-    # suggested. So this is a more heterogeneous training set than the frictionless merge, by
-    # design, and the gap between its two halves widened rather than closed.
-    # Set back to 'augmentation_ma50_z03_b140-230_a6_telica' for the frictionless arm.
-    mode='augmentation_ma50_z03_b140-230_a6all_telica_coulomb',
+    # D-221: the thesis data (Thesis-writeup/Data, DATA-DESIGN.md section 7): truth T_AF
+    # (baseline + Karnopp Coulomb rail friction + payload absorber), one controller K1 designed
+    # at Y = 0, 18 training / 6 validation / 12 test records from MANIFEST.csv.
+    # 'thesis_taf_noisy' = with the calibrated force disturbance (D-218);
+    # 'thesis_taf_noisefree' = the noise-free twins. The legacy data set this replaced was
+    # 'augmentation_ma50_z03_b140-230_a6all_telica_coulomb' (D-204, D-206, D-207).
+    mode='thesis_taf_noisy',
     # 'linear_map' = Hoekstra 2026 reconstructability init (trainable); 'default' = deepSI learned encoder
     encoder_init='linear_map',
     ann_activation='tanh',        # 'linear' = Identity (Jan's ECC, D-071); 'tanh' = nonlinear ANN
@@ -99,9 +69,6 @@ CFG = RunConfig(
     fs_orig=20000,
     fs_new=4000,                  # None = no downsampling (use fs_orig)
     stride=10,                   # keep every STRIDE-th BPTT window; 100 matches 69399 (fewer windows -> ~10x faster epoch)
-    # D-178: samples dropped from the SCORE at each window start. 0 = the pre-D-178
-    # objective, bit-identically. K=100 (25 ms) is the loop settling time, not a fit.
-    burn_in=0,
     # KEEP False. cl_direct_vs_residual T4 does show a large float32 ROLLOUT sensitivity once
     # the ANN is active (gap/err 1.4% at gain 0, but 835% at 1e-2 and 867% at 1e-1, i.e.
     # gain-independent once the loop is nonlinear), which looked like a reason to switch.
@@ -209,7 +176,7 @@ CFG = RunConfig(
     # MOVES WITH batch_size: change that and this number no longer means 10 epochs.
     its_per_val=1300,
     n_its=None,                    # None = epochs decide (exact no-op). Set an int to cap BATCH
-    # [s] rollout horizon; nf = nf_seconds / ts_new. 0.100 s = 5*tau_msd.
+    # [s] rollout horizon; nf = nf_seconds / ts_new. 0.100 s = 9x the slowest closed-loop pole with K1 (11 ms), D-220.
     nf_seconds=0.100,
     # D-171: polish phase after Adam. Wants use_f64=True (no Adam normalisation to
     # absorb float32 rollout noise), but dtype COHERENCE across phases outranks that.
@@ -241,9 +208,6 @@ CFG = RunConfig(
     # 'adam' = normal run, and with RESUME_CHECKPOINT set it CONTINUES that run's Adam phase
     # (D-173 restores the moments) before polishing. 'lbfgs' = skip Adam and polish the restored
     # weights directly; that spelling requires RESUME_CHECKPOINT, enforced in main().
-    # CHANGED BACK for the burn-in screen: 'adam'. The freeze pair (81692/81693) is done and its
-    # question is answered; this run trains, and `lbfgs=True` runs the polish at the end of the
-    # SAME job, so the burn-in objective is exercised by both phases without a second launch.
     start_phase='adam',
 )
 
@@ -271,21 +235,6 @@ if _dataset_ab_seed is not None:
 # arms differ ONLY in which parameters the polish may move, and editing this file between the
 # launches is how a paired experiment silently stops being paired. The arm that ran is recorded
 # in config.json as LBFGS_FREEZE, because the override rewrites CFG before it is serialised.
-# Burn-in pair (D-178), same narrow form and the same reason as the overrides above: the two arms
-# differ ONLY in whether the window's startup transient is scored, and the arm that ran is
-# recorded in config.json as BURN_IN. An integer rather than named arms, because unlike the
-# freeze this knob has a meaningful range and a sweep over K is a likely follow-up; the
-# construction check in RunConfig.__post_init__ rejects anything outside [0, nf).
-_burn_in_ab = os.environ.get('BURN_IN_AB')
-if _burn_in_ab is not None:
-    try:
-        _burn_in_ab_int = int(_burn_in_ab)
-    except ValueError as exc:
-        raise ValueError(
-            'BURN_IN_AB is the number of samples dropped from the score at each window start, '
-            f'so it must be an integer; got {_burn_in_ab!r}') from exc
-    CFG = replace(CFG, burn_in=_burn_in_ab_int)
-
 _lbfgs_ab_freeze = os.environ.get('LBFGS_AB_FREEZE')
 if _lbfgs_ab_freeze is not None:
     _freeze_arms = {'none': (), 'encoder': ('encoder',)}
@@ -338,6 +287,83 @@ if _obc_arm is not None:
     )
     CFG = replace(CFG, **_SHARED, **_ARMS[_obc_arm])
 
+# Thesis campaign (D-222; Thesis-writeup/Documentation/TRAINING-DESIGN.md sections 3 and 4). Same
+# narrow form as the blocks above. _THESIS_FIXED is the training design and is applied to EVERY
+# thesis run, so it can never become a difference between two runs; the variables below are the
+# only things a submission chooses. A submission without THESIS_ARM is untouched by this block.
+#   THESIS_ARM    obc | u            Aug-OBC (state-level OBC, tangent basis) | Aug-U (unconstrained)
+#   THESIS_NOISE  noisy | lowpass | noisefree  data set (D-221, D-239)
+#   THESIS_START  detuned | correct  10 % detuned combinations | the true ones
+#   THESIS_NA     0 | 2 | 4 | 8      added states
+#   THESIS_SEED   int >= 1           one start: network seed and detuning direction
+#   THESIS_NF     window [s]         default 0.1 (D-220); the sweep uses 0.2 and 0.4
+#   THESIS_NITS   int                Adam updates instead of the epoch count (window sweep)
+#   THESIS_SMOKE  1                  a few updates and a 2-iteration polish: tests a launch, never a result
+#   THESIS_DEVICE cpu                eager on the CPU, for a local test only
+#   THESIS_PS2    0 | 1              D-236: PS2 opening of the added-state part (default 0 = the thesis run)
+#   THESIS_ARCH   mlp | resnet       D-240: g_aug network, default mlp (Jan's tanh MLP, no bypass)
+#   THESIS_INIT   zero | live        D-240: g_aug final layer all zero (default) | added-state rows live
+_thesis_arm = os.environ.get('THESIS_ARM')
+if _thesis_arm is not None:
+    if _obc_arm is not None:
+        raise ValueError('THESIS_ARM and OBC_ARM are two different experiment blocks; set only one')
+
+    def _thesis_env(name, allowed, default=None):
+        value = os.environ.get(name, default)
+        if value is None or value not in allowed:
+            raise ValueError('%s must be one of %s, got %r' % (name, sorted(allowed), value))
+        return value
+
+    _arm = _thesis_env('THESIS_ARM', {'obc', 'u'})
+    _noise = _thesis_env('THESIS_NOISE', {'noisy', 'lowpass', 'noisefree'})
+    _start = _thesis_env('THESIS_START', {'detuned', 'correct'})
+    _na = int(_thesis_env('THESIS_NA', {'0', '2', '4', '8'}))
+    _seed = int(os.environ.get('THESIS_SEED', ''))   # ValueError if missing: a start must be named
+    if _seed < 1:
+        raise ValueError('THESIS_SEED must be a positive integer, got %r' % _seed)
+    _nf_s = float(os.environ.get('THESIS_NF', '0.1'))
+    # HEURISTIC (D-222): D-191's 10 % magnitude, one sign per combination drawn from the seed, so
+    # a start fixes its direction and the noisy and noise-free twins of a seed share it.
+    _detune = None
+    if _start == 'detuned':
+        _signs = np.random.default_rng(_seed).choice([-1.0, 1.0], size=10)
+        _detune = [float(1.0 + 0.10 * s) for s in _signs]
+    _THESIS_FIXED = dict(
+        joint_estimation=True, physics_parameterization='reduced', param_init_detune=None,
+        param_prior=False, orth=False, obc_space='tangent',
+        n_nodes_per_layer=16, n_hidden_layers=2, na_nb_override=29,
+        use_f64=True, lr=1e-5, batch_size=512, stride=10, epochs=200,
+        closed_loop=True, lbfgs=True, lbfgs_max_iter=100, lbfgs_history=50, start_phase='adam',
+        wa_encoder_init='xavier_uniform_gain1',
+    )
+    CFG = replace(CFG, **_THESIS_FIXED,
+                  mode={'noisy': 'thesis_taf_noisy',
+                        'lowpass': 'thesis_taf_lowpass_noise',
+                        'noisefree': 'thesis_taf_noisefree'}[_noise],
+                  obc=(_arm == 'obc'), nx_ann=_na, ann_route_ix=tuple(range(6 + _na)),
+                  seed=_seed, combo_init_detune=_detune, nf_seconds=_nf_s,
+                  ann_arch=_thesis_env('THESIS_ARCH', {'mlp', 'resnet'}, default='mlp'),
+                  g_init=_thesis_env('THESIS_INIT', {'zero', 'live'}, default='zero'),
+                  ps2=(_thesis_env('THESIS_PS2', {'0', '1'}, default='0') == '1'),
+                  # MEMORY ONLY (value and gradient unchanged): longer windows accumulate the
+                  # polish in chunks holding as many steps as the 0.1 s polish holds at once.
+                  lbfgs_chunk=None if _nf_s <= 0.1 else int(16384 * 0.1 / _nf_s))
+    # Window sweep (TRAINING-DESIGN 1.1): equal Adam updates across windows, set from the pilot.
+    if os.environ.get('THESIS_NITS'):
+        CFG = replace(CFG, n_its=int(os.environ['THESIS_NITS']))
+    if os.environ.get('THESIS_SMOKE') == '1':
+        # Launch test in minutes: 2 s of every record, eager (compilation is checked by the first
+        # real run), 4 updates, one validation cadence, a 2-iteration polish.
+        CFG = replace(CFG, truncate_s=2.0, compile_mode=None, n_its=4, its_per_val=4,
+                      lbfgs_inner_iter=1, lbfgs_max_iter=2, lbfgs_windows=256)
+    if os.environ.get('THESIS_DEVICE') == 'cpu':
+        CFG = replace(CFG, device='cpu', compile_mode=None)
+    print('[thesis run] arm=%s noise=%s start=%s n_a=%d seed=%d nf=%.3f s detune=%s%s'
+          % (_arm, _noise, _start, _na, _seed, _nf_s, _detune,
+             '  SMOKE' if os.environ.get('THESIS_SMOKE') == '1' else '')
+          + ' g_aug=%s/%s' % (CFG.ann_arch, CFG.g_init)
+          + ('  PS2' if CFG.ps2 else '  plain'), flush=True)
+
 
 def main():
     cfg = CFG
@@ -363,7 +389,7 @@ def main():
     if cfg.save_flag:
         with open(os.path.join(sdir, 'config.json'), 'w') as _f:
             json.dump({**config_json_dict(cfg, git=git_provenance()),
-                       'hp': hp, 'run_id': run_id}, _f, indent=2)
+                       'hp': hp, 'run_id': run_id, 'data_dir': traj_dir(cfg)}, _f, indent=2)
 
     # Seed again before model construction (matches pre-refactor second seeding).
     np.random.seed(cfg.seed)
@@ -391,28 +417,16 @@ def main():
     # and are no longer imported by anything on this path.
     if cfg.closed_loop:
         from gantry_dynamic.controller import build_closed_loop    # noqa: E402
-        from gantry_dynamic.data import TRAIN_FILES                # noqa: E402
         # Keyword-only by design: build_closed_loop's docstring records that swapping train_files
         # and val_files "attaches the wrong controller to every record, produces a plausible loss".
+        # D-221: the lists the data were loaded from, not the legacy constants.
         fit_sys.simulator = build_closed_loop(
             fit_sys, norm, cfg,
-            train_files=TRAIN_FILES, val_files=VAL_FILES, val_data=data.val_ckpt_data)
+            train_files=data.train_files, val_files=data.val_files, val_data=data.val_ckpt_data)
         print('\nLoss rollout: CLOSED loop (known controller wrapped around the model)')
     else:
         print('\nLoss rollout: OPEN loop (plant input replayed; simulator = None)')
     # ─────────────────────────────────────────────────────────────────────────────────
-
-    _na, _nb, _na_right, _nb_right = get_encoder_dims(hp, cfg)
-    K0 = max(_na, _nb)   # first sample with a full encoder window (~ model cheat_n)
-
-    # D-089: capture untrained-encoder x0 estimates now (must happen before fit()
-    # trains the encoder); the four slow baseline sims run post-training — nothing
-    # in training consumes them, and they don't touch fit_sys or the RNG stream.
-    if cfg.encoder_init == 'linear_map':
-        x0_encinit_val  = encoder_init_state(fit_sys, data.val_data,  K0, _na, _nb, _na_right, _nb_right, cfg)
-        x0_encinit_test = encoder_init_state(fit_sys, data.test_data, K0, _na, _nb, _na_right, _nb_right, cfg)
-    else:
-        x0_encinit_val = x0_encinit_test = None
 
     ckpt_dir = sdir if cfg.save_flag else None
     bestfit, diag_conv = train_model_with_diagnostics(
@@ -420,14 +434,8 @@ def main():
         checkpoint_dir=ckpt_dir, run_id=run_id)
     print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
 
-    baselines = compute_all_baselines(hp, cfg, data, norm, K0,
-                                      x0_encinit_val, x0_encinit_test)
-
-    per_record_nrms(fit_sys, VAL_FILES, data.val_list, norm, K0, 'Validation-set')
-    per_record_nrms(fit_sys, TEST_FILES, data.test_list, norm, K0, 'Test-set')
-
-    evaluate_and_save(fit_sys, hp, run_id, cfg, data, norm, sdir,
-                      diag_conv=diag_conv, **baselines)
+    # D-227: every post-run number is closed loop (gantry_dynamic/closed_loop_report.py).
+    evaluate_and_save(fit_sys, hp, run_id, cfg, data, norm, sdir, diag_conv=diag_conv)
 
     print('\n== B. ENCODER QUALITY ==')   # D-094 output grouping
     state_recovery_diagnostic(fit_sys, hp, run_id, cfg, data, norm, sdir)

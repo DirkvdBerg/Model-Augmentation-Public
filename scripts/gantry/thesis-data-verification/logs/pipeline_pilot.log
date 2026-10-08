@@ -1,0 +1,261 @@
+[pipeline 23:10:13] start; RETRIES=60 RETRY_WAIT=120
+[run] attempt 1, C: free 6.1G before smoke_nojvm
+[wd] launch  out=logs/smoke_nojvm
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke; fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+JVM running: 0
+WATCHDOG ALERT available RAM 1.41 GB < 1.5 GB (tree 2,806 MB)
+sim 16.3 s, sum|q| 97278.827112667743, sum|da| 10.002701806325771, sum|u| 189683633.50999242
+@@TDG_DONE@@
+[run] smoke_nojvm: statement completed but MATLAB did not exit within 20 s; ending its process tree (winpid 30772)
+[run] smoke_nojvm finished with code 0 after 1 attempt(s)
+[run] attempt 1, C: free 6.1G before smoke_jvm
+[wd] launch  out=logs/smoke_jvm
+[wd] command matlab  -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); nojvm_smoke; fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+JVM running: 1
+WATCHDOG ALERT available RAM 1.43 GB < 1.5 GB (tree 2,783 MB)
+sim 17.3 s, sum|q| 97278.827112667743, sum|da| 10.002701806325771, sum|u| 189683633.50999242
+@@TDG_DONE@@
+[run] smoke_jvm: statement completed but MATLAB did not exit within 20 s; ending its process tree (winpid 8752)
+[run] smoke_jvm finished with code 0 after 1 attempt(s)
+[pipeline 23:12:52] C15 smoke: -nojvm and JVM checksums identical (sum|q| 97278.827112667743, sum|da| 10.002701806325771, sum|u| 189683633.50999242) -> PASS, use -nojvm
+[run] attempt 1, C: free 6.1G before checks_final
+[wd] launch  out=logs/checks_final
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); check_references; check_controller_gate; check_noise_calibration; check_noise_draw; fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+C7  100 records (96 noise-free), 292 distinct seeds over ms/sp/noise keys, twins share ms/sp -> PASS
+    counts: training 54, validation 18, test-I 6, test-E 6, frf 12, noise-twin 4
+C10a TR-S1  vs J9 TR-S_Y-0.30  max|dr| = 0 m
+C10a TR-S2  vs J9 TR-S_Y-0.15  max|dr| = 0 m
+C10a TR-S3  vs J9 TR-S_Y+0.00  max|dr| = 0 m
+C10a TR-S4  vs J9 TR-S_Y+0.15  max|dr| = 0 m
+C10a TR-S5  vs J9 TR-S_Y+0.30  max|dr| = 0 m
+C10a TR-Y1  vs J9 TR-Y1        max|dr| = 0 m
+C10a TR-Y2  vs J9 TR-Y2        max|dr| = 0 m
+C10a TR-Y3  vs J9 TR-Y3        max|dr| = 0 m
+C10a TR-P1  vs J9 TR-P1        max|dr| = 0 m
+C10a TR-P2  vs J9 TR-P2        max|dr| = 0 m
+C10a TR-P3  vs J9 TR-P3        max|dr| = 0 m
+C10a TR-P4  vs J9 TR-P4        max|dr| = 0 m
+C10a TR-L1  vs J9 TR-L1        max|dr| = 0 m
+C10a TR-L2  vs J9 TR-L2        max|dr| = 0 m
+C10a TR-T1  vs J9 TR-T1        max|dr| = 0 m
+C10a TR-T2  vs J9 TR-T2        max|dr| = 0 m
+C10a TR-T3  vs J9 TR-T3        max|dr| = 0 m
+C10a TR-T4  vs J9 TR-T4        max|dr| = 0 m
+C10a training references: same construction rule as the J9/J10 evidence (bitwise at 4 kHz, S-curves at ref_planned seeds) -> PASS
+C10b I3: route(cyc, together) vs telica max|dr| = 0 m
+C10b E2: route(cyc, together) vs telica max|dr| = 0 m
+C10b route class reproduces telica class -> PASS
+C4a TR-S1_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-S2_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-S3_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-S4_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-S5_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-Y1_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.7e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-Y2_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-Y3_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-P1_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-P2_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-P3_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-P4_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-L1_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TR-L2_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.7e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a VA-S1_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.7e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a VA-Y1_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a VA-P1_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.7e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a VA-L1_r1   lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a I1_r1      lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.7e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a I2_r1      lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a E1_r1      lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TF-1_r1    lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.7e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TF-2_r1    lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.6e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C4a TF-3_r1    lines [383 383 383], off-grid [1.6e-31 1.8e-31 1.7e-31], rms [240 87 180] (applied [240 87 180], scale 1.00) -> PASS
+C9  every manifest reference within the limits (E6 exception, E3 margin) -> PASS
+C4a constructed multisine on the B_tr grid at the applied level -> PASS
+
+realised reference peaks (logical X_sym / Y): v [m/s], a [m/s^2], j [m/s^3], Y range, X_sym range, pre-check scale
+  TR-S1_r1   v 0.000 / 0.000  a   0.00 /   0.00  j       0 /       0  Y [-0.300 -0.300]  X [+0.000 +0.000]  scale 1.00
+  TR-S2_r1   v 0.000 / 0.000  a   0.00 /   0.00  j       0 /       0  Y [-0.150 -0.150]  X [+0.000 +0.000]  scale 1.00
+  TR-S3_r1   v 0.000 / 0.000  a   0.00 /   0.00  j       0 /       0  Y [+0.000 +0.000]  X [+0.000 +0.000]  scale 1.00
+  TR-S4_r1   v 0.000 / 0.000  a   0.00 /   0.00  j       0 /       0  Y [+0.150 +0.150]  X [+0.000 +0.000]  scale 1.00
+  TR-S5_r1   v 0.000 / 0.000  a   0.00 /   0.00  j       0 /       0  Y [+0.300 +0.300]  X [+0.000 +0.000]  scale 1.00
+  TR-Y1_r1   v 0.000 / 0.596  a   0.00 /   3.76  j       0 /   34807  Y [-0.300 +0.300]  X [+0.000 +0.000]  scale 1.00
+  TR-Y2_r1   v 0.000 / 1.088  a   0.00 /   8.88  j       0 /   59218  Y [-0.300 +0.300]  X [+0.000 +0.000]  scale 1.00
+  TR-Y3_r1   v 0.000 / 1.414  a   0.00 /  12.20  j       0 /   41945  Y [-0.300 +0.300]  X [+0.000 +0.000]  scale 1.00
+  TR-P1_r1   v 0.500 / 0.500  a   7.50 /  12.50  j     417 /     694  Y [-0.264 +0.292]  X [-0.225 +0.277]  scale 1.00
+  TR-P2_r1   v 1.000 / 1.000  a  15.00 /  25.00  j    1000 /    1666  Y [-0.296 +0.296]  X [-0.280 +0.203]  scale 1.00
+  TR-P3_r1   v 1.500 / 1.500  a  22.50 /  37.50  j    3750 /    6250  Y [-0.299 +0.297]  X [-0.240 +0.280]  scale 1.00
+  TR-P4_r1   v 1.000 / 1.000  a  14.99 /  25.00  j    1199 /    1999  Y [-0.286 +0.300]  X [-0.140 +0.140]  scale 1.00
+  TR-L1_r1   v 1.495 / 0.914  a  12.84 /   6.57  j   25196 /   52762  Y [-0.300 +0.300]  X [-0.280 +0.280]  scale 1.00
+  TR-L2_r1   v 0.754 / 1.100  a   8.69 /   9.56  j   15791 /   39968  Y [-0.250 +0.250]  X [-0.080 +0.080]  scale 1.00
+  TR-T1_r1   v 0.757 / 1.382  a  22.50 /  37.50  j    1338 /    2035  Y [-0.240 +0.240]  X [-0.080 +0.080]  scale 1.00
+  TR-T2_r1   v 0.586 / 1.070  a  13.50 /  22.50  j     622 /     951  Y [-0.240 +0.240]  X [-0.080 +0.080]  scale 1.00
+  TR-T3_r1   v 0.757 / 1.382  a  22.50 /  37.50  j    1338 /    2035  Y [-0.260 +0.300]  X [-0.080 +0.080]  scale 1.00
+  TR-T4_r1   v 0.586 / 1.070  a  13.50 /  22.50  j     622 /     951  Y [-0.300 +0.260]  X [-0.080 +0.080]  scale 1.00
+  VA-S1_r1   v 0.000 / 0.000  a   0.00 /   0.00  j       0 /       0  Y [+0.100 +0.100]  X [+0.000 +0.000]  scale 1.00
+  VA-Y1_r1   v 0.000 / 0.907  a   0.00 /   7.40  j       0 /   49348  Y [-0.200 +0.300]  X [+0.000 +0.000]  scale 1.00
+  VA-P1_r1   v 1.000 / 1.000  a  15.00 /  25.00  j    1000 /    1667  Y [-0.212 +0.299]  X [-0.274 +0.280]  scale 1.00
+  VA-L1_r1   v 0.754 / 0.880  a   8.69 /   7.65  j   15791 /   31974  Y [-0.250 +0.150]  X [-0.080 +0.080]  scale 1.00
+  VA-T1_r1   v 0.757 / 1.382  a  22.50 /  37.50  j    1338 /    2035  Y [-0.280 +0.280]  X [-0.080 +0.080]  scale 1.00
+  VA-T2_r1   v 0.586 / 1.070  a  13.50 /  22.50  j     622 /     951  Y [-0.280 +0.280]  X [-0.080 +0.080]  scale 1.00
+  I1_r1      v 1.000 / 1.000  a  14.99 /  25.00  j    1000 /    1666  Y [-0.297 +0.288]  X [-0.258 +0.273]  scale 1.00
+  I2_r1      v 0.000 / 0.000  a   0.00 /   0.00  j       0 /       0  Y [-0.225 -0.225]  X [+0.000 +0.000]  scale 1.00
+  I3_r1      v 0.677 / 1.236  a  18.00 /  30.00  j     960 /    1456  Y [-0.170 +0.150]  X [-0.080 +0.080]  scale 1.00
+  I4_r1      v 0.677 / 1.236  a  18.00 /  30.00  j     957 /    1456  Y [-0.170 +0.150]  X [-0.080 +0.080]  scale 1.00
+  I5_r1      v 0.736 / 1.359  a  17.99 /  29.99  j    1439 /    2399  Y [-0.170 +0.150]  X [-0.080 +0.080]  scale 1.00
+  I6_r1      v 1.500 / 1.500  a  18.00 /  30.00  j     432 /    1200  Y [-0.280 +0.280]  X [-0.250 +0.250]  scale 1.00
+  E1_r1      v 0.000 / 0.000  a   0.00 /   0.00  j       0 /       0  Y [-0.390 -0.390]  X [+0.000 +0.000]  scale 1.00
+  E2_r1      v 0.677 / 1.236  a  18.00 /  30.00  j     960 /    1456  Y [-0.330 +0.390]  X [-0.080 +0.080]  scale 1.00
+  E3_r1      v 0.907 / 1.498  a  29.94 /  49.98  j    2395 /    3999  Y [-0.170 +0.150]  X [-0.080 +0.080]  scale 1.00
+  E4_r1      v 1.950 / 1.950  a  18.00 /  30.00  j     383 /     923  Y [-0.280 +0.280]  X [-0.250 +0.250]  scale 1.00
+  E5_r1      v 0.677 / 1.236  a  18.00 /  30.00  j     960 /    1456  Y [-0.170 +0.150]  X [-0.080 +0.080]  scale 1.00
+  E6_r1      v 1.001 / 1.500  a  39.31 /  50.66  j    3090 /    3422  Y [-0.170 +0.150]  X [-0.080 +0.080]  scale 1.00
+  TF-1_r1    v 0.000 / 0.000  a   0.00 /   0.00  j       0 /       0  Y [+0.150 +0.150]  X [+0.000 +0.000]  scale 1.00
+  TF-2_r1    v 0.000 / 0.000  a   0.00 /   0.00  j       0 /       0  Y [+0.225 +0.225]  X [+0.000 +0.000]  scale 1.00
+  TF-3_r1    v 0.000 / 0.000  a   0.00 /   0.00  j       0 /       0  Y [+0.350 +0.350]  X [+0.000 +0.000]  scale 1.00
+K1: closed loop stable at all 79 Y points: PASS (max |pole| 0.995530 at Y +0.39)
+   loop X1: min |GM| 13.59 dB (Y -0.39), min PM  36.1 deg (Y -0.39), first crossover  71.9 to 106.7 Hz
+   loop X2: min |GM| 12.82 dB (Y +0.39), min PM  33.8 deg (Y +0.39), first crossover  67.4 to 106.4 Hz
+   loop Y : min |GM| 12.23 dB (Y -0.04), min PM  28.5 deg (Y -0.05), first crossover  82.9 to  83.5 Hz  <-- below GM 6 dB / PM 30 deg
+K2-g+: closed loop stable at all 79 Y points: PASS (max |pole| 0.995448 at Y +0.39)
+   loop X1: min |GM| 15.18 dB (Y -0.39), min PM  38.2 deg (Y -0.39), first crossover  83.1 to 124.2 Hz
+   loop X2: min |GM| 14.41 dB (Y +0.39), min PM  36.1 deg (Y +0.39), first crossover  77.7 to 123.8 Hz
+   loop Y : min |GM| 10.65 dB (Y -0.06), min PM  25.0 deg (Y -0.02), first crossover  91.4 to  91.9 Hz  <-- below GM 6 dB / PM 30 deg
+C6  controller gate (stability of K1 and K2-g+ on T_AF, Y -0.39 to +0.39) -> PASS
+target band rms (measured, 19.53 to 292.97 Hz): [3.37 3.696 1.086] nm
+C11 Y = -0.390: rel err A 6.55e-17, B 1.66e-17
+C11 Y = +0.000: rel err A 6.55e-17, B 1.66e-18
+C11 Y = +0.350: rel err A 1.31e-16, B 2.60e-17
+C11 truth linearisation = ODE Jacobian -> PASS
+WATCHDOG ALERT available RAM 1.47 GB < 1.5 GB (tree 2,795 MB)
+  Y -0.390 draw 1: std d [0.161 0.114 0.0198] N (int Phi_d: [0.164 0.112 0.0201]), rms d below 300 Hz [0.134 0.0895 0.0198] N, var err [0.039 0.038 0.024]
+C2  Y -0.390: band rms [3.352 3.721 1.087] nm, rel [-0.0053 0.007 0.0015] -> PASS | Phi_d peak X1 6.09e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.9e+01 | multisine over noise in B_tr >= [54.9 57.7 68] dB
+  Y -0.300 draw 1: std d [0.149 0.117 0.02] N (int Phi_d: [0.151 0.116 0.0201]), rms d below 300 Hz [0.122 0.0929 0.0198] N, var err [0.015 0.0054 0.01]
+C2  Y -0.300: band rms [3.381 3.655 1.088] nm, rel [0.0032 -0.011 0.0018] -> PASS | Phi_d peak X1 4.94e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [55.8 57.5 68] dB
+  Y -0.225 draw 1: std d [0.141 0.124 0.0196] N (int Phi_d: [0.141 0.121 0.0201]), rms d below 300 Hz [0.114 0.0967 0.0198] N, var err [0.0013 0.049 0.048]
+C2  Y -0.225: band rms [3.378 3.729 1.083] nm, rel [0.0022 0.0091 -0.0022] -> PASS | Phi_d peak X1 4.21e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [56.4 57.3 68] dB
+  Y -0.150 draw 1: std d [0.128 0.123 0.0206] N (int Phi_d: [0.132 0.126 0.0201]), rms d below 300 Hz [0.107 0.101 0.0198] N, var err [0.061 0.057 0.05]
+C2  Y -0.150: band rms [3.353 3.692 1.091] nm, rel [-0.005 -0.00082 0.0049] -> PASS | Phi_d peak X1 3.65e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [57 56.9 68] dB
+  Y -0.060 draw 1: std d [0.121 0.134 0.0197] N (int Phi_d: [0.123 0.135 0.0201]), rms d below 300 Hz [0.1 0.108 0.0198] N, var err [0.044 0.0062 0.036]
+C2  Y -0.060: band rms [3.419 3.732 1.09] nm, rel [0.014 0.01 0.004] -> PASS | Phi_d peak X1 3.13e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [57.7 56.3 68] dB
+  Y -0.050 draw 1: std d [0.126 0.137 0.0193] N (int Phi_d: [0.123 0.136 0.0201]), rms d below 300 Hz [0.0994 0.109 0.0198] N, var err [0.056 0.016 0.073]
+C2  Y -0.050: band rms [3.4 3.694 1.093] nm, rel [0.009 -0.00046 0.0067] -> PASS | Phi_d peak X1 3.08e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [57.7 56.3 68] dB
+  Y -0.040 draw 1: std d [0.119 0.136 0.0198] N (int Phi_d: [0.122 0.137 0.0201]), rms d below 300 Hz [0.0986 0.109 0.0198] N, var err [0.043 0.006 0.03]
+C2  Y -0.040: band rms [3.355 3.727 1.088] nm, rel [-0.0046 0.0085 0.002] -> PASS | Phi_d peak X1 3.03e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [57.8 56.2 68] dB
+  Y -0.010 draw 1: std d [0.119 0.14 0.0209] N (int Phi_d: [0.119 0.14 0.0201]), rms d below 300 Hz [0.0965 0.112 0.0198] N, var err [0.004 0.00081 0.087]
+C2  Y -0.010: band rms [3.378 3.663 1.097] nm, rel [0.0023 -0.0089 0.011] -> PASS | Phi_d peak X1 2.90e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58 56 68] dB
+  Y +0.000 draw 1: std d [0.119 0.137 0.0195] N (int Phi_d: [0.118 0.141 0.0201]), rms d below 300 Hz [0.0958 0.113 0.0198] N, var err [0.0046 0.049 0.054]
+C2  Y +0.000: band rms [3.4 3.72 1.083] nm, rel [0.0088 0.0067 -0.0028] -> PASS | Phi_d peak X1 2.86e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58.1 55.9 68] dB
+  Y +0.040 draw 1: std d [0.116 0.15 0.0204] N (int Phi_d: [0.115 0.145 0.0201]), rms d below 300 Hz [0.0932 0.116 0.0198] N, var err [0.014 0.068 0.031]
+C2  Y +0.040: band rms [3.361 3.679 1.097] nm, rel [-0.0027 -0.0045 0.01] -> PASS | Phi_d peak X1 2.70e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58.3 55.6 68] dB
+  Y +0.050 draw 1: std d [0.114 0.145 0.0196] N (int Phi_d: [0.114 0.146 0.0201]), rms d below 300 Hz [0.0925 0.117 0.0198] N, var err [0.0036 0.018 0.049]
+C2  Y +0.050: band rms [3.384 3.72 1.085] nm, rel [0.0041 0.0065 -0.00058] -> PASS | Phi_d peak X1 2.67e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58.4 55.5 68] dB
+  Y +0.060 draw 1: std d [0.115 0.148 0.0201] N (int Phi_d: [0.114 0.148 0.0201]), rms d below 300 Hz [0.0919 0.118 0.0198] N, var err [0.034 0.006 0.00016]
+C2  Y +0.060: band rms [3.408 3.725 1.094] nm, rel [0.011 0.008 0.0078] -> PASS | Phi_d peak X1 2.63e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58.4 55.4 68] dB
+  Y +0.100 draw 1: std d [0.11 0.152 0.0207] N (int Phi_d: [0.111 0.153 0.0201]), rms d below 300 Hz [0.0895 0.122 0.0198] N, var err [0.02 0.014 0.065]
+C2  Y +0.100: band rms [3.388 3.705 1.09] nm, rel [0.0053 0.0025 0.0044] -> PASS | Phi_d peak X1 2.51e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58.6 55.1 68] dB
+  Y +0.150 draw 1: std d [0.107 0.163 0.0207] N (int Phi_d: [0.107 0.16 0.0201]), rms d below 300 Hz [0.0868 0.128 0.0198] N, var err [0.0064 0.044 0.063]
+C2  Y +0.150: band rms [3.357 3.693 1.086] nm, rel [-0.0038 -0.00059 0.00066] -> PASS | Phi_d peak X1 2.37e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.8e+01 | multisine over noise in B_tr >= [58.9 54.7 68] dB
+  Y +0.225 draw 1: std d [0.103 0.171 0.0204] N (int Phi_d: [0.103 0.171 0.0201]), rms d below 300 Hz [0.0832 0.137 0.0198] N, var err [0.0014 0.0023 0.037]
+C2  Y +0.225: band rms [3.384 3.708 1.086] nm, rel [0.0042 0.0033 0.00058] -> PASS | Phi_d peak X1 2.23e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 1.9e+01 | multisine over noise in B_tr >= [59.2 54 68] dB
+  Y +0.300 draw 1: std d [0.0993 0.185 0.0201] N (int Phi_d: [0.0997 0.184 0.0201]), rms d below 300 Hz [0.0805 0.147 0.0198] N, var err [0.0077 0.0056 0.00061]
+C2  Y +0.300: band rms [3.36 3.679 1.08] nm, rel [-0.003 -0.0044 -0.0056] -> PASS | Phi_d peak X1 2.16e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 2.0e+01 | multisine over noise in B_tr >= [59.3 53.2 68] dB
+  Y +0.350 draw 1: std d [0.0992 0.194 0.0203] N (int Phi_d: [0.0984 0.194 0.0201]), rms d below 300 Hz [0.0794 0.155 0.0198] N, var err [0.017 0.0033 0.023]
+C2  Y +0.350: band rms [3.342 3.732 1.086] nm, rel [-0.0082 0.01 2.3e-05] -> PASS | Phi_d peak X1 2.17e-04 N^2/Hz at 302.8 Hz, Y 2.70e-05 at 150.1 Hz | max cond(T) 2.0e+01 | multisine over noise in B_tr >= [59.4 52.7 68] dB
+C2  noise calibration, 17 Y_op values, 2 x 12 s each, tol 2 % -> PASS
+no JVM: figure skipped; checks/plot_noise_calibration.py draws it from noise_calibration_spectra.mat
+Y -0.39: target std [0.164 0.112 0.0201] N | predicted single-draw spread [0.03 0.032 0.052] | mean ratio [0.9938 0.9984 1.015] (a PASS) | draw spread [0.033 0.041 0.063] (b PASS) | corr target [0.441 -0.125 0.153] sample [0.436 -0.126 0.153] (c PASS)
+         force variance share: below 100 Hz [0.0018 0.0063 0.011], 100-300 Hz [0.66 0.63 0.96], above 300 Hz (roll-off) [0.34 0.36 0.028]; Y within 145-155 Hz [0.0034 0.0036 0.51]
+Y +0.00: target std [0.118 0.141 0.0201] N | predicted single-draw spread [0.03 0.032 0.052] | mean ratio [1.001 0.9954 1.008] (a PASS) | draw spread [0.03 0.031 0.045] (b PASS) | corr target [0.663 -0.084 0.139] sample [0.664 -0.084 0.138] (c PASS)
+         force variance share: below 100 Hz [0.0029 0.0042 0.011], 100-300 Hz [0.65 0.64 0.96], above 300 Hz (roll-off) [0.34 0.36 0.028]; Y within 145-155 Hz [0.0034 0.0036 0.51]
+Y +0.35: target std [0.0984 0.194 0.0201] N | predicted single-draw spread [0.03 0.033 0.052] | mean ratio [1.003 0.9995 0.9911] (a PASS) | draw spread [0.026 0.032 0.052] (b PASS) | corr target [0.358 -0.125 0.173] sample [0.362 -0.125 0.173] (c PASS)
+         force variance share: below 100 Hz [0.004 0.0027 0.011], 100-300 Hz [0.65 0.64 0.96], above 300 Hz (roll-off) [0.35 0.36 0.028]; Y within 145-155 Hz [0.0035 0.0034 0.51]
+C13 noise synthesis covariance (revised criterion) -> PASS
+@@TDG_DONE@@
+[run] checks_final: statement completed but MATLAB did not exit within 20 s; ending its process tree (winpid 4072)
+[run] checks_final finished with code 0 after 1 attempt(s)
+[run] attempt 1, C: free 6.1G before pilot
+[wd] launch  out=logs/pilot
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data({'TR-P3_r1','TR-S1_r1','TR-Y1_r1','TR-L2_r1','TR-T1_r1','I3_r1','I4_r1','I5_r1','I6_r1','E1_r1','E1_r1_nt1','E5_r1','E6_r1','TF-3_r1'}); addpath('checks'); check_records({'TR-P3_r1','TR-S1_r1','TR-Y1_r1','TR-L2_r1','TR-T1_r1','I3_r1','I4_r1','I5_r1','I6_r1','E1_r1','E1_r1_nt1','E5_r1','E6_r1','TF-3_r1'}); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+generate_thesis_data: 14 records selected, versions noisy + noise-free
+
+=== 1/14  TR-S1_r1  [training, standstill Y -0.30, A_prod multisine] ===
+  r OK TR-S1_r1    : X1=[+0 +0] X2=[+0 +0] Y=[-300 -300] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.40 GB < 1.5 GB (tree 2,814 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [8.327 6.619 3.037] nm | stick [10 7.8 2.6] % | F peak [0.42 0.47 0.59], rms [0.25 0.26 0.34] of limit | 47.9 + 42.4 MB | 37.3 s
+
+=== 2/14  TR-Y1_r1  [training, Y sweep 0 +- 0.30 at 0.20 Hz, A_prod] ===
+  r OK TR-Y1_r1    : X1=[+0 +0] X2=[+0 +0] Y=[-300 +300] mm | v 0.000/0.596 m/s a 0.00/3.76 m/s^2 j 0/34807 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [7.028 8.646 2.108] nm | stick [8.5 9 0.6] % | F peak [0.42 0.44 0.56], rms [0.27 0.25 0.36] of limit | 49.7 + 44.2 MB | 21.7 s
+
+=== 3/14  TR-P3_r1  [training, S-curve moves, log strata, T3 12 ms, A_prod] ===
+  r OK TR-P3_r1    : X1=[-240 +280] X2=[-240 +280] Y=[-299 +297] mm | v 1.500/1.500 m/s a 22.50/37.50 m/s^2 j 3750/6250 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [5.915 6.715 2.201] nm | stick [4.7 5.8 1.5] % | F peak [0.78 0.79 0.8], rms [0.4 0.43 0.41] of limit | 49.1 + 43.6 MB | 19.5 s
+
+=== 4/14  TR-L2_r1  [training, Lissajous Y 0.25 @0.7 Hz, X 0.08 @1.5 Hz, X_anti 1 mm @0.8 Hz, A_prod] ===
+  r OK TR-L2_r1    : X1=[-81 +81] X2=[-81 +81] Y=[-250 +250] mm | v 0.754/1.100 m/s a 8.69/9.56 m/s^2 j 15791/39968 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [4.373 5.171 2.061] nm | stick [1.5 1.4 0.4] % | F peak [0.48 0.53 0.64], rms [0.3 0.31 0.36] of limit | 52.5 + 47.0 MB | 18.9 s
+
+=== 5/14  TR-T1_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.00, 75 % max, dwell 0.30 s, no multisine] ===
+  r OK TR-T1_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-240 +240] mm | v 0.757/1.382 m/s a 22.50/37.50 m/s^2 j 1338/2035 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [827.534 919.237 884.896] nm | stick [75.5 75.4 72.3] % | F peak [0.37 0.4 0.28], rms [0.21 0.23 0.2] of limit | 40.4 + 33.3 MB | 14.7 s
+
+=== 6/14  I3_r1  [test-I, ASMPT sine route, X and Y together, 60 % max, Y inside +-0.20] ===
+  r OK I3_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 960/1456 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [1011.258 1046.394 484.428] nm | stick [75.8 74.3 71.6] % | F peak [0.25 0.31 0.23], rms [0.16 0.2 0.16] of limit | 39.5 + 32.9 MB | 14.8 s
+
+=== 7/14  I4_r1  [test-I, ASMPT sine, alternating X-only 40 mm and Y-only 80 mm moves, 60 % max] ===
+  r OK I4_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 957/1456 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [2387.944 2103.323 2510.946] nm | stick [87.1 87 86.3] % | F peak [0.27 0.29 0.23], rms [0.13 0.14 0.11] of limit | 38.2 + 31.7 MB | 14.2 s
+
+=== 8/14  I5_r1  [test-I, ASMPT S-curve route (I3 sequence), 60 % max, vmax 1.5, T3 25 ms] ===
+  r OK I5_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.736/1.359 m/s a 17.99/29.99 m/s^2 j 1439/2399 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [1501.593 1557.394 678.502] nm | stick [75.4 74.5 72.1] % | F peak [0.26 0.32 0.24], rms [0.17 0.22 0.18] of limit | 39.4 + 32.8 MB | 15.4 s
+
+=== 9/14  I6_r1  [test-I, ASMPT sine long strokes 0.50 / 0.56 m, 60 % max, v cap 1.5] ===
+  r OK I6_r1       : X1=[-250 +250] X2=[-250 +250] Y=[-280 +280] mm | v 1.500/1.500 m/s a 18.00/30.00 m/s^2 j 432/1200 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [455.143 433.152 913.601] nm | stick [50.6 50.1 50.7] % | F peak [0.27 0.31 0.23], rms [0.19 0.22 0.14] of limit | 41.1 + 33.5 MB | 14.5 s
+
+=== 10/14  E1_r1  [test-E, standstill Y -0.39, A_prod] ===
+  r OK E1_r1       : X1=[+0 +0] X2=[+0 +0] Y=[-390 -390] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [7.986 7.434 4.488] nm | stick [11.4 8.3 2.3] % | F peak [0.41 0.47 0.48], rms [0.24 0.27 0.34] of limit | 47.9 + 42.4 MB | 17.8 s
+
+=== 11/14  E5_r1  [test-E, I3 under K2-g+ (K1 gains +20 %)] ===
+  r OK E5_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 960/1456 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [1612.794 1622.851 874.518] nm | stick [75.8 74.7 71.9] % | F peak [0.25 0.31 0.23], rms [0.16 0.2 0.16] of limit | 39.1 + 32.5 MB | 16.3 s
+
+=== 12/14  E6_r1  [test-E, measured ILC move (D-210), exact, on the I3 lattice] ===
+  E6_r1: acceleration assert skipped by name (realised X 39.31, Y 50.66 m/s^2)
+  r OK E6_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 1.001/1.500 m/s a 39.31/50.66 m/s^2 j 3090/3422 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [1209.625 929.326 783.738] nm | stick [78.6 76.5 73.1] % | F peak [0.55 0.66 0.38], rms [0.32 0.38 0.25] of limit | 39.5 + 32.9 MB | 14.2 s
+
+=== 13/14  TF-3_r1  [frf, FRF reference, standstill Y +0.350, periodic B_tr multisine (6 periods of 2 s)] ===
+  r OK TF-3_r1     : X1=[+0 +0] X2=[+0 +0] Y=[+350 +350] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [6.711 9.518 4.516] nm | stick [7.6 14.1 1.8] % | F peak [0.51 0.38 0.57], rms [0.27 0.23 0.34] of limit | 47.9 + 42.4 MB | 18.5 s
+
+=== 14/14  E1_r1_nt1  [noise-twin, noise-only twin of E1: same r and f, new noise] ===
+  r OK E1_r1_nt1   : X1=[+0 +0] X2=[+0 +0] Y=[-390 -390] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [NaN NaN NaN] nm | stick [11.4 8.3 2.3] % | F peak [0.41 0.47 0.48], rms [0.24 0.27 0.34] of limit | 47.9 + 0.0 MB | 10.8 s
+MANIFEST noisy: 14 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 13 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+file         C14   C3    C4b   C8    | noise adds rms all f / band [nm]          | target band [3.37 3.7 1.09] nm | MB noisy/free
+TR-P3_r1     PASS  PASS  PASS  PASS  | [5.92 6.71 2.2]      / [5.83 6.45 2.1]      |                   | 49.1 / 43.6 
+TR-S1_r1     PASS  PASS  PASS  PASS  | [8.33 6.62 3.04]     / [8.08 6.36 2.86]     |                   | 47.9 / 42.4 
+TR-Y1_r1     PASS  PASS  PASS  PASS  | [7.03 8.65 2.11]     / [6.69 8.05 2.12]     |                   | 49.7 / 44.2 
+TR-L2_r1     PASS  PASS  PASS  PASS  | [4.37 5.17 2.06]     / [4.1 4.5 1.51]       |                   | 52.5 / 47.0 
+TR-T1_r1     PASS  PASS  PASS  PASS  | [827.53 919.24 884.9] / [792.19 880.18 835.72] |                   | 40.4 / 33.3 
+I3_r1        PASS  PASS  PASS  PASS  | [1011.26 1046.39 484.43] / [949.82 982.19 445.77] |                   | 39.5 / 32.9 
+I4_r1        PASS  PASS  PASS  PASS  | [2387.94 2103.32 2510.95] / [2183.04 1941.01 2337.32] |                   | 38.2 / 31.7 
+I5_r1        PASS  PASS  PASS  PASS  | [1501.59 1557.39 678.5] / [1428.45 1486.5 628.55] |                   | 39.4 / 32.8 
+I6_r1        PASS  PASS  PASS  PASS  | [455.14 433.15 913.6] / [426.02 408.03 859.41] |                   | 41.1 / 33.5 
+E1_r1        PASS  PASS  PASS  PASS  | [7.99 7.43 4.49]     / [7.59 7.33 3.88]     |                   | 47.9 / 42.4 
+E1_r1_nt1    PASS  PASS  PASS  PASS  | [NaN NaN NaN]        / [NaN NaN NaN]        |                   | 47.9 / NaN 
+E5_r1        PASS  PASS  PASS  PASS  | [1612.79 1622.85 874.52] / [1468.09 1477.86 770.35] |                   | 39.1 / 32.5 
+E6_r1        PASS  PASS  PASS  PASS  | [1209.62 929.33 783.74] / [1097.45 843.58 730.46] |                   | 39.5 / 32.9 
+TF-3_r1      PASS  PASS  PASS  PASS  | [6.71 9.52 4.52]     / [6.5 9.18 4.09]      |                   | 47.9 / 42.4 
+C3 / C4b / C8 / C14 on 14 saved records -> PASS
+@@TDG_DONE@@
+[run] pilot: statement completed but MATLAB did not exit within 20 s; ending its process tree (winpid 26888)
+[run] pilot finished with code 0 after 1 attempt(s)
+[pipeline 23:28:23] done

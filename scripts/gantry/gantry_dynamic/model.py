@@ -1,10 +1,4 @@
-"""Model construction (interconnect + encoder) and the training call.
-
-The augmentation implementation is untouched: `build_model` and `train_model`
-are verbatim moves of the pre-refactor functions, with module globals replaced
-by explicit (hp, cfg, data, norm) arguments. The star imports mirror the
-pre-refactor entry file so no name resolves differently.
-"""
+"""Model construction (interconnect + encoder) and the training call."""
 __project_origin__ = "added"
 
 import os
@@ -14,7 +8,7 @@ import torch
 import deepSI
 
 from model_augmentation.utils.utils import *
-from model_augmentation.utils.torch_nets import zero_init_feed_forward_nn
+from model_augmentation.utils.torch_nets import paper_resnet, zero_init_feed_forward_nn, live_g_feed_forward_nn
 from model_augmentation.fit_systems.interconnect import *
 from model_augmentation.fit_systems.blocks import *
 from model_augmentation.fit_systems.pre_encoder import linear_encoder_init_aug
@@ -98,6 +92,8 @@ def build_model(hp, cfg: RunConfig, data, norm):
             _combo = Reduced_Gantry_State_Block.combos_of(_nominal, _gss.Lb)
             if cfg.combo_init_detune is not None:
                 _combo = _combo * _combo.new_tensor(cfg.combo_init_detune)
+            # D-229: the block, not this pipeline, owns the bounded m_diff coordinate. Constructing
+            # it after detuning makes eta0 and the local scale s specific to the declared start.
             phy_block = Reduced_Gantry_State_Block(
                 params_init=_nominal, combo_init=_combo, **_common).to(DTYPE_PT)
         else:
@@ -133,11 +129,18 @@ def build_model(hp, cfg: RunConfig, data, norm):
     ic.add_block(out_phys)
 
     _act = torch.nn.Identity if cfg.ann_activation == 'linear' else torch.nn.Tanh
+    # D-240: g_aug network. Live variants receive which output rows route to added states.
+    if cfg.g_init == 'live':
+        _ann_net = paper_resnet if cfg.ann_arch == 'resnet' else live_g_feed_forward_nn
+        _ann_net_kwargs = {'output_state_indices': tuple(int(i) for i in route_ix), 'nx_phys': NX_PHYS}
+    else:
+        _ann_net, _ann_net_kwargs = zero_init_feed_forward_nn, None
     ann_block = Static_ANN_Block(
         nz=nxd + nu, nw=len(route_ix),  # D-068: ANN outputs, one per routed row (cfg.ann_route_ix)
         n_nodes_per_layer=hp['n_nodes_per_layer'],
         n_hidden_layers=hp['n_hidden_layers'],
-        net=zero_init_feed_forward_nn,
+        net=_ann_net,
+        net_kwargs=_ann_net_kwargs,
         activation=_act,
     )
     ic.add_block(ann_block)
@@ -147,6 +150,9 @@ def build_model(hp, cfg: RunConfig, data, norm):
     # zero-projection-plus-zero-gate saddle is arXiv:2607.16568). Addresses the W^a dead zone
     # (D-130, gate G1).
     if os.environ.get('ANN_REZERO_GATE'):
+        if cfg.g_init == 'live':
+            raise ValueError('ANN_REZERO_GATE is a different initialization and cannot be combined '
+                             'with live-g initialization')
         from common.rezero_gate import apply_rezero_gate
         _alpha = apply_rezero_gate(ann_block.net)
         print(f"[rezero] final layer re-initialised + zero scalar gate (alpha={float(_alpha):.1f}); "
@@ -230,6 +236,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
             # does not restore digits already discarded, so with use_f64=True the encoder init
             # would carry float32 accuracy inside a float64 run.
             dtype=DTYPE_PT,
+            wa_encoder_init=cfg.wa_encoder_init,
         ).to(DTYPE_PT)
 
     # CHANGED: pass lr and eps at optimizer creation. init_model builds the optimizer here;
@@ -285,25 +292,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
         from common.orth_penalty import build_orth_penalty
         fit_sys.orth_penalty = build_orth_penalty(cfg, data, norm)
 
-    # Burn-in (D-178), attached the same way and for the same reason: 0 is the exact no-op, so
-    # this line changes nothing for every run before it existed.
-    #
-    # The assert is NOT ceremony. The slice lives in `SSE_Interconnect_Composed.loss`, which
-    # re-implements the reduction rather than calling `super().loss()`; the base class's own
-    # `loss` therefore ignores `burn_in` entirely. Setting the attribute on a system built from
-    # any other class would leave a run silently optimising the OLD objective while its
-    # config.json claimed BURN_IN=100, which is a wrong experiment rather than a crash. Checked
-    # against the class, not the instance, because the attribute would otherwise appear to exist
-    # the moment we set it.
-    if cfg.burn_in and not any('burn_in' in k.__dict__ for k in type(fit_sys).__mro__):
-        raise RuntimeError(
-            'burn_in=%d was requested but %s declares no `burn_in`, so its loss() cannot honour '
-            'it and the run would silently optimise the full window while config.json recorded '
-            'the burn-in. The slice lives in SSE_Interconnect_Composed.loss (D-178).'
-            % (cfg.burn_in, type(fit_sys).__name__))
-    fit_sys.burn_in = cfg.burn_in
-
-    # One-step orthogonal-by-construction (D-192), attached the same way as the two above and
+    # One-step orthogonal-by-construction (D-192), attached the same way as the penalty above and
     # for the same reason: `obc=False` attaches nothing, so every seam it uses is inert and the
     # run is bit-identical to one from before it existed. The attach builds the fixed reference
     # set from every training sample (CPU, float64 source) and the correction module; the first

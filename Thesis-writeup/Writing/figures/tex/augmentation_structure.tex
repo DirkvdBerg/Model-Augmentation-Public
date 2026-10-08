@@ -1,0 +1,89 @@
+\begin{tikzpicture}[
+    >={Latex[length=1.8mm,width=1.3mm]},
+    line width=0.5pt,
+    blk/.style={draw, line width=0.6pt, rounded corners=1pt, fill=white,
+                align=center, inner sep=2pt, minimum height=9mm},
+    sub/.style={font=\scriptsize},
+    dot/.style={circle, fill, inner sep=0pt, minimum size=2.4pt},
+    hop/.style={preaction={draw=white, line width=2.4pt}},
+    sum/.style={draw, circle, line width=0.6pt, inner sep=0pt, minimum size=3.4mm},
+  ]
+  % grid
+  \def\xU{0}     % u_k bus
+  \def\xS{0.8}   % state bus x-hat_k
+  \def\xB{3.25}  % block centres
+  \def\xP{5.35}  % sums
+  \def\xR{6.55}  % merge bar
+  \def\xF{7.45}  % feedback
+  \def\yA{2.6}   % phi_aug row
+  \def\yF{1.3}   % f_base row
+  \def\yO{0.0}   % h_base row
+  \def\yR{-1.25} % z^-1
+  \def\yE{-2.65} % encoder, below z^-1
+
+  % blocks
+  \node[blk, minimum width=27mm] (ann) at (\xB,\yA)
+       {$\phi_{\mathrm{aug}}$\\[-1pt] {\scriptsize neural network}};
+  \node[blk, minimum width=27mm] (fb) at (\xB,\yF)
+       {$f_{\mathrm{base}}$\\[-1pt] {\scriptsize physics model, one step}};
+  \node[blk, minimum width=27mm] (hb) at (\xB,\yO)
+       {$h_{\mathrm{base}}$\\[-1pt] {\scriptsize output map}};
+  \node[blk, minimum width=8mm, minimum height=7mm] (z) at (\xS,\yR) {$z^{-1}$};
+  \node[blk, minimum width=11mm, minimum height=11mm] (enc) at (\xS,\yE)
+       {$\psi$\\[-1pt] {\scriptsize encoder}};
+
+  \node[sum] (s1) at (\xP,\yF) {};
+  \node[sum] (s2) at (\xP,\yO) {};
+  \foreach \s in {s1,s2}
+    \draw ($(\s)+(-0.95mm,0)$) -- ($(\s)+(0.95mm,0)$)
+          ($(\s)+(0,-0.95mm)$) -- ($(\s)+(0,0.95mm)$);
+
+  % state bus x-hat_k
+  \draw (z.north) -- (\xS,\yA+0.2);
+  \node[anchor=east] at (\xS,{(\yR+\yO)/2+0.05}) {$\hat x_k$};
+  \draw[->] (\xS,\yA+0.2) -- (ann.west |- 0,\yA+0.2);
+  \draw[->] (\xS,\yF+0.2) -- (fb.west |- 0,\yF+0.2)
+       node[pos=0.45, above, inner sep=1.5pt] {$\tilde x_k$};
+  \draw[->] (\xS,\yO) -- (hb.west)
+       node[pos=0.45, above, inner sep=1.5pt] {$\tilde x_k$};
+  \node[dot] at (\xS,\yF+0.2) {};
+  \node[dot] at (\xS,\yO) {};
+
+  % input bus u_k (crosses the state bus with a gap)
+  \node[anchor=south, inner sep=1.5pt] at (\xU,\yA+0.7) {$u_k$};
+  \draw (\xU,\yA+0.7) -- (\xU,\yF-0.2);
+  \draw[->, hop] (\xU,\yA-0.2) -- (ann.west |- 0,\yA-0.2);
+  \draw[->, hop] (\xU,\yF-0.2) -- (fb.west |- 0,\yF-0.2);
+  \node[dot] at (\xU,\yA-0.2) {};
+
+  % network outputs
+  \draw[->] (ann.east |- 0,\yA+0.2) -- (\xR,\yA+0.2)
+       node[pos=0.22, above, inner sep=1.5pt] {$g_{\mathrm{aug}}$}
+       node[pos=0.8, above, inner sep=1.5pt] {$\bar x_{k+1}$};
+  \draw[->] (ann.east |- 0,\yA-0.2) -| (s1.north)
+       node[pos=0.75, right, inner sep=1.5pt] {$f_{\mathrm{aug}}$};
+
+  % physics step -> sum -> merge bar
+  \draw[->] (fb.east) -- (s1.west);
+  \draw[->] (s1.east) -- (\xR,\yF)
+       node[pos=0.5, above, inner sep=1.5pt] {$\tilde x_{k+1}$};
+  \draw[line width=2pt] (\xR,\yF-0.2) -- (\xR,\yA+0.4);
+
+  % feedback x-hat_{k+1} -> z^-1
+  \draw[->] (\xR,{(\yA+\yF)/2}) -- (\xF,{(\yA+\yF)/2}) |- (z.east);
+  \node[anchor=south, inner sep=1.5pt] at ({(\xR+\xF)/2+0.03},{(\yA+\yF)/2}) {$\hat x_{k+1}$};
+
+  % output
+  \draw[->] (hb.east) -- (s2.west);
+  \draw[->, dashed] (\xP,\yO+0.7) -- (s2.north);
+  \node[anchor=west, inner sep=1.5pt] at (\xP+0.05,\yO+0.6) {$h_{\mathrm{aug}}=0$};
+  \draw[->] (s2.east) -- ++(0.55,0) node[anchor=west, inner sep=1.5pt] {$\hat y_k$};
+
+  % encoder
+  \draw[->, dashed] (enc.north) -- (z.south)
+       node[pos=0.5, right, inner sep=1.5pt] {$\hat x_{k|k}$};
+  \draw[<-] (enc.west |- 0,\yE+0.3) -- ++(-0.4,0)
+       node[anchor=east, inner sep=1.5pt] {$y_{k-n_a}^{k-1}$};
+  \draw[<-] (enc.west |- 0,\yE-0.3) -- ++(-0.4,0)
+       node[anchor=east, inner sep=1.5pt] {$u_{k-n_b}^{k-1}$};
+\end{tikzpicture}

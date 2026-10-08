@@ -39,7 +39,7 @@ from model_augmentation.fit_systems.obc import (
     evaluate_step_rows)
 
 from .config import RunConfig
-from .data import TRAIN_FILES, traj_dir, _resample_u, _load_u
+from .data import TRAIN_FILES, traj_dir, _record_at_fs_new
 
 COMBO_NAMES = Reduced_Gantry_State_Block.COMBO_NAMES
 
@@ -87,19 +87,15 @@ def fourth_order_central_difference(q: np.ndarray, ts: float) -> np.ndarray:
 def _load_record_float64(filename: str, cfg: RunConfig):
     """One training record in float64 with the pipeline's exact resampling.
 
-    `u`: block mean over each hold interval (data.py::_resample_u, D-087). `y`, `x_logical`,
-    `delta_a`, `vdelta_a`: point-sampled `[::D]` (data.py::load_traj / load_mat_aug). The
-    pipeline casts to float32 for training; the reference derivative is formed from the float64
-    source so the fourth-order stencil is not applied to float32-quantized positions.
+    The same samples as data.py::load_traj (data.py::_record_at_fs_new): `u` block mean (D-087),
+    `y` the mode's decimation rule (D-232: anti-alias filtered and end-trimmed in the noisy thesis
+    mode), `x_logical`, `delta_a`, `vdelta_a` point-sampled `[::D]`. The pipeline casts to float32
+    for training; the reference derivative is formed from the float64 source so the fourth-order
+    stencil is not applied to float32-quantized positions.
     """
     d = loadmat(os.path.join(traj_dir(cfg), filename), squeeze_me=True)
-    D = cfg.d
-    u = _resample_u(_load_u(d), cfg).astype(np.float64)
-    N = len(u)
-    y = np.asarray(d['y'], dtype=np.float64)[::D][:N]
-    x_logical = np.asarray(d['x_logical'], dtype=np.float64)[::D][:N]
-    delta_a = np.asarray(d['delta_a'], dtype=np.float64)[::D][:N]
-    vdelta_a = np.asarray(d['vdelta_a'], dtype=np.float64)[::D][:N]
+    u, y, x_logical, delta_a, vdelta_a = (np.asarray(a, dtype=np.float64) for a in
+                                          _record_at_fs_new(d, cfg, ('x_logical', 'delta_a', 'vdelta_a')))
     return u, y, x_logical, np.stack([delta_a, vdelta_a], 1)
 
 
@@ -370,8 +366,10 @@ def attach_obc(fit_sys, cfg: RunConfig, data, norm, ref: Optional[GantryReferenc
                            'interconnect (joint_estimation=True, physics_parameterization=reduced).')
     nx = fit_sys.hfn.nx
     if ref is None:
-        ref = build_reference_set(cfg, norm, nx_ann=nx - cfg.nx_phys, stride=ref_stride,
-                                  verbose=verbose)
+        # D-221: the records this run trains on, not the legacy TRAIN_FILES constant.
+        files = getattr(data, 'train_files', None) or TRAIN_FILES
+        ref = build_reference_set(cfg, norm, nx_ann=nx - cfg.nx_phys, files=files,
+                                  stride=ref_stride, verbose=verbose)
     corr = GantryOBCCorrection(phy, nx=nx, nx_phys=cfg.nx_phys, nu=cfg.nu,
                                route_ix=cfg.ann_route_ix, dtype=cfg.dtype_pt,
                                space=cfg.obc_space)

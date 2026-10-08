@@ -1,0 +1,43 @@
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## memory test [lr1e-5]: 216 windows; loss at Delta 0 1.1840e-08; added eig rho 0.0007 at 2000 Hz
+  dL/dDelta = [[-1.356e-08 -7.227e-08]
+ [ 1.338e-08  1.010e-07]]  (|g| 1.256e-07; trace part 4.371e-08 = radial, antisym part 4.283e-08 = rotation)
+  steepest-descent line Delta = s d:
+    s 0.05: loss / L0 1.001 | added eig rho 0.0368 at 2000 Hz
+    s 0.10: loss / L0 1.010 | added eig rho 0.0734 at 2000 Hz
+    s 0.20: loss / L0 1.040 | added eig rho 0.1464 at 2000 Hz
+    s 0.40: loss / L0 1.110 | added eig rho 0.2926 at 2000 Hz
+    s 0.60: loss / L0 1.157 | added eig rho 0.4387 at 2000 Hz
+  [compile] update took 4.8 s against a 0.95 s median at 12 windows: possibly a torch.compile RECOMPILE. If it repeats around validations, check whether a compiled callable is reached on the wrong device.
+    s 0.80: loss / L0 1.195 | added eig rho 0.5848 at 2000 Hz
+  L1 analogue, Delta = r R(2 pi f Ts), loss / L0:
+    r           150 Hz      212 Hz      260 Hz
+    0.30         1.201       1.202       1.204
+    0.60         2.511       2.503       2.461
+    0.80         8.046       7.192       6.099
+    0.90        22.667      15.541      11.034
+    0.95        49.066      27.037      18.287

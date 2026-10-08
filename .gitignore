@@ -5,6 +5,10 @@ __pycache__/
 
 # hidden/cache/editor
 .vscode/
+!.vscode/
+!.vscode/settings.json
+!Thesis-writeup/Writing/.vscode/
+!Thesis-writeup/Writing/.vscode/settings.json
 .pytest_cache/
 .mypy_cache/
 .claude/worktrees/
@@ -16,12 +20,17 @@ LPV_CONTEXT.MAP.txt
 PLAN.md
 *.png
 *.json
+!.vscode/settings.json
+!Thesis-writeup/Writing/.vscode/settings.json
 *.pt
 *.txt
 
 # ML checkpoints
 *.pth
 *.pt
+
+# Data files
+*.mat
 
 # benchmark folder
 literature/robot-benchmark-full/

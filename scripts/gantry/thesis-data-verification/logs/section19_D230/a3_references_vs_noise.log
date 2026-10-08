@@ -1,0 +1,35 @@
+read TR-L1_r1.mat
+read TR-L2_r1.mat
+read TR-P1_r1.mat
+read TR-P2_r1.mat
+read TR-P3_r1.mat
+read TR-P4_r1.mat
+read TR-S1_r1.mat
+read TR-S2_r1.mat
+read TR-S3_r1.mat
+read TR-S4_r1.mat
+read TR-S5_r1.mat
+read TR-T1_r1.mat
+read TR-T2_r1.mat
+read TR-T3_r1.mat
+read TR-T4_r1.mat
+read TR-Y1_r1.mat
+read TR-Y2_r1.mat
+read TR-Y3_r1.mat
+
+(2) ESD K1 r / ESD w_n per 1.5 Hz cell [dB], training set (18 records, 216 s); holds: median >= 30 dB
+  1.0 to  20.0 Hz: median [137.1 104.8 148.6], 10th pct [114.2  94.  125.8], min [109.5  92.4 122.7]  -> sym holds, anti holds, Y holds
+ 20.0 to  50.0 Hz: median [ 88.6  69.  101. ], 10th pct [75.  57.8 87.2], min [72.3 49.6 83. ]  -> sym holds, anti holds, Y holds
+ 50.0 to 106.0 Hz: median [43.  36.5 50.7], 10th pct [35.1 29.6 44.8], min [32.3 20.6 43.3]  -> sym holds, anti holds, Y holds
+  cells below 10 dB (f [Hz], channel, dB): []
+
+(1) force side: ESD f_sim / ESD w_n in B_tr [dB]; holds: min >= 20 dB
+106.0 to 297.0 Hz: median [71.6 70.7 89.4], 10th pct [70.4 69.  81.3], min [67.3 66.6 80.2]  -> sym holds, anti holds, Y holds
+  cells below 10 dB (f [Hz], channel, dB): []
+
+(1) output side: ESD (y - r) / ESD (y_noisy - y_free) in B_tr [dB], logical positions; holds: min >= 20 dB
+106.0 to 297.0 Hz: median [62.5 67.1 86.1], 10th pct [58.5 63.6 75.7], min [53.5 58.  72.5]  -> X holds, Theta holds, Y holds
+  cells below 10 dB (f [Hz], channel, dB): []
+
+noise-induced force rms below 106 Hz per logical channel [N]: [0.0292 0.0075 0.004 ]
+noise-induced force rms in B_tr [N]: [0.0569 0.0231 0.0079]   multisine force rms in B_tr [N]: [211.66  76.73 158.75]

@@ -1,0 +1,13 @@
+[wd] launch  out=outputs/logs/noise_check_B
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); check_encoder_noise('B', false); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+Phi_v on the record grid: rms [9.849 10.4 6.338] nm (target 9.8 / 10.4 / 6.3)
+[wd] t=58s tree=1,051 MB cpu=8% availRAM=1.87 GB C:free=12.83 GB
+(B) friction off, standstill Y 0: simulated [10.81 11.08 6.615] nm, analytic [10.8 11.11 6.638] nm, deviation [0.083 -0.25 -0.35] % | PASS
+    against the measured [9.849 10.4 6.338] nm: analytic / measured [1.1 1.07 1.05] (the sensitivity difference)
+        0 to    20 Hz: analytic / measured rms [0.0538 0.0512 0.0423]
+       20 to   100 Hz: analytic / measured rms [1.3 1.09 1.44]
+      100 to   300 Hz: analytic / measured rms [1.49 1.36 1.49]
+      300 to  1000 Hz: analytic / measured rms [1.12 1.1 1.19]
+     1000 to 10000 Hz: analytic / measured rms [1 1 1.01]
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=75.8 samples=15 peak_tree_ws_mb=1,057 min_avail_ram_gb=1.78 min_C_free_gb=12.83 kill_reason=""

@@ -154,7 +154,9 @@ def main():
             # in a real run happens inside the first loss() call. Do it explicitly here.
             life.maybe_refresh(0, corr.expansion_point)
             th = life.coefficient(rig.ann).detach().clone().requires_grad_(True)
-            exp = torch._dynamo.explain(fs.hfn)(x, u, th)
+            # Since D-194 the step's third argument is the per-objective (mats, dmats) pair, built
+            # exactly as interconnect.loss builds it; the bare coefficient is not a valid input.
+            exp = torch._dynamo.explain(fs.hfn)(x, u, corr.tangent_pair(th))
             out['graph_count'] = exp.graph_count
             out['graph_break_count'] = exp.graph_break_count
             out['op_count'] = exp.op_count
@@ -178,7 +180,7 @@ def main():
             exp = torch._dynamo.explain(fs.hfn)(
                 batch[0].new_zeros(BATCH, fs.hfn.nx).normal_(0, 0.1),
                 batch[0].new_zeros(BATCH, fs.hfn.nu).normal_(0, 0.1),
-                life_theta(life, corr, rig))
+                corr.tangent_pair(life_theta(life, corr, rig)))       # the D-194 pair, as loss()
             out['graph_count'] = exp.graph_count
             out['graph_break_count'] = exp.graph_break_count
             out['break_reasons'] = [str(r)[:200] for r in exp.break_reasons]

@@ -1,0 +1,30 @@
+[wd] launch  out=logs/gen_test-I
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('test-I'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+generate_thesis_data: 6 records selected, versions noisy + noise-free
+
+=== 1/6  I1_r1  [test-I, as TR-P2: S-curve moves, 50 %, T3 30 ms, new phases, noise, setpoints] ===
+  r OK I1_r1       : X1=[-258 +273] X2=[-258 +273] Y=[-297 +288] mm | v 1.000/1.000 m/s a 14.99/25.00 m/s^2 j 1000/1666 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.46 GB < 1.5 GB (tree 2,809 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [5.934 6.907 1.693] nm | stick [4.8 4.9 1.4] % | F peak [0.62 0.6 0.65], rms [0.32 0.32 0.37] of limit | 49.4 + 43.9 MB | 30.1 s
+
+=== 2/6  I2_r1  [test-I, standstill Y -0.225, A_prod] ===
+  r OK I2_r1       : X1=[+0 +0] X2=[+0 +0] Y=[-225 -225] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+[wd] t=58s tree=2,835 MB cpu=10% availRAM=1.36 GB C:free=2.35 GB
+  scale pre 1.00 post 1.00 | noise adds rms [6.888 8.598 2.592] nm | stick [9.4 8.3 2.2] % | F peak [0.43 0.49 0.61], rms [0.25 0.27 0.34] of limit | 47.9 + 42.4 MB | 18.2 s
+
+=== 3/6  I3_r1  [test-I, ASMPT sine route, X and Y together, 60 % max, Y inside +-0.20] ===
+  skip: already on disk
+
+=== 4/6  I4_r1  [test-I, ASMPT sine, alternating X-only 40 mm and Y-only 80 mm moves, 60 % max] ===
+  skip: already on disk
+
+=== 5/6  I5_r1  [test-I, ASMPT S-curve route (I3 sequence), 60 % max, vmax 1.5, T3 25 ms] ===
+  skip: already on disk
+
+=== 6/6  I6_r1  [test-I, ASMPT sine long strokes 0.50 / 0.56 m, 60 % max, v cap 1.5] ===
+  skip: already on disk
+MANIFEST noisy: 38 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 37 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@

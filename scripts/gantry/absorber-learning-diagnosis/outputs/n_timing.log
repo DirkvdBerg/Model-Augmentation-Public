@@ -1,0 +1,32 @@
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## phase 1 pre-flight [timing]: 3 updates, lr 1e-05, batch 512, gate 0, nf 400; 85572 windows available
+  [eval     0] loss 1.5133e-08 | added eig: rho median 0.0000 max 0.0000, angle of max 0.000 rad (0 Hz), complex at 0 % | |W_out| state 0.00e+00 readout 0.00e+00
+  upd     1 loss 1.4189e-08 | grad state 0.00e+00 readout 6.31e-07 static 0.00e+00 phys_params 2.27e-08 encoder 5.23e-06 | 6.8 s/upd
+  upd     2 loss 3.1119e-08 | grad state 6.08e-09 readout 1.17e-05 static 0.00e+00 phys_params 2.29e-08 encoder 2.36e-04 | 7.4 s/upd
+  upd     3 loss 1.6333e-08 | grad state 5.18e-09 readout 2.98e-06 static 0.00e+00 phys_params 2.34e-08 encoder 4.95e-05 | 7.7 s/upd
+  [eval     3] loss 1.9401e-08 | added eig: rho median 0.0000 max 0.0000, angle of max 1.507 rad (959 Hz), complex at 17 % | |W_out| state 8.22e-05 readout 1.67e-04
+  saved outputs/n_phase1_timing.pt

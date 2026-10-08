@@ -5,6 +5,45 @@ nothing else. No `.tex` file here may contain a `..` path: everything LaTeX
 needs lives under `Writing/`, so this directory can be zipped and handed to
 Overleaf or a supervisor as is.
 
+## Editor build and SyncTeX invariant
+
+The repository VS Code settings at the root and in `Writing/.vscode/`
+must preserve the following workflow:
+
+1. Saving any included `.tex` file (Ctrl+S) rebuilds `main.tex`, never the
+   section file in isolation. Changes written from outside the editor do not
+   start a build (`onSave`): with `onFileChange`, AI edits, OneDrive and git
+   started overlapping builds that aborted on a locked `main.aux` and left no
+   `main.synctex.gz`.
+2. The only editor PDF is `build/main.pdf`, produced together with
+   `build/main.synctex.gz` using `-synctex=1`.
+3. The PDF is opened with LaTeX Workshop's tab viewer; double-clicking it must
+   navigate back to the corresponding source line.
+
+Do not change the root-file pattern, output directory, recipe, SyncTeX flag, or
+viewer configuration without testing both an included-section save and reverse
+SyncTeX. Do not add per-section root directives: `main.tex` is the sole root.
+
+AI edits of any `.tex` file here must leave this workflow working. Dirk relies
+on it for every save.
+
+- Edit content only. Never add `% !TEX root`, `\documentclass`,
+  `\begin{document}`, or a `..` path to a section file, and never change
+  `main.tex`'s structure, `.latexmkrc`, or either `.vscode/settings.json` unless
+  asked.
+- Leave the file compiling: braces and environments balanced, and `%`, `&`,
+  `_`, `#` escaped outside math. A failed build leaves `build/main.pdf` stale,
+  so saving no longer refreshes the PDF and double-clicking lands on old lines.
+- Only the editor recipe writes build output, so there is exactly one PDF and
+  one SyncTeX file. Test compiles go to a scratch directory, never to
+  `Writing/` or `build/`.
+- Dirk saves the file before asking for an AI edit. An edit on disk while the
+  editor holds unsaved changes causes a save conflict, and that save then
+  triggers no rebuild.
+
+Done when: after the automatic rebuild, `build/main.log` has no line starting
+with `!`.
+
 | Path | Role |
 |-|-|
 | `main.tex` | class, inputs, title block. Roughly 70 lines, no content. |
@@ -18,10 +57,10 @@ Overleaf or a supervisor as is.
 | `build/` | aux, log and output PDF. |
 | `reference/` | the original untouched IEEE template and BST distribution, for lookup only. Not part of the build. |
 
-## Section writing workflow
+## Writing a section
 
-Write one section at a time using the `WRITING GUIDE` at the top of its file.
-For each section, inspect sources in this order:
+Write one section at a time, starting from the `WRITING GUIDE` at the top of its
+file. Inspect sources in this order:
 
 1. Read the research-plan anchor and identify wording that can be preserved, wording that needs a method update, and explicit departures. Reuse research-plan wording where it is accurate and concise; otherwise write new text, concise and to the point. The research plan is a source, not a constraint.
 2. Read `docs/Thesis-documentation/Meeting-audit/candidate-thesis-impact.md` and the relevant theme in `thematic-thesis-audit.md`. Use Quinten's 18 September outline feedback to set priorities: realistic ASMPT motion, settling, controller transfer, justified choices, and final evidence rather than development history.
@@ -31,11 +70,184 @@ For each section, inspect sources in this order:
    - `model_augmentation/`: reusable augmentation, rollout, encoder, closed-loop, and OBC framework;
    - `scripts/gantry/gantry_dynamic/`: gantry-specific configuration, data, model assembly, controller, training, diagnostics, OBC adapter, and evaluation;
    - `scripts/gantry/gantry_interconnect_dynamic.py`: thin run entry point and final run knobs.
+
+   The audit informs claims; it is not content. Include only what the reader
+   needs to follow the argument.
 5. Trace empirical claims to final configurations, saved artefacts, figure data, and evaluation code. Plans and design notes are not evidence.
 6. Read the relevant primary papers from the mandatory set below and add literature only where an external claim, method origin, theorem, or comparison needs support.
-7. Turn the outline bullets into prose, then check the section's completion criterion and page budget.
 
-Before drafting, write a short section brief with six questions: what must the reader understand; which choices need a reason; which equations are load-bearing; which figure carries the argument; which claims need code, result, or literature verification; and which tempting claims are out of scope. Parameter-recovery tests, failed routes, burn-in screens, and similar development steps stay out of the main narrative unless they are required to establish a final claim.
+### Order of work
+
+The reader's argument comes before every style rule below. Work in this
+order, and do not start a step before Dirk approves the previous one:
+
+1. **Section brief.** Answer six questions: what must the reader understand;
+   which choices need a reason; which equations are load-bearing; which figure
+   carries the argument; which claims need code, result, or literature
+   verification; and which tempting claims are out of scope. Parameter-recovery
+   tests, failed routes, burn-in screens, and similar development steps stay
+   out of the main narrative unless they are required to establish a final
+   claim.
+2. **Claim list.** Per subsection, one governing question and the ordered
+   claims that answer it, each with its source and its verified strength.
+3. **Equations.** Every load-bearing construction displayed, checked against
+   the preceding sections and the code.
+4. **Prose,** one paragraph at a time.
+
+Claim rules, applied from step 2 onward:
+
+- **Claim strength.** State the weakest claim the evidence supports.
+  Wording in `docs/decisions.md`, plans, or code comments is not evidence for
+  a thesis claim; re-derive it or verify it at the source.
+- **Method versus experiment.** A method section describes the method and its
+  gantry realisation. The simulated truth, controller design, numerical
+  settings, and measured numbers belong to Setup or Results.
+- **Checks must be able to fail.** A proposed verification that passes by
+  construction is not a check.
+
+Then run the four phases below. Dirk names the phase ("structure", "mark",
+"rewrite", "check"); the default is structure. The AI supplies content,
+structure, and checks; Dirk writes every sentence of the final text. An AI's
+word choice and sentence structure carry its fingerprint and survive
+paraphrasing, and rewrite prompts do not remove it (evidence basis below).
+
+### Phase 1: Structure
+
+AI role: co-author of content. Produce the brief, claim list, and equations of
+the order of work above in chat. Write prose into the section's `.tex` file only
+on request, one paragraph at a time, following the authorial-voice rules below
+and the editor build invariant above, until Dirk approves the content.
+
+- Write one claim per sentence, connected by the reasoning between them, so the
+  section can be rewritten sentence by sentence without becoming a list of
+  disconnected statements. Where a dependency must stay attached, voice rule 9
+  takes precedence.
+- Display every load-bearing construction as an equation; never compress a
+  formula into prose to save space. Prose gives the purpose, assumption, or
+  consequence of the equation.
+- When a choice or assumption needs a reason that is not in `docs/decisions.md`,
+  the code, or a cited source, write `because: ?` in its place. An invented
+  reason is either wrong or generic, and reasons are what the examiners test.
+
+Done when: Dirk approves the content.
+
+### Phase 2: Mark
+
+AI role: marker. Wrap each technical term in `\kw{}` and change nothing else,
+style issues included. A technical term is a noun phrase that names a quantity,
+model object, component, or method defined in this thesis or its cited
+literature. Mark every occurrence; a multiword term is one unit. Math, symbols,
+and `\cite`/`\ref`/`\eqref` are fixed by default and stay unmarked. `\kw{}`
+prints teal in the draft build and plain with `\draftfalse`.
+
+Example (Section II-B):
+
+```latex
+The measured \kw{payload position} $Y$ is both a \kw{state} and the \kw{scheduling variable},
+making the \kw{baseline} a \kw{self-scheduled LPV model}.
+```
+
+Done when: deleting every `\kw{` and its closing brace gives back the approved
+text exactly. Dirk then commits the marked file; that commit is the reference
+for phase 4.
+
+### Phase 3: Rewrite (Dirk only)
+
+Dirk rewrites each paragraph in place around the `\kw{}` terms: read it, cover
+it, write it from memory. Useful moves: split a sentence, start from a
+different subject, use a verb instead of a noun, use "we" with an active verb,
+move the reason. In this phase the AI does not edit the section files and does
+not write or suggest sentences. Asked about a sentence, it answers with a
+question or a fix of at most five words.
+
+### Phase 4: Check
+
+1. `git diff --word-diff <phase-2 commit> -- <file>`. Uncoloured
+   words were kept from the draft; long uncoloured runs outside `\kw{}` terms
+   show where the draft's wording survived.
+2. AI role: checker. Compare the phase-2 commit with Dirk's version and report
+   every instance as this table, nothing else:
+
+   | # | type | problem | fix (max 5 words) |
+   |-|-|-|-|
+   | 3 | term | `\kw{scheduling variable}` missing | restore term |
+   | 5 | meaning | "only if" became "if" | restore "only if" |
+
+   Types: meaning (a claim changed), term (a `\kw{}` term, symbol, or reference
+   changed or missing), grammar.
+
+Done when: the table has no meaning or term rows, and the section meets its
+completion criterion and page budget.
+
+## Authorial voice and non-generic prose
+
+The aim is clear, recognisably project-specific technical writing, not imitation
+of a detector's idea of human prose. Automated authorship detectors are not a
+validation tool: they can misclassify human text and perform poorly on short
+passages. Review the argument and evidence instead.
+
+Apply these rules to every AI draft (phase 1) and use them as the checklist for
+Dirk's rewrite (phase 3):
+
+1. Preserve Dirk's accepted wording and sentence rhythm where it is accurate.
+   Edit the smallest necessary span; do not rewrite an entire paragraph merely
+   to make it sound more polished.
+2. Give every paragraph one concrete job: introduce a physical fact, make a
+   modelling choice, define a construction, verify it, or state a consequence.
+   Delete sentences that could be pasted unchanged into an unrelated paper.
+3. Name the actual object and action. Prefer “closing the loop recovers
+   \(M(Y)\ddot q=f_{\mathrm{net}}\)” over “this highlights the effectiveness of
+   the proposed framework.”
+4. Use plain technical verbs. Avoid inflated, generic vocabulary such as
+   “delve,” “intricate,” “pivotal,” “crucial,” “meticulous,” “seamless,”
+   “comprehensive,” “underscore,” “showcase,” “leverage,” “utilize,” “enhance,”
+   “subsequently,” or “additionally” unless that word is genuinely the most
+   precise choice.
+5. Do not manufacture transitions. Use “however,” “therefore,” “because,” and
+   “consequently” only when the stated logical relation is real. Avoid routine
+   “first/next/finally” scaffolding and concluding summaries that repeat the
+   paragraph.
+6. Do not paraphrase an equation line by line. Prose around an equation must
+   explain its purpose, assumption, interpretation, or consequence.
+7. Keep technical terms stable rather than cycling through synonyms. Define a
+   symbol or acronym once, then use it consistently.
+8. Prefer direct claims with an explicit subject and a finite verb. Give a
+   consequence its own clause instead of a trailing participle (“…, making the
+   baseline …”), use the verb instead of a noun made from it (“we estimate,” not
+   “the estimation of … is performed”), and write “is” rather than “serves as.”
+   Avoid throat-clearing phrases such as “it is important to note,” “it should be
+   emphasized,” “in order to,” and “it can be seen that.”
+9. Vary sentence length only as the reasoning requires. Use a short sentence
+   for a decisive result and a longer sentence when a dependency or qualification
+   must remain attached. Do not force every paragraph into the same cadence.
+10. State uncertainty and limitations where the evidence requires them. Do not
+    replace a qualified project claim with smooth but stronger generic prose.
+11. Check attribution sentence by sentence. Literature supplies general methods
+    and definitions; gantry-specific algebra, implementation choices, and results
+    remain explicitly this project's work.
+12. In the final voice pass, flag repeated sentence openings, repeated transition
+    words, trailing participle clauses, unnecessary three-part lists, “not only …
+    but also” constructions, promotional adjectives, and claims with no concrete
+    noun, equation, datum, or source. Revise for meaning, not merely for lexical
+    variation.
+
+These rules implement IEEE's guidance to use clear, simple sentences without
+unnecessary words. They also address measured tendencies of LLM-written and
+LLM-modified text: a small set of overused words, noun-heavy grammar with
+trailing participle clauses, formulaic structure, and wording that is more
+homogeneous across authors. Lexical diversity within one text is not a reliable
+marker; studies disagree on its direction. The rules are quality controls, not
+evidence about who authored a passage.
+
+Evidence basis: [IEEE technical-English guidance](https://conferences.ieeeauthorcenter.ieee.org/write-your-paper/write-in-technical-english/),
+[linguistic profiling across human and LLM text](https://aclanthology.org/2025.emnlp-main.1163/),
+[changes in LLM-modified scientific prose](https://aclanthology.org/2026.lrec-1.142/),
+[excess vocabulary in LLM-era abstracts](https://arxiv.org/abs/2406.07016),
+[grammatical and rhetorical style of LLMs](https://doi.org/10.1073/pnas.2422455122),
+[cues used by expert human detectors](https://arxiv.org/abs/2501.15654),
+[model fingerprints that survive paraphrasing](https://arxiv.org/abs/2502.12150),
+[detection of guideline-rewritten text](https://arxiv.org/abs/2607.27183) (detector vendor report),
+and [documented limitations of AI-text classification](https://openai.com/index/new-ai-classifier-for-indicating-ai-written-text/).
 
 ## Validation story
 
@@ -155,4 +367,5 @@ and body font size, so no figure ever needs rescaling in LaTeX.
 ## Draft switch
 
 `util/format.tex` sets `\drafttrue`. Flip it to `\draftfalse` for the
-submission build and every `\todo{}` and `\note{}` disappears.
+submission build: every `\todo{}` and `\note{}` disappears, and every `\kw{}`
+prints as plain text.

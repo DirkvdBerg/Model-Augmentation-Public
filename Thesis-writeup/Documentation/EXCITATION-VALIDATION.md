@@ -5,6 +5,10 @@ Task: `tasks/handoffs/2026-09-25-closed-loop-excitation-validation.md`. Consumer
 absorber (ma 0.50, zeta 0.03), always. Sections 1 to 7 were written before any computation; section 8b
 lists what changed after it.
 
+Friction law, 2026-09-28: every measurement below was made with the Karnopp stick law. The truth's friction is
+now `cc_i tanh(g v_i)`, g = 1000 s/m (D-224, D-226), which removes Karnopp's standstill limit cycle (D-223). Section
+20 reruns the band decision of section 16 with it: the band is unchanged.
+
 One data set. The data are generated once, from the truth under K1; the truth is never detuned. "Nominal" and
 "10 % detuned" (D-191 vector) are two versions of the BASELINE MODEL: the detuned one is the parameter start value of
 joint estimation, not a property of the data (`DATA-DESIGN.md` Q2). Each baseline model is compared with the same
@@ -51,7 +55,7 @@ Done (section 17): T3 and friction coverage on the planned references of `DATA-D
 
 Done (section 18): T4 for the detuned case, gamma 1.27 on the planned data (limit 5), also at the detuned start; the cross-entry gap does not cost separability.
 
-Noise (section 19): the decision is noiseless; the argument that adding noise does not change it is written, but its numbers come from the superseded white-force calibration and MUST BE RECOMPUTED once the shaped noise spectrum exists.
+Noise (section 19): the decision is noiseless; the argument that adding noise does not change it holds with the encoder noise (D-225), recomputed on the D-230 thesis data on 2026-09-29 (it also held with the superseded D-218 force noise, 2026-09-27).
 
 ## 1. What this must establish
 - (a) The multisine band the absorber data must excite: where the nominal baseline and the truth differ in closed loop, above the floor
@@ -465,17 +469,24 @@ Reading, against the criterion
 - So the T3 gap (X-Y cross entries and part of the X1 / X2 split unresolved below the crossover) does not cost separability: what the cross entries carry is also carried by entries the data resolve
 - Limits: noiseless and linear-in-parameter (secant sensitivities of +10 %), baseline model only; gamma judges the shape of the ten effects, not their size against friction distortion (that is T3); whether the augmentation can absorb baseline effects is a separate question (negation, projection)
 
-## 19. Why the noiseless decision holds once noise is added (argument; numbers to recompute, 2026-09-26)
+## 19. Why the noiseless decision holds once noise is added (argument 2026-09-26; numbers on the D-230 data, encoder noise and tanh friction, 2026-09-29)
 The excitation (B_tr, references) was decided on the noiseless case (user). The data are generated with and without noise; the argument below is why adding noise should not change the decision.
-- The noise is a force at the plant input (`NOISE-INJECTION.md`), the same point where the multisine enters and where a reference acts (as K1 r), so the comparison is a plain force-spectrum ratio
-- In the band: the multisine puts about 170 to 300 N^2/Hz per logical channel into 106 to 297 Hz; the noise is 70 to 80 dB below that
-- Below the crossover: the references deliver about 40 dB more force energy per hertz than the noise at 50 to 106 Hz (training set, 18 records of 12 s)
-- Against the friction distortion: the noise-driven FRF error in the band is about 100x smaller than the friction distortion sigma used in T1 to T3, so the thresholds, and hence T1 to T3, are set by friction, not by noise
+- The noise sits on the encoder (`NOISE-INJECTION.md`, D-225): it corrupts the measured output directly and reaches the plant as the force the controller applies in reaction to it. That force is read from the data as u_total(noisy) - u_total(noise-free) (the twins differ only in the noise), so the input-side comparison stays a plain force-spectrum ratio against the multisine and against K1 r; the output side is compared directly
+- In the band: the multisine is at least 67 dB above the noise-induced force (0.01 to 0.06 N rms against 77 to 212 N), and the noise-free response at least 53 dB above the output noise
+- Below the crossover: the references deliver 36 to 51 dB more force energy per hertz than the noise-induced force at 50 to 106 Hz (median per logical channel; training set, 18 records of 12 s)
+- Against the friction distortion: the noise-driven FRF error in the band is 103 to 947x smaller than the friction distortion sigma (median per output and Y, on the thesis FRF records), so the thresholds, and hence T1 to T3, are set by friction, not by noise
 - T4: Brun's gamma uses column-normalised sensitivities; it measures how alike the ten effects are and does not depend on the noise level; noise only widens the parameter standard errors
 - So noise changes the results (floors, parameter accuracy), not which excitation is needed; the with-noise and noise-free data serve the results (R5, floors), not this decision
 
-MUST BE RECOMPUTED before the thesis cites these numbers:
-- The dB figures above are estimates from the SUPERSEDED white-force calibration (sigma 0.312 / 0.342 / 0.099 N per 20 kHz sample, about 0.05 / 0.06 / 0.02 N rms below 300 Hz; `NOISE-INJECTION.md` section 3, "superseded")
-- The agreed calibration is shaped to the measured error spectrum below 300 Hz and puts about 1/9 of that power there (3.4 against about 9.8 nm rms), but it can concentrate it at some frequencies; its force spectrum Phi_d is not computed yet (`NOISE-INJECTION.md` status)
-- To recompute once Phi_d exists: (1) Phi_d against the multisine PSD in 106 to 297 Hz; (2) Phi_d x 216 s against the references' energy spectral density below 106 Hz (`j9_refcov.py`); (3) the noise-driven FRF variance against the friction distortion variance of B6 to B10 per line; the argument holds if (1) and (2) stay above about 20 dB and (3) stays below 1
-- Below about 20 Hz the argument is weakest (the noise model holds its lowest band value there, and the shaped noise is largest at low frequency); that range carries under 1 % of the resolved weight below the crossover (17b)
+Recomputed 2026-09-29 on the D-230 data (docs/decisions.md, section 19 on the D-230 data; logs in `scripts/gantry/thesis-data-verification/logs/section19_D230/`). The 2026-09-27 numbers were for the superseded D-218 force noise and Karnopp friction. Criterion, stated before the recomputation: (1) and (2) above about 20 dB, (3) below 1. All three hold everywhere, not only in the median:
+- (1) In 106 to 297 Hz, per logical channel and 1.5 Hz cell, training set: multisine force against the noise-induced force at least 67 dB (median 71 to 89 dB); noise-free response y - r against the output noise y_noisy - y_free at least 53 dB (median 62 to 86 dB) (`checks/a3_references_vs_noise.py`)
+- (2) Reference force K1 r against the noise-induced force below 106 Hz, training set, 216 s: median 36 to 51 dB at 50 to 106 Hz (at least 20.6 dB in every 1.5 Hz cell, on the anti channel), 69 to 101 dB at 20 to 50 Hz, 105 to 149 dB below 20 Hz (same script)
+- (3) Noise-driven FRF variance against the friction distortion variance, per line, on TF-1 to TF-3 (4 realisations each, noisy minus noise-free against the realisation spread): the sigma ratio is 103 to 947 in the median per output and Y and at least 1.34 at every line (TF-1, X2), so the variance ratio is below 0.56 everywhere (`checks/a3_frf_noise_vs_friction.py`). The tanh law did not remove the friction distortion that sets the thresholds; the noise-free records are now periodic to 1e-10 (Karnopp's stick made them non-periodic)
+- The weakest point is (2) on the anti (yaw) channel just below 106 Hz, where the noise-induced force is closest to the references: 20.6 dB in the worst cell, at the criterion's edge; its median there is 36.5 dB
+
+## 20. The band with the tanh friction law (D-224, D-226, 2026-09-28)
+- Rerun of B6 to B10 (same seeds, injections and DFT lines as `matlab/bla_truth.m`) through a replica of the generator's loop that reproduces the Karnopp B10 Simulink run bitwise, then `j2_bla.py` and `j7_band.py` unchanged (`scripts/gantry/coulomb-tanh-gain/bla_tanh.m`, `band_tanh.py`)
+- Result, g = 1000 and g = 100 alike: f_c 106.5 Hz, nominal 90 % band 106.5 to 297.0 Hz, detuned 106.5 to 289.5 Hz, identical to section 16; dip 150 Hz, X1<-F_Y notch 207 to 213 Hz, closed-loop peak 261.5 to 266 Hz inside B_tr; its upper -3 dB edge at 302 to 303.5 Hz lies outside, as with Karnopp (section 9 table)
+- Realisation spread of the BLA: 1.5 to 3 % at g = 1000 (Karnopp 2 to 5 %, g = 100 0.4 to 0.8 %): at production level the X rails move at 7 to 8 mm/s rms, Coulomb-like at g = 1000, a linear damper at g = 100
+- B_tr 106 to 297 Hz stands (D-226)
+

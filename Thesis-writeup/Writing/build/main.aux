@@ -22,30 +22,29 @@
 \citation{garcia2013model}
 \citation{garcia2013model}
 \citation{garcia2013model}
+\citation{toth2010modeling}
 \citation{garcia2013model}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {I-C}}Contributions and paper organisation}{3}{subsection.1.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {II}Dual-Drive Gantry System and Physics Baseline}{3}{section.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}System and first-principles baseline}{3}{subsection.2.1}\protected@file@percent }
 \newlabel{eq:Ptransform}{{1}{3}{System and first-principles baseline}{equation.1}{}}
-\newlabel{eq:eom}{{2}{3}{System and first-principles baseline}{equation.2}{}}
-\newlabel{eq:mass_matrix}{{3}{3}{System and first-principles baseline}{equation.3}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Lumped-parameter gantry schematic adapted from the mechanical arrangement in \cite  {garcia2013model}. Red labels denote actuator coordinates and blue labels generalized coordinates.}}{3}{figure.caption.1}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
 \newlabel{fig:gantry_system}{{1}{3}{Lumped-parameter gantry schematic adapted from the mechanical arrangement in \cite {garcia2013model}. Red labels denote actuator coordinates and blue labels generalized coordinates}{figure.caption.1}{}}
 \citation{garcia2013model}
-\citation{toth2010modeling}
-\citation{drenth2025thesis}
+\citation{drenth2025lpvlfr,hoekstra2026lfr}
+\citation{drenth2025lpvlfr}
+\newlabel{eq:eom}{{2}{4}{System and first-principles baseline}{equation.2}{}}
+\newlabel{eq:mass_matrix}{{3}{4}{System and first-principles baseline}{equation.3}{}}
 \newlabel{eq:damping_stiffness_matrices}{{4}{4}{System and first-principles baseline}{equation.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Self-scheduled LPV-LFR representation}{4}{subsection.2.2}\protected@file@percent }
 \newlabel{sec:lfr}{{\mbox  {II-B}}{4}{Self-scheduled LPV-LFR representation}{subsection.2.2}{}}
 \newlabel{eq:Msplit}{{5}{4}{Self-scheduled LPV-LFR representation}{equation.5}{}}
-\newlabel{eq:fnet}{{6}{4}{Self-scheduled LPV-LFR representation}{equation.6}{}}
-\newlabel{eq:internal_signals}{{7}{4}{Self-scheduled LPV-LFR representation}{equation.7}{}}
-\newlabel{eq:constant_mass_relation}{{8}{4}{Self-scheduled LPV-LFR representation}{equation.8}{}}
-\newlabel{eq:delta}{{10}{4}{Self-scheduled LPV-LFR representation}{equation.10}{}}
-\newlabel{eq:lfr}{{11}{4}{Self-scheduled LPV-LFR representation}{equation.11}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Self-scheduled baseline interconnection: the LTI part $G$ is closed by $\Delta (Y)=YI_6$, where $Y$ is a component of the state.}}{4}{figure.caption.2}\protected@file@percent }
-\newlabel{fig:lfr}{{2}{4}{Self-scheduled baseline interconnection: the LTI part $G$ is closed by $\Dsch (Y)=YI_6$, where $Y$ is a component of the state}{figure.caption.2}{}}
+\newlabel{eq:lfr_mass_factorization}{{6}{4}{Self-scheduled LPV-LFR representation}{equation.6}{}}
+\newlabel{eq:lfr_chain}{{7}{4}{Self-scheduled LPV-LFR representation}{equation.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Self-scheduled \textcolor {teal}{baseline} interconnection. The \textcolor {teal}{scheduling block} closes the \textcolor {teal}{internal ports} of $G$ through $w=\Delta (Y)z$, with $\Delta (Y)=YI_6$ and $Y$ a component of the \textcolor {teal}{state}.}}{4}{figure.caption.2}\protected@file@percent }
+\newlabel{fig:lfr}{{2}{4}{Self-scheduled \kw {baseline} interconnection. The \kw {scheduling block} closes the \kw {internal ports} of $G$ through $w=\Dsch (Y)z$, with $\Dsch (Y)=YI_6$ and $Y$ a component of the \kw {state}}{figure.caption.2}{}}
+\newlabel{eq:delta}{{8}{4}{Self-scheduled LPV-LFR representation}{equation.8}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Physical parameters and identifiable combinations}{4}{subsection.2.3}\protected@file@percent }
 \newlabel{sec:params}{{\mbox  {II-C}}{4}{Physical parameters and identifiable combinations}{subsection.2.3}{}}
 \citation{hoekstra2026lfr}
@@ -53,7 +52,6 @@
 \citation{kessels2025ai}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Simulated ground-truth system: the baseline of Fig.~\ref {fig:gantry_system} with a payload-mounted absorber. The light-gray elements ($m_a$, $k_a$, $c_a$, $\delta _a$) are absent from the baseline.}}{5}{figure.caption.3}\protected@file@percent }
 \newlabel{fig:gantry_absorber}{{3}{5}{Simulated ground-truth system: the baseline of Fig.~\ref {fig:gantry_system} with a payload-mounted absorber. The light-gray elements ($m_a$, $k_a$, $c_a$, $\delta _a$) are absent from the baseline}{figure.caption.3}{}}
-\newlabel{eq:phi}{{13}{5}{Physical parameters and identifiable combinations}{equation.13}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {III}Dynamic LPV-LFR Augmentation}{5}{section.3}\protected@file@percent }
 \newlabel{sec:augmentation}{{III}{5}{Dynamic LPV-LFR Augmentation}{section.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Parallel augmentation with additional states}{5}{subsection.3.1}\protected@file@percent }
@@ -88,14 +86,21 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-C}}Implications and future work}{9}{subsection.7.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {VIII}Conclusion}{9}{section.8}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-A}}Conclusions}{9}{subsection.8.1}\protected@file@percent }
+\citation{drenth2025lpvlfr}
+\citation{drenth2025lpvlfr}
+\citation{drenth2025lpvlfr}
+\citation{drenth2025lpvlfr}
+\citation{drenth2025lpvlfr}
 \citation{garcia2013model}
+\@writefile{toc}{\contentsline {section}{Appendix\nobreakspace  A: Supporting Derivations and Reproducibility}{10}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {A-A}}Explicit LPV-LFR realization}{10}{subsection.Appendix.A.1}\protected@file@percent }
+\newlabel{app:lfr-details}{{\mbox  {A-A}}{10}{Explicit LPV-LFR realization}{subsection.Appendix.A.1}{}}
+\newlabel{eq:app_G_partition}{{9}{10}{Explicit LPV-LFR realization}{equation.9}{}}
+\newlabel{eq:app_lfr_blocks}{{10}{10}{Explicit LPV-LFR realization}{equation.10}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Nominal baseline parameters.}}{10}{table.caption.5}\protected@file@percent }
 \newlabel{tab:nominal_parameters}{{I}{10}{Nominal baseline parameters}{table.caption.5}{}}
-\@writefile{toc}{\contentsline {section}{Appendix\nobreakspace  A: Supporting Derivations and Reproducibility}{10}{section*.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {A-A}}Baseline and LFR details}{10}{subsection.Appendix.A.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {A-B}}Identifiability of the physical parameters}{10}{subsection.Appendix.A.2}\protected@file@percent }
 \newlabel{app:params}{{\mbox  {A-B}}{10}{Identifiability of the physical parameters}{subsection.Appendix.A.2}{}}
-\newlabel{eq:admissible}{{14}{10}{Identifiability of the physical parameters}{equation.14}{}}
 \bibstyle{IEEEtran}
 \bibdata{IEEEabrv,refs}
 \bibcite{garcia2013model}{1}
@@ -110,11 +115,12 @@
 \bibcite{kessels2025ai}{10}
 \bibcite{retzler2024}{11}
 \bibcite{toth2010modeling}{12}
-\bibcite{drenth2025thesis}{13}
+\bibcite{drenth2025lpvlfr}{13}
 \bibcite{hoekstra2026encoder}{14}
 \bibcite{gyorok2025l4dc}{15}
 \bibcite{lee2020feeddrive}{16}
-\newlabel{eq:wellposed_identity}{{15}{11}{Identifiability of the physical parameters}{equation.15}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {A-C}}OBC and experiment details}{11}{subsection.Appendix.A.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {A-C}}Positive definiteness of the inertia matrix}{11}{subsection.Appendix.A.3}\protected@file@percent }
+\newlabel{app:lfr-wellposed}{{\mbox  {A-C}}{11}{Positive definiteness of the inertia matrix}{subsection.Appendix.A.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {A-D}}OBC and experiment details}{11}{subsection.Appendix.A.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{References}{11}{section*.6}\protected@file@percent }
 \gdef \@abspage@last{11}

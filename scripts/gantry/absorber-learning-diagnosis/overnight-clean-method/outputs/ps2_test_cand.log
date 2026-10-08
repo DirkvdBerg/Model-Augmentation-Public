@@ -1,0 +1,41 @@
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## PS2 [test_cand]: mode cand, seed 0, head mlp, 4 updates, batch 64, M 30, S1 cap 4; thesis rates out_a 0.001, rest 1e-05; aux 0.001; calibration records [11, 4, 17, 7]
+  [eval    0] phase S1 loss 1.5133e-08 | cal unexplained 1.0000 | enc x_a rms 1.712e+00 | |W_out_a| 0.00e+00
+  CHECK aux step 1: OK
+  upd    1 oe 1.4262e-08 inn 1.0000 | 3.90 s/upd
+  CHECK aux step 2: OK
+  upd    2 oe 2.0028e-08 inn 0.9992 | 3.98 s/upd
+  CHECK aux step 3: OK
+  upd    3 oe 1.3924e-08 inn 0.9968 | 4.11 s/upd
+  CHECK aux step 4: OK
+  [eval    4] phase S1 loss 1.5068e-08 | cal unexplained 1.0090 | enc x_a rms 1.731e+00 | |W_out_a| 9.48e-03
+  S1 -> S2 at update 4 (cap), cal unexplained 1.0090
+  S2 start: snapshot 8192 fit / 2048 cal pairs, cal EE rel residual 1.0207
+  S2 end after 200 steps: best cal EE rel residual 0.1794 (start 1.0207)
+  CHECK S2: OK
+  [eval    4] phase S2end loss 1.2848e-07 | cal unexplained nan | enc x_a rms 1.731e+00 | |W_out_a| 1.05e+00
+  saved overnight-clean-method/outputs/ps2_test_cand.pt (S1 end 4, S2 residual (0.1794160423939607, 1.020725259278011))

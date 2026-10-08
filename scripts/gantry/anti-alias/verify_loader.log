@@ -1,0 +1,129 @@
+
+V1 mode augmentation, trim 0, truncate_s None, 4 records
+  T1_standstill_Ym30.mat load_traj / load_mat_aug / obc                          PASS
+  T2_standstill_Ym15.mat load_traj / load_mat_aug / obc                          PASS
+  T3_standstill_Y000.mat load_traj / load_mat_aug / obc                          PASS
+  V1_standstill_Yp10.mat load_traj / load_mat_aug / obc                          PASS
+
+V2 mode thesis_taf_noisefree, trim 20, truncate_s None, 36 records
+  Training/TR-S1_r1.mat load_traj / load_mat_aug / obc                           PASS
+  Training/TR-S2_r1.mat load_traj / load_mat_aug / obc                           PASS
+  Training/TR-S3_r1.mat load_traj / load_mat_aug / obc                           PASS
+  Training/TR-S4_r1.mat load_traj / load_mat_aug / obc                           PASS
+  Training/TR-S5_r1.mat load_traj                                                PASS
+  Training/TR-Y1_r1.mat load_traj                                                PASS
+  Training/TR-Y2_r1.mat load_traj                                                PASS
+  Training/TR-Y3_r1.mat load_traj                                                PASS
+  Training/TR-P1_r1.mat load_traj                                                PASS
+  Training/TR-P2_r1.mat load_traj                                                PASS
+  Training/TR-P3_r1.mat load_traj                                                PASS
+  Training/TR-P4_r1.mat load_traj                                                PASS
+  Training/TR-L1_r1.mat load_traj                                                PASS
+  Training/TR-L2_r1.mat load_traj                                                PASS
+  Training/TR-T1_r1.mat load_traj                                                PASS
+  Training/TR-T2_r1.mat load_traj                                                PASS
+  Training/TR-T3_r1.mat load_traj                                                PASS
+  Training/TR-T4_r1.mat load_traj                                                PASS
+  Validation/VA-S1_r1.mat load_traj                                              PASS
+  Validation/VA-Y1_r1.mat load_traj                                              PASS
+  Validation/VA-P1_r1.mat load_traj                                              PASS
+  Validation/VA-L1_r1.mat load_traj                                              PASS
+  Validation/VA-T1_r1.mat load_traj                                              PASS
+  Validation/VA-T2_r1.mat load_traj                                              PASS
+  Test/I1_r1.mat load_traj                                                       PASS
+  Test/I2_r1.mat load_traj                                                       PASS
+  Test/I3_r1.mat load_traj                                                       PASS
+  Test/I4_r1.mat load_traj                                                       PASS
+  Test/I5_r1.mat load_traj                                                       PASS
+  Test/I6_r1.mat load_traj                                                       PASS
+  Test/E1_r1.mat load_traj                                                       PASS
+  Test/E2_r1.mat load_traj                                                       PASS
+  Test/E3_r1.mat load_traj                                                       PASS
+  Test/E4_r1.mat load_traj                                                       PASS
+  Test/E5_r1.mat load_traj                                                       PASS
+  Test/E6_r1.mat load_traj                                                       PASS
+
+V2 mode thesis_taf_noisefree, trim 20, truncate_s 1.0, 2 records
+  Training/TR-S1_r1.mat load_traj / load_mat_aug / obc                           PASS
+  Training/TR-S2_r1.mat load_traj / load_mat_aug / obc                           PASS
+
+V3 exact rule + alignment, V4 twin grid; mode thesis_taf_noisy, 36 records
+  Training/TR-S1_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-20 m (shift: 4e-05 m) PASS
+  Training/TR-S1_r1.mat V4 twins: noisy - noise-free rms [7.6 8.4 5. ] nm (shifted by one: [ 2307.  3203. 10763.] nm) PASS
+  Training/TR-S2_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-20 m (shift: 4e-05 m) PASS
+  Training/TR-S2_r1.mat V4 twins: noisy - noise-free rms [7.7 8.3 5. ] nm (shifted by one: [ 2827.  3209. 10709.] nm) PASS
+  Training/TR-S3_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-20 m (shift: 4e-05 m) PASS
+  Training/TR-S3_r1.mat V4 twins: noisy - noise-free rms [7.8 8.2 5. ] nm (shifted by one: [ 3231.  2942. 10752.] nm) PASS
+  Training/TR-S4_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-20 m (shift: 4e-05 m) PASS
+  Training/TR-S4_r1.mat V4 twins: noisy - noise-free rms [7.8 8.3 5. ] nm (shifted by one: [ 3406.  2450. 10751.] nm) PASS
+  Training/TR-S5_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-20 m (shift: 4e-05 m) PASS
+  Training/TR-S5_r1.mat V4 twins: noisy - noise-free rms [7.8 8.1 5. ] nm (shifted by one: [ 3248.  1972. 10756.] nm) PASS
+  Training/TR-Y1_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-20 m (shift: 2e-04 m) PASS
+  Training/TR-Y1_r1.mat V4 twins: noisy - noise-free rms [7.7 8.3 4.6] nm (shifted by one: [ 3019.  2831. 63629.] nm) PASS
+  Training/TR-Y2_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-20 m (shift: 3e-04 m) PASS
+  Training/TR-Y2_r1.mat V4 twins: noisy - noise-free rms [7.7 8.3 4.6] nm (shifted by one: [  3076.   2832. 153520.] nm) PASS
+  Training/TR-Y3_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-20 m (shift: 4e-04 m) PASS
+  Training/TR-Y3_r1.mat V4 twins: noisy - noise-free rms [7.8 8.3 4.6] nm (shifted by one: [  3087.   2799. 225408.] nm) PASS
+  Training/TR-P1_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-17 m (shift: 2e-04 m) PASS
+  Training/TR-P1_r1.mat V4 twins: noisy - noise-free rms [7.8 8.3 4.9] nm (shifted by one: [69140. 69125. 68178.] nm) PASS
+  Training/TR-P2_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-17 m (shift: 3e-04 m) PASS
+  Training/TR-P2_r1.mat V4 twins: noisy - noise-free rms [7.8 8.4 4.9] nm (shifted by one: [109921. 109916. 116905.] nm) PASS
+  Training/TR-P3_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-17 m (shift: 4e-04 m) PASS
+  Training/TR-P3_r1.mat V4 twins: noisy - noise-free rms [7.7 8.3 4.9] nm (shifted by one: [148545. 148545. 163786.] nm) PASS
+  Training/TR-P4_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-17 m (shift: 3e-04 m) PASS
+  Training/TR-P4_r1.mat V4 twins: noisy - noise-free rms [7.8 8.3 4.9] nm (shifted by one: [103792. 103839. 119582.] nm) PASS
+  Training/TR-L1_r1.mat V3 exact rule, same samples in 3 loaders, aligned 3e-17 m (shift: 4e-04 m) PASS
+  Training/TR-L1_r1.mat V4 twins: noisy - noise-free rms [7.8 8.5 4.6] nm (shifted by one: [236744. 236739. 109107.] nm) PASS
+  Training/TR-L2_r1.mat V3 exact rule, same samples in 3 loaders, aligned 7e-18 m (shift: 3e-04 m) PASS
+  Training/TR-L2_r1.mat V4 twins: noisy - noise-free rms [7.9 8.4 4.6] nm (shifted by one: [118219. 118295. 176076.] nm) PASS
+  Training/TR-T1_r1.mat V3 exact rule, same samples in 3 loaders, aligned 3e-18 m (shift: 3e-04 m) PASS
+  Training/TR-T1_r1.mat V4 twins: noisy - noise-free rms [7.2 7.8 4.2] nm (shifted by one: [ 53495.  53505. 102053.] nm) PASS
+  Training/TR-T2_r1.mat V3 exact rule, same samples in 3 loaders, aligned 4e-19 m (shift: 3e-04 m) PASS
+  Training/TR-T2_r1.mat V4 twins: noisy - noise-free rms [7.2 7.7 4.2] nm (shifted by one: [38363. 38362. 73252.] nm) PASS
+  Training/TR-T3_r1.mat V3 exact rule, same samples in 3 loaders, aligned 7e-18 m (shift: 3e-04 m) PASS
+  Training/TR-T3_r1.mat V4 twins: noisy - noise-free rms [7.1 7.8 4.2] nm (shifted by one: [39366. 39383. 75109.] nm) PASS
+  Training/TR-T4_r1.mat V3 exact rule, same samples in 3 loaders, aligned 9e-19 m (shift: 3e-04 m) PASS
+  Training/TR-T4_r1.mat V4 twins: noisy - noise-free rms [7.2 7.8 4.2] nm (shifted by one: [44985. 44983. 85896.] nm) PASS
+  Validation/VA-S1_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-20 m (shift: 4e-05 m) PASS
+  Validation/VA-S1_r1.mat V4 twins: noisy - noise-free rms [7.8 8.3 5. ] nm (shifted by one: [ 3336.  2651. 10741.] nm) PASS
+  Validation/VA-Y1_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-20 m (shift: 3e-04 m) PASS
+  Validation/VA-Y1_r1.mat V4 twins: noisy - noise-free rms [7.8 8.4 4.6] nm (shifted by one: [  3096.   2744. 128085.] nm) PASS
+  Validation/VA-P1_r1.mat V3 exact rule, same samples in 3 loaders, aligned 3e-17 m (shift: 3e-04 m) PASS
+  Validation/VA-P1_r1.mat V4 twins: noisy - noise-free rms [7.8 8.5 4.8] nm (shifted by one: [112231. 112227. 113530.] nm) PASS
+  Validation/VA-L1_r1.mat V3 exact rule, same samples in 3 loaders, aligned 7e-18 m (shift: 3e-04 m) PASS
+  Validation/VA-L1_r1.mat V4 twins: noisy - noise-free rms [7.8 8.4 4.6] nm (shifted by one: [118252. 118257. 141026.] nm) PASS
+  Validation/VA-T1_r1.mat V3 exact rule, same samples in 3 loaders, aligned 3e-18 m (shift: 3e-04 m) PASS
+  Validation/VA-T1_r1.mat V4 twins: noisy - noise-free rms [7.2 7.8 4.2] nm (shifted by one: [47594. 47610. 90802.] nm) PASS
+  Validation/VA-T2_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-19 m (shift: 3e-04 m) PASS
+  Validation/VA-T2_r1.mat V4 twins: noisy - noise-free rms [7.2 7.7 4.2] nm (shifted by one: [42888. 42893. 81898.] nm) PASS
+  Test/I1_r1.mat V3 exact rule, same samples in 3 loaders, aligned 7e-18 m (shift: 3e-04 m) PASS
+  Test/I1_r1.mat V4 twins: noisy - noise-free rms [7.8 8.3 4.8] nm (shifted by one: [115337. 115333. 119109.] nm) PASS
+  Test/I2_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-20 m (shift: 4e-05 m) PASS
+  Test/I2_r1.mat V4 twins: noisy - noise-free rms [7.6 8.4 5. ] nm (shifted by one: [ 2575.  3281. 10665.] nm) PASS
+  Test/I3_r1.mat V3 exact rule, same samples in 3 loaders, aligned 7e-18 m (shift: 3e-04 m) PASS
+  Test/I3_r1.mat V4 twins: noisy - noise-free rms [7.3 7.8 4.2] nm (shifted by one: [49458. 49490. 94425.] nm) PASS
+  Test/I4_r1.mat V3 exact rule, same samples in 3 loaders, aligned 7e-18 m (shift: 3e-04 m) PASS
+  Test/I4_r1.mat V4 twins: noisy - noise-free rms [7.1 7.7 4.1] nm (shifted by one: [35733. 35739. 65301.] nm) PASS
+  Test/I5_r1.mat V3 exact rule, same samples in 3 loaders, aligned 3e-18 m (shift: 3e-04 m) PASS
+  Test/I5_r1.mat V4 twins: noisy - noise-free rms [7.2 7.9 4.2] nm (shifted by one: [50656. 50696. 97109.] nm) PASS
+  Test/I6_r1.mat V3 exact rule, same samples in 3 loaders, aligned 3e-17 m (shift: 4e-04 m) PASS
+  Test/I6_r1.mat V4 twins: noisy - noise-free rms [7.5 8.  4.3] nm (shifted by one: [209485. 209486. 227489.] nm) PASS
+  Test/E1_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-20 m (shift: 4e-05 m) PASS
+  Test/E1_r1.mat V4 twins: noisy - noise-free rms [7.6 8.4 5. ] nm (shifted by one: [ 2033.  3146. 10640.] nm) PASS
+  Test/E2_r1.mat V3 exact rule, same samples in 3 loaders, aligned 1e-19 m (shift: 3e-04 m) PASS
+  Test/E2_r1.mat V4 twins: noisy - noise-free rms [7.3 7.8 4.2] nm (shifted by one: [49466. 49482. 94425.] nm) PASS
+  Test/E3_r1.mat V3 exact rule, same samples in 3 loaders, aligned 3e-18 m (shift: 4e-04 m) PASS
+  Test/E3_r1.mat V4 twins: noisy - noise-free rms [7.2 7.8 4.2] nm (shifted by one: [ 57875.  57950. 106975.] nm) PASS
+  Test/E4_r1.mat V3 exact rule, same samples in 3 loaders, aligned 3e-17 m (shift: 5e-04 m) PASS
+  Test/E4_r1.mat V4 twins: noisy - noise-free rms [7.4 7.9 4.3] nm (shifted by one: [229191. 229191. 254140.] nm) PASS
+  Test/E5_r1.mat V3 exact rule, same samples in 3 loaders, aligned 7e-18 m (shift: 3e-04 m) PASS
+  Test/E5_r1.mat V4 twins: noisy - noise-free rms [7.3 7.8 4.2] nm (shifted by one: [49439. 49466. 94403.] nm) PASS
+  Test/E6_r1.mat V3 exact rule, same samples in 3 loaders, aligned 9e-19 m (shift: 4e-04 m) PASS
+  Test/E6_r1.mat V4 twins: noisy - noise-free rms [7.2 7.7 4.2] nm (shifted by one: [ 63068.  63170. 110925.] nm) PASS
+
+V5 config.json keys
+  thesis_taf_noisy: Y_DECIMATION 'r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]', RECORD_TRIM 20 PASS
+  thesis_taf_noisefree: Y_DECIMATION 'point sampling [::5]', RECORD_TRIM 20      PASS
+  augmentation: Y_DECIMATION 'point sampling [::5]', RECORD_TRIM 0               PASS
+
+ALL PASS (0 failures); worst x_logical misalignment 2.8e-17 m; worst twin difference 8.5 nm

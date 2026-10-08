@@ -1,0 +1,57 @@
+B10 (H, Y +0.00, cc True, band [   1. 1000.]): median |BLA - frictionless| / |frictionless| per column [0.052  0.0688 0.0657]; median total std / |BLA| [0.0187 0.0151 0.0308]; stick [0.113 0.124 0.035]; nonperiodic [2.08e-13 1.95e-13 2.48e-13]
+   Y column: anti-resonance 150.50 Hz, closed-loop peak 264.50 Hz, upper -3 dB 303.50 Hz
+B6 (H, Y -0.30, cc True, band [   1. 1000.]): median |BLA - frictionless| / |frictionless| per column [0.058  0.0692 0.0633]; median total std / |BLA| [0.0184 0.0147 0.0304]; stick [0.136 0.116 0.034]; nonperiodic [3.38e-13 3.79e-13 1.71e-12]
+   Y column: anti-resonance 150.50 Hz, closed-loop peak 261.50 Hz, upper -3 dB 303.50 Hz
+B7 (H, Y -0.15, cc True, band [   1. 1000.]): median |BLA - frictionless| / |frictionless| per column [0.057  0.0711 0.0652]; median total std / |BLA| [0.0191 0.015  0.0296]; stick [0.122 0.116 0.034]; nonperiodic [2.49e-13 2.52e-13 9.39e-13]
+   Y column: anti-resonance 152.00 Hz, closed-loop peak 261.50 Hz, upper -3 dB 303.50 Hz
+B8 (H, Y +0.15, cc True, band [   1. 1000.]): median |BLA - frictionless| / |frictionless| per column [0.0559 0.0708 0.0642]; median total std / |BLA| [0.0185 0.0147 0.0304]; stick [0.114 0.138 0.034]; nonperiodic [2.55e-13 2.34e-13 9.15e-13]
+   Y column: anti-resonance 152.00 Hz, closed-loop peak 266.00 Hz, upper -3 dB 303.50 Hz
+B9 (H, Y +0.30, cc True, band [   1. 1000.]): median |BLA - frictionless| / |frictionless| per column [0.0585 0.0663 0.061 ]; median total std / |BLA| [0.0175 0.0149 0.0312]; stick [0.114 0.15  0.034]; nonperiodic [3.73e-13 3.20e-13 1.68e-12]
+   Y column: anti-resonance 150.50 Hz, closed-loop peak 261.50 Hz, upper -3 dB 302.00 Hz
+wrote outputs/j2_bla.npz
+crossover with K1 (first |L_jj| = 1, the bandwidth), per Y and channel [Hz], baseline / truth:
+  Y -0.30 X1    78.3 /   81.0
+  Y -0.30 X2   106.1 /  105.0
+  Y -0.30 Y     99.7 /   84.0
+  Y -0.15 X1    89.9 /   93.0
+  Y -0.15 X2   105.6 /  105.0
+  Y -0.15 Y     99.9 /   85.5
+  Y +0.00 X1   100.2 /  102.0
+  Y +0.00 X2   100.2 /   96.0
+  Y +0.00 Y    100.2 /   84.0
+  Y +0.15 X1   105.8 /  105.0
+  Y +0.15 X2    90.3 /   85.5
+  Y +0.15 Y     99.9 /   84.0
+  Y +0.30 X1   106.3 /  106.5
+  Y +0.30 X2    78.6 /   75.0
+  Y +0.30 Y     99.7 /   84.0
+-> band lower bound f_c = 106.5 Hz
+
+nominal baseline vs Coulomb + MSD:
+  resolved weight below f_c (the references' job): 16.0 % of the total
+  band holding 80% of the resolved weight above f_c: 112.5 to 277.5 Hz
+  band holding 90% of the resolved weight above f_c: 106.5 to 297.0 Hz
+  band holding 95% of the resolved weight above f_c: 106.5 to 322.5 Hz
+  plant features: dip 150.0 Hz (Y<-F_Y, mean over Y); notch X1<-F_Y per Y [207.0, 211.5, 207.0, 213.0, 211.5] Hz; inside the 90 % band: True
+
+detuned baseline vs Coulomb + MSD:
+  resolved weight below f_c (the references' job): 21.2 % of the total
+  band holding 80% of the resolved weight above f_c: 106.5 to 267.0 Hz
+  band holding 90% of the resolved weight above f_c: 106.5 to 289.5 Hz
+  band holding 95% of the resolved weight above f_c: 106.5 to 313.5 Hz
+  plant features: dip 150.0 Hz (Y<-F_Y, mean over Y); notch X1<-F_Y per Y [207.0, 211.5, 207.0, 213.0, 211.5] Hz; inside the 90 % band: True
+
+line density: 1/12 Hz spacing gives >= 4 lines per 3 dB width for any width >= 0.33 Hz (Geerardyn et al. 2013)
+
+wrote outputs/j7_band.json, figures/fig11_differences_avg.png, figures/fig12_band_weight.png
+
+==== Karnopp (stored) vs tanh (D-224) ====
+f_c: 106.3 -> 106.5 Hz
+nominal  80% band: [111.0, 276.0] -> [112.5, 277.5] Hz
+nominal  90% band: [106.5, 297.0] -> [106.5, 297.0] Hz
+nominal  95% band: [106.5, 322.5] -> [106.5, 322.5] Hz
+nominal  features_inside_90: True -> True
+detuned  80% band: [106.5, 267.0] -> [106.5, 267.0] Hz
+detuned  90% band: [106.5, 289.5] -> [106.5, 289.5] Hz
+detuned  95% band: [106.5, 313.5] -> [106.5, 313.5] Hz
+detuned  features_inside_90: True -> True

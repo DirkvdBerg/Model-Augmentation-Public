@@ -1,0 +1,35 @@
+[wd] launch  out=outputs/logs/bla_tanh_g1000_b
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); bla_tanh({'B9','B10'}); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+[wd] t=59s tree=982 MB cpu=8% availRAM=1.86 GB C:free=10.30 GB
+gate  B10 m=1 Karnopp replica vs stored Simulink Yk: max rel 0.00e+00  PASS
+tanh friction, g = 1000 s/m
+  B9 m=1: |v|<1mm/s [0.108 0.146 0.0347]  rms v [0.00787 0.00585 0.026]  nonperiodic [3.59e-13 3.15e-13 1.68e-12]  (23 s)
+  B9 m=2: |v|<1mm/s [0.117 0.148 0.0358]  rms v [0.00787 0.00581 0.026]  nonperiodic [3.71e-13 3.17e-13 1.66e-12]  (41 s)
+[wd] t=122s tree=1,032 MB cpu=8% availRAM=1.77 GB C:free=10.29 GB
+  B9 m=3: |v|<1mm/s [0.116 0.15 0.0336]  rms v [0.00787 0.00585 0.026]  nonperiodic [3.44e-13 3.02e-13 1.62e-12]  (63 s)
+  B9 m=4: |v|<1mm/s [0.115 0.144 0.0324]  rms v [0.00785 0.00583 0.026]  nonperiodic [3.52e-13 3.04e-13 1.6e-12]  (84 s)
+  B9 m=5: |v|<1mm/s [0.114 0.156 0.0355]  rms v [0.00789 0.00583 0.026]  nonperiodic [3.38e-13 3.1e-13 1.5e-12]  (103 s)
+  B9 m=6: |v|<1mm/s [0.111 0.151 0.0353]  rms v [0.00786 0.00585 0.026]  nonperiodic [3.65e-13 3.2e-13 1.63e-12]  (123 s)
+[wd] t=185s tree=968 MB cpu=8% availRAM=2.02 GB C:free=10.32 GB
+  B9 m=7: |v|<1mm/s [0.113 0.148 0.0331]  rms v [0.00786 0.00583 0.026]  nonperiodic [3.49e-13 2.97e-13 1.62e-12]  (143 s)
+  B9 m=8: |v|<1mm/s [0.111 0.154 0.0336]  rms v [0.0079 0.00587 0.026]  nonperiodic [3.73e-13 3.14e-13 1.64e-12]  (160 s)
+  B9 m=9: |v|<1mm/s [0.119 0.147 0.0354]  rms v [0.00788 0.00584 0.026]  nonperiodic [3.45e-13 2.98e-13 1.6e-12]  (178 s)
+[wd] t=247s tree=973 MB cpu=8% availRAM=2.15 GB C:free=10.31 GB
+  B9 m=10: |v|<1mm/s [0.115 0.155 0.0327]  rms v [0.00787 0.00583 0.0259]  nonperiodic [3.59e-13 3.05e-13 1.64e-12]  (196 s)
+B9 saved (196 s)
+  B10 m=1: |v|<1mm/s [0.111 0.123 0.0358]  rms v [0.00774 0.00721 0.0261]  nonperiodic [2.08e-13 1.9e-13 2.17e-13]  (18 s)
+  B10 m=2: |v|<1mm/s [0.114 0.125 0.0338]  rms v [0.00776 0.00721 0.0261]  nonperiodic [1.94e-13 1.95e-13 2.21e-13]  (36 s)
+[wd] t=310s tree=979 MB cpu=8% availRAM=2.10 GB C:free=10.30 GB
+  B10 m=3: |v|<1mm/s [0.115 0.12 0.0347]  rms v [0.00776 0.00721 0.026]  nonperiodic [1.91e-13 1.91e-13 2.32e-13]  (54 s)
+  B10 m=4: |v|<1mm/s [0.109 0.127 0.0356]  rms v [0.00775 0.00723 0.0261]  nonperiodic [1.97e-13 1.91e-13 2.22e-13]  (75 s)
+  B10 m=5: |v|<1mm/s [0.11 0.121 0.0352]  rms v [0.00774 0.00721 0.0261]  nonperiodic [1.91e-13 1.84e-13 2.48e-13]  (94 s)
+  B10 m=6: |v|<1mm/s [0.112 0.131 0.0348]  rms v [0.0078 0.00724 0.0261]  nonperiodic [1.91e-13 1.95e-13 2.34e-13]  (111 s)
+[wd] t=372s tree=966 MB cpu=8% availRAM=2.46 GB C:free=10.29 GB
+  B10 m=7: |v|<1mm/s [0.118 0.123 0.034]  rms v [0.00776 0.00723 0.026]  nonperiodic [2.02e-13 1.84e-13 2.3e-13]  (131 s)
+  B10 m=8: |v|<1mm/s [0.113 0.12 0.0366]  rms v [0.00776 0.00723 0.0261]  nonperiodic [2.04e-13 1.75e-13 2.37e-13]  (154 s)
+  B10 m=9: |v|<1mm/s [0.115 0.128 0.0306]  rms v [0.00775 0.00722 0.0261]  nonperiodic [1.84e-13 1.86e-13 2.21e-13]  (173 s)
+[wd] t=435s tree=967 MB cpu=8% availRAM=2.30 GB C:free=10.30 GB
+  B10 m=10: |v|<1mm/s [0.112 0.12 0.0343]  rms v [0.00775 0.00721 0.0261]  nonperiodic [1.92e-13 1.73e-13 2.43e-13]  (192 s)
+B10 saved (192 s)
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=452.0 samples=87 peak_tree_ws_mb=1,033 min_avail_ram_gb=1.71 min_C_free_gb=10.27 kill_reason=""

@@ -1,0 +1,34 @@
+[wd] launch  out=outputs/logs/noise_check
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); check_encoder_noise('AB', true); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+Phi_v on the record grid: rms [9.849 10.4 6.338] nm (target 9.8 / 10.4 / 6.3)
+WATCHDOG ALERT available RAM 1.31 GB < 1.5 GB (tree 2,201 MB)
+deleted 37 blocks: Demux, Error, Error2, Error3, Feedforward, Feedforward2, Feedforward3, Gain1, Gain2, Gain5, Gain6, Integrator1, Integrator2, LTI System, LTI System2, LTI System3, MATLAB Function1, MATLAB Function2, Mux, Reference, Reference2, Reference3, Scope2, Selector2, Selector3, Single H-gantry, Sum, Sum1, Sum4, Sum5, Sum6, Sum7, To Workspace, To Workspace2, To Workspace3, To Workspace4, To Workspace6
+chart script now:
+function dxdt = gantrySystemExtendedMFile(u, x, Lb, kb1, kb2, m1, cy, ma, cg2, cb1, cg1, d, Jh, Jb, mh, m2, ca, mb, cb2, ka, L0, cc1, cc2, ccy, ts, g_fric)
+dxdt = zeros(8,1);
+dxdt = gantrySystemExtendedTanh(u, x, m1, m2, mb, mh, Lb, Jb, Jh, d, cg1, cg2, cb1, cb2, cy, kb1, kb2, ma, ka, ca, L0, cc1, cc2, ccy, g_fric);
+end
+
+chart data: dxdt(Output) u(Input) x(Input) Lb(Parameter) kb1(Parameter) kb2(Parameter) m1(Parameter) cy(Parameter) ma(Parameter) cg2(Parameter) cb1(Parameter) cg1(Parameter) d(Parameter) Jh(Parameter) Jb(Parameter) mh(Parameter) m2(Parameter) ca(Parameter) mb(Parameter) cb2(Parameter) ka(Parameter) L0(Parameter) cc1(Parameter) cc2(Parameter) ccy(Parameter) ts(Parameter) g_fric(Parameter)
+  EncoderSum     -> Sum3
+  Extended ODE   -> Integrator
+  Feedforward1   -> Sum2
+  Gain3          -> Extended ODE
+  Gain4          -> To Workspace1, EncoderSum
+  Integrator     -> Selector1, Selector5, Extended ODE
+  LTI System1    -> Sum2
+  Reference1     -> Sum3
+  Selector1      -> Gain4
+  Selector5      -> To Workspace5
+  Sum2           -> Gain3, PlantForceLog
+  Sum3           -> Error1, LTI System1
+saved C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data\model\gantry_tdg_2025a.slx
+WATCHDOG KILL available RAM 0.85 GB < 1 GB; killing tree of PID 40440 (12 processes, 2,790 MB)
+taskkill.exe : ERROR: The process with PID 36756 (child process of PID 24960) could not be terminated.
+At C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP 
+model\Baseline-LPV-Augmentation\scripts\gantry\thesis-data-verification\tools\watchdog.ps1:134 char:9
++         & taskkill.exe /T /F /PID $rootId 2>&1 | Out-Null
++         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ERROR: The proc... be terminated.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

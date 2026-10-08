@@ -1,0 +1,18 @@
+[wd] launch  out=logs/gen_frf
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('frf'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+generate_thesis_data: 12 records selected, versions noisy + noise-free
+
+=== 1/12  TF-1_r1  [frf, FRF reference, standstill Y +0.150, periodic B_tr multisine (6 periods of 2 s)] ===
+  r OK TF-1_r1     : X1=[+0 +0] X2=[+0 +0] Y=[+150 +150] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.20 GB < 1.5 GB (tree 2,700 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [7.092 7.758 2.18] nm | stick [7.2 9.4 2.1] % | F peak [0.42 0.43 0.5], rms [0.26 0.26 0.34] of limit | 47.9 + 42.4 MB | 36.5 s
+
+=== 2/12  TF-1_r2  [frf, FRF reference, standstill Y +0.150, periodic B_tr multisine (6 periods of 2 s)] ===
+WATCHDOG ALERT C: free 1.93 GB < 2 GB
+[wd] t=59s tree=2,877 MB cpu=9% availRAM=1.18 GB C:free=1.93 GB
+STAGE STOP: disk: 2.07 GB free, record needs ~0.12 GB, reserve 2.0 GB. Stopped before TF-1_r2.
+MANIFEST noisy: 42 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 41 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@

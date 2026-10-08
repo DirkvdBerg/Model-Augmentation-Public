@@ -1,0 +1,10 @@
+[wd] launch  out=outputs/logs/checkA_a1
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); check_encoder_noise('A', false); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+friction gain 1000 s/m, corner 50 Hz, correction diag, tolerance 0.1
+[wd] t=58s tree=2,447 MB cpu=5% availRAM=1.73 GB C:free=14.56 GB
+(A) noisy      max|q_sim - q_replica| 0.00e+00 0.00e+00 0.00e+00 m | plumbing |u_plant - u_total| 1.29e-08 N | noise std [9.62 10.2 6.28] nm | PASS
+[wd] t=121s tree=2,825 MB cpu=9% availRAM=2.31 GB C:free=14.56 GB
+(A) noise-free max|q_sim - q_replica| 0.00e+00 0.00e+00 0.00e+00 m | plumbing |u_plant - u_total| 1.38e-08 N | noise std [0 0 0] nm | PASS
+(A) PASS
+@@TDG_DONE@@
+[wd] t=183s tree=2,710 MB cpu=0% availRAM=2.40 GB C:free=14.58 GB

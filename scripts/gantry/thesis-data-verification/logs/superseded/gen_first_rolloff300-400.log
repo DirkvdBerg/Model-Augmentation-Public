@@ -1,0 +1,13 @@
+[run] C: free 3.7G before gen_first
+[wd] launch  out=logs/gen_first
+[wd] command matlab -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data({'TR-P3_r1'})"
+generate_thesis_data: 1 records selected, versions noisy + noise-free
+
+=== 1/1  TR-P3_r1  [training, S-curve moves, log strata, T3 12 ms, A_prod] ===
+  r OK TR-P3_r1    : X1=[-240 +280] X2=[-240 +280] Y=[-299 +297] mm | v 1.500/1.500 m/s a 22.50/37.50 m/s^2 j 3750/6250 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [6.728 7.65 2.232] nm | stick [4.7 5.8 1.5] % | F peak [0.78 0.79 0.8], rms [0.4 0.43 0.41] of limit | 49.1 + 43.6 MB | 8.5 s
+MANIFEST noisy: 1 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 1 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+WATCHDOG SUMMARY exit=0 killed=False duration_s=60.6 samples=12 peak_tree_ws_mb=3,096 min_avail_ram_gb=2.24 min_C_free_gb=3.47 kill_reason=""

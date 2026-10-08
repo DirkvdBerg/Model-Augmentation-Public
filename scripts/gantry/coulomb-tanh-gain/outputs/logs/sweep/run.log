@@ -1,0 +1,57 @@
+[wd] launch  out=outputs/logs/sweep
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); run_tanh_sweep; fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+
+==== 2026-09-28 11:56:16  TR-T1_r1  gains [100 300 1000 3000 10000] ====
+
+== noise-free  (C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\Training\TR-T1_r1.mat, Y_op +0.00, |d| max 0 N)
+[wd] t=58s tree=1,035 MB cpu=8% availRAM=3.65 GB C:free=12.84 GB
+gate  Karnopp replay vs stored y: max|dq| 0.00e+00 0.00e+00 0.00e+00 m, u_fb rel 1.6e-11 1.6e-11 2.0e-11  (53 s)  PASS
+run   tanh g=100     39 s
+[wd] t=120s tree=1,066 MB cpu=8% availRAM=3.54 GB C:free=12.84 GB
+run   tanh g=300     40 s
+[wd] t=183s tree=1,088 MB cpu=8% availRAM=3.43 GB C:free=12.83 GB
+run   tanh g=1000    39 s
+run   tanh g=3000    42 s
+[wd] t=246s tree=1,101 MB cpu=8% availRAM=3.23 GB C:free=12.82 GB
+run   tanh g=10000   41 s
+dwells scored: 24 (>= 0.1 s, preceded by a move); moving 23.2 % of the record
+
+run            | dwell 2nd-half rms [nm]    | Q4/Q3 max            | reversals/s dwell    | moving rms [um]            | moving vs Karnopp    | moving vs next g     |  lam*h    p2
+Karnopp        | 3.86e+03 4.17e+03 4.82e+03 |   1.05   1.06   1.03 |   39.0   39.0   39.7 |    72.88    76.34    82.21 |  0.000  0.000  0.000 |    NaN    NaN    NaN |    NaN     2
+tanh g=100     |  0.00317  0.00317  0.00356 |   0.00   0.00   0.00 |    0.5    0.5    4.6 |    72.78    76.24    82.48 |  0.019  0.019  0.013 |  0.006  0.006  0.003 |  0.012     0
+tanh g=300     | 3.32e-05 3.24e-05 6.79e-05 |   0.00   0.00   0.00 |   10.3    9.9   16.3 |    72.77    76.22    82.47 |  0.016  0.016  0.012 |  0.005  0.005  0.002 |  0.035     0
+tanh g=1000    |   0.0631    0.106     1.71 |   0.01   0.01   0.01 |   24.1   19.0   17.0 |    72.74    76.19    82.45 |  0.014  0.015  0.012 |  0.002  0.002  0.001 |  0.118     0
+tanh g=3000    |     26.5       32     71.5 |   0.14   0.17   0.21 |   19.3   19.3   14.0 |    72.73    76.18    82.44 |  0.014  0.014  0.012 |  0.002  0.002  0.001 |  0.354     0
+tanh g=10000   |      314      352      480 |   0.47   0.48   0.46 |   13.1   12.8   12.6 |    72.75    76.19    82.44 |  0.013  0.014  0.012 |    NaN    NaN    NaN |  1.179     0
+reference levels [nm]: measured machine standstill [9.8 10.4 6.3], calibrated noise [3.37 3.696 1.086]
+criterion (D-223)  a standstill  b converged  c numerics
+  tanh g=100     1 1 1
+  tanh g=300     1 1 1
+  tanh g=1000    1 1 1
+  tanh g=3000    0 1 1
+  tanh g=10000   0 0 1
+recommended gain: 100
+
+== noisy  (C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\Training\TR-T1_r1.mat, Y_op +0.00, |d| max 0.624 N)
+[wd] t=308s tree=1,082 MB cpu=8% availRAM=2.94 GB C:free=12.80 GB
+gate  Karnopp replay vs stored y: max|dq| 0.00e+00 0.00e+00 0.00e+00 m, u_fb rel 1.5e-11 1.5e-11 1.8e-11  (51 s)  PASS
+run   tanh g=100     36 s
+[wd] t=371s tree=1,017 MB cpu=8% availRAM=2.97 GB C:free=12.80 GB
+run   tanh g=300     36 s
+[wd] t=433s tree=1,041 MB cpu=8% availRAM=2.94 GB C:free=12.87 GB
+run   tanh g=1000    35 s
+run   tanh g=3000    39 s
+[wd] t=496s tree=1,056 MB cpu=8% availRAM=2.90 GB C:free=12.86 GB
+run   tanh g=10000   38 s
+dwells scored: 24 (>= 0.1 s, preceded by a move); moving 23.2 % of the record
+
+run            | dwell 2nd-half rms [nm]    | Q4/Q3 max            | reversals/s dwell    | moving rms [um]            | moving vs Karnopp    | moving vs next g     |  lam*h    p2
+Karnopp        | 3.85e+03 4.16e+03 4.82e+03 |   1.10   1.13   1.04 |   38.8   38.8   39.7 |    72.89    76.34    82.21 |  0.000  0.000  0.000 |    NaN    NaN    NaN |    NaN     4
+tanh g=100     |     3.24     3.66    0.996 |   1.56   1.52   1.39 |  504.8  527.0  461.2 |    72.78    76.24    82.48 |  0.019  0.020  0.013 |  0.006  0.006  0.003 |  0.012     0
+tanh g=300     |     2.89     3.25    0.829 |   1.62   1.56   1.45 |  514.4  533.9  435.3 |    72.77    76.22    82.47 |  0.016  0.016  0.012 |  0.005  0.005  0.002 |  0.035     0
+tanh g=1000    |     2.16     2.42     1.79 |   1.72   1.64   1.10 |  531.8  545.8  390.3 |    72.74    76.19    82.45 |  0.015  0.015  0.012 |  0.002  0.002  0.001 |  0.118     0
+tanh g=3000    |     26.5     32.1     71.5 |   1.07   0.99   1.10 |  461.2  457.3  102.5 |    72.73    76.18    82.44 |  0.014  0.015  0.012 |  0.002  0.002  0.001 |  0.354     0
+tanh g=10000   |      314      352      480 |   1.05   1.00   0.46 |  132.6  141.3   80.0 |    72.75    76.19    82.44 |  0.014  0.014  0.012 |    NaN    NaN    NaN |  1.179     0
+reference levels [nm]: measured machine standstill [9.8 10.4 6.3], calibrated noise [3.37 3.696 1.086]
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=520.8 samples=100 peak_tree_ws_mb=1,119 min_avail_ram_gb=2.81 min_C_free_gb=12.80 kill_reason=""

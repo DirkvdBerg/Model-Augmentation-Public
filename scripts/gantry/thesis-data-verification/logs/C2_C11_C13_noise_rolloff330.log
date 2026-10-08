@@ -1,0 +1,6 @@
+[run] C: free 14G before C2_C11_C13_noise_rolloff330
+[wd] launch  out=logs/C2_C11_C13_noise_rolloff330
+[wd] command matlab -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); check_noise_calibration; check_noise_draw"
+WATCHDOG ALERT available RAM 0.94 GB < 1.5 GB (tree 2,107 MB)
+WATCHDOG KILL available RAM 0.94 GB < 1 GB; killing tree of PID 2412 (12 processes, 2,107 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=17.6 samples=4 peak_tree_ws_mb=2,107 min_avail_ram_gb=0.94 min_C_free_gb=13.59 kill_reason="available RAM 0.94 GB < 1 GB"

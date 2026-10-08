@@ -1,0 +1,46 @@
+\documentclass[11pt]{article}
+
+\usepackage[paperwidth=200mm,paperheight=112.5mm,margin=7mm,top=6mm]{geometry}
+\usepackage{amsmath,amssymb,xcolor,enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlist[itemize]{leftmargin=5mm,itemsep=2mm,topsep=1mm,parsep=0pt}
+
+\newcommand{\slide}[1]{\clearpage{\LARGE\textbf{#1}}\par\vspace{2mm}}
+
+\begin{document}
+
+%======================================================================
+\slide{Constraint on the mass difference $m_{\mathrm{diff}} = m_1 - m_2$}
+{\large
+\textbf{What}
+\begin{itemize}
+\item Joint estimation trains 10 identifiable combinations; 9 are positive (log), $m_{\mathrm{diff}}$ is signed
+\end{itemize}
+
+\textbf{Why}
+\begin{itemize}
+\item The model needs $M(Y)^{-1}$; positive combinations alone do not make $M(Y) \succ 0$
+\item Exact condition (Schur complement on $m_h$, worst case over $Y$):
+\[
+M(Y) \succ 0 \;\; \forall Y \iff m_{\mathrm{total}}\, J_{\mathrm{eff}} > \tfrac{L_b^2}{4}\, m_{\mathrm{diff}}^2
+\]
+\end{itemize}
+
+\textbf{How}
+\begin{itemize}
+\item Bounded parameterisation, valid for every optimiser step (no clamp, no penalty):
+\[
+m_{\mathrm{diff}} = \rho\,\tfrac{2}{L_b}\sqrt{m_{\mathrm{total}} J_{\mathrm{eff}}}\,\tanh(\eta_0 + s\,\xi), \qquad \rho = 0.99
+\]
+\item $\eta_0, s$: start and initial sensitivity unchanged; $\rho < 1$: strict inside the bound in floating point
+\item Start at 1.6\,\% of the bound (35.0 kg)
+\end{itemize}
+
+\textbf{Question:} does this make sense, or should the estimate stay unconstrained?
+}
+
+\end{document}

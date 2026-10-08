@@ -1,0 +1,8 @@
+[wd] launch  out=outputs/logs/noise_check_A
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); check_encoder_noise('A', false); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+friction gain 1000 s/m, corner 50 Hz, correction diag, tolerance 0.1
+[wd] t=59s tree=2,471 MB cpu=6% availRAM=2.13 GB C:free=10.48 GB
+WATCHDOG ALERT available RAM 1.38 GB < 1.5 GB (tree 2,850 MB)
+[wd] t=123s tree=2,850 MB cpu=8% availRAM=1.38 GB C:free=10.45 GB
+WATCHDOG KILL available RAM 0.94 GB < 1 GB; killing tree of PID 33484 (10 processes, 2,853 MB)
+WATCHDOG SUMMARY exit=killed killed=True duration_s=136.3 samples=26 peak_tree_ws_mb=2,853 min_avail_ram_gb=0.94 min_C_free_gb=10.45 kill_reason="available RAM 0.94 GB < 1 GB"

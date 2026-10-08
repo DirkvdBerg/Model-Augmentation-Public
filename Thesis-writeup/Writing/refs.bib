@@ -135,6 +135,26 @@
   doi           = {10.48550/arXiv.2602.17297}
 }
 
+@article{hoekstra2025lfr,
+  author  = {Hoekstra, Jan H. and Verhoek, Chris and T{\'o}th, Roland and Schoukens, Maarten},
+  title   = {Learning-Based Model Augmentation With {LFRs}},
+  journal = {European Journal of Control},
+  volume  = {86},
+  pages   = {101304},
+  year    = {2025},
+  doi     = {10.1016/j.ejcon.2025.101304}
+}
+
+@article{beintema2023subnet,
+  author  = {Beintema, Gerben I. and Schoukens, Maarten and T{\'o}th, Roland},
+  title   = {Deep Subspace Encoders for Nonlinear System Identification},
+  journal = {Automatica},
+  volume  = {156},
+  pages   = {111210},
+  year    = {2023},
+  doi     = {10.1016/j.automatica.2023.111210}
+}
+
 % Supplied by the user 2026-09-22 with the friction-threshold sentence; metadata not independently verified.
 @article{lee2020feeddrive,
   author  = {Lee, Chan-Young and Hwang, Soon-Hong and Nam, Eunseok and Min, Byung-Kwon},
@@ -144,13 +164,110 @@
   volume  = {109}, number = {9-12}, pages = {2831--2844}, year = {2020},
   doi     = {10.1007/s00170-020-05858-x}}
 
-% CHECK: metadata confirmed via Crossref 2026-09-23; supporting passage not yet read in the primary paper.
+% Metadata confirmed via Crossref 2026-09-23. Passage read 2026-09-29 in HAL hal-05223021
+% (accepted-manuscript scan): Sec. III p.368 (minimum set by eliminating and regrouping) and
+% Sec. VI p.371 ("the only identifiable parameters by the use of the dynamic model");
+% page numbers mapped from the scan's page count.
 @article{gautier1990minimum,
   author  = {Gautier, M. and Khalil, W.},
   title   = {Direct calculation of minimum set of inertial parameters of serial robots},
   journal = {IEEE Transactions on Robotics and Automation},
   volume  = {6}, number = {3}, pages = {368--373}, year = {1990},
   doi     = {10.1109/70.56655}}
+
+% Section II-C proof sources, verified 2026-10-07 (metadata via Crossref; passages read in the arXiv
+% versions this session). Hong: arXiv:1801.08112, Def. 2.5 p.6 (identifiability through equal outputs
+% for generic parameters and inputs), Prop. 3.4 p.16 (equivalent to the classical definitions).
+@article{hong2020global,
+  author  = {Hong, Hoon and Ovchinnikov, Alexey and Pogudin, Gleb and Yap, Chee},
+  title   = {Global Identifiability of Differential Models},
+  journal = {Communications on Pure and Applied Mathematics},
+  volume  = {73}, number = {9}, pages = {1831--1879}, year = {2020},
+  doi     = {10.1002/cpa.21921}}
+
+% arXiv:2004.07774, Def. 7 p.4: identifiable functions of the parameters, stated as equivalent to
+% Hong et al. Def. 2.5.
+@article{ovchinnikov2021computing,
+  author  = {Ovchinnikov, Alexey and Pillay, Anand and Pogudin, Gleb and Scanlon, Thomas},
+  title   = {Computing all identifiable functions of parameters for {ODE} models},
+  journal = {Systems \& Control Letters},
+  volume  = {157}, pages = {105030}, year = {2021},
+  doi     = {10.1016/j.sysconle.2021.105030}}
+
+% arXiv:1711.03896v3, Sec. 2 pp.3-4: unidentifiable set {dpi | Y(q,qd,qdd) dpi = 0 for all q,qd,qdd};
+% its orthogonal complement gives the identifiable parameter combinations.
+@article{wensing2024geometric,
+  author  = {Wensing, Patrick M. and Niemeyer, G{\"u}nter and Slotine, Jean-Jacques E.},
+  title   = {A geometric characterization of observability in inertial parameter identification},
+  journal = {The International Journal of Robotics Research},
+  volume  = {43}, number = {14}, pages = {2274--2302}, year = {2024},
+  doi     = {10.1177/02783649241258215}}
+
+% Section II-C sources, verified 2026-09-29 (deep-research agents; metadata via doi.org/Crossref).
+% Read in primary text: local PDF literature/Orthogonality/; p.1924 "To avoid the natural lower
+% bound of zero, logarithmic parameter values will be used".
+@article{raue2009profile,
+  author  = {Raue, A. and Kreutz, C. and Maiwald, T. and Bachmann, J. and Schilling, M. and Klingm{\"u}ller, U. and Timmer, J.},
+  title   = {Structural and practical identifiability analysis of partially observed dynamical models by exploiting the profile likelihood},
+  journal = {Bioinformatics},
+  volume  = {25}, number = {15}, pages = {1923-1929}, year = {2009},
+  doi     = {10.1093/bioinformatics/btp358}}
+
+% Read in primary text (PLoS OA), p.3: log-scale for non-negative parameters so that values
+% differing by orders of magnitude are handled with equal efficiency.
+@article{raue2013lessons,
+  author  = {Raue, Andreas and Schilling, Marcel and Bachmann, Julie and Matteson, Andrew and Schelke, Max and Kaschek, Daniel and Hug, Sabine and Kreutz, Clemens and Harms, Brian D. and Theis, Fabian J. and Klingm{\"u}ller, Ursula and Timmer, Jens},
+  title   = {Lessons Learned from Quantitative Dynamical Modeling in Systems Biology},
+  journal = {PLoS ONE},
+  volume  = {8}, number = {9}, pages = {e74335}, year = {2013},
+  doi     = {10.1371/journal.pone.0074335}}
+
+% Read in primary text (ctsm.info/mathguide.pdf), Sect. 1.1.5.4, p.25, Eq. (1.154): bounded
+% parameters optimized through a logistic transformation. The Automatica 2004 CTSM paper was not
+% readable, so it is not cited.
+@techreport{kristensen2003ctsmmath,
+  author      = {Kristensen, Niels Rode and Madsen, Henrik},
+  title       = {Continuous Time Stochastic Modelling, {CTSM} 2.3: Mathematics Guide},
+  institution = {Technical University of Denmark},
+  year        = {2003}, month = dec,
+  note        = {Available at \url{http://ctsm.info/mathguide.pdf}}}
+
+% ABSTRACT ONLY (closed): "some sets of base-parameter values may be not positive definite for
+% some configurations. Such sets of base-parameter values are physically impossible."
+@article{yoshida2000verification,
+  author  = {Yoshida, Koji and Khalil, Wisama},
+  title   = {Verification of the Positive Definiteness of the Inertial Matrix of Manipulators Using Base Inertial Parameters},
+  journal = {The International Journal of Robotics Research},
+  volume  = {19}, number = {5}, pages = {498-510}, year = {2000},
+  doi     = {10.1177/02783640022066996}}
+
+% Read in primary text (HAL lirmm-03260126), p.2: OLS estimates can lose physical coherence,
+% e.g. "non-positive-definite rotational inertia"; constraints as LMIs solved by SDP.
+@article{leboutet2021survey,
+  author  = {Leboutet, Quentin and Roux, Julien and Janot, Alexandre and Guadarrama-Olvera, Julio Rogelio and Cheng, Gordon},
+  title   = {Inertial Parameter Identification in Robotics: A Survey},
+  journal = {Applied Sciences},
+  volume  = {11}, number = {9}, pages = {4303}, year = {2021},
+  doi     = {10.3390/app11094303}}
+
+% Read in primary text (arXiv v3 accepted version), p.3: physical-consistency constraints as
+% LMIs give an SDP problem.
+@article{wensing2018physical,
+  author  = {Wensing, Patrick M. and Kim, Sangbae and Slotine, Jean-Jacques E.},
+  title   = {Linear Matrix Inequalities for Physically Consistent Inertial Parameter Identification: A Statistical Perspective on the Mass Distribution},
+  journal = {IEEE Robotics and Automation Letters},
+  volume  = {3}, number = {1}, pages = {60-67}, year = {2018},
+  doi     = {10.1109/LRA.2017.2729659}}
+
+% Read in primary text (arXiv v4 camera-ready), p.4: explicit constraints require constrained
+% optimization; parameter representations encode consistency and allow unconstrained gradient
+% descent (Eq. 11 uses a sigmoid-bounded coordinate).
+@inproceedings{sutanto2020encoding,
+  author    = {Sutanto, Giovanni and Wang, Austin S. and Lin, Yixin and Mukadam, Mustafa and Sukhatme, Gaurav S. and Rai, Akshara and Meier, Franziska},
+  title     = {Encoding Physical Constraints in Differentiable {Newton-Euler} Algorithm},
+  booktitle = {Proceedings of the 2nd Conference on Learning for Dynamics and Control},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {120}, pages = {804-813}, year = {2020}}
 
 @book{toth2010modeling,
   author    = {R. T{\'o}th},
@@ -171,13 +288,23 @@
 }
 
 @misc{drenth2025lpvlfr,
-  title = {Source pending verification},
-  note  = {Citation metadata not yet verified}
+  author        = {R. Drenth and J. H. Hoekstra and M. Schoukens and R. T{\'o}th},
+  title         = {Efficient Learning of Affine and Rational Dependency {LPV} Models With Linear Fractional Representation},
+  year          = {2026},
+  eprint        = {2605.12203},
+  archivePrefix = {arXiv},
+  primaryClass  = {eess.SY},
+  doi           = {10.48550/arXiv.2605.12203}
 }
 
 @misc{hoekstra2026encoder,
-  title = {Source pending verification},
-  note  = {Citation metadata not yet verified}
+  author        = {Hoekstra, Jan H. and Gy{\"o}r{\"o}k, Bendeg{\'u}z M. and T{\'o}th, Roland and Schoukens, Maarten},
+  title         = {Encoder Initialisation Methods in the Model Augmentation Setting},
+  year          = {2026},
+  eprint        = {2602.13108},
+  archivePrefix = {arXiv},
+  primaryClass  = {eess.SY},
+  doi           = {10.48550/arXiv.2602.13108}
 }
 
 @misc{gyorok2025l4dc,

@@ -1,0 +1,55 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## AA1 target ceiling [f_inn.pt], M 40, encoder na 29 nb 29 (+1 right)
+  1. encoder x_a: rms [4.169 3.862], lag-1 autocorr per record/coord [0.914 0.93  0.914 0.929 0.915 0.927 0.915 0.93 ]
+     x_a band power fractions: 0-50:0.00 50-150:0.09 150-300:0.90 300-800:0.01 800-2000:0.00
+     x_phys band power fractions: 0-50:0.00 50-150:0.46 150-300:0.53 300-800:0.00 800-2000:0.00
+  2. one-step dynamics of the ENCODER states (EE ceiling):
+    x_a LS: poles 0.928@224Hz(z0.21), 0.928@224Hz(z0.21) | residual/var 0.002
+    x_a IV d=20: poles 0.924@217Hz(z0.23), 0.924@217Hz(z0.23) | residual/var 0.013
+    x_a IV d=40: poles 0.943@223Hz(z0.17), 0.943@223Hz(z0.17) | residual/var 0.107
+    x_phys LS: poles 0.876@0Hz(z1.00), 0.994@22Hz(z0.17), 0.994@22Hz(z0.17), 0.978@0Hz(z1.00), 1.013@0Hz(z-1.00), 1.000@0Hz(z1.00) | residual/var 0.000
+    x_phys IV d=20: poles 0.800@0Hz(z1.00), 0.952@0Hz(z1.00), 1.018@0Hz(z-1.00), 0.991@0Hz(z1.00), 1.003@0Hz(z-1.00), 1.000@0Hz(z1.00) | residual/var 0.000
+    x_phys IV d=40: poles 0.432@0Hz(z1.00), 0.994@50Hz(z0.08), 0.994@50Hz(z0.08), 0.934@0Hz(z1.00), 1.016@0Hz(z-1.00), 1.000@0Hz(z1.00) | residual/var 0.001
+  3. model A_aa: dominant |z| median 0.225, complex 25 %, median |angle| 0 Hz
+  4. innovation (M 40): rms per channel [6.0e-05 4.0e-05 1.4e-04]; linear-in-history explained: full rank 0.980, rank 2 0.477, rank 4 0.772
+     innovation first-sample band fractions: 0-50:0.00 50-150:0.56 150-300:0.43 300-800:0.00 800-2000:0.00
+     optimal 2-d state: lag-1 autocorr [0.918 0.917 0.918 0.917 0.918 0.917 0.919 0.917]; band fractions 0-50:0.00 50-150:0.04 150-300:0.95 300-800:0.01 800-2000:0.00
+    x_inn* LS: poles 0.991@234Hz(z0.02), 0.991@234Hz(z0.02) | residual/var 0.003
+    x_inn* IV d=20: poles 0.981@232Hz(z0.05), 0.981@232Hz(z0.05) | residual/var 0.008
+    x_inn* IV d=40: poles 0.957@237Hz(z0.12), 0.957@237Hz(z0.12) | residual/var 0.023
+     R^2 of the optimal state on the current x_a: [0.637 0.578]
+  5. 400-step rollout error: loss 7.0475e-09; band fractions per channel:
+C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\absorber-learning-diagnosis\aa_target_ceiling.py:42: UserWarning: nperseg=512 is greater than signal length max(len(x), len(y)) = 400, using nperseg = 400
+  f, p = welch(x, fs=FS, nperseg=512, axis=0)
+     ch 0: 0-50:0.17 50-150:0.55 150-300:0.27 300-800:0.00 800-2000:0.00
+     ch 1: 0-50:0.21 50-150:0.53 150-300:0.26 300-800:0.00 800-2000:0.00
+     ch 2: 0-50:0.02 50-150:0.27 150-300:0.68 300-800:0.03 800-2000:0.00
+=== EXIT 0 ===

@@ -690,8 +690,12 @@ class ClosedLoopSimulator:
                                 weights=[len(sd.u) for sd in sdl]))
 
 
-def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, k0=None):
+def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, k0=None, return_pred=False):
     """@added (D-169). N records scored in ONE rollout. Returns (per_channel_list, aggregate_list).
+
+    CHANGED (D-227): `return_pred=True` also returns the physical closed-loop output of each
+    record from k0 on, as a third list, so a report can plot the trajectory it scored without a
+    second normalise -> encoder -> rollout chain. Default False: the return is unchanged.
 
     THE scoring path. `closed_loop_free_run_rms` is the one-record case of this, and
     `validation_error` calls it once for the whole validation set instead of looping. There is
@@ -752,6 +756,7 @@ def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, k0=None):
 
     per_channel = [None] * len(sdl)
     aggregate = [None] * len(sdl)
+    preds = [None] * len(sdl)                          # CHANGED (D-227): filled only on request
     for ixs in groups.values():
         uh = T(np.stack([un[i][k0 - nb:k0 + nb_r] for i in ixs]))
         yh = T(np.stack([yn[i][k0 - na:k0 + na_r] for i in ixs]))
@@ -776,6 +781,10 @@ def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, k0=None):
             mse_per_channel = np.mean(e ** 2, axis=0)
             per_channel[i] = np.sqrt(mse_per_channel)
             aggregate[i] = float(np.sqrt(np.mean(mse_per_channel)))
+            if return_pred:
+                preds[i] = y_phys
+    if return_pred:
+        return per_channel, aggregate, preds
     return per_channel, aggregate
 
 

@@ -14,6 +14,7 @@ Decisions and pre-registered thresholds: `DECISIONS.md` (JH-xxx). Every run: `RU
 | `info/` | G1: Cramer-Rao bound per combination against window length |
 | `staged/` | G2: baseline-only fits against `J+ Delta*` |
 | `runners/` | G3: server arm and control (not submitted) |
+| `memory/` | JH-013 (D-220): closed-loop window memory, model matrices (A) against measured FRF (B) |
 | `outputs/<run>/` | `run.log`, `resources.csv`, `watchdog_summary.txt`, results |
 
 Run anything from the repo root, always through the watchdog:

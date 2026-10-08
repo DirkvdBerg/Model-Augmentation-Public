@@ -1,0 +1,5 @@
+id	tier	arm	noise	start	na	seed	nf	arch	ps2
+161	compare-resnet	u	lowpass	detuned	2	1	0.1	resnet	0
+162	compare-resnet	u	lowpass	detuned	2	1	0.1	resnet	1
+163	compare-mlp	u	lowpass	detuned	2	1	0.1	mlp	0
+164	compare-mlp	u	lowpass	detuned	2	1	0.1	mlp	1

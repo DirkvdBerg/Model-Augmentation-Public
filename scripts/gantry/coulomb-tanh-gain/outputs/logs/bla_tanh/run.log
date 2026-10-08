@@ -1,0 +1,79 @@
+[wd] launch  out=outputs/logs/bla_tanh
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); bla_tanh; fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+gate  B10 m=1 Karnopp replica vs stored Simulink Yk: max rel 0.00e+00  PASS
+tanh friction, g = 100 s/m
+[wd] t=58s tree=1,037 MB cpu=11% availRAM=3.27 GB C:free=12.89 GB
+  B6 m=1: |v|<1mm/s [0.121 0.0997 0.0289]  rms v [0.00683 0.008 0.0261]  nonperiodic [3.2e-13 3.54e-13 1.64e-12]  (24 s)
+  B6 m=2: |v|<1mm/s [0.123 0.0983 0.0333]  rms v [0.00682 0.008 0.0261]  nonperiodic [2.96e-13 3.36e-13 1.54e-12]  (46 s)
+[wd] t=121s tree=1,061 MB cpu=8% availRAM=3.32 GB C:free=12.91 GB
+  B6 m=3: |v|<1mm/s [0.117 0.106 0.0316]  rms v [0.00683 0.00801 0.0261]  nonperiodic [3.08e-13 3.47e-13 1.57e-12]  (67 s)
+  B6 m=4: |v|<1mm/s [0.117 0.0964 0.0346]  rms v [0.00683 0.008 0.0262]  nonperiodic [2.9e-13 3.28e-13 1.53e-12]  (89 s)
+  B6 m=5: |v|<1mm/s [0.115 0.0959 0.0297]  rms v [0.00682 0.008 0.0262]  nonperiodic [3.35e-13 3.71e-13 1.69e-12]  (110 s)
+[wd] t=184s tree=1,062 MB cpu=8% availRAM=3.19 GB C:free=12.91 GB
+  B6 m=6: |v|<1mm/s [0.11 0.0957 0.0331]  rms v [0.00682 0.00799 0.0262]  nonperiodic [3.03e-13 3.5e-13 1.6e-12]  (133 s)
+  B6 m=7: |v|<1mm/s [0.121 0.099 0.0321]  rms v [0.00682 0.008 0.0262]  nonperiodic [3.34e-13 3.62e-13 1.69e-12]  (156 s)
+  B6 m=8: |v|<1mm/s [0.112 0.0976 0.0331]  rms v [0.00683 0.008 0.0261]  nonperiodic [3.24e-13 3.73e-13 1.67e-12]  (177 s)
+[wd] t=247s tree=984 MB cpu=8% availRAM=3.31 GB C:free=12.90 GB
+  B6 m=9: |v|<1mm/s [0.113 0.102 0.0313]  rms v [0.00682 0.008 0.0261]  nonperiodic [3.05e-13 3.46e-13 1.6e-12]  (199 s)
+  B6 m=10: |v|<1mm/s [0.121 0.1 0.0316]  rms v [0.00682 0.008 0.0261]  nonperiodic [3.09e-13 3.47e-13 1.57e-12]  (220 s)
+B6 saved (220 s)
+  B7 m=1: |v|<1mm/s [0.103 0.0978 0.0341]  rms v [0.00753 0.00793 0.0262]  nonperiodic [2.35e-13 2.52e-13 9.18e-13]  (21 s)
+[wd] t=310s tree=986 MB cpu=8% availRAM=3.13 GB C:free=12.90 GB
+  B7 m=2: |v|<1mm/s [0.112 0.103 0.0299]  rms v [0.00753 0.00794 0.0261]  nonperiodic [2.31e-13 2.38e-13 8.66e-13]  (42 s)
+  B7 m=3: |v|<1mm/s [0.105 0.0967 0.03]  rms v [0.00753 0.00793 0.0261]  nonperiodic [2.26e-13 2.59e-13 9.02e-13]  (63 s)
+  B7 m=4: |v|<1mm/s [0.106 0.0928 0.0315]  rms v [0.00753 0.00793 0.0262]  nonperiodic [2.38e-13 2.4e-13 8.77e-13]  (85 s)
+[wd] t=373s tree=985 MB cpu=8% availRAM=3.08 GB C:free=12.89 GB
+  B7 m=5: |v|<1mm/s [0.106 0.0996 0.0298]  rms v [0.00753 0.00794 0.0262]  nonperiodic [2.4e-13 2.24e-13 8.86e-13]  (106 s)
+  B7 m=6: |v|<1mm/s [0.0978 0.105 0.0337]  rms v [0.00753 0.00794 0.0262]  nonperiodic [2.38e-13 2.36e-13 8.81e-13]  (128 s)
+  B7 m=7: |v|<1mm/s [0.101 0.0987 0.0321]  rms v [0.00753 0.00794 0.0262]  nonperiodic [2.17e-13 2.37e-13 8.56e-13]  (149 s)
+[wd] t=436s tree=943 MB cpu=8% availRAM=3.35 GB C:free=12.89 GB
+  B7 m=8: |v|<1mm/s [0.107 0.0994 0.0298]  rms v [0.00753 0.00793 0.0261]  nonperiodic [2.3e-13 2.45e-13 8.86e-13]  (170 s)
+  B7 m=9: |v|<1mm/s [0.107 0.0978 0.0312]  rms v [0.00752 0.00792 0.0261]  nonperiodic [2.32e-13 2.42e-13 9.16e-13]  (191 s)
+  B7 m=10: |v|<1mm/s [0.108 0.102 0.0321]  rms v [0.00753 0.00794 0.0261]  nonperiodic [2.31e-13 2.48e-13 8.86e-13]  (212 s)
+B7 saved (213 s)
+[wd] t=499s tree=945 MB cpu=8% availRAM=3.24 GB C:free=12.87 GB
+  B8 m=1: |v|<1mm/s [0.0984 0.115 0.0294]  rms v [0.00825 0.0069 0.0261]  nonperiodic [2.33e-13 2.29e-13 8.7e-13]  (21 s)
+  B8 m=2: |v|<1mm/s [0.103 0.113 0.0327]  rms v [0.00825 0.00689 0.0261]  nonperiodic [2.39e-13 2.16e-13 8.77e-13]  (43 s)
+  B8 m=3: |v|<1mm/s [0.0968 0.115 0.0332]  rms v [0.00825 0.0069 0.0262]  nonperiodic [2.38e-13 2.12e-13 8.53e-13]  (64 s)
+[wd] t=562s tree=951 MB cpu=8% availRAM=3.17 GB C:free=12.87 GB
+  B8 m=4: |v|<1mm/s [0.0964 0.112 0.0316]  rms v [0.00825 0.0069 0.0261]  nonperiodic [2.52e-13 2.29e-13 8.9e-13]  (85 s)
+  B8 m=5: |v|<1mm/s [0.0935 0.124 0.0316]  rms v [0.00826 0.0069 0.0262]  nonperiodic [2.47e-13 2.28e-13 8.68e-13]  (106 s)
+  B8 m=6: |v|<1mm/s [0.0967 0.124 0.0312]  rms v [0.00828 0.00692 0.0261]  nonperiodic [2.52e-13 2.38e-13 8.89e-13]  (128 s)
+[wd] t=625s tree=950 MB cpu=8% availRAM=3.20 GB C:free=12.90 GB
+  B8 m=7: |v|<1mm/s [0.0978 0.123 0.0314]  rms v [0.00825 0.0069 0.0261]  nonperiodic [2.44e-13 2.23e-13 9.02e-13]  (149 s)
+  B8 m=8: |v|<1mm/s [0.101 0.127 0.0301]  rms v [0.00826 0.00691 0.0261]  nonperiodic [2.5e-13 2.31e-13 8.89e-13]  (170 s)
+  B8 m=9: |v|<1mm/s [0.0939 0.113 0.0309]  rms v [0.00825 0.00689 0.0262]  nonperiodic [2.41e-13 2.37e-13 9.08e-13]  (191 s)
+[wd] t=688s tree=950 MB cpu=8% availRAM=3.14 GB C:free=12.89 GB
+  B8 m=10: |v|<1mm/s [0.101 0.112 0.0288]  rms v [0.00826 0.0069 0.0261]  nonperiodic [2.43e-13 2.2e-13 8.8e-13]  (212 s)
+B8 saved (213 s)
+  B9 m=1: |v|<1mm/s [0.0928 0.122 0.0319]  rms v [0.00815 0.0062 0.0261]  nonperiodic [3.52e-13 3.02e-13 1.6e-12]  (22 s)
+  B9 m=2: |v|<1mm/s [0.101 0.124 0.0328]  rms v [0.00816 0.0062 0.0261]  nonperiodic [3.41e-13 3.08e-13 1.58e-12]  (44 s)
+[wd] t=751s tree=949 MB cpu=9% availRAM=2.43 GB C:free=12.88 GB
+  B9 m=3: |v|<1mm/s [0.0996 0.13 0.0306]  rms v [0.00816 0.0062 0.0261]  nonperiodic [3.57e-13 3.17e-13 1.72e-12]  (66 s)
+  B9 m=4: |v|<1mm/s [0.101 0.121 0.0305]  rms v [0.00815 0.0062 0.0261]  nonperiodic [3.48e-13 2.88e-13 1.58e-12]  (88 s)
+  B9 m=5: |v|<1mm/s [0.0949 0.131 0.0319]  rms v [0.00817 0.0062 0.0261]  nonperiodic [3.47e-13 2.95e-13 1.61e-12]  (111 s)
+[wd] t=814s tree=948 MB cpu=8% availRAM=2.47 GB C:free=12.88 GB
+  B9 m=6: |v|<1mm/s [0.0964 0.13 0.0316]  rms v [0.00816 0.00621 0.0261]  nonperiodic [3.33e-13 2.91e-13 1.52e-12]  (132 s)
+  B9 m=7: |v|<1mm/s [0.0978 0.126 0.0307]  rms v [0.00816 0.0062 0.0261]  nonperiodic [3.39e-13 2.9e-13 1.55e-12]  (154 s)
+[wd] t=877s tree=955 MB cpu=8% availRAM=2.43 GB C:free=12.88 GB
+  B9 m=8: |v|<1mm/s [0.0979 0.135 0.0315]  rms v [0.00817 0.00622 0.0261]  nonperiodic [3.43e-13 3.04e-13 1.63e-12]  (176 s)
+  B9 m=9: |v|<1mm/s [0.102 0.126 0.0326]  rms v [0.00817 0.00621 0.0261]  nonperiodic [3.75e-13 3.02e-13 1.62e-12]  (198 s)
+  B9 m=10: |v|<1mm/s [0.0999 0.128 0.031]  rms v [0.00816 0.0062 0.0261]  nonperiodic [3.5e-13 3.29e-13 1.7e-12]  (219 s)
+B9 saved (219 s)
+[wd] t=940s tree=949 MB cpu=8% availRAM=2.45 GB C:free=12.88 GB
+  B10 m=1: |v|<1mm/s [0.0958 0.105 0.0327]  rms v [0.00805 0.00753 0.0262]  nonperiodic [1.91e-13 1.72e-13 2.31e-13]  (22 s)
+  B10 m=2: |v|<1mm/s [0.1 0.106 0.0328]  rms v [0.00805 0.00754 0.0262]  nonperiodic [1.84e-13 1.84e-13 2.1e-13]  (43 s)
+  B10 m=3: |v|<1mm/s [0.1 0.105 0.0321]  rms v [0.00805 0.00754 0.0261]  nonperiodic [1.89e-13 1.74e-13 2.43e-13]  (65 s)
+[wd] t=1,003s tree=955 MB cpu=8% availRAM=2.42 GB C:free=12.87 GB
+  B10 m=4: |v|<1mm/s [0.0944 0.109 0.0324]  rms v [0.00805 0.00754 0.0262]  nonperiodic [1.84e-13 1.82e-13 2.25e-13]  (85 s)
+  B10 m=5: |v|<1mm/s [0.0944 0.106 0.0337]  rms v [0.00804 0.00754 0.0262]  nonperiodic [1.77e-13 1.8e-13 2.35e-13]  (107 s)
+  B10 m=6: |v|<1mm/s [0.099 0.114 0.0318]  rms v [0.00806 0.00754 0.0262]  nonperiodic [1.98e-13 1.82e-13 2.33e-13]  (129 s)
+[wd] t=1,066s tree=954 MB cpu=8% availRAM=2.46 GB C:free=12.87 GB
+  B10 m=7: |v|<1mm/s [0.103 0.106 0.0314]  rms v [0.00806 0.00755 0.0262]  nonperiodic [1.83e-13 1.83e-13 2.23e-13]  (151 s)
+  B10 m=8: |v|<1mm/s [0.0971 0.104 0.0343]  rms v [0.00805 0.00754 0.0262]  nonperiodic [1.9e-13 1.83e-13 2.33e-13]  (171 s)
+  B10 m=9: |v|<1mm/s [0.1 0.113 0.0282]  rms v [0.00805 0.00754 0.0262]  nonperiodic [1.85e-13 1.83e-13 2.26e-13]  (193 s)
+[wd] t=1,129s tree=951 MB cpu=8% availRAM=2.41 GB C:free=12.86 GB
+  B10 m=10: |v|<1mm/s [0.097 0.102 0.0308]  rms v [0.00805 0.00754 0.0262]  nonperiodic [1.79e-13 1.79e-13 2.22e-13]  (214 s)
+B10 saved (214 s)
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=1,138.2 samples=217 peak_tree_ws_mb=1,063 min_avail_ram_gb=2.34 min_C_free_gb=12.86 kill_reason=""

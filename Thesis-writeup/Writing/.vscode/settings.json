@@ -1,0 +1,43 @@
+{
+    "latex-workshop.latex.outDir": "%DIR%/build",
+    // Keep this file equivalent to the repository-root settings for users who
+    // open Writing/ directly as their VS Code workspace.
+    "latex-workshop.latex.autoBuild.run": "onSave",
+    "latex-workshop.latex.search.rootFiles.include": [
+        "main.tex"
+    ],
+    "latex-workshop.latex.tools": [
+        {
+            "name": "thesis-latexmk",
+            "command": "latexmk",
+            "args": [
+                "-pdf",
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-outdir=%OUTDIR%",
+                "%DOC%"
+            ]
+        }
+    ],
+    "latex-workshop.latex.recipes": [
+        {
+            "name": "Thesis latexmk",
+            "tools": ["thesis-latexmk"]
+        }
+    ],
+    "latex-workshop.latex.recipe.default": "first",
+    "latex-workshop.latex.rootFile.doNotPrompt": true,
+    "latex-workshop.view.pdf.viewer": "tab",
+    "latex-workshop.view.pdf.internal.synctex.keybinding": "double-click",
+
+    // No AI inline completions in TeX files: the thesis text is written by hand.
+    "github.copilot.enable": {
+        "*": true,
+        "latex": false,
+        "tex": false,
+        "bibtex": false
+    },
+    "[latex]": {
+        "editor.inlineSuggest.enabled": false
+    }
+}

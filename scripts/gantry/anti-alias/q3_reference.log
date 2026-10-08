@@ -1,0 +1,35 @@
+
+TR-S1_r1  Q1 [7.716 8.493 4.784] nm   window periodicity [2.044e-08 2.158e-08 2.220e-07] nm (periodic)   y - r above 2 kHz [0.241 0.398 1.405] nm
+  point         interior: vs point-sampled [0. 0. 0.] nm ([0. 0. 0.] of Q1)   vs alias-free [0.063 0.113 0.482] nm ([0.008 0.013 0.101] of Q1)   last 20 ms max |vs alias-free| [0.849 1.491 3.853] nm
+  butter_err    interior: vs point-sampled [0.063 0.113 0.482] nm ([0.008 0.013 0.101] of Q1)   vs alias-free [0.001 0.002 0.015] nm ([9.169e-05 1.926e-04 3.062e-03] of Q1)   last 20 ms max |vs alias-free| [ 12.576  25.977 237.202] nm
+  butter_err_18 interior: vs point-sampled [0.063 0.113 0.482] nm ([0.008 0.013 0.101] of Q1)   vs alias-free [7.333e-05 7.920e-04 9.650e-03] nm ([9.504e-06 9.326e-05 2.017e-03] of Q1)   last 20 ms max |vs alias-free| [  2.518   5.349 240.636] nm
+
+TR-S3_r1  Q1 [7.857 8.355 4.804] nm   window periodicity [2.717e-09 2.653e-09 5.387e-09] nm (periodic)   y - r above 2 kHz [0.37  0.348 1.424] nm
+  point         interior: vs point-sampled [0. 0. 0.] nm ([0. 0. 0.] of Q1)   vs alias-free [0.107 0.098 0.484] nm ([0.014 0.012 0.101] of Q1)   last 20 ms max |vs alias-free| [1.106 1.167 3.444] nm
+  butter_err    interior: vs point-sampled [0.107 0.098 0.484] nm ([0.014 0.012 0.101] of Q1)   vs alias-free [0.001 0.001 0.011] nm ([0.    0.    0.002] of Q1)   last 20 ms max |vs alias-free| [ 15.434  13.991 107.952] nm
+  butter_err_18 interior: vs point-sampled [0.107 0.098 0.484] nm ([0.014 0.012 0.101] of Q1)   vs alias-free [0.001 0.001 0.006] nm ([6.474e-05 6.165e-05 1.331e-03] of Q1)   last 20 ms max |vs alias-free| [ 28.619  13.316 166.195] nm
+
+TR-P1_r1  Q1 [7.958 8.459 4.843] nm   window periodicity [57117.516 72826.282 50993.796] nm (NOT periodic: alias-free reference invalid)   y - r above 2 kHz [34.913 20.861 31.837] nm
+  point         interior: vs point-sampled [0. 0. 0.] nm ([0. 0. 0.] of Q1)   vs alias-free [27.933 16.675 25.373] nm ([3.51  1.971 5.239] of Q1)   last 20 ms max |vs alias-free| [1722.191 1031.236 1576.212] nm
+  butter_err    interior: vs point-sampled [0.078 0.068 0.389] nm ([0.01  0.008 0.08 ] of Q1)   vs alias-free [27.934 16.675 25.364] nm ([3.51  1.971 5.237] of Q1)   last 20 ms max |vs alias-free| [1711.868 1056.727 1620.95 ] nm
+  butter_err_18 interior: vs point-sampled [0.078 0.068 0.389] nm ([0.01  0.008 0.08 ] of Q1)   vs alias-free [27.934 16.675 25.368] nm ([3.51  1.971 5.238] of Q1)   last 20 ms max |vs alias-free| [1698.603 1060.058 1574.337] nm
+
+TR-T1_r1  Q1 [7.349 7.967 4.599] nm   window periodicity [133631.336 128664.962 132857.83 ] nm (NOT periodic: alias-free reference invalid)   y - r above 2 kHz [0.964 0.718 2.51 ] nm
+  point         interior: vs point-sampled [0. 0. 0.] nm ([0. 0. 0.] of Q1)   vs alias-free [0.774 0.578 2.012] nm ([0.105 0.073 0.438] of Q1)   last 20 ms max |vs alias-free| [ 47.26   35.163 123.533] nm
+  butter_err    interior: vs point-sampled [0.001 0.001 0.001] nm ([8.139e-05 7.524e-05 1.969e-04] of Q1)   vs alias-free [0.774 0.578 2.012] nm ([0.105 0.073 0.438] of Q1)   last 20 ms max |vs alias-free| [ 47.26   35.163 123.533] nm
+  butter_err_18 interior: vs point-sampled [0.001 0.001 0.001] nm ([8.145e-05 7.513e-05 1.968e-04] of Q1)   vs alias-free [0.774 0.578 2.012] nm ([0.105 0.073 0.438] of Q1)   last 20 ms max |vs alias-free| [ 47.26   35.163 123.533] nm
+
+TR-Y1_r1  Q1 [7.835 8.447 4.81 ] nm   window periodicity [14479.238  7681.46  19539.004] nm (NOT periodic: alias-free reference invalid)   y - r above 2 kHz [0.919 4.449 0.854] nm
+  point         interior: vs point-sampled [0. 0. 0.] nm ([0. 0. 0.] of Q1)   vs alias-free [0.35  3.679 0.383] nm ([0.045 0.436 0.08 ] of Q1)   last 20 ms max |vs alias-free| [ 62.749 206.096  16.587] nm
+  butter_err    interior: vs point-sampled [0.093 0.092 0.263] nm ([0.012 0.011 0.055] of Q1)   vs alias-free [0.338 3.678 0.268] nm ([0.043 0.435 0.056] of Q1)   last 20 ms max |vs alias-free| [ 64.458 192.63   39.71 ] nm
+  butter_err_18 interior: vs point-sampled [0.093 0.092 0.263] nm ([0.012 0.011 0.055] of Q1)   vs alias-free [0.338 3.678 0.272] nm ([0.043 0.435 0.057] of Q1)   last 20 ms max |vs alias-free| [ 80.841 202.263  75.549] nm
+
+TR-L1_r1  Q1 [7.942 8.628 4.821] nm   window periodicity [17884.376 28808.861 29108.236] nm (NOT periodic: alias-free reference invalid)   y - r above 2 kHz [ 1.794 24.841  4.016] nm
+  point         interior: vs point-sampled [0. 0. 0.] nm ([0. 0. 0.] of Q1)   vs alias-free [ 1.022 19.871  3.572] nm ([0.129 2.303 0.741] of Q1)   last 20 ms max |vs alias-free| [ 117.291 1225.038  150.6  ] nm
+  butter_err    interior: vs point-sampled [0.047 0.043 0.241] nm ([0.006 0.005 0.05 ] of Q1)   vs alias-free [ 1.022 19.87   3.56 ] nm ([0.129 2.303 0.738] of Q1)   last 20 ms max |vs alias-free| [ 101.896 1250.731  118.334] nm
+  butter_err_18 interior: vs point-sampled [0.047 0.043 0.241] nm ([0.006 0.005 0.05 ] of Q1)   vs alias-free [ 1.021 19.871  3.564] nm ([0.129 2.303 0.739] of Q1)   last 20 ms max |vs alias-free| [  73.452 1261.836  150.546] nm
+
+== (ii) max Q3 / Q1 on the window (criterion 0.10; alias-free: periodic records only) ==
+  point         point-sampled reference 0.000   alias-free reference 0.101
+  butter_err    point-sampled reference 0.101   alias-free reference 0.003
+  butter_err_18 point-sampled reference 0.101   alias-free reference 0.002

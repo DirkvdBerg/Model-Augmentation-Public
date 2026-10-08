@@ -1,0 +1,82 @@
+python.exe : Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+At line:2 char:35
++ ... TECODE='1'; & C:/Users/20203253/AppData/Local/anaconda3/envs/Graduati ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Gym has been un... functionality.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and 
+request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast 
+majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=lowpass start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE architecture=paper_resnet_live_g  plain
+[thesis run] arm=u noise=lowpass start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE architecture=paper_resnet_live_g  plain
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(8000, 6)  delta_a std=4.879e-05 m  vdelta_a std=6.894e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 8000 samples  (Training/TR-S1_r1.mat)
+  T2: 8000 samples  (Training/TR-S2_r1.mat)
+  T3: 8000 samples  (Training/TR-S3_r1.mat)
+  T4: 8000 samples  (Training/TR-S4_r1.mat)
+  T5: 8000 samples  (Training/TR-S5_r1.mat)
+  T6: 8000 samples  (Training/TR-Y1_r1.mat)
+  T7: 8000 samples  (Training/TR-Y2_r1.mat)
+  T8: 8000 samples  (Training/TR-Y3_r1.mat)
+  T9: 8000 samples  (Training/TR-P1_r1.mat)
+  T10: 8000 samples  (Training/TR-P2_r1.mat)
+  T11: 8000 samples  (Training/TR-P3_r1.mat)
+  T12: 8000 samples  (Training/TR-P4_r1.mat)
+  T13: 8000 samples  (Training/TR-L1_r1.mat)
+  T14: 8000 samples  (Training/TR-L2_r1.mat)
+  T15: 8000 samples  (Training/TR-T1_r1.mat)
+  T16: 8000 samples  (Training/TR-T2_r1.mat)
+  T17: 8000 samples  (Training/TR-T3_r1.mat)
+  T18: 8000 samples  (Training/TR-T4_r1.mat)
+[thesis run] arm=u noise=lowpass start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE architecture=paper_resnet_live_g  PS2
+[ps2] opening started: M 30, calibration records ['TR-S5', 'TR-Y3', 'TR-P4', 'TR-T4'], spec {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 512, "n_snap_cal": 128, "s2_batch": 128, "s2_check": 50, "s2_min": 200, "s2_cap": 600, "s2_tol": 0.01, "seed": 1}
+PASS gradients resnet plain {'g': 9.571309349683175e-09, 'Wy': 5.866842937061293e-11, 'Wu': 1.970972478099064e-10}
+[ps2] update 2: calibration unexplained 0.9958
+[ps2] update 4: calibration unexplained 1.0035 (S1 ends: cap)
+[ps2] S2 state-map fit: calibration EE residual 0.9619 -> 0.0271 in 600 steps
+[ps2] opening completed; the run continues as the plain method
+PASS gradients resnet ps2 {'g': 9.571309349683175e-09, 'Wy': 5.866842937061293e-11, 'Wu': 1.970972478099064e-10}
+  Checkpoint format: whole
+PASS checkpoint reconstruction and exact reload resnet
+PASS resnet matched initialization, baseline equivalence, nf=400 finite updates, shortened PS2 completed
+[thesis run] arm=u noise=lowpass start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE architecture=tanh_mlp_live_g  plain
+Data dir (thesis_taf_lowpass_noise): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD-lowpass-noise
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(8000, 6)  delta_a std=4.879e-05 m  vdelta_a std=6.894e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 8000 samples  (Training/TR-S1_r1.mat)
+  T2: 8000 samples  (Training/TR-S2_r1.mat)
+  T3: 8000 samples  (Training/TR-S3_r1.mat)
+  T4: 8000 samples  (Training/TR-S4_r1.mat)
+  T5: 8000 samples  (Training/TR-S5_r1.mat)
+  T6: 8000 samples  (Training/TR-Y1_r1.mat)
+  T7: 8000 samples  (Training/TR-Y2_r1.mat)
+  T8: 8000 samples  (Training/TR-Y3_r1.mat)
+  T9: 8000 samples  (Training/TR-P1_r1.mat)
+  T10: 8000 samples  (Training/TR-P2_r1.mat)
+  T11: 8000 samples  (Training/TR-P3_r1.mat)
+  T12: 8000 samples  (Training/TR-P4_r1.mat)
+  T13: 8000 samples  (Training/TR-L1_r1.mat)
+  T14: 8000 samples  (Training/TR-L2_r1.mat)
+  T15: 8000 samples  (Training/TR-T1_r1.mat)
+  T16: 8000 samples  (Training/TR-T2_r1.mat)
+  T17: 8000 samples  (Training/TR-T3_r1.mat)
+  T18: 8000 samples  (Training/TR-T4_r1.mat)
+[thesis run] arm=u noise=lowpass start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]  SMOKE architecture=tanh_mlp_live_g  PS2
+[ps2] opening started: M 30, calibration records ['TR-S5', 'TR-Y3', 'TR-P4', 'TR-T4'], spec {"aux_batch": 64, "lr": 0.001, "eval_every": 2, "s1_min": 0, "s1_cap": 4, "s1_tol": 0.02, "s1_window": 4, "screen_at": -1, "screen_max": Infinity, "n_cal": 32, "n_snap": 512, "n_snap_cal": 128, "s2_batch": 128, "s2_check": 50, "s2_min": 200, "s2_cap": 600, "s2_tol": 0.01, "seed": 1}
+PASS gradients mlp plain {'g': 1.6422068792420194e-10, 'Wy': 2.471133015920125e-11, 'Wu': 6.193679809895031e-11}
+[ps2] update 2: calibration unexplained 0.9971
+[ps2] update 4: calibration unexplained 1.0023 (S1 ends: cap)
+[ps2] S2 state-map fit: calibration EE residual 1.0486 -> 0.0330 in 600 steps
+[ps2] opening completed; the run continues as the plain method
+PASS gradients mlp ps2 {'g': 1.6422068792420194e-10, 'Wy': 2.471133015920125e-11, 'Wu': 6.193679809895031e-11}
+  Checkpoint format: whole
+PASS checkpoint reconstruction and exact reload mlp
+PASS mlp matched initialization, baseline equivalence, nf=400 finite updates, shortened PS2 completed
+ALL PASS (focused checks; no full validation)

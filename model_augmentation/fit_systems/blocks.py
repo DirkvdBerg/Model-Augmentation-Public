@@ -37,21 +37,25 @@ class Static_ANN_Block(Block):
         n_nodes_per_layer=64,
         n_hidden_layers=2,
         activation=nn.Tanh,
+        net_kwargs=None,
         *args,
         **kwargs,
     ) -> None:
         super(Static_ANN_Block, self).__init__(*args, **kwargs)
 
+        # CHANGED: allow a network to receive its structural initialization data at normal
+        # construction time. Existing callers pass nothing and retain the exact old call.
         self.net = net(
             n_in=self.nz,
             n_out=self.nw,
             n_nodes_per_layer=n_nodes_per_layer,
             n_hidden_layers=n_hidden_layers,
             activation=activation,
+            **({} if net_kwargs is None else net_kwargs),
         )
         # CHANGED: per-output intervention gate for the trajectory-orthogonality method
         # (scripts/gantry/orthogonality/documentation/plan/..., Sect. 4.3). It selects the
-        # 'full' / 'off' / 'clamped' rollouts by masking ANN OUTPUT COLUMNS, which is what
+        # 'full' / 'off' / 'clamped' rollouts by disabling ANN OUTPUT COLUMNS, which is what
         # `route_ix` indexes, without touching weights, wrapping the module or rebuilding the
         # interconnect.
         #
@@ -1259,17 +1263,23 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
     COORDINATES. `free_params` is a ten-vector, zero at `combo_init`. Nine combinations are
     parameterized in LOG, which keeps them positive and improves the condition number on the
     identifiable range by a factor 52 over physical coordinates (180 against 9360). `m_diff =
-    m1 - m2` is SIGNED (nominally -0.5 kg) so no log coordinate exists for it; it uses a
-    relative linear coordinate `m_diff = m_diff_init * (1 + free)`, which matches the log
-    coordinate's scaling to first order so the Jacobian columns stay comparably scaled.
-    # HEURISTIC: the relative-linear coordinate for the one signed combination is a conditioning
-    # choice, not a result from literature. Its only requirements are that free zero gives the
-    # initial value and that its column scale matches the log columns.
+    m1 - m2` is SIGNED (nominally -0.5 kg), so it instead uses the bounded normalized coupling
 
-    POSITIVITY IS NOT ADMISSIBILITY. Positivity of each of the ten does NOT imply `M(Y) > 0` over
-    the scheduling range. `admissibility()` checks the two conditions that matter,
-    `min eig M(Y) > 0` and `d(Y) != 0`; it is the caller's to run, and the forward pass does not
-    police it.
+        m_diff = rho * (2/Lb) * sqrt(m_total * J_eff) * tanh(eta0 + s*free).
+
+    `eta0` reproduces this run's possibly detuned start. The numerical coordinate scale `s` makes
+    the direct initial derivative equal to `m_diff_init`, matching the local relative-change
+    convention of the log coordinates. It is conditioning, not an additional physical condition.
+    Precondition: `m_diff_init` well away from zero (the thesis starts are -0.45 to -0.55 kg). A
+    near-zero start gives a tiny `s`, i.e. a numerically inert coordinate; exact zero is refused.
+
+    ADMISSIBILITY BY CONSTRUCTION (D-229). With `mh, m_total, J_eff > 0` (log coordinates),
+    `m_total*J_eff > Lb^2*m_diff^2/4`, i.e. a normalized coupling `|r| < 1`, is necessary and
+    sufficient for `M(Y) > 0` at every Y. The map covers the slightly smaller region `|r| < rho`
+    of it, for every representable free coordinate, strictly even where tanh rounds to one. It guarantees positive-definite inertia, NOT positive raw masses: in the
+    declared gauge (`mb` fixed) positive `m1, m2` need `|m_diff| < m_total - mb`, a tighter bound
+    the reduced coordinates cannot enforce. `admissibility()` remains an independent numerical
+    diagnostic; the forward pass needs no clamp, penalty or sampled gate.
 
     THE GAUGE. `_recover_params` returns a raw fourteen-vector through `gauge_section`, which
     fixes `mb` at its initial value, splits `Jb:Jh` at the initial ratio and sets `kb1 = kb2`,
@@ -1285,7 +1295,11 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
 
     COMBO_NAMES = ["kb_sum", "cg1", "cg2", "cy", "cb_sum", "mh",
                    "m_total", "m_diff", "J_eff", "d"]
+    M_TOTAL_IX = 6
     M_DIFF_IX = 7
+    J_EFF_IX = 8
+    M_DIFF_RHO = 0.99
+    COORDINATE_VERSION = 2
 
     def __init__(self, combo_init=None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -1315,7 +1329,21 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
         self.register_buffer(
             "Lambda_combo",
             torch.as_tensor(self._RMSE_baseline, dtype=raw_init.dtype) / combo_init.abs())
-        self.register_buffer("_m_diff_mask", torch.arange(10) == self.M_DIFF_IX)
+
+        # D-229: `eta0` and `s` are derived AFTER detuning, so free zero reproduces the declared
+        # start and its direct m_diff sensitivity (`combo_init != 0` is checked above). Persistent
+        # buffers make the coordinate part of the checkpoint architecture: pre-D-229 checkpoints
+        # fail closed instead of loading the same ten values under a different map.
+        r0 = combo_init[self.M_DIFF_IX] / self._m_diff_bound(combo_init)
+        if not torch.isfinite(r0) or torch.abs(r0) >= 1:
+            raise ValueError(
+                "initial m_diff lies outside the rho-contracted positive-definite domain")
+        eta0 = torch.atanh(r0)
+        scale = combo_init[self.M_DIFF_IX] / (self._m_diff_bound(combo_init) * (1 - r0 ** 2))
+        self.register_buffer("coordinate_version", torch.as_tensor(
+            self.COORDINATE_VERSION, dtype=torch.int64, device=combo_init.device))
+        self.register_buffer("m_diff_eta0", eta0)
+        self.register_buffer("m_diff_scale", scale)
 
     # ------------------------------------------------------------------ coordinates
     @staticmethod
@@ -1354,16 +1382,47 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
             J_sum * r, J_sum * (1 - r), d,
         ])
 
+    def _m_diff_bound(self, combo: Tensor) -> Tensor:
+        """`rho (2/Lb) sqrt(m_total J_eff)`: the contracted bound on `|m_diff|` (D-229).
+
+        Two dtype rules. `Lb` is cast to the combinations' dtype first: the buffer can still be
+        float32 when `__init__` derives `eta0` and `s`, and the bound must be the same number
+        there as in the float64 forward pass. And the Python constants meet only the constant
+        `Lb`, never a parameter-dependent tensor: under `torch.func.jvp` a Python float times a
+        dual tensor promotes the TANGENT to float64 while the value stays float32.
+        """
+        k = 2 * self.M_DIFF_RHO / self.Lb.to(combo.dtype)
+        return k * torch.sqrt(combo[..., self.M_TOTAL_IX] * combo[..., self.J_EFF_IX])
+
     def combinations_from_free(self, free: Tensor) -> Tensor:
-        """The ten combinations at an EXPLICIT free coordinate `free` (10,). Nine log, `m_diff` linear."""
-        return torch.where(
-            self._m_diff_mask,
-            self.combo_init * (1.0 + free),
-            self.combo_init * torch.exp(free),
-        )
+        """The ten combinations at free coordinate `free` (..., 10): nine log, `m_diff` bounded.
+
+        Pure tensor algebra (no data-dependent branch, no in-place op), so it traces under
+        torch.compile(fullgraph=True), jacfwd, jvp and vmap.
+        """
+        i = self.M_DIFF_IX
+        c = self.combo_init * torch.exp(free)
+        m_diff = self._m_diff_bound(c) * torch.tanh(
+            self.m_diff_eta0 + self.m_diff_scale * free[..., i])
+        return torch.cat((c[..., :i], m_diff.unsqueeze(-1), c[..., i + 1:]), dim=-1)
+
+    def free_from_combinations(self, combo: Tensor) -> Tensor:
+        """Inverse of `combinations_from_free` for admissible combinations (..., 10). Reporting only."""
+        i = self.M_DIFF_IX
+        c = torch.as_tensor(combo, dtype=self.combo_init.dtype, device=self.combo_init.device)
+        positive = torch.cat((c[..., :i], c[..., i + 1:]), dim=-1)
+        if not torch.isfinite(c).all() or (positive <= 0).any():
+            raise ValueError("combinations must be finite and positive except for signed m_diff")
+        r = c[..., i] / self._m_diff_bound(c)
+        if (r.abs() >= 1).any():
+            raise ValueError("m_diff lies outside the rho-contracted positive-definite domain")
+        init = torch.cat((self.combo_init[:i], self.combo_init[i + 1:]))
+        log = torch.log(positive / init)
+        xi = (torch.atanh(r) - self.m_diff_eta0) / self.m_diff_scale
+        return torch.cat((log[..., :i], xi.unsqueeze(-1), log[..., i:]), dim=-1)
 
     def recover_combinations(self) -> Tensor:
-        """The ten combinations at the current free coordinate. Nine log, `m_diff` linear."""
+        """The ten combinations at the current free coordinate."""
         return self.combinations_from_free(self.free_params)
 
     # CHANGED (D-192): the transition as a PURE function of the free coordinate.
@@ -1433,12 +1492,11 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
 
     # ------------------------------------------------------------------ admissibility
     def admissibility(self, y_range=(-0.30, 0.30), n: int = 201):
-        """`min eig M(Y)` and `min abs d(Y)` over the scheduling range.
+        """Numerical diagnostic of `M(Y) > 0` on a Y grid: `min eig M(Y)` and `min abs d(Y)`.
 
-        The two conditions the forward pass needs, neither of which positivity of the ten
-        combinations implies: `M(Y)` positive definite so the interconnection is well posed, and
-        the LFR denominator `d(Y)` away from zero so the rational form is finite. Returns a dict
-        and leaves the decision to the caller.
+        `d(Y) = det M(Y)`, so the two numbers test ONE condition, positive definiteness (which
+        D-229 guarantees by construction). Grid only: the worst Y can lie outside `y_range` when
+        `m_diff` nears its bound; `01-reduced` T6 checks the analytic worst Y.
         """
         p = self._recover_params()
         (kb1, kb2, cg1, cg2, cy, cb1, cb2, mh, m1, m2, mb, Jb, Jh, d) = p
@@ -1484,7 +1542,7 @@ class Reduced_Gantry_State_Block(_Trainable_Gantry_State_Block):
         return {n: self.combo_init[i].item() for i, n in enumerate(self.COMBO_NAMES)}
 
     def _combination_training_label(self) -> str:
-        return "identifiable coordinates trained"
+        return "identifiable coordinates trained, inertia positive definite by construction"
 
     def physical_params(self) -> dict:
         """Raw fourteen scalars IN THE DECLARED GAUGE. Not estimates. See the class docstring."""

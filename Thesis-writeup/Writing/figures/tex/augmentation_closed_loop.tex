@@ -1,0 +1,38 @@
+% Source asset, condensed from docs/writeup/closed-loop-form-v4.tex.
+% Original three-loop argument, with current symbols and no unsupported footer.
+\begin{tikzpicture}[x=1cm,y=1cm,>=Latex,font=\scriptsize,
+ block/.style={draw,rounded corners,align=center,minimum width=13mm,minimum height=6mm},
+ sum/.style={draw,circle,inner sep=0pt,minimum size=4.5mm}]
+ \foreach \yy/\obj/\uin/\yout/\ttl in {
+   3.65/plant/u/y/recorded,
+   1.9/model/{\hat u}/{\hat y}/direct model}{
+   \node[anchor=west] at (0,\yy+0.48) {\ttl};
+   \node[sum] (e\ttl) at (0.9,\yy) {$+$};
+   \node[block] (c\ttl) at (2.25,\yy) {$C_{\mathrm{fb}}$};
+   \node[sum] (f\ttl) at (3.55,\yy) {$+$};
+   \node[block] (p\ttl) at (5.25,\yy) {\obj};
+   \draw[->] (0,\yy) -- (e\ttl.west) node[pos=0,above] {$r$};
+   \draw[->] (e\ttl.east) -- (c\ttl.west);
+   \draw[->] (c\ttl.east) -- (f\ttl.west);
+   \draw[->] (3.55,\yy+0.6) -- (f\ttl.north)
+      node[pos=0,right] {$u^{\mathrm{ff}}$};
+   \draw[->] (f\ttl.east) -- (p\ttl.west) node[midway,above] {$\uin$};
+   \draw[->] (p\ttl.east) -- (7.4,\yy) node[right] {$\yout$};
+   \draw[->] (7.05,\yy) -- (7.05,\yy-0.65)
+      -- (0.9,\yy-0.65) -- (e\ttl.south);
+   \node at (1.13,\yy-0.32) {$-$};
+ }
+ \node[anchor=west] at (0,0.48) {residual model};
+ \node[sum] (us) at (0.9,0) {$+$};
+ \node[block] (pm) at (2.65,0) {model};
+ \node[sum] (es) at (5.1,-0.9) {$+$};
+ \node[block] (cf) at (2.65,-0.9) {$C_{\mathrm{fb}}$};
+ \draw[->] (0,0) -- (us.west) node[pos=0,above] {$u$};
+ \draw[->] (us.east) -- (pm.west) node[midway,above] {$\hat u$};
+ \draw[->] (pm.east) -- (7.4,0) node[right] {$\hat y$};
+ \draw[->] (6.7,0) -- (6.7,-0.9) -- (es.east);
+ \node at (5.65,-0.68) {$-$};
+ \draw[->] (5.1,-1.55) -- (es.south) node[pos=0,right] {$y$};
+ \draw[->] (es.west) -- (cf.east) node[midway,above] {$y-\hat y$};
+ \draw[->] (cf.west) -- (0.9,-0.9) -- (us.south);
+\end{tikzpicture}

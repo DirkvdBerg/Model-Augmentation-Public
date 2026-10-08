@@ -1,0 +1,33 @@
+[wd] launch  out=logs/gen_test-E
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('test-E'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+generate_thesis_data: 6 records selected, versions noisy + noise-free
+
+=== 1/6  E1_r1  [test-E, standstill Y -0.39, A_prod] ===
+  skip: already on disk
+
+=== 2/6  E2_r1  [test-E, I3 route shuttling to -0.33 / +0.39] ===
+  r OK E2_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-330 +390] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 960/1456 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.37 GB < 1.5 GB (tree 2,799 MB)
+[wd] t=59s tree=2,799 MB cpu=6% availRAM=1.37 GB C:free=2.27 GB
+  scale pre 1.00 post 1.00 | noise adds rms [2136.219 1021.696 2925.377] nm | stick [75.2 75 71.6] % | F peak [0.27 0.34 0.23], rms [0.17 0.19 0.16] of limit | 39.4 + 32.9 MB | 32.8 s
+
+=== 3/6  E3_r1  [test-E, I5 at 100 % max (30 / 50 m/s^2), T3 25 ms] ===
+  r OK E3_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.907/1.498 m/s a 29.94/49.98 m/s^2 j 2395/3999 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [1907.459 2033.083 2698.891] nm | stick [78.2 76.4 73.7] % | F peak [0.45 0.53 0.39], rms [0.25 0.31 0.23] of limit | 39.6 + 33.0 MB | 14.1 s
+
+=== 4/6  E4_r1  [test-E, I6 with v cap 1.95 m/s] ===
+  r OK E4_r1       : X1=[-250 +250] X2=[-250 +250] Y=[-280 +280] mm | v 1.950/1.950 m/s a 18.00/30.00 m/s^2 j 383/923 m/s^3 (X_sym/Y)
+WATCHDOG ALERT C: free 1.98 GB < 2 GB
+  scale pre 1.00 post 1.00 | noise adds rms [514.058 813.028 556.72] nm | stick [54.7 54.4 57.5] % | F peak [0.27 0.31 0.23], rms [0.21 0.25 0.16] of limit | 40.9 + 33.8 MB | 14.4 s
+
+=== 5/6  E5_r1  [test-E, I3 under K2-g+ (K1 gains +20 %)] ===
+  skip: already on disk
+
+=== 6/6  E6_r1  [test-E, measured ILC move (D-210), exact, on the I3 lattice] ===
+  skip: already on disk
+MANIFEST noisy: 41 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 40 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@
+[wd] t=122s tree=2,792 MB cpu=0% availRAM=1.37 GB C:free=2.07 GB

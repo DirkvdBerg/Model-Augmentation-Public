@@ -1,0 +1,52 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Cubic-absorber-test\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.306e-05 m  vdelta_a std=6.446e-02 m/s
+Loaded 9 train, 3 val, 1 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-Y1_r1.mat)
+  T5: 47960 samples  (Training/TR-Y2_r1.mat)
+  T6: 47960 samples  (Training/TR-Y3_r1.mat)
+  T7: 47960 samples  (Training/TR-P1_r1.mat)
+  T8: 47960 samples  (Training/TR-P2_r1.mat)
+  T9: 47960 samples  (Training/TR-P3_r1.mat)
+
+######## evalc: free run over 3 validation records (sim-RMS, m)
+  [ps2_q2.pt, 600 upd] on 7.4748e-06 | clamp 1.7766e-05 | off 2.0707e-05 | finite True
+      on    per record 6.650e-06 7.281e-06 8.494e-06
+      clamp per record 1.751e-05 1.806e-05 1.773e-05
+      off   per record 2.048e-05 2.090e-05 2.075e-05
+      clamp increase per record 1.09e-05 1.08e-05 9.23e-06; median 1.078e-05, 95% bootstrap CI over records [9.235e-06, 1.086e-05] -> EXCLUDES 0
+      records with on > off (block hurts): none
+  [ps2_k2.pt, 600 upd] on 1.4339e-05 | clamp 1.6959e-05 | off 2.0660e-05 | finite True
+      on    per record 1.368e-05 1.447e-05 1.488e-05
+      clamp per record 1.635e-05 1.690e-05 1.763e-05
+      off   per record 2.043e-05 2.085e-05 2.070e-05
+      clamp increase per record 2.67e-06 2.43e-06 2.76e-06; median 2.670e-06, 95% bootstrap CI over records [2.432e-06, 2.756e-06] -> EXCLUDES 0
+      records with on > off (block hurts): none
+  [ps2_q3.pt, 600 upd] on 7.1588e-06 | clamp 1.7479e-05 | off 2.0712e-05 | finite True
+      on    per record 6.812e-06 7.192e-06 7.472e-06
+      clamp per record 1.711e-05 1.778e-05 1.754e-05
+      off   per record 2.048e-05 2.090e-05 2.075e-05
+      clamp increase per record 1.03e-05 1.06e-05 1.01e-05; median 1.030e-05, 95% bootstrap CI over records [1.007e-05, 1.059e-05] -> EXCLUDES 0
+      records with on > off (block hurts): none
+  [ps2_k3.pt, 600 upd] on 1.3227e-05 | clamp 1.5993e-05 | off 2.0666e-05 | finite True
+      on    per record 1.245e-05 1.330e-05 1.393e-05
+      clamp per record 1.555e-05 1.625e-05 1.617e-05
+      off   per record 2.044e-05 2.086e-05 2.070e-05
+      clamp increase per record 3.11e-06 2.95e-06 2.24e-06; median 2.949e-06, 95% bootstrap CI over records [2.237e-06, 3.109e-06] -> EXCLUDES 0
+      records with on > off (block hurts): none
+  PAIR ps2_q2.pt vs ps2_k2.pt: per-record on ratio 0.486 0.503 0.571; median ratio 0.503, 95% CI [0.486, 0.571]; whole 7.4748e-06 vs 1.4339e-05
+      clamp increase cand minus ctrl per record 8.19e-06 8.35e-06 6.48e-06; median 8.187e-06, 95% CI [6.479e-06, 8.350e-06] -> EXCLUDES 0
+      on/off per record cand 0.325 0.348 0.409 | ctrl 0.669 0.694 0.719
+  PAIR ps2_q3.pt vs ps2_k3.pt: per-record on ratio 0.547 0.541 0.536; median ratio 0.541, 95% CI [0.536, 0.547]; whole 7.1588e-06 vs 1.3227e-05
+      clamp increase cand minus ctrl per record 7.19e-06 7.64e-06 7.83e-06; median 7.638e-06, 95% CI [7.193e-06, 7.834e-06] -> EXCLUDES 0
+      on/off per record cand 0.333 0.344 0.360 | ctrl 0.609 0.638 0.673
+=== EXIT 0 ===

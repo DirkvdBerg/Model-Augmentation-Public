@@ -1,0 +1,4 @@
+######## MSD tanh seed 1, 2 epochs in chunks of 1, SNR20 approximate (truth 3rd mode 5.79 Hz zeta 0.091)
+  device: cpu
+Initializing encoder network...
+  epoch     1 (29 s): best val sim-RMS 1.7049e-01 | 3rd pair at   0 % of points, median nan Hz zeta nan | mean-J modes 1.41Hz/z0.040 3.64Hz/z0.055

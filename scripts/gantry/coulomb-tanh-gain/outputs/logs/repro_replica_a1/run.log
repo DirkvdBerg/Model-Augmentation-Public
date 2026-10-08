@@ -1,0 +1,47 @@
+[wd] launch  out=outputs/logs/repro_replica_a1
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain'); addpath('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\thesis-data-verification\checks'); generate_thesis_data({'TR-T1_r1','TR-S3_r1','TR-P3_r1'}, struct('out_dir', 'C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain\outputs\repro_replica', 'simulator', 'replica')); check_reproduction('TR-T1_r1', 'C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain\outputs\repro_replica'); check_reproduction('TR-S3_r1', 'C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain\outputs\repro_replica'); check_reproduction('TR-P3_r1', 'C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain\outputs\repro_replica'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+generate_thesis_data: 3 records selected, versions noisy + noise-free
+
+=== 1/3  TR-S3_r1  [training, standstill Y +0.00, A_prod multisine] ===
+  r OK TR-S3_r1    : X1=[+0 +0] X2=[+0 +0] Y=[+0 +0] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+[wd] t=58s tree=1,114 MB cpu=8% availRAM=1.59 GB C:free=13.08 GB
+WATCHDOG ALERT available RAM 1.44 GB < 1.5 GB (tree 1,148 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [10.362 10.809 6.564] nm | stick [6.7 7.3 2.2] % | F peak [0.49 0.44 0.56], rms [0.26 0.26 0.34] of limit | 54.7 + 49.1 MB | 73.4 s
+
+=== 2/3  TR-P3_r1  [training, S-curve moves, log strata, T3 12 ms, A_prod] ===
+  r OK TR-P3_r1    : X1=[-240 +280] X2=[-240 +280] Y=[-299 +297] mm | v 1.500/1.500 m/s a 22.50/37.50 m/s^2 j 3750/6250 m/s^3 (X_sym/Y)
+[wd] t=120s tree=1,073 MB cpu=8% availRAM=1.59 GB C:free=12.98 GB
+  scale pre 1.00 post 1.00 | noise adds rms [10.356 10.889 6.569] nm | stick [4.3 5.3 1.5] % | F peak [0.78 0.79 0.8], rms [0.4 0.43 0.41] of limit | 53.9 + 48.3 MB | 67.4 s
+
+=== 3/3  TR-T1_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.00, 75 % max, dwell 0.30 s, no multisine] ===
+  r OK TR-T1_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-240 +240] mm | v 0.757/1.382 m/s a 22.50/37.50 m/s^2 j 1338/2035 m/s^3 (X_sym/Y)
+[wd] t=182s tree=1,035 MB cpu=8% availRAM=1.96 GB C:free=12.88 GB
+  scale pre 1.00 post 1.00 | noise adds rms [9.96 10.502 6.412] nm | stick [74.7 74.5 71.8] % | F peak [0.37 0.4 0.28], rms [0.21 0.23 0.2] of limit | 46.6 + 35.4 MB | 64.6 s
+MANIFEST noisy: 3 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain\outputs\repro_replica\Coulomb-tanh-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 3 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\scripts\gantry\coulomb-tanh-gain\outputs\repro_replica\Coulomb-tanh-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+C16 TR-T1_r1 noisy: PASS, every field bitwise equal outside meta.generator
+    code changed since the saved record: generate_thesis_data_m, gtd_run_simulation_m, tdg_config_m, tdg_replica_m (new)
+    model sha256 saved bcf644b9c24f637b, now bcf644b9c24f637b
+C16 TR-T1_r1 noise-free: PASS, every field bitwise equal outside meta.generator
+    code changed since the saved record: generate_thesis_data_m, gtd_run_simulation_m, tdg_config_m, tdg_replica_m (new)
+    model sha256 saved bcf644b9c24f637b, now bcf644b9c24f637b
+C16 reproduction TR-T1_r1: PASS
+C16 TR-S3_r1 noisy: PASS, every field bitwise equal outside meta.generator
+    code changed since the saved record: generate_thesis_data_m, gtd_run_simulation_m, tdg_config_m, tdg_replica_m (new)
+    model sha256 saved bcf644b9c24f637b, now bcf644b9c24f637b
+C16 TR-S3_r1 noise-free: PASS, every field bitwise equal outside meta.generator
+    code changed since the saved record: generate_thesis_data_m, gtd_run_simulation_m, tdg_config_m, tdg_replica_m (new)
+    model sha256 saved bcf644b9c24f637b, now bcf644b9c24f637b
+C16 reproduction TR-S3_r1: PASS
+C16 TR-P3_r1 noisy: PASS, every field bitwise equal outside meta.generator
+    code changed since the saved record: generate_thesis_data_m, gtd_run_simulation_m, tdg_config_m, tdg_replica_m (new)
+    model sha256 saved bcf644b9c24f637b, now bcf644b9c24f637b
+C16 TR-P3_r1 noise-free: PASS, every field bitwise equal outside meta.generator
+    code changed since the saved record: generate_thesis_data_m, gtd_run_simulation_m, tdg_config_m, tdg_replica_m (new)
+    model sha256 saved bcf644b9c24f637b, now bcf644b9c24f637b
+C16 reproduction TR-P3_r1: PASS
+@@TDG_DONE@@
+[wd] t=244s tree=306 MB cpu=6% availRAM=2.97 GB C:free=12.79 GB
+WATCHDOG SUMMARY exit=0 killed=False duration_s=244.1 samples=48 peak_tree_ws_mb=1,148 min_avail_ram_gb=1.44 min_C_free_gb=12.79 kill_reason=""

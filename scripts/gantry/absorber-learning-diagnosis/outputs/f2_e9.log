@@ -1,0 +1,127 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+  F_SEED 2: hidden layers and W^a redrawn (same init method), batch sequence 2
+
+######## opening probe [e9]: 1100 updates, batch 64; opening: out_a 0.01, hidden 0.001, W^a 0.001, hold 800, end 950, F_INN 40; after: out_a 0.001, hidden 1e-05, W^a 0.001
+  [eval     0] loss 1.5133e-08 | added: rho med 0.000, dom 0 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 2.484e+00 | W^a change 0.000 | |W_a| 0.00e+00
+  upd     1 oe 1.6041e-08 ee 5.6615e+00 (rel 0.986) inn unexplained 1.0000 w 1.000 | 5.61 s/upd
+  upd     2 oe 2.7115e-08 ee 5.8428e+00 (rel 0.990) inn unexplained 1.0016 w 1.000 | 5.30 s/upd
+  upd     3 oe 1.1981e-08 ee 4.9047e+00 (rel 1.012) inn unexplained 0.9994 w 1.000 | 5.07 s/upd
+  upd    25 oe 8.2130e-09 ee 4.1840e+00 (rel 1.001) inn unexplained 0.9995 w 1.000 | 5.08 s/upd
+  [eval    25] loss 9.1237e-09 | added: rho med 0.006, dom 2000 Hz, complex 8 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 1.968e+00 | W^a change 0.063 | |W_a| 6.10e-02
+  upd    50 oe 6.6359e-09 ee 3.1418e+00 (rel 1.040) inn unexplained 0.9949 w 1.000 | 5.02 s/upd
+  [eval    50] loss 7.6514e-09 | added: rho med 0.012, dom 2000 Hz, complex 8 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 1.756e+00 | W^a change 0.114 | |W_a| 1.11e-01
+  upd    75 oe 7.1992e-09 ee 3.8736e+00 (rel 1.009) inn unexplained 0.9813 w 1.000 | 5.08 s/upd
+  [eval    75] loss 7.3468e-09 | added: rho med 0.014, dom 2000 Hz, complex 17 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 1.960e+00 | W^a change 0.184 | |W_a| 1.35e-01
+  upd   100 oe 6.8432e-09 ee 5.2581e+00 (rel 1.013) inn unexplained 0.9411 w 1.000 | 5.05 s/upd
+  [eval   100] loss 7.2391e-09 | added: rho med 0.016, dom 2000 Hz, complex 17 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 2.070e+00 | W^a change 0.273 | |W_a| 1.56e-01
+  upd   125 oe 7.0808e-09 ee 6.1243e+00 (rel 1.012) inn unexplained 0.9102 w 1.000 | 5.02 s/upd
+  [eval   125] loss 7.2069e-09 | added: rho med 0.018, dom 2000 Hz, complex 8 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 2.221e+00 | W^a change 0.368 | |W_a| 1.78e-01
+  upd   150 oe 6.3791e-09 ee 1.1154e+01 (rel 1.031) inn unexplained 0.8642 w 1.000 | 5.02 s/upd
+  [eval   150] loss 7.1414e-09 | added: rho med 0.020, dom 2000 Hz, complex 8 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 2.602e+00 | W^a change 0.456 | |W_a| 2.08e-01
+  upd   175 oe 7.1218e-09 ee 9.2576e+00 (rel 1.028) inn unexplained 0.8437 w 1.000 | 5.00 s/upd
+  [eval   175] loss 7.1073e-09 | added: rho med 0.020, dom 2000 Hz, complex 12 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 2.998e+00 | W^a change 0.518 | |W_a| 2.34e-01
+  upd   200 oe 6.2985e-09 ee 1.2226e+01 (rel 1.010) inn unexplained 0.7907 w 1.000 | 5.02 s/upd
+  [eval   200] loss 7.1113e-09 | added: rho med 0.023, dom 2000 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 3.251e+00 | W^a change 0.573 | |W_a| 2.61e-01
+  upd   225 oe 6.4164e-09 ee 9.8039e+00 (rel 1.022) inn unexplained 0.8170 w 1.000 | 5.00 s/upd
+  [eval   225] loss 7.0313e-09 | added: rho med 0.025, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 3.462e+00 | W^a change 0.618 | |W_a| 2.85e-01
+  upd   250 oe 7.7184e-09 ee 1.5923e+01 (rel 1.014) inn unexplained 0.7220 w 1.000 | 4.99 s/upd
+  [eval   250] loss 7.0225e-09 | added: rho med 0.031, dom 2000 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 3.655e+00 | W^a change 0.660 | |W_a| 3.09e-01
+  upd   275 oe 6.8809e-09 ee 1.5519e+01 (rel 1.031) inn unexplained 0.7613 w 1.000 | 5.00 s/upd
+  [eval   275] loss 6.9941e-09 | added: rho med 0.035, dom 2000 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 3.865e+00 | W^a change 0.693 | |W_a| 3.36e-01
+  upd   300 oe 7.5334e-09 ee 1.9004e+01 (rel 1.044) inn unexplained 0.7023 w 1.000 | 5.00 s/upd
+  [eval   300] loss 7.0071e-09 | added: rho med 0.038, dom 2000 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 3.901e+00 | W^a change 0.713 | |W_a| 3.60e-01
+  upd   325 oe 7.0381e-09 ee 1.7612e+01 (rel 1.026) inn unexplained 0.7120 w 1.000 | 5.02 s/upd
+  [eval   325] loss 7.0603e-09 | added: rho med 0.041, dom 2000 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 4.018e+00 | W^a change 0.736 | |W_a| 3.87e-01
+  upd   350 oe 6.4748e-09 ee 1.4851e+01 (rel 1.035) inn unexplained 0.7831 w 1.000 | 5.01 s/upd
+  [eval   350] loss 6.9623e-09 | added: rho med 0.044, dom 2000 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 3.989e+00 | W^a change 0.742 | |W_a| 4.12e-01
+  upd   375 oe 7.0480e-09 ee 1.7885e+01 (rel 1.065) inn unexplained 0.7113 w 1.000 | 5.01 s/upd
+  [eval   375] loss 6.9733e-09 | added: rho med 0.047, dom 2000 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 3.993e+00 | W^a change 0.752 | |W_a| 4.39e-01
+  upd   400 oe 6.9550e-09 ee 1.9561e+01 (rel 1.053) inn unexplained 0.6937 w 1.000 | 5.01 s/upd
+  [eval   400] loss 6.9541e-09 | added: rho med 0.049, dom 2000 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 3.996e+00 | W^a change 0.765 | |W_a| 4.62e-01
+  upd   425 oe 7.0975e-09 ee 1.7713e+01 (rel 1.059) inn unexplained 0.8008 w 1.000 | 5.01 s/upd
+  [eval   425] loss 6.9746e-09 | added: rho med 0.050, dom 2000 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 3.988e+00 | W^a change 0.781 | |W_a| 4.82e-01
+  upd   450 oe 6.8760e-09 ee 1.5413e+01 (rel 1.067) inn unexplained 0.7184 w 1.000 | 5.03 s/upd
+  [eval   450] loss 6.8997e-09 | added: rho med 0.054, dom 2000 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 3.977e+00 | W^a change 0.788 | |W_a| 5.05e-01
+  upd   475 oe 7.7913e-09 ee 1.8402e+01 (rel 1.086) inn unexplained 0.6730 w 1.000 | 5.02 s/upd
+  [eval   475] loss 6.9596e-09 | added: rho med 0.054, dom 2000 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 4.038e+00 | W^a change 0.802 | |W_a| 5.28e-01
+  upd   500 oe 7.2514e-09 ee 1.5901e+01 (rel 1.074) inn unexplained 0.7344 w 1.000 | 5.01 s/upd
+  [eval   500] loss 6.9686e-09 | added: rho med 0.059, dom 2000 Hz, complex 4 %, band pair 0 % (f nan, zeta nan) | full J band pair 0 % (f nan, zeta nan) | x_a rms 4.001e+00 | W^a change 0.810 | |W_a| 5.59e-01
+  EE on from update 501: out_a 0.01, hidden 0.001
+  upd   525 oe 7.2279e-09 ee 7.8770e+00 (rel 0.422) inn unexplained 0.6674 w 1.000 | 5.02 s/upd
+  [eval   525] loss 7.1343e-09 | added: rho med 0.538, dom 140 Hz, complex 62 %, band pair 58 % (f 199, zeta 0.74) | full J band pair 58 % (f 200, zeta 0.74) | x_a rms 3.903e+00 | W^a change 0.809 | |W_a| 3.24e+00
+  upd   550 oe 7.2891e-09 ee 4.3428e+00 (rel 0.252) inn unexplained 0.6841 w 1.000 | 5.02 s/upd
+  [eval   550] loss 6.4699e-09 | added: rho med 0.649, dom 175 Hz, complex 67 %, band pair 67 % (f 218, zeta 0.58) | full J band pair 67 % (f 218, zeta 0.58) | x_a rms 3.809e+00 | W^a change 0.801 | |W_a| 4.30e+00
+  upd   575 oe 4.6744e-09 ee 3.1048e+00 (rel 0.205) inn unexplained 0.7506 w 1.000 | 5.02 s/upd
+  [eval   575] loss 4.8602e-09 | added: rho med 0.902, dom 177 Hz, complex 62 %, band pair 62 % (f 201, zeta 0.04) | full J band pair 62 % (f 201, zeta 0.04) | x_a rms 3.629e+00 | W^a change 0.798 | |W_a| 4.89e+00
+  upd   600 oe 4.0897e-09 ee 1.7148e+00 (rel 0.148) inn unexplained 0.7791 w 1.000 | 5.02 s/upd
+  [eval   600] loss 4.4523e-09 | added: rho med 0.902, dom 172 Hz, complex 71 %, band pair 71 % (f 205, zeta -0.18) | full J band pair 71 % (f 205, zeta -0.18) | x_a rms 3.683e+00 | W^a change 0.800 | |W_a| 5.22e+00
+  upd   625 oe 3.9478e-09 ee 1.2481e+00 (rel 0.089) inn unexplained 0.8275 w 1.000 | 5.01 s/upd
+  [eval   625] loss 4.4444e-09 | added: rho med 1.007, dom 201 Hz, complex 71 %, band pair 67 % (f 213, zeta -0.27) | full J band pair 67 % (f 213, zeta -0.27) | x_a rms 3.626e+00 | W^a change 0.809 | |W_a| 5.46e+00
+  upd   650 oe 4.1986e-09 ee 1.2309e+00 (rel 0.094) inn unexplained 0.8300 w 1.000 | 5.01 s/upd
+  [eval   650] loss 4.1725e-09 | added: rho med 0.968, dom 200 Hz, complex 71 %, band pair 67 % (f 215, zeta -0.34) | full J band pair 67 % (f 215, zeta -0.34) | x_a rms 3.399e+00 | W^a change 0.788 | |W_a| 5.57e+00
+  upd   675 oe 4.4455e-09 ee 9.4380e-01 (rel 0.083) inn unexplained 0.8911 w 1.000 | 5.02 s/upd
+  [eval   675] loss 4.2916e-09 | added: rho med 1.012, dom 207 Hz, complex 75 %, band pair 71 % (f 216, zeta -0.37) | full J band pair 71 % (f 216, zeta -0.37) | x_a rms 3.250e+00 | W^a change 0.774 | |W_a| 5.66e+00
+  upd   700 oe 3.8916e-09 ee 8.6805e-01 (rel 0.065) inn unexplained 0.7927 w 1.000 | 5.02 s/upd
+  [eval   700] loss 4.1303e-09 | added: rho med 1.009, dom 214 Hz, complex 75 %, band pair 71 % (f 220, zeta -0.33) | full J band pair 71 % (f 220, zeta -0.33) | x_a rms 3.212e+00 | W^a change 0.775 | |W_a| 5.68e+00
+  upd   725 oe 4.8645e-09 ee 6.5912e-01 (rel 0.063) inn unexplained 0.9337 w 1.000 | 5.03 s/upd
+  [eval   725] loss 4.0897e-09 | added: rho med 1.020, dom 216 Hz, complex 75 %, band pair 71 % (f 222, zeta -0.30) | full J band pair 71 % (f 222, zeta -0.30) | x_a rms 3.078e+00 | W^a change 0.762 | |W_a| 5.68e+00
+  upd   750 oe 3.4444e-09 ee 7.1044e-01 (rel 0.069) inn unexplained 0.8025 w 1.000 | 5.03 s/upd
+  [eval   750] loss 3.7261e-09 | added: rho med 0.964, dom 212 Hz, complex 75 %, band pair 75 % (f 217, zeta -0.07) | full J band pair 75 % (f 217, zeta -0.07) | x_a rms 2.851e+00 | W^a change 0.750 | |W_a| 5.64e+00
+  upd   775 oe 3.3275e-09 ee 1.2387e+00 (rel 0.106) inn unexplained 0.8241 w 1.000 | 5.03 s/upd
+  [eval   775] loss 3.6041e-09 | added: rho med 0.918, dom 208 Hz, complex 75 %, band pair 75 % (f 218, zeta 0.08) | full J band pair 75 % (f 218, zeta 0.08) | x_a rms 2.926e+00 | W^a change 0.755 | |W_a| 5.57e+00
+  upd   800 oe 2.9914e-09 ee 1.3927e+00 (rel 0.112) inn unexplained 0.8219 w 1.000 | 5.03 s/upd
+  [eval   800] loss 2.6667e-09 | added: rho med 0.878, dom 204 Hz, complex 75 %, band pair 75 % (f 207, zeta 0.28) | full J band pair 75 % (f 207, zeta 0.28) | x_a rms 2.971e+00 | W^a change 0.763 | |W_a| 5.52e+00
+  upd   825 oe 1.9320e-09 ee 6.3574e-01 (rel 0.086) inn unexplained 0.8724 w 0.833 | 5.03 s/upd
+  [eval   825] loss 2.1643e-09 | added: rho med 0.875, dom 201 Hz, complex 79 %, band pair 79 % (f 205, zeta 0.32) | full J band pair 79 % (f 205, zeta 0.32) | x_a rms 2.888e+00 | W^a change 0.760 | |W_a| 5.56e+00
+  upd   850 oe 1.7678e-09 ee 8.4232e-01 (rel 0.108) inn unexplained 0.9578 w 0.667 | 5.03 s/upd
+  [eval   850] loss 1.7280e-09 | added: rho med 0.894, dom 201 Hz, complex 92 %, band pair 88 % (f 203, zeta 0.30) | full J band pair 88 % (f 203, zeta 0.30) | x_a rms 2.767e+00 | W^a change 0.755 | |W_a| 5.60e+00
+  upd   875 oe 1.6979e-09 ee 8.2224e-01 (rel 0.109) inn unexplained 0.9816 w 0.500 | 5.02 s/upd
+  [eval   875] loss 1.4752e-09 | added: rho med 0.914, dom 204 Hz, complex 92 %, band pair 92 % (f 205, zeta 0.23) | full J band pair 92 % (f 205, zeta 0.23) | x_a rms 2.619e+00 | W^a change 0.743 | |W_a| 5.63e+00
+  upd   900 oe 1.5073e-09 ee 5.9530e-01 (rel 0.082) inn unexplained 0.9513 w 0.333 | 5.02 s/upd
+  [eval   900] loss 1.4246e-09 | added: rho med 0.933, dom 208 Hz, complex 92 %, band pair 92 % (f 209, zeta 0.17) | full J band pair 92 % (f 209, zeta 0.17) | x_a rms 2.445e+00 | W^a change 0.734 | |W_a| 5.65e+00
+  upd   925 oe 1.1890e-09 ee 3.3998e-01 (rel 0.059) inn unexplained 0.9676 w 0.167 | 5.02 s/upd
+  [eval   925] loss 1.3099e-09 | added: rho med 0.928, dom 206 Hz, complex 96 %, band pair 92 % (f 206, zeta 0.17) | full J band pair 92 % (f 206, zeta 0.17) | x_a rms 2.326e+00 | W^a change 0.727 | |W_a| 5.66e+00
+  upd   950 oe 1.1499e-09 | 5.02 s/upd
+  [eval   950] loss 1.2820e-09 | added: rho med 0.945, dom 209 Hz, complex 96 %, band pair 96 % (f 209, zeta 0.16) | full J band pair 96 % (f 209, zeta 0.16) | x_a rms 2.251e+00 | W^a change 0.721 | |W_a| 5.67e+00
+  opening ended at update 950: out_a 0.001, hidden 1e-05, W^a 0.001
+  upd   975 oe 1.2527e-09 | 5.01 s/upd
+  [eval   975] loss 1.2056e-09 | added: rho med 0.953, dom 208 Hz, complex 100 %, band pair 96 % (f 208, zeta 0.14) | full J band pair 96 % (f 208, zeta 0.14) | x_a rms 2.179e+00 | W^a change 0.715 | |W_a| 5.67e+00
+  upd  1000 oe 1.2440e-09 | 5.01 s/upd
+  [eval  1000] loss 1.1991e-09 | added: rho med 0.960, dom 208 Hz, complex 100 %, band pair 96 % (f 208, zeta 0.11) | full J band pair 96 % (f 208, zeta 0.11) | x_a rms 2.128e+00 | W^a change 0.707 | |W_a| 5.66e+00
+  upd  1025 oe 9.2615e-10 | 5.02 s/upd
+  [eval  1025] loss 1.1460e-09 | added: rho med 0.960, dom 209 Hz, complex 100 %, band pair 100 % (f 209, zeta 0.12) | full J band pair 100 % (f 209, zeta 0.12) | x_a rms 2.060e+00 | W^a change 0.701 | |W_a| 5.66e+00
+  upd  1050 oe 1.2373e-09 | 5.01 s/upd
+  [eval  1050] loss 1.1230e-09 | added: rho med 0.961, dom 209 Hz, complex 100 %, band pair 100 % (f 209, zeta 0.12) | full J band pair 100 % (f 209, zeta 0.12) | x_a rms 1.999e+00 | W^a change 0.694 | |W_a| 5.66e+00
+  upd  1075 oe 9.4763e-10 | 5.01 s/upd
+  [eval  1075] loss 1.2077e-09 | added: rho med 0.967, dom 208 Hz, complex 100 %, band pair 100 % (f 208, zeta 0.10) | full J band pair 100 % (f 208, zeta 0.10) | x_a rms 1.936e+00 | W^a change 0.687 | |W_a| 5.66e+00
+  upd  1100 oe 1.1911e-09 | 5.01 s/upd
+  [eval  1100] loss 1.1801e-09 | added: rho med 0.970, dom 209 Hz, complex 100 %, band pair 100 % (f 209, zeta 0.09) | full J band pair 100 % (f 209, zeta 0.09) | x_a rms 1.882e+00 | W^a change 0.680 | |W_a| 5.66e+00
+  saved outputs/f2_e9.pt
+=== EXIT 0 ===

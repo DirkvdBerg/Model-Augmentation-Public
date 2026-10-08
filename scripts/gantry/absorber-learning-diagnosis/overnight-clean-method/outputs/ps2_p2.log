@@ -1,0 +1,95 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## PS2 [p2]: mode cand, seed 2, head mlp, 600 updates, batch 64, M 30, S1 cap 350; thesis rates out_a 0.001, rest 1e-05; aux 0.001; calibration records [11, 4, 17, 7]
+  [eval    0] phase S1 loss 1.5133e-08 | cal unexplained 1.0000 | enc x_a rms 2.484e+00 | |W_out_a| 0.00e+00
+  upd    1 oe 1.6041e-08 inn 1.0000 | 4.19 s/upd
+  upd    2 oe 2.7115e-08 inn 1.0015 | 4.08 s/upd
+  upd    3 oe 1.1981e-08 inn 0.9977 | 4.09 s/upd
+  upd   25 oe 8.2182e-09 inn 0.9987 | 4.45 s/upd
+  [eval   25] phase S1 loss 9.1303e-09 | cal unexplained 1.0018 | enc x_a rms 2.323e+00 | |W_out_a| 6.10e-02
+  upd   50 oe 6.6371e-09 inn 0.9871 | 4.46 s/upd
+  [eval   50] phase S1 loss 7.6528e-09 | cal unexplained 0.9892 | enc x_a rms 2.074e+00 | |W_out_a| 1.11e-01
+  upd   75 oe 7.1986e-09 inn 0.9648 | 4.70 s/upd
+  [eval   75] phase S1 loss 7.3461e-09 | cal unexplained 0.9736 | enc x_a rms 2.102e+00 | |W_out_a| 1.35e-01
+  upd  100 oe 6.8428e-09 inn 0.9262 | 4.73 s/upd
+  [eval  100] phase S1 loss 7.2372e-09 | cal unexplained 0.9380 | enc x_a rms 1.850e+00 | |W_out_a| 1.56e-01
+  upd  125 oe 7.0794e-09 inn 0.8745 | 4.77 s/upd
+  [eval  125] phase S1 loss 7.2047e-09 | cal unexplained 0.8742 | enc x_a rms 1.877e+00 | |W_out_a| 1.78e-01
+  upd  150 oe 6.3768e-09 inn 0.8458 | 4.79 s/upd
+  [eval  150] phase S1 loss 7.1352e-09 | cal unexplained 0.8233 | enc x_a rms 2.042e+00 | |W_out_a| 2.08e-01
+  upd  175 oe 7.1186e-09 inn 0.7709 | 4.81 s/upd
+  [eval  175] phase S1 loss 7.1035e-09 | cal unexplained 0.7777 | enc x_a rms 2.123e+00 | |W_out_a| 2.34e-01
+  upd  200 oe 6.2953e-09 inn 0.6962 | 4.77 s/upd
+  [eval  200] phase S1 loss 7.1054e-09 | cal unexplained 0.7480 | enc x_a rms 2.248e+00 | |W_out_a| 2.62e-01
+  upd  225 oe 6.4159e-09 inn 0.7311 | 4.67 s/upd
+  [eval  225] phase S1 loss 7.0248e-09 | cal unexplained 0.7145 | enc x_a rms 2.299e+00 | |W_out_a| 2.86e-01
+  upd  250 oe 7.7064e-09 inn 0.6790 | 4.57 s/upd
+  [eval  250] phase S1 loss 7.0116e-09 | cal unexplained 0.6957 | enc x_a rms 2.253e+00 | |W_out_a| 3.11e-01
+  upd  275 oe 6.8779e-09 inn 0.7221 | 4.50 s/upd
+  [eval  275] phase S1 loss 6.9862e-09 | cal unexplained 0.6799 | enc x_a rms 2.281e+00 | |W_out_a| 3.39e-01
+  upd  300 oe 7.5330e-09 inn 0.5983 | 4.46 s/upd
+  [eval  300] phase S1 loss 6.9965e-09 | cal unexplained 0.6592 | enc x_a rms 2.237e+00 | |W_out_a| 3.63e-01
+  upd  325 oe 7.0337e-09 inn 0.6588 | 4.40 s/upd
+  [eval  325] phase S1 loss 7.0512e-09 | cal unexplained 0.6587 | enc x_a rms 2.188e+00 | |W_out_a| 3.91e-01
+  upd  350 oe 6.4701e-09 inn 0.7249 | 4.36 s/upd
+  [eval  350] phase S1 loss 6.9548e-09 | cal unexplained 0.6523 | enc x_a rms 2.053e+00 | |W_out_a| 4.17e-01
+  S1 -> S2 at update 350 (cap), cal unexplained 0.6523
+  S2 start: snapshot 8192 fit / 2048 cal pairs, cal EE rel residual 1.0619
+    S2 step   500: EE rel residual fit 0.0686 cal 0.0700 (best 0.0700) | 10 s
+    S2 step  1000: EE rel residual fit 0.0273 cal 0.0285 (best 0.0285) | 20 s
+    S2 step  1500: EE rel residual fit 0.0139 cal 0.0137 (best 0.0137) | 30 s
+    S2 step  2000: EE rel residual fit 0.0099 cal 0.0096 (best 0.0096) | 40 s
+    S2 step  2500: EE rel residual fit 0.0088 cal 0.0086 (best 0.0086) | 49 s
+    S2 step  3000: EE rel residual fit 0.0083 cal 0.0083 (best 0.0083) | 59 s
+    S2 step  3500: EE rel residual fit 0.0081 cal 0.0083 (best 0.0081) | 68 s
+  S2 end after 3700 steps: best cal EE rel residual 0.0081 (start 1.0619)
+  [eval  350] phase S2end loss 5.2508e-08 | cal unexplained nan | enc x_a rms 2.053e+00 | |W_out_a| 3.67e+00
+  upd  375 oe 1.2804e-08 | 4.51 s/upd
+  [eval  375] phase S3 loss 1.3869e-08 | cal unexplained nan | enc x_a rms 2.044e+00 | |W_out_a| 3.52e+00
+  upd  400 oe 9.8853e-09 | 4.45 s/upd
+  [eval  400] phase S3 loss 1.0106e-08 | cal unexplained nan | enc x_a rms 2.037e+00 | |W_out_a| 3.49e+00
+  upd  425 oe 7.4168e-09 | 4.41 s/upd
+  [eval  425] phase S3 loss 7.2669e-09 | cal unexplained nan | enc x_a rms 2.033e+00 | |W_out_a| 3.48e+00
+  upd  450 oe 5.9421e-09 | 4.36 s/upd
+  [eval  450] phase S3 loss 6.2059e-09 | cal unexplained nan | enc x_a rms 2.030e+00 | |W_out_a| 3.48e+00
+  upd  475 oe 6.2133e-09 | 4.32 s/upd
+  [eval  475] phase S3 loss 5.9327e-09 | cal unexplained nan | enc x_a rms 2.028e+00 | |W_out_a| 3.48e+00
+  upd  500 oe 5.9879e-09 | 4.29 s/upd
+  [eval  500] phase S3 loss 5.7384e-09 | cal unexplained nan | enc x_a rms 2.027e+00 | |W_out_a| 3.49e+00
+  upd  525 oe 5.7394e-09 | 4.25 s/upd
+  [eval  525] phase S3 loss 5.8073e-09 | cal unexplained nan | enc x_a rms 2.025e+00 | |W_out_a| 3.49e+00
+  upd  550 oe 6.0874e-09 | 4.22 s/upd
+  [eval  550] phase S3 loss 5.7499e-09 | cal unexplained nan | enc x_a rms 2.023e+00 | |W_out_a| 3.49e+00
+  upd  575 oe 4.8000e-09 | 4.19 s/upd
+  [eval  575] phase S3 loss 5.2877e-09 | cal unexplained nan | enc x_a rms 2.021e+00 | |W_out_a| 3.49e+00
+  upd  600 oe 4.3500e-09 | 4.18 s/upd
+  [eval  600] phase S3 loss 5.1448e-09 | cal unexplained nan | enc x_a rms 2.019e+00 | |W_out_a| 3.49e+00
+  saved overnight-clean-method/outputs/ps2_p2.pt (S1 end 350, S2 residual (0.008061738705194117, 1.0618896272978033))
+=== EXIT 0 ===

@@ -1,0 +1,46 @@
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+  Checkpoint format: whole
+  graft: FULL (member static rows + absorber)
+
+######## graft, job 86894: member pole |z| 0.9844 211.8 Hz
+
+  host phys_true alone (alpha 0) on 216 windows: 1.2146e-08
+  r 0.6000: 1.215e-08 (1.000) 1.259e-08 (1.037) 1.325e-08 (1.091) 1.422e-08 (1.170) 1.489e-08 (1.226) 1.521e-08 (1.253)
+  r 0.9000: 1.215e-08 (1.000) 1.082e-08 (0.891) 9.161e-09 (0.754) 6.987e-09 (0.575) 5.348e-09 (0.440) 4.233e-09 (0.349)
+  r 0.9844: 1.215e-08 (1.000) 9.929e-09 (0.818) 7.538e-09 (0.621) 4.299e-09 (0.354) 1.831e-09 (0.151) 7.474e-10 (0.062)
+  columns alpha: [0.0, 0.1, 0.25, 0.5, 0.75, 1.0]
+
+  host trained alone (alpha 0) on 216 windows: 5.0537e-09
+  r 0.6000: 5.054e-09 (1.000) 5.072e-09 (1.004) 5.173e-09 (1.024) 5.505e-09 (1.089) 5.987e-09 (1.185) 6.562e-09 (1.298)
+  r 0.9000: 5.054e-09 (1.000) 5.014e-09 (0.992) 4.987e-09 (0.987) 5.007e-09 (0.991) 5.092e-09 (1.008) 5.236e-09 (1.036)
+  r 0.9844: 5.054e-09 (1.000) 4.836e-09 (0.957) 4.610e-09 (0.912) 4.379e-09 (0.866) 4.275e-09 (0.846) 4.297e-09 (0.850)
+  columns alpha: [0.0, 0.1, 0.25, 0.5, 0.75, 1.0]
+
+  host phys_trained alone (alpha 0) on 216 windows: 1.2800e-08
+  r 0.6000: 1.280e-08 (1.000) 1.327e-08 (1.037) 1.395e-08 (1.090) 1.487e-08 (1.162) 1.546e-08 (1.208) 1.569e-08 (1.226)
+  r 0.9000: 1.280e-08 (1.000) 1.135e-08 (0.887) 9.551e-09 (0.746) 7.216e-09 (0.564) 5.482e-09 (0.428) 4.322e-09 (0.338)
+  r 0.9844: 1.280e-08 (1.000) 1.043e-08 (0.815) 7.876e-09 (0.615) 4.428e-09 (0.346) 1.850e-09 (0.145) 7.734e-10 (0.060)
+  columns alpha: [0.0, 0.1, 0.25, 0.5, 0.75, 1.0]

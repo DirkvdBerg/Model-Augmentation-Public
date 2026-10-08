@@ -33,7 +33,8 @@ so the step order (y before u) is forced; `closed_loop_rollout` implements it.
 
 PER-RECORD Cfb. `generate_trajectory_data.m:43` calls `gtd_build_plant(rec.Y_op, cfg)` inside
 the per-record loop, so the controller is rebuilt per record and frozen within it. Nine distinct
-controllers across the 22 records.
+controllers across the 22 records. The thesis data instead use ONE controller, K1 designed at
+Y = 0, stored in each record's meta (section 4b, D-221).
 
 Provenance: this replaces the six-module import chain under
 `scripts/gantry/closed-loop-controller/` (and the `core/` copy of it) that the entry point used
@@ -139,10 +140,15 @@ def _tf_to_ss_batch(cfb):
     return A, B, C, D
 
 
-def controller_ss(Y_op, ts):
-    """Cfb at sample time `ts`, as one 3-in 3-out state space (A, B, C, D)."""
+def controller_ss(Y_op, ts, gain=1.0):
+    """Cfb at sample time `ts`, as one 3-in 3-out state space (A, B, C, D).
+
+    `gain` scales the whole controller (D-227: K2-g+ = 1.2 K1); the controller is linear, so
+    scaling its output matrices C and D is the scaled controller exactly. 1.0 = Cfb itself.
+    """
     cfb, _ = build_cfb_at(Y_op, ts)
-    return _tf_to_ss_batch(cfb)
+    A, B, C, D = _tf_to_ss_batch(cfb)
+    return A, B, gain * C, gain * D
 
 
 # ── 4. the boundary: which record sits at which operating point ─────────────────────
@@ -177,32 +183,85 @@ def _stem(name):
     return stem[:-4] if stem.endswith('.mat') else stem
 
 
-def y_op_for(name):
-    """Y_op for a record file name, with or without the .mat suffix."""
+# ── 4b. records that carry their own controller (D-221) ─────────────────────────────
+# The thesis data (Thesis-writeup/Data) store meta.controller = (name, design_Y, gain, fbw_Hz,
+# rule). Every training and validation record uses K1: ruleOfThumb on the section-1 rigid nominal
+# plant at design_Y = 0, gain 1, FBW (DATA-DESIGN.md 5.11). The loader registers each record it
+# reads. The bank builds a controller from a design Y and a gain, so a stored controller is accepted
+# at FBW; its gain (E5: K2, gain 1.2) is used only when a bank is asked to (D-227,
+# RunConfig.controller_gain), and a record with gain != 1 is refused otherwise, as before.
+_STORED_DESIGN_Y = {}
+_STORED_GAIN = {}
+_UNSUPPORTED = {}
+
+
+def register_stored_controller(name, ctrl_name, design_y, gain, fbw_hz):
     stem = _stem(name)
-    if stem not in RECORD_Y_OP:
-        raise KeyError('no Y_op known for record %r; add it to RECORD_Y_OP from '
-                       'gtd_build_records.m' % stem)
-    return RECORD_Y_OP[stem]
+    if abs(fbw_hz - FBW) < 1e-9:
+        _STORED_DESIGN_Y[stem] = design_y
+        _STORED_GAIN[stem] = float(gain)
+        _UNSUPPORTED.pop(stem, None)
+    else:
+        _UNSUPPORTED[stem] = '%s (gain %g, %g Hz)' % (ctrl_name, gain, fbw_hz)
+        _STORED_DESIGN_Y.pop(stem, None)
+        _STORED_GAIN.pop(stem, None)
 
 
-def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32):
+def y_op_for(name, use_gain=False):
+    """Controller design Y for a record file name, with or without the .mat suffix.
+
+    Legacy records: their RECORD_Y_OP entry. Thesis records: the design_Y of their stored K1.
+    A record stored with a gain other than 1 is refused unless `use_gain` (D-227), so no caller
+    gets K1's design point for a K2 record without asking.
+    """
+    stem = _stem(name)
+    if stem in RECORD_Y_OP:
+        return RECORD_Y_OP[stem]
+    if stem in _STORED_DESIGN_Y:
+        gain_for(stem, use_gain)                  # raises for gain != 1 without use_gain
+        return _STORED_DESIGN_Y[stem]
+    if stem in _UNSUPPORTED:
+        raise KeyError('record %r uses controller %s; the bank builds ruleOfThumb at gain 1 and '
+                       '%g Hz from a design Y only, so this record cannot be trained or validated '
+                       'on in closed loop (D-221)' % (stem, _UNSUPPORTED[stem], FBW))
+    raise KeyError('no Y_op known for record %r; add it to RECORD_Y_OP from '
+                   'gtd_build_records.m, or load it through gantry_dynamic.data so its stored '
+                   'controller is registered (D-221)' % stem)
+
+
+def gain_for(name, use_gain=False):
+    """The stored gain of a record's controller; 1.0 unless stored otherwise. D-227.
+
+    A gain other than 1 is returned only with `use_gain`; without it the record is refused, so a
+    record generated with K2 is never silently scored through K1.
+    """
+    stem = _stem(name)
+    g = _STORED_GAIN.get(stem, 1.0)
+    if abs(g - 1.0) > 1e-12 and not use_gain:
+        raise KeyError('record %r was generated with %g x K1; set RunConfig.controller_gain to '
+                       'score it with its own controller (D-227)' % (stem, g))
+    return g
+
+
+def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32, use_gain=False):
     """The framework's ControllerBank for a set of records, plus each record's row in it.
 
     ONE bank over whatever list it is given, indexed globally: the controller belongs to a
     trajectory, and train versus validation is a property of the split, not an axis of the
-    controller. One (A, B, C, D) per DISTINCT operating point, not per record, because several
+    controller. One (A, B, C, D) per DISTINCT controller, not per record, because several
     records share one (T6-T14 are all at 0.00) and identical rows would widen the gather for
-    nothing.
+    nothing. A controller is its design Y and, with `use_gain` (D-227), its stored gain.
 
-    Returns (bank, rows, y_ops_unique) with rows[i] the controller row of record_names[i].
+    Returns (bank, rows, uniq) with rows[i] the controller row of record_names[i]; uniq lists
+    the distinct design Y values, or (design Y, gain) pairs when `use_gain` is set.
     """
-    y_ops = [y_op_for(n) for n in record_names]
-    uniq = sorted(set(y_ops))
-    rows = [uniq.index(v) for v in y_ops]
-    mats = [controller_ss(Y_op, float(ts)) for Y_op in uniq]
+    keys = [(y_op_for(n, use_gain), gain_for(n, use_gain)) for n in record_names]
+    uniq = sorted(set(keys))
+    rows = [uniq.index(k) for k in keys]
+    mats = [controller_ss(Y_op, float(ts), g) for Y_op, g in uniq]
     A, B, C, D = (np.stack([np.asarray(m[k], float) for m in mats]) for k in range(4))
-    return ControllerBank(A, B, C, D, ystd=ystd, std_u=std_u, dtype=dtype), rows, uniq
+    bank = ControllerBank(A, B, C, D, ystd=ystd, std_u=std_u, dtype=dtype)
+    return bank, rows, (uniq if use_gain else [y for y, _ in uniq])
 
 
 # ── 5. the one call the entry point makes ───────────────────────────────────────────

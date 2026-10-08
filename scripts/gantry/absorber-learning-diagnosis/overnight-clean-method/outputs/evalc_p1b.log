@@ -1,0 +1,46 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## evalc: free run over 6 validation records (sim-RMS, m)
+  [ps2_p1b.pt, 600 upd] on 3.1210e-06 | clamp 1.4903e-05 | off 1.6706e-05 | finite True
+      on    per record 3.526e-06 3.814e-06 4.207e-06 3.880e-06 2.040e-06 1.259e-06
+      clamp per record 2.078e-05 2.157e-05 2.128e-05 2.157e-05 2.615e-06 1.597e-06
+      off   per record 2.333e-05 2.406e-05 2.379e-05 2.406e-05 3.120e-06 1.873e-06
+      clamp increase per record 1.73e-05 1.78e-05 1.71e-05 1.77e-05 5.75e-07 3.37e-07; median 1.717e-05, 95% bootstrap CI over records [4.559e-07, 1.772e-05] -> EXCLUDES 0
+      records with on > off (block hurts): none
+  [u_u1ctl600.pt, 600 upd] on 1.1450e-05 | clamp 1.1647e-05 | off 1.6683e-05 | finite True
+      on    per record 1.518e-05 1.608e-05 1.586e-05 1.627e-05 3.262e-06 2.058e-06
+      clamp per record 1.532e-05 1.622e-05 1.601e-05 1.647e-05 3.572e-06 2.296e-06
+      off   per record 2.330e-05 2.402e-05 2.376e-05 2.403e-05 3.123e-06 1.874e-06
+      clamp increase per record 1.39e-07 1.43e-07 1.54e-07 1.99e-07 3.11e-07 2.38e-07; median 1.763e-07, 95% bootstrap CI over records [1.410e-07, 2.744e-07] -> EXCLUDES 0
+      records with on > off (block hurts): [np.int64(5), np.int64(6)]
+  PAIR ps2_p1b.pt vs u_u1ctl600.pt: per-record on ratio 0.232 0.237 0.265 0.238 0.625 0.612; median ratio 0.252, 95% CI [0.235, 0.619]; whole 3.1210e-06 vs 1.1450e-05
+      clamp increase cand minus ctrl per record 1.71e-05 1.76e-05 1.69e-05 1.75e-05 2.64e-07 9.89e-08; median 1.702e-05, 95% CI [1.815e-07, 1.755e-05] -> EXCLUDES 0
+      on/off per record cand 0.151 0.159 0.177 0.161 0.654 0.672 | ctrl 0.652 0.669 0.667 0.677 1.044 1.098
+=== EXIT 0 ===

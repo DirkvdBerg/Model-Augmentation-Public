@@ -1,0 +1,77 @@
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+  Checkpoint format: whole
+  coordinate check (bt truth vs physics at true combos), rms diff / target std per row: 6.61e-07 2.14e-06 1.86e-07 5.74e-07 2.58e-07 2.33e-08
+
+######## run 42 (job 86894): 143892 one-step points (every 6-th sample, 18 records), gauge sa [4.45464623e-05 6.22749207e-02]
+  target std per row: 1.741e-07 1.473e-04 8.524e-06 3.432e-04 2.215e-02 2.861e-02 1.052e+00 9.323e-01
+  trained ANN, RELATIVE one-step residual rms per row: 3.138e+01 1.226e+01 8.785e+00 1.315e+00 1.042e+00 9.196e-01 7.046e-01 8.967e-01
+  adam     0  loss 2.2538e+02  rel rows 2.9e+04 4.2e+01 6.3e+02 1.4e+01 9.1e-01 8.8e-01 1.0e+00 1.0e+00  (0 s)
+  adam   250  loss 1.4565e+02  rel rows 1.7e+02 6.7e-01 4.1e+00 7.8e-01 6.6e-01 2.4e-01 7.0e-01 7.0e-01  (17 s)
+  adam   500  loss 6.8643e+01  rel rows 8.6e+01 6.6e-01 2.5e+00 7.8e-01 6.6e-01 2.3e-01 5.5e-01 4.7e-01  (34 s)
+  adam   750  loss 3.4715e+01  rel rows 4.1e+01 6.6e-01 1.4e+00 7.8e-01 6.6e-01 2.2e-01 4.3e-01 3.2e-01  (52 s)
+  adam  1000  loss 2.3133e+01  rel rows 1.4e+01 6.6e-01 8.1e-01 7.8e-01 6.6e-01 2.1e-01 3.6e-01 2.6e-01  (70 s)
+  adam  1250  loss 1.5954e+01  rel rows 3.3e+00 6.6e-01 3.1e-01 7.8e-01 6.6e-01 2.0e-01 2.9e-01 2.3e-01  (93 s)
+  adam  1500  loss 1.3487e+01  rel rows 9.5e-01 6.6e-01 2.1e-01 7.8e-01 6.6e-01 2.0e-01 2.6e-01 2.2e-01  (112 s)
+  adam  1750  loss 1.2245e+01  rel rows 7.8e-01 6.6e-01 2.0e-01 7.8e-01 6.6e-01 2.0e-01 2.5e-01 2.2e-01  (133 s)
+  adam  2000  loss 1.0629e+02  rel rows 3.8e+02 6.7e-01 1.9e-01 7.7e-01 6.7e-01 1.9e-01 2.8e-01 2.2e-01  (152 s)
+  adam  2250  loss 1.0657e+01  rel rows 7.8e-01 6.7e-01 1.9e-01 7.7e-01 6.7e-01 1.9e-01 2.3e-01 2.0e-01  (170 s)
+  adam  2500  loss 5.5333e+01  rel rows 2.7e+02 6.7e-01 1.8e-01 7.8e-01 6.7e-01 1.8e-01 2.2e-01 1.9e-01  (188 s)
+  adam  2750  loss 8.7298e+00  rel rows 7.7e-01 6.7e-01 1.8e-01 7.7e-01 6.7e-01 1.8e-01 2.1e-01 1.8e-01  (205 s)
+  lbfgs    0  loss 7.9767e+00  rows 9.0e-01 6.7e-01 2.6e-01 7.7e-01 6.7e-01 1.8e-01 2.0e-01 1.7e-01  (2 s)
+  lbfgs  500  loss 7.1746e+00  rows 8.2e-01 6.7e-01 9.5e+00 8.5e-01 6.7e-01 1.7e-01 1.8e-01 1.6e-01  (45 s)
+  lbfgs 1000  loss 5.4949e+00  rows 1.7e+00 6.9e-01 2.6e+00 8.4e-01 6.9e-01 1.7e-01 1.6e-01 1.5e-01  (91 s)
+  lbfgs 1500  loss 4.4532e+00  rows 1.2e+00 7.4e-01 2.8e+00 9.5e-01 7.1e-01 1.7e-01 1.4e-01 1.3e-01  (132 s)
+  fitted, RELATIVE (rms / target std) one-step residual rms per row: 2.186e+00 6.825e-01 5.642e+00 1.198e+00 7.099e-01 1.706e-01 1.348e-01 1.205e-01
+  fitted model: points with a pair in 95 to 380 Hz: 600 of 603
+     pct 10: |z| 0.8253  f 185.1 Hz  zeta -0.448
+     pct 50: |z| 1.0100  f 206.5 Hz  zeta -0.031
+     pct 90: |z| 1.1768  f 222.1 Hz  zeta 0.550
+  fitted A_aa eig median: |z| [1.00764051 1.00764051] angle [0.32393442 0.32393442]
+  Training/TR-S1_r1.mat done
+  Training/TR-S2_r1.mat done
+  Training/TR-S3_r1.mat done
+  Training/TR-S4_r1.mat done
+  Training/TR-S5_r1.mat done
+  Training/TR-Y1_r1.mat done
+  Training/TR-Y2_r1.mat done
+  Training/TR-Y3_r1.mat done
+  Training/TR-P1_r1.mat done
+  Training/TR-P2_r1.mat done
+  Training/TR-P3_r1.mat done
+  Training/TR-P4_r1.mat done
+  Training/TR-L1_r1.mat done
+  Training/TR-L2_r1.mat done
+  Training/TR-T1_r1.mat done
+  Training/TR-T2_r1.mat done
+  Training/TR-T3_r1.mat done
+  Training/TR-T4_r1.mat done
+
+  windowed training loss (mse, normalised), 864 windows, nf 400; reference: model 5.09e-9, oracle T1 5.1e-11, T2 1.35e-9, noabs 1.25e-8
+  trained_enc      mse 5.0889e-09 | Y rms 2.170e-05 m (steps 0-40 2.158e-05, 40-400 2.171e-05) | finite windows 864/864
+  trained_enc_xa0  mse 5.1529e-09 | Y rms 2.182e-05 m (steps 0-40 2.268e-05, 40-400 2.172e-05) | finite windows 864/864
+  fit_T1           mse 1.3215e-08 | Y rms 3.440e-05 m (steps 0-40 3.641e-05, 40-400 3.417e-05) | finite windows 864/864
+  fit_T2           mse 1.3833e-08 | Y rms 3.520e-05 m (steps 0-40 4.246e-05, 40-400 3.430e-05) | finite windows 864/864
+  fit_enc          mse 1.3423e-08 | Y rms 3.455e-05 m (steps 0-40 3.842e-05, 40-400 3.409e-05) | finite windows 864/864

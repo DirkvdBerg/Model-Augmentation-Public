@@ -1,0 +1,60 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## probe [ident]: 300 updates, batch 64, lr 1e-05, lr added rows 0.001, init identity (skip scale 1), nf 400
+  [eval     0] loss 1.5133e-08 | added: rho med 1.000 max 1.000, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 0.00e+00
+  upd     1 loss 1.4262e-08 | 3.32 s/upd
+  upd     2 loss 2.0480e-08 | 3.43 s/upd
+  upd     3 loss 1.4396e-08 | 3.35 s/upd
+  upd    25 loss 8.4920e-09 | 3.26 s/upd
+  [eval    25] loss 8.7605e-09 | added: rho med 0.995 max 0.996, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 4.59e-02
+  upd    50 loss 6.2671e-09 | 3.33 s/upd
+  [eval    50] loss 7.1734e-09 | added: rho med 0.987 max 0.988, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 7.59e-02
+  upd    75 loss 6.9273e-09 | 3.39 s/upd
+  [eval    75] loss 6.5952e-09 | added: rho med 0.980 max 0.981, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 1.22e-01
+  upd   100 loss 6.4649e-09 | 3.61 s/upd
+  [eval   100] loss 6.0661e-09 | added: rho med 0.978 max 0.979, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 1.82e-01
+  upd   125 loss 6.0640e-09 | 3.63 s/upd
+  [eval   125] loss 5.7463e-09 | added: rho med 0.976 max 0.977, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 2.38e-01
+  upd   150 loss 5.3929e-09 | 3.60 s/upd
+  [eval   150] loss 5.6105e-09 | added: rho med 0.974 max 0.975, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 2.83e-01
+  upd   175 loss 5.2860e-09 | 3.60 s/upd
+  [eval   175] loss 5.4850e-09 | added: rho med 0.971 max 0.974, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 3.18e-01
+  upd   200 loss 5.7421e-09 | 3.54 s/upd
+  [eval   200] loss 5.5070e-09 | added: rho med 0.969 max 0.972, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 3.45e-01
+  upd   225 loss 6.3258e-09 | 3.53 s/upd
+  [eval   225] loss 5.4911e-09 | added: rho med 0.969 max 0.972, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 3.66e-01
+  upd   250 loss 4.6380e-09 | 3.50 s/upd
+  [eval   250] loss 5.3812e-09 | added: rho med 0.968 max 0.971, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 3.85e-01
+  upd   275 loss 5.6042e-09 | 3.47 s/upd
+  [eval   275] loss 5.3535e-09 | added: rho med 0.966 max 0.970, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 4.01e-01
+  upd   300 loss 5.3683e-09 | 3.44 s/upd
+  [eval   300] loss 5.3262e-09 | added: rho med 0.963 max 0.968, dom freq med 0 Hz, complex 0 %, pair in 95-380 Hz 0 % (f nan Hz zeta nan) | full J: pair in band 0 % (f nan Hz zeta nan) | |W_a| 4.16e-01
+  saved outputs/u_ident.pt
+=== EXIT 0 ===

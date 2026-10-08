@@ -1,0 +1,309 @@
+[campaign 23:35:13] start; MATLAB flags '-nojvm'
+[campaign 23:35:13] gate open: every check on the final code passed
+[campaign 23:35:34] stage real:1, C: free 3.1G
+[run] attempt 1, C: free 3.1G before gen_real1
+[wd] launch  out=logs/gen_real1
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('real:1'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+generate_thesis_data: 24 records selected, versions noisy + noise-free
+  removing interrupted write C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\Training\TR-S4_r2_part.mat
+
+=== 1/24  TR-S1_r1  [training, standstill Y -0.30, A_prod multisine] ===
+  skip: already on disk
+
+=== 2/24  TR-S2_r1  [training, standstill Y -0.15, A_prod multisine] ===
+  skip: already on disk
+
+=== 3/24  TR-S3_r1  [training, standstill Y +0.00, A_prod multisine] ===
+  skip: already on disk
+
+=== 4/24  TR-S4_r1  [training, standstill Y +0.15, A_prod multisine] ===
+  skip: already on disk
+
+=== 5/24  TR-S5_r1  [training, standstill Y +0.30, A_prod multisine] ===
+  skip: already on disk
+
+=== 6/24  TR-Y1_r1  [training, Y sweep 0 +- 0.30 at 0.20 Hz, A_prod] ===
+  skip: already on disk
+
+=== 7/24  TR-Y2_r1  [training, Y sweep 0 +- 0.30 at 0.50 Hz, A_prod] ===
+  skip: already on disk
+
+=== 8/24  TR-Y3_r1  [training, Y sweep 0 +- 0.30 at 0.75 Hz, A_prod] ===
+  skip: already on disk
+
+=== 9/24  TR-P1_r1  [training, S-curve moves, log strata, T3 36 ms, A_prod] ===
+  skip: already on disk
+
+=== 10/24  TR-P2_r1  [training, S-curve moves, log strata, T3 30 ms, A_prod] ===
+  skip: already on disk
+
+=== 11/24  TR-P3_r1  [training, S-curve moves, log strata, T3 12 ms, A_prod] ===
+  skip: already on disk
+
+=== 12/24  TR-P4_r1  [training, S-curve moves, log strata, T3 25 ms, A_prod] ===
+  skip: already on disk
+
+=== 13/24  TR-L1_r1  [training, Lissajous Y 0.30 @0.35 Hz, X 0.28 @0.85 Hz, A_prod] ===
+  skip: already on disk
+
+=== 14/24  TR-L2_r1  [training, Lissajous Y 0.25 @0.7 Hz, X 0.08 @1.5 Hz, X_anti 1 mm @0.8 Hz, A_prod] ===
+  skip: already on disk
+
+=== 15/24  TR-T1_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.00, 75 % max, dwell 0.30 s, no multisine] ===
+  skip: already on disk
+
+=== 16/24  TR-T2_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.00, 45 % max, dwell 0.45 s, no multisine] ===
+  skip: already on disk
+
+=== 17/24  TR-T3_r1  [training, ILC-shape sine shuttle, lattice Y_op +0.06, 75 % max, dwell 0.60 s, no multisine] ===
+  skip: already on disk
+
+=== 18/24  TR-T4_r1  [training, ILC-shape sine shuttle, lattice Y_op -0.06, 45 % max, dwell 0.30 s, no multisine] ===
+  skip: already on disk
+
+=== 19/24  VA-S1_r1  [validation, standstill Y +0.10, A_prod] ===
+  r OK VA-S1_r1    : X1=[+0 +0] X2=[+0 +0] Y=[+100 +100] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.48 GB < 1.5 GB (tree 2,866 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [6.287 7.864 3.671] nm | stick [7.6 9.8 2.6] % | F peak [0.44 0.48 0.57], rms [0.26 0.26 0.34] of limit | 48.0 + 42.4 MB | 30.7 s
+
+=== 20/24  VA-Y1_r1  [validation, Y sweep +0.05 +- 0.25 at 0.5 Hz, A_prod] ===
+  r OK VA-Y1_r1    : X1=[+0 +0] X2=[+0 +0] Y=[-200 +300] mm | v 0.000/0.907 m/s a 0.00/7.40 m/s^2 j 0/49348 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [6.409 7.749 2.538] nm | stick [7.6 8.9 0.5] % | F peak [0.44 0.48 0.65], rms [0.26 0.26 0.36] of limit | 49.8 + 44.2 MB | 18.1 s
+
+=== 21/24  VA-P1_r1  [validation, S-curve moves, log strata, 50 %, T3 30 ms, new draw, A_prod] ===
+  r OK VA-P1_r1    : X1=[-274 +280] X2=[-274 +280] Y=[-212 +299] mm | v 1.000/1.000 m/s a 15.00/25.00 m/s^2 j 1000/1667 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [5.891 7.149 2.74] nm | stick [4.8 5.5 1.5] % | F peak [0.71 0.61 0.73], rms [0.31 0.32 0.37] of limit | 49.2 + 43.7 MB | 18.1 s
+
+=== 22/24  VA-L1_r1  [validation, Lissajous centre -0.05, Y 0.20 @0.7 Hz, X 0.08 @1.5 Hz, A_prod] ===
+  r OK VA-L1_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-250 +150] mm | v 0.754/0.880 m/s a 8.69/7.65 m/s^2 j 15791/31974 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [4.533 5.093 1.412] nm | stick [1.5 1.4 0.5] % | F peak [0.49 0.54 0.61], rms [0.29 0.31 0.36] of limit | 52.3 + 46.8 MB | 18.5 s
+
+=== 23/24  VA-T1_r1  [validation, ILC-shape, held-out lattice Y_op +0.04, 75 % max, no multisine] ===
+  r OK VA-T1_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-280 +280] mm | v 0.757/1.382 m/s a 22.50/37.50 m/s^2 j 1338/2035 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [1612.865 1962.917 2764.044] nm | stick [80.6 80.6 78.1] % | F peak [0.38 0.4 0.28], rms [0.19 0.21 0.18] of limit | 38.9 + 32.3 MB | 14.1 s
+
+=== 24/24  VA-T2_r1  [validation, ILC-shape, held-out lattice Y_op -0.04, 45 % max, no multisine] ===
+  r OK VA-T2_r1    : X1=[-80 +80] X2=[-80 +80] Y=[-280 +280] mm | v 0.586/1.070 m/s a 13.50/22.50 m/s^2 j 622/951 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [784.419 857.328 539.312] nm | stick [76.3 76.2 73] % | F peak [0.22 0.24 0.17], rms [0.13 0.14 0.12] of limit | 39.6 + 33.0 MB | 14.2 s
+MANIFEST noisy: 36 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 35 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@
+[run] gen_real1: statement completed but MATLAB did not exit within 20 s; ending its process tree (winpid 14392)
+[run] gen_real1 finished with code 0 after 1 attempt(s)
+[campaign 23:38:46] stage test-I, C: free 2.5G
+[run] attempt 1, C: free 2.5G before gen_test-I
+[wd] launch  out=logs/gen_test-I
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('test-I'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+generate_thesis_data: 6 records selected, versions noisy + noise-free
+
+=== 1/6  I1_r1  [test-I, as TR-P2: S-curve moves, 50 %, T3 30 ms, new phases, noise, setpoints] ===
+  r OK I1_r1       : X1=[-258 +273] X2=[-258 +273] Y=[-297 +288] mm | v 1.000/1.000 m/s a 14.99/25.00 m/s^2 j 1000/1666 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.46 GB < 1.5 GB (tree 2,809 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [5.934 6.907 1.693] nm | stick [4.8 4.9 1.4] % | F peak [0.62 0.6 0.65], rms [0.32 0.32 0.37] of limit | 49.4 + 43.9 MB | 30.1 s
+
+=== 2/6  I2_r1  [test-I, standstill Y -0.225, A_prod] ===
+  r OK I2_r1       : X1=[+0 +0] X2=[+0 +0] Y=[-225 -225] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [6.888 8.598 2.592] nm | stick [9.4 8.3 2.2] % | F peak [0.43 0.49 0.61], rms [0.25 0.27 0.34] of limit | 47.9 + 42.4 MB | 18.2 s
+
+=== 3/6  I3_r1  [test-I, ASMPT sine route, X and Y together, 60 % max, Y inside +-0.20] ===
+  skip: already on disk
+
+=== 4/6  I4_r1  [test-I, ASMPT sine, alternating X-only 40 mm and Y-only 80 mm moves, 60 % max] ===
+  skip: already on disk
+
+=== 5/6  I5_r1  [test-I, ASMPT S-curve route (I3 sequence), 60 % max, vmax 1.5, T3 25 ms] ===
+  skip: already on disk
+
+=== 6/6  I6_r1  [test-I, ASMPT sine long strokes 0.50 / 0.56 m, 60 % max, v cap 1.5] ===
+  skip: already on disk
+MANIFEST noisy: 38 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 37 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@
+[run] gen_test-I: statement completed but MATLAB did not exit within 20 s; ending its process tree (winpid 28864)
+[run] gen_test-I finished with code 0 after 1 attempt(s)
+[campaign 23:40:44] stage test-E, C: free 2.4G
+[run] attempt 1, C: free 2.4G before gen_test-E
+[wd] launch  out=logs/gen_test-E
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('test-E'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+generate_thesis_data: 6 records selected, versions noisy + noise-free
+
+=== 1/6  E1_r1  [test-E, standstill Y -0.39, A_prod] ===
+  skip: already on disk
+
+=== 2/6  E2_r1  [test-E, I3 route shuttling to -0.33 / +0.39] ===
+  r OK E2_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-330 +390] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 960/1456 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.37 GB < 1.5 GB (tree 2,799 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [2136.219 1021.696 2925.377] nm | stick [75.2 75 71.6] % | F peak [0.27 0.34 0.23], rms [0.17 0.19 0.16] of limit | 39.4 + 32.9 MB | 32.8 s
+
+=== 3/6  E3_r1  [test-E, I5 at 100 % max (30 / 50 m/s^2), T3 25 ms] ===
+  r OK E3_r1       : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.907/1.498 m/s a 29.94/49.98 m/s^2 j 2395/3999 m/s^3 (X_sym/Y)
+  scale pre 1.00 post 1.00 | noise adds rms [1907.459 2033.083 2698.891] nm | stick [78.2 76.4 73.7] % | F peak [0.45 0.53 0.39], rms [0.25 0.31 0.23] of limit | 39.6 + 33.0 MB | 14.1 s
+
+=== 4/6  E4_r1  [test-E, I6 with v cap 1.95 m/s] ===
+  r OK E4_r1       : X1=[-250 +250] X2=[-250 +250] Y=[-280 +280] mm | v 1.950/1.950 m/s a 18.00/30.00 m/s^2 j 383/923 m/s^3 (X_sym/Y)
+WATCHDOG ALERT C: free 1.98 GB < 2 GB
+  scale pre 1.00 post 1.00 | noise adds rms [514.058 813.028 556.72] nm | stick [54.7 54.4 57.5] % | F peak [0.27 0.31 0.23], rms [0.21 0.25 0.16] of limit | 40.9 + 33.8 MB | 14.4 s
+
+=== 5/6  E5_r1  [test-E, I3 under K2-g+ (K1 gains +20 %)] ===
+  skip: already on disk
+
+=== 6/6  E6_r1  [test-E, measured ILC move (D-210), exact, on the I3 lattice] ===
+  skip: already on disk
+MANIFEST noisy: 41 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 40 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@
+[run] gen_test-E: statement completed but MATLAB did not exit within 20 s; ending its process tree (winpid 34440)
+[run] gen_test-E finished with code 0 after 1 attempt(s)
+[campaign 23:43:13] stage frf, C: free 2.1G
+[run] attempt 1, C: free 2.1G before gen_frf
+[wd] launch  out=logs/gen_frf
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('frf'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+generate_thesis_data: 12 records selected, versions noisy + noise-free
+
+=== 1/12  TF-1_r1  [frf, FRF reference, standstill Y +0.150, periodic B_tr multisine (6 periods of 2 s)] ===
+  r OK TF-1_r1     : X1=[+0 +0] X2=[+0 +0] Y=[+150 +150] mm | v 0.000/0.000 m/s a 0.00/0.00 m/s^2 j 0/0 m/s^3 (X_sym/Y)
+WATCHDOG ALERT available RAM 1.20 GB < 1.5 GB (tree 2,700 MB)
+  scale pre 1.00 post 1.00 | noise adds rms [7.092 7.758 2.18] nm | stick [7.2 9.4 2.1] % | F peak [0.42 0.43 0.5], rms [0.26 0.26 0.34] of limit | 47.9 + 42.4 MB | 36.5 s
+
+=== 2/12  TF-1_r2  [frf, FRF reference, standstill Y +0.150, periodic B_tr multisine (6 periods of 2 s)] ===
+WATCHDOG ALERT C: free 1.93 GB < 2 GB
+STAGE STOP: disk: 2.07 GB free, record needs ~0.12 GB, reserve 2.0 GB. Stopped before TF-1_r2.
+MANIFEST noisy: 42 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 41 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@
+[run] gen_frf: statement completed but MATLAB did not exit within 20 s; ending its process tree (winpid 19180)
+[run] gen_frf finished with code 0 after 1 attempt(s)
+[campaign 23:44:50] stage noise-twin, C: free 2.0G
+[run] attempt 1, C: free 2.0G before gen_noise-twin
+[wd] launch  out=logs/gen_noise-twin
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('noise-twin'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+WATCHDOG ALERT C: free 1.97 GB < 2 GB
+generate_thesis_data: 4 records selected, versions noisy + noise-free
+
+=== 1/4  E1_r1_nt1  [noise-twin, noise-only twin of E1: same r and f, new noise] ===
+  skip: already on disk
+
+=== 2/4  I1_r1_nt1  [noise-twin, noise-only twin of I1: same r and f, new noise] ===
+  r OK I1_r1_nt1   : X1=[-258 +273] X2=[-258 +273] Y=[-297 +288] mm | v 1.000/1.000 m/s a 14.99/25.00 m/s^2 j 1000/1666 m/s^3 (X_sym/Y)
+RECORD FAIL I1_r1_nt1: noise twin I1_r1_nt1: generate its record 
+
+=== 3/4  I4_r1_nt1  [noise-twin, noise-only twin of I4: same r and f, new noise] ===
+  r OK I4_r1_nt1   : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 957/1456 m/s^3 (X_sym/Y)
+RECORD FAIL I4_r1_nt1: noise twin I4_r1_nt1: generate its record 
+
+=== 4/4  E5_r1_nt1  [noise-twin, noise-only twin of E5: same r and f, new noise] ===
+  r OK E5_r1_nt1   : X1=[-80 +80] X2=[-80 +80] Y=[-170 +150] mm | v 0.677/1.236 m/s a 18.00/30.00 m/s^2 j 960/1456 m/s^3 (X_sym/Y)
+RECORD FAIL E5_r1_nt1: noise twin E5_r1_nt1: generate its record 
+
+3 record(s) FAILED, see logs/generation_failures.csv
+MANIFEST noisy: 42 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 41 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=41.3 samples=8 peak_tree_ws_mb=2,473 min_avail_ram_gb=1.63 min_C_free_gb=1.94 kill_reason=""
+[run] gen_noise-twin finished with code 0 after 1 attempt(s)
+[campaign 23:45:55] stage real:2, C: free 2.0G
+[run] attempt 1, C: free 2.0G before gen_real2
+[wd] launch  out=logs/gen_real2
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('real:2'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+WATCHDOG ALERT C: free 1.96 GB < 2 GB
+generate_thesis_data: 24 records selected, versions noisy + noise-free
+
+=== 1/24  TR-S1_r2  [training, standstill Y -0.30, A_prod multisine] ===
+  skip: already on disk
+
+=== 2/24  TR-S2_r2  [training, standstill Y -0.15, A_prod multisine] ===
+  skip: already on disk
+
+=== 3/24  TR-S3_r2  [training, standstill Y +0.00, A_prod multisine] ===
+  skip: already on disk
+
+=== 4/24  TR-S4_r2  [training, standstill Y +0.15, A_prod multisine] ===
+STAGE STOP: disk: 2.08 GB free, record needs ~0.12 GB, reserve 2.0 GB. Stopped before TR-S4_r2.
+MANIFEST noisy: 42 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 41 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=44.0 samples=9 peak_tree_ws_mb=2,409 min_avail_ram_gb=1.74 min_C_free_gb=1.93 kill_reason=""
+[run] gen_real2 finished with code 0 after 1 attempt(s)
+[campaign 23:47:03] stage real:3, C: free 2.0G
+[run] attempt 1, C: free 2.0G before gen_real3
+[wd] launch  out=logs/gen_real3
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); generate_thesis_data('real:3'); fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+WATCHDOG ALERT C: free 1.94 GB < 2 GB
+generate_thesis_data: 24 records selected, versions noisy + noise-free
+
+=== 1/24  TR-S1_r3  [training, standstill Y -0.30, A_prod multisine] ===
+STAGE STOP: disk: 2.06 GB free, record needs ~0.12 GB, reserve 2.0 GB. Stopped before TR-S1_r3.
+MANIFEST noisy: 42 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD\MANIFEST.csv
+MANIFEST noise-free: 41 records -> C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-and-MSD-noise-free\MANIFEST.csv
+
+generate_thesis_data: done
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=42.9 samples=9 peak_tree_ws_mb=2,440 min_avail_ram_gb=1.82 min_C_free_gb=1.90 kill_reason=""
+[run] gen_real3 finished with code 0 after 1 attempt(s)
+[campaign 23:47:48] all stages run; checking every saved record
+[run] attempt 1, C: free 2.0G before check_records_all
+[wd] launch  out=logs/check_records_all
+[wd] command matlab -nojvm -batch "cd('C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data'); addpath('checks'); check_records; fprintf('%s%s\n', '@@TDG_', 'DONE@@');"
+WATCHDOG ALERT C: free 1.92 GB < 2 GB
+file         C14   C3    C4b   C8    | noise adds rms all f / band [nm]          | target band [3.37 3.7 1.09] nm | MB noisy/free
+TR-S1_r1     PASS  PASS  PASS  PASS  | [8.33 6.62 3.04]     / [8.08 6.36 2.86]     |                   | 47.9 / 42.4 
+TR-S2_r1     PASS  PASS  PASS  PASS  | [6.07 7.79 4]        / [5.71 7.48 3.52]     |                   | 47.9 / 42.4 
+TR-S3_r1     PASS  PASS  PASS  PASS  | [6.78 7.42 2.92]     / [6.48 7.21 3.03]     |                   | 49.1 / 43.6 
+TR-S4_r1     PASS  PASS  PASS  PASS  | [6.78 8.89 3.22]     / [6.43 8.62 3.18]     |                   | 47.9 / 42.4 
+TR-S5_r1     PASS  PASS  PASS  PASS  | [7.87 8.83 2.8]      / [7.78 8.49 2.68]     |                   | 47.9 / 42.4 
+TR-Y1_r1     PASS  PASS  PASS  PASS  | [7.03 8.65 2.11]     / [6.69 8.05 2.12]     |                   | 49.7 / 44.2 
+TR-Y2_r1     PASS  PASS  PASS  PASS  | [6.77 8.14 2.21]     / [6.37 7.91 2.23]     |                   | 50.0 / 44.4 
+TR-Y3_r1     PASS  PASS  PASS  PASS  | [7.14 7.84 1.71]     / [6.84 7.43 1.67]     |                   | 50.0 / 44.5 
+TR-P1_r1     PASS  PASS  PASS  PASS  | [5.79 6.22 2.73]     / [5.73 6.05 2.92]     |                   | 49.5 / 44.0 
+TR-P2_r1     PASS  PASS  PASS  PASS  | [5.83 6.94 2.39]     / [5.61 6.63 2.52]     |                   | 49.2 / 43.7 
+TR-P3_r1     PASS  PASS  PASS  PASS  | [5.92 6.71 2.2]      / [5.83 6.45 2.1]      |                   | 49.1 / 43.6 
+TR-P4_r1     PASS  PASS  PASS  PASS  | [5.94 6.48 2.02]     / [5.68 6.2 1.88]      |                   | 49.3 / 43.7 
+TR-L1_r1     PASS  PASS  PASS  PASS  | [4.33 4.81 1.65]     / [4 4.47 1.2]         |                   | 52.1 / 46.6 
+TR-L2_r1     PASS  PASS  PASS  PASS  | [4.37 5.17 2.06]     / [4.1 4.5 1.51]       |                   | 52.5 / 47.0 
+TR-T1_r1     PASS  PASS  PASS  PASS  | [827.53 919.24 884.9] / [792.19 880.18 835.72] |                   | 40.4 / 33.3 
+TR-T2_r1     PASS  PASS  PASS  PASS  | [2267.54 2368.4 3231.07] / [2039.14 2119.07 2976.52] |                   | 39.6 / 32.6 
+TR-T3_r1     PASS  PASS  PASS  PASS  | [684.22 801.81 2959.33] / [636.56 738.86 2737.57] |                   | 38.3 / 31.8 
+TR-T4_r1     PASS  PASS  PASS  PASS  | [1165.72 1577.75 486.43] / [1091.16 1480.05 451.85] |                   | 39.5 / 33.0 
+TR-S1_r2     PASS  PASS  PASS  PASS  | [9.57 8.13 3.22]     / [9.23 7.73 2.91]     |                   | 47.9 / 42.4 
+TR-S2_r2     PASS  PASS  PASS  PASS  | [6.83 7.39 2.33]     / [6.39 6.96 2.29]     |                   | 47.9 / 42.4 
+TR-S3_r2     PASS  PASS  PASS  PASS  | [7.37 8.07 3.34]     / [7.12 7.92 3.24]     |                   | 49.1 / 43.6 
+VA-S1_r1     PASS  PASS  PASS  PASS  | [6.29 7.86 3.67]     / [5.99 7.47 3.35]     |                   | 48.0 / 42.4 
+VA-Y1_r1     PASS  PASS  PASS  PASS  | [6.41 7.75 2.54]     / [6.1 7.41 2.33]      |                   | 49.8 / 44.2 
+VA-P1_r1     PASS  PASS  PASS  PASS  | [5.89 7.15 2.74]     / [5.69 6.97 2.76]     |                   | 49.2 / 43.7 
+VA-L1_r1     PASS  PASS  PASS  PASS  | [4.53 5.09 1.41]     / [4.16 4.79 1.35]     |                   | 52.3 / 46.8 
+VA-T1_r1     PASS  PASS  PASS  PASS  | [1612.87 1962.92 2764.04] / [1467.73 1804.11 2530.54] |                   | 38.9 / 32.3 
+VA-T2_r1     PASS  PASS  PASS  PASS  | [784.42 857.33 539.31] / [738.87 803.96 504.12] |                   | 39.6 / 33.0 
+I1_r1        PASS  PASS  PASS  PASS  | [5.93 6.91 1.69]     / [5.47 6.6 1.55]      |                   | 49.4 / 43.9 
+I2_r1        PASS  PASS  PASS  PASS  | [6.89 8.6 2.59]      / [6.63 8.34 2.41]     |                   | 47.9 / 42.4 
+I3_r1        PASS  PASS  PASS  PASS  | [1011.26 1046.39 484.43] / [949.82 982.19 445.77] |                   | 39.5 / 32.9 
+I4_r1        PASS  PASS  PASS  PASS  | [2387.94 2103.32 2510.95] / [2183.04 1941.01 2337.32] |                   | 38.2 / 31.7 
+I5_r1        PASS  PASS  PASS  PASS  | [1501.59 1557.39 678.5] / [1428.45 1486.5 628.55] |                   | 39.4 / 32.8 
+I6_r1        PASS  PASS  PASS  PASS  | [455.14 433.15 913.6] / [426.02 408.03 859.41] |                   | 41.1 / 33.5 
+E1_r1        PASS  PASS  PASS  PASS  | [7.99 7.43 4.49]     / [7.59 7.33 3.88]     |                   | 47.9 / 42.4 
+E2_r1        PASS  PASS  PASS  PASS  | [2136.22 1021.7 2925.38] / [1932.71 972.94 2641.78] |                   | 39.4 / 32.9 
+E3_r1        PASS  PASS  PASS  PASS  | [1907.46 2033.08 2698.89] / [1668.41 1768.15 2497.42] |                   | 39.6 / 33.0 
+E4_r1        PASS  PASS  PASS  PASS  | [514.06 813.03 556.72] / [473.4 769.46 506.17] |                   | 40.9 / 33.8 
+E5_r1        PASS  PASS  PASS  PASS  | [1612.79 1622.85 874.52] / [1468.09 1477.86 770.35] |                   | 39.1 / 32.5 
+E6_r1        PASS  PASS  PASS  PASS  | [1209.62 929.33 783.74] / [1097.45 843.58 730.46] |                   | 39.5 / 32.9 
+TF-1_r1      PASS  PASS  PASS  PASS  | [7.09 7.76 2.18]     / [6.77 7.43 2]        |                   | 47.9 / 42.4 
+TF-3_r1      PASS  PASS  PASS  PASS  | [6.71 9.52 4.52]     / [6.5 9.18 4.09]      |                   | 47.9 / 42.4 
+E1_r1_nt1    PASS  PASS  PASS  PASS  | [NaN NaN NaN]        / [NaN NaN NaN]        |                   | 47.9 / NaN 
+C3 / C4b / C8 / C14 on 42 saved records -> PASS
+@@TDG_DONE@@
+WATCHDOG SUMMARY exit=0 killed=False duration_s=64.0 samples=13 peak_tree_ws_mb=1,175 min_avail_ram_gb=2.82 min_C_free_gb=1.92 kill_reason=""
+[run] check_records_all finished with code 0 after 1 attempt(s)
+saved C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Code\Data\checks\fig_noise_calibration.png
+
+[campaign 23:49:45] done, C: free 2.0G

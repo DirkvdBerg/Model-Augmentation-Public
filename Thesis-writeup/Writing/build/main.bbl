@@ -32,6 +32,10 @@ J.~H. Hoekstra, B.~M. Györök, R.~Tóth, and M.~Schoukens, ``Learning-based
   augmentation of first-principle models: A linear fractional
   representation-based approach,'' 2026, submitted to Automatica.
 
+\bibitem{kessels2025ai}
+B.~M. Kessels, ``Ai-based model updating for nonlinear dynamical systems,'' PhD
+  thesis, Eindhoven University of Technology, Eindhoven, The Netherlands, 2025.
+
 \bibitem{irds2022}
 {International Roadmap for Devices and Systems (IRDS)}, ``International roadmap
   for devices and systems: 2022 edition executive summary,'' IEEE, Tech. Rep.,
@@ -68,10 +72,6 @@ J.~P. Noël and J.~Schoukens, ``Grey-box state-space identification of
   nonlinear mechanical vibrations,'' \emph{International Journal of Control},
   vol.~91, no.~5, pp. 1118--1139, 2018.
 
-\bibitem{kessels2025ai}
-B.~M. Kessels, ``Ai-based model updating for nonlinear dynamical systems,'' PhD
-  thesis, Eindhoven University of Technology, Eindhoven, The Netherlands, 2025.
-
 \bibitem{retzler2024}
 A.~Retzler, R.~T{\'o}th, M.~Schoukens, G.~I. Beintema, J.~Weigand, J.-P.
   No{\"e}l, Z.~Koll{\'a}r, and J.~Swevers, ``Learning-based augmentation of
@@ -83,13 +83,51 @@ R.~T{\'o}th, \emph{Modeling and Identification of Linear Parameter-Varying
   Systems}, ser. Lecture Notes in Control and Information Sciences.\hskip 1em
   plus 0.5em minus 0.4em\relax Berlin, Heidelberg: Springer, 2010, vol. 403.
 
+\bibitem{drenth2025lpvlfr}
+R.~Drenth, J.~H. Hoekstra, M.~Schoukens, and R.~T{\'o}th, ``Efficient learning
+  of affine and rational dependency {LPV} models with linear fractional
+  representation,'' 2026.
+
+\bibitem{gautier1990minimum}
+M.~Gautier and W.~Khalil, ``Direct calculation of minimum set of inertial
+  parameters of serial robots,'' \emph{IEEE Transactions on Robotics and
+  Automation}, vol.~6, no.~3, pp. 368--373, 1990.
+
+\bibitem{hong2020global}
+H.~Hong, A.~Ovchinnikov, G.~Pogudin, and C.~Yap, ``Global identifiability of
+  differential models,'' \emph{Communications on Pure and Applied Mathematics},
+  vol.~73, no.~9, pp. 1831--1879, 2020.
+
+\bibitem{ovchinnikov2021computing}
+A.~Ovchinnikov, A.~Pillay, G.~Pogudin, and T.~Scanlon, ``Computing all
+  identifiable functions of parameters for {ODE} models,'' \emph{Systems \&
+  Control Letters}, vol. 157, p. 105030, 2021.
+
+\bibitem{hoekstra2025lfr}
+J.~H. Hoekstra, C.~Verhoek, R.~T{\'o}th, and M.~Schoukens, ``Learning-based
+  model augmentation with {LFRs},'' \emph{European Journal of Control},
+  vol.~86, p. 101304, 2025.
+
 \bibitem{drenth2025thesis}
 R.~Drenth, ``Efficient gradient-based learning of {LPV} models with linear
   fractional representation,'' Master's thesis, Eindhoven University of
   Technology, 2025.
 
+\bibitem{beintema2023subnet}
+G.~I. Beintema, M.~Schoukens, and R.~T{\'o}th, ``Deep subspace encoders for
+  nonlinear system identification,'' \emph{Automatica}, vol. 156, p. 111210,
+  2023.
+
 \bibitem{hoekstra2026encoder}
-``Source pending verification,'' citation metadata not yet verified.
+J.~H. Hoekstra, B.~M. Gy{\"o}r{\"o}k, R.~T{\'o}th, and M.~Schoukens, ``Encoder
+  initialisation methods in the model augmentation setting,'' 2026.
+
+\bibitem{sutanto2020encoding}
+G.~Sutanto, A.~S. Wang, Y.~Lin, M.~Mukadam, G.~S. Sukhatme, A.~Rai, and
+  F.~Meier, ``Encoding physical constraints in differentiable {Newton-Euler}
+  algorithm,'' in \emph{Proceedings of the 2nd Conference on Learning for
+  Dynamics and Control}, ser. Proceedings of Machine Learning Research, vol.
+  120, 2020, pp. 804--813.
 
 \bibitem{gyorok2025l4dc}
 ``Source pending verification,'' citation metadata not yet verified.

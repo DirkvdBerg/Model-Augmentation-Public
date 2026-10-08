@@ -1,0 +1,8 @@
+  PASS T1 update-0 loss = baseline ['1.5133e-08', '1.5133e-08']
+  PASS T2 thesis losses identical at updates 1 and 2 [['1.4262e-08', '2.0028e-08', '1.3924e-08'], ['1.4262e-08', '2.0028e-08', '1.3923e-08']]
+  PASS T3/T4 precondition: S2 ran in the candidate 
+  PASS T3 auxiliary steps write no protected tensor ['OK', 'OK', 'OK', 'OK']
+  PASS T3 S2 writes only hidden layers and the added-row output ['OK']
+  PASS T4 added-row output layer changed by S2 ['connected_blocks.2.net.out_a.weight', 'connected_blocks.2.net.out_a.bias']
+  PASS T5 stratified calibration records [11, 4, 17, 7]
+ALL PASS

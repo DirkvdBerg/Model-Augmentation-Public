@@ -1,0 +1,4 @@
+time_iso,elapsed_s,tree_n,tree_ws_mb,tree_cpu_pct,avail_ram_gb,disk_free_gb,flag
+2026-09-28T21:21:57,0.0,3,30.6,0.0,1.341,10.373,ram_alert
+2026-09-28T21:22:02,5.6,5,332.3,3.6,1.022,10.373,ram_alert
+2026-09-28T21:22:08,10.9,5,497.7,6.3,0.824,10.373,ram_alert kill

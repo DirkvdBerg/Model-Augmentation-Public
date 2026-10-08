@@ -10,9 +10,11 @@
 \ifdraft
   \newcommand{\todo}[1]{\textcolor{red}{[\textbf{TODO:} #1]}}
   \newcommand{\note}[1]{\textcolor{blue}{[#1]}}
+  \newcommand{\kw}[1]{\textcolor{teal}{#1}}   % keep-word: fixed term during own-words rewrite
 \else
   \newcommand{\todo}[1]{}
   \newcommand{\note}[1]{}
+  \newcommand{\kw}[1]{#1}                     % submission build: plain text
 \fi
 
 % ------------------------------------------------------------ general notation

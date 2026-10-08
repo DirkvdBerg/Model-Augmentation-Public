@@ -1,0 +1,93 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+[thesis run] arm=u noise=noisy start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9]
+Data dir (thesis_taf_noisy): C:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Data\Coulomb-tanh-and-MSD
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+######## LM probe [lm from early150]: 960 params, 19200 residuals; check |r|^2 7.323314e-09 vs fs.loss 7.323314e-09
+  [step   0] batch loss 7.3233e-09 | mu nan cg  0 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | eval nf400 7.1188e-09
+  [step   1] batch loss 7.2826e-09 | mu 4.14e-01 cg  6 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 1: 15 s
+  [step   2] batch loss 7.2537e-09 | mu 1.38e-01 cg  9 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 2: 20 s
+  [step   3] batch loss 7.2357e-09 | mu 4.59e-02 cg 14 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 3: 30 s
+  [step   4] batch loss 7.2211e-09 | mu 1.53e-02 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 4: 42 s
+  [step   5] batch loss 7.2061e-09 | mu 5.10e-03 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | eval nf400 7.0675e-09
+    step 5: 41 s
+  [step   6] batch loss 7.1881e-09 | mu 1.70e-03 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 6: 40 s
+  [step   7] batch loss 7.1665e-09 | mu 5.67e-04 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 7: 38 s
+  [step   8] batch loss 7.1379e-09 | mu 1.89e-04 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 8: 38 s
+  [step   9] batch loss 7.1246e-09 | mu 6.30e-05 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 9: 38 s
+  [step  10] batch loss 7.1146e-09 | mu 2.10e-05 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | eval nf400 7.0809e-09
+    step 10: 39 s
+  [step  11] batch loss 7.1068e-09 | mu 7.00e-06 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 11: 38 s
+  [step  12] batch loss 7.0990e-09 | mu 2.33e-06 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 12: 40 s
+  [step  13] batch loss 7.0926e-09 | mu 7.78e-07 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 13: 40 s
+  [step  14] batch loss 7.0872e-09 | mu 2.59e-07 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 14: 42 s
+  [step  15] batch loss 7.0826e-09 | mu 8.65e-08 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | eval nf400 7.0779e-09
+    step 15: 39 s
+  [step  16] batch loss 7.0774e-09 | mu 2.88e-08 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 16: 38 s
+  [step  17] batch loss 7.0729e-09 | mu 9.61e-09 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 17: 38 s
+  [step  18] batch loss 7.0691e-09 | mu 3.20e-09 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 18: 38 s
+  [step  19] batch loss 7.0658e-09 | mu 1.07e-09 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 19: 38 s
+  [step  20] batch loss 7.0630e-09 | mu 3.56e-10 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | eval nf400 7.0948e-09
+    step 20: 42 s
+  [step  21] batch loss 7.0604e-09 | mu 1.19e-10 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 21: 38 s
+  [step  22] batch loss 7.0579e-09 | mu 3.95e-11 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 22: 37 s
+  [step  23] batch loss 7.0556e-09 | mu 1.32e-11 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 23: 38 s
+  [step  24] batch loss 7.0533e-09 | mu 4.39e-12 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 24: 38 s
+  [step  25] batch loss 7.0511e-09 | mu 1.46e-12 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | eval nf400 7.1019e-09
+    step 25: 39 s
+  [step  26] batch loss 7.0491e-09 | mu 4.88e-13 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 26: 38 s
+  [step  27] batch loss 7.0470e-09 | mu 1.63e-13 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 27: 37 s
+  [step  28] batch loss 7.0451e-09 | mu 5.42e-14 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 28: 39 s
+  [step  29] batch loss 7.0431e-09 | mu 1.81e-14 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan)
+    step 29: 42 s
+  [step  30] batch loss 7.0410e-09 | mu 6.03e-15 cg 20 | added: rho med 0.021, dom 2000 Hz, complex 0 %, band pair 0 % (f nan, zeta nan) | eval nf400 7.1083e-09
+    step 30: 41 s
+  saved outputs/g3_lm.pt
+=== EXIT 0 ===
