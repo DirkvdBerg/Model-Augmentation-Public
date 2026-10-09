@@ -1,0 +1,15 @@
+# Writer notes, cycle 14, Section IV
+1. Task says the reset restores a MUST ESTABLISH block and draft bullets; the original 04_obc.tex has neither (as in cycle 11). Followed the skill: inferred block, marked PROPOSED.
+2. Task names source-map rows IV-A to IV-C; the header requires the true-recovery condition, which only row IV-D sources. Used IV-D too. Task text and README row set still disagree.
+3. The skill's packing example says "A fixed point loses accuracy as the estimate moves away from it" next to a Gyorok 2025 citation; Gyorok 2025 Sec. 4 says the opposite (the nominal point stays valid). A writer reusing the example mis-cites. Fix the example's facts.
+4. Math standard 3 puts held-fixed or refreshed quantities (coefficient, expansion point) in the problem display's where clause; the review counts every fact in a where clause as a sentence (max one). Contradiction; treated them as definitions.
+5. The only recorded reason for data-derived tuples (open-loop drift) sits in D-185/D-111, which row IV-B lists as "not". Rules are silent on reusing a superseded entry's reason for a choice that still holds. Wrote a todo.
+6. Rule "a measured reason is stated as observed with a pointer, else a todo" collides with "evidence from superseded data gets an open point" (D-190 rotation measurement). Stated it as observed plus a todo naming the old data.
+7. Observed-quantities rule removed the overlap display that 06_results cites, and left three todos asking Results to report rank, overlap and Phi' eps*. No rule says how a method section requests a Results item other than a todo.
+8. Every decoration is already taken (bar = added state, tilde = physical, + = pseudoinverse, Delta = scheduling block, z = LFR latent). Forced xi°, f^perp, chi, eps*. Rules give no way to signal a forced departure from the cited paper's notation.
+9. D-186's lead reason for omitting the offset rests on the estimator result, which is Proposition 1 later in the section (Known before new). Rephrased it from IV-A's first-order sentence. Rules silent on a reason that depends on a later result of the same section.
+10. "A Taylor-expansion result is one sentence, not displayed" versus Maarten's "show the math": kept negation as one sentence and the gantry derivative dq''/dtheta as an inline formula. Unclear whether inline math satisfies the Math standard's goal.
+11. The PS2 reuse rule (per phase: sees the new term, what changes) was clear; unclear whether validation, selection and prediction count as phases. Included them.
+12. The refs.bib reset drops keys Section III cites (forssell1999revisited, hefny2015supervised, downey2017psrnn): undefined citations after compile. The reset step conflicts with bib entries added in earlier cycles.
+13. "No double hyphen anywhere" collides with BibTeX's page-range convention; wrote 166-178 with a single hyphen.
+14. Statement concerns a restricted tuple set (successor stencil) and a one-step surrogate; the rules handled both (variant named, scope paragraph). Length about 1.7 pages against 1.55, under the 1.5x trigger.

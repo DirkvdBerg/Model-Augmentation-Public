@@ -1,0 +1,403 @@
+% Page budget: 1.55 pages | Owns: negation, OBC derivation, additional-state scope, implementation, and true-parameter condition.
+% WRITING GUIDE
+% Purpose: Explain negation, derive the final state-level orthogonal-by-construction map, and delimit its interpretability guarantee.
+% Sources: README "Source map per subsection", rows IV-A, IV-B and IV-C; mandatory papers and the reference gate as in the README.
+% Research-plan anchor: Preserve Aspect 3's goal of protecting physical interpretability; state clearly how the final construction differs from the proposed regularisation.
+% Current decisions: Reduced identifiable coordinates, data-derived reference tuples, a tangent-only one-step physical-state projection, per-epoch refresh, and no affine comparison arm.
+% Choices to justify: Protected parameter coordinates, reference-set construction, projected rows, rank tolerance, exclusion of the affine offset, refresh frequency, and treatment of additional states.
+% Cautions: docs/orthogonal-projection-plan.md describes an older soft-penalty route; one-step state orthogonality is not trajectory-output orthogonality or guaranteed true recovery.
+% Planned figures: New geometric projection figure with a physical and additional-state partition inset; show the remaining uniqueness limitation as clearly as the protected direction.
+% Section is finished when: The protected space, coordinate frame, gradient treatment, added-state scope, and true-recovery condition are explicit.
+%
+% DRAFT NOTES (cycle 14, 2026-10-09)
+% MUST ESTABLISH (PROPOSED, inferred from the README ownership row IV and source-map rows IV-A to IV-D;
+%   the file held no agreed block)
+% Contribution delivered: the third contribution of Section I in its wording (state-level orthogonality for the
+%   identifiable physical-parameter tangent space and its true-parameter recovery condition).
+% IV-A 1. Negation (Kessels Sec. 5.3.1.3) made precise for the parameter directions: to first order a learned write
+%        -Phi dxi cancels a displacement dxi; Phi taken in the ten training coordinates xi (D-190 Why: raw
+%        parameters give nullity 4). On the gantry these directions are forces scaled by M(Y)^{-1}, so they move with Y.
+% IV-B 2. Data-derived reference tuples (P^{-T} q_act, fourth-order difference, xbar = 0, recorded force; D-192).
+%      3. Gyorok 2026 Eqs. 8, 10, 11 adapted: the regressor is the Jacobian of the nonlinear RK4 transition at xi°
+%        (Gyorok 2025 Sec. 4 precedent), tangent only (D-186 of 2026-09-10 reasons 1, 2 and its caveat);
+%        coefficient differentiated through (D-190 item 5). Differs from the proposed penalty (research plan).
+% IV-C 4. M_OBC: the problem display with the corrected physical line; xi° refreshed per epoch (D-190 item 6;
+%        Gyorok 2025 Remark 2 adapted); per phase what changes (PS2 S1, S2, S3, polish, selection).
+% IV-D 5. Proposition 1 (own): on the tuples and to first order, the estimate is xi* + Phi^+ eps*, unique for every
+%        corrected write; recovery iff Phi' eps* = 0 (state-level Gyorok Cond. 4, Eq. 21). Scope paragraph.
+% CORRECTIONS against the earlier draft of this file (code and sources win):
+%   - The Jacobian is taken in the training coordinates xi, not in theta_base (FS/obc.py build_stacked_sensitivity
+%     of transition_from_free); the range is the same because d theta_base / d xi is invertible (checked: diagonal
+%     entries theta_j > 0 and b s sech^2 != 0, triangular otherwise, s != 0 needs m_Delta,0 != 0).
+%   - Gyorok 2025 Sec. 4 does NOT say a fixed expansion point loses accuracy; it argues the nominal point stays
+%     valid. The draft states only what the paper says.
+%   - The recovery statement concerns the tuples whose successor has a full stencil (D-203 drops the last tuple of
+%     each record), so it is named a variant on I'.
+%   - Gyorok 2026 Eq. (39) does not support parameter uniqueness (citation-log row 74); Assumption 1, Eq. (7) used.
+%   - Symbols: bar marks the added state and tilde the physical state, so the expansion point is xi° and the
+%     corrected write f^perp; Delta names the scheduling block, so the true discrepancy is eps*; z names the LFR
+%     latent variable, so the tuples are written by their state and input; + marks the pseudoinverse, so the
+%     stacked successor is chi.
+% LEFT OUT (reader test): hand-written forward sensitivity (D-194), per-objective hoist (D-195), float64 solve and
+%   SVD storage, rank tolerance and the rank-loss fallback (mechanics), validation diagnostics (D-201), the affine
+%   eleven-column arm (not in the campaign, THESIS-RESULTS), the overlap measures (THESIS-RESULTS reports none;
+%   todo in IV-B), the stencil's gain argument in the old 140 to 230 Hz band (superseded data), the Section II
+%   parameter prior (Section III's block: never mention it).
+% EXISTING TODOS of the restored file: "Source" (opening) resolved by the contribution sentence and Gyorok 2026
+%   Sec. 6; "Subsection title improve" resolved; the Section III negation todo resolved (IV-A); the affine-arm todo
+%   and its notes resolved (no affine arm, THESIS-RESULTS; exclusion reasoned in IV-B); "one-step versus
+%   trajectory penalty" resolved by D-190 Ruled out (1) (trajectory method rejected by the user); "orthogonal
+%   multisine design" resolved by THESIS-RESULTS Sec. 6 (T_OA not run) and stated with Remark 5 in IV-D; the
+%   Gamma todo kept and rewritten (supervisor confirmation, IV-B). Notes moved here: figure plan (geometric
+%   decomposition of f_aug into its part in range(Phi) and the orthogonal part, inset with the state partition);
+%   pointwise no-go and Coulomb inner-product argument belong to Section VII; rho* = 0.205 and the 4.96 percent
+%   floor dropped (earlier absorber-only data).
+% STALE LINES ELSEWHERE (not edited): 03_augmentation.tex line 667 claims Section IV makes the estimate unique,
+%   while Proposition 1 gives uniqueness on the tuples and to first order only; 05_setup.tex line 52 lists an
+%   affine-OBC arm; 05_setup.tex line 59 reports the Jacobian rank with respect to varphi (now xi);
+%   06_results.tex line 40 cites eq:obc_overlap, removed here; 06_results.tex lines 45, 49, 50, 52 quote the
+%   affine arm, rho* and the 4.96 percent floor of earlier data. 99_appendix.tex OBC bullets updated.
+% CODE CONFIRMED this session: GD/obc_gantry.py (build_reference_set, GantryOBCCorrection.forward,
+%   make_reference_field with xbar = 0, attach_obc), FS/obc.py (build_stacked_sensitivity, OBCBasis.coefficient,
+%   OBCLifecycle.refresh, maybe_refresh, coefficient), FS/interconnect.py (forward subtraction, loss seam,
+%   _sync_prediction_state_for_validation, rebuild after the selected checkpoint), FS/ps2_opening.py (S1 residual
+%   and S2 through the prediction path with the corrected model), FS/lbfgs_polish.py (no OBC logic: xi° fixed
+%   during the polish), entry _THESIS_FIXED (obc_space tangent, obc_refresh epoch).
+% LENGTH: see the delivery report of cycle 14.
+\section{Interpretability by Orthogonal Construction}\label{sec:obc}
+\ifdraft
+\begin{itemize}
+\item Goal from Section~III-D: a unique estimate of $\theta_{\mathrm{base}}$; names IV-A to IV-D (style profile)
+\item Contribution share: the third contribution of Section~I, in its wording (Introduction)
+\end{itemize}
+\fi
+
+Section~\ref{sec:aug_closed_loop} requires a unique estimate of
+$\theta_{\mathrm{base}}$, which the additive split of the augmented model does
+not give.
+Our goal is a correction of the learned physical write that removes the
+parameter directions of the baseline from it.
+To this end, we state the negation it removes
+(Section~\ref{sec:obc_negation}), construct the
+orthogonal-by-construction (OBC) correction (Section~\ref{sec:obc_map}) and
+identify the corrected model (Section~\ref{sec:obc_id}).
+We then derive when its estimate equals the true parameters and delimit the
+guarantee (Section~\ref{sec:obc_scope}).
+This section constructs state-level orthogonality for the identifiable
+physical-parameter tangent space and quantifies its true-parameter recovery
+condition, the third contribution of Section~I.
+
+\subsection{Negation of the physical parameters}\label{sec:obc_negation}
+\ifdraft
+\begin{itemize}
+\item Kessels' negation; the linear example of Gy\"or\"ok et al.\ (Kessels Sec.~5.3.1.3; Gy\"or\"ok 2025 Ex.~1)
+\item Directions in the ten training coordinates $\xi$, since the raw parameters lose four; same range as in $\theta_{\mathrm{base}}$ (D-190; code; this work)
+\item Sensitivity $\Phi_{\xi^\circ}$ displayed; to first order a learned write cancels a displacement (this work; first-order expansion)
+\item On the gantry the directions are forces scaled by $M(Y)^{-1}$, so they change with $Y$ (this work; research plan Aspect~3)
+\end{itemize}
+\fi
+
+The non-unique split of Section~\ref{sec:aug_closed_loop} needs a precise form
+before a construction can remove it.
+Kessels calls learned terms that (partially) negate the first-principles terms
+negation~\cite[Sec.~5.3.1.3]{kessels2025ai}.
+For a state transition linear in its parameter, Gy\"or\"ok et al.\ show that a
+linear learned term makes every pair with the same sum a
+minimiser~\cite[Ex.~1]{gyorok2025l4dc}.
+
+These directions are the changes of the normalised transition
+$f^{\mathrm n}_{\mathrm{base}}$ of \eqref{eq:aug_norm} that $\theta_{\mathrm{base}}$
+can produce.
+We take them in the training coordinates $\xi$ of \eqref{eq:mdelta_map}.
+In the fourteen raw parameters, the four lost directions of
+Section~\ref{sec:params} would make them linearly dependent.
+Because $\partial\theta_{\mathrm{base}}/\partial\xi$ is invertible
+(Appendix~\ref{app:lfr-wellposed}), they span the same directions as the
+derivatives with respect to $\theta_{\mathrm{base}}$.
+At an expansion point $\xi^\circ$, they are the columns of the sensitivity
+\begin{equation}
+ \Phi_{\xi^\circ}(\tilde x^{\mathrm n},u^{\mathrm n})
+ =\left.\frac{\partial f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\xi),
+   \tilde x^{\mathrm n},u^{\mathrm n}\bigr)}{\partial\xi}\right|_{\xi=\xi^\circ},
+ \label{eq:obc_sens}
+\end{equation}
+where $\xi^\circ\in\R^{10}$, $\Phi_{\xi^\circ}:\R^6\times\R^3\to\R^{6\times10}$,
+and $\theta_{\mathrm{base}}(\xi)$ is the map \eqref{eq:mdelta_map}.
+To first order, a displacement $\delta\xi$ changes the transition by
+$\Phi_{\xi^\circ}\delta\xi$, which a learned write $-\Phi_{\xi^\circ}\delta\xi$
+cancels, so the data cannot attribute this change to either component.
+
+On the gantry, these directions are forces scaled by the inverse inertia.
+Differentiating \eqref{eq:eom} at fixed $(q,\dot q,u)$ gives
+$\partial\ddot q/\partial\theta_{\mathrm{base},j}
+=-M(Y)^{-1}\bigl(\partial_jM(Y)\,\ddot q+\partial_jC\,\dot q+\partial_jK\,q\bigr)$,
+with $\partial_j=\partial/\partial\theta_{\mathrm{base},j}$.
+A write that negates a mass, damping or stiffness combination therefore acts as
+an added inertial, damping or elastic force.
+Through $M(Y)^{-1}$, the direction it negates changes with the payload
+position.
+
+\subsection{Orthogonal-by-construction correction}\label{sec:obc_map}
+\ifdraft
+\begin{itemize}
+\item Removing negation needs the learned write on a fixed set of states; only positions are measured (Section~III-B)
+\item Reference tuples from every training sample: $P^{-\top}\qact$, fourth-order central difference, $\bar x=0$, recorded force; stacks over all six physical rows (D-192; code); why not a baseline simulation (?)
+\item Adapted from Gy\"or\"ok 2026: regressor is the Jacobian of the nonlinear RK4 step, as Gy\"or\"ok 2025 linearises (Gy\"or\"ok 2026 Eq.~(2); Gy\"or\"ok 2025 Sec.~4)
+\item Tangent only: the offset charges no parameter direction and depends on the centring; nominal-response caveat (D-186 of 2026-09-10; D-192); supervisor confirmation (?)
+\item Coefficient and corrected write displayed; no weight, unlike the proposed penalty (Gy\"or\"ok 2026 Eqs.~(8), (10), (11), Assumption~1; Gy\"or\"ok 2025 Remark~1; research plan Aspect~3)
+\item Differentiated coefficient: the gradient of the corrected write stays orthogonal (D-190 item 5; this work, algebra); measured check (?)
+\end{itemize}
+\fi
+
+Removing negation needs the part of the learned physical write in the range
+of $\Phi_{\xi^\circ}$, measured over a fixed set of states.
+Only the positions are measured (Section~\ref{sec:aug_encoder}), so the states
+of this set must be reconstructed.
+We build one reference tuple from every training sample at which a
+fourth-order central difference fits inside its record.
+The stacks run over all six physical rows, which the network writes
+(Section~\ref{sec:aug_structure}):
+{\small
+\begin{equation}
+\begin{aligned}
+ \boldsymbol\Phi&=\col\bigl(\Phi_{\xi^\circ}(\tilde x^{\mathrm n}_i,
+   u^{\mathrm n}_i)\bigr)_{i\in\mathcal I},\\
+ \boldsymbol f_{\mathrm{aug}}(\theta_{\mathrm{aug}})&=\col\bigl(
+   f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}},
+   \col(\tilde x^{\mathrm n}_i,0),u^{\mathrm n}_i)\bigr)_{i\in\mathcal I},\\
+ \tilde x^{\mathrm n}_i&=T_x\bigl(\col(q_i,\dot q_i)-\mu_x\bigr),\qquad
+ q_i=P^{-\top}q_{\mathrm{act},i},
+\end{aligned}
+\label{eq:obc_stacks}
+\end{equation}
+}
+where $\mathcal I$ is the set of these samples, $N=|\mathcal I|$,
+$\boldsymbol\Phi\in\R^{6N\times10}$,
+$\boldsymbol f_{\mathrm{aug}}:\R^{n_{\mathrm{aug}}}\to\R^{6N}$, $\dot q_i$ is
+the fourth-order central difference of $q$ over $T_s$ at sample $i$, and
+$u^{\mathrm n}_i$ is the normalised recorded force, with $T_x$ and $\mu_x$ of
+\eqref{eq:aug_norm}.
+The tuples depend neither on the current model nor on the controller, so they
+stay fixed for the whole identification.
+\todo{Missing: (a) reason for data-derived tuples rather than a simulation of the baseline on the training data, which Gy\"or\"ok et al.\ use when the states are not measured~\cite[Sec.~3]{gyorok2025l4dc}. Candidate: an open-loop simulation drifts on the free axes (Section~\ref{sec:aug_loop}); D-185 records this as the reason of D-111, both superseded entries, so it needs Dirk's confirmation. (b) On the noisy records, the reference basis built from filtered positions spans nearly the same range as the one from noise-free positions (D-232, OBC velocity result), but no section reports it. Candidate: one sentence with a pointer to the appendix, or leave out.}
+
+We adapt the construction of Gy\"or\"ok et al., whose regressor belongs to an
+input-output baseline linear in its parameters~\cite[Eq.~(2)]{gyorok2026obc}.
+Our transition is rational in $\theta_{\mathrm{base}}$ through $M(Y)^{-1}$ and
+has no such form.
+We therefore use the sensitivity stack, as their penalty method linearises a
+nonlinear baseline at an expansion point~\cite[Sec.~4]{gyorok2025l4dc}.
+Unlike there, we keep only the tangent and omit the offset column of the
+expansion~\cite[Eq.~(18)]{gyorok2025l4dc}.
+To first order, a parameter change moves the transition only within
+$\ran\boldsymbol\Phi$ (Section~\ref{sec:obc_negation}).
+The offset column would therefore charge a direction that no parameter change
+produces.
+It also depends on the centring $\mu_x$ of \eqref{eq:aug_norm}, while
+$\boldsymbol\Phi$ does not.
+A write that cancels the nominal transition is consequently charged only
+through its component in $\ran\boldsymbol\Phi$.
+\todo{Missing: supervisor confirmation of the protected set. D-190 recorded the supervisors' condition as non-overlap with the baseline output, which the omitted offset protects only partly. Candidate: the tangent set, for the reasons above (D-192; D-186 of 2026-09-10).}
+
+Gy\"or\"ok et al.\ remove from the stacked learned output its least-squares fit
+on the regressor, whose coefficient is a function of the network
+parameters~\cite[Eqs.~(8), (10), (11)]{gyorok2026obc}.
+Unlike their earlier penalty, which the research plan proposed, this removes
+the overlap without a weight that trades it against the
+fit~\cite[Remark~1]{gyorok2025l4dc}.
+With $\boldsymbol\Phi$ of full column rank, as their Assumption~1
+requires~\cite[Eq.~(7)]{gyorok2026obc}, the construction is
+\begin{equation}
+\begin{aligned}
+ \theta_{\mathrm{aux}}&=\boldsymbol\Phi^{+}\boldsymbol f_{\mathrm{aug}}(\theta_{\mathrm{aug}}),\\
+ \boldsymbol f^{\perp}_{\mathrm{aug}}(\theta_{\mathrm{aug}})
+ &=\boldsymbol f_{\mathrm{aug}}(\theta_{\mathrm{aug}})-\boldsymbol\Phi\,\theta_{\mathrm{aux}},\\
+ \boldsymbol\Phi^\top\boldsymbol f^{\perp}_{\mathrm{aug}}(\theta_{\mathrm{aug}})&=0,
+\end{aligned}
+\label{eq:obc_ours}
+\end{equation}
+where $\theta_{\mathrm{aux}}\in\R^{10}$ is the coefficient,
+$\boldsymbol f^{\perp}_{\mathrm{aug}}:\R^{n_{\mathrm{aug}}}\to\R^{6N}$ the
+corrected write, and $\boldsymbol\Phi^{+}$ the Moore-Penrose pseudoinverse, a
+left inverse by the full column rank.
+Because $\theta_{\mathrm{aux}}$ is differentiated through while
+$\boldsymbol\Phi$ is fixed, also
+$\boldsymbol\Phi^\top\partial\boldsymbol f^{\perp}_{\mathrm{aug}}/\partial\theta_{\mathrm{aug}}=0$,
+so no update of $\theta_{\mathrm{aug}}$ moves the corrected write into
+$\ran\boldsymbol\Phi$.
+\todo{Missing: a measured check of \eqref{eq:obc_ours} on the thesis data (rank of $\boldsymbol\Phi$ at each rebuild, overlap of the corrected write with $\ran\boldsymbol\Phi$ on held-out tuples). \texttt{DOC/THESIS-RESULTS.md} reports neither, so the overlap display of the earlier draft was removed. Candidate: report both in Section~\ref{sec:results} from the logged validation diagnostics (D-201).}
+
+\subsection{Identification of the corrected model}\label{sec:obc_id}
+\ifdraft
+\begin{itemize}
+\item The expansion point must follow $\xi$; per-epoch refresh adapted from Gy\"or\"ok 2025 Remark~2; reason against every evaluation (cost) and against a fixed point (?) (Gy\"or\"ok 2025 Sec.~4; D-190 item 6; code)
+\item Problem display: the corrected physical line in \eqref{eq:aug_loss}, regressor at the simulated point (Gy\"or\"ok 2026 Eq.~(13); code)
+\item The added-state line carries no correction (code; D-192)
+\item Per phase: Adam, polish with $\xi^\circ$ fixed, S1 and S2 on the corrected model, validation re-solves, prediction with fixed $\xi^\circ$ and $\theta_{\mathrm{aux}}$ (code; D-198)
+\item $\mathcal M_{\mathrm{OBC}}$ named; inputs and output as $\mathcal M_{\mathrm U}$ (THESIS-RESULTS step~5; notation (?))
+\end{itemize}
+\fi
+
+Identifying the corrected model needs an expansion point that follows $\xi$
+as the estimate leaves its start.
+Gy\"or\"ok et al.\ either update the point at every objective evaluation or fix
+it at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.
+Updating recomputes the factorisation of the stack at every evaluation.
+Fixing it relies on nominal values close to the system.
+Their projection is instead recomputed at the start of each epoch from the
+current state estimates~\cite[Remark~2]{gyorok2025l4dc}.
+We adapt this per-epoch recomputation to the expansion point.
+The range of $\boldsymbol\Phi$ turns slowly with $\xi^\circ$, so a more
+frequent rebuild changes little.
+\todo{Missing: (a) the slow rotation of $\ran\boldsymbol\Phi$ is a measurement on earlier data (D-190 item 6) that no section reports. Candidate: report the principal angle between consecutive bases in Section~\ref{sec:results}. (b) Reason against a fixed point. Candidate: the detuned start is not the nominal value that Gy\"or\"ok et al.\ assume close to the system, so a basis fixed there would protect the directions of the start, not of the estimate (own reading).}
+
+The correction evaluates the regressor at the simulated state and input with
+the coefficient of the reference stack, as Gy\"or\"ok et al.\ predict on new
+data~\cite[Eq.~(13)]{gyorok2026obc}.
+Substituted into the physical state line of \eqref{eq:aug_loss}, it gives the
+identification problem
+\begin{equation}
+\begin{aligned}
+ &\min_{\vartheta}\;V(\vartheta)\quad\text{s.t.}\\
+ &\tilde x^{\mathrm n}_{k+1|\tau}
+  =f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\xi),
+   \tilde x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau}\bigr)\\
+ &\qquad+f^{\mathrm n}_{\mathrm{aug}}\bigl(\theta_{\mathrm{aug}},
+   \hat x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau}\bigr)
+  -\Phi_{\xi^\circ}\bigl(\tilde x^{\mathrm n}_{k|\tau},
+   \hat u^{\mathrm n}_{k|\tau}\bigr)\,\theta_{\mathrm{aux}},\\
+ &\text{and the other constraints of \eqref{eq:aug_loss}},
+\end{aligned}
+\label{eq:obc_problem}
+\end{equation}
+where $V$ and $\vartheta=(\xi,\theta_{\mathrm{aug}},\theta_{\mathrm{enc}})$ are
+those of \eqref{eq:aug_loss}, $\theta_{\mathrm{aux}}$ is the coefficient of
+\eqref{eq:obc_ours}, solved once per objective evaluation from the current
+network and differentiated through, and $\xi^\circ$ is the expansion point,
+held fixed within an epoch and set to the current $\xi$ at each epoch
+boundary.
+The added-state line of \eqref{eq:aug_loss} carries no correction, because the
+baseline has no added-state update.
+
+Every phase of Section~\ref{sec:augmentation} identifies
+\eqref{eq:obc_problem} in place of \eqref{eq:aug_loss}.
+S1 regresses the closed-loop residual of the corrected model and changes only
+the head and $\theta^a_{\mathrm{enc}}$, as in Section~\ref{sec:aug_ps2}.
+S2 changes $g^{\mathrm n}_{\mathrm{aug}}$, which is uncorrected.
+It also moves the shared hidden layers, and so $f^{\mathrm n}_{\mathrm{aug}}$.
+The next objective evaluation then solves $\theta_{\mathrm{aux}}$ anew.
+S3 and the polish minimise \eqref{eq:obc_problem} as in
+Section~\ref{sec:aug_closed_loop}.
+Each validation solves $\theta_{\mathrm{aux}}$ from the current network, with
+the expansion point of the epoch.
+After selection, $\xi^\circ$ is set to the selected estimate and stays there
+during the polish.
+Prediction holds $\xi^\circ$ and the last solved $\theta_{\mathrm{aux}}$ fixed,
+as in~\cite[Eq.~(13)]{gyorok2026obc}.
+
+We call the model of $\mathcal M_{\mathrm{PS2}}$ with the corrected physical
+line, identified by \eqref{eq:obc_problem} through S1 to S3,
+$\mathcal M_{\mathrm{OBC}}$.
+Its inputs and output are those of $\mathcal M_{\mathrm U}$.
+\todo{Missing: model notation. Candidate: the calligraphic $\mathcal M_{\mathrm{OBC}}$, since plain $M$ clashes with $M(Y)$ (README open conflict on model names).}
+
+\subsection{Recovery condition and scope}\label{sec:obc_scope}
+\ifdraft
+\begin{itemize}
+\item Interpretable combinations need the unique estimate to be the true one, which depends on the omitted dynamics (Gy\"or\"ok 2026 Sec.~4.1)
+\item True one-step discrepancy $\boldsymbol\varepsilon^\star$ on the tuples with a full successor stencil, same normalised frame (D-202, D-203)
+\item Proposition~1: on the tuples and to first order, the estimate is $\xi^\star+\boldsymbol\Phi^{+}\boldsymbol\varepsilon^\star$ for every corrected write; recovery iff $\boldsymbol\Phi^\top\boldsymbol\varepsilon^\star=0$ (this work; state-level Gy\"or\"ok Cond.~4, Eq.~(21), without Assumption~6)
+\item The condition needs $\theta^\star_{\mathrm{base}}$, so simulation only; input design can meet it (Gy\"or\"ok 2026 Remark~5); whether the thesis data meet it (?)
+\item Scope: one-step surrogate of a closed-loop criterion; slice $\bar x=0$ and uncorrected $g^{\mathrm n}_{\mathrm{aug}}$; aggregate and normalised; Theorems 16, 18 do not transfer (D-192; THESIS-RESULTS step~5; Gy\"or\"ok 2026 Thms.~16, 18)
+\end{itemize}
+\fi
+
+Interpretable combinations also need the unique estimate to be the true one,
+which depends on the dynamics the baseline omits.
+Let $\xi^\star$ be the training coordinates of the true parameters
+$\theta^\star_{\mathrm{base}}$.
+On the tuples whose successor sample also admits the difference stencil, the
+true one-step discrepancy is
+\begin{equation}
+\begin{aligned}
+ \boldsymbol\varepsilon^\star&=\boldsymbol\chi-\boldsymbol f_{\mathrm{base}}(\xi^\star),\qquad
+ \boldsymbol\chi=\col(\chi_i)_{i\in\mathcal I'},\\
+ \boldsymbol f_{\mathrm{base}}(\xi)&=\col\bigl(f^{\mathrm n}_{\mathrm{base}}
+   (\theta_{\mathrm{base}}(\xi),\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)\bigr)_{i\in\mathcal I'},
+\end{aligned}
+\label{eq:obc_delta}
+\end{equation}
+where $\mathcal I'\subset\mathcal I$ drops the last tuple of each record,
+$N'=|\mathcal I'|$, $\chi_i\in\R^6$ is $\tilde x^{\mathrm n}_{i+1}$ of
+\eqref{eq:obc_stacks}, $\boldsymbol\chi,\boldsymbol\varepsilon^\star\in\R^{6N'}$,
+and $\boldsymbol f_{\mathrm{base}}:\R^{10}\to\R^{6N'}$.
+The discrepancy collects every part of the recorded successor that the true
+baseline does not produce, the error of the velocity estimate included.
+
+\textit{Proposition 1:} Build \eqref{eq:obc_stacks} and \eqref{eq:obc_ours} on
+$\mathcal I'$, and let $E(\xi,\theta_{\mathrm{aug}})
+=\norm{\boldsymbol\chi-\boldsymbol f_{\mathrm{base}}(\xi)
+-\boldsymbol f^{\perp}_{\mathrm{aug}}(\theta_{\mathrm{aug}})}_2^2$ be the
+one-step error of the corrected model on these tuples.
+Suppose (i) $\boldsymbol\Phi$ has full column rank, and (ii)
+$\boldsymbol f_{\mathrm{base}}(\xi)=\boldsymbol f_{\mathrm{base}}(\xi^\star)
++\boldsymbol\Phi(\xi-\xi^\star)$ on a neighbourhood $\mathcal U$ of $\xi^\star$
+that contains $\xi^\circ$.
+Then every stationary point $(\hat\xi,\hat\theta_{\mathrm{aug}})$ of $E$ with
+$\hat\xi\in\mathcal U$ satisfies
+$\hat\xi-\xi^\star=\boldsymbol\Phi^{+}\boldsymbol\varepsilon^\star$.
+Hence $\hat\xi=\xi^\star$ if and only if
+$\boldsymbol\Phi^\top\boldsymbol\varepsilon^\star=0$.
+
+\begin{IEEEproof}
+The tuples are data on $\bar x=0$ and $\boldsymbol\Phi$ is fixed, so
+$\boldsymbol f^{\perp}_{\mathrm{aug}}$ does not depend on $\xi$.
+By (ii), stationarity of $E$ in $\xi$ gives
+$\boldsymbol\Phi^\top\bigl(\boldsymbol\varepsilon^\star
+-\boldsymbol\Phi(\hat\xi-\xi^\star)
+-\boldsymbol f^{\perp}_{\mathrm{aug}}(\hat\theta_{\mathrm{aug}})\bigr)=0$.
+The last line of \eqref{eq:obc_ours} removes the learned term, which leaves
+$\boldsymbol\Phi^\top\boldsymbol\Phi(\hat\xi-\xi^\star)
+=\boldsymbol\Phi^\top\boldsymbol\varepsilon^\star$.
+By (i), $\boldsymbol\Phi^\top\boldsymbol\Phi$ is invertible, so
+$\hat\xi-\xi^\star=(\boldsymbol\Phi^\top\boldsymbol\Phi)^{-1}
+\boldsymbol\Phi^\top\boldsymbol\varepsilon^\star
+=\boldsymbol\Phi^{+}\boldsymbol\varepsilon^\star$.
+This vanishes exactly when $\boldsymbol\Phi^\top\boldsymbol\varepsilon^\star=0$.
+\end{IEEEproof}
+
+Proposition~1 is the state-level counterpart of Condition~4 and Eq.~(21) of
+Gy\"or\"ok et al.~\cite[Sec.~4.1]{gyorok2026obc}, for the one-step transition
+linearised at $\xi^\circ$.
+Unlike their Theorem~7, it needs no exact fit of the data (their
+Assumption~6), because the corrected write drops out of the stationarity
+condition.
+The estimate is therefore the same for every corrected write, which is the
+uniqueness Section~\ref{sec:aug_closed_loop} requires, on the tuples and to
+first order.
+Since \eqref{eq:mdelta_map} is a bijection onto its range,
+$\hat\xi=\xi^\star$ means $\hat\theta_{\mathrm{base}}=\theta^\star_{\mathrm{base}}$
+whenever $\theta^\star_{\mathrm{base}}$ lies in that range.
+The condition needs $\theta^\star_{\mathrm{base}}$, so it can be checked in
+simulation only.
+When the structure of the omitted term is known, an input can be designed to
+meet it~\cite[Remark~5]{gyorok2026obc}.
+\todo{Missing: whether the discrepancy of the thesis data meets $\boldsymbol\Phi^\top\boldsymbol\varepsilon^\star=0$. \texttt{DOC/THESIS-RESULTS.md} step~5 states that it does not, but the only measurement (D-190, D-203) used earlier data. Candidate: report $\norm{\boldsymbol\Phi\boldsymbol\Phi^{+}\boldsymbol\varepsilon^\star}/\norm{\boldsymbol\varepsilon^\star}$ on the thesis training records in Section~\ref{sec:results} beside the step~5 table.}
+
+The guarantee is narrower than orthogonality of the simulated output.
+Proposition~1 concerns the one-step error on the tuples, whereas
+\eqref{eq:obc_problem} minimises a closed-loop multistep output error.
+It therefore describes a surrogate, not the bias of $\mathcal M_{\mathrm{OBC}}$.
+The tuples lie on $\bar x=0$, so $\theta_{\mathrm{aux}}$ sees the learned write
+on that slice only.
+In the simulation, the part of the write that acts through a nonzero $\bar x$
+has no stacked guarantee.
+The uncorrected $g^{\mathrm n}_{\mathrm{aug}}$ also reaches the physical rows
+one step later through $f^{\mathrm n}_{\mathrm{aug}}$.
+The orthogonality is aggregate over the tuples, not per tuple.
+It holds in the normalised coordinates, so the normalisation sets its metric.
+The consistency and zero-covariance results of Gy\"or\"ok et
+al.~\cite[Thms.~16, 18]{gyorok2026obc} do not transfer.
+They assume a stable data-generating
+system~\cite[Condition~10]{gyorok2026obc}, which the open-loop gantry is not
+(Section~\ref{sec:aug_loop}).

@@ -1,0 +1,426 @@
+% Page budget: 1.55 pages | Owns: negation, OBC derivation, additional-state scope, implementation, and true-parameter condition.
+% WRITING GUIDE
+% Purpose: Explain negation, derive the final state-level orthogonal-by-construction map, and delimit its interpretability guarantee.
+% Sources: README "Source map per subsection", rows IV-A to IV-D; mandatory papers and the reference gate as in the README.
+% Research-plan anchor: Preserve Aspect 3's goal of protecting physical interpretability; state clearly how the final construction differs from the proposed regularisation.
+% Current decisions: Reduced identifiable coordinates, data-derived reference tuples, a tangent-only one-step physical-state projection, per-epoch refresh, and no affine comparison arm.
+% Choices to justify: Protected parameter coordinates, reference-set construction, projected rows, rank tolerance, exclusion of the affine offset, refresh frequency, and treatment of additional states.
+% Cautions: docs/orthogonal-projection-plan.md describes an older soft-penalty route; one-step state orthogonality is not trajectory-output orthogonality or guaranteed true recovery.
+% Planned figures: New geometric projection figure with a physical and additional-state partition inset; show the remaining uniqueness limitation as clearly as the protected direction.
+% Section is finished when: The protected space, coordinate frame, gradient treatment, added-state scope, and true-recovery condition are explicit.
+%
+% DRAFT NOTES (cycle 17, 2026-10-09)
+% PROPOSED MUST ESTABLISH (no agreed block existed; inferred from the README ownership row IV and source-map
+%   rows IV-A to IV-D; not yet agreed with Dirk)
+%  IV-A 1. Problem: the split left open by Section III-D is negation (Kessels Sec. 5.3.1.3); to first order a
+%          network term along the parameter directions cancels a change of xi (Gyorok 2025 Ex. 1); on the
+%          gantry these directions are M(Y)^{-1}-weighted mass, damping and stiffness forces (own).
+%       2. Departure from the research plan: the penalty of Gyorok 2025 (Eq. 13, Remark 1) is replaced by the
+%          construction of Gyorok 2026, which needs a baseline linear in its parameters (Eq. 2).
+%       3. Adapted: the regressor is the Jacobian of the normalised RK4 transition in xi at a linearisation
+%          point (Gyorok 2025 Sec. 4, Eq. 15); its range is that of the ten combinations; no offset column.
+%       4. Adapted: fixed tuples from recorded positions, fourth-order velocities, xbar = 0 (state space without
+%          full-state measurement is Gyorok 2026 Sec. 6 future work); coefficient and orthogonality as in
+%          Gyorok 2026 Eqs. 8, 11, Lemma 3; correction on the physical rows at every step (Eqs. 9, 13).
+%       5. Coefficient differentiated (D-190 item 5); basis rebuilt per epoch at a detached xi (D-190 item 6,
+%          adapted from Gyorok 2025 Remark 2).
+%  IV-B 6. Identification problem of M_OBC: eq:aug_loss with the changed physical-row line; per phase what
+%          sees the correction and what changes (S1, S2, Adam, validation, selection, polish); M_OBC named;
+%          purpose in THESIS-RESULTS step 5 and 6 terms.
+%  IV-C 7. Proposition (own, adapted from Gyorok 2026 Thm. 7 without its exact-fit Assumption 6): on the
+%          tuples with a successor and to first order, every one-step least-squares minimiser has the same
+%          xi, xi* + Phi^+ eps, equal to xi* iff Phi^T eps = 0.
+%       8. Scope: one-step surrogate, xbar = 0 slice and active added states, offset caveat, normalised
+%          metric, Thms. 16, 18 do not transfer, excitation condition (Remark 5).
+% CORRECTIONS (code and sources win):
+%   - Header "Reduced identifiable coordinates": the Jacobian is taken in the training coordinates xi of
+%     eq:mdelta_map (obc_gantry.py make_basis_builder through transition_from_free), not in theta_base; its range
+%     equals that of the theta_base sensitivity because the coordinate map has a triangular Jacobian with
+%     nonzero diagonal (m_Delta,0 != 0), checked by hand against combinations_from_free.
+%   - D-192 item 1 "m_diff relative-linear": superseded by the bounded tanh coordinate of D-229 (code).
+%   - The old draft's Gamma todo cited gyorok2026obc Eq. (39) for parameter uniqueness; citation-log row 74 says
+%     Eq. (39) does not support it, Assumption 1 does; the rewritten todo uses Assumption 1.
+%   - Old eq:obc_overlap and its two cosines: THESIS-RESULTS step 5 reports neither, so they are not displayed
+%     (README: observed quantities to Results); left as a todo in IV-C.
+% NOTATION: Gyorok's Delta (unmodelled terms) clashes with the scheduling block Delta(Y), so the true one-step
+%   discrepancy is eps. A bar marks the added state (Section III), so the expansion point is xi_lin, not
+%   xi-bar. Plain J clashes with the inertias J_b, J_h, J_eff, so the sensitivity is Phi (Gyorok's letter).
+%   Stacks over tuples are bold (SKILL Notation). The correction is f^n_obc (c is a damping letter).
+% SOURCE CONFLICTS: D-190 Why records the supervisors' condition as non-overlap with the baseline OUTPUT (an
+%   affine [J c] range); D-192 makes the offset diagnostic only and D-186 (2026-09-10) gives the reasons for
+%   omitting it. The draft follows D-192 with D-186's reason 2 and caveat; the supervisor question stays a todo.
+% LEFT OUT (reader test, ownership or rule): the rank tolerance and the rank-loss fallback (numerical
+%   mechanics); the hand-written forward sensitivity of D-194 and the per-objective hoist of D-195 (how the
+%   code evaluates the same model); float64 solve via SVD rather than normal equations (implementation);
+%   the D-232 noisy-velocity check of the basis (PASS, no section reports it, no claim needs it); the
+%   pointwise no-go result and the Coulomb inner-product argument (Discussion bullets); the measured
+%   principal angles behind the refresh reason (todo); the overlap cosines (todo); the affine arm (not in the
+%   THESIS-RESULTS campaign).
+% RESOLVED TODOS of the restored file: "\todo{Source}" (citations now in IV-A); "Subsection title improve"
+%   (restructured); Kessels negation definition (IV-A cites Sec. 5.3.1.3 and opens from the uniqueness need);
+%   affine arm wording and its note (the arm is not in the campaign, THESIS-RESULTS Sec. 4; the omitted offset
+%   is argued in IV-A); refs.bib note (gyorok2026obc added, gyorok2025l4dc placeholder replaced); one-step
+%   versus trajectory contribution (D-190 Ruled out (1): the trajectory method was rejected; D-192; the
+%   Introduction names state-level orthogonality); orthogonal multisine design (THESIS-RESULTS Sec. 6: T_OA
+%   not run, the guarantee is derived here; Remark 5 is cited as what would meet the condition). Kept and
+%   rewritten: the supervisor question on the offset (IV-A) and the figure plan (IV-A).
+% STALE LINES in other sections (not edited): 06_results.tex line 40 cites eq:obc_overlap and rho_f, no longer
+%   defined; 06_results.tex line 45 quotes the affine arm (not in the campaign); 05_setup.tex line 52 lists the
+%   affine-OBC arm; 07_discussion.tex lines 37, 44 use J^T Delta* (now Phi^T eps, eq:obc_eps) and "Section IV-C"
+%   (now the Proposition of sec:obc_scope); 08_conclusion.tex line 19 "prevents local tangent overlap" uses the
+%   wording D-186 Ruled out (1) bars for negation; 99_appendix.tex OBC bullets updated in this cycle (owned part).
+% SYMBOLS FOR SECTION V: none (the refresh is per epoch; no threshold symbol is introduced).
+% CODE CONFIRMED this session: obc_gantry.py (build_reference_set: q = P^-T y, fourth_order_central_difference
+%   inside each record, two samples trimmed per end, x_a = 0, recorded u, normalised with the training
+%   statistics; GantryOBCCorrection.forward: correction on the routed physical rows at the step's physical
+%   state and input, zero on the added-state rows; make_basis_builder: float64 jacfwd of transition_from_free
+%   over the ten free coordinates; make_reference_field: network on the tuples with x_a = 0); obc.py
+%   (OBCBasis.coefficient V S^-1 U^T F differentiable in F; OBCLifecycle.maybe_refresh at each new epoch);
+%   interconnect.py (loss: coefficient once per objective, set_frozen, tangent pair threaded; forward subtracts
+%   the correction; _sync_prediction_state_for_validation: coefficient re-solved before validation, basis
+%   rebuilt after the selected checkpoint is restored); ps2_opening.py _residual (S1 residual through the
+%   corrected prediction path); blocks.py combinations_from_free, transition_from_free (normalised in and out).
+%   Polish: no refresh because the epoch counter does not advance after the post-restore rebuild (read from
+%   the code, not measured). Algebra checked by hand: the Pythagoras split of the Proposition, Phi^+ =
+%   (Phi^T Phi)^{-1} Phi^T at full column rank, the unprojected minimiser Phi^+(eps - f_aug), the triangular
+%   Jacobian of eq:mdelta_map, dqdd/dxi_j = -M^{-1}(dM qdd + dC qd + dK q).
+%   Further clashes avoided: delta (absorber delta_a of Section V) and r (reference of Section III) are not
+%   used for the coordinate change and the proof residual.
+% LENGTH: a \draftfalse build in the scratchpad puts Section IV from about 80 percent of the left column of
+%   p. 8 to about 45 percent of the left column of p. 10, about 3.65 columns (1.8 pages) against the 1.55-page
+%   budget (1.2x), with no figure yet. Five displays and one proposition.
+\section{Interpretability by Orthogonal Construction}\label{sec:obc}
+\ifdraft
+\begin{itemize}
+\item Goal from Section~III-D: an estimate of $\theta_{\mathrm{base}}$ that is unique under stated conditions; names IV-A to IV-C (style profile)
+\item Contribution share: the third contribution of Section~I, in its wording (Introduction)
+\end{itemize}
+\fi
+
+Given the augmented model of Section~\ref{sec:augmentation}, whose split
+between baseline and network is not unique (Section~\ref{sec:aug_closed_loop}),
+our goal is an estimate of $\theta_{\mathrm{base}}$ that is unique under
+stated conditions.
+To this end, we construct an orthogonal correction of the physical rows
+(Section~\ref{sec:obc_map}) and state the identification problem of the
+corrected model (Section~\ref{sec:obc_ident}).
+We then give the condition under which its estimate equals the true
+combinations, with the scope of this result (Section~\ref{sec:obc_scope}).
+This delivers the third contribution of Section~I: state-level orthogonality
+for the identifiable physical-parameter tangent space and its true-parameter
+recovery condition.
+
+\subsection{Orthogonal correction of the physical rows}\label{sec:obc_map}
+\ifdraft
+\begin{itemize}
+\item The split is not unique because the network can negate the baseline (Kessels Sec.~5.3.1.3); to first order a term along $\partial f^{\mathrm n}_{\mathrm{base}}/\partial\xi$ cancels a change of $\xi$ (Gy\"or\"ok 2025 Ex.~1)
+\item On the gantry, each direction is an $M(Y)^{-1}$-weighted mass, damping or stiffness force, propagated by RK4 (this work)
+\item The research plan's penalty trades orthogonality against fit; the construction needs no weight but a baseline linear in its parameters (Gy\"or\"ok 2025 Eq.~(13), Remark~1; 2026 Sec.~3.2, Eq.~(2))
+\item Regressor: Jacobian of the normalised transition in $\xi$ at $\xi_{\mathrm{lin}}$; range of the ten combinations; no offset column (Gy\"or\"ok 2025 Sec.~4, Eqs.~(15), (18); D-186; D-192; adapted)
+\item Fixed tuples from the recorded positions, fourth-order velocities, $\bar x=0$, recorded input; recorded rather than simulated states (Gy\"or\"ok 2025 Sec.~3; 2026 Sec.~6; D-192; adapted)
+\item Coefficient on the stack, full column rank, orthogonal corrected stack (Gy\"or\"ok 2026 Eqs.~(8), (11), Lemma~3, Assumption~1; adapted)
+\item Correction on the physical rows at every step; added-state rows not corrected; coefficient differentiated (Gy\"or\"ok 2026 Eqs.~(9), (13); D-190; adapted)
+\item Linearisation point rebuilt per epoch at a detached $\xi$ (Gy\"or\"ok 2025 Sec.~4, Remark~2; D-190; adapted)
+\end{itemize}
+\fi
+
+The split of Section~\ref{sec:aug_closed_loop} is not unique because the
+network can negate the baseline, Kessels' term for learned terms that
+partially cancel the first-principles terms~\cite[Sec.~5.3.1.3]{kessels2025ai}.
+Let $\xi'\in\R^{10}$ be other values of the training coordinates $\xi$ of
+\eqref{eq:mdelta_map}.
+The network term
+$f^{\mathrm n}_{\mathrm{aug}}-(\partial f^{\mathrm n}_{\mathrm{base}}/\partial\xi)(\xi'-\xi)$
+with $\xi'$ then gives, to first order in $\xi'-\xi$, the same one-step map as
+$f^{\mathrm n}_{\mathrm{aug}}$ with $\xi$.
+The data cannot attribute such a term to either component.
+Gy\"or\"ok et al.\ show this freedom exactly for a state transition linear in
+its parameter and a linear network~\cite[Ex.~1]{gyorok2025l4dc}.
+On the gantry, each column of $\partial f^{\mathrm n}_{\mathrm{base}}/\partial\xi$
+is the RK4 propagation of the acceleration change
+$-M(Y)^{-1}\bigl(\tfrac{\partial M}{\partial\xi_j}\ddot q+\tfrac{\partial C}{\partial\xi_j}\dot q+\tfrac{\partial K}{\partial\xi_j}q\bigr)$
+of \eqref{eq:eom}.
+A negating term therefore acts as an added mass, damping or stiffness force
+whose effect on the state depends on $Y$.
+
+The research plan proposed the orthogonality penalty of Gy\"or\"ok et al.,
+whose weight trades orthogonality against fit~\cite[Eq.~(13), Remark~1]{gyorok2025l4dc}.
+They later construct the network term orthogonal to the baseline, without a
+weight~\cite[Sec.~3.2]{gyorok2026obc}.
+This construction needs a baseline linear in its
+parameters~\cite[Eq.~(2)]{gyorok2026obc}.
+Our transition is rational in $\theta_{\mathrm{base}}$ through $M(Y)^{-1}$, so
+it has no regressor.
+
+Following their linearisation of a nonlinear baseline in its
+parameters~\cite[Sec.~4, Eq.~(15)]{gyorok2025l4dc}, we use the Jacobian of the
+normalised transition with respect to $\xi$.
+We differentiate with respect to $\xi$ rather than the fourteen raw
+parameters, whose four lost directions (Section~\ref{sec:params}) would give
+the Jacobian four null directions.
+Unlike their extended regressor~\cite[Eq.~(18)]{gyorok2025l4dc}, we omit the
+offset column $f^{\mathrm n}_{\mathrm{base}}$ itself.
+A parameter derivative does not change when the origin of the normalised state
+moves, whereas the offset does.
+The offset would thus make the protected directions depend on the centring
+$\mu_x$ of \eqref{eq:aug_norm}.
+The sensitivity is
+\begin{equation}
+ \Phi(\xi_{\mathrm{lin}},\tilde x^{\mathrm n},u^{\mathrm n})
+ =\left.\frac{\partial f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\xi),\tilde x^{\mathrm n},u^{\mathrm n}\bigr)}
+   {\partial\xi}\right|_{\xi=\xi_{\mathrm{lin}}},
+\label{eq:obc_sens}
+\end{equation}
+where $\xi_{\mathrm{lin}}\in\R^{10}$ is the linearisation point and
+$\Phi:\R^{10}\times\R^6\times\R^3\to\R^{6\times10}$.
+The map \eqref{eq:mdelta_map} has a nonsingular Jacobian for
+$m_{\Delta,0}\neq0$, so $\Phi$ spans the sensitivity directions of the ten
+combinations $\theta_{\mathrm{base}}$.
+\todo{Missing: supervisor confirmation of the protected set. D-190 records the supervisors' condition as non-overlap with the baseline output, which is the affine range of $[\Phi\;\,f^{\mathrm n}_{\mathrm{base}}]$; D-192 protects the tangent range only. Candidate: the tangent range, with the origin argument above (D-186, 2026-09-10, reason 2) and the caveat in Section~\ref{sec:obc_scope}; parameter uniqueness needs the rank of $\Phi$ only~\cite[Assumption~1]{gyorok2026obc}.}
+
+We evaluate $\Phi$ on fixed reference tuples from the training records,
+because only the positions of the full baseline state are measured.
+Gy\"or\"ok et al.\ name state-space baselines without full-state measurement as
+future research~\cite[Sec.~6]{gyorok2026obc}.
+Each tuple holds the positions $P^{-\top}q_{\mathrm{act},i}$ of a training
+sample, their velocities from a fourth-order central difference within the
+record, $\bar x_i=0$ and the recorded input.
+The tuples cover every sample at which this difference exists.
+Each tuple is one step at the recorded input, so the controller does not enter.
+Unlike Gy\"or\"ok et al., who simulate the baseline when the states are not
+measured~\cite[Sec.~3]{gyorok2025l4dc}, we use recorded states.
+An open-loop simulation would drift on the free axes
+(Section~\ref{sec:aug_loop}).
+
+The construction needs a stack of full column rank, as Gy\"or\"ok et al.\
+assume of their regressor~\cite[Assumption~1]{gyorok2026obc}.
+Adapting their coefficient~\cite[Eqs.~(8), (11), Lemma~3]{gyorok2026obc} to
+these tuples, we fit the network's physical rows by the stacked sensitivity in
+the least-squares sense, which makes the corrected stack orthogonal to it:
+\begin{equation}
+\begin{aligned}
+ \boldsymbol\Phi(\xi_{\mathrm{lin}})
+ &=\col\bigl(\Phi(\xi_{\mathrm{lin}},\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)\bigr)_{i\in\mathcal I},\\
+ \boldsymbol f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})
+ &=\col\bigl(f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}},\col(\tilde x^{\mathrm n}_i,0),u^{\mathrm n}_i)\bigr)_{i\in\mathcal I},\\
+ \theta_{\mathrm{aux}}(\theta_{\mathrm{aug}})
+ &=\boldsymbol\Phi(\xi_{\mathrm{lin}})^{+}\,\boldsymbol f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}}),\\
+ 0&=\boldsymbol\Phi(\xi_{\mathrm{lin}})^{\top}
+   \bigl(\boldsymbol f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})
+   -\boldsymbol\Phi(\xi_{\mathrm{lin}})\,\theta_{\mathrm{aux}}(\theta_{\mathrm{aug}})\bigr),
+\end{aligned}
+\label{eq:obc_coef}
+\end{equation}
+where $\mathcal I$ is the set of tuples, $N=|\mathcal I|$,
+$\tilde x^{\mathrm n}_i\in\R^6$ and $u^{\mathrm n}_i\in\R^3$ are the state and
+input of tuple $i$ in the coordinates of \eqref{eq:aug_norm},
+$\boldsymbol\Phi(\xi_{\mathrm{lin}})\in\R^{6N\times10}$,
+$\boldsymbol f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})\in\R^{6N}$,
+${}^{+}$ is the Moore-Penrose pseudoinverse and
+$\theta_{\mathrm{aux}}\in\R^{10}$.
+
+In the method of Gy\"or\"ok et al., the coefficient is a function of the
+network parameters during training~\cite[Eq.~(9)]{gyorok2026obc}.
+Every prediction subtracts the regressor times the
+coefficient~\cite[Eq.~(13)]{gyorok2026obc}.
+We subtract the state-level counterpart from the physical rows at every step
+of the augmented model, at the state and input of that step.
+The added-state rows are not corrected, because the baseline has no
+added-state update to be orthogonal to.
+The correction is
+\begin{equation}
+ f^{\mathrm n}_{\mathrm{obc}}(\theta_{\mathrm{aug}},\tilde x^{\mathrm n},u^{\mathrm n})
+ =\Phi(\xi_{\mathrm{lin}},\tilde x^{\mathrm n},u^{\mathrm n})\,
+  \theta_{\mathrm{aux}}(\theta_{\mathrm{aug}}),
+\label{eq:obc_corr}
+\end{equation}
+where
+$f^{\mathrm n}_{\mathrm{obc}}:\R^{n_{\mathrm{aug}}}\times\R^6\times\R^3\to\R^6$.
+Differentiating $\theta_{\mathrm{aux}}(\theta_{\mathrm{aug}})$ gives the
+network the gradient of the corrected term, which a detached coefficient would
+replace by that of the uncorrected one.
+\todo{Missing: the planned figure (header): the network's physical stack split into its part in $\ran\boldsymbol\Phi(\xi_{\mathrm{lin}})$ and the orthogonal part, with an inset showing the corrected physical rows, the uncorrected added-state rows and their route back through $f^{\mathrm n}_{\mathrm{aug}}$ one step later. Candidate: none drawn yet.}
+
+The linearisation point $\xi_{\mathrm{lin}}$ is set to the current $\xi$ at
+each epoch boundary.
+The stack $\boldsymbol\Phi(\xi_{\mathrm{lin}})$ is rebuilt there and held
+fixed for the epoch.
+No gradient therefore reaches $\xi$ through $\Phi$.
+Gy\"or\"ok et al.\ update the linearisation point at every evaluation of the
+objective or fix it at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.
+We adapt the per-epoch update of their linear case, which refreshes the
+projection with current state estimates~\cite[Remark~2]{gyorok2025l4dc}, to
+the linearisation point.
+The stacked sensitivity changes little within an epoch, so a rebuild at every
+evaluation would mainly add cost.
+\todo{Missing: (a) a reported measurement for the slow change of the stacked sensitivity (D-190 measured its principal angles at 1 and 20 percent displacement; no section reports them). Candidate: one sentence with the numbers in Appendix~\ref{app:obc}. (b) The reason against a linearisation point fixed at the start. Candidate: the detuned start is not the nominal point that Gy\"or\"ok et al.\ argue for, since it lies away from the true combinations by design (Section~\ref{sec:setup}) (own reading).}
+
+\subsection{Identification of the corrected model}\label{sec:obc_ident}
+\ifdraft
+\begin{itemize}
+\item Need: the identification problem of Section~III-D must include the correction \eqref{eq:obc_corr}; trained parameters, coordinates and cost stay (2026 Eq.~(22); code)
+\item Problem display: cost and changed physical-row line, the other constraints by number; $\xi_{\mathrm{lin}}$ held fixed and refreshed per epoch, $\theta_{\mathrm{aux}}$ re-solved at every evaluation (D-190 items 5, 6; code)
+\item Per phase: S1 fits the corrected residual; S2 does not see the correction but changes $\theta_{\mathrm{aug}}$; Adam updates; validation re-solves $\theta_{\mathrm{aux}}$; selection rebuilds the basis; the polish keeps it (D-198; code)
+\item $\mathcal M_{\mathrm{OBC}}$ named; input $\uact$, output $\qact$; purpose (THESIS-RESULTS steps~5, 6; notation (?))
+\end{itemize}
+\fi
+
+The identification problem of Section~\ref{sec:aug_closed_loop} must now
+include the correction in the physical-row update.
+The trained parameters $\vartheta=(\xi,\theta_{\mathrm{aug}},\theta_{\mathrm{enc}})$
+and the cost $V$ are unchanged:
+{\small
+\begin{equation}
+\begin{aligned}
+ &\min_{\vartheta}\;V(\vartheta)\quad\text{s.t.}\\
+ &\tilde x^{\mathrm n}_{k+1|\tau}
+  =f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\xi),
+   \tilde x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau}\bigr)
+  +f^{\mathrm n}_{\mathrm{aug}}\bigl(\theta_{\mathrm{aug}},
+   \hat x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau}\bigr)\\
+ &\qquad\qquad\;-f^{\mathrm n}_{\mathrm{obc}}\bigl(\theta_{\mathrm{aug}},
+   \tilde x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau}\bigr),\\
+ &\text{the other constraints of \eqref{eq:aug_loss}},
+\end{aligned}
+\label{eq:obc_problem}
+\end{equation}
+}
+where $\xi_{\mathrm{lin}}$ in \eqref{eq:obc_corr} is held fixed during each
+update and refreshed per epoch (Section~\ref{sec:obc_map}), and
+$\theta_{\mathrm{aux}}$ is solved by \eqref{eq:obc_coef} from the current
+$\theta_{\mathrm{aug}}$ at every evaluation of $V$.
+
+The optimiser, the stages of Section~\ref{sec:aug_ps2} and the selection rule
+of Section~\ref{sec:aug_closed_loop} are reused.
+Each S1 update fits the residual of the corrected model and changes only
+$\theta_{\mathrm p}$ and $\theta^a_{\mathrm{enc}}$.
+S2 fits $g^{\mathrm n}_{\mathrm{aug}}$, which the correction does not touch.
+It changes $\theta_{\mathrm{aug}}$, so $\theta_{\mathrm{aux}}$ changes at the
+next evaluation of $V$.
+The Adam updates of $V$, during S1 and in S3, change every entry of
+$\vartheta$.
+Before each validation, $\theta_{\mathrm{aux}}$ is re-solved from the current
+network with the basis of the last epoch.
+After the best Adam checkpoint is restored, the basis is rebuilt at its $\xi$,
+with $\theta_{\mathrm{aux}}$ re-solved.
+The polish then changes every entry of $\vartheta$ with this basis, under the
+acceptance rule of Section~\ref{sec:aug_closed_loop}.
+
+We call $\mathcal M_{\mathrm{OBC}}$ the model $\mathcal M_{\mathrm{PS2}}$ with
+the correction \eqref{eq:obc_corr}, identified by \eqref{eq:obc_problem}.
+Its input is the recorded actuator force $\uact$ and its output the actuator
+positions $\qact$.
+It starts as $\mathcal M_{\mathrm{PS2}}$ does, with the first basis built at
+the start $\xi=0$.
+Section~\ref{sec:results} compares what $\mathcal M_{\mathrm{OBC}}$ and
+$\mathcal M_{\mathrm{PS2}}$ do to the ten combinations, from the correct and
+from a detuned start, and at what accuracy cost.
+It also uses $\mathcal M_{\mathrm{OBC}}$ as the final model.
+\todo{Missing: model notation. Candidate: the calligraphic $\mathcal M_{\mathrm{OBC}}$, since plain $M$ clashes with $M(Y)$ (README open conflict on model names).}
+
+\subsection{Scope and condition for true parameter recovery}\label{sec:obc_scope}
+\ifdraft
+\begin{itemize}
+\item Need: \eqref{eq:obc_coef} gives orthogonality on the tuples, not yet a unique or true estimate; that needs what the baseline misses in the data (Gy\"or\"ok 2026 Sec.~4.1)
+\item True one-step discrepancy on the tuples with a successor, same stencil, normalised coordinates (D-202, D-203)
+\item Proposition: to first order and with full column rank, every one-step least-squares minimiser has $\xi=\xi^\star+\boldsymbol\Phi^{+}\varepsilon$, true iff $\boldsymbol\Phi^\top\varepsilon=0$; adapted from Thm.~7 without the exact fit (this work; Gy\"or\"ok 2026 Assumption~6, Cond.~4, Eq.~(21))
+\item Without the correction, the minimiser moves with the network (this work)
+\item Scope: one-step surrogate; $\bar x=0$ slice and active added states; offset caveat; normalised metric; Thms.~16, 18 do not transfer (D-192, D-186, D-190, D-202; THESIS-RESULTS step~5; Gy\"or\"ok 2026 Secs.~4.3, 4.4)
+\item The condition is one on the excitation; the records of Section~V are not designed for it (Gy\"or\"ok 2026 Remark~5; THESIS-RESULTS Sec.~6)
+\end{itemize}
+\fi
+
+Orthogonality on the tuples does not yet say whether the estimate is unique,
+nor when it equals the true combinations.
+Recovery depends on what the baseline misses in the data.
+Let $\xi^\star\in\R^{10}$ be the coordinates of the true combinations.
+The successor of tuple $i$ is tuple $i+1$ of the same record, which every
+tuple except the last of each record has.
+On the set $\mathcal I'\subset\mathcal I$ of tuples with a successor, the true
+one-step discrepancy is
+\begin{equation}
+ \varepsilon
+ =\boldsymbol{\tilde x}^{\mathrm n}_{+}-\boldsymbol f^{\mathrm n}_{\mathrm{base}}(\xi^\star),
+ \qquad
+ \boldsymbol{\tilde x}^{\mathrm n}_{+}=\col\bigl(\tilde x^{\mathrm n}_{i+1}\bigr)_{i\in\mathcal I'},
+\label{eq:obc_eps}
+\end{equation}
+where
+$\boldsymbol f^{\mathrm n}_{\mathrm{base}}(\xi)=\col\bigl(f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}}(\xi),\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)\bigr)_{i\in\mathcal I'}$
+and $\varepsilon,\boldsymbol{\tilde x}^{\mathrm n}_{+}\in\R^{6|\mathcal I'|}$.
+
+We adapt the recovery theorem of Gy\"or\"ok et al., with its orthogonality
+condition and parameter error~\cite[Cond.~4, Assumption~6, Thm.~7, Eq.~(21)]{gyorok2026obc}.
+Their theorem assumes that the model reproduces the data exactly.
+The least-squares form below needs no exact fit.
+It concerns the variant of \eqref{eq:obc_coef} in which every stack runs over
+$\mathcal I'$.
+
+\textit{Proposition 1:} Suppose (i) $\boldsymbol\Phi(\xi_{\mathrm{lin}})$ has
+full column rank, and (ii)
+$\boldsymbol f^{\mathrm n}_{\mathrm{base}}(\xi)=\boldsymbol f^{\mathrm n}_{\mathrm{base}}(\xi^\star)+\boldsymbol\Phi(\xi_{\mathrm{lin}})(\xi-\xi^\star)$
+for every $\xi$, which the gantry meets to first order in $\xi-\xi^\star$ and
+$\xi_{\mathrm{lin}}-\xi^\star$.
+Then, for every $\theta_{\mathrm{aug}}$, the one-step error
+$\norm{\boldsymbol{\tilde x}^{\mathrm n}_{+}-\boldsymbol f^{\mathrm n}_{\mathrm{base}}(\xi)-\boldsymbol f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})+\boldsymbol\Phi(\xi_{\mathrm{lin}})\theta_{\mathrm{aux}}(\theta_{\mathrm{aug}})}_2^2$
+has the unique minimiser $\xi=\xi^\star+\boldsymbol\Phi(\xi_{\mathrm{lin}})^{+}\varepsilon$
+over $\xi$.
+It equals $\xi^\star$ if and only if
+$\boldsymbol\Phi(\xi_{\mathrm{lin}})^\top\varepsilon=0$.
+
+\begin{IEEEproof}
+Write $\boldsymbol\Phi$ for $\boldsymbol\Phi(\xi_{\mathrm{lin}})$ and
+$\Pi=\boldsymbol\Phi\boldsymbol\Phi^{+}$, the orthogonal projector onto
+$\ran\boldsymbol\Phi$.
+By (ii), \eqref{eq:obc_eps} and \eqref{eq:obc_coef}, the stacked residual is
+$\varepsilon-\boldsymbol\Phi(\xi-\xi^\star)-(I-\Pi)\boldsymbol f^{\mathrm n}_{\mathrm{aug}}$.
+Its projections by $\Pi$ and $I-\Pi$ are
+$\Pi\varepsilon-\boldsymbol\Phi(\xi-\xi^\star)$ and
+$(I-\Pi)(\varepsilon-\boldsymbol f^{\mathrm n}_{\mathrm{aug}})$.
+They are orthogonal, so the one-step error is
+$\norm{\Pi\varepsilon-\boldsymbol\Phi(\xi-\xi^\star)}_2^2+\norm{(I-\Pi)(\varepsilon-\boldsymbol f^{\mathrm n}_{\mathrm{aug}})}_2^2$.
+The second term does not depend on $\xi$.
+The first vanishes if and only if
+$\boldsymbol\Phi(\xi-\xi^\star)=\Pi\varepsilon$, which by (i) holds only for
+$\xi-\xi^\star=\boldsymbol\Phi^{+}\varepsilon$.
+By (i), $\boldsymbol\Phi^{+}=(\boldsymbol\Phi^\top\boldsymbol\Phi)^{-1}\boldsymbol\Phi^\top$,
+so $\boldsymbol\Phi^{+}\varepsilon=0$ if and only if
+$\boldsymbol\Phi^\top\varepsilon=0$.
+\end{IEEEproof}
+
+Without the correction, the same steps give
+$\xi-\xi^\star=\boldsymbol\Phi^{+}(\varepsilon-\boldsymbol f^{\mathrm n}_{\mathrm{aug}})$,
+which moves with the network along the directions of
+Section~\ref{sec:obc_map}.
+
+Proposition~1 concerns the one-step error on the tuples, whereas
+\eqref{eq:obc_problem} minimises a closed-loop multistep output error.
+It is therefore a surrogate, not the bias of the trained model.
+No orthogonality of trajectories or outputs follows from it.
+The tuples lie on $\bar x=0$, so $\theta_{\mathrm{aux}}$ sees the network only
+there.
+With the added states active, the part of $f^{\mathrm n}_{\mathrm{aug}}$ that
+acts through $\bar x$ is not protected.
+The uncorrected $g^{\mathrm n}_{\mathrm{aug}}$ reaches the physical rows one
+step later through $f^{\mathrm n}_{\mathrm{aug}}$.
+A network term that cancels the nominal transition
+$f^{\mathrm n}_{\mathrm{base}}$ is charged only through its component in
+$\ran\boldsymbol\Phi$.
+The offset can still be omitted, because the minimiser of Proposition~1
+depends on $\varepsilon$ only through $\Pi\varepsilon$.
+The inner product is Euclidean in the coordinates of \eqref{eq:aug_norm}, so
+the scaling $T_x$ weights the six rows.
+Finally, the consistency and covariance results of Gy\"or\"ok et al.\ do not
+transfer, because they concern an input-output baseline linear in its
+parameters~\cite[Secs.~4.3, 4.4]{gyorok2026obc}.
+The gantry transition is a state-space map rational in
+$\theta_{\mathrm{base}}$.
+\todo{Missing: whether Section~\ref{sec:results} reports the overlaps $\norm{\Pi\varepsilon}_2/\norm{\varepsilon}_2$ and $\norm{\Pi\boldsymbol f^{\mathrm n}_{\mathrm{aug}}}_2/\norm{\boldsymbol f^{\mathrm n}_{\mathrm{aug}}}_2$ on held-out tuples (the old display; \texttt{06\_results.tex} still cites it). Candidate: not reported, since THESIS-RESULTS step~5 lists only the ten combinations and the test RMS; $\varepsilon$ needs $\xi^\star$, so it is available in simulation only.}
+
+The condition $\boldsymbol\Phi^\top\varepsilon=0$ is an excitation condition
+on the records.
+Gy\"or\"ok et al.\ note that an input can be designed to meet their condition
+when the structure of the omitted terms is known~\cite[Remark~5]{gyorok2026obc}.
+The records of Section~\ref{sec:setup} are not designed for it.
+Proposition~1 then gives a unique estimate on the tuples, to first order, but
+does not guarantee the true combinations.

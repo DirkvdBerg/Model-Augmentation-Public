@@ -1,0 +1,27 @@
+# Critic (checker lens), cycle 09, Section II
+
+Score: 8 / 10
+
+## What I verified
+- Compile: `latexmk -pdf main.tex` in `thesis-iteration/Writing` reports up to date. `build/main.log` has no line starting with "!". The only Section II warning is a 5.3 pt overfull box inside the figure input `gantry_system_with_absorber.tex`, which is a generated figure and not section text.
+- Code: `SYS/gantry_ss.py` gives P, M0, C, K as displayed (M12 = (m1-m2)Lb/2 - mh Y, K only in entry (2,2); the artificial stiffnesses `GANTRY_KX_ART`/`KY_ART` default to 0). `FS/blocks.py::_deriv_with` forms u_log = P u_act, solves the loop as N(Y)/d(Y) in Horner form, then builds z, w and xdot through `A_combined = [Ax Bw Bu]`, so "evaluates G with the resulting w" is correct. The thesis path sets `up_sample=1` (ENT line 127), so "one RK4 step per sample" is correct. `Reduced_Gantry_State_Block.COMBO_NAMES` and `combos_of` match eq:phi in order and definition. `combinations_from_free` keeps |m_diff| under a rho-contracted bound and log-parameterises the other nine combinations, so "keeps eq:lfr_admissibility at every iterate" is correct.
+- Own algebra, checked by hand: det(I6 - D_zw Delta(Y)) = det M(Y)/det M0, from the Schur complement of the lower identity block (I + Y R M1 + Y^2 R M2 = R M(Y)). There are twelve nonzero entries, and three of them are m_h. The four lost directions are correct, including the mass transfer m_b + delta with m1, m2 - delta/2 and J_b + J_h + Lb^2 delta/4. eq:lfr_admissibility holds as an iff: after the Schur step on m_h the d terms cancel, and the minimum over Y equals (m_Sigma + m_h)(J_eff - Lb^2 m_Delta^2/(4 m_Sigma)).
+- Citations: every location appears in `citation-log.md` (garcia Sec. 2.2, 2.3, Eqs. 6, 11, Table I; toth Def. 7.2; drenth2025lpvlfr Sec. 3.1, 3.2; drenth2025thesis Sec. 2.1, Eqs. 2.1, 2.9, Sec. 2.1.1, Sec. 5.2 Eq. 5.1; ovchinnikov Def. 7). Each one supports its sentence.
+- Decisions: the D-242 / THESIS-RESULTS step 1 baselines (both at true parameters, untrained, LTI frozen mid-stroke) match II-D. Section III uses this LFR as its baseline block (03_augmentation.tex lines 191 to 212), and its notation (u_k = P u_act,k, h_base = P^T q) is consistent.
+
+## Strengths (criteria A, B, C)
+The section is one argument: roadmap, then coordinates, EOM, scheduling, LFR construction, exactness, well-posedness, combinations and compared models. Each subsection opens with its problem. Every part is in math: the ports u_act to q_act sit inside G, the identifiable combinations and the admissibility condition are displayed, and the two baselines are displayed. Nothing is overdone: long algebra sits in the appendix, and the only displayed own derivation result is eq:wellposed.
+
+## Issues
+1. (minor, E) Three sentences restate. "G depends on the physical parameters but not on Y" (line 322) restates "a constant LTI system G" (line 255) and the display. "It also yields the exact well-posedness condition" (line 348) restates eq:wellposed in the previous paragraph. "Closing the loop with (delta) gives a1 = Y qdd and a2 = Y^2 qdd" (lines 324 to 325) reads back the definitions of line 284.
+2. (minor, A/E) The paragraph at lines 339 to 348 has three points: well-posedness at every Y, the closed-form implementation, and what the LFR is still for. Its topic sentence serves only the first point.
+3. (minor, E) The packing pass misses some sentences. The opening (line 109, about 31 words), the embedding lead-in (lines 280 to 283, about 36 words: adoption, choice, reason) and lines 145 to 148 (choice plus two relative facts) each hold three facts or exceed 30 words. Line 225 also joins two reasons with their own subjects through "and".
+4. (minor, F) The where clause of eq:lfr_G defines x-tilde = col(q, qdot), but the display never uses it (it writes q, qdot). Section III defines x-tilde again at line 204.
+5. (minor, F) The LFR-purpose sentence (line 346) gives the reason as Drenth's LPV-LFR augmentation (drenth2025thesis Sec. 5.2, discrete time). The thesis does not use that method. Section III instead uses this LFR as the baseline block of Hoekstra's LFR augmentation, and D-020 says the LFR is kept "for derivation and structural analysis". The cited passage is real, but it is not this thesis's reason.
+6. (minor, D/F) The continuous-time paragraph cites Drenth twice in conflicting ways. It contrasts with "the discrete-time LPV-LFR of Drenth et al.", but G was given "in the continuous-time form of drenth2025thesis Eq. (2.1)". The stated reason ("theta enters through M, C and K as derived") rests on D-020, which is about the closed form versus solving the LFR loop online. D-018 gives only a supervisor instruction. As written, the reason is the writer's own reading, stated in the prose instead of in a todo.
+7. (minor, F) Section II uses terms before they are introduced: "not only on the stroke" (line 341) and "the parameters of the data-generating system" (line 427). Both are introduced only in Section V, and only Y_op gets the pointer.
+
+## Not issues (checked)
+- Showing all of G in the main text is justified, because the well-posedness claim uses D_zw (Derivation policy item 5).
+- Every todo sits at a paragraph end, has a candidate and a basis, and could not be resolved in this session (no Gautier PDF; notation and terminology are Dirk's decision; the D-022 vs D-204 conflict is real; no runner evaluates M_LTI yet).
+- The length of about 1.44x budget, by the writer's measurement, is under the 1.5x trigger.

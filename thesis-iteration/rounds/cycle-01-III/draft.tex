@@ -1,0 +1,683 @@
+% Page budget: 1.55 pages | Owns: augmentation topology, additional states, encoder, and closed-loop objective; per README ownership also the training coordinates of theta_base, the optimiser, checkpoint selection and the added-state initialisation (PS2); models M_U and M_PS2.
+% WRITING GUIDE
+% Purpose: Define the final augmentation architecture and explain how it is trained inside the known feedback loop.
+% Start here: Current implementation decisions D-129, D-140, D-141, D-180, D-220, D-233, and D-237 in docs/decisions.md.
+% Supporting material: Quinten's 18 September outline feedback, the Meeting-audit synthesis, Thesis-writeup/Documentation/TRAINING-DESIGN.md, and docs/writeup figures.
+% Mandatory papers: Read Hoekstra's 2025 LFR augmentation paper, the 2026 first-principles augmentation paper, the encoder-initialization paper, and Kessels' Chapter 5 before writing this section.
+% Research-plan anchor: Preserve Aspect 2's dynamic parallel augmentation objective; document the departure from open-loop training and earlier state routing.
+% Current decisions: Separate physical and additional states, keep the controller outside the model, score the complete training window without burn-in, and use one network for the physical correction and added-state update.
+% Choices to justify: Final reported routing, added-state dimension, ANN width and depth, zero initialization, encoder history, closed-loop objective, rollout length, full-window scoring, and validation horizon. Use the configuration of the reported thesis run, not a superseded routing experiment.
+% Horizon check: Treat encoder history, scored training window, joint-estimation horizon, and free-run validation horizon separately; relate candidates to relevant stable modes and test sensitivity to slower dynamics and free-integrator accumulation.
+% Implementation audit: Read scripts/gantry/gantry_interconnect_dynamic.py, gantry_dynamic/{model,config,controller,data,training}.py, and model_augmentation/fit_systems/{interconnect,closed_loop,pre_encoder}.py.
+% Reference check: Verify sources for parallel LFR augmentation, encoder initialization, closed-loop state extension, and any claimed architectural precedent against the original paper or thesis.
+% Cautions: Earlier routing plans are superseded; distinguish the truth-only hidden absorber from learned states; closed-loop fit alone does not prove autonomous plant recovery.
+% Figures: Absorber schematic, author's updated architecture, and thesis-owned common-reference loops. No residual panel or horizon figure.
+% Section is finished when: Every signal has a defined frame and timing, the RK4 boundary is explicit, and the described architecture matches the final code.
+%
+% SOURCE MAP
+% Hoekstra et al. 2025 EJC: dynamic-parallel topology, additional states, encoder-based truncated simulation.
+% Hoekstra et al. 2026 Automatica submission: extended LFR formulation, baseline-preserving model/encoder initialization, joint identification context.
+% Hoekstra et al. 2026 encoder paper: reconstructability-based W^b initialization; it does not identify W^a or test dynamic augmentation.
+% Kessels 2025 thesis: direct closed-loop rollout, controller equations, and reconstruction of the machine controller state for each window.
+% Drenth 2025 thesis: LPV-specific augmentation precedent; not the unrestricted MLP structure used here.
+% Hefny et al. 2015, Downey et al. 2017: two-stage regression and its use as an RNN initialisation before BPTT (PS2 motivation only).
+% This project: gantry specialization, residual-loop implementation, exact routing, RK4 boundary, PS2, and verification.
+%
+% MUST ESTABLISH (agreed with Dirk, 2026-10-06; step 2a of the thesis-section skill)
+% Contribution delivered: the gantry realisation of S-DP augmentation (CT self-scheduled LPV-LFR baseline
+%   inside a DT parallel model, joint estimation in the ten combinations) and its identification under
+%   feedback. Not new: the S-DP topology (Hoekstra), augmentation of self-scheduled LPV-LFR with added
+%   states (Drenth Eq. 5.2), closed-loop training with a known controller (Kessels, inspiration only).
+% III-A Augmented model
+%  1. Dynamic, not static: static augmentation adds no states (EJC Sec. 2, "flexible modes"); refitting
+%     theta_base adds none either. Argue from the general case, no absorber.
+%  1b. The augmented model is Hoekstra's LFR augmentation structure (EJC Eq. 4, 2026 Eq. 6) with a FIXED
+%     interconnection (EJC Sec. 3.2) realising S-DP; its baseline block is Section II's self-scheduled
+%     LFR with Delta(Y) = Y I6: an LFR inside an LFR, which is what the section title means.
+%     Well-posedness: acyclic graph (EJC Thm. 1, 2026 Cond. 6) plus Section II's M(Y) condition.
+%  2. Parallel, not series. LEAD REASON (Dirk, 2026-10-06): the orthogonal-by-construction method that
+%     Section IV builds on is defined for the additive (parallel) structure (Gyorok 2026 abstract, Sec. 1;
+%     D-003), so parallel lets us use that existing work. Supporting: Hoekstra gives no universal rule,
+%     the structure follows prior knowledge (2026 Sec. 1, 6.3); the baseline stays the explicit nominal
+%     term (research plan Aspect 2); parallel needs only a feedforward network for baseline-preserving
+%     init, series needs ResNets (EJC Sec. 4.3, 2026 Sec. 5.4, 6.3).
+%  3. State augmentation only, h_aug = 0: output P^T q is exact kinematics (cf. Kessels Remark 5.3). TODO reason.
+%  4. Correction on all physical rows and added states: S-DP definition (EJC), X and Y reachable (D-103);
+%     marginal-mode risk on free axes stated. TODO: why correct position rows rather than keep kinematics.
+%     Context: Hoekstra 2026 Sec. 7 (F1Tenth) detaches the free integrators and learns only the
+%     input-to-velocity map because the full state is measured; here only positions are measured.
+%     One network for f_aug and g_aug is an implementation statement (D-180), no scientific claim.
+%  5. DT correction after the CT RK4 step (input held, M(Y) per stage, affine normalisation). TODO reason
+%     versus force injection in the CT derivative.
+%  6. Unrestricted nonlinear augmentation (depends on Y through the state) versus LPV-structured
+%     augmentation (Drenth): departure from the research plan's "in LPV-LFR form". TODO reason. Acyclic
+%     routing adds no instantaneous loops; baseline well-posedness is Section II's.
+%  7. Zero output layer reproduces the baseline from the same physical initial state (Hoekstra 2026
+%     Eq. 29, D-237); the split is not unique (Sec. 5.2), handed to Section IV. Added states are memory
+%     and model order, defined up to a state transformation, no physical coordinates.
+% III-B Encoder
+%  8. Encoder needed: only positions measured; truncated windows for cost and stability (Beintema).
+%  9. W^b from the reconstructability map of a ZOH linearisation at an equilibrium (encoder paper
+%     Eqs. 15-17, 30-32), not fitted (Hoekstra 2026 Eq. 30); W^a random. Claim only better starting
+%     values and faster convergence, final accuracy comparable (encoder paper Sec. 4.4). The paper
+%     assumes a stable baseline; ours is marginally stable (free X, Y), the map exists because the
+%     positions make the linearisation observable. The paper treats co-estimating theta_base as out of
+%     scope (footnote 1); we co-estimate. Precedent for linearising at zero: encoder paper Sec. 4.2
+%     ("around the 0 point"), no reason given. TODOs: why Y = 0; disclose nominal parameters in W^b
+%     versus detuned start; why model-based rather than data-based init (candidate: cost, Sec. 4.4);
+%     Kaiming versus Xavier (todo only).
+% 10. Encoder estimates the full state incl. measured positions (SUBNET). TODO: mention Kessels Remark 5.3?
+% 11. Keep encoder history, scored window and validation horizon apart; values in Setup. The
+%     joint-estimation sensitivity horizon belongs to Section IV.
+% III-C Closed-loop identification
+% 12. Known-controller, reference-driven output-error identification, inspired by Kessels (Eqs. 5.12,
+%     5.13; Remark 5.6 open-loop attempt failed). Related to the indirect approach (Forssell and Ljung
+%     Sec. 5.2) as a linear-theory motivation, not a guarantee; direct identification is not called
+%     inherently biased. Free X and Y axes: the SUBNET consistency argument that Hoekstra inherits
+%     (2026 Sec. 5.5) assumes an incrementally exponentially output stable data-generating system
+%     (Beintema 2023 Condition 1); the open-loop gantry is not (free integrators), the loop with the
+%     stabilising controller can be. Precondition, not a proof, for our nonlinear model. Same principle
+%     as Kessels (closed-loop simulation of an unstable open-loop system), scoped to marginal stability.
+% 13. Our formulation (ours, "we"): u_hat = u + C x^c + D(y - y_hat). Derivation by subtracting the
+%     machine's controller equations, equal to the shared-r, shared-u_ff loop of the figure under a
+%     compatible controller, signals and initial state (assumption; whether the data meet it is a Setup
+%     or Results check: 4 kHz controller on recorded r - y versus recorded feedback force).
+%     Main consequence: x^c_tau = 0 per window, no controller initialisation; consistent with the
+%     encoder (model state and model controller both start on the machine's condition at tau). Contrast:
+%     Kessels' direct form needs the machine controller state (Remark 5.4). Error before tau is not
+%     carried in; the free-run validation does carry it.
+% 14. Step order from no plant feedthrough: no algebraic loop, no added delay.
+% 15. Every window sample scored (as Eq. 22); theta_base, theta_aug, eta joint, controller fixed.
+%     Joint estimation framing (Dirk, 2026-10-06): the goal is to estimate theta_base jointly, in the ten
+%     combinations. Obstacle from Jan's work: the split is not unique (2026 Sec. 5.2) and approximately
+%     initialised parameters stay near their start (EJC Sec. 4.3, 2026 Sec. 6.3). Handover: Section IV
+%     extends Jan's method with orthogonality so that the estimate of theta_base is UNIQUE (this
+%     strength, not "recovers the true parameters"). State what interpretable means: the estimated
+%     parameters keep their physical meaning; cite Gyorok 2026 Sec. 3 ("With non-unique theta_b, the
+%     baseline model could lose its physical meaning"). Operational form only; the general definition
+%     is the Introduction's (todo there). "Negation" and Kessels' definition (Sec. 5.3.1.3) belong to
+%     Section IV; his Sec. 6.2 recommendation to the Introduction gap. Do NOT mention Jan's parameter regularisation anywhere.
+%     Do NOT say explicitly that Section III's formulation is the unconstrained comparison arm; let
+%     Section IV extend it naturally.
+% Setup pattern for hyperparameters (2026 Sec. 7): honest basis per value (physical insight and
+%     trial-and-error, line-search, inherited from earlier results).
+% 16. Closed-loop fit can mask plant error; plant-domain checks and controller transfer in Results.
+% Notation: u = P u_act as in Sections II and IV; no "(eom)" shorthand; controller matrices distinct from A_c(Y).
+%
+% PROPOSED ADDITIONS (writer, sandbox cycle 01, 2026-10-09; not yet approved by Dirk; derived from the
+%   README ownership row for III and source-map rows III-C and III-D)
+% 17. III-C also owns the training coordinates of theta_base (moved from Section II-C, eq:mdelta_map),
+%     the optimiser (Adam, then an L-BFGS polish on a fixed batch of windows as in Drenth et al.) and
+%     checkpoint selection (closed-loop free run over whole validation records, scored in metres). Values
+%     stay in Experiment design. The polish acceptance meter compares against the true parameters (oracle,
+%     sources.md trap 6): todo.
+% 18. III-D PS2 (this work, motivated by Hefny 2015 two-stage regression and Downey 2017 2SR-then-BPTT):
+%     problem = zero output layer leaves the added states without influence and without gradient; S1 fits
+%     the encoder's added-state part and a temporary head to the current model's closed-loop residuals
+%     over the next M = n+1 samples; S2 fits the deployed g_aug once to frozen encoder pairs; S3 continues
+%     with the unchanged criterion. Deployed model, criterion and selection unchanged; switch rules use
+%     training records only. Added states stay latent. Models: M_U (zero start) and M_PS2.
+\section{Dynamic LPV-LFR Augmentation}\label{sec:augmentation}
+\ifdraft
+\begin{itemize}
+\item The section extends the baseline with learned dynamics and identifies the result from closed-loop records; it names its four subsections (style profile)
+\item Contribution share: the realisation on the self-scheduled gantry baseline with joint estimation of $\theta_{\mathrm{base}}$, its identification in closed loop with the known controller, and the initialisation of the added states (MUST ESTABLISH, item 18)
+\end{itemize}
+\fi
+
+This section augments the baseline of Section~\ref{sec:lfr} with learned
+dynamics and identifies the result from records measured under feedback.
+Section~\ref{sec:aug_structure} defines the augmented model,
+Section~\ref{sec:aug_encoder} the initial state of each training window,
+Section~\ref{sec:aug_closed_loop} the closed-loop identification criterion and
+its optimisation, and Section~\ref{sec:aug_ps2} the initialisation of the
+additional states.
+This work contributes the realisation on the self-scheduled gantry baseline,
+with $\theta_{\mathrm{base}}$ estimated jointly in the combinations of
+Section~\ref{sec:params}.
+It further contributes the identification in closed loop with the known
+controller and the initialisation of the additional states.
+\todo{Missing: the Introduction's contribution list does not name the added-state initialisation (PS2). Candidate: extend the second contribution with ``and a data-driven initialisation of the additional states'' (D-236, D-240: PS2 is part of the reported method).}
+\todo{VERIFY keys: \texttt{hoekstra2025lfr} = EJC 86 (2025) 101304,
+\texttt{hoekstra2026lfr} = arXiv:2602.17297 (submitted to Automatica).
+refs.bib and docs/references.md rows 46 and 130 now agree.}
+
+\subsection{Augmented model}\label{sec:aug_structure}
+\ifdraft
+\begin{itemize}
+\item If the omitted effects are dynamic, the six baseline states cannot represent them; refitting $\theta_{\mathrm{base}}$ or a static augmentation adds no states (EJC Sec.~2)
+\item The model is Hoekstra's LFR augmentation structure with a fixed interconnection realising S-DP; its baseline block is the LFR of Section~II (EJC Sec.~3, 2026 Table~1)
+\item Parallel because the orthogonal-by-construction method of Section~IV is defined for the additive structure (Gy\"or\"ok 2026); the baseline stays an explicit term
+\item State augmentation only, output map not learned (?)
+\item $f_{\mathrm{base}}$ is one RK4 step with the input held and $M(Y)$ per stage, so it stays self-scheduled; affine normalisation from the training records, unlike Hoekstra Eq.~(28)
+\item The learned correction is added to the discrete-time transition after the step, as in the S-DP form (2026 Table~1)
+\item One feedforward network with tanh hidden layers supplies $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$; plain feedforward suffices for a parallel structure (EJC Sec.~4.3)
+\item The correction acts on all physical rows, $X$ and $Y$ included; on these axes it meets no stiffness (?: why the position rows)
+\item The network depends on $Y$ through the state but has no LPV structure, unlike Drenth Eq.~(5.2) (?)
+\item The interconnection is acyclic, so it adds no algebraic loop; the baseline loop is well posed by Section~II
+\item A zero output layer reproduces the baseline from the same physical initial state (2026 Eq.~(29)); additional states have no physical coordinates
+\item The baseline/network split is not unique (2026 Sec.~5.2); interpretable means the estimated $\theta_{\mathrm{base}}$ keeps its physical meaning (Gy\"or\"ok Sec.~3); Section~IV makes the estimate unique
+\end{itemize}
+\fi
+
+If the effects that the baseline omits are dynamic, its six states cannot
+represent them.
+Refitting $\theta_{\mathrm{base}}$ adds no states.
+Neither does a static augmentation, which corrects the state update of the
+baseline without extending its state~\cite[Sec.~2]{hoekstra2025lfr}.
+The augmentation therefore needs states of its own.
+
+We use the LFR-based augmentation structure of Hoekstra et
+al.~\cite{hoekstra2025lfr,hoekstra2026lfr}, in which a fixed interconnection
+connects a baseline block and a learning
+block~\cite[Sec.~3.2]{hoekstra2025lfr}.
+The baseline block is the self-scheduled LFR of Section~\ref{sec:lfr}, so the
+augmented model is an LFR whose baseline block is itself an LFR in $Y$.
+The interconnection realises the dynamic-parallel (S-DP)
+structure~\cite[Table~1]{hoekstra2026lfr},
+\begin{equation}
+\begin{aligned}
+ \tilde x_{k+1}
+ &=f_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x_k,u_k)
+   +f_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x_k,u_k),\\
+ \bar x_{k+1}
+ &=g_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x_k,u_k),\\
+ \hat y_k&=h_{\mathrm{base}}(\tilde x_k),
+\end{aligned}
+\label{eq:aug_transition}
+\end{equation}
+where $\tilde x_k=\col(q_k,\dot q_k)\in\R^6$ is the physical state of
+Section~\ref{sec:lfr}, $\bar x_k\in\R^{n_{\bar x}}$ the additional state,
+$\hat x_k=\col(\tilde x_k,\bar x_k)$, $u_k=Pu_{\mathrm{act},k}\in\R^3$ the generalised
+force of \eqref{eq:Ptransform}, and $h_{\mathrm{base}}(\tilde x)=P^\top q$ the
+measured positions $\qact$.
+We choose the parallel interconnection because the orthogonal-by-construction
+parametrisation that Section~\ref{sec:obc} extends is defined for this
+additive structure~\cite{gyorok2026obc}.
+It also keeps the baseline as an explicit term of the state update.
+The output map is not augmented.
+\todo{Missing: reason for state augmentation only ($h_{\mathrm{aug}}=0$). Candidate: $h_{\mathrm{base}}$ is the exact kinematic map of the measured positions, the premise under which Kessels initialises positions from the output~\cite[Remark~5.3]{kessels2025ai}; an output augmentation depending on the input would also close an algebraic loop with the controller~\cite[Remark~5.1]{kessels2025ai}.}
+
+The baseline transition $f_{\mathrm{base}}$ is one fourth-order Runge-Kutta
+(RK4) step of the equations of motion \eqref{eq:eom} over the sample period
+$T_s$, with the input held over the step.
+Each stage evaluates $M(Y)$ at its own state, so $f_{\mathrm{base}}$ remains
+self-scheduled.
+As in the S-DP form, $f_{\mathrm{aug}}$ is added to the discrete-time
+transition, after the step.
+All signals are normalised with statistics of the training records,
+\begin{equation}
+ \tilde x=T_x\bigl(\col(q,\dot q)-\mu_x\bigr),\qquad
+ T_x=\operatorname{diag}(\sigma_x)^{-1},
+ \label{eq:aug_norm}
+\end{equation}
+where $\mu_x,\sigma_x\in\R^6$ are the mean and standard deviation of each
+state channel.
+The actuator forces $\uact$ and positions $\qact$ are normalised in the same
+way.
+Hoekstra et al.\ only scale the signals and take $\sigma_x$ from a simulation
+of the baseline~\cite[Sec.~5.3]{hoekstra2026lfr}.
+Here the state statistics come from the measured positions $q=P^{-\top}\qact$
+and their first differences, since no state is measured.
+
+One multilayer perceptron with tanh hidden layers and a linear output layer
+supplies both learned functions,
+\begin{equation}
+\begin{aligned}
+ \begin{bmatrix}
+  f_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x_k,u_k)\\
+  g_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x_k,u_k)
+ \end{bmatrix}
+ &=\phi_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x_k,u_k)\\
+ &=W_L\,\sigma_{L-1}(\hat x_k,u_k)+b_L,
+\end{aligned}
+ \label{eq:aug_network}
+\end{equation}
+where $\sigma_{L-1}$ is the output of the last hidden layer, $W_L$ and $b_L$
+are the weight and bias of the output layer, $\theta_{\mathrm{aug}}$ collects
+all weights and biases, and the first six rows form $f_{\mathrm{aug}}$
+(Fig.~\ref{fig:aug_structure}).
+A plain feedforward network suffices because the baseline is augmented
+additively, whereas a series structure needs a residual network to reproduce
+the baseline at initialisation~\cite[Sec.~4.3]{hoekstra2025lfr}.
+As in the dynamic-parallel structure, $f_{\mathrm{aug}}$ corrects every
+physical row~\cite[Sec.~2]{hoekstra2025lfr}, so the learned component can act
+on the $X$ and $Y$ axes.
+On these axes a correction meets no stiffness
+(\eqref{eq:damping_stiffness_matrices}), so a persistent correction
+accumulates in position.
+\todo{Missing: why the position rows are corrected rather than kept as the integrals of the velocities. Context: Hoekstra et al.\ detach the free integrators of their vehicle and learn only the input-to-velocity map, which needs measured velocities~\cite[Sec.~7]{hoekstra2026lfr}; here only positions are measured. D-103 requires only that $X$ and $Y$ are reachable.}
+The network depends on $Y$ through $\hat x$, so it can represent
+position-dependent corrections, but unlike the augmented LPV-LFR of
+Drenth~\cite[Eq.~(5.2)]{drenth2025thesis} it has no LPV structure.
+\todo{Missing: reason for an unrestricted network rather than an LPV-structured augmentation. The research plan (Aspect~2) proposed the interconnection in LPV-LFR form, and D-017 (2026-03-19) still requires a $\Delta^a(Y)$ block; no later decision supersedes it, while the code uses an unrestricted MLP. Candidate: keep the plain S-DP network of Hoekstra et al.\ so that Section~IV's construction applies to one additive term (D-003, D-222).}
+No learned function feeds the baseline block or itself within a step, so the
+interconnection graph is acyclic and adds no algebraic
+loop~\cite[Thm.~1]{hoekstra2025lfr}.
+The scheduling loop of the baseline is well posed by
+Section~\ref{sec:lfr}.
+
+\begin{figure}[t]
+ \centering
+ \resizebox{\columnwidth}{!}{\input{figures/tex/augmentation_structure}}
+ \caption{Augmented model. The physics step $f_{\mathrm{base}}$ and the
+ network $\phi_{\mathrm{aug}}$ act in parallel on $\hat x_k$;
+ $\phi_{\mathrm{aug}}$ supplies $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$,
+ and the output map is not learned ($h_{\mathrm{aug}}=0$). The encoder
+ $\psi$ sets $\hat x$ at each window start. During training, $u_k$ is the
+ closed-loop input $\hat u_k$.
+ \todo{No setpoint generator currently for the inputs. to cramped together. We could make this a two column figure.}
+ }
+ \label{fig:aug_structure}
+\end{figure}
+
+Training starts from the baseline.
+The output layer of the network is initialised at zero,
+\begin{equation}
+ W_L=0,\quad b_L=0
+ \quad\Longrightarrow\quad
+ f_{\mathrm{aug}}=0,\quad g_{\mathrm{aug}}=0,
+ \label{eq:aug_zero_init}
+\end{equation}
+so that from the same physical initial state the augmented model reproduces
+the baseline~\cite[Eq.~(29)]{hoekstra2026lfr}.
+The additional states are zero after the first step and reach the output only
+through $f_{\mathrm{aug}}$.
+They have no assigned physical meaning: an invertible transformation of
+$\bar x$, absorbed by the network, leaves the input-output behaviour
+unchanged.
+Nothing in the method ties them to a particular subsystem of the
+data-generating system.
+\todo{Missing: attribution of the all-zero output layer. It follows the authors' public dynamic-parallel code (D-237); \cite[Sec.~5.4.3]{hoekstra2026lfr} also allows a random linear part. Ask Jan which produced the reported S-DP results.}
+
+From this start, $f_{\mathrm{aug}}$ can also learn changes that a different
+$\theta_{\mathrm{base}}$ would produce, so the split between baseline and
+network is not unique~\cite[Sec.~5.2]{hoekstra2026lfr}.
+In the experiments of Hoekstra et al., approximately initialised physical
+parameters stay close to their initial values, while the network learns
+dynamics the baseline could represent~\cite[Sec.~6.3]{hoekstra2026lfr}.
+With a non-unique $\theta_{\mathrm{base}}$, the baseline can lose its physical
+meaning~\cite[Sec.~3]{gyorok2026obc}.
+Here, the estimated combinations $\theta_{\mathrm{base}}$ are interpretable if
+they keep that meaning, which requires a unique estimate.
+Section~\ref{sec:obc} extends the method so that this estimate is unique.
+
+\subsection{Encoder and initial state}\label{sec:aug_encoder}
+\ifdraft
+\begin{itemize}
+\item Each window starts from a state of which only the positions are measured; an encoder estimates it from the input-output history (Beintema)
+\item Windows starting from an estimated state keep the cost independent of the record length and stabilise the optimisation (Beintema Sec.~3.1)
+\item The encoder estimates all states, the measured positions included (?: Kessels Remark~5.3)
+\item The encoder is a linear map plus a nonlinear correction (encoder paper Eq.~(8))
+\item $W^b$ starts from the reconstructability map of the baseline linearised at rest, $Y=0$ (encoder paper Eqs.~(15) to (17), (30) to (32)); computed, not fitted as in 2026 Eq.~(30)
+\item The paper assumes a stable baseline; ours is marginally stable, but the positions make the linearisation observable
+\item The initialisation improves starting values and convergence speed, not final accuracy (encoder paper Sec.~4.4)
+\item $W^a$ starts from a Xavier draw, as in 2026 Eq.~(31) (resolved: thesis runs set \texttt{xavier\_uniform\_gain1}, D-239)
+\item Open: why $Y=0$, nominal parameters in $W^b$, model-based versus data-based initialisation (?)
+\end{itemize}
+\fi
+
+Each training window starts from a state of which only the positions are
+measured.
+Following Beintema et al.~\cite{beintema2023subnet}, an encoder estimates this
+state from the input and output history,
+\begin{equation}
+\begin{aligned}
+ \hat x_{\tau|\tau}
+ &=\psi(\theta_{\mathrm{enc}},\xi_\tau),\\
+ \xi_\tau&=\col\bigl(y_{\tau-n},\dots,y_\tau,\,u_{\tau-n},\dots,u_\tau\bigr),
+\end{aligned}
+ \label{eq:aug_encoder}
+\end{equation}
+where $\tau$ is the window start, $n$ the encoder history,
+$\theta_{\mathrm{enc}}$ the encoder parameters, and $y=\qact$ and $u$ the
+recorded output and input.
+Simulating short windows from estimated states keeps the cost of a gradient
+step independent of the record length and makes the optimisation more
+stable~\cite[Sec.~3]{beintema2023subnet}.
+The encoder estimates all states, the measured positions included.
+\todo{Missing: whether to mention the alternative of initialising the positions from the measurement~\cite[Remark~5.3]{kessels2025ai}.}
+\todo{Align the figure's past-only encoder-history labels with
+\eqref{eq:aug_encoder}, which also uses the current sample.}
+
+The encoder is a linear map with a nonlinear
+correction~\cite[Eq.~(8)]{hoekstra2026encoder},
+\begin{equation}
+ \psi(\theta_{\mathrm{enc}},\xi_\tau)
+ =\begin{bmatrix}W^b\\ W^a\end{bmatrix}\xi_\tau+\tilde\psi(\xi_\tau),
+ \label{eq:aug_enc_lin}
+\end{equation}
+where the rows $W^b$ and $W^a$ give the physical and the additional states,
+and $\tilde\psi$ is a multilayer perceptron whose output layer starts at zero.
+$W^a$ has no baseline counterpart and starts from a Xavier draw, as for the
+additional-state encoder of~\cite[Eq.~(31)]{hoekstra2026lfr}.
+\todo{VERIFY bib: \texttt{hoekstra2026encoder} = arXiv:2602.13108v1
+(13 Feb 2026), Hoekstra, Gy\"or\"ok, T\'oth, Schoukens; matches PDF p.~1.
+Check for a published (IFAC) version before submission.}
+
+The physical rows start from the baseline, following the model-based
+initialisation of Hoekstra et al.~\cite[Sec.~3.1]{hoekstra2026encoder}.
+For zero input, every rest state with $\Theta=0$ is an equilibrium of
+\eqref{eq:eom}, because
+$K$ in \eqref{eq:damping_stiffness_matrices} vanishes on $X$ and $Y$.
+We linearise the baseline at rest at $Y=0$ and discretise it by zero-order
+hold over $T_s$, which gives $(A_d,B_d,C_d)$ in normalised coordinates.
+The reconstructability map of this model~\cite[Eqs.~(15) to (17)]{hoekstra2026encoder}
+gives
+\begin{equation}
+ W^b=\begin{bmatrix}
+  A_d^nO_n^{+} & \;r_n-A_d^nO_n^{+}T_n
+ \end{bmatrix},
+ \label{eq:aug_wb}
+\end{equation}
+where $O_n$ is the observability matrix of $(A_d,C_d)$ over $n+1$ samples,
+$T_n$ the Toeplitz matrix of its Markov parameters, $r_n$ the input-to-state
+map over the same samples, and the two blocks act on the output and input
+parts of $\xi_\tau$.
+The encoder paper assumes a stable baseline.
+Ours is marginally stable, but the measured positions make $(A_d,C_d)$
+observable, so $O_n$ has full column rank and the map exists.
+Unlike~\cite[Eq.~(30)]{hoekstra2026lfr}, which fits the baseline encoder to
+simulated baseline states, we compute the map directly.
+The model-based initialisation gives better starting values and faster
+convergence than a random encoder, at comparable final
+accuracy~\cite[Sec.~4.4]{hoekstra2026encoder}.
+The encoder is trained jointly with the model, so the linearisation only sets
+its starting value.
+\todo{Missing: why linearise at $Y=0$. The encoder paper also linearises ``around the 0 point''~\cite[Sec.~4.2]{hoekstra2026encoder} but gives no reason.}
+\todo{Missing: disclosure. $W^b$ is built from the nominal parameters (\texttt{gantry\_linearize\_and\_discretize} in \texttt{GD/model.py::build\_model}), which in simulation equal the true ones, also when $\theta_{\mathrm{base}}$ starts detuned; the encoder paper leaves co-estimation out of scope~\cite[footnote~1]{hoekstra2026encoder}. Candidate: state it as prior information of the grey-box model and weigh it in the black-box comparison of Section~\ref{sec:setup} (D-243 gives the black box no physical knowledge).}
+\todo{Missing: why the model-based rather than the data-based initialisation~\cite[Sec.~3.2]{hoekstra2026encoder}. Candidate: negligible computation~\cite[Sec.~4.4]{hoekstra2026encoder}.}
+
+\subsection{Closed-loop identification}\label{sec:aug_closed_loop}
+\ifdraft
+\begin{itemize}
+\item The records are measured under feedback and the model must predict the machine under feedback, so we fit the closed-loop response, not a rollout driven by the recorded input (2026 Eq.~(22))
+\item Inspired by Kessels (Eqs.~(5.12), (5.13); Remark~5.6); for linear systems the indirect approach, where an output-error criterion remains consistent (Forssell and Ljung); a motivation, not a guarantee
+\item $X$ and $Y$ are free, so the open-loop gantry violates the stability condition behind SUBNET consistency (Beintema Cond.~1); the loop with the controller can satisfy it
+\item Both loops share $r$, $u^{\mathrm{ff}}$ and the controller; subtracting them gives our residual form, exact under a compatible controller, signals and initial state (check in Setup)
+\item $x^{c}_\tau=0$ is the true controller state that Kessels' Remark~5.4 supplies, obtained without reading or reconstructing it; it matches the encoder
+\item No plant feedthrough fixes the step order: no algebraic loop, no added delay
+\item $\theta_{\mathrm{base}}$, $\theta_{\mathrm{aug}}$ and $\theta_{\mathrm{enc}}$ minimise the closed-loop output error over every window sample, controller fixed; the window spans the closed-loop memory (D-220)
+\item Moved from Section~II-C: state and justify the training coordinates of $\theta_{\mathrm{base}}$ here. Nine positive combinations in logarithmic coordinates; the signed $m_\Delta$ through \eqref{eq:mdelta_map}. Justification: every $\xi_\Delta$ satisfies \eqref{eq:lfr_admissibility}, so $M(Y)\succ0$ and the LFR stays well posed at every optimiser iterate without clamp or penalty (D-229); constraint by parameterization as in \cite{sutanto2020encoding}; it guarantees positive-definite inertia, not positive raw masses (positive $m_1,m_2$ need $|m_\Delta|<m_\Sigma-m_b$, with $m_b$ unidentifiable); $\eta_0$, $s$ in Appendix~\ref{app:lfr-wellposed}, $\rho$ in Setup. Notation clash resolved: encoder parameters are $\theta_{\mathrm{enc}}$ and controller states $x^{\mathrm{fb}}$, so $\eta_0$, $s$, $\xi_\Delta$ are free
+\item Adam on minibatches of windows, then an L-BFGS polish on one fixed set of windows, kept only if the validation score improves (Drenth; D-171, D-174)
+\item The checkpoint with the lowest closed-loop free-run RMS on the validation records is selected; the free run carries model error over the whole record (D-171, D-172, D-198)
+\item The horizons are separate quantities with values in Setup; a closed-loop fit can hide plant error (Results)
+\item Model names: $\mathcal M_{\mathrm{U}}$ is this model and criterion from the zero start (?: notation)
+\end{itemize}
+\fi
+
+The records are measured under feedback, and the model must predict the
+machine under feedback: its response to a reference, a feedforward and a
+known controller.
+We therefore identify the model from this closed-loop response, rather than
+from a simulation driven by the recorded input as
+in~\cite[Eq.~(22)]{hoekstra2026lfr}.
+Kessels trains augmented models in this way, simulating each window in closed
+loop with the known controller~\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}.
+He also reports that identifying the open-loop model from his closed-loop data
+failed~\cite[Remark~5.6]{kessels2025ai}.
+For linear systems, fitting the closed loop from the reference with a known
+controller is the indirect approach to closed-loop
+identification~\cite[Sec.~5.2]{forssell1999revisited}.
+The reference is uncorrelated with the noise, so an output-error criterion
+remains consistent under the conditions given there.
+For our nonlinear model, this is a motivation, not a guarantee.
+
+The free axes of the baseline give a second reason.
+$X$ and $Y$ have no stiffness in \eqref{eq:damping_stiffness_matrices}, so the
+open-loop gantry is marginally stable:
+a difference in initial velocity leaves a permanent position offset.
+The consistency of the identification method~\cite[Sec.~5.5]{hoekstra2026lfr}
+rests on that of SUBNET, which assumes an incrementally exponentially output
+stable data-generating system~\cite[Cond.~1]{beintema2023subnet}.
+The open-loop gantry does not satisfy this condition, whereas the loop with
+the stabilising controller can.
+Kessels uses the same principle to update models of systems that are unstable
+in open loop~\cite[Ch.~5]{kessels2025ai}.
+For our nonlinear model, this makes the condition attainable but does not
+prove consistency.
+\todo{Missing: evidence on the thesis data that open-loop rollouts accumulate position error on $X$ and $Y$; measure and report in Results (THESIS-RESULTS Sec.~5, ``Section III-C evidence'').}
+
+Both loops are driven by the same reference $r$ and feedforward
+$u^{\mathrm{ff}}$ through the same controller, and differ only in the output
+they feed back (Fig.~\ref{fig:aug_closed_loop}).
+The controller of each record is known, linear and time invariant, with
+state-space matrices $(A_{\mathrm{fb}},B_{\mathrm{fb}},C_{\mathrm{fb}},D_{\mathrm{fb}})$
+mapping the position error in actuator coordinates to actuator forces.
+With controller state $x^{\mathrm{fb}}$ on the machine and
+$\hat x^{\mathrm{fb}}$ in the model, the loops are
+\begin{equation}
+\begin{aligned}
+ x^{\mathrm{fb}}_{k+1}&=A_{\mathrm{fb}}x^{\mathrm{fb}}_k+B_{\mathrm{fb}}(r_k-y_k),\\
+ u_{\mathrm{act},k}&=C_{\mathrm{fb}}x^{\mathrm{fb}}_k+D_{\mathrm{fb}}(r_k-y_k)+u^{\mathrm{ff}}_k,\\
+ \hat x^{\mathrm{fb}}_{k+1}&=A_{\mathrm{fb}}\hat x^{\mathrm{fb}}_k+B_{\mathrm{fb}}(r_k-\hat y_k),\\
+ \hat u_{\mathrm{act},k}&=C_{\mathrm{fb}}\hat x^{\mathrm{fb}}_k+D_{\mathrm{fb}}(r_k-\hat y_k)+u^{\mathrm{ff}}_k.
+\end{aligned}
+\label{eq:aug_direct_loop}
+\end{equation}
+We implement the model loop by subtracting the machine's equations from the
+model's.
+This removes $r$ and $u^{\mathrm{ff}}$ and gives
+\begin{equation}
+\begin{aligned}
+ x^{c}_{k+1}&=A_{\mathrm{fb}}x^{c}_k+B_{\mathrm{fb}}(y_k-\hat y_k),\qquad x^{c}_\tau=0,\\
+ \hat u_{\mathrm{act},k}&=u_{\mathrm{act},k}+C_{\mathrm{fb}}x^{c}_k+D_{\mathrm{fb}}(y_k-\hat y_k),
+\end{aligned}
+\label{eq:aug_residual_loop}
+\end{equation}
+where $x^{c}=\hat x^{\mathrm{fb}}-x^{\mathrm{fb}}$.
+The model thus receives the recorded input plus the controller's response to
+its own output error, and $\hat u_k=P\hat u_{\mathrm{act},k}$ replaces $u_k$
+in \eqref{eq:aug_transition}.
+The two forms are equal when the recorded input was produced by this
+controller from the same output samples and initial state.
+\todo{Check for Setup: the training loop uses the controller re-discretised at the model rate, while the records were generated at a higher rate. Run the re-discretised controller on the recorded $r-y$ and compare its feedback force with the recorded one. A rollout with $\hat y=y$ gives $\hat u=u$ by construction and checks nothing.}
+
+\begin{figure}[t]
+ \centering
+ \includegraphics[width=\columnwidth]{closed_loop_same_reference.pdf}
+ \caption{Recorded plant loop (top) and augmented-model loop (bottom),
+ driven by one shared reference $r_k$ and feedforward $u_k^{\mathrm{ff}}$,
+ with the same feedback controller. The model output is evaluated
+ before the input advances its state to the next sample.}
+ \label{fig:aug_closed_loop}
+\end{figure}
+
+Because $x^{c}$ is a difference of controller states, $x^{c}_\tau=0$ places
+the model's controller in the machine's controller state,
+$\hat x^{\mathrm{fb}}_\tau=x^{\mathrm{fb}}_\tau$, just as the encoder places
+the model state on the recorded trajectory.
+This is the initialisation that Kessels obtains by reading the machine's
+controller state or reconstructing it from the reference, the output and the
+controller~\cite[Remark~5.4]{kessels2025ai}.
+The residual form needs neither.
+Model error made before $\tau$ is not carried into the window.
+The augmented model has no feedthrough, so each sample is evaluated in a fixed
+order: $\hat y_k$ from $\tilde x_k$, then $\hat u_{\mathrm{act},k}$ from
+\eqref{eq:aug_residual_loop}, then the model and controller states advance.
+The controller feedthrough $D_{\mathrm{fb}}$ therefore closes no algebraic
+loop, and the loop adds no delay.
+\todo{Resolve in docs: D-142 states that $x^c=0$ \emph{is} Kessels' Remark~5.4, while \texttt{FS/closed\_loop.py::closed\_loop\_rollout} says it is not. The text above takes the reading that both hold: $x^c_\tau=0$ yields the true controller state Remark~5.4 supplies, without its reconstruction. Candidate: amend the code comment.}
+
+The physical parameters are trained in coordinates that keep the baseline
+well posed.
+The nine positive combinations of \eqref{eq:phi} are trained as logarithms.
+The signed $m_\Delta$ is trained through
+\begin{equation}
+  m_\Delta=\rho\,\frac{2}{L_b}\sqrt{m_\Sigma J_{\mathrm{eff}}}\,\tanh(\eta_0+s\,\xi_\Delta),
+  \label{eq:mdelta_map}
+\end{equation}
+where $\xi_\Delta\in\R$ is the trained coordinate, $\rho<1$ a margin, and
+$\eta_0$ and $s$ fix the start and the local scale
+(Appendix~\ref{app:lfr-wellposed}).
+Every $\xi_\Delta$ satisfies \eqref{eq:lfr_admissibility}, so $M(Y)\succ0$
+and the LFR stays well posed at every iterate without a clamp or a penalty.
+As in~\cite{sutanto2020encoding}, the constraint is enforced by the
+parametrisation.
+The map guarantees positive-definite inertia, not positive raw masses.
+\todo{VERIFY citation: \cite{sutanto2020encoding} has no row in docs/references.md and its passage was not read in this cycle (README source map II-C).}
+
+Over the window starts $\mathcal T$ and the window length $n_f$, we identify
+the model as
+\begin{equation}
+\begin{aligned}
+ \hat\vartheta&=\arg\min_{\vartheta}V(\vartheta),\\
+ V(\vartheta)&=\frac{1}{|\mathcal T|\,n_f\,n_y}
+ \sum_{\tau\in\mathcal T}\sum_{\ell=0}^{n_f-1}
+ \norm{y_{\tau+\ell}-\hat y_{\tau+\ell|\tau}}_2^2,\\
+ &\text{s.t.}\quad \hat x_{\tau|\tau}=\psi(\theta_{\mathrm{enc}},\xi_\tau),\quad x^c_\tau=0,\\
+ &\phantom{\text{s.t.}\quad}\text{\eqref{eq:aug_transition} with $u=\hat u$, and \eqref{eq:aug_residual_loop}},
+\end{aligned}
+\label{eq:aug_loss}
+\end{equation}
+where $\vartheta=(\theta_{\mathrm{base}},\theta_{\mathrm{aug}},\theta_{\mathrm{enc}})$,
+$\theta_{\mathrm{base}}$ enters through the coordinates above, $n_y=3$, the
+outputs are normalised, and $\hat y_{\tau+\ell|\tau}$ is the output $\ell$
+samples after $\tau$ simulated from $\hat x_{\tau|\tau}$.
+As in~\cite[Eq.~(22)]{hoekstra2026lfr}, every sample of a window is scored.
+Both initial conditions are set by the window start, so no sample needs to be
+discarded as a transient.
+$\theta_{\mathrm{base}}$ is estimated jointly with the network and the
+encoder, while the controller stays fixed.
+Kessels' criterion, in contrast, leaves the first-principles parameters
+fixed~\cite[Eq.~(5.12)]{kessels2025ai}.
+Since $x^c$ restarts at every window, $n_fT_s$ must span the time a residual
+force stays visible in the closed-loop output.
+The poles of the loop with the controller bound that time.
+\todo{Missing: the window bound is computed from the linearised truth with the controller (D-220, option A), i.e.\ from model matrices of the data-generating system. Candidate: state in Section~\ref{sec:setup} that the value is derived from the loop poles and confirmed by the measured closed-loop FRF (option B), not tuned.}
+
+As in Drenth et al.~\cite{drenth2025lpvlfr}, the criterion is minimised with
+Adam and then refined with L-BFGS.
+Adam uses minibatches of windows.
+L-BFGS runs a fixed number of iterations with a strong-Wolfe line search on
+one fixed set of windows.
+Unlike there, L-BFGS runs unconstrained, since \eqref{eq:mdelta_map} already
+keeps every iterate admissible.
+The model that is reported is selected on the validation records by a
+closed-loop free run: from $\hat x_{k_0|k_0}$ and $x^c_{k_0}=0$, each record
+$i$ is simulated through \eqref{eq:aug_transition} and
+\eqref{eq:aug_residual_loop} to its end, and scored by
+\begin{equation}
+\begin{aligned}
+ J_{\mathrm{val}}
+ &=\frac{\sum_i N_i\,e_i}{\sum_i N_i},\\
+ e_i&=\Bigl(\frac{1}{(N_i-k_0)\,n_y}\sum_{k=k_0}^{N_i-1}
+ \norm{y_k-\hat y_{k|k_0}}_2^2\Bigr)^{1/2},
+\end{aligned}
+ \label{eq:aug_val}
+\end{equation}
+where $N_i$ is the record length, $k_0=n$ the first sample with a complete
+encoder history, and $y$ is in metres.
+Unlike a training window, the free run carries model error over the whole
+record.
+During Adam, the checkpoint with the lowest $J_{\mathrm{val}}$ is kept.
+The polished parameters replace it only if they lower $J_{\mathrm{val}}$ and
+no monitored parameter meter regresses.
+The encoder history $n$, the window length $n_f$ and the free-run horizon are
+separate quantities, whose values are given in Section~\ref{sec:setup}.
+\todo{Missing: the polish acceptance meter \texttt{combo\_err} compares the combinations with the true parameters (\texttt{GD/training.py::\_gantry\_meters}), an oracle inside training. Candidate: drop that meter from acceptance, or state it as a simulation-only safeguard.}
+
+We call the model \eqref{eq:aug_transition} with encoder
+\eqref{eq:aug_encoder}, started from \eqref{eq:aug_zero_init} and identified
+by \eqref{eq:aug_loss}, $\mathcal M_{\mathrm{U}}$.
+A good closed-loop fit does not by itself show that the model is correct in
+open loop, because the controller acts on the output error and can mask plant
+error.
+Section~\ref{sec:results} therefore also examines the model outside the
+training loop.
+\todo{Missing: model-name notation. The README writes $M_{\mathrm{U}}$, which clashes with the inertia matrix $M(Y)$. Candidate: $\mathcal M_{\mathrm{U}}$, $\mathcal M_{\mathrm{PS2}}$, $\mathcal M_{\mathrm{OBC}}$ (notation is Dirk's decision).}
+
+\subsection{Initialisation of the additional states}\label{sec:aug_ps2}
+\ifdraft
+\begin{itemize}
+\item From \eqref{eq:aug_zero_init}, every path from $\bar x$ to $\hat y$ passes through $W_L=0$: $W^a$ and the $g_{\mathrm{aug}}$ rows of $W_L$ start with zero gradient of $V$ (this work, PS2-METHOD Sec.~2.2)
+\item $W^b$ gives the physical states a meaning from the baseline; no baseline exists for $\bar x$, so we give them one from data, before they influence the output (this work, D-236)
+\item S1: a temporary head and the encoder's additional-state part regress the current model's closed-loop residuals over the next $M=n+1$ samples (this work; motivated by Hefny S1)
+\item S2: once, the deployed $g_{\mathrm{aug}}$ is fitted to frozen encoder pairs, one step (this work; motivated by Hefny S2 and Downey Sec.~4.2)
+\item S3: the head is discarded and training continues with $V$; model, criterion and selection unchanged (code, D-236)
+\item Phase switches use training records only; a failed screen skips S2; thresholds in Setup (code, PS2-METHOD Sec.~4.5)
+\item Limit: the added states stay latent; one-step fit does not guarantee multi-step propagation (PS2-METHOD Sec.~6.2.1)
+\item Model name: $\mathcal M_{\mathrm{PS2}}$ (?: notation)
+\end{itemize}
+\fi
+
+The zero output layer of \eqref{eq:aug_zero_init} leaves the additional states
+without influence and without a learning signal.
+Every path from $\bar x$ to $\hat y$ passes through $W_L$, so at the start
+the gradient of $V$ is zero with respect to $W^a$ and to the rows of $W_L$
+that produce $g_{\mathrm{aug}}$.
+These parameters receive a gradient only once the rows producing
+$f_{\mathrm{aug}}$ depend on $\bar x$, that is, through products of weights
+that start at zero.
+The encoder gives the physical states a meaning from the baseline through
+$W^b$.
+No baseline exists for $\bar x$, so we propose to give the additional states a
+meaning from data before they reach the output.
+The procedure, PS2, has two supervised stages during the first updates of the
+training and changes only the starting values of $\theta_{\mathrm{enc}}$ and
+$\theta_{\mathrm{aug}}$.
+
+The first stage (S1) makes the encoded additional states predictive of what
+the current model gets wrong.
+For a window start $\tau$, the target is the closed-loop output residual of
+the current model over the next $M=n+1$ samples, normalised by its root mean
+square $\sigma_e$ over the minibatch $\mathcal B$,
+\begin{equation}
+\begin{aligned}
+ e_\tau&=\sigma_e^{-1}\col\bigl(y_{\tau+\ell}-\hat y_{\tau+\ell|\tau}\bigr)_{\ell=0}^{M-1},\\
+ \min_{\phi,\,\theta_{\mathrm{enc}}^{a}}&\;
+ \frac{1}{|\mathcal B|\,M\,n_y}\sum_{\tau\in\mathcal B}
+ \norm{h_\phi\bigl(\psi_a(\theta_{\mathrm{enc}},\xi_\tau)\bigr)-e_\tau}_2^2,
+\end{aligned}
+\label{eq:ps2_s1}
+\end{equation}
+where $\hat y_{\tau+\ell|\tau}$ is predicted as in \eqref{eq:aug_loss} and
+held fixed, $\psi_a\in\R^{n_{\bar x}}$ are the additional-state rows of the
+encoder, $\theta_{\mathrm{enc}}^{a}$ are $W^a$ and the rows of the output
+layer of $\tilde\psi$ that produce $\psi_a$, and
+$h_\phi:\R^{n_{\bar x}}\to\R^{Mn_y}$ is a temporary head with one tanh hidden
+layer and an output layer that starts at zero.
+One S1 step with its own Adam optimiser follows every update of $V$, on
+windows of the training records except a held-out calibration subset.
+S1 ends when the fraction of $\norm{e}^2$ that $h_\phi$ leaves unexplained on
+the calibration windows stops decreasing, or after a fixed number of updates.
+
+The second stage (S2) makes the deployed transition propagate these states.
+Once, at the end of S1, encoder pairs one sample apart are drawn and frozen,
+and the network is fitted by
+\begin{equation}
+ \min_{\theta_{\mathrm{aug}}}\;
+ \sum_{k}\norm{g_{\mathrm{aug}}\bigl(\theta_{\mathrm{aug}},\hat x_{k|k},u_k\bigr)
+ -\psi_a(\theta_{\mathrm{enc}},\xi_{k+1})}_2^2,
+ \label{eq:ps2_s2}
+\end{equation}
+with $\hat x_{k|k}=\psi(\theta_{\mathrm{enc}},\xi_k)$, normalised by the
+variance of the targets.
+The rows of $W_L$ that produce $f_{\mathrm{aug}}$ receive no gradient from
+\eqref{eq:ps2_s2} and stay unchanged.
+The hidden layers, shared with $f_{\mathrm{aug}}$, do move.
+S2 runs until its residual on calibration pairs stops decreasing and keeps
+the weights with the lowest residual.
+If at the end of S1 the head still leaves most of $\norm{e}^2$ unexplained,
+S2 is skipped.
+The switching rules use training records only.
+Their thresholds are listed in Section~\ref{sec:setup}.
+
+After S2 the head is discarded (S3), and training continues with $V$,
+the optimiser and the selection of Section~\ref{sec:aug_closed_loop}.
+The deployed model, the criterion and the selection are those of
+$\mathcal M_{\mathrm{U}}$.
+We call the model obtained with PS2 $\mathcal M_{\mathrm{PS2}}$.
+S1 follows the first stage of the two-stage regression of Hefny et al., which
+regresses a predictive state on the history~\cite[Sec.~3]{hefny2015supervised}.
+Unlike there, the target is the residual of the current closed-loop model and
+the state is the encoder output.
+S2 replaces their linear operator between stage-one outputs by a one-step fit
+of the nonlinear $g_{\mathrm{aug}}$.
+Initialising by two-stage regression and then refining by backpropagation
+through time follows Downey et al.~\cite[Sec.~4.2]{downey2017psrnn}.
+Neither stage ties $\bar x$ to a physical subsystem.
+A one-step fit also does not guarantee that $g_{\mathrm{aug}}$ propagates the
+states over many steps.
+S3 refines the transition through $V$.
+\todo{Missing: the S2 weight selection in \texttt{FS/ps2\_opening.py::PS2Opening.\_fit\_map} keeps the final weights when no calibration check improves on the start (PS2-METHOD Sec.~4.3, known defect). Candidate: state ``keeps the best weights, the start included'' after the code is fixed, or report the S2 residual of each run in Results.}

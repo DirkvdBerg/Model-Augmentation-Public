@@ -1,0 +1,463 @@
+% Page budget: 1.35 pages | Owns: gantry coordinates, first-principles equations, scheduling, LPV-LFR realisation, and physical parameterisation.
+% WRITING GUIDE
+% Purpose: Define the physical coordinates and derive the exact continuous-time LPV-LFR baseline used by every later section.
+% Primary reference for Section II-B and its appendix material:
+% docs/Thesis-documentation/LPV_LFR_Stepwise_Derivation/main.tex
+% (the version shared with Jasper, including the G-Delta interconnection figure).
+% Follow its signal definitions, direct mass-equation construction, block partitioning,
+% loop-closing verification, and allocation of detailed algebra to the appendix.
+% Supporting checks/details only: LPV_LFR_internal_loop_Well_posedness,
+% LPV_Mass_invertible, LPV_LFR_Justification_Drenth, LPV_LFR_Derivation,
+% and docs/fp-model-structure.md. Where their presentation differs, follow
+% LPV_LFR_Stepwise_Derivation for Section II-B.
+% Sources: README "Source map per subsection", rows II-A, II-B, II-C and II Frozen-LTI baseline; mandatory papers and the reference gate as in the README.
+% Research-plan anchor: Preserve Aspect 1's explicit position dependence; update the original discretisation wording to the final method.
+% Current decisions: Continuous-time physics, endogenous scheduler Y, fixed-step RK4, and identifiable parameter combinations.
+% Choices to justify: Coordinate frame, Y as scheduler, continuous-time formulation, RK4 step and substeps, full six-channel LFR realization, and reduced physical parameterization. Give the physical or numerical reason for each choice, not only its definition.
+% Cautions: The final pipeline uses the full six-channel scheduling loop, not the experimental six-to-four SVD reduction. Resolve the supervisor comment about dual-gantry terminology; do not copy unverified bibliography entries.
+% Planned figures: Physical coordinate schematic and compact interconnection between G and Delta(Y).
+% Section is finished when: The LFR collapses to the original model, well-posedness assumptions are stated, and notation matches Section 03.
+%
+% LPV-LFR DERIVATION ROADMAP
+% 1. Define q=[X,Theta,Y]^T, the force transformation, measured outputs, assumptions, and the admissible range of Y.
+% 2. State M(Y)qdd+Cqd+Kq=f and expose the structural dependence M(Y)=M0+Y M1+Y^2 M2.
+% 3. Construct the LFR directly from the polynomial mass equation:
+%       a1=Y qdd, a2=Y a1, M0 qdd + M1 a1 + M2 a2 = f_net,
+%       z=[qdd; a1], w=[a1; a2] (stepwise latent names; qdd is not renamed to a).
+% 4. Collect w=Delta(Y)z with Delta(Y)=Y I6 and give the constant block-level G realization with all signal dimensions.
+% 5. Eliminate w and z in a short exactness check to recover the original equation of motion.
+% 6. State the well-posedness condition over the complete scheduling range and relate it to invertibility of M(Y); place the longer proof outside the main text.
+% 7. Only after the conceptual construction, mention that the implementation
+%    evaluates the resulting rational expression in Horner form. Put
+%    M(Y)^(-1)=[N0+Y N1+Y^2 N2]/d(Y), the explicit Ni entries, and the
+%    determinant coefficients in the appendix or technical supplement.
+% 8. Keep this derivation continuous-time; Section III-A owns the RK4 scheme, Section V only its step size.
+%
+% DERIVATION WARNING
+% Do not start from v=M(Y)^(-1)f_net. Follow LPV_LFR_Stepwise_Derivation:
+% construct the repeated scheduling loop from qdd, a1=Y qdd, a2=Y a1 with
+% z=[qdd; a1], w=[a1; a2], then verify it by closing the loop. Older inverse-first notes
+% may be used only as supporting algebra. Verify terminology against the
+% primary literature by Drenth and Hoekstra.
+% MUST ESTABLISH (II-B after eq:delta, agreed 2026-10-06):
+% 1. G is a constant LTI system in Drenth Eq. (6) form; its first block row is the state equation.
+% 2. Closing the algebraic loop gives back eq:eom exactly.
+% 3. Well posed iff M(Y) nonsingular, true for every Y; hence closed-form M(Y)^{-1}=N(Y)/d(Y)
+%    (N_i, d(Y) and Horner evaluation in the appendix). The reduced-parameter bound stays in II-C.
+% MUST ESTABLISH (II-C, agreed 2026-10-07):
+% 1. The fourteen raw parameters enter M0,M1,M2,C,K only through theta_base (eq:phi); this work's own.
+% 2. Argument in the main text, ordered toward the conclusion: input-output behaviour fixes the matrices;
+%    twelve entries, three equal m_h, ten independent; so exactly ten combinations are structurally
+%    identifiable; only then named theta_base (eq:phi). Model-only (no data), no new symbols, no
+%    Proposition/proof environment (agreed 2026-10-07).
+% 3. Four lost directions in one sentence; estimates reported in theta_base.
+% 4. Positive theta_base does not give M(Y)>0; that holds iff eq:lfr_admissibility (proof in app:lfr-wellposed).
+% 5. One sentence: training keeps eq:lfr_admissibility at every iterate. The m_Delta map (eq:mdelta_map)
+%    and its justification are stated in Section III-C (agreed 2026-10-07), not here.
+% Compact form agreed 2026-10-07: no separate definition paragraph, no null-direction display.
+% Moved to Section V as bullets: rho value, combination-error metric with the m_Delta normalisation, raw vs
+% reduced coordinates per arm, practical identifiability on the records. Appendix app:params keeps the table only.
+% Main text: assumptions, polynomial dependence, direct LFR construction, compact G, exactness, well-posedness statement, and one implementation sentence.
+% Appendix/supplement: expanded M_i and N_i matrices, determinant polynomial, longer invertibility/well-posedness proof, and symbolic verification.
+%
+% PROPOSED MUST ESTABLISH (cycle 15; inferred from the README ownership row II and source-map rows II-A and
+%   II Frozen-LTI baseline; not yet agreed with Dirk)
+% II-A 1. The baseline adapts Garcia's lumped model (Sec. 2.2) in the coordinates (X, Theta, Y) with the transforms
+%         eq:Ptransform; L_b fixed because q depends on it through P.
+% II-A 2. Small-angle and no-Coriolis simplifications as in Garcia Sec. 2.3; the one adaptation is dropping the
+%         Coulomb terms of Garcia Eq. (6), with the section's one pointer to Section V (D-204).
+% II-A 3. M(Y) > 0 for every Y for positive masses and inertias (app:lfr-wellposed), stated once.
+% II-D 1. M_LPV and M_LTI named with their displays, input u_act and output q_act; neither is trained; purpose in
+%         THESIS-RESULTS step 1 terms (a demonstration).
+% CORRECTIONS to the agreed blocks (cycle 15): II-B item 1 "Drenth Eq. (6)": that equation is discrete time and names
+%   the LTI part M (README source map II-B), so G follows the continuous-time form of drenth2025thesis Sec. 2.1
+%   (citation-log rows 58, 73). II-B item 3 "true for every Y": true for positive raw masses and inertias
+%   (app:lfr-wellposed), and for theta_base only under eq:lfr_admissibility (II-C item 4); the draft states both.
+%   II-B item 3 "N(Y)/d(Y)": d already names the payload offset, so the draft writes adj M(Y) and det M(Y).
+%   II-C item 5 "Section III-C": the identification problem is now Section III-D (sec:aug_closed_loop).
+% SOURCE CONFLICTS: D-022 (baseline = Garcia's equations as derived) argues against omitting Garcia's Coulomb
+%   term; D-204 (friction in the truth only) governs, as the README row says. The code default Y_op = 0.3 m of
+%   Gantry_State_Block differs from THESIS-RESULTS step 1 "mid-stroke" (Y = 0 for the symmetric +-0.40 m stroke,
+%   DATA-DESIGN Sec. 1); left as a todo in II-D. D-006 (stage coordinates in Python) is superseded in effect: the
+%   code keeps logical states and applies P inside Gantry_State_Block._deriv_with, as eq:lfr_G displays.
+% LEFT OUT (reader test or verification gate): the comparison with base inertial parameters (gautier1990minimum has
+%   no local PDF, unverified); hong2020global beside ovchinnikov2021computing (README row II-C); the second Coulomb
+%   reason of the old todo (hoekstra2026lfr Cond. 8 smoothness; not in the source map, unverified); the operating
+%   range of Y (well-posedness holds for every Y, so the range is a data fact for Section V); recovery of
+%   theta_base from the records (Section VI step 5); the SVD six-to-four reduction (Caution); RK4 and its substeps
+%   (owned by Section III-A, header roadmap item 8).
+% RESOLVED TODOS of the previous text: model-discrepancy sentence (the roadmap of Section III states the goal);
+%   coordinate reason (Garcia Sec. 2.2, citation-log row 54); "how to connect the non-uniform load distribution"
+%   (II-B problem paragraph); Coulomb insertion (II-A, D-204 with the Section V pointer); "look at this section"
+%   (style remark, superseded by the rewrite); geometric dimensions (L_b and d defined); nominal values from real
+%   data (simulation only; the simulated system uses Garcia's parameter set, DATA-DESIGN Sec. 1); operating range
+%   (see LEFT OUT); self-scheduled source (toth2010modeling Def. 7.2, drenth2025lpvlfr Sec. 3.2); "Left here"
+%   marker; appendix remark list (repeated Y and the Thm. 6 contrast now in II-B, Def. 1 in continuous time
+%   replaced by drenth2025thesis Sec. 2.1, learned scheduling map in II-B). The SVD todo is kept, rewritten.
+% STALE LINES in other sections (not edited): 01_introduction.tex line 75 contribution "compact" (minimality open);
+%   05_setup.tex line 58 "Decision (moved from Section II-C)" and line 60 "Practical identifiability (referenced
+%   from Section II-C)": II-C no longer refers to them; 03_augmentation.tex lines 161, 186, 339 cite sec:baseline and
+%   eq:wellposed, now defined here.
+% SYMBOLS FOR SECTION V: Y_op (frozen payload position of M_LTI).
+% LENGTH: a \draftfalse build in the scratchpad puts Section II from the bottom of p. 2 to the middle of the right
+%   column of p. 4, about 2.0 pages with two figures, against the 1.35-page budget (about 1.5x). The budget predates
+%   the ownership row (D-244) that adds II-D; the required content is nine displays (transforms, equations of
+%   motion with matrices, mass split, scheduling block, G, well-posedness, theta_base, admissibility, frozen model)
+%   and the two planned figures. Proposed budget: 2.0 pages.
+% CODE CONFIRMED this session: gantry_ss.py (constants, M0, M1, M2, C, K, P, build_poly_constants,
+%   build_G_matrix_entries), blocks.py Gantry_State_Block (_deriv_with closed-form loop, Horner, z, w, A_combined;
+%   Y_op frozen branch), Reduced_Gantry_State_Block (COMBO_NAMES, combos_of, gauge_section). Algebra checked with
+%   sympy (scratchpad check2.py): det(I6 - Dzw Y) = det M(Y)/det M0; twelve entries, ten distinct; Jacobian rank 10,
+%   nullity 4 with the four directions named in II-C; determinant m_h L_b^2/2; completed square of det M(Y)/m_h.
+\section{Dual-Drive Gantry System and Physics Baseline}\label{sec:baseline}
+\ifdraft
+\begin{itemize}
+\item Goal: a baseline with physical parameters and exact dependence on $Y$; names II-A to II-D (style profile)
+\item Contribution share: the first contribution of Section~I; ``compact'' not shown, share wider (?)
+\item Terminology: Garc\'ia-Herreros' ``dual-drive gantry stage'' (?)
+\end{itemize}
+\fi
+
+Given the dual-drive gantry stage of Garc\'ia-Herreros et
+al.~\cite{garcia2013model}, our goal is a baseline model whose parameters are
+physical and whose dependence on the payload position is exact.
+To this end, we state the first-principles model in generalised coordinates
+(Section~\ref{sec:system}) and realise it as a self-scheduled LPV-LFR
+(Section~\ref{sec:lfr}).
+We then reduce its parameters to the identifiable combinations
+(Section~\ref{sec:params}) and name the two baseline models that
+Section~\ref{sec:results} compares (Section~\ref{sec:baseline_models}).
+This delivers the first contribution of Section~I: a continuous-time LPV-LFR
+realisation of the dual-gantry baseline with rational dependence on the
+payload position.
+\todo{Missing: contribution wording. The Introduction says ``compact'', which this section does not show (minimality is open, Section~\ref{sec:lfr}), and the section also delivers the well-posedness condition and the identifiable combinations. Candidate: ``Derive an exact continuous-time LPV-LFR realisation of the dual-gantry baseline, well posed for every payload position and parameterised by its ten identifiable combinations'' (Sections~\ref{sec:lfr}, \ref{sec:params}).}
+\todo{Missing: the supervisor comment on dual-gantry terminology has no source in the decisions, the meeting audit or the research plan. Candidate: Garc\'ia-Herreros' term ``dual-drive gantry stage''~\cite[Sec.~1]{garcia2013model} throughout, replacing ``dual-gantry'' in Section~I.}
+
+\subsection{System and first-principles model}\label{sec:system}
+\ifdraft
+\begin{itemize}
+\item Adapted lumped model of Garc\'ia-Herreros: two parallel actuators carry the cross-arm through flexible joints, a third moves the payload (Garc\'ia Secs.~1, 2.2; adapted)
+\item Coordinates $(X,\Theta,Y)$ avoid closed kinematic chains and expose the load-distribution coupling; $L_b$ fixed because $q$ depends on it (Garc\'ia Sec.~2.2; code)
+\item Small-angle and no-Coriolis simplifications as in Garc\'ia Sec.~2.3; Coulomb terms of Eq.~(6) omitted, friction added to the simulated system (D-204; Section~V)
+\item $M(Y)\succ0$ for every $Y$ for positive masses and inertias (this work; Appendix)
+\end{itemize}
+\fi
+
+For the physical part of this goal, we adapt the lumped-parameter model of
+Garc\'ia-Herreros et al.~\cite[Sec.~2.2]{garcia2013model}.
+Two parallel linear actuators carry a cross-arm through flexible joints, and
+a third linear actuator moves the payload along the
+cross-arm~\cite[Sec.~1]{garcia2013model} (Fig.~\ref{fig:gantry_system}).
+
+\begin{figure}[b]
+  \centering
+  \def\gantryabsorber{0}% baseline only; the absorber version is in Section III
+  \resizebox{\columnwidth}{!}{\input{figures/gantry_system_with_absorber}}
+  \caption{Lumped-parameter gantry schematic adapted from the mechanical
+  arrangement in \cite{garcia2013model}. Red labels denote actuator coordinates
+  and blue labels generalised coordinates.}
+  \label{fig:gantry_system}
+\end{figure}
+
+Following~\cite[Sec.~2.2]{garcia2013model}, we use the generalised coordinates
+$q=[X\;\Theta\;Y]^\top$, which avoid closed kinematic chains and expose the
+coupling caused by the non-uniform load distribution over the two actuators.
+They follow from the measured positions and the actuator forces as
+\begin{equation}
+\begin{aligned}
+  q &= P^{-\top}\qact,
+  \qquad
+  u = P\uact,\\
+  P &=
+  \begin{bmatrix}
+    1 & 1 & 0\\
+    L_b/2 & -L_b/2 & 0\\
+    0 & 0 & 1
+  \end{bmatrix},
+\end{aligned}
+\label{eq:Ptransform}
+\end{equation}
+where $\qact=[X_1\;X_2\;Y]^\top\in\R^3$ are the actuator positions,
+$\uact=[F_{X1}\;F_{X2}\;F_Y]^\top\in\R^3$ the actuator forces,
+$u\in\R^3$ the generalised force, $L_b$ the distance between the two
+flexible joints, $X=(X_1+X_2)/2$ the translation of the cross-arm and
+$\Theta=(X_1-X_2)/L_b$ its yaw angle, and $P$ is invertible since
+$\det P=-L_b$.
+We fix $L_b$ at its nominal value, because $P$, and with it $q$, depends on
+$L_b$.
+
+The baseline keeps the simplifications of Garc\'ia-Herreros et al.\ but not
+their friction model.
+As they do~\cite[Sec.~2.3]{garcia2013model}, we approximate
+$\cos\Theta\approx1$ and $\sin\Theta\approx0$, because $\Theta$ stays within
+tens of microradians.
+We also neglect the Coriolis and centripetal terms.
+Unlike their Eq.~(6)~\cite[Sec.~2.2]{garcia2013model}, the baseline omits the
+Coulomb friction of the three actuators.
+Section~\ref{sec:setup} adds it to the simulated system, so friction is an
+effect the baseline lacks by construction.
+
+The equations of motion are then
+\begin{equation}
+  M(Y)\ddot{q}(t) + C\dot{q}(t) + K q(t) = u(t),
+  \label{eq:eom}
+\end{equation}
+with
+{\footnotesize
+\setlength{\arraycolsep}{3pt}
+\begin{equation}
+M(Y)=
+\begin{bmatrix}
+m_1+m_2+m_b+m_h & \tfrac{L_b}{2}(m_1-m_2)-m_hY & 0\\
+\tfrac{L_b}{2}(m_1-m_2)-m_hY &
+\substack{J_b+J_h+\tfrac{L_b^2}{4}(m_1+m_2)\\{}+m_h(d^2+Y^2)} & -m_hd\\
+0 & -m_hd & m_h
+\end{bmatrix},
+\label{eq:mass_matrix}
+\end{equation}
+\begin{equation}
+\begin{aligned}
+C&=
+\begin{bmatrix}
+c_{g1}+c_{g2} & \tfrac{L_b}{2}(c_{g1}-c_{g2}) & 0\\
+\tfrac{L_b}{2}(c_{g1}-c_{g2}) &
+c_{b1}+c_{b2}+\tfrac{L_b^2}{4}(c_{g1}+c_{g2}) & 0\\
+0 & 0 & c_y
+\end{bmatrix},\\[1ex]
+K&=
+\begin{bmatrix}
+0&0&0\\
+0&k_{b1}+k_{b2}&0\\
+0&0&0
+\end{bmatrix},
+\end{aligned}
+\label{eq:damping_stiffness_matrices}
+\end{equation}
+}
+where $M(Y),C,K\in\R^{3\times3}$ depend on the parameter vector
+$\theta\in\R^{14}$ of Table~\ref{tab:nominal_parameters}
+(Appendix~\ref{app:params}): the actuator, cross-arm and payload masses $m_1$,
+$m_2$, $m_b$, $m_h$, the yaw inertias $J_b$, $J_h$ of cross-arm and payload,
+the actuator damping coefficients $c_{g1}$, $c_{g2}$, $c_y$, the joint damping
+and stiffness coefficients $c_{b1}$, $c_{b2}$, $k_{b1}$, $k_{b2}$, and the
+payload offset $d$ from the cross-arm.
+For positive masses and inertias, $M(Y)\succ0$ for every $Y\in\R$
+(Appendix~\ref{app:lfr-wellposed}).
+
+\subsection{Self-scheduled LPV-LFR representation}\label{sec:lfr}
+\ifdraft
+\begin{itemize}
+\item Need: Section~III builds the baseline into an LFR-based augmentation, so its well-posedness must be checkable for every $Y$ (D-017; Aspect~1; Hoekstra EJC Sec.~3.2)
+\item $Y$ is the only signal in the coefficient matrices and a state: quasi-LPV, self-scheduled with a known map, unlike Drenth's learned map; $M(Y)^{-1}$ makes the model rational in $Y$ (T\'oth Def.~7.2; Drenth Sec.~3.2)
+\item $M(Y)=M_0+YM_1+Y^2M_2$; $Y^2$ realised by repeating $Y$, as in Drenth's rational embedding (Drenth thesis Sec.~2.1.1; this work)
+\item Latent variables $z,w$ and $\Dsch(Y)=YI_6$; minimality open (this work; (?))
+\item $G$ constant, continuous time as in Drenth's thesis Sec.~2.1, so $\theta$ keeps the structure of $M(Y)$, $C$, $K$; input and output maps to the actuator frame in the display (D-018, D-020; adopted form)
+\item Closing the algebraic loop gives back \eqref{eq:eom} exactly (this work)
+\item Well posed iff $M(Y)$ nonsingular, an exact condition unlike Drenth's sufficient Thm.~6 (Drenth thesis Sec.~2.1; this work)
+\item Implementation: closed-form loop solution with Horner evaluation; same model; the LFR still gives \eqref{eq:wellposed} for Section~III-A (D-020; code)
+\end{itemize}
+\fi
+
+Section~\ref{sec:augmentation} builds the baseline into an LFR-based
+augmentation~\cite[Sec.~3.2]{hoekstra2025lfr}, so the thesis needs a form of
+\eqref{eq:eom} whose well-posedness can be checked for every payload position.
+Solving \eqref{eq:eom} for $\ddot q$ needs
+$M(Y)^{-1}=\operatorname{adj}M(Y)/\det M(Y)$, so the state equation is
+rational in $Y$.
+An LPV-LFR represents such a dependence by a constant matrix $G$ in feedback
+with a scheduling block $\Dsch(Y)$~\cite[Sec.~2.1]{drenth2025thesis}
+(Fig.~\ref{fig:lfr}).
+
+The scheduling variable is the payload position $Y$.
+After the simplifications of Section~\ref{sec:system}, it is the only signal
+in the coefficient matrices of \eqref{eq:eom}.
+It enters through $M(Y)$, which carries the load distribution over the
+actuators and the yaw inertia.
+$Y$ is also a state, so the baseline is quasi-LPV~\cite[Def.~7.2]{toth2010modeling}.
+In self-scheduled LPV-LFR models, Drenth et al.\ estimate the scheduling map
+jointly with the model~\cite[Sec.~3.2]{drenth2025lpvlfr}.
+Here the map is the known selection $Y=q_3$.
+
+\begin{figure}[t]
+  \centering
+  \input{figures/lfr_loop}
+  \caption{Self-scheduled baseline interconnection. The scheduling block
+  closes the latent variables of $G$ through $w=\Dsch(Y)z$, with
+  $\Dsch(Y)=YI_6$ and $Y$ a component of the state.}
+  \label{fig:lfr}
+\end{figure}
+
+We build $\Dsch(Y)$ from the polynomial structure of $M(Y)$.
+We realise $Y^2$ by repeating $Y$, as in the rational embedding
+of~\cite[Sec.~2.1.1]{drenth2025thesis}, because a second scheduling variable
+for $Y^2$ would admit combinations that cannot occur.
+With $a_1=Y\ddot q$ and $a_2=Ya_1$, the split of $M(Y)$ turns \eqref{eq:eom}
+into a relation with constant matrices:
+\begin{equation}
+\begin{aligned}
+  M(Y)&=M_0+YM_1+Y^2M_2,\\
+  M_0\ddot q+M_1a_1+M_2a_2&=u-C\dot q-Kq,
+\end{aligned}
+  \label{eq:Msplit}
+\end{equation}
+where $M_0=M(0)$ and $M_1,M_2\in\R^{3\times3}$ are given in
+Appendix~\ref{app:lfr-details}, and $a_1,a_2\in\R^3$.
+The latent variables $z=\col(\ddot q,a_1)$ and $w=\col(a_1,a_2)$ close this
+relation through the scheduling block
+\begin{equation}
+  w=\begin{bmatrix}a_1\\a_2\end{bmatrix}
+   =\underbrace{\begin{bmatrix}YI_3&0\\0&YI_3\end{bmatrix}}_{\Dsch(Y)=YI_6}
+    \begin{bmatrix}\ddot q\\a_1\end{bmatrix}
+   =\Dsch(Y)z,
+  \label{eq:delta}
+\end{equation}
+where $z,w\in\R^6$.
+\todo{Missing: minimality of the six-channel realisation (D-017 open question). Candidate: state no claim; an exploratory six-to-four SVD reduction exists but is not used by the final pipeline (header Caution), so it stays out.}
+
+We keep the LFR in continuous time, as Drenth does~\cite[Sec.~2.1]{drenth2025thesis}.
+The parameters $\theta$ then keep the structure of $M(Y)$, $C$ and $K$ until
+Section~\ref{sec:augmentation} integrates the model.
+Solving the second line of \eqref{eq:Msplit} for $\ddot q$ gives the constant
+interconnection
+{\footnotesize
+\setlength{\arraycolsep}{2.5pt}
+\begin{equation}
+\begin{aligned}
+  &\begin{bmatrix}\dot{\tilde x}\\ z\\ q\end{bmatrix}
+  =G\begin{bmatrix}\tilde x\\ w\\ u\end{bmatrix},
+  \qquad u=P\uact,\quad \qact=P^\top q,\\
+  &G=\left[\begin{array}{cc|cc|c}
+  0&I_3&0&0&0\\
+  -M_0^{-1}K&-M_0^{-1}C&-M_0^{-1}M_1&-M_0^{-1}M_2&M_0^{-1}\\\hline
+  -M_0^{-1}K&-M_0^{-1}C&-M_0^{-1}M_1&-M_0^{-1}M_2&M_0^{-1}\\
+  0&0&I_3&0&0\\\hline
+  I_3&0&0&0&0
+  \end{array}\right],
+\end{aligned}
+  \label{eq:lfr_G}
+\end{equation}
+}
+where $\tilde x=\col(q,\dot q)\in\R^6$ is the state, $q\in\R^3$ the output,
+$G\in\R^{15\times15}$, and $M_0=M(0)$ is invertible by
+Section~\ref{sec:system}.
+Closing the loop with \eqref{eq:delta} gives $a_1=Y\ddot q$ and
+$a_2=Y^2\ddot q$, so \eqref{eq:lfr_G} and \eqref{eq:delta} return
+\eqref{eq:eom} exactly.
+
+The LFR is well posed if $I_6-D_{zw}\Dsch(Y)$ is nonsingular for every
+$Y$~\cite[Sec.~2.1]{drenth2025thesis}.
+Drenth et al.\ give a sufficient condition, which needs the
+scheduling variables in the unit ball and a spectral radius of $D_{zw}$ below
+one~\cite[Thm.~6]{drenth2025lpvlfr}.
+For our realisation, the Schur complement of the lower identity block of
+$I_6-D_{zw}\Dsch(Y)$ gives the exact condition
+\begin{equation}
+  \det\bigl(I_6-D_{zw}\Dsch(Y)\bigr)=\frac{\det M(Y)}{\det M_0},
+  \label{eq:wellposed}
+\end{equation}
+where $D_{zw}\in\R^{6\times6}$ is the block of $G$ that maps $w$ to $z$
+(Appendix~\ref{app:lfr-details}).
+The LFR is therefore well posed exactly where $M(Y)$ is nonsingular, which
+holds for every $Y\in\R$ by Section~\ref{sec:system}.
+
+The implementation solves the loop in closed form.
+It computes $\ddot q=M(Y)^{-1}(u-C\dot q-Kq)$, with $\operatorname{adj}M(Y)$
+and $\det M(Y)$ evaluated as quadratic polynomials in $Y$ by Horner's scheme
+(Appendix~\ref{app:lfr-details}).
+It then evaluates the first block row of $G$ at
+$w=\Dsch(Y)\col(\ddot q,Y\ddot q)$, which is the same model by the exactness
+of \eqref{eq:lfr_G}, \eqref{eq:delta}.
+The LFR is still needed for \eqref{eq:wellposed}, which
+Section~\ref{sec:aug_structure} cites for the baseline block of the augmented
+model.
+
+\subsection{Physical parameters and identifiable combinations}\label{sec:params}
+\ifdraft
+\begin{itemize}
+\item Need: Section~III estimates the physical parameters jointly, so they must be determined by the input-output behaviour (D-191)
+\item Full actuation and measured positions: the input-output behaviour fixes $M_0,M_1,M_2,C,K$ and conversely, so the identifiable part of $\theta$ is what the matrices contain (this work)
+\item Twelve nonzero entries, three equal to $m_h$, leave ten independent functions: exactly ten combinations are structurally identifiable (this work; definition Ovchinnikov Def.~7)
+\item Written physically as $\theta_{\mathrm{base}}$; the raw parameters enter only through it; four lost directions; estimates reported in $\theta_{\mathrm{base}}$ (this work)
+\item Positive $\theta_{\mathrm{base}}$ does not give $M(Y)\succ0$; that holds iff \eqref{eq:lfr_admissibility} (this work; proof Appendix~\ref{app:lfr-wellposed})
+\item Training keeps \eqref{eq:lfr_admissibility} at every iterate; the map and its justification are in Section~\ref{sec:aug_closed_loop}
+\end{itemize}
+\fi
+
+Section~\ref{sec:augmentation} estimates the physical parameters jointly with
+the augmentation, so the thesis needs parameters that the input-output
+behaviour determines uniquely.
+Since $P$ is invertible and the positions are measured, two parameter vectors
+with the same input-output behaviour give the same $q$ for every input.
+Subtracting their equations \eqref{eq:eom} shows that their matrices give the
+same $M(Y)\ddot q+C\dot q+Kq$ along every trajectory.
+The gantry is fully actuated, so every $(q,\dot q,\ddot q)$ is attained.
+The input-output behaviour therefore fixes $M_0$, $M_1$, $M_2$, $C$ and $K$,
+and these matrices fix it in turn.
+The identifiable part of $\theta$ is what these matrices contain.
+
+Up to symmetry, \eqref{eq:mass_matrix} and \eqref{eq:damping_stiffness_matrices}
+have twelve nonzero entries.
+Three of them, $M_{0,33}$, $-M_{1,12}$ and $M_{2,22}$, equal $m_h$, which
+leaves ten distinct functions of $\theta$.
+Their Jacobian with respect to
+$(m_h,d,m_1,m_b,J_b,c_{g1},c_{g2},c_{b1},c_y,k_{b1})$ has determinant
+$m_hL_b^2/2\neq0$, so the ten are independent.
+Exactly ten combinations of $\theta$ are therefore structurally
+identifiable~\cite[Def.~7]{ovchinnikov2021computing}.
+
+The fourteen raw parameters enter $M_0$, $M_1$, $M_2$, $C$ and $K$ only
+through these combinations, which we write in physically readable form as
+\begin{equation}
+  \theta_{\mathrm{base}}=[k_{b,\Sigma},c_{g1},c_{g2},c_y,c_{b,\Sigma},
+  m_h,m_\Sigma,m_\Delta,J_{\mathrm{eff}},d]^\top,
+  \label{eq:phi}
+\end{equation}
+where $\theta_{\mathrm{base}}\in\R^{10}$, $k_{b,\Sigma}=k_{b1}+k_{b2}$,
+$c_{b,\Sigma}=c_{b1}+c_{b2}$, $m_\Sigma=m_1+m_2+m_b$, $m_\Delta=m_1-m_2$ and
+$J_{\mathrm{eff}}=J_b+J_h+\tfrac{L_b^2}{4}(m_1+m_2)$.
+Four directions of $\theta$ leave the model unchanged, $k_{b1}-k_{b2}$,
+$c_{b1}-c_{b2}$, $J_b-J_h$ and a mass transfer from the cross-arm to the
+actuators compensated in $J_b$, so estimates are reported in
+$\theta_{\mathrm{base}}$.
+\todo{Missing: notation decision. The index $\Delta$ of $m_\Delta$ (and of $\xi_\Delta$ in Section~\ref{sec:aug_closed_loop}) also names the scheduling block $\Dsch(Y)$; Sections~III and~IV use $m_\Delta$, so it is kept. Candidate: $m_{\mathrm d}$ for the mass difference.}
+
+Positive $\theta_{\mathrm{base}}$ does not imply $M(Y)\succ0$.
+For $m_h,m_\Sigma,J_{\mathrm{eff}}>0$, $M(Y)\succ0$ for every $Y$ if and only
+if
+\begin{equation}
+  m_\Sigma J_{\mathrm{eff}}>\tfrac{L_b^2}{4}\,m_\Delta^2
+  \label{eq:lfr_admissibility}
+\end{equation}
+(Appendix~\ref{app:lfr-wellposed}).
+The training coordinates of Section~\ref{sec:aug_closed_loop} keep
+\eqref{eq:lfr_admissibility} at every iterate, so the LFR stays well posed
+during training.
+
+\subsection{Baseline models}\label{sec:baseline_models}
+\ifdraft
+\begin{itemize}
+\item Need: Aspect~1 asks whether the scheduling improves prediction over a position-independent model (THESIS-RESULTS step~1)
+\item $\mathcal M_{\mathrm{LPV}}$: \eqref{eq:lfr_G}, \eqref{eq:delta} at the nominal parameters; input $\uact$, output $\qact$ (THESIS-RESULTS step~1; notation (?))
+\item $\mathcal M_{\mathrm{LTI}}$: $M(Y)$ frozen at $Y_{\mathrm{op}}$; value in Section~V (D-242; code \texttt{Y\_op}; value (?))
+\item Neither is trained; initial state and loop (?); a demonstration of the position-dependent error (THESIS-RESULTS step~1)
+\end{itemize}
+\fi
+
+Aspect~1 of Section~I asks whether the scheduling by $Y$ improves prediction
+over a position-independent model, which needs both as compared models.
+Both map the actuator forces $\uact$ to the actuator positions $\qact$
+without training.
+We call $\mathcal M_{\mathrm{LPV}}$ the baseline \eqref{eq:lfr_G},
+\eqref{eq:delta} at the nominal parameters of
+Table~\ref{tab:nominal_parameters}.
+The position-independent model $\mathcal M_{\mathrm{LTI}}$ freezes the
+scheduling block at a fixed payload position:
+\begin{equation}
+  M(Y_{\mathrm{op}})\ddot q+C\dot q+Kq=P\uact,\qquad \qact=P^\top q,
+  \label{eq:lti}
+\end{equation}
+where $Y_{\mathrm{op}}\in\R$ is the frozen position, so that
+$\Dsch(Y_{\mathrm{op}})=Y_{\mathrm{op}}I_6$ is constant.
+Section~\ref{sec:results} uses the pair to demonstrate the size of the
+position-dependent prediction error.
+\todo{Missing: (a) initial state and loop of both models; no runner exists yet. Candidate: simulated in the closed loop of Section~\ref{sec:aug_loop} with the recorded controller, as every compared model (THESIS-RESULTS Sec.~2, servo-error metric), from the physical rows of the encoder of Section~\ref{sec:aug_encoder}. (b) The value of $Y_{\mathrm{op}}$. Candidate: $Y_{\mathrm{op}}=0$, the middle of the symmetric stroke (THESIS-RESULTS step~1 ``mid-stroke''; DATA-DESIGN Sec.~1); the code default of \texttt{Gantry\_State\_Block} is $0.3$\,m. (c) Model names: plain $M$ clashes with $M(Y)$, so the calligraphic names are candidates (README open conflicts).}

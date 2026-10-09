@@ -10,12 +10,10 @@
 % LPV_Mass_invertible, LPV_LFR_Justification_Drenth, LPV_LFR_Derivation,
 % and docs/fp-model-structure.md. Where their presentation differs, follow
 % LPV_LFR_Stepwise_Derivation for Section II-B.
-% Mandatory papers: Read Drenth's rational LPV-LFR paper and the LPV-LFR definitions used by Hoekstra before adopting terminology or well-posedness claims.
+% Sources: README "Source map per subsection", rows II-A, II-B, II-C and II Frozen-LTI baseline; mandatory papers and the reference gate as in the README.
 % Research-plan anchor: Preserve Aspect 1's explicit position dependence; update the original discretisation wording to the final method.
 % Current decisions: Continuous-time physics, endogenous scheduler Y, fixed-step RK4, and identifiable parameter combinations.
 % Choices to justify: Coordinate frame, Y as scheduler, continuous-time formulation, RK4 step and substeps, full six-channel LFR realization, and reduced physical parameterization. Give the physical or numerical reason for each choice, not only its definition.
-% Implementation audit: Read lpv_lfr_baseline/core/{physics,lfr_matrices,lfr_forward}.py, blocks/lfr_param_block.py, and scripts/validate_lfr.py before finalising equations or claims.
-% Reference check: Verify the original gantry model, LPV definitions, and LFR framework against primary sources; cite the gantry-specific algebra as this project's own derivation.
 % Cautions: The final pipeline uses the full six-channel scheduling loop, not the experimental six-to-four SVD reduction. Resolve the supervisor comment about dual-gantry terminology; do not copy unverified bibliography entries.
 % Planned figures: Physical coordinate schematic and compact interconnection between G and Delta(Y).
 % Section is finished when: The LFR collapses to the original model, well-posedness assumptions are stated, and notation matches Section 03.

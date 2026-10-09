@@ -1,0 +1,175 @@
+% Page budget: 0.30 pages | Owns: derivation details and reproducibility items needed for audit but not for the main argument.
+% WRITING GUIDE
+% Purpose: Preserve derivation and reproducibility details required to audit the paper without interrupting its main argument.
+% Start here: Material explicitly deferred from Sections 02, 04, and 05 during page-budget editing.
+% Supporting material: LPV_LFR_internal_loop_Well_posedness, LPV_Mass_invertible, LPV_LFR_Rational_rewrite, current OBC derivations, and final run manifests.
+% Research-plan anchor: Include only technical detail needed to support a retained plan claim or documented departure.
+% Current decisions: Prefer repository or archival references for bulky matrices and configurations when permitted by the examination format.
+% Choices to justify: Numerical tolerances, optimizer settings, architecture details, secondary diagnostics, and any setting omitted from the main method discussion.
+% Implementation audit: Compare all printed matrices, algorithms, parameter maps, and configuration listings directly with the final code that produced the results.
+% Reference check: Keep source-derived results attributed and own derivations labelled; include only bibliography entries whose metadata and supporting content have been verified.
+% Cautions: Verify whether the appendix counts toward the 12-page limit; do not use it as storage for unfinished analysis.
+% Planned figures: Optional normalization and controller-chain audit figures only if equations and prose are insufficient.
+% Section is finished when: Every appendix item is referenced from the main paper and necessary for verification or reproducibility.
+\section{Supporting Derivations and Reproducibility}
+
+\subsection{Explicit LPV-LFR realization}\label{app:lfr-details}
+In \eqref{eq:Msplit}, $M_0$ is \eqref{eq:mass_matrix} evaluated at $Y=0$, and
+\begin{equation*}
+ M_1=\begin{bmatrix}0&-m_h&0\\-m_h&0&0\\0&0&0\end{bmatrix},\qquad
+ M_2=\begin{bmatrix}0&0&0\\0&m_h&0\\0&0&0\end{bmatrix}.
+\end{equation*}
+With $a_1$ and $a_2$ from \eqref{eq:lfr_chain} treated as independent signals, solving
+$M_0\ddot q+M_1a_1+M_2a_2=u-C\dot q-Kq$ for $\ddot q$ with $R=M_0^{-1}$ gives
+$\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With $\dot{\tilde x}=\col(\dot q,\ddot q)$,
+$z=\col(\ddot q,a_1)$, and $w=\col(a_1,a_2)$, the LTI part $G$ of
+\eqref{eq:lfr_G}, partitioned as in \cite[Eq.~(6)]{drenth2025lpvlfr}, is
+\begin{equation}
+ \begin{bmatrix}\dot{\tilde x}\\z\\q\end{bmatrix}
+ =
+ \underbrace{\begin{bmatrix}
+  A_x&B_w&B_u\\ C_z&D_{zw}&D_{zu}\\ C_y&D_{yw}&D_{yu}
+ \end{bmatrix}}_{G}
+ \begin{bmatrix}\tilde x\\w\\u\end{bmatrix}.
+ \label{eq:app_G_partition}
+\end{equation}
+with blocks
+{\footnotesize
+\setlength{\arraycolsep}{2.5pt}
+\begin{equation}
+\begin{aligned}
+ A_x&=\begin{bmatrix}0&I_3\\-RK&-RC\end{bmatrix},
+&B_w&=\begin{bmatrix}0&0\\-RM_1&-RM_2\end{bmatrix},
+&B_u&=\begin{bmatrix}0\\R\end{bmatrix},\\
+ C_z&=\begin{bmatrix}-RK&-RC\\0&0\end{bmatrix},
+&D_{zw}&=\begin{bmatrix}-RM_1&-RM_2\\I_3&0\end{bmatrix},
+&D_{zu}&=\begin{bmatrix}R\\0\end{bmatrix},\\
+ C_y&=\begin{bmatrix}I_3&0\end{bmatrix},
+&D_{yw}&=0,
+&D_{yu}&=0.
+\end{aligned}
+\label{eq:app_lfr_blocks}
+\end{equation}
+}
+Here $\tilde x,z,w\in\R^6$ and $u,q\in\R^3$, so $G\in\R^{15\times15}$.
+The actuator frame enters only through $u=P\uact$ and $\qact=P^\top q$ in
+\eqref{eq:Ptransform}.
+
+Substituting $w=\Dsch(Y)z$ into the $z$ equation of
+\eqref{eq:app_G_partition} gives the algebraic loop equation
+$(I_6-D_{zw}\Dsch(Y))z=C_zx+D_{zu}u$. Written out,
+\begin{equation*}
+ \begin{bmatrix}I_3+YRM_1&YRM_2\\-YI_3&I_3\end{bmatrix}
+ \begin{bmatrix}\ddot q\\a_1\end{bmatrix}
+ =\begin{bmatrix}R(u-Kq-C\dot q)\\0\end{bmatrix}.
+\end{equation*}
+The second block row gives $a_1=Y\ddot q$, and the first then gives
+$M(Y)\ddot q=u-C\dot q-Kq$, that is \eqref{eq:eom}, after multiplication by
+$M_0$. The condition of
+\cite[Def.~1]{drenth2025lpvlfr}, that $I_6-D_{zw}\Dsch(Y)$ is nonsingular, is
+therefore the condition that $M(Y)$ is nonsingular: the Schur complement of
+the lower identity block gives
+\begin{equation*}
+\begin{aligned}
+ \det\bigl(I_6-D_{zw}\Dsch(Y)\bigr)
+ &=\det\bigl(I_3+YRM_1+Y^2RM_2\bigr)\\
+ &=\det M(Y)/\det M_0.
+\end{aligned}
+\end{equation*}
+Since $M(Y)$ is nonsingular, the loop is solved in closed form,
+$\ddot q=M(Y)^{-1}(u-C\dot q-Kq)$ with
+\begin{equation*}
+ M(Y)^{-1}=\frac{N_0+YN_1+Y^2N_2}{d(Y)},\qquad d(Y)=\det M(Y),
+\end{equation*}
+where $N_0+YN_1+Y^2N_2=\operatorname{adj}M(Y)$ and $d(Y)$ are both quadratic
+in $Y$.
+The implementation evaluates both polynomials with Horner's scheme.
+\todo{Missing: print $N_0$, $N_1$, $N_2$ and $d(Y)$ explicitly? Candidate: no, appendix budget; the quadratic degree was checked symbolically (sympy, 2026-10-06).}
+
+\todo{Remarks cut from Section~II-B; keep here or drop?}
+\begin{itemize}
+\item $Y^2$ is realized by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2025lpvlfr}
+\item The scheduling map is a known selection of the state ($Y=q_3$), not a learned map as in the self-scheduled models of \cite{drenth2025lpvlfr}
+\item The exact condition $\det M(Y)\neq0$ replaces the sufficient condition of \cite[Thm.~6]{drenth2025lpvlfr}, which needs a scheduling set in the unit ball and $\rho(D_{zw})<1$
+\item Drenth's Def.~1 is stated in discrete time but constrains only the algebraic loop equation, so it applies unchanged in continuous time
+\end{itemize}
+
+\subsection{Nominal physical parameters}\label{app:params}
+Table~\ref{tab:nominal_parameters} lists the nominal values used by the baseline.
+They are taken from the ETEL gantry reported by Garc\'ia-Herreros et al.
+\cite[Table~I]{garcia2013model}. Here $\theta$ collects the fourteen table
+entries other than the fixed length $L_b$.
+\begin{table}[t]
+\caption{Nominal baseline parameters.}
+\label{tab:nominal_parameters}
+\centering
+\footnotesize
+\begin{tabular}{@{}ll@{\qquad}ll@{}}
+\toprule
+Parameter & Value & Parameter & Value \\
+\midrule
+$m_1$ & $10.2\,\mathrm{kg}$ & $m_2$ & $10.7\,\mathrm{kg}$ \\
+$m_b$ & $22.8\,\mathrm{kg}$ & $m_h$ & $10.1\,\mathrm{kg}$ \\
+$J_b$ & $1.00\,\mathrm{kg\,m^2}$ & $J_h$ & $0.05\,\mathrm{kg\,m^2}$ \\
+$c_{g1}$ & $14.5\,\mathrm{N\,s/m}$ & $c_{g2}$ & $20.3\,\mathrm{N\,s/m}$ \\
+$c_y$ & $10.0\,\mathrm{N\,s/m}$ & $d$ & $0.10\,\mathrm{m}$ \\
+$c_{b1}$ & $9.0\,\mathrm{N\,m\,s/rad}$ & $c_{b2}$ & $9.0\,\mathrm{N\,m\,s/rad}$ \\
+$k_{b1}$ & $1987.5\,\mathrm{N\,m/rad}$ & $k_{b2}$ & $1987.5\,\mathrm{N\,m/rad}$ \\
+$L_b$ & $0.725\,\mathrm{m}$ & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Positive definiteness of the inertia matrix}
+\label{app:lfr-wellposed}
+With $a=L_bm_\Delta/2$, elimination of the $m_h$ block and completion of the square give
+\begin{equation*}
+\begin{aligned}
+  \frac{\det M(Y)}{m_h}
+  &=(m_\Sigma+m_h)(J_{\mathrm{eff}}+m_hY^2)
+    -(a-m_hY)^2\\
+  &=m_\Sigma m_h\left(Y+\frac{a}{m_\Sigma}\right)^2\\
+  &\quad +(m_\Sigma+m_h)
+      \left(J_{\mathrm{eff}}-\frac{a^2}{m_\Sigma}\right).
+\end{aligned}
+\end{equation*}
+The $2\times2$ Schur complement has positive leading entry
+$m_\Sigma+m_h$. Sylvester's criterion therefore reduces positive definiteness
+to positivity of the completed-square expression for every $Y$. Hence, for
+positive $m_h$, $m_\Sigma$, and $J_{\mathrm{eff}}$, $M(Y)\succ0$ for all
+$Y\in\R$ if and only if \eqref{eq:lfr_admissibility} holds.
+For the physical parameterization, the difference between the two sides is
+\begin{equation*}
+\begin{aligned}
+  m_\Sigma J_{\mathrm{eff}}-\frac{L_b^2}{4}m_\Delta^2
+  ={}&m_\Sigma(J_b+J_h)\\
+  &+\frac{L_b^2}{4}\left[4m_1m_2+m_b(m_1+m_2)\right],
+\end{aligned}
+\end{equation*}
+which is strictly positive for positive component masses and yaw inertias.
+
+In \eqref{eq:mdelta_map}, let
+$b(\theta_{\mathrm{base}})=\rho(2/L_b)\sqrt{m_\Sigma J_{\mathrm{eff}}}$. The offset and scale
+are
+\begin{equation*}
+ r_0=\frac{m_{\Delta,0}}{b(\theta_{\mathrm{base},0})},\quad
+ \eta_0=\operatorname{atanh}(r_0),\quad
+ s=\frac{m_{\Delta,0}}{b(\theta_{\mathrm{base},0})(1-r_0^2)}.
+\end{equation*}
+Here $\eta_0$ makes $\xi_\Delta=0$ reproduce the initial combination, and $s$
+gives $\partial m_\Delta/\partial\xi_\Delta|_0=m_{\Delta,0}$, matching the local
+relative-change scaling of the logarithmic coordinates. The construction
+requires $m_{\Delta,0}\neq0$; a start near zero makes $s$ small and the
+coordinate numerically inert. The exact inverse used for reporting is
+\begin{equation*}
+ \xi_\Delta=\frac{\operatorname{atanh}(m_\Delta/b(\theta_{\mathrm{base}}))-\eta_0}{s}.
+\end{equation*}
+
+\subsection{OBC and experiment details}
+\begin{itemize}
+\item Derive the stacked projector, rank-deficient pseudoinverse case, epoch refresh, and additional-state zero extension
+\item Derive $J^+\Delta^*$ and list the measured singular-direction contributions to the predicted parameter bias
+\item List dataset identifiers, split membership, hyperparameters, seed, and exact metric definitions for every reported arm
+\item Figure (existing, optional): place \texttt{controller-chain-v1} here only if the controller reconstruction cannot be audited adequately in prose and equations
+\end{itemize}
+\todo{Can code and data tables be cited through a repository or DOI instead of spending paper space on full reproducibility metadata?}

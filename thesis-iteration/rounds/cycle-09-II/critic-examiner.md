@@ -1,0 +1,34 @@
+# Critic (examiner lens, Maarten Schoukens), cycle 09, Section II
+
+Score: 8 / 10
+
+## Overall reading
+Read once as an examiner, the section is one argument. The roadmap is short. Each subsection has one job: system and equations of motion, the LFR and its well-posedness, the identifiable combinations, and the two compared baselines. Every part is displayed with its spaces: P with the actuator ports, the EOM with full M, C and K, the polynomial split, the latent loop, the full G with u_act and q_act, the determinant identity, theta_base, the admissibility condition, and M_LPV and M_LTI. Nothing is described only in words. The level is right. The only own derivations are the determinant identity and the identifiability argument, both short, with the rest in the appendix. No textbook machinery is displayed. After each display there is at most one consequence. Section II trains nothing, and the handover to III-C (training coordinates that keep the admissibility condition) is one sentence in the right place. The section compiles with no "!" lines. It contains no em-dashes.
+
+What keeps it from 9 or 10: II-C does not open with its problem, the continuous-time choice is not justified in a form an examiner can check, and the II-B paragraph after the well-posedness display mixes two jobs and ends on a restatement. A few smaller correctness and register points follow.
+
+## Issues
+
+1. **Major (A, Order). II-C opens with a construction, not its problem (lines 368 to 378).** The first sentence is "The fourteen parameters enter the model only through M0, M1, M2, C and K". The reader is never told why an identifiability analysis is needed at this point: the thesis's interpretability claim (Aspect 3, the OBC of Section IV) concerns parameters that the data can determine, and fourteen raw parameters cannot all be recovered. Maarten would read a correct proof without knowing what question it answers. One problem sentence before the argument would fix it.
+   Rule cause: the skill's "Order" rule ("A subsection opens with the problem it solves") did not prevent this. Skill 2a ("A block fixes claims and restrictions, not sentences") does not stop a MUST ESTABLISH block's ordering ("argument ... ordered toward the conclusion") from replacing the problem opening. The review loop's "Coherence" item names problem, construction and consequence, but it has no check that the first sentence of each subsection states its problem.
+
+2. **Major (D, choices justified). The reason for continuous time is not checkable (lines 350 to 354).** The text reads "it stays in continuous time, where theta enters through M, C and K as derived." It does not say what pre-discretisation would lose. The point is that a discretised (G, Delta) would mix theta nonlinearly into the matrices, while RK4 at runtime keeps the physical structure (D-018, D-020). The sentence also uses "it" whose referent is unclear (the previous subject is "Two realisation choices"). Maarten's "justify choices" asks for exactly this reason.
+   Rule cause: the skill's "Justify only what an examiner would question" and the Content rule on "The header" (a choice that differs from a cited method gets its reason or a \todo) do not require the reason to name what the alternative loses. The writer notes (item 7) also record that the rules are silent on whether a supervisor instruction in a decision entry counts as a reason. That rule is missing.
+
+3. **Minor (A/D, one job per paragraph). The paragraph after eq:wellposed holds two jobs and a restatement (lines 339 to 348).** The topic sentence is the consequence (M(Y) is positive definite for every Y, so the LFR is well posed everywhere). The next four sentences give the implementation equivalence and what the LFR is still for. The last sentence, "It also yields the exact well-posedness condition (wellposed)", repeats the previous paragraph.
+   Rule cause: the skill's "Order" rule (Method: "one sentence states the equivalence and what the construction is still for") and the topic-sentence check ("every later sentence of a paragraph serves its first") did not prevent this. Neither did "Say each fact once".
+
+4. **Minor (F, correctness of a comparison). "The baseline keeps more coordinates and fewer forces than the control model of Garcia-Herreros et al." (line 221).** The Coulomb terms are in their generalised forces, Eq. (6). The citation log does not record that the control model (11) contains them. The next sentence correctly cites Eq. (6), so "fewer forces than the control model" compares against the wrong object.
+   Rule cause: review-loop item "every citation supports the exact sentence it is attached to". A topic sentence that summarises two cited facts carries no citation, so it escaped the check.
+
+5. **Minor (F, notation). The symbol x-tilde is defined in the where clause of eq:lfr_G (line 320) but appears in no display of Section II.** Section III (03_augmentation.tex line 204) defines it again as the physical state. The result is a definition that Section II never uses and a duplicate definition.
+   Rule cause: the review-loop rule ("a 'where' clause defines the display's new symbols only") and "Say each fact once" did not prevent this.
+
+6. **Minor (E, packing). Sentences over 30 words remain.** Line 280: "As in the rational embedding of Drenth ... that cannot occur", about 36 words, with a choice and its reason. Line 145: "We model the gantry ... over the two drives", about 33 words, with two facts in the relative clause. The opening sentence at line 109 has about 32 words.
+   Rule cause: the review-loop "Packing pass" (every sentence over 30 words outside a where clause is split or cut) did not prevent this.
+
+7. **Minor (F, claim strength). II-D says the comparison measures "what the scheduling contributes" (line 424).** DOC/THESIS-RESULTS.md step 1 states that the truth contains the LPV structure, so the comparison is a demonstration, not an open test. Because both baselines run at the true parameters, an examiner would question "measure". The claim should be no stronger than THESIS-RESULTS reports, for example "to show the size of the position-dependent error".
+   Rule cause: the README "Claim strength" rule and the skill's "Reasons and claims" ("A pointer to what Results reports names only what DOC/THESIS-RESULTS.md plans to report") did not prevent this. The rule covers pointers to Results but not the purpose sentence of a compared model.
+
+8. **Minor (G). The log reports an overfull hbox (5.3 pt) inside sections/02_system_baseline.tex (log line 984, "lines 197--141").** It is most likely the footnotesize matrix display or the figure input.
+   Rule cause: skill step 3 ("An overfull box reported on this section's lines ... is fixed by breaking the display") did not prevent this. The compile check in the task only requires no "!" lines.
