@@ -74,9 +74,9 @@ third actuator that moves the payload along this arm (Fig.~\ref{fig:gantry_syste
   \centering
   \def\gantryabsorber{0}% baseline only; the absorber version is in Section III
   \input{figures/gantry_system_with_absorber}
-  \caption{Lumped-parameter gantry schematic adapted from the mechanical
+  \caption{\todo{Lumped-parameter gantry schematic adapted from the mechanical
   arrangement in \cite{garcia2013model}. Red labels denote actuator coordinates
-  and blue labels generalized coordinates.}
+  and blue labels generalized coordinates.}}
   \label{fig:gantry_system}
 \end{figure}
 % In Fig.~\ref{fig:gantry_lfr}(a), the physics baseline components are depicted in black;
@@ -196,9 +196,9 @@ with the scheduling being connected in feedback with $G$ (Fig.~\ref{fig:lfr}) \c
 \begin{figure}[t]
   \centering
   \input{figures/lfr_loop}
-  \caption{Self-scheduled \kw{baseline} interconnection. The \kw{Delta-block} closes
+  \caption{\todo{Self-scheduled \kw{baseline} interconnection. The \kw{Delta-block} closes
   the \kw{latent variables} of $G$ through $w=\Dsch(Y)z$, with
-  $\Dsch(Y)=YI_6$ and $Y$ a component of the \kw{state}.}
+  $\Dsch(Y)=YI_6$ and $Y$ a component of the \kw{state}.}}
   \label{fig:lfr}
 \end{figure}
 
@@ -263,7 +263,7 @@ For the gantry realization we show that this conditions holds
 when $M(Y)$ is nonsingular (Appendix~\ref{app:lfr-details}).
 For positive \kw{masses} and \kw{inertias}, $M(Y)\succ0$ for every $Y\in\R$
 (Appendix~\ref{app:lfr-wellposed}). Therefore the \kw{LFR} is well posed over the
-whole $Y$-operating range.
+whole $Y$-operating range. \todo{Connect the two sentences better?}
 
 \subsection{Physical parameters and identifiable combinations}\label{sec:params}
 \ifdraft

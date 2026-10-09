@@ -32,6 +32,12 @@ J.~H. Hoekstra, B.~M. Györök, R.~Tóth, and M.~Schoukens, ``Learning-based
   augmentation of first-principle models: A linear fractional
   representation-based approach,'' 2026, submitted to Automatica.
 
+\bibitem{gyorok2026obc}
+B.~M. Gy{\"o}r{\"o}k, M.~Schoukens, T.~P{\'e}ni, and R.~T{\'o}th,
+  ``Orthogonal-by-construction augmentation of physics-based input-output
+  models,'' \emph{IFAC Journal of Systems and Control}, vol.~35, p. 100376,
+  2026.
+
 \bibitem{kessels2025ai}
 B.~M. Kessels, ``Ai-based model updating for nonlinear dynamical systems,'' PhD
   thesis, Eindhoven University of Technology, Eindhoven, The Netherlands, 2025.
@@ -88,11 +94,6 @@ R.~Drenth, J.~H. Hoekstra, M.~Schoukens, and R.~T{\'o}th, ``Efficient learning
   of affine and rational dependency {LPV} models with linear fractional
   representation,'' 2026.
 
-\bibitem{gautier1990minimum}
-M.~Gautier and W.~Khalil, ``Direct calculation of minimum set of inertial
-  parameters of serial robots,'' \emph{IEEE Transactions on Robotics and
-  Automation}, vol.~6, no.~3, pp. 368--373, 1990.
-
 \bibitem{hong2020global}
 H.~Hong, A.~Ovchinnikov, G.~Pogudin, and C.~Yap, ``Global identifiability of
   differential models,'' \emph{Communications on Pure and Applied Mathematics},
@@ -102,6 +103,11 @@ H.~Hong, A.~Ovchinnikov, G.~Pogudin, and C.~Yap, ``Global identifiability of
 A.~Ovchinnikov, A.~Pillay, G.~Pogudin, and T.~Scanlon, ``Computing all
   identifiable functions of parameters for {ODE} models,'' \emph{Systems \&
   Control Letters}, vol. 157, p. 105030, 2021.
+
+\bibitem{gautier1990minimum}
+M.~Gautier and W.~Khalil, ``Direct calculation of minimum set of inertial
+  parameters of serial robots,'' \emph{IEEE Transactions on Robotics and
+  Automation}, vol.~6, no.~3, pp. 368--373, 1990.
 
 \bibitem{hoekstra2025lfr}
 J.~H. Hoekstra, C.~Verhoek, R.~T{\'o}th, and M.~Schoukens, ``Learning-based
@@ -122,12 +128,19 @@ G.~I. Beintema, M.~Schoukens, and R.~T{\'o}th, ``Deep subspace encoders for
 J.~H. Hoekstra, B.~M. Gy{\"o}r{\"o}k, R.~T{\'o}th, and M.~Schoukens, ``Encoder
   initialisation methods in the model augmentation setting,'' 2026.
 
-\bibitem{sutanto2020encoding}
-G.~Sutanto, A.~S. Wang, Y.~Lin, M.~Mukadam, G.~S. Sukhatme, A.~Rai, and
-  F.~Meier, ``Encoding physical constraints in differentiable {Newton-Euler}
-  algorithm,'' in \emph{Proceedings of the 2nd Conference on Learning for
-  Dynamics and Control}, ser. Proceedings of Machine Learning Research, vol.
-  120, 2020, pp. 804--813.
+\bibitem{forssell1999revisited}
+U.~Forssell and L.~Ljung, ``Closed-loop identification revisited,''
+  \emph{Automatica}, vol.~35, no.~7, pp. 1215--1241, 1999.
+
+\bibitem{hefny2015supervised}
+A.~Hefny, C.~Downey, and G.~J. Gordon, ``Supervised learning for dynamical
+  system learning,'' in \emph{Advances in Neural Information Processing
+  Systems}, vol.~28, 2015.
+
+\bibitem{downey2017psrnn}
+C.~Downey, A.~Hefny, B.~Li, B.~Boots, and G.~J. Gordon, ``Predictive state
+  recurrent neural networks,'' in \emph{Advances in Neural Information
+  Processing Systems}, vol.~30, 2017.
 
 \bibitem{gyorok2025l4dc}
 ``Source pending verification,'' citation metadata not yet verified.

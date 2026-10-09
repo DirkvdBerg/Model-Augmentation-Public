@@ -221,7 +221,7 @@ evaluation would mainly add cost.
 \item Need: the identification problem of Section~III-D must include the correction \eqref{eq:obc_corr}; trained parameters, coordinates and cost stay (2026 Eq.~(22); code)
 \item Problem display: cost and changed physical-row line, the other constraints by number; $\xi_{\mathrm{lin}}$ held fixed and refreshed per epoch, $\theta_{\mathrm{aux}}$ re-solved at every evaluation (D-190 items 5, 6; code)
 \item Per phase: S1 fits the corrected residual; S2 does not see the correction but changes $\theta_{\mathrm{aug}}$; Adam updates; validation uses the last epoch's basis; selection rebuilds the basis; the polish keeps it (D-198; code)
-\item $\mathcal M_{\mathrm{OBC}}$ named, input and output as in Section~III; compared with $\mathcal M_{\mathrm{PS2}}$ in Results (THESIS-RESULTS steps~5, 6; notation (?))
+\item $\mathcal M_{\mathrm{OBC}}$ named, input and output as in Section~III; compared with $\mathcal M_{\mathrm{PS}}$ in Results (THESIS-RESULTS steps~5, 6; notation (?))
 \end{itemize}
 \fi
 
@@ -264,14 +264,14 @@ After the best Adam checkpoint is restored, the basis is rebuilt at its $\xi$.
 The polish then changes every entry of $\vartheta$ with this basis, under the
 acceptance rule of Section~\ref{sec:aug_closed_loop}.
 
-We call $\mathcal M_{\mathrm{OBC}}$ the model $\mathcal M_{\mathrm{PS2}}$ with
+We call $\mathcal M_{\mathrm{OBC}}$ the model $\mathcal M_{\mathrm{PS}}$ with
 the correction \eqref{eq:obc_corr}, identified by \eqref{eq:obc_problem}.
 Its input is the actuator force $\uact$ and its output the actuator positions
 $\qact$.
-It starts as $\mathcal M_{\mathrm{PS2}}$ does, with the first basis built at
+It starts as $\mathcal M_{\mathrm{PS}}$ does, with the first basis built at
 $\xi=0$.
 Section~\ref{sec:results} compares $\mathcal M_{\mathrm{OBC}}$ with
-$\mathcal M_{\mathrm{PS2}}$ on the ten combinations and on accuracy.
+$\mathcal M_{\mathrm{PS}}$ on the ten combinations and on accuracy.
 \todo{Missing: model notation. Candidate: the calligraphic $\mathcal M_{\mathrm{OBC}}$, since plain $M$ clashes with $M(Y)$ (README open conflict on model names).}
 
 \subsection{Scope and condition for true parameter recovery}\label{sec:obc_scope}

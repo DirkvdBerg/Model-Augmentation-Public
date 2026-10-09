@@ -1,0 +1,59 @@
+% PS windows on one record (Section III-E), layout adapted from Hefny et al. 2015, Fig. 2.
+% Shows the final method: S1 target from tau+1 to tau+M (FINAL-RUN-FIXES.md item 5).
+\begin{tikzpicture}[
+    >={Latex[length=1.8mm,width=1.3mm]},
+    line width=0.5pt,
+    smp/.style={draw, line width=0.5pt, minimum width=10.5mm, minimum height=5mm,
+                inner sep=0pt, font=\scriptsize},
+    blk/.style={draw, line width=0.6pt, rounded corners=1pt, fill=white,
+                align=center, inner sep=2pt, minimum height=6mm, minimum width=9mm},
+    lab/.style={font=\scriptsize, inner sep=1.5pt},
+    hop/.style={preaction={draw=white, line width=2.4pt}},
+  ]
+  \def\w{1.05}   % sample pitch
+  \def\h{0.525}  % half sample width
+  \def\g{0.09}   % bracket inset, keeps adjacent windows visibly apart
+  \def\yB{0.47}  % bracket height above and below the row
+  \def\yS{1.25}  % S1 blocks
+  \def\yA{-1.1}  % psi_a row
+  \def\yG{-1.85} % g_aug row
+  \def\xL{-0.85} % route of x-hat_tau
+  \def\xV{6.45}  % loss blocks
+  % sample row
+  \foreach \i/\t in {0/{$\tau{-}n$}, 1/{$\tau{-}n{+}1$}, 2/{$\cdots$}, 3/{$\tau$},
+                     4/{$\tau{+}1$}, 5/{$\cdots$}, 6/{$\tau{+}M$}}
+    \node[smp] (s\i) at (\i*\w,0) {\t};
+  \node[lab, anchor=west] at (6*\w+\h+0.05,0) {$(y_k,u_k)$};
+
+  % S1 (top): encoder window chi_tau and residual target e_tau, disjoint
+  \draw (-\h+\g,\yB-0.1) -- (-\h+\g,\yB) -- (3*\w+\h-\g,\yB) -- (3*\w+\h-\g,\yB-0.1);
+  \node[lab, anchor=south west] at (-\h+\g,\yB) {$\chi_\tau$};
+  \draw (4*\w-\h+\g,\yB-0.1) -- (4*\w-\h+\g,\yB) -- (6*\w+\h-\g,\yB) -- (6*\w+\h-\g,\yB-0.1);
+  \node[lab, anchor=south west] at (4*\w-\h+\g,\yB) {$e_\tau$};
+  \node[blk] (psi) at (1.5*\w,\yS) {$\psi$};
+  \node[blk] (dec) at (4.4*\w,\yS) {$d$};
+  \node[blk] (v1) at (\xV,\yS) {$\|{\cdot}\|_2^2$};
+  \draw[->] (1.5*\w,\yB) -- (psi.south);
+  \draw[->] (psi.east) -- (dec.west) node[midway, above, lab] {$\bar x_\tau$};
+  \draw[->] (dec.east) -- (v1.west);
+  \draw[->] (\xV,\yB) -- (v1.south);
+
+  % S2 (bottom): window shifted by one sample, one-step map g_aug
+  \draw (1*\w-\h+\g,-\yB+0.1) -- (1*\w-\h+\g,-\yB) -- (4*\w+\h-\g,-\yB) -- (4*\w+\h-\g,-\yB+0.1);
+  \node[lab, anchor=north west] at (1*\w-\h+\g,-\yB) {$\chi_{\tau+1}$};
+  \node[blk] (psia) at (4.3*\w,\yA) {$\psi_a$};
+  \draw[->] (4.3*\w,-\yB) -- (psia.north);
+  \node[blk] (v2) at (\xV,\yA) {$\|{\cdot}\|_2^2$};
+  \draw[->] (psia.east) -- (v2.west) node[midway, above, lab] {$\bar x_{\tau+1}$};
+  \node[blk] (g) at (3*\w,\yG) {$g_{\mathrm{aug}}$};
+  \draw[->, hop] (s3.south) -- (g.north) node[pos=0.72, left, lab] {$u_\tau$};
+  % encoded state at tau, from the top encoder around the left
+  \draw[->] (psi.west) -- (\xL,\yS) -- (\xL,\yG) -- (g.west)
+       node[pos=0.08, lab, anchor=south west] {$\hat x_\tau$};
+  \draw[->] (g.east) -| (v2.south);
+  % stage tags beside each loss: what that loss trains
+  \node[lab, anchor=west, align=left] at ($(v1.east)+(0.08,0)$)
+       {S1: trains\\$\theta_{\mathrm p}$, $\theta^a_{\mathrm{enc}}$};
+  \node[lab, anchor=west, align=left] at ($(v2.east)+(0.08,0)$)
+       {S2: trains the\\added-state\\rows of $\phi_{\mathrm{aug}}$};
+\end{tikzpicture}
