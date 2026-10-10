@@ -86,6 +86,19 @@ in $Y$.
 The implementation evaluates both polynomials with Horner's scheme.
 \todo{Missing: print $N_0$, $N_1$, $N_2$ and $d(Y)$ explicitly? Candidate: no, appendix budget; the quadratic degree was checked symbolically (sympy, 2026-10-06).}
 
+For $m_h>0$, the ten distinct entries of $M_0$, $C$ and $K$ determine
+$\theta_{\mathrm{base}}$ of \eqref{eq:phi} uniquely (Section~\ref{sec:params}):
+\begin{equation*}
+\begin{aligned}
+ m_h&=M_{0,33}, & d&=-M_{0,23}/m_h, & m_\Sigma&=M_{0,11}-m_h,\\
+ m_\Delta&=2M_{0,12}/L_b, & J_{\mathrm{eff}}&=M_{0,22}-m_hd^2, & k_{b,\Sigma}&=K_{22},\\
+ c_{g1}&=\tfrac12C_{11}+C_{12}/L_b, & c_{g2}&=\tfrac12C_{11}-C_{12}/L_b, & c_y&=C_{33},\\
+ c_{b,\Sigma}&=C_{22}-\tfrac{L_b^2}{4}C_{11}. & &
+\end{aligned}
+\end{equation*}
+Conversely, \eqref{eq:mass_matrix} and \eqref{eq:damping_stiffness_matrices}
+give every entry as a function of $\theta_{\mathrm{base}}$, so the map is one-to-one.
+
 \todo{Remarks cut from Section~II-B; keep here or drop?}
 \begin{itemize}
 \item $Y^2$ is realized by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2025lpvlfr}

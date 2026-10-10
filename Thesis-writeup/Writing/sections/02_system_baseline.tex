@@ -50,7 +50,16 @@
 %    twelve entries, three equal m_h, ten independent; so exactly ten combinations are structurally
 %    identifiable; only then named theta_base (eq:phi). Model-only (no data), no new symbols, no
 %    Proposition/proof environment (agreed 2026-10-07).
-% 3. Four lost directions in one sentence; estimates reported in theta_base.
+%    Amended 2026-10-09: the I/O step names its conditions (q measured, full actuation, known force
+%    scale, Y over its operating range; open-set argument, M(Y) quadratic in Y). The ten entries are
+%    themselves identifiable, so "exactly ten" needs only the I/O step and the determinant; cite
+%    ovchinnikov2021computing Def. 7 only (README source map).
+% 2b. (2026-10-09) theta_base is one-to-one with the ten entries for m_h>0 (inverse map in
+%    app:lfr-details), so it is identifiable at every admissible theta.
+% 3. Four lost directions in one sentence; the fourth (carriage to cross-arm mass transfer) includes
+%    the compensating change of J_b+J_h that keeps J_eff fixed (2026-10-09); estimates reported in theta_base.
+% 3b. (2026-10-09) Scope in one sentence each: baseline with output q, independent of the encoder's
+%    initial-state estimate (sec:aug_encoder); the augmented model is treated in Section IV.
 % 4. Positive theta_base does not give M(Y)>0; that holds iff eq:lfr_admissibility (proof in app:lfr-wellposed).
 % 5. One sentence: training keeps eq:lfr_admissibility at every iterate. The m_Delta map (eq:mdelta_map)
 %    and its justification are stated in Section III-C (agreed 2026-10-07), not here.
@@ -268,32 +277,51 @@ whole $Y$-operating range. \todo{Connect the two sentences better?}
 \subsection{Physical parameters and identifiable combinations}\label{sec:params}
 \ifdraft
 \begin{itemize}
-\item The input-output behaviour fixes $M_0,M_1,M_2,C,K$ and conversely, so the identifiable part of $\theta$ is what the matrices contain (this work)
-\item Twelve nonzero entries, three equal to $m_h$, leave ten independent functions: exactly ten combinations are structurally identifiable (this work; definition Hong, Ovchinnikov)
-\item Written physically as $\theta_{\mathrm{base}}$, the gantry counterpart of base parameters (Gautier and Khalil); four lost directions; estimates reported in $\theta_{\mathrm{base}}$; recovery from the records in Setup
+\item With $q$ measured, known force scale and full actuation, the input-output behaviour fixes $M_0,M_1,M_2,C,K$ and conversely (this work)
+\item Twelve nonzero entries, three equal to $m_h$, leave ten independent functions: exactly ten combinations are structurally identifiable (this work; definition Ovchinnikov)
+\item Written physically as $\theta_{\mathrm{base}}$, the gantry counterpart of base parameters (Gautier and Khalil); one-to-one with the entries for $m_h>0$ (this work)
+\item Four lost directions; estimates reported in $\theta_{\mathrm{base}}$; result independent of the encoder; augmented model in Section~IV; recovery from the records in Setup
 \item Positive $\theta_{\mathrm{base}}$ does not give $M(Y)\succ0$; that holds iff \eqref{eq:lfr_admissibility} (this work; proof Appendix~\ref{app:lfr-wellposed})
 \item Training keeps \eqref{eq:lfr_admissibility} at every iterate; the map and its justification are in Section~\ref{sec:aug_closed_loop}
 \end{itemize}
 \fi
-The fourteen raw parameters $\theta$ of Table~\ref{tab:nominal_parameters} cannot
-all be identified from input-output data. Two parameter vectors with the same
-input-output behaviour satisfy
+The fourteen parameters $\theta$ of 
+\todo{needs to have appendix in the name of the table}
+Table~\ref{tab:nominal_parameters} cannot all be identified from input-output data.
+The positions $X_1$, $X_2$, $Y$ are measured, which gives 
+$q$ through \eqref{eq:Ptransform}, and the forces $u$ are known in newtons.
+Two parameter sets $\theta$ and $\theta'$ that produce the same 
+motion for every input force satisfy
 \begin{equation*}
   \bigl(M(Y)-M'(Y)\bigr)\ddot q+(C-C')\dot q+(K-K')q=0
 \end{equation*}
-along every trajectory. Since every $(q,\dot q,\ddot q)$ is attained, the
-input-output behaviour fixes $M_0,M_1,M_2,C,K$, and conversely. The identifiable
-part of $\theta$ is therefore what these matrices contain.
 
-Up to symmetry, \eqref{eq:mass_matrix} and \eqref{eq:damping_stiffness_matrices}
-have twelve nonzero entries. Three of them, $M_{0,33}$, $-M_{1,12}$ and
-$M_{2,22}$, equal $m_h$, which leaves ten distinct functions of $\theta$. Their
-Jacobian with respect to $(m_h,d,m_1,m_b,J_b,c_{g1},c_{g2},c_{b1},c_y,k_{b1})$ is
-block triangular with determinant $m_hL_b^2/2\neq0$, so the ten are independent.
-Exactly ten combinations of $\theta$ are therefore structurally identifiable
-\cite[Def.~2.5]{hong2020global}, \cite[Def.~7]{ovchinnikov2021computing}.
 
-We write them in physically readable form as
+With unconstrained initial conditions and full actuation,
+any acceleration $\ddot q$ can be reached at any state within 
+the operating range. Therefore the identity must hold for all 
+these states and accelerations, this implies that $K=K'$, $C=C'$ 
+and $M(Y)=M'(Y)$. Since $M(Y)$ is quadratic in $Y$, this also 
+implies that $M_0=M_0'$, $M_1=M_1'$ and $M_2=M_2'$. 
+If these matrices are equal, the input-output behaviour is also the same. 
+Therefore, the part of $\theta$ that can be identified is 
+determined by the parameter combinations in $M_0,M_1,M_2,C$ and $K$.
+% Therefore the part of $\theta$ that can be identified 
+% Therefore, only the parameter combinations in $M_0,M_1,M_2,C$ and $K$ can 
+% be identified.
+If we ignore the symmetric entries, \eqref{eq:mass_matrix} and 
+\eqref{eq:damping_stiffness_matrices} contain 
+twelve nonzero entries. Three of these, $M_{0,33}$, $-M_{1,12}$ and $M_{2,22}$, 
+are equal to $m_h$. This leaves us with ten distinct functions of $\theta$. 
+The Jacobian of these ten functions with respect to 
+$(m_h,d,m_1,m_b,J_b,c_{g1},c_{g2},c_{b1},c_y,k_{b1})$ 
+is block triangular and has a determinant of $m_hL_b^2/2\neq0$, 
+meaning that the then functions are independent.
+Since the matrices only depend on these ten functions, 
+exactly ten independent combinations of $\theta$ can be identified 
+\todo{check source} \cite[Def.~7]{ovchinnikov2021computing}.
+\\
+We define these ten combinations as
 \begin{equation}
   \theta_{\mathrm{base}}=[k_{b,\Sigma},c_{g1},c_{g2},c_y,c_{b,\Sigma},
   m_h,m_\Sigma,m_\Delta,J_{\mathrm{eff}},d]^\top,
@@ -301,18 +329,37 @@ We write them in physically readable form as
 \end{equation}
 with $k_{b,\Sigma}=k_{b1}+k_{b2}$, $c_{b,\Sigma}=c_{b1}+c_{b2}$,
 $m_\Sigma=m_1+m_2+m_b$, $m_\Delta=m_1-m_2$ and
-$J_{\mathrm{eff}}=J_b+J_h+\tfrac{L_b^2}{4}(m_1+m_2)$, the gantry counterpart of
-base inertial parameters \cite{gautier1990minimum}. The four lost directions are
-$k_{b1}-k_{b2}$, $c_{b1}-c_{b2}$, $J_b-J_h$ and a mass transfer from the carriages
-to the cross-arm, so estimates are reported in $\theta_{\mathrm{base}}$. Recovery
-from the closed-loop records is examined in Section~\ref{sec:setup}.
+$J_{\mathrm{eff}}=J_b+J_h+\tfrac{L_b^2}{4}(m_1+m_2)$. 
+This follows the idea of base parameters used in robot dynamics \todo{check source}\cite{gautier1990minimum}.
+For $m_h>0$, $\theta_{\mathrm{base}}$ can be uniquely determined from 
+the ten entries (Appendix~\ref{app}). 
+We therefore estimate $\theta_{\mathrm{base}}$ instead of $\theta$, 
+presented in the results \todo{Section~\ref{sec}}.
+% For $m_h>0$,
+% $\theta_{\mathrm{base}}$ is a one-to-one function of the ten entries
+% (Appendix~\ref{app:lfr-details}), so it is identifiable at every admissible
+% $\theta$. The four lost directions are $k_{b1}-k_{b2}$, $c_{b1}-c_{b2}$,
+% $J_b-J_h$, and a mass transfer from the carriages to the cross-arm with the
+% change of $J_b+J_h$ that keeps $J_{\mathrm{eff}}$ fixed. Estimates are therefore
+% reported in $\theta_{\mathrm{base}}$. The result holds for the baseline with
+% output $q$, independent of how the initial state of a simulation is estimated
+% (Section~\ref{sec:aug_encoder}). The augmented model is treated in
+% Section~\ref{sec:obc}. Recovery from the closed-loop records is examined in
+% Section~\ref{sec:setup}.
+% \todo{Missing: gautier1990minimum passage unchecked (no local PDF); metadata verified, DOI 10.1109/70.56655. Candidate: obtain the paper and check that it defines base inertial parameters as the minimal set of regressor coefficients.}
+\\
 Positive $\theta_{\mathrm{base}}$ does not imply $M(Y)\succ0$. For
 $m_h,m_\Sigma,J_{\mathrm{eff}}>0$, $M(Y)\succ0$ for every $Y$ if and only if
 \begin{equation}
   m_\Sigma J_{\mathrm{eff}}>\tfrac{L_b^2}{4}\,m_\Delta^2
   \label{eq:lfr_admissibility}
 \end{equation}
-(Appendix~\ref{app:lfr-wellposed}). Training therefore uses logarithmic
-coordinates for the nine positive combinations and a $\tanh$-bounded $m_\Delta$
-(Section~\ref{sec:aug_closed_loop}), so \eqref{eq:lfr_admissibility} and
-well-posedness hold at every iterate.
+(Appendix~\ref{app:lfr-wellposed}). 
+To ensure that well-posedness and \eqref{eq:lfr_admissibility} 
+hold during training, we use a logarithmic parameterization for 
+the nine positive combinations and a $\tanh$-bounded $m_\Delta$
+(Section~\ref{sec:aug_closed_loop}).
+% Training therefore uses logarithmic
+% coordinates for the nine positive combinations and a $\tanh$-bounded $m_\Delta$
+% (Section~\ref{sec:aug_closed_loop}), so \eqref{eq:lfr_admissibility} and
+% well-posedness hold at every iterate.

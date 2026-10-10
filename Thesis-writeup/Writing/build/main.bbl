@@ -94,11 +94,6 @@ R.~Drenth, J.~H. Hoekstra, M.~Schoukens, and R.~T{\'o}th, ``Efficient learning
   of affine and rational dependency {LPV} models with linear fractional
   representation,'' 2026.
 
-\bibitem{hong2020global}
-H.~Hong, A.~Ovchinnikov, G.~Pogudin, and C.~Yap, ``Global identifiability of
-  differential models,'' \emph{Communications on Pure and Applied Mathematics},
-  vol.~73, no.~9, pp. 1831--1879, 2020.
-
 \bibitem{ovchinnikov2021computing}
 A.~Ovchinnikov, A.~Pillay, G.~Pogudin, and T.~Scanlon, ``Computing all
   identifiable functions of parameters for {ODE} models,'' \emph{Systems \&
