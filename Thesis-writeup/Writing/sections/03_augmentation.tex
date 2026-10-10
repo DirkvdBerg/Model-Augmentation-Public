@@ -144,12 +144,21 @@
 \end{itemize}
 \fi
 
-The dynamics of the system that the baseline defined in Section~\ref{sec:lfr} 
-does not capture, will be identified from input-output data measured in closed-loop \todo{To vague?}.
-The baseline model will be augmented to represent these missing dynamics. 
-To represent \todo{unmodeled dynamics} a correction 
-to the states of the baseline models does not suffice \todo{why?}, additional states are 
-therefore introduced.
+The dynamics of the system that are not captured by the baseline model
+defined in Section~\ref{sec:lfr} will be identified from input-output data
+measured in closed-loop.
+The baseline model will be augmented to represent these missing dynamics.
+A correction to the states of the baseline model alone is not sufficient, 
+so additional states are introduced.
+We make use of a neural network to model both the changes for the baseline states
+and the additional states.
+\\
+The model is trained using short windows of the closed-loop data, where each
+window is simulated with the known controller.
+The initial states are estimated by an encoder, including the additional
+states.
+During training, the physical parameters $\theta_{\mathrm{base}}$ are also
+estimated, using the combinations defined in Section~\ref{sec:params}.
 % For the system data will be generated in simulation, see Section \todo{section label}. 
 % Given the baseline of Section~\ref{sec:lfr}, our goal is a model that
 % also captures the dynamics the baseline omits, identified from records
@@ -182,38 +191,54 @@ therefore introduced.
 \end{itemize}
 \fi
 
-If the effects that the baseline omits are dynamic, its six states cannot
-represent them.
-Refitting $\theta_{\mathrm{base}}$ adds no states.
-Neither does a static augmentation, which corrects the state update of the
-baseline without extending its state~\cite[Sec.~2]{hoekstra2025lfr}.
-The augmentation therefore needs states of its own.
-
-We use the LFR-based augmentation structure of Hoekstra et al., in which an
-interconnection matrix connects a baseline block and a learning
-block~\cite[Sec.~3.1]{hoekstra2025lfr}, here a fixed
-one~\cite[Sec.~3.2]{hoekstra2025lfr}: the dynamic-parallel choice below
-specifies every entry of the interconnection, so nothing in it is left to
-learn.
-\todo{Candidate reason for the fixed interconnection (own reasoning, no source or decision entry yet); confirm or replace.}
-Since $Y$ is a state, the self-scheduled LFR of Section~\ref{sec:lfr} is a
-nonlinear map of the state and the input, and it enters this structure as the
-baseline block.
+To represent additional dynamics such as a flexible mode,
+refitting $\theta_{\mathrm{base}}$ or correcting the baseline states
+with a static augmentation is not sufficient.
+Both these methods \todo{only retain} the original states of the baseline, 
+while missing dynamics require
+states the baseline does not include~\cite[Sec.~2]{hoekstra2025lfr}.
+A dynamic augmentation therefore adds states $\bar x$ to model these
+missing dynamics~\cite[Sec.~3]{hoekstra2026lfr}.
+The augmented model updates these states using the full state
+and input~\cite[Sec.~2, Table~1]{hoekstra2025lfr}.
+\\
+The LFR-based augmentation structure of Hoekstra et al. is used, 
+an interconnection matrix connects a baseline block and a learning
+block~\cite[Sec.~3.1]{hoekstra2025lfr}. The learning block is a neural network.
+Similar to the LFR in Section~\ref{sec:lfr} (Fig.~\ref{fig:lfr}),
+a constant matrix connects the two blocks through latent variables.
+The self-scheduled LFR 
+The baseline block for this is the self-scheduled LFR of Section~\ref{sec:lfr}, 
+this is a nonlinear 
+\todo{Check can i state nonlinear here}
+map of the state and the input~\cite[Sec.~1.1]{drenth2025thesis}.
 The augmented model is thus an LFR whose baseline block is itself an LFR
 in~$Y$.
-The learning block is a neural network, as in Hoekstra et al., not an LPV-LFR
+\\
+The dynamic-parallel augmentation structure is chosen, because the 
+orthogonal-by-construction parametrisation that Section~\ref{sec:obc} builds upon 
+is defined for the additive structure~\cite{hoekstra2025lfr, gyorok2026obc}.
+\\
+The output map is not augmented, because \eqref{eq:Ptransform} gives the exact 
+relation between the states and the measured outputs. 
+This is also done to ensure that $q$ still represents the physical positions. 
+With a learned correction to the output map the states could stop 
+representing the actual positions. 
+Kessels also leaves the output map unchanged when it is
+already accurate~\cite[Remark~5.3]{kessels2025ai}.
+\todo{not an LPV-LFR
 with a learned scheduling map as in the augmentation of
-Drenth~\cite[Eq.~(5.2)]{drenth2025thesis}.
-\todo{Missing: reason for a network as learning block rather than Drenth's LPV-LFR augmentation. The research plan (Aspect~2) extends the structure ``to the LPV setting following'' Drenth and leaves ``the specific parameterization to be established''. Candidates: (a) Hoekstra's framework with its zero start and well-posedness result is kept as is; (b) the research question asks only for a structure that captures the omitted dynamics. Close D-017 with a decision entry.}
-Of the interconnections, we choose the dynamic-parallel
-one~\cite[Table~1]{hoekstra2025lfr}, because the orthogonal-by-construction
-parametrisation that Section~\ref{sec:obc} extends is defined for this
-additive structure~\cite{gyorok2026obc}.
-It also keeps the baseline an explicit term of the state update.
-The output map is not augmented, because it is the exact kinematic relation
-\eqref{eq:Ptransform}.
-Kessels likewise leaves an accurate output map
-unaugmented~\cite[Remark~5.3]{kessels2025ai}.
+Drenth~\cite[Eq.~(5.2)]{drenth2025thesis}.}
+\todo{Missing: reason for a network as learning block rather 
+than Drenth's LPV-LFR augmentation. The research plan (Aspect~2) extends 
+the structure ``to the LPV setting following'' Drenth and leaves 
+``the specific parameterization to be established''. 
+Candidates: (a) Hoekstra's framework with its zero start and well-posedness 
+result is kept as is; (b) the research question asks only
+ for a structure that captures the omitted dynamics. Close D-017 
+ with a decision entry.}
+\\
+
 
 The structure is a discrete-time state update, in which the learned
 correction is added to the baseline transition~\cite[Sec.~2, Table~1]{hoekstra2025lfr}.
