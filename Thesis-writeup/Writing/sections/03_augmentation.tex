@@ -204,8 +204,10 @@ and input~\cite[Sec.~2, Table~1]{hoekstra2025lfr}.
 \\
 The LFR-based augmentation structure of Hoekstra et al. is used, 
 an interconnection matrix connects a baseline block and a learning
-block~\cite[Sec.~3.1]{hoekstra2025lfr}. The learning block is a neural network.
-Similar to the LFR in Section~\ref{sec:lfr} (Fig.~\ref{fig:lfr}),
+block~\cite[Sec.~3.1]{hoekstra2025lfr}. 
+The learning components are a neural network consisting of $f_{\mathrm{aug}}$ 
+and $g_{\mathrm{aug}}$.
+\todo{constant block is not really constant} Similar to the LFR in Section~\ref{sec:lfr} (Fig.~\ref{fig:lfr}),
 a constant matrix connects the two blocks through latent variables.
 The self-scheduled LFR 
 The baseline block for this is the self-scheduled LFR of Section~\ref{sec:lfr}, 
@@ -219,7 +221,7 @@ The dynamic-parallel augmentation structure is chosen, because the
 orthogonal-by-construction parametrisation that Section~\ref{sec:obc} builds upon 
 is defined for the additive structure~\cite{hoekstra2025lfr, gyorok2026obc}.
 \\
-The output map is not augmented, because \eqref{eq:Ptransform} gives the exact 
+The output map is not augmented (no $h_{\mathrm{aug}}$), because \eqref{eq:Ptransform} gives the exact
 relation between the states and the measured outputs. 
 This is also done to ensure that $q$ still represents the physical positions. 
 With a learned correction to the output map the states could stop 
@@ -259,65 +261,78 @@ forces, $\hat y_k\in\R^3$ the predicted actuator positions,
 and $y_k = q_{\mathrm{act},k}$ the measured positions,
 $\theta_{\mathrm{base}}\in\R^{10}$ the combinations \eqref{eq:phi},
 and \todo{using theta might be confusing with baseline} $\theta_{\mathrm{aug}}\in\R^{n_{\mathrm{aug}}}$ the network parameters.
+The added states are updated by $g_{\mathrm{aug}}$ without any predetermined 
+physical meaning, in contrast to the baseline states $\tilde x$ for which 
+the positions are measured.
 \\
-The added states evolve through $g_{\mathrm{aug}}$ alone and therefore carry
-no predefined physical meaning, whereas the learning component depends on the
-payload position $Y$ through $\tilde x_k$ and can thus represent
-position-dependent effects.
-
-The baseline enters through its transition over one sample period
-$T_s$, one fourth-order Runge-Kutta (RK4) step of \eqref{eq:eom} with the
-input held over the step:
+The baseline is evaluated over one sample period $T_s$.
+Writing \eqref{eq:eom} in state-space form gives
 \begin{equation}
-\begin{aligned}
- F(\tilde x,u)&=\begin{bmatrix}\dot q\\
-  M(Y)^{-1}\bigl(u-C\dot q-Kq\bigr)\end{bmatrix},\\
- k_1&=F(\tilde x_k,u_k),\quad
- k_i=F\bigl(\tilde x_k+c_iT_s\,k_{i-1},u_k\bigr),\quad i=2,3,4,\\
- f_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x_k,u_{\mathrm{act},k})
-  &=\tilde x_k+\tfrac{T_s}{6}\bigl(k_1+2k_2+2k_3+k_4\bigr),
-\end{aligned}
-\label{eq:aug_rk4}
+ \dot{\tilde x}=F(\tilde x,u)=\begin{bmatrix}\dot q\\
+  M(Y)^{-1}\bigl(u-C\dot q-Kq\bigr)\end{bmatrix},
+\label{eq:aug_ct}
 \end{equation}
-where $u_k=Pu_{\mathrm{act},k}$ is the generalized force
-\eqref{eq:Ptransform}, $c=(\tfrac12,\tfrac12,1)$, $M$, $C$ and $K$ depend on
-$\theta_{\mathrm{base}}$ through \eqref{eq:phi}, and $M(Y)^{-1}$ is the
-closed loop of the LFR of Section~\ref{sec:lfr}.
-Each stage evaluates $M(Y)$ at the $Y$ of its own state, so
-$f_{\mathrm{base}}$ remains self-scheduled.
-No learned function feeds the baseline block or itself within a step, so the
-interconnection graph is acyclic~\cite[Thm.~1]{hoekstra2025lfr} and, with
-the well-posedness of the baseline LFR (Section~\ref{sec:lfr}), the augmented
-model is well posed for every $Y$.
+where $u=Pu_{\mathrm{act}}$ is the generalized force
+\eqref{eq:Ptransform}, $M$, $C$ and $K$ depend on $\theta_{\mathrm{base}}$
+through \eqref{eq:phi}, and $M(Y)^{-1}$ is the closed loop of the LFR of
+Section~\ref{sec:lfr}.
+$f_{\mathrm{base}}$ is calculated using one fourth-order
+Runge-Kutta (RK4) step of $F$ over $T_s$, with the input
+kept constant during the step.
+For each of the four RK4 steps $M(Y)$ is evaluated 
+using the value of $Y$ from its intermediate state.
 
-The network and the identification act on centred signals of unit variance,
-so that network inputs in metres, radians and newtons, and output channels of
-different amplitude, enter on a comparable scale.
-\todo{Candidate reason for the normalisation (own reasoning; D-055 and D-119 cover the mechanics, not the reason); confirm or replace with a source.}
-Every statistic is taken from the training records, the state statistics from
-the positions $q=P^{-\top}y$ and their first differences divided by $T_s$:
+\todo{
+The augmented model admits a unique solution for every state,
+input and $Y$. The interconnection has no algebraic loops,
+making it acyclic, and both blocks are twice continuously differentiable,
+which together give well-posedness~\cite[Cond.~6, Cond.~8, Thm.~9]{hoekstra2026lfr}.
+The baseline LFR is also well posed
+(Section~\ref{sec:lfr}).}
+
+The inputs to the artificial neural network (ANN) are normalised
+to zero mean and unit variance, which has been shown to improve
+the estimation of models containing ANNs~\cite[Sec.~5.3]{hoekstra2026lfr}.
+The mean and standard deviations are computed from the training data.
+For the baseline states the measured positions are converted to their generalized 
+positions, for which the velocities can be estimated from their 
+finite difference by dividing with $T_s$. 
+This ensures that the positions and outputs are scaled with the same 
+measurements: keeping the scales consistent. This also makes sure that 
+all models independent of its initial parameters use the same scale, 
 \begin{equation}
  \tilde x^{\mathrm n}=T_x(\tilde x-\mu_x),\quad
  u^{\mathrm n}=T_u(u_{\mathrm{act}}-\mu_u),\quad
  y^{\mathrm n}=T_y(y-\mu_y),
  \label{eq:aug_norm}
 \end{equation}
-where $\mu_x\in\R^6$, $\mu_u,\mu_y\in\R^3$ are the channel means,
-$T_\bullet=\operatorname{diag}(\sigma_\bullet)^{-1}$ with $\sigma_\bullet$ the
-channel standard deviations, and $\bar x$ is not scaled, so
-$\hat x^{\mathrm n}=\col(\tilde x^{\mathrm n},\bar x)$.
-In these coordinates the baseline transition is
-$f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x^{\mathrm n},u^{\mathrm n})
-=T_x\bigl(f_{\mathrm{base}}(\theta_{\mathrm{base}},T_x^{-1}\tilde x^{\mathrm n}+\mu_x,
-T_u^{-1}u^{\mathrm n}+\mu_u)-\mu_x\bigr)$: it maps back to physical units,
-takes the RK4 step and normalises the result.
-A correction only scales, $f^{\mathrm n}_{\mathrm{aug}}=T_xf_{\mathrm{aug}}$,
-because it is a difference of states, and
-$g^{\mathrm n}_{\mathrm{aug}}=g_{\mathrm{aug}}$.
-Since the position part of $\mu_x$ is $P^{-\top}\mu_y$, the output map stays
-linear,
-$\hat y^{\mathrm n}_k=C^{\mathrm n}\tilde x^{\mathrm n}_k$ with
-$C^{\mathrm n}=T_yP^\top[I_3\;\,0]\,T_x^{-1}$.
+where $\mu_x\in\R^6$ and $\mu_u,\mu_y\in\R^3$ are the channel means, 
+and $T_i=\operatorname{diag}(\sigma_i)^{-1}$
+for $i\in{x,u,y}$, with $\sigma_i$ the corresponding standard
+deviations. The additional states $\bar x$ are not normalised,
+so $\hat x^{\mathrm n}=\col(\tilde x^{\mathrm n},\bar x)$.
+\\
+After normalisation, the model equations become
+\begin{equation}
+\begin{aligned}
+ f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x^{\mathrm n},u^{\mathrm n})
+ &=T_x\bigl(f_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x,u_{\mathrm{act}})-\mu_x\bigr),\\
+ f^{\mathrm n}_{\mathrm{aug}}&=T_xf_{\mathrm{aug}},\qquad
+ g^{\mathrm n}_{\mathrm{aug}}=g_{\mathrm{aug}},\\
+ \hat y^{\mathrm n}_k&=C^{\mathrm n}\tilde x^{\mathrm n}_k,\qquad
+ C^{\mathrm n}=T_yP^\top[I_3\;\,0]\,T_x^{-1}.
+\end{aligned}
+\label{eq:aug_norm_maps}
+\end{equation}
+where $\tilde x$ and $u_{\mathrm{act}}$ follow from $\tilde x^{\mathrm n}$ and
+$u^{\mathrm n}$ by inverting \eqref{eq:aug_norm}, so RK4 uses the
+states and inputs in physical units.
+The correction represents a change in the states itself and not the full state 
+itself, and therefore we only scale it. 
+The output map remains linear because the mean of the
+positions is calculated from the output mean as
+$P^{-\top}\mu_y$.
+
 
 One multilayer perceptron $\phi_{\mathrm{aug}}$ with tanh hidden layers and a
 linear output layer supplies both learned functions,
@@ -326,6 +341,9 @@ $\col(f^{\mathrm n}_{\mathrm{aug}},g^{\mathrm n}_{\mathrm{aug}})
 it reads the $6+n_{\bar x}$ states and the three inputs, its first six
 outputs are the corrections of the physical rows and its last $n_{\bar x}$
 outputs the next added state (Fig.~\ref{fig:aug_structure}).
+Both $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$ depend on the
+payload position $Y$ through $\tilde x_k$, and therefore are able to represent
+position-dependent effects.
 A feedforward network suffices because the baseline is augmented additively,
 whereas a series structure needs a residual network to reproduce the baseline
 at initialisation~\cite[Sec.~4.3]{hoekstra2025lfr}.
@@ -495,6 +513,7 @@ of~\cite[Sec.~3.2]{hoekstra2026encoder}.
 On the gantry, that simulation is driven by the recorded input and drifts on
 the free axes $X$ and $Y$ (Section~\ref{sec:aug_loop}), so it would fit $W^b$
 to wrong states.
+\todo{Revise: the drift holds only for the open-loop simulation of Jan's Eq.~(30). A closed-loop simulation of the baseline with the known controller does not drift (Section~\ref{sec:aug_loop}), so drift alone is no reason against the data-based route. Candidate: the closed-loop alternative would need an extra simulation, which the model-based map avoids.}
 The map \eqref{eq:aug_wb} needs no simulation and negligible
 computation~\cite[Sec.~4.4]{hoekstra2026encoder}.
 It gives better starting values and faster convergence than a random encoder,
