@@ -120,30 +120,4 @@ R.~Drenth, ``Efficient gradient-based learning of {LPV} models with linear
   fractional representation,'' Master's thesis, Eindhoven University of
   Technology, 2025.
 
-\bibitem{beintema2023subnet}
-G.~I. Beintema, M.~Schoukens, and R.~T{\'o}th, ``Deep subspace encoders for
-  nonlinear system identification,'' \emph{Automatica}, vol. 156, p. 111210,
-  2023.
-
-\bibitem{hoekstra2026encoder}
-J.~H. Hoekstra, B.~M. Gy{\"o}r{\"o}k, R.~T{\'o}th, and M.~Schoukens, ``Encoder
-  initialisation methods in the model augmentation setting,'' 2026.
-
-\bibitem{forssell1999revisited}
-U.~Forssell and L.~Ljung, ``Closed-loop identification revisited,''
-  \emph{Automatica}, vol.~35, no.~7, pp. 1215--1241, 1999.
-
-\bibitem{hefny2015supervised}
-A.~Hefny, C.~Downey, and G.~J. Gordon, ``Supervised learning for dynamical
-  system learning,'' in \emph{Advances in Neural Information Processing
-  Systems}, vol.~28, 2015.
-
-\bibitem{downey2017psrnn}
-C.~Downey, A.~Hefny, B.~Li, B.~Boots, and G.~J. Gordon, ``Predictive state
-  recurrent neural networks,'' in \emph{Advances in Neural Information
-  Processing Systems}, vol.~30, 2017.
-
-\bibitem{gyorok2025l4dc}
-``Source pending verification,'' citation metadata not yet verified.
-
 \end{thebibliography}

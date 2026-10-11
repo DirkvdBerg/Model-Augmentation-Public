@@ -408,13 +408,13 @@ INPUT .\figures\tex\augmentation_structure.tex
 INPUT .\figures\tex\augmentation_structure.tex
 INPUT .\figures\tex\augmentation_structure.tex
 INPUT figures\tex\augmentation_structure.tex
+INPUT .\figures\closed_loop_same_reference.pdf
+INPUT .\figures\closed_loop_same_reference.pdf
+INPUT .\figures\closed_loop_same_reference.pdf
+INPUT .\figures\closed_loop_same_reference.pdf
+INPUT .\figures\closed_loop_same_reference.pdf
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.tfm
-INPUT .\figures\closed_loop_same_reference.pdf
-INPUT .\figures\closed_loop_same_reference.pdf
-INPUT .\figures\closed_loop_same_reference.pdf
-INPUT .\figures\closed_loop_same_reference.pdf
-INPUT .\figures\closed_loop_same_reference.pdf
 INPUT .\figures\tex\ps2_windows.tex
 INPUT .\figures\tex\ps2_windows.tex
 INPUT .\figures\tex\ps2_windows.tex
@@ -440,8 +440,6 @@ INPUT .\sections\05_setup.tex
 INPUT .\sections\05_setup.tex
 INPUT .\sections\05_setup.tex
 INPUT sections\05_setup.tex
-INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
-INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.tfm
 INPUT .\figures\gantry_system_with_absorber.tex
 INPUT .\figures\gantry_system_with_absorber.tex
 INPUT .\figures\gantry_system_with_absorber.tex
@@ -457,6 +455,8 @@ INPUT .\figures\res_lpv_lti.pdf
 INPUT .\figures\res_lpv_lti.pdf
 INPUT .\figures\res_lpv_lti.pdf
 INPUT .\figures\res_lpv_lti.pdf
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.tfm
 INPUT .\tables\res_structure.tex
 INPUT .\tables\res_structure.tex
 INPUT .\tables\res_structure.tex
@@ -541,8 +541,6 @@ INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfont
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmr9.pfb
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy10.pfb
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy10.pfb
-INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy5.pfb
-INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy5.pfb
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy6.pfb
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy6.pfb
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\type1\public\amsfonts\cm\cmsy7.pfb

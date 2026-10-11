@@ -381,7 +381,7 @@ chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).
  \resizebox{\columnwidth}{!}{\input{figures/tex/augmentation_structure}}
  \caption{Augmented model. The physics step $f_{\mathrm{base}}$ and the
  network $\phi_{\mathrm{aug}}$ act in parallel on $\hat x_k$.
- $\phi_{\mathrm{aug}}$ supplies $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$,
+ $\phi_{\mathrm{aug}}$ gives $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$,
  and the output map is not learned. The encoder
  $\psi$ sets $\hat x$ at each window start. During training, the input is the
  closed-loop input of Section~\ref{sec:aug_loop}.
@@ -402,6 +402,12 @@ chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).
 \end{itemize}
 \fi
 
+\begin{outline}
+\item Only positions are measured, so an encoder estimates the state at each window start $\tau$ from past inputs and outputs
+\item Choice: short windows from encoded states
+\item Choice: the history includes sample $\tau$; the encoder estimates all $6+n_{\bar x}$ states:
+\end{outline}
+\begin{wip}
 Only the positions of the state at the start $\tau$ of a training window are
 measured.
 Following Beintema et al., an encoder estimates this state from the input and
@@ -413,15 +419,20 @@ Unlike the criterion of Hoekstra et al., whose encoder reads the samples up to
 $\tau-1$~\cite[Eq.~(22e)]{hoekstra2026lfr}, the history includes sample
 $\tau$, as the reconstructability map used below
 requires~\cite[Eqs.~(11) to (17)]{hoekstra2026encoder}:
+\end{wip}
 \begin{equation}
 \begin{aligned}
  \hat x^{\mathrm n}_{\tau|\tau}
  &=\psi(\theta_{\mathrm{enc}},\chi_\tau),\\
- \chi_\tau&=\col\bigl(y^{\mathrm n}_{\tau-n},\dots,y^{\mathrm n}_\tau,\,
-   u^{\mathrm n}_{\tau-n},\dots,u^{\mathrm n}_\tau\bigr),
+ \chi_\tau&=\col\bigl(y^{\mathrm n}_\tau,\dots,y^{\mathrm n}_{\tau-n},\,
+   u^{\mathrm n}_\tau,\dots,u^{\mathrm n}_{\tau-n}\bigr),
 \end{aligned}
  \label{eq:aug_encoder}
 \end{equation}
+\begin{outline}
+\item The encoder is a linear map plus a network correction; $W^b$ gives the physical states, $W^a$ the added states:
+\end{outline}
+\begin{wip}
 where $n$ is the encoder history, $\chi_\tau\in\R^{6(n+1)}$ the recorded
 window and $\theta_{\mathrm{enc}}\in\R^{n_{\mathrm{enc}}}$ the encoder
 parameters.
@@ -435,6 +446,7 @@ correction~\cite[Eq.~(8)]{hoekstra2026encoder}.
 Its added-state rows $W^a$ have no baseline counterpart.
 The linear part acts on the scaled but uncentred window, for which the map
 \eqref{eq:aug_wb} below is built:
+\end{wip}
 \begin{equation}
  \psi(\theta_{\mathrm{enc}},\chi_\tau)
  =\begin{bmatrix}W^b\\ W^a\end{bmatrix}(\chi_\tau+\chi_0)
@@ -442,6 +454,10 @@ The linear part acts on the scaled but uncentred window, for which the map
   +\tilde\psi(\chi_\tau),
  \label{eq:aug_enc_lin}
 \end{equation}
+\begin{outline}
+\item Choice: $W^b$ from the baseline, linearised at rest at $Y=0$ with nominal parameters, ZOH over $T_s$:
+\end{outline}
+\begin{wip}
 where $W^b\in\R^{6\times6(n+1)}$, $W^a\in\R^{n_{\bar x}\times6(n+1)}$,
 $\chi_0$ restores the means that \eqref{eq:aug_norm} removes, $\tilde\psi$ is
 a neural network, and $\theta_{\mathrm{enc}}$ collects $W^b$, $W^a$
@@ -465,6 +481,7 @@ Frozen at $Y=0$, \eqref{eq:eom} is linear, so the linearisation is the
 baseline itself at that position and approximates it only as $Y$ moves.
 Discretising by zero-order hold over $T_s$ and scaling as \eqref{eq:aug_norm}
 without the means gives
+\end{wip}
 \begin{equation}
 \begin{aligned}
  &A_d=T_xe^{A_cT_s}T_x^{-1},\quad
@@ -476,26 +493,38 @@ without the means gives
 \end{aligned}
 \label{eq:aug_lin}
 \end{equation}
+% \begin{outline}
+% \item Eliminating the oldest state, as in Hoekstra et al.\ Eqs.~(11) to (17), gives the reconstructability map:
+% \end{outline}
+\begin{wip}
 with $M_0=M(0)$ from \eqref{eq:Msplit}, evaluated at the nominal parameters.
 Stacking the outputs and inputs of the window as $Y_\tau$ and $U_\tau$, the
-output and input parts of $\chi_\tau+\chi_0$ with the oldest sample first,
-gives $Y_\tau=O_n\tilde x_{\tau-n}+\Gamma_nU_\tau$ and
-$\tilde x_\tau=A_d^{\,n}\tilde x_{\tau-n}+r_nU_\tau$.
-Eliminating $\tilde x_{\tau-n}$ gives the reconstructability
-map~\cite[Eqs.~(15) to (17)]{hoekstra2026encoder}
-\begin{equation}
-\begin{aligned}
- \tilde x_\tau&=A_d^{\,n}O_n^{+}\bigl(Y_\tau-\Gamma_nU_\tau\bigr)+r_nU_\tau,\\
- W^b&=\begin{bmatrix}
-  A_d^{\,n}O_n^{+} & \;r_n-A_d^{\,n}O_n^{+}\Gamma_n
- \end{bmatrix},
-\end{aligned}
- \label{eq:aug_wb}
-\end{equation}
-where $O_n=\col(C_d,C_dA_d,\dots,C_dA_d^{\,n})\in\R^{3(n+1)\times6}$,
-$\Gamma_n$ is block lower triangular with block $(i,j)$ equal to
-$C_dA_d^{\,i-j-1}B_d$ for $i>j$ and zero otherwise,
-$r_n=[A_d^{\,n-1}B_d\;\cdots\;B_d\;\,0]$, and ${}^{+}$ is the Moore-Penrose
+output and input parts of $\chi_\tau+\chi_0$ with the newest sample first,
+gives $Y_\tau=O_nT_x\tilde x_{\tau-n}+\Gamma_nU_\tau$ and
+$T_x\tilde x_\tau=A_d^{\,n}T_x\tilde x_{\tau-n}+r_nU_\tau$.
+Eliminating $T_x\tilde x_{\tau-n}$ gives the reconstructability
+map~\cite[Eqs.~(11) to (17)]{hoekstra2026encoder}
+\end{wip}
+% \begin{equation}
+% \begin{aligned}
+%  T_x\tilde x_\tau&=A_d^{\,n}O_n^{+}\bigl(Y_\tau-\Gamma_nU_\tau\bigr)+r_nU_\tau,\\
+%  W^b&=\begin{bmatrix}
+%   A_d^{\,n}O_n^{+} & \;r_n-A_d^{\,n}O_n^{+}\Gamma_n
+%  \end{bmatrix},
+% \end{aligned}
+%  \label{eq:aug_wb}
+% \end{equation}
+\begin{outline}
+\item The baseline is marginally stable on $X$ and $Y$ but observable from the positions, so $O_n$ has full column rank
+\item Choice: the noise-free map of Hoekstra et al., not the noise-model version, since no process-noise gain is known
+\item $W^b$ only sets the start; it is trained with all other parameters, including $\theta_{\mathrm{base}}$, which Hoekstra et al.\ keep fixed
+\end{outline}
+\begin{wip}
+where $O_n=\col(C_dA_d^{\,n},\dots,C_dA_d,C_d)\in\R^{3(n+1)\times6}$,
+$\Gamma_n$ is block upper triangular with block $(i,j)$ equal to
+$C_dA_d^{\,j-i-1}B_d$ for $j>i$ and zero otherwise,
+$r_n=[0\;\,B_d\;\,A_dB_d\;\cdots\;A_d^{\,n-1}B_d]$, as
+in~\cite[Eqs.~(10), (13)]{hoekstra2026encoder}, and ${}^{+}$ is the Moore-Penrose
 pseudoinverse.
 The paper assumes a stable baseline~\cite[Sec.~2]{hoekstra2026encoder}.
 Ours is marginally stable, but the measured positions make $(A_d,C_d)$
@@ -525,6 +554,7 @@ The map \eqref{eq:aug_wb} needs no simulation and negligible
 computation~\cite[Sec.~4.4]{hoekstra2026encoder}.
 It gives better starting values and faster convergence than a random encoder,
 at comparable final accuracy~\cite[Sec.~4.4]{hoekstra2026encoder}.
+\end{wip}
 
 \subsection{Closed-loop simulation}\label{sec:aug_loop}
 \ifdraft
@@ -538,6 +568,11 @@ at comparable final accuracy~\cite[Sec.~4.4]{hoekstra2026encoder}.
 \end{itemize}
 \fi
 
+\begin{outline}
+\item Each training window is simulated in closed loop with the known controller, not driven by the recorded input
+\item Machine and model same closed-loop, with the same reference and feedforward:
+\end{outline}
+\begin{wip}
 The records are measured under feedback, and the model must predict the
 machine under feedback: its response to a reference, a feedforward and a
 known controller.
@@ -572,6 +607,7 @@ The machine and the model each close this controller around their own
 output, with controller states $x^{\mathrm{fb}}$ and $\hat x^{\mathrm{fb}}$,
 and both loops are driven by the reference $r$ and feedforward
 $u^{\mathrm{ff}}$ of the record (Fig.~\ref{fig:aug_closed_loop}):
+\end{wip}
 \begin{equation}
 \begin{aligned}
  x^{\mathrm{fb}}_{k+1}&=A_{\mathrm{fb}}x^{\mathrm{fb}}_k+B_{\mathrm{fb}}(r_k-y_k),\\
@@ -581,6 +617,10 @@ $u^{\mathrm{ff}}$ of the record (Fig.~\ref{fig:aug_closed_loop}):
 \end{aligned}
 \label{eq:aug_two_loops}
 \end{equation}
+\begin{outline}
+\item Removes reference and feedforward (all done with respect to the reference):
+\end{outline}
+\begin{wip}
 where $(A_{\mathrm{fb}},B_{\mathrm{fb}},C_{\mathrm{fb}},D_{\mathrm{fb}})$ are
 the state-space matrices of the controller discretised over $T_s$, $r_k$ and
 $u^{\mathrm{ff}}_k$ are in actuator coordinates, and $\hat u_{\mathrm{act},k}$
@@ -588,6 +628,7 @@ is the input the model receives in place of the recorded $u_{\mathrm{act},k}$.
 Subtracting the machine's lines from the model's, with
 $x^{c}=\hat x^{\mathrm{fb}}-x^{\mathrm{fb}}$, removes $r$ and
 $u^{\mathrm{ff}}$:
+\end{wip}
 \begin{equation}
 \begin{aligned}
  x^{c}_{k+1}&=A_{\mathrm{fb}}x^{c}_k+B_{\mathrm{fb}}(y_k-\hat y_k),\qquad x^{c}_\tau=0,\\
@@ -595,6 +636,12 @@ $u^{\mathrm{ff}}$:
 \end{aligned}
 \label{eq:aug_residual_loop}
 \end{equation}
+\begin{outline}
+\item Model input = recorded input + controller response to the model's output error
+\item Choice: $x^{c}_\tau=0$, so no controller state estimate is needed
+\item The model output depends only on the state, not on the current input, so each step first computes $\hat y_k$, then the error and the controller input $\hat u_k$, then the next state; this avoids an algebraic loop through the controller feedthrough:
+\end{outline}
+\begin{wip}
 The model input is thus the recorded input plus the controller's response to
 the output error of the model.
 This form equals the model loop of \eqref{eq:aug_two_loops} when the recorded
@@ -615,6 +662,7 @@ The controller feedthrough $D_{\mathrm{fb}}$ therefore closes no algebraic
 loop, and the loop adds no delay.
 In the coordinates of \eqref{eq:aug_norm}, where the output means cancel in
 the error, one step of a window started at $\tau$ is
+\end{wip}
 \begin{equation}
 \begin{aligned}
  \hat y^{\mathrm n}_{k|\tau}&=C^{\mathrm n}\tilde x^{\mathrm n}_{k|\tau},\qquad
@@ -625,6 +673,10 @@ the error, one step of a window started at $\tau$ is
 \end{aligned}
 \label{eq:aug_cl_step}
 \end{equation}
+\begin{outline}
+\item Each window restarts from the encoder state and $x^{c}_\tau=0$, so errors from before $\tau$ do not affect the window; the free-run validation simulates whole records and does include them
+\end{outline}
+\begin{wip}
 after which $\hat x^{\mathrm n}_{k+1|\tau}$ follows from
 \eqref{eq:aug_transition} with input $\hat u^{\mathrm n}_{k|\tau}$, starting
 from the encoder state \eqref{eq:aug_encoder}.
@@ -636,6 +688,7 @@ machine.
 Model error made before $\tau$ is not carried into the window, whereas the
 free-run validation of Section~\ref{sec:aug_closed_loop} applies
 \eqref{eq:aug_cl_step} over whole records and carries it.
+\end{wip}
 
 \begin{figure}[t]
  \centering
@@ -643,7 +696,7 @@ free-run validation of Section~\ref{sec:aug_closed_loop} applies
  \caption{Recorded plant loop (top) and augmented-model loop (bottom),
  driven by one shared reference $r_k$ and feedforward $u_k^{\mathrm{ff}}$,
  with the same feedback controller. The model output is evaluated
- before the input advances its state to the next sample.}
+ before the input moves its state to the next sample.}
  \label{fig:aug_closed_loop}
 \end{figure}
 
@@ -658,6 +711,11 @@ free-run validation of Section~\ref{sec:aug_closed_loop} applies
 \end{itemize}
 \fi
 
+\begin{outline}
+\item Choice: $\theta_{\mathrm{base}}$ estimated together with network and encoder, in coordinates $\xi$ that are zero at the start
+\item Nine combinations logarithmic, $m_\Delta$ bounded:
+\end{outline}
+\begin{wip}
 We estimate $\theta_{\mathrm{base}}$ jointly with the network and the encoder,
 as Hoekstra et al.\ do~\cite[Eq.~(22)]{hoekstra2026lfr}, whereas Kessels
 leaves the first-principles parameters fixed~\cite[Eq.~(5.12)]{kessels2025ai}.
@@ -669,10 +727,15 @@ The nine positive combinations are logarithmic,
 $\theta_{\mathrm{base},j}=\theta_{\mathrm{base},0,j}\,e^{\xi_j}$, which keeps
 them positive.
 The signed $m_\Delta$ is bounded by \eqref{eq:lfr_admissibility} itself:
+\end{wip}
 \begin{equation}
   m_\Delta=\rho\,\frac{2}{L_b}\sqrt{m_\Sigma J_{\mathrm{eff}}}\,\tanh(\eta_0+s\,\xi_\Delta),
   \label{eq:mdelta_map}
 \end{equation}
+\begin{outline}
+\item Every sample of each window scored, controller fixed:
+\end{outline}
+\begin{wip}
 where $\xi_\Delta$ is the component of $\xi$ for $m_\Delta$, $\rho\in(0,1)$ a
 margin, and $\eta_0$ and $s$ reproduce $m_{\Delta,0}$ and its sensitivity at
 $\xi=0$ (Appendix~\ref{app:lfr-wellposed}).
@@ -689,6 +752,7 @@ Because the controller acts on the output error, a good closed-loop fit can
 mask plant error, so Section~\ref{sec:results} also tests the model under a
 changed controller.
 The identification problem is
+\end{wip}
 \begin{equation}
 \begin{aligned}
  &\min_{\vartheta}\;V(\vartheta)=\frac{1}{|\mathcal T|\,n_f\,n_y}
@@ -706,6 +770,11 @@ The identification problem is
 \end{aligned}
 \label{eq:aug_loss}
 \end{equation}
+\begin{outline}
+\item Choice: Adam over the whole window, then L-BFGS polish; best validation free-run checkpoint kept
+\item Training starts from the baseline:
+\end{outline}
+\begin{wip}
 for $\tau\le k<\tau+n_f$, where $n_y=3$ and $\theta_{\mathrm{base}}(\xi)$ is
 the coordinate map above.
 The controller matrices are fixed, but they are part of the computation:
@@ -743,15 +812,20 @@ settings are given with their basis in Section~\ref{sec:setup}.
 Training starts from the baseline, as Hoekstra et al.\ require of the
 initialisation~\cite[Eq.~(29)]{hoekstra2026lfr}.
 Every trained block starts as
+\end{wip}
 \begin{equation}
 \begin{aligned}
  &\xi=0\;\Longrightarrow\;\theta_{\mathrm{base}}=\theta_{\mathrm{base},0},\\
  &W_L=0,\;b_L=0\;\Longrightarrow\;f^{\mathrm n}_{\mathrm{aug}}=0,\;g^{\mathrm n}_{\mathrm{aug}}=0,\\
- &W^b\text{ from \eqref{eq:aug_wb}},\quad W^a\sim\mathcal U\bigl(-a,a\bigr),\quad
+ &W^b\text{ from the reconstructability map},\quad W^a\sim\mathcal U\bigl(-a,a\bigr),\quad
   \tilde W_L=0,\;\tilde b_L=0,
 \end{aligned}
  \label{eq:aug_init}
 \end{equation}
+\begin{outline}
+\item The model reproduces the baseline at the start; this model is called $\mathcal M_{\mathrm U}$
+\end{outline}
+\begin{wip}
 where $\theta_{\mathrm{base},0}$ are the starting combinations
 (Section~\ref{sec:setup}), $W_L\in\R^{(6+n_{\bar x})\times n_h}$ and
 $b_L\in\R^{6+n_{\bar x}}$ the weight and bias of the output layer of
@@ -768,6 +842,7 @@ We call $\mathcal M_{\mathrm U}$ the augmented model \eqref{eq:aug_transition}
 identified by \eqref{eq:aug_loss} from the start \eqref{eq:aug_init}.
 Its input is the actuator force $\uact$ and its output the actuator positions
 $\qact$.
+\end{wip}
 
 \subsection{Added-state initialisation}\label{sec:aug_ps2}
 \ifdraft
@@ -781,6 +856,12 @@ $\qact$.
 \end{itemize}
 \fi
 
+\begin{outline}
+\item From the start \eqref{eq:aug_init} the added states are zero after the first step, and $W^a$ and the added-state rows of the output layer get zero gradient, so training can lower the cost without the added states
+\item Choice: PS initialisation in two stages
+\item S1, during the first updates of training: after every update of $V$, the encoder's added states are trained to predict the model's closed-loop residual through a temporary decoder:
+\end{outline}
+\begin{wip}
 The start \eqref{eq:aug_init} leaves the added states without a role.
 They are zero after the first step, and the output depends on them only
 through the zero output layer, so the gradient of $V$ with respect to $W^a$
@@ -803,12 +884,13 @@ than a linear operator.
 Fig.~\ref{fig:ps2_windows} shows which samples enter each stage.
 Stage S1 trains the encoder's added-state outputs to predict the residual of
 the model being trained.
+\end{wip}
 
 \begin{figure}[t]
  \centering
  \resizebox{\columnwidth}{!}{\input{figures/tex/ps2_windows}}
- \caption{Windows of PS on one record, layout adapted
- from~\cite[Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the
+ \caption{Windows of PS on one record \todo{, layout adapted
+ from~\cite[Fig.~2]{hefny2015supervised}}. S1 (top): the encoder maps the
  window $\chi_\tau$ to $\hat x_\tau$, and the decoder $d$ maps its added part
  $\bar x_\tau$ to the residuals $e_\tau$ of the next $M$ samples
  \eqref{eq:ps2_s1}. S2 (bottom): $g_{\mathrm{aug}}$ maps $\hat x_\tau$ and the
@@ -818,6 +900,7 @@ the model being trained.
  \label{fig:ps2_windows}
 \end{figure}
 
+\begin{wip}
 During the first updates of \eqref{eq:aug_loss}, one S1 update with its own
 Adam optimiser follows every update of $V$.
 S1 draws windows from the training records except a calibration subset of
@@ -825,6 +908,7 @@ records.
 Its target is the current model's closed-loop residual over the $M=n+1$
 samples from the window start, and a temporary decoder reads only
 $\bar x_\tau$:
+\end{wip}
 \begin{equation}
 \begin{aligned}
  e_\tau&=\frac{1}{\sigma_e}\col\bigl(y^{\mathrm n}_{k}-\hat y^{\mathrm n}_{k|\tau}\bigr)_{k=\tau}^{\tau+M-1},\\
@@ -834,6 +918,10 @@ $\bar x_\tau$:
 \end{aligned}
 \label{eq:ps2_s1}
 \end{equation}
+\begin{outline}
+\item Unexplained fraction on calibration records:
+\end{outline}
+\begin{wip}
 where $\hat y^{\mathrm n}_{k|\tau}$ is the output of the loop of
 Section~\ref{sec:aug_loop} at the current $\vartheta$, held fixed in the
 gradient, $\mathcal B$ a minibatch of window starts, $\sigma_e$ the RMS of the
@@ -850,11 +938,17 @@ the target, so S1 predicts exactly the residual sequence that $V$ scores.
 Whether $\bar x_\tau$ predicts the residual is measured on a fixed set
 $\mathcal C$ of windows from the calibration records, by the fraction the
 decoder leaves unexplained,
+\end{wip}
 \begin{equation}
  \nu=\frac{\sum_{\tau\in\mathcal C}\norm{d\bigl(\theta_{\mathrm p},\psi_a(\theta_{\mathrm{enc}},\chi_\tau)\bigr)-e_\tau}_2^2}
  {\sum_{\tau\in\mathcal C}\norm{e_\tau}_2^2}.
  \label{eq:ps2_nu}
 \end{equation}
+\begin{outline}
+\item S1 ends when $\nu$ stops falling or after a maximum number of updates; if $\nu$ is then above a threshold, S2 is skipped
+\item S2, once: one-step regression of $g_{\mathrm{aug}}$ on frozen encoder pairs with the recorded input:
+\end{outline}
+\begin{wip}
 S1 ends when $\nu$ stops falling, or after a maximum number of updates.
 If $\nu$ then exceeds a threshold, or already does at a fixed early update,
 the residual is not predictable from $\bar x_\tau$: S2 is skipped and
@@ -866,24 +960,35 @@ and $k_i+1$ anywhere in the fit records, freeze them as the set
 $\mathcal P$, and fit $g^{\mathrm n}_{\mathrm{aug}}$ by one-step regression
 with a fresh optimiser, keeping the best parameters on pairs from the
 calibration records:
+\end{wip}
 \begin{equation}
  \min_{\theta_{\mathrm{aug}}}\;
- \frac{\sum_{i\in\mathcal P}\norm{g^{\mathrm n}_{\mathrm{aug}}\bigl(\theta_{\mathrm{aug}},
+ \frac{\sum_{i\in\mathcal B}\norm{g^{\mathrm n}_{\mathrm{aug}}\bigl(\theta_{\mathrm{aug}},
    \psi(\theta_{\mathrm{enc}},\chi_{k_i}),u^{\mathrm n}_{k_i}\bigr)
    -\psi_a(\theta_{\mathrm{enc}},\chi_{k_i+1})}_2^2}
- {\sum_{j=1}^{n_{\bar x}}\sum_{i\in\mathcal P}\bigl(\psi_{a,j}(\theta_{\mathrm{enc}},\chi_{k_i+1})-\bar\psi_{a,j}\bigr)^2},
+ {\sum_{j=1}^{n_{\bar x}}\sum_{i\in\mathcal B}\bigl(\psi_{a,j}(\theta_{\mathrm{enc}},\chi_{k_i+1})-\bar\psi_{a,j}\bigr)^2},
  \label{eq:ps2_s2}
 \end{equation}
-minimised on minibatches of $\mathcal P$, where $\theta_{\mathrm{enc}}$ is
+\begin{outline}
+\item If $k_i$ were a window start, the model input there would be:
+\end{outline}
+\begin{wip}
+minimised on minibatches $\mathcal B\subset\mathcal P$, where $\theta_{\mathrm{enc}}$ is
 held at its value at the end of S1 and $\bar\psi_{a,j}$ is the mean of the
-$j$th target.
+$j$th target over $\mathcal B$.
 The input $u^{\mathrm n}_{k_i}$ is the recorded one: the force that moved the
 machine from $k_i$ to $k_i+1$, from whose response the target is encoded.
 At a window start of the loop \eqref{eq:aug_residual_loop}, $x^c=0$, so the
 model input there is
+\end{wip}
 \begin{equation*}
- \hat u_{\mathrm{act},k_i}=u_{\mathrm{act},k_i}+D_{\mathrm{fb}}\bigl(y_{k_i}-\hat y_{k_i}\bigr),
+ \hat u_{\mathrm{act},k_i}=u_{\mathrm{act},k_i}+D_{\mathrm{fb}}\bigl(y_{k_i}-\hat y_{k_i|k_i}\bigr),
 \end{equation*}
+\begin{outline}
+\item So it equals the recorded input when the encoder reproduces $y$
+\item Normal training continues and the decoder is discarded; this model is called $\mathcal M_{\mathrm{PS}}$
+\end{outline}
+\begin{wip}
 which equals the recorded input when the encoder reproduces $y_{k_i}$.
 The loss reaches $\phi_{\mathrm{aug}}$ only through its added-state rows, so
 S2 leaves the physical rows of $W_L$ unchanged, while the shared hidden layers
@@ -901,3 +1006,4 @@ We call $\mathcal M_{\mathrm{PS}}$ the model \eqref{eq:aug_transition}
 identified by \eqref{eq:aug_loss} with this opening, from the same start as
 $\mathcal M_{\mathrm U}$.
 \todo{Missing: basis of the PS switch and stop rules (S1 plateau and cap, screen update and threshold, S2 plateau and cap, snapshot sizes, calibration split as the last record of each class with three or more records). Candidate: rows of the hyperparameter table in Section~\ref{sec:setup}, all HEURISTIC (\texttt{PS2Spec}; \texttt{PS2-METHOD.md} Sec.~5), noting that the S1 cap, not the plateau, ended S1 in every run so far.}
+\end{wip}
