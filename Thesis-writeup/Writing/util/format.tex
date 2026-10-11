@@ -7,6 +7,7 @@
 % \drafttrue  -> todo notes visible.   \draftfalse -> submission build.
 \newif\ifdraft
 \drafttrue
+\ifdefined\ReviewBuild\draftfalse\fi   % review.tex defines \ReviewBuild: review PDF for supervisors
 \ifdraft
   \newcommand{\todo}[1]{\textcolor{red}{[\textbf{TODO:} #1]}}
   \newcommand{\note}[1]{\textcolor{blue}{[#1]}}
@@ -15,6 +16,21 @@
   \newcommand{\todo}[1]{}
   \newcommand{\note}[1]{}
   \newcommand{\kw}[1]{#1}                     % submission build: plain text
+\fi
+
+% ---------------------------------------------------------------- review switch
+% wip:     text kept in the file but not shown to supervisors (old bullets, AI prose).
+%          \begin{wip} and \end{wip} each on their own line (comment package).
+% outline: the clean bullets of what a section will state. A list: write \item lines.
+% main.tex (editor build): wip shown, outline shown in blue.
+% review.tex (review build): wip removed, outline shown as a plain list, todos removed.
+\usepackage{comment}
+\ifdefined\ReviewBuild
+  \excludecomment{wip}
+  \newenvironment{outline}{\begin{itemize}}{\end{itemize}}
+\else
+  \includecomment{wip}
+  \newenvironment{outline}{\begingroup\color{blue!60!black}\begin{itemize}}{\end{itemize}\endgroup}
 \fi
 
 % ------------------------------------------------------------ general notation

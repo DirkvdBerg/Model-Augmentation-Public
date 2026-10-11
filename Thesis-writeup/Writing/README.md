@@ -520,3 +520,10 @@ and body font size, so no figure ever needs rescaling in LaTeX.
 `util/format.tex` sets `\drafttrue`. Flip it to `\draftfalse` for the
 submission build: every `\todo{}` and `\note{}` disappears, and every `\kw{}`
 prints as plain text.
+
+Review build (2026-10-11): `latexmk review.tex` builds `build/review.pdf` for supervisors without
+touching the switch. It removes todos, notes and every `\begin{wip}...\end{wip}` block (old
+bullets, AI prose kept in the file) and shows `\begin{outline}...\end{outline}` lists (`\item`
+lines, equations allowed) as plain bullets; the editor build shows both, outlines in blue.
+`\begin{wip}` and `\end{wip}` must each stand on their own line. A `\label` inside a wip block
+is undefined in the review PDF: keep referenced equations in the outline.
