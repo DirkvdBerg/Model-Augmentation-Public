@@ -27,10 +27,11 @@
   2022.
 
 \bibitem{workman2021diewafer}
-T.~Workman, L.~Mirkarimi, J.~Theil, G.~Fountain, K.~M. Bang, and B.~Lee, ``Die
-  to wafer hybrid bonding and fine pitch considerations,'' in \emph{2021 IEEE
-  71st Electronic Components and Technology Conference (ECTC)}.\hskip 1em plus
-  0.5em minus 0.4em\relax IEEE, 2021.
+T.~Workman, L.~Mirkarimi, J.~Theil, G.~Fountain, K.~M. Bang, B.~Lee, C.~Uzoh,
+  D.~Suwito, G.~Gao, and P.~Mrozek, ``Die to wafer hybrid bonding and fine
+  pitch considerations,'' in \emph{2021 IEEE 71st Electronic Components and
+  Technology Conference (ECTC)}.\hskip 1em plus 0.5em minus 0.4em\relax IEEE,
+  2021, pp. 2071--2077.
 
 \bibitem{garcia2013model}
 I.~Garc{\'i}a-Herreros, X.~Kestelyn, J.~Gomand, R.~Coleman, and P.-J. Barre,
@@ -56,7 +57,7 @@ J.~Hwang and S.~D. Noh, ``Digital twin-based optimization of operational
 \bibitem{willard2020integrating}
 J.~Willard, X.~Jia, S.~Xu, M.~Steinbach, and V.~Kumar, ``Integrating scientific
   knowledge with machine learning for engineering and environmental systems,''
-  \emph{ACM Computing Surveys}, vol.~55, no.~4, pp. 1--37, Mar. 2022.
+  \emph{ACM Computing Surveys}, vol.~55, no.~4, pp. 1--37, Nov. 2022.
 
 \bibitem{hoekstra2026lfr}
 J.~H. Hoekstra, B.~M. Györök, R.~Tóth, and M.~Schoukens, ``Learning-based
@@ -144,11 +145,5 @@ C.~Downey, A.~Hefny, B.~Li, B.~Boots, and G.~J. Gordon, ``Predictive state
 
 \bibitem{gyorok2025l4dc}
 ``Source pending verification,'' citation metadata not yet verified.
-
-\bibitem{lee2020feeddrive}
-C.-Y. Lee, S.-H. Hwang, E.~Nam, and B.-K. Min, ``Identification of mass and
-  sliding friction parameters of machine tool feed drive using recursive least
-  squares method,'' \emph{The International Journal of Advanced Manufacturing
-  Technology}, vol. 109, no. 9-12, pp. 2831--2844, 2020.
 
 \end{thebibliography}

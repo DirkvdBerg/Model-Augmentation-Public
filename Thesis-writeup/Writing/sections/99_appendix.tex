@@ -11,7 +11,7 @@
 % Cautions: Verify whether the appendix counts toward the 12-page limit; do not use it as storage for unfinished analysis.
 % Planned figures: Optional normalization and controller-chain audit figures only if equations and prose are insufficient.
 % Section is finished when: Every appendix item is referenced from the main paper and necessary for verification or reproducibility.
-\section{Supporting Derivations and Reproducibility}
+\section{Supporting derivations}
 
 \subsection{Explicit LPV-LFR realization}\label{app:lfr-details}
 In \eqref{eq:Msplit}, $M_0$ is \eqref{eq:mass_matrix} evaluated at $Y=0$, and
@@ -86,6 +86,7 @@ in $Y$.
 The implementation evaluates both polynomials with Horner's scheme.
 \todo{Missing: print $N_0$, $N_1$, $N_2$ and $d(Y)$ explicitly? Candidate: no, appendix budget; the quadratic degree was checked symbolically (sympy, 2026-10-06).}
 
+\subsection{Identifiable combinations}\label{app:combos}
 For $m_h>0$, the ten distinct entries of $M_0$, $C$ and $K$ determine
 $\theta_{\mathrm{base}}$ of \eqref{eq:phi} uniquely (Section~\ref{sec:params}):
 \begin{equation*}
@@ -99,6 +100,7 @@ $\theta_{\mathrm{base}}$ of \eqref{eq:phi} uniquely (Section~\ref{sec:params}):
 Conversely, \eqref{eq:mass_matrix} and \eqref{eq:damping_stiffness_matrices}
 give every entry as a function of $\theta_{\mathrm{base}}$, so the map is one-to-one.
 
+\begin{wip}
 \todo{Remarks cut from Section~II-B; keep here or drop?}
 \begin{itemize}
 \item $Y^2$ is realized by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2025lpvlfr}
@@ -106,12 +108,13 @@ give every entry as a function of $\theta_{\mathrm{base}}$, so the map is one-to
 \item The exact condition $\det M(Y)\neq0$ replaces the sufficient condition of \cite[Thm.~6]{drenth2025lpvlfr}, which needs a scheduling set in the unit ball and $\rho(D_{zw})<1$
 \item Drenth's Def.~1 is stated in discrete time but constrains only the algebraic loop equation, so it applies unchanged in continuous time
 \end{itemize}
+\end{wip}
 
 \subsection{Nominal physical parameters}\label{app:params}
 Table~\ref{tab:nominal_parameters} lists the nominal values used by the baseline.
 They are taken from the ETEL gantry reported by Garc\'ia-Herreros et al.
-\cite[Table~I]{garcia2013model}. Here $\theta$ collects the fourteen table
-entries other than the fixed length $L_b$.
+\cite[Table~I]{garcia2013model}. 
+%Here $\theta$ collects the fourteen table entries other than the fixed length $L_b$.
 \begin{table}[t]
 \caption{Nominal baseline parameters.}
 \label{tab:nominal_parameters}
@@ -178,6 +181,7 @@ coordinate numerically inert. The exact inverse used for reporting is
  \xi_\Delta=\frac{\operatorname{atanh}(m_\Delta/b(\theta_{\mathrm{base}}))-\eta_0}{s}.
 \end{equation*}
 
+\begin{wip}
 \subsection{OBC and experiment details}
 \begin{itemize}
 \item Derive the stacked projector, rank-deficient pseudoinverse case, epoch refresh, and additional-state zero extension
@@ -186,3 +190,4 @@ coordinate numerically inert. The exact inverse used for reporting is
 \item Figure (existing, optional): place \texttt{controller-chain-v1} here only if the controller reconstruction cannot be audited adequately in prose and equations
 \end{itemize}
 \todo{Can code and data tables be cited through a repository or DOI instead of spending paper space on full reproducibility metadata?}
+\end{wip}

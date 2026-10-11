@@ -10,9 +10,18 @@
 % Cautions: Add no new method, citation, experiment, or future-work argument here.
 % Planned figures: None.
 % Section is finished when: It contains one direct answer, the central limitation, and one practical recommendation without repeating the discussion.
-\section{Conclusion}
+\section{Conclusions and discussion}
 
 \subsection{Conclusions}
+\begin{outline}
+\item Aspect 1: LPV scheduling lowers the error on $X$, increasingly away from $Y=0$
+\item Aspect 2: added states with PS initialisation learn the missing mode; plain training does not
+\item Aspect 3: OBC keeps the learned term out of the parameter directions; the parameters still drift
+\item Aspect 4: better than the black-box model on interpolation and extrapolation
+\item Black box currently doesnt perform well on test sets.
+\item Recommendation (?)
+\end{outline}
+\begin{wip}
 \begin{itemize}
 \item Answer whether LPV-LFR dynamic augmentation improves dual-gantry settling prediction over the physics baseline and black-box comparator
 \item State whether the learned additional states contributed measurable missing dynamics under the final validated configuration
@@ -23,9 +32,19 @@
 \item Figure plan: no conclusion figure; reserve the space for the final quantitative answer and limitations
 \end{itemize}
 \todo{Rewrite every conclusion bullet after freezing the final result table; no planned or diagnostic result may appear as achieved.}
-
+\end{wip}
 
 \subsection{Discussion}
+\begin{outline}
+\item Why the parameters drift despite OBC (missing-dynamics overlap)
+\item What the black-box comparison does and does not show
+\item The error during motion is not captured, likely friction??
+\item Single seed, simulation only, no controller transfer
+\item OBC holds only at $\bar x=0$; current definition doesn't take into account the additional states entering the output the next update step.
+\item Need to fix: current enencoder is initialized with true parameters % polish of these runs use true-parameter information (?)
+\item Future work: friction, excitation for parameter recovery, real data
+\end{outline}
+\begin{wip}
 \begin{itemize}
     \item Why all states routing.
     \item why not use the encoder for the orthogonality each epoch instead of finite difference
@@ -71,4 +90,4 @@ Verdedigen
 * Orthogonality definition and that we orthogonalize additional states with respect to the baseline := 0. additional states propogate, not included in our definition.
 * Kijken decisions.md
 * do i need to justify controller can i say what i got from my supervisor, how to approach these kind of questions?
-
+\end{wip}

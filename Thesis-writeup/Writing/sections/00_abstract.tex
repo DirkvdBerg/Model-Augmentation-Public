@@ -10,6 +10,12 @@
 % Cautions: Do not include planned experiments, diagnostic-only numbers, or unverified citations.
 % Planned figures: None.
 % Section is finished when: Every result is numerical, traceable to the final evaluation, and consistent with the conclusion.
+% Review build: only the heading "Abstract", without IEEEtran's dash; the draft abstract is hidden.
+\ifdefined\ReviewBuild
+\noindent\textbf{\textit{Abstract}}
+\par
+\fi
+\begin{wip}
 \begin{abstract}
 \begin{itemize}
 \item Problem: improve settling prediction for a position-dependent dual gantry without surrendering the meaning of its physical parameters
@@ -20,7 +26,10 @@
 \end{itemize}
 \todo{Write the numerical abstract only after the final simulation and Telica result tables are frozen.}
 \end{abstract}
+\end{wip}
 
+\begin{wip}
 \begin{IEEEkeywords}
-grey-box identification, LPV systems, model augmentation, orthogonal projection, dual gantry
+% grey-box identification, LPV systems, model augmentation, orthogonal projection, dual gantry
 \end{IEEEkeywords}
+\end{wip}
