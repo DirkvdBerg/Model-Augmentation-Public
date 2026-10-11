@@ -1,0 +1,147 @@
+\usepackage[utf8]{inputenc}
+\usepackage{a4wide}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{systeme}
+\usepackage{mathtools}
+\usepackage{bbm}
+\usepackage{pythonhighlight}
+\usepackage{amsthm}
+\usepackage{realhats}
+\usepackage{changepage}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\hypersetup{
+    colorlinks=false,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+\usepackage{listings}
+\usepackage{ocg-p}
+\usepackage[cache=false]{minted}
+
+\usepackage[noend]{algpseudocode}
+\usepackage{algorithm}
+% paper specs
+\usepackage[english]{babel}
+
+% font type
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+% Set page size and margins
+% Replace `letterpaper' with`a4paper' for UK/EU standard size
+\usepackage[a4paper, top = 2cm, bottom = 2cm,left = 2cm, right = 2cm, marginparwidth = 1.75cm]{geometry}
+
+% only one space after period
+\frenchspacing
+
+% %dark mode
+% \color{pink}
+% \pagecolor{black}
+
+% Some custom commands:
+\newcommand{\Exercise}[1]{\subsection*{Exercise #1}}
+\newcommand{\ex}[1]{\Exercise{#1}}
+%\newcommand{\subex}[1]{\subsection*{#1}}
+\newcommand{\tab}{\indent}
+\newcommand{\lbr}{$ $\newline}
+\newcommand{\limninf}{\lim_{n \to \infty}}
+\newcommand{\limkinf}{\lim_{k \to \infty}}
+\newcommand{\dist}{\text{dist}}
+\newcommand{\diag}{\text{diag}}
+
+% Custom commands for norm, floor and ceil functions: 
+\newcommand{\abs}[1]{\left\lvert #1 \right\rvert}
+\newcommand{\norm}[1]{\left\lvert\left\lvert#1\right\rvert\right\rvert}
+\newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
+\newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
+
+\renewcommand\qedsymbol{\ensuremath{\blacksquare}}
+
+% Subproof environment:
+\newenvironment{subproof}[1][\text{Subproof}]{\renewcommand{\qedsymbol}{\ensuremath{\square}} \begin{proof}[#1]}{\end{proof}}
+
+% Exercise environment:
+\newenvironment{exercise}[1][10.10.10]{\ex{#1}}{}
+\newenvironment{subex}[2][a)]{
+\noindent\textbf{#1} #2
+\begin{adjustwidth}{1.5em}{}
+
+}{\end{adjustwidth}$ $\\}
+
+% Custom commands for IH related symbols: 
+\newcommand{\eqih}{\ensuremath{\stackrel{\mathclap{\normalfont\tiny\mbox{IH}}}{=}}}
+\newcommand{\gih}{\ensuremath{\stackrel{\mathclap{\normalfont\tiny\mbox{IH}}}{>}}}
+\newcommand{\lih}{\ensuremath{\stackrel{\mathclap{\normalfont\tiny\mbox{IH}}}{<}}}
+\newcommand{\geqih}{\ensuremath{\stackrel{\mathclap{\normalfont\tiny\mbox{IH}}}{\geq}}}
+\newcommand{\leqih}{\ensuremath{\stackrel{\mathclap{\normalfont\tiny\mbox{IH}}}{\leq}}}
+
+% independent random variable symbol
+\newcommand{\indep}{\perp \!\!\! \perp}
+\newcommand{\eqindep}{\ensuremath{\stackrel{\mathclap{\normalfont\tiny\mbox{$\indep$}}}{=}}}
+
+% Letters: 
+\newcommand{\A}{\ensuremath{\mathcal{A}}}
+\newcommand{\B}{\ensuremath{\mathcal{B}}}
+\newcommand{\I}{\ensuremath{\mathcal{I}}}
+\newcommand{\N}{\ensuremath{\mathcal{N}}}
+\newcommand{\R}{\ensuremath{\mathcal{R}}}
+\renewcommand{\P}{\ensuremath{\mathcal{P}}}
+\newcommand{\Q}{\ensuremath{\mathcal{Q}}}
+\newcommand{\D}{\ensuremath{\mathcal{D}}}
+\newcommand{\fancyH}{\ensuremath{\mathcal{H}}}
+\newcommand{\fancyL}{\ensuremath{\mathcal{L}}}
+\newcommand{\fancyO}{\ensuremath{\mathcal{O}}}
+\newcommand{\fancyF}{\ensuremath{\mathcal{F}}}
+
+% Sets:
+\newcommand{\setR}{\ensuremath{\mathbb{R}}}
+\newcommand{\setQ}{\ensuremath{\mathbb{Q}}}
+\newcommand{\setC}{\ensuremath{\mathbb{C}}}
+\newcommand{\setr}{\ensuremath{\mathbb{R}}}
+\newcommand{\setq}{\ensuremath{\mathbb{Q}}}
+\newcommand{\setc}{\ensuremath{\mathbb{C}}}
+\newcommand{\setN}{\ensuremath{\mathbb{N}}}
+\newcommand{\setn}{\ensuremath{\mathbb{N}}}
+\newcommand{\setZ}{\ensuremath{\mathbb{Z}}}
+\newcommand{\setz}{\ensuremath{\mathbb{Z}}}
+\newcommand{\setP}{\ensuremath{\mathbb{P}}}
+\newcommand{\setp}{\ensuremath{\mathbb{P}}}
+\newcommand{\setF}{\ensuremath{\mathbb{F}}}
+\newcommand{\setE}{\ensuremath{\mathbb{E}}}
+\newcommand{\setI}{\ensuremath{\mathbb{I}}}
+
+
+
+
+% For vector notation using underline bar
+\newcommand{\lvec}[1]{\ensuremath{\underline{#1}}}
+
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+\renewcommand{\bar}[1]{\overline{#1}}
+
+\newcommand{\cov}{\text{Cov}}
+\newcommand{\var}{\text{Var}}
+\usepackage{blindtext}
+% Some physics jokes
+\newcommand{\ihat}{\hat{i}} % Dick, kun je dit fixen?
+\newcommand{\jhat}{\hat{j}} % Done!
+\newcommand{\khat}{\hat{k}}
+
+% Linear map command
+\newcommand{\lin}{\text{Lin}}
+
+\newcommand{\err}[0]{\ensuremath{\text{Err}}}
+\newcommand{\Err}[0]{\err}
+
+\newcommand{\leibniz}[2]{\ensuremath{\frac{d}{dt} #2 \bigg\rvert_{t=#1}}}
+\newcommand{\del}{\partial}
+% \renewcommand{\partial}[1]{\ensuremath{\frac{\partial}{\partial #1}}}
+\newcommand{\laspan}[1]{\ensuremath{\left\langle #1 \right\rangle}}
+
+%Shorter commands
+\renewcommand{\iff}{\Leftrightarrow}

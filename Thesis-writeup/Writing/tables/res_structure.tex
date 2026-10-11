@@ -1,0 +1,21 @@
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l r r r}
+\toprule
+Model & $X_1$ (m) & $X_2$ (m) & $Y$ (m)\\
+\midrule
+Baseline, true $\theta$ & $1.64\cdot10^{-6}$ & $1.97\cdot10^{-6}$ & $1.31\cdot10^{-5}$\\
+Baseline, detuned $\theta$ & $2.99\cdot10^{-6}$ & $2.28\cdot10^{-6}$ & $1.56\cdot10^{-5}$\\
+Static parallel, $n_a{=}0$ & $1.33\cdot10^{-6}$ & $1.42\cdot10^{-6}$ & $1.24\cdot10^{-5}$\\
+Plain training, $n_a{=}2$ & $1.18\cdot10^{-6}$ & $1.26\cdot10^{-6}$ & $1.06\cdot10^{-5}$\\
+PS init., $n_a{=}2$ & $1.09\cdot10^{-6}$ & $1.21\cdot10^{-6}$ & $1.39\cdot10^{-6}$\\
+PS init., baseline part only & $1.94\cdot10^{-6}$ & $1.77\cdot10^{-6}$ & $1.35\cdot10^{-5}$\\
+PS init., $n_a{=}8$ & $1.04\cdot10^{-6}$ & $1.19\cdot10^{-6}$ & $1.44\cdot10^{-6}$\\
+PS init., detuned $\theta$ & $1.08\cdot10^{-6}$ & $1.20\cdot10^{-6}$ & $1.44\cdot10^{-6}$\\
+\midrule
+Augmented (OBC), detuned $\theta$ & $1.14\cdot10^{-6}$ & $1.29\cdot10^{-6}$ & $1.49\cdot10^{-6}$\\
+\midrule
+Black-box model & $1.85\cdot10^{-5}$ & $2.11\cdot10^{-5}$ & $2.33\cdot10^{-5}$\\
+\midrule
+Noise floor & $9.00\cdot10^{-9}$ & $9.63\cdot10^{-9}$ & $3.19\cdot10^{-9}$\\
+\bottomrule
+\end{tabular}

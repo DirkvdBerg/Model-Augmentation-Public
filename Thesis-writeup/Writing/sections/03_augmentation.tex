@@ -390,19 +390,6 @@ chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).
  \label{fig:aug_structure}
 \end{figure}
 
-Because $f_{\mathrm{aug}}$ acts on the same rows as $f_{\mathrm{base}}$, it
-can also learn changes that a different $\theta_{\mathrm{base}}$ would
-produce, so the split between baseline and network is not
-unique~\cite[Sec.~5.2]{hoekstra2026lfr}.
-In the experiments of Hoekstra et al., approximately initialised physical
-parameters stay close to their initial values, while the network learns
-dynamics the baseline could represent~\cite[Sec.~6.3]{hoekstra2026lfr}.
-With a non-unique $\theta_{\mathrm{base}}$, the baseline can lose its physical
-meaning~\cite[Sec.~3]{gyorok2026obc}.
-Here, the estimated combinations are interpretable if they keep that meaning,
-which requires a unique estimate.
-Section~\ref{sec:obc} extends the method so that this estimate is unique.
-
 \subsection{Encoder and initial state}\label{sec:aug_encoder}
 \ifdraft
 \begin{itemize}
@@ -724,6 +711,16 @@ the coordinate map above.
 The controller matrices are fixed, but they are part of the computation:
 since $\hat u^{\mathrm n}_{k|\tau}$ depends on $\hat y^{\mathrm n}_{k|\tau}$,
 the gradient of $V$ also passes through the controller recursion.
+
+Because $f_{\mathrm{aug}}$ acts on the same rows as $f_{\mathrm{base}}$, it
+can also learn changes that a different $\theta_{\mathrm{base}}$ would
+produce, so the split between baseline and network is not
+unique~\cite[Sec.~5.2]{hoekstra2026lfr}.
+With a non-unique $\theta_{\mathrm{base}}$, the baseline can lose its physical
+meaning~\cite[Sec.~3]{gyorok2026obc}.
+Here, the estimated combinations are interpretable if they keep that meaning,
+which requires a unique estimate.
+Section~\ref{sec:obc} extends the method so that this estimate is unique.
 
 We minimise $V$ with Adam on minibatches of windows, with the gradient
 obtained by automatic differentiation through the whole window, so no part of

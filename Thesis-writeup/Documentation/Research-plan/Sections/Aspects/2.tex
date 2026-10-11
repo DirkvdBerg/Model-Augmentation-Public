@@ -1,0 +1,73 @@
+\subsection{Aspect 2: Augmentation structure}
+
+\subsection*{Aspect}
+What augmentation structure can effectively capture residual dynamics beyond the physics-based baseline model, in particular residual coupled settling dynamics that are not represented by the baseline model?
+
+\subsubsection{Research method}
+
+This aspect builds on the baseline model obtained in Aspect 1. The García-Herreros model provides a physically meaningful coupled lumped-parameter description of the dual-drive H-type gantry in the coordinates $(X,\Theta,Y)$, where these coordinates directly expose coupling effects associated with non-uniform load distribution, motor differences, and the motion of the payload along the cross-arm. At the same time, García-Herreros models the system as a lumped-parameter structure with masses, friction terms, and flexible-joint stiffnesses $k_{b1},k_{b2}$, while also explicitly noting that some vibration phenomena of the cross-arm support are not included in the model. Therefore, this thesis does not assume that the baseline model fully captures all settling-related dynamics over the operating range, and it treats any remaining mismatch as residual dynamics to be analyzed and modeled.
+
+To select an appropriate residual model structure, the augmentation will be formulated using the LFR-based model augmentation framework of Hoekstra et al. This framework considers a general interconnection between a baseline model and learning components, and explicitly distinguishes between static and dynamic augmentations as well as between series and parallel interconnections. In particular, Hoekstra et al. classify the candidate structures as static parallel, static series, dynamic parallel, and dynamic series, and define dynamic augmentation as the case in which additional states are introduced for the learning component.
+
+Within this structure family, the primary candidate considered in this thesis is a \emph{dynamic} augmentation. The reason is not that the literature proves beforehand that the residual mismatch in the ASMPT system is definitely of a specific flexible form, but rather that Hoekstra et al. explicitly motivate dynamic augmentation when the baseline model lacks dynamics that require additional states, such as flexible modes or actuator dynamics, whereas static augmentations do not add states beyond the baseline model. Since the mismatch of interest appears in transient settling responses and may involve dynamics not represented by the baseline lumped-parameter model, a dynamic augmentation is the most appropriate structure class to investigate first. The exact physical interpretation of the added states will therefore not be assumed a priori, but will be assessed from the residual behavior observed after subtracting the baseline response from measured data.
+
+For the interconnection, this thesis adopts a \emph{parallel} augmentation structure. Hoekstra et al. include dynamic parallel augmentation explicitly in their framework, with the augmented state update written as the baseline state update plus an additional dynamic correction term, together with separate augmentation-state dynamics. This makes it possible to preserve the baseline model as the nominal first-principles description while interpreting the augmentation as an additional contribution that accounts for remaining mismatch. This interpretation is also consistent with Hoekstra et al.'s analysis of the dynamic parallel case, where the learning components are described as augmenting the baseline model rather than replacing its dominant behavior. For that reason, the model architecture in this thesis is chosen as a dynamic parallel augmentation of the baseline model.
+
+After selecting this augmentation class, the resulting model will be embedded in an LPV-LFR representation using the framework of Drenth. This is used as a representation and analysis framework, not as proof that the final dual-gantry model is already validated by the literature. Drenth shows that an LPV-LFR model must satisfy the well-posedness condition that $I-D_{zw}\Delta(p(t))$ is non-singular for all admissible values of the scheduling variable, and provides sufficient conditions for this based on diagonal $\Delta(p)$, bounded scheduling, and $\rho(D_{zw})<1$. Accordingly, once the baseline and augmentation blocks have been interconnected, the chosen LPV-LFR realization will be checked for well-posedness over the operational scheduling range before identification is carried out.
+
+The outcome of this aspect is therefore the selection and formulation of a dynamic parallel augmentation architecture, represented in LPV-LFR form, for capturing residual dynamics beyond the baseline model. This aspect determines the model architecture only. Whether this structure is sufficient for the dual-gantry application will be assessed empirically in later aspects through identification and validation on experimental settling data.
+
+\subsubsection{What will you measure?}
+
+The main outputs of this aspect are:
+
+\textbf{(i) Technical deliverables:}
+\begin{itemize}
+    \item The selected augmentation structure class, specified as a dynamic parallel augmentation
+    \item The final interconnection of the baseline model and augmentation block in LPV-LFR form
+    \item The number of additional augmentation states introduced in the residual model
+    \item Verification that the selected LPV-LFR realization is well posed over the considered scheduling range
+\end{itemize}
+
+\textbf{(ii) Structural adequacy indicators:}
+\begin{itemize}
+    \item Whether the chosen augmentation structure reduces the residual mismatch of the baseline model on settling trajectories
+    \item Whether the added dynamic states are needed to represent dominant residual behavior that cannot be captured sufficiently by a static correction
+    \item Whether the selected model complexity remains as small as possible while still capturing the dominant residual dynamics
+\end{itemize}
+
+\subsubsection{What data is needed?}
+
+Experimental data are needed for:
+
+\textbf{(i) Residual analysis:} input-output trajectory data from the ASMPT dual-gantry system together with the predictions of the Aspect 1 baseline model, so that the part of the settling response not explained by the baseline can be analyzed.
+
+\textbf{(ii) Coupling-sensitive experiments:} motion and settling trajectories that sufficiently excite the coupled gantry behavior, since García-Herreros shows that the relevant dual-gantry coupling is associated with payload-position effects, motor differences, and the motion of the payload axis.
+
+\textbf{(iii) Operating-range coverage:} data covering the relevant range of payload positions and motion conditions, so that the selected augmentation structure is assessed in the regime in which the model will ultimately be used.
+
+\subsubsection{What resources from ASMPT?}
+
+This aspect requires access to the ASMPT dual-gantry experimental setup, measured settling trajectory data and sensor signals, the baseline model and simulated baseline responses from Aspect 1, knowledge of the relevant operating range and payload-position range, and engineering input on which experiments are most informative for exposing residual coupled settling dynamics.
+
+
+@article{hoekstra2025lfr,
+  author  = {Jan Hoekstra and Mingren Yin and Johan Schoukens and Roland T{\'o}th},
+  title   = {Learning-Based Model Augmentation of Nonlinear Mechanical Systems Using Linear Fractional Representations},
+  year    = {2025},
+  note    = {preprint / manuscript}
+}
+
+@article{hoekstra2025orthogonal,
+  author  = {Jan Hoekstra and Mingren Yin and Johan Schoukens and Roland T{\'o}th},
+  title   = {Orthogonal Projection-Based Regularization for Efficient Model Augmentation of Nonlinear Systems},
+  year    = {2025},
+  note    = {preprint / manuscript}
+}
+
+@mastersthesis{drenth2025thesis,
+  author = {J. Drenth},
+  title  = {Efficient Gradient-Based Learning of LPV Models with Linear Fractional Representation},
+  school = {Eindhoven University of Technology},
+  year   = {2025}
+}

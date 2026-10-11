@@ -1,0 +1,404 @@
+\textbf{How are you going to answer your research questions? Provide a sufficient description of the research methods
+and materials you will use during your project so that your supervisor can assess the appropriateness of your
+research approach, methods and materials, and of the quality and reliability of your data. What resources will
+you use or require? If an external party, such as a company, is involved, state what you need from this external
+party. }
+\\
+\\
+\subsection{Aspect 2: Position-Dependent Modeling}
+
+\subsubsection*{Aspect}
+How is the baseline physics model converted to state-space form, and does position-dependent (LPV) formulation improve prediction compared to position-independent (LTI) alternatives?
+
+\subsubsection{How will you formulate the state-space models?}
+
+\textbf{LPV baseline construction:}
+The baseline physics model is taken from \citet{garcia2013model}, which describes dual-gantry dynamics in modal coordinates (X, $\Theta$, Y) with position-dependent coupling terms in the inertia matrix due to payload position Y. ASMPT has provided the MATLAB implementation of this model. 
+
+Before conversion to state-space form, the invertibility of the position-dependent matrix $M_s(Y)$ is analyzed across the Y-position operational range. If $M_s(Y)$ is nonsingular throughout the range, the model is converted to standard discrete-time LPV state-space form following discrete-time LPV formulations \citep{toth2010discretization} with affine scheduling dependency on Y-position \citep{toth2007discrete}. If $M_s(Y)$ is singular at any Y-position, the model is treated in descriptor (singular) LPV form, consistent with descriptor LPV system representations in the literature \citep{masubuchi2003synthesis, chadli2008stabilisation}.
+
+\textbf{LTI baseline construction:}
+A position-independent baseline is constructed by freezing the payload position at mid-travel (Y = $L_y$/2). The invertibility of $M_s$ at this frozen point is checked. The resulting model with constant mass matrix is converted to standard discrete-time LTI state-space form. Frozen systems with constant scheduling are LTI, representing a special case of LPV systems \citep{toth2010modeling}.
+
+\subsubsection{How will you compare them?}
+
+Both models are validated using the methodology described in Aspect 5, applied to simulation data from the García-Herreros MATLAB implementation provided by ASMPT. The success criterion is that the LPV model provides greater than 10\% improvement in settling prediction accuracy over the LTI baseline, justifying the position-dependent formulation for the subsequent augmentation phase (Aspect 3).
+
+\subsubsection{What resources from ASMPT?}
+
+ASMPT's MATLAB implementation of the García-Herreros dual-gantry model. System parameters including masses ($m_b$, $m_h$, $m_1$, $m_2$), rotary inertias ($J_b$, $J_h$), dimensions ($L_b$, $L_h$, d), and Y-axis operational range for scheduling variable bounds.
+
+\subsection{Aspect 3: Augmentation Structure}
+
+\subsubsection*{Aspect}
+What augmentation structure can effectively capture residual dynamics beyond the physics-based baseline model, in particular flexible cross-coupling dynamics?
+
+\subsubsection{Step 1: Establish physics baseline}
+
+\textbf{Modal decomposition baseline:}
+The LPV baseline from Aspect 2 is expressed in modal coordinates (X, $\Theta$, Y) following \citet{garcia2013model}, representing rigid-body translation, rotation, and payload motion. The baseline includes the first N flexible modes (N=2--3) to capture cross-beam dynamics, following flexible H-gantry beam modeling approaches \citep{chen2019modeling}.
+
+\subsubsection{Step 2: Design LPV-LFR augmentation structure}
+
+\textbf{Parallel augmentation structure:}
+The augmentation follows a parallel structure: $G_{total} = G_{physics} + G_{augment}$, where the augmentation is realized through LFR interconnection. The LFR interconnection matrix M couples a neural network block $\Delta$ to the modal coordinates, capturing residual dynamics beyond the physics baseline \citep{hoekstra2025learning}. 
+
+\textbf{LPV-LFR formulation:}
+Augmenting the affine LPV baseline from Aspect 2 with the LFR structure results in an LPV-LFR formulation with rational scheduling dependency. The equivalence between LPV-LFR interconnection and LPV state-space representation with rational dependency is established \citep{drenth2025efficient}.
+
+\textbf{Well-posedness verification:}
+The well-posedness of the augmented LPV-LFR system is verified by checking that $I - D_{zw}\Delta(p)$ remains nonsingular for all scheduling parameter values p in the operational range \citep{drenth2025efficient}.
+
+\subsubsection{Step 3: Implement additive MIMO structure}
+
+\textbf{Cross-coupling structure:}
+The augmentation uses additive modal sub-models to capture MIMO cross-coupling between gantry axes. Rank-one constraints are applied to maintain modal structure consistency and reduce model complexity \citep{vanderhulst2025additive, vanderhulst2025rankone, gonzalez2025rankone}.
+
+\subsubsection{Step 4: Determine implementation details during project}
+
+\textbf{Design choices to be determined experimentally:}
+\begin{itemize}
+    \item M matrix structure (diagonal vs. full coupling matrix)
+    \item Neural network architecture (number of hidden layers, activation functions)
+    \item Static vs. dynamic $\Delta$ block \citep{hoekstra2025learning} shows static $\Delta$ works well for many systems
+\end{itemize}
+
+The implementation balances physics-based knowledge with data-driven flexibility, following grey-box modeling philosophy \citep{schoukens2019nonlinear}.
+
+\subsubsection{Step 5: Learn from precedent}
+
+\textbf{ASMPT implementation precedent:}
+The implementation is guided by ASMPT's prior experience with AI-based model updating for wafer stage systems, which provides practical guidance on neural network sizing, training procedures, and validation approaches specific to semiconductor precision motion systems \citep{kessels2025}.
+
+\subsubsection{What resources from ASMPT?}
+
+Access to dual-gantry system for experimental data collection. Knowledge of dominant flexible modes and their frequency ranges. Computational resources for neural network training. Guidance from Kessels's wafer stage implementation for neural network architecture choices and training procedures specific to ASMPT systems.
+
+
+
+
+
+\subsection{Aspect 4: Identifiability Preservation}
+
+\subsubsection*{Aspect}
+How can parameter identifiability be maintained during data-driven augmentation, compared to unconstrained approaches?
+
+\subsubsection{Step 1: Implement projection-based orthogonality regularization}
+
+\textbf{Regularization approach:}
+The augmentation uses projection-based regularization to maintain orthogonality between the physics baseline and the data-driven augmentation. The identification cost function combines prediction error minimization with an orthogonality penalty:
+
+\begin{equation*}
+\text{Cost} = \text{Prediction error} + \lambda \cdot ||\text{Projection of augmentation onto physics}||^2
+\end{equation*}
+
+This approach ensures the augmentation captures residual dynamics not already represented by the physics baseline, while preserving the physical meaning of baseline parameters \citep{gyorok2025projection, kon2022orthogonal}.
+
+\subsubsection{Step 2: Understand theoretical foundation}
+
+\textbf{Background theory:}
+The orthogonal-by-construction theory provides theoretical foundation for understanding why orthogonality preservation matters for identifiability, though the actual implementation uses the projection-based regularization approach from Step 1 \citep{gyorok2025orthogonal}.
+
+\textbf{Rationale for identifiability:}
+Maintaining identifiability ensures physics parameters remain interpretable and stable across different datasets, which is critical for understanding system behavior and validating model correctness \citep{schoukens2019nonlinear}.
+
+\subsubsection{Step 3: Determine regularization weight $\lambda$}
+
+\textbf{Hyperparameter tuning:}
+The regularization weight $\lambda$ balances prediction accuracy against orthogonality enforcement. Cross-validation is used to tune $\lambda$, evaluating the trade-off between settling error reduction and parameter stability. A range of $\lambda$ values is tested to identify the optimal balance for the dual-gantry application.
+
+\subsubsection{Step 4: Implement unconstrained baseline for comparison}
+
+\textbf{Comparison baseline:}
+A neural network augmentation WITHOUT orthogonality constraint is trained as a comparison baseline. This unconstrained approach represents the maximum achievable prediction accuracy without identifiability preservation \citep{bolderman2024physics}.
+
+\subsubsection{Step 5: Learn from ASMPT model updating precedent}
+
+\textbf{Implementation guidance:}
+ASMPT's prior experience with AI-based model updating for wafer stages provides practical guidance on preserving physical interpretability during data-driven augmentation, including validation workflows and parameter stability assessment methods \citep{kessels2025}.
+
+\subsubsection{Step 6: Evaluate identifiability preservation}
+
+\textbf{Evaluation metrics:}
+\begin{itemize}
+    \item \textbf{Parameter stability:} Compare variance of identified physics parameters between orthogonal-constrained and unconstrained approaches across different datasets
+    \item \textbf{Physical interpretability:} Assess whether physics parameters (masses, inertias, stiffnesses) remain within physically meaningful ranges
+    \item \textbf{Prediction accuracy:} Measure settling error for both approaches
+\end{itemize}
+
+\textbf{Success criterion:}
+Orthogonality-constrained model achieves comparable prediction accuracy to unconstrained (within 5--10\% degradation) while maintaining interpretable and stable physics parameters.
+
+\subsubsection{What will you measure?}
+
+\textbf{Identifiability metrics:}
+Parameter variance across multiple identification runs. Correlation between physics and augmentation parameters. Physical plausibility of identified baseline parameters.
+
+\textbf{Performance metrics:}
+Settling prediction accuracy for orthogonal-constrained vs unconstrained. Trade-off curves showing accuracy vs identifiability for different $\lambda$ values.
+
+\subsubsection{What data is needed?}
+
+Training data from Aspect 2 (simulation) and experimental measurements. Multiple independent datasets for cross-validation and parameter stability assessment. Data splits designed to test generalization (Aspect 5 methodology).
+
+\subsubsection{What resources from ASMPT?}
+
+Kessels's experience with identifiability assessment in wafer stage model updating. Expected ranges for physical parameters (masses, inertias) for validation. Computational resources for hyperparameter tuning over $\lambda$ range.
+
+
+
+
+
+
+
+\subsection{Aspect 5: Model Generalization}
+
+\subsubsection*{Aspect}
+How does the augmented model perform during settling on (i) untrained operating points and (ii) untrained motion profiles within the operational range?
+
+\subsubsection{How will you validate generalization?}
+
+Validation follows a two-part approach addressing both local and global LPV behavior. For untrained operating points, local dynamics are assessed at Y-positions not used during identification. \citet{bachnas2014review} emphasize that validating model quality based solely on one scheduling trajectory may not fully reveal whether the LPV model generalizes local dynamics to other operating points, and therefore evaluate frozen-point behavior across a dense grid of the scheduling domain. \citet{paijmans2008identification} validate the LPV model using an additional local model at an intermediate operating point not used during identification, confirming that ``for frozen values of the parameter the LPV model correctly describes the dynamic behaviour of the system.'' This frozen-point validation compares the frozen LPV transfer function at constant Y with the local system behavior at that Y-position.
+
+For untrained motion profiles, time-domain simulation on validation trajectories tests global behavior. Simulation is used rather than one-step-ahead prediction because obtaining good simulation is harder and better reveals structural model errors---a model can predict well one step ahead yet fail to generate reliable simulation \citep{schoukens2019nonlinear}. \citet{paijmans2008identification} validate the LPV model during parameter variation using time-domain simulation. The BLA framework can assess nonlinear distortion and separate linear approximation behavior from nonlinear contributions \citep{schoukens2016linear}.
+
+\subsubsection{What will you measure?}
+
+\textbf{Frozen-point validation:} H$_2$ error between the frozen LPV model (with Y held constant) and the local system at untrained Y-positions across the operational range \citep{bachnas2014review}. FRF-based comparisons can include uncertainty quantification on FRF estimates obtained with multisine excitation \citep{gonzalez2025finite}.
+
+\textbf{Time-domain validation:} Best-Fit-Rate (BFR), Variance-Accounted-For (VAF), and mean-squared error (MSE) quantify general model fit quality on simulated outputs for untrained motion profiles \citep{toth2010modeling, bachnas2014review}. \citet{drenth2025efficient} reports both simulation BFR and prediction BFR on validation datasets for LPV-LFR models. Settling error---the maximum deviation from setpoint after a specified time window---is measured as the application-specific performance metric for the target system.
+
+\subsubsection{What data is needed?}
+
+\textbf{Training data:} FRF measurements at multiple frozen Y-positions spanning the operational range (3--6 positions per scheduling dimension as typical guidance, \citet{bachnas2014review}), plus operational scanning trajectories representative of production motions.
+
+\textbf{Validation data:} FRF measurements at untrained Y-positions not used during identification (intermediate positions within the operational envelope, following \citet{paijmans2008identification}), and motion profiles with different velocity/acceleration characteristics than training trajectories to test generalization beyond the trained dynamics \citep{toth2010modeling}.
+
+\subsubsection{What resources from ASMPT?}
+
+Access to the dual-gantry motion system for experimental measurements across the Y-axis operational range. Time allocation for systematic FRF measurements at multiple frozen Y-positions and execution of various scanning trajectories. Company-specific settling requirements defining acceptable performance tolerances for overlay accuracy. Knowledge of representative production motion profiles to inform validation trajectory selection.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Aspect 1 Combined into Others}
+
+The system identification methodology from the original Aspect 1 has been distributed across the remaining aspects as follows:
+
+\section{Aspect 1: Position-Dependent Baseline Modeling and Identification}
+
+\subsection*{Aspect}
+How is the baseline physics model identified from experimental data and formulated in state-space, and does position-dependent (LPV) formulation improve prediction compared to position-independent (LTI) alternatives?
+
+\subsection{Step 1: Design excitation signals and measure MIMO FRFs}
+
+\textbf{Experimental characterization:}
+Frequency-response function (FRF) data are collected using multivariable frequency-domain measurement methodology. Measurements are performed in closed-loop configuration with excitation through the reference signal \citep{pintelon2012system}. Multisine excitation is used as it is widely adopted for MIMO FRF identification due to its sparse spectrum, and enables finite-sample uncertainty quantification \citep{gonzalez2025finite}.
+
+\subsection{Step 2: Extract parametric MIMO models from FRF data}
+
+\textbf{Additive MIMO structure:}
+Parametric continuous-time models are extracted from FRF data using an additive MIMO model structure suitable for multivariable flexible motion systems with spatially distributed actuators and sensors. The estimation uses an iterative linear regression algorithm \citep{vanderhulst2025frequency}.
+
+\textbf{Modal structure with rank constraints:}
+Where modal structure is physically meaningful, a two-stage approach is applied: first estimate an additive MIMO model, then project it onto modal form with explicit rank-one residue constraints to maintain modal structure consistency \citep{vanderhulst2025rankone}.
+
+\textbf{Numerical conditioning:}
+Bi-orthonormal polynomial basis functions are available as an option for improving numerical conditioning during parametric estimation from frequency-domain data \citep{vanherpen2016biorthonormal}.
+
+\subsection{Step 3: Extract modal coordinates}
+
+\textbf{Modal coordinate interpretation:}
+The identified parametric models are interpreted in physically meaningful modal coordinates. For the H-type gantry structure, dynamics are expressed in coordinates (X, $\Theta$, Y) associated with translation, rotation, and payload motion \citep{garcia2013model}. For position-dependent mechanical systems, a two-step modal framework can be applied where identified mode shapes are interpolated across the scheduling variable \citep{voorhoeve2021identifying}.
+
+\subsection{Step 4: Formulate state-space models}
+
+\textbf{LPV baseline construction:}
+The baseline physics model from \citet{garcia2013model} is converted to discrete-time LPV state-space form with affine scheduling on Y-position, following discrete-time LPV formulations \citep{toth2010discretization} with affine scheduling dependency \citep{toth2007discrete}. 
+
+Before conversion, the invertibility of the position-dependent matrix $M_s(Y)$ is analyzed across the Y-position operational range. If $M_s(Y)$ is nonsingular throughout the range, the model is converted to standard discrete-time LPV state-space form. If $M_s(Y)$ is singular at any Y-position, the model is treated in descriptor (singular) LPV form \citep{masubuchi2003synthesis, chadli2008stabilisation}.
+
+\textbf{LTI baseline construction:}
+A position-independent baseline is constructed by freezing the payload position at mid-travel (Y = $L_y$/2), resulting in a constant mass matrix and standard discrete-time LTI state-space form. Frozen systems with constant scheduling are LTI \citep{toth2010modeling}.
+
+\subsection{Step 5: Compare LPV vs LTI formulations}
+
+Both models are validated using the methodology described in Aspect 4, applied to simulation data from the García-Herreros MATLAB implementation provided by ASMPT. The success criterion is that the LPV model provides greater than 10\% improvement in settling prediction accuracy over the LTI baseline, justifying the position-dependent formulation for the subsequent augmentation phase.
+
+\subsection{What resources from ASMPT?}
+
+ASMPT's MATLAB implementation of the García-Herreros dual-gantry model. Access to dual-gantry system for experimental FRF measurements. System parameters including masses, inertias, dimensions, and Y-axis operational range. Representative production motion profiles.
+
+\section{Aspect 2: LPV-LFR Augmentation Structure and Identification}
+
+\subsection*{Aspect}
+What augmentation structure can effectively capture residual dynamics beyond the physics-based baseline model, and how is the augmented LPV-LFR model identified?
+
+\subsection{Step 1: Establish physics baseline}
+
+The LPV baseline from Aspect 1 is expressed in modal coordinates (X, $\Theta$, Y) \citep{garcia2013model}, representing rigid-body translation, rotation, and payload motion. The baseline includes the first N flexible modes (N=2--3) to capture cross-beam dynamics \citep{chen2019modeling}.
+
+\subsection{Step 2: Design LPV-LFR augmentation structure}
+
+\textbf{Parallel augmentation structure:}
+The augmentation follows a parallel structure: $G_{total} = G_{physics} + G_{augment}$, where the augmentation is realized through LFR interconnection. The LFR interconnection matrix M couples a neural network block $\Delta$ to the modal coordinates, capturing residual dynamics beyond the physics baseline \citep{hoekstra2025learning, hoekstra2026extended}.
+
+\textbf{Cross-coupling structure:}
+The augmentation uses additive modal sub-models to capture MIMO cross-coupling between gantry axes. Rank-one constraints are applied to maintain modal structure consistency and reduce model complexity \citep{vanderhulst2025additive, vanderhulst2025rankone, gonzalez2025rankone}.
+
+\subsection{Step 3: Direct LPV-LFR identification with joint estimation}
+
+\textbf{Identification framework:}
+The augmented LPV-LFR model is identified through direct joint estimation where the LPV model and scheduling map are identified simultaneously using gradient-based optimization on trajectory-based training records \citep{drenth2025efficient}. This provides an alternative to frozen-point interpolation-based LPV identification approaches.
+
+\textbf{Well-posedness guarantee:}
+The identification employs a well-posedness-guaranteeing parameterization ensuring that $I - D_{zw}\Delta(p)$ remains nonsingular for all scheduling parameter values under stated assumptions. Multiple-shooting techniques and proper initialization strategies ensure reliable convergence during gradient-based optimization \citep{drenth2025efficient}.
+
+\subsection{Step 4: Determine implementation details during project}
+
+\textbf{Design choices to be determined experimentally:}
+M matrix structure (diagonal vs. full coupling matrix); neural network architecture (number of hidden layers, activation functions); static vs. dynamic $\Delta$ block. The implementation balances physics-based knowledge with data-driven flexibility \citep{schoukens2019nonlinear}.
+
+\subsection{Step 5: Learn from precedent}
+
+The implementation is guided by ASMPT's prior experience with AI-based model updating for wafer stage systems \citep{kessels2025}.
+
+\subsection{What resources from ASMPT?}
+
+Access to dual-gantry system for trajectory-based experimental data collection. Knowledge of dominant flexible modes and their frequency ranges. Computational resources for gradient-based LPV-LFR optimization and neural network training. Guidance from Kessels's wafer stage implementation.
+
+\section{Aspect 3: Identifiability Preservation}
+
+\subsection*{Aspect}
+How can parameter identifiability be maintained during data-driven augmentation, compared to unconstrained approaches?
+
+\subsection{Step 1: Implement projection-based orthogonality regularization}
+
+The augmentation identification from Aspect 2 uses projection-based regularization to maintain orthogonality between the physics baseline and the data-driven augmentation. The identification cost function combines prediction error minimization with an orthogonality penalty:
+
+\begin{equation*}
+\text{Cost} = \text{Prediction error} + \lambda \cdot ||\text{Projection of augmentation onto physics}||^2
+\end{equation*}
+
+This regularization is applied during the gradient-based LPV-LFR identification, ensuring the augmentation captures residual dynamics not already represented by the physics baseline while preserving the physical meaning of baseline parameters \citep{gyorok2025projection, kon2022orthogonal}.
+
+\subsection{Step 2: Understand theoretical foundation}
+
+The orthogonal-by-construction theory provides theoretical foundation for understanding why orthogonality preservation matters for identifiability \citep{gyorok2025orthogonal}. Maintaining identifiability ensures physics parameters remain interpretable and stable across different datasets \citep{schoukens2019nonlinear}.
+
+\subsection{Step 3: Determine regularization weight $\lambda$}
+
+The regularization weight $\lambda$ balances prediction accuracy against orthogonality enforcement. Cross-validation is used to tune $\lambda$, evaluating the trade-off between settling error reduction and parameter stability.
+
+\subsection{Step 4: Implement unconstrained baseline for comparison}
+
+A neural network augmentation WITHOUT orthogonality constraint is trained as a comparison baseline, representing the maximum achievable prediction accuracy without identifiability preservation \citep{bolderman2024physics}.
+
+\subsection{Step 5: Learn from ASMPT precedent}
+
+ASMPT's prior experience with AI-based model updating provides practical guidance on preserving physical interpretability during data-driven augmentation \citep{kessels2025}.
+
+\subsection{Step 6: Evaluate identifiability preservation}
+
+\textbf{Evaluation metrics:}
+Parameter stability across multiple identification runs; physical interpretability of identified baseline parameters; prediction accuracy for both approaches.
+
+\textbf{Success criterion:}
+Orthogonality-constrained model achieves comparable prediction accuracy to unconstrained (within 5--10\% degradation) while maintaining interpretable and stable physics parameters.
+
+\subsection{What will you measure?}
+
+\textbf{Identifiability metrics:} Parameter variance across multiple runs; correlation between physics and augmentation parameters; physical plausibility of identified parameters.
+
+\textbf{Performance metrics:} Settling prediction accuracy for orthogonal-constrained vs unconstrained; trade-off curves showing accuracy vs identifiability for different $\lambda$ values.
+
+\subsection{What data is needed?}
+
+Training data from Aspects 1 and 2. Multiple independent datasets for cross-validation and parameter stability assessment.
+
+\subsection{What resources from ASMPT?}
+
+Kessels's experience with identifiability assessment. Expected ranges for physical parameters for validation. Computational resources for hyperparameter tuning.
+
+\section{Aspect 4: Model Validation}
+
+\subsection*{Aspect}
+How will model performance be validated on (i) untrained operating points and (ii) untrained motion profiles within the operational range?
+
+\subsection{How will you validate generalization?}
+
+Validation follows a two-part approach addressing both local and global LPV behavior. For untrained operating points, local dynamics are assessed at Y-positions not used during identification. \citet{bachnas2014review} emphasize that validating model quality based solely on one scheduling trajectory may not fully reveal whether the LPV model generalizes local dynamics to other operating points, and therefore evaluate frozen-point behavior across a dense grid of the scheduling domain. \citet{paijmans2008identification} validate the LPV model using an additional local model at an intermediate operating point not used during identification, confirming that ``for frozen values of the parameter the LPV model correctly describes the dynamic behaviour of the system.'' This frozen-point validation compares the frozen LPV transfer function at constant Y with the local system behavior at that Y-position.
+
+For untrained motion profiles, time-domain simulation on validation trajectories tests global behavior. Simulation is used rather than one-step-ahead prediction because obtaining good simulation is harder and better reveals structural model errors---a model can predict well one step ahead yet fail to generate reliable simulation \citep{schoukens2019nonlinear}. \citet{paijmans2008identification} validate the LPV model during parameter variation using time-domain simulation. The BLA framework can assess nonlinear distortion and separate linear approximation behavior from nonlinear contributions \citep{schoukens2016linear}.
+
+This validation methodology is applied in two stages: first to the baseline LPV physics model in simulation (Aspect 1), then to the final augmented LPV-LFR model on the experimental system (Aspect 2).
+
+\subsection{What will you measure?}
+
+\textbf{Frozen-point validation:} H$_2$ error between the frozen LPV model (with Y held constant) and the local system at untrained Y-positions across the operational range \citep{bachnas2014review}. FRF-based comparisons can include uncertainty quantification on FRF estimates obtained with multisine excitation \citep{gonzalez2025finite}.
+
+\textbf{Time-domain validation:} Best-Fit-Rate (BFR), Variance-Accounted-For (VAF), and mean-squared error (MSE) quantify general model fit quality on simulated outputs for untrained motion profiles \citep{toth2010modeling, bachnas2014review}. \citet{drenth2025efficient} reports both simulation BFR and prediction BFR on validation datasets for LPV-LFR models. Settling error---the maximum deviation from setpoint after a specified time window---is measured as the application-specific performance metric for the target system.
+
+\subsection{What data is needed?}
+
+\textbf{Training data:} FRF measurements at multiple frozen Y-positions spanning the operational range (3--6 positions per scheduling dimension as typical guidance, \citet{bachnas2014review}), plus operational scanning trajectories representative of production motions.
+
+\textbf{Validation data:} FRF measurements at untrained Y-positions not used during identification (intermediate positions within the operational envelope, following \citet{paijmans2008identification}), and motion profiles with different velocity/acceleration characteristics than training trajectories to test generalization beyond the trained dynamics \citep{toth2010modeling}.
+
+\subsection{What resources from ASMPT?}
+
+Access to the dual-gantry motion system for experimental measurements across the Y-axis operational range. Time allocation for systematic FRF measurements at multiple frozen Y-positions and execution of various scanning trajectories. Company-specific settling requirements defining acceptable performance tolerances for overlay accuracy. Knowledge of representative production motion profiles to inform validation trajectory selection.
+% Project steps
+% 1.	Multibody model implementation
+% 2.	Data experiment design (to generate the data required for identification)
+% 3.	Model augmentation 
+% 4.	Validation using realistic motion profiles
+
+
+% Experiment-design implication: you should gather data that makes the difference between baseline and reality visible in a way that doesn’t let the learner “explain everything.” Concretely:
+
+% include regimes where baseline is known to be good (so the learner is forced to be small there)
+
+% include regimes where baseline is known to be wrong (so the learner is forced to activate there)
+
+% keep a clean validation split by regime (not just random shuffle)
+
+% Don’t underestimate “boring” but decisive items: sensors, synchronization, and validation splits
+
+% Industry will judge your work on repeatability and trust:
+
+% SNR / filtering / sample rate: ensure resonance bands are measurable (not aliased, not filtered out).
+
+% Time synchronization across axes: critical for differential mode estimation.
+
+% Repeat runs: at least a few repeats per key condition to quantify variance.
+
+% Validation design: hold out entire regimes (e.g., one payload position extreme, or one speed band) to demonstrate generalization—this is very aligned with augmentation motivation.
+
+
+% for master thesis can just run 6 hours experiments instead of 3 hours for example.. not the main goal.
+% Where GP + “highly informative regions” fits (and why your supervisors might not care)
+
+% GP-driven active learning is most valuable when:
+
+% experiments are extremely expensive,
+
+% you have a very small budget,
+
+% and you can run sequential cycles (measure → update GP → pick next point).
+
+
+% Experiment design:
+% Step 3 — Two-stage (very common) workflow
+
+% Pilot experiment: small set of safe experiments → fit/update key FP parameters (light grey-box).
+
+% Main experiment: design richer excitations using the updated FP to improve conditioning / Fisher information (because your “best guess” parameters are now better).
+
+% Step 4 — Collect data for both baseline and augmentation
+
+% If you will do augmentation, you must collect data that:
+
+% identifies the baseline parameters (requires persistency / full-rank regressors in IO settings; analogous conditions exist in SS settings), and
+
+% makes the residual dynamics visible (operate where FP mismatch is largest: higher speeds/accelerations, direction reversals, different positions, thermal states, etc.).
+
+% This matters even more when you do joint estimation baseline+augmentation, because poor excitation makes compensation worse.

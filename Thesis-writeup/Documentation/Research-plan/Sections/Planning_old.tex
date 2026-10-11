@@ -1,0 +1,643 @@
+% Omschrijven FP-LPV
+% Main thing is adding C and D matrices, for output. Mapping states (6 states x and acceleration/velocity I think)
+\textbf{Provide an outline of the main activities or tasks of your project and their timetable with time estimated per
+activity or task. Work chronologically in months and weeks starting with day 1 of the project phase and ending
+with your final presentation and defense.}
+\\
+\\
+% Entire project
+% Estimated duration
+% From: 01-02-2026
+% To: 27-09-2026
+
+% Phase 2 starts
+% 16-03-2026
+
+% Deadlines:
+% final presentation and defense.
+% turn in paper
+
+% Do I need to take into account my and my supervisors their vacation?
+
+% Dual-gantry system arrives:
+% also need to take into account when I can actually work on the dual-gantry system.
+% Half april, misschien zelfs later eind april. Maar ben nog wel even zoet met simulatie.
+
+% Everything should be simulation --> experiment --> real hardware setup --> validation (have to look if i make the validation experiments a subset of my experiment, I think this should be the case since I need to take it into account for experiment design.
+
+% Onderverdelen in de volgende activiteiten aspects misschien?
+
+% FP-LPV simulatie
+% need to convert FP model to lpv state space
+% need to implement FP model without LPV component/y-position dependency.
+% How do I compare the both
+
+% Continous Time First Principles model beschikbaar. Jasper heeft met ode45 (Runge–Kutta algorithm) soort van al Discrete Time. Reference en feedforward zijn ook in discrete time/hebben een bepaalde sampling rate
+
+% LPV-LFR
+% adjust code to work for mimo (basicly already done only 2 lines of code)
+% need to extend Jan his code to LPV-LFR mimo
+% I already have the FP-baseline (I will first extend this to be LPV-SS so that's compatible with Jan's code)
+% And then I can replace the MSD variant with that. Should do that first before making it LPV-LFR etc.
+
+% Hoe is in huidige simulatie geverifieerd
+
+
+% Time planning table for Section 7
+% Requires packages: booktabs, longtable, array, enumitem
+% Add to preamble: \usepackage{booktabs, longtable, array, enumitem}
+
+% ---------- Preamble ----------
+% Required packages
+
+
+% % Column types
+% \newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+
+% % Table styling
+% \renewcommand{\arraystretch}{1.16}
+% \setlength{\LTpre}{0pt}
+% \setlength{\LTpost}{0pt}
+
+% % Row colors
+% \definecolor{phasegray}{gray}{0.93}
+% \definecolor{checkblue}{RGB}{235,242,250}
+% \definecolor{deadlinepink}{RGB}{252,235,235}
+
+% % Compact itemize for table cells
+% \newlist{tightitemize}{itemize}{1}
+% \setlist[tightitemize]{nosep,leftmargin=1.2em,topsep=1pt}
+
+% % Convenience macros
+% \newcommand{\periodcell}[2]{\makecell[l]{\textbf{#1}\\\footnotesize #2}}
+% \newcommand{\phaserow}[1]{%
+%   \rowcolor{phasegray}
+%   \multicolumn{3}{L{14.4cm}}{\textbf{#1}}\\
+% }
+% \newcommand{\checkpointrow}[1]{%
+%   \rowcolor{checkblue}
+%   \multicolumn{3}{L{14.4cm}}{\textbf{Supervisor checkpoint:} #1}\\
+% }
+% \newcommand{\deadlinerow}[1]{%
+%   \rowcolor{deadlinepink}
+%   \multicolumn{3}{L{14.4cm}}{\textbf{Deadline:} #1}\\
+% }
+
+% % ---------- Table ----------
+% \begin{longtable}{L{2.8cm} L{8.2cm} L{3.2cm}}
+% \toprule
+% \textbf{Period} & \textbf{Technical activities} & \textbf{Writing / feedback} \\
+% \midrule
+% \endfirsthead
+
+% \toprule
+% \textbf{Period} & \textbf{Technical activities} & \textbf{Writing / feedback} \\
+% \midrule
+% \endhead
+
+% \bottomrule
+% \endfoot
+
+% \phaserow{Baseline model development}
+
+% \periodcell{W1--W2}{Mar 16--Mar 29}
+% &
+% \begin{tightitemize}
+%     \item Study the existing codebase and determine what interface Jan's framework expects from the baseline model
+%     \item Understand Jasper's first-principles model: equations, states, inputs, outputs, parameters, and solver logic
+%     \item Reproduce the current simulation setup as reference before making structural changes
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item Set up thesis structure and notation
+%     \item Weekly discussion of modeling assumptions
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \periodcell{W3--W4}{Mar 30--Apr 12}
+% &
+% \begin{tightitemize}
+%     \item Define a discrete-time compatible baseline structure for use in the augmentation framework
+%     \item Convert the first-principles model to a DT state-space form or equivalent DT update structure
+%     \item Verify the DT implementation against Jasper's ODE45 simulation reference
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item Draft baseline-model implementation subsection
+%     \item Record modeling choices and assumptions
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \periodcell{W5--W6}{Apr 13--Apr 26}
+% &
+% \begin{tightitemize}
+%     \item Refine and verify the DT baseline model
+%     \item Introduce position dependence in a controlled way and formulate the LPV / quasi-LPV baseline
+%     \item Compare the position-dependent baseline against frozen LTI alternatives in simulation
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item Rough draft of Aspect~1 methods
+%     \item Update literature-to-method motivation
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \phaserow{Augmentation development and hardware validation for baseline}
+
+% \periodcell{W7--W8}{Apr 27--May 10}
+% &
+% \begin{tightitemize}
+%     \item Study the augmentation structure in the existing framework
+%     \item Replace the MSD example baseline by the DT-compatible Jasper baseline
+%     \item Perform the first end-to-end simulation tests with the integrated baseline
+%     \item Prepare hardware workflow, logging, and validation setup
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item Draft augmentation framework subsection
+%     \item Weekly feedback on integration progress
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \periodcell{W9--W10}{May 11--May 24}
+% &
+% \begin{tightitemize}
+%     \item Extend the augmentation framework to the LPV-LFR setting
+%     \item Verify in simulation that the augmented model improves over the baseline
+%     \item Perform initial baseline checks on available hardware data or setup access
+%     \item Define the first version of the operating range and experiment design
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item Rough draft of Aspect~2 methods
+%     \item Short write-up of experiment-design choices
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \checkpointrow{review baseline verification results and agree on the direction of the experimental design}
+% \addlinespace[0.35em]
+
+% \phaserow{Interpretability, experiment design, and data collection}
+
+% \periodcell{W11--W12}{May 25--Jun 7}
+% &
+% \begin{tightitemize}
+%     \item Implement interpretability-preserving regularisation
+%     \item Compare unconstrained and constrained augmentation in simulation
+%     \item Finalize the operating range, experiment categories, and held-out validation split
+%     \item Prepare baseline-identification, augmentation-training, and validation experiments
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item Draft Aspect~3 methods
+%     \item Draft experimental setup section
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \checkpointrow{approve the experiment design, operating range, and validation split with ASMPT and TU/e}
+% \addlinespace[0.35em]
+
+% \periodcell{W13--W14}{Jun 8--Jun 21}
+% &
+% \begin{tightitemize}
+%     \item Extend the regularisation approach to the relevant dual-gantry setting and document any limitations
+%     \item Run baseline-related experiments on hardware
+%     \item Collect augmentation-training data and held-out validation data
+%     \item Familiarize with the selected black-box benchmark for comparison
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item Refine Aspect~3
+%     \item Write data-collection and validation protocol
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \phaserow{Training and validation on experimental data}
+
+% \periodcell{W15--W16}{Jun 22--Jul 5}
+% &
+% \begin{tightitemize}
+%     \item Inspect, clean, and structure the experimental datasets
+%     \item Train the augmented model on experimental data
+%     \item Train the black-box benchmark model for comparison
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item Start results chapter
+%     \item Weekly feedback on first experimental outcomes
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \checkpointrow{review the first experimental results before final validation and comparison}
+% \addlinespace[0.35em]
+
+% \periodcell{W17--W18}{Jul 6--Jul 19}
+% &
+% \begin{tightitemize}
+%     \item Validate all models on held-out operating points and motion profiles
+%     \item Compare baseline, grey-box, and black-box performance
+%     \item Compare training effort, convergence behaviour, and computational cost
+%     \item Use remaining time as buffer for reruns or missing experiments
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item Rough draft of Aspect~4 methods and results
+%     \item Consolidate figures and tables
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \deadlinerow{target: main experimental results and first complete comparison finalized before vacation}
+% \addlinespace[0.35em]
+
+% \phaserow{Thesis completion}
+
+% \periodcell{W19--W20}{Jul 20--Aug 2}
+% &
+% Vacation
+% &
+% \\
+% \addlinespace[0.35em]
+
+% \deadlinerow{confirm committee composition before leaving for vacation}
+% \addlinespace[0.35em]
+
+% \periodcell{W21--W23}{Aug 3--Aug 23}
+% &
+% \begin{tightitemize}
+%     \item Assemble all chapters into a full draft
+%     \item Complete discussion, conclusion, introduction, and abstract
+%     \item Check consistency between methods, results, and research questions
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item First complete thesis draft
+%     \item Send draft to supervisors around Aug~21
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \periodcell{W24--W25}{Aug 24--Sep 6}
+% &
+% \begin{tightitemize}
+%     \item Incorporate supervisor feedback from weekly meetings
+%     \item Clean up implementation code, validation scripts, and workflow documentation
+%     \item Finalize appendices and reproducibility details
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item Revision round based on supervisor comments
+%     \item Improve discussion and conclusion
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \periodcell{W26}{Sep 7--Sep 13}
+% &
+% \begin{tightitemize}
+%     \item Final thesis revisions
+%     \item Final checks on formatting, references, and confidentiality-sensitive content
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item Finalize submission version
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \deadlinerow{complete the confidentiality procedure by approximately Sep~11}
+% \addlinespace[0.35em]
+
+% \periodcell{W27--W28}{Sep 14--Sep 27}
+% &
+% \begin{tightitemize}
+%     \item Share the thesis with the committee
+%     \item Prepare the final presentation
+%     \item Rehearse the defense and refine the presentation story line
+% \end{tightitemize}
+% &
+% \begin{tightitemize}
+%     \item Final polishing after committee sharing
+%     \item Prepare defense slides
+% \end{tightitemize}
+% \\
+% \addlinespace[0.35em]
+
+% \deadlinerow{share the thesis with the committee by Sep~27}
+% \addlinespace[0.35em]
+
+% \periodcell{After Sep 27}{TBD}
+% &
+% \begin{tightitemize}
+%     \item Final presentation and defense
+%     \item Send the thesis and signed TU/e code of scientific conduct according to the graduation procedure
+% \end{tightitemize}
+% &
+% \\
+
+% \end{longtable}
+
+
+
+% Time planning table for Section 7
+% Requires packages: booktabs, longtable, array, enumitem, makecell, xcolor, ragged2e
+% Preamble definitions:
+
+% Column types
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+
+% Table styling
+\renewcommand{\arraystretch}{1.16}
+\setlength{\LTpre}{0pt}
+\setlength{\LTpost}{0pt}
+
+% Row colors
+\definecolor{phasegray}{gray}{0.93}
+\definecolor{checkblue}{RGB}{235,242,250}
+\definecolor{deadlinepink}{RGB}{252,235,235}
+
+% Compact itemize for table cells
+\newlist{tightitemize}{itemize}{1}
+\setlist[tightitemize]{nosep,leftmargin=1.2em,topsep=1pt}
+
+% Convenience macros
+\newcommand{\periodcell}[2]{\makecell[l]{\textbf{#1}\\\footnotesize #2}}
+\newcommand{\phaserow}[1]{%
+  \rowcolor{phasegray}
+  \multicolumn{3}{L{14.4cm}}{\textbf{#1}}\\
+}
+\newcommand{\checkpointrow}[1]{%
+  \rowcolor{checkblue}
+  \multicolumn{3}{L{14.4cm}}{\textbf{Supervisor checkpoint:} #1}\\
+}
+\newcommand{\deadlinerow}[1]{%
+  \rowcolor{deadlinepink}
+  \multicolumn{3}{L{14.4cm}}{\textbf{Deadline:} #1}\\
+}
+
+% ---------- Table ----------
+\begin{longtable}{L{2.8cm} L{8.2cm} L{3.2cm}}
+\toprule
+\textbf{Period} & \textbf{Technical activities} & \textbf{Writing / feedback} \\
+\midrule
+\endfirsthead
+
+\toprule
+\textbf{Period} & \textbf{Technical activities} & \textbf{Writing / feedback} \\
+\midrule
+\endhead
+
+\bottomrule
+\endfoot
+
+%% ==== PHASE 1: BASELINE (3 weeks) ====
+\phaserow{Baseline model development}
+
+\periodcell{W1--W2}{Mar 16--Mar 29}
+&
+\begin{tightitemize}
+    \item Study the existing augmentation structure to determine what structure the baseline model needs to satisfy
+    \item Understand Jasper's first-principles model
+    \item Discretize the first-principles model to a DT state-space form (discretization method to be motivated)
+    \item Verify the DT model outputs against Jasper's ODE45 simulation reference
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item Set up thesis structure and notation
+    \item Record modeling choices and assumptions
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+\periodcell{W3}{Mar 30--Apr 5}
+&
+\begin{tightitemize}
+    \item Verify that the quasi-LPV interpretation holds
+    \item Verify inertia matrix invertibility across the operating range 
+    \item Create frozen LTI alternatives by fixing $Y$ and compare against the position-dependent baseline in simulation
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item Rough draft of Aspect~1 methods
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+\checkpointrow{review that the DT baseline model is verified and discuss the LPV vs LTI comparison results}
+\addlinespace[0.35em]
+
+%% ==== PHASE 2: AUGMENTATION + HARDWARE (5 weeks) ====
+\phaserow{Augmentation development and hardware validation for baseline}
+
+\periodcell{W4--W5}{Apr 6--Apr 19}
+&
+\begin{tightitemize}
+    \item Integrate the first-principles baseline into the augmentation framework
+    \item Train the first augmentation on simulated data (fixed $Y$, no scheduling)
+    \item Verify the augmented model improves over the baseline on simulated settling trajectories
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item Draft augmentation framework subsection
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+\periodcell{W6--W8}{Apr 20--May 10}
+&
+\begin{tightitemize}
+    \item Extend the augmentation to the LPV-LFR setting (scheduling on $Y$)
+    \item Commission dual-gantry hardware (expected mid-to-late April)
+    \item Validate the baseline on hardware and identify where it fails
+    \item Begin defining the operating range and experiment design, informed by the validation results
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item Rough draft of Aspect~2 methods
+    \item Initial experiment-design write-up
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+\checkpointrow{review augmentation simulation results and baseline hardware validation; agree on experiment design direction}
+\addlinespace[0.35em]
+
+%% ==== PHASE 3: INTERPRETABILITY + EXPERIMENTS (5 weeks) ====
+\phaserow{Interpretability and experimental design}
+
+\periodcell{W9--W10}{May 11--May 24}
+&
+\begin{tightitemize}
+    \item Implement orthogonal projection-based regularisation
+    \item Compare constrained and unconstrained augmentation in simulation
+    \item Finalize experiment design and validation split with ASMPT supervisors
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item Draft Aspect~3 methods
+    \item Draft experimental setup section
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+\checkpointrow{approve the experiment design, operating range, and validation split with ASMPT and TU/e}
+\addlinespace[0.35em]
+
+\periodcell{W11--W13}{May 25--Jun 14}
+&
+\begin{tightitemize}
+    \item Extend the regularisation to the dual-gantry setting (MIMO, position-dependent, LFR); document limitations where needed
+    \item Collect augmentation-training data and held-out validation data
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item Refine Aspect~3 write-up
+    \item Write data-collection protocol
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+%% ==== PHASE 4: TRAINING + VALIDATION (5 weeks) ====
+\phaserow{Training and validation on experimental data}
+
+\periodcell{W14--W15}{Jun 15--Jun 28}
+&
+\begin{tightitemize}
+    \item Prepare experimental data for training
+    \item Train the augmented model on experimental data with orthogonality regularisation
+    \item Set up and train the SUBNET as black-box comparison model
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item Start results chapter
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+\checkpointrow{review first experimental results before final validation and comparison}
+\addlinespace[0.35em]
+
+\periodcell{W16--W17}{Jun 29--Jul 12}
+&
+\begin{tightitemize}
+    \item Validate all models on held-out operating points and motion profiles; report BFR
+    \item Compare training efficiency and computational cost: grey-box vs black-box
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item Draft Aspect~4 methods and results
+    \item Consolidate figures and tables
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+\periodcell{W18}{Jul 13--Jul 19}
+&
+\begin{tightitemize}
+    \item Buffer for reruns, missing experiments, or refinement
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item Finalize results write-up
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+\checkpointrow{confirm experimental results are complete before vacation}
+\addlinespace[0.35em]
+
+%% ==== PHASE 5: THESIS COMPLETION (7 working weeks + 2 vacation) ====
+\phaserow{Thesis completion}
+
+\periodcell{W19--W20}{Jul 20--Aug 2}
+&
+Vacation
+&
+\\
+\addlinespace[0.35em]
+
+\deadlinerow{confirm committee composition with supervisor before leaving for vacation}
+\addlinespace[0.35em]
+
+\periodcell{W21--W23}{Aug 3--Aug 23}
+&
+\begin{tightitemize}
+    \item Assemble all chapters into a full thesis draft
+    \item Write discussion, conclusion, introduction, and abstract
+    \item Check consistency between methods, results, and research questions
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item First complete thesis draft
+    \item Send draft to supervisors around Aug~21
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+\periodcell{W24--W25}{Aug 24--Sep 6}
+&
+\begin{tightitemize}
+    \item Incorporate supervisor feedback from weekly meetings
+    \item Clean up implementation code, validation scripts, and workflow documentation for ASMPT
+    \item Finalize appendices and reproducibility details
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item Revision round based on supervisor comments
+    \item Improve discussion and conclusion
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+\periodcell{W26}{Sep 7--Sep 13}
+&
+\begin{tightitemize}
+    \item Final thesis revisions
+    \item Final checks on formatting, references, and confidentiality-sensitive content
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item Finalize submission version
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+\deadlinerow{complete the confidentiality procedure by approximately Sep~11}
+\addlinespace[0.35em]
+
+\periodcell{W27--W28}{Sep 14--Sep 27}
+&
+\begin{tightitemize}
+    \item Share the thesis with the committee
+    \item Prepare the final presentation
+    \item Rehearse the defense and refine the presentation
+\end{tightitemize}
+&
+\begin{tightitemize}
+    \item Final polishing after committee sharing
+    \item Prepare defense slides
+\end{tightitemize}
+\\
+\addlinespace[0.35em]
+
+\deadlinerow{share the thesis with the committee by Sep~27}
+\addlinespace[0.35em]
+
+\periodcell{After Sep 27}{TBD}
+&
+\begin{tightitemize}
+    \item Final presentation and defense
+    \item Send the thesis and signed TU/e code of scientific conduct according to the graduation procedure
+\end{tightitemize}
+&
+\\
+
+\end{longtable}

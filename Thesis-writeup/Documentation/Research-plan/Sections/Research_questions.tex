@@ -1,0 +1,18 @@
+% This section defines the main research question of the thesis and outlines the key aspects that must be addressed in order to answer it. These aspects also provide the basis for the methodological choices and evaluation criteria used in the remainder of this work. 
+% \\
+% \\
+\noindent The main research question is formulated as follows:
+\begin{quote}
+\textbf{For the dual-gantry system, how should physics-based plant models be augmented to improve parameter interpretability and settling prediction accuracy, particularly of cross-coupling and position-dependent dynamics?}
+\end{quote}
+\noindent To answer this research question, the following four aspects are investigated:
+\begin{enumerate}[leftmargin=*, itemsep=0.3em, topsep=0.3em, parsep=0pt, partopsep=0pt]
+    \item \textbf{Position-dependent baseline modeling} \\
+    In what form should the baseline model be represented for subsequent augmentation, and does position-dependent (LPV) formulation improve prediction compared to position-independent (LTI) alternatives?
+    \item \textbf{Augmentation structure} \\
+    What augmentation structure can effectively capture dynamics not modeled in the physics-based baseline model, in particular flexible cross-coupling dynamics?
+    \item \textbf{Interpretability preservation} \\
+    How can parameter interpretability be maintained during data-driven augmentation, compared to unconstrained approaches? Here, interpretability means that the physical parameters of the baseline retain values close to their physically meaningful initialization after augmentation.
+    \item \textbf{Model generalization} \\
+    How well does the augmented model generalize to (i) held-out operating points representative of actual industrial operating conditions and (ii) unseen motion profiles relevant to the industrial use context, and how does its prediction accuracy compare to a black-box state-space model trained on the same data?
+\end{enumerate}

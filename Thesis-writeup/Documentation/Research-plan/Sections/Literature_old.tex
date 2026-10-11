@@ -1,0 +1,80 @@
+
+Grey-box modelling encompasses a range of strategies: parameter re-estimation within the physics model structure, static residual correction on the model output, and dynamic augmentation that extends the baseline with learned states \cite{willard2020integrating, noel2018greybox}.
+For the dual-gantry system, cross-coupling between axes and position-dependent flexible dynamics are not captured by the first-principles baseline even with re-fitted parameters; capturing these requires additional model states, which neither re-estimation nor static correction can provide \cite{hoekstra2026lfr}.
+Dynamic augmentation is therefore the appropriate strategy: it extends the physical baseline with learned states that capture the missing dynamics \cite{willard2020integrating, hoekstra2026lfr}.
+
+\\
+
+The payload position $Y$ enters the inertia matrix algebraically \cite{garcia2013model}, making position-dependence structural; linear parameter-varying (LPV) modelling \cite{toth2010lpv} is therefore the physically motivated formulation, with $Y$ as scheduling variable.
+The linear fractional representation (LFR) \cite{hoekstra2026lfr} unifies augmentation topologies and explicitly encodes the first-principles baseline in the model interconnection.
+The parallel topology is adopted because orthogonal projection-based regularization applies to parallel structures only \cite{gyorok2025l4dc}; the resulting LPV-LFR formulation is trained via gradient-based learning \cite{drenth2025lpvlfr}.
+
+\\
+
+When physical and learned parameters are estimated simultaneously, the augmentation can absorb dynamics already described by the baseline, causing the physical parameters to lose their meaning — a failure mode known as \emph{negation} \cite{kon2022physics, gyorok2025l4dc}.
+Standard regularization limits this drift but cannot prevent negation structurally; orthogonal projection-based regularization \cite{kon2022physics, gyorok2025l4dc} constrains the augmentation output to the subspace orthogonal to the baseline output, so the augmentation captures only what the baseline cannot.
+Current implementations cover single-input single-output (SISO) systems \cite{bolderman2024pgnn}; how this extends to the coupled multi-input multi-output (MIMO) outputs and LFR interconnection of the dual-gantry system is an open problem.
+Augmented models also introduce hidden states with no hardware equivalent, requiring a principled initialization strategy for reliable simulation \cite{hoekstra2026encoder}.
+
+\\
+
+Performance is quantified by the Best Fit Rate (BFR) on free-run simulation, as simulation accuracy directly determines settling prediction quality \cite{schoukensljung2019nonlinear}.
+Generalisation is tested at held-out operating points — directly probing the interpolation claim of LPV modelling \cite{paijmans2008interpolating, bachnas2014datadrivenlpv} — and on unseen motion profiles, following the evaluation protocol of \cite{champneys2024baseline}.
+A continuous-time subspace encoder network (CT-SUBNET) \cite{beintema2023ctsubnet} serves as black-box comparison baseline.
+Both the MIMO-LFR extension of orthogonal projection and principled encoder initialization remain unresolved in the literature, and define the research questions of the following section.
+
+
+
+% Grey-box modelling encompasses a range of strategies: parameter re-estimation within the physics model structure, static residual correction on the model output, and dynamic augmentation that extends the baseline with learned states \cite{willard2020integrating, noel2018greybox}.
+% For the dual-gantry system, cross-coupling between axes and position-dependent flexible dynamics are present in the system but not captured by the first-principles baseline even with re-fitted parameters; capturing these requires additional model states, which neither re-estimation nor static correction can provide \cite{hoekstra2026lfr}.
+% Dynamic augmentation is therefore the appropriate strategy: it preserves the physical baseline while extending it with learned states that represent the unmodelled dynamics \cite{willard2020integrating, hoekstra2026lfr}.
+
+% \\
+
+% The payload position $Y$ enters the inertia matrix of the first-principles model algebraically \cite{garcia2013model}, making position-dependent behaviour a structural property of the system; linear parameter-varying (LPV) modelling \cite{toth2010lpv} is therefore the physically motivated baseline formulation, with $Y$ as the scheduling variable parameterising the system matrices.
+% Within dynamic augmentation, the linear fractional representation (LFR) \cite{hoekstra2026lfr} provides a unifying structure that accommodates parallel, series, and feedback augmentation architectures while explicitly encoding the first-principles baseline in the interconnection.
+% A parallel LFR structure is chosen because orthogonal projection-based regularization is formulated specifically for parallel structures and is not directly applicable to series interconnections \cite{gyorok2025l4dc}; this structure extends to the LPV setting via gradient-based learning \cite{drenth2025lpvlfr}.
+
+% \\
+
+% When physical and learned parameters are estimated simultaneously, the augmentation can capture dynamics already described by the baseline, causing the physical parameters to drift away from meaningful values — a failure mode known as \emph{negation} \cite{kon2022physics, gyorok2025l4dc}.
+% Regularization on the parameter values limits drift but does not structurally prevent negation; orthogonal projection-based regularization \cite{kon2022physics, gyorok2025l4dc} does, by constraining the augmentation output to the subspace orthogonal to the baseline output, so the baseline adapts first and the augmentation captures only the remaining residual.
+% Existing implementations are validated on single-input single-output (SISO) systems \cite{bolderman2024pgnn}; extension to the coupled multi-input multi-output (MIMO) outputs and LFR interconnection of the dual-gantry system remains an open problem in the literature.
+% In addition, augmented state-space models introduce hidden states with no direct hardware measurement; initialising these states for simulation requires a principled strategy, which baseline model-based encoder initialisation provides \cite{hoekstra2026encoder}.
+
+% \\
+
+% Model performance is evaluated using the Best Fit Rate (BFR), reported on free-run simulation because simulation accuracy is the relevant criterion for settling prediction \cite{schoukensljung2019nonlinear}.
+% Generalisation is validated at held-out operating points — directly testing the interpolation claim of LPV modelling \cite{paijmans2008interpolating, bachnas2014datadrivenlpv} — and on unseen motion profiles within the operating range, following the standardised evaluation protocol of Champneys et al.\ \cite{champneys2024baseline}.
+% A continuous-time subspace encoder network (CT-SUBNET) \cite{beintema2023ctsubnet} provides a black-box comparison baseline for prediction accuracy, training time, and resource use.
+% Together, the extension of orthogonal projection-based regularization to MIMO and LFR interconnections, and principled encoder initialization for simulation, constitute the open problems that motivate the research questions in the following section.
+
+
+
+
+
+
+
+
+%Grey-box modelling encompasses a range of strategies: parameter re-estimation within the physics model structure, static residual correction on the model output, and dynamic augmentation that extends the baseline with learned states \cite{willard2020integrating, noel2018greybox}.
+% For the dual-gantry system, cross-coupling between axes and position-dependent flexible dynamics are present in the system but not captured by the first-principles baseline even with re-fitted parameters; capturing these requires additional model states, which neither re-estimation nor static correction can provide \cite{hoekstra2026lfr}.
+% Dynamic augmentation is therefore the appropriate strategy: it preserves the physical baseline while extending it with learned states that represent the unmodelled dynamics \cite{willard2020integrating, hoekstra2026lfr}.
+
+% \\
+
+% The payload position $Y$ enters the inertia matrix of the first-principles model algebraically \cite{garcia2013model}, making position-dependent behaviour a structural property of the system; linear parameter-varying (LPV) modelling \cite{toth2010lpv} is therefore the physically motivated baseline formulation, with $Y$ as the scheduling variable parameterising the system matrices.
+% Within dynamic augmentation, the linear fractional representation (LFR) \cite{hoekstra2026lfr} provides a unifying structure that accommodates parallel, series, and feedback augmentation architectures while explicitly encoding the first-principles baseline in the interconnection.
+% A parallel LFR structure is chosen because the orthogonal projection-based regularization of Aspect~3 is formulated specifically for parallel structures and is not directly applicable to series interconnections \cite{gyorok2025l4dc}; this structure extends to the LPV setting via gradient-based learning \cite{drenth2025lpvlfr}.
+
+% \\
+
+% When physical and learned parameters are estimated simultaneously, the augmentation can capture dynamics already described by the baseline, causing the physical parameters to drift away from meaningful values — a failure mode known as \emph{negation} \cite{kon2022physics, gyorok2025l4dc}.
+% Regularization on the parameter values limits drift but does not structurally prevent negation; orthogonal projection-based regularization \cite{kon2022physics, gyorok2025l4dc} does, by constraining the augmentation output to the subspace orthogonal to the baseline output, so the baseline adapts first and the augmentation captures only the remaining residual.
+% Existing implementations are validated on single-input single-output (SISO) systems \cite{bolderman2024pgnn}; extension to the coupled multi-input multi-output (MIMO) outputs and LFR interconnection of the dual-gantry system remains an open problem in the literature.
+
+% \\
+
+% Model performance is evaluated using the Best Fit Rate (BFR), reported on free-run simulation because simulation accuracy is the relevant criterion for settling prediction \cite{schoukensljung2019nonlinear}.
+% Generalisation is validated at held-out operating points — directly testing the interpolation claim of LPV modelling \cite{paijmans2008interpolating, bachnas2014datadrivenlpv} — and on unseen motion profiles within the operating range, following the standardised evaluation protocol of Champneys et al.\ \cite{champneys2024baseline}.
+% A continuous-time subspace encoder network (CT-SUBNET) \cite{beintema2023ctsubnet} provides a black-box comparison baseline for prediction accuracy, training time, and resource use.
+% Based on the above, this project develops an LPV-LFR grey-box augmentation framework for the dual-gantry system, using orthogonal projection to preserve physical interpretability of the baseline model parameters, evaluated against a CT-SUBNET baseline within the specified operating range.

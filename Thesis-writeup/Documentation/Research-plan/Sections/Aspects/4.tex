@@ -1,0 +1,106 @@
+\subsection{Aspect 4: Model generalization}
+
+\subsection*{Aspect}
+How will model performance be validated on (i) untrained operating points and (ii) untrained motion profiles within the operational range?
+
+\subsubsection{Research method}
+
+This aspect defines the validation procedure that will be used to compare the models obtained in the previous aspects. The validation will be based on data that are not used during estimation. This follows the general cross-validation principle described by \citet{schoukens2019nonlinear}, who state that model validation checks how well a model reproduces the behavior of new data sets that were not used to estimate the model, and that the comparison should assess whether the aspects relevant for the intended application are adequately reproduced.
+
+The validation is divided into two complementary parts. First, operating-point generalization will be assessed at payload positions that are excluded from model estimation. This is motivated by the validation strategy of \citet{paijmans2008identification}, where five operating points are considered, four are used in the LPV model construction, and a fifth intermediate operating point is reserved to evaluate the derived LPV model. The same paper also includes a second validation in which time-domain results of the LPV model are compared with the experimental setup for a varying parameter. In the present thesis, this motivates using unseen payload positions for local validation and separate time-domain validation trajectories for varying-position operation.
+
+Second, motion-profile generalization will be assessed on validation trajectories with varying payload position that are not used during estimation. This choice is further supported by \citet{bachnas2014review}, who note that comparison of the simulated output response for a particular scheduling trajectory may not fully reveal the quality of the identified LPV models. In their case study, this motivates a separate analysis of local behavior at other operating points in addition to validation on an independent dataset with varying operating conditions. Therefore, the present validation protocol will not rely on trajectory-level validation alone.
+
+For the LPV-LFR models, fit measures on a validation dataset will be reported consistently with the evaluation style used by \citet{drenth2025thesis}. Drenth evaluates identified LPV-LFR models by calculating BFR on validation datasets and reports both simulation and prediction BFR results for multiple model classes and datasets. In addition, \citet{bachnas2014review} report MSE and BFR on a validation dataset with varying operating conditions. Accordingly, in this thesis, BFR will be used as a primary fit measure, and MSE may be reported as an additional comparative measure.
+
+If frozen-position validation is performed using local frequency-response measurements, then the local comparison can be supported by FRF estimates obtained from multisine experiments. In that case, uncertainty information should be taken into account when available. This is supported by \citet{gonzalez2025finite}, who derive exact distributional and covariance properties of a MIMO FRF estimator under multisine excitation and show how these results enable rigorous uncertainty quantification. Since this source concerns FRF estimation rather than LPV validation itself, it is used here only to justify uncertainty-aware local frequency-domain comparisons when such measurements are available.
+
+The exact implementation of the frozen-position comparison in this thesis is application-specific. The cited sources support the use of held-out operating points and separate trajectory-based validation, but they do not prescribe a single frozen reference for the dual-gantry system. Therefore, the frozen-position comparison will be defined using whichever local reference data can be obtained reliably for the machine, such as local experimental frequency-response data or local fixed-position identification data, while the decisive model comparison remains the evaluation on independent validation data representative of the intended settling task.
+
+\subsubsection{What will you measure?}
+
+The main outputs of this aspect are:
+
+\textbf{(i) Generalization at untrained operating points:}
+\begin{itemize}
+    \item model behavior at payload positions not used during estimation;
+    \item agreement between the model and the available local reference at those positions;
+    \item whether the position-dependent baseline and the augmented models retain acceptable local behavior at unseen positions.
+\end{itemize}
+
+\textbf{(ii) Generalization on untrained motion profiles:}
+\begin{itemize}
+    \item simulation and/or prediction performance on validation trajectories with varying payload position that were not used during estimation;
+    \item trajectory-level accuracy on representative settling motions over the operational range;
+    \item whether augmentation improves validation performance relative to the baseline model.
+\end{itemize}
+
+\textbf{(iii) Comparative model assessment:}
+\begin{itemize}
+    \item comparison of baseline and augmented models under the same validation protocol;
+    \item comparison of regularized and unregularized augmented models;
+    \item fit measures on validation data, with BFR as the primary reported metric and MSE as an optional additional metric.
+\end{itemize}
+
+The inclusion of BFR and, optionally, MSE is consistent with the cited LPV and LPV-LFR validation literature, while the split between unseen operating-point validation and varying-trajectory validation follows the validation logic illustrated by Paijmans et al.\ and Bachnas et al.
+
+\subsubsection{What data is needed?}
+
+Validation requires data that are not used for model estimation.
+
+\textbf{(i) Operating-point validation data:} measurements at payload positions within the operational range that are excluded from estimation, so that model behavior can be checked at unseen operating points.
+
+\textbf{(ii) Motion-profile validation data:} validation trajectories with varying payload position that are not used during estimation and are representative of the intended application, namely settling prediction over the operational range.
+
+\textbf{(iii) Optional local frequency-domain data:} if available, multisine-based local measurements that permit local FRF estimation and uncertainty-aware comparison at selected operating points.
+
+\subsubsection{What resources from ASMPT?}
+
+This aspect requires access to independent validation data from the dual-gantry setup. At minimum, this includes experimental data from payload positions and trajectories that are excluded from estimation, so that both unseen operating-point validation and varying-trajectory validation can be carried out. If local frequency-domain comparisons are included, it additionally requires suitable multisine excitation experiments and corresponding measurements at selected fixed positions.
+
+
+
+@article{paijmans2008identification,
+  author  = {Bart Paijmans and Wim Symens and Hendrik Van Brussel and Jan Swevers},
+  title   = {Identification of Interpolating Affine LPV Models for Mechatronic Systems with One Varying Parameter},
+  journal = {European Journal of Control},
+  volume  = {14},
+  number  = {1},
+  pages   = {16--29},
+  year    = {2008}
+}
+
+@article{bachnas2014review,
+  author  = {A. A. Bachnas and R. T{\'o}th and A. Mesbah and B. Ludlage},
+  title   = {A Review on Data-Driven Linear Parameter-Varying Modeling Approaches: A High-Purity Distillation Column Case Study},
+  journal = {Journal of Process Control},
+  volume  = {24},
+  number  = {4},
+  pages   = {272--285},
+  year    = {2014}
+}
+
+@article{schoukens2019nonlinear,
+  author  = {Johan Schoukens and Lennart Ljung},
+  title   = {Nonlinear System Identification: A User-Oriented Road Map},
+  journal = {IEEE Control Systems Magazine},
+  volume  = {39},
+  number  = {6},
+  pages   = {28--99},
+  year    = {2019}
+}
+
+@mastersthesis{drenth2025thesis,
+  author = {Roel Drenth},
+  title  = {Efficient Gradient-Based Learning of LPV Models with Linear Fractional Representation},
+  school = {Eindhoven University of Technology},
+  year   = {2025}
+}
+
+@article{gonzalez2025finite,
+  author  = {Alan Gonz{\'a}lez and Tom Claessens and Cristian Rojas and Tom Oomen and H{\aa}kan Hjalmarsson},
+  title   = {Finite Sample MIMO System Identification with Multisine Excitation: Nonparametric, Direct, and Two-step Parametric Estimators},
+  journal = {IEEE Control Systems Letters},
+  year    = {2025},
+  note    = {Early access / accepted version, depending on your PDF}
+}

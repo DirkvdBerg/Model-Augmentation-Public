@@ -1,0 +1,12 @@
+label,run,job,row,rms_X1,rms_X2,rms_Y
+"Baseline, true parameters",R5,88767,base_true,1.639139e-06,1.972673e-06,1.311931e-05
+"Baseline, detuned start",R1,88762,base_start,2.993570e-06,2.278623e-06,1.560447e-05
+"Static parallel, $n_a=0$",R6,88768,model,1.333421e-06,1.423576e-06,1.244494e-05
+"Plain start, $n_a=2$",R3,88763,model,1.177997e-06,1.256153e-06,1.057570e-05
+"PS start, $n_a=2$",R5,88767,model,1.088950e-06,1.210621e-06,1.390906e-06
+"PS start, $n_a=2$, physics part only",R5,88767,physics,1.940547e-06,1.774796e-06,1.350122e-05
+"PS start, $n_a=8$",R7,88756,model,1.042032e-06,1.185285e-06,1.438008e-06
+"PS start, $n_a=2$, detuned start",R4,88764,model,1.083446e-06,1.200311e-06,1.435174e-06
+"Final model (OBC), detuned start",R1,88762,model,1.142244e-06,1.293623e-06,1.491393e-06
+Black box,R8,88757,bb,1.848153e-05,2.110969e-05,2.331976e-05
+Noise floor,,,floor,9.000340e-09,9.625215e-09,3.193985e-09

@@ -23,6 +23,16 @@ TAB_DIR = ROOT / "Writing" / "tables"
 COL_WIDTH = 3.5
 FULL_WIDTH = 7.16
 
+# One colour per model in every results figure.
+COLOR = {
+    "baseline": "#7f7f7f",     # LPV baseline at the true parameters
+    "lti": "#bcbd22",          # frozen-Y LTI baseline
+    "plain": "#ff7f0e",        # augmented, plain start
+    "ps": "#1f77b4",           # augmented, PS start (also the final model)
+    "bb": "#2ca02c",           # black box
+}
+FLOOR = dict(color="#d62728", linestyle="--", linewidth=0.9)   # noise floor
+
 
 def use_paper_style():
     """Match the IEEEtran body font size so no figure needs rescaling in LaTeX."""
@@ -31,6 +41,8 @@ def use_paper_style():
         "savefig.bbox": "tight",
         "savefig.pad_inches": 0.02,
         "font.family": "serif",
+        "font.serif": ["Times New Roman", "STIXGeneral", "DejaVu Serif"],   # IEEEtran body is Times
+        "mathtext.fontset": "stix",
         "font.size": 8,
         "axes.labelsize": 8,
         "axes.titlesize": 8,
