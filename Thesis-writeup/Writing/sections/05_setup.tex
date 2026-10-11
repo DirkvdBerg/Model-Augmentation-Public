@@ -23,20 +23,20 @@
 \item System: LPV baseline plus a payload absorber (50\,\% of the head mass, 150~Hz, $\zeta=0.03$) plus tanh Coulomb rail friction, in closed loop with controller K1 (Fig.~\ref{fig:gantry_absorber})
 \item Choice: absorber and friction only in the system, as known missing dynamics
 \item Choice: output noise at the measured machine level; noise floor = noisy record minus its noise-free twin
-\item Excitation: multisine of 106 to 297~Hz at production amplitude on the actuator forces, added to the motion; some records have motion only
-\item Types of motion: standstill at a fixed $Y$, slow $Y$ sweeps, $X$-$Y$ Lissajous paths, S-curve point-to-point moves, sine-shaped shuttle moves with dwell
+\item Excitation: multisine of 106 to 297~Hz
+\item Types of motion: standstill at a fixed $Y$, slow $Y$ sweeps, $X$-$Y$ Lissajous paths, S-curve point-to-point moves, sine-shaped
 \item Training (18 records): fits the model; $Y$ within $\pm0.30$~m, accelerations up to 75\,\% of the machine maximum
 \item Validation (6 records): only selects the checkpoint and the black-box size; never reported
 \item Test (12 records): every reported number
 \item Interpolation (I1 to I6): inside the training range, with new multisine phases, new $Y$ positions and new move sequences (sine and S-curve routes, $X$-only and $Y$-only moves, long strokes)
-\item Extrapolation (E1 to E6): each differs from its I record in one property outside the training range: $Y$ position (E1, E2, up to 0.39~m), acceleration (E3, 100\,\%), velocity (E4, 1.95~m/s), a measured machine move (E6), a changed controller (E5, not scored)
+\item Extrapolation (E1 to E6): each differs from its I record in one property outside the training range: $Y$ position (E1, E2, up to 0.39~m), acceleration (E3, 100\,\%), velocity (E4, 1.95~m/s), setpoint using movement from machine (E6), a changed controller (E5, not done currently)
 \end{outline}
 
 \subsection{Compared models}
 \begin{outline}
 \item Baseline: LPV at the true and at the detuned parameters; LTI frozen at $Y=0$
 \item Augmented: static ($n_a=0$), plain training, PS initialisation ($n_a=2$ and 8), unconstrained against OBC
-\item Choice: start 10\,\% detuned, the same direction in every run
+\item Choice: start 10\,\% detuned for the combinations, the same direction in every run
 \item Choice: black box = SUBNET on the closed loop $(r,f)\to e$, size selected from 11 configurations on validation
 \end{outline}
 
