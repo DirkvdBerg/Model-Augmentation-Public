@@ -196,15 +196,15 @@ refitting $\theta_{\mathrm{base}}$ or correcting the baseline states
 with a static augmentation is not sufficient.
 Both these methods \todo{only retain} the original states of the baseline, 
 while missing dynamics require
-states the baseline does not include~\cite[Sec.~2]{hoekstra2025lfr}.
+states the baseline does not include~\cite[Sec.~2]{hoekstra2026lfr}.
 A dynamic augmentation therefore adds states $\bar x$ to model these
-missing dynamics~\cite[Sec.~3]{hoekstra2026lfr}.
+missing dynamics~\cite[Sec.~2]{hoekstra2026lfr}.
 The augmented model updates these states using the full state
-and input~\cite[Sec.~2, Table~1]{hoekstra2025lfr}.
+and input~\cite[Sec.~2, Table~1]{hoekstra2026lfr}.
 \\
 The LFR-based augmentation structure of Hoekstra et al. is used, 
 an interconnection matrix connects a baseline block and a learning
-block~\cite[Sec.~3.1]{hoekstra2025lfr}. 
+block~\cite[Sec.~3.1]{hoekstra2026lfr}. 
 The learning components are a neural network consisting of $f_{\mathrm{aug}}$ 
 and $g_{\mathrm{aug}}$.
 \todo{constant block is not really constant} Similar to the LFR in Section~\ref{sec:lfr} (Fig.~\ref{fig:lfr}),
@@ -219,7 +219,7 @@ in~$Y$.
 \\
 The dynamic-parallel augmentation structure is chosen, because the 
 orthogonal-by-construction parametrisation that Section~\ref{sec:obc} builds upon 
-is defined for the additive structure~\cite{hoekstra2025lfr, gyorok2026obc}.
+is defined for the additive structure~\cite{gyorok2026obc}.
 \\
 The output map is not augmented (no $h_{\mathrm{aug}}$), because \eqref{eq:Ptransform} gives the exact
 relation between the states and the measured outputs. 
@@ -241,7 +241,7 @@ result is kept as is; (b) the research question asks only
  with a decision entry.}
 \\
 The model is defined in discrite time with the augmentation added to
-the state update of the baseline~\cite[Sec.~2, Table~1]{hoekstra2025lfr}.
+the state update of the baseline~\cite[Sec.~2, Table~1]{hoekstra2026lfr}.
 This gives us
 \begin{equation}
 \begin{aligned}
@@ -290,9 +290,9 @@ which together give well-posedness~\cite[Cond.~6, Cond.~8, Thm.~9]{hoekstra2026l
 The baseline LFR is also well posed
 (Section~\ref{sec:lfr}).}
 
-The inputs to the artificial neural network (ANN) are normalised
+The inputs to the neural network are normalised
 to zero mean and unit variance, which has been shown to improve
-the estimation of models containing ANNs~\cite[Sec.~5.3]{hoekstra2026lfr}.
+the estimation of models containing neural networks~\cite[Sec.~5.3]{hoekstra2026lfr}.
 The mean and standard deviations are computed from the training data.
 For the baseline states the measured positions are converted to their generalized 
 positions, for which the velocities can be estimated from their 
@@ -312,7 +312,7 @@ for $i\in{x,u,y}$, with $\sigma_i$ the corresponding standard
 deviations. The additional states $\bar x$ are not normalised,
 so $\hat x^{\mathrm n}=\col(\tilde x^{\mathrm n},\bar x)$.
 \\
-After normalisation, the model equations become
+After normalisation the model equations become
 \begin{equation}
 \begin{aligned}
  f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}},\tilde x^{\mathrm n},u^{\mathrm n})
@@ -332,29 +332,49 @@ itself, and therefore we only scale it.
 The output map remains linear because the mean of the
 positions is calculated from the output mean as
 $P^{-\top}\mu_y$.
+\\
+A multilayer perceptron $\phi_{\mathrm{aug}}$ with tanh activation
+functions for the hidden layers and a linear output layer is used
+for both $f^{\mathrm n}_{\mathrm{aug}}$ and $g^{\mathrm n}_{\mathrm{aug}}$:
+\[
+\col(f^{\mathrm n}_{\mathrm{aug}},g^{\mathrm n}_{\mathrm{aug}})
+=\phi_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x^{\mathrm n}_k,u^{\mathrm n}_k).
+\]
+The inputs to the neural network are the $6+n_{\bar x}$ states 
+and the three actuator forces.
+The first six outputs $f^{\mathrm n}_{\mathrm{aug}}$ update the six 
+physical states and the remaining $n_{\bar x}$ outputs 
+$g^{\mathrm n}_{\mathrm{aug}}$ and
+equals the next additional states $\bar x_{k+1}$ (Fig.~\ref{fig:aug_structure}).
+These corrections act on all six physical states, the positions included,
+as in the dynamic-parallel structure~\cite[Table~1]{hoekstra2026lfr}.
+The positions are also corrected because within one sample period 
+an unmodelled force would change both the velocity and position,
+correcting only for the velocities would not be able to capture this.
+Both $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$ are given the payload 
+position $Y$ through $\tilde x_k$, enabling the neural network to learn 
+model position-dependent effects.
+\\
+Randomly initializing the learning components can give an unstable and bad 
+optimization problem, to resolve this training starts 
+from the baseline~\cite[Sec.~5.4]{hoekstra2026lfr}.
+At the start of training $f_{\mathrm{aug}}$ is set to zero, resulting in the 
+augmented model being equal to the baseline. Because we make use of a 
+feedforward neural network this only requires us to zero the output layer.
+\\
+The gantry baseline model has two free axes, $X$ and $Y$, without stiffness 
+in \eqref{eq:damping_stiffness_matrices}, which are also 
+affected by the learned correction. 
+The discretized baseline model has a pole at $z=1$ on each of these stiffness free 
+axes, making it marginally stable.
+Therefore these axes act as integrators: a consant error in the correction 
+keeps accumalating in the position. 
+The alternative to only correct the velocities would not prevent the integrator 
+issue, because an error in the velocity also accumulates in the position. 
+The feedback controller is able to correct this drift, which is why we have 
+chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).
 
-
-One multilayer perceptron $\phi_{\mathrm{aug}}$ with tanh hidden layers and a
-linear output layer supplies both learned functions,
-$\col(f^{\mathrm n}_{\mathrm{aug}},g^{\mathrm n}_{\mathrm{aug}})
-=\phi_{\mathrm{aug}}(\theta_{\mathrm{aug}},\hat x^{\mathrm n}_k,u^{\mathrm n}_k)$:
-it reads the $6+n_{\bar x}$ states and the three inputs, its first six
-outputs are the corrections of the physical rows and its last $n_{\bar x}$
-outputs the next added state (Fig.~\ref{fig:aug_structure}).
-Both $f_{\mathrm{aug}}$ and $g_{\mathrm{aug}}$ depend on the
-payload position $Y$ through $\tilde x_k$, and therefore are able to represent
-position-dependent effects.
-A feedforward network suffices because the baseline is augmented additively,
-whereas a series structure needs a residual network to reproduce the baseline
-at initialisation~\cite[Sec.~4.3]{hoekstra2025lfr}.
-The corrections act on every physical row of the baseline transition, as in
-the dynamic-parallel structure~\cite[Table~1]{hoekstra2025lfr}.
-The learned component thus also acts on the free axes $X$ and $Y$, which have
-no stiffness in \eqref{eq:damping_stiffness_matrices}, so a persistent
-correction on these rows accumulates in position.
-\todo{Missing: justification for correcting the position rows rather than keeping them as the integrals of the velocities. Context: Hoekstra et al.\ detach the free integrators of their vehicle and learn only the input-to-velocity map, which needs measured velocities~\cite[Secs.~7.2, 7.4]{hoekstra2026lfr}; here only positions are measured. D-103 requires only that $X$ and $Y$ are reachable.}
-With $n_{\bar x}=0$, $\phi_{\mathrm{aug}}$ corrects the physical rows only,
-which is the static parallel augmentation of~\cite[Table~1]{hoekstra2025lfr}.
+%LEFT HERE Section III 11-10 15:57
 
 \begin{figure}[t]
  \centering
@@ -437,7 +457,7 @@ The linear part acts on the scaled but uncentred window, for which the map
 \end{equation}
 where $W^b\in\R^{6\times6(n+1)}$, $W^a\in\R^{n_{\bar x}\times6(n+1)}$,
 $\chi_0$ restores the means that \eqref{eq:aug_norm} removes, $\tilde\psi$ is
-a multilayer perceptron, and $\theta_{\mathrm{enc}}$ collects $W^b$, $W^a$
+a neural network, and $\theta_{\mathrm{enc}}$ collects $W^b$, $W^a$
 and the parameters of $\tilde\psi$.
 We write $\psi_a$ for the last $n_{\bar x}$ rows of $\psi$ and
 $\theta^a_{\mathrm{enc}}$ for $W^a$ with the added-state rows of the output

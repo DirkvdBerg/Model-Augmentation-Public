@@ -104,11 +104,6 @@ M.~Gautier and W.~Khalil, ``Direct calculation of minimum set of inertial
   parameters of serial robots,'' \emph{IEEE Transactions on Robotics and
   Automation}, vol.~6, no.~3, pp. 368--373, 1990.
 
-\bibitem{hoekstra2025lfr}
-J.~H. Hoekstra, C.~Verhoek, R.~T{\'o}th, and M.~Schoukens, ``Learning-based
-  model augmentation with {LFRs},'' \emph{European Journal of Control},
-  vol.~86, p. 101304, 2025.
-
 \bibitem{drenth2025thesis}
 R.~Drenth, ``Efficient gradient-based learning of {LPV} models with linear
   fractional representation,'' Master's thesis, Eindhoven University of
