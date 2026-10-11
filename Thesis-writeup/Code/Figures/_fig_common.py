@@ -26,7 +26,7 @@ FULL_WIDTH = 7.16
 # One colour per model in every results figure.
 COLOR = {
     "baseline": "#7f7f7f",     # LPV baseline at the true parameters
-    "lti": "#bcbd22",          # frozen-Y LTI baseline
+    "lti": "#c7c7c7",          # frozen-Y LTI baseline (same family as the baseline, lighter)
     "plain": "#ff7f0e",        # augmented, plain start
     "ps": "#1f77b4",           # augmented, PS start (also the final model)
     "bb": "#2ca02c",           # black box

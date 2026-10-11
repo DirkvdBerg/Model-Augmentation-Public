@@ -34,10 +34,10 @@ def main():
             rel[r["combination"]]["start"] = 100 * (float(r["start_value"]) / float(r["true"]) - 1)
         rms[r["run"]] = np.mean([float(r[f"test_rms_{a}"]) for a in ("X1", "X2", "Y")])
 
-    lines = [r"\setlength{\tabcolsep}{4.5pt}", r"\begin{tabular}{l r r r r r}", r"\toprule",
+    lines = [r"\setlength{\tabcolsep}{3pt}", r"\begin{tabular}{l r r r r r}", r"\toprule",
              r" & \multicolumn{3}{c}{Detuned start} & \multicolumn{2}{c}{Correct start}\\",
              r"\cmidrule(lr){2-4}\cmidrule(lr){5-6}",
-             r"Rel. error (\%) & Start & U & OBC & U & OBC\\", r"\midrule"]
+             r"Rel. error (\%) & Start & Unconstr. & OBC & Unconstr. & OBC\\", r"\midrule"]
     fmt = lambda v: r"$%+.1f$" % v                                            # noqa: E731
     for c in SYMBOL:
         lines.append(" & ".join([SYMBOL[c], fmt(rel[c]["start"])] + [fmt(rel[c][run]) for run, _ in COLS]) + r"\\")
@@ -54,7 +54,7 @@ def main():
                                                         for run, _ in COLS]) + r"\\")
     tru = {round(float(ov[run]["truth_overlap"]), 6) for run, _ in COLS}
     assert len(tru) == 1                       # a property of the data and the truth, not of a run
-    lines.append(r"Unmodelled-dyn. overlap & &\multicolumn{4}{c}{$%.2f$}\\" % tru.pop())
+    lines.append(r"Missing-dynamics overlap & &\multicolumn{4}{c}{$%.2f$}\\" % tru.pop())
     lines.append(" & ".join([r"Learned pole (Hz)", ""] + [r"$%.0f$" % float(ov[run]["mode_hz"])
                                                           for run, _ in COLS]) + r"\\")
     lines.append(" & ".join([r"Learned damping $\zeta$", ""] + [r"$%.3f$" % float(ov[run]["mode_zeta"])

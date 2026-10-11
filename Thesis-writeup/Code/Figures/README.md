@@ -35,7 +35,7 @@ Agreed set with Dirk on 2026-10-11 (D-247). Each output comes from one script, w
 | `tables/res_structure.tex` | `res_structure.py` | `res_structure.csv` | Aspect 2 (+ black box): test RMS per axis, I1 to I6 |
 | `figures/res_ps_spectrum.pdf` | `res_ps_spectrum.py` | `res_ps_spectrum.csv` | Aspect 2: Y simulation-error spectrum, plain vs PS |
 | `tables/res_obc_combinations.tex` | `res_obc_combinations.py` | `res_obc_combinations.csv`, `res_obc_overlap.csv` | Aspect 3: ten combinations, overlaps, learned pole |
-| `figures/res_generalisation.pdf` | `res_generalisation.py` | `res_generalisation.csv` | Aspect 4: I/E pairs, baseline vs augmented vs black box |
+| `figures/res_generalisation.pdf` | `res_generalisation.py` | `res_generalisation.csv` | Aspect 4: I/E pairs, detuned baseline vs augmented vs black box |
 | `figures/res_time_trace.pdf` | `res_time_trace.py` | `res_time_trace.csv` | I1 time trace, Y axis |
 
 Regenerate a figure: `python Thesis-writeup/Code/Figures/<stem>.py` (seconds, no rollout).
