@@ -915,10 +915,10 @@ PS is a two-stage regression of predictive-state
 learning~\cite[Sec.~2]{hefny2015supervised}, and it makes use of initialisation
 before backpropagation through time~\cite[Sec.~4.2]{downey2017psrnn}.
 \\
-The first stage predicts the residual of the model, instead 
-of features of future observations as in~\cite{hefny2015supervised}.
-The second stage trains the nonlinear state update
-instead of a linear operator.
+The first stage (S1) predicts the residual of the model, instead 
+of \kw{features of future observations} as in~\cite{hefny2015supervised}.
+The second stage (S2) trains the nonlinear state update
+instead of a \kw{linear operator.}
 We also use the first stage during the initial training
 of $V$, instead of before training as
 in~\cite{downey2017psrnn}.
@@ -944,14 +944,27 @@ are used for both stages.
 \item S1, during the first updates of \eqref{eq:aug_loss}: a temporary decoder on $\bar x_\tau$ predicts the current model's residual over the $M$ samples after the encoder window:
 \end{outline}
 \begin{wip}
+\\
+% Stage S1 trains the encoder's added-state outputs to predict the residual of
+% the augmented model \eqref{eq:aug_transition} at the parameters $\vartheta$
+% after the latest update of $V$.
 Stage S1 trains the encoder's added-state outputs to predict the residual of
-the current model.
-During the first updates of \eqref{eq:aug_loss}, every update of $V$ is
-followed by one S1 update with its own Adam optimiser, on windows from the
-training records except a few calibration records.
-The target is the current model's closed-loop residual over the $M=n+1$
-samples after the encoder window, and a temporary decoder reads only
-$\bar x_\tau=\psi_a(\theta_{\mathrm{enc}},\chi_\tau)$:
+the augmented model \eqref{eq:aug_transition} using the model parameters $\vartheta$
+from the latest $V$ update step.
+Each update of $V$ is followed by one S1 update with its own Adam optimiser.
+For the S1 update we select a minibatch $\mathcal B$ of samples $\tau$ from the training data.
+The training data is divided into excitation classes (\todo{see section}), and for classes 
+with at least three records one is left out of S1 and S2 to evaluate $\nu$ \eqref{eq:ps2_nu}.
+The left out data is still used in $V$.
+For each sample $\tau$, the encoder uses the last $n+1$
+samples up to $\tau$, $\chi_\tau$, to estimate the initial state $\hat x_\tau$.
+From this state the augmented model is simulated in the closed loop of 
+Section~\ref{sec:aug_loop}.
+We calculate the residual from the next $M=n+1$ samples, from $\tau+1$ to $\tau+M$.
+By convention we have chosen to use the same number of samples as the encoder window.
+Then a temporary decoder $d$ with only the added states as inputs
+$\bar x_\tau=\psi_a(\theta_{\mathrm{enc}},\chi_\tau)$
+is used to predict this residual:
 \end{wip}
 \begin{equation}
 \begin{aligned}
@@ -968,34 +981,59 @@ $\bar x_\tau=\psi_a(\theta_{\mathrm{enc}},\chi_\tau)$:
 \item The target starts after the window, so the two share no sample
 \end{outline}
 \begin{wip}
-where $\hat y^{\mathrm n}_{k|\tau}$ is the output of the loop of
-Section~\ref{sec:aug_loop} from $\hat x^{\mathrm n}_{\tau|\tau}$ at the current
-$\vartheta$, held fixed in the gradient, $\mathcal B$ a minibatch of window
-ends $\tau$, $\sigma_e$ the RMS of all residual entries over $\mathcal B$, and
-$d:\R^{n_{\bar x}}\to\R^{Mn_y}$ the decoder with parameters
-$\theta_{\mathrm p}=(W_{\mathrm p,1},b_{\mathrm p,1},W_{\mathrm p,2},b_{\mathrm p,2})$,
+% where $\hat y^{\mathrm n}_{k|\tau}$ is the output of the loop of
+% Section~\ref{sec:aug_loop} from $\hat x^{\mathrm n}_{\tau|\tau}$ at the current
+% $\vartheta$, held fixed in the gradient, $\mathcal B$ a minibatch of window
+% ends $\tau$, $\sigma_e$ the RMS of all residual entries over $\mathcal B$, and
+% $d:\R^{n_{\bar x}}\to\R^{Mn_y}$ the decoder with parameters
+% $\theta_{\mathrm p}=(W_{\mathrm p,1},b_{\mathrm p,1},W_{\mathrm p,2},b_{\mathrm p,2})$,
+% $W_{\mathrm p,1}\in\R^{n_h\times n_{\bar x}}$ and
+% $W_{\mathrm p,2}\in\R^{Mn_y\times n_h}$.
+% $W_{\mathrm p,2}$ and $b_{\mathrm p,2}$ start at zero, so the decoder first
+% predicts no residual.
+% Only $\theta_{\mathrm p}$ and $\theta^a_{\mathrm{enc}}$ receive a gradient,
+% and the rest of $\vartheta$ is left to $V$.
+where $\hat y^{\mathrm n}_{k|\tau}$ is the output from the
+closed-loop simulation of Section~\ref{sec:aug_loop},
+starting at $\hat x^{\mathrm n}_{\tau|\tau}$.
+This simulated output is kept fixed during
+the S1 update.
+$\mathcal B$ is the minibatch of samples $\tau$ and
+$\sigma_e$ is the RMS of all residual values in $\mathcal B$.
+The decoder $d:\R^{n_{\bar x}}\to\R^{Mn_y}$ has parameters
+$\theta_{\mathrm p}=(W_{\mathrm p,1},b_{\mathrm p,1},
+W_{\mathrm p,2},b_{\mathrm p,2})$, with
 $W_{\mathrm p,1}\in\R^{n_h\times n_{\bar x}}$ and
 $W_{\mathrm p,2}\in\R^{Mn_y\times n_h}$.
-$W_{\mathrm p,2}$ and $b_{\mathrm p,2}$ start at zero, so the decoder first
-predicts no residual.
-Only $\theta_{\mathrm p}$ and $\theta^a_{\mathrm{enc}}$ receive a gradient,
-and the rest of $\vartheta$ is left to $V$.
+Both $W_{\mathrm p,2}$ and $b_{\mathrm p,2}$ are initially
+set to zero, so that the decoder starts by predicting zero residual.
+Only $\theta_{\mathrm p}$ and $\theta^a_{\mathrm{enc}}$
+are updated by S1. 
+All parameters of $\vartheta$, including $\theta^a_{\mathrm{enc}}$
+are trained through $V$.
+\\
 
-Over all functions of $\chi_\tau$, the expected cost is minimised by the
-conditional mean $\mathbb E[e_\tau\mid\chi_\tau]$.
-The decoder sees $\chi_\tau$ only through the $n_{\bar x}$ entries of
-$\bar x_\tau$, so S1 drives $\bar x_\tau$ towards a summary of the past that
-predicts the coming residual.
-This is the predictive state of~\cite[Sec.~2]{hefny2015supervised}, the
-expected future features given the history, with the residual as the feature.
-The target starts at $\tau+1$, so $\chi_\tau$ shares no sample with it, as
-Hefny et al.\ keep history and future disjoint so that the history is
-uncorrelated with the noise in the future~\cite[Sec.~2]{hefny2015supervised}.
-Venkatraman et al.\ also decode the internal state into future observations,
-jointly with the task loss throughout
+
+The conditional mean $\mathbb E[e_\tau\mid\chi_\tau]$ is used to minimise 
+the expected squared error.
+The decoder only sees up to $\bar x_\tau$ and not the full history $\chi_\tau$, 
+this forces the encoder to use the added states to predict the future residual.
+\todo{
+Instead of using features of future observations 
+as Hefny et al.~\cite[Sec.~2]{hefny2015supervised} for predictive-state learning, 
+we use the model residual.
+}
+To avoid correlation between the history and future noise Hefny et al.\ separates 
+the past and future samples~\cite[Sec.~2]{hefny2015supervised}. 
+We borrow this principle by having the residual starts at $\tau+1$, so that there 
+is no overlap between the samples used for the encoder and to calculate the residual.
+\todo{
+Venkatraman et al.\ use a similar approach by predicting
+future observations from the internal states during
 training~\ucite[Sec.~3]{venkatraman2017psd}.
-Here the target is the residual of the model, and the decoder is discarded
-after S1.
+}
+For the PS implementation the decoder predicts the model residual and
+is removed after S1.
 \todo{Current runs (\texttt{FINAL-RUN-FIXES.md} item~5): the 2026-10-11 runs start the target at $\tau$ (\texttt{ps2\_opening.py}, \texttt{\_sample} and \texttt{\_residual}), so sample $\tau$ is both the last sample of $\chi_\tau$ and the first of $e_\tau$, and the noise in $y_\tau$ enters both sides of \eqref{eq:ps2_s1}.}
 \todo{Missing: Hefny et al.\ model the noise as independent per sample (Fig.~1). Our measurement noise is low-pass and fed back by the controller, so disjoint windows remove the shared sample but not all correlation between $\chi_\tau$ and the noise in $e_\tau$. Candidate: one sentence here or in the Discussion (basis: D-238 noise model).}
 \end{wip}
@@ -1004,9 +1042,10 @@ after S1.
 \item Unexplained fraction $\nu$ on fixed calibration windows:
 \end{outline}
 \begin{wip}
-Whether $\bar x_\tau$ predicts the residual is measured on a fixed set
-$\mathcal C$ of windows from the calibration records, by the fraction of the
-residual that the decoder leaves unexplained,
+To evaluate how well $\bar x_\tau$ performs at predicting the residual, a
+fixed set $\mathcal C$ of windows from the held out data is used.
+For this set the squared prediction error of the decoder
+divided by the squared residual is computed,
 \end{wip}
 \begin{equation}
  \nu=\frac{\sum_{\tau\in\mathcal C}\norm{d\bigl(\theta_{\mathrm p},\psi_a(\theta_{\mathrm{enc}},\chi_\tau)\bigr)-e_\tau}_2^2}
