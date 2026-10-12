@@ -33,9 +33,20 @@
 \ifdefined\ReviewBuild
   \excludecomment{wip}
   \newenvironment{outline}{\begin{itemize}}{\end{itemize}}
+  % review: cite the source only, without the Eq./Sec./Thm. part in brackets
+  \let\fullcite\cite
+  \renewcommand{\cite}[2][]{\fullcite{#2}}
 \else
   \includecomment{wip}
   \newenvironment{outline}{\begingroup\color{blue!60!black}\begin{itemize}}{\end{itemize}\endgroup}
+\fi
+% \ucite: a citation whose source is not yet checked. Editor build: normal citation in orange.
+% Review build: no citation, and the source is left out of the reference list.
+% Same arguments as \cite; change back to \cite once the source is checked.
+\ifdefined\ReviewBuild
+  \newcommand{\ucite}[2][]{}
+\else
+  \newcommand{\ucite}[2][]{{\color{orange}\if\relax\detokenize{#1}\relax\cite{#2}\else\cite[#1]{#2}\fi}}
 \fi
 
 % ------------------------------------------------------------ general notation

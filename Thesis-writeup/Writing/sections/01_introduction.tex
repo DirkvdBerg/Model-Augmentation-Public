@@ -13,8 +13,9 @@
 % Planned figures: No dedicated introduction figure.
 % Section is finished when: Each contribution points to evidence later in the paper and each active citation has been verified.
 \section{Introduction}
-\todo{Kijken bronnen origineel van roland + hoekstra + bendeguz + roel drenth. currently i dont really state anything about orthogonality for interpretability for example.}
-\subsection{Industrial motivation and modelling gap}
+% No subsections in the introduction (2026-10-11).
+% Outline bullets hidden 2026-10-11 (kept in source; the prose below covers them).
+\iffalse
 \begin{itemize}
 \item Settling prediction limits throughput in coupled high-precision gantries, so model error has a direct operational cost \cite{garcia2013model}
 \item The concrete digital-twin use case is to evaluate relevant ASMPT motion and a changed controller before deployment on the machine
@@ -22,60 +23,266 @@
 \item A black-box model offers flexibility but weakens extrapolation arguments and removes parameters useful for control design, digital twins, and health monitoring
 \item Grey-box dynamic augmentation is the target compromise: preserve the baseline and learn only the missing state dynamics \cite{hoekstra2026lfr}
 \end{itemize}
-\todo{Which industrial benefit should lead: settling prediction, controller design, offline commissioning, or condition monitoring?}
-\todo{Instead of health monitoring more focus on process and root cause analysis, especially the interpretability is waardevol for this.}
-\todo{Clearly explain white, black and grey-box}
-\todo{Clearly explain interpretability and should be clear in orthogonality section also. lets see where to say what..}
-\todo{Decided 2026-10-06: the general definition of interpretability belongs here; Section~III states only its operational form (the estimated $\theta_{\mathrm{base}}$ keeps its physical meaning, which requires a unique estimate) and does not repeat a general one. Candidate sources: Gy\"or\"ok et al.\ \cite{gyorok2026obc}, Sec.~1 and~3 (``With non-unique $\theta_b$, the baseline model could lose its physical meaning''); Kessels \cite{kessels2025ai}, Sec.~5.3.1.3 (negation) and Sec.~6.2 (orthogonality ``could enhance physical interpretability'', not yet available beyond linear-in-the-parameter problems), which also states the gap.}
-% Copied 1:1 from research plan Sections/Background.tex; todos mark sentences that need your rewrite.
-ASMPT develops semiconductor assembly and packaging equipment, including high-precision motion systems for advanced packaging. Advanced packaging refers to combining multiple semiconductor functions within a single package, for example through heterogeneous integration of different die types such as logic and memory, and through hybrid bonding, in which dies are directly joined at very fine pitch. \todo{Shorten to a clause inside the previous sentence (page budget).} Such technologies place strict demands on alignment accuracy, yield, throughput, and manufacturing cost \cite{irds2022,workman2021diewafer}. \todo{Only partly supported. IRDS covers heterogeneous integration, cost and yield, but never mentions hybrid bonding and its throughput means memory bandwidth. Workman covers sub-micron alignment and yield. Neither supports machine throughput: drop it here or add a source. Workman bib entry: authors incomplete, pages 2071 to 2077 missing.}
+\fi
+% Prose based on the research plan,
+%   Documentation/Research-plan/Sections/Background.tex (2026-10-11).
+% One sentence per line. A line without a marker is word for word the
+%   research plan.
+% CHANGED, NEW and REMOVED compare against Background.tex, not against the
+%   previous version of this file.
+ASMPT develops semiconductor assembly and packaging equipment, including
+high-precision motion systems for advanced packaging, which combines
+multiple semiconductor functions within a single package.
+% CHANGED: definition shortened to a clause (page budget); heterogeneous
+%   integration and hybrid bonding dropped (IRDS never mentions hybrid
+%   bonding)
+% REMOVED: Advanced packaging refers to combining multiple semiconductor
+%   functions within a single package, for example through heterogeneous
+%   integration of different die types such as logic and memory, and
+%   through hybrid bonding, in which dies are directly joined at very fine
+%   pitch.
+Such technologies place strict demands on alignment accuracy, yield, and
+manufacturing cost \cite{irds2022,workman2021diewafer}.
+% CHANGED: "throughput" dropped, neither source supports machine throughput
+\\
+This paper focuses on a dual-gantry motion system in which two parallel
+linear actuators support a common beam carrying the payload.
+% CHANGED: project -> paper
+The shared beam couples the actuator dynamics, so motion of one actuator
+influences the other, and the system exhibits position-dependent behaviour
+\cite{garcia2013model, teo2007dynamic} and flexible dynamics
+\cite{garcia2013model}.
+% CHANGED: citation split; Teo supports coupling and position dependence,
+%   not flexibility (Garcia Sec. 2, flexible joints)
+In such systems, settling behaviour is a key performance metric.
+After each motion, the system must wait for residual oscillations to decay
+before the next placement can begin \cite{lambrechts2005trajectory}, so
+settling time directly affects throughput.
+Furthermore, cross-coupling means that the motion of one gantry can disturb
+the other, making accurate prediction relevant not only for settling but
+also for tracking behaviour during simultaneous motion.
+\\
+Predicting this behaviour therefore requires an accurate representation of
+the underlying plant dynamics.
+% CHANGED: was "Improving settling performance"; settling stays as
+%   motivation, the paper evaluates prediction (D-241)
+% REMOVED: ASMPT currently captures part of the position dependence of the
+%   dual-gantry system using a baseline model based on frequency-response
+%   measurements at multiple operating points with interpolation across the
+%   operating space.
+% REMOVED: However, this baseline captures only part of the position
+%   dependence and does not systematically account for cross-coupling
+%   between the gantries.
+% REMOVED: A more accurate plant model is therefore needed.
+%   (no written source for the ASMPT model; the paper does not compare
+%   against it)
+Such a model can be used as a digital twin, for example to evaluate a changed
+controller before it is tested on the machine.
+% NEW: controller evaluation leads (Quinten, 18 Sep); the
+%   changed-controller test record E5 tests it
+% REMOVED: Such models are not only valuable for settling prediction, but
+%   also for digital-twin development, offline evaluation, control design,
+%   and condition monitoring.
+Digital twins can support offline simulation of semiconductor manufacturing
+equipment and help optimize operating parameters
+\cite{hwang2024semiconductor}.
+% CHANGED: "before testing changes on the real machine, reducing costly
+%   trial-and-error" dropped, not in Hwang
+Such models are also valuable for control design and for process and root
+cause analysis.
+% CHANGED: rest of the removed sentence above; condition monitoring ->
+%   process and root cause analysis
+This requires a model with physically meaningful parameters, because a
+change in machine behaviour can then be traced back to a physical cause,
+such as a change in stiffness or damping.
+% NEW: no source
+% REMOVED: Accurate models can also support condition monitoring and early
+%   fault detection, as demonstrated in robotic manufacturing systems
+%   \cite{aivaliotis2019predictive}.
+\\
+%!!!!!!!!!!!!!!!!!!
+White-box models are attractive because they reflect the physics of the
+system, which makes them interpretable.
+First-principles (FP) models are a specific type of white-box model,
+derived from physical laws and described by quantities such as mass,
+stiffness, and damping.
+However, purely physics-based models do not always capture all behaviour
+needed for accurate prediction across the operating range
+\cite{willard2020integrating}.
+More accurate FP models can be developed, but this is labour-intensive
+\cite{hoekstra2026lfr}.
+%!!!!!!!!!!!!!!
+% NEW: Hoekstra 2026 Sec. 1, p. 1
+% REMOVED: For the dual-gantry system, this limitation is also evident in
+%   the first-principles model structure of Garc\'ia-Herreros et al.
+%   \cite{garcia2013model}, which is only able to capture part of the
+%   position-dependent behaviour and cross-coupling.
+\\
+Purely data-driven (black-box) models such as neural networks or Gaussian
+processes can describe measured behaviour well, but they give less physical
+insight and are often harder to trust at operating conditions not covered
+by the training data \cite{willard2020integrating}.
+% CHANGED: "(black-box)" added; "and" added after "insight"
+Typically these models also require large amounts of data to train
+\cite{willard2020integrating, karniadakis2021physicsinformed}.
+% CHANGED: "and significant computational power" dropped (no source); cited
+%   Willard Sec. 1, Karniadakis abstract
+In addition, these models need to learn behaviour that is already known
+from first principles, such as the rigid-body dynamics
+\cite{hoekstra2026lfr}.
+% NEW: Hoekstra 2026 Sec. 1, p. 1
+Physics-informed approaches, including physics-informed neural networks
+(PINNs), enforce physical laws as constraints during training
+\cite{karniadakis2021physicsinformed, raissi2017physicsinformedpart1}.
+However, these methods require the physics equations to be known and still
+rely on a black-box model for the entire system \cite{hoekstra2026lfr}.
+% NEW: Hoekstra 2026 Sec. 1, p. 2
+For the plant model of the dual-gantry system, both predictive accuracy and
+physical interpretability are required.
+Physical interpretability means that the estimated physical parameters are
+unique \cite{gyorok2026obc}.
+% NEW: definition; Gyorok 2026 Sec. 3.2, p. 3 (non-unique estimate loses
+%   physical meaning)
+\todo{Leave out?: Section~\ref{sec:obc_scope} gives the conditions under which they equal
+their true values.}
+% NEW: the recovery condition depends on the excitation and on the missing
+%   dynamics, so it is stated in Section IV-C only
+However, neither a purely physics-based nor a purely data-driven model is
+sufficient on its own \cite{willard2020integrating}.
+% CHANGED: Noel removed; Willard Sec. 1, p. 2
+Grey-box modeling is the logical choice, because it is able to combine a
+physically meaningful baseline model needed for interpretation with
+data-driven flexibility needed for accurate prediction
+\cite{noel2018greybox}.
+The following grey-box approaches appear in practice: parameter
+re-estimation within the physics model structure, static residual
+correction on the model output, and dynamic augmentation that extends the
+baseline with learned states \cite{willard2020integrating, hoekstra2026lfr}.
+% NEW: research plan Literature.tex l.1 word for word, citation changed;
+%   Willard Secs. 2.3, 3.4.1 (calibration, residual modeling), Hoekstra
+%   2026 Sec. 2 (static vs dynamic)
+Model augmentation combines a physics-based baseline model with a learned
+component, so that the learned component only needs to capture the dynamics
+the physics-based model cannot describe \cite{hoekstra2026lfr}.
+% NEW: wording from research plan Literature.tex l.3; Hoekstra 2026 Sec. 1,
+%   p. 2
+However, related work on an ASMPT wire bonder shows that preserving
+physical interpretability during model updating remains an open challenge
+\cite{kessels2025ai}.
+% CHANGED: "at ASMPT" -> "on an ASMPT wire bonder"; Kessels Sec. 5.3.2 (PDF
+%   p. 194), Sec. 6.2 (PDF p. 222)
+\\
+Learning-based hybrid modeling has already been demonstrated on real
+industrial systems \cite{retzler2024}.
+However, a key gap remains: there is no grey-box modeling framework for the
+dual-gantry system that simultaneously addresses coupled multi-input
+multi-output (MIMO) dynamics, position-dependent behaviour, closed-loop data,
+and preserves physical interpretability.
+% CHANGED: "validated" dropped (simulation only); "closed-loop data," added
+Model augmentation using a linear fractional representation (LFR) has
+already been demonstrated, but not for position-dependent baselines or
+closed-loop data \cite{hoekstra2026lfr}.
+% NEW: Hoekstra 2026, absence: no closed loop, LPV only in a reference
+%   title
+The related work at ASMPT uses closed-loop data, but keeps the physical
+parameters fixed during training \cite{kessels2025ai}.
+% NEW: Kessels Sec. 5.1 (PDF p. 175, only network weights trained); wire
+%   bonder updated from closed-loop measurements (Sec. 5.3.2)
+Orthogonal-by-construction augmentation is able to preserve the physical
+meaning of the baseline parameters, but has so far only been formulated
+for discrete-time input-output models \cite{gyorok2026obc}.
+% NEW: Gyorok 2026 Sec. 3.2 (physical meaning), Conclusion, pp. 9 to 10
+%   (state-space form named as future research)
+This paper therefore aims to develop and evaluate such a framework in
+simulation, so that the plant model becomes more accurate across operating
+points and motion profiles while remaining physically meaningful.
+% CHANGED: project -> paper, validate -> evaluate, "in simulation" added,
+%   "for settling prediction" -> "across operating points and motion
+%   profiles" (D-241)
 
-This project focuses on a dual-gantry motion system \todo{Tense and terminology: project becomes paper.} in which two parallel linear actuators support a common beam carrying the payload. The shared beam couples the actuator dynamics, so motion of one actuator influences the other, and the system exhibits position-dependent behaviour and flexible dynamics \cite{garcia2013model, teo2007dynamic}. \todo{Teo (abstract only) supports coupling and payload-position dependence, not flexibility. Flexibility rests on Garcia Sec. 2 (flexible joints kb1, kb2): consider flexible joint dynamics.} In such systems, settling behaviour is a key performance metric. After each motion, the system must wait for residual oscillations to decay before the next placement can begin \cite{lambrechts2005trajectory}, so settling time directly affects throughput. Furthermore, cross-coupling means that the motion of one gantry can disturb the other, making accurate prediction relevant not only for settling but also for tracking behaviour during simultaneous motion.
-
-Improving settling performance therefore requires an accurate representation of the underlying plant dynamics. ASMPT currently captures part of the position dependence of the dual-gantry system using a baseline model based on frequency-response measurements at multiple operating points with interpolation across the operating space. \todo{No written source: confirm with Quinten or Jasper. The paper does not compare against this model, so do not imply it.} However, this baseline captures only part of the position dependence and does not systematically account for cross-coupling between the gantries. \todo{Same confirmation as above.} A more accurate plant model is therefore needed. Such models are not only valuable for settling prediction, but also for digital-twin development, offline evaluation, control design, and condition monitoring. \todo{Lead with the controller-evaluation digital twin: test a changed controller on the model before the machine (Quinten, 18 Sep). Condition monitoring is not evaluated; its supporting sentence was removed.} Digital twins can support offline simulation of semiconductor manufacturing equipment and help optimize operating parameters before testing changes on the real machine, reducing costly trial-and-error \cite{hwang2024semiconductor}. \todo{Only partly supported (abstract only). Hwang optimises operating parameters of wafer-processing cluster tools by digital-twin simulation; before testing on the real machine and trial-and-error are not in the source.}
-
-White-box models are attractive because they reflect the physics of the system, which makes them interpretable. First-principles (FP) models are a specific type of white-box model, derived from physical laws and described by quantities such as mass, stiffness, and damping. However, purely physics-based models do not always capture all behaviour needed for accurate prediction across the operating range \cite{willard2020integrating}. For the dual-gantry system, this limitation is also evident in the first-principles model structure of Garc\'ia-Herreros et al. \cite{garcia2013model}, which is only able to capture part of the position-dependent behaviour and cross-coupling. \todo{Not what Garcia says. Garcia Sec. 2 deliberately neglects cross-arm vibration on the flexible plates, detent forces, and friction variation along the stroke. Our LPV-LFR baseline captures the M(Y) position dependence exactly; the missing dynamics here are the hidden absorber mode and, in the friction twin, Coulomb friction in the truth only (D-204).}
-\todo{Proposed replacement of the Garcia sentence: ``For the dual-gantry system, the first-principles model of Garc\'ia-Herreros et al.\ neglects the resonance of the supporting base, the vibration of the cross-arm on its flexible plates, the detent forces of the linear motors, and the variation of friction along the stroke \cite[Sec.~2.4]{garcia2013model}.'' Verified against Garcia Sec.~2.4, pp.~15 to 16. Our baseline additionally omits Garcia's Coulomb friction (stated in Sec.~II); the simulated stand-ins (absorber, friction) are introduced in Setup.}
-
-Purely data-driven models such as neural networks or Gaussian processes can describe measured behaviour well, but they give less physical insight, are often harder to trust \todo{Grammar: an and is missing after insight.} at operating conditions not covered by the training data \cite{willard2020integrating}. Typically these models also require large amounts of data and significant computational power to train. \todo{Uncited. Large data requirements: Willard Sec. 1. Computational power: no source found, drop or cite. Verified alternative: black-box models spend effort rediscovering dynamics already known from first principles (Hoekstra 2025 EJC p. 1).} For the plant model of the dual-gantry system, both predictive accuracy and physical interpretability are required. However, neither a purely physics-based nor a purely data-driven model is sufficient on its own \cite{willard2020integrating, noel2018greybox}. \todo{Cite Willard only: Noel never argues that pure physics models are insufficient. Willard bib: ACM Computing Surveys 2022 (issue 2023), not 2020; month field wrong.} Grey-box modeling is the logical choice, because it is able to combine a physically meaningful baseline model needed for interpretation with data-driven flexibility needed for accurate prediction \cite{noel2018greybox}. \todo{Noel supports only grey-box combining physical structure with data-driven flexibility. Name model augmentation explicitly and cite Hoekstra 2025 EJC and Hoekstra 2026.} However, related work at ASMPT shows that preserving physical interpretability during model updating remains an open challenge \cite{kessels2025ai}. \todo{Supported by Kessels thesis Ch. 6 recommendations (PDF p. 222): augmentation can compensate for incorrect FP parameters, compromising their interpretability, and orthogonality methods exist only for linear-in-the-parameter cases. The thesis says industrial wire bonder and never names ASMPT: confirm or reword.}
-
-Learning-based hybrid modeling has already been demonstrated on real industrial systems \cite{retzler2024}. \todo{Supported (Retzler 2024, industrial robot, measured data).} However, a key gap remains: there is no validated grey-box modeling framework for the dual-gantry system that simultaneously addresses coupled multi-input multi-output (MIMO) dynamics, position-dependent behaviour, and preserves physical interpretability. \todo{Rewrite the gap as a verified intersection. Hoekstra 2025/2026: dynamic LFR augmentation, no LPV scheduling, no closed-loop training. Kessels: closed-loop-trained augmentation on an industrial motion system, but no LFR or LPV, frozen FP parameters, no orthogonality, so closed-loop training alone is not the novelty. Gyorok OBC 2026: discrete-time input-output models only; its conclusion names state-space without full-state measurement as future work. Validated must be scoped to simulation.} This project therefore aims to develop and validate such a framework \todo{Tense and scope: this paper develops and evaluates in simulation.} so that the plant model becomes more accurate for settling prediction while remaining physically meaningful.
-
-\subsection{Research question and scope}
+% Outline bullets hidden 2026-10-11 (kept in source; the research question and aspects below cover them).
+\iffalse
 \begin{itemize}
-\item Main question: how should a dual-gantry physics model be augmented to improve settling prediction while retaining physical parameter interpretability?
-\item Aspect 1 asks whether the payload-position scheduling should remain explicit in a quasi-LPV baseline rather than frozen LTI models
-\item Aspect 2 asks whether a dynamic parallel augmentation with additional states captures flexible cross-coupling absent from the baseline
-\item Aspect 3 asks what state-level orthogonality can and cannot guarantee during joint estimation
-\item Aspect 4 asks whether the model generalises across operating points and motion profiles relative to a black-box state-space model
-\item Scope separates interpolation, transfer to ASMPT-relevant motion, controller transfer, operating-range extrapolation, and any unavailable hardware evidence
+\item Main question: how should a physics-based plant model be augmented to capture unmodelled dynamics, improving prediction accuracy across operating points and motion profiles while preserving the physical interpretability of its parameters?
+\item Aspect 1 asks in what form the baseline is represented and whether the position-dependent (LPV) form predicts better than position-independent (LTI) alternatives; answered by the derivation plus a small demonstration
+\item Aspect 2 asks which augmentation structure effectively captures the unmodelled dynamics: parallel with or without added states (parallel versus series argued in Section~III), and what makes the added states learn them
+\item Aspect 3 asks how parameter interpretability is maintained compared to unconstrained joint estimation; answered by what orthogonality by construction guarantees and what it cannot
+\item Aspect 4 asks how well the model generalises to held-out operating points and unseen motion profiles compared to a black-box state-space model; controller transfer is shown as a use case
+\item Scope: simulation only; aspects are answered by derivation where possible and by experiment where needed
 \end{itemize}
-\todo{Does the approved research-plan wording need to remain verbatim, or may the final question reflect the closed-loop and OBC developments?}
+\todo{Outline bullets updated to the changed research question and aspects (D-241).}
+\fi
 
+% Research question in the running text and the contributions as a short list, as in
+% Hoekstra 2026 Sec. 1, p. 2. CHANGED, NEW and REMOVED compare against the research plan,
+% Documentation/Research-plan/Sections/Research_questions.tex.
+This paper addresses the following research question:
+% NEW
+\textit{For the dual-gantry system, how should a physics-based plant model
+be augmented to capture unmodelled dynamics, improving prediction accuracy
+across operating points and motion profiles while preserving the physical
+interpretability of its parameters?}
+% CHANGED: quote block and bold replaced by italics in the running text;
+%   wording is the changed research question (D-241)
+To answer this research question, the following four aspects are
+investigated:
+\begin{enumerate}
+\item In what form should the baseline model be represented for subsequent
+augmentation, and does a position-dependent (LPV) formulation improve
+prediction compared to position-independent (LTI) alternatives?
+% CHANGED: bold title dropped; "a" added before "position-dependent"
+\item What augmentation structure can effectively capture dynamics not
+modeled in the physics-based baseline model?
+% CHANGED: bold title dropped; wording D-241
+\item How can parameter interpretability be maintained during data-driven
+augmentation, compared to unconstrained approaches?
+% CHANGED: bold title dropped; wording D-241
+\item How well does the augmented model generalize to (i) held-out
+operating points and (ii) unseen motion profiles, and how does its
+prediction accuracy compare to a black-box state-space model?
+% CHANGED: bold title dropped; wording D-241
+\end{enumerate}
+
+
+% The main contributions are summarised as:
+% % NEW: phrasing of Hoekstra 2026 Sec. 1, p. 2
+% \begin{itemize}
+% \item Derive a compact continuous-time LPV-LFR realisation of the dual-gantry baseline with rational dependence on payload position
+%   % Aspect 1
+% \item Extend dynamic parallel LFR augmentation to a closed-loop, self-scheduled state-space setting with learned additional states and a predictive-state (PS) initialisation of these states % CHANGED: PS added (Section III todo)
+%   % Aspect 2
+% \item Construct state-level orthogonality for the identifiable physical-parameter tangent space and quantify its true-parameter recovery condition
+%   % Aspect 3
+% \item Evaluate predictive fit, controller transfer, added-state contribution, interpretability, and black-box performance under matched data % CHANGED: settling removed (D-241)
+%   % Aspect 4
+% \end{itemize}
+% \todo{Rewrite the contribution wording together with the sentences in
+% Sections III and IV that refer back to it; one contribution per aspect.}
+
+
+% REMOVED: \item Paper organisation: baseline, augmentation, OBC, setup, results, discussion, conclusion, then supporting derivations
+% REMOVED: \item Figure plan: no dedicated introduction figure; use the limited figure budget where the baseline, training interconnection, and OBC need visual explanation
+
+% Old format of the research question and aspects (quote block, bold titles), hidden
+% 2026-10-11; the visible list above has the same wording. Kept in source with its todos.
+\iffalse
 % Copied 1:1 from research plan Sections/Research_questions.tex; todos mark sentences that need your rewrite.
 \noindent The main research question is formulated as follows:
 \begin{quote}
-\textbf{For the dual-gantry system, how should physics-based plant models be augmented to improve parameter interpretability and settling prediction accuracy, particularly of cross-coupling and position-dependent dynamics?} \todo{Decision A open: approved wording says improve parameter interpretability, which augmentation cannot do; candidate minimal edit is augmented from closed-loop data to improve settling prediction accuracy while preserving parameter interpretability.}
+\textbf{For the dual-gantry system, how should a physics-based plant model be augmented to capture unmodelled dynamics, improving prediction accuracy across operating points and motion profiles while preserving the physical interpretability of its parameters?}
 \end{quote}
+\todo{changed rq and polished aspects}
 \noindent To answer this research question, the following four aspects are investigated:
 \begin{enumerate}
     \item \textbf{Position-dependent baseline modeling} \\
     In what form should the baseline model be represented for subsequent augmentation, and does position-dependent (LPV) formulation improve prediction compared to position-independent (LTI) alternatives? \todo{LPV versus frozen LTI exists only as a baseline check (lpv\_lfr\_baseline/scripts/validate\_lfr.py), not in the final evaluation; Quinten wants LTI as second baseline.}
     \item \textbf{Augmentation structure} \\
-    What augmentation structure can effectively capture dynamics not modeled in the physics-based baseline model, in particular flexible cross-coupling dynamics?
+    What augmentation structure can effectively capture dynamics not modeled in the physics-based baseline model?
     \item \textbf{Interpretability preservation} \\
-    How can parameter interpretability be maintained during data-driven augmentation, compared to unconstrained approaches? Here, interpretability means that the physical parameters of the baseline retain values close to their physically meaningful initialization after augmentation. \todo{Definition no longer matches the method. The OBC arms start from 10 percent detuned combinations with the prior disabled (D-193) and judge recovery of the ten identifiable combinations. Staying near initialization is what a Lambda penalty trivially gives.}
+    How can parameter interpretability be maintained during data-driven augmentation, compared to unconstrained approaches?
     \item \textbf{Model generalization} \\
-    How well does the augmented model generalize to (i) held-out operating points representative of actual industrial operating conditions and (ii) unseen motion profiles relevant to the industrial use context, and how does its prediction accuracy compare to a black-box state-space model trained on the same data? \todo{Not yet true. The D-196 black-box arm runs on the MA\_FRAC 0.10 dataset, not the production ma50 data. Unseen motion profiles partly covered by the Telica cycloidal records (D-206). Controller transfer is not implemented. Align with the validation ladder in Writing/README.md.}
+    How well does the augmented model generalize to (i) held-out operating points and (ii) unseen motion profiles, and how does its prediction accuracy compare to a black-box state-space model? \todo{Not yet true. The D-196 black-box arm runs on the MA\_FRAC 0.10 dataset, not the production ma50 data. Unseen motion profiles partly covered by the Telica cycloidal records (D-206). Controller transfer is not implemented. Align with the validation ladder in Writing/README.md.}
 \end{enumerate}
+\fi
 
-\subsection{Contributions and paper organisation}
-\begin{itemize}
-\item Derive a compact continuous-time LPV-LFR realisation of the dual-gantry baseline with rational dependence on payload position
-\item Extend dynamic parallel LFR augmentation to a closed-loop, self-scheduled state-space setting with learned additional states
-\item Construct state-level orthogonality for the identifiable physical-parameter tangent space and quantify its true-parameter recovery condition
-\item Evaluate predictive fit, settling, controller transfer, added-state contribution, interpretability, and black-box performance under matched data
-\item Paper organisation: baseline, augmentation, OBC, setup, results, discussion, conclusion, then supporting derivations
-\item Figure plan: no dedicated introduction figure; use the limited figure budget where the baseline, training interconnection, and OBC need visual explanation
-\end{itemize}
 \todo{Confirm whether references and appendices are excluded from the 12-page IEEE limit and whether TU/e requires front matter beyond the IEEE paper.}

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  30 SEP 2026 08:37
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  12 OCT 2026 09:18
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -616,7 +616,9 @@ File: tikzlibrarycalc.code.tex 2025-08-29 v3.1.11a (3.1.11a)
 \pgfdecorationsegmentlength=\dimen327
 )
 \tikz@lib@dec@box=\box71
-) (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries/decorations\pgflibrarydecorations.pathmorphing.code.tex))) (util/format.tex) (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-pdftex.def
+) (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries/decorations\pgflibrarydecorations.pathmorphing.code.tex))) (util/format.tex (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/comment\comment.sty
+\CommentStream=\write4
+ Excluding comment 'comment') Excluding comment 'wip') (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count350
 ) (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.aux)
@@ -666,175 +668,12 @@ Package caption Info: hyperref package is loaded.
 Package caption Info: End \AtBeginDocument code.
 Package hyperref Info: Link coloring OFF on input line 22.
  (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out) (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out)
-\@outlinefile=\write4
-\openout4 = `main.out'.
+\@outlinefile=\write5
+\openout5 = `main.out'.
 
 LaTeX Info: Redefining \microtypecontext on input line 22.
 Package microtype Info: Applying patch `item' on input line 22.
 Package microtype Info: Applying patch `toc' on input line 22.
 Package microtype Info: Applying patch `eqnum' on input line 22.
 Package microtype Info: Applying patch `footnote' on input line 22.
-Package microtype Info: Applying patch `verbatim' on input line 22.
-LaTeX Info: Redefining \microtypesetup on input line 22.
-Package microtype Info: Generating PDF output.
-Package microtype Info: Character protrusion enabled (level 2).
-Package microtype Info: Using default protrusion set `alltext'.
-Package microtype Info: Automatic font expansion enabled (level 2),
-(microtype)             stretch: 20, shrink: 20, step: 1, non-selected.
-Package microtype Info: Using default expansion set `alltext-nott'.
-Package microtype Info: Patching command `\showhyphens'.
-Package microtype Info: No adjustment of tracking.
-Package microtype Info: No adjustment of interword spacing.
-Package microtype Info: No adjustment of character kerning.
- (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-ptm.cfg
-File: mt-ptm.cfg 2006/04/20 v1.7 microtype config. file: Times (RS)
-)
-LaTeX Font Info:    Calculating math sizes for size <11> on input line 41.
- (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-cmr.cfg
-File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman (RS)
-)
-LaTeX Font Info:    Trying to load font information for U+msa on input line 41.
- (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd
-File: umsa.fd 2013/01/14 v3.01 AMS symbols A
-) (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msa.cfg
-File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
-)
-LaTeX Font Info:    Trying to load font information for U+msb on input line 41.
- (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd
-File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-) (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/microtype\mt-msb.cfg
-File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
-) (sections/00_abstract.tex) (sections/01_introduction.tex [1{C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}
-
-
-] [2]) (sections/02_system_baseline.tex (figures/gantry_system_with_absorber.tex)
-Overfull \hbox (5.27286pt too wide) in paragraph at lines 197--60
- [][] 
- []
-
-[3] (figures/lfr_loop.tex) [4]) (sections/03_augmentation.tex (figures/gantry_system_with_absorber.tex)
-Overfull \hbox (5.27286pt too wide) in paragraph at lines 197--24
- [][] 
- []
-
-LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 33.
-(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
-File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
-)
-Underfull \hbox (badness 10000) in paragraph at lines 33--34
-[]\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, ma-jor re-vi-sion): sim-plify
- []
-
-
-Underfull \hbox (badness 1924) in paragraph at lines 33--34
-\OT1/pcr/m/n/10 jan-blockscheme-v5 \OT1/ptm/m/n/10 (+20) to base-line, ANN, router,
- []
-
-[5]) (sections/04_obc.tex
-Underfull \hbox (badness 10000) in paragraph at lines 16--22
-\OT1/ptm/m/n/10 (+20) claude --resume 6eaea0c3-7f91-409d-8d40-9b4e360c38f8
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 16--22
-\OT1/ptm/m/n/10 (+20) claude --resume eece7a3a-4b2b-425e-afcc-d20762e8568f
- []
-
-
-Underfull \hbox (badness 4217) in paragraph at lines 16--22
-\OT1/ptm/m/n/10 (+20) claude --resume 36e2d208-ddf6-4e28-b66d-3790804a52bb
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 16--22
-\OT1/ptm/m/n/10 (+20) claude --resume 11f02a5d-ad5b-4b39-9bbf-09f193716e45
- []
-
-
-LaTeX Warning: Citation `hoekstra2026lfraug' on page 6 undefined on input line 24.
-
-) (sections/05_setup.tex [6]
-Underfull \hbox (badness 3460) in paragraph at lines 23--24
-\OT1/ptm/m/n/10 (+20) matched to the fric-tion-less ex-ci-ta-tion; the ear-lier
- []
-
-
-Underfull \hbox (badness 2547) in paragraph at lines 51--52
-\OT1/ptm/m/n/10 (+20) arms start from the nom-i-nal $\OML/cmm/m/it/10 '$ \OT1/ptm/m/n/10 (+20) of the ref-er-ence
- []
-
-
-Underfull \hbox (badness 3769) in paragraph at lines 51--52
-\OT1/ptm/m/n/10 (+20) im-ple-men-ta-tion de-tuned by 10% per com-bi-na-tion
- []
-
-[7]
-Underfull \hbox (badness 10000) in paragraph at lines 65--66
-[]\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, ap-pendix can-di-date): use
- []
-
-
-Underfull \hbox (badness 4819) in paragraph at lines 65--66
-\OT1/pcr/m/n/10 controller-chain-v1 \OT1/ptm/m/n/10 (+20) only as an au-dit trail
- []
-
-) (sections/06_results.tex
-Underfull \hbox (badness 2556) in paragraph at lines 53--54
-\OT1/ptm/m/n/10 (+20) relevant mo-tion, con-troller trans-fer, and quan-ti-fied
- []
-
-[8]) (sections/07_discussion.tex) (sections/08_conclusion.tex [9]) (sections/99_appendix.tex
-
-LaTeX Warning: Reference `eq:phi' on page 10 undefined on input line 128.
-
-[10]
-
-LaTeX Warning: Reference `eq:lfr_admissibility' on page 11 undefined on input line 180.
-
-
-LaTeX Warning: Reference `eq:mdelta_map' on page 11 undefined on input line 191.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 213--214
-[]\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, op-tional): place
- []
-
-) (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.bbl)
-
-** Conference Paper **
-Before submitting the final camera ready copy, remember to:
-
- 1. Manually equalize the lengths of two columns on the last page
- of your paper;
-
- 2. Ensure that any PostScript and/or PDF output post-processing
- uses only Type 1 fonts and that every step in the generation
- process uses the appropriate paper size.
-
-[11] (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.aux)
- ***********
-LaTeX2e <2025-11-01>
-L3 programming layer <2026-01-19>
- ***********
-
-
-LaTeX Warning: There were undefined references.
-
-Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: F62072684828E53E2C0033F0BCAAD8A6;8951.
- ) 
-Here is how much of TeX's memory you used:
- 27245 strings out of 467867
- 521104 string characters out of 5416882
- 967146 words of memory out of 5000000
- 55260 multiletter control sequences out of 15000+600000
- 689649 words of font info for 346 fonts, out of 8000000 for 9000
- 1141 hyphenation exceptions out of 8191
- 89i,14n,97p,2153b,959s stack positions out of 10000i,1000n,20000p,200000b,200000s
-<C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf" (11 pages, 405428 bytes).
-PDF statistics:
- 459 PDF objects out of 1000 (max. 8388607)
- 87 named destinations out of 1000 (max. 500000)
- 53061 words of extra memory for PDF output out of 61914 (max. 10000000)
-
+Package microtype Info: Applying patch `v

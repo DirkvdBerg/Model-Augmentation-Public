@@ -75,8 +75,8 @@
 experiment in the simulation in section V}
 The physics baseline of the gantry system used in this paper 
 is the lumped-parameter model of the
-the dual-drive gantry of Garc\'ia-Herreros et al.~\cite{garcia2013model}.
-The gantry has two actuators that are connecected with a cross-arm and a 
+dual-drive gantry of Garc\'ia-Herreros et al.~\cite{garcia2013model}.
+The gantry has two actuators that are connected with a cross-arm and a 
 third actuator that moves the payload along this arm (Fig.~\ref{fig:gantry_system}).
 \todo{Does this make sense to put here?: Dynamics not represented by the baseline
  are treated as model discrepancy and addressed by the augmentation
@@ -85,7 +85,7 @@ third actuator that moves the payload along this arm (Fig.~\ref{fig:gantry_syste
   \centering
   \def\gantryabsorber{0}% baseline only; the absorber version is in Section III
   \input{figures/gantry_system_with_absorber}
-  \caption{\todo{Lumped-parameter gantry schematic adapted from the mechanical
+  \caption{Still need to add springs to the current torsion. \todo{Lumped-parameter gantry schematic adapted from the mechanical
   arrangement in \cite{garcia2013model}. Red labels denote actuator coordinates
   and blue labels generalized coordinates.}}
   \todo{Will need to add springs to the current torsion; feedback from Jasper}
@@ -318,7 +318,7 @@ are equal to $m_h$. This leaves us with ten distinct functions of $\theta$.
 The Jacobian of these ten functions with respect to 
 $(m_h,d,m_1,m_b,J_b,c_{g1},c_{g2},c_{b1},c_y,k_{b1})$ 
 is block triangular and has a determinant of $m_hL_b^2/2\neq0$, 
-meaning that the then functions are independent.
+meaning that the functions are independent.
 Since the matrices only depend on these ten functions, 
 exactly ten independent combinations of $\theta$ can be identified 
 \todo{check source} \cite[Def.~7]{ovchinnikov2021computing}.
@@ -332,7 +332,7 @@ We define these ten combinations as
 with $k_{b,\Sigma}=k_{b1}+k_{b2}$, $c_{b,\Sigma}=c_{b1}+c_{b2}$,
 $m_\Sigma=m_1+m_2+m_b$, $m_\Delta=m_1-m_2$ and
 $J_{\mathrm{eff}}=J_b+J_h+\tfrac{L_b^2}{4}(m_1+m_2)$. 
-This follows the idea of base parameters used in robot dynamics \todo{check source}\cite{gautier1990minimum}.
+This follows the idea of base parameters used in robot dynamics \todo{check source}\ucite{gautier1990minimum}.
 For $m_h>0$, $\theta_{\mathrm{base}}$ can be uniquely determined from 
 the ten entries (Appendix~\ref{app:combos}).
 We therefore estimate $\theta_{\mathrm{base}}$ instead of $\theta$, 

@@ -1,19 +1,22 @@
 % Page budget: 2.90 pages | Owns: all quantitative evidence, figure and table claims, criteria, verdicts, and comparison to the black box.
 % WRITING GUIDE
 % Purpose: Answer the research aspects with frozen quantitative evidence, including negative and conditional results.
-% Start here: Final run artefacts and generated figure data; use docs/gantry-augmentation-problem-log.md only to locate and interpret them.
-% Supporting material: Quinten's 18 September outline feedback, final configuration manifests, checkpoint reports, controller checks, OBC monitoring, ablations, and black-box outputs.
+% Sources: README "Source map per subsection", rows VI Results and V Metrics; mandatory papers and the reference gate as in the README.
 % Research-plan anchor: Evaluate each promised aspect against its original criterion; name any missing or changed experiment as a departure.
 % Current decisions: Every result states expectation, criterion, verdict, and mechanism under matched data and optimisation budgets.
 % Choices to justify: Comparator capacity, matched budget, checkpoint rule, one primary metric, representative ASMPT motion, settling interval, controller-transfer case, figure aggregation, and treatment of neural seeds separately from phase realizations.
-% Implementation audit: Trace figures and tables to gantry_dynamic/evaluation.py, diagnostics.py, obc_diagnostics.py, lpv_lfr_baseline evaluation scripts, final configs, and saved artefacts.
-% Reference check: Results normally cite methods or benchmark definitions, not external authority for the measured outcome; keep internal provenance in captions, configs, and repository records.
 % Cautions: Do not promote preregistrations, implementation plans, diagnostic-only runs, or superseded numbers to final evidence.
 % Planned figures: Use only the result figures and tables named in the subsection bullets; combine panels where they support one claim.
 % Section is finished when: Every number is reproducible, every comparison is fair, and every claimed mechanism has an intervention or derivation behind it.
 \section{Results}\label{sec:results}
 
-\subsection{Baseline and closed-loop formulation}
+\subsection{Baseline form}
+\begin{outline}
+\item Criterion: LPV error flat over $Y$, LTI error growing away from $Y=0$ (Fig.~\ref{fig:res_lpv_lti})
+\item On $X$ the LTI error is 1.5 to 3.7 times the LPV error, growing with $|Y|$; on $Y$ both are equal
+\item $Y$ scheduling is needed for the $X$ axes
+\end{outline}
+\begin{wip}
 \begin{itemize}
 \item Expectation and criterion: the LPV-LFR and original physics equations agree numerically across the payload range before model-error comparisons are meaningful
 \item Verdict and reason: report inertia invertibility, LFR/RK4 equivalence, and the remaining baseline error caused by the truth-only absorber
@@ -23,9 +26,26 @@
 \item Evidence for Section~III-C (moved 2026-10-06): on the thesis data, open-loop rollouts accumulate position error on the free axes $X$ and $Y$, closed-loop rollouts do not; re-measure, do not reuse the older D-142 numbers
 \item Figure: recorded input, controller correction, and model error over one rollout; supports the interpretation that feedback can suppress visible output error while the open-loop model remains wrong
 \end{itemize}
+\end{wip}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{res_lpv_lti.pdf}
+  \caption{Simulation error RMS on the $X$ axes of the LPV baseline and the LTI baseline at $Y=0$, both at the true parameters.}
+  \label{fig:res_lpv_lti}
+\end{figure}
 \todo{The LPV-versus-frozen-LTI comparison is required by the plan but may not yet have a final matched result; run it or narrow Aspect 1 explicitly.}
 
-\subsection{Predictive benefit and additional-state contribution}
+\subsection{Augmentation structure}
+\begin{outline}
+\item Criterion: error below the baseline and below the model without added states (Table~\ref{tab:res_structure})
+\item PS initialisation lowers the $Y$ error about 9 times; plain training and $n_a=0$ stay near the baseline
+\item The error in the multisine band disappears with PS initialisation, not with plain training (Fig.~\ref{fig:res_ps_spectrum})
+\item The learned pole is at 212~Hz, the absorber pole of the system at 212~Hz; $n_a=8$ adds nothing
+\item Without added states ($n_a=0$) the $Y$ error stays at the baseline level
+\item Time trace of the augmented model and the system (Fig.~\ref{fig:res_time_trace})
+\end{outline}
+\begin{wip}
 \begin{itemize}
 \item Expectation and criterion: augmentation must reduce held-out long-horizon error, not only the short training loss, relative to the same encoder-initialised baseline
 \item Verdict and reason: report the best validated improvement and the gap between window fit and free-run accuracy caused by integrated velocity bias
@@ -35,10 +55,44 @@
 \item Table: standard model, no-added-state ablation, zero-initialised latent path, and longer encoder history; connects structure changes to predictive benefit
 \item State the observed weak or harmful added-state contribution as a result if the final run does not reverse it, rather than inferring usefulness from state magnitude
 \end{itemize}
+\end{wip}
+
+\begin{table}[t]
+  \centering
+  \caption{Simulation error RMS per axis, mean over test records I1 to I6.}
+  \label{tab:res_structure}
+  \input{tables/res_structure}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{res_ps_spectrum.pdf}
+  \caption{Amplitude spectral density of the $Y$ simulation error on test records I1 and I2. Shaded: multisine band. Dotted: absorber pole.}
+  \label{fig:res_ps_spectrum}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{res_time_trace.pdf}
+  \caption{Test record I1, $Y$ axis. Top: moving RMS of the simulation error. Bottom: servo error in the shaded window.}
+  \label{fig:res_time_trace}
+\end{figure}
 \todo{Are state Gramians useful for explaining each added state's contribution, or would intervention-based ablation be more direct and less linearisation-dependent?}
 
-\subsection{Parameter interpretability and orthogonality}
+\subsection{Interpretability}
+\begin{outline}
+\item Criterion: OBC drifts less than the unconstrained arm at equal test RMS (Table~\ref{tab:res_obc})
+\item Not met: the parameters drift in both arms, OBC not less
+\item OBC keeps the learned term out of the parameter directions: overlap 0.12 to 0.13 against 0.91 to 0.99
+\item Cause: 59\,\% of the missing dynamics lies in the parameter directions
+\end{outline}
+\begin{wip}
 \begin{itemize}
+\item Evaluation on the validation-selected best checkpoints of R1/R2 (OBC, detuned/correct start) and R4/R5 (unconstrained, detuned/correct start): the following diagnostics require no additional training runs; all reported predictive scores use the test set.
+\item Report normalised inner products with the baseline sensitivity space and the baseline-output overlap $\rho_f$ (Eq.~\eqref{eq:obc_overlap}), both on the $x_a=0$ reference slice and with active added states along held-out test rollouts. Use the same normalised coordinates and stacking convention, and distinguish reference-slice orthogonality from observed overlap away from that slice.
+\item Report the ten physical combination errors relative to truth, their aggregate relative-error norm, and displacement from each start; compare OBC with unconstrained estimation for both starts.
+\item Report full augmented-model and standalone-baseline test prediction RMS using each checkpoint's fitted physical parameters, against the per-record noise floor, to assess physical-model usefulness alongside predictive accuracy.
+\item Interpret overlap and agreement between the two starts as empirical diagnostics of the decomposition. They do not prove uniqueness or true-parameter recovery; any uniqueness statement must retain the assumptions and scope of the derivation in Section~\ref{sec:obc_scope}.
 \item Expectation and criterion: OBC should reduce physical combination error without materially worsening held-out predictive fit relative to unconstrained joint estimation
 \item Verdict and reason: the completed arms reach 7.20\% no projection, 7.69\% tangent OBC, and 8.47\% unfinished affine OBC from a common 9.49\% start, so aggregate recovery does not establish OBC superiority
 \item Figure: validation fit versus combination error over training for all three arms; supports the claim that near-equal fit permits materially different physical parameters
@@ -47,9 +101,23 @@
 \item Figure: $\rho^*$ and predicted versus observed parameter bias by singular direction; supports the conditional result that true recovery is limited by non-orthogonal missing physics
 \item Explain why the 4.96\% predicted floor accounts for part of the residual squared error but does not match the observed per-parameter pattern or prove convergence
 \end{itemize}
+\end{wip}
+
+\begin{table}[t]
+  \centering
+  \caption{Relative error of the ten combinations, unconstrained and OBC, from the detuned and the correct start.}
+  \label{tab:res_obc}
+  \input{tables/res_obc_combinations}
+\end{table}
 \todo{Should the incomplete affine arm be retained, rerun to a matched budget, or reported only as exploratory evidence?}
 
-\subsection{Generalisation and black-box comparison}
+\subsection{Generalisation}
+\begin{outline}
+\item Criterion: at least as good as the black-box model on I, better on E (Fig.~\ref{fig:res_generalisation})
+\item Met: the augmented model is below the detuned baseline on all records, and 10 to 30 times below the black-box model on I and E
+\item During motion about $10^{-6}$~m remains, 100 times above the noise floor
+\end{outline}
+\begin{wip}
 \begin{itemize}
 \item Expectation and criterion: improvement must progress from held-out position/phase interpolation to ASMPT-relevant motion, controller transfer, and quantified operating-range extrapolation without retuning
 \item Verdict and reason: separate completed simulation evidence from pending Telica results and explain any failure by excitation coverage, initialisation, or objective mismatch
@@ -60,4 +128,12 @@
 \item Report the black box's early improvement and later free-run degradation as a negative comparator result if no stable matched run supersedes it
 \item Aggregate the final learned-model comparison across neural initialization seeds and show a representative, not best, time trace; report phase realizations separately
 \end{itemize}
+\end{wip}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{res_generalisation.pdf}
+  \caption{Simulation error RMS per test record, mean over $X_1$, $X_2$, $Y$.}
+  \label{fig:res_generalisation}
+\end{figure*}
 \todo{Freeze which validation rungs are complete enough for a final claim; omit rather than speculate about unfinished controller, noise, or hardware experiments.}

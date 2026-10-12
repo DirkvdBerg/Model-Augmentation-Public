@@ -110,11 +110,6 @@ A.~Ovchinnikov, A.~Pillay, G.~Pogudin, and T.~Scanlon, ``Computing all
   identifiable functions of parameters for {ODE} models,'' \emph{Systems \&
   Control Letters}, vol. 157, p. 105030, 2021.
 
-\bibitem{gautier1990minimum}
-M.~Gautier and W.~Khalil, ``Direct calculation of minimum set of inertial
-  parameters of serial robots,'' \emph{IEEE Transactions on Robotics and
-  Automation}, vol.~6, no.~3, pp. 368--373, 1990.
-
 \bibitem{drenth2025thesis}
 R.~Drenth, ``Efficient gradient-based learning of {LPV} models with linear
   fractional representation,'' Master's thesis, Eindhoven University of
