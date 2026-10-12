@@ -181,6 +181,28 @@ coordinate numerically inert. The exact inverse used for reporting is
  \xi_\Delta=\frac{\operatorname{atanh}(m_\Delta/b(\theta_{\mathrm{base}}))-\eta_0}{s}.
 \end{equation*}
 
+\subsection{PS stopping rule}\label{app:ps_stop}
+The unexplained fraction $\nu$ of \eqref{eq:ps2_nu} is evaluated after every
+$i_c$th update of $V$, with $\nu_i$ its value after update $i$.
+S1 ends at update
+\begin{equation*}
+\begin{aligned}
+ i_1&=\min\bigl\{i\in\mathcal J:\ i=i_{\max}\ \text{or}\\
+ &\qquad\bigl(i\ge i_{\min}\ \text{and}\ \nu^{\mathrm{new}}_i>(1-\delta_\nu)\,\nu^{\mathrm{old}}_i\bigr)\bigr\},\\
+ \nu^{\mathrm{new}}_i&=\min_{j\in\mathcal W_i}\nu_j,\qquad
+ \nu^{\mathrm{old}}_i=\min_{j\in\mathcal J_i\setminus\mathcal W_i}\nu_j,
+\end{aligned}
+\end{equation*}
+where $\mathcal J=\{i_c,2i_c,\dots\}$, $\mathcal J_i=\{j\in\mathcal J:j\le i\}$,
+$\mathcal W_i$ the last $w$ elements of $\mathcal J_i$, $\delta_\nu$ the
+plateau tolerance and $i_{\min}$, $i_{\max}$ the earliest and latest end of
+S1, with $\nu^{\mathrm{old}}_i=\infty$ while $\mathcal J_i$ has at most $w$
+elements.
+S2 runs if $\nu_{i_1}\le\nu_{\max}$ and, when $i_1>i_s$, also
+$\nu_{i_s}\le\nu_{\max}$, where $i_s<i_{\max}$ is a fixed early check.
+If $\nu_{i_s}>\nu_{\max}$, PS ends at $i_s$.
+The values are given in Section~\ref{sec:setup}.
+
 \begin{wip}
 \subsection{OBC and experiment details}
 \begin{itemize}

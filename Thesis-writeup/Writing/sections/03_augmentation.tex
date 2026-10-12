@@ -149,8 +149,8 @@
 % 4. S2: one-step regression of g_aug on frozen encoder pairs, recorded input (Hefny S2, Downey 2SR);
 %    overlapping windows as a todo.
 % 5. Hand-over: decoder discarded, criterion, model and selection unchanged; M_PS named.
-% Displays: eq:ps2_s1 (with decoder), eq:ps2_nu, eq:ps2_stop, eq:ps2_s2 (with snapshot set), the input
-%   equation, eq:ps2_handover. Final runs: live g_aug MLP (D-248), target from tau+1 (FINAL-RUN-FIXES item 5).
+% Displays: eq:ps2_s1 (with decoder), eq:ps2_nu, eq:ps2_s2 (with snapshot set), the input
+%   equation, eq:ps2_handover; the exact S1 stopping rule is in the appendix (app:ps_stop). Final runs: live g_aug MLP (D-248), target from tau+1 (FINAL-RUN-FIXES item 5).
 \section{Dynamic Augmentation of the LPV-LFR Baseline}\label{sec:augmentation}
 \ifdraft
 \begin{itemize}
@@ -906,7 +906,8 @@ while also having a much better starting point.
 \item Adapted from two-stage regression and its use before backpropagation through time; differences: residual target, nonlinear transition, first stage alongside $V$
 \end{outline}
 \begin{wip}
-\\
+%\\
+
 We therefore propose predictive-state (PS) initialisation, which is
 a data-driven initialisation for the added states. 
 Similar to $W^b$ after its initialisation is done, 
@@ -914,14 +915,15 @@ the states optimize through \eqref{eq:aug_loss}.
 PS is a two-stage regression of predictive-state
 learning~\cite[Sec.~2]{hefny2015supervised}, and it makes use of initialisation
 before backpropagation through time~\cite[Sec.~4.2]{downey2017psrnn}.
-\\
+%\\
+
 The first stage (S1) predicts the residual of the model, instead 
 of \kw{features of future observations} as in~\cite{hefny2015supervised}.
 The second stage (S2) trains the nonlinear state update
 instead of a \kw{linear operator.}
-We also use the first stage during the initial training
+\kw{We also use the first stage during the initial training
 of $V$, instead of before training as
-in~\cite{downey2017psrnn}.
+in~\cite{downey2017psrnn}.}
 Fig.~\ref{fig:ps2_windows} shows which samples
 are used for both stages.
 \end{wip}
@@ -944,7 +946,7 @@ are used for both stages.
 \item S1, during the first updates of \eqref{eq:aug_loss}: a temporary decoder on $\bar x_\tau$ predicts the current model's residual over the $M$ samples after the encoder window:
 \end{outline}
 \begin{wip}
-\\
+%\\
 % Stage S1 trains the encoder's added-state outputs to predict the residual of
 % the augmented model \eqref{eq:aug_transition} at the parameters $\vartheta$
 % after the latest update of $V$.
@@ -961,6 +963,8 @@ samples up to $\tau$, $\chi_\tau$, to estimate the initial state $\hat x_\tau$.
 From this state the augmented model is simulated in the closed loop of 
 Section~\ref{sec:aug_loop}.
 We calculate the residual from the next $M=n+1$ samples, from $\tau+1$ to $\tau+M$.
+The top of Fig.~\ref{fig:ps2_windows} shows the window $\chi_\tau$ and the
+samples of the residual $e_\tau$.
 By convention we have chosen to use the same number of samples as the encoder window.
 Then a temporary decoder $d$ with only the added states as inputs
 $\bar x_\tau=\psi_a(\theta_{\mathrm{enc}},\chi_\tau)$
@@ -1009,14 +1013,12 @@ Both $W_{\mathrm p,2}$ and $b_{\mathrm p,2}$ are initially
 set to zero, so that the decoder starts by predicting zero residual.
 Only $\theta_{\mathrm p}$ and $\theta^a_{\mathrm{enc}}$
 are updated by S1. 
-All parameters of $\vartheta$, including $\theta^a_{\mathrm{enc}}$
-are trained through $V$.
+The parameters of $\vartheta$, including $\theta^a_{\mathrm{enc}}$
+are still trained through $V$.
 \\
-
-
 The conditional mean $\mathbb E[e_\tau\mid\chi_\tau]$ is used to minimise 
 the expected squared error.
-The decoder only sees up to $\bar x_\tau$ and not the full history $\chi_\tau$, 
+The decoder only sees up to $\bar x_\tau$, not the full history $\chi_\tau$, 
 this forces the encoder to use the added states to predict the future residual.
 \todo{
 Instead of using features of future observations 
@@ -1053,36 +1055,13 @@ divided by the squared residual is computed,
  \label{eq:ps2_nu}
 \end{equation}
 \begin{outline}
-\item S1 ends at a plateau of $\nu$ or at a cap; S2 follows only if $\nu$ is below a threshold:
+\item S1 ends when $\nu$ stops improving or at a cap; S2 follows only if $\nu$ is below a threshold, otherwise the S1 changes are kept (exact rule in the appendix)
 \end{outline}
 \begin{wip}
-It is evaluated after every $i_c$th update of $V$.
-With $\nu_i$ its value after update $i$, S1 ends at the first plateau or at a
-cap, and S2 follows only if the residual is predictable from $\bar x$:
-\end{wip}
-\begin{equation}
-\begin{aligned}
- i_1&=\min\bigl\{i\in\mathcal J:\ i=i_{\max}\ \text{or}\\
- &\qquad\bigl(i\ge i_{\min}\ \text{and}\ \nu^{\mathrm{new}}_i>(1-\delta_\nu)\,\nu^{\mathrm{old}}_i\bigr)\bigr\},\\
- \nu^{\mathrm{new}}_i&=\min_{j\in\mathcal W_i}\nu_j,\qquad
- \nu^{\mathrm{old}}_i=\min_{j\in\mathcal J_i\setminus\mathcal W_i}\nu_j,\\
- &\text{S2 if }\nu_{i_1}\le\nu_{\max}\ \text{and}\ \bigl(i_1\le i_s\ \text{or}\ \nu_{i_s}\le\nu_{\max}\bigr),
-\end{aligned}
-\label{eq:ps2_stop}
-\end{equation}
-\begin{outline}
-\item Otherwise S2 is skipped and the S1 changes are kept
-\end{outline}
-\begin{wip}
-where $\mathcal J=\{i_c,2i_c,\dots\}$, $\mathcal J_i=\{j\in\mathcal J:j\le i\}$,
-$\mathcal W_i$ the last $w$ elements of $\mathcal J_i$, $\delta_\nu$ the
-plateau tolerance, $i_{\min}$ and $i_{\max}$ the earliest and latest end of
-S1, $i_s<i_{\max}$ a fixed early check and $\nu_{\max}<1$ the threshold,
-with $\nu^{\mathrm{old}}_i=\infty$ while $\mathcal J_i$ has at most $w$
-elements.
-If $\nu_{i_s}>\nu_{\max}$, PS ends at $i_s$.
-When S2 is skipped, training continues with the S1 changes kept.
-The values and their basis are given in Section~\ref{sec:setup}.
+S1 is stopped when a maximum number of updates is reached or when $\nu$ stops improving.
+S2 starts only if $\nu$ is below a threshold $\nu_{\max}$, else the decoder is removed 
+and training continues. In both cases the encoder changes from S1 are kept.
+The threshold rule for S2 is given in Appendix~\ref{app:ps_stop}.
 \todo{Missing: basis of the PS switch and stop rules (S1 plateau and cap, screen update and threshold, S2 plateau and cap, snapshot sizes, calibration split as the last record of each class with three or more records). Candidate: rows of the hyperparameter table in Section~\ref{sec:setup}, all HEURISTIC (\texttt{PS2Spec}; \texttt{PS2-METHOD.md} Sec.~5), noting that the S1 cap, not the plateau, ended S1 in every run so far.}
 \end{wip}
 
@@ -1090,13 +1069,30 @@ The values and their basis are given in Section~\ref{sec:setup}.
 \item S2, once at the end of S1: one-step regression of $g^{\mathrm n}_{\mathrm{aug}}$ on frozen encoder pairs with the recorded input:
 \end{outline}
 \begin{wip}
-Stage S2 then fits the added-state transition so that the model propagates
-these states itself.
-Once, at the end of S1, we encode window pairs $\chi_{k_i}$ and
-$\chi_{k_i+1}$ drawn anywhere in the training records except the calibration
-records, freeze them as the set $\mathcal P$, and fit
-$g^{\mathrm n}_{\mathrm{aug}}$ by one-step regression with a fresh Adam
-optimiser:
+
+S1 has only trained the part of the encoder that initializes the 
+added states $\bar x_{\tau|\tau}$, $g^{\mathrm n}_{\mathrm{aug}}$ 
+is only updated by $V$. 
+S2 trains the states itself.
+In S2 $g^{\mathrm n}_{\mathrm{aug}}$ is trained to predict the next
+added state $\bar x_{k+1}$ from the full state $\hat x_k$ and the input
+$u^{\mathrm n}_k$.
+
+
+For S2 samples $k_i$ from the training data are selected, held out data 
+is left out. 
+For each sample the encoder estimates $\hat x_i$ from
+$\chi_{k_i}$ and $\bar x_i^+$ from the next window
+$\chi_{k_i+1}$. 
+Fig.~\ref{fig:ps2_windows} shows an example with $k_i=\tau$.
+The window $\chi_\tau$ at the top is used for $\hat x_i$,
+and the shifted window at the bottom is used for $\bar x_i^+$.
+We calculate these pairs once after S1, this set $\mathcal P$ is kept fixed. 
+\\
+During S2 the model is not simulated in closed-loop and $V$ is paused.
+We instead train $g^{\mathrm n}_{\mathrm{aug}}$ on
+$\mathcal P$ using one-step regression with the recorded
+actuator force $u^{\mathrm n}_{k_i}$ as input, and a separate Adam optimiser:
 \end{wip}
 \begin{equation}
 \begin{aligned}
