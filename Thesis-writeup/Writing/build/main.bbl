@@ -110,9 +110,51 @@ A.~Ovchinnikov, A.~Pillay, G.~Pogudin, and T.~Scanlon, ``Computing all
   identifiable functions of parameters for {ODE} models,'' \emph{Systems \&
   Control Letters}, vol. 157, p. 105030, 2021.
 
+\bibitem{gautier1990minimum}
+M.~Gautier and W.~Khalil, ``Direct calculation of minimum set of inertial
+  parameters of serial robots,'' \emph{IEEE Transactions on Robotics and
+  Automation}, vol.~6, no.~3, pp. 368--373, 1990.
+
 \bibitem{drenth2025thesis}
 R.~Drenth, ``Efficient gradient-based learning of {LPV} models with linear
   fractional representation,'' Master's thesis, Eindhoven University of
   Technology, 2025.
+
+\bibitem{beintema2023subnet}
+G.~I. Beintema, M.~Schoukens, and R.~T{\'o}th, ``Deep subspace encoders for
+  nonlinear system identification,'' \emph{Automatica}, vol. 156, p. 111210,
+  2023.
+
+\bibitem{hoekstra2026encoder}
+J.~H. Hoekstra, B.~M. Gy{\"o}r{\"o}k, R.~T{\'o}th, and M.~Schoukens, ``Encoder
+  initialisation methods in the model augmentation setting,'' 2026.
+
+\bibitem{forssell1999revisited}
+U.~Forssell and L.~Ljung, ``Closed-loop identification revisited,''
+  \emph{Automatica}, vol.~35, no.~7, pp. 1215--1241, 1999.
+
+\bibitem{hefny2015supervised}
+A.~Hefny, C.~Downey, and G.~J. Gordon, ``Supervised learning for dynamical
+  system learning,'' in \emph{Advances in Neural Information Processing
+  Systems}, vol.~28, 2015.
+
+\bibitem{downey2017psrnn}
+C.~Downey, A.~Hefny, B.~Li, B.~Boots, and G.~J. Gordon, ``Predictive state
+  recurrent neural networks,'' in \emph{Advances in Neural Information
+  Processing Systems}, vol.~30, 2017.
+
+\bibitem{gyorok2025l4dc}
+B.~M. Gy{\"o}r{\"o}k, J.~H. Hoekstra, J.~Kon, T.~P{\'e}ni, M.~Schoukens, and
+  R.~T{\'o}th, ``Orthogonal projection-based regularization for efficient model
+  augmentation,'' in \emph{Proceedings of the 7th Annual Conference on Learning
+  for Dynamics and Control}, ser. Proceedings of Machine Learning Research,
+  N.~Ozay, L.~Balzano, D.~Panagou, and A.~Abate, Eds., vol. 283, 2025, pp.
+  166--178.
+
+\bibitem{lee2020feeddrive}
+C.-Y. Lee, S.-H. Hwang, E.~Nam, and B.-K. Min, ``Identification of mass and
+  sliding friction parameters of machine tool feed drive using recursive least
+  squares method,'' \emph{The International Journal of Advanced Manufacturing
+  Technology}, vol. 109, no. 9-12, pp. 2831--2844, 2020.
 
 \end{thebibliography}

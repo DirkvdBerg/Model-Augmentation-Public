@@ -35,10 +35,20 @@ Code changes and checks found while structuring thesis Section III (2026-10-09).
      disjoint so that the history is uncorrelated with the future noise; our records are noisy, so that
      reason applies.
    - Fix: keep the encoder state at $k$, simulate $M+1$ samples from it (`u[k:k+M+1]`, `y[k:k+M+1]`) and
-     drop the first residual, so the target covers $k+1$ to $k+M$; widen the sampling bound in `_sample`
-     by one. The decoder output size $M n_y$ is unchanged.
+     drop the first residual, so the target covers $k+1$ to $k+M$. The sampling bound in `_sample` needs no
+     change: `rng.integers(k0, len(u) - M - 1)` already gives $k \le N-M-2$, so the $M+1$ samples fit
+     (checked 2026-10-12). The decoder output size $M n_y$ is unchanged.
    - Check: on one batch, the new target equals the old target shifted by one sample.
    - Thesis: III-E todo; `eq:ps2_s1` then sums from $\tau+1$, and the sentence on matching $V$ goes.
+6. **Live start of $g_{\mathrm{aug}}$ (D-248).**
+   - Now: the 2026-10-11 runs R1 to R7 use `G_INIT` zero (`zero_init_feed_forward_nn`, final layer all zero), so
+     $g_{\mathrm{aug}}=0$ and the added states are zero after the first step.
+   - Fix: launch with `THESIS_ARCH=mlp`, `THESIS_INIT=live` (`live_g_feed_forward_nn`): added-state rows of the output
+     layer keep nn.Linear's draw, physical rows and biases zero. No code change; config.json must show `G_INIT` live and
+     `LIVE_G_WEIGHT_INIT` `kaiming_uniform_a_sqrt5`.
+   - Check: initial 400-sample loss equals the baseline's; plain and PS initial parameters bitwise equal (D-240 test);
+     no overflow in the first updates on all seeds.
+   - Thesis: III-D `eq:aug_init` and its attribution todo; III-E todo on the current runs.
 
 ## Checks before launch
 
@@ -55,5 +65,6 @@ Code changes and checks found while structuring thesis Section III (2026-10-09).
 - PS2 S2 regresses $g_{\mathrm{aug}}$ with the recorded $u_k$ (`FS/ps2_opening.py::_fit_map`). Correct: it is
   the force that took the machine from $k$ to $k+1$, and it equals the closed-loop input
   $u_k + D_{\mathrm{fb}}(y_k-\hat y_k)$ when the encoder reproduces $y_k$. To be specified in III-E.
-- Hidden layers of $\phi_{\mathrm{aug}}$: PyTorch's default `nn.Linear` initialisation, output layer zero
-  (`model_augmentation/utils/torch_nets.py::zero_init_feed_forward_nn`, lines 96 to 113).
+- Hidden layers of $\phi_{\mathrm{aug}}$: PyTorch's default `nn.Linear` initialisation. Output layer all zero in the
+  2026-10-11 runs (`model_augmentation/utils/torch_nets.py::zero_init_feed_forward_nn`, lines 96 to 113); in the final
+  runs only its physical rows and biases are zero (`live_g_feed_forward_nn`, item 6, D-248).
