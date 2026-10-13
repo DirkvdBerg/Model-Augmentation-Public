@@ -146,8 +146,8 @@
 \citation{hefny2015supervised}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Added-state initialisation}{10}{subsection.3.5}\protected@file@percent }
 \newlabel{sec:aug_ps2}{{\mbox  {III-E}}{10}{Added-state initialisation}{subsection.3.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Windows of PS on one record, layout adapted from~\cite  [Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the window $\chi _\tau $ to $\hat  x_\tau $, and the decoder $d$ maps its added part $\bar  x_\tau $ to the residuals $e_\tau $ of the next $M$ samples \eqref  {eq:ps2_s1}. S2 (bottom): $g_{\mathrm  {aug}}$ maps $\hat  x_\tau $ and the recorded $u_\tau $ to the added state encoded from the window shifted by one sample \eqref  {eq:ps2_s2}. \textcolor {red}{[\textbf  {TODO:} The figure shows the target from $\tau +1$ (\texttt  {FINAL-RUN-FIXES.md} item~5). The 2026-10-11 runs start it at $\tau $, so the noise in $y_\tau $ enters both $\chi _\tau $ and $e_\tau $.]}}}{10}{figure.caption.5}\protected@file@percent }
-\newlabel{fig:ps2_windows}{{5}{10}{Windows of PS on one record, layout adapted from~\cite [Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the window $\chi _\tau $ to $\hat x_\tau $, and the decoder $d$ maps its added part $\bar x_\tau $ to the residuals $e_\tau $ of the next $M$ samples \eqref {eq:ps2_s1}. S2 (bottom): $g_{\mathrm {aug}}$ maps $\hat x_\tau $ and the recorded $u_\tau $ to the added state encoded from the window shifted by one sample \eqref {eq:ps2_s2}. \todo {The figure shows the target from $\tau +1$ (\texttt {FINAL-RUN-FIXES.md} item~5). The 2026-10-11 runs start it at $\tau $, so the noise in $y_\tau $ enters both $\chi _\tau $ and $e_\tau $.}}{figure.caption.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Windows of PS on one record, layout adapted from~\cite  [Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the window $\chi _\tau $ to $\hat  x^{\mathrm  n}_{\tau |\tau }$, and the decoder $d$ maps its added part $\bar  x_{\tau |\tau }$ to the residuals $e_\tau $ of the next $M$ samples \eqref  {eq:ps2_s1}. S2 (bottom): $g_{\mathrm  {aug}}$ maps $\hat  x^{\mathrm  n}_{\tau |\tau }$ and the recorded $u_\tau $ to the added state encoded from the window shifted by one sample \eqref  {eq:ps2_s2}. \textcolor {red}{[\textbf  {TODO:} The figure shows the target from $\tau +1$ (\texttt  {FINAL-RUN-FIXES.md} item~5). The 2026-10-11 runs start it at $\tau $, so the noise in $y_\tau $ enters both $\chi _\tau $ and $e_\tau $.]}}}{10}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:ps2_windows}{{5}{10}{Windows of PS on one record, layout adapted from~\cite [Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the window $\chi _\tau $ to $\hat x^{\mathrm n}_{\tau |\tau }$, and the decoder $d$ maps its added part $\bar x_{\tau |\tau }$ to the residuals $e_\tau $ of the next $M$ samples \eqref {eq:ps2_s1}. S2 (bottom): $g_{\mathrm {aug}}$ maps $\hat x^{\mathrm n}_{\tau |\tau }$ and the recorded $u_\tau $ to the added state encoded from the window shifted by one sample \eqref {eq:ps2_s2}. \todo {The figure shows the target from $\tau +1$ (\texttt {FINAL-RUN-FIXES.md} item~5). The 2026-10-11 runs start it at $\tau $, so the noise in $y_\tau $ enters both $\chi _\tau $ and $e_\tau $.}}{figure.caption.5}{}}
 \citation{hefny2015supervised}
 \citation{hefny2015supervised}
 \citation{venkatraman2017psd}
@@ -159,13 +159,13 @@
 \citation{gyorok2025l4dc}
 \citation{gyorok2026obc}
 \citation{gyorok2026obc}
-\citation{gyorok2025l4dc}
-\citation{gyorok2025l4dc}
 \newlabel{eq:ps2_handover}{{29}{12}{Added-state initialisation}{equation.29}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {IV}Interpretability by Orthogonal Construction}{12}{section.4}\protected@file@percent }
 \newlabel{sec:obc}{{IV}{12}{Interpretability by Orthogonal Construction}{section.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Orthogonal correction of the physical rows}{12}{subsection.4.1}\protected@file@percent }
 \newlabel{sec:obc_map}{{\mbox  {IV-A}}{12}{Orthogonal correction of the physical rows}{subsection.4.1}{}}
+\citation{gyorok2025l4dc}
+\citation{gyorok2025l4dc}
 \citation{gyorok2026obc}
 \citation{gyorok2025l4dc}
 \citation{gyorok2026obc}
@@ -179,18 +179,18 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Identification of the corrected model}{14}{subsection.4.2}\protected@file@percent }
 \newlabel{sec:obc_ident}{{\mbox  {IV-B}}{14}{Identification of the corrected model}{subsection.4.2}{}}
 \newlabel{eq:obc_problem}{{33}{14}{Identification of the corrected model}{equation.33}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Simulated gantry with a payload-mounted absorber. The light-gray elements $(m_a,k_a,c_a,\delta _a)$ are absent from the baseline.}}{14}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:gantry_absorber}{{6}{14}{Simulated gantry with a payload-mounted absorber. The light-gray elements $(m_a,k_a,c_a,\delta _a)$ are absent from the baseline}{figure.caption.6}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {V}Experiment design}{14}{section.5}\protected@file@percent }
 \newlabel{sec:setup}{{V}{14}{Experiment design}{section.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}System and data}{14}{subsection.5.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Simulated gantry with a payload-mounted absorber. The light-gray elements $(m_a,k_a,c_a,\delta _a)$ are absent from the baseline.}}{14}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:gantry_absorber}{{6}{14}{Simulated gantry with a payload-mounted absorber. The light-gray elements $(m_a,k_a,c_a,\delta _a)$ are absent from the baseline}{figure.caption.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Compared models}{14}{subsection.5.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Training and evaluation}{14}{subsection.5.3}\protected@file@percent }
 \citation{lee2020feeddrive}
 \citation{lee2020feeddrive}
-\citation{hoekstra2026lfr}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Training and evaluation}{15}{subsection.5.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Real Telica data and split}{15}{subsection.5.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-E}}Training protocol, comparators, and metrics}{15}{subsection.5.5}\protected@file@percent }
+\citation{hoekstra2026lfr}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-F}}Reproducibility and implementation checks}{16}{subsection.5.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {VI}Results}{16}{section.6}\protected@file@percent }
 \newlabel{sec:results}{{VI}{16}{Results}{section.6}{}}

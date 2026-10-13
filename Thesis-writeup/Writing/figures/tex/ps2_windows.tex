@@ -34,22 +34,22 @@
   \node[blk] (dec) at (4.4*\w,\yS) {$d$};
   \node[blk] (v1) at (\xV,\yS) {$\|{\cdot}\|_2^2$};
   \draw[->] (1.5*\w,\yB) -- (psi.south);
-  \draw[->] (psi.east) -- (dec.west) node[midway, above, lab] {$\bar x_\tau$};
+  \draw[->] (psi.east) -- (dec.west) node[midway, above, lab] {$\bar x_{\tau|\tau}$};
   \draw[->] (dec.east) -- (v1.west);
   \draw[->] (\xV,\yB) -- (v1.south);
 
   % S2 (bottom): window shifted by one sample, one-step map g_aug
   \draw (1*\w-\h+\g,-\yB+0.1) -- (1*\w-\h+\g,-\yB) -- (4*\w+\h-\g,-\yB) -- (4*\w+\h-\g,-\yB+0.1);
   \node[lab, anchor=north west] at (1*\w-\h+\g,-\yB) {$\chi_{\tau+1}$};
-  \node[blk] (psia) at (4.3*\w,\yA) {$\psi_a$};
-  \draw[->] (4.3*\w,-\yB) -- (psia.north);
+  \node[blk] (psia) at (3.85*\w,\yA) {$\psi_a$};
+  \draw[->] (3.85*\w,-\yB) -- (psia.north);
   \node[blk] (v2) at (\xV,\yA) {$\|{\cdot}\|_2^2$};
-  \draw[->] (psia.east) -- (v2.west) node[midway, above, lab] {$\bar x_{\tau+1}$};
+  \draw[->] (psia.east) -- (v2.west) node[midway, above, lab] {$\bar x_{\tau+1|\tau+1}$};
   \node[blk] (g) at (3*\w,\yG) {$g_{\mathrm{aug}}$};
   \draw[->, hop] (s3.south) -- (g.north) node[pos=0.72, left, lab] {$u_\tau$};
   % encoded state at tau, from the top encoder around the left
   \draw[->] (psi.west) -- (\xL,\yS) -- (\xL,\yG) -- (g.west)
-       node[pos=0.08, lab, anchor=south west] {$\hat x_\tau$};
+       node[pos=0.08, lab, anchor=south west] {$\hat x^{\mathrm n}_{\tau|\tau}$};
   \draw[->] (g.east) -| (v2.south);
   % stage tags beside each loss: what that loss trains
   \node[lab, anchor=west, align=left] at ($(v1.east)+(0.08,0)$)
