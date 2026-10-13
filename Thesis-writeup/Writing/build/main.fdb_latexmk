@@ -1,14 +1,14 @@
 # Fdb version 4
-["bibtex build/main"] 1791899220.66011 "build/main.aux" "build/main.bbl" "build/main" 1791900668.45765 0
+["bibtex build/main"] 1791912012.79987 "build/main.aux" "build/main.bbl" "build/main" 1791912018.56611 0
   "./IEEEabrv.bib" 1789999553 17841 5f68ac6bd88a4483a55f39046634d899 ""
   "./IEEEtran.bst" 1789999553 61632 bc5380b3434a66b895bbc75d3d380540 ""
-  "./refs.bib" 1791751265 21427 59edb7c0a7f9ff1a45085e133dbf367b ""
-  "build/main.aux" 1791900667 22488 52a5369035720877c969a1390af61de2 "pdflatex"
+  "./refs.bib" 1791905627 22073 9208c99871076dba023b0c03e7e61653 ""
+  "build/main.aux" 1791912017 22448 a2b5c038a48cc410ef205d709bf1a9c0 "pdflatex"
   (generated)
   "build/main.bbl"
   "build/main.blg"
   (rewritten before read)
-["pdflatex"] 1791900662.4652 "c:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/Thesis-writeup/Writing/main.tex" "build/main.pdf" "main" 1791900668.45847 0
+["pdflatex"] 1791912013.14004 "c:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/Thesis-writeup/Writing/main.tex" "build/main.pdf" "main" 1791912018.56693 0
   "C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1791741120 122874 9195f0588e30cb644cb9f8108da0b71a ""
   "C:/Users/20203253/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1774359590 13335301 4af29fd5c72fbf51e4db50c9b05a27bf ""
   "C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -229,10 +229,10 @@
   "C:/Users/20203253/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "C:/Users/20203253/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1729265222 55384 b454dec21c2d9f45ec0b793f0995b992 ""
   "IEEEtran.cls" 1789999553 288304 5b2e4fa15b0f7eabb840ebf67df4c0f7 ""
-  "build/comment.cut" 1791900667 731 2e7c88f9928588c97ea582908529dc78 "pdflatex"
-  "build/main.aux" 1791900667 22488 52a5369035720877c969a1390af61de2 "pdflatex"
-  "build/main.bbl" 1791899220 7301 a76ee4ac8ca59191abcb0ab824e7582f "bibtex build/main"
-  "build/main.out" 1791900667 7860 a16a3dcfdc3d999e71aa6c91b21fe876 "pdflatex"
+  "build/comment.cut" 1791912017 731 2e7c88f9928588c97ea582908529dc78 "pdflatex"
+  "build/main.aux" 1791912017 22448 a2b5c038a48cc410ef205d709bf1a9c0 "pdflatex"
+  "build/main.bbl" 1791912013 7663 8226be26e1a1fdc4c6eb7de1b1a99f34 "bibtex build/main"
+  "build/main.out" 1791912017 7817 6fde102bf1907db7809227638f4bda1a "pdflatex"
   "c:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/Thesis-writeup/Writing/main.tex" 1791743094 1919 a52ddd56ce4b811ce03f3de7b563c53e ""
   "figures/closed_loop_same_reference.pdf" 1791203554 74979 2316253766c7759f2aaf91b01039a7c2 ""
   "figures/gantry_system_with_absorber.tex" 1790173562 9780 982338748e6e29347b4c3316e9f83d94 ""
@@ -242,12 +242,12 @@
   "figures/res_ps_spectrum.pdf" 1791737927 71556 63c3f69ade461f7bcc647c22a4f0faa5 ""
   "figures/res_time_trace.pdf" 1791739307 99236 1230368536cb6d426450f03059f26726 ""
   "figures/tex/augmentation_structure.tex" 1791213092 3732 6bf0e0894e18a4e09b6cf75f67b39bc1 ""
-  "figures/tex/ps2_windows.tex" 1791816789 3169 701f41cbe08c5373828f212a9905473b ""
+  "figures/tex/ps2_windows.tex" 1791902608 3169 611bee5e02c2113b1af0a499c2c481bc ""
   "main.tex" 1791743094 1919 a52ddd56ce4b811ce03f3de7b563c53e ""
   "sections/00_abstract.tex" 1791745505 2698 460cc99527539b948998833df61bca50 ""
-  "sections/01_introduction.tex" 1791745571 19264 28da99d169bddd30dea11c5a4f35f56e ""
+  "sections/01_introduction.tex" 1791911997 19264 28da99d169bddd30dea11c5a4f35f56e ""
   "sections/02_system_baseline.tex" 1791809590 22483 162c2957fee2a1415c9dc506258e19ec ""
-  "sections/03_augmentation.tex" 1791900665 78510 0077bac84ebcd867f0cdfad7c2017ab5 ""
+  "sections/03_augmentation.tex" 1791911422 79237 40d160a6bb92262cfd610e104446ffec ""
   "sections/04_obc.tex" 1791748450 31223 3e1e9f78f7d4754fa8024e87a3cc9559 ""
   "sections/05_setup.tex" 1791888606 15169 a49d90ef61d0a3e09b260a0d8a86aaa3 ""
   "sections/06_results.tex" 1791744373 11762 97d2c7747697de6925dba635aa12b62a ""

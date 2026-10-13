@@ -107,3 +107,12 @@ Passages read in the PDF under `literature/` and what each supports. One row per
 | hoekstra2026lfr | Sec. 5.5, p. 10 | consistency under SUBNET Conditions 2.1 to 2.4; 2.1 requires an incrementally exponentially output stable data-generating system | 2026-10-13 |
 | forssell1999revisited | LiU report LiTH-ISY-R-2021, Sec. 5.2.1, pp. 13 to 14, Eqs. (44), (45), (49) | indirect approach needs a known regulator and measurable r; identifying r to y is an open-loop problem since r and noise are uncorrelated; output-error models with fixed noise model stay consistent | 2026-10-13 |
 | forssell1999revisited | LiU report, example ending before Sec. 7, p. 28, Table 1 | the indirect method gives useless results when a nonlinearity in the regulator is not taken into account | 2026-10-13 |
+| hoekstra2026lfr | Sec. 5.1, Eq. (22), p. 8 | joint parameter vector includes theta_base; encoder (22e) reads up to k-1 (III-D re-read) | 2026-10-13 |
+| hoekstra2026lfr | Sec. 5.2, pp. 8 to 9 | optimal parameter values minimising (22) are not unique (cited for non-uniqueness only, not for Eq. (26)) | 2026-10-13 |
+| hoekstra2026lfr | Sec. 5.4.1, Eq. (29), p. 9 | baseline behaviour required at initialisation for x_b and y_hat; x_a,k+1 = phi_aug(theta_aug^0, z_a,k) | 2026-10-13 |
+| hoekstra2026lfr | Sec. 5.4.2, Eq. (31), p. 9 | augmented-state encoder psi_aug initialised by the Xavier approach | 2026-10-13 |
+| hoekstra2026lfr | Sec. 5.4.3, pp. 9 to 10 | NL component zero, phi_aug = 0 + W_a z_a; matrices not needed for (29) drawn from U(-1,1) | 2026-10-13 |
+| drenth2025lpvlfr | Sec. 4.2, Eqs. (16), (17), p. 4 | D_zw = e^{-N}, N > 0 by construction: direct parameterisation enabling unconstrained optimisation without ill-posed models | 2026-10-13 |
+| drenth2025lpvlfr | Sec. 5.1, p. 4 | Adam for a fixed number of iterations, then L-BFGS-B; Adam gives a better starting point | 2026-10-13 |
+| kessels2025ai | Eq. (5.12), thesis p. 156 (PDF p. 183) | minimisation over the NN weights w0 to w3 only (FP parameters fixed) (III-D re-read) | 2026-10-13 |
+| drenth2025lpvlfr | Sec. 4.1, Assumptions 2, 3, p. 3; Theorem 6, p. 4 | well-posedness also assumes a diagonal Delta block and scheduling values bounded by one; Sec. 4.2 supplies Condition 5 through the feedthrough parameterisation (III-D math check, F3) | 2026-10-13 |

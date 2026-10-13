@@ -114,41 +114,40 @@
 \newlabel{sec:aug_loop}{{\mbox  {III-C}}{7}{Closed-loop simulation}{subsection.3.3}{}}
 \citation{beintema2023subnet}
 \citation{hoekstra2026lfr}
-\citation{forssell1999revisited}
+\citation{hoekstra2026lfr}
 \citation{kessels2025ai}
 \citation{kessels2025ai}
 \citation{kessels2025ai}
 \newlabel{eq:aug_two_loops}{{20}{8}{Closed-loop simulation}{equation.20}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces  Recorded plant loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm  {ff}}$. The model output is calculated before the input updates the model state. }}{8}{figure.caption.4}\protected@file@percent }
-\newlabel{fig:aug_closed_loop}{{4}{8}{Recorded plant loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm {ff}}$. The model output is calculated before the input updates the model state}{figure.caption.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces  Recorded system loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm  {ff}}$. The model output is calculated before the input updates the model state. }}{8}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:aug_closed_loop}{{4}{8}{Recorded system loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm {ff}}$. The model output is calculated before the input updates the model state}{figure.caption.4}{}}
 \newlabel{eq:aug_residual_loop}{{21}{8}{Closed-loop simulation}{equation.21}{}}
 \newlabel{eq:aug_cl_step}{{22}{8}{Closed-loop simulation}{equation.22}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Identification problem}{8}{subsection.3.4}\protected@file@percent }
-\newlabel{sec:aug_closed_loop}{{\mbox  {III-D}}{8}{Identification problem}{subsection.3.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Identification}{8}{subsection.3.4}\protected@file@percent }
+\newlabel{sec:aug_closed_loop}{{\mbox  {III-D}}{8}{Identification}{subsection.3.4}{}}
 \citation{hoekstra2026lfr}
 \citation{kessels2025ai}
+\citation{drenth2025lpvlfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
-\citation{gyorok2026obc}
 \citation{drenth2025lpvlfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
-\newlabel{eq:mdelta_map}{{23}{9}{Identification problem}{equation.23}{}}
-\newlabel{eq:aug_loss}{{24}{9}{Identification problem}{equation.24}{}}
-\newlabel{eq:aug_init}{{25}{9}{Identification problem}{equation.25}{}}
-\citation{venkatraman2017psd}
 \citation{hoekstra2026lfr}
+\newlabel{eq:mdelta_map}{{23}{9}{Identification}{equation.23}{}}
+\newlabel{eq:aug_loss}{{24}{9}{Identification}{equation.24}{}}
+\newlabel{eq:aug_init}{{25}{9}{Identification}{equation.25}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Added-state initialisation}{9}{subsection.3.5}\protected@file@percent }
+\newlabel{sec:aug_ps2}{{\mbox  {III-E}}{9}{Added-state initialisation}{subsection.3.5}{}}
 \citation{hefny2015supervised}
 \citation{downey2017psrnn}
 \citation{hefny2015supervised}
 \citation{downey2017psrnn}
 \citation{hefny2015supervised}
 \citation{hefny2015supervised}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Added-state initialisation}{10}{subsection.3.5}\protected@file@percent }
-\newlabel{sec:aug_ps2}{{\mbox  {III-E}}{10}{Added-state initialisation}{subsection.3.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Windows of PS on one record, layout adapted from~\cite  [Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the window $\chi _\tau $ to $\hat  x^{\mathrm  n}_{\tau |\tau }$, and the decoder $d$ maps its added part $\bar  x_{\tau |\tau }$ to the residuals $e_\tau $ of the next $M$ samples \eqref  {eq:ps2_s1}. S2 (bottom): $g_{\mathrm  {aug}}$ maps $\hat  x^{\mathrm  n}_{\tau |\tau }$ and the recorded $u_\tau $ to the added state encoded from the window shifted by one sample \eqref  {eq:ps2_s2}. \textcolor {red}{[\textbf  {TODO:} The figure shows the target from $\tau +1$ (\texttt  {FINAL-RUN-FIXES.md} item~5). The 2026-10-11 runs start it at $\tau $, so the noise in $y_\tau $ enters both $\chi _\tau $ and $e_\tau $.]}}}{10}{figure.caption.5}\protected@file@percent }
-\newlabel{fig:ps2_windows}{{5}{10}{Windows of PS on one record, layout adapted from~\cite [Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the window $\chi _\tau $ to $\hat x^{\mathrm n}_{\tau |\tau }$, and the decoder $d$ maps its added part $\bar x_{\tau |\tau }$ to the residuals $e_\tau $ of the next $M$ samples \eqref {eq:ps2_s1}. S2 (bottom): $g_{\mathrm {aug}}$ maps $\hat x^{\mathrm n}_{\tau |\tau }$ and the recorded $u_\tau $ to the added state encoded from the window shifted by one sample \eqref {eq:ps2_s2}. \todo {The figure shows the target from $\tau +1$ (\texttt {FINAL-RUN-FIXES.md} item~5). The 2026-10-11 runs start it at $\tau $, so the noise in $y_\tau $ enters both $\chi _\tau $ and $e_\tau $.}}{figure.caption.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Windows of PS on one record, layout adapted from~\cite  [Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the window $\chi _\tau $ to $\hat  x^{\mathrm  n}_{\tau |\tau }$, and the decoder $d$ maps its added part $\bar  x_{\tau |\tau }$ to the residuals $e_\tau $ of the next $H$ samples \eqref  {eq:ps2_s1}. S2 (bottom): $g_{\mathrm  {aug}}$ maps $\hat  x^{\mathrm  n}_{\tau |\tau }$ and the recorded $u_\tau $ to the added state encoded from the window shifted by one sample \eqref  {eq:ps2_s2}. \textcolor {red}{[\textbf  {TODO:} The figure shows the target from $\tau +1$ (\texttt  {FINAL-RUN-FIXES.md} item~5). The 2026-10-11 runs start it at $\tau $, so the noise in $y_\tau $ enters both $\chi _\tau $ and $e_\tau $.]}}}{10}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:ps2_windows}{{5}{10}{Windows of PS on one record, layout adapted from~\cite [Fig.~2]{hefny2015supervised}. S1 (top): the encoder maps the window $\chi _\tau $ to $\hat x^{\mathrm n}_{\tau |\tau }$, and the decoder $d$ maps its added part $\bar x_{\tau |\tau }$ to the residuals $e_\tau $ of the next $H$ samples \eqref {eq:ps2_s1}. S2 (bottom): $g_{\mathrm {aug}}$ maps $\hat x^{\mathrm n}_{\tau |\tau }$ and the recorded $u_\tau $ to the added state encoded from the window shifted by one sample \eqref {eq:ps2_s2}. \todo {The figure shows the target from $\tau +1$ (\texttt {FINAL-RUN-FIXES.md} item~5). The 2026-10-11 runs start it at $\tau $, so the noise in $y_\tau $ enters both $\chi _\tau $ and $e_\tau $.}}{figure.caption.5}{}}
 \citation{hefny2015supervised}
 \citation{hefny2015supervised}
 \citation{venkatraman2017psd}
@@ -160,13 +159,13 @@
 \citation{gyorok2025l4dc}
 \citation{gyorok2026obc}
 \citation{gyorok2026obc}
+\citation{gyorok2025l4dc}
+\citation{gyorok2025l4dc}
 \newlabel{eq:ps2_handover}{{29}{12}{Added-state initialisation}{equation.29}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {IV}Interpretability by Orthogonal Construction}{12}{section.4}\protected@file@percent }
 \newlabel{sec:obc}{{IV}{12}{Interpretability by Orthogonal Construction}{section.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Orthogonal correction of the physical rows}{12}{subsection.4.1}\protected@file@percent }
 \newlabel{sec:obc_map}{{\mbox  {IV-A}}{12}{Orthogonal correction of the physical rows}{subsection.4.1}{}}
-\citation{gyorok2025l4dc}
-\citation{gyorok2025l4dc}
 \citation{gyorok2026obc}
 \citation{gyorok2025l4dc}
 \citation{gyorok2026obc}
@@ -203,9 +202,9 @@
 \newlabel{tab:res_structure}{{I}{17}{Simulation error RMS per axis, mean over test records I1 to I6}{table.caption.8}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Amplitude spectral density of the $Y$ simulation error on test records I1 and I2. Shaded: multisine band. Dotted: absorber pole.}}{17}{figure.caption.9}\protected@file@percent }
 \newlabel{fig:res_ps_spectrum}{{8}{17}{Amplitude spectral density of the $Y$ simulation error on test records I1 and I2. Shaded: multisine band. Dotted: absorber pole}{figure.caption.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-C}}Interpretability}{17}{subsection.6.3}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Test record I1, $Y$ axis. Top: moving RMS of the simulation error. Bottom: servo error in the shaded window.}}{18}{figure.caption.10}\protected@file@percent }
 \newlabel{fig:res_time_trace}{{9}{18}{Test record I1, $Y$ axis. Top: moving RMS of the simulation error. Bottom: servo error in the shaded window}{figure.caption.10}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-C}}Interpretability}{18}{subsection.6.3}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Relative error of the ten combinations, unconstrained and OBC, from the detuned and the correct start.}}{18}{table.caption.11}\protected@file@percent }
 \newlabel{tab:res_obc}{{II}{18}{Relative error of the ten combinations, unconstrained and OBC, from the detuned and the correct start}{table.caption.11}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-D}}Generalisation}{18}{subsection.6.4}\protected@file@percent }
@@ -213,10 +212,10 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-A}}Answers to the four research aspects}{19}{subsection.7.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-B}}Limitations and lessons}{19}{subsection.7.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-C}}Implications and future work}{19}{subsection.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {VIII}Conclusions and discussion}{19}{section.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-A}}Conclusions}{19}{subsection.8.1}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Simulation error RMS per test record, mean over $X_1$, $X_2$, $Y$.}}{20}{figure.caption.12}\protected@file@percent }
 \newlabel{fig:res_generalisation}{{10}{20}{Simulation error RMS per test record, mean over $X_1$, $X_2$, $Y$}{figure.caption.12}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {VIII}Conclusions and discussion}{20}{section.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-A}}Conclusions}{20}{subsection.8.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-B}}Discussion}{20}{subsection.8.2}\protected@file@percent }
 \bibstyle{IEEEtran}
 \bibdata{IEEEabrv,refs}
@@ -244,8 +243,9 @@
 \bibcite{forssell1999revisited}{22}
 \bibcite{hefny2015supervised}{23}
 \bibcite{downey2017psrnn}{24}
-\bibcite{gyorok2025l4dc}{25}
-\bibcite{lee2020feeddrive}{26}
+\bibcite{venkatraman2017psd}{25}
+\bibcite{gyorok2025l4dc}{26}
+\bibcite{lee2020feeddrive}{27}
 \@writefile{toc}{\contentsline {section}{References}{21}{section*.13}\protected@file@percent }
 \citation{drenth2025lpvlfr}
 \citation{drenth2025lpvlfr}

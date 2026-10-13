@@ -1,5 +1,5 @@
 % PS windows on one record (Section III-E), layout adapted from Hefny et al. 2015, Fig. 2.
-% Shows the final method: S1 target from tau+1 to tau+M (FINAL-RUN-FIXES.md item 5).
+% Shows the final method: S1 target from tau+1 to tau+H (FINAL-RUN-FIXES.md item 5).
 \begin{tikzpicture}[
     >={Latex[length=1.8mm,width=1.3mm]},
     line width=0.5pt,
@@ -21,7 +21,7 @@
   \def\xV{6.45}  % loss blocks
   % sample row
   \foreach \i/\t in {0/{$\tau{-}n$}, 1/{$\tau{-}n{+}1$}, 2/{$\cdots$}, 3/{$\tau$},
-                     4/{$\tau{+}1$}, 5/{$\cdots$}, 6/{$\tau{+}M$}}
+                     4/{$\tau{+}1$}, 5/{$\cdots$}, 6/{$\tau{+}H$}}
     \node[smp] (s\i) at (\i*\w,0) {\t};
   \node[lab, anchor=west] at (6*\w+\h+0.05,0) {$(y_k,u_k)$};
 

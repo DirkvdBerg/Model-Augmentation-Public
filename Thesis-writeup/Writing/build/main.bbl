@@ -130,8 +130,9 @@ J.~H. Hoekstra, B.~M. Gy{\"o}r{\"o}k, R.~T{\'o}th, and M.~Schoukens, ``Encoder
   initialisation methods in the model augmentation setting,'' 2026.
 
 \bibitem{forssell1999revisited}
-U.~Forssell and L.~Ljung, ``Closed-loop identification revisited,''
-  \emph{Automatica}, vol.~35, no.~7, pp. 1215--1241, 1999.
+U.~Forssell and L.~Ljung, ``Closed-loop identification revisited: Updated
+  version,'' Department of Electrical Engineering, Link{\"o}ping University,
+  Tech. Rep. LiTH-ISY-R-2021, Apr. 1998.
 
 \bibitem{hefny2015supervised}
 A.~Hefny, C.~Downey, and G.~J. Gordon, ``Supervised learning for dynamical
@@ -142,6 +143,12 @@ A.~Hefny, C.~Downey, and G.~J. Gordon, ``Supervised learning for dynamical
 C.~Downey, A.~Hefny, B.~Li, B.~Boots, and G.~J. Gordon, ``Predictive state
   recurrent neural networks,'' in \emph{Advances in Neural Information
   Processing Systems}, vol.~30, 2017.
+
+\bibitem{venkatraman2017psd}
+A.~Venkatraman, N.~Rhinehart, W.~Sun, L.~Pinto, M.~Hebert, B.~Boots, K.~M.
+  Kitani, and J.~A. Bagnell, ``Predictive-state decoders: Encoding the future
+  into recurrent networks,'' in \emph{Advances in Neural Information Processing
+  Systems}, vol.~30, 2017.
 
 \bibitem{gyorok2025l4dc}
 B.~M. Gy{\"o}r{\"o}k, J.~H. Hoekstra, J.~Kon, T.~P{\'e}ni, M.~Schoukens, and
