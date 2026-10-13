@@ -42,6 +42,7 @@
 \item Single seed, simulation only, no controller transfer
 \item OBC holds only at $\bar x=0$; current definition doesn't take into account the additional states entering the output the next update step.
 \item Need to fix: current encoder is initialized with true parameters % polish of these runs use true-parameter information (?)
+\item The reconstructability-based encoder uses measurements through $\tau$, including the first output scored by \eqref{eq:aug_loss}. That first error measures reconstruction rather than prediction without the current measurement. This follows the encoder initialisation, not the controller; results assuming a past-only encoder do not transfer automatically.
 \item Future work: friction, excitation for parameter recovery, real data
 \end{outline}
 \begin{wip}

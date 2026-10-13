@@ -900,8 +900,10 @@ are the output layer weights and bias of $\tilde\psi$.
 We initialise $W^{\bar x}_L$ and the hidden layers of both networks
 from $\mathcal U(-1/\sqrt{m},1/\sqrt{m})$,
 where $m$ is the input size of the layer.
-We set $a$ to the Xavier uniform bound with gain one,
-as in~\cite[Eq.~(31)]{hoekstra2026lfr}.
+We use Xavier initialisation for $W^a$,
+following~\cite[Eq.~(31)]{hoekstra2026lfr}.
+We choose the uniform distribution with gain one,
+giving $a=\sqrt{6/(n_{\bar x}+6(n+1))}$.
 At the start of training, $\theta_{\mathrm{base}}=\theta^0_{\mathrm{base}}$
 and $f^{\mathrm n}_{\mathrm{aug}}=0$.
 The augmented model and baseline model give the same $\tilde x$ and $\hat y$, 
