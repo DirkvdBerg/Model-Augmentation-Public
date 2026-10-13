@@ -18,7 +18,7 @@
 % Hoekstra et al. 2025 EJC: dynamic-parallel topology, additional states, encoder-based truncated simulation.
 % Hoekstra et al. 2026 Automatica submission: extended LFR formulation, baseline-preserving model/encoder initialization, joint identification context.
 % Hoekstra et al. 2026 encoder paper: reconstructability-based W^b initialization; it does not identify W^a or test dynamic augmentation.
-% Kessels 2025 thesis: direct closed-loop rollout, controller equations, and reconstruction of the machine controller state for each window.
+% Kessels 2025 thesis: direct closed-loop rollout, controller equations, and reconstruction of the sytem controller state for each window.
 % Drenth 2025 thesis: LPV-specific augmentation precedent; not the unrestricted MLP structure used here.
 % This project: gantry specialization, residual-loop implementation, exact routing, RK4 boundary, and verification.
 %
@@ -78,12 +78,12 @@
 %     stabilising controller can be. Precondition, not a proof, for our nonlinear model. Same principle
 %     as Kessels (closed-loop simulation of an unstable open-loop system), scoped to marginal stability.
 % 13. Our formulation (ours, "we"): u_hat = u + C x^c + D(y - y_hat). Derivation by subtracting the
-%     machine's controller equations, equal to the shared-r, shared-u_ff loop of the figure under a
+%     sytem's controller equations, equal to the shared-r, shared-u_ff loop of the figure under a
 %     compatible controller, signals and initial state (assumption; whether the data meet it is a Setup
 %     or Results check: 4 kHz controller on recorded r - y versus recorded feedback force).
 %     Main consequence: x^c_tau = 0 per window, no controller initialisation; consistent with the
-%     encoder (model state and model controller both start on the machine's condition at tau). Contrast:
-%     Kessels' direct form needs the machine controller state (Remark 5.4). Error before tau is not
+%     encoder (model state and model controller both start on the sytem's condition at tau). Contrast:
+%     Kessels' direct form needs the sytem controller state (Remark 5.4). Error before tau is not
 %     carried in; the free-run validation does carry it.
 % 14. Step order from no plant feedthrough: no algebraic loop, no added delay.
 % 15. Every window sample scored (as Eq. 22); theta_base, theta_aug, eta joint, controller fixed.
@@ -122,7 +122,7 @@
 % 20. S3: decoder discarded, eq:aug_loss continues unchanged; deployed model, criterion and selection
 %     unchanged; added states stay latent; M_PS2 named.
 % Notation set in this session: encoder window chi_tau (xi is the training coordinate Section IV uses);
-%   encoder parameters theta_enc and its added-state part theta^a_enc (Section IV); machine controller state
+%   encoder parameters theta_enc and its added-state part theta^a_enc (Section IV); sytem controller state
 %   x^fb (s is the m_Delta scale of the appendix); normalised signals carry a superscript n (Section IV);
 %   the model input is u_act, as in the code and Section II-D, with P inside f_base through eq:eom.
 %
@@ -151,6 +151,21 @@
 % 5. Hand-over: decoder discarded, criterion, model and selection unchanged; M_PS named.
 % Displays: eq:ps2_s1 (with decoder), eq:ps2_nu, eq:ps2_s2 (with snapshot set), the input
 %   equation, eq:ps2_handover; the exact S1 stopping rule is in the appendix (app:ps_stop). Final runs: live g_aug MLP (D-248), target from tau+1 (FINAL-RUN-FIXES item 5).
+%
+% MUST ESTABLISH, III-C (agreed with Dirk, 2026-10-13; supersedes items 12 to 14 above):
+% 1. Closed loop, not the recorded input (2026 Eq. 22), for two reasons: noise-induced bias (Kessels Remark 5.6,
+%    an open-loop SUBNET attempt, his "may be explained"; Forssell indirect approach) and the free axes (pointer
+%    to III-A, which keeps its own drift sentences) violating Beintema Cond. 1. Motivation, not a proof.
+% 2. The idea is Kessels' (Eqs. 5.12, 5.13d): the known controller in the rollout, error against the model
+%    output. Both loops displayed, shared r and u_ff; the model input is u_act, the force into the plant.
+% 3. This work: the controller is LTI, so subtracting the sytem loop cancels r and u_ff; the residual form
+%    needs only the recorded u_act and y and is exact when u_act was produced by this controller from y.
+% 4. This work: x^c_tau = 0 starts the model's controller in the sytem's controller state, as the encoder
+%    does for the plant state; no controller state is estimated (unlike Kessels Remark 5.4), r and u_ff are
+%    not needed. It drops the controller-state difference from model error before tau; the free run keeps it.
+% 5. Step order from no plant feedthrough (as Kessels Remark 5.1); the output error re-enters the input and is
+%    partly corrected within the window. The masking sentence stays in III-D; the controller-mismatch
+%    argument is a Setup bullet.
 \section{Dynamic Augmentation of the LPV-LFR Baseline}\label{sec:augmentation}
 \ifdraft
 \begin{itemize}
@@ -574,55 +589,60 @@ at comparable final accuracy~\cite[Sec.~4.4]{hoekstra2026encoder}.
 \subsection{Closed-loop simulation}\label{sec:aug_loop}
 \ifdraft
 \begin{itemize}
-\item The records are measured under feedback and the model must predict the machine under feedback, so each window is simulated in the loop, not driven by the recorded input (2026 Eq.~(22))
-\item Kessels (Eqs.~(5.12), (5.13); Remark~5.6, noisy records); for linear systems the indirect approach (Forssell and Ljung); free $X$, $Y$ violate the stability condition behind SUBNET consistency (Beintema Cond.~1), the loop can satisfy it; motivation, not a guarantee
-\item Both loops displayed; subtracting the machine's controller equations gives our residual form, exact under a compatible controller, signals and initial state (check in Setup)
-\item One normalised closed-loop step displayed; the model's output error re-enters its input through the controller
-\item $x^{c}_\tau=0$ needs no controller initialisation and matches the encoder; Kessels' direct form needs the machine's controller state (Remark~5.4)
-\item No plant feedthrough fixes the step order: no algebraic loop, no added delay; error before $\tau$ is not carried into the window
+\item The model is not driven by the recorded input (2026 Eq.~(22)), for two reasons: noise-induced bias under feedback (Kessels Remark~5.6, SUBNET; indirect approach, Forssell and Ljung) and the free axes of Section~\ref{sec:aug_structure}, which violate the stability condition behind SUBNET consistency (Beintema Cond.~1); motivation, not a proof
+\item As in Kessels (Eqs.~(5.12), (5.13)), each window is simulated in closed loop with the known controller, which forms its error against the model output; sytem and model loops share $r$ and $u^{\mathrm{ff}}$
+\item The controller is linear and time invariant, so subtracting the sytem's loop cancels $r$ and $u^{\mathrm{ff}}$; the residual form needs only the recorded $u_{\mathrm{act}}$ and $y$, and is exact when $u_{\mathrm{act}}$ was produced by this controller from $y$ (this work)
+\item $x^{c}_\tau=0$ starts the model's controller in the sytem's controller state, as the encoder does for the plant state; no controller state is estimated, unlike Kessels Remark~5.4 (this work)
+\item No plant feedthrough fixes the step order, so $D_{\mathrm{fb}}$ closes no algebraic loop (as Kessels Remark~5.1); one normalised step displayed
+\item The output error re-enters the model input, so part of it is corrected within the window; error before $\tau$ is not carried in, the free-run validation carries it
 \end{itemize}
 \fi
 
-\begin{outline}
-\item Each training window is simulated in closed loop with the known controller, not driven by the recorded input
-\item Machine and model same closed-loop, with the same reference and feedforward:
-\end{outline}
-\begin{wip}
-The records are measured under feedback, and the model must predict the
-machine under feedback: its response to a reference, a feedforward and a
-known controller.
-We therefore simulate each training window in closed loop with that
-controller, rather than driving the model with the recorded input as
-in~\cite[Eq.~(22)]{hoekstra2026lfr}.
-Kessels trains augmented models in this way~\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}
-and reports that identifying the open-loop model from his closed-loop data
-failed, which he attributes to noise-induced
-bias~\cite[Remark~5.6]{kessels2025ai}; our records are noisy as well
-(Section~\ref{sec:setup}).
-For linear systems, fitting the closed loop from the reference with a known
-controller is the indirect approach to closed-loop identification, in which
-an output-error criterion remains consistent because the reference is
-uncorrelated with the noise~\cite{forssell1999revisited}.
-The free axes give a second reason.
-$X$ and $Y$ have no stiffness, so the open-loop gantry is marginally stable:
-a difference in initial velocity leaves a permanent position offset.
-The consistency argument of the identification
-method~\cite[Sec.~5.5]{hoekstra2026lfr} rests on that of SUBNET, which assumes
-an incrementally exponentially output stable data-generating
-system~\cite[Cond.~1]{beintema2023subnet}; the open-loop gantry violates this
-condition, whereas the loop with the stabilising controller can satisfy it.
-For our nonlinear model, both arguments motivate the closed loop but do not
-prove consistency.
-\todo{Missing: section number for~\cite{forssell1999revisited}. The indirect approach was verified in Sec.~5.2.1 of the LiU report LiTH-ISY-R-2021; the Automatica numbering is unchecked. Candidate: cite without a section number until the journal version is read.}
-\todo{Missing: evidence on the thesis data that open-loop rollouts accumulate position error on $X$ and $Y$. Candidate: the open-loop versus closed-loop drift on one record that \texttt{THESIS-RESULTS.md} Sec.~5 plans, reported in Section~\ref{sec:results}.}
 
-The controller of each record is known, linear and time invariant, and maps
-the position error in actuator coordinates to actuator forces.
-The machine and the model each close this controller around their own
-output, with controller states $x^{\mathrm{fb}}$ and $\hat x^{\mathrm{fb}}$,
-and both loops are driven by the reference $r$ and feedforward
-$u^{\mathrm{ff}}$ of the record (Fig.~\ref{fig:aug_closed_loop}):
-\end{wip}
+The data is measured in closed-loop, and the model is simulated in 
+closed-loop. 
+Instead of using the recorded input as
+in~\cite[Eq.~(22)]{hoekstra2026lfr}, we include the
+feedback controller in the simulation for the following reasons.
+The feedback controller causes a correlation between
+the recorded input and the measurement noise.
+Kessels was not able to identify an open-loop SUBNET model
+using closed-loop data from a wire bonder.
+He suggest that this could be explained by noise-induced bias 
+due to this correlation and the integral term 
+of the controller~\cite[Remark~5.6]{kessels2025ai}.
+
+The indirect approach for linear systems with a known controller 
+fits the closed-loop model using the reference.
+Because the reference is uncorrelated with the noise, the model 
+can be identified from the output prediction error~\cite{forssell1999revisited}.
+\todo{output prediction error??}
+
+Also, as has been established in Section~\ref{sec:aug_structure}: 
+the free axes $X$ and $Y$ make the open-loop gantry
+marginally stable.
+SUBNET assumes that the system that generates the data is
+incrementally exponentially output
+stable~\cite[Cond.~1]{beintema2023subnet}.
+The identification method we have adapted from~\cite[Sec.~5.5]{hoekstra2026lfr}
+relies on this SUBNET assumption.
+The open-loop gantry system does not satisfy this assumption: 
+a mismatch in the initial velocity will create a permanent position offset.
+These reasons motivate the choice for simulating in closed-loop.
+They do not prove that our estimate is consistent. \todo{?}
+\todo{Missing: section number for~\cite{forssell1999revisited}. The indirect approach was verified in Sec.~5.2.1 of the LiU report LiTH-ISY-R-2021; the Automatica numbering is unchecked. Candidate: cite without a section number until the journal version is read.}
+\todo{Missing: D-140 (Ruled out (4)) bars Kessels' Remark~5.6 as an argument because the records were then noise free. The thesis records are noisy, so the ban appears lapsed. Candidate: keep the sentence and amend D-140 (basis: noisy thesis records, Section~\ref{sec:setup}).}
+\todo{Missing: evidence on the thesis data that open-loop rollouts accumulate position error on $X$ and $Y$. Candidate: the open-loop versus closed-loop drift on one record that \texttt{THESIS-RESULTS.md} Sec.~5 plans, reported in Section~\ref{sec:results}.}
+\\
+Every training window is simulated in closed-loop with the known controller, 
+as in Kessels~\cite[Eqs.~(5.12), (5.13)]{kessels2025ai}. 
+The controller is linear and time invariant, the model output is used to
+calculate the position error in actuator coordinates \todo{qact?}.
+The controller calculates the actuator forces from this error.
+The system and model use the same reference $r$ and feedforward
+$u^{\mathrm{ff}}$, but use their own output for feedback, with controller
+states $x^{\mathrm{fb}}$ and $\hat x^{\mathrm{fb}}$
+(Fig.~\ref{fig:aug_closed_loop}):
 \begin{equation}
 \begin{aligned}
  x^{\mathrm{fb}}_{k+1}&=A_{\mathrm{fb}}x^{\mathrm{fb}}_k+B_{\mathrm{fb}}(r_k-y_k),\\
@@ -632,52 +652,52 @@ $u^{\mathrm{ff}}$ of the record (Fig.~\ref{fig:aug_closed_loop}):
 \end{aligned}
 \label{eq:aug_two_loops}
 \end{equation}
-\begin{outline}
-\item Removes reference and feedforward (all done with respect to the reference):
-\end{outline}
-\begin{wip}
-where $(A_{\mathrm{fb}},B_{\mathrm{fb}},C_{\mathrm{fb}},D_{\mathrm{fb}})$ are
-the state-space matrices of the controller discretised over $T_s$, $r_k$ and
-$u^{\mathrm{ff}}_k$ are in actuator coordinates, and $\hat u_{\mathrm{act},k}$
-is the input the model receives in place of the recorded $u_{\mathrm{act},k}$.
-Subtracting the machine's lines from the model's, with
-$x^{c}=\hat x^{\mathrm{fb}}-x^{\mathrm{fb}}$, removes $r$ and
-$u^{\mathrm{ff}}$:
-\end{wip}
+where $(A_{\mathrm{fb}},B_{\mathrm{fb}},C_{\mathrm{fb}},D_{\mathrm{fb}})$
+are the state-space matrices of the controller discretised
+with sampling time $T_s$.
+Both $r_k$ and $u^{\mathrm{ff}}_k$ are in actuator coordinates.
+The model uses the calculated actuator force $\hat u_{\mathrm{act},k}$
+instead of the recorded $u_{\mathrm{act},k}$
+in \eqref{eq:aug_transition}.
+\\
+Since we use a linear controller we are able to substract the system 
+and model controller equations to cancel $r$ and $u^{\mathrm{ff}}$.
+This leaves us with the controller state difference
+$x^c=\hat x^{\mathrm{fb}}-x^{\mathrm{fb}}$,
+driven by $y-\hat y$.
+The model is still simulated with respect to the reference $r$,
+but $r$ and $u^{\mathrm{ff}}$ are not used in simulation.
+If the controllers between the system and simulation differ, 
+the equations are only approximate and noise-induced bias
+cannot be ruled out.
+\\
+At the start of each training window we set $x^c_\tau=0$, 
+which sets the model's controller state equal to that of the sytem at $\tau$.
+Therefore the encoder only has to initialize the states of the model.
+Kessels instead uses the system's controller state at the start of each
+window, either measured directly or calculated by simulating the
+controller from the start of the record~\cite[Remark~5.4]{kessels2025ai}.
+We then write the closed-loop model in \eqref{eq:aug_two_loops} as
 \begin{equation}
 \begin{aligned}
  x^{c}_{k+1}&=A_{\mathrm{fb}}x^{c}_k+B_{\mathrm{fb}}(y_k-\hat y_k),\qquad x^{c}_\tau=0,\\
- \hat u_{\mathrm{act},k}&=u_{\mathrm{act},k}+C_{\mathrm{fb}}x^{c}_k+D_{\mathrm{fb}}(y_k-\hat y_k).
+ \hat u_{\mathrm{act},k}&=u_{\mathrm{act},k}+C_{\mathrm{fb}}x^{c}_k+D_{\mathrm{fb}}(y_k-\hat y_k),
 \end{aligned}
 \label{eq:aug_residual_loop}
 \end{equation}
-\begin{outline}
-\item Model input = recorded input + controller response to the model's output error
-\item Choice: $x^{c}_\tau=0$, so no controller state estimate is needed
-\item The model output depends only on the state, not on the current input, so each step first computes $\hat y_k$, then the error and the controller input $\hat u_k$, then the next state; this avoids an algebraic loop through the controller feedthrough:
-\end{outline}
-\begin{wip}
-The model input is thus the recorded input plus the controller's response to
-the output error of the model.
-This form equals the model loop of \eqref{eq:aug_two_loops} when the recorded
-input was produced by this controller from the same output samples and
-initial state.
-The difference of the controller states needs no estimate: setting it to zero
-at the window start places the model's controller in the machine's controller
-state, as the encoder places the model state on the recorded trajectory.
-Kessels' direct form instead needs the machine's controller state at every
-window start, read from the machine or reconstructed from the reference, the
-output and the controller~\cite[Remark~5.4]{kessels2025ai}.
+which needs only the recorded $u_{\mathrm{act}}$ and $y$.
+Within a window, $\hat y$ is still the response of the model loop to $r$ and
+$u^{\mathrm{ff}}$ from the states at $\tau$, although neither signal is used.
 \todo{Check for Setup: the training loop uses the controller re-discretised at the model rate, while the records were generated at a higher rate. Run the re-discretised controller on the recorded $r-y$ and compare its feedback force with the recorded one. A rollout with $\hat y=y$ gives $\hat u=u$ by construction and checks nothing. Related: \texttt{FINAL-RUN-FIXES.md} item~3, the D-232 leak check on the lowpass data, passed (0.22 to 0.50~nm).}
 
-The augmented model has no feedthrough, so each sample is evaluated in a fixed
-order: the output from the physical state, then the input, then the model and
-controller states advance.
+The output of the augmented model depends on its state only, so each sample is
+evaluated in a fixed order: the output, then the error and the model input,
+then the model and controller states advance.
 The controller feedthrough $D_{\mathrm{fb}}$ therefore closes no algebraic
-loop, and the loop adds no delay.
+loop, for the same reason that Kessels' output augmentation does not depend
+on the input~\cite[Remark~5.1]{kessels2025ai}.
 In the coordinates of \eqref{eq:aug_norm}, where the output means cancel in
 the error, one step of a window started at $\tau$ is
-\end{wip}
 \begin{equation}
 \begin{aligned}
  \hat y^{\mathrm n}_{k|\tau}&=C^{\mathrm n}\tilde x^{\mathrm n}_{k|\tau},\qquad
@@ -688,22 +708,18 @@ the error, one step of a window started at $\tau$ is
 \end{aligned}
 \label{eq:aug_cl_step}
 \end{equation}
-\begin{outline}
-\item Each window restarts from the encoder state and $x^{c}_\tau=0$, so errors from before $\tau$ do not affect the window; the free-run validation simulates whole records and does include them
-\end{outline}
-\begin{wip}
 after which $\hat x^{\mathrm n}_{k+1|\tau}$ follows from
 \eqref{eq:aug_transition} with input $\hat u^{\mathrm n}_{k|\tau}$, starting
 from the encoder state \eqref{eq:aug_encoder}.
-Here $\varepsilon_{k|\tau}=y_k-\hat y_{k|\tau}$ is the output error in
-metres.
+Here $\varepsilon_{k|\tau}=y_k-\hat y_{k|\tau}$ is the output error in metres.
+
 The output error of the model thus re-enters its own input through the
-controller, so a model error is partly corrected within the window, as on the
-machine.
-Model error made before $\tau$ is not carried into the window, whereas the
-free-run validation of Section~\ref{sec:aug_closed_loop} applies
-\eqref{eq:aug_cl_step} over whole records and carries it.
-\end{wip}
+controller, so part of a model error is corrected within the window, as on
+the sytem.
+Model error made before $\tau$ is not carried into the window, because the
+model state and $x^{c}$ both restart at $\tau$.
+The free-run validation of Section~\ref{sec:aug_closed_loop} applies
+\eqref{eq:aug_cl_step} over whole records and does carry it.
 
 \begin{figure}[t]
  \centering
