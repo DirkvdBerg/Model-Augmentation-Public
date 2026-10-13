@@ -48,6 +48,14 @@
 \else
   \newcommand{\ucite}[2][]{{\color{orange}\if\relax\detokenize{#1}\relax\cite{#2}\else\cite[#1]{#2}\fi}}
 \fi
+% \revnote: a remark for supervisors. Shown in main.tex and review.tex, removed at submission.
+\ifdefined\ReviewBuild
+  \newcommand{\revnote}[1]{\textcolor{violet}{[\textbf{Note:} #1]}}
+\else\ifdraft
+  \newcommand{\revnote}[1]{\textcolor{violet}{[\textbf{Note:} #1]}}
+\else
+  \newcommand{\revnote}[1]{}
+\fi\fi
 
 % ------------------------------------------------------------ general notation
 % Copied verbatim from scripts/gantry/orthogonal-by-construction/documentation/

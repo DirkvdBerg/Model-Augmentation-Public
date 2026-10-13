@@ -592,7 +592,7 @@ not an optimal estimator.
 It leaves co-estimation of the baseline parameters out of
 scope~\cite[footnote~1]{hoekstra2026encoder}, whereas here $W^b$ is trained
 jointly with them.
-\todo{Fix before the final run (\texttt{FINAL-RUN-FIXES.md} item~1): $W^b$ is built from the nominal parameters, which equal those of the simulated truth, while $\theta_{\mathrm{base}}$ starts detuned. The final runs build $W^b$ at the start $\theta_{\mathrm{base},0}$; the text then states that.}
+\todo{Fix before the final run (\texttt{FINAL-RUN-FIXES.md} item~1): $W^b$ is built from the nominal parameters, which equal those of the simulated truth, while $\theta_{\mathrm{base}}$ starts detuned. The final runs build $W^b$ at the start $\theta^0_{\mathrm{base}}$; the text then states that.}
 
 Hoekstra et al.\ instead fit the baseline encoder to states simulated with the
 baseline~\cite[Eq.~(30)]{hoekstra2026lfr}, the data-based alternative
@@ -775,50 +775,46 @@ the model state.
 \ifdraft
 \begin{itemize}
 \item $\theta_{\mathrm{base}}$ is estimated jointly with network and encoder, as in 2026 Eq.~(22); Kessels trains only the network weights (Eq.~(5.12))
-\item Training coordinates $\beta$, zero at $\theta_{\mathrm{base},0}$: nine combinations logarithmic, $m_\Delta$ through \eqref{eq:mdelta_map}; every $\beta$ admissible, so no clamp or penalty (this work, D-229; adapted from Drenth Sec.~4.2)
+\item Training coordinates $\beta$, zero at $\theta^0_{\mathrm{base}}$: nine combinations logarithmic, $m_\Delta$ through \eqref{eq:mdelta_map}; every $\beta$ admissible, so no clamp or penalty (this work, D-229; adapted from Drenth Sec.~4.2)
 \item Criterion \eqref{eq:aug_loss}: Eq.~(22) adapted by the loop of Section~\ref{sec:aug_loop} and the encoder of Section~\ref{sec:aug_encoder}; every window sample scored; controller fixed; a closed-loop fit can mask plant error (Section~VI)
 \item The baseline/network split is not unique (2026 Sec.~5.2), so $\theta_{\mathrm{base}}$ is not interpretable in the sense of Section~I; Section~IV addresses this (unique to first order only?)
 \item Adam, then an unbounded L-BFGS polish (adapted from Drenth Sec.~5.1); checkpoint with the lowest closed-loop free-run error over whole validation records; polish kept only if it lowers that error
 \item Initialisation \eqref{eq:aug_init}: $\tilde x$ and $\hat y$ reproduce the baseline, $\bar x$ evolves through a live $g_{\mathrm{aug}}$ (2026 Eq.~(29)); adapted from Sec.~5.4.3 (random added-state rows, no linear bypass); the model is named in Section~\ref{sec:setup}, not here
 \end{itemize}
 \fi
-
-We estimate $\theta_{\mathrm{base}}$ jointly with the network and the encoder,
+The network, encoder and $\theta_{\mathrm{base}}$ are jointly estimated, 
 as in~\cite[Eq.~(22)]{hoekstra2026lfr}.
-Kessels instead keeps the first-principles parameters fixed and trains only
-the network weights, the encoder included~\cite[Eq.~(5.12)]{kessels2025ai}.
-The optimiser works in coordinates $\beta\in\R^{10}$ that are zero at the
-starting combinations $\theta_{\mathrm{base},0}$.
-The nine positive combinations are logarithmic,
-$\theta_{\mathrm{base},j}=\theta_{\mathrm{base},0,j}\,e^{\beta_j}$, and the
-signed $m_\Delta$ is bounded by \eqref{eq:lfr_admissibility}:
+The optimiser updates $\theta_{\mathrm{base}}$ using $\beta\in\R^{10}$.
+The nine positive parameter combinations are
+$\theta_{\mathrm{base},j}=\theta^0_{\mathrm{base},j}\,e^{\beta_j}$,
+while $m_\Delta$ can be positive or negative and is bounded
+by \eqref{eq:lfr_admissibility}:
 \begin{equation}
   m_\Delta=\rho\,\frac{2}{L_b}\sqrt{m_\Sigma J_{\mathrm{eff}}}\,
   \tanh\bigl(\eta_0+s\,\beta_\Delta\bigr),
   \label{eq:mdelta_map}
 \end{equation}
-where $\beta_\Delta$ is the coordinate of $m_\Delta$ and $\rho\in(0,1)$ a
-margin.
-The offset $\eta_0$ and scale $s$ give $m_\Delta$ the convention of the
-logarithmic coordinates: $\beta=0$ gives the start $m_{\Delta,0}$, and
-$\partial m_\Delta/\partial\beta_\Delta=m_{\Delta,0}$ at $\beta=0$, as
-$\partial\theta_{\mathrm{base},j}/\partial\beta_j=\theta_{\mathrm{base},0,j}$
+where $\beta_\Delta$ determines $m_\Delta$ and
+$\rho\in(0,1)$ provides a safety margin.
+We choose the offset $\eta_0$ and scale $s$ so that
+$\beta=0$ gives $m_\Delta=m_{\Delta,0}$ and
+$\partial m_\Delta/\partial\beta_\Delta=m_{\Delta,0}$.
+This matches the logarithmic parameters, where
+$\partial\theta_{\mathrm{base},j}/\partial\beta_j
+=\theta^0_{\mathrm{base},j}$ at $\beta=0$
 (Appendix~\ref{app:lfr-wellposed}).
-The start must satisfy
+The initial value must satisfy
 $\lvert m_{\Delta,0}\rvert<\rho(2/L_b)\sqrt{m_{\Sigma,0}J_{\mathrm{eff},0}}$.
-Every $\beta$ thus satisfies \eqref{eq:lfr_admissibility}, so the optimiser
-needs no clamp or penalty.
-We adapt this from Drenth et al., who parameterise the feedthrough of their
-LFR so that, under their scheduling assumptions, every value of its free
-parameters gives a well-posed model~\cite[Sec.~4.2]{drenth2025lpvlfr}.
-
-Over the window starts $\mathcal T$ and the window length $n_f$, the trained
-parameters $\vartheta=(\beta,\theta_{\mathrm{aug}},\theta_{\mathrm{enc}})$
-minimise the normalised output error of the closed-loop simulation, with the
-controller fixed.
-This adapts~\cite[Eq.~(22)]{hoekstra2026lfr} with the loop of
-Section~\ref{sec:aug_loop} and the encoder of Section~\ref{sec:aug_encoder},
-and scores every sample of a window as it does:
+The bound in \eqref{eq:lfr_admissibility} holds for
+every $\beta$, therefore no clamping or penalty is needed.
+\\
+The parameters
+$\vartheta=(\beta,\theta_{\mathrm{aug}},\theta_{\mathrm{enc}})$
+are trained to minimise the normalised output error of the
+closed-loop simulation, with the
+controller fixed. We adapt this from~\cite[Eq.~(22)]{hoekstra2026lfr}, 
+adapted for the closed loop of Section~\ref{sec:aug_loop} and the
+encoder of Section~\ref{sec:aug_encoder}:
 \begin{equation}
 \begin{aligned}
  &\min_{\vartheta}\;V(\vartheta)=\frac{1}{|\mathcal T|\,n_f\,n_y}
@@ -836,20 +832,32 @@ and scores every sample of a window as it does:
 \end{aligned}
 \label{eq:aug_loss}
 \end{equation}
-for $\tau\le k<\tau+n_f$, where $n_y=3$ and $\theta_{\mathrm{base}}(\beta)$ is
-the coordinate map above.
-Because the controller acts on the output error, a closed-loop fit can mask
-plant error, so Section~\ref{sec:results} also tests the model under a
-changed controller.
-\todo{Missing: the changed-controller test is E5 (\texttt{THESIS-RESULTS.md}), which D-247 lists as ``skipped for now''. Candidate: keep the sentence if E5 is run; otherwise end it after ``plant error'' and point to the check Section~\ref{sec:results} does report.}
-
-The split between baseline and network is not
-unique~\cite[Sec.~5.2]{hoekstra2026lfr}, so the estimate of
-$\theta_{\mathrm{base}}$ is not interpretable in the sense of Section~I.
-Section~\ref{sec:obc} extends the identification to address this
-non-uniqueness.
-\todo{Missing: Section~\ref{sec:obc} makes the network orthogonal to the linearised baseline sensitivity at fixed tuples, so the split is unique only to first order around $\beta_{\mathrm{lin}}$, not a unique minimiser of \eqref{eq:aug_loss}. Candidate: once Section~\ref{sec:obc} states that local result, write ``so that the split is unique to first order'' with a pointer to it (basis: \texttt{04\_obc.tex} \eqref{eq:obc_coef}; math check 2026-10-13, F1).}
-
+for $\tau\le k<\tau+n_f$, where each training window starts at a sample
+$\tau\in\mathcal T$ and has length $n_f$, $n_y=3$, and
+$\theta_{\mathrm{base}}(\beta)$ gives the baseline parameters.
+\todo{might have to move to discussion if i dont add it. Since the controller corrects part of the output error,
+it can hide errors in the plant model.
+We therefore also test the model with a different controller
+in Section~\ref{sec:results}.}
+\\
+The baseline parameters and the neural network can both correct the same 
+model errors, making the optimal parameter values  
+not unique~\cite[Sec.~5.2]{hoekstra2026lfr}.
+Without enforcing uniqueness the estimated $\theta_{\mathrm{base}}$ is not 
+interpretable as defined in Section~\ref{sec:intro}.
+Section~\ref{sec:obc} extends the identification to separate what the 
+neural network can learn from the baseline parameters.
+\todo{Missing: Section~\ref{sec:obc} makes the 
+network orthogonal to the linearised baseline sensitivity at
+fixed tuples, so the split is unique only to first order 
+around $\beta_{\mathrm{lin}}$, not a unique 
+minimiser of \eqref{eq:aug_loss}. Candidate: 
+once Section~\ref{sec:obc} states that local 
+result, write ``so that the split is unique to first
+order'' with a pointer to it 
+(basis: \texttt{04\_obc.tex} \eqref{eq:obc_coef}; 
+math check 2026-10-13, F1).}
+\\
 We minimise $V$ with Adam on minibatches of windows, with the gradient
 through the whole window.
 We then polish with L-BFGS on a fixed set of windows.
@@ -889,10 +897,14 @@ The bound $c$ is the default of the software, which also initialises all
 hidden layers.
 The bound $a$ is the uniform Xavier bound with gain one, following the
 initialisation of~\cite[Eq.~(31)]{hoekstra2026lfr}.
-Then $\theta_{\mathrm{base}}=\theta_{\mathrm{base},0}$ and
+Then $\theta_{\mathrm{base}}=\theta^0_{\mathrm{base}}$ and
 $f^{\mathrm n}_{\mathrm{aug}}=0$, so from the same physical initial state
 $\tilde x$ and $\hat y$ reproduce the baseline, while $\bar x$ evolves
 through $g^{\mathrm n}_{\mathrm{aug}}$, as in~\cite[Eq.~(29)]{hoekstra2026lfr}.
+\revnote{The current results start with the whole output
+layer of $\phi_{\mathrm{aug}}$ at zero, so $g_{\mathrm{aug}}=0$ and the added
+states are zero after the first step. The final runs will use live
+$g_{\mathrm{aug}}$ as described here.}
 \todo{Current runs: the 2026-10-11 runs (R1 to R7) set the whole output layer of $\phi_{\mathrm{aug}}$ to zero (\texttt{G\_INIT} zero, D-240), as the authors' public code does (D-237), so $g^{\mathrm n}_{\mathrm{aug}}=0$ and $\bar x$ is zero after the first step. The final runs use \eqref{eq:aug_init} (D-248, \texttt{FINAL-RUN-FIXES.md} item~6).}
 
 \subsection{Added-state initialisation}\label{sec:aug_ps2}
@@ -998,6 +1010,9 @@ samples up to $\tau$, $\chi_\tau$, to estimate the initial state $\hat x^{\mathr
 From this state the augmented model is simulated in the closed loop of 
 Section~\ref{sec:aug_loop}.
 We calculate the residual from the next $H=n+1$ samples, from $\tau+1$ to $\tau+H$.
+\revnote{The current results use a residual target starting at $\tau$, so the
+encoder and target share sample $\tau$. The final runs will start the target
+at $\tau+1$, as described here.}
 The top of Fig.~\ref{fig:ps2_windows} shows the window $\chi_\tau$ and the
 samples of the residual $e_\tau$.
 We have chosen to use the same number of samples as the encoder window.
