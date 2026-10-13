@@ -18,7 +18,7 @@
 % Hoekstra et al. 2025 EJC: dynamic-parallel topology, additional states, encoder-based truncated simulation.
 % Hoekstra et al. 2026 Automatica submission: extended LFR formulation, baseline-preserving model/encoder initialization, joint identification context.
 % Hoekstra et al. 2026 encoder paper: reconstructability-based W^b initialization; it does not identify W^a or test dynamic augmentation.
-% Kessels 2025 thesis: direct closed-loop rollout, controller equations, and reconstruction of the sytem controller state for each window.
+% Kessels 2025 thesis: direct closed-loop rollout, controller equations, and reconstruction of the system controller state for each window.
 % Drenth 2025 thesis: LPV-specific augmentation precedent; not the unrestricted MLP structure used here.
 % This project: gantry specialization, residual-loop implementation, exact routing, RK4 boundary, and verification.
 %
@@ -78,12 +78,12 @@
 %     stabilising controller can be. Precondition, not a proof, for our nonlinear model. Same principle
 %     as Kessels (closed-loop simulation of an unstable open-loop system), scoped to marginal stability.
 % 13. Our formulation (ours, "we"): u_hat = u + C x^c + D(y - y_hat). Derivation by subtracting the
-%     sytem's controller equations, equal to the shared-r, shared-u_ff loop of the figure under a
+%     system's controller equations, equal to the shared-r, shared-u_ff loop of the figure under a
 %     compatible controller, signals and initial state (assumption; whether the data meet it is a Setup
 %     or Results check: 4 kHz controller on recorded r - y versus recorded feedback force).
 %     Main consequence: x^c_tau = 0 per window, no controller initialisation; consistent with the
-%     encoder (model state and model controller both start on the sytem's condition at tau). Contrast:
-%     Kessels' direct form needs the sytem controller state (Remark 5.4). Error before tau is not
+%     encoder (model state and model controller both start on the system's condition at tau). Contrast:
+%     Kessels' direct form needs the system controller state (Remark 5.4). Error before tau is not
 %     carried in; the free-run validation does carry it.
 % 14. Step order from no plant feedthrough: no algebraic loop, no added delay.
 % 15. Every window sample scored (as Eq. 22); theta_base, theta_aug, eta joint, controller fixed.
@@ -122,7 +122,7 @@
 % 20. S3: decoder discarded, eq:aug_loss continues unchanged; deployed model, criterion and selection
 %     unchanged; added states stay latent; M_PS2 named.
 % Notation set in this session: encoder window chi_tau (xi is the training coordinate Section IV uses);
-%   encoder parameters theta_enc and its added-state part theta^a_enc (Section IV); sytem controller state
+%   encoder parameters theta_enc and its added-state part theta^a_enc (Section IV); system controller state
 %   x^fb (s is the m_Delta scale of the appendix); normalised signals carry a superscript n (Section IV);
 %   the model input is u_act, as in the code and Section II-D, with P inside f_base through eq:eom.
 %
@@ -158,9 +158,9 @@
 %    to III-A, which keeps its own drift sentences) violating Beintema Cond. 1. Motivation, not a proof.
 % 2. The idea is Kessels' (Eqs. 5.12, 5.13d): the known controller in the rollout, error against the model
 %    output. Both loops displayed, shared r and u_ff; the model input is u_act, the force into the plant.
-% 3. This work: the controller is LTI, so subtracting the sytem loop cancels r and u_ff; the residual form
+% 3. This work: the controller is LTI, so subtracting the system loop cancels r and u_ff; the residual form
 %    needs only the recorded u_act and y and is exact when u_act was produced by this controller from y.
-% 4. This work: x^c_tau = 0 starts the model's controller in the sytem's controller state, as the encoder
+% 4. This work: x^c_tau = 0 starts the model's controller in the system's controller state, as the encoder
 %    does for the plant state; no controller state is estimated (unlike Kessels Remark 5.4), r and u_ff are
 %    not needed. It drops the controller-state difference from model error before tau; the free run keeps it.
 % 5. Step order from no plant feedthrough (as Kessels Remark 5.1); the output error re-enters the input and is
@@ -590,9 +590,9 @@ at comparable final accuracy~\cite[Sec.~4.4]{hoekstra2026encoder}.
 \ifdraft
 \begin{itemize}
 \item The model is not driven by the recorded input (2026 Eq.~(22)), for two reasons: noise-induced bias under feedback (Kessels Remark~5.6, SUBNET; indirect approach, Forssell and Ljung) and the free axes of Section~\ref{sec:aug_structure}, which violate the stability condition behind SUBNET consistency (Beintema Cond.~1); motivation, not a proof
-\item As in Kessels (Eqs.~(5.12), (5.13)), each window is simulated in closed loop with the known controller, which forms its error against the model output; sytem and model loops share $r$ and $u^{\mathrm{ff}}$
-\item The controller is linear and time invariant, so subtracting the sytem's loop cancels $r$ and $u^{\mathrm{ff}}$; the residual form needs only the recorded $u_{\mathrm{act}}$ and $y$, and is exact when $u_{\mathrm{act}}$ was produced by this controller from $y$ (this work)
-\item $x^{c}_\tau=0$ starts the model's controller in the sytem's controller state, as the encoder does for the plant state; no controller state is estimated, unlike Kessels Remark~5.4 (this work)
+\item As in Kessels (Eqs.~(5.12), (5.13)), each window is simulated in closed loop with the known controller, which forms its error against the model output; system and model loops share $r$ and $u^{\mathrm{ff}}$
+\item The controller is linear and time invariant, so subtracting the system's loop cancels $r$ and $u^{\mathrm{ff}}$; the residual form needs only the recorded $u_{\mathrm{act}}$ and $y$, and is exact when $u_{\mathrm{act}}$ was produced by this controller from $y$ (this work)
+\item $x^{c}_\tau=0$ starts the model's controller in the system's controller state, as the encoder does for the plant state; no controller state is estimated, unlike Kessels Remark~5.4 (this work)
 \item No plant feedthrough fixes the step order, so $D_{\mathrm{fb}}$ closes no algebraic loop (as Kessels Remark~5.1); one normalised step displayed
 \item The output error re-enters the model input, so part of it is corrected within the window; error before $\tau$ is not carried in, the free-run validation carries it
 \end{itemize}
@@ -660,7 +660,7 @@ The model uses the calculated actuator force $\hat u_{\mathrm{act},k}$
 instead of the recorded $u_{\mathrm{act},k}$
 in \eqref{eq:aug_transition}.
 \\
-Since we use a linear controller we are able to substract the system 
+Since we use a linear controller we are able to subtract the system 
 and model controller equations to cancel $r$ and $u^{\mathrm{ff}}$.
 This leaves us with the controller state difference
 $x^c=\hat x^{\mathrm{fb}}-x^{\mathrm{fb}}$,
@@ -672,7 +672,7 @@ the equations are only approximate and noise-induced bias
 cannot be ruled out.
 \\
 At the start of each training window we set $x^c_\tau=0$, 
-which sets the model's controller state equal to that of the sytem at $\tau$.
+which sets the model's controller state equal to that of the system at $\tau$.
 Therefore the encoder only has to initialize the states of the model.
 Kessels instead uses the system's controller state at the start of each
 window, either measured directly or calculated by simulating the
@@ -685,19 +685,33 @@ We then write the closed-loop model in \eqref{eq:aug_two_loops} as
 \end{aligned}
 \label{eq:aug_residual_loop}
 \end{equation}
-which needs only the recorded $u_{\mathrm{act}}$ and $y$.
-Within a window, $\hat y$ is still the response of the model loop to $r$ and
-$u^{\mathrm{ff}}$ from the states at $\tau$, although neither signal is used.
-\todo{Check for Setup: the training loop uses the controller re-discretised at the model rate, while the records were generated at a higher rate. Run the re-discretised controller on the recorded $r-y$ and compare its feedback force with the recorded one. A rollout with $\hat y=y$ gives $\hat u=u$ by construction and checks nothing. Related: \texttt{FINAL-RUN-FIXES.md} item~3, the D-232 leak check on the lowpass data, passed (0.22 to 0.50~nm).}
-
-The output of the augmented model depends on its state only, so each sample is
-evaluated in a fixed order: the output, then the error and the model input,
-then the model and controller states advance.
-The controller feedthrough $D_{\mathrm{fb}}$ therefore closes no algebraic
-loop, for the same reason that Kessels' output augmentation does not depend
-on the input~\cite[Remark~5.1]{kessels2025ai}.
-In the coordinates of \eqref{eq:aug_norm}, where the output means cancel in
-the error, one step of a window started at $\tau$ is
+which only need the recorded $u_{\mathrm{act}}$ and $y$.
+\todo{\todo{Should be discussed in the setup for controller discretization}
+Check for Setup: the training loop uses the 
+controller re-discretised at the model rate, 
+while the records were generated at a higher rate. 
+Run the re-discretised controller on the recorded $r-y$ and 
+compare its feedback force with the recorded one. 
+A rollout with $\hat y=y$ gives $\hat u=u$ 
+by construction and checks nothing. 
+Related: \texttt{FINAL-RUN-FIXES.md} item~3, 
+the D-232 leak check on the lowpass data, passed (0.22 to 0.50~nm).}
+\\
+The model output depends only on the state.
+For each sample we first calculate the output and then
+the error and model input before updating the states.
+This avoids an algebraic loop through $D_{\mathrm{fb}}$,
+as described by Kessels~\cite[Remark~5.1]{kessels2025ai}.
+For a window starting at $\tau$, the model equations
+in the normalised coordinates of \eqref{eq:aug_norm} are
+% The output of the augmented model depends on its state only, so each sample is
+% evaluated in a fixed order: the output, then the error and the model input,
+% then the model and controller states advance.
+% The controller feedthrough $D_{\mathrm{fb}}$ therefore closes no algebraic
+% loop, for the same reason that Kessels' output augmentation does not depend
+% on the input~\cite[Remark~5.1]{kessels2025ai}.
+% In the coordinates of \eqref{eq:aug_norm}, where the output means cancel in
+% the error, one step of a window started at $\tau$ is
 \begin{equation}
 \begin{aligned}
  \hat y^{\mathrm n}_{k|\tau}&=C^{\mathrm n}\tilde x^{\mathrm n}_{k|\tau},\qquad
@@ -708,26 +722,30 @@ the error, one step of a window started at $\tau$ is
 \end{aligned}
 \label{eq:aug_cl_step}
 \end{equation}
-after which $\hat x^{\mathrm n}_{k+1|\tau}$ follows from
-\eqref{eq:aug_transition} with input $\hat u^{\mathrm n}_{k|\tau}$, starting
-from the encoder state \eqref{eq:aug_encoder}.
-Here $\varepsilon_{k|\tau}=y_k-\hat y_{k|\tau}$ is the output error in metres.
-
-The output error of the model thus re-enters its own input through the
-controller, so part of a model error is corrected within the window, as on
-the sytem.
-Model error made before $\tau$ is not carried into the window, because the
-model state and $x^{c}$ both restart at $\tau$.
-The free-run validation of Section~\ref{sec:aug_closed_loop} applies
-\eqref{eq:aug_cl_step} over whole records and does carry it.
-
+and the next model state $\hat x^{\mathrm n}_{k+1|\tau}$
+is calculated using \eqref{eq:aug_transition}
+with input $\hat u^{\mathrm n}_{k|\tau}$.
+Each window starts from the encoder state in
+\eqref{eq:aug_encoder}.
+The output error $\varepsilon_{k|\tau}=y_k-\hat y_{k|\tau}$
+is in metres.
+\\
+The controller uses the output error to correct the model input
+within the training window, as in the closed loop of the system.
+Each window starts from a new encoder estimate and $x^c_\tau=0$,
+so the window is not affected by model errors before $\tau$.
+The validation of Section~\ref{sec:aug_closed_loop} is simulated 
+in closed-loop and only initialized at the start. 
 \begin{figure}[t]
  \centering
  \includegraphics[width=\columnwidth]{closed_loop_same_reference.pdf}
- \caption{Recorded plant loop (top) and augmented-model loop (bottom),
- driven by one shared reference $r_k$ and feedforward $u_k^{\mathrm{ff}}$,
- with the same feedback controller. The model output is evaluated
- before the input moves its state to the next sample.}
+ \caption{
+Recorded plant loop (top) and augmented model loop (bottom),
+both using the same feedback controller, reference $r_k$
+and feedforward $u_k^{\mathrm{ff}}$.
+The model output is calculated before the input updates
+the model state.
+}
  \label{fig:aug_closed_loop}
 \end{figure}
 
