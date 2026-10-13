@@ -1,14 +1,14 @@
 # Fdb version 4
-["bibtex build/main"] 1791918350.57264 "build/main.aux" "build/main.bbl" "build/main" 1791918649.77798 0
+["bibtex build/main"] 1791920958.43299 "build/main.aux" "build/main.bbl" "build/main" 1791920965.2991 0
   "./IEEEabrv.bib" 1789999553 17841 5f68ac6bd88a4483a55f39046634d899 ""
   "./IEEEtran.bst" 1789999553 61632 bc5380b3434a66b895bbc75d3d380540 ""
   "./refs.bib" 1791905627 22073 9208c99871076dba023b0c03e7e61653 ""
-  "build/main.aux" 1791918648 22478 b9e52d19b0a6f7394f2605b5e88eadd7 "pdflatex"
+  "build/main.aux" 1791920963 22534 fc435abe3f8fc43a869ec0a98f6d75f2 "pdflatex"
   (generated)
   "build/main.bbl"
   "build/main.blg"
   (rewritten before read)
-["pdflatex"] 1791918643.11744 "c:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/Thesis-writeup/Writing/main.tex" "build/main.pdf" "main" 1791918649.77907 0
+["pdflatex"] 1791920958.93915 "c:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/Thesis-writeup/Writing/main.tex" "build/main.pdf" "main" 1791920965.30009 0
   "C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1791741120 122874 9195f0588e30cb644cb9f8108da0b71a ""
   "C:/Users/20203253/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1774359590 13335301 4af29fd5c72fbf51e4db50c9b05a27bf ""
   "C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -229,10 +229,10 @@
   "C:/Users/20203253/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "C:/Users/20203253/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1729265222 55384 b454dec21c2d9f45ec0b793f0995b992 ""
   "IEEEtran.cls" 1789999553 288304 5b2e4fa15b0f7eabb840ebf67df4c0f7 ""
-  "build/comment.cut" 1791918648 731 2e7c88f9928588c97ea582908529dc78 "pdflatex"
-  "build/main.aux" 1791918648 22478 b9e52d19b0a6f7394f2605b5e88eadd7 "pdflatex"
-  "build/main.bbl" 1791918350 7663 8226be26e1a1fdc4c6eb7de1b1a99f34 "bibtex build/main"
-  "build/main.out" 1791918648 7817 6fde102bf1907db7809227638f4bda1a "pdflatex"
+  "build/comment.cut" 1791920963 731 2e7c88f9928588c97ea582908529dc78 "pdflatex"
+  "build/main.aux" 1791920963 22534 fc435abe3f8fc43a869ec0a98f6d75f2 "pdflatex"
+  "build/main.bbl" 1791920958 7663 8226be26e1a1fdc4c6eb7de1b1a99f34 "bibtex build/main"
+  "build/main.out" 1791920963 7817 6fde102bf1907db7809227638f4bda1a "pdflatex"
   "c:/Users/20203253/OneDrive - TU Eindhoven/Graduation Project/Baseline FP model/Baseline-LPV-Augmentation/Thesis-writeup/Writing/main.tex" 1791743094 1919 a52ddd56ce4b811ce03f3de7b563c53e ""
   "figures/closed_loop_same_reference.pdf" 1791203554 74979 2316253766c7759f2aaf91b01039a7c2 ""
   "figures/gantry_system_with_absorber.tex" 1790173562 9780 982338748e6e29347b4c3316e9f83d94 ""
@@ -247,7 +247,7 @@
   "sections/00_abstract.tex" 1791745505 2698 460cc99527539b948998833df61bca50 ""
   "sections/01_introduction.tex" 1791917713 19281 af20e6ba892dc735393dee75bd74ad59 ""
   "sections/02_system_baseline.tex" 1791809590 22483 162c2957fee2a1415c9dc506258e19ec ""
-  "sections/03_augmentation.tex" 1791918642 79401 6c6aa74beba632753b812cc9aa24a2d2 ""
+  "sections/03_augmentation.tex" 1791920952 80967 95d7eb62ba2041148e3b255310b3d949 ""
   "sections/04_obc.tex" 1791912308 31413 14b36005efb85b60a96a830a66982d9d ""
   "sections/05_setup.tex" 1791912308 15173 6b3c62152007cae0560467c3d88c3ae6 ""
   "sections/06_results.tex" 1791744373 11762 97d2c7747697de6925dba635aa12b62a ""

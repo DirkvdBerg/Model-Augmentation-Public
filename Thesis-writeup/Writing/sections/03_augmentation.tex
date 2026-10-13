@@ -753,7 +753,7 @@ The output error $\varepsilon_{k|\tau}=y_k-\hat y_{k|\tau}$
 is in metres.
 \\
 The controller uses the output error to correct the model input
-within the training window, as in the closed loop of the system.
+within the training window, as in the closed loop system.
 Each window starts from a new encoder estimate and $x^c_\tau=0$,
 so the window is not affected by model errors before $\tau$.
 The validation of Section~\ref{sec:aug_closed_loop} is simulated 
@@ -858,26 +858,28 @@ order'' with a pointer to it
 (basis: \texttt{04\_obc.tex} \eqref{eq:obc_coef}; 
 math check 2026-10-13, F1).}
 \\
-We minimise $V$ with Adam on minibatches of windows, with the gradient
-through the whole window.
+For training we minimise $V$ with Adam on minibatches of windows, and 
+the gradient is calculated over the full window.
 We then polish with L-BFGS on a fixed set of windows.
-This adapts the Adam and L-BFGS-B sequence of Drenth
+This is adapted from the Adam and L-BFGS-B sequence of Drenth
 et al.~\cite[Sec.~5.1]{drenth2025lpvlfr}.
-Our polish needs no bounds, because every $\beta$ is admissible.
-During Adam we keep the parameters with the lowest validation error.
-This error is the closed-loop free-run error over whole validation records,
-each simulated from one encoder start with $x^{c}=0$.
-The polish is kept only if it lowers this error.
-The encoder history $n$, the window length $n_f$, the added-state dimension
-$n_{\bar x}$, the width and depth of $\phi_{\mathrm{aug}}$ and the optimiser
-settings are given with their basis in Section~\ref{sec:setup}.
+Because every $\beta$ satisfies \eqref{eq:lfr_admissibility}, 
+unconstrained L-BFGS works without a bound.
+During the optimization with Adam the parameters with the lowest validation 
+error are kept.
+The error is the RMS output error in meters for each complete validation record, 
+simulated in closed loop with the initial state estimated
+once by the encoder and $x^c=0$.
+We only keep the polish if it lowers the validation error.
 \todo{Current runs (\texttt{FINAL-RUN-FIXES.md} item~2): the 2026-10-11 runs also reject the polish if \texttt{combo\_err}, the error of the ten combinations against the true parameters, rises by more than 0.1\,\%. This uses the simulated truth; the final runs accept on the validation error alone. \texttt{param\_loss} is zero in all thesis runs (\texttt{param\_prior} off).}
-
-Training starts from the baseline, as~\cite[Eq.~(29)]{hoekstra2026lfr}
-requires.
-Unlike~\cite[Sec.~5.4.3]{hoekstra2026lfr}, which adds a random linear bypass
-to a zero network, we zero only the physical rows of the output layer and keep
-its added-state rows random:
+\\
+We start training with the augmented model giving the same
+output as the baseline model from the same initial state, as required
+by~\cite[Eq.~(29)]{hoekstra2026lfr}. \revnote{I use the encoder 
+for my augmented model, so i state: model from the same initial state. 
+But i could leave it out.}
+Therefore we zero the physical rows of $\phi_{\mathrm{aug}}$ its output layer, 
+and the added-state rows are kept random:
 \begin{equation}
 \begin{aligned}
  &\text{baseline:} &&\beta=0,\\
@@ -888,19 +890,25 @@ its added-state rows random:
 \end{aligned}
  \label{eq:aug_init}
 \end{equation}
-where $W_L$ and $b_L$ are the weight and bias of the output layer of
-$\phi_{\mathrm{aug}}$, with the rows $W^{\tilde x}_L$ of
-$f^{\mathrm n}_{\mathrm{aug}}$ and $W^{\bar x}_L$ of
-$g^{\mathrm n}_{\mathrm{aug}}$, $n_h$ is its hidden width, and $\tilde W_L$
-and $\tilde b_L$ are the output layer of $\tilde\psi$.
-The bound $c$ is the default of the software, which also initialises all
-hidden layers.
-The bound $a$ is the uniform Xavier bound with gain one, following the
-initialisation of~\cite[Eq.~(31)]{hoekstra2026lfr}.
-Then $\theta_{\mathrm{base}}=\theta^0_{\mathrm{base}}$ and
-$f^{\mathrm n}_{\mathrm{aug}}=0$, so from the same physical initial state
-$\tilde x$ and $\hat y$ reproduce the baseline, while $\bar x$ evolves
-through $g^{\mathrm n}_{\mathrm{aug}}$, as in~\cite[Eq.~(29)]{hoekstra2026lfr}.
+where $W_L$ and $b_L$ are the output layer weights and bias of
+$\phi_{\mathrm{aug}}$, with rows $W^{\tilde x}_L$ for
+$f^{\mathrm n}_{\mathrm{aug}}$ and $W^{\bar x}_L$ for
+$g^{\mathrm n}_{\mathrm{aug}}$.
+The number of neurons per hidden layer $n_h$, 
+$\tilde W_L$ and $\tilde b_L$
+are the output layer weights and bias of $\tilde\psi$.
+We initialise $W^{\bar x}_L$ and the hidden layers of both networks
+from $\mathcal U(-1/\sqrt{m},1/\sqrt{m})$,
+where $m$ is the input size of the layer.
+We set $a$ to the Xavier uniform bound with gain one,
+as in~\cite[Eq.~(31)]{hoekstra2026lfr}.
+At the start of training, $\theta_{\mathrm{base}}=\theta^0_{\mathrm{base}}$
+and $f^{\mathrm n}_{\mathrm{aug}}=0$.
+The augmented model and baseline model give the same $\tilde x$ and $\hat y$, 
+given they start from the same physical state.
+The added states $\bar x$ are still updated by
+$g^{\mathrm n}_{\mathrm{aug}}$, as in~\cite[Eq.~(29)]{hoekstra2026lfr}.
+\\
 \revnote{The current results start with the whole output
 layer of $\phi_{\mathrm{aug}}$ at zero, so $g_{\mathrm{aug}}=0$ and the added
 states are zero after the first step. The final runs will use live
