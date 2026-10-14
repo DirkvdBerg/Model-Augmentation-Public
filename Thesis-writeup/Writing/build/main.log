@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  14 OCT 2026 11:29
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  14 OCT 2026 14:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -667,7 +667,6 @@ Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: hyperref package is loaded.
 Package caption Info: End \AtBeginDocument code.
 Package hyperref Info: Link coloring OFF on input line 22.
- (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out) (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out)
 \@outlinefile=\write5
 \openout5 = `main.out'.
 
@@ -712,102 +711,963 @@ File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut)) (sections/01_introduction.tex
 
-LaTeX Warning: Reference `sec:obc_scope' on page 1 undefined on input line 147.
+LaTeX Warning: Citation `irds2022' on page 1 undefined on input line 45.
+
+
+LaTeX Warning: Citation `workman2021diewafer' on page 1 undefined on input line 45.
+
+
+LaTeX Warning: Citation `garcia2013model' on page 1 undefined on input line 53.
+
+
+LaTeX Warning: Citation `teo2007dynamic' on page 1 undefined on input line 53.
+
+
+LaTeX Warning: Citation `garcia2013model' on page 1 undefined on input line 54.
+
+
+LaTeX Warning: Citation `lambrechts2005trajectory' on page 1 undefined on input line 59.
+
+
+LaTeX Warning: Citation `hwang2024semiconductor' on page 1 undefined on input line 88.
+
+
+LaTeX Warning: Citation `willard2020integrating' on page 1 undefined on input line 111.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 1 undefined on input line 113.
+
+
+LaTeX Warning: Citation `willard2020integrating' on page 1 undefined on input line 124.
+
+
+LaTeX Warning: Citation `willard2020integrating' on page 1 undefined on input line 127.
+
+
+LaTeX Warning: Citation `karniadakis2021physicsinformed' on page 1 undefined on input line 127.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 1 undefined on input line 132.
+
+
+LaTeX Warning: Citation `karniadakis2021physicsinformed' on page 1 undefined on input line 136.
+
+
+LaTeX Warning: Citation `raissi2017physicsinformedpart1' on page 1 undefined on input line 136.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 1 undefined on input line 138.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 1 undefined on input line 143.
+
+
+LaTeX Warning: Reference `sec:obc_map' on page 1 undefined on input line 147.
+
+
+LaTeX Warning: Citation `willard2020integrating' on page 1 undefined on input line 151.
+
+
+LaTeX Warning: Citation `noel2018greybox' on page 1 undefined on input line 156.
+
+
+LaTeX Warning: Citation `willard2020integrating' on page 1 undefined on input line 160.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 1 undefined on input line 160.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 1 undefined on input line 166.
+
+
+LaTeX Warning: Citation `kessels2025ai' on page 1 undefined on input line 171.
+
+
+LaTeX Warning: Citation `retzler2024' on page 1 undefined on input line 176.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 1 undefined on input line 184.
+
+
+LaTeX Warning: Citation `kessels2025ai' on page 1 undefined on input line 188.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 1 undefined on input line 193.
 
 [1{C:/Users/20203253/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}
 
 
-]) (sections/02_system_baseline.tex (figures/gantry_system_with_absorber.tex)
+]) (sections/02_system_baseline.tex
+
+LaTeX Warning: Citation `garcia2013model' on page 2 undefined on input line 78.
+
+
+LaTeX Warning: Reference `fig:gantry_system' on page 2 undefined on input line 80.
+
+
+LaTeX Warning: Reference `sec:augmentation' on page 2 undefined on input line 83.
+
+(figures/gantry_system_with_absorber.tex)
 Overfull \hbox (5.27286pt too wide) in paragraph at lines 197--90
  [][] 
  []
 
-[2] (figures/lfr_loop.tex) [3]
+
+LaTeX Warning: Citation `garcia2013model' on page 2 undefined on input line 90.
+
+
+LaTeX Warning: Citation `garcia2013model' on page 2 undefined on input line 90.
+
+
+LaTeX Warning: Citation `garcia2013model' on page 2 undefined on input line 119.
+
+
+LaTeX Warning: Citation `toth2010modeling' on page 2 undefined on input line 121.
+
+
+LaTeX Warning: Citation `garcia2013model' on page 2 undefined on input line 132.
+
+[2]
+
+LaTeX Warning: Citation `garcia2013model' on page 3 undefined on input line 173.
+
+
+LaTeX Warning: Reference `sec:setup' on page 3 undefined on input line 173.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 3 undefined on input line 173.
+
+
+LaTeX Warning: Reference `fig:gantry_system' on page 3 undefined on input line 176.
+
+
+LaTeX Warning: Citation `garcia2013model' on page 3 undefined on input line 179.
+
+
+LaTeX Warning: Reference `app:params' on page 3 undefined on input line 179.
+
+
+LaTeX Warning: Reference `app:params' on page 3 undefined on input line 181.
+
+
+LaTeX Warning: Reference `eq:eom' on page 3 undefined on input line 194.
+
+
+LaTeX Warning: Reference `eq:eom' on page 3 undefined on input line 200.
+
+
+LaTeX Warning: Reference `fig:lfr' on page 3 undefined on input line 203.
+
+
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 3 undefined on input line 203.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 3 undefined on input line 203.
+
+(figures/lfr_loop.tex)
+
+LaTeX Warning: Reference `eq:mass_matrix' on page 3 undefined on input line 218.
+
+
+LaTeX Warning: Reference `app:lfr-details' on page 3 undefined on input line 223.
+
+
+LaTeX Warning: Reference `eq:Msplit' on page 3 undefined on input line 224.
+
+
+LaTeX Warning: Reference `eq:eom' on page 3 undefined on input line 224.
+
+
+LaTeX Warning: Reference `eq:lfr_mass_factorization' on page 3 undefined on input line 239.
+
+
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 3 undefined on input line 258.
+
+
+LaTeX Warning: Reference `eq:lfr_constant' on page 3 undefined on input line 266.
+
+
+LaTeX Warning: Reference `app:lfr-details' on page 3 undefined on input line 266.
+
+
+LaTeX Warning: Reference `eq:delta' on page 3 undefined on input line 268.
+
+
+LaTeX Warning: Reference `eq:lfr_constant' on page 3 undefined on input line 269.
+
+
+LaTeX Warning: Reference `eq:eom' on page 3 undefined on input line 270.
+
+
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 3 undefined on input line 272.
+
+
+LaTeX Warning: Reference `app:lfr-details' on page 3 undefined on input line 274.
+
+
+LaTeX Warning: Reference `app:lfr-wellposed' on page 3 undefined on input line 276.
+
+[3]
+
+LaTeX Warning: Reference `eq:lfr_admissibility' on page 4 undefined on input line 286.
+
+
+LaTeX Warning: Reference `app:lfr-wellposed' on page 4 undefined on input line 286.
+
+
+LaTeX Warning: Reference `eq:lfr_admissibility' on page 4 undefined on input line 287.
+
+
+LaTeX Warning: Reference `sec:aug_closed_loop' on page 4 undefined on input line 287.
+
+
+LaTeX Warning: Reference `tab:nominal_parameters' on page 4 undefined on input line 292.
+
+
+LaTeX Warning: Reference `eq:Ptransform' on page 4 undefined on input line 294.
+
+
+LaTeX Warning: Reference `eq:mass_matrix' on page 4 undefined on input line 314.
+
+
+LaTeX Warning: Reference `eq:damping_stiffness_matrices' on page 4 undefined on input line 315.
+
+
+LaTeX Warning: Citation `ovchinnikov2021computing' on page 4 undefined on input line 324.
+
+
+LaTeX Warning: Citation `gautier1990minimum' on page 4 undefined on input line 335.
+
+
+LaTeX Warning: Reference `app:combos' on page 4 undefined on input line 337.
+
 
 LaTeX Warning: Reference `sec' on page 4 undefined on input line 339.
 
-) (sections/03_augmentation.tex [4] [5] (figures/tex/augmentation_structure.tex)
+
+LaTeX Warning: Reference `app:lfr-wellposed' on page 4 undefined on input line 359.
+
+
+LaTeX Warning: Reference `eq:lfr_admissibility' on page 4 undefined on input line 360.
+
+
+LaTeX Warning: Reference `sec:aug_closed_loop' on page 4 undefined on input line 363.
+
+) (sections/03_augmentation.tex
+
+LaTeX Warning: Reference `sec:lfr' on page 4 undefined on input line 203.
+
+
+LaTeX Warning: Reference `sec:params' on page 4 undefined on input line 216.
+
+[4]
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 5 undefined on input line 254.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 5 undefined on input line 256.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 5 undefined on input line 258.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 5 undefined on input line 262.
+
+
+LaTeX Warning: Reference `sec:lfr' on page 5 undefined on input line 265.
+
+
+LaTeX Warning: Reference `fig:lfr' on page 5 undefined on input line 265.
+
+
+LaTeX Warning: Reference `sec:lfr' on page 5 undefined on input line 268.
+
+
+LaTeX Warning: Citation `drenth2025thesis' on page 5 undefined on input line 271.
+
+
+LaTeX Warning: Reference `sec:obc' on page 5 undefined on input line 276.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 5 undefined on input line 277.
+
+
+LaTeX Warning: Reference `eq:Ptransform' on page 5 undefined on input line 279.
+
+
+LaTeX Warning: Citation `kessels2025ai' on page 5 undefined on input line 285.
+
+
+LaTeX Warning: Citation `drenth2025thesis' on page 5 undefined on input line 288.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 5 undefined on input line 299.
+
+
+LaTeX Warning: Reference `eq:lfr_G' on page 5 undefined on input line 313.
+
+
+LaTeX Warning: Reference `eq:phi' on page 5 undefined on input line 317.
+
+
+LaTeX Warning: Reference `eq:eom' on page 5 undefined on input line 324.
+
+
+LaTeX Warning: Reference `eq:Ptransform' on page 5 undefined on input line 331.
+
+
+LaTeX Warning: Reference `eq:phi' on page 5 undefined on input line 332.
+
+
+LaTeX Warning: Reference `sec:lfr' on page 5 undefined on input line 333.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 5 undefined on input line 346.
+
+
+LaTeX Warning: Reference `sec:lfr' on page 5 undefined on input line 346.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 5 undefined on input line 350.
+
+
+LaTeX Warning: Reference `eq:aug_norm' on page 5 undefined on input line 383.
+
+
+LaTeX Warning: Reference `fig:aug_structure' on page 5 undefined on input line 403.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 5 undefined on input line 405.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 5 undefined on input line 415.
+
+
+LaTeX Warning: Reference `eq:damping_stiffness_matrices' on page 5 undefined on input line 421.
+
+
+LaTeX Warning: Reference `sec:aug_loop' on page 5 undefined on input line 430.
+
+[5] (figures/tex/augmentation_structure.tex)
+
+LaTeX Warning: Reference `sec:aug_loop' on page 6 undefined on input line 444.
+
+
+LaTeX Warning: Reference `sec:aug_loop' on page 6 undefined on input line 444.
+
+
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
-\openout4 = `comment.cut'.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
-\openout4 = `comment.cut'.
+LaTeX Warning: Citation `beintema2023subnet' on page 6 undefined on input line 6.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
+
+LaTeX Warning: Citation `beintema2023subnet' on page 6 undefined on input line 8.
+
+
+LaTeX Warning: Citation `beintema2023subnet' on page 6 undefined on input line 11.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 6 undefined on input line 13.
+
+) Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
-LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 15.
- (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
+
+LaTeX Warning: Reference `eq:aug_loss' on page 6 undefined on input line 14.
+
+) Including 'wip' comment.
+\openout4 = `comment.cut'.
+
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+
+LaTeX Warning: Citation `hoekstra2026encoder' on page 6 undefined on input line 2.
+
+) [6] Including 'wip' comment.
+\openout4 = `comment.cut'.
+
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+
+LaTeX Warning: Reference `eq:aug_norm' on page 7 undefined on input line 17.
+
+LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 20.
+(C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
-)) [6] Including 'wip' comment.
+)) Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+
+! LaTeX Error: There's no line here to end.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.2 T
+     he physical rows are initialized from the baseline model.
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+
+LaTeX Warning: Reference `eq:eom' on page 7 undefined on input line 3.
+
+
+LaTeX Warning: Reference `sec:lfr' on page 7 undefined on input line 4.
+
+
+LaTeX Warning: Citation `hoekstra2026encoder' on page 7 undefined on input line 8.
+
+
+LaTeX Warning: Citation `hoekstra2026encoder' on page 7 undefined on input line 11.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 7 undefined on input line 12.
+
+
+LaTeX Warning: Reference `eq:aug_cl_step' on page 7 undefined on input line 17.
+
+
+LaTeX Warning: Reference `sec:aug_structure' on page 7 undefined on input line 19.
+
+) Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+
+LaTeX Warning: Reference `eq:aug_cl_step' on page 7 undefined on input line 4.
+
+
+LaTeX Warning: Reference `sec:aug_loop' on page 7 undefined on input line 7.
+
+
+LaTeX Warning: Reference `eq:aug_enc_sim' on page 7 undefined on input line 10.
+
+) Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 7 undefined on input line 2.
+
+) Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+
+LaTeX Warning: Citation `hoekstra2026encoder' on page 7 undefined on input line 3.
+
+
+LaTeX Warning: Reference `eq:aug_encoder' on page 7 undefined on input line 5.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 7 undefined on input line 8.
+
+
+LaTeX Warning: Reference `eq:aug_enc_sim' on page 7 undefined on input line 9.
+
+) Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
-\openout4 = `comment.cut'.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) [7]
-<figures/closed_loop_same_reference.pdf, id=425, 281.74458pt x 103.98448pt>
+LaTeX Warning: Citation `hoekstra2026encoder' on page 7 undefined on input line 4.
+
+
+LaTeX Warning: Citation `hoekstra2026encoder' on page 7 undefined on input line 14.
+
+)
+
+LaTeX Warning: Reference `sec:aug_structure' on page 7 undefined on input line 629.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 7 undefined on input line 642.
+
+
+LaTeX Warning: Citation `kessels2025ai' on page 7 undefined on input line 650.
+
+[7]
+
+LaTeX Warning: Citation `forssell1999revisited' on page 8 undefined on input line 655.
+
+
+LaTeX Warning: Reference `sec:aug_structure' on page 8 undefined on input line 658.
+
+
+LaTeX Warning: Citation `beintema2023subnet' on page 8 undefined on input line 663.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 8 undefined on input line 664.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 8 undefined on input line 665.
+
+
+LaTeX Warning: Reference `sec:setup' on page 8 undefined on input line 671.
+
+
+LaTeX Warning: Reference `sec:results' on page 8 undefined on input line 672.
+
+
+LaTeX Warning: Citation `kessels2025ai' on page 8 undefined on input line 675.
+
+
+LaTeX Warning: Reference `fig:aug_closed_loop' on page 8 undefined on input line 682.
+
+
+LaTeX Warning: Reference `eq:aug_transition' on page 8 undefined on input line 699.
+
+
+LaTeX Warning: Citation `kessels2025ai' on page 8 undefined on input line 717.
+
+
+LaTeX Warning: Reference `eq:aug_two_loops' on page 8 undefined on input line 718.
+
+
+LaTeX Warning: Citation `kessels2025ai' on page 8 undefined on input line 742.
+
+
+LaTeX Warning: Reference `eq:aug_norm' on page 8 undefined on input line 744.
+
+
+LaTeX Warning: Reference `eq:aug_norm_maps' on page 8 undefined on input line 764.
+
+
+LaTeX Warning: Reference `eq:aug_encoder' on page 8 undefined on input line 767.
+
+
+LaTeX Warning: Reference `sec:aug_closed_loop' on page 8 undefined on input line 775.
+
+<figures/closed_loop_same_reference.pdf, id=94, 281.74458pt x 103.98448pt>
 File: figures/closed_loop_same_reference.pdf Graphic file (type pdf)
 <use figures/closed_loop_same_reference.pdf>
-Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 760.
+Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 779.
 (pdftex.def)             Requested size: 252.0pt x 93.00919pt.
- [8 <./figures/closed_loop_same_reference.pdf>]
-Overfull \hbox (0.51308pt too wide) detected at line 831
+
+LaTeX Warning: Reference `eq:mdelta_map' on page 8 undefined on input line 794.
+
+[8 <./figures/closed_loop_same_reference.pdf>]
+
+LaTeX Warning: Reference `eq:aug_loss' on page 9 undefined on input line 795.
+
+
+LaTeX Warning: Reference `sec:aug_loop' on page 9 undefined on input line 795.
+
+
+LaTeX Warning: Reference `sec:aug_encoder' on page 9 undefined on input line 795.
+
+
+LaTeX Warning: Reference `eq:aug_init' on page 9 undefined on input line 798.
+
+
+LaTeX Warning: Reference `sec:setup' on page 9 undefined on input line 798.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 9 undefined on input line 802.
+
+
+LaTeX Warning: Reference `eq:lfr_admissibility' on page 9 undefined on input line 807.
+
+
+LaTeX Warning: Reference `app:lfr-wellposed' on page 9 undefined on input line 821.
+
+
+LaTeX Warning: Reference `eq:lfr_admissibility' on page 9 undefined on input line 824.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 9 undefined on input line 831.
+
+
+LaTeX Warning: Reference `sec:aug_loop' on page 9 undefined on input line 832.
+
+
+LaTeX Warning: Reference `sec:aug_encoder' on page 9 undefined on input line 833.
+
+
+LaTeX Warning: Reference `eq:aug_cl_step' on page 9 undefined on input line 847.
+
+
+Overfull \hbox (0.51308pt too wide) detected at line 850
 [][][][][]
  []
 
-[9] (figures/tex/ps2_windows.tex) [10]) (sections/04_obc.tex [11] Including 'wip' comment.
+
+LaTeX Warning: Reference `sec:results' on page 9 undefined on input line 857.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 9 undefined on input line 861.
+
+
+LaTeX Warning: Reference `sec:intro' on page 9 undefined on input line 863.
+
+
+LaTeX Warning: Reference `sec:obc' on page 9 undefined on input line 864.
+
+
+LaTeX Warning: Reference `sec:obc' on page 9 undefined on input line 875.
+
+
+LaTeX Warning: Reference `eq:aug_loss' on page 9 undefined on input line 875.
+
+
+LaTeX Warning: Reference `sec:obc' on page 9 undefined on input line 875.
+
+
+LaTeX Warning: Reference `eq:obc_coef' on page 9 undefined on input line 875.
+
+
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 9 undefined on input line 881.
+
+
+LaTeX Warning: Reference `eq:lfr_admissibility' on page 9 undefined on input line 882.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 9 undefined on input line 894.
+
+
+LaTeX Warning: Reference `eq:aug_enc_fit' on page 9 undefined on input line 903.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 9 undefined on input line 920.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 9 undefined on input line 928.
+
+
+LaTeX Warning: Citation `hoekstra2026encoder' on page 9 undefined on input line 934.
+
+
+LaTeX Warning: Reference `eq:aug_enc_fit' on page 9 undefined on input line 934.
+
+
+LaTeX Warning: Reference `eq:aug_init' on page 9 undefined on input line 939.
+
+[9]
+
+LaTeX Warning: Reference `eq:aug_init' on page 10 undefined on input line 944.
+
+
+LaTeX Warning: Reference `eq:aug_loss' on page 10 undefined on input line 949.
+
+
+LaTeX Warning: Reference `eq:aug_enc_fit' on page 10 undefined on input line 955.
+
+
+LaTeX Warning: Reference `eq:aug_transition' on page 10 undefined on input line 958.
+
+
+LaTeX Warning: Reference `eq:aug_loss' on page 10 undefined on input line 963.
+
+
+LaTeX Warning: Reference `eq:aug_loss' on page 10 undefined on input line 965.
+
+
+LaTeX Warning: Reference `sec:results' on page 10 undefined on input line 970.
+
+
+LaTeX Warning: Reference `eq:aug_init' on page 10 undefined on input line 975.
+
+
+LaTeX Warning: Reference `sec:aug_closed_loop' on page 10 undefined on input line 975.
+
+
+LaTeX Warning: Reference `eq:aug_loss' on page 10 undefined on input line 982.
+
+
+LaTeX Warning: Citation `hefny2015supervised' on page 10 undefined on input line 984.
+
+
+LaTeX Warning: Citation `downey2017psrnn' on page 10 undefined on input line 985.
+
+
+LaTeX Warning: Citation `hefny2015supervised' on page 10 undefined on input line 989.
+
+
+LaTeX Warning: Citation `downey2017psrnn' on page 10 undefined on input line 993.
+
+
+LaTeX Warning: Reference `fig:ps2_windows' on page 10 undefined on input line 994.
+
+(figures/tex/ps2_windows.tex)
+
+LaTeX Warning: Citation `hefny2015supervised' on page 10 undefined on input line 1007.
+
+
+LaTeX Warning: Reference `eq:ps2_s1' on page 10 undefined on input line 1007.
+
+
+LaTeX Warning: Reference `eq:ps2_s2' on page 10 undefined on input line 1007.
+
+
+LaTeX Warning: Citation `hefny2015supervised' on page 10 undefined on input line 1007.
+
+
+LaTeX Warning: Reference `eq:ps2_s1' on page 10 undefined on input line 1007.
+
+
+LaTeX Warning: Reference `eq:ps2_s2' on page 10 undefined on input line 1007.
+
+
+LaTeX Warning: Reference `eq:aug_transition' on page 10 undefined on input line 1016.
+
+
+LaTeX Warning: Reference `eq:ps2_nu' on page 10 undefined on input line 1021.
+
+
+LaTeX Warning: Reference `sec:aug_loop' on page 10 undefined on input line 1026.
+
+
+LaTeX Warning: Reference `fig:ps2_windows' on page 10 undefined on input line 1031.
+
+[10]
+
+LaTeX Warning: Reference `sec:aug_loop' on page 11 undefined on input line 1060.
+
+
+LaTeX Warning: Citation `hefny2015supervised' on page 11 undefined on input line 1086.
+
+
+LaTeX Warning: Citation `hefny2015supervised' on page 11 undefined on input line 1088.
+
+
+LaTeX Warning: Citation `venkatraman2017psd' on page 11 undefined on input line 1095.
+
+
+LaTeX Warning: Reference `eq:ps2_s1' on page 11 undefined on input line 1098.
+
+
+LaTeX Warning: Reference `app:ps_stop' on page 11 undefined on input line 1113.
+
+
+LaTeX Warning: Reference `sec:setup' on page 11 undefined on input line 1114.
+
+
+LaTeX Warning: Reference `fig:ps2_windows' on page 11 undefined on input line 1129.
+
+
+LaTeX Warning: Reference `eq:aug_residual_loop' on page 11 undefined on input line 1162.
+
+
+LaTeX Warning: Citation `hefny2015supervised' on page 11 undefined on input line 1179.
+
+
+LaTeX Warning: Reference `eq:aug_loss' on page 11 undefined on input line 1181.
+
+[11]
+
+LaTeX Warning: Reference `sec:aug_closed_loop' on page 12 undefined on input line 1187.
+
+) (sections/04_obc.tex Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 
-LaTeX Warning: Reference `sec:obc_scope' on page 12 undefined on input line 8.
+LaTeX Warning: Reference `sec:aug_closed_loop' on page 12 undefined on input line 2.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 12 undefined on input line 4.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 12 undefined on input line 9.
+
+
+LaTeX Warning: Reference `sec:obc_map' on page 12 undefined on input line 14.
+
+
+LaTeX Warning: Reference `sec:obc_ident' on page 12 undefined on input line 17.
+
+)
+Underfull \hbox (badness 1502) in paragraph at lines 102--103
+\OT1/ptm/m/n/10 (+20) po-si-tions, dif-fer-enced ve-loc-i-ties, $[] \OT1/cmr/m/n/10 = 0$\OT1/ptm/m/n/10 (+20) , recorded
+ []
+
+
+LaTeX Warning: Reference `eq:obc_eps' on page 12 undefined on input line 106.
+
+Including 'wip' comment.
+\openout4 = `comment.cut'.
+
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+
+LaTeX Warning: Citation `kessels2025ai' on page 12 undefined on input line 4.
+
+
+LaTeX Warning: Reference `eq:mdelta_map' on page 12 undefined on input line 6.
+
+
+LaTeX Warning: Reference `eq:eom' on page 12 undefined on input line 14.
+
+
+LaTeX Warning: Citation `gyorok2025l4dc' on page 12 undefined on input line 19.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 12 undefined on input line 22.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 12 undefined on input line 23.
+
+
+LaTeX Warning: Citation `gyorok2025l4dc' on page 12 undefined on input line 28.
+
+
+LaTeX Warning: Reference `sec:params' on page 12 undefined on input line 30.
+
+
+LaTeX Warning: Reference `eq:mdelta_map' on page 12 undefined on input line 32.
+
+
+LaTeX Warning: Citation `gyorok2025l4dc' on page 12 undefined on input line 37.
+
+
+LaTeX Warning: Reference `eq:obc_eps' on page 12 undefined on input line 41.
+
+
+LaTeX Warning: Reference `eq:aug_norm' on page 12 undefined on input line 45.
+
+) [12] Including 'wip' comment.
+\openout4 = `comment.cut'.
+
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+
+LaTeX Warning: Reference `eq:obc_eps' on page 13 undefined on input line 3.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 13 undefined on input line 3.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 13 undefined on input line 3.
+
+
+LaTeX Warning: Citation `gyorok2025l4dc' on page 13 undefined on input line 3.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 13 undefined on input line 6.
+
+
+LaTeX Warning: Citation `gyorok2025l4dc' on page 13 undefined on input line 17.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 13 undefined on input line 19.
+
+
+LaTeX Warning: Reference `eq:obc_eps' on page 13 undefined on input line 24.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 13 undefined on input line 29.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 13 undefined on input line 31.
 
 ) Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 
-LaTeX Warning: Reference `sec:obc_scope' on page 12 undefined on input line 37.
+LaTeX Warning: Reference `eq:aug_norm' on page 13 undefined on input line 3.
 
-) Including 'wip' comment.
+
+LaTeX Warning: Citation `gyorok2026obc' on page 13 undefined on input line 9.
+
+)
+
+LaTeX Warning: Reference `eq:aug_loss' on page 13 undefined on input line 251.
+
+Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 
-LaTeX Warning: Reference `sec:obc_scope' on page 12 undefined on input line 3.
+LaTeX Warning: Citation `gyorok2025l4dc' on page 13 undefined on input line 15.
 
-[12]) Including 'wip' comment.
+
+LaTeX Warning: Citation `gyorok2025l4dc' on page 13 undefined on input line 17.
+
+) [13] Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+
+LaTeX Warning: Citation `gyorok2026obc' on page 14 undefined on input line 17.
+
+
+LaTeX Warning: Citation `gyorok2026obc' on page 14 undefined on input line 23.
+
+
+LaTeX Warning: Reference `eq:obc_problem' on page 14 undefined on input line 25.
+
+)
+
+LaTeX Warning: Reference `eq:obc_corr' on page 14 undefined on input line 316.
+
+
+LaTeX Warning: Reference `sec:aug_closed_loop' on page 14 undefined on input line 326.
+
+Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+
+LaTeX Warning: Reference `sec:aug_closed_loop' on page 14 undefined on input line 1.
+
+)
+
+LaTeX Warning: Reference `eq:aug_loss' on page 14 undefined on input line 345.
+
+Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
-\openout4 = `comment.cut'.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut [13])) (sections/05_setup.tex (figures/gantry_system_with_absorber.tex) Including 'wip' comment.
+LaTeX Warning: Reference `eq:obc_corr' on page 14 undefined on input line 1.
+
+
+LaTeX Warning: Reference `sec:obc_map' on page 14 undefined on input line 2.
+
+
+LaTeX Warning: Reference `eq:obc_coef' on page 14 undefined on input line 3.
+
+
+LaTeX Warning: Reference `sec:aug_ps2' on page 14 undefined on input line 6.
+
+
+LaTeX Warning: Reference `sec:aug_closed_loop' on page 14 undefined on input line 7.
+
+
+LaTeX Warning: Reference `sec:aug_closed_loop' on page 14 undefined on input line 18.
+
+
+LaTeX Warning: Reference `sec:aug_closed_loop' on page 14 undefined on input line 27.
+
+
+LaTeX Warning: Reference `eq:obc_corr' on page 14 undefined on input line 30.
+
+
+LaTeX Warning: Reference `eq:obc_problem' on page 14 undefined on input line 30.
+
+
+LaTeX Warning: Reference `sec:results' on page 14 undefined on input line 35.
+
+)) (sections/05_setup.tex (figures/gantry_system_with_absorber.tex)
+
+LaTeX Warning: Reference `fig:gantry_absorber' on page 14 undefined on input line 23.
+
+[14]
+
+LaTeX Warning: Reference `tab:res_obc' on page 15 undefined on input line 51.
+
+
+LaTeX Warning: Reference `eq:obc_coef' on page 15 undefined on input line 51.
+
+
+LaTeX Warning: Reference `eq:obc_corr' on page 15 undefined on input line 51.
+
+Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
@@ -815,8 +1675,15 @@ Underfull \hbox (badness 3460) in paragraph at lines 6--7
 \OT1/ptm/m/n/10 (+20) matched to the fric-tion-less ex-ci-ta-tion; the ear-lier
  []
 
-[14]
-Underfull \vbox (badness 1540) has occurred while \output is active []
+
+LaTeX Warning: Citation `lee2020feeddrive' on page 15 undefined on input line 7.
+
+
+LaTeX Warning: Citation `lee2020feeddrive' on page 15 undefined on input line 7.
+
+[15]
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 16 undefined on input line 36.
 
 
 Underfull \hbox (badness 2547) in paragraph at lines 38--39
@@ -829,9 +1696,18 @@ Underfull \hbox (badness 3769) in paragraph at lines 38--39
  []
 
 
-Underfull \vbox (badness 6078) has occurred while \output is active []
+LaTeX Warning: Reference `sec:obc' on page 16 undefined on input line 39.
 
- [15]
+
+LaTeX Warning: Reference `sec:obc' on page 16 undefined on input line 41.
+
+
+LaTeX Warning: Reference `eq:mdelta_map' on page 16 undefined on input line 42.
+
+
+LaTeX Warning: Reference `sec:aug_loop' on page 16 undefined on input line 57.
+
+[16]
 Underfull \hbox (badness 10000) in paragraph at lines 61--62
 []\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, ap-pendix can-di-date): use
  []
@@ -841,41 +1717,62 @@ Underfull \hbox (badness 4819) in paragraph at lines 61--62
 \OT1/pcr/m/n/10 controller-chain-v1 \OT1/ptm/m/n/10 (+20) only as an au-dit trail
  []
 
-)) (sections/06_results.tex Including 'wip' comment.
+)) (sections/06_results.tex
+
+LaTeX Warning: Reference `fig:res_lpv_lti' on page 17 undefined on input line 15.
+
+Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut)
-<figures/res_lpv_lti.pdf, id=661, 231.04317pt x 146.8958pt>
+<figures/res_lpv_lti.pdf, id=218, 231.04317pt x 146.8958pt>
 File: figures/res_lpv_lti.pdf Graphic file (type pdf)
 <use figures/res_lpv_lti.pdf>
 Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 33.
 (pdftex.def)             Requested size: 252.0pt x 160.22755pt.
- [16 <./figures/res_lpv_lti.pdf>] Including 'wip' comment.
+
+
+LaTeX Warning: Reference `tab:res_structure' on page 17 undefined on input line 41.
+
+
+LaTeX Warning: Reference `fig:res_ps_spectrum' on page 17 undefined on input line 43.
+
+
+LaTeX Warning: Reference `fig:res_time_trace' on page 17 undefined on input line 46.
+
+Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) (tables/res_structure.tex)
-<figures/res_ps_spectrum.pdf, id=693, 256.75955pt x 148.78436pt>
+<figures/res_ps_spectrum.pdf, id=219, 256.75955pt x 148.78436pt>
 File: figures/res_ps_spectrum.pdf Graphic file (type pdf)
 <use figures/res_ps_spectrum.pdf>
 Package pdftex.def Info: figures/res_ps_spectrum.pdf  used on input line 69.
 (pdftex.def)             Requested size: 252.0pt x 146.03015pt.
-<figures/res_time_trace.pdf, id=694, 234.77274pt x 196.20125pt>
+<figures/res_time_trace.pdf, id=220, 234.77274pt x 196.20125pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
 <use figures/res_time_trace.pdf>
 Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 76.
 (pdftex.def)             Requested size: 252.0pt x 210.60385pt.
- Including 'wip' comment.
+ [17 <./figures/res_lpv_lti.pdf>]
+
+LaTeX Warning: Reference `tab:res_obc' on page 18 undefined on input line 84.
+
+Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 
-LaTeX Warning: Reference `eq:obc_overlap' on page 17 undefined on input line 3.
+LaTeX Warning: Reference `eq:obc_overlap' on page 18 undefined on input line 3.
 
-[17 <./figures/res_ps_spectrum.pdf> <./figures/res_time_trace.pdf>]
 
-LaTeX Warning: Reference `sec:obc_scope' on page 18 undefined on input line 6.
+LaTeX Warning: Reference `sec:obc_map' on page 18 undefined on input line 6.
 
-) (tables/res_obc_combinations.tex) Including 'wip' comment.
+) (tables/res_obc_combinations.tex) [18 <./figures/res_ps_spectrum.pdf> <./figures/res_time_trace.pdf>]
+
+LaTeX Warning: Reference `fig:res_generalisation' on page 19 undefined on input line 116.
+
+Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
@@ -884,7 +1781,7 @@ Underfull \hbox (badness 2556) in paragraph at lines 2--3
  []
 
 )
-<figures/res_generalisation.pdf, id=733, 435.31557pt x 143.76047pt>
+<figures/res_generalisation.pdf, id=289, 435.31557pt x 143.76047pt>
 File: figures/res_generalisation.pdf Graphic file (type pdf)
 <use figures/res_generalisation.pdf>
 Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 135.
@@ -892,38 +1789,104 @@ Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 135.
 ) (sections/07_discussion.tex Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut [18])) (sections/08_conclusion.tex [19 <./figures/res_generalisation.pdf>] Including 'wip' comment.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut [19]
+
+LaTeX Warning: Reference `eq:aug_loss' on page 20 undefined on input line 28.
+
+
+LaTeX Warning: Citation `hoekstra2026lfr' on page 20 undefined on input line 28.
+
+)) (sections/08_conclusion.tex Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
-\openout4 = `comment.cut'.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) [20 <./figures/res_generalisation.pdf>]
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut)) (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.bbl [20]) [21
-
-] (sections/99_appendix.tex
-Overfull \hbox (47.02722pt too wide) detected at line 99
-[][]
- []
+LaTeX Warning: Reference `eq:aug_loss' on page 21 undefined on input line 45.
 
 Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) [22
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut)) (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.bbl [21]) [22
+
+] (sections/99_appendix.tex
+
+LaTeX Warning: Reference `eq:Msplit' on page 23 undefined on input line 17.
+
+
+LaTeX Warning: Reference `eq:mass_matrix' on page 23 undefined on input line 17.
+
+
+LaTeX Warning: Reference `eq:lfr_chain' on page 23 undefined on input line 22.
+
+
+LaTeX Warning: Reference `eq:lfr_G' on page 23 undefined on input line 26.
+
+
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 23 undefined on input line 26.
+
+
+LaTeX Warning: Reference `eq:Ptransform' on page 23 undefined on input line 56.
+
+
+LaTeX Warning: Reference `eq:app_G_partition' on page 23 undefined on input line 59.
+
+
+LaTeX Warning: Reference `eq:eom' on page 23 undefined on input line 67.
+
+
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 23 undefined on input line 69.
+
+
+LaTeX Warning: Reference `eq:phi' on page 23 undefined on input line 91.
+
+
+LaTeX Warning: Reference `sec:params' on page 23 undefined on input line 91.
+
+
+Overfull \hbox (47.02722pt too wide) detected at line 99
+[][]
+ []
+
+
+LaTeX Warning: Reference `eq:mass_matrix' on page 23 undefined on input line 100.
+
+
+LaTeX Warning: Reference `eq:damping_stiffness_matrices' on page 23 undefined on input line 100.
+
+Including 'wip' comment.
+\openout4 = `comment.cut'.
+
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 23 undefined on input line 3.
+
+
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 23 undefined on input line 4.
+
+
+LaTeX Warning: Citation `drenth2025lpvlfr' on page 23 undefined on input line 5.
+
+)
+
+LaTeX Warning: Reference `tab:nominal_parameters' on page 23 undefined on input line 114.
+
+
+LaTeX Warning: Citation `garcia2013model' on page 23 undefined on input line 116.
+
+
+LaTeX Warning: Reference `eq:lfr_admissibility' on page 23 undefined on input line 156.
+
+[23
 
 ]
-Overfull \hbox (39.91411pt too wide) detected at line 231
-[][][][][]
- []
+
+LaTeX Warning: Reference `eq:mdelta_map' on page 24 undefined on input line 167.
 
 
-Underfull \hbox (badness 1655) in paragraph at lines 250--269
-\OT1/ptm/m/n/10 (+20) where $\OML/cmm/m/it/10 O[] \OT1/cmr/m/n/10 = [](\OML/cmm/m/it/10 C[]A[]; [] ; C[]A[]; C[]\OT1/cmr/m/n/10 ) \OMS/cmsy/m/n/10 2 \U/msb/m/n/10 R[]$\OT1/ptm/m/n/10 (+20) ,
- []
+LaTeX Warning: Reference `eq:ps2_nu' on page 24 undefined on input line 185.
 
 
-Underfull \hbox (badness 1888) in paragraph at lines 250--269
-\OML/cmm/m/it/10 C[]A[]B[]$ \OT1/ptm/m/n/10 (+20) for $\OML/cmm/m/it/10 j > i$ \OT1/ptm/m/n/10 (+20) and zero oth-er-wise, $\OML/cmm/m/it/10 r[] \OT1/cmr/m/n/10 =
- []
+LaTeX Warning: Reference `sec:setup' on page 24 undefined on input line 204.
 
 Including 'wip' comment.
 \openout4 = `comment.cut'.
@@ -933,7 +1896,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 6--7
 []\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, op-tional): place
  []
 
-)) [23]
+))
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -956,21 +1919,30 @@ L3 programming layer <2026-01-19>
 
 LaTeX Warning: There were undefined references.
 
-Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 0A9EB494258CD4D824B90365AE8D94FD;8062.
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+
+Package rerunfilecheck Warning: File `main.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `main.out':
+(rerunfilecheck)             Before: <no file>
+(rerunfilecheck)             After:  6FDE102BF1907DB7809227638F4BDA1A;7817.
  ) 
 Here is how much of TeX's memory you used:
- 27773 strings out of 467867
- 538508 string characters out of 5416882
- 975339 words of memory out of 5000000
- 55613 multiletter control sequences out of 15000+600000
- 688339 words of font info for 351 fonts, out of 8000000 for 9000
+ 27784 strings out of 467867
+ 537749 string characters out of 5416882
+ 971527 words of memory out of 5000000
+ 55570 multiletter control sequences out of 15000+600000
+ 691032 words of font info for 390 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 89i,14n,97p,1131b,984s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 89i,14n,97p,1295b,984s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmib10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf" (24 pages, 916889 bytes).
+Output written on "c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf" (24 pages, 842140 bytes).
 PDF statistics:
- 974 PDF objects out of 1000 (max. 8388607)
- 151 named destinations out of 1000 (max. 500000)
- 58230 words of extra memory for PDF output out of 61914 (max. 10000000)
+ 523 PDF objects out of 1000 (max. 8388607)
+ 149 named destinations out of 1000 (max. 500000)
+ 64038 words of extra memory for PDF output out of 74296 (max. 10000000)
 

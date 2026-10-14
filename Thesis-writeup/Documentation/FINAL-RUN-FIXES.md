@@ -85,8 +85,9 @@ Code changes and checks found while structuring thesis Section III (2026-10-09).
      $f_{\mathrm{aug}}=0$, controller bank of the training records) over every training record; collect windows
      $(\hat y, u_{\mathrm{cl}})$ over $\tau-1-n..\tau-1$ (item 8) and the simulated state at $\tau$, in the centred
      normalised coordinates; fit the PHYSICAL ROWS OF THE WHOLE ENCODER to these states, as Hoekstra 2026 Eq. (30)
-     (D-251 amendment, option A): $W^b$, a physical-row bias $b^b$, the hidden layers of $\tilde\psi$ and the physical
-     rows of its output layer, minimising the squared state error. Use a randomly initialised physical encoder
+     (D-251 amendment, option A): $W^b$, the hidden layers of $\tilde\psi$ and the physical rows of its output layer
+     (weights and bias), minimising the squared state error. No separate physical-row bias $b^b$: the encoder is
+     encoder paper Eq. (8) as printed, and the output bias of $\tilde\psi$ carries any constant (D-249 amendment). Use a randomly initialised physical encoder
      for this pretraining, as in the nonlinear-baseline method of encoder paper Eq. (35); no linear least-squares
      warm start is adopted. Train the shared hidden layers and physical output rows; keep the added-state output
      rows zero and $W^a$ at its Xavier draw. Retain the fitted physical nonlinear rows and hidden layers at the
@@ -100,6 +101,25 @@ Code changes and checks found while structuring thesis Section III (2026-10-09).
      pretraining. The earlier 0.11-std result belongs to the linear fit, not to this not-yet-run nonlinear fit.
    - Thesis: III-B `eq:aug_enc_fit` and its `\revnote`; III-D `eq:aug_init` must keep the fitted physical nonlinear
      rows and zero only the added-state nonlinear output rows; III-E sentence near line 930.
+11. **OBC reference tuples with a successor (D-252).**
+   - Now: `GD/obc_gantry.py::build_reference_set` keeps every sample with a full fourth-order stencil,
+     `k = np.arange(2, len(u) - 2)`, so the last tuple of each record has no next tuple. The recovery result of
+     Section IV (minimiser beta* + Phi^+ eps, independent of the network) needs the coefficient and the discrepancy on
+     the SAME stack; with the coefficient on all tuples and eps only on tuples with a successor, a network-dependent
+     term remains (critique 2026-10-14: three-row counterexample shifts the minimiser by -9/70 at eps = 0).
+   - Fix: `k = np.arange(2, len(u) - 3)`, so every tuple's next sample is also a tuple. One tuple fewer per record.
+   - Check: tuple count drops by exactly one per record; Phi of the remaining tuples is bitwise unchanged; rank 10.
+   - Thesis: IV-A reference-set `\revnote` (remove after the rerun).
+12. **Polish compared with the validation error after the OBC basis rebuild (D-253).**
+   - Now: `FS/interconnect.py::fit` restores the best checkpoint and rebuilds the OBC basis at its beta
+     (`_sync_prediction_state_for_validation(refresh_basis=True)`), which changes the corrected model;
+     `GD/training.py::run_lbfgs_polish` then passes `val_before=bestfit`, measured BEFORE the rebuild, so
+     `FS/lbfgs_polish.py::lbfgs_polish` compares the polish with a different model.
+   - Fix: when `cfg.obc` is on, pass `val_before=None`, so `lbfgs_polish` measures the validation error of the rebuilt
+     model (`_validate()`) before polishing. Cost: one closed-loop free run (about 162 s). No change without OBC.
+   - Check: for an OBC run the logged `val_before` differs from `bestfit` and equals a fresh validation of the
+     restored, rebuilt model; for a U run it is unchanged.
+   - Thesis: IV-B `\revnote` on the comparison score (remove after the rerun).
 
 ## Checks before launch
 

@@ -296,14 +296,8 @@ INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\epstopdf-pkg\eps
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\00miktex\epstopdf-sys.cfg
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\00miktex\epstopdf-sys.cfg
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\00miktex\epstopdf-sys.cfg
-INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
-INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
-INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
-INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
-OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf
-INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
-INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.out
+OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\microtype\mt-ptm.cfg
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\microtype\mt-ptm.cfg
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\microtype\mt-ptm.cfg
@@ -433,16 +427,14 @@ OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP 
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.tfm
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\ot1pcr.fd
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\ot1pcr.fd
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\ot1pcr.fd
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\courier\pcrr7t.tfm
-INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
-INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.tfm
-OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
-INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
@@ -482,11 +474,12 @@ OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP 
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
-INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr7t.tfm
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
-INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
-INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.tfm
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr7t.tfm
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmb7t.tfm
+OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT .\sections\05_setup.tex
 INPUT .\sections\05_setup.tex
 INPUT .\sections\05_setup.tex
@@ -497,6 +490,8 @@ INPUT .\figures\gantry_system_with_absorber.tex
 INPUT .\figures\gantry_system_with_absorber.tex
 INPUT .\figures\gantry_system_with_absorber.tex
 INPUT figures\gantry_system_with_absorber.tex
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
+INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.tfm
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT .\sections\06_results.tex

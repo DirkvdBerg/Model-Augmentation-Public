@@ -116,3 +116,7 @@ Passages read in the PDF under `literature/` and what each supports. One row per
 | drenth2025lpvlfr | Sec. 5.1, p. 4 | Adam for a fixed number of iterations, then L-BFGS-B; Adam gives a better starting point | 2026-10-13 |
 | kessels2025ai | Eq. (5.12), thesis p. 156 (PDF p. 183) | minimisation over the NN weights w0 to w3 only (FP parameters fixed) (III-D re-read) | 2026-10-13 |
 | drenth2025lpvlfr | Sec. 4.1, Assumptions 2, 3, p. 3; Theorem 6, p. 4 | well-posedness also assumes a diagonal Delta block and scheduling values bounded by one; Sec. 4.2 supplies Condition 5 through the feedthrough parameterisation (III-D math check, F3) | 2026-10-13 |
+| gyorok2026obc | Sec. 5.2, end, p. 9 (arXiv 2511.01321v3) | the orthogonal-by-construction method requires no hyperparameter tuning, unlike the regularisation-based methods whose trade-off coefficient must be selected (IV-A positive reason) | 2026-10-14 |
+| gyorok2026obc | Sec. 3.2, p. 3 (arXiv 2511.01321v3) | with non-unique theta_b the baseline could lose its physical meaning (IV opening) | 2026-10-14 |
+| kessels2025ai | Sec. 5.3.1.3, thesis p. 166 (PDF p. 193) | FP terms retained (fixed); trained NNs may (partially) negate them, called negation; recommended for future work (IV-A) | 2026-10-14 |
+| gyorok2026obc | Sec. 2, Eq. (5), p. 3 (arXiv 2511.01321v3) | the regressor stack Phi is formed from phi(x_k) at the data points x_k of D_N (lagged measured IO); thesis IV-A: regressor evaluated at measured data | 2026-10-14 |
