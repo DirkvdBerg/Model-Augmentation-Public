@@ -90,37 +90,39 @@
 \citation{beintema2023subnet}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026encoder}
+\citation{hoekstra2026encoder}
+\citation{hoekstra2026encoder}
+\citation{hoekstra2026lfr}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Augmented model. The physics step $f_{\mathrm  {base}}$ and the network $\phi _{\mathrm  {aug}}$ act in parallel on $\hat  x_k$. $\phi _{\mathrm  {aug}}$ gives $f_{\mathrm  {aug}}$ and $g_{\mathrm  {aug}}$, and the output map is not learned. The encoder $\psi $ sets $\hat  x$ at each window start. During training, the input is the closed-loop input of Section~\ref {sec:aug_loop}. \textcolor {red}{[\textbf  {TODO:} No setpoint generator currently for the inputs; layout cramped at one column width.]} }}{6}{figure.caption.3}\protected@file@percent }
 \newlabel{fig:aug_structure}{{3}{6}{Augmented model. The physics step $f_{\mathrm {base}}$ and the network $\phi _{\mathrm {aug}}$ act in parallel on $\hat x_k$. $\phi _{\mathrm {aug}}$ gives $f_{\mathrm {aug}}$ and $g_{\mathrm {aug}}$, and the output map is not learned. The encoder $\psi $ sets $\hat x$ at each window start. During training, the input is the closed-loop input of Section~\ref {sec:aug_loop}. \todo {No setpoint generator currently for the inputs; layout cramped at one column width.}}{figure.caption.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Encoder and initial state}{6}{subsection.3.2}\protected@file@percent }
 \newlabel{sec:aug_encoder}{{\mbox  {III-B}}{6}{Encoder and initial state}{subsection.3.2}{}}
 \newlabel{eq:aug_encoder}{{17}{6}{Encoder and initial state}{equation.17}{}}
-\citation{hoekstra2026encoder}
-\citation{hoekstra2026encoder}
-\citation{hoekstra2026lfr}
+\newlabel{eq:aug_enc_lin}{{18}{6}{Encoder and initial state}{equation.18}{}}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026encoder}
 \citation{hoekstra2026encoder}
 \citation{hoekstra2026lfr}
 \citation{kessels2025ai}
-\newlabel{eq:aug_enc_lin}{{18}{7}{Encoder and initial state}{equation.18}{}}
-\newlabel{eq:aug_enc_sim}{{19}{7}{Encoder and initial state}{equation.19}{}}
-\newlabel{eq:aug_enc_fit}{{20}{7}{Encoder and initial state}{equation.20}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Closed-loop simulation}{7}{subsection.3.3}\protected@file@percent }
-\newlabel{sec:aug_loop}{{\mbox  {III-C}}{7}{Closed-loop simulation}{subsection.3.3}{}}
 \citation{forssell1999revisited}
 \citation{beintema2023subnet}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{kessels2025ai}
+\newlabel{eq:aug_enc_sim}{{19}{7}{Encoder and initial state}{equation.19}{}}
+\newlabel{eq:aug_enc_fit}{{20}{7}{Encoder and initial state}{equation.20}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Closed-loop simulation}{7}{subsection.3.3}\protected@file@percent }
+\newlabel{sec:aug_loop}{{\mbox  {III-C}}{7}{Closed-loop simulation}{subsection.3.3}{}}
 \citation{kessels2025ai}
 \citation{kessels2025ai}
 \newlabel{eq:aug_two_loops}{{21}{8}{Closed-loop simulation}{equation.21}{}}
+\newlabel{eq:aug_residual_loop}{{22}{8}{Closed-loop simulation}{equation.22}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces  Recorded system loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm  {ff}}$. The model output is calculated before the input updates the model state. }}{8}{figure.caption.4}\protected@file@percent }
 \newlabel{fig:aug_closed_loop}{{4}{8}{Recorded system loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm {ff}}$. The model output is calculated before the input updates the model state}{figure.caption.4}{}}
-\newlabel{eq:aug_residual_loop}{{22}{8}{Closed-loop simulation}{equation.22}{}}
 \newlabel{eq:aug_cl_step}{{23}{8}{Closed-loop simulation}{equation.23}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Identification}{8}{subsection.3.4}\protected@file@percent }
+\newlabel{sec:aug_closed_loop}{{\mbox  {III-D}}{8}{Identification}{subsection.3.4}{}}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
@@ -129,8 +131,6 @@
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026encoder}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Identification}{9}{subsection.3.4}\protected@file@percent }
-\newlabel{sec:aug_closed_loop}{{\mbox  {III-D}}{9}{Identification}{subsection.3.4}{}}
 \newlabel{eq:mdelta_map}{{24}{9}{Identification}{equation.24}{}}
 \newlabel{eq:aug_loss}{{25}{9}{Identification}{equation.25}{}}
 \newlabel{eq:aug_init}{{26}{9}{Identification}{equation.26}{}}
@@ -151,6 +151,7 @@
 \newlabel{eq:ps2_s1}{{27}{11}{Added-state initialisation}{equation.27}{}}
 \newlabel{eq:ps2_nu}{{28}{11}{Added-state initialisation}{equation.28}{}}
 \newlabel{eq:ps2_s2}{{29}{11}{Added-state initialisation}{equation.29}{}}
+\newlabel{eq:ps2_handover}{{30}{11}{Added-state initialisation}{equation.30}{}}
 \citation{gyorok2026obc}
 \citation{gyorok2026obc}
 \citation{gyorok2026obc}
@@ -160,14 +161,10 @@
 \citation{gyorok2026obc}
 \citation{gyorok2025l4dc}
 \citation{gyorok2025l4dc}
-\newlabel{eq:ps2_handover}{{30}{12}{Added-state initialisation}{equation.30}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {IV}Interpretability by Orthogonal Construction}{12}{section.4}\protected@file@percent }
 \newlabel{sec:obc}{{IV}{12}{Interpretability by Orthogonal Construction}{section.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Orthogonal correction of the physical rows}{12}{subsection.4.1}\protected@file@percent }
 \newlabel{sec:obc_map}{{\mbox  {IV-A}}{12}{Orthogonal correction of the physical rows}{subsection.4.1}{}}
-\citation{gyorok2026obc}
-\citation{gyorok2026obc}
-\citation{gyorok2025l4dc}
 \citation{gyorok2026obc}
 \citation{gyorok2025l4dc}
 \citation{gyorok2026obc}
@@ -239,10 +236,10 @@
 \bibcite{noel2018greybox}{12}
 \bibcite{kessels2025ai}{13}
 \bibcite{retzler2024}{14}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-B}}Discussion}{21}{subsection.8.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{References}{21}{section*.13}\protected@file@percent }
 \bibcite{toth2010modeling}{15}
 \bibcite{drenth2025lpvlfr}{16}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-B}}Discussion}{21}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{21}{section*.13}\protected@file@percent }
 \bibcite{ovchinnikov2021computing}{17}
 \bibcite{gautier1990minimum}{18}
 \bibcite{drenth2025thesis}{19}

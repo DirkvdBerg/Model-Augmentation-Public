@@ -24,7 +24,10 @@
 %          to tune (2026 Sec. 3.2 and Sec. 5.2, p. 9); it needs a baseline linear in its parameters (Eq. 2).
 %       3. Adapted: Jacobian of the normalised RK4 transition in beta (Gyorok 2025 Sec. 4, Eq. 15); range of
 %          the ten combinations; the offset column Gamma of 2025 Eq. 18 (span of [Phi Gamma] = span of
-%          [Phi f_base]) omitted with D-186 reasons 1 and 2, todo for the supervisor condition.
+%          [Phi f_base]) omitted: Phi-orthogonality is exactly the condition for an estimate independent of the
+%          network (the Section I definition of interpretability); Gamma does not enter the estimate. Negation
+%          means parameter negation; response negation is not prevented, with or without Gamma. Supervisor
+%          \revnote after eq:obc_sens, outside wip (D-254 item 1 as amended 2026-10-14).
 %       4. Adopted: a fixed auxiliary reference set (Gyorok 2026, text after Eq. 12, p. 3). Adapted: its tuples
 %          are measured positions, fourth-order differenced velocities, xbar = 0, recorded input. Open todo:
 %          data tuples versus states of the closed-loop baseline simulation eq:aug_enc_sim (Gyorok 2025 Sec. 3
@@ -73,31 +76,23 @@
 
 \begin{wip}
 The parameter pair $(\theta_{\mathrm{base}},\theta_{\mathrm{aug}})$
-minimising the criterion of Section~\ref{sec:aug_closed_loop} is non-unique:
+minimising the loss function of Section~\ref{sec:aug_closed_loop} is non-unique:
 different pairs give the same fit~\cite[Sec.~3.1]{gyorok2026obc}.
-
-
-
-
-The split between baseline and network in the augmented model of
-Section~\ref{sec:aug_closed_loop} is not unique, so the estimate of
-$\theta_{\mathrm{base}}$ can lose its physical
-meaning~\cite[Sec.~3.2]{gyorok2026obc}.
-Our goal is an estimate that is unique under stated conditions.
-Gy\"or\"ok et al.\ construct such an estimate for input-output baselines that
-are linear in their parameters.
-They name state-space baselines without full-state measurement as future
-research~\cite[Sec.~6]{gyorok2026obc}.
-We extend their construction to our baseline, a state-space model that is
-nonlinear in its parameters.
-Only its positions are measured.
-It is identified in closed loop.
-Section~\ref{sec:obc_map} constructs an orthogonal correction of the physical
-rows and gives the condition under which its estimate equals the true
-combinations.
-Section~\ref{sec:obc_ident} states the identification problem of the corrected
-model.
-
+Meaning that the rigid-body dynamics that the baseline parameters 
+$\theta_{\mathrm{base}}$ are able to explain from the data, can instead be represented by 
+a neural network correction.
+To prevent the neural network from correcting what $\theta_{\mathrm{base}}$ 
+can represent we introduce orthogonality by construction~\cite{gyorok2026obc}.
+Orthogonality here is defined as the neural network correction to the
+physical states having no component in the directions in which a change of
+$\theta_{\mathrm{base}}$ is able to change the next state predicted by the baseline.
+This gives us a unique estimate of $\theta_{\mathrm{base}}$,
+but it does not guarantee recovering the true baseline parameters.
+\\
+Gy\"or\"ok et al.\ have constructed this for input-output baseline models that
+are linear in their parameters~\cite{gyorok2026obc}.
+We extend this to state-space models nonlinear in their parameters,
+specifically for our gantry system.
 \end{wip}
 \subsection{Orthogonal correction of the physical rows}\label{sec:obc_map}
 \ifdraft
@@ -105,7 +100,7 @@ model.
 \item The non-unique split of Section~III lets the network negate the baseline (Kessels Sec.~5.3.1.3); to first order a term along $\partial f^{\mathrm n}_{\mathrm{base}}/\partial\beta$ cancels a change of $\beta$ (this work)
 \item On the gantry, each direction is an $M(Y)^{-1}$-weighted mass, damping or stiffness force, propagated by RK4 (this work)
 \item The research plan's penalty trades orthogonality against fit; the construction needs no weight but a baseline linear in its parameters (Gy\"or\"ok 2025 Eq.~(13), Remark~1; 2026 Sec.~3.2, Eq.~(2))
-\item Regressor: Jacobian of the normalised transition in $\beta$ at $\beta_{\mathrm{lin}}$; range of the ten combinations; the offset column $\Gamma$ omitted, for two reasons (Gy\"or\"ok 2025 Sec.~4, Eqs.~(15), (17), (18); D-186; D-192; adapted)
+\item Regressor: Jacobian of the normalised transition in $\beta$ at $\beta_{\mathrm{lin}}$; range of the ten combinations; the offset column $\Gamma$ omitted: $\Phi$-orthogonality is exactly the condition for an estimate independent of the network, $\Gamma$ does not enter the estimate; prevents parameter negation, not response negation (Gy\"or\"ok 2025 Sec.~4, Eqs.~(15), (17), (18); D-192; D-254; adapted; supervisor note)
 \item A fixed reference set for the coefficient (Gy\"or\"ok 2026 Sec.~3.2, after Eq.~(12); adopted); tuples of measured positions, differenced velocities, $\bar x=0$, recorded input, each with a successor (current runs: revnote, \texttt{FINAL-RUN-FIXES.md} item~11, D-252); data rather than a baseline simulation: the regressor at measured data as in Gy\"or\"ok 2026 Eq.~(5), on the system's trajectories, the next states define $\varepsilon$, fixed before training (Gy\"or\"ok 2025 Sec.~3; D-254)
 \item Coefficient on the stack, full column rank, orthogonal corrected stack (Gy\"or\"ok 2026 Eqs.~(8), (10), (11), Lemma~3, Assumption~1; adapted)
 \item Correction on the physical rows at every step; added-state rows not corrected; coefficient differentiated (Gy\"or\"ok 2026 Eqs.~(9), (10), (13); D-190; adapted)
@@ -156,14 +151,12 @@ of the ten combinations $\theta_{\mathrm{base}}$.
 Their extended regressor adds an offset column $\Gamma$, which adds the
 direction of the transition $f^{\mathrm n}_{\mathrm{base}}$ itself to the
 protected range~\cite[Eqs.~(17), (18)]{gyorok2025l4dc}.
-We omit it, for two reasons.
-To first order, the estimate of $\beta$ depends on the data only through
-their projection onto the range of the stacked Jacobian (below
-\eqref{eq:obc_eps}).
-The offset would therefore constrain directions that do not move the estimate.
-A parameter derivative also does not change when the origin of the normalised
-state moves, whereas the offset does, so the protected directions would depend
-on the centring $\mu_x$ of \eqref{eq:aug_norm}.
+We protect the parameter sensitivity only.
+To first order, the estimate of $\beta$ does not depend on the network if and
+only if the network's stacked correction is orthogonal to the range of this
+sensitivity (below \eqref{eq:obc_eps}).
+The offset does not enter the estimate, so it would constrain the network
+without changing the estimate.
 The sensitivity is
 \end{wip}
 \begin{equation}
@@ -177,10 +170,21 @@ The sensitivity is
 \item Choice: $\Phi$ is evaluated on fixed one-step tuples $i\in\mathcal I$ from the training data: measured positions, finite difference to get the velocities, added states $\bar x=0$
 \item The network's physical rows are fitted by the stacked sensitivity in least squares; the remainder is orthogonal to its range:
 \end{outline}
+\revnote{Orthogonality here means orthogonality to the parameter
+sensitivity $\Phi$ of the baseline: the construction of Gy\"or\"ok et al.\
+(2026, Lemma~3), with their regressor taken as the parameter Jacobian. This is
+exactly the condition under which the estimate of $\theta_{\mathrm{base}}$
+does not depend on the network, which is how Section~I defines
+interpretability. It prevents parameter negation: a network term that mimics a
+change of mass, damping or stiffness. It does not prevent the network from
+cancelling part of the baseline response itself (negation as in Kessels).
+The offset column $\Gamma$ of Gy\"or\"ok et al.\ (2025, Eq.~(18)) would exclude
+only one direction of that, a uniform scaling of the baseline response, and
+does not change the parameter estimate. Adding $\Gamma$ would therefore not
+avoid negation. We leave it out; the current runs are also without $\Gamma$.}
 \begin{wip}
 where $\beta_{\mathrm{lin}}\in\R^{10}$ is the linearisation point and
 $\Phi:\R^{10}\times\R^6\times\R^3\to\R^{6\times10}$.
-\todo{Open question for Maarten and Jan: omit or keep the offset column $\Gamma$. For omitting: the estimate of $\beta$ depends on the data only through their projection onto $\ran\boldsymbol\Phi$ (below \eqref{eq:obc_eps}); the protected directions then do not depend on the centring; in the construction we adopt, the regressor equals the parameter derivative~\cite[Eq.~(39)]{gyorok2026obc}; parameter uniqueness needs the rank of $\boldsymbol\Phi$ only~\cite[Assumption~1]{gyorok2026obc} (D-186 reasons 1, 2, written for the earlier trajectory basis). For keeping: Gy\"or\"ok et al.\ include it for a nonlinear baseline~\cite[Eq.~(18)]{gyorok2025l4dc}; D-190 records the supervisors' condition as non-overlap with the baseline output, the column span of $[\boldsymbol\Phi\;\,\boldsymbol f^{\mathrm n}_{\mathrm{base}}]$, and measured that the column adds a direction (57 percent of it outside $\ran\boldsymbol\Phi$). Without it, a network term along $\boldsymbol f^{\mathrm n}_{\mathrm{base}}$ is charged only through its component in $\ran\boldsymbol\Phi$ (D-186 caveat). Candidate: omit (D-192, the current code).}
 
 We evaluate $\Phi$ on a fixed reference set, which Gy\"or\"ok et al.\ allow
 for the construction of the coefficient~\cite[Sec.~3.2]{gyorok2026obc}.
@@ -309,6 +313,9 @@ exactly~\cite[Cond.~4, Assumption~6, Thm.~7, Eq.~(21)]{gyorok2026obc}.
 Without the correction, the minimiser is
 $\beta^\star+\boldsymbol\Phi^{+}(\varepsilon-\boldsymbol f^{\mathrm n}_{\mathrm{aug}})$,
 which moves with the network.
+The correction thus prevents parameter negation.
+It does not prevent a network term that cancels part of the baseline response
+itself.
 The condition $\boldsymbol\Phi^\top\varepsilon=0$ depends on the excitation.
 Gy\"or\"ok et al.\ note that an input can be designed to meet it when the
 structure of the omitted terms is known~\cite[Remark~5]{gyorok2026obc}.
