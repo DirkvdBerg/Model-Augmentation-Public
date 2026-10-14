@@ -49,6 +49,57 @@ Code changes and checks found while structuring thesis Section III (2026-10-09).
    - Check: initial 400-sample loss equals the baseline's; plain and PS initial parameters bitwise equal (D-240 test);
      no overflow in the first updates on all seeds.
    - Thesis: III-D `eq:aug_init` and its attribution todo; III-E todo on the current runs.
+7. **Added-state encoder rows on the centred window.**
+   - Now: `FS/pre_encoder.py::linear_encoder_init_aug.forward` adds the D-055 offsets `u_off`, `y_off` before both
+     $W^b$ and $W^a$, so the initial added states carry a constant $W^a\chi_0$ (about 3 % of $W^a\chi^{\mathrm n}$
+     on the noisy training data, `scratchpad/bb_offset.py`, 2026-10-12). The offset has a reason only for $W^b$:
+     Jan's map works in deviations from rest (encoder paper, text after Eq. 32), the model in deviations from
+     the data mean, which gives the bias $b^b = W^b\chi_0 - T_x\mu_x$.
+   - Fix: apply the offsets to the $W^b$ rows only; $W^a$ acts on the centred window, as Jan's $\psi_{\mathrm{aug}}$
+     sees centred data (2026 Sec. 5.3). Physical rows unchanged.
+   - Check: physical encoder output bitwise unchanged; added-state output differs by exactly $W^a\chi_0$.
+   - Thesis: III-B `eq:aug_enc_lin` (clean form) and its `\revnote`.
+8. **Encoder window ends at $\tau-1$ (D-250).**
+   - Now: `GD/model.py::get_encoder_dims` sets `na_right = nb_right = 1` (D-054), so the window is $\tau-n..\tau$ and the
+     first loss term ($k=\tau$) scores a noisy sample the encoder has seen.
+   - Fix: `na_right = nb_right = 0` AND `na = nb = n + 1 = 30`, so the window $\tau-1-n..\tau-1$ keeps the displayed
+     $n+1 = 30$ samples (Hoekstra 2026 Eq. 22e with $n_a = n_b = n+1$; changing only the right extensions gives 29); in
+     `FS/pre_encoder.py::linear_encoder_init_aug` build $W^b_y = A^{n+1}O_n^+$ and $W^b_u = \bar r_n - A^{n+1}O_n^+\mathcal T_n$,
+     $\bar r_n = [B\;AB\cdots A^nB]$ (oldest-first storage reverses the blocks). Check every caller that builds encoder
+     windows (`closed_loop_free_run_rms_batch`, PS2 `_sample`, item 5, diagnostics) uses `na_right` from the model.
+   - Check: noiseless linear trajectory reconstructs $x_\tau$ to rounding (`scratchpad/wb_shift_check.py`: 6e-17).
+   - Thesis: III-B `eq:aug_encoder`, `eq:aug_wb` and the `\revnote` after the encoder where-clause.
+9. **One normalisation for encoder and rollout.**
+   - Now: `GD/data.py::compute_normalization` stores $\sigma_i + 10^{-8}$, used by the rollout, the output map and the
+     D-055 offsets; `GD/model.py::build_model` builds $W^b$ through `normalize_linear_ss_matrices`, which recomputes the
+     raw $\sigma_i$ from `norm.x_all`, `u_all`, `y_all`. Relative scale mismatch up to $2\times10^{-5}$, $W^b$ off by
+     $4.5\times10^{-6}$ relative (second-audit finding F2, 2026-10-14).
+   - Fix: scale $(A_d, B_d, C_d)$ with the stored `norm.std_x`, `norm.std_u`, `norm.ystd`, so the thesis's single
+     $T_x, T_u, T_y$ is what the code uses.
+   - Check: $W^b$ changes by about $10^{-5}$ relative and no more; physical encoder output matches the rollout scaling.
+   - Thesis: none (the equations already state one common $T$).
+10. **Data-based initialisation of the physical encoder rows (D-251).**
+   - Now: `GD/model.py::build_model` builds $W^b$ from the reconstructability map of the $Y=0$ linearisation
+     (`linear_encoder_init_aug`, D-054).
+   - Fix: before training, simulate the baseline at $\theta^0_{\mathrm{base}}$ in closed loop (`FS/closed_loop.py` step,
+     $f_{\mathrm{aug}}=0$, controller bank of the training records) over every training record; collect windows
+     $(\hat y, u_{\mathrm{cl}})$ over $\tau-1-n..\tau-1$ (item 8) and the simulated state at $\tau$, in the centred
+     normalised coordinates; fit the PHYSICAL ROWS OF THE WHOLE ENCODER to these states, as Hoekstra 2026 Eq. (30)
+     (D-251 amendment, option A): $W^b$, a physical-row bias $b^b$, the hidden layers of $\tilde\psi$ and the physical
+     rows of its output layer, minimising the squared state error. Use a randomly initialised physical encoder
+     for this pretraining, as in the nonlinear-baseline method of encoder paper Eq. (35); no linear least-squares
+     warm start is adopted. Train the shared hidden layers and physical output rows; keep the added-state output
+     rows zero and $W^a$ at its Xavier draw. Retain the fitted physical nonlinear rows and hidden layers at the
+     start of joint training; do not reapply the old all-row zero initialisation of $\tilde\psi$.
+     Remove the D-055 offsets (items 7, 9 then concern only $W^a$ and the scales).
+     Initial state per record: open (D-251); candidate measured positions with zero velocity.
+   - Check: pretraining reduces the simulated-state error; $W^a$ is unchanged and the added-state nonlinear output
+     remains zero. Encoder histories and targets use the stored normalisation scales and the past-only window.
+     The initial augmented transition reproduces the baseline from the same physical state, with $f_{\mathrm{aug}}=0$.
+     True-state validation comparisons are simulation-only diagnostics, not a criterion for accepting the encoder
+     pretraining. The earlier 0.11-std result belongs to the linear fit, not to this not-yet-run nonlinear fit.
+   - Thesis: III-B `eq:aug_enc_fit` and its `\revnote`; III-D `eq:aug_init` must keep the fitted physical nonlinear
+     rows and zero only the added-state nonlinear output rows; III-E sentence near line 930.
 
 ## Checks before launch
 

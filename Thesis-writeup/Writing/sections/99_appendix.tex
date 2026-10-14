@@ -203,6 +203,86 @@ $\nu_{i_s}\le\nu_{\max}$, where $i_s<i_{\max}$ is a fixed early check.
 If $\nu_{i_s}>\nu_{\max}$, PS ends at $i_s$.
 The values are given in Section~\ref{sec:setup}.
 
+\subsection{Model-based encoder initialisation}\label{app:enc_model}
+This appendix gives the model-based initialisation of the physical encoder
+rows that Section~\ref{sec:aug_encoder} does not use, and the comparison
+behind that choice.
+The model-based initialisation of Hoekstra et al.~\cite[Sec.~3.1]{hoekstra2026encoder}
+needs a linear model, so as in~\cite[Eqs.~(30) to (32)]{hoekstra2026encoder}
+we linearise the baseline at an equilibrium.
+We take rest at $Y=0$, which is an equilibrium for zero input because $K$ in
+\eqref{eq:damping_stiffness_matrices} vanishes on $X$ and $Y$, and the
+position at which the controller of the records is designed
+(Section~\ref{sec:setup}).
+Frozen at $Y=0$, \eqref{eq:eom} is linear, so the linearisation is the
+baseline itself at that position and approximates it only as $Y$ moves.
+Discretising by zero-order hold over $T_s$ and scaling as \eqref{eq:aug_norm}
+without the means gives
+\begin{equation}
+\begin{aligned}
+ &A_d=T_xe^{A_cT_s}T_x^{-1},\quad
+  B_d=T_x\!\int_0^{T_s}\!e^{A_cs}\,\mathrm ds\,B_cT_u^{-1},\quad
+  C_d=T_yC_cT_x^{-1},\\
+ &A_c=\begin{bmatrix}0&I_3\\-M_0^{-1}K&-M_0^{-1}C\end{bmatrix},\quad
+  B_c=\begin{bmatrix}0\\M_0^{-1}P\end{bmatrix},\quad
+  C_c=\begin{bmatrix}P^\top&0\end{bmatrix},
+\end{aligned}
+\label{eq:aug_lin}
+\end{equation}
+with $M_0=M(0)$ from \eqref{eq:Msplit}, evaluated at $\theta^0_{\mathrm{base}}$.
+Stacking the outputs and inputs of the window as $Y_\tau$ and $U_\tau$, the
+output and input parts of $\chi_\tau+\chi_0$ with the newest sample first,
+where $\chi_0$ restores the means that \eqref{eq:aug_norm} removes,
+gives $Y_\tau=O_nT_x\tilde x_{\tau-n-1}+\mathcal T_nU_\tau$ and
+$T_x\tilde x_{\tau-1}=A_d^{\,n}T_x\tilde x_{\tau-n-1}+r_nU_\tau$.
+Eliminating $T_x\tilde x_{\tau-n-1}$ gives the reconstructability
+map~\cite[Eqs.~(11) to (17)]{hoekstra2026encoder} at $\tau-1$, and one step
+of the linear model~\cite[Eq.~(9a)]{hoekstra2026encoder} gives the state at $\tau$
+\begin{equation}
+\begin{aligned}
+ T_x\tilde x_{\tau-1}&=A_d^{\,n}O_n^{+}\bigl(Y_\tau-\mathcal T_nU_\tau\bigr)+r_nU_\tau,\\
+ T_x\tilde x_\tau&=A_dT_x\tilde x_{\tau-1}+B_dE_1U_\tau,\\
+ W^b&=\begin{bmatrix}
+  A_d^{\,n+1}O_n^{+} & \;\bar r_n-A_d^{\,n+1}O_n^{+}\mathcal T_n
+ \end{bmatrix},
+\end{aligned}
+ \label{eq:aug_wb}
+\end{equation}
+where $O_n=\col(C_dA_d^{\,n},\dots,C_dA_d,C_d)\in\R^{3(n+1)\times6}$,
+$\mathcal T_n$ is block upper triangular with block $(i,j)$ equal to
+$C_dA_d^{\,j-i-1}B_d$ for $j>i$ and zero otherwise,
+$r_n=[0\;\,B_d\;\,A_dB_d\;\cdots\;A_d^{\,n-1}B_d]$, as
+in~\cite[Eqs.~(10), (13)]{hoekstra2026encoder},
+$E_1=[I_3\;\,0\;\cdots\;0]$ selects $u_{\tau-1}$ from $U_\tau$,
+$\bar r_n=A_dr_n+B_dE_1=[B_d\;\,A_dB_d\;\cdots\;A_d^{\,n}B_d]$, and ${}^{+}$ is the Moore-Penrose
+pseudoinverse.
+On the centred window $\chi_\tau$ the map needs the bias
+$b^b=W^b\chi_0-T_x\mu_x$.
+The paper assumes a stable baseline~\cite[Sec.~2]{hoekstra2026encoder}.
+Ours is marginally stable, but the measured positions make $(A_d,C_d)$
+observable, so $O_n$ has full column rank.
+The paper also gives a version for process noise, which needs a known noise
+gain~\cite[Eqs.~(18) to (29)]{hoekstra2026encoder}.
+The noise in our records enters at the position measurement
+(Section~\ref{sec:setup}) and no noise gain is known, so the noise-free map
+\eqref{eq:aug_wb} would be used, as a starting value and not an optimal estimator.
+
+We compare \eqref{eq:aug_wb} with a linear data-based fit, the least squares
+of~\cite[Eq.~(33)]{hoekstra2026encoder} on the simulation \eqref{eq:aug_enc_sim},
+both with the window of \eqref{eq:aug_encoder}, on the measured windows of
+the six validation records against their true states.
+The RMS error of $\dot\Theta$ is 34\,\% of its standard deviation for the
+model-based map and 11\,\% for the data-based fit.
+The model-based error grows from 16\,\% at $|Y|<0.05$~m to 56\,\% at
+$0.2\le|Y|<0.3$~m, while the data-based error stays between 10\,\% and 13\,\%.
+On $Y$ and $\dot Y$ both have the same error, which the baseline itself causes.
+The data-based fit has a larger gain from measurement noise to the estimated
+state, which the measurement noise of our records keeps negligible.
+\todo{Missing: numbers from \texttt{scratchpad/recon\_val\_check.py}
+(session 2026-10-14, baseline at the true parameters, current noisy records);
+regenerate them with a script in \texttt{Code/Evaluation} for the final runs
+and place them as a table in \texttt{tables/} (README: numbers are never retyped).}
+
 \begin{wip}
 \subsection{OBC and experiment details}
 \begin{itemize}

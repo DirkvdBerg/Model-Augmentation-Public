@@ -54,20 +54,23 @@
 %  7. Zero output layer reproduces the baseline from the same physical initial state (Hoekstra 2026
 %     Eq. 29, D-237); the split is not unique (Sec. 5.2), handed to Section IV. Added states are memory
 %     and model order, defined up to a state transformation, no physical coordinates.
-% III-B Encoder
-%  8. Encoder needed: only positions measured; truncated windows for cost and stability (Beintema).
-%  9. W^b from the reconstructability map of a ZOH linearisation at an equilibrium (encoder paper
-%     Eqs. 15-17, 30-32), not fitted (Hoekstra 2026 Eq. 30); W^a random. Claim only better starting
-%     values and faster convergence, final accuracy comparable (encoder paper Sec. 4.4). The paper
-%     assumes a stable baseline; ours is marginally stable (free X, Y), the map exists because the
-%     positions make the linearisation observable. The paper treats co-estimating theta_base as out of
-%     scope (footnote 1); we co-estimate. Precedent for linearising at zero: encoder paper Sec. 4.2
-%     ("around the 0 point"), no reason given. TODOs: why Y = 0; disclose nominal parameters in W^b
-%     versus detuned start; why model-based rather than data-based init (candidate: cost, Sec. 4.4);
-%     Kaiming versus Xavier (todo only).
-% 10. Encoder estimates the full state incl. measured positions (SUBNET). TODO: mention Kessels Remark 5.3?
-% 11. Keep encoder history, scored window and validation horizon apart; values in Setup. The
-%     joint-estimation sensitivity horizon belongs to Section IV.
+% III-B Encoder (agreed with Dirk 2026-10-14; supersedes items 8 to 11 of 2026-10-06). Organised as
+% adoption and adaptation of Jan's encoder, each adaptation with its reason:
+%  8. Only positions are measured, so an encoder estimates all 6 + n_xbar states of each window
+%     (Beintema Sec. 3.1, adopted); the window ends at tau-1 as in Hoekstra 2026 Eq. (22e) (D-250;
+%     Beintema includes y_t, so he is no precedent for this).
+%  9. Encoder paper Eq. (8): linear map plus psi_tilde (adopted). The physical rows carry a bias b^b
+%     because window and state are centred separately (D-249, zero mean for generality; ours).
+% 10. Positive reason, from the papers: the baseline is LPV in Y, hence nonlinear; a linearisation-based
+%     reconstruction is accurate only near its point (encoder paper Sec. 3.1, after Eq. 32) and the paper
+%     suggests the data-based route for nonlinear baselines (Secs. 3.2, 4.4). So the physical rows
+%     (W^b, b^b, psi_tilde hidden layers and physical output rows) are fitted as Hoekstra 2026 Eq. (30)
+%     to a CLOSED-loop simulation of the baseline at theta^0_base (adapted: the open-loop baseline drifts
+%     on X and Y; the window holds the closed-loop input). Trained jointly with theta_base (encoder
+%     paper footnote 1 vs 2026 Eq. 22). D-251 with its option-A amendment.
+% 11. No experiment data in the method: the model-based alternative and the validation comparison are
+%     in app:enc_model; the current runs (model-based map) are a revnote.
+%  W^a Xavier init and psi_tilde zero output: III-D eq:aug_init. Horizons apart: III-D and Setup.
 % III-C Closed-loop identification
 % 12. Known-controller, reference-driven output-error identification, inspired by Kessels (Eqs. 5.12,
 %     5.13; Remark 5.6 open-loop attempt failed). Related to the indirect approach (Forssell and Ljung
@@ -444,19 +447,18 @@ chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).
 \subsection{Encoder and initial state}\label{sec:aug_encoder}
 \ifdraft
 \begin{itemize}
-\item Each window starts from a state of which only the positions are measured; an encoder estimates it from the input-output history (Beintema); the window includes sample $\tau$ (encoder paper Eqs.~(11) to (17))
-\item The encoder is a linear map plus a nonlinear correction (encoder paper Eq.~(8)); the linear part acts on scaled, uncentred histories (D-055, code)
-\item $W^b$: linearise at rest at $Y=0$, the design point of the controller; frozen at $Y=0$ the baseline is LTI, so the linearisation is exact there (this work)
-\item $W^b$ is the reconstructability map of the encoder paper, Eqs.~(15) to (17); the noise-model version (Eqs.~(18) to (29)) needs a process-noise gain, our noise is measurement noise
-\item Adaptations: marginally stable but observable baseline; co-estimated $\theta_{\mathrm{base}}$ (footnote~1)
-\item Model-based rather than data-based (2026 Eq.~(30)): the baseline simulation the latter needs drifts on $X$ and $Y$; negligible cost (encoder paper Sec.~4.4) (this work)
+\item Only the positions are measured, so an encoder estimates all $6+n_{\bar x}$ states at each window start from the input-output window (Beintema Sec.~3.1); the window ends at $\tau-1$ (2026 Eq.~(22e), D-250)
+\item The encoder is a linear map plus a network correction (encoder paper Eq.~(8)); window and state are centred separately, so the physical rows carry a bias $b^b$ (D-249, this work)
+\item The physical rows start data-based: the baseline is self-scheduled by the state $Y$, hence nonlinear; a reconstruction from a linearisation is accurate only near its linearisation point (encoder paper Sec.~3.1), and the paper suggests the data-based route for nonlinear baselines (Secs.~3.2, 4.4)
+\item The physical rows are fitted to a baseline simulation as in 2026 Eq.~(30); the simulation runs in closed loop because the open-loop baseline drifts on $X$ and $Y$ (this work, D-251)
+\item The fitted physical rows only set the start and are trained jointly with $\theta_{\mathrm{base}}$ (2026 Eq.~(22)); current runs: model-based map at $Y=0$ (revnote, appendix)
 \end{itemize}
 \fi
 
 \begin{outline}
 \item Only positions are measured, so an encoder estimates the state at each window start $\tau$ from past inputs and outputs
 \item Choice: short windows from encoded states
-\item Choice: the history includes sample $\tau$; the encoder estimates all $6+n_{\bar x}$ states:
+\item The history ends at sample $\tau-1$, as in Hoekstra et al.; the encoder estimates all $6+n_{\bar x}$ states:
 \end{outline}
 \begin{wip}
 Only the positions of the state at the start $\tau$ of a training window are
@@ -465,147 +467,141 @@ Following Beintema et al., an encoder estimates this state from the input and
 output history~\cite{beintema2023subnet}.
 Simulating short windows from encoded states keeps the cost of a gradient step
 independent of the record length and stabilises the
-optimisation~\cite[Secs.~2, 3]{beintema2023subnet}.
-Unlike the criterion of Hoekstra et al., whose encoder reads the samples up to
-$\tau-1$~\cite[Eq.~(22e)]{hoekstra2026lfr}, the history includes sample
-$\tau$, as the reconstructability map used below
-requires~\cite[Eqs.~(11) to (17)]{hoekstra2026encoder}:
+optimisation~\cite[Sec.~3.1]{beintema2023subnet}.
+As in the criterion of Hoekstra et al., the encoder reads the samples up to
+$\tau-1$~\cite[Eq.~(22e)]{hoekstra2026lfr}:
 \end{wip}
 \begin{equation}
 \begin{aligned}
  \hat x^{\mathrm n}_{\tau|\tau}
  &=\psi(\theta_{\mathrm{enc}},\chi_\tau),\\
- \chi_\tau&=\col\bigl(y^{\mathrm n}_\tau,\dots,y^{\mathrm n}_{\tau-n},\,
-   u^{\mathrm n}_\tau,\dots,u^{\mathrm n}_{\tau-n}\bigr),
+ \chi_\tau&=\col\bigl(y^{\mathrm n}_{\tau-1},\dots,y^{\mathrm n}_{\tau-n-1},\,
+   u^{\mathrm n}_{\tau-1},\dots,u^{\mathrm n}_{\tau-n-1}\bigr),
 \end{aligned}
  \label{eq:aug_encoder}
 \end{equation}
-\begin{outline}
-\item The encoder is a linear map plus a network correction; $W^b$ gives the physical states, $W^a$ the added states:
-\end{outline}
 \begin{wip}
 where $n$ is the encoder history, $\chi_\tau\in\R^{6(n+1)}$ the recorded
 window and $\theta_{\mathrm{enc}}\in\R^{n_{\mathrm{enc}}}$ the encoder
 parameters.
 The encoder thus estimates all $6+n_{\bar x}$ states, the measured positions
 included.
-\todo{Align the figure's past-only encoder-history labels with
-\eqref{eq:aug_encoder}, which also uses the current sample.}
-
+\revnote{The current results use the window up to and including $\tau$
+(D-054), so the first term of \eqref{eq:aug_loss} scores a sample the encoder
+has seen. The final runs will use the window up to $\tau-1$ as described here.}
+\end{wip}
+\begin{outline}
+\item The encoder is a linear map plus a network correction; $W^b$ and $b^b$ give the physical states, $W^a$ the added states:
+\end{outline}
+\begin{wip}
 The encoder is a linear map with a nonlinear
 correction~\cite[Eq.~(8)]{hoekstra2026encoder}.
-Its added-state rows $W^a$ have no baseline counterpart.
-The linear part acts on the scaled but uncentred window, for which the map
-\eqref{eq:aug_wb} below is built:
+The window and the physical state are centred separately by
+\eqref{eq:aug_norm}, so the map between them is affine and the physical rows
+carry a bias $b^b$:
 \end{wip}
 \begin{equation}
  \psi(\theta_{\mathrm{enc}},\chi_\tau)
- =\begin{bmatrix}W^b\\ W^a\end{bmatrix}(\chi_\tau+\chi_0)
-  -\begin{bmatrix}T_x\mu_x\\ 0\end{bmatrix}
+ =\begin{bmatrix}W^b\\ W^a\end{bmatrix}\chi_\tau
+  +\begin{bmatrix}b^b\\ 0\end{bmatrix}
   +\tilde\psi(\chi_\tau),
  \label{eq:aug_enc_lin}
 \end{equation}
-\begin{outline}
-\item Choice: $W^b$ from the baseline, linearised at rest at $Y=0$ with nominal parameters, ZOH over $T_s$:
-\end{outline}
 \begin{wip}
-where $W^b\in\R^{6\times6(n+1)}$, $W^a\in\R^{n_{\bar x}\times6(n+1)}$,
-$\chi_0$ restores the means that \eqref{eq:aug_norm} removes, $\tilde\psi$ is
-a neural network, and $\theta_{\mathrm{enc}}$ collects $W^b$, $W^a$
+where $W^b\in\R^{6\times6(n+1)}$, $b^b\in\R^6$,
+$W^a\in\R^{n_{\bar x}\times6(n+1)}$, which has no baseline counterpart,
+$\tilde\psi$ is
+a neural network, and $\theta_{\mathrm{enc}}$ collects $W^b$, $b^b$, $W^a$
 and the parameters of $\tilde\psi$.
-We write $\psi_a$ for the last $n_{\bar x}$ rows of $\psi$ and
-$\theta^a_{\mathrm{enc}}$ for $W^a$ with the added-state rows of the output
+We write $\psi_b$ and $\psi_a$ for the first six and the last $n_{\bar x}$
+rows of $\psi$, and $\theta^a_{\mathrm{enc}}$ for $W^a$ with the added-state rows of the output
 layer of $\tilde\psi$.
+\revnote{The current results feed $W^a$ the uncentred window
+$\chi_\tau+\chi_0$, where $\chi_0$ restores the means that
+\eqref{eq:aug_norm} removes, which adds a constant $W^a\chi_0$ to the initial
+added states. The final runs will use the centred window as described here.}
 \todo{VERIFY bib: \texttt{hoekstra2026encoder} = arXiv:2602.13108v1
 (13 Feb 2026), Hoekstra, Gy\"or\"ok, T\'oth, Schoukens; matches PDF p.~1.
 Check for a published (IFAC) version before submission.}
-
-The physical rows start from the baseline, through the model-based
-initialisation of Hoekstra et al.~\cite[Sec.~3.1]{hoekstra2026encoder}.
-Its map needs a linear model, so as in~\cite[Eqs.~(30) to (32)]{hoekstra2026encoder}
-we linearise the baseline at an equilibrium.
-We take rest at $Y=0$, which is an equilibrium for zero input because $K$ in
-\eqref{eq:damping_stiffness_matrices} vanishes on $X$ and $Y$, and the
-position at which the controller of the records is designed
-(Section~\ref{sec:setup}).
-Frozen at $Y=0$, \eqref{eq:eom} is linear, so the linearisation is the
-baseline itself at that position and approximates it only as $Y$ moves.
-Discretising by zero-order hold over $T_s$ and scaling as \eqref{eq:aug_norm}
-without the means gives
 \end{wip}
-\begin{equation}
-\begin{aligned}
- &A_d=T_xe^{A_cT_s}T_x^{-1},\quad
-  B_d=T_x\!\int_0^{T_s}\!e^{A_cs}\,\mathrm ds\,B_cT_u^{-1},\quad
-  C_d=T_yC_cT_x^{-1},\\
- &A_c=\begin{bmatrix}0&I_3\\-M_0^{-1}K&-M_0^{-1}C\end{bmatrix},\quad
-  B_c=\begin{bmatrix}0\\M_0^{-1}P\end{bmatrix},\quad
-  C_c=\begin{bmatrix}P^\top&0\end{bmatrix},
-\end{aligned}
-\label{eq:aug_lin}
-\end{equation}
-% \begin{outline}
-% \item Eliminating the oldest state, as in Hoekstra et al., gives the reconstructability map:
-% \end{outline}
-\begin{wip}
-with $M_0=M(0)$ from \eqref{eq:Msplit}, evaluated at the nominal parameters.
-Stacking the outputs and inputs of the window as $Y_\tau$ and $U_\tau$, the
-output and input parts of $\chi_\tau+\chi_0$ with the newest sample first,
-gives $Y_\tau=O_nT_x\tilde x_{\tau-n}+\Gamma_nU_\tau$ and
-$T_x\tilde x_\tau=A_d^{\,n}T_x\tilde x_{\tau-n}+r_nU_\tau$.
-Eliminating $T_x\tilde x_{\tau-n}$ gives the reconstructability
-map~\cite[Eqs.~(11) to (17)]{hoekstra2026encoder}
-\end{wip}
-% \begin{equation}
-% \begin{aligned}
-%  T_x\tilde x_\tau&=A_d^{\,n}O_n^{+}\bigl(Y_\tau-\Gamma_nU_\tau\bigr)+r_nU_\tau,\\
-%  W^b&=\begin{bmatrix}
-%   A_d^{\,n}O_n^{+} & \;r_n-A_d^{\,n}O_n^{+}\Gamma_n
-%  \end{bmatrix},
-% \end{aligned}
-%  \label{eq:aug_wb}
-% \end{equation}
 \begin{outline}
-\item The baseline is marginally stable on $X$ and $Y$ but observable from the positions, so $O_n$ has full column rank
-\item Choice: the noise-free map of Hoekstra et al., not the noise-model version, since no process-noise gain is known
-\item $W^b$ only sets the start; it is trained with all other parameters, including $\theta_{\mathrm{base}}$, which Hoekstra et al.\ keep fixed
+\item Choice: the physical rows start data-based, because the baseline is nonlinear (LPV in $Y$):
 \end{outline}
 \begin{wip}
-where $O_n=\col(C_dA_d^{\,n},\dots,C_dA_d,C_d)\in\R^{3(n+1)\times6}$,
-$\Gamma_n$ is block upper triangular with block $(i,j)$ equal to
-$C_dA_d^{\,j-i-1}B_d$ for $j>i$ and zero otherwise,
-$r_n=[0\;\,B_d\;\,A_dB_d\;\cdots\;A_d^{\,n-1}B_d]$, as
-in~\cite[Eqs.~(10), (13)]{hoekstra2026encoder}, and ${}^{+}$ is the Moore-Penrose
-pseudoinverse.
-The paper assumes a stable baseline~\cite[Sec.~2]{hoekstra2026encoder}.
-Ours is marginally stable, but the measured positions make $(A_d,C_d)$
-observable, so $O_n$ has full column rank.
-The map is derived without noise; with white Gaussian measurement noise it is
-the maximum-likelihood estimate of the state~\cite[Sec.~3.1]{hoekstra2026encoder}.
-The paper also gives a version for process noise, which needs a known noise
-gain~\cite[Eqs.~(18) to (29)]{hoekstra2026encoder}.
-The noise in our records enters at the position measurement
-(Section~\ref{sec:setup}) and no noise gain is known, so we use
-\eqref{eq:aug_wb}.
-Our measurement noise is coloured, so the map is a starting value for $W^b$,
-not an optimal estimator.
-It leaves co-estimation of the baseline parameters out of
-scope~\cite[footnote~1]{hoekstra2026encoder}, whereas here $W^b$ is trained
-jointly with them.
-\todo{Fix before the final run (\texttt{FINAL-RUN-FIXES.md} item~1): $W^b$ is built from the nominal parameters, which equal those of the simulated truth, while $\theta_{\mathrm{base}}$ starts detuned. The final runs build $W^b$ at the start $\theta^0_{\mathrm{base}}$; the text then states that.}
-
-Hoekstra et al.\ instead fit the baseline encoder to states simulated with the
-baseline~\cite[Eq.~(30)]{hoekstra2026lfr}, the data-based alternative
-of~\cite[Sec.~3.2]{hoekstra2026encoder}.
-On the gantry, that simulation is driven by the recorded input and drifts on
-the free axes $X$ and $Y$ (Section~\ref{sec:aug_loop}), so it would fit $W^b$
-to wrong states.
-\todo{Revise: the drift holds only for the open-loop simulation of Jan's Eq.~(30). A closed-loop simulation of the baseline with the known controller does not drift (Section~\ref{sec:aug_loop}), so drift alone is no reason against the data-based route. Candidate: the closed-loop alternative would need an extra simulation, which the model-based map avoids.}
-The map \eqref{eq:aug_wb} needs no simulation and negligible
-computation~\cite[Sec.~4.4]{hoekstra2026encoder}.
-It gives better starting values and faster convergence than a random encoder,
-at comparable final accuracy~\cite[Sec.~4.4]{hoekstra2026encoder}.
+The physical rows start from the baseline.
+The baseline is self-scheduled by the state $Y$ (Section~\ref{sec:lfr}) and
+therefore nonlinear.
+For a nonlinear baseline, a state reconstruction from a linearisation is
+accurate only around the linearisation
+point~\cite[Sec.~3.1]{hoekstra2026encoder}.
+Hoekstra et al.\ therefore suggest fitting the encoder to states simulated
+with the baseline~\cite[Sec.~3.2, Eq.~(35), Sec.~4.4]{hoekstra2026encoder}, which their
+augmentation method does~\cite[Eq.~(30)]{hoekstra2026lfr}.
+Driven by the recorded input, that simulation drifts on the free axes $X$
+and $Y$ (Section~\ref{sec:aug_structure}).
+We therefore simulate the baseline in closed loop with the known controller of
+Section~\ref{sec:aug_loop}, once over every training record:
 \end{wip}
+\begin{equation}
+ \tilde x^{\mathrm n,0}_{k+1}=f^{\mathrm n}_{\mathrm{base}}\bigl(\theta^0_{\mathrm{base}},
+   \tilde x^{\mathrm n,0}_k,\hat u^{\mathrm n,0}_k\bigr),\qquad
+ \hat y^{\mathrm n,0}_k=C^{\mathrm n}\tilde x^{\mathrm n,0}_k,
+ \label{eq:aug_enc_sim}
+\end{equation}
+\begin{wip}
+where $\tilde x^{\mathrm n,0}_k$ is the simulated baseline state,
+$\theta^0_{\mathrm{base}}$ are the starting parameters, and
+$\hat u^{\mathrm n,0}_k$ is the closed-loop input of \eqref{eq:aug_cl_step}, with
+$\hat y^{\mathrm n,0}_k$ as the model output and the controller state zero at the start
+of the record.
+\todo{Missing: initial state of \eqref{eq:aug_enc_sim} per record (D-251 open).
+Candidate: the measured positions with zero velocity at the record start
+(basis: the records start at rest, to be checked in the data).}
+\end{wip}
+\begin{outline}
+\item Choice: the physical rows of the encoder are fitted to the simulated states, as in Hoekstra et al.:
+\end{outline}
+\begin{wip}
+The physical rows of the encoder are then fitted to the simulated
+states~\cite[Eq.~(30)]{hoekstra2026lfr}:
+\end{wip}
+\begin{equation}
+ \theta^{b,0}_{\mathrm{enc}}\in\arg\min_{\theta^b_{\mathrm{enc}}}
+ \frac{1}{|\mathcal D|}\sum_{\tau\in\mathcal D}
+ \bigl\|\psi_b(\theta^b_{\mathrm{enc}},\chi^{0}_\tau)-\tilde x^{\mathrm n,0}_\tau\bigr\|_2^2,
+ \label{eq:aug_enc_fit}
+\end{equation}
+\begin{wip}
+where $\theta^b_{\mathrm{enc}}$ collects $W^b$, $b^b$, the hidden layers of
+$\tilde\psi$ and the physical rows of its output layer, fitted from a random
+start as in~\cite[Eq.~(35)]{hoekstra2026encoder},
+$\theta^{b,0}_{\mathrm{enc}}$ is its fitted start value, $\chi^{0}_\tau$ is the
+window of \eqref{eq:aug_encoder} built from $\hat y^{\mathrm n,0}$ and
+$\hat u^{\mathrm n,0}$, and $\mathcal D$ is the set of samples $\tau$ in the
+training records with a complete window.
+Unlike~\cite[Eq.~(30)]{hoekstra2026lfr}, the window holds the closed-loop
+input of \eqref{eq:aug_enc_sim} instead of the recorded input.
+\end{wip}
+\begin{outline}
+\item $\theta^{b,0}_{\mathrm{enc}}$ only sets the start; $\theta^b_{\mathrm{enc}}$ is trained jointly with $\theta_{\mathrm{base}}$
+\end{outline}
+\begin{wip}
+$\theta^{b,0}_{\mathrm{enc}}$ only sets the start.
+$\theta^b_{\mathrm{enc}}$ is trained jointly with all other parameters, including
+$\theta_{\mathrm{base}}$, which the encoder paper keeps
+fixed~\cite[footnote~1]{hoekstra2026encoder}.
+\todo{Fix before the final run (\texttt{FINAL-RUN-FIXES.md} item~1): $W^b$ is built from the nominal parameters, which equal those of the simulated truth, while $\theta_{\mathrm{base}}$ starts detuned. The final runs build $W^b$ at the start $\theta^0_{\mathrm{base}}$; the text then states that.}
+\revnote{The current results build $W^b$ from the true parameters of the
+simulated system, while $\theta_{\mathrm{base}}$ starts detuned. The final
+runs will simulate the baseline at the start $\theta^0_{\mathrm{base}}$ as
+described here.}
+\revnote{The current results initialise only $W^b$, with the model-based
+reconstructability map~\cite[Eqs.~(15) to (17)]{hoekstra2026encoder} of the
+baseline linearised at rest at $Y=0$ (Appendix~\ref{app:enc_model}), and start
+the whole output layer of $\tilde\psi$ at zero. The final runs will fit the
+physical rows as described here (D-251).}
+\end{wip}
+
 
 \subsection{Closed-loop simulation}\label{sec:aug_loop}
 \ifdraft
@@ -817,8 +813,8 @@ adapted for the closed loop of Section~\ref{sec:aug_loop} and the
 encoder of Section~\ref{sec:aug_encoder}:
 \begin{equation}
 \begin{aligned}
- &\min_{\vartheta}\;V(\vartheta)=\frac{1}{|\mathcal T|\,n_f\,n_y}
- \sum_{\tau\in\mathcal T}\sum_{k=\tau}^{\tau+n_f-1}
+ &\min_{\vartheta}\;V(\vartheta)=\frac{1}{|\mathcal W|\,n_f\,n_y}
+ \sum_{\tau\in\mathcal W}\sum_{k=\tau}^{\tau+n_f-1}
  \norm{y^{\mathrm n}_{k}-\hat y^{\mathrm n}_{k|\tau}}_2^2\quad\text{s.t.}\\
  &\tilde x^{\mathrm n}_{k+1|\tau}
   =f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\beta),
@@ -833,7 +829,7 @@ encoder of Section~\ref{sec:aug_encoder}:
 \label{eq:aug_loss}
 \end{equation}
 for $\tau\le k<\tau+n_f$, where each training window starts at a sample
-$\tau\in\mathcal T$ and has length $n_f$, $n_y=3$, and
+$\tau\in\mathcal W$ and has length $n_f$, $n_y=3$, and
 $\theta_{\mathrm{base}}(\beta)$ gives the baseline parameters.
 \todo{might have to move to discussion if i dont add it. Since the controller corrects part of the output error,
 it can hide errors in the plant model.
@@ -884,8 +880,8 @@ and the added-state rows are kept random:
 \begin{aligned}
  &\text{baseline:} &&\beta=0,\\
  &\text{network:}  &&W^{\tilde x}_L=0,\quad b_L=0,\quad W^{\bar x}_L\sim\mathcal U(-c,c),\\
- &\text{encoder:}  &&W^b\text{ from the reconstructability map},\\
- &                 &&W^a\sim\mathcal U(-a,a),\quad \tilde W_L=0,\quad \tilde b_L=0,\\
+ &\text{encoder:}  &&\theta^{b,0}_{\mathrm{enc}}\text{ from \eqref{eq:aug_enc_fit}},\\
+ &                 &&W^a\sim\mathcal U(-a,a),\quad \tilde W^{\bar x}_L=0,\quad \tilde b^{\bar x}_L=0,\\
  &                 &&c=1/\sqrt{n_h},\quad a=\sqrt{6/(n_{\bar x}+6(n+1))},
 \end{aligned}
  \label{eq:aug_init}
@@ -895,9 +891,9 @@ $\phi_{\mathrm{aug}}$, with rows $W^{\tilde x}_L$ for
 $f^{\mathrm n}_{\mathrm{aug}}$ and $W^{\bar x}_L$ for
 $g^{\mathrm n}_{\mathrm{aug}}$.
 The number of neurons per hidden layer $n_h$, 
-$\tilde W_L$ and $\tilde b_L$
-are the output layer weights and bias of $\tilde\psi$.
-We initialise $W^{\bar x}_L$ and the hidden layers of both networks
+$\tilde W^{\bar x}_L$ and $\tilde b^{\bar x}_L$
+are the added-state rows of the output layer weights and bias of $\tilde\psi$.
+We initialise $W^{\bar x}_L$ and the hidden layers of $\phi_{\mathrm{aug}}$
 from $\mathcal U(-1/\sqrt{m},1/\sqrt{m})$,
 where $m$ is the input size of the layer.
 We use Xavier initialisation for $W^a$,
@@ -911,6 +907,10 @@ given they start from the same physical state.
 The added states $\bar x$ are still updated by
 $g^{\mathrm n}_{\mathrm{aug}}$, as in~\cite[Eq.~(29)]{hoekstra2026lfr}.
 \\
+\revnote{The current results start $W^b$ from the model-based map of
+Appendix~\ref{app:enc_model} and the whole output layer of $\tilde\psi$ at
+zero. The final runs will start the physical encoder rows from
+$\theta^{b,0}_{\mathrm{enc}}$ of \eqref{eq:aug_enc_fit} as described here.}
 \revnote{The current results start with the whole output
 layer of $\phi_{\mathrm{aug}}$ at zero, so $g_{\mathrm{aug}}=0$ and the added
 states are zero after the first step. The final runs will use live
@@ -931,7 +931,7 @@ $g_{\mathrm{aug}}$ as described here.}
 \fi
 
 The physical states of the baseline are initialized with the 
-reconstructability map $W^b$ \eqref{eq:aug_init} and updated through
+data-based fit \eqref{eq:aug_enc_fit} and updated through
 $f^{\mathrm n}_{\mathrm{base}}$, while the added-state rows $W^a$ are randomly initialized.
 For the physical states their generalized coordinates $q_k$ are directly mapped to 
 actuator positions, $\hat y_k=P^\top q_k$ in \eqref{eq:aug_transition}.
