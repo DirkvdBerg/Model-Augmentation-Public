@@ -121,8 +121,6 @@
 \newlabel{fig:aug_closed_loop}{{4}{8}{Recorded system loop (top) and augmented model loop (bottom), both using the same feedback controller, reference $r_k$ and feedforward $u_k^{\mathrm {ff}}$. The model output is calculated before the input updates the model state}{figure.caption.4}{}}
 \newlabel{eq:aug_residual_loop}{{22}{8}{Closed-loop simulation}{equation.22}{}}
 \newlabel{eq:aug_cl_step}{{23}{8}{Closed-loop simulation}{equation.23}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Identification}{8}{subsection.3.4}\protected@file@percent }
-\newlabel{sec:aug_closed_loop}{{\mbox  {III-D}}{8}{Identification}{subsection.3.4}{}}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
@@ -131,6 +129,8 @@
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026lfr}
 \citation{hoekstra2026encoder}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Identification}{9}{subsection.3.4}\protected@file@percent }
+\newlabel{sec:aug_closed_loop}{{\mbox  {III-D}}{9}{Identification}{subsection.3.4}{}}
 \newlabel{eq:mdelta_map}{{24}{9}{Identification}{equation.24}{}}
 \newlabel{eq:aug_loss}{{25}{9}{Identification}{equation.25}{}}
 \newlabel{eq:aug_init}{{26}{9}{Identification}{equation.26}{}}
@@ -184,25 +184,25 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Identification of the corrected model}{14}{subsection.4.2}\protected@file@percent }
 \newlabel{sec:obc_ident}{{\mbox  {IV-B}}{14}{Identification of the corrected model}{subsection.4.2}{}}
 \newlabel{eq:obc_problem}{{35}{14}{Identification of the corrected model}{equation.35}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Simulated gantry with a payload-mounted absorber. The light-gray elements $(m_a,k_a,c_a,\delta _a)$ are absent from the baseline.}}{14}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:gantry_absorber}{{6}{14}{Simulated gantry with a payload-mounted absorber. The light-gray elements $(m_a,k_a,c_a,\delta _a)$ are absent from the baseline}{figure.caption.6}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {V}Experiment design}{14}{section.5}\protected@file@percent }
 \newlabel{sec:setup}{{V}{14}{Experiment design}{section.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}System and data}{14}{subsection.5.1}\protected@file@percent }
 \citation{lee2020feeddrive}
 \citation{lee2020feeddrive}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Simulated gantry with a payload-mounted absorber. The light-gray elements $(m_a,k_a,c_a,\delta _a)$ are absent from the baseline.}}{15}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:gantry_absorber}{{6}{15}{Simulated gantry with a payload-mounted absorber. The light-gray elements $(m_a,k_a,c_a,\delta _a)$ are absent from the baseline}{figure.caption.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Compared models}{15}{subsection.5.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Training and evaluation}{15}{subsection.5.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Real Telica data and split}{15}{subsection.5.4}\protected@file@percent }
 \citation{hoekstra2026lfr}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Real Telica data and split}{16}{subsection.5.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-E}}Training protocol, comparators, and metrics}{16}{subsection.5.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-F}}Reproducibility and implementation checks}{16}{subsection.5.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {VI}Results}{17}{section.6}\protected@file@percent }
 \newlabel{sec:results}{{VI}{17}{Results}{section.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-A}}Baseline form}{17}{subsection.6.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-B}}Augmentation structure}{17}{subsection.6.2}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Simulation error RMS on the $X$ axes of the LPV baseline and the LTI baseline at $Y=0$, both at the true parameters.}}{17}{figure.caption.7}\protected@file@percent }
 \newlabel{fig:res_lpv_lti}{{7}{17}{Simulation error RMS on the $X$ axes of the LPV baseline and the LTI baseline at $Y=0$, both at the true parameters}{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-B}}Augmentation structure}{17}{subsection.6.2}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Simulation error RMS per axis, mean over test records I1 to I6.}}{18}{table.caption.8}\protected@file@percent }
 \newlabel{tab:res_structure}{{I}{18}{Simulation error RMS per axis, mean over test records I1 to I6}{table.caption.8}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Amplitude spectral density of the $Y$ simulation error on test records I1 and I2. Shaded: multisine band. Dotted: absorber pole.}}{18}{figure.caption.9}\protected@file@percent }
@@ -240,10 +240,10 @@
 \bibcite{retzler2024}{14}
 \bibcite{toth2010modeling}{15}
 \bibcite{drenth2025lpvlfr}{16}
-\bibcite{ovchinnikov2021computing}{17}
-\bibcite{gautier1990minimum}{18}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-B}}Discussion}{21}{subsection.8.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{References}{21}{section*.13}\protected@file@percent }
+\bibcite{ovchinnikov2021computing}{17}
+\bibcite{gautier1990minimum}{18}
 \bibcite{drenth2025thesis}{19}
 \bibcite{beintema2023subnet}{20}
 \bibcite{hoekstra2026encoder}{21}

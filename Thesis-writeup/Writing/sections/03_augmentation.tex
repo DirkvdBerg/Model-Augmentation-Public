@@ -540,7 +540,7 @@ Check for a published (IFAC) version before submission.}
 \item Choice: the physical rows start data-based, because the baseline is nonlinear (LPV in $Y$):
 \end{outline}
 \begin{wip}
-\\
+%\\
 The physical rows are initialized from the baseline model.
 Because solving \eqref{eq:eom} for $\ddot q$ requires $M(Y)^{-1}$ 
 and $Y$ is a state (Section~\ref{sec:lfr}), the baseline is nonlinear.
@@ -592,24 +592,30 @@ states~\cite[Eq.~(30)]{hoekstra2026lfr}:
  \label{eq:aug_enc_fit}
 \end{equation}
 \begin{wip}
-where $\theta^b_{\mathrm{enc}}$ contains $W^b$, the hidden layers of
-$\tilde\psi$ and the physical rows of its output layer, fitted from a random
-start as in~\cite[Eq.~(35)]{hoekstra2026encoder},
-$\theta^{b,0}_{\mathrm{enc}}$ is its fitted start value, $\chi^{0}_\tau$ is the
-window of \eqref{eq:aug_encoder} built from $\hat y^{\mathrm n,0}$ and
-$\hat u^{\mathrm n,0}$, and $\mathcal D$ is the set of samples $\tau$ in the
-training records with a complete window.
-Unlike~\cite[Eq.~(30)]{hoekstra2026lfr}, the window holds the closed-loop
-input of \eqref{eq:aug_enc_sim} instead of the recorded input.
+where $\theta^b_{\mathrm{enc}}$ consists of $W^b$,
+the hidden-layer parameters of $\tilde\psi$ and the physical
+rows of its output layer.
+These parameters are fitted starting form the weights drawn from
+$\mathcal U(-1/\sqrt m,1/\sqrt m)$, where $m$ is the input
+size of the layer~\cite[Eq.~(35)]{hoekstra2026encoder}.
+The fitted values $\theta^{b,0}_{\mathrm{enc}}$ are used
+to start training.
+$\chi^0_\tau$ is formed as we do in \eqref{eq:aug_encoder}
+using $\hat y^{\mathrm n,0}$ and $\hat u^{\mathrm n,0}$.
+$\mathcal D$ is the set of samples $\tau$ in the training
+records for which a complete window is available.
+We use the closed-loop input from \eqref{eq:aug_enc_sim}, instead of the 
+recorded input as in~\cite[Eq.~(30)]{hoekstra2026lfr}.
 \end{wip}
 \begin{outline}
 \item $\theta^{b,0}_{\mathrm{enc}}$ only sets the start; $\theta^b_{\mathrm{enc}}$ is trained jointly with $\theta_{\mathrm{base}}$
 \end{outline}
 \begin{wip}
-$\theta^{b,0}_{\mathrm{enc}}$ only sets the start.
-$\theta^b_{\mathrm{enc}}$ is trained jointly with all other parameters, including
-$\theta_{\mathrm{base}}$, which the encoder paper keeps
-fixed~\cite[footnote~1]{hoekstra2026encoder}.
+We only use $\theta^{b,0}_{\mathrm{enc}}$ for initialization.
+$\theta^b_{\mathrm{enc}}$ is trained in combination with 
+$\theta^a_{\mathrm{enc}}$, the network parameters $\theta_{\mathrm{aug}}$ 
+and the baseline parameters $\theta_{\mathrm{base}}$, 
+which the encoder paper keeps fixed~\cite[footnote~1]{hoekstra2026encoder}.
 \todo{Fix before the final run (\texttt{FINAL-RUN-FIXES.md} item~1): $W^b$ is built from the nominal parameters, which equal those of the simulated truth, while $\theta_{\mathrm{base}}$ starts detuned. The final runs build $W^b$ at the start $\theta^0_{\mathrm{base}}$; the text then states that.}
 \revnote{The current results build $W^b$ from the true parameters of the
 simulated system, while $\theta_{\mathrm{base}}$ starts detuned. The final
