@@ -930,11 +930,6 @@ $g_{\mathrm{aug}}$ as described here.}
 \end{itemize}
 \fi
 
-\begin{outline}
-\item The start \eqref{eq:aug_init} gives the physical states a model and the added states none
-\item $V$ scores only the output, and $f_{\mathrm{aug}}$ can lower the error without memory, so training can leave the omitted dynamics out of $\bar x$
-\end{outline}
-\begin{wip}
 The physical states of the baseline are initialized with the 
 reconstructability map $W^b$ \eqref{eq:aug_init} and updated through
 $f^{\mathrm n}_{\mathrm{base}}$, while the added-state rows $W^a$ are randomly initialized.
@@ -957,13 +952,7 @@ due to the physical states being able to directly map to the output,
 while also having a much better starting point.
 
 \todo{Current runs: the 2026-10-11 runs (R1 to R7) start the whole output layer of $\phi_{\mathrm{aug}}$ at zero (\texttt{G\_INIT} zero, D-240), as the authors' public code does (D-237), so $g^{\mathrm n}_{\mathrm{aug}}=0$ and $\bar x$ is zero after the first step. In the final runs, the added-state rows of the network's final output layer are randomly initialized (D-248, \texttt{FINAL-RUN-FIXES.md} item~6); \eqref{eq:aug_init} in Section~\ref{sec:aug_closed_loop} then changes accordingly. PS with a live start is so far one seed with the ResNet variant ($4.0\times10^{-6}$~m against $1.0\times10^{-5}$~m for plain training).}
-\end{wip}
 
-\begin{outline}
-\item Choice: predictive-state (PS) initialisation gives the added states a role from data, as $W^b$ does for the physical states, then hands over to \eqref{eq:aug_loss}
-\item Adapted from two-stage regression and its use before backpropagation through time; differences: residual target, nonlinear transition, first stage alongside $V$
-\end{outline}
-\begin{wip}
 %\\
 
 We therefore propose predictive-state (PS) initialisation, which is
@@ -983,7 +972,6 @@ instead of a \kw{linear operator.}
 their initialisation before starting BPTT~\cite[Sec.~4.2]{downey2017psrnn}.}
 Fig.~\ref{fig:ps2_windows} shows which samples
 are used for both stages.
-\end{wip}
 
 \begin{figure}[t]
  \centering
@@ -999,10 +987,6 @@ are used for both stages.
  \label{fig:ps2_windows}
 \end{figure}
 
-\begin{outline}
-\item S1, during the first updates of \eqref{eq:aug_loss}: a temporary decoder on $\bar x_{\tau|\tau}$ predicts the current model's residual over the $H$ samples after the encoder window:
-\end{outline}
-\begin{wip}
 %\\
 % Stage S1 trains the encoder's added-state outputs to predict the residual of
 % the augmented model \eqref{eq:aug_transition} at the parameters $\vartheta$
@@ -1029,7 +1013,6 @@ We have chosen to use the same number of samples as the encoder window.
 Then a temporary decoder $d$ with only the added states as inputs
 $\bar x_{\tau|\tau}=\psi_a(\theta_{\mathrm{enc}},\chi_\tau)$
 is used to predict this residual:
-\end{wip}
 \begin{equation}
 \begin{aligned}
  e_\tau&=\frac{1}{\sigma_e}\col\bigl(y^{\mathrm n}_{k}-\hat y^{\mathrm n}_{k|\tau}\bigr)_{k=\tau+1}^{\tau+H},\\
@@ -1040,11 +1023,6 @@ is used to predict this residual:
 \end{aligned}
 \label{eq:ps2_s1}
 \end{equation}
-\begin{outline}
-\item The minimiser is the conditional mean of the residual given the window; through the bottleneck $\bar x_{\tau|\tau}$ the added states become a predictive state
-\item The target starts after the window, so the two share no sample
-\end{outline}
-\begin{wip}
 % where $\hat y^{\mathrm n}_{k|\tau}$ is the output of the loop of
 % Section~\ref{sec:aug_loop} from $\hat x^{\mathrm n}_{\tau|\tau}$ at the current
 % $\vartheta$, held fixed in the gradient, $\mathcal B$ a minibatch of window
@@ -1098,37 +1076,22 @@ For the PS implementation the decoder predicts the model residual and
 is removed after S1.
 \todo{Current runs (\texttt{FINAL-RUN-FIXES.md} item~5): the 2026-10-11 runs start the target at $\tau$ (\texttt{ps2\_opening.py}, \texttt{\_sample} and \texttt{\_residual}), so sample $\tau$ is both the last sample of $\chi_\tau$ and the first of $e_\tau$, and the noise in $y_\tau$ enters both sides of \eqref{eq:ps2_s1}.}
 \todo{Missing: Hefny et al.\ model the noise as independent per sample (Fig.~1). Our measurement noise is low-pass and fed back by the controller, so disjoint windows remove the shared sample but not all correlation between $\chi_\tau$ and the noise in $e_\tau$. Candidate: one sentence here or in the Discussion (basis: D-238 noise model).}
-\end{wip}
 
-\begin{outline}
-\item Unexplained fraction $\nu$ on fixed calibration windows:
-\end{outline}
-\begin{wip}
 To evaluate how well $\bar x_{\tau|\tau}$ performs at predicting the residual, a
 fixed set $\mathcal C$ of windows from the held out data is used.
 For this set the squared prediction error of the decoder
 divided by the squared residual is computed,
-\end{wip}
 \begin{equation}
  \nu=\frac{\sum_{\tau\in\mathcal C}\norm{d\bigl(\theta_{\mathrm p},\psi_a(\theta_{\mathrm{enc}},\chi_\tau)\bigr)-e_\tau}_2^2}
  {\sum_{\tau\in\mathcal C}\norm{e_\tau}_2^2}.
  \label{eq:ps2_nu}
 \end{equation}
-\begin{outline}
-\item S1 ends when $\nu$ stops improving or at a cap; S2 follows only if $\nu$ is below a threshold, otherwise the S1 changes are kept (exact rule in the appendix)
-\end{outline}
-\begin{wip}
 S1 is stopped when a maximum number of updates is reached or when $\nu$ stops improving, or at an early check when $\nu$ is above $\nu_{\max}$.
 S2 starts only if $\nu$ is below a threshold $\nu_{\max}$, else the decoder is removed 
 and training continues. In both cases the encoder changes from S1 are kept.
 The threshold rule for S2 is given in Appendix~\ref{app:ps_stop}.
 \todo{Missing: basis of the PS switch and stop rules (S1 plateau and cap, screen update and threshold, S2 plateau and cap, snapshot sizes, calibration split as the last record of each class with three or more records). Candidate: rows of the hyperparameter table in Section~\ref{sec:setup}, all HEURISTIC (\texttt{PS2Spec}; \texttt{PS2-METHOD.md} Sec.~5), noting that the S1 cap, not the plateau, ended S1 in every run so far.}
-\end{wip}
 
-\begin{outline}
-\item S2, once at the end of S1: one-step regression of $g^{\mathrm n}_{\mathrm{aug}}$ on frozen encoder pairs with the recorded input:
-\end{outline}
-\begin{wip}
 
 S1 has only trained the part of the encoder that initializes the 
 added states $\bar x_{\tau|\tau}$, $g^{\mathrm n}_{\mathrm{aug}}$ 
@@ -1151,7 +1114,6 @@ During S2 the model is not simulated in closed-loop and $V$ is paused.
 We instead train $g^{\mathrm n}_{\mathrm{aug}}$ on
 $\mathcal P$ using one-step regression with the recorded
 actuator force $u^{\mathrm n}_{k_i}$ as input, and a separate Adam optimiser:
-\end{wip}
 \begin{equation}
 \begin{aligned}
  \mathcal P&=\bigl\{(\hat x^{\mathrm n}_{k_i|k_i},\,u^{\mathrm n}_{k_i},\,\bar x_{k_i+1|k_i+1})\bigr\}_{i=1}^{N_{\mathcal P}},\\
@@ -1163,10 +1125,6 @@ actuator force $u^{\mathrm n}_{k_i}$ as input, and a separate Adam optimiser:
 \end{aligned}
 \label{eq:ps2_s2}
 \end{equation}
-\begin{outline}
-\item The recorded input is the one that moved the system from $k_i$ to $k_i+1$; at a window start the loop input is:
-\end{outline}
-\begin{wip}
 where $\theta_{\mathrm{enc}}$ is not updated during S2,
 $\mathcal B_{\mathcal P}\subset\mathcal P$ is a minibatch,
 $\bar x_{j,\cdot}$ is the $j$th added state and $m_j$
@@ -1182,14 +1140,9 @@ The encoder estimates $\bar x_{k_i+1|k_i+1}$ from
 $\chi_{k_i+1}$, using the data up to $k_i+1$.
 At the start of a window in \eqref{eq:aug_residual_loop}
 $x^c=0$, resulting in the model input
-\end{wip}
 \begin{equation*}
  \hat u_{\mathrm{act},k_i}=u_{\mathrm{act},k_i}+D_{\mathrm{fb}}\bigl(y_{k_i}-\hat y_{k_i|k_i}\bigr),
 \end{equation*}
-\begin{outline}
-\item So it equals the recorded input when the encoder reproduces $y$; S2 leaves the physical rows of the output layer unchanged
-\end{outline}
-\begin{wip}
 
 when the encoder reproduces $y_{k_i}$ this equals the recorded input, 
 because at this sample only the controller feedthrough $D_{\mathrm{fb}}$
@@ -1203,23 +1156,13 @@ The hidden layers of $\phi_{\mathrm{aug}}$ are shared by
 $f^{\mathrm n}_{\mathrm{aug}}$ and $g^{\mathrm n}_{\mathrm{aug}}$, so S2 also
 updates $f^{\mathrm n}_{\mathrm{aug}}$.
 \todo{The encoder windows at $k_i$ and $k_i+1$ share measurement samples, so noise enters both sides of the S2 regression. Hefny et al.\ discuss how correlated noise can bias such a fit~\cite[Sec.~2]{hefny2015supervised}. We do not correct for this effect in S2.}
-\end{wip}
-\begin{outline}
-\item Then the decoder is discarded and \eqref{eq:aug_loss} continues from the parameters PS leaves; this model is called $\mathcal M_{\mathrm{PS}}$:
-\end{outline}
-\begin{wip}
 When S2 is completed the optimization continues minimizing
 \eqref{eq:aug_loss}
-\end{wip}
 \begin{equation}
  \vartheta_{\mathrm{PS}}
  =\bigl(\beta^{(i_1)},\,\theta^{\mathrm{S2}}_{\mathrm{aug}},\,\theta^{(i_1)}_{\mathrm{enc}}\bigr),
  \label{eq:ps2_handover}
 \end{equation}
-\begin{outline}
-\item PS changes only the parameters during the first updates: deployed model, criterion and selection unchanged; the added states stay latent
-\end{outline}
-\begin{wip}
 followed by the L-BFGS polish and selection of Section~\ref{sec:aug_closed_loop}.
 Here $\beta^{(i_1)}$ and $\theta^{(i_1)}_{\mathrm{enc}}$ are the parameters
 after S1 and $\theta^{\mathrm{S2}}_{\mathrm{aug}}$ contains the parameters
@@ -1230,4 +1173,3 @@ PS has only changed the starting point of minimising $V$
 with its initialization phases, not what is being minimized.
 The models with and without PS have the same number of parameters, 
 since the decoder is removed.
-\end{wip}
