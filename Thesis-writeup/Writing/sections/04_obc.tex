@@ -72,6 +72,13 @@
 \fi
 
 \begin{wip}
+The parameter pair $(\theta_{\mathrm{base}},\theta_{\mathrm{aug}})$
+minimising the criterion of Section~\ref{sec:aug_closed_loop} is non-unique:
+different pairs give the same fit~\cite[Sec.~3.1]{gyorok2026obc}.
+
+
+
+
 The split between baseline and network in the augmented model of
 Section~\ref{sec:aug_closed_loop} is not unique, so the estimate of
 $\theta_{\mathrm{base}}$ can lose its physical
@@ -173,7 +180,7 @@ The sensitivity is
 \begin{wip}
 where $\beta_{\mathrm{lin}}\in\R^{10}$ is the linearisation point and
 $\Phi:\R^{10}\times\R^6\times\R^3\to\R^{6\times10}$.
-\todo{Open question for Maarten and Jan: omit or keep the offset column $\Gamma$. For omitting: the estimate of $\beta$ depends on the data only through $\boldsymbol\Phi$ (below \eqref{eq:obc_eps}); the protected directions then do not depend on the centring; in the construction we adopt, the regressor equals the parameter derivative~\cite[Eq.~(39)]{gyorok2026obc}; parameter uniqueness needs the rank of $\boldsymbol\Phi$ only~\cite[Assumption~1]{gyorok2026obc} (D-186 reasons 1, 2, written for the earlier trajectory basis). For keeping: Gy\"or\"ok et al.\ include it for a nonlinear baseline~\cite[Eq.~(18)]{gyorok2025l4dc}; D-190 records the supervisors' condition as non-overlap with the baseline output, the column span of $[\boldsymbol\Phi\;\,\boldsymbol f^{\mathrm n}_{\mathrm{base}}]$, and measured that the column adds a direction (57 percent of it outside $\ran\boldsymbol\Phi$). Without it, a network term along $\boldsymbol f^{\mathrm n}_{\mathrm{base}}$ is charged only through its component in $\ran\boldsymbol\Phi$ (D-186 caveat). Candidate: omit (D-192, the current code).}
+\todo{Open question for Maarten and Jan: omit or keep the offset column $\Gamma$. For omitting: the estimate of $\beta$ depends on the data only through their projection onto $\ran\boldsymbol\Phi$ (below \eqref{eq:obc_eps}); the protected directions then do not depend on the centring; in the construction we adopt, the regressor equals the parameter derivative~\cite[Eq.~(39)]{gyorok2026obc}; parameter uniqueness needs the rank of $\boldsymbol\Phi$ only~\cite[Assumption~1]{gyorok2026obc} (D-186 reasons 1, 2, written for the earlier trajectory basis). For keeping: Gy\"or\"ok et al.\ include it for a nonlinear baseline~\cite[Eq.~(18)]{gyorok2025l4dc}; D-190 records the supervisors' condition as non-overlap with the baseline output, the column span of $[\boldsymbol\Phi\;\,\boldsymbol f^{\mathrm n}_{\mathrm{base}}]$, and measured that the column adds a direction (57 percent of it outside $\ran\boldsymbol\Phi$). Without it, a network term along $\boldsymbol f^{\mathrm n}_{\mathrm{base}}$ is charged only through its component in $\ran\boldsymbol\Phi$ (D-186 caveat). Candidate: omit (D-192, the current code).}
 
 We evaluate $\Phi$ on a fixed reference set, which Gy\"or\"ok et al.\ allow
 for the construction of the coefficient~\cite[Sec.~3.2]{gyorok2026obc}.
@@ -190,10 +197,10 @@ Gy\"or\"ok et al.\ simulate the baseline when the states are not
 measured~\cite[Sec.~3]{gyorok2025l4dc}.
 We build the tuples from the data instead, as their later construction
 evaluates its regressor at the measured data~\cite[Eq.~(5)]{gyorok2026obc}.
-The tuples then lie on the trajectories of the system, where the omitted
-dynamics act, rather than on those of the baseline at
-$\theta^0_{\mathrm{base}}$.
-They also hold the measured next states that define the discrepancy
+The tuples then follow the trajectories reconstructed from the measured
+positions of the system, where the omitted dynamics act, rather than those of
+the baseline at $\theta^0_{\mathrm{base}}$.
+The same reconstruction gives the next states that define the discrepancy
 \eqref{eq:obc_eps} below.
 The tuples are built once, before training, and depend neither on the trained
 parameters nor on the encoder.

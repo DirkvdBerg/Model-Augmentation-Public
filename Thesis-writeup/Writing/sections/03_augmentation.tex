@@ -471,8 +471,10 @@ grows~\cite[Sec.~3.1]{beintema2023subnet}.
 Following Beintema et al., we use an encoder that estimates $\hat x_\tau$ from
 past inputs and outputs~\cite[Sec.~3.2]{beintema2023subnet}.
 Simulating the short windows using the encoded states 
-keeps the computation per gradient step independent of the record length,
-and stabilises optimization~\cite[Sec.~3.1]{beintema2023subnet}.
+keeps the computation per gradient step independent of the record length
+for fixed batch size and window lengths~\cite[Sec.~3.1, Eq.~(9)]{beintema2023subnet}.
+Using short simulation windows increases the loss function
+smoothness~\cite[Sec.~3.1]{beintema2023subnet}.
 The encoder uses the samples up to $\tau-1$,
 as in~\cite[Eq.~(22e)]{hoekstra2026lfr}:
 \end{wip}
@@ -480,15 +482,15 @@ as in~\cite[Eq.~(22e)]{hoekstra2026lfr}:
 \begin{aligned}
  \hat x^{\mathrm n}_{\tau|\tau}
  &=\psi(\theta_{\mathrm{enc}},\chi_\tau),\\
- \chi_\tau&=\col\bigl(y^{\mathrm n}_{\tau-1},\dots,y^{\mathrm n}_{\tau-n-1},\,
-   u^{\mathrm n}_{\tau-1},\dots,u^{\mathrm n}_{\tau-n-1}\bigr),
+ \chi_\tau&=\col\bigl(y^{\mathrm n}_{\tau-n-1},\dots,y^{\mathrm n}_{\tau-1},\,
+   u^{\mathrm n}_{\tau-n-1},\dots,u^{\mathrm n}_{\tau-1}\bigr),
 \end{aligned}
  \label{eq:aug_encoder}
 \end{equation}
 \begin{wip}
 where $n+1$ is the number of samples in the window,
 $\chi_\tau\in\R^{6(n+1)}$ stacks the normalised recorded
-outputs and inputs, and $\theta_{\mathrm{enc}}\in\R^{n_{\mathrm{enc}}}$
+outputs and inputs as in \eqref{eq:aug_norm}, and $\theta_{\mathrm{enc}}\in\R^{n_{\mathrm{enc}}}$
 is the parameter vector of the encoder.
 The encoder estimates all $6+n_{\bar x}$ initial states $\hat x_\tau$, 
 which includes the measured positions.
@@ -595,9 +597,9 @@ states~\cite[Eq.~(30)]{hoekstra2026lfr}:
 where $\theta^b_{\mathrm{enc}}$ consists of $W^b$,
 the hidden-layer parameters of $\tilde\psi$ and the physical
 rows of its output layer.
-These parameters are fitted starting form the weights drawn from
+These parameters are fitted starting from the weights drawn from
 $\mathcal U(-1/\sqrt m,1/\sqrt m)$, where $m$ is the input
-size of the layer~\cite[Eq.~(35)]{hoekstra2026encoder}.
+size of the layer.
 The fitted values $\theta^{b,0}_{\mathrm{enc}}$ are used
 to start training.
 $\chi^0_\tau$ is formed as we do in \eqref{eq:aug_encoder}
@@ -612,6 +614,8 @@ recorded input as in~\cite[Eq.~(30)]{hoekstra2026lfr}.
 \end{outline}
 \begin{wip}
 We only use $\theta^{b,0}_{\mathrm{enc}}$ for initialization.
+The fitting loss in \eqref{eq:aug_enc_fit} is only used for initialization.
+Subsequent training uses \eqref{eq:aug_loss}.
 $\theta^b_{\mathrm{enc}}$ is trained in combination with 
 $\theta^a_{\mathrm{enc}}$, the network parameters $\theta_{\mathrm{aug}}$ 
 and the baseline parameters $\theta_{\mathrm{base}}$, 

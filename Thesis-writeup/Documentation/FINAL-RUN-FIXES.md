@@ -17,7 +17,7 @@ Code changes and checks found while structuring thesis Section III (2026-10-09).
    - Check: for a correct-start run the new $W^b$ equals the old one to rounding.
    - Thesis: III-B todo.
 
-2. **Polish acceptance without truth information.**
+2. **Polish acceptance without truth information (D-255).**
    - Now: `FS/lbfgs_polish.py::decide` (line 94) keeps the L-BFGS polish only if the validation error
      improves and no meter worsens by more than 0.1 %. The meters include `combo_err`
      (`GD/training.py::_gantry_meters`, line 652), the error of the ten combinations against the true
@@ -78,6 +78,10 @@ Code changes and checks found while structuring thesis Section III (2026-10-09).
      $T_x, T_u, T_y$ is what the code uses.
    - Check: $W^b$ changes by about $10^{-5}$ relative and no more; physical encoder output matches the rollout scaling.
    - Thesis: none (the equations already state one common $T$).
+   - Superseded by item 10 (note 2026-10-14): the data-based fit replaces the model-based $W^b$ that
+     `normalize_linear_ss_matrices` scales, so after item 10 this mismatch no longer reaches the final runs. Check
+     during item 10 that no remaining caller uses the recomputed scales; no `\revnote` (second Section IV critique
+     raised it; the OBC reference set and rollout already share the stored scales).
 10. **Data-based initialisation of the physical encoder rows (D-251).**
    - Now: `GD/model.py::build_model` builds $W^b$ from the reconstructability map of the $Y=0$ linearisation
      (`linear_encoder_init_aug`, D-054).
@@ -107,8 +111,16 @@ Code changes and checks found while structuring thesis Section III (2026-10-09).
      Section IV (minimiser beta* + Phi^+ eps, independent of the network) needs the coefficient and the discrepancy on
      the SAME stack; with the coefficient on all tuples and eps only on tuples with a successor, a network-dependent
      term remains (critique 2026-10-14: three-row counterexample shifts the minimiser by -9/70 at eps = 0).
-   - Fix: `k = np.arange(2, len(u) - 3)`, so every tuple's next sample is also a tuple. One tuple fewer per record.
-   - Check: tuple count drops by exactly one per record; Phi of the remaining tuples is bitwise unchanged; rank 10.
+   - Fix (amended after the second critique, 2026-10-14): the successor only needs a reconstructible state, not to
+     be a reference tuple itself. `k = np.arange(2, len(u) - 3)` AND align the velocities to it:
+     `x_ref = np.hstack([q[k], qd[k - 2]])` (`qd` is aligned with `q[2:-2]`; changing `k` alone breaks the
+     `hstack`). One tuple fewer per record.
+   - Fix, discrepancy diagnostic: the successor target of `eq:obc_eps` is the RECONSTRUCTED next state
+     `np.hstack([q[k + 1], qd[k - 1]])`, the same reconstruction as the tuples; store it beside the reference set.
+     Now `x_phys_next = x_log[k + 1]` holds the simulator's true next state, and `GD/obc_diagnostics.py::discrepancy_fields`
+     uses it for the 'data' discrepancy; keep that as a separate, simulation-only diagnostic.
+   - Check: tuple count drops by exactly one per record; Phi of the remaining tuples is bitwise unchanged; rank 10;
+     the reconstructed next state of tuple k equals the reconstructed state of tuple k+1 wherever both exist.
    - Thesis: IV-A reference-set `\revnote` (remove after the rerun).
 12. **Polish compared with the validation error after the OBC basis rebuild (D-253).**
    - Now: `FS/interconnect.py::fit` restores the best checkpoint and rebuilds the OBC basis at its beta

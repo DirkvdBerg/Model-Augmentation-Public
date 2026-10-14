@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  14 OCT 2026 15:23
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  14 OCT 2026 16:06
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -757,13 +757,13 @@ File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) [7]
-<figures/closed_loop_same_reference.pdf, id=426, 281.74458pt x 103.98448pt>
+<figures/closed_loop_same_reference.pdf, id=429, 281.74458pt x 103.98448pt>
 File: figures/closed_loop_same_reference.pdf Graphic file (type pdf)
 <use figures/closed_loop_same_reference.pdf>
-Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 785.
+Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 789.
 (pdftex.def)             Requested size: 252.0pt x 93.00919pt.
  [8 <./figures/closed_loop_same_reference.pdf>]
-Overfull \hbox (0.51308pt too wide) detected at line 856
+Overfull \hbox (0.51308pt too wide) detected at line 860
 [][][][][]
  []
 
@@ -774,7 +774,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut)
-Underfull \hbox (badness 1502) in paragraph at lines 102--103
+Underfull \hbox (badness 1502) in paragraph at lines 109--110
 \OT1/ptm/m/n/10 (+20) po-si-tions, dif-fer-enced ve-loc-i-ties, $[] \OT1/cmr/m/n/10 = 0$\OT1/ptm/m/n/10 (+20) , recorded
  []
 
@@ -807,10 +807,7 @@ Underfull \hbox (badness 3460) in paragraph at lines 6--7
 \OT1/ptm/m/n/10 (+20) matched to the fric-tion-less ex-ci-ta-tion; the ear-lier
  []
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [15]
+[15]
 Underfull \hbox (badness 2547) in paragraph at lines 38--39
 \OT1/ptm/m/n/10 (+20) arms start from the nom-i-nal $\OML/cmm/m/it/10 '$ \OT1/ptm/m/n/10 (+20) of the ref-er-ence
  []
@@ -834,7 +831,7 @@ Underfull \hbox (badness 4819) in paragraph at lines 61--62
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut)
-<figures/res_lpv_lti.pdf, id=682, 231.04317pt x 146.8958pt>
+<figures/res_lpv_lti.pdf, id=687, 231.04317pt x 146.8958pt>
 File: figures/res_lpv_lti.pdf Graphic file (type pdf)
 <use figures/res_lpv_lti.pdf>
 Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 33.
@@ -843,12 +840,12 @@ Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 33.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut [17 <./figures/res_lpv_lti.pdf>]) (tables/res_structure.tex)
-<figures/res_ps_spectrum.pdf, id=716, 256.75955pt x 148.78436pt>
+<figures/res_ps_spectrum.pdf, id=721, 256.75955pt x 148.78436pt>
 File: figures/res_ps_spectrum.pdf Graphic file (type pdf)
 <use figures/res_ps_spectrum.pdf>
 Package pdftex.def Info: figures/res_ps_spectrum.pdf  used on input line 69.
 (pdftex.def)             Requested size: 252.0pt x 146.03015pt.
-<figures/res_time_trace.pdf, id=717, 234.77274pt x 196.20125pt>
+<figures/res_time_trace.pdf, id=722, 234.77274pt x 196.20125pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
 <use figures/res_time_trace.pdf>
 Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 76.
@@ -869,7 +866,7 @@ Underfull \hbox (badness 2556) in paragraph at lines 2--3
  []
 
 )
-<figures/res_generalisation.pdf, id=755, 435.31557pt x 143.76047pt>
+<figures/res_generalisation.pdf, id=760, 435.31557pt x 143.76047pt>
 File: figures/res_generalisation.pdf Graphic file (type pdf)
 <use figures/res_generalisation.pdf>
 Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 135.
@@ -932,15 +929,15 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 Here is how much of TeX's memory you used:
  27770 strings out of 467867
  538436 string characters out of 5416882
- 979897 words of memory out of 5000000
+ 981101 words of memory out of 5000000
  55609 multiletter control sequences out of 15000+600000
  688455 words of font info for 353 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 89i,14n,97p,1295b,984s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 89i,14n,97p,1321b,984s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmib10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf" (24 pages, 915457 bytes).
+Output written on "c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf" (24 pages, 916953 bytes).
 PDF statistics:
- 970 PDF objects out of 1000 (max. 8388607)
+ 975 PDF objects out of 1000 (max. 8388607)
  149 named destinations out of 1000 (max. 500000)
  58222 words of extra memory for PDF output out of 61914 (max. 10000000)
 
