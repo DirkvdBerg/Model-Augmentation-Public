@@ -456,12 +456,6 @@ chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).
 \end{itemize}
 \fi
 
-\begin{outline}
-\item Only positions are measured, so an encoder estimates the state at each window start $\tau$ from past inputs and outputs
-\item Choice: short windows from encoded states
-\item The history ends at sample $\tau-1$, as in Hoekstra et al.; the encoder estimates all $6+n_{\bar x}$ states:
-\end{outline}
-\begin{wip}
 Each simulation window starts from an initial state $\hat x_\tau$, but we 
 measure only the positions of the physical state $\tilde x$.
 The additional states $\bar x$ are latent.
@@ -477,7 +471,6 @@ Using short simulation windows increases the loss function
 smoothness~\cite[Sec.~3.1]{beintema2023subnet}.
 The encoder uses the samples up to $\tau-1$,
 as in~\cite[Eq.~(22e)]{hoekstra2026lfr}:
-\end{wip}
 \begin{equation}
 \begin{aligned}
  \hat x^{\mathrm n}_{\tau|\tau}
@@ -487,7 +480,6 @@ as in~\cite[Eq.~(22e)]{hoekstra2026lfr}:
 \end{aligned}
  \label{eq:aug_encoder}
 \end{equation}
-\begin{wip}
 where $n+1$ is the number of samples in the window,
 $\chi_\tau\in\R^{6(n+1)}$ stacks the normalised recorded
 outputs and inputs as in \eqref{eq:aug_norm}, and $\theta_{\mathrm{enc}}\in\R^{n_{\mathrm{enc}}}$
@@ -502,21 +494,14 @@ the positions consistent with the estimated velocities.
 \revnote{The current results use the window up to and including $\tau$
 (D-054), so the first term of \eqref{eq:aug_loss} scores a sample the encoder
 has seen. The final runs will use the window up to $\tau-1$ as described here.}
-\end{wip}
-\begin{outline}
-\item The encoder is a linear map plus a network correction; $W^b$ gives the physical states, $W^a$ the additional states:
-\end{outline}
-\begin{wip}
 The encoder uses a linear map with a nonlinear
 correction~\cite[Eq.~(8)]{hoekstra2026encoder}:
-\end{wip}
 \begin{equation}
  \psi(\theta_{\mathrm{enc}},\chi_\tau)
  =\begin{bmatrix}W^b\\ W^a\end{bmatrix}\chi_\tau
   +\tilde\psi(\chi_\tau),
  \label{eq:aug_enc_lin}
 \end{equation}
-\begin{wip}
 where $W^b\in\R^{6\times6(n+1)}$ and $W^a\in\R^{n_{\bar x}\times6(n+1)}$ are
 the linear maps for the six physical states and the $n_{\bar x}$ additional
 states, and $\tilde\psi$ is a neural network.
@@ -537,11 +522,6 @@ fitted output bias of $\tilde\psi$ carries any constant.}
 \todo{VERIFY bib: \texttt{hoekstra2026encoder} = arXiv:2602.13108v1
 (13 Feb 2026), Hoekstra, Gy\"or\"ok, T\'oth, Schoukens; matches PDF p.~1.
 Check for a published (IFAC) version before submission.}
-\end{wip}
-\begin{outline}
-\item Choice: the physical rows start data-based, because the baseline is nonlinear (LPV in $Y$):
-\end{outline}
-\begin{wip}
 %\\
 The physical rows are initialized from the baseline model.
 Because solving \eqref{eq:eom} for $\ddot q$ requires $M(Y)^{-1}$ 
@@ -558,17 +538,15 @@ We apply this approach and simulate the baseline model once before training
 to obtain the physical state at every sample $\tau$.
 The recorded actuator forces $\uact$ and positions $y$
 from the training records with the known controller in
-\eqref{eq:aug_cl_step} are used to simulate the physical states in closed-loop.
-Because in open-loop the baseline drifts on the free axes $X$ and $Y$ 
+\eqref{eq:aug_cl_step} are used to simulate the physical states in closed-loop, 
+because in open-loop the baseline drifts on the free axes $X$ and $Y$ 
 (Section~\ref{sec:aug_structure}):
-\end{wip}
 \begin{equation}
  \tilde x^{\mathrm n,0}_{k+1}=f^{\mathrm n}_{\mathrm{base}}\bigl(\theta^0_{\mathrm{base}},
    \tilde x^{\mathrm n,0}_k,\hat u^{\mathrm n,0}_k\bigr),\qquad
  \hat y^{\mathrm n,0}_k=C^{\mathrm n}\tilde x^{\mathrm n,0}_k,
  \label{eq:aug_enc_sim}
 \end{equation}
-\begin{wip}
 where $\tilde x^{\mathrm n,0}_k$ is the simulated baseline state,
 $\theta^0_{\mathrm{base}}$ are the initial parameters,
 and $\hat u^{\mathrm n,0}_k$ is the closed-loop input
@@ -579,21 +557,14 @@ start of each record (see Section~\ref{sec:aug_loop}).
 \todo{Missing: initial state of \eqref{eq:aug_enc_sim} per record (D-251 open).
 Candidate: the measured positions with zero velocity at the record start
 (basis: the records start at rest, to be checked in the data).}
-\end{wip}
-\begin{outline}
-\item Choice: the physical rows of the encoder are fitted to the simulated states, as in Hoekstra et al.:
-\end{outline}
-\begin{wip}
 The physical rows of the encoder are then fitted to the simulated
 states~\cite[Eq.~(30)]{hoekstra2026lfr}:
-\end{wip}
 \begin{equation}
  \theta^{b,0}_{\mathrm{enc}}\in\arg\min_{\theta^b_{\mathrm{enc}}}
  \frac{1}{|\mathcal D|}\sum_{\tau\in\mathcal D}
  \bigl\|\psi_b(\theta^b_{\mathrm{enc}},\chi^{0}_\tau)-\tilde x^{\mathrm n,0}_\tau\bigr\|_2^2,
  \label{eq:aug_enc_fit}
 \end{equation}
-\begin{wip}
 where $\theta^b_{\mathrm{enc}}$ consists of $W^b$,
 the hidden-layer parameters of $\tilde\psi$ and the physical
 rows of its output layer.
@@ -608,13 +579,8 @@ $\mathcal D$ is the set of samples $\tau$ in the training
 records for which a complete window is available.
 We use the closed-loop input from \eqref{eq:aug_enc_sim}, instead of the 
 recorded input as in~\cite[Eq.~(30)]{hoekstra2026lfr}.
-\end{wip}
-\begin{outline}
-\item $\theta^{b,0}_{\mathrm{enc}}$ only sets the start; $\theta^b_{\mathrm{enc}}$ is trained jointly with $\theta_{\mathrm{base}}$
-\end{outline}
-\begin{wip}
-We only use $\theta^{b,0}_{\mathrm{enc}}$ for initialization.
-The fitting loss in \eqref{eq:aug_enc_fit} is only used for initialization.
+The fitting loss in \eqref{eq:aug_enc_fit} and $\theta^{b,0}_{\mathrm{enc}}$
+are only used for initialization.
 Subsequent training uses \eqref{eq:aug_loss}.
 $\theta^b_{\mathrm{enc}}$ is trained in combination with 
 $\theta^a_{\mathrm{enc}}$, the network parameters $\theta_{\mathrm{aug}}$ 
@@ -630,7 +596,6 @@ reconstructability map~\cite[Eqs.~(15) to (17)]{hoekstra2026encoder} of the
 baseline linearised at rest at $Y=0$, and start
 the whole output layer of $\tilde\psi$ at zero. The final runs will fit the
 physical rows as described here (D-251).}
-\end{wip}
 
 
 \subsection{Closed-loop simulation}\label{sec:aug_loop}
