@@ -1104,7 +1104,7 @@ The window $\chi_\tau$ at the top is used for $\hat x^{\mathrm n}_{k_i|k_i}$,
 and the shifted window at the bottom is used for $\bar x_{k_i+1|k_i+1}$.
 We calculate these pairs once after S1, this set $\mathcal P$ is kept fixed. 
 \\
-During S2 the model is not simulated in closed-loop and $V$ is paused.
+During S2 the model is not simulated in closed-loop \kw{and $V$ is paused.}
 We instead train $g^{\mathrm n}_{\mathrm{aug}}$ on
 $\mathcal P$ using one-step regression with the recorded
 actuator force $u^{\mathrm n}_{k_i}$ as input, and a separate Adam optimiser:

@@ -42,8 +42,12 @@ derivation (Sections II and IV); their runs illustrate.
   `tasks/handoffs/2026-10-08-zero-init-mlp-runs.md`). Live g_aug (MLP) stays a toggle and the ResNet stays in the
   code; neither is part of the thesis results
 - Floor per test record: the noisy record minus its noise-free twin; every error is read against it
-- Primary metric: servo-error prediction RMS per axis, RMS(y_hat - y) in m, whole record after the encoder window;
-  NRMS_e = RMS(y_hat - y) / RMS(e) when records are compared
+- Primary metric (D-256, 2026-10-15): NRMS_e,j = RMS(y_hat_j - y_j) / RMS(y_j - r_j) in % per test record and axis,
+  whole record after the encoder window; beside it the absolute RMS(y_hat - y) in m and the noise floor. Records with
+  multisine (I1, I2, E1) and without (I3 to I6, E2 to E6) are reported separately, never one mean over I1 to I6. Both
+  sides are stated: the gain is in the excited absorber band; on the records without multisine the augmentation is equal
+  to or slightly worse than the baseline (2026-10-11 runs). Final runs also select and weight the loss by NRMS_e
+  (FINAL-RUN-FIXES items 13 to 18)
 - Single-seed rule: a difference counts only if it exceeds 2 times the seed spread measured in the previous campaign
   (HEURISTIC; old runs 121 to 126 and 41 to 46, same settings, older data); smaller differences are reported as "not
   resolved with one seed" (?) spread values to be read from those runs' final logs

@@ -133,6 +133,50 @@ Code changes and checks found while structuring thesis Section III (2026-10-09).
      restored, rebuilt model; for a U run it is unchanged.
    - Thesis: IV-B `\revnote` on the comparison score (remove after the rerun).
 
+Items 13 to 18: error relative to the servo error, $\mathrm{NRMS}_{e,j}=\mathrm{RMS}(\hat y_j-y_j)/\mathrm{RMS}(y_j-r_j)$
+per record and stage axis $j$ (D-256, Dirk 2026-10-15). Reason in one line: the reference is given, so the servo error
+$e=y-r$ is what a closed-loop model must predict; RMS in m hid that the final model is at 3 to 8 % on every test record
+and axis while the baseline is above 100 % on Y on the multisine records.
+
+13. **Log validation RMS per record and axis at every validation.**
+   - Now: `FS/closed_loop.py::ClosedLoopSimulator.validation_error` (line 649) keeps `self.last_per_record` but the
+     run saves only the pooled score per validation (`loss_val` in `gantry_results_<job>.npz`) and per-record values only
+     for the final model (`cl_val_rms`). Re-ranking checkpoints by another rule afterwards is therefore impossible
+     (tried 2026-10-15 on the 2026-10-11 runs).
+   - Fix: at every validation append the per-record, per-axis RMS in m (6 records x 3 axes) and RMS(y - r) of each
+     validation record to the run's results npz (e.g. `val_rms_hist` of shape (n_val, 6, 3)). Same for the black box
+     (`scripts/gantry/blackbox-cl-trainable/train_bb_clmap.py`).
+   - Check: the last entry equals `cl_val_rms` of the selected model when no polish is accepted.
+14. **Checkpoint selection by NRMS_e.**
+   - Now: `FS/closed_loop.py::ClosedLoopSimulator.validation_error` returns the record-length-weighted mean of the
+     per-record RMS in m (`np.average(per_record, weights=len(sd.u))`, line 689).
+   - Fix: return the mean over the 6 validation records and 3 axes of RMS(y_hat_j - y_j) / RMS(y_j - r_j), both from
+     k0; RMS(y - r) per record and axis computed once from the validation data (`r_sim` decimated as y). Keep the old
+     value in the log for comparison.
+   - Check: on a saved checkpoint the new score equals the mean of `cl_val_rms / RMS(e)` computed offline.
+   - Thesis: III-D selection sentence (to update, Dirk to approve).
+15. **Loss weighted per training record and axis.**
+   - Now: `FS/interconnect.py::SSE_Interconnect_Composed.loss` (line 1418): `mse_loss(yfuture, y_pred)` on the
+     normalised output, so each axis is weighted by 1/std of the training POSITION.
+   - Fix: multiply the error of each window by the fixed weight $w_{\rho,j}=\sigma_{y,j}/\mathrm{RMS}(y_j-r_j)$ of its
+     record $\rho$ and axis $j$ (the $\sigma_{y,j}$ undoes the position normalisation of the error), computed once from
+     the training records (noisy data, no oracle) and carried with each window. Not per window (zero in standstill).
+   - Check: with all weights equal to one the loss is bitwise the old one; on one batch the weighted loss equals the
+     offline mean of $(w(\hat y-y))^2$.
+   - Thesis: III-D `eq:aug_loss` gets the weight (to update, Dirk to approve).
+16. **L-BFGS tolerance for the new loss scale.**
+   - Now: `FS/lbfgs_polish.py` `tol_grad = 1e-12` (line 62) is absolute and commented "the loss here is of order 1e-9";
+     the weighted loss is of a different order.
+   - Fix: measure the opening loss and gradient norm of the weighted loss on the pilot and set `tol_grad` relative to
+     them (same ratio as now), or confirm that 1e-12 never triggers before the 100 iterations.
+17. **Polish acceptance on NRMS_e.** `FS/lbfgs_polish.py::decide` (line 94) and `GD/training.py::run_lbfgs_polish` compare
+   validation errors; they must use the score of item 14 (with OBC: after the basis rebuild, item 12; D-255).
+18. **Black box on the same loss and selection.** `scripts/gantry/blackbox-cl-trainable/train_bb_clmap.py` uses deepSI's
+   `fit` with `validation_measure='sim-RMS'` (line 146) and the unweighted window MSE. Give it the weights of item 15 and
+   the selection of item 14 (custom loss and validation hook), and the selection rule in
+   `runners/thesis_r8_grid.conf` ("lowest best-validation sim-RMS") becomes NRMS_e. Without this the comparison is not
+   matched.
+
 ## Checks before launch
 
 3. **D-232 leak check on the lowpass data.** `scripts/gantry/anti-alias/measure_aliasing.py` (line 40) still

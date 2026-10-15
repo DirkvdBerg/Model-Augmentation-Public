@@ -201,7 +201,69 @@ elements.
 S2 runs if $\nu_{i_1}\le\nu_{\max}$ and, when $i_1>i_s$, also
 $\nu_{i_s}\le\nu_{\max}$, where $i_s<i_{\max}$ is a fixed early check.
 If $\nu_{i_s}>\nu_{\max}$, PS ends at $i_s$.
-The values are given in Section~\ref{sec:setup}.
+The values are given in Table~\ref{tab:hyper}.
+
+\subsection{Hyperparameters}\label{app:hyper}
+Table~\ref{tab:hyper} lists the settings of every grey-box run and of the
+black-box search.
+The basis of a value is derived (computed in Section~\ref{sec:setup}),
+inherited (from earlier work), tuned (on validation data), heuristic (fixed
+without a measurement) or compute-limited.
+\begin{table}[t]
+\caption{Hyperparameters of the identification.}
+\label{tab:hyper}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Setting & Value & Basis\\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Model and data}}\\
+Model rate $1/T_s$ & 4~kHz & derived\\
+RK4 steps per $T_s$ & 1 & heuristic\\
+Window $n_f$ & 400 (0.1~s) & derived\\
+Window stride & 10 samples & heuristic\\
+Encoder window $n+1$ & 30 samples & heuristic\\
+Added states $n_{\bar x}$ & 0, 2, 8 & compared\\
+Network, encoder correction & $2\times16$, tanh & tuned (earlier)\\
+Precision & float64 & numerical\\
+Margin $\rho$ & 0.99 & heuristic\\
+Detuning of the combinations & 10\,\% & heuristic\\
+\multicolumn{3}{@{}l}{\emph{Optimiser}}\\
+Adam rate, $\epsilon$ & $10^{-5}$, $10^{-16}$ & tuned (earlier)\\
+Batch & 512 windows & heuristic\\
+Epochs & 200 & compute-limited\\
+Validation interval & 1300 updates & compute-limited\\
+L-BFGS iterations, history & 100, 50 & inherited\\
+L-BFGS inner steps, windows & 20, 16384 & compute-limited\\
+L-BFGS tolerance (grad., change) & $10^{-12}$, 0 & inherited\\
+Seeds per model & 1 & compute-limited\\
+\multicolumn{3}{@{}l}{\emph{PS (Section~\ref{sec:aug_ps2}, Appendix~\ref{app:ps_stop})}}\\
+S1 and S2 Adam rate & $10^{-3}$ & Adam default\\
+S1 batch, windows $\lvert\mathcal C\rvert$ & 64, 128 & heuristic\\
+Decoder width $n_h$, horizon $H$ & 16, $n+1$ & as above\\
+Check interval $i_c$ & 25 updates & heuristic\\
+Plateau checks $w$, tolerance $\delta_\nu$ & 4, 0.02 & heuristic\\
+S1 updates $i_{\min}$, $i_{\max}$ & 100, 350 & heuristic\\
+Early check $i_s$, threshold $\nu_{\max}$ & 150, 0.90 & heuristic\\
+Held-out records & last per class & heuristic\\
+S2 pairs $N_{\mathcal P}$ (fit, held-out) & 8192, 2048 & heuristic\\
+S2 batch, check interval & 512, 100 updates & heuristic\\
+S2 plateau (checks, tolerance) & 5, 0.01 & heuristic\\
+S2 updates (min, max) & 500, 8000 & heuristic\\
+\multicolumn{3}{@{}l}{\emph{Black box (Section~\ref{sec:setup_models})}}\\
+States $n_x$ & 8, 16, 32 & tuned\\
+Width of $f_\theta$, $h_\theta$ (encoder $2\times$) & 8, 16, 32 & tuned\\
+Adam rate & $10^{-3}$, $3\cdot10^{-3}$, $10^{-2}$ & tuned\\
+Batch, stride & 256, 25 & inherited\\
+Updates (search, final) & 20000, 80000 & compute-limited\\
+Selection & lowest validation RMS & heuristic\\
+\bottomrule
+\end{tabular}
+\end{table}
+\todo{Missing: a stated reason for the rows marked heuristic without one in \texttt{docs/decisions.md} (window stride, batch, RK4 steps, the PS rules). Candidate: keep them as heuristic, with D-234 as the source of the PS rules (prototype runs).}
+\todo{Missing: the black-box rows are the search grid of \texttt{thesis\_r8\_grid.conf}; the selected configuration is not known yet. Candidate: add a row with the selected $n_x$, width and rate once R8 has run.}
 
 \begin{wip}
 \subsection{OBC and experiment details}
