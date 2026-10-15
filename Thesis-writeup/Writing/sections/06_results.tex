@@ -64,6 +64,7 @@
 \item PS initialisation lowers the $Y$ error about 9 times; plain training and $n_a=0$ stay near the baseline
 \item The error in the multisine band disappears with PS initialisation, not with plain training (Fig.~\ref{fig:res_ps_spectrum})
 \item The learned pole is at 212~Hz, the absorber pole of the system at 212~Hz; $n_a=8$ adds nothing
+\item The final model learned the absorber as plant dynamics: its open-loop response $F_Y\to Y$, linearised at rest and averaged over $Y=-0.39$ to $0.39$~m, reproduces the anti-resonance and the coupled mode of the system, which the baseline lacks (Fig.~\ref{fig:res_frf}; full $3\times3$ in Appendix~\ref{app:frf}); mode 212.0 to 212.2~Hz, $\zeta\approx0.06$, against the system's 211.9~Hz, $\zeta=0.043$ (\texttt{Results/res\_frf\_modes.csv}, numbers to macros)
 \item Without added states ($n_a=0$) the $Y$ error stays at the baseline level
 \item Time trace of the augmented model and the system (Fig.~\ref{fig:res_time_trace})
 \item Metric (header, D-256): Table~\ref{tab:res_structure} reports $\mathrm{NRMS}_e$ per axis, records with and without multisine separately, beside the RMS in m and the floor
@@ -101,6 +102,13 @@
   \includegraphics[width=\columnwidth]{res_time_trace.pdf}
   \caption{Test record I1, $Y$ axis. Top: moving RMS of the simulation error. Bottom: servo error in the shaded window.}
   \label{fig:res_time_trace}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{res_frf.pdf}
+  \caption{Bode magnitude from the stage force $F_Y$ to the stage position $Y$, linearised at rest. Geometric mean over $Y=-0.39$ to $0.39$~m; shaded: range of the final model over $Y$.}
+  \label{fig:res_frf}
 \end{figure}
 \todo{Are state Gramians useful for explaining each added state's contribution, or would intervention-based ablation be more direct and less linearisation-dependent?}
 

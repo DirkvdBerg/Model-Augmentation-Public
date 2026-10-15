@@ -860,6 +860,7 @@ The error is the RMS output error in meters for each complete validation record,
 simulated in closed loop with the initial state estimated
 once by the encoder and $x^c=0$.
 We only keep the polish if it lowers the validation error.
+\revnote{The current results use the unweighted loss \eqref{eq:aug_loss} and select on the RMS output error in metres. The final runs will weight the error of each training record and axis in \eqref{eq:aug_loss} by the fixed factor $1/\mathrm{RMS}(y_j-r_j)$ of that record, and select checkpoints and the polish on the mean over the validation records and axes of $\mathrm{NRMS}_{e,j}$ of \eqref{eq:setup_rms} (D-256, \texttt{FINAL-RUN-FIXES.md} items 13 to 18).}
 \todo{Current runs (\texttt{FINAL-RUN-FIXES.md} item~2): the 2026-10-11 runs also reject the polish if \texttt{combo\_err}, the error of the ten combinations against the true parameters, rises by more than 0.1\,\%. This uses the simulated truth; the final runs accept on the validation error alone. \texttt{param\_loss} is zero in all thesis runs (\texttt{param\_prior} off).}
 \\
 We start training with the augmented model giving the same

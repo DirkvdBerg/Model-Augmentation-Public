@@ -474,8 +474,6 @@ OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP 
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
-OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
-INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT .\sections\05_setup.tex
 INPUT .\sections\05_setup.tex
 INPUT .\sections\05_setup.tex
@@ -525,6 +523,11 @@ INPUT .\figures\res_time_trace.pdf
 INPUT .\figures\res_time_trace.pdf
 INPUT .\figures\res_time_trace.pdf
 INPUT .\figures\res_time_trace.pdf
+INPUT .\figures\res_frf.pdf
+INPUT .\figures\res_frf.pdf
+INPUT .\figures\res_frf.pdf
+INPUT .\figures\res_frf.pdf
+INPUT .\figures\res_frf.pdf
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT .\tables\res_obc_combinations.tex
@@ -567,6 +570,11 @@ INPUT .\sections\99_appendix.tex
 INPUT sections\99_appendix.tex
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+INPUT .\figures\res_frf_full.pdf
+INPUT .\figures\res_frf_full.pdf
+INPUT .\figures\res_frf_full.pdf
+INPUT .\figures\res_frf_full.pdf
+INPUT .\figures\res_frf_full.pdf
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.aux
