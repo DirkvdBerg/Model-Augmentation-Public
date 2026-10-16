@@ -779,12 +779,12 @@ $\theta_{\mathrm{base},j}=\theta^0_{\mathrm{base},j}\,e^{\beta_j}$,
 while $m_\Delta$ can be positive or negative and is bounded
 by \eqref{eq:lfr_admissibility}:
 \begin{equation}
-  m_\Delta=\rho\,\frac{2}{L_b}\sqrt{m_\Sigma J_{\mathrm{eff}}}\,
+  m_\Delta=\gamma\,\frac{2}{L_b}\sqrt{m_\Sigma J_{\mathrm{eff}}}\,
   \tanh\bigl(\eta_0+s\,\beta_\Delta\bigr),
   \label{eq:mdelta_map}
 \end{equation}
 where $\beta_\Delta$ determines $m_\Delta$ and
-$\rho\in(0,1)$ provides a safety margin.
+$\gamma\in(0,1)$ provides a safety margin.
 We choose the offset $\eta_0$ and scale $s$ so that
 $\beta=0$ gives $m_\Delta=m_{\Delta,0}$ and
 $\partial m_\Delta/\partial\beta_\Delta=m_{\Delta,0}$.
@@ -793,7 +793,7 @@ $\partial\theta_{\mathrm{base},j}/\partial\beta_j
 =\theta^0_{\mathrm{base},j}$ at $\beta=0$
 (Appendix~\ref{app:lfr-wellposed}).
 The initial value must satisfy
-$\lvert m_{\Delta,0}\rvert<\rho(2/L_b)\sqrt{m_{\Sigma,0}J_{\mathrm{eff},0}}$.
+$\lvert m_{\Delta,0}\rvert<\gamma(2/L_b)\sqrt{m_{\Sigma,0}J_{\mathrm{eff},0}}$.
 The bound in \eqref{eq:lfr_admissibility} holds for
 every $\beta$, therefore no clamping or penalty is needed.
 \\

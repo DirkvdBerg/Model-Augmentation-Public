@@ -176,6 +176,14 @@ and axis while the baseline is above 100 % on Y on the multisine records.
    the selection of item 14 (custom loss and validation hook), and the selection rule in
    `runners/thesis_r8_grid.conf` ("lowest best-validation sim-RMS") becomes NRMS_e. Without this the comparison is not
    matched.
+19. **OBC basis with the offset column $\Gamma$ (D-257).** The 2026-10-11 runs protect $\operatorname{ran}\Phi$ only
+   (D-254). The final OBC runs protect $\operatorname{span}[\Phi\ \Gamma]$, with
+   $\Gamma=F_{\mathrm{base}}(\beta_{\mathrm{lin}})-\Phi\beta_{\mathrm{lin}}$ stacked over the same tuples (Gyorok 2025
+   Eq. 18), so $\theta_{\mathrm{aux}}\in\mathbb R^{11}$ and every closed-loop step subtracts $[\varphi\ \gamma]\theta_{\mathrm{aux}}$.
+   Code location not yet chosen: check first whether the earlier affine variant (D-186, D-190, D-192) is still in
+   `obc_gantry.py` / `obc.py` and reuse it. Check after the change: $[\Phi\ \Gamma]^\top\tilde F=0$ to numerical
+   precision on the tuples. Evaluation: add the negation measure $\cos\angle(F_{\mathrm{aug}},F_{\mathrm{base}}-\tilde X)$
+   (baseline one-step increment) on the held-out I1 to I6 tuples to `Code/Evaluation/eval_negation.py`.
 
 ## Checks before launch
 

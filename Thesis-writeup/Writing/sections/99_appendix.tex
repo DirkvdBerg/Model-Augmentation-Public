@@ -165,7 +165,7 @@ For the physical parameterization, the difference between the two sides is
 which is strictly positive for positive component masses and yaw inertias.
 
 In \eqref{eq:mdelta_map}, let
-$b(\theta_{\mathrm{base}})=\rho(2/L_b)\sqrt{m_\Sigma J_{\mathrm{eff}}}$. The offset and scale
+$b(\theta_{\mathrm{base}})=\gamma(2/L_b)\sqrt{m_\Sigma J_{\mathrm{eff}}}$. The offset and scale
 are
 \begin{equation*}
  r_0=\frac{m_{\Delta,0}}{b(\theta^0_{\mathrm{base}})},\quad
@@ -228,7 +228,7 @@ Encoder window $n+1$ & 30 samples & heuristic\\
 Added states $n_{\bar x}$ & 0, 2, 8 & compared\\
 Network, encoder correction & $2\times16$, tanh & tuned (earlier)\\
 Precision & float64 & numerical\\
-Margin $\rho$ & 0.99 & heuristic\\
+Margin $\gamma$ & 0.99 & heuristic\\
 Detuning of the combinations & 10\,\% & heuristic\\
 \multicolumn{3}{@{}l}{\emph{Optimiser}}\\
 Adam rate, $\epsilon$ & $10^{-5}$, $10^{-16}$ & tuned (earlier)\\

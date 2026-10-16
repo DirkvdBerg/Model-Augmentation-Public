@@ -303,7 +303,6 @@ in~\cite[Eqs.~(9), (10)]{gyorok2026obc},
 \item Measures for Results: cosine, $c_j$, $\rho$, $\Pi$ \eqref{eq:obc_overlap} (supervisor: orthogonality is measured by the inner product)
 \end{itemize}
 \fi
-\begin{wip}
 We call $\mathcal M_{\mathrm{OBC}}$ the augmented model of
 Section~\ref{sec:augmentation}, with the added-state initialisation of
 Section~\ref{sec:aug_ps2} and the correction \eqref{eq:obc_corr}.
@@ -329,13 +328,11 @@ rebuild, as described here.}
 The construction makes the estimate of $\beta$ unique to first order, but not
 equal to the coordinates $\beta^\star\in\R^{10}$ of the true combinations.
 On the tuples, what the baseline at $\beta^\star$ misses is
-\end{wip}
 \begin{equation}
  \Xi
  =\tilde X^{\mathrm n}_{+}-F^{\mathrm n}_{\mathrm{base}}(\beta^\star),
 \label{eq:obc_eps}
 \end{equation}
-\begin{wip}
 where
 $\tilde X^{\mathrm n}_{+}=\col(\tilde x^{\mathrm n}_{i+1})_{i\in\mathcal I}$
 holds the next states,
@@ -346,7 +343,6 @@ of~\cite[Eqs.~(14), (15)]{gyorok2026obc} and also holds the reconstruction
 error and the measurement noise.
 To first order, the one-step error on the tuples is minimised with the
 correction by the first line and without it by the second:
-\end{wip}
 \begin{equation}
 \begin{aligned}
  \beta&=\beta^\star+\bigl(\Phi^\top\Phi\bigr)^{-1}\Phi^\top\Xi,\\
@@ -354,7 +350,6 @@ correction by the first line and without it by the second:
 \end{aligned}
 \label{eq:obc_recovery}
 \end{equation}
-\begin{wip}
 With the correction, the estimate does not depend on the network.
 Without it, the estimate depends on the network through
 $\Phi^\top F^{\mathrm n}_{\mathrm{aug}}$.
@@ -371,7 +366,6 @@ closed-loop optimum of \eqref{eq:aug_loss}.
 Section~\ref{sec:results} measures orthogonality away from the reference
 tuples, for $\tilde F^{\mathrm n}_{\mathrm{aug}}$, and for $\Xi$, by the
 normalised inner product in the coordinates of \eqref{eq:aug_norm}:
-\end{wip}
 \begin{equation}
 \begin{aligned}
  \cos\angle(a,b)&=\frac{\langle a,b\rangle}{\norm{a}_2\norm{b}_2},\\
@@ -382,7 +376,6 @@ normalised inner product in the coordinates of \eqref{eq:aug_norm}:
 \end{aligned}
 \label{eq:obc_overlap}
 \end{equation}
-\begin{wip}
 where $a,b,d\in\R^{6N}$ are nonzero, $\Phi_j$ is column $j$ of $\Phi$ and
 $\Pi$ is the orthogonal projector onto $\ran\Phi$.
 $c_j(d)$ is the signed overlap of $d$ with one parameter direction, and
@@ -390,7 +383,6 @@ $\rho(d)$ the largest overlap with any direction in $\ran\Phi$.
 $\rho(d)=0$ if and only if $\Phi^\top d=0$, the orthogonality of
 \eqref{eq:obc_coef}.
 
-\end{wip}
 
 % ---------------------------------------------------------------------------
 % OUTLINE BLOCKS (Dirk's bullets), moved here from the text on 2026-10-15 for readability.
