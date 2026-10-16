@@ -117,6 +117,10 @@ class DataBundle:
     train_files: list = None
     val_files: list = None
     test_files: list = None
+    # D-262: servo error e = y - r per record (float64, None without a reference), same order.
+    e_train: list = None
+    e_val: list = None
+    e_test: list = None
 
 
 @dataclass
@@ -196,12 +200,38 @@ def _record_at_fs_new(d, cfg: RunConfig, fields=()):
     return arrs
 
 
-def load_traj(filename, cfg: RunConfig):
-    d = loadmat(os.path.join(traj_dir(cfg), filename), squeeze_me=True)
+def _load_record(filename, cfg: RunConfig, folder=None):
+    """(System_data, e) of one record from ONE read of its file; e = y - r at FS_NEW (float64),
+    on the same samples as y, or None when the record holds no reference (legacy modes).
+
+    `folder` overrides traj_dir(cfg), for the evaluation-only multisine twins (D-258)."""
+    d = loadmat(os.path.join(folder or traj_dir(cfg), filename), squeeze_me=True)
     if is_thesis(cfg):
         _register_controller(d, filename)
-    u, y = _record_at_fs_new(d, cfg)
-    return deepSI.System_data(u=u.astype(cfg.dtype_np), y=y.astype(cfg.dtype_np), dt=cfg.ts_new)
+    has_r = 'r_sim' in d and np.ndim(d['r_sim']) == 2
+    u, y, *r = _record_at_fs_new(d, cfg, ('r_sim',) if has_r else ())
+    e = np.asarray(y, np.float64) - np.asarray(r[0], np.float64) if has_r else None
+    sd = deepSI.System_data(u=u.astype(cfg.dtype_np), y=y.astype(cfg.dtype_np), dt=cfg.ts_new)
+    return sd, e
+
+
+def load_traj(filename, cfg: RunConfig, folder=None):
+    return _load_record(filename, cfg, folder)[0]
+
+
+def servo_sigma(e_list, k0):
+    """sigma_e per record and axis (D-262): population std of the servo error e = y - r over the
+    scored samples k0..N-1, shape (n_records, ny). THE one definition, used by the loss weights,
+    the selection, the black box and the evaluation."""
+    if any(e is None for e in e_list):
+        raise ValueError('servo_sigma needs the servo error of every record; a record without r_sim '
+                         'cannot be weighted or scored relative to its servo error')
+    # THEORY: Beintema 2023 Eq. (43) normalises by the sample standard deviation of the output;
+    # here the output is the servo error (thesis eq:setup_rms, D-256)
+    s = np.stack([np.std(np.asarray(e, np.float64)[k0:], axis=0) for e in e_list])
+    if not (np.all(np.isfinite(s)) and np.all(s > 0)):
+        raise ValueError('servo error standard deviation must be finite and positive, got %s' % s)
+    return s
 
 
 def load_mat_aug(filename, cfg: RunConfig):
@@ -243,9 +273,12 @@ def load_datasets(cfg: RunConfig) -> DataBundle:
                          'noise-free twin instead (D-221)' % (SNR, cfg.mode))
     train_files, val_files, test_files = record_files(cfg)
 
-    train_list = [load_traj(f, cfg) for f in train_files]
-    val_list   = [load_traj(f, cfg) for f in val_files]
-    test_list  = [load_traj(f, cfg) for f in test_files]
+    def _split(files):
+        pairs = [_load_record(f, cfg) for f in files]
+        return [p[0] for p in pairs], [p[1] for p in pairs]
+
+    (train_list, e_train), (val_list, e_val), (test_list, e_test) = (
+        _split(train_files), _split(val_files), _split(test_files))
 
     ## ------------- Add output noise (Jan's ECC convention, D-078) -------------
     if SNR is not None:
@@ -289,6 +322,7 @@ def load_datasets(cfg: RunConfig) -> DataBundle:
         test_x_logical=test_x_logical, test_x_aug=test_x_aug,
         sigma_n=sigma_n,
         train_files=train_files, val_files=val_files, test_files=test_files,
+        e_train=e_train, e_val=e_val, e_test=e_test,
     )
 
 

@@ -52,7 +52,8 @@ def main():
                             + [r"$%.2f$" % (1e6 * rms[run]) for run, _ in COLS]) + r"\\")
     # D-246 inner products and the learned added-state mode (Code/Evaluation/eval_overlap.py)
     with open(RESULTS_DIR / "res_obc_overlap.csv", newline="") as fh:
-        ov = {r["run"]: r for r in csv.DictReader(fh)}
+        # the held-out test stack I1 to I6; the file also holds training and validation (D-268)
+        ov = {r["run"]: r for r in csv.DictReader(fh) if r.get("stack", "test") == "test"}
     lines.append(r"\midrule")
     lines.append(" & ".join([r"Learned-term overlap", ""] + [r"$%.2f$" % float(ov[run]["network_overlap"])
                                                         for run, _ in COLS]) + r"\\")

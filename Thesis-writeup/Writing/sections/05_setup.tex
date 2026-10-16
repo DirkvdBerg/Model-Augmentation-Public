@@ -195,10 +195,14 @@ loop the feedback suppresses an injected force.
 Its band of 106 to 297~Hz therefore starts at the highest crossover of the
 loop with $K_1$ over the axes and the training positions,
 \SetupCrossMax~Hz.
+Its upper edge keeps 90\,\% of the difference between the frequency
+responses of the system and the baseline above the crossover
+(Appendix~\ref{app:setup_records}).
 On the simulated system, the band holds the anti-resonance, the coupled
 mode and the closed-loop peak at \SetupClPeak~Hz at all five training
 positions (Fig.~\ref{fig:setup_band}).
 This placement uses the known system and is available only in simulation.
+On a machine, a measured frequency response plays this role.
 
 Of the records, 18 are used for training, 6 for validation and 11 for
 testing (Fig.~\ref{fig:setup_coverage}).
@@ -356,6 +360,13 @@ The floor is the error of an exact noise-free prediction.
 \revnote{The current evaluation reports the RMS in metres per record and
 axis; $\mathrm{NRMS}_{e,j}$ is computed from these outside the evaluation
 code.}
+\revnote{Start index of \eqref{eq:setup_rms}: the window $\chi_\tau$ holds
+the $n+1$ samples up to $\tau-1$ (\eqref{eq:aug_encoder}), so the first
+window covers samples $0$ to $n$ and the first prediction is at $k=n+1$.
+Following~\cite[Eq.~(43)]{beintema2023subnet}, which leaves out the outputs
+that fed the encoder, the sums run from $k=n+1$ with $1/(N-n-1)$; the code
+of the final runs scores from that sample. $\sigma_{e,j}$ is the population
+standard deviation over the same samples (D-262).}
 
 The combinations are compared with their true values
 $\theta^\star_{\mathrm{base}}$ by
@@ -383,3 +394,14 @@ The truth overlap $\rho(\Xi)$ measures how far the missing dynamics lie in
 the parameter directions.
 \revnote{The predicted first-order bias is not yet computed for the current
 runs.}
+\revnote{Final runs (D-268, Dirk 2026-10-16): the overlaps and the predicted
+first-order bias are computed on three tuple stacks, training, validation and
+test (I1 to I6), so the sentence ``Both are measured on the one-step tuples of
+I1 to I6'' changes. The training stack, where $\theta_{\mathrm{aux}}$ is
+formed, gives the prediction of \eqref{eq:obc_recovery}; validation and test
+show how it carries over. On the training stack the network overlap of
+$\mathcal M_{\mathrm{OBC}}$ is zero by construction, so that overlap is
+informative on validation and test. The prediction holds for the one-step
+least-squares fit at $\bar x=0$, while training minimises the closed-loop loss
+with active added states (Section~\ref{sec:obc}); the agreement criterion
+between predicted and observed $\delta_j$ is to be stated before the results.}

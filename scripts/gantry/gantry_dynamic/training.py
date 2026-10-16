@@ -365,6 +365,10 @@ class _NfProbe:
         self.do_print = do_print
         fit_sys.Loss_train_nf = []
         fit_sys.Loss_val_nf = []
+        # D-267: the per-record, per-axis validation RMS of every validation and the selection
+        # events, held HERE rather than on fit_sys, so fit()'s best-checkpoint reload (which
+        # replaces fit_sys.__dict__) cannot truncate it. `hist_path` = rewritten at every entry.
+        self.val_hist, self.hist_path = [], None
 
         # Train side: statistics accumulate inside loss() over every training window, so there is
         # nothing to build here and no extra rollout. Attaching the object IS the switch.
@@ -387,8 +391,11 @@ class _NfProbe:
         _sim = getattr(fit_sys, 'simulator', None)
         _saved_rows = None
         if _sim is not None and hasattr(_sim, 'indexer') and getattr(_sim, 'val_records', None):
-            _saved_rows = _sim.indexer.record_rows
+            _saved_rows = (_sim.indexer.record_rows, getattr(_sim.indexer, 'record_weights', None))
             _sim.indexer.record_rows = [int(r) for _, _, r in _sim.val_records]
+            # D-256: the training loss weights belong to the training records; this batch only
+            # measures the val nf-window error, so it carries none.
+            _sim.indexer.record_weights = None
         try:
             d = fit_sys.make_training_data(fit_sys.norm.transform(val_sd), nf=nf, stride=nf)
             n = min(self.N_VAL_WINDOWS, len(d[0]))
@@ -402,7 +409,7 @@ class _NfProbe:
             print(f'    [nf val  ] window batch unavailable (non-fatal): {e}')
         finally:
             if _saved_rows is not None:
-                _sim.indexer.record_rows = _saved_rows
+                _sim.indexer.record_rows, _sim.indexer.record_weights = _saved_rows
         # Joint/orth probe state (user 07-12: live recovery + negation meters).
         # Nominal combos computed ONCE; sim-study meter -- on real data the
         # reference must become params_init (no nominal truth exists there).
@@ -583,8 +590,43 @@ class _NfProbe:
         print('      [obc] ||theta_aux|| %.4e (%d coefficients)%s | ||F_ann|| %.4e'
               % (d['theta_norm'], len(d['theta']), alpha_s, d['field_norm']))
 
+    def record(self, event, fit_sys, score, **extra):
+        """D-267: one history row from the simulator's LAST validation, which must be the one the
+        row describes ('adam', 'rebuilt', 'polish_candidate'), or a copy of an earlier row
+        ('selected', 'final', passed as `row`)."""
+        row = extra.pop('row', None)
+        if row is None:
+            sim = getattr(fit_sys, 'simulator', None)
+            if getattr(sim, 'last_per_channel', None) is None:
+                return                                   # open loop: no per-record scores
+            row = dict(per_channel=np.array(sim.last_per_channel, dtype=float),
+                       sim_rms=float(sim.last_sim_rms), score=float(score),
+                       update=int(getattr(fit_sys, 'batch_counter', -1)),
+                       epoch=float(getattr(fit_sys, 'epoch_counter', float('nan'))))
+        self.val_hist.append(dict(row, event=event, **extra))
+        if self.hist_path is not None:
+            np.savez(self.hist_path, **self.hist_arrays())
+
+    def hist_arrays(self):
+        """The history as arrays, one entry per row, for val_hist.npz and the results npz."""
+        if not self.val_hist:
+            return {}
+        sim = getattr(self.fit_sys, 'simulator', None)
+        h = self.val_hist
+        return dict(
+            val_hist_event=np.array([r['event'] for r in h]),
+            val_hist_update=np.array([r['update'] for r in h]),
+            val_hist_epoch=np.array([r['epoch'] for r in h]),
+            val_hist_score=np.array([r['score'] for r in h]),
+            val_hist_sim_rms=np.array([r['sim_rms'] for r in h]),
+            val_hist_rms=np.stack([r['per_channel'] for r in h]),      # (n, n_val, ny), metres
+            val_hist_accepted=np.array([r.get('accepted', np.nan) for r in h], dtype=float),
+            val_sigma_e=(np.asarray(sim.val_sigma_e) if getattr(sim, 'val_sigma_e', None) is not None
+                         else np.array([])))
+
     def __call__(self, fit_sys, val_sys_data, value):
         """validation_probes entry: side effects only, `value` is read-only here."""
+        self.record('adam', fit_sys, value)
         # Train: read and RESET, so each line covers the windows trained since the last
         # validation rather than the whole run.
         tr_s = fit_sys.loss_stats.summary() if fit_sys.loss_stats is not None else None
@@ -598,17 +640,22 @@ class _NfProbe:
                 print(self._fmt('train', tr_s))
             if va_s:
                 print(self._fmt('val', va_s))
-            # The comparison, stated rather than left as arithmetic. `value` is the 12 s free-run
-            # sim-RMS that selects the checkpoint, so both ratios are against the same scalar and
-            # each is labelled with what it confounds.
-            if np.isfinite(value):
+            # The comparison, stated rather than left as arithmetic. `sim_m` is the free-run
+            # sim-RMS in metres, so both ratios are metres over metres and each is labelled with
+            # what it confounds. CHANGED (review 1, finding 7): read from the simulator rather
+            # than `value`, which is dimensionless when the selector is 'sim-NRMSe'.
+            sim_m = getattr(getattr(fit_sys, 'simulator', None), 'last_sim_rms', None)
+            sim_m = value if sim_m is None else sim_m
+            if np.isfinite(sim_m):
                 parts = []
                 if va_s and va_s['rms'] > 0:
-                    parts.append('%.2fx val_nf (horizon)' % (value / va_s['rms']))
+                    parts.append('%.2fx val_nf (horizon)' % (sim_m / va_s['rms']))
                 if tr_s and tr_s['rms'] > 0:
-                    parts.append('%.2fx train_nf (horizon+gen)' % (value / tr_s['rms']))
+                    parts.append('%.2fx train_nf (horizon+gen)' % (sim_m / tr_s['rms']))
                 if parts:
-                    print('    [nf gap  ] val_sim %.3e = %s' % (value, ' = '.join(parts)))
+                    print('    [nf gap  ] val_sim %.3e m = %s' % (sim_m, ' = '.join(parts)))
+                if not np.isclose(sim_m, value):
+                    print('    [select  ] validation score %.4e (the selection measure)' % value)
             if self._xa_stats is not None:
                 m, s, mx = self._xa_stats
                 print('    [x_aug   ] ||x_aug|| end-of-rollout  mean %.3e  std %.3e  max %.3e'
@@ -621,10 +668,13 @@ class _NfProbe:
                 print(f'    [joint-probe] failed (non-fatal): {e}')
 
 
-def _install_nf_val_probe(fit_sys, hp, cfg, val_sd):
-    """Append an `_NfProbe` to `fit_sys.validation_probes`; return the previous tuple to restore."""
+def _install_nf_val_probe(fit_sys, hp, cfg, val_sd, hist_path=None):
+    """Append an `_NfProbe` to `fit_sys.validation_probes`; return the previous tuple to restore.
+    The probe is `fit_sys.validation_probes[-1]` right after; a caller that keeps that reference
+    keeps its validation history across the checkpoint reload (D-267)."""
     prev = fit_sys.validation_probes
     probe = _NfProbe(fit_sys, hp['nf'], cfg, val_sd, do_print=cfg.nf_probe_print)
+    probe.hist_path = hist_path
     fit_sys.validation_probes = tuple(prev) + (probe,)
     if cfg.nf_probe_print:
         mode = 'closed loop' if getattr(fit_sys, 'simulator', None) is not None else 'open loop'
@@ -644,7 +694,8 @@ def _install_nf_val_probe(fit_sys, hp, cfg, val_sd):
                       'UNAVAILABLE (batch failed to build; no [nf val] line will appear)')
         print(f'     train = all windows since the last validation, running mean | '
               f'val = {_val_state}')
-        print('     metre weighting is NOT the objective\'s, which weights channels by 1/ystd^2;')
+        print('     metre weighting is NOT the objective\'s, which weights channels by '
+              + ('1/sigma_e^2 per record (D-256);' if cfg.loss_weighting == 'servo' else '1/ystd^2;'))
         print('     numbers are not comparable ACROSS loop modes, the [nf gap] ratios are')
     return prev
 
@@ -699,10 +750,11 @@ def _gantry_meters(fit_sys):
     return m
 
 
-def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan')):
+def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan'), history=None):
     """The D-171 phase, with the device round-trip and the gantry meter wired in.
 
     Returns the outcome dict, or None when `cfg.lbfgs` is off (an exact no-op).
+    `history` (an `_NfProbe`, D-267) receives the 'rebuilt' and 'polish_candidate' rows.
 
     The device flip lives here rather than in `model.py::train_model` so that BOTH entry paths
     reach the phase identically: a normal run arrives with the model back on the CPU
@@ -719,7 +771,8 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan')):
         inner_iter=cfg.lbfgs_inner_iter, history_size=cfg.lbfgs_history,
         tol_grad=cfg.lbfgs_tol_grad, tol_change=cfg.lbfgs_tol_change,
         freeze=tuple(cfg.lbfgs_freeze), meter_rel_tol=cfg.lbfgs_meter_rel_tol,
-        time_budget_s=cfg.lbfgs_time_budget_s, chunk=cfg.lbfgs_chunk, seed=cfg.seed)
+        time_budget_s=cfg.lbfgs_time_budget_s, chunk=cfg.lbfgs_chunk, seed=cfg.seed,
+        meters_gate=cfg.lbfgs_meters_gate)
     if cfg.device == 'cuda':
         fit_sys.cuda()
         # The caching allocator is holding a pool shaped by Adam's batch-512 graphs, and the
@@ -728,7 +781,16 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan')):
         # fragmentation-driven OOM that would otherwise land at the END of a training run.
         torch.cuda.empty_cache()
     try:
-        return lbfgs_polish(
+        # D-253: with OBC, fit() rebuilt the basis at the restored parameters after selecting the
+        # checkpoint, so `bestfit` scored a different model. Measure the rebuilt one, once, here.
+        val_before = (bestfit if (np.isfinite(bestfit) and cfg.start_phase != 'lbfgs') else None)
+        if cfg.obc:
+            val_before = float(fit_sys.cal_validation_error(data.val_ckpt_data, cfg.validation_measure))
+            print('[lbfgs] rebuilt-basis validation %s %.6e (selected checkpoint: %.6e)'
+                  % (cfg.validation_measure, val_before, bestfit))
+            if history is not None:
+                history.record('rebuilt', fit_sys, val_before)
+        out = lbfgs_polish(
             fit_sys, data.train_data,
             loss_kwargs={'nf': hp['nf'], 'stride': cfg.stride}, spec=spec,
             val_sys_data=data.val_ckpt_data,
@@ -743,10 +805,14 @@ def run_lbfgs_polish(fit_sys, hp, cfg: RunConfig, data, bestfit=float('nan')):
             # run 81262's own validation noise, so it would not flip a clear result, but it is a
             # systematic bias in exactly the comparison the phase exists to make. Pay the 162 s
             # and measure both sides with one code path.
-            val_before=(bestfit if (np.isfinite(bestfit) and cfg.start_phase != 'lbfgs')
-                        else None),
-            validation_measure='sim-RMS',
+            val_before=val_before,
+            validation_measure=cfg.validation_measure,
             meters_fn=_gantry_meters, verbose=True)
+        if history is not None and out.get('ran') and np.isfinite(out.get('val_after', np.nan)):
+            # the simulator's last validation is the polished candidate's (val_after)
+            history.record('polish_candidate', fit_sys, out['val_after'],
+                           accepted=float(bool(out.get('accepted'))))
+        return out
     finally:
         if cfg.device == 'cuda':
             fit_sys.cpu()
@@ -788,7 +854,8 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
         print(f'Resumed from {resume_ckpt}  ({done_epochs} epochs done)')
 
     epochs_remaining = hp['epochs'] - done_epochs
-    print(f'\nTraining: nf={hp["nf"]}  epochs={hp["epochs"]}  val=sim-RMS  NX_ANN={hp["NX_ANN"]}')
+    print(f'\nTraining: nf={hp["nf"]}  epochs={hp["epochs"]}  val={cfg.validation_measure}  '
+          f'NX_ANN={hp["NX_ANN"]}')
     if done_epochs > 0:
         print(f'  Resuming: {done_epochs} done, {epochs_remaining} remaining')
 
@@ -807,7 +874,10 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
                                           width=hp['n_nodes_per_layer'], spec=spec)
         fit_sys.training_phase = opening
     # D-095: piggyback the nf-window RMS diagnostic (train + val); selection stays full-traj sim-RMS.
-    _prev_probes = _install_nf_val_probe(fit_sys, hp, cfg, data.val_ckpt_data)
+    _prev_probes = _install_nf_val_probe(
+        fit_sys, hp, cfg, data.val_ckpt_data,
+        hist_path=None if checkpoint_dir is None else os.path.join(checkpoint_dir, 'val_hist.npz'))
+    history = fit_sys.validation_probes[-1]    # D-267: kept here, outlives the checkpoint reload
     try:
         if cfg.start_phase == 'lbfgs':
             # D-171: resume straight into the polish. The nf probe above is still installed and
@@ -818,7 +888,7 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
             bestfit = train_model(fit_sys, hp, cfg, data,
                                   epochs=epochs_remaining,
                                   nf=hp['nf'],
-                                  validation_measure='sim-RMS')
+                                  validation_measure=cfg.validation_measure)
     finally:
         fit_sys.validation_probes = _prev_probes   # restore always
         fit_sys.training_phase = None              # D-236: nothing of the opening outlives fit()
@@ -836,7 +906,7 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
     _fin = loss_val_nf[np.isfinite(loss_val_nf)] if loss_val_nf.size else loss_val_nf
     if _fin.size:
         print(f'  val nf-window RMS ({hp["nf"]}-step): first={loss_val_nf[0]:.4e}  '
-              f'best={_fin.min():.4e}  last={loss_val_nf[-1]:.4e} [m]  (sim-RMS selector unchanged)')
+              f'best={_fin.min():.4e}  last={loss_val_nf[-1]:.4e} [m]  ({cfg.validation_measure} selects)')
     _fintr = loss_train_nf[np.isfinite(loss_train_nf)] if loss_train_nf.size else loss_train_nf
     if _fintr.size:
         # first/last come from the FINITE entries. The train row is a running mean over the
@@ -862,15 +932,30 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
                  bestfit=np.array(bestfit), hp=np.array(json.dumps(hp)),
                  orig_run_id=np.array(run_id))
         print(f'  Pre-polish checkpoint: {pre_base}.pt')
-    lbfgs_outcome = run_lbfgs_polish(fit_sys, hp, cfg, data, bestfit=bestfit)
-    if lbfgs_outcome is not None and lbfgs_outcome.get('accepted'):
-        # The phase only changes the weights when it improves the same selector fit() used, so
-        # bestfit follows it. On a rollback nothing moved and bestfit is untouched.
-        # The ATTRIBUTE follows too: `fit_sys.bestfit` is what deepSI's own reporting and any
-        # later reader of the system reach for, and leaving it at the pre-polish value would make
-        # the object disagree with the checkpoint written from it two lines below.
+    # D-267: the Adam validation fit() selected: its lowest score, the LAST on a tie, because fit()
+    # replaces the best checkpoint when `bestfit >= Loss_val` (interconnect.py::fit).
+    _adam = [r for r in history.val_hist if r['event'] == 'adam']
+    selected = min(reversed(_adam), key=lambda r: r['score']) if _adam else None
+    if selected is not None:
+        history.record('selected', fit_sys, selected['score'], row=selected)
+    lbfgs_outcome = run_lbfgs_polish(fit_sys, hp, cfg, data, bestfit=bestfit, history=history)
+    # 'final' = the model that is saved and evaluated: the accepted polish, else (OBC) the model
+    # after the basis rebuild, else the selected checkpoint.
+    _last = {r['event']: r for r in history.val_hist}
+    final = (_last.get('polish_candidate') if lbfgs_outcome and lbfgs_outcome.get('accepted')
+             else _last.get('rebuilt') or selected)
+    if final is not None:
+        history.record('final', fit_sys, final['score'], row=final)
+    # `bestfit` describes the model that is SAVED: the final event's score (with OBC that is the
+    # rebuilt model even when the polish is rejected, audit 2026-10-16), else the accepted polish.
+    # The Adam selection score is kept beside it. The ATTRIBUTE follows too: `fit_sys.bestfit` is
+    # what deepSI's own reporting and any later reader of the system reach for.
+    bestfit_selected = bestfit
+    if final is not None:
+        bestfit = final['score']
+    elif lbfgs_outcome is not None and lbfgs_outcome.get('accepted'):
         bestfit = lbfgs_outcome['val_after']
-        fit_sys.bestfit = bestfit
+    fit_sys.bestfit = bestfit
 
     # --- Checkpoint weights first: diagnostics below must not be able to lose them (D-070)
     ckpt_base = None
@@ -902,6 +987,7 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
         np.savez(ckpt_base + '.npz',
                  done_epochs    = np.array(done_epochs),
                  bestfit        = np.array(bestfit),
+                 bestfit_selected = np.array(bestfit_selected),   # the Adam selection score
                  elapsed        = np.array(elapsed),
                  hp             = np.array(json.dumps(hp)),
                  orig_run_id    = np.array(run_id),
@@ -923,6 +1009,7 @@ def train_model_with_diagnostics(fit_sys, hp, cfg: RunConfig, data, norm,
     return bestfit, dict(
         loss_val_nf   = loss_val_nf,    # D-095: per-epoch val nf-window RMS (aligns with Loss_val tail)
         loss_train_nf = loss_train_nf,  # D-095: per-epoch train nf-window RMS (same horizon, meters)
+        val_hist      = history.hist_arrays(),   # D-267: per-record validation history and events
     )
 
 

@@ -287,9 +287,18 @@ the crest factor is taken on the simulated yaw response.
 The rms amplitudes $A=(240~\mathrm N,87~\mathrm{N\,m},180~\mathrm N)$ keep
 every record within the force and stroke limits of the machine without
 scaling.
-The upper edge keeps 90\,\% of the difference between the frequency
-responses of the simulated system and the baseline above the crossover.
-\todo{Missing: reason for the 90\,\% share of the upper edge and for 30 phase draws. Candidate: keep both as heuristic (D-217, D-219).}
+$K_1$ is tuned for 100~Hz on the rigid baseline at $Y=0$.
+On the simulated system, the crossover of the loop lies between
+\SetupCrossMin{} and \SetupCrossMax~Hz over the axes and the training
+positions, so the band starts at the highest.
+The upper edge follows from the best linear approximation of the simulated
+system with friction under $K_1$, measured at the five training positions.
+Above the crossover, the band holds 90\,\% of the squared difference between
+this response and that of the baseline, counted where the difference
+exceeds its uncertainty.
+A rerun with the friction law of \eqref{eq:setup_fric} gives the same
+edges.
+\todo{Missing: reason for the 90\,\% share of the upper edge and for 30 phase draws, and a cite key for the best linear approximation. Candidate: keep both as heuristic (D-217, D-219); cite Pintelon and Schoukens 2012 for the best linear approximation (no cite key yet).}
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{setup_band.pdf}
@@ -374,6 +383,15 @@ Samples with $\lvert v\rvert\ge3v_{\mathrm{fr}}$, multisine & $\ge$\SetupRailSha
 The training loop re-discretises $K_1$ at $T_s$, which changes the feedback
 force on the training records by a median of \SetupKmismatchMed\,\% RMS.
 \todo{Missing: the cause of this change and whether it affects the results. Candidate: the half-sample offset between the block-mean force and the controller output at $T_s$ (2\,sin($\pi f\cdot0.1$~ms) is 9 to 19\,\% over the band, only records with multisine show it; not verified); the effect to Section~\ref{sec:results} or the Discussion.}
+\revnote{Cause found (2026-10-16, D-265): the check compares the 4~kHz
+controller output at sample $kD$ with the force averaged over $kD$ to $kD+4$,
+centred 0.1~ms later. Compared at the same instant, the two controllers agree
+to 0.5 to 1\,\% on TR-S1. The 10.8\,\% is the change of the force within one
+0.25~ms hold, the cost of closing the loop at 4~kHz in simulation, not an
+error in the block-mean preprocessing (D-087), which stays. Its output effect
+is bounded by the oracle error of the closed-loop report. The check is
+corrected to report both numbers separately, so these macros and this
+sentence change.}
 
 \subsection{Black-box model}\label{app:setup_bb}
 % Sources: beintema2023subnet; scripts/gantry/blackbox-cl-trainable (train_bb_clmap.py), thesis_r8_grid.conf.

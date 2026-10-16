@@ -367,8 +367,11 @@ class WindowControllerIndex:
     fitted inside the wrong loop.
     """
 
-    def __init__(self, record_rows):
+    def __init__(self, record_rows, record_weights=None):
         self.record_rows = [int(r) for r in record_rows]
+        # CHANGED (D-256): optional fixed loss weight per record, one (ny,) row each, appended per
+        # window as `loss_w` beside `ctrl_ix` from the same counts. None = no weight array.
+        self.record_weights = None if record_weights is None else [np.asarray(w) for w in record_weights]
         self.last_counts = None
 
     def build(self, data, sys_data, fit_sys, **kw):
@@ -411,7 +414,14 @@ class WindowControllerIndex:
         # against a full rebuild.
         self.verify_by_content(data, sdl, counts, fit_sys, nf, stride, na_r, nb_r)
         self.last_counts = list(counts)
-        return [ctrl_ix]
+        if getattr(self, 'record_weights', None) is None:       # absent in pre-D-256 pickles
+            return [ctrl_ix]
+        # CHANGED (D-256): same record order and counts as ctrl_ix, so the checks above cover it.
+        if len(self.record_weights) != len(counts):
+            raise RuntimeError('%d record weights for %d records'
+                               % (len(self.record_weights), len(counts)))
+        loss_w = np.concatenate([np.tile(w, (c, 1)) for w, c in zip(self.record_weights, counts)])
+        return [ctrl_ix, loss_w]
 
     @staticmethod
     def verify_by_content(data, sdl, counts, fit_sys, nf, stride, na_r, nb_r):
@@ -470,8 +480,16 @@ class ClosedLoopSimulator:
     extra_array_names = ('ctrl_ix',)
 
     def __init__(self, bank, train_ctrl_rows, val_records=(), checkpoint_chunk=0,
-                 compiled=None):
+                 compiled=None, train_weights=None, val_sigma_e=None):
         self.bank = bank
+        # CHANGED (D-256, D-262): `train_weights` (one (ny,) row per training record) makes the loss
+        # weighted, so the instance names a second array; `val_sigma_e` ((n_val, ny), servo-error
+        # std per validation record and axis) enables the 'sim-NRMSe' selection measure.
+        if train_weights is not None:
+            self.extra_array_names = ('ctrl_ix', 'loss_w')
+        self.val_sigma_e = None if val_sigma_e is None else np.asarray(val_sigma_e, np.float64)
+        self.last_per_channel = None
+        self.last_sim_rms = None
         # CHANGED (D-169): (hfn, output_only) compiled with torch.compile, or None for eager.
         #
         # Held HERE rather than substituted for `fit_sys.hfn`, deliberately. Everything else that
@@ -499,7 +517,7 @@ class ClosedLoopSimulator:
         self.train_ctrl_rows = [int(r) for r in train_ctrl_rows]
         # The deepSI window bookkeeping is a collaborator, not a responsibility of this class.
         # See WindowControllerIndex for why.
-        self.indexer = WindowControllerIndex(self.train_ctrl_rows)
+        self.indexer = WindowControllerIndex(self.train_ctrl_rows, train_weights)
         self.val_records = [(str(n), sd, int(r)) for n, sd, r in val_records]
         self._val_checked = False
         self.last_window_counts = None
@@ -661,7 +679,11 @@ class ClosedLoopSimulator:
         measures ('sim-NRMS', 'sim-NRMS_sys_norm', 'X-step-...') normalise or window differently,
         so honouring them means implementing them, not relabelling this one.
         """
-        if validation_measure != 'sim-RMS':
+        # CHANGED (D-256, D-262): 'sim-NRMSe' is the mean over records and axes of the per-channel
+        # RMS divided by the servo-error std of that record and axis, from the same rollout.
+        if validation_measure == 'sim-NRMSe' and getattr(self, 'val_sigma_e', None) is None:
+            raise ValueError("validation_measure='sim-NRMSe' needs val_sigma_e at construction")
+        if validation_measure not in ('sim-RMS', 'sim-NRMSe'):
             raise ValueError(
                 'the closed-loop validator computes a full free run scored in metres, i.e. '
                 'sim-RMS, and cannot honour validation_measure=%r. Returning an RMS under another '
@@ -675,9 +697,10 @@ class ClosedLoopSimulator:
         # set is 4 x 48000 samples; sequentially that is 192k timesteps each at batch one, and the
         # rollout is dispatch-bound, so batch one pays the full per-step price for a quarter of
         # the work. Same chain, same numbers, ~4x less wall time (measured ~6 min before).
-        _, per_record = closed_loop_free_run_rms_batch(
+        per_channel, per_record = closed_loop_free_run_rms_batch(
             fit_sys, sdl, self.bank, [row for (_, _, row) in self.val_records])
         self.last_per_record = per_record
+        self.last_per_channel = np.asarray(per_channel)          # CHANGED (D-267): (n_val, ny), m
         # THEORY: deepSI aggregates a multi-record sim-RMS in System_data_list.RMS as
         # weighted_mean([sd.RMS(sdo) for ...]), i.e. the ARITHMETIC mean of the per-record RMS
         # values weighted by sd.N_samples (system_data.py:705-713). The quadratic mean used here
@@ -686,8 +709,11 @@ class ClosedLoopSimulator:
         # selection scalar sit above the open-loop one on the same rollout. The weight is the FULL
         # record length, matching N_samples of the simulated record, which includes the cheat_n
         # prefix and so is not the post-k0 length scored in closed_loop_free_run_rms.
-        return float(np.average(np.asarray(per_record),
-                                weights=[len(sd.u) for sd in sdl]))
+        self.last_sim_rms = float(np.average(np.asarray(per_record),
+                                             weights=[len(sd.u) for sd in sdl]))
+        if validation_measure == 'sim-NRMSe':
+            return float(np.mean(self.last_per_channel / self.val_sigma_e))
+        return self.last_sim_rms
 
 
 def closed_loop_free_run_rms_batch(fit_sys, sdl, bank, ctrl_rows, k0=None, return_pred=False):

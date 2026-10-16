@@ -266,7 +266,8 @@ def build_controller_bank(record_names, ts, ystd, std_u, dtype=torch.float32, us
 
 # ── 5. the one call the entry point makes ───────────────────────────────────────────
 
-def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, verbose=True):
+def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, verbose=True,
+                      e_train=None, e_val=None):
     """The ClosedLoopSimulator for this pipeline. Assign it to `fs.simulator`.
 
     Not monkey patching: `simulator` is a declared class attribute on SSE_Interconnect with a
@@ -282,6 +283,8 @@ def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, verbos
     norm       the pipeline's Norm, for ystd and std_u
     cfg        RunConfig, for ts_new: the controller is stepped at the TRAINING rate, not the
                record rate, and Dc is rate dependent. See the module header.
+    e_train, e_val  servo errors y - r per record, same order as the files (DataBundle.e_train,
+               e_val): e_val enables 'sim-NRMSe', e_train the 'servo' loss weights (D-256, D-262)
     """
     from model_augmentation.fit_systems.closed_loop import ClosedLoopSimulator
 
@@ -337,5 +340,17 @@ def build_closed_loop(fs, norm, cfg, *, train_files, val_files, val_data, verbos
             print('[closed loop] training rollout COMPILED: backend=%s mode=%s fullgraph=True'
                   % (COMPILE_BACKEND, cfg.compile_mode))
             print('[closed loop] validation and diagnostics stay EAGER (they use fs.hfn directly)')
+    # D-256, D-262: servo-error scales from the scored samples k0..N-1 of the built model. The
+    # validation scales enable 'sim-NRMSe'; the training weights sigma_y / sigma_e make the loss the
+    # error relative to the servo error per record and axis.
+    from .data import servo_sigma                                       # noqa: E402
+    k0 = max(fs.na, fs.nb)
+    val_sigma_e = None if e_val is None else servo_sigma(e_val, k0)
+    train_weights = None
+    if cfg.loss_weighting == 'servo':
+        if e_train is None:
+            raise ValueError("loss_weighting='servo' needs e_train, the training servo errors")
+        train_weights = np.asarray(norm.ystd, np.float64).ravel() / servo_sigma(e_train, k0)
     return ClosedLoopSimulator(bank, train_rows, val_records,
-                               checkpoint_chunk=cfg.checkpoint_chunk, compiled=compiled)
+                               checkpoint_chunk=cfg.checkpoint_chunk, compiled=compiled,
+                               train_weights=train_weights, val_sigma_e=val_sigma_e)

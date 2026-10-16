@@ -219,7 +219,9 @@ def discrepancy_fields(ref: GantryReferenceSet, base_next_n: Tensor, norm, up_sa
 
       'recorded'  truth step at the reference tuple with the RECORDED absorber state
       'zero'      truth step at the reference tuple with ZERO absorber state (the x_a = 0 slice)
-      'data'      recorded next logical state minus the baseline step (fully data-derived)
+      'data'      recorded next logical state minus the baseline step (simulator successor)
+      'reconstructed'  (D-252, only when the set stores it) the successor reconstructed from the
+                  measured positions like the tuples themselves, minus the baseline step
 
     `base_next_n` is the baseline transition at `vbar` on the reference tuples, normalized,
     `(N, nx_phys)`.
@@ -232,7 +234,11 @@ def discrepancy_fields(ref: GantryReferenceSet, base_next_n: Tensor, norm, up_sa
     out = {}
     xn_rec, _ = absorber_truth_one_step(xk, xa, u, ref.ts, up_sample, ma_frac, zeta_a)
     xn_zero, _ = absorber_truth_one_step(xk, np.zeros_like(xa), u, ref.ts, up_sample, ma_frac, zeta_a)
-    for key, xn in (('recorded', xn_rec), ('zero', xn_zero), ('data', ref.x_phys_next.numpy())):
+    pairs = [('recorded', xn_rec), ('zero', xn_zero), ('data', ref.x_phys_next.numpy())]
+    if ref.x_phys_next_rec is not None:
+        # D-252: eq:obc_eps with the successor RECONSTRUCTED as the tuples are (no simulator state)
+        pairs.append(('reconstructed', ref.x_phys_next_rec.numpy()))
+    for key, xn in pairs:
         dn = (xn - x_mean) / std_x - base
         out[key] = torch.from_numpy(np.ascontiguousarray(dn[:, rows]).reshape(-1))
     return out

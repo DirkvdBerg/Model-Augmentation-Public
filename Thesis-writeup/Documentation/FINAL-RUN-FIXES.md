@@ -40,6 +40,19 @@ Code changes and checks found while structuring thesis Section III (2026-10-09).
      (checked 2026-10-12). The decoder output size $M n_y$ is unchanged.
    - Check: on one batch, the new target equals the old target shifted by one sample.
    - Thesis: III-E todo; `eq:ps2_s1` then sums from $\tau+1$, and the sentence on matching $V$ goes.
+   - **Superseded by item 8 (Dirk 2026-10-16): not implemented; the target stays at $\tau$ to $\tau+H-1$.**
+     Reason: the overlap this item removes exists only because the 2026-10-11 window ends at $\tau$. Item 8 ends the
+     window at $\tau-1$ (Hoekstra 2026 Eq. 22e, past only), so a target from $\tau$ already shares no sample with
+     $\chi_\tau$. Starting the target at $\tau$ also matches the main loss $V$, which, like Hoekstra 2026 Eq. (22a)
+     ($\ell=0$), scores from $\tau$; a start at $\tau+1$ would skip sample $\tau$ without a source. Justification
+     claimed: no direct reuse of a sample and the same scoring start as $V$. NOT claimed: noise independence. Hefny et
+     al. assume noise independent per sample; ours is low-pass and filtered again before decimation (D-232), so
+     disjoint indices do not make $\chi_\tau$ uncorrelated with the noise in $e_\tau$, and a one-sample shift would not
+     either. Code: no change to the target indexing; during item 8 check the rollout length $H=M=30$, the decoder
+     output size $M n_y$ and the sampling bound in `_sample` against the 30-sample past-only window.
+     Thesis: `eq:ps2_s1` sums $k=\tau$ to $\tau+H-1$; the residual sentence (III-E, "from $\tau+1$ to $\tau+H$"), the
+     Hefny sentence ("residual start at $\tau+1$"), Fig. `fig:ps2_windows` and the outline comments follow (revnotes
+     placed there).
 6. **Live start of $g_{\mathrm{aug}}$ (D-248).**
    - Now: the 2026-10-11 runs R1 to R7 use `G_INIT` zero (`zero_init_feed_forward_nn`, final layer all zero), so
      $g_{\mathrm{aug}}=0$ and the added states are zero after the first step.
@@ -154,6 +167,8 @@ and axis while the baseline is above 100 % on Y on the multisine records.
      k0; RMS(y - r) per record and axis computed once from the validation data (`r_sim` decimated as y). Keep the old
      value in the log for comparison.
    - Check: on a saved checkpoint the new score equals the mean of `cl_val_rms / RMS(e)` computed offline.
+   - Denominator (D-262, 2026-10-16): the population standard deviation of y - r over k0..N-1, not RMS(y - r), as
+     the thesis eq:setup_rms; they agree to 0.000 % on the test records.
    - Thesis: III-D selection sentence (to update, Dirk to approve).
 15. **Loss weighted per training record and axis.**
    - Now: `FS/interconnect.py::SSE_Interconnect_Composed.loss` (line 1418): `mse_loss(yfuture, y_pred)` on the

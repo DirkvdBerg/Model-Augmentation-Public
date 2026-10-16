@@ -1,15 +1,20 @@
 """Closed-loop test-set predictions of one grey-box run (THESIS-RESULTS section 5).
 
 For run R (job id from eval_common.RUNS) it loads the final model (`gantry_ckpt_<id>`, the model
-the run's own report scored), rebuilds the K1 controller bank for the test records the report
-scored (E5 is refused by the scorer, D-227), and stores per record, from k0:
+the run's own report scored), rebuilds the K1 controller bank for the records of one split (train,
+val, test or the multisine twins, D-269; E5 is refused by the scorer, D-227), and stores per record,
+from the model's own k0 = max(na, nb):
   y         the measured (noisy) output
   model     the trained model
+  physics   the model with the learned block off (report row 2)
+  base_start the physics block at the start coordinate, learned block off (report row 3)
   base_true the physics block at the true combinations, learned block off (report row 4)
   clamped   the model with every output to an added state disabled (only when n_a > 0)
-Check: the model RMS must reproduce the run's saved `cl_test_rms` row 0.
+  sigma_e   the servo-error std per record and axis over the same samples (D-262), for NRMS_e
+Check: on test and val every row the report has must reproduce the run's saved `cl_<split>_rms`.
 
-Usage: python Thesis-writeup/Code/Evaluation/eval_greybox.py R5 [R3 ...]
+Usage: python Thesis-writeup/Code/Evaluation/eval_greybox.py R5:physics,base_start,base_true,clamped [R3 ...]
+       [--split=train,val,test,twins]      (default split: test; a run without ':' rolls out the model only)
 """
 import sys
 import time
@@ -17,7 +22,7 @@ import time
 import numpy as np
 import torch
 
-from eval_common import RUNS, RUNS_DIR, CACHE, K0, record_name
+from eval_common import RUNS, RUNS_DIR, CACHE, TWINS_NOISY, record_name, twin_files
 
 
 def run_config(run_dir):
@@ -47,7 +52,8 @@ def build(cfg):
     np.random.seed(cfg.seed); torch.manual_seed(cfg.seed)
     fs = build_model(cfg.hp, cfg, data, norm)
     fs.simulator = build_closed_loop(fs, norm, cfg, train_files=data.train_files, val_files=data.val_files,
-                                     val_data=data.val_ckpt_data, verbose=False)
+                                     val_data=data.val_ckpt_data, verbose=False,
+                                     e_train=data.e_train, e_val=data.e_val)
     return data, norm, fs
 
 
@@ -68,12 +74,28 @@ def frozen_y(m, y_op=0.0):
     return m
 
 
-def evaluate(run, lti_only=False, only=('base_true', 'clamped')):
+def split_records(data, cfg, split):
+    """(files, System_data list, servo errors) of one split; the twins load from their own folder
+    through the pipeline's loader (same resampling, trim and controller registration, D-258)."""
+    if split == 'twins':
+        from gantry_dynamic.data import _load_record
+        files = twin_files()
+        pairs = [_load_record(f, cfg, folder=str(TWINS_NOISY)) for f in files]
+        return files, [p[0] for p in pairs], [p[1] for p in pairs]
+    return getattr(data, split + '_files'), getattr(data, split + '_list'), getattr(data, 'e_' + split)
+
+
+def cache_path(run, split):
+    return CACHE / ('preds_%s.npz' % run if split == 'test' else 'preds_%s_%s.npz' % (run, split))
+
+
+def evaluate(run, lti_only=False, only=('base_true', 'clamped'), split='test'):
     from inspect_checkpoint import clamped
     from gantry_dynamic.training import load_checkpoint
     from gantry_dynamic.controller import build_controller_bank, y_op_for
     from gantry_dynamic.closed_loop_report import _without_learned, _true_free
     from model_augmentation.fit_systems.closed_loop import closed_loop_free_run_rms_batch
+    from gantry_dynamic.data import servo_sigma
 
     rid = RUNS[run]
     base = str(RUNS_DIR / str(rid) / ('gantry_ckpt_%d' % rid))
@@ -81,11 +103,11 @@ def evaluate(run, lti_only=False, only=('base_true', 'clamped')):
     cfg = run_config(RUNS_DIR / str(rid))
     data, norm, fs = build(cfg)
     load_checkpoint(fs, base, joint_estimation=True, start_phase='lbfgs')
-    fs._sync_prediction_state_for_validation(refresh_basis=False)
+    # keep the SAVED OBC correction (vbar, theta_frozen are checkpoint buffers); a re-sync would rebuild the basis
     print('[%s %d] built and loaded in %.0f s' % (run, rid, time.time() - t0), flush=True)
 
-    files, sdl = [], []
-    for f, sd in zip(data.test_files, data.test_list):
+    files, sdl, es = [], [], []
+    for f, sd, e in zip(*split_records(data, cfg, split)):
         try:
             y_op_for(f, cfg.controller_gain)
         except KeyError:
@@ -93,22 +115,29 @@ def evaluate(run, lti_only=False, only=('base_true', 'clamped')):
             continue
         files.append(f)
         sdl.append(sd)
+        es.append(e)
     bank, rows, _ = build_controller_bank(files, cfg.ts_new, ystd=norm.ystd, std_u=norm.std_u,
                                           dtype=cfg.dtype_pt, use_gain=cfg.controller_gain)
-    assert max(fs.na, fs.nb) == K0
+    k0 = max(fs.na, fs.nb)                                  # the model's own scored interval (D-250)
 
     phy = next(b for b in fs.hfn.connected_blocks if hasattr(b, 'free_params'))
     if lti_only:
-        prev = dict(np.load(CACHE / ('preds_%s.npz' % run), allow_pickle=True))
+        prev = dict(np.load(cache_path(run, split), allow_pickle=True))
         systems = {'base_lti': frozen_y(_without_learned(fs, _true_free(phy)))}
     else:
         systems = {'model': fs}
         if 'base_true' in only:
             systems['base_true'] = _without_learned(fs, _true_free(phy))
+        # D-269: the report's rows 2 and 3 on every split (the run report has them for val/test only)
+        if 'physics' in only:
+            systems['physics'] = _without_learned(fs)
+        if 'base_start' in only:
+            systems['base_start'] = _without_learned(fs, torch.zeros_like(phy.free_params))
         if cfg.nx_ann and 'clamped' in only:
             systems['clamped'] = clamped(fs, cfg.ann_route_ix, cfg.nx_phys)
-    out = {'records': np.array([record_name(f) for f in files]),
-           'y': np.stack([np.asarray(sd.y, float)[K0:] for sd in sdl])}
+    out = {'records': np.array([record_name(f) for f in files]), 'k0': k0, 'split': split,
+           'y': np.stack([np.asarray(sd.y, float)[k0:] for sd in sdl]),
+           'sigma_e': servo_sigma(es, k0)}
     for tag, s in systems.items():
         t1 = time.time()
         with torch.no_grad():
@@ -119,7 +148,7 @@ def evaluate(run, lti_only=False, only=('base_true', 'clamped')):
     if lti_only:
         assert list(prev['records']) == list(out['records'])
         prev['base_lti'] = out['base_lti']
-        np.savez_compressed(CACHE / ('preds_%s.npz' % run), **prev)
+        np.savez_compressed(cache_path(run, split), **prev)
         mine = np.sqrt(np.mean((out['base_lti'] - out['y']) ** 2, axis=1))
         lpv = np.sqrt(np.mean((prev['base_true'] - out['y']) ** 2, axis=1))
         for n, a, b in zip(out['records'], mine, lpv):
@@ -127,27 +156,32 @@ def evaluate(run, lti_only=False, only=('base_true', 'clamped')):
         print('[%s %d] LTI added in %.0f s' % (run, rid, time.time() - t0), flush=True)
         return
 
-    # check against the run's own report (row 0 model, row 3 baseline true)
+    # check against the run's own report (row 0 model, row 3 baseline true); the report scores
+    # the validation and test records only
     saved = np.load(RUNS_DIR / str(rid) / ('gantry_results_%d.npz' % rid), allow_pickle=True)
-    names = [record_name(f) for f in saved['cl_test_files']]
-    for tag, row in (('model', 0), ('base_true', 3)):
-        if tag not in out:
-            continue
-        mine = np.sqrt(np.mean((out[tag] - out['y']) ** 2, axis=1))
-        ref = np.stack([saved['cl_test_rms'][row, names.index(r)] for r in out['records']])
-        rel = np.max(np.abs(mine - ref) / ref)
-        print('  check %-9s max rel. difference to the run report %.1e' % (tag, rel), flush=True)
-        assert rel < 1e-6, 'does not reproduce the run report'
+    if split in ('test', 'val'):
+        names = [record_name(f) for f in saved['cl_%s_files' % split]]
+        for tag, row in (('model', 0), ('physics', 1), ('base_start', 2), ('base_true', 3)):
+            if tag not in out:
+                continue
+            mine = np.sqrt(np.mean((out[tag] - out['y']) ** 2, axis=1))
+            ref = np.stack([saved['cl_%s_rms' % split][row, names.index(r)] for r in out['records']])
+            rel = np.max(np.abs(mine - ref) / ref)
+            print('  check %-9s max rel. difference to the run report %.1e' % (tag, rel), flush=True)
+            assert rel < 1e-6, 'does not reproduce the run report'
     CACHE.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(CACHE / ('preds_%s.npz' % run), run=run, job=rid, nx_ann=cfg.nx_ann,
+    np.savez_compressed(cache_path(run, split), run=run, job=rid, nx_ann=cfg.nx_ann,
                         obc=cfg.obc, ps2=bool(getattr(cfg, 'ps2', False)), **out)
-    print('[%s %d] done in %.0f s' % (run, rid, time.time() - t0), flush=True)
+    print('[%s %d] %s done in %.0f s' % (run, rid, split, time.time() - t0), flush=True)
 
 
 if __name__ == '__main__':
     torch.set_num_threads(4)
     # R3:clamped -> model + clamped rollouts; R6 -> model only; R5 --lti -> add the LTI baseline
     lti = '--lti' in sys.argv
-    for a in [a for a in sys.argv[1:] if a != '--lti']:
+    splits = next((a.split('=', 1)[1].split(',') for a in sys.argv[1:] if a.startswith('--split=')),
+                  ['test'])
+    for a in [a for a in sys.argv[1:] if a != '--lti' and not a.startswith('--split=')]:
         run, _, extra = a.partition(':')
-        evaluate(run, lti_only=lti, only=tuple(e for e in extra.split(',') if e))
+        for sp in splits:
+            evaluate(run, lti_only=lti, only=tuple(e for e in extra.split(',') if e), split=sp)

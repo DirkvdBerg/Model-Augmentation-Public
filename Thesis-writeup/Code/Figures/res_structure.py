@@ -1,4 +1,5 @@
-"""Table I (Aspect 2, with the black box of Aspect 4): test RMS per axis, mean over I1 to I6.
+"""Table I (Aspect 2, with the black box of Aspect 4): RMS and NRMS_e per axis, mean over the
+validation records (D-269: validation decides the design choice).
 
 Reads Results/res_structure.csv (Code/Evaluation/make_results.py), writes
 Writing/tables/res_structure.tex (tabular body for \\input).

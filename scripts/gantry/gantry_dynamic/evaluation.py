@@ -143,6 +143,8 @@ def evaluate_and_save(fit_sys, hp, rid, cfg: RunConfig, data, norm, save_dir,
                                      loss_train_full=loss_train_full, tabs=tabs,
                                      param_names=param_names, params_init_np=params_init_np,
                                      params_learned_np=params_learned_np)
+        # D-267: the per-record validation history and its selection events (val_hist_*)
+        save_dict.update((diag_conv or {}).get('val_hist', {}))
         np.savez(os.path.join(save_dir, f'gantry_results_{rid}.npz'), **save_dict)
         print(f'Saved results: gantry_results_{rid}.npz')
 

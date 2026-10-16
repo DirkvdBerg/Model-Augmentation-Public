@@ -44,6 +44,11 @@ def get_encoder_dims(hp, cfg: RunConfig):
         nb = na
         na_right = 1   # reconstructability map uses y(k), so window is [k-na, k]
         nb_right = 1
+    elif cfg.encoder_init == 'data_fit':
+        # THEORY: Hoekstra 2026 Eq. (22e), x_k|k from y and u over k-na .. k-1 (D-250): na = nb
+        # past samples, the current one excluded.
+        na = nb = hp['na_nb']
+        na_right = nb_right = 0
     else:
         na = hp.get('na_nb', 2 * (NX_PHYS + hp['NX_ANN']) + 1)
         nb = na
@@ -238,6 +243,22 @@ def build_model(hp, cfg: RunConfig, data, norm):
             dtype=DTYPE_PT,
             wa_encoder_init=cfg.wa_encoder_init,
         ).to(DTYPE_PT)
+    elif cfg.encoder_init == 'data_fit':
+        # D-251/D-261: random physical rows, fitted to a closed-loop baseline simulation by
+        # prefit_physical_encoder before training. The class reads n+1 samples for its argument n,
+        # so n = na - 1 gives the na-sample window. No mean arguments: no D-055 offsets (FIX-7);
+        # A..D are unused by wb_init='random'.
+        fit_sys.encoder = linear_encoder_init_aug(
+            A=None, B=None, C=None, D=None,
+            nx=NX_PHYS, nu=nu, ny=ny, na=na - 1, nb=nb - 1,
+            nx_aug=NX_ANN,
+            n_nodes_per_layer=hp['n_nodes_per_layer'],
+            n_hidden_layers=hp['n_hidden_layers'],
+            flag_linear_only=False,
+            dtype=DTYPE_PT,
+            wa_encoder_init=cfg.wa_encoder_init,
+            wb_init='random',
+        ).to(DTYPE_PT)
 
     # CHANGED: pass lr and eps at optimizer creation. init_model builds the optimizer here;
     # fit()'s optimizer_kwargs are ignored once init_model_done=True, so without this
@@ -276,7 +297,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
         raise RuntimeError(
             f'Adam eps mismatch after optimizer construction: config={cfg.adam_eps}, '
             f'optimizer={sorted(eps_values)}')
-    if cfg.encoder_init == 'linear_map':
+    if cfg.encoder_init in ('linear_map', 'data_fit'):
         fit_sys.hfn.to(DTYPE_PT)
     else:
         for net in (fit_sys.encoder, fit_sys.hfn):
@@ -302,6 +323,117 @@ def build_model(hp, cfg: RunConfig, data, norm):
         attach_obc(fit_sys, cfg, data, norm)
 
     return fit_sys
+
+
+def prefit_physical_encoder(fit_sys, cfg: RunConfig, data, norm):
+    """D-251 option A, D-261: fit the PHYSICAL rows of the encoder to a closed-loop baseline simulation.
+
+    The model at its start (theta^0, f_aug = 0) is simulated in closed loop over every training
+    record, from the measured positions with zero velocities, zero added states and zero controller
+    state. A temporary callable around `fit_sys.hfn` records the state before each step and the
+    corrected input of that step; `fit_sys.hfn` itself is never replaced and the rollout is the
+    pipeline's own. The encoder is then fitted on windows (y_hat, u_cl) of the na samples before tau
+    to the simulated physical state at tau (Hoekstra 2026 Eq. 30), training W^b, the hidden layers and
+    the physical output rows; W^a and the added-state output rows and bias are left unchanged.
+    """
+    if cfg.encoder_fit_epochs == 0:
+        return
+    # Runs on the run's device, as fit() does (model.py::train_model): the rollout over every
+    # training record is the cost, minutes on the GPU against about 25 min on four CPU cores. The
+    # model goes back to the CPU afterwards, where build_model left it.
+    if cfg.device == 'cuda':
+        fit_sys.cuda()
+    try:
+        _prefit(fit_sys, cfg, data, norm)
+    finally:
+        if cfg.device == 'cuda':
+            fit_sys.cpu()
+
+
+def _prefit(fit_sys, cfg, data, norm):
+    from model_augmentation.fit_systems.closed_loop import closed_loop_rollout
+    enc, sim = fit_sys.encoder, fit_sys.simulator
+    if sim is None:
+        raise RuntimeError('the encoder pre-fit needs the closed loop: call build_closed_loop first')
+    nx, na, nb, stride = cfg.nx_phys, fit_sys.na, fit_sys.nb, cfg.stride
+    final = enc.net[-1]
+    dtype, dev = next(enc.parameters()).dtype, next(enc.parameters()).device
+    T = lambda a: torch.as_tensor(np.ascontiguousarray(a), dtype=dtype, device=dev)   # noqa: E731
+    rv = lambda a: np.asarray(a, np.float64).ravel()                      # noqa: E731
+    # With OBC attached the correction needs a coefficient paired with theta^0; it is zero here
+    # (f_aug = 0 on the physical rows), and the basis built now is the one fit() would build first.
+    fit_sys._sync_prediction_state_for_validation()
+    # The parameter-dependent structures are constant over the rollout, so they are built once
+    # and threaded, exactly as SSE_Interconnect_Composed.loss does (D-194, D-195).
+    step_kw = {}
+    with torch.no_grad():
+        if fit_sys._mats_ix is not None:
+            step_kw['pass_mats'] = fit_sys.hfn.connected_blocks[fit_sys._mats_ix].pass_mats()
+        corr = getattr(fit_sys.hfn, 'obc_correction', None)
+        if corr is not None:
+            step_kw['obc_pass'] = corr.tangent_pair(corr.theta_frozen)
+
+    sdl = data.train_data.sdl
+    PinvT = np.linalg.inv(P.detach().cpu().numpy().astype(np.float64).T)
+    x_mean, std_x = rv(norm.x_mean), rv(norm.std_x)
+    uh_all, yh_all, xt_all = [], [], []
+    groups = {}
+    for i, sd in enumerate(sdl):
+        groups.setdefault(len(sd.u), []).append(i)
+    for ixs in groups.values():
+        un = np.stack([(sdl[i].u - rv(fit_sys.norm.u0)) / rv(fit_sys.norm.ustd) for i in ixs])
+        yn = np.stack([(sdl[i].y - rv(fit_sys.norm.y0)) / rv(fit_sys.norm.ystd) for i in ixs])
+        x0 = np.zeros((len(ixs), nx + cfg.nx_ann))
+        q0 = np.stack([np.asarray(sdl[i].y[0], np.float64) @ PinvT.T for i in ixs])  # q = P^-T y
+        x0[:, :nx] = (np.hstack([q0, np.zeros_like(q0)]) - x_mean) / std_x
+        xs, us = [], []
+
+        def recorder(x, u, *args):
+            xs.append(x)
+            us.append(u)
+            return fit_sys.hfn(x, u, *args)
+
+        with torch.no_grad():
+            y_hat, _, _ = closed_loop_rollout(
+                recorder, fit_sys.hfn.output_only, T(un), T(yn), T(x0), sim.bank,
+                torch.tensor([sim.train_ctrl_rows[i] for i in ixs], dtype=torch.long, device=dev),
+                **step_kw)
+        X = torch.stack(xs, 1).reshape(len(ixs), len(xs), -1)
+        U = torch.stack(us, 1).reshape(len(ixs), len(us), -1)
+        starts = torch.arange(0, X.shape[1] - max(na, nb), stride, device=dev)
+        uh_all.append(U[:, starts[:, None] + torch.arange(nb, device=dev)].flatten(0, 1))
+        yh_all.append(y_hat[:, starts[:, None] + torch.arange(na, device=dev)].flatten(0, 1))
+        xt_all.append(X[:, starts + max(na, nb), :nx].flatten(0, 1))
+    uh, yh, xt = torch.cat(uh_all), torch.cat(yh_all), torch.cat(xt_all)
+
+    params = [enc.Wb_psi_y, enc.Wb_psi_u] + [p for layer in enc.net for p in layer.parameters()]
+    wa_before = (enc.Wa_psi_y.detach().clone(), enc.Wa_psi_u.detach().clone())
+    opt = torch.optim.Adam(params, lr=cfg.encoder_fit_lr)
+    gen = torch.Generator().manual_seed(cfg.seed)        # the global RNG streams stay untouched
+    bs = cfg.batch_size
+
+    def mse():
+        with torch.no_grad():
+            return float(torch.mean((enc(uh, yh)[:, :nx] - xt) ** 2))
+
+    print('[encoder pre-fit] %d windows from %d records, start MSE %.4e (normalised states)'
+          % (len(xt), len(sdl), mse()), flush=True)
+    for ep in range(cfg.encoder_fit_epochs):
+        for ix in torch.randperm(len(xt), generator=gen).to(dev).split(bs):
+            opt.zero_grad()
+            loss = torch.mean((enc(uh[ix], yh[ix])[:, :nx] - xt[ix]) ** 2)
+            loss.backward()
+            # Added-state output rows and their bias stay zero (thesis eq:aug_init); a zero gradient
+            # with zero Adam moments gives an exactly zero step.
+            final.weight.grad[nx:] = 0.0
+            final.bias.grad[nx:] = 0.0
+            opt.step()
+        if (ep + 1) % max(1, cfg.encoder_fit_epochs // 10) == 0 and ep + 1 < cfg.encoder_fit_epochs:
+            print('[encoder pre-fit] epoch %d, MSE %.4e' % (ep + 1, mse()), flush=True)
+    print('[encoder pre-fit] %d epochs, end MSE %.4e' % (cfg.encoder_fit_epochs, mse()), flush=True)
+    if not (torch.equal(wa_before[0], enc.Wa_psi_y) and torch.equal(wa_before[1], enc.Wa_psi_u)
+            and not final.weight[nx:].any() and not final.bias[nx:].any()):
+        raise RuntimeError('the encoder pre-fit moved W^a or an added-state output row')
 
 
 def train_model(fit_sys, hp, cfg: RunConfig, data, epochs=None, nf=None, validation_measure=None):

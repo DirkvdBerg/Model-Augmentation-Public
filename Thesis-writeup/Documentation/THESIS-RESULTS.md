@@ -163,7 +163,8 @@ model M_OBC (R1: OBC, PS, n_a 2, detuned start), the black box M_BB (R8).
 - D (Aspect 4): NRMS_e per I/E pair (I2/E1, I3/E2, I5/E3, I6/E4; E6 as stress record), baseline, final model, black box,
   floor marked; plus the multisine twins (evaluation-only extension, 2026-10-16) once generated.
 Appendix, choice justification (on the VALIDATION records where a choice is compared, so the test set stays for the main
-results; Dirk's confirmation of the validation rule pending): structure comparison n_a 0 / 2 / 8 and plain vs PS (all
+results; confirmed by Dirk 2026-10-16: test is only for the final results, every choice in between is decided on
+validation; training and test numbers are still reported beside it, D-269): structure comparison n_a 0 / 2 / 8 and plain vs PS (all
 true-start runs R3, R5, R6, R7, plus the detuned n_a 0 pair), error spectrum PS vs plain, parameter recovery without added
 states (U and OBC, n_a 0, detuned start: two NEW runs, Jasper point 5), OBC vs U from the correct start (R2, R5), full
 structure table (all runs, NRMS_e and m, physical part per run), validation curves, black-box search table, full 3 x 3 FRF
@@ -171,22 +172,37 @@ structure table (all runs, NRMS_e and m, physical part per run), validation curv
 
 ## 4. Server runs
 
-All runs: noisy training records, one seed, same detuning direction in the detuned runs (D-243), `THESIS_ARCH=mlp`, `THESIS_INIT=zero`, window
-0.1 s, settings of `TRAINING-DESIGN.md`. Run-table rows (`docs/gantry-augmentation-problem-log.md` section 12, D-090)
-before launch.
+Final settings (2026-10-16; code changes in `tasks/final-run-code-changes-2026-10-16.md`, FINAL-RUN-FIXES items
+1 to 19). All runs: lowpass noisy training records (`Coulomb-tanh-and-MSD-lowpass-noise`), seed 1, same detuning
+direction in the detuned runs (D-243), window 0.1 s, settings of `TRAINING-DESIGN.md`, plus:
+- `THESIS_ARCH=mlp`, `THESIS_INIT=live` (D-248): config.json shows `G_INIT live`, `LIVE_G_WEIGHT_INIT
+  kaiming_uniform_a_sqrt5`
+- encoder: 30 past samples, window ending at tau-1 (D-250); physical rows fitted to a closed-loop baseline simulation
+  before training (`ENCODER_INIT data_fit`, D-251, D-261)
+- loss weighted per training record and axis by sigma_y / sigma_e; checkpoint selection and polish acceptance on
+  NRMS_e over the 6 validation records (D-256, D-262); per-validation history saved
+- OBC arm: `OBC_SPACE affine`, span[Phi Gamma] (D-257); reference tuples with a successor (D-252); polish compared
+  with the validation error after the basis rebuild (D-253)
+- polish acceptance on validation only, meters logged (D-255); tolerances from the pilot (D-263)
+- PS2 S1 target tau to tau+H-1 (D-260)
+- results in `thesis_taf_lowpass_noise_data_fit/`, never over the 2026-10-11 `..._linear_map/` runs
+Run-table rows (`docs/gantry-augmentation-problem-log.md` section 12, D-090) before launch.
 
-| Run | Arm | PS2 | n_a | Start | Steps | Duration |
-|-|-|-|-|-|-|-|
-| R1 | OBC | yes | 2 | detuned | 5, 6 (final model) | long (48 h or more) |
-| R2 | OBC | yes | 2 | correct | 5 | long (48 h or more) |
-| R3 | U | no | 2 | correct | 2, 3 | normal |
-| R4 | U | yes | 2 | detuned | 5 | normal |
-| R5 | U | yes | 2 | correct | 3, 4, 5 | normal |
-| R6 | U | no | 0 | correct | 4 | normal |
-| R7 | U | yes | 8 | correct | 4 | normal |
-| R8 | black box | n/a | nx searched | n/a | 6 | search: many short configurations; final: short |
+| Run | Arm | PS2 | n_a | Start | Used in | Priority | Duration (measured 2026-10-11 campaign) |
+|-|-|-|-|-|-|-|-|
+| R1 | OBC | yes | 2 | detuned | main: steps 5, 6 (final model) | 1 | 13 to 20 h on A100; about 30 to 35 h on hawaii |
+| R4 | U | yes | 2 | detuned | main: step 5 | 1 | about 7 h on A100; about 16 h on hawaii |
+| R8 | black box | n/a | nx searched | n/a | main: step 6; appendix: search table | 1 | CPU, about 4.5 h per configuration on molokai/lanai |
+| R2 | OBC | yes | 2 | correct | appendix: OBC vs U, correct start | 2 | as R1 |
+| R3 | U | no | 2 | correct | appendix: plain vs PS, spectrum | 2 | as R4 |
+| R5 | U | yes | 2 | correct | appendix: structure, spectrum, OBC vs U | 2 | as R4 |
+| R6 | U | no | 0 | correct | appendix: structure | 2 | as R4 |
+| R7 | U | yes | 8 | correct | appendix: structure | 2 | as R4 |
+| R13 | OBC | no | 0 | detuned | appendix: recovery without added states (Jasper point 5) | 2 | as R1 |
+| R14 | U | no | 0 | detuned | appendix: same | 2 | as R4 |
 
-Total: 7 grey-box runs (2 OBC, 5 U) plus the black box (search + final configuration).
+Total: 9 grey-box runs (3 OBC, 6 U) plus the black-box grid. The OBC runs fit the 72 h wall time on hawaii, lanai and
+molokai; oahu (blade1) is about 2x slower for OBC and is not used for them (runs 41, 43 did not finish in 45 h).
 
 R8, the black-box hyperparameter search (on the new dataset, since all data and runs are regenerated):
 - The configuration (including state count, network widths and learning rate) and checkpoint are selected on the
@@ -196,13 +212,17 @@ R8, the black-box hyperparameter search (on the new dataset, since all data and 
   learning rate; the previous search (`BLACKBOX-METHOD.md` section 8, e1 to e8) is the starting point
 - State the initial search ranges and total compute budget before launch. The search may expand or refine those
   ranges based on validation results within that budget; record the reason for each expansion.
-- Fixed, as in the grey box: the same 18 training records, 4 kHz, window 0.1 s, encoder lag 29, seed 1
+- Fixed, as in the grey box: the same 18 training records, 4 kHz, window 0.1 s, encoder window 30 past samples,
+  seed 1, the same record-axis loss weights and NRMS_e selection (FIX-18, D-256)
+- Final form (D-264): all 11 configurations of `thesis_r8_grid.conf` run directly to the 80000-update limit; the
+  selected configuration's search run is R8, no separate retrain. NaN breaks are reported as failures (3 of 11 in the
+  2026-10-11 search) and a best validation at the limit as unresolved convergence
 - Budget: equal to or larger than the grey box's tuning effort; report configurations tried, training effort
   (GPU-h or CPU-h, with hardware stated), failures and validation convergence. Search effort alone does not
   establish that tuning is sufficient.
-- State the validation plateau criterion and maximum training limit before launch. Final: retrain the selected
-  configuration to its validation plateau or the stated limit, retaining its best validation checkpoint; this model
-  enters step 6. Report any unresolved convergence at the limit; test results do not determine stopping.
+- State the validation plateau criterion and maximum training limit before launch (`thesis_r8_grid.conf`). The
+  selected configuration keeps its best validation checkpoint; this model enters step 6. Report any unresolved
+  convergence at the limit; test results do not determine stopping.
 
 Optional, if compute allows:
 
@@ -212,16 +232,17 @@ Optional, if compute allows:
 | R10 | U | yes | 4 | correct | step 4 curve |
 | R11, R12 | black box | n/a | selected nx | n/a | seeds 2 and 3 of the selected configuration: assesses sensitivity to initialisation |
 
-Launch order: R1 and R2 first (longest), then R3 to R7, then R8.
+Launch order (Dirk 2026-10-16): priority 1 first (R1, R4 and the R8 grid; the grid runs on CPU beside the GPU runs),
+then priority 2 (R2, R13 first as the longest, then R3, R5, R6, R7, R14).
 
 Before launch:
-- launch path passes and logs `THESIS_INIT` next to `THESIS_ARCH` and `THESIS_PS2` (`run_thesis.sbatch`, `submit.sh`;
-  open in `tasks/handoffs/2026-10-08-zero-init-mlp-runs.md`); each run's log line reads `g_aug=mlp/zero` and its
-  config.json has `ANN_ARCH=mlp`, `G_INIT=zero`
-- new run ids above 164, never reused
+- each run's log line reads `g_aug=mlp/live` and its config.json has `ANN_ARCH=mlp`, `G_INIT=live`,
+  `ENCODER_INIT=data_fit`, `NA_NB_OVERRIDE=30`, the NRMS_e measure and, for OBC, `OBC_SPACE=affine`
+- new run ids above 207, never reused
 - dataset fixed: lowpass (section 7)
-- code frozen; git SHA in every run
-- smoke test of each row type (`THESIS_SMOKE=1`)
+- code frozen (git provenance dropped, Dirk 2026-10-16)
+- local CPU smoke test of each row type (`THESIS_SMOKE=1 THESIS_DEVICE=cpu`: OBC+PS2, U+PS2, U plain, n_a 0) and a
+  4-update black-box run
 - the U PS2 and OBC PS2 runs build identical initial parameters for the same seed (D-240 check)
 
 ## 5. Evaluation only (no server runs)

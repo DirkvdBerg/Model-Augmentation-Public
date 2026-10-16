@@ -66,6 +66,9 @@ class PolishSpec:
     time_budget_s: Optional[int] = None
     chunk: Optional[int] = None    # windows per gradient-accumulation chunk; None = one chunk
     seed: int = 42
+    # CHANGED (D-263): False = the meters are measured and reported but cannot veto acceptance
+    # (some use the truth, D-255); the validation measure alone decides.
+    meters_gate: bool = True
 
 
 # =================================================================================================
@@ -163,6 +166,16 @@ def _restore(named, snap):
     with torch.no_grad():
         for (_, p), saved in zip(named, snap):
             p.data.copy_(saved)
+
+
+def _resync(fit_sys):
+    """D-266: pair a prediction coefficient held OUTSIDE the parameters (the OBC `theta_frozen`)
+    with the parameters as they are now. Every closure's loss() overwrites it, so after a restore,
+    or before a validation, it may still describe another network. Keeps the basis; a no-op for a
+    system without such state."""
+    sync = getattr(fit_sys, '_sync_prediction_state_for_validation', None)
+    if sync is not None:
+        sync(refresh_basis=False)
 
 
 def generic_meters(fit_sys):
@@ -587,6 +600,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec=None,
         was_training = fit_sys.hfn.training
         fit_sys.eval()
         try:
+            _resync(fit_sys)                     # D-266: score the network that is in place
             with _quiet_probes(fit_sys):
                 return float(fit_sys.cal_validation_error(val_sys_data, validation_measure))
         finally:
@@ -678,6 +692,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec=None,
                     'cannot be run. Try torch.use_deterministic_algorithms(True).')
                 out['wall_s'] = time.time() - t0
                 _restore(named, snap)
+                _resync(fit_sys)                 # D-266
                 if verbose:
                     print('  [lbfgs] ABORTED, weights unchanged: %s' % out['reason'])
                 return out
@@ -718,6 +733,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec=None,
                     out['wall_s'] = time.time() - t0
                     out['n_closure'] = n_closure[0]
                     _restore(named, snap)
+                    _resync(fit_sys)             # D-266
                     if _is_oom(e):
                         torch.cuda.empty_cache()
                     if verbose:
@@ -758,8 +774,11 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec=None,
     out['meters_after'] = _all_meters()
     out['wall_s'] = time.time() - t0
 
+    # D-263: with meters_gate=False the meters stay in `out` as a report but do not gate.
+    gate = spec.meters_gate
     out['accepted'], why = decide(
-        out['val_before'], out['val_after'], out['meters_before'], out['meters_after'],
+        out['val_before'], out['val_after'],
+        out['meters_before'] if gate else {}, out['meters_after'] if gate else {},
         loss_finite=bool(np.isfinite(out['loss_last'])), meter_rel_tol=spec.meter_rel_tol,
         validation_measure=validation_measure,
         accept_without_validation=accept_without_validation)
@@ -767,6 +786,7 @@ def lbfgs_polish(fit_sys, train_sys_data, *, loss_kwargs, spec=None,
 
     if not out['accepted']:
         _restore(named, snap)
+        _resync(fit_sys)                         # D-266
     if verbose:
         print('  [lbfgs] %s: %s' % ('ACCEPTED' if out['accepted'] else 'ROLLED BACK', why))
         print('  [lbfgs] loss %.6e -> %.6e | %d iterations, %d closures in %.0f s%s'

@@ -978,7 +978,7 @@ are used for both stages.
  \eqref{eq:ps2_s1}. S2 (bottom): $g_{\mathrm{aug}}$ maps $\hat x^{\mathrm n}_{\tau|\tau}$ and the
  recorded $u_\tau$ to the added state encoded from the window shifted by one
  sample \eqref{eq:ps2_s2}.
- \todo{The figure shows the target from $\tau+1$ (\texttt{FINAL-RUN-FIXES.md} item~5). The 2026-10-11 runs start it at $\tau$, so the noise in $y_\tau$ enters both $\chi_\tau$ and $e_\tau$.}}
+ \todo{The figure shows the target from $\tau+1$ (\texttt{FINAL-RUN-FIXES.md} item~5). Item~5 is superseded by item~8 (2026-10-16): the final runs end $\chi_\tau$ at $\tau-1$ and start the target at $\tau$, so the figure must show $\chi_\tau$ up to $\tau-1$ and $e_\tau$ from $\tau$ to $\tau+H-1$.}}
  \label{fig:ps2_windows}
  \revnote{d is also a baseline parameter, need to change}
 \end{figure}
@@ -1000,9 +1000,17 @@ samples up to $\tau$, $\chi_\tau$, to estimate the initial state $\hat x^{\mathr
 From this state the augmented model is simulated in the closed loop of 
 Section~\ref{sec:aug_loop}.
 We calculate the residual from the next $H=n+1$ samples, from $\tau+1$ to $\tau+H$.
-\revnote{The current results use a residual target starting at $\tau$, so the
-encoder and target share sample $\tau$. The final runs will start the target
-at $\tau+1$, as described here.}
+\revnote{The current results use an encoder window up to $\tau$ and a residual
+target starting at $\tau$, so the encoder and target share sample $\tau$. The
+final runs end the window at $\tau-1$ (\eqref{eq:aug_encoder},
+\cite[Eq.~(22e)]{hoekstra2026lfr}) and keep the target at $\tau$ to
+$\tau+H-1$: no sample is then shared, and S1 scores from $\tau$ as $V$
+does~\cite[Eq.~(22a)]{hoekstra2026lfr}. This text, \eqref{eq:ps2_s1} and
+Fig.~\ref{fig:ps2_windows} still show $\tau+1$ to $\tau+H$ and change to
+$\tau$ to $\tau+H-1$ (\texttt{FINAL-RUN-FIXES.md} item~5, superseded by
+item~8). The sentence above (``the last $n+1$ samples up to $\tau$'')
+changes to ``up to $\tau-1$'', as \eqref{eq:aug_encoder}; the S1 item of the
+draft list of this section also still says $\tau+1$ to $\tau+H$.}
 The top of Fig.~\ref{fig:ps2_windows} shows the window $\chi_\tau$ and the
 samples of the residual $e_\tau$.
 We have chosen to use the same number of samples as the encoder window.
@@ -1063,6 +1071,13 @@ To avoid correlation between the history and future noise Hefny et al.\ separate
 the past and future samples~\cite[Sec.~2]{hefny2015supervised}. 
 We borrow this principle by having the residual start at $\tau+1$, so that there 
 is no overlap between the samples used for the encoder and to calculate the residual.
+\revnote{Final runs: the separation comes from the encoder window ending at
+$\tau-1$, not from shifting the residual; the residual starts at $\tau$. The
+claim is only that no sample is used on both sides. Hefny et al.\ assume noise
+independent per sample; our noise is low-pass and filtered before decimation,
+so disjoint windows do not make $\chi_\tau$ uncorrelated with the noise in
+$e_\tau$, and a later residual start would not either (see the todo below).
+This sentence changes accordingly.}
 \todo{
 Venkatraman et al.\ use a similar approach by predicting
 future observations from the internal states during
@@ -1070,7 +1085,7 @@ training~\ucite[Sec.~3]{venkatraman2017psd}.
 }
 For the PS implementation the decoder predicts the model residual and
 is removed after S1.
-\todo{Current runs (\texttt{FINAL-RUN-FIXES.md} item~5): the 2026-10-11 runs start the target at $\tau$ (\texttt{ps2\_opening.py}, \texttt{\_sample} and \texttt{\_residual}), so sample $\tau$ is both the last sample of $\chi_\tau$ and the first of $e_\tau$, and the noise in $y_\tau$ enters both sides of \eqref{eq:ps2_s1}.}
+\todo{Current runs (\texttt{FINAL-RUN-FIXES.md} items~5 and~8): the 2026-10-11 runs end $\chi_\tau$ at $\tau$ and start the target at $\tau$ (\texttt{ps2\_opening.py}, \texttt{\_sample} and \texttt{\_residual}), so sample $\tau$ is both the last sample of $\chi_\tau$ and the first of $e_\tau$. The final runs remove the overlap through the window (item~8), not the target (item~5, superseded).}
 \todo{Missing: Hefny et al.\ model the noise as independent per sample (Fig.~1). Our measurement noise is low-pass and fed back by the controller, so disjoint windows remove the shared sample but not all correlation between $\chi_\tau$ and the noise in $e_\tau$. Candidate: one sentence here or in the Discussion (basis: D-238 noise model).}
 
 To evaluate how well $\bar x_{\tau|\tau}$ performs at predicting the residual, a

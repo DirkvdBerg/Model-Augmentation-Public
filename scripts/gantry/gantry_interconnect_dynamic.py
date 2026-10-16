@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from gantry_dynamic.config import RunConfig, save_dir, config_json_dict, git_provenance
 from gantry_dynamic.data import load_datasets, compute_normalization, traj_dir
-from gantry_dynamic.model import build_model
+from gantry_dynamic.model import build_model, prefit_physical_encoder
 from gantry_dynamic.diagnostics import (
     state_recovery_diagnostic, compute_gradient_norms, print_run_banner,
 )
@@ -303,6 +303,11 @@ if _obc_arm is not None:
 #   THESIS_PS2    0 | 1              D-236: PS2 opening of the added-state part (default 0 = the thesis run)
 #   THESIS_ARCH   mlp | resnet       D-240: g_aug network, default mlp (Jan's tanh MLP, no bypass)
 #   THESIS_INIT   zero | live        D-240: g_aug final layer all zero (default) | added-state rows live
+#   THESIS_ENCODER_FIT_EPOCHS int    D-261 pilot only: encoder pre-fit epochs instead of _ENCODER_FIT_EPOCHS
+# Pilot-set values of the final method (D-261, D-263); see their comments where measured.
+_ENCODER_FIT_EPOCHS = 20      # HEURISTIC (D-261): provisional, replaced by the pilot value
+_LBFGS_TOL_GRAD = 1e-12       # HEURISTIC (D-263): provisional, replaced by the pilot value
+_LBFGS_TOL_CHANGE = 1e-14     # HEURISTIC (D-263): provisional, replaced by the pilot value
 _thesis_arm = os.environ.get('THESIS_ARM')
 if _thesis_arm is not None:
     if _obc_arm is not None:
@@ -328,12 +333,19 @@ if _thesis_arm is not None:
     if _start == 'detuned':
         _signs = np.random.default_rng(_seed).choice([-1.0, 1.0], size=10)
         _detune = [float(1.0 + 0.10 * s) for s in _signs]
+    # Final method (2026-10-16, Thesis-writeup/Documentation/FINAL-RUN-FIXES.md,
+    # tasks/final-run-code-changes-2026-10-16.md): past-only 30-sample encoder window with a
+    # data-fitted physical part (D-250, D-251, D-261), OBC on span[Phi Gamma] over tuples with a
+    # successor (D-252, D-257), loss, selection and polish on NRMS_e (D-256, D-262, D-263).
     _THESIS_FIXED = dict(
         joint_estimation=True, physics_parameterization='reduced', param_init_detune=None,
-        param_prior=False, orth=False, obc_space='tangent',
-        n_nodes_per_layer=16, n_hidden_layers=2, na_nb_override=29,
+        param_prior=False, orth=False, obc_space='affine', obc_ref_successor=True,
+        n_nodes_per_layer=16, n_hidden_layers=2,
+        encoder_init='data_fit', na_nb_override=30, encoder_fit_epochs=_ENCODER_FIT_EPOCHS,
         use_f64=True, lr=1e-5, batch_size=512, stride=10, epochs=200,
+        loss_weighting='servo', validation_measure='sim-NRMSe',
         closed_loop=True, lbfgs=True, lbfgs_max_iter=100, lbfgs_history=50, start_phase='adam',
+        lbfgs_meters_gate=False, lbfgs_tol_grad=_LBFGS_TOL_GRAD, lbfgs_tol_change=_LBFGS_TOL_CHANGE,
         wa_encoder_init='xavier_uniform_gain1',
     )
     CFG = replace(CFG, **_THESIS_FIXED,
@@ -351,11 +363,15 @@ if _thesis_arm is not None:
     # Window sweep (TRAINING-DESIGN 1.1): equal Adam updates across windows, set from the pilot.
     if os.environ.get('THESIS_NITS'):
         CFG = replace(CFG, n_its=int(os.environ['THESIS_NITS']))
+    # D-261 pilot only: a longer encoder pre-fit whose printed MSE curve sets _ENCODER_FIT_EPOCHS.
+    if os.environ.get('THESIS_ENCODER_FIT_EPOCHS'):
+        CFG = replace(CFG, encoder_fit_epochs=int(os.environ['THESIS_ENCODER_FIT_EPOCHS']))
     if os.environ.get('THESIS_SMOKE') == '1':
         # Launch test in minutes: 2 s of every record, eager (compilation is checked by the first
         # real run), 4 updates, one validation cadence, a 2-iteration polish.
         CFG = replace(CFG, truncate_s=2.0, compile_mode=None, n_its=4, its_per_val=4,
-                      lbfgs_inner_iter=1, lbfgs_max_iter=2, lbfgs_windows=256)
+                      lbfgs_inner_iter=1, lbfgs_max_iter=2, lbfgs_windows=256,
+                      encoder_fit_epochs=min(CFG.encoder_fit_epochs, 1))
     if os.environ.get('THESIS_DEVICE') == 'cpu':
         CFG = replace(CFG, device='cpu', compile_mode=None)
     print('[thesis run] arm=%s noise=%s start=%s n_a=%d seed=%d nf=%.3f s detune=%s%s'
@@ -422,8 +438,13 @@ def main():
         # D-221: the lists the data were loaded from, not the legacy constants.
         fit_sys.simulator = build_closed_loop(
             fit_sys, norm, cfg,
-            train_files=data.train_files, val_files=data.val_files, val_data=data.val_ckpt_data)
+            train_files=data.train_files, val_files=data.val_files, val_data=data.val_ckpt_data,
+            e_train=data.e_train, e_val=data.e_val)
         print('\nLoss rollout: CLOSED loop (known controller wrapped around the model)')
+        # D-261: the data-based encoder start needs the controller bank; a resume restores the
+        # fitted encoder instead.
+        if cfg.encoder_init == 'data_fit' and resume_ckpt is None:
+            prefit_physical_encoder(fit_sys, cfg, data, norm)
     else:
         print('\nLoss rollout: OPEN loop (plant input replayed; simulator = None)')
     # ─────────────────────────────────────────────────────────────────────────────────
@@ -432,7 +453,7 @@ def main():
     bestfit, diag_conv = train_model_with_diagnostics(
         fit_sys, hp, cfg, data, norm, resume_ckpt=resume_ckpt,
         checkpoint_dir=ckpt_dir, run_id=run_id)
-    print(f"\nTraining complete. Best validation sim-RMS: {bestfit:.6f}")
+    print(f"\nTraining complete. Best validation {cfg.validation_measure}: {bestfit:.6g}")
 
     # D-227: every post-run number is closed loop (gantry_dynamic/closed_loop_report.py).
     evaluate_and_save(fit_sys, hp, run_id, cfg, data, norm, sdir, diag_conv=diag_conv)

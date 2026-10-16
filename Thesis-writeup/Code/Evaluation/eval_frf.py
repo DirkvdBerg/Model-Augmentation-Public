@@ -41,7 +41,7 @@ def linearise(fs, norm, cfg, Y):
     u0 = -um / su                                            # zero physical stage force
     dt = next(fs.hfn.parameters()).dtype
     X0, U0 = torch.tensor(x0, dtype=dt)[None], torch.tensor(u0, dtype=dt)[None]
-    fs._sync_prediction_state_for_validation(refresh_basis=False)
+    # keep the SAVED OBC correction (vbar, theta_frozen are checkpoint buffers); a re-sync would rebuild the basis
     step = lambda x, u: fs.hfn(x, u)[1].reshape(-1)          # noqa: E731  (next state)
     with torch.no_grad():
         drift = float(np.abs(step(X0, U0).double().numpy() - x0).max())

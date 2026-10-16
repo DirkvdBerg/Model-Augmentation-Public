@@ -49,6 +49,10 @@ p.add_argument('--timeout', type=float, default=None)                   # deepSI
 p.add_argument('--n-its', type=int, default=None)                       # BB2-029: fixed update budget (overrides epochs)
 p.add_argument('--f-blockmean', action=argparse.BooleanOptionalAction, default=False)                 # BB2-029: f block-averaged like the grey box's u
 p.add_argument('--cuda', action='store_true')                           # deepSI's own cuda switch (training only)
+# FIX-18 (D-256, D-264): 'nrmse' = the grey box's loss weights sigma_y/sigma_e per record and axis and
+# selection by NRMS_e; 'native' = deepSI's own loss and sim-RMS (every run before 2026-10-16).
+p.add_argument('--objective', choices=('native', 'nrmse'), default='native')
+p.add_argument('--truncate-s', type=float, default=None)                # launch tests only: keep the first s of every record (D-222)
 p.add_argument('--out', required=True)
 p.add_argument('--server', action='store_true')
 args = p.parse_args()
@@ -67,8 +71,10 @@ from scipy.io import loadmat                                           # noqa: E
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bbcl'))
 from setup import cfg_for                                              # noqa: E402
 from jan_model import JanEncoder, JanStateNet                          # noqa: E402
-from gantry_dynamic.data import record_files, traj_dir, _record_at_fs_new, _load_u, _resample_u  # noqa: E402
+from gantry_dynamic.data import (record_files, traj_dir, _record_at_fs_new, _load_u, _resample_u,  # noqa: E402
+                                 servo_sigma)
 from gantry_dynamic.config import record_trim                         # noqa: E402
+from model_augmentation.fit_systems.closed_loop import window_controller_index  # noqa: E402
 
 if not args.server:
     torch.set_num_threads(4)
@@ -116,17 +122,76 @@ def per_axis(model, sdl, ry, k0):
     return np.asarray(rms)
 
 
+class ServoWeightedEncoder(SS_encoder_general_hf):
+    """FIX-18: Jan's SUBNET with the grey box's objective and selection (D-256, D-262).
+
+    Training windows carry a fifth array, the fixed weight sigma_y/sigma_e of their record and
+    axis (sigma_y = deepSI's own output scale, so the weighted normalised error is error/sigma_e);
+    validation returns NRMS_e. The run's history and failure lists are handed in by reference
+    (`run_lists`), so deepSI's `_best` reload, which replaces `__dict__`, cannot erase them; the
+    history is also rewritten to `hist_path` at every validation (D-267). The training loop
+    itself is deepSI's."""
+
+    def set_objective(self, e_train, k0, val_ry, run_lists, hist_path):
+        self._sigma_train = servo_sigma(e_train, k0)          # only the scales, not the records
+        self._k0, self._val_ry, self._hist_path = k0, val_ry, hist_path
+        self._val_sigma = servo_sigma([y - r for r, y in val_ry], k0)
+        self._hist, self._failure = run_lists
+
+    def make_training_data(self, sys_data, **kw):
+        data = super().make_training_data(sys_data, **kw)
+        sdl = sys_data.sdl if hasattr(sys_data, 'sdl') else [sys_data]
+        _, counts = window_controller_index(sys_data, [0] * len(sdl), self.na, self.nb,
+                                            kw.get('nf', 25), self.na_right, self.nb_right,
+                                            kw.get('stride', 1))
+        if sum(counts) != len(data[0]):
+            raise RuntimeError('weight rows %d != training windows %d' % (sum(counts), len(data[0])))
+        w = np.asarray(self.norm.ystd, float).ravel() / self._sigma_train
+        return list(data) + [np.concatenate([np.tile(wr, (c, 1)) for wr, c in zip(w, counts)])]
+
+    def loss(self, uhist, yhist, ufuture, yfuture, w=None, **kw):
+        if w is None:
+            return super().loss(uhist, yhist, ufuture, yfuture, **kw)
+        x = self.encoder(uhist, yhist)
+        errors = []
+        for y, u in zip(torch.transpose(yfuture, 0, 1), torch.transpose(ufuture, 0, 1)):
+            yhat, x = self.hfn(x, u)
+            errors.append(((yhat - y) * w) ** 2)
+        L = torch.mean(torch.stack(errors))
+        if not self._failure and not torch.isfinite(L):
+            # deepSI breaks on a NaN loss and reloads `_best` silently; the run records it (D-264)
+            self._failure.append({'update': int(getattr(self, 'batch_counter', -1)), 'loss': float(L)})
+            self._dump()
+        return L
+
+    def cal_validation_error(self, val_sys_data, validation_measure='sim-NRMS'):
+        if validation_measure != 'sim-NRMSe':
+            return super().cal_validation_error(val_sys_data, validation_measure)
+        rms = per_axis(self, val_sys_data.sdl, self._val_ry, self._k0)
+        score = float(np.mean(rms / self._val_sigma))
+        self._hist.append({'update': int(getattr(self, 'batch_counter', -1)), 'nrms_e': score,
+                           'rms': rms.tolist()})
+        self._dump()
+        return score
+
+    def _dump(self):
+        """History and failure on disk at every event, so a killed job keeps them (D-267)."""
+        with open(self._hist_path, 'w') as fh:
+            json.dump({'val_sigma_e': self._val_sigma.tolist(), 'history': self._hist,
+                       'failure': self._failure[0] if self._failure else None}, fh)
+
+
 def main():
     t0 = time.time()
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-    cfg = cfg_for(args.version, args.seed, local=not args.server)
+    cfg = cfg_for(args.version, args.seed, local=not args.server, truncate_s=args.truncate_s)
     nf = args.nf or cfg.nf
     batch = args.batch or cfg.batch_size
     stride = args.stride or cfg.stride
     tr_f, va_f, _ = record_files(cfg)                                   # test records not loaded
     (train, train_ry), (val, val_ry) = load(cfg, tr_f), load(cfg, va_f)
-    k0 = NA                                                             # section 10: scored from 29
+    k0 = NA                                                             # section 10: scored from na (30 in R8)
     y0 = np.mean(np.concatenate([y for _, y in train_ry]), 0)
     mean_rms = np.mean([np.sqrt(np.mean((y[k0:] - y0) ** 2, 0)) for _, y in val_ry], 0)
     triv = np.asarray([np.sqrt(np.mean((r[k0:] - y[k0:]) ** 2, 0)) for r, y in val_ry])
@@ -137,18 +202,29 @@ def main():
     ekw = dict(n_hidden_layers=args.e_depth, n_nodes_per_layer=args.e_width)
     hf_kw = dict(f_net=JanStateNet, f_net_kwargs=dict(fkw), h_net=default_output_net,
                  h_net_kwargs=dict(fkw))
-    model = SS_encoder_general_hf(nx=args.nx, na=NA, nb=NA, hf_net_kwargs=hf_kw,
-                                  e_net=JanEncoder, e_net_kwargs=dict(ekw),
-                                  na_right=args.na_right, nb_right=args.na_right)
+    nrmse = args.objective == 'nrmse'
+    model = (ServoWeightedEncoder if nrmse else SS_encoder_general_hf)(
+        nx=args.nx, na=NA, nb=NA, hf_net_kwargs=hf_kw, e_net=JanEncoder, e_net_kwargs=dict(ekw),
+        na_right=args.na_right, nb_right=args.na_right)
+    val_hist, failure = [], []                     # run-owned (D-264, D-267)
+    if nrmse:
+        model.set_objective([y - r for r, y in train_ry], k0, val_ry, (val_hist, failure),
+                            os.path.join(OUT, 'val_hist.json'))
     tr, va = deepSI.System_data_list(train), deepSI.System_data_list(val)
     model.fit(tr, val_sys_data=va, epochs=args.epochs, batch_size=batch,
               loss_kwargs=dict(nf=nf, stride=stride), auto_fit_norm=True,
-              validation_measure='sim-RMS', optimizer_kwargs=dict(lr=args.lr),
+              validation_measure='sim-NRMSe' if nrmse else 'sim-RMS',
+              optimizer_kwargs=dict(lr=args.lr),
               its_per_val=args.its_per_val or 'epoch', timeout=args.timeout,
               n_its=args.n_its, cuda=args.cuda)
     pa = per_axis(model, val, val_ry, k0)
     ratio = (pa.mean(0) / mean_rms).tolist()
-    nrms_e = (pa.mean(0) / triv.mean(0)).tolist()
+    if nrmse:                                      # D-262: relative to the servo-error std
+        val_sigma = servo_sigma([y - r for r, y in val_ry], k0)
+        nrms_e_rec = pa / val_sigma
+    else:
+        nrms_e_rec = pa / triv
+    nrms_e = (pa.mean(0) / triv.mean(0)).tolist() if not nrmse else nrms_e_rec.mean(0).tolist()
     lv = np.asarray(model.Loss_val, float)
     lt = np.asarray(model.Loss_train, float)
     lt_f = lt[np.isfinite(lt)]
@@ -165,11 +241,16 @@ def main():
                                                            and max(ratio) <= 1 / 3),
                 c_loss_decreases=bool(len(lt_f) >= 2 and lt_f[-1] < lt_f[0]))
     crit['PASS'] = all(crit.values())
-    res = dict(args=vars(args), stride=stride, batch=batch, nf=nf, k0=k0,
+    # the selected checkpoint's file name: deepSI names it after the class (audit 2026-10-16)
+    best = model.name + '_best.pth'                     # deepSI checkpoint_save_system's file name
+    res = dict(args=vars(args), stride=stride, batch=batch, nf=nf, k0=k0, checkpoint=best,
                mean_model_rms=mean_rms.tolist(), trivial_rms=triv.mean(0).tolist(),
                trivial_per_record=triv.tolist(), per_axis_final=pa.mean(0).tolist(),
                per_record=pa.tolist(), ratio_final_over_mean_model=ratio, nrms_e=nrms_e,
-               nrms_e_per_record=(pa / triv).tolist(),
+               nrms_e_per_record=nrms_e_rec.tolist(), objective=args.objective,
+               val_rms_hist=val_hist, val_sigma_e=val_sigma.tolist() if nrmse else None,
+               failure=failure[0] if failure else None,
+               status='failed' if failure else 'completed',
                loss_val=lv.tolist(), loss_train=lt.tolist(), epoch_id=np.asarray(model.epoch_id).tolist(),
                loss_val_full=lv_full.tolist(), loss_train_full=lt_full.tolist(),
                updates_full=bid_full.tolist(), best_update=int(model.batch_counter),

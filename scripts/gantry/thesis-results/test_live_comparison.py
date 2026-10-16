@@ -31,7 +31,7 @@ def main():
             return result
 
         with patch('torch.nn.init.xavier_uniform_', side_effect=capture_xavier):
-            cfg, data, norm, plain = HELPERS['build']('u')
+            cfg, data, norm, plain = HELPERS['build']('u', arch=architecture)
         os.environ['THESIS_PS2'] = '1'
         cfg_ps2 = importlib.reload(importlib.import_module('gantry_interconnect_dynamic')).CFG
         from gantry_dynamic.model import build_model
@@ -41,7 +41,8 @@ def main():
         ps2 = build_model(cfg_ps2.hp, cfg_ps2, data, norm)
         ps2.simulator = build_closed_loop(ps2, norm, cfg_ps2,
                                          train_files=data.train_files, val_files=data.val_files,
-                                         val_data=data.val_ckpt_data, verbose=False)
+                                         val_data=data.val_ckpt_data, verbose=False,
+                                         e_train=data.e_train, e_val=data.e_val)
         assert cfg.nf == 400 and cfg.mode == 'thesis_taf_lowpass_noise'
         assert not cfg.obc and not cfg.orth and not cfg.ps2 and cfg_ps2.ps2
         from gantry_dynamic.data import THESIS_DATASETS

@@ -1414,8 +1414,16 @@ class SSE_Interconnect_Composed(SSE_Interconnect):
             # `tangent_pair` is optional, so a correction module without it still works.
             _tan = _corr.tangent_pair(_theta) if hasattr(_corr, 'tangent_pair') else _theta
             Loss_kwargs = dict(Loss_kwargs, obc_pass=_tan)
+        # CHANGED (D-256): `loss_w` (windows, ny), the fixed record-and-axis weight of each window
+        # sent by the simulator, is the objective's, not the rollout's.
+        w = Loss_kwargs.pop('loss_w', None)
         y_pred, _ = self.simulate(x, ufuture, yfuture, **Loss_kwargs)
-        L = nn.functional.mse_loss(yfuture, y_pred)
+        if w is None:
+            L = nn.functional.mse_loss(yfuture, y_pred)
+        else:
+            # THEORY: D-256, w = sigma_y / sigma_e turns the normalised error into error / sigma_e,
+            # so the objective is the squared error relative to the servo error per record and axis.
+            L = ((y_pred - yfuture) * w[:, None, :]).square().mean()
         # Window error statistics, from the rollout that just happened. Accumulated HERE, before
         # the penalties, so the reported error is the fit error and does not move when orth or
         # joint estimation is toggled. None = no statistics, an exact no-op.

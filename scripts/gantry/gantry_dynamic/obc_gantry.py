@@ -59,6 +59,10 @@ class GantryReferenceSet:
     n_per_record: list    # samples kept per record
     record_names: list
     ts: float
+    # D-252 (cfg.obc_ref_successor): the RECONSTRUCTED next state [q(k+1); qdot(k+1)], same
+    # reconstruction as x_phys; None on the earlier reference set, which has no successor for the
+    # last tuple of each record.
+    x_phys_next_rec: Optional[Tensor] = None
 
     @property
     def n(self) -> int:
@@ -120,17 +124,20 @@ def build_reference_set(cfg: RunConfig, norm, nx_ann: int, files: Sequence[str] 
     u_mean = np.asarray(norm.u_mean, dtype=np.float64).reshape(1, 3)
     std_u = np.asarray(norm.std_u, dtype=np.float64).reshape(1, 3)
 
-    xs, us, xn, xa, rec, samp, counts = [], [], [], [], [], [], []
+    xs, us, xn, xa, rec, samp, counts, xnr = [], [], [], [], [], [], [], []
     t0 = time.perf_counter()
     for r, f in enumerate(files):
         u, y, x_log, x_abs = _load_record_float64(f, cfg)
         q = y @ PinvT.T                              # q_k = P^-T y_k, (N, 3)
-        qd = fourth_order_central_difference(q, ts)  # (N-4, 3), aligned with q[2:-2]
-        k = np.arange(2, len(u) - 2)                 # full stencil exists here only
+        qd = fourth_order_central_difference(q, ts)  # (N-4, 3), qd[k - 2] belongs to q[k]
+        # Full stencil exists for k in 2..N-3. D-252: with obc_ref_successor the last of these is
+        # dropped, so every tuple's successor k+1 is reconstructible as well (one tuple fewer).
+        k = np.arange(2, len(u) - (3 if cfg.obc_ref_successor else 2))
         if stride > 1:
             k = k[::stride]
-            qd = qd[::stride]
-        x_ref = np.hstack([q[k], qd])                # (n, 6) physical
+        x_ref = np.hstack([q[k], qd[k - 2]])         # (n, 6) physical
+        if cfg.obc_ref_successor:
+            xnr.append(np.hstack([q[k + 1], qd[k - 1]]))
         xs.append(x_ref); us.append(u[k])
         xn.append(x_log[k + 1]); xa.append(x_abs[k])
         rec.append(np.full(len(k), r)); samp.append(k); counts.append(len(k))
@@ -151,7 +158,8 @@ def build_reference_set(cfg: RunConfig, norm, nx_ann: int, files: Sequence[str] 
         x_phys=torch.from_numpy(x_phys), u_stage=torch.from_numpy(u_stage),
         x_phys_next=torch.from_numpy(x_next), x_abs=torch.from_numpy(x_abs),
         n_per_record=counts, record_names=[os.path.basename(f) for f in files]
-        + ([] if stride == 1 else ['(stride %d: probe only)' % stride]), ts=ts)
+        + ([] if stride == 1 else ['(stride %d: probe only)' % stride]), ts=ts,
+        x_phys_next_rec=torch.from_numpy(np.concatenate(xnr)) if xnr else None)
     if verbose:
         Y = x_phys[:, 2]
         print('[obc] reference set: %d tuples from %d records (%s per record), stride %d, '

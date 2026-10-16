@@ -62,8 +62,13 @@ class RunConfig:
     # --- Track: 'joint' (broadband [1,200] Hz) or 'augmentation' (narrowband [130,180] Hz) ---
     mode: str = 'augmentation'
     # encoder_init: 'linear_map' = Hoekstra 2026 reconstructability init (trainable);
-    #               'default' = standard deepSI learned encoder
+    #               'data_fit'   = random encoder, physical rows fitted to a closed-loop baseline
+    #                              simulation before training, past-only window (D-250, D-251, D-261);
+    #               'default'    = standard deepSI learned encoder
     encoder_init: str = 'linear_map'
+    # D-261: epochs and Adam rate of the 'data_fit' pre-fit; 0 epochs = no pre-fit.
+    encoder_fit_epochs: int = 0
+    encoder_fit_lr: float = 1e-3   # HEURISTIC: Adam's customary rate; the budget is set from the pilot
     # ann_activation: 'linear' = Identity activation (Jan's ECC setup, D-071); 'tanh' = nonlinear ANN
     ann_activation: str = 'tanh'
     # D-240: learning function g_aug. ann_arch: 'mlp' = Jan's tanh MLP; 'resnet' = MLP plus linear
@@ -216,6 +221,11 @@ class RunConfig:
     # Optional direct overrides (None = derive). Set a number to bypass the formula.
     nf_override: Optional[int] = None      # None -> nf = nf_seconds / ts_new
     na_nb_override: Optional[int] = None   # None -> na_nb = (nx_phys + nx_ann)*2 + 1 (Jan's rule)
+    # D-256/D-262. 'servo' weights the loss per training record and axis by sigma_y / sigma_e, so the
+    # objective is the error relative to the servo error; 'none' is the unweighted loss.
+    loss_weighting: str = 'none'
+    # Checkpoint selection and polish acceptance: 'sim-RMS' (metres) or 'sim-NRMSe' (D-256).
+    validation_measure: str = 'sim-RMS'
 
     # ═══ L-BFGS polish phase (D-171) ══════════════════════════════════════════
     # A terminal quasi-Newton phase, staged AFTER Adam in the same run, matching the recipe this
@@ -277,6 +287,9 @@ class RunConfig:
     lbfgs_time_budget_s: Optional[int] = None
     # Relative worsening tolerated on the negation meters before the phase is rolled back.
     lbfgs_meter_rel_tol: float = 1e-3
+    # D-263. False: the meters are measured and logged but cannot veto the polish (combo_err uses
+    # the truth, D-255); acceptance is then on the validation measure alone.
+    lbfgs_meters_gate: bool = True
     # Which phase a RESUMED run enters. 'adam' = today's behaviour (finish the remaining epochs,
     # then polish if lbfgs=True). 'lbfgs' = skip Adam and polish the restored weights directly.
     # Only meaningful with RESUME_CHECKPOINT set; the entry point enforces that.
@@ -331,6 +344,9 @@ class RunConfig:
     # arm. 'affine' is range([J | f(vbar,z)]): an eleventh frozen-offset column, column-scaled
     # for the SVD solve. The value is recorded even when obc=False so an arm is reproducible.
     obc_space: str = 'tangent'
+    # D-252. True: drop the last stencil tuple of each record so every tuple has a reconstructible
+    # successor, and store that successor. False reproduces the reference set of the earlier runs.
+    obc_ref_successor: bool = False
     # 'epoch' rebuilds the basis at every epoch boundary at the current physical parameters;
     # 'fixed' builds it once at the first objective (the fixed-initial-basis diagnostic arm).
     obc_refresh: str = 'epoch'
@@ -370,8 +386,21 @@ class RunConfig:
                 "wa_encoder_init must be 'legacy_kaiming' or 'xavier_uniform_gain1', got %r"
                 % (self.wa_encoder_init,)
             )
-        if self.wa_encoder_init != 'legacy_kaiming' and self.encoder_init != 'linear_map':
-            raise ValueError('wa_encoder_init applies only when encoder_init is linear_map')
+        if self.encoder_init not in ('linear_map', 'data_fit', 'default'):
+            raise ValueError("encoder_init must be 'linear_map', 'data_fit' or 'default', got %r"
+                             % (self.encoder_init,))
+        if self.wa_encoder_init != 'legacy_kaiming' and self.encoder_init not in ('linear_map', 'data_fit'):
+            raise ValueError('wa_encoder_init applies only when encoder_init is linear_map or data_fit')
+        if self.encoder_fit_epochs < 0 or self.encoder_fit_lr <= 0:
+            raise ValueError('encoder_fit_epochs must be >= 0 and encoder_fit_lr > 0, got %r, %r'
+                             % (self.encoder_fit_epochs, self.encoder_fit_lr))
+        if self.loss_weighting not in ('none', 'servo'):
+            raise ValueError("loss_weighting must be 'none' or 'servo', got %r" % (self.loss_weighting,))
+        if self.validation_measure not in ('sim-RMS', 'sim-NRMSe'):
+            raise ValueError("validation_measure must be 'sim-RMS' or 'sim-NRMSe', got %r"
+                             % (self.validation_measure,))
+        if (self.loss_weighting != 'none' or self.validation_measure != 'sim-RMS') and not self.closed_loop:
+            raise ValueError('loss_weighting and sim-NRMSe are implemented for the closed-loop rollout only')
         if self.physics_parameterization not in ('raw', 'reduced'):
             raise ValueError("physics_parameterization must be 'raw' or 'reduced', got %r"
                              % (self.physics_parameterization,))
@@ -756,6 +785,13 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
         # with the raw .mat record: loader sample i = recorded sample (i + RECORD_TRIM) * D.
         Y_DECIMATION=y_decimation(cfg),
         RECORD_TRIM=record_trim(cfg),
+        # Appended 2026-10-16: the final-run method (D-252, D-256, D-261 to D-263).
+        ENCODER_FIT_EPOCHS=cfg.encoder_fit_epochs,
+        ENCODER_FIT_LR=cfg.encoder_fit_lr,
+        LOSS_WEIGHTING=cfg.loss_weighting,
+        VALIDATION_MEASURE=cfg.validation_measure,
+        LBFGS_METERS_GATE=cfg.lbfgs_meters_gate,
+        OBC_REF_SUCCESSOR=cfg.obc_ref_successor,
         # Which CODE ran, as opposed to what it was asked to do. None when the caller did not
         # look it up; the entry point passes git_provenance().
         GIT=git,

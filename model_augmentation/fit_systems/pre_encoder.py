@@ -349,6 +349,10 @@ class linear_encoder_init_aug(nn.Module):
         # CHANGED: the paper-style thesis run initializes the complete added-state history map
         # once with Xavier, while the default preserves the original separate Kaiming draws.
         wa_encoder_init='legacy_kaiming',
+        # CHANGED (D-251, D-261): 'random' starts W^b and the physical output rows of psi_tilde at
+        # the nn.Linear draw instead of the reconstructability map, for the data-based pre-fit;
+        # A, B, C, D are then unused. The default keeps every existing call site bit-identical.
+        wb_init='reconstructability',
     ):
         super(linear_encoder_init_aug, self).__init__()
 
@@ -362,46 +366,55 @@ class linear_encoder_init_aug(nn.Module):
 
         assert na == nb, "only na=nb is implemented for linear encoder init"
         n = na
+        if wb_init not in ('reconstructability', 'random'):
+            raise ValueError('unknown wb_init %r' % (wb_init,))
+        if wb_init == 'random':
+            # THEORY: nn.Linear's default U(-1/sqrt(m), 1/sqrt(m)), m = fan-in = (n+1)(nu+ny): a
+            # randomly initialised encoder, as in the nonlinear-baseline method of the encoder paper
+            # (Eq. 35, D-251). The physical rows are then fitted to data before training (D-261).
+            bound = 1.0 / np.sqrt((n + 1) * (nu + ny))
+            self.Wb_psi_y = nn.Parameter(torch.empty(nx, (n + 1) * ny, dtype=dtype).uniform_(-bound, bound))
+            self.Wb_psi_u = nn.Parameter(torch.empty(nx, (n + 1) * nu, dtype=dtype).uniform_(-bound, bound))
+        else:
+            # --- W^b: theory-initialized from reconstructability map (Jan's original, verbatim) ---
+            # THEORY: Hoekstra 2026 Eq. 10 -- Gamma_n is the Toeplitz matrix T_n of Markov
+            # parameters [D, CB, CAB, ..., CA^{n-1}B]
+            Gamma_n = np.zeros(((n + 1) * ny, (n + 1) * nu))
+            for i in range(n + 1):
+                for j in range(i, n + 1):
+                    flipped_i = n - i
+                    flipped_j = n - j
+                    if i != j:
+                        Gamma_n[
+                            flipped_i * ny : (flipped_i + 1) * ny,
+                            flipped_j * nu : (flipped_j + 1) * nu,
+                        ] = C @ np.linalg.matrix_power(A, j - i - 1) @ B
+                    else:
+                        Gamma_n[
+                            flipped_i * ny : (flipped_i + 1) * ny,
+                            flipped_j * nu : (flipped_j + 1) * nu,
+                        ] = D
 
-        # --- W^b: theory-initialized from reconstructability map (Jan's original, verbatim) ---
-        # THEORY: Hoekstra 2026 Eq. 10 -- Gamma_n is the Toeplitz matrix T_n of Markov
-        # parameters [D, CB, CAB, ..., CA^{n-1}B]
-        Gamma_n = np.zeros(((n + 1) * ny, (n + 1) * nu))
-        for i in range(n + 1):
-            for j in range(i, n + 1):
-                flipped_i = n - i
-                flipped_j = n - j
-                if i != j:
-                    Gamma_n[
-                        flipped_i * ny : (flipped_i + 1) * ny,
-                        flipped_j * nu : (flipped_j + 1) * nu,
-                    ] = C @ np.linalg.matrix_power(A, j - i - 1) @ B
-                else:
-                    Gamma_n[
-                        flipped_i * ny : (flipped_i + 1) * ny,
-                        flipped_j * nu : (flipped_j + 1) * nu,
-                    ] = D
+            # THEORY: Hoekstra 2026 Eq. 10 -- O_n is the observability matrix [C; CA; ...; CA^n]
+            O_n = np.zeros(((n + 1) * ny, nx))
+            for i in range(n + 1):
+                O_n[i * ny : (i + 1) * ny, :] = C @ np.linalg.matrix_power(A, i)
+            O_inv = np.linalg.pinv(O_n)
 
-        # THEORY: Hoekstra 2026 Eq. 10 -- O_n is the observability matrix [C; CA; ...; CA^n]
-        O_n = np.zeros(((n + 1) * ny, nx))
-        for i in range(n + 1):
-            O_n[i * ny : (i + 1) * ny, :] = C @ np.linalg.matrix_power(A, i)
-        O_inv = np.linalg.pinv(O_n)
+            # THEORY: Hoekstra 2026 Eq. 13-14 -- A^n and r_n (input-to-state convolution)
+            A_n = np.linalg.matrix_power(A, n)
+            gamma_n = np.zeros((nx, (n + 1) * nu))
+            for i in range(0, n):
+                gamma_n[:, i * nu : (i + 1) * nu] = np.linalg.matrix_power(A, n - i - 1) @ B
 
-        # THEORY: Hoekstra 2026 Eq. 13-14 -- A^n and r_n (input-to-state convolution)
-        A_n = np.linalg.matrix_power(A, n)
-        gamma_n = np.zeros((nx, (n + 1) * nu))
-        for i in range(0, n):
-            gamma_n[:, i * nu : (i + 1) * nu] = np.linalg.matrix_power(A, n - i - 1) @ B
-
-        # THEORY: Hoekstra 2026 Eq. 17 -- W^b_{psi,y} = A^n O_n^{-1}
-        self.Wb_psi_y = nn.Parameter(
-            torch.tensor(A_n @ O_inv, dtype=dtype)   # CHANGED: was hard-coded float32
-        )
-        # THEORY: Hoekstra 2026 Eq. 16 -- W^b_{psi,u} = -A^n O_n^{-1} T_n + r_n
-        self.Wb_psi_u = nn.Parameter(
-            torch.tensor(-A_n @ O_inv @ Gamma_n + gamma_n, dtype=dtype)   # CHANGED: was float32
-        )
+            # THEORY: Hoekstra 2026 Eq. 17 -- W^b_{psi,y} = A^n O_n^{-1}
+            self.Wb_psi_y = nn.Parameter(
+                torch.tensor(A_n @ O_inv, dtype=dtype)   # CHANGED: was hard-coded float32
+            )
+            # THEORY: Hoekstra 2026 Eq. 16 -- W^b_{psi,u} = -A^n O_n^{-1} T_n + r_n
+            self.Wb_psi_u = nn.Parameter(
+                torch.tensor(-A_n @ O_inv @ Gamma_n + gamma_n, dtype=dtype)   # CHANGED: was float32
+            )
 
         # --- W^a: randomly initialized for augmented state rows (Eq. 8) ---
         _ny_hist = (n + 1) * ny
@@ -439,7 +452,13 @@ class linear_encoder_init_aug(nn.Module):
             seq.append(final_layer)
             self.net = nn.Sequential(*seq)
             nn.init.constant_(final_layer.bias, val=0.0)
-            nn.init.constant_(final_layer.weight, val=0.0)
+            if wb_init == 'random':
+                # CHANGED (D-261, thesis eq:aug_init): the physical rows keep the nn.Linear draw for
+                # the data-based pre-fit; the added-state rows start at zero.
+                with torch.no_grad():
+                    final_layer.weight[nx:].zero_()
+            else:
+                nn.init.constant_(final_layer.weight, val=0.0)
 
         # CHANGED: D-055 -- register convention-fix buffers (no gradient, move with .to(device))
         # THEORY: D-017 -- W^b maps y/ystd -> x/std_x (pure-scaled); pipeline feeds
