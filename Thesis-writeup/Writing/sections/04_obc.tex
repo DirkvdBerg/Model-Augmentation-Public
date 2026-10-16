@@ -110,11 +110,6 @@ specifically for our gantry system.
 \item Uniqueness of $\hat\theta_{\mathrm b}$ shown under Assumption~1 and exact reproduction of the noise-free dynamics on the same training data (2026 Sec.~4.2, Assumption~6)
 \end{itemize}
 \fi
-\begin{outline}
-\item Problem: the split between baseline and network is not unique; the network can cancel the baseline (negation)
-\item Choice: the orthogonal construction of Gy\"or\"ok et al.\ 
-\item Choice: the baseline is not linear in its parameters, so we use its derivative instead: the sensitivity of the one-step map to the ten trained coordinates $\beta$, taken at the current point $\beta_{\mathrm{lin}}$:   % CHANGED
-\end{outline}
 \begin{wip}
 For a baseline linear in its parameters,
 $\hat y_k=\varphi(x_k)\theta_{\mathrm b}$,
@@ -177,7 +172,7 @@ as in the orthogonal regularisation method of
 Gy\"or\"ok et al.~\cite[Sec.~4, Eq.~(15)]{gyorok2025l4dc}.
 Like the regressor, the stacked Jacobian must have full column rank.
 This requires identifiable parameters, which is why we use $\beta$.
-The Jacobian is taken at linearisation point $\beta_{\mathrm{lin}}$ as
+The Jacobian is taken at a linearisation point $\beta_{\mathrm{lin}}$ as
 \end{wip}
 \begin{equation}
  \varphi(\beta_{\mathrm{lin}},\tilde x^{\mathrm n},u^{\mathrm n})
@@ -185,13 +180,13 @@ The Jacobian is taken at linearisation point $\beta_{\mathrm{lin}}$ as
    {\partial\beta}\right|_{\beta=\beta_{\mathrm{lin}}},
 \label{eq:obc_sens}
 \end{equation}
-\begin{outline}
-\item Choice: only the range of $\Phi$ is protected, without the offset column $\Gamma$ of Gy\"or\"ok et al.
-\item Choice: $\Phi$ is evaluated on fixed one-step tuples $i\in\mathcal I$ from the training data: measured positions, finite difference to get the velocities, added states $\bar x=0$
-\item The network's physical rows are fitted by the stacked sensitivity in least squares; the remainder is orthogonal to its range:
-\end{outline}
 where $\beta_{\mathrm{lin}}\in\R^{10}$ and
 $\varphi:\R^{10}\times\R^6\times\R^3\to\R^{6\times10}$.
+The offset column of~\cite[Eq.~(18)]{gyorok2025l4dc} is left out, because it does 
+not change the first-order estimate \eqref{eq:obc_recovery}.
+Including it would not prevent negation~\cite[Sec.~5.3.1.3]{kessels2025ai}, where the neural network 
+cancels part of the baseline response,because only the 
+part of the \kw{network along the stacked baseline response would be excluded.}
 The Jacobian also depends on the state, while the regressor of
 Gy\"or\"ok et al.\ uses only measured inputs and
 outputs~\cite[Eqs.~(1), (2)]{gyorok2026obc}.
@@ -272,9 +267,6 @@ On the stacked tuples, the coefficient and the projected network output of
 \end{aligned}
 \label{eq:obc_coef}
 \end{equation}
-\begin{outline}
-\item Choice: the correction is subtracted from the physical rows at every step; the added-state rows are not corrected:
-\end{outline}
 \begin{wip}
 where $\mathcal I$ is the set of tuples, $N=|\mathcal I|$,
 $\Phi\in\R^{6N\times10}$ is evaluated at $\beta_{\mathrm{lin}}$,
@@ -302,10 +294,6 @@ update:
 \end{aligned}
 \label{eq:obc_corr}
 \end{equation}
-\begin{outline}
-\item Choice: the gradient of the training cost $V$ of \eqref{eq:aug_loss} to the network parameters $\theta_{\mathrm{aug}}$ includes the path through $\theta_{\mathrm{aux}}(\theta_{\mathrm{aug}})=\boldsymbol\Phi^{+}\boldsymbol f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})$; with $\theta_{\mathrm{aux}}$ held fixed, each step would give the network the derivative of its uncorrected output   % CHANGED
-\item Choice: $\beta_{\mathrm{lin}}$ is set to the current $\beta$ at each epoch and held fixed within it
-\end{outline}
 \begin{wip}
 where
 $f^{\mathrm n}_{\mathrm{obc}}:\R^{n_{\mathrm{aug}}}\times\R^6\times\R^3\to\R^6$,
@@ -326,13 +314,6 @@ gradient of its projected output.
 \item Measures for Results: cosine, $c_j$, $\rho$, $\Pi$ \eqref{eq:obc_overlap} (supervisor: orthogonality is measured by the inner product)
 \end{itemize}
 \fi
-\begin{outline}
-\item The identification problem of Section~\ref{sec:aug_closed_loop} gets the correction in the physical-row update; trained parameters and cost are unchanged:
-\end{outline}
-\begin{outline}
-\item $\theta_{\mathrm{aux}}$ is solved again at every evaluation of $V$; $\beta_{\mathrm{lin}}$ is refreshed per epoch
-\item The PS stages, optimiser and selection rule are reused; $\mathcal M_{\mathrm{OBC}}$ is $\mathcal M_{\mathrm{PS}}$ with the correction
-\end{outline}
 \begin{wip}
 We call $\mathcal M_{\mathrm{OBC}}$ the augmented model of
 Section~\ref{sec:augmentation}, with the added-state initialisation of
@@ -421,3 +402,44 @@ $\rho(d)=0$ if and only if $\Phi^\top d=0$, the orthogonality of
 \eqref{eq:obc_coef}.
 
 \end{wip}
+
+% ---------------------------------------------------------------------------
+% OUTLINE BLOCKS (Dirk's bullets), moved here from the text on 2026-10-15 for readability.
+% Each is preceded by a comment naming where it stood.
+
+% was after: sec:obc_construction
+\begin{outline}
+\item Problem: the split between baseline and network is not unique; the network can cancel the baseline (negation)
+\item Choice: the orthogonal construction of Gy\"or\"ok et al.\ 
+\item Choice: the baseline is not linear in its parameters, so we use its derivative instead: the sensitivity of the one-step map to the ten trained coordinates $\beta$, taken at the current point $\beta_{\mathrm{lin}}$:   % CHANGED
+\end{outline}
+
+% was after: eq:obc_sens
+\begin{outline}
+\item Choice: only the range of $\Phi$ is protected, without the offset column $\Gamma$ of Gy\"or\"ok et al.
+\item Choice: $\Phi$ is evaluated on fixed one-step tuples $i\in\mathcal I$ from the training data: measured positions, finite difference to get the velocities, added states $\bar x=0$
+\item The network's physical rows are fitted by the stacked sensitivity in least squares; the remainder is orthogonal to its range:
+\end{outline}
+
+% was after: eq:obc_coef
+\begin{outline}
+\item Choice: the correction is subtracted from the physical rows at every step; the added-state rows are not corrected:
+\end{outline}
+
+% was after: eq:obc_corr
+\begin{outline}
+\item Choice: the gradient of the training cost $V$ of \eqref{eq:aug_loss} to the network parameters $\theta_{\mathrm{aug}}$ includes the path through $\theta_{\mathrm{aux}}(\theta_{\mathrm{aug}})=\boldsymbol\Phi^{+}\boldsymbol f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})$; with $\theta_{\mathrm{aux}}$ held fixed, each step would give the network the derivative of its uncorrected output   % CHANGED
+\item Choice: $\beta_{\mathrm{lin}}$ is set to the current $\beta$ at each epoch and held fixed within it
+\end{outline}
+
+% was after: sec:obc_ident
+\begin{outline}
+\item The identification problem of Section~\ref{sec:aug_closed_loop} gets the correction in the physical-row update; trained parameters and cost are unchanged:
+\end{outline}
+
+% was after: sec:obc_ident
+\begin{outline}
+\item $\theta_{\mathrm{aux}}$ is solved again at every evaluation of $V$; $\beta_{\mathrm{lin}}$ is refreshed per epoch
+\item The PS stages, optimiser and selection rule are reused; $\mathcal M_{\mathrm{OBC}}$ is $\mathcal M_{\mathrm{PS}}$ with the correction
+\end{outline}
+
