@@ -185,17 +185,9 @@ $\varphi:\R^{10}\times\R^6\times\R^3\to\R^{6\times10}$.
 The offset column of~\cite[Eq.~(18)]{gyorok2025l4dc} is left out, because it does 
 not change the first-order estimate \eqref{eq:obc_recovery}.
 Including it would not prevent negation~\cite[Sec.~5.3.1.3]{kessels2025ai}, where the neural network 
-cancels part of the baseline response,because only the 
+cancels part of the baseline response, because only the
 part of the \kw{network along the stacked baseline response would be excluded.}
-The Jacobian also depends on the state, while the regressor of
-Gy\"or\"ok et al.\ uses only measured inputs and
-outputs~\cite[Eqs.~(1), (2)]{gyorok2026obc}.
-Since only the positions are measured, we evaluate the Jacobian at these
-positions with the velocities reconstructed from them.
-We use a state-space model predicting the next state instead of the output.
-The projection is removed from the neural network correction of the
-physical state at every step in the closed-loop simulation.
-
+\\
 \revnote{Orthogonality here means orthogonality to the stacked parameter
 sensitivity $\Phi$ of the baseline on the reference tuples: the construction
 of Gy\"or\"ok et al.\ (2026, Lemma~3), with their regressor taken as the
@@ -212,29 +204,12 @@ $(I-\Pi)F^{\mathrm n}_{\mathrm{base}}$, and remove the component of any network
 field along it. To first order it does not change the parameter estimate.
 Adding $\Gamma$ would therefore not avoid negation in general. We leave it out;
 the current runs are also without $\Gamma$.}
-\begin{wip}
-
-
-
-
-where $\beta_{\mathrm{lin}}\in\R^{10}$ is the linearisation point and
-$\varphi:\R^{10}\times\R^6\times\R^3\to\R^{6\times10}$.
-Full column rank of the stack then depends on the excitation and is checked
-each time the stack is built.
-The offset column of~\cite[Eq.~(18)]{gyorok2025l4dc} is left out, because to
-first order it does not enter the estimate (Section~\ref{sec:obc_ident}).
-
-Only the positions of the baseline state are measured.
-We reconstruct the state of each reference tuple from the data, as in
-Section~\ref{sec:aug_structure} but with a fourth-order difference.
-The regressor is then evaluated at the measured data, as
-in~\cite[Eq.~(5)]{gyorok2026obc}, rather than at a simulated
-baseline~\cite[Sec.~3]{gyorok2025l4dc}:
-
-
-
-
-\end{wip}
+\\
+The Jacobian also depends on the state, while the regressor of
+Gy\"or\"ok et al.\ uses only measured inputs and
+outputs~\cite[Eqs.~(1), (2)]{gyorok2026obc}.
+Since only the positions are measured, we evaluate the Jacobian at these
+positions with the velocities reconstructed from them:
 \begin{equation}
 \begin{aligned}
  \tilde x_i&=\col(q_i,\dot q_i),\qquad q_i=P^{-\top}y_i,\\
@@ -243,15 +218,19 @@ baseline~\cite[Sec.~3]{gyorok2025l4dc}:
 \label{eq:obc_tuples}
 \end{equation}
 \begin{wip}
-where $y_i$ is the measured actuator position of sample $i$, and each tuple
-also holds $\bar x_i=0$ and the recorded actuator force $u_i$, normalised by
-\eqref{eq:aug_norm} to $\tilde x^{\mathrm n}_i$ and $u^{\mathrm n}_i$.
-The tuples cover every sample at which this difference exists, both at the
-sample and at the next sample, and are built once, before training.
+where $y_i$ is the measured actuator position at sample $i$.
+Each tuple $(\tilde x_i,\bar x_i,u_i)$ uses the recorded actuator 
+force $u_i$ and $\bar x_i=0$,
+with the physical state and input normalised to
+$\tilde x^{\mathrm n}_i$ and $u^{\mathrm n}_i$
+using \eqref{eq:aug_norm}.
+The tuples are calculated once before training, using all samples for which
+\eqref{eq:obc_tuples} can be calculated at $i$ and at the next sample $i+1$.
 \revnote{The current results also use the last such sample of each record,
 which has no successor. The final runs will use the tuples as described here.}
-On the stacked tuples, the coefficient and the projected network output of
-\eqref{eq:obc_gyorok} become
+\\
+Stacking the Jacobian and the network output over the tuples, the projection
+of \eqref{eq:obc_gyorok} becomes
 \end{wip}
 \begin{equation}
 \begin{aligned}
@@ -275,13 +254,19 @@ and $\theta_{\mathrm{aux}}\in\R^{10}$.
 The last line is the orthogonality defined at the start of this section.
 It holds for the stack on the reference tuples at $\bar x=0$, not for each
 tuple separately.
+\\
+We use a state-space model predicting the next state instead of the output.
+The fitted part is removed from the neural network correction of the
+physical state at every step in the closed-loop simulation.
 
-Our model is a state update simulated in closed loop.
-Every step subtracts the regressor times the coefficient, at the state and
-input of that step, as Gy\"or\"ok et al.\ do for a
+Every step subtracts the \kw{regressor times the coefficient, at the state and
+input of that step}, as Gy\"or\"ok et al.\ do for a
 prediction~\cite[Eqs.~(9), (13)]{gyorok2026obc}.
-Only the physical rows are corrected, because the baseline has no added-state
-update:
+The baseline has no added states, so its Jacobian is zero in the added-state
+rows and $g^{\mathrm n}_{\mathrm{aug}}$ is orthogonal to it by definition.
+Only the physical rows are therefore corrected:
+% Only the physical rows are corrected, because the baseline has no added-state
+% update:
 \end{wip}
 \begin{equation}
 \begin{aligned}

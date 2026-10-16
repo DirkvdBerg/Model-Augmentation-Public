@@ -314,23 +314,26 @@ The black box is simulated in free run over the same records.
 The reference is given, so the part of the output a model has to predict is
 the servo error $y-r$.
 The primary metric is therefore the RMS of the simulation error per stage
-axis $j$ relative to the RMS of the servo error, with the RMS in metres and
-the noise floor of the record beside it:
+axis $j$ relative to the standard deviation of the servo error, with the RMS
+in metres and the noise floor of the record beside it:
 \begin{equation}
 \begin{aligned}
  \mathrm{RMS}_j&=\Bigl(\frac{1}{N-n}\sum_{k=n}^{N-1}(\hat y_{j,k}-y_{j,k})^2\Bigr)^{1/2},\\
- \mathrm{NRMS}_{e,j}&=\frac{\mathrm{RMS}_j}{\mathrm{RMS}(y_j-r_j)},\\
+ \mathrm{NRMS}_{e,j}&=\frac{\mathrm{RMS}_j}{\sigma_{e,j}},\\
  \mathrm{RMS}^{\mathrm{fl}}_j&=\Bigl(\frac{1}{N-n}\sum_{k=n}^{N-1}(y_{j,k}-y^{\circ}_{j,k})^2\Bigr)^{1/2},
 \end{aligned}
 \label{eq:setup_rms}
 \end{equation}
 where $N$ is the record length, $n$ the encoder window, and
-$\mathrm{RMS}(y_j-r_j)$ is taken over the same samples.
+$\sigma_{e,j}$ is the standard deviation of the servo error $y_j-r_j$ over
+the same samples.
+$\mathrm{NRMS}_{e,j}$ is the NRMS of~\cite[Eq.~(43)]{beintema2023subnet}
+with the servo error as output, since $\hat y-y$ equals the error of the
+predicted servo error $\hat y-r$.
+A value of 100\,\% means no better than $\hat y=r$.
 The floor is the error of a model that predicts the noise-free output
 exactly.
-An NRMS normalised by $y$ itself would be dominated by the motion, which is
-orders of magnitude larger than the servo error.
-\todo{Missing: citations for NRMS and BFR as the usual normalised measures. Candidate: Gy\"or\"ok et al.\ 2025 (test error in NRMS\,\%, Fig.~3) and Drenth et al.\ (BFR, Eq.~(22)); verify their definitions in the PDFs; Hoekstra's papers report the absolute RMSE.}
+\todo{Missing: the symbol $e$ is also the coupling vector of \eqref{eq:setup_truth}. Candidate: rename the coupling vector (Jasper's notation point 1).}
 
 The combinations are compared with their true values $\theta^\star_{\mathrm{base}}$ by
 $\epsilon_j=\lvert\theta_{\mathrm{base},j}-\theta^\star_{\mathrm{base},j}\rvert/\lvert\theta^\star_{\mathrm{base},j}\rvert$.
