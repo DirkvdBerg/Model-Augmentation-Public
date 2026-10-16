@@ -182,28 +182,38 @@ The Jacobian is taken at a linearisation point $\beta_{\mathrm{lin}}$ as
 \end{equation}
 where $\beta_{\mathrm{lin}}\in\R^{10}$ and
 $\varphi:\R^{10}\times\R^6\times\R^3\to\R^{6\times10}$.
-The offset column of~\cite[Eq.~(18)]{gyorok2025l4dc} is left out, because it does 
-not change the first-order estimate \eqref{eq:obc_recovery}.
-Including it would not prevent negation~\cite[Sec.~5.3.1.3]{kessels2025ai}, where the neural network 
-cancels part of the baseline response, because only the
-part of the \kw{network along the stacked baseline response would be excluded.}
+\kw{The linearisation also leaves an offset that does not depend on
+$\beta$~\cite[Eq.~(16)]{gyorok2025l4dc}:}
+\begin{equation}
+\begin{aligned}
+ f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\beta),\tilde x^{\mathrm n},u^{\mathrm n}\bigr)
+ &\approx\varphi\,\beta+\gamma,\\
+ \gamma
+ &=f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\beta_{\mathrm{lin}}),\tilde x^{\mathrm n},u^{\mathrm n}\bigr)
+  -\varphi\,\beta_{\mathrm{lin}},
+\end{aligned}
+\label{eq:obc_offset}
+\end{equation}
+\kw{where $\gamma:\R^{10}\times\R^6\times\R^3\to\R^6$, so that
+$\varphi\beta_{\mathrm{lin}}+\gamma$ is the next state predicted by the
+baseline at $\beta_{\mathrm{lin}}$.
+Gy\"or\"ok et al.\ add this offset as an extra column to the Jacobian, to
+include all components of the baseline model in the
+orthogonality~\cite[Eq.~(18)]{gyorok2025l4dc}.
+We include it as well, so the neural network has no component along the
+stacked next states predicted by the baseline.}
+The offset does not change the first-order estimate \eqref{eq:obc_recovery}.
+\kw{It does not fully prevent negation~\cite[Sec.~5.3.1.3]{kessels2025ai}, where
+the neural network cancels part of the baseline response, because only the
+part of the network along the stacked baseline response is excluded.}
 \\
-\revnote{Orthogonality here means orthogonality to the stacked parameter
-sensitivity $\Phi$ of the baseline on the reference tuples: the construction
-of Gy\"or\"ok et al.\ (2026, Lemma~3), with their regressor taken as the
-parameter Jacobian. To first order, for the one-step error on these tuples,
-this is exactly the condition under which the estimate of
-$\theta_{\mathrm{base}}$ does not depend on the network, which is how
-Section~I defines interpretability. It is not shown for the nonlinear
-closed-loop training optimum. It prevents the network from representing what a
-change of mass, damping or stiffness could explain, in this first-order sense.
-It does not prevent the network from cancelling part of the baseline response
-itself (negation as in Kessels). The offset column $\Gamma$ of Gy\"or\"ok et
-al.\ (2025, Eq.~(18)) would add at most one protected direction,
-$(I-\Pi)F^{\mathrm n}_{\mathrm{base}}$, and remove the component of any network
-field along it. To first order it does not change the parameter estimate.
-Adding $\Gamma$ would therefore not avoid negation in general. We leave it out;
-the current runs are also without $\Gamma$.}
+\revnote{Orthogonality here is to the stacked Jacobian and offset
+$\Phi_\Gamma$ on the tuples (Gy\"or\"ok et al.\ 2026, Lemma~3, with the
+regressor taken as $[\varphi\ \gamma]$, the offset as in Gy\"or\"ok et al.\
+2025, Eq.~(18)). To first order the estimate of $\beta$ does not depend on
+the network, with or without $\Gamma$; not shown for the nonlinear
+closed-loop optimum. The current results are without $\Gamma$; the final
+runs include it.}
 \\
 The Jacobian also depends on the state, while the regressor of
 Gy\"or\"ok et al.\ uses only measured inputs and
@@ -229,42 +239,43 @@ The tuples are calculated once before training, using all samples for which
 \revnote{The current results also use the last such sample of each record,
 which has no successor. The final runs will use the tuples as described here.}
 \\
-Stacking the Jacobian and the network output over the tuples, the projection
+Stacking the Jacobian, \kw{the offset} and the network output over the tuples, the projection
 of \eqref{eq:obc_gyorok} becomes
 \end{wip}
 \begin{equation}
 \begin{aligned}
- \Phi
- &=\col\bigl(\varphi(\beta_{\mathrm{lin}},\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)\bigr)_{i\in\mathcal I},\\
+ \Phi_\Gamma
+ &=\col\bigl([\varphi\ \ \gamma](\beta_{\mathrm{lin}},\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)\bigr)_{i\in\mathcal I},\\
  F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})
  &=\col\bigl(f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}},\col(\tilde x^{\mathrm n}_i,0),u^{\mathrm n}_i)\bigr)_{i\in\mathcal I},\\
  \theta_{\mathrm{aux}}(\theta_{\mathrm{aug}})
- &=\bigl(\Phi^\top\Phi\bigr)^{-1}\Phi^\top F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}}),\\
+ &=\bigl(\Phi_\Gamma^\top\Phi_\Gamma\bigr)^{-1}\Phi_\Gamma^\top F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}}),\\
  \tilde F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})
- &=F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})-\Phi\,\theta_{\mathrm{aux}}(\theta_{\mathrm{aug}}),\\
- 0&=\Phi^{\top}\tilde F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}}),
+ &=F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})-\Phi_\Gamma\,\theta_{\mathrm{aux}}(\theta_{\mathrm{aug}}),\\
+ 0&=\Phi_\Gamma^{\top}\tilde F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}}),
 \end{aligned}
 \label{eq:obc_coef}
 \end{equation}
 \begin{wip}
 where $\mathcal I$ is the set of tuples, $N=|\mathcal I|$,
-$\Phi\in\R^{6N\times10}$ is evaluated at $\beta_{\mathrm{lin}}$,
+\kw{$\Phi_\Gamma=[\Phi\ \Gamma]\in\R^{6N\times11}$ stacks $\varphi$ and $\gamma$}
+evaluated at $\beta_{\mathrm{lin}}$,
 $F^{\mathrm n}_{\mathrm{aug}},\tilde F^{\mathrm n}_{\mathrm{aug}}\in\R^{6N}$
-and $\theta_{\mathrm{aux}}\in\R^{10}$.
+and $\theta_{\mathrm{aux}}\in\R^{\kw{11}}$.
 The projected network output $\tilde F^{\mathrm n}_{\mathrm{aug}}$ therefore
-has no component along any column of $\Phi$, which satisfies our orthogonality 
+has no component along any column of $\kw{\Phi_\Gamma}$, which satisfies our orthogonality
 definition at the start of this section.
 This holds for the stacked tuples at $\bar x=0$, not for each tuple separately.
 \\
 We use a state-space model predicting the next state instead of the output.
 The fitted part is removed from the neural network correction of the
 physical state at every step in the closed-loop simulation.
-At each step, we subtract the Jacobian multiplied by
+At each step, we subtract the Jacobian \kw{and offset} multiplied by
 $\theta_{\mathrm{aux}}$ from the network correction,
 evaluated at the current state and input.
 Gy\"or\"ok et al.\ apply the same correction to the predicted
 output~\cite[Eqs.~(9), (13)]{gyorok2026obc}.
-The baseline has no added states, so its Jacobian is zero
+The baseline has no added states, so its Jacobian \kw{and offset are} zero
 in the added-state rows and $g^{\mathrm n}_{\mathrm{aug}}$
 is orthogonal to it by definition.
 We therefore only correct the physical rows:
@@ -274,7 +285,7 @@ We therefore only correct the physical rows:
 \begin{equation}
 \begin{aligned}
  f^{\mathrm n}_{\mathrm{obc}}(\theta_{\mathrm{aug}},\tilde x^{\mathrm n},u^{\mathrm n})
- &=\varphi(\beta_{\mathrm{lin}},\tilde x^{\mathrm n},u^{\mathrm n})\,
+ &=[\varphi\ \ \gamma](\beta_{\mathrm{lin}},\tilde x^{\mathrm n},u^{\mathrm n})\,
   \theta_{\mathrm{aux}}(\theta_{\mathrm{aug}}),\\
  \tilde x^{\mathrm n}_{k+1|\tau}
  &=f^{\mathrm n}_{\mathrm{base}}+f^{\mathrm n}_{\mathrm{aug}}-f^{\mathrm n}_{\mathrm{obc}},\\
@@ -296,34 +307,39 @@ in~\cite[Eqs.~(9), (10)]{gyorok2026obc},
 \subsection{Identification and recovery}\label{sec:obc_ident}
 \ifdraft
 \begin{itemize}
-\item $\mathcal M_{\mathrm{OBC}}$: the augmented model of Section~III with the PS start and the correction; identified by \eqref{eq:aug_loss} with everything of Section~III-C reused (this work)
-\item Two added rules: $\theta_{\mathrm{aux}}$ re-solved at every evaluation; $\beta_{\mathrm{lin}}$ per epoch, a fixed objective per epoch while the point follows the estimate (adapted from 2025 Sec.~3, Remark~2, and Sec.~4; D-190, D-254); rebuild after restore, polish compared with the rebuilt model (D-253, revnote)
-\item Recovery: $\Xi$ \eqref{eq:obc_eps}, the unmodelled terms of 2026 Eqs.~(14), (15) plus reconstruction error and noise; the two first-order minimisers \eqref{eq:obc_recovery}; true iff $\Phi^\top\Xi=0$, an excitation condition (2026 Sec.~4.1); adapted from Thm.~7 without exact fit
-\item Limits: Kessels' negation not prevented; a one-step surrogate at $\bar x=0$ (Kessels Sec.~5.3.1.3)
-\item Measures for Results: cosine, $c_j$, $\rho$, $\Pi$ \eqref{eq:obc_overlap} (supervisor: orthogonality is measured by the inner product)
+\item $\mathcal M_{\mathrm{OBC}}$: the augmented model of Section~III with the PS start and the correction; identified by \eqref{eq:aug_loss} with \eqref{eq:obc_corr} as the physical-state update, everything of Section~III-C reused (this work)
+\item Rules, each from a dependence: $\theta_{\mathrm{aux}}$ re-solved at every evaluation; $\beta_{\mathrm{lin}}$ per epoch, a fixed objective per epoch while the point follows the estimate; 2025 Sec.~4 options not taken (cost, detuned start), Remark~2 adapted (D-190, D-254); rebuild after restore, polish compared with the rebuilt model (D-253, revnote)
+\item Recovery: $\Xi$ \eqref{eq:obc_eps}, the unmodelled terms of 2026 Eqs.~(14), (15) plus reconstruction error and noise; the one-step error and its two first-order minimisers \eqref{eq:obc_recovery}; form of 2026 Eq.~(21) without the exact fit of Assumption~6; true iff $\Phi^\top\Xi=0$ (Condition~4, Remark~5); $\Gamma$ does not enter (D-257)
+\item Limits: a one-step surrogate at $\bar x=0$, not the closed-loop optimum; negation is treated in IV-B
+\item Measures: $\cos$, $\rho$, $\Pi$ \eqref{eq:obc_overlap} (supervisor: orthogonality is measured by the inner product); negation by the cosine with the baseline's one-step increment (D-257); $c_j$ dropped (correlated columns of $\Phi$; the per-parameter bias is \eqref{eq:obc_recovery})
 \end{itemize}
 \fi
 We call $\mathcal M_{\mathrm{OBC}}$ the augmented model of
 Section~\ref{sec:augmentation}, with the added-state initialisation of
 Section~\ref{sec:aug_ps2} and the correction \eqref{eq:obc_corr}.
-It is identified by \eqref{eq:aug_loss}, with the trained parameters, cost,
-optimiser and selection of Section~\ref{sec:aug_closed_loop}.
-The correction adds two rules.
-$\theta_{\mathrm{aux}}$ is solved by \eqref{eq:obc_coef} from the current
-$\theta_{\mathrm{aug}}$ at every evaluation of $V$.
-$\beta_{\mathrm{lin}}$ is set to the current $\beta$ at each epoch boundary
-and held within the epoch, so each epoch minimises a fixed objective while the
-linearisation point follows the estimate.
-This adapts the per-epoch recomputation of Gy\"or\"ok
-et al.~\cite[Sec.~3, Remark~2]{gyorok2025l4dc}, who otherwise update the
-point at every evaluation or fix it at the nominal
-parameters~\cite[Sec.~4]{gyorok2025l4dc}.
-After the best checkpoint is restored, $\Phi$ is rebuilt at its $\beta$, and
-the polish is compared with the validation error of this model.
+\kw{It is identified by \eqref{eq:aug_loss} with \eqref{eq:obc_corr} as the
+physical-state update, and with the trained parameters, cost, optimiser and
+selection of Section~\ref{sec:aug_closed_loop}.
+Since $\theta_{\mathrm{aux}}$ depends on $\theta_{\mathrm{aug}}$, it is solved
+again by \eqref{eq:obc_coef} at every evaluation of $V$.
+Since $\Phi_\Gamma$ depends on $\beta_{\mathrm{lin}}$, we set
+$\beta_{\mathrm{lin}}$ to the current $\beta$ at the start of each epoch and
+hold it within the epoch.
+Each epoch then minimises a fixed objective, while the linearisation point
+follows the estimate.
+Gy\"or\"ok et al.\ update the linearisation point at every iteration or fix it
+at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.
+Updating at every iteration rebuilds $\Phi_\Gamma$ at every evaluation of $V$.
+A fixed point does not apply here, because training also starts from detuned
+parameters (Section~\ref{sec:setup}).
+We therefore adapt their recomputation at the start of each
+epoch~\cite[Remark~2]{gyorok2025l4dc}.
+After the best checkpoint is restored, $\Phi_\Gamma$ is rebuilt at its $\beta$.
+This changes the corrected model, so the polish is compared with the
+validation error after the rebuild.}
 \revnote{The current results compare the polish with the validation error
 measured before the basis is rebuilt. The final runs will measure it after the
 rebuild, as described here.}
-\todo{Missing: model notation. Candidate: the calligraphic $\mathcal M_{\mathrm{OBC}}$, since plain $M$ clashes with $M(Y)$ (README open conflict on model names).}
 
 The construction makes the estimate of $\beta$ unique to first order, but not
 equal to the coordinates $\beta^\star\in\R^{10}$ of the true combinations.
@@ -338,11 +354,13 @@ $\tilde X^{\mathrm n}_{+}=\col(\tilde x^{\mathrm n}_{i+1})_{i\in\mathcal I}$
 holds the next states,
 $F^{\mathrm n}_{\mathrm{base}}(\beta)=\col\bigl(f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}}(\beta),\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)\bigr)_{i\in\mathcal I}$
 and $\Xi\in\R^{6N}$.
-$\Xi$ plays the role of the unmodelled terms
-of~\cite[Eqs.~(14), (15)]{gyorok2026obc} and also holds the reconstruction
-error and the measurement noise.
-To first order, the one-step error on the tuples is minimised with the
-correction by the first line and without it by the second:
+\kw{$\Xi$ holds the unmodelled terms of~\cite[Eqs.~(14), (15)]{gyorok2026obc},
+the reconstruction error of \eqref{eq:obc_tuples} and the measurement noise.
+To first order, the one-step error
+$\tilde X^{\mathrm n}_{+}-F^{\mathrm n}_{\mathrm{base}}(\beta)-\tilde F^{\mathrm n}_{\mathrm{aug}}$
+is minimised by the first line, and without the correction, with
+$F^{\mathrm n}_{\mathrm{aug}}$ in place of $\tilde F^{\mathrm n}_{\mathrm{aug}}$,
+by the second:}
 \begin{equation}
 \begin{aligned}
  \beta&=\beta^\star+\bigl(\Phi^\top\Phi\bigr)^{-1}\Phi^\top\Xi,\\
@@ -353,36 +371,35 @@ correction by the first line and without it by the second:
 With the correction, the estimate does not depend on the network.
 Without it, the estimate depends on the network through
 $\Phi^\top F^{\mathrm n}_{\mathrm{aug}}$.
-The first line equals $\beta^\star$ if and only if $\Phi^\top\Xi=0$, an
-excitation condition as in~\cite[Sec.~4.1]{gyorok2026obc}.
-This adapts the recovery theorem of Gy\"or\"ok et al., which assumes an exact
-fit of the noise-free dynamics~\cite[Assumption~6, Thm.~7, Eq.~(21)]{gyorok2026obc}.
-The correction does not prevent a network term that cancels part of the
-baseline response, negation in the sense of
-Kessels~\cite[Sec.~5.3.1.3]{kessels2025ai}.
-The result is a one-step surrogate at $\bar x=0$, not a statement on the
-closed-loop optimum of \eqref{eq:aug_loss}.
+\kw{The first line has the form of the error of Gy\"or\"ok
+et al.~\cite[Eq.~(21)]{gyorok2026obc}, who derive it from an exact fit of the
+noise-free data~\cite[Assumption~6]{gyorok2026obc}.
+Here it follows from the one-step least-squares fit.
+It equals $\beta^\star$ if and only if $\Phi^\top\Xi=0$, an excitation
+condition on the data~\cite[Condition~4, Remark~5]{gyorok2026obc}.
+This holds for the one-step error at $\bar x=0$, not for the closed-loop
+optimum of \eqref{eq:aug_loss}.}
 
-Section~\ref{sec:results} measures orthogonality away from the reference
-tuples, for $\tilde F^{\mathrm n}_{\mathrm{aug}}$, and for $\Xi$, by the
-normalised inner product in the coordinates of \eqref{eq:aug_norm}:
+\kw{We measure orthogonality by the normalised inner product, in the coordinates
+of \eqref{eq:aug_norm}:}
 \begin{equation}
 \begin{aligned}
  \cos\angle(a,b)&=\frac{\langle a,b\rangle}{\norm{a}_2\norm{b}_2},\\
- c_j(d)&=\cos\angle(\Phi_j,d),\\
  \rho(d)&=\max_{v\in\ran\Phi\setminus\{0\}}\cos\angle(v,d)
  =\frac{\norm{\Pi d}_2}{\norm{d}_2},\\
  \Pi&=\Phi\bigl(\Phi^\top\Phi\bigr)^{-1}\Phi^\top,
 \end{aligned}
 \label{eq:obc_overlap}
 \end{equation}
-where $a,b,d\in\R^{6N}$ are nonzero, $\Phi_j$ is column $j$ of $\Phi$ and
-$\Pi$ is the orthogonal projector onto $\ran\Phi$.
-$c_j(d)$ is the signed overlap of $d$ with one parameter direction, and
-$\rho(d)$ the largest overlap with any direction in $\ran\Phi$.
-$\rho(d)=0$ if and only if $\Phi^\top d=0$, the orthogonality of
-\eqref{eq:obc_coef}.
-
+\kw{where $a,b,d\in\R^{6N}$ are nonzero and $\Pi$ is the orthogonal projector
+onto $\ran\Phi$.
+$\rho(d)$ is the largest normalised inner product of $d$ with a parameter
+direction, and $\rho(d)=0$ if and only if $\Phi^\top d=0$.
+Negation is measured by
+$\cos\angle\bigl(F^{\mathrm n}_{\mathrm{aug}},F^{\mathrm n}_{\mathrm{base}}-\tilde X^{\mathrm n}\bigr)$,
+with $\tilde X^{\mathrm n}=\col(\tilde x^{\mathrm n}_i)_{i\in\mathcal I}$,
+the alignment of the network with the one-step change of the state predicted
+by the baseline.}
 
 % ---------------------------------------------------------------------------
 % OUTLINE BLOCKS (Dirk's bullets), moved here from the text on 2026-10-15 for readability.

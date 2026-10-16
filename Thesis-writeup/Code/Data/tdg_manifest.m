@@ -113,6 +113,25 @@ function man = tdg_manifest(cfg)
     % (noise-only twins removed 2026-09-27: the floor comes from each record's noise-free
     % twin; the twin field and its seed key stay, so a twin could be added back here)
 
+    % ── D-258 multisine twins of the motion-only test records, evaluation only ──
+    % Only with cfg.ms_twins (generate_thesis_data opts.ms_twins, which requires out_dir), so the
+    % default 48-record table is unchanged. Same row as the record, rec <rec>M, A_prod multisine.
+    % E members first (normal scale rule); each I member takes the lowest realised scale of its
+    % E partners (scale_from), so a pair differs in one property only.
+    if isfield(cfg, 'ms_twins') && cfg.ms_twins
+        tw = {'E2', {};  'E3', {};  'E4', {};  'E6', {};
+              'I3', {'E2M_r1', 'E6M_r1'};  'I5', {'E3M_r1'};  'I6', {'E4M_r1'}};
+        recs = cellfun(@(x) x.rec, c, 'UniformOutput', false);
+        for k = 1:size(tw, 1)
+            e = c{strcmp(recs, tw{k, 1})};
+            e.rec = [tw{k, 1} 'M'];
+            e.p.excitation = 'multisine';
+            e.scale_from = tw{k, 2};
+            e.desc = [e.desc ', + A_prod multisine (D-258 evaluation twin)'];
+            c{end+1} = e; %#ok<AGROW>
+        end
+    end
+
     man = [c{:}];
     blk = {'train','training'; 'val','validation'};
     for k = 1:numel(man)
@@ -151,7 +170,7 @@ end
 function e = mk(set, rec, real, class, Y_op, p, desc)
     e = struct('file','', 'rec',rec, 'set',set, 'split','', 'block','', 'real',real, 'twin',0, ...
                'class',class, 'Y_op',Y_op, 'K_gain',1, 'p',p, 'desc',desc, ...
-               'seed_ms',NaN, 'seed_sp',NaN, 'seed_noise',NaN, 'free',true);
+               'seed_ms',NaN, 'seed_sp',NaN, 'seed_noise',NaN, 'free',true, 'scale_from',{{}});   % D-258
 end
 
 function p = ps()                                    % standstill, A_prod multisine

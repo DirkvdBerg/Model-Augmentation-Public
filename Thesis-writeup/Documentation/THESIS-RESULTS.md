@@ -146,24 +146,28 @@ Steps 2 to 4 say how to augment (parallel, added states at the order of the miss
 what OBC preserves and where it stops; step 6 says how far the improvement carries beyond the training conditions.
 
 ### Presentation agreed 2026-10-16 (Dirk; Jasper's feedback; cross-check of Hoekstra, Gyorok, Drenth)
-Supersedes the figure and table lines of steps 1 to 6 above where they differ. Main text: one result per aspect, each
-opened by its criterion; metric NRMS_e (D-256) with the RMS in m and the floor; records with and without multisine
-reported separately; no oracle row (the floor plus NRMS_e are the reference, as Drenth's "True System" row); no
-"error removed" percentage (none of the reference papers uses one; give factors in the prose).
+Supersedes the figure and table lines of steps 1 to 6 above where they differ.
+BINDING RULE (Dirk 2026-10-16, Jasper point 2): the main text shows only what answers the research question, one result
+per aspect, each opened by its criterion. Everything that justifies a CHOICE (structure, number of added states, PS,
+start, settings, black-box size) goes to the appendix. Metric NRMS_e (D-256) with the RMS in m and the floor; records
+with and without multisine reported separately; no oracle row; no "error removed" percentage (factors in the prose).
+Main-text models (five): M_LPV and M_LTI (true parameters, untrained), M_U (R4: U, PS, n_a 2, detuned start), the final
+model M_OBC (R1: OBC, PS, n_a 2, detuned start), the black box M_BB (R8).
 - A (Aspect 1): LPV vs LTI figure, NRMS_e on X, I2/E1 and I3/E2.
-- B (Aspect 2): one table in the style of Hoekstra 2026 Table 6: rows baseline, n_a 0, plain n_a 2, PS n_a 2, final model,
-  black box, floor; columns NRMS_e per axis with and without multisine. Figures: FRF F_Y -> Y (res_frf, mean over
-  Y = -0.39 to 0.39 m) with one sentence on the spurious X-Y cross terms; I1 time trace captioned with its NRMS_e.
-- C (Aspect 3): one table in the style of Gyorok 2026 Table 1, detuned start: U and OBC at n_a 2 (R4, R1) and at n_a 0
-  (two NEW runs, Jasper point 5); rows the ten combinations (delta_j) and their norm, full-model NRMS_e, physical part
-  alone (Gyorok 2025 Table 1), network overlap rho(F_aug), truth overlap rho(Xi), and the PREDICTED first-order bias of
-  eq:obc_recovery (beta* + (Phi^T Phi)^-1 Phi^T Xi, Phi at beta*) beside the observed delta_j of OBC. Verdict per
-  parameter (masses vs dampings), not only the norm.
-- D (Aspect 4): NRMS_e per I/E pair (I2/E1, I3/E2, I5/E3, I6/E4, I3/E6), baseline, final model, black box, floor marked.
-Appendix (design-choice evidence and extra results): full structure table (all runs, NRMS_e and m, n_a 8, PS detuned,
-physical part per run), error spectrum, ten combinations from the correct start (R2, R5), network overlap along the test
-rollouts, clamp ablation, validation curves, black-box search table, I4 segments, full 3 x 3 FRF (res_frf_full),
-setup figures (multisine band, coverage) and numbers.
+- B (Aspect 2): baseline vs final model vs black box, NRMS_e per axis with and without multisine, floor; FRF F_Y -> Y
+  (res_frf, mean over Y = -0.39 to 0.39 m) with one sentence on the spurious X-Y cross terms; I1 time trace captioned
+  with its NRMS_e. Why this structure (n_a, PS) is in the appendix.
+- C (Aspect 3): table in the style of Gyorok 2026 Table 1, detuned start, M_U vs M_OBC: the ten combinations (delta_j) and
+  their norm, full-model NRMS_e, physical part alone (Gyorok 2025 Table 1), network overlap rho(F_aug), truth overlap
+  rho(Xi), and the PREDICTED first-order bias of eq:obc_recovery beside the observed delta_j of OBC. Verdict per parameter.
+- D (Aspect 4): NRMS_e per I/E pair (I2/E1, I3/E2, I5/E3, I6/E4; E6 as stress record), baseline, final model, black box,
+  floor marked; plus the multisine twins (evaluation-only extension, 2026-10-16) once generated.
+Appendix, choice justification (on the VALIDATION records where a choice is compared, so the test set stays for the main
+results; Dirk's confirmation of the validation rule pending): structure comparison n_a 0 / 2 / 8 and plain vs PS (all
+true-start runs R3, R5, R6, R7, plus the detuned n_a 0 pair), error spectrum PS vs plain, parameter recovery without added
+states (U and OBC, n_a 0, detuned start: two NEW runs, Jasper point 5), OBC vs U from the correct start (R2, R5), full
+structure table (all runs, NRMS_e and m, physical part per run), validation curves, black-box search table, full 3 x 3 FRF
+(res_frf_full), setup figures (multisine band, coverage), setup checks, hyperparameters.
 
 ## 4. Server runs
 

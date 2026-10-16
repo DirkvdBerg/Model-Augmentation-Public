@@ -47,6 +47,10 @@ function generate_thesis_data(sel, opts)
         cfg.out_free  = fullfile(opts.out_dir, cfg.name_free);
         cfg.log_dir   = opts.out_dir;
     end
+    if isfield(opts, 'ms_twins') && opts.ms_twins     % D-258: evaluation twins, never in the data set folders
+        assert(isfield(opts, 'out_dir'), 'ms_twins requires out_dir (D-258: a new folder pair)');
+        cfg.ms_twins = true;
+    end
     man = tdg_manifest(cfg);
     man_all = man;                    % the full table: noise twins look up their record in it
     man = select(man, sel);
@@ -137,6 +141,15 @@ function gen_one(e, sd, fn, ff, need_n, need_f, cfg, K1, nzmap, gen, truth, logf
         bf = fullfile(cfg.out_noisy, sd, [b.file '.mat']);
         assert(isfile(bf), 'noise twin %s: generate its record %s first', e.file, b.file);
         B = load(bf, 'meta');  s_req = B.meta.scale_realised;
+    elseif ~isempty(e.scale_from)
+        % D-258: an I twin takes the lowest realised scale of its E partners (equal scale per pair)
+        sc = zeros(1, numel(e.scale_from));
+        for j = 1:numel(e.scale_from)
+            pf = fullfile(cfg.out_noisy, sd, [e.scale_from{j} '.mat']);
+            assert(isfile(pf), '%s: generate its partner %s first', e.file, e.scale_from{j});
+            P = load(pf, 'meta');  sc(j) = P.meta.scale_realised;
+        end
+        s_req = min(sc);
     elseif ~need_n && isfile(fn)
         A = load(fn, 'meta');  s_req = A.meta.scale_realised;
     elseif ~need_f && e.free && isfile(ff)
@@ -197,6 +210,7 @@ function gen_one(e, sd, fn, ff, need_n, need_f, cfg, K1, nzmap, gen, truth, logf
     m.A_prod = [cfg.A_sym, cfg.A_anti, cfg.A_Y];
     m.amp_applied = s * in.ms.A;                                 % [N, N m, N]
     m.scale_precheck = in.chk.scale;  m.scale_realised = s;
+    m.scale_from = e.scale_from;                                 % D-258: partners fixing the scale
     m.precheck = in.chk;  m.ref_peaks = in.pk;
     m.seed_ms = e.seed_ms;  m.seed_sp = e.seed_sp;
     m.seed_keys = struct('ms', sprintf('TAF|%s|%s|r%d|nt0|ms', e.set, e.rec, e.real), ...
