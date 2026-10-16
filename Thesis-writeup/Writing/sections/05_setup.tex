@@ -129,7 +129,7 @@ Seen from the head, $f_a$ is an anti-resonance.
 It and the coupled mode lie above the crossover of the loop
 (Section~\ref{sec:setup_data}), so the feedback does not suppress them.
 \begin{table}[t]
-\caption{Parameters of the data-generating system that the baseline lacks.}
+\caption{Parameters that the baseline lacks.}
 \label{tab:setup_truth}
 \centering
 \footnotesize
@@ -216,9 +216,8 @@ E6 differs from I3 in more than one property and is reported as a stress
 record.
 \todo{Missing: whether E6 (a measured machine move) and the relative limits may be described this way. Candidate: ask Jasper or Dragan.}
 \begin{table}[t]
-\caption{Test records. The twins add the training multisine for
-evaluation only, at 0.30 of its amplitude for I6 and E4 (velocity limit);
-both twins of a pair have the same amplitude.}
+\caption{Test records. The twins add the training multisine, at 0.30 of
+its amplitude for the pair I6, E4.}
 \label{tab:setup_records}
 \centering
 \footnotesize
@@ -257,15 +256,14 @@ Table~\ref{tab:setup_checks}.
 \end{itemize}
 \fi
 Each comparison between the models of Table~\ref{tab:setup_models}
-answers one aspect of the research question.
-$\mathcal M_{\mathrm{LPV}}$ against $\mathcal M_{\mathrm{LTI}}$ tests the
-position-dependent baseline (Aspect~1).
-The final model $\mathcal M_{\mathrm{OBC}}$ against
-$\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{BB}}$ tests the
-augmentation (Aspect~2).
-$\mathcal M_{\mathrm{OBC}}$ against $\mathcal M_{\mathrm U}$ tests the
-orthogonal construction (Aspect~3).
-The extrapolation records test all of them (Aspect~4).
+answers one aspect of the research question (last column).
+The pairs are $\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{LTI}}$
+for the baseline, the final model $\mathcal M_{\mathrm{OBC}}$ with
+$\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{BB}}$ for the
+augmentation, and $\mathcal M_{\mathrm{OBC}}$ with $\mathcal M_{\mathrm U}$
+for the orthogonal construction.
+The extrapolation records compare the final model with the black box
+(Aspect~4).
 $\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{LTI}}$ are the baseline
 at the true parameters without training.
 $\mathcal M_{\mathrm{LTI}}$ freezes $M(Y)$ at $Y=0$, the middle of the
@@ -284,7 +282,7 @@ $\mathcal M_{\mathrm{LPV}}$ & 0 & no & true, untrained & 1, 2\\
 $\mathcal M_{\mathrm{LTI}}$ & 0 & no & true at $Y=0$, untrained & 1\\
 $\mathcal M_{\mathrm{U}}$ & 2 & no & detuned & 3\\
 $\mathcal M_{\mathrm{OBC}}$ & 2 & yes & detuned & 2, 3, 4\\
-$\mathcal M_{\mathrm{BB}}$ & \multicolumn{3}{l}{black box, \eqref{eq:setup_bb}} & 2, 4\\
+$\mathcal M_{\mathrm{BB}}$ & \multicolumn{3}{l}{black box, Appendix~\ref{app:setup_bb}} & 2, 4\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -310,14 +308,7 @@ The black box $\mathcal M_{\mathrm{BB}}$ is a SUBNET
 model~\cite{beintema2023subnet}, a state-space model with neural maps
 identified on simulation windows.
 It models the closed loop from the reference and the injected force to the
-servo error:
-\begin{equation}
- x^{\mathrm{bb}}_{k+1}=f_{\mathrm{bb}}\bigl(\theta_{\mathrm{bb}},x^{\mathrm{bb}}_k,r_k,u^{\mathrm{ms}}_k\bigr),\quad
- \hat y_k=r_k+h_{\mathrm{bb}}\bigl(\theta_{\mathrm{bb}},x^{\mathrm{bb}}_k\bigr),
- \label{eq:setup_bb}
-\end{equation}
-where $x^{\mathrm{bb}}_k\in\R^{n_x}$ and an encoder estimates
-$x^{\mathrm{bb}}$ at the window start from past inputs and servo errors.
+servo error (Appendix~\ref{app:setup_bb}).
 It uses no physical knowledge and no controller.
 Its state count $n_x$, network widths and learning rate are selected on the
 validation records from 11 configurations, with the data and windows of
