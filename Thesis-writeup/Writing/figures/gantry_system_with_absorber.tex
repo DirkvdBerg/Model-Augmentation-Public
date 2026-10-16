@@ -24,7 +24,7 @@
 %     drawn for legibility.  The absorber rides on the payload, so it may
 %     overhang the beam end.
 %   * Colours: red = measured coordinates, blue = generalized coordinates,
-%     grey = absorber (m_a, k_a, c_a, delta_a), present only in the simulated
+%     grey = absorber (m_a, k_a, c_a, q_a), present only in the simulated
 %     plant and not in the baseline.  Theta is drawn once, at the CoM.
 %
 % \gantryabsorber: 0 draws the baseline only (Section II), 1 adds the grey
@@ -106,7 +106,7 @@
     \ifnum\gantrydelta>0                      % displacement relative to m_h
       \draw[->] (\ua,\vh+\Ha/2+4.5) -- ++(-14,0);
       \node[anchor=south east, inner sep=1pt]
-            at (\ua-3,\vh+\Ha/2+5.5) {$\delta_a$};
+            at (\ua-3,\vh+\Ha/2+5.5) {$q_a$};
     \fi
     \end{scope}
     \fi

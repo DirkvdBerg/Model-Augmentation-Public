@@ -482,8 +482,6 @@ INPUT figures\gantry_system_with_absorber.tex
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\omspcr.fd
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\omspcr.fd
 INPUT C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\omspcr.fd
-OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
-INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT .\sections\06_results.tex
 INPUT .\sections\06_results.tex
 INPUT .\sections\06_results.tex
@@ -565,6 +563,16 @@ INPUT .\figures\res_frf_full.pdf
 INPUT .\figures\res_frf_full.pdf
 INPUT .\figures\res_frf_full.pdf
 INPUT .\figures\res_frf_full.pdf
+INPUT .\figures\setup_band.pdf
+INPUT .\figures\setup_band.pdf
+INPUT .\figures\setup_band.pdf
+INPUT .\figures\setup_band.pdf
+INPUT .\figures\setup_band.pdf
+INPUT .\figures\setup_coverage.pdf
+INPUT .\figures\setup_coverage.pdf
+INPUT .\figures\setup_coverage.pdf
+INPUT .\figures\setup_coverage.pdf
+INPUT .\figures\setup_coverage.pdf
 OUTPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
 INPUT c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.aux

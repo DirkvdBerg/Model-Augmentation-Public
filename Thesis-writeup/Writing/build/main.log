@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  16 OCT 2026 16:29
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  16 OCT 2026 17:45
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -729,7 +729,7 @@ LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 52
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ot1pcr.fd
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 ) [6] [7]
-<figures/closed_loop_same_reference.pdf, id=446, 281.74458pt x 103.98448pt>
+<figures/closed_loop_same_reference.pdf, id=450, 281.74458pt x 103.98448pt>
 File: figures/closed_loop_same_reference.pdf Graphic file (type pdf)
 <use figures/closed_loop_same_reference.pdf>
 Package pdftex.def Info: figures/closed_loop_same_reference.pdf  used on input line 752.
@@ -763,49 +763,23 @@ Underfull \vbox (badness 1226) has occurred while \output is active []
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) [13]) (sections/05_setup.tex (tables/setup_numbers.tex) (figures/gantry_system_with_absorber.tex) [14]
-Underfull \vbox (badness 2932) has occurred while \output is active []
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) [13]
+Overfull \hbox (16.96844pt too wide) detected at line 395
+[][][][][]
+ []
 
- [15]
-LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 272.
+) (sections/05_setup.tex (tables/setup_numbers.tex) (figures/gantry_system_with_absorber.tex) [14] [15]
+LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 291.
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\omspcr.fd
 File: omspcr.fd 
 )
 LaTeX Font Info:    Font shape `OMS/pcr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 272.
- [16] Including 'wip' comment.
-\openout4 = `comment.cut'.
-
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
-Underfull \hbox (badness 3460) in paragraph at lines 6--7
-\OT1/ptm/m/n/10 (+20) matched to the fric-tion-less ex-ci-ta-tion; the ear-lier
- []
-
-[17]
-Underfull \hbox (badness 2547) in paragraph at lines 38--39
-\OT1/ptm/m/n/10 (+20) arms start from the nom-i-nal $\OML/cmm/m/it/10 '$ \OT1/ptm/m/n/10 (+20) of the ref-er-ence
- []
-
-
-Underfull \hbox (badness 3769) in paragraph at lines 38--39
-\OT1/ptm/m/n/10 (+20) im-ple-men-ta-tion de-tuned by 10% per com-bi-na-tion
- []
-
-[18]
-Underfull \hbox (badness 10000) in paragraph at lines 61--62
-[]\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, ap-pendix can-di-date): use
- []
-
-
-Underfull \hbox (badness 4819) in paragraph at lines 61--62
-\OT1/pcr/m/n/10 controller-chain-v1 \OT1/ptm/m/n/10 (+20) only as an au-dit trail
- []
-
-)) (sections/06_results.tex Including 'wip' comment.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 291.
+ [16]) (sections/06_results.tex Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut)
-<figures/res_lpv_lti.pdf, id=750, 231.04317pt x 146.8958pt>
+<figures/res_lpv_lti.pdf, id=748, 231.04317pt x 146.8958pt>
 File: figures/res_lpv_lti.pdf Graphic file (type pdf)
 <use figures/res_lpv_lti.pdf>
 Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 55.
@@ -815,21 +789,21 @@ Underfull \hbox (badness 1484) in paragraph at lines 67--68
 \OML/cmm/m/it/10 ^^P \OMS/cmsy/m/n/10 ^^Y \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 06$\OT1/ptm/m/n/10 (+20) , against the sys-tem's 211.9 Hz, $\OML/cmm/m/it/10 ^^P \OT1/cmr/m/n/10 =
  []
 
-[19 <./figures/res_lpv_lti.pdf>] Including 'wip' comment.
+[17 <./figures/res_lpv_lti.pdf>] Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) (tables/res_structure.tex)
-<figures/res_ps_spectrum.pdf, id=788, 256.75955pt x 148.78436pt>
+<figures/res_ps_spectrum.pdf, id=784, 256.75955pt x 148.78436pt>
 File: figures/res_ps_spectrum.pdf Graphic file (type pdf)
 <use figures/res_ps_spectrum.pdf>
 Package pdftex.def Info: figures/res_ps_spectrum.pdf  used on input line 95.
 (pdftex.def)             Requested size: 252.0pt x 146.03015pt.
-<figures/res_time_trace.pdf, id=789, 234.77274pt x 196.20125pt>
+<figures/res_time_trace.pdf, id=785, 234.77274pt x 196.20125pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
 <use figures/res_time_trace.pdf>
 Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 102.
 (pdftex.def)             Requested size: 252.0pt x 210.60385pt.
-<figures/res_frf.pdf, id=790, 238.08197pt x 151.69862pt>
+<figures/res_frf.pdf, id=786, 238.08197pt x 151.69862pt>
 File: figures/res_frf.pdf Graphic file (type pdf)
 <use figures/res_frf.pdf>
 Package pdftex.def Info: figures/res_frf.pdf  used on input line 109.
@@ -837,7 +811,7 @@ Package pdftex.def Info: figures/res_frf.pdf  used on input line 109.
  Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut [20 <./figures/res_ps_spectrum.pdf> <./figures/res_time_trace.pdf>]) (tables/res_obc_combinations.tex) Including 'wip' comment.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut [18 <./figures/res_ps_spectrum.pdf> <./figures/res_time_trace.pdf>]) (tables/res_obc_combinations.tex) Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
@@ -845,8 +819,8 @@ Underfull \hbox (badness 2556) in paragraph at lines 2--3
 \OT1/ptm/m/n/10 (+20) relevant mo-tion, con-troller trans-fer, and quan-ti-fied
  []
 
-[21 <./figures/res_frf.pdf>])
-<figures/res_generalisation.pdf, id=858, 435.31557pt x 143.76047pt>
+[19 <./figures/res_frf.pdf>])
+<figures/res_generalisation.pdf, id=856, 435.31557pt x 143.76047pt>
 File: figures/res_generalisation.pdf Graphic file (type pdf)
 <use figures/res_generalisation.pdf>
 Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 170.
@@ -854,13 +828,13 @@ Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 170.
 ) (sections/07_discussion.tex Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut)) (sections/08_conclusion.tex [22] Including 'wip' comment.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut)) (sections/08_conclusion.tex [20] Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut [23 <./figures/res_generalisation.pdf>])) (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.bbl) [24] (sections/99_appendix.tex
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut [21 <./figures/res_generalisation.pdf>])) (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.bbl) [22] (sections/99_appendix.tex
 Overfull \hbox (47.02722pt too wide) detected at line 99
 [][]
  []
@@ -868,24 +842,37 @@ Overfull \hbox (47.02722pt too wide) detected at line 99
 Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) [25
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) [23
 
 ]
-Underfull \hbox (badness 10000) in paragraph at lines 271--272
+Underfull \hbox (badness 10000) in paragraph at lines 209--210
 []\OT1/ptm/m/n/10 (+20) Full $\OT1/cmr/m/n/10 3 \OMS/cmsy/m/n/10 ^^B \OT1/cmr/m/n/10 3$ \OT1/ptm/m/n/10 (+20) re-sponse of Fig. []10[]: same
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 271--272
+Underfull \hbox (badness 10000) in paragraph at lines 209--210
 \OT1/ptm/m/n/10 (+20) lin-eari-sa-tion at rest, same seven po-si-tions
  []
 
-<figures/res_frf_full.pdf, id=928, 500.92596pt x 329.01947pt>
+<figures/res_frf_full.pdf, id=920, 500.92596pt x 329.01947pt>
 File: figures/res_frf_full.pdf Graphic file (type pdf)
 <use figures/res_frf_full.pdf>
-Package pdftex.def Info: figures/res_frf_full.pdf  used on input line 280.
+Package pdftex.def Info: figures/res_frf_full.pdf  used on input line 218.
 (pdftex.def)             Requested size: 516.0pt x 338.95407pt.
-Including 'wip' comment.
+<figures/setup_band.pdf, id=923, 239.52798pt x 194.67302pt>
+File: figures/setup_band.pdf Graphic file (type pdf)
+<use figures/setup_band.pdf>
+Package pdftex.def Info: figures/setup_band.pdf  used on input line 295.
+(pdftex.def)             Requested size: 252.0pt x 204.81667pt.
+<figures/setup_coverage.pdf, id=925, 229.1878pt x 242.79445pt>
+File: figures/setup_coverage.pdf Graphic file (type pdf)
+<use figures/setup_coverage.pdf>
+Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 313.
+(pdftex.def)             Requested size: 252.0pt x 266.9784pt.
+[24]
+Underfull \vbox (badness 2707) has occurred while \output is active []
+
+ [25 <./figures/res_frf_full.pdf>] Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
@@ -893,7 +880,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 6--7
 []\OT1/ptm/m/n/10 (+20) Figure (ex-ist-ing, op-tional): place
  []
 
-[26]))
+))
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -905,9 +892,9 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[27
+[26 <./figures/setup_band.pdf> <./figures/setup_coverage.pdf>] [27
 
- <./figures/res_frf_full.pdf>] (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.aux)
+] (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
@@ -917,20 +904,20 @@ L3 programming layer <2026-01-19>
 LaTeX Warning: There were undefined references.
 
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 758AC36E71586E5CD811F62A2E288CF3;8329.
+(rerunfilecheck)             Checksum: 95AF772F2D86817EB58A64932EFB6E91;8362.
  ) 
 Here is how much of TeX's memory you used:
- 27877 strings out of 467867
- 537975 string characters out of 5416882
- 981745 words of memory out of 5000000
- 55717 multiletter control sequences out of 15000+600000
- 686632 words of font info for 347 fonts, out of 8000000 for 9000
+ 27911 strings out of 467867
+ 538681 string characters out of 5416882
+ 983416 words of memory out of 5000000
+ 55751 multiletter control sequences out of 15000+600000
+ 686312 words of font info for 343 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 89i,17n,97p,1131b,984s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 89i,14n,97p,1131b,988s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmib10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf" (27 pages, 1243134 bytes).
+Output written on "c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf" (27 pages, 1319511 bytes).
 PDF statistics:
- 1108 PDF objects out of 1200 (max. 8388607)
- 171 named destinations out of 1000 (max. 500000)
- 54168 words of extra memory for PDF output out of 61914 (max. 10000000)
+ 1166 PDF objects out of 1200 (max. 8388607)
+ 179 named destinations out of 1000 (max. 500000)
+ 54186 words of extra memory for PDF output out of 61914 (max. 10000000)
 

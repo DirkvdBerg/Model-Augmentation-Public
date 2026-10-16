@@ -203,10 +203,182 @@ $\nu_{i_s}\le\nu_{\max}$, where $i_s<i_{\max}$ is a fixed early check.
 If $\nu_{i_s}>\nu_{\max}$, PS ends at $i_s$.
 The values are given in Table~\ref{tab:hyper}.
 
+\subsection{Open-loop frequency response}\label{app:frf}
+\ifdraft
+\begin{itemize}
+\item Full $3\times3$ response of Fig.~\ref{fig:res_frf}: same linearisation at rest, same seven positions (\texttt{Code/Evaluation/eval\_frf.py})
+\item On the $X$ entries the final model, the system and the baseline coincide; the spread over $Y$ is the position dependence of the system
+\item The final model has a small resonance near 212~Hz in the cross terms between $X$ and $Y$ that the system lacks (state it)
+\end{itemize}
+\fi
+Fig.~\ref{fig:res_frf_full} gives all nine entries of the response in
+Fig.~\ref{fig:res_frf}, with the same linearisation and positions.
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{res_frf_full.pdf}
+  \caption{Bode magnitude from the stage forces (columns) to the stage positions (rows), linearised at rest. Geometric mean over $Y=-0.39$ to $0.39$~m; shaded: range of the final model over $Y$.}
+  \label{fig:res_frf_full}
+\end{figure*}
+
+\section{Experiment design details}\label{app:setup}
+This appendix gives the details of Section~\ref{sec:setup} and the checks
+of its design choices.
+The checks use the known simulated system where the text says so.
+
+\subsection{Data-generating system}\label{app:setup_system}
+% Sources: vendor/ruleOfThumb.m, gtd_build_plant.m (K1); D-238, NOISE-INJECTION.md (noise).
+\ifdraft
+\begin{itemize}
+\item The controller $K_1$ of every record
+\item The noise spectrum, fitted to the standstill servo error of the machine (?: confidentiality)
+\item The definition of the signal-to-noise ratio
+\end{itemize}
+\fi
+The controller of every record is, per stage axis $j$,
+\begin{equation}
+ K_{1,j}(s)=\kappa_j\,\frac{s+\omega_b/6}{s}\,
+ \frac{s+\omega_b/3}{s+3\omega_b}\,\frac{10\,\omega_b}{s+10\,\omega_b},
+ \label{eq:setup_K1}
+\end{equation}
+where $\omega_b=2\pi\cdot100$~rad/s is the bandwidth and $\kappa_j$ sets the
+open-loop gain of axis $j$ to one at $\omega_b$, for the diagonal entry of
+the rigid baseline at $Y=0$ from stage force to stage position.
+$K_1$ is discretised by the Tustin rule at $f_{\mathrm s}$.
+
+The noise $v_j$ has the one-sided spectrum
+\begin{equation}
+ S_{v,j}(f)=\lambda_j^2\,\lvert H_j(f)\rvert^2+\sigma_{v,j}^2,
+ \label{eq:setup_noise}
+\end{equation}
+where $H_j$ is a second-order Butterworth low-pass with cutoff $f_{v,j}$,
+$\lambda_j$ its level and $\sigma_{v,j}$ a white floor.
+$\lambda_j$ and $f_{v,j}$ are fitted so that the simulated standstill servo
+error at $Y=0$ matches the measured one of the industrial machine, and
+$\sigma_{v,j}$ is its level above 5~kHz.
+The signal-to-noise ratio of Section~\ref{sec:setup_system} is
+$\mathrm{SNR}_j=20\log_{10}\bigl(\mathrm{RMS}(y^{\circ}_j-r_j)/\mathrm{RMS}(y_j-y^{\circ}_j)\bigr)$
+over the training records.
+
+\subsection{Excitation and records}\label{app:setup_records}
+% Sources: D-217, D-219 (band, grid, crest factor, amplitudes), MANIFEST (scale), Code/Setup band_frf.py,
+% coverage.py; Code/Figures setup_band.py, setup_coverage.py.
+\ifdraft
+\begin{itemize}
+\item The multisine: grid from the width of the anti-resonance, best crest factor of 30 draws, amplitudes, no record needed scaling
+\item The upper band edge and the band over the frequency response of the simulated system
+\item The five motion types, the operational moves and the operating range of all records
+\end{itemize}
+\fi
+In each channel $c\in\{X,\Theta,Y\}$ of the generalised force, the
+multisine is
+\begin{equation}
+ u^{\mathrm{ms}}_c(t)=A_c\sqrt{\frac{2}{\lvert\mathcal L\rvert}}\sum_{l\in\mathcal L}
+ \cos(2\pi l\,\Delta f\,t+\alpha_{c,l}),
+ \label{eq:setup_ms}
+\end{equation}
+where $\Delta f=0.5$~Hz, $\mathcal L=\{212,\dots,594\}$ spans 106 to
+297~Hz, and the phases $\alpha_{c,l}$ are drawn uniformly per record.
+It enters at the actuators as $u^{\mathrm{ff}}=P^{-1}u^{\mathrm{ms}}$.
+The grid places 18 lines inside the half-power width $2\zeta_af_a=9$~Hz of
+the anti-resonance, the narrowest feature of the system, and makes the
+multisine periodic in 2~s.
+Of 30 phase draws, the one with the lowest crest factor is kept; for $\Theta$
+the crest factor is taken on the simulated yaw response.
+The rms amplitudes $A=(240~\mathrm N,87~\mathrm{N\,m},180~\mathrm N)$ keep
+every record within the force and stroke limits of the machine without
+scaling.
+The upper edge keeps 90\,\% of the difference between the frequency
+responses of the simulated system and the baseline above the crossover.
+\todo{Missing: reason for the 90\,\% share of the upper edge and for 30 phase draws. Candidate: keep both as heuristic (D-217, D-219).}
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{setup_band.pdf}
+  \caption{Stage axis $Y$ of the simulated system and of the baseline,
+  linearised at the five training positions (lines overlap). Top: open
+  loop. Bottom: complementary sensitivity with $K_1$. Shaded: multisine
+  band; hatched: range of the $K_1$ crossovers over the axes and
+  positions.}
+  \label{fig:setup_band}
+\end{figure}
+
+The five motion types are standstill at a fixed $Y$, slow sweeps of $Y$,
+$X$-$Y$ Lissajous paths, point-to-point moves with S-curve profiles, and
+sine-shaped moves representative of machine operation.
+The operational test records I3 to I6 are sine-shaped routes with $X$ and
+$Y$ together, alternating $X$-only and $Y$-only moves, an S-curve route and
+long strokes.
+Fig.~\ref{fig:setup_coverage} shows the operating range of the records.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{setup_coverage.pdf}
+  \caption{Range of $Y$ of each record against its largest acceleration
+  (top) and velocity (bottom), in \% of the machine limits. Dashed: training
+  range. Test records at the same level are offset by 4\,\% for
+  legibility.}
+  \label{fig:setup_coverage}
+\end{figure}
+\subsection{Processing and checks}\label{app:setup_checks}
+% Sources: D-087 (block mean), D-166 (rate), D-220 (window), D-232 (filter), D-141 (controller rate);
+% Code/Setup rate.py, filter_leak.py, filter_edge.py, loop_memory.py, controller_rate.py, rail_velocity.py.
+\ifdraft
+\begin{itemize}
+\item The reduction to the model rate: block mean of the force, zero-phase filter on the servo error, trim at the record ends
+\item The checks of rate, filter, window, controller rate and friction regime
+\item The cause of the controller-rate change (?)
+\end{itemize}
+\fi
+With the argument counting samples at $f_{\mathrm s}$, the records are
+reduced to $T_s$ by
+\begin{equation}
+ u_k=\frac15\sum_{i=0}^{4}\uact(5k+i),\qquad
+ y_k=r(5k)+\bigl(\mathcal B\ast(y-r)\bigr)(5k),
+ \label{eq:setup_decim}
+\end{equation}
+where $\mathcal B$ is a zero-phase eighth-order Butterworth low-pass at
+1.6~kHz.
+The block mean is the exact input of a zero-order-hold model at $T_s$.
+The filter acts on the servo error only, so the reference passes unchanged.
+It changes the noise-free output by at most $\SetupFiltDist$~m RMS.
+Its impulse response falls below 1\,\% of its peak within
+\SetupFiltDecay~ms, so the \SetupTrim~ms removed at both record ends hold
+its edge transient.
+\todo{Missing: source for the cutoff at 0.8 times the Nyquist frequency and for the order 8. Candidate: Gautier, Janot and Vandanjon, IEEE TCST 2013 (decimation at 0.8 of the Nyquist frequency; no cite key yet); order 8 heuristic (D-232).}
+
+For $\lvert v_i\rvert\ge3v_{\mathrm{fr}}$, the friction of
+\eqref{eq:setup_fric} is within 0.5\,\% of the Coulomb law.
+Table~\ref{tab:setup_checks} gives the checks of the design, including the
+share of samples in this range.
+\begin{table}[t]
+\caption{Checks of the experiment design. Basis: model, the simulated
+system linearised at the training positions; data, the training records.}
+\label{tab:setup_checks}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Check & Value & Basis\\
+\midrule
+Phase-margin loss, 4 / 2~kHz & \SetupPmLossFour$^\circ$ / \SetupPmLossTwo$^\circ$ & model\\
+Noise above 2~kHz, raw / filtered & $\SetupAliasRaw$ / $\SetupAliasFilt$~m & data\\
+Filter impulse response, 1\,\% & \SetupFiltDecay~ms (trim \SetupTrim~ms) & filter\\
+Slowest closed-loop time constant & \SetupTauMax~ms & model\\
+Response to a force error, 1\,\% & \SetupDecay~ms (window \SetupWindow~ms) & model\\
+$K_1$ at 20~kHz, force error & $\SetupKcheck$ & data\\
+$K_1$ at $T_s$, force change, median & \SetupKmismatchMed\,\% & data\\
+\quad largest; without multisine & \SetupKmismatchMax\,\%; \SetupKmismatchMotion\,\% & data\\
+Samples with $\lvert v\rvert\ge3v_{\mathrm{fr}}$, multisine & $\ge$\SetupRailShareMin\,\% & data\\
+\bottomrule
+\end{tabular}
+\end{table}
+The training loop re-discretises $K_1$ at $T_s$, which changes the feedback
+force on the training records by a median of \SetupKmismatchMed\,\% RMS.
+\todo{Missing: the cause of this change and whether it affects the results. Candidate: the half-sample offset between the block-mean force and the controller output at $T_s$ (2\,sin($\pi f\cdot0.1$~ms) is 9 to 19\,\% over the band, only records with multisine show it; not verified); the effect to Section~\ref{sec:results} or the Discussion.}
+
 \subsection{Hyperparameters}\label{app:hyper}
 Table~\ref{tab:hyper} lists the settings of every grey-box run and of the
 black-box search.
-The basis of a value is derived (computed in Section~\ref{sec:setup}),
+The basis of a value is derived (computed in Section~\ref{sec:setup} or Appendix~\ref{app:setup}),
 inherited (from earlier work), tuned (on validation data), heuristic (fixed
 without a measurement) or compute-limited.
 \begin{table}[t]
@@ -254,7 +426,7 @@ S2 plateau (checks, tolerance) & 5, 0.01 & heuristic\\
 S2 updates (min, max) & 500, 8000 & heuristic\\
 \multicolumn{3}{@{}l}{\emph{Black box (Section~\ref{sec:setup_models})}}\\
 States $n_x$ & 8, 16, 32 & tuned\\
-Width of $f_\theta$, $h_\theta$ (encoder $2\times$) & 8, 16, 32 & tuned\\
+Width of $f_{\mathrm{bb}}$, $h_{\mathrm{bb}}$ (encoder $2\times$) & 8, 16, 32 & tuned\\
 Adam rate & $10^{-3}$, $3\cdot10^{-3}$, $10^{-2}$ & tuned\\
 Batch, stride & 256, 25 & inherited\\
 Updates (search, final) & 20000, 80000 & compute-limited\\
@@ -264,23 +436,6 @@ Selection & lowest validation RMS & heuristic\\
 \end{table}
 \todo{Missing: a stated reason for the rows marked heuristic without one in \texttt{docs/decisions.md} (window stride, batch, RK4 steps, the PS rules). Candidate: keep them as heuristic, with D-234 as the source of the PS rules (prototype runs).}
 \todo{Missing: the black-box rows are the search grid of \texttt{thesis\_r8\_grid.conf}; the selected configuration is not known yet. Candidate: add a row with the selected $n_x$, width and rate once R8 has run.}
-
-\subsection{Open-loop frequency response}\label{app:frf}
-\ifdraft
-\begin{itemize}
-\item Full $3\times3$ response of Fig.~\ref{fig:res_frf}: same linearisation at rest, same seven positions (\texttt{Code/Evaluation/eval\_frf.py})
-\item On the $X$ entries the final model, the system and the baseline coincide; the spread over $Y$ is the position dependence of the system
-\item The final model has a small resonance near 212~Hz in the cross terms between $X$ and $Y$ that the system lacks (state it)
-\end{itemize}
-\fi
-Fig.~\ref{fig:res_frf_full} gives all nine entries of the response in
-Fig.~\ref{fig:res_frf}, with the same linearisation and positions.
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=\textwidth]{res_frf_full.pdf}
-  \caption{Bode magnitude from the stage forces (columns) to the stage positions (rows), linearised at rest. Geometric mean over $Y=-0.39$ to $0.39$~m; shaded: range of the final model over $Y$.}
-  \label{fig:res_frf_full}
-\end{figure*}
 
 \begin{wip}
 \subsection{OBC and experiment details}
