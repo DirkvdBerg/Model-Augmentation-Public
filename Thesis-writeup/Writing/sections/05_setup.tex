@@ -303,7 +303,7 @@ and encoder window of the grey-box models.
 \item Primary: simulation error relative to the servo error, $\mathrm{NRMS}_e$, per record and stage axis; beside it the RMS in m and the record's noise floor (D-256, THESIS-RESULTS Sec. 2)
 \item Why the servo error: the reference is given, so $y-r$ is what the model must predict; $y$ itself is dominated by the motion (D-256)
 \item Combination error against the true values, $m_\Delta$ by the mean actuator mass; simulation only
-\item Overlaps $\rho$ of \eqref{eq:obc_overlap} for the network and for the true discrepancy (moved from Section~IV-C)
+\item Overlaps $\rho$ of \eqref{eq:obc_overlap} for the network and for $\Xi$ (moved from Section~IV-C); predicted first-order bias from \eqref{eq:obc_recovery} against the observed $\delta_j$ of $\mathcal M_{\mathrm{OBC}}$ (Dirk 2026-10-16)
 \item Single-seed rule for differences (?: seed spread)
 \end{itemize}
 \fi
@@ -336,19 +336,22 @@ exactly.
 \todo{Missing: the symbol $e$ is also the coupling vector of \eqref{eq:setup_truth}. Candidate: rename the coupling vector (Jasper's notation point 1).}
 
 The combinations are compared with their true values $\theta^\star_{\mathrm{base}}$ by
-$\epsilon_j=\lvert\theta_{\mathrm{base},j}-\theta^\star_{\mathrm{base},j}\rvert/\lvert\theta^\star_{\mathrm{base},j}\rvert$.
+$\delta_j=\lvert\theta_{\mathrm{base},j}-\theta^\star_{\mathrm{base},j}\rvert/\lvert\theta^\star_{\mathrm{base},j}\rvert$.
 The small, signed $m_\Delta$ is normalised by the mean actuator mass
 instead.
 This uses the true parameters and is available only in simulation.
 
 The overlaps of Section~\ref{sec:obc} are $\rho$ of \eqref{eq:obc_overlap}
 on the one-step tuples of I1 to I6 at $\bar x=0$.
-The network overlap $\rho(\boldsymbol f^{\mathrm n}_{\mathrm{aug}})$ uses
-$\boldsymbol\Phi$ at the trained coordinates and, for
-$\mathcal M_{\mathrm{OBC}}$, the network after the correction
-\eqref{eq:obc_corr}.
-The truth overlap $\rho(\varepsilon)$ uses the discrepancy
-\eqref{eq:obc_eps}, with $\boldsymbol\Phi$ at $\beta^\star$.
+The network overlap $\rho(F^{\mathrm n}_{\mathrm{aug}})$ uses $\Phi$ at the
+trained coordinates and, for $\mathcal M_{\mathrm{OBC}}$, the network after
+the correction \eqref{eq:obc_corr}.
+The truth overlap $\rho(\Xi)$ uses \eqref{eq:obc_eps}, with $\Phi$ at
+$\beta^\star$.
+The first line of \eqref{eq:obc_recovery} with this $\Xi$ predicts the
+first-order bias of $\mathcal M_{\mathrm{OBC}}$.
+Its $\delta_j$ is compared with the $\delta_j$ of the trained
+$\mathcal M_{\mathrm{OBC}}$.
 
 A difference between two models counts only if it exceeds twice the spread
 over seeds of an earlier campaign with the same settings.

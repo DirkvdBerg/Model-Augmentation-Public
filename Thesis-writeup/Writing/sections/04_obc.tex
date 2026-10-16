@@ -251,20 +251,23 @@ where $\mathcal I$ is the set of tuples, $N=|\mathcal I|$,
 $\Phi\in\R^{6N\times10}$ is evaluated at $\beta_{\mathrm{lin}}$,
 $F^{\mathrm n}_{\mathrm{aug}},\tilde F^{\mathrm n}_{\mathrm{aug}}\in\R^{6N}$
 and $\theta_{\mathrm{aux}}\in\R^{10}$.
-The last line is the orthogonality defined at the start of this section.
-It holds for the stack on the reference tuples at $\bar x=0$, not for each
-tuple separately.
+The projected network output $\tilde F^{\mathrm n}_{\mathrm{aug}}$ therefore
+has no component along any column of $\Phi$, which satisfies our orthogonality 
+definition at the start of this section.
+This holds for the stacked tuples at $\bar x=0$, not for each tuple separately.
 \\
 We use a state-space model predicting the next state instead of the output.
 The fitted part is removed from the neural network correction of the
 physical state at every step in the closed-loop simulation.
-
-Every step subtracts the \kw{regressor times the coefficient, at the state and
-input of that step}, as Gy\"or\"ok et al.\ do for a
-prediction~\cite[Eqs.~(9), (13)]{gyorok2026obc}.
-The baseline has no added states, so its Jacobian is zero in the added-state
-rows and $g^{\mathrm n}_{\mathrm{aug}}$ is orthogonal to it by definition.
-Only the physical rows are therefore corrected:
+At each step, we subtract the Jacobian multiplied by
+$\theta_{\mathrm{aux}}$ from the network correction,
+evaluated at the current state and input.
+Gy\"or\"ok et al.\ apply the same correction to the predicted
+output~\cite[Eqs.~(9), (13)]{gyorok2026obc}.
+The baseline has no added states, so its Jacobian is zero
+in the added-state rows and $g^{\mathrm n}_{\mathrm{aug}}$
+is orthogonal to it by definition.
+We therefore only correct the physical rows:
 % Only the physical rows are corrected, because the baseline has no added-state
 % update:
 \end{wip}
@@ -273,21 +276,22 @@ Only the physical rows are therefore corrected:
  f^{\mathrm n}_{\mathrm{obc}}(\theta_{\mathrm{aug}},\tilde x^{\mathrm n},u^{\mathrm n})
  &=\varphi(\beta_{\mathrm{lin}},\tilde x^{\mathrm n},u^{\mathrm n})\,
   \theta_{\mathrm{aux}}(\theta_{\mathrm{aug}}),\\
- \tilde x^{\mathrm n}_{k+1}
+ \tilde x^{\mathrm n}_{k+1|\tau}
  &=f^{\mathrm n}_{\mathrm{base}}+f^{\mathrm n}_{\mathrm{aug}}-f^{\mathrm n}_{\mathrm{obc}},\\
- \bar x_{k+1}&=g^{\mathrm n}_{\mathrm{aug}},
+ \bar x_{k+1|\tau}&=g^{\mathrm n}_{\mathrm{aug}},
 \end{aligned}
 \label{eq:obc_corr}
 \end{equation}
 \begin{wip}
-where
-$f^{\mathrm n}_{\mathrm{obc}}:\R^{n_{\mathrm{aug}}}\times\R^6\times\R^3\to\R^6$,
-and the other arguments are those of \eqref{eq:aug_loss}, with
-$f^{\mathrm n}_{\mathrm{obc}}$ at $(\tilde x^{\mathrm n}_k,\hat u^{\mathrm n}_k)$.
-The coefficient is differentiated with respect to $\theta_{\mathrm{aug}}$, as
-in~\cite[Eqs.~(9), (10)]{gyorok2026obc}, so that the network receives the
-gradient of its projected output.
 
+where
+$f^{\mathrm n}_{\mathrm{obc}}:\R^{n_{\mathrm{aug}}}\times\R^6\times\R^3\to\R^6$
+is evaluated at $(\tilde x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau})$, and
+$f^{\mathrm n}_{\mathrm{base}}$, $f^{\mathrm n}_{\mathrm{aug}}$ and
+$g^{\mathrm n}_{\mathrm{aug}}$ take the arguments of \eqref{eq:aug_loss}.
+We differentiate $\theta_{\mathrm{aux}}$ with respect to $\theta_{\mathrm{aug}}$, as
+in~\cite[Eqs.~(9), (10)]{gyorok2026obc}, 
+\kw{so} the network is trained using the gradient of its projected output.
 \end{wip}
 \subsection{Identification and recovery}\label{sec:obc_ident}
 \ifdraft
