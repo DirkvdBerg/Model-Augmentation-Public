@@ -4,6 +4,8 @@
 \providecommand{\SetupCrossMax}{}\renewcommand{\SetupCrossMax}{106}% max K1 crossover [Hz]
 \providecommand{\SetupCrossMin}{}\renewcommand{\SetupCrossMin}{75}% min K1 crossover over axes and training Y [Hz], simulated system
 \providecommand{\SetupMotionFNN}{}\renewcommand{\SetupMotionFNN}{24}% max over motion-only training records and axes of the 99 % power frequency of u [Hz]
+% --- band_frf.py
+\providecommand{\SetupClPeak}{}\renewcommand{\SetupClPeak}{267}% closed-loop peak of T_YY with K1, median over training Y [Hz]
 % --- controller_rate.py
 \providecommand{\SetupKcheck}{}\renewcommand{\SetupKcheck}{1.5\cdot10^{-9}}% largest relative RMS, K1 at 20 kHz vs recorded u_fb
 \providecommand{\SetupKmismatchMax}{}\renewcommand{\SetupKmismatchMax}{16.8}% largest relative RMS [%], same
@@ -17,6 +19,10 @@
 \providecommand{\SetupTrainAcc}{}\renewcommand{\SetupTrainAcc}{75}% largest training acceleration [% of max]
 \providecommand{\SetupTrainVel}{}\renewcommand{\SetupTrainVel}{75}% largest training velocity [% of max]
 \providecommand{\SetupTrainY}{}\renewcommand{\SetupTrainY}{0.30}% largest |Y| of a training reference [m]
+% --- filter_edge.py
+\providecommand{\SetupFiltDecay}{}\renewcommand{\SetupFiltDecay}{2.6}% 1 % decay time of the anti-alias filter impulse response [ms]
+\providecommand{\SetupFiltTau}{}\renewcommand{\SetupFiltTau}{0.5}% slowest pole time constant of the anti-alias filter [ms]
+\providecommand{\SetupTrim}{}\renewcommand{\SetupTrim}{5}% samples removed at each record end [ms]
 % --- filter_leak.py
 \providecommand{\SetupAliasFilt}{}\renewcommand{\SetupAliasFilt}{4.0\cdot10^{-11}}% largest RMS of the noise above 2 kHz after the filter [m]
 \providecommand{\SetupAliasRaw}{}\renewcommand{\SetupAliasRaw}{4.6\cdot10^{-9}}% largest RMS of the noise above 2 kHz, unfiltered [m]
@@ -25,6 +31,11 @@
 \providecommand{\SetupDecay}{}\renewcommand{\SetupDecay}{44}% largest 1 % decay time of the PS impulse response [ms]
 \providecommand{\SetupTauMax}{}\renewcommand{\SetupTauMax}{11}% slowest closed-loop time constant over training Y [ms]
 \providecommand{\SetupWindow}{}\renewcommand{\SetupWindow}{100}% training window [ms]
+% --- rail_velocity.py
+\providecommand{\SetupFricVzero}{}\renewcommand{\SetupFricVzero}{1}% friction velocity scale 1/g [mm/s]
+\providecommand{\SetupRailShareMed}{}\renewcommand{\SetupRailShareMed}{87}% median share of samples with |v| >= 3/g, multisine training records [%]
+\providecommand{\SetupRailShareMin}{}\renewcommand{\SetupRailShareMin}{71}% smallest share of samples with |v| >= 3/g, multisine training records, any rail [%]
+\providecommand{\SetupRailVrmsMin}{}\renewcommand{\SetupRailVrmsMin}{7.9}% smallest rail velocity RMS, multisine training records [mm/s]
 % --- rate.py
 \providecommand{\SetupPmGate}{}\renewcommand{\SetupPmGate}{5}% phase-margin gate [deg], D-166 HEURISTIC
 \providecommand{\SetupPmLossFour}{}\renewcommand{\SetupPmLossFour}{3.8}% largest phase-margin loss at 4 kHz vs 20 kHz [deg], 5 training Y, 3 axes

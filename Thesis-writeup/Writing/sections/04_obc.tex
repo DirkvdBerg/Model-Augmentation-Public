@@ -314,32 +314,37 @@ in~\cite[Eqs.~(9), (10)]{gyorok2026obc},
 \item Measures: $\cos$, $\rho$, $\Pi$ \eqref{eq:obc_overlap} (supervisor: orthogonality is measured by the inner product); negation by the cosine with the baseline's one-step increment (D-257); $c_j$ dropped (correlated columns of $\Phi$; the per-parameter bias is \eqref{eq:obc_recovery})
 \end{itemize}
 \fi
-We call $\mathcal M_{\mathrm{OBC}}$ the augmented model of
-Section~\ref{sec:augmentation}, with the added-state initialisation of
-Section~\ref{sec:aug_ps2} and the correction \eqref{eq:obc_corr}.
-\kw{It is identified by \eqref{eq:aug_loss} with \eqref{eq:obc_corr} as the
-physical-state update, and with the trained parameters, cost, optimiser and
-selection of Section~\ref{sec:aug_closed_loop}.
-Since $\theta_{\mathrm{aux}}$ depends on $\theta_{\mathrm{aug}}$, it is solved
-again by \eqref{eq:obc_coef} at every evaluation of $V$.
-Since $\Phi_\Gamma$ depends on $\beta_{\mathrm{lin}}$, we set
-$\beta_{\mathrm{lin}}$ to the current $\beta$ at the start of each epoch and
-hold it within the epoch.
-Each epoch then minimises a fixed objective, while the linearisation point
-follows the estimate.
-Gy\"or\"ok et al.\ update the linearisation point at every iteration or fix it
-at the nominal parameters~\cite[Sec.~4]{gyorok2025l4dc}.
-Updating at every iteration rebuilds $\Phi_\Gamma$ at every evaluation of $V$.
-A fixed point does not apply here, because training also starts from detuned
-parameters (Section~\ref{sec:setup}).
-We therefore adapt their recomputation at the start of each
-epoch~\cite[Remark~2]{gyorok2025l4dc}.
-After the best checkpoint is restored, $\Phi_\Gamma$ is rebuilt at its $\beta$.
-This changes the corrected model, so the polish is compared with the
-validation error after the rebuild.}
-\revnote{The current results compare the polish with the validation error
-measured before the basis is rebuilt. The final runs will measure it after the
-rebuild, as described here.}
+The augmented model is identified as in Section~\ref{sec:aug_closed_loop},
+with the added-state
+initialisation of Section~\ref{sec:aug_ps2}.
+With orthogonality by construction the state update in \eqref{eq:aug_loss} is instead
+the projected state update \eqref{eq:obc_corr}.
+Since $\theta_{\mathrm{aux}}$ depends on $\theta_{\mathrm{aug}}$,
+we solve \eqref{eq:obc_coef} at every evaluation of $V$.
+At the start of each epoch $\beta_{\mathrm{lin}}$ is set to the current $\beta$, 
+and its held fixed during the epoch.
+Gy\"or\"ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration,
+which requires rebuilding $\Phi_\Gamma$ at each evaluation
+of $V$~\cite[Sec.~4]{gyorok2025l4dc}. The other proposed method is to 
+keep $\beta_{\mathrm{lin}}$ fixed at the nominal parameters, 
+assuming these are close to the true parameters~\cite[Sec.~4]{gyorok2025l4dc}.
+Training as stated in Section~\ref{sec:setup} starts from detuned parameters,
+we instead adapt their recomputation 
+at the start of each epoch~\cite[Remark~2]{gyorok2025l4dc}.
+We load the best checkpoint and rebuild $\Phi_\Gamma$ using its $\beta$.
+The polish minimises the same projected objective, with $\Phi_\Gamma$ held
+fixed at this $\beta$.
+The polish is only kept if its validation error is lower.
+
+\revnote{The current results compare the polish with the validation
+error measured before rebuilding $\Phi_\Gamma$.
+The final runs will use the error measured after the rebuild.}
+
+
+
+
+
+
 
 The construction makes the estimate of $\beta$ unique to first order, but not
 equal to the coordinates $\beta^\star\in\R^{10}$ of the true combinations.

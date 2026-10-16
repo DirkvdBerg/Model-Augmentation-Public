@@ -16,6 +16,7 @@ SYMBOL = {"kb_sum": r"$k_{b,\Sigma}$", "cg1": r"$c_{g1}$", "cg2": r"$c_{g2}$", "
           "cb_sum": r"$c_{b,\Sigma}$", "mh": r"$m_h$", "m_total": r"$m_\Sigma$",
           "m_diff": r"$m_\Delta$", "J_eff": r"$J_{\mathrm{eff}}$", "d": r"$d$"}
 COLS = [("R4", "U"), ("R1", "OBC"), ("R5", "U"), ("R2", "OBC")]
+M_ACT_MEAN = 0.5 * (10.2 + 10.7)   # (m1 + m2)/2 [kg], nominal values of Writing/sections/99_appendix.tex tab:nominal_parameters
 
 
 def sci(x):
@@ -29,9 +30,12 @@ def main():
     rel = defaultdict(dict)
     rms = {}
     for r in rows:
-        rel[r["combination"]][r["run"]] = 100 * (float(r["learned"]) / float(r["true"]) - 1)
+        c, true = r["combination"], float(r["true"])
+        # D-259: m_Delta = m1 - m2 (-0.5 kg) is scaled by the mean actuator mass (m1 + m2)/2, the others by |true|
+        scale = M_ACT_MEAN if c == "m_diff" else abs(true)
+        rel[c][r["run"]] = 100 * (float(r["learned"]) - true) / scale
         if r["start"] == "detuned":
-            rel[r["combination"]]["start"] = 100 * (float(r["start_value"]) / float(r["true"]) - 1)
+            rel[c]["start"] = 100 * (float(r["start_value"]) - true) / scale
         rms[r["run"]] = np.mean([float(r[f"test_rms_{a}"]) for a in ("X1", "X2", "Y")])
 
     lines = [r"\setlength{\tabcolsep}{3pt}", r"\begin{tabular}{l r r r r r}", r"\toprule",

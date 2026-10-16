@@ -16,6 +16,9 @@ Run from this folder, one at a time: `conda run -n GraduationProject python <scr
 | `filter_leak.py` | anti-alias rule on y - r (V-B) | training records + twins | `SetupAliasRaw`, `SetupAliasFilt`, `SetupFiltDist` |
 | `loop_memory.py` | window 0.1 s (V-B) | meta.truth (simulation only) | `SetupTauMax`, `SetupDecay`, `SetupWindow` |
 | `controller_rate.py` | K1 re-discretised at 4 kHz (V-B, open todo) | training records | `SetupKcheck`, `SetupKmismatch{Med,Max}` |
+| `filter_edge.py` | 5 ms trim at the record ends (V-B, D-259) | the anti-alias filter only (known filter) | `SetupFiltTau`, `SetupFiltDecay`, `SetupTrim` |
+| `rail_velocity.py` | g = 1000 s/m is Coulomb-like at the excited rail velocities (V-A, D-259) | noise-free training records (simulated states) | `SetupFricVzero`, `SetupRailShare{Min,Med}`, `SetupRailVrmsMin` |
+| `band_frf.py` | band placement: anti-resonance, coupled mode, closed-loop peak inside 106 to 297 Hz; data of Fig. setup_band (V-B, appendix) | meta.truth (simulation only) | `SetupClPeak` |
 | `coverage.py` | training range, E records, coverage figure data (V-B) | all 36 records (references) | `SetupTrain{Y,Vel,Acc}`, `SetupE{Y,Acc,Vel}`, `SetupESixAcc` |
 
 `_setup_common.py`: paths, record loading, the linear models built from `meta.truth` (rigid baseline,
