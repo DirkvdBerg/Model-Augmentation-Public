@@ -274,7 +274,7 @@ over the training records.
 \begin{itemize}
 \item The multisine: grid from the width of the anti-resonance, best crest factor of 30 draws, amplitudes, no record needed scaling
 \item The upper band edge and the band over the frequency response of the simulated system
-\item The five motion types, the operational moves and the operating range of all records
+\item The five types of motion profile, the operational motion profiles of the test records and the operating range of all records
 \end{itemize}
 \fi
 In each channel $c\in\{X,\Theta,Y\}$ of the generalised force, the
@@ -318,12 +318,13 @@ edges.
   \label{fig:setup_band}
 \end{figure}
 
-The five motion types are standstill at a fixed $Y$, slow sweeps of $Y$,
-$X$-$Y$ Lissajous paths, point-to-point moves with S-curve profiles, and
-sine-shaped moves representative of machine operation.
-The operational test records I3 to I6 are sine-shaped routes with $X$ and
-$Y$ together, alternating $X$-only and $Y$-only moves, an S-curve route and
-long strokes.
+The five types of motion profile are standstill at a fixed $Y$, slow
+sweeps of $Y$, $X$-$Y$ Lissajous paths, point-to-point moves with S-curve
+profiles, and operational motion profiles, which are sine-shaped moves
+representative of machine operation.
+The test records I3 to I6 add new operational motion profiles: sine-shaped
+routes with $X$ and $Y$ together, alternating $X$-only and $Y$-only moves,
+an S-curve route and long strokes.
 Table~\ref{tab:setup_records} lists the records, and
 Fig.~\ref{fig:setup_coverage} shows their operating range.
 \begin{table}[t]
@@ -340,16 +341,16 @@ Validation & all five types & 4 of 6 & positions, draws & \\
 \midrule
 I1 & point-to-point & yes & phases, setpoints & \\
 I2 & standstill & yes & position & \\
-I3 & machine move & no$^\dagger$ & motion type & \\
+I3 & operational & no$^\dagger$ & motion type & \\
 I4 & route & no & motion type & \\
 I5 & route & no$^\dagger$ & motion type & \\
 I6 & route & no$^\dagger$ & motion type & \\
 \midrule
 E1 & standstill & yes & $\lvert Y\rvert=\fpeval{round(\SetupEY/\SetupTrainY,1)}\,Y_{\mathrm{tr}}$ & I2\\
-E2 & machine move & no$^\dagger$ & stroke of $Y$ & I3\\
+E2 & operational & no$^\dagger$ & stroke of $Y$ & I3\\
 E3 & route & no$^\dagger$ & acceleration, \SetupEAcc\,\% & I5\\
 E4 & route & no$^\dagger$ & velocity, \SetupEVel\,\% & I6\\
-E6 & machine move & no$^\dagger$ & several, \SetupESixAcc\,\% acc. & I3\\
+E6 & operational & no$^\dagger$ & several, \SetupESixAcc\,\% acc. & I3\\
 \bottomrule
 \end{tabular}
 

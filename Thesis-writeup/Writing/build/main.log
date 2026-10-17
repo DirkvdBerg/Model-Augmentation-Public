@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  17 OCT 2026 18:07
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (MiKTeX 26.2) (preloaded format=pdflatex 2026.3.24)  17 OCT 2026 19:55
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -766,17 +766,17 @@ Overfull \hbox (16.96844pt too wide) detected at line 395
  []
 
 [14]) (sections/05_setup.tex (tables/setup_numbers.tex) (figures/gantry_system_with_absorber.tex) [15]
-LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 268.
+LaTeX Font Info:    Trying to load font information for OMS+pcr on input line 261.
  (C:\Users\20203253\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\omspcr.fd
 File: omspcr.fd 
 )
 LaTeX Font Info:    Font shape `OMS/pcr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 268.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 261.
  [16]) (sections/06_results.tex Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut [17])
-<figures/res_lpv_lti.pdf, id=766, 231.04317pt x 146.8958pt>
+<figures/res_lpv_lti.pdf, id=765, 231.04317pt x 146.8958pt>
 File: figures/res_lpv_lti.pdf Graphic file (type pdf)
 <use figures/res_lpv_lti.pdf>
 Package pdftex.def Info: figures/res_lpv_lti.pdf  used on input line 55.
@@ -790,25 +790,25 @@ Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) (tables/res_structure.tex)
-<figures/res_ps_spectrum.pdf, id=773, 256.75955pt x 148.78436pt>
+<figures/res_ps_spectrum.pdf, id=772, 256.75955pt x 148.78436pt>
 File: figures/res_ps_spectrum.pdf Graphic file (type pdf)
 <use figures/res_ps_spectrum.pdf>
 Package pdftex.def Info: figures/res_ps_spectrum.pdf  used on input line 95.
 (pdftex.def)             Requested size: 252.0pt x 146.03015pt.
-<figures/res_time_trace.pdf, id=774, 234.77274pt x 196.20125pt>
+<figures/res_time_trace.pdf, id=773, 234.77274pt x 196.20125pt>
 File: figures/res_time_trace.pdf Graphic file (type pdf)
 <use figures/res_time_trace.pdf>
 Package pdftex.def Info: figures/res_time_trace.pdf  used on input line 102.
 (pdftex.def)             Requested size: 252.0pt x 210.60385pt.
-<figures/res_frf.pdf, id=775, 238.08197pt x 151.69862pt>
+<figures/res_frf.pdf, id=774, 238.08197pt x 151.69862pt>
 File: figures/res_frf.pdf Graphic file (type pdf)
 <use figures/res_frf.pdf>
 Package pdftex.def Info: figures/res_frf.pdf  used on input line 109.
 (pdftex.def)             Requested size: 252.0pt x 160.56828pt.
- [18 <./figures/res_lpv_lti.pdf>] Including 'wip' comment.
+ [18 <./figures/res_lpv_lti.pdf> <./figures/res_ps_spectrum.pdf>] Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) (tables/res_obc_combinations.tex) [19 <./figures/res_ps_spectrum.pdf> <./figures/res_time_trace.pdf> <./figures/res_frf.pdf>] Including 'wip' comment.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) (tables/res_obc_combinations.tex) [19 <./figures/res_time_trace.pdf> <./figures/res_frf.pdf>] Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
@@ -825,7 +825,10 @@ Package pdftex.def Info: figures/res_generalisation.pdf  used on input line 170.
 ) (sections/07_discussion.tex Including 'wip' comment.
 \openout4 = `comment.cut'.
 
- Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut [20])) (sections/08_conclusion.tex Including 'wip' comment.
+ Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [20])) (sections/08_conclusion.tex Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut) [21 <./figures/res_generalisation.pdf>] Including 'wip' comment.
@@ -867,9 +870,18 @@ Package pdftex.def Info: figures/setup_band.pdf  used on input line 312.
 <figures/setup_coverage.pdf, id=955, 229.1878pt x 242.79445pt>
 File: figures/setup_coverage.pdf Graphic file (type pdf)
 <use figures/setup_coverage.pdf>
-Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 369.
+Package pdftex.def Info: figures/setup_coverage.pdf  used on input line 370.
 (pdftex.def)             Requested size: 252.0pt x 266.9784pt.
- [26 <./figures/res_frf_full.pdf>] [27 <./figures/setup_band.pdf> <./figures/setup_coverage.pdf>] Including 'wip' comment.
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [26 <./figures/res_frf_full.pdf>]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [27 <./figures/setup_band.pdf> <./figures/setup_coverage.pdf>] Including 'wip' comment.
 \openout4 = `comment.cut'.
 
  Straight input of comment.cut. (c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\comment.cut
@@ -910,7 +922,7 @@ Here is how much of TeX's memory you used:
  1141 hyphenation exceptions out of 8191
  89i,17n,97p,1131b,988s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cmextra/cmex8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmib10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msam10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm10.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/20203253/AppData/Local/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on "c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf" (28 pages, 1333492 bytes).
+Output written on "c:\Users\20203253\OneDrive - TU Eindhoven\Graduation Project\Baseline FP model\Baseline-LPV-Augmentation\Thesis-writeup\Writing\build\main.pdf" (28 pages, 1333891 bytes).
 PDF statistics:
  1192 PDF objects out of 1200 (max. 8388607)
  180 named destinations out of 1000 (max. 500000)

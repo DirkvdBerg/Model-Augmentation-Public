@@ -178,50 +178,43 @@ list $f_{v,j}$, $\lambda_j$, $\sigma_{v,j}$ in Appendix~\ref{app:setup_system}.}
 \item Model rate, anti-alias filter and window checked on the simulated loop (appendix)
 \end{itemize}
 \fi
-Each record is a closed-loop simulation of 12~s at $f_{\mathrm s}$ with
-$K_1$.
-It follows one of five motion types, from standstill to sine-shaped moves
-of machine operation (Appendix~\ref{app:setup_records}).
-Except on the sine-shaped moves, a multisine force is injected in each
-channel $X$, $\Theta$, $Y$ of the generalised force.
-Every record exists with and without noise.
-
-The motion profiles excite the low frequencies.
-Up to the crossover of the loop, their servo error lies at least
-\SetupGapSnrMinMotion~dB above the noise.
-The absorber lies above the crossover, so a multisine force is injected
-there.
-Below the crossover, the feedback would suppress it.
-The band therefore starts at the highest crossover of the loop with $K_1$
-over the axes and the training positions, $\fpeval{round(\SetupCrossMax/100,2)}\,f_b$.
-Its upper edge, $2.97\,f_b$, keeps 90\,\% of the difference between the
-frequency responses of the system and the baseline above the crossover
+The data is divided into five types of motion profiles and each record is 12~s
 (Appendix~\ref{app:setup_records}).
-On the simulated system, the band holds the anti-resonance, the coupled
-mode and the closed-loop peak at $\fpeval{round(\SetupClPeak/100,2)}\,f_b$ at all five training
-positions (Fig.~\ref{fig:setup_band}).
-This placement uses the known system and is available only in simulation.
-On a machine, a measured frequency response plays this role.
-
-Of the records, 18 are used for training, 6 for validation and 11 for
-testing (Table~\ref{tab:setup_records} in Appendix~\ref{app:setup_records}).
-Training and validation cover all five motion types within the training
-range $\lvert Y\rvert\le Y_{\mathrm{tr}}$, \SetupTrainAcc\,\% of the acceleration
-limit and \SetupTrainVel\,\% of the velocity limit of the machine.
-The validation records only select the checkpoints and the size of the
-black box.
-The test records separate interpolation, inside this range with new
-positions, phases and motion types, from extrapolation, where each record
-leaves the range in one design setting: position, stroke, acceleration
-limit or velocity limit.
-Results are reported on all three sets, and the comparisons rest on the
-test records.
+The motion profiles excite the low frequencies up till the loop crossover, 
+for at least \SetupGapSnrMinMotion~dB above the noise.
+A multisine force is added to each of the generalized channels $X$,
+$\Theta$, $Y$, except in records with an operational motion profile.
+The force is applied to the actuators through $P^{-1}$.
+The multisine band starts at the highest loop crossover 
+$\fpeval{round(\SetupCrossMax/100,2)}\,f_b$, to prevent feedback suppression.
+The band ends at $2.97\,f_b$, which keeps 90\,\% of the squared
+frequency-response error of the baseline above the crossover. This was 
+measured on the system without noise.
+The band contains the anti-resonance and the
+resonance of the added mass (Fig.~\ref{fig:setup_band}), 
+for all the positions used in training.
+This was determined from the frequency response of the known system model at
+each training position.
+\\
+We use 18 records for training, 6 for validation and 11 for testing
+(Table~\ref{tab:setup_records} in Appendix~\ref{app:setup_records}).
+\revnote{11? and the multinse doubles?}
+Training and validation include all five motion types, with
+$\lvert Y\rvert\le Y_{\mathrm{tr}}$, up to \SetupTrainAcc\,\% of the
+acceleration limit and \SetupTrainVel\,\% of the velocity limit.
+The validation records are used to select the best-performing checkpoints
+and the hyperparameters of the black box.
+We separate the test records into interpolation and extrapolation.
+Interpolation stays within the training range, while each
+extrapolation record exceeds one of the limits on $Y$,
+acceleration or velocity.
+The results for all three sets are reported, but performance is evaluated on
+the test set.
 \todo{Missing: whether E6 (a measured machine move) and the relative limits may be described this way. Candidate: ask Jasper or Dragan.}
-
-The models run at $T_s=0.25$~ms (4~kHz) on training windows of 0.1~s.
-The reduction of the records to this rate, its anti-alias filter and the
-window length are checked on the simulated loop in
-Table~\ref{tab:setup_checks}.
+\\
+The models run at $T_s=0.25$~ms on training windows of 0.1~s.
+The rate, its anti-alias filter and the window length are supported by the
+checks in Table~\ref{tab:setup_checks}.
 
 \subsection{Compared models}\label{sec:setup_models}
 % Sources: THESIS-RESULTS.md "Presentation agreed 2026-10-16"; D-191, D-243 (detuned start);
