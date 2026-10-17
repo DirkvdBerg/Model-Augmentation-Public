@@ -45,18 +45,18 @@
 The system used to obtain the data is simulated. 
 When referring to the system in this section, we refer to this simulated model. 
 The data consist of simulated records, with motion profiles, 
-limits and noise level taken from an industrial gantry whose data are confidential.
+limits and noise level taken from an industrial gantry whose data is confidential.
 Frequencies are therefore given relative to the controller bandwidth
 $f_b$, positions relative to the training range, and velocities and
 accelerations relative to the machine limits.
 The design details and their checks are in Appendix~\ref{app:setup}.
 
-\subsection{Data-generating system}\label{sec:setup_system}
+\subsection{Simulated system}\label{sec:setup_system}
 % Sources: D-204, D-224 (truth), D-188 (absorber), D-223, D-226 (friction gain), D-221 (K1),
 % D-238 (noise); tdg_config.m, gtd_build_plant.m; Code/Setup rail_velocity.py, band_edge.py, snr.py.
 \ifdraft
 \begin{itemize}
-\item The data are simulated: the system is the baseline plus rail friction and a payload absorber, both absent from the baseline
+\item The data is simulated: the system is the baseline plus rail friction and a payload absorber, both absent from the baseline
 \item The friction subtracts from the actuator forces; a smoothed Coulomb law, Coulomb-like on the excited records
 \item The absorber adds one coordinate, coupled through the inertia; matrices written out as in Section~II
 \item Parameter values with their basis; both absorber features lie above the crossover of the loop
@@ -79,9 +79,9 @@ baseline model is not able to represent with its states.
 \begin{figure}[t]
   \centering
   \resizebox{\columnwidth}{!}{\input{figures/gantry_system_with_absorber}}
-  \caption{Simulated gantry with a flexibly mounted part $m_a$ of the
+  \caption{\todo{Simulated gantry with a flexibly mounted part $m_a$ of the
   payload mass $m_h$; the rest of the payload is $m_{h,r}=m_h-m_a$. The
-  light-gray elements $(m_a,k_a,c_a,q_a)$ are absent from the baseline.}
+  light-gray elements $(m_a,k_a,c_a,q_a)$ are absent from the baseline.}}
   \label{fig:gantry_absorber}
 \end{figure}
 With the friction acting against each actuator force on the input, 
@@ -101,7 +101,7 @@ For $\lvert v_i\rvert\gg v_{\mathrm{fr}}$, the friction
 approaches the Coulomb law
 $F_{\mathrm{fr},i}=c_{c,i}\operatorname{sign}(v_i)$
 of~\cite{garcia2013model}.
-With $v_{\mathrm{fr}}=\SetupFricVzero$~mm/s, this was chosen by simulating
+$v_{\mathrm{fr}}=\SetupFricVzero$~mm/s was chosen by simulating
 the loop with values between 0.1 and 10~mm/s.
 \kw{Higher values turn the friction into viscous damping under the multisine,
 and lower values keep the standstill servo error above the noise level.}
@@ -137,7 +137,7 @@ The added mass changes the inertia through $M_a$,
 which also includes its coupling to $\Theta$ and $Y$.
 We simulate the system with fixed-step RK4 at
 $f_{\mathrm s}=20$~kHz.
-All parameters values are listed in Table~\ref{tab:nominal_parameters}.
+All parameter values are listed in Table~\ref{tab:nominal_parameters}.
 The friction levels $c_c$ are taken from Garc\'ia-Herreros et
 al.~\cite[Table~I]{garcia2013model}.
 The added mass creates an anti-resonance
@@ -147,33 +147,24 @@ Both are designed to be above the crossover of the loop with $K_1$
 (Section~\ref{sec:setup_data}).
 As a result, the feedback does not suppress them, and we can identify
 them from the data.
-
-
-The absorber mass $m_a=0.5\,m_h$ makes the baseline error caused by the
-absorber large against the noise floor.
-\todo{Missing: reason for $L_0=0.10$~m (inherited from \texttt{tdg\_config.m}, 
-no reason on record) and a source for 
-$\zeta_a=0.03$. Candidate: $\zeta_a$ the low end of the damping range of 
-jointed metal structures (D-188, web source \texttt{jpe\_structural\_damping}, 
-no cite key).}
-
-The records are closed loop.
-Each stage axis $j$ has one controller $K_{1,j}$ with bandwidth $f_b$,
-designed on the rigid baseline at $Y=0$ (Appendix~\ref{app:setup_system}).
-$K_1$ is the same in every record and is the known controller of
+All data is generated in closed loop with the controller $K_1$ of
+Appendix~\ref{app:setup_system}, which is the known controller of
 Section~\ref{sec:aug_loop}.
-The feedforward $u^{\mathrm{ff}}$ of \eqref{eq:aug_two_loops} is the
-injected excitation force only.
-
-The position measurement carries noise, $y=\qact+v$.
-The components of $v$ are independent and coloured.
-Their standstill servo error matches the level and spectral shape of the
-industrial machine, without its resonances.
-Every record also exists without noise, denoted $y^{\circ}$.
-The signal-to-noise ratio of the servo error is \SetupSnrMinX{} to
-\SetupSnrMaxX~dB on the $X$ rails and \SetupSnrMinY{} to \SetupSnrMaxY~dB
-on $Y$.
-\todo{Missing: what may be named about the machine and its noise. Candidate: ask Jasper or Dragan; if allowed, list $f_{v,j}$, $\lambda_j$, $\sigma_{v,j}$ in Appendix~\ref{app:setup_system}.}
+The only feedforward, $u^{\mathrm{ff}}$ in \eqref{eq:aug_two_loops}, is the
+injected excitation force.
+Independent coloured noise is added to the position measurements
+of each axis, $y=\qact+v$.
+The simulated servo error matches at standstill the noise level
+and spectral shape of the industrial gantry, but its resonances are left
+out (Appendix~\ref{app:setup_system}).
+The servo-error signal-to-noise ratio (SNR) ranges from
+\SetupSnrMinX{} to \SetupSnrMaxX~dB on the $X$ actuators
+and \SetupSnrMinY{} to \SetupSnrMaxY~dB on $Y$, depending on the motion of the record.
+The data is also generated without measurement noise, with output $y^\circ$.
+\todo{dB in combination with RMS migth be sensitive information.}
+\todo{Missing: what may be named about the machine and its noise. 
+Candidate: ask Jasper or Dragan; if allowed, 
+list $f_{v,j}$, $\lambda_j$, $\sigma_{v,j}$ in Appendix~\ref{app:setup_system}.}
 
 \subsection{Records}\label{sec:setup_data}
 % Sources: D-219, D-226 (band), D-221 (split), D-258 (twins), README validation story;
