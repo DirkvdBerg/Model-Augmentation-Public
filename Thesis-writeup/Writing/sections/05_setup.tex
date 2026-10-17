@@ -203,7 +203,7 @@ Training and validation include all five motion types, with
 $\lvert Y\rvert\le Y_{\mathrm{tr}}$, up to \SetupTrainAcc\,\% of the
 acceleration limit and \SetupTrainVel\,\% of the velocity limit.
 The validation records are used to select the best-performing checkpoints
-and the hyperparameters of the black box.
+and the hyperparameters for the black box.
 We separate the test records into interpolation and extrapolation.
 Interpolation stays within the training range, while each
 extrapolation record exceeds one of the limits on $Y$,
@@ -227,8 +227,8 @@ checks in Table~\ref{tab:setup_checks}.
 \item Black box: SUBNET of the closed loop, no physics, no controller, sized on the validation records
 \end{itemize}
 \fi
-Each comparison between the models of Table~\ref{tab:setup_models}
-answers one aspect of the research question.
+The models of Table~\ref{tab:setup_models} are compared in pairs,
+each answering one aspect of the research question.
 The pairs are $\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{LTI}}$
 for the baseline, the final model $\mathcal M_{\mathrm{OBC}}$ with
 $\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{BB}}$ for the
@@ -237,9 +237,8 @@ for the orthogonal construction.
 The extrapolation records compare the final model with the black box
 (Aspect~4).
 $\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{LTI}}$ are the baseline
-at the true parameters without training.
-$\mathcal M_{\mathrm{LTI}}$ freezes $M(Y)$ at $Y=0$, the middle of the
-stroke.
+at the true parameters, with $M(Y)$ taken at $Y=0$ for
+$\mathcal M_{\mathrm{LTI}}$.
 \begin{table}[t]
 \caption{Compared models. Start: the ten combinations at the start of
 training; final model: $\mathcal M_{\mathrm{OBC}}$.}
@@ -258,36 +257,41 @@ $\mathcal M_{\mathrm{BB}}$ & black box & no & no physics\\
 \bottomrule
 \end{tabular}
 \end{table}
-\todo{Missing: model notation. Candidate: the calligraphic names of the table (README open conflict on model names; same \texttt{\textbackslash todo} as in Section~\ref{sec:obc}).}
-
-$\mathcal M_{\mathrm U}$ and $\mathcal M_{\mathrm{OBC}}$ are identified by
-the criterion of Section~\ref{sec:aug_closed_loop} on the same training
-records, with the same settings, budget and checkpoint rule
-(Table~\ref{tab:hyper}).
-Both start the added states by PS (Section~\ref{sec:aug_ps2}).
+\todo{Missing: model notation. Candidate: the calligraphic 
+names of the table (README open conflict on model names; same 
+\texttt{\textbackslash todo} as in Section~\ref{sec:obc}).}
+We identify $\mathcal M_{\mathrm U}$ and $\mathcal M_{\mathrm{OBC}}$
+by minimising the loss of Section~\ref{sec:aug_closed_loop} 
+with the same training setup (Table~\ref{tab:hyper}).
+This includes PS to initialise the added states (Section~\ref{sec:aug_ps2}).
+The parameter combinations $\theta_{\mathrm{base}}$ start 10\,\% larger or
+smaller in magnitude than their true values, and every run uses the same
+signs.
+Appendix~\ref{app:choices} shows the runs used to choose $n_{\bar x}$ and
+the PS initialisation of the added states.
 \revnote{Holds only if the PS screen passes in the final runs (D-271
 relaunch, 2026-10-17); in the cancelled runs with the Adam encoder start PS
 fell back in every run. Check R1 and R4 before the results.}
-Both start the combinations at
-$\theta^0_{\mathrm{base},j}=(1+0.1\,s_j)\,\theta^\star_{\mathrm{base},j}$,
-with signs $s_j\in\{-1,1\}$ that are the same in every run.
-The final model therefore holds no true parameter value, like the black
-box.
-The runs that justify $n_{\bar x}$, PS and the start are in the appendix.
-Every model is trained once, with one seed (compute limit), so the spread
-over seeds is not measured and small differences between models are not
-resolved.
-\todo{Missing: the label of the appendix with the choice-justifying runs, and whether they are compared on the validation records. Candidate: a new appendix section on the validation records (THESIS-RESULTS, recommendation of 2026-10-16, not yet confirmed).}
-
+\todo{Missing: the label of the appendix with the choice-justifying runs, 
+and whether they are compared on the validation records. Candidate: 
+a new appendix section on the validation records (THESIS-RESULTS, recommendation 
+of 2026-10-16, not yet confirmed).}
 The black box $\mathcal M_{\mathrm{BB}}$ is a SUBNET
-model~\cite{beintema2023subnet}, a state-space model with neural maps
-identified on simulation windows.
-It models the closed loop from the reference and the injected force to the
-servo error (Appendix~\ref{app:setup_bb}).
-It uses no physical knowledge and no controller.
-Its state count $n_x$, network widths and learning rate are selected on the
-validation records from 11 configurations, with the data and windows of
-the grey-box models.
+model~\cite{beintema2023subnet} that predicts the closed-loop
+servo error from the reference and injected force,
+without modelling the controller separately
+(Appendix~\ref{app:setup_bb}).
+Its state count, network widths and learning rate are selected
+from 11 configurations using the validation records,
+with the same data and training and encoder window as the grey-box models.
+% The black box $\mathcal M_{\mathrm{BB}}$ is a SUBNET
+% model~\cite{beintema2023subnet} of the closed loop, from the reference and
+% the injected force to the servo error, without a controller
+% (Appendix~\ref{app:setup_bb}).
+% Its state count, network widths and learning rate are selected on the
+% validation records from 11 configurations, with the data and windows of
+% the grey-box models.
+
 \revnote{In the current search, the selected configuration ($n_x=16$, width
 8) had its best validation error at the limit of 20000 updates; the final
 retraining to a validation plateau has not run yet.}

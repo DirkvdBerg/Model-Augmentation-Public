@@ -467,6 +467,8 @@ black-box search.
 The basis of a value is derived (computed in Section~\ref{sec:setup} or Appendix~\ref{app:setup}),
 inherited (from earlier work), tuned (on validation data), heuristic (fixed
 without a measurement) or compute-limited.
+Every model is trained once with one seed, so differences between models
+smaller than the variation between seeds are not resolved.
 \begin{table}[t]
 \caption{Hyperparameters of the identification.}
 \label{tab:hyper}
