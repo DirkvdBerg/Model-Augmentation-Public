@@ -235,6 +235,13 @@ Optional, if compute allows:
 Launch order (Dirk 2026-10-16): priority 1 first (R1, R4 and the R8 grid; the grid runs on CPU beside the GPU runs),
 then priority 2 (R2, R13 first as the longest, then R3, R5, R6, R7, R14).
 
+Launch files: `Thesis-writeup/Code/Server/` (`submit.sh`; `greybox/` job files; `blackbox/` runner and grid; `tables/`
+run table). Logs: `/home/dirk_van_den_berg/logs/augmentation/thesis-results-3`. From the cluster clone:
+`bash Thesis-writeup/Code/Server/submit.sh final-smoke` (gate), then `final-all`; after the runs,
+`THESIS_BB_DIR=<selected R8 output folder> bash Thesis-writeup/Code/Server/submit.sh final-eval` (evaluation on the
+server, every model on every split, then `make_results.py`) (priority 1 tiers,
+then the priority 2 tiers at lower scheduling priority).
+
 Before launch:
 - each run's log line reads `g_aug=mlp/live` and its config.json has `ANN_ARCH=mlp`, `G_INIT=live`,
   `ENCODER_INIT=data_fit`, `NA_NB_OVERRIDE=30`, the NRMS_e measure and, for OBC, `OBC_SPACE=affine`

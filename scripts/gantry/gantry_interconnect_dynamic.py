@@ -303,11 +303,16 @@ if _obc_arm is not None:
 #   THESIS_PS2    0 | 1              D-236: PS2 opening of the added-state part (default 0 = the thesis run)
 #   THESIS_ARCH   mlp | resnet       D-240: g_aug network, default mlp (Jan's tanh MLP, no bypass)
 #   THESIS_INIT   zero | live        D-240: g_aug final layer all zero (default) | added-state rows live
-#   THESIS_ENCODER_FIT_EPOCHS int    D-261 pilot only: encoder pre-fit epochs instead of _ENCODER_FIT_EPOCHS
-# Pilot-set values of the final method (D-261, D-263); see their comments where measured.
-_ENCODER_FIT_EPOCHS = 20      # HEURISTIC (D-261): provisional, replaced by the pilot value
-_LBFGS_TOL_GRAD = 1e-12       # HEURISTIC (D-263): provisional, replaced by the pilot value
-_LBFGS_TOL_CHANGE = 1e-14     # HEURISTIC (D-263): provisional, replaced by the pilot value
+# Set values of the final method (D-261, D-263).
+# HEURISTIC (D-261, Dirk 2026-10-16): Adam epochs of the data-based encoder initialisation. The
+# encoder paper's example (Hoekstra 2026, Sec. 4.3, Table 3) used 50 Adam + 200 L-BFGS-B epochs.
+_ENCODER_FIT_EPOCHS = 20
+# HEURISTIC (D-263, FINAL-RUN-FIXES item 16): the production polish tolerances (1e-12, 1e-14, set for the
+# unweighted loss) kept at the same ratio to the loss. The sigma_e weighting scales the loss by 2.58e7 and the
+# largest gradient entry by 2.60e7 (local pilot 2026-10-16: 128 windows of the full training records, same
+# model, weighted vs unweighted).
+_LBFGS_TOL_GRAD = 2.6e-5
+_LBFGS_TOL_CHANGE = 2.6e-7
 _thesis_arm = os.environ.get('THESIS_ARM')
 if _thesis_arm is not None:
     if _obc_arm is not None:
@@ -363,9 +368,6 @@ if _thesis_arm is not None:
     # Window sweep (TRAINING-DESIGN 1.1): equal Adam updates across windows, set from the pilot.
     if os.environ.get('THESIS_NITS'):
         CFG = replace(CFG, n_its=int(os.environ['THESIS_NITS']))
-    # D-261 pilot only: a longer encoder pre-fit whose printed MSE curve sets _ENCODER_FIT_EPOCHS.
-    if os.environ.get('THESIS_ENCODER_FIT_EPOCHS'):
-        CFG = replace(CFG, encoder_fit_epochs=int(os.environ['THESIS_ENCODER_FIT_EPOCHS']))
     if os.environ.get('THESIS_SMOKE') == '1':
         # Launch test in minutes: 2 s of every record, eager (compilation is checked by the first
         # real run), 4 updates, one validation cadence, a 2-iteration polish.

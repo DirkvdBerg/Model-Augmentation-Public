@@ -62,7 +62,7 @@ Package and framework:
 - D-167 Y-scheduled encoder `W^b(Y)`: not wired; `build_model` calls `gantry_linearize_and_discretize(dt)` with the default `Y_op=0`.
 - `lpv_lfr_baseline/`: reference derivation and verification package, not imported by the training path (`gantry_ss.py` says so).
 - `gantry_dynamic/obc_diagnostics.py`, `diagnostics.py`, `baselines.py`: reporting only.
-- `scripts/gantry/thesis-results/runs.tsv`: tier `karnopp` is by its name the pre-D-230 Karnopp data under the same mode names (not confirmed in a decision; check the job logs); tier `ps2ctl` is retired (D-236); the thesis tiers are `core` and `4` (window sweep).
+- `Thesis-writeup/Code/Server/tables/runs.tsv`: tier `karnopp` is by its name the pre-D-230 Karnopp data under the same mode names (not confirmed in a decision; check the job logs); tier `ps2ctl` is retired (D-236); the thesis tiers are `core` and `4` (window sweep).
 
 ## 3. Concept-to-code map (thesis path)
 

@@ -376,13 +376,32 @@ Where the code differs from sections 3 to 9, and why:
   `submit.sh` and `smoke_all.sbatch` (`SMOKE_TIER`) know them. The THESIS block now runs the final method for
   every THESIS_ARM row, so rows 201 to 217 no longer reproduce their 2026-10-11 runs if resubmitted (stated in
   the submit.sh header).
-- **Pilot values**: `_ENCODER_FIT_EPOCHS`, `_LBFGS_TOL_GRAD`, `_LBFGS_TOL_CHANGE` at the top of the THESIS block
-  are provisional (20, 1e-12, 1e-14) until the pilot (D-261, D-263).
+- **Set values**: `_ENCODER_FIT_EPOCHS = 20` (Dirk 2026-10-16, D-261 amendment; no pilot; the encoder paper's
+  example used 50 Adam + 200 L-BFGS-B epochs). `_LBFGS_TOL_GRAD`, `_LBFGS_TOL_CHANGE` from the local loss-scale
+  pilot (D-263 amendment). Sections 3, 4 and 7 still say "pilot" for the epochs; this line supersedes them.
 - **Evaluation**: `THESIS_EVAL=final` selects the final runs; `RUNS_FINAL` and the final black-box paths in
   `eval_common.py` are empty until the runs exist, and the final run folders are expected under
   `Thesis-writeup/Results/final/thesis_taf_lowpass_noise_data_fit/`. Old preds caches lack `k0` and `sigma_e`;
   `make_results.py` skips a stem until `eval_greybox.py`/`eval_blackbox.py` are rerun.
 - **controller_rate.py**: changed, not run: running it rewrites `SetupKmismatch*` in `Writing/tables/setup_numbers.tex`
   (new `SetupKholdMed`), and the appendix sentence that uses them is Dirk's to update first.
-- **Tests**: the proofs of section 7 are one scratch script (`proofs.py`, session scratchpad), not added to
-  `test_ps2_pipeline.py`/`test_live_comparison.py`.
+- **Tests**: the proofs of section 7 are kept as F1 to F6 in `test_ps2_pipeline.py` (`--final` runs only them).
+- **Launch files moved (Dirk 2026-10-16)** to `Thesis-writeup/Code/Server/`: `submit.sh`; `greybox/run_thesis.sbatch`,
+  `greybox/smoke_all.sbatch`; `blackbox/run_bb_search.sh`, `blackbox/thesis_r8_grid.conf`; `tables/runs.tsv`,
+  `tables/live_compare.tsv`. The runner looks for a grid in `Server/blackbox/` first, then in
+  `blackbox-cl-trainable/runners/` (earlier searches). Logs default to `logs/augmentation/thesis-results-3`.
+  `submit.sh final-smoke | final-all | final-bb`;
+  appendix tiers get `--nice=1000`. Paths in this document's sections 3 to 9 refer to the old locations.
+- **Audit 2 fixes (2026-10-16)**: evaluators keep the saved OBC correction (no re-sync after loading, six
+  scripts); `result.json` records the black-box checkpoint name; the bias stack uses every stored successor;
+  one evaluation cache per campaign with an identity check; physics and start-baseline rows and all three
+  stacks in the evaluation; black-box history written at every validation; `bestfit` = final model's score
+  (`bestfit_selected` kept); test builders pass `e_train`/`e_val`; F1 to F6 kept as regression tests
+  (`test_ps2_pipeline.py --final`); the pre-fit runs on the run's device.
+- **Evaluation on the server (2026-10-16)**: `THESIS_EVAL=final` finds the final runs itself from each run's
+  config.json (`eval_common.discover_runs`: arm, n_a, start, PS2 -> R1 to R14; launch tests and capped runs
+  ignored; a duplicate design raises) in `simulations/gantry_subnet/thesis_taf_lowpass_noise_data_fit`
+  (`THESIS_RUNS_DIR` overrides); `THESIS_BB_DIR` names the selected R8 output folder, from whose
+  `result.json` the checkpoint and deepSI code are read. `submit.sh final-eval` runs
+  `Server/evaluation/run_eval.sbatch` (CPU array: 9 grey-box models, the black box, the overlap/bias/negation task)
+  and then `make_results.py`.

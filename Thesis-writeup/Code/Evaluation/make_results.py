@@ -103,12 +103,16 @@ def structure(split='val'):
     items = [('Baseline, true parameters', 'R5', 'base_true'),
              ('Baseline, detuned start', 'R1', 'base_start'),
              ('Static parallel, $n_a=0$', 'R6', 'model'),
+             # the detuned n_a = 0 pair (THESIS-RESULTS presentation 2026-10-16; final campaign only)
+             ('Static parallel, $n_a=0$, detuned start', 'R14', 'model'),
+             ('Static parallel (OBC), $n_a=0$, detuned start', 'R13', 'model'),
              ('Plain start, $n_a=2$', 'R3', 'model'),
              ('PS start, $n_a=2$', 'R5', 'model'),
              ('PS start, $n_a=2$, physics part only', 'R5', 'physics'),
              ('PS start, $n_a=8$', 'R7', 'model'),
              ('PS start, $n_a=2$, detuned start', 'R4', 'model'),
              ('Final model (OBC), detuned start', 'R1', 'model')]
+    items = [it for it in items if it[1] in RUNS]           # runs this campaign has
     recs = INTERP if split == 'test' else [record_name(n) for n in saved('R5', split)[1]]
     sg = sigma_e(recs, split)
     both = lambda a: [f(v) for v in a.mean(0)] + [f(v) for v in (a / sg).mean(0)]   # noqa: E731
@@ -141,13 +145,16 @@ def spectrum(split='val'):
 
 # ------------------------------------------------------------------ Table II: combinations
 def combinations():
-    """Ten combinations (true, start, learned) and test RMS of R4, R1, R5, R2. `params_init` is
-    the START vector, so the true values come from a correct-start run (both must agree)."""
-    npz = {r: saved(r)[0] for r in ('R4', 'R1', 'R5', 'R2')}
+    """Ten combinations (true, start, learned) and test RMS of R4, R1, R5, R2 and, in the final
+    campaign, the detuned n_a = 0 pair R14 (U), R13 (OBC): parameter recovery without added states
+    (appendix, Jasper point 5). `params_init` is the START vector, so the true values come from a
+    correct-start run (both must agree)."""
+    runs = [r for r in ('R4', 'R1', 'R5', 'R2', 'R14', 'R13') if r in RUNS]
+    npz = {r: saved(r)[0] for r in runs}
     true = npz['R5']['params_init']
     assert np.allclose(true, npz['R2']['params_init'], rtol=1e-12)
     rows = []
-    for run in ('R4', 'R1', 'R5', 'R2'):
+    for run in runs:
         s = npz[run]
         cfg = json.loads(str(s['config']))
         det = cfg.get('COMBO_INIT_DETUNE') or [1.0] * 10

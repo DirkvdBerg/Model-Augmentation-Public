@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=64gb
 #SBATCH -t 24:00:00
-#SBATCH -o /home/dirk_van_den_berg/logs/augmentation/live-init-g-aug/%x_%A_%a.out
+#SBATCH -o /home/dirk_van_den_berg/logs/augmentation/thesis-results-3/%x_%A_%a.out
 
 # One run of the thesis campaign (Thesis-writeup/Documentation/TRAINING-DESIGN.md section 4).
 # Submit through submit.sh, never directly: it passes RUN_TABLE and runs as an array whose task
@@ -16,11 +16,12 @@
 # (D-222), whose "Configuration:" print in the log is authoritative.
 #
 # Expected config: float64, nf=400 (0.1 s; sweep 800 / 1600), batch 512, lr 1e-5, 16x2 tanh,
-#   na_nb=29, nx_ann = THESIS_NA, epochs 200, stride 10, L-BFGS polish 100 iterations history 50,
+#   na_nb=30 (final; 29 before), nx_ann = THESIS_NA, epochs 200, stride 10, L-BFGS polish 100 iterations history 50,
 #   compile_mode=reduce-overhead, device=cuda.
+# Wall time: 24 h here; the OBC tier overrides it to 72 h on the faster partitions (submit.sh).
 #
 # Sanity lines to grep in the output:
-#   "[thesis run] arm=..."                 the run the task id selected
+#   "[thesis run] arm=..."                 the run the task id selected; ends in g_aug=mlp/live (final rows) and PS2|plain
 #   "one bank over 24 records, 1 distinct controllers"   K1 for every record (D-221)
 #   "training rollout COMPILED"            compilation engaged
 #   NO "skipping cudagraphs due to cpu"    CUDA graphs kept their fast path
@@ -37,16 +38,18 @@ export PYTHONUNBUFFERED=1
 export PYTHONIOENCODING=utf-8
 
 # The run: the row of RUN_TABLE whose id is this array task.
-RUN_TABLE="${RUN_TABLE:-scripts/gantry/thesis-results/runs.tsv}"
+RUN_TABLE="${RUN_TABLE:-Thesis-writeup/Code/Server/tables/runs.tsv}"
 ROW=$(awk -F'\t' -v id="${SLURM_ARRAY_TASK_ID:?submit through submit.sh}" 'NR>1 && $1==id' "$RUN_TABLE")
 if [ -z "$ROW" ]; then echo "no run with id ${SLURM_ARRAY_TASK_ID} in ${RUN_TABLE}"; exit 2; fi
-read -r RUN_ID TIER THESIS_ARM THESIS_NOISE THESIS_START THESIS_NA THESIS_SEED THESIS_NF ROW_ARCH ROW_PS2 <<< "$ROW"
+read -r RUN_ID TIER THESIS_ARM THESIS_NOISE THESIS_START THESIS_NA THESIS_SEED THESIS_NF ROW_ARCH ROW_PS2 ROW_INIT <<< "$ROW"
 export THESIS_ARM THESIS_NOISE THESIS_START THESIS_NA THESIS_SEED THESIS_NF
-# Comparison rows specify both choices; legacy eight-column tables retain env defaults.
+# Rows with arch/ps2/init columns set those choices; legacy eight-column rows retain env defaults
+# (entry defaults: mlp, zero, PS2 0).
 if [ -n "$ROW_ARCH" ]; then export THESIS_ARCH="$ROW_ARCH"; fi
 if [ -n "$ROW_PS2" ]; then export THESIS_PS2="$ROW_PS2"; fi
+if [ -n "$ROW_INIT" ]; then export THESIS_INIT="$ROW_INIT"; fi
 echo "run_id=${RUN_ID} tier=${TIER} arm=${THESIS_ARM} noise=${THESIS_NOISE} start=${THESIS_START} na=${THESIS_NA} seed=${THESIS_SEED} nf=${THESIS_NF} smoke=${THESIS_SMOKE:-0} nits=${THESIS_NITS:-<epochs>}"
-echo "architecture=${THESIS_ARCH:-resnet} ps2=${THESIS_PS2:-0}"
+echo "architecture=${THESIS_ARCH:-mlp} init=${THESIS_INIT:-zero} ps2=${THESIS_PS2:-0}"
 
 # Do NOT clear CUDA_VISIBLE_DEVICES here: --gres=gpu:1 sets it to the allocated card, and the
 # config refuses a device index for exactly that reason. Clearing it makes device='cuda' fail.
