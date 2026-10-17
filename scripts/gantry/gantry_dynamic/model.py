@@ -44,7 +44,7 @@ def get_encoder_dims(hp, cfg: RunConfig):
         nb = na
         na_right = 1   # reconstructability map uses y(k), so window is [k-na, k]
         nb_right = 1
-    elif cfg.encoder_init == 'data_fit':
+    elif cfg.encoder_init == 'data_lsq':
         # THEORY: Hoekstra 2026 Eq. (22e), x_k|k from y and u over k-na .. k-1 (D-250): na = nb
         # past samples, the current one excluded.
         na = nb = hp['na_nb']
@@ -243,9 +243,9 @@ def build_model(hp, cfg: RunConfig, data, norm):
             dtype=DTYPE_PT,
             wa_encoder_init=cfg.wa_encoder_init,
         ).to(DTYPE_PT)
-    elif cfg.encoder_init == 'data_fit':
-        # D-251/D-261: random physical rows, fitted to a closed-loop baseline simulation by
-        # prefit_physical_encoder before training. The class reads n+1 samples for its argument n,
+    elif cfg.encoder_init == 'data_lsq':
+        # D-251/D-271: physical rows set to the least-squares map of a closed-loop baseline
+        # simulation by prefit_physical_encoder before training. The class reads n+1 samples for its argument n,
         # so n = na - 1 gives the na-sample window. No mean arguments: no D-055 offsets (FIX-7);
         # A..D are unused by wb_init='random'.
         fit_sys.encoder = linear_encoder_init_aug(
@@ -297,7 +297,7 @@ def build_model(hp, cfg: RunConfig, data, norm):
         raise RuntimeError(
             f'Adam eps mismatch after optimizer construction: config={cfg.adam_eps}, '
             f'optimizer={sorted(eps_values)}')
-    if cfg.encoder_init in ('linear_map', 'data_fit'):
+    if cfg.encoder_init in ('linear_map', 'data_lsq'):
         fit_sys.hfn.to(DTYPE_PT)
     else:
         for net in (fit_sys.encoder, fit_sys.hfn):
@@ -326,18 +326,17 @@ def build_model(hp, cfg: RunConfig, data, norm):
 
 
 def prefit_physical_encoder(fit_sys, cfg: RunConfig, data, norm):
-    """D-251 option A, D-261: fit the PHYSICAL rows of the encoder to a closed-loop baseline simulation.
+    """D-251, D-271: start the PHYSICAL rows of the encoder at the least-squares map of a closed-loop
+    baseline simulation.
 
     The model at its start (theta^0, f_aug = 0) is simulated in closed loop over every training
     record, from the measured positions with zero velocities, zero added states and zero controller
     state. A temporary callable around `fit_sys.hfn` records the state before each step and the
     corrected input of that step; `fit_sys.hfn` itself is never replaced and the rollout is the
-    pipeline's own. The encoder is then fitted on windows (y_hat, u_cl) of the na samples before tau
-    to the simulated physical state at tau (Hoekstra 2026 Eq. 30), training W^b, the hidden layers and
-    the physical output rows; W^a and the added-state output rows and bias are left unchanged.
+    pipeline's own. The windows (y_hat, u_cl) of the na samples before tau and the simulated physical
+    state at tau then give the least-squares map of encoder paper Eq. (33) (`least_squares_start`);
+    the hidden layers, W^a and the added-state rows are left unchanged.
     """
-    if cfg.encoder_fit_epochs == 0:
-        return
     # Runs on the run's device, as fit() does (model.py::train_model): the rollout over every
     # training record is the cost, minutes on the GPU against about 25 min on four CPU cores. The
     # model goes back to the CPU afterwards, where build_model left it.
@@ -356,7 +355,6 @@ def _prefit(fit_sys, cfg, data, norm):
     if sim is None:
         raise RuntimeError('the encoder pre-fit needs the closed loop: call build_closed_loop first')
     nx, na, nb, stride = cfg.nx_phys, fit_sys.na, fit_sys.nb, cfg.stride
-    final = enc.net[-1]
     dtype, dev = next(enc.parameters()).dtype, next(enc.parameters()).device
     T = lambda a: torch.as_tensor(np.ascontiguousarray(a), dtype=dtype, device=dev)   # noqa: E731
     rv = lambda a: np.asarray(a, np.float64).ravel()                      # noqa: E731
@@ -405,35 +403,65 @@ def _prefit(fit_sys, cfg, data, norm):
         yh_all.append(y_hat[:, starts[:, None] + torch.arange(na, device=dev)].flatten(0, 1))
         xt_all.append(X[:, starts + max(na, nb), :nx].flatten(0, 1))
     uh, yh, xt = torch.cat(uh_all), torch.cat(yh_all), torch.cat(xt_all)
+    print('[encoder start] %d windows from %d records' % (len(xt), len(sdl)), flush=True)
+    least_squares_start(enc, nx, uh, yh, xt)
 
-    params = [enc.Wb_psi_y, enc.Wb_psi_u] + [p for layer in enc.net for p in layer.parameters()]
+
+# HEURISTIC (D-271, Dirk): readiness of the start, every physical state reconstructed with R^2 >= 0.999 on
+# the simulated windows; the accurate start of the ablation (F1) reached about 1e-7, the failing ones 0.04 to 8.8.
+_START_MAX_UNEXPLAINED = 1e-3
+
+
+def least_squares_start(enc, nx, uh, yh, xt):
+    """D-271: set the physical rows of the encoder to the least-squares map x ~ W [yh; uh] + b.
+
+    Encoder paper Eq. (33) with an intercept, on centred and per-column scaled regressors, solved in float64
+    on the CPU by LAPACK gelsd (SVD) at the PyTorch default cutoff max(N, m) eps (a numerical convention):
+    the numerical-rank-truncated SVD solution in standardised regressors. W^b takes W; the physical output
+    rows of psi_tilde get zero weights and a bias carrying the intercept (minus the encoder's own constant,
+    the D-055 offsets), so the physical part of the encoder is exactly the affine map. W^a and the
+    added-state rows are left unchanged. Stops the run (RuntimeError) if any value is not finite, if the
+    encoder does not reproduce the solved predictions, or if a state is reconstructed with R^2 < 0.999.
+    """
+    final = enc.net[-1]
     wa_before = (enc.Wa_psi_y.detach().clone(), enc.Wa_psi_u.detach().clone())
-    opt = torch.optim.Adam(params, lr=cfg.encoder_fit_lr)
-    gen = torch.Generator().manual_seed(cfg.seed)        # the global RNG streams stay untouched
-    bs = cfg.batch_size
-
-    def mse():
-        with torch.no_grad():
-            return float(torch.mean((enc(uh, yh)[:, :nx] - xt) ** 2))
-
-    print('[encoder pre-fit] %d windows from %d records, start MSE %.4e (normalised states)'
-          % (len(xt), len(sdl), mse()), flush=True)
-    for ep in range(cfg.encoder_fit_epochs):
-        for ix in torch.randperm(len(xt), generator=gen).to(dev).split(bs):
-            opt.zero_grad()
-            loss = torch.mean((enc(uh[ix], yh[ix])[:, :nx] - xt[ix]) ** 2)
-            loss.backward()
-            # Added-state output rows and their bias stay zero (thesis eq:aug_init); a zero gradient
-            # with zero Adam moments gives an exactly zero step.
-            final.weight.grad[nx:] = 0.0
-            final.bias.grad[nx:] = 0.0
-            opt.step()
-        if (ep + 1) % max(1, cfg.encoder_fit_epochs // 10) == 0 and ep + 1 < cfg.encoder_fit_epochs:
-            print('[encoder pre-fit] epoch %d, MSE %.4e' % (ep + 1, mse()), flush=True)
-    print('[encoder pre-fit] %d epochs, end MSE %.4e' % (cfg.encoder_fit_epochs, mse()), flush=True)
+    cpu = lambda a: a.detach().to('cpu', torch.float64)                   # noqa: E731
+    Phi, X = cpu(torch.cat([yh.flatten(1), uh.flatten(1)], 1)), cpu(xt)  # the encoder's own input order
+    if not (torch.isfinite(Phi).all() and torch.isfinite(X).all()):
+        raise RuntimeError('the encoder start windows contain non-finite values')
+    mu, s, x_mu = Phi.mean(0), Phi.std(0, unbiased=False), X.mean(0)
+    s = torch.where(s > 0, s, torch.ones_like(s))
+    rcond = torch.finfo(torch.float64).eps * max(Phi.shape)
+    sol = torch.linalg.lstsq((Phi - mu) / s, X - x_mu, rcond=rcond, driver='gelsd')
+    W = sol.solution / s[:, None]
+    b = x_mu - mu @ W
+    pred = Phi @ W + b
+    if not (torch.isfinite(W).all() and torch.isfinite(b).all() and torch.isfinite(pred).all()):
+        raise RuntimeError('the least-squares encoder start is not finite')
+    sv = sol.singular_values
+    ny_h = yh[0].numel()
+    with torch.no_grad():
+        p = next(enc.parameters())
+        enc.Wb_psi_y.copy_(W[:ny_h].T.to(p))
+        enc.Wb_psi_u.copy_(W[ny_h:].T.to(p))
+        final.weight[:nx] = 0.0
+        final.bias[:nx] = 0.0
+        final.bias[:nx] = b.to(p) - enc(uh[:1] * 0, yh[:1] * 0)[0, :nx]
+        got = cpu(enc(uh, yh)[:, :nx])
+    unexplained = ((pred - X) ** 2).mean(0) / X.var(0, unbiased=False)
+    print('[encoder start] least squares: %d regressors, rank %d, condition %.3e; unexplained per state %s'
+          % (Phi.shape[1], int(sol.rank), float(sv[0] / sv[-1]), ' '.join('%.2e' % v for v in unexplained)),
+          flush=True)
+    if not torch.allclose(got, pred, rtol=0.0, atol=1e-6 * float(X.std(0, unbiased=False).min())):
+        raise RuntimeError('the encoder does not reproduce the least-squares map (max deviation %.3e)'
+                           % float((got - pred).abs().max()))
+    if not (unexplained <= _START_MAX_UNEXPLAINED).all():
+        raise RuntimeError('encoder start not ready: a physical state is reconstructed with R^2 < %.3f (%s)'
+                           % (1 - _START_MAX_UNEXPLAINED, ' '.join('%.2e' % v for v in unexplained)))
     if not (torch.equal(wa_before[0], enc.Wa_psi_y) and torch.equal(wa_before[1], enc.Wa_psi_u)
             and not final.weight[nx:].any() and not final.bias[nx:].any()):
-        raise RuntimeError('the encoder pre-fit moved W^a or an added-state output row')
+        raise RuntimeError('the encoder start moved W^a or an added-state output row')
+    return W, b
 
 
 def train_model(fit_sys, hp, cfg: RunConfig, data, epochs=None, nf=None, validation_measure=None):

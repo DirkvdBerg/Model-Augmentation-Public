@@ -63,7 +63,7 @@ def discover_runs(runs_dir):
 if _FINAL:
     # where the server writes them (config.save_dir); THESIS_RUNS_DIR if they were copied elsewhere
     RUNS_DIR = Path(os.environ.get('THESIS_RUNS_DIR',
-                                   REPO / 'simulations' / 'gantry_subnet' / 'thesis_taf_lowpass_noise_data_fit'))
+                                   REPO / 'simulations' / 'gantry_subnet' / 'thesis_taf_lowpass_noise_data_lsq'))   # D-271
     RUNS = discover_runs(RUNS_DIR)
     # the selected R8 configuration's output folder (run_bb_search.sh OUT), chosen after the grid
     _bb = os.environ.get('THESIS_BB_DIR')
@@ -84,7 +84,7 @@ else:
     BB_RESULT = TW / 'Results' / '11-10-2026' / 'Black-box' / 'thesis_r8_grid' / '3_nx16_w08_n20000_88757' / 'result.json'
 # One prediction cache per campaign, so the two can never be mixed (audit 2026-10-16); readers
 # check the stored identity with check_identity.
-CACHE = TW / 'Results' / 'thesis-eval' / ('final' if _FINAL else '')
+CACHE = TW / 'Results' / 'thesis-eval' / (('final-' + RUNS_DIR.name) if _FINAL else '')   # one cache per campaign (D-271)
 
 
 def check_identity(name, d):

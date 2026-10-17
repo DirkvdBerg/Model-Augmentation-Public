@@ -7,7 +7,7 @@
 #SBATCH --mem=16gb
 #SBATCH -t 24:00:00
 #SBATCH --array=0-17
-#SBATCH -o /home/dirk_van_den_berg/logs/augmentation/thesis-results-3/bb_search_%A_%a.out
+#SBATCH -o /home/dirk_van_den_berg/logs/augmentation/thesis-results-4/bb_search_%A_%a.out
 
 # Black-box hyperparameter search, batch 1 (DECISIONS.md BB2-029). One array index = one line of
 # runners/search_grid.conf (same index). NOT SUBMITTED by the session that wrote it.

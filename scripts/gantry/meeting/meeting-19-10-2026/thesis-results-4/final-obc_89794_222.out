@@ -1,0 +1,125 @@
+run_id=222 tier=final-obc arm=obc noise=lowpass start=correct na=2 seed=1 nf=0.1 smoke=0 nits=<epochs>
+architecture=mlp init=live ps2=1
+cache_key=ubuntu22.04-x86_64
+job_id=89796 array=89794_222
+node_list=blade3 partition=hawaii
+cpus_per_task=4
+cuda_visible_devices=0
+Sat Oct 17 01:59:55 PM CEST 2026
+=== GPU info (float64 speed depends on the card) ===
+name, memory.total [MiB], driver_version
+Quadro RTX 6000, 24576 MiB, 590.48.01
+=== host CPU (t_step tracks HOST dispatch, not the GPU) ===
+CPU(s):                                  64
+On-line CPU(s) list:                     0-63
+Model name:                              AMD EPYC 7302 16-Core Processor
+Thread(s) per core:                      2
+Core(s) per socket:                      16
+Socket(s):                               2
+NUMA node0 CPU(s):                       0-15,32-47
+NUMA node1 CPU(s):                       16-31,48-63
+=== toolchain (inductor needs gcc and triton) ===
+/usr/bin/gcc
+gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0
+triton 3.1.0
+=== git (the code this run used) ===
+fatal: not a git repository (or any parent up to mount point /)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+fatal: not a git repository (or any parent up to mount point /)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+=== gantry_interconnect_dynamic, thesis run 222 ===
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=obc noise=lowpass start=correct n_a=2 seed=1 nf=0.100 s detune=None g_aug=mlp/live  PS2
+Data dir (thesis_taf_lowpass_noise): /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/Thesis-writeup/Data/Coulomb-tanh-and-MSD-lowpass-noise
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+
+Configuration:
+  PROVENANCE:  git unavailable (CalledProcessError) and no GIT_SHA in the environment: this run has NO code provenance
+               run_id 89796   save=True
+               /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/simulations/gantry_subnet/thesis_taf_lowpass_noise_data_lsq/89796
+  DATA:        thesis_taf_lowpass_noise   20000 -> 4000 Hz (D=5)   stride=10
+               nf=400 (0.1 s)   na_nb=30 (7.50 ms)   batch=512
+  MODEL:       encoder=data_lsq   ann=tanh   nx_ann=2   16x2   up_sample=1
+               ann_arch=mlp   g_init=live   wa_encoder_init=xavier_uniform_gain1
+               ann_route_ix=(0, 1, 2, 3, 4, 5, 6, 7)
+  OBJECTIVE:   rollout=closed loop   obc=ON (one-step, space=affine, refresh=epoch)
+               joint=True   param_init=true values   noise=None (noiseless)
+  OPTIM:       lr=1e-05   adam_eps=1.0e-16   epochs=200   seed=1   float64
+  EXEC:        device=cuda (Quadro RTX 6000)   checkpoint=OFF (whole rollout graph)
+               compile=reduce-overhead   [training rollout only; validation + diagnostics stay eager]
+
+Default hyperparameters (may be overridden by checkpoint):
+  NX_ANN: 2
+  n_nodes_per_layer: 16
+  n_hidden_layers: 2
+  up_sample: 1
+  nf: 400
+  na_nb: 30
+  batch_size: 512
+  lr: 1e-05
+  epochs: 200
+[obc] reference set: 863190 tuples from 18 records (47955/47955/47955/47955/47955/47955/47955/47955/47955/47955/47955/47955/47955/47955/47955/47955/47955/47955 per record), stride 1, 6.3 s to build
+[obc]   Y coverage: min -0.3001 max +0.3001 mean +0.0003 std 0.1812 m; hot tensors 138.1 MB
+[obc] attached: protected rows (0, 1, 2, 3, 4, 5) (ANN cols (0, 1, 2, 3, 4, 5)), 863190 reference tuples, space=affine, refresh=epoch, solve float64, rollout torch.float64
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [8.0554e+06 8.2528e+06 4.2749e+06] N/m
+[closed loop] training rollout COMPILED: backend=inductor mode=reduce-overhead fullgraph=True
+[closed loop] validation and diagnostics stay EAGER (they use fs.hfn directly)
+
+Loss rollout: CLOSED loop (known controller wrapped around the model)
+[obc] refresh at epoch 0: vbar=+0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00 +0.0000e+00
+  J: 5179140 x 11, rank 11/11 at tol 1.623e-09 (rtol 1.150e-09), cond 1.1381e+01, build 2.9 s, svd 0.4 s
+  singular values: 1.4117e+00 1.2656e+00 1.2096e+00 1.1305e+00 1.0054e+00 9.9427e-01 9.8231e-01 9.1995e-01 7.6070e-01 5.0944e-01 1.2404e-01
+  SVD coordinates: columns scaled to unit 2-norm; norms below and all basis products are in original coordinates
+  column norms:    kb_sum=4.362e+00 cg1=3.984e+00 cg2=5.348e+00 cy=9.975e-01 cb_sum=1.037e+00 mh=2.772e+01 m_total=2.257e+01 m_diff=2.915e+00 J_eff=2.435e+02 d=4.615e+01 f_bar=2.283e+03
+  largest |column correlations|: cg1~cg2=-0.9822, mh~m_total=-0.5266, cb_sum~f_bar=-0.4093, mh~J_eff=+0.3451, m_total~J_eff=+0.2121, J_eff~d=-0.2049
+  r_J = 0.000e+00 (vs first basis), r_J_step = 0.000e+00 (vs previous)
+[encoder start] 86274 windows from 18 records
+[encoder start] least squares: 180 regressors, rank 128, condition 3.169e+16; unexplained per state 1.96e-18 5.08e-13 3.79e-20 6.76e-12 8.22e-09 3.82e-13
+
+Training: nf=400  epochs=200  val=sim-NRMSe  NX_ANN=2
+
+[nf] rms = RMS over nf=400 (0.100 s) windows, closed loop, metres
+     chan = per-channel X/Theta/Y | grow = RMS(last step)/RMS(first) | bias = mean residual
+     train = all windows since the last validation, running mean | val = 256 fixed windows, snapshot
+     metre weighting is NOT the objective's, which weights channels by 1/sigma_e^2 per record (D-256);
+     numbers are not comparable ACROSS loop modes, the [nf gap] ratios are
+Model already initilized (init_model_done=True), skipping initilizing of the model, the norm and the creation of the optimizer
+Size of the training array =  1.6 GB!
+Consider using online_construct=True (in loss_kwargs) or let make_training_data return a Dataset to reduce data-usage
+N_training_samples = 85572, batch_size = 512, N_batch_updates_per_epoch = 167
+    [nf val  ] rms 1.750e-05  chan 3.0e-06/2.9e-06/3.0e-05  grow 1.51x  bias -7.8e-09/-2.7e-08/-1.3e-08  (256 win)
+    [nf gap  ] val_sim 1.507e-05 m = 0.86x val_nf (horizon)
+    [select  ] validation score 3.9195e-01 (the selection measure)
+    [x_aug   ] ||x_aug|| end-of-rollout  mean 1.089e-01  std 6.645e-02  max 2.928e-01
+    [joint-probe] combo-err 0.00% (worst kb_sum +0.0%) | param_loss 0.000e+00
+      [combos] kb_sum=3.9750e+03 (+0.00%) | cg1=1.4500e+01 (+0.00%) | cg2=2.0300e+01 (+0.00%) | cy=1.0000e+01 (+0.00%) | cb_sum=1.8000e+01 (+0.00%)
+      [combos] mh=1.0100e+01 (+0.00%) | m_total=4.3700e+01 (+0.00%) | m_diff=-5.0000e-01 (+0.00%) | J_eff=3.7964e+00 (+0.00%) | d=1.0000e-01 (+0.00%)
+      [obc] space affine | basis rank 11/11 (epoch 0) | overlap rho 0.0000 | r_perp 0.000e+00
+      [obc] ||theta_aux|| 0.0000e+00 (11 coefficients) | alpha +0.0000e+00 | ||F_ann|| 0.0000e+00
+Initial Validation sim-NRMSe= 0.3919511481322982
+[ps2] opening started: M 30, calibration records ['TR-S5', 'TR-Y3', 'TR-P4', 'TR-T4'], spec {"aux_batch": 64, "lr": 0.001, "eval_every": 25, "s1_min": 100, "s1_cap": 350, "s1_tol": 0.02, "s1_window": 4, "screen_at": 150, "screen_max": 0.9, "n_cal": 128, "n_snap": 8192, "n_snap_cal": 2048, "s2_batch": 512, "s2_check": 100, "s2_min": 500, "s2_cap": 8000, "s2_tol": 0.01, "seed": 1}

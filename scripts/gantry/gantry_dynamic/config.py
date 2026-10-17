@@ -62,13 +62,10 @@ class RunConfig:
     # --- Track: 'joint' (broadband [1,200] Hz) or 'augmentation' (narrowband [130,180] Hz) ---
     mode: str = 'augmentation'
     # encoder_init: 'linear_map' = Hoekstra 2026 reconstructability init (trainable);
-    #               'data_fit'   = random encoder, physical rows fitted to a closed-loop baseline
-    #                              simulation before training, past-only window (D-250, D-251, D-261);
+    #               'data_lsq'   = physical rows start at the least-squares map of a closed-loop baseline
+    #                              simulation, past-only window (D-250, D-251, D-271);
     #               'default'    = standard deepSI learned encoder
     encoder_init: str = 'linear_map'
-    # D-261: epochs and Adam rate of the 'data_fit' pre-fit; 0 epochs = no pre-fit.
-    encoder_fit_epochs: int = 0
-    encoder_fit_lr: float = 1e-3   # HEURISTIC: Adam's customary rate; the budget is set from the pilot
     # ann_activation: 'linear' = Identity activation (Jan's ECC setup, D-071); 'tanh' = nonlinear ANN
     ann_activation: str = 'tanh'
     # D-240: learning function g_aug. ann_arch: 'mlp' = Jan's tanh MLP; 'resnet' = MLP plus linear
@@ -386,14 +383,11 @@ class RunConfig:
                 "wa_encoder_init must be 'legacy_kaiming' or 'xavier_uniform_gain1', got %r"
                 % (self.wa_encoder_init,)
             )
-        if self.encoder_init not in ('linear_map', 'data_fit', 'default'):
-            raise ValueError("encoder_init must be 'linear_map', 'data_fit' or 'default', got %r"
+        if self.encoder_init not in ('linear_map', 'data_lsq', 'default'):
+            raise ValueError("encoder_init must be 'linear_map', 'data_lsq' or 'default', got %r"
                              % (self.encoder_init,))
-        if self.wa_encoder_init != 'legacy_kaiming' and self.encoder_init not in ('linear_map', 'data_fit'):
-            raise ValueError('wa_encoder_init applies only when encoder_init is linear_map or data_fit')
-        if self.encoder_fit_epochs < 0 or self.encoder_fit_lr <= 0:
-            raise ValueError('encoder_fit_epochs must be >= 0 and encoder_fit_lr > 0, got %r, %r'
-                             % (self.encoder_fit_epochs, self.encoder_fit_lr))
+        if self.wa_encoder_init != 'legacy_kaiming' and self.encoder_init not in ('linear_map', 'data_lsq'):
+            raise ValueError('wa_encoder_init applies only when encoder_init is linear_map or data_lsq')
         if self.loss_weighting not in ('none', 'servo'):
             raise ValueError("loss_weighting must be 'none' or 'servo', got %r" % (self.loss_weighting,))
         if self.validation_measure not in ('sim-RMS', 'sim-NRMSe'):
@@ -785,9 +779,7 @@ def config_json_dict(cfg: RunConfig, git: Optional[str] = None) -> dict:
         # with the raw .mat record: loader sample i = recorded sample (i + RECORD_TRIM) * D.
         Y_DECIMATION=y_decimation(cfg),
         RECORD_TRIM=record_trim(cfg),
-        # Appended 2026-10-16: the final-run method (D-252, D-256, D-261 to D-263).
-        ENCODER_FIT_EPOCHS=cfg.encoder_fit_epochs,
-        ENCODER_FIT_LR=cfg.encoder_fit_lr,
+        # Appended 2026-10-16: the final-run method (D-252, D-256, D-262, D-263).
         LOSS_WEIGHTING=cfg.loss_weighting,
         VALIDATION_MEASURE=cfg.validation_measure,
         LBFGS_METERS_GATE=cfg.lbfgs_meters_gate,

@@ -303,10 +303,7 @@ if _obc_arm is not None:
 #   THESIS_PS2    0 | 1              D-236: PS2 opening of the added-state part (default 0 = the thesis run)
 #   THESIS_ARCH   mlp | resnet       D-240: g_aug network, default mlp (Jan's tanh MLP, no bypass)
 #   THESIS_INIT   zero | live        D-240: g_aug final layer all zero (default) | added-state rows live
-# Set values of the final method (D-261, D-263).
-# HEURISTIC (D-261, Dirk 2026-10-16): Adam epochs of the data-based encoder initialisation. The
-# encoder paper's example (Hoekstra 2026, Sec. 4.3, Table 3) used 50 Adam + 200 L-BFGS-B epochs.
-_ENCODER_FIT_EPOCHS = 20
+# Set values of the final method (D-263).
 # HEURISTIC (D-263, FINAL-RUN-FIXES item 16): the production polish tolerances (1e-12, 1e-14, set for the
 # unweighted loss) kept at the same ratio to the loss. The sigma_e weighting scales the loss by 2.58e7 and the
 # largest gradient entry by 2.60e7 (local pilot 2026-10-16: 128 windows of the full training records, same
@@ -340,13 +337,13 @@ if _thesis_arm is not None:
         _detune = [float(1.0 + 0.10 * s) for s in _signs]
     # Final method (2026-10-16, Thesis-writeup/Documentation/FINAL-RUN-FIXES.md,
     # tasks/final-run-code-changes-2026-10-16.md): past-only 30-sample encoder window with a
-    # data-fitted physical part (D-250, D-251, D-261), OBC on span[Phi Gamma] over tuples with a
+    # least-squares physical start (D-250, D-251, D-271), OBC on span[Phi Gamma] over tuples with a
     # successor (D-252, D-257), loss, selection and polish on NRMS_e (D-256, D-262, D-263).
     _THESIS_FIXED = dict(
         joint_estimation=True, physics_parameterization='reduced', param_init_detune=None,
         param_prior=False, orth=False, obc_space='affine', obc_ref_successor=True,
         n_nodes_per_layer=16, n_hidden_layers=2,
-        encoder_init='data_fit', na_nb_override=30, encoder_fit_epochs=_ENCODER_FIT_EPOCHS,
+        encoder_init='data_lsq', na_nb_override=30,
         use_f64=True, lr=1e-5, batch_size=512, stride=10, epochs=200,
         loss_weighting='servo', validation_measure='sim-NRMSe',
         closed_loop=True, lbfgs=True, lbfgs_max_iter=100, lbfgs_history=50, start_phase='adam',
@@ -372,8 +369,7 @@ if _thesis_arm is not None:
         # Launch test in minutes: 2 s of every record, eager (compilation is checked by the first
         # real run), 4 updates, one validation cadence, a 2-iteration polish.
         CFG = replace(CFG, truncate_s=2.0, compile_mode=None, n_its=4, its_per_val=4,
-                      lbfgs_inner_iter=1, lbfgs_max_iter=2, lbfgs_windows=256,
-                      encoder_fit_epochs=min(CFG.encoder_fit_epochs, 1))
+                      lbfgs_inner_iter=1, lbfgs_max_iter=2, lbfgs_windows=256)
     if os.environ.get('THESIS_DEVICE') == 'cpu':
         CFG = replace(CFG, device='cpu', compile_mode=None)
     print('[thesis run] arm=%s noise=%s start=%s n_a=%d seed=%d nf=%.3f s detune=%s%s'
@@ -443,9 +439,9 @@ def main():
             train_files=data.train_files, val_files=data.val_files, val_data=data.val_ckpt_data,
             e_train=data.e_train, e_val=data.e_val)
         print('\nLoss rollout: CLOSED loop (known controller wrapped around the model)')
-        # D-261: the data-based encoder start needs the controller bank; a resume restores the
+        # D-271: the data-based encoder start needs the controller bank; a resume restores the
         # fitted encoder instead.
-        if cfg.encoder_init == 'data_fit' and resume_ckpt is None:
+        if cfg.encoder_init == 'data_lsq' and resume_ckpt is None:
             prefit_physical_encoder(fit_sys, cfg, data, norm)
     else:
         print('\nLoss rollout: OPEN loop (plant input replayed; simulator = None)')

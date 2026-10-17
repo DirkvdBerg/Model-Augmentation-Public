@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=64gb
 #SBATCH -t 24:00:00
-#SBATCH -o /home/dirk_van_den_berg/logs/augmentation/thesis-results-3/%x_%A_%a.out
+#SBATCH -o /home/dirk_van_den_berg/logs/augmentation/thesis-results-4/%x_%A_%a.out
 
 # One run of the thesis campaign (Thesis-writeup/Documentation/TRAINING-DESIGN.md section 4).
 # Submit through submit.sh, never directly: it passes RUN_TABLE and runs as an array whose task

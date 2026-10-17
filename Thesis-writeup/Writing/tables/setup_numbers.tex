@@ -27,6 +27,11 @@
 \providecommand{\SetupAliasFilt}{}\renewcommand{\SetupAliasFilt}{4.0\cdot10^{-11}}% largest RMS of the noise above 2 kHz after the filter [m]
 \providecommand{\SetupAliasRaw}{}\renewcommand{\SetupAliasRaw}{4.6\cdot10^{-9}}% largest RMS of the noise above 2 kHz, unfiltered [m]
 \providecommand{\SetupFiltDist}{}\renewcommand{\SetupFiltDist}{2.3\cdot10^{-9}}% largest RMS change of the noise-free output by the rule [m]
+% --- gap_snr.py
+\providecommand{\SetupGapSnrMedMotion}{}\renewcommand{\SetupGapSnrMedMotion}{65}% median SNR 24-105 Hz, training records without multisine [dB]
+\providecommand{\SetupGapSnrMedMs}{}\renewcommand{\SetupGapSnrMedMs}{56}% median SNR 24-105 Hz, training records with multisine [dB]
+\providecommand{\SetupGapSnrMinMotion}{}\renewcommand{\SetupGapSnrMinMotion}{59}% min SNR 24-105 Hz, training records without multisine [dB]
+\providecommand{\SetupGapSnrMinMs}{}\renewcommand{\SetupGapSnrMinMs}{49}% min SNR 24-105 Hz, training records with multisine [dB]
 % --- loop_memory.py
 \providecommand{\SetupDecay}{}\renewcommand{\SetupDecay}{44}% largest 1 % decay time of the PS impulse response [ms]
 \providecommand{\SetupTauMax}{}\renewcommand{\SetupTauMax}{11}% slowest closed-loop time constant over training Y [ms]

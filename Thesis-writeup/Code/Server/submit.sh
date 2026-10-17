@@ -4,7 +4,7 @@
 #
 # FINAL CAMPAIGN (THESIS-RESULTS.md section 4, final settings 2026-10-16; lowpass data, seed 1, mlp +
 # live g_aug; the entry's THESIS block holds the final method, tasks/final-run-code-changes-2026-10-16.md).
-# Logs: $LOG_DIR, default /home/dirk_van_den_berg/logs/augmentation/thesis-results-3. In this order:
+# Logs: $LOG_DIR, default /home/dirk_van_den_berg/logs/augmentation/thesis-results-4. In this order:
 #   bash .../submit.sh final-smoke     the gate: GPU launch test of every final row type (ids 231-240), one job
 #   bash .../submit.sh final-all       everything, main results first: R1 (221) and R4 (224), the R8
 #                                      black-box grid, then the appendix runs R2, R13 (222, 229) and
@@ -49,7 +49,7 @@ set -eo pipefail
 cd "$(dirname "$0")/../../.."
 TABLE=Thesis-writeup/Code/Server/tables/runs.tsv
 SBATCH_FILE=Thesis-writeup/Code/Server/greybox/run_thesis.sbatch
-LOG_DIR="${LOG_DIR:-/home/dirk_van_den_berg/logs/augmentation/thesis-results-3}"
+LOG_DIR="${LOG_DIR:-/home/dirk_van_den_berg/logs/augmentation/thesis-results-4}"   # D-271 relaunch; the Adam-start campaign is in thesis-results-3
 mkdir -p "$LOG_DIR"
 LOG="${LOG_DIR}/%x_%A_%a.out"
 

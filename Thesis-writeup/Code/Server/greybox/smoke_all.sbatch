@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=64gb
 #SBATCH -t 02:00:00
-#SBATCH -o /home/dirk_van_den_berg/logs/augmentation/thesis-results-3/%x_%j.out
+#SBATCH -o /home/dirk_van_den_berg/logs/augmentation/thesis-results-4/%x_%j.out
 
 # ONE job that launch-tests every row type of the thesis campaign (THESIS-RESULTS.md section 4):
 # the tier "thesis-smoke" rows of runs.tsv, run one after another with THESIS_SMOKE=1 (2 s records,
@@ -24,7 +24,7 @@
 # PS2|plain as listed; PS2 rows print "[ps2] opening completed" or a fall-back reason.
 #
 # Submit from the repo root (SLURM does not create the log folder):
-#   mkdir -p /home/dirk_van_den_berg/logs/augmentation/thesis-results-3
+#   mkdir -p /home/dirk_van_den_berg/logs/augmentation/thesis-results-4
 #   sbatch Thesis-writeup/Code/Server/greybox/smoke_all.sbatch
 
 set -o pipefail       # deliberately not -e: one failing row must not stop the others

@@ -1,0 +1,58 @@
+task=10 arm=LSQ seed=1
+job_id=89778 array=89778_10 node_list=blade6 partition=molokai
+name, memory.total [MiB]
+NVIDIA A100 80GB PCIe, 81920 MiB
+Sat Oct 17 11:21:24 CEST 2026
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[thesis run] arm=u noise=lowpass start=detuned n_a=2 seed=1 nf=0.100 s detune=[0.9, 1.1, 1.1, 1.1, 0.9, 0.9, 1.1, 1.1, 0.9, 0.9] g_aug=mlp/live  PS2
+[ablation] arm LSQ seed 1: encoder=data_fit na_nb=30 g_init=live loss_weighting=servo validation=sim-NRMSe n_its=375
+Data dir (thesis_taf_lowpass_noise): /dataB1/dirk_van_den_berg/repos/LPV-LFR-Baseline-Augmentation/Thesis-writeup/Data/Coulomb-tanh-and-MSD-lowpass-noise
+y decimation (D-232): r + zero-phase Butterworth 8 at 1600 Hz on y - r, then [::5]; 20 samples dropped at both record ends (u, y and every field)
+Loaded val augmented GT: x_logical=(47960, 6)  delta_a std=4.875e-05 m  vdelta_a std=6.888e-02 m/s
+Loaded 18 train, 6 val, 12 test trajectories
+  T1: 47960 samples  (Training/TR-S1_r1.mat)
+  T2: 47960 samples  (Training/TR-S2_r1.mat)
+  T3: 47960 samples  (Training/TR-S3_r1.mat)
+  T4: 47960 samples  (Training/TR-S4_r1.mat)
+  T5: 47960 samples  (Training/TR-S5_r1.mat)
+  T6: 47960 samples  (Training/TR-Y1_r1.mat)
+  T7: 47960 samples  (Training/TR-Y2_r1.mat)
+  T8: 47960 samples  (Training/TR-Y3_r1.mat)
+  T9: 47960 samples  (Training/TR-P1_r1.mat)
+  T10: 47960 samples  (Training/TR-P2_r1.mat)
+  T11: 47960 samples  (Training/TR-P3_r1.mat)
+  T12: 47960 samples  (Training/TR-P4_r1.mat)
+  T13: 47960 samples  (Training/TR-L1_r1.mat)
+  T14: 47960 samples  (Training/TR-L2_r1.mat)
+  T15: 47960 samples  (Training/TR-T1_r1.mat)
+  T16: 47960 samples  (Training/TR-T2_r1.mat)
+  T17: 47960 samples  (Training/TR-T3_r1.mat)
+  T18: 47960 samples  (Training/TR-T4_r1.mat)
+[closed loop] one bank over 24 records, 1 distinct controllers, Y_op [0.0]
+[closed loop] stepped at ts = 0.00025 s (4000 Hz), nc = 9 states
+[closed loop] diag(Dc) physical [8.0554e+06 8.2528e+06 4.2749e+06] N/m
+[closed loop] training rollout COMPILED: backend=inductor mode=reduce-overhead fullgraph=True
+[closed loop] validation and diagnostics stay EAGER (they use fs.hfn directly)
+[lsq] 86274 windows, per-state MSE in normalised states (order of the model state vector)
+[lsq] least squares (Eq. 33):  2.743e-08 4.703e-03 2.604e-10 2.631e-03 9.220e-01 2.696e-05  | mean 1.5489e-01
+[lsq] encoder before the fit:  1.534e+00 1.765e+00 6.179e-01 1.234e+00 2.328e+00 1.429e+00  | mean 1.4846e+00
+[encoder pre-fit] 86274 windows from 18 records, start MSE 1.4846e+00 (normalised states)
+[encoder pre-fit] epoch 2, MSE 4.9041e-01
+[encoder pre-fit] epoch 4, MSE 4.4174e-01
+[encoder pre-fit] epoch 6, MSE 3.2286e-01
+[encoder pre-fit] epoch 8, MSE 3.0518e-01
+[encoder pre-fit] epoch 10, MSE 2.6219e-01
+[encoder pre-fit] epoch 12, MSE 1.8754e-01
+[encoder pre-fit] epoch 14, MSE 1.8802e-01
+[encoder pre-fit] epoch 16, MSE 1.6389e-01
+[encoder pre-fit] epoch 18, MSE 1.6390e-01
+[encoder pre-fit] 20 epochs, end MSE 1.5480e-01
+[lsq] Adam  20 epochs (prod): 1.604e-04 8.370e-01 1.040e-04 9.319e-03 6.856e-02 1.366e-02  | mean 1.5480e-01
+[lsq] Adam  50 epochs:        1.524e-05 4.002e-02 2.005e-05 4.739e-03 5.138e-02 1.040e-02  | mean 1.7762e-02
+[lsq] Adam 100 epochs:        1.607e-05 8.710e-02 1.269e-05 3.107e-03 4.598e-02 6.016e-03  | mean 2.3706e-02
+[lsq] Adam 200 epochs:        2.259e-05 9.603e-03 6.404e-06 1.227e-03 4.161e-02 2.401e-03  | mean 9.1449e-03
+Sat Oct 17 11:24:53 CEST 2026
+done

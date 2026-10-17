@@ -39,14 +39,14 @@
 \section{Experiment design}\label{sec:setup}
 \ifdraft
 \begin{itemize}
-\item Opening: system, records, compared models, metrics; design details and checks in Appendix~\ref{app:setup}
+\item Opening: the records are simulated on a model of a confidential industrial gantry; quantities are given relative; design details and checks in Appendix~\ref{app:setup}
 \end{itemize}
 \fi
-This section gives the data-generating system
-(Section~\ref{sec:setup_system}), the records and their split
-(Section~\ref{sec:setup_data}), the compared models
-(Section~\ref{sec:setup_models}) and the metrics
-(Section~\ref{sec:setup_metrics}).
+The records are simulated on a model of an industrial gantry whose data
+are confidential.
+Frequencies are therefore given relative to the controller bandwidth
+$f_b$, positions relative to the training range, and velocities and
+accelerations relative to the machine limits.
 The design details and their checks are in Appendix~\ref{app:setup}.
 
 \subsection{Data-generating system}\label{sec:setup_system}
@@ -118,41 +118,26 @@ with
 \end{equation*}}
 where $M(Y)$ is \eqref{eq:mass_matrix} with $m_h$ the total head mass, of
 which $m_a$ moves relative to the head, $\ell=L_0+q_a$, and $L_0$ is the
-offset of the absorber along $Y$.
+offset of the absorber along $Y$, and $k_a=m_a(2\pi f_a)^2$ and
+$c_a=2\zeta_a\sqrt{k_am_a}$ for the natural frequency $f_a$ and the damping
+ratio $\zeta_a$.
 The absorber enters through the inertia, by $E$ and $b_a$, and through its
 own spring and damper.
 The system is integrated by fixed-step RK4 at $f_{\mathrm s}=20$~kHz.
 
-Table~\ref{tab:setup_truth} gives the parameters that the baseline lacks.
-The baseline parameters are those of Appendix~\ref{app:params}.
+All parameter values are listed in Table~\ref{tab:nominal_parameters}.
+The friction levels $c_c$ are those identified by Garc\'ia-Herreros et
+al.~\cite[Table~I]{garcia2013model}.
 Seen from the head, $f_a$ is an anti-resonance.
-It and the coupled mode lie above the crossover of the loop
+The coupled mode lies at $f_a\sqrt{1+m_a/(m_h-m_a)}\approx2.12\,f_b$.
+Both lie above the crossover of the loop with $K_1$
 (Section~\ref{sec:setup_data}), so the feedback does not suppress them.
-\begin{table}[t]
-\caption{Parameters that the baseline lacks.}
-\label{tab:setup_truth}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}lll@{}}
-\toprule
-Parameter & Value & Basis\\
-\midrule
-$c_c$ ($X_1$, $X_2$, $Y$) & 16.80, 18.35, 11.60~N & \cite[Table~I]{garcia2013model}\\
-$v_{\mathrm{fr}}$ & \SetupFricVzero~mm/s & chosen\\
-$m_a$ & $0.5\,m_h$ & chosen\\
-$L_0$ & 0.10~m & chosen\\
-$f_a$ & 150~Hz & chosen\\
-$\zeta_a$ & 0.03 & jointed metal\\
-$k_a$, $c_a$ & $m_a(2\pi f_a)^2$, $2\zeta_a\sqrt{k_am_a}$ & derived\\
-Coupled mode & $f_a\sqrt{1+m_a/(m_h-m_a)}\approx212$~Hz & derived\\
-\bottomrule
-\end{tabular}
-\end{table}
-\todo{Missing: reason for $m_a=0.5\,m_h$, $L_0=0.10$~m and $f_a=150$~Hz (inherited from \texttt{tdg\_config.m}, no reason on record), and a source for $\zeta_a$. Candidate: $m_a$ large enough that the mode carries a learnable share of the baseline error (D-170, D-188); $\zeta_a$ the low end of the damping range of jointed metal structures (D-188, web source \texttt{jpe\_structural\_damping}, no cite key).}
+The absorber mass $m_a=0.5\,m_h$ makes the baseline error caused by the
+absorber large against the noise floor.
+\todo{Missing: reason for $L_0=0.10$~m (inherited from \texttt{tdg\_config.m}, no reason on record) and a source for $\zeta_a=0.03$. Candidate: $\zeta_a$ the low end of the damping range of jointed metal structures (D-188, web source \texttt{jpe\_structural\_damping}, no cite key).}
 
 The records are closed loop.
-Each stage axis $j$ has one controller $K_{1,j}$ with 100~Hz bandwidth,
+Each stage axis $j$ has one controller $K_{1,j}$ with bandwidth $f_b$,
 designed on the rigid baseline at $Y=0$ (Appendix~\ref{app:setup_system}).
 $K_1$ is the same in every record and is the known controller of
 Section~\ref{sec:aug_loop}.
@@ -175,8 +160,8 @@ on $Y$.
 \ifdraft
 \begin{itemize}
 \item A record: 12~s in closed loop with $K_1$, one of five motion types, a multisine added except on the operational moves; noisy and noise-free
-\item The multisine band starts at the highest crossover of the loop and holds the absorber features of the simulated system (simulation only)
-\item Split 18 / 6 / 11; validation only selects; every reported number on the test records
+\item The motion profiles excite up to the crossover above the noise; the multisine band starts at the highest crossover, ends at 90\,\% of the model difference and holds the absorber features of the simulated system (simulation only)
+\item Split 18 / 6 / 11; validation only selects; results on all three sets, comparisons on the test records
 \item Test records by layer: interpolation, operational motion, extrapolation in one setting, stress record E6, multisine twins for evaluation only
 \item Model rate, anti-alias filter and window checked on the simulated loop (appendix)
 \end{itemize}
@@ -190,58 +175,36 @@ channel $X$, $\Theta$, $Y$ of the generalised force.
 Every record exists with and without noise.
 
 The motion profiles excite the low frequencies.
-The multisine has to excite the absorber, but below the crossover of the
-loop the feedback suppresses an injected force.
-Its band of 106 to 297~Hz therefore starts at the highest crossover of the
-loop with $K_1$ over the axes and the training positions,
-\SetupCrossMax~Hz.
-Its upper edge keeps 90\,\% of the difference between the frequency
-responses of the system and the baseline above the crossover
+Up to the crossover of the loop, their servo error lies at least
+\SetupGapSnrMinMotion~dB above the noise.
+The absorber lies above the crossover, so a multisine force is injected
+there.
+Below the crossover, the feedback would suppress it.
+The band therefore starts at the highest crossover of the loop with $K_1$
+over the axes and the training positions, $\fpeval{round(\SetupCrossMax/100,2)}\,f_b$.
+Its upper edge, $2.97\,f_b$, keeps 90\,\% of the difference between the
+frequency responses of the system and the baseline above the crossover
 (Appendix~\ref{app:setup_records}).
 On the simulated system, the band holds the anti-resonance, the coupled
-mode and the closed-loop peak at \SetupClPeak~Hz at all five training
+mode and the closed-loop peak at $\fpeval{round(\SetupClPeak/100,2)}\,f_b$ at all five training
 positions (Fig.~\ref{fig:setup_band}).
 This placement uses the known system and is available only in simulation.
 On a machine, a measured frequency response plays this role.
 
 Of the records, 18 are used for training, 6 for validation and 11 for
-testing (Fig.~\ref{fig:setup_coverage}).
-Training covers $\lvert Y\rvert\le\SetupTrainY$~m, accelerations up to
-\SetupTrainAcc\,\% and velocities up to \SetupTrainVel\,\% of the machine
-limits.
-The validation records use new positions and new random draws.
-They only select the checkpoints and the size of the black box.
-Every reported number is computed on the test records of
-Table~\ref{tab:setup_records}, which test interpolation, operational motion
-and range extrapolation separately.
-Each extrapolation record changes one design setting against an
-interpolation record.
-E6 differs from I3 in more than one property and is reported as a stress
-record.
+testing (Table~\ref{tab:setup_records} in Appendix~\ref{app:setup_records}).
+Training and validation cover all five motion types within the training
+range $\lvert Y\rvert\le Y_{\mathrm{tr}}$, \SetupTrainAcc\,\% of the acceleration
+limit and \SetupTrainVel\,\% of the velocity limit of the machine.
+The validation records only select the checkpoints and the size of the
+black box.
+The test records separate interpolation, inside this range with new
+positions, phases and motion types, from extrapolation, where each record
+leaves the range in one design setting: position, stroke, acceleration
+limit or velocity limit.
+Results are reported on all three sets, and the comparisons rest on the
+test records.
 \todo{Missing: whether E6 (a measured machine move) and the relative limits may be described this way. Candidate: ask Jasper or Dragan.}
-\begin{table}[t]
-\caption{Test records. The twins add the training multisine, at 0.30 of
-its amplitude for the pair I6, E4.}
-\label{tab:setup_records}
-\centering
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}llll@{}}
-\toprule
-Record & Motion & Multisine & Tests\\
-\midrule
-I1 & training type & yes & new phases and setpoints\\
-I2 & standstill & yes & new position\\
-I3 to I6 & machine-like & no & operational motion\\
-E1 & as I2 & yes & position, $\lvert Y\rvert=\SetupEY$~m\\
-E2 & as I3 & no & stroke of $Y$\\
-E3 & as I5 & no & acceleration limit, \SetupEAcc\,\%\\
-E4 & as I6 & no & velocity limit, \SetupEVel\,\%\\
-E6 & machine move & no & stress, \SetupESixAcc\,\% acceleration\\
-I3M to E6M & twins & yes & absorber band on every pair\\
-\bottomrule
-\end{tabular}
-\end{table}
 
 The models run at $T_s=0.25$~ms (4~kHz) on training windows of 0.1~s.
 The reduction of the records to this rate, its anti-alias filter and the
@@ -260,7 +223,7 @@ Table~\ref{tab:setup_checks}.
 \end{itemize}
 \fi
 Each comparison between the models of Table~\ref{tab:setup_models}
-answers one aspect of the research question (last column).
+answers one aspect of the research question.
 The pairs are $\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{LTI}}$
 for the baseline, the final model $\mathcal M_{\mathrm{OBC}}$ with
 $\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{BB}}$ for the
@@ -273,20 +236,20 @@ at the true parameters without training.
 $\mathcal M_{\mathrm{LTI}}$ freezes $M(Y)$ at $Y=0$, the middle of the
 stroke.
 \begin{table}[t]
-\caption{Compared models. $\theta^0_{\mathrm{base}}$: start of the ten
-combinations; final model: $\mathcal M_{\mathrm{OBC}}$.}
+\caption{Compared models. Start: the ten combinations at the start of
+training; final model: $\mathcal M_{\mathrm{OBC}}$.}
 \label{tab:setup_models}
 \centering
 \footnotesize
-\begin{tabular}{@{}lllll@{}}
+\begin{tabular}{@{}llll@{}}
 \toprule
-Model & $n_{\bar x}$ & OBC & $\theta^0_{\mathrm{base}}$ & Aspect\\
+Model & Added states & OBC & Start\\
 \midrule
-$\mathcal M_{\mathrm{LPV}}$ & 0 & no & true, untrained & 1, 2\\
-$\mathcal M_{\mathrm{LTI}}$ & 0 & no & true at $Y=0$, untrained & 1\\
-$\mathcal M_{\mathrm{U}}$ & 2 & no & detuned & 3\\
-$\mathcal M_{\mathrm{OBC}}$ & 2 & yes & detuned & 2, 3, 4\\
-$\mathcal M_{\mathrm{BB}}$ & \multicolumn{3}{l}{black box, Appendix~\ref{app:setup_bb}} & 2, 4\\
+$\mathcal M_{\mathrm{LPV}}$ & 0 & no & true, untrained\\
+$\mathcal M_{\mathrm{LTI}}$ & 0 & no & true, untrained\\
+$\mathcal M_{\mathrm{U}}$ & 2 & no & 10\,\% detuned\\
+$\mathcal M_{\mathrm{OBC}}$ & 2 & yes & 10\,\% detuned\\
+$\mathcal M_{\mathrm{BB}}$ & black box & no & no physics\\
 \bottomrule
 \end{tabular}
 \end{table}
