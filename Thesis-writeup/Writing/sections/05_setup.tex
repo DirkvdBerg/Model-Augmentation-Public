@@ -311,16 +311,12 @@ width 16, rate $10^{-3}$, validation NRMS$_e$ 0.501).}
 \item The two predictions of Section~\ref{sec:obc}: the network stays out of the parameter directions, and the remaining parameter error is the first-order bias
 \end{itemize}
 \fi
-Each grey-box model is simulated in closed loop with $K_1$
-(Section~\ref{sec:aug_loop}) over each whole test record, from the encoder
-estimate at the record start.
-The black box is simulated in free run over the same records.
-
-The reference is given, so a model has to predict the servo error $y-r$.
-The primary metric is therefore the RMS of the simulation error per stage
-axis $j$ relative to the standard deviation of the servo error.
-Beside it, the RMS in metres and the noise floor of the record are
-reported:
+All models are evaluated based on its output simulated over the full records. 
+Since the reference is known, we compare the predicted servo error
+with the recorded servo error $y-r$.
+The primary metric is the NRMS of~\cite[Eq.~(43)]{beintema2023subnet},
+adapted by using the servo error as output.
+We also report the RMS in metres and the noise floor:
 \begin{equation}
 \begin{aligned}
  \mathrm{RMS}_j&=\Bigl(\frac{1}{N-n}\sum_{k=n}^{N-1}(\hat y_{j,k}-y_{j,k})^2\Bigr)^{1/2},\\
@@ -329,13 +325,34 @@ reported:
 \end{aligned}
 \label{eq:setup_rms}
 \end{equation}
-where $N$ is the record length, $n$ the encoder window, and
-$\sigma_{e,j}$ is the standard deviation of the servo error $y_j-r_j$ over
-the same samples.
-Since $\hat y-y=(\hat y-r)-(y-r)$, $\mathrm{NRMS}_{e,j}$ is the NRMS
-of~\cite[Eq.~(43)]{beintema2023subnet} with the servo error as output.
-A value of 100\,\% means no better than $\hat y=r$.
-The floor is the error of an exact noise-free prediction.
+where $j$ is the stage axis, $N$ the record length, $n$ the encoder
+window length and $\sigma_{e,j}$ the standard deviation of the servo error
+$y_j-r_j$ over the same samples.
+An NRMS of 100\,\% means the model performs no better than $\hat y=r$.
+The noise floor is the RMS difference between the measured and noise-free
+outputs.
+\\
+The parameter error of combination $j$ is
+\begin{equation}
+ \delta_j=\frac{\lvert\theta_{\mathrm{base},j}-\theta^\star_{\mathrm{base},j}\rvert}{s_j},
+ \qquad
+ s_j=\begin{cases}
+  (m_1+m_2)/2, & \theta_{\mathrm{base},j}=m_\Delta,\\
+  \lvert\theta^\star_{\mathrm{base},j}\rvert, & \text{otherwise},
+ \end{cases}
+ \label{eq:setup_delta}
+\end{equation}
+where the true value of $m_\Delta=m_1-m_2$ is close to zero,
+so we scale its error by the mean actuator mass $(m_1+m_2)/2$ instead.
+\\
+For the orthogonal construction of Section~\ref{sec:obc}, the overlap
+$\rho$ of \eqref{eq:obc_overlap} is computed on the one-step tuples of I1 to
+I6 at $\bar x=0$, for the network of $\mathcal M_{\mathrm U}$, the corrected
+network of $\mathcal M_{\mathrm{OBC}}$ and the missing dynamics $\Xi$.
+The first-order parameter error from $\Xi$ in \eqref{eq:obc_recovery}
+is scaled using \eqref{eq:setup_delta} and compared with
+the $\delta_j$ of the trained $\mathcal M_{\mathrm{OBC}}$.
+
 \revnote{The current evaluation reports the RMS in metres per record and
 axis; $\mathrm{NRMS}_{e,j}$ is computed from these outside the evaluation
 code.}
@@ -346,31 +363,6 @@ Following~\cite[Eq.~(43)]{beintema2023subnet}, which leaves out the outputs
 that fed the encoder, the sums run from $k=n+1$ with $1/(N-n-1)$; the code
 of the final runs scores from that sample. $\sigma_{e,j}$ is the population
 standard deviation over the same samples (D-262).}
-
-The combinations are compared with their true values
-$\theta^\star_{\mathrm{base}}$ by
-$\delta_j=\lvert\theta_{\mathrm{base},j}-\theta^\star_{\mathrm{base},j}\rvert/\lvert\theta^\star_{\mathrm{base},j}\rvert$.
-For $m_\Delta=m_1-m_2$, the denominator is the mean actuator mass
-$(m_1+m_2)/2$ instead.
-Its true value of $-0.5$~kg is close to zero, while it acts in $M(Y)$
-beside the actuator masses.
-This uses the true parameters and is available only in simulation.
-
-Section~\ref{sec:obc} predicts two properties of
-$\mathcal M_{\mathrm{OBC}}$.
-Both are measured on the one-step tuples of I1 to I6 at $\bar x=0$.
-The first is that the network stays out of the parameter directions.
-It is measured by the overlap $\rho$ of \eqref{eq:obc_overlap}, with $\Phi$
-at the trained coordinates, for $F^{\mathrm n}_{\mathrm{aug}}$ of
-$\mathcal M_{\mathrm U}$ and for $\tilde F^{\mathrm n}_{\mathrm{aug}}$ of
-\eqref{eq:obc_corr} for $\mathcal M_{\mathrm{OBC}}$.
-The second is that the remaining parameter error is the first-order bias of
-\eqref{eq:obc_recovery}.
-Its first line, with $\Xi$ of \eqref{eq:obc_eps} and $\Phi$ at
-$\beta^\star$, predicts the $\delta_j$ of the trained
-$\mathcal M_{\mathrm{OBC}}$.
-The truth overlap $\rho(\Xi)$ measures how far the missing dynamics lie in
-the parameter directions.
 \revnote{The predicted first-order bias is not yet computed for the current
 runs.}
 \revnote{Final runs (D-268, Dirk 2026-10-16): the overlaps and the predicted
