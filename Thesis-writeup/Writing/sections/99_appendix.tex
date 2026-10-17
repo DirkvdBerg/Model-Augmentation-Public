@@ -519,6 +519,14 @@ Selection & lowest validation RMS & heuristic\\
 \bottomrule
 \end{tabular}
 \end{table}
+\revnote{Final runs, rows to update: L-BFGS tolerance (grad., change)
+$2.6\times10^{-5}$, $2.6\times10^{-7}$ (D-263, production ratio to the
+weighted loss); held-out records: last per class with at least 3 records;
+black box: all 11 configurations to 80000 updates, objective and selection on
+validation NRMS$_e$ (D-264). New row, encoder start: least squares of
+\cite[Eq.~(33)]{hoekstra2026encoder}, the numerical-rank-truncated SVD
+solution in standardised regressors, cutoff $\max(N,m)\,\epsilon$ (the
+PyTorch default), convention (D-271).}
 \todo{Missing: a stated reason for the rows marked heuristic without one in \texttt{docs/decisions.md} (window stride, batch, RK4 steps, the PS rules). Candidate: keep them as heuristic, with D-234 as the source of the PS rules (prototype runs).}
 \todo{Missing: the black-box rows are the search grid of \texttt{thesis\_r8\_grid.conf}; the selected configuration is not known yet. Candidate: add a row with the selected $n_x$, width and rate once R8 has run.}
 

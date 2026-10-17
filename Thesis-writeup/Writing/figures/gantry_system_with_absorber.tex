@@ -80,7 +80,7 @@
     % ==== payload m_h on its wheels ====
     \draw[fill=white] (\Yp-\Lh/2,\vh-\Hh/2) rectangle (\Yp+\Lh/2,\vh+\Hh/2);
     \draw (\Yp-7,\hb+\rw) circle (\rw)  (\Yp+7,\hb+\rw) circle (\rw);
-    \node at (\Yp,\vh) {$m_h$};
+    \node at (\Yp,\vh) {\ifnum\gantryabsorber>0 $m_{h,r}$\else $m_h$\fi};
 
     % ==== payload absorber: mass m_a, spring k_a, damper c_a ====
     % Drawn entirely in grey: not part of the baseline, only of the simulated

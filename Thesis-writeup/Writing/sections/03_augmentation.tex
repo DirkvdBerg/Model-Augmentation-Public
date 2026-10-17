@@ -577,6 +577,9 @@ $\chi^0_\tau$ is formed as we do in \eqref{eq:aug_encoder}
 using $\hat y^{\mathrm n,0}$ and $\hat u^{\mathrm n,0}$.
 $\mathcal D$ is the set of samples $\tau$ in the training
 records for which a complete window is available.
+\revnote{Final runs: $\mathcal D$ holds every 10th $\tau$, the training
+stride (Table~\ref{tab:hyper}). Proposed: ``$\mathcal D$ is the set of window
+ends $\tau$ at the training stride of 10 samples.'' The rest keeps $\tau$.}
 We use the closed-loop input from \eqref{eq:aug_enc_sim}, instead of the 
 recorded input as in~\cite[Eq.~(30)]{hoekstra2026lfr}.
 The fitting loss in \eqref{eq:aug_enc_fit} and $\theta^{b,0}_{\mathrm{enc}}$
@@ -596,6 +599,17 @@ reconstructability map~\cite[Eqs.~(15) to (17)]{hoekstra2026encoder} of the
 baseline linearised at rest at $Y=0$, and start
 the whole output layer of $\tilde\psi$ at zero. The final runs will fit the
 physical rows as described here (D-251).}
+\revnote{Final runs (D-271, 2026-10-17), replaces the gradient fit from
+$\mathcal U(-1/\sqrt m,1/\sqrt m)$ above: $W^b$ and an intercept are the
+least-squares map of~\cite[Eq.~(33)]{hoekstra2026encoder} on the windows of
+\eqref{eq:aug_enc_sim}, a linear restriction of the data-based
+initialisation (our adaptation: the paper proposes Eq.~(33) for LTI baselines
+and Eq.~(35) for nonlinear ones). The physical output rows of $\tilde\psi$
+start with zero weights and a bias that carries the intercept; the hidden
+layers keep their random draw; no gradient fit before training. Reason: 20
+Adam epochs from the random start stopped at a state error of
+$1.5\times10^{-1}$ against $2.1\times10^{-8}$ for least squares (normalised
+states), and the PS opening fell back in every run with that start.}
 
 
 \subsection{Closed-loop simulation}\label{sec:aug_loop}
@@ -906,6 +920,9 @@ reconstructability map~\cite[Eqs.~(15) to (17)]{hoekstra2026encoder} of the
 baseline linearised at rest at $Y=0$, and the whole output layer of
 $\tilde\psi$ at zero. The final runs will start the physical encoder rows from
 $\theta^{b,0}_{\mathrm{enc}}$ of \eqref{eq:aug_enc_fit} as described here.}
+\revnote{Final runs (D-271): $\theta^{b,0}_{\mathrm{enc}}$ is the
+least-squares start of Section~\ref{sec:aug_encoder}, so the physical rows of
+$W_L$ of $\tilde\psi$ are zero but its physical bias carries the intercept.}
 \revnote{The current results start with the whole output
 layer of $\phi_{\mathrm{aug}}$ at zero, so $g_{\mathrm{aug}}=0$ and the added
 states are zero after the first step. The final runs will use live

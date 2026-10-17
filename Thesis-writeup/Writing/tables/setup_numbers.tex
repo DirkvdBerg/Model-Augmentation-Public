@@ -5,6 +5,8 @@
 \providecommand{\SetupCrossMin}{}\renewcommand{\SetupCrossMin}{75}% min K1 crossover over axes and training Y [Hz], simulated system
 \providecommand{\SetupMotionFNN}{}\renewcommand{\SetupMotionFNN}{24}% max over motion-only training records and axes of the 99 % power frequency of u [Hz]
 % --- band_frf.py
+\providecommand{\SetupAddedMassDbHi}{}\renewcommand{\SetupAddedMassDbHi}{15}% highest closed-loop |S G|_YY of the system against the baseline, 100-300 Hz, training Y [dB]
+\providecommand{\SetupAddedMassDbLo}{}\renewcommand{\SetupAddedMassDbLo}{-21}% lowest closed-loop |S G|_YY of the system against the baseline, 100-300 Hz, training Y [dB]
 \providecommand{\SetupClPeak}{}\renewcommand{\SetupClPeak}{267}% closed-loop peak of T_YY with K1, median over training Y [Hz]
 % --- controller_rate.py
 \providecommand{\SetupKcheck}{}\renewcommand{\SetupKcheck}{1.5\cdot10^{-9}}% largest relative RMS, K1 at 20 kHz vs recorded u_fb

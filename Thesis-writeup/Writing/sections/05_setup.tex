@@ -42,8 +42,10 @@
 \item Opening: the records are simulated on a model of a confidential industrial gantry; quantities are given relative; design details and checks in Appendix~\ref{app:setup}
 \end{itemize}
 \fi
-The records are simulated on a model of an industrial gantry whose data
-are confidential.
+The system used to obtain the data is simulated. 
+When referring to the system in this section, we refer to this simulated model. 
+The data consist of simulated records, with motion profiles, 
+limits and noise level taken from an industrial gantry whose data are confidential.
 Frequencies are therefore given relative to the controller bandwidth
 $f_b$, positions relative to the training range, and velocities and
 accelerations relative to the machine limits.
@@ -62,21 +64,28 @@ The design details and their checks are in Appendix~\ref{app:setup}.
 \item Noise matched to the machine; noise-free twin of every record; SNR (?: confidentiality)
 \end{itemize}
 \fi
-The data are simulated, so the dynamics the baseline misses are known.
-The data-generating system is the baseline \eqref{eq:eom} with Coulomb
-friction on the three rails and a vibration absorber on the payload
+The system consists of the baseline model \eqref{eq:eom}, with two additions.
+The first is Coulomb friction at the actuators $X_1$, $X_2$ and $Y$, as
+modelled by Garc\'ia-Herreros et al.~\cite{garcia2013model}.
+We deliberately left it out of the baseline, to add nonlinear unmodelled
+dynamics to the system. The friction works as a force against each actuator 
+force, this is modeled as a term entering \eqref{eq:eom} through the input.
+For the second addition, we split the payload mass $m_h$ into
+$m_a$ and $m_{h,r}=m_h-m_a$, with $m_a$ connected to $m_{h,r}$
+by a spring and damper in the $Y$ direction
 (Fig.~\ref{fig:gantry_absorber}).
-Both are absent from the baseline.
+This adds a vibration mode which the 
+baseline model is not able to represent with its states.
 \begin{figure}[t]
   \centering
   \resizebox{\columnwidth}{!}{\input{figures/gantry_system_with_absorber}}
-  \caption{Simulated gantry with a payload-mounted absorber. The light-gray
-  elements $(m_a,k_a,c_a,q_a)$ are absent from the baseline.}
+  \caption{Simulated gantry with a flexibly mounted part $m_a$ of the
+  payload mass $m_h$; the rest of the payload is $m_{h,r}=m_h-m_a$. The
+  light-gray elements $(m_a,k_a,c_a,q_a)$ are absent from the baseline.}
   \label{fig:gantry_absorber}
 \end{figure}
-
-The friction acts on each rail against its actuator force.
-With it, \eqref{eq:eom} becomes
+With the friction acting against each actuator force on the input, 
+\eqref{eq:eom} becomes
 \begin{subequations}\label{eq:setup_truth}
 \begin{equation}
 \begin{aligned}
@@ -85,17 +94,20 @@ With it, \eqref{eq:eom} becomes
 \end{aligned}
  \label{eq:setup_fric}
 \end{equation}
-where $P^\top\dot q$ are the rail velocities, $i\in\{X_1,X_2,Y\}$, and
-$v_{\mathrm{fr}}$ is the velocity scale of the smoothing.
-For $\lvert v_i\rvert\gg v_{\mathrm{fr}}$, $F_{\mathrm{fr},i}$ is the
-Coulomb law $c_{c,i}\operatorname{sign}(v_i)$ of~\cite{garcia2013model}.
-With $v_{\mathrm{fr}}=\SetupFricVzero$~mm/s, this holds on most samples of
-the records with multisine (Table~\ref{tab:setup_checks}).
-At standstill the law acts as a stiff viscous damper, so the axes settle
-without a limit cycle.
-
-The absorber adds the displacement $q_a$ of its mass relative to the head
-along $Y$.
+where $P^\top\dot q$ gives the actuator velocities
+for $i\in\{X_1,X_2,Y\}$, and $v_{\mathrm{fr}}$ sets
+the velocity scale of the smoothing.
+For $\lvert v_i\rvert\gg v_{\mathrm{fr}}$, the friction
+approaches the Coulomb law
+$F_{\mathrm{fr},i}=c_{c,i}\operatorname{sign}(v_i)$
+of~\cite{garcia2013model}.
+With $v_{\mathrm{fr}}=\SetupFricVzero$~mm/s, this was chosen by simulating
+the loop with values between 0.1 and 10~mm/s.
+\kw{Higher values turn the friction into viscous damping under the multisine,
+and lower values keep the standstill servo error above the noise level.}
+\\
+The added mass adds the displacement $q_a$ of $m_a$ relative to
+$m_{h,r}$ along $Y$.
 With $q_{\mathrm e}=\begin{bmatrix}q^\top&q_a\end{bmatrix}^\top$, the
 system is
 \begin{equation}
@@ -109,32 +121,41 @@ with
 \setlength{\arraycolsep}{3pt}
 \begin{equation*}
 \begin{gathered}
- M_{\mathrm e}(Y,q_a)=\begin{bmatrix}M(Y)+m_aE(Y,\ell)&m_ab_a\\m_ab_a^\top&m_a\end{bmatrix},\\
- E(Y,\ell)=\begin{bmatrix}0&-\ell&0\\-\ell&\ell(2Y+\ell)&0\\0&0&0\end{bmatrix},\\
- b_a=\begin{bmatrix}0&-d&1\end{bmatrix}^\top,\quad
+ M_{\mathrm e}(Y,q_a)=\begin{bmatrix}M(Y)+M_a(Y,\ell)&m_a\begin{bmatrix}0&-d&1\end{bmatrix}^\top\\m_a\begin{bmatrix}0&-d&1\end{bmatrix}&m_a\end{bmatrix},\\
+ M_a(Y,\ell)=m_a\ell\begin{bmatrix}0&-1&0\\-1&2Y+\ell&0\\0&0&0\end{bmatrix},\\
  C_{\mathrm e}=\operatorname{diag}(C,c_a),\quad
  K_{\mathrm e}=\operatorname{diag}(K,k_a),
 \end{gathered}
 \end{equation*}}
-where $M(Y)$ is \eqref{eq:mass_matrix} with $m_h$ the total head mass, of
-which $m_a$ moves relative to the head, $\ell=L_0+q_a$, and $L_0$ is the
-offset of the absorber along $Y$, and $k_a=m_a(2\pi f_a)^2$ and
-$c_a=2\zeta_a\sqrt{k_am_a}$ for the natural frequency $f_a$ and the damping
-ratio $\zeta_a$.
-The absorber enters through the inertia, by $E$ and $b_a$, and through its
-own spring and damper.
-The system is integrated by fixed-step RK4 at $f_{\mathrm s}=20$~kHz.
-
-All parameter values are listed in Table~\ref{tab:nominal_parameters}.
-The friction levels $c_c$ are those identified by Garc\'ia-Herreros et
+where $M(Y)$ is \eqref{eq:mass_matrix} with $m_h$ the total payload mass.
+$M_a(Y,\ell)$ corrects it for $m_a$ being at $Y+\ell$ instead of $Y$,
+where $\ell=L_0+q_a$ and $L_0$ is the offset of the added mass along $Y$.
+$k_a=m_a(2\pi f_a)^2$ and
+$c_a=2\zeta_a\sqrt{k_am_a}$, with natural frequency $f_a$
+and damping ratio $\zeta_a$.
+The added mass changes the inertia through $M_a$,
+which also includes its coupling to $\Theta$ and $Y$.
+We simulate the system with fixed-step RK4 at
+$f_{\mathrm s}=20$~kHz.
+All parameters values are listed in Table~\ref{tab:nominal_parameters}.
+The friction levels $c_c$ are taken from Garc\'ia-Herreros et
 al.~\cite[Table~I]{garcia2013model}.
-Seen from the head, $f_a$ is an anti-resonance.
-The coupled mode lies at $f_a\sqrt{1+m_a/(m_h-m_a)}\approx2.12\,f_b$.
-Both lie above the crossover of the loop with $K_1$
-(Section~\ref{sec:setup_data}), so the feedback does not suppress them.
+The added mass creates an anti-resonance
+at $f_a$ and a resonance at $f_a\sqrt{1+m_a/m_{h,r}}\approx2.12\,f_b$,
+in the transfer function from $F_Y$ to $Y$.
+Both are designed to be above the crossover of the loop with $K_1$
+(Section~\ref{sec:setup_data}).
+As a result, the feedback does not suppress them, and we can identify
+them from the data.
+
+
 The absorber mass $m_a=0.5\,m_h$ makes the baseline error caused by the
 absorber large against the noise floor.
-\todo{Missing: reason for $L_0=0.10$~m (inherited from \texttt{tdg\_config.m}, no reason on record) and a source for $\zeta_a=0.03$. Candidate: $\zeta_a$ the low end of the damping range of jointed metal structures (D-188, web source \texttt{jpe\_structural\_damping}, no cite key).}
+\todo{Missing: reason for $L_0=0.10$~m (inherited from \texttt{tdg\_config.m}, 
+no reason on record) and a source for 
+$\zeta_a=0.03$. Candidate: $\zeta_a$ the low end of the damping range of 
+jointed metal structures (D-188, web source \texttt{jpe\_structural\_damping}, 
+no cite key).}
 
 The records are closed loop.
 Each stage axis $j$ has one controller $K_{1,j}$ with bandwidth $f_b$,
@@ -260,6 +281,9 @@ the criterion of Section~\ref{sec:aug_closed_loop} on the same training
 records, with the same settings, budget and checkpoint rule
 (Table~\ref{tab:hyper}).
 Both start the added states by PS (Section~\ref{sec:aug_ps2}).
+\revnote{Holds only if the PS screen passes in the final runs (D-271
+relaunch, 2026-10-17); in the cancelled runs with the Adam encoder start PS
+fell back in every run. Check R1 and R4 before the results.}
 Both start the combinations at
 $\theta^0_{\mathrm{base},j}=(1+0.1\,s_j)\,\theta^\star_{\mathrm{base},j}$,
 with signs $s_j\in\{-1,1\}$ that are the same in every run.
@@ -283,6 +307,10 @@ the grey-box models.
 \revnote{In the current search, the selected configuration ($n_x=16$, width
 8) had its best validation error at the limit of 20000 updates; the final
 retraining to a validation plateau has not run yet.}
+\revnote{Final runs (D-264): all 11 configurations ran to 80000 updates with
+the NRMS$_e$ objective and are selected on validation NRMS$_e$, without a
+separate search and retraining; completed 2026-10-17 (best so far $n_x=16$,
+width 16, rate $10^{-3}$, validation NRMS$_e$ 0.501).}
 
 \subsection{Metrics}\label{sec:setup_metrics}
 % Sources: D-256 (NRMS_e), THESIS-RESULTS Sec. 2; D-259 (m_Delta scale, revnotes); Section IV
