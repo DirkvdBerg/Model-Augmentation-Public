@@ -1,5 +1,7 @@
 % PS windows on one record (Section III-E), layout adapted from Hefny et al. 2015, Fig. 2.
-% Shows the final method: S1 target from tau+1 to tau+H (FINAL-RUN-FIXES.md item 5).
+% Matches model_augmentation/fit_systems/ps2_opening.py (_sample, _residual, _fit_map), D-250:
+% S1: chi_tau = samples tau-n-1 .. tau-1, residual e_tau = tau .. tau+H-1 (H = n+1);
+% S2: chi_{tau+1} = tau-n .. tau, recorded input u_tau.
 \begin{tikzpicture}[
     >={Latex[length=1.8mm,width=1.3mm]},
     line width=0.5pt,
@@ -20,8 +22,8 @@
   \def\xL{-0.85} % route of x-hat_tau
   \def\xV{6.45}  % loss blocks
   % sample row
-  \foreach \i/\t in {0/{$\tau{-}n$}, 1/{$\tau{-}n{+}1$}, 2/{$\cdots$}, 3/{$\tau$},
-                     4/{$\tau{+}1$}, 5/{$\cdots$}, 6/{$\tau{+}H$}}
+  \foreach \i/\t in {0/{$\tau{-}n{-}1$}, 1/{$\tau{-}n$}, 2/{$\cdots$}, 3/{$\tau{-}1$},
+                     4/{$\tau$}, 5/{$\cdots$}, 6/{$\tau{+}H{-}1$}}
     \node[smp] (s\i) at (\i*\w,0) {\t};
   \node[lab, anchor=west] at (6*\w+\h+0.05,0) {$(y_k,u_k)$};
 
@@ -38,15 +40,16 @@
   \draw[->] (dec.east) -- (v1.west);
   \draw[->] (\xV,\yB) -- (v1.south);
 
-  % S2 (bottom): window shifted by one sample, one-step map g_aug
+  % S2 (bottom): window shifted by one sample (ends at tau), one-step map g_aug
   \draw (1*\w-\h+\g,-\yB+0.1) -- (1*\w-\h+\g,-\yB) -- (4*\w+\h-\g,-\yB) -- (4*\w+\h-\g,-\yB+0.1);
   \node[lab, anchor=north west] at (1*\w-\h+\g,-\yB) {$\chi_{\tau+1}$};
-  \node[blk] (psia) at (3.85*\w,\yA) {$\psi_a$};
-  \draw[->] (3.85*\w,-\yB) -- (psia.north);
+  \node[blk] (psia) at (2*\w,\yA) {$\psi_a$};
+  \draw[->] (2*\w,-\yB) -- (psia.north);
   \node[blk] (v2) at (\xV,\yA) {$\|{\cdot}\|_2^2$};
-  \draw[->] (psia.east) -- (v2.west) node[midway, above, lab] {$\bar x_{\tau+1|\tau+1}$};
-  \node[blk] (g) at (3*\w,\yG) {$g_{\mathrm{aug}}$};
-  \draw[->, hop] (s3.south) -- (g.north) node[pos=0.72, left, lab] {$u_\tau$};
+  \draw[->] (psia.east) -- (v2.west) node[pos=0.25, above, lab] {$\bar x_{\tau+1|\tau+1}$};
+  \node[blk] (g) at (4*\w,\yG) {$g_{\mathrm{aug}}$};
+  % recorded input of the first residual sample, crossing the S2 bracket and the psi_a line
+  \draw[->, hop] (s4.south) -- (g.north) node[pos=0.33, left, lab] {$u_\tau$};
   % encoded state at tau, from the top encoder around the left
   \draw[->] (psi.west) -- (\xL,\yS) -- (\xL,\yG) -- (g.west)
        node[pos=0.08, lab, anchor=south west] {$\hat x^{\mathrm n}_{\tau|\tau}$};

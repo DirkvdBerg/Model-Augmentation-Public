@@ -154,7 +154,7 @@ $\varphi(\cdot)\theta_{\mathrm b}$.
 \ifdraft
 \begin{itemize}
 \item Three differences, each changing one element of \eqref{eq:obc_gyorok}: regressor, data, prediction (this work)
-\item Regressor: Jacobian of the normalised transition in $\beta$ at $\beta_{\mathrm{lin}}$, since the baseline is nonlinear through $M(Y)^{-1}$; $\beta$ because only the ten combinations are identifiable (adapted from Gy\"or\"ok 2025 Sec.~4, Eq.~(15); 2026 Assumption~1; Section~II-C; D-190, D-229); $\Gamma$ left out (D-254; supervisor note)
+\item Regressor: Jacobian of the normalised transition in $\beta$ at $\beta_{\mathrm{lin}}$, since the baseline is nonlinear through $M(Y)^{-1}$; $\beta$ because only the ten combinations are identifiable (adapted from Gy\"or\"ok 2025 Sec.~4, Eq.~(15); 2026 Assumption~1; Section~II-C; D-190, D-229); offset column $\Gamma$ included (D-257)
 \item Data: reference tuples reconstructed from the measured positions, regressor at the data as in 2026 Eq.~(5) rather than at a simulated baseline (2025 Sec.~3); each with a successor; built once before training (D-252, D-254)
 \item Projection on the stacked tuples, with the orthogonality of the section opening as its last line; holds for the stack at $\bar x=0$ (adapted from 2026 Eqs.~(8) to (11), Lemma~3)
 \item Prediction: the correction at every step of the closed-loop state update, physical rows only; coefficient differentiated (2026 Eqs.~(9), (10), (13); added states this work)
@@ -236,8 +236,6 @@ $\tilde x^{\mathrm n}_i$ and $u^{\mathrm n}_i$
 using \eqref{eq:aug_norm}.
 The tuples are calculated once before training, using all samples for which
 \eqref{eq:obc_tuples} can be calculated at $i$ and at the next sample $i+1$.
-\revnote{The current results also use the last such sample of each record,
-which has no successor. The final runs will use the tuples as described here.}
 \\
 Stacking the Jacobian, \kw{the offset} and the network output over the tuples, the projection
 of \eqref{eq:obc_gyorok} becomes
@@ -322,7 +320,7 @@ the projected state update \eqref{eq:obc_corr}.
 Since $\theta_{\mathrm{aux}}$ depends on $\theta_{\mathrm{aug}}$,
 we solve \eqref{eq:obc_coef} at every evaluation of $V$.
 At the start of each epoch $\beta_{\mathrm{lin}}$ is set to the current $\beta$, 
-and its held fixed during the epoch.
+and it is held fixed during the epoch.
 Gy\"or\"ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration,
 which requires rebuilding $\Phi_\Gamma$ at each evaluation
 of $V$~\cite[Sec.~4]{gyorok2025l4dc}. The other proposed method is to 
@@ -336,9 +334,6 @@ The polish minimises the same projected objective, with $\Phi_\Gamma$ held
 fixed at this $\beta$.
 The polish is only kept if its validation error is lower.
 
-\revnote{The current results compare the polish with the validation
-error measured before rebuilding $\Phi_\Gamma$.
-The final runs will use the error measured after the rebuild.}
 
 The projection does not guarantee that the true parameters $\beta^\star\in\R^{10}$ are recovered.
 That depends on whether what the baseline misses on the tuples is itself
@@ -423,7 +418,7 @@ the one-step state change predicted by the baseline.
 
 % was after: eq:obc_sens
 \begin{outline}
-\item Choice: only the range of $\Phi$ is protected, without the offset column $\Gamma$ of Gy\"or\"ok et al.
+\item Choice: the range of $\Phi_\Gamma$ is protected, with the offset column $\Gamma$ of Gy\"or\"ok et al.
 \item Choice: $\Phi$ is evaluated on fixed one-step tuples $i\in\mathcal I$ from the training data: measured positions, finite difference to get the velocities, added states $\bar x=0$
 \item The network's physical rows are fitted by the stacked sensitivity in least squares; the remainder is orthogonal to its range:
 \end{outline}
@@ -435,7 +430,7 @@ the one-step state change predicted by the baseline.
 
 % was after: eq:obc_corr
 \begin{outline}
-\item Choice: the gradient of the training cost $V$ of \eqref{eq:aug_loss} to the network parameters $\theta_{\mathrm{aug}}$ includes the path through $\theta_{\mathrm{aux}}(\theta_{\mathrm{aug}})=\boldsymbol\Phi^{+}\boldsymbol f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})$; with $\theta_{\mathrm{aux}}$ held fixed, each step would give the network the derivative of its uncorrected output   % CHANGED
+\item Choice: the gradient of the training cost $V$ of \eqref{eq:aug_loss} to the network parameters $\theta_{\mathrm{aug}}$ includes the path through $\theta_{\mathrm{aux}}(\theta_{\mathrm{aug}})=\Phi_\Gamma^{+}\boldsymbol f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})$; with $\theta_{\mathrm{aux}}$ held fixed, each step would give the network the derivative of its uncorrected output   % CHANGED
 \item Choice: $\beta_{\mathrm{lin}}$ is set to the current $\beta$ at each epoch and held fixed within it
 \end{outline}
 

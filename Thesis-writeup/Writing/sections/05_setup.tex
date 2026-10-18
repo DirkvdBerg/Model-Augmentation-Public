@@ -269,9 +269,6 @@ smaller in magnitude than their true values, and every run uses the same
 signs.
 Appendix~\ref{app:choices} shows the runs used to choose $n_{\bar x}$ and
 the PS initialisation of the added states.
-\revnote{Holds only if the PS screen passes in the final runs (D-271
-relaunch, 2026-10-17); in the cancelled runs with the Adam encoder start PS
-fell back in every run. Check R1 and R4 before the results.}
 \todo{Missing: the label of the appendix with the choice-justifying runs, 
 and whether they are compared on the validation records. Candidate: 
 a new appendix section on the validation records (THESIS-RESULTS, recommendation 
@@ -292,13 +289,6 @@ with the same data and training and encoder window as the grey-box models.
 % validation records from 11 configurations, with the data and windows of
 % the grey-box models.
 
-\revnote{In the current search, the selected configuration ($n_x=16$, width
-8) had its best validation error at the limit of 20000 updates; the final
-retraining to a validation plateau has not run yet.}
-\revnote{Final runs (D-264): all 11 configurations ran to 80000 updates with
-the NRMS$_e$ objective and are selected on validation NRMS$_e$, without a
-separate search and retraining; completed 2026-10-17 (best so far $n_x=16$,
-width 16, rate $10^{-3}$, validation NRMS$_e$ 0.501).}
 
 \subsection{Metrics}\label{sec:setup_metrics}
 % Sources: D-256 (NRMS_e), THESIS-RESULTS Sec. 2; D-259 (m_Delta scale, revnotes); Section IV
@@ -319,14 +309,14 @@ adapted by using the servo error as output.
 We also report the RMS in metres and the noise floor:
 \begin{equation}
 \begin{aligned}
- \mathrm{RMS}_j&=\Bigl(\frac{1}{N-n}\sum_{k=n}^{N-1}(\hat y_{j,k}-y_{j,k})^2\Bigr)^{1/2},\\
+ \mathrm{RMS}_j&=\Bigl(\frac{1}{N-n-1}\sum_{k=n+1}^{N-1}(\hat y_{j,k}-y_{j,k})^2\Bigr)^{1/2},\\
  \mathrm{NRMS}_{e,j}&=\frac{\mathrm{RMS}_j}{\sigma_{e,j}},\\
- \mathrm{RMS}^{\mathrm{fl}}_j&=\Bigl(\frac{1}{N-n}\sum_{k=n}^{N-1}(y_{j,k}-y^{\circ}_{j,k})^2\Bigr)^{1/2},
+ \mathrm{RMS}^{\mathrm{fl}}_j&=\Bigl(\frac{1}{N-n-1}\sum_{k=n+1}^{N-1}(y_{j,k}-y^{\circ}_{j,k})^2\Bigr)^{1/2},
 \end{aligned}
 \label{eq:setup_rms}
 \end{equation}
-where $j$ is the stage axis, $N$ the record length, $n$ the encoder
-window length and $\sigma_{e,j}$ the standard deviation of the servo error
+where $j$ is the stage axis, $N$ the record length, $n+1$ the encoder
+window length and $\sigma_{e,j}$ the population standard deviation of the servo error
 $y_j-r_j$ over the same samples.
 An NRMS of 100\,\% means the model performs no better than $\hat y=r$.
 The noise floor is the RMS difference between the measured and noise-free
@@ -347,33 +337,9 @@ where the true value of $m_\Delta=m_1-m_2$ is close to zero,
 so we scale its error by the mean actuator mass $(m_1+m_2)/2$ instead.
 \\
 For the orthogonal construction of Section~\ref{sec:obc}, the overlap
-$\rho$ of \eqref{eq:obc_overlap} is computed on the one-step tuples of I1 to
-I6 at $\bar x=0$, for the network of $\mathcal M_{\mathrm U}$, the corrected
-network of $\mathcal M_{\mathrm{OBC}}$ and the missing dynamics $\Xi$.
-The first-order parameter error from $\Xi$ in \eqref{eq:obc_recovery}
-is scaled using \eqref{eq:setup_delta} and compared with
-the $\delta_j$ of the trained $\mathcal M_{\mathrm{OBC}}$.
+$\rho$ of \eqref{eq:obc_overlap} is computed at $\bar x=0$ on the one-step
+tuples of the training, validation and test records (test: I1 to I6), for
+the network of $\mathcal M_{\mathrm U}$, the corrected network of
+$\mathcal M_{\mathrm{OBC}}$ and the missing dynamics $\Xi$.
+On the training tuples the corrected overlap is zero by construction.
 
-\revnote{The current evaluation reports the RMS in metres per record and
-axis; $\mathrm{NRMS}_{e,j}$ is computed from these outside the evaluation
-code.}
-\revnote{Start index of \eqref{eq:setup_rms}: the window $\chi_\tau$ holds
-the $n+1$ samples up to $\tau-1$ (\eqref{eq:aug_encoder}), so the first
-window covers samples $0$ to $n$ and the first prediction is at $k=n+1$.
-Following~\cite[Eq.~(43)]{beintema2023subnet}, which leaves out the outputs
-that fed the encoder, the sums run from $k=n+1$ with $1/(N-n-1)$; the code
-of the final runs scores from that sample. $\sigma_{e,j}$ is the population
-standard deviation over the same samples (D-262).}
-\revnote{The predicted first-order bias is not yet computed for the current
-runs.}
-\revnote{Final runs (D-268, Dirk 2026-10-16): the overlaps and the predicted
-first-order bias are computed on three tuple stacks, training, validation and
-test (I1 to I6), so the sentence ``Both are measured on the one-step tuples of
-I1 to I6'' changes. The training stack, where $\theta_{\mathrm{aux}}$ is
-formed, gives the prediction of \eqref{eq:obc_recovery}; validation and test
-show how it carries over. On the training stack the network overlap of
-$\mathcal M_{\mathrm{OBC}}$ is zero by construction, so that overlap is
-informative on validation and test. The prediction holds for the one-step
-least-squares fit at $\bar x=0$, while training minimises the closed-loop loss
-with active added states (Section~\ref{sec:obc}); the agreement criterion
-between predicted and observed $\delta_j$ is to be stated before the results.}

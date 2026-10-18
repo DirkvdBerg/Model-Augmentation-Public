@@ -452,7 +452,7 @@ chosen to simulate the model in closed-loop (Section~\ref{sec:aug_loop}).
 \item The encoder is a linear map plus a network correction, as encoder paper Eq.~(8), with no separate bias (the output bias of $\tilde\psi$ carries any constant)
 \item The physical rows start data-based: the baseline is self-scheduled by the state $Y$, hence nonlinear; a reconstruction from a linearisation is accurate only near its linearisation point (encoder paper Sec.~3.1), and the paper suggests the data-based route for nonlinear baselines (Secs.~3.2, 4.4)
 \item The physical rows are fitted to a baseline simulation as in 2026 Eq.~(30); the simulation runs in closed loop because the open-loop baseline drifts on $X$ and $Y$ (this work, D-251)
-\item The fitted physical rows only set the start and are trained jointly with $\theta_{\mathrm{base}}$ (2026 Eq.~(22)); current runs: model-based map at $Y=0$ (revnote, appendix)
+\item The fitted physical rows only set the start and are trained jointly with $\theta_{\mathrm{base}}$ (2026 Eq.~(22)); least-squares start (D-271)
 \end{itemize}
 \fi
 
@@ -491,9 +491,6 @@ the positions consistent with the estimated velocities.
 \\
 % , and to 
 % average out measurement noise over the window.
-\revnote{The current results use the window up to and including $\tau$
-(D-054), so the first term of \eqref{eq:aug_loss} scores a sample the encoder
-has seen. The final runs will use the window up to $\tau-1$ as described here.}
 The encoder uses a linear map with a nonlinear
 correction~\cite[Eq.~(8)]{hoekstra2026encoder}:
 \begin{equation}
@@ -512,13 +509,6 @@ $n_{\bar x}$ outputs $\psi_a$ estimate the additional states.
 We use $\theta^a_{\mathrm{enc}}$ for the parameters
 that affect only $\psi_a$: $W^a$ and the additional-state
 rows of the output layer of $\tilde\psi$.
-\revnote{The current results apply $W^b$ and $W^a$ to the uncentred window
-$\chi_\tau+\chi_0$, where $\chi_0$ restores the means that
-\eqref{eq:aug_norm} removes, and subtract $T_x\mu_x$ from the physical rows.
-This amounts to a fixed bias $W^b\chi_0-T_x\mu_x$ on the physical rows and a
-constant $W^a\chi_0$ on the initial additional states. The final runs will
-use the centred window without a separate bias, as described here; the
-fitted output bias of $\tilde\psi$ carries any constant.}
 \todo{VERIFY bib: \texttt{hoekstra2026encoder} = arXiv:2602.13108v1
 (13 Feb 2026), Hoekstra, Gy\"or\"ok, T\'oth, Schoukens; matches PDF p.~1.
 Check for a published (IFAC) version before submission.}
@@ -811,7 +801,7 @@ encoder of Section~\ref{sec:aug_encoder}:
 \begin{aligned}
  &\min_{\vartheta}\;V(\vartheta)=\frac{1}{|\mathcal W|\,n_f\,n_y}
  \sum_{\tau\in\mathcal W}\sum_{k=\tau}^{\tau+n_f-1}
- \norm{y^{\mathrm n}_{k}-\hat y^{\mathrm n}_{k|\tau}}_2^2\quad\text{s.t.}\\
+ \norm{W_r\bigl(y^{\mathrm n}_{k}-\hat y^{\mathrm n}_{k|\tau}\bigr)}_2^2\quad\text{s.t.}\\
  &\tilde x^{\mathrm n}_{k+1|\tau}
   =f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\beta),
    \tilde x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau}\bigr)
@@ -827,6 +817,9 @@ encoder of Section~\ref{sec:aug_encoder}:
 for $\tau\le k<\tau+n_f$, where each training window starts at a sample
 $\tau\in\mathcal W$ and has length $n_f$, $n_y=3$, and
 $\theta_{\mathrm{base}}(\beta)$ gives the baseline parameters.
+$W_r=\mathrm{diag}(\sigma_{y,j}/\sigma_{e,r,j})$ weights axis $j$ of training
+record $r$, so that its residual in metres is divided by the standard
+deviation $\sigma_{e,r,j}$ of its servo error \eqref{eq:setup_rms}.
 \todo{might have to move to discussion if i dont add it. Since the controller corrects part of the output error,
 it can hide errors in the plant model.
 We therefore also test the model with a different controller
@@ -859,7 +852,8 @@ Because every $\beta$ satisfies \eqref{eq:lfr_admissibility},
 unconstrained L-BFGS works without a bound.
 During the optimization with Adam the parameters with the lowest validation 
 error are kept.
-The error is the RMS output error in meters for each complete validation record, 
+The error is the mean $\mathrm{NRMS}_{e,j}$ \eqref{eq:setup_rms} over the
+complete validation records and axes,
 simulated in closed loop with the initial state estimated
 once by the encoder and $x^c=0$.
 We only keep the polish if it lowers the validation error.
@@ -870,8 +864,6 @@ rolled back in R4 and R7 (no improvement), accepted in R13 with validation
 NRMS$_e$ $0.2927\to0.2926$. R1 and R2 run on 24~GB cards: check for an
 aborted polish and, if so, repeat only the polish on an 80~GB card from the
 saved pre-polish checkpoint.}
-\revnote{The current results use the unweighted loss \eqref{eq:aug_loss} and select on the RMS output error in metres. The final runs will weight the error of each training record and axis in \eqref{eq:aug_loss} by the fixed factor $1/\mathrm{RMS}(y_j-r_j)$ of that record, and select checkpoints and the polish on the mean over the validation records and axes of $\mathrm{NRMS}_{e,j}$ of \eqref{eq:setup_rms} (D-256, \texttt{FINAL-RUN-FIXES.md} items 13 to 18).}
-\todo{Current runs (\texttt{FINAL-RUN-FIXES.md} item~2): the 2026-10-11 runs also reject the polish if \texttt{combo\_err}, the error of the ten combinations against the true parameters, rises by more than 0.1\,\%. This uses the simulated truth; the final runs accept on the validation error alone. \texttt{param\_loss} is zero in all thesis runs (\texttt{param\_prior} off).}
 \\
 We start training with the augmented model giving the same
 output as the baseline model from the same initial state, as required
@@ -911,27 +903,16 @@ given they start from the same physical state.
 The added states $\bar x$ are still updated by
 $g^{\mathrm n}_{\mathrm{aug}}$, as in~\cite[Eq.~(29)]{hoekstra2026lfr}.
 \\
-\revnote{The current results start $W^b$ from the model-based
-reconstructability map~\cite[Eqs.~(15) to (17)]{hoekstra2026encoder} of the
-baseline linearised at rest at $Y=0$, and the whole output layer of
-$\tilde\psi$ at zero. The final runs will start the physical encoder rows from
-$\theta^{b,0}_{\mathrm{enc}}$ of \eqref{eq:aug_enc_fit} as described here.}
-\revnote{The current results start with the whole output
-layer of $\phi_{\mathrm{aug}}$ at zero, so $g_{\mathrm{aug}}=0$ and the added
-states are zero after the first step. The final runs will use live
-$g_{\mathrm{aug}}$ as described here.}
-\todo{Current runs: the 2026-10-11 runs (R1 to R7) set the whole output layer of $\phi_{\mathrm{aug}}$ to zero (\texttt{G\_INIT} zero, D-240), as the authors' public code does (D-237), so $g^{\mathrm n}_{\mathrm{aug}}=0$ and $\bar x$ is zero after the first step. The final runs use \eqref{eq:aug_init} (D-248, \texttt{FINAL-RUN-FIXES.md} item~6).}
 
 \subsection{Added-state initialisation}\label{sec:aug_ps2}
 \ifdraft
 \begin{itemize}
 \item Problem: the start \eqref{eq:aug_init} gives $\tilde x$ a model ($f_{\mathrm{base}}$, $W^b$, output) and $\bar x$ none (random $W^a$, random added-state rows of $\phi_{\mathrm{aug}}$); $V$ scores only the output and $f_{\mathrm{aug}}$ can lower the same error statically, so training can leave the omitted dynamics out of $\bar x$ (Venkatraman Sec.~2.1; Section~VI tests it)
 \item PS is this work's, adapted from two-stage regression (Hefny Sec.~2) and its use before BPTT (Downey Sec.~4.2); it gives $\bar x$ a start from data, as $W^b$ gives $\tilde x$ one from the baseline
-\item S1: a decoder on $\psi_a$ predicts the current model's residual over $\tau+1$ to $\tau+H$; the minimiser is the conditional mean, so $\bar x_{\tau|\tau}$ becomes a predictive state; trains $\theta_{\mathrm p}$, $\theta^a_{\mathrm{enc}}$ only, one update after every update of $V$
+\item S1: a decoder on $\psi_a$ predicts the current model's residual over $\tau$ to $\tau+H-1$; the minimiser is the conditional mean, so $\bar x_{\tau|\tau}$ becomes a predictive state; trains $\theta_{\mathrm p}$, $\theta^a_{\mathrm{enc}}$ only, one update after every update of $V$
 \item Stopping rule: $\nu$ on calibration windows ends S1 (plateau or cap) and decides whether S2 runs
 \item S2: once, one-step regression of $g^{\mathrm n}_{\mathrm{aug}}$ on frozen encoder pairs with the recorded input, which equals the loop input when the encoder reproduces $y_{k_i}$; overlapping windows (?)
 \item Hand-over: decoder discarded, \eqref{eq:aug_loss} continues from $\vartheta_{\mathrm{PS}}$; deployed model, criterion and selection unchanged; $\bar x$ latent; $\mathcal M_{\mathrm{PS}}$ named
-\item The current runs differ in two points: $g_{\mathrm{aug}}$ starts at zero, and the S1 target starts at $\tau$ (?)
 \end{itemize}
 \fi
 
@@ -956,7 +937,6 @@ This forms a sharp contrast between the physical and added states,
 due to the physical states being able to directly map to the output, 
 while also having a much better starting point.
 
-\todo{Current runs: the 2026-10-11 runs (R1 to R7) start the whole output layer of $\phi_{\mathrm{aug}}$ at zero (\texttt{G\_INIT} zero, D-240), as the authors' public code does (D-237), so $g^{\mathrm n}_{\mathrm{aug}}=0$ and $\bar x$ is zero after the first step. In the final runs, the added-state rows of the network's final output layer are randomly initialized (D-248, \texttt{FINAL-RUN-FIXES.md} item~6); \eqref{eq:aug_init} in Section~\ref{sec:aug_closed_loop} then changes accordingly. PS with a live start is so far one seed with the ResNet variant ($4.0\times10^{-6}$~m against $1.0\times10^{-5}$~m for plain training).}
 
 %\\
 
@@ -987,8 +967,7 @@ are used for both stages.
  $\bar x_{\tau|\tau}$ to the residuals $e_\tau$ of the next $H$ samples
  \eqref{eq:ps2_s1}. S2 (bottom): $g_{\mathrm{aug}}$ maps $\hat x^{\mathrm n}_{\tau|\tau}$ and the
  recorded $u_\tau$ to the added state encoded from the window shifted by one
- sample \eqref{eq:ps2_s2}.
- \todo{The figure shows the target from $\tau+1$ (\texttt{FINAL-RUN-FIXES.md} item~5). Item~5 is superseded by item~8 (2026-10-16): the final runs end $\chi_\tau$ at $\tau-1$ and start the target at $\tau$, so the figure must show $\chi_\tau$ up to $\tau-1$ and $e_\tau$ from $\tau$ to $\tau+H-1$.}}
+ sample \eqref{eq:ps2_s2}.}
  \label{fig:ps2_windows}
  \revnote{d is also a baseline parameter, need to change}
 \end{figure}
@@ -1006,21 +985,10 @@ The training data is divided into excitation classes (\todo{see section}), and f
 with at least three records one is left out of S1 and S2 to evaluate $\nu$ \eqref{eq:ps2_nu}.
 The left out data is still used in $V$.
 For each sample $\tau$, the encoder uses the last $n+1$
-samples up to $\tau$, $\chi_\tau$, to estimate the initial state $\hat x^{\mathrm n}_{\tau|\tau}$.
+samples up to $\tau-1$, $\chi_\tau$, to estimate the initial state $\hat x^{\mathrm n}_{\tau|\tau}$.
 From this state the augmented model is simulated in the closed loop of 
 Section~\ref{sec:aug_loop}.
-We calculate the residual from the next $H=n+1$ samples, from $\tau+1$ to $\tau+H$.
-\revnote{The current results use an encoder window up to $\tau$ and a residual
-target starting at $\tau$, so the encoder and target share sample $\tau$. The
-final runs end the window at $\tau-1$ (\eqref{eq:aug_encoder},
-\cite[Eq.~(22e)]{hoekstra2026lfr}) and keep the target at $\tau$ to
-$\tau+H-1$: no sample is then shared, and S1 scores from $\tau$ as $V$
-does~\cite[Eq.~(22a)]{hoekstra2026lfr}. This text, \eqref{eq:ps2_s1} and
-Fig.~\ref{fig:ps2_windows} still show $\tau+1$ to $\tau+H$ and change to
-$\tau$ to $\tau+H-1$ (\texttt{FINAL-RUN-FIXES.md} item~5, superseded by
-item~8). The sentence above (``the last $n+1$ samples up to $\tau$'')
-changes to ``up to $\tau-1$'', as \eqref{eq:aug_encoder}; the S1 item of the
-draft list of this section also still says $\tau+1$ to $\tau+H$.}
+We calculate the residual from the next $H=n+1$ samples, from $\tau$ to $\tau+H-1$.
 The top of Fig.~\ref{fig:ps2_windows} shows the window $\chi_\tau$ and the
 samples of the residual $e_\tau$.
 We have chosen to use the same number of samples as the encoder window.
@@ -1029,7 +997,7 @@ $\bar x_{\tau|\tau}=\psi_a(\theta_{\mathrm{enc}},\chi_\tau)$
 is used to predict this residual:
 \begin{equation}
 \begin{aligned}
- e_\tau&=\frac{1}{\sigma_e}\col\bigl(y^{\mathrm n}_{k}-\hat y^{\mathrm n}_{k|\tau}\bigr)_{k=\tau+1}^{\tau+H},\\
+ e_\tau&=\frac{1}{\sigma_e}\col\bigl(y^{\mathrm n}_{k}-\hat y^{\mathrm n}_{k|\tau}\bigr)_{k=\tau}^{\tau+H-1},\\
  d(\theta_{\mathrm p},\bar x)&=W_{\mathrm p,2}\tanh\bigl(W_{\mathrm p,1}\bar x+b_{\mathrm p,1}\bigr)+b_{\mathrm p,2},\\
  &\min_{\theta_{\mathrm p},\,\theta^a_{\mathrm{enc}}}\;
  \frac{1}{|\mathcal B|\,H\,n_y}\sum_{\tau\in\mathcal B}
@@ -1079,15 +1047,10 @@ we use the model residual.
 }
 To avoid correlation between the history and future noise Hefny et al.\ separate
 the past and future samples~\cite[Sec.~2]{hefny2015supervised}. 
-We borrow this principle by having the residual start at $\tau+1$, so that there 
-is no overlap between the samples used for the encoder and to calculate the residual.
-\revnote{Final runs: the separation comes from the encoder window ending at
-$\tau-1$, not from shifting the residual; the residual starts at $\tau$. The
-claim is only that no sample is used on both sides. Hefny et al.\ assume noise
-independent per sample; our noise is low-pass and filtered before decimation,
-so disjoint windows do not make $\chi_\tau$ uncorrelated with the noise in
-$e_\tau$, and a later residual start would not either (see the todo below).
-This sentence changes accordingly.}
+The encoder window ends at $\tau-1$, while the residual starts at $\tau$, so
+no measurement sample is reused on both sides.
+With filtered measurement noise, this separation does not guarantee noise
+independence.
 \todo{
 Venkatraman et al.\ use a similar approach by predicting
 future observations from the internal states during
@@ -1095,8 +1058,6 @@ training~\ucite[Sec.~3]{venkatraman2017psd}.
 }
 For the PS implementation the decoder predicts the model residual and
 is removed after S1.
-\todo{Current runs (\texttt{FINAL-RUN-FIXES.md} items~5 and~8): the 2026-10-11 runs end $\chi_\tau$ at $\tau$ and start the target at $\tau$ (\texttt{ps2\_opening.py}, \texttt{\_sample} and \texttt{\_residual}), so sample $\tau$ is both the last sample of $\chi_\tau$ and the first of $e_\tau$. The final runs remove the overlap through the window (item~8), not the target (item~5, superseded).}
-\todo{Missing: Hefny et al.\ model the noise as independent per sample (Fig.~1). Our measurement noise is low-pass and fed back by the controller, so disjoint windows remove the shared sample but not all correlation between $\chi_\tau$ and the noise in $e_\tau$. Candidate: one sentence here or in the Discussion (basis: D-238 noise model).}
 
 To evaluate how well $\bar x_{\tau|\tau}$ performs at predicting the residual, a
 fixed set $\mathcal C$ of windows from the held out data is used.

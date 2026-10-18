@@ -100,7 +100,7 @@ advanced packaging, which combines multiple semiconductor functions within
 a single package. Such technologies place strict demands on alignment
 accuracy, yield, and manufacturing cost
 \cite{irds2022,workman2021diewafer}.}{
-\kw{The dual-drive gantry that we study in this 
+\kw{The dual-drive gantry that we study in this thesis
 is a high-precision motion system of ASMPT, used in back-end
 semiconductor assembly and packaging equipment.}
 }
@@ -133,8 +133,8 @@ $q=[X\;\Theta\;Y]^\top$}.
 $X_1$, $X_2$ and $Y$ the measured positions of the two X actuators and the Y
 actuator.}
 \\
-\add[Jan7, Jan29, Js69, Js70]{Following \cite[Sec.~2]{hoekstra2026lfr}, we
-consider the gantry as the system to be identified,
+\add[Jan7, Jan29, Js69, Js70]{The system to be identified is the gantry system
+described as,
 \begin{equation}
   \dot x(t)=f\bigl(x(t),\uact(t)\bigr),\qquad y_k=\qact(kT_s)+v_k,
   \label{eq:system}
@@ -142,15 +142,15 @@ consider the gantry as the system to be identified,
 where the state $x$ contains $\qact$, $y_k$ are the measured positions at
 sample $k$ with sampling time $T_s$, and $v_k$ is measurement noise.
 The state-transition function $f$ is unknown.}
-\add[Jan7, Jan23, Js95, Jan51]{The gantry operates in closed loop with a known
+\add[Jan7, Jan23, Js95, Jan51]{The system runs in closed loop with a known
 linear time-invariant feedback controller (Section~\ref{sec:aug_loop}),
 which gives the data set $\mathcal D_N=\{u_{\mathrm{act},k},y_k\}_{k=1}^N$.}
 \add[Jan7, Jan8, Jan23]{A baseline model of \eqref{eq:system} with physical
 parameters is available (Section~\ref{sec:baseline}).
 The goal is to estimate from $\mathcal D_N$ a model that combines this
 baseline with learned components and captures the behaviour of
-\eqref{eq:system} \cite[Sec.~5]{hoekstra2026lfr}, while the physical
-parameters are estimated uniquely (Section~\ref{sec:params}).}
+\eqref{eq:system}, while the physical
+parameters are uniquely estimated (Section~\ref{sec:params}).}
 % FEEDBACK: problem statement copied in structure from Hoekstra 2026 Sec. 2
 %   (system to be identified with noise, available baseline) and the goal
 %   sentence of Sec. 5 (Dirk 2026-10-18). Differences: continuous-time f
@@ -170,9 +170,10 @@ experiment in the simulation in section V}
 is the lumped-parameter model of the
 dual-drive gantry of Garc\'ia-Herreros et al.~\cite{garcia2013model}.
 \mv[Jan11]{II-A P2}Let \(L_b\) denote the cross-arm length between the two flexible joints.
-\mv[Jan11]{II-A P2}The generalized coordinates\add[Jan11]{ $q=[X\;\Theta\;Y]^\top$} are defined as $X=(X_1+X_2)/2$ and $\Theta=(X_1-X_2)/L_b$\add[Jan11]{, the position and yaw angle of the cross-arm}, while $Y$ is
+\mv[Jan11]{II-A P2}The generalized coordinates \add[Jan11]{ $q=[X\;\Theta\;Y]^\top$} are defined as $X=(X_1+X_2)/2$ and $\Theta=(X_1-X_2)/L_b$\add[Jan11]{, the position and yaw angle of the cross-arm}, while $Y$ is
 unchanged. These coordinates avoid
-\add[Jan12, Js26, Q19]{a closed kinematic-chain description and make the coupling caused by the
+\add[Jan12, Js26, Q19]{a closed kinematic-chain description and make the coupling 
+associated with the
 nonuniform load distribution explicit} \cite{garcia2013model}.
 \todo{This needs to make clear why we choose for this realization.}
 \todo{How to connect, nonunfirom ... moving payload position}
@@ -206,7 +207,8 @@ where $u$ denotes the generalized force.
 % with the measured position $Y$ as scheduling variable \cite{toth2010modeling}.
 
 Following Garc\'ia-Herreros et al. \cite{garcia2013model}, the baseline \chg[Q22, Q23]{uses}{assumes} \chg[Js28]{\(\cos\Theta\approx1\)
-and \(\sin\Theta\approx0\)}{$\cos(\Theta)\approx1$ and $\sin(\Theta)\approx0$}\add[Q23]{, which holds because the yaw angle stays small,} and assumes that the Coriolis and centripetal force \chg[Jan13]{term is}{terms are}
+and \(\sin\Theta\approx0\)}{$\cos(\Theta)\approx1$ and $\sin(\Theta)\approx0$}\add[Q23]{, 
+valid for small yaw angles,} and assumes that the Coriolis and centripetal force \chg[Jan13]{term is}{terms are}
 negligible compared \chg[Jan14]{with}{to} the inertia, damping, and stiffness forces.
 % FEEDBACK: Q23 small angles; Garcia Sec. 2.2 (yaw limited to tens of
 %   microrad in operation).
@@ -249,12 +251,12 @@ K&=
 \label{eq:damping_stiffness_matrices}
 \end{equation}
 }
-\add[Js34, Js47]{The time argument is omitted from here on.}
+\add[Js34, Js47]{From here on the notation for the time dependency is dropped.}
 \todo{Proposed insertion: ``Garc\'ia-Herreros et al.\ also model Coulomb friction at the three actuators \cite[Sec.~2.2]{garcia2013model}. The baseline omits these terms, so that friction remains a physical effect the augmentation must capture (Section~\ref{sec:setup}).'' Reason documented in D-204. Second reason? A sign term is not twice differentiable, which \cite[Cond.~8]{hoekstra2026lfr} assumes for well-posedness. because: ?}
 \todo{Look at this section, the above state a lot, look fine}
-The masses, flexible-joint stiffness and damping coefficients, and \add[Jan15, Js31]{geometric
-dimensions} are shown in Fig.~\ref{fig:gantry_system}. Here, $J_b$ and $J_h$
-denote the yaw inertias\add[Jasper mail 1]{ of the cross-arm and the payload}, while $c_{g1}$, $c_{g2}$, and $c_y$ denote the actuator
+The masses, flexible-joint stiffness and damping coefficients, and \add[Jan15, Js31]{the
+dimensions $L_b$ and $d$} are shown in Fig.~\ref{fig:gantry_system}. Here, $J_b$ and $J_h$
+denote the yaw inertias \add[Jasper mail 1]{of the cross-arm and the payload}, while $c_{g1}$, $c_{g2}$, and $c_y$ denote the actuator
 damping coefficients.
 \add[Jasper mail 1]{The masses $m_1$ and $m_2$ belong to the two X actuators,
 $m_b$ to the cross-arm and $m_h$ to the payload.
