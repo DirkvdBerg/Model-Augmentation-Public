@@ -1,88 +1,94 @@
-% cover.tex  --  TU/e AI&ES MSc thesis cover (open access), rebuilt in LaTeX
-% 1:1 from frontmatter/titlepage.pdf (Dirk 2026-10-18). Every position, font
-% and size is taken from the template's text baselines (PDF bp from the
-% bottom-left corner of the A4 template). The TU/e logo is cropped from the
-% template itself; the ASMPT logo is added top left. Only deviation: Program
-% needs two lines, so the Graduation rows below it move down one line.
+% cover.tex  --  TU/e AI&ES MSc thesis cover (open access), from the official
+% LaTeX template frontmatter/tue-templates/open_access/main.tex (Dirk
+% 2026-10-18). The template body is kept as is; only the fields are filled in
+% and the ASMPT logo is added left of the TU/e logo. The template's page
+% (article, 12pt, A4, 1in margins, Computer Modern) is reproduced inside a
+% box and fitted to the US Letter IEEEtran page: scale 11in/297mm, centred.
 
-\newcommand{\coverat}[3]{% x, baseline y, text (left aligned)
-  \node[anchor=base west] at (#1bp,#2bp) {#3};}
-\newcommand{\coverline}[3]{% x, baseline y, width: template form line
-  \fill (#1bp,#2bp-1.56bp) rectangle ++(#3,-0.48bp);}
-\newlength{\coverdate}
-\settowidth{\coverdate}{\fontsize{9.96}{12}\selectfont 17 November 2026}
-\ifdim\coverdate<56.4bp \setlength{\coverdate}{56.4bp}\fi
+% Article 12pt list spacing (size12.clo), used by flushright and center.
+\makeatletter
+\newcommand{\coverarticlelists}{%
+  \def\@listi{\leftmargin\leftmargini
+    \parsep 5\p@ \@plus2.5\p@ \@minus\p@
+    \topsep 10\p@ \@plus4\p@ \@minus6\p@
+    \itemsep5\p@ \@plus2.5\p@ \@minus\p@}%
+  \let\@listI\@listi
+  \@listi
+  \setlength\partopsep{3\p@ \@plus 2\p@ \@minus 2\p@}}
+\makeatother
 
 \begin{titlepage}
-\begin{tikzpicture}[remember picture, overlay,
-    every node/.style={inner sep=0bp, outer sep=0bp}]
-  % The A4 template (595.56 x 842.04 bp) is fitted to the US Letter IEEEtran
-  % page (612 x 792 bp) as pdfpages would: scale 792/842.04, centred.
+\begin{tikzpicture}[remember picture, overlay]
   \begin{scope}[shift={(current page.south west)},
-      xshift=25.91bp, scale=0.940573, transform shape]
+      xshift={(8.5in-0.940737*210mm)/2}, scale=0.940737, transform shape]
+  \node[anchor=north west, inner sep=0pt] at (1in,{297mm-1in}) {%
+  \begin{minipage}[t]{\dimexpr210mm-2in\relax}
+  % Template typesetting: article 12pt sizes, Computer Modern, indent 1.5em.
+  \fontfamily{cmr}\renewcommand{\bfdefault}{bx}\fontsize{12}{14.5}\selectfont
+  \coverarticlelists
+  \renewcommand{\small}{\fontsize{10.95}{13.6}\selectfont}%
+  \renewcommand{\large}{\fontsize{14.4}{18}\selectfont}%
+  \renewcommand{\Large}{\fontsize{17.28}{22}\selectfont}%
+  \setlength{\parindent}{1.5em}%
+  \setlength{\parskip}{0pt plus 1pt}%
 
-  % Logos.
-  \node[anchor=west] at (72bp,751.5bp)
-    {\includegraphics[height=24bp]{frontmatter/asmpt_logo.png}};
-  \node[anchor=south west] at (364.65bp,730.99bp)
-    {\includegraphics[viewport=364.65 730.99 515.36 772.04, clip]
-      {frontmatter/titlepage.pdf}};
+\begin{flushright}
+    \makebox[\linewidth][s]{%
+      \raisebox{11.5pt}{\includegraphics[height=24pt]{frontmatter/asmpt_logo.png}}\hfill
+      \includegraphics[width=0.38\textwidth]{frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png}}\\[0.25cm]
+    {\small \textbf{Department of Electrical Engineering}}
+\end{flushright}
+\vspace*{2cm}
+%%% -------------------------------------------
+% TITLE + AUTHOR
+\begin{center}
+    {\Large \textbf{Model Augmentation for a\\
+      High-Precision Dual-Drive Gantry}\par}\vspace{1cm}
+    by \\[1cm]
+    {\large \textbf{D.J.L.M. van den Berg}} \\[3cm]
+    {\large MSc Thesis} \\[2cm]
+\end{center}
 
-  \fontsize{9.96}{12}\selectfont
-  \coverat{81.96}{684.12}{\bfseries Department of Electrical Engineering}
+% TWO COLUMNS
+\begin{minipage}[t]{0.48\textwidth}
+    {\bfseries \small Thesis committee} \\[0.25cm]
+    {\small dr.\ ir.\ M. Schoukens} \\
+    {\small prof.\ dr.\ ir.\ R. T{\'o}th} \\
+    {\small dr.\ ir.\ M.F. Shakib} \\
+    {\small ir.\ J. Gerritsen} \\
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+    {\bfseries \small Graduation} \\[0.25cm]
+    {\small
+    \begin{tabular}{@{}l r@{}}
+        Program: & \begin{tabular}[t]{@{}r@{}}Artificial Intelligence and\\
+                   Engineering Systems\end{tabular} \\
+        Research group: & Control Systems \\
+        Thesis supervisor: & dr.\ ir.\ M. Schoukens \\
+        Date of defense: & 17-11-2026 \\
+        Student ID: & 1555561 \\
+        Study load (ECTS): & 45 \\
+        Track: & \begin{tabular}[t]{@{}r@{}}High-Tech Systems\\
+                 and Robotics\end{tabular} \\
+    \end{tabular}
+    }
+\end{minipage}
 
-  % Title block, each line centred where the template placeholder was centred.
-  \node[anchor=base] at (276.5bp,537bp)
-    {\fontsize{17.04}{20}\selectfont\bfseries Model Augmentation for a};
-  \node[anchor=base] at (276.5bp,517bp)
-    {\fontsize{17.04}{20}\selectfont\bfseries High-Precision Dual-Drive Gantry};
-  \coverat{277.56}{487.08}{\fontsize{12}{14}\selectfont by}
-  \node[anchor=base] at (279.8bp,442.91bp)
-    {\fontsize{14.04}{16}\selectfont\bfseries D.J.L.M. van den Berg};
-  \coverat{251.52}{356.40}{\fontsize{14.04}{16}\selectfont MSc Thesis}
+\vspace{1cm}
 
-  % Thesis committee (fifth line left empty).
-  \coverat{72}{300.36}{\bfseries Thesis committee}
-  \coverat{72}{285}{dr.\ ir.\ M. Schoukens}
-  \coverat{72}{273}{prof.\ dr.\ ir.\ R. T{\'o}th}
-  \coverat{72}{261}{dr.\ ir.\ M.F. Shakib}
-  \coverat{72}{247.8}{ir.\ J. Gerritsen}
+{\small The research of this thesis has been carried out in collaboration with ASMPT, Beuningen.}
 
-  % Graduation. Template baselines; rows after Program shifted by 11.88 bp.
-  \coverat{304.35}{300.36}{\bfseries Graduation}
-  \coverat{304.35}{284.88}{Program:}
-  \coverat{395.76}{284.52}{Artificial Intelligence and}
-  \coverat{395.76}{272.64}{Engineering Systems}
-  \coverat{304.35}{261.12}{Capacity group:}
-  \coverat{395.76}{260.52}{Control Systems}
-  \coverat{304.35}{249.24}{Thesis supervisor:}
-  \coverat{395.76}{247.92}{dr.\ ir.\ M. Schoukens}
-  \coverat{304.34}{236.40}{Date of defense:}
-  \coverat{396}{236.40}{17 November 2026}
-  \coverline{396}{236.40}{\coverdate}
-  \coverat{304.32}{224.76}{Student ID:}
-  \coverat{395.4}{224.76}{1555561}
-  \coverline{395.4}{224.76}{57bp}
-  \coverat{304.32}{213.12}{Study load (ECTS):}
-  \coverat{395.76}{213.12}{45}
-  \coverline{395.76}{213.12}{56.64bp}
-  \coverat{304.32}{200.52}{Track:}
-  \coverat{395.39}{200.52}{High-Tech Systems and Robotics}
+\vspace{0.4cm}
+{\small This thesis is public and Open Access.}
 
-  % Footer, line by line; full lines are spread to the template text width.
-  \coverat{71.28}{149.28}{The research of this thesis has been carried out
-    in collaboration with \textit{ASMPT, Beuningen}.}
-  \coverat{71.88}{136.80}{\fontfamily{ppl}\fontsize{9.02}{11}\selectfont
-    This thesis is public and Open Access.}
-  \coverat{71.28}{113.40}{\makebox[444.3bp][s]{This thesis has been realized
-    in accordance with the regulations as stated in the TU/e Code of
-    Scientific}}
-  \coverat{71.28}{101.88}{Conduct.}
-  \coverat{71.28}{78.24}{\makebox[444.3bp][s]{Disclaimer: the Department of
-    Electrical Engineering of the Eindhoven University of Technology accepts
-    no}}
-  \coverat{71.28}{66.72}{responsibility for the contents of MSc theses or
-    practical training reports.}
+\vspace{0.4cm}
+{\small This thesis has been realized in accordance with the regulations as stated in the TU/e Code of Scientific Conduct.}
+
+\vspace{0.4cm}
+
+{\small Disclaimer: the Department of Electrical Engineering of the Eindhoven University of Technology accepts no responsibility for the contents of MSc theses or practical training reports.}
+  \end{minipage}};
   \end{scope}
 \end{tikzpicture}
 \end{titlepage}

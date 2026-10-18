@@ -88,6 +88,15 @@ CACHE = TW / 'Results' / 'thesis-eval' / (('final-' + RUNS_DIR.name) if _FINAL e
 # deepSI's own checkpoint folder of the grey-box runs (`get_work_dirs()['checkpoints']`: ~/.deepSI/checkpoints
 # on the server), where a run that has not finished keeps its best validated model as `<Class>_<id>_best.pth`
 DEEPSI_CKPT = Path(os.environ.get('THESIS_DEEPSI_CKPT', Path.home() / '.deepSI' / 'checkpoints'))
+(TW / 'Results').mkdir(exist_ok=True)                  # every producer writes its CSV here
+
+
+def bb_checkpoint(folder, name):
+    """A black-box checkpoint file: in the run's own folder (`<out>/localappdata/deepSI/checkpoints`,
+    where train_bb_clmap.py points LOCALAPPDATA; honoured by deepSI on Windows only), else in deepSI's
+    default folder (on Linux: ~/.deepSI/checkpoints, where the server grid wrote them)."""
+    p = Path(folder) / name
+    return p if p.is_file() else DEEPSI_CKPT / name
 
 
 def checkpoint_status(rid):

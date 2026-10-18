@@ -26,7 +26,7 @@ import numpy as np
 import torch
 from scipy.io import loadmat
 
-from eval_common import (REPO, TW, BB_CKPT, BB_CODE, BB_RESULT, CACHE, DATA_NF, TWINS_NOISY, TWINS_NF,
+from eval_common import (REPO, TW, BB_CKPT, bb_checkpoint, BB_CODE, BB_RESULT, CACHE, DATA_NF, TWINS_NOISY, TWINS_NF,
                          SPLITS, record_name, twin_files)
 
 sys.path.insert(0, str(REPO / 'scripts' / 'gantry' / 'blackbox-cl-trainable' / 'bbcl'))
@@ -69,9 +69,12 @@ def select_bb(bb_dir):
         hist = [h['nrms_e'] for h in res.get('val_rms_hist') or [] if np.isfinite(h['nrms_e'])]
         ckd = d / 'localappdata' / 'deepSI' / 'checkpoints'
         # result.json names the file since 2026-10-16; earlier searches hold one `_best.pth`
-        ck = ckd / res['checkpoint'] if 'checkpoint' in res else next(iter(sorted(ckd.glob('*_best.pth'))), ckd)
+        ck = (bb_checkpoint(ckd, res['checkpoint']) if 'checkpoint' in res
+              else next(iter(sorted(ckd.glob('*_best.pth'))), ckd))
         n_par = np.nan
-        if ck.is_file():
+        if not ck.is_file():
+            print('[BB select] %s: checkpoint %s not found, parameters not counted' % (d.name, ck), flush=True)
+        else:
             sd = torch.load(ck, map_location='cpu', weights_only=False)
             n_par = sum(p.numel() for m in sd.values() if isinstance(m, torch.nn.Module) for p in m.parameters())
         parts = d.name.split('_')
@@ -120,7 +123,8 @@ def main():
     # name of the 2026-10-11 search, which predates the field
     ckpt = res.get('checkpoint', 'SS_encoder_general_hf_%s_best.pth' % BB_CODE)
     model = SS_encoder_general_hf.__new__(SS_encoder_general_hf)
-    model.__dict__ = torch.load(BB_CKPT / ckpt, map_location='cpu', weights_only=False)
+    print('[BB] checkpoint %s' % bb_checkpoint(BB_CKPT, ckpt), flush=True)
+    model.__dict__ = torch.load(bb_checkpoint(BB_CKPT, ckpt), map_location='cpu', weights_only=False)
     print('[BB] nx %d, loaded in %.0f s' % (model.nx, time.time() - t0), flush=True)
 
     def predict(recs):
