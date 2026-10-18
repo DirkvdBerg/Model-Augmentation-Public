@@ -1,0 +1,108 @@
+% format.tex  --  macros, notation, styling. Swap the class without touching this.
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% ---------------------------------------------------------------- review preview
+% Uncomment to make the editor build (main.pdf) show what supervisors see: no todos,
+% no wip blocks, outlines as plain bullets. Comment out again to get the working version.
+%\def\ReviewBuild{}
+
+% ---------------------------------------------------------------- draft switch
+% \drafttrue  -> todo notes visible.   \draftfalse -> submission build.
+\newif\ifdraft
+\drafttrue
+\ifdefined\ReviewBuild\draftfalse\fi   % review.tex defines \ReviewBuild: review PDF for supervisors
+\ifdraft
+  \newcommand{\todo}[1]{\textcolor{red}{[\textbf{TODO:} #1]}}
+  \newcommand{\note}[1]{\textcolor{blue}{[#1]}}
+  \newcommand{\kw}[1]{\textcolor{teal}{#1}}   % keep-word: fixed term during own-words rewrite
+\else
+  \newcommand{\todo}[1]{}
+  \newcommand{\note}[1]{}
+  \newcommand{\kw}[1]{#1}                     % submission build: plain text
+\fi
+
+% ---------------------------------------------------------------- review switch
+% wip:     text kept in the file but not shown to supervisors (old bullets, AI prose).
+%          \begin{wip} and \end{wip} each on their own line (comment package).
+% outline: the clean bullets of what a section will state. A list: write \item lines.
+% main.tex (editor build): wip shown, outline shown in blue.
+% review.tex (review build): wip removed, outline shown as a plain list, todos removed.
+\usepackage{comment}
+\ifdefined\ReviewBuild
+  \excludecomment{wip}
+  \newenvironment{outline}{\begin{itemize}}{\end{itemize}}
+  % review: cite the source only, without the Eq./Sec./Thm. part in brackets
+  \let\fullcite\cite
+  \renewcommand{\cite}[2][]{\fullcite{#2}}
+\else
+  \includecomment{wip}
+  \newenvironment{outline}{\begingroup\color{blue!60!black}\begin{itemize}}{\end{itemize}\endgroup}
+\fi
+% \ucite: a citation whose source is not yet checked. Editor build: normal citation in orange.
+% Review build: no citation, and the source is left out of the reference list.
+% Same arguments as \cite; change back to \cite once the source is checked.
+\ifdefined\ReviewBuild
+  \newcommand{\ucite}[2][]{}
+\else
+  \newcommand{\ucite}[2][]{{\color{orange}\if\relax\detokenize{#1}\relax\cite{#2}\else\cite[#1]{#2}\fi}}
+\fi
+% \revnote: a remark for supervisors. Shown in main.tex and review.tex, removed at submission.
+\ifdefined\ReviewBuild
+  \newcommand{\revnote}[1]{\textcolor{violet}{[\textbf{Note:} #1]}}
+\else\ifdraft
+  \newcommand{\revnote}[1]{\textcolor{violet}{[\textbf{Note:} #1]}}
+\else
+  \newcommand{\revnote}[1]{}
+\fi\fi
+
+% ------------------------------------------------------------ feedback changes
+% Marks for revising text after supervisor feedback (2026-10-18). Black text is the
+% original word for word. Editor build: changes visible. Review and submission build:
+% final text only, deletions gone, no tags. [tag] is the comment id, e.g. Jan3, Js12, Q5.
+%   \chg[tag]{old}{new}   word-level fix: old struck grey, new green
+%   \del[tag]{text}       deleted text: struck grey
+%   \add[tag]{text}       new text: green
+%   \mv[tag]{P3}          before a moved sentence: grey tag "P3" (paragraph it came from)
+%   \changelegend         one-line legend, put once at the top of a revised section
+% \showdeletionsfalse hides the struck text to read the revised flow.
+\newif\ifshowdeletions
+\showdeletionstrue
+\definecolor{chgnew}{rgb}{0,0.45,0.15}
+\newcommand{\fbtag}[1]{\if\relax\detokenize{#1}\relax\else\textsuperscript{\tiny\color{gray}#1}\fi}
+% \fbsout: grey strikethrough; boxes \cite, which \sout cannot break into
+\newcommand{\fbsout}[1]{{\color{gray}\let\fbcite\cite\def\cite##1{\mbox{\fbcite{##1}}}\sout{#1}}}
+\ifdraft
+  \newcommand{\chg}[3][]{\ifshowdeletions\fbsout{#2}\ \fi{\color{chgnew}#3}\fbtag{#1}}
+  \newcommand{\del}[2][]{\ifshowdeletions\fbsout{#2}\fbtag{#1}\fi}
+  \newcommand{\add}[2][]{{\color{chgnew}#2}\fbtag{#1}}
+  \newcommand{\mv}[2][]{\textsuperscript{\tiny\color{gray}from #2\if\relax\detokenize{#1}\relax\else, #1\fi}\,}
+  \newcommand{\changelegend}{{\footnotesize\color{gray}[Changes: black = original,
+    {\color{chgnew}green} = changed or new, \sout{struck} = deleted,
+    \textsuperscript{\tiny from P3} = moved from paragraph 3, superscript = comment id.]}\par}
+\else
+  \newcommand{\chg}[3][]{#3}
+  \newcommand{\del}[2][]{}
+  \newcommand{\add}[2][]{#2}
+  \newcommand{\mv}[2][]{}
+  \newcommand{\changelegend}{}
+\fi
+
+% ------------------------------------------------------------ general notation
+% Copied verbatim from scripts/gantry/orthogonal-by-construction/documentation/
+% state-level-obc-derivation.tex so the two documents stay comparable.
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\ran}{\operatorname{range}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\code}[1]{\nolinkurl{#1}}
+
+% ------------------------------------------------------------ paper notation
+% Define the symbols for this paper here, once.
+% Section II: gantry coordinates, baseline model, LFR.
+\newcommand{\qact}{q_{\mathrm{act}}}     % actuator coordinates [X1 X2 Y]^T
+\newcommand{\uact}{u_{\mathrm{act}}}     % actuator forces
+\newcommand{\fnet}{f_{\mathrm{net}}}     % net generalized force on the inertia
+\newcommand{\Dsch}{\Delta}               % scheduling block of the LFR

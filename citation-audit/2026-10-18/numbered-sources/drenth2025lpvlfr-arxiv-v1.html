@@ -1,0 +1,422 @@
+<meta charset="utf-8"><title>drenth2025lpvlfr-arxiv-v1</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1]                                                                           Eﬀicient Learning of Aﬀine and Rational</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1]                                                                            Dependency LPV Models With Linear</div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1]                                                                                  Fractional Representation ⋆</div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1]                                                                            Roel Drenth ∗ Jan H. Hoekstra ∗ Maarten Schoukens ∗</div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1]                                                                                              Roland Tóth ∗,∗∗</div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1]                                                                            ∗</div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1]                                                                              Control Systems Group, Dept. of Electrical Eng., Eindhoven</div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1]                                                                           University of Technology, Eindhoven, The Netherlands.(e-mail:</div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1]                                                                                {r.drenth, j.h.hoekstra, m.schoukens, r.toth}@tue.nl).</div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1]                                                                       ∗∗</div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1]                                                                          Systems and Control Laboratory, HUN-REN Institute for Computer</div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1] arXiv:2605.12203v1 [eess.SY] 12 May 2026</div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1] </div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1] </div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1] </div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1] </div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1]                                                                                      Science and Control, Budapest, Hungary</div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1] </div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1]                                                         Abstract: Identifying control-friendly models of nonlinear systems remains one of the major</div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1]                                                         challenges at the intersection of system identification and control. The Linear Parameter-</div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1]                                                         Varying (LPV) framework offers a promising solution, but existing identification methods</div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1]                                                         often rely on model structures with aﬀine scheduling dependency. Instead, this work proposes</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1]                                                         the use of LPV models with Linear Fractional Representation (LFR) admitting a rational</div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1]                                                         scheduling-dependency, capable of modelling complex nonlinear systems with fewer scheduling</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1]                                                         variables compared to aﬀine models. This work introduces a direct parameterization to ensure</div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1]                                                         well-posedness of rational LPV-LFR models, which by joint-estimation of an LPV plant and</div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1]                                                         scheduling map, using only input-output data, is capable of modelling complex nonlinear</div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1]                                                         systems. Accuracy of the proposed approach is shown on two simulation examples.</div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1] </div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1]                                                         Keywords: Linear Parameter-Varying System Identification, Linear Fractional Representation,</div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1]                                                         Scheduling Map Estimation</div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.1] </div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.1]                                                                1. INTRODUCTION                                   powerful control and modelling approaches (Hjartarson</div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.1]                                                                                                                  et al., 2015; den Boef et al., 2021).</div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.1]                                            As the performance demands of systems in engineering                  Traditional LPV identification methods, which require</div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.1]                                            grow, the limitations of the ubiquitous Linear Time-                  knowledge of the scheduling signal, are often extensions of</div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.1]                                            Invariant (LTI) assumptions become apparent. Employing                their LTI counterparts. Notable methods include Predic-</div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.1]                                            the LTI framework to model systems which are often in-                tion Error Minimization (PEM) methods (see e.g., Tóth</div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.1]                                            herently nonlinear (NL) results in models with limited ac-            (2010)), and Subspace Identification (see e.g., Van Winger-</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.1]                                            curacy, which subsequently limits achievable performance              den and Verhaegen (2009), Cox and Tóth (2021)). In</div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.1]                                            in (model-based) control.                                             recent years, methods which jointly identify an LPV model</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.1]                                            The Linear Parameter-Varying (LPV) framework offers an                and its scheduling map have been gaining attention. By</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.1]                                            attractive alternative to the LTI framework. LPV models               estimating the scheduling map directly from data, the</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.1]                                            retain a structure that is linear in the input, but the model         often significant challenge of modelling the scheduling is</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.1]                                            parameters can vary as a function of a scheduling variable.           bypassed. In particular, deep-learning-based identification</div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.1]                                            Through change in the scheduling variable, LPV models                 methods with LPV-state-space (SS) models and Neural</div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.1]                                            are capable of representing time-varying and nonlinear                Network (NN) scheduling maps have been shown to ef-</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.1]                                            behaviour. This results in a model class which provides               ficiently estimate LPV/NL models (Verhoek et al., 2022)</div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.1]                                            a middle-ground between the limitations of the LTI class              and noise processes (Bemporad and Tóth, 2025).</div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.1]                                            and the complexity of nonlinear models. Importantly,                  LPV identification methods have been developed for a</div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.1]                                            the LPV structure enables controller synthesis tools with             wide range of model classes, including LPV-Input-Output</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.1]                                            performance guarantees (see e.g., Mohammadpour and                    (IO), LPV-SS and LPV-Linear Fractional Representation</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.1]                                            Scherer (2012)). Moreover, the LPV framework enjoys                   (LFR) classes. However, the LPV-SS and LPV-LFR model</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.1]                                            the support of various software toolboxes, implementing               classes are most commonly used for controller synthesis.</div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.1]                                                                                                                  For LPV-SS models, controller synthesis methods require</div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.1]                                            ⋆ This work is funded by the European Union (ERC, COMPLETE,           aﬀine dependency on the scheduling variables. Using a</div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.1]                                            101075836), by the Air Force Oﬀice of Scientific Research under       simple aﬀine-dependency structure to model complex non-</div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.1]                                            award number FA8655-23-1-7061, and the Mathworks Inc. Views and       linearities often comes with the trade-off of requiring in-</div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.1]                                            opinions expressed are however those of the author(s) only and do     creased number of scheduling variables and a complex</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.1]                                            not necessarily reflect those of the European Union or the European   scheduling map, which in turn can introduce unnecessary</div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.1]                                            Research Council Executive Agency. Neither the European Union         conservatism in controller synthesis, called overbounding.</div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.1]                                            nor the granting authority can be held responsible for them.</div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.1] </div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.2] Alternatively, we consider the LPV-LFR class of models.           with a wide range of properties, such as nonlinearities</div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.2] This class admits rational dependency on the scheduling           and uncertainty, in a unified manner. It originally gained</div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.2] variable which can reduce the required dimension and              popularity in the field of robust control (Zhou et al.</div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.2] complexity of the scheduling map and thus the effects of          (1996)) where it is used to model uncertain systems.</div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.2] overbounding (see e.g., Hoffmann and Werner (2014) for            For LPV systems it is instead used to incorporate the</div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.2] a comparison). Importantly, this model class is still suited      parameter-varying nature. With an LFR, LPV systems are</div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.2] for controller synthesis (Scherer (2001)). However, iden-         represented by interconnections between nominal systems</div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.2] tification of LPV-LFR models corresponding to rational-           M and their parameter-varying components represented</div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.2] dependency is a significantly more challenging problem as         by matrix functions ∆(p) with linear dependence on the</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.2] the rational terms can introduce singularities.                   scheduling signal p (Scherer and Weiland, 2015).</div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2] So far, little research on the identification of LPV-LFR          Let us define an LPV-LFR as a pair {M, ∆(p)} where the</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2] models has been performed, and the methods that do                interconnection in discrete time follows the standard form:</div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2]                                                                                 {[      ] [                 ][ ]</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2] exist face significant challenges, such as requiring full-state                    xk+1         Ax B w B u      xk</div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2] measurements (Nemani et al. (1995)), being restricted                       M:      zk = Cz Dzw Dzu wk ,</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2] to aﬀine-dependency (Mejari et al. (2019); Bianchi and                              yk          Cy Dyw Dyu uk               (2)</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2] Sánchez-Peña (2010)), or assuming models cannot be ill-                                  wk = ∆(pk )zk ,</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2] posed (Lee and Poolla (1999), Cheng and Sznaier (2015)).</div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2] In particular, to the best of the authors’ knowledge,             where wk , zk ∈ Rnw are the latent variables, Ax , . . . Dyu</div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2] no methods to ensure well-posedness in identification of          are real matrices of appropriate dimensions, and pk ∈</div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2] LPV-LFR models under rational scheduling dependency               P ⊆ Rnp is the scheduling variable. The matrix function</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2] exist. Furthermore, no research on the use of LPV-LFR             ∆(pk ) : P → Rnw ×nw , commonly referred to as the Delta-</div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2] models in the aforementioned joint scheduling and model           block, is typically assumed to be diagonal and can be</div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2] identification setting has been performed.                        defined as:                                 </div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.2]                                                                                           p1,k Iη1       0</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.2] In this work we leverage the eﬀiciency of deep-learning-                                          ..          </div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.2]                                                                               ∆(pk ) =               .        ,           (3)</div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.2] based joint-estimation methods with the expressivity of</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.2] rational LPV-LFR models to estimate nonlinear models.                                         0        pnp ,k Iηnp</div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.2] Specifically, as main contribution, we provide a direct           where η is a vector of integers denoting the number of</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.2] parameterization of LPV-LFR models that guarantees                repetitions per scheduling variable and where Iη1 , . . . , Iηnp</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.2] well-posedness, inspired by direct parameterizations for          are identity matrices of appropriate size to realize the</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.2] stability of recurrent models (Revay et al. (2020), Verhoek       correct total dimension of ∆ (pk ). This interconnection</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.2] et al. (2023)).                                                   is equivalent to a LPV-SS representation with rational</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.2] The remainder of this paper first discusses the prob-             dependency on pk :</div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.2]                                                                                [      ] [               ][ ]</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.2] lem setting, including the model structure, in Section 2.                        xk+1      A(pk ) B(pk ) xk</div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.2]                                                                                        =                      ,                (4)</div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.2] Next, in Section 3, well-posedness conditions and a direct-                       yk       C(pk ) D(pk ) uk</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.2] parameterization satisfying such conditions is introduced.        where A(pk ), B(pk ), C(pk ), D(pk ) are matrix functions of</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.2] This is followed by the introduction of the identification        pk .</div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.2] methodology in Section 4. Finally, the proposed method is</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.2] evaluated on simulation examples in Section 5, after which        This is achieved by eliminating the latent variables wk and</div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.2] conclusions are drawn in Section 6.                               zk in (2) by substitution of</div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.2]                                                                            zk = (I − Dzw ∆(pk ))−1 (Cz xk + Dzu uk ).          (5)</div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.2]                  2. PROBLEM SETTING                               Which requires (I − Dzw ∆(pk )) to be non-singular. This</div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.2]                                                                   gives rise to the following definition:</div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.2] 2.1 Data-generating system                                        Definition 1. The LPV-LFR model defined by the pair</div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.2]                                                                   {M, ∆(pk )} according to (2) is well-posed, if I −Dzw ∆(pk )</div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.2] We consider discrete-time (DT) data-generating systems            is non-singular, i.e., det(I − Dzw ∆(pk )) ̸= 0 for all possible</div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.2] with the following state-space representation:                    realizations of the scheduling variable, i.e., pk ∈ P.</div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.2]                     {</div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.2]                       xk+1 = f (xk , uk ),</div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.2]                Σo :                                 (1)           As this representation admits rational LPV-SS models, it</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.2]                         yk = g(xk , uk ) + ek ,</div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.2]                                                                   is a generalization of commonly used aﬀine LPV-SS mod-</div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.2] where k ∈ Z is the discrete time, where xk ∈ X ⊆ Rnx is           els. Notably, aﬀine-dependency models are represented</div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.2] the state of the plant, uk ∈ U ⊆ Rnu is the input signal,         by taking (2) with Dzw = 0, resulting in a model set</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.2] yk ∈ Y ⊆ Rny is the system output, with output-additive           which is always well-posed. Furthermore, given an LPV-</div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.2] white noise noise ek ∈ E ⊆ Rny . uk is assumed to be quasi-       SS model with aﬀine dependency an equivalent LPV-LFR</div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.2] stationary. The state transition function f : X × U → X           realization can easily be recovered using Singular Value</div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.2] and output function g : X × U → Y are considered to be            Decomposition (SVD) methods (Zhou et al., 1996).</div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.2] deterministic and nonlinear.                                      LPV-LFR models can be used to represent LPV systems</div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.2]                                                                   by considering pk to be an exogeneous signal. Nonlinear</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.2] 2.2 Linear Fractional Representation                              systems such as Σo in (1) require defining pk = ψ(xk , uk )</div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.2]                                                                   where ψ : Rnx × Rnu → Rnp is a scheduling map, corre-</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.2] The Linear Fractional Representation is a general model           sponding to a LPV embedding of the original nonlinear</div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.2] representation that allows one to model dynamical systems         system.</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.2] </div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.3] 2.3 Identification structure                                           Definition 4. The spectral radius ρ of a matrix A ∈ Rn×n</div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.3]                                                                        with eigenvalues λ1 , . . . λn is defined as:</div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.3] We aim to identify the data-generating NL system Σo                                   ρ(A) = max{|λ1 |, . . . , |λn |}.      (8)</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.3] based on a dataset DN , in the form of parameterized</div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.3]                                                                        Condition 5. The spectral radius ρ of Dzw is strictly</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.3] surrogate model. Specifically, we consider self-scheduled</div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.3]                                                                        smaller than 1, i.e.,</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.3] LPV-LFR models, requiring the joint-estimation of LPV</div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.3] model and scheduling map, similar to Verhoek et al.                                              ρ(Dzw ) &lt; 1.                (9)</div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.3] (2022), which treats the LPV-SS setting.</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.3]                                                                        These lead to the following theorem.</div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.3] We parameterize the surrogate model for the system (1)                 Theorem 6. If Assumptions 2, 3, and Condition 5 hold,</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.3] in an LPV-LFR form according to:                                       the LPV-LFR model (2) is well-posed.</div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.3]              [         ] [              ][ ]</div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.3]              </div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.3]                x̂k+1        Ax B w B u    x̂k</div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.3]               ẑ         = Cz Dzw Dzu ŵk ,                           Proof. From Assumptions 2 and 3 it follows that</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.3]                     k</div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.3]         Gθ :      ŷk        Cy Dyw Dyu uk         (6)                 ρ(∆(pk )) ≤ 1, ∀pk ∈ P. Additionally, under Assumption</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.3]              </div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.3]                                                                       2, it holds that ρ(Dzw ∆(pk )) ≤ ρ(Dzw )ρ(∆(pk )). Thus,</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.3]              </div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.3]                       ŵk = ∆(p̂k )ẑk ,                               it follows that I − Dzw ∆(pk ) ≻ 0 for all combinations of</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.3] where the matrices Ax , . . . , Dyu form the parameter vector          pk ∈ P. This implies det(I − Dzw ∆(pk )) &gt; 0, ∀pk ∈ P,</div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.3] θG . Next, we consider the scheduling signal p̂k to be                 satisfying the well-posedness condition.</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.3] defined by a scheduling map ψ̂θ (xk , uk , dk ), where dk ∈            3.2 Well-posedness by direct parameterization</div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.3] Rnd is a known exogenous signal. The inclusion of dk</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.3] allows for full or partial external scheduling. To be able             To ensure Condition 5 is satisfied, we define</div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.3] to capture the set of data-generating systems described in                                Dzw = e−N , N ≻ 0.                 (10)</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.3] (1), the scheduling map is required to be a general function</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.3] approximator. To achieve this, we propose the use of a                 As the matrix exponential maps eigenvalues λ to eλ , the</div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.3] Feedforward Neural Network (FNN) parameterization of                   originally negative eigenvalues of −N are mapped to eigen-</div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.3] the scheduling map. Typically the FNN is extended with                 values of Dzw that are strictly smaller in magnitude than</div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.3] a linear bypass layer, resulting in a one-block ResNet (He             one. Based on (10) we propose direct parameterization</div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.3] et al., 2016). This bypass aids in the learning of linear              satisfying N ≻ 0, enabling unconstrained optimization.</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.3] dependencies on xk , uk and dk if present. The weights and             To guarantee Condition 5 through Dzw defined according</div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.3] biases of the ResNet form the parameter vector θψ . For                to (10) with N ≻ 0, we use the parameterization</div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.3] mildly nonlinear systems, the authors suggest the use of a                                  ⊤              ⊤</div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.3]                                                                                    N = Ψ(DA   DA + DB − DB   + ϵI),      (11)</div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.3] ResNet with two hidden layers, limited amount of neurons</div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.3] per layer (6-12) and hyperbolic tangent (tanh) activation              where the matrix Ψ = diag(eDd ) such that N is constructed</div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.3] functions.                                                             with the free variables DA ∈ Rnw ×nw , DB ∈ Rnw ×nw and</div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.3]             3. ENSURING WELL-POSEDNESS                                 Dd ∈ Rnw and a constant 0 &lt; ϵ ≪ 1. By combining</div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.3]                                                                                                                       ⊤</div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.3]                                                                        a symmetric positive-semi-definite term DA       DA , a skew-</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.3]                                                                                                   ⊤</div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.3] 3.1 Well-posedness conditions                                          symmetric term DB − DB and a strictly positive definite</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.3]                                                                        term ϵI, with positive scaling by Ψ, N is guaranteed to</div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.3] As we have shown in (5), for an LPV-LFR to be well-                    be strictly positive-definite by construction. The positive</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.3] posed, we require I − Dzw ∆(pk ) to be non-singular for                scaling term Ψ is shown in Revay et al. (2020) to extend the</div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.3] all possible realizations of the scheduling variables, i.e.,           feasible domain of N . Additionally, it aids in counteracting</div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.3] pk ∈ P. We propose a novel method for guaranteeing well-               potential poor scaling of variables which can be introduced</div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.3] posedness of LPV-LFR models, we begin by establishing                  through the transformation (10).</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.3] key assumptions and conditions that play a role in this</div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.3] result.                                                                When considering the use of LPV-LFR models in iden-</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.3]                                                                        tification, the parameterization of N according to (11)</div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.3] Assumption 2. The matrix function ∆(pk ) has a diagonal                enables unconstrained optimization without risk of obtain-</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.3] structure as defined in (3).                                           ing ill-posed models. By substituting the direct free pa-</div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.3] Assumption 3. The scheduling set 1 P is contained in the               rameterization of Dzw with the transformed free variables</div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.3] closed np -dimensional ℓ∞ unit ball, i.e.,                             in DA , DB and Dd for constructing Dzw , the number of</div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.3]          P ⊆ {p : Z → Rnp | ∥pk ||∞ ≤ 1 ∀k ∈ Z}.        (7)            parameters is increased from n2w to 2n2w + nw . However, as</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.3]                                                                        noted in Winston and Kolter (2020), by populating only</div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.3] It is important to note that Assumption 3 is not restrictive.          the lower triangular elements of DA and the strictly upper</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.3] Given an arbitrary, well-posed, LFR {G, ∆(p)}, under                   triangular elements of DB , this overparameterization is</div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.3] Assumption 2 it is trivial to retrieve an equivalent LFR               greatly reduced, now requiring only n2w + nw elements, nw</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.3] defined by the pair {M̄ , ∆(p)}</div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.3]                           ¯     which satisfies Assumption             variables more than populating Dzw directly.</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.3] 3 by scaling and shifting the scheduling variables (see e.g.,</div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.3] Scherer and Weiland (2015)). For models with NN schedul-                           4. IDENTIFICATION METHOD</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.3] ing map this can be enforced through the incorporation of</div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.3] an activation function on the output layer, such as the                4.1 Parameter Estimation</div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.3] tanh function.</div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.3] 1 One could also assume constraints directly on the scheduling map,    We aim to estimate a parametric surrogate model using</div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.3] however by constraining the scheduling set the results also hold for   LFR parameterization (6), given a dataset DN by mini-</div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.3] externally scheduled LPV models.                                       mizing the criterion:</div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.3] </div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.4]                                       N −1</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.4]                                     1 ∑                            Xavier initialization (Glorot and Bengio (2010)) is used.</div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.4]                   VNﬁt (θ, DN ) =       ∥êk|θ ∥22 ,       (12)    Bias terms are initialized as zero.</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.4]                                     N</div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.4]                                        k=0</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.4] where êk|θ = yk − ŷk|θ represents the prediction error given                   5. SIMULATION EXAMPLES</div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.4] the parameters θ. By choosing the model structure in (6),</div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.4] with Output-Error (OE) noise model, the prediction error           To evaluate the performance of the identified models,</div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.4] equals the simulation error.                                       we consider two simulation examples. First, a Nonlin-</div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.4]                                                                    ear Mass-Spring-Damper (NL-MSD) system is considered</div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.4] The parameter vector θ is comprised of the combined                to evaluate the trade-off of rational-scheduling depen-</div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.4] parameter vectors of the plant and scheduling map, θ =             dency. Secondly, we consider a Control Moment Gyroscope</div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.4]   ⊤ ⊤ ⊤</div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.4] [θG θψ ] . The minimization of (12) matches the classical          (CMG), previously used to evaluate performance of joint-</div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.4] PEM criterion which aims to minimize the Mean Squared              estimation methods, enabling comparison of the proposed</div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.4] Error (MSE) of the predictions. This leads to the following        methodology to existing methods. As a performance mea-</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.4] optimization problem:                                              sure, the Best Fit Rate (BFR) is considered, defined as:</div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.4]      argmin VNﬁt (θ, DN ) + ρ∥θ∥22 ,                                                {    ∑N −1                  }</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.4]                                                                                             k=0 ∥yk − ŷk ∥2</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.4]          θ</div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.4]                                                                       BFR = max 1 − ∑N −1                    , 0 · 100%, (15)</div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.4]                                                                                              k=0 ∥yk − ȳ∥2</div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.4]              s.t. x0 = θx0 ,</div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.4]                 p̂k = ψ̂(x̂k , uk , dk , θ),                (13)   where ŷk is the estimated output and ȳ is the sample mean</div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.4]                 x̂k+1 = A(∆(p̂k ), θ)x̂k +B(∆(p̂k ), θ)uk ,        of y.</div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.4]                 ŷk = C(∆(p̂k ), θ)x̂k +D(∆(p̂k ), θ)uk ,          The LPV-LFR models of both examples are trained ac-</div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.4]                 êk = yk − ŷk ,                                   cording to the same optimization strategy proposed in Sec-</div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.4] where θx0 represents the initial state as additional decision      tion 4. Leveraging the eﬀiciency of the JAX-based method,</div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.4] variable and where ρ∥θ∥22 is added as an ℓ2 -regularization        all models are trained for 100 random initializations on an</div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.4] term. To solve this optimization problem, we leverage              Intel 14700K CPU, and the model with the highest BFR</div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.4] the approach described in Bemporad (2025) based on                 on validation data is selected.</div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.4] JAX (Bradbury et al. (2018)). In this gradient-based</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.4] method, local optimization is performed in two steps.              5.1 Nonlinear Mass-Spring-Damper</div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.4] First, a fixed number of iterations is taken using the</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.4] Adam algorithm , followed by a number of iterations using          To illustrate the trade-off between aﬀine and rational-</div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.4] the bound-constrained limited-memory Broyden-Fletcher-             dependency LPV-LFR models we show a numerical ex-</div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.4] Goldfarb-Shanno (L-BFGS-B) algorithm (Liu and Nocedal              ample based on a DT NL-MSD system described by:</div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.4] (1989)). The use of Adam, through the incorporation of             x1,k+1 = x1,k +Ts x2,k ,</div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.4] momentum, aids in escaping local minima at the early                                  (                                           )</div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.4]                                                                    x2,k+1 = x2,k + Tms uk − 35 x1,k uk −k1 x1,k −k2 x31,k −d1 x2,k ,</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.4] iterations of the optimization process, providing a better</div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.4] point of initialization for the L-BFGS-B optimizer, which               yk = x1,k ,                                             (16)</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.4] subsequently converges accurately to the final minimum of          with Ts = 0.1, m = 1, k1 = 0.1, k2 = 1, d1 = 1 and</div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.4] the optimization process. This two-step approach has been          where x1 represents the position of the system and x2</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.4] shown to be computationally eﬀicient for the identification        its velocity. This plant features nonlinearities dependent</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.4] of NL-SS systems (Bemporad (2025)) as well as self-                on x1 and x21 , requiring two scheduling variables for aﬀine</div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.4] scheduled LPV-SS models (Bemporad and Tóth (2025)),                LPV representations or one scheduling variable for rational</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.4] particularly when compared with methods using Adam                 dependency models.</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.4] exclusively.</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.4]                                                                    The Data: Using the DT system, we generate three</div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.4] 4.2 Parameter Initialization                                       datasets, one training, validation and test set. Each</div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.4]                                                                    dataset is generated by exciting the system (16) with a</div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.4]                                                                    different realization of a random phase multisine signal.</div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.4] When starting the optimization procedure, initial values</div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.4]                                                                    The training and validation input signals are N = 6 · 103</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.4] for all elements in the parameter vector are required. This</div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.4]                                                                    samples long, the test set is longer, consisting of N = 3·104</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.4] is done in a pseudo-random manner. The elements of the</div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.4]                                                                    samples. Each input has frequency components from 16 Hz</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.4] plant are initialized as follows:</div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.4]                                                                    to 5 Hz. The input signals have amplitudes with standard</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.4]        Ax = 0.5I,               Bw = 0,                            deviation σu = 4 N. The output of (16) has additive white</div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.4]        Bu ∼ U (−0.1, 0.1),      Cz ∼ U (−0.1, 0.1),                noise N (0, σe2 ) with σe2 = 0.063, resulting in a SNR of</div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.4]                                                           (14)</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.4]        Dzu ∼ U (−0.1, 0.1), Cy ∼ U (−0.1, 0.1),                    approximately 20 dB.</div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.4]        Dyw = 0,                 Dyu = 0.</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.4] If aﬀine LPV-LFR models are used, Dzw is left out of the           Model Settings: To compare the performance of rational</div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.4] parameter vector, fixed at a zero matrix. For well-posed           and aﬀine-dependency based LPV-LFR models, we train</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.4] rational LPV-LFR models, we construct the Dzw matrix               such models using the well-posed parameterization with</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.4] by drawing lower triangular elements from a uniform                (nx = 2, np = 1, η = 3), matching the required order</div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.4] distribution U (0, 0.1) for the matrix DA , the strictly upper     necessary for rational models. Subsequently we train aﬀine</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.4] triangular elements of DB follow the normal distribution           models with (nx = 2, np = 2, η = 1) matching the the-</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.4] N (1, 1), finally Dd = 0 is chosen to initialize the remainder     oretically required dimensions for aﬀine models. On this</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.4] of the parameter vector. Lastly, to initialize the parameters      example, linear scheduling maps with saturation:</div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.4] of the scheduling map, represented by a ResNet, uniform                          ψ̂(x, u) = tanh(Wx x + Wu u + b),             (17)</div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.4] </div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.5]       Table 1. Results on the NL-MSD example</div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.5]                using LPV-LFR models.</div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.5] Model               BFR train   BFR val   BFR test     time</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.5] True System           89.47      90.19     90.15           -</div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.5] Aﬀine (np = 1)        53.56      41.78     44.90        37 s</div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.5] Aﬀine (np = 2)        89.56      90.20     89.87        87 s</div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.5] Rational (np = 1)     89.57      90.20     90.16      112 s</div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.5] </div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.5] are considered. Here Wx , Wu , b are free variables. Each</div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.5] model is trained for 1000 Adam epochs followed by 4000</div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.5] epochs using L-BFGS.                                            Fig. 2. Picture of the CMG considered in example 2.</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.5] Results: The results achieved on the NL-MSD benchmark</div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.5] are shown in Table 1 and illustrated in Figure 1. They show     The Data: As Verhoek et al. (2022) describes, the input</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.5] that LPV-LFR models with aﬀine and rational scheduling          of the first gimbal is excited with a sinusoidal carrier</div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.5] dependency are capable of achieving accurate results on         wave with white noise added: uk = 21 sin(ωTs k)+vk where</div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.5] test data-set. However, given the simple scheduling map         vk ∼ N (0, σv2 ) and σv = 13 . For each dataset, the frequency</div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.5] (17), the aﬀine models require a higher scheduling dimen-       of the sinusoidal carrier wave is drawn from a uniform</div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.5] sion np = 2 to achieve the same accuracy as the LPV-LFR         distribution, ω ∼ U (1, 2). Furthermore, an OE noise struc-</div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.5] model with rational scheduling dependency achieves with         ture is considered with error signal ek ∼ N (0, σe2 ) with</div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.5] a scheduling dimension of one. This illustrates the trade-      variance σe2 = 2.2 · 10−5 corresponding to a SNR of 35 dB.</div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.5] off between complexity in terms of scheduling dimension         The velocity of the disk follows the previously specified</div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.5] and complexity in terms of scheduling dependency which          reference. The data is generated using CT simulation with</div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.5] is made possible through the well-posed parameterization        RK4 integration and is subsequently down-sampled to 100</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.5] introduced in this work.                                        Hz. A training set consisting of 104 samples is created as</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.5]                                                                 well as a validation set of 3 · 104 samples.</div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.5] 5.2 Control Moment Gyroscope                                    Model Settings: To compare the performance of the</div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.5]                                                                 proposed LPV-LFR-based approach with the methods</div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.5] As second simulation example, we consider the 3-DOF             described in Verhoek et al. (2022) and Bemporad and</div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.5] CMG and compare achieved performance with the meth-             Tóth (2025), we opt to train models with the same</div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.5] ods presented in Verhoek et al. (2022) and Bemporad and         state and scheduling dimension (nx = 5, np = 3).</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.5] Tóth (2025). The 3-DOF CMG, as shown in Figure 2,               Rational-dependency and aﬀine-dependency-based models</div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.5] consists of a disk mounted inside a blue gimbal, which          are trained for comparison, both with η = 1. As scheduling</div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.5] in turn is mounted inside a red gimbal which is mounted         map, 2-hidden layer ResNets with 6 neurons per hidden</div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.5] inside of silver gimbal. The disk, and gimbals are each         layer and tanh activation functions are used. Each model</div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.5] equipped with a DC motor for actuation and an encoder           is trained for 2000 epochs using Adam, followed by 4000</div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.5] to measure the angular positions (q1 , q2 , q3 and q4 for the   epochs using L-BFGS.</div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.5] disk, blue, red, and silver gimbal respectively). During</div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.5] the simulation, the red gimbal is locked at q3 = 0, the         Results: The simulation performance of the LTI, aﬀine</div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.5] blue gimbal q2 is actuated with a motor current i2 , and        LPV-LFR and rational LPV-LFR model are shown in</div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.5] the angular velocity of the silver gimbal q̇4 is measured       Figure 3 and compared with the results in Bemporad and</div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.5] and considered as output. The velocity of the disk q̇1 is       Tóth (2025) in Table 2. The results show that for aﬀine</div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.5] controlled independently, tracking a random multi-level-        models, results similar to existing joint-estimation meth-</div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.5] reference signal with amplitudes between 30 and 50 rad/s        ods can be achieved, for rational models however, perfor-</div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.5] and dwell time of 4-8 seconds. The resulting dynamics can,      mance is slightly worse. This reduction in performance is</div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.5] for small angles of q2 , be interpreted as a nonlinear SISO     attributed to the increased complexity of the optimization</div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.5] model between the input i2 and output q̇4 with dynamics         problem, resulting form the additional complexity of the</div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.5] dependent on the external input q̇1 .                           rational scheduling dependency.</div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.5] </div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.5] </div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.5] </div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.5] </div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.5] Fig. 1. True output ( ), aﬀine LPV-LFR (np = 1) sim.</div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.5]      error ( ), aﬀine LPV-LFR (np = 2) sim. error ( ),          Fig. 3. True output ( ), LTI sim. error ( ), aﬀine LPV-</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.5]      and rational LPV-LFR sim. error ( ) on the test                 LFR sim. error ( ), and rational LPV-LFR sim.</div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.5]      data of the NL-MSD.                                             error ( ) on the validation data of the CMG.</div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.5] </div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.6]      Table 2. Comparison of LPV identification                 Intelligence and Statistics, 249–256. JMLR Workshop</div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.6]      results on the CMG dataset. Previous results              and Conference Proceedings, Sardinia, Italy.</div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.6]      are taken from Bemporad and Tóth (2025) and             He, K., Zhang, X., Ren, S., and Sun, J. (2016). Deep</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.6]      achieved on different hardware, computation               Residual Learning for Image Recognition. In Proc. of</div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.6]      times may differ. The LPV-SUBNET method                   the IEEE Conference on Computer Vision and Pattern</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.6]           is described in Verhoek et al. (2022).               Recognition, 770–778. Las Vegas, USA.</div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.6]                                                              Hjartarson, A., Seiler, P., and Packard, A. (2015). LPV-</div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.6] Model               BFR train     BFR val       time           Tools: A Toolbox for Modeling, Analysis, and Synthesis</div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.6] True System           98.16        98.19          -</div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.6]                                                                of Parameter Varying Control Systems. In Proc. of</div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.6] Aﬀine LPV-LFR         97.46        96.41        172 s</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.6] Rat. LPV-LFR          97.12        96.02        279 s</div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.6]                                                                the 1st IFAC Workshop on Linear Parameter Varying</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.6] LPV-SS                97.61        96.50       47.54 s         Systems, 139–145. Grenoble, France.</div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.6] LPV-SUBNET            97.28        96.40       ≈ 10 h        Hoffmann, C. and Werner, H. (2014). Complexity of</div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.6]                                                                Implementation and Synthesis in Linear Parameter-</div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.6]                    6. CONCLUSION                               Varying Control. In Proc. 19th IFAC World Congr. Cape</div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.6]                                                                Town, South Africa.</div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.6]                                                              Lee, L.H. and Poolla, K. (1999). Identification of Linear</div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.6] This work has proposed the use of the linear fractional</div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.6]                                                                Parameter-Varying Systems Using Nonlinear Program-</div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.6] representation for LPV models in the joint-estimation of</div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.6]                                                                ming. Journal of Dynamic Systems, Measurement, and</div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.6] LPV models and scheduling maps. A novel parameteri-</div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.6]                                                                Control, 121(1), 71–78.</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.6] zation which, by construction, guarantees well-posedness</div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.6]                                                              Liu, D.C. and Nocedal, J. (1989). On the limited memory</div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.6] of LPV-LFR models with rational scheduling dependency,</div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.6]                                                                BFGS method for large scale optimization. Mathemati-</div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.6] has been introduced. The well-posed parameterization has</div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.6]                                                                cal Programming, 45(1-3), 503–528.</div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.6] been shown to be capable of accurately modelling non-</div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.6]                                                              Mejari, M., Piga, D., Toth, R., and Bemporad, A. (2019).</div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.6] linear systems a simulation example, illustrating how the</div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.6]                                                                Kernelized Identification of Linear Parameter-Varying</div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.6] rational scheduling dependency can reduce the required</div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.6]                                                                Models with Linear Fractional Representation. In Proc.</div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.6] scheduling order. Finally, estimation of LPV-LFR models</div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.6]                                                                of the 18th European Control Conference, 337–342.</div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.6] with aﬀine and rational-dependency has been compared to</div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.6]                                                                Naples, Italy.</div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.6] state-of-the-art joint-estimation methods for LPV models</div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.6]                                                              Mohammadpour, J. and Scherer, C.W. (eds.) (2012). Con-</div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.6] on a benchmark where LPV-LFR models have been shown</div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.6]                                                                trol of Linear Parameter Varying Systems with Applica-</div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.6] to achieve results close to existing methods.</div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.6]                                                                tions. Springer US, Boston, MA.</div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.6]                                                              Nemani, M., Ravikanth, R., and Bamieh, B. (1995). Iden-</div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.6]                      REFERENCES                                tification of linear parametrically varying systems. In</div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.6]                                                                Proc. of the 34th IEEE Conference on Decision and</div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.6] Bemporad, A. (2025). An L-BFGS-B approach for linear           Control, 2990–2995. New Orleans, LA, USA.</div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.6]   and nonlinear system identification under ℓ1 and group-    Revay, M., Wang, R., and Manchester, I.R. (2020). Lip-</div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.6]   lasso regularization. IEEE Transactions on Automatic         schitz Bounded Equilibrium Networks. arXiv preprint</div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.6]   Control.                                                     arXiv:2010.01732.</div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.6] Bemporad, A. and Tóth, R. (2025). Eﬀicient identification    Scherer, C.W. (2001). LPV control and full block multi-</div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.6]   of linear, parameter-varying, and nonlinear systems with     pliers. Automatica, 37, 361–375.</div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.6]   noise models. arXiv preprint arXiv:2504.11982.             Scherer, C. and Weiland, S. (2015). Linear matrix inequal-</div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.6] Bianchi, F.D. and Sánchez-Peña, R.S. (2010). Robust            ities in control. Lecture Notes.</div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.6]   identification/invalidation in an LPV framework. In-       Tóth, R. (2010). Modeling and Identification of Lin-</div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.6]   ternational Journal of Robust and Nonlinear Control,         ear Parameter-Varying Systems, volume 403 of Lecture</div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.6]   20(3), 301–312.                                              Notes in Control and Information Sciences. Springer,</div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.6] Bradbury, J., Frostig, R., Hawkins, P., Johnson,               Berlin, Heidelberg.</div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.6]   M.J., Leary, C., Maclaurin, D., Necula, G.,                Van Wingerden, J.W. and Verhaegen, M. (2009). Subspace</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.6]   Paszke, A., VanderPlas, J., Wanderman-Milne,                 identification of Bilinear and LPV systems for open- and</div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.6]   S., and Zhang, Q. (2018).             JAX: composable        closed-loop data. Automatica, 45(2), 372–381.</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.6]   transformations       of    python+numpy       programs.   Verhoek, C., Beintema, G.I., Haesaert, S., Schoukens, M.,</div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.6]   https://github.com/google/jax.                               and Toth, R. (2022). Deep-Learning-Based Identifica-</div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.6] Cheng, Y. and Sznaier, M. (2015). Identification of LPV        tion of LPV Models for Nonlinear Systems. In Proc.</div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.6]   systems with LFT parametric dependence via convex            of the 61st IEEE Conference on Decision and Control,</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.6]   optimization. In Proc. of the 54th IEEE Conference on        3274–3280. Cancun, Mexico.</div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.6]   Decision and Control, 1459–1464. Osaka, Japan.             Verhoek, C., Wang, R., and Tóth, R. (2023). Learning</div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.6] Cox, P.B. and Tóth, R. (2021). Linear parameter-varying        Stable and Robust Linear Parameter-Varying State-</div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.6]   subspace identification: A unified framework. Automat-       Space Models. In Proc. of the 62nd IEEE Conference</div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.6]   ica, 123, 109296.                                            on Decision and Control, 1348–1353. Singapore.</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.6] den Boef, P., Cox, P.B., and Tóth, R. (2021). LPVcore:       Winston, E. and Kolter, J.Z. (2020). Monotone operator</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.6]   MATLAB toolbox for LPV modelling, identification and         equilibrium networks. Advances in neural information</div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.6]   control. In Proc. of the 19th IFAC Symposium on System       processing systems, 33, 10718–10728.</div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.6]   Identification, 385–390.                                   Zhou, K., Doyle, J., and Glover, K. (1996). Robust and</div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.6] Glorot, X. and Bengio, Y. (2010). Understanding the dif-       optimal control. Control Engineering Practice, 4(8),</div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.6]   ficulty of training deep feedforward neural networks. In     1189–1190.</div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.6]   Proc. of the 13th International Conference on Artificial</div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.6] </div></pre>

@@ -1,0 +1,19 @@
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{r r r r r r r l}
+\toprule
+\# & $n_x$ & Width & LR & Param. & $\mathrm{NRMS}_e$ (\%) & Best update & Status\\
+\midrule
+0 & 8 & 8 & $3\cdot10^{-3}$ & 7494 & $63.4$ & 8000 & completed\\
+1 & 8 & 16 & $3\cdot10^{-3}$ & 13422 & $59.9$ & 28000 & completed\\
+2 & 8 & 32 & $3\cdot10^{-3}$ & 27582 & $63.4$ & 20000 & completed\\
+3 & 16 & 8 & $3\cdot10^{-3}$ & 10270 & $52.5$ & 50000 & completed\\
+4 & 16 & 16 & $3\cdot10^{-3}$ & 16518 & $56.2$ & 11000 & failed\\
+5 & 16 & 32 & $3\cdot10^{-3}$ & 31318 & $54.8$ & 75000 & completed\\
+6 & 32 & 8 & $3\cdot10^{-3}$ & 16206 & $58.2$ & 9000 & completed\\
+7 & 32 & 16 & $3\cdot10^{-3}$ & 23094 & $57.5$ & 3000 & completed\\
+8 & 32 & 32 & $3\cdot10^{-3}$ & 39174 & $59.1$ & 4000 & completed\\
+\textbf{9} & \textbf{16} & \textbf{16} & \textbf{$1\cdot10^{-3}$} & \textbf{16518} & \textbf{$48.2$} & \textbf{78000} & \textbf{completed}\\
+10 & 16 & 16 & $1\cdot10^{-2}$ & 16518 & $66.4$ & 1000 & failed\\
+\bottomrule
+\multicolumn{8}{l}{\footnotesize Bold: selected on validation (lowest $\mathrm{NRMS}_e$; within 2\,\% the fewer parameters).}\\
+\end{tabular}

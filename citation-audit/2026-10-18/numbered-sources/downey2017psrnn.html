@@ -1,0 +1,663 @@
+<meta charset="utf-8"><title>downey2017psrnn</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1]                                                     Predictive State Recurrent Neural Networks</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1] </div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1] </div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1]                                                              Carlton Downey                                    Ahmed Hefny</div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1]                                                       Department of Machine Learning                  Department of Machine Learning</div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1]                                                         Carnegie Mellon University                      Carnegie Mellon University</div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1]                                                            Pittsburgh, PA 15213                            Pittsburgh, PA, 15213</div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1]                                                          cmdowney@cs.cmu.edu                              ahefny@cs.cmu.edu</div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1] arXiv:1705.09353v2 [stat.ML] 18 Jun 2017</div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1] </div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1] </div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1] </div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1] </div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1]                                                                  Boyue Li                                       Byron Boots</div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1]                                                       Department of Machine Learning                   School of Interactive Computing</div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1]                                                         Carnegie Mellon University                              Georgia Tech</div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1]                                                            Pittsburgh, PA, 15213                            Atlanta, GA, 30332</div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1]                                                            boyue@cs.cmu.edu                               bboots@cc.gatech.edu</div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1] </div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1]                                                                                        Geoff Gordon</div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1]                                                                               Department of Machine Learning</div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1]                                                                                 Carnegie Mellon University</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1]                                                                                    Pittsburgh, PA, 15213</div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1]                                                                                   ggordon@cs.cmu.edu</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1] </div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1] </div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1] </div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1]                                                                                           Abstract</div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1] </div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1]                                                     We present a new model, Predictive State Recurrent Neural Networks (PSRNNs),</div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1]                                                     for filtering and prediction in dynamical systems. PSRNNs draw on insights from</div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.1]                                                     both Recurrent Neural Networks (RNNs) and Predictive State Representations</div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.1]                                                     (PSRs), and inherit advantages from both types of models. Like many successful</div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.1]                                                     RNN architectures, PSRNNs use (potentially deeply composed) bilinear transfer</div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.1]                                                     functions to combine information from multiple sources. We show that such bilinear</div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.1]                                                     functions arise naturally from state updates in Bayes filters like PSRs, in which</div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.1]                                                     observations can be viewed as gating belief states. We also show that PSRNNs</div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.1]                                                     can be learned effectively by combining Backpropogation Through Time (BPTT)</div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.1]                                                     with an initialization derived from a statistically consistent learning algorithm</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.1]                                                     for PSRs called two-stage regression (2SR). Finally, we show that PSRNNs can</div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.1]                                                     be factorized using tensor decomposition, reducing model size and suggesting</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.1]                                                     interesting connections to existing multiplicative architectures such as LSTMs. We</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.1]                                                     applied PSRNNs to 4 datasets, and showed that we outperform several popular</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.1]                                                     alternative approaches to modeling dynamical systems in all cases.</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.1] </div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.1] </div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.1]                                            1   Introduction</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.1] </div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.1]                                            Learning to predict temporal sequences of observations is a fundamental challenge in a range of</div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.1]                                            disciplines including machine learning, robotics, and natural language processing. While there are a</div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.1]                                            wide variety of different approaches to modelling time series data, many of these approaches can be</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.1]                                            categorized as either recursive Bayes Filtering or Recurrent Neural Networks.</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.1]                                            Bayes Filters (BFs) [1] focus on modeling and maintaining a belief state: a set of statistics, which,</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.1]                                            if known at time t, are sufficient to predict all future observations as accurately as if we know the</div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.1]                                            full history. The belief state is generally interpreted as the statistics of a distribution over the latent</div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.1]                                            state of the data generating process conditioned on history. BFs recursively update the belief state by</div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.1] </div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.2] conditioning on new observations using Bayes rule. Examples of common BFs include sequential</div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.2] filtering in Hidden Markov Models (HMMs) [2] and Kalman Filters (KFs) [3].</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.2] Predictive State Representations [4] (PSRs) are a variation on Bayes filters that do not define system</div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.2] state explicitly, but proceed directly to a representation of state as the statistics of a distribution</div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.2] of features of future observations, conditioned on history. By defining the belief state in terms of</div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.2] observables rather than latent states, PSRs can be easier to learn than other filtering methods [5–7].</div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.2] PSRs also support rich functional forms through kernel mean map embeddings [8], and a natural</div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.2] interpretation of model update behavior as a gating mechanism. We note this last is not unique to</div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.2] PSRs, as it is also possible to interpret the model updates of other BFs such as HMMs in terms of</div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.2] gating.</div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.2] Due to their probabilistic grounding, BFs and PSRs possess a strong statistical theory leading</div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.2] to efficient learning algorithms. In particular, method-of-moments algorithms provide consistent</div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.2] parameter estimates for a range of BFs including PSRs [5, 7, 9–11]. Unfortunately, current versions</div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.2] of method of moments initialization restrict BFs to relatively simple functional forms such as linear-</div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.2] Gaussian (KFs) or linear-multinomial (HMMs).</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.2] Recurrent Neural Networks (RNNs) are an alternative to BFs that model sequential data via a</div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2] parameterized internal state and update function. In contrast to BFs, RNNs are directly trained to</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2] minimize output prediction error, without adhering to any axiomatic probabilistic interpretation.</div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2] Examples of popular RNN models include Long-Short Term Memory networks [12] (LSTMs), Gated</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2] Recurrent Units [13] (GRUs), and simple recurrent networks such as Elman networks [14].</div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2] RNNs have several advantages over BFs. Their flexible functional form supports large, rich models.</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2] And, RNNs can be paired with simple gradient-based training procedures that achieve state-of-the-art</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2] performance on many tasks [15]. RNNs have drawbacks however: unlike BFs, RNNs lack an</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2] axiomatic probabilistic interpretation, and are therefore difficult to analyze. Furthermore, despite</div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2] strong performance in some domains, RNNs are notoriously difficult to train; in particular it is</div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2] difficult to find good initializations.</div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2] In summary, RNNs and BFs offer complementary advantages and disadvantages: RNNs offer rich</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2] functional forms at the cost of statistical insight, while BFs possess a sophisticated statistical theory</div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2] but are restricted to simpler functional forms in order to maintain tractable training and inference. By</div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2] drawing insights from both Bayes Filters and RNNs we develop a novel hybrid model, Predictive</div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.2] State Recurrent Neural Networks (PSRNNs). Like many successful RNN architectures, PSRNNs</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.2] use (potentially deeply composed) bilinear transfer functions to combine information from multiple</div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.2] sources. We show that such bilinear functions arise naturally from state updates in Bayes filters like</div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.2] PSRs, in which observations can be viewed as gating belief states. We show that PSRNNs directly</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.2] generalize discrete PSRs, and can be learned effectively by combining Backpropogation Through</div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.2] Time (BPTT) with an approximately consistent method-of-moments initialization called two-stage</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.2] regression (2SR). We also show that PSRNNs can be factorized using tensor decomposition, reducing</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.2] model size and suggesting interesting connections to existing multiplicative architectures such as</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.2] LSTMs. Finally, we note that our initialization for PSRNNs is approximately consistent in the case</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.2] of discrete data.</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.2] </div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.2] </div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.2] 2   Related Work</div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.2] </div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.2] It is well known that a principled initialization can greatly increase the effectiveness of local search</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.2] heuristics. For example, Boots [16] and Zhang et al. [17] use subspace ID to initialize EM for linear</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.2] dyanmical systems, and Ko and Fox [18] use N4SID [19] to initialize GP-Bayes filters.</div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.2] Existing work similar to ours can be organized into two main categories: 1) methods which attempt</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.2] to use BFs to initialize RNNs [20, 21]; and 2) methods which attempt to use BPTT to refine Bayes</div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.2] Filters [22, 23]. Researchers have been experimenting with the latter strategy for several decades [23].</div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.2] Pasa et al. [20] propose an HMM-based pre-training algorithm for RNNs by first training an HMM,</div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.2] then using this HMM to generate a new, simplified dataset, and, finally, initializing the RNN weights</div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.2] by training the RNN on this dataset.</div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.2] Belanger and Kakade [21] propose a two-stage algorithm for learning a KF on text data. Their</div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.2] approach consists of a spectral initialization, followed by fine tuning via BPTT. They show that</div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.2] </div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.2] </div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.2]                                                    2</div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.2] </div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.3] this approach has clear advantages over either spectral learning or BPTT in isolation. Despite</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.3] these advantages, KFs make restrictive linear-Gaussian assumptions that preclude their use on many</div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.3] interesting problems.</div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.3] Downey et al. [22] propose a two-stage algorithm for learning discrete PSRs, consisting of a spectral</div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.3] initialization followed by BPTT. While this work is similar in spirit, it is still an attempt to optimize</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.3] a BF using BPTT rather than an attempt to construct a true hybrid model. This results in several</div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.3] key differences: they focus on the discrete setting, and they optimize only a subset of the model</div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.3] parameters.</div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.3] </div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.3] 3     Background</div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.3] 3.1   Predictive State Representations</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.3] </div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.3] Predictive state representations (PSRs) [4] are a class of models for filtering, prediction, and simulation</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.3] of discrete time dynamical systems. PSRs provide a compact representation of a dynamical system</div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.3] by representing state as a set of predictions of features of future observations.</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.3] We define a predictive state qt = qt|t−1 = E[ft | ht ], where ft = f (ot:t+k−1 ) is a vector of features</div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.3] of future observations and ht = h(o1:t−1 ) is a vector of features of historical observations. The</div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.3] features are selected such that qt determines the distribution of future observations P (ot:t+k−1 |</div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.3] o1:t−1 ).1 Filtering is the process of mapping a predictive state qt to qt+1 conditioned on ot , while</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.3] prediction maps a predictive state qt = qt|t−1 to qt+k|t−1 = E[ft+k | o1:t−1 ] without intervening</div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.3] observations.</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.3] PSRs were originally developed for discrete data as a generalization of existing Bayes Filters such as</div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.3] HMMs [4]. However, by leveraging the recent concept of Hilbert Space embeddings of distributions</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.3] [24], which can be used to embed the PSR in a Hilbert Space, we can generalize the PSR to continuous</div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.3] observations [8]. Hilbert Space Embeddings of PSRs (HSE-PSRs) [8] represent the state as one</div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.3] or more nonparametric conditional embedding operators in a Reproducing Kernel Hilbert Space</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.3] (RKHS) [25] and use Kernel Bayes Rule (KBR) [24] to estimate, predict, and update the state.</div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.3] For a full treatment of HSE-PSRs see [8]. Let kf , kh , ko be translation invariant kernels [26] defined</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.3] on ft , ht , and ot respectively. We use Random Fourier Features [26] (RFF) to define projections</div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.3] φt = RFF (ft ), ηt = RFF (ht ), and ωt = RFF (ot ) such that kf (fi , fj ) = φTi φj , kh (hi , hj ) =</div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.3] ηiT ηj , ko (oi , oj ) = ωiT ωj . Using this notation, the HSE-PSR predictive state is qt = E[φt | ηt ].</div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.3] Formally an HSE-PSR (hereafter simply referred to as a PSR) consists of an initial state b1 , a 3-mode</div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.3] update tensor W , and a 3-mode normalization tensor Z. The PSR update equation is</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.3]                                                                            −1</div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.3]                                    qt+1 = (W ×3 qt ) (Z ×3 qt )                 ×2 o t .                         (1)</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.3] </div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.3] 3.2   Two-stage Regression</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.3] </div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.3] Hefny et al. [7] show that PSRs can be learned by solving a sequence of regression problems. This</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.3] approach, referred to as Two-Stage Regression or 2SR, is fast, statistically consistent, and reduces to</div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.3] simple linear algebra operations. In 2SR the PSR model parameters q1 , W , and Z are learned via the</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.3] following set of equations:</div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.3]                                           T</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.3]                                       1X</div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.3]                                q1 =         φt                                                                   (2)</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.3]                                       T t=1</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.3]                                         T</div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.3]                                                                  !     T</div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.3]                                                                                            !+</div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.3]                                         X                              X</div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.3]                               W =             φt+1 ⊗ ωt ⊗ ηt                    ηt ⊗ φt                          (3)</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.3]                                         t=1                            t=1</div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.3]                                         T</div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.3]                                                              !   T</div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.3]                                                                                       !+</div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.3]                                         X                        X</div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.3]                                Z=             ωt ⊗ ωt ⊗ ηt                 η t ⊗ φt        .                     (4)</div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.3]                                         t=1                          t=1</div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.3] </div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.3]     1</div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.3]       For convenience we assume that the system is k-observable: that is, the distribution of all future observations</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.3] is determined by the distribution of the next k observations. (Note: not by the next k observations themselves.)</div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.3] At the cost of additional notation, this restriction could easily be lifted.</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.3] </div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.3] </div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.3]                                                          3</div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.3] </div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.4]         PT                       PT                       PT</div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.4] where t=1 φt+1 ⊗ ωt ⊗ ηt , t=1 ωt ⊗ ωt ⊗ ηt and t=1 ηt ⊗ φt are all estimated via regression.</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.4] Here + is the Moore-Penrose pseudo-inverse. We note that multiplying by the pseudo-inverse is also</div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.4] equivalent to solving a least squares regression problem, hence the name 2SR. Finally in practice</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.4] we use ridge regression in order to improve model stability, and minimize the destabilizing effect</div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.4] of rare events while preserving consistency. Once we learn model parameters, we can apply the</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.4] filtering equation (1) to obtain predictive states q1:T . In some settings (such as the case of discrete</div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.4] data) it is possible to predict observations directly from the state; however, in order to generalize to</div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.4] the continuous setting with RFF features we train a regression model to predict ωt from qt . With RFF</div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.4] features, linear regression has been sufficient for our purposes.2</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.4] </div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.4] 3.3   Tensor Decomposition</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.4] </div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.4] The tensor Canonical Polyadic decomposition (CP decomposition) [27] can be viewed as a general-</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.4] ization of the Singular Value Decomposition (SVD) to tensors. If T ∈ R(d1 ×...×dk ) is a tensor, then a</div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.4] CP decomposition of T is:</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.4]                                                m</div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.4]                                                X</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.4]                                          T =         a1i ⊗ a2i ⊗ ... ⊗ aki</div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.4]                                                i=1</div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.4] </div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.4] where aji ∈ Rdj and ⊗ is the Kronecker product. The rank of T is the minimum m such that the</div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.4] above equality holds. In other words, the CP decomposition represents T as a sum of rank-1 tensors.</div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.4] </div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.4] 4     Predictive State Recurrent Neural Networks</div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.4] In this section we introduce Predictive State Recurrent Neural Networks (PSRNNs), a new RNN</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.4] architecture inspired by PSRs. PSRNNs allow for a principled initialization and refinement via BPTT.</div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.4] The key contributions which led to the development of PSRNNs are: 1) a new normalization scheme</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.4] for PSRs which allows for effective refinement via BPTT; 2) the extention of the 2SR algorithm to a</div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.4] multilayered architecture; and 3) the optional use of a tensor decomposition to obtain a more scalable</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.4] model.</div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.4] </div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.4] 4.1   Architecture</div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.4] </div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.4] The basic building block of a PSRNN is a 3-mode tensor, which can be used to compute a bilinear</div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.4] combination of two input vectors. We note that, while bilinear operators are not a new development</div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.4] (e.g., they have been widely used in a variety of systems engineering and control applications for</div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.4] many years [28]), the current paper shows how to chain these bilinear components together into a</div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.4] powerful new predictive model.</div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.4] Let qt and ot be the state and observation at time t. Let W be a 3-mode tensor, and let q be a vector.</div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.4] The 1-layer state update for a PSRNN is defined as:</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.4]                                                  W ×2 ot ×3 qt + b</div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.4]                                        qt+1 =                                                                 (5)</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.4]                                                 kW ×2 ot ×3 qt + bk2</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.4] </div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.4] Here the 3-mode tensor of weights W and the bias vector b are the model parameters.3 This</div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.4] architecture is illustrated in Figure 1a. It is similar, but not identical, to the PSR update (Eq. 1); sec</div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.4] 3.1 gives more detail on the relationship.</div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.4] This model may appear simple, but crucially the tensor contraction W ×2 ot ×3 qt integrates</div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.4] information from bt and ot multiplicatively, and acts as a gating mechanism, as discussed in more</div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.4] detail in section 5.</div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.4] The typical approach used to increase modeling capability for BFs (including PSRs) is to use an initial</div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.4] fixed nonlinearity to map inputs up into a higher-dimensional space [29, 28]. However, a multilayered</div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.4]     2</div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.4]       Note that we can train a regression model to predict any quantity from the state. This is useful for general</div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.4] sequence-to-sequence mapping models. However, in this work we focus on predicting future observations.</div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.4]     3</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.4] P We define A ×p B to the be tensor contraction of A and B along the pth mode, e.g., [W ×2 q]i,j =</div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.4]    k Wi,k,j qk .</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.4] </div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.4] </div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.4] </div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.4]                                                          4</div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.4] </div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.5] architecture typically offers higher representation power for a given number of parameters [30]. We</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.5] now present a Multilayer PSRNN architecture which benefits from both of the above.</div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.5] To obtain a multilayer PSRNN, we stack the 1-layer blocks of Eq. (5) by providing the output of one</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.5] layer as the observation for the next layer. (The state input for each layer remains the same.) In this</div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.5] way we can obtain arbitrarily deep RNNs. This architecture is displayed in Figure 1b.</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.5] We choose to chain on the observation (as opposed to on the state) as this architecture leads to a</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.5] natural extension of 2SR to multilayered models (see Sec. 3.1). In addition, this architecture is</div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.5] consistent with the typical approach for constructing multilayered LSTMs/GRUs [12]. Finally, this</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.5] architecture is suggested by the full normalized form of an HSE PSR, where the observation is passed</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.5] through two layers.</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.5] </div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.5] </div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.5] </div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.5] </div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.5]               (a) Single Layer PSRNN                                 (b) Multilayer PSRNN</div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.5]    Figure 1: PSRNN architecture: See equation 5 for details. We omit bias terms to avoid clutter.</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.5] </div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.5] 4.2   Learning PSRNNs</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.5] </div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.5] There are two components to learning PSRNNs: an initialization procedure followed by gradient-</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.5] based refinement. We first show how a statistically consistent 2SR algorithm derived for PSRs</div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.5] can be used to initialize the PSRNN model; this model can then be refined via BPTT. We omit</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.5] BPTT equations as they are similar to existing literature, and can be easily obtained via automatic</div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.5] differentiation in a neural network library such as PyTorch or TensorFlow.</div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.5] The Kernel Bayes Rule portion of the PSR update (equation 1) can be separated into two terms:</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.5]                             −1</div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.5] (W ×3 qt ) and (Z ×3 qt ) . The first term corresponds to calculating the joint distribution, while the</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.5] second term corresponds to normalizing the joint to obtain the conditional distribution. In the discrete</div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.5] case, this is equivalent to dividing the joint distribution of ft+1 and ot by the marginal of ot ; see [31]</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.5] for details. If we remove the normalization term, and replace it with two-norm normalization, the</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.5]                                   W ×3 qt ×2 ot</div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.5] PSR update becomes qt+1 = kW        ×3 qt ×2 ot k , which corresponds to calculating the joint distribution</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.5] (up to a scale factor), and has the same functional form as our single-layer PSRNN update equation</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.5] (up to bias).</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.5] It is not immediately clear that this modification is reasonable. We show in appendix A that our</div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.5] algorithm is consistent in the discrete (realizable) setting; however, to our current knowledge we</div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.5] lose the consistency guarantees of the 2SR algorithm in the full continuous setting. Despite this we</div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.5] determined experimentally that replacing full normalization with two-norm normalization appears to</div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.5] have a minimal effect on model performance prior to refinement, and results in improved performance</div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.5] after refinement. Finally, we note that working with the (normalized) joint distribution in place of the</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.5] conditional distribution is a commonly made simplification in the systems literature, and has been</div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.5] shown to work well in practice [32].</div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.5] The adaptation of the two-stage regression algorithm of Hefny et al. [7] described above allows us</div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.5] to initialize 1-layer PSRNNs; however, it is not immediately clear how to extend this approach to</div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.5] multilayered PSRNNs. But, suppose we have learned a 1-layer PSRNN P using two-stage regression.</div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.5] We can use P to perform filtering on a dataset to generate a sequence of estimated states q̂1 , ..., q̂n .</div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.5] According to the architecture described in Figure 1b, these states are treated as observations in the</div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.5] second layer. Therefore we can initialize the second layer by an additional iteration of two-stage</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.5] regression using our estimated states q̂1 , ..., q̂n in place of observations. This process can be repeated</div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.5] as many times as desired to initialize an arbitrarily deep PSRNN. If the first layer were learned</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.5] perfectly, the second layer would be superfluous, however, in practice, we observe that the second</div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.5] layer is able to learn to improve on the first layer’s performance.</div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.5] Once we have obtained a PSRNN using the 2SR approach described above, we can use BPTT to refine</div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.5] the PSRNN. BPPT unrolls the state update over time to generate a feedfoward neural network with</div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.5] </div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.5] </div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.5]                                                     5</div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.5] </div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.6] tied weights, which can then be used to perform gradient descent updates on the model parameters.</div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.6] We note that one of the we choose to use 2-norm divisive normalization because it is not practical to</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.6] perform BPTT through the matrix inverse required in PSRs. We observe that 2SR provides us with</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.6] an initialization which converges to a good local optimum.</div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.6] </div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.6] 4.3   Factorized PSRNNs</div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.6] </div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.6] In this section we show how the PSRNN model can be factorized to reduce the number of parameters</div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.6] prior to applying BPTT.</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.6] Let (W, b0 ) be a PSRNN block. Suppose we decompose W using CP decomposition to obtain</div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.6]                                               n</div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.6]                                               X</div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.6]                                         W =         ai ⊗ bi ⊗ ci</div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.6]                                               i=1</div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.6] </div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.6] Let A (similarly B, C) be the matrix whose ith row is ai (respectively bi , ci ). Then the PSRNN state</div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.6] update (equation (5)) becomes (up to normalization):</div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.6]                                qt+1 = W ×2 ot ×3 qt + b                                            (6)</div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.6]                                     = (A ⊗ B ⊗ C) ×2 ot ×3 qt + b                                  (7)</div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.6]                                      = AT (Bot          Cqt ) + b                                  (8)</div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.6] where     is the Hadamard product. We call a PSRNN of this form a factorized PSRNN. This</div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.6] model architecture is illustrated in Figure 2. Using a factorized PSRNN provides us with complete</div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.6] control over the size of our model via the rank of the factorization. Importantly, it decouples the</div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.6] number of model parameters from the number of states, allowing us to set these two hyperparameters</div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.6] independently.</div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.6] </div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.6] </div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.6] </div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.6] </div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.6]                              Figure 2: Factorized PSRNN Architecture</div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.6] </div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.6] We determined experimentally that factorized PSRNNs are poorly conditioned when compared with</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.6] PSRNNs, due to very large and very small numbers often occurring in the CP decomposition. To</div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.6] alleviate this issue, we need to initialize the bias b in a factorized PSRNN to be a small multiple of</div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.6] the mean state. This acts to stabilize the model, regularizing gradients and preventing us from moving</div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.6] away from the good local optimum provided by 2SR.</div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.6] We note that a similar stabilization happens automatically in randomly initialized RNNs: after the</div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.6] first few iterations the gradient updates cause the biases to become non-zero, stabilizing the model</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.6] and resulting in subsequent gradient descent updates being reasonable. Initialization of the biases is</div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.6] only a concern for us because we do not want the original model to move away from our carefully</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.6] prepared initialization due to extreme gradients during the first few steps of gradient descent.</div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.6] In summary, we can learn factorized PSRNNs by first using 2SR to initialize a PSRNN, then using CP</div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.6] decomposition to factorize the tensor model parameters to obtain a factorized PSRNN, then applying</div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.6] BPTT to the refine the factorized PSRNN.</div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.6] </div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.6] 5     Discussion</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.6] The value of bilinear units in RNNs was the focus of recent work by Wu et al [33]. They introduced the</div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.6] concept of Multiplicative Integration (MI) units — components of the form Ax By — and showed</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.6] that replacing additive units by multiplicative ones in a range of architectures leads to significantly</div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.6] improved performance. As Eq. (8) shows, factorizing W leads precisely to an architecture with MI</div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.6] units.</div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.6] </div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.6] </div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.6]                                                     6</div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.6] </div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.7] Modern RNN architectures such as LSTMs and GRUs are known to outperform traditional RNN</div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.7] architectures on many problems [12]. While the success of these methods is not fully understood,</div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.7] much of it is attributed to the fact that these architectures possess a gating mechanism which allows</div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.7] them both to remember information for a long time, and also to forget it quickly. Crucially, we note</div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.7] that PSRNNs also allow for a gating mechanism. To see this consider a single entry in the factorized</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.7] PSRNN update (omitting normalization).</div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.7]                                                                              !</div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.7]                                    X           X               X</div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.7]                         [qt+1 ]i =      Aji        Bjk [ot ]k      Cjl [qt ]l + b                  (9)</div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.7]                                     j         k                 l</div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.7]                                                                           P</div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.7] The current state qt will only contribute to the new state if the function k Bjk [ot ]k of ot is non-zero.</div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.7] Otherwise ot will cause the model to forget this information: the bilinear component of the PSRNN</div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.7] architecture naturally achieves gating.</div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.7] We note that similar bilinear forms occur as components of many successful models. For example,</div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.7] consider the (one layer) GRU update equation:</div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.7]                        zt = σ(Wz ot + Uz qt + cz )</div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.7]                        rt = σ(Wr ot + Ur qt + cr )</div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.7]                      qt+1 = zt qt + (1 − zt ) σ(Wh ot + Uh (rt            qt ) + ch )</div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.7] The GRU update is a convex combination of the existing state qt and and update term Wh ot +Uh (rt</div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.7] qt ) + ch . We see that the core part of this update term Uh (rt qt ) + ch bears a striking similarity to</div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.7] our factorized PSRNN update. The PSRNN update is simpler, though, since it omits the nonlinearity</div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.7] σ(·), and hence is able to combine pairs of linear updates inside and outside σ(·) into a single matrix.</div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.7] Finally, we would like to highlight the fact that, as discussed in section 5, the bilinear form shared in</div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.7] some form by these models (including PSRNNs) resembles the first component of the Kernel Bayes</div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.7] Rule update function. This observation suggests that bilinear components are a natural structure to</div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.7] use when constructing RNNs, and may help explain the success of the above methods over alternative</div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.7] approaches. This hypothesis is supported by the fact that there are no activation functions (other than</div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.7] divisive normalization) present in our PSRNN architecture, yet it still manages to achieve strong</div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.7] performance.</div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.7] </div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.7] </div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.7] 6       Experimental Setup</div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.7] </div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.7] In this section we describe the datasets, models, model initializations, model hyperparameters,</div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.7] evaluation metrics used in our experiments. All models were implemented using the PyTorch</div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.7] framework in Python. We plan to release code for these experiments soon.</div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.7] We use the following datasets in our experiments:</div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.7] </div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.7]  • Penn Tree Bank (PTB) This is a standard benchmark in the NLP community [34]. Due to</div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.7]    hardware limitations we use a train/test split of 120780/124774 characters.</div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.7]  • Swimmer We consider the 3-link simulated swimmer robot from the open-source package</div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.7]    OpenAI gym.4 The observation model returns the angular position of the nose as well as the</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.7]    angles of the two joints. We collect 25 trajectories from a robot that is trained to swim forward</div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.7]    (via the cross entropy with a linear policy), with a train/test split of 20/5.</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.7]  • Mocap This is a Human Motion Capture dataset consisting of 48 skeletal tracks from three human</div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.7]    subjects collected while they were walking. The tracks have 300 timesteps each, and are from</div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.7]    a Vicon motion capture system. We use a train/test split of 40/8. Features consist of the 3D</div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.7]    positions of the skeletal parts (e.g., upper back, thorax, clavicle).</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.7]  • Handwriting This is a digit database available on the UCI repository [35, 36] created using a</div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.7]    pressure sensitive tablet and a cordless stylus. Features are x and y tablet coordinates and pressure</div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.7]    levels of the pen at a sampling rate of 100 milliseconds. We use 25 trajectories with a train/test</div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.7]    split of 20/5.</div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.7]     4</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.7]         https://gym.openai.com/</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.7] </div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.7] </div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.7]                                                     7</div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.7] </div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.8] We note that, given the diversity of these datasets, it is a challenge for one method to perform well on</div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.8] all of them.</div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.8] Models compared are LSTMs [28], GRUs [13], basic RNNs [14], KFs [3], PSRNNs, and factorized</div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.8] PSRNNs. All models except KFs consist of a linear encoder, a recurrent module, and a linear decoder.</div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.8] The encoder maps observations to a compressed representation; it can be viewed as a word embedding</div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.8] in the context of text data. The recurrent module maps a state and an observation to a new state and</div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.8] an output. The decoder maps an output to a predicted observation.5</div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.8] We initialize the LSTMs and RNNs with random weights and zero biases according to the Xavier</div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.8] initialization scheme [37]. We initialize the the KF using the 2SR algorithm described in [7]. We</div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.8] initialize PSRNN and factorized PSRNN weights as described in section 3.1. We note that if we</div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.8] initialize PSRNNs or Factorized PSRNNs using random weights, BPTT fails and we cannot learn a</div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.8] usable model.</div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.8] In two-stage regression we use a ridge-regression parameter of 10(−2) n where n is the number of</div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.8] training examples (this is consistent with the values suggested in [8]). (Experiments show that our</div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.8] approach works well for a wide variety of hyperparameter values.) We use a horizon of 1 in the PTB</div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.8] experiments, and a horizon of 10 in all continuous experiments. We use 2000 RFFs from a Gaussian</div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.8] kernel, selected according to the method of [26], and with the kernel width selected as the median</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.8] pairwise distance. We use 20 hidden states, and a fixed learning rate of 1 in all experiments. We use a</div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.8] BPTT horizon of 35 in the PTB experiments, and an infinite BPTT horizon in all other experiments.</div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.8] All models are single layer unless stated otherwise.</div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.8] We optimize models on the PTB using Bits Per Character (BPC) and evaluate them using both BPC</div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.8] and one-step prediction accuracy (OSPA). We optimize and evaluate all continuous experiments using</div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.8] the Mean Squared Error (MSE).</div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.8] </div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.8] </div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.8] 7    Results</div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.8] </div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.8] In Figure 3a we compare performance of LSTMs, GRUs, and Factorized PSRNNs on PTB, where</div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.8] all models have the same number of states and approximately the same number of parameters. To</div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.8] achieve this we use a factorized PSRNN of rank 60. We see that the factorized PSRNN significantly</div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.8] outperforms LSTMs and GRUs on both metrics.</div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.8] </div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.8] </div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.8] </div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.8] </div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.8] (a) BPC and OSPA on PTB. All (b) Comparison between 1- and 2- (c) Cross-entropy and prediction</div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.8] models have the same number of layer PSRs on PTB.             accuracy on Penn Tree Bank for</div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.8] states and approximately the same                             PSRNNs and factorized PSRNNs of</div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.8] number of parameters.                                         various rank.</div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.8] </div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.8]                                         Figure 3: PTB Experiments</div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.8] </div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.8]    5</div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.8]      This is a standard RNN architecture; e.g., a PyTorch implementation of this architecture for text prediction</div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.8] can be found at https://github.com/pytorch/examples/tree/master/word_language_model.</div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.8] </div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.8] </div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.8]                                                        8</div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.8] </div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.9] In Figure 3b we compare the performance of 1 and 2 layer PSRNNs on PTB. We see that adding an</div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.9] additional layer significantly improves performance.</div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.9] In Figure 3c we compare PSRNNs with factorized PSRNNs on the PTB. We see that PSRNNs</div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.9] outperform factorized PSRNNs regardless of rank, even when the factorized PSRNN has significantly</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.9] more model parameters. (In this experiment, factorized PSRNNs of rank 7 or greater have more</div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.9] model parameters than a plain PSRNN.) This observation makes sense, as the PSRNN provides a</div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.9] simpler optimization surface: The tensor multiplication in each layer of a PSRNN is linear with</div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.9] respect to the model parameters, while the tensor multiplication in each layer of a Factorized PSRNN</div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.9] is bilinear. One obvious question raised by this result is whether we can represent LSTMs or GRUs</div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.9] in a similar factorized form.</div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.9] In addition, we see that higher-rank factorized models outperform lower-rank ones. However, it is</div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.9] worth noting that even models with low rank still perform well, as demonstrated by our rank 40 model</div>
+<div id="L481"><a href="#L481">00481</a> [PDF p.9] still outperforming GRUs and LSTMs, despite having fewer parameters.</div>
+<div id="L482"><a href="#L482">00482</a> [PDF p.9] </div>
+<div id="L483"><a href="#L483">00483</a> [PDF p.9] </div>
+<div id="L484"><a href="#L484">00484</a> [PDF p.9] </div>
+<div id="L485"><a href="#L485">00485</a> [PDF p.9] </div>
+<div id="L486"><a href="#L486">00486</a> [PDF p.9]                    (a) MSE vs Epoch on the Swimmer, Mocap, and Handwriting datasets</div>
+<div id="L487"><a href="#L487">00487</a> [PDF p.9] </div>
+<div id="L488"><a href="#L488">00488</a> [PDF p.9] </div>
+<div id="L489"><a href="#L489">00489</a> [PDF p.9] </div>
+<div id="L490"><a href="#L490">00490</a> [PDF p.9] </div>
+<div id="L491"><a href="#L491">00491</a> [PDF p.9] (b) Test Data vs Model Prediction on a single feature of Swimmer. The first row shows initial performance. The</div>
+<div id="L492"><a href="#L492">00492</a> [PDF p.9] second row shows performance after training. In order the columns show KF, RNN, GRU, LSTM, and PSRNN.</div>
+<div id="L493"><a href="#L493">00493</a> [PDF p.9]                       Figure 4: Swimmer, Mocap, and Handwriting Experiments</div>
+<div id="L494"><a href="#L494">00494</a> [PDF p.9] </div>
+<div id="L495"><a href="#L495">00495</a> [PDF p.9] In Figure 4a we compare model performance on the Swimmer, Mocap, and Handwriting datasets.</div>
+<div id="L496"><a href="#L496">00496</a> [PDF p.9] We see that PSRNNs significantly outperform alternative approaches on all datasets.</div>
+<div id="L497"><a href="#L497">00497</a> [PDF p.9] In Figure 4b we attempt to gain insight into why using 2SR to initialize our models is so beneficial.</div>
+<div id="L498"><a href="#L498">00498</a> [PDF p.9] We visualize the the one step model predictions before and after BPTT. We see that the behavior of</div>
+<div id="L499"><a href="#L499">00499</a> [PDF p.9] the initialization has a large impact on the behavior of the refined model. For example the initial</div>
+<div id="L500"><a href="#L500">00500</a> [PDF p.9] (incorrect) oscillatory behavior of the RNN in the second column is preserved even after gradient</div>
+<div id="L501"><a href="#L501">00501</a> [PDF p.9] descent.</div>
+<div id="L502"><a href="#L502">00502</a> [PDF p.9] </div>
+<div id="L503"><a href="#L503">00503</a> [PDF p.9] 8   Conclusions</div>
+<div id="L504"><a href="#L504">00504</a> [PDF p.9] We present PSRNNs: a new approach for modelling time-series data that hybridizes Bayes filters with</div>
+<div id="L505"><a href="#L505">00505</a> [PDF p.9] RNNs. PSRNNs have both a principled initialization procedure and a rich functional form. The basic</div>
+<div id="L506"><a href="#L506">00506</a> [PDF p.9] PSRNN block consists of a 3-mode tensor, corresponding to bilinear combination of the state and</div>
+<div id="L507"><a href="#L507">00507</a> [PDF p.9] observation, followed by divisive normalization. These blocks can be arranged in layers to increase</div>
+<div id="L508"><a href="#L508">00508</a> [PDF p.9] the expressive power of the model. We showed that tensor CP decomposition can be used to obtain</div>
+<div id="L509"><a href="#L509">00509</a> [PDF p.9] </div>
+<div id="L510"><a href="#L510">00510</a> [PDF p.9] </div>
+<div id="L511"><a href="#L511">00511</a> [PDF p.9]                                                       9</div>
+<div id="L512"><a href="#L512">00512</a> [PDF p.9] </div>
+<div id="L513"><a href="#L513">00513</a> [PDF p.10] factorized PSRNNs, which allow flexibly selecting the number of states and model parameters. We</div>
+<div id="L514"><a href="#L514">00514</a> [PDF p.10] showed how factorized PSRNNs can be viewed as both an instance of Kernel Bayes Rule and a gated</div>
+<div id="L515"><a href="#L515">00515</a> [PDF p.10] architecture, and discussed links to existing multiplicative architectures such as LSTMs. We applied</div>
+<div id="L516"><a href="#L516">00516</a> [PDF p.10] PSRNNs to 4 datasets and showed that we outperform alternative approaches in all cases.</div>
+<div id="L517"><a href="#L517">00517</a> [PDF p.10] </div>
+<div id="L518"><a href="#L518">00518</a> [PDF p.10] </div>
+<div id="L519"><a href="#L519">00519</a> [PDF p.10] </div>
+<div id="L520"><a href="#L520">00520</a> [PDF p.10] </div>
+<div id="L521"><a href="#L521">00521</a> [PDF p.10]                                                 10</div>
+<div id="L522"><a href="#L522">00522</a> [PDF p.10] </div>
+<div id="L523"><a href="#L523">00523</a> [PDF p.11] References</div>
+<div id="L524"><a href="#L524">00524</a> [PDF p.11]  [1] Sam Roweis and Zoubin Ghahramani. A unifying review of linear gaussian models. Neural</div>
+<div id="L525"><a href="#L525">00525</a> [PDF p.11]      Comput., 11(2):305–345, February 1999. ISSN 0899-7667. doi: 10.1162/089976699300016674.</div>
+<div id="L526"><a href="#L526">00526</a> [PDF p.11]      URL http://dx.doi.org/10.1162/089976699300016674.</div>
+<div id="L527"><a href="#L527">00527</a> [PDF p.11]  [2] Leonard E. Baum and Ted Petrie. Statistical inference for probabilistic functions of finite state</div>
+<div id="L528"><a href="#L528">00528</a> [PDF p.11]      markov chains. The Annals of Mathematical Statistics, 37:1554–1563, 1966.</div>
+<div id="L529"><a href="#L529">00529</a> [PDF p.11]  [3] R. E. Kalman. A new approach to linear filtering and prediction problems. ASME Journal of</div>
+<div id="L530"><a href="#L530">00530</a> [PDF p.11]      Basic Engineering, 1960.</div>
+<div id="L531"><a href="#L531">00531</a> [PDF p.11]  [4] Michael L. Littman, Richard S. Sutton, and Satinder Singh. Predictive representations of state.</div>
+<div id="L532"><a href="#L532">00532</a> [PDF p.11]      In In Advances In Neural Information Processing Systems 14, pages 1555–1561. MIT Press,</div>
+<div id="L533"><a href="#L533">00533</a> [PDF p.11]      2001.</div>
+<div id="L534"><a href="#L534">00534</a> [PDF p.11]  [5] Byron Boots, Sajid Siddiqi, and Geoffrey Gordon. Closing the learning planning loop with</div>
+<div id="L535"><a href="#L535">00535</a> [PDF p.11]      predictive state representations. International Journal of Robotics Research (IJRR), 30:954–956,</div>
+<div id="L536"><a href="#L536">00536</a> [PDF p.11]      2011.</div>
+<div id="L537"><a href="#L537">00537</a> [PDF p.11]  [6] Byron Boots and Geoffrey Gordon. An online spectral learning algorithm for partially observable</div>
+<div id="L538"><a href="#L538">00538</a> [PDF p.11]      nonlinear dynamical systems. In Proceedings of the 25th National Conference on Artificial</div>
+<div id="L539"><a href="#L539">00539</a> [PDF p.11]      Intelligence (AAAI), 2011.</div>
+<div id="L540"><a href="#L540">00540</a> [PDF p.11]  [7] Ahmed Hefny, Carlton Downey, and Geoffrey J. Gordon. Supervised learning for dynamical</div>
+<div id="L541"><a href="#L541">00541</a> [PDF p.11]      system learning. In Advances in Neural Information Processing Systems 28: Annual Conference</div>
+<div id="L542"><a href="#L542">00542</a> [PDF p.11]      on Neural Information Processing Systems 2015, December 7-12, 2015, Montreal, Quebec,</div>
+<div id="L543"><a href="#L543">00543</a> [PDF p.11]      Canada, pages 1963–1971, 2015.</div>
+<div id="L544"><a href="#L544">00544</a> [PDF p.11]  [8] Byron Boots, Geoffrey J. Gordon, and Arthur Gretton. Hilbert space embeddings of predictive</div>
+<div id="L545"><a href="#L545">00545</a> [PDF p.11]      state representations. CoRR, abs/1309.6819, 2013. URL http://arxiv.org/abs/1309.</div>
+<div id="L546"><a href="#L546">00546</a> [PDF p.11]      6819.</div>
+<div id="L547"><a href="#L547">00547</a> [PDF p.11]  [9] Daniel J. Hsu, Sham M. Kakade, and Tong Zhang. A spectral algorithm for learning hidden</div>
+<div id="L548"><a href="#L548">00548</a> [PDF p.11]      markov models. CoRR, abs/0811.4413, 2008.</div>
+<div id="L549"><a href="#L549">00549</a> [PDF p.11] [10] Amirreza Shaban, Mehrdad Farajtabar, Bo Xie, Le Song, and Byron Boots. Learning latent</div>
+<div id="L550"><a href="#L550">00550</a> [PDF p.11]      variable models by improving spectral solutions with exterior point methods. In Proceedings of</div>
+<div id="L551"><a href="#L551">00551</a> [PDF p.11]      The International Conference on Uncertainty in Artificial Intelligence (UAI), 2015.</div>
+<div id="L552"><a href="#L552">00552</a> [PDF p.11] [11] Peter Van Overschee and Bart De Moor. N4sid: numerical algorithms for state space subspace</div>
+<div id="L553"><a href="#L553">00553</a> [PDF p.11]      system identification. In Proc. of the World Congress of the International Federation of</div>
+<div id="L554"><a href="#L554">00554</a> [PDF p.11]      Automatic Control, IFAC, volume 7, pages 361–364, 1993.</div>
+<div id="L555"><a href="#L555">00555</a> [PDF p.11] [12] Sepp Hochreiter and Jürgen Schmidhuber. Long short-term memory. Neural Comput., 9</div>
+<div id="L556"><a href="#L556">00556</a> [PDF p.11]      (8):1735–1780, November 1997. ISSN 0899-7667. doi: 10.1162/neco.1997.9.8.1735. URL</div>
+<div id="L557"><a href="#L557">00557</a> [PDF p.11]      http://dx.doi.org/10.1162/neco.1997.9.8.1735.</div>
+<div id="L558"><a href="#L558">00558</a> [PDF p.11] [13] KyungHyun Cho, Bart van Merrienboer, Dzmitry Bahdanau, and Yoshua Bengio. On the</div>
+<div id="L559"><a href="#L559">00559</a> [PDF p.11]      properties of neural machine translation: Encoder-decoder approaches. CoRR, abs/1409.1259,</div>
+<div id="L560"><a href="#L560">00560</a> [PDF p.11]      2014. URL http://arxiv.org/abs/1409.1259.</div>
+<div id="L561"><a href="#L561">00561</a> [PDF p.11] [14] Jeffrey L. Elman. Finding structure in time. COGNITIVE SCIENCE, 14(2):179–211, 1990.</div>
+<div id="L562"><a href="#L562">00562</a> [PDF p.11] [15] Ilya Sutskever, Oriol Vinyals, and Quoc V. Le. Sequence to sequence learning with neural</div>
+<div id="L563"><a href="#L563">00563</a> [PDF p.11]      networks. CoRR, abs/1409.3215, 2014. URL http://arxiv.org/abs/1409.3215.</div>
+<div id="L564"><a href="#L564">00564</a> [PDF p.11] [16] Byron Boots. Learning stable linear dynamical systems. Online]. Avail.: https://www. ml. cmu.</div>
+<div id="L565"><a href="#L565">00565</a> [PDF p.11]      edu/research/dap-papers/dap_boots. pdf, 2009.</div>
+<div id="L566"><a href="#L566">00566</a> [PDF p.11] [17] Yuchen Zhang, Xi Chen, Denny Zhou, and Michael I Jordan. Spectral methods meet em: A</div>
+<div id="L567"><a href="#L567">00567</a> [PDF p.11]      provably optimal algorithm for crowdsourcing. In Advances in neural information processing</div>
+<div id="L568"><a href="#L568">00568</a> [PDF p.11]      systems, pages 1260–1268, 2014.</div>
+<div id="L569"><a href="#L569">00569</a> [PDF p.11] </div>
+<div id="L570"><a href="#L570">00570</a> [PDF p.11] </div>
+<div id="L571"><a href="#L571">00571</a> [PDF p.11]                                                  11</div>
+<div id="L572"><a href="#L572">00572</a> [PDF p.11] </div>
+<div id="L573"><a href="#L573">00573</a> [PDF p.12] [18] Jonathan Ko and Dieter Fox. Learning gp-bayesfilters via gaussian process latent variable</div>
+<div id="L574"><a href="#L574">00574</a> [PDF p.12]      models. Autonomous Robots, 30(1):3–23, 2011.</div>
+<div id="L575"><a href="#L575">00575</a> [PDF p.12] [19] Peter Van Overschee and Bart De Moor. N4sid: Subspace algorithms for the identification of</div>
+<div id="L576"><a href="#L576">00576</a> [PDF p.12]      combined deterministic-stochastic systems. Automatica, 30(1):75–93, January 1994. ISSN</div>
+<div id="L577"><a href="#L577">00577</a> [PDF p.12]      0005-1098. doi: 10.1016/0005-1098(94)90230-5. URL http://dx.doi.org/10.1016/</div>
+<div id="L578"><a href="#L578">00578</a> [PDF p.12]      0005-1098(94)90230-5.</div>
+<div id="L579"><a href="#L579">00579</a> [PDF p.12] [20] Luca Pasa, Alberto Testolin, and Alessandro Sperduti. A hmm-based pre-training approach</div>
+<div id="L580"><a href="#L580">00580</a> [PDF p.12]      for sequential data. In 22th European Symposium on Artificial Neural Networks, ESANN</div>
+<div id="L581"><a href="#L581">00581</a> [PDF p.12]      2014, Bruges, Belgium, April 23-25, 2014, 2014. URL http://www.elen.ucl.ac.be/</div>
+<div id="L582"><a href="#L582">00582</a> [PDF p.12]      Proceedings/esann/esannpdf/es2014-166.pdf.</div>
+<div id="L583"><a href="#L583">00583</a> [PDF p.12] [21] David Belanger and Sham Kakade. A linear dynamical system model for text. In Francis</div>
+<div id="L584"><a href="#L584">00584</a> [PDF p.12]      Bach and David Blei, editors, Proceedings of the 32nd International Conference on Machine</div>
+<div id="L585"><a href="#L585">00585</a> [PDF p.12]      Learning, volume 37 of Proceedings of Machine Learning Research, pages 833–842, Lille,</div>
+<div id="L586"><a href="#L586">00586</a> [PDF p.12]      France, 07–09 Jul 2015. PMLR.</div>
+<div id="L587"><a href="#L587">00587</a> [PDF p.12] [22] Carlton Downey, Ahmed Hefny, and Geoffrey Gordon. Practical learning of predictive state</div>
+<div id="L588"><a href="#L588">00588</a> [PDF p.12]      representations. Technical report, Carnegie Mellon University, 2017.</div>
+<div id="L589"><a href="#L589">00589</a> [PDF p.12] [23] Hiroshi Mamitsuka. Learning hidden Markov models using back-propagation through time.</div>
+<div id="L590"><a href="#L590">00590</a> [PDF p.12]      Genome Informatics, 6, 1995.</div>
+<div id="L591"><a href="#L591">00591</a> [PDF p.12] [24] Alex Smola, Arthur Gretton, Le Song, and Bernhard Schölkopf. A hilbert space embedding</div>
+<div id="L592"><a href="#L592">00592</a> [PDF p.12]      for distributions. In International Conference on Algorithmic Learning Theory, pages 13–31.</div>
+<div id="L593"><a href="#L593">00593</a> [PDF p.12]      Springer, 2007.</div>
+<div id="L594"><a href="#L594">00594</a> [PDF p.12] [25] Nachman Aronszajn. Theory of reproducing kernels. Transactions of the American mathemati-</div>
+<div id="L595"><a href="#L595">00595</a> [PDF p.12]      cal society, 68(3):337–404, 1950.</div>
+<div id="L596"><a href="#L596">00596</a> [PDF p.12] [26] Ali Rahimi and Benjamin Recht. Random features for large-scale kernel machines. In Advances</div>
+<div id="L597"><a href="#L597">00597</a> [PDF p.12]      in neural information processing systems, pages 1177–1184, 2008.</div>
+<div id="L598"><a href="#L598">00598</a> [PDF p.12] [27] Frank L Hitchcock. The expression of a tensor or a polyadic as a sum of products. Studies in</div>
+<div id="L599"><a href="#L599">00599</a> [PDF p.12]      Applied Mathematics, 6(1-4):164–189, 1927.</div>
+<div id="L600"><a href="#L600">00600</a> [PDF p.12] [28] Lennart Ljung. System identification. Wiley Online Library, 1999.</div>
+<div id="L601"><a href="#L601">00601</a> [PDF p.12] [29] Le Song, Byron Boots, Sajid M. Siddiqi, Geoffrey J. Gordon, and Alex J. Smola. Hilbert space</div>
+<div id="L602"><a href="#L602">00602</a> [PDF p.12]      embeddings of hidden markov models. In Johannes Fürnkranz and Thorsten Joachims, editors,</div>
+<div id="L603"><a href="#L603">00603</a> [PDF p.12]      Proceedings of the 27th International Conference on Machine Learning (ICML-10), pages</div>
+<div id="L604"><a href="#L604">00604</a> [PDF p.12]      991–998. Omnipress, 2010. URL http://www.icml2010.org/papers/495.pdf.</div>
+<div id="L605"><a href="#L605">00605</a> [PDF p.12] [30] Yoshua Bengio et al. Learning deep architectures for ai. Foundations and trends R in Machine</div>
+<div id="L606"><a href="#L606">00606</a> [PDF p.12]      Learning, 2(1):1–127, 2009.</div>
+<div id="L607"><a href="#L607">00607</a> [PDF p.12] [31] Le Song, Jonathan Huang, Alex Smola, and Kenji Fukumizu. Hilbert space embeddings of</div>
+<div id="L608"><a href="#L608">00608</a> [PDF p.12]      conditional distributions with applications to dynamical systems. In Proceedings of the 26th</div>
+<div id="L609"><a href="#L609">00609</a> [PDF p.12]      Annual International Conference on Machine Learning, pages 961–968. ACM, 2009.</div>
+<div id="L610"><a href="#L610">00610</a> [PDF p.12] [32] Sebastian Thrun, Wolfram Burgard, and Dieter Fox. Probabilistic robotics. MIT press, 2005.</div>
+<div id="L611"><a href="#L611">00611</a> [PDF p.12] [33] Yuhuai Wu, Saizheng Zhang, Ying Zhang, Yoshua Bengio, and Ruslan Salakhutdinov. On</div>
+<div id="L612"><a href="#L612">00612</a> [PDF p.12]      multiplicative integration with recurrent neural networks. CoRR, abs/1606.06630, 2016. URL</div>
+<div id="L613"><a href="#L613">00613</a> [PDF p.12]      http://arxiv.org/abs/1606.06630.</div>
+<div id="L614"><a href="#L614">00614</a> [PDF p.12] [34] Mitchell P Marcus, Mary Ann Marcinkiewicz, and Beatrice Santorini. Building a large annotated</div>
+<div id="L615"><a href="#L615">00615</a> [PDF p.12]      corpus of english: The penn treebank. Computational linguistics, 19(2):313–330, 1993.</div>
+<div id="L616"><a href="#L616">00616</a> [PDF p.12] [35] Fevzi. Alimoglu E. Alpaydin. Pen-Based Recognition of Handwritten Digits Data Set.</div>
+<div id="L617"><a href="#L617">00617</a> [PDF p.12]      https://archive.ics.uci.edu/ml/datasets/Pen-Based+Recognition+of+Handwritten+Digits.</div>
+<div id="L618"><a href="#L618">00618</a> [PDF p.12] [36] E Alpaydin and Fevzi Alimoglu. Pen-based recognition of handwritten digits data set. University</div>
+<div id="L619"><a href="#L619">00619</a> [PDF p.12]      of California, Irvine, Machine Learning Repository. Irvine: University of California, 1998.</div>
+<div id="L620"><a href="#L620">00620</a> [PDF p.12] </div>
+<div id="L621"><a href="#L621">00621</a> [PDF p.12] </div>
+<div id="L622"><a href="#L622">00622</a> [PDF p.12]                                                 12</div>
+<div id="L623"><a href="#L623">00623</a> [PDF p.12] </div>
+<div id="L624"><a href="#L624">00624</a> [PDF p.13] [37] Xavier Glorot and Yoshua Bengio. Understanding the difficulty of training deep feedforward</div>
+<div id="L625"><a href="#L625">00625</a> [PDF p.13]      neural networks. In In Proceedings of the International Conference on Artificial Intelligence</div>
+<div id="L626"><a href="#L626">00626</a> [PDF p.13]      and Statistics (AISTATS’10). Society for Artificial Intelligence and Statistics, 2010.</div>
+<div id="L627"><a href="#L627">00627</a> [PDF p.13] </div>
+<div id="L628"><a href="#L628">00628</a> [PDF p.13] </div>
+<div id="L629"><a href="#L629">00629</a> [PDF p.13] </div>
+<div id="L630"><a href="#L630">00630</a> [PDF p.13] </div>
+<div id="L631"><a href="#L631">00631</a> [PDF p.13]                                                13</div>
+<div id="L632"><a href="#L632">00632</a> [PDF p.13] </div>
+<div id="L633"><a href="#L633">00633</a> [PDF p.14] A    On the Consistency of Initialization</div>
+<div id="L634"><a href="#L634">00634</a> [PDF p.14] In this section we provide a theoretical justification for the PSRNN. Specifically, we show that in</div>
+<div id="L635"><a href="#L635">00635</a> [PDF p.14] the case of discrete observations and a single layer the PSRNN provides a good approximation to a</div>
+<div id="L636"><a href="#L636">00636</a> [PDF p.14] consistent model. We first show that in the discrete setting using a matrix inverse is equivalent to a</div>
+<div id="L637"><a href="#L637">00637</a> [PDF p.14] sum normalization. We subsequently show that, under certain conditions, two-norm normalization</div>
+<div id="L638"><a href="#L638">00638</a> [PDF p.14] has the same effect as sum-normalization. .</div>
+<div id="L639"><a href="#L639">00639</a> [PDF p.14] Let qt be the PSR state at time t, and ot be the observation at time t (as an indicator vector). In</div>
+<div id="L640"><a href="#L640">00640</a> [PDF p.14] this setting the covariance matrix Ct = E[ot × ot |o1:t−1 ] will be diagonal. By assumption, the</div>
+<div id="L641"><a href="#L641">00641</a> [PDF p.14] normalization term Z in PSRs is defined as a linear function from qt to Ct , and when we learn PSRN</div>
+<div id="L642"><a href="#L642">00642</a> [PDF p.14] by 2-stage regression we estimate this linear function consistently. Hence, for all qt , Z ×3 qt is a</div>
+<div id="L643"><a href="#L643">00643</a> [PDF p.14]                                 −1</div>
+<div id="L644"><a href="#L644">00644</a> [PDF p.14] diagonal matrix, and (Z ×3 qt ) is also a diagonal matrix. Furthermore, since ot is an indicator</div>
+<div id="L645"><a href="#L645">00645</a> [PDF p.14]                   −1</div>
+<div id="L646"><a href="#L646">00646</a> [PDF p.14] vector, (Z ×3 qt ) ×2 ot = ot /P (ot ) in the limit. We also know that as a probability distribution,</div>
+<div id="L647"><a href="#L647">00647</a> [PDF p.14] qt should sum to one. This is equivalent to dividing the unnormalized update q̂t+1 by its sum. i.e.</div>
+<div id="L648"><a href="#L648">00648</a> [PDF p.14]                                         qt+1 = q̂t+1 /P (ot )</div>
+<div id="L649"><a href="#L649">00649</a> [PDF p.14]                                              = q̂t+1 /(1T q̂t+1 )</div>
+<div id="L650"><a href="#L650">00650</a> [PDF p.14] Now consider the difference between the sum normalization q̂t+1 /(1T q̂t+1 ) and the two-norm</div>
+<div id="L651"><a href="#L651">00651</a> [PDF p.14] normalization q̂t+1 / kq̂t+1 k2 . Since qt is a probability distribution, all elements will be positive,</div>
+<div id="L652"><a href="#L652">00652</a> [PDF p.14] hence the sum norm is equivalent to the 1-norm. In both settings, normalization is equivalent to</div>
+<div id="L653"><a href="#L653">00653</a> [PDF p.14] projection onto a norm ball. Now let S be the set of all valid states. Then if the diameter of S is small</div>
+<div id="L654"><a href="#L654">00654</a> [PDF p.14] compared to the distance from (the convex hull of) S to the origin then the local curvature of the</div>
+<div id="L655"><a href="#L655">00655</a> [PDF p.14] 2-norm ball will be negligible, and both cases will be approximately equivalent to projection onto a</div>
+<div id="L656"><a href="#L656">00656</a> [PDF p.14] plane. We note we can obtain an S with this property by augmenting our state with a set of constant</div>
+<div id="L657"><a href="#L657">00657</a> [PDF p.14] features.</div>
+<div id="L658"><a href="#L658">00658</a> [PDF p.14] </div>
+<div id="L659"><a href="#L659">00659</a> [PDF p.14] </div>
+<div id="L660"><a href="#L660">00660</a> [PDF p.14] </div>
+<div id="L661"><a href="#L661">00661</a> [PDF p.14] </div>
+<div id="L662"><a href="#L662">00662</a> [PDF p.14]                                                    14</div>
+<div id="L663"><a href="#L663">00663</a> [PDF p.14] </div></pre>

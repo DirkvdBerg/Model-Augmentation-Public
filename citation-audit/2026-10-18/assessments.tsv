@@ -1,0 +1,130 @@
+id	verdict	evidence	note
+C013	SUPPORTED	garcia2013model:87-121;teo2007dynamic:125-144	Both sources describe shared-beam coupling and payload-position dependence; Teo is not being used for flexible joints.
+C014	SUPPORTED	garcia2013model:89-97;garcia2013model:307-339	Flexible joints and their stiffness/damping support the flexible-dynamics statement.
+C016	SUPPORTED	willard2020integrating:30-36;willard2020integrating:139-149	Survey explains shortcomings of mechanistic models and inaccurate subprocess descriptions.
+C017	SUPPORTED	hoekstra2026lfr:30-41	Introduction explicitly describes more accurate FP modelling as labour intensive.
+C019	SUPPORTED	willard2020integrating:58-65;hoekstra2026lfr:46-58	Both support limitations of black-box interpretation and extrapolation. This is a limitation, not an impossibility theorem.
+C020	SUPPORTED	willard2020integrating:58-65;karniadakis2021physicsinformed:6-19	Both explicitly discuss large-data requirements of purely data-driven learning.
+C021	SUPPORTED	hoekstra2026lfr:46-58	Source explicitly identifies learning already-known rigid-body behaviour as a drawback.
+C022	SUPPORTED	karniadakis2021physicsinformed:6-19;raissi2017physicsinformedpart1:201-232	Physics constraints during training supported by the review and Raissi Eq. (4). Soft residual penalties are meant here, not exact satisfaction.
+C023	SUPPORTED WITH SCOPE LIMIT	hoekstra2026lfr:64-85	Hoekstra makes this criticism of PINN/physics-guided methods. Avoid treating it as a theorem covering every physics-informed architecture; the review also includes built-in physical structure.
+C024	SUPPORTED AS MOTIVATION	gyorok2026obc:168-184;gyorok2026obc:237-252	Source connects non-unique parameters to lost physical meaning. The thesis's definition of interpretability is its own operational choice, not a definition imposed by this paper.
+C025	SUPPORTED	willard2020integrating:58-65	Survey explicitly motivates the continuum between the two approaches.
+C026	SUPPORTED	noel2018greybox:121-175;noel2018greybox:799-805	Physical structure and identifiable physical coefficients coexist with flexible state-space fitting in this example. The citation supports this rationale, not a universal superiority claim.
+C027	SUPPORTED	willard2020integrating:284-304;willard2020integrating:960-975;hoekstra2026lfr:137-215	Hoekstra directly distinguishes static and dynamic structures. Willard supports calibration and residual modelling; the three-way taxonomy is a synthesis of these sources.
+C028	SUPPORTED	hoekstra2026lfr:73-85	Introduction explicitly says the learning component need only represent unknown dynamics.
+C029	PARTIAL: MODEL-ORDER QUALIFICATION	hoekstra2026lfr:197-215	Source defines dynamic augmentation by added states. It does not prove that every missing flexible effect requires additional states in every existing baseline. State the need relative to the missing mode/order in this gantry.
+C030	SUPPORTED	kessels2025ai:7717-7728;kessels2025ai:8624-8635	ASMPT wire-bonder application and open orthogonality/interpretability questions are explicit. Bibliographic author-name error is independent of support.
+C031	SUPPORTED	gyorok2026obc:237-252;gyorok2026obc:168-184	Source explains equivalent parameter pairs, unrealistic physical values, and overlap with the learned component.
+C035	SUPPORTED	retzler2024:93-101	Real industrial-robot benchmark measurements and hybrid augmentation are described.
+C036	PARTIAL: NEGATIVE CLAIM	hoekstra2026lfr:117-124;hoekstra2026lfr:813-834	This paper uses recorded-input, open-loop identification and its displayed examples do not establish the stated gantry setting. Its general nonlinear formulation does not exclude position-dependent baselines. Prefer 'not demonstrated on a self-scheduled gantry in closed loop'; absence from one paper cannot prove a field-wide gap.
+C037	SUPPORTED	kessels2025ai:8584-8588;kessels2025ai:7233-7258	Future-work recommendation to tune the FP parameters confirms they are fixed in the current EA method; closed-loop controller is included.
+C038	PARTIAL: CONDITIONAL UNIQUENESS	gyorok2026obc:215-227;gyorok2026obc:265-299	Orthogonality gives the desired separation under rank/informativity and fit conditions. Unqualified uniqueness can be read as uniqueness of this thesis's nonlinear closed-loop optimizer, which the source does not establish.
+C039	SUPPORTED FIGURE ADAPTATION	garcia2013model:307-367	Caption acknowledges adaptation of the lumped model in Fig. 2; physical content matches, with thesis-specific omission of friction. See accompanying figure comparison artifact.
+C040	SUPPORTED ADAPTATION	garcia2013model:307-367;garcia2013model:454-500	Thesis uses the lumped model with small-angle approximations and omits Coulomb terms. It is not identical to the subsequently reduced control model (11).
+C041	SUPPORTED	garcia2013model:343-367	Chosen coordinates explicitly avoid closed kinematic chains and expose uneven load coupling. Exact source uses arcsin; thesis's angle relation uses its declared small-angle approximation.
+C044	SUPPORTED	garcia2013model:480-500	Small-angle and negligible Coriolis/centripetal terms are explicitly stated in Sec. 2.3.
+C045	SUPPORTED DRAFT	garcia2013model:307-339	Sec. 2.2 includes Coulomb forces at all three actuators. The omission is a thesis choice.
+C046	PARTIAL DRAFT: SUFFICIENCY	hoekstra2026lfr:504-518	Condition 8 is C2 differentiability in a sufficient theorem for the augmentation representation. It does not make smoothness necessary for all notions of well-posedness or prove that Coulomb friction must be omitted.
+C047	SUPPORTED	garcia2013model:307-367;garcia2013model:677-699	Symbols and the geometric distance d agree with the source model and parameter table.
+C048	SUPPORTED	garcia2013model:677-699	Every nominal baseline value in the appendix was compared with Table I and agrees.
+C049	SUPPORTED WITH TERMINOLOGY NOTE	toth2010modeling:10134-10205	Scheduling from a measured state is supported by the nonlinear-to-LPV embedding discussion. The book calls endogenous scheduling quasi-LPV; do not imply an independent exogenous scheduling signal.
+C050	SUPPORTED STRUCTURE; VERSION ISSUE	drenth2025lpvlfr:124-210;hoekstra2026lfr:216-286	Both give LFR interconnections; the gantry construction is the thesis's adaptation. Drenth's local manuscript differs from the bibliographic arXiv version.
+C052	LOCATOR/DOMAIN ERROR	drenth2025lpvlfr:139-153;drenth2025lpvlfr-arxiv-v1:75-114	The local Eq. (6) is explicitly discrete time. In arXiv v1 the nominal LFR is Eq. (2), while Eq. (6) is the identification model, also discrete time. Mark the CT form as an adaptation or cite Drenth's thesis CT equation.
+C053	SUPPORTED; VERSION ISSUE	drenth2025lpvlfr:201-210;drenth2025lpvlfr-arxiv-v1:108-114	Definition 1 states nonsingularity over all allowed scheduling values in both checked versions.
+C054	CONCEPTUAL SUPPORT ONLY	ovchinnikov2021computing-v3:174-207	Definition 7 defines identifiable rational functions for generic solutions. It does not prove the gantry's ten-combination count; that is the thesis's own derivation. Final journal numbering remains unverified.
+C055	SUPPORTED ANALOGY	gautier1990minimum:42-69	Abstract and Sec. III define a minimum set by eliminating and regrouping parameters. This supports the analogy, not the thesis-specific count or nonlinear parameterization.
+C056	SUPPORTED STRUCTURAL DISTINCTION	hoekstra2026lfr:197-215	Source says dynamic augmentation adds states to represent missing dynamics. Same model-order qualification as C029 applies if read universally.
+C057	SUPPORTED DELETED PASSAGE	hoekstra2026lfr:197-215	Same state-extension definition; this citation is only in displayed deleted text.
+C058	SUPPORTED	hoekstra2026lfr:137-156	Dynamic-parallel state update uses baseline states, added states and input in Table 1.
+C059	SUPPORTED	hoekstra2026lfr:137-156	Displayed thesis interconnection matches Table 1 S-DP, with thesis-specific output and discretized baseline.
+C060	SUPPORTED DELETED PASSAGE	hoekstra2026lfr:216-286	Sec. 3.1 gives the general baseline/learning-block interconnection.
+C061	SUPPORTED DELETED PASSAGE	drenth2025thesis:633-681	Sec. 2.4 describes self-scheduling by a state/input-dependent map. The nonlinear gantry embedding remains this thesis's construction.
+C062	SUPPORTED	hoekstra2026lfr:137-156	DT additive state-update form matches Table 1, after this thesis discretizes its CT baseline.
+C063	PARTIAL: STRUCTURE SCOPE	gyorok2026obc:110-138	OBC source treats additive input-output models linear in baseline parameters. It does not directly define the full dynamic-parallel state-space structure here. Section IV's extension must carry this step.
+C064	SUPPORTED	kessels2025ai:7259-7269	Remark 5.3 explicitly permits leaving an accurate output equation unaugmented.
+C065	SUPPORTED DELETED PASSAGE	kessels2025ai:7259-7269	Accurate-output-map rationale is explicit in Remark 5.3.
+C066	SUPPORTED DRAFT	drenth2025thesis:1799-1855	Eq. (5.2) and following text allow augmenting scheduling through an added learned scheduling map.
+C067	SUPPORTED SUFFICIENT CONDITIONS	hoekstra2026lfr:504-518	Cond. 6 acyclicity plus Cond. 8 C2 differentiability imply Theorem 9. The thesis must separately establish these conditions for its block maps; this is not a proof of stability.
+C068	SUPPORTED	hoekstra2026lfr:699-738	Sec. 5.3 explicitly motivates normalization for ANN estimation. Thesis adds nonzero-mean offsets, which are its own extension.
+C069	SUPPORTED	hoekstra2026lfr:137-156	The S-DP formula corrects the whole baseline state vector; source does not force velocity-only correction.
+C070	SUPPORTED CONTRAST	hoekstra2026lfr:627-650	Eq. (22b) uses recorded input; including a feedback controller is the thesis's stated adaptation.
+C071	SUPPORTED	beintema2023subnet:353-380;beintema2023subnet:531-550	Correct attribution of SUBNET and its data-generating-system stability assumption.
+C072	SUPPORTED	beintema2023subnet:531-550	Condition 1 is explicitly incremental exponential output stability.
+C073	SUPPORTED	hoekstra2026lfr:616-650;hoekstra2026lfr:811-834	Hoekstra adopts the truncated encoder criterion and its convergence assumptions.
+C074	SUPPORTED	hoekstra2026lfr:811-834	Sec. 5.5 explicitly imports incremental exponential output stability. Closing the loop does not by itself prove all imported conditions.
+C075	SUPPORTED	kessels2025ai:7987-7996	Remark 5.6 reports unsuccessful open-loop identification and presents noise/controller integration as a possible explanation, not a proved cause.
+C076	SUPPORTED WITH ASSUMPTIONS	forssell1999revisited:581-610	Sec. 5.2.1 uses reference-output identification with known linear controller and reference uncorrelated with noise. This supports the linear indirect rationale, not consistency of the nonlinear residual-loop method.
+C077	SUPPORTED ADAPTATION	kessels2025ai:7180-7258	Eqs. (5.12)-(5.13) embed known feedback dynamics over each training window. The residual-controller difference formulation is this thesis's own construction.
+C078	SUPPORTED	kessels2025ai:7271-7277	Remark 5.4 permits direct controller-state access or reconstruction using measurements, reference, known controller and initial state.
+C079	SUPPORTED	kessels2025ai:6935-6942	Remark 5.1 excludes input dependence in the output augmentation to avoid feedback algebraic dependence. Thesis applies the same causal reasoning.
+C081	SUPPORTED	hoekstra2026lfr:627-668	Baseline and learning parameters plus encoder are co-estimated; baseline parameters occur in Eq. (22c).
+C082	SUPPORTED	hoekstra2026encoder:151-168	Footnote 1 explicitly sets co-estimation of baseline parameters outside this encoder paper's scope.
+C083	SUPPORTED ADAPTATION	hoekstra2026lfr:627-650	Truncated output-error criterion is the source. Closed-loop simulation, parameter constraints and servo-error weights are declared thesis changes, not source results.
+C084	SUPPORTED	beintema2023subnet:339-351	Sec. 3.1 explicitly says independent subsection initial states would cause O(N) parameter growth.
+C085	SUPPORTED	beintema2023subnet:339-380	Sec. 3.2 derives an encoder from IO history to initialize each window.
+C086	SUPPORTED	beintema2023subnet:290-338	Eq. (9) minibatches and fixed window length support record-length-independent work per gradient step. Total training effort need not be independent of record length.
+C087	SUPPORTED	beintema2023subnet:290-305	Source explicitly links truncation with increased loss smoothness and refers to the underlying analysis.
+C088	SUPPORTED	hoekstra2026lfr:643-650	Eq. (22e) histories end at k-1. Thesis uses n+1 samples explicitly; source lag-symbol conventions differ but causality matches.
+C089	SUPPORTED	hoekstra2026encoder:243-264	Eq. (8) is nonlinear encoder plus baseline/additional-state linear bypass rows.
+C090	SUPPORTED	hoekstra2026lfr:647-668	Sec. 5.2 directly states optimal parameter non-uniqueness and learned cancellation of baseline dynamics.
+C091	LOCATOR/VERSION ERROR	drenth2025lpvlfr:284-307;drenth2025lpvlfr-arxiv-v1:201-257	Adam then L-BFGS-B is Sec. 5.1 in the local manuscript, but Sec. 4.1 in arXiv v1 named by refs.bib. Thesis explicitly adapts to L-BFGS, so that optimizer difference is disclosed.
+C092	SUPPORTED	hoekstra2026lfr:663-709	Sec. 5.4 proposes baseline-equivalent initial behavior and discusses instability from random starts. Exact encoder matching is not guaranteed by the thesis's restricted fit.
+C093	SUPPORTED	hoekstra2026encoder:364-397	Sec. 3.1 explains local validity around the chosen linearization/equilibrium point.
+C094	LOCATOR ERROR	hoekstra2026encoder:402-448;hoekstra2026encoder:489-515	Eq. (35) and method are Sec. 3.2. Sec. 4.4 is Monte Carlo evaluation, not the method's location. Cite Sec. 3.2, Eq. (35).
+C095	SUPPORTED	hoekstra2026lfr:703-738	Eq. (30) fits the encoder to baseline-simulated physical states.
+C096	SUPPORTED EXPLICIT RESTRICTION	hoekstra2026encoder:402-440	Eq. (33) is linear LS for LTI baselines. Thesis explicitly says it uses a linear restriction for its nonlinear baseline and adds an intercept, so no claim of exact equivalence is justified or needed.
+C097	SUPPORTED	hoekstra2026encoder:402-448	Correctly distinguishes linear LS for LTI models (33) and ANN fitting for nonlinear models (35).
+C098	SUPPORTED CONTRAST	hoekstra2026lfr:713-738	Source Eq. (30) uses the given input sequence; thesis states its use of simulated closed-loop inputs as a change.
+C099	SUPPORTED DELETED PASSAGE	hoekstra2026encoder:151-168	Footnote 1 excludes physical-parameter co-estimation in that paper.
+C100	SUPPORTED SAME-STATE CLAIM	hoekstra2026lfr:663-697	Eq. (29) leaves the physical transition and output baseline-equivalent while allowing added-state updates. Thesis conditions its claim on the same initial physical state.
+C101	SUPPORTED ADAPTATION	hoekstra2026lfr:727-739	Text after Eq. (31) uses Xavier for the added-state encoder. Uniform distribution and gain one are thesis choices, not specified by this equation.
+C102	SUPPORTED	hoekstra2026lfr:670-689	Eq. (29) explicitly retains a nonzero added-state update while physical behavior remains the baseline.
+C103	SUPPORTED INSPIRATION	hefny2015supervised:147-169;hefny2015supervised:204-219	Two-stage regression is correctly cited as inspiration. The thesis discloses nonlinear residual-state updates; source's statistical guarantees do not transfer automatically.
+C104	SUPPORTED	downey2017psrnn:261-309	Sec. 4.2 initializes with 2SR and then refines with BPTT; final published PDF retains the same section.
+C105	SUPPORTED	hefny2015supervised:132-169	Source state features summarize future observations; thesis identifies its residual-target replacement.
+C106	SUPPORTED	downey2017psrnn:290-309	Source completes 2SR initialization before BPTT. The interleaved thesis procedure is explicitly contrasted.
+C107	SUPPORTED FIGURE ADAPTATION	hefny2015supervised:65-84;hefny2015supervised:204-225	Fig. 2 is indeed a time/window layout for history, future, shifted future and regression stages. Visually inspected PDF p. 2; thesis credits layout only, not identical algorithms.
+C108	SUPPORTED DRAFT	hefny2015supervised:132-169	The draft correctly identifies future-observation statistics and its residual-target modification.
+C109	SUPPORTED WITH NOISE QUALIFICATION	hefny2015supervised:147-169	Sec. 2 separates instrument/history from future-noise windows. Thesis correctly warns that disjoint samples with filtered noise need not be independent.
+C110	SUPPORTED DRAFT	venkatraman2017psd:240-268	Sec. 3 decodes future-observation statistics from recurrent internal states during training. It is analogous, not the same residual-only loss or staged algorithm.
+C111	SUPPORTED ANALOGY DRAFT	hefny2015supervised:147-169	Source warns overlap can correlate errors and bias naive regression. Application to the thesis's encoded S2 fit is a plausible warning, not a bias magnitude or proof for this method.
+C112	SUPPORTED	gyorok2026obc:237-252	Sec. 3.1 explicitly explains multiple parameter pairs giving the same fit.
+C113	SUPPORTED AS EXTENSION	gyorok2026obc:168-227	Projection removes the learning output's component along the baseline regressor. Thesis's state sensitivity construction is an extension with local scope.
+C114	SUPPORTED	gyorok2026obc:110-138	Source explicitly uses input-output baseline models linear in physical parameters.
+C115	SUPPORTED	gyorok2026obc:110-118;gyorok2026obc:453-466	Eq. (2) gives the linear regressor and Eq. (39) its derivative w.r.t. baseline parameters. Both locators exist in local arXiv v3.
+C116	SUPPORTED	gyorok2026obc:185-234	Eqs. (8)-(11) define LS subtraction and Lemma 3 proves stacked orthogonality.
+C117	SUPPORTED	gyorok2026obc:85-110	Eq. (1) defines the input-output history vector; it is not an independently observed state vector.
+C118	SUPPORTED	gyorok2026obc:161-181	Eq. (5) stacks predicted outputs, regressors and ANN outputs.
+C119	SUPPORTED	gyorok2026obc:185-227	Eqs. (9)-(10) define projected ANN output.
+C120	SUPPORTED	gyorok2026obc:220-236	Lemma 3 proves orthogonality on the data stack.
+C121	SUPPORTED	gyorok2026obc:185-227	Full column rank in Assumption 1 justifies the Gram inverse. It is not guaranteed merely by choosing identifiable combinations.
+C122	SUPPORTED WITH TERMINOLOGY NOTE	gyorok2026obc:185-218	Eq. (6) states weak persistent excitation combined with baseline distinguishability. Prefer 'weakly persistently exciting' and preserve both conditions.
+C123	SUPPORTED ADAPTATION	gyorok2025l4dc-published:362-375	Sec. 4 Eq. (15) linearizes the FP state update w.r.t. physical parameters. Using constrained coordinates beta is this thesis's chain-rule adaptation.
+C124	SUPPORTED	gyorok2025l4dc-published:367-377	Eq. (16) explicitly contains the parameter-independent affine offset.
+C125	SUPPORTED	gyorok2025l4dc-published:394-413	Eq. (18) appends the offset column to the Jacobian regressor before constructing the projection.
+C126	SUPPORTED DEFINITION; OWN LIMITATION	kessels2025ai:7686-7695	Sec. 5.3.1.3 defines negation. It does not analyze the thesis's offset projection or prove what it prevents; that limitation is the thesis's own argument.
+C127	SUPPORTED CONTRAST	gyorok2026obc:85-118	Eqs. (1)-(2) use measured IO histories; thesis reconstructs latent velocities instead.
+C128	SUPPORTED ADAPTATION	gyorok2026obc:197-217;gyorok2026obc:238-253	Eqs. (9),(13) apply the learned subtraction in output prediction, including new data. Thesis changes the prediction target to next physical state.
+C129	SUPPORTED ALGEBRAIC INFERENCE	gyorok2026obc:185-227	Projection coefficient depends on ANN outputs in (8)-(10); differentiating the projected function follows algebraically. These equations alone are not documentation of a particular autodiff implementation.
+C130	WORDING OVERSTATEMENT	gyorok2025l4dc-published:424-430	Source says the linearization point CAN be updated at every iteration and gives a fixed-nominal alternative. 'They update' claims an actual implementation choice that this passage does not establish; use 'they discuss updating'.
+C131	SUPPORTED	gyorok2025l4dc-published:424-430	Fixed nominal parameters and their assumed proximity to the true physical properties are explicit.
+C132	SUPPORTED ADAPTATION	gyorok2025l4dc-published:352-360	Remark 2 recomputes the projection using updated state estimates at epoch starts. Adapting the schedule to beta is stated as a thesis choice, not an identical source procedure.
+C133	SUPPORTED ADAPTATION	gyorok2026obc:257-273	Eqs. (14)-(15) separate baseline, discrepancy and noise. The velocity-reconstruction error and state-space interpretation are this thesis's additions.
+C134	SUPPORTED FORM ANALOGY	gyorok2026obc:265-299	Eq. (21) has the same least-squares bias form. Thesis explicitly distinguishes its first-order fixed-tuple surrogate from source exact-fit analysis and closed-loop training.
+C135	SUPPORTED	gyorok2026obc:255-268;gyorok2026obc:316-330	Assumption 6 is exact recovery of noise-free dynamics on training data; finite-data theorem and later noisy asymptotic result are distinct.
+C136	SUPPORTED ADAPTATION	gyorok2026obc:275-314	Condition 4 and Remark 5 require discrepancy orthogonality on the data. Thesis's Xi includes extra errors and the fixed-tuple first-order qualification is essential.
+C137	SUPPORTED ADAPTATION	garcia2013model:307-339	Source models Coulomb forces on all three actuators; thesis explicitly omits them from baseline and adds them to the simulated system.
+C138	SUPPORTED	garcia2013model:318-339;garcia2013model:536-550	Source sign law is the large-velocity limit of the thesis's declared tanh smoothing. The smoothing itself is not attributed to Garcia.
+C139	SUPPORTED	garcia2013model:677-699	All three Coulomb levels match Table I: 16.8, 18.35 and 11.6 N.
+C140	SUPPORTED METHOD ADAPTATION	beintema2023subnet:250-305;beintema2023subnet:353-380	SUBNET encoder/state-space framework is correctly cited. Closed-loop servo-error inputs and architecture selection are thesis-specific.
+C142	SUPPORTED EXPLICIT METRIC ADAPTATION	beintema2023subnet:874-889	Eq. (43) is RMS divided by output standard deviation, with encoder warm-up excluded. Thesis declares servo error as output and population-standard-deviation convention.
+C143	OUTDATED DRAFT CLAIM	hoekstra2026lfr:699-738	Source normalization is real, but current thesis loss includes record/axis-specific Wr servo-error weights. The TODO claiming weights only 1/sigma_y^2 is stale relative to current Eq. aug_loss.
+C144	SUPPORTED	garcia2013model:677-699	Baseline block and cited friction amplitudes match Table I. Absorber and smoothing parameters in the separately labeled simulated-system block are not source values.
+C145	SUPPORTED PARTITION ADAPTATION; VERSION ISSUE	drenth2025lpvlfr:139-153;drenth2025lpvlfr-arxiv-v1:75-114	Block partition agrees, after adapting from DT to CT. Local nominal Eq. (6) corresponds to nominal Eq. (2) in the bibliographic arXiv version.
+C146	SUPPORTED; VERSION ISSUE	drenth2025lpvlfr:201-210;drenth2025lpvlfr-arxiv-v1:108-114	Definition 1 has the same nonsingularity requirement in both versions; thesis derives its own equivalence with mass-matrix nonsingularity.
+C147	SUPPORTED MOTIVATION; VERSION ISSUE	drenth2025lpvlfr:68-88;drenth2025lpvlfr-arxiv-v1:45-70	Source motivates fewer scheduling variables to limit overbounding/conservatism in synthesis. This does not prove minimality of the thesis's six repeated channels.
+C148	SUPPORTED CONTRAST; VERSION ISSUE	drenth2025lpvlfr:203-215;drenth2025lpvlfr-arxiv-v1:127-165	Source learns the scheduling map from states and inputs; thesis instead uses its fixed measured-state selection.
+C149	SOURCE THEOREM CAVEAT; VERSION ISSUE	drenth2025lpvlfr:229-272;drenth2025lpvlfr-arxiv-v1:133-157	Theorem 6 is correctly numbered, but its stated assumptions do not generally make the spectral-radius product inequality true. Counterexample: Dzw=0.5[[1,1],[-1,-1]] has spectral radius zero, Delta=diag(1,-1) is allowed, yet I-Dzw*Delta is singular. Treat 'sufficient condition' with care; use a justified stronger bound or distinguish a source statement from a validated guarantee. This does not undermine the thesis's separate mass-matrix argument.
+C150	SUPPORTED METHOD ADAPTATION	beintema2023subnet:250-305;beintema2023subnet:353-380	Black-box state-space transition/output and encoder follow SUBNET; thesis-specific training, inputs and widths require its own evidence.
+C151	SUPPORTED EXPLICIT RESTRICTION	hoekstra2026encoder:402-440	Eq. (33) supports LS initialization; it does not prescribe SVD truncation or make the nonlinear baseline LTI. Section III explicitly explains its restricted affine fit.

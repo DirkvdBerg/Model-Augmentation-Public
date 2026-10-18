@@ -1,0 +1,36 @@
+<meta charset="utf-8"><title>tables/res_all_splits.tex</title><pre><div id="L1"><a href="#L1">0001</a> \setlength{\tabcolsep}{3pt}</div>
+<div id="L2"><a href="#L2">0002</a> \begin{tabular}{l r r r r r r}</div>
+<div id="L3"><a href="#L3">0003</a> \toprule</div>
+<div id="L4"><a href="#L4">0004</a>  &amp; \multicolumn{3}{c}{Multisine} &amp; \multicolumn{3}{c}{No multisine}\\</div>
+<div id="L5"><a href="#L5">0005</a> \cmidrule(lr){2-4}\cmidrule(lr){5-7}</div>
+<div id="L6"><a href="#L6">0006</a> $\mathrm{NRMS}_e$ (\%) &amp; $X_1$ &amp; $X_2$ &amp; $Y$ &amp; $X_1$ &amp; $X_2$ &amp; $Y$\\</div>
+<div id="L7"><a href="#L7">0007</a> \midrule</div>
+<div id="L8"><a href="#L8">0008</a> \multicolumn{7}{l}{\emph{Training records}}\\</div>
+<div id="L9"><a href="#L9">0009</a> Baseline, true $\theta$ &amp; $21.9$ &amp; $24.5$ &amp; $120.0$ &amp; $4.6$ &amp; $5.0$ &amp; $3.7$\\</div>
+<div id="L10"><a href="#L10">0010</a> Augmented, unconstrained &amp; $9.4$ &amp; $10.2$ &amp; $6.6$ &amp; $4.1$ &amp; $4.3$ &amp; $4.3$\\</div>
+<div id="L11"><a href="#L11">0011</a> \quad physical part &amp; $21.0$ &amp; $23.7$ &amp; $120.8$ &amp; $5.9$ &amp; $4.3$ &amp; $4.2$\\</div>
+<div id="L12"><a href="#L12">0012</a> Augmented, OBC (final)$^\dagger$ &amp; $10.5$ &amp; $11.2$ &amp; $6.8$ &amp; $4.5$ &amp; $5.0$ &amp; $4.2$\\</div>
+<div id="L13"><a href="#L13">0013</a> \quad physical part$^\dagger$ &amp; $23.9$ &amp; $26.9$ &amp; $122.3$ &amp; $4.7$ &amp; $4.6$ &amp; $5.1$\\</div>
+<div id="L14"><a href="#L14">0014</a> Black-box model &amp; $32.4$ &amp; $34.5$ &amp; $25.2$ &amp; $75.6$ &amp; $76.9$ &amp; $104.4$\\</div>
+<div id="L15"><a href="#L15">0015</a> Noise floor &amp; $0.06$ &amp; $0.07$ &amp; $0.01$ &amp; $0.04$ &amp; $0.04$ &amp; $0.01$\\</div>
+<div id="L16"><a href="#L16">0016</a> \midrule</div>
+<div id="L17"><a href="#L17">0017</a> \multicolumn{7}{l}{\emph{Validation records}}\\</div>
+<div id="L18"><a href="#L18">0018</a> Baseline, true $\theta$ &amp; $23.0$ &amp; $24.9$ &amp; $121.8$ &amp; $4.7$ &amp; $4.9$ &amp; $3.7$\\</div>
+<div id="L19"><a href="#L19">0019</a> Augmented, unconstrained &amp; $9.9$ &amp; $10.2$ &amp; $6.6$ &amp; $4.1$ &amp; $4.2$ &amp; $4.3$\\</div>
+<div id="L20"><a href="#L20">0020</a> \quad physical part &amp; $22.1$ &amp; $24.1$ &amp; $122.7$ &amp; $5.9$ &amp; $4.2$ &amp; $4.2$\\</div>
+<div id="L21"><a href="#L21">0021</a> Augmented, OBC (final)$^\dagger$ &amp; $11.0$ &amp; $11.1$ &amp; $7.1$ &amp; $4.6$ &amp; $4.9$ &amp; $4.1$\\</div>
+<div id="L22"><a href="#L22">0022</a> \quad physical part$^\dagger$ &amp; $25.3$ &amp; $27.4$ &amp; $123.9$ &amp; $4.8$ &amp; $4.5$ &amp; $5.0$\\</div>
+<div id="L23"><a href="#L23">0023</a> Black-box model &amp; $31.6$ &amp; $33.6$ &amp; $23.8$ &amp; $75.6$ &amp; $76.9$ &amp; $103.3$\\</div>
+<div id="L24"><a href="#L24">0024</a> Noise floor &amp; $0.06$ &amp; $0.07$ &amp; $0.01$ &amp; $0.04$ &amp; $0.04$ &amp; $0.01$\\</div>
+<div id="L25"><a href="#L25">0025</a> \midrule</div>
+<div id="L26"><a href="#L26">0026</a> \multicolumn{7}{l}{\emph{Test records I1 to I6}}\\</div>
+<div id="L27"><a href="#L27">0027</a> Baseline, true $\theta$ &amp; $18.8$ &amp; $20.7$ &amp; $116.6$ &amp; $4.5$ &amp; $4.6$ &amp; $3.4$\\</div>
+<div id="L28"><a href="#L28">0028</a> Augmented, unconstrained &amp; $8.8$ &amp; $8.4$ &amp; $6.3$ &amp; $4.2$ &amp; $4.2$ &amp; $4.0$\\</div>
+<div id="L29"><a href="#L29">0029</a> \quad physical part &amp; $17.9$ &amp; $19.4$ &amp; $117.4$ &amp; $6.5$ &amp; $4.2$ &amp; $3.9$\\</div>
+<div id="L30"><a href="#L30">0030</a> Augmented, OBC (final)$^\dagger$ &amp; $9.7$ &amp; $9.5$ &amp; $6.2$ &amp; $4.7$ &amp; $4.8$ &amp; $3.8$\\</div>
+<div id="L31"><a href="#L31">0031</a> \quad physical part$^\dagger$ &amp; $19.8$ &amp; $22.0$ &amp; $118.7$ &amp; $4.7$ &amp; $4.3$ &amp; $4.7$\\</div>
+<div id="L32"><a href="#L32">0032</a> Black-box model &amp; $47.8$ &amp; $47.8$ &amp; $35.9$ &amp; $104.8$ &amp; $97.0$ &amp; $127.7$\\</div>
+<div id="L33"><a href="#L33">0033</a> Noise floor &amp; $0.06$ &amp; $0.06$ &amp; $0.01$ &amp; $0.04$ &amp; $0.04$ &amp; $0.01$\\</div>
+<div id="L34"><a href="#L34">0034</a> \bottomrule</div>
+<div id="L35"><a href="#L35">0035</a> \multicolumn{7}{l}{\footnotesize $^\dagger$ preliminary, update 19500 of 33400}\\</div>
+<div id="L36"><a href="#L36">0036</a> \end{tabular}</div></pre>

@@ -1,0 +1,199 @@
+<meta charset="utf-8"><title>figures/gantry_system_with_absorber.tex</title><pre><div id="L1"><a href="#L1">0001</a> % ===========================================================================</div>
+<div id="L2"><a href="#L2">0002</a> % Final thesis figure: lumped-parameter model of the dual-drive H-type gantry</div>
+<div id="L3"><a href="#L3">0003</a> % with the simulated payload absorber. Geometry adapted from</div>
+<div id="L4"><a href="#L4">0004</a> % Garcia-Herreros et al. (2013), Fig. 2.</div>
+<div id="L5"><a href="#L5">0005</a> %</div>
+<div id="L6"><a href="#L6">0006</a> % Requires in the preamble:</div>
+<div id="L7"><a href="#L7">0007</a> %   \usepackage{tikz}</div>
+<div id="L8"><a href="#L8">0008</a> %   \usetikzlibrary{arrows.meta,calc,decorations.pathmorphing}</div>
+<div id="L9"><a href="#L9">0009</a> %</div>
+<div id="L10"><a href="#L10">0010</a> % Conventions</div>
+<div id="L11"><a href="#L11">0011</a> %   * Coordinates are in drawing units; the x/y keys of the tikzpicture set the</div>
+<div id="L12"><a href="#L12">0012</a> %     unit, so the drawing scales while the labels keep the document&#x27;s own font</div>
+<div id="L13"><a href="#L13">0013</a> %     and size.  At 0.3mm the drawing is 1:1 with Garcia Fig. 2 (about 285pt</div>
+<div id="L14"><a href="#L14">0014</a> %     wide); 0.26mm fits one IEEE column (252pt).</div>
+<div id="L15"><a href="#L15">0015</a> %   * The origin is the cross arm centre of mass (the blue coordinate X).</div>
+<div id="L16"><a href="#L16">0016</a> %   * Parts on the cross arm are drawn in its rotated frame: u along the beam</div>
+<div id="L17"><a href="#L17">0017</a> %     (positive to the right), v perpendicular to it.  The measured coordinate</div>
+<div id="L18"><a href="#L18">0018</a> %     Y points LEFT in this view, so Y = -u, and the absorber, which sits at</div>
+<div id="L19"><a href="#L19">0019</a> %     +L0 in Y, is drawn to the LEFT of the payload.</div>
+<div id="L20"><a href="#L20">0020</a> %   * Changing \th (yaw) or \Yp (payload position) moves every attached part,</div>
+<div id="L21"><a href="#L21">0021</a> %     including its labels.  With \Yp &gt; 0 the absorber ends up between the CoM</div>
+<div id="L22"><a href="#L22">0022</a> %     and the payload, and the F_Y label then needs a manual nudge.</div>
+<div id="L23"><a href="#L23">0023</a> %   * Schematic, not to scale: the absorber offset L0 and the mass sizes are</div>
+<div id="L24"><a href="#L24">0024</a> %     drawn for legibility.  The absorber rides on the payload, so it may</div>
+<div id="L25"><a href="#L25">0025</a> %     overhang the beam end.</div>
+<div id="L26"><a href="#L26">0026</a> %   * Colours: red = measured coordinates, blue = generalized coordinates,</div>
+<div id="L27"><a href="#L27">0027</a> %     grey = absorber (m_a, k_a, c_a, q_a), present only in the simulated</div>
+<div id="L28"><a href="#L28">0028</a> %     plant and not in the baseline.  Theta is drawn once, at the CoM.</div>
+<div id="L29"><a href="#L29">0029</a> %</div>
+<div id="L30"><a href="#L30">0030</a> % \gantryabsorber: 0 draws the baseline only (Section II), 1 adds the grey</div>
+<div id="L31"><a href="#L31">0031</a> % absorber (Section III).</div>
+<div id="L32"><a href="#L32">0032</a> % \gantrydelta: 1 adds an arrow for the absorber displacement relative to the</div>
+<div id="L33"><a href="#L33">0033</a> % payload.</div>
+<div id="L34"><a href="#L34">0034</a> % ===========================================================================</div>
+<div id="L35"><a href="#L35">0035</a> \providecommand{\gantryabsorber}{1}</div>
+<div id="L36"><a href="#L36">0036</a> \providecommand{\gantrydelta}{1}</div>
+<div id="L37"><a href="#L37">0037</a> \begin{tikzpicture}[</div>
+<div id="L38"><a href="#L38">0038</a>     x=0.26mm, y=0.26mm,                      % one column; 0.3mm is 1:1 with</div>
+<div id="L39"><a href="#L39">0039</a>                                              % Garcia Fig. 2</div>
+<div id="L40"><a href="#L40">0040</a>     line width=0.5pt, line cap=round, line join=round,</div>
+<div id="L41"><a href="#L41">0041</a>     &gt;={Triangle[length=3.4pt,width=2.9pt]},</div>
+<div id="L42"><a href="#L42">0042</a>     dim/.style={line width=0.4pt, dash pattern=on 3pt off 1.1pt on 0.4pt off 1.1pt},</div>
+<div id="L43"><a href="#L43">0043</a>     ext/.style={line width=0.35pt},</div>
+<div id="L44"><a href="#L44">0044</a>     cl/.style={gray!55, line width=0.25pt,</div>
+<div id="L45"><a href="#L45">0045</a>                dash pattern=on 4pt off 1pt on 0.3pt off 1pt},</div>
+<div id="L46"><a href="#L46">0046</a>     absc/.style={black!55},                    % absorber colour (not baseline)</div>
+<div id="L47"><a href="#L47">0047</a>     abs/.style={fill=black!15, line width=0.5pt},             % absorber: shaded</div>
+<div id="L48"><a href="#L48">0048</a>     absl/.style={font=\small},                                % k_a, c_a labels</div>
+<div id="L49"><a href="#L49">0049</a>   ]</div>
+<div id="L50"><a href="#L50">0050</a>   % ================ parameters ================</div>
+<div id="L51"><a href="#L51">0051</a>   \def\th{9.25}      % yaw angle Theta [deg]</div>
+<div id="L52"><a href="#L52">0052</a>   \def\Lb{152.5}     % cross arm length</div>
+<div id="L53"><a href="#L53">0053</a>   \def\Wb{24.5}      % cross arm width</div>
+<div id="L54"><a href="#L54">0054</a>   \def\Yp{-18}       % payload position along the cross arm (u); Y = -u</div>
+<div id="L55"><a href="#L55">0055</a>   \def\Lh{26}        % payload width</div>
+<div id="L56"><a href="#L56">0056</a>   \def\Hh{24}        % payload height</div>
+<div id="L57"><a href="#L57">0057</a>   \def\rw{3.7}       % payload wheel radius</div>
+<div id="L58"><a href="#L58">0058</a>   \def\Wa{20}        % absorber width</div>
+<div id="L59"><a href="#L59">0059</a>   \def\Ha{20}        % absorber height</div>
+<div id="L60"><a href="#L60">0060</a>   \def\ga{30}        % spring and damper gap between absorber and payload</div>
+<div id="L61"><a href="#L61">0061</a>   \def\Mw{34.7}      % actuator mass box size</div>
+<div id="L62"><a href="#L62">0062</a>   \pgfmathsetmacro\yE{0.5*\Lb*sin(\th)}       % height of the beam ends</div>
+<div id="L63"><a href="#L63">0063</a>   \pgfmathsetmacro\hb{0.5*\Wb}</div>
+<div id="L64"><a href="#L64">0064</a>   \pgfmathsetmacro\vh{\hb+2*\rw+0.5*\Hh}      % payload centre height (v)</div>
+<div id="L65"><a href="#L65">0065</a>   \pgfmathsetmacro\ua{\Yp-0.5*\Lh-\ga-0.5*\Wa}  % absorber centre (u)</div>
+<div id="L66"><a href="#L66">0066</a>   \pgfmathsetmacro\vY{\vh+0.5*\Hh+30}          % height of the Y dimension line</div>
+<div id="L67"><a href="#L67">0067</a>   \pgfmathsetmacro\xM{0.5*\Lb*cos(\th)+22.3+0.5*\Mw}  % |x| of actuator centres</div>
+<div id="L68"><a href="#L68">0068</a>   % Lane for the d dimension and the F_Y arrow: on the CoM side of the payload</div>
+<div id="L69"><a href="#L69">0069</a>   % and clear of the red Y reference line, so it follows the sign of \Yp.</div>
+<div id="L70"><a href="#L70">0070</a>   \pgfmathsetmacro\ud{ifthenelse(\Yp&lt;0,9,-9)}</div>
+<div id="L71"><a href="#L71">0071</a>   \pgfmathsetmacro\sd{ifthenelse(\Yp&lt;0,1,-1)}</div>
+<div id="L72"><a href="#L72">0072</a> </div>
+<div id="L73"><a href="#L73">0073</a>   % ===================== cross arm =====================</div>
+<div id="L74"><a href="#L74">0074</a>   \begin{scope}[rotate=\th]</div>
+<div id="L75"><a href="#L75">0075</a>     \draw (-\Lb/2,-\hb) rectangle (\Lb/2,\hb);</div>
+<div id="L76"><a href="#L76">0076</a>     \draw[cl] (-0.57*\Lb,0) -- (0.58*\Lb,0);</div>
+<div id="L77"><a href="#L77">0077</a>     \coordinate (E1) at ( \Lb/2,0);</div>
+<div id="L78"><a href="#L78">0078</a>     \coordinate (E2) at (-\Lb/2,0);</div>
+<div id="L79"><a href="#L79">0079</a> </div>
+<div id="L80"><a href="#L80">0080</a>     % ==== payload m_h on its wheels ====</div>
+<div id="L81"><a href="#L81">0081</a>     \draw[fill=white] (\Yp-\Lh/2,\vh-\Hh/2) rectangle (\Yp+\Lh/2,\vh+\Hh/2);</div>
+<div id="L82"><a href="#L82">0082</a>     \draw (\Yp-7,\hb+\rw) circle (\rw)  (\Yp+7,\hb+\rw) circle (\rw);</div>
+<div id="L83"><a href="#L83">0083</a>     \node at (\Yp,\vh) {\ifnum\gantryabsorber&gt;0 $m_{h,r}$\else $m_h$\fi};</div>
+<div id="L84"><a href="#L84">0084</a> </div>
+<div id="L85"><a href="#L85">0085</a>     % ==== payload absorber: mass m_a, spring k_a, damper c_a ====</div>
+<div id="L86"><a href="#L86">0086</a>     % Drawn entirely in grey: not part of the baseline, only of the simulated</div>
+<div id="L87"><a href="#L87">0087</a>     % data-generating plant.</div>
+<div id="L88"><a href="#L88">0088</a>     \ifnum\gantryabsorber&gt;0</div>
+<div id="L89"><a href="#L89">0089</a>     \begin{scope}[absc]</div>
+<div id="L90"><a href="#L90">0090</a>     \pgfmathsetmacro\xa{\ua+0.5*\Wa}          % absorber side attachment</div>
+<div id="L91"><a href="#L91">0091</a>     \pgfmathsetmacro\xh{\Yp-0.5*\Lh}          % payload side attachment</div>
+<div id="L92"><a href="#L92">0092</a>     \draw[abs] (\ua-\Wa/2,\vh-\Ha/2) rectangle (\ua+\Wa/2,\vh+\Ha/2);</div>
+<div id="L93"><a href="#L93">0093</a>     \node at (\ua,\vh) {$m_a$};</div>
+<div id="L94"><a href="#L94">0094</a>     \pgfmathsetmacro\xc{0.5*(\xa+\xh)}        % centre of the gap</div>
+<div id="L95"><a href="#L95">0095</a>     % spring k_a on top</div>
+<div id="L96"><a href="#L96">0096</a>     \draw[decorate, decoration={zigzag, segment length=4, amplitude=3.5,</div>
+<div id="L97"><a href="#L97">0097</a>           pre length=5, post length=5}] (\xa,\vh+6) -- (\xh,\vh+6);</div>
+<div id="L98"><a href="#L98">0098</a>     \node[absl, anchor=south, inner sep=1.5pt] at (\xc,\vh+10) {$k_a$};</div>
+<div id="L99"><a href="#L99">0099</a>     % damper c_a below: rod, filled piston, open cylinder, rod</div>
+<div id="L100"><a href="#L100">0100</a>     \draw (\xa,\vh-6) -- (\xc+1,\vh-6);</div>
+<div id="L101"><a href="#L101">0101</a>     \fill (\xc-1.4,\vh-8.6) rectangle (\xc+0.8,\vh-3.4);</div>
+<div id="L102"><a href="#L102">0102</a>     \draw (\xc-4,\vh-2) -- (\xc+4,\vh-2) -- (\xc+4,\vh-10) -- (\xc-4,\vh-10);</div>
+<div id="L103"><a href="#L103">0103</a>     \draw (\xc+4,\vh-6) -- (\xh,\vh-6);</div>
+<div id="L104"><a href="#L104">0104</a>     \node[absl, anchor=north, inner sep=0.5pt]        % tucked up under the</div>
+<div id="L105"><a href="#L105">0105</a>           at (\xc,\vh-10.9) {$c_a$};                   % cylinder, clear of the beam</div>
+<div id="L106"><a href="#L106">0106</a>     \ifnum\gantrydelta&gt;0                      % displacement relative to m_h</div>
+<div id="L107"><a href="#L107">0107</a>       \draw[-&gt;] (\ua,\vh+\Ha/2+4.5) -- ++(-14,0);</div>
+<div id="L108"><a href="#L108">0108</a>       \node[anchor=south east, inner sep=1pt]</div>
+<div id="L109"><a href="#L109">0109</a>             at (\ua-3,\vh+\Ha/2+5.5) {$q_a$};</div>
+<div id="L110"><a href="#L110">0110</a>     \fi</div>
+<div id="L111"><a href="#L111">0111</a>     \end{scope}</div>
+<div id="L112"><a href="#L112">0112</a>     \fi</div>
+<div id="L113"><a href="#L113">0113</a> </div>
+<div id="L114"><a href="#L114">0114</a>     % ==== payload force F_Y ====</div>
+<div id="L115"><a href="#L115">0115</a>     \draw[-&gt;] ({\ud+\sd*11},\vh+4) -- ({\Yp+\sd*\Lh/2},\vh+4);</div>
+<div id="L116"><a href="#L116">0116</a>     \node[inner sep=2pt] at ({\ud+\sd*20},\vh+4) {$F_Y$};</div>
+<div id="L117"><a href="#L117">0117</a> </div>
+<div id="L118"><a href="#L118">0118</a>     % ==== d : centreline to payload centre of mass ====</div>
+<div id="L119"><a href="#L119">0119</a>     \draw[&lt;-&gt;] (\ud,0) -- (\ud,\vh);</div>
+<div id="L120"><a href="#L120">0120</a>     \node[inner sep=2pt] at ({\ud+\sd*4.5},0.78*\vh) {$d$};  % away from CoM</div>
+<div id="L121"><a href="#L121">0121</a> </div>
+<div id="L122"><a href="#L122">0122</a>     % ==== Y : CoM to payload (red) ====</div>
+<div id="L123"><a href="#L123">0123</a>     \begin{scope}[red]</div>
+<div id="L124"><a href="#L124">0124</a>       \draw[dim] (0,\hb+2) -- (0,\vY+6)               % extension lines at the</div>
+<div id="L125"><a href="#L125">0125</a>                  (\Yp,\vh+\Hh/2+2) -- (\Yp,\vY+6);    % CoM and at the payload</div>
+<div id="L126"><a href="#L126">0126</a>       \draw[-&gt;] (0,\vY) -- (\Yp,\vY);</div>
+<div id="L127"><a href="#L127">0127</a>       \node[anchor=south] at ({0.5*\Yp},\vY+1) {$Y$};</div>
+<div id="L128"><a href="#L128">0128</a>     \end{scope}</div>
+<div id="L129"><a href="#L129">0129</a> </div>
+<div id="L130"><a href="#L130">0130</a>     % ==== flexible joints and L_b ====</div>
+<div id="L131"><a href="#L131">0131</a>     \draw[dim] ( \Lb/2,-\hb-2) -- ++(0,-24)   (-\Lb/2,-\hb-2) -- ++(0,-24);</div>
+<div id="L132"><a href="#L132">0132</a>     \draw[&lt;-&gt;] (-\Lb/2,-\hb-18) -- node[pos=0.72, below=1pt] {$L_b$}</div>
+<div id="L133"><a href="#L133">0133</a>                ( \Lb/2,-\hb-18);</div>
+<div id="L134"><a href="#L134">0134</a>     \node[anchor=north west, inner sep=2.5pt] at ( \Lb/2,-\hb-19) {$k_{b1},\,c_{b1}$};</div>
+<div id="L135"><a href="#L135">0135</a>     \node[anchor=north east, inner sep=2.5pt] at (-\Lb/2,-\hb-19) {$k_{b2},\,c_{b2}$};</div>
+<div id="L136"><a href="#L136">0136</a>   \end{scope}</div>
+<div id="L137"><a href="#L137">0137</a> </div>
+<div id="L138"><a href="#L138">0138</a>   % ===================== generalized coordinates X, Theta (blue) =============</div>
+<div id="L139"><a href="#L139">0139</a>   \begin{scope}[blue]</div>
+<div id="L140"><a href="#L140">0140</a>     \draw[-&gt;] (0,-5.2) -- (0,-26);</div>
+<div id="L141"><a href="#L141">0141</a>     \node[anchor=west, inner sep=2pt] at (1.5,-21) {$X$};</div>
+<div id="L142"><a href="#L142">0142</a>     \draw (4.6,0) -- (36,0);</div>
+<div id="L143"><a href="#L143">0143</a>     \draw (32,0) arc[start angle=0, end angle=\th, radius=32];</div>
+<div id="L144"><a href="#L144">0144</a>     \node[anchor=west, inner sep=2.5pt] at (37,{36*sin(0.5*\th)}) {$\Theta$};</div>
+<div id="L145"><a href="#L145">0145</a>   \end{scope}</div>
+<div id="L146"><a href="#L146">0146</a>   % centre of mass m_b</div>
+<div id="L147"><a href="#L147">0147</a>   \fill[white] (0,0) circle (4.3);</div>
+<div id="L148"><a href="#L148">0148</a>   \fill (0,0) -- (4.3,0) arc[start angle=0, end angle=-90, radius=4.3] -- cycle</div>
+<div id="L149"><a href="#L149">0149</a>         (0,0) -- (-4.3,0) arc[start angle=180, end angle=90, radius=4.3] -- cycle;</div>
+<div id="L150"><a href="#L150">0150</a>   \draw (0,0) circle (4.3);</div>
+<div id="L151"><a href="#L151">0151</a>   \node[anchor=north east, inner sep=1pt] at (-3.4,-3.4) {$m_b$};</div>
+<div id="L152"><a href="#L152">0152</a> </div>
+<div id="L153"><a href="#L153">0153</a>   % ===================== actuators, guides, forces =====================</div>
+<div id="L154"><a href="#L154">0154</a>   % \s = +1 : actuator 1 (right) ; \s = -1 : actuator 2 (left)</div>
+<div id="L155"><a href="#L155">0155</a>   \foreach \s/\i in {1/1,-1/2}{</div>
+<div id="L156"><a href="#L156">0156</a>     \pgfmathsetmacro\y{\s*\yE}                 % row height (symmetric)</div>
+<div id="L157"><a href="#L157">0157</a>     \coordinate (M\i) at (\s*\xM,\y);</div>
+<div id="L158"><a href="#L158">0158</a>     \draw (\s*\xM-\Mw/2,\y-\Mw/2) rectangle (\s*\xM+\Mw/2,\y+\Mw/2);</div>
+<div id="L159"><a href="#L159">0159</a>     \node at (M\i) {$m_\i$};</div>
+<div id="L160"><a href="#L160">0160</a> </div>
+<div id="L161"><a href="#L161">0161</a>     % flexible joint: spiral spring between beam end and actuator</div>
+<div id="L162"><a href="#L162">0162</a>     \pgfmathsetmacro\xs{\s*(0.5*\Lb*cos(\th)+11)}</div>
+<div id="L163"><a href="#L163">0163</a>     \draw (\xs,\y) -- (E\i);</div>
+<div id="L164"><a href="#L164">0164</a>     \draw[line width=0.4pt] plot[domain=0:540, samples=100, smooth]  % 1.5 turns</div>
+<div id="L165"><a href="#L165">0165</a>           ({\xs+(3.4+3.9*\x/540)*cos(90*(1-\s)-\s*(\x-540))},</div>
+<div id="L166"><a href="#L166">0166</a>            {\y +(3.4+3.9*\x/540)*sin(90*(1-\s)-\s*(\x-540))});</div>
+<div id="L167"><a href="#L167">0167</a>     \draw (\xs+\s*7.3,\y) -- (\s*\xM-\s*\Mw/2,\y);</div>
+<div id="L168"><a href="#L168">0168</a> </div>
+<div id="L169"><a href="#L169">0169</a>     % linear guide: two rollers against a hatched wall</div>
+<div id="L170"><a href="#L170">0170</a>     \pgfmathsetmacro\xb{\s*(\xM+\Mw/2+5.35)}</div>
+<div id="L171"><a href="#L171">0171</a>     \draw (\xb,\y+11.6) circle (5.35)  (\xb,\y-11.6) circle (5.35);</div>
+<div id="L172"><a href="#L172">0172</a>     \draw (\xb+\s*5.6,\y-20) -- (\xb+\s*5.6,\y+20);</div>
+<div id="L173"><a href="#L173">0173</a>     \foreach \k in {0,...,5}</div>
+<div id="L174"><a href="#L174">0174</a>       \draw[ext] (\xb+\s*5.6,\y+18-7.5*\k) -- ++(\s*6.5,-6.5);</div>
+<div id="L175"><a href="#L175">0175</a> </div>
+<div id="L176"><a href="#L176">0176</a>     % actuator force</div>
+<div id="L177"><a href="#L177">0177</a>     \draw[-&gt;] (\s*\xM,\y+\Mw/2+30) -- (\s*\xM,\y+\Mw/2);</div>
+<div id="L178"><a href="#L178">0178</a>     \node[anchor=south] at (\s*\xM,\y+\Mw/2+31) {$F_{X\i}$};</div>
+<div id="L179"><a href="#L179">0179</a> </div>
+<div id="L180"><a href="#L180">0180</a>     % measured position X_i (red), drawn from the carriage so that it does</div>
+<div id="L181"><a href="#L181">0181</a>     % not start at the fixed world (feedback Js24, 2026-10-18); was a tick</div>
+<div id="L182"><a href="#L182">0182</a>     % and arrow outside the wall hatching</div>
+<div id="L183"><a href="#L183">0183</a>     \pgfmathsetmacro\xr{\s*(\xM+\Mw/2-1.5)}   % outer edge of the carriage,</div>
+<div id="L184"><a href="#L184">0184</a>                                               % clear of the k_b, c_b labels</div>
+<div id="L185"><a href="#L185">0185</a>     \draw[red,-&gt;] (\xr,\y-\Mw/2) -- (\xr,\y-\Mw/2-22);</div>
+<div id="L186"><a href="#L186">0186</a>     \node[red, anchor=north] at (\xr,\y-\Mw/2-23) {$X_\i$};</div>
+<div id="L187"><a href="#L187">0187</a>   }</div>
+<div id="L188"><a href="#L188">0188</a> </div>
+<div id="L189"><a href="#L189">0189</a>   % ===================== inertial frame (top view) =====================</div>
+<div id="L190"><a href="#L190">0190</a>   \begin{scope}[shift={(72,-58)}]</div>
+<div id="L191"><a href="#L191">0191</a>     \draw[-&gt;] (0,-3.2) -- (0,-19);          % x points down</div>
+<div id="L192"><a href="#L192">0192</a>     \draw[-&gt;] (-3.2,0) -- (-19,0);          % y points left</div>
+<div id="L193"><a href="#L193">0193</a>     \draw[fill=white] (0,0) circle (3.2);   % z into the page: circle with a cross</div>
+<div id="L194"><a href="#L194">0194</a>     \draw[ext] (-2.26,-2.26) -- (2.26,2.26)  (-2.26,2.26) -- (2.26,-2.26);</div>
+<div id="L195"><a href="#L195">0195</a>     \node[anchor=east, inner sep=2pt]  at (-19,0.3) {$y$};</div>
+<div id="L196"><a href="#L196">0196</a>     \node[anchor=west, inner sep=2pt]  at (3.6,0.8) {$z$};</div>
+<div id="L197"><a href="#L197">0197</a>     \node[anchor=north, inner sep=2pt] at (0,-20)  {$x$};</div>
+<div id="L198"><a href="#L198">0198</a>   \end{scope}</div>
+<div id="L199"><a href="#L199">0199</a> \end{tikzpicture}</div></pre>

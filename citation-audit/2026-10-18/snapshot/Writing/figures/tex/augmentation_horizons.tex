@@ -1,0 +1,18 @@
+% Source asset, adapted from docs/writeup/training-objective-v1.tex.
+% No fixed legacy validation duration; the top axis is to scale at 4 kHz.
+\begin{tikzpicture}[x=0.075cm,y=1cm,>=Latex,font=\scriptsize]
+ \fill[black!12] (-7.25,0) rectangle (0,0.38);
+ \draw (-7.25,0) rectangle (0,0.38);
+ \draw (0,0) rectangle (100,0.38);
+ \node[anchor=east,align=right] at (-8,0.19) {history\\29 lags};
+ \node at (50,0.19) {fully scored rollout: $n_f=400$, 100 ms};
+ \draw[->] (-7.25,-0.12) -- (105,-0.12) node[right] {$t$};
+ \draw (0,-0.12) -- (0,-0.22) node[below] {$\tau$};
+ \draw (100,-0.12) -- (100,-0.22) node[below] {$\tau+n_fT_s$};
+ \node[anchor=west] at (0,0.68) {encoder uses history and current sample};
+ \draw[->] (0,0.57) -- (0,0.4);
+ \draw[->] (0,-1.0) -- (100,-1.0);
+ \node[anchor=east,align=right] at (-8,-1.0) {validation\\separate axis};
+ \node[above] at (50,-1.0) {encoder once, then full-record closed-loop rollout};
+ \node[below] at (50,-1.0) {no periodic state resets; duration set by each record};
+\end{tikzpicture}

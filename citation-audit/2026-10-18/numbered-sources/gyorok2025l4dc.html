@@ -1,0 +1,747 @@
+<meta charset="utf-8"><title>gyorok2025l4dc</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1]                                          Proceedings of Machine Learning Research vol 283:1–13, 2025             7th Annual Conference on Learning for Dynamics and Control</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1] </div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1] </div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1] </div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1] </div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1]                                                 Orthogonal projection-based regularization for efficient model</div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1]                                                                        augmentation</div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1] </div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1]                                          Bendegúz M. Györök1                                                            GYOROKBENDE @ SZTAKI . HUN - REN . HU</div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1]                                          Jan H. Hoekstra2                                                                                    J . H . HOEKSTRA @ TUE . NL</div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1]                                          Johan Kon3                                                                                                  J . J . KON @ TUE . NL</div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1]                                          Tamás Péni1,4                                                                                PENI @ SZTAKI . HUN - REN . HU</div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1]                                          Maarten Schoukens2                                                                                 M . SCHOUKENS @ TUE . NL</div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1] arXiv:2501.05842v2 [cs.LG] 22 Apr 2025</div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1] </div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1] </div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1] </div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1] </div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1]                                          Roland Tóth1,2                                                                       R . TOTH @ TUE . NL</div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1]                                          1</div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1]                                            Systems and Control Lab, HUN-REN Institute for Computer Science and Control, Budapest, Hungary</div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1]                                          2</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1]                                            Control Systems Group, Eindhoven University of Technology, The Netherlands</div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1]                                          3</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1]                                            Control Systems Technology Group, Eindhoven University of Technology, The Netherlands</div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1]                                          4</div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1]                                            National Laboratory for Health Security, Budapest, Hungary</div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1]                                          Editors: N. Ozay, L. Balzano, D. Panagou, A. Abate</div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1] </div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1]                                                                                                      Abstract</div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1]                                                Deep-learning-based nonlinear system identification has shown the ability to produce reliable and</div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.1]                                                highly accurate models in practice. However, these black-box models lack physical interpretability,</div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.1]                                                and a considerable part of the learning effort is often spent on capturing already expected/known</div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.1]                                                behavior of the system, that can be accurately described by first-principles laws of physics. A po-</div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.1]                                                tential solution is to directly integrate such prior physical knowledge into the model structure, com-</div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.1]                                                bining the strengths of physics-based modeling and deep-learning-based identification. The most</div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.1]                                                common approach is to use an additive model augmentation structure, where the physics-based</div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.1]                                                and the machine-learning (ML) components are connected in parallel, i.e., additively. However,</div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.1]                                                such models are overparametrized, training them is challenging, potentially causing the physics-</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.1]                                                based part to lose interpretability. To overcome this challenge, this paper proposes an orthogonal</div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.1]                                                projection-based regularization technique to enhance parameter learning and even model accuracy</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.1]                                                in learning-based augmentation of nonlinear baseline models.</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.1]                                                Keywords: Nonlinear system identification, Model augmentation, Hybrid modeling, Physics-</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.1]                                                based learning</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.1] </div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.1]                                          1. Introduction</div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.1]                                          Continuously rising performance requirements and the growing complexity of systems resulted in</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.1]                                          high demand for nonlinear models that can accurately describe complex behavior. For example,</div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.1]                                          reliable path planning and motion control of autonomous vehicles require accurate dynamic models.</div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.1]                                          First-principle (FP) models for these systems can usually be obtained from physical knowledge and</div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.1]                                          practical engineering insight. While FP modeling approaches offer models that can describe the</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.1]                                          main dynamic behavior of systems on a wide operating range, they often provide approximative</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.1]                                          descriptions of complex dynamical aspects such as aerodynamic forces, tire dynamics, or friction</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.1]                                          characteristics, which can become dominant under high-performance operation of the system.</div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.1]                                              As an alternative approach, data-driven nonlinear modeling methods (identification) have been</div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.1]                                          developed, capable of providing highly accurate and consistent models of the system behavior. In</div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.1]                                          particular, recent approaches utilizing state-space (SS) models based on deep artificial neural net-</div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.1]                                          works (ANNs) have shown exceptional results (Masti and Bemporad, 2021). However, the use of</div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.1]                                          such models in practical applications, such as trajectory planning and control raised some signifi-</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.1]                                          cant concerns, since they lack physical interpretation (Ljung, 2010). Furthermore, such ANN-based</div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.1] </div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.1]                                          © 2025 B.M. Györök, J.H. Hoekstra, J. Kon, T. Péni, M. Schoukens &amp; R. Tóth.</div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.1] </div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.2]                          G Y ÖR ÖK H OEKSTRA KON P ÉNI S CHOUKENS T ÓTH</div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.2] </div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.2] </div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.2] </div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.2] </div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.2] black-box models typically extrapolate inaccurately from training data and are more prone to over-</div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.2] fitting when trained on small datasets. Another drawback of black-box identification is that often</div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.2] a considerable time of the learning effort is spent on capturing already expected behavior due to</div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.2] first-principles-based understanding of some aspects of the system.</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.2]      To address these challenges, physics-informed neural networks (PINNs) and physics-guided</div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2] neural networks (PGNNs) were introduced in Raissi et al. (2019), and Daw et al. (2022), respec-</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2] tively. Both branches of model learning apply an additional term in the cost function, penaliz-</div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2] ing when the ANN predictions deviate from priori-selected physical laws during model training</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2] (Karpatne et al., 2017). A more traditional approach for combining physics-based knowledge and</div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2] data-driven identification techniques is (light) grey-box modeling. A wide range of methods has</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2] been developed and applied successfully in practice for years (Bohlin, 2006), mainly for linear</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2] time invariant (LTI) system representations. Light grey-box models utilize physics-based system</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2] descriptions and data-driven parameter estimation (Schoukens and Ljung, 2019).</div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2]      Model augmentation, i.e., hybrid modeling, is a promising direction of utilizing physical knowl-</div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2] edge in nonlinear system identification (Schön et al., 2022). By combining FP models with flexible</div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2] learning components, (i) faster convergence and (ii) better accuracy can be achieved compared to</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2] black-box learning methods while producing (iii) physically interpretable models (Djeumou et al.,</div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2] 2022). Furthermore, existing approaches can be incorporated into the model augmentation frame-</div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2] work, e.g., physics-based loss functions can be utilized during model optimization (Daw et al.,</div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.2] 2022) and physical parameters can be co-estimated with the parameters of the learning component</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.2] (Psichogios and Ungar, 1992).</div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.2]      This paper investigates learning for hybrid model augmentation when the model is composed of</div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.2] an FP model with an additive neural network part, and the objective is to jointly estimate the ANN</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.2] parameters and the physical parameters based on measured data from the system. This formulation</div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.2] can produce models with properties (i-iii), however simultaneous tuning of the learning-based and</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.2] physical parameters causes overparametrization and results in ”competing” submodels. Instead of</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.2] only compensating for the unmodeled terms, the ML part can learn some of the known dynamics</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.2] of the FP model as well. This can generate unrealistic parameters in the FP model, resulting in</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.2] less interpretable models and even hurting extrapolation properties. Recent studies have addressed</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.2] similar challenges in the context of PGNN-based feedforward control methods (Bolderman et al.,</div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.2] 2022, 2024), yet, this issue remains unsolved for nonlinear system identification. Orthogonaliza-</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.2] tion is an attractive approach that we now generalize for nonlinear model learning, inspired by Kon</div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.2] et al. (2022). With this modification, the learning component is penalized for learning the known</div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.2] dynamics of the FP model, by forcing a particular form of orthogonality between the ML- and</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.2] physics-based layers. The original approach is limited to FP models that are linear in their parame-</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.2] ters; therefore, a generalized version of the method is also presented in this paper.</div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.2]      The main contributions of this work can be summarized as:</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.2] C1 Generalization of an orthogonal projection-based regularization method (Kon et al., 2022) for</div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.2]       FP models that are nonlinear in the parameters, and integrating the approach to learning-based</div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.2]       model augmentation.</div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.2] C2 Efficient initialization and normalization schemes for the additive model augmentation.</div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.2]      The remainder of the paper is organized as follows: Sect. 2 introduces the identification prob-</div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.2] lem and the additive model augmentation structure. The applied cost function, normalization, and</div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.2] initialization schemes are also discussed. Then, Sect. 3 gives the orthogonal projection-based regu-</div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.2] larization term for FP models that are linear in the parameters, which is generalized in Sect. 4 to FP</div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.2] </div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.2]                                                   2</div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.2] </div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.3]    O RTHOGONAL PROJECTION - BASED REGULARIZATION FOR EFFICIENT MODEL AUGMENTATION</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.3] </div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.3] </div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.3] </div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.3] </div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.3] models that can be nonlinear in the parameters. Sect. 5 provides a simulation study to demonstrate</div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.3] the effectiveness of the methodology. Finally, in Sect. 6, the conclusions on the presented work are</div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.3] drawn.</div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.3] </div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.3] 2. Additive model augmentation</div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.3] 2.1. Problem formulation</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.3] The dynamics of the data-generating system are considered to be defined by a discrete-time (DT)</div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.3] nonlinear SS representation:</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.3] </div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.3]                                       xk+1 = f (xk , uk ),                                       (1a)</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.3]                                          yk = h(xk , uk ) + ek ,                                 (1b)</div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.3] </div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.3] where k ∈ Z is the discrete time index, xk ∈ Rnx is the state, uk ∈ Rnu is the control input,</div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.3] yk ∈ Rny is the measured output, f : Rnx × Rnu → Rnx is the DT state transition function,</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.3] h : Rnx × Rnu → Rny is the output map, and ek ∈ Rny is an i.i.d. white noise process with finite</div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.3] variance, representing measurement noise.</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.3]     The exact dynamics of (1) are not known, but we assume that based on prior knowledge, a</div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.3] physics-based approximative model (baseline model) is available in the form of</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.3] </div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.3]                                          x̂k+1 = fθ (x̂k , uk ),                                 (2a)</div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.3]                                             ŷk = hθ (x̂k , uk ),                                (2b)</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.3] </div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.3] where x̂k ∈ Rnx is the model state, ŷk ∈ Rny is the model output, fθ : Rnx × Rnu → Rnx is the</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.3] FP state transition function, and hθ : Rnx × Rnu → Rny is the output function, that both depend</div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.3] on physical parameters θ ∈ Rnθ . Nominal parameter values θ0 can often be obtained directly from</div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.3] manufacturer datasheets, as they typically provide specifications and coefficient values for many</div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.3] subcomponents. In cases where such information is unavailable, prior coefficient estimation may</div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.3] be required to determine suitable nominal values.</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.3]     As discussed in Sect. 1, even by optimizing the parameters of FP models, they can often only</div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.3] provide an approximative representation of the true underlying dynamics of the system, hence we</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.3] can use deep-learning-based model augmentation to enhance their modeling capabilities. One of</div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.3] the most straightforward ways to augment the baseline first-principle dynamics is to introduce an</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.3] additive term into the state transition (Sun et al., 2020; Sohlberg and Jacobsen, 2008). The FP output</div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.3] function hθ is assumed to contain simple relations (it can even be an identity map), thus, the aim is</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.3] to identify the system dynamics in the form of</div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.3] </div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.3]                                x̂k+1 = fθ (x̂k , uk ) + fηANN (x̂k , uk ),                       (3a)</div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.3]                                   ŷk = hθ (x̂k , uk ),                                          (3b)</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.3] </div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.3] where f ANN here represents a fully connected, feedforward neural network with η ∈ Rnη collecting</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.3] its parameters, but can be replaced by any function approximator without loss of generality.</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.3]      Although nominal values are typically available, still certain physical parameters are often only</div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.3] approximately known. Hence, to get the best prediction performance, the first-principle model pa-</div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.3] rameters are estimated simultaneously with the ANN parameters. The goal is to find the underlying</div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.3] physical parameters θ∗ that resemble the actual system properties as closely as possible while find-</div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.3] ing η∗ parameter values that maximize the data fit.</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.3] </div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.3]                                                     3</div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.3] </div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.4]                           G Y ÖR ÖK H OEKSTRA KON P ÉNI S CHOUKENS T ÓTH</div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.4] </div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.4] </div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.4] </div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.4] </div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.4] 2.2. Model training</div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.4] To achieve co-estimation efficiently, the T -step ahead prediction cost on multiple overlapping sub-</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.4] sections of the training data, used in the SUBNET method (Beintema et al., 2023), is chosen to esti-</div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.4] mate the augmented model. In this way, model estimation using data sequence DN = {(yi , ui )}N   i=1</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.4]                                                                                       (sec)</div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.4] acquired from (1), corresponds to an optimization problem with objective function VDN , as</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.4] </div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.4]                                                            T −1</div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.4]                         (sec)            1      X        1 X                2</div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.4]                        VDN (η, θ) =                          yk+l − ŷk+l|k 2 ,                      (4a)</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.4]                                         Nsec             T</div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.4]                                                k∈INsec     l=0</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.4] </div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.4]                           x̂k+l+1|k = fθ (x̂k+l|k , uk+l ) + fηANN (x̂k+l|k , uk+l ),                (4b)</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.4]                              ŷk+l|k = hθ (x̂k+l|k , uk+l )                                          (4c)</div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.4]                                x̂k|k = xk ,                                                          (4d)</div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.4] </div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.4] where the starting times of the sections collected in INsec are randomly selected from {1, . . . , N −</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.4] T + 1}, Nsec = |INsec |. Here, x̂k+l|k denotes the simulated state at k + l, starting from the mea-</div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.4] sured initial state x̂k|k = xk at time k. Training with the T -step ahead prediction cost brings two</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.4] main benefits compared to traditional simulation error-based training: (i) forward simulation on the</div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.4] subsections can be calculated in parallel, therefore requiring less computational load, and allowing</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.4] the use of batch optimization algorithms; (ii) using overlapping sections increases cost function</div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.4] smoothness (Ribeiro et al., 2020), which further enhances the efficiency of (stochastic) gradient-</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.4] based optimization methods.</div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.4]     Cost-function (4) uses the initial state of each subsection for calculating the loss value, as visible</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.4] in (4d). When full-state measurements are not applicable, i.e, when yk ̸= xk + ek , an encoder</div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.4] network is used to estimate the initial states from past input and output values, similarly as in</div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.4] Beintema et al. (2023); Hoekstra et al. (2024).</div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.4] 2.3. Normalization and initialization scheme</div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.4] To efficiently train artificial neural networks, input-output (IO) normalization is essential to avoid</div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.4] exploding and vanishing gradients, which would potentially cause worse estimation results (LeCun</div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.4] et al., 1998). A transformation for data normalization is defined according to Schoukens and Tóth</div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.4] (2020):</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.4] </div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.4]                                           Tu = diag (1/σu,i ) ,                                       (5)</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.4]                                           Tx = diag (1/σx,i ) ,                                       (6)</div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.4] </div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.4] where σ notes the standard deviation, and the transformation matrix Tu ∈ Rnu ×nu is a diagonal</div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.4] matrix containing the inverse of the standard deviation of uk for each channel i. The transformation</div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.4] matrix Tx can be defined similarly. The standard deviations are calculated based on the training</div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.4] data, or, in case when state measurements are not available, transformation matrices are obtained by</div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.4] forward simulating the FP model on the training data.</div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.4]     Based on (5) and (6), the state transition of the augmented model can be expressed as</div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.4] </div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.4]                            x̂k+1 = fθ (x̂k , uk ) + Tx−1 fηANN (Tx x̂k , Tu uk ).                     (7)</div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.4] </div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.4]      Besides IO normalization, a reliable parameter initialization scheme is also important for ef-</div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.4] ficient model training to improve accuracy and potentially decrease convergence time. A similar</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.4] </div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.4]                                                      4</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.4] </div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.5]     O RTHOGONAL PROJECTION - BASED REGULARIZATION FOR EFFICIENT MODEL AUGMENTATION</div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.5] </div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.5] </div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.5] </div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.5] </div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.5] initialization method is applied as in Ramkannan et al. (2023). This guarantees that the augmented</div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.5] state transition function behaves like fθ0 at the beginning of training. A fully random initialization</div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.5] can increase convergence time and even cause stability loss at the beginning of the optimization. To</div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.5] prevent this, the weight and bias values of the last layer in the ANN1 are initialized as zero matrices,</div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.5] while the rest of the parameters are initialized randomly, e.g., by the Xavier approach (Glorot and</div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.5] Bengio, 2010).</div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.5] </div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.5] 3. Orthogonalization-based regularization</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.5] Assuming that system (1) is part of the model set spanned by the parametrization of (3), there</div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.5] should exist a choice of parameter pairs (θ, η) for the additive model augmentation structure that</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.5] realizes exactly the dynamical relations of the data-generating system. However, since fηANN and</div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.5] fθ are connected in parallel, i.e., additively, the optimal θ∗ , η∗ parameters that minimize (4) are not</div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.5] unique, i.e., different θ, η parameters can result in the same input-state behavior. This is generally</div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.5] called non-identifiability. For ease of understanding, Example 1 illustrates this non-uniqueness.</div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.5] Example 1 Consider an FP model with a state-transition function of fθ (x̂, u) = θx̂, and fηANN</div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.5] as an ANN. By the universal approximation properties, there exist choices of weights and biases</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.5] such that fηANN (x̂, u) ≈ WL+1 x̂. Consequently, for a true state-transition map f (x, u) = θ∗ x, any</div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.5] (θ, WL+1 ) pair that satisfies WL+1 + θ = θ∗ is a global minimizer of (4).</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.5]     A straightforward approach would be to define a Θ∗ ⊂ Rnθ +nη set that collects all parameter</div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.5] pairs that achieve an equivalent system representation with the data-generating system. Then, during</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.5] model training, the aim would be to find any (θ∗ , η∗ ) ∈ Θ∗ . However, if the parameterization is non-</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.5] identifiable, certain gradient directions become indistinguishable from one another, increasing the</div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.5] risk of convergence to local minima. While stochastic gradient descent-based optimizers inherently</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.5] provide some degree of implicit regularization that helps to mitigate this issue (Zhang et al., 2017),</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.5] another critical concern arises: the physical parameters may converge to unrealistic values due to</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.5] the non-uniqueness of θ∗ . As a result, the estimated FP model cannot reliably serve as a standalone</div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.5] physical model of the system. Additionally, physics-based models are often capable of extrapolating</div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.5] accurately beyond the range of observed data, while ANNs extrapolate poorly outside of the training</div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.5] data set. Hence, the augmented model can lose this advantageous extrapolation capability due to</div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.5] the indistinguishability of the model contributions in the cost during training.</div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.5]     We aim to address the above-mentioned problems by adding a new term to the cost function</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.5] based on Kon et al. (2022) that forces fηANN to prioritize the learning of the unknown dynamics. It</div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.5] is achieved by regularizing the output of fηANN in the subspace where fθ can generate outputs. The</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.5] original approach has been derived for feedforward control, but it can be easily modified for system</div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.5] identification problems if the FP model can be represented as being linear in the parameters:</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.5] </div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.5]                                              fθ (x̂k , uk ) = ϕ(x̂k , uk )θ.                                          (8)</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.5] </div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.5]     By taking a further assumption of full state-measurement, i.e., yk = xk + ek , and fixing the</div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.5] learning component to zero, due to the linear parameterization, fitting of the FP model parameters</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.5] </div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.5] </div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.5]                                                                                                            ⊤ ⊤</div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.5]     1</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.5]       Consider a simple feedforward neural network as fηANN (x̂k , uk ) = WL+1 σ(WL . . . σ(W0 x̂⊤</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.5]                                                                                                             </div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.5]                                                                                                        k uk      + b0 ) +</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.5] bL ) + bL+1 , where σ(·) is an element-wise (nonlinear) activation function, Wi represents the weight values, bi notes the</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.5] biases, and L notes the number of hidden layers.</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.5] </div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.5] </div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.5]                                                             5</div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.5] </div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.6]                          G Y ÖR ÖK H OEKSTRA KON P ÉNI S CHOUKENS T ÓTH</div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.6] </div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.6] </div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.6] </div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.6] </div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.6] becomes a linear regression (LR) problem:</div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.6]                                                                       </div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.6]                               x1          ϕ(x0 , u0 )                   e1</div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.6]                              x2   ϕ(x1 , u1 )                      e2 </div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.6]                              ..  =                            θ +  .. ,                     (9)</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.6]                                                                    </div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.6]                                               ..</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.6]                              .              .                      . </div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.6]                                    xN          ϕ(xN −1 , uN −1 )        eN</div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.6]                                  | {z }    |         {z          }    | {z }</div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.6]                                   X+                Φ(X,U )               E</div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.6]                                      ⊤</div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.6] where X = x⊤       x⊤   · · · x⊤        ∈ RN nx , and U is defined similarly. The E matrix collects</div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.6]               </div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.6]                 0    1          N −1</div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.6] the residuals of the FP state transition. Given dataset DN , an explicit base for the output space</div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.6] of fθ can be calculated by taking the reduced singular value decomposition (SVD) of Φ(X, U ) ∈</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.6] RN nx ×nθ , as                                               ⊤</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.6]                                    Φ(X, U ) = QX,U ΣX,U VX,U    ,                              (10)</div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.6] in which we assume N nx &gt; nθ such that QX,U ∈ RN nx ×nθ , ΣX,U ∈ Rnθ ×nθ , and VX,U ∈ Rnθ ×nθ .</div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.6] Thus, (9) can be reformulated as</div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.6]                                                         ⊤</div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.6]                                        X + = QX,U ΣX,U VX,U θ + E.                               (11)</div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.6]     The columns of QX,U form a basis for the output space of fθ for the particular state and input</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.6] values in X, U . The projection matrix onto the subspace spanned by these basis vectors can be</div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.6] expressed as</div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.6]                                         ΠX,U = QX,U Q⊤   X,U .                                 (12)</div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.6]     Thus, the component of fη   ANN   that lies in the subspace spanned by QX,U can be given by</div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.6]                                                                                            ⊤</div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.6]         ANN                  ANN  (X, U ) = fηANN (x0 , u0 )⊤ · · · fηANN (xN −1 , uN −1 )⊤ ∈ RN nx .</div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.6]                                              </div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.6] ΠX,U fη     (X, U ), where fη</div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.6] The aim is to penalize such η parameters that result in significant contributions in this subspace,</div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.6]                                  2</div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.6] by adding ΠX,U fηANN (X, U ) 2 to (4a), as an orthogonality-promoting term. Thus, it can be in-</div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.6] terpreted as a targeted ℓ2 regularization of the ANN that only penalizes the directions of η which</div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.6] generate output in the subspace of the model fθ . The modified cost function is given as</div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.6]                         (orth)             (sec)                                    2</div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.6]                       VDN        (η, θ) = VDN (η, θ) + β ΠX,U fηANN (X, U ) 2 ,                  (13)</div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.6] </div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.6] where β ∈ R≥0 is the orthogonalization coefficient. The value of β can be interpreted as a trade-off</div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.6] between orthogonality and performance. With large β values, fηANN is restricted too much, and</div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.6] the optimizer focuses more on promoting orthogonality between the FP model and the ANN part,</div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.6] rather than producing an accurate model. On the other hand, too small β values can lead to a near</div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.6] unregularized situation by diminishing the penalization of subspace contributions.</div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.6] Remark 1 In practice, often only a small amount of orthogonal regularization is needed to achieve</div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.6] the desired complementarity. A wide range of β values can be chosen, usually spanning several</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.6] orders of magnitude. Later we will illustrate this in our example (in Figure 3). A similar observation</div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.6] has been made in Kon et al. (2023).</div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.6]      Since N nx ≫ nθ , matrix multiplication with ΠX,U ∈ RN nx ×N nx is computationally demand-</div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.6] ing in ΠX,U fηANN (X, U ). However, since ΠX,U = QX,U Q⊤       X,U , and QX,U is orthonormal, it holds</div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.6] that</div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.6]                                                 2                           2</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.6]                           ΠX,U fηANN (X, U ) 2 = Q⊤           ANN</div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.6]                                                          X,U fη     (X, U ) .                     (14)</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.6]                                                                                 2</div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.6] Calculating (14) is less intensive, as it is composed of nθ numbers of dot product calculation be-</div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.6] tween fηANN and vectors of length N nx . Another advantage of the decomposition shown in (11)</div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.6] </div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.6]                                                        6</div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.6] </div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.7]     O RTHOGONAL PROJECTION - BASED REGULARIZATION FOR EFFICIENT MODEL AUGMENTATION</div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.7] </div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.7] </div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.7] </div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.7] </div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.7] is that the projection matrix ΠX,U is independent of the physical parameters since Φ depends only</div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.7] on the state and input values. This practically means that the SVD can be calculated before the</div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.7] optimization process begins, thus lowering the computational demand of the method. When full-</div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.7] state measurements are not available, an approximate X̂ data set can be constructed by forward</div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.7] simulating the FP model on the training data, and using X̂ to compute ΠX̂,U .</div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.7] Remark 2 The current model estimates of X̂ can be also used to update the projection matrix at</div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.7] each iteration step. This modification increases computational demand, as the SVD needs to be</div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.7] recomputed at the start of each epoch. However, the benefit of it is that the regularization term is</div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.7] applied for the accurate states, potentially leading to faster convergence and better model accuracy.</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.7] </div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.7] 4. Generalization for nonlinear first-principle models</div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.7] A serious limitation of the orthogonalization-based method derived in Sect. 3 is that it can only be</div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.7] applied to FP models that are linear-in-the-parameters. To extend the method to the nonlinear case,</div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.7] the Taylor series expansion of the FP state transition function is taken w.r.t. the physical parameters:</div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.7] </div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.7]                                                                ∂fθ (x̂k , uk )            </div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.7]                       fθ (x̂k , uk ) ≈ fθ (x̂k , uk ) θ=θ̄ +                        θ − θ̄ ,            (15)</div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.7]                                                                |    ∂θ{z       θ=θ̄</div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.7]                                                                                  }</div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.7]                                                                    Φθ̄ (x̂k ,uk )</div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.7] </div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.7] where θ̄ is the linearization point, and ∂fθ (x̂k , uk )/∂θ ∈ Rnx ×nθ is the Jacobian matrix of fθ (x̂k , uk )</div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.7] with respect to the θ parameters. Next, expanding (15), we arrive to the expression of</div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.7]                        fθ (x̂k , uk ) ≈ Φθ̄ (x̂k , uk )θ + fθ̄ (x̂k , uk ) − Φθ̄ (x̂k , uk )θ̄,         (16)</div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.7] where the first term is linear in θ, while the second and third terms are a θ-independent offset given</div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.7] by the linearization point θ̄. Similar to (9), by vectorizing the approximate FP model responses,</div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.7]                                                                                        </div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.7]       x1            Φθ̄ (x0 , u0 )                  fθ̄ (x0 , u0 ) − Φθ̄ (x0 , u0 )θ̄           e1</div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.7]      x2   Φ (x1 , u1 ) </div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.7]                       θ̄</div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.7]                                                    f   (x</div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.7]                                                      θ̄ 1 1 , u  ) −   Φ   (x ,</div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.7]                                                                          θ̄ 1 1 u ) θ̄      e2 </div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.7]                                                                                                  </div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.7]      ..  =                        θ +                                                 +  ..  . (17)</div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.7]                                       </div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.7]                           ..                                        ..</div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.7]      .                  .                                       .                      . </div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.7]       xN        Φθ̄ (xN −1 , uN −1 )        fθ̄ (xN −1 , uN −1 ) − Φθ̄ (xN −1 , uN −1 )θ̄      eN</div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.7]     | {z } |             {z          }    |                        {z                     } | {z }</div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.7]      X+               Φθ̄ (X,U )                                   Γθ̄ (X,U )                     E</div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.7] </div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.7] To consider all components of the baseline model in promoting orthogonality, and to enable adjust-</div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.7] ments to the linearization point during model learning, an extended parameter vector is introduced</div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.7] as θ̃ ∈ Rnθ +1 . Then, the two terms in (17) can be combined:</div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.7]                                                                </div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.7]                                  +</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.7]                                                            θ</div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.7]                               X = Φθ̄ (X, U ) Γθ̄ (X, U )          +E.                        (18)</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.7]                                       |          {z        } 1</div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.7]                                               Φ̃ (X,U )</div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.7]                                                               |{z}</div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.7]                                                       θ̄</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.7]                                                                             θ̃</div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.7] </div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.7]    It is evident that (18) has a structure similar to (9), hence the same orthogonalization-based</div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.7] penalization term can be derived for it, but instead of taking the reduced SVD of Φ(X, U ), now it</div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.7] should be calculated for Φ̃θ̄ (X, U ). The projection matrix Π̃X,U can then be calculated as in (12).</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.7] Similarly to (13), the orthogonality-promoting term is added to the cost function, as</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.7]                           (orth)              (sec)                                         2</div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.7]                        VD N        (η, θ) = VDN (η, θ) + β Π̃X,U fηANN (X, U ) .                        (19)</div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.7]                                                                                             2</div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.7] </div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.7] </div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.7]                                                            7</div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.7] </div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.8]                           G Y ÖR ÖK H OEKSTRA KON P ÉNI S CHOUKENS T ÓTH</div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.8] </div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.8] </div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.8] </div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.8] </div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.8]        Figure 1: The single track model.                 Figure 2: Digital twin of the F1tenth vehicle.</div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.8]     The linearization point θ̄ can be updated at each iteration using the current estimate of θ, but</div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.8] this requires recomputing the SVD and projection matrix every time the cost function is evaluated,</div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.8] increasing computational demand. Alternatively, θ̄ can be approximated by the nominal parameter</div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.8] values θ0 , allowing the projection matrix to be precomputed at the start of training, which signifi-</div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.8] cantly reduces the computational cost of the regularization method. As θ0 is derived from physical</div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.8] principles and typically aligns well with the actual system properties, the approximation remains</div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.8] valid and the basis for the response of the physical model is accurately maintained.</div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.8] 5. Identification study</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.8] To demonstrate the advantages of the proposed orthogonal projection-based regularization for learning-</div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.8] based model augmentation, we aim to identify the dynamics of a small-scale electric vehicle (F1Tenth</div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.8] (Agnihotri et al., 2020)), by augmenting with an ANN component a simplified mechanical model</div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.8] that describes the main characteristics of the vehicle2 .</div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.8] 5.1. First-principle model of the F1Tenth vehicle</div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.8] To develop an approximate baseline model of the F1tenth platform, the so-called single-track model</div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.8] has been used (Paden et al., 2016). The model is illustrated in Figure 1, and expressed as</div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.8]                                              1</div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.8]       ṗx = vξ cos φ − vη sin φ,       v̇ξ =    (Fξ + Fξ cos δ − Ff,η sin δ + mvη ω) ,        (20a)</div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.8]                                              m</div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.8]                                              1</div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.8]       ṗy = vξ sin φ + vη cos φ,      v̇η =     (Fr,η + Fξ sin δ − Ff,η cos δ − mvξ ω) ,     (20b)</div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.8]                                              m</div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.8]                                              1</div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.8]        φ̇ = ω,                          ω̇ =    (Ff,η lf cos δ + Fξ lf sin δ − Fξ lr ) ,      (20c)</div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.8]                                              Jz</div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.8] where (px , py ) is the position of the center-of-gravity (CoG) in the (X, Y ) plane, φ is the orientation</div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.8] of the vehicle, which is measured from the X axis. The variables vξ and vη denote the longitudinal</div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.8] and lateral velocities of the vehicle, respectively, while ω is the yaw rate. Furthermore, lr and lf are</div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.8] the distances of the rear and front axis from the CoG, δ is the steering angle, m is the mass of the</div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.8] vehicle, and Jz is the inertia along the vertical axis.</div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.8]     The longitudinal tire force component Fξ is expressed with an empirical drivetrain model. For</div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.8] more details, refer to Floch et al. (2024). Moreover, the linearized Magic Formula (Pacejka, 2012)</div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.8] is utilized to model the lateral tire forces. Thus, the tire force components are expressed as</div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.8]                                                                                                      </div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.8]                                                            −vη + lr ω                       vη + lf ω</div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.8]   Fξ = Cm1 d − Cm2 vξ − sign (vξ ) Cm3 , Fr,η = Cr                    , Ff,η = Cf δ −                   ,</div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.8]                                                                 vξ                             vξ</div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.8]                                                                                                       (21)</div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.8]    2</div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.8]        Code, data available: https://github.com/AIMotionLab-SZTAKI/orthogonal-augmentation</div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.8] </div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.8] </div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.8]                                                     8</div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.8] </div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.9]     O RTHOGONAL PROJECTION - BASED REGULARIZATION FOR EFFICIENT MODEL AUGMENTATION</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.9] </div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.9] </div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.9] </div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.9] </div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.9] where Cm1 , Cm2 , and Cm3 are the drivetrain constants, d is the motor PWM percentage, Fr,η and</div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.9] Ff,η are the rear and front lateral tire forces, while Cr and Cf are the rear and front cornering stiffness</div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.9] values, respectively. The applied tire models (particularly the empirical drivetrain model) are highly</div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.9] approximative and are the primary sources of inaccuracy in the FP model.</div>
+<div id="L481"><a href="#L481">00481</a> [PDF p.9]                                                                            ⊤</div>
+<div id="L482"><a href="#L482">00482</a> [PDF p.9]     The state of the baseline model is x = px py φ vξ vη ω . The control inputs are δ</div>
+<div id="L483"><a href="#L483">00483</a> [PDF p.9] and d. As discussed in Sect. 2, we have assumed that the FP model is given in DT form, thus (20)</div>
+<div id="L484"><a href="#L484">00484</a> [PDF p.9] is discretized with the forward Euler scheme. The parameters of the baseline model are</div>
+<div id="L485"><a href="#L485">00485</a> [PDF p.9]                                                                               ⊤</div>
+<div id="L486"><a href="#L486">00486</a> [PDF p.9]                         θ = m Jz lr lf Cm1 Cm2 Cm3 Cr Cf ,                                             (22)</div>
+<div id="L487"><a href="#L487">00487</a> [PDF p.9] and their nominal values have been determined in Floch (2022). However, to achieve accurate</div>
+<div id="L488"><a href="#L488">00488</a> [PDF p.9] representation of the true dynamics, θ in (22) is tuned jointly with the ANN parameters.</div>
+<div id="L489"><a href="#L489">00489</a> [PDF p.9]      As one might see, in (20), the differential equations for the position and orientation values</div>
+<div id="L490"><a href="#L490">00490</a> [PDF p.9] contain simple kinematic relations and can be separated from the rest of the equations. As proposed</div>
+<div id="L491"><a href="#L491">00491</a> [PDF p.9] by Szécsi et al. (2024), to simplify the neural network structure, we only augment the velocity states</div>
+<div id="L492"><a href="#L492">00492</a> [PDF p.9] of the system, then px , py , and φ can be determined by numerical integration.</div>
+<div id="L493"><a href="#L493">00493</a> [PDF p.9] 5.2. Data acquisition</div>
+<div id="L494"><a href="#L494">00494</a> [PDF p.9] To generate data for training, a high-fidelity multi-body simulator, the MuJoCo physics engine is</div>
+<div id="L495"><a href="#L495">00495</a> [PDF p.9] utilized (Todorov et al., 2012). In this simulator, the digital twin model of the car was assembled</div>
+<div id="L496"><a href="#L496">00496</a> [PDF p.9] using parameters that were identified based on measurements with the real car. Figure 2 shows the</div>
+<div id="L497"><a href="#L497">00497</a> [PDF p.9] digital twin model. Multiple experiments were performed in the simulator to acquire sufficient data.</div>
+<div id="L498"><a href="#L498">00498</a> [PDF p.9] The MuJoCo model operates with motion states in terms of joint positions and velocities, utilizing</div>
+<div id="L499"><a href="#L499">00499</a> [PDF p.9] complex contact models and friction characteristics. The logged signals have been determined based</div>
+<div id="L500"><a href="#L500">00500</a> [PDF p.9] on the states of the FP model. All states are directly measured, as it would be for the real F1Tenth.</div>
+<div id="L501"><a href="#L501">00501</a> [PDF p.9] Two different trajectories (a lemniscate and a circular path), with 12 different velocity references</div>
+<div id="L502"><a href="#L502">00502</a> [PDF p.9] have been utilized to achieve robust identification results. With a sampling frequency of fs = 40 Hz,</div>
+<div id="L503"><a href="#L503">00503</a> [PDF p.9] altogether N = 15985 data points have been recorded. Half of the measurements were separated</div>
+<div id="L504"><a href="#L504">00504</a> [PDF p.9] for model training, while the other half were used for testing. Trajectories with alternating reference</div>
+<div id="L505"><a href="#L505">00505</a> [PDF p.9] velocities have been included in both. Lastly, 20% of each training trajectory have been randomly</div>
+<div id="L506"><a href="#L506">00506</a> [PDF p.9] selected to form a validation data set, achieving an 80%-20% ratio of the training and validation</div>
+<div id="L507"><a href="#L507">00507</a> [PDF p.9] data points. The gathered data does not contain any noise, but to test the methodology with noise</div>
+<div id="L508"><a href="#L508">00508</a> [PDF p.9] levels that are typical for this application type, i.i.d. white Gaussian noise is added to the output</div>
+<div id="L509"><a href="#L509">00509</a> [PDF p.9] signals in the training and validation data sets to reach Signal-to-noise ratio3 (SNR) values of 30 dB</div>
+<div id="L510"><a href="#L510">00510</a> [PDF p.9] and 25 dB. To ensure a clear comparison of the resulting models, the test data is kept noise-free.</div>
+<div id="L511"><a href="#L511">00511</a> [PDF p.9] 5.3. Model training and hyperparameter selection</div>
+<div id="L512"><a href="#L512">00512</a> [PDF p.9] All models have been trained with the Adam optimizer (Kingma and Ba, 2015), applying a learning</div>
+<div id="L513"><a href="#L513">00513</a> [PDF p.9] rate of 10−3 and a batch size of 256. For the truncation length, T = 15 has been used, correspond-</div>
+<div id="L514"><a href="#L514">00514</a> [PDF p.9] ing to roughly 1.5 times the largest characteristic time scale of the data-generating system. The</div>
+<div id="L515"><a href="#L515">00515</a> [PDF p.9] hyperparameters of fηANN have been determined empirically: 2 hidden layers with 64 nodes per</div>
+<div id="L516"><a href="#L516">00516</a> [PDF p.9] layer have been applied, using the hyperbolic tangent (tanh) activation function. The regularization</div>
+<div id="L517"><a href="#L517">00517</a> [PDF p.9] coefficient β was also tuned empirically, as illustrated in Figure 3, with β = 10−7 selected for the</div>
+<div id="L518"><a href="#L518">00518</a> [PDF p.9] noiseless case. For scenarios with output noise, β waschosen using a similar approach. Based on</div>
+<div id="L519"><a href="#L519">00519</a> [PDF p.9] our experience, values of β in the range 10−7 , 10−5 yielded the best results for the considered</div>
+<div id="L520"><a href="#L520">00520</a> [PDF p.9] modeling task.</div>
+<div id="L521"><a href="#L521">00521</a> [PDF p.9]    3</div>
+<div id="L522"><a href="#L522">00522</a> [PDF p.9]        SNRdB = 10 log10 (Ps /Pn ), where Ps and Pn are the sample mean signal power and noise power, respectively.</div>
+<div id="L523"><a href="#L523">00523</a> [PDF p.9] </div>
+<div id="L524"><a href="#L524">00524</a> [PDF p.9] </div>
+<div id="L525"><a href="#L525">00525</a> [PDF p.9]                                                           9</div>
+<div id="L526"><a href="#L526">00526</a> [PDF p.9] </div>
+<div id="L527"><a href="#L527">00527</a> [PDF p.10]                                                         G Y ÖR ÖK H OEKSTRA KON P ÉNI S CHOUKENS T ÓTH</div>
+<div id="L528"><a href="#L528">00528</a> [PDF p.10] </div>
+<div id="L529"><a href="#L529">00529</a> [PDF p.10] </div>
+<div id="L530"><a href="#L530">00530</a> [PDF p.10] </div>
+<div id="L531"><a href="#L531">00531</a> [PDF p.10] </div>
+<div id="L532"><a href="#L532">00532</a> [PDF p.10]                               Fixed params.        β=0            Orthog.</div>
+<div id="L533"><a href="#L533">00533</a> [PDF p.10]                                                                             Model                                 No noise    30 dB    25 dB</div>
+<div id="L534"><a href="#L534">00534</a> [PDF p.10]                        4.5                                                  Initial baseline model with θ0        37.91%     37.91%   37.91%</div>
+<div id="L535"><a href="#L535">00535</a> [PDF p.10]   Test error (NRMS%)</div>
+<div id="L536"><a href="#L536">00536</a> [PDF p.10] </div>
+<div id="L537"><a href="#L537">00537</a> [PDF p.10] </div>
+<div id="L538"><a href="#L538">00538</a> [PDF p.10] </div>
+<div id="L539"><a href="#L539">00539</a> [PDF p.10]                                                                             Baseline model with θ̂ (no reg.)      118.01%    80.49%   68.18%</div>
+<div id="L540"><a href="#L540">00540</a> [PDF p.10]                        4.0                                                  Baseline model with θ̂ (orth. reg.)   36.07%     36.64%   30.69%</div>
+<div id="L541"><a href="#L541">00541</a> [PDF p.10]                                                                             Augm. model (fixed baseline θ0 )       3.61%      4.18%    5.11%</div>
+<div id="L542"><a href="#L542">00542</a> [PDF p.10]                        3.5</div>
+<div id="L543"><a href="#L543">00543</a> [PDF p.10]                                                                             Augm. model (co-estim., no reg.)       3.45%      4.17%    4.92%</div>
+<div id="L544"><a href="#L544">00544</a> [PDF p.10]                                                                             Augm. model (co-estim., orth. reg.)    3.00%     3.84%    4.76%</div>
+<div id="L545"><a href="#L545">00545</a> [PDF p.10]                        3.0</div>
+<div id="L546"><a href="#L546">00546</a> [PDF p.10]                                                                             Black-box (Beintema et al., 2023)      2.12%      2.31%    3.06%</div>
+<div id="L547"><a href="#L547">00547</a> [PDF p.10]                              10−9    10−7        10−5      10−3      10−1</div>
+<div id="L548"><a href="#L548">00548</a> [PDF p.10]                                               β [1]</div>
+<div id="L549"><a href="#L549">00549</a> [PDF p.10]                                      Table 1: Test NRMS errors with various models. SNR val-</div>
+<div id="L550"><a href="#L550">00550</a> [PDF p.10] Figure 3: Illustrating the empirical ues refer to the noise level in the training and validation sets.</div>
+<div id="L551"><a href="#L551">00551</a> [PDF p.10] process of tuning β (with no noise).</div>
+<div id="L552"><a href="#L552">00552</a> [PDF p.10] 5.4. Results</div>
+<div id="L553"><a href="#L553">00553</a> [PDF p.10] Model performance is evaluated using the Normalized Root Mean Square (NRMS) error, see, e.g.,</div>
+<div id="L554"><a href="#L554">00554</a> [PDF p.10] Beintema et al. (2021), with results summarized in Table 1. As shown, augmenting the baseline</div>
+<div id="L555"><a href="#L555">00555</a> [PDF p.10] model while keeping the physical parameters fixed leads to a significant improvement in accuracy</div>
+<div id="L556"><a href="#L556">00556</a> [PDF p.10] compared to the standalone FP model. Jointly optimizing the physical and ANN parameters has</div>
+<div id="L557"><a href="#L557">00557</a> [PDF p.10] further reduced the test error, while using the orthogonalization-based cost function led to additional</div>
+<div id="L558"><a href="#L558">00558</a> [PDF p.10] improvements in model accuracy across all noise conditions. With increasing noise levels, the</div>
+<div id="L559"><a href="#L559">00559</a> [PDF p.10] effect of orthogonal regularization on model accuracy is less noticeable compared to the noiseless</div>
+<div id="L560"><a href="#L560">00560</a> [PDF p.10] scenario, but this is expected, as it is harder to separate the baseline model dynamics and the noise.</div>
+<div id="L561"><a href="#L561">00561</a> [PDF p.10]      When the physical and learning-based parameters are co-estimated, we acquire a (θ̂, η̂) param-</div>
+<div id="L562"><a href="#L562">00562</a> [PDF p.10] eter pair as a result of the optimization. This allows for evaluating the FP model separately using the</div>
+<div id="L563"><a href="#L563">00563</a> [PDF p.10] estimated physical parameters θ̂, providing insight into the interpretability of the augmented model.</div>
+<div id="L564"><a href="#L564">00564</a> [PDF p.10] Table 1 also includes these test results with the FP model, using θ̂. Without regularization, the</div>
+<div id="L565"><a href="#L565">00565</a> [PDF p.10] physics-based component of the augmentation structure shows a notable drop in accuracy compared</div>
+<div id="L566"><a href="#L566">00566</a> [PDF p.10] to the nominal baseline model, supporting our earlier statement that, in the absence of the proposed</div>
+<div id="L567"><a href="#L567">00567</a> [PDF p.10] regularization, physical parameters may be tuned to unrealistic values, potentially undermining the</div>
+<div id="L568"><a href="#L568">00568</a> [PDF p.10] interpretability of the augmented model. In contrast, applying orthogonal regularization not only</div>
+<div id="L569"><a href="#L569">00569</a> [PDF p.10] enhances the overall accuracy of the augmented model but also improves the performance of the</div>
+<div id="L570"><a href="#L570">00570</a> [PDF p.10] physics-based part relative to the nominal FP model. This demonstrates that the proposed method</div>
+<div id="L571"><a href="#L571">00571</a> [PDF p.10] effectively promotes the desired complementarity between the baseline and learning components.</div>
+<div id="L572"><a href="#L572">00572</a> [PDF p.10]      Comparing the results to a state-of-the-art black-box method, it is visible that even with the</div>
+<div id="L573"><a href="#L573">00573</a> [PDF p.10] orthogonal projection-based approach, black-box models have performed slightly better. However,</div>
+<div id="L574"><a href="#L574">00574</a> [PDF p.10] as we have demonstrated, model augmentation generates physically interpretable models in contrast</div>
+<div id="L575"><a href="#L575">00575</a> [PDF p.10] to black-box approaches. Consequently, a slight reduction in model accuracy is an acceptable trade-</div>
+<div id="L576"><a href="#L576">00576</a> [PDF p.10] off for the added interpretability.</div>
+<div id="L577"><a href="#L577">00577</a> [PDF p.10] 6. Conclusion</div>
+<div id="L578"><a href="#L578">00578</a> [PDF p.10] This paper introduced an orthogonal projection-based regularization method that extends the ap-</div>
+<div id="L579"><a href="#L579">00579</a> [PDF p.10] proach in Kon et al. (2022), originally limited to linear-in-the-parameter FP models, to support</div>
+<div id="L580"><a href="#L580">00580</a> [PDF p.10] models that are nonlinear in the parameters and improve the efficiency of estimating additive model</div>
+<div id="L581"><a href="#L581">00581</a> [PDF p.10] augmentation structures. The proposed method improved model performance across various out-</div>
+<div id="L582"><a href="#L582">00582</a> [PDF p.10] put noise levels. Although the impact of online recalculation of the projection matrix has not been</div>
+<div id="L583"><a href="#L583">00583</a> [PDF p.10] evaluated, its potential benefits, despite the increased computational cost, will be explored in future</div>
+<div id="L584"><a href="#L584">00584</a> [PDF p.10] studies. Further theoretical analysis and application in other model augmentation settings will be</div>
+<div id="L585"><a href="#L585">00585</a> [PDF p.10] addressed in future research.</div>
+<div id="L586"><a href="#L586">00586</a> [PDF p.10] </div>
+<div id="L587"><a href="#L587">00587</a> [PDF p.10]                                                                                      10</div>
+<div id="L588"><a href="#L588">00588</a> [PDF p.10] </div>
+<div id="L589"><a href="#L589">00589</a> [PDF p.11]     O RTHOGONAL PROJECTION - BASED REGULARIZATION FOR EFFICIENT MODEL AUGMENTATION</div>
+<div id="L590"><a href="#L590">00590</a> [PDF p.11] </div>
+<div id="L591"><a href="#L591">00591</a> [PDF p.11] </div>
+<div id="L592"><a href="#L592">00592</a> [PDF p.11] </div>
+<div id="L593"><a href="#L593">00593</a> [PDF p.11] </div>
+<div id="L594"><a href="#L594">00594</a> [PDF p.11] Acknowledgments</div>
+<div id="L595"><a href="#L595">00595</a> [PDF p.11] This project has received funding from the European Defence Fund programme under grant agreement num-</div>
+<div id="L596"><a href="#L596">00596</a> [PDF p.11] ber No 101103386 and has also been supported by the Air Force Office of Scientific Research under award</div>
+<div id="L597"><a href="#L597">00597</a> [PDF p.11] number FA8655-23-1-7061 and by the EKÖP-24-2-BME-123 University Research Scholarship Programme</div>
+<div id="L598"><a href="#L598">00598</a> [PDF p.11] of the Ministry for Culture and Innovation from the source of the National Research, Development, and In-</div>
+<div id="L599"><a href="#L599">00599</a> [PDF p.11] novation Fund. Views and opinions expressed are however those of the authors only and do not necessarily</div>
+<div id="L600"><a href="#L600">00600</a> [PDF p.11] reflect those of the European Union or the European Commission. Neither the European Union nor the grant-</div>
+<div id="L601"><a href="#L601">00601</a> [PDF p.11] ing authority can be held responsible for them. The study was also partly funded by the National Research,</div>
+<div id="L602"><a href="#L602">00602</a> [PDF p.11] Development and Innovation Office in Hungary (RRF-2.3.1-21-2022-00006).</div>
+<div id="L603"><a href="#L603">00603</a> [PDF p.11] </div>
+<div id="L604"><a href="#L604">00604</a> [PDF p.11] </div>
+<div id="L605"><a href="#L605">00605</a> [PDF p.11] References</div>
+<div id="L606"><a href="#L606">00606</a> [PDF p.11] Abhijeet Agnihotri, Matthew O’Kelly, Rahul Mangharam, and Houssam Abbas. Teaching Au-</div>
+<div id="L607"><a href="#L607">00607</a> [PDF p.11]   tonomous Systems at 1/10th-scale: Design of the F1/10 Racecar, Simulators and Curriculum. In</div>
+<div id="L608"><a href="#L608">00608</a> [PDF p.11]   Proc. of the ACM Technical Symposium on Computer Science Education, pages 657–663, 2020.</div>
+<div id="L609"><a href="#L609">00609</a> [PDF p.11] </div>
+<div id="L610"><a href="#L610">00610</a> [PDF p.11] Gerben Beintema, Roland Tóth, and Maarten Schoukens. Nonlinear state-space identification using</div>
+<div id="L611"><a href="#L611">00611</a> [PDF p.11]   deep encoder networks. In Proc. of the 3rd Conference on Learning for Dynamics and Control,</div>
+<div id="L612"><a href="#L612">00612</a> [PDF p.11]   volume 144 of Proceedings of Machine Learning Research, pages 241–250, 2021.</div>
+<div id="L613"><a href="#L613">00613</a> [PDF p.11] </div>
+<div id="L614"><a href="#L614">00614</a> [PDF p.11] Gerben I. Beintema, Maarten Schoukens, and Roland Tóth. Deep subspace encoders for nonlinear</div>
+<div id="L615"><a href="#L615">00615</a> [PDF p.11]   system identification. Automatica, 156:111210, 2023.</div>
+<div id="L616"><a href="#L616">00616</a> [PDF p.11] </div>
+<div id="L617"><a href="#L617">00617</a> [PDF p.11] Torsten Bohlin. Practical Grey-box Process Identification. Advances in Industrial Control. Springer</div>
+<div id="L618"><a href="#L618">00618</a> [PDF p.11]   London, 1st edition, 2006.</div>
+<div id="L619"><a href="#L619">00619</a> [PDF p.11] </div>
+<div id="L620"><a href="#L620">00620</a> [PDF p.11] Max Bolderman, Mircea Lazar, and Hans Butler. On feedforward control using physics–guided neu-</div>
+<div id="L621"><a href="#L621">00621</a> [PDF p.11]  ral networks: Training cost regularization and optimized initialization. In Proc. of the European</div>
+<div id="L622"><a href="#L622">00622</a> [PDF p.11]  Control Conference, pages 1403–1408, 2022.</div>
+<div id="L623"><a href="#L623">00623</a> [PDF p.11] </div>
+<div id="L624"><a href="#L624">00624</a> [PDF p.11] Max Bolderman, Hans Butler, Sjirk Koekebakker, Eelco Van Horssen, Ramidin Kamidi, Theresa</div>
+<div id="L625"><a href="#L625">00625</a> [PDF p.11]  Spaan-Burke, Nard Strijbosch, and Mircea Lazar. Physics-guided neural networks for feedfor-</div>
+<div id="L626"><a href="#L626">00626</a> [PDF p.11]  ward control with input-to-state-stability guarantees. Control Engineering Practice, 145:105851,</div>
+<div id="L627"><a href="#L627">00627</a> [PDF p.11]  2024.</div>
+<div id="L628"><a href="#L628">00628</a> [PDF p.11] </div>
+<div id="L629"><a href="#L629">00629</a> [PDF p.11] Arka Daw, Anuj Karpatne, William D. Watkins, Jordan S. Read, and Vipin Kumar. Physics-Guided</div>
+<div id="L630"><a href="#L630">00630</a> [PDF p.11]   Neural Networks (PGNN): An Application in Lake Temperature Modeling. In Knowledge Guided</div>
+<div id="L631"><a href="#L631">00631</a> [PDF p.11]   Machine Learning. Chapman and Hall/CRC, 2022.</div>
+<div id="L632"><a href="#L632">00632</a> [PDF p.11] </div>
+<div id="L633"><a href="#L633">00633</a> [PDF p.11] Franck Djeumou, Cyrus Neary, Eric Goubault, Sylvie Putot, and Ufuk Topcu. Neural networks</div>
+<div id="L634"><a href="#L634">00634</a> [PDF p.11]   with physics-informed architectures and constraints for dynamical systems modeling. In Proc. of</div>
+<div id="L635"><a href="#L635">00635</a> [PDF p.11]   the 4th Annual Learning for Dynamics and Control Conference, volume 168 of Proceedings of</div>
+<div id="L636"><a href="#L636">00636</a> [PDF p.11]   Machine Learning Research, pages 263–277, 2022.</div>
+<div id="L637"><a href="#L637">00637</a> [PDF p.11] </div>
+<div id="L638"><a href="#L638">00638</a> [PDF p.11] Kristóf Floch. Model-based motion control of the F1TENTH autonomous electrical vehicle.</div>
+<div id="L639"><a href="#L639">00639</a> [PDF p.11]   Bachelor’s thesis, Budapest University of Technology and Economics, 2022. URL https:</div>
+<div id="L640"><a href="#L640">00640</a> [PDF p.11]   //eprints.sztaki.hu/10544/.</div>
+<div id="L641"><a href="#L641">00641</a> [PDF p.11] </div>
+<div id="L642"><a href="#L642">00642</a> [PDF p.11]                                                    11</div>
+<div id="L643"><a href="#L643">00643</a> [PDF p.11] </div>
+<div id="L644"><a href="#L644">00644</a> [PDF p.12]                         G Y ÖR ÖK H OEKSTRA KON P ÉNI S CHOUKENS T ÓTH</div>
+<div id="L645"><a href="#L645">00645</a> [PDF p.12] </div>
+<div id="L646"><a href="#L646">00646</a> [PDF p.12] </div>
+<div id="L647"><a href="#L647">00647</a> [PDF p.12] </div>
+<div id="L648"><a href="#L648">00648</a> [PDF p.12] </div>
+<div id="L649"><a href="#L649">00649</a> [PDF p.12] Kristóf Floch, Tamás Péni, and Roland Tóth. Gaussian-Process-Based Adaptive Trajectory Tracking</div>
+<div id="L650"><a href="#L650">00650</a> [PDF p.12]   Control for Autonomous Ground Vehicles. In Proc. of the European Control Conference, pages</div>
+<div id="L651"><a href="#L651">00651</a> [PDF p.12]   464–471, 2024.</div>
+<div id="L652"><a href="#L652">00652</a> [PDF p.12] </div>
+<div id="L653"><a href="#L653">00653</a> [PDF p.12] Xavier Glorot and Yoshua Bengio. Understanding the difficulty of training deep feedforward neural</div>
+<div id="L654"><a href="#L654">00654</a> [PDF p.12]   networks. In Proc. of the International Conference on Artificial Intelligence and Statistics, pages</div>
+<div id="L655"><a href="#L655">00655</a> [PDF p.12]   249–256, 2010.</div>
+<div id="L656"><a href="#L656">00656</a> [PDF p.12] </div>
+<div id="L657"><a href="#L657">00657</a> [PDF p.12] Jan H. Hoekstra, Chris Verhoek, Roland Tóth, and Maarten Schoukens. Learning-based model</div>
+<div id="L658"><a href="#L658">00658</a> [PDF p.12]   augmentation with LFRs. arXiv prepint arXiv:2404.01901, 2024.</div>
+<div id="L659"><a href="#L659">00659</a> [PDF p.12] </div>
+<div id="L660"><a href="#L660">00660</a> [PDF p.12] Anuj Karpatne, Gowtham Atluri, James H. Faghmous, Michael Steinbach, Arindam Banerjee, Au-</div>
+<div id="L661"><a href="#L661">00661</a> [PDF p.12]   roop Ganguly, Shashi Shekhar, Nagiza Samatova, and Vipin Kumar. Theory-Guided Data Sci-</div>
+<div id="L662"><a href="#L662">00662</a> [PDF p.12]   ence: A New Paradigm for Scientific Discovery from Data. IEEE Transactions on Knowledge</div>
+<div id="L663"><a href="#L663">00663</a> [PDF p.12]   and Data Engineering, 29(10):2318–2331, 2017.</div>
+<div id="L664"><a href="#L664">00664</a> [PDF p.12] </div>
+<div id="L665"><a href="#L665">00665</a> [PDF p.12] Diederik P. Kingma and Jimmy Ba. Adam: A Method for Stochastic Optimization. In Proc. of the</div>
+<div id="L666"><a href="#L666">00666</a> [PDF p.12]   International Conference on Learning Representations, pages 1–15, 2015.</div>
+<div id="L667"><a href="#L667">00667</a> [PDF p.12] </div>
+<div id="L668"><a href="#L668">00668</a> [PDF p.12] Johan Kon, Dennis Bruijnen, Jeroen Van De Wijdeven, Marcel Heertjes, and Tom Oomen. Physics-</div>
+<div id="L669"><a href="#L669">00669</a> [PDF p.12]   Guided Neural Networks for Feedforward Control: An Orthogonal Projection-Based Approach.</div>
+<div id="L670"><a href="#L670">00670</a> [PDF p.12]   In Proc. of the American Control Conference, pages 4377–4382, 2022.</div>
+<div id="L671"><a href="#L671">00671</a> [PDF p.12] </div>
+<div id="L672"><a href="#L672">00672</a> [PDF p.12] Johan Kon, Naomi de Vos, Dennis Bruijnen, Jeroen van de Wijdeven, Marcel Heertjes, and Tom</div>
+<div id="L673"><a href="#L673">00673</a> [PDF p.12]   Oomen. Learning for Precision Motion of an Interventional X-ray System: Add-on Physics-</div>
+<div id="L674"><a href="#L674">00674</a> [PDF p.12]   Guided Neural Network Feedforward Control. In Proc. of the 22nd IFAC World Congress, pages</div>
+<div id="L675"><a href="#L675">00675</a> [PDF p.12]   7523–7528, 2023.</div>
+<div id="L676"><a href="#L676">00676</a> [PDF p.12] </div>
+<div id="L677"><a href="#L677">00677</a> [PDF p.12] Yann LeCun, Leon Bottou, Genevieve B. Orr, and Klaus Robert Müller. Efficient BackProp. In</div>
+<div id="L678"><a href="#L678">00678</a> [PDF p.12]   Neural Networks: Tricks of the Trade, pages 9–50. Springer, Berlin, Heidelberg, 1998.</div>
+<div id="L679"><a href="#L679">00679</a> [PDF p.12] </div>
+<div id="L680"><a href="#L680">00680</a> [PDF p.12] Lennart Ljung. Perspectives on system identification. Annual Reviews in Control, 34(1):1–12, 2010.</div>
+<div id="L681"><a href="#L681">00681</a> [PDF p.12] </div>
+<div id="L682"><a href="#L682">00682</a> [PDF p.12] Daniele Masti and Alberto Bemporad. Learning nonlinear state–space models using autoencoders.</div>
+<div id="L683"><a href="#L683">00683</a> [PDF p.12]   Automatica, 129:109666, 2021.</div>
+<div id="L684"><a href="#L684">00684</a> [PDF p.12] </div>
+<div id="L685"><a href="#L685">00685</a> [PDF p.12] Hans B. Pacejka. Chapter 4 - Semi-Empirical Tire Models. In Tire and Vehicle Dynamics (Third</div>
+<div id="L686"><a href="#L686">00686</a> [PDF p.12]   Edition), pages 149–209. Butterworth-Heinemann, Oxford, 2012.</div>
+<div id="L687"><a href="#L687">00687</a> [PDF p.12] </div>
+<div id="L688"><a href="#L688">00688</a> [PDF p.12] Brian Paden, Michal Čáp, Sze Zheng Yong, Dmitry Yershov, and Emilio Frazzoli. A survey of</div>
+<div id="L689"><a href="#L689">00689</a> [PDF p.12]   motion planning and control techniques for self-driving urban vehicles. IEEE Transactions on</div>
+<div id="L690"><a href="#L690">00690</a> [PDF p.12]   Intelligent Vehicles, 1(1):33–55, 2016.</div>
+<div id="L691"><a href="#L691">00691</a> [PDF p.12] </div>
+<div id="L692"><a href="#L692">00692</a> [PDF p.12] Dimitris C. Psichogios and Lyle H. Ungar. A hybrid neural network-first principles approach to</div>
+<div id="L693"><a href="#L693">00693</a> [PDF p.12]   process modeling. AIChE Journal, 38(10):1499–1511, 1992.</div>
+<div id="L694"><a href="#L694">00694</a> [PDF p.12] </div>
+<div id="L695"><a href="#L695">00695</a> [PDF p.12] M. Raissi, P. Perdikaris, and G. E. Karniadakis. Physics-informed neural networks: A deep learn-</div>
+<div id="L696"><a href="#L696">00696</a> [PDF p.12]  ing framework for solving forward and inverse problems involving nonlinear partial differential</div>
+<div id="L697"><a href="#L697">00697</a> [PDF p.12]  equations. Journal of Computational Physics, 378:686–707, 2019.</div>
+<div id="L698"><a href="#L698">00698</a> [PDF p.12] </div>
+<div id="L699"><a href="#L699">00699</a> [PDF p.12]                                                  12</div>
+<div id="L700"><a href="#L700">00700</a> [PDF p.12] </div>
+<div id="L701"><a href="#L701">00701</a> [PDF p.13]    O RTHOGONAL PROJECTION - BASED REGULARIZATION FOR EFFICIENT MODEL AUGMENTATION</div>
+<div id="L702"><a href="#L702">00702</a> [PDF p.13] </div>
+<div id="L703"><a href="#L703">00703</a> [PDF p.13] </div>
+<div id="L704"><a href="#L704">00704</a> [PDF p.13] </div>
+<div id="L705"><a href="#L705">00705</a> [PDF p.13] </div>
+<div id="L706"><a href="#L706">00706</a> [PDF p.13] Rishi Ramkannan, Gerben I. Beintema, Roland Tóth, and Maarten Schoukens. Initialization Ap-</div>
+<div id="L707"><a href="#L707">00707</a> [PDF p.13]   proach for Nonlinear State-Space Identification via the Subspace Encoder Approach. In Proc. of</div>
+<div id="L708"><a href="#L708">00708</a> [PDF p.13]   the 22nd IFAC World Congress, pages 5146–5151, 2023.</div>
+<div id="L709"><a href="#L709">00709</a> [PDF p.13] </div>
+<div id="L710"><a href="#L710">00710</a> [PDF p.13] Antônio H. Ribeiro, Koen Tiels, Jack Umenberger, Thomas B. Schön, and Luis A. Aguirre. On the</div>
+<div id="L711"><a href="#L711">00711</a> [PDF p.13]   smoothness of nonlinear system identification. Automatica, 121:109158, 2020.</div>
+<div id="L712"><a href="#L712">00712</a> [PDF p.13] </div>
+<div id="L713"><a href="#L713">00713</a> [PDF p.13] Johan Schoukens and Lennart Ljung. Nonlinear system identification: A user-oriented road map.</div>
+<div id="L714"><a href="#L714">00714</a> [PDF p.13]   IEEE Control Systems Magazine, 39(6):28–99, 2019.</div>
+<div id="L715"><a href="#L715">00715</a> [PDF p.13] </div>
+<div id="L716"><a href="#L716">00716</a> [PDF p.13] Maarten Schoukens and Roland Tóth. On the Initialization of Nonlinear LFR Model Identification</div>
+<div id="L717"><a href="#L717">00717</a> [PDF p.13]  with the Best Linear Approximation. In Proc. of the 21st IFAC World Congress, pages 310–315,</div>
+<div id="L718"><a href="#L718">00718</a> [PDF p.13]  2020.</div>
+<div id="L719"><a href="#L719">00719</a> [PDF p.13] </div>
+<div id="L720"><a href="#L720">00720</a> [PDF p.13] Oliver Schön, Ricarda-Samantha Götte, and Julia Timmermann. Multi-Objective Physics-Guided</div>
+<div id="L721"><a href="#L721">00721</a> [PDF p.13]   Recurrent Neural Networks for Identifying Non-Autonomous Dynamical Systems. In Proc. of</div>
+<div id="L722"><a href="#L722">00722</a> [PDF p.13]   the 14th IFAC Workshop on Adaptive and Learning Control Systems, pages 19–24, 2022.</div>
+<div id="L723"><a href="#L723">00723</a> [PDF p.13] </div>
+<div id="L724"><a href="#L724">00724</a> [PDF p.13] B. Sohlberg and E. W. Jacobsen. GREY BOX MODELLING – BRANCHES AND EXPERI-</div>
+<div id="L725"><a href="#L725">00725</a> [PDF p.13]   ENCES. IFAC Proceedings Volumes, 41(2):11415–11420, 2008.</div>
+<div id="L726"><a href="#L726">00726</a> [PDF p.13] </div>
+<div id="L727"><a href="#L727">00727</a> [PDF p.13] Bei Sun, Chunhua Yang, Yalin Wang, Weihua Gui, Ian Craig, and Laurentz Olivier. A compre-</div>
+<div id="L728"><a href="#L728">00728</a> [PDF p.13]   hensive hybrid first principles/machine learning modeling framework for complex industrial pro-</div>
+<div id="L729"><a href="#L729">00729</a> [PDF p.13]   cesses. Journal of Process Control, 86:30–43, 2020.</div>
+<div id="L730"><a href="#L730">00730</a> [PDF p.13] </div>
+<div id="L731"><a href="#L731">00731</a> [PDF p.13] M. Szécsi, B. Györök, Á. Weinhardt-Kovács, G. I. Beintema, M. Schoukens, T. Péni, and R. Tóth.</div>
+<div id="L732"><a href="#L732">00732</a> [PDF p.13]  Deep learning of vehicle dynamics. In Proc. of the 20th IFAC Symposium on System Identifica-</div>
+<div id="L733"><a href="#L733">00733</a> [PDF p.13]  tion, pages 283–288, 2024.</div>
+<div id="L734"><a href="#L734">00734</a> [PDF p.13] </div>
+<div id="L735"><a href="#L735">00735</a> [PDF p.13] Emanuel Todorov, Tom Erez, and Yuval Tassa. MuJoCo: A physics engine for model-based control.</div>
+<div id="L736"><a href="#L736">00736</a> [PDF p.13]  In Proc. of the IEEE/RSJ International Conference on Intelligent Robots and Systems, pages</div>
+<div id="L737"><a href="#L737">00737</a> [PDF p.13]  5026–5033, 2012.</div>
+<div id="L738"><a href="#L738">00738</a> [PDF p.13] </div>
+<div id="L739"><a href="#L739">00739</a> [PDF p.13] Chiyuan Zhang, Samy Bengio, Moritz Hardt, Benjamin Recht, and Oriol Vinyals. Understanding</div>
+<div id="L740"><a href="#L740">00740</a> [PDF p.13]   deep learning requires rethinking generalization. In Proc. of the 5th International Conference on</div>
+<div id="L741"><a href="#L741">00741</a> [PDF p.13]   Learning Representations, 2017.</div>
+<div id="L742"><a href="#L742">00742</a> [PDF p.13] </div>
+<div id="L743"><a href="#L743">00743</a> [PDF p.13] </div>
+<div id="L744"><a href="#L744">00744</a> [PDF p.13] </div>
+<div id="L745"><a href="#L745">00745</a> [PDF p.13] </div>
+<div id="L746"><a href="#L746">00746</a> [PDF p.13]                                                  13</div>
+<div id="L747"><a href="#L747">00747</a> [PDF p.13] </div></pre>

@@ -1,0 +1,310 @@
+<meta charset="utf-8"><title>sections/08_conclusion.tex</title><pre><div id="L1"><a href="#L1">0001</a> % Page budget: 0.45 pages (conclusion) + 0.90 pages (discussion, from 07) | Owns: interpretation of every result,</div>
+<div id="L2"><a href="#L2">0002</a> %   limits of each claim, departures from the research plan, the answer to the research question.</div>
+<div id="L3"><a href="#L3">0003</a> % WRITING GUIDE</div>
+<div id="L4"><a href="#L4">0004</a> % Purpose: Explain the results that do not speak for themselves, state the limit of each claim, disclose the</div>
+<div id="L5"><a href="#L5">0005</a> %   departures from the research plan, and answer the research question per aspect.</div>
+<div id="L6"><a href="#L6">0006</a> % Start here: the frozen Results section (06) and the method sections it evaluates (03, 04).</div>
+<div id="L7"><a href="#L7">0007</a> % Reference check: introduce no new reference; reuse only verified sources already cited in the method sections.</div>
+<div id="L8"><a href="#L8">0008</a> % Cautions: no new results, runs or figures; every number from a float of 06, the appendix tables or</div>
+<div id="L9"><a href="#L9">0009</a> %   Thesis-writeup/Results/18-10-2026/CSV; untested explanations stated as candidates; no LPV vs LTI as a research</div>
+<div id="L10"><a href="#L10">0010</a> %   result; no predicted-bias comparison; no OBC network-overlap digit (R1 label mismatch).</div>
+<div id="L11"><a href="#L11">0011</a> % Section is finished when: every discussion point is tied to a float and states its limit, and the conclusion</div>
+<div id="L12"><a href="#L12">0012</a> %   answers each aspect and the research question in fewer words than the discussion.</div>
+<div id="L13"><a href="#L13">0013</a> % MUST ESTABLISH (Dirk 2026-10-18; handoff tasks/handoffs/2026-10-18-discussion-conclusion.md)</div>
+<div id="L14"><a href="#L14">0014</a> %   Form: one section &quot;Discussion and Conclusion&quot;, discussion first, by aspect as numbered in the Introduction</div>
+<div id="L15"><a href="#L15">0015</a> %   (1 structure and training, 2 OBC interpretability, 3 generalisation), then limits and departures, then a short</div>
+<div id="L16"><a href="#L16">0016</a> %   conclusion in the same order. Results (06) is observational; explanations, limits and departures are here.</div>
+<div id="L17"><a href="#L17">0017</a> %   Interpretability = unique estimate of the identifiable combinations, not true-parameter recovery.</div>
+<div id="L18"><a href="#L18">0018</a> %   Style per paragraph: claim, evidence, limit, what would test it. Conclusion: one or two sentences per aspect,</div>
+<div id="L19"><a href="#L19">0019</a> %   one sentence of the central limit, one recommendation.</div>
+<div id="L20"><a href="#L20">0020</a> %   Checked 2026-10-18: the final runs build the encoder from data (D-271, logs thesis-results-4), so the old</div>
+<div id="L21"><a href="#L21">0021</a> %   &quot;encoder from true parameters&quot; point is no limitation; the K1-rate point of 07 is a diagnostic only (D-265);</div>
+<div id="L22"><a href="#L22">0022</a> %   the axis weighting point of 07 is resolved by W_r and NRMS_e selection (03, eq:aug_loss).</div>
+<div id="L23"><a href="#L23">0023</a> \section{Discussion and Conclusion}\label{sec:conclusion}</div>
+<div id="L24"><a href="#L24">0024</a> \ifdraft</div>
+<div id="L25"><a href="#L25">0025</a> \begin{itemize}</div>
+<div id="L26"><a href="#L26">0026</a> \item Discussion per aspect: explanation, limit and test of each result; then the limits and departures that bound all three (handoff 2026-10-18)</div>
+<div id="L27"><a href="#L27">0027</a> \item Conclusion: the answer per aspect and to the research question, the central limit, one recommendation</div>
+<div id="L28"><a href="#L28">0028</a> \end{itemize}</div>
+<div id="L29"><a href="#L29">0029</a> \fi</div>
+<div id="L30"><a href="#L30">0030</a> This section interprets the results of Section~\ref{sec:results} per aspect,</div>
+<div id="L31"><a href="#L31">0031</a> states the limits of each claim and the departures from the research plan,</div>
+<div id="L32"><a href="#L32">0032</a> and then answers the research question.</div>
+<div id="L33"><a href="#L33">0033</a> </div>
+<div id="L34"><a href="#L34">0034</a> \subsection{Augmentation structure}</div>
+<div id="L35"><a href="#L35">0035</a> \ifdraft</div>
+<div id="L36"><a href="#L36">0036</a> \begin{itemize}</div>
+<div id="L37"><a href="#L37">0037</a> \item The gain with multisine is the absorber mode, carried by the network and the added states (Fig.~\ref{fig:res_frf}, Table~\ref{tab:res_obc}, Table~\ref{tab:app_structure})</div>
+<div id="L38"><a href="#L38">0038</a> \item Added states and PS are both needed; shown on validation with one seed (Table~\ref{tab:app_structure})</div>
+<div id="L39"><a href="#L39">0039</a> \item Without multisine the final model is slightly above the baseline; candidates only (Table~\ref{tab:res_structure}) (?)</div>
+<div id="L40"><a href="#L40">0040</a> \end{itemize}</div>
+<div id="L41"><a href="#L41">0041</a> \fi</div>
+<div id="L42"><a href="#L42">0042</a> The gain on the records with multisine comes from the absorber mode.</div>
+<div id="L43"><a href="#L43">0043</a> The final model has a resonance at 2.11 to 2.13\,$f_b$ over $Y$, against</div>
+<div id="L44"><a href="#L44">0044</a> 2.12\,$f_b$ of the system (Fig.~\ref{fig:res_frf}).</div>
+<div id="L45"><a href="#L45">0045</a> Its damping ratio is 0.036 to 0.080 over $Y$, against 0.043, so the mode</div>
+<div id="L46"><a href="#L46">0046</a> frequency is learned more accurately than its damping.</div>
+<div id="L47"><a href="#L47">0047</a> With the learned block switched off, the $Y$ error of the trained model</div>
+<div id="L48"><a href="#L48">0048</a> returns to about 42\,\% (Table~\ref{tab:res_obc}), so the network and the</div>
+<div id="L49"><a href="#L49">0049</a> added states carry the mode, not the refitted parameters.</div>
+<div id="L50"><a href="#L50">0050</a> \\</div>
+<div id="L51"><a href="#L51">0051</a> Both the added states and their PS start are needed to learn the mode.</div>
+<div id="L52"><a href="#L52">0052</a> On the validation records with multisine, the $Y$ error is 6.4\,\% with PS,</div>
+<div id="L53"><a href="#L53">0053</a> 78.1\,\% with plain training and 86.5\,\% without added states</div>
+<div id="L54"><a href="#L54">0054</a> (Table~\ref{tab:app_structure}).</div>
+<div id="L55"><a href="#L55">0055</a> Eight added states give the same error as two.</div>
+<div id="L56"><a href="#L56">0056</a> This rests on one seed per model, so a seed that lets plain training find</div>
+<div id="L57"><a href="#L57">0057</a> the mode is not excluded.</div>
+<div id="L58"><a href="#L58">0058</a> The missing dynamics hold one mode of known order, so the result shows that</div>
+<div id="L59"><a href="#L59">0059</a> two added states suffice for this mode, not how $n_{\bar x}$ should be</div>
+<div id="L60"><a href="#L60">0060</a> chosen when the order is unknown.</div>
+<div id="L61"><a href="#L61">0061</a> \\</div>
+<div id="L62"><a href="#L62">0062</a> Without multisine, the final model is 0.2 to 0.4 points above the baseline</div>
+<div id="L63"><a href="#L63">0063</a> at the true parameters (Table~\ref{tab:res_structure}).</div>
+<div id="L64"><a href="#L64">0064</a> At this level the baseline misses only the friction and the part of the</div>
+<div id="L65"><a href="#L65">0065</a> absorber that the motion excites.</div>
+<div id="L66"><a href="#L66">0066</a> A candidate explanation is that the learned correction, fitted mainly where</div>
+<div id="L67"><a href="#L67">0067</a> the multisine excites the absorber, adds small errors where the baseline is</div>
+<div id="L68"><a href="#L68">0068</a> already close to its limit.</div>
+<div id="L69"><a href="#L69">0069</a> The detuned start is not the cause: on the validation records, the model</div>
+<div id="L70"><a href="#L70">0070</a> trained from the true parameters is also above the baseline on $Y$</div>
+<div id="L71"><a href="#L71">0071</a> (Table~\ref{tab:app_structure}).</div>
+<div id="L72"><a href="#L72">0072</a> The candidate is not tested.</div>
+<div id="L73"><a href="#L73">0073</a> The error spectrum of both models on these records would show whether the</div>
+<div id="L74"><a href="#L74">0074</a> difference lies in the absorber band or below the crossover.</div>
+<div id="L75"><a href="#L75">0075</a> \todo{Missing: a check of the candidate. Candidate: compare the error spectra of the final model and the baseline on I3 to I6 with the existing evaluation code (no new run; basis: res\_ps\_spectrum uses the same computation on the validation multisine records).}</div>
+<div id="L76"><a href="#L76">0076</a> </div>
+<div id="L77"><a href="#L77">0077</a> \subsection{Interpretability}</div>
+<div id="L78"><a href="#L78">0078</a> \ifdraft</div>
+<div id="L79"><a href="#L79">0079</a> \begin{itemize}</div>
+<div id="L80"><a href="#L80">0080</a> \item OBC halves the drift of U but does not recover the truth; expected from the truth overlap and \eqref{eq:obc_recovery} (Table~\ref{tab:res_obc})</div>
+<div id="L81"><a href="#L81">0081</a> \item The dampers move most; the friction projects onto the damping sensitivities by construction (D-204 argument, not measured)</div>
+<div id="L82"><a href="#L82">0082</a> \item OBC holds to first order at $\bar x=0$ for the one-step fit only; added states are not protected</div>
+<div id="L83"><a href="#L83">0083</a> \item Uniqueness only partly shown: the two starts still differ (Table~\ref{tab:app_obc_full}) (?: row requested)</div>
+<div id="L84"><a href="#L84">0084</a> \item Without added states the order reverses; candidate only (Table~\ref{tab:app_obc_na0})</div>
+<div id="L85"><a href="#L85">0085</a> \item Root cause analysis compares unique estimates only while the missing dynamics do not change</div>
+<div id="L86"><a href="#L86">0086</a> \end{itemize}</div>
+<div id="L87"><a href="#L87">0087</a> \fi</div>
+<div id="L88"><a href="#L88">0088</a> OBC reduces the parameter drift, but it does not recover the true</div>
+<div id="L89"><a href="#L89">0089</a> combinations.</div>
+<div id="L90"><a href="#L90">0090</a> From the detuned start, the combination error grows from 30.0\,\% to</div>
+<div id="L91"><a href="#L91">0091</a> 47.7\,\% with OBC and to 83.1\,\% without (Table~\ref{tab:res_obc}).</div>
+<div id="L92"><a href="#L92">0092</a> From the correct start, OBC ends at 35.4\,\% and $\mathcal M_{\mathrm U}$ at</div>
+<div id="L93"><a href="#L93">0093</a> 58.3\,\% (Table~\ref{tab:app_obc_full}).</div>
+<div id="L94"><a href="#L94">0094</a> This drift is expected from Section~\ref{sec:obc_ident}.</div>
+<div id="L95"><a href="#L95">0095</a> The truth overlap of 0.59 shows that $\Phi^\top\Xi\neq0$ on the tuples, so</div>
+<div id="L96"><a href="#L96">0096</a> the estimate of \eqref{eq:obc_recovery} is biased even with the projection.</div>
+<div id="L97"><a href="#L97">0097</a> OBC costs no accuracy, since the full models and their physical parts differ</div>
+<div id="L98"><a href="#L98">0098</a> by at most 0.9 points between the two arms.</div>
+<div id="L99"><a href="#L99">0099</a> \todo{Missing: the numbers of $\mathcal M_{\mathrm{OBC}}$ (R1, R2) are preliminary (update 19500 of 33400). Candidate: update 47.7, 35.4, 0.9 and the two-start differences after the final rerun (basis: handoff 2026-10-18, Sec.~3).}</div>
+<div id="L100"><a href="#L100">0100</a> \\</div>
+<div id="L101"><a href="#L101">0101</a> The damping combinations $c_{g1}$, $c_{g2}$ and $c_y$ move most, by 23 to</div>
+<div id="L102"><a href="#L102">0102</a> 30 points with OBC and 43 to 46 points without, while the mass combinations</div>
+<div id="L103"><a href="#L103">0103</a> stay within 3.4\,\% of their true values.</div>
+<div id="L104"><a href="#L104">0104</a> A candidate cause is the rail friction of \eqref{eq:setup_fric}.</div>
+<div id="L105"><a href="#L105">0105</a> The sensitivity to $c_{g1}$ is proportional to $\dot X_1$, and the friction</div>
+<div id="L106"><a href="#L106">0106</a> force has the sign of $\dot X_1$.</div>
+<div id="L107"><a href="#L107">0107</a> Their inner product over a moving record is therefore nonzero, so the</div>
+<div id="L108"><a href="#L108">0108</a> friction lies partly in the damping directions and biases the dampers</div>
+<div id="L109"><a href="#L109">0109</a> through $\Phi^\top\Xi$.</div>
+<div id="L110"><a href="#L110">0110</a> This argument is ours and is not measured on the final data.</div>
+<div id="L111"><a href="#L111">0111</a> The truth overlap of $\Xi$ split into its friction and absorber parts would</div>
+<div id="L112"><a href="#L112">0112</a> test it.</div>
+<div id="L113"><a href="#L113">0113</a> \\</div>
+<div id="L114"><a href="#L114">0114</a> The guarantee of OBC is also narrower than the training it is applied to.</div>
+<div id="L115"><a href="#L115">0115</a> The projection holds to first order around $\beta_{\mathrm{lin}}$, for the</div>
+<div id="L116"><a href="#L116">0116</a> one-step fit on the reference slice $\bar x=0$</div>
+<div id="L117"><a href="#L117">0117</a> (Section~\ref{sec:obc_ident}).</div>
+<div id="L118"><a href="#L118">0118</a> With PS the added states are active, so the part of $f_{\mathrm{aug}}$ that</div>
+<div id="L119"><a href="#L119">0119</a> depends on $\bar x$ is not orthogonal to the parameter directions, and the</div>
+<div id="L120"><a href="#L120">0120</a> closed-loop criterion \eqref{eq:aug_loss} is not the one-step fit.</div>
+<div id="L121"><a href="#L121">0121</a> The two starts measure how far uniqueness holds in practice.</div>
+<div id="L122"><a href="#L122">0122</a> Their final estimates differ by 25.1\,\% with OBC and 36.4\,\% without, from</div>
+<div id="L123"><a href="#L123">0123</a> Table~\ref{tab:app_obc_full}.</div>
+<div id="L124"><a href="#L124">0124</a> OBC brings the two estimates closer, but they are not equal, so uniqueness is</div>
+<div id="L125"><a href="#L125">0125</a> only partly shown.</div>
+<div id="L126"><a href="#L126">0126</a> \todo{Missing: the two-start difference is computed by hand from Table~\ref{tab:app_obc_full}, not shown in a float. Candidate: the ``difference between starts&#x27;&#x27; row requested at the end of Section~\ref{sec:results}, computed by \texttt{res\_obc\_combinations.py} after the final rerun.}</div>
+<div id="L127"><a href="#L127">0127</a> \\</div>
+<div id="L128"><a href="#L128">0128</a> Without added states the order reverses: $\mathcal M_{\mathrm U}$ ends at</div>
+<div id="L129"><a href="#L129">0129</a> 48.8\,\% and $\mathcal M_{\mathrm{OBC}}$ at 68.4\,\%</div>
+<div id="L130"><a href="#L130">0130</a> (Table~\ref{tab:app_obc_na0}).</div>
+<div id="L131"><a href="#L131">0131</a> A candidate explanation is that the network must then represent the absorber</div>
+<div id="L132"><a href="#L132">0132</a> statically, and a large part of it lies in the parameter directions (truth</div>
+<div id="L133"><a href="#L133">0133</a> overlap 0.59).</div>
+<div id="L134"><a href="#L134">0134</a> The projection removes that part from the network, so the parameters absorb</div>
+<div id="L135"><a href="#L135">0135</a> it.</div>
+<div id="L136"><a href="#L136">0136</a> This is not tested.</div>
+<div id="L137"><a href="#L137">0137</a> The result shows that OBC does not bring the estimate closer to the truth in</div>
+<div id="L138"><a href="#L138">0138</a> general.</div>
+<div id="L139"><a href="#L139">0139</a> Its guarantee is a unique split, and only the pair from two starts tests that.</div>
+<div id="L140"><a href="#L140">0140</a> \todo{Missing: a possible inconsistency in Table~\ref{tab:app_obc_na0}: its full-model $Y$ row (41.8, 42.7) equals the physical-part $Y$ row of Table~\ref{tab:res_obc}. Candidate: check \texttt{res\_obc\_na0} in the evaluation code before the paragraph above relies on that table.}</div>
+<div id="L141"><a href="#L141">0141</a> \\</div>
+<div id="L142"><a href="#L142">0142</a> Root cause analysis (Section~\ref{sec:intro}) compares unique estimates</div>
+<div id="L143"><a href="#L143">0143</a> over time.</div>
+<div id="L144"><a href="#L144">0144</a> By \eqref{eq:obc_recovery}, the estimate contains the bias</div>
+<div id="L145"><a href="#L145">0145</a> $(\Phi^\top\Phi)^{-1}\Phi^\top\Xi$, which depends on the missing dynamics.</div>
+<div id="L146"><a href="#L146">0146</a> A change of the estimate therefore indicates a changed physical parameter</div>
+<div id="L147"><a href="#L147">0147</a> only while the missing dynamics and the excitation stay the same.</div>
+<div id="L148"><a href="#L148">0148</a> This is our reasoning and is not tested.</div>
+<div id="L149"><a href="#L149">0149</a> </div>
+<div id="L150"><a href="#L150">0150</a> \subsection{Generalisation}</div>
+<div id="L151"><a href="#L151">0151</a> \ifdraft</div>
+<div id="L152"><a href="#L152">0152</a> \begin{itemize}</div>
+<div id="L153"><a href="#L153">0153</a> \item The final model keeps its accuracy on each E record; each E record leaves the training range in one direction only (Fig.~\ref{fig:res_generalisation}, Fig.~\ref{fig:setup_coverage})</div>
+<div id="L154"><a href="#L154">0154</a> \item The black box does not fit the records without multisine, training records included; candidates, with the budget evidence (Table~\ref{tab:app_bb_search})</div>
+<div id="L155"><a href="#L155">0155</a> \item The comparison does not test the black box at its best; a black box of the plant inside the known loop would</div>
+<div id="L156"><a href="#L156">0156</a> \end{itemize}</div>
+<div id="L157"><a href="#L157">0157</a> \fi</div>
+<div id="L158"><a href="#L158">0158</a> The final model keeps its accuracy outside the training range.</div>
+<div id="L159"><a href="#L159">0159</a> Each extrapolation record is within 2.0 points of its interpolation record</div>
+<div id="L160"><a href="#L160">0160</a> (Fig.~\ref{fig:res_generalisation}).</div>
+<div id="L161"><a href="#L161">0161</a> On the multisine twins it stays below 10\,\% on $Y$, against 48 to 87\,\% for</div>
+<div id="L162"><a href="#L162">0162</a> the baseline.</div>
+<div id="L163"><a href="#L163">0163</a> Each extrapolation record leaves the training range in one direction only</div>
+<div id="L164"><a href="#L164">0164</a> ($Y$, acceleration or velocity; Fig.~\ref{fig:setup_coverage}), so a</div>
+<div id="L165"><a href="#L165">0165</a> combined extrapolation is not tested.</div>
+<div id="L166"><a href="#L166">0166</a> The physical part extrapolates by construction through $M(Y)$, while the</div>
+<div id="L167"><a href="#L167">0167</a> network has only seen the training range.</div>
+<div id="L168"><a href="#L168">0168</a> \\</div>
+<div id="L169"><a href="#L169">0169</a> The black box does not fit the records without multisine, including the</div>
+<div id="L170"><a href="#L170">0170</a> training records, where its error is 72 to 106\,\%.</div>
+<div id="L171"><a href="#L171">0171</a> It therefore fails to fit these records rather than overfitting them.</div>
+<div id="L172"><a href="#L172">0172</a> It is below the final model only on $X_2$ of I2.</div>
+<div id="L173"><a href="#L173">0173</a> It models the whole closed loop from the reference and the injected force,</div>
+<div id="L174"><a href="#L174">0174</a> and must learn the rigid-body and controller dynamics from servo errors of</div>
+<div id="L175"><a href="#L175">0175</a> order $10^{-5}$~m.</div>
+<div id="L176"><a href="#L176">0176</a> Its selected configuration reached its best validation error at update 78000</div>
+<div id="L177"><a href="#L177">0177</a> of 80000 (Table~\ref{tab:app_bb_search}), so its training had not converged</div>
+<div id="L178"><a href="#L178">0178</a> within the budget.</div>
+<div id="L179"><a href="#L179">0179</a> Both are candidate causes and neither is tested.</div>
+<div id="L180"><a href="#L180">0180</a> A longer budget would test the second.</div>
+<div id="L181"><a href="#L181">0181</a> A black box of the plant inside the known loop would separate the first from</div>
+<div id="L182"><a href="#L182">0182</a> the comparison of the model classes.</div>
+<div id="L183"><a href="#L183">0183</a> The comparison therefore shows that this black box, at this budget, is less</div>
+<div id="L184"><a href="#L184">0184</a> accurate than the final model, not that every black box would be.</div>
+<div id="L185"><a href="#L185">0185</a> </div>
+<div id="L186"><a href="#L186">0186</a> \subsection{Limits and departures from the research plan}</div>
+<div id="L187"><a href="#L187">0187</a> \ifdraft</div>
+<div id="L188"><a href="#L188">0188</a> \begin{itemize}</div>
+<div id="L189"><a href="#L189">0189</a> \item Simulation only, one absorber plus friction, one seed, the same known controller in data and model</div>
+<div id="L190"><a href="#L190">0190</a> \item Closed-loop training and evaluation can hide plant error behind the controller; no changed-controller test</div>
+<div id="L191"><a href="#L191">0191</a> \item Departures: LPV vs LTI aspect removed, controller transfer (E5) dropped, real Telica data out, settling dropped (D-241)</div>
+<div id="L192"><a href="#L192">0192</a> \end{itemize}</div>
+<div id="L193"><a href="#L193">0193</a> \fi</div>
+<div id="L194"><a href="#L194">0194</a> Three limits bound every result above.</div>
+<div id="L195"><a href="#L195">0195</a> The data are simulated, and the missing dynamics are one absorber mode and</div>
+<div id="L196"><a href="#L196">0196</a> rail friction, both chosen for this study.</div>
+<div id="L197"><a href="#L197">0197</a> Every model is trained once with one seed (Appendix~\ref{app:hyper}), so</div>
+<div id="L198"><a href="#L198">0198</a> differences of a few points between models are not resolved.</div>
+<div id="L199"><a href="#L199">0199</a> The controller in the model is the controller that generated the data.</div>
+<div id="L200"><a href="#L200">0200</a> \\</div>
+<div id="L201"><a href="#L201">0201</a> This last limit matters because training and evaluation are both closed</div>
+<div id="L202"><a href="#L202">0202</a> loop.</div>
+<div id="L203"><a href="#L203">0203</a> The controller corrects part of the output error, so a plant error at low</div>
+<div id="L204"><a href="#L204">0204</a> frequencies can stay hidden in the servo error.</div>
+<div id="L205"><a href="#L205">0205</a> An evaluation under a changed controller would expose it, and it is the use</div>
+<div id="L206"><a href="#L206">0206</a> that the Introduction motivates.</div>
+<div id="L207"><a href="#L207">0207</a> \\</div>
+<div id="L208"><a href="#L208">0208</a> The results depart from the research plan in four points.</div>
+<div id="L209"><a href="#L209">0209</a> The comparison of the LPV baseline with an LTI baseline is no longer an</div>
+<div id="L210"><a href="#L210">0210</a> aspect, because the LPV form follows from the equations of motion</div>
+<div id="L211"><a href="#L211">0211</a> (Section~\ref{sec:lfr}); it justifies the baseline in</div>
+<div id="L212"><a href="#L212">0212</a> Appendix~\ref{app:choices} (Fig.~\ref{fig:res_lpv_lti}).</div>
+<div id="L213"><a href="#L213">0213</a> The planned test with a changed controller is not in the results.</div>
+<div id="L214"><a href="#L214">0214</a> The planned evaluation on measured data from the industrial gantry is not</div>
+<div id="L215"><a href="#L215">0215</a> part of the results either.</div>
+<div id="L216"><a href="#L216">0216</a> Settling prediction is replaced by prediction over whole records, which the</div>
+<div id="L217"><a href="#L217">0217</a> metric of Section~\ref{sec:setup_metrics} evaluates.</div>
+<div id="L218"><a href="#L218">0218</a> \todo{Missing: a stated reason for dropping the changed-controller test (E5) and the measured data. Candidate: Dirk&#x27;s decision with its basis (E5: not in the final evaluation, Introduction todo l.68; Telica: user decision 2026-09-24); the reason belongs here in one sentence each.}</div>
+<div id="L219"><a href="#L219">0219</a> </div>
+<div id="L220"><a href="#L220">0220</a> \subsection{Conclusion}</div>
+<div id="L221"><a href="#L221">0221</a> \ifdraft</div>
+<div id="L222"><a href="#L222">0222</a> \begin{itemize}</div>
+<div id="L223"><a href="#L223">0223</a> \item Aspect 1: parallel augmentation with two added states and PS learns the missing mode from closed-loop data (Table~\ref{tab:res_structure})</div>
+<div id="L224"><a href="#L224">0224</a> \item Aspect 2: OBC halves the drift at no accuracy cost, gives a partly unique split, does not recover the truth</div>
+<div id="L225"><a href="#L225">0225</a> \item Aspect 3: the final model keeps its accuracy at extrapolation; better than this black box</div>
+<div id="L226"><a href="#L226">0226</a> \item Research question, central limit, one recommendation</div>
+<div id="L227"><a href="#L227">0227</a> \end{itemize}</div>
+<div id="L228"><a href="#L228">0228</a> \fi</div>
+<div id="L229"><a href="#L229">0229</a> A parallel augmentation with added states, initialised by PS and trained in</div>
+<div id="L230"><a href="#L230">0230</a> closed loop with the known controller, learns the missing absorber mode from</div>
+<div id="L231"><a href="#L231">0231</a> closed-loop data (Aspect~1).</div>
+<div id="L232"><a href="#L232">0232</a> With multisine it lowers the $Y$ error from 116.6\,\% to 6.2\,\%, and</div>
+<div id="L233"><a href="#L233">0233</a> without multisine it stays at the level of the baseline.</div>
+<div id="L234"><a href="#L234">0234</a> OBC halves the drift of the physical combinations at no cost in accuracy</div>
+<div id="L235"><a href="#L235">0235</a> (Aspect~2).</div>
+<div id="L236"><a href="#L236">0236</a> It makes the estimates from two starts closer but not equal, and it does</div>
+<div id="L237"><a href="#L237">0237</a> not recover the true values, because the missing dynamics are not orthogonal</div>
+<div id="L238"><a href="#L238">0238</a> to the parameter directions.</div>
+<div id="L239"><a href="#L239">0239</a> The augmented model keeps its accuracy at held-out positions, velocities and</div>
+<div id="L240"><a href="#L240">0240</a> accelerations, and is more accurate than the black box on every record</div>
+<div id="L241"><a href="#L241">0241</a> except one axis of one record (Aspect~3).</div>
+<div id="L242"><a href="#L242">0242</a> The answer to the research question is therefore a parallel augmentation</div>
+<div id="L243"><a href="#L243">0243</a> with added states, a PS start and the orthogonal construction: it predicts</div>
+<div id="L244"><a href="#L244">0244</a> the missing dynamics, and its parameters stay closer to a unique estimate</div>
+<div id="L245"><a href="#L245">0245</a> than without the construction.</div>
+<div id="L246"><a href="#L246">0246</a> The central limit is that uniqueness holds only to first order at</div>
+<div id="L247"><a href="#L247">0247</a> $\bar x=0$, and has been shown in simulation with one seed.</div>
+<div id="L248"><a href="#L248">0248</a> The next step is to evaluate the final model under a changed controller,</div>
+<div id="L249"><a href="#L249">0249</a> the use that motivates it.</div>
+<div id="L250"><a href="#L250">0250</a> </div>
+<div id="L251"><a href="#L251">0251</a> % Source material kept until Dirk removes it (wip blocks of the earlier outline, 2026-10-11 to 2026-10-18).</div>
+<div id="L252"><a href="#L252">0252</a> \begin{wip}</div>
+<div id="L253"><a href="#L253">0253</a> \begin{itemize}</div>
+<div id="L254"><a href="#L254">0254</a> \item Answer whether LPV-LFR dynamic augmentation improves dual-gantry settling prediction over the physics baseline and black-box comparator</div>
+<div id="L255"><a href="#L255">0255</a> \item State whether the learned additional states contributed measurable missing dynamics under the final validated configuration</div>
+<div id="L256"><a href="#L256">0256</a> \item Conclude that state-level OBC prevents local tangent overlap by construction, while true parameters are recovered only when the physical discrepancy is orthogonal on the chosen excitation</div>
+<div id="L257"><a href="#L257">0257</a> \item Give the final quantitative trade between prediction error and physical combination error on held-out data</div>
+<div id="L258"><a href="#L258">0258</a> \item State whether the evidence covers relevant ASMPT motion, settling, controller transfer, or only a narrower simulation validation ladder</div>
+<div id="L259"><a href="#L259">0259</a> \item Close with the practical recommendation for when ASMPT should use the augmented model and when the baseline or a simpler residual model is safer</div>
+<div id="L260"><a href="#L260">0260</a> \item Figure plan: no conclusion figure; reserve the space for the final quantitative answer and limitations</div>
+<div id="L261"><a href="#L261">0261</a> \end{itemize}</div>
+<div id="L262"><a href="#L262">0262</a> \todo{Rewrite every conclusion bullet after freezing the final result table; no planned or diagnostic result may appear as achieved.}</div>
+<div id="L263"><a href="#L263">0263</a> \end{wip}</div>
+<div id="L264"><a href="#L264">0264</a> \begin{wip}</div>
+<div id="L265"><a href="#L265">0265</a> \begin{itemize}</div>
+<div id="L266"><a href="#L266">0266</a>     \item Why all states routing.</div>
+<div id="L267"><a href="#L267">0267</a>     \item why not use the encoder for the orthogonality each epoch instead of finite difference</div>
+<div id="L268"><a href="#L268">0268</a>     \item why not use the positions since we measure them --&gt; train nn and encoder in combination? not full answer</div>
+<div id="L269"><a href="#L269">0269</a>     \item black box not fair comparison, no init (BLA) no controller</div>
+<div id="L270"><a href="#L270">0270</a> \end{itemize}</div>
+<div id="L271"><a href="#L271">0271</a> </div>
+<div id="L272"><a href="#L272">0272</a> Thesis</div>
+<div id="L273"><a href="#L273">0273</a> </div>
+<div id="L274"><a href="#L274">0274</a> Make a new folder for figures and code of the figures for the paper, and the final dataset that will be used.</div>
+<div id="L275"><a href="#L275">0275</a> </div>
+<div id="L276"><a href="#L276">0276</a> </div>
+<div id="L277"><a href="#L277">0277</a> </div>
+<div id="L278"><a href="#L278">0278</a> * laten zien met parameters samenvoegen huidige methode niet correct ik moet iets van jacobian of iets laten zien</div>
+<div id="L279"><a href="#L279">0279</a> * ik heb nog steeds niet netjes uitgewerkt voor LPV-LFR met hoe ik het heb omgeschreven die n m ik kan niet zo goed zeggen hoe het heet</div>
+<div id="L280"><a href="#L280">0280</a> * verbeterde model met additional states laten zien als ik ze weg haal wat ze toevoegen = op nul zetten. ik weet niet of andere phase multisine validation en test genoeg laat zien hoe goed het werkt.</div>
+<div id="L281"><a href="#L281">0281</a> * Duidelijk verantwoorden controller. vooral met integrator problem van de plant en dus X en Y geen stijfheid K = 0 daar. kleine integratie error propegeert gwn door, dit zei maarten ook denk dat dit de error is.</div>
+<div id="L282"><a href="#L282">0282</a> * velocity central difference, why not get direct?</div>
+<div id="L283"><a href="#L283">0283</a> * Zijn Gramians nuttig om per state te laten zien?</div>
+<div id="L284"><a href="#L284">0284</a> * Multisine phase uitleggen kunnen we ook bronnen voor gebruiken. dat verschillende train validation en test verschillende multisine phase hebben.</div>
+<div id="L285"><a href="#L285">0285</a> * Met alleen simulatie is huidige simulatie niet genoeg, cubic spring toevoegen??</div>
+<div id="L286"><a href="#L286">0286</a> * benefit van mijn closed-loop training method is ook dat ik geen encoder / states er voor hoef te initializen. kessels wel referencen. figuur gebruiken.</div>
+<div id="L287"><a href="#L287">0287</a> * Jacobian additional states</div>
+<div id="L288"><a href="#L288">0288</a> * 2d / 3d grid wat jan zei van de data space of ik alles vang van het gebied van telica.</div>
+<div id="L289"><a href="#L289">0289</a> * Montecarlo simulatie zoals jan?</div>
+<div id="L290"><a href="#L290">0290</a> * For parameter recovery I had trajectories similar to the paper, currently not used for joint estimation?</div>
+<div id="L291"><a href="#L291">0291</a> * How well do we extrapolate outside multisine range? what does jan do?</div>
+<div id="L292"><a href="#L292">0292</a> </div>
+<div id="L293"><a href="#L293">0293</a> </div>
+<div id="L294"><a href="#L294">0294</a> </div>
+<div id="L295"><a href="#L295">0295</a> </div>
+<div id="L296"><a href="#L296">0296</a> </div>
+<div id="L297"><a href="#L297">0297</a> Verdedigen</div>
+<div id="L298"><a href="#L298">0298</a> </div>
+<div id="L299"><a href="#L299">0299</a> * waarom geen basis functions</div>
+<div id="L300"><a href="#L300">0300</a> * waarom niet zoals kessels: vooral andere literatuur kunnen zeggen waarom niet dat gebruikt, moet dat?</div>
+<div id="L301"><a href="#L301">0301</a> * wat is het voordeel van interpreteerbaarheid?--&gt; controller maken, monitor health?</div>
+<div id="L302"><a href="#L302">0302</a> * waarom niet frf of mass lijn fitten voor de missende dynamica</div>
+<div id="L303"><a href="#L303">0303</a> * controller surpressses / hides issues such as orthogonality overlap. Byproduct of closed-loop.</div>
+<div id="L304"><a href="#L304">0304</a> * Hoe verdedig ik augmentation over residual frf fit??</div>
+<div id="L305"><a href="#L305">0305</a> * Hoeveelheid data kunnen verdedigen</div>
+<div id="L306"><a href="#L306">0306</a> * Huidige nf window and encoder window, should i run for different lengths?</div>
+<div id="L307"><a href="#L307">0307</a> * Orthogonality definition and that we orthogonalize additional states with respect to the baseline := 0. additional states propogate, not included in our definition.</div>
+<div id="L308"><a href="#L308">0308</a> * Kijken decisions.md</div>
+<div id="L309"><a href="#L309">0309</a> * do i need to justify controller can i say what i got from my supervisor, how to approach these kind of questions?</div>
+<div id="L310"><a href="#L310">0310</a> \end{wip}</div></pre>

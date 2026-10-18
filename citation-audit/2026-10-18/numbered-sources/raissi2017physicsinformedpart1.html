@@ -1,0 +1,1070 @@
+<meta charset="utf-8"><title>raissi2017physicsinformedpart1</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1]                                           Physics Informed Deep Learning (Part I): Data-driven</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1]                                            Solutions of Nonlinear Partial Differential Equations</div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1]                                                Maziar Raissi1 , Paris Perdikaris2 , and George Em Karniadakis1</div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1]                                                          1</div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1]                                                            Division of Applied Mathematics, Brown University,</div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1] arXiv:1711.10561v1 [cs.AI] 28 Nov 2017</div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1] </div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1] </div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1] </div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1] </div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1]                                                                        Providence, RI, 02912, USA</div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1]                                                     2</div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1]                                                       Department of Mechanical Engineering and Applied Mechanics,</div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1]                                                                        University of Pennsylvania,</div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1]                                                                      Philadelphia, PA, 19104, USA</div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1] </div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1] </div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1] </div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1] </div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1]                                          Abstract</div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1]                                              We introduce physics informed neural networks – neural networks that</div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1]                                          are trained to solve supervised learning tasks while respecting any given law</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1]                                          of physics described by general nonlinear partial differential equations. In</div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1]                                          this two part treatise, we present our developments in the context of solving</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1]                                          two main classes of problems: data-driven solution and data-driven discovery</div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1]                                          of partial differential equations. Depending on the nature and arrangement</div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1]                                          of the available data, we devise two distinct classes of algorithms, namely</div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1]                                          continuous time and discrete time models. The resulting neural networks</div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1]                                          form a new class of data-efficient universal function approximators that nat-</div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1]                                          urally encode any underlying physical laws as prior information. In this first</div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1]                                          part, we demonstrate how these networks can be used to infer solutions to</div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.1]                                          partial differential equations, and obtain physics-informed surrogate models</div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.1]                                          that are fully differentiable with respect to all input coordinates and free</div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.1]                                          parameters.</div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.1]                                          Keywords: Data-driven scientific computing, Machine learning, Predictive</div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.1]                                          modeling, Runge-Kutta methods, Nonlinear dynamics</div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.1] </div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.1] </div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.1]                                          1. Introduction</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.1]                                              With the explosive growth of available data and computing resources, re-</div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.1]                                          cent advances in machine learning and data analytics have yielded transfor-</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.1]                                          mative results across diverse scientific disciplines, including image recognition</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.1]                                          [1], natural language processing [2], cognitive science [3], and genomics [4].</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.1] </div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.1]                                          Preprint submitted to Journal Name                               November 30, 2017</div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.1] </div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.2] However, more often than not, in the course of analyzing complex physical,</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.2] biological or engineering systems, the cost of data acquisition is prohibitive,</div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.2] and we are inevitably faced with the challenge of drawing conclusions and</div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.2] making decisions under partial information. In this small data regime, the</div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.2] vast majority of state-of-the art machine learning techniques (e.g., deep/-</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.2] convolutional/recurrent neural networks) are lacking robustness and fail to</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.2] provide any guarantees of convergence.</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.2] </div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.2]     At first sight, the task of training a deep learning algorithm to accurately</div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.2] identify a nonlinear map from a few – potentially very high-dimensional –</div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.2] input and output data pairs seems at best naive. Coming to our rescue, for</div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.2] many cases pertaining to the modeling of physical and biological systems,</div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.2] there a exist a vast amount of prior knowledge that is currently not being</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.2] utilized in modern machine learning practice. Let it be the principled physical</div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.2] laws that govern the time-dependent dynamics of a system, or some empirical</div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.2] validated rules or other domain expertise, this prior information can act as</div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.2] a regularization agent that constrains the space of admissible solutions to a</div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.2] manageable size (for e.g., in incompressible fluid dynamics problems by dis-</div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.2] carding any non realistic flow solutions that violate the conservation of mass</div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.2] principle). In return, encoding such structured information into a learning</div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.2] algorithm results in amplifying the information content of the data that the</div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.2] algorithm sees, enabling it to quickly steer itself towards the right solution</div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.2] and generalize well even when only a few training examples are available.</div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.2] </div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.2]     The first glimpses of promise for exploiting structured prior information</div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.2] to construct data-efficient and physics-informed learning machines have al-</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.2] ready been showcased in the recent studies of [5, 6, 7]. There, the authors</div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2] employed Gaussian process regression [8] to devise functional representations</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2] that are tailored to a given linear operator, and were able to accurately infer</div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2] solutions and provide uncertainty estimates for several prototype problems</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2] in mathematical physics. Extensions to nonlinear problems were proposed</div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2] in subsequent studies by Raissi et. al. [9, 10] in the context of both in-</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2] ference and systems identification. Despite the flexibility and mathematical</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2] elegance of Gaussian processes in encoding prior information, the treatment</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2] of nonlinear problems introduces two important limitations. First, in [9, 10]</div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2] the authors had to locally linearize any nonlinear terms in time, thus limit-</div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2] ing the applicability of the proposed methods to discrete-time domains and</div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2] compromising the accuracy of their predictions in strongly nonlinear regimes.</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2] </div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2]                                        2</div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2] </div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.3] Secondly, the Bayesian nature of Gaussian process regression requires certain</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.3] prior assumptions that may limit the representation capacity of the model</div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.3] and give rise to robustness/brittleness issues, especially for nonlinear prob-</div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.3] lems [11].</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.3] </div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.3] 1.1. Problem setup and summary of contributions</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.3]     In this work we take a different approach by employing deep neural net-</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.3] works and leverage their well known capability as universal function ap-</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.3] proximators [12]. In this setting, we can directly tackle nonlinear problems</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.3] without the need for committing to any prior assumptions, linearization, or</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.3] local time-stepping. We exploit recent developments in automatic differen-</div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.3] tiation [13] – one of the most useful but perhaps underused techniques in</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.3] scientific computing – to differentiate neural networks with respect to their</div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.3] input coordinates and model parameters to obtain physics informed neural</div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.3] networks. Such neural networks are constrained to respect any symmetry,</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.3] invariance, or conservation principles originating from the physical laws that</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.3] govern the observed data, as modeled by general time-dependent and non-</div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.3] linear partial differential equations. This simple yet powerful construction</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.3] allows us to tackle a wide range of problems in computational science and</div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.3] introduces a potentially disruptive technology leading to the development</div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.3] of new data-efficient and physics-informed learning machines, new classes of</div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.3] numerical solvers for partial differential equations, as well as new data-driven</div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.3] approaches for model inversion and systems identification.</div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.3] </div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.3]    The general aim of this work is to set the foundations for a new paradigm</div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.3] in modeling and computation that enriches deep learning with the long-</div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.3] standing developments in mathematical physics. These developments are</div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.3] presented in the context of two main problem classes: data-driven solution</div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.3] and data-driven discovery of partial differential equations. To this end, let</div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.3] us consider parametrized and nonlinear partial differential equations of the</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.3] general form</div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.3]                              ut + N [u; λ] = 0,</div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.3] where u(t, x) denotes the latent (hidden) solution and N [·; λ] is a nonlinear</div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.3] operator parametrized by λ. This setup encapsulates a wide range of prob-</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.3] lems in mathematical physics including conservation laws, diffusion processes,</div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.3] advection-diffusion-reaction systems, and kinetic equations. As a motivating</div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.3] example, the one dimensional Burgers’ equation [14] corresponds to the case</div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.3] </div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.3] </div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.3]                                        3</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.3] </div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.4] where N [u; λ] = λ1 uux − λ2 uxx and λ = (λ1 , λ2 ). Here, the subscripts denote</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.4] partial differentiation in either time or space. Given noisy measurements of</div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.4] the system, we are interested in the solution of two distinct problems. The</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.4] first problem is that of predictive inference, filtering and smoothing, or data</div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.4] driven solutions of partial differential equations [9, 5] which states: given</div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.4] fixed model parameters λ what can be said about the unknown hidden state</div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.4] u(t, x) of the system? The second problem is that of learning, system identi-</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.4] fication, or data-driven discovery of partial differential equations [10, 6, 15]</div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.4] stating: what are the parameters λ that best describe the observed data?</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.4] </div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.4]     In this first part of our two-part treatise, we focus on computing data-</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.4] driven solutions to partial differential equations of the general form</div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.4] </div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.4]                         ut + N [u] = 0, x ∈ Ω, t ∈ [0, T ],                 (1)</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.4] </div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.4] where u(t, x) denotes the latent (hidden) solution, N [·] is a nonlinear differ-</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.4] ential operator, and Ω is a subset of RD . In what follows, we put forth two</div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.4] distinct classes of algorithms, namely continuous and discrete time models,</div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.4] and highlight their properties and performance through the lens of different</div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.4] benchmark problems. All code and data-sets accompanying this manuscript</div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.4] are available at https://github.com/maziarraissi/PINNs.</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.4] </div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.4] 2. Continuous Time Models</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.4]    We define f (t, x) to be given by the left-hand-side of equation (1); i.e.,</div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.4] </div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.4]                                f := ut + N [u],                             (2)</div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.4] </div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.4] and proceed by approximating u(t, x) by a deep neural network. This as-</div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.4] sumption along with equation (2) result in a physics informed neural net-</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.4] work f (t, x). This network can be derived by applying the chain rule for</div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.4] differentiating compositions of functions using automatic differentiation [13].</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.4] </div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.4] 2.1. Example (Burgers’ Equation)</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.4]     As an example, let us consider the Burgers’ equation. This equation arises</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.4] in various areas of applied mathematics, including fluid mechanics, nonlinear</div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.4] acoustics, gas dynamics, and traffic flow [14]. It is a fundamental partial</div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.4] differential equation and can be derived from the Navier-Stokes equations for</div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.4] the velocity field by dropping the pressure gradient term. For small values of</div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.4] </div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.4]                                        4</div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.4] </div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.5] the viscosity parameters, Burgers’ equation can lead to shock formation that</div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.5] is notoriously hard to resolve by classical numerical methods. In one space</div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.5] dimension, the Burger’s equation along with Dirichlet boundary conditions</div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.5] reads as</div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.5] </div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.5]              ut + uux − (0.01/π)uxx = 0,    x ∈ [−1, 1],   t ∈ [0, 1],   (3)</div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.5]              u(0, x) = − sin(πx),</div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.5]              u(t, −1) = u(t, 1) = 0.</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.5] </div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.5] Let us define f (t, x) to be given by</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.5] </div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.5]                         f := ut + uux − (0.01/π)uxx ,</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.5] </div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.5] and proceed by approximating u(t, x) by a deep neural network. To highlight</div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.5] the simplicity in implementing this idea we have included a Python code</div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.5] snippet using Tensorflow [16]; currently one of the most popular and well</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.5] documented open source libraries for machine learning computations. To</div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.5] this end, u(t, x) can be simply defined as</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.5] def u(t, x):</div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.5]     u = neural_net(tf.concat([t,x],1), weights, biases)</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.5]     return u</div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.5] </div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.5] Correspondingly, the physics informed neural network f (t, x) takes the form</div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.5] def f(t, x):</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.5]     u = u(t, x)</div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.5]     u_t = tf.gradients(u, t)[0]</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.5]     u_x = tf.gradients(u, x)[0]</div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.5]     u_xx = tf.gradients(u_x, x)[0]</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.5]     f = u_t + u*u_x - (0.01/tf.pi)*u_xx</div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.5]     return f</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.5] </div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.5] The shared parameters between the neural networks u(t, x) and f (t, x) can</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.5] be learned by minimizing the mean squared error loss</div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.5] </div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.5]                           M SE = M SEu + M SEf ,                         (4)</div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.5] </div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.5] </div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.5] </div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.5] </div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.5]                                         5</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.5] </div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.6] where</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.6]                                     u  N</div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.6]                                1 X</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.6]                        M SEu =        |u(tiu , xiu ) − ui |2 ,</div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.6]                                Nu i=1</div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.6] and</div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.6]                                            Nf</div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.6]                                  1 X</div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.6]                          M SEf =        |f (tif , xif )|2 .</div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.6]                                  Nf i=1</div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.6] </div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.6] Here, {tiu , xiu , ui }N</div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.6]                        i=1 denote the initial and boundary training data on u(t, x)</div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.6]                          u</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.6] </div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.6]                 N</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.6] and {tif , xif }i=1 specify the collocations points for f (t, x). The loss M SEu</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.6]                    f</div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.6] </div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.6] </div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.6] corresponds to the initial and boundary data while M SEf enforces the struc-</div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.6] ture imposed by equation (3) at a finite set of collocation points.</div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.6] </div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.6]     In all benchmarks considered in this work, the total number of training</div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.6] data Nu is relatively small (a few hundred up to a few thousand points), and</div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.6] we chose to optimize all loss functions using L-BFGS; a quasi-Newton, full-</div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.6] batch gradient-based optimization algorithm [17]. For larger data-sets a more</div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.6] computationally efficient mini-batch setting can be readily employed using</div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.6] stochastic gradient descent and its modern variants [18, 19]. Despite the</div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.6] fact that there is no theoretical guarantee that this procedure converges to</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.6] a global minimum, our empirical evidence indicates that, if the given partial</div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.6] differential equation is well-posed and its solution is unique, our method is</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.6] capable of achieving good prediction accuracy given a sufficiently expressive</div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.6] neural network architecture and a sufficient number of collocation points Nf .</div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.6] This general observation deeply relates to the resulting optimization land-</div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.6] scape induced by the mean square error loss of equation 4, and defines an</div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.6] open question for research that is in sync with recent theoretical develop-</div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.6] ments in deep learning [20, 21]. Here, we will test the robustness of the</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.6] proposed methodology using a series of systematic sensitivity studies that</div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.6] accompany the numerical results presented in the following.</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.6] </div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.6]     Figure 1 summarizes our results for the data-driven solution of the Burg-</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.6] ers equation. Specifically, given a set of Nu = 100 randomly distributed</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.6] initial and boundary data, we learn the latent solution u(t, x) by training all</div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.6] 3021 parameters of a 9-layer deep neural network using the mean squared</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.6] error loss of (4). Each hidden layer contained 20 neurons and a hyperbolic</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.6] tangent activation function. In general, the neural network should be given</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.6] sufficient approximation capacity in order to accommodate the anticipated</div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.6] </div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.6]                                            6</div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.6] </div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.7] complexity of u(t, x). However, in this example, our choice aims to highlight</div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.7] the robustness of the proposed method with respect to the well known issue</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.7] of over-fitting. Specifically, the term in M SEf in equation (4) acts as a reg-</div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.7] ularization mechanism that penalizes solutions that do not satisfy equation</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.7] (3). Therefore, a key property of physics informed neural networks is that</div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.7] they can be effectively trained using small data sets; a setting often encoun-</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.7] tered in the study of physical systems for which the cost of data acquisition</div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.7] may be prohibitive.</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.7] </div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.7]     The top panel of Figure 1 shows the predicted spatio-temporal solution</div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.7] u(t, x), along with the locations of the initial and boundary training data.</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.7] We must underline that, unlike any classical numerical method for solv-</div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.7] ing partial differential equations, this prediction is obtained without any</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.7] sort of discretization of the spatio-temporal domain. The exact solution for</div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.7] this problem is analytically available [14], and the resulting prediction error</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.7] is measured at 6.7 · 10−4 in the relative L2 -norm. Note that this error is</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.7] about two orders of magnitude lower than the one reported in our previous</div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.7] work on data-driven solution of partial differential equation using Gaussian</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.7] processes [9]. A more detailed assessment of the predicted solution is pre-</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.7] sented in the bottom panel of figure 1. In particular, we present a compari-</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.7] son between the exact and the predicted solutions at different time instants</div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.7] t = 0.25, 0.50, 0.75. Using only a handful of initial and boundary data, the</div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.7] physics informed neural network can accurately capture the intricate non-</div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.7] linear behavior of the Burgers’ equation that leads to the development of a</div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.7] sharp internal layer around t = 0.4. The latter is notoriously hard to ac-</div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.7] curately resolve with classical numerical methods and requires a laborious</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.7] spatio-temporal discretization of equation (3).</div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.7] </div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.7]     To further analyze the performance of our method, we have performed</div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.7] the following systematic studies to quantify its predictive accuracy for differ-</div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.7] ent number of training and collocation points, as well as for different neural</div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.7] network architectures. In table 1 we report the resulting relative L2 error</div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.7] for different number of initial and boundary training data Nu and different</div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.7] number of collocation points Nf , while keeping the 9-layer network archi-</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.7] tecture fixed. The general trend shows increased prediction accuracy as the</div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.7] total number of training data Nu is increased, given a sufficient number of</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.7] collocation points Nf . This observation highlights a key strength of physics</div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.7] informed neural networks: by encoding the structure of the underlying phys-</div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.7] </div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.7]                                        7</div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.7] </div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.8]                                                                  u(t, x)</div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.8]                    1.0</div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.8]                                                                                       Data (100 points)              0.75</div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.8]                    0.5                                                                                               0.50</div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.8]                                                                                                                      0.25</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.8]                    0.0                                                                                               0.00</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.8]           x</div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.8] </div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.8] </div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.8] </div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.8] </div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.8]                                                                                                                      −0.25</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.8]                   −0.5                                                                                               −0.50</div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.8]                                                                                                                      −0.75</div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.8]                   −1.0</div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.8]                          0.0          0.2                  0.4              0.6                 0.8</div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.8]                                                                     t</div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.8]                            t = 0.25                               t = 0.50                                t = 0.75</div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.8]               1                                        1                                         1</div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.8] u(t, x)</div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.8] </div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.8] </div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.8] </div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.8] </div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.8]                                             u(t, x)</div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.8] </div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.8] </div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.8] </div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.8] </div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.8]                                                                                       u(t, x)</div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.8]               0                                        0                                         0</div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.8] </div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.8] </div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.8] </div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.8]           −1                                          −1                                        −1</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.8]                   −1           0       1                   −1           0         1                  −1      0        1</div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.8]                                x                                        x                                    x</div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.8]                                                            Exact              Prediction</div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.8] </div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.8] </div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.8] Figure 1: Burgers’ equation: Top: Predicted solution u(t, x) along with the initial and</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.8] boundary training data. In addition we are using 10,000 collocation points generated using</div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.8] a Latin Hypercube Sampling strategy. Bottom: Comparison of the predicted and exact</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.8] solutions corresponding to the three temporal snapshots depicted by the white vertical</div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.8] lines in the top panel. The relative L2 error for this case is 6.7 · 10−4 . Model training took</div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.8] approximately 60 seconds on a single NVIDIA Titan X GPU card.</div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.8] </div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.8] </div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.8] ical law through the collocation points Nf , one can obtain a more accurate</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.8] and data-efficient learning algorithm.1 Finally, table 2 shows the resulting</div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.8] relative L2 for different number of hidden layers, and different number of</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.8] neurons per layer, while the total number of training and collocation points</div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.8] is kept fixed to Nu = 100 and Nf = 10, 000, respectively. As expected, we</div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.8] observe that as the number of layers and neurons is increased (hence the</div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.8] capacity of the neural network to approximate more complex functions), the</div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.8] </div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.8]           1</div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.8]     Note that the case Nf = 0 corresponds to a standard neural network model, i.e., a</div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.8] neural network that does not take into account the underlying governing equation.</div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.8] </div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.8] </div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.8] </div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.8]                                                                    8</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.8] </div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.9]             Nf</div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.9]                      2000        4000       6000        7000        8000       10000</div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.9]       Nu</div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.9]       20           2.9e-01      4.4e-01    8.9e-01    1.2e+00      9.9e-02    4.2e-02</div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.9]       40           6.5e-02      1.1e-02    5.0e-01    9.6e-03      4.6e-01    7.5e-02</div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.9]       60           3.6e-01      1.2e-02    1.7e-01    5.9e-03      1.9e-03    8.2e-03</div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.9]       80           5.5e-03      1.0e-03    3.2e-03    7.8e-03      4.9e-02    4.5e-03</div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.9]       100          6.6e-02      2.7e-01    7.2e-03    6.8e-04      2.2e-03    6.7e-04</div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.9]       200          1.5e-01      2.3e-03    8.2e-04    8.9e-04      6.1e-04    4.9e-04</div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.9] Table 1: Burgers’ equation: Relative L2 error between the predicted and the exact solution</div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.9] u(t, x) for different number of initial and boundary training data Nu , and different number</div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.9] of collocation points Nf . Here, the network architecture is fixed to 9 layers with 20 neurons</div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.9] per hidden layer.</div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.9] </div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.9]                                 Neurons</div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.9]                                                10         20          40</div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.9]                  Layers</div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.9]                             2               7.4e-02     5.3e-02    1.0e-01</div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.9]                             4               3.0e-03     9.4e-04    6.4e-04</div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.9]                             6               9.6e-03     1.3e-03    6.1e-04</div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.9]                             8               2.5e-03     9.6e-04    5.6e-04</div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.9] Table 2: Burgers’ equation: Relative L2 error between the predicted and the exact solution</div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.9] u(t, x) for different number of hidden layers and different number of neurons per layer.</div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.9] Here, the total number of training and collocation points is fixed to Nu = 100 and Nf =</div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.9] 10, 000, respectively.</div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.9] </div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.9] </div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.9] predictive accuracy is increased.</div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.9] </div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.9] 2.2. Example (Shrödinger Equation)</div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.9]     This example aims to highlight the ability of our method to handle pe-</div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.9] riodic boundary conditions, complex-valued solutions, as well as different</div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.9] types of nonlinearities in the governing partial differential equations. The</div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.9] one-dimensional nonlinear Schrödinger equation is a classical field equation</div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.9] that is used to study quantum mechanical systems, including nonlinear wave</div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.9] propagation in optical fibers and/or waveguides, Bose-Einstein condensates,</div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.9] and plasma waves. In optics, the nonlinear term arises from the intensity</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.9] dependent index of refraction of a given material. Similarly, the nonlinear</div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.9] term for Bose-Einstein condensates is a result of the mean-field interactions</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.9] of an interacting, N-body system. The nonlinear Schrödinger equation along</div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.9] </div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.9] </div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.9]                                               9</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.9] </div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.10] with periodic boundary conditions is given by</div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.10] </div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.10]                  iht + 0.5hxx + |h|2 h = 0,           x ∈ [−5, 5],   t ∈ [0, π/2],           (5)</div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.10]                  h(0, x) = 2 sech(x),</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.10]                  h(t, −5) = h(t, 5),</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.10]                  hx (t, −5) = hx (t, 5),</div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.10] </div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.10] where h(t, x) is the complex-valued solution. Let us define f (t, x) to be given</div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.10] by</div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.10]                           f := iht + 0.5hxx + |h|2 h,</div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.10] and proceed by placing a complex-valued neural network prior on h(t, x).</div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.10] In fact, if u denotes the real part of h and v is the imaginary</div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.10]                                                                   part, we</div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.10]                                                                           </div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.10] are placing a multi-out neural network prior on h(t, x) = u(t, x) v(t, x) .</div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.10] This will result in the complex-valued (multi-output) physic informed neural</div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.10] network f (t, x). The shared parameters of the neural networks h(t, x) and</div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.10] f (t, x) can be learned by minimizing the mean squared error loss</div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.10] </div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.10]                            M SE = M SE0 + M SEb + M SEf ,                                    (6)</div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.10] </div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.10] where</div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.10]                                          0   N</div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.10]                                     1 X</div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.10]                             M SE0 =        |h(0, xi0 ) − hi0 |2 ,</div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.10]                                     N0 i=1</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.10]                    b   N</div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.10]               1 X</div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.10]                      |hi (tib , −5) − hi (tib , 5)|2 + |hix (tib , −5) − hix (tib , 5)|2 ,</div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.10]                                                                                         </div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.10]       M SEb =</div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.10]               Nb i=1</div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.10] and</div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.10]                                                  Nf</div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.10]                                       1 X</div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.10]                               M SEf =        |f (tif , xif )|2 .</div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.10]                                       Nf i=1</div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.10]                                                   i Nb</div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.10] Here, {xi0 , hi0 }N</div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.10]                   i=1 denotes the initial data, {tb }i=1 corresponds to the colloca-</div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.10]                     0</div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.10] </div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.10]                                               Nf</div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.10] tion points on the boundary, and {tif , xif }i=1  represents the collocation points</div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.10] on f (t, x). Consequently, M SE0 corresponds to the loss on the initial data,</div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.10] M SEb enforces the periodic boundary conditions, and M SEf penalizes the</div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.10] Schrödinger equation not being satisfied on the collocation points.</div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.10] </div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.10]    In order to assess the accuracy of our method, we have simulated equation</div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.10] </div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.10] </div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.10]                                               10</div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.10] </div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.11] (5) using conventional spectral methods to create a high-resolution data set.</div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.11] Specifically, starting from an initial state h(0, x) = 2 sech(x) and assuming</div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.11] periodic boundary conditions h(t, −5) = h(t, 5) and hx (t, −5) = hx (t, 5), we</div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.11] have integrated equation (5) up to a final time t = π/2 using the Chebfun</div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.11] package [22] with a spectral Fourier discretization with 256 modes and a</div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.11] fourth-order explicit Runge-Kutta temporal integrator with time-step ∆t =</div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.11] π/2 · 10−6 . Under our data-driven setting, all we observe are measurements</div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.11] {xi0 , hi0 }N</div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.11]             i=1 of the latent function h(t, x) at time t = 0. In particular, the train-</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.11]               0</div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.11] </div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.11] </div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.11] ing set consists of a total of N0 = 50 data points on h(0, x) randomly parsed</div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.11] from the full high-resolution data-set, as well as Nb = 50 randomly sampled</div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.11] collocation points {tib }N   i=1 for enforcing the periodic boundaries. Moreover,</div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.11]                                b</div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.11] </div>
+<div id="L481"><a href="#L481">00481</a> [PDF p.11] </div>
+<div id="L482"><a href="#L482">00482</a> [PDF p.11] we have assumed Nf = 20, 000 randomly sampled collocation points used</div>
+<div id="L483"><a href="#L483">00483</a> [PDF p.11] to enforce equation (5) inside the solution domain. All randomly sampled</div>
+<div id="L484"><a href="#L484">00484</a> [PDF p.11] point locations were generated using a space filling Latin Hypercube Sam-</div>
+<div id="L485"><a href="#L485">00485</a> [PDF p.11] pling strategy [23].</div>
+<div id="L486"><a href="#L486">00486</a> [PDF p.11] </div>
+<div id="L487"><a href="#L487">00487</a> [PDF p.11]     Here our goal is to infer the entire spatio-temporal solution h(t, x) of the</div>
+<div id="L488"><a href="#L488">00488</a> [PDF p.11] Schrödinger equation (5). We chose to jointly represent the latent func-</div>
+<div id="L489"><a href="#L489">00489</a> [PDF p.11] tion h(t, x) = [u(t, x) v(t, x)] using a 5-layer deep neural network with</div>
+<div id="L490"><a href="#L490">00490</a> [PDF p.11] 100 neurons per layer and a hyperbolic tangent activation function. Fig-</div>
+<div id="L491"><a href="#L491">00491</a> [PDF p.11] ure 2 summarizes the results of our experiment. Specifically, the top panel</div>
+<div id="L492"><a href="#L492">00492</a> [PDF p.11] of figure 2 pshows the magnitude of the predicted spatio-temporal solution</div>
+<div id="L493"><a href="#L493">00493</a> [PDF p.11] |h(t, x)| = u2 (t, x) + v 2 (t, x), along with the locations of the initial and</div>
+<div id="L494"><a href="#L494">00494</a> [PDF p.11] boundary training data. The resulting prediction error is validated against</div>
+<div id="L495"><a href="#L495">00495</a> [PDF p.11] the test data for this problem, and is measured at 1.97 · 10−3 in the rela-</div>
+<div id="L496"><a href="#L496">00496</a> [PDF p.11] tive L2 -norm. A more detailed assessment of the predicted solution is pre-</div>
+<div id="L497"><a href="#L497">00497</a> [PDF p.11] sented in the bottom panel of Figure 2. In particular, we present a compar-</div>
+<div id="L498"><a href="#L498">00498</a> [PDF p.11] ison between the exact and the predicted solutions at different time instants</div>
+<div id="L499"><a href="#L499">00499</a> [PDF p.11] t = 0.59, 0.79, 0.98. Using only a handful of initial data, the physics informed</div>
+<div id="L500"><a href="#L500">00500</a> [PDF p.11] neural network can accurately capture the intricate nonlinear behavior of the</div>
+<div id="L501"><a href="#L501">00501</a> [PDF p.11] Schrödinger equation.</div>
+<div id="L502"><a href="#L502">00502</a> [PDF p.11] </div>
+<div id="L503"><a href="#L503">00503</a> [PDF p.11]    One potential limitation of the continuous time neural network models</div>
+<div id="L504"><a href="#L504">00504</a> [PDF p.11] considered so far, stems from the need to use a large number of collocation</div>
+<div id="L505"><a href="#L505">00505</a> [PDF p.11] points Nf in order to enforce physics informed constraints in the entire spatio-</div>
+<div id="L506"><a href="#L506">00506</a> [PDF p.11] temporal domain. Although this poses no significant issues for problems</div>
+<div id="L507"><a href="#L507">00507</a> [PDF p.11] in one or two spatial dimensions, it may introduce a severe bottleneck in</div>
+<div id="L508"><a href="#L508">00508</a> [PDF p.11] higher dimensional problems, as the total number of collocation points needed</div>
+<div id="L509"><a href="#L509">00509</a> [PDF p.11] </div>
+<div id="L510"><a href="#L510">00510</a> [PDF p.11]                                           11</div>
+<div id="L511"><a href="#L511">00511</a> [PDF p.11] </div>
+<div id="L512"><a href="#L512">00512</a> [PDF p.12]                                                                  |h(t, x)|</div>
+<div id="L513"><a href="#L513">00513</a> [PDF p.12]                  5</div>
+<div id="L514"><a href="#L514">00514</a> [PDF p.12]                                                                                        Data (150 points)                  3.5</div>
+<div id="L515"><a href="#L515">00515</a> [PDF p.12]                                                                                                                           3.0</div>
+<div id="L516"><a href="#L516">00516</a> [PDF p.12]                                                                                                                           2.5</div>
+<div id="L517"><a href="#L517">00517</a> [PDF p.12]                  0                                                                                                        2.0</div>
+<div id="L518"><a href="#L518">00518</a> [PDF p.12]        x</div>
+<div id="L519"><a href="#L519">00519</a> [PDF p.12] </div>
+<div id="L520"><a href="#L520">00520</a> [PDF p.12] </div>
+<div id="L521"><a href="#L521">00521</a> [PDF p.12] </div>
+<div id="L522"><a href="#L522">00522</a> [PDF p.12]                                                                                                                           1.5</div>
+<div id="L523"><a href="#L523">00523</a> [PDF p.12]                                                                                                                           1.0</div>
+<div id="L524"><a href="#L524">00524</a> [PDF p.12]                                                                                                                           0.5</div>
+<div id="L525"><a href="#L525">00525</a> [PDF p.12]              −5</div>
+<div id="L526"><a href="#L526">00526</a> [PDF p.12]                      0.0       0.2       0.4               0.6      0.8      1.0        1.2              1.4</div>
+<div id="L527"><a href="#L527">00527</a> [PDF p.12]                                                                      t</div>
+<div id="L528"><a href="#L528">00528</a> [PDF p.12] </div>
+<div id="L529"><a href="#L529">00529</a> [PDF p.12]                        t = 0.59                                   t = 0.79                                     t = 0.98</div>
+<div id="L530"><a href="#L530">00530</a> [PDF p.12]        5                                              5                                        5</div>
+<div id="L531"><a href="#L531">00531</a> [PDF p.12] |h(t, x)|</div>
+<div id="L532"><a href="#L532">00532</a> [PDF p.12] </div>
+<div id="L533"><a href="#L533">00533</a> [PDF p.12] </div>
+<div id="L534"><a href="#L534">00534</a> [PDF p.12] </div>
+<div id="L535"><a href="#L535">00535</a> [PDF p.12] </div>
+<div id="L536"><a href="#L536">00536</a> [PDF p.12]                                                |h(t, x)|</div>
+<div id="L537"><a href="#L537">00537</a> [PDF p.12] </div>
+<div id="L538"><a href="#L538">00538</a> [PDF p.12] </div>
+<div id="L539"><a href="#L539">00539</a> [PDF p.12] </div>
+<div id="L540"><a href="#L540">00540</a> [PDF p.12] </div>
+<div id="L541"><a href="#L541">00541</a> [PDF p.12]                                                                                         |h(t, x)|</div>
+<div id="L542"><a href="#L542">00542</a> [PDF p.12]        0                                              0                                        0</div>
+<div id="L543"><a href="#L543">00543</a> [PDF p.12]             −5             0         5                     −5            0         5                −5            0         5</div>
+<div id="L544"><a href="#L544">00544</a> [PDF p.12]                            x                                             x                                        x</div>
+<div id="L545"><a href="#L545">00545</a> [PDF p.12]                                                             Exact            Prediction</div>
+<div id="L546"><a href="#L546">00546</a> [PDF p.12] </div>
+<div id="L547"><a href="#L547">00547</a> [PDF p.12] Figure 2: Shrödinger equation: Top: Predicted solution |h(t, x)| along with the initial and</div>
+<div id="L548"><a href="#L548">00548</a> [PDF p.12] boundary training data. In addition we are using 20,000 collocation points generated using</div>
+<div id="L549"><a href="#L549">00549</a> [PDF p.12] a Latin Hypercube Sampling strategy. Bottom: Comparison of the predicted and exact</div>
+<div id="L550"><a href="#L550">00550</a> [PDF p.12] solutions corresponding to the three temporal snapshots depicted by the dashed vertical</div>
+<div id="L551"><a href="#L551">00551</a> [PDF p.12] lines in the top panel. The relative L2 error for this case is 1.97 · 10−3 .</div>
+<div id="L552"><a href="#L552">00552</a> [PDF p.12] </div>
+<div id="L553"><a href="#L553">00553</a> [PDF p.12] </div>
+<div id="L554"><a href="#L554">00554</a> [PDF p.12] to globally enforce a physics informed constrain (i.e., in our case a partial</div>
+<div id="L555"><a href="#L555">00555</a> [PDF p.12] differential equation) will increase exponentially. In the next section, we put</div>
+<div id="L556"><a href="#L556">00556</a> [PDF p.12] forth a different approach that circumvents the need for collocation points</div>
+<div id="L557"><a href="#L557">00557</a> [PDF p.12] by introducing a more structured neural network representation leveraging</div>
+<div id="L558"><a href="#L558">00558</a> [PDF p.12] the classical Runge-Kutta time-stepping schemes [24].</div>
+<div id="L559"><a href="#L559">00559</a> [PDF p.12] </div>
+<div id="L560"><a href="#L560">00560</a> [PDF p.12] 3. Discrete Time Models</div>
+<div id="L561"><a href="#L561">00561</a> [PDF p.12]     Let us apply the general form of Runge-Kutta methods with q stages [24]</div>
+<div id="L562"><a href="#L562">00562</a> [PDF p.12] to equation (1) and obtain</div>
+<div id="L563"><a href="#L563">00563</a> [PDF p.12] </div>
+<div id="L564"><a href="#L564">00564</a> [PDF p.12]                            un+ci = un − ∆t qj=1 aij N [un+cj ], i = 1, . . . , q,</div>
+<div id="L565"><a href="#L565">00565</a> [PDF p.12]                                           P</div>
+<div id="L566"><a href="#L566">00566</a> [PDF p.12]                                                                                                                           (7)</div>
+<div id="L567"><a href="#L567">00567</a> [PDF p.12]                            un+1 = un − ∆t qj=1 bj N [un+cj ].</div>
+<div id="L568"><a href="#L568">00568</a> [PDF p.12]                                           P</div>
+<div id="L569"><a href="#L569">00569</a> [PDF p.12] </div>
+<div id="L570"><a href="#L570">00570</a> [PDF p.12] </div>
+<div id="L571"><a href="#L571">00571</a> [PDF p.12] </div>
+<div id="L572"><a href="#L572">00572</a> [PDF p.12]                                                                     12</div>
+<div id="L573"><a href="#L573">00573</a> [PDF p.12] </div>
+<div id="L574"><a href="#L574">00574</a> [PDF p.13] Here, un+cj (x) = u(tn + cj ∆t, x) for j = 1, . . . , q. This general form en-</div>
+<div id="L575"><a href="#L575">00575</a> [PDF p.13] capsulates both implicit and explicit time-stepping schemes, depending on</div>
+<div id="L576"><a href="#L576">00576</a> [PDF p.13] the choice of the parameters {aij , bj , cj }. Equations (7) can be equivalently</div>
+<div id="L577"><a href="#L577">00577</a> [PDF p.13] expressed as</div>
+<div id="L578"><a href="#L578">00578</a> [PDF p.13]                             un = uni , i = 1, . . . , q,</div>
+<div id="L579"><a href="#L579">00579</a> [PDF p.13]                                                                                    (8)</div>
+<div id="L580"><a href="#L580">00580</a> [PDF p.13]                             un = unq+1 ,</div>
+<div id="L581"><a href="#L581">00581</a> [PDF p.13] where</div>
+<div id="L582"><a href="#L582">00582</a> [PDF p.13]                                   Pq</div>
+<div id="L583"><a href="#L583">00583</a> [PDF p.13]               uni := un+ci + ∆t     j=1 aij N [u</div>
+<div id="L584"><a href="#L584">00584</a> [PDF p.13]                                                 n+cj</div>
+<div id="L585"><a href="#L585">00585</a> [PDF p.13]                                                      ],       i = 1, . . . , q,</div>
+<div id="L586"><a href="#L586">00586</a> [PDF p.13]                                    Pq                                              (9)</div>
+<div id="L587"><a href="#L587">00587</a> [PDF p.13]               unq+1 := un+1 + ∆t       j=1 bj N [u</div>
+<div id="L588"><a href="#L588">00588</a> [PDF p.13]                                                    n+cj</div>
+<div id="L589"><a href="#L589">00589</a> [PDF p.13]                                                         ].</div>
+<div id="L590"><a href="#L590">00590</a> [PDF p.13] We proceed by placing a multi-output neural network prior on</div>
+<div id="L591"><a href="#L591">00591</a> [PDF p.13]                      n+c</div>
+<div id="L592"><a href="#L592">00592</a> [PDF p.13]                      u 1 (x), . . . , un+cq (x), un+1 (x) .</div>
+<div id="L593"><a href="#L593">00593</a> [PDF p.13]                                                          </div>
+<div id="L594"><a href="#L594">00594</a> [PDF p.13]                                                                                   (10)</div>
+<div id="L595"><a href="#L595">00595</a> [PDF p.13] </div>
+<div id="L596"><a href="#L596">00596</a> [PDF p.13] This prior assumption along with equations (9) result in a physics informed</div>
+<div id="L597"><a href="#L597">00597</a> [PDF p.13] neural network that takes x as an input and outputs</div>
+<div id="L598"><a href="#L598">00598</a> [PDF p.13]                          n</div>
+<div id="L599"><a href="#L599">00599</a> [PDF p.13]                          u1 (x), . . . , unq (x), unq+1 (x) .</div>
+<div id="L600"><a href="#L600">00600</a> [PDF p.13]                                                            </div>
+<div id="L601"><a href="#L601">00601</a> [PDF p.13]                                                                         (11)</div>
+<div id="L602"><a href="#L602">00602</a> [PDF p.13] </div>
+<div id="L603"><a href="#L603">00603</a> [PDF p.13] 3.1. Example (Burgers’ Equation)</div>
+<div id="L604"><a href="#L604">00604</a> [PDF p.13]     To highlight the key features of the discrete time representation we revisit</div>
+<div id="L605"><a href="#L605">00605</a> [PDF p.13] the problem of data-driven solution of the Burgers’ equation. For this case,</div>
+<div id="L606"><a href="#L606">00606</a> [PDF p.13] the nonlinear operator in equation (9) is given by</div>
+<div id="L607"><a href="#L607">00607</a> [PDF p.13] </div>
+<div id="L608"><a href="#L608">00608</a> [PDF p.13]                    N [un+cj ] = un+cj uxn+cj − (0.01/π)uxx</div>
+<div id="L609"><a href="#L609">00609</a> [PDF p.13]                                                         n+cj</div>
+<div id="L610"><a href="#L610">00610</a> [PDF p.13]                                                              ,</div>
+<div id="L611"><a href="#L611">00611</a> [PDF p.13] </div>
+<div id="L612"><a href="#L612">00612</a> [PDF p.13] and the shared parameters of the neural networks (10) and (11) can be</div>
+<div id="L613"><a href="#L613">00613</a> [PDF p.13] learned by minimizing the sum of squared errors</div>
+<div id="L614"><a href="#L614">00614</a> [PDF p.13] </div>
+<div id="L615"><a href="#L615">00615</a> [PDF p.13]                            SSE = SSEn + SSEb ,                                    (12)</div>
+<div id="L616"><a href="#L616">00616</a> [PDF p.13] </div>
+<div id="L617"><a href="#L617">00617</a> [PDF p.13] where</div>
+<div id="L618"><a href="#L618">00618</a> [PDF p.13]                                 q+1 Nn</div>
+<div id="L619"><a href="#L619">00619</a> [PDF p.13]                                 X   X</div>
+<div id="L620"><a href="#L620">00620</a> [PDF p.13]                       SSEn =                |unj (xn,i ) − un,i |2 ,</div>
+<div id="L621"><a href="#L621">00621</a> [PDF p.13]                                   j=1 i=1</div>
+<div id="L622"><a href="#L622">00622</a> [PDF p.13] </div>
+<div id="L623"><a href="#L623">00623</a> [PDF p.13] </div>
+<div id="L624"><a href="#L624">00624</a> [PDF p.13] </div>
+<div id="L625"><a href="#L625">00625</a> [PDF p.13] </div>
+<div id="L626"><a href="#L626">00626</a> [PDF p.13]                                          13</div>
+<div id="L627"><a href="#L627">00627</a> [PDF p.13] </div>
+<div id="L628"><a href="#L628">00628</a> [PDF p.14] and</div>
+<div id="L629"><a href="#L629">00629</a> [PDF p.14]                q</div>
+<div id="L630"><a href="#L630">00630</a> [PDF p.14]                X</div>
+<div id="L631"><a href="#L631">00631</a> [PDF p.14]                      |un+ci (−1)|2 + |un+ci (1)|2 + |un+1 (−1)|2 + |un+1 (1)|2 .</div>
+<div id="L632"><a href="#L632">00632</a> [PDF p.14]                                                  </div>
+<div id="L633"><a href="#L633">00633</a> [PDF p.14]       SSEb =</div>
+<div id="L634"><a href="#L634">00634</a> [PDF p.14]                i=1</div>
+<div id="L635"><a href="#L635">00635</a> [PDF p.14] </div>
+<div id="L636"><a href="#L636">00636</a> [PDF p.14] </div>
+<div id="L637"><a href="#L637">00637</a> [PDF p.14] Here, {xn,i , un,i }N                                       n</div>
+<div id="L638"><a href="#L638">00638</a> [PDF p.14]                     i=1 corresponds to the data at time t . The Runge-Kutta</div>
+<div id="L639"><a href="#L639">00639</a> [PDF p.14]                       n</div>
+<div id="L640"><a href="#L640">00640</a> [PDF p.14] </div>
+<div id="L641"><a href="#L641">00641</a> [PDF p.14] </div>
+<div id="L642"><a href="#L642">00642</a> [PDF p.14] scheme now allows us to infer the latent solution u(t, x) in a sequential fash-</div>
+<div id="L643"><a href="#L643">00643</a> [PDF p.14] ion. Starting from initial data {xn,i , un,i }N               n</div>
+<div id="L644"><a href="#L644">00644</a> [PDF p.14]                                                  i=1 at time t and data at the</div>
+<div id="L645"><a href="#L645">00645</a> [PDF p.14]                                                    n</div>
+<div id="L646"><a href="#L646">00646</a> [PDF p.14] </div>
+<div id="L647"><a href="#L647">00647</a> [PDF p.14] </div>
+<div id="L648"><a href="#L648">00648</a> [PDF p.14] domain boundaries x = −1 and x = 1, we can use the aforementioned loss</div>
+<div id="L649"><a href="#L649">00649</a> [PDF p.14] function (12) to train the networks of (10), (11), and predict the solution at</div>
+<div id="L650"><a href="#L650">00650</a> [PDF p.14] time tn+1 . A Runge-Kutta time-stepping scheme would then use this predic-</div>
+<div id="L651"><a href="#L651">00651</a> [PDF p.14] tion as initial data for the next step and proceed to train again and predict</div>
+<div id="L652"><a href="#L652">00652</a> [PDF p.14] u(tn+2 , x), u(tn+3 , x), etc., one step at a time.</div>
+<div id="L653"><a href="#L653">00653</a> [PDF p.14] </div>
+<div id="L654"><a href="#L654">00654</a> [PDF p.14]     In classical numerical analysis, these steps are usually confined to be small</div>
+<div id="L655"><a href="#L655">00655</a> [PDF p.14] due to stability constraints for explicit schemes or computational complexity</div>
+<div id="L656"><a href="#L656">00656</a> [PDF p.14] constrains for implicit formulations [24]. These constraints become more se-</div>
+<div id="L657"><a href="#L657">00657</a> [PDF p.14] vere as the total number of Runge-Kutta stages q is increased, and, for most</div>
+<div id="L658"><a href="#L658">00658</a> [PDF p.14] problems of practical interest, one needs to take thousands to millions of such</div>
+<div id="L659"><a href="#L659">00659</a> [PDF p.14] steps until the solution is resolved up to a desired final time. In sharp con-</div>
+<div id="L660"><a href="#L660">00660</a> [PDF p.14] trast to classical methods, here we can employ implicit Runge-Kutta schemes</div>
+<div id="L661"><a href="#L661">00661</a> [PDF p.14] with an arbitrarily large number of stages at effectively no extra cost.2 This</div>
+<div id="L662"><a href="#L662">00662</a> [PDF p.14] enables us to take very large time steps while retaining stability and high pre-</div>
+<div id="L663"><a href="#L663">00663</a> [PDF p.14] dictive accuracy, therefore allowing us to resolve the entire spatio-temporal</div>
+<div id="L664"><a href="#L664">00664</a> [PDF p.14] solution in a single step.</div>
+<div id="L665"><a href="#L665">00665</a> [PDF p.14] </div>
+<div id="L666"><a href="#L666">00666</a> [PDF p.14]     The result of applying this process to the Burgers’ equation is presented</div>
+<div id="L667"><a href="#L667">00667</a> [PDF p.14] in figure 3. For illustration purposes, we start with a set of Nn = 250 initial</div>
+<div id="L668"><a href="#L668">00668</a> [PDF p.14] data at t = 0.1, and employ a physics informed neural network induced by an</div>
+<div id="L669"><a href="#L669">00669</a> [PDF p.14] implicit Runge-Kutta scheme with 500 stages to predict the solution at time</div>
+<div id="L670"><a href="#L670">00670</a> [PDF p.14] t = 0.9 in a single step. The theoretical error estimates for this scheme predict</div>
+<div id="L671"><a href="#L671">00671</a> [PDF p.14] a temporal error accumulation of O(∆t2q ) [24], which in our case translates</div>
+<div id="L672"><a href="#L672">00672</a> [PDF p.14] into an error way below machine precision, i.e., ∆t2q = 0.81000 ≈ 10−97 . To</div>
+<div id="L673"><a href="#L673">00673</a> [PDF p.14] our knowledge, this is the first time that an implicit Runge-Kutta scheme</div>
+<div id="L674"><a href="#L674">00674</a> [PDF p.14] </div>
+<div id="L675"><a href="#L675">00675</a> [PDF p.14]   2</div>
+<div id="L676"><a href="#L676">00676</a> [PDF p.14]     To be precise, it is only the number of parameters in the last layer of the neural</div>
+<div id="L677"><a href="#L677">00677</a> [PDF p.14] network that increases linearly with the total number of stages.</div>
+<div id="L678"><a href="#L678">00678</a> [PDF p.14] </div>
+<div id="L679"><a href="#L679">00679</a> [PDF p.14] </div>
+<div id="L680"><a href="#L680">00680</a> [PDF p.14] </div>
+<div id="L681"><a href="#L681">00681</a> [PDF p.14]                                          14</div>
+<div id="L682"><a href="#L682">00682</a> [PDF p.14] </div>
+<div id="L683"><a href="#L683">00683</a> [PDF p.15]                                           u(t, x)</div>
+<div id="L684"><a href="#L684">00684</a> [PDF p.15]            1.0</div>
+<div id="L685"><a href="#L685">00685</a> [PDF p.15]                                                                                      0.75</div>
+<div id="L686"><a href="#L686">00686</a> [PDF p.15]            0.5                                                                       0.50</div>
+<div id="L687"><a href="#L687">00687</a> [PDF p.15]                                                                                      0.25</div>
+<div id="L688"><a href="#L688">00688</a> [PDF p.15]            0.0                                                                       0.00</div>
+<div id="L689"><a href="#L689">00689</a> [PDF p.15] x</div>
+<div id="L690"><a href="#L690">00690</a> [PDF p.15] </div>
+<div id="L691"><a href="#L691">00691</a> [PDF p.15] </div>
+<div id="L692"><a href="#L692">00692</a> [PDF p.15] </div>
+<div id="L693"><a href="#L693">00693</a> [PDF p.15] </div>
+<div id="L694"><a href="#L694">00694</a> [PDF p.15]                                                                                      −0.25</div>
+<div id="L695"><a href="#L695">00695</a> [PDF p.15]           −0.5                                                                       −0.50</div>
+<div id="L696"><a href="#L696">00696</a> [PDF p.15]                                                                                      −0.75</div>
+<div id="L697"><a href="#L697">00697</a> [PDF p.15]           −1.0</div>
+<div id="L698"><a href="#L698">00698</a> [PDF p.15]                  0.0     0.2        0.4                  0.6         0.8</div>
+<div id="L699"><a href="#L699">00699</a> [PDF p.15]                                              t</div>
+<div id="L700"><a href="#L700">00700</a> [PDF p.15]                        t = 0.10                                      t = 0.90</div>
+<div id="L701"><a href="#L701">00701</a> [PDF p.15]            1.0</div>
+<div id="L702"><a href="#L702">00702</a> [PDF p.15]                                                         0.5</div>
+<div id="L703"><a href="#L703">00703</a> [PDF p.15]            0.5</div>
+<div id="L704"><a href="#L704">00704</a> [PDF p.15] u(t, x)</div>
+<div id="L705"><a href="#L705">00705</a> [PDF p.15] </div>
+<div id="L706"><a href="#L706">00706</a> [PDF p.15] </div>
+<div id="L707"><a href="#L707">00707</a> [PDF p.15] </div>
+<div id="L708"><a href="#L708">00708</a> [PDF p.15] </div>
+<div id="L709"><a href="#L709">00709</a> [PDF p.15]                                             u(t, x)</div>
+<div id="L710"><a href="#L710">00710</a> [PDF p.15] </div>
+<div id="L711"><a href="#L711">00711</a> [PDF p.15] </div>
+<div id="L712"><a href="#L712">00712</a> [PDF p.15] </div>
+<div id="L713"><a href="#L713">00713</a> [PDF p.15]            0.0                                          0.0</div>
+<div id="L714"><a href="#L714">00714</a> [PDF p.15] </div>
+<div id="L715"><a href="#L715">00715</a> [PDF p.15]           −0.5</div>
+<div id="L716"><a href="#L716">00716</a> [PDF p.15]                                                       −0.5</div>
+<div id="L717"><a href="#L717">00717</a> [PDF p.15]           −1.0</div>
+<div id="L718"><a href="#L718">00718</a> [PDF p.15]                   −1      0          1                         −1          0     1</div>
+<div id="L719"><a href="#L719">00719</a> [PDF p.15]                           x                                                x</div>
+<div id="L720"><a href="#L720">00720</a> [PDF p.15]                                   Data                Exact         Prediction</div>
+<div id="L721"><a href="#L721">00721</a> [PDF p.15] </div>
+<div id="L722"><a href="#L722">00722</a> [PDF p.15] Figure 3: Burgers equation: Top: Solution u(t, x) along with the location of the initial</div>
+<div id="L723"><a href="#L723">00723</a> [PDF p.15] training snapshot at t = 0.1 and the final prediction snapshot at t = 0.9. Bottom: Initial</div>
+<div id="L724"><a href="#L724">00724</a> [PDF p.15] training data and final prediction at the snapshots depicted by the white vertical lines in</div>
+<div id="L725"><a href="#L725">00725</a> [PDF p.15] the top panel. The relative L2 error for this case is 8.2 · 10−4 .</div>
+<div id="L726"><a href="#L726">00726</a> [PDF p.15] </div>
+<div id="L727"><a href="#L727">00727</a> [PDF p.15] </div>
+<div id="L728"><a href="#L728">00728</a> [PDF p.15] of that high-order has ever been used. Remarkably, starting from smooth</div>
+<div id="L729"><a href="#L729">00729</a> [PDF p.15] initial data at t = 0.1 we can predict the nearly discontinuous solution at</div>
+<div id="L730"><a href="#L730">00730</a> [PDF p.15] t = 0.9 in a single time-step with a relative L2 error of 8.2·10−4 . This error is</div>
+<div id="L731"><a href="#L731">00731</a> [PDF p.15] two orders of magnitude lower that the one reported in [9], and it is entirely</div>
+<div id="L732"><a href="#L732">00732</a> [PDF p.15] attributed to the neural network’s capacity to approximate u(t, x), as well as</div>
+<div id="L733"><a href="#L733">00733</a> [PDF p.15] to the degree that the sum of squared errors loss allows interpolation of the</div>
+<div id="L734"><a href="#L734">00734</a> [PDF p.15] training data. The network architecture used here consists of 4 layers with</div>
+<div id="L735"><a href="#L735">00735</a> [PDF p.15] 50 neurons in each hidden layer.</div>
+<div id="L736"><a href="#L736">00736</a> [PDF p.15] </div>
+<div id="L737"><a href="#L737">00737</a> [PDF p.15] </div>
+<div id="L738"><a href="#L738">00738</a> [PDF p.15] </div>
+<div id="L739"><a href="#L739">00739</a> [PDF p.15]                                              15</div>
+<div id="L740"><a href="#L740">00740</a> [PDF p.15] </div>
+<div id="L741"><a href="#L741">00741</a> [PDF p.16]                               Neurons</div>
+<div id="L742"><a href="#L742">00742</a> [PDF p.16]                                            10         25         50</div>
+<div id="L743"><a href="#L743">00743</a> [PDF p.16]                 Layers</div>
+<div id="L744"><a href="#L744">00744</a> [PDF p.16]                           1              4.1e-02   4.1e-02    1.5e-01</div>
+<div id="L745"><a href="#L745">00745</a> [PDF p.16]                           2              2.7e-03   5.0e-03    2.4e-03</div>
+<div id="L746"><a href="#L746">00746</a> [PDF p.16]                           3              3.6e-03   1.9e-03    9.5e-04</div>
+<div id="L747"><a href="#L747">00747</a> [PDF p.16] Table 3: Burgers’ equation: Relative final prediction error measure in the L2 norm for</div>
+<div id="L748"><a href="#L748">00748</a> [PDF p.16] different number of hidden layers and neurons in each layer. Here, the number of Runge-</div>
+<div id="L749"><a href="#L749">00749</a> [PDF p.16] Kutta stages is fixed to 500 and the time-step size to ∆t = 0.8.</div>
+<div id="L750"><a href="#L750">00750</a> [PDF p.16] </div>
+<div id="L751"><a href="#L751">00751</a> [PDF p.16] </div>
+<div id="L752"><a href="#L752">00752</a> [PDF p.16]     A detailed systematic study to quantify the effect of different network</div>
+<div id="L753"><a href="#L753">00753</a> [PDF p.16] architectures is presented in table 3. By keeping the number of Runge-Kutta</div>
+<div id="L754"><a href="#L754">00754</a> [PDF p.16] stages fixed to q = 500 and the time-step size to ∆t = 0.8, we have var-</div>
+<div id="L755"><a href="#L755">00755</a> [PDF p.16] ied the number of hidden layers and the number of neurons per layer, and</div>
+<div id="L756"><a href="#L756">00756</a> [PDF p.16] monitored the resulting relative L2 error for the predicted solution at time</div>
+<div id="L757"><a href="#L757">00757</a> [PDF p.16] t = 0.9. Evidently, as the neural network capacity is increased the predictive</div>
+<div id="L758"><a href="#L758">00758</a> [PDF p.16] accuracy is enhanced.</div>
+<div id="L759"><a href="#L759">00759</a> [PDF p.16] </div>
+<div id="L760"><a href="#L760">00760</a> [PDF p.16]     The key parameters controlling the performance of our discrete time al-</div>
+<div id="L761"><a href="#L761">00761</a> [PDF p.16] gorithm are the total number of Runge-Kutta stages q and the time-step size</div>
+<div id="L762"><a href="#L762">00762</a> [PDF p.16] ∆t. In table 4 we summarize the results of an extensive systematic study</div>
+<div id="L763"><a href="#L763">00763</a> [PDF p.16] where we fix the network architecture to 4 hidden layers with 50 neurons</div>
+<div id="L764"><a href="#L764">00764</a> [PDF p.16] per layer, and vary the number of Runge-Kutta stages q and the time-step</div>
+<div id="L765"><a href="#L765">00765</a> [PDF p.16] size ∆t. Specifically, we see how cases with low numbers of stages fail to</div>
+<div id="L766"><a href="#L766">00766</a> [PDF p.16] yield accurate results when the time-step size is large. For instance, the case</div>
+<div id="L767"><a href="#L767">00767</a> [PDF p.16] q = 1 corresponding to the classical trapezoidal rule, and the case q = 2</div>
+<div id="L768"><a href="#L768">00768</a> [PDF p.16] corresponding to the 4th -order Gauss-Legendre method, cannot retain their</div>
+<div id="L769"><a href="#L769">00769</a> [PDF p.16] predictive accuracy for time-steps larger than 0.2, thus mandating a solu-</div>
+<div id="L770"><a href="#L770">00770</a> [PDF p.16] tion strategy with multiple time-steps of small size. On the other hand, the</div>
+<div id="L771"><a href="#L771">00771</a> [PDF p.16] ability to push the number of Runge-Kutta stages to 32 and even higher</div>
+<div id="L772"><a href="#L772">00772</a> [PDF p.16] allows us to take very large time steps, and effectively resolve the solution</div>
+<div id="L773"><a href="#L773">00773</a> [PDF p.16] in a single step without sacrificing the accuracy of our predictions. More-</div>
+<div id="L774"><a href="#L774">00774</a> [PDF p.16] over, numerical stability is not sacrificed either as implicit Runge-Kutta is</div>
+<div id="L775"><a href="#L775">00775</a> [PDF p.16] the only family of time-stepping schemes that remain A-stable regardless of</div>
+<div id="L776"><a href="#L776">00776</a> [PDF p.16] their order, thus making them ideal for stiff problems [24]. These properties</div>
+<div id="L777"><a href="#L777">00777</a> [PDF p.16] are unprecedented for an algorithm of such implementation simplicity, and</div>
+<div id="L778"><a href="#L778">00778</a> [PDF p.16] illustrate one of the key highlights of our discrete time approach.</div>
+<div id="L779"><a href="#L779">00779</a> [PDF p.16] </div>
+<div id="L780"><a href="#L780">00780</a> [PDF p.16] </div>
+<div id="L781"><a href="#L781">00781</a> [PDF p.16] </div>
+<div id="L782"><a href="#L782">00782</a> [PDF p.16]                                           16</div>
+<div id="L783"><a href="#L783">00783</a> [PDF p.16] </div>
+<div id="L784"><a href="#L784">00784</a> [PDF p.17]                        ∆t</div>
+<div id="L785"><a href="#L785">00785</a> [PDF p.17]                                0.2        0.4        0.6           0.8</div>
+<div id="L786"><a href="#L786">00786</a> [PDF p.17]                  q</div>
+<div id="L787"><a href="#L787">00787</a> [PDF p.17]                  1           3.5e-02    1.1e-01   2.3e-01        3.8e-01</div>
+<div id="L788"><a href="#L788">00788</a> [PDF p.17]                  2           5.4e-03    5.1e-02   9.3e-02        2.2e-01</div>
+<div id="L789"><a href="#L789">00789</a> [PDF p.17]                  4           1.2e-03    1.5e-02   3.6e-02        5.4e-02</div>
+<div id="L790"><a href="#L790">00790</a> [PDF p.17]                  8           6.7e-04    1.8e-03   8.7e-03        5.8e-02</div>
+<div id="L791"><a href="#L791">00791</a> [PDF p.17]                  16          5.1e-04    7.6e-02   8.4e-04        1.1e-03</div>
+<div id="L792"><a href="#L792">00792</a> [PDF p.17]                  32          7.4e-04    5.2e-04   4.2e-04        7.0e-04</div>
+<div id="L793"><a href="#L793">00793</a> [PDF p.17]                  64          4.5e-04    4.8e-04   1.2e-03        7.8e-04</div>
+<div id="L794"><a href="#L794">00794</a> [PDF p.17]                  100         5.1e-04    5.7e-04   1.8e-02        1.2e-03</div>
+<div id="L795"><a href="#L795">00795</a> [PDF p.17]                  500         4.1e-04    3.8e-04   4.2e-04        8.2e-04</div>
+<div id="L796"><a href="#L796">00796</a> [PDF p.17] Table 4: Burgers’ equation: Relative final prediction error measured in the L2 norm for</div>
+<div id="L797"><a href="#L797">00797</a> [PDF p.17] different number of Runge-Kutta stages q and time-step sizes ∆t. Here, the network</div>
+<div id="L798"><a href="#L798">00798</a> [PDF p.17] architecture is fixed to 4 hidden layers with 50 neurons in each layer.</div>
+<div id="L799"><a href="#L799">00799</a> [PDF p.17] </div>
+<div id="L800"><a href="#L800">00800</a> [PDF p.17] </div>
+<div id="L801"><a href="#L801">00801</a> [PDF p.17] 3.1.1. Example (Allen-Cahn Equation)</div>
+<div id="L802"><a href="#L802">00802</a> [PDF p.17]     This example aims to highlight the ability of the proposed discrete time</div>
+<div id="L803"><a href="#L803">00803</a> [PDF p.17] models to handle different types of nonlinearity in the governing partial dif-</div>
+<div id="L804"><a href="#L804">00804</a> [PDF p.17] ferential equation. To this end, let us consider the Allen-Cahn equation along</div>
+<div id="L805"><a href="#L805">00805</a> [PDF p.17] with periodic boundary conditions</div>
+<div id="L806"><a href="#L806">00806</a> [PDF p.17] </div>
+<div id="L807"><a href="#L807">00807</a> [PDF p.17]              ut − 0.0001uxx + 5u3 − 5u = 0,        x ∈ [−1, 1],          t ∈ [0, 1],   (13)</div>
+<div id="L808"><a href="#L808">00808</a> [PDF p.17]              u(0, x) = x2 cos(πx),</div>
+<div id="L809"><a href="#L809">00809</a> [PDF p.17]              u(t, −1) = u(t, 1),</div>
+<div id="L810"><a href="#L810">00810</a> [PDF p.17]              ux (t, −1) = ux (t, 1).</div>
+<div id="L811"><a href="#L811">00811</a> [PDF p.17] </div>
+<div id="L812"><a href="#L812">00812</a> [PDF p.17] The Allen-Cahn equation is a well-known equation from the area of reaction-</div>
+<div id="L813"><a href="#L813">00813</a> [PDF p.17] diffusion systems. It describes the process of phase separation in multi-</div>
+<div id="L814"><a href="#L814">00814</a> [PDF p.17] component alloy systems, including order-disorder transitions. For the Allen-</div>
+<div id="L815"><a href="#L815">00815</a> [PDF p.17] Cahn equation, the nonlinear operator in equation (9) is given by</div>
+<div id="L816"><a href="#L816">00816</a> [PDF p.17]                                                            3</div>
+<div id="L817"><a href="#L817">00817</a> [PDF p.17]                 N [un+cj ] = −0.0001un+c</div>
+<div id="L818"><a href="#L818">00818</a> [PDF p.17]                                      xx</div>
+<div id="L819"><a href="#L819">00819</a> [PDF p.17]                                          j</div>
+<div id="L820"><a href="#L820">00820</a> [PDF p.17]                                            + 5 un+cj            − 5un+cj ,</div>
+<div id="L821"><a href="#L821">00821</a> [PDF p.17] </div>
+<div id="L822"><a href="#L822">00822</a> [PDF p.17] and the shared parameters of the neural networks (10) and (11) can be</div>
+<div id="L823"><a href="#L823">00823</a> [PDF p.17] learned by minimizing the sum of squared errors</div>
+<div id="L824"><a href="#L824">00824</a> [PDF p.17] </div>
+<div id="L825"><a href="#L825">00825</a> [PDF p.17]                               SSE = SSEn + SSEb ,                                      (14)</div>
+<div id="L826"><a href="#L826">00826</a> [PDF p.17] </div>
+<div id="L827"><a href="#L827">00827</a> [PDF p.17]                                           17</div>
+<div id="L828"><a href="#L828">00828</a> [PDF p.17] </div>
+<div id="L829"><a href="#L829">00829</a> [PDF p.18] where</div>
+<div id="L830"><a href="#L830">00830</a> [PDF p.18]                                   q+1 Nn</div>
+<div id="L831"><a href="#L831">00831</a> [PDF p.18]                                   X   X</div>
+<div id="L832"><a href="#L832">00832</a> [PDF p.18]                          SSEn =             |unj (xn,i ) − un,i |2 ,</div>
+<div id="L833"><a href="#L833">00833</a> [PDF p.18]                                   j=1 i=1</div>
+<div id="L834"><a href="#L834">00834</a> [PDF p.18] </div>
+<div id="L835"><a href="#L835">00835</a> [PDF p.18] and</div>
+<div id="L836"><a href="#L836">00836</a> [PDF p.18]                    q</div>
+<div id="L837"><a href="#L837">00837</a> [PDF p.18]                    X</div>
+<div id="L838"><a href="#L838">00838</a> [PDF p.18]         SSEb =           |un+ci (−1) − un+ci (1)|2 + |un+1 (−1) − un+1 (1)|2</div>
+<div id="L839"><a href="#L839">00839</a> [PDF p.18]                    i=1</div>
+<div id="L840"><a href="#L840">00840</a> [PDF p.18]                     q</div>
+<div id="L841"><a href="#L841">00841</a> [PDF p.18]                    X</div>
+<div id="L842"><a href="#L842">00842</a> [PDF p.18]                +         |un+c</div>
+<div id="L843"><a href="#L843">00843</a> [PDF p.18]                            x</div>
+<div id="L844"><a href="#L844">00844</a> [PDF p.18]                                i</div>
+<div id="L845"><a href="#L845">00845</a> [PDF p.18]                                  (−1) − uxn+ci (1)|2 + |un+1       n+1   2</div>
+<div id="L846"><a href="#L846">00846</a> [PDF p.18]                                                          x (−1) − ux (1)| .</div>
+<div id="L847"><a href="#L847">00847</a> [PDF p.18]                    i=1</div>
+<div id="L848"><a href="#L848">00848</a> [PDF p.18] </div>
+<div id="L849"><a href="#L849">00849</a> [PDF p.18] </div>
+<div id="L850"><a href="#L850">00850</a> [PDF p.18] Here, {xn,i , un,i }N                                    n</div>
+<div id="L851"><a href="#L851">00851</a> [PDF p.18]                     i=1 corresponds to the data at time t . We have generated</div>
+<div id="L852"><a href="#L852">00852</a> [PDF p.18]                       n</div>
+<div id="L853"><a href="#L853">00853</a> [PDF p.18] </div>
+<div id="L854"><a href="#L854">00854</a> [PDF p.18] </div>
+<div id="L855"><a href="#L855">00855</a> [PDF p.18] a training and test data-set set by simulating the Allen-Cahn equation (13)</div>
+<div id="L856"><a href="#L856">00856</a> [PDF p.18] using conventional spectral methods. Specifically, starting from an initial</div>
+<div id="L857"><a href="#L857">00857</a> [PDF p.18] condition u(0, x) = x2 cos(πx) and assuming periodic boundary conditions</div>
+<div id="L858"><a href="#L858">00858</a> [PDF p.18] u(t, −1) = u(t, 1) and ux (t, −1) = ux (t, 1), we have integrated equation (13)</div>
+<div id="L859"><a href="#L859">00859</a> [PDF p.18] up to a final time t = 1.0 using the Chebfun package [22] with a spectral</div>
+<div id="L860"><a href="#L860">00860</a> [PDF p.18] Fourier discretization with 512 modes and a fourth-order explicit Runge-</div>
+<div id="L861"><a href="#L861">00861</a> [PDF p.18] Kutta temporal integrator with time-step ∆t = 10−5 .</div>
+<div id="L862"><a href="#L862">00862</a> [PDF p.18] </div>
+<div id="L863"><a href="#L863">00863</a> [PDF p.18]     In this example, we assume Nn = 200 initial data points that are ran-</div>
+<div id="L864"><a href="#L864">00864</a> [PDF p.18] domly sub-sampled from the exact solution at time t = 0.1, and our goal</div>
+<div id="L865"><a href="#L865">00865</a> [PDF p.18] is to predict the solution at time t = 0.9 using a single time-step with size</div>
+<div id="L866"><a href="#L866">00866</a> [PDF p.18] ∆t = 0.8. To this end, we employ a discrete time physics informed neural</div>
+<div id="L867"><a href="#L867">00867</a> [PDF p.18] network with 4 hidden layers and 200 neurons per layer, while the output</div>
+<div id="L868"><a href="#L868">00868</a> [PDF p.18] layer predicts 101 quantities of interest corresponding to the q = 100 Runge-</div>
+<div id="L869"><a href="#L869">00869</a> [PDF p.18] Kutta stages un+ci (x), i = 1, . . . , q, and the solution at final time un+1 (x).</div>
+<div id="L870"><a href="#L870">00870</a> [PDF p.18] Figure 4 summarizes our predictions after the network has been trained using</div>
+<div id="L871"><a href="#L871">00871</a> [PDF p.18] the loss function of equation (14). Evidently, despite the complex dynamics</div>
+<div id="L872"><a href="#L872">00872</a> [PDF p.18] leading to a solution with two sharp internal layers, we are able to obtain an</div>
+<div id="L873"><a href="#L873">00873</a> [PDF p.18] accurate prediction of the solution at t = 0.9 using only a small number of</div>
+<div id="L874"><a href="#L874">00874</a> [PDF p.18] scattered measurements at t = 0.1.</div>
+<div id="L875"><a href="#L875">00875</a> [PDF p.18] </div>
+<div id="L876"><a href="#L876">00876</a> [PDF p.18] 4. Summary and Discussion</div>
+<div id="L877"><a href="#L877">00877</a> [PDF p.18]    We have introduced physics informed neural networks, a new class of uni-</div>
+<div id="L878"><a href="#L878">00878</a> [PDF p.18] versal function approximators that is capable of encoding any underlying</div>
+<div id="L879"><a href="#L879">00879</a> [PDF p.18] </div>
+<div id="L880"><a href="#L880">00880</a> [PDF p.18] </div>
+<div id="L881"><a href="#L881">00881</a> [PDF p.18]                                          18</div>
+<div id="L882"><a href="#L882">00882</a> [PDF p.18] </div>
+<div id="L883"><a href="#L883">00883</a> [PDF p.19]                                           u(t, x)</div>
+<div id="L884"><a href="#L884">00884</a> [PDF p.19]             1.0</div>
+<div id="L885"><a href="#L885">00885</a> [PDF p.19]                                                                                           0.75</div>
+<div id="L886"><a href="#L886">00886</a> [PDF p.19]             0.5                                                                           0.50</div>
+<div id="L887"><a href="#L887">00887</a> [PDF p.19]                                                                                           0.25</div>
+<div id="L888"><a href="#L888">00888</a> [PDF p.19]             0.0                                                                           0.00</div>
+<div id="L889"><a href="#L889">00889</a> [PDF p.19]    x</div>
+<div id="L890"><a href="#L890">00890</a> [PDF p.19] </div>
+<div id="L891"><a href="#L891">00891</a> [PDF p.19] </div>
+<div id="L892"><a href="#L892">00892</a> [PDF p.19] </div>
+<div id="L893"><a href="#L893">00893</a> [PDF p.19] </div>
+<div id="L894"><a href="#L894">00894</a> [PDF p.19]                                                                                           −0.25</div>
+<div id="L895"><a href="#L895">00895</a> [PDF p.19]           −0.5                                                                            −0.50</div>
+<div id="L896"><a href="#L896">00896</a> [PDF p.19]                                                                                           −0.75</div>
+<div id="L897"><a href="#L897">00897</a> [PDF p.19]           −1.0                                                                            −1.00</div>
+<div id="L898"><a href="#L898">00898</a> [PDF p.19]                   0.0    0.2        0.4                 0.6        0.8          1.0</div>
+<div id="L899"><a href="#L899">00899</a> [PDF p.19]                                              t</div>
+<div id="L900"><a href="#L900">00900</a> [PDF p.19]                         t = 0.10                                    t = 0.90</div>
+<div id="L901"><a href="#L901">00901</a> [PDF p.19]                                                         1.0</div>
+<div id="L902"><a href="#L902">00902</a> [PDF p.19]            0.00</div>
+<div id="L903"><a href="#L903">00903</a> [PDF p.19]                                                         0.5</div>
+<div id="L904"><a href="#L904">00904</a> [PDF p.19]           −0.25</div>
+<div id="L905"><a href="#L905">00905</a> [PDF p.19] u(t, x)</div>
+<div id="L906"><a href="#L906">00906</a> [PDF p.19] </div>
+<div id="L907"><a href="#L907">00907</a> [PDF p.19] </div>
+<div id="L908"><a href="#L908">00908</a> [PDF p.19] </div>
+<div id="L909"><a href="#L909">00909</a> [PDF p.19] </div>
+<div id="L910"><a href="#L910">00910</a> [PDF p.19]                                             u(t, x)</div>
+<div id="L911"><a href="#L911">00911</a> [PDF p.19] </div>
+<div id="L912"><a href="#L912">00912</a> [PDF p.19] </div>
+<div id="L913"><a href="#L913">00913</a> [PDF p.19] </div>
+<div id="L914"><a href="#L914">00914</a> [PDF p.19]           −0.50                                         0.0</div>
+<div id="L915"><a href="#L915">00915</a> [PDF p.19] </div>
+<div id="L916"><a href="#L916">00916</a> [PDF p.19]           −0.75                                       −0.5</div>
+<div id="L917"><a href="#L917">00917</a> [PDF p.19] </div>
+<div id="L918"><a href="#L918">00918</a> [PDF p.19]           −1.00                                       −1.0</div>
+<div id="L919"><a href="#L919">00919</a> [PDF p.19]                    −1      0          1                       −1         0            1</div>
+<div id="L920"><a href="#L920">00920</a> [PDF p.19]                            x                                             x</div>
+<div id="L921"><a href="#L921">00921</a> [PDF p.19]                                    Data               Exact        Prediction</div>
+<div id="L922"><a href="#L922">00922</a> [PDF p.19] </div>
+<div id="L923"><a href="#L923">00923</a> [PDF p.19] </div>
+<div id="L924"><a href="#L924">00924</a> [PDF p.19] Figure 4: Allen-Cahn equation: Top: Solution u(t, x) along with the location of the initial</div>
+<div id="L925"><a href="#L925">00925</a> [PDF p.19] training snapshot at t = 0.1 and the final prediction snapshot at t = 0.9. Bottom: Initial</div>
+<div id="L926"><a href="#L926">00926</a> [PDF p.19] training data and final prediction at the snapshots depicted by the white vertical lines in</div>
+<div id="L927"><a href="#L927">00927</a> [PDF p.19] the top panel. The relative L2 error for this case is 6.99 · 10−3 .</div>
+<div id="L928"><a href="#L928">00928</a> [PDF p.19] </div>
+<div id="L929"><a href="#L929">00929</a> [PDF p.19] </div>
+<div id="L930"><a href="#L930">00930</a> [PDF p.19] physical laws that govern a given data-set, and can be described by par-</div>
+<div id="L931"><a href="#L931">00931</a> [PDF p.19] tial differential equations. In this work, we design data-driven algorithms for</div>
+<div id="L932"><a href="#L932">00932</a> [PDF p.19] inferring solutions to general nonlinear partial differential equations, and con-</div>
+<div id="L933"><a href="#L933">00933</a> [PDF p.19] structing computationally efficient physics-informed surrogate models. The</div>
+<div id="L934"><a href="#L934">00934</a> [PDF p.19] resulting methods showcase a series of promising results for a diverse collec-</div>
+<div id="L935"><a href="#L935">00935</a> [PDF p.19] tion of problems in computational science, and open the path for endowing</div>
+<div id="L936"><a href="#L936">00936</a> [PDF p.19] deep learning with the powerful capacity of mathematical physics to model</div>
+<div id="L937"><a href="#L937">00937</a> [PDF p.19] the world around us. As deep learning technology is continuing to grow</div>
+<div id="L938"><a href="#L938">00938</a> [PDF p.19] rapidly both in terms of methodological and algorithmic developments, we</div>
+<div id="L939"><a href="#L939">00939</a> [PDF p.19] believe that this is a timely contribution that can benefit practitioners across</div>
+<div id="L940"><a href="#L940">00940</a> [PDF p.19] </div>
+<div id="L941"><a href="#L941">00941</a> [PDF p.19]                                             19</div>
+<div id="L942"><a href="#L942">00942</a> [PDF p.19] </div>
+<div id="L943"><a href="#L943">00943</a> [PDF p.20] a wide range of scientific domains. Specific applications that can readily en-</div>
+<div id="L944"><a href="#L944">00944</a> [PDF p.20] joy these benefits include, but are not limited to, data-driven forecasting of</div>
+<div id="L945"><a href="#L945">00945</a> [PDF p.20] physical processes, model predictive control, multi-physics/multi-scale mod-</div>
+<div id="L946"><a href="#L946">00946</a> [PDF p.20] eling and simulation.</div>
+<div id="L947"><a href="#L947">00947</a> [PDF p.20] </div>
+<div id="L948"><a href="#L948">00948</a> [PDF p.20]     We must note however that the proposed methods should not be viewed</div>
+<div id="L949"><a href="#L949">00949</a> [PDF p.20] as replacements of classical numerical methods for solving partial differen-</div>
+<div id="L950"><a href="#L950">00950</a> [PDF p.20] tial equations (e.g., finite elements, spectral methods, etc.). Such methods</div>
+<div id="L951"><a href="#L951">00951</a> [PDF p.20] have matured over the last 50 years and, in many cases, meet the robustness</div>
+<div id="L952"><a href="#L952">00952</a> [PDF p.20] and computational efficiency standards required in practice. Our message</div>
+<div id="L953"><a href="#L953">00953</a> [PDF p.20] here, as advocated in Section 3, is that classical methods such as the Runge-</div>
+<div id="L954"><a href="#L954">00954</a> [PDF p.20] Kutta time-stepping schemes can coexist in harmony with deep neural net-</div>
+<div id="L955"><a href="#L955">00955</a> [PDF p.20] works, and offer invaluable intuition in constructing structured predictive</div>
+<div id="L956"><a href="#L956">00956</a> [PDF p.20] algorithms. Moreover, the implementation simplicity of the latter greatly</div>
+<div id="L957"><a href="#L957">00957</a> [PDF p.20] favors rapid development and testing of new ideas, potentially opening the</div>
+<div id="L958"><a href="#L958">00958</a> [PDF p.20] path for a new era in data-driven scientific computing. This will be further</div>
+<div id="L959"><a href="#L959">00959</a> [PDF p.20] highlighted in the second part of this paper in which physics informed neural</div>
+<div id="L960"><a href="#L960">00960</a> [PDF p.20] networks are put to the test of data-driven discovery of partial differential</div>
+<div id="L961"><a href="#L961">00961</a> [PDF p.20] equations.</div>
+<div id="L962"><a href="#L962">00962</a> [PDF p.20] </div>
+<div id="L963"><a href="#L963">00963</a> [PDF p.20]    Finally, in terms of future work, one pressing question involves addressing</div>
+<div id="L964"><a href="#L964">00964</a> [PDF p.20] the problem of quantifying the uncertainty associated with the neural net-</div>
+<div id="L965"><a href="#L965">00965</a> [PDF p.20] work predictions. Although this important element was naturally addressed</div>
+<div id="L966"><a href="#L966">00966</a> [PDF p.20] in previous work employing Gaussian processes [9], it not captured by the</div>
+<div id="L967"><a href="#L967">00967</a> [PDF p.20] proposed methodology in its present form and requires further investigation.</div>
+<div id="L968"><a href="#L968">00968</a> [PDF p.20] </div>
+<div id="L969"><a href="#L969">00969</a> [PDF p.20] Acknowledgements</div>
+<div id="L970"><a href="#L970">00970</a> [PDF p.20]    This work received support by the DARPA EQUiPS grant N66001-15-</div>
+<div id="L971"><a href="#L971">00971</a> [PDF p.20] 2-4055, the MURI/ARO grant W911NF-15-1-0562, and the AFOSR grant</div>
+<div id="L972"><a href="#L972">00972</a> [PDF p.20] FA9550-17-1-0013. All data and codes used in this manuscript are publicly</div>
+<div id="L973"><a href="#L973">00973</a> [PDF p.20] available on GitHub at https://github.com/maziarraissi/PINNs.</div>
+<div id="L974"><a href="#L974">00974</a> [PDF p.20] </div>
+<div id="L975"><a href="#L975">00975</a> [PDF p.20] References</div>
+<div id="L976"><a href="#L976">00976</a> [PDF p.20]  [1] A. Krizhevsky, I. Sutskever, G. E. Hinton, Imagenet classification with</div>
+<div id="L977"><a href="#L977">00977</a> [PDF p.20]      deep convolutional neural networks, in: Advances in neural information</div>
+<div id="L978"><a href="#L978">00978</a> [PDF p.20]      processing systems, pp. 1097–1105.</div>
+<div id="L979"><a href="#L979">00979</a> [PDF p.20] </div>
+<div id="L980"><a href="#L980">00980</a> [PDF p.20]                                      20</div>
+<div id="L981"><a href="#L981">00981</a> [PDF p.20] </div>
+<div id="L982"><a href="#L982">00982</a> [PDF p.21]  [2] Y. LeCun, Y. Bengio, G. Hinton, Deep learning, Nature 521 (2015)</div>
+<div id="L983"><a href="#L983">00983</a> [PDF p.21]      436–444.</div>
+<div id="L984"><a href="#L984">00984</a> [PDF p.21] </div>
+<div id="L985"><a href="#L985">00985</a> [PDF p.21]  [3] B. M. Lake, R. Salakhutdinov, J. B. Tenenbaum, Human-level concept</div>
+<div id="L986"><a href="#L986">00986</a> [PDF p.21]      learning through probabilistic program induction, Science 350 (2015)</div>
+<div id="L987"><a href="#L987">00987</a> [PDF p.21]      1332–1338.</div>
+<div id="L988"><a href="#L988">00988</a> [PDF p.21] </div>
+<div id="L989"><a href="#L989">00989</a> [PDF p.21]  [4] B. Alipanahi, A. Delong, M. T. Weirauch, B. J. Frey, Predicting the se-</div>
+<div id="L990"><a href="#L990">00990</a> [PDF p.21]      quence specificities of DNA-and RNA-binding proteins by deep learning,</div>
+<div id="L991"><a href="#L991">00991</a> [PDF p.21]      Nature biotechnology 33 (2015) 831–838.</div>
+<div id="L992"><a href="#L992">00992</a> [PDF p.21] </div>
+<div id="L993"><a href="#L993">00993</a> [PDF p.21]  [5] M. Raissi, P. Perdikaris, G. E. Karniadakis, Inferring solutions of dif-</div>
+<div id="L994"><a href="#L994">00994</a> [PDF p.21]      ferential equations using noisy multi-fidelity data, Journal of Computa-</div>
+<div id="L995"><a href="#L995">00995</a> [PDF p.21]      tional Physics 335 (2017) 736–746.</div>
+<div id="L996"><a href="#L996">00996</a> [PDF p.21] </div>
+<div id="L997"><a href="#L997">00997</a> [PDF p.21]  [6] M. Raissi, P. Perdikaris, G. E. Karniadakis, Machine learning of linear</div>
+<div id="L998"><a href="#L998">00998</a> [PDF p.21]      differential equations using Gaussian processes, Journal of Computa-</div>
+<div id="L999"><a href="#L999">00999</a> [PDF p.21]      tional Physics 348 (2017) 683 – 693.</div>
+<div id="L1000"><a href="#L1000">01000</a> [PDF p.21] </div>
+<div id="L1001"><a href="#L1001">01001</a> [PDF p.21]  [7] H. Owhadi, Bayesian numerical homogenization, Multiscale Modeling</div>
+<div id="L1002"><a href="#L1002">01002</a> [PDF p.21]      &amp; Simulation 13 (2015) 812–828.</div>
+<div id="L1003"><a href="#L1003">01003</a> [PDF p.21] </div>
+<div id="L1004"><a href="#L1004">01004</a> [PDF p.21]  [8] C. E. Rasmussen, C. K. Williams, Gaussian processes for machine learn-</div>
+<div id="L1005"><a href="#L1005">01005</a> [PDF p.21]      ing, volume 1, MIT press Cambridge, 2006.</div>
+<div id="L1006"><a href="#L1006">01006</a> [PDF p.21] </div>
+<div id="L1007"><a href="#L1007">01007</a> [PDF p.21]  [9] M. Raissi, P. Perdikaris, G. E. Karniadakis, Numerical Gaussian pro-</div>
+<div id="L1008"><a href="#L1008">01008</a> [PDF p.21]      cesses for time-dependent and non-linear partial differential equations,</div>
+<div id="L1009"><a href="#L1009">01009</a> [PDF p.21]      arXiv preprint arXiv:1703.10230 (2017).</div>
+<div id="L1010"><a href="#L1010">01010</a> [PDF p.21] </div>
+<div id="L1011"><a href="#L1011">01011</a> [PDF p.21] [10] M. Raissi, G. E. Karniadakis, Hidden physics models: Machine</div>
+<div id="L1012"><a href="#L1012">01012</a> [PDF p.21]      learning of nonlinear partial differential equations, arXiv preprint</div>
+<div id="L1013"><a href="#L1013">01013</a> [PDF p.21]      arXiv:1708.00588 (2017).</div>
+<div id="L1014"><a href="#L1014">01014</a> [PDF p.21] </div>
+<div id="L1015"><a href="#L1015">01015</a> [PDF p.21] [11] H. Owhadi, C. Scovel, T. Sullivan, et al., Brittleness of Bayesian infer-</div>
+<div id="L1016"><a href="#L1016">01016</a> [PDF p.21]      ence under finite information in a continuous world, Electronic Journal</div>
+<div id="L1017"><a href="#L1017">01017</a> [PDF p.21]      of Statistics 9 (2015) 1–79.</div>
+<div id="L1018"><a href="#L1018">01018</a> [PDF p.21] </div>
+<div id="L1019"><a href="#L1019">01019</a> [PDF p.21] [12] K. Hornik, M. Stinchcombe, H. White, Multilayer feedforward networks</div>
+<div id="L1020"><a href="#L1020">01020</a> [PDF p.21]      are universal approximators, Neural networks 2 (1989) 359–366.</div>
+<div id="L1021"><a href="#L1021">01021</a> [PDF p.21] </div>
+<div id="L1022"><a href="#L1022">01022</a> [PDF p.21] </div>
+<div id="L1023"><a href="#L1023">01023</a> [PDF p.21] </div>
+<div id="L1024"><a href="#L1024">01024</a> [PDF p.21] </div>
+<div id="L1025"><a href="#L1025">01025</a> [PDF p.21]                                      21</div>
+<div id="L1026"><a href="#L1026">01026</a> [PDF p.21] </div>
+<div id="L1027"><a href="#L1027">01027</a> [PDF p.22] [13] A. G. Baydin, B. A. Pearlmutter, A. A. Radul, J. M. Siskind, Au-</div>
+<div id="L1028"><a href="#L1028">01028</a> [PDF p.22]      tomatic differentiation in machine learning: a survey, arXiv preprint</div>
+<div id="L1029"><a href="#L1029">01029</a> [PDF p.22]      arXiv:1502.05767 (2015).</div>
+<div id="L1030"><a href="#L1030">01030</a> [PDF p.22] </div>
+<div id="L1031"><a href="#L1031">01031</a> [PDF p.22] [14] C. Basdevant, M. Deville, P. Haldenwang, J. Lacroix, J. Ouazzani,</div>
+<div id="L1032"><a href="#L1032">01032</a> [PDF p.22]      R. Peyret, P. Orlandi, A. Patera, Spectral and finite difference solu-</div>
+<div id="L1033"><a href="#L1033">01033</a> [PDF p.22]      tions of the Burgers equation, Computers &amp; fluids 14 (1986) 23–41.</div>
+<div id="L1034"><a href="#L1034">01034</a> [PDF p.22] </div>
+<div id="L1035"><a href="#L1035">01035</a> [PDF p.22] [15] S. H. Rudy, S. L. Brunton, J. L. Proctor, J. N. Kutz, Data-driven</div>
+<div id="L1036"><a href="#L1036">01036</a> [PDF p.22]      discovery of partial differential equations, Science Advances 3 (2017).</div>
+<div id="L1037"><a href="#L1037">01037</a> [PDF p.22] </div>
+<div id="L1038"><a href="#L1038">01038</a> [PDF p.22] [16] M. Abadi, A. Agarwal, P. Barham, E. Brevdo, Z. Chen, C. Citro, G. S.</div>
+<div id="L1039"><a href="#L1039">01039</a> [PDF p.22]      Corrado, A. Davis, J. Dean, M. Devin, et al., Tensorflow: Large-scale</div>
+<div id="L1040"><a href="#L1040">01040</a> [PDF p.22]      machine learning on heterogeneous distributed systems, arXiv preprint</div>
+<div id="L1041"><a href="#L1041">01041</a> [PDF p.22]      arXiv:1603.04467 (2016).</div>
+<div id="L1042"><a href="#L1042">01042</a> [PDF p.22] </div>
+<div id="L1043"><a href="#L1043">01043</a> [PDF p.22] [17] D. C. Liu, J. Nocedal, On the limited memory BFGS method for large</div>
+<div id="L1044"><a href="#L1044">01044</a> [PDF p.22]      scale optimization, Mathematical programming 45 (1989) 503–528.</div>
+<div id="L1045"><a href="#L1045">01045</a> [PDF p.22] </div>
+<div id="L1046"><a href="#L1046">01046</a> [PDF p.22] [18] I. Goodfellow, Y. Bengio, A. Courville, Deep learning, MIT press, 2016.</div>
+<div id="L1047"><a href="#L1047">01047</a> [PDF p.22] </div>
+<div id="L1048"><a href="#L1048">01048</a> [PDF p.22] [19] D. Kingma, J. Ba, Adam: A method for stochastic optimization, arXiv</div>
+<div id="L1049"><a href="#L1049">01049</a> [PDF p.22]      preprint arXiv:1412.6980 (2014).</div>
+<div id="L1050"><a href="#L1050">01050</a> [PDF p.22] </div>
+<div id="L1051"><a href="#L1051">01051</a> [PDF p.22] [20] A. Choromanska, M. Henaff, M. Mathieu, G. B. Arous, Y. LeCun, The</div>
+<div id="L1052"><a href="#L1052">01052</a> [PDF p.22]      loss surfaces of multilayer networks, in: Artificial Intelligence and Statis-</div>
+<div id="L1053"><a href="#L1053">01053</a> [PDF p.22]      tics, pp. 192–204.</div>
+<div id="L1054"><a href="#L1054">01054</a> [PDF p.22] </div>
+<div id="L1055"><a href="#L1055">01055</a> [PDF p.22] [21] R. Shwartz-Ziv, N. Tishby, Opening the black box of deep neural net-</div>
+<div id="L1056"><a href="#L1056">01056</a> [PDF p.22]      works via information, arXiv preprint arXiv:1703.00810 (2017).</div>
+<div id="L1057"><a href="#L1057">01057</a> [PDF p.22] </div>
+<div id="L1058"><a href="#L1058">01058</a> [PDF p.22] [22] T. A. Driscoll, N. Hale, L. N. Trefethen, Chebfun guide, 2014.</div>
+<div id="L1059"><a href="#L1059">01059</a> [PDF p.22] </div>
+<div id="L1060"><a href="#L1060">01060</a> [PDF p.22] [23] M. Stein, Large sample properties of simulations using latin hypercube</div>
+<div id="L1061"><a href="#L1061">01061</a> [PDF p.22]      sampling, Technometrics 29 (1987) 143–151.</div>
+<div id="L1062"><a href="#L1062">01062</a> [PDF p.22] </div>
+<div id="L1063"><a href="#L1063">01063</a> [PDF p.22] [24] A. Iserles, A first course in the numerical analysis of differential equa-</div>
+<div id="L1064"><a href="#L1064">01064</a> [PDF p.22]      tions, 44, Cambridge University Press, 2009.</div>
+<div id="L1065"><a href="#L1065">01065</a> [PDF p.22] </div>
+<div id="L1066"><a href="#L1066">01066</a> [PDF p.22] </div>
+<div id="L1067"><a href="#L1067">01067</a> [PDF p.22] </div>
+<div id="L1068"><a href="#L1068">01068</a> [PDF p.22] </div>
+<div id="L1069"><a href="#L1069">01069</a> [PDF p.22]                                        22</div>
+<div id="L1070"><a href="#L1070">01070</a> [PDF p.22] </div></pre>

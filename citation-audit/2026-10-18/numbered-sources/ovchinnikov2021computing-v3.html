@@ -1,0 +1,1349 @@
+<meta charset="utf-8"><title>ovchinnikov2021computing-v3</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1]                                                       Computing all identifiable functions of parameters for ODE models</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1] </div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1]                                                                       Alexey Ovchinnikova, Anand Pillayb , Gleb Pogudinc, Thomas Scanlond</div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1]                                                                 a CUNY Queens College, Department of Mathematics, 65-30 Kissena Blvd, Queens, NY 11367, USA</div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1] </div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1]                                                              CUNY Graduate Center, Mathematics and Computer Science, 365 Fifth Avenue, New York, NY 10016, USA</div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1]                                                                        b University of Notre Dame, Department of Mathematics, Notre Dame, IN 46556, USA</div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1]                                                   c LIX, CNRS, École Polytechnique, Institute Polytechnique de Paris, 1 rue Honoré d’Estienne d’Orves, 91120, Palaiseau, France</div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1]                                                            d University of California, Berkeley, Department of Mathematics, Evans Hall, Berkeley, CA 94720-3840, USA</div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1] arXiv:2004.07774v3 [eess.SY] 3 Jun 2021</div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1] </div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1] </div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1] </div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1] </div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1]                                           Abstract</div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1]                                           Parameter identifiability is a structural property of an ODE model for recovering the values of parameters from the</div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1]                                           data (i.e., from the input and output variables). This property is a prerequisite for meaningful parameter identification</div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1]                                           in practice. In the presence of nonidentifiability, it is important to find all functions of the parameters that are identi-</div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1]                                           fiable. The existing algorithms check whether a given function of parameters is identifiable or, under the solvability</div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1]                                           condition, find all identifiable functions. However, this solvability condition is not always satisfied, which presents</div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1]                                           a challenge. Our first main result is an algorithm that computes all identifiable functions without any additional as-</div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1]                                           sumptions, which is the first such algorithm as far as we know. Our second main result concerns the identifiability</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1]                                           from multiple experiments (with generically different inputs and initial conditions among the experiments). For this</div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1]                                           problem, we prove that the set of functions identifiable from multiple experiments is what would actually be computed</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1]                                           by input-output equation-based algorithms (whether or not the solvability condition is fulfilled), which was not known</div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1]                                           before. We give an algorithm that not only finds these functions but also provides an upper bound for the number of</div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1]                                           experiments to be performed to identify these functions. We provide an implementation of the presented algorithms.</div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1]                                           Keywords: parameter identifiability, multiple experiments, input-output equations, differential algebra, characteristic</div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1]                                           sets</div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1] </div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1] </div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.1] </div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.1]                                           1. Introduction</div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.1] </div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.1]                                               In this paper, we study structural parameter identifiability of rational ODE systems. Roughly speaking, a param-</div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.1]                                           eter is structurally identifiable if its value can be recovered from the observations assuming continuous noise-free</div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.1]                                           measurements and sufficiently exciting inputs (also referred to as the persistence of excitation, see [21, 43]). If not all</div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.1]                                           of the parameters of a model are identifiable, the next question usually is what rational functions h(µ̄) ∈ C(µ̄) of the</div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.1]                                           parameters µ̄ are identifiable. The knowledge of identifiable functions can be used in these ways:</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.1]                                               • If the functions of interest to the modeler are identifiable, then the lack of identifiability of some parameters is</div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.1]                                                  not an issue (sometimes, this is even an advantage [38]).</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.1]                                               • Identifiable functions can be used to find an identifiable reparametrization of the model [1, 23, 24], which is a</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.1]                                                  way of improving the model.</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.1]                                               • Knowledge of identifiable functions can be used to discover parameter transformations that preserve the input-</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.1]                                                  output behavior and thus could provide additional insights to the modeler (see Section 5.2).</div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.1]                                               To the best of our knowledge, all existing approaches to computing identifiable functions extract them from the</div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.1]                                           coefficients of input-output equations (going back to [29]; for a concise summary, we refer to [31, Introduction and</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.1]                                           Algorithm II.1]). To conclude that the coefficients of an input-output equation are identifiable, one can, for example,</div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.1] </div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.1] </div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.1]                                                Email addresses: aovchinnikov@qc.cuny.edu (Alexey Ovchinnikov), Anand.Pillay.3@nd.edu (Anand Pillay),</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.1]                                           gleb.pogudin@polytechnique.edu (Gleb Pogudin), scanlon@math.berkeley.edu (Thomas Scanlon)</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.1]                                              1 During the preparation of this manuscript, G. Pogudin also worked at the Courant Institute of Mathematical Sciences, New York University,</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.1] </div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.1]                                           New York, NY 10012, USA and at the Higher School of Economics, Faculty of Computer Science, Moscow, 109028, Russia</div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.1] </div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.1]                                           Preprint submitted to Elsevier                                                                                                     June 7, 2021</div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.1] </div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.2] verify if the solvability condition [35, Remark 3] holds for the equation. The condition can be checked by an algorithm</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.2] (see [8, Section 4.1] and [28, Section 3.4]) and holds for some classes of models [31]. If the condition does not hold,</div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.2] then this approach of finding identifiable functions of parameters is not applicable but is still used by some of the</div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.2] existing software packages, including DAISY and COMBOS. This is a reason why these tools may miss the non-</div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.2] identifiability of some of the parameters in such systems. For a simple example of a system for which this condition</div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.2] does not hold, see [16, Example 2.14] (see also Sections 5.2 and 5.3).</div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.2]     Therefore, we are not aware of any prior algorithm that can compute all identifiable functions (e.g., by computing</div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.2] generators of the field of identifiable functions). Note that some existing software can, for any fixed rational function</div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.2] of parameters, check whether it is identifiable [32, Remark 1]. However, looking for all identifiable functions, it is</div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.2] not known in advance what functions of parameters to test for identifiability, so this approach cannot be used as an</div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.2] algorithm.</div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.2]     The above issues motivate the following questions (which remained unanswered as far as we know) we study in</div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.2] this paper:</div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.2] (Q1) How to find the identifiable functions of a model even if the solvability condition does not hold?</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.2] (Q2) If the solvability condition does not hold, what is the meaning of the coefficients of the input-output equations?</div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2] Our main results are the following answers to these questions:</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2]     • We answer (Q1) by providing Algorithm 1 for computing generators of the field of identifiable functions. This</div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2]        is the first such algorithm and is based on our theory established in Theorem 11.</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2]     • We show in Theorem 19 that the coefficients of the input-output equations are generators of the field of functions</div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2]        identifiable from multiple experiments (with generically different inputs and initial conditions among the exper-</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2]        iments [20]), thus answering (Q2). To the best of our knowledge, this natural interpretation of the coefficients</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2]        of the input-output equations has not been known before despite the popularity of this method. Furthermore,</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2]        we use this to derive the first upper bound for the number of such experiments, which can be used further for</div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2]        experimental design (e.g., for protocols such as [10, Section 7]). The multi-experiment setup is natural, for</div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2]        example, for models involving constant inputs [42].</div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2]     The theoretical basis for this work uses differential algebra and commutative algebra. We employ characteristic</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2] sets, a tool from computational algebra. The key difference with the prior algorithms based on characteristic sets is</div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2] that we provide a mathematically sound way to treat a typically ignored case in which the solvability condition is not</div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2] satisfied. To achieve this, we analyze the Wronskians of the monomials of characteristic sets using methods from</div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.2] linear algebra. Our results are informed by model theory in the sense of mathematical logic, though this does not</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.2] appear explicitly in our presentation. We elaborate on this connection in a follow-up work [30]. Additional related</div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.2] results on identifiability using input-output equations and differential algebra include [3, 7, 14, 17, 25–27, 34–36].</div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.2]     The rest of the paper is organized as follows. Section 2 contains definitions and notation that we use. In Section 3,</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.2] we give our algorithm for computing the generators of the field of identifiable functions, which is based on the theory</div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.2] we present in this section as well. Section 4 is on theory for multi-experimental identifiability. We illustrate our</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.2] methods with examples in Section 5. We prove our main results in Appendix A. In the other remaining appendices,</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.2] we present and prove correctness of two algorithms that are used in our main algorithmic contributions and also</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.2] provide a mathematical discussion, illustrated with examples, on our main theorems.</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.2]     We have implemented Algorithm 1 and an algorithm for computing the bound from Theorem 19 (as in</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.2] Remark 23) in Maple. A Maple implementation together with the examples from Section 5 is available</div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.2] at https://github.com/pogudingleb/AllIdentifiableFunctions. This implementation has recently been</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.2] incorporated into a freely available web app https://maple.cloud/app/5710317752942592/SIAN.</div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.2] </div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.2] 2. Basic notions and notation</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.2] </div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.2]     In this section, we will present the basic notions and notation from differential algebra and parameter identifiability</div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.2] that are essential for our main results.</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.2] </div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.2] 2.1. Background and notation from differential algebra</div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.2]     Differential algebra has been a standard theory behind identifiability, and we will simply fix the basic notation.</div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.2] General references include [19, 33]. For other presentations of these concepts in the context of control theory, see [11,</div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.2]                                                             2</div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.2] </div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.3] 18, 21, 35].</div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.3] Notation 1 (Differential rings and ideals).</div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.3]  (a) A differential ring (R, ′ ) is a commutative ring with a derivation ′ : R → R, that is, a map such that, for all</div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.3]       a, b ∈ R, (a + b)′ = a′ + b′ and (ab)′ = a′ b + ab′ . A differential field is a differential ring that is a field. For i &gt; 0,</div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.3]       a(i) denotes the i-th order derivative of a ∈ R. Const(K) denotes the field of constants of a differential field K.</div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.3]  (b) The ring of differential polynomials in the variables z1 , . . . , zn over a differential field (K, ′ ) is the ring</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.3]                                            </div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.3]                  K z(i)</div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.3]                       j | i ⩾ 0, 1 ⩽ j ⩽ n</div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.3]                                                            ′</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.3]       with a derivation defined on the ring by z(i)      j    := z(i+1)</div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.3]                                                                   j     . This differential ring is denoted by K{z1 , . . . , zn }.</div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.3]  (c) For differential fields F ⊂ L and a1 , . . . , an ∈ L, the smallest differential subfield of L that contains F and</div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.3]       a1 , . . . , an is denoted by Fha1 , . . . , an i.</div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.3]  (d) For a commutative ring R and a subset F ⊂ R, the smallest ideal containing F is denoted by (F).</div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.3]  (e) An ideal I of a differential ring (R, ′ ) is called a differential ideal if, for all a ∈ I, a′ ∈ I. For F ⊂ R, the smallest</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.3]       differential ideal containing F is denoted by [F].</div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.3]   (f) For an ideal I and element a in a ring R, we denote I : a∞ = {r ∈ R | ∃n : an r ∈ I}. This set is also an ideal in R.</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.3]       This will be useful for dealing with ODE systems in which (non-polynomial) rational functions appear.</div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.3]  (g) For a1 , . . . , an in a differential ring R, we denote the n × n matrix with (i, j)-entry a(i−1)   j   by Wr(a1 , . . . , an ) and</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.3]       call it the Wronskian of a1 , . . . , an . For example,</div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.3]                                         !</div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.3]                                  a1 a2</div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.3]                  Wr(a1 , a2 ) = ′         .</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.3]                                  a1 a′2</div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.3]     The rest of the definitions in this section generalize Gaussian elimination to systems of non-linear ODEs. Differ-</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.3] ential rankings are analogous to ordering of variables in Gaussian elimination; characteristic sets and presentations</div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.3] are analogous to row echelon form and reduced row echelon forms, respectively.</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.3] </div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.3] Definition 2. A differential ranking is a total order &gt; on Z := {z(i)</div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.3]                                                                   j | i ⩾ 0, 1 ⩽ j ⩽ n} satisfying:</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.3] </div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.3]        ∀ x ∈ Z x′ &gt; x      and ∀ x, y ∈ Z (x &gt; y =⇒ x′ &gt; y′ ).</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.3] </div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.3] Notation 3. For f ∈ K{z1 , . . . , zn }\K and a differential ranking,</div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.3]                                    </div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.3]    • lead( f ) is the element of z(i)   j | i ⩾ 0, 1 ⩽ j ⩽ n of the highest rank appearing in f . This is partly analogous to</div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.3]      the leading variable in Gaussian elimination.</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.3]    • The leading coefficient of f viewed as a polynomial in lead( f ) is called the initial of f . This is similar to the</div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.3]      leading coefficient in Gaussian elimination.</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.3]                                 ∂f</div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.3]    • The separant of f is ∂ lead(    f ) . One can show that it is equal to the leading coefficient of any derivative of f .</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.3]     • The rank of f is rank( f ) = lead( f )deglead( f ) f . The ranks are compared first by lead, and in the case of equality, by</div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.3]       deg. This is analogous to the leading variable in Gaussian elimination/leading term in Gröbner bases.</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.3]     • For S ⊂ K{z1 , . . . , zn }\K, the product of initials and separants of S is denoted by HS . This is used in handling</div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.3]       division with remainder algebraically.</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.3] </div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.3] Definition 4 (Characteristic sets).</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.3]    • For f, g ∈ K{z1 , . . . , zn }\K, f is said to be reduced w.r.t. g if no proper derivative of lead(g) appears in f and</div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.3]       deglead(g) f &lt; deglead(g) g.</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.3]    • A subset A ⊂ K{z1 , . . . , zn }\K is called autoreduced if, for all p ∈ A, p is reduced w.r.t. every element of</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.3]       A \ {p}. Every autoreduced set is finite [19, Section I.9].</div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.3]    • Let A = A1 &lt; . . . &lt; Ar and B = B1 &lt; . . . &lt; B s be autoreduced sets ordered by their ranks (see Notation 3). We</div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.3]       say that A &lt; B if</div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.3]           – r &gt; s and rank(Ai ) = rank(Bi ), 1 ⩽ i ⩽ s, or</div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.3]           – there exists q such that rank(Aq ) &lt; rank(Bq) and, for all i, 1 ⩽ i &lt; q, rank(Ai ) = rank(Bi).</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.3] </div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.3]                                                                    3</div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.3] </div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.4]     • An autoreduced subset of the smallest rank of a differential ideal I ⊂ K{z1 , . . . , zn } is called a characteristic set</div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.4]       of I. One can show that every non-zero differential ideal in K{z1 , . . . , zn } has a characteristic set.</div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.4] </div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.4] Definition 5 (Characteristic presentation). (cf. [5, Definition 3]) A polynomial is said to be monic if at least one of</div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.4] its coefficients is 1. This is how monic is typically used in identifiability analysis and not how it is used in [5]. A set</div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.4] of polynomials is said to be monic if each polynomial in the set is monic.</div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.4]      Let C be a monic characteristic set of a prime differential ideal P ⊂ K{z1 , . . . , zn }. Let N(C) denote the set of</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.4] non-leading variables of C. Then C is called a characteristic presentation of P if all initials of C belong to K[N(C)]</div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.4] and none of the elements of C has a factor in K[N(C)].</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.4] </div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.4] 2.2. Parameter identifiability for ODE models</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.4]     Consider an ODE system of the form</div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.4]           </div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.4]           </div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.4]            x̄′ = f¯( x̄, µ̄, ū),</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.4]           </div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.4]       Σ=                                                                                                                 (1)</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.4]           ȳ = ḡ( x̄, µ̄, ū),</div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.4] where x̄: a vector of state variables, ȳ: a vector of output variables, µ̄: a vector of time-independent parameters, ū: a</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.4] vector of input variables, and f¯ and ḡ: tuples of elements of C( x̄, µ̄, ū).</div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.4]      Bringing f¯ and ḡ to the common denominator, write f¯ = F̄/Q and ḡ = Ḡ/Q, for F1 , . . . , Fn , G1 , . . . , Gm , Q ∈</div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.4] C[ x̄, µ̄, ū]. Consider the (prime, see [16, Lemma 3.2]) differential ideal</div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.4]       IΣ := [Qx′i − Fi , Qy j − G j , 1 ⩽ i ⩽ n, 1 ⩽ j ⩽ m] : Q∞ .</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.4] Note that every solution of (1) is a zero of every element of IΣ .</div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.4] Definition 6 (Generic solution, cf. [12, 13]). The image of ( x̄, ȳ, ū) under the canonical homomorphism</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.4]       C(µ̄){ x̄, ȳ, ū} → C(µ̄){ x̄, ȳ, ū}/IΣ</div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.4] is called the generic solution of (1).</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.4]     Rigorously written definitions of identifiability in analytic terms can be found in [31, Definition 1] and [16, Defi-</div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.4] nition 2.5]. [16, Proposition 3.4] implies that the following is an equivalent definition of identifiability, which we will</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.4] use.</div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.4] Definition 7 (Identifiability). A function h ∈ C(µ̄) is said to be (single-experiment, or SE-) identifiable for (1) if, for</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.4] every generic solution ( x̄∗ , ȳ∗ , ū∗ ) of (1), we have h ∈ Chȳ∗ , ū∗ i.</div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.4] </div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.4] Definition 8 (Input-output equations, cf. [9, Definition 4.1]). For a fixed differential ranking &gt; on (ȳ, ū), the set of</div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.4] input-output equations (IO-equations) of the system Σ from (1) is the characteristic presentation of IΣ ∩ C{ȳ, ū}.</div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.4]     It can be computed by computing the characteristic presentation C of IΣ with respect to the differential ranking</div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.4] that is compatible with &gt; and in which any derivative from x̄ is greater than any derivative from (ȳ, ū), and returning</div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.4] C ∩ C{ȳ, ū} (e.g., by the Rosenfeld-Gröbner algorithm [6]).</div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.4] </div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.4]     In the Sections 3 and 4, we will present our two main results, Theorem 11 and Theorem 19. The former is the</div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.4] main theoretical ingredient for our Algorithm 1 to find all single-experiment identifiable functions of parameters. The</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.4] latter is a key to calculating a bound for a sufficient number of experiments to check identifiability of multi-experiment</div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.4] identifiable functions of parameters. Both main results are used in our software implementations referenced in the</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.4] introduction. We prove our main results in Appendix A.</div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.4] </div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.4] 3. Main result: Single-experiment identifiability</div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.4]     In this section, we give an algorithm to compute all functions of the parameters that are identifiable from a single</div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.4] experiment for system (1). We begin with a construction in Section 3.1, which is a refinement of considering Wron-</div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.4] skians of monomials (cf. [8, 12, 28, 31]). Using this, we give an algebraic characterization, Theorem 11 (our first</div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.4] main result), of the identifiable functions, which we turn into Algorithm 1. The proof of Theorem 11 can be found</div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.4] in Appendix A.1.</div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.4]                                                               4</div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.4] </div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.5] 3.1. Preparation for Theorem 11</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.5]     To find the identifiable functions, we will begin with a new construction. Let K be a differential field and k a</div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.5] constant subfield such that C ⊂ k and let ā = (a1 , . . . , an ) ∈ K n . For p ∈ k{z̄}, where z̄ = (z1 , . . . , zn ), such that</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.5] p(ā) = 0, we construct a subfield F(p) ⊂ K as follows:</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.5]    1. Let W p denote the Wronskian (see Notation 1(g)) of the monomials of p evaluated at ā.</div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.5]    2. Define F(p) to be the field generated over C by (the nonleading) entries in the reduced row echelon form of W p .</div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.5] </div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.5] Example 9. Let K = C(x), n = 2, ā = (x + 1, 2/(x + 1)), and p = z′1 − 2z1 z2 + 3. Then the monomials of p are z′1 , z1 z2 ,</div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.5] and 1, their Wronskian and its evaluation at ā are</div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.5]        ′                                              </div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.5]        z1       z1 z2    1               1 2 1</div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.5]          ′′                                         </div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.5]            z1 (z1 z2 ) 0 and W p = 0 0 0 ,</div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.5]                           ′</div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.5]                ′′′       ′′</div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.5]              z1 (z1 z2 )    0                     0 0 0</div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.5] which is already in reduced row echelon form, and so F(p) = C(1, 2, 1) = C. For examples in which F(p) is strictly</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.5] greater than C, see Example 14 and Section 5.2. There, evaluation of the Wronskian at a point is by differential ideal</div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.5] calculations.</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.5] </div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.5]     For a tuple p̄ ⊂ k{z̄} of differential polynomials,</div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.5]       F( p̄) := C(F(p) | p ∈ p̄).</div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.5] </div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.5] Lemma 10. For every p ∈ k{z̄} such that p(ā) = 0, we have F(p) ⊂ Chāi.</div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.5] Proof. Follows from all entries of W p being from Chāi.</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.5] </div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.5] 3.2. Statement of main result</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.5]     We will now show that the problem of finding the field of identifiable functions is reduced to computing the</div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.5] intersection of fields of constants defined by their generators. This is a key step in Algorithm 1 to find the field of all</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.5] identifiable functions.</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.5] Theorem 11 (Single-experiment identifiability). For system (1), the field of identifiable functions is equal to</div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.5]       C(µ̄) ∩ F( p̄),</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.5] where p̄ is a set of input-output equations of (1) (Definition 8).</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.5] </div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.5] Remark 12. Similarly to Theorem 19, the statement of Theorem 11 remains true if, in the calculation of F( p̄), for</div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.5] each p, one replaces the Wronskian of the monomials evaluated at ā by the Wronskian of any q1 , . . . , qn ∈ C{z}</div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.5]                              P</div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.5] evaluated at ā such that p = ni=1 ci qi for some c1 , . . . , cn ∈ k.</div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.5] </div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.5] 3.3. An algorithm for computing all identifiable functions</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.5]     In this section, we present an algorithm that computes generators of the field of all identifiable functions of</div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.5] system (1). We also give an example following the algorithm step by step.</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.5] </div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.5] </div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.5] </div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.5] </div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.5]                                                                5</div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.5] </div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.6] Algorithm 1 Computing all identifiable functions</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.6] Input System Σ as in (1)</div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.6] Output Generators of the field of identifiable functions of Σ</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.6] </div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.6] (Step 1) Compute a set p̄ of input-output equations of Σ (see Definition 8).</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.6] (Step 2) For each p ∈ p̄, compute W  e p the Wronskian of the monomials of p. Compute W p by replacing each y( j) in</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.6]                                                                                                              i</div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.6]       e p with the j-th Lie derivative of gi with respect to Σ (gi ’s are the same as in (1)).</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.6]       W</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.6] (Step 3) For each p ∈ p̄, calculate the reduced row echelon form of the matrix W p and let F( p̄) be the field generated</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.6]       over C by all non-leading coefficients of all matrices W p . By [16, Lemma 3.1] and Remark 25, the generators of</div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.6]       F( p̄) belong to C(µ̄, x̄).</div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.6] (Step 4) Apply Algorithm 2 to find generators of C(µ̄) ∩ F( p̄). Return these generators.</div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.6] </div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.6] </div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.6] Remark 13. In practice, the runtime of the algorithm depends on the chosen ranking, and it would be interesting to</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.6] have a way to choose the ranking based on the problem.</div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.6] </div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.6] Example 14 (Computing identifiable functions – illustration). To illustrate, we will follow Algorithm 1 for the</div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.6] system:</div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.6]         </div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.6]         </div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.6]         </div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.6]          x′ = 0,</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.6]         </div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.6]          1′</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.6]         </div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.6]       Σ=</div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.6]          x2 = x1 x2 + ax1 u + bu,</div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.6]         </div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.6]         </div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.6]         </div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.6]         y = x2</div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.6] where x̄ = (x1 , x2 ), ȳ = (y), µ̄ = (a, b), ū = (u). This system is a variant of the example from [30, Section 5].</div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.6] (Step 1) For the elimination differential ranking with x1 &gt; x2 &gt; y &gt; u, a calculation shows that</div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.6]         x1 y − ax1 u − y′ − bu,    x2 − y,   yy′′ − auy′′ − y′2 + au′ y′ − buy′ + bu′ y</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.6]  is a monic characteristic presentation for IΣ . Therefore, p̄ = (p), where p = yy′′ − auy′′ − y′2 + au′ y′ − buy′ + bu′ y.</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.6] (Step 2) The Wronskian W   e p = Wr(u′ y, uy′ , u′ y′ , y′2 , uy′′ , yy′′ ) is computed (too large to be displayed here). Then, to</div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.6]  compute W p , all derivatives of y are replaced with the corresponding Lie derivatives of x2 , for example:</div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.6]          y → x2 , y′ → x1 x2 + ax1 u + bu,</div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.6]         y′′ → x1 (x1 x2 + ax1 u + bu) + ax1 u′ + bu′ .</div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.6] </div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.6] (Step 3) A calculation shows that the corresponding reduced row echelon form is:</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.6]                                               </div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.6]        1 0 0 0 −x1 −ax1 − b</div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.6]          0 1 0 0 x              ax1 + b </div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.6]                               1</div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.6]                                                </div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.6]              0 0 1 0         1     0           .</div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.6]                                                 </div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.6]                  0 0 0 1     0     1              </div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.6]                                                     </div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.6]                      0 0 0 0 0     0</div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.6]                                                          </div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.6]                         0 0 0 0 0     0</div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.6]  Therefore, F( p̄) = C(ax1 + b, x1 ).</div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.6] (Step 4) By Theorem 11, the field of identifiable functions is</div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.6]         C(a, b) ∩ C(ax1 + b, x1 ).</div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.6]  Applying Algorithm 2, we find that</div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.6]         C(a, b) ∩ C(ax1 + b, x1 ) = C,                                                                                        (2)</div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.6]  so there are no nontrival identifiable functions in this model.</div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.6]                                                                 6</div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.6] </div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.7] 4. Main result: Multi-experiment identifiability</div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.7] </div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.7]      In this section, we show that the coefficients input-output equations generate the field of multi-experiment iden-</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.7] tifiable function and derive a generally tight upper bound for the number of independent experiments for system (1)</div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.7] sufficient to recover the field of multi-experiment identifiable functions of parameters. These results are stated in</div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.7] Section 4.1 and proven in Appendix A.2. We apply them to specific examples from the literature in Section 5. The</div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.7] tightness of the bound from the mathematical point of view is discussed in the appendix.</div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.7] </div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.7] 4.1. Preparation for Theorem 19</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.7] Definition 15 (Input-output identifiable functions). A function of parameters h ∈ C(µ̄) in system (1) is said to be</div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.7] input-output (IO) identifiable if h can be expressed as a rational function of the coefficients of the IO-equations of</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.7] system (1) (see Definition 8), see also [31, Definition 2] and [32, Corollary 1].</div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.7] </div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.7] As shown in [32, Section 4.1], every identifiable function is input-output identifiable but not every input-output iden-</div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.7] tifiable function is necessarily identifiable.</div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.7] </div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.7] Definition 16 (Multi-experiment identifiability, cf. [20]). A function of parameters h ∈ C(µ̄) in system (1) is said</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.7] to be multi-experiment identifiable (ME-identifiable) if there exists N ⩾ 1 such that h is identifiable in the following</div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.7] “N-experiment” system</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.7]              </div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.7]              </div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.7]              </div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.7]               x̄′i = f ( x̄i , µ̄, ūi ),</div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.7]       ΣN :=                              1 ⩽ i ⩽ N.                                                                (3)</div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.7]              yi = g( x̄i , µ̄, ūi ),</div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.7] We also say that h is N-experiment identifiable in this case.</div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.7] </div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.7] Example 17 (Illustrating the definition). Consider the system (intentionally simple to illustrate the definition)</div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.7]     </div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.7]     </div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.7]     </div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.7]      x′ = 0</div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.7]     </div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.7]      1</div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.7]     </div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.7]     </div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.7]      y1 = x1                                                                                                     (4)</div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.7]     </div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.7]     </div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.7]     </div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.7]     y2 = θx1 + θ2 ,</div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.7] in which θ is the unknown parameter. By [16, Example 2.14], θ is not (globally) identifiable. Consider now the</div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.7] corresponding 2-experiment system</div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.7]       </div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.7]       </div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.7]       </div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.7]        x′1,1 = x′2,1 = 0</div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.7]       </div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.7]       </div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.7]       </div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.7]       </div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.7]       </div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.7]        y1,1 = x1,1</div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.7]       </div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.7]       </div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.7]       </div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.7]       </div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.7]        y1,2 = θx1,1 + θ2</div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.7]       </div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.7]       </div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.7]       </div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.7]       </div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.7]       </div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.7]        y2,1 = x2,1</div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.7]       </div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.7]       </div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.7]       </div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.7]       y2,2 = θx2,1 + θ2 ;</div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.7]           y2,2 − y1,2</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.7] now θ =               and so is identifiable.</div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.7]           y2,1 − y1,1</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.7] </div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.7] Remark 18. SIAN [15] (see also [32, Remark 2.3]) is software that can check (SE-) global and local identifiability of</div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.7] any given function h ∈ C(µ̄) of parameters of an ODE model Σ. If h is globally ME-identifiable, then, running SIAN</div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.7] on models of the form ΣN (see (3)) for N = 1, 2, . . ., one will in principle eventually find this out. However, if h is</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.7] not globally ME-identifiable, one will not be able to conclude this from assessing SE-identifiability of ΣN without a</div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.7] bound on the number of experiments (provided by Theorem 19).</div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.7]     On the other hand, one could use SIAN to find the sufficient number of experiments given a set of generators of</div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.7] the field of ME-identifiable functions. Indeed, for each of these generators, there is an N such that the generator is</div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.7] SE-identifiable in ΣN , so the sufficient number of experiments can be taken as the maximum of these Ns. However,</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.7] this approach works only if generators of the field of ME-identifiable functions are known in advance. Theorem 19</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.7] and an algorithm to compute IO-equations (Definition 8) yield an algorithm to find such generators.</div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.7] </div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.7] </div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.7]                                                            7</div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.7] </div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.8] 4.2. Statement of main result</div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.8] Theorem 19 (Multi-experiment identifiability). A function of parameters h ∈ C(µ̄) in system (1) is multi-experiment</div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.8] identifiable if and only if it is input-output identifiable in system (1).</div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.8]     Moreover, if h is multi-experiment identifiable, then, for all</div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.8]       N ⩾ max (si − ri + 1),</div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.8]             1⩽i⩽m</div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.8] </div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.8] h is identifiable in the N-experiment system, where si and ri are defined by the following:</div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.8]     • p̄ = p1 , . . . , pm is a set of input-output equations of system (1), and for all i, 1 ⩽ i ⩽ m,</div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.8]           – we write</div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.8]                                        X</div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.8]                                        si</div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.8]                        pi = fi,si +1 +    ci, j fi, j ,                                                                 (5)</div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.8]                                   j=1</div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.8] </div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.8]             where fi, j ∈ C{ȳ, ū} and linearly independent over C (so, si is the length of such a presentation of pi minus</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.8]             1),</div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.8]           – ri := rank Wr( fi,1 (ȳ, ū), . . . , fi,si (ȳ, ū)) modulo IΣ .</div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.8] Example 20 (Degenerate Wronskian). The goal of this intentionally simple example is to demonstrate that the</div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.8] Wronskians in the theorem can indeed be singular. Consider system (4) again. A calculation shows that</div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.8]          n                    o</div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.8]      p̄ = y′1 , y2 − θy1 − θ2</div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.8] is a set of IO-equations for (4). Then m = 2, s1 =0, and s2 = 2. We have</div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.8]                            !                    !</div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.8]                      y 1                 x 1</div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.8]        Wr(y1 , 1) = ′1         mod IΣ = 1         ,</div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.8]                      y1 0                 0 0</div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.8] and so r2 = 1. From [16, Example 2.14], θ is not (globally) identifiable (so, we cannot take N = 1). By Theorem 19,</div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.8] for all</div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.8]       N ⩾ 2 − 1 + 1 = 2,</div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.8] the field of ME-identifiable functions C(θ, θ2 ) = C(θ) is N-experiment identifiable.</div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.8] Remark 21. In some works (e.g., [2, Section 3.1]), it was suggested that the Wronskians of monomials in a charac-</div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.8] teristic set be always of corank one (ri = si in the notation of Theorem 19). As Example 20 (see also Sections 5.2 and</div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.8] 5.3) shows, this is not the case.</div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.8] </div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.8] 4.3. Computational aspects</div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.8] Remark 22 (Dependence on decomposition (5)). For fixed input-output equations p1 , . . . , pm , the bound given by</div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.8] Theorem 19 may depend on the choice of decomposition (5). In Appendix D, we give an algorithm to compute a</div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.8] representation yielding the best possible bound (compared to other representations). We use this algorithm in our</div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.8] implementation.</div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.8] Remark 23 (Computing the bound). The rank of the Wronskian matrix from Theorem 19 can be found by:</div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.8]    1. Calculating the Wronskian matrix in ȳ, ū,</div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.8]    2. For each matrix entry, computing its differential remainder [19, Section I.9] with respect to the characteristic</div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.8]       set defined by Σ, and</div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.8]    3. Applying a (symbolic) algorithm for rank computation.</div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.8] The correctness follows from [16, Lemma 3.1]. Before computing the rank, one can evaluate the Wronskian at a point.</div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.8] Since the rank cannot increase after an evaluation, the resulting bound will always be correct although might be larger</div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.8] than the bound from Theorem 19.</div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.8] Remark 24. The bound for N from Theorem 19 can be improved if some of the output variables are constant as</div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.8] discussed in Section 5.3. Constant outputs arise, e.g., to encode the case of constant inputs, which is common in some</div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.8] application domains [42]. The general idea of the refinement is first to treat the constant outputs as parameters, apply</div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.8] Theorem 19 to the rest of the outputs, and then use simultaneous rational interpolation to extract the coefficients with</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.8] respect to the constant outputs.</div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.8]                                                                8</div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.8] </div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.9] 5. Examples</div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.9] </div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.9]     We illustrate our results with 3 examples. In Section 5.1, Lotka-Volterra model with control, we show that the SE-</div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.9] identifiable and ME-identifiable functions coincide, so one can find the generators of the field of identifiable functions</div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.9] from the coefficients of the IO-equations. The second example (Section 5.2) is a chemical reaction exhibiting the</div>
+<div id="L481"><a href="#L481">00481</a> [PDF p.9] slow-fast ambiguity [41]. Here, the bound from Theorem 19 is exact, and yields that all parameters are identifiable</div>
+<div id="L482"><a href="#L482">00482</a> [PDF p.9] from 2 experiments. In Section 5.3, we show another Lotka-Volterra model, for which some of the parameters become</div>
+<div id="L483"><a href="#L483">00483</a> [PDF p.9] identifiable only after 2 experiments. For other models with more ME-identifiable functions than SE-identifiable ones,</div>
+<div id="L484"><a href="#L484">00484</a> [PDF p.9] we refer to [42, Section III]. Finally, in Section 5.4, we apply our results to the SEIR epidemiological model studied</div>
+<div id="L485"><a href="#L485">00485</a> [PDF p.9] in [40].</div>
+<div id="L486"><a href="#L486">00486</a> [PDF p.9]     All       the       computations        for      the      examples        in      this      section       can       be</div>
+<div id="L487"><a href="#L487">00487</a> [PDF p.9] performed automatically using our implementation. The corresponding files can be found in the examples folder</div>
+<div id="L488"><a href="#L488">00488</a> [PDF p.9] in the repository https://github.com/pogudingleb/AllIdentifiableFunctions.</div>
+<div id="L489"><a href="#L489">00489</a> [PDF p.9] </div>
+<div id="L490"><a href="#L490">00490</a> [PDF p.9] 5.1. Lotka-Volterra model with control</div>
+<div id="L491"><a href="#L491">00491</a> [PDF p.9]     Consider the following system</div>
+<div id="L492"><a href="#L492">00492</a> [PDF p.9]           </div>
+<div id="L493"><a href="#L493">00493</a> [PDF p.9]           </div>
+<div id="L494"><a href="#L494">00494</a> [PDF p.9]           </div>
+<div id="L495"><a href="#L495">00495</a> [PDF p.9]            x′ = ax1 − bx1 x2 ,</div>
+<div id="L496"><a href="#L496">00496</a> [PDF p.9]           </div>
+<div id="L497"><a href="#L497">00497</a> [PDF p.9]            ′1</div>
+<div id="L498"><a href="#L498">00498</a> [PDF p.9]           </div>
+<div id="L499"><a href="#L499">00499</a> [PDF p.9]       Σ=  x2 = −cx2 + dx1 x2 + eu,</div>
+<div id="L500"><a href="#L500">00500</a> [PDF p.9]           </div>
+<div id="L501"><a href="#L501">00501</a> [PDF p.9]           </div>
+<div id="L502"><a href="#L502">00502</a> [PDF p.9]           </div>
+<div id="L503"><a href="#L503">00503</a> [PDF p.9]           y = x1 ,</div>
+<div id="L504"><a href="#L504">00504</a> [PDF p.9] in which a, b, c, d, e are the unknown parameters and u is the input (control). With Theorem 19, we show that, for</div>
+<div id="L505"><a href="#L505">00505</a> [PDF p.9] this model, the fields of SE-identifiable and of ME-identifiable functions coincide. A computation shows that the</div>
+<div id="L506"><a href="#L506">00506</a> [PDF p.9] IO-equation is:</div>
+<div id="L507"><a href="#L507">00507</a> [PDF p.9]       p̄ = (yy′′ − y′2 − dy2 y′ + cyy′ + ady3 − beuy2 − acy2 ),</div>
+<div id="L508"><a href="#L508">00508</a> [PDF p.9] so, in the notation of Theorem 19, m = 1 and, for f1 = y2 y′ , f2 = yy′ , f3 = y3 , f4 = uy2 , f5 = y2 , and f6 = yy′′ − y′2 ,</div>
+<div id="L509"><a href="#L509">00509</a> [PDF p.9] we have s1 = 5. A computation shows that</div>
+<div id="L510"><a href="#L510">00510</a> [PDF p.9]       r1 := rank(Wr( f1 , f2 , f3 , f4 , f5 )   mod IΣ ) = 5.</div>
+<div id="L511"><a href="#L511">00511</a> [PDF p.9] By Theorem 19, for any</div>
+<div id="L512"><a href="#L512">00512</a> [PDF p.9]       N ⩾5−5+1=1</div>
+<div id="L513"><a href="#L513">00513</a> [PDF p.9] the ME-identifiable functions are identifiable from N experiments (cf. [31, Main Results 1 and 2]). In particu-</div>
+<div id="L514"><a href="#L514">00514</a> [PDF p.9] lar, 1 experiment is sufficient. Hence, by Theorem 19, the field of SE-identifiable functions is C(d, c, ad, be, ac) =</div>
+<div id="L515"><a href="#L515">00515</a> [PDF p.9] C(a, be, c, d).</div>
+<div id="L516"><a href="#L516">00516</a> [PDF p.9] </div>
+<div id="L517"><a href="#L517">00517</a> [PDF p.9] 5.2. Slow-fast ambiguity in chemical reactions</div>
+<div id="L518"><a href="#L518">00518</a> [PDF p.9]     In this example, we consider the system [15, Section A.1,equation (3)]. This system originates from the following</div>
+<div id="L519"><a href="#L519">00519</a> [PDF p.9] chemical reaction network [41, equation (1.1)]:</div>
+<div id="L520"><a href="#L520">00520</a> [PDF p.9]          k1      k2</div>
+<div id="L521"><a href="#L521">00521</a> [PDF p.9]       A −→ B −→ C.</div>
+<div id="L522"><a href="#L522">00522</a> [PDF p.9] Then the quantities xA , xB , and xC of species satisfy the system:</div>
+<div id="L523"><a href="#L523">00523</a> [PDF p.9]       </div>
+<div id="L524"><a href="#L524">00524</a> [PDF p.9]       </div>
+<div id="L525"><a href="#L525">00525</a> [PDF p.9]       </div>
+<div id="L526"><a href="#L526">00526</a> [PDF p.9]        x′A = −k1 xA ,</div>
+<div id="L527"><a href="#L527">00527</a> [PDF p.9]       </div>
+<div id="L528"><a href="#L528">00528</a> [PDF p.9]       </div>
+<div id="L529"><a href="#L529">00529</a> [PDF p.9]        ′</div>
+<div id="L530"><a href="#L530">00530</a> [PDF p.9]       </div>
+<div id="L531"><a href="#L531">00531</a> [PDF p.9]        x B = k1 x A − k2 x B ,                                                                                           (6)</div>
+<div id="L532"><a href="#L532">00532</a> [PDF p.9]       </div>
+<div id="L533"><a href="#L533">00533</a> [PDF p.9]       </div>
+<div id="L534"><a href="#L534">00534</a> [PDF p.9]       </div>
+<div id="L535"><a href="#L535">00535</a> [PDF p.9]        x′ = k2 x B .</div>
+<div id="L536"><a href="#L536">00536</a> [PDF p.9]          C</div>
+<div id="L537"><a href="#L537">00537</a> [PDF p.9] The observed quantities will be</div>
+<div id="L538"><a href="#L538">00538</a> [PDF p.9]    • y1 = xC , the concentration of C;</div>
+<div id="L539"><a href="#L539">00539</a> [PDF p.9]     • y2 = εA xA + εB xB + εC xC , which may represent a property of the mixture, e.g. absorbance or conductivity [41,</div>
+<div id="L540"><a href="#L540">00540</a> [PDF p.9]       p. 701].</div>
+<div id="L541"><a href="#L541">00541</a> [PDF p.9] </div>
+<div id="L542"><a href="#L542">00542</a> [PDF p.9]                                                                 9</div>
+<div id="L543"><a href="#L543">00543</a> [PDF p.9] </div>
+<div id="L544"><a href="#L544">00544</a> [PDF p.10] As explained in [41, p. 701], in practice, xB might be hard to isolate, so εB is also an unknown parameter, while the</div>
+<div id="L545"><a href="#L545">00545</a> [PDF p.10] values εA and εC can be assumed to be known but could depend on A, C, and the details of the experimental setup.</div>
+<div id="L546"><a href="#L546">00546</a> [PDF p.10] The assumption that εA and εC are known can be encoded into the ODE system by making them state variables with</div>
+<div id="L547"><a href="#L547">00547</a> [PDF p.10] zero derivatives and adding outputs to make them observable. This will yield the following final ODE model (the</div>
+<div id="L548"><a href="#L548">00548</a> [PDF p.10] same as [15, Section A.1,equation (3)]):</div>
+<div id="L549"><a href="#L549">00549</a> [PDF p.10]            ′</div>
+<div id="L550"><a href="#L550">00550</a> [PDF p.10]           </div>
+<div id="L551"><a href="#L551">00551</a> [PDF p.10]           </div>
+<div id="L552"><a href="#L552">00552</a> [PDF p.10]            xA = −k1 xA ,</div>
+<div id="L553"><a href="#L553">00553</a> [PDF p.10]           </div>
+<div id="L554"><a href="#L554">00554</a> [PDF p.10]           </div>
+<div id="L555"><a href="#L555">00555</a> [PDF p.10]           </div>
+<div id="L556"><a href="#L556">00556</a> [PDF p.10]           </div>
+<div id="L557"><a href="#L557">00557</a> [PDF p.10]           </div>
+<div id="L558"><a href="#L558">00558</a> [PDF p.10]            x′B = k1 xA − k2 xB ,</div>
+<div id="L559"><a href="#L559">00559</a> [PDF p.10]           </div>
+<div id="L560"><a href="#L560">00560</a> [PDF p.10]           </div>
+<div id="L561"><a href="#L561">00561</a> [PDF p.10]           </div>
+<div id="L562"><a href="#L562">00562</a> [PDF p.10]           </div>
+<div id="L563"><a href="#L563">00563</a> [PDF p.10]           </div>
+<div id="L564"><a href="#L564">00564</a> [PDF p.10]            xC′ = k2 xB ,</div>
+<div id="L565"><a href="#L565">00565</a> [PDF p.10]           </div>
+<div id="L566"><a href="#L566">00566</a> [PDF p.10]           </div>
+<div id="L567"><a href="#L567">00567</a> [PDF p.10]           </div>
+<div id="L568"><a href="#L568">00568</a> [PDF p.10]           </div>
+<div id="L569"><a href="#L569">00569</a> [PDF p.10]           </div>
+<div id="L570"><a href="#L570">00570</a> [PDF p.10]           ε′A = εC′ = 0,</div>
+<div id="L571"><a href="#L571">00571</a> [PDF p.10]       Σ=                                                                                                        (7)</div>
+<div id="L572"><a href="#L572">00572</a> [PDF p.10]           </div>
+<div id="L573"><a href="#L573">00573</a> [PDF p.10]           </div>
+<div id="L574"><a href="#L574">00574</a> [PDF p.10]            y1 = xC ,</div>
+<div id="L575"><a href="#L575">00575</a> [PDF p.10]           </div>
+<div id="L576"><a href="#L576">00576</a> [PDF p.10]           </div>
+<div id="L577"><a href="#L577">00577</a> [PDF p.10]           </div>
+<div id="L578"><a href="#L578">00578</a> [PDF p.10]           </div>
+<div id="L579"><a href="#L579">00579</a> [PDF p.10]           </div>
+<div id="L580"><a href="#L580">00580</a> [PDF p.10]            y2 = εA xA + εB xB + εC xC ,</div>
+<div id="L581"><a href="#L581">00581</a> [PDF p.10]           </div>
+<div id="L582"><a href="#L582">00582</a> [PDF p.10]           </div>
+<div id="L583"><a href="#L583">00583</a> [PDF p.10]           </div>
+<div id="L584"><a href="#L584">00584</a> [PDF p.10]           </div>
+<div id="L585"><a href="#L585">00585</a> [PDF p.10]           </div>
+<div id="L586"><a href="#L586">00586</a> [PDF p.10]            y3 = ε A ,</div>
+<div id="L587"><a href="#L587">00587</a> [PDF p.10]           </div>
+<div id="L588"><a href="#L588">00588</a> [PDF p.10]           </div>
+<div id="L589"><a href="#L589">00589</a> [PDF p.10]           </div>
+<div id="L590"><a href="#L590">00590</a> [PDF p.10]           y = ε ,</div>
+<div id="L591"><a href="#L591">00591</a> [PDF p.10]              4     C</div>
+<div id="L592"><a href="#L592">00592</a> [PDF p.10] </div>
+<div id="L593"><a href="#L593">00593</a> [PDF p.10] where x̄ = (xA , xB , xC , εA , εC ), ȳ = (y1 , y2 , y3 , y4 ), and µ̄ = (k1 , k2 , εB ). As noted in [41] (see also [15, Section A.1]),</div>
+<div id="L594"><a href="#L594">00594</a> [PDF p.10] this model has slow-fast ambiguity: it is possible to recover a pair of numbers {k1 , k2 } from the observations but</div>
+<div id="L595"><a href="#L595">00595</a> [PDF p.10] impossible to know which one is k1 and which one is k2 . A similar phenomenon occurs in epidemiological models,</div>
+<div id="L596"><a href="#L596">00596</a> [PDF p.10] see [40, Proposition 2].</div>
+<div id="L597"><a href="#L597">00597</a> [PDF p.10]     We start with assessing the SE-identifiability of the model (7) using Algorithm 1 to find the field of identifiable</div>
+<div id="L598"><a href="#L598">00598</a> [PDF p.10] functions. For (Step 1), a calculation in Maple shows that the following set p̄ = {p1 , p2 , p3 , p4 } is a set of IO-equations</div>
+<div id="L599"><a href="#L599">00599</a> [PDF p.10] of (7):</div>
+<div id="L600"><a href="#L600">00600</a> [PDF p.10]        p1 = k1 k2 (y2 − y1 y4 ) − εB k1 y′1 − k2 y′1 y3 − y′′1 y3 ,</div>
+<div id="L601"><a href="#L601">00601</a> [PDF p.10]        p2 = y′′′                ′′</div>
+<div id="L602"><a href="#L602">00602</a> [PDF p.10]              1 + (k1 + k2 )y1 + k1 k2 y1 ,</div>
+<div id="L603"><a href="#L603">00603</a> [PDF p.10]                                             ′</div>
+<div id="L604"><a href="#L604">00604</a> [PDF p.10]                                                  p3 = y′3 , p4 = y′4 .</div>
+<div id="L605"><a href="#L605">00605</a> [PDF p.10] In (Step 2) and (Step 3), we compute the reduced row echelon forms of W p1 = Wr(y2 , y1 y4 , y′1 , y′1 y3 , y′′1 y3 ) and W p2 =</div>
+<div id="L606"><a href="#L606">00606</a> [PDF p.10] Wr(y′′1 , y′1 , y′′′   1 ) modulo the equations Σ and obtain the matrices</div>
+<div id="L607"><a href="#L607">00607</a> [PDF p.10]                                                 </div>
+<div id="L608"><a href="#L608">00608</a> [PDF p.10]        1 0 0 0                      k1 k2                          </div>
+<div id="L609"><a href="#L609">00609</a> [PDF p.10]          0 1 0 0                    −k   k       1 0      −k1 k2 </div>
+<div id="L610"><a href="#L610">00610</a> [PDF p.10]                                        1   2       </div>
+<div id="L611"><a href="#L611">00611</a> [PDF p.10]              0 0 1 εA −(εA k2 + εB k1 ) , 0 1 −(k1 + k2 ) ,</div>
+<div id="L612"><a href="#L612">00612</a> [PDF p.10]                                                                   </div>
+<div id="L613"><a href="#L613">00613</a> [PDF p.10]                  0 0 0 0              0                0 0   0</div>
+<div id="L614"><a href="#L614">00614</a> [PDF p.10]                     0 0 0 0              0</div>
+<div id="L615"><a href="#L615">00615</a> [PDF p.10] respectively. W p3 and W p4 are 1 × 1 matrices with the reduces row echclon form (1). Therefore,</div>
+<div id="L616"><a href="#L616">00616</a> [PDF p.10]        F( p̄) = C(k1 + k2 , k1 k2 , εA , εA k2 + εB k1 ).</div>
+<div id="L617"><a href="#L617">00617</a> [PDF p.10] Before going to (Step 4), we show that this intermediate result of computation can provide additional insights, for</div>
+<div id="L618"><a href="#L618">00618</a> [PDF p.10] example, recover the parameter transformation corresponding to the slow-fast ambiguity [41, equation (1.3)]. From</div>
+<div id="L619"><a href="#L619">00619</a> [PDF p.10] the proof of Theorem 11, F( p̄) consists of identifiable constants. So, any parameter transformation induces an auto-</div>
+<div id="L620"><a href="#L620">00620</a> [PDF p.10] morphism α of the constants over F( p̄). Since k1 + k2 and k1 k2 are identifiable, α(k1 ) = k1 and α(k2 ) = k2 or α(k1 ) = k2</div>
+<div id="L621"><a href="#L621">00621</a> [PDF p.10] and α(k2 ) = k1 . Consider the latter case. Since εA ∈ F( p̄), we have α(εA ) = εA . Hence,</div>
+<div id="L622"><a href="#L622">00622</a> [PDF p.10]        εA k2 + εB k1 = α(εA k2 + εB k1 ) = εA k1 + k2 α(εB ),</div>
+<div id="L623"><a href="#L623">00623</a> [PDF p.10] so α(εB ) = εA + k1 (εkB2−εA ) , giving the transformation [41, (1.3)]:</div>
+<div id="L624"><a href="#L624">00624</a> [PDF p.10]                                                             k1 (εB − εA )</div>
+<div id="L625"><a href="#L625">00625</a> [PDF p.10]        k1 → k2 , k2 → k1 , ε A → ε A , ε B → ε A +                        .                                                          (8)</div>
+<div id="L626"><a href="#L626">00626</a> [PDF p.10]                                                                  k2</div>
+<div id="L627"><a href="#L627">00627</a> [PDF p.10] Finally, in (Step 4), we compute</div>
+<div id="L628"><a href="#L628">00628</a> [PDF p.10]        C(k1 , k2 , εB ) ∩ F( p̄) = C(k1 k2 , k1 + k2 ).</div>
+<div id="L629"><a href="#L629">00629</a> [PDF p.10]     Now we will consider model (7) in the multi-experiment setup in which one is allowed to perform several</div>
+<div id="L630"><a href="#L630">00630</a> [PDF p.10] </div>
+<div id="L631"><a href="#L631">00631</a> [PDF p.10]                                                                        10</div>
+<div id="L632"><a href="#L632">00632</a> [PDF p.10] </div>
+<div id="L633"><a href="#L633">00633</a> [PDF p.11] experiments with the same k1 , k2 , εB but different initial concentrations and εA , εC . We will show that, in this setup,</div>
+<div id="L634"><a href="#L634">00634</a> [PDF p.11] the ambiguity can be resolved by one extra experiment. The first part of Theorem 19 implies that the field of ME-</div>
+<div id="L635"><a href="#L635">00635</a> [PDF p.11] identifiable functions is generated by the coefficients of p̄, so it equals</div>
+<div id="L636"><a href="#L636">00636</a> [PDF p.11]       C(k1 k2 , εB k1 , k2 , k1 + k2 ) = C(k1 , k2 , εB).</div>
+<div id="L637"><a href="#L637">00637</a> [PDF p.11] Therefore, all the parameters can be identified from several experiments. Now we use the bound from Theorem 19 to</div>
+<div id="L638"><a href="#L638">00638</a> [PDF p.11] find the number of experiments sufficient to make all the parameter identifiable. In the notation of the theorem, for</div>
+<div id="L639"><a href="#L639">00639</a> [PDF p.11] i = 1, we take</div>
+<div id="L640"><a href="#L640">00640</a> [PDF p.11]        f1,1 = y2 − y1 y4 , f1,2 = y′1 , f1,3 = y′1 y3 , f1,4 = y′′1 y3 ,</div>
+<div id="L641"><a href="#L641">00641</a> [PDF p.11] and so s1 = 3. A calculation in Maple shows that</div>
+<div id="L642"><a href="#L642">00642</a> [PDF p.11]       r1 = rank Wr( f1,1 , f1,2 , f1,3 )   mod IΣ = 2.</div>
+<div id="L643"><a href="#L643">00643</a> [PDF p.11] so the Wronskian does not always have full rank in practical examples either. For i = 2, f2,1 = y′′1 , f2,2 = y′1 , so s2 = 2,</div>
+<div id="L644"><a href="#L644">00644</a> [PDF p.11] and</div>
+<div id="L645"><a href="#L645">00645</a> [PDF p.11]       r2 = rank Wr( f2,1 , f2,2 )    mod IΣ = 2.</div>
+<div id="L646"><a href="#L646">00646</a> [PDF p.11] Finally, f3,1 = y′3 and f4,1 = y′4 , and so s3 = s4 = 0. Thus, all parameters are N-identifiable for all</div>
+<div id="L647"><a href="#L647">00647</a> [PDF p.11]       N ⩾ max(3 − 2 + 1, 2 − 2 + 1, 0 − 0 + 1, 0 − 0 + 1) = 2.</div>
+<div id="L648"><a href="#L648">00648</a> [PDF p.11] This bound is tight because, as we demonstrated earlier, neither of the parameter is identifiable from a single experi-</div>
+<div id="L649"><a href="#L649">00649</a> [PDF p.11] ment.</div>
+<div id="L650"><a href="#L650">00650</a> [PDF p.11] </div>
+<div id="L651"><a href="#L651">00651</a> [PDF p.11] 5.3. Lotka-Volterra model with “mixed” output</div>
+<div id="L652"><a href="#L652">00652</a> [PDF p.11]     In this example, we will illustrate the refinement of the bound on the number of experiments mentioned in Re-</div>
+<div id="L653"><a href="#L653">00653</a> [PDF p.11] mark 24 on the following variant of the Lotka-Volterra model:</div>
+<div id="L654"><a href="#L654">00654</a> [PDF p.11]             </div>
+<div id="L655"><a href="#L655">00655</a> [PDF p.11]             </div>
+<div id="L656"><a href="#L656">00656</a> [PDF p.11]             </div>
+<div id="L657"><a href="#L657">00657</a> [PDF p.11]              x′ = ax1 − x1 bx2 ,</div>
+<div id="L658"><a href="#L658">00658</a> [PDF p.11]             </div>
+<div id="L659"><a href="#L659">00659</a> [PDF p.11]              1′</div>
+<div id="L660"><a href="#L660">00660</a> [PDF p.11]             </div>
+<div id="L661"><a href="#L661">00661</a> [PDF p.11]        Σ=   x2 = −cx2 + dx1 x2 ,</div>
+<div id="L662"><a href="#L662">00662</a> [PDF p.11]             </div>
+<div id="L663"><a href="#L663">00663</a> [PDF p.11]             </div>
+<div id="L664"><a href="#L664">00664</a> [PDF p.11]             </div>
+<div id="L665"><a href="#L665">00665</a> [PDF p.11]             y = ex1 + f x2 ,</div>
+<div id="L666"><a href="#L666">00666</a> [PDF p.11] where we assume that a, b, c, d, e are unknown parameters and f is a known parameter that takes different values if</div>
+<div id="L667"><a href="#L667">00667</a> [PDF p.11] multiple experiments are conducted. In the context of our differential algebra setup, this can be encoded as follows:</div>
+<div id="L668"><a href="#L668">00668</a> [PDF p.11]            </div>
+<div id="L669"><a href="#L669">00669</a> [PDF p.11]            </div>
+<div id="L670"><a href="#L670">00670</a> [PDF p.11]            </div>
+<div id="L671"><a href="#L671">00671</a> [PDF p.11]             x′1 = ax1 − bx1 x2 ,</div>
+<div id="L672"><a href="#L672">00672</a> [PDF p.11]            </div>
+<div id="L673"><a href="#L673">00673</a> [PDF p.11]            </div>
+<div id="L674"><a href="#L674">00674</a> [PDF p.11]            </div>
+<div id="L675"><a href="#L675">00675</a> [PDF p.11]            </div>
+<div id="L676"><a href="#L676">00676</a> [PDF p.11]            </div>
+<div id="L677"><a href="#L677">00677</a> [PDF p.11]             x′ = −cx2 + dx1 x2 ,</div>
+<div id="L678"><a href="#L678">00678</a> [PDF p.11]            </div>
+<div id="L679"><a href="#L679">00679</a> [PDF p.11]             2′</div>
+<div id="L680"><a href="#L680">00680</a> [PDF p.11]            </div>
+<div id="L681"><a href="#L681">00681</a> [PDF p.11]       Σ=   f = 0,                                                                                                (9)</div>
+<div id="L682"><a href="#L682">00682</a> [PDF p.11]            </div>
+<div id="L683"><a href="#L683">00683</a> [PDF p.11]            </div>
+<div id="L684"><a href="#L684">00684</a> [PDF p.11]            </div>
+<div id="L685"><a href="#L685">00685</a> [PDF p.11]            </div>
+<div id="L686"><a href="#L686">00686</a> [PDF p.11]            </div>
+<div id="L687"><a href="#L687">00687</a> [PDF p.11]             y1 = ex1 + f x2 ,</div>
+<div id="L688"><a href="#L688">00688</a> [PDF p.11]            </div>
+<div id="L689"><a href="#L689">00689</a> [PDF p.11]            </div>
+<div id="L690"><a href="#L690">00690</a> [PDF p.11]            </div>
+<div id="L691"><a href="#L691">00691</a> [PDF p.11]            y2 = f</div>
+<div id="L692"><a href="#L692">00692</a> [PDF p.11] Our implementation shows that the field of ME-identifiable functions is</div>
+<div id="L693"><a href="#L693">00693</a> [PDF p.11]       C(a, b, c, d/e).                                                                                                   (10)</div>
+<div id="L694"><a href="#L694">00694</a> [PDF p.11] In particular, a, b, c are ME-identifiable, d and e are not but their ratio is.</div>
+<div id="L695"><a href="#L695">00695</a> [PDF p.11]     We now discuss the number of experiments for globally identifying the functions (10). A straightforward applica-</div>
+<div id="L696"><a href="#L696">00696</a> [PDF p.11] tion of Theorem 19 yields a bound 35 (Wronskian of dimension 51 and rank 17). 35 could be viewed as a rather high</div>
+<div id="L697"><a href="#L697">00697</a> [PDF p.11] number of experiments and is far from the actual number (2, as shown below).</div>
+<div id="L698"><a href="#L698">00698</a> [PDF p.11]     We can get a better bound equal to 4 using the same Theorem 19 as follows. Observe that, since y2 is constant,</div>
+<div id="L699"><a href="#L699">00699</a> [PDF p.11] then there will be the following input-output equations for the model: y′2 = 0 and p = 0, where p is a differential</div>
+<div id="L700"><a href="#L700">00700</a> [PDF p.11] polynomial y1 and y2 over C(µ̄) of zero order in y2 . We observe that, if one replaces y2 in p = 0 with f , the resulting</div>
+<div id="L701"><a href="#L701">00701</a> [PDF p.11] equations will be the input-output equations for the following simplified model, in which f is considered as a scalar</div>
+<div id="L702"><a href="#L702">00702</a> [PDF p.11] </div>
+<div id="L703"><a href="#L703">00703</a> [PDF p.11] </div>
+<div id="L704"><a href="#L704">00704</a> [PDF p.11] </div>
+<div id="L705"><a href="#L705">00705</a> [PDF p.11]                                                                      11</div>
+<div id="L706"><a href="#L706">00706</a> [PDF p.11] </div>
+<div id="L707"><a href="#L707">00707</a> [PDF p.12] parameter:</div>
+<div id="L708"><a href="#L708">00708</a> [PDF p.12]           </div>
+<div id="L709"><a href="#L709">00709</a> [PDF p.12]           </div>
+<div id="L710"><a href="#L710">00710</a> [PDF p.12]           </div>
+<div id="L711"><a href="#L711">00711</a> [PDF p.12]            x′ = ax1 − bx1 x2 ,</div>
+<div id="L712"><a href="#L712">00712</a> [PDF p.12]           </div>
+<div id="L713"><a href="#L713">00713</a> [PDF p.12]            ′1</div>
+<div id="L714"><a href="#L714">00714</a> [PDF p.12]           </div>
+<div id="L715"><a href="#L715">00715</a> [PDF p.12]      Σ=   x2 = −cx2 + dx1 x2 ,                                                                                               (11)</div>
+<div id="L716"><a href="#L716">00716</a> [PDF p.12]           </div>
+<div id="L717"><a href="#L717">00717</a> [PDF p.12]           </div>
+<div id="L718"><a href="#L718">00718</a> [PDF p.12]           </div>
+<div id="L719"><a href="#L719">00719</a> [PDF p.12]           y = ex1 + f x2 ,</div>
+<div id="L720"><a href="#L720">00720</a> [PDF p.12] Our implementation shows that the bound for this model is one, so SE-identifiable and ME-identifiable functions for</div>
+<div id="L721"><a href="#L721">00721</a> [PDF p.12] this model are the same. In particular the coefficients of the monic input-output equation of (11) are identifiable from a</div>
+<div id="L722"><a href="#L722">00722</a> [PDF p.12] single experiment. These coefficients are rational function in f over C(a, b, c, d, e). We write them as C1 /C, . . . , C s /C,</div>
+<div id="L723"><a href="#L723">00723</a> [PDF p.12] where C, C1 , . . . , C s are polynomials in f over C(a, b, c, d, e), and C is monic. We denote the number coefficients not</div>
+<div id="L724"><a href="#L724">00724</a> [PDF p.12] belonging to C in C, C1 , . . . , C s by n, n1 , . . . , n s , respectively. Then these coefficients can be determined uniquely from</div>
+<div id="L725"><a href="#L725">00725</a> [PDF p.12]                                       !</div>
+<div id="L726"><a href="#L726">00726</a> [PDF p.12]       max n + min ni , max ni .</div>
+<div id="L727"><a href="#L727">00727</a> [PDF p.12]                  1⩽i⩽s     1⩽i⩽s</div>
+<div id="L728"><a href="#L728">00728</a> [PDF p.12] </div>
+<div id="L729"><a href="#L729">00729</a> [PDF p.12] evaluations for different values of f . To show this, assume that n1 = min ni . Then n + n1 evaluations are sufficient to</div>
+<div id="L730"><a href="#L730">00730</a> [PDF p.12]                                                                              1⩽i⩽s</div>
+<div id="L731"><a href="#L731">00731</a> [PDF p.12] reconstruct coefficients of C1 /C as a rational function in f . Then, once the coefficients of C are known, evaluations of</div>
+<div id="L732"><a href="#L732">00732</a> [PDF p.12] C2 /C, . . . , C s /C can be used to find the coefficients of C2 , . . . , C s via polynomial interpolation. In this example, n = 2,</div>
+<div id="L733"><a href="#L733">00733</a> [PDF p.12]  min ni = 2, and max ni = 4, so four evaluations (that is, four experiments with different known values of f will be</div>
+<div id="L734"><a href="#L734">00734</a> [PDF p.12] 1⩽i⩽s              1⩽i⩽s</div>
+<div id="L735"><a href="#L735">00735</a> [PDF p.12] enough).</div>
+<div id="L736"><a href="#L736">00736</a> [PDF p.12]     The obtained bound 4 is close to the exact bound 2, which can be obtained using Theorem 19 and SIAN as follows.</div>
+<div id="L737"><a href="#L737">00737</a> [PDF p.12] Using SIAN, we obtain that a, b, c, d/e are only locally identifiable (from one experiment), so N &gt; 1. Running SIAN</div>
+<div id="L738"><a href="#L738">00738</a> [PDF p.12] for 2 experiments shows that the functions (10) are 2-experiment globally identifiable. Since from Theorem 19 we</div>
+<div id="L739"><a href="#L739">00739</a> [PDF p.12] know that these functions generate all ME-identifiable functions, we conclude that N = 2. Replication of the system</div>
+<div id="L740"><a href="#L740">00740</a> [PDF p.12] makes it substantially more challenging for SIAN, so this approach might be impractical if N is large, while computing</div>
+<div id="L741"><a href="#L741">00741</a> [PDF p.12] the bound above may be feasible.</div>
+<div id="L742"><a href="#L742">00742</a> [PDF p.12] </div>
+<div id="L743"><a href="#L743">00743</a> [PDF p.12] 5.4. SEIR epidemiological model</div>
+<div id="L744"><a href="#L744">00744</a> [PDF p.12]     Structural identifiability of the following epidemiological model has been considered in [40, Equation 2.2]</div>
+<div id="L745"><a href="#L745">00745</a> [PDF p.12]        </div>
+<div id="L746"><a href="#L746">00746</a> [PDF p.12]        </div>
+<div id="L747"><a href="#L747">00747</a> [PDF p.12]        </div>
+<div id="L748"><a href="#L748">00748</a> [PDF p.12]         S ′ = −β SNI ,</div>
+<div id="L749"><a href="#L749">00749</a> [PDF p.12]        </div>
+<div id="L750"><a href="#L750">00750</a> [PDF p.12]        </div>
+<div id="L751"><a href="#L751">00751</a> [PDF p.12]        </div>
+<div id="L752"><a href="#L752">00752</a> [PDF p.12]        </div>
+<div id="L753"><a href="#L753">00753</a> [PDF p.12]        E ′ = β SNI − ηE,</div>
+<div id="L754"><a href="#L754">00754</a> [PDF p.12]        </div>
+<div id="L755"><a href="#L755">00755</a> [PDF p.12]        </div>
+<div id="L756"><a href="#L756">00756</a> [PDF p.12]                                                                                                                               (12)</div>
+<div id="L757"><a href="#L757">00757</a> [PDF p.12]        </div>
+<div id="L758"><a href="#L758">00758</a> [PDF p.12]        </div>
+<div id="L759"><a href="#L759">00759</a> [PDF p.12]         I ′ = ηE − αI,</div>
+<div id="L760"><a href="#L760">00760</a> [PDF p.12]        </div>
+<div id="L761"><a href="#L761">00761</a> [PDF p.12]        </div>
+<div id="L762"><a href="#L762">00762</a> [PDF p.12]        </div>
+<div id="L763"><a href="#L763">00763</a> [PDF p.12]        R′ = αI,</div>
+<div id="L764"><a href="#L764">00764</a> [PDF p.12] where N is the total population which is constant and known. The following two setups are considered in [40]:</div>
+<div id="L765"><a href="#L765">00765</a> [PDF p.12]     • Prevalence observation. In this case, these is an output y1 = I. We also add y2 = N to account for the fact that</div>
+<div id="L766"><a href="#L766">00766</a> [PDF p.12]       N is known. Our implementation shows that the bound from Theorem 19 is equal to one, so the fields of ME-</div>
+<div id="L767"><a href="#L767">00767</a> [PDF p.12]       identifiable and SE-identifiable functions coincide. It also finds that these fields are equal to C(αη, α + η, β, N).</div>
+<div id="L768"><a href="#L768">00768</a> [PDF p.12]                                                                                        R</div>
+<div id="L769"><a href="#L769">00769</a> [PDF p.12]     • Cumulative incidence observation. In this case, the observed quantity is ηE dt. This can be encoded by</div>
+<div id="L770"><a href="#L770">00770</a> [PDF p.12]       introducing a new state variable C with C ′ = ηE and the outputs y1 = C and y2 = N. Our algorithm again shows</div>
+<div id="L771"><a href="#L771">00771</a> [PDF p.12]       that the fields of ME-identifiable and SE-identifiable functions coincide and that they equal C(α, β, η, N), so all</div>
+<div id="L772"><a href="#L772">00772</a> [PDF p.12]       of the parameters are globally identifiable.</div>
+<div id="L773"><a href="#L773">00773</a> [PDF p.12] These results confirm the findings of [40] obtained from analysis of input-output equations (that is, for ME-</div>
+<div id="L774"><a href="#L774">00774</a> [PDF p.12] identifiability) and show that they are valid for SE-identifiability as well.</div>
+<div id="L775"><a href="#L775">00775</a> [PDF p.12] </div>
+<div id="L776"><a href="#L776">00776</a> [PDF p.12] Acknowledgments</div>
+<div id="L777"><a href="#L777">00777</a> [PDF p.12] </div>
+<div id="L778"><a href="#L778">00778</a> [PDF p.12]     We are grateful to Julio Banga and Alejandro Villaverde for learning from them about the importance of multi-</div>
+<div id="L779"><a href="#L779">00779</a> [PDF p.12] experiment parameter identifiability at the AIM workshop “Identifiability problems in systems biology”. We thank</div>
+<div id="L780"><a href="#L780">00780</a> [PDF p.12] the editors and referees for their useful comments and suggestions. This work was partially supported by the</div>
+<div id="L781"><a href="#L781">00781</a> [PDF p.12]                                                                 12</div>
+<div id="L782"><a href="#L782">00782</a> [PDF p.12] </div>
+<div id="L783"><a href="#L783">00783</a> [PDF p.13] NSF grants CCF-1564132, CCF-1563942, DMS-1760448, DMS-1760413, DMS-1853650, DMS-1665035, DMS-</div>
+<div id="L784"><a href="#L784">00784</a> [PDF p.13] 1760212, DMS-1853482, and DMS-1800492, and by the Paris Ile-de-France Region.</div>
+<div id="L785"><a href="#L785">00785</a> [PDF p.13] </div>
+<div id="L786"><a href="#L786">00786</a> [PDF p.13] References</div>
+<div id="L787"><a href="#L787">00787</a> [PDF p.13]  [1] J. Baaijens and J. Draisma. On the existence of identifiable reparametrizations for linear compartment models. SIAM Journal on Applied</div>
+<div id="L788"><a href="#L788">00788</a> [PDF p.13]      Mathematics, 76(4), 2016. URL https://doi.org/10.1137/15M1038013 .</div>
+<div id="L789"><a href="#L789">00789</a> [PDF p.13]  [2] D. J. Bearup, N. D. Evans, and M. J. Chappell. The input-output relationship approach to structural identifiability analysis. Computer Methods</div>
+<div id="L790"><a href="#L790">00790</a> [PDF p.13]      and Programs in Biomedicine, 109(2):171–181, 2013. URL https://doi.org/10.1016/j.cmpb.2012.10.012.</div>
+<div id="L791"><a href="#L791">00791</a> [PDF p.13]  [3] G. Bellu, M. P. Saccomani, S. Audoly, and L. D’Angió.                       DAISY: A new software tool to test global identifiabil-</div>
+<div id="L792"><a href="#L792">00792</a> [PDF p.13]      ity of biological and physiological systems.            Computer Methods and Programs in Biomedicine, 88(1):52–61, 2007.                   URL</div>
+<div id="L793"><a href="#L793">00793</a> [PDF p.13]      https://doi.org/10.1016/j.cmpb.2007.07.002 .</div>
+<div id="L794"><a href="#L794">00794</a> [PDF p.13]  [4] A. K. Binder. Algorithms for Fields and an Application to a Problem in Computer Vision. PhD thesis, Technische Universität München,</div>
+<div id="L795"><a href="#L795">00795</a> [PDF p.13]      2009. URL https://pdfs.semanticscholar.org/e8f3/bba89b1f1c524d55914cf930562ac8432041.pdf .</div>
+<div id="L796"><a href="#L796">00796</a> [PDF p.13]  [5] F. Boulier and F. Lemaire. Computing canonical representatives of regular differential ideals. In Proceedings of the 2000 International Sym-</div>
+<div id="L797"><a href="#L797">00797</a> [PDF p.13]      posium on Symbolic and Algebraic Computation (ISSAC), pages 38–47. ACM, 2000. URL https://doi.org/10.1145/345542.345571.</div>
+<div id="L798"><a href="#L798">00798</a> [PDF p.13]  [6] F. Boulier, D. Lazard, F. Ollivier, and M. Petitot. Computing representations for radicals of finitely generated differential ideals. Applicable</div>
+<div id="L799"><a href="#L799">00799</a> [PDF p.13]      Algebra in Engineering, Communication and Computing, 20:73–121, 2009. URL https://doi.org/10.1007/s00200-009-0091-7 .</div>
+<div id="L800"><a href="#L800">00800</a> [PDF p.13]  [7] F. Boulier, F. Lemaire, M. Rosenkranz, R. Ushirobira, and N. Verdière. On symbolic approaches to integro-differential equations. In</div>
+<div id="L801"><a href="#L801">00801</a> [PDF p.13]      Algebraic and Symbolic Computation Methods in Dynamical Systems, pages 161–182. Springer International Publishing, 2020. URL</div>
+<div id="L802"><a href="#L802">00802</a> [PDF p.13]      https://doi.org/10.1007/978-3-030-38356-5_6 .</div>
+<div id="L803"><a href="#L803">00803</a> [PDF p.13]  [8] L. Denis-Vidal, G. Joly-Blanchard, C. Noiret, and M. Petitot. An algorithm to test identifiability of non-linear systems. IFAC Proceedings</div>
+<div id="L804"><a href="#L804">00804</a> [PDF p.13]      Volumes, 34(6):197–201, 2001. URL https://doi.org/10.1016/S1474-6670(17)35173-X.</div>
+<div id="L805"><a href="#L805">00805</a> [PDF p.13]  [9] M. Eisenberg. Input-output equivalence and identifiability: some simple generalizations of the differential algebra approach. 2019. URL</div>
+<div id="L806"><a href="#L806">00806</a> [PDF p.13]      https://arxiv.org/abs/1302.5484 .</div>
+<div id="L807"><a href="#L807">00807</a> [PDF p.13] [10] M. Fink and M. Noble. Markov models for ion channels: Versatility versus identifiability and speed. Philosophical Transactions: Mathemat-</div>
+<div id="L808"><a href="#L808">00808</a> [PDF p.13]      ical, Physical and Engineering Sciences, 367(1896):2161–2179, 2009. URL https://doi.org/10.1098/rsta.2008.0301.</div>
+<div id="L809"><a href="#L809">00809</a> [PDF p.13] [11] K. Forsman and M. Jirstrand. Some finiteness issues in differential algebraic systems theory. In Proceedings of 1994 33rd IEEE Conference</div>
+<div id="L810"><a href="#L810">00810</a> [PDF p.13]      on Decision and Control. URL https://doi.org/10.1109/cdc.1994.411295 .</div>
+<div id="L811"><a href="#L811">00811</a> [PDF p.13] [12] S. Glad. Nonlinear input output relations and identifiability. In Proceedings of the 31st IEEE Conference on Decision and Control, volume 4,</div>
+<div id="L812"><a href="#L812">00812</a> [PDF p.13]      pages 3673–3675, Tucson, AZ, USA, 1992. URL https://doi.org/10.1109/CDC.1992.370965.</div>
+<div id="L813"><a href="#L813">00813</a> [PDF p.13] [13] S. Glad and L. Ljung. Model structure identifiability and persistence of excitation. In Proceedings of the 29th IEEE Conference on Decision</div>
+<div id="L814"><a href="#L814">00814</a> [PDF p.13]      and Control, volume 6, pages 3236–3240, Honolulu, HI, USA, 1990. URL https://doi.org/10.1109/CDC.1990.203389.</div>
+<div id="L815"><a href="#L815">00815</a> [PDF p.13] [14] E. Gross, H. A. Harrington, N. Meshkat, and A. Shiu. Linear compartmental models: input-output equations and operations that preserve</div>
+<div id="L816"><a href="#L816">00816</a> [PDF p.13]      identifiability. SIAM Journal on Applied Mathematics, 79(4):1423–1447, 2019. URL https://doi.org/10.1137/18M1204826.</div>
+<div id="L817"><a href="#L817">00817</a> [PDF p.13] [15] H. Hong, A. Ovchinnikov, G. Pogudin, and C. Yap. SIAN: software for structural identifiability analysis of ODE models. Bioinformatics, 35</div>
+<div id="L818"><a href="#L818">00818</a> [PDF p.13]      (16):2873–2874, 2019. URL https://doi.org/10.1093/bioinformatics/bty1069.</div>
+<div id="L819"><a href="#L819">00819</a> [PDF p.13] [16] H. Hong, A. Ovchinnikov, G. Pogudin, and C. Yap. Global identifiability of differential models. Communications on Pure and Applied</div>
+<div id="L820"><a href="#L820">00820</a> [PDF p.13]      Mathematics, 73(9):1831–1879, 2020. URL https://doi.org/10.1002/cpa.21921 .</div>
+<div id="L821"><a href="#L821">00821</a> [PDF p.13] [17] R. Jain, S. Narasimhan, and N. Bhatt. A priori parameter identifiability in models with non-rational functions. Automatica, 109(11):108513,</div>
+<div id="L822"><a href="#L822">00822</a> [PDF p.13]      2019. URL https://doi.org/10.1016/j.automatica.2019.108513.</div>
+<div id="L823"><a href="#L823">00823</a> [PDF p.13] [18] Z. Jiafan and L. Xiang. Diagnosability test for nonlinear systems using the characteristic set. In 2009 Asia-Pacific Conference on Information</div>
+<div id="L824"><a href="#L824">00824</a> [PDF p.13]      Processing, 2009. URL https://doi.org/10.1109/apcip.2009.59.</div>
+<div id="L825"><a href="#L825">00825</a> [PDF p.13] [19] E. Kolchin. Differential Algebra and Algebraic Groups. Academic Press, New York, 1973.</div>
+<div id="L826"><a href="#L826">00826</a> [PDF p.13] [20] T. S. Ligon, F. Fröhlich, O. T. Chiş, J. R. Banga, E. Balsa-Canto, and J. Hasenauer. GenSSI 2.0: multi-experiment structural identifiability</div>
+<div id="L827"><a href="#L827">00827</a> [PDF p.13]      analysis of SBML models. Bioinformatics, 34(8):1421–1423, 2017. URL https://doi.org/10.1093/bioinformatics/btx735.</div>
+<div id="L828"><a href="#L828">00828</a> [PDF p.13] [21] L. Ljung and T. Glad. On global identifiability for arbitrary model parametrizations. Automatica, 30(2):265–276, 1994. URL</div>
+<div id="L829"><a href="#L829">00829</a> [PDF p.13]      https://doi.org/10.1016/0005-1098(94)90029-9 .</div>
+<div id="L830"><a href="#L830">00830</a> [PDF p.13] [22] D. Marker. Model Theory of Differential Fields, volume 5 of Lecture Notes in Logic, pages 38–113. Springer-Verlag, Berlin, 1996. URL</div>
+<div id="L831"><a href="#L831">00831</a> [PDF p.13]      https://doi.org/10.1017/9781316716991.003.</div>
+<div id="L832"><a href="#L832">00832</a> [PDF p.13] [23] N. Meshkat and S. Sullivant. Identifiable reparametrizations of linear compartment models. Journal of Symbolic Computation, 63:46–67,</div>
+<div id="L833"><a href="#L833">00833</a> [PDF p.13]      2014. URL https://doi.org/10.1016/j.jsc.2013.11.002.</div>
+<div id="L834"><a href="#L834">00834</a> [PDF p.13] [24] N. Meshkat, M. Eisenberg, and J. DiStefano. An algorithm for finding globally identifiable parameter combinations of nonlinear ODE models</div>
+<div id="L835"><a href="#L835">00835</a> [PDF p.13]      using Gröbner bases. Mathematical Biosciences, 222(2):61–72, 2009. URL https://doi.org/10.1016/j.mbs.2009.08.010.</div>
+<div id="L836"><a href="#L836">00836</a> [PDF p.13] [25] N. Meshkat, C. Kuo, and J. DiStefano.                   On finding and using identifiable parameter combinations in nonlinear dy-</div>
+<div id="L837"><a href="#L837">00837</a> [PDF p.13]      namic systems biology models and COMBOS: A novel web implementation.                             PLoS ONE, 9(10):e110261, 2014.            URL</div>
+<div id="L838"><a href="#L838">00838</a> [PDF p.13]      https://doi.org/10.1371/journal.pone.0110261.</div>
+<div id="L839"><a href="#L839">00839</a> [PDF p.13] [26] N. Meshkat, S. Sullivant, and M. Eisenberg. Identifiability results for several classes of linear compartment models. Bulletin of Mathematical</div>
+<div id="L840"><a href="#L840">00840</a> [PDF p.13]      Biology, 77:1620–1651, 10 2014. URL https://doi.org/10.1007/s11538-015-0098-0.</div>
+<div id="L841"><a href="#L841">00841</a> [PDF p.13] [27] N. Meshkat, Z. Rosen, and S. Sullivant. Algebraic tools for the analysis of state space models. In T. Hibi, editor, The 50th Anniversary</div>
+<div id="L842"><a href="#L842">00842</a> [PDF p.13]      of Gröbner Bases, July 1–10, 2015, Osaka, Japan, volume 77 of Advances in Pure Mathematics, pages 171–205, Tokyo, Japan, 2018.</div>
+<div id="L843"><a href="#L843">00843</a> [PDF p.13]      Mathematical Society of Japan. URL https://doi.org/10.2969/aspm/07710171.</div>
+<div id="L844"><a href="#L844">00844</a> [PDF p.13] [28] H. Miao, X. Xia, A. S. Perelson, and H. Wu. On identifiability of nonlinear ODE models and applications in viral dynamics. SIAM Review,</div>
+<div id="L845"><a href="#L845">00845</a> [PDF p.13]      53(1):3–39, 2011. URL https://doi.org/10.1137/090757009.</div>
+<div id="L846"><a href="#L846">00846</a> [PDF p.13] </div>
+<div id="L847"><a href="#L847">00847</a> [PDF p.13]                                                                         13</div>
+<div id="L848"><a href="#L848">00848</a> [PDF p.13] </div>
+<div id="L849"><a href="#L849">00849</a> [PDF p.14] [29] F. Ollivier. Le problème de l’identifiabilité structurelle globale: approche th éorique, méthodes effectives et bornes de complexité. PhD thesis,</div>
+<div id="L850"><a href="#L850">00850</a> [PDF p.14]      École polytechnique, 1990. URL https://www.theses.fr/1990EPXX0009 .</div>
+<div id="L851"><a href="#L851">00851</a> [PDF p.14] [30] A. Ovchinnikov, A. Pillay, G. Pogudin, and T. Scanlon. Multi-experiment parameter identifiability of ODEs and model theory. 2020. URL</div>
+<div id="L852"><a href="#L852">00852</a> [PDF p.14]      https://arxiv.org/abs/2011.10868.</div>
+<div id="L853"><a href="#L853">00853</a> [PDF p.14] [31] A. Ovchinnikov, G. Pogudin, and P. Thompson. Input-output equations and identifiability of linear ODE models. 2020. URL</div>
+<div id="L854"><a href="#L854">00854</a> [PDF p.14]      https://arxiv.org/abs/1910.03960.</div>
+<div id="L855"><a href="#L855">00855</a> [PDF p.14] [32] A. Ovchinnikov, G. Pogudin, and P. Thompson. Parameter identifiability and input-output equations. Applicable Algebra in Engineering,</div>
+<div id="L856"><a href="#L856">00856</a> [PDF p.14]      Communication and Computing, 2021. URL https://doi.org/10.1007/s00200-021-00486-8 .</div>
+<div id="L857"><a href="#L857">00857</a> [PDF p.14] [33] J. F. Ritt. Differential Algebra, volume 33 of Colloquium Publications. American Mathematical Society, 1950.</div>
+<div id="L858"><a href="#L858">00858</a> [PDF p.14] [34] M. Saccomani and L. D’Angió. Examples of testing global identifiability with the DAISY software. IFAC Proceedings Volumes, 42(10):</div>
+<div id="L859"><a href="#L859">00859</a> [PDF p.14]      48–53, 2009. URL https://doi.org/10.3182/20090706-3-FR-2004.00007.</div>
+<div id="L860"><a href="#L860">00860</a> [PDF p.14] [35] M. Saccomani, S. Audoly, and L. D’Angiò. Parameter identifiability of nonlinear systems: the role of initial conditions. Automatica, 39:</div>
+<div id="L861"><a href="#L861">00861</a> [PDF p.14]      619–632, 2003. URL https://doi.org/10.1016/S0005-1098(02)00302-3.</div>
+<div id="L862"><a href="#L862">00862</a> [PDF p.14] [36] M. P. Saccomani and G. Bellu. DAISY: An efficient tool to test global identifiability. Some case studies. In 2008 16th Mediterranean</div>
+<div id="L863"><a href="#L863">00863</a> [PDF p.14]      Conference on Control and Automation, pages 1723–1728, 2008. URL https://doi.org/10.1109/MED.2008.4602152 .</div>
+<div id="L864"><a href="#L864">00864</a> [PDF p.14] [37] A. Seidenberg. The prime ideals of a polynomial ideal under extension of the base field. Annali di Matematica Pura ed Applicata, 102(1):</div>
+<div id="L865"><a href="#L865">00865</a> [PDF p.14]      57–59, 1975. URL https://doi.org/10.1007/bf02410595.</div>
+<div id="L866"><a href="#L866">00866</a> [PDF p.14] [38] E. D. Sontag. Dynamic compensation, parameter identifiability, and equivariances. PLOS Computational Biology, 13(4):1–17, 2017. URL</div>
+<div id="L867"><a href="#L867">00867</a> [PDF p.14]      https://doi.org/10.1371/journal.pcbi.1005447.</div>
+<div id="L868"><a href="#L868">00868</a> [PDF p.14] [39] G. W. Stewart. Matrix Algorithms: I. Basic Decompositions. SIAM, 1998.</div>
+<div id="L869"><a href="#L869">00869</a> [PDF p.14] [40] N. Tuncer and T. T. Le. Structural and practical identifiability analysis of outbreak models. Mathematical Biosciences, 299:1–18, 2018. URL</div>
+<div id="L870"><a href="#L870">00870</a> [PDF p.14]      https://doi.org/10.1016/j.mbs.2018.02.004.</div>
+<div id="L871"><a href="#L871">00871</a> [PDF p.14] [41] S. Vajda and H. Rabitz. Identifiability and distinguishability of first-order reaction systems. Journal of Physical Chemistry, 92:701–707,</div>
+<div id="L872"><a href="#L872">00872</a> [PDF p.14]      1988. URL https://doi.org/10.1021/j100314a024 .</div>
+<div id="L873"><a href="#L873">00873</a> [PDF p.14] [42] A. Villaverde, N. Evans, M. Chappell, and J. Banga. Input-dependent structural identifiability of nonlinear systems. IEEE Control Systems</div>
+<div id="L874"><a href="#L874">00874</a> [PDF p.14]      Letters, 3(2):272–277, 2019. URL https://doi.org/10.1109/LCSYS.2018.2868608.</div>
+<div id="L875"><a href="#L875">00875</a> [PDF p.14] [43] A. F. Villaverde, N. D. Evans, M. J. Chappell, and J. R. Banga. Sufficiently exciting inputs for structurally identifiable systems biology</div>
+<div id="L876"><a href="#L876">00876</a> [PDF p.14]      models. IFAC-PapersOnLine, 51(19):16–19, 2018. URL https://doi.org/10.1016/j.ifacol.2018.09.015.</div>
+<div id="L877"><a href="#L877">00877</a> [PDF p.14] </div>
+<div id="L878"><a href="#L878">00878</a> [PDF p.14] </div>
+<div id="L879"><a href="#L879">00879</a> [PDF p.14] Appendix A. Proofs of the main results</div>
+<div id="L880"><a href="#L880">00880</a> [PDF p.14] </div>
+<div id="L881"><a href="#L881">00881</a> [PDF p.14] Appendix A.1. Single-experiment identifiability</div>
+<div id="L882"><a href="#L882">00882</a> [PDF p.14]    In this section, we will prove our first main result, Theorem 11.</div>
+<div id="L883"><a href="#L883">00883</a> [PDF p.14] Remark 25 (F(p) is generated by first integrals). Lemma 26 implies that F( p̄) consists of constants (that is, first</div>
+<div id="L884"><a href="#L884">00884</a> [PDF p.14] integrals). [31, Lemma 2] implies that F( p̄) ⊂ C(µ̄, x̄).</div>
+<div id="L885"><a href="#L885">00885</a> [PDF p.14] Lemma 26. In the setup of Section 3.1, F(p) ⊂ Const(K).</div>
+<div id="L886"><a href="#L886">00886</a> [PDF p.14] Proof. We will show that the space of linear relations between columns of W p is defined over Const(K). This will</div>
+<div id="L887"><a href="#L887">00887</a> [PDF p.14] imply that all the entries in the reduced row echelon form of W p are constants. Let X be a maximal set of linearly</div>
+<div id="L888"><a href="#L888">00888</a> [PDF p.14] independent columns of W p , and let Y denote the rest of the columns. The monomials corresponding to X are linearly</div>
+<div id="L889"><a href="#L889">00889</a> [PDF p.14] independent over Const(K) because any such dependence would yield a dependence of X. For each v ∈ Y, there exists</div>
+<div id="L890"><a href="#L890">00890</a> [PDF p.14] a column dependence of X ∪ {v}, unique up to scaling. These dependencies span the space of column dependencies of</div>
+<div id="L891"><a href="#L891">00891</a> [PDF p.14] W p . [19, Chapter II, Section 1, Theorem 1] implies that the monomials corresponding to X ∪ {v} are dependent over</div>
+<div id="L892"><a href="#L892">00892</a> [PDF p.14] Const(K). Therefore, the corresponding column dependence can be chosen to be over Const(K) as well.</div>
+<div id="L893"><a href="#L893">00893</a> [PDF p.14] Proof of Theorem 11. To prove the theorem, we will show that, for all differential fields k ⊂ K with C ⊂ k ⊂ Const(K)</div>
+<div id="L894"><a href="#L894">00894</a> [PDF p.14] and k being algebraically closed in K, every n, and every tuple ā ∈ K n ,</div>
+<div id="L895"><a href="#L895">00895</a> [PDF p.14]         k ∩ F( p̄) = k ∩ Chāi,</div>
+<div id="L896"><a href="#L896">00896</a> [PDF p.14] where p̄ := {p1 , . . . , pm } ⊂ k{z1 , . . . , zn } is a characteristic set of the prime ideal of all differential polynomials van-</div>
+<div id="L897"><a href="#L897">00897</a> [PDF p.14] ishing at ā. This is then applied to k = C(µ̄) and the differential field K generated over k by the (ȳ, ū)-components</div>
+<div id="L898"><a href="#L898">00898</a> [PDF p.14] (denoted by ā) of a generic solution of (1).</div>
+<div id="L899"><a href="#L899">00899</a> [PDF p.14]     Lemma 10 implies that k ∩ F( p̄) ⊂ k ∩ Chāi. Assume that</div>
+<div id="L900"><a href="#L900">00900</a> [PDF p.14]         k ∩ Chāi ) k ∩ F( p̄)</div>
+<div id="L901"><a href="#L901">00901</a> [PDF p.14] and let b ∈ k ∩ Chāi \ k ∩ F( p̄).</div>
+<div id="L902"><a href="#L902">00902</a> [PDF p.14] </div>
+<div id="L903"><a href="#L903">00903</a> [PDF p.14]                                                                            14</div>
+<div id="L904"><a href="#L904">00904</a> [PDF p.14] </div>
+<div id="L905"><a href="#L905">00905</a> [PDF p.15]        Recall (see [22, Section 2]) that a differential field K is differentially closed if: for all m and finite G ⊂</div>
+<div id="L906"><a href="#L906">00906</a> [PDF p.15] K{w1 , . . . , wm }, if there exists L ⊃ K such that G = 0 has a solution in L, then G = 0 has a solution in K. Let</div>
+<div id="L907"><a href="#L907">00907</a> [PDF p.15] K diff be a differential closure of K, that is, a differentially closed field containing K that embeds into any other differ-</div>
+<div id="L908"><a href="#L908">00908</a> [PDF p.15] entially closed field containing K.</div>
+<div id="L909"><a href="#L909">00909</a> [PDF p.15]        We have K diff ⊃ kacl , the algebraic closure of k, and kacl ∩ K = k. Since b &lt; F( p̄), there exists an automorphism</div>
+<div id="L910"><a href="#L910">00910</a> [PDF p.15] α : Const(K diff ) → Const(K diff ) such that α|F( p̄) = id and α(b) , b. We pick such an α and extend it to a differential</div>
+<div id="L911"><a href="#L911">00911</a> [PDF p.15] automorphism of K diff and denote the extension by α as well.</div>
+<div id="L912"><a href="#L912">00912</a> [PDF p.15]        For a vector K-subspace V of K n with C ⊂ K, we denote the field of definition of the subspace over C by FD(V).</div>
+<div id="L913"><a href="#L913">00913</a> [PDF p.15] Recall that V has a K-basis e1 , . . . , eℓ of V such that e1 , . . . , eℓ ∈ FD(V)n .</div>
+<div id="L914"><a href="#L914">00914</a> [PDF p.15]        Fix 1 ⩽ i ⩽ m. Let V pi denote the right kernel of W pi . Note that V pi is defined over Const(K). Since pi (ā) = 0,</div>
+<div id="L915"><a href="#L915">00915</a> [PDF p.15] the vector of coefficients of pi belongs to V pi . Note that FD(V pi ) = F(pi ). By the preceding paragraph, there exist</div>
+<div id="L916"><a href="#L916">00916</a> [PDF p.15] ri,1 , . . . , ri,Ni ∈ FD(V pi ){z1 , . . . , zn } such that</div>
+<div id="L917"><a href="#L917">00917</a> [PDF p.15]        • for every 1 ⩽ j ⩽ Ni , the vector of the coefficients of ri, j belongs to V pi (in particular, ri, j (ā) = 0);</div>
+<div id="L918"><a href="#L918">00918</a> [PDF p.15]        • pi is a K-linear combination of ri,1 , . . . , ri,Ni .</div>
+<div id="L919"><a href="#L919">00919</a> [PDF p.15]        Since b ∈ Chāi, there exist differential polynomials R1 , R2 ∈ C{z̄} such that b = RR12 (ā)</div>
+<div id="L920"><a href="#L920">00920</a> [PDF p.15]                                                                                                    (ā) . We write H = S 1 · . . . ·</div>
+<div id="L921"><a href="#L921">00921</a> [PDF p.15] S m · I1 · . . . · Im , where Ii and S i are the initial and separant of pi . Since b ∈ k, bR2 − R1 ∈ k{ x̄}. Since additionally</div>
+<div id="L922"><a href="#L922">00922</a> [PDF p.15] bR2 (ā) − R1 (ā) = 0,</div>
+<div id="L923"><a href="#L923">00923</a> [PDF p.15]                                p</div>
+<div id="L924"><a href="#L924">00924</a> [PDF p.15]            H(bR2 − R1 ) ∈ [ p̄].</div>
+<div id="L925"><a href="#L925">00925</a> [PDF p.15] Since, for every 1 ⩽ i ⩽ ℓ, pi ∈ [ri,1 , . . . , ri,Ni ], we have</div>
+<div id="L926"><a href="#L926">00926</a> [PDF p.15]                        p</div>
+<div id="L927"><a href="#L927">00927</a> [PDF p.15]       H(bR2 − R1 ) ∈ [r1,1 , . . . , rm,Nm ].                                                                                (A.1)</div>
+<div id="L928"><a href="#L928">00928</a> [PDF p.15] We apply α to (A.1) and use that ri, j ’s are invariant under α:</div>
+<div id="L929"><a href="#L929">00929</a> [PDF p.15]                            p</div>
+<div id="L930"><a href="#L930">00930</a> [PDF p.15]      α(H)(α(b)R2 − R1 ) ∈ [r1,1 , . . . , rm,Nm ].                                                                           (A.2)</div>
+<div id="L931"><a href="#L931">00931</a> [PDF p.15] We multiply (A.1) by α(H) and (A.2) by H, and subtract. We obtain</div>
+<div id="L932"><a href="#L932">00932</a> [PDF p.15]                                  p</div>
+<div id="L933"><a href="#L933">00933</a> [PDF p.15]         Hα(H)R2 (α(b) − b) ∈ [r1,1 , . . . , rm,Nm ].</div>
+<div id="L934"><a href="#L934">00934</a> [PDF p.15]                      p</div>
+<div id="L935"><a href="#L935">00935</a> [PDF p.15] Every element of [r1,1 , . . . , rm,Nm ] vanishes at ā since every ri, j vanishes at ā. Since H(ā) , 0 and R2 (ā)(α(b)−b) , 0,</div>
+<div id="L936"><a href="#L936">00936</a> [PDF p.15] it is sufficient to show that α(H)(ā) , 0 to arrive at contradiction.</div>
+<div id="L937"><a href="#L937">00937</a> [PDF p.15]      Assume there are 1 ⩽ i ⩽ m and h ∈ {S i , Ii } such that α(h)(ā) = 0. Consider the sets M0 and M1 of monomials</div>
+<div id="L938"><a href="#L938">00938</a> [PDF p.15] of α(h)(ā) (or, equivalently, of h(ā)) and pi (ā), respectively. Observe that there is a monomial A in ā with AM0 ⊂ M1</div>
+<div id="L939"><a href="#L939">00939</a> [PDF p.15] because</div>
+<div id="L940"><a href="#L940">00940</a> [PDF p.15]     • if h = S i , take A to be lead pi (ā);</div>
+<div id="L941"><a href="#L941">00941</a> [PDF p.15]     • if h = Ii , take A to be the appropriate power of lead pi (ā).</div>
+<div id="L942"><a href="#L942">00942</a> [PDF p.15] As AM0 ⊂ M1 , we have F(AM0 ) ⊂ F(pi ). Kernels of Wronskians are defined over the constants by Lemma 26, so the</div>
+<div id="L943"><a href="#L943">00943</a> [PDF p.15] kernel of the Wronskian of a tuple does not change if the tuple is multiplied by a nonzero element. Hence, F(AM0 ) =</div>
+<div id="L944"><a href="#L944">00944</a> [PDF p.15] F(M0 ) = F(α(h)), and so F(α(h)) ⊂ F(pi ). Since α(h)(ā) = 0, there are r1 , . . . , r s ∈ F(α(h)){z̄} = F(h){z̄} ⊂ K{z̄} and</div>
+<div id="L945"><a href="#L945">00945</a> [PDF p.15] λ1 , . . . , λ s ∈ K such that</div>
+<div id="L946"><a href="#L946">00946</a> [PDF p.15]        α(h) = λ1 r1 + . . . + λ s r s and r1 (ā) = . . . = r s (ā) = 0.</div>
+<div id="L947"><a href="#L947">00947</a> [PDF p.15] Applying α−1 , we get</div>
+<div id="L948"><a href="#L948">00948</a> [PDF p.15]        h = α−1 (λ1 )r1 + . . . + α−1 (λ s )r s ,</div>
+<div id="L949"><a href="#L949">00949</a> [PDF p.15] so h(ā) = 0, which is impossible, hence the contradiction.</div>
+<div id="L950"><a href="#L950">00950</a> [PDF p.15] </div>
+<div id="L951"><a href="#L951">00951</a> [PDF p.15] Appendix A.2. Multi-experiment identifiability</div>
+<div id="L952"><a href="#L952">00952</a> [PDF p.15] Proof of Theorem 19. For simplicity of notation, we denote the tuple of variables ȳ, ū by w̄. Note that, for every</div>
+<div id="L953"><a href="#L953">00953</a> [PDF p.15] N ⩾ 1, the set</div>
+<div id="L954"><a href="#L954">00954</a> [PDF p.15]        p̄(w̄1 ), . . . , p̄(w̄N ) ⊂ k{w̄1 , . . . , w̄N }</div>
+<div id="L955"><a href="#L955">00955</a> [PDF p.15] </div>
+<div id="L956"><a href="#L956">00956</a> [PDF p.15]                                                                        15</div>
+<div id="L957"><a href="#L957">00957</a> [PDF p.15] </div>
+<div id="L958"><a href="#L958">00958</a> [PDF p.16] is a set of IO-equations of ΣN . The coefficients of p̄(w̄1 ), . . . , p̄(w̄N ) are also c1,1 , . . . , cm,sm . Hence, as in [32, Corol-</div>
+<div id="L959"><a href="#L959">00959</a> [PDF p.16] lary 1 and Theorem 1], the field of N-experiment identifiable functions is contained in C(c1,1 , . . . , cm,sm ).</div>
+<div id="L960"><a href="#L960">00960</a> [PDF p.16]     For the reverse inclusion, let p ∈ p̄,</div>
+<div id="L961"><a href="#L961">00961</a> [PDF p.16]              X</div>
+<div id="L962"><a href="#L962">00962</a> [PDF p.16]              s</div>
+<div id="L963"><a href="#L963">00963</a> [PDF p.16]         p=          bi fi + f s+1 ,</div>
+<div id="L964"><a href="#L964">00964</a> [PDF p.16]               i=1</div>
+<div id="L965"><a href="#L965">00965</a> [PDF p.16] where, for each i, fi ∈ C{w̄} and f1 , . . . , f s are linearly independent over C. By dividing p by an element of k, we may</div>
+<div id="L966"><a href="#L966">00966</a> [PDF p.16] assume that deg f s+1 = deg p. Let</div>
+<div id="L967"><a href="#L967">00967</a> [PDF p.16]                                                </div>
+<div id="L968"><a href="#L968">00968</a> [PDF p.16]               f1 (ā1 ) . . . f s (ā1 )</div>
+<div id="L969"><a href="#L969">00969</a> [PDF p.16]                                        ..  ,</div>
+<div id="L970"><a href="#L970">00970</a> [PDF p.16]      A :=  ...            ..</div>
+<div id="L971"><a href="#L971">00971</a> [PDF p.16]                                   .       . </div>
+<div id="L972"><a href="#L972">00972</a> [PDF p.16]                                               </div>
+<div id="L973"><a href="#L973">00973</a> [PDF p.16]                    f1 (ā s ) . . . f s (ā s )</div>
+<div id="L974"><a href="#L974">00974</a> [PDF p.16] where, for each i, āi is the image of w̄i modulo IΣN . We will first show that det A , 0. For this, let M be a minimal (by</div>
+<div id="L975"><a href="#L975">00975</a> [PDF p.16] size) zero minor of A. Let, for some i and ℓ, fi (āℓ ) appear in M and q ∈ k{w̄} be the differential polynomial obtained</div>
+<div id="L976"><a href="#L976">00976</a> [PDF p.16] from M by replacing f j (āℓ ) with f j (w̄), 1 ⩽ j ⩽ s. By the minimality of M and linear independence of f1 , . . . , f s ,</div>
+<div id="L977"><a href="#L977">00977</a> [PDF p.16] q(w̄) , 0. Since q(āℓ ) = 0, there exist qi, j ∈ k{w̄ j } such that</div>
+<div id="L978"><a href="#L978">00978</a> [PDF p.16]         ∀i qi,1 (w̄) ∈ IΣ or . . . or qi,s (w̄) ∈ IΣ    and</div>
+<div id="L979"><a href="#L979">00979</a> [PDF p.16]              X                 Y</div>
+<div id="L980"><a href="#L980">00980</a> [PDF p.16]                                s</div>
+<div id="L981"><a href="#L981">00981</a> [PDF p.16]         q=         qi,ℓ (w̄) ·   qi, j (ā j ).</div>
+<div id="L982"><a href="#L982">00982</a> [PDF p.16]                i                j=1</div>
+<div id="L983"><a href="#L983">00983</a> [PDF p.16]                                 j,ℓ</div>
+<div id="L984"><a href="#L984">00984</a> [PDF p.16] </div>
+<div id="L985"><a href="#L985">00985</a> [PDF p.16]                                                                                                                                      P</div>
+<div id="L986"><a href="#L986">00986</a> [PDF p.16]                                                                                                                                      α</div>
+<div id="L987"><a href="#L987">00987</a> [PDF p.16] Hence, there exist α, and q1 , . . . , qα ∈ IΣ , and b1 , . . . , bα ∈ khā1 , . . . , āℓ−1 , āℓ+1 , . . . , ā si such that q =         bi qi and, for</div>
+<div id="L988"><a href="#L988">00988</a> [PDF p.16]                                                                                                                                      i=1</div>
+<div id="L989"><a href="#L989">00989</a> [PDF p.16] each i, every monomial that appears in qi also appears in q (and, therefore, in p). Let q̃ be the primitive part of q1</div>
+<div id="L990"><a href="#L990">00990</a> [PDF p.16] considered as a polynomial in its leader. Since IΣ is prime, q̃ ∈ IΣ . Since p̄ is autoreduced and q̃ divides a linear</div>
+<div id="L991"><a href="#L991">00991</a> [PDF p.16] combination of the monomials of p, the characteristic set p̄˜ of p̄ \ {p} ∪ {q̃} satisfies rank p̄˜ ⩽ rank p̄. Hence, p̄˜ is a</div>
+<div id="L992"><a href="#L992">00992</a> [PDF p.16] characteristic set of J, and so</div>
+<div id="L993"><a href="#L993">00993</a> [PDF p.16]         p̄˜ = p̄ \ {p} ∪ {q̃}.</div>
+<div id="L994"><a href="#L994">00994</a> [PDF p.16] Thus, p̄˜ is a characteristic presentation of IΣ . If q̃ , q, then deg q̃ &lt; deg q. If q̃ = q, then q̃ has fewer monomials than</div>
+<div id="L995"><a href="#L995">00995</a> [PDF p.16] p does. Thus, in either case, p/q̃ &lt; k. However, [5, Theorem 3] implies that p/q̃ ∈ k, which is a contradiction. This</div>
+<div id="L996"><a href="#L996">00996</a> [PDF p.16] shows that det A , 0. Thus, the rows of A are linearly independent.</div>
+<div id="L997"><a href="#L997">00997</a> [PDF p.16]        Let r = rank Wr( f1 (ā), . . . , f s (ā)) and the rows i1 = 0, i2 , . . . , ir of the Wronskian be linearly independent. Since</div>
+<div id="L998"><a href="#L998">00998</a> [PDF p.16] the rows of A form a basis of Chā1 , . . . , ā s i s , there exist rows j1 , . . . , j s−r of A such that they together with the rows</div>
+<div id="L999"><a href="#L999">00999</a> [PDF p.16] i1 , . . . , ir of the Wronskian form a basis of Chā1 , . . . , ā si s as well. Hence,</div>
+<div id="L1000"><a href="#L1000">01000</a> [PDF p.16]                                                                              </div>
+<div id="L1001"><a href="#L1001">01001</a> [PDF p.16]                       f1 (ā1 ) . . .                         f s (ā1 ) </div>
+<div id="L1002"><a href="#L1002">01002</a> [PDF p.16]                                                                               </div>
+<div id="L1003"><a href="#L1003">01003</a> [PDF p.16]                         (i2 )</div>
+<div id="L1004"><a href="#L1004">01004</a> [PDF p.16]                           f1 (ā1 ) . . . f s (ā1 )</div>
+<div id="L1005"><a href="#L1005">01005</a> [PDF p.16]                                                                  (i2 )</div>
+<div id="L1006"><a href="#L1006">01006</a> [PDF p.16]                             .                         ..           .. </div>
+<div id="L1007"><a href="#L1007">01007</a> [PDF p.16]                               ..                          .         . </div>
+<div id="L1008"><a href="#L1008">01008</a> [PDF p.16]                                                                              </div>
+<div id="L1009"><a href="#L1009">01009</a> [PDF p.16]             B :=  f1(ir ) (ā1 ) . . . f s(ir ) (ā1 ) ,</div>
+<div id="L1010"><a href="#L1010">01010</a> [PDF p.16]                                                                             </div>
+<div id="L1011"><a href="#L1011">01011</a> [PDF p.16]                                    f1 (ā j1 ) . . . f s (ā j1 ) </div>
+<div id="L1012"><a href="#L1012">01012</a> [PDF p.16]                                      .                ..            .. </div>
+<div id="L1013"><a href="#L1013">01013</a> [PDF p.16]                                        ..                 .          . </div>
+<div id="L1014"><a href="#L1014">01014</a> [PDF p.16]                                                                              </div>
+<div id="L1015"><a href="#L1015">01015</a> [PDF p.16]                                            f1 (ā js−r ) . . . f s (ā js−r )</div>
+<div id="L1016"><a href="#L1016">01016</a> [PDF p.16] is invertible. Replacing ā1 , ā j1 , . . . , ā js−r in det B by the indeterminates w̄1 , . . . , w̄ s−r+1 , we obtain a differential polyno-</div>
+<div id="L1017"><a href="#L1017">01017</a> [PDF p.16] mial with coefficients in C that does not belong to he vanishing ideal of ā1 , ā j1 , . . . , ā js−r . Since this ideal is the same</div>
+<div id="L1018"><a href="#L1018">01018</a> [PDF p.16] </div>
+<div id="L1019"><a href="#L1019">01019</a> [PDF p.16] </div>
+<div id="L1020"><a href="#L1020">01020</a> [PDF p.16] </div>
+<div id="L1021"><a href="#L1021">01021</a> [PDF p.16] </div>
+<div id="L1022"><a href="#L1022">01022</a> [PDF p.16]                                                                          16</div>
+<div id="L1023"><a href="#L1023">01023</a> [PDF p.16] </div>
+<div id="L1024"><a href="#L1024">01024</a> [PDF p.17] as the vanishing ideal of ā1 , ā2 , . . . , ā s−r+1, we conclude that the matrix</div>
+<div id="L1025"><a href="#L1025">01025</a> [PDF p.17]                                                                             </div>
+<div id="L1026"><a href="#L1026">01026</a> [PDF p.17]                 f1 (ā1 )                         ...       f s (ā1 ) </div>
+<div id="L1027"><a href="#L1027">01027</a> [PDF p.17]                   (i2 )                                                   </div>
+<div id="L1028"><a href="#L1028">01028</a> [PDF p.17]                     f1 (ā1 ) . . . f s (ā1 ) </div>
+<div id="L1029"><a href="#L1029">01029</a> [PDF p.17]                                                                (i2 )</div>
+<div id="L1030"><a href="#L1030">01030</a> [PDF p.17]                                           ..      ..              ..       </div>
+<div id="L1031"><a href="#L1031">01031</a> [PDF p.17]                                            .          .            .         </div>
+<div id="L1032"><a href="#L1032">01032</a> [PDF p.17]                           (i )                                                 </div>
+<div id="L1033"><a href="#L1033">01033</a> [PDF p.17]        C :=  f1 (ā1 ) . . . f s (ā1 ) </div>
+<div id="L1034"><a href="#L1034">01034</a> [PDF p.17]                                            r                   (i r )</div>
+<div id="L1035"><a href="#L1035">01035</a> [PDF p.17]                                                                                 </div>
+<div id="L1036"><a href="#L1036">01036</a> [PDF p.17]                               f1 (ā2 )           ...       f s (ā2 ) </div>
+<div id="L1037"><a href="#L1037">01037</a> [PDF p.17]                                            ..                      ..           </div>
+<div id="L1038"><a href="#L1038">01038</a> [PDF p.17]                                                   ..                              </div>
+<div id="L1039"><a href="#L1039">01039</a> [PDF p.17]                                              .         .             .               </div>
+<div id="L1040"><a href="#L1040">01040</a> [PDF p.17]                                       f1 (ā s−r+1 ) . . . f s (ā s−r+1 )</div>
+<div id="L1041"><a href="#L1041">01041</a> [PDF p.17] is invertible. Thus,</div>
+<div id="L1042"><a href="#L1042">01042</a> [PDF p.17]                                                                   </div>
+<div id="L1043"><a href="#L1043">01043</a> [PDF p.17]                                  f s+1 (ā1 )</div>
+<div id="L1044"><a href="#L1044">01044</a> [PDF p.17]                                    (i2 )                        </div>
+<div id="L1045"><a href="#L1045">01045</a> [PDF p.17]                                      f s+1 (ā1 )</div>
+<div id="L1046"><a href="#L1046">01046</a> [PDF p.17]                                     </div>
+<div id="L1047"><a href="#L1047">01047</a> [PDF p.17]                                        .. </div>
+<div id="L1048"><a href="#L1048">01048</a> [PDF p.17]        b1                          . </div>
+<div id="L1049"><a href="#L1049">01049</a> [PDF p.17]           .                                                 </div>
+<div id="L1050"><a href="#L1050">01050</a> [PDF p.17]             ..  = C −1  f (ir ) (ā1 ) ,</div>
+<div id="L1051"><a href="#L1051">01051</a> [PDF p.17]                                       </div>
+<div id="L1052"><a href="#L1052">01052</a> [PDF p.17]                                                    s+1          </div>
+<div id="L1053"><a href="#L1053">01053</a> [PDF p.17]                bs                            f s+1 (ā2 )</div>
+<div id="L1054"><a href="#L1054">01054</a> [PDF p.17]                                                . </div>
+<div id="L1055"><a href="#L1055">01055</a> [PDF p.17]                                                  .. </div>
+<div id="L1056"><a href="#L1056">01056</a> [PDF p.17]                                                                   </div>
+<div id="L1057"><a href="#L1057">01057</a> [PDF p.17]                                                      f s+1 (ā s )</div>
+<div id="L1058"><a href="#L1058">01058</a> [PDF p.17] which is in Chā1 , . . . , ā s−r+1i s and so is (s − r + 1)-experiment identifiable. Thus, the field of IO-identifiable functions</div>
+<div id="L1059"><a href="#L1059">01059</a> [PDF p.17] is N-experiment identifiable.</div>
+<div id="L1060"><a href="#L1060">01060</a> [PDF p.17] </div>
+<div id="L1061"><a href="#L1061">01061</a> [PDF p.17] Appendix B. Intersection for rational function fields</div>
+<div id="L1062"><a href="#L1062">01062</a> [PDF p.17] </div>
+<div id="L1063"><a href="#L1063">01063</a> [PDF p.17]     In this section, we will describe how [4, Algorithm 2.38] can be used to compute the intersection L1 ∩ L2 , where</div>
+<div id="L1064"><a href="#L1064">01064</a> [PDF p.17] L1 = C(µ̄) and L2 = F( p̄), as required by Algorithm 1.</div>
+<div id="L1065"><a href="#L1065">01065</a> [PDF p.17]     Algorithm 2 below is a version of [4, Algorithm 2.38]. It was shown [4, p. 37-38] that the output of the algorithm</div>
+<div id="L1066"><a href="#L1066">01066</a> [PDF p.17] is correct if the algorithm terminates. Termination was proved only if both input fields are algebraically closed in the</div>
+<div id="L1067"><a href="#L1067">01067</a> [PDF p.17] ambient rational function field. To use the algorithm in our applications, we relax this condition to requiring only one</div>
+<div id="L1068"><a href="#L1068">01068</a> [PDF p.17] of the fields to be algebraically closed (C(µ̄) in C(µ̄, x̄)) in Proposition 27.</div>
+<div id="L1069"><a href="#L1069">01069</a> [PDF p.17] </div>
+<div id="L1070"><a href="#L1070">01070</a> [PDF p.17] </div>
+<div id="L1071"><a href="#L1071">01071</a> [PDF p.17] </div>
+<div id="L1072"><a href="#L1072">01072</a> [PDF p.17] </div>
+<div id="L1073"><a href="#L1073">01073</a> [PDF p.17]                                                                          17</div>
+<div id="L1074"><a href="#L1074">01074</a> [PDF p.17] </div>
+<div id="L1075"><a href="#L1075">01075</a> [PDF p.18]  Algorithm 2 Intersection of fields (a version of [4, Algorithm 2.38])</div>
+<div id="L1076"><a href="#L1076">01076</a> [PDF p.18]  Input Tuples f¯ := ( f1 , . . . , f s ) and ḡ := (g1 , . . . , gℓ ) such that f1 , . . . , f s , g1 , . . . , gℓ ∈ K( x̄), where x̄ := (x1 , . . . , xn );</div>
+<div id="L1077"><a href="#L1077">01077</a> [PDF p.18] </div>
+<div id="L1078"><a href="#L1078">01078</a> [PDF p.18]  Output If terminates, returns generators of K( f¯) ∩ K(ḡ).</div>
+<div id="L1079"><a href="#L1079">01079</a> [PDF p.18] </div>
+<div id="L1080"><a href="#L1080">01080</a> [PDF p.18]  Notation: Introduce new variables X := (X1 , . . . , Xn ). In the algorithm, for a set S ⊂ K( x̄)[X], hS i will denote the</div>
+<div id="L1081"><a href="#L1081">01081</a> [PDF p.18]  ideal generated by S in K( x̄)[X].</div>
+<div id="L1082"><a href="#L1082">01082</a> [PDF p.18] </div>
+<div id="L1083"><a href="#L1083">01083</a> [PDF p.18] (Step 1) For every 1 ⩽ i ⩽ s, write fi ( x̄) = ndii (( x̄)</div>
+<div id="L1084"><a href="#L1084">01084</a> [PDF p.18]                                                        x̄) so that ni , di ∈ K[ x̄], and set D( x̄) := d1 · . . . · d s ;</div>
+<div id="L1085"><a href="#L1085">01085</a> [PDF p.18] (Step 2) Set i := 1, I1 := h1i and</div>
+<div id="L1086"><a href="#L1086">01086</a> [PDF p.18] </div>
+<div id="L1087"><a href="#L1087">01087</a> [PDF p.18]                 J1 := n1 (X) − f1 ( x̄)d1 (X), . . . , n s (X) − f s ( x̄)d s(X) : D(X)∞ ;</div>
+<div id="L1088"><a href="#L1088">01088</a> [PDF p.18] </div>
+<div id="L1089"><a href="#L1089">01089</a> [PDF p.18] (Step 3) While Ii , Ji do</div>
+<div id="L1090"><a href="#L1090">01090</a> [PDF p.18]           (a) Ii+1 := hJi ∩ K(ḡ)[X]i;</div>
+<div id="L1091"><a href="#L1091">01091</a> [PDF p.18]           (b) Ji+1 := hIi+1 ∩ K( f¯)[X]i;</div>
+<div id="L1092"><a href="#L1092">01092</a> [PDF p.18]           (c) i := i + 1;</div>
+<div id="L1093"><a href="#L1093">01093</a> [PDF p.18] </div>
+<div id="L1094"><a href="#L1094">01094</a> [PDF p.18] (Step 4) Compute any reduced Gröbner basis of Ji and return its coefficients.</div>
+<div id="L1095"><a href="#L1095">01095</a> [PDF p.18] </div>
+<div id="L1096"><a href="#L1096">01096</a> [PDF p.18] </div>
+<div id="L1097"><a href="#L1097">01097</a> [PDF p.18]  Proposition 27 (Termination of Algorithm 2). In the notation of Algorithm 2, if K( f¯) is algebraically closed in K( x̄)</div>
+<div id="L1098"><a href="#L1098">01098</a> [PDF p.18]  or K(ḡ) is algebraically closed in K( x̄), then Algorithm 2 terminates.</div>
+<div id="L1099"><a href="#L1099">01099</a> [PDF p.18]  Lemma 28. Let I0 , I1 , . . . , I s ⊂ K[ x̄], where x̄ = (x1 , . . . , xn ), be ideals such that I0 = I1 ∩ . . . ∩ I s , and let L ⊂ K be a</div>
+<div id="L1100"><a href="#L1100">01100</a> [PDF p.18]  subfield. For 0 ⩽ j ⩽ s, we define J j to be the ideal in K[ x̄] generated by I j ∩ L[ x̄]. Then J0 = J1 ∩ . . . ∩ J s .</div>
+<div id="L1101"><a href="#L1101">01101</a> [PDF p.18]  Proof. Since I0 ∩ L[ x̄] = (I1 ∩ L[ x̄]) ∩ . . . ∩ (I s ∩ L[ x̄]), we have J0 ⊂ J1 ∩ . . . ∩ J s .</div>
+<div id="L1102"><a href="#L1102">01102</a> [PDF p.18]     Now we prove the reverse inclusion. Let {aλ }λ∈Λ be an L-basis of K. Consider b ∈ J1 ∩ . . . ∩ J s . We write</div>
+<div id="L1103"><a href="#L1103">01103</a> [PDF p.18]      P</div>
+<div id="L1104"><a href="#L1104">01104</a> [PDF p.18]  b=     bλ aλ , where bλ ∈ L[ x̄] for every λ ∈ Λ and only finitely many of them are not zeroes. Consider any 1 ⩽ j ⩽ s.</div>
+<div id="L1105"><a href="#L1105">01105</a> [PDF p.18]       λ∈Λ</div>
+<div id="L1106"><a href="#L1106">01106</a> [PDF p.18]  Since J j has a set of generators with coefficients in L, the inclusion b ∈ J j implies that bλ ∈ I j ∩ L[ x̄] for every λ ∈ Λ.</div>
+<div id="L1107"><a href="#L1107">01107</a> [PDF p.18]  Therefore, bλ ∈ I0 ∩ L[ x̄] for every λ ∈ Λ. Thus, b ∈ J0 .</div>
+<div id="L1108"><a href="#L1108">01108</a> [PDF p.18]  Proof of Proposition 27. We will assume that K( f¯) is algebraically closed in K( x̄). The proof for the case of K(ḡ)</div>
+<div id="L1109"><a href="#L1109">01109</a> [PDF p.18]  being algebraically closed in K( x̄) is analogous. Assume that the algorithm does not terminate. By the construction,</div>
+<div id="L1110"><a href="#L1110">01110</a> [PDF p.18]  I j ⊃ J j for every j ⩾ 1. The ideals I1 and J1 are radical (the latter is due to [4, Definition 2.16 and Proposition 2.21]</div>
+<div id="L1111"><a href="#L1111">01111</a> [PDF p.18]  and since the intersection of a radical ideal with a subring is radical and the extension of a radical ideal is radical). It</div>
+<div id="L1112"><a href="#L1112">01112</a> [PDF p.18]  follows then that all Ii ’s and Ji ’s are radical. For every i ⩾ 1, we define di to be the minimum of the dimensions of the</div>
+<div id="L1113"><a href="#L1113">01113</a> [PDF p.18]  prime components P of Ji such that P 2 Ii . We will show that the sequence di is strictly increasing thus arriving at a</div>
+<div id="L1114"><a href="#L1114">01114</a> [PDF p.18]  contradiction.</div>
+<div id="L1115"><a href="#L1115">01115</a> [PDF p.18]       Fix i ⩾ 1. Let P1 , . . . , Pm be the prime components of Ji so that P1 , . . . , Pr are the components of the dimension</div>
+<div id="L1116"><a href="#L1116">01116</a> [PDF p.18]  &lt; di and Pr+1 , . . . , Pm are the components of the dimension ⩾ di . By the construction, Ji is defined over K( f¯). [4,</div>
+<div id="L1117"><a href="#L1117">01117</a> [PDF p.18]  Proposition 2.37] implies that P1 , . . . , Pm are also defined over K( f¯).</div>
+<div id="L1118"><a href="#L1118">01118</a> [PDF p.18]       Since Ii ⊃ Ji , and P1 , . . . , Pr contain Ii , P1 , . . . , Pr are exactly the prime components of Ii of dimension &lt; d, so</div>
+<div id="L1119"><a href="#L1119">01119</a> [PDF p.18]  Q := P1 ∩ . . . ∩ Pr is the intersection of the equidimensional components of Ii of dimensions &lt; d. Therefore, since Ii</div>
+<div id="L1120"><a href="#L1120">01120</a> [PDF p.18]  is defined over K(ḡ), Q is defined over K(ḡ). Hence,</div>
+<div id="L1121"><a href="#L1121">01121</a> [PDF p.18]          Q = hQ ∩ K(ḡ)[X]i = hQ ∩ K( f¯)[X]i ⊃ Ii+1 .                                                                                                  (B.1)</div>
+<div id="L1122"><a href="#L1122">01122</a> [PDF p.18]  Consider</div>
+<div id="L1123"><a href="#L1123">01123</a> [PDF p.18]          C := {C | C is a prime component of hP j ∩ K(ḡ)[X]i for j &gt; r}</div>
+<div id="L1124"><a href="#L1124">01124</a> [PDF p.18] </div>
+<div id="L1125"><a href="#L1125">01125</a> [PDF p.18]                                                                               18</div>
+<div id="L1126"><a href="#L1126">01126</a> [PDF p.18] </div>
+<div id="L1127"><a href="#L1127">01127</a> [PDF p.19] [37] implies that, for every j &gt; r, all prime components of hP j ∩ K(ḡ)[X]i are of the same dimension, so, for all C ∈ C,</div>
+<div id="L1128"><a href="#L1128">01128</a> [PDF p.19] dim C ⩾ di . For every C ∈ C, denote C ′ := hC ∩ K( f¯)[X]i. [4, Proposition 2.37] implies that C ′ is prime. If C , C ′ ,</div>
+<div id="L1129"><a href="#L1129">01129</a> [PDF p.19] then dim C ′ &gt; di . Otherwise, C ′ = C ⊃ Ii+1 . Therefore, due to Lemma 28, we have:</div>
+<div id="L1130"><a href="#L1130">01130</a> [PDF p.19]                                                                                              </div>
+<div id="L1131"><a href="#L1131">01131</a> [PDF p.19]                                                        \               \               </div>
+<div id="L1132"><a href="#L1132">01132</a> [PDF p.19]       Ji+1 = hIi+i ∩ K( f¯)[X]i = hQ ∩ K( f¯)[X]i ∩          C ′  ∩          C ′ </div>
+<div id="L1133"><a href="#L1133">01133</a> [PDF p.19]                                                         C∈C,C=C′                C∈C,C,C′</div>
+<div id="L1134"><a href="#L1134">01134</a> [PDF p.19]                                        |           {z              } | {z }</div>
+<div id="L1135"><a href="#L1135">01135</a> [PDF p.19]                                                    =:A                     =:B</div>
+<div id="L1136"><a href="#L1136">01136</a> [PDF p.19] </div>
+<div id="L1137"><a href="#L1137">01137</a> [PDF p.19] Since hQ ∩ K( f¯)[X]i ⊃ Ii+1 (see (B.1)), we have A ⊃ Ii+1 . Since every component of B has dimension at least di + 1,</div>
+<div id="L1138"><a href="#L1138">01138</a> [PDF p.19] we deduce that di+1 &gt; di .</div>
+<div id="L1139"><a href="#L1139">01139</a> [PDF p.19] </div>
+<div id="L1140"><a href="#L1140">01140</a> [PDF p.19] Appendix C. Mathematical discussion for Theorems 11 and 19</div>
+<div id="L1141"><a href="#L1141">01141</a> [PDF p.19] </div>
+<div id="L1142"><a href="#L1142">01142</a> [PDF p.19] Example 29 (Ranking dependency of F( p̄) in Theorem 11). We show that the field F( p̄) from Theorem 11 can de-</div>
+<div id="L1143"><a href="#L1143">01143</a> [PDF p.19] pend on the ranking although C(µ̄) ∩ F( p̄) cannot. Consider the following input-output equations</div>
+<div id="L1144"><a href="#L1144">01144</a> [PDF p.19]       p1 := y21 + y22 + y3 , p2 := y′2 − 1, p3 := y′3 − 1.</div>
+<div id="L1145"><a href="#L1145">01145</a> [PDF p.19] </div>
+<div id="L1146"><a href="#L1146">01146</a> [PDF p.19]                   p differential ranking y1 &gt; y2 &gt; y3 , p1 , p2 , p3 is the characteristic presentation of the prime differ-</div>
+<div id="L1147"><a href="#L1147">01147</a> [PDF p.19] For the elimination</div>
+<div id="L1148"><a href="#L1148">01148</a> [PDF p.19] ential ideal P := [p1 , p2 , p3 ]. A calculation in Maple shows that F(p1 ) = F(p2 ) = F(p3 ) = C, and so F( p̄) = C.</div>
+<div id="L1149"><a href="#L1149">01149</a> [PDF p.19] However, a calculation in Maple shows that q̄ := {q1 , q2 , q3 },</div>
+<div id="L1150"><a href="#L1150">01150</a> [PDF p.19]       q1 := 2y2 + 2y1 y′1 + 1,</div>
+<div id="L1151"><a href="#L1151">01151</a> [PDF p.19]       q2 := 4y21 y′2       ′     2</div>
+<div id="L1152"><a href="#L1152">01152</a> [PDF p.19]                   1 + 4y1 y1 + 4y1 + 4y3 + 1,</div>
+<div id="L1153"><a href="#L1153">01153</a> [PDF p.19]       q3 := y′3 − 1,</div>
+<div id="L1154"><a href="#L1154">01154</a> [PDF p.19] is the characteristic presentation of P with respect to the elimination differential ranking y2 &gt; y1 &gt; y3 and that</div>
+<div id="L1155"><a href="#L1155">01155</a> [PDF p.19] F(q2 ) = C(y1 y′1 + y3 ) and F(q1 ) = F(q3 ) = C, and so F(q̄) ) F( p̄).</div>
+<div id="L1156"><a href="#L1156">01156</a> [PDF p.19] </div>
+<div id="L1157"><a href="#L1157">01157</a> [PDF p.19] Example 30 (Achieving the bound in Theorem 19). A natural mathematical question about a bound is whether it is</div>
+<div id="L1158"><a href="#L1158">01158</a> [PDF p.19] tight in the sense that the equality can be reached for all the values of the parameters appearing in the bound. We will</div>
+<div id="L1159"><a href="#L1159">01159</a> [PDF p.19] give an indication of the tightness of the bound from Theorem 19 by providing, for every positive integers h ⩽ n, a</div>
+<div id="L1160"><a href="#L1160">01160</a> [PDF p.19] model with n+1 monomials in the IO-equations and the corresponding Wronskian having rank h so that every element</div>
+<div id="L1161"><a href="#L1161">01161</a> [PDF p.19] of the field of IO-identifiable functions is (n − h + 1)-identifiable but not necessarily (n − h)-identifiable. Fix h ⩽ n</div>
+<div id="L1162"><a href="#L1162">01162</a> [PDF p.19] and consider the system</div>
+<div id="L1163"><a href="#L1163">01163</a> [PDF p.19]                         P</div>
+<div id="L1164"><a href="#L1164">01164</a> [PDF p.19]                          n</div>
+<div id="L1165"><a href="#L1165">01165</a> [PDF p.19]             </div>
+<div id="L1166"><a href="#L1166">01166</a> [PDF p.19]             </div>
+<div id="L1167"><a href="#L1167">01167</a> [PDF p.19]              x′1 = c1 + ci xi ,</div>
+<div id="L1168"><a href="#L1168">01168</a> [PDF p.19]             </div>
+<div id="L1169"><a href="#L1169">01169</a> [PDF p.19]             </div>
+<div id="L1170"><a href="#L1170">01170</a> [PDF p.19]             </div>
+<div id="L1171"><a href="#L1171">01171</a> [PDF p.19]             </div>
+<div id="L1172"><a href="#L1172">01172</a> [PDF p.19]             </div>
+<div id="L1173"><a href="#L1173">01173</a> [PDF p.19]             </div>
+<div id="L1174"><a href="#L1174">01174</a> [PDF p.19]                         i=2</div>
+<div id="L1175"><a href="#L1175">01175</a> [PDF p.19]              x(h) = 0,           2⩽i⩽h</div>
+<div id="L1176"><a href="#L1176">01176</a> [PDF p.19]        Σ=     i                                                                                                    (C.1)</div>
+<div id="L1177"><a href="#L1177">01177</a> [PDF p.19]             </div>
+<div id="L1178"><a href="#L1178">01178</a> [PDF p.19]             </div>
+<div id="L1179"><a href="#L1179">01179</a> [PDF p.19]                ′</div>
+<div id="L1180"><a href="#L1180">01180</a> [PDF p.19]             </div>
+<div id="L1181"><a href="#L1181">01181</a> [PDF p.19]              x i = 0,            h +1⩽i⩽n</div>
+<div id="L1182"><a href="#L1182">01182</a> [PDF p.19]             </div>
+<div id="L1183"><a href="#L1183">01183</a> [PDF p.19]             </div>
+<div id="L1184"><a href="#L1184">01184</a> [PDF p.19]             y = x ,</div>
+<div id="L1185"><a href="#L1185">01185</a> [PDF p.19]              i     i              1⩽i⩽n</div>
+<div id="L1186"><a href="#L1186">01186</a> [PDF p.19] with unknown parameters {ci , 1 ⩽ i ⩽ n}. By a calculation,</div>
+<div id="L1187"><a href="#L1187">01187</a> [PDF p.19]           n           X</div>
+<div id="L1188"><a href="#L1188">01188</a> [PDF p.19]                       n                                                o</div>
+<div id="L1189"><a href="#L1189">01189</a> [PDF p.19]       p̄ = y′1 − c1 −   ci yi , yi(h) , 2 ⩽ i ⩽ h, y′i , h + 1 ⩽ i ⩽ n</div>
+<div id="L1190"><a href="#L1190">01190</a> [PDF p.19]                        i=2</div>
+<div id="L1191"><a href="#L1191">01191</a> [PDF p.19] </div>
+<div id="L1192"><a href="#L1192">01192</a> [PDF p.19] </div>
+<div id="L1193"><a href="#L1193">01193</a> [PDF p.19] </div>
+<div id="L1194"><a href="#L1194">01194</a> [PDF p.19] </div>
+<div id="L1195"><a href="#L1195">01195</a> [PDF p.19]                                                                 19</div>
+<div id="L1196"><a href="#L1196">01196</a> [PDF p.19] </div>
+<div id="L1197"><a href="#L1197">01197</a> [PDF p.20] is a set of IO-equations of (C.1). We have modulo IΣ :</div>
+<div id="L1198"><a href="#L1198">01198</a> [PDF p.20]                                                                                                 </div>
+<div id="L1199"><a href="#L1199">01199</a> [PDF p.20]                                     y2                   ...     yh    yh+1 . . . yn   1</div>
+<div id="L1200"><a href="#L1200">01200</a> [PDF p.20]                                       y′                                                      </div>
+<div id="L1201"><a href="#L1201">01201</a> [PDF p.20]                                         2                . . .   y   ′</div>
+<div id="L1202"><a href="#L1202">01202</a> [PDF p.20]                                                                            0    ... 0     0</div>
+<div id="L1203"><a href="#L1203">01203</a> [PDF p.20]                                                                         h                        </div>
+<div id="L1204"><a href="#L1204">01204</a> [PDF p.20]                                           ..             ..        ..     .. ..    .    .. </div>
+<div id="L1205"><a href="#L1205">01205</a> [PDF p.20]                                             .                .      .      .    . ..     . </div>
+<div id="L1206"><a href="#L1206">01206</a> [PDF p.20]                                               (h−1)                                           </div>
+<div id="L1207"><a href="#L1207">01207</a> [PDF p.20]        Wr(y2 , . . . , yn , 1) = y2                      . . . y(h−1)   0    ... 0     0 ,</div>
+<div id="L1208"><a href="#L1208">01208</a> [PDF p.20]                                                                 h                              </div>
+<div id="L1209"><a href="#L1209">01209</a> [PDF p.20]                                                   0      ...     0      0    ... 0     0</div>
+<div id="L1210"><a href="#L1210">01210</a> [PDF p.20]                                                     .                                          </div>
+<div id="L1211"><a href="#L1211">01211</a> [PDF p.20]                                                       .. ..       ..     ..  ..    .   .. </div>
+<div id="L1212"><a href="#L1212">01212</a> [PDF p.20]                                                               .     .      .     . ..    . </div>
+<div id="L1213"><a href="#L1213">01213</a> [PDF p.20]                                                           0 ...     0      0    ... 0     0</div>
+<div id="L1214"><a href="#L1214">01214</a> [PDF p.20] whose rank is r1 . On the one hand r1 ⩽ h because the matrix has only h non-zero rows. On the other hand,</div>
+<div id="L1215"><a href="#L1215">01215</a> [PDF p.20] det Wr(y2 , . . . , yh , 1) &lt; IΣ since Wr(y2 , . . . , yh , 1) is not reducible (to zero) by p̄. Thus, r1 = h. Also, s1 = n and,</div>
+<div id="L1216"><a href="#L1216">01216</a> [PDF p.20] for all i ⩾ 2, si = 0. So, by Theorem 19, for all</div>
+<div id="L1217"><a href="#L1217">01217</a> [PDF p.20]         N ⩾ s1 − r1 + 1 = n − h + 1,</div>
+<div id="L1218"><a href="#L1218">01218</a> [PDF p.20] the field of IO-identifiable functions C(c1 , . . . , cn ) is N-experiment identifiable. We will show that it is not (n −</div>
+<div id="L1219"><a href="#L1219">01219</a> [PDF p.20] h)-experiment identifiable, thus showing the desired tightness of the bound in Theorem 19. For this, consider the</div>
+<div id="L1220"><a href="#L1220">01220</a> [PDF p.20] following set of IO-equations for the (n − h)-experiment system Σn−h :</div>
+<div id="L1221"><a href="#L1221">01221</a> [PDF p.20]            </div>
+<div id="L1222"><a href="#L1222">01222</a> [PDF p.20]        n−h </div>
+<div id="L1223"><a href="#L1223">01223</a> [PDF p.20]                                                           </div>
+<div id="L1224"><a href="#L1224">01224</a> [PDF p.20]        [                 X</div>
+<div id="L1225"><a href="#L1225">01225</a> [PDF p.20]                           n</div>
+<div id="L1226"><a href="#L1226">01226</a> [PDF p.20]                                          y(h)             </div>
+<div id="L1227"><a href="#L1227">01227</a> [PDF p.20]                                                           </div>
+<div id="L1228"><a href="#L1228">01228</a> [PDF p.20]             ′                            j,i , 2 ⩽ i ⩽ h </div>
+<div id="L1229"><a href="#L1229">01229</a> [PDF p.20]            </div>
+<div id="L1230"><a href="#L1230">01230</a> [PDF p.20]             y j,1 − c1 −   ci y j,i , ′                  </div>
+<div id="L1231"><a href="#L1231">01231</a> [PDF p.20]            </div>
+<div id="L1232"><a href="#L1232">01232</a> [PDF p.20]          j=1                    i=2</div>
+<div id="L1233"><a href="#L1233">01233</a> [PDF p.20]                                        y , h + 1 ⩽ i ⩽ n</div>
+<div id="L1234"><a href="#L1234">01234</a> [PDF p.20]                                                 j,i</div>
+<div id="L1235"><a href="#L1235">01235</a> [PDF p.20]                                                           </div>
+<div id="L1236"><a href="#L1236">01236</a> [PDF p.20] </div>
+<div id="L1237"><a href="#L1237">01237</a> [PDF p.20] Let a j,i denote the image of y j,i modulo IΣn−h . Since, for all i and j, h + 1 ⩽ i ⩽ n, 1 ⩽ j ⩽ n − h, a j,i is constant, we</div>
+<div id="L1238"><a href="#L1238">01238</a> [PDF p.20] can define a differential field automorphism ϕ of Chā1 , . . . , ān−h i(c1 , . . . , cn ) over Chā1 , . . . , ān−h i by</div>
+<div id="L1239"><a href="#L1239">01239</a> [PDF p.20]         ϕ(c1 , c2 , . . . , ch , ch+1 , . . . , cn ) := (c1 + bn−h+1 , c2 . . . , ch , ch+1 + b1 , . . . , cn + bn−h ),</div>
+<div id="L1240"><a href="#L1240">01240</a> [PDF p.20] where (b1 , . . . , bn−h+1 ) ∈ Cha j,i | 1 ⩽ j ⩽ n − h, h + 1 ⩽ i ⩽ ni is a non-zero linear dependence among the columns</div>
+<div id="L1241"><a href="#L1241">01241</a> [PDF p.20] of the (n − h) × (n − h + 1) matrix</div>
+<div id="L1242"><a href="#L1242">01242</a> [PDF p.20]                                            </div>
+<div id="L1243"><a href="#L1243">01243</a> [PDF p.20]         a1,h+1 . . . a1,n 1</div>
+<div id="L1244"><a href="#L1244">01244</a> [PDF p.20]           .          ..      ..    ..  .</div>
+<div id="L1245"><a href="#L1245">01245</a> [PDF p.20]             ..           .    .     . </div>
+<div id="L1246"><a href="#L1246">01246</a> [PDF p.20]                                           </div>
+<div id="L1247"><a href="#L1247">01247</a> [PDF p.20]                an−h,h+1 . . . an−h,n 1</div>
+<div id="L1248"><a href="#L1248">01248</a> [PDF p.20] Thus, there exists i ∈ {1, h + 1, . . . , n} such that ci &lt; Chā1 , . . . , ān−h i, and so the IO-identifiable parameter ci is not</div>
+<div id="L1249"><a href="#L1249">01249</a> [PDF p.20] (n − h)-experiment identifiable.</div>
+<div id="L1250"><a href="#L1250">01250</a> [PDF p.20] </div>
+<div id="L1251"><a href="#L1251">01251</a> [PDF p.20] Appendix D. Computing an optimal representation (5) in Theorem 19</div>
+<div id="L1252"><a href="#L1252">01252</a> [PDF p.20]      In this section, we prove Lemma 31 providing a sufficient condition for a decomposition (5) to yield the optimal</div>
+<div id="L1253"><a href="#L1253">01253</a> [PDF p.20] (compared to other decompositions) bound in Theorem 19. Then we give Algorithm 3 to compute such a decompo-</div>
+<div id="L1254"><a href="#L1254">01254</a> [PDF p.20] sition, which basically computes an LU-decomposition of a matrix in the language of polynomials (see the proof of</div>
+<div id="L1255"><a href="#L1255">01255</a> [PDF p.20] Lemma 31).</div>
+<div id="L1256"><a href="#L1256">01256</a> [PDF p.20] Lemma 31. Let p(z̄) ∈ C(µ̄){z̄} be a differential polynomial over a constant field C(µ̄) in z̄ = (z1 , . . . , zn ), where</div>
+<div id="L1257"><a href="#L1257">01257</a> [PDF p.20] µ̄ = (µ1 , . . . , µm ) are transcendental constants. Let I ⊂ C(µ̄){z̄} be a prime differential ideal containing p. Consider</div>
+<div id="L1258"><a href="#L1258">01258</a> [PDF p.20] two representations of p</div>
+<div id="L1259"><a href="#L1259">01259</a> [PDF p.20]                         X</div>
+<div id="L1260"><a href="#L1260">01260</a> [PDF p.20]                         s                                     X</div>
+<div id="L1261"><a href="#L1261">01261</a> [PDF p.20]                                                               s̃</div>
+<div id="L1262"><a href="#L1262">01262</a> [PDF p.20]          p = f s+1 +           c j f j and p = f˜s̃+1 +             c̃ j f˜j</div>
+<div id="L1263"><a href="#L1263">01263</a> [PDF p.20]                          j=1                                  j=1</div>
+<div id="L1264"><a href="#L1264">01264</a> [PDF p.20] </div>
+<div id="L1265"><a href="#L1265">01265</a> [PDF p.20] such that f1 , . . . , f s+1 , f˜1 , . . . , f˜s̃+1 ∈ C{z̄}, c1 , . . . , c s , c̃1 , . . . , c̃ s̃ ∈ C(µ̄), f1 , . . . , f s+1 are C-linearly independent, and</div>
+<div id="L1266"><a href="#L1266">01266</a> [PDF p.20] 1, c1 , . . . , c s are C-linearly independent. We define r and r̃ to be the ranks of Wr( f1 , . . . , f s ) and Wr( f˜1 , . . . , f˜s̃ ) modulo</div>
+<div id="L1267"><a href="#L1267">01267</a> [PDF p.20] I, respectively. Then</div>
+<div id="L1268"><a href="#L1268">01268</a> [PDF p.20]          s − r ⩽ s̃ − r̃        and      s ⩽ s̃.</div>
+<div id="L1269"><a href="#L1269">01269</a> [PDF p.20]                                                                                  20</div>
+<div id="L1270"><a href="#L1270">01270</a> [PDF p.20] </div>
+<div id="L1271"><a href="#L1271">01271</a> [PDF p.21]  Proof. Viewing C(µ̄){z̄} as a tensor product of C-vector spaces C(µ̄) ⊗C C{z̄}, we can consider p as an element of this</div>
+<div id="L1272"><a href="#L1272">01272</a> [PDF p.21]  tensor product. Then the linear independence of 1, c1 , . . . , c s and of f1 , . . . , f s+1 implies that</div>
+<div id="L1273"><a href="#L1273">01273</a> [PDF p.21]         1 ⊗ f s+1 + c1 ⊗ f1 + . . . + c s ⊗ f s</div>
+<div id="L1274"><a href="#L1274">01274</a> [PDF p.21]  is a full-rank factorization of p [39, Theorem 3.13]. Since 1 ⊗ f˜s̃+1 + c̃1 ⊗ f˜1 + . . . + c̃ s̃ ⊗ f˜s̃ is another rank-one</div>
+<div id="L1275"><a href="#L1275">01275</a> [PDF p.21]  factorization of the same tensor, the proof of [39, Theorem 3.13] implies that 1, c1 , . . . , c s belong to the C-span of</div>
+<div id="L1276"><a href="#L1276">01276</a> [PDF p.21]  1, c̃1 , . . . , c̃ s̃ and f1 , . . . , f s+1 belong to the C-span of f˜1 , . . . , f˜s̃+1 . The former inclusion implies s ⩽ s̃. The latter</div>
+<div id="L1277"><a href="#L1277">01277</a> [PDF p.21]  implies that there exists a full-rank C-matrix M such that ( f1 , . . . , f s+1 ) = ( f˜1 , . . . , f˜s̃+1 )M. Therefore, any nontrivial</div>
+<div id="L1278"><a href="#L1278">01278</a> [PDF p.21]  linear dependence of the images of f1 , . . . , f s+1 in C(µ̄){z̄}/I over the constants of the fraction field of C(µ̄){z̄}/I yields</div>
+<div id="L1279"><a href="#L1279">01279</a> [PDF p.21]  (after multiplying by M) such a relation for the images of f˜1 , . . . , f˜s̃+1 . Therefore, the proof of Lemma 26 implies that</div>
+<div id="L1280"><a href="#L1280">01280</a> [PDF p.21]  the corank of Wr( f1 , . . . , f s ) modulo I, r − s, does not exceed the corank of Wr( f˜1 , . . . , f˜s̃ ) modulo I, r̃ − s̃.</div>
+<div id="L1281"><a href="#L1281">01281</a> [PDF p.21] </div>
+<div id="L1282"><a href="#L1282">01282</a> [PDF p.21] </div>
+<div id="L1283"><a href="#L1283">01283</a> [PDF p.21]  Algorithm 3 Computing optimal representation for Theorem 19</div>
+<div id="L1284"><a href="#L1284">01284</a> [PDF p.21]  Input a monic polynomial p( x̄) ∈ C(µ̄)[ x̄] (see Definition 5), where x̄ = (x1 , . . . , xn ) and µ̄ = (µ1 , . . . , µm ) are</div>
+<div id="L1285"><a href="#L1285">01285</a> [PDF p.21]       independent indeterminates;</div>
+<div id="L1286"><a href="#L1286">01286</a> [PDF p.21]  Output A representation of p of the form</div>
+<div id="L1287"><a href="#L1287">01287</a> [PDF p.21]                                   X</div>
+<div id="L1288"><a href="#L1288">01288</a> [PDF p.21]                                   s</div>
+<div id="L1289"><a href="#L1289">01289</a> [PDF p.21]                   p = f s+1 +           cj fj</div>
+<div id="L1290"><a href="#L1290">01290</a> [PDF p.21]                                   j=1</div>
+<div id="L1291"><a href="#L1291">01291</a> [PDF p.21] </div>
+<div id="L1292"><a href="#L1292">01292</a> [PDF p.21]         in which f1 , . . . , f s+1 ∈ C[ x̄] are C-linearly independent and 1, c1 , . . . , c s ∈ C(µ̄) are C-linearly independent.</div>
+<div id="L1293"><a href="#L1293">01293</a> [PDF p.21] </div>
+<div id="L1294"><a href="#L1294">01294</a> [PDF p.21]  Fix an arbitrary ordering on the monomials in µ̄. The leading monomial and leading coefficient of a polynomial f</div>
+<div id="L1295"><a href="#L1295">01295</a> [PDF p.21]  w.r.t. this ordering will be denoted by lm f and lc f , respectively.</div>
+<div id="L1296"><a href="#L1296">01296</a> [PDF p.21] </div>
+<div id="L1297"><a href="#L1297">01297</a> [PDF p.21] (Step 1) Compute the LCM q(µ̄) ∈ C[µ̄] of the denominators of the coefficients of p. Set P(µ̄, x̄) := q · p ∈ C[µ̄, x̄].</div>
+<div id="L1298"><a href="#L1298">01298</a> [PDF p.21]                    P</div>
+<div id="L1299"><a href="#L1299">01299</a> [PDF p.21]                    ℓ</div>
+<div id="L1300"><a href="#L1300">01300</a> [PDF p.21] (Step 2) Write P as Ci (µ̄)Mi ( x̄), where M1 , . . . , Mℓ are distinct monomials in x̄ and C1 , . . . , Cℓ ∈ C[µ̄], and C1 = q</div>
+<div id="L1301"><a href="#L1301">01301</a> [PDF p.21]                             i=1</div>
+<div id="L1302"><a href="#L1302">01302</a> [PDF p.21]        (possible since p is monic).</div>
+<div id="L1303"><a href="#L1303">01303</a> [PDF p.21] (Step 3) Let S be a list of pairs from C[µ̄] × C[ x̄] initialized to be empty.</div>
+<div id="L1304"><a href="#L1304">01304</a> [PDF p.21] (Step 4) For every i = 1, . . . , ℓ, do</div>
+<div id="L1305"><a href="#L1305">01305</a> [PDF p.21]          (a) for every (A, B) ∈ S , where A ∈ C[µ̄], B ∈ C[ x̄]</div>
+<div id="L1306"><a href="#L1306">01306</a> [PDF p.21]                                            c                           c</div>
+<div id="L1307"><a href="#L1307">01307</a> [PDF p.21]                          Ci := Ci −            A,         B := B +         Mi ,                                                       (D.1)</div>
+<div id="L1308"><a href="#L1308">01308</a> [PDF p.21]                                          lc(A)                       lc(A)</div>
+<div id="L1309"><a href="#L1309">01309</a> [PDF p.21]              where c is the coefficient in front of lm(A) in Ci .</div>
+<div id="L1310"><a href="#L1310">01310</a> [PDF p.21]         (b) if Ci , 0, append (Ci , Mi ) to S .</div>
+<div id="L1311"><a href="#L1311">01311</a> [PDF p.21] (Step 5) Let S = [(A0 , B0 ), (A1 , B1), . . . , (A s, B s)]. Return f s+1 = B0 and fi = Bi and ci = Aqi for every 1 ⩽ i ⩽ s.</div>
+<div id="L1312"><a href="#L1312">01312</a> [PDF p.21] </div>
+<div id="L1313"><a href="#L1313">01313</a> [PDF p.21] </div>
+<div id="L1314"><a href="#L1314">01314</a> [PDF p.21]  Lemma 32. Algorithm 3 is correct.</div>
+<div id="L1315"><a href="#L1315">01315</a> [PDF p.21]                                                     P</div>
+<div id="L1316"><a href="#L1316">01316</a> [PDF p.21]                                                     s</div>
+<div id="L1317"><a href="#L1317">01317</a> [PDF p.21]                                                       Ai</div>
+<div id="L1318"><a href="#L1318">01318</a> [PDF p.21]  Proof. First we will show that p =                       q Bi + B0 . By the construction, we will have A0 = Q, so this is equivalent to</div>
+<div id="L1319"><a href="#L1319">01319</a> [PDF p.21]                                                     i=1</div>
+<div id="L1320"><a href="#L1320">01320</a> [PDF p.21]                   P</div>
+<div id="L1321"><a href="#L1321">01321</a> [PDF p.21]                   s</div>
+<div id="L1322"><a href="#L1322">01322</a> [PDF p.21]                         Ai</div>
+<div id="L1323"><a href="#L1323">01323</a> [PDF p.21]  proving p =            q Bi . To prove this, we observe that the transformation (D.1) preserves the value</div>
+<div id="L1324"><a href="#L1324">01324</a> [PDF p.21]                   i=0</div>
+<div id="L1325"><a href="#L1325">01325</a> [PDF p.21]           X</div>
+<div id="L1326"><a href="#L1326">01326</a> [PDF p.21]                   A · B + Ci Mi .</div>
+<div id="L1327"><a href="#L1327">01327</a> [PDF p.21]         (A,B)∈S</div>
+<div id="L1328"><a href="#L1328">01328</a> [PDF p.21] </div>
+<div id="L1329"><a href="#L1329">01329</a> [PDF p.21]                                                                               21</div>
+<div id="L1330"><a href="#L1330">01330</a> [PDF p.21] </div>
+<div id="L1331"><a href="#L1331">01331</a> [PDF p.22]                                                                                    P</div>
+<div id="L1332"><a href="#L1332">01332</a> [PDF p.22] Therefore, after the i-th iteration of the loop in (Step 4), the value                     AB is increased by Ci Mi . Since it starts with</div>
+<div id="L1333"><a href="#L1333">01333</a> [PDF p.22]                                                                                  (A,B)∈S</div>
+<div id="L1334"><a href="#L1334">01334</a> [PDF p.22]                             P</div>
+<div id="L1335"><a href="#L1335">01335</a> [PDF p.22]                             ℓ                                              P</div>
+<div id="L1336"><a href="#L1336">01336</a> [PDF p.22]                                                                            s</div>
+<div id="L1337"><a href="#L1337">01337</a> [PDF p.22]                                                                              Ai          P</div>
+<div id="L1338"><a href="#L1338">01338</a> [PDF p.22] zero, it will be equal to         C j M j = P after (Step 4). Therefore,          q Bi = q = p.</div>
+<div id="L1339"><a href="#L1339">01339</a> [PDF p.22]                             j=1                                            i=0</div>
+<div id="L1340"><a href="#L1340">01340</a> [PDF p.22]    To prove the C-linear independence of B j ’s, for each 1 ⩽ j ⩽ s, consider the pair (Ci , Mi ) that was the j-th</div>
+<div id="L1341"><a href="#L1341">01341</a> [PDF p.22] appended pair for (Step 4)b. Then Mi will not appear in any of B j+1 , . . . , B s, so B1 , . . . , B s are C-linearly independent.</div>
+<div id="L1342"><a href="#L1342">01342</a> [PDF p.22]    The linear independence of A0 , . . . , A s follows from the fact that, lm(A j ) does not appear in A j+1 , . . . , A s for every</div>
+<div id="L1343"><a href="#L1343">01343</a> [PDF p.22] 0 ⩽ j ⩽ s, and this property is due to the reduction procedure (D.1).</div>
+<div id="L1344"><a href="#L1344">01344</a> [PDF p.22] </div>
+<div id="L1345"><a href="#L1345">01345</a> [PDF p.22] </div>
+<div id="L1346"><a href="#L1346">01346</a> [PDF p.22] </div>
+<div id="L1347"><a href="#L1347">01347</a> [PDF p.22] </div>
+<div id="L1348"><a href="#L1348">01348</a> [PDF p.22]                                                                  22</div>
+<div id="L1349"><a href="#L1349">01349</a> [PDF p.22] </div></pre>

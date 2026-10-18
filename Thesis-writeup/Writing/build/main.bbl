@@ -103,14 +103,14 @@ G.~I. Beintema, M.~Schoukens, and R.~T{\'o}th, ``Deep subspace encoders for
   nonlinear system identification,'' \emph{Automatica}, vol. 156, p. 111210,
   2023.
 
-\bibitem{hoekstra2026encoder}
-J.~H. Hoekstra, B.~M. Gy{\"o}r{\"o}k, R.~T{\'o}th, and M.~Schoukens, ``Encoder
-  initialisation methods in the model augmentation setting,'' 2026.
-
 \bibitem{forssell1999revisited}
 U.~Forssell and L.~Ljung, ``Closed-loop identification revisited: Updated
   version,'' Department of Electrical Engineering, Link{\"o}ping University,
   Tech. Rep. LiTH-ISY-R-2021, Apr. 1998.
+
+\bibitem{hoekstra2026encoder}
+J.~H. Hoekstra, B.~M. Gy{\"o}r{\"o}k, R.~T{\'o}th, and M.~Schoukens, ``Encoder
+  initialisation methods in the model augmentation setting,'' 2026.
 
 \bibitem{hefny2015supervised}
 A.~Hefny, C.~Downey, and G.~J. Gordon, ``Supervised learning for dynamical

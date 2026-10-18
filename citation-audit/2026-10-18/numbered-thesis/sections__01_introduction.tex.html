@@ -1,0 +1,339 @@
+<meta charset="utf-8"><title>sections/01_introduction.tex</title><pre><div id="L1"><a href="#L1">0001</a> % Page budget: 1.15 pages | Owns: application motivation, research gap, research question, contributions, and paper map.</div>
+<div id="L2"><a href="#L2">0002</a> % WRITING GUIDE</div>
+<div id="L3"><a href="#L3">0003</a> % Purpose: Motivate the industrial problem, establish the research gap, state the question, and claim only demonstrated contributions.</div>
+<div id="L4"><a href="#L4">0004</a> % Start here: Research-plan Sections/Background.tex, Relevance.tex, Research_questions.tex, and Expected_outcomes.tex.</div>
+<div id="L5"><a href="#L5">0005</a> % Supporting material: Quinten&#x27;s 18 September outline feedback, the Meeting-audit synthesis, docs/decisions.md for final scope, and verified entries from docs/references.md.</div>
+<div id="L6"><a href="#L6">0006</a> % Mandatory papers: Hoekstra&#x27;s LFR augmentation and encoder papers, Drenth&#x27;s rational LPV-LFR paper, and Györök&#x27;s regularization and OBC papers listed in Writing/README.md.</div>
+<div id="L7"><a href="#L7">0007</a> % Research-plan anchor: Preserve stable motivation and question wording closely; mark changed methods and outcomes explicitly.</div>
+<div id="L8"><a href="#L8">0008</a> % Current decisions: Use the four-aspect structure only where it still matches the completed thesis argument.</div>
+<div id="L9"><a href="#L9">0009</a> % Choices to justify: Scope boundaries, controller-evaluation use case, settling objective, four-aspect framing, and why the black-box comparison is required.</div>
+<div id="L10"><a href="#L10">0010</a> % Implementation audit: Check each claimed contribution against lpv_lfr_baseline, model_augmentation, scripts/gantry/gantry_dynamic, and the final entry script.</div>
+<div id="L11"><a href="#L11">0011</a> % Reference check: Use docs/references.md only to locate candidates; verify title, authors, venue, year, DOI or repository record, and the exact supporting passage.</div>
+<div id="L12"><a href="#L12">0012</a> % Cautions: Write this section after Results and Discussion; control-reasoning.md contains outdated implementation status.</div>
+<div id="L13"><a href="#L13">0013</a> % Planned figures: No dedicated introduction figure.</div>
+<div id="L14"><a href="#L14">0014</a> % Section is finished when: Each contribution points to evidence later in the paper and each active citation has been verified.</div>
+<div id="L15"><a href="#L15">0015</a> \section{Introduction}\label{sec:intro}</div>
+<div id="L16"><a href="#L16">0016</a> % No subsections in the introduction (2026-10-11).</div>
+<div id="L17"><a href="#L17">0017</a> % Outline bullets hidden 2026-10-11 (kept in source; the prose below covers them).</div>
+<div id="L18"><a href="#L18">0018</a> \iffalse</div>
+<div id="L19"><a href="#L19">0019</a> \begin{itemize}</div>
+<div id="L20"><a href="#L20">0020</a> \item Settling prediction limits throughput in coupled high-precision gantries, so model error has a direct operational cost \cite{garcia2013model}</div>
+<div id="L21"><a href="#L21">0021</a> \item The concrete digital-twin use case is to evaluate relevant ASMPT motion and a changed controller before deployment on the machine</div>
+<div id="L22"><a href="#L22">0022</a> \item The physics model exposes masses, stiffnesses, damping, and coupling, but omits position-dependent flexible dynamics that matter for prediction</div>
+<div id="L23"><a href="#L23">0023</a> \item A black-box model offers flexibility but weakens extrapolation arguments and removes parameters useful for control design, digital twins, and health monitoring</div>
+<div id="L24"><a href="#L24">0024</a> \item Grey-box dynamic augmentation is the target compromise: preserve the baseline and learn only the missing state dynamics \cite{hoekstra2026lfr}</div>
+<div id="L25"><a href="#L25">0025</a> \end{itemize}</div>
+<div id="L26"><a href="#L26">0026</a> \fi</div>
+<div id="L27"><a href="#L27">0027</a> % Prose based on the research plan,</div>
+<div id="L28"><a href="#L28">0028</a> %   Documentation/Research-plan/Sections/Background.tex (2026-10-11).</div>
+<div id="L29"><a href="#L29">0029</a> % One sentence per line. A line without a marker is word for word the</div>
+<div id="L30"><a href="#L30">0030</a> %   research plan.</div>
+<div id="L31"><a href="#L31">0031</a> % CHANGED, NEW and REMOVED compare against Background.tex, not against the</div>
+<div id="L32"><a href="#L32">0032</a> %   previous version of this file.</div>
+<div id="L33"><a href="#L33">0033</a> % FEEDBACK v1 (2026-10-18): supervisor feedback incorporated; change marks</div>
+<div id="L34"><a href="#L34">0034</a> %   accepted (Dirk 2026-10-18). Marked version: git history.</div>
+<div id="L35"><a href="#L35">0035</a> % FEEDBACK: the ASMPT sentences moved to the start of Section II-A, as Jan1</div>
+<div id="L36"><a href="#L36">0036</a> %   asks (&quot;Ik zou dit verwerken in de volgende sectie&quot;; Dirk 2026-10-18).</div>
+<div id="L37"><a href="#L37">0037</a> %   Their source comments moved with them.</div>
+<div id="L38"><a href="#L38">0038</a> This thesis focuses on a</div>
+<div id="L39"><a href="#L39">0039</a> dual-drive gantry motion system in which two parallel</div>
+<div id="L40"><a href="#L40">0040</a> linear actuators support a common beam carrying the payload.</div>
+<div id="L41"><a href="#L41">0041</a> % CHANGED: project -&gt; paper</div>
+<div id="L42"><a href="#L42">0042</a> The gantry positions this payload at successive placement</div>
+<div id="L43"><a href="#L43">0043</a> locations.</div>
+<div id="L44"><a href="#L44">0044</a> The shared beam couples the dynamics of</div>
+<div id="L45"><a href="#L45">0045</a> both actuators, so the motion of one actuator</div>
+<div id="L46"><a href="#L46">0046</a> influences the other, and the system exhibits position-dependent behaviour</div>
+<div id="L47"><a href="#L47">0047</a> \cite{garcia2013model, teo2007dynamic} and flexible dynamics</div>
+<div id="L48"><a href="#L48">0048</a> \cite{garcia2013model}.</div>
+<div id="L49"><a href="#L49">0049</a> % CHANGED: citation split; Teo supports coupling and position dependence,</div>
+<div id="L50"><a href="#L50">0050</a> %   not flexibility (Garcia Sec. 2, flexible joints)</div>
+<div id="L51"><a href="#L51">0051</a> This position dependence can be described by a linear</div>
+<div id="L52"><a href="#L52">0052</a> parameter-varying (LPV) model.</div>
+<div id="L53"><a href="#L53">0053</a> % FEEDBACK: settling dropped, the thesis evaluates prediction (D-241, Dirk</div>
+<div id="L54"><a href="#L54">0054</a> %   2026-10-18)</div>
+<div id="L55"><a href="#L55">0055</a> Furthermore, cross-coupling means that the motion of one</div>
+<div id="L56"><a href="#L56">0056</a> actuator can disturb</div>
+<div id="L57"><a href="#L57">0057</a> the other, which affects the tracking behaviour during</div>
+<div id="L58"><a href="#L58">0058</a> simultaneous motion.</div>
+<div id="L59"><a href="#L59">0059</a> \\</div>
+<div id="L60"><a href="#L60">0060</a> % FEEDBACK: paragraph reordered as Jan2 asks: use (controller design, root</div>
+<div id="L61"><a href="#L61">0061</a> %   cause analysis) first, the need for an accurate model last. Digital twin</div>
+<div id="L62"><a href="#L62">0062</a> %   dropped (Js9, Js10, Q10).</div>
+<div id="L63"><a href="#L63">0063</a> A plant model can be used to evaluate a changed</div>
+<div id="L64"><a href="#L64">0064</a> feedback controller before it is tested on the machine.</div>
+<div id="L65"><a href="#L65">0065</a> A closed-loop simulation is faster than an experiment, </div>
+<div id="L66"><a href="#L66">0066</a> allowing multiple controller to be compared simultaneously, and without risk </div>
+<div id="L67"><a href="#L67">0067</a> of harming the hardware.</div>
+<div id="L68"><a href="#L68">0068</a> \todo{Link to evaluation with a changed controller in closed loop</div>
+<div id="L69"><a href="#L69">0069</a> (Section~VI), once that result exists.}</div>
+<div id="L70"><a href="#L70">0070</a> % NEW: controller evaluation leads (Quinten, 18 Sep); the</div>
+<div id="L71"><a href="#L71">0071</a> %   changed-controller test record E5 tests it</div>
+<div id="L72"><a href="#L72">0072</a> %   FEEDBACK (2026-10-18): outdated, E5 is not in the final results, so</div>
+<div id="L73"><a href="#L73">0073</a> %   controller evaluation is motivation only.</div>
+<div id="L74"><a href="#L74">0074</a> % FEEDBACK: in-between step replacing Jan2&#x27;s &quot;digital twin method&quot; (Dirk</div>
+<div id="L75"><a href="#L75">0075</a> %   2026-10-18: no digital twin).</div>
+<div id="L76"><a href="#L76">0076</a> % CHANGED: &quot;before testing changes on the real machine, reducing costly</div>
+<div id="L77"><a href="#L77">0077</a> %   trial-and-error&quot; dropped, not in Hwang</div>
+<div id="L78"><a href="#L78">0078</a> Such models are also valuable for root cause analysis.</div>
+<div id="L79"><a href="#L79">0079</a> % CHANGED: rest of the removed sentence above; condition monitoring -&gt;</div>
+<div id="L80"><a href="#L80">0080</a> %   process and root cause analysis</div>
+<div id="L81"><a href="#L81">0081</a> This requires a model with physically meaningful</div>
+<div id="L82"><a href="#L82">0082</a> parameters, because a change in machine behaviour can then be traced back to</div>
+<div id="L83"><a href="#L83">0083</a> a physical cause, such as a change in stiffness or damping.</div>
+<div id="L84"><a href="#L84">0084</a> % NEW: no source</div>
+<div id="L85"><a href="#L85">0085</a> \todo{Missing: source for the root cause analysis sentence. Candidate:</div>
+<div id="L86"><a href="#L86">0086</a> Gy\&quot;or\&quot;ok et al.\ Sec.~3.2 (non-unique estimate loses physical meaning) or</div>
+<div id="L87"><a href="#L87">0087</a> Kessels Sec.~6.2 (not yet checked).}</div>
+<div id="L88"><a href="#L88">0088</a> Both uses require an accurate representation of the underlying</div>
+<div id="L89"><a href="#L89">0089</a> plant dynamics.</div>
+<div id="L90"><a href="#L90">0090</a> % CHANGED: was &quot;Improving settling performance&quot;; settling stays as</div>
+<div id="L91"><a href="#L91">0091</a> %   motivation, the paper evaluates prediction (D-241)</div>
+<div id="L92"><a href="#L92">0092</a> % REMOVED: ASMPT currently captures part of the position dependence of the</div>
+<div id="L93"><a href="#L93">0093</a> %   dual-gantry system using a baseline model based on frequency-response</div>
+<div id="L94"><a href="#L94">0094</a> %   measurements at multiple operating points with interpolation across the</div>
+<div id="L95"><a href="#L95">0095</a> %   operating space.</div>
+<div id="L96"><a href="#L96">0096</a> % REMOVED: However, this baseline captures only part of the position</div>
+<div id="L97"><a href="#L97">0097</a> %   dependence and does not systematically account for cross-coupling</div>
+<div id="L98"><a href="#L98">0098</a> %   between the gantries.</div>
+<div id="L99"><a href="#L99">0099</a> % REMOVED: A more accurate plant model is therefore needed.</div>
+<div id="L100"><a href="#L100">0100</a> %   (no written source for the ASMPT model; the paper does not compare</div>
+<div id="L101"><a href="#L101">0101</a> %   against it)</div>
+<div id="L102"><a href="#L102">0102</a> % REMOVED: Such models are not only valuable for settling prediction, but</div>
+<div id="L103"><a href="#L103">0103</a> %   also for digital-twin development, offline evaluation, control design,</div>
+<div id="L104"><a href="#L104">0104</a> %   and condition monitoring.</div>
+<div id="L105"><a href="#L105">0105</a> % FEEDBACK: the original sentences of this paragraph moved up (\mv).</div>
+<div id="L106"><a href="#L106">0106</a> % REMOVED: Accurate models can also support condition monitoring and early</div>
+<div id="L107"><a href="#L107">0107</a> %   fault detection, as demonstrated in robotic manufacturing systems</div>
+<div id="L108"><a href="#L108">0108</a> %   \cite{aivaliotis2019predictive}.</div>
+<div id="L109"><a href="#L109">0109</a> \\</div>
+<div id="L110"><a href="#L110">0110</a> %!!!!!!!!!!!!!!!!!!</div>
+<div id="L111"><a href="#L111">0111</a> White-box models are attractive because they reflect the physics of the</div>
+<div id="L112"><a href="#L112">0112</a> system, which makes them interpretable.</div>
+<div id="L113"><a href="#L113">0113</a> First-principles (FP) models are a specific type of white-box model,</div>
+<div id="L114"><a href="#L114">0114</a> derived from physical laws and described by quantities such as mass,</div>
+<div id="L115"><a href="#L115">0115</a> stiffness, and damping.</div>
+<div id="L116"><a href="#L116">0116</a> However, purely physics-based models do not always capture all behaviour</div>
+<div id="L117"><a href="#L117">0117</a> needed for accurate prediction across the operating range</div>
+<div id="L118"><a href="#L118">0118</a> \cite{willard2020integrating}.</div>
+<div id="L119"><a href="#L119">0119</a> More accurate FP models can be developed, but this is labour-intensive</div>
+<div id="L120"><a href="#L120">0120</a> \cite{hoekstra2026lfr}.</div>
+<div id="L121"><a href="#L121">0121</a> %!!!!!!!!!!!!!!</div>
+<div id="L122"><a href="#L122">0122</a> % NEW: Hoekstra 2026 Sec. 1, p. 1</div>
+<div id="L123"><a href="#L123">0123</a> % REMOVED: For the dual-gantry system, this limitation is also evident in</div>
+<div id="L124"><a href="#L124">0124</a> %   the first-principles model structure of Garc\&#x27;ia-Herreros et al.</div>
+<div id="L125"><a href="#L125">0125</a> %   \cite{garcia2013model}, which is only able to capture part of the</div>
+<div id="L126"><a href="#L126">0126</a> %   position-dependent behaviour and cross-coupling.</div>
+<div id="L127"><a href="#L127">0127</a> \\</div>
+<div id="L128"><a href="#L128">0128</a> Purely data-driven (black-box) models such as neural-network or Gaussian-process state-space models</div>
+<div id="L129"><a href="#L129">0129</a> can describe measured behaviour well, but can offer limited physical</div>
+<div id="L130"><a href="#L130">0130</a> insight and are not guaranteed to be</div>
+<div id="L131"><a href="#L131">0131</a> accurate at operating conditions not covered</div>
+<div id="L132"><a href="#L132">0132</a> by the training data \cite{willard2020integrating, hoekstra2026lfr}.</div>
+<div id="L133"><a href="#L133">0133</a> % CHANGED: &quot;(black-box)&quot; added; &quot;and&quot; added after &quot;insight&quot;</div>
+<div id="L134"><a href="#L134">0134</a> These models can also require large amounts of data to train</div>
+<div id="L135"><a href="#L135">0135</a> \cite{willard2020integrating, karniadakis2021physicsinformed}.</div>
+<div id="L136"><a href="#L136">0136</a> % CHANGED: &quot;and significant computational power&quot; dropped (no source); cited</div>
+<div id="L137"><a href="#L137">0137</a> %   Willard Sec. 1, Karniadakis abstract</div>
+<div id="L138"><a href="#L138">0138</a> In addition, these models need to learn behaviour that is already known</div>
+<div id="L139"><a href="#L139">0139</a> from first principles, such as the rigid-body dynamics</div>
+<div id="L140"><a href="#L140">0140</a> \cite{hoekstra2026lfr}.</div>
+<div id="L141"><a href="#L141">0141</a> % NEW: Hoekstra 2026 Sec. 1, p. 1</div>
+<div id="L142"><a href="#L142">0142</a> \\</div>
+<div id="L143"><a href="#L143">0143</a> Physics-informed approaches, including physics-informed neural networks</div>
+<div id="L144"><a href="#L144">0144</a> (PINNs), incorporate physical laws as constraints during training</div>
+<div id="L145"><a href="#L145">0145</a> \cite{karniadakis2021physicsinformed, raissi2017physicsinformedpart1}.</div>
+<div id="L146"><a href="#L146">0146</a> However, these methods require the physics equations to be known and still</div>
+<div id="L147"><a href="#L147">0147</a> rely on a black-box model for the entire system \cite{hoekstra2026lfr}.</div>
+<div id="L148"><a href="#L148">0148</a> % NEW: Hoekstra 2026 Sec. 1, p. 2</div>
+<div id="L149"><a href="#L149">0149</a> For the plant model of the dual-drive gantry,</div>
+<div id="L150"><a href="#L150">0150</a> both predictive accuracy and</div>
+<div id="L151"><a href="#L151">0151</a> physical interpretability are required.</div>
+<div id="L152"><a href="#L152">0152</a> Physical interpretability means that the identifiable combinations of the physical</div>
+<div id="L153"><a href="#L153">0153</a> parameters (Section~\ref{sec:params}) are estimated uniquely</div>
+<div id="L154"><a href="#L154">0154</a> \cite{gyorok2026obc}.</div>
+<div id="L155"><a href="#L155">0155</a> This does not guarantee identifying the true parameters, </div>
+<div id="L156"><a href="#L156">0156</a> but a deviation from the trained model can then indicate which </div>
+<div id="L157"><a href="#L157">0157</a> physical parameter has changed.</div>
+<div id="L158"><a href="#L158">0158</a> % FEEDBACK: link uniqueness to root cause analysis (Dirk 2026-10-18); own</div>
+<div id="L159"><a href="#L159">0159</a> %   reasoning, holds while the missing dynamics do not change (discussion)</div>
+<div id="L160"><a href="#L160">0160</a> % NEW: definition; Gyorok 2026 Sec. 3.2, p. 3 (non-unique estimate loses</div>
+<div id="L161"><a href="#L161">0161</a> %   physical meaning)</div>
+<div id="L162"><a href="#L162">0162</a> % FEEDBACK: \todo &quot;Leave out?: Section IV-C gives the conditions under which</div>
+<div id="L163"><a href="#L163">0163</a> %   they equal their true values.&quot; removed (Dirk 2026-10-18)</div>
+<div id="L164"><a href="#L164">0164</a> % NEW: the recovery condition depends on the excitation and on the missing</div>
+<div id="L165"><a href="#L165">0165</a> %   dynamics, so it is stated in Section IV-C only</div>
+<div id="L166"><a href="#L166">0166</a> However, purely physics-based and purely data-driven models can each have</div>
+<div id="L167"><a href="#L167">0167</a> limitations in meeting both requirements \cite{willard2020integrating}.</div>
+<div id="L168"><a href="#L168">0168</a> % CHANGED: Noel removed; Willard Sec. 1, p. 2</div>
+<div id="L169"><a href="#L169">0169</a> \\</div>
+<div id="L170"><a href="#L170">0170</a> Grey-box modeling is the logical choice, because it is able to</div>
+<div id="L171"><a href="#L171">0171</a> combine a baseline model with interpretable parameters with</div>
+<div id="L172"><a href="#L172">0172</a> data-driven flexibility needed for accurate prediction</div>
+<div id="L173"><a href="#L173">0173</a> \cite{noel2018greybox}.</div>
+<div id="L174"><a href="#L174">0174</a> Grey-box approaches include parameter</div>
+<div id="L175"><a href="#L175">0175</a> re-estimation within the physics model structure, static residual</div>
+<div id="L176"><a href="#L176">0176</a> correction on the model output, and dynamic augmentation that extends the</div>
+<div id="L177"><a href="#L177">0177</a> baseline with learned states \cite{willard2020integrating, hoekstra2026lfr}.</div>
+<div id="L178"><a href="#L178">0178</a> % NEW: research plan Literature.tex l.1 word for word, citation changed;</div>
+<div id="L179"><a href="#L179">0179</a> %   Willard Secs. 2.3, 3.4.1 (calibration, residual modeling), Hoekstra</div>
+<div id="L180"><a href="#L180">0180</a> %   2026 Sec. 2 (static vs dynamic)</div>
+<div id="L181"><a href="#L181">0181</a> Model augmentation combines a physics-based baseline model with a learned</div>
+<div id="L182"><a href="#L182">0182</a> component, so that the learned component only needs to capture the dynamics</div>
+<div id="L183"><a href="#L183">0183</a> the physics-based model cannot describe \cite{hoekstra2026lfr}.</div>
+<div id="L184"><a href="#L184">0184</a> % NEW: wording from research plan Literature.tex l.3; Hoekstra 2026 Sec. 1,</div>
+<div id="L185"><a href="#L185">0185</a> %   p. 2</div>
+<div id="L186"><a href="#L186">0186</a> Dynamic augmentation is chosen to be able to model missing dynamics, </div>
+<div id="L187"><a href="#L187">0187</a> such as flexible dynamics. These require additional states, which </div>
+<div id="L188"><a href="#L188">0188</a> parameter re-estimation </div>
+<div id="L189"><a href="#L189">0189</a> and static output correction cannot provide \cite{hoekstra2026lfr}.</div>
+<div id="L190"><a href="#L190">0190</a> However, related work at ASMPT on a wire bonder shows that preserving</div>
+<div id="L191"><a href="#L191">0191</a> physical interpretability during model updating remains an open challenge</div>
+<div id="L192"><a href="#L192">0192</a> \cite{kessels2025ai}.</div>
+<div id="L193"><a href="#L193">0193</a> Refitting the physical parameters allows them to absorbs unmodelled dynamics, </div>
+<div id="L194"><a href="#L194">0194</a> and an unconstrained learning component is able to absorb dynamics </div>
+<div id="L195"><a href="#L195">0195</a> the baseline already describes \cite{gyorok2026obc}.</div>
+<div id="L196"><a href="#L196">0196</a> % CHANGED: &quot;at ASMPT&quot; -&gt; &quot;on an ASMPT wire bonder&quot;; Kessels Sec. 5.3.2 (PDF</div>
+<div id="L197"><a href="#L197">0197</a> %   p. 194), Sec. 6.2 (PDF p. 222)</div>
+<div id="L198"><a href="#L198">0198</a> % FEEDBACK: new paragraph, system-specific challenges (Dirk 2026-10-18).</div>
+<div id="L199"><a href="#L199">0199</a> %   Draft for Dirk&#x27;s own wording.</div>
+<div id="L200"><a href="#L200">0200</a> % \add{Two properties make augmentation of this gantry difficult.</div>
+<div id="L201"><a href="#L201">0201</a> % Two axes have no stiffness to the fixed world, so the plant is marginally</div>
+<div id="L202"><a href="#L202">0202</a> % stable and operates in closed loop, whereas the training method of</div>
+<div id="L203"><a href="#L203">0203</a> % \cite{hoekstra2026lfr} assumes an incrementally exponentially output stable</div>
+<div id="L204"><a href="#L204">0204</a> % system \cite[Cond.~1]{beintema2023subnet}.</div>
+<div id="L205"><a href="#L205">0205</a> % Moreover, prediction accuracy and interpretability interfere.</div>
+<div id="L206"><a href="#L206">0206</a> % Refitting the physical parameters absorbs the unmodelled dynamics, and an</div>
+<div id="L207"><a href="#L207">0207</a> % unconstrained learned component can absorb dynamics the baseline already</div>
+<div id="L208"><a href="#L208">0208</a> % describes \cite{gyorok2026obc}.}</div>
+<div id="L209"><a href="#L209">0209</a> % FEEDBACK: concise version (Dirk 2026-10-18); root cause tie-back left out,</div>
+<div id="L210"><a href="#L210">0210</a> %   the sentence after the interpretability definition carries it.</div>
+<div id="L211"><a href="#L211">0211</a> \todo{Missing: check that Gy\&quot;or\&quot;ok et al.\ supports the absorption by an</div>
+<div id="L212"><a href="#L212">0212</a> unconstrained learned component, and a source for absorption by refitting.</div>
+<div id="L213"><a href="#L213">0213</a> Candidate: Gy\&quot;or\&quot;ok et al.\ Sec.~1 and Sec.~3.2 (not yet checked).}</div>
+<div id="L214"><a href="#L214">0214</a> \\</div>
+<div id="L215"><a href="#L215">0215</a> Learning-based hybrid modeling has already been demonstrated using</div>
+<div id="L216"><a href="#L216">0216</a> measurements from an industrial robot \cite{retzler2024}.</div>
+<div id="L217"><a href="#L217">0217</a> However, a key gap remains: there is no grey-box modeling framework for the</div>
+<div id="L218"><a href="#L218">0218</a> dual-drive gantry that simultaneously addresses coupled multi-input</div>
+<div id="L219"><a href="#L219">0219</a> multi-output (MIMO) dynamics, position-dependent behaviour, closed-loop data,</div>
+<div id="L220"><a href="#L220">0220</a> and preserves physical interpretability.</div>
+<div id="L221"><a href="#L221">0221</a> % CHANGED: &quot;validated&quot; dropped (simulation only); &quot;closed-loop data,&quot; added</div>
+<div id="L222"><a href="#L222">0222</a> Model augmentation using a linear fractional representation (LFR) has</div>
+<div id="L223"><a href="#L223">0223</a> already been demonstrated, but not for position-dependent baselines or</div>
+<div id="L224"><a href="#L224">0224</a> closed-loop data \cite{hoekstra2026lfr}.</div>
+<div id="L225"><a href="#L225">0225</a> % NEW: Hoekstra 2026, absence: no closed loop, LPV only in a reference</div>
+<div id="L226"><a href="#L226">0226</a> %   title</div>
+<div id="L227"><a href="#L227">0227</a> The related work at ASMPT uses closed-loop data, but keeps the physical</div>
+<div id="L228"><a href="#L228">0228</a> parameters fixed during training \cite{kessels2025ai}.</div>
+<div id="L229"><a href="#L229">0229</a> % NEW: Kessels Sec. 5.1 (PDF p. 175, only network weights trained); wire</div>
+<div id="L230"><a href="#L230">0230</a> %   bonder updated from closed-loop measurements (Sec. 5.3.2)</div>
+<div id="L231"><a href="#L231">0231</a> Orthogonal-by-construction (OBC) augmentation keeps the learned component</div>
+<div id="L232"><a href="#L232">0232</a> orthogonal to the baseline parameters, so that their </div>
+<div id="L233"><a href="#L233">0233</a> estimates are unique \cite{gyorok2026obc}. This has currently only been </div>
+<div id="L234"><a href="#L234">0234</a> formulated for discrete-time input-output models, and not for state-space models.</div>
+<div id="L235"><a href="#L235">0235</a> % NEW: Gyorok 2026 Sec. 3.2 (physical meaning), Conclusion, pp. 9 to 10</div>
+<div id="L236"><a href="#L236">0236</a> %   (state-space form named as future research)</div>
+<div id="L237"><a href="#L237">0237</a> \kw{This thesis therefore develops such a framework and evaluates it in simulation. </div>
+<div id="L238"><a href="#L238">0238</a> The augmented model should predict more accurately than the physics-based </div>
+<div id="L239"><a href="#L239">0239</a> baseline across operating points and motion profiles, while its physical </div>
+<div id="L240"><a href="#L240">0240</a> parameters remain interpretable.}</div>
+<div id="L241"><a href="#L241">0241</a> % FEEDBACK: one term after the definition, &quot;interpretable&quot; (Dirk</div>
+<div id="L242"><a href="#L242">0242</a> %   2026-10-18); l.96 keeps &quot;physically meaningful&quot; (before the definition,</div>
+<div id="L243"><a href="#L243">0243</a> %   explained by its own sentence), the OBC sentence keeps Gyorok&#x27;s wording.</div>
+<div id="L244"><a href="#L244">0244</a> % CHANGED: project -&gt; paper, validate -&gt; evaluate, &quot;in simulation&quot; added,</div>
+<div id="L245"><a href="#L245">0245</a> %   &quot;for settling prediction&quot; -&gt; &quot;across operating points and motion</div>
+<div id="L246"><a href="#L246">0246</a> %   profiles&quot; (D-241)</div>
+<div id="L247"><a href="#L247">0247</a> </div>
+<div id="L248"><a href="#L248">0248</a> % Outline bullets hidden 2026-10-11 (kept in source; the research question and aspects below cover them).</div>
+<div id="L249"><a href="#L249">0249</a> \iffalse</div>
+<div id="L250"><a href="#L250">0250</a> \begin{itemize}</div>
+<div id="L251"><a href="#L251">0251</a> \item Main question: how should a physics-based plant model be augmented to capture unmodelled dynamics, improving prediction accuracy across operating points and motion profiles while preserving the physical interpretability of its parameters?</div>
+<div id="L252"><a href="#L252">0252</a> \item Aspect 1 asks in what form the baseline is represented and whether the position-dependent (LPV) form predicts better than position-independent (LTI) alternatives; answered by the derivation plus a small demonstration</div>
+<div id="L253"><a href="#L253">0253</a> \item Aspect 2 asks which augmentation structure effectively captures the unmodelled dynamics: parallel with or without added states (parallel versus series argued in Section~III), and what makes the added states learn them</div>
+<div id="L254"><a href="#L254">0254</a> \item Aspect 3 asks how parameter interpretability is maintained compared to unconstrained joint estimation; answered by what orthogonality by construction guarantees and what it cannot</div>
+<div id="L255"><a href="#L255">0255</a> \item Aspect 4 asks how well the model generalises to held-out operating points and unseen motion profiles compared to a black-box state-space model; controller transfer is shown as a use case</div>
+<div id="L256"><a href="#L256">0256</a> \item Scope: simulation only; aspects are answered by derivation where possible and by experiment where needed</div>
+<div id="L257"><a href="#L257">0257</a> \end{itemize}</div>
+<div id="L258"><a href="#L258">0258</a> \todo{Outline bullets updated to the changed research question and aspects (D-241).}</div>
+<div id="L259"><a href="#L259">0259</a> \fi</div>
+<div id="L260"><a href="#L260">0260</a> </div>
+<div id="L261"><a href="#L261">0261</a> % Research question in the running text and the contributions as a short list, as in</div>
+<div id="L262"><a href="#L262">0262</a> % Hoekstra 2026 Sec. 1, p. 2. CHANGED, NEW and REMOVED compare against the research plan,</div>
+<div id="L263"><a href="#L263">0263</a> % Documentation/Research-plan/Sections/Research_questions.tex.</div>
+<div id="L264"><a href="#L264">0264</a> This thesis addresses the following research question:</div>
+<div id="L265"><a href="#L265">0265</a> % NEW</div>
+<div id="L266"><a href="#L266">0266</a> \textit{For the dual-drive gantry, how should a physics-based plant model</div>
+<div id="L267"><a href="#L267">0267</a> be augmented to capture unmodelled dynamics, improving prediction accuracy</div>
+<div id="L268"><a href="#L268">0268</a> across operating points and motion profiles while preserving the physical</div>
+<div id="L269"><a href="#L269">0269</a> interpretability of its parameters?}</div>
+<div id="L270"><a href="#L270">0270</a> % CHANGED: quote block and bold replaced by italics in the running text;</div>
+<div id="L271"><a href="#L271">0271</a> %   wording is the changed research question (D-241)</div>
+<div id="L272"><a href="#L272">0272</a> To answer this research question, the following three aspects</div>
+<div id="L273"><a href="#L273">0273</a> are investigated:</div>
+<div id="L274"><a href="#L274">0274</a> \begin{enumerate}</div>
+<div id="L275"><a href="#L275">0275</a> % FEEDBACK: aspect 1 (LPV versus LTI) removed (Dirk 2026-10-18).</div>
+<div id="L276"><a href="#L276">0276</a> % CHANGED: bold title dropped; &quot;a&quot; added before &quot;position-dependent&quot;</div>
+<div id="L277"><a href="#L277">0277</a> \item Which augmentation structure and</div>
+<div id="L278"><a href="#L278">0278</a> training let the learned component capture the missing dynamics from</div>
+<div id="L279"><a href="#L279">0279</a> closed-loop data?</div>
+<div id="L280"><a href="#L280">0280</a> % CHANGED: bold title dropped; wording D-241</div>
+<div id="L281"><a href="#L281">0281</a> \item To what</div>
+<div id="L282"><a href="#L282">0282</a> extent does orthogonal-by-construction augmentation keep the physical</div>
+<div id="L283"><a href="#L283">0283</a> parameters interpretable, compared to unconstrained estimation?</div>
+<div id="L284"><a href="#L284">0284</a> % CHANGED: bold title dropped; wording D-241</div>
+<div id="L285"><a href="#L285">0285</a> \item How does the</div>
+<div id="L286"><a href="#L286">0286</a> augmented model generalise to held-out operating points and unseen motion</div>
+<div id="L287"><a href="#L287">0287</a> profiles, compared to a black-box model?</div>
+<div id="L288"><a href="#L288">0288</a> % CHANGED: bold title dropped; wording D-241</div>
+<div id="L289"><a href="#L289">0289</a> \end{enumerate}</div>
+<div id="L290"><a href="#L290">0290</a> \revnote{Aspect 1 (LPV versus LTI) is removed: the LPV form follows from the</div>
+<div id="L291"><a href="#L291">0291</a> equations of motion (Section~II), so it is a modelling choice rather than a</div>
+<div id="L292"><a href="#L292">0292</a> research result. The LTI comparison (on $X$ the LTI error is 1.5 to 3.7 times</div>
+<div id="L293"><a href="#L293">0293</a> the LPV error) moves to the appendix. Aspects 2 to 4 are reworded to the</div>
+<div id="L294"><a href="#L294">0294</a> final method.}</div>
+<div id="L295"><a href="#L295">0295</a> \revnote{The current introduction is quite long, also the rq with aspects is quite long.</div>
+<div id="L296"><a href="#L296">0296</a> Shall I remove the aspects, or shorten the introduction?}</div>
+<div id="L297"><a href="#L297">0297</a> </div>
+<div id="L298"><a href="#L298">0298</a> % The main contributions are summarised as:</div>
+<div id="L299"><a href="#L299">0299</a> % % NEW: phrasing of Hoekstra 2026 Sec. 1, p. 2</div>
+<div id="L300"><a href="#L300">0300</a> % \begin{itemize}</div>
+<div id="L301"><a href="#L301">0301</a> % \item Derive a compact continuous-time LPV-LFR realisation of the dual-gantry baseline with rational dependence on payload position</div>
+<div id="L302"><a href="#L302">0302</a> %   % Aspect 1</div>
+<div id="L303"><a href="#L303">0303</a> % \item Extend dynamic parallel LFR augmentation to a closed-loop, self-scheduled state-space setting with learned additional states and a predictive-state (PS) initialisation of these states % CHANGED: PS added (Section III todo)</div>
+<div id="L304"><a href="#L304">0304</a> %   % Aspect 2</div>
+<div id="L305"><a href="#L305">0305</a> % \item Construct state-level orthogonality for the identifiable physical-parameter tangent space and quantify its true-parameter recovery condition</div>
+<div id="L306"><a href="#L306">0306</a> %   % Aspect 3</div>
+<div id="L307"><a href="#L307">0307</a> % \item Evaluate predictive fit, controller transfer, added-state contribution, interpretability, and black-box performance under matched data % CHANGED: settling removed (D-241)</div>
+<div id="L308"><a href="#L308">0308</a> %   % Aspect 4</div>
+<div id="L309"><a href="#L309">0309</a> % \end{itemize}</div>
+<div id="L310"><a href="#L310">0310</a> % \todo{Rewrite the contribution wording together with the sentences in</div>
+<div id="L311"><a href="#L311">0311</a> % Sections III and IV that refer back to it; one contribution per aspect.}</div>
+<div id="L312"><a href="#L312">0312</a> </div>
+<div id="L313"><a href="#L313">0313</a> </div>
+<div id="L314"><a href="#L314">0314</a> % REMOVED: \item Paper organisation: baseline, augmentation, OBC, setup, results, discussion, conclusion, then supporting derivations</div>
+<div id="L315"><a href="#L315">0315</a> % REMOVED: \item Figure plan: no dedicated introduction figure; use the limited figure budget where the baseline, training interconnection, and OBC need visual explanation</div>
+<div id="L316"><a href="#L316">0316</a> </div>
+<div id="L317"><a href="#L317">0317</a> % Old format of the research question and aspects (quote block, bold titles), hidden</div>
+<div id="L318"><a href="#L318">0318</a> % 2026-10-11; the visible list above has the same wording. Kept in source with its todos.</div>
+<div id="L319"><a href="#L319">0319</a> \iffalse</div>
+<div id="L320"><a href="#L320">0320</a> % Copied 1:1 from research plan Sections/Research_questions.tex; todos mark sentences that need your rewrite.</div>
+<div id="L321"><a href="#L321">0321</a> \noindent The main research question is formulated as follows:</div>
+<div id="L322"><a href="#L322">0322</a> \begin{quote}</div>
+<div id="L323"><a href="#L323">0323</a> \textbf{For the dual-gantry system, how should a physics-based plant model be augmented to capture unmodelled dynamics, improving prediction accuracy across operating points and motion profiles while preserving the physical interpretability of its parameters?}</div>
+<div id="L324"><a href="#L324">0324</a> \end{quote}</div>
+<div id="L325"><a href="#L325">0325</a> \todo{changed rq and polished aspects}</div>
+<div id="L326"><a href="#L326">0326</a> \noindent To answer this research question, the following four aspects are investigated:</div>
+<div id="L327"><a href="#L327">0327</a> \begin{enumerate}</div>
+<div id="L328"><a href="#L328">0328</a>     \item \textbf{Position-dependent baseline modeling} \\</div>
+<div id="L329"><a href="#L329">0329</a>     In what form should the baseline model be represented for subsequent augmentation, and does position-dependent (LPV) formulation improve prediction compared to position-independent (LTI) alternatives? \todo{LPV versus frozen LTI exists only as a baseline check (lpv\_lfr\_baseline/scripts/validate\_lfr.py), not in the final evaluation; Quinten wants LTI as second baseline.}</div>
+<div id="L330"><a href="#L330">0330</a>     \item \textbf{Augmentation structure} \\</div>
+<div id="L331"><a href="#L331">0331</a>     What augmentation structure can effectively capture dynamics not modeled in the physics-based baseline model?</div>
+<div id="L332"><a href="#L332">0332</a>     \item \textbf{Interpretability preservation} \\</div>
+<div id="L333"><a href="#L333">0333</a>     How can parameter interpretability be maintained during data-driven augmentation, compared to unconstrained approaches?</div>
+<div id="L334"><a href="#L334">0334</a>     \item \textbf{Model generalization} \\</div>
+<div id="L335"><a href="#L335">0335</a>     How well does the augmented model generalize to (i) held-out operating points and (ii) unseen motion profiles, and how does its prediction accuracy compare to a black-box state-space model? \todo{Not yet true. The D-196 black-box arm runs on the MA\_FRAC 0.10 dataset, not the production ma50 data. Unseen motion profiles partly covered by the Telica cycloidal records (D-206). Controller transfer is not implemented. Align with the validation ladder in Writing/README.md.}</div>
+<div id="L336"><a href="#L336">0336</a> \end{enumerate}</div>
+<div id="L337"><a href="#L337">0337</a> \fi</div>
+<div id="L338"><a href="#L338">0338</a> </div>
+<div id="L339"><a href="#L339">0339</a> \todo{Confirm whether references and appendices are excluded from the 12-page IEEE limit and whether TU/e requires front matter beyond the IEEE paper.}</div></pre>

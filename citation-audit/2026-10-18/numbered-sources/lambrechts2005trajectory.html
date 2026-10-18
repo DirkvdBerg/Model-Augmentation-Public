@@ -1,0 +1,1126 @@
+<meta charset="utf-8"><title>lambrechts2005trajectory</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1]                                                         ARTICLE IN PRESS</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1] </div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1] </div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1] </div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1]                                           Control Engineering Practice 13 (2005) 145–157</div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1] </div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1] </div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1] </div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1] </div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1]     Trajectory planning and feedforward design for electromechanical</div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1]                             motion systems</div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1]                           Paul Lambrechts*, Matthijs Boerlage, Maarten Steinbuch</div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1]            Control Systems Technology Group, Faculty of Mechanical Engineering, Eindhoven University of Technology, P.O. Box 513,</div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1]                                                    5600 MB Eindhoven, The Netherlands</div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1]                                              Received 14 February 2003; accepted 28 February 2004</div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1] </div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1] </div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1] </div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1] Abstract</div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1] </div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1]    This paper considers trajectory planning with given design constraints and design of a feedforward controller for single-axis</div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1] motion control. A motivation is given for using fourth-order feedforward with fourth-order trajectories. An algorithm is given for</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1] calculating higher-order trajectories with bounds on all considered derivatives for point-to-point moves. It is shown that these</div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1] trajectories are time-optimal in the most relevant cases. All required equations for fourth-order trajectory planning are derived.</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1] Implementation, discretization and quantization effects are considered. Simulations and hardware-in-the-loop experiments show</div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1] superior effectiveness of fourth-order feedforward in comparison with lower-order feedforward.</div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1] r 2004 Elsevier Ltd. All rights reserved.</div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1] </div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1] Keywords: Trajectory planning; Feedforward compensation; Motion; Point-to-point control; Industrial control; Numerical methods</div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1] </div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1] </div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.1] </div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.1] </div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.1] 1. Introduction                                                            * system compensation: to reduce or remove unwanted</div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.1]                                                                              behaviour like measured disturbances or non-linear-</div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.1]   Feedforward control is a well-known technique for                          ities,</div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.1] high-performance motion control problems as found in                       * feedback control: the processing of available measure-</div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.1] </div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.1] industry. It is, for instance, widely applied in robots,                     ments and calculation of input signals for actuation</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.1] pick-and-place units and positioning systems. These                          devices to compensate for unknown disturbances and</div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.1] systems are often embedded in a factory automation                           unmodelled behaviour,</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.1] scheme, which provides desired motion tasks to the                         * internal checks, diagnostics, safety issues, commu-</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.1] </div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.1] considered system. The current trend is to leave                             nication, etc.</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.1] the details of planning and execution of the motion to</div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.1] the computer hardware dedicated to the control of the                      This shows that the burden for the motion controller</div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.1] system: one or more motion controllers. The tasks of                       can be quite high, while usually also a high sampling</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.1] such a dedicated motion controller will then consist of:                   rate is required to achieve the desired performance.</div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.1]                                                                               To simplify these tasks, trajectory planning, proﬁle</div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.1]                                                                            generation and feedforward control are usually done for</div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.1] * trajectory planning: the calculation of an allowable</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.1]                                                                            each actuating device separately, relying on system</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.1]   trajectory,</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.1] * profile generation: the representation of the trajectory</div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.1]                                                                            compensation and feedback control to deal with</div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.1]                                                                            interactions and non-linearities. In that case, each</div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.1]   in appropriate form (e.g. a time sequence with a given</div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.1]                                                                            actuating device is considered to be acting on a simple</div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.1]   sample time),</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.1] * feedforward control: the calculation of input signals</div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.1]                                                                            object, usually a single mass, moving along a single</div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.1]                                                                            degree of freedom. The feedforward control problem is</div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.1]   for actuation devices with the intention to obtain the</div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.1]                                                                            then to generate the force required to perform the</div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.1]   trajectory,</div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.1]                                                                            acceleration of the mass in accordance with the desired</div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.1]   *Corresponding author. Tel.: +31-40-2472839; fax: +31-40-                trajectory. Conversely, the desired trajectory should be</div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.1] 2461418.                                                                   such that the required force is allowable (in the sense of</div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.1]    E-mail address: p.f.lambrechts@tue.nl (P. Lambrechts).                  mechanical load on the system) and can be generated by</div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.1] </div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.1] 0967-0661/$ - see front matter r 2004 Elsevier Ltd. All rights reserved.</div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.1] doi:10.1016/j.conengprac.2004.02.010</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.1] </div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2]                                                 ARTICLE IN PRESS</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2] 146                           P. Lambrechts et al. / Control Engineering Practice 13 (2005) 145–157</div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2] </div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2] </div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2]  Nomenclature                                                     d         derivative of jerk (proﬁle) (m=s4 or rad=s4 )</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2]                                                                   F         actuator force, feedforward force (N) or torque</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2]  x%       bound on jxj                                                      ðNmÞ</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2]  x#       maximum value obtained by jxj if bound is not           m         mass (kg) or inertia ðkgm2 Þ</div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2]           considered                                              c         spring stiffness (N/m or Nm=rad)</div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2]  x0       initial value                                           k         viscous damping coefﬁcient (Ns=m or</div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2]  tx%      time interval during which jxj obtains its bound                  Ns m=rad)</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2]  ti ; iAN switching time instances                                q1?4      feedforward parameters</div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2]  x        position, displacement (proﬁle) (m or rad)              Ts        sampling time (s)</div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2]  v        velocity (proﬁle) (m/s or rad/s)                        s         Laplace transform variable</div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.2]  a        acceleration (proﬁle) (m=s2 or rad=s2 )                 z         shift operator</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.2]  ;        jerk (proﬁle) (m=s3 or rad=s3 )</div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.2] </div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.2] </div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.2] </div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.2] the actuating device. For obvious reasons, this approach               However, it may also lead to a considerable increase</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.2] is often referred to as ‘mass feedforward’ or ‘rigid body              in execution time of the trajectory, often without</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.2] feedforward’. It allows a simple and practical imple-                  a clear mechanism for ﬁnding a time optimal</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.2] mentation of trajectory planning and feedforward                       solution. Various examples of this approach can</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.2] control.                                                               be found in Dijkstra, Rambaratsingh, Scherer,</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.2]    The disadvantage of this approach is its dependence                 Bosgra, Steinbuch, and Kerssemakers (2000),</div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.2] on feedback control to deal with unmodelled behaviour                  Meckl, Arestides, and Woods (1998), Murphy and</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.2] as mentioned before. The resulting problem formulation                 Watanabe (1992), Paganini and Giusto (1997) and</div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.2] can be split into two.                                                 Singer, Singhose, and Seering (1999).</div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.2]                                                                    (2) Feedforward control based on plant inversion: This</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.2] (1) During execution of the trajectory the position</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.2]                                                                        attempts to take the effect of unmodelled behaviour</div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.2]     errors are large, such that feedback control actions</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.2]                                                                        into account by either using a more detailed model</div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.2]     are considerable. Actual velocity and acceleration</div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.2]                                                                        of the motion system or by learning its behaviour</div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.2]     (hence: actuator force) may therefore be much larger</div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.2]                                                                        based on measurements. An important practical</div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.2]     than planned. This may lead to undesired and even</div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.2]                                                                        disadvantage is that they do not provide an</div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.2]     dangerous deviations from the planned trajectory</div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.2]                                                                        approach for designing an appropriate trajectory.</div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.2]     and damage to actuator and system.</div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.2]                                                                        Various examples of this can be found in Boerlage,</div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.2] (2) When arriving at the desired endpoint, the position-</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.2]                                                                        Steinbuch, Lambrechts, and van de Wal (2003),</div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.2]     ing error is large and the dynamical state of the</div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.2]                                                                        Devasia (2000), Hunt, Meyer, and Su (1996), Park,</div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.2]     controlled system is not settled. Although the</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.2]                                                                        Chang, and Lee (2001), Roover (1997), Roover and</div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.2]     trajectory has ﬁnished, it is often necessary to wait</div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.2]                                                                        Sperling (1997), Tomizuka (1987), Torfs, Swevers,</div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.2]     for a considerable time before the position error is</div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.2]                                                                        and De Schutter (1991) and Torfs, Vuerinckx,</div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.2]     settled within some given accuracy bounds before</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.2]                                                                        Swevers, and Schoukens (1998).</div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.2]     subsequent actions or motions are allowed. A</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.2]                                                                    (3) Feedback control optimization (possibly aided by</div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.2]     practical consequence is the need for a complex test</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.2]                                                                        system compensation improvement): By improving</div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.2]     to determine whether settling has sufﬁciently</div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.2]                                                                        the feedback controller, the positioning errors can</div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.2]     occurred. Furthermore, it is a source of time</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.2]                                                                        be kept smaller during and at the end of the</div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.2]     uncertainty that may be undesirable on the factory</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.2]                                                                        trajectory. Furthermore, settling will occur in a</div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.2]     automation level.</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.2]                                                                        shorter time. Also in this case the design of an</div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.2]                                                                        appropriate trajectory is not considered. Obviously,</div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.2]    To improve on this, many academic and practical</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.2]                                                                        any feedback control design method can be used for</div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.2] approaches are possible. These can roughly be categor-</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.2]                                                                        this. Some references given above also include a</div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.2] ized in three.</div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.2]                                                                        discussion on the effect of feedback control on</div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.2] (1) Trajectory smoothing or shaping: This can be done                  trajectory following e.g. see Roover (1997), Roover</div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.2]     by simply reducing the acceleration and velocity                   and Sperling (1997), Torfs et al. (1998).</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.2]     bounds used for trajectory planning, but also by</div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.2]     smoothing or shaping the trajectory and/or applica-            This paper will provide a method for higher-order</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.2]     tion of force (higher-order trajectories, S-curves,            trajectory planning that can be used with all of the</div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.2]     input shaping, ﬁltering). The result of this can be            approaches given above. Furthermore, ‘fourth-order</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.2]     very good, especially if the dynamical behaviour of            feedforward’ will be presented as a clear and well</div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.2]     the motion system is explicitly taken into account.            implementable extension of ‘rigid body feedforward’. It</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.2] </div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.3]                                                   ARTICLE IN PRESS</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.3]                                 P. Lambrechts et al. / Control Engineering Practice 13 (2005) 145–157                                             147</div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.3] </div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.3] </div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.3] will be shown that the combination of fourth-order                                                                                  x</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.3] trajectory planning and fourth-order feedforward is well</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.3] matched with the general behaviour of electromechani-                                                         F</div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.3]                                                                                                                          m</div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.3] cal motion systems and obtains time optimality within</div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.3] given physical bounds (actuator device and motion</div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.3] system limits). Next, the effect of discrete time                                                                             k</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.3] implementation will be considered: this includes the</div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.3]                                                                                              Fig. 1. Simple motion system: a single mass.</div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.3] planning of a fourth-order trajectory in discrete time</div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.3] and the optimal compensation of time delays in the</div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.3] feedforward control signal. Finally, some simulation</div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.3] results and hardware-in-the-loop experiments are given                                              Second order trajectory profiles</div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.3] to further motivate the use of fourth-order feedforward.                            5</div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.3] </div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.3] </div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.3] </div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.3] </div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.3]                                                                        a [m/s 2]</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.3]    The next section will review rigid body feedforward,                                           ta                    tv</div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.3]                                                                                     0</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.3] mostly with the purpose of introducing some notation</div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.3]                                                                                                                                          ta</div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.3] (see also Nomenclature). Next, Section 3 will consider                              -5</div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.3] the extension of rigid body feedforward to fourth-order                                  0         0.2            0.4         0.6       0.8   1</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.3] </div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.3] feedforward, based on an extended model of the motion                              1.5</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.3] </div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.3] </div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.3] </div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.3] </div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.3]                                                                         v [m/s]</div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.3] system. A general algorithm for higher-order trajectory                             1</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.3] </div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.3] planning will be considered in Section 4, after which the                          0.5</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.3] </div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.3] relevant equations are derived for fourth-order trajectory                          0</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.3]                                                                                          0         0.2            0.4         0.6       0.8   1</div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.3] planning in Section 5. Next, implementation aspects are</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.3]                                                                                     1</div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.3] considered in Section 6, followed by simulations and</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.3]                                                                         x [m]</div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.3] </div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.3] experiments in Section 7, and conclusions in Section 8.                            0.5</div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.3] </div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.3]                                                                                     0</div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.3]                                                                                          0         0.2            0.4         0.6       0.8   1</div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.3] 2. Rigid body feedforward                                                                                               time [s]</div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.3]                                                                                              Fig. 2. Second-order trajectory determination.</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.3]   The speciﬁcs of planning a trajectory and calculating</div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.3] a feedforward signal based on rigid body feedforward</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.3] are fairly simple and can be found in many commercially              Hence, this algorithm has calculated two time interval</div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.3] available electromechanical motion control systems. In               durations ta% and tv% such that</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.3] this section, a short review is given as an introduction to          tx% ¼ 2ta% þ tv% ;                     % 2a% þ v%tv% :</div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.3]                                                                                                        x% ¼ at                                    ð2Þ</div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.3] a standardized approach to higher-order feedforward</div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.3] calculations.                                                        Note that tv% automatically reverts to 0 if the velocity</div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.3]   Consider the conﬁguration of Fig. 1 with m denoting                bound is not obtained. Construction of the acceleration</div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.3] the mass of the motion system, F the force supplied by               proﬁle a from a;% ta% and tv% is straightforward. From this,</div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.3] the actuating device, x the position and k a viscous                 the desired trajectory can be determined by integrating it</div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.3] damping term. The equation of motion for this simple                 once to obtain the velocity proﬁle v; and integrating it</div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.3] conﬁguration is of course                                            twice to obtain the position proﬁle x; see Fig. 2. As the</div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.3]                                                                      position proﬁle thus establishes the trajectory as a</div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.3] mx. þ kx’ ¼ F :                                            ð1Þ</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.3]                                                                      sequence of polynomials in time with a degree of at most</div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.3]    Now consider the planning of a point-to-point move                2, rigid body feedforward is also referred to as ‘second-</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.3] for this system over a distance denoted as x;       % while          order feedforward’.</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.3] restricted by given bounds on maximal velocity v% and                   The actual implementation of the trajectory planner</div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.3] maximal acceleration a:    %                                         and feedforward controller is indicated in Fig. 3. Note</div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.3]           pﬃﬃﬃﬃﬃﬃﬃﬃ                                                  that the feedforward force F is simply calculated from</div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.3] 1. ta% ¼ x=   % a% ; preliminary acceleration/deceleration           Eq. (2) and the proﬁles in Fig. 2 as</div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.3]    time interval to obtain x:  %</div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.3] 2. v# ¼ a%  ta% ; maximal velocity obtained during move.            F ¼ ma þ kv:                                                                 ð3Þ</div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.3] 3. v# &gt; v%; test whether velocity violates bound:</div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.3]   3 if true: ta% ¼ v%=a;</div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.3]                       %</div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.3]   3 if false: no action.                                             3. Higher-order feedforward</div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.3] </div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.3]           % 2a% ; distance covered during acceleration and</div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.3] 4. xa% ¼ at                                                            The previous section shows that rigid body feedfor-</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.3]    deceleration.                                                     ward is based on a simple single-mass model of the</div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.3] 5. tv% ¼ ðx%  xa% Þ=v%; constant velocity time interval.            motion system. This implies that the performance of</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.3] </div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.4]                                                            ARTICLE IN PRESS</div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.4] 148                                      P. Lambrechts et al. / Control Engineering Practice 13 (2005) 145–157</div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.4] </div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.4] </div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.4]         a                                                                                                                x1             x2</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.4]                                             m</div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.4] Acceleration</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.4]                                                                                                                      c</div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.4]                                                                                                 F</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.4]                                             k                                                              m1                 m2</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.4]                                                        F                                                             k12</div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.4]                       1          1</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.4]                                                 PD</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.4]                                                               1       x</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.4]                       s          s                         ms2 + ks</div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.4]                    Velocity   Position    Controller        Plant</div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.4]                                                                                                                 k1                 k2</div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.4] </div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.4]                Fig. 3. Rigid body feedforward implementation.                             Fig. 4. Extended motion system: double mass.</div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.4] </div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.4] </div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.4] </div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.4] rigid body feedforward is determined by how much the                          between the two masses, k12 the viscous damping</div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.4] actual motion system deviates from this single-mass                           between the two masses, k1 the viscous damping of the</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.4] model. On the other hand, the performance of the                              actuator towards ground and k2 the viscous damping of</div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.4] motion system as a whole is also determined by the                            the load towards ground. The equations of motion for</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.4] quality of system compensation and/or feedback con-                           this conﬁguration are</div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.4] trol. It can be stated that the success of feedback control</div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.4]                                                                                m1 x. 1 ¼ k1 x’ 1  cðx1  x2 Þ  k12 ðx’ 1  x’ 2 Þ þ F ;</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.4] is such that in many cases the rigid body feedforward</div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.4] approach is considered sufﬁcient, given that an appro-                         m2 x. 2 ¼ k2 x’ 2 þ cðx1  x2 Þ þ k12 ðx’ 1  x’ 2 Þ:        ð4Þ</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.4] priate feedback controller is required anyway for                             Laplace transformation and substitution then results in</div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.4] disturbance reduction and stabilization.                                      the following expression:</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.4]    However, when considering further improvement of</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.4] motion control system performance, the use of higher-                                q1 s 4 þ q2 s 3 þ q3 s 2 þ q4 s</div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.4]                                                                               F¼                                     x2                      ð5Þ</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.4] order feedforward is often a very effective approach in                                        k12 s þ c</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.4] comparison with improved feedback control. The ﬁrst                           with</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.4] effect is that higher-order trajectories inherently have a</div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.4] lower energy content at higher frequencies, which results                      q1 ¼ m 1 m 2 ;</div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.4] in a lower high-frequency content of the error signal,                         q2 ¼ ðm1 þ m2 Þk12 þ m1 k2 þ m2 k1 ;</div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.4] which in turn enables the feedback controller to be more                       q3 ¼ ðm1 þ m2 Þc þ k1 k2 þ ðk1 þ k2 Þk12 ;</div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.4] effective. The second effect is that higher-order trajec-</div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.4]                                                                                q4 ¼ ðk1 þ k2 Þc:                                             ð6Þ</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.4] tories have less chance of demanding a motion which is</div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.4] physically impossible to perform by the given motion                          This implies that if some fourth-order trajectory has</div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.4] system, e.g. most power ampliﬁers exhibit a ‘rise time’                       been planned for x2 ; from which the corresponding</div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.4] effect, such that it is impossible to produce a step-like                     proﬁles for velocity v; acceleration a; jerk ; and</div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.4] change in force.                                                              derivative of jerk d can be derived, the feedforward</div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.4]    These effects are commonly referred to as ‘smoothing’                      force F can be calculated as</div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.4] and result in a decrease of positioning errors during                                    1</div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.4] execution of the trajectory and a reduced settling time.                      F¼               fq1 d þ q2 ; þ q3 a þ q4 vg:                  ð7Þ</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.4]                                                                                      k12 s þ c</div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.4] The disadvantage of higher-order trajectories, i.e. the</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.4] increase in trajectory execution time, is usually more                        Analogous to the implementation given in Fig. 3, this</div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.4] than compensated by the reduced settling time. Because                        feedforward scheme can readily be implemented as given</div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.4] of this, many high-performance motion systems are                             in Fig. 5. Note that it is convenient to specify the</div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.4] already equipped with a third-order trajectory planner                        trajectory by means of the derivative of jerk proﬁle d;</div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.4] as a direct extension of rigid body feedforward. In this                      such that all other proﬁles can easily be obtained by</div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.4] section, it will be determined that a fourth-order                            integration. An algorithm for obtaining d will be the</div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.4] trajectory planner and feedforward calculation gives a                        subject of the next sections.</div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.4] signiﬁcant further improvement.</div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.4]    The main argument is that an electromechanical</div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.4] motion system will usually have some compliance                               4. Higher-order trajectory planning</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.4] between actuator and load, and that both actuator</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.4] and load will have a relevant mass. Support for this can                         Planners for second- and third-order trajectories are</div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.4] for instance be found in Steinbuch and Norg (1998).                           fairly well known in industry and academia and there</div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.4] Based on this, it is natural to extend the single mass                        are many approaches for obtaining a valid solution.</div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.4] model of Fig. 1 to the double-mass model of Fig. 4. Here                      Extension to fourth-order trajectory planning is how-</div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.4] m1 denotes the mass of the actuator, m2 the mass of the                       ever not trivial. In this section, the main objectives of</div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.4] load, F the force supplied by the actuating device, x1 the                    trajectory planning, in general, will be reviewed and an</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.4] actuator position, x2 the load position, c the stiffness                      algorithm will be set up for obtaining these objectives</div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.4] </div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.5]                                                        ARTICLE IN PRESS</div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.5]                                    P. Lambrechts et al. / Control Engineering Practice 13 (2005) 145–157                                    149</div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.5] </div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.5]                              d                                                          q1</div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.5]                       Derivative</div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.5]                        of Jerk                                                          q2</div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.5]                                                         Rigid Body Feedforward</div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.5] </div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.5]                                                                                         q3</div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.5] </div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.5]                                                                                         q4</div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.5] </div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.5]                                                                                                          1</div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.5]                                                                                                       k12 s + c</div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.5] </div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.5] </div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.5]                                                                                                             F</div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.5]                                        1           1           1            1                                         Motion</div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.5]                                        s           s           s            s                PD                       System        x</div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.5]                                       Jerk   Acceleration   Velocity    Position         Controller               4th order plant</div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.5] </div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.5] </div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.5]                                              Fig. 5. Fourth-order feedforward implementation.</div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.5] </div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.5] </div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.5] more or less irrespective of the order of the resulting                          minimal, given the bounds a% and v%: Next, actuator effort</div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.5] trajectory.                                                                      is immediately taken into account by means of the given</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.5]    A trajectory planner for a point-to-point move will be                        bounds, accuracy is precise, complexity is low and</div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.5] considered, although the resulting algorithm can be                              reliability is high (no iteration loops that can</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.5] adjusted for relevant alternative objectives like for                            hang up, algorithm only fails if a non-positive bound</div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.5] instance speed control instead of position control,                              is speciﬁed). The implementation problem is considered</div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.5] scanning motions or speed change operations. The                                 later.</div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.5] objectives that are important for applicability of any                              Given the advantages of this algorithm, it is desirable</div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.5] trajectory planning algorithm are given below:                                   to generalize it for planning higher-order trajectories.</div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.5]                                                                                  The position displacement x% and bounds on all</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.5] * Timing: Time optimality should be obtained; at least                           derivatives of the trajectory up to the highest-order</div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.5]   it must be clear what the consequences are for the                                                         % are assumed to be given.</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.5]                                                                                  derivative d (indicated as d)</div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.5]   trajectory execution time when considering the effect                          Furthermore, all derivatives are required to be equal to</div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.5]   of boundary conditions.                                                        zero at the start and end positions.</div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.5] * Actuator effort: This is usually the basis for the</div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.5] </div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.5]   selection of bounds for velocity, acceleration and</div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.5]   jerk, although they may also be related to bounds on                             (1) Determine a symmetrical trajectory that has d</div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.5]   mechanics or safety issues.                                                          equal to either d% or d% at all times and obtains</div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.5] * Accuracy: For point-to-point moves, the planned end                                  displacement x:%</div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.5]   position of the trajectory must be equal to the desired                          (2) Determine td%: the shortest time that d remains</div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.5]   end position (within measurement accuracy).                                          constant (always the ﬁrst period).</div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.5] * Complexity: Usually, trajectory planning is thought                              (3) Calculate the maximal value of velocity v# obtained</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.5]   of as being done off-line. In practice, however, the                                 during this trajectory.</div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.5]   desired end position often becomes available at the                              (4) Test v# &gt; v%:</div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.5]   moment the trajectory should start. Hence, the time                                    3 if true re-calculate td% based on v% (td% decreases),</div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.5]   required for planning the trajectory is lost and should                                3 if false continue.</div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.5]   be minimized.                                                                    (5) Calculate the maximal value of acceleration a#</div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.5] * Reliability: The planning algorithm should always                                    obtained during this trajectory.</div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.5]   come up with a valid solution.                                                   (6) Test a# &gt; a:</div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.5]                                                                                                   %</div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.5] * Implementation: Trajectory planning is done in                                         3 if true re-calculate td% based on a% (td% decreases),</div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.5]   computer hardware, and is therefore subject to                                         3 if false continue.</div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.5]   discretization and digitization.                                                 (7) Continue these tests and possible recalculations</div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.5]                                                                                        until d; the last test is performed on ; ; deﬁned as</div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.5]   These objectives, except the ﬁnal one, are all met by                                the highest derivative before d: The resulting td% will</div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.5] the simple algorithm given in Section 2. Obviously,                                    not be changed anymore.</div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.5] timing is minimal if the bound v% is discarded and only                            (8) Extend the trajectory symmetrically with periods of</div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.5] acceleration occurs at the maximal allowable a:   % Intro-                             constant ; whenever ; reaches the value ;% or %; :</div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.5] ducing v% always leads to a reduction of ta% (easily                                   this must be done such that the required displace-</div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.5] veriﬁed). The result will be that v ¼ v% is obtained in the                            ment x% is obtained.</div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.5] shortest possible time, and is continued for as long as                            (9) Determine t;% : the shortest time that ; remains</div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.5] possible. Hence, the trajectory execution time is always                               constant.</div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.5] </div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.6]                                                    ARTICLE IN PRESS</div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.6] 150                              P. Lambrechts et al. / Control Engineering Practice 13 (2005) 145–157</div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.6] </div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.6] </div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.6] (10) Starting with velocity and ending with the deriva-                                                          Fourth order trajectory profiles</div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.6]      tive before ; ; calculate the maximal value and re-                               1000</div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.6] </div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.6] </div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.6] </div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.6] </div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.6]                                                                          d [m/s 4]</div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.6]      calculate t;% if the appropriate bound is violated                                               t2 t 3      t4 t 5                  t8 t 9                   t14 t15</div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.6]                                                                                           0</div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.6]      (each re-calculation can only decrease t;% ).                                            t0t 1                        t6 t 7                  t10 t11   t12 t13</div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.6] (11) The resulting t ;% will not be changed anymore.                                 -1000</div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.6]                                                                                               0            0.2         0.4          0.6             0.8        1         1.2</div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.6] (12) Extend the trajectory symmetrically with periods of                                50</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.6] </div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.6] </div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.6] </div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.6] </div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.6]                                                                            j [m/s 3]</div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.6]      constant next lower derivative; again such that the</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.6]      required displacement x% is obtained. Determine the                                  0</div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.6] </div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.6]      associated time interval and do the tests and                                      -50</div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.6]      recalculations resulting in a ﬁnal value for it.                                         0            0.2         0.4          0.6             0.8        1         1.2</div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.6]                                                                                           5</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.6] (13) Continue until v: the constant speed phase duration</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.6] </div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.6] </div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.6] </div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.6] </div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.6]                                                                            a [m/s 2]</div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.6]      tv% is calculated such that the required displacement                                0</div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.6]      x% is obtained (i.e. the displacement ‘left to go’</div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.6]                                                                                          -5</div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.6]      divided by v%).                                                                          0            0.2         0.4          0.6             0.8        1         1.2</div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.6] (14) Finished: td%; t;% ; etc. until tv% completely determine                           1.5</div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.6] </div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.6] </div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.6] </div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.6] </div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.6]                                                                             v [m/s]</div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.6]      the trajectory.                                                                     1</div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.6]                                                                                         0.5</div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.6] </div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.6]  The properties of the resulting trajectories (in the sense                              0</div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.6]                                                                                               0            0.2         0.4          0.6             0.8        1         1.2</div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.6] of the objectives given above) appear to depend partly</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.6]                                                                                          1</div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.6] on the order of the trajectory planner. Obviously, the</div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.6] </div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.6]                                                                             x [m]</div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.6] required calculations become more complex with                                          0.5</div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.6] </div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.6] increasing order. Time-optimality is still automatically                                 0</div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.6] obtained with third-order trajectories, but not necessa-                                      0            0.2         0.4          0.6             0.8        1         1.2</div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.6] </div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.6] rily for fourth-order trajectories (this can be obtained                                                                            time [s]</div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.6] but costs much complexity at a small gain with respect                                            Fig. 6. Fourth-order trajectory planning.</div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.6] to a good sub-optimal solution). In principle, higher</div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.6] than fourth-order trajectories can also be planned by</div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.6] means of this algorithm, but this is considered im-</div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.6] practical due to the large increase in complexity. It is              bound on the derivative of jerk will be considered. This</div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.6] noted here that all calculations for third- and fourth-               implies tv% ¼ 0; ta% ¼ 0 and t;% ¼ 0 and it is clear that this</div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.6] order planning can be done analytically with fairly basic             will provide a lower bound for the trajectory execution</div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.6] mathematical functions.                                               time tx% ¼ 8 td%:</div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.6]                                                                          To obtain td% (step 2), the relation between td% and x%</div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.6]                                                                       with given d% is needed. For this the constant value of</div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.6] 5. Fourth-order trajectory planning                                   derivative of jerk of þd% or d% during each interval will</div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.6]                                                                       be used. If the time instance of derivative of jerk change</div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.6]      This section will provide the derivations and calcula-           is set to 0, it is easily veriﬁed that for any time t during</div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.6] tions necessary to ‘ﬁll in’ the algorithm developed in the            the constant derivative of jerk interval the fourth-order</div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.6] previous section for fourth-order trajectory planning.                proﬁles for acceleration, velocity and position can be</div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.6] Again it will be assumed that a symmetrical trajectory                expressed as follows:</div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.6] must be planned for a point-to-point move over a</div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.6]                                                                        ; ðtÞ ¼ d0 t þ ; 0 ;</div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.6] distance x: % Bounds are deﬁned on velocity (v%), accelera-</div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.6]         %</div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.6] tion ðaÞ;  jerk                               % The trajectory</div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.6]                 (%; ) and derivative of jerk (d).                      aðtÞ ¼ 12 d0 t2 þ ; 0 t þ a0 ;</div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.6] planning algorithm will be based on the construction of                vðtÞ ¼ 16 d0 t3 þ 12 ; 0 t2 þ a0 t þ v0 ;</div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.6] a derivative of jerk proﬁle that can be integrated four                        1</div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.6]                                                                        xðtÞ ¼ 24 d0 t4 þ 16 ; 0 t3 þ a0 t2 þ v0 t þ x0 :                                                       ð8Þ</div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.6] times to obtain the fourth-order position trajectory. A</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.6] symmetrical trajectory is completely determined                       Because the bounds on jerk, acceleration and velocity</div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.6] by four time intervals: the constant derivative of jerk               are assumed to be not violated, t;% ¼ 0; ta% ¼ 0 and tv% ¼ 0;</div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.6] interval td%; the constant jerk interval t;% ; the constant           and consequently from Fig. 6: t2 ¼ t1 ¼ td%; t4 ¼ t3 ¼ 2td%;</div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.6] acceleration interval ta% and the constant velocity interval          t6 ¼ t5 ¼ 3td% and t8 ¼ t7 ¼ 4td%: Hence,</div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.6] tv% : The resulting proﬁles are given in Fig. 6. Note that                       % d%;</div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.6]                                                                        ; ðt1 Þ ¼ dt</div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.6] there are 16 time instances at which the derivative of jerk</div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.6] changes, including the starting time of the trajectory                             % 2%;</div>
+<div id="L481"><a href="#L481">00481</a> [PDF p.6]                                                                        aðt1 Þ ¼ 1 dt      2       d</div>
+<div id="L482"><a href="#L482">00482</a> [PDF p.6] at t0 :                                                                            % 3%;</div>
+<div id="L483"><a href="#L483">00483</a> [PDF p.6]                                                                        vðt1 Þ ¼ 16 dt d</div>
+<div id="L484"><a href="#L484">00484</a> [PDF p.6]      For step 1 of the algorithm, the bounds on jerk,</div>
+<div id="L485"><a href="#L485">00485</a> [PDF p.6]                                                                        xðt1 Þ ¼ 1 dt % 4%                                                                                      ð9Þ</div>
+<div id="L486"><a href="#L486">00486</a> [PDF p.6] acceleration and velocity will be discarded, and only the                                 24          d</div>
+<div id="L487"><a href="#L487">00487</a> [PDF p.6] </div>
+<div id="L488"><a href="#L488">00488</a> [PDF p.7]                                                              ARTICLE IN PRESS</div>
+<div id="L489"><a href="#L489">00489</a> [PDF p.7]                                            P. Lambrechts et al. / Control Engineering Practice 13 (2005) 145–157                              151</div>
+<div id="L490"><a href="#L490">00490</a> [PDF p.7] </div>
+<div id="L491"><a href="#L491">00491</a> [PDF p.7] </div>
+<div id="L492"><a href="#L492">00492</a> [PDF p.7] and for the next period in which d ¼ d%                                        now implies</div>
+<div id="L493"><a href="#L493">00493</a> [PDF p.7]            % d% þ ; ðt1 Þ ¼ 0;</div>
+<div id="L494"><a href="#L494">00494</a> [PDF p.7] ; ðt3 Þ ¼ dt                                                                             % d%;</div>
+<div id="L495"><a href="#L495">00495</a> [PDF p.7]                                                                                 ; ðt2 Þ ¼ dt</div>
+<div id="L496"><a href="#L496">00496</a> [PDF p.7]               % 2% þ ; ðt1 Þtd% þ aðt1 Þ ¼ dt</div>
+<div id="L497"><a href="#L497">00497</a> [PDF p.7] aðt3 Þ ¼  12 dt                              % 2%;                                                  % d%t;% ;</div>
+<div id="L498"><a href="#L498">00498</a> [PDF p.7]                                                                                              % 2% þ dt</div>
+<div id="L499"><a href="#L499">00499</a> [PDF p.7]                                                                                  aðt2 Þ ¼ 12 dt</div>
+<div id="L500"><a href="#L500">00500</a> [PDF p.7]                  d                              d                                               d</div>
+<div id="L501"><a href="#L501">00501</a> [PDF p.7] vðt3 Þ ¼  1 dt                                          % 3%;</div>
+<div id="L502"><a href="#L502">00502</a> [PDF p.7]               % 3% þ 1 ; ðt1 Þt2% þ aðt1 Þtd% þ vðt1 Þ ¼ dt                               1 % 3     1 % 2      % d%t2;% ;</div>
+<div id="L503"><a href="#L503">00503</a> [PDF p.7]                                                                                  vðt2 Þ ¼ dt % þ dt %t ;% þ 1 dt</div>
+<div id="L504"><a href="#L504">00504</a> [PDF p.7]                6       d       2   d                         d                             6    d       2   d           2</div>
+<div id="L505"><a href="#L505">00505</a> [PDF p.7]                                                                                            1 % 4       % 3%t ;% þ 1 dt</div>
+<div id="L506"><a href="#L506">00506</a> [PDF p.7]                                                                                                                     %2 2 1 % 3</div>
+<div id="L507"><a href="#L507">00507</a> [PDF p.7]             1 % 4</div>
+<div id="L508"><a href="#L508">00508</a> [PDF p.7] xðt3 Þ ¼  24 dtd% þ 16 ; ðt1 Þt3d% þ 12 aðt1 Þt2d% þ vðt1 Þtd% þ xðt1 Þ         xðt2 Þ ¼ 24 dtd% þ 16 dt d       4 d%t ;% þ 6 dtd%t ;% :    ð19Þ</div>
+<div id="L509"><a href="#L509">00509</a> [PDF p.7]            % 4%:</div>
+<div id="L510"><a href="#L510">00510</a> [PDF p.7]        ¼ 7 dt                                                          ð10Þ     Again using Eq. (8) it is possible to calculate jerk,</div>
+<div id="L511"><a href="#L511">00511</a> [PDF p.7]           12       d</div>
+<div id="L512"><a href="#L512">00512</a> [PDF p.7]                                                                                 acceleration, velocity and position at the consecutive</div>
+<div id="L513"><a href="#L513">00513</a> [PDF p.7] Again using Eq. (8), the results of the subsequent                              time instances. Note, that maximal acceleration is</div>
+<div id="L514"><a href="#L514">00514</a> [PDF p.7] periods can be calculated:                                                      obtained at t3 and maximal velocity at t7 : Now, it can</div>
+<div id="L515"><a href="#L515">00515</a> [PDF p.7] ; ðt5 Þ ¼ dt% d%;    ; ðt7 Þ ¼ 0;                                              be derived that the position obtained at the end of the</div>
+<div id="L516"><a href="#L516">00516</a> [PDF p.7]           1 % 2                                                                 move can be calculated as</div>
+<div id="L517"><a href="#L517">00517</a> [PDF p.7] aðt5 Þ ¼ 2 dtd%;      aðt7 Þ ¼ 0;</div>
+<div id="L518"><a href="#L518">00518</a> [PDF p.7]             5 % 3                 % 3%;</div>
+<div id="L519"><a href="#L519">00519</a> [PDF p.7]                                               ð11Þ                                         % 4% þ 16dt</div>
+<div id="L520"><a href="#L520">00520</a> [PDF p.7]                                                                                 xðt15 Þ ¼ 8dt       % 3%t;% þ 10dt</div>
+<div id="L521"><a href="#L521">00521</a> [PDF p.7]                                                                                                                 % 2%t2;% þ 2dt</div>
+<div id="L522"><a href="#L522">00522</a> [PDF p.7]                                                                                                                             % d%t3;% : ð20Þ</div>
+<div id="L523"><a href="#L523">00523</a> [PDF p.7] vðt5 Þ ¼ 1 6 dtd%; vðt7 Þ ¼ 2dt     d</div>
+<div id="L524"><a href="#L524">00524</a> [PDF p.7]                                                                                                 d               d           d</div>
+<div id="L525"><a href="#L525">00525</a> [PDF p.7] </div>
+<div id="L526"><a href="#L526">00526</a> [PDF p.7] xðt5 Þ ¼ 2 1 dt % 4%; xðt7 Þ ¼ 4dt% 4%                                          By setting x% ¼ xðt15 Þ; it is then possible to solve t;% from</div>
+<div id="L527"><a href="#L527">00527</a> [PDF p.7]             24         d               d</div>
+<div id="L528"><a href="#L528">00528</a> [PDF p.7]                                                                                 the following:</div>
+<div id="L529"><a href="#L529">00529</a> [PDF p.7] and due to symmetry of the proﬁle: xðt15 Þ ¼ 2xðt7 Þ ¼</div>
+<div id="L530"><a href="#L530">00530</a> [PDF p.7]    % 4%: From this td% can be calculated as required by steps                                      % 2%Þt2;% þ ð16dt</div>
+<div id="L531"><a href="#L531">00531</a> [PDF p.7]                                                                                    % d%Þt3;% þ ð10dt</div>
+<div id="L532"><a href="#L532">00532</a> [PDF p.7]                                                                                 ð2dt                               % 3%Þt;% þ ð8dt</div>
+<div id="L533"><a href="#L533">00533</a> [PDF p.7]                                                                                                                                 % 4%  xÞ% ¼0</div>
+<div id="L534"><a href="#L534">00534</a> [PDF p.7] 8dt  d</div>
+<div id="L535"><a href="#L535">00535</a> [PDF p.7]                                                                                                      d               d</div>
+<div id="L536"><a href="#L536">00536</a> [PDF p.7]                                                                                                                                   d</div>
+<div id="L537"><a href="#L537">00537</a> [PDF p.7]                                                                                                                                        </div>
+<div id="L538"><a href="#L538">00538</a> [PDF p.7] 1 and 2 of the trajectory planning algorithm:                                                                                    x%</div>
+<div id="L539"><a href="#L539">00539</a> [PDF p.7]         rﬃﬃﬃﬃﬃ                                                                   ) t3;% þ ð5td%Þt2;% þ ð8t2d%Þt;% þ 4t3d%               ¼ 0: ð21Þ</div>
+<div id="L540"><a href="#L540">00540</a> [PDF p.7]             %                                                                                                                  2dt% d%</div>
+<div id="L541"><a href="#L541">00541</a> [PDF p.7]          4 x</div>
+<div id="L542"><a href="#L542">00542</a> [PDF p.7] td% ¼         :                                          ð12Þ</div>
+<div id="L543"><a href="#L543">00543</a> [PDF p.7]            8d%                                                                  This is a third-order polynomial equation in t ;% ; which</div>
+<div id="L544"><a href="#L544">00544</a> [PDF p.7] To continue with step 3, note that the maximal velocity                         has one positive real root that can be calculated as</div>
+<div id="L545"><a href="#L545">00545</a> [PDF p.7] is obtained at time instance t7 : Hence, from Eq. (11)                          follows (see Bronshtein &amp; Semendyayev, 1973):</div>
+<div id="L546"><a href="#L546">00546</a> [PDF p.7] follows                                                                                 1</div>
+<div id="L547"><a href="#L547">00547</a> [PDF p.7]                                                                                 p :¼  t2d%;</div>
+<div id="L548"><a href="#L548">00548</a> [PDF p.7]                % 3%:</div>
+<div id="L549"><a href="#L549">00549</a> [PDF p.7] v# ¼ vðt7 Þ ¼ 2dt                                  ð13Þ                                 9</div>
+<div id="L550"><a href="#L550">00550</a> [PDF p.7]                            d</div>
+<div id="L551"><a href="#L551">00551</a> [PDF p.7]                                                                                          1       x%</div>
+<div id="L552"><a href="#L552">00552</a> [PDF p.7] If v# &gt; v% it is necessary to recalculate td% as                                q :¼  t3d%           ;</div>
+<div id="L553"><a href="#L553">00553</a> [PDF p.7]        rﬃﬃﬃﬃﬃ                                                                           27        % d%</div>
+<div id="L554"><a href="#L554">00554</a> [PDF p.7]                                                                                                 4dt</div>
+<div id="L555"><a href="#L555">00555</a> [PDF p.7]        3   v%                                                                    D :¼ p3 þ q2 ;</div>
+<div id="L556"><a href="#L556">00556</a> [PDF p.7] td% ¼         ;                                                      ð14Þ</div>
+<div id="L557"><a href="#L557">00557</a> [PDF p.7]           2d%                                                                          qﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ</div>
+<div id="L558"><a href="#L558">00558</a> [PDF p.7]                                                                                                     pﬃﬃﬃﬃ</div>
+<div id="L559"><a href="#L559">00559</a> [PDF p.7]                                                                                         3</div>
+<div id="L560"><a href="#L560">00560</a> [PDF p.7] which establishes step 4. Next, step 5 follows from the                          r :¼ q þ D;</div>
+<div id="L561"><a href="#L561">00561</a> [PDF p.7] calculation of maximal acceleration obtained at time                                         p 5</div>
+<div id="L562"><a href="#L562">00562</a> [PDF p.7]                                                                                  t ;% ¼ r   td%:                                 ð22Þ</div>
+<div id="L563"><a href="#L563">00563</a> [PDF p.7] instance t3 : From Eq. (10) follows:                                                         r 3</div>
+<div id="L564"><a href="#L564">00564</a> [PDF p.7]               % 2%</div>
+<div id="L565"><a href="#L565">00565</a> [PDF p.7] a# ¼ aðt3 Þ ¼ dt                                   ð15Þ                         After this, step 10 of the algorithm introduces the</div>
+<div id="L566"><a href="#L566">00566</a> [PDF p.7]                        d</div>
+<div id="L567"><a href="#L567">00567</a> [PDF p.7]                                                                                 velocity and acceleration bounds again; the maximal</div>
+<div id="L568"><a href="#L568">00568</a> [PDF p.7] and if a# &gt; a% it is necessary to recalculate td% as</div>
+<div id="L569"><a href="#L569">00569</a> [PDF p.7]       rﬃﬃ                                                                       velocity is obtained at t7 :</div>
+<div id="L570"><a href="#L570">00570</a> [PDF p.7]         a%                                                                                           % 3% þ 3dt</div>
+<div id="L571"><a href="#L571">00571</a> [PDF p.7]                                                                                                               % 2%t;% þ dt</div>
+<div id="L572"><a href="#L572">00572</a> [PDF p.7]                                                                                                                         % d%t2;% :</div>
+<div id="L573"><a href="#L573">00573</a> [PDF p.7] td% ¼      ;                                                         ð16Þ       v# ¼ vðt7 Þ ¼ 2dt                                  ð23Þ</div>
+<div id="L574"><a href="#L574">00574</a> [PDF p.7]         d%                                                                                              d           d</div>
+<div id="L575"><a href="#L575">00575</a> [PDF p.7] </div>
+<div id="L576"><a href="#L576">00576</a> [PDF p.7] which establishes step 6. In this case, one further test is                     If v# &gt; v% the bound is violated and it is necessary to</div>
+<div id="L577"><a href="#L577">00577</a> [PDF p.7] required (step 7) to do on the maximal jerk obtained at                         recalculate t;% from the second-order polynomial</div>
+<div id="L578"><a href="#L578">00578</a> [PDF p.7] t1 :                                                                                                       v%</div>
+<div id="L579"><a href="#L579">00579</a> [PDF p.7]                                                                                 t2;% þ 3td%t ;% þ 2t2d%       ¼ 0:                 ð24Þ</div>
+<div id="L580"><a href="#L580">00580</a> [PDF p.7]                % d%                                                                                       %</div>
+<div id="L581"><a href="#L581">00581</a> [PDF p.7]                                                                                                           dtd%</div>
+<div id="L582"><a href="#L582">00582</a> [PDF p.7] ;# ¼ ; ðt1 Þ ¼ dt                                     ð17Þ</div>
+<div id="L583"><a href="#L583">00583</a> [PDF p.7] and if ;# &gt; ;% it is necessary to recalculate td% as                            The positive real solution for this is</div>
+<div id="L584"><a href="#L584">00584</a> [PDF p.7]                                                                                                sﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ</div>
+<div id="L585"><a href="#L585">00585</a> [PDF p.7]       ;%                                                                                1        t2d%      v%</div>
+<div id="L586"><a href="#L586">00586</a> [PDF p.7] td% ¼ :                                                  ð18Þ                   t;% ¼ 1 td% þ        þ :                                    ð25Þ</div>
+<div id="L587"><a href="#L587">00587</a> [PDF p.7]       d%                                                                                2        4 dt     % d%</div>
+<div id="L588"><a href="#L588">00588</a> [PDF p.7] Hence, this establishes a value for td% that complies with</div>
+<div id="L589"><a href="#L589">00589</a> [PDF p.7]                                                                                 Next, the maximal acceleration is obtained at t3 :</div>
+<div id="L590"><a href="#L590">00590</a> [PDF p.7] all of the bounds ;% ; a% and v%: From this point on, td% can</div>
+<div id="L591"><a href="#L591">00591</a> [PDF p.7] be considered a constant.                                                                     % 2% þ dt</div>
+<div id="L592"><a href="#L592">00592</a> [PDF p.7]                                                                                 a# ¼ aðt3 Þ ¼ dt     % d%t;% :                               ð26Þ</div>
+<div id="L593"><a href="#L593">00593</a> [PDF p.7]                                                                                                     d</div>
+<div id="L594"><a href="#L594">00594</a> [PDF p.7]     The next thing to do is to calculate t;% under the                          If a# &gt; a% it is necessary to recalculate t ;% as</div>
+<div id="L595"><a href="#L595">00595</a> [PDF p.7] assumption that bounds a% and v% are not violated (steps 8</div>
+<div id="L596"><a href="#L596">00596</a> [PDF p.7]                                                                                       a%</div>
+<div id="L597"><a href="#L597">00597</a> [PDF p.7] and 9). To do the necessary calculations, assume that                           t;% ¼  td%                                                  ð27Þ</div>
+<div id="L598"><a href="#L598">00598</a> [PDF p.7] t;% &gt; 0; such that t2 &gt; t1 and t6 &gt; t5 (from Fig. 6). Eq. (8)                          ;%</div>
+<div id="L599"><a href="#L599">00599</a> [PDF p.7] and the fact that d ¼ 0 during the period from t1 to t2                         and step 11 of the planning algorithm is established.</div>
+<div id="L600"><a href="#L600">00600</a> [PDF p.7] </div>
+<div id="L601"><a href="#L601">00601</a> [PDF p.8]                                                                        ARTICLE IN PRESS</div>
+<div id="L602"><a href="#L602">00602</a> [PDF p.8] 152                                                  P. Lambrechts et al. / Control Engineering Practice 13 (2005) 145–157</div>
+<div id="L603"><a href="#L603">00603</a> [PDF p.8] </div>
+<div id="L604"><a href="#L604">00604</a> [PDF p.8] </div>
+<div id="L605"><a href="#L605">00605</a> [PDF p.8]    In accordance with step 12, there is a further                                         6. Implementation aspects</div>
+<div id="L606"><a href="#L606">00606</a> [PDF p.8] extension of the trajectory required for the calculation</div>
+<div id="L607"><a href="#L607">00607</a> [PDF p.8] of ta% : To do the necessary calculations, assume that ta% &gt;                              6.1. Switching times</div>
+<div id="L608"><a href="#L608">00608</a> [PDF p.8] 0; such that t4 &gt; t3 (from Fig. 6). Eq. (8) and the fact that</div>
+<div id="L609"><a href="#L609">00609</a> [PDF p.8] d ¼ 0 and ; ¼ 0 during the period from t3 to t4 can now                                       From the previous sections, it is clear that the</div>
+<div id="L610"><a href="#L610">00610</a> [PDF p.8] again be used to calculate jerk, acceleration, velocity and                               derivations for especially fourth-order trajectory plan-</div>
+<div id="L611"><a href="#L611">00611</a> [PDF p.8] position at the consecutive time instances. This results in                               ning are quite elaborate. However, the calculations</div>
+<div id="L612"><a href="#L612">00612</a> [PDF p.8] the following expression for the obtained end position at                                 actually required for implementation of this planner are</div>
+<div id="L613"><a href="#L613">00613</a> [PDF p.8] t15 :                                                                                     relatively straightforward. The algorithm consists of a</div>
+<div id="L614"><a href="#L614">00614</a> [PDF p.8]            % 4% þ 16dt</div>
+<div id="L615"><a href="#L615">00615</a> [PDF p.8]                     % 3%t;% þ 10dt</div>
+<div id="L616"><a href="#L616">00616</a> [PDF p.8]                                 % 2%t2;% þ 2dt</div>
+<div id="L617"><a href="#L617">00617</a> [PDF p.8]                                             % d%t3;% þ dt</div>
+<div id="L618"><a href="#L618">00618</a> [PDF p.8]                                                        % 2%t2a%                           combination of polynomial calculations with simple if–</div>
+<div id="L619"><a href="#L619">00619</a> [PDF p.8] xðt15 Þ ¼ 8dtd        d            d                      d                               then–else tests for which most state-of-the-art motion</div>
+<div id="L620"><a href="#L620">00620</a> [PDF p.8]                 % d%t;% t2a% þ 6dt</div>
+<div id="L621"><a href="#L621">00621</a> [PDF p.8]               þ dt              % 3%ta% þ 9dt</div>
+<div id="L622"><a href="#L622">00622</a> [PDF p.8]                                            % 2%t;% ta% þ 3dt</div>
+<div id="L623"><a href="#L623">00623</a> [PDF p.8]                                                           % d%t2;% ta% :       ð28Þ       control hardware has standard algorithms.</div>
+<div id="L624"><a href="#L624">00624</a> [PDF p.8]                                    d         d</div>
+<div id="L625"><a href="#L625">00625</a> [PDF p.8]                                                                                               When considering implementation of the planned</div>
+<div id="L626"><a href="#L626">00626</a> [PDF p.8] Now, given that td% and t ;% are already determined, ta% can</div>
+<div id="L627"><a href="#L627">00627</a> [PDF p.8]                                                                                           trajectory into a feedforward control scheme, it is</div>
+<div id="L628"><a href="#L628">00628</a> [PDF p.8] be solved such that xðt15 Þ ¼ x% from the following</div>
+<div id="L629"><a href="#L629">00629</a> [PDF p.8]                                                                                           important to consider the effect of discretization. This</div>
+<div id="L630"><a href="#L630">00630</a> [PDF p.8] polynomial equation:</div>
+<div id="L631"><a href="#L631">00631</a> [PDF p.8]                                                                                           implies that the integrators and the feedforward ﬁlter as</div>
+<div id="L632"><a href="#L632">00632</a> [PDF p.8]  % 2% þ dt</div>
+<div id="L633"><a href="#L633">00633</a> [PDF p.8] fdt     % d%t ;% gt2a% þ f6dt</div>
+<div id="L634"><a href="#L634">00634</a> [PDF p.8]                            % 3% þ 9dt</div>
+<div id="L635"><a href="#L635">00635</a> [PDF p.8]                                    % 2%t;% þ 3dt</div>
+<div id="L636"><a href="#L636">00636</a> [PDF p.8]                                               % d%t2;% gta%                               given in the diagram of Fig. 5 will all have to be</div>
+<div id="L637"><a href="#L637">00637</a> [PDF p.8]     d                         d       d</div>
+<div id="L638"><a href="#L638">00638</a> [PDF p.8]           % 4% þ 16dt</div>
+<div id="L639"><a href="#L639">00639</a> [PDF p.8]       þ f8dt       % 3%t;% þ 10dt</div>
+<div id="L640"><a href="#L640">00640</a> [PDF p.8]                                % 2%t2;% þ 2dt</div>
+<div id="L641"><a href="#L641">00641</a> [PDF p.8]                                            % d%t3;%  xg</div>
+<div id="L642"><a href="#L642">00642</a> [PDF p.8]                                                       % ¼ 0:                   ð29Þ       implemented in discrete time at some given sampling</div>
+<div id="L643"><a href="#L643">00643</a> [PDF p.8]              d        d           d</div>
+<div id="L644"><a href="#L644">00644</a> [PDF p.8]                                                                                           time interval Ts : This also implies that the switching</div>
+<div id="L645"><a href="#L645">00645</a> [PDF p.8] Clearly, ta% must be the positive root of this second-order                               time instances of the planned trajectory must be</div>
+<div id="L646"><a href="#L646">00646</a> [PDF p.8] polynomial equation.                                                                      synchronized with the sampling time instances, i.e. the</div>
+<div id="L647"><a href="#L647">00647</a> [PDF p.8]   Now introduce the velocity bound again:                                                 time intervals tv% ; ta% ; etc. must be multiples of Ts :</div>
+<div id="L648"><a href="#L648">00648</a> [PDF p.8]                % 3% þ 3dt</div>
+<div id="L649"><a href="#L649">00649</a> [PDF p.8] v# ¼ vðt7 Þ ¼ 2dt      % 2%t;% þ dt</div>
+<div id="L650"><a href="#L650">00650</a> [PDF p.8]                                  % d%t2;% þ dt</div>
+<div id="L651"><a href="#L651">00651</a> [PDF p.8]                                             % 2%ta% þ dt</div>
+<div id="L652"><a href="#L652">00652</a> [PDF p.8]                                                       % d%t;% ta%              ð30Þ           To obtain this, it must be accepted that time-</div>
+<div id="L653"><a href="#L653">00653</a> [PDF p.8]                  d       d                     d</div>
+<div id="L654"><a href="#L654">00654</a> [PDF p.8]                                                                                           optimality as resulting from the continuous time</div>
+<div id="L655"><a href="#L655">00655</a> [PDF p.8] and if v# &gt; v% the bound is violated such that ta% must be re-                            calculations in the previous sections is lost. The</div>
+<div id="L656"><a href="#L656">00656</a> [PDF p.8] calculated as                                                                             calculated time intervals must be rounded-off towards</div>
+<div id="L657"><a href="#L657">00657</a> [PDF p.8]              % 3%  3dt</div>
+<div id="L658"><a href="#L658">00658</a> [PDF p.8]       v%  2dt         % 2%t;%  dt</div>
+<div id="L659"><a href="#L659">00659</a> [PDF p.8]                                  % d%t2;%                                                 a multiple of Ts : This must be done such that the given</div>
+<div id="L660"><a href="#L660">00660</a> [PDF p.8]                d         d</div>
+<div id="L661"><a href="#L661">00661</a> [PDF p.8] ta% ¼                                     :              ð31Þ</div>
+<div id="L662"><a href="#L662">00662</a> [PDF p.8]                dt       % d%t ;%</div>
+<div id="L663"><a href="#L663">00663</a> [PDF p.8]                 % 2% þ dt                                                                 bounds are not violated, but at the same time</div>
+<div id="L664"><a href="#L664">00664</a> [PDF p.8]                        d</div>
+<div id="L665"><a href="#L665">00665</a> [PDF p.8]                                                                                           approximated as closely as possible. The approach</div>
+<div id="L666"><a href="#L666">00666</a> [PDF p.8] This determines td%; t ;% and ta% under the restriction of the                            proposed here is to extend the algorithm of Section 5.</div>
+<div id="L667"><a href="#L667">00667</a> [PDF p.8] given bounds and, as the next derivative is v; this                                       After each calculation or re-calculation of a time</div>
+<div id="L668"><a href="#L668">00668</a> [PDF p.8] establishes step 12 of the algorithm.                                                     interval, the result is rounded-off upward to the next</div>
+<div id="L669"><a href="#L669">00669</a> [PDF p.8]     Finally, step 13 will determine the constant velocity                                 multiple of Ts : Next, the maximal value of the highest</div>
+<div id="L670"><a href="#L670">00670</a> [PDF p.8] time interval tv% such that the required total displacement                               derivative is calculated accordingly.</div>
+<div id="L671"><a href="#L671">00671</a> [PDF p.8] x% is obtained. From the previous calculations follows                                        As an example, consider the ﬁrst calculation of td%</div>
+<div id="L672"><a href="#L672">00672</a> [PDF p.8] that tv% ¼ 0 if ta% is according to Eq. (29). But if ta% is                               (Eq. (12)). The rounded-off value for td% can be</div>
+<div id="L673"><a href="#L673">00673</a> [PDF p.8] reduced according to Eq. (31), the result will be that                                    calculated as</div>
+<div id="L674"><a href="#L674">00674</a> [PDF p.8] xðt15 Þox% (with xðt15 Þ recalculated according to Eq. (28)),                                          </div>
+<div id="L675"><a href="#L675">00675</a> [PDF p.8]                                                                                                        t%</div>
+<div id="L676"><a href="#L676">00676</a> [PDF p.8] and a constant velocity phase must be added to the                                        td% 0 ¼ ceil d       Ts                                   ð34Þ</div>
+<div id="L677"><a href="#L677">00677</a> [PDF p.8] trajectory such that xðt4 Þ  xðt3 Þ ¼ x%  xðt15 Þ: Hence, tv%                                        Ts</div>
+<div id="L678"><a href="#L678">00678</a> [PDF p.8] can be calculated as                                                                      with ceilðÞ denoting the rounding off towards the next</div>
+<div id="L679"><a href="#L679">00679</a> [PDF p.8]       x%  xðt15 Þ                                                                        higher integer. From Eq. (12) a new value for d% can then</div>
+<div id="L680"><a href="#L680">00680</a> [PDF p.8] tv% ¼              :                                      ð32Þ                            be calculated:</div>
+<div id="L681"><a href="#L681">00681</a> [PDF p.8]            v%</div>
+<div id="L682"><a href="#L682">00682</a> [PDF p.8] This completes the calculation of the characteristics of                                         x%</div>
+<div id="L683"><a href="#L683">00683</a> [PDF p.8]                                                                                           d% 0 ¼ 04 :                                           ð35Þ</div>
+<div id="L684"><a href="#L684">00684</a> [PDF p.8] the symmetrical fourth-order proﬁle for a given distance                                        8td%</div>
+<div id="L685"><a href="#L685">00685</a> [PDF p.8] x% and given bounds v%; a;            % Furthermore, if the</div>
+<div id="L686"><a href="#L686">00686</a> [PDF p.8]                             % ;% and d:</div>
+<div id="L687"><a href="#L687">00687</a> [PDF p.8] trajectory contains a constant velocity phase (i.e. tv% &gt; 0),                             Note that with t0d%Xtd% this results in d% 0 pd:</div>
+<div id="L688"><a href="#L688">00688</a> [PDF p.8]                                                                                                                                         %</div>
+<div id="L689"><a href="#L689">00689</a> [PDF p.8] the trajectory is time-optimal. The total displacement x%                                    It can be veriﬁed that this same approach is valid for</div>
+<div id="L690"><a href="#L690">00690</a> [PDF p.8] can be expressed as a function of d% and the times td% t;% ; ta%                          the calculation or recalculation of all time intervals. It is</div>
+<div id="L691"><a href="#L691">00691</a> [PDF p.8] and tv% :                                                                                 important to note that with each new calculation of d% 0</div>
+<div id="L692"><a href="#L692">00692</a> [PDF p.8]                                                                                           its value must reduce. This guarantees that none of the</div>
+<div id="L693"><a href="#L693">00693</a> [PDF p.8]                                                                                           bounds that were checked in earlier steps of the</div>
+<div id="L694"><a href="#L694">00694</a> [PDF p.8]      % 2%t2a% þ td%t ;% t2a% þ 6t3%ta% þ 9t2%t ;% ta% þ 3td%t2;% ta% þ 8t4%</div>
+<div id="L695"><a href="#L695">00695</a> [PDF p.8] x% ¼ dðt                                                                                  algorithm will be violated.</div>
+<div id="L696"><a href="#L696">00696</a> [PDF p.8]          d                       d         d                             d</div>
+<div id="L697"><a href="#L697">00697</a> [PDF p.8]        þ 16t3d%t;% þ 10t2d%t2;% þ 2td%t3;% þ 2t3d%tv% þ 3t2d%t ;% tv%                        State-of-the-art motion controllers are equipped with</div>
+<div id="L698"><a href="#L698">00698</a> [PDF p.8]                                                                                           a high-resolution ﬂoating point calculation unit, such</div>
+<div id="L699"><a href="#L699">00699</a> [PDF p.8]        þ td%t2;% tv% þ t2d%ta% tv% þ td%t ;% ta% tv% Þ:                        ð33Þ       that quantization effects are usually negligible. To check</div>
+<div id="L700"><a href="#L700">00700</a> [PDF p.8] </div>
+<div id="L701"><a href="#L701">00701</a> [PDF p.9]                                                               ARTICLE IN PRESS</div>
+<div id="L702"><a href="#L702">00702</a> [PDF p.9]                                            P. Lambrechts et al. / Control Engineering Practice 13 (2005) 145–157                                                   153</div>
+<div id="L703"><a href="#L703">00703</a> [PDF p.9] </div>
+<div id="L704"><a href="#L704">00704</a> [PDF p.9] </div>
+<div id="L705"><a href="#L705">00705</a> [PDF p.9] this, Eq. (33) can be used to calculate the obtained                                              Normalized discrete time fourth order profiles</div>
+<div id="L706"><a href="#L706">00706</a> [PDF p.9] position in case of a quantized d% 0 : The difference                                            not synchronized          synchronized, delayed by 0.1s</div>
+<div id="L707"><a href="#L707">00707</a> [PDF p.9] between desired position and calculated position can be</div>
+<div id="L708"><a href="#L708">00708</a> [PDF p.9] accounted for by means of a correction signal on the</div>
+<div id="L709"><a href="#L709">00709</a> [PDF p.9] </div>
+<div id="L710"><a href="#L710">00710</a> [PDF p.9] </div>
+<div id="L711"><a href="#L711">00711</a> [PDF p.9] </div>
+<div id="L712"><a href="#L712">00712</a> [PDF p.9] </div>
+<div id="L713"><a href="#L713">00713</a> [PDF p.9]                                                                                  d</div>
+<div id="L714"><a href="#L714">00714</a> [PDF p.9] position trajectory. Typically in a digital system, the</div>
+<div id="L715"><a href="#L715">00715</a> [PDF p.9] position signal is also quantized (usually in encoder</div>
+<div id="L716"><a href="#L716">00716</a> [PDF p.9] </div>
+<div id="L717"><a href="#L717">00717</a> [PDF p.9] </div>
+<div id="L718"><a href="#L718">00718</a> [PDF p.9] </div>
+<div id="L719"><a href="#L719">00719</a> [PDF p.9] </div>
+<div id="L720"><a href="#L720">00720</a> [PDF p.9]                                                                                  j</div>
+<div id="L721"><a href="#L721">00721</a> [PDF p.9] increments). The correction signal can then be imple-</div>
+<div id="L722"><a href="#L722">00722</a> [PDF p.9] mented by adding some increments to the position</div>
+<div id="L723"><a href="#L723">00723</a> [PDF p.9] reference at each sampling instance during the trajec-</div>
+<div id="L724"><a href="#L724">00724</a> [PDF p.9] </div>
+<div id="L725"><a href="#L725">00725</a> [PDF p.9] </div>
+<div id="L726"><a href="#L726">00726</a> [PDF p.9] </div>
+<div id="L727"><a href="#L727">00727</a> [PDF p.9] </div>
+<div id="L728"><a href="#L728">00728</a> [PDF p.9]                                                                                  a</div>
+<div id="L729"><a href="#L729">00729</a> [PDF p.9] tory. In relevant cases only one or two correction</div>
+<div id="L730"><a href="#L730">00730</a> [PDF p.9] increments at each sampling instance should be sufﬁ-</div>
+<div id="L731"><a href="#L731">00731</a> [PDF p.9] </div>
+<div id="L732"><a href="#L732">00732</a> [PDF p.9] </div>
+<div id="L733"><a href="#L733">00733</a> [PDF p.9] </div>
+<div id="L734"><a href="#L734">00734</a> [PDF p.9] </div>
+<div id="L735"><a href="#L735">00735</a> [PDF p.9]                                                                                  v</div>
+<div id="L736"><a href="#L736">00736</a> [PDF p.9] cient (to prevent deterioration of the feedforward</div>
+<div id="L737"><a href="#L737">00737</a> [PDF p.9] control). In case larger corrections are necessary, the</div>
+<div id="L738"><a href="#L738">00738</a> [PDF p.9] </div>
+<div id="L739"><a href="#L739">00739</a> [PDF p.9] </div>
+<div id="L740"><a href="#L740">00740</a> [PDF p.9] </div>
+<div id="L741"><a href="#L741">00741</a> [PDF p.9] </div>
+<div id="L742"><a href="#L742">00742</a> [PDF p.9]                                                                                  x</div>
+<div id="L743"><a href="#L743">00743</a> [PDF p.9] accuracy and/or sampling rate of the motion control</div>
+<div id="L744"><a href="#L744">00744</a> [PDF p.9]                                                                                        0   0.2    0.4   0.6    0.8   1   1.2    0    0.2   0.4   0.6    0.8   1    1.2</div>
+<div id="L745"><a href="#L745">00745</a> [PDF p.9] hardware should be increased.</div>
+<div id="L746"><a href="#L746">00746</a> [PDF p.9]                                                                                  (a)                time [s]                   (b)           time [s]</div>
+<div id="L747"><a href="#L747">00747</a> [PDF p.9] 6.2. Synchronization of profiles                                                Fig. 8. Synchronization of discrete time proﬁles (dashed: continuous</div>
+<div id="L748"><a href="#L748">00748</a> [PDF p.9]                                                                                 time).</div>
+<div id="L749"><a href="#L749">00749</a> [PDF p.9]    Consider the continuous time implementation of the</div>
+<div id="L750"><a href="#L750">00750</a> [PDF p.9] feedforward signal calculation as given in Fig. 5. Now,                         factors q1 to q4 followed by summation as indicated in</div>
+<div id="L751"><a href="#L751">00751</a> [PDF p.9] the generation of the derivative of jerk proﬁle and the                         Fig. 5 is straightforward. The ﬁrst-order ﬁltering is less</div>
+<div id="L752"><a href="#L752">00752</a> [PDF p.9] four integrators to obtain jerk, acceleration, velocity and                     trivial, as it must also be transferred to the discrete time</div>
+<div id="L753"><a href="#L753">00753</a> [PDF p.9] position must be implemented in digital hardware. A                             domain. A possible implementation that prevents</div>
+<div id="L754"><a href="#L754">00754</a> [PDF p.9] straightforward approach is to replace the continuous                           problems with unwanted time delays and gives good</div>
+<div id="L755"><a href="#L755">00755</a> [PDF p.9] time integrators by forward Euler discrete time inte-                           results is to make use of the trapezoidal integration</div>
+<div id="L756"><a href="#L756">00756</a> [PDF p.9] grators as indicated in Fig. 7. Clearly, all required                           method. Fig. 9 shows the equivalence of the ﬁrst-order</div>
+<div id="L757"><a href="#L757">00757</a> [PDF p.9] proﬁles are thus calculated. However, due to the zero-                          ﬁlter in Fig. 5 with two possible implementations using</div>
+<div id="L758"><a href="#L758">00758</a> [PDF p.9] order hold effect, each of the four integrators introduces                      the trapezoidal integration method. The ﬁrst implemen-</div>
+<div id="L759"><a href="#L759">00759</a> [PDF p.9] a speciﬁc delay time. To ﬁx this effect, the higher-order                       tation has the inherent disadvantage that an algebraic</div>
+<div id="L760"><a href="#L760">00760</a> [PDF p.9] proﬁles can be delayed individually such that the                               loop occurs; in the second implementation this is</div>
+<div id="L761"><a href="#L761">00761</a> [PDF p.9] symmetry of the complete set of proﬁles is restored.                            prevented by re-calculating the loop. Equivalence can</div>
+<div id="L762"><a href="#L762">00762</a> [PDF p.9] All this can be seen in Fig. 8, in which the discrete time                      be checked by verifying that the discrete implementa-</div>
+<div id="L763"><a href="#L763">00763</a> [PDF p.9] proﬁles are compared with the corresponding contin-                             tions both have the following transfer function:</div>
+<div id="L764"><a href="#L764">00764</a> [PDF p.9] uous time proﬁles. The derivative of jerk proﬁle must be</div>
+<div id="L765"><a href="#L765">00765</a> [PDF p.9]                                                                                 y    ðTs =ð2k12 þ cTs ÞÞðz þ 1Þ</div>
+<div id="L766"><a href="#L766">00766</a> [PDF p.9] delayed with 2 Ts ; the jerk proﬁle with 1:5 Ts ; the                             ¼                               :                                               ð36Þ</div>
+<div id="L767"><a href="#L767">00767</a> [PDF p.9]                                                                                 u z  ð2k12  cTs Þ=ð2k12 þ cTs Þ</div>
+<div id="L768"><a href="#L768">00768</a> [PDF p.9] acceleration proﬁle with 1 Ts and ﬁnally the velocity</div>
+<div id="L769"><a href="#L769">00769</a> [PDF p.9] proﬁle with 0:5 Ts : To obtain a delay of 0:5 Ts when</div>
+<div id="L770"><a href="#L770">00770</a> [PDF p.9] sampling with Ts the average value is taken from the                            6.4. Calculation of reference trajectory</div>
+<div id="L771"><a href="#L771">00771</a> [PDF p.9] current and previous amplitude of the considered</div>
+<div id="L772"><a href="#L772">00772</a> [PDF p.9] proﬁle. This operation appears to work very well,                                  A ﬁnal point on synchronization must be made with</div>
+<div id="L773"><a href="#L773">00773</a> [PDF p.9] although the associated smoothing effect is undesirable.                        respect to the calculation of the reference trajectory that</div>
+<div id="L774"><a href="#L774">00774</a> [PDF p.9] Note that in this case the synchronization introduces a                         is used for feedback control. When applying the</div>
+<div id="L775"><a href="#L775">00775</a> [PDF p.9] total delay of 0:1 s (2 Ts ), but in practice the sampling                      feedforward signal as calculated above, based on the</div>
+<div id="L776"><a href="#L776">00776</a> [PDF p.9] time will be much smaller.                                                      synchronized proﬁles as illustrated in Fig. 8, the actual</div>
+<div id="L777"><a href="#L777">00777</a> [PDF p.9]                                                                                 plant’s response will be close to the ideal continuous</div>
+<div id="L778"><a href="#L778">00778</a> [PDF p.9] 6.3. Implementation of first-order filter                                       time response with a delay of 2 Ts : However, in order</div>
+<div id="L779"><a href="#L779">00779</a> [PDF p.9]                                                                                 to compare this signal with the reference trajectory, it</div>
+<div id="L780"><a href="#L780">00780</a> [PDF p.9]   All required proﬁles for calculation of the feedfor-                          must be sampled with the same sampling frequency as is</div>
+<div id="L781"><a href="#L781">00781</a> [PDF p.9] ward signal are now available. The multiplication with                          used for generation of the reference trajectory. The</div>
+<div id="L782"><a href="#L782">00782</a> [PDF p.9]                                                                                 sample and hold device used for this will then introduce</div>
+<div id="L783"><a href="#L783">00783</a> [PDF p.9]        d                                                                 d      an average delay of exactly 0:5 Ts :</div>
+<div id="L784"><a href="#L784">00784</a> [PDF p.9] Derivative                                                                         Hence, to compensate for this further delay, it is</div>
+<div id="L785"><a href="#L785">00785</a> [PDF p.9]                 Ts</div>
+<div id="L786"><a href="#L786">00786</a> [PDF p.9]                         j        Ts        a      Ts      v      Ts</div>
+<div id="L787"><a href="#L787">00787</a> [PDF p.9]  of Jerk</div>
+<div id="L788"><a href="#L788">00788</a> [PDF p.9]                                                                          x      necessary to also delay the reference trajectory with this</div>
+<div id="L789"><a href="#L789">00789</a> [PDF p.9]                z− 1             z−1              z−1            z−1</div>
+<div id="L790"><a href="#L790">00790</a> [PDF p.9]                                                                                 same value. This additional delay can be implemented in</div>
+<div id="L791"><a href="#L791">00791</a> [PDF p.9]                Jerk         Acceleration       Velocity       Position</div>
+<div id="L792"><a href="#L792">00792</a> [PDF p.9]                                                                                 the same manner as mentioned before: by taking the</div>
+<div id="L793"><a href="#L793">00793</a> [PDF p.9]    Fig. 7. Discrete time planner using forward Euler integrators.               average between the current and previous reference</div>
+<div id="L794"><a href="#L794">00794</a> [PDF p.9] </div>
+<div id="L795"><a href="#L795">00795</a> [PDF p.10]                                                    ARTICLE IN PRESS</div>
+<div id="L796"><a href="#L796">00796</a> [PDF p.10] 154                              P. Lambrechts et al. / Control Engineering Practice 13 (2005) 145–157</div>
+<div id="L797"><a href="#L797">00797</a> [PDF p.10] </div>
+<div id="L798"><a href="#L798">00798</a> [PDF p.10] </div>
+<div id="L799"><a href="#L799">00799</a> [PDF p.10]                                          1                 y</div>
+<div id="L800"><a href="#L800">00800</a> [PDF p.10]   u                                 k 12 s +1</div>
+<div id="L801"><a href="#L801">00801</a> [PDF p.10]                                    continuous</div>
+<div id="L802"><a href="#L802">00802</a> [PDF p.10] </div>
+<div id="L803"><a href="#L803">00803</a> [PDF p.10]                    1               T s (z +1)</div>
+<div id="L804"><a href="#L804">00804</a> [PDF p.10]   u                                                        y</div>
+<div id="L805"><a href="#L805">00805</a> [PDF p.10]                   k 12              2( z −1)</div>
+<div id="L806"><a href="#L806">00806</a> [PDF p.10]                                    trapezoidal</div>
+<div id="L807"><a href="#L807">00807</a> [PDF p.10]                                         c</div>
+<div id="L808"><a href="#L808">00808</a> [PDF p.10]                                        k12</div>
+<div id="L809"><a href="#L809">00809</a> [PDF p.10] </div>
+<div id="L810"><a href="#L810">00810</a> [PDF p.10] </div>
+<div id="L811"><a href="#L811">00811</a> [PDF p.10] </div>
+<div id="L812"><a href="#L812">00812</a> [PDF p.10]                    Ts                   1                  y                                           Fig. 10. Experimental motion system.</div>
+<div id="L813"><a href="#L813">00813</a> [PDF p.10]   u            2k12 + cT s              z</div>
+<div id="L814"><a href="#L814">00814</a> [PDF p.10] </div>
+<div id="L815"><a href="#L815">00815</a> [PDF p.10]                                    2k 12 − cT s                                                  Measured FRF of motion system plant with fitted model</div>
+<div id="L816"><a href="#L816">00816</a> [PDF p.10]                                    2k 12 + cT s</div>
+<div id="L817"><a href="#L817">00817</a> [PDF p.10]                                                                                            60                                                  measurement</div>
+<div id="L818"><a href="#L818">00818</a> [PDF p.10]                                                                                                                                                model</div>
+<div id="L819"><a href="#L819">00819</a> [PDF p.10] </div>
+<div id="L820"><a href="#L820">00820</a> [PDF p.10] </div>
+<div id="L821"><a href="#L821">00821</a> [PDF p.10] </div>
+<div id="L822"><a href="#L822">00822</a> [PDF p.10] </div>
+<div id="L823"><a href="#L823">00823</a> [PDF p.10]                                                                        Magnitude [dB]</div>
+<div id="L824"><a href="#L824">00824</a> [PDF p.10] Fig. 9. Discrete implementation of ﬁrst-order ﬁlter using the                              40</div>
+<div id="L825"><a href="#L825">00825</a> [PDF p.10] trapezoidal integration method.                                                            20</div>
+<div id="L826"><a href="#L826">00826</a> [PDF p.10] </div>
+<div id="L827"><a href="#L827">00827</a> [PDF p.10]                                                                                             0</div>
+<div id="L828"><a href="#L828">00828</a> [PDF p.10] </div>
+<div id="L829"><a href="#L829">00829</a> [PDF p.10]                                                                                           -20</div>
+<div id="L830"><a href="#L830">00830</a> [PDF p.10] trajectory value. The result of this will be that the</div>
+<div id="L831"><a href="#L831">00831</a> [PDF p.10]                                                                                                        0                        1                       2</div>
+<div id="L832"><a href="#L832">00832</a> [PDF p.10]                                                                                                   10                       10                      10</div>
+<div id="L833"><a href="#L833">00833</a> [PDF p.10] control error will not be affected by sampling. The</div>
+<div id="L834"><a href="#L834">00834</a> [PDF p.10] controller will only act on the effects of disturbances and                              -100</div>
+<div id="L835"><a href="#L835">00835</a> [PDF p.10] </div>
+<div id="L836"><a href="#L836">00836</a> [PDF p.10] on discrepancies between the actual plant and the</div>
+<div id="L837"><a href="#L837">00837</a> [PDF p.10]                                                                        Phase [degrees]</div>
+<div id="L838"><a href="#L838">00838</a> [PDF p.10] </div>
+<div id="L839"><a href="#L839">00839</a> [PDF p.10] </div>
+<div id="L840"><a href="#L840">00840</a> [PDF p.10]                                                                                          -200</div>
+<div id="L841"><a href="#L841">00841</a> [PDF p.10] modelled fourth-order behaviour.</div>
+<div id="L842"><a href="#L842">00842</a> [PDF p.10]                                                                                          -300</div>
+<div id="L843"><a href="#L843">00843</a> [PDF p.10]    Obviously, this is only true if the sampling frequency</div>
+<div id="L844"><a href="#L844">00844</a> [PDF p.10] is sufﬁciently high, otherwise the momentary control                                     -400</div>
+<div id="L845"><a href="#L845">00845</a> [PDF p.10] </div>
+<div id="L846"><a href="#L846">00846</a> [PDF p.10] error may deviate signiﬁcantly from the average value. If                                -500</div>
+<div id="L847"><a href="#L847">00847</a> [PDF p.10] this is the case, an increase in sampling frequency must                                          10</div>
+<div id="L848"><a href="#L848">00848</a> [PDF p.10]                                                                                                        0</div>
+<div id="L849"><a href="#L849">00849</a> [PDF p.10]                                                                                                                            10</div>
+<div id="L850"><a href="#L850">00850</a> [PDF p.10]                                                                                                                                 1</div>
+<div id="L851"><a href="#L851">00851</a> [PDF p.10]                                                                                                                                                    10</div>
+<div id="L852"><a href="#L852">00852</a> [PDF p.10]                                                                                                                                                         2</div>
+<div id="L853"><a href="#L853">00853</a> [PDF p.10] </div>
+<div id="L854"><a href="#L854">00854</a> [PDF p.10] be considered. Usually however, the sampling frequency                                                             Frequency [Hz]</div>
+<div id="L855"><a href="#L855">00855</a> [PDF p.10] is more signiﬁcantly determined by the demands on                                          Fig. 11. Measured frequency response of motion system.</div>
+<div id="L856"><a href="#L856">00856</a> [PDF p.10] stability and performance of the (digital) feedback</div>
+<div id="L857"><a href="#L857">00857</a> [PDF p.10] controller.</div>
+<div id="L858"><a href="#L858">00858</a> [PDF p.10]                                                                       body feedforward: the total mass of the motion system is</div>
+<div id="L859"><a href="#L859">00859</a> [PDF p.10]                                                                       usually known within tight boundaries and a well-</div>
+<div id="L860"><a href="#L860">00860</a> [PDF p.10] 7. Simulations and hardware-in-the-loop experiments                   designed motion system will have limited friction and</div>
+<div id="L861"><a href="#L861">00861</a> [PDF p.10]                                                                       damping. Hence, the dependence of fourth-order</div>
+<div id="L862"><a href="#L862">00862</a> [PDF p.10]    A theoretical motivation for the application of fourth-            feedforward on several additional physical parameters</div>
+<div id="L863"><a href="#L863">00863</a> [PDF p.10] order feedforward as an extension of rigid body                       that may, or may not be constant should be investigated.</div>
+<div id="L864"><a href="#L864">00864</a> [PDF p.10] feedforward was already given in Section 3. Next,                     The theoretical improvement of using fourth-order</div>
+<div id="L865"><a href="#L865">00865</a> [PDF p.10] subsequent sections have shown that this approach is                  feedforward instead of rigid body feedforward must be</div>
+<div id="L866"><a href="#L866">00866</a> [PDF p.10] feasible in the sense of trajectory planning and (digital)            robust against variations in these additional parameters:</div>
+<div id="L867"><a href="#L867">00867</a> [PDF p.10] feedforward implementation. This section will now                     the mass ratio (division of mass in m1 and m2 ), the</div>
+<div id="L868"><a href="#L868">00868</a> [PDF p.10] show the effectiveness of fourth-order feedforward by                 damping ratio (division of damping in k1 and k2 ), the</div>
+<div id="L869"><a href="#L869">00869</a> [PDF p.10] considering the real-time implementation on the experi-               spring stiffness c and the internal damping k12 (see Figs.</div>
+<div id="L870"><a href="#L870">00870</a> [PDF p.10] mental motion system setup given in Fig. 10. This setup               1 and 4). To demonstrate this, the fourth-order model</div>
+<div id="L871"><a href="#L871">00871</a> [PDF p.10] consists of a DC servomotor connected to a 500 lines per              derived from Fig. 11 is used to simulate the open-loop</div>
+<div id="L872"><a href="#L872">00872</a> [PDF p.10] revolution encoder via a ﬂexible axle, and can be                     servo error response on the trajectory deﬁned in Table 1.</div>
+<div id="L873"><a href="#L873">00873</a> [PDF p.10] controlled using Matlab/Simulink, real-time workshop                  The simulations are performed in open loop to remove</div>
+<div id="L874"><a href="#L874">00874</a> [PDF p.10] and dSPACE equipment. The measured frequency                          the effect of feedback control from the results. The</div>
+<div id="L875"><a href="#L875">00875</a> [PDF p.10] response function given in Fig. 11 was used to determine              motion system parameters and variations deﬁned in</div>
+<div id="L876"><a href="#L876">00876</a> [PDF p.10] a fourth-order model in accordance with Fig. 4, in which              Table 2 will be used, and all simulations are performed</div>
+<div id="L877"><a href="#L877">00877</a> [PDF p.10] x1 and x2 should obviously be interpreted as rotations.               with the feedforward controller conﬁguration of Fig. 5.</div>
+<div id="L878"><a href="#L878">00878</a> [PDF p.10]    Now the main concern when considering model-based                  When comparing with rigid body feedforward, the</div>
+<div id="L879"><a href="#L879">00879</a> [PDF p.10] feedforward control is the occurrence of discrepancies                fourth-order trajectory will be applied, such that the</div>
+<div id="L880"><a href="#L880">00880</a> [PDF p.10] between the behaviour of the actual motion system and                 smoothing effect of using a high-order trajectory is not</div>
+<div id="L881"><a href="#L881">00881</a> [PDF p.10] the used model. This often motivates the use of rigid                 accountable for the difference. It can easily be veriﬁed</div>
+<div id="L882"><a href="#L882">00882</a> [PDF p.10] </div>
+<div id="L883"><a href="#L883">00883</a> [PDF p.11]                                                         ARTICLE IN PRESS</div>
+<div id="L884"><a href="#L884">00884</a> [PDF p.11]                                      P. Lambrechts et al. / Control Engineering Practice 13 (2005) 145–157                                                155</div>
+<div id="L885"><a href="#L885">00885</a> [PDF p.11] </div>
+<div id="L886"><a href="#L886">00886</a> [PDF p.11] Table 1                                                                                       Open loop 4th order FF response with plant variation</div>
+<div id="L887"><a href="#L887">00887</a> [PDF p.11] Fourth-order trajectory deﬁnition parameters</div>
+<div id="L888"><a href="#L888">00888</a> [PDF p.11]                                                                                                0.1</div>
+<div id="L889"><a href="#L889">00889</a> [PDF p.11] Parameter                   Symbol             Value         Unit</div>
+<div id="L890"><a href="#L890">00890</a> [PDF p.11]                                                                                               0.08</div>
+<div id="L891"><a href="#L891">00891</a> [PDF p.11] Derivative of jerk          d%                 108           rad=s4</div>
+<div id="L892"><a href="#L892">00892</a> [PDF p.11] Jerk                        ;%                 5 105         rad=s3</div>
+<div id="L893"><a href="#L893">00893</a> [PDF p.11]                                                                                               0.06</div>
+<div id="L894"><a href="#L894">00894</a> [PDF p.11] Acceleration                a%                 5000          rad=s2</div>
+<div id="L895"><a href="#L895">00895</a> [PDF p.11] Velocity                    v%                 250           rad/s                                       6</div>
+<div id="L896"><a href="#L896">00896</a> [PDF p.11]                                                                                               0.04</div>
+<div id="L897"><a href="#L897">00897</a> [PDF p.11] Displacement                x%                 100           rad</div>
+<div id="L898"><a href="#L898">00898</a> [PDF p.11]                                                                                                          2</div>
+<div id="L899"><a href="#L899">00899</a> [PDF p.11]                                                                                               0.02</div>
+<div id="L900"><a href="#L900">00900</a> [PDF p.11] </div>
+<div id="L901"><a href="#L901">00901</a> [PDF p.11] </div>
+<div id="L902"><a href="#L902">00902</a> [PDF p.11] </div>
+<div id="L903"><a href="#L903">00903</a> [PDF p.11] </div>
+<div id="L904"><a href="#L904">00904</a> [PDF p.11]                                                                                Error [rad]</div>
+<div id="L905"><a href="#L905">00905</a> [PDF p.11]                                                                                                          3</div>
+<div id="L906"><a href="#L906">00906</a> [PDF p.11] Table 2                                                                                          0</div>
+<div id="L907"><a href="#L907">00907</a> [PDF p.11]                                                                                                     7,8</div>
+<div id="L908"><a href="#L908">00908</a> [PDF p.11] Motion system parameters and variations                                                              4</div>
+<div id="L909"><a href="#L909">00909</a> [PDF p.11]                                                                                               -0.02</div>
+<div id="L910"><a href="#L910">00910</a> [PDF p.11] Parameter            Symbol Value         Unit Variation                                            5</div>
+<div id="L911"><a href="#L911">00911</a> [PDF p.11]                                                                                                          1</div>
+<div id="L912"><a href="#L912">00912</a> [PDF p.11]                                                                                               -0.04</div>
+<div id="L913"><a href="#L913">00913</a> [PDF p.11] Motor inertia    m1         0:72 10  5</div>
+<div id="L914"><a href="#L914">00914</a> [PDF p.11]                                           kgm2   ð0:605?0:835Þ 105</div>
+<div id="L915"><a href="#L915">00915</a> [PDF p.11] Load inertia     m2         0:23 105     kgm2   ð0:345?0:115Þ 105                                          Rigid Body FF</div>
+<div id="L916"><a href="#L916">00916</a> [PDF p.11] Spring stiffness c          0.156         Nm     733%                                         -0.06</div>
+<div id="L917"><a href="#L917">00917</a> [PDF p.11]                                                                                                              1,2 m1 max and min</div>
+<div id="L918"><a href="#L918">00918</a> [PDF p.11] Internal damping k12        1:0 105      Nms    7100%                                                       3,4 k1 max and min</div>
+<div id="L919"><a href="#L919">00919</a> [PDF p.11] Motor damping k1            1:0 105      Nms    ð0:5?2:0Þ 105                               -0.08          5,6 c max and min</div>
+<div id="L920"><a href="#L920">00920</a> [PDF p.11] Load damping     k2         1:0 105      Nms    ð2:0?0:5Þ 105                                              7,8 k12 max and min</div>
+<div id="L921"><a href="#L921">00921</a> [PDF p.11]                                                                                                -0.1</div>
+<div id="L922"><a href="#L922">00922</a> [PDF p.11] m1 and m2 are matched such that m1 þ m2 is constant, the same holds                               -0.1       0       0.1      0.2      0.3    0.4   0.5</div>
+<div id="L923"><a href="#L923">00923</a> [PDF p.11] for k1 and k2 :                                                                                                                 time [s]</div>
+<div id="L924"><a href="#L924">00924</a> [PDF p.11]                                                                           Fig. 12. Open-loop simulation results of fourth-order feedforward</div>
+<div id="L925"><a href="#L925">00925</a> [PDF p.11] that optimal rigid body feedforward is obtained by                        controller with plant variations, in comparison with optimally tuned</div>
+<div id="L926"><a href="#L926">00926</a> [PDF p.11] means of the conﬁguration of Fig. 5 when setting m1 ¼                     rigid body feedforward.</div>
+<div id="L927"><a href="#L927">00927</a> [PDF p.11] 0:95 105 kg m2 ; m2 ¼ 0; k1 ¼ 2 105 N m s; k2 ¼ 0</div>
+<div id="L928"><a href="#L928">00928</a> [PDF p.11] and k12 ¼ 0: With Eq. (6) this results in q1 ¼ q2 ¼ 0;</div>
+<div id="L929"><a href="#L929">00929</a> [PDF p.11] q3 ¼ m1 c and q4 ¼ k1 c: Furthermore, the ﬁrst-order                                                         Open loop response with optimal 2nd,</div>
+<div id="L930"><a href="#L930">00930</a> [PDF p.11] ﬁlter reverts to a constant gain of 1=c (see also Eq. (36)),                                                         3rd and 4th order FF</div>
+<div id="L931"><a href="#L931">00931</a> [PDF p.11] and Eq. (7) reverts to Eq. (2). Note that the value of c                                        0.1</div>
+<div id="L932"><a href="#L932">00932</a> [PDF p.11] becomes unimportant as it drops out of the calculations.</div>
+<div id="L933"><a href="#L933">00933</a> [PDF p.11]                                                                                                0.08</div>
+<div id="L934"><a href="#L934">00934</a> [PDF p.11] The results are combined in Fig. 12. Note that in spite of</div>
+<div id="L935"><a href="#L935">00935</a> [PDF p.11] the signiﬁcant plant variations, the fourth-order feedfor-                                     0.06</div>
+<div id="L936"><a href="#L936">00936</a> [PDF p.11] ward controller performs at least twice as good.</div>
+<div id="L937"><a href="#L937">00937</a> [PDF p.11]    The approach of choosing the parameters such that                                           0.04</div>
+<div id="L938"><a href="#L938">00938</a> [PDF p.11] fourth-order feedforward reverts to rigid body feedfor-</div>
+<div id="L939"><a href="#L939">00939</a> [PDF p.11]                                                                                                0.02</div>
+<div id="L940"><a href="#L940">00940</a> [PDF p.11] ward suggests the use of third-order feedforward as an</div>
+<div id="L941"><a href="#L941">00941</a> [PDF p.11]                                                                                 Error [rad]</div>
+<div id="L942"><a href="#L942">00942</a> [PDF p.11] </div>
+<div id="L943"><a href="#L943">00943</a> [PDF p.11] </div>
+<div id="L944"><a href="#L944">00944</a> [PDF p.11] </div>
+<div id="L945"><a href="#L945">00945</a> [PDF p.11] </div>
+<div id="L946"><a href="#L946">00946</a> [PDF p.11] intermediate form by setting q1 ¼ 0: This would allow to                                          0</div>
+<div id="L947"><a href="#L947">00947</a> [PDF p.11] implement a simpler third-order trajectory planner, with</div>
+<div id="L948"><a href="#L948">00948</a> [PDF p.11] jerk being the highest bounded derivative. However,                                           -0.02</div>
+<div id="L949"><a href="#L949">00949</a> [PDF p.11] Fig. 13 shows that the effect of the jerk feedforward</div>
+<div id="L950"><a href="#L950">00950</a> [PDF p.11]                                                                                               -0.04</div>
+<div id="L951"><a href="#L951">00951</a> [PDF p.11] term q2 is insigniﬁcant (and can hardly be improved by</div>
+<div id="L952"><a href="#L952">00952</a> [PDF p.11] manual tuning of q2 ). This shows that it is the derivative                                   -0.06</div>
+<div id="L953"><a href="#L953">00953</a> [PDF p.11] of jerk term q1 that makes the difference. The fact that</div>
+<div id="L954"><a href="#L954">00954</a> [PDF p.11]                                                                                                               Second order FF (Rigid Body)</div>
+<div id="L955"><a href="#L955">00955</a> [PDF p.11] in practice it appears that third-order trajectory plan-                                      -0.08           Third order FF</div>
+<div id="L956"><a href="#L956">00956</a> [PDF p.11] ning may lead to strong improvement of performance is                                                         Fourth order FF (=0)</div>
+<div id="L957"><a href="#L957">00957</a> [PDF p.11]                                                                                                -0.1</div>
+<div id="L958"><a href="#L958">00958</a> [PDF p.11] therefore almost exclusively due to smoothing.                                                    -0.1        0       0.1      0.2      0.3   0.4   0.5</div>
+<div id="L959"><a href="#L959">00959</a> [PDF p.11]    Fig. 14 shows that the servo error responses will not                                                                       time [s]</div>
+<div id="L960"><a href="#L960">00960</a> [PDF p.11] signiﬁcantly deteriorate if fourth-order feedforward is</div>
+<div id="L961"><a href="#L961">00961</a> [PDF p.11]                                                                           Fig. 13. Open-loop simulation results of optimal second-, third- and</div>
+<div id="L962"><a href="#L962">00962</a> [PDF p.11] implemented in discrete time. As an example, the                          fourth-order feedforward controller with nominal plant.</div>
+<div id="L963"><a href="#L963">00963</a> [PDF p.11] motion system with minimal spring stiffness is consid-</div>
+<div id="L964"><a href="#L964">00964</a> [PDF p.11] ered. Note that the average delay between continuous</div>
+<div id="L965"><a href="#L965">00965</a> [PDF p.11] time and discrete time signals equals the expected 2:5                    performance feedback controller (with a bandwidth of</div>
+<div id="L966"><a href="#L966">00966</a> [PDF p.11] Ts :                                                                      about 20 Hz) that is implemented together with the</div>
+<div id="L967"><a href="#L967">00967</a> [PDF p.11]    Finally, the effectiveness of fourth-order feedforward                 discrete time version of the feedforward diagram in</div>
+<div id="L968"><a href="#L968">00968</a> [PDF p.11] is veriﬁed in real time. The measured frequency response                  accordance with Fig. 5 at a sampling frequency of</div>
+<div id="L969"><a href="#L969">00969</a> [PDF p.11] function given in Fig. 11 was used to design a high-                      500 Hz: In addition to this conﬁguration, a Coulomb</div>
+<div id="L970"><a href="#L970">00970</a> [PDF p.11] </div>
+<div id="L971"><a href="#L971">00971</a> [PDF p.12]                                                                            ARTICLE IN PRESS</div>
+<div id="L972"><a href="#L972">00972</a> [PDF p.12] 156                                                     P. Lambrechts et al. / Control Engineering Practice 13 (2005) 145–157</div>
+<div id="L973"><a href="#L973">00973</a> [PDF p.12] </div>
+<div id="L974"><a href="#L974">00974</a> [PDF p.12] </div>
+<div id="L975"><a href="#L975">00975</a> [PDF p.12]                                Discrete time response of servo error                                                     Simulated servo errors</div>
+<div id="L976"><a href="#L976">00976</a> [PDF p.12]                       0.1                                                                                     0.1                              Rigid Body FF</div>
+<div id="L977"><a href="#L977">00977</a> [PDF p.12]                                                                                                                                                4th order FF</div>
+<div id="L978"><a href="#L978">00978</a> [PDF p.12]                                       0.05                                                                                                     Acceleration (scaled)</div>
+<div id="L979"><a href="#L979">00979</a> [PDF p.12]                                                                                                              0.05</div>
+<div id="L980"><a href="#L980">00980</a> [PDF p.12] </div>
+<div id="L981"><a href="#L981">00981</a> [PDF p.12] </div>
+<div id="L982"><a href="#L982">00982</a> [PDF p.12] </div>
+<div id="L983"><a href="#L983">00983</a> [PDF p.12] </div>
+<div id="L984"><a href="#L984">00984</a> [PDF p.12]                                                                                                Error [rad]</div>
+<div id="L985"><a href="#L985">00985</a> [PDF p.12]                                       0.04</div>
+<div id="L986"><a href="#L986">00986</a> [PDF p.12] </div>
+<div id="L987"><a href="#L987">00987</a> [PDF p.12]                                       0.03</div>
+<div id="L988"><a href="#L988">00988</a> [PDF p.12]                                                                                                                 0</div>
+<div id="L989"><a href="#L989">00989</a> [PDF p.12] </div>
+<div id="L990"><a href="#L990">00990</a> [PDF p.12]                     0.05              0.02                                                                   -0.05</div>
+<div id="L991"><a href="#L991">00991</a> [PDF p.12]       Error [rad]</div>
+<div id="L992"><a href="#L992">00992</a> [PDF p.12] </div>
+<div id="L993"><a href="#L993">00993</a> [PDF p.12] </div>
+<div id="L994"><a href="#L994">00994</a> [PDF p.12] </div>
+<div id="L995"><a href="#L995">00995</a> [PDF p.12] </div>
+<div id="L996"><a href="#L996">00996</a> [PDF p.12]                                       0.01</div>
+<div id="L997"><a href="#L997">00997</a> [PDF p.12]                                                                                                               -0.1</div>
+<div id="L998"><a href="#L998">00998</a> [PDF p.12]                                              0                                                                       0       0.2              0.4                 0.6</div>
+<div id="L999"><a href="#L999">00999</a> [PDF p.12]                                               0            0.02          0.04</div>
+<div id="L1000"><a href="#L1000">01000</a> [PDF p.12]                                                                                                                                 time [s]</div>
+<div id="L1001"><a href="#L1001">01001</a> [PDF p.12]                         0                                                                                                Measured servo errors</div>
+<div id="L1002"><a href="#L1002">01002</a> [PDF p.12]                                                                                                               0.1</div>
+<div id="L1003"><a href="#L1003">01003</a> [PDF p.12] </div>
+<div id="L1004"><a href="#L1004">01004</a> [PDF p.12]                                                                                                              0.05</div>
+<div id="L1005"><a href="#L1005">01005</a> [PDF p.12] </div>
+<div id="L1006"><a href="#L1006">01006</a> [PDF p.12] </div>
+<div id="L1007"><a href="#L1007">01007</a> [PDF p.12] </div>
+<div id="L1008"><a href="#L1008">01008</a> [PDF p.12] </div>
+<div id="L1009"><a href="#L1009">01009</a> [PDF p.12]                                                                                                Error [rad]</div>
+<div id="L1010"><a href="#L1010">01010</a> [PDF p.12]                                 Continuous</div>
+<div id="L1011"><a href="#L1011">01011</a> [PDF p.12]                                 Discrete                                                                        0</div>
+<div id="L1012"><a href="#L1012">01012</a> [PDF p.12]                     -0.05</div>
+<div id="L1013"><a href="#L1013">01013</a> [PDF p.12]                         -0.1    0      0.1        0.2       0.3    0.4     0.5</div>
+<div id="L1014"><a href="#L1014">01014</a> [PDF p.12]                                                   time [s]                                                   -0.05</div>
+<div id="L1015"><a href="#L1015">01015</a> [PDF p.12] </div>
+<div id="L1016"><a href="#L1016">01016</a> [PDF p.12] Fig. 14. Simulation results of open-loop discrete time fourth-order</div>
+<div id="L1017"><a href="#L1017">01017</a> [PDF p.12]                                                                                                               -0.1</div>
+<div id="L1018"><a href="#L1018">01018</a> [PDF p.12] feedforward controller with minimal stiffness plant.</div>
+<div id="L1019"><a href="#L1019">01019</a> [PDF p.12]                                                                                                                      0       0.2              0.4                 0.6</div>
+<div id="L1020"><a href="#L1020">01020</a> [PDF p.12]                                                                                                                                    time [s]</div>
+<div id="L1021"><a href="#L1021">01021</a> [PDF p.12]                                                                                              Fig. 15. Servo error responses simulated and measured on the</div>
+<div id="L1022"><a href="#L1022">01022</a> [PDF p.12] friction compensation scheme was implemented to</div>
+<div id="L1023"><a href="#L1023">01023</a> [PDF p.12]                                                                                              experimental motion system.</div>
+<div id="L1024"><a href="#L1024">01024</a> [PDF p.12] account for the effect of dry friction in the setup. This</div>
+<div id="L1025"><a href="#L1025">01025</a> [PDF p.12] approach is standard when using rigid body feedforward</div>
+<div id="L1026"><a href="#L1026">01026</a> [PDF p.12] and can equally be used in combination with fourth-</div>
+<div id="L1027"><a href="#L1027">01027</a> [PDF p.12] order feedforward. The servo error responses when                                            errors in the order of the encoder resolution, and</div>
+<div id="L1028"><a href="#L1028">01028</a> [PDF p.12] using fourth-order feedforward versus rigid body                                             therefore effectively obtains zero-settling behaviour.</div>
+<div id="L1029"><a href="#L1029">01029</a> [PDF p.12] feedforward are measured on the actual setup and given</div>
+<div id="L1030"><a href="#L1030">01030</a> [PDF p.12] in Fig. 15 in comparison with simulations. Although the</div>
+<div id="L1031"><a href="#L1031">01031</a> [PDF p.12] theoretical ‘zero-response’ of fourth-order feedforward                                      8. Conclusions</div>
+<div id="L1032"><a href="#L1032">01032</a> [PDF p.12] is clearly too much to hope for in the actual experiment,</div>
+<div id="L1033"><a href="#L1033">01033</a> [PDF p.12] a signiﬁcant reduction of the servo error is indeed                                             For high-performance motion control, especially for</div>
+<div id="L1034"><a href="#L1034">01034</a> [PDF p.12] obtained. Note that the response with rigid body                                             electromechanical motion systems, the usefulness of</div>
+<div id="L1035"><a href="#L1035">01035</a> [PDF p.12] feedforward shows a signiﬁcant relation with the jerk                                        feedforward control is well known and often implemen-</div>
+<div id="L1036"><a href="#L1036">01036</a> [PDF p.12] phases of the motion, which is also well predicted by the                                    ted. This paper shows that the popular simple feedfor-</div>
+<div id="L1037"><a href="#L1037">01037</a> [PDF p.12] simulation, while the fourth-order feedforward response                                      ward scheme known as ‘mass feedforward’, ‘rigid body</div>
+<div id="L1038"><a href="#L1038">01038</a> [PDF p.12] does not show this behaviour. The remaining response                                         feedforward’ or ‘second-order feedforward’ can be</div>
+<div id="L1039"><a href="#L1039">01039</a> [PDF p.12] with fourth-order feedforward seems to be more related                                       extended to higher-order feedforward while still main-</div>
+<div id="L1040"><a href="#L1040">01040</a> [PDF p.12] with the velocity proﬁle, and may therefore be caused by                                     taining important practical properties like time-optim-</div>
+<div id="L1041"><a href="#L1041">01041</a> [PDF p.12] unmodelled behaviour like, for instance, imperfect dry                                       ality,    actuator    effort    limitation,    reliability,</div>
+<div id="L1042"><a href="#L1042">01042</a> [PDF p.12] friction compensation or cogging forces. Also note that                                      implementability and accuracy. Furthermore, it is</div>
+<div id="L1043"><a href="#L1043">01043</a> [PDF p.12] in the rigid body feedforward case, in comparison with                                       argued that the increase in complexity is manageable</div>
+<div id="L1044"><a href="#L1044">01044</a> [PDF p.12] the simulations, the damping of the resonance is                                             in state-of-the-art motion control hardware.</div>
+<div id="L1045"><a href="#L1045">01045</a> [PDF p.12] signiﬁcantly lower during the constant velocity phase                                           Third-order feedforward, which is increasingly ap-</div>
+<div id="L1046"><a href="#L1046">01046</a> [PDF p.12] and signiﬁcantly higher at the end of the move. This can                                     plied in practice, appears to be mainly effective due to</div>
+<div id="L1047"><a href="#L1047">01047</a> [PDF p.12] be explained by the effect of dry friction during                                            ‘smoothing’ of the trajectory, i.e. reduction of the high</div>
+<div id="L1048"><a href="#L1048">01048</a> [PDF p.12] measurement of the frequency response function of                                            frequency content of the trajectory, such that feedback</div>
+<div id="L1049"><a href="#L1049">01049</a> [PDF p.12] Fig. 11: the linear model ﬁt will take some of the effect                                    control can be more effective. The use of fourth-order</div>
+<div id="L1050"><a href="#L1050">01050</a> [PDF p.12] of dry friction into account as additional viscous                                           feedforward for high-performance electromechanical</div>
+<div id="L1051"><a href="#L1051">01051</a> [PDF p.12] damping. Finally, note that at the end of the move the                                       motion systems is motivated by considering an appro-</div>
+<div id="L1052"><a href="#L1052">01052</a> [PDF p.12] rigid body feedforward has a signiﬁcant settling                                             priate model and supported by simulations and experi-</div>
+<div id="L1053"><a href="#L1053">01053</a> [PDF p.12] behaviour, while the fourth-order feedforward shows                                          mental results. Apart from the mentioned smoothing</div>
+<div id="L1054"><a href="#L1054">01054</a> [PDF p.12] </div>
+<div id="L1055"><a href="#L1055">01055</a> [PDF p.13]                                                  ARTICLE IN PRESS</div>
+<div id="L1056"><a href="#L1056">01056</a> [PDF p.13]                                P. Lambrechts et al. / Control Engineering Practice 13 (2005) 145–157                                   157</div>
+<div id="L1057"><a href="#L1057">01057</a> [PDF p.13] </div>
+<div id="L1058"><a href="#L1058">01058</a> [PDF p.13] </div>
+<div id="L1059"><a href="#L1059">01059</a> [PDF p.13] effect, the feedforward of the derivative of jerk proﬁle               A toolbox for Matlab and Simulink, containing the</div>
+<div id="L1060"><a href="#L1060">01060</a> [PDF p.13] appears to result in a signiﬁcant performance improve-              algorithms for obtaining third- and fourth-order pro-</div>
+<div id="L1061"><a href="#L1061">01061</a> [PDF p.13] ment. This is even more remarkable when considering                 ﬁles and several possibilities for using them in simula-</div>
+<div id="L1062"><a href="#L1062">01062</a> [PDF p.13] that, for relevant cases, the calculated feedforward force          tions and experiments is available on the</div>
+<div id="L1063"><a href="#L1063">01063</a> [PDF p.13] is hardly affected.                                                 internet: http://www.dct.tue.nl/New/Lambrechts/</div>
+<div id="L1064"><a href="#L1064">01064</a> [PDF p.13]    A high-level algorithm is given to calculate higher-             Advanced Setpoints.zip</div>
+<div id="L1065"><a href="#L1065">01065</a> [PDF p.13] order trajectories for point-to-point moves; other mo-</div>
+<div id="L1066"><a href="#L1066">01066</a> [PDF p.13] tion commands, like speed change operations, can be</div>
+<div id="L1067"><a href="#L1067">01067</a> [PDF p.13] derived from this. For fourth-order trajectory planning,</div>
+<div id="L1068"><a href="#L1068">01068</a> [PDF p.13] the details of the algorithm are worked out, resulting in           References</div>
+<div id="L1069"><a href="#L1069">01069</a> [PDF p.13] a practical, reliable and accurate algorithm.</div>
+<div id="L1070"><a href="#L1070">01070</a> [PDF p.13]                                                                     Boerlage, M., Steinbuch, M., Lambrechts, P. F., &amp; van de Wal, M.</div>
+<div id="L1071"><a href="#L1071">01071</a> [PDF p.13]    Further implementation issues, like discrete time</div>
+<div id="L1072"><a href="#L1072">01072</a> [PDF p.13]                                                                         (2003). Model based feedforward for motion systems. Proceedings</div>
+<div id="L1073"><a href="#L1073">01073</a> [PDF p.13] calculations, quantization effects and synchronization,                 of the IEEE international conference on control applications (CCA),</div>
+<div id="L1074"><a href="#L1074">01074</a> [PDF p.13] are explicitly addressed. The trajectory planning algo-                 Istanbul, Turkey (pp. 1158–1163).</div>
+<div id="L1075"><a href="#L1075">01075</a> [PDF p.13] rithms can be implemented such that switching times are             Bronshtein, I. N., &amp; Semendyayev, K. A. (1973). A guide book to</div>
+<div id="L1076"><a href="#L1076">01076</a> [PDF p.13] exactly synchronized with sampling instances. A digital                 mathematics. Frankfurt, Germany: Verlag Harri Deutsch ISBN</div>
+<div id="L1077"><a href="#L1077">01077</a> [PDF p.13] implementation is suggested that takes care of the                      3-87144-095-7.</div>
+<div id="L1078"><a href="#L1078">01078</a> [PDF p.13]                                                                     Devasia, S. (2000). Robust inversion-based feedforward controllers for</div>
+<div id="L1079"><a href="#L1079">01079</a> [PDF p.13] synchronization of the various proﬁles with each other                  output tracking under plant uncertainty. Proceedings of the</div>
+<div id="L1080"><a href="#L1080">01080</a> [PDF p.13] and the position trajectory, and also with the measured                 American control conference, Chicago, IL, USA (pp. 497–502).</div>
+<div id="L1081"><a href="#L1081">01081</a> [PDF p.13] position. It is shown that deterioration of the contin-             Dijkstra, B. G., Rambaratsingh, N. J., Scherer, C., Bosgra, O. H.,</div>
+<div id="L1082"><a href="#L1082">01082</a> [PDF p.13] uous time results due to sampling is small when applying                Steinbuch, M., &amp; Kerssemakers, S. (2000). Input design for optimal</div>
+<div id="L1083"><a href="#L1083">01083</a> [PDF p.13]                                                                         discrete-time point-to-point motion of an industrial XY position-</div>
+<div id="L1084"><a href="#L1084">01084</a> [PDF p.13] a sufﬁcient sampling rate. Experience shows that a</div>
+<div id="L1085"><a href="#L1085">01085</a> [PDF p.13]                                                                         ing table. Proceedings of the 39th IEEE conference on decision and</div>
+<div id="L1086"><a href="#L1086">01086</a> [PDF p.13] sampling rate that is required for stable feedback                      control, Sydney, Australia (pp. 901–906).</div>
+<div id="L1087"><a href="#L1087">01087</a> [PDF p.13] control is also sufﬁcient for feedforward control.                  Hunt, L., Meyer, G., &amp; Su, R. (1996). Noncausal inverses for linear</div>
+<div id="L1088"><a href="#L1088">01088</a> [PDF p.13]    Simulation results show that the improvement ob-                     systems. IEEE Transactions on Automatic Control, AC-41(4),</div>
+<div id="L1089"><a href="#L1089">01089</a> [PDF p.13] tained with fourth-order feedforward is not overly                      608–611.</div>
+<div id="L1090"><a href="#L1090">01090</a> [PDF p.13] sensitive to variations in the parameters that are                  Meckl, P. H., Arestides, P. B., &amp; Woods, M. C. (1998). Optimized S-</div>
+<div id="L1091"><a href="#L1091">01091</a> [PDF p.13]                                                                         curve motion proﬁles for minimum residual vibration. Proceedings</div>
+<div id="L1092"><a href="#L1092">01092</a> [PDF p.13] additional to the ‘classic’ parameters of rigid body                    of the American control conference, Philadelphia, PA, USA (pp.</div>
+<div id="L1093"><a href="#L1093">01093</a> [PDF p.13] feedforward (i.e. mass and viscous damping). Obviously,                 2627–2631).</div>
+<div id="L1094"><a href="#L1094">01094</a> [PDF p.13] the feedforward performance will improve if the                     Murphy, B. R., &amp; Watanabe, I. (1992). Digital shaping ﬁlters for</div>
+<div id="L1095"><a href="#L1095">01095</a> [PDF p.13] dynamical behaviour of the actual motion system is                      reducing machine vibration. IEEE Transactions on Robotics and</div>
+<div id="L1096"><a href="#L1096">01096</a> [PDF p.13] closer to that of the fourth-order model and said                       Automation, 8(2), 285–289.</div>
+<div id="L1097"><a href="#L1097">01097</a> [PDF p.13]                                                                     Paganini, F., &amp; Giusto, A. (1997). Robust synthesis of dynamic</div>
+<div id="L1098"><a href="#L1098">01098</a> [PDF p.13] parameters are known within tighter bounds. An                          preﬁlters. Proceedings of the American control conference, Albu-</div>
+<div id="L1099"><a href="#L1099">01099</a> [PDF p.13] important advantage of the suggested implementation                     querque, NM, USA (pp. 1314–1318).</div>
+<div id="L1100"><a href="#L1100">01100</a> [PDF p.13] is the possibility to manually ﬁne-tune the feedforward             Park, H. S., Chang, P. H., &amp; Lee, D. Y. (2001). Concurrent design of</div>
+<div id="L1101"><a href="#L1101">01101</a> [PDF p.13] ampliﬁcation factor for each proﬁle (the q factors). This               continuous zero phase error tracking controller and sinusoidal</div>
+<div id="L1102"><a href="#L1102">01102</a> [PDF p.13]                                                                         trajectory for improved tracking control. Journal of Dynamic</div>
+<div id="L1103"><a href="#L1103">01103</a> [PDF p.13] can be seen as a simple, direct extension of the well-</div>
+<div id="L1104"><a href="#L1104">01104</a> [PDF p.13]                                                                         Systems, Measurement, and Control, 123, 127–129.</div>
+<div id="L1105"><a href="#L1105">01105</a> [PDF p.13] known practice of ﬁne-tuning rigid body feedforward.                Roover, D. (1997). Motion control of a wafer stage. The Netherlands:</div>
+<div id="L1106"><a href="#L1106">01106</a> [PDF p.13]    Actual implementation has been performed on an                       Delft University Press ISBN 90-407-1562-9.</div>
+<div id="L1107"><a href="#L1107">01107</a> [PDF p.13] experimental motion system setup. It is shown that the              Roover, D., &amp; Sperling, F. (1997). Point-to-point control of a high</div>
+<div id="L1108"><a href="#L1108">01108</a> [PDF p.13] servo error with a well-tuned feedback and rigid body                   accuracy positioning mechanism. Proceedings of the American</div>
+<div id="L1109"><a href="#L1109">01109</a> [PDF p.13] feedforward design can be improved upon signiﬁcantly                    control conference 1997, Albuquerque, NM, USA (pp. 1350–1354).</div>
+<div id="L1110"><a href="#L1110">01110</a> [PDF p.13]                                                                     Singer, N., Singhose, W., &amp; Seering, W. (1999). Comparison of</div>
+<div id="L1111"><a href="#L1111">01111</a> [PDF p.13] during all phases of a point-to-point move by means of                  ﬁltering methods for reducing residual vibration. European Journal</div>
+<div id="L1112"><a href="#L1112">01112</a> [PDF p.13] fourth-order feedforward.                                               of Control, 5, 208–218.</div>
+<div id="L1113"><a href="#L1113">01113</a> [PDF p.13]    Future work in this area may address several issues.             Steinbuch, M., &amp; Norg, M. L. (1998). Advanced motion control: An</div>
+<div id="L1114"><a href="#L1114">01114</a> [PDF p.13] For instance, the matter of how to obtain optimal                       industrial perspective. European Journal of Control, 4, 278–293.</div>
+<div id="L1115"><a href="#L1115">01115</a> [PDF p.13] feedforward parameters for a given motion system is                 Tomizuka, M. (1987). Zero phase error tracking algorithm for digital</div>
+<div id="L1116"><a href="#L1116">01116</a> [PDF p.13]                                                                         control. Journal of Dynamic Systems, Measurement, and Control,</div>
+<div id="L1117"><a href="#L1117">01117</a> [PDF p.13] solved in this paper by ﬁtting a fourth-order frequency                 109, 65–68.</div>
+<div id="L1118"><a href="#L1118">01118</a> [PDF p.13] response function on a measurement. Based on this, it               Torfs, D. E., Swevers, J., &amp; De Schutter, J. (1991). Quasi-perfect</div>
+<div id="L1119"><a href="#L1119">01119</a> [PDF p.13] should be possible to apply further techniques like on-                 tracking control of non-minimal phase systems. Proceedings</div>
+<div id="L1120"><a href="#L1120">01120</a> [PDF p.13] line tuning, parameter estimation, learning and non-                    of the 30th conference on decision and control, Brighton, UK</div>
+<div id="L1121"><a href="#L1121">01121</a> [PDF p.13] linearity compensation (e.g. scheduling). Another issue                 (pp. 241–244).</div>
+<div id="L1122"><a href="#L1122">01122</a> [PDF p.13]                                                                     Torfs, D. E., Vuerinckx, R., Swevers, J., &amp; Schoukens, J. (1998).</div>
+<div id="L1123"><a href="#L1123">01123</a> [PDF p.13] is to deﬁne fourth-order proﬁles for multiple axes                      Comparison of two feedforward design methods aiming at accurate</div>
+<div id="L1124"><a href="#L1124">01124</a> [PDF p.13] motion systems, dealing with more complex paths and                     trajectory tracking of the end point of a ﬂexible robot arm. IEEE</div>
+<div id="L1125"><a href="#L1125">01125</a> [PDF p.13] non-linear kinematic and dynamic behaviour.                             Transactions on Control Systems Technology, 6(1), 1–14.</div>
+<div id="L1126"><a href="#L1126">01126</a> [PDF p.13] </div></pre>

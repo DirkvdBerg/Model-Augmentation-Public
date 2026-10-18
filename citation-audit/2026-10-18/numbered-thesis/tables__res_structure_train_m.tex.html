@@ -1,0 +1,27 @@
+<meta charset="utf-8"><title>tables/res_structure_train_m.tex</title><pre><div id="L1"><a href="#L1">0001</a> % training records</div>
+<div id="L2"><a href="#L2">0002</a> \setlength{\tabcolsep}{3pt}</div>
+<div id="L3"><a href="#L3">0003</a> \begin{tabular}{l r r r r r r}</div>
+<div id="L4"><a href="#L4">0004</a> \toprule</div>
+<div id="L5"><a href="#L5">0005</a>  &amp; \multicolumn{3}{c}{Multisine} &amp; \multicolumn{3}{c}{No multisine}\\</div>
+<div id="L6"><a href="#L6">0006</a> \cmidrule(lr){2-4}\cmidrule(lr){5-7}</div>
+<div id="L7"><a href="#L7">0007</a> RMS (m) &amp; $X_1$ &amp; $X_2$ &amp; $Y$ &amp; $X_1$ &amp; $X_2$ &amp; $Y$\\</div>
+<div id="L8"><a href="#L8">0008</a> \midrule</div>
+<div id="L9"><a href="#L9">0009</a> Baseline, true $\theta$ &amp; $3.35\times10^{-6}$ &amp; $3.46\times10^{-6}$ &amp; $3.77\times10^{-5}$ &amp; $1.11\times10^{-6}$ &amp; $1.22\times10^{-6}$ &amp; $1.02\times10^{-6}$\\</div>
+<div id="L10"><a href="#L10">0010</a> Baseline, detuned $\theta$$^\dagger$ &amp; $4.62\times10^{-6}$ &amp; $4.65\times10^{-6}$ &amp; $4.07\times10^{-5}$ &amp; $2.40\times10^{-6}$ &amp; $1.41\times10^{-6}$ &amp; $3.26\times10^{-6}$\\</div>
+<div id="L11"><a href="#L11">0011</a> Static parallel, $n_a{=}0$ &amp; $2.16\times10^{-6}$ &amp; $2.10\times10^{-6}$ &amp; $2.69\times10^{-5}$ &amp; $1.16\times10^{-6}$ &amp; $1.13\times10^{-6}$ &amp; $5.13\times10^{-6}$\\</div>
+<div id="L12"><a href="#L12">0012</a> Static parallel, $n_a{=}0$, detuned $\theta$ &amp; $2.15\times10^{-6}$ &amp; $2.10\times10^{-6}$ &amp; $2.69\times10^{-5}$ &amp; $1.16\times10^{-6}$ &amp; $1.13\times10^{-6}$ &amp; $5.20\times10^{-6}$\\</div>
+<div id="L13"><a href="#L13">0013</a> Static parallel (OBC), $n_a{=}0$, detuned $\theta$ &amp; $2.22\times10^{-6}$ &amp; $2.18\times10^{-6}$ &amp; $2.69\times10^{-5}$ &amp; $1.27\times10^{-6}$ &amp; $1.30\times10^{-6}$ &amp; $5.52\times10^{-6}$\\</div>
+<div id="L14"><a href="#L14">0014</a> Plain training, $n_a{=}2$ &amp; $1.73\times10^{-6}$ &amp; $1.75\times10^{-6}$ &amp; $2.42\times10^{-5}$ &amp; $1.06\times10^{-6}$ &amp; $1.12\times10^{-6}$ &amp; $3.93\times10^{-6}$\\</div>
+<div id="L15"><a href="#L15">0015</a> PS init., $n_a{=}2$ &amp; $1.48\times10^{-6}$ &amp; $1.57\times10^{-6}$ &amp; $2.03\times10^{-6}$ &amp; $9.64\times10^{-7}$ &amp; $1.06\times10^{-6}$ &amp; $1.18\times10^{-6}$\\</div>
+<div id="L16"><a href="#L16">0016</a> PS init., baseline part only &amp; $3.10\times10^{-6}$ &amp; $3.02\times10^{-6}$ &amp; $3.73\times10^{-5}$ &amp; $1.33\times10^{-6}$ &amp; $1.07\times10^{-6}$ &amp; $1.02\times10^{-6}$\\</div>
+<div id="L17"><a href="#L17">0017</a> PS init., $n_a{=}8$ &amp; $1.40\times10^{-6}$ &amp; $1.44\times10^{-6}$ &amp; $2.01\times10^{-6}$ &amp; $9.67\times10^{-7}$ &amp; $1.04\times10^{-6}$ &amp; $1.19\times10^{-6}$\\</div>
+<div id="L18"><a href="#L18">0018</a> PS init., detuned $\theta$ &amp; $1.48\times10^{-6}$ &amp; $1.52\times10^{-6}$ &amp; $2.11\times10^{-6}$ &amp; $9.67\times10^{-7}$ &amp; $1.05\times10^{-6}$ &amp; $1.18\times10^{-6}$\\</div>
+<div id="L19"><a href="#L19">0019</a> \midrule</div>
+<div id="L20"><a href="#L20">0020</a> Augmented (OBC), detuned $\theta$$^\dagger$ &amp; $1.66\times10^{-6}$ &amp; $1.65\times10^{-6}$ &amp; $2.20\times10^{-6}$ &amp; $1.09\times10^{-6}$ &amp; $1.21\times10^{-6}$ &amp; $1.14\times10^{-6}$\\</div>
+<div id="L21"><a href="#L21">0021</a> \midrule</div>
+<div id="L22"><a href="#L22">0022</a> Black-box model &amp; $8.38\times10^{-6}$ &amp; $8.90\times10^{-6}$ &amp; $1.02\times10^{-5}$ &amp; $1.86\times10^{-5}$ &amp; $1.98\times10^{-5}$ &amp; $3.01\times10^{-5}$\\</div>
+<div id="L23"><a href="#L23">0023</a> \midrule</div>
+<div id="L24"><a href="#L24">0024</a> Noise floor &amp; $9.41\times10^{-9}$ &amp; $9.96\times10^{-9}$ &amp; $3.45\times10^{-9}$ &amp; $8.75\times10^{-9}$ &amp; $9.33\times10^{-9}$ &amp; $3.03\times10^{-9}$\\</div>
+<div id="L25"><a href="#L25">0025</a> \bottomrule</div>
+<div id="L26"><a href="#L26">0026</a> \multicolumn{7}{l}{\footnotesize $^\dagger$ preliminary, update 19500 of 33400}\\</div>
+<div id="L27"><a href="#L27">0027</a> \end{tabular}</div></pre>

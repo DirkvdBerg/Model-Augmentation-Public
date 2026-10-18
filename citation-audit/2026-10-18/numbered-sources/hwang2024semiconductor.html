@@ -1,0 +1,1115 @@
+<meta charset="utf-8"><title>hwang2024semiconductor</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1] Received 24 June 2024, accepted 22 August 2024, date of publication 28 August 2024, date of current version 10 September 2024.</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1] Digital Object Identifier 10.1109/ACCESS.2024.3450869</div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1] </div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1] </div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1] </div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1] </div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1] Digital Twin-Based Optimization of Operational</div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1] Parameters for Cluster Tools in</div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1] Semiconductor Manufacturing</div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1] JOONICK HWANG                    1 AND SANG DO NOH2</div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1] 1 Department of Semiconductor and Display Engineering, Sungkyunkwan University, Suwon-si 16419, South Korea</div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1] 2 Department of Industrial Engineering, Sungkyunkwan University, Suwon-si 16419, South Korea</div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1] </div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1] Corresponding author: Sang Do Noh (sdnoh@skku.edu)</div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1] This work was supported by Samsung Electronics Company Ltd.</div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1] </div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1] </div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1] </div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1] </div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1]   ABSTRACT Manufacturing and supply chain management are becoming increasingly important in the</div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1]   semiconductor industry. Cluster tools are essential equipment in semiconductor production and are used for</div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1]   microscopic operations, such as the surface treatment of wafers. In particular, the operational parameters of</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1]   cluster tools directly affect productivity, and various efforts are underway to optimize them at manufacturing</div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1]   sites. However, there are still many challenges in this process. In this study, we propose a framework</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1]   for optimizing the operational parameters of cluster tools in semiconductor manufacturing using digital</div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1]   twin technology to address these challenges. The framework predicts productivity through manufacturing</div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1]   simulations based on operational parameters in a digital twin environment, analyzes the factors affecting</div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1]   productivity, and determines the optimal operational parameters. The study demonstrates that the cycle time</div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1]   of cluster tools in wafer fabrication can be significantly reduced through the proposed approach based on</div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1]   digital twins. The application of this framework is expected to contribute to cost reduction, productivity</div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1]   improvement, and enhancement of industrial competitiveness at semiconductor manufacturing sites.</div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.1] </div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.1] </div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.1]   INDEX TERMS Cluster tool, digital twin, finite state machine, hill climbing algorithm, semiconductor</div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.1]   manufacturing.</div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.1] </div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.1] </div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.1] I. INTRODUCTION                                                                                manufacturing processes and are essential equipment in the</div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.1] Semiconductors are essential components of various elec-                                       modern semiconductor industry that requires highly sophis-</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.1] tronic devices that play crucial roles in information pro-                                     ticated and precise process conditions. Therefore, research</div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.1] cessing and communication. Especially in the era of the                                        on the efficient utilization of cluster tools has become an</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.1] Fourth Industrial Revolution, with technologies such as 5G,                                    important challenge contributing to the advancement of the</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.1] autonomous vehicles, artificial intelligence, and the Internet                                 modern semiconductor industry.</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.1] of Things (IoT), semiconductor devices are indispensable,                                         Wafer manufacturing processes using cluster tools face</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.1] and their shortage affects not only individual industries,                                     several challenges. Cluster tools use various types of gases</div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.1] but also national security [1]. Therefore, the semiconductor                                   and chemicals during wafer processing [3], and because these</div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.1] industry is making various efforts to meet demand by making                                    raw materials can be hazardous to the health of the operators,</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.1] efficient decisions in the process of semiconductor product                                    careful process management is required [4]. Additionally,</div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.1] production and supply chain management, and investing in                                       semiconductor products are highly susceptible to quality</div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.1] R&amp;D and facilities [2]. Cluster tools are advanced automation                                  defects due to microscopic factors, such as the inflow of fine</div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.1] equipment used in wafer fabrication in semiconductor                                           particles due to airflow changes during the process [5] or</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.1]                                                                                                patterns being affected by specific wavelengths of light [6],</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.1]    The associate editor coordinating the review of this manuscript and                         necessitating many operational procedures and quality ver-</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.1] approving it for publication was Rahul A. Trivedi           .                                  ifications in managing cluster tools on the manufacturing</div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.1] </div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.1]                                   2024 The Authors. This work is licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 License.</div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.1] 122078                                               For more information, see https://creativecommons.org/licenses/by-nc-nd/4.0/                         VOLUME 12, 2024</div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.1] </div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.2] J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.2] </div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.2] </div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.2] </div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.2] </div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.2] floor. In particular, the operational parameters of cluster tools                  the operational parameters of cluster tools were performed in</div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.2] directly affect product quality and productivity. However,                         a digital twin environment to predict productivity, and factors</div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.2] owing to the complex structure of cluster tools, various                           affecting productivity owing to operational parameters in</div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.2] models, and differences in target processes, standardized                          the wafer manufacturing process were analyzed. Heuristic</div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.2] management criteria for these operational parameters are                           algorithms are utilized to iteratively explore the operational</div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.2] often lacking. Although manufacturing execution system                             parameters to enhance the productivity of the cluster tools.</div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.2] (MES) can be utilized to manage equipment operations,                              The proposed method derives optimal operational parameters</div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.2] process control, and semiconductor manufacturing processes                         by considering various variables and complex interactions</div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.2] more efficiently [7], understanding the entire manufacturing                       occurring in the semiconductor manufacturing process. Addi-</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.2] process and operational expertise is essential for effective                       tionally, it presents technical solutions for minimizing trial</div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2] utilization because most of the data provided by these systems                     and error in actual manufacturing sites, reducing the costs and</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2] do not clearly indicate the causality of various problems                          time associated with process modification and improvement,</div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2] occurring during cluster tool operation and manufacturing                          enhancing the efficiency of the manufacturing process,</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2] processes. For these reasons, there is a growing need for                          and optimizing wafer productivity, thereby strengthening</div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2] systems to predict productivity through the operational                            the competitiveness of cluster tools in the semiconductor</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2] parameters of cluster tools and to analyze and optimize                            manufacturing industry.</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2] factors affecting productivity to improve the productivity of                         The structure of this paper is organized as follows:</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2] cluster tools.                                                                     Section II offers a comprehensive overview of semiconductor</div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2]    Research on enhancing the productivity of semiconductor                         manufacturing, cluster tools, equipment engineering systems,</div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2] manufacturing processes has been previously conducted.                             and digital twins. Section III elaborates on the research</div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2] In particular, to enhance the productivity at the wafer fabrica-                   methodology, with a focus on the digital twin application</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2] tion (FAB) level, research has been conducted on managing                          framework, digital twin modules, and optimization modules.</div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2] FAB shipments [8], predicting FAB cycle times [9], and                             Section IV discusses the scenarios and practical applications</div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2] scheduling FAB logistics [10], [11]. Research has also                             of the digital twin framework, including its implementation</div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.2] been conducted to enhance the productivity of cluster tools,                       and the results obtained. Finally, Section V synthesizes the</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.2] focusing on the number of process recipes or combinations                          research findings and presents the conclusions derived from</div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.2] of process recipes [12], [13], wafer productivity under                            the study.</div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.2] simplified conditions [14], and module-level productivity</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.2] of cluster tools [15], [16]; however, the detailed operating</div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.2] units of the entire cluster tool have not been considered.                         II. RESEARCH BACKGROUND</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.2] Furthermore, research has been conducted to improve the                            A. SEMICONDUCTOR MANUFACTURING AND CLUSTER</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.2] fundamental scheduling methods of cluster tools [17], [18]                         TOOLS</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.2] and optimize process flows [19]; however, it is difficult                          A semiconductor manufacturing facility is commonly</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.2] to apply these methods to existing cluster tools in mass                           referred to as a FAB. In the FAB, semiconductor products</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.2] production. Considering these limitations, this study aims to                      are produced by forming integrated circuits using patterns</div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.2] explore new approaches to improve the productivity of cluster                      on the surfaces of bare silicon wafers, as shown in Fig. 1.</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.2] tools and expand their industrial applicability.                                   Typically, silicon wafers are extremely thin, fragile to impact,</div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.2]    Digital twin technology has been proposed as an alternative                     and vulnerable to defects caused by fine particles. Therefore,</div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.2] for solving various problems in semiconductor manufactur-                          the interiors of FABs are designed as cleanrooms with</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.2] ing. A digital twin is defined as a digital replica of a physical                  very high cleanliness levels, maintaining airborne particle</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.2] object, such as a product, facility, or process. It is a virtual                   concentrations below a certain level and managing internal</div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.2] model that reflects the real-world situation of the target object                  temperature and humidity consistently [22]. Additionally,</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.2] elements, such as their properties and status, in a digital space                  special containers, such as a front opening unified pod</div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.2] and depicts their characteristics so that they can be monitored                    (FOUP), are used to safely store and transport wafers via</div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.2] during design and operation throughout their lifecycle [20].                       overhead hoist transport (OHT) configured on top of the</div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.2] Additionally, it provides the ability to collect and analyze data                  FAB to minimize physical impact and quality risks [23].</div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.2] from real-world systems in real time, thereby enabling the                         Most semiconductor manufacturing processes are automated</div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.2] simulation and optimization of a series of operations based                        for quality assurance and process efficiency, and various</div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.2] on these data [21]. Thus, digital twins are gaining attention                      unit processes are repeated using multiple cluster tools in a</div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.2] as innovative solutions not only in the semiconductor industry                     predetermined order.</div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.2] but also in various industrial fields to enhance the efficiency                       Cluster tools refer to automated equipment used in</div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.2] of production processes and prevent defects.                                       semiconductor manufacturing processes, attaching two or</div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.2]    This study proposes the design and application of a                             more modularized chambers to one or more wafer transfer</div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.2] digital twin framework to determine the optimal operational                        robots to perform process steps in parallel, representing</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.2] parameters of semiconductor manufacturing cluster tools.                           multichamber processing manufacturing equipment [24].</div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.2] Through this framework, manufacturing simulations based on                         This concept of multichamber processing has long been</div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.2] </div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.2] VOLUME 12, 2024                                                                                                                             122079</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.2] </div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.3]                                                              J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.3] </div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.3] </div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.3] </div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.3] </div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.3]    FIGURE 1. Common semiconductor product manufacturing processes using wafers.</div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.3] </div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.3] </div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.3] </div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.3] </div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.3]    FIGURE 2. Cluster tool with engineers (a) and example configuration for the cluster tool (b).</div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.3] </div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.3] </div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.3] </div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.3] used in the semiconductor industry, and the technological</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.3] requirements for cluster tools to meet the miniaturization of</div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.3] circuit patterns owing to continuous advancements in design</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.3] technology have also increased. Fig. 2 shows a photograph</div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.3] of a cluster tool and a diagram describing its typical</div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.3] configuration, which consists of a cassette module (A),</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.3] transport module (B), and process module (C) [25]. The roles</div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.3] of these modules are as follows:</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.3]    • Cassette module: This module is responsible for the</div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.3]      input and output of wafers. It opens and closes the door</div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.3]      of the FOUP transported through the OHT, transfers</div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.3]      wafers stored in the FOUP to the cluster tool using a</div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.3]      wafer transfer robot, or transfers processed wafers back</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.3]      to the FOUP.</div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.3]    • Transport module: This module is responsible for trans-</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.3]      ferring wafers between the cassette and process modules</div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.3]      using wafer transfer robots. Appropriate operational</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.3]      parameter settings are required because the performance</div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.3]      and stability of wafer transfer robots significantly affect</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.3]      the productivity of cluster tools.</div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.3]    • Process module: This module is where the actual wafer</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.3]      processing takes place. It consists of spray nozzles for</div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.3]      spraying chemicals or gases and a chuck table for fixing</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.3]      and rotating the wafers.                                                  FIGURE 3. Wafer transfer model between cluster modules.</div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.3]    Fig. 3 [24] illustrates the wafer transfer model between</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.3] cluster modules. The wafers that are initially input through</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.3] the cassette module are transported by the transport module                    After the completion of the process, the wafers are</div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.3] to the process module. The process module then per-                            transferred back to the cassette module via the transport</div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.3] forms the sequential steps defined in the process recipe.                      module. Once this transfer process is completed for all the</div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.3] </div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.3] 122080                                                                                                                                       VOLUME 12, 2024</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.3] </div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.4] J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.4] </div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.4] </div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.4] </div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.4] </div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.4] wafers, the manufacturing sequence of the single-cluster                           tools, providing insights into the complex causality occurring</div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.4] tool ends.                                                                         in the manufacturing process and contributing to overall</div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.4]    Various studies have been conducted to understand and                           productivity improvement.</div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.4] model the complex operations of cluster tool systems in</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.4] semiconductor manufacturing. Some of the early work                                B. EQUIPMENT ENGINEERING SYSTEM</div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.4] was performed using Petri nets, which are well suited                              The operational parameters of semiconductor manufacturing</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.4] for modeling parallel and distributed systems of cluster                           cluster tools consist of various factors from different perspec-</div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.4] tools. In this context, Zuberek implemented the steady-                            tives, which are mainly distinguished into aspects concerning</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.4] state behavior of cluster tools using an iterative chamber                         quality and those that enhance productivity. In terms of</div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.4] revisiting scheduling [26], and Kim et al. studied scheduling                      quality, factors that have a decisive impact on the final</div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.4] methods within time constraints for cluster tools with dual                        yield of wafers are relevant, such as the temperature of the</div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.4] arms [18]. Lee et al. conducted research on scheduling                             operating units and the flow rate of raw materials. In terms</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.4] issues when multiple jobs were performed using batch wafer                         of productivity, the set values of operating units, such as the</div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.4] equipment [27].                                                                    speed of the cylinders and the torque of the motors, are the</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.4]    However, Petri nets have difficulty analyzing factors                           key components of the equipment. Proper control of these</div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.4] that hinder the productivity of increasingly detailed cluster                      components is essential to optimize the performance of each</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.4] tools; therefore, studies have been conducted using finite                         module during wafer transfer and process progression, and to</div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.4] state machines, a branch of automata theory. Lee and Lee                           increase wafer productivity.</div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.4] modeled wafer scheduling techniques considering system                                Operational parameters are usually detected in real time</div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.4] time constraints using finite state machines [28], and Sun                         by sensors located at the end of the equipment or determined</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.4] and Han built a simulation model based on finite state                             by preset values in hardware drivers. These data are reflected</div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.4] machines to measure the wafer throughput per unit time [29].                       in the operational parameters set in the system through</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.4] Hong and Lee conducted research to improve scheduling by                           a communication module, which assists users in detecting</div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.4] avoiding unnecessary behaviors of the equipment front-end                          and responding to abnormal situations by defining threshold</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.4] module (EFEM) using finite state machines and tick-based                           values for individual items.</div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.4] simulations [30].                                                                     To eliminate causes of equipment failure and enhance</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.4]    Studies have also utilized simulations to predict the                           overall equipment efficiency, an equipment engineering</div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.4] productivity of cluster tools. Hung and Leachman studied                           system (EES), one of several MESs, is utilized. The EES</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.4] methods to evaluate the productivity of wafer manufacturing                        consists of various subapplications and provides various</div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.4] equipment in simplified simulation environments [14], and                          functionalities depending on user requirements and the</div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.4] LeBaron and Pool implemented a simulator to predict the                            environment. The main subapplications and their roles are as</div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.4] productivity of cluster tools using AutoMod [15]. Watanabe                         follows [31]:</div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.4] implemented a wafer transfer simulator based on spreadsheet                           • Fault detection and classification (FDC): Real time</div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.4] applications [16], and Kohn and Rose conducted research to                               monitoring of equipment operational parameters to</div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.4] predict cluster tool processing times based on specific recipe                           detect and control anomalies.</div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.4] combinations and parallel processing methods [13]. In addi-                           • Recipe management module (RMM): Monitors and</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.4] tion, Tu built a productivity prediction model for cluster tools                         manages process recipes.</div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.4] using multiple regression analysis and established regression                         • Alarm management module (ALM): Monitors and</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.4] equations based on the number of process recipes [12].                                   manages errors occurring in equipment.</div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.4]    Previous studies on the productivity of cluster tools have                         • Equipment constant module (ECM): Manages the initial</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.4] been limited to module-level simulations rather than the                                 values set on the equipment.</div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.4] detailed operating units of the cluster tool, or have focused on                      With advances in semiconductor manufacturing technol-</div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.4] the impact of process recipes. In addition, research focusing                      ogy, various studies have been conducted on systems to man-</div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.4] on improving the scheduling methods of wafer transfer robots                       age these manufacturing processes efficiently. Chien et al.</div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.4] is not applicable to equipment that already operates using                         presented an FDC framework for the anomaly detection</div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.4] existing methods. Thus, existing studies are limited in that                       and classification of semiconductors to monitor and analyze</div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.4] they only focus on certain elements of wafer processing using                      FAB profiles to reduce defects and unnecessary yield</div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.4] cluster tools rather than comprehensively considering the                          reduction [32]. Yasuda et al. studied FDC indicators that</div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.4] entire process.                                                                    could detect abnormal conditions in equipment without</div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.4]    Considering these limitations, this study aims to systemat-                     chambers or process recipes [33]. Tsuda et al. analyzed</div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.4] ically analyze the factors that hinder productivity throughout                     the parameter data related to the product yield using FAB-</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.4] the wafer manufacturing process using a deterministic                              wide systems [34]. Kim conducted research to improve the</div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.4] finite state machine methodology and improve the related                           processing efficiency owing to increased data volume [35],</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.4] operational parameters. This approach not only focuses                             and Kim et al. conducted research to build an equipment-</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.4] on specific modules or wafer transfer methods, but also                            level FDC system capable of analyzing anomalies on its</div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.4] comprehensively considers all operating units of cluster                           own [36]. Zhang et al. conducted research to optimize</div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.4] </div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.4] VOLUME 12, 2024                                                                                                                             122081</div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.4] </div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.5]                                                      J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.5] </div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.5] </div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.5] </div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.5] </div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.5] production planning based on data from a MES [37]; they                the teaching of wafer transfer robots by setting parameters</div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.5] utilized manufacturing- and logistics-related data rather than         such as movement and velocity/acceleration of each axis of</div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.5] cluster tool data. These studies mainly focused on monitoring          the robot via a teaching pad [48]. However, these studies</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.5] functions or data processing methods.                                  mainly focused on implementing wafer transfer robots and</div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.5]    Considering these limitations, this study aims to per-              did not reflect all the components of the entire equipment or</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.5] form manufacturing simulations and determine the optimal               were not based on actual manufacturing site data, resulting in</div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.5] operational parameters based on a cluster tool implemented             insufficient simulation reliability.</div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.5] in a digital twin environment by utilizing the operational                Considering the limitations of the existing research, this</div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.5] parameters and process recipe data of the cluster tool stored          study aims to model cluster tools in a virtual space using</div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.5] in the EES. The utilization of data from legacy systems                digital twins and perform manufacturing simulations in</div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.5] is expected to enhance the reliability of the simulation               the same sequence as the actual processes. By visually</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.5] results, ultimately aiming to provide suitable solutions for           representing the manufacturing simulation process in a</div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.5] actual retrofitting and the improvement of cluster tools at            three-dimensional (3D) environment using a base model</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.5] manufacturing sites.                                                   implemented in a digital twin, we aim to enable users to</div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.5]                                                                        identify and respond more effectively to potential risks that</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.5]                                                                        may occur during the process. Through this, we propose a</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.5] C. DIGITAL TWIN                                                        new approach to cluster tool management at manufacturing</div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.5] The concept of a digital twin was initially introduced by              sites and contribute to the digitalization and automation of</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.5] Grieves in 2003 [38] and has garnered significant attention in         manufacturing.</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.5] both academia and industry, leading to continuous research                Table 1 presents a comparison of the objectives, method-</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.5] efforts [39], [40], [41]. Grieves and Vickers defines a digital        ologies, and tools used in previous studies, which were</div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.5] twin as a set of virtual information constructs that perfectly         discussed in the research background and are closely related</div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.5] describe a real-world physical entity [20], and the terms              to this study.</div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.5] ‘‘digital twin’’ and ‘‘model’’ are used distinctly depending on</div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.5] the presence of the actual physical entity [42]. Digital twins</div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.5] can be used to build real physical systems or processes in a            III. RESEARCH METHODOLOGY</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.5] digital space, monitor and analyze the status of real systems in        A. DIGITAL TWIN APPLICATION FRAMEWORK</div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.5] real time through IoT [21], and solve problems in the product          The framework of existing MES is designed to collect</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.5] lifecycle by using data and simulations of real products and           data from manufacturing equipment via communication</div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.5] systems to predict and analyze their behaviors [43]. Thus,             based on the SEMI equipment communications standard</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.5] digital twins are expected to significantly impact the future          (SECS)/generic equipment model (GEM) protocol, process</div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.5] of manufacturing by enabling a shift from analyzing the past           it, and present the results in visual forms such as tables</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.5] to predicting the future.                                              and charts, enabling users to monitor and analyze data</div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.5]    Digital twin technology is already being utilized in various        on equipment operational parameters in real time [49],</div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.5] industries and various studies have been conducted to apply it         [50]. However, these frameworks are limited to simply</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.5] in the semiconductor industry. Haddod and Dingli researched            displaying data visually and do not provide advanced</div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.5] the implementation of digital twins in semiconductor FABs              features, such as predictive analytics and optimization, which</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.5] and the synchronization between actual production lines                can limit the ability to increase the efficiency of manufac-</div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.5] and developed digital twins [44]. Deenen et al. conducted              turing processes and proactively anticipate and respond to</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.5] research based on simulations using digital twins to resolve           problems.</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.5] bottlenecks in wafer manufacturing [45]. Sivasubrama-                     Therefore, based on the existing framework, the framework</div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.5] nian et al. implemented a digital twin-based discrete-event            of the proposed digital twin application was designed as</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.5] simulation model to address reticle management issues in the           shown in Fig. 4. Digital twin applications utilize operational</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.5] photolithography process [46]. However, these studies either           parameters and process recipe data stored in legacy systems</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.5] focused on production lines rather than individual equipment           to iteratively perform simulations and optimizations in a</div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.5] units or were driven by specific process data, making it               digital twin environment, and explore the optimal operational</div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.5] difficult to extend them for application to all cluster tool           parameters to enhance the productivity of cluster tools. The</div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.5] models.                                                                data generated in this process are stored in the MES and</div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.5]    Research has also been conducted on the implementation              utilized by users to improve the actual cluster tool.</div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.5] of the operating units of cluster tools in virtual environments.          The framework of the digital twin application proposed</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.5] Bratovanov developed a wafer pick-and-place robot simula-              in this study consists of a digital twin module and an</div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.5] tor using SolidWorks and Visual Basic.NET, which simulates             optimization module, where the digital twin module consists</div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.5] wafer handling by setting parameters such as the valve                 of a base model and a simulation engine, and the optimization</div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.5] open/closed states of the end-effector/pre-aligner during the          module consists of an optimization engine and an interface.</div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.5] process [47]. Nicolescu et al. implemented a robot in a virtual        First, the base model is implemented in the digital twin</div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.5] environment using CATIA and DMU Kinematics, allowing                   environment as a representation of the cluster tool based on</div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.5] </div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.5] 122082                                                                                                                               VOLUME 12, 2024</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.5] </div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.6] J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.6] </div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.6] </div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.6] </div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.6] </div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.6] TABLE 1. Literature review.</div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.6] </div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.6] </div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.6] </div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.6] </div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.6] data, such as equipment specifications, operation sequences,                       automation settings. The optimization engine utilizes the data</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.6] and operational parameters. The simulation engine performs                         generated by the simulation engine to create neighborhoods</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.6] actual manufacturing simulations by automating detailed                            for multiple models based on metaheuristic algorithms,</div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.6] state transitions based on the base model, event handling                          iteratively exploring and improving the operational param-</div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.6] based on operational logic, and scenario execution using                           eters. While running these applications, visualization of the</div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.6] </div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.6] VOLUME 12, 2024                                                                                                                           122083</div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.6] </div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.7]                                                                J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.7] </div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.7] </div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.7] </div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.7] </div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.7] FIGURE 4. Framework of digital twin application.</div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.7] </div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.7] </div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.7] </div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.7] </div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.7] FIGURE 5. Operational sequence of digital twin applications.</div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.7] </div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.7] </div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.7] </div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.7] </div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.7] 122084                                                                                                                                         VOLUME 12, 2024</div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.7] </div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.8] J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.8] </div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.8] </div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.8] </div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.8] </div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.8] manufacturing simulation and the input and output of the data                      using the existing hierarchy, thereby enhancing the scalability</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.8] are performed through interfaces.                                                  and reusability of the simulation environment.</div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.8]    Fig. 5 illustrates the operational sequence of this digital</div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.8] twin application. Initially, the operational parameter data</div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.8] of the cluster tool stored in the MES and the target</div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.8] process recipe data are processed and set as initial input</div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.8] values for the simulation to drive the base model. The</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.8] simulation engine synchronizes these data, assigns them as</div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.8] the parameters of the subobjects that constitute the base</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.8] model, and performs the simulation. During the simulation,</div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.8] users can observe virtual manufacturing activities in a digital</div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.8] twin environment from various perspectives through the</div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.8] interface. Upon completion of the simulation, the resulting</div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.8] data are output, and the optimization engine utilizes them</div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.8] to perform optimization tasks on the operational parameters.</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.8] Once the optimization is completed, the simulation engine</div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.8] is initialized, and the optimized operational parameters are</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.8] reassigned to the base model for simulation. This process</div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.8] is defined as an episode that is repeated as many times as</div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.8] the user sets during the application run. Upon reaching the</div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.8] specified count, the application operation is terminated, and</div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.8] the final resulting data is processed and stored in the MES.</div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.8] Subsequently, users can use these data for real-world business</div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.8] purposes.</div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.8] </div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.8] </div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.8] B. DIGITAL TWIN MODULE</div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.8] 1) BASE MODEL</div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.8] In the base model constituting the digital twin module, the</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.8] cluster tool is implemented in the digital twin environment</div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.8] through an inheritance hierarchy structure, which is a hier-</div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.8] archical combination of modeled component-level objects.</div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.8] The inheritance hierarchy is a concept used in object-oriented</div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.8]                                                                                    FIGURE 6. Example of the hierarchy of objects and the components</div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.8] programming to represent hierarchical relationships between                        assigned to them.</div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.8] parent and child objects [51]. A parent object has one or more</div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.8] child objects, and the child objects have one parent object.                         Fig. 6 illustrates the hierarchical structure of the objects</div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.8] This hierarchical structure enables the representation of                          constituting the cluster tool and examples of the assigned</div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.8] relationships such as inheritance, composition, and grouping                       components. This hierarchy is organized into three levels:</div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.8] among objects.                                                                     equipment, module, and unit, which are described as follows:</div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.8]    The hierarchical structure of this base model offers                              • Equipment level: Objects representing the cluster tool</div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.8] several advantages for effectively performing manufactur-                               units that constitute the FAB are assigned. Objects at</div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.8] ing simulations based on finite state machines. Firstly,                                the equipment level control objects at the module level</div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.8] the hierarchical structure allows for a clear definition of                             sequentially perform the processes from start to end</div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.8] interactions between objects, enabling detailed modeling                                of the manufacturing simulation. Multiple objects were</div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.8] of the complex systems and state transitions within a                                   deployed at the equipment level to enable the simulation</div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.8] cluster tool. This facilitates the implementation of realistic                          of multiple operational parameters simultaneously.</div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.8] semiconductor manufacturing processes, thereby enhancing                             • Module level: Objects representing the cassette, trans-</div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.8] the accuracy and reliability of the simulations. Additionally,                          port, and process modules constituting the cluster tool</div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.8] the hierarchical structure permits the independent definition                           are assigned. The objects at the module level control</div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.8] and management of the state and behavior of each component                              multiple subunit-level objects to perform a series of</div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.8] within the cluster tool. This capability minimizes the impact                           operations, enabling each module to fulfill its role.</div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.8] on other components when a specific issue arises, enabling                           • Unit level: Assign component-level objects that con-</div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.8] rapid identification and resolution of problems. Lastly, the                            stitute each module, perform actual operations, and</div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.8] hierarchical structure provides flexibility when adding new                             distinguish between parent and child objects by assign-</div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.8] components or functions to the cluster tool. This flexibility                           ing a sequence of orders. The operational parameters</div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.8] allows for the expansion and modification of functionalities                            input to equipment-level objects are assigned to the</div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.8] </div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.8] VOLUME 12, 2024                                                                                                                                  122085</div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.8] </div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.9]                                                       J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.9] </div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.9] </div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.9] </div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.9] </div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.9]       lowest unit-level objects, enabling the execution of              modeling technique that allows a system to transition between</div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.9]       operations based on the state transitions of objects              multiple states and perform specific behaviors in each state.</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.9]       during the manufacturing simulation.                              This can be useful for tracing the operational flow of a system,</div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.9]    Each object constituting this hierarchical structure was             identifying and solving problems by representing all possible</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.9] endowed with appropriate attributes through component-                  situations, and determining how the system reaches these</div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.9] based software engineering (CBSE). CBSE is a methodology                situations [54]. Moreover, finite state machines are highly</div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.9] for building software systems by assembling reusable com-               scalable, and existing states and transitions can be extended</div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.9] ponents [52], enhancing development productivity and main-              to reflect the requirements as new sequences or components</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.9] tainability through software modularization, and increasing             are added. In particular, deterministic finite state machines</div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.9] code reusability to improve system flexibility and scalabil-            are finite state machines in which the next state is uniquely</div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.9] ity [53]. Utilizing CBSE in digital twin applications can               determined given discrete states and inputs, making them</div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.9] significantly enhance development productivity, maintain-               ideal for expressing the behavior of a system simply and</div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.9] ability, and system flexibility. Firstly, reusable components           clearly [55]. The elements constituting such deterministic</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.9] of the base model can be consistently applied across various            finite state machines are defined by 5-tuples, as follows:</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.9] simulation scenarios. Additionally, components can be easily</div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.9]                                                                                                  M = (Q, 6, δ, q0 , F)                            (1)</div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.9] updated and replaced independently, making maintenance</div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.9] easier. Lastly, the system’s flexibility is augmented as                The M stands for machine, where Q is the set of all</div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.9] new components can be added or modified in the base                     possible states of a finite state machine, expressed as Q =</div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.9] model without extensive redesign. These components define               {q0 , q1 , q2 , . . .}, and Σ is the set of all possible input values</div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.9] the characteristics and functionalities of the objects and              that a finite state machine can recognize. δ : Q × Σ→Q is</div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.9] coordinate the interactions between them to configure                   a state transition function, which determines the next state</div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.9] the operation of the entire system. Descriptions of each                based on the current state and inputs. q0 ∈ Q is the initial</div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.9] component assigned to the base model are as follows:                    state, the first state existing when the finite state machine</div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.9]    • Coordinate Setting: X, Y, and Z coordinates, along with            starts, and F ⊆ Q is the set of final states.</div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.9]       rotation values, are configured to determine the position            To model the cluster tool and the wafer to be manufactured</div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.9]       and orientation of objects within the 3D space. For               in the simulation engine, five components of the deterministic</div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.9]       instance, this ensures that specific modules of the cluster       finite state machine were defined as listed in Table 2. The</div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.9]       tool or wafers are accurately positioned and correctly            operating unit of the cluster tool defines all the states in which</div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.9]       oriented for operation.                                           it can act and performs wafer fabrication by changing its</div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.9]    • Physical Engine Setting: Physical properties such as               operational state in a prescribed sequence and considering</div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.9]       collision, reaction, motion, and rotation are configured          the current state of the wafers. The wafers also define all the</div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.9]       to simulate interactions between objects. For example,            states that occur during the manufacturing process, transition</div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.9]       during the wafer transfer process, the actions of the             through the wafer states based on the current position of</div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.9]       cluster tool modules are simulated considering various            the wafers and the behavior of the operating units, and the</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.9]       physical factors affecting the wafer to achieve realistic         simulation ends when all wafers have transitioned to the end</div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.9]       simulations.                                                      state. Fig. 7 illustrates an example of the state transition</div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.9]    • Visualization Setting: Mesh rendering is used to deter-            process between the operating units of the cluster tool and</div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.9]       mine how objects are displayed on the screen, improving           the wafers with each other’s states as input.</div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.9]       the visual representation of objects within the simulation           The primary functions of the modeled simulation engine</div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.9]       environment. For instance, each module of the cluster             can be categorized into state transitions of each object,</div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.9]       tool is configured to appear with textures and materials          the execution of operating logic for modules and units</div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.9]       similar to the real ones.                                         comprising the equipment, and the automation of these</div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.9]    • Scripting: Logic to control the behavior and state of              processes through defined scenarios. The scenario is con-</div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.9]       objects is defined, programming the interactions and              figured as the top-level class of the simulation engine,</div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.9]       actions among objects. For example, the operational               controlling subordinate classes to ensure that data input</div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.9]       sequences of the objects comprising the cluster tool are          and output, manufacturing simulation, and optimization</div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.9]       implemented to ensure that the defined states transition          of operational parameters are executed automatically in</div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.9]       appropriately during interactions.                                a sequential manner. Under the control of this top-level</div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.9]                                                                         scenario class, during the execution of a series of man-</div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.9] 2) SIMULATION ENGINE                                                    ufacturing simulations, the subordinate classes that make</div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.9] Cluster tools for semiconductor manufacturing involve                   up the simulation engine perform their functions through</div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.9] complex interactions between multiple process steps and                 scripting components assigned to each object of the base</div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.9] equipment components. To effectively manage this com-                   model. This process enables state transitions according to the</div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.9] plexity and implement the operational flow of the system,               defined operating logic and generates simulation data. Fig. 8</div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.9] a finite state machine was utilized as the core methodology for         depicts the scope of implementing the main functions of the</div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.9] designing the simulation engine. A finite state machine is a            simulation engine based on the base model.</div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.9] </div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.9] 122086                                                                                                                                VOLUME 12, 2024</div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.9] </div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.10] J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.10] </div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.10] </div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.10] </div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.10] </div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.10] TABLE 2. Definition of deterministic finite state machine elements for modeling.</div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.10] </div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.10] </div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.10] </div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.10] </div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.10]  FIGURE 7. Example of state transitions between operating units and wafers.</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.10] </div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.10] </div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.10] </div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.10]    During the simulation, the time required by each wafer in                       To calculate the time for the object to rotate, the rotational</div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.10] every state of the manufacturing process was measured and                          Euler angles for each axis of the i-th wafer in the j-th state are</div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.10] stored. The time required for each state is calculated based                       expressed as:</div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.10] on the coordinates setting assigned to the object on the wafer,                                                             y</div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.10]                                                                                                           Rij = (θijx , θij , θijz )              (5)</div>
+<div id="L481"><a href="#L481">00481</a> [PDF p.10] dividing the time for the object to move and the time for the</div>
+<div id="L482"><a href="#L482">00482</a> [PDF p.10] object to rotate according to the state. First, to calculate the                   Based on this, the change in the rotational angle for each axis</div>
+<div id="L483"><a href="#L483">00483</a> [PDF p.10] time for the object to move, the 3D vector of the i-th wafer in                    from the j-th state to the (j + 1)-th state of the i-th wafer is</div>
+<div id="L484"><a href="#L484">00484</a> [PDF p.10] the j-th state is expressed as:                                                    calculated as:</div>
+<div id="L485"><a href="#L485">00485</a> [PDF p.10]                            Pij = (xij , yij , zij )                      (2)                             1θijx = θi,j+1</div>
+<div id="L486"><a href="#L486">00486</a> [PDF p.10]                                                                                                                   x</div>
+<div id="L487"><a href="#L487">00487</a> [PDF p.10]                                                                                                                         − θijx                    (6)</div>
+<div id="L488"><a href="#L488">00488</a> [PDF p.10]    Based on this, the Euclidean distance the i-th wafer travels                                              y        y</div>
+<div id="L489"><a href="#L489">00489</a> [PDF p.10]                                                                                                          1θij = θi,j+1 − θij</div>
+<div id="L490"><a href="#L490">00490</a> [PDF p.10]                                                                                                                                    y</div>
+<div id="L491"><a href="#L491">00491</a> [PDF p.10]                                                                                                                                                   (7)</div>
+<div id="L492"><a href="#L492">00492</a> [PDF p.10] from the j-th state to the (j + 1)-th state is calculated as:</div>
+<div id="L493"><a href="#L493">00493</a> [PDF p.10]        q                                                                                                 1θijz = θi,j+1</div>
+<div id="L494"><a href="#L494">00494</a> [PDF p.10]                                                                                                                   z</div>
+<div id="L495"><a href="#L495">00495</a> [PDF p.10]                                                                                                                         − θijz                    (8)</div>
+<div id="L496"><a href="#L496">00496</a> [PDF p.10]   dij = (xi,j+1 − xij )2 + (yi,j+1 − yij )2 + (zi,j+1 − zij )2 (3)</div>
+<div id="L497"><a href="#L497">00497</a> [PDF p.10]                                                                                    The rotational speed of the actuator when the i-th wafer is in</div>
+<div id="L498"><a href="#L498">00498</a> [PDF p.10] The driving speed of the actuator when the i-th wafer is in the                    the j-th state is defined as ωij , and the rotational time for each</div>
+<div id="L499"><a href="#L499">00499</a> [PDF p.10] j-th state is defined as vij , and the time taken for the i-th wafer               axis is calculated as:</div>
+<div id="L500"><a href="#L500">00500</a> [PDF p.10] to move in the j-th state is calculated as:</div>
+<div id="L501"><a href="#L501">00501</a> [PDF p.10]                                                                                                                        1θijx</div>
+<div id="L502"><a href="#L502">00502</a> [PDF p.10]                                                                                                                tijx =</div>
+<div id="L503"><a href="#L503">00503</a> [PDF p.10]                q</div>
+<div id="L504"><a href="#L504">00504</a> [PDF p.10]                                                                                                                                                    (9)</div>
+<div id="L505"><a href="#L505">00505</a> [PDF p.10]        dij      (xi,j+1 − xij )2 + (yi,j+1 − yij )2 + (zi,j+1 − zij )2                                                  ωij</div>
+<div id="L506"><a href="#L506">00506</a> [PDF p.10] tij =      =                                                                                                               y</div>
+<div id="L507"><a href="#L507">00507</a> [PDF p.10]        vij                               vij                                                                     y     1θij</div>
+<div id="L508"><a href="#L508">00508</a> [PDF p.10]                                                                                                                tij =                              (10)</div>
+<div id="L509"><a href="#L509">00509</a> [PDF p.10]                                                                   (4)                                                   ωij</div>
+<div id="L510"><a href="#L510">00510</a> [PDF p.10] VOLUME 12, 2024                                                                                                                                122087</div>
+<div id="L511"><a href="#L511">00511</a> [PDF p.10] </div>
+<div id="L512"><a href="#L512">00512</a> [PDF p.11]                                                           J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L513"><a href="#L513">00513</a> [PDF p.11] </div>
+<div id="L514"><a href="#L514">00514</a> [PDF p.11] </div>
+<div id="L515"><a href="#L515">00515</a> [PDF p.11] </div>
+<div id="L516"><a href="#L516">00516</a> [PDF p.11] </div>
+<div id="L517"><a href="#L517">00517</a> [PDF p.11]  FIGURE 8. Scope of implementing the main functions of the simulation engine based on the base model.</div>
+<div id="L518"><a href="#L518">00518</a> [PDF p.11] </div>
+<div id="L519"><a href="#L519">00519</a> [PDF p.11] </div>
+<div id="L520"><a href="#L520">00520</a> [PDF p.11] </div>
+<div id="L521"><a href="#L521">00521</a> [PDF p.11]                                       1θijz                                 process for each wafer as:</div>
+<div id="L522"><a href="#L522">00522</a> [PDF p.11]                              tijz =                              (11)</div>
+<div id="L523"><a href="#L523">00523</a> [PDF p.11]                                       ωij                                                                         Xm</div>
+<div id="L524"><a href="#L524">00524</a> [PDF p.11]                                                                                                          CT i =             tij                     (14)</div>
+<div id="L525"><a href="#L525">00525</a> [PDF p.11]                                                                                                                       j=1</div>
+<div id="L526"><a href="#L526">00526</a> [PDF p.11] Based on the rotational time for each axis, the time taken</div>
+<div id="L527"><a href="#L527">00527</a> [PDF p.11] for the i-th wafer to rotate in the j-th state is calculated by             The time required to complete the manufacturing of all</div>
+<div id="L528"><a href="#L528">00528</a> [PDF p.11] distinguishing between the cases where the rotations of the                 wafers is cycle time, which is the same as the time when</div>
+<div id="L529"><a href="#L529">00529</a> [PDF p.11] three axes occur simultaneously and sequentially:                           the manufacturing of the last wafer (n-th wafer) ends and is</div>
+<div id="L530"><a href="#L530">00530</a> [PDF p.11]                                                                             calculated as:</div>
+<div id="L531"><a href="#L531">00531</a> [PDF p.11]                       y</div>
+<div id="L532"><a href="#L532">00532</a> [PDF p.11]        (</div>
+<div id="L533"><a href="#L533">00533</a> [PDF p.11]           max(tijx , tij , tijz ) if in simultaneous rotation                                               Xm</div>
+<div id="L534"><a href="#L534">00534</a> [PDF p.11]   tij = x        y                                            (12)                            CT = CT n =           tnj             (15)</div>
+<div id="L535"><a href="#L535">00535</a> [PDF p.11]           tij + tij + tijz        if in sequential rotation                                                                 j=1</div>
+<div id="L536"><a href="#L536">00536</a> [PDF p.11] </div>
+<div id="L537"><a href="#L537">00537</a> [PDF p.11]                                                                             In addition, the average time that n wafers spend in the j-th</div>
+<div id="L538"><a href="#L538">00538</a> [PDF p.11]    To output these state-specific times as data, assume that a              state of the cluster tool is termed ST j , and it can be calculated</div>
+<div id="L539"><a href="#L539">00539</a> [PDF p.11] FOUP containing a total of n wafers is docked in the cluster                to determine which state of the wafer manufacturing process</div>
+<div id="L540"><a href="#L540">00540</a> [PDF p.11] tool and that each wafer goes through a total of m states                   requires the most time on average as:</div>
+<div id="L541"><a href="#L541">00541</a> [PDF p.11] before being processed and undocked. Through this process,</div>
+<div id="L542"><a href="#L542">00542</a> [PDF p.11] all calculated wafer status times during the manufacturing of                                               1 Xn</div>
+<div id="L543"><a href="#L543">00543</a> [PDF p.11]                                                                                                     ST j =             tij                 (16)</div>
+<div id="L544"><a href="#L544">00544</a> [PDF p.11] one FOUP by the cluster tool can be represented as an n row                                                 n    i=1</div>
+<div id="L545"><a href="#L545">00545</a> [PDF p.11] </div>
+<div id="L546"><a href="#L546">00546</a> [PDF p.11] by m column matrix, as:                                                        Table 3 lists the notations of simulation results data.</div>
+<div id="L547"><a href="#L547">00547</a> [PDF p.11]                                                     </div>
+<div id="L548"><a href="#L548">00548</a> [PDF p.11]                               t11 t12 t13 · · · t1m                          C. OPTIMIZATION MODULE</div>
+<div id="L549"><a href="#L549">00549</a> [PDF p.11]                              t21 t22 t23 · · · t2m </div>
+<div id="L550"><a href="#L550">00550</a> [PDF p.11]                                                                           In semiconductor manufacturing, the yield, which is the</div>
+<div id="L551"><a href="#L551">00551</a> [PDF p.11]       Wafer State Times =  t31 t32 t33 · · · t3m        (13)              number of healthy chips actually produced as a percentage</div>
+<div id="L552"><a href="#L552">00552</a> [PDF p.11]                                                     </div>
+<div id="L553"><a href="#L553">00553</a> [PDF p.11]                              .. .. .. . .        .. </div>
+<div id="L554"><a href="#L554">00554</a> [PDF p.11]                              . . .           . .                          of the maximum number of chips designed on a wafer,</div>
+<div id="L555"><a href="#L555">00555</a> [PDF p.11]                               tn1 tn2 tn3 · · · tnm                         is also affected by subtle factors such as errors in setting</div>
+<div id="L556"><a href="#L556">00556</a> [PDF p.11]                                                                             process parameters, poor facility management, and operator</div>
+<div id="L557"><a href="#L557">00557</a> [PDF p.11] Let CT i denote the time it takes for the i-th wafer to be fed              error [56]. Consequently, modifications and improvements</div>
+<div id="L558"><a href="#L558">00558</a> [PDF p.11] into the cluster tool and complete manufacturing. This time                 to cluster tools require rigorous validation procedures,</div>
+<div id="L559"><a href="#L559">00559</a> [PDF p.11] is calculated to determine the duration of the manufacturing                and production in the absence of such validation can</div>
+<div id="L560"><a href="#L560">00560</a> [PDF p.11] </div>
+<div id="L561"><a href="#L561">00561</a> [PDF p.11] 122088                                                                                                                                    VOLUME 12, 2024</div>
+<div id="L562"><a href="#L562">00562</a> [PDF p.11] </div>
+<div id="L563"><a href="#L563">00563</a> [PDF p.12] J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L564"><a href="#L564">00564</a> [PDF p.12] </div>
+<div id="L565"><a href="#L565">00565</a> [PDF p.12] </div>
+<div id="L566"><a href="#L566">00566</a> [PDF p.12] </div>
+<div id="L567"><a href="#L567">00567</a> [PDF p.12] </div>
+<div id="L568"><a href="#L568">00568</a> [PDF p.12] TABLE 3. Notation of simulation result data.                                       as listed in Table 4. Because it is difficult to determine</div>
+<div id="L569"><a href="#L569">00569</a> [PDF p.12]                                                                                    exactly how each component of the initial solution affects</div>
+<div id="L570"><a href="#L570">00570</a> [PDF p.12]                                                                                    the objective function, various adjustments were made to the</div>
+<div id="L571"><a href="#L571">00571</a> [PDF p.12]                                                                                    initial solution to generate multiple neighboring solutions.</div>
+<div id="L572"><a href="#L572">00572</a> [PDF p.12]                                                                                    Subsequently, the same objective function was applied to the</div>
+<div id="L573"><a href="#L573">00573</a> [PDF p.12]                                                                                    generated neighboring solutions to compare the results and</div>
+<div id="L574"><a href="#L574">00574</a> [PDF p.12]                                                                                    expand the search process for the optimal solution in various</div>
+<div id="L575"><a href="#L575">00575</a> [PDF p.12]                                                                                    ways to determine how the components of the initial solution</div>
+<div id="L576"><a href="#L576">00576</a> [PDF p.12]                                                                                    affect the results of the objective function, which is expected</div>
+<div id="L577"><a href="#L577">00577</a> [PDF p.12]                                                                                    to help us find a high-quality solution.</div>
+<div id="L578"><a href="#L578">00578</a> [PDF p.12]                                                                                       The optimization engine sets the existing operational</div>
+<div id="L579"><a href="#L579">00579</a> [PDF p.12]                                                                                    parameters stored in the MES as the initial solution and</div>
+<div id="L580"><a href="#L580">00580</a> [PDF p.12]                                                                                    searches for the optimal operational parameters. For this</div>
+<div id="L581"><a href="#L581">00581</a> [PDF p.12]                                                                                    purpose, the base model of the digital twin module was set as</div>
+<div id="L582"><a href="#L582">00582</a> [PDF p.12]                                                                                    the objective function, and a manufacturing simulation was</div>
+<div id="L583"><a href="#L583">00583</a> [PDF p.12]                                                                                    performed based on the generated neighboring operational</div>
+<div id="L584"><a href="#L584">00584</a> [PDF p.12]                                                                                    parameters.</div>
+<div id="L585"><a href="#L585">00585</a> [PDF p.12]                                                                                       To achieve this, the base model of the digital twin module</div>
+<div id="L586"><a href="#L586">00586</a> [PDF p.12]                                                                                    is set as the objective function, and the generated neighboring</div>
+<div id="L587"><a href="#L587">00587</a> [PDF p.12]                                                                                    solutions, which are the operational parameters, are used</div>
+<div id="L588"><a href="#L588">00588</a> [PDF p.12]                                                                                    as simulation input data for manufacturing simulation. The</div>
+<div id="L589"><a href="#L589">00589</a> [PDF p.12] critically affect the quality of an entire production line or                      output data from the simulation includes the input operational</div>
+<div id="L590"><a href="#L590">00590</a> [PDF p.12] product. To minimize such quality risks, this study aims to                        parameters and resulting cycle time values. The optimization</div>
+<div id="L591"><a href="#L591">00591</a> [PDF p.12] explore optimal operational parameters through incremental                         engine selects the neighboring solution with the shortest</div>
+<div id="L592"><a href="#L592">00592</a> [PDF p.12] improvements based on existing operational parameters.                             cycle time from these results, i.e., the improved operational</div>
+<div id="L593"><a href="#L593">00593</a> [PDF p.12] This approach ensures the stability of the existing validated                      parameters and updates the current solution accordingly.</div>
+<div id="L594"><a href="#L594">00594</a> [PDF p.12] operational parameters while gradually enhancing equipment                         When configuring the input data for the next simulation</div>
+<div id="L595"><a href="#L595">00595</a> [PDF p.12] performance. Therefore, in this study, an optimization engine                      episode based on the improved operational parameters,</div>
+<div id="L596"><a href="#L596">00596</a> [PDF p.12] was designed based on the hill climbing algorithm, which is                        analyzing the impact of each operational parameter item</div>
+<div id="L597"><a href="#L597">00597</a> [PDF p.12] a metaheuristic algorithm.                                                         on the simulation results is possible. To achieve this,</div>
+<div id="L598"><a href="#L598">00598</a> [PDF p.12]    The hill climbing algorithm searches for an optimal                             multiple neighboring operational parameters are generated by</div>
+<div id="L599"><a href="#L599">00599</a> [PDF p.12] solution by exploring neighboring solutions relative to the                        sequentially adjusting the values of each item in the current</div>
+<div id="L600"><a href="#L600">00600</a> [PDF p.12] current solution. Although it does not guarantee a global                          and newly generated operational parameters. The generated</div>
+<div id="L601"><a href="#L601">00601</a> [PDF p.12] optimal solution, it effectively searches for local optimal                        data are then utilized as input data for subsequent simulation</div>
+<div id="L602"><a href="#L602">00602</a> [PDF p.12] solutions [57]. The hill climbing algorithm operates as                            episode. Fig. 9 illustrates an example of the data configuration</div>
+<div id="L603"><a href="#L603">00603</a> [PDF p.12] follows:                                                                           for updating the current solution and generating neighboring</div>
+<div id="L604"><a href="#L604">00604</a> [PDF p.12]    1. Set the initial solution.                                                    solutions.</div>
+<div id="L605"><a href="#L605">00605</a> [PDF p.12]    2. Generate neighboring solutions from the initial solution                        This series of processes is defined as one episode, and</div>
+<div id="L606"><a href="#L606">00606</a> [PDF p.12]        according to specific rules.                                                the optimal operational parameters are derived by repeating</div>
+<div id="L607"><a href="#L607">00607</a> [PDF p.12]    3. Compare the generated neighboring solutions with the                         a specified number of episodes. Fig. 10 illustrates the</div>
+<div id="L608"><a href="#L608">00608</a> [PDF p.12]        initial solution, and update the current solution if a                      process of the optimization engine searching for the optimal</div>
+<div id="L609"><a href="#L609">00609</a> [PDF p.12]        better solution is found.                                                   operational parameters based on the hill climbing algorithm.</div>
+<div id="L610"><a href="#L610">00610</a> [PDF p.12]    4. Repeat this process until it converges to the optimal</div>
+<div id="L611"><a href="#L611">00611</a> [PDF p.12]        solution.</div>
+<div id="L612"><a href="#L612">00612</a> [PDF p.12]    The key to this algorithm lies in the generation of                             IV. APPLICATION APPROACH</div>
+<div id="L613"><a href="#L613">00613</a> [PDF p.12] neighboring solutions and the criteria for selecting a better                      A. SCENARIO AND APPLICATION OF DIGITAL TWIN</div>
+<div id="L614"><a href="#L614">00614</a> [PDF p.12] solution. Neighbors can be generated in various ways,                              FRAMEWORK</div>
+<div id="L615"><a href="#L615">00615</a> [PDF p.12] including by randomly selecting neighboring solutions or                           The scenario configuration for optimizing the operational</div>
+<div id="L616"><a href="#L616">00616</a> [PDF p.12] incrementally modifying the initial solution. The criterion for                    parameters of the cluster tool defined in this study is shown</div>
+<div id="L617"><a href="#L617">00617</a> [PDF p.12] selecting a better solution varies depending on the nature of                      in Fig. 11. During the scenario execution, the cumulative</div>
+<div id="L618"><a href="#L618">00618</a> [PDF p.12] the problem; however, in most cases, it involves comparing                         episode count increased for each episode. At the beginning</div>
+<div id="L619"><a href="#L619">00619</a> [PDF p.12] objective function values of the solutions and selecting the                       of an episode, the simulation engine assigns the initial input</div>
+<div id="L620"><a href="#L620">00620</a> [PDF p.12] solution with the smallest value.                                                  data as parameters to the base model and performs virtual</div>
+<div id="L621"><a href="#L621">00621</a> [PDF p.12]    To design an optimization engine based on the hill climbing                     manufacturing. After completing all manufacturing activities,</div>
+<div id="L622"><a href="#L622">00622</a> [PDF p.12] algorithm to explore the optimal operational parameters                            the simulation engine merges the assigned parameters with</div>
+<div id="L623"><a href="#L623">00623</a> [PDF p.12] for the cluster tool, the main components were defined                             the simulation results and outputs them. Subsequently, based</div>
+<div id="L624"><a href="#L624">00624</a> [PDF p.12] </div>
+<div id="L625"><a href="#L625">00625</a> [PDF p.12] VOLUME 12, 2024                                                                                                                             122089</div>
+<div id="L626"><a href="#L626">00626</a> [PDF p.12] </div>
+<div id="L627"><a href="#L627">00627</a> [PDF p.13]                                                              J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L628"><a href="#L628">00628</a> [PDF p.13] </div>
+<div id="L629"><a href="#L629">00629</a> [PDF p.13] </div>
+<div id="L630"><a href="#L630">00630</a> [PDF p.13] </div>
+<div id="L631"><a href="#L631">00631</a> [PDF p.13] </div>
+<div id="L632"><a href="#L632">00632</a> [PDF p.13] TABLE 4. Definition of hill climbing algorithm elements for optimization.</div>
+<div id="L633"><a href="#L633">00633</a> [PDF p.13] </div>
+<div id="L634"><a href="#L634">00634</a> [PDF p.13] </div>
+<div id="L635"><a href="#L635">00635</a> [PDF p.13] </div>
+<div id="L636"><a href="#L636">00636</a> [PDF p.13] </div>
+<div id="L637"><a href="#L637">00637</a> [PDF p.13] FIGURE 9. Data configuration example for updating the current solution and generating neighboring solutions.</div>
+<div id="L638"><a href="#L638">00638</a> [PDF p.13] </div>
+<div id="L639"><a href="#L639">00639</a> [PDF p.13] </div>
+<div id="L640"><a href="#L640">00640</a> [PDF p.13] </div>
+<div id="L641"><a href="#L641">00641</a> [PDF p.13] on the simulation results, the optimization engine performs                       The implementation environment of the digital twin</div>
+<div id="L642"><a href="#L642">00642</a> [PDF p.13] the optimization tasks, initializes the existing simulation                    application proposed in this study is listed in Table 5. Each</div>
+<div id="L643"><a href="#L643">00643</a> [PDF p.13] environment for the next episode, and ends the episode. The                    unit component constituting the cluster tool was modeled</div>
+<div id="L644"><a href="#L644">00644</a> [PDF p.13] simulation engine determines whether the current episode                       using Autodesk Inventor Professional 2024, CAD software,</div>
+<div id="L645"><a href="#L645">00645</a> [PDF p.13] has reached the number of times specified by the user; if                      and saved in STL file format. Subsequently, Blender, a 3D</div>
+<div id="L646"><a href="#L646">00646</a> [PDF p.13] not, it returns to the step before starting the episode and                    graphics production software, was used to render the STL</div>
+<div id="L647"><a href="#L647">00647</a> [PDF p.13] performs the next episode; if it has, it outputs the final                     files to match the texture and color of the real-world objects,</div>
+<div id="L648"><a href="#L648">00648</a> [PDF p.13] result to end the optimization scenario of the operational                     converting them into DAE files, which were then stored</div>
+<div id="L649"><a href="#L649">00649</a> [PDF p.13] parameters.                                                                    in a Unity environment. Unity implements the base model</div>
+<div id="L650"><a href="#L650">00650</a> [PDF p.13]    This simulation-optimization iterative structure is imple-                  through the inheritance hierarchy and component settings of</div>
+<div id="L651"><a href="#L651">00651</a> [PDF p.13] mented based on the repetitive search process of the hill                      the stored objects, and the simulation engine is implemented</div>
+<div id="L652"><a href="#L652">00652</a> [PDF p.13] climbing algorithm. It is designed to perform a sufficient                     through object-oriented programming using C# in Visual</div>
+<div id="L653"><a href="#L653">00653</a> [PDF p.13] number of iterations, as set by the user, to evaluate the impact               Studio 2022 based on the base model. The optimization</div>
+<div id="L654"><a href="#L654">00654</a> [PDF p.13] of changes in each component of the operational parameters                     engine was implemented using Python in the Visual Studio</div>
+<div id="L655"><a href="#L655">00655</a> [PDF p.13] on the cycle time and to identify the key operational                          Code environment and executed in the Anaconda3 virtual</div>
+<div id="L656"><a href="#L656">00656</a> [PDF p.13] parameters.                                                                    environment. The input and output files were in the form</div>
+<div id="L657"><a href="#L657">00657</a> [PDF p.13] </div>
+<div id="L658"><a href="#L658">00658</a> [PDF p.13] </div>
+<div id="L659"><a href="#L659">00659</a> [PDF p.13] 122090                                                                                                                                       VOLUME 12, 2024</div>
+<div id="L660"><a href="#L660">00660</a> [PDF p.13] </div>
+<div id="L661"><a href="#L661">00661</a> [PDF p.14] J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L662"><a href="#L662">00662</a> [PDF p.14] </div>
+<div id="L663"><a href="#L663">00663</a> [PDF p.14] </div>
+<div id="L664"><a href="#L664">00664</a> [PDF p.14] </div>
+<div id="L665"><a href="#L665">00665</a> [PDF p.14] </div>
+<div id="L666"><a href="#L666">00666</a> [PDF p.14] FIGURE 10. Sequence to explore optimal operational parameters based on a hill climbing algorithm.</div>
+<div id="L667"><a href="#L667">00667</a> [PDF p.14] </div>
+<div id="L668"><a href="#L668">00668</a> [PDF p.14] TABLE 5. Implementation environment for digital twin applications.</div>
+<div id="L669"><a href="#L669">00669</a> [PDF p.14] </div>
+<div id="L670"><a href="#L670">00670</a> [PDF p.14] </div>
+<div id="L671"><a href="#L671">00671</a> [PDF p.14] </div>
+<div id="L672"><a href="#L672">00672</a> [PDF p.14] </div>
+<div id="L673"><a href="#L673">00673</a> [PDF p.14] of CSV files, and the user interface of the application was                        as gravity, air resistance, collision detection, and reaction</div>
+<div id="L674"><a href="#L674">00674</a> [PDF p.14] implemented using Unity UI.                                                        to enable interactions between objects, thereby enhancing</div>
+<div id="L675"><a href="#L675">00675</a> [PDF p.14]                                                                                    the reliability of the simulation. Finally, object-oriented</div>
+<div id="L676"><a href="#L676">00676</a> [PDF p.14] 1) IMPLEMENTATION APPROACH FOR THE DIGITAL TWIN                                    programming is used to implement the behavior, state, and</div>
+<div id="L677"><a href="#L677">00677</a> [PDF p.14] MODULE                                                                             detailed settings for the interaction between objects to control</div>
+<div id="L678"><a href="#L678">00678</a> [PDF p.14] To construct the backbone of the digital twin module,                              their behavior and state. Fig. 12 shows an example of the</div>
+<div id="L679"><a href="#L679">00679</a> [PDF p.14] which is the base model, each modeled object was arranged                          hierarchy and component setting information of the base</div>
+<div id="L680"><a href="#L680">00680</a> [PDF p.14] according to the appropriate hierarchy and the components                          model implemented in this study. Tables 6−9 show the details</div>
+<div id="L681"><a href="#L681">00681</a> [PDF p.14] required for the object were clearly defined. First, to adjust                     of the information model and the contents used to explain</div>
+<div id="L682"><a href="#L682">00682</a> [PDF p.14] the position and rotation of the objects, the location and                         each item.</div>
+<div id="L683"><a href="#L683">00683</a> [PDF p.14] rotation information of the components in 3D space are                                The simulation engine performed manufacturing simula-</div>
+<div id="L684"><a href="#L684">00684</a> [PDF p.14] input based on actual equipment specifications. Additionally,                      tions based on this implemented base model. To achieve</div>
+<div id="L685"><a href="#L685">00685</a> [PDF p.14] the visualization settings were set to consider the material,                      this, we implemented a previously defined scenario and</div>
+<div id="L686"><a href="#L686">00686</a> [PDF p.14] color, shadows, and reflections of real objects. Setting                           combined classes to perform the detailed procedures of the</div>
+<div id="L687"><a href="#L687">00687</a> [PDF p.14] up the physics engine involves specifying details such                             scenario. The class configuration of the simulation engine</div>
+<div id="L688"><a href="#L688">00688</a> [PDF p.14] </div>
+<div id="L689"><a href="#L689">00689</a> [PDF p.14] VOLUME 12, 2024                                                                                                                             122091</div>
+<div id="L690"><a href="#L690">00690</a> [PDF p.14] </div>
+<div id="L691"><a href="#L691">00691</a> [PDF p.15]                                                           J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L692"><a href="#L692">00692</a> [PDF p.15] </div>
+<div id="L693"><a href="#L693">00693</a> [PDF p.15] </div>
+<div id="L694"><a href="#L694">00694</a> [PDF p.15] </div>
+<div id="L695"><a href="#L695">00695</a> [PDF p.15] </div>
+<div id="L696"><a href="#L696">00696</a> [PDF p.15]                                                                             components, and the time spent in each state is measured and</div>
+<div id="L697"><a href="#L697">00697</a> [PDF p.15]                                                                             stored as the simulation results. For this purpose, as shown in</div>
+<div id="L698"><a href="#L698">00698</a> [PDF p.15]                                                                             Fig. 14, the wafer transitions its state by determining whether</div>
+<div id="L699"><a href="#L699">00699</a> [PDF p.15]                                                                             it interferes with trigger cubes installed in each component of</div>
+<div id="L700"><a href="#L700">00700</a> [PDF p.15]                                                                             the cluster tool.</div>
+<div id="L701"><a href="#L701">00701</a> [PDF p.15] </div>
+<div id="L702"><a href="#L702">00702</a> [PDF p.15]                                                                             2) IMPLEMENTATION APPROACH FOR THE OPTIMIZATION</div>
+<div id="L703"><a href="#L703">00703</a> [PDF p.15]                                                                             MODULE</div>
+<div id="L704"><a href="#L704">00704</a> [PDF p.15]                                                                             The optimization engine of the optimization module was</div>
+<div id="L705"><a href="#L705">00705</a> [PDF p.15]                                                                             run at the end of each episode to optimize the operational</div>
+<div id="L706"><a href="#L706">00706</a> [PDF p.15]                                                                             parameters. This optimization process is based on the hill</div>
+<div id="L707"><a href="#L707">00707</a> [PDF p.15]                                                                             climbing algorithm, which sets the operational parameter</div>
+<div id="L708"><a href="#L708">00708</a> [PDF p.15]                                                                             with the smallest cycle time from the simulation result data</div>
+<div id="L709"><a href="#L709">00709</a> [PDF p.15]                                                                             as the optimal solution. The optimal solution is determined</div>
+<div id="L710"><a href="#L710">00710</a> [PDF p.15]                                                                             based on the simulation input data, and neighboring solutions</div>
+<div id="L711"><a href="#L711">00711</a> [PDF p.15]                                                                             are generated by multiplying the optimal solution by a</div>
+<div id="L712"><a href="#L712">00712</a> [PDF p.15]                                                                             certain value. During the generation of neighboring solutions,</div>
+<div id="L713"><a href="#L713">00713</a> [PDF p.15]                                                                             the ratios of the optimal and neighboring solutions are</div>
+<div id="L714"><a href="#L714">00714</a> [PDF p.15]                                                                             sequentially adjusted to assess how each operational param-</div>
+<div id="L715"><a href="#L715">00715</a> [PDF p.15]                                                                             eter affects productivity enhancement. Table 10 lists the</div>
+<div id="L716"><a href="#L716">00716</a> [PDF p.15]                                                                             pseudocode of the hill climbing algorithm for performing the</div>
+<div id="L717"><a href="#L717">00717</a> [PDF p.15]                                                                             optimization process. The next episode of the manufacturing</div>
+<div id="L718"><a href="#L718">00718</a> [PDF p.15]                                                                             simulation was performed based on the simulation input data</div>
+<div id="L719"><a href="#L719">00719</a> [PDF p.15]                                                                             generated by the optimization engine. Fig. 15 illustrates the</div>
+<div id="L720"><a href="#L720">00720</a> [PDF p.15]                                                                             data input and output processes during the simulation and</div>
+<div id="L721"><a href="#L721">00721</a> [PDF p.15]                                                                             optimization processes.</div>
+<div id="L722"><a href="#L722">00722</a> [PDF p.15] </div>
+<div id="L723"><a href="#L723">00723</a> [PDF p.15]                                                                             B. IMPLEMENTATION AND RESULTS OF THE DIGITAL</div>
+<div id="L724"><a href="#L724">00724</a> [PDF p.15] FIGURE 11. Scenario diagrams to optimize operational parameters.</div>
+<div id="L725"><a href="#L725">00725</a> [PDF p.15]                                                                             TWIN APPLICATION</div>
+<div id="L726"><a href="#L726">00726</a> [PDF p.15] TABLE 6. Schema of coordinates component in the base model.</div>
+<div id="L727"><a href="#L727">00727</a> [PDF p.15]                                                                             To demonstrate the applicability and validity of the proposed</div>
+<div id="L728"><a href="#L728">00728</a> [PDF p.15]                                                                             framework, an example of implementing the digital twin</div>
+<div id="L729"><a href="#L729">00729</a> [PDF p.15]                                                                             application is presented. For security reasons, instead of</div>
+<div id="L730"><a href="#L730">00730</a> [PDF p.15]                                                                             using actual semiconductor manufacturing equipment, vir-</div>
+<div id="L731"><a href="#L731">00731</a> [PDF p.15]                                                                             tual equipment simulating the manufacturing process was</div>
+<div id="L732"><a href="#L732">00732</a> [PDF p.15]                                                                             implemented based on publicly available patent data. During</div>
+<div id="L733"><a href="#L733">00733</a> [PDF p.15]                                                                             the simulation process, each module of the cluster tool</div>
+<div id="L734"><a href="#L734">00734</a> [PDF p.15]                                                                             executed only one operation at a time, and unexpected</div>
+<div id="L735"><a href="#L735">00735</a> [PDF p.15]                                                                             events such as equipment failures were not considered.</div>
+<div id="L736"><a href="#L736">00736</a> [PDF p.15]                                                                             In addition, a manufacturing simulation of a single process</div>
+<div id="L737"><a href="#L737">00737</a> [PDF p.15]                                                                             recipe was performed for 25 wafers, and the subunits</div>
+<div id="L738"><a href="#L738">00738</a> [PDF p.15]                                                                             of the parallel process module were assigned the same</div>
+<div id="L739"><a href="#L739">00739</a> [PDF p.15]                                                                             operational parameters. The reason for assigning identical</div>
+<div id="L740"><a href="#L740">00740</a> [PDF p.15] implemented in this study is shown in Fig. 13. The four main                operating parameter values to the sub-units of the parallel</div>
+<div id="L741"><a href="#L741">00741</a> [PDF p.15] classes and their roles are as follows:                                     process module is that performance differences between</div>
+<div id="L742"><a href="#L742">00742</a> [PDF p.15]    • Scenario Manager: A class that performs the predefined                 chambers can affect wafer yield. To ensure consistent product</div>
+<div id="L743"><a href="#L743">00743</a> [PDF p.15]      simulation scenario.                                                   quality, chamber matching is essential, which involves</div>
+<div id="L744"><a href="#L744">00744</a> [PDF p.15]    • Job Manager: A class that performs manufacturing                       minimizing parameter differences between chambers [58].</div>
+<div id="L745"><a href="#L745">00745</a> [PDF p.15]      simulations based on the base model of the cluster tool.               In manufacturing environments, permissible ranges for these</div>
+<div id="L746"><a href="#L746">00746</a> [PDF p.15]    • Data Input/Output Manager: A class that inputs and                     operating parameters are established, and sensors are used</div>
+<div id="L747"><a href="#L747">00747</a> [PDF p.15]      outputs the data required for the simulation.                          to maintain consistent parameter values to ensure pattern</div>
+<div id="L748"><a href="#L748">00748</a> [PDF p.15]    • Optimization Manager: A class that calls the optimiza-                 quality [59]. Additionally, standardization through chamber</div>
+<div id="L749"><a href="#L749">00749</a> [PDF p.15]      tion engine.                                                           matching contributes to improved equipment management</div>
+<div id="L750"><a href="#L750">00750</a> [PDF p.15]    During virtual manufacturing activities performed through                and operational efficiency.</div>
+<div id="L751"><a href="#L751">00751</a> [PDF p.15] the Job Manager class, the wafer state transitions through the                 An example screen of the digital twin application imple-</div>
+<div id="L752"><a href="#L752">00752</a> [PDF p.15] current wafer position and operation state of the cluster tool              mented in this study is shown in Fig. 16. A represents the</div>
+<div id="L753"><a href="#L753">00753</a> [PDF p.15] </div>
+<div id="L754"><a href="#L754">00754</a> [PDF p.15] 122092                                                                                                                                    VOLUME 12, 2024</div>
+<div id="L755"><a href="#L755">00755</a> [PDF p.15] </div>
+<div id="L756"><a href="#L756">00756</a> [PDF p.16] J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L757"><a href="#L757">00757</a> [PDF p.16] </div>
+<div id="L758"><a href="#L758">00758</a> [PDF p.16] </div>
+<div id="L759"><a href="#L759">00759</a> [PDF p.16] </div>
+<div id="L760"><a href="#L760">00760</a> [PDF p.16] </div>
+<div id="L761"><a href="#L761">00761</a> [PDF p.16] FIGURE 12. Example hierarchy and component setting for implementing a base model.</div>
+<div id="L762"><a href="#L762">00762</a> [PDF p.16] </div>
+<div id="L763"><a href="#L763">00763</a> [PDF p.16] </div>
+<div id="L764"><a href="#L764">00764</a> [PDF p.16] TABLE 7. Schema of visualizations component in the base model.</div>
+<div id="L765"><a href="#L765">00765</a> [PDF p.16] </div>
+<div id="L766"><a href="#L766">00766</a> [PDF p.16] </div>
+<div id="L767"><a href="#L767">00767</a> [PDF p.16] </div>
+<div id="L768"><a href="#L768">00768</a> [PDF p.16] </div>
+<div id="L769"><a href="#L769">00769</a> [PDF p.16] digital twin module that performs manufacturing simulation                            When the digital twin application was executed, opera-</div>
+<div id="L770"><a href="#L770">00770</a> [PDF p.16] based on the base model of the cluster tool. In this example,                      tional parameters and process recipes were set as simulation</div>
+<div id="L771"><a href="#L771">00771</a> [PDF p.16] 16 machines are deployed to consider the graphics resources                        input data, and the manufacturing simulation was conducted</div>
+<div id="L772"><a href="#L772">00772</a> [PDF p.16] of the computer. B is the user interface screen, where users                       by assigning these parameters to each base model of the</div>
+<div id="L773"><a href="#L773">00773</a> [PDF p.16] can control the camera position to visualize the digital twin                      cluster tool. Subsequently, the optimization module explores</div>
+<div id="L774"><a href="#L774">00774</a> [PDF p.16] environment through buttons. The current progress of the                           the operational parameters with the highest productivity</div>
+<div id="L775"><a href="#L775">00775</a> [PDF p.16] episode, simulation status of each piece of equipment, and                         based on the stored simulation result data and generates</div>
+<div id="L776"><a href="#L776">00776</a> [PDF p.16] optimization status are visualized using LED indicators.                           operational parameters for the next episode based on this,</div>
+<div id="L777"><a href="#L777">00777</a> [PDF p.16] C is the optimization module that optimizes the operational                        updating the simulation input data. This process was repeated</div>
+<div id="L778"><a href="#L778">00778</a> [PDF p.16] parameters considering the cycle time.                                             until a user-defined number of episodes was reached, and</div>
+<div id="L779"><a href="#L779">00779</a> [PDF p.16] </div>
+<div id="L780"><a href="#L780">00780</a> [PDF p.16] VOLUME 12, 2024                                                                                                                          122093</div>
+<div id="L781"><a href="#L781">00781</a> [PDF p.16] </div>
+<div id="L782"><a href="#L782">00782</a> [PDF p.17]                                                             J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L783"><a href="#L783">00783</a> [PDF p.17] </div>
+<div id="L784"><a href="#L784">00784</a> [PDF p.17] </div>
+<div id="L785"><a href="#L785">00785</a> [PDF p.17] </div>
+<div id="L786"><a href="#L786">00786</a> [PDF p.17] </div>
+<div id="L787"><a href="#L787">00787</a> [PDF p.17] TABLE 8. Schema of physics component in the base model.</div>
+<div id="L788"><a href="#L788">00788</a> [PDF p.17] </div>
+<div id="L789"><a href="#L789">00789</a> [PDF p.17] </div>
+<div id="L790"><a href="#L790">00790</a> [PDF p.17] </div>
+<div id="L791"><a href="#L791">00791</a> [PDF p.17] </div>
+<div id="L792"><a href="#L792">00792</a> [PDF p.17] TABLE 9. Schema of scripting component in the base model.</div>
+<div id="L793"><a href="#L793">00793</a> [PDF p.17] </div>
+<div id="L794"><a href="#L794">00794</a> [PDF p.17] </div>
+<div id="L795"><a href="#L795">00795</a> [PDF p.17] </div>
+<div id="L796"><a href="#L796">00796</a> [PDF p.17] </div>
+<div id="L797"><a href="#L797">00797</a> [PDF p.17] TABLE 10. Pseudocode for a hill-climbing algorithm to optimize operational parameters.</div>
+<div id="L798"><a href="#L798">00798</a> [PDF p.17] </div>
+<div id="L799"><a href="#L799">00799</a> [PDF p.17] </div>
+<div id="L800"><a href="#L800">00800</a> [PDF p.17] </div>
+<div id="L801"><a href="#L801">00801</a> [PDF p.17] </div>
+<div id="L802"><a href="#L802">00802</a> [PDF p.17] the accumulated simulation results and optimal operational                    application. In this experiment, 100 simulation-optimization</div>
+<div id="L803"><a href="#L803">00803</a> [PDF p.17] parameters were utilized for business purposes.                               episodes were repeated to select the operational parameters</div>
+<div id="L804"><a href="#L804">00804</a> [PDF p.17]   An experiment was conducted to determine the operational                    with the smallest cycle time, and the accumulated simulation</div>
+<div id="L805"><a href="#L805">00805</a> [PDF p.17] parameters using a previously implemented digital twin                        data were analyzed. The initial operational parameters</div>
+<div id="L806"><a href="#L806">00806</a> [PDF p.17] </div>
+<div id="L807"><a href="#L807">00807</a> [PDF p.17] 122094                                                                                                                                      VOLUME 12, 2024</div>
+<div id="L808"><a href="#L808">00808</a> [PDF p.17] </div>
+<div id="L809"><a href="#L809">00809</a> [PDF p.18] J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L810"><a href="#L810">00810</a> [PDF p.18] </div>
+<div id="L811"><a href="#L811">00811</a> [PDF p.18] </div>
+<div id="L812"><a href="#L812">00812</a> [PDF p.18] </div>
+<div id="L813"><a href="#L813">00813</a> [PDF p.18] </div>
+<div id="L814"><a href="#L814">00814</a> [PDF p.18]         FIGURE 13. Class organization of a simulation engine.</div>
+<div id="L815"><a href="#L815">00815</a> [PDF p.18] </div>
+<div id="L816"><a href="#L816">00816</a> [PDF p.18] </div>
+<div id="L817"><a href="#L817">00817</a> [PDF p.18] </div>
+<div id="L818"><a href="#L818">00818</a> [PDF p.18] </div>
+<div id="L819"><a href="#L819">00819</a> [PDF p.18]         FIGURE 14. Example of setting up state transitions for undetected (a) and detected (b) wafers using a trigger cube.</div>
+<div id="L820"><a href="#L820">00820</a> [PDF p.18] </div>
+<div id="L821"><a href="#L821">00821</a> [PDF p.18] </div>
+<div id="L822"><a href="#L822">00822</a> [PDF p.18] </div>
+<div id="L823"><a href="#L823">00823</a> [PDF p.18] </div>
+<div id="L824"><a href="#L824">00824</a> [PDF p.18] VOLUME 12, 2024                                                                                                               122095</div>
+<div id="L825"><a href="#L825">00825</a> [PDF p.18] </div>
+<div id="L826"><a href="#L826">00826</a> [PDF p.19]                                                             J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L827"><a href="#L827">00827</a> [PDF p.19] </div>
+<div id="L828"><a href="#L828">00828</a> [PDF p.19] </div>
+<div id="L829"><a href="#L829">00829</a> [PDF p.19] </div>
+<div id="L830"><a href="#L830">00830</a> [PDF p.19] </div>
+<div id="L831"><a href="#L831">00831</a> [PDF p.19]          FIGURE 15. Data input/output process in simulation and optimization.</div>
+<div id="L832"><a href="#L832">00832</a> [PDF p.19] </div>
+<div id="L833"><a href="#L833">00833</a> [PDF p.19] </div>
+<div id="L834"><a href="#L834">00834</a> [PDF p.19] </div>
+<div id="L835"><a href="#L835">00835</a> [PDF p.19] </div>
+<div id="L836"><a href="#L836">00836</a> [PDF p.19]          FIGURE 16. Example of a screen from an implemented digital twin application.</div>
+<div id="L837"><a href="#L837">00837</a> [PDF p.19] </div>
+<div id="L838"><a href="#L838">00838</a> [PDF p.19] </div>
+<div id="L839"><a href="#L839">00839</a> [PDF p.19] </div>
+<div id="L840"><a href="#L840">00840</a> [PDF p.19] consisted of the speed settings of the actuators comprising                     solutions using the hill climbing algorithm, values ranging</div>
+<div id="L841"><a href="#L841">00841</a> [PDF p.19] the transport and process modules of the cluster tool, with a                   from 98% to 102% of the initial solution were sequentially</div>
+<div id="L842"><a href="#L842">00842</a> [PDF p.19] total of 23 items. In the process of generating neighboring                     arranged, as shown in Fig. 17.</div>
+<div id="L843"><a href="#L843">00843</a> [PDF p.19] </div>
+<div id="L844"><a href="#L844">00844</a> [PDF p.19] 122096                                                                                                                                      VOLUME 12, 2024</div>
+<div id="L845"><a href="#L845">00845</a> [PDF p.19] </div>
+<div id="L846"><a href="#L846">00846</a> [PDF p.20] J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L847"><a href="#L847">00847</a> [PDF p.20] </div>
+<div id="L848"><a href="#L848">00848</a> [PDF p.20] </div>
+<div id="L849"><a href="#L849">00849</a> [PDF p.20] </div>
+<div id="L850"><a href="#L850">00850</a> [PDF p.20] </div>
+<div id="L851"><a href="#L851">00851</a> [PDF p.20] TABLE 11. Results of optimizing operational parameters.</div>
+<div id="L852"><a href="#L852">00852</a> [PDF p.20] </div>
+<div id="L853"><a href="#L853">00853</a> [PDF p.20] </div>
+<div id="L854"><a href="#L854">00854</a> [PDF p.20] </div>
+<div id="L855"><a href="#L855">00855</a> [PDF p.20] </div>
+<div id="L856"><a href="#L856">00856</a> [PDF p.20]                                                                                    however, as the cycle time converged, the speed settings of</div>
+<div id="L857"><a href="#L857">00857</a> [PDF p.20]                                                                                    certain actuators increased sharply.</div>
+<div id="L858"><a href="#L858">00858</a> [PDF p.20]                                                                                       Table 11 presents the optimization results for the oper-</div>
+<div id="L859"><a href="#L859">00859</a> [PDF p.20]                                                                                    ational parameters obtained through this demonstration.</div>
+<div id="L860"><a href="#L860">00860</a> [PDF p.20]                                                                                    ‘‘As is’’ represents the results corresponding to the initial</div>
+<div id="L861"><a href="#L861">00861</a> [PDF p.20]                                                                                    operational parameters, whereas ‘‘To be’’ represents the</div>
+<div id="L862"><a href="#L862">00862</a> [PDF p.20]                                                                                    results corresponding to the operational parameters with the</div>
+<div id="L863"><a href="#L863">00863</a> [PDF p.20]                                                                                    lowest cycle time among the 100 episodes. The cycle time</div>
+<div id="L864"><a href="#L864">00864</a> [PDF p.20]                                                                                    improved by 41.14% compared to the previous time, with the</div>
+<div id="L865"><a href="#L865">00865</a> [PDF p.20]                                                                                    average speed setting of the actuators composing the transport</div>
+<div id="L866"><a href="#L866">00866</a> [PDF p.20]                                                                                    module increasing by 155.34%, and the average speed setting</div>
+<div id="L867"><a href="#L867">00867</a> [PDF p.20]                                                                                    of the actuators composing the process module increasing by</div>
+<div id="L868"><a href="#L868">00868</a> [PDF p.20]                                                                                    85.79%.</div>
+<div id="L869"><a href="#L869">00869</a> [PDF p.20]                                                                                       Studies on the improvement of wafer productivity in cluster</div>
+<div id="L870"><a href="#L870">00870</a> [PDF p.20]                                                                                    tools have been conducted on different equipment models and</div>
+<div id="L871"><a href="#L871">00871</a> [PDF p.20]                                                                                    processes, making direct comparisons challenging. However,</div>
+<div id="L872"><a href="#L872">00872</a> [PDF p.20]                                                                                    from the perspective of wafer productivity improvement,</div>
+<div id="L873"><a href="#L873">00873</a> [PDF p.20]                                                                                    the 41.14% cycle time reduction achieved in this study</div>
+<div id="L874"><a href="#L874">00874</a> [PDF p.20]                                                                                    significantly surpasses the 10.00% improvement achieved by</div>
+<div id="L875"><a href="#L875">00875</a> [PDF p.20]                                                                                    LeBaron et al. through step time optimization [15], the 6.90%</div>
+<div id="L876"><a href="#L876">00876</a> [PDF p.20]                                                                                    improvement achieved by Watanabe through the elimination</div>
+<div id="L877"><a href="#L877">00877</a> [PDF p.20]                                                                                    of misunderstanding logics [16], the 3.07% improvement</div>
+<div id="L878"><a href="#L878">00878</a> [PDF p.20]                                                                                    achieved by Kim et al. through the optimization of scheduling</div>
+<div id="L879"><a href="#L879">00879</a> [PDF p.20] FIGURE 17. Creating neighboring solutions via cascading arrays.</div>
+<div id="L880"><a href="#L880">00880</a> [PDF p.20]                                                                                    variables [19], and the 13.45% improvement achieved by</div>
+<div id="L881"><a href="#L881">00881</a> [PDF p.20]                                                                                    Sivasubramanian et al. through reticle management using a</div>
+<div id="L882"><a href="#L882">00882</a> [PDF p.20]                                                                                    rollout policy [46]. These results suggest that the method-</div>
+<div id="L883"><a href="#L883">00883</a> [PDF p.20]    Fig. 18-(a) shows a graph with the arithmetic mean of the                       ology proposed in this study may be more effective in</div>
+<div id="L884"><a href="#L884">00884</a> [PDF p.20] actuator speed settings on the x-axis and the resulting cycle                      improving wafer productivity.</div>
+<div id="L885"><a href="#L885">00885</a> [PDF p.20] time on the y-axis. The optimal solution for a single episode is                      Several significant experimental results were observed in</div>
+<div id="L886"><a href="#L886">00886</a> [PDF p.20] marked in red while neighboring solutions are marked in blue.                      the example of determining the operational parameters. First,</div>
+<div id="L887"><a href="#L887">00887</a> [PDF p.20] Fig. 18-(b) presents a graph with the number of episodes on                        the cycle time tended to converge after a certain point as the</div>
+<div id="L888"><a href="#L888">00888</a> [PDF p.20] the x-axis, and the corresponding cycle time and arithmetic                        simulation-optimization iterations were repeated. This result</div>
+<div id="L889"><a href="#L889">00889</a> [PDF p.20] mean of the actuator speed settings on the y1- and y2- axes,                       shows that simple changes in the operational parameters</div>
+<div id="L890"><a href="#L890">00890</a> [PDF p.20] respectively. In the initial phase of the optimization scenario,                   are not sufficient to sustainably improve productivity. This</div>
+<div id="L891"><a href="#L891">00891</a> [PDF p.20] as the number of episodes increases, the average actuator                          suggests that productivity improvement requires a compre-</div>
+<div id="L892"><a href="#L892">00892</a> [PDF p.20] speed settings tend to increase, resulting in a decrease in                        hensive consideration of various factors, such as equipment</div>
+<div id="L893"><a href="#L893">00893</a> [PDF p.20] cycle time. However, after the number of episodes exceeds                          specifications and wafer transfer scheduling, in addition to</div>
+<div id="L894"><a href="#L894">00894</a> [PDF p.20] approximately 70, the average actuator speed settings exhibit                      the operational parameters.</div>
+<div id="L895"><a href="#L895">00895</a> [PDF p.20] unstable fluctuations with a slight upward trend, and the cycle                       Furthermore, in the simulation-optimization process for</div>
+<div id="L896"><a href="#L896">00896</a> [PDF p.20] time converges to approximately 440 seconds.                                       the example equipment model, it was found that the opera-</div>
+<div id="L897"><a href="#L897">00897</a> [PDF p.20]    To understand the impact of individual operational param-                       tional parameters of the transport module had a greater impact</div>
+<div id="L898"><a href="#L898">00898</a> [PDF p.20] eters on the reduction in cycle time, a graph was plotted with                     on improving the cycle time after a certain point than those</div>
+<div id="L899"><a href="#L899">00899</a> [PDF p.20] the sequence number of operational parameter items on the x-                       of the process module. Through this analysis, it is expected</div>
+<div id="L900"><a href="#L900">00900</a> [PDF p.20] axis, cycle time on the y-axis, and the ratio of the current value                 that operational parameters that have a greater impact on</div>
+<div id="L901"><a href="#L901">00901</a> [PDF p.20] to the initial value of the actuator speed settings on the z-axis,                 productivity can be identified not only for this model but also</div>
+<div id="L902"><a href="#L902">00902</a> [PDF p.20] as shown in Fig. 19. This graph shows that the actuator speed                      in the process of determining operational parameters for other</div>
+<div id="L903"><a href="#L903">00903</a> [PDF p.20] settings were evenly scattered until the cycle time converged;                     equipment. This can provide users with valuable insights into</div>
+<div id="L904"><a href="#L904">00904</a> [PDF p.20] </div>
+<div id="L905"><a href="#L905">00905</a> [PDF p.20] VOLUME 12, 2024                                                                                                                            122097</div>
+<div id="L906"><a href="#L906">00906</a> [PDF p.20] </div>
+<div id="L907"><a href="#L907">00907</a> [PDF p.21]                                                              J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L908"><a href="#L908">00908</a> [PDF p.21] </div>
+<div id="L909"><a href="#L909">00909</a> [PDF p.21] </div>
+<div id="L910"><a href="#L910">00910</a> [PDF p.21] </div>
+<div id="L911"><a href="#L911">00911</a> [PDF p.21] </div>
+<div id="L912"><a href="#L912">00912</a> [PDF p.21] FIGURE 18. Graph of cycle time vs. average of actuator speed (a) and Graph of number of episode vs. cycle time and average of actuator speed (b).</div>
+<div id="L913"><a href="#L913">00913</a> [PDF p.21] </div>
+<div id="L914"><a href="#L914">00914</a> [PDF p.21] </div>
+<div id="L915"><a href="#L915">00915</a> [PDF p.21] </div>
+<div id="L916"><a href="#L916">00916</a> [PDF p.21]                                                                                and various research and improvement efforts are being</div>
+<div id="L917"><a href="#L917">00917</a> [PDF p.21]                                                                                made to utilize them efficiently. However, efficient operation</div>
+<div id="L918"><a href="#L918">00918</a> [PDF p.21]                                                                                and management are still a challenge owing to various</div>
+<div id="L919"><a href="#L919">00919</a> [PDF p.21]                                                                                physical and system limitations. Therefore, there is an</div>
+<div id="L920"><a href="#L920">00920</a> [PDF p.21]                                                                                increasing need for a system that predicts and optimizes</div>
+<div id="L921"><a href="#L921">00921</a> [PDF p.21]                                                                                productivity based on the actual operational parameters of</div>
+<div id="L922"><a href="#L922">00922</a> [PDF p.21]                                                                                cluster tools.</div>
+<div id="L923"><a href="#L923">00923</a> [PDF p.21]                                                                                   As an alternative solution to these problems, this study</div>
+<div id="L924"><a href="#L924">00924</a> [PDF p.21]                                                                                proposed a framework for determining the operational param-</div>
+<div id="L925"><a href="#L925">00925</a> [PDF p.21]                                                                                eters of semiconductor manufacturing cluster tools using</div>
+<div id="L926"><a href="#L926">00926</a> [PDF p.21]                                                                                digital twins and demonstrated its implementation through</div>
+<div id="L927"><a href="#L927">00927</a> [PDF p.21]                                                                                a specific example. Through manufacturing simulations and</div>
+<div id="L928"><a href="#L928">00928</a> [PDF p.21]                                                                                operational parameter optimization based on digital twins,</div>
+<div id="L929"><a href="#L929">00929</a> [PDF p.21]                                                                                we were able to significantly reduce the cycle time of cluster</div>
+<div id="L930"><a href="#L930">00930</a> [PDF p.21]                                                                                tools in wafer fabrication.</div>
+<div id="L931"><a href="#L931">00931</a> [PDF p.21]                                                                                   These research findings extend beyond mere productivity</div>
+<div id="L932"><a href="#L932">00932</a> [PDF p.21]                                                                                enhancement, considerably influencing the development of</div>
+<div id="L933"><a href="#L933">00933</a> [PDF p.21] FIGURE 19. Graph of parameters, cycle time, and a ratio of current value</div>
+<div id="L934"><a href="#L934">00934</a> [PDF p.21] to an initial value.                                                           operational strategies for actual equipment and optimization</div>
+<div id="L935"><a href="#L935">00935</a> [PDF p.21]                                                                                of production processes. First, by utilizing digital twin-based</div>
+<div id="L936"><a href="#L936">00936</a> [PDF p.21]                                                                                simulations to pre-test and optimize real processes, on-site</div>
+<div id="L937"><a href="#L937">00937</a> [PDF p.21] formulating operational strategies for actual equipment and                    trial and error can be minimized. This approach reduces</div>
+<div id="L938"><a href="#L938">00938</a> [PDF p.21] laying the foundation for optimizing production processes.                     the risks faced by engineers due to the use of hazardous</div>
+<div id="L939"><a href="#L939">00939</a> [PDF p.21] Moreover, it is expected to minimize the wastage of human                      chemicals and prevents unexpected equipment failures or</div>
+<div id="L940"><a href="#L940">00940</a> [PDF p.21] resources and operational inefficiencies in the improvement                    product quality degradation. Furthermore, by optimizing</div>
+<div id="L941"><a href="#L941">00941</a> [PDF p.21] of actual equipment.                                                           based on verified MES data rather than relying on the</div>
+<div id="L942"><a href="#L942">00942</a> [PDF p.21]                                                                                expertise of equipment manufacturers, it contributes to the</div>
+<div id="L943"><a href="#L943">00943</a> [PDF p.21] V. CONCLUSION                                                                  establishment of operational strategies for actual equipment,</div>
+<div id="L944"><a href="#L944">00944</a> [PDF p.21] Technological advancements brought about by the Fourth                         using cycle time improvement data derived from changes</div>
+<div id="L945"><a href="#L945">00945</a> [PDF p.21] Industrial Revolution require large amounts of data pro-                       in operational parameters. Ultimately, this is expected to</div>
+<div id="L946"><a href="#L946">00946</a> [PDF p.21] cessing and analysis, driving the demand for related                           contribute to cost reduction and improved efficiency in</div>
+<div id="L947"><a href="#L947">00947</a> [PDF p.21] semiconductor products. In this context, the importance                        human resource allocation in manufacturing environments.</div>
+<div id="L948"><a href="#L948">00948</a> [PDF p.21] of manufacturing and supply chain management in the                               Furthermore, by visually clarifying the manufacturing</div>
+<div id="L949"><a href="#L949">00949</a> [PDF p.21] semiconductor industry is emphasized, and semiconductor                        simulation process of cluster tools through the application</div>
+<div id="L950"><a href="#L950">00950</a> [PDF p.21] manufacturers focus on efficient production management                         of digital twin technology, it is anticipated that users will</div>
+<div id="L951"><a href="#L951">00951</a> [PDF p.21] and technological development. Cluster tools are essential                     be provided with insights into the complex interactions that</div>
+<div id="L952"><a href="#L952">00952</a> [PDF p.21] equipment in the semiconductor manufacturing process,                          occur within cluster tools.</div>
+<div id="L953"><a href="#L953">00953</a> [PDF p.21] </div>
+<div id="L954"><a href="#L954">00954</a> [PDF p.21] 122098                                                                                                                                       VOLUME 12, 2024</div>
+<div id="L955"><a href="#L955">00955</a> [PDF p.21] </div>
+<div id="L956"><a href="#L956">00956</a> [PDF p.22] J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L957"><a href="#L957">00957</a> [PDF p.22] </div>
+<div id="L958"><a href="#L958">00958</a> [PDF p.22] </div>
+<div id="L959"><a href="#L959">00959</a> [PDF p.22] </div>
+<div id="L960"><a href="#L960">00960</a> [PDF p.22] </div>
+<div id="L961"><a href="#L961">00961</a> [PDF p.22]    This study has some limitations that need to be addressed                         [15] H. T. LeBaron and M. Pool, ‘‘The simulation of cluster tools: A new</div>
+<div id="L962"><a href="#L962">00962</a> [PDF p.22] in future research. First, the example of the base model imple-                           semiconductor manufacturing technology,’’ in Proc. Winter Simulation</div>
+<div id="L963"><a href="#L963">00963</a> [PDF p.22]                                                                                           Conf., Dec. 1994, pp. 907–912.</div>
+<div id="L964"><a href="#L964">00964</a> [PDF p.22] mented in the digital twin application was based on publicly                         [16] H. Watanabe, ‘‘Development of wafer transfer simulator based on cellular</div>
+<div id="L965"><a href="#L965">00965</a> [PDF p.22] available patent data for security reasons; thus, it requires                             automata,’’ IEEE Trans. Semicond. Manuf., vol. 28, no. 3, pp. 283–288,</div>
+<div id="L966"><a href="#L966">00966</a> [PDF p.22] validation through the application of actual equipment to                                 Aug. 2015.</div>
+<div id="L967"><a href="#L967">00967</a> [PDF p.22]                                                                                      [17] S. Hur, H. Lee, Y. J. Park, and S. H. Yang, ‘‘A scheduling method with</div>
+<div id="L968"><a href="#L968">00968</a> [PDF p.22] increase the reliability of simulation results. Second, the                               wafer transfer delay in the cluster tool process,’’ J. Korean Prod. Oper.</div>
+<div id="L969"><a href="#L969">00969</a> [PDF p.22] range of input operational parameters may not encompass all                               Manage. Soc., vol. 22, no. 4, pp. 417–430, Dec. 2011.</div>
+<div id="L970"><a href="#L970">00970</a> [PDF p.22] factors affecting productivity in wafer manufacturing. Con-                          [18] J.-H. Kim, T.-E. Lee, H.-Y. Lee, and D.-B. Park, ‘‘Scheduling analysis</div>
+<div id="L971"><a href="#L971">00971</a> [PDF p.22]                                                                                           of time-constrained dual-armed cluster tools,’’ IEEE Trans. Semicond.</div>
+<div id="L972"><a href="#L972">00972</a> [PDF p.22] ducting research that considers comprehensive factors such                                Manuf., vol. 16, no. 3, pp. 521–534, Aug. 2003.</div>
+<div id="L973"><a href="#L973">00973</a> [PDF p.22] as the physical limitations of equipment specifications and                          [19] Y. Kim, G. Lee, and J. Jeong, ‘‘ML-based JIT1 optimization for throughput</div>
+<div id="L974"><a href="#L974">00974</a> [PDF p.22] productivity changes depending on wafer transfer scheduling                               maximization in cluster tool automation,’’ Appl. Sci., vol. 12, no. 15,</div>
+<div id="L975"><a href="#L975">00975</a> [PDF p.22] methods would yield more reliable results. Third, this study                              p. 7519, Jul. 2022.</div>
+<div id="L976"><a href="#L976">00976</a> [PDF p.22]                                                                                      [20] M. Grieves and J. Vickers, ‘‘Digital twin: Mitigating unpredictable,</div>
+<div id="L977"><a href="#L977">00977</a> [PDF p.22] is limited to a single process. It is necessary to analyze and                            undesirable emergent behavior in complex systems,’’ in Transdisciplinary</div>
+<div id="L978"><a href="#L978">00978</a> [PDF p.22] generalize the experimental results in various situations, such                           Perspectives on Complex Systems: New Findings and Approaches. Cham,</div>
+<div id="L979"><a href="#L979">00979</a> [PDF p.22] as when different process recipes are performed for different                             Switzerland: Springer, 2017, pp. 85–113.</div>
+<div id="L980"><a href="#L980">00980</a> [PDF p.22]                                                                                      [21] K. Ding, F. T. S. Chan, X. Zhang, G. Zhou, and F. Zhang, ‘‘Defining</div>
+<div id="L981"><a href="#L981">00981</a> [PDF p.22] wafers on the same carrier [60]. Finally, this study did not                              a digital twin-based cyber-physical production system for autonomous</div>
+<div id="L982"><a href="#L982">00982</a> [PDF p.22] consider the impact of operational parameter changes on                                   manufacturing in smart shop floors,’’ Int. J. Prod. Res., vol. 57, no. 20,</div>
+<div id="L983"><a href="#L983">00983</a> [PDF p.22] component failures or defects. Excessive use of components                                pp. 6315–6334, Oct. 2019.</div>
+<div id="L984"><a href="#L984">00984</a> [PDF p.22]                                                                                      [22] K.-M. Choi, J.-E. Lee, K.-Y. Cho, K.-S. Kim, and S.-H. Cho, ‘‘Clean</div>
+<div id="L985"><a href="#L985">00985</a> [PDF p.22] may not only lead to component failure due to deterioration                               room structure, air conditioning and contamination control systems in the</div>
+<div id="L986"><a href="#L986">00986</a> [PDF p.22] but also reduce the reliability of the equipment and eventually                           semiconductor fabrication process,’’ J. Korean Soc. Occupational Environ.</div>
+<div id="L987"><a href="#L987">00987</a> [PDF p.22] affect wafer quality due to physical factors. Considering these                           Hygiene, vol. 25, no. 2, pp. 202–210, Jun. 2015.</div>
+<div id="L988"><a href="#L988">00988</a> [PDF p.22]                                                                                      [23] M. Brain, R. Gould, U. Kaempf, and B. Wehrung, ‘‘Emerging needs for</div>
+<div id="L989"><a href="#L989">00989</a> [PDF p.22] factors will lead to further empirical research.                                          continuous flow FOUP transport,’’ in Proc. 24th IEEE/CPMT Int. Electron.</div>
+<div id="L990"><a href="#L990">00990</a> [PDF p.22]                                                                                           Manuf. Technol. Symp., Oct. 1999, pp. 76–82.</div>
+<div id="L991"><a href="#L991">00991</a> [PDF p.22] REFERENCES                                                                           [24] H. M. Lee and T. J. Chung, ‘‘The cluster controller,’’ Electron.</div>
+<div id="L992"><a href="#L992">00992</a> [PDF p.22]                                                                                           Telecommun. Trends, vol. 13, no. 1, pp. 29–40, Feb. 1998.</div>
+<div id="L993"><a href="#L993">00993</a> [PDF p.22]  [1] J. Voas, N. Kshetri, and J. F. DeFranco, ‘‘Scarcity and global insecurity:      [25] M. Dümmler, ‘‘Semiconductor manufacturing and cluster tools,’’ in</div>
+<div id="L994"><a href="#L994">00994</a> [PDF p.22]      The semiconductor shortage,’’ IT Prof., vol. 23, no. 5, pp. 78–82,                   Modeling and Optimization of Cluster Tools in Semiconductor Manufac-</div>
+<div id="L995"><a href="#L995">00995</a> [PDF p.22]      Sep. 2021.                                                                           turing. Würzburg, Germany: Institut für Informatik, Lehrstuhl für Verteilte</div>
+<div id="L996"><a href="#L996">00996</a> [PDF p.22]  [2] W. Mohammad, A. Elomri, and L. Kerbache, ‘‘The global semiconductor                  Systeme, 2004, pp. 5–28.</div>
+<div id="L997"><a href="#L997">00997</a> [PDF p.22]      chip shortage: Causes, implications, and potential remedies,’’ IFAC-            [26] W. M. Zuberek, ‘‘Cluster tools with chamber revisiting-modeling and</div>
+<div id="L998"><a href="#L998">00998</a> [PDF p.22]      PapersOnLine, vol. 55, no. 10, pp. 476–483, 2022.                                    analysis using timed Petri nets,’’ IEEE Trans. Semicond. Manuf., vol. 17,</div>
+<div id="L999"><a href="#L999">00999</a> [PDF p.22]  [3] L. Mönch, J. W. Fowler, and S. J. Mason, ‘‘Semiconductor manufacturing               no. 3, pp. 333–344, Aug. 2004.</div>
+<div id="L1000"><a href="#L1000">01000</a> [PDF p.22]      process description,’’ in Production Planning and Control for Semiconduc-       [27] T.-E. Lee, H.-Y. Lee, and S.-J. Lee, ‘‘Scheduling a wet station for wafer</div>
+<div id="L1001"><a href="#L1001">01001</a> [PDF p.22]      tor Wafer Fabrication Facilities: Modeling, Analysis, and System, vol. 52.           cleaning with multiple job flows and multiple wafer-handling robots,’’ Int.</div>
+<div id="L1002"><a href="#L1002">01002</a> [PDF p.22]      New York, NY, USA: Springer, 2013, pp. 11–28.                                        J. Prod. Res., vol. 45, no. 3, pp. 487–507, Feb. 2007.</div>
+<div id="L1003"><a href="#L1003">01003</a> [PDF p.22]  [4] P. H. Wald and J. R. Jones, ‘‘Semiconductor manufacturing: An                   [28] H. Y. Lee and T. E. Lee, ‘‘Scheduling and determination of feasible process</div>
+<div id="L1004"><a href="#L1004">01004</a> [PDF p.22]      introduction to processes and hazards,’’ Amer. J. Ind. Med., vol. 11, no. 2,         times for CVD cluster tools with a dual end effector,’’ in Proc. Korean Oper.</div>
+<div id="L1005"><a href="#L1005">01005</a> [PDF p.22]      pp. 203–221, Jan. 1987.                                                              Res. Manage. Sci. Soc. Conf. Paper, vol. 1, Apr. 2000, pp. 107–110.</div>
+<div id="L1006"><a href="#L1006">01006</a> [PDF p.22]  [5] B. Jean-Luc and D. Bruno, ‘‘Contamination monitoring and analysis in            [29] B. K. Sun and K. R. Han, ‘‘Study on measurement of wafer processing</div>
+<div id="L1007"><a href="#L1007">01007</a> [PDF p.22]      semiconductor manufacturing,’’ in Semiconductor Technologies. Rijeka,                throughput and sequence simulation of SWP (single wafer process)</div>
+<div id="L1008"><a href="#L1008">01008</a> [PDF p.22]      Croatia: Intech, 1999, pp. 57–78.                                                    cleaning equipment,’’ Inst. Electron. Eng. Korea Comput. Inform., vol. 42,</div>
+<div id="L1009"><a href="#L1009">01009</a> [PDF p.22]  [6] W. M. Moreau, ‘‘Optical exposure,’’ in Semiconductor Lithography:                    no. 5, pp. 31–40, Sep. 2005.</div>
+<div id="L1010"><a href="#L1010">01010</a> [PDF p.22]      Principles, Practices, and Materials. New York, NY, USA: Springer, 1988,        [30] C. Hong and T.-E. Lee, ‘‘Modeling, simulation and supervisory control</div>
+<div id="L1011"><a href="#L1011">01011</a> [PDF p.22]      pp. 355–408.                                                                         of semiconductor manufacturing cluster tools with an equipment front-</div>
+<div id="L1012"><a href="#L1012">01012</a> [PDF p.22]  [7] S.-L. Chung and M. Jeng, ‘‘Manufacturing execution system (MES)                      end module,’’ in Proc. IEEE 16th Int. Conf. Autom. Sci. Eng. (CASE),</div>
+<div id="L1013"><a href="#L1013">01013</a> [PDF p.22]      for semiconductor manufacturing,’’ in Proc. IEEE Int. Conf. Syst., Man               Aug. 2020, pp. 703–709.</div>
+<div id="L1014"><a href="#L1014">01014</a> [PDF p.22]      Cybern., vol. 4, Oct. 2002, pp. 1–5.                                            [31] D. G. Chung, ‘‘Equipment engineering,’’ in MES Technology for Smart</div>
+<div id="L1015"><a href="#L1015">01015</a> [PDF p.22]  [8] L. Hsieh and T.-J. Hsieh, ‘‘A throughput management system for semicon-              Manufacturing. Gyeonggi-do, South Korea: Hanul Academy, 2022,</div>
+<div id="L1016"><a href="#L1016">01016</a> [PDF p.22]      ductor wafer fabrication facilities: Design, systems and implementation,’’           pp. 232–264.</div>
+<div id="L1017"><a href="#L1017">01017</a> [PDF p.22]      Processes, vol. 6, no. 2, p. 16, Feb. 2018.                                     [32] C.-F. Chien, C.-Y. Hsu, and P.-N. Chen, ‘‘Semiconductor fault detection</div>
+<div id="L1018"><a href="#L1018">01018</a> [PDF p.22]                                                                                           and classification for yield enhancement and manufacturing intelligence,’’</div>
+<div id="L1019"><a href="#L1019">01019</a> [PDF p.22]  [9] S. R. Ab Rahim, G. Haw, W. J. Lee, and O. Diehl, ‘‘Application of a</div>
+<div id="L1020"><a href="#L1020">01020</a> [PDF p.22]                                                                                           Flexible Services Manuf. J., vol. 25, no. 3, pp. 367–388, Sep. 2013.</div>
+<div id="L1021"><a href="#L1021">01021</a> [PDF p.22]      simulation model to forecast cycle time based on static model input,’’ in</div>
+<div id="L1022"><a href="#L1022">01022</a> [PDF p.22]                                                                                      [33] S. Yasuda, T. Tanaka, M. Kitabata, and Y. Jisaki, ‘‘Chamber and recipe-</div>
+<div id="L1023"><a href="#L1023">01023</a> [PDF p.22]      Proc. Winter Simulation Conf. (WSC), Dec. 2022, pp. 3372–3381.</div>
+<div id="L1024"><a href="#L1024">01024</a> [PDF p.22]                                                                                           independent FDC indicator in high-mix semiconductor manufacturing,’’</div>
+<div id="L1025"><a href="#L1025">01025</a> [PDF p.22] [10] L. M. Wein, ‘‘Scheduling semiconductor wafer fabrication,’’ IEEE Trans.              IEEE Trans. Semicond. Manuf., vol. 34, no. 3, pp. 301–306, Aug. 2021.</div>
+<div id="L1026"><a href="#L1026">01026</a> [PDF p.22]      Semicond. Manuf., vol. SM-1, no. 3, pp. 115–130, Aug. 1988.</div>
+<div id="L1027"><a href="#L1027">01027</a> [PDF p.22]                                                                                      [34] T. Tsuda, S. Inoue, A. Kayahara, S.-I. Imai, T. Tanaka, N. Sato, and</div>
+<div id="L1028"><a href="#L1028">01028</a> [PDF p.22] [11] Y.-M. Tu, ‘‘Short-term scheduling model of cluster tool in wafer                     S. Yasuda, ‘‘Advanced semiconductor manufacturing using big data,’’</div>
+<div id="L1029"><a href="#L1029">01029</a> [PDF p.22]      fabrication,’’ Mathematics, vol. 9, no. 9, p. 1029, May 2021.                        IEEE Trans. Semicond. Manuf., vol. 28, no. 3, pp. 229–235, Aug. 2015.</div>
+<div id="L1030"><a href="#L1030">01030</a> [PDF p.22] [12] Y. M. Tu, ‘‘Throughput estimation model of cluster tool in semiconductor        [35] G.-B. Kim, ‘‘Design and implementation of a hybrid equipment data</div>
+<div id="L1031"><a href="#L1031">01031</a> [PDF p.22]      manufacturing,’’ Key Eng. Mater., vol. 814, pp. 196–202, Sep. 2019.                  acquisition system (HEDAS) for equipment engineering System(EES)</div>
+<div id="L1032"><a href="#L1032">01032</a> [PDF p.22] [13] R. Kohn and O. Rose, ‘‘Automated generation of analytical process time               framework,’’ J. Korea Soc. Comput. Inf., vol. 17, no. 2, pp. 167–176,</div>
+<div id="L1033"><a href="#L1033">01033</a> [PDF p.22]      models for cluster tools in semiconductor manufacturing,’’ in Proc. Winter           Feb. 2012.</div>
+<div id="L1034"><a href="#L1034">01034</a> [PDF p.22]      Simulation Conf. (WSC), Dec. 2011, pp. 1803–1815.                               [36] N. Kim, H. Choi, J. Chun, and J. Jeong, ‘‘Introduction of equipment level</div>
+<div id="L1035"><a href="#L1035">01035</a> [PDF p.22] [14] Y.-F. Hung and R. C. Leachman, ‘‘Reduced simulation models of wafer                  FDC system for semiconductor wet-cleaning equipment optimization and</div>
+<div id="L1036"><a href="#L1036">01036</a> [PDF p.22]      fabrication facilities,’’ Int. J. Prod. Res., vol. 37, no. 12, pp. 2685–2701,        real-time fault detection,’’ in Proc. 33rd Annu. Semi Adv. Semiconductor</div>
+<div id="L1037"><a href="#L1037">01037</a> [PDF p.22]      Aug. 1999.                                                                           Manuf. Conf. (ASMC), May 2022, pp. 1–4.</div>
+<div id="L1038"><a href="#L1038">01038</a> [PDF p.22] </div>
+<div id="L1039"><a href="#L1039">01039</a> [PDF p.22] VOLUME 12, 2024                                                                                                                                               122099</div>
+<div id="L1040"><a href="#L1040">01040</a> [PDF p.22] </div>
+<div id="L1041"><a href="#L1041">01041</a> [PDF p.23]                                                                      J. Hwang, S. D. Noh: Digital Twin-Based Optimization of Operational Parameters for Cluster Tools</div>
+<div id="L1042"><a href="#L1042">01042</a> [PDF p.23] </div>
+<div id="L1043"><a href="#L1043">01043</a> [PDF p.23] </div>
+<div id="L1044"><a href="#L1044">01044</a> [PDF p.23] </div>
+<div id="L1045"><a href="#L1045">01045</a> [PDF p.23] </div>
+<div id="L1046"><a href="#L1046">01046</a> [PDF p.23] [37] Z. Zhang, G. Yeming, and G. Zailin, ‘‘Clearing function-based simulation          [55] P. Linz, ‘‘Finite automata,’’ in An Introduction to Formal Languages and</div>
+<div id="L1047"><a href="#L1047">01047</a> [PDF p.23]      optimization for release planning under digital twin wafer fabs,’’ IFAC-               Automata, 6th ed., Burlington, MA, USA: Jones &amp; Bartlett Learning, 2016,</div>
+<div id="L1048"><a href="#L1048">01048</a> [PDF p.23]      PapersOnLine, vol. 55, no. 10, pp. 2539–2544, 2022.                                    pp. 81–132.</div>
+<div id="L1049"><a href="#L1049">01049</a> [PDF p.23] [38] M. Grieves, ‘‘Digital twin: Manufacturing excellence through virtual              [56] D. H. Baek and C. H. Han, ‘‘Application of data mining for improving and</div>
+<div id="L1050"><a href="#L1050">01050</a> [PDF p.23]      factory replication,’’ White Paper, vol. 1, pp. 1–7, Mar. 2014.                        predicting yield in wafer fabrication system,’’ J. Korea Intell. Inform. Syst.</div>
+<div id="L1051"><a href="#L1051">01051</a> [PDF p.23] [39] F. Tao, H. Zhang, A. Liu, and A. Y. C. Nee, ‘‘Digital twin in industry: State-         Soc., vol. 9, no. 1, pp. 157–177, Apr. 2003.</div>
+<div id="L1052"><a href="#L1052">01052</a> [PDF p.23]      of-the-art,’’ IEEE Trans. Ind. Informat., vol. 15, no. 4, pp. 2405–2415,          [57] B. Selman and C. P. Gomes, ‘‘Hill-climbing search,’’ Encyclopedia Cogn.</div>
+<div id="L1053"><a href="#L1053">01053</a> [PDF p.23]      Apr. 2019.                                                                             Sci., vol. 81, p. 82, Jan. 2006.</div>
+<div id="L1054"><a href="#L1054">01054</a> [PDF p.23] [40] Y. H. Son, G.-Y. Kim, H. C. Kim, C. Jun, and S. D. Noh, ‘‘Past, present,          [58] T.-H. Pan, D. S. Wong, and S.-S. Jang, ‘‘Chamber matching of</div>
+<div id="L1055"><a href="#L1055">01055</a> [PDF p.23]      and future research of digital twin for smart manufacturing,’’ J. Comput.              semiconductor manufacturing process using statistical analysis,’’ IEEE</div>
+<div id="L1056"><a href="#L1056">01056</a> [PDF p.23]      Design Eng., vol. 9, no. 1, pp. 1–23, Dec. 2021.                                       Trans. Syst., Man, Cybern. C, Appl. Rev., vol. 42, no. 4, pp. 571–576,</div>
+<div id="L1057"><a href="#L1057">01057</a> [PDF p.23] [41] Y. Lu, C. Liu, K. I.-K. Wang, H. Huang, and X. Xu, ‘‘Digital twin-                     Jul. 2012.</div>
+<div id="L1058"><a href="#L1058">01058</a> [PDF p.23]      driven smart manufacturing: Connotation, reference model, applications            [59] K. H. Baek, K. P. Han, G. Choi, H.-K. Kang, E. S. Jung, K. Song,</div>
+<div id="L1059"><a href="#L1059">01059</a> [PDF p.23]      and research issues,’’ Robot. Comput.-Integr. Manuf., vol. 61, Feb. 2020,              C. Han, and T. F. Edgar, ‘‘Multiple input multiple output controller design</div>
+<div id="L1060"><a href="#L1060">01060</a> [PDF p.23]      Art. no. 101837.                                                                       to match chamber performance in plasma etching for semiconductor man-</div>
+<div id="L1061"><a href="#L1061">01061</a> [PDF p.23] [42] L. Wright and S. Davidson, ‘‘How to tell the difference between a model                ufacturing,’’ J. Vac. Sci. Technol. B, Nanotechnol. Microelectron., Mater.,</div>
+<div id="L1062"><a href="#L1062">01062</a> [PDF p.23]      and a digital twin,’’ Adv. Model. Simul. Eng. Sci., vol. 7, no. 1, pp. 1–13,           Process., Meas., Phenomena, vol. 31, no. 6, Nov. 2013, Art. no. 062201.</div>
+<div id="L1063"><a href="#L1063">01063</a> [PDF p.23]      Dec. 2020.                                                                        [60] D.-G. Ha, J.-M. Koo, D.-D. Park, and C.-H. Han, ‘‘APC technique and</div>
+<div id="L1064"><a href="#L1064">01064</a> [PDF p.23] [43] A. Rasheed, O. San, and T. Kvamsdal, ‘‘Digital twin: Values, challenges                fault detection and classification system in semiconductor manufacturing</div>
+<div id="L1065"><a href="#L1065">01065</a> [PDF p.23]      and enablers from a modeling perspective,’’ IEEE Access, vol. 8,                       process,’’ J. Inst. Control, Robot. Syst., vol. 21, no. 9, pp. 875–880,</div>
+<div id="L1066"><a href="#L1066">01066</a> [PDF p.23]      pp. 21980–22012, 2020.                                                                 Sep. 2015.</div>
+<div id="L1067"><a href="#L1067">01067</a> [PDF p.23] [44] F. Haddod and A. Dingli, ‘‘Intelligent digital twin system in the</div>
+<div id="L1068"><a href="#L1068">01068</a> [PDF p.23]      semiconductors manufacturing industry,’’ in Artificial Intelligence in</div>
+<div id="L1069"><a href="#L1069">01069</a> [PDF p.23]      Industry 4.0: A Collection of Innovative Research Case-Studies That</div>
+<div id="L1070"><a href="#L1070">01070</a> [PDF p.23]      are Reworking the Way We Look at Industry 4.0 Thanks to Artificial</div>
+<div id="L1071"><a href="#L1071">01071</a> [PDF p.23]      Intelligence. Cham, Switzerland: Springer, 2021, pp. 99–113.</div>
+<div id="L1072"><a href="#L1072">01072</a> [PDF p.23] [45] P. C. Deenen, R. A. M. Adriaensen, and J. W. Fowler, ‘‘Building a digital</div>
+<div id="L1073"><a href="#L1073">01073</a> [PDF p.23]      twin of the photolithography area of a real-world wafer FAB to validate</div>
+<div id="L1074"><a href="#L1074">01074</a> [PDF p.23]      improved production control,’’ in Proc. Winter Simulation Conf. (WSC),</div>
+<div id="L1075"><a href="#L1075">01075</a> [PDF p.23]      Dec. 2022, pp. 3394–3405.</div>
+<div id="L1076"><a href="#L1076">01076</a> [PDF p.23]                                                                                                                    JOONICK HWANG received the B.S. degree</div>
+<div id="L1077"><a href="#L1077">01077</a> [PDF p.23] [46] C. K. Sivasubramanian, R. Dodge, A. Ramani, D. Bayba, M. Janakiram,</div>
+<div id="L1078"><a href="#L1078">01078</a> [PDF p.23]      E. Butcher, J. Gonzales, and G. Pedrielli, ‘‘DTFab: A digital twin based                                      in electrical engineering from Soongsil Uni-</div>
+<div id="L1079"><a href="#L1079">01079</a> [PDF p.23]      approach for optimal reticle management in semiconductor photolithogra-                                       versity, South Korea. He is currently pursuing</div>
+<div id="L1080"><a href="#L1080">01080</a> [PDF p.23]      phy,’’ J. Syst. Sci. Syst. Eng., vol. 32, no. 3, pp. 320–351, Jun. 2023.                                      the M.S. degree with Sungkyunkwan Univer-</div>
+<div id="L1081"><a href="#L1081">01081</a> [PDF p.23] [47] N. Bratovanov, ‘‘Implementation of pick-and-place algorithms for the                                          sity, South Korea. His professional background</div>
+<div id="L1082"><a href="#L1082">01082</a> [PDF p.23]      purposes of wafer handling robotics simulations,’’ in Proc. 3rd Int. Congr.                                   includes significant industry experience as an</div>
+<div id="L1083"><a href="#L1083">01083</a> [PDF p.23]      Human-Comput. Interact., Optim. Robotic Appl. (HORA), Jun. 2021,                                              Equipment Engineer with Samsung Electronics</div>
+<div id="L1084"><a href="#L1084">01084</a> [PDF p.23]      pp. 1–5.                                                                                                      Company Ltd. His current research interests</div>
+<div id="L1085"><a href="#L1085">01085</a> [PDF p.23] [48] A. F. Nicolescu, G. Enciu, A. Ivan, G. C. Avram, and D. A. Marinescu,                                         include digital twins, cyber-physical systems,</div>
+<div id="L1086"><a href="#L1086">01086</a> [PDF p.23]      ‘‘Wafer manipulating robots-design, programming and simulation,’’ in                                          smart manufacturing, and data analytics.</div>
+<div id="L1087"><a href="#L1087">01087</a> [PDF p.23]      Sensors, Signals, Visualization, Imaging, Simulation and Materials.</div>
+<div id="L1088"><a href="#L1088">01088</a> [PDF p.23]      Houston, TX, USA: WSEAS, 2009, pp. 139–144.</div>
+<div id="L1089"><a href="#L1089">01089</a> [PDF p.23] [49] S. A. Laghari, S. Manickam, and S. Karuppayah, ‘‘A review on</div>
+<div id="L1090"><a href="#L1090">01090</a> [PDF p.23]      SECS/GEM: A machine-to-machine (M2M) communication protocol for</div>
+<div id="L1091"><a href="#L1091">01091</a> [PDF p.23]      Industry 4.0,’’ Int. J. Electr. Electron. Eng. Telecommun., vol. 10, no. 2,</div>
+<div id="L1092"><a href="#L1092">01092</a> [PDF p.23]      pp. 105–114, 2021.</div>
+<div id="L1093"><a href="#L1093">01093</a> [PDF p.23] [50] S.-I. Imai, N. Sato, M. Kitabata, and S. Yasuda, ‘‘Fab-wide equipment</div>
+<div id="L1094"><a href="#L1094">01094</a> [PDF p.23]      monitoring and FDC system,’’ in Proc. IEEE Int. Symp. Semiconductor</div>
+<div id="L1095"><a href="#L1095">01095</a> [PDF p.23]      Manuf., Sep. 2006, pp. 114–117.</div>
+<div id="L1096"><a href="#L1096">01096</a> [PDF p.23]                                                                                                                    SANG DO NOH received the Ph.D. degree in</div>
+<div id="L1097"><a href="#L1097">01097</a> [PDF p.23] [51] P. Wegner, ‘‘Concepts and paradigms of object-oriented programming,’’</div>
+<div id="L1098"><a href="#L1098">01098</a> [PDF p.23]                                                                                                                    mechanical design and production engineering</div>
+<div id="L1099"><a href="#L1099">01099</a> [PDF p.23]      ACM SIGPLAN OOPS Messenger, vol. 1, no. 1, pp. 7–87, Aug. 1990.</div>
+<div id="L1100"><a href="#L1100">01100</a> [PDF p.23]                                                                                                                    from Seoul National University, South Korea.</div>
+<div id="L1101"><a href="#L1101">01101</a> [PDF p.23] [52] W. Kozaczynski and G. Booch, ‘‘Component-based software engineering,’’</div>
+<div id="L1102"><a href="#L1102">01102</a> [PDF p.23]      IEEE Softw., vol. 15, no. 5, p. 34, Sep. 1998.                                                                He is currently a Professor with the Depart-</div>
+<div id="L1103"><a href="#L1103">01103</a> [PDF p.23] [53] I. Crnkovic, ‘‘Component-based software engineering-new challenges                                            ment of Industrial Engineering, Sungkyunkwan</div>
+<div id="L1104"><a href="#L1104">01104</a> [PDF p.23]      in software development,’’ Softw. Focus, vol. 2, no. 4, pp. 127–133,                                          University, South Korea. His major research</div>
+<div id="L1105"><a href="#L1105">01105</a> [PDF p.23]      Dec. 2001.                                                                                                    interests include CAD/CAM/PLM, modeling and</div>
+<div id="L1106"><a href="#L1106">01106</a> [PDF p.23] [54] F. Wagner, R. Schmuki, T. Wagner, and P. Wolstenholme, ‘‘Introduction,                                        simulation of manufacturing systems, smart manu-</div>
+<div id="L1107"><a href="#L1107">01107</a> [PDF p.23]      definitions, and notation,’’ in Modeling Software With Finite State                                           facturing, smart factories, cyber-physical systems,</div>
+<div id="L1108"><a href="#L1108">01108</a> [PDF p.23]      Machines: A Practical Approach. Boca Raton, FL, USA: Auerbach, 2006,                                          and digital twins.</div>
+<div id="L1109"><a href="#L1109">01109</a> [PDF p.23]      pp. 63–76.</div>
+<div id="L1110"><a href="#L1110">01110</a> [PDF p.23] </div>
+<div id="L1111"><a href="#L1111">01111</a> [PDF p.23] </div>
+<div id="L1112"><a href="#L1112">01112</a> [PDF p.23] </div>
+<div id="L1113"><a href="#L1113">01113</a> [PDF p.23] </div>
+<div id="L1114"><a href="#L1114">01114</a> [PDF p.23] 122100                                                                                                                                                   VOLUME 12, 2024</div>
+<div id="L1115"><a href="#L1115">01115</a> [PDF p.23] </div></pre>

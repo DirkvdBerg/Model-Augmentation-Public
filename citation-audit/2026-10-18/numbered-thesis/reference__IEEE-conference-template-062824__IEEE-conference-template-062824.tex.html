@@ -1,0 +1,293 @@
+<meta charset="utf-8"><title>reference/IEEE-conference-template-062824/IEEE-conference-template-062824.tex</title><pre><div id="L1"><a href="#L1">0001</a> \documentclass[conference]{IEEEtran}</div>
+<div id="L2"><a href="#L2">0002</a> \IEEEoverridecommandlockouts</div>
+<div id="L3"><a href="#L3">0003</a> % The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.</div>
+<div id="L4"><a href="#L4">0004</a> %Template version as of 6/27/2024</div>
+<div id="L5"><a href="#L5">0005</a> </div>
+<div id="L6"><a href="#L6">0006</a> \usepackage{cite}</div>
+<div id="L7"><a href="#L7">0007</a> \usepackage{amsmath,amssymb,amsfonts}</div>
+<div id="L8"><a href="#L8">0008</a> \usepackage{algorithmic}</div>
+<div id="L9"><a href="#L9">0009</a> \usepackage{graphicx}</div>
+<div id="L10"><a href="#L10">0010</a> \usepackage{textcomp}</div>
+<div id="L11"><a href="#L11">0011</a> \usepackage{xcolor}</div>
+<div id="L12"><a href="#L12">0012</a> \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em</div>
+<div id="L13"><a href="#L13">0013</a>     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}</div>
+<div id="L14"><a href="#L14">0014</a> \begin{document}</div>
+<div id="L15"><a href="#L15">0015</a> </div>
+<div id="L16"><a href="#L16">0016</a> \title{Conference Paper Title*\\</div>
+<div id="L17"><a href="#L17">0017</a> {\footnotesize \textsuperscript{*}Note: Sub-titles are not captured for https://ieeexplore.ieee.org  and</div>
+<div id="L18"><a href="#L18">0018</a> should not be used}</div>
+<div id="L19"><a href="#L19">0019</a> \thanks{Identify applicable funding agency here. If none, delete this.}</div>
+<div id="L20"><a href="#L20">0020</a> }</div>
+<div id="L21"><a href="#L21">0021</a> </div>
+<div id="L22"><a href="#L22">0022</a> \author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}</div>
+<div id="L23"><a href="#L23">0023</a> \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\</div>
+<div id="L24"><a href="#L24">0024</a> \textit{name of organization (of Aff.)}\\</div>
+<div id="L25"><a href="#L25">0025</a> City, Country \\</div>
+<div id="L26"><a href="#L26">0026</a> email address or ORCID}</div>
+<div id="L27"><a href="#L27">0027</a> \and</div>
+<div id="L28"><a href="#L28">0028</a> \IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}</div>
+<div id="L29"><a href="#L29">0029</a> \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\</div>
+<div id="L30"><a href="#L30">0030</a> \textit{name of organization (of Aff.)}\\</div>
+<div id="L31"><a href="#L31">0031</a> City, Country \\</div>
+<div id="L32"><a href="#L32">0032</a> email address or ORCID}</div>
+<div id="L33"><a href="#L33">0033</a> \and</div>
+<div id="L34"><a href="#L34">0034</a> \IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}</div>
+<div id="L35"><a href="#L35">0035</a> \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\</div>
+<div id="L36"><a href="#L36">0036</a> \textit{name of organization (of Aff.)}\\</div>
+<div id="L37"><a href="#L37">0037</a> City, Country \\</div>
+<div id="L38"><a href="#L38">0038</a> email address or ORCID}</div>
+<div id="L39"><a href="#L39">0039</a> \and</div>
+<div id="L40"><a href="#L40">0040</a> \IEEEauthorblockN{4\textsuperscript{th} Given Name Surname}</div>
+<div id="L41"><a href="#L41">0041</a> \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\</div>
+<div id="L42"><a href="#L42">0042</a> \textit{name of organization (of Aff.)}\\</div>
+<div id="L43"><a href="#L43">0043</a> City, Country \\</div>
+<div id="L44"><a href="#L44">0044</a> email address or ORCID}</div>
+<div id="L45"><a href="#L45">0045</a> \and</div>
+<div id="L46"><a href="#L46">0046</a> \IEEEauthorblockN{5\textsuperscript{th} Given Name Surname}</div>
+<div id="L47"><a href="#L47">0047</a> \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\</div>
+<div id="L48"><a href="#L48">0048</a> \textit{name of organization (of Aff.)}\\</div>
+<div id="L49"><a href="#L49">0049</a> City, Country \\</div>
+<div id="L50"><a href="#L50">0050</a> email address or ORCID}</div>
+<div id="L51"><a href="#L51">0051</a> \and</div>
+<div id="L52"><a href="#L52">0052</a> \IEEEauthorblockN{6\textsuperscript{th} Given Name Surname}</div>
+<div id="L53"><a href="#L53">0053</a> \IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\</div>
+<div id="L54"><a href="#L54">0054</a> \textit{name of organization (of Aff.)}\\</div>
+<div id="L55"><a href="#L55">0055</a> City, Country \\</div>
+<div id="L56"><a href="#L56">0056</a> email address or ORCID}</div>
+<div id="L57"><a href="#L57">0057</a> }</div>
+<div id="L58"><a href="#L58">0058</a> </div>
+<div id="L59"><a href="#L59">0059</a> \maketitle</div>
+<div id="L60"><a href="#L60">0060</a> </div>
+<div id="L61"><a href="#L61">0061</a> \begin{abstract}</div>
+<div id="L62"><a href="#L62">0062</a> This document is a model and instructions for \LaTeX.</div>
+<div id="L63"><a href="#L63">0063</a> This and the IEEEtran.cls file define the components of your paper [title, text, heads, etc.]. *CRITICAL: Do Not Use Symbols, Special Characters, Footnotes, </div>
+<div id="L64"><a href="#L64">0064</a> or Math in Paper Title or Abstract.</div>
+<div id="L65"><a href="#L65">0065</a> \end{abstract}</div>
+<div id="L66"><a href="#L66">0066</a> </div>
+<div id="L67"><a href="#L67">0067</a> \begin{IEEEkeywords}</div>
+<div id="L68"><a href="#L68">0068</a> component, formatting, style, styling, insert.</div>
+<div id="L69"><a href="#L69">0069</a> \end{IEEEkeywords}</div>
+<div id="L70"><a href="#L70">0070</a> </div>
+<div id="L71"><a href="#L71">0071</a> \section{Introduction}</div>
+<div id="L72"><a href="#L72">0072</a> This document is a model and instructions for \LaTeX.</div>
+<div id="L73"><a href="#L73">0073</a> Please observe the conference page limits. For more information about how to become an IEEE Conference author or how to write your paper, please visit   IEEE Conference Author Center website: https://conferences.ieeeauthorcenter.ieee.org/.</div>
+<div id="L74"><a href="#L74">0074</a> </div>
+<div id="L75"><a href="#L75">0075</a> \subsection{Maintaining the Integrity of the Specifications}</div>
+<div id="L76"><a href="#L76">0076</a> </div>
+<div id="L77"><a href="#L77">0077</a> The IEEEtran class file is used to format your paper and style the text. All margins, </div>
+<div id="L78"><a href="#L78">0078</a> column widths, line spaces, and text fonts are prescribed; please do not </div>
+<div id="L79"><a href="#L79">0079</a> alter them. You may note peculiarities. For example, the head margin</div>
+<div id="L80"><a href="#L80">0080</a> measures proportionately more than is customary. This measurement </div>
+<div id="L81"><a href="#L81">0081</a> and others are deliberate, using specifications that anticipate your paper </div>
+<div id="L82"><a href="#L82">0082</a> as one part of the entire proceedings, and not as an independent document. </div>
+<div id="L83"><a href="#L83">0083</a> Please do not revise any of the current designations.</div>
+<div id="L84"><a href="#L84">0084</a> </div>
+<div id="L85"><a href="#L85">0085</a> \section{Prepare Your Paper Before Styling}</div>
+<div id="L86"><a href="#L86">0086</a> Before you begin to format your paper, first write and save the content as a </div>
+<div id="L87"><a href="#L87">0087</a> separate text file. Complete all content and organizational editing before </div>
+<div id="L88"><a href="#L88">0088</a> formatting. Please note sections \ref{AA} to \ref{FAT} below for more information on </div>
+<div id="L89"><a href="#L89">0089</a> proofreading, spelling and grammar.</div>
+<div id="L90"><a href="#L90">0090</a> </div>
+<div id="L91"><a href="#L91">0091</a> Keep your text and graphic files separate until after the text has been </div>
+<div id="L92"><a href="#L92">0092</a> formatted and styled. Do not number text heads---{\LaTeX} will do that </div>
+<div id="L93"><a href="#L93">0093</a> for you.</div>
+<div id="L94"><a href="#L94">0094</a> </div>
+<div id="L95"><a href="#L95">0095</a> \subsection{Abbreviations and Acronyms}\label{AA}</div>
+<div id="L96"><a href="#L96">0096</a> Define abbreviations and acronyms the first time they are used in the text, </div>
+<div id="L97"><a href="#L97">0097</a> even after they have been defined in the abstract. Abbreviations such as </div>
+<div id="L98"><a href="#L98">0098</a> IEEE, SI, MKS, CGS, ac, dc, and rms do not have to be defined. Do not use </div>
+<div id="L99"><a href="#L99">0099</a> abbreviations in the title or heads unless they are unavoidable.</div>
+<div id="L100"><a href="#L100">0100</a> </div>
+<div id="L101"><a href="#L101">0101</a> \subsection{Units}</div>
+<div id="L102"><a href="#L102">0102</a> \begin{itemize}</div>
+<div id="L103"><a href="#L103">0103</a> \item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as ``3.5-inch disk drive&#x27;&#x27;.</div>
+<div id="L104"><a href="#L104">0104</a> \item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.</div>
+<div id="L105"><a href="#L105">0105</a> \item Do not mix complete spellings and abbreviations of units: ``Wb/m\textsuperscript{2}&#x27;&#x27; or ``webers per square meter&#x27;&#x27;, not ``webers/m\textsuperscript{2}&#x27;&#x27;. Spell out units when they appear in text: ``. . . a few henries&#x27;&#x27;, not ``. . . a few H&#x27;&#x27;.</div>
+<div id="L106"><a href="#L106">0106</a> \item Use a zero before decimal points: ``0.25&#x27;&#x27;, not ``.25&#x27;&#x27;. Use ``cm\textsuperscript{3}&#x27;&#x27;, not ``cc&#x27;&#x27;.)</div>
+<div id="L107"><a href="#L107">0107</a> \end{itemize}</div>
+<div id="L108"><a href="#L108">0108</a> </div>
+<div id="L109"><a href="#L109">0109</a> \subsection{Equations}</div>
+<div id="L110"><a href="#L110">0110</a> Number equations consecutively. To make your </div>
+<div id="L111"><a href="#L111">0111</a> equations more compact, you may use the solidus (~/~), the exp function, or </div>
+<div id="L112"><a href="#L112">0112</a> appropriate exponents. Italicize Roman symbols for quantities and variables, </div>
+<div id="L113"><a href="#L113">0113</a> but not Greek symbols. Use a long dash rather than a hyphen for a minus </div>
+<div id="L114"><a href="#L114">0114</a> sign. Punctuate equations with commas or periods when they are part of a </div>
+<div id="L115"><a href="#L115">0115</a> sentence, as in:</div>
+<div id="L116"><a href="#L116">0116</a> \begin{equation}</div>
+<div id="L117"><a href="#L117">0117</a> a+b=\gamma\label{eq}</div>
+<div id="L118"><a href="#L118">0118</a> \end{equation}</div>
+<div id="L119"><a href="#L119">0119</a> </div>
+<div id="L120"><a href="#L120">0120</a> Be sure that the </div>
+<div id="L121"><a href="#L121">0121</a> symbols in your equation have been defined before or immediately following </div>
+<div id="L122"><a href="#L122">0122</a> the equation. Use ``\eqref{eq}&#x27;&#x27;, not ``Eq.~\eqref{eq}&#x27;&#x27; or ``equation \eqref{eq}&#x27;&#x27;, except at </div>
+<div id="L123"><a href="#L123">0123</a> the beginning of a sentence: ``Equation \eqref{eq} is . . .&#x27;&#x27;</div>
+<div id="L124"><a href="#L124">0124</a> </div>
+<div id="L125"><a href="#L125">0125</a> \subsection{\LaTeX-Specific Advice}</div>
+<div id="L126"><a href="#L126">0126</a> </div>
+<div id="L127"><a href="#L127">0127</a> Please use ``soft&#x27;&#x27; (e.g., \verb|\eqref{Eq}|) cross references instead</div>
+<div id="L128"><a href="#L128">0128</a> of ``hard&#x27;&#x27; references (e.g., \verb|(1)|). That will make it possible</div>
+<div id="L129"><a href="#L129">0129</a> to combine sections, add equations, or change the order of figures or</div>
+<div id="L130"><a href="#L130">0130</a> citations without having to go through the file line by line.</div>
+<div id="L131"><a href="#L131">0131</a> </div>
+<div id="L132"><a href="#L132">0132</a> Please don&#x27;t use the \verb|{eqnarray}| equation environment. Use</div>
+<div id="L133"><a href="#L133">0133</a> \verb|{align}| or \verb|{IEEEeqnarray}| instead. The \verb|{eqnarray}|</div>
+<div id="L134"><a href="#L134">0134</a> environment leaves unsightly spaces around relation symbols.</div>
+<div id="L135"><a href="#L135">0135</a> </div>
+<div id="L136"><a href="#L136">0136</a> Please note that the \verb|{subequations}| environment in {\LaTeX}</div>
+<div id="L137"><a href="#L137">0137</a> will increment the main equation counter even when there are no</div>
+<div id="L138"><a href="#L138">0138</a> equation numbers displayed. If you forget that, you might write an</div>
+<div id="L139"><a href="#L139">0139</a> article in which the equation numbers skip from (17) to (20), causing</div>
+<div id="L140"><a href="#L140">0140</a> the copy editors to wonder if you&#x27;ve discovered a new method of</div>
+<div id="L141"><a href="#L141">0141</a> counting.</div>
+<div id="L142"><a href="#L142">0142</a> </div>
+<div id="L143"><a href="#L143">0143</a> {\BibTeX} does not work by magic. It doesn&#x27;t get the bibliographic</div>
+<div id="L144"><a href="#L144">0144</a> data from thin air but from .bib files. If you use {\BibTeX} to produce a</div>
+<div id="L145"><a href="#L145">0145</a> bibliography you must send the .bib files. </div>
+<div id="L146"><a href="#L146">0146</a> </div>
+<div id="L147"><a href="#L147">0147</a> {\LaTeX} can&#x27;t read your mind. If you assign the same label to a</div>
+<div id="L148"><a href="#L148">0148</a> subsubsection and a table, you might find that Table I has been cross</div>
+<div id="L149"><a href="#L149">0149</a> referenced as Table IV-B3. </div>
+<div id="L150"><a href="#L150">0150</a> </div>
+<div id="L151"><a href="#L151">0151</a> {\LaTeX} does not have precognitive abilities. If you put a</div>
+<div id="L152"><a href="#L152">0152</a> \verb|\label| command before the command that updates the counter it&#x27;s</div>
+<div id="L153"><a href="#L153">0153</a> supposed to be using, the label will pick up the last counter to be</div>
+<div id="L154"><a href="#L154">0154</a> cross referenced instead. In particular, a \verb|\label| command</div>
+<div id="L155"><a href="#L155">0155</a> should not go before the caption of a figure or a table.</div>
+<div id="L156"><a href="#L156">0156</a> </div>
+<div id="L157"><a href="#L157">0157</a> Do not use \verb|\nonumber| inside the \verb|{array}| environment. It</div>
+<div id="L158"><a href="#L158">0158</a> will not stop equation numbers inside \verb|{array}| (there won&#x27;t be</div>
+<div id="L159"><a href="#L159">0159</a> any anyway) and it might stop a wanted equation number in the</div>
+<div id="L160"><a href="#L160">0160</a> surrounding equation.</div>
+<div id="L161"><a href="#L161">0161</a> </div>
+<div id="L162"><a href="#L162">0162</a> \subsection{Some Common Mistakes}\label{SCM}</div>
+<div id="L163"><a href="#L163">0163</a> \begin{itemize}</div>
+<div id="L164"><a href="#L164">0164</a> \item The word ``data&#x27;&#x27; is plural, not singular.</div>
+<div id="L165"><a href="#L165">0165</a> \item The subscript for the permeability of vacuum $\mu_{0}$, and other common scientific constants, is zero with subscript formatting, not a lowercase letter ``o&#x27;&#x27;.</div>
+<div id="L166"><a href="#L166">0166</a> \item In American English, commas, semicolons, periods, question and exclamation marks are located within quotation marks only when a complete thought or name is cited, such as a title or full quotation. When quotation marks are used, instead of a bold or italic typeface, to highlight a word or phrase, punctuation should appear outside of the quotation marks. A parenthetical phrase or statement at the end of a sentence is punctuated outside of the closing parenthesis (like this). (A parenthetical sentence is punctuated within the parentheses.)</div>
+<div id="L167"><a href="#L167">0167</a> \item A graph within a graph is an ``inset&#x27;&#x27;, not an ``insert&#x27;&#x27;. The word alternatively is preferred to the word ``alternately&#x27;&#x27; (unless you really mean something that alternates).</div>
+<div id="L168"><a href="#L168">0168</a> \item Do not use the word ``essentially&#x27;&#x27; to mean ``approximately&#x27;&#x27; or ``effectively&#x27;&#x27;.</div>
+<div id="L169"><a href="#L169">0169</a> \item In your paper title, if the words ``that uses&#x27;&#x27; can accurately replace the word ``using&#x27;&#x27;, capitalize the ``u&#x27;&#x27;; if not, keep using lower-cased.</div>
+<div id="L170"><a href="#L170">0170</a> \item Be aware of the different meanings of the homophones ``affect&#x27;&#x27; and ``effect&#x27;&#x27;, ``complement&#x27;&#x27; and ``compliment&#x27;&#x27;, ``discreet&#x27;&#x27; and ``discrete&#x27;&#x27;, ``principal&#x27;&#x27; and ``principle&#x27;&#x27;.</div>
+<div id="L171"><a href="#L171">0171</a> \item Do not confuse ``imply&#x27;&#x27; and ``infer&#x27;&#x27;.</div>
+<div id="L172"><a href="#L172">0172</a> \item The prefix ``non&#x27;&#x27; is not a word; it should be joined to the word it modifies, usually without a hyphen.</div>
+<div id="L173"><a href="#L173">0173</a> \item There is no period after the ``et&#x27;&#x27; in the Latin abbreviation ``et al.&#x27;&#x27;.</div>
+<div id="L174"><a href="#L174">0174</a> \item The abbreviation ``i.e.&#x27;&#x27; means ``that is&#x27;&#x27;, and the abbreviation ``e.g.&#x27;&#x27; means ``for example&#x27;&#x27;.</div>
+<div id="L175"><a href="#L175">0175</a> \end{itemize}</div>
+<div id="L176"><a href="#L176">0176</a> An excellent style manual for science writers is \cite{b7}.</div>
+<div id="L177"><a href="#L177">0177</a> </div>
+<div id="L178"><a href="#L178">0178</a> \subsection{Authors and Affiliations}\label{AAA}</div>
+<div id="L179"><a href="#L179">0179</a> \textbf{The class file is designed for, but not limited to, six authors.} A </div>
+<div id="L180"><a href="#L180">0180</a> minimum of one author is required for all conference articles. Author names </div>
+<div id="L181"><a href="#L181">0181</a> should be listed starting from left to right and then moving down to the </div>
+<div id="L182"><a href="#L182">0182</a> next line. This is the author sequence that will be used in future citations </div>
+<div id="L183"><a href="#L183">0183</a> and by indexing services. Names should not be listed in columns nor group by </div>
+<div id="L184"><a href="#L184">0184</a> affiliation. Please keep your affiliations as succinct as possible (for </div>
+<div id="L185"><a href="#L185">0185</a> example, do not differentiate among departments of the same organization).</div>
+<div id="L186"><a href="#L186">0186</a> </div>
+<div id="L187"><a href="#L187">0187</a> \subsection{Identify the Headings}\label{ITH}</div>
+<div id="L188"><a href="#L188">0188</a> Headings, or heads, are organizational devices that guide the reader through </div>
+<div id="L189"><a href="#L189">0189</a> your paper. There are two types: component heads and text heads.</div>
+<div id="L190"><a href="#L190">0190</a> </div>
+<div id="L191"><a href="#L191">0191</a> Component heads identify the different components of your paper and are not </div>
+<div id="L192"><a href="#L192">0192</a> topically subordinate to each other. Examples include Acknowledgments and </div>
+<div id="L193"><a href="#L193">0193</a> References and, for these, the correct style to use is ``Heading 5&#x27;&#x27;. Use </div>
+<div id="L194"><a href="#L194">0194</a> ``figure caption&#x27;&#x27; for your Figure captions, and ``table head&#x27;&#x27; for your </div>
+<div id="L195"><a href="#L195">0195</a> table title. Run-in heads, such as ``Abstract&#x27;&#x27;, will require you to apply a </div>
+<div id="L196"><a href="#L196">0196</a> style (in this case, italic) in addition to the style provided by the drop </div>
+<div id="L197"><a href="#L197">0197</a> down menu to differentiate the head from the text.</div>
+<div id="L198"><a href="#L198">0198</a> </div>
+<div id="L199"><a href="#L199">0199</a> Text heads organize the topics on a relational, hierarchical basis. For </div>
+<div id="L200"><a href="#L200">0200</a> example, the paper title is the primary text head because all subsequent </div>
+<div id="L201"><a href="#L201">0201</a> material relates and elaborates on this one topic. If there are two or more </div>
+<div id="L202"><a href="#L202">0202</a> sub-topics, the next level head (uppercase Roman numerals) should be used </div>
+<div id="L203"><a href="#L203">0203</a> and, conversely, if there are not at least two sub-topics, then no subheads </div>
+<div id="L204"><a href="#L204">0204</a> should be introduced.</div>
+<div id="L205"><a href="#L205">0205</a> </div>
+<div id="L206"><a href="#L206">0206</a> \subsection{Figures and Tables}\label{FAT}</div>
+<div id="L207"><a href="#L207">0207</a> \paragraph{Positioning Figures and Tables} Place figures and tables at the top and </div>
+<div id="L208"><a href="#L208">0208</a> bottom of columns. Avoid placing them in the middle of columns. Large </div>
+<div id="L209"><a href="#L209">0209</a> figures and tables may span across both columns. Figure captions should be </div>
+<div id="L210"><a href="#L210">0210</a> below the figures; table heads should appear above the tables. Insert </div>
+<div id="L211"><a href="#L211">0211</a> figures and tables after they are cited in the text. Use the abbreviation </div>
+<div id="L212"><a href="#L212">0212</a> ``Fig.~\ref{fig}&#x27;&#x27;, even at the beginning of a sentence.</div>
+<div id="L213"><a href="#L213">0213</a> </div>
+<div id="L214"><a href="#L214">0214</a> \begin{table}[htbp]</div>
+<div id="L215"><a href="#L215">0215</a> \caption{Table Type Styles}</div>
+<div id="L216"><a href="#L216">0216</a> \begin{center}</div>
+<div id="L217"><a href="#L217">0217</a> \begin{tabular}{|c|c|c|c|}</div>
+<div id="L218"><a href="#L218">0218</a> \hline</div>
+<div id="L219"><a href="#L219">0219</a> \textbf{Table}&amp;\multicolumn{3}{|c|}{\textbf{Table Column Head}} \\</div>
+<div id="L220"><a href="#L220">0220</a> \cline{2-4} </div>
+<div id="L221"><a href="#L221">0221</a> \textbf{Head} &amp; \textbf{\textit{Table column subhead}}&amp; \textbf{\textit{Subhead}}&amp; \textbf{\textit{Subhead}} \\</div>
+<div id="L222"><a href="#L222">0222</a> \hline</div>
+<div id="L223"><a href="#L223">0223</a> copy&amp; More table copy$^{\mathrm{a}}$&amp; &amp;  \\</div>
+<div id="L224"><a href="#L224">0224</a> \hline</div>
+<div id="L225"><a href="#L225">0225</a> \multicolumn{4}{l}{$^{\mathrm{a}}$Sample of a Table footnote.}</div>
+<div id="L226"><a href="#L226">0226</a> \end{tabular}</div>
+<div id="L227"><a href="#L227">0227</a> \label{tab1}</div>
+<div id="L228"><a href="#L228">0228</a> \end{center}</div>
+<div id="L229"><a href="#L229">0229</a> \end{table}</div>
+<div id="L230"><a href="#L230">0230</a> </div>
+<div id="L231"><a href="#L231">0231</a> \begin{figure}[htbp]</div>
+<div id="L232"><a href="#L232">0232</a> \centerline{\includegraphics{fig1.png}}</div>
+<div id="L233"><a href="#L233">0233</a> \caption{Example of a figure caption.}</div>
+<div id="L234"><a href="#L234">0234</a> \label{fig}</div>
+<div id="L235"><a href="#L235">0235</a> \end{figure}</div>
+<div id="L236"><a href="#L236">0236</a> </div>
+<div id="L237"><a href="#L237">0237</a> Figure Labels: Use 8 point Times New Roman for Figure labels. Use words </div>
+<div id="L238"><a href="#L238">0238</a> rather than symbols or abbreviations when writing Figure axis labels to </div>
+<div id="L239"><a href="#L239">0239</a> avoid confusing the reader. As an example, write the quantity </div>
+<div id="L240"><a href="#L240">0240</a> ``Magnetization&#x27;&#x27;, or ``Magnetization, M&#x27;&#x27;, not just ``M&#x27;&#x27;. If including </div>
+<div id="L241"><a href="#L241">0241</a> units in the label, present them within parentheses. Do not label axes only </div>
+<div id="L242"><a href="#L242">0242</a> with units. In the example, write ``Magnetization (A/m)&#x27;&#x27; or ``Magnetization </div>
+<div id="L243"><a href="#L243">0243</a> \{A[m(1)]\}&#x27;&#x27;, not just ``A/m&#x27;&#x27;. Do not label axes with a ratio of </div>
+<div id="L244"><a href="#L244">0244</a> quantities and units. For example, write ``Temperature (K)&#x27;&#x27;, not </div>
+<div id="L245"><a href="#L245">0245</a> ``Temperature/K&#x27;&#x27;.</div>
+<div id="L246"><a href="#L246">0246</a> </div>
+<div id="L247"><a href="#L247">0247</a> \section*{Acknowledgment}</div>
+<div id="L248"><a href="#L248">0248</a> </div>
+<div id="L249"><a href="#L249">0249</a> The preferred spelling of the word ``acknowledgment&#x27;&#x27; in America is without </div>
+<div id="L250"><a href="#L250">0250</a> an ``e&#x27;&#x27; after the ``g&#x27;&#x27;. Avoid the stilted expression ``one of us (R. B. </div>
+<div id="L251"><a href="#L251">0251</a> G.) thanks $\ldots$&#x27;&#x27;. Instead, try ``R. B. G. thanks$\ldots$&#x27;&#x27;. Put sponsor </div>
+<div id="L252"><a href="#L252">0252</a> acknowledgments in the unnumbered footnote on the first page.</div>
+<div id="L253"><a href="#L253">0253</a> </div>
+<div id="L254"><a href="#L254">0254</a> \section*{References}</div>
+<div id="L255"><a href="#L255">0255</a> </div>
+<div id="L256"><a href="#L256">0256</a> Please number citations consecutively within brackets \cite{b1}. The </div>
+<div id="L257"><a href="#L257">0257</a> sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference </div>
+<div id="L258"><a href="#L258">0258</a> number, as in \cite{b3}---do not use ``Ref. \cite{b3}&#x27;&#x27; or ``reference \cite{b3}&#x27;&#x27; except at </div>
+<div id="L259"><a href="#L259">0259</a> the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$&#x27;&#x27;</div>
+<div id="L260"><a href="#L260">0260</a> </div>
+<div id="L261"><a href="#L261">0261</a> Number footnotes separately in superscripts. Place the actual footnote at </div>
+<div id="L262"><a href="#L262">0262</a> the bottom of the column in which it was cited. Do not put footnotes in the </div>
+<div id="L263"><a href="#L263">0263</a> abstract or reference list. Use letters for table footnotes.</div>
+<div id="L264"><a href="#L264">0264</a> </div>
+<div id="L265"><a href="#L265">0265</a> Unless there are six authors or more give all authors&#x27; names; do not use </div>
+<div id="L266"><a href="#L266">0266</a> ``et al.&#x27;&#x27;. Papers that have not been published, even if they have been </div>
+<div id="L267"><a href="#L267">0267</a> submitted for publication, should be cited as ``unpublished&#x27;&#x27; \cite{b4}. Papers </div>
+<div id="L268"><a href="#L268">0268</a> that have been accepted for publication should be cited as ``in press&#x27;&#x27; \cite{b5}. </div>
+<div id="L269"><a href="#L269">0269</a> Capitalize only the first word in a paper title, except for proper nouns and </div>
+<div id="L270"><a href="#L270">0270</a> element symbols.</div>
+<div id="L271"><a href="#L271">0271</a> </div>
+<div id="L272"><a href="#L272">0272</a> For papers published in translation journals, please give the English </div>
+<div id="L273"><a href="#L273">0273</a> citation first, followed by the original foreign-language citation \cite{b6}.</div>
+<div id="L274"><a href="#L274">0274</a> </div>
+<div id="L275"><a href="#L275">0275</a> \begin{thebibliography}{00}</div>
+<div id="L276"><a href="#L276">0276</a> \bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,&#x27;&#x27; Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.</div>
+<div id="L277"><a href="#L277">0277</a> \bibitem{b2} J. Clerk Maxwell, A Treatise on Electricity and Magnetism, 3rd ed., vol. 2. Oxford: Clarendon, 1892, pp.68--73.</div>
+<div id="L278"><a href="#L278">0278</a> \bibitem{b3} I. S. Jacobs and C. P. Bean, ``Fine particles, thin films and exchange anisotropy,&#x27;&#x27; in Magnetism, vol. III, G. T. Rado and H. Suhl, Eds. New York: Academic, 1963, pp. 271--350.</div>
+<div id="L279"><a href="#L279">0279</a> \bibitem{b4} K. Elissa, ``Title of paper if known,&#x27;&#x27; unpublished.</div>
+<div id="L280"><a href="#L280">0280</a> \bibitem{b5} R. Nicole, ``Title of paper with only first word capitalized,&#x27;&#x27; J. Name Stand. Abbrev., in press.</div>
+<div id="L281"><a href="#L281">0281</a> \bibitem{b6} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ``Electron spectroscopy studies on magneto-optical media and plastic substrate interface,&#x27;&#x27; IEEE Transl. J. Magn. Japan, vol. 2, pp. 740--741, August 1987 [Digests 9th Annual Conf. Magnetics Japan, p. 301, 1982].</div>
+<div id="L282"><a href="#L282">0282</a> \bibitem{b7} M. Young, The Technical Writer&#x27;s Handbook. Mill Valley, CA: University Science, 1989.</div>
+<div id="L283"><a href="#L283">0283</a> \bibitem{b8} D. P. Kingma and M. Welling, ``Auto-encoding variational Bayes,&#x27;&#x27; 2013, arXiv:1312.6114. [Online]. Available: https://arxiv.org/abs/1312.6114</div>
+<div id="L284"><a href="#L284">0284</a> \bibitem{b9} S. Liu, ``Wi-Fi Energy Detection Testbed (12MTC),&#x27;&#x27; 2023, gitHub repository. [Online]. Available: https://github.com/liustone99/Wi-Fi-Energy-Detection-Testbed-12MTC</div>
+<div id="L285"><a href="#L285">0285</a> \bibitem{b10} ``Treatment episode data set: discharges (TEDS-D): concatenated, 2006 to 2009.&#x27;&#x27; U.S. Department of Health and Human Services, Substance Abuse and Mental Health Services Administration, Office of Applied Studies, August, 2013, DOI:10.3886/ICPSR30122.v2</div>
+<div id="L286"><a href="#L286">0286</a> \bibitem{b11} K. Eves and J. Valasek, ``Adaptive control for singularly perturbed systems examples,&#x27;&#x27; Code Ocean, Aug. 2023. [Online]. Available: https://codeocean.com/capsule/4989235/tree</div>
+<div id="L287"><a href="#L287">0287</a> \end{thebibliography}</div>
+<div id="L288"><a href="#L288">0288</a> </div>
+<div id="L289"><a href="#L289">0289</a> \vspace{12pt}</div>
+<div id="L290"><a href="#L290">0290</a> \color{red}</div>
+<div id="L291"><a href="#L291">0291</a> IEEE conference templates contain guidance text for composing and formatting conference papers. Please ensure that all template text is removed from your conference paper prior to submission to the conference. Failure to remove the template text from your paper may result in your paper not being published.</div>
+<div id="L292"><a href="#L292">0292</a> </div>
+<div id="L293"><a href="#L293">0293</a> \end{document}</div></pre>

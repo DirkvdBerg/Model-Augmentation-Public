@@ -1,0 +1,599 @@
+<meta charset="utf-8"><title>sections/99_appendix.tex</title><pre><div id="L1"><a href="#L1">0001</a> % Page budget: 0.30 pages | Owns: derivation details and reproducibility items needed for audit but not for the main argument.</div>
+<div id="L2"><a href="#L2">0002</a> % WRITING GUIDE</div>
+<div id="L3"><a href="#L3">0003</a> % Purpose: Preserve derivation and reproducibility details required to audit the paper without interrupting its main argument.</div>
+<div id="L4"><a href="#L4">0004</a> % Start here: Material explicitly deferred from Sections 02, 04, and 05 during page-budget editing.</div>
+<div id="L5"><a href="#L5">0005</a> % Supporting material: LPV_LFR_internal_loop_Well_posedness, LPV_Mass_invertible, LPV_LFR_Rational_rewrite, current OBC derivations, and final run manifests.</div>
+<div id="L6"><a href="#L6">0006</a> % Research-plan anchor: Include only technical detail needed to support a retained plan claim or documented departure.</div>
+<div id="L7"><a href="#L7">0007</a> % Current decisions: Prefer repository or archival references for bulky matrices and configurations when permitted by the examination format.</div>
+<div id="L8"><a href="#L8">0008</a> % Choices to justify: Numerical tolerances, optimizer settings, architecture details, secondary diagnostics, and any setting omitted from the main method discussion.</div>
+<div id="L9"><a href="#L9">0009</a> % Implementation audit: Compare all printed matrices, algorithms, parameter maps, and configuration listings directly with the final code that produced the results.</div>
+<div id="L10"><a href="#L10">0010</a> % Reference check: Keep source-derived results attributed and own derivations labelled; include only bibliography entries whose metadata and supporting content have been verified.</div>
+<div id="L11"><a href="#L11">0011</a> % Cautions: Verify whether the appendix counts toward the 12-page limit; do not use it as storage for unfinished analysis.</div>
+<div id="L12"><a href="#L12">0012</a> % Planned figures: Optional normalization and controller-chain audit figures only if equations and prose are insufficient.</div>
+<div id="L13"><a href="#L13">0013</a> % Section is finished when: Every appendix item is referenced from the main paper and necessary for verification or reproducibility.</div>
+<div id="L14"><a href="#L14">0014</a> \section{Supporting derivations}</div>
+<div id="L15"><a href="#L15">0015</a> </div>
+<div id="L16"><a href="#L16">0016</a> % FEEDBACK v1 (2026-10-18): subsections reordered to the order of first</div>
+<div id="L17"><a href="#L17">0017</a> %   reference in Section II (Q25, Js32): parameters, LFR realization,</div>
+<div id="L18"><a href="#L18">0018</a> %   positive definiteness, identifiable combinations.</div>
+<div id="L19"><a href="#L19">0019</a> \subsection{Nominal physical parameters}\label{app:params}</div>
+<div id="L20"><a href="#L20">0020</a> Table~\ref{tab:nominal_parameters} lists the nominal values used by the baseline.</div>
+<div id="L21"><a href="#L21">0021</a> They are taken from the gantry reported by Garc\&#x27;ia-Herreros et al.</div>
+<div id="L22"><a href="#L22">0022</a> \cite[Table~I]{garcia2013model}. </div>
+<div id="L23"><a href="#L23">0023</a> %Here $\theta$ collects the fourteen table entries other than the fixed length $L_b$.</div>
+<div id="L24"><a href="#L24">0024</a> The lower block holds the parameters of the simulated system that the</div>
+<div id="L25"><a href="#L25">0025</a> baseline lacks (Section~\ref{sec:setup_system}).</div>
+<div id="L26"><a href="#L26">0026</a> \begin{table}[t]</div>
+<div id="L27"><a href="#L27">0027</a> \caption{Nominal baseline parameters and, in the lower block, the</div>
+<div id="L28"><a href="#L28">0028</a> parameters of the simulated system only.}</div>
+<div id="L29"><a href="#L29">0029</a> \label{tab:nominal_parameters}</div>
+<div id="L30"><a href="#L30">0030</a> \centering</div>
+<div id="L31"><a href="#L31">0031</a> \footnotesize</div>
+<div id="L32"><a href="#L32">0032</a> \begin{tabular}{@{}ll@{\qquad}ll@{}}</div>
+<div id="L33"><a href="#L33">0033</a> \toprule</div>
+<div id="L34"><a href="#L34">0034</a> Parameter &amp; Value &amp; Parameter &amp; Value \\</div>
+<div id="L35"><a href="#L35">0035</a> \midrule</div>
+<div id="L36"><a href="#L36">0036</a> $m_1$ &amp; $10.2\,\mathrm{kg}$ &amp; $m_2$ &amp; $10.7\,\mathrm{kg}$ \\</div>
+<div id="L37"><a href="#L37">0037</a> $m_b$ &amp; $22.8\,\mathrm{kg}$ &amp; $m_h$ &amp; $10.1\,\mathrm{kg}$ \\</div>
+<div id="L38"><a href="#L38">0038</a> $J_b$ &amp; $1.00\,\mathrm{kg\,m^2}$ &amp; $J_h$ &amp; $0.05\,\mathrm{kg\,m^2}$ \\</div>
+<div id="L39"><a href="#L39">0039</a> $c_{g1}$ &amp; $14.5\,\mathrm{N\,s/m}$ &amp; $c_{g2}$ &amp; $20.3\,\mathrm{N\,s/m}$ \\</div>
+<div id="L40"><a href="#L40">0040</a> $c_y$ &amp; $10.0\,\mathrm{N\,s/m}$ &amp; $d$ &amp; $0.10\,\mathrm{m}$ \\</div>
+<div id="L41"><a href="#L41">0041</a> $c_{b1}$ &amp; $9.0\,\mathrm{N\,m\,s/rad}$ &amp; $c_{b2}$ &amp; $9.0\,\mathrm{N\,m\,s/rad}$ \\</div>
+<div id="L42"><a href="#L42">0042</a> $k_{b1}$ &amp; $1987.5\,\mathrm{N\,m/rad}$ &amp; $k_{b2}$ &amp; $1987.5\,\mathrm{N\,m/rad}$ \\</div>
+<div id="L43"><a href="#L43">0043</a> $L_b$ &amp; $0.725\,\mathrm{m}$ &amp; &amp; \\</div>
+<div id="L44"><a href="#L44">0044</a> \midrule</div>
+<div id="L45"><a href="#L45">0045</a> $c_{c,X_1}$ &amp; $16.80\,\mathrm{N}$ &amp; $c_{c,X_2}$ &amp; $18.35\,\mathrm{N}$ \\</div>
+<div id="L46"><a href="#L46">0046</a> $c_{c,Y}$ &amp; $11.60\,\mathrm{N}$ &amp; $v_{\mathrm{fr}}$ &amp; $\SetupFricVzero\,\mathrm{mm/s}$ \\</div>
+<div id="L47"><a href="#L47">0047</a> $m_a$ &amp; $0.5\,m_h$ &amp; $L_0$ &amp; $0.10\,\mathrm{m}$ \\</div>
+<div id="L48"><a href="#L48">0048</a> $f_a$ &amp; $150\,\mathrm{Hz}$ &amp; $\zeta_a$ &amp; $0.03$ \\</div>
+<div id="L49"><a href="#L49">0049</a> \bottomrule</div>
+<div id="L50"><a href="#L50">0050</a> \end{tabular}</div>
+<div id="L51"><a href="#L51">0051</a> \end{table}</div>
+<div id="L52"><a href="#L52">0052</a> </div>
+<div id="L53"><a href="#L53">0053</a> \subsection{Explicit LPV-LFR realization}\label{app:lfr-details}</div>
+<div id="L54"><a href="#L54">0054</a> In \eqref{eq:Msplit}, $M_0$ is \eqref{eq:mass_matrix} evaluated at $Y=0$, and</div>
+<div id="L55"><a href="#L55">0055</a> \begin{equation*}</div>
+<div id="L56"><a href="#L56">0056</a>  M_1=\begin{bmatrix}0&amp;-m_h&amp;0\\-m_h&amp;0&amp;0\\0&amp;0&amp;0\end{bmatrix},\qquad</div>
+<div id="L57"><a href="#L57">0057</a>  M_2=\begin{bmatrix}0&amp;0&amp;0\\0&amp;m_h&amp;0\\0&amp;0&amp;0\end{bmatrix}.</div>
+<div id="L58"><a href="#L58">0058</a> \end{equation*}</div>
+<div id="L59"><a href="#L59">0059</a> With $a_1$ and $a_2$ from \eqref{eq:lfr_chain} treated as independent signals, solving</div>
+<div id="L60"><a href="#L60">0060</a> $M_0\ddot q+M_1a_1+M_2a_2=u-C\dot q-Kq$ for $\ddot q$ with $R=M_0^{-1}$ gives</div>
+<div id="L61"><a href="#L61">0061</a> $\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With $\dot{\tilde x}=[\dot q^\top\;\ddot q^\top]^\top$,</div>
+<div id="L62"><a href="#L62">0062</a> $z=[\ddot q^\top\;a_1^\top]^\top$, and $w=[a_1^\top\;a_2^\top]^\top$, the LTI part $G$ of</div>
+<div id="L63"><a href="#L63">0063</a> \eqref{eq:lfr_G}, partitioned as in \cite[Eq.~(6)]{drenth2025lpvlfr}, is</div>
+<div id="L64"><a href="#L64">0064</a> \begin{equation}</div>
+<div id="L65"><a href="#L65">0065</a>  \begin{bmatrix}\dot{\tilde x}\\z\\q\end{bmatrix}</div>
+<div id="L66"><a href="#L66">0066</a>  =</div>
+<div id="L67"><a href="#L67">0067</a>  \underbrace{\begin{bmatrix}</div>
+<div id="L68"><a href="#L68">0068</a>   A_x&amp;B_w&amp;B_u\\ C_z&amp;D_{zw}&amp;D_{zu}\\ C_y&amp;D_{yw}&amp;D_{yu}</div>
+<div id="L69"><a href="#L69">0069</a>  \end{bmatrix}}_{G}</div>
+<div id="L70"><a href="#L70">0070</a>  \begin{bmatrix}\tilde x\\w\\u\end{bmatrix}.</div>
+<div id="L71"><a href="#L71">0071</a>  \label{eq:app_G_partition}</div>
+<div id="L72"><a href="#L72">0072</a> \end{equation}</div>
+<div id="L73"><a href="#L73">0073</a> with blocks</div>
+<div id="L74"><a href="#L74">0074</a> {\footnotesize</div>
+<div id="L75"><a href="#L75">0075</a> \setlength{\arraycolsep}{2.5pt}</div>
+<div id="L76"><a href="#L76">0076</a> \begin{equation}</div>
+<div id="L77"><a href="#L77">0077</a> \begin{aligned}</div>
+<div id="L78"><a href="#L78">0078</a>  A_x&amp;=\begin{bmatrix}0&amp;I_3\\-RK&amp;-RC\end{bmatrix},</div>
+<div id="L79"><a href="#L79">0079</a> &amp;B_w&amp;=\begin{bmatrix}0&amp;0\\-RM_1&amp;-RM_2\end{bmatrix},</div>
+<div id="L80"><a href="#L80">0080</a> &amp;B_u&amp;=\begin{bmatrix}0\\R\end{bmatrix},\\</div>
+<div id="L81"><a href="#L81">0081</a>  C_z&amp;=\begin{bmatrix}-RK&amp;-RC\\0&amp;0\end{bmatrix},</div>
+<div id="L82"><a href="#L82">0082</a> &amp;D_{zw}&amp;=\begin{bmatrix}-RM_1&amp;-RM_2\\I_3&amp;0\end{bmatrix},</div>
+<div id="L83"><a href="#L83">0083</a> &amp;D_{zu}&amp;=\begin{bmatrix}R\\0\end{bmatrix},\\</div>
+<div id="L84"><a href="#L84">0084</a>  C_y&amp;=\begin{bmatrix}I_3&amp;0\end{bmatrix},</div>
+<div id="L85"><a href="#L85">0085</a> &amp;D_{yw}&amp;=0,</div>
+<div id="L86"><a href="#L86">0086</a> &amp;D_{yu}&amp;=0.</div>
+<div id="L87"><a href="#L87">0087</a> \end{aligned}</div>
+<div id="L88"><a href="#L88">0088</a> \label{eq:app_lfr_blocks}</div>
+<div id="L89"><a href="#L89">0089</a> \end{equation}</div>
+<div id="L90"><a href="#L90">0090</a> }</div>
+<div id="L91"><a href="#L91">0091</a> Here $\tilde x,z,w\in\R^6$ and $u,q\in\R^3$, so $G\in\R^{15\times15}$.</div>
+<div id="L92"><a href="#L92">0092</a> The actuator frame enters only through $u=P\uact$ and $\qact=P^\top q$ in</div>
+<div id="L93"><a href="#L93">0093</a> \eqref{eq:Ptransform}.</div>
+<div id="L94"><a href="#L94">0094</a> </div>
+<div id="L95"><a href="#L95">0095</a> Substituting $w=\Dsch(Y)z$ into the $z$ equation of</div>
+<div id="L96"><a href="#L96">0096</a> \eqref{eq:app_G_partition} gives the algebraic loop equation</div>
+<div id="L97"><a href="#L97">0097</a> $(I_6-D_{zw}\Dsch(Y))z=C_zx+D_{zu}u$. Written out,</div>
+<div id="L98"><a href="#L98">0098</a> \begin{equation*}</div>
+<div id="L99"><a href="#L99">0099</a>  \begin{bmatrix}I_3+YRM_1&amp;YRM_2\\-YI_3&amp;I_3\end{bmatrix}</div>
+<div id="L100"><a href="#L100">0100</a>  \begin{bmatrix}\ddot q\\a_1\end{bmatrix}</div>
+<div id="L101"><a href="#L101">0101</a>  =\begin{bmatrix}R(u-Kq-C\dot q)\\0\end{bmatrix}.</div>
+<div id="L102"><a href="#L102">0102</a> \end{equation*}</div>
+<div id="L103"><a href="#L103">0103</a> The second block row gives $a_1=Y\ddot q$, and the first then gives</div>
+<div id="L104"><a href="#L104">0104</a> $M(Y)\ddot q=u-C\dot q-Kq$, that is \eqref{eq:eom}, after multiplication by</div>
+<div id="L105"><a href="#L105">0105</a> $M_0$. The condition of</div>
+<div id="L106"><a href="#L106">0106</a> \cite[Def.~1]{drenth2025lpvlfr}, that $I_6-D_{zw}\Dsch(Y)$ is nonsingular, is</div>
+<div id="L107"><a href="#L107">0107</a> therefore the condition that $M(Y)$ is nonsingular: the Schur complement of</div>
+<div id="L108"><a href="#L108">0108</a> the lower identity block gives</div>
+<div id="L109"><a href="#L109">0109</a> \begin{equation*}</div>
+<div id="L110"><a href="#L110">0110</a> \begin{aligned}</div>
+<div id="L111"><a href="#L111">0111</a>  \det\bigl(I_6-D_{zw}\Dsch(Y)\bigr)</div>
+<div id="L112"><a href="#L112">0112</a>  &amp;=\det\bigl(I_3+YRM_1+Y^2RM_2\bigr)\\</div>
+<div id="L113"><a href="#L113">0113</a>  &amp;=\det M(Y)/\det M_0.</div>
+<div id="L114"><a href="#L114">0114</a> \end{aligned}</div>
+<div id="L115"><a href="#L115">0115</a> \end{equation*}</div>
+<div id="L116"><a href="#L116">0116</a> Since $M(Y)$ is nonsingular, the loop is solved in closed form,</div>
+<div id="L117"><a href="#L117">0117</a> $\ddot q=M(Y)^{-1}(u-C\dot q-Kq)$ with</div>
+<div id="L118"><a href="#L118">0118</a> \begin{equation*}</div>
+<div id="L119"><a href="#L119">0119</a>  M(Y)^{-1}=\frac{N_0+YN_1+Y^2N_2}{d(Y)},\qquad d(Y)=\det M(Y),</div>
+<div id="L120"><a href="#L120">0120</a> \end{equation*}</div>
+<div id="L121"><a href="#L121">0121</a> where $N_0+YN_1+Y^2N_2=\operatorname{adj}M(Y)$ and $d(Y)$ are both quadratic</div>
+<div id="L122"><a href="#L122">0122</a> in $Y$.</div>
+<div id="L123"><a href="#L123">0123</a> The implementation evaluates both polynomials with Horner&#x27;s scheme.</div>
+<div id="L124"><a href="#L124">0124</a> \todo{Missing: print $N_0$, $N_1$, $N_2$ and $d(Y)$ explicitly? Candidate: no, appendix budget; the quadratic degree was checked symbolically (sympy, 2026-10-06).}</div>
+<div id="L125"><a href="#L125">0125</a> </div>
+<div id="L126"><a href="#L126">0126</a> \subsection{Positive definiteness of the inertia matrix}</div>
+<div id="L127"><a href="#L127">0127</a> \label{app:lfr-wellposed}</div>
+<div id="L128"><a href="#L128">0128</a> With $a=L_bm_\Delta/2$, elimination of the $m_h$ block and completion of the square give</div>
+<div id="L129"><a href="#L129">0129</a> \begin{equation*}</div>
+<div id="L130"><a href="#L130">0130</a> \begin{aligned}</div>
+<div id="L131"><a href="#L131">0131</a>   \frac{\det M(Y)}{m_h}</div>
+<div id="L132"><a href="#L132">0132</a>   &amp;=(m_\Sigma+m_h)(J_{\mathrm{eff}}+m_hY^2)</div>
+<div id="L133"><a href="#L133">0133</a>     -(a-m_hY)^2\\</div>
+<div id="L134"><a href="#L134">0134</a>   &amp;=m_\Sigma m_h\left(Y+\frac{a}{m_\Sigma}\right)^2\\</div>
+<div id="L135"><a href="#L135">0135</a>   &amp;\quad +(m_\Sigma+m_h)</div>
+<div id="L136"><a href="#L136">0136</a>       \left(J_{\mathrm{eff}}-\frac{a^2}{m_\Sigma}\right).</div>
+<div id="L137"><a href="#L137">0137</a> \end{aligned}</div>
+<div id="L138"><a href="#L138">0138</a> \end{equation*}</div>
+<div id="L139"><a href="#L139">0139</a> The $2\times2$ Schur complement has positive leading entry</div>
+<div id="L140"><a href="#L140">0140</a> $m_\Sigma+m_h$. Sylvester&#x27;s criterion therefore reduces positive definiteness</div>
+<div id="L141"><a href="#L141">0141</a> to positivity of the completed-square expression for every $Y$. Hence, for</div>
+<div id="L142"><a href="#L142">0142</a> positive $m_h$, $m_\Sigma$, and $J_{\mathrm{eff}}$, $M(Y)\succ0$ for all</div>
+<div id="L143"><a href="#L143">0143</a> $Y\in\R$ if and only if \eqref{eq:lfr_admissibility} holds.</div>
+<div id="L144"><a href="#L144">0144</a> For the physical parameterization, the difference between the two sides is</div>
+<div id="L145"><a href="#L145">0145</a> \begin{equation*}</div>
+<div id="L146"><a href="#L146">0146</a> \begin{aligned}</div>
+<div id="L147"><a href="#L147">0147</a>   m_\Sigma J_{\mathrm{eff}}-\frac{L_b^2}{4}m_\Delta^2</div>
+<div id="L148"><a href="#L148">0148</a>   ={}&amp;m_\Sigma(J_b+J_h)\\</div>
+<div id="L149"><a href="#L149">0149</a>   &amp;+\frac{L_b^2}{4}\left[4m_1m_2+m_b(m_1+m_2)\right],</div>
+<div id="L150"><a href="#L150">0150</a> \end{aligned}</div>
+<div id="L151"><a href="#L151">0151</a> \end{equation*}</div>
+<div id="L152"><a href="#L152">0152</a> which is strictly positive for positive component masses and yaw inertias.</div>
+<div id="L153"><a href="#L153">0153</a> </div>
+<div id="L154"><a href="#L154">0154</a> In \eqref{eq:mdelta_map}, let</div>
+<div id="L155"><a href="#L155">0155</a> $b(\theta_{\mathrm{base}})=\gamma(2/L_b)\sqrt{m_\Sigma J_{\mathrm{eff}}}$. The offset and scale</div>
+<div id="L156"><a href="#L156">0156</a> are</div>
+<div id="L157"><a href="#L157">0157</a> \begin{equation*}</div>
+<div id="L158"><a href="#L158">0158</a>  r_0=\frac{m_{\Delta,0}}{b(\theta^0_{\mathrm{base}})},\quad</div>
+<div id="L159"><a href="#L159">0159</a>  \eta_0=\operatorname{atanh}(r_0),\quad</div>
+<div id="L160"><a href="#L160">0160</a>  s=\frac{m_{\Delta,0}}{b(\theta^0_{\mathrm{base}})(1-r_0^2)}.</div>
+<div id="L161"><a href="#L161">0161</a> \end{equation*}</div>
+<div id="L162"><a href="#L162">0162</a> Here $\eta_0$ makes $\beta_\Delta=0$ reproduce the initial combination, and $s$</div>
+<div id="L163"><a href="#L163">0163</a> gives $\partial m_\Delta/\partial\beta_\Delta|_0=m_{\Delta,0}$, matching the local</div>
+<div id="L164"><a href="#L164">0164</a> relative-change scaling of the logarithmic coordinates. The construction</div>
+<div id="L165"><a href="#L165">0165</a> requires $m_{\Delta,0}\neq0$; a start near zero makes $s$ small and the</div>
+<div id="L166"><a href="#L166">0166</a> coordinate numerically inert. The exact inverse used for reporting is</div>
+<div id="L167"><a href="#L167">0167</a> \begin{equation*}</div>
+<div id="L168"><a href="#L168">0168</a>  \beta_\Delta=\frac{\operatorname{atanh}(m_\Delta/b(\theta_{\mathrm{base}}))-\eta_0}{s}.</div>
+<div id="L169"><a href="#L169">0169</a> \end{equation*}</div>
+<div id="L170"><a href="#L170">0170</a> </div>
+<div id="L171"><a href="#L171">0171</a> \subsection{Identifiable combinations}\label{app:combos}</div>
+<div id="L172"><a href="#L172">0172</a> For $m_h&gt;0$, the ten distinct entries of $M_0$, $C$ and $K$ determine</div>
+<div id="L173"><a href="#L173">0173</a> $\theta_{\mathrm{base}}$ of \eqref{eq:phi} uniquely (Section~\ref{sec:params}):</div>
+<div id="L174"><a href="#L174">0174</a> \begin{equation*}</div>
+<div id="L175"><a href="#L175">0175</a> \begin{aligned}</div>
+<div id="L176"><a href="#L176">0176</a>  m_h&amp;=M_{0,33}, &amp; d&amp;=-M_{0,23}/m_h, &amp; m_\Sigma&amp;=M_{0,11}-m_h,\\</div>
+<div id="L177"><a href="#L177">0177</a>  m_\Delta&amp;=2M_{0,12}/L_b, &amp; J_{\mathrm{eff}}&amp;=M_{0,22}-m_hd^2, &amp; k_{b,\Sigma}&amp;=K_{22},\\</div>
+<div id="L178"><a href="#L178">0178</a>  c_{g1}&amp;=\tfrac12C_{11}+C_{12}/L_b, &amp; c_{g2}&amp;=\tfrac12C_{11}-C_{12}/L_b, &amp; c_y&amp;=C_{33},\\</div>
+<div id="L179"><a href="#L179">0179</a>  c_{b,\Sigma}&amp;=C_{22}-\tfrac{L_b^2}{4}C_{11}. &amp; &amp;</div>
+<div id="L180"><a href="#L180">0180</a> \end{aligned}</div>
+<div id="L181"><a href="#L181">0181</a> \end{equation*}</div>
+<div id="L182"><a href="#L182">0182</a> Conversely, \eqref{eq:mass_matrix} and \eqref{eq:damping_stiffness_matrices}</div>
+<div id="L183"><a href="#L183">0183</a> give every entry as a function of $\theta_{\mathrm{base}}$, so the map is one-to-one.</div>
+<div id="L184"><a href="#L184">0184</a> </div>
+<div id="L185"><a href="#L185">0185</a> \begin{wip}</div>
+<div id="L186"><a href="#L186">0186</a> \todo{Remarks cut from Section~II-B; keep here or drop?}</div>
+<div id="L187"><a href="#L187">0187</a> \begin{itemize}</div>
+<div id="L188"><a href="#L188">0188</a> \item $Y^2$ is realized by repeating $Y$, not as a second scheduling variable $p_2=Y^2$, which would admit pairs with $p_2\neq Y^2$; extra scheduling variables cause overbounding in controller synthesis \cite{drenth2025lpvlfr}</div>
+<div id="L189"><a href="#L189">0189</a> \item The scheduling map is a known selection of the state ($Y=q_3$), not a learned map as in the self-scheduled models of \cite{drenth2025lpvlfr}</div>
+<div id="L190"><a href="#L190">0190</a> \item The exact condition $\det M(Y)\neq0$ replaces the sufficient condition of \cite[Thm.~6]{drenth2025lpvlfr}, which needs a scheduling set in the unit ball and $\rho(D_{zw})&lt;1$</div>
+<div id="L191"><a href="#L191">0191</a> \item Drenth&#x27;s Def.~1 is stated in discrete time but constrains only the algebraic loop equation, so it applies unchanged in continuous time</div>
+<div id="L192"><a href="#L192">0192</a> \end{itemize}</div>
+<div id="L193"><a href="#L193">0193</a> \end{wip}</div>
+<div id="L194"><a href="#L194">0194</a> </div>
+<div id="L195"><a href="#L195">0195</a> \subsection{PS stopping rule}\label{app:ps_stop}</div>
+<div id="L196"><a href="#L196">0196</a> The unexplained fraction $\nu$ of \eqref{eq:ps2_nu} is evaluated after every</div>
+<div id="L197"><a href="#L197">0197</a> $i_c$th update of $V$, with $\nu_i$ its value after update $i$.</div>
+<div id="L198"><a href="#L198">0198</a> S1 ends at update</div>
+<div id="L199"><a href="#L199">0199</a> \begin{equation*}</div>
+<div id="L200"><a href="#L200">0200</a> \begin{aligned}</div>
+<div id="L201"><a href="#L201">0201</a>  i_1&amp;=\min\bigl\{i\in\mathcal J:\ i=i_{\max}\ \text{or}\\</div>
+<div id="L202"><a href="#L202">0202</a>  &amp;\qquad\bigl(i\ge i_{\min}\ \text{and}\ \nu^{\mathrm{new}}_i&gt;(1-\delta_\nu)\,\nu^{\mathrm{old}}_i\bigr)\bigr\},\\</div>
+<div id="L203"><a href="#L203">0203</a>  \nu^{\mathrm{new}}_i&amp;=\min_{j\in\mathcal W_i}\nu_j,\qquad</div>
+<div id="L204"><a href="#L204">0204</a>  \nu^{\mathrm{old}}_i=\min_{j\in\mathcal J_i\setminus\mathcal W_i}\nu_j,</div>
+<div id="L205"><a href="#L205">0205</a> \end{aligned}</div>
+<div id="L206"><a href="#L206">0206</a> \end{equation*}</div>
+<div id="L207"><a href="#L207">0207</a> where $\mathcal J=\{i_c,2i_c,\dots\}$, $\mathcal J_i=\{j\in\mathcal J:j\le i\}$,</div>
+<div id="L208"><a href="#L208">0208</a> $\mathcal W_i$ the last $w$ elements of $\mathcal J_i$, $\delta_\nu$ the</div>
+<div id="L209"><a href="#L209">0209</a> plateau tolerance and $i_{\min}$, $i_{\max}$ the earliest and latest end of</div>
+<div id="L210"><a href="#L210">0210</a> S1, with $\nu^{\mathrm{old}}_i=\infty$ while $\mathcal J_i$ has at most $w$</div>
+<div id="L211"><a href="#L211">0211</a> elements.</div>
+<div id="L212"><a href="#L212">0212</a> S2 runs if $\nu_{i_1}\le\nu_{\max}$ and, when $i_1&gt;i_s$, also</div>
+<div id="L213"><a href="#L213">0213</a> $\nu_{i_s}\le\nu_{\max}$, where $i_s&lt;i_{\max}$ is a fixed early check.</div>
+<div id="L214"><a href="#L214">0214</a> If $\nu_{i_s}&gt;\nu_{\max}$, PS ends at $i_s$.</div>
+<div id="L215"><a href="#L215">0215</a> The values are given in Table~\ref{tab:hyper}.</div>
+<div id="L216"><a href="#L216">0216</a> </div>
+<div id="L217"><a href="#L217">0217</a> \subsection{Open-loop frequency response}\label{app:frf}</div>
+<div id="L218"><a href="#L218">0218</a> \ifdraft</div>
+<div id="L219"><a href="#L219">0219</a> \begin{itemize}</div>
+<div id="L220"><a href="#L220">0220</a> \item Full $3\times3$ response of Fig.~\ref{fig:res_frf}: same linearisation at rest, same seven positions (\texttt{Code/Evaluation/eval\_frf.py})</div>
+<div id="L221"><a href="#L221">0221</a> \item On the $X$ entries the final model, the system and the baseline coincide; the spread over $Y$ is the position dependence of the system</div>
+<div id="L222"><a href="#L222">0222</a> \item The final model has a small resonance near 212~Hz in the cross terms between $X$ and $Y$ that the system lacks (state it)</div>
+<div id="L223"><a href="#L223">0223</a> \end{itemize}</div>
+<div id="L224"><a href="#L224">0224</a> \fi</div>
+<div id="L225"><a href="#L225">0225</a> Fig.~\ref{fig:res_frf_full} gives all nine entries of the response in</div>
+<div id="L226"><a href="#L226">0226</a> Fig.~\ref{fig:res_frf}, with the same linearisation and positions.</div>
+<div id="L227"><a href="#L227">0227</a> \begin{figure*}[t]</div>
+<div id="L228"><a href="#L228">0228</a>   \centering</div>
+<div id="L229"><a href="#L229">0229</a>   \includegraphics[width=\textwidth]{res_frf_full.pdf}</div>
+<div id="L230"><a href="#L230">0230</a>   \caption{Bode magnitude from the stage forces (columns) to the stage positions (rows), linearised at rest. Geometric mean over $Y=-0.39$ to $0.39$~m; shaded: range of the final model over $Y$.}</div>
+<div id="L231"><a href="#L231">0231</a>   \label{fig:res_frf_full}</div>
+<div id="L232"><a href="#L232">0232</a> \end{figure*}</div>
+<div id="L233"><a href="#L233">0233</a> </div>
+<div id="L234"><a href="#L234">0234</a> \section{Training, validation and test results}\label{app:splits}</div>
+<div id="L235"><a href="#L235">0235</a> % D-269: every result for every split (Dirk 2026-10-18); Code/Figures/res_all_splits.py.</div>
+<div id="L236"><a href="#L236">0236</a> Table~\ref{tab:app_splits} gives the models of Section~\ref{sec:results} on</div>
+<div id="L237"><a href="#L237">0237</a> the training, validation and test records.</div>
+<div id="L238"><a href="#L238">0238</a> \begin{table}[t]</div>
+<div id="L239"><a href="#L239">0239</a>   \centering</div>
+<div id="L240"><a href="#L240">0240</a>   \caption{$\mathrm{NRMS}_e$ per axis on the training, validation and test records, mean over each set, with and without multisine. Physical part: the trained model with the learned block switched off.}</div>
+<div id="L241"><a href="#L241">0241</a>   \label{tab:app_splits}</div>
+<div id="L242"><a href="#L242">0242</a>   \input{tables/res_all_splits}</div>
+<div id="L243"><a href="#L243">0243</a> \end{table}</div>
+<div id="L244"><a href="#L244">0244</a> </div>
+<div id="L245"><a href="#L245">0245</a> \section{Design choices}\label{app:choices}</div>
+<div id="L246"><a href="#L246">0246</a> % Results that justify a choice (THESIS-RESULTS presentation 2026-10-16; Dirk 2026-10-18).</div>
+<div id="L247"><a href="#L247">0247</a> % Choices are compared on the validation records; Code/Figures writes the training, test and twin</div>
+<div id="L248"><a href="#L248">0248</a> % versions beside them (tables/res_structure_&lt;split&gt;.tex, res_obc_combinations_&lt;stack&gt;.tex).</div>
+<div id="L249"><a href="#L249">0249</a> This appendix gives the results behind the choices of the baseline form,</div>
+<div id="L250"><a href="#L250">0250</a> the augmentation structure, the start of the added states and the black</div>
+<div id="L251"><a href="#L251">0251</a> box.</div>
+<div id="L252"><a href="#L252">0252</a> \begin{figure}[t]</div>
+<div id="L253"><a href="#L253">0253</a>   \centering</div>
+<div id="L254"><a href="#L254">0254</a>   \includegraphics[width=\columnwidth]{res_lpv_lti.pdf}</div>
+<div id="L255"><a href="#L255">0255</a>   \caption{Simulation error RMS on the $X$ axes of the LPV baseline and the LTI baseline at $Y=0$, both at the true parameters.}</div>
+<div id="L256"><a href="#L256">0256</a>   \label{fig:res_lpv_lti}</div>
+<div id="L257"><a href="#L257">0257</a> \end{figure}</div>
+<div id="L258"><a href="#L258">0258</a> \begin{table*}[t]</div>
+<div id="L259"><a href="#L259">0259</a>   \centering</div>
+<div id="L260"><a href="#L260">0260</a>   \caption{$\mathrm{NRMS}_e$ per axis of every model, mean over the validation records, with and without multisine.}</div>
+<div id="L261"><a href="#L261">0261</a>   \label{tab:app_structure}</div>
+<div id="L262"><a href="#L262">0262</a>   \input{tables/res_structure_val}</div>
+<div id="L263"><a href="#L263">0263</a> \end{table*}</div>
+<div id="L264"><a href="#L264">0264</a> \begin{figure}[t]</div>
+<div id="L265"><a href="#L265">0265</a>   \centering</div>
+<div id="L266"><a href="#L266">0266</a>   \includegraphics[width=\columnwidth]{res_ps_spectrum.pdf}</div>
+<div id="L267"><a href="#L267">0267</a>   \caption{Amplitude spectral density of the $Y$ simulation error on the validation records with multisine. Shaded: multisine band. Dotted: absorber pole.}</div>
+<div id="L268"><a href="#L268">0268</a>   \label{fig:res_ps_spectrum}</div>
+<div id="L269"><a href="#L269">0269</a> \end{figure}</div>
+<div id="L270"><a href="#L270">0270</a> \begin{table*}[t]</div>
+<div id="L271"><a href="#L271">0271</a>   \centering</div>
+<div id="L272"><a href="#L272">0272</a>   \caption{Relative error of the ten combinations, unconstrained and OBC, from the detuned and the correct start.}</div>
+<div id="L273"><a href="#L273">0273</a>   \label{tab:app_obc_full}</div>
+<div id="L274"><a href="#L274">0274</a>   \input{tables/res_obc_combinations_test}</div>
+<div id="L275"><a href="#L275">0275</a> \end{table*}</div>
+<div id="L276"><a href="#L276">0276</a> \begin{table}[t]</div>
+<div id="L277"><a href="#L277">0277</a>   \centering</div>
+<div id="L278"><a href="#L278">0278</a>   \caption{Relative error of the ten combinations without added states ($n_a=0$), unconstrained and OBC, from the detuned start.}</div>
+<div id="L279"><a href="#L279">0279</a>   \label{tab:app_obc_na0}</div>
+<div id="L280"><a href="#L280">0280</a>   \input{tables/res_obc_na0}</div>
+<div id="L281"><a href="#L281">0281</a> \end{table}</div>
+<div id="L282"><a href="#L282">0282</a> \begin{table}[t]</div>
+<div id="L283"><a href="#L283">0283</a>   \centering</div>
+<div id="L284"><a href="#L284">0284</a>   \caption{Black-box search: the 11 configurations and their best validation $\mathrm{NRMS}_e$.}</div>
+<div id="L285"><a href="#L285">0285</a>   \label{tab:app_bb_search}</div>
+<div id="L286"><a href="#L286">0286</a>   \input{tables/res_bb_selection}</div>
+<div id="L287"><a href="#L287">0287</a> \end{table}</div>
+<div id="L288"><a href="#L288">0288</a> \revnote{Add the validation curves here: validation $\mathrm{NRMS}_e$</div>
+<div id="L289"><a href="#L289">0289</a> against the optimiser updates for every grey-box run and the selected black</div>
+<div id="L290"><a href="#L290">0290</a> box}</div>
+<div id="L291"><a href="#L291">0291</a> </div>
+<div id="L292"><a href="#L292">0292</a> \section{Experiment design details}\label{app:setup}</div>
+<div id="L293"><a href="#L293">0293</a> This appendix gives the details of Section~\ref{sec:setup} and the checks</div>
+<div id="L294"><a href="#L294">0294</a> of its design choices.</div>
+<div id="L295"><a href="#L295">0295</a> The checks use the known simulated system where the text says so.</div>
+<div id="L296"><a href="#L296">0296</a> </div>
+<div id="L297"><a href="#L297">0297</a> \subsection{Data-generating system}\label{app:setup_system}</div>
+<div id="L298"><a href="#L298">0298</a> % Sources: vendor/ruleOfThumb.m, gtd_build_plant.m (K1); D-238, NOISE-INJECTION.md (noise).</div>
+<div id="L299"><a href="#L299">0299</a> \ifdraft</div>
+<div id="L300"><a href="#L300">0300</a> \begin{itemize}</div>
+<div id="L301"><a href="#L301">0301</a> \item The controller $K_1$ of every record</div>
+<div id="L302"><a href="#L302">0302</a> \item The noise spectrum, fitted to the standstill servo error of the machine (?: confidentiality)</div>
+<div id="L303"><a href="#L303">0303</a> \item The definition of the signal-to-noise ratio</div>
+<div id="L304"><a href="#L304">0304</a> \end{itemize}</div>
+<div id="L305"><a href="#L305">0305</a> \fi</div>
+<div id="L306"><a href="#L306">0306</a> The controller of every record is, per stage axis $j$,</div>
+<div id="L307"><a href="#L307">0307</a> \begin{equation}</div>
+<div id="L308"><a href="#L308">0308</a>  K_{1,j}(s)=\kappa_j\,\frac{s+\omega_b/6}{s}\,</div>
+<div id="L309"><a href="#L309">0309</a>  \frac{s+\omega_b/3}{s+3\omega_b}\,\frac{10\,\omega_b}{s+10\,\omega_b},</div>
+<div id="L310"><a href="#L310">0310</a>  \label{eq:setup_K1}</div>
+<div id="L311"><a href="#L311">0311</a> \end{equation}</div>
+<div id="L312"><a href="#L312">0312</a> where $\omega_b=2\pi f_b$ is the bandwidth and $\kappa_j$ sets the</div>
+<div id="L313"><a href="#L313">0313</a> open-loop gain of axis $j$ to one at $\omega_b$, for the diagonal entry of</div>
+<div id="L314"><a href="#L314">0314</a> the rigid baseline at $Y=0$ from stage force to stage position.</div>
+<div id="L315"><a href="#L315">0315</a> $K_1$ is discretised by the Tustin rule at $f_{\mathrm s}$.</div>
+<div id="L316"><a href="#L316">0316</a> </div>
+<div id="L317"><a href="#L317">0317</a> The noise $v_j$ has the one-sided spectrum</div>
+<div id="L318"><a href="#L318">0318</a> \begin{equation}</div>
+<div id="L319"><a href="#L319">0319</a>  S_{v,j}(f)=\lambda_j^2\,\lvert H_j(f)\rvert^2+\sigma_{v,j}^2,</div>
+<div id="L320"><a href="#L320">0320</a>  \label{eq:setup_noise}</div>
+<div id="L321"><a href="#L321">0321</a> \end{equation}</div>
+<div id="L322"><a href="#L322">0322</a> where $H_j$ is a second-order Butterworth low-pass with cutoff $f_{v,j}$,</div>
+<div id="L323"><a href="#L323">0323</a> $\lambda_j$ its level and $\sigma_{v,j}$ a white floor.</div>
+<div id="L324"><a href="#L324">0324</a> $\lambda_j$ and $f_{v,j}$ are fitted so that the simulated standstill servo</div>
+<div id="L325"><a href="#L325">0325</a> error at $Y=0$ matches the measured one of the industrial machine, and</div>
+<div id="L326"><a href="#L326">0326</a> $\sigma_{v,j}$ is its level above 5~kHz.</div>
+<div id="L327"><a href="#L327">0327</a> The signal-to-noise ratio of Section~\ref{sec:setup_system} is</div>
+<div id="L328"><a href="#L328">0328</a> $\mathrm{SNR}_j=20\log_{10}\bigl(\mathrm{RMS}(y^{\circ}_j-r_j)/\mathrm{RMS}(y_j-y^{\circ}_j)\bigr)$</div>
+<div id="L329"><a href="#L329">0329</a> over the training records.</div>
+<div id="L330"><a href="#L330">0330</a> </div>
+<div id="L331"><a href="#L331">0331</a> \subsection{Excitation and records}\label{app:setup_records}</div>
+<div id="L332"><a href="#L332">0332</a> % Sources: D-217, D-219 (band, grid, crest factor, amplitudes), MANIFEST (scale), Code/Setup band_frf.py,</div>
+<div id="L333"><a href="#L333">0333</a> % coverage.py; Code/Figures setup_band.py, setup_coverage.py.</div>
+<div id="L334"><a href="#L334">0334</a> \ifdraft</div>
+<div id="L335"><a href="#L335">0335</a> \begin{itemize}</div>
+<div id="L336"><a href="#L336">0336</a> \item The multisine: grid from the width of the anti-resonance, best crest factor of 30 draws, amplitudes, no record needed scaling</div>
+<div id="L337"><a href="#L337">0337</a> \item The upper band edge and the band over the frequency response of the simulated system</div>
+<div id="L338"><a href="#L338">0338</a> \item The five types of motion profile, the operational motion profiles of the test records and the operating range of all records</div>
+<div id="L339"><a href="#L339">0339</a> \end{itemize}</div>
+<div id="L340"><a href="#L340">0340</a> \fi</div>
+<div id="L341"><a href="#L341">0341</a> In each channel $c\in\{X,\Theta,Y\}$ of the generalised force, the</div>
+<div id="L342"><a href="#L342">0342</a> multisine is</div>
+<div id="L343"><a href="#L343">0343</a> \begin{equation}</div>
+<div id="L344"><a href="#L344">0344</a>  u^{\mathrm{ms}}_c(t)=A_c\sqrt{\frac{2}{\lvert\mathcal L\rvert}}\sum_{l\in\mathcal L}</div>
+<div id="L345"><a href="#L345">0345</a>  \cos(2\pi l\,\Delta f\,t+\alpha_{c,l}),</div>
+<div id="L346"><a href="#L346">0346</a>  \label{eq:setup_ms}</div>
+<div id="L347"><a href="#L347">0347</a> \end{equation}</div>
+<div id="L348"><a href="#L348">0348</a> where $\Delta f=0.005\,f_b$, $\mathcal L=\{212,\dots,594\}$ spans</div>
+<div id="L349"><a href="#L349">0349</a> $1.06\,f_b$ to $2.97\,f_b$, and the phases $\alpha_{c,l}$ are drawn uniformly per record.</div>
+<div id="L350"><a href="#L350">0350</a> It enters at the actuators as $u^{\mathrm{ff}}=P^{-1}u^{\mathrm{ms}}$.</div>
+<div id="L351"><a href="#L351">0351</a> The grid places 18 lines inside the half-power width $2\zeta_af_a=0.09\,f_b$ of</div>
+<div id="L352"><a href="#L352">0352</a> the anti-resonance, the narrowest feature of the system, and makes the</div>
+<div id="L353"><a href="#L353">0353</a> multisine periodic in 2~s.</div>
+<div id="L354"><a href="#L354">0354</a> Of 30 phase draws, the one with the lowest crest factor is kept; for $\Theta$</div>
+<div id="L355"><a href="#L355">0355</a> the crest factor is taken on the simulated yaw response.</div>
+<div id="L356"><a href="#L356">0356</a> The rms amplitudes $A_c$ keep every record within the force and stroke</div>
+<div id="L357"><a href="#L357">0357</a> limits of the machine without scaling.</div>
+<div id="L358"><a href="#L358">0358</a> $K_1$ is tuned for $f_b$ on the rigid baseline at $Y=0$.</div>
+<div id="L359"><a href="#L359">0359</a> On the simulated system, the crossover of the loop lies between</div>
+<div id="L360"><a href="#L360">0360</a> $\fpeval{round(\SetupCrossMin/100,2)}\,f_b$ and</div>
+<div id="L361"><a href="#L361">0361</a> $\fpeval{round(\SetupCrossMax/100,2)}\,f_b$ over the axes and the training</div>
+<div id="L362"><a href="#L362">0362</a> positions, so the band starts at the highest.</div>
+<div id="L363"><a href="#L363">0363</a> The upper edge follows from the best linear approximation of the simulated</div>
+<div id="L364"><a href="#L364">0364</a> system with friction under $K_1$, measured at the five training positions.</div>
+<div id="L365"><a href="#L365">0365</a> Above the crossover, the band holds 90\,\% of the squared difference between</div>
+<div id="L366"><a href="#L366">0366</a> this response and that of the baseline, counted where the difference</div>
+<div id="L367"><a href="#L367">0367</a> exceeds its uncertainty.</div>
+<div id="L368"><a href="#L368">0368</a> A rerun with the friction law of \eqref{eq:setup_fric} gives the same</div>
+<div id="L369"><a href="#L369">0369</a> edges.</div>
+<div id="L370"><a href="#L370">0370</a> \todo{Missing: reason for the 90\,\% share of the upper edge and for 30 phase draws, and a cite key for the best linear approximation. Candidate: keep both as heuristic (D-217, D-219); cite Pintelon and Schoukens 2012 for the best linear approximation (no cite key yet).}</div>
+<div id="L371"><a href="#L371">0371</a> \begin{figure}[t]</div>
+<div id="L372"><a href="#L372">0372</a>   \centering</div>
+<div id="L373"><a href="#L373">0373</a>   \includegraphics[width=\columnwidth]{setup_band.pdf}</div>
+<div id="L374"><a href="#L374">0374</a>   \caption{Stage axis $Y$ of the simulated system and of the baseline,</div>
+<div id="L375"><a href="#L375">0375</a>   linearised at the five training positions (lines overlap). Top: open</div>
+<div id="L376"><a href="#L376">0376</a>   loop. Bottom: complementary sensitivity with $K_1$. Shaded: multisine</div>
+<div id="L377"><a href="#L377">0377</a>   band; hatched: range of the $K_1$ crossovers over the axes and</div>
+<div id="L378"><a href="#L378">0378</a>   positions.}</div>
+<div id="L379"><a href="#L379">0379</a>   \label{fig:setup_band}</div>
+<div id="L380"><a href="#L380">0380</a> \end{figure}</div>
+<div id="L381"><a href="#L381">0381</a> </div>
+<div id="L382"><a href="#L382">0382</a> The five types of motion profile are standstill at a fixed $Y$, slow</div>
+<div id="L383"><a href="#L383">0383</a> sweeps of $Y$, $X$-$Y$ Lissajous paths, point-to-point moves with S-curve</div>
+<div id="L384"><a href="#L384">0384</a> profiles, and operational motion profiles, which are sine-shaped moves</div>
+<div id="L385"><a href="#L385">0385</a> representative of machine operation.</div>
+<div id="L386"><a href="#L386">0386</a> The test records I3 to I6 add new operational motion profiles: sine-shaped</div>
+<div id="L387"><a href="#L387">0387</a> routes with $X$ and $Y$ together, alternating $X$-only and $Y$-only moves,</div>
+<div id="L388"><a href="#L388">0388</a> an S-curve route and long strokes.</div>
+<div id="L389"><a href="#L389">0389</a> Table~\ref{tab:setup_records} lists the records, and</div>
+<div id="L390"><a href="#L390">0390</a> Fig.~\ref{fig:setup_coverage} shows their operating range.</div>
+<div id="L391"><a href="#L391">0391</a> \begin{table}[t]</div>
+<div id="L392"><a href="#L392">0392</a> \caption{Training, validation and test records.}</div>
+<div id="L393"><a href="#L393">0393</a> \label{tab:setup_records}</div>
+<div id="L394"><a href="#L394">0394</a> \centering</div>
+<div id="L395"><a href="#L395">0395</a> \footnotesize</div>
+<div id="L396"><a href="#L396">0396</a> \begin{tabular}{@{}lllll@{}}</div>
+<div id="L397"><a href="#L397">0397</a> \toprule</div>
+<div id="L398"><a href="#L398">0398</a> Record &amp; Motion &amp; Multisine &amp; New &amp; Pair\\</div>
+<div id="L399"><a href="#L399">0399</a> \midrule</div>
+<div id="L400"><a href="#L400">0400</a> Training &amp; all five types &amp; 14 of 18 &amp; &amp; \\</div>
+<div id="L401"><a href="#L401">0401</a> Validation &amp; all five types &amp; 4 of 6 &amp; positions, draws &amp; \\</div>
+<div id="L402"><a href="#L402">0402</a> \midrule</div>
+<div id="L403"><a href="#L403">0403</a> I1 &amp; point-to-point &amp; yes &amp; phases, setpoints &amp; \\</div>
+<div id="L404"><a href="#L404">0404</a> I2 &amp; standstill &amp; yes &amp; position &amp; \\</div>
+<div id="L405"><a href="#L405">0405</a> I3 &amp; operational &amp; no$^\dagger$ &amp; motion type &amp; \\</div>
+<div id="L406"><a href="#L406">0406</a> I4 &amp; route &amp; no &amp; motion type &amp; \\</div>
+<div id="L407"><a href="#L407">0407</a> I5 &amp; route &amp; no$^\dagger$ &amp; motion type &amp; \\</div>
+<div id="L408"><a href="#L408">0408</a> I6 &amp; route &amp; no$^\dagger$ &amp; motion type &amp; \\</div>
+<div id="L409"><a href="#L409">0409</a> \midrule</div>
+<div id="L410"><a href="#L410">0410</a> E1 &amp; standstill &amp; yes &amp; $\lvert Y\rvert=\fpeval{round(\SetupEY/\SetupTrainY,1)}\,Y_{\mathrm{tr}}$ &amp; I2\\</div>
+<div id="L411"><a href="#L411">0411</a> E2 &amp; operational &amp; no$^\dagger$ &amp; stroke of $Y$ &amp; I3\\</div>
+<div id="L412"><a href="#L412">0412</a> E3 &amp; route &amp; no$^\dagger$ &amp; acceleration, \SetupEAcc\,\% &amp; I5\\</div>
+<div id="L413"><a href="#L413">0413</a> E4 &amp; route &amp; no$^\dagger$ &amp; velocity, \SetupEVel\,\% &amp; I6\\</div>
+<div id="L414"><a href="#L414">0414</a> E6 &amp; operational &amp; no$^\dagger$ &amp; several, \SetupESixAcc\,\% acc. &amp; I3\\</div>
+<div id="L415"><a href="#L415">0415</a> \bottomrule</div>
+<div id="L416"><a href="#L416">0416</a> \end{tabular}</div>
+<div id="L417"><a href="#L417">0417</a> </div>
+<div id="L418"><a href="#L418">0418</a> \smallskip</div>
+<div id="L419"><a href="#L419">0419</a> \begin{minipage}{\linewidth}\footnotesize</div>
+<div id="L420"><a href="#L420">0420</a> I: interpolation, inside the training range. E: extrapolation, outside</div>
+<div id="L421"><a href="#L421">0421</a> it in the setting under New, with the motion of the Pair record. New:</div>
+<div id="L422"><a href="#L422">0422</a> what differs from the training records, for E from the Pair record.</div>
+<div id="L423"><a href="#L423">0423</a> E6 differs in more than one setting and is a stress record.</div>
+<div id="L424"><a href="#L424">0424</a> $^\dagger$Also evaluated with the training multisine added (I3M, E2M,</div>
+<div id="L425"><a href="#L425">0425</a> and so on), at equal amplitude within a pair and 0.30 of the training</div>
+<div id="L426"><a href="#L426">0426</a> amplitude for I6 and E4.</div>
+<div id="L427"><a href="#L427">0427</a> \end{minipage}</div>
+<div id="L428"><a href="#L428">0428</a> \end{table}</div>
+<div id="L429"><a href="#L429">0429</a> \begin{figure}[t]</div>
+<div id="L430"><a href="#L430">0430</a>   \centering</div>
+<div id="L431"><a href="#L431">0431</a>   \includegraphics[width=\columnwidth]{setup_coverage.pdf}</div>
+<div id="L432"><a href="#L432">0432</a>   \caption{Coverage of each record: range of $Y$ (left), largest acceleration</div>
+<div id="L433"><a href="#L433">0433</a>   (middle) and largest velocity (right), in \% of the machine limits.</div>
+<div id="L434"><a href="#L434">0434</a>   Shaded: range of the training records.}</div>
+<div id="L435"><a href="#L435">0435</a>   \label{fig:setup_coverage}</div>
+<div id="L436"><a href="#L436">0436</a> \end{figure}</div>
+<div id="L437"><a href="#L437">0437</a> \subsection{Processing and checks}\label{app:setup_checks}</div>
+<div id="L438"><a href="#L438">0438</a> % Sources: D-087 (block mean), D-166 (rate), D-220 (window), D-232 (filter), D-141 (controller rate);</div>
+<div id="L439"><a href="#L439">0439</a> % Code/Setup rate.py, filter_leak.py, filter_edge.py, loop_memory.py, controller_rate.py, rail_velocity.py.</div>
+<div id="L440"><a href="#L440">0440</a> \ifdraft</div>
+<div id="L441"><a href="#L441">0441</a> \begin{itemize}</div>
+<div id="L442"><a href="#L442">0442</a> \item The reduction to the model rate: block mean of the force, zero-phase filter on the servo error, trim at the record ends</div>
+<div id="L443"><a href="#L443">0443</a> \item The checks of rate, filter, window, controller rate and friction regime</div>
+<div id="L444"><a href="#L444">0444</a> \item The cause of the controller-rate change (?)</div>
+<div id="L445"><a href="#L445">0445</a> \end{itemize}</div>
+<div id="L446"><a href="#L446">0446</a> \fi</div>
+<div id="L447"><a href="#L447">0447</a> With the argument counting samples at $f_{\mathrm s}$, the records are</div>
+<div id="L448"><a href="#L448">0448</a> reduced to $T_s$ by</div>
+<div id="L449"><a href="#L449">0449</a> \begin{equation}</div>
+<div id="L450"><a href="#L450">0450</a>  u_k=\frac15\sum_{i=0}^{4}\uact(5k+i),\qquad</div>
+<div id="L451"><a href="#L451">0451</a>  y_k=r(5k)+\bigl(\mathcal B\ast(y-r)\bigr)(5k),</div>
+<div id="L452"><a href="#L452">0452</a>  \label{eq:setup_decim}</div>
+<div id="L453"><a href="#L453">0453</a> \end{equation}</div>
+<div id="L454"><a href="#L454">0454</a> where $\mathcal B$ is a zero-phase eighth-order Butterworth low-pass at</div>
+<div id="L455"><a href="#L455">0455</a> 1.6~kHz.</div>
+<div id="L456"><a href="#L456">0456</a> The block mean is the exact input of a zero-order-hold model at $T_s$.</div>
+<div id="L457"><a href="#L457">0457</a> The filter acts on the servo error only, so the reference passes unchanged.</div>
+<div id="L458"><a href="#L458">0458</a> It changes the noise-free output by at most $\SetupFiltDist$~m RMS.</div>
+<div id="L459"><a href="#L459">0459</a> Its impulse response falls below 1\,\% of its peak within</div>
+<div id="L460"><a href="#L460">0460</a> \SetupFiltDecay~ms, so the \SetupTrim~ms removed at both record ends hold</div>
+<div id="L461"><a href="#L461">0461</a> its edge transient.</div>
+<div id="L462"><a href="#L462">0462</a> \todo{Missing: source for the cutoff at 0.8 times the Nyquist frequency and for the order 8. Candidate: Gautier, Janot and Vandanjon, IEEE TCST 2013 (decimation at 0.8 of the Nyquist frequency; no cite key yet); order 8 heuristic (D-232).}</div>
+<div id="L463"><a href="#L463">0463</a> </div>
+<div id="L464"><a href="#L464">0464</a> For $\lvert v_i\rvert\ge3v_{\mathrm{fr}}$, the friction of</div>
+<div id="L465"><a href="#L465">0465</a> \eqref{eq:setup_fric} is within 0.5\,\% of the Coulomb law.</div>
+<div id="L466"><a href="#L466">0466</a> Table~\ref{tab:setup_checks} gives the checks of the design, including the</div>
+<div id="L467"><a href="#L467">0467</a> share of samples in this range.</div>
+<div id="L468"><a href="#L468">0468</a> \begin{table}[t]</div>
+<div id="L469"><a href="#L469">0469</a> \caption{Checks of the experiment design.}</div>
+<div id="L470"><a href="#L470">0470</a> \label{tab:setup_checks}</div>
+<div id="L471"><a href="#L471">0471</a> \centering</div>
+<div id="L472"><a href="#L472">0472</a> \footnotesize</div>
+<div id="L473"><a href="#L473">0473</a> \setlength{\tabcolsep}{3pt}</div>
+<div id="L474"><a href="#L474">0474</a> \begin{tabular}{@{}ll@{}}</div>
+<div id="L475"><a href="#L475">0475</a> \toprule</div>
+<div id="L476"><a href="#L476">0476</a> Check &amp; Value\\</div>
+<div id="L477"><a href="#L477">0477</a> \midrule</div>
+<div id="L478"><a href="#L478">0478</a> \multicolumn{2}{@{}l}{\emph{Simulated loop, linearised at the training positions}}\\</div>
+<div id="L479"><a href="#L479">0479</a> Phase-margin loss, 4 / 2~kHz &amp; \SetupPmLossFour$^\circ$ / \SetupPmLossTwo$^\circ$\\</div>
+<div id="L480"><a href="#L480">0480</a> Slowest closed-loop time constant &amp; \SetupTauMax~ms\\</div>
+<div id="L481"><a href="#L481">0481</a> Response to a force error, 1\,\% &amp; \SetupDecay~ms (window \SetupWindow~ms)\\</div>
+<div id="L482"><a href="#L482">0482</a> Filter impulse response, 1\,\% &amp; \SetupFiltDecay~ms (trim \SetupTrim~ms)\\</div>
+<div id="L483"><a href="#L483">0483</a> \multicolumn{2}{@{}l}{\emph{Training records}}\\</div>
+<div id="L484"><a href="#L484">0484</a> Noise above 2~kHz, raw / filtered &amp; $\SetupAliasRaw$ / $\SetupAliasFilt$~m\\</div>
+<div id="L485"><a href="#L485">0485</a> SNR $\fpeval{round(\SetupMotionFNN/100,2)}\,f_b$ to $1.05\,f_b$, without multisine &amp; $\ge$\SetupGapSnrMinMotion~dB\\</div>
+<div id="L486"><a href="#L486">0486</a> Samples with $\lvert v\rvert\ge3v_{\mathrm{fr}}$, multisine &amp; $\ge$\SetupRailShareMin\,\%\\</div>
+<div id="L487"><a href="#L487">0487</a> $K_1$ at 20~kHz, force error &amp; $\SetupKcheck$\\</div>
+<div id="L488"><a href="#L488">0488</a> $K_1$ at $T_s$, force change, median &amp; \SetupKmismatchMed\,\%\\</div>
+<div id="L489"><a href="#L489">0489</a> \quad largest; without multisine &amp; \SetupKmismatchMax\,\%; \SetupKmismatchMotion\,\%\\</div>
+<div id="L490"><a href="#L490">0490</a> \bottomrule</div>
+<div id="L491"><a href="#L491">0491</a> \end{tabular}</div>
+<div id="L492"><a href="#L492">0492</a> \end{table}</div>
+<div id="L493"><a href="#L493">0493</a> The training loop re-discretises $K_1$ at $T_s$, which changes the feedback</div>
+<div id="L494"><a href="#L494">0494</a> force on the training records by a median of \SetupKmismatchMed\,\% RMS.</div>
+<div id="L495"><a href="#L495">0495</a> \todo{Missing: the cause of this change and whether it affects the results. Candidate: the half-sample offset between the block-mean force and the controller output at $T_s$ (2\,sin($\pi f\cdot0.1$~ms) is 9 to 19\,\% over the band, only records with multisine show it; not verified); the effect to Section~\ref{sec:results} or the Discussion.}</div>
+<div id="L496"><a href="#L496">0496</a> \todo{Cause found (2026-10-16, D-265): the check compares the 4~kHz</div>
+<div id="L497"><a href="#L497">0497</a> controller output at sample $kD$ with the force averaged over $kD$ to $kD+4$,</div>
+<div id="L498"><a href="#L498">0498</a> centred 0.1~ms later. Compared at the same instant, the two controllers agree</div>
+<div id="L499"><a href="#L499">0499</a> to 0.5 to 1\,\% on TR-S1. The 10.8\,\% is the change of the force within one</div>
+<div id="L500"><a href="#L500">0500</a> 0.25~ms hold, the cost of closing the loop at 4~kHz in simulation, not an</div>
+<div id="L501"><a href="#L501">0501</a> error in the block-mean preprocessing (D-087), which stays. Its output effect</div>
+<div id="L502"><a href="#L502">0502</a> is bounded by the oracle error of the closed-loop report. The check is</div>
+<div id="L503"><a href="#L503">0503</a> corrected to report both numbers separately, so these macros and this</div>
+<div id="L504"><a href="#L504">0504</a> sentence change.}</div>
+<div id="L505"><a href="#L505">0505</a> </div>
+<div id="L506"><a href="#L506">0506</a> \subsection{Black-box model}\label{app:setup_bb}</div>
+<div id="L507"><a href="#L507">0507</a> % Sources: beintema2023subnet; scripts/gantry/blackbox-cl-trainable (train_bb_clmap.py), thesis_r8_grid.conf.</div>
+<div id="L508"><a href="#L508">0508</a> \ifdraft</div>
+<div id="L509"><a href="#L509">0509</a> \begin{itemize}</div>
+<div id="L510"><a href="#L510">0510</a> \item The SUBNET model of the closed loop, from reference and injected force to servo error, with its encoder</div>
+<div id="L511"><a href="#L511">0511</a> \end{itemize}</div>
+<div id="L512"><a href="#L512">0512</a> \fi</div>
+<div id="L513"><a href="#L513">0513</a> The black box of Section~\ref{sec:setup_models} is</div>
+<div id="L514"><a href="#L514">0514</a> \begin{equation}</div>
+<div id="L515"><a href="#L515">0515</a>  x^{\mathrm{bb}}_{k+1}=f_{\mathrm{bb}}\bigl(\theta_{\mathrm{bb}},x^{\mathrm{bb}}_k,r_k,u^{\mathrm{ms}}_k\bigr),\quad</div>
+<div id="L516"><a href="#L516">0516</a>  \hat y_k=r_k+h_{\mathrm{bb}}\bigl(\theta_{\mathrm{bb}},x^{\mathrm{bb}}_k\bigr),</div>
+<div id="L517"><a href="#L517">0517</a>  \label{eq:setup_bb}</div>
+<div id="L518"><a href="#L518">0518</a> \end{equation}</div>
+<div id="L519"><a href="#L519">0519</a> where $x^{\mathrm{bb}}_k\in\R^{n_x}$ and an encoder estimates</div>
+<div id="L520"><a href="#L520">0520</a> $x^{\mathrm{bb}}$ at the window start from past inputs and servo errors, as</div>
+<div id="L521"><a href="#L521">0521</a> in~\cite{beintema2023subnet}.</div>
+<div id="L522"><a href="#L522">0522</a> Its settings are the black-box rows of Table~\ref{tab:hyper}.</div>
+<div id="L523"><a href="#L523">0523</a> </div>
+<div id="L524"><a href="#L524">0524</a> \subsection{Hyperparameters}\label{app:hyper}</div>
+<div id="L525"><a href="#L525">0525</a> Table~\ref{tab:hyper} lists the settings of every grey-box run and of the</div>
+<div id="L526"><a href="#L526">0526</a> black-box search.</div>
+<div id="L527"><a href="#L527">0527</a> The basis of a value is derived (computed in Section~\ref{sec:setup} or Appendix~\ref{app:setup}),</div>
+<div id="L528"><a href="#L528">0528</a> inherited (from earlier work), tuned (on validation data), heuristic (fixed</div>
+<div id="L529"><a href="#L529">0529</a> without a measurement) or compute-limited.</div>
+<div id="L530"><a href="#L530">0530</a> Every model is trained once with one seed, so differences between models</div>
+<div id="L531"><a href="#L531">0531</a> smaller than the variation between seeds are not resolved.</div>
+<div id="L532"><a href="#L532">0532</a> \begin{table}[t]</div>
+<div id="L533"><a href="#L533">0533</a> \caption{Hyperparameters of the identification.}</div>
+<div id="L534"><a href="#L534">0534</a> \label{tab:hyper}</div>
+<div id="L535"><a href="#L535">0535</a> \centering</div>
+<div id="L536"><a href="#L536">0536</a> \footnotesize</div>
+<div id="L537"><a href="#L537">0537</a> \setlength{\tabcolsep}{3pt}</div>
+<div id="L538"><a href="#L538">0538</a> \begin{tabular}{@{}lll@{}}</div>
+<div id="L539"><a href="#L539">0539</a> \toprule</div>
+<div id="L540"><a href="#L540">0540</a> Setting &amp; Value &amp; Basis\\</div>
+<div id="L541"><a href="#L541">0541</a> \midrule</div>
+<div id="L542"><a href="#L542">0542</a> \multicolumn{3}{@{}l}{\emph{Model and data}}\\</div>
+<div id="L543"><a href="#L543">0543</a> Model rate $1/T_s$ &amp; 4~kHz &amp; derived\\</div>
+<div id="L544"><a href="#L544">0544</a> RK4 steps per $T_s$ &amp; 1 &amp; heuristic\\</div>
+<div id="L545"><a href="#L545">0545</a> Window $n_f$ &amp; 400 (0.1~s) &amp; derived\\</div>
+<div id="L546"><a href="#L546">0546</a> Window stride &amp; 10 samples &amp; heuristic\\</div>
+<div id="L547"><a href="#L547">0547</a> Encoder window $n+1$ &amp; 30 samples &amp; heuristic\\</div>
+<div id="L548"><a href="#L548">0548</a> Encoder start &amp; least squares (SVD) &amp; \cite[Eq.~(33)]{hoekstra2026encoder}\\</div>
+<div id="L549"><a href="#L549">0549</a> SVD cutoff ($N$ windows, $m$ regressors) &amp; $\max(N,m)\,\epsilon$ &amp; numerical\\</div>
+<div id="L550"><a href="#L550">0550</a> Added states $n_{\bar x}$ &amp; 0, 2, 8 &amp; compared\\</div>
+<div id="L551"><a href="#L551">0551</a> Network, encoder correction &amp; $2\times16$, tanh &amp; tuned (earlier)\\</div>
+<div id="L552"><a href="#L552">0552</a> Precision &amp; float64 &amp; numerical\\</div>
+<div id="L553"><a href="#L553">0553</a> Margin $\gamma$ &amp; 0.99 &amp; heuristic\\</div>
+<div id="L554"><a href="#L554">0554</a> Detuning of the combinations &amp; 10\,\% &amp; heuristic\\</div>
+<div id="L555"><a href="#L555">0555</a> \multicolumn{3}{@{}l}{\emph{Optimiser}}\\</div>
+<div id="L556"><a href="#L556">0556</a> Adam rate, $\epsilon$ &amp; $10^{-5}$, $10^{-16}$ &amp; tuned (earlier)\\</div>
+<div id="L557"><a href="#L557">0557</a> Batch &amp; 512 windows &amp; heuristic\\</div>
+<div id="L558"><a href="#L558">0558</a> Epochs &amp; 200 &amp; compute-limited\\</div>
+<div id="L559"><a href="#L559">0559</a> Validation interval &amp; 1300 updates &amp; compute-limited\\</div>
+<div id="L560"><a href="#L560">0560</a> L-BFGS iterations, history &amp; 100, 50 &amp; inherited\\</div>
+<div id="L561"><a href="#L561">0561</a> L-BFGS inner steps, windows &amp; 20, 16384 &amp; compute-limited\\</div>
+<div id="L562"><a href="#L562">0562</a> L-BFGS tolerance (grad., change) &amp; $2.6\cdot10^{-5}$, $2.6\cdot10^{-7}$ &amp; inherited, scaled to the loss\\</div>
+<div id="L563"><a href="#L563">0563</a> Seeds per model &amp; 1 &amp; compute-limited\\</div>
+<div id="L564"><a href="#L564">0564</a> \multicolumn{3}{@{}l}{\emph{PS (Section~\ref{sec:aug_ps2}, Appendix~\ref{app:ps_stop})}}\\</div>
+<div id="L565"><a href="#L565">0565</a> S1 and S2 Adam rate &amp; $10^{-3}$ &amp; Adam default\\</div>
+<div id="L566"><a href="#L566">0566</a> S1 batch, windows $\lvert\mathcal C\rvert$ &amp; 64, 128 &amp; heuristic\\</div>
+<div id="L567"><a href="#L567">0567</a> Decoder width $n_h$, horizon $H$ &amp; 16, $n+1$ &amp; as above\\</div>
+<div id="L568"><a href="#L568">0568</a> Check interval $i_c$ &amp; 25 updates &amp; heuristic\\</div>
+<div id="L569"><a href="#L569">0569</a> Plateau checks $w$, tolerance $\delta_\nu$ &amp; 4, 0.02 &amp; heuristic\\</div>
+<div id="L570"><a href="#L570">0570</a> S1 updates $i_{\min}$, $i_{\max}$ &amp; 100, 350 &amp; heuristic\\</div>
+<div id="L571"><a href="#L571">0571</a> Early check $i_s$, threshold $\nu_{\max}$ &amp; 150, 0.90 &amp; heuristic\\</div>
+<div id="L572"><a href="#L572">0572</a> Held-out records &amp; last per class with at least 3 records &amp; heuristic\\</div>
+<div id="L573"><a href="#L573">0573</a> S2 pairs $N_{\mathcal P}$ (fit, held-out) &amp; 8192, 2048 &amp; heuristic\\</div>
+<div id="L574"><a href="#L574">0574</a> S2 batch, check interval &amp; 512, 100 updates &amp; heuristic\\</div>
+<div id="L575"><a href="#L575">0575</a> S2 plateau (checks, tolerance) &amp; 5, 0.01 &amp; heuristic\\</div>
+<div id="L576"><a href="#L576">0576</a> S2 updates (min, max) &amp; 500, 8000 &amp; heuristic\\</div>
+<div id="L577"><a href="#L577">0577</a> \multicolumn{3}{@{}l}{\emph{Black box (Section~\ref{sec:setup_models})}}\\</div>
+<div id="L578"><a href="#L578">0578</a> States $n_x$ &amp; 8, 16, 32 &amp; tuned\\</div>
+<div id="L579"><a href="#L579">0579</a> Width of $f_{\mathrm{bb}}$, $h_{\mathrm{bb}}$ (encoder $2\times$) &amp; 8, 16, 32 &amp; tuned\\</div>
+<div id="L580"><a href="#L580">0580</a> Adam rate &amp; $10^{-3}$, $3\cdot10^{-3}$, $10^{-2}$ &amp; tuned\\</div>
+<div id="L581"><a href="#L581">0581</a> Batch, stride &amp; 256, 25 &amp; inherited\\</div>
+<div id="L582"><a href="#L582">0582</a> Updates &amp; 80000 &amp; compute-limited\\</div>
+<div id="L583"><a href="#L583">0583</a> Selection &amp; lowest validation NRMS$_e$ &amp; heuristic\\</div>
+<div id="L584"><a href="#L584">0584</a> \bottomrule</div>
+<div id="L585"><a href="#L585">0585</a> \end{tabular}</div>
+<div id="L586"><a href="#L586">0586</a> \end{table}</div>
+<div id="L587"><a href="#L587">0587</a> \todo{Missing: a stated reason for the rows marked heuristic without one in \texttt{docs/decisions.md} (window stride, batch, RK4 steps, the PS rules). Candidate: keep them as heuristic, with D-234 as the source of the PS rules (prototype runs).}</div>
+<div id="L588"><a href="#L588">0588</a> \todo{Missing: the black-box rows are the search grid of \texttt{thesis\_r8\_grid.conf}; the selected configuration is not known yet. Candidate: add a row with the selected $n_x$, width and rate once R8 has run.}</div>
+<div id="L589"><a href="#L589">0589</a> </div>
+<div id="L590"><a href="#L590">0590</a> \begin{wip}</div>
+<div id="L591"><a href="#L591">0591</a> \subsection{OBC and experiment details}</div>
+<div id="L592"><a href="#L592">0592</a> \begin{itemize}</div>
+<div id="L593"><a href="#L593">0593</a> \item Derive the stacked projector, rank-deficient pseudoinverse case, epoch refresh, and additional-state zero extension</div>
+<div id="L594"><a href="#L594">0594</a> \item Derive $J^+\Delta^*$ and list the measured singular-direction contributions to the predicted parameter bias</div>
+<div id="L595"><a href="#L595">0595</a> \item List dataset identifiers, split membership, hyperparameters, seed, and exact metric definitions for every reported arm</div>
+<div id="L596"><a href="#L596">0596</a> \item Figure (existing, optional): place \texttt{controller-chain-v1} here only if the controller reconstruction cannot be audited adequately in prose and equations</div>
+<div id="L597"><a href="#L597">0597</a> \end{itemize}</div>
+<div id="L598"><a href="#L598">0598</a> \todo{Can code and data tables be cited through a repository or DOI instead of spending paper space on full reproducibility metadata?}</div>
+<div id="L599"><a href="#L599">0599</a> \end{wip}</div></pre>

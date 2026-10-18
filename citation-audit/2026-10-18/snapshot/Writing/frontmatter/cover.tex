@@ -1,0 +1,94 @@
+% cover.tex  --  TU/e AI&ES MSc thesis cover (open access), from the official
+% LaTeX template frontmatter/tue-templates/open_access/main.tex (Dirk
+% 2026-10-18). The template body is kept as is; only the fields are filled in
+% and the ASMPT logo is added left of the TU/e logo. The template's page
+% (article, 12pt, A4, 1in margins, Computer Modern) is reproduced inside a
+% box and fitted to the US Letter IEEEtran page: scale 11in/297mm, centred.
+
+% Article 12pt list spacing (size12.clo), used by flushright and center.
+\makeatletter
+\newcommand{\coverarticlelists}{%
+  \def\@listi{\leftmargin\leftmargini
+    \parsep 5\p@ \@plus2.5\p@ \@minus\p@
+    \topsep 10\p@ \@plus4\p@ \@minus6\p@
+    \itemsep5\p@ \@plus2.5\p@ \@minus\p@}%
+  \let\@listI\@listi
+  \@listi
+  \setlength\partopsep{3\p@ \@plus 2\p@ \@minus 2\p@}}
+\makeatother
+
+\begin{titlepage}
+\begin{tikzpicture}[remember picture, overlay]
+  \begin{scope}[shift={(current page.south west)},
+      xshift={(8.5in-0.940737*210mm)/2}, scale=0.940737, transform shape]
+  \node[anchor=north west, inner sep=0pt] at (1in,{297mm-1in}) {%
+  \begin{minipage}[t]{\dimexpr210mm-2in\relax}
+  % Template typesetting: article 12pt sizes, Computer Modern, indent 1.5em.
+  \fontfamily{cmr}\renewcommand{\bfdefault}{bx}\fontsize{12}{14.5}\selectfont
+  \coverarticlelists
+  \renewcommand{\small}{\fontsize{10.95}{13.6}\selectfont}%
+  \renewcommand{\large}{\fontsize{14.4}{18}\selectfont}%
+  \renewcommand{\Large}{\fontsize{17.28}{22}\selectfont}%
+  \setlength{\parindent}{1.5em}%
+  \setlength{\parskip}{0pt plus 1pt}%
+
+\begin{flushright}
+    \makebox[\linewidth][s]{%
+      \raisebox{11.5pt}{\includegraphics[height=24pt]{frontmatter/asmpt_logo.png}}\hfill
+      \includegraphics[width=0.38\textwidth]{frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png}}\\[0.25cm]
+    {\small \textbf{Department of Electrical Engineering}}
+\end{flushright}
+\vspace*{2cm}
+%%% -------------------------------------------
+% TITLE + AUTHOR
+\begin{center}
+    {\Large \textbf{Model Augmentation for a\\
+      High-Precision Dual-Drive Gantry}\par}\vspace{1cm}
+    by \\[1cm]
+    {\large \textbf{D.J.L.M. van den Berg}} \\[3cm]
+    {\large MSc Thesis} \\[2cm]
+\end{center}
+
+% TWO COLUMNS
+\begin{minipage}[t]{0.48\textwidth}
+    {\bfseries \small Thesis committee} \\[0.25cm]
+    {\small dr.\ ir.\ M. Schoukens} \\
+    {\small prof.\ dr.\ ir.\ R. T{\'o}th} \\
+    {\small dr.\ ir.\ M.F. Shakib} \\
+    {\small ir.\ J. Gerritsen} \\
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+    {\bfseries \small Graduation} \\[0.25cm]
+    {\small
+    \begin{tabular}{@{}l r@{}}
+        Program: & \begin{tabular}[t]{@{}r@{}}Artificial Intelligence and\\
+                   Engineering Systems\end{tabular} \\
+        Research group: & Control Systems \\
+        Thesis supervisor: & dr.\ ir.\ M. Schoukens \\
+        Date of defense: & 17-11-2026 \\
+        Student ID: & 1555561 \\
+        Study load (ECTS): & 45 \\
+        Track: & \begin{tabular}[t]{@{}r@{}}High-Tech Systems\\
+                 and Robotics\end{tabular} \\
+    \end{tabular}
+    }
+\end{minipage}
+
+\vspace{1cm}
+
+{\small The research of this thesis has been carried out in collaboration with ASMPT, Beuningen.}
+
+\vspace{0.4cm}
+{\small This thesis is public and Open Access.}
+
+\vspace{0.4cm}
+{\small This thesis has been realized in accordance with the regulations as stated in the TU/e Code of Scientific Conduct.}
+
+\vspace{0.4cm}
+
+{\small Disclaimer: the Department of Electrical Engineering of the Eindhoven University of Technology accepts no responsibility for the contents of MSc theses or practical training reports.}
+  \end{minipage}};
+  \end{scope}
+\end{tikzpicture}
+\end{titlepage}

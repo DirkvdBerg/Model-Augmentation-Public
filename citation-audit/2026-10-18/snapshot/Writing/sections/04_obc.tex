@@ -1,0 +1,448 @@
+% Page budget: 1.55 pages | Owns: negation, OBC derivation, additional-state scope, implementation, and true-parameter condition.
+% WRITING GUIDE
+% Purpose: Explain negation, derive the final state-level orthogonal-by-construction map, and delimit its interpretability guarantee.
+% Sources: README "Source map per subsection", rows IV-A to IV-D; mandatory papers and the reference gate as in the README.
+% Research-plan anchor: Preserve Aspect 3's goal of protecting physical interpretability; state clearly how the final construction differs from the proposed regularisation.
+% Current decisions: Reduced identifiable coordinates, data-derived reference tuples, a tangent-only one-step physical-state projection, per-epoch refresh, and no affine comparison arm.
+% Choices to justify: Protected parameter coordinates, reference-set construction, projected rows, rank tolerance, exclusion of the affine offset, refresh frequency, and treatment of additional states.
+% Cautions: docs/orthogonal-projection-plan.md describes an older soft-penalty route; one-step state orthogonality is not trajectory-output orthogonality or guaranteed true recovery.
+% Planned figures: New geometric projection figure with a physical and additional-state partition inset; show the remaining uniqueness limitation as clearly as the protected direction.
+% Section is finished when: The protected space, coordinate frame, gradient treatment, added-state scope, and true-recovery condition are explicit.
+%
+% MUST ESTABLISH (agreed with Dirk 2026-10-09, revised 2026-10-14 and 2026-10-15; step 2a of the
+%   thesis-section skill). Section IV is about orthogonality and stays general: no data, band, sample-rate or
+%   record statements (those are Section V and Results). Math first: every step a display. We use orthogonality
+%   by construction, not regularisation: the penalty is not discussed; the 2025 regularisation paper is cited
+%   only where its concepts are used (state-level stacking Eq. 9, parameter Jacobian Sec. 4 Eq. 15, simulated
+%   states Sec. 3, per-epoch recomputation Sec. 3 Remark 2, offset column Eqs. 17, 18).
+%  Opening (Dirk's text): non-unique pair; the network can represent what theta_base explains; orthogonality
+%          defined in words; unique, not necessarily true; Gyorok IO linear-in-parameters, we extend to state
+%          space nonlinear in its parameters. No roadmap. Added states NOT in the opening (they are in IV-B).
+%  IV-A Orthogonal-by-construction parametrisation (Gyorok 2026, adopted), eq:obc_gyorok: theta_aux is the
+%          least-squares fit of the network output by the regressor; that part is removed; the remainder is
+%          orthogonal on the training data (Lemma 3); theta_aux exists for full column rank (Assumption 1, Eq.
+%          6: identifiable baseline, weakly persistently exciting input); data-driven: holds on the data used,
+%          depends on their distribution (Sec. 3.2, text after Eqs. 12, 13); uniqueness of theta_b shown under
+%          Assumption 1 AND exact fit (Assumption 6, Sec. 4.2).
+%  IV-B Extension to the gantry (this work; label sec:obc_map kept for the refs in Sections I and VI):
+%       a. nonlinear in the parameters: Jacobian eq:obc_sens (2025 Eq. 15); columns = Y-dependent mass, damping,
+%          stiffness forces; Gamma left out, it does not enter the estimate (D-254; supervisor revnote outside wip).
+%       b. full column rank (Assumption 1) through the ten identifiable combinations: 14 raw parameters give four
+%          structural null directions (Section II-C, D-190); beta map invertible (D-229); rank then needs only
+%          excitation (2026 Eq. 6).
+%       c. only positions measured: tuples eq:obc_tuples from the data (2026 Eq. 5; 2025 Sec. 3 simulates
+%          instead; D-254); each with a successor (D-252, revnote); coefficient on the stack eq:obc_coef.
+%       d. our definition of orthogonality eq:obc_orth, on the reference tuples at xbar = 0 (Lemma 3 adapted);
+%          measured by the normalised inner product eq:obc_overlap: cos angle, c_j per parameter direction,
+%          rho = max over ran Phi = ||Pi d|| / ||d|| (supervisor: orthogonality is measured by the inner product;
+%          Dirk 2026-10-15). Section V says what it is applied to (D-246: corrected f_aug on held-out tuples,
+%          eps in simulation, eval_overlap.py; c_j not computed yet).
+%       e. closed-loop state update: eq:obc_corr, correction at every step, added states not corrected,
+%          coefficient differentiated (2026 Eqs. 9, 10, 13).
+%       f. identification of M_OBC in prose (no separate display; the cost does not change): eq:aug_loss with
+%          the corrected row; theta_aux re-solved per evaluation; beta_lin per epoch (2025 Remark 2, Sec. 4);
+%          rebuild after restore; polish revnotes (D-253, D-255).
+%       g. what it guarantees: eq:obc_eps, eq:obc_recovery (adapted from 2026 Thm. 7 without Assumption 6);
+%          true iff Phi^T eps = 0 (excitation, Remark 5); Kessels' negation not prevented; one-step surrogate.
+%  Removed 2026-10-15: the old problem paragraph (eq:obc_nonunique), eq:obc_problem and the separate
+%          identification subsection (sec:obc_ident), the projection figure, the per-phase details, the
+%          pseudoinverse "+" notation ((Phi^T Phi)^{-1} Phi^T throughout, as in Gyorok 2026 Eq. 8; Dirk).
+%
+% DRAFT NOTES (revision 2026-10-09 of the cycle-17 draft)
+% NOTATION (Dirk, 2026-10-15): as Gyorok, lower case per sample/tuple, upper case stacked over the data; no bold.
+%   Per tuple varphi(beta_lin, x, u) (6x10), stack Phi (6N x 10), column Phi_j; network f_aug, stack F_aug; baseline
+%   stack F_base; next states X_+. The stacked one-step discrepancy is Xi (Gyorok's Delta clashes with Delta(Y),
+%   m_Delta, beta_Delta; eps clashes with the Section III output error eps_{k|tau}); label eq:obc_eps kept for refs.
+%   Earlier note (superseded): A bar marks the added state (Section III), so the expansion point is xi_lin. Plain J
+%   clashes with the inertias, so the sensitivity is Phi (Gyorok's letter). The correction is f^n_obc.
+% SOURCE CONFLICTS: D-190 Why records the supervisors' condition as non-overlap with the baseline OUTPUT (an
+%   affine [J c] range); D-192 makes the offset diagnostic only and gives no reason; D-186 (2026-09-10, written
+%   for the trajectory basis) gives reasons 1 and 2. The draft states those reasons; the question is a todo.
+% LEFT OUT: rank tolerance and rank-loss fallback; D-194 forward sensitivity and D-195 hoist (how the code
+%   evaluates the same model); SVD solve; D-232 noisy-velocity check; pointwise no-go and Coulomb argument
+%   (Discussion); overlap cosines (todo); the affine arm (not in the THESIS-RESULTS campaign).
+% MOVED to other sections (not edited here): the fourth-order stencil basis (gain error below 0.2 percent
+%   against about 2.2 percent for second order at 230 Hz, 4 kHz; obc-gantry-one-step-implementation-plan.tex
+%   after eq. reference-reconstruction) to the Section V basis column; "the records are not designed for the
+%   condition" and the detuned-start comparison to Section V and Results.
+% STALE LINES in other sections (not edited): 06_results.tex line 40 cites eq:obc_overlap and rho_f, no longer
+%   defined; 06_results.tex line 45 and 05_setup.tex line 52 quote the affine arm; 07_discussion.tex uses
+%   J^T Delta* (now Phi^T eps, eq:obc_eps); 08_conclusion.tex line 19 "prevents local tangent overlap" uses
+%   wording D-186 Ruled out (1) bars.
+% CODE CONFIRMED (cycle 17, checker): obc_gantry.py build_reference_set, make_basis_builder,
+%   GantryOBCCorrection.forward; obc.py OBCBasis.coefficient, OBCLifecycle.maybe_refresh; interconnect.py loss,
+%   forward, _sync_prediction_state_for_validation; ps2_opening.py _residual; blocks.py transition_from_free.
+\section{Interpretability by Orthogonal Construction}\label{sec:obc}
+\ifdraft
+\begin{itemize}
+\item Goal from Section~III: an estimate of $\theta_{\mathrm{base}}$ that is unique under stated conditions; names IV-A and IV-B (style profile)
+\item Contribution: the extension Gy\"or\"ok 2026 Sec.~6 leaves open: a state-space baseline without full-state measurement, here nonlinear in its parameters and identified in closed loop (this work)
+\end{itemize}
+\fi
+
+\begin{wip}
+The parameter pair $(\theta_{\mathrm{base}},\theta_{\mathrm{aug}})$
+minimising the loss function of Section~\ref{sec:aug_closed_loop} can be non-unique:
+different pairs can give the same fit~\cite[Sec.~3.1]{gyorok2026obc}.
+Meaning that the rigid-body dynamics that the baseline parameters 
+$\theta_{\mathrm{base}}$ are able to explain from the data, can instead be represented by 
+a neural network correction.
+To prevent the neural network from correcting what $\theta_{\mathrm{base}}$ 
+can represent we introduce orthogonality by construction~\cite{gyorok2026obc}.
+Orthogonality here is defined as the neural network correction to the
+physical states having no component in the directions in which a change of
+$\theta_{\mathrm{base}}$ is able to change the next state predicted by the baseline.
+This gives us a unique estimate of $\theta_{\mathrm{base}}$ up to first order,
+but it does not guarantee recovering the true baseline parameters.
+\\
+Gy\"or\"ok et al.\ have constructed this for input-output baseline models that
+are linear in their parameters~\cite{gyorok2026obc}.
+We extend this to state-space models nonlinear in their parameters,
+specifically for our gantry system.
+\end{wip}
+\subsection{Orthogonal-by-construction parametrisation}\label{sec:obc_construction}
+\ifdraft
+\begin{itemize}
+\item Gy\"or\"ok's construction as adopted: baseline linear in its parameters, regressor at measured input-output data (past outputs, past and current inputs), stacked over the training data; lower case per sample, upper case stacked (2026 Eqs.~(1), (2), (5))
+\item $\theta_{\mathrm{aux}}$ is the least-squares fit of the network output by the regressor; its fitted part is removed and the remainder is orthogonal to $\Phi$ on the training data (2026 Eqs.~(8) to (11), Lemma~3)
+\item $\theta_{\mathrm{aux}}$ exists for full column rank of $\Phi$: identifiable baseline, weakly persistently exciting input (2026 Eqs.~(6), (7), Assumption~1)
+\item Data-driven: orthogonality holds on the data used, the projection depends on their distribution; any fixed set may be used, the analysis uses the whole training set (2026 Sec.~3.2, text after Eqs.~(12), (13))
+\item Uniqueness of $\hat\theta_{\mathrm b}$ shown under Assumption~1 and exact reproduction of the noise-free dynamics on the same training data (2026 Sec.~4.2, Assumption~6)
+\end{itemize}
+\fi
+\begin{wip}
+For a baseline linear in its parameters,
+$\hat y_k=\varphi(x_k)\theta_{\mathrm b}$,
+changing $\theta_{\mathrm b}$ changes the model output $\hat y_k$
+by a linear combination of the columns of the
+regressor $\varphi(x_k)$~\cite[Eqs.~(2), (39)]{gyorok2026obc}.
+Gy\"or\"ok et al.\ subtract from the neural network output
+its least-squares fit by the stacked
+regressor~\cite[Eqs.~(8), (9), (11), Lemma~3]{gyorok2026obc}:
+\end{wip}
+\begin{equation}
+\begin{aligned}
+ \hat Y&=\Phi\theta_{\mathrm b}+\tilde F^{\mathrm{ANN}},\\
+ \tilde F^{\mathrm{ANN}}&=F^{\mathrm{ANN}}-\Phi\theta_{\mathrm{aux}},\\
+ \theta_{\mathrm{aux}}&=\bigl(\Phi^\top\Phi\bigr)^{-1}\Phi^\top F^{\mathrm{ANN}},\\
+ 0&=\Phi^\top\tilde F^{\mathrm{ANN}},
+\end{aligned}
+\label{eq:obc_gyorok}
+\end{equation}
+\begin{wip}
+where $x_k$ is the vector of past measured outputs and past and current
+inputs~\cite[Eq.~(1)]{gyorok2026obc}, $\hat Y$ stacks the
+predicted outputs over the training data, $\Phi$ is the stacked
+regressor, $F^{\mathrm{ANN}}$ stacks the parallel network
+outputs~\cite[Eq.~(5)]{gyorok2026obc} and $\tilde F^{\mathrm{ANN}}$ is the
+projected network output~\cite[Eqs.~(9), (10)]{gyorok2026obc}.
+\\
+The projected network output $\tilde F^{\mathrm{ANN}}$ is
+orthogonal to the regressor~\cite[Lemma~3]{gyorok2026obc}.
+Calculating $\theta_{\mathrm{aux}}$ requires
+$(\Phi^\top\Phi)^{-1}$, which exists only if $\Phi$ has
+full column rank~\cite[Assumption~1]{gyorok2026obc}.
+Therefore different values of $\theta_{\mathrm b}$ are unable 
+to give the same stacked prediction on the training data. 
+Gy\"or\"ok et al.\ call an input with this property persistently
+exciting~\cite[Eq.~(6), Sec.~4.3]{gyorok2026obc}.
+This also requires an identifiable baseline, where different
+values of $\theta_{\mathrm b}$ give different functions
+$\varphi(\cdot)\theta_{\mathrm b}$.
+\end{wip}
+\subsection{Extension to the gantry}\label{sec:obc_map}
+\ifdraft
+\begin{itemize}
+\item Three differences, each changing one element of \eqref{eq:obc_gyorok}: regressor, data, prediction (this work)
+\item Regressor: Jacobian of the normalised transition in $\beta$ at $\beta_{\mathrm{lin}}$, since the baseline is nonlinear through $M(Y)^{-1}$; $\beta$ because only the ten combinations are identifiable (adapted from Gy\"or\"ok 2025 Sec.~4, Eq.~(15); 2026 Assumption~1; Section~II-C; D-190, D-229); offset column $\Gamma$ included (D-257)
+\item Data: reference tuples reconstructed from the measured positions, regressor at the data as in 2026 Eq.~(5) rather than at a simulated baseline (2025 Sec.~3); each with a successor; built once before training (D-252, D-254)
+\item Projection on the stacked tuples, with the orthogonality of the section opening as its last line; holds for the stack at $\bar x=0$ (adapted from 2026 Eqs.~(8) to (11), Lemma~3)
+\item Prediction: the correction at every step of the closed-loop state update, physical rows only; coefficient differentiated (2026 Eqs.~(9), (10), (13); added states this work)
+\end{itemize}
+\fi
+\begin{wip}
+Our baseline violates three requirements of the projection in
+\eqref{eq:obc_gyorok}.
+Its state update is nonlinear in the parameters, because
+the next state update depends on $M(Y)^{-1}$ in \eqref{eq:aug_ct}, 
+violating the linear requirement for the regressor.
+Instead of the regressor the Jacobian of the baseline state update is taken 
+with respect to $\beta$,
+as in the orthogonal regularisation method of
+Gy\"or\"ok et al.~\cite[Sec.~4, Eq.~(15)]{gyorok2025l4dc}.
+Like the regressor, the stacked Jacobian must have full column rank.
+This requires identifiable parameters, which is why we use $\beta$.
+The Jacobian is taken at a linearisation point $\beta_{\mathrm{lin}}$ as
+\end{wip}
+\begin{equation}
+ \varphi(\beta_{\mathrm{lin}},\tilde x^{\mathrm n},u^{\mathrm n})
+ =\left.\frac{\partial f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\beta),\tilde x^{\mathrm n},u^{\mathrm n}\bigr)}
+   {\partial\beta}\right|_{\beta=\beta_{\mathrm{lin}}},
+\label{eq:obc_sens}
+\end{equation}
+where $\beta_{\mathrm{lin}}\in\R^{10}$ and
+$\varphi:\R^{10}\times\R^6\times\R^3\to\R^{6\times10}$.
+\kw{The linearisation also leaves an offset that does not depend on
+$\beta$~\cite[Eq.~(16)]{gyorok2025l4dc}:}
+\begin{equation}
+\begin{aligned}
+ f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\beta),\tilde x^{\mathrm n},u^{\mathrm n}\bigr)
+ &\approx\varphi\,\beta+\gamma,\\
+ \gamma
+ &=f^{\mathrm n}_{\mathrm{base}}\bigl(\theta_{\mathrm{base}}(\beta_{\mathrm{lin}}),\tilde x^{\mathrm n},u^{\mathrm n}\bigr)
+  -\varphi\,\beta_{\mathrm{lin}},
+\end{aligned}
+\label{eq:obc_offset}
+\end{equation}
+\kw{where $\gamma:\R^{10}\times\R^6\times\R^3\to\R^6$, so that
+$\varphi\beta_{\mathrm{lin}}+\gamma$ is the next state predicted by the
+baseline at $\beta_{\mathrm{lin}}$.
+Gy\"or\"ok et al.\ add this offset as an extra column to the Jacobian, to
+include all components of the baseline model in the
+orthogonality~\cite[Eq.~(18)]{gyorok2025l4dc}.
+We include it as well, so the neural network has no component along the
+stacked next states predicted by the baseline.}
+The offset does not change the first-order estimate \eqref{eq:obc_recovery}.
+\kw{It does not fully prevent negation~\cite[Sec.~5.3.1.3]{kessels2025ai}, where
+the neural network cancels part of the baseline response, because only the
+part of the network along the stacked baseline response is excluded.}
+% \\
+% \revnote{Orthogonality here is to the stacked Jacobian and offset
+% $\Phi_\Gamma$ on the tuples (Gy\"or\"ok et al.\ 2026, Lemma~3, with the
+% regressor taken as $[\varphi\ \gamma]$, the offset as in Gy\"or\"ok et al.\
+% 2025, Eq.~(18)). To first order the estimate of $\beta$ does not depend on
+% the network, with or without $\Gamma$; not shown for the nonlinear
+% closed-loop optimum. The current results are without $\Gamma$; the final
+% % runs include it.}
+% \\
+
+The Jacobian also depends on the state, while the regressor of
+Gy\"or\"ok et al.\ uses only measured inputs and
+outputs~\cite[Eqs.~(1), (2)]{gyorok2026obc}.
+Since only the positions are measured, we evaluate the Jacobian at these
+positions with the velocities reconstructed from them:
+\begin{equation}
+\begin{aligned}
+ \tilde x_i&=\col(q_i,\dot q_i),\qquad q_i=P^{-\top}y_i,\\
+ \dot q_i&=\frac{-q_{i+2}+8q_{i+1}-8q_{i-1}+q_{i-2}}{12\,T_s},
+\end{aligned}
+\label{eq:obc_tuples}
+\end{equation}
+\begin{wip}
+where $y_i$ is the measured actuator position at sample $i$.
+Each tuple $(\tilde x_i,\bar x_i,u_i)$ uses the recorded actuator 
+force $u_i$ and $\bar x_i=0$,
+with the physical state and input normalised to
+$\tilde x^{\mathrm n}_i$ and $u^{\mathrm n}_i$
+using \eqref{eq:aug_norm}.
+The tuples are calculated once before training, using all samples for which
+\eqref{eq:obc_tuples} can be calculated at $i$ and at the next sample $i+1$.
+\\
+Stacking the Jacobian, \kw{the offset} and the network output over the tuples, the projection
+of \eqref{eq:obc_gyorok} becomes
+\end{wip}
+\begin{equation}
+\begin{aligned}
+ \Phi_\Gamma
+ &=\col\bigl([\varphi\ \ \gamma](\beta_{\mathrm{lin}},\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)\bigr)_{i\in\mathcal I},\\
+ F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})
+ &=\col\bigl(f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}},\col(\tilde x^{\mathrm n}_i,0),u^{\mathrm n}_i)\bigr)_{i\in\mathcal I},\\
+ \theta_{\mathrm{aux}}(\theta_{\mathrm{aug}})
+ &=\bigl(\Phi_\Gamma^\top\Phi_\Gamma\bigr)^{-1}\Phi_\Gamma^\top F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}}),\\
+ \tilde F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})
+ &=F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})-\Phi_\Gamma\,\theta_{\mathrm{aux}}(\theta_{\mathrm{aug}}),\\
+ 0&=\Phi_\Gamma^{\top}\tilde F^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}}),
+\end{aligned}
+\label{eq:obc_coef}
+\end{equation}
+\begin{wip}
+where $\mathcal I$ is the set of tuples, $N=|\mathcal I|$,
+\kw{$\Phi_\Gamma=[\Phi\ \Gamma]\in\R^{6N\times11}$ stacks $\varphi$ and $\gamma$}
+evaluated at $\beta_{\mathrm{lin}}$,
+$F^{\mathrm n}_{\mathrm{aug}},\tilde F^{\mathrm n}_{\mathrm{aug}}\in\R^{6N}$
+and $\theta_{\mathrm{aux}}\in\R^{\kw{11}}$.
+The projected network output $\tilde F^{\mathrm n}_{\mathrm{aug}}$ therefore
+has no component along any column of $\kw{\Phi_\Gamma}$, which satisfies our orthogonality
+definition at the start of this section.
+This holds for the stacked tuples at $\bar x=0$, not for each tuple separately.
+\\
+We use a state-space model predicting the next state instead of the output.
+The fitted part is removed from the neural network correction of the
+physical state at every step in the closed-loop simulation.
+At each step, we subtract the Jacobian \kw{and offset} multiplied by
+$\theta_{\mathrm{aux}}$ from the network correction,
+evaluated at the current state and input.
+Gy\"or\"ok et al.\ apply the same correction to the predicted
+output~\cite[Eqs.~(9), (13)]{gyorok2026obc}.
+The baseline has no added states, so its Jacobian \kw{and offset are} zero
+in the added-state rows and $g^{\mathrm n}_{\mathrm{aug}}$
+is orthogonal to it by definition.
+We therefore only correct the physical rows:
+% Only the physical rows are corrected, because the baseline has no added-state
+% update:
+\end{wip}
+\begin{equation}
+\begin{aligned}
+ f^{\mathrm n}_{\mathrm{obc}}(\theta_{\mathrm{aug}},\tilde x^{\mathrm n},u^{\mathrm n})
+ &=[\varphi\ \ \gamma](\beta_{\mathrm{lin}},\tilde x^{\mathrm n},u^{\mathrm n})\,
+  \theta_{\mathrm{aux}}(\theta_{\mathrm{aug}}),\\
+ \tilde x^{\mathrm n}_{k+1|\tau}
+ &=f^{\mathrm n}_{\mathrm{base}}+f^{\mathrm n}_{\mathrm{aug}}-f^{\mathrm n}_{\mathrm{obc}},\\
+ \bar x_{k+1|\tau}&=g^{\mathrm n}_{\mathrm{aug}},
+\end{aligned}
+\label{eq:obc_corr}
+\end{equation}
+\begin{wip}
+
+where
+$f^{\mathrm n}_{\mathrm{obc}}:\R^{n_{\mathrm{aug}}}\times\R^6\times\R^3\to\R^6$
+is evaluated at $(\tilde x^{\mathrm n}_{k|\tau},\hat u^{\mathrm n}_{k|\tau})$, and
+$f^{\mathrm n}_{\mathrm{base}}$, $f^{\mathrm n}_{\mathrm{aug}}$ and
+$g^{\mathrm n}_{\mathrm{aug}}$ take the arguments of \eqref{eq:aug_loss}.
+We differentiate $\theta_{\mathrm{aux}}$ with respect to $\theta_{\mathrm{aug}}$, as
+in~\cite[Eqs.~(9), (10)]{gyorok2026obc}, 
+\kw{so} the network is trained using the gradient of its projected output.
+\end{wip}
+\subsection{Identification and recovery}\label{sec:obc_ident}
+\ifdraft
+\begin{itemize}
+\item $\mathcal M_{\mathrm{OBC}}$: the augmented model of Section~III with the PS start and the correction; identified by \eqref{eq:aug_loss} with \eqref{eq:obc_corr} as the physical-state update, everything of Section~III-C reused (this work)
+\item Rules, each from a dependence: $\theta_{\mathrm{aux}}$ re-solved at every evaluation; $\beta_{\mathrm{lin}}$ per epoch, a fixed objective per epoch while the point follows the estimate; 2025 Sec.~4 options not taken (cost, detuned start), Remark~2 adapted (D-190, D-254); rebuild after restore, polish compared with the rebuilt model (D-253, revnote)
+\item Recovery: $\Xi$ \eqref{eq:obc_eps}, the unmodelled terms of 2026 Eqs.~(14), (15) plus reconstruction error and noise; the one-step error and its two first-order minimisers \eqref{eq:obc_recovery}; form of 2026 Eq.~(21) without the exact fit of Assumption~6; true iff $\Phi^\top\Xi=0$ (Condition~4, Remark~5); $\Gamma$ does not enter (D-257)
+\item Limits: a one-step surrogate at $\bar x=0$, not the closed-loop optimum; negation is treated in IV-B
+\item Measures: $\cos$, $\rho$, $\Pi$ \eqref{eq:obc_overlap} (supervisor: orthogonality is measured by the inner product); negation by the cosine with the baseline's one-step increment (D-257); $c_j$ dropped (correlated columns of $\Phi$; the per-parameter bias is \eqref{eq:obc_recovery})
+\end{itemize}
+\fi
+The augmented model is identified as in Section~\ref{sec:aug_closed_loop},
+with the added-state
+initialisation of Section~\ref{sec:aug_ps2}.
+With orthogonality by construction the state update in \eqref{eq:aug_loss} is instead
+the projected state update \eqref{eq:obc_corr}.
+Since $\theta_{\mathrm{aux}}$ depends on $\theta_{\mathrm{aug}}$,
+we solve \eqref{eq:obc_coef} at every evaluation of $V$.
+At the start of each epoch $\beta_{\mathrm{lin}}$ is set to the current $\beta$, 
+and it is held fixed during the epoch.
+Gy\"or\"ok et al.\ update $\beta_{\mathrm{lin}}$ at every iteration,
+which requires rebuilding $\Phi_\Gamma$ at each evaluation
+of $V$~\cite[Sec.~4]{gyorok2025l4dc}. The other proposed method is to 
+keep $\beta_{\mathrm{lin}}$ fixed at the nominal parameters, 
+assuming these are close to the true parameters~\cite[Sec.~4]{gyorok2025l4dc}.
+Training as stated in Section~\ref{sec:setup} starts from detuned parameters,
+we instead adapt their recomputation 
+at the start of each epoch~\cite[Remark~2]{gyorok2025l4dc}.
+We load the best checkpoint and rebuild $\Phi_\Gamma$ using its $\beta$.
+The polish minimises the same projected objective, with $\Phi_\Gamma$ held
+fixed at this $\beta$.
+The polish is only kept if its validation error is lower.
+
+
+The projection does not guarantee that the true parameters $\beta^\star\in\R^{10}$ are recovered.
+That depends on whether what the baseline misses on the tuples is itself
+orthogonal to the stacked Jacobian:
+\begin{equation}
+ \Xi
+ =\col\bigl(\tilde x^{\mathrm n}_{i+1}-f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}}(\beta^\star),\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)\bigr)_{i\in\mathcal I},
+\label{eq:obc_eps}
+\end{equation}
+where $\Xi\in\R^{6N}$ contains the unmodelled terms
+of~\cite[Eqs.~(14), (15)]{gyorok2026obc},
+the reconstruction error of \eqref{eq:obc_tuples}
+and the measurement noise.
+To first order around $\beta^\star$, the one-step error on the tuples is
+$\Xi-\Phi(\beta-\beta^\star)-\tilde F^{\mathrm n}_{\mathrm{aug}}$.
+Minimising the squared one-step error over $\beta$ gives $\hat\beta$.
+Without the projection, $F^{\mathrm n}_{\mathrm{aug}}$ replaces
+$\tilde F^{\mathrm n}_{\mathrm{aug}}$, which gives $\hat\beta_{\mathrm{np}}$:
+\begin{equation}
+\begin{aligned}
+ \hat\beta&=\beta^\star+\bigl(\Phi^\top\Phi\bigr)^{-1}\Phi^\top\Xi,\\
+ \hat\beta_{\mathrm{np}}&=\beta^\star+\bigl(\Phi^\top\Phi\bigr)^{-1}\Phi^\top\bigl(\Xi-F^{\mathrm n}_{\mathrm{aug}}\bigr),
+\end{aligned}
+\label{eq:obc_recovery}
+\end{equation}
+With the projection, $\hat\beta$ does not depend on the network output,
+since $\Phi^\top\tilde F^{\mathrm n}_{\mathrm{aug}}=0$ by \eqref{eq:obc_coef}.
+Without the projection, $\Phi^\top F^{\mathrm n}_{\mathrm{aug}}$
+is still in the estimate $\hat\beta_{\mathrm{np}}$.
+The expression for $\hat\beta-\beta^\star$ has the same form as
+Gy\"or\"ok et al.~\cite[Eq.~(21)]{gyorok2026obc}. Which they derived 
+assuming an exact fit of noise-free
+data~\cite[Assumption~6]{gyorok2026obc}.
+We obtain it by minimising the squared one-step error.
+The estimate equals $\beta^\star$ if and only if
+$\Phi^\top\Xi=0$, requiring $\Xi$ to be orthogonal to the
+columns of $\Phi$ on the tuples~\cite[Condition~4, Remark~5]{gyorok2026obc}.
+This is a first-order result for the one-step least-squares
+problem on the fixed reference slice $\bar x=0$; it does not
+predict the parameter bias from minimising the closed-loop
+loss \eqref{eq:aug_loss} with active added states.
+\\
+We measure orthogonality using the normalised inner product,
+with the physical state normalised using \eqref{eq:aug_norm}:
+\begin{equation}
+\begin{aligned}
+ \cos\angle(a,b)&=\frac{\langle a,b\rangle}{\norm{a}_2\norm{b}_2},\\
+ \rho(d)&=\max_{v\in\ran\Phi\setminus\{0\}}\cos\angle(v,d)
+ =\frac{\norm{\Pi d}_2}{\norm{d}_2},\\
+ \Pi&=\Phi\bigl(\Phi^\top\Phi\bigr)^{-1}\Phi^\top,\\
+ c_{\mathrm{neg}}&=\cos\angle\Bigl(F^{\mathrm n}_{\mathrm{aug}},
+ \col\bigl(f^{\mathrm n}_{\mathrm{base}}(\theta_{\mathrm{base}}(\beta),\tilde x^{\mathrm n}_i,u^{\mathrm n}_i)-\tilde x^{\mathrm n}_i\bigr)_{i\in\mathcal I}\Bigr),
+\end{aligned}
+\label{eq:obc_overlap}
+\end{equation}
+% where $a,b,d\in\R^{6N}$ are nonzero and $\Pi$ is the orthogonal projector
+% onto $\ran\Phi$.
+% $\rho(d)$ is the largest normalised inner product of $d$ with a parameter
+% direction, and $\rho(d)=0$ if and only if $\Phi^\top d=0$.
+% $c_{\mathrm{neg}}$ measures negation as the alignment of the network with the
+% one-step change of the state predicted by the baseline.
+where $a,b,d\in\R^{6N}$ are nonzero and $\Pi$ is the orthogonal
+projector onto $\ran\Phi$.
+$\rho(d)$ gives the largest normalised inner product between $d$
+and a vector in $\ran\Phi$.
+It is zero if and only if $\Phi^\top d=0$.
+Negation is measured by $c_{\mathrm{neg}}$, which is the cosine between the network output 
+and
+the one-step state change predicted by the baseline.
+
+\revnote{Lets use something else then d.}
+% ---------------------------------------------------------------------------
+% OUTLINE BLOCKS (Dirk's bullets), moved here from the text on 2026-10-15 for readability.
+% Each is preceded by a comment naming where it stood.
+
+% was after: sec:obc_construction
+\begin{outline}
+\item Problem: the split between baseline and network is not unique; the network can cancel the baseline (negation)
+\item Choice: the orthogonal construction of Gy\"or\"ok et al.\ 
+\item Choice: the baseline is not linear in its parameters, so we use its derivative instead: the sensitivity of the one-step map to the ten trained coordinates $\beta$, taken at the current point $\beta_{\mathrm{lin}}$:   % CHANGED
+\end{outline}
+
+% was after: eq:obc_sens
+\begin{outline}
+\item Choice: the range of $\Phi_\Gamma$ is protected, with the offset column $\Gamma$ of Gy\"or\"ok et al.
+\item Choice: $\Phi$ is evaluated on fixed one-step tuples $i\in\mathcal I$ from the training data: measured positions, finite difference to get the velocities, added states $\bar x=0$
+\item The network's physical rows are fitted by the stacked sensitivity in least squares; the remainder is orthogonal to its range:
+\end{outline}
+
+% was after: eq:obc_coef
+\begin{outline}
+\item Choice: the correction is subtracted from the physical rows at every step; the added-state rows are not corrected:
+\end{outline}
+
+% was after: eq:obc_corr
+\begin{outline}
+\item Choice: the gradient of the training cost $V$ of \eqref{eq:aug_loss} to the network parameters $\theta_{\mathrm{aug}}$ includes the path through $\theta_{\mathrm{aux}}(\theta_{\mathrm{aug}})=\Phi_\Gamma^{+}\boldsymbol f^{\mathrm n}_{\mathrm{aug}}(\theta_{\mathrm{aug}})$; with $\theta_{\mathrm{aux}}$ held fixed, each step would give the network the derivative of its uncorrected output   % CHANGED
+\item Choice: $\beta_{\mathrm{lin}}$ is set to the current $\beta$ at each epoch and held fixed within it
+\end{outline}
+
+% was after: sec:obc_ident
+\begin{outline}
+\item The identification problem of Section~\ref{sec:aug_closed_loop} gets the correction in the physical-row update; trained parameters and cost are unchanged:
+\end{outline}
+
+% was after: sec:obc_ident
+\begin{outline}
+\item $\theta_{\mathrm{aux}}$ is solved again at every evaluation of $V$; $\beta_{\mathrm{lin}}$ is refreshed per epoch
+\item The PS stages, optimiser and selection rule are reused; $\mathcal M_{\mathrm{OBC}}$ is $\mathcal M_{\mathrm{PS}}$ with the correction
+\end{outline}
+

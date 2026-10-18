@@ -1,0 +1,87 @@
+<meta charset="utf-8"><title>figures/tex/augmentation_structure.tex</title><pre><div id="L1"><a href="#L1">0001</a> \begin{tikzpicture}[</div>
+<div id="L2"><a href="#L2">0002</a>     &gt;={Latex[length=1.8mm,width=1.3mm]},</div>
+<div id="L3"><a href="#L3">0003</a>     line width=0.5pt,</div>
+<div id="L4"><a href="#L4">0004</a>     blk/.style={draw, line width=0.6pt, rounded corners=1pt, fill=white,</div>
+<div id="L5"><a href="#L5">0005</a>                 align=center, inner sep=2pt, minimum height=9mm},</div>
+<div id="L6"><a href="#L6">0006</a>     sub/.style={font=\scriptsize},</div>
+<div id="L7"><a href="#L7">0007</a>     dot/.style={circle, fill, inner sep=0pt, minimum size=2.4pt},</div>
+<div id="L8"><a href="#L8">0008</a>     hop/.style={preaction={draw=white, line width=2.4pt}},</div>
+<div id="L9"><a href="#L9">0009</a>     sum/.style={draw, circle, line width=0.6pt, inner sep=0pt, minimum size=3.4mm},</div>
+<div id="L10"><a href="#L10">0010</a>   ]</div>
+<div id="L11"><a href="#L11">0011</a>   % grid</div>
+<div id="L12"><a href="#L12">0012</a>   \def\xU{0}     % u_k bus</div>
+<div id="L13"><a href="#L13">0013</a>   \def\xS{0.8}   % state bus x-hat_k</div>
+<div id="L14"><a href="#L14">0014</a>   \def\xB{3.25}  % block centres</div>
+<div id="L15"><a href="#L15">0015</a>   \def\xP{5.35}  % sums</div>
+<div id="L16"><a href="#L16">0016</a>   \def\xR{6.55}  % merge bar</div>
+<div id="L17"><a href="#L17">0017</a>   \def\xF{7.45}  % feedback</div>
+<div id="L18"><a href="#L18">0018</a>   \def\yA{2.6}   % phi_aug row</div>
+<div id="L19"><a href="#L19">0019</a>   \def\yF{1.3}   % f_base row</div>
+<div id="L20"><a href="#L20">0020</a>   \def\yO{0.0}   % h_base row</div>
+<div id="L21"><a href="#L21">0021</a>   \def\yR{-1.25} % z^-1</div>
+<div id="L22"><a href="#L22">0022</a>   \def\yE{-2.65} % encoder, below z^-1</div>
+<div id="L23"><a href="#L23">0023</a> </div>
+<div id="L24"><a href="#L24">0024</a>   % blocks</div>
+<div id="L25"><a href="#L25">0025</a>   \node[blk, minimum width=27mm] (ann) at (\xB,\yA)</div>
+<div id="L26"><a href="#L26">0026</a>        {$\phi_{\mathrm{aug}}$\\[-1pt] {\scriptsize neural network}};</div>
+<div id="L27"><a href="#L27">0027</a>   \node[blk, minimum width=27mm] (fb) at (\xB,\yF)</div>
+<div id="L28"><a href="#L28">0028</a>        {$f_{\mathrm{base}}$\\[-1pt] {\scriptsize physics model, one step}};</div>
+<div id="L29"><a href="#L29">0029</a>   \node[blk, minimum width=27mm] (hb) at (\xB,\yO)</div>
+<div id="L30"><a href="#L30">0030</a>        {$h_{\mathrm{base}}$\\[-1pt] {\scriptsize output map}};</div>
+<div id="L31"><a href="#L31">0031</a>   \node[blk, minimum width=8mm, minimum height=7mm] (z) at (\xS,\yR) {$z^{-1}$};</div>
+<div id="L32"><a href="#L32">0032</a>   \node[blk, minimum width=11mm, minimum height=11mm] (enc) at (\xS,\yE)</div>
+<div id="L33"><a href="#L33">0033</a>        {$\psi$\\[-1pt] {\scriptsize encoder}};</div>
+<div id="L34"><a href="#L34">0034</a> </div>
+<div id="L35"><a href="#L35">0035</a>   \node[sum] (s1) at (\xP,\yF) {};</div>
+<div id="L36"><a href="#L36">0036</a>   \node[sum] (s2) at (\xP,\yO) {};</div>
+<div id="L37"><a href="#L37">0037</a>   \foreach \s in {s1,s2}</div>
+<div id="L38"><a href="#L38">0038</a>     \draw ($(\s)+(-0.95mm,0)$) -- ($(\s)+(0.95mm,0)$)</div>
+<div id="L39"><a href="#L39">0039</a>           ($(\s)+(0,-0.95mm)$) -- ($(\s)+(0,0.95mm)$);</div>
+<div id="L40"><a href="#L40">0040</a> </div>
+<div id="L41"><a href="#L41">0041</a>   % state bus x-hat_k</div>
+<div id="L42"><a href="#L42">0042</a>   \draw (z.north) -- (\xS,\yA+0.2);</div>
+<div id="L43"><a href="#L43">0043</a>   \node[anchor=east] at (\xS,{(\yR+\yO)/2+0.05}) {$\hat x_k$};</div>
+<div id="L44"><a href="#L44">0044</a>   \draw[-&gt;] (\xS,\yA+0.2) -- (ann.west |- 0,\yA+0.2);</div>
+<div id="L45"><a href="#L45">0045</a>   \draw[-&gt;] (\xS,\yF+0.2) -- (fb.west |- 0,\yF+0.2)</div>
+<div id="L46"><a href="#L46">0046</a>        node[pos=0.45, above, inner sep=1.5pt] {$\tilde x_k$};</div>
+<div id="L47"><a href="#L47">0047</a>   \draw[-&gt;] (\xS,\yO) -- (hb.west)</div>
+<div id="L48"><a href="#L48">0048</a>        node[pos=0.45, above, inner sep=1.5pt] {$\tilde x_k$};</div>
+<div id="L49"><a href="#L49">0049</a>   \node[dot] at (\xS,\yF+0.2) {};</div>
+<div id="L50"><a href="#L50">0050</a>   \node[dot] at (\xS,\yO) {};</div>
+<div id="L51"><a href="#L51">0051</a> </div>
+<div id="L52"><a href="#L52">0052</a>   % input bus u_k (crosses the state bus with a gap)</div>
+<div id="L53"><a href="#L53">0053</a>   \node[anchor=south, inner sep=1.5pt] at (\xU,\yA+0.7) {$u_k$};</div>
+<div id="L54"><a href="#L54">0054</a>   \draw (\xU,\yA+0.7) -- (\xU,\yF-0.2);</div>
+<div id="L55"><a href="#L55">0055</a>   \draw[-&gt;, hop] (\xU,\yA-0.2) -- (ann.west |- 0,\yA-0.2);</div>
+<div id="L56"><a href="#L56">0056</a>   \draw[-&gt;, hop] (\xU,\yF-0.2) -- (fb.west |- 0,\yF-0.2);</div>
+<div id="L57"><a href="#L57">0057</a>   \node[dot] at (\xU,\yA-0.2) {};</div>
+<div id="L58"><a href="#L58">0058</a> </div>
+<div id="L59"><a href="#L59">0059</a>   % network outputs</div>
+<div id="L60"><a href="#L60">0060</a>   \draw[-&gt;] (ann.east |- 0,\yA+0.2) -- (\xR,\yA+0.2)</div>
+<div id="L61"><a href="#L61">0061</a>        node[pos=0.22, above, inner sep=1.5pt] {$g_{\mathrm{aug}}$}</div>
+<div id="L62"><a href="#L62">0062</a>        node[pos=0.8, above, inner sep=1.5pt] {$\bar x_{k+1}$};</div>
+<div id="L63"><a href="#L63">0063</a>   \draw[-&gt;] (ann.east |- 0,\yA-0.2) -| (s1.north)</div>
+<div id="L64"><a href="#L64">0064</a>        node[pos=0.75, right, inner sep=1.5pt] {$f_{\mathrm{aug}}$};</div>
+<div id="L65"><a href="#L65">0065</a> </div>
+<div id="L66"><a href="#L66">0066</a>   % physics step -&gt; sum -&gt; merge bar</div>
+<div id="L67"><a href="#L67">0067</a>   \draw[-&gt;] (fb.east) -- (s1.west);</div>
+<div id="L68"><a href="#L68">0068</a>   \draw[-&gt;] (s1.east) -- (\xR,\yF)</div>
+<div id="L69"><a href="#L69">0069</a>        node[pos=0.5, above, inner sep=1.5pt] {$\tilde x_{k+1}$};</div>
+<div id="L70"><a href="#L70">0070</a>   \draw[line width=2pt] (\xR,\yF-0.2) -- (\xR,\yA+0.4);</div>
+<div id="L71"><a href="#L71">0071</a> </div>
+<div id="L72"><a href="#L72">0072</a>   % feedback x-hat_{k+1} -&gt; z^-1</div>
+<div id="L73"><a href="#L73">0073</a>   \draw[-&gt;] (\xR,{(\yA+\yF)/2}) -- (\xF,{(\yA+\yF)/2}) |- (z.east);</div>
+<div id="L74"><a href="#L74">0074</a>   \node[anchor=south, inner sep=1.5pt] at ({(\xR+\xF)/2+0.03},{(\yA+\yF)/2}) {$\hat x_{k+1}$};</div>
+<div id="L75"><a href="#L75">0075</a> </div>
+<div id="L76"><a href="#L76">0076</a>   % output</div>
+<div id="L77"><a href="#L77">0077</a>   \draw[-&gt;] (hb.east) -- (s2.west);</div>
+<div id="L78"><a href="#L78">0078</a>   \draw[-&gt;, dashed] (\xP,\yO+0.7) -- (s2.north);</div>
+<div id="L79"><a href="#L79">0079</a>   \node[anchor=west, inner sep=1.5pt] at (\xP+0.05,\yO+0.6) {$h_{\mathrm{aug}}=0$};</div>
+<div id="L80"><a href="#L80">0080</a>   \draw[-&gt;] (s2.east) -- ++(0.55,0) node[anchor=west, inner sep=1.5pt] {$\hat y_k$};</div>
+<div id="L81"><a href="#L81">0081</a> </div>
+<div id="L82"><a href="#L82">0082</a>   % encoder</div>
+<div id="L83"><a href="#L83">0083</a>   \draw[-&gt;, dashed] (enc.north) -- (z.south)</div>
+<div id="L84"><a href="#L84">0084</a>        node[pos=0.5, right, inner sep=1.5pt] {$\hat x_{\tau|\tau}$};</div>
+<div id="L85"><a href="#L85">0085</a>   \draw[&lt;-] (enc.west) -- ++(-0.4,0)</div>
+<div id="L86"><a href="#L86">0086</a>        node[anchor=east, inner sep=1.5pt] {$\chi_\tau$};</div>
+<div id="L87"><a href="#L87">0087</a> \end{tikzpicture}</div></pre>

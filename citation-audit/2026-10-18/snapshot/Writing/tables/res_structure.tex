@@ -1,0 +1,16 @@
+% main text: test (I1 to I6) records
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{l r r r r r r}
+\toprule
+ & \multicolumn{3}{c}{Multisine} & \multicolumn{3}{c}{No multisine}\\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+$\mathrm{NRMS}_e$ (\%) & $X_1$ & $X_2$ & $Y$ & $X_1$ & $X_2$ & $Y$\\
+\midrule
+Baseline, true $\theta$ & $18.8$ & $20.7$ & $116.6$ & $4.5$ & $4.6$ & $3.4$\\
+Augmented (OBC), detuned $\theta$$^\dagger$ & $9.7$ & $9.5$ & $6.2$ & $4.7$ & $4.8$ & $3.8$\\
+Black-box model & $47.8$ & $47.8$ & $35.9$ & $104.8$ & $97.0$ & $127.7$\\
+\midrule
+Noise floor & $0.06$ & $0.06$ & $0.01$ & $0.04$ & $0.04$ & $0.01$\\
+\bottomrule
+\multicolumn{7}{l}{\footnotesize $^\dagger$ preliminary, update 19500 of 33400}\\
+\end{tabular}

@@ -1,0 +1,62 @@
+<meta charset="utf-8"><title>figures/tex/ps2_windows.tex</title><pre><div id="L1"><a href="#L1">0001</a> % PS windows on one record (Section III-E), layout adapted from Hefny et al. 2015, Fig. 2.</div>
+<div id="L2"><a href="#L2">0002</a> % Matches model_augmentation/fit_systems/ps2_opening.py (_sample, _residual, _fit_map), D-250:</div>
+<div id="L3"><a href="#L3">0003</a> % S1: chi_tau = samples tau-n-1 .. tau-1, residual e_tau = tau .. tau+H-1 (H = n+1);</div>
+<div id="L4"><a href="#L4">0004</a> % S2: chi_{tau+1} = tau-n .. tau, recorded input u_tau.</div>
+<div id="L5"><a href="#L5">0005</a> \begin{tikzpicture}[</div>
+<div id="L6"><a href="#L6">0006</a>     &gt;={Latex[length=1.8mm,width=1.3mm]},</div>
+<div id="L7"><a href="#L7">0007</a>     line width=0.5pt,</div>
+<div id="L8"><a href="#L8">0008</a>     smp/.style={draw, line width=0.5pt, minimum width=10.5mm, minimum height=5mm,</div>
+<div id="L9"><a href="#L9">0009</a>                 inner sep=0pt, font=\scriptsize},</div>
+<div id="L10"><a href="#L10">0010</a>     blk/.style={draw, line width=0.6pt, rounded corners=1pt, fill=white,</div>
+<div id="L11"><a href="#L11">0011</a>                 align=center, inner sep=2pt, minimum height=6mm, minimum width=9mm},</div>
+<div id="L12"><a href="#L12">0012</a>     lab/.style={font=\scriptsize, inner sep=1.5pt},</div>
+<div id="L13"><a href="#L13">0013</a>     hop/.style={preaction={draw=white, line width=2.4pt}},</div>
+<div id="L14"><a href="#L14">0014</a>   ]</div>
+<div id="L15"><a href="#L15">0015</a>   \def\w{1.05}   % sample pitch</div>
+<div id="L16"><a href="#L16">0016</a>   \def\h{0.525}  % half sample width</div>
+<div id="L17"><a href="#L17">0017</a>   \def\g{0.09}   % bracket inset, keeps adjacent windows visibly apart</div>
+<div id="L18"><a href="#L18">0018</a>   \def\yB{0.47}  % bracket height above and below the row</div>
+<div id="L19"><a href="#L19">0019</a>   \def\yS{1.25}  % S1 blocks</div>
+<div id="L20"><a href="#L20">0020</a>   \def\yA{-1.1}  % psi_a row</div>
+<div id="L21"><a href="#L21">0021</a>   \def\yG{-1.85} % g_aug row</div>
+<div id="L22"><a href="#L22">0022</a>   \def\xL{-0.85} % route of x-hat_tau</div>
+<div id="L23"><a href="#L23">0023</a>   \def\xV{6.45}  % loss blocks</div>
+<div id="L24"><a href="#L24">0024</a>   % sample row</div>
+<div id="L25"><a href="#L25">0025</a>   \foreach \i/\t in {0/{$\tau{-}n{-}1$}, 1/{$\tau{-}n$}, 2/{$\cdots$}, 3/{$\tau{-}1$},</div>
+<div id="L26"><a href="#L26">0026</a>                      4/{$\tau$}, 5/{$\cdots$}, 6/{$\tau{+}H{-}1$}}</div>
+<div id="L27"><a href="#L27">0027</a>     \node[smp] (s\i) at (\i*\w,0) {\t};</div>
+<div id="L28"><a href="#L28">0028</a>   \node[lab, anchor=west] at (6*\w+\h+0.05,0) {$(y_k,u_k)$};</div>
+<div id="L29"><a href="#L29">0029</a> </div>
+<div id="L30"><a href="#L30">0030</a>   % S1 (top): encoder window chi_tau and residual target e_tau, disjoint</div>
+<div id="L31"><a href="#L31">0031</a>   \draw (-\h+\g,\yB-0.1) -- (-\h+\g,\yB) -- (3*\w+\h-\g,\yB) -- (3*\w+\h-\g,\yB-0.1);</div>
+<div id="L32"><a href="#L32">0032</a>   \node[lab, anchor=south west] at (-\h+\g,\yB) {$\chi_\tau$};</div>
+<div id="L33"><a href="#L33">0033</a>   \draw (4*\w-\h+\g,\yB-0.1) -- (4*\w-\h+\g,\yB) -- (6*\w+\h-\g,\yB) -- (6*\w+\h-\g,\yB-0.1);</div>
+<div id="L34"><a href="#L34">0034</a>   \node[lab, anchor=south west] at (4*\w-\h+\g,\yB) {$e_\tau$};</div>
+<div id="L35"><a href="#L35">0035</a>   \node[blk] (psi) at (1.5*\w,\yS) {$\psi$};</div>
+<div id="L36"><a href="#L36">0036</a>   \node[blk] (dec) at (4.4*\w,\yS) {$d$};</div>
+<div id="L37"><a href="#L37">0037</a>   \node[blk] (v1) at (\xV,\yS) {$\|{\cdot}\|_2^2$};</div>
+<div id="L38"><a href="#L38">0038</a>   \draw[-&gt;] (1.5*\w,\yB) -- (psi.south);</div>
+<div id="L39"><a href="#L39">0039</a>   \draw[-&gt;] (psi.east) -- (dec.west) node[midway, above, lab] {$\bar x_{\tau|\tau}$};</div>
+<div id="L40"><a href="#L40">0040</a>   \draw[-&gt;] (dec.east) -- (v1.west);</div>
+<div id="L41"><a href="#L41">0041</a>   \draw[-&gt;] (\xV,\yB) -- (v1.south);</div>
+<div id="L42"><a href="#L42">0042</a> </div>
+<div id="L43"><a href="#L43">0043</a>   % S2 (bottom): window shifted by one sample (ends at tau), one-step map g_aug</div>
+<div id="L44"><a href="#L44">0044</a>   \draw (1*\w-\h+\g,-\yB+0.1) -- (1*\w-\h+\g,-\yB) -- (4*\w+\h-\g,-\yB) -- (4*\w+\h-\g,-\yB+0.1);</div>
+<div id="L45"><a href="#L45">0045</a>   \node[lab, anchor=north west] at (1*\w-\h+\g,-\yB) {$\chi_{\tau+1}$};</div>
+<div id="L46"><a href="#L46">0046</a>   \node[blk] (psia) at (2*\w,\yA) {$\psi_a$};</div>
+<div id="L47"><a href="#L47">0047</a>   \draw[-&gt;] (2*\w,-\yB) -- (psia.north);</div>
+<div id="L48"><a href="#L48">0048</a>   \node[blk] (v2) at (\xV,\yA) {$\|{\cdot}\|_2^2$};</div>
+<div id="L49"><a href="#L49">0049</a>   \draw[-&gt;] (psia.east) -- (v2.west) node[pos=0.25, above, lab] {$\bar x_{\tau+1|\tau+1}$};</div>
+<div id="L50"><a href="#L50">0050</a>   \node[blk] (g) at (4*\w,\yG) {$g_{\mathrm{aug}}$};</div>
+<div id="L51"><a href="#L51">0051</a>   % recorded input of the first residual sample, crossing the S2 bracket and the psi_a line</div>
+<div id="L52"><a href="#L52">0052</a>   \draw[-&gt;, hop] (s4.south) -- (g.north) node[pos=0.33, left, lab] {$u_\tau$};</div>
+<div id="L53"><a href="#L53">0053</a>   % encoded state at tau, from the top encoder around the left</div>
+<div id="L54"><a href="#L54">0054</a>   \draw[-&gt;] (psi.west) -- (\xL,\yS) -- (\xL,\yG) -- (g.west)</div>
+<div id="L55"><a href="#L55">0055</a>        node[pos=0.08, lab, anchor=south west] {$\hat x^{\mathrm n}_{\tau|\tau}$};</div>
+<div id="L56"><a href="#L56">0056</a>   \draw[-&gt;] (g.east) -| (v2.south);</div>
+<div id="L57"><a href="#L57">0057</a>   % stage tags beside each loss: what that loss trains</div>
+<div id="L58"><a href="#L58">0058</a>   \node[lab, anchor=west, align=left] at ($(v1.east)+(0.08,0)$)</div>
+<div id="L59"><a href="#L59">0059</a>        {S1: trains\\$\theta_{\mathrm p}$, $\theta^a_{\mathrm{enc}}$};</div>
+<div id="L60"><a href="#L60">0060</a>   \node[lab, anchor=west, align=left] at ($(v2.east)+(0.08,0)$)</div>
+<div id="L61"><a href="#L61">0061</a>        {S2: trains\\$\theta_{\mathrm{aug}}$};</div>
+<div id="L62"><a href="#L62">0062</a> \end{tikzpicture}</div></pre>

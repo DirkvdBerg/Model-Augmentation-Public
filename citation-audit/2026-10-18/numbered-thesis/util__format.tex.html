@@ -1,0 +1,108 @@
+<meta charset="utf-8"><title>util/format.tex</title><pre><div id="L1"><a href="#L1">0001</a> % format.tex  --  macros, notation, styling. Swap the class without touching this.</div>
+<div id="L2"><a href="#L2">0002</a> </div>
+<div id="L3"><a href="#L3">0003</a> \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em</div>
+<div id="L4"><a href="#L4">0004</a>     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}</div>
+<div id="L5"><a href="#L5">0005</a> </div>
+<div id="L6"><a href="#L6">0006</a> % ---------------------------------------------------------------- review preview</div>
+<div id="L7"><a href="#L7">0007</a> % Uncomment to make the editor build (main.pdf) show what supervisors see: no todos,</div>
+<div id="L8"><a href="#L8">0008</a> % no wip blocks, outlines as plain bullets. Comment out again to get the working version.</div>
+<div id="L9"><a href="#L9">0009</a> %\def\ReviewBuild{}</div>
+<div id="L10"><a href="#L10">0010</a> </div>
+<div id="L11"><a href="#L11">0011</a> % ---------------------------------------------------------------- draft switch</div>
+<div id="L12"><a href="#L12">0012</a> % \drafttrue  -&gt; todo notes visible.   \draftfalse -&gt; submission build.</div>
+<div id="L13"><a href="#L13">0013</a> \newif\ifdraft</div>
+<div id="L14"><a href="#L14">0014</a> \drafttrue</div>
+<div id="L15"><a href="#L15">0015</a> \ifdefined\ReviewBuild\draftfalse\fi   % review.tex defines \ReviewBuild: review PDF for supervisors</div>
+<div id="L16"><a href="#L16">0016</a> \ifdraft</div>
+<div id="L17"><a href="#L17">0017</a>   \newcommand{\todo}[1]{\textcolor{red}{[\textbf{TODO:} #1]}}</div>
+<div id="L18"><a href="#L18">0018</a>   \newcommand{\note}[1]{\textcolor{blue}{[#1]}}</div>
+<div id="L19"><a href="#L19">0019</a>   \newcommand{\kw}[1]{\textcolor{teal}{#1}}   % keep-word: fixed term during own-words rewrite</div>
+<div id="L20"><a href="#L20">0020</a> \else</div>
+<div id="L21"><a href="#L21">0021</a>   \newcommand{\todo}[1]{}</div>
+<div id="L22"><a href="#L22">0022</a>   \newcommand{\note}[1]{}</div>
+<div id="L23"><a href="#L23">0023</a>   \newcommand{\kw}[1]{#1}                     % submission build: plain text</div>
+<div id="L24"><a href="#L24">0024</a> \fi</div>
+<div id="L25"><a href="#L25">0025</a> </div>
+<div id="L26"><a href="#L26">0026</a> % ---------------------------------------------------------------- review switch</div>
+<div id="L27"><a href="#L27">0027</a> % wip:     text kept in the file but not shown to supervisors (old bullets, AI prose).</div>
+<div id="L28"><a href="#L28">0028</a> %          \begin{wip} and \end{wip} each on their own line (comment package).</div>
+<div id="L29"><a href="#L29">0029</a> % outline: the clean bullets of what a section will state. A list: write \item lines.</div>
+<div id="L30"><a href="#L30">0030</a> % main.tex (editor build): wip shown, outline shown in blue.</div>
+<div id="L31"><a href="#L31">0031</a> % review.tex (review build): wip removed, outline shown as a plain list, todos removed.</div>
+<div id="L32"><a href="#L32">0032</a> \usepackage{comment}</div>
+<div id="L33"><a href="#L33">0033</a> \ifdefined\ReviewBuild</div>
+<div id="L34"><a href="#L34">0034</a>   \excludecomment{wip}</div>
+<div id="L35"><a href="#L35">0035</a>   \newenvironment{outline}{\begin{itemize}}{\end{itemize}}</div>
+<div id="L36"><a href="#L36">0036</a>   % review: cite the source only, without the Eq./Sec./Thm. part in brackets</div>
+<div id="L37"><a href="#L37">0037</a>   \let\fullcite\cite</div>
+<div id="L38"><a href="#L38">0038</a>   \renewcommand{\cite}[2][]{\fullcite{#2}}</div>
+<div id="L39"><a href="#L39">0039</a> \else</div>
+<div id="L40"><a href="#L40">0040</a>   \includecomment{wip}</div>
+<div id="L41"><a href="#L41">0041</a>   \newenvironment{outline}{\begingroup\color{blue!60!black}\begin{itemize}}{\end{itemize}\endgroup}</div>
+<div id="L42"><a href="#L42">0042</a> \fi</div>
+<div id="L43"><a href="#L43">0043</a> % \ucite: a citation whose source is not yet checked. Editor build: normal citation in orange.</div>
+<div id="L44"><a href="#L44">0044</a> % Review build: no citation, and the source is left out of the reference list.</div>
+<div id="L45"><a href="#L45">0045</a> % Same arguments as \cite; change back to \cite once the source is checked.</div>
+<div id="L46"><a href="#L46">0046</a> \ifdefined\ReviewBuild</div>
+<div id="L47"><a href="#L47">0047</a>   \newcommand{\ucite}[2][]{}</div>
+<div id="L48"><a href="#L48">0048</a> \else</div>
+<div id="L49"><a href="#L49">0049</a>   \newcommand{\ucite}[2][]{{\color{orange}\if\relax\detokenize{#1}\relax\cite{#2}\else\cite[#1]{#2}\fi}}</div>
+<div id="L50"><a href="#L50">0050</a> \fi</div>
+<div id="L51"><a href="#L51">0051</a> % \revnote: a remark for supervisors. Shown in main.tex and review.tex, removed at submission.</div>
+<div id="L52"><a href="#L52">0052</a> \ifdefined\ReviewBuild</div>
+<div id="L53"><a href="#L53">0053</a>   \newcommand{\revnote}[1]{\textcolor{violet}{[\textbf{Note:} #1]}}</div>
+<div id="L54"><a href="#L54">0054</a> \else\ifdraft</div>
+<div id="L55"><a href="#L55">0055</a>   \newcommand{\revnote}[1]{\textcolor{violet}{[\textbf{Note:} #1]}}</div>
+<div id="L56"><a href="#L56">0056</a> \else</div>
+<div id="L57"><a href="#L57">0057</a>   \newcommand{\revnote}[1]{}</div>
+<div id="L58"><a href="#L58">0058</a> \fi\fi</div>
+<div id="L59"><a href="#L59">0059</a> </div>
+<div id="L60"><a href="#L60">0060</a> % ------------------------------------------------------------ feedback changes</div>
+<div id="L61"><a href="#L61">0061</a> % Marks for revising text after supervisor feedback (2026-10-18). Black text is the</div>
+<div id="L62"><a href="#L62">0062</a> % original word for word. Editor build: changes visible. Review and submission build:</div>
+<div id="L63"><a href="#L63">0063</a> % final text only, deletions gone, no tags. [tag] is the comment id, e.g. Jan3, Js12, Q5.</div>
+<div id="L64"><a href="#L64">0064</a> %   \chg[tag]{old}{new}   word-level fix: old struck grey, new green</div>
+<div id="L65"><a href="#L65">0065</a> %   \del[tag]{text}       deleted text: struck grey</div>
+<div id="L66"><a href="#L66">0066</a> %   \add[tag]{text}       new text: green</div>
+<div id="L67"><a href="#L67">0067</a> %   \mv[tag]{P3}          before a moved sentence: grey tag &quot;P3&quot; (paragraph it came from)</div>
+<div id="L68"><a href="#L68">0068</a> %   \changelegend         one-line legend, put once at the top of a revised section</div>
+<div id="L69"><a href="#L69">0069</a> % \showdeletionsfalse hides the struck text to read the revised flow.</div>
+<div id="L70"><a href="#L70">0070</a> \newif\ifshowdeletions</div>
+<div id="L71"><a href="#L71">0071</a> \showdeletionstrue</div>
+<div id="L72"><a href="#L72">0072</a> \definecolor{chgnew}{rgb}{0,0.45,0.15}</div>
+<div id="L73"><a href="#L73">0073</a> \newcommand{\fbtag}[1]{\if\relax\detokenize{#1}\relax\else\textsuperscript{\tiny\color{gray}#1}\fi}</div>
+<div id="L74"><a href="#L74">0074</a> % \fbsout: grey strikethrough; boxes \cite, which \sout cannot break into</div>
+<div id="L75"><a href="#L75">0075</a> \newcommand{\fbsout}[1]{{\color{gray}\let\fbcite\cite\def\cite##1{\mbox{\fbcite{##1}}}\sout{#1}}}</div>
+<div id="L76"><a href="#L76">0076</a> \ifdraft</div>
+<div id="L77"><a href="#L77">0077</a>   \newcommand{\chg}[3][]{\ifshowdeletions\fbsout{#2}\ \fi{\color{chgnew}#3}\fbtag{#1}}</div>
+<div id="L78"><a href="#L78">0078</a>   \newcommand{\del}[2][]{\ifshowdeletions\fbsout{#2}\fbtag{#1}\fi}</div>
+<div id="L79"><a href="#L79">0079</a>   \newcommand{\add}[2][]{{\color{chgnew}#2}\fbtag{#1}}</div>
+<div id="L80"><a href="#L80">0080</a>   \newcommand{\mv}[2][]{\textsuperscript{\tiny\color{gray}from #2\if\relax\detokenize{#1}\relax\else, #1\fi}\,}</div>
+<div id="L81"><a href="#L81">0081</a>   \newcommand{\changelegend}{{\footnotesize\color{gray}[Changes: black = original,</div>
+<div id="L82"><a href="#L82">0082</a>     {\color{chgnew}green} = changed or new, \sout{struck} = deleted,</div>
+<div id="L83"><a href="#L83">0083</a>     \textsuperscript{\tiny from P3} = moved from paragraph 3, superscript = comment id.]}\par}</div>
+<div id="L84"><a href="#L84">0084</a> \else</div>
+<div id="L85"><a href="#L85">0085</a>   \newcommand{\chg}[3][]{#3}</div>
+<div id="L86"><a href="#L86">0086</a>   \newcommand{\del}[2][]{}</div>
+<div id="L87"><a href="#L87">0087</a>   \newcommand{\add}[2][]{#2}</div>
+<div id="L88"><a href="#L88">0088</a>   \newcommand{\mv}[2][]{}</div>
+<div id="L89"><a href="#L89">0089</a>   \newcommand{\changelegend}{}</div>
+<div id="L90"><a href="#L90">0090</a> \fi</div>
+<div id="L91"><a href="#L91">0091</a> </div>
+<div id="L92"><a href="#L92">0092</a> % ------------------------------------------------------------ general notation</div>
+<div id="L93"><a href="#L93">0093</a> % Copied verbatim from scripts/gantry/orthogonal-by-construction/documentation/</div>
+<div id="L94"><a href="#L94">0094</a> % state-level-obc-derivation.tex so the two documents stay comparable.</div>
+<div id="L95"><a href="#L95">0095</a> \newcommand{\R}{\mathbb{R}}</div>
+<div id="L96"><a href="#L96">0096</a> \newcommand{\ran}{\operatorname{range}}</div>
+<div id="L97"><a href="#L97">0097</a> \newcommand{\rank}{\operatorname{rank}}</div>
+<div id="L98"><a href="#L98">0098</a> \newcommand{\col}{\operatorname{col}}</div>
+<div id="L99"><a href="#L99">0099</a> \newcommand{\norm}[1]{\left\lVert#1\right\rVert}</div>
+<div id="L100"><a href="#L100">0100</a> \newcommand{\code}[1]{\nolinkurl{#1}}</div>
+<div id="L101"><a href="#L101">0101</a> </div>
+<div id="L102"><a href="#L102">0102</a> % ------------------------------------------------------------ paper notation</div>
+<div id="L103"><a href="#L103">0103</a> % Define the symbols for this paper here, once.</div>
+<div id="L104"><a href="#L104">0104</a> % Section II: gantry coordinates, baseline model, LFR.</div>
+<div id="L105"><a href="#L105">0105</a> \newcommand{\qact}{q_{\mathrm{act}}}     % actuator coordinates [X1 X2 Y]^T</div>
+<div id="L106"><a href="#L106">0106</a> \newcommand{\uact}{u_{\mathrm{act}}}     % actuator forces</div>
+<div id="L107"><a href="#L107">0107</a> \newcommand{\fnet}{f_{\mathrm{net}}}     % net generalized force on the inertia</div>
+<div id="L108"><a href="#L108">0108</a> \newcommand{\Dsch}{\Delta}               % scheduling block of the LFR</div></pre>

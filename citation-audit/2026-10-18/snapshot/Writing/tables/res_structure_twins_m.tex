@@ -1,0 +1,27 @@
+% multisine twins records
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{l r r r}
+\toprule
+ & \multicolumn{3}{c}{Multisine}\\
+\cmidrule(lr){2-4}
+RMS (m) & $X_1$ & $X_2$ & $Y$\\
+\midrule
+Baseline, true $\theta$ & $3.03\times10^{-6}$ & $3.20\times10^{-6}$ & $2.98\times10^{-5}$\\
+Baseline, detuned $\theta$$^\dagger$ & $5.13\times10^{-6}$ & $4.14\times10^{-6}$ & $3.24\times10^{-5}$\\
+Static parallel, $n_a{=}0$ & $2.18\times10^{-6}$ & $2.14\times10^{-6}$ & $2.20\times10^{-5}$\\
+Static parallel, $n_a{=}0$, detuned $\theta$ & $2.19\times10^{-6}$ & $2.14\times10^{-6}$ & $2.20\times10^{-5}$\\
+Static parallel (OBC), $n_a{=}0$, detuned $\theta$ & $2.31\times10^{-6}$ & $2.50\times10^{-6}$ & $2.21\times10^{-5}$\\
+Plain training, $n_a{=}2$ & $1.83\times10^{-6}$ & $1.87\times10^{-6}$ & $1.93\times10^{-5}$\\
+PS init., $n_a{=}2$ & $1.53\times10^{-6}$ & $1.64\times10^{-6}$ & $2.38\times10^{-6}$\\
+PS init., baseline part only & $3.05\times10^{-6}$ & $2.79\times10^{-6}$ & $2.95\times10^{-5}$\\
+PS init., $n_a{=}8$ & $1.51\times10^{-6}$ & $1.57\times10^{-6}$ & $2.55\times10^{-6}$\\
+PS init., detuned $\theta$ & $1.53\times10^{-6}$ & $1.62\times10^{-6}$ & $2.49\times10^{-6}$\\
+\midrule
+Augmented (OBC), detuned $\theta$$^\dagger$ & $1.82\times10^{-6}$ & $1.86\times10^{-6}$ & $2.48\times10^{-6}$\\
+\midrule
+Black-box model & $3.12\times10^{-5}$ & $3.63\times10^{-5}$ & $3.70\times10^{-5}$\\
+\midrule
+Noise floor & $9.38\times10^{-9}$ & $9.92\times10^{-9}$ & $3.44\times10^{-9}$\\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize $^\dagger$ preliminary, update 19500 of 33400}\\
+\end{tabular}

@@ -1,0 +1,173 @@
+<meta charset="utf-8"><title>sections/06_results.tex</title><pre><div id="L1"><a href="#L1">0001</a> % Page budget: 2.90 pages | Owns: all quantitative evidence, figure and table claims, criteria, verdicts, and comparison to the black box.</div>
+<div id="L2"><a href="#L2">0002</a> % WRITING GUIDE</div>
+<div id="L3"><a href="#L3">0003</a> % Purpose: Answer the research aspects with frozen quantitative evidence, including negative and conditional results.</div>
+<div id="L4"><a href="#L4">0004</a> % Sources: README &quot;Source map per subsection&quot;, rows VI Results and V Metrics; mandatory papers and the reference gate as in the README.</div>
+<div id="L5"><a href="#L5">0005</a> % Research-plan anchor: Evaluate each promised aspect against its original criterion; name any missing or changed experiment as a departure.</div>
+<div id="L6"><a href="#L6">0006</a> % Current decisions: Every result states expectation, criterion, verdict, and mechanism under matched data and optimisation budgets.</div>
+<div id="L7"><a href="#L7">0007</a> % Choices to justify: Comparator capacity, matched budget, checkpoint rule, one primary metric, representative ASMPT motion, settling interval, controller-transfer case, figure aggregation, and treatment of neural seeds separately from phase realizations.</div>
+<div id="L8"><a href="#L8">0008</a> % Cautions: Do not promote preregistrations, implementation plans, diagnostic-only runs, or superseded numbers to final evidence.</div>
+<div id="L9"><a href="#L9">0009</a> % Planned figures: Use only the result figures and tables named in the subsection bullets; combine panels where they support one claim.</div>
+<div id="L10"><a href="#L10">0010</a> % Section is finished when: Every number is reproducible, every comparison is fair, and every claimed mechanism has an intervention or derivation behind it.</div>
+<div id="L11"><a href="#L11">0011</a> % RESULTS METRIC (binding; Dirk 2026-10-15, D-256; Jasper feedback point 4 on the v2 draft)</div>
+<div id="L12"><a href="#L12">0012</a> %   Primary number of every result: NRMS_e,j = RMS(y_hat_j - y_j) / RMS(y_j - r_j) in %, per test record and stage</div>
+<div id="L13"><a href="#L13">0013</a> %   axis j, from the encoder window k0 on the noisy test record. Defined in Section V-D (eq:setup_rms); this section</div>
+<div id="L14"><a href="#L14">0014</a> %   only uses it. Beside it: the absolute RMS in m (Hoekstra&#x27;s papers report absolute simulation RMSE) and the record&#x27;s</div>
+<div id="L15"><a href="#L15">0015</a> %   noise floor RMS(y - y_noisefree), the lower bound.</div>
+<div id="L16"><a href="#L16">0016</a> %   Why: the reference is given, so the servo error e = y - r is what a closed-loop model must predict. RMS(y) is about</div>
+<div id="L17"><a href="#L17">0017</a> %   0.17 m (motion), RMS(e) 1e-5 to 6e-5 m, so NRMS normalised by y would be about 1e-5 % for every model.</div>
+<div id="L18"><a href="#L18">0018</a> %   Report records with multisine (I1, I2, E1) and without (I3 to I6, E2 to E6) separately; never one mean over I1 to I6</div>
+<div id="L19"><a href="#L19">0019</a> %   (it hides where the gain is). State both sides: the gain is in the excited absorber band; on the records without</div>
+<div id="L20"><a href="#L20">0020</a> %   multisine the augmentation is equal to or slightly worse than the baseline.</div>
+<div id="L21"><a href="#L21">0021</a> %   Numbers come from Thesis-writeup/Results/18-10-2026/CSV (res_structure, res_obc_combinations, res_generalisation,</div>
+<div id="L22"><a href="#L22">0022</a> %   res_frf_modes) and the tables generated from them.</div>
+<div id="L23"><a href="#L23">0023</a> % MUST ESTABLISH (agreed with Dirk 2026-10-18; handoff 2026-10-18-results-section-content and the session after it)</div>
+<div id="L24"><a href="#L24">0024</a> %   Form (revised 2026-10-18 after &quot;too messy&quot;): an opening and three short subsections, one per aspect, numbered as</div>
+<div id="L25"><a href="#L25">0025</a> %   in the Introduction (1 structure and training, 2 OBC, 3 generalisation). Each subsection names its float and reads</div>
+<div id="L26"><a href="#L26">0026</a> %   it in two to four sentences in words; digits stay in the floats, at most one or two in the text where the float</div>
+<div id="L27"><a href="#L27">0027</a> %   cannot show them (Hoekstra 2025 Sec. 4.3, Hoekstra 2026 Sec. 6.3, Gyorok 2025 Sec. 5.4). Floats after the text of</div>
+<div id="L28"><a href="#L28">0028</a> %   their subsection; todos and revnotes at the end of the section. No verdicts against criteria and no mechanisms:</div>
+<div id="L29"><a href="#L29">0029</a> %   those are in the Discussion (Section 08). Definitions stay in Section V. Choices in Appendix app:choices.</div>
+<div id="L30"><a href="#L30">0030</a> %   1. With multisine the final model lowers the Y error by more than an order of magnitude (116.6 to 6.2 %) and halves</div>
+<div id="L31"><a href="#L31">0031</a> %      X; without it, it is at the baseline level (0.2 to 0.4 points above). The final model has the resonance of the</div>
+<div id="L32"><a href="#L32">0032</a> %      system (2.12 f_b) that the baseline lacks. PS and added states: validation results in the appendix.</div>
+<div id="L33"><a href="#L33">0033</a> %   2. From the detuned start U ends almost twice as far from the truth as OBC (83.1 vs 47.7 %, start 30.0 %), at equal</div>
+<div id="L34"><a href="#L34">0034</a> %      accuracy within one point; dampers move most, masses stay within 3.4 %; truth overlap 0.59; reversed without</div>
+<div id="L35"><a href="#L35">0035</a> %      added states (appendix).</div>
+<div id="L36"><a href="#L36">0036</a> %   3. The final model has about the same error on each E record as on its I record (within 2.0 points); without</div>
+<div id="L37"><a href="#L37">0037</a> %      multisine at or slightly above the baseline (up to 1.2 points); the black box 74 to 193 % without multisine,</div>
+<div id="L38"><a href="#L38">0038</a> %      below the final model only on I2 X2; twins: final below 10 % on Y, baseline and black box above 47 %.</div>
+<div id="L39"><a href="#L39">0039</a> %   Moved out: verdicts, mechanisms, the black-box explanation (Quinten p9), the n_a = 0 reversal as an argument</div>
+<div id="L40"><a href="#L40">0040</a> %   (Discussion); the &quot;difference between starts&quot; row (revnote request at the end).</div>
+<div id="L41"><a href="#L41">0041</a> \section{Results}\label{sec:results}</div>
+<div id="L42"><a href="#L42">0042</a> \ifdraft</div>
+<div id="L43"><a href="#L43">0043</a> \begin{itemize}</div>
+<div id="L44"><a href="#L44">0044</a> \item Test records, $\mathrm{NRMS}_e$ with the noise floor; training and validation in the appendix (D-269)</div>
+<div id="L45"><a href="#L45">0045</a> \end{itemize}</div>
+<div id="L46"><a href="#L46">0046</a> \fi</div>
+<div id="L47"><a href="#L47">0047</a> All errors are reported on the test set in $\mathrm{NRMS}_e$ of \eqref{eq:setup_rms},</div>
+<div id="L48"><a href="#L48">0048</a> against the noise floor.</div>
+<div id="L49"><a href="#L49">0049</a> Appendix~\ref{app:splits} gives the training and validation records.</div>
+<div id="L50"><a href="#L50">0050</a> </div>
+<div id="L51"><a href="#L51">0051</a> \subsection{Augmentation structure}</div>
+<div id="L52"><a href="#L52">0052</a> \ifdraft</div>
+<div id="L53"><a href="#L53">0053</a> \begin{itemize}</div>
+<div id="L54"><a href="#L54">0054</a> \item Final model against the baseline and the black box, with and without multisine (Table~\ref{tab:res_structure}, Fig.~\ref{fig:res_time_trace})</div>
+<div id="L55"><a href="#L55">0055</a> \item The final model has the resonance of the system, the baseline none (Fig.~\ref{fig:res_frf})</div>
+<div id="L56"><a href="#L56">0056</a> \item PS start and added states compared on validation in the appendix</div>
+<div id="L57"><a href="#L57">0057</a> \end{itemize}</div>
+<div id="L58"><a href="#L58">0058</a> \fi</div>
+<div id="L59"><a href="#L59">0059</a> Table~\ref{tab:res_structure} compares the final grey box model with the baseline at</div>
+<div id="L60"><a href="#L60">0060</a> the true parameters and with the black box (Aspect~1).</div>
+<div id="L61"><a href="#L61">0061</a> For the data with multisine, the final model lowers the error on $Y$ by more </div>
+<div id="L62"><a href="#L62">0062</a> than an order of magnitude and halves the error on $X_1$ and $X_2$.</div>
+<div id="L63"><a href="#L63">0063</a> For the data without multisine both models achieve similar results.</div>
+<div id="L64"><a href="#L64">0064</a> Fig.~\ref{fig:res_time_trace} shows this on record I1, and</div>
+<div id="L65"><a href="#L65">0065</a> Fig.~\ref{fig:res_frf} shows that the final model is able to capture the resonance</div>
+<div id="L66"><a href="#L66">0066</a> of the system, which is not modeled in the baseline.</div>
+<div id="L67"><a href="#L67">0067</a> \kw{Appendix~\ref{app:choices} compares the final model on the validation records </div>
+<div id="L68"><a href="#L68">0068</a> with plain training of the added states and with zero and eight added states.}</div>
+<div id="L69"><a href="#L69">0069</a> </div>
+<div id="L70"><a href="#L70">0070</a> \begin{table}[t]</div>
+<div id="L71"><a href="#L71">0071</a>   \centering</div>
+<div id="L72"><a href="#L72">0072</a>   \caption{$\mathrm{NRMS}_e$ per axis, mean over test records I1 to I6, with and without multisine.}</div>
+<div id="L73"><a href="#L73">0073</a>   \label{tab:res_structure}</div>
+<div id="L74"><a href="#L74">0074</a>   \input{tables/res_structure}</div>
+<div id="L75"><a href="#L75">0075</a> \end{table}</div>
+<div id="L76"><a href="#L76">0076</a> </div>
+<div id="L77"><a href="#L77">0077</a> \begin{figure}[t]</div>
+<div id="L78"><a href="#L78">0078</a>   \centering</div>
+<div id="L79"><a href="#L79">0079</a>   \includegraphics[width=\columnwidth]{res_time_trace.pdf}</div>
+<div id="L80"><a href="#L80">0080</a>   \caption{Test record I1, $Y$ axis. Top: moving RMS of the simulation error. Bottom: servo error in the shaded window.}</div>
+<div id="L81"><a href="#L81">0081</a>   \label{fig:res_time_trace}</div>
+<div id="L82"><a href="#L82">0082</a> \end{figure}</div>
+<div id="L83"><a href="#L83">0083</a> </div>
+<div id="L84"><a href="#L84">0084</a> \begin{figure}[t]</div>
+<div id="L85"><a href="#L85">0085</a>   \centering</div>
+<div id="L86"><a href="#L86">0086</a>   \includegraphics[width=\columnwidth]{res_frf.pdf}</div>
+<div id="L87"><a href="#L87">0087</a>   \caption{Bode magnitude from the stage force $F_Y$ to the stage position $Y$, linearised at rest. Geometric mean over $Y=-0.39$ to $0.39$~m; shaded: range of the final model over $Y$.}</div>
+<div id="L88"><a href="#L88">0088</a>   \label{fig:res_frf}</div>
+<div id="L89"><a href="#L89">0089</a> \end{figure}</div>
+<div id="L90"><a href="#L90">0090</a> </div>
+<div id="L91"><a href="#L91">0091</a> \subsection{Interpretability}</div>
+<div id="L92"><a href="#L92">0092</a> \ifdraft</div>
+<div id="L93"><a href="#L93">0093</a> \begin{itemize}</div>
+<div id="L94"><a href="#L94">0094</a> \item Combination errors, full model, physical part and overlaps, $\mathcal M_{\mathrm U}$ against $\mathcal M_{\mathrm{OBC}}$ from the detuned start (Table~\ref{tab:res_obc})</div>
+<div id="L95"><a href="#L95">0095</a> \item Correct start and the models without added states in the appendix</div>
+<div id="L96"><a href="#L96">0096</a> \item Uniqueness from the two starts (?: row requested, revnote at the end)</div>
+<div id="L97"><a href="#L97">0097</a> \end{itemize}</div>
+<div id="L98"><a href="#L98">0098</a> \fi</div>
+<div id="L99"><a href="#L99">0099</a> Table~\ref{tab:res_obc} compares $\mathcal M_{\mathrm{OBC}}$ with</div>
+<div id="L100"><a href="#L100">0100</a> $\mathcal M_{\mathrm U}$, both from the detuned start (Aspect~2).</div>
+<div id="L101"><a href="#L101">0101</a> Both models have deviated further from the true combinations, than their initial values.</div>
+<div id="L102"><a href="#L102">0102</a> $\mathcal M_{\mathrm U}$ deviates close to double that of $\mathcal M_{\mathrm{OBC}}$.</div>
+<div id="L103"><a href="#L103">0103</a> The combinations describing the damping deviate the most, </div>
+<div id="L104"><a href="#L104">0104</a> while the mass combinations stay close to their true values.</div>
+<div id="L105"><a href="#L105">0105</a> The final model with the orthogonality constraint and the unconstrained model</div>
+<div id="L106"><a href="#L106">0106</a> perform equally well. </div>
+<div id="L107"><a href="#L107">0107</a> \kw{OBC keeps the network out of the parameter directions: its network overlap is </div>
+<div id="L108"><a href="#L108">0108</a> much lower than that of $\mathcal M_{\mathrm U}$.</div>
+<div id="L109"><a href="#L109">0109</a> The missing dynamics are not orthogonal to these directions, their overlap is 0.59.</div>
+<div id="L110"><a href="#L110">0110</a> From the correct start, OBC also ends closer to the true values (Appendix~\ref{app:choices}).</div>
+<div id="L111"><a href="#L111">0111</a> Without added states, $\mathcal M_{\mathrm U}$ ends closer instead.}</div>
+<div id="L112"><a href="#L112">0112</a> </div>
+<div id="L113"><a href="#L113">0113</a> \begin{table}[t]</div>
+<div id="L114"><a href="#L114">0114</a>   \centering</div>
+<div id="L115"><a href="#L115">0115</a>   \caption{Relative error of the ten combinations, unconstrained and OBC, from the detuned start.}</div>
+<div id="L116"><a href="#L116">0116</a>   \label{tab:res_obc}</div>
+<div id="L117"><a href="#L117">0117</a>   \input{tables/res_obc_combinations}</div>
+<div id="L118"><a href="#L118">0118</a> \end{table}</div>
+<div id="L119"><a href="#L119">0119</a> </div>
+<div id="L120"><a href="#L120">0120</a> \subsection{Generalisation}</div>
+<div id="L121"><a href="#L121">0121</a> \ifdraft</div>
+<div id="L122"><a href="#L122">0122</a> \begin{itemize}</div>
+<div id="L123"><a href="#L123">0123</a> \item Final model, baseline and black box per test record, each E record beside its I record (Fig.~\ref{fig:res_generalisation})</div>
+<div id="L124"><a href="#L124">0124</a> \item Multisine twins of the records without multisine</div>
+<div id="L125"><a href="#L125">0125</a> \end{itemize}</div>
+<div id="L126"><a href="#L126">0126</a> \fi</div>
+<div id="L127"><a href="#L127">0127</a> The error per test record are shown in Fig.~\ref{fig:res_generalisation}, </div>
+<div id="L128"><a href="#L128">0128</a> for extrapolation (E) and interpolation (I) (Aspect~3).</div>
+<div id="L129"><a href="#L129">0129</a> Without multisine the model performs as well or slightly above the baseline.</div>
+<div id="L130"><a href="#L130">0130</a> The black box has 74 to 193\,\% on the records without multisine, and it is</div>
+<div id="L131"><a href="#L131">0131</a> below the final model only on I2 $X_2$.</div>
+<div id="L132"><a href="#L132">0132</a> On the \kw{multisine twins}, the final model stays below 10\,\% on $Y$, while the</div>
+<div id="L133"><a href="#L133">0133</a> baseline and the black box are above 47\,\%.</div>
+<div id="L134"><a href="#L134">0134</a> \revnote{Should I drop Fig.~\ref{fig:res_generalisation} and put it in a table instead,</div>
+<div id="L135"><a href="#L135">0135</a> also due to the noise floor i think it undersells the results compared to </div>
+<div id="L136"><a href="#L136">0136</a> Fig.~\ref{fig:res_time_trace}.}</div>
+<div id="L137"><a href="#L137">0137</a> </div>
+<div id="L138"><a href="#L138">0138</a> \begin{figure*}[t]</div>
+<div id="L139"><a href="#L139">0139</a>   \centering</div>
+<div id="L140"><a href="#L140">0140</a>   \includegraphics[width=\textwidth]{res_generalisation.pdf}</div>
+<div id="L141"><a href="#L141">0141</a>   \caption{Simulation error RMS per test record, mean over $X_1$, $X_2$, $Y$.}</div>
+<div id="L142"><a href="#L142">0142</a>   \label{fig:res_generalisation}</div>
+<div id="L143"><a href="#L143">0143</a> \end{figure*}</div>
+<div id="L144"><a href="#L144">0144</a> </div>
+<div id="L145"><a href="#L145">0145</a> % Open points of this section (kept together so the text reads without interruption).</div>
+<div id="L146"><a href="#L146">0146</a> \todo{Missing: the numbers of $\mathcal M_{\mathrm{OBC}}$ (R1) in this section</div>
+<div id="L147"><a href="#L147">0147</a> are preliminary (update 19500 of 33400). Candidate: update them after the</div>
+<div id="L148"><a href="#L148">0148</a> final R1/R2 rerun (basis: handoff 2026-10-18, Sec.~3).}</div>
+<div id="L149"><a href="#L149">0149</a> \todo{Missing: the network overlap of $\mathcal M_{\mathrm{OBC}}$ in</div>
+<div id="L150"><a href="#L150">0150</a> Table~\ref{tab:res_obc} comes from update 18200 while labelled 19500, so the</div>
+<div id="L151"><a href="#L151">0151</a> text gives no number for it. Candidate: recheck after the final R1 rerun</div>
+<div id="L152"><a href="#L152">0152</a> (basis: handoff 2026-10-18, Sec.~12).}</div>
+<div id="L153"><a href="#L153">0153</a> \todo{Missing: the caption of Fig.~\ref{fig:res_generalisation} says ``RMS,</div>
+<div id="L154"><a href="#L154">0154</a> mean over $X_1$, $X_2$, $Y$&#x27;&#x27;, while the text reads $\mathrm{NRMS}_e$ per</div>
+<div id="L155"><a href="#L155">0155</a> axis. Candidate: check the figure and update the caption (Jasper p9: say</div>
+<div id="L156"><a href="#L156">0156</a> error of what with respect to what).}</div>
+<div id="L157"><a href="#L157">0157</a> \todo{Are state Gramians useful for explaining each added state&#x27;s contribution, or would intervention-based ablation be more direct and less linearisation-dependent?}</div>
+<div id="L158"><a href="#L158">0158</a> % \revnote{The ``OBC pred.&#x27;&#x27; columns are dropped (Dirk 2026-10-18). The</div>
+<div id="L159"><a href="#L159">0159</a> % first-order bias of \eqref{eq:obc_recovery} is 100 to 1300\,\% against</div>
+<div id="L160"><a href="#L160">0160</a> % observed errors of a few to 30\,\%: outside the range of the expansion, and</div>
+<div id="L161"><a href="#L161">0161</a> % it holds for the one-step least-squares fit at $\bar x=0$, not the</div>
+<div id="L162"><a href="#L162">0162</a> % closed-loop training with active added states. The truth overlap row keeps</div>
+<div id="L163"><a href="#L163">0163</a> % the argument why OBC cannot recover the true parameters; the text that</div>
+<div id="L164"><a href="#L164">0164</a> % compares predicted and observed $\delta_j$ (05\_setup, end of the metric</div>
+<div id="L165"><a href="#L165">0165</a> % paragraph) still needs to go.}</div>
+<div id="L166"><a href="#L166">0166</a> % \revnote{Request (2026-10-18): add a row ``difference between starts&#x27;&#x27; to</div>
+<div id="L167"><a href="#L167">0167</a> % Table~\ref{tab:res_obc}, the norm of $\delta_j$ from the detuned start minus</div>
+<div id="L168"><a href="#L168">0168</a> % $\delta_j$ from the correct start, per arm. Section~\ref{sec:intro} defines</div>
+<div id="L169"><a href="#L169">0169</a> % interpretability as a unique estimate, and this row tests uniqueness; the</div>
+<div id="L170"><a href="#L170">0170</a> % norm to the truth tests recovery. From</div>
+<div id="L171"><a href="#L171">0171</a> % Table~\ref{tab:app_obc_full} by hand (R1, R2 preliminary): 36.4\,\%</div>
+<div id="L172"><a href="#L172">0172</a> % unconstrained, 25.1\,\% OBC. To be computed by</div>
+<div id="L173"><a href="#L173">0173</a> % \texttt{Code/Figures/res\_obc\_combinations.py} after the final R1/R2 rerun.}</div></pre>

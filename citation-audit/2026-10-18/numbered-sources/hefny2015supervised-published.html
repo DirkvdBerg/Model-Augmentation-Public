@@ -1,0 +1,565 @@
+<meta charset="utf-8"><title>hefny2015supervised-published</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1] Supervised Learning for Dynamical System Learning</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1] </div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1] </div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1]            Ahmed Hefny ∗                  Carlton Downey †                  Geoffrey J. Gordon ‡</div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1]     Carnegie Mellon University        Carnegie Mellon University         Carnegie Mellon University</div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1]        Pittsburgh, PA 15213              Pittsburgh, PA 15213               Pittsburgh, PA 15213</div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1]      ahefny@cs.cmu.edu                cmdowney@cs.cmu.edu                ggordon@cs.cmu.edu</div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1] </div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1] </div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1] </div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1]                                                Abstract</div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1] </div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1]          Recently there has been substantial interest in spectral methods for learning dy-</div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1]          namical systems. These methods are popular since they often offer a good tradeoff</div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1]          between computational and statistical efficiency. Unfortunately, they can be dif-</div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1]          ficult to use and extend in practice: e.g., they can make it difficult to incorporate</div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1]          prior information such as sparsity or structure. To address this problem, we present</div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1]          a new view of dynamical system learning: we show how to learn dynamical sys-</div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1]          tems by solving a sequence of ordinary supervised learning problems, thereby</div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1]          allowing users to incorporate prior knowledge via standard techniques such as</div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1]          L1 regularization. Many existing spectral methods are special cases of this new</div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1]          framework, using linear regression as the supervised learner. We demonstrate the</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1]          effectiveness of our framework by showing examples where nonlinear regression</div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1]          or lasso let us learn better state representations than plain linear regression does;</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1]          the correctness of these instances follows directly from our general analysis.</div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1] </div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1] </div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1] 1    Introduction</div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1] </div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1] Likelihood-based approaches to learning dynamical systems, such as EM [1] and MCMC [2], can</div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1] be slow and suffer from local optima. This difficulty has resulted in the development of so-called</div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.1] “spectral algorithms” [3], which rely on factorization of a matrix of observable moments; these</div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.1] algorithms are often fast, simple, and globally optimal.</div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.1] Despite these advantages, spectral algorithms fall short in one important aspect compared to EM and</div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.1] MCMC: the latter two methods are meta-algorithms or frameworks that offer a clear template for</div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.1] developing new instances incorporating various forms of prior knowledge. For spectral algorithms,</div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.1] by contrast, there is no clear template to go from a set of probabilistic assumptions to an algorithm.</div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.1] In fact, researchers often relax model assumptions to make the algorithm design process easier,</div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.1] potentially discarding valuable information in the process.</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.1] To address this problem, we propose a new framework for dynamical system learning, using the</div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.1] idea of instrumental-variable regression [4, 5] to transform dynamical system learning to a sequence</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.1] of ordinary supervised learning problems. This transformation allows us to apply the rich literature</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.1] on supervised learning to incorporate many types of prior knowledge. Our new methods subsume a</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.1] variety of existing spectral algorithms as special cases.</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.1] The remainder of this paper is organized as follows: first we formulate the new learning framework</div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.1] (Sec. 2). We then provide theoretical guarantees for the proposed methods (Sec. 4). Finally, we give</div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.1]    ∗</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.1]      This material is based upon work funded and supported by the Department of Defense under Contract No.</div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.1] FA8721-05-C-0003 with Carnegie Mellon University for the operation of the Software Engineering Institute, a</div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.1] federally funded research and development center.</div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.1]    †</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.1]      Supported by a grant from the PNC Center for Financial Services Innovation</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.1]    ‡</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.1]      Supported by NIH grant R01 MH 064537 and ONR contract N000141512365.</div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.1] </div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.1] </div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.1]                                                     1</div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.1] </div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.2]                                                                      S1A regression 𝐸[𝑞𝑡 |ℎ𝑡 ]</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.2] </div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.2] </div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.2]                                                               history ℎ𝑡                       future 𝜓𝑡 /𝑞𝑡</div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.2] </div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.2] </div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.2]                                                                                 𝑜𝑡−1      𝑜𝑡                     𝑜𝑡+𝑘−1 𝑜𝑡+𝑘</div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.2] </div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.2]                                                                                            S2 regression       shifted future 𝜓𝑡+1</div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.2] </div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.2] </div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.2]                                                                                     extended future 𝜉𝑡 /𝑝𝑡</div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.2]                                                             S1B regression  𝐸[𝑝𝑡 |ℎ𝑡 ]</div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.2]                                                                                                      Condition on 𝑜𝑡 (filter)  𝑞𝑡+1</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.2]                                                                                                      Marginalize 𝑜𝑡 (predict)  𝑞𝑡+1|𝑡−1</div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2] </div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2] </div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2]     Figure 1: A latent-state dynamical system.</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2]     Observation ot is determined by latent state            Figure 2: Learning and applying a dynami-</div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2]     st and noise t .                                       cal system with instrumental regression. The</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2]                                                             predictions from S1 provide training data to</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2]                                                             S2. At test time, we filter or predict using the</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2]                                                             weights from S2.</div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2] </div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2] </div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2] two examples of how our techniques let us rapidly design new and useful dynamical system learning</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2] methods by encoding modeling assumptions (Sec. 5).</div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2] </div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2] </div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.2] 2     A framework for spectral algorithms</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.2] </div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.2] A dynamical system is a stochastic process (i.e., a distribution over sequences of observations) such</div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.2] that, at any time, the distribution of future observations is fully determined by a vector st called the</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.2] latent state. The process is specified by three distributions: the initial state distribution P (s1 ), the</div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.2] state transition distribution P (st+1 | st ), and the observation distribution P (ot | st ). For later use,</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.2] we write the observation ot as a function of the state st and random noise t , as shown in Figure 1.</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.2] Given a dynamical system, one of the fundamental tasks is to perform inference, where we predict</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.2] future observations given a history of observations. Typically this is accomplished by maintaining</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.2] a distribution or belief over states bt|t−1 = P (st | o1:t−1 ) where o1:t−1 denotes the first t − 1</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.2] observations. bt|t−1 represents both our knowledge and our uncertainty about the true state of the</div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.2] system. Two core inference tasks are filtering and prediction.1 In filtering, given the current belief</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.2] bt = bt|t−1 and a new observation ot , we calculate an updated belief bt+1 = bt+1|t that incorporates</div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.2] ot . In prediction, we project our belief into the future: given a belief bt|t−1 we estimate bt+k|t−1 =</div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.2] P (st+k | o1:t−1 ) for some k &gt; 0 (without incorporating any intervening observations).</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.2] The typical approach for learning a dynamical system is to explicitly learn the initial, transition, and</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.2] observation distributions by maximum likelihood. Spectral algorithms offer an alternate approach</div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.2] to learning: they instead use the method of moments to set up a system of equations that can be</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.2] solved in closed form to recover estimates of the desired parameters. In this process, they typically</div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.2] factorize a matrix or tensor of observed moments—hence the name “spectral.”</div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.2] Spectral algorithms often (but not always [6]) avoid explicitly estimating the latent state or the initial,</div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.2] transition, or observation distributions; instead they recover observable operators that can be used</div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.2] to perform filtering and prediction directly. To do so, they use an observable representation: instead</div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.2] of maintaining a belief bt over states st , they maintain the expected value of a sufficient statistic of</div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.2] future observations. Such a representation is often called a (transformed) predictive state [7].</div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.2] In more detail, we define qt = qt|t−1 = E[ψt | o1:t−1 ], where ψt = ψ(ot:t+k−1 ) is a vector of future</div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.2] features. The features are chosen such that qt determines the distribution of future observations</div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.2] </div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.2]    1</div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.2]      There are other forms of inference in addition to filtering and prediction, such as smoothing and likelihood</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.2] evaluation, but they are outside the scope of this paper.</div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.2] </div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.2] </div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.2]                                                        2</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.2] </div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.3] P (ot:t+k−1 | o1:t−1 ).2 Filtering then becomes the process of mapping a predictive state qt to qt+1</div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.3] conditioned on ot , while prediction maps a predictive state qt = qt|t−1 to qt+k|t−1 = E[ψt+k |</div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.3] o1:t−1 ] without intervening observations.</div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.3] A typical way to derive a spectral method is to select a set of moments involving ψt , work out the</div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.3] expected values of these moments in terms of the observable operators, then invert this relationship</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.3] to get an equation for the observable operators in terms of the moments. We can then plug in an</div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.3] empirical estimate of the moments to compute estimates of the observable operators.</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.3] While effective, this approach can be statistically inefficient (the goal of being able to solve for the</div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.3] observable operators is in conflict with the goal of maximizing statistical efficiency) and can make</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.3] it difficult to incorporate prior information (each new source of information leads to new moments</div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.3] and a different and possibly harder set of equations to solve). To address these problems, we show</div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.3] that we can instead learn the observable operators by solving three supervised learning problems.</div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.3] The main idea is that, just as we can represent a belief about a latent state st as the conditional</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.3] expectation of a vector of observable statistics, we can also represent any other distributions needed</div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.3] for prediction and filtering via their own vectors of observable statistics. Given such a representation,</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.3] we can learn to filter and predict by learning how to map these vectors to one another.</div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.3] In particular, the key intermediate quantity for filtering is the “extended and marginalized” belief</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.3] P (ot , st+1 | o1:t−1 )—or equivalently P (ot:t+k | o1:t−1 ). We represent this distribution via a vector</div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.3] ξt = ξ(ot:t+k ) of features of the extended future. The features are chosen such that the extended</div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.3] state pt = E[ξt | o1:t−1 ] determines P (ot:t+k | o1:t−1 ). Given P (ot:t+k | o1:t−1 ), filtering and</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.3] prediction reduce respectively to conditioning on and marginalizing over ot .</div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.3] In many models (including Hidden Markov Models (HMMs) and Kalman filters), the extended state</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.3] pt is linearly related to the predictive state qt —a property we exploit for our framework. That is,</div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.3]                                                  pt = W qt                                                 (1)</div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.3] for some linear operator W . For example, in a discrete system ψt can be an indicator vector repre-</div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.3] senting the joint assignment of the next k observations, and ξt can be an indicator vector for the next</div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.3] k + 1 observations. The matrix W is then the conditional probability table P (ot:t+k | ot:t+k−1 ).</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.3] Our goal, therefore, is to learn this mapping W . Naı̈vely, we might try to use linear regression for</div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.3] this purpose, substituting samples of ψt and ξt in place of qt and pt since we cannot observe qt or</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.3] pt directly. Unfortunately, due to the overlap between observation windows, the noise terms on ψt</div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.3] and ξt are correlated. So, naı̈ve linear regression will give a biased estimate of W .</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.3] To counteract this bias, we employ instrumental regression [4, 5]. Instrumental regression uses in-</div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.3] strumental variables that are correlated with the input qt but not with the noise t:t+k . This property</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.3] provides a criterion to denoise the inputs and outputs of the original regression problem: we remove</div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.3] that part of the input/output that is not correlated with the instrumental variables. In our case, since</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.3] past observations o1:t−1 do not overlap with future or extended future windows, they are not cor-</div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.3] related with the noise t:t+k+1 , as can be seen in Figure 1. Therefore, we can use history features</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.3] ht = h(o1:t−1 ) as instrumental variables.</div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.3] In more detail, by taking the expectation of (1) given ht , we obtain an instrument-based moment</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.3] condition: for all t,</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.3]                                        E[pt | ht ] = E[W qt | ht ]</div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.3]                             E[E[ξt | o1:t−1 ] | ht ] = W E[E[ψt | o1:t−1 ] | ht ]</div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.3]                                         E[ξt | ht ] = W E[ψt | ht ]                                        (2)</div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.3] Assuming that there are enough independent dimensions in ht that are correlated with qt , we main-</div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.3] tain the rank of the moment condition when moving from (1) to (2), and we can recover W by least</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.3] squares regression if we can compute E[ψt | ht ] and E[ξt | ht ] for sufficiently many examples t.</div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.3] Fortunately, conditional expectations such as E[ψt | ht ] are exactly what supervised learning algo-</div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.3] rithms are designed to compute. So, we arrive at our learning framework: we first use supervised</div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.3]     2</div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.3]       For convenience we assume that the system is k-observable: that is, the distribution of all future obser-</div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.3] vations is determined by the distribution of the next k observations. (Note: not by the next k observations</div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.3] themselves.) At the cost of additional notation, this restriction could easily be lifted.</div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.3] </div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.3] </div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.3]                                                       3</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.3] </div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.4]  Model/Algorithm          future features ψt                            extended future features    ffilter</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.4]                                                                         ξt</div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.4]  Spectral Algorithm       U &gt; eot where eot is an indicator vec-        U &gt; eot+1 ⊗ eot             Estimate a state normalizer from S1A</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.4]  for HMM [3]              tor and U spans the range of qt (typi-                                    output states.</div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.4]                           cally the top m left singular vectors of</div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.4]                           the joint probability table P (ot+1 , ot ))</div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.4]  SSID for Kalman          xt and xt ⊗ xt , where xt =                   yt and yt ⊗ yt , where      pt specifies a Gaussian distribution</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.4]  filters (time depen-     U &gt; ot:t+k−1 for a matrix U that spans        yt is formed by stacking    where conditioning on ot is straightfor-</div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.4]  dent gain)               the range of qt (typically the top m left     U &gt; ot+1:t+k and ot .       ward.</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.4]                           singular vectors of the covariance matrix</div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.4]                           Cov(ot:t+k−1 , ot−k:t−1 ))</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.4]  SSID for stable          U &gt; ot:t+k−1 (U obtained as above)            ot and U &gt; ot+1:t+k         Estimate steady-state covariance by</div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.4]  Kalman         filters                                                                             solving Riccati equation [8]. pt to-</div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.4]  (constant gain)                                                                                    gether with the steady-state covariance</div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.4]                                                                                                     specify a Gaussian distribution where</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.4]                                                                                                     conditioning on ot is straightforward.</div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.4]  Uncontrolled HSE-        Evaluation functional ks (ot:t+k−1 , .)       ko (ot , .) ⊗ ko (ot , .)   Kernel Bayes rule [10].</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.4]  PSR [9]                  for a characteristic kernel ks                and ψt+1 ⊗ ko (ot , .)</div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.4] </div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.4] </div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.4] Table 1: Examples of existing spectral algorithms reformulated as two-stage instrument regression</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.4] with linear S1 regression. Here ot1 :t2 is a vector formed by stacking observations ot1 through ot2 and</div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.4] ⊗ denotes the outer product. Details and derivations can be found in the supplementary material.</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.4] </div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.4] </div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.4] learning to estimate E[ψt | ht ] and E[ξt | ht ], effectively denoising the training examples, and then</div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.4] use these estimates to compute W by finding the least squares solution to (2).</div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.4] In summary, learning and inference of a dynamical system through instrumental regression can be</div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.4] described as follows:</div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.4]         • Model Specification: Pick features of history ht = h(o1:t−1 ), future ψt = ψ(ot:t+k−1 )</div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.4]           and extended future ξt = ξ(ot:t+k ). ψt must be a sufficient statistic for P(ot:t+k−1 |</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.4]           o1:t−1 ). ξt must satisfy</div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.4]                 – E[ψt+1 | o1:t−1 ] = fpredict (E[ξt | o1:t−1 ]) for a known function fpredict .</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.4]                 – E[ψt+1 | o1:t ] = ffilter (E[ξt | o1:t−1 ], ot ) for a known function ffilter .</div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.4]         • S1A (Stage 1A) Regression: Learn a (possibly non-linear) regression model to estimate</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.4]           ψ̄t = E[ψt | ht ]. The training data for this model are (ht , ψt ) across time steps t.3</div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.4]         • S1B Regression: Learn a (possibly non-linear) regression model to estimate ξ¯t = E[ξt |</div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.4]           ht ]. The training data for this model are (ht , ξt ) across time steps t.</div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.4]         • S2 Regression: Use the feature expectations estimated in S1A and S1B to train a model</div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.4]           to predict ξ¯t = W ψ̄t , where W is a linear operator. The training data for this model are</div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.4]           estimates of (ψ̄t , ξ¯t ) obtained from S1A and S1B across time steps t.</div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.4]         • Initial State Estimation: Estimate an initial state q1 = E[ψ1 ] by averaging ψ1 across</div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.4]           several example realizations of our time series.4</div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.4]         • Inference: Starting from the initial state q1 , we can maintain the predictive state qt =</div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.4]           E[ψt | o1:t−1 ] through filtering: given qt we compute pt = E[ξt | o1:t−1 ] = W qt . Then,</div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.4]           given the observation ot , we can compute qt+1 = ffilter (pt , ot ). Or, in the absence of ot ,</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.4]           we can predict the next state qt+1|t−1 = fpredict (pt ). Finally, by definition, the predictive</div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.4]           state qt is sufficient to compute P(ot:t+k−1 | o1:t−1 ).5</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.4] The process of learning and inference is depicted in Figure 2. Modeling assumptions are reflected</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.4] in the choice of the statistics ψ, ξ and h as well as the regression models in stages S1A and S1B.</div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.4] Table 1 demonstrates that we can recover existing spectral algorithms for dynamical system learning</div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.4] using linear S1 regression. In addition to providing a unifying view of some successful learning</div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.4] algorithms, the new framework also paves the way for extending these algorithms in a theoretically</div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.4] justified manner, as we demonstrate in the experiments below.</div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.4] </div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.4]     3</div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.4]       Our bounds assume that the training time steps t are sufficiently spaced for the underlying process to mix,</div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.4] but in practice, the error will only get smaller if we consider all time steps t.</div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.4]     4</div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.4]       Assuming ergodicity, we can set the initial state to be the empirical average vector of future features in a</div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.4] single long sequence, T1 Tt=1 ψt .</div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.4]                            P</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.4]     5</div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.4]       It might seem reasonable to learn qt+1 = fcombined (qt , ot ) directly, thereby avoiding the need to separately</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.4] estimate pt and condition on ot . Unfortunately, fcombined is nonlinear for common models such as HMMs.</div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.4] </div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.4] </div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.4]                                                                         4</div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.4] </div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.5] 3   Related Work</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.5] This work extends predictive state learning algorithms for dynamical systems, which include spec-</div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.5] tral algorithms for Kalman filters [11], Hidden Markov Models [3, 12], Predictive State Represen-</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.5] tations (PSRs) [13, 14] and Weighted Automata [15]. It also extends kernel variants such as [9],</div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.5] which builds on [16]. All of the above work effectively uses linear regression or linear ridge regres-</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.5] sion (although not always in an obvious way).</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.5] One common aspect of predictive state learning algorithms is that they exploit the covariance struc-</div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.5] ture between future and past observation sequences to obtain an unbiased observable state represen-</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.5] tation. Boots and Gordon [17] note the connection between this covariance and (linear) instrumental</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.5] regression in the context of the HSE-HMM. We use this connection to build a general framework for</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.5] dynamical system learning where the state space can be identified using arbitrary (possibly nonlin-</div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.5] ear) supervised learning methods. This generalization lets us incorporate prior knowledge to learn</div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.5] compact or regularized models; our experiments demonstrate that this flexibility lets us take better</div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.5] advantage of limited data.</div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.5] Reducing the problem of learning dynamical systems with latent state to supervised learning bears</div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.5] similarity to Langford et al.’s sufficient posterior representation (SPR) [18], which encodes the state</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.5] by the sufficient statistics of the conditional distribution of the next observation and represents sys-</div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.5] tem dynamics by three vector-valued functions that are estimated using supervised learning ap-</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.5] proaches. While SPR allows all of these functions to be non-linear, it involves a rather complicated</div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.5] training procedure involving multiple iterations of model refinement and model averaging, whereas</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.5] our framework only requires solving three regression problems in sequence. In addition, the theo-</div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.5] retical analysis of [18] only establishes the consistency of SPR learning assuming that all regression</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.5] steps are solved perfectly. Our work, on the other hand, establishes convergence rates based on the</div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.5] performance of S1 regression.</div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.5] </div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.5] 4   Theoretical Analysis</div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.5] In this section we present error bounds for two-stage instrumental regression. These bounds hold</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.5] regardless of the particular S1 regression method used, assuming that the S1 predictions converge to</div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.5] the true conditional expectations. The bounds imply that our overall method is consistent.</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.5] Let (xt , yt , zt ) ∈ (X , Y, Z) be i.i.d. triplets of input, output, and instrumental variables. (Lack of</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.5] independence will result in slower convergence in proportion to the mixing time of our process.) Let</div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.5] x̄t and ȳt denote E[xt | zt ] and E[yt | zt ]. And, let x̂t and ŷt denote Ê[xt | zt ] and Ê[yt | zt ] as</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.5] estimated by the S1A and S1B regression steps. Here x̄t , x̂t ∈ X and ȳt , ŷt ∈ Y.</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.5] We want to analyze the convergence of the output of S2 regression—that is, of the weights W given</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.5] by ridge regression between S1A outputs and S1B outputs:</div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.5]                                  T</div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.5]                                               ! T                    !−1</div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.5]                                 X                X</div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.5]                          Ŵλ =      ŷt ⊗ x̂t        x̂t ⊗ x̂t + λIX                           (3)</div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.5]                                      t=1                 t=1</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.5] </div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.5] Here ⊗ denotes tensor (outer) product, and λ &gt; 0 is a regularization parameter that ensures the</div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.5] invertibility of the estimated covariance.</div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.5] Before we state our main theorem we need to quantify the quality of S1 regression in a way that is</div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.5] independent of the S1 functional form. To do so, we place a bound on the S1 error, and assume that</div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.5] this bound converges to zero: given the definition below, for each fixed δ, limN →∞ ηδ,N = 0.</div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.5] Definition 1 (S1 Regression Bound). For any δ &gt; 0 and N ∈ N+ , the S1 regression bound ηδ,N &gt; 0</div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.5] is a number such that, with probability at least (1 − δ/2), for all 1 ≤ t ≤ N :</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.5]                                            kx̂t − x̄t kX &lt; ηδ,N</div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.5]                                            kŷt − ȳt kY &lt; ηδ,N</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.5] </div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.5] In many applications, X , Y and Z will be finite dimensional real vector spaces: Rdx , Rdy and</div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.5] Rdz . However, for generality we state our results in terms of arbitrary reproducing kernel Hilbert</div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.5] spaces. In this case S2 uses kernel ridge regression, leading to methods such as HSE-PSRs. For</div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.5] </div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.5] </div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.5]                                                      5</div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.5] </div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.6] this purpose, let Σx̄x̄ and Σȳȳ denote the (uncentered) covariance operators of x̄ and ȳ respectively:</div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.6] Σx̄x̄ = E[x̄ ⊗ x̄], Σȳȳ = E[ȳ ⊗ ȳ]. And, let R(Σx̄x̄ ) denote the closure of the range of Σx̄x̄ .</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.6] With the above assumptions, Theorem 2 gives a generic error bound on S2 regression in terms of</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.6] S1 regression. If X and Y are finite dimensional and Σx̄x̄ has full rank, then using ordinary least</div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.6] squares (i.e., setting λ = 0) will give the same bound, but with λ in the first two terms replaced by</div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.6] the minimum eigenvalue of Σx̄x̄ , and the last term dropped.</div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.6] Theorem 2. Assume that kx̄kX , kx̄kY &lt; c &lt; ∞ almost surely. Assume W is a Hilbert-Schmidt</div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.6] operator, and let Ŵλ be as defined in (3). Then, with probability at least 1 − δ, for each xtest ∈</div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.6] R(Σx̄x̄ ) s.t. kxtest kX ≤ 1, the error kŴλ xtest − W xtest kY is bounded by</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.6]                       r      q          </div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.6]                                  log(1/δ)</div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.6]                1        1 +       N     </div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.6]                                                    </div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.6]                                                      log(1/δ) 1</div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.6]                                                                  </div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.6]                                                                           1</div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.6]                                                                                           √ </div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.6]     O   η</div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.6]        δ,N  λ</div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.6]                     +          3</div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.6]                                             +  O      √              +        +         O     λ</div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.6]                                λ2                        N        λ λ 32                |  {z   }</div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.6]                                                  |             {z             }</div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.6]                                                     error from finite samples     error from regularization</div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.6]     |                    {z                 }</div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.6]                error in S1 regression</div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.6] We defer the proof to the supplementary material. The supplementary material also provides explicit</div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.6] finite-sample bounds (including expressions for the constants hidden by O-notation), as well as</div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.6] concrete examples of S1 regression bounds ηδ,N for practical regression models.</div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.6] Theorem 2 assumes that xtest is in R(Σx̄x̄ ). For dynamical systems, all valid states satisfy this</div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.6] property. However, with finite data, estimation errors may cause the estimated state q̂t (i.e., xtest ) to</div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.6] have a non-zero component in R⊥ (Σx̄x̄ ). Lemma 3 bounds the effect of such errors: it states that, in</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.6] a stable system, this component gets smaller as S1 regression performs better. The main limitation</div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.6] of Lemma 3 is the assumption that ffilter is L-Lipchitz, which essentially means that the model’s</div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.6] estimated probability for ot is bounded below. There is no way to guarantee this property in practice;</div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.6] so, Lemma 3 provides suggestive evidence rather than a guarantee that our learned dynamical system</div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.6] will predict well.</div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.6] Lemma 3. For observations o1:T , let q̂t be the estimated state given o1:t−1 . Let q̃t be the projection</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.6] of q̂t onto R(Σx̄x̄ ). Assume ffilter is L-Lipchitz on pt when evaluated at ot , and ffilter (pt , ot ) ∈</div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.6] R(Σx̄x̄ ) for any pt ∈ R(Σȳȳ ). Given the assumptions of theorem 2 and assuming that kq̂t kX ≤ R</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.6] for all 1 ≤ t ≤ T , the following holds for all 1 ≤ t ≤ T with probability at least 1 − δ/2.</div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.6]                                                                   </div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.6]                                                               ηδ,N</div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.6]                                   kt kX = kq̂t − q̃t kX = O √</div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.6]                                                                  λ</div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.6] Since Ŵλ is bounded, the prediction error due to t diminishes at the same rate as kt kX .</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.6] </div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.6] 5     Experiments and Results</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.6] We now demonstrate examples of tweaking the S1 regression to gain advantage. In the first experi-</div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.6] ment we show that nonlinear regression can be used to reduce the number of parameters needed in</div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.6] S1, thereby improving statistical performance for learning an HMM. In the second experiment we</div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.6] show that we can encode prior knowledge as regularization.</div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.6] </div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.6] 5.1     Learning A Knowledge Tracing Model</div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.6] </div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.6] In this experiment we attempt to model and predict the performance of students learning from an</div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.6] interactive computer-based tutor. We use the Bayesian knowledge tracing (BKT) model [19], which</div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.6] is essentially a 2-state HMM: the state st represents whether a student has learned a knowledge</div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.6] component (KC), and the observation ot represents the success/failure of solving the tth question in</div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.6] a sequence of questions that cover this KC. Figure 3 summarizes the model. The events denoted by</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.6] guessing, slipping, learning and forgetting typically have relatively low probabilities.</div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.6] </div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.6] 5.1.1    Data Description</div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.6] We evaluate the model using the “Geometry Area (1996-97)” data available from DataShop [20].</div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.6] This data was generated by students learning introductory geometry, and contains attempts by 59</div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.6] </div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.6] </div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.6]                                                     6</div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.6] </div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.7]                                       Correct           Skill           Skill</div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.7]                                       Answer           Known           Known</div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.7] </div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.7] </div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.7] </div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.7] </div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.7]                                       Incorrect         Skill           Skill</div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.7]                                        Answer         Unknown         Unknown</div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.7] </div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.7] </div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.7] </div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.7] Figure 3: Transitions and observations in BKT. Each node represents a possible value of the state</div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.7] or observation. Solid arrows represent transitions while dashed arrows represent observations.</div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.7] </div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.7] </div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.7] students in 12 knowledge components. As is typical for BKT, we consider a student’s attempt at a</div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.7] question to be correct iff the student entered the correct answer on the first try, without requesting</div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.7] any hints from the help system. Each training sequence consists of a sequence of first attempts for a</div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.7] student/KC pair. We discard sequences of length less than 5, resulting in a total of 325 sequences.</div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.7] </div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.7] 5.1.2        Models and Evaluation</div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.7] </div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.7] Under the (reasonable) assumption that the two states have distinct observation probabilities, this</div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.7] model is 1-observable. Hence we define the predictive state to be the expected next observation,</div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.7] which results in the following statistics: ψt = ot and ξt = ot ⊗k ot+1 , where ot is represented by</div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.7] a 2 dimensional indicator vector and ⊗k denotes the Kronecker product. Given these statistics, the</div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.7] extended state pt = E[ξt | o1:t−1 ] is a joint probability table of ot:t+1 .</div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.7] We compare three models that differ by history features and S1 regression method:</div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.7] Spec-HMM: This baseline uses ht = ot−1 and linear S1 regression, making it equivalent to the</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.7] spectral HMM method of [3], as detailed in the supplementary material.</div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.7] Feat-HMM: This baseline represents ht by an indicator vector of the joint assignment of the previ-</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.7] ous b observations (we set b to 4) and uses linear S1 regression. This is essentially a feature-based</div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.7] spectral HMM [12]. It thus incorporates more history information compared to Spec-HMM at the</div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.7] expense of increasing the number of S1 parameters by O(2b ).</div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.7] LR-HMM: This model represents ht by a binary vector of length b encoding the previous b obser-</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.7] vations and uses logistic regression as the S1 model. Thus, it uses the same history information as</div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.7] Feat-HMM but reduces the number of parameters to O(b) at the expense of inductive bias.</div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.7] We evaluated the above models using 1000 random splits of the 325 sequences into 200 training</div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.7] and 125 testing. For each testing observation ot we compute the absolute error between actual and</div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.7] expected value (i.e. |δot =1 − P̂ (ot = 1 | o1:t−1 )|). We report the mean absolute error for each split.</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.7] The results are displayed in Figure 4.6 We see that, while incorporating more history information</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.7] increases accuracy (Feat-HMM vs. Spec-HMM), being able to incorporate the same information</div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.7] using a more compact model gives an additional gain in accuracy (LR-HMM vs. Feat-HMM). We</div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.7] also compared the LR-HMM method to an HMM trained using expectation maximization (EM). We</div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.7] found that the LR-HMM model is much faster to train than EM while being on par with it in terms</div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.7] of prediction error.7</div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.7] </div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.7] 5.2        Modeling Independent Subsystems Using Lasso Regression</div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.7] </div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.7] Spectral algorithms for Kalman filters typically use the left singular vectors of the covariance be-</div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.7] tween history and future features as a basis for the state space. However, this basis hides any sparsity</div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.7] that might be present in our original basis. In this experiment, we show that we can instead use</div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.7] lasso (without dimensionality reduction) as our S1 regression algorithm to discover sparsity. This is</div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.7] useful, for example, when the system consists of multiple independent subsystems, each of which</div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.7] affects a subset of the observation coordinates.</div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.7]       6</div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.7]           The differences have similar sign but smaller magnitude if we use RMSE instead of MAE.</div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.7]       7</div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.7]           We used MATLAB’s built-in logistic regression and EM functions.</div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.7] </div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.7] </div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.7]                                                          7</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.7] </div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.8]                 0.34                            0.34                            0.34                            0.34</div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.8] </div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.8] </div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.8] </div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.8] </div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.8]      Feat-HMM</div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.8] </div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.8] </div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.8] </div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.8] </div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.8]                                                                        LR-HMM</div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.8]                                        LR-HMM</div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.8] </div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.8] </div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.8] </div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.8] </div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.8]                                                                                                        LR-HMM</div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.8]                 0.32                            0.32                            0.32                            0.32</div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.8]                  0.3                             0.3                             0.3                             0.3</div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.8]                 0.28                            0.28                            0.28                            0.28</div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.8]                 0.26                            0.26                            0.26                            0.26</div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.8]                    0.26   0.3   0.34               0.26   0.3   0.34               0.26   0.3   0.34               0.26   0.3      0.34</div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.8]                        Spec-HMM                        Spec-HMM                        Feat-HMM                           EM</div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.8] </div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.8]                                 Model                           Spec-HMM               Feat-HMM        LR-HMM              EM</div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.8]                 Training time (relative to Spec-HMM)                 1                    1.02          2.219             14.323</div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.8] </div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.8] Figure 4: Experimental results: each graph compares the performance of two models (measured</div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.8] by mean absolute error) on 1000 train/test splits. The black line is x = y. Points below this line</div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.8] indicate that model y is better than model x. The table shows training time.</div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.8] </div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.8] </div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.8] </div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.8] </div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.8] Figure 5: Left singular vectors of (left) true linear predictor from ot−1 to ot (i.e. OT O+ ), (middle)</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.8] covariance matrix between ot and ot−1 and (right) S1 Sparse regression weights. Each column</div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.8] corresponds to a singular vector (only absolute values are depicted). Singular vectors are ordered by</div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.8] their mean coordinate, interpreting absolute values as a probability distribution over coordinates.</div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.8] </div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.8] </div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.8] To test this idea we generate a sequence of 30-dimensional observations from a Kalman filter. Obser-</div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.8] vation dimensions 1 through 10 and 11 through 20 are generated from two independent subsystems</div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.8] of state dimension 5. Dimensions 21-30 are generated from white noise. Each subsystem’s transi-</div>
+<div id="L481"><a href="#L481">00481</a> [PDF p.8] tion and observation matrices have random Gaussian coordinates, with the transition matrix scaled</div>
+<div id="L482"><a href="#L482">00482</a> [PDF p.8] to have a maximum eigenvalue of 0.95. States and observations are perturbed by Gaussian noise</div>
+<div id="L483"><a href="#L483">00483</a> [PDF p.8] with covariance of 0.01I and 1.0I respectively.</div>
+<div id="L484"><a href="#L484">00484</a> [PDF p.8] We estimate the state space basis using 1000 examples (assuming 1-observability) and compare the</div>
+<div id="L485"><a href="#L485">00485</a> [PDF p.8] singular vectors of the past to future regression matrix to those obtained from the Lasso regression</div>
+<div id="L486"><a href="#L486">00486</a> [PDF p.8] matrix. The result is shown in figure 5. Clearly, using Lasso as stage 1 regression results in a basis</div>
+<div id="L487"><a href="#L487">00487</a> [PDF p.8] that better matches the structure of the underlying system.</div>
+<div id="L488"><a href="#L488">00488</a> [PDF p.8] </div>
+<div id="L489"><a href="#L489">00489</a> [PDF p.8] 6   Conclusion</div>
+<div id="L490"><a href="#L490">00490</a> [PDF p.8] In this work we developed a general framework for dynamical system learning using supervised</div>
+<div id="L491"><a href="#L491">00491</a> [PDF p.8] learning methods. The framework relies on two key principles: first, we extend the idea of predictive</div>
+<div id="L492"><a href="#L492">00492</a> [PDF p.8] state to include extended state as well, allowing us to represent all of inference in terms of predictions</div>
+<div id="L493"><a href="#L493">00493</a> [PDF p.8] of observable features. Second, we use past features as instruments in an instrumental regression,</div>
+<div id="L494"><a href="#L494">00494</a> [PDF p.8] denoising state estimates that then serve as training examples to estimate system dynamics.</div>
+<div id="L495"><a href="#L495">00495</a> [PDF p.8] We have shown that this framework encompasses and provides a unified view of some previous</div>
+<div id="L496"><a href="#L496">00496</a> [PDF p.8] successful dynamical system learning algorithms. We have also demostrated that it can be used</div>
+<div id="L497"><a href="#L497">00497</a> [PDF p.8] to extend existing algorithms to incorporate nonlinearity and regularizers, resulting in better state</div>
+<div id="L498"><a href="#L498">00498</a> [PDF p.8] estimates. As future work, we would like to apply this framework to leverage additional techniques</div>
+<div id="L499"><a href="#L499">00499</a> [PDF p.8] such as manifold embedding and transfer learning in stage 1 regression. We would also like to</div>
+<div id="L500"><a href="#L500">00500</a> [PDF p.8] extend the framework to controlled processes.</div>
+<div id="L501"><a href="#L501">00501</a> [PDF p.8] </div>
+<div id="L502"><a href="#L502">00502</a> [PDF p.8] References</div>
+<div id="L503"><a href="#L503">00503</a> [PDF p.8]  [1] Leonard E. Baum, Ted Petrie, George Soules, and Norman Weiss. A maximization technique</div>
+<div id="L504"><a href="#L504">00504</a> [PDF p.8]      occurring in the statistical analysis of probabilistic functions of markov chains. The Annals of</div>
+<div id="L505"><a href="#L505">00505</a> [PDF p.8] </div>
+<div id="L506"><a href="#L506">00506</a> [PDF p.8] </div>
+<div id="L507"><a href="#L507">00507</a> [PDF p.8]                                                                    8</div>
+<div id="L508"><a href="#L508">00508</a> [PDF p.8] </div>
+<div id="L509"><a href="#L509">00509</a> [PDF p.9]      Mathematical Statistics, 41(1):pp. 164–171, 1970.</div>
+<div id="L510"><a href="#L510">00510</a> [PDF p.9]  [2] W. R. Gilks, S. Richardson, and D. J. Spiegelhalter. Markov Chain Monte Carlo in Practice.</div>
+<div id="L511"><a href="#L511">00511</a> [PDF p.9]      Chapman and Hall, London, 1996 (ISBN: 0-412-05551-1).</div>
+<div id="L512"><a href="#L512">00512</a> [PDF p.9]      This book thoroughly summarizes the uses of MCMC in Bayesian analysis. It is a core book</div>
+<div id="L513"><a href="#L513">00513</a> [PDF p.9]      for Bayesian studies.</div>
+<div id="L514"><a href="#L514">00514</a> [PDF p.9]  [3] Daniel Hsu, Sham M. Kakade, and Tong Zhang. A spectral algorithm for learning hidden</div>
+<div id="L515"><a href="#L515">00515</a> [PDF p.9]      markov models. In COLT, 2009.</div>
+<div id="L516"><a href="#L516">00516</a> [PDF p.9]  [4] Judea Pearl. Causality: Models, Reasoning, and Inference. Cambridge University Press, New</div>
+<div id="L517"><a href="#L517">00517</a> [PDF p.9]      York, NY, USA, 2000.</div>
+<div id="L518"><a href="#L518">00518</a> [PDF p.9]  [5] J.H. Stock and M.W. Watson. Introduction to Econometrics. Addison-Wesley series in eco-</div>
+<div id="L519"><a href="#L519">00519</a> [PDF p.9]      nomics. Addison-Wesley, 2011.</div>
+<div id="L520"><a href="#L520">00520</a> [PDF p.9]  [6] Animashree Anandkumar, Rong Ge, Daniel Hsu, Sham M Kakade, and Matus Telgarsky. Ten-</div>
+<div id="L521"><a href="#L521">00521</a> [PDF p.9]      sor decompositions for learning latent variable models. The Journal of Machine Learning</div>
+<div id="L522"><a href="#L522">00522</a> [PDF p.9]      Research, 15(1):2773–2832, 2014.</div>
+<div id="L523"><a href="#L523">00523</a> [PDF p.9]  [7] Matthew Rosencrantz and Geoff Gordon. Learning low dimensional predictive representa-</div>
+<div id="L524"><a href="#L524">00524</a> [PDF p.9]      tions. In ICML ’04: Twenty-first international conference on Machine learning, pages 695–</div>
+<div id="L525"><a href="#L525">00525</a> [PDF p.9]      702, 2004.</div>
+<div id="L526"><a href="#L526">00526</a> [PDF p.9]  [8] P. van Overschee and L.R. de Moor. Subspace identification for linear systems: theory, imple-</div>
+<div id="L527"><a href="#L527">00527</a> [PDF p.9]      mentation, applications. Kluwer Academic Publishers, 1996.</div>
+<div id="L528"><a href="#L528">00528</a> [PDF p.9]  [9] Byron Boots, Arthur Gretton, and Geoffrey J. Gordon. Hilbert Space Embeddings of Predictive</div>
+<div id="L529"><a href="#L529">00529</a> [PDF p.9]      State Representations. In Proc. 29th Intl. Conf. on Uncertainty in Artificial Intelligence (UAI),</div>
+<div id="L530"><a href="#L530">00530</a> [PDF p.9]      2013.</div>
+<div id="L531"><a href="#L531">00531</a> [PDF p.9] [10] Kenji Fukumizu, Le Song, and Arthur Gretton. Kernel bayes’ rule: Bayesian inference with</div>
+<div id="L532"><a href="#L532">00532</a> [PDF p.9]      positive definite kernels. Journal of Machine Learning Research, 14(1):3753–3783, 2013.</div>
+<div id="L533"><a href="#L533">00533</a> [PDF p.9] [11] Byron Boots. Spectral Approaches to Learning Predictive Representations. PhD thesis,</div>
+<div id="L534"><a href="#L534">00534</a> [PDF p.9]      Carnegie Mellon University, December 2012.</div>
+<div id="L535"><a href="#L535">00535</a> [PDF p.9] [12] Sajid Siddiqi, Byron Boots, and Geoffrey J. Gordon. Reduced-rank hidden Markov models. In</div>
+<div id="L536"><a href="#L536">00536</a> [PDF p.9]      Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics</div>
+<div id="L537"><a href="#L537">00537</a> [PDF p.9]      (AISTATS-2010), 2010.</div>
+<div id="L538"><a href="#L538">00538</a> [PDF p.9] [13] Byron Boots, Sajid Siddiqi, and Geoffrey Gordon. Closing the learning planning loop with</div>
+<div id="L539"><a href="#L539">00539</a> [PDF p.9]      predictive state representations. In I. J. Robotic Research, volume 30, pages 954–956, 2011.</div>
+<div id="L540"><a href="#L540">00540</a> [PDF p.9] [14] Byron Boots and Geoffrey Gordon. An online spectral learning algorithm for partially ob-</div>
+<div id="L541"><a href="#L541">00541</a> [PDF p.9]      servable nonlinear dynamical systems. In Proceedings of the 25th National Conference on</div>
+<div id="L542"><a href="#L542">00542</a> [PDF p.9]      Artificial Intelligence (AAAI-2011), 2011.</div>
+<div id="L543"><a href="#L543">00543</a> [PDF p.9] [15] Methods of moments for learning stochastic languages: Unified presentation and empirical</div>
+<div id="L544"><a href="#L544">00544</a> [PDF p.9]      comparison. In Proceedings of the 31st International Conference on Machine Learning (ICML-</div>
+<div id="L545"><a href="#L545">00545</a> [PDF p.9]      14), pages 1386–1394, 2014.</div>
+<div id="L546"><a href="#L546">00546</a> [PDF p.9] [16] L. Song, B. Boots, S. M. Siddiqi, G. J. Gordon, and A. J. Smola. Hilbert space embeddings of</div>
+<div id="L547"><a href="#L547">00547</a> [PDF p.9]      hidden Markov models. In Proc. 27th Intl. Conf. on Machine Learning (ICML), 2010.</div>
+<div id="L548"><a href="#L548">00548</a> [PDF p.9] [17] Byron Boots and Geoffrey Gordon. Two-manifold problems with applications to nonlinear</div>
+<div id="L549"><a href="#L549">00549</a> [PDF p.9]      system identification. In Proc. 29th Intl. Conf. on Machine Learning (ICML), 2012.</div>
+<div id="L550"><a href="#L550">00550</a> [PDF p.9] [18] John Langford, Ruslan Salakhutdinov, and Tong Zhang. Learning nonlinear dynamic mod-</div>
+<div id="L551"><a href="#L551">00551</a> [PDF p.9]      els. In Proceedings of the 26th Annual International Conference on Machine Learning, ICML</div>
+<div id="L552"><a href="#L552">00552</a> [PDF p.9]      2009, Montreal, Quebec, Canada, June 14-18, 2009, pages 593–600, 2009.</div>
+<div id="L553"><a href="#L553">00553</a> [PDF p.9] [19] Albert T. Corbett and John R. Anderson. Knowledge tracing: Modelling the acquisition of</div>
+<div id="L554"><a href="#L554">00554</a> [PDF p.9]      procedural knowledge. User Model. User-Adapt. Interact., 4(4):253–278, 1995.</div>
+<div id="L555"><a href="#L555">00555</a> [PDF p.9] [20] Kenneth R. Koedinger, R. S. J. Baker, K. Cunningham, A. Skogsholm, B. Leber, and John</div>
+<div id="L556"><a href="#L556">00556</a> [PDF p.9]      Stamper. A data repository for the EDM community: The PSLC DataShop. Handbook of</div>
+<div id="L557"><a href="#L557">00557</a> [PDF p.9]      Educational Data Mining, pages 43–55, 2010.</div>
+<div id="L558"><a href="#L558">00558</a> [PDF p.9] [21] Le Song, Jonathan Huang, Alexander J. Smola, and Kenji Fukumizu. Hilbert space embed-</div>
+<div id="L559"><a href="#L559">00559</a> [PDF p.9]      dings of conditional distributions with applications to dynamical systems. In Proceedings of</div>
+<div id="L560"><a href="#L560">00560</a> [PDF p.9]      the 26th Annual International Conference on Machine Learning, ICML 2009, Montreal, Que-</div>
+<div id="L561"><a href="#L561">00561</a> [PDF p.9]      bec, Canada, June 14-18, 2009, pages 961–968, 2009.</div>
+<div id="L562"><a href="#L562">00562</a> [PDF p.9] </div>
+<div id="L563"><a href="#L563">00563</a> [PDF p.9] </div>
+<div id="L564"><a href="#L564">00564</a> [PDF p.9]                                                   9</div>
+<div id="L565"><a href="#L565">00565</a> [PDF p.9] </div></pre>

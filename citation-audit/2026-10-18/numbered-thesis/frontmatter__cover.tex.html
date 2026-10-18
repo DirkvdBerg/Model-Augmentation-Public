@@ -1,0 +1,94 @@
+<meta charset="utf-8"><title>frontmatter/cover.tex</title><pre><div id="L1"><a href="#L1">0001</a> % cover.tex  --  TU/e AI&amp;ES MSc thesis cover (open access), from the official</div>
+<div id="L2"><a href="#L2">0002</a> % LaTeX template frontmatter/tue-templates/open_access/main.tex (Dirk</div>
+<div id="L3"><a href="#L3">0003</a> % 2026-10-18). The template body is kept as is; only the fields are filled in</div>
+<div id="L4"><a href="#L4">0004</a> % and the ASMPT logo is added left of the TU/e logo. The template&#x27;s page</div>
+<div id="L5"><a href="#L5">0005</a> % (article, 12pt, A4, 1in margins, Computer Modern) is reproduced inside a</div>
+<div id="L6"><a href="#L6">0006</a> % box and fitted to the US Letter IEEEtran page: scale 11in/297mm, centred.</div>
+<div id="L7"><a href="#L7">0007</a> </div>
+<div id="L8"><a href="#L8">0008</a> % Article 12pt list spacing (size12.clo), used by flushright and center.</div>
+<div id="L9"><a href="#L9">0009</a> \makeatletter</div>
+<div id="L10"><a href="#L10">0010</a> \newcommand{\coverarticlelists}{%</div>
+<div id="L11"><a href="#L11">0011</a>   \def\@listi{\leftmargin\leftmargini</div>
+<div id="L12"><a href="#L12">0012</a>     \parsep 5\p@ \@plus2.5\p@ \@minus\p@</div>
+<div id="L13"><a href="#L13">0013</a>     \topsep 10\p@ \@plus4\p@ \@minus6\p@</div>
+<div id="L14"><a href="#L14">0014</a>     \itemsep5\p@ \@plus2.5\p@ \@minus\p@}%</div>
+<div id="L15"><a href="#L15">0015</a>   \let\@listI\@listi</div>
+<div id="L16"><a href="#L16">0016</a>   \@listi</div>
+<div id="L17"><a href="#L17">0017</a>   \setlength\partopsep{3\p@ \@plus 2\p@ \@minus 2\p@}}</div>
+<div id="L18"><a href="#L18">0018</a> \makeatother</div>
+<div id="L19"><a href="#L19">0019</a> </div>
+<div id="L20"><a href="#L20">0020</a> \begin{titlepage}</div>
+<div id="L21"><a href="#L21">0021</a> \begin{tikzpicture}[remember picture, overlay]</div>
+<div id="L22"><a href="#L22">0022</a>   \begin{scope}[shift={(current page.south west)},</div>
+<div id="L23"><a href="#L23">0023</a>       xshift={(8.5in-0.940737*210mm)/2}, scale=0.940737, transform shape]</div>
+<div id="L24"><a href="#L24">0024</a>   \node[anchor=north west, inner sep=0pt] at (1in,{297mm-1in}) {%</div>
+<div id="L25"><a href="#L25">0025</a>   \begin{minipage}[t]{\dimexpr210mm-2in\relax}</div>
+<div id="L26"><a href="#L26">0026</a>   % Template typesetting: article 12pt sizes, Computer Modern, indent 1.5em.</div>
+<div id="L27"><a href="#L27">0027</a>   \fontfamily{cmr}\renewcommand{\bfdefault}{bx}\fontsize{12}{14.5}\selectfont</div>
+<div id="L28"><a href="#L28">0028</a>   \coverarticlelists</div>
+<div id="L29"><a href="#L29">0029</a>   \renewcommand{\small}{\fontsize{10.95}{13.6}\selectfont}%</div>
+<div id="L30"><a href="#L30">0030</a>   \renewcommand{\large}{\fontsize{14.4}{18}\selectfont}%</div>
+<div id="L31"><a href="#L31">0031</a>   \renewcommand{\Large}{\fontsize{17.28}{22}\selectfont}%</div>
+<div id="L32"><a href="#L32">0032</a>   \setlength{\parindent}{1.5em}%</div>
+<div id="L33"><a href="#L33">0033</a>   \setlength{\parskip}{0pt plus 1pt}%</div>
+<div id="L34"><a href="#L34">0034</a> </div>
+<div id="L35"><a href="#L35">0035</a> \begin{flushright}</div>
+<div id="L36"><a href="#L36">0036</a>     \makebox[\linewidth][s]{%</div>
+<div id="L37"><a href="#L37">0037</a>       \raisebox{11.5pt}{\includegraphics[height=24pt]{frontmatter/asmpt_logo.png}}\hfill</div>
+<div id="L38"><a href="#L38">0038</a>       \includegraphics[width=0.38\textwidth]{frontmatter/tue-templates/open_access/Eindhoven_University_of_Technology_logo_new.png}}\\[0.25cm]</div>
+<div id="L39"><a href="#L39">0039</a>     {\small \textbf{Department of Electrical Engineering}}</div>
+<div id="L40"><a href="#L40">0040</a> \end{flushright}</div>
+<div id="L41"><a href="#L41">0041</a> \vspace*{2cm}</div>
+<div id="L42"><a href="#L42">0042</a> %%% -------------------------------------------</div>
+<div id="L43"><a href="#L43">0043</a> % TITLE + AUTHOR</div>
+<div id="L44"><a href="#L44">0044</a> \begin{center}</div>
+<div id="L45"><a href="#L45">0045</a>     {\Large \textbf{Model Augmentation for a\\</div>
+<div id="L46"><a href="#L46">0046</a>       High-Precision Dual-Drive Gantry}\par}\vspace{1cm}</div>
+<div id="L47"><a href="#L47">0047</a>     by \\[1cm]</div>
+<div id="L48"><a href="#L48">0048</a>     {\large \textbf{D.J.L.M. van den Berg}} \\[3cm]</div>
+<div id="L49"><a href="#L49">0049</a>     {\large MSc Thesis} \\[2cm]</div>
+<div id="L50"><a href="#L50">0050</a> \end{center}</div>
+<div id="L51"><a href="#L51">0051</a> </div>
+<div id="L52"><a href="#L52">0052</a> % TWO COLUMNS</div>
+<div id="L53"><a href="#L53">0053</a> \begin{minipage}[t]{0.48\textwidth}</div>
+<div id="L54"><a href="#L54">0054</a>     {\bfseries \small Thesis committee} \\[0.25cm]</div>
+<div id="L55"><a href="#L55">0055</a>     {\small dr.\ ir.\ M. Schoukens} \\</div>
+<div id="L56"><a href="#L56">0056</a>     {\small prof.\ dr.\ ir.\ R. T{\&#x27;o}th} \\</div>
+<div id="L57"><a href="#L57">0057</a>     {\small dr.\ ir.\ M.F. Shakib} \\</div>
+<div id="L58"><a href="#L58">0058</a>     {\small ir.\ J. Gerritsen} \\</div>
+<div id="L59"><a href="#L59">0059</a> \end{minipage}</div>
+<div id="L60"><a href="#L60">0060</a> \hfill</div>
+<div id="L61"><a href="#L61">0061</a> \begin{minipage}[t]{0.48\textwidth}</div>
+<div id="L62"><a href="#L62">0062</a>     {\bfseries \small Graduation} \\[0.25cm]</div>
+<div id="L63"><a href="#L63">0063</a>     {\small</div>
+<div id="L64"><a href="#L64">0064</a>     \begin{tabular}{@{}l r@{}}</div>
+<div id="L65"><a href="#L65">0065</a>         Program: &amp; \begin{tabular}[t]{@{}r@{}}Artificial Intelligence and\\</div>
+<div id="L66"><a href="#L66">0066</a>                    Engineering Systems\end{tabular} \\</div>
+<div id="L67"><a href="#L67">0067</a>         Research group: &amp; Control Systems \\</div>
+<div id="L68"><a href="#L68">0068</a>         Thesis supervisor: &amp; dr.\ ir.\ M. Schoukens \\</div>
+<div id="L69"><a href="#L69">0069</a>         Date of defense: &amp; 17-11-2026 \\</div>
+<div id="L70"><a href="#L70">0070</a>         Student ID: &amp; 1555561 \\</div>
+<div id="L71"><a href="#L71">0071</a>         Study load (ECTS): &amp; 45 \\</div>
+<div id="L72"><a href="#L72">0072</a>         Track: &amp; \begin{tabular}[t]{@{}r@{}}High-Tech Systems\\</div>
+<div id="L73"><a href="#L73">0073</a>                  and Robotics\end{tabular} \\</div>
+<div id="L74"><a href="#L74">0074</a>     \end{tabular}</div>
+<div id="L75"><a href="#L75">0075</a>     }</div>
+<div id="L76"><a href="#L76">0076</a> \end{minipage}</div>
+<div id="L77"><a href="#L77">0077</a> </div>
+<div id="L78"><a href="#L78">0078</a> \vspace{1cm}</div>
+<div id="L79"><a href="#L79">0079</a> </div>
+<div id="L80"><a href="#L80">0080</a> {\small The research of this thesis has been carried out in collaboration with ASMPT, Beuningen.}</div>
+<div id="L81"><a href="#L81">0081</a> </div>
+<div id="L82"><a href="#L82">0082</a> \vspace{0.4cm}</div>
+<div id="L83"><a href="#L83">0083</a> {\small This thesis is public and Open Access.}</div>
+<div id="L84"><a href="#L84">0084</a> </div>
+<div id="L85"><a href="#L85">0085</a> \vspace{0.4cm}</div>
+<div id="L86"><a href="#L86">0086</a> {\small This thesis has been realized in accordance with the regulations as stated in the TU/e Code of Scientific Conduct.}</div>
+<div id="L87"><a href="#L87">0087</a> </div>
+<div id="L88"><a href="#L88">0088</a> \vspace{0.4cm}</div>
+<div id="L89"><a href="#L89">0089</a> </div>
+<div id="L90"><a href="#L90">0090</a> {\small Disclaimer: the Department of Electrical Engineering of the Eindhoven University of Technology accepts no responsibility for the contents of MSc theses or practical training reports.}</div>
+<div id="L91"><a href="#L91">0091</a>   \end{minipage}};</div>
+<div id="L92"><a href="#L92">0092</a>   \end{scope}</div>
+<div id="L93"><a href="#L93">0093</a> \end{tikzpicture}</div>
+<div id="L94"><a href="#L94">0094</a> \end{titlepage}</div></pre>

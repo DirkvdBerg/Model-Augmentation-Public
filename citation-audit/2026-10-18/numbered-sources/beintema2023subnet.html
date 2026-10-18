@@ -1,0 +1,1196 @@
+<meta charset="utf-8"><title>beintema2023subnet</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1] Deep subspace encoders for nonlinear system identification</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1] </div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1] Citation for published version (APA):</div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1] Beintema, G. I., Schoukens, M., &amp; Tóth, R. (2023). Deep subspace encoders for nonlinear system identification.</div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1] Automatica, 156, Article 111210. https://doi.org/10.1016/j.automatica.2023.111210</div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1] </div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1] </div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1] </div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1] </div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1] Document license:</div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1] CC BY</div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1] </div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1] </div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1] DOI:</div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1] 10.1016/j.automatica.2023.111210</div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1] </div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1] </div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1] Document status and date:</div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1] Published: 01/10/2023</div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1] </div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1] </div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1] Document Version:</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1] Publisher’s PDF, also known as Version of Record (includes final page, issue and volume numbers)</div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1] </div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1] </div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1] Please check the document version of this publication:</div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1] • A submitted manuscript is the version of the article upon submission and before peer-review. There can be</div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1] important differences between the submitted version and the official published version of record. People</div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1] interested in the research are advised to contact the author for the final version of the publication, or visit the</div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1] DOI to the publisher&#x27;s website.</div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1] • The final author version and the galley proof are versions of the publication after peer review.</div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.1] • The final published version features the final layout of the paper including the volume, issue and page</div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.1] numbers.</div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.1] Link to publication</div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.1] </div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.1] </div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.1] </div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.1] </div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.1] General rights</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.1] Copyright and moral rights for the publications made accessible in the public portal are retained by the authors and/or other copyright owners</div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.1] and it is a condition of accessing publications that users recognise and abide by the legal requirements associated with these rights.</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.1] </div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.1]        • Users may download and print one copy of any publication from the public portal for the purpose of private study or research.</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.1]        • You may not further distribute the material or use it for any profit-making activity or commercial gain</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.1]        • You may freely distribute the URL identifying the publication in the public portal.</div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.1] </div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.1] If the publication is distributed under the terms of Article 25fa of the Dutch Copyright Act, indicated by the “Taverne” license above, please</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.1] follow below link for the End User Agreement:</div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.1] www.tue.nl/taverne</div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.1] </div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.1] Take down policy</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.1] If you believe that this document breaches copyright please contact us at:</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.1] openaccess@tue.nl</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.1] providing details and we will investigate your claim.</div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.1] </div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.1] </div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.1] </div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.1] </div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.1] Download date: 10. May. 2026</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.1] </div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.2]                                                                       Automatica 156 (2023) 111210</div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.2] </div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.2] </div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.2] </div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.2]                                                               Contents lists available at ScienceDirect</div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.2] </div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.2] </div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.2]                                                                           Automatica</div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.2]                                                     journal homepage: www.elsevier.com/locate/automatica</div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.2] </div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.2] </div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.2] </div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.2] </div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2] Deep subspace encoders for nonlinear system identification✩ , ✩✩</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2]                                     ∗</div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2] Gerben I. Beintema a , , Maarten Schoukens a , Roland Tóth a,b</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2] a</div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2]     Department of Electrical Engineering, Eindhoven University of Technology, Eindhoven, The Netherlands</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2] b</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2]     Systems and Control Laboratory, Institute for Computer Science and Control, Budapest, Hungary</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2] </div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2] </div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2] </div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2] article                info                            a b s t r a c t</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2] </div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2] Article history:                                       Using Artificial Neural Networks (ANN) for nonlinear system identification has proven to be a</div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2] Received 26 October 2022                               promising approach, but despite of all recent research efforts, many practical and theoretical problems</div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.2] Received in revised form 30 March 2023                 still remain open. Specifically, noise handling and models, issues of consistency and reliable estimation</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.2] Accepted 16 June 2023</div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.2]                                                        under minimization of the prediction error are the most severe problems. The latter comes with</div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.2] Available online xxxx</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.2]                                                        numerous practical challenges such as explosion of the computational cost in terms of the number of</div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.2] Keywords:                                              data samples and the occurrence of instabilities during optimization. In this paper, we aim to overcome</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.2] System identification                                  these issues by proposing a method which uses a truncated prediction loss and a subspace encoder for</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.2] Nonlinear state–space modeling                         state estimation. The truncated prediction loss is computed by selecting multiple truncated subsections</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.2] Subspace identification                                from the time series and computing the average prediction loss. To obtain a computationally efficient</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.2] Deep learning</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.2]                                                        estimation method that minimizes the truncated prediction loss, a subspace encoder represented by an</div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.2]                                                        artificial neural network is introduced. This encoder aims to approximate the state reconstructability</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.2]                                                        map of the estimated model to provide an initial state for each truncated subsection given past</div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.2]                                                        inputs and outputs. By theoretical analysis, we show that, under mild conditions, the proposed</div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.2]                                                        method is locally consistent, increases optimization stability, and achieves increased data efficiency by</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.2]                                                        allowing for overlap between the subsections. Lastly, we provide practical insights and user guidelines</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.2]                                                        employing a numerical example and state-of-the-art benchmark results.</div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.2]                                                               © 2023 The Author(s). Published by Elsevier Ltd. This is an open access article under the CC BY license</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.2]                                                                                                                     (http://creativecommons.org/licenses/by/4.0/).</div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.2] </div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.2] </div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.2] </div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.2] 1. Introduction                                                                          (Lee &amp; Poolla, 1999; Tóth, 2010), Volterra (Birpoutsoukis, Mar-</div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.2]                                                                                          conato, Lataire, &amp; Schoukens, 2017; Sliwiński, Marconato, Wachel,</div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.2]     While linear system identification offers both a strongly                            &amp; Birpoutsoukis, 2017), NAR(MA)X (Billings, 2013), block-oriented</div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.2] developed theoretical framework and broadly applicable compu-                            (Giri &amp; Bai, 2010; Schoukens &amp; Tiels, 2017), and nonlinear state–</div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.2] tational tools, identification of nonlinear systems remains                              space (Beintema, Tóth, &amp; Schoukens, 2021a, 2021b; Forgione,</div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.2] challenging. The wide range of nonlinear behaviors that appear                           Mejari, &amp; Piga, 2022; Gedon, Wahlström, Schön, &amp; Ljung, 2021;</div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.2] in engineering, reaching from mechatronic systems to chemical                            Masti &amp; Bemporad, 2021; Paduart et al., 2010; Schön, Wills, &amp;</div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.2] and biological systems, poses a challenge in developing gener-                           Ninness, 2011; Schoukens, 2021) approaches.</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.2] ically applicable model structures and identification methods                               In this paper, we consider the problem of identifying non-</div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.2] (Schoukens &amp; Ljung, 2019). Hence, numerous nonlinear system                              linear systems using nonlinear state–space (NL-SS) models since</div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.2] identification methods have been proposed over the last decades.                         they can represent a broad range of dynamic behaviors and</div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.2] Amongst the most popular ones are, linear parameter-varying                              are well applicable for multiple-input multiple-output (MIMO)</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.2]                                                                                          systems (Schoukens &amp; Ljung, 2019). However, estimation of NL-</div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.2]                                                                                          SS models is rather challenging as the state-variables are of-</div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.2]   ✩ The research was partly funded by the Eötvös Loránd Research Network</div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.2]                                                                                          ten not measurable (hidden Markov model) and the associated</div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.2] (Grant Number: SA-77/2021). The material in this paper was partially presented</div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.2]                                                                                          optimization-based training process is prone to local minima</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.2] at 3rd Conference on Learning for Dynamics and Control, June 7 – 8, 2021,</div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.2] ETH Zurich, Switzerland, Virtual. This paper was recommended for publication             and model/gradient instability (Decuyper, Runacres, Schoukens, &amp;</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.2] in revised form by Associate Editor Dario Piga under the direction of Editor             Tiels, 2020). Furthermore, the associated nonlinear state</div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.2] Alessandro Chiuso.                                                                       -transition and output functions rapidly grow in complexity with</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.2] ✩✩ Implementation of the proposed SUBNET method is available at https:</div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.2]                                                                                          a growing number of states and inputs. If these are parametrized</div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.2] //github.com/GerbenBeintema/deepSI and the implementation of the simulation</div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.2]                                                                                          as a linear combination of basis functions, e.g., polynomials as</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.2] study is available at GerbenBeintema/encoder-automatica-experiments.</div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.2]   ∗ Corresponding author.                                                                in Decuyper, Dreesen, Schoukens, Runacres, and Tiels (2019) and</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.2]       E-mail addresses: g.i.beintema@tue.nl (G.I. Beintema), m.schoukens@tue.nl          Paduart et al. (2010), then this often leads to an explosion of</div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.2] (M. Schoukens), r.toth@tue.nl (R. Tóth).                                                 parameters to be able to capture the system dynamics. Also,</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.2] </div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.2] https://doi.org/10.1016/j.automatica.2023.111210</div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.2] 0005-1098/© 2023 The Author(s). Published by Elsevier Ltd. This is an open access article under the CC BY license (http://creativecommons.org/licenses/by/4.0/).</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.2] </div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.3] G.I. Beintema, M. Schoukens and R. Tóth                                                                                       Automatica 156 (2023) 111210</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.3] </div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.3] </div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.3] probabilistic methods such as Schön et al. (2011) can become                 • Proving that the proposed estimator is consistent (statistical</div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.3] computationally burdensome with increasing numbers of states                   validity) and enhances smoothness of the costs function</div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.3] and inputs or training sequence lengths. Hence, an efficient repre-            (optimization efficiency);</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.3] sentation approach for the nonlinearities and a novel estimation             • Guidelines for the choice of hyperparameters and a detailed</div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.3] concept is required for NL-SS identification.                                  comparison of the proposed method to the state-of-the-art</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.3]     Deep learning and artificial neural networks (ANNs) are                    on a widely used identification benchmark.</div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.3] uniquely suited to approach the NL-SS identification challenges as</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.3] they have been shown theoretically and practically to be able to             The paper is structured as follows: Section 2 introduces the</div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.3] model complex data relations while being computationally scal-            considered data-generating system and identification problem.</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.3] able to large datasets. Although these benefits inspired the use          Section 3 discusses the proposed subspace encoder method in</div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.3] of state–space neural network models two decades ago (Suykens,            detail and provides some user guidelines. We theoretically prove</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.3] Moor, &amp; Vandewalle, 1995), fully exploiting these properties in           multiple key properties of the proposed method in Section 4,</div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.3] NL-SS identification without major downsides is still an open             and demonstrate state-of-the-art performance of the method on</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.3] problem. For instance, careful initialization of the neural net-          a simulation example and the Wiener–Hammerstein benchmark</div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.3] work weights and biases partially mitigates the risk of local             in Sections 5–6, followed by the conclusions in Section 7.</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.3] minima during optimization, but requires additional informa-</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.3] tion, e.g., estimating of a linear approximate model of the sys-          2. Problem setting and preliminaries</div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.3] tem (Schoukens, 2021). Additionally, Ribeiro, Tiels, Umenberger,</div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.3] Schön, and Aguirre (2020) have shown that multiple shooting               2.1. Data-generating system</div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.3] smooths the cost function, reducing the number of local minima</div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.3] and improving optimization stability, which has given rise to                Consider a discrete-time system with innovation noise that</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.3] the use of truncated simulation error cost for ANN based NL-SS            can be represented by the state–space description:</div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.3] estimation (Forgione &amp; Piga, 2021). However, the use of multiple</div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.3] shooting approaches comes with the challenge of estimating                xk+1 = f (xk , uk , ek ),                                                  (1a)</div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.3] a potentially large number of unknown initial states for each             yk = h(xk ) + ek ,                                                         (1b)</div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.3] subsection, resulting in a complexity increase of the optimization.</div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.3] To overcome this problem, auto-encoders have been investigated            where k ∈ Z is the discrete-time, e is an i.i.d. white noise</div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.3] to jointly estimate the model state and the underlying state–             process with finite variance Σe ∈ Rny ×ny , and u is a quasi-</div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.3] space functions using one-step-ahead prediction cost (Masti &amp;             stationary input process independent of e and taking values in</div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.3] Bemporad, 2021). However, these approaches fall short of giving           Rnu at each time moment k. Additionally, x and y are the state</div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.3] accurate long-term predictions due to incorrect noise handling,           and output processes, taking values in Rnx and Rny respectively.</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.3] they need for tuning sensitive hyperparameters in the compos-             The functions f : Rnx ×nu ×ny → Rnx and h : Rnx → Rny ,</div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.3] ite auto-encoder/prediction-error loss function, and they lack of         i.e. the state transition and output functions, are considered to</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.3] consistency guarantees.                                                   be bounded, deterministic maps. Without loss of generality we</div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.3]     To overcome these challenges, this paper enhances the sub-            can assume that h does not contain a direct feedthrough term. By</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.3] space encoder-based method for identification of state–space (SS)         assuming various structures for f and h, many well-known noise</div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.3] neural networks first introduced in Beintema et al. (2021b) with          structures can be obtained such as nonlinear output noise (NOE),</div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.3] an innovation noise model and prove consistency properties.               nonlinear auto-regressive with exogenous input (NARX), nonlinear</div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.3] The nonlinear SS model is parametrized with ANNs for flexibil-            auto-regressive with moving average exogenous input (NARMAX)</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.3] ity and efficiency in representing the often complex and high-            and nonlinear Box–Jenkins (NBJ) (Jansson, 2003). For instance, if</div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.3] dimensional state-transition and output functions. The model is           f does not depend on ek , then a NL-SS model with an OE noise</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.3] estimated under a truncated prediction loss, evaluated on short           structure is obtained.</div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.3] subsections. Similarly to multiple shooting, these subsections fur-           For a given sampled excitation sequence {uk }Nk=1 and poten-</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.3] ther improve computational scalability and optimization stability,        tially unknown initial state x1 ∈ Rnx , the obtained response of</div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.3] thereby reducing the importance of parameter initialization. The          the considered system (1) in terms of a sample path realization</div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.3] internal state at the start of each subsection is obtained using          is collected into an ordered input–output (IO) data set DN =</div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.3] a nonlinear subspace encoder which approximates the recon-                {(uk , yk )}Nk=1 used for identification. To avoid unnecessary clutter,</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.3] structability map of the SS model and further improves compu-             we will not use different notation for random variables such as</div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.3] tational scalability and data efficiency. The state-transition and        yk defined by (10) and their sampled values, but at places where</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.3] output functions of the SS model and the encoder are simultane-           confusion might arise, we will specify which notion is used.</div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.3] ously estimated based on the aforementioned truncated predic-</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.3] tion loss function. Finally, batch optimization and early stopping        2.2. Identification problem</div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.3] are employed to further improve the performance of the pro-</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.3] posed identification scheme. We demonstrate that the resulting                Based on the given data sequence DN , our objective is to iden-</div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.3] nonlinear state–space identification method is robust w.r.t. model        tify the dynamic relation (1), which boils down to the estimation</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.3] and gradient instability during training, has a relatively small          of f and h. Note that these functions cannot be estimated directly</div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.3] number of hyperparameters, and obtains state-of-the-art results           as x and e are not measured.</div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.3] on benchmark examples.                                                        To accomplish our objective, notice that ek = yk − h(xk ) based</div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.3]     To summarize, our main contributions are                              on (1), hence, by substitution, we get</div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.3]    • A novel ANN-based NL-SS identification algorithm that even           xk+1 = f (xk , uk , yk − h(xk )) = f˜ (xk , uk , yk ).                      (2)</div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.3]      in the presence of innovation noise disturbances provides</div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.3]      reliable and computationally efficient data-driven                   Then, for n ≥ 1, we can write</div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.3]      modeling;</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.3]                                                                             yk = h(xk ) + ek ,                                                       (3a)</div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.3]    • Efficient use of multiple-shooting based formulation of the</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.3]      prediction loss via co-estimation of an encoder function rep-        yk+1 = (h ◦ f˜ )(xk , ukk , ykk ) + ek+1 ,                                 (3b)</div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.3]      resenting the reconstructability map of the nonlinear model                 ..</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.3]      (computational efficiency);                                                  .</div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.3]                                                                       2</div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.3] </div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.4] G.I. Beintema, M. Schoukens and R. Tóth                                                                                                          Automatica 156 (2023) 111210</div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.4] </div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.4] </div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.4] yk+n = (h ◦n f˜ )(xk , ukk+n−1 , ykk+n−1 ) + ek+n ,                      (3c)       with considerable difficulties. In ANN-based identification, mini-</div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.4]                                                                                     mizing the simulation error, which is a special case of (6) under</div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.4] where ◦ stands for function concatenation on the state argument,</div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.4]                                                                                     an OE noise structure, has been observed to result in accurate</div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.4] ◦n means n-times recursive repetition of ◦ (e.g., h ◦2 f˜ = h ◦ f˜ ◦ f˜ ),</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.4]                                                                                     models (Schoukens &amp; Ljung, 2019), but its major shortcoming is</div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.4] and ukk+n−1 = [u⊤</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.4]                 k               ···   u⊤      ⊤      k+n−1</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.4]                                        k+n−1 ] with yk     similarly defined.       that the computational cost scales at least linearly with N. Fur-</div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.4] More compactly:                                                                     thermore, optimization of this cost function is sensitive to local</div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.4]                                                                                     minima and gradient-based methods commonly display unstable</div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.4] ykk+n = Γn (xk , ukk+n−1 , ykk+n−1 ) + ekk+n .                            (4)</div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.4]                                                                                     behavior (Ribeiro et al., 2020). Hence, the problem that we aim</div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.4] Note that the noise sequence ekk+n     is not available in practice,                to solve in this paper is twofold: (i) achieve consistent estimation</div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.4] hence, Eq. (4) cannot be directly used in estimation. To overcome                   of (1) under innovation noise conditions using the parametrized</div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.4] this problem, we can exploit the i.i.d. white noise assumption on                   SS-ANN model (7) and one-step-ahead prediction (6) and (ii)</div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.4] ek and calculate the expectation of (4) w.r.t. e conditioned on the                 to provide a consistent estimator that drastically reduces the</div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.4] available past data and the initial state xk :                                      involved computational cost and ensures implementability.</div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.4] ŷkk+n = Ee [ykk+n | ukk+n−1 , ykk+n−1 , xk ] =</div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.4]                                                                                     3. The subspace encoder method</div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.4]           Γn (xk , ukk+n−1 , ykk+n−1 ),                                   (5)</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.4] which is the so called one-step-ahead predictor associated with                        This section introduces the proposed subspace encoder</div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.4] (1) and can be computed for the entire sample path realization                      method that addresses many of the challenges encountered when</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.4] in DN , i.e., ŷN1 = ΓN (x1 , uN1 −1 , yN1 −1 ) or, for a specific sample,          using classical prediction or simulation error identification ap-</div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.4] as ŷn = γn (x1 , un1−1 , yn1−1 ) with γn = (h ◦n f˜ ). We can exploit              proaches for nonlinear state–space models. The proposed ap-</div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.4] (5) to define the estimator by introducing a parametrized form                      proach builds on the introduction of two main ingredients: a</div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.4] ΓN ,θ of the predictor in terms of fθ : Rnx ×nu ×ny → Rnx and                       truncated prediction loss based cost function and a subspace</div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.4] hθ : Rnx → Rny defined by the parameters θ ∈ Θ ⊆ Rnθ . The                          encoder which is linked to the concept of state reconstructability.</div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.4] classical way to estimate the parameter vector θ based on a given</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.4] data set DN and ensure that fθ and hθ accurately represent Eq. (1)</div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.4] is to minimize the ℓ2 loss of the prediction error êk = yk − ŷk                   3.1. Truncated prediction loss</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.4] between the measured samples yk and the predicted response ŷk</div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.4] by ΓN ,θ :                                                                              In order to overcome the computational difficulties in the</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.4]                       N</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.4]                                                                                     minimization of (6), it is an important observation that the main</div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.4]                 1 ∑                                                                difficulty comes from forward propagation of the state over the</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.4]   pred</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.4] VD N ( θ ) =                yk − ŷk 2 ,</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.4]                                       </div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.4]                                        2</div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.4]                                                                           (6)</div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.4]                 N                                                                   entire length of the data set. Hence in the proposed method,</div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.4]                       k=1</div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.4]                                                                                     which is an extension of our previous work (Beintema et al.,</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.4] where the initial state x1 is a parameter which is co-estimated                     2021b), a truncated form of the ℓ2 prediction loss is considered</div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.4] with θ . In case fθ does not depend on êk , which corresponds to an                that emulates well the total prediction loss. This truncated form</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.4] OE noise structure, then (6) is equal to the well-known simulation                  aims to reduce the computational cost by the utilization of par-</div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.4] error loss function.                                                                allel computing and to increase optimization stability (Ribeiro</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.4]    The parametrized predictor ΓN ,θ , can also be written in a</div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.4]                                                                                     et al., 2020). By selecting subsections of length T (called the</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.4] state–space form                                                                    truncation length) in the overall time sequence, the prediction</div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.4] x̂k+1 = fθ (x̂k , uk , êk ),                                            (7a)       loss is calculated on the selected sections:</div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.4]                                                                                                      N −T +1 T −1</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.4]    ŷk = hθ (x̂k ),                                                     (7b)                        1 ∑ ∑</div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.4]                                                                                      sub</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.4]                                                                                     VD N</div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.4]                                                                                          (θ ) =                        ∥yt +k − ŷt +k|t ∥22 ,                          (8a)</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.4] where x̂ and ŷ are the predicted state and predicted output taking                                 C</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.4]                                                                                                          t =1    k=0</div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.4] values from Rnx and Rny respectively, while ê is the prediction</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.4]                                                                                     x̂t +k+1|t = fθ (x̂t +k|t , ut +k , êt +k|t ),                                     (8b)</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.4] error. In fact, (7) qualifies as the model structure used to estimate</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.4] Eq. (1) through the minimization of the identification criterion                       ŷt +k|t = hθ (x̂t +k|t ),                                                       (8c)</div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.4] (6).</div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.4]                                                                                        êt +k|t = yt +k − ŷt +k|t ,                                                    (8d)</div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.4]     In the sequel, we will consider fθ and hθ to be multi-layer</div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.4] artificial neural networks (ANNs), parametrized in θ , where each                   where the pipe (|) notation is introduced to distinguish between</div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.4] hidden layer is composed from        ∑m m activation functions φ : R → R            subsections as (current index|start index), and C = (N − T + 1)T .</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.4] in the form of zi,j = φ ( l=i−1 1 θw,i,j,l zi−1,l + θb,i,j ) where zi =             If the truncation length is set to T = N, then the prediction loss</div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.4] col(zi,1 , . . . , zi,mi ) is the latent variable representing the output of        (6) is recovered.</div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.4] layer 1 ≤ i ≤ q. Here, col() denotes composition of a column                           Formulation (8) addresses both shortcomings of the prediction</div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.4] vector. For fθ with q hidden-layers and linear input and output</div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.4]                                                                                     loss mentioned in Section 1. Based on the fact that the predictions</div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.4] layers, this means fθ (x̂k , uk , êk ) = θw,q+1 zq (k) + θb,q+1 and z0 (k) =</div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.4]                                                                                     can be computed in parallel, only T computations are required</div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.4] col(x̂k , uk , êk ). The parameters of the state transition and output</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.4]                                                                                     to be performed in series hence providing O(T ) computational</div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.4] functions of (7) are collected in θ . Furthermore, for the remainder</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.4]                                                                                     scaling, which can be considerably smaller than the initial O(N).</div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.4] of this paper we will assume that fθ and hθ are Lipschitz contin-</div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.4] uous. Note that assumption is not restrictive for commonly used                     Moreover, as is shown in Section 4.2, the use of truncated sections</div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.4] neural network structures since the activation functions (ReLu,                     increases the loss function smoothness (Ribeiro et al., 2020),</div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.4] tanh, sigmoid, etc.) used for φ are Lipschitz continuous. Under                     which both makes gradient-based optimization methods more</div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.4] these considerations, model structure (7) represents a recurrent                    stable and reduces the effect of parameter initialization on the</div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.4] neural network and it is also called state–space (SS) ANN in the                    optimization, making the estimation process more reproducible</div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.4] literature (Schoukens, 2021; Suykens et al., 1995).                                 and less varied (Ribeiro et al., 2020).</div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.4]     By using the ANNs fθ and hθ , one can directly compose the                          The computational cost of the proposed loss function (8) can</div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.4] feedforward predictor network ΓN ,θ and attempt to solve mini-                      be further decreased by not summing over all available subsec-</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.4] mization of (6) directly. However, this blunt approach can meet                     tions of the complete data set DN for each optimization step,</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.4]                                                                                 3</div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.4] </div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.5] G.I. Beintema, M. Schoukens and R. Tóth                                                                                                   Automatica 156 (2023) 111210</div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.5] </div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.5] </div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.5] but only over a subset of subsections. This results in a batch                  which is called the reconstructability map (Isidori et al., 1995) of</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.5] formulation of the loss:                                                        (1) as it allows to recover xk from past measured IO data. Note</div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.5]                            1                                                    that the noise sequence ekk−n is not directly available in practice</div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.5]   (sub,batch)</div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.5]                                   ∑</div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.5] VDN             (θ ) =                   vt ,                       (9a)        to compute this recovery based on (10c), but again we can exploit</div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.5]                          Nbatch</div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.5]                                   t ∈I                                          the i.i.d. white noise property of ek to arrive at:</div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.5]            T −1</div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.5]                                                                                                   −n , yk−n ] = Ψ̄n (uk−n , yk−n ),</div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.5]        1∑                                                                       x̄k = Ee [xk | ukk−1    k             k−1    k</div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.5]                                                                                                                                                                  (11)</div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.5] vt ≜              ∥yt +k − ŷt +k|t ∥22 ,                           (9b)</div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.5]        T</div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.5]            k=0                                                                  giving an efficient estimator of xk . In the sequel, we will exploit</div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.5]        N −T +1</div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.5] I ⊂ In+1      = {n + 1, n + 2, . . . , N − T + 1}                   (9c)        this concept to formulate an encoder that approximates Ψ̄n .</div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.5]                                                                                     As shown in (11), there exists a state-estimator in the con-</div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.5] s.t. |I | = Nbatch ,</div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.5]                                                                                 ditional expectation sense for the original system and also the</div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.5] which allows for the utilization of powerful batch optimization                 same estimator can be derived for the model structure (7). How-</div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.5] algorithms such as the Adam optimizer (Kingma &amp; Ba, 2015).                      ever, the exact calculation of this estimator for a given ANN</div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.5] Moreover, it is also not necessary to have the complete data set                parametrization of fθ and hθ is practically infeasible due to the</div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.5] in memory, see Beintema et al. (2021a), which is a significant                  required analytic inversion in terms of Φn and the computation</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.5] advantage in case of large data sets.                                           of the conditional expectation of Ψn under a given Σe . Hence, we</div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.5]     An important problem in the minimization of (8) is that there               aim to approximate Ψ̄n by introducing a nonlinear function ψη</div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.5] is no expression for the initial state x̂t |t of each subsection. Con-          which is co-estimated with fθ and hθ . Since ψη aims to approx-</div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.5] sidering the initial state of each section to be an optimization                imate the subspace reconstructability map (10c) we call it the</div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.5] parameter in the minimization of (8) trades new optimization                    subspace encoder. Similarly to fθ and hθ it is also assumed to be</div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.5] parameters for the scalability of the cost function (i.e. number of             Lipschitz continuous:</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.5] parameters would scale O(N)). This quickly outweighs the bene-                  x̂t |t ≜ ψη (utt −</div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.5]                                                                                                  −n , yt −n ).</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.5]                                                                                                    1   t</div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.5]                                                                                                                                                                  (12)</div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.5] fits of (8). Hence, to preserve the advantages of the cost function</div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.5] reformulation, an appropriate estimator of the initial state x̂t |t             Here, n corresponds to the number of past inputs and outputs,</div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.5] is required. The next section introduces an encoder-based state                 i.e. lag window, considered to estimate the initial state, while</div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.5] estimator based on the concept of state reconstructability.                     η ∈ Λ ⊆ Rnη is the collection of the parameters associated</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.5]                                                                                 with ψη in terms of a corresponding ANN with multiple hidden</div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.5] 3.2. Subspace encoder                                                           layers. In order to provide an estimator for the initial state of</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.5]                                                                                 the considered model structure (7), the encoder function ψη is</div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.5]     To introduce the proposed encoder, we first require some pre-               co-estimated with fθ and hθ by adding the parameters η and the</div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.5] liminary notions from nonlinear system theory. Due to causality                 estimated initial state using ψη to the loss function (8).</div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.5] of (1), it is a fundamental property of the state that xk with k &gt; 1                                N −T +1 T −1</div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.5]                                                                                                    1 ∑ ∑</div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.5] is completely determined by the past sequence of inputs {ul }kl=−11              enc</div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.5]                                                                                 VD   (θ, η) =                        ∥yt +k − ŷt +k|t ∥22 ,                    (13a)</div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.5]                                                                                    N</div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.5] and disturbances {el }kl=−11 together with an initial state x1 . In case                           C</div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.5]                                                                                                        t =n+1 k=0</div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.5] of state observability of (1), this initial state x1 can be determined</div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.5]                                                                                          x̂t |t = ψη (utt −</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.5]                                                                                                           −n , yt −n ),</div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.5]                                                                                                             1   t</div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.5]                                                                                                                                                                (13b)</div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.5] based on a future IO sequence (Isidori, 1985). The complementary</div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.5] notion of state reconstructability considers the determination                     x̂t +k+1|t = fθ (x̂t +k|t , ut +k , êt +k|t ),                              (13c)</div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.5] of xk based on a purely past IO sequence (Isidori, 1985). The                         ŷt +k|t = hθ (x̂t +k|t ),                                               (13d)</div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.5] concepts of state observability and reconstructability and the</div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.5] realization theory that builds upon them both for deterministic                       êt +k|t = yt +k − ŷt +k|t ,                                             (13e)</div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.5] and stochastic systems form the cornerstones of subspace iden-                  where now C = (N − T − n + 1)T and which again can be</div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.5] tification of linear systems and led to many powerful estimation                formulated as a batch loss function similar to (9). The used trun-</div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.5] algorithms, see Katayama et al. (2005) for an overview.                         cated prediction loss and the introduced subspace encoder lead</div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.5]     To exploit the concept of observability and reconstructability              to a model with a deep network structure for estimation, which</div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.5] in deep learning-based identification of (1), consider the result of            we call the subspace-encoder network (SUBNET). It is graphically</div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.5] our derivations in (4). If for an n ≥ 1, Γn is partially invertible             summarized in Fig. 1.</div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.5] w.r.t xk on the open sets X0 ⊆ Rnx , U0 ⊆ Rnu , Y0 ⊆ Rny ,                            The derivation of the reconstructability map has shown that</div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.5] E0 ⊆ Rny , i.e., there exists a Φn : Un0 × Yn0+1 × En0+1 → Rnx such             based on n = nx − 1 past inputs and outputs, an effective</div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.5] that xk = Φn (ukk+n−1 , ykk+n , ekk+n ) with xk ∈ X0 and IO signals in          unbiased estimator of the initial state xt |t can be achieved. While</div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.5] these sets, then (1) is called locally observable on (X0 , U0 , Y0 , E0 )       n = nx − 1 is often the minimal required number of past IO</div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.5] and Φn is called the observability map of (1) (Isidori, Sontag,                 samples to obtain an unbiased estimator, the variance of estimate</div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.5] &amp; Thoma, 1995). Note that if there exists a (x∗ , w∗ ) ∈ Rnx ×                  x̂t |t can be rather significant and further reduced by increasing n.</div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.5] Rnnu ×(n+1)ny ×(n+1)ny that ∇x∗ Γnx −1 (x∗ , w∗ ) is full row rank, then        The underlying mechanism is similar to the concept of minimum</div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.5] there are open sets x∗ ∈ X0 and w∗ ∈ Un0 × Yn0+1 × En0+1 such that              variance observers (Darouach &amp; Zasadzinski, 1997) that provide</div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.5] the partial inverse of Γn exists in terms of an analytic function               statically efficient state estimation using n &gt; nx − 1 input</div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.5] Φn (Isidori et al., 1995). Furthermore, if (1) is locally observable            and outputs lags. Besides of showing empirically this effect in</div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.5] on (X0 , U0 , Y0 , E0 ), then Γn with n ≥ nx − 1 has to be partially            Section 6, a deeper theoretical exploration of the variance optimal</div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.5] invertible in the above defined sense.                                          choice of n is not within the scope of this paper.</div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.5]     Let ◦n f˜ be a shorthand for f˜ when n = 1 and f˜ ◦n−1 f˜ for n &gt; 1.</div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.5] Consider                                                                        3.3. Parameter estimation</div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.5] </div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.5] xk = (◦n f˜ )(xk−n , ukk−</div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.5]                         −n , yk−n )</div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.5]                          1    k−1</div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.5]                                                                    (10a)            To obtain a model estimate in terms of the SUBNET structure</div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.5]                      −n , yk−n , ek−n ), uk−n , yk−n</div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.5]    = (◦n f˜ ) Φn (ukk−1    k      k       k−1    k−1                            through the minimization of the loss (13), the following steps are</div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.5]              (                                       )</div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.5]                                                                    (10b)</div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.5]                                                                                 executed: (i) random initialization of all networks in Fig. 1 by an</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.5]             −n , yk−n , ek−n )</div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.5]    = Ψn (ukk−1    k      k</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.5]                                                                    (10c)        efficient approach such as the Xavier method (Glorot &amp; Bengio,</div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.5]                                                                             4</div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.5] </div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.6] G.I. Beintema, M. Schoukens and R. Tóth                                                                                             Automatica 156 (2023) 111210</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.6] </div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.6] </div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.6]                                                                                                guideline is according to the current consensus in the ML</div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.6]                                                                                                community. The baseline is 256, but this is data and archi-</div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.6]                                                                                                tecture dependent.</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.6]                                                                                              • For all our experiments a fixed learning rate of 10−3 using</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.6]                                                                                                the Adam optimizer has been sufficient. The model quality</div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.6]                                                                                                can be further improved by using early stopping and return-</div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.6]                                                                                                ing the model of the epoch which had the lowest validation</div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.6]                                                                                                error.</div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.6] </div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.6] Fig. 1. Overall SUBNET structure: the subspace encoder ψη estimates the initial</div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.6]                                                                                           3.5. Comparison to the state-of-the-art</div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.6] state at time index t based on past inputs and outputs, then the state is</div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.6] propagated through fθ and hθ multiple times until the truncation length T . The</div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.6] parts marked in blue constitute the innovation noise process. (For interpretation             Contrary to other approaches that use an encoder function</div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.6] of the references to color in this figure legend, the reader is referred to the web       such as Masti and Bemporad (2021), which is based on a mod-</div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.6] version of this article.)                                                                 ified auto-encoder to learn the latent state and a 1-step ahead</div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.6]                                                                                           prediction loss to learn the system dynamics, we do not need</div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.6]                                                                                           to introduce any additional loss function elements to fit the</div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.6] 2010), (ii) for the given normalized data (or batches of data) the                        encoder function. Intuitively, a more accurate estimate of the</div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.6] loss is computed while the computation graph with intermediate                            state automatically reduces the transient error and hence the</div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.6] values are saved in memory (this uses O(Nbatch T ) memory), (iii)                         mismatch between the measurements and the predicted model</div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.6] the gradient of the loss is computed by back-propagation using                            output. Thus, reducing the transient also reduces the truncated</div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.6] the computation graph obtained in Step (ii), (iv) the network                             prediction loss, which makes it superfluous to introduce any</div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.6] parameters are updated by a stochastic gradient optimization                              additional cost function terms.</div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.6] method like Adam (Kingma &amp; Ba, 2015), (v) iteration is continued                              The proposed estimation method can be also related to mul-</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.6] till convergence or cross-validation based early stopping.                                tiple shooting methods (Bock, 1981). Multiple shooting also sub-</div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.6]                                                                                           divides the time series into multiple sections and adds the initial</div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.6] 3.4. User guidelines                                                                      state of each section to the parameter vector together with ad-</div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.6]                                                                                           ditional constraints (Decuyper et al., 2020). Compared to this</div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.6]    The subspace encoder has a number of hyper-parameters that                             method, our proposed method uses the subspace encoder to</div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.6] need to be chosen based on the to-be-identified system at hand.                           directly estimate the initial state from past inputs and outputs</div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.6] Hence, a few guidelines are provided based on insights obtained                           for each section. As a consequence, the computational complexity</div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.6] from theoretical analysis, numerical analysis and practical expe-                         does not increase for an increasing number of sections. Fur-</div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.6] rience.                                                                                   thermore, our formulation uses overlapping subsections whereas</div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.6]                                                                                           multiple shooting does not make use of overlap. In Section 4.3,</div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.6]    • Choose T to be a few times the largest characteristic time                           we prove that section overlap increases data efficiency.</div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.6]      scale for stable data-generating systems. For such a choice,                             Truncated back-propagation through time (truncated BPTT)</div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.6]      the truncated prediction loss (13) provides a close approx-                          (Tallec &amp; Ollivier, 2017) also sub-divides the time series, but</div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.6]      imation of the ‘regular’ prediction error at a low computa-                          by truncating the gradient calculation at a truncation length to</div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.6]      tional cost.                                                                         stabilize the gradient. This still requires a full pass over the time</div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.6]    • nx and n need to be chosen as at least the effective order                           series data which can be computationally expensive and still</div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.6]      and lag (minimal reconstruction order) of the system, re-                            unstable (value explosion) for large data sets. Furthermore, it</div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.6]      spectively. Furthermore, one can choose different lags na for                        adds extra bias and/or variability to the gradient estimate, which</div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.6]      past y and nb for past u and increase n to reduce the variance                       is not the case with the proposed subspace encoder method.</div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.6]      of the initial state estimate.                                                           Lastly, the subspace encoder function not only qualifies as</div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.6]    • The choice of the ANN architectures (number of layers q, ac-                         a reconstructability map, but also as a state observer. Hence,</div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.6]      tivation functions per layer m, type of activation functions)                        the encoder can be used to kick-start simulations on possibly</div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.6]      used to parametrize fθ , gθ and ψη are system dependent.                             unseen data sets. In particular, nonlinear model predictive control</div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.6]      However, overfitting on the data caused by the choice of an                          (NMPC) relies on accurate few-step-ahead prediction models and</div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.6]      over-parametrized architecture is suppressed by the used                             state estimates (Allgöwer &amp; Zheng, 2012), which makes the com-</div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.6]      innovation noise model structure, regularization induced                             bined SUBNET structure with the encoder based observer readily</div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.6]      by the overlapping subsections, early stopping and batch                             applicable for MPC.</div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.6]      optimization. Hence, a suggested baseline is to use 2 hidden</div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.6]      layer networks with 64 nodes per layer, tanh activation and                          4. Theoretical analysis</div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.6]      a linear bypass (similar to a residual component).</div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.6]    • IO normalization is essential to make the signals involved                              In this section, we show key theoretical properties of the</div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.6]      in the estimation to be zero-mean and have standard de-                              proposed encoder method in terms of consistency corresponding</div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.6]      viation of one. This is required as IO normalization is a                            to statistical validity of the estimator, loss function smoothness</div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.6]      key assumption in many parameter initialization methods                              that implies optimization efficiency, and data efficiency resulting</div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.6]      (e.g. Xavier initialization Glorot &amp; Bengio, 2010) and the                           from allowed overlaps in the subsections.</div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.6]      ‘‘active’’ range of many activation functions is also close to</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.6]      a range around zero with a width of 1. After estimation,                             4.1. Consistency of the estimator</div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.6]      to remove normalization, a back scaling is added to the</div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.6]      resulting model estimate.                                                               The notion of consistency, as defined in Ljung (1978), ex-</div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.6]    • The batch size should be the smallest size which only                                presses that the resulting model estimates tend to an equivalent</div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.6]      marginally compromises the data throughput speed (i.e.                               representation of the system that generated the data when the</div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.6]      training samples processed per second) and further reduced                           number of data points tends to infinity. In other words, the model</div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.6]      to increase regularization effects of batch-optimization. This                       estimate is asymptotically unbiased and converges asymptotically</div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.6]                                                                                       5</div>
+<div id="L481"><a href="#L481">00481</a> [PDF p.6] </div>
+<div id="L482"><a href="#L482">00482</a> [PDF p.7] G.I. Beintema, M. Schoukens and R. Tóth                                                                                                     Automatica 156 (2023) 111210</div>
+<div id="L483"><a href="#L483">00483</a> [PDF p.7] </div>
+<div id="L484"><a href="#L484">00484</a> [PDF p.7] </div>
+<div id="L485"><a href="#L485">00485</a> [PDF p.7] to a true model of the system. Thus in this section, we will                    for any (uk−−n1 , yk−−n1 ), (ũk−−n1 , ỹk−−n1 ) ∈ R(ny +nu )(n+k) and</div>
+<div id="L486"><a href="#L486">00486</a> [PDF p.7] show consistency of the SUBNET approach relying on the results</div>
+<div id="L487"><a href="#L487">00487</a> [PDF p.7] of Ljung (1978).                                                                ∥γ̂k (ξ , 0k−−n1 , 0k−−n1 )∥2 ≤ C ,                                                (18)</div>
+<div id="L488"><a href="#L488">00488</a> [PDF p.7] </div>
+<div id="L489"><a href="#L489">00489</a> [PDF p.7] Data-generating system: To show consistency, we need to in-                     where 0tt +−n</div>
+<div id="L490"><a href="#L490">00490</a> [PDF p.7]                                                                                              k−1</div>
+<div id="L491"><a href="#L491">00491</a> [PDF p.7]                                                                                                  = [ 0 · · · 0 ]⊤ . Furthermore, (17) is also satisfied by</div>
+<div id="L492"><a href="#L492">00492</a> [PDF p.7]                                                                                  ∂</div>
+<div id="L493"><a href="#L493">00493</a> [PDF p.7] troduce some conditions on the data-generating system. As we                       γ̂ (ξ , y−n , u+</div>
+<div id="L494"><a href="#L494">00494</a> [PDF p.7]                                                                                 ∂φ k</div>
+<div id="L495"><a href="#L495">00495</a> [PDF p.7]                                                                                             k−1     k−1</div>
+<div id="L496"><a href="#L496">00496</a> [PDF p.7]                                                                                                   −n ).</div>
+<div id="L497"><a href="#L497">00497</a> [PDF p.7] discussed, the true system (1) can be reformulated in a 1-step-</div>
+<div id="L498"><a href="#L498">00498</a> [PDF p.7] ahead predictor form given by (5). For k ≥ 1, let W[1,k] denote                 Convergence: Under the previous considerations, convergence of</div>
+<div id="L499"><a href="#L499">00499</a> [PDF p.7] the σ -algebra generated by the random variables (uk1 , ek1 ) and let           the SUBNET estimator can be shown, which is a required property</div>
+<div id="L500"><a href="#L500">00500</a> [PDF p.7] µw : W[1,k] → [0, 1] denote the associated probability measure.                 to show consistency.</div>
+<div id="L501"><a href="#L501">00501</a> [PDF p.7] Furthermore, as f and h are deterministic, define</div>
+<div id="L502"><a href="#L502">00502</a> [PDF p.7]                                                                                 Theorem 4 (Convergence). Consider system (1) satisfying Condi-</div>
+<div id="L503"><a href="#L503">00503</a> [PDF p.7]       1 , x1 , u1 , e1 ) ∈ (R ) | (u1 , e1 ) ∈ W[1,∞] ,</div>
+<div id="L504"><a href="#L504">00504</a> [PDF p.7]                              nw N</div>
+<div id="L505"><a href="#L505">00505</a> [PDF p.7] B = (y∞    ∞    ∞ ∞                 ∞ ∞</div>
+<div id="L506"><a href="#L506">00506</a> [PDF p.7]         {</div>
+<div id="L507"><a href="#L507">00507</a> [PDF p.7]                                                                                 tion 1 with a quasi-stationary u independent of the white noise</div>
+<div id="L508"><a href="#L508">00508</a> [PDF p.7]          and (yk , xk , uk , ek ) satisfies (1) ∀k ∈ N} ,           (14)        process e. Let the set of models M defined by the model structure</div>
+<div id="L509"><a href="#L509">00509</a> [PDF p.7] with nw = ny + nx + nu + ny , being the sample path behavior,                   (13b)–(13e) for ∀ξ ∈ Ξ satisfy Conditions 2 and 3. Then</div>
+<div id="L510"><a href="#L510">00510</a> [PDF p.7] i.e., the set of all solution trajectories, of (1). Note that by defining                        (θ, η) − Ee [VD   (θ, η)] → 0,</div>
+<div id="L511"><a href="#L511">00511</a> [PDF p.7]                                                                                               </div>
+<div id="L512"><a href="#L512">00512</a> [PDF p.7]                                                                                              enc               enc</div>
+<div id="L513"><a href="#L513">00513</a> [PDF p.7]                                                                                                                                     </div>
+<div id="L514"><a href="#L514">00514</a> [PDF p.7]                                                                                 sup(θ,η)∈Ξ VD                                                                     (19)</div>
+<div id="L515"><a href="#L515">00515</a> [PDF p.7] the σ -algebra B over B and an appropriate probability mea-                                    N                N                       2</div>
+<div id="L516"><a href="#L516">00516</a> [PDF p.7] </div>
+<div id="L517"><a href="#L517">00517</a> [PDF p.7] sure µb , the stochastic behavior of (1) can be fully represented,              with probability 1 as T , N → ∞ and the sequence of functions</div>
+<div id="L518"><a href="#L518">00518</a> [PDF p.7] see Willems (2013).                                                                  enc</div>
+<div id="L519"><a href="#L519">00519</a> [PDF p.7]                                                                                 Ee [VD N</div>
+<div id="L520"><a href="#L520">00520</a> [PDF p.7]                                                                                          (θ, η)] is equicontinuous in ξ ∈ Ξ .</div>
+<div id="L521"><a href="#L521">00521</a> [PDF p.7]      Let B[ko ,k] and B[ko ,k] be the restriction of B and B to the</div>
+<div id="L522"><a href="#L522">00522</a> [PDF p.7] time interval [ko , k] ⊆ N with k ≥ ko , respectively. Then, for                Proof. The mean squared prediction error identification criterion</div>
+<div id="L523"><a href="#L523">00523</a> [PDF p.7] a given sample path {(yk , xk , uk , ek )}∞  k=ko ∈ B[ko ,∞] of (1) with        used in (13) satisfies Condition C1 in Ljung (1978), hence the</div>
+<div id="L524"><a href="#L524">00524</a> [PDF p.7] x(ko ) = xo , {(ỹk , x̃k , uk , ek )}∞</div>
+<div id="L525"><a href="#L525">00525</a> [PDF p.7]                                       k=ko ∈ B [ko ,∞] corresponds to the       proof of Ljung (1978, Lemma 3.1) applies for the considered case.</div>
+<div id="L526"><a href="#L526">00526</a> [PDF p.7] response of (1) for the perturbed state value x̃(ko ) = x̃o at time                ■</div>
+<div id="L527"><a href="#L527">00527</a> [PDF p.7] moment ko ∈ N subject to the same input and disturbance as</div>
+<div id="L528"><a href="#L528">00528</a> [PDF p.7] the nominal state response. Based on these, the following stability             Consistency: In order to show consistency, we need to assume</div>
+<div id="L529"><a href="#L529">00529</a> [PDF p.7] condition is formulated:                                                        that the system is part of the model set. Consider the state-</div>
+<div id="L530"><a href="#L530">00530</a> [PDF p.7]                                                                                 reconstructability map Ψn in (10c) for the data-generating system</div>
+<div id="L531"><a href="#L531">00531</a> [PDF p.7] Condition 1 (Incremental Exp. Output Stability).          The data-             (1) with n ≥ nx . Note that</div>
+<div id="L532"><a href="#L532">00532</a> [PDF p.7] generating system (4) is (globally) incrementally exponentially out-</div>
+<div id="L533"><a href="#L533">00533</a> [PDF p.7] put stable, meaning that for any δ &gt; 0, there exist a 0 ≤ C (δ ) &lt; ∞            yt +k = γk (Ψn (utt −</div>
+<div id="L534"><a href="#L534">00534</a> [PDF p.7]                                                                                                     −n , yt −n , et −n ), ut</div>
+<div id="L535"><a href="#L535">00535</a> [PDF p.7]                                                                                                      1    t       t        t +k−1</div>
+<div id="L536"><a href="#L536">00536</a> [PDF p.7]                                                                                                                                   , ytt +k−1 ) + et +k ,</div>
+<div id="L537"><a href="#L537">00537</a> [PDF p.7] and a 0 ≤ λ &lt; 1 such that</div>
+<div id="L538"><a href="#L538">00538</a> [PDF p.7]                                                                                       = γ̆k (utt +</div>
+<div id="L539"><a href="#L539">00539</a> [PDF p.7]                                                                                                  −n , yt −n , et −n ) + et +n</div>
+<div id="L540"><a href="#L540">00540</a> [PDF p.7]                                                                                                   k−1  t +k−1  t</div>
+<div id="L541"><a href="#L541">00541</a> [PDF p.7]                                                                                                                                                                    (20)</div>
+<div id="L542"><a href="#L542">00542</a> [PDF p.7] Ee [∥yk −         ∥ ] &lt; C (δ )λ</div>
+<div id="L543"><a href="#L543">00543</a> [PDF p.7]               ỹk 42                k−ko</div>
+<div id="L544"><a href="#L544">00544</a> [PDF p.7]                                            ,   ∀k ≥ ko              (15)</div>
+<div id="L545"><a href="#L545">00545</a> [PDF p.7]                                                                                 for any t , k ≥ 0, where γk is according to (5), i.e., γk = (h ◦k f˜ ).</div>
+<div id="L546"><a href="#L546">00546</a> [PDF p.7] under any ko ≥ 1, xo , x̃o ∈ Rnx with ∥xo − x̃o ∥2 &lt; δ and                      Then,</div>
+<div id="L547"><a href="#L547">00547</a> [PDF p.7]   1 , e1 ) ∈ W[1,∞] , where the random variables yk and ỹk belong</div>
+<div id="L548"><a href="#L548">00548</a> [PDF p.7] (u∞    ∞</div>
+<div id="L549"><a href="#L549">00549</a> [PDF p.7] </div>
+<div id="L550"><a href="#L550">00550</a> [PDF p.7] to B[ko ,∞] with the same (uk , ek ), but with xko = xo and x̃ko = x̃o .        ȳt +k|t = Ee [γ̆k (utt +</div>
+<div id="L551"><a href="#L551">00551</a> [PDF p.7]                                                                                                         −n , yt −n , et −n )]</div>
+<div id="L552"><a href="#L552">00552</a> [PDF p.7]                                                                                                          k−1  t +k−1  t</div>
+<div id="L553"><a href="#L553">00553</a> [PDF p.7] </div>
+<div id="L554"><a href="#L554">00554</a> [PDF p.7] </div>
+<div id="L555"><a href="#L555">00555</a> [PDF p.7]                                                                                         = γ̄k (utt +</div>
+<div id="L556"><a href="#L556">00556</a> [PDF p.7]                                                                                                    −n , yt −n ),</div>
+<div id="L557"><a href="#L557">00557</a> [PDF p.7]                                                                                                     k−1  t +k−1</div>
+<div id="L558"><a href="#L558">00558</a> [PDF p.7]                                                                                                                                                                    (21)</div>
+<div id="L559"><a href="#L559">00559</a> [PDF p.7] Model Set: The considered SUBNET model (13b)–(13e) corre-</div>
+<div id="L560"><a href="#L560">00560</a> [PDF p.7] sponds to a model structure Mξ parametrized by a finite-                        is the optimal one-step-ahead predictor associated with (1) under</div>
+<div id="L561"><a href="#L561">00561</a> [PDF p.7]                                                                                 an n-lag based reconstructability map.</div>
+<div id="L562"><a href="#L562">00562</a> [PDF p.7] dimensional parameter vector ξ = [θ ⊤ η⊤ ]⊤ that is restricted</div>
+<div id="L563"><a href="#L563">00563</a> [PDF p.7] to vary in a compact set Ξ ⊂ Rnξ . The resulting model set is</div>
+<div id="L564"><a href="#L564">00564</a> [PDF p.7]                                                                                 Definition 5 (Equivalence Set). For a given model structure Mξ</div>
+<div id="L565"><a href="#L565">00565</a> [PDF p.7] M = {Mξ | ξ ∈ Ξ }. For each ξ ∈ Ξ , the SUBNET model Mξ</div>
+<div id="L566"><a href="#L566">00566</a> [PDF p.7] with a given encoder lag n ≥ 1, can be written in a 1-step-ahead                with encoder lag n ≥ nx , predictor γ̂k (ξ , ) (see (16)) and ξ ∈</div>
+<div id="L567"><a href="#L567">00567</a> [PDF p.7] predictor form                                                                  Ξ ⊂ Rnξ , the set of equivalent models with the data-generating</div>
+<div id="L568"><a href="#L568">00568</a> [PDF p.7]                                                                                 system (1) in the one-step-ahead prediction sense (21) is defined</div>
+<div id="L569"><a href="#L569">00569</a> [PDF p.7] ŷt +k|t = γ̂k (ξ , ytt +</div>
+<div id="L570"><a href="#L570">00570</a> [PDF p.7]                         −n , ut −n ).</div>
+<div id="L571"><a href="#L571">00571</a> [PDF p.7]                          k−1  t +k−1</div>
+<div id="L572"><a href="#L572">00572</a> [PDF p.7]                                                                     (16)        as</div>
+<div id="L573"><a href="#L573">00573</a> [PDF p.7]                                                                                 Ξ∗ = ξ ∈ Ξ | γ̂k (ξ , ) = γ̄k (), ∀k ≥ 0 .</div>
+<div id="L574"><a href="#L574">00574</a> [PDF p.7]                                                                                     {                                     }</div>
+<div id="L575"><a href="#L575">00575</a> [PDF p.7] For M, two important conditions are considered.                                                                                                                    (22)</div>
+<div id="L576"><a href="#L576">00576</a> [PDF p.7] </div>
+<div id="L577"><a href="#L577">00577</a> [PDF p.7] Condition 2 (Differentiability). The 1-step-ahead predictor γ̂k :                  Note that if Ξ∗ ̸ = ∅, then there exists a Mξ∗ ∈ M that is</div>
+<div id="L578"><a href="#L578">00578</a> [PDF p.7]                                                                                 equivalent with (1). In this case, we call the considered model set</div>
+<div id="L579"><a href="#L579">00579</a> [PDF p.7] Rnθ +nη × R(ny +nu )(n+k) → Rny is differentiable with respect to ξ for</div>
+<div id="L580"><a href="#L580">00580</a> [PDF p.7]                                                                                 to be sufficiently rich to contain an equivalent realization of the</div>
+<div id="L581"><a href="#L581">00581</a> [PDF p.7] all ξ ∈ Ξ̆ , where Ξ̆ is an open neighborhood of Ξ .</div>
+<div id="L582"><a href="#L582">00582</a> [PDF p.7]                                                                                 data-generating system. Next we need to ensure that under the</div>
+<div id="L583"><a href="#L583">00583</a> [PDF p.7]     Next, we require the influence of delayed inputs and outputs                given observed data from (1), we can distinguish non-equivalent</div>
+<div id="L584"><a href="#L584">00584</a> [PDF p.7] on the predictor map γ̂k to be exponentially decaying with a                    models in M.</div>
+<div id="L585"><a href="#L585">00585</a> [PDF p.7] number of delays to assure the convergence of the predictor. This</div>
+<div id="L586"><a href="#L586">00586</a> [PDF p.7] is formalized as follows;                                                       Condition 6 (Persistence of Excitation). Given the model set M =</div>
+<div id="L587"><a href="#L587">00587</a> [PDF p.7]                                                                                 {Mξ | ξ ∈ Ξ } with n ∈ N and the associated VDenc                  in terms</div>
+<div id="L588"><a href="#L588">00588</a> [PDF p.7] Condition 3 (Predictor Convergence). There exist a 0 ≤ C &lt; ∞</div>
+<div id="L589"><a href="#L589">00589</a> [PDF p.7]                                                                                                                                                  N</div>
+<div id="L590"><a href="#L590">00590</a> [PDF p.7]                                                                                 of (13) with 0 ≤ T ≤ N, we call the input sequence uN1 in DN</div>
+<div id="L591"><a href="#L591">00591</a> [PDF p.7] and a 0 ≤ λ &lt; 1 such that, for any k ≥ 0 and ξ ∈ Ξ̆ , where Ξ                   generated by (1) to be weakly persistently exciting, if for all pairs of</div>
+<div id="L592"><a href="#L592">00592</a> [PDF p.7] is an open neighborhood of Ξ , the deterministic predictor map γ̂k              parameterizations given by (θ1 , η1 ) ∈ Ξ and (θ2 , η2 ) ∈ Ξ for which</div>
+<div id="L593"><a href="#L593">00593</a> [PDF p.7] under Condition 2 satisfies</div>
+<div id="L594"><a href="#L594">00594</a> [PDF p.7]                                                                                                                          ·) (θ1 , η1 ) ̸ = V(·) (θ2 , η2 ), we</div>
+<div id="L595"><a href="#L595">00595</a> [PDF p.7]                                                                                 the function mapping is unequal, i.e., V(enc                 enc</div>
+<div id="L596"><a href="#L596">00596</a> [PDF p.7] </div>
+<div id="L597"><a href="#L597">00597</a> [PDF p.7] ∥γ̂k (ξ , uk−−n1 , yk−−n1 ) − γ̂k (ξ , ũk−−n1 , ỹk−−n1 )∥2                    have</div>
+<div id="L598"><a href="#L598">00598</a> [PDF p.7]             k</div>
+<div id="L599"><a href="#L599">00599</a> [PDF p.7]             ∑                                                                    enc</div>
+<div id="L600"><a href="#L600">00600</a> [PDF p.7]                                                                                 VD   (θ1 , η1 ) ̸ = VD</div>
+<div id="L601"><a href="#L601">00601</a> [PDF p.7]                                                                                                      enc</div>
+<div id="L602"><a href="#L602">00602</a> [PDF p.7]                                                                                                          (θ2 , η2 ).                                               (23)</div>
+<div id="L603"><a href="#L603">00603</a> [PDF p.7]                  λk−s ∥us − ũs ∥2 + ∥ys − ỹs ∥2 ,</div>
+<div id="L604"><a href="#L604">00604</a> [PDF p.7]                                                                                   N                   N</div>
+<div id="L605"><a href="#L605">00605</a> [PDF p.7]                      (                           )</div>
+<div id="L606"><a href="#L606">00606</a> [PDF p.7]    ≤C                                                               (17)</div>
+<div id="L607"><a href="#L607">00607</a> [PDF p.7]           s=−n</div>
+<div id="L608"><a href="#L608">00608</a> [PDF p.7]                                                                                 with probability 1.</div>
+<div id="L609"><a href="#L609">00609</a> [PDF p.7]                                                                             6</div>
+<div id="L610"><a href="#L610">00610</a> [PDF p.7] </div>
+<div id="L611"><a href="#L611">00611</a> [PDF p.8] G.I. Beintema, M. Schoukens and R. Tóth                                                                                               Automatica 156 (2023) 111210</div>
+<div id="L612"><a href="#L612">00612</a> [PDF p.8] </div>
+<div id="L613"><a href="#L613">00613</a> [PDF p.8] </div>
+<div id="L614"><a href="#L614">00614</a> [PDF p.8]    To show consistency, we also require that any element of Ξ∗                    with [ θ ⊤ η⊤ ]⊤ ∈ Ξ = Ξθ × Ξη , assuming that Ξ is not only</div>
+<div id="L615"><a href="#L615">00615</a> [PDF p.8] has minimal cost.                                                                 compact, but it is also convex. Here, the T dependence of the</div>
+<div id="L616"><a href="#L616">00616</a> [PDF p.8]                                                                                   loss function is added explicitly. Since Lenc,T bounds the slope of</div>
+<div id="L617"><a href="#L617">00617</a> [PDF p.8] Property 7 (Minimal Cost). If M is sufficiently rich, then for any                the function, it provides insight into the smoothness of the cost</div>
+<div id="L618"><a href="#L618">00618</a> [PDF p.8] ξ = [ θ ⊤ η⊤ ]⊤ ∈ Ξ and φ∗ = [ θ∗⊤ η∗⊤ ]⊤ ∈ Ξ∗ the encoder loss                   function as T changes. By the following theorem, we show that</div>
+<div id="L619"><a href="#L619">00619</a> [PDF p.8]                                                                                                     enc,T</div>
+<div id="L620"><a href="#L620">00620</a> [PDF p.8] in (13) has the following property:                                               smoothness of VDN can decrease exponentially with increasing</div>
+<div id="L621"><a href="#L621">00621</a> [PDF p.8]                                                                                   T.</div>
+<div id="L622"><a href="#L622">00622</a> [PDF p.8]        enc</div>
+<div id="L623"><a href="#L623">00623</a> [PDF p.8]   lim VD   (θ∗ , η∗ ) ≤               enc</div>
+<div id="L624"><a href="#L624">00624</a> [PDF p.8]                                  lim VD   (θ, η)                      (24)</div>
+<div id="L625"><a href="#L625">00625</a> [PDF p.8] T ,N →∞  N                     T ,N →∞ N</div>
+<div id="L626"><a href="#L626">00626</a> [PDF p.8] </div>
+<div id="L627"><a href="#L627">00627</a> [PDF p.8]                                                                                   Theorem 9. Assume that fθ , hθ and ψη are Lipschitz continuous with</div>
+<div id="L628"><a href="#L628">00628</a> [PDF p.8] with probability 1.                                                               Lipschitz constants Lf , Lh and Lψ . Then, Lenc,T and L′enc,T , representing</div>
+<div id="L629"><a href="#L629">00629</a> [PDF p.8]                                                                                                                                        enc,T</div>
+<div id="L630"><a href="#L630">00630</a> [PDF p.8]                                                                                   the Lipschitz constant of the derivative of VDN , scale as</div>
+<div id="L631"><a href="#L631">00631</a> [PDF p.8]                   enc</div>
+<div id="L632"><a href="#L632">00632</a> [PDF p.8] Proof. Since Ee [VDN</div>
+<div id="L633"><a href="#L633">00633</a> [PDF p.8]                       (θ∗ , η∗ )] exists as shown in Theorem 4, it is</div>
+<div id="L634"><a href="#L634">00634</a> [PDF p.8] sufficient to show that                                                           Lenc,T = O(L2T</div>
+<div id="L635"><a href="#L635">00635</a> [PDF p.8]                                                                                               f˜</div>
+<div id="L636"><a href="#L636">00636</a> [PDF p.8]                                                                                                  ); L′enc,T = O(L3T</div>
+<div id="L637"><a href="#L637">00637</a> [PDF p.8]                                                                                                                  f˜</div>
+<div id="L638"><a href="#L638">00638</a> [PDF p.8]                                                                                                                     ).                                       (32)</div>
+<div id="L639"><a href="#L639">00639</a> [PDF p.8]          T −1</div>
+<div id="L640"><a href="#L640">00640</a> [PDF p.8]         1∑</div>
+<div id="L641"><a href="#L641">00641</a> [PDF p.8]                                                                                                   √</div>
+<div id="L642"><a href="#L642">00642</a> [PDF p.8] lim             ∥ŷ∗t +k|t − yt +k ∥22 ≤                                          if Lf˜ = Lf     1 + L2h &gt; 1.</div>
+<div id="L643"><a href="#L643">00643</a> [PDF p.8] T →∞ T</div>
+<div id="L644"><a href="#L644">00644</a> [PDF p.8]           k=0</div>
+<div id="L645"><a href="#L645">00645</a> [PDF p.8]              T −1</div>
+<div id="L646"><a href="#L646">00646</a> [PDF p.8]           1∑                                                                      Proof. For Lipschitz-continuous functions q(x) and p(x), two</div>
+<div id="L647"><a href="#L647">00647</a> [PDF p.8]    lim              ∥ŷt +k|t − yt +k ∥22                             (25)        known properties of the Lipschitz constant are: (i) the sum of two</div>
+<div id="L648"><a href="#L648">00648</a> [PDF p.8]   T →∞ T</div>
+<div id="L649"><a href="#L649">00649</a> [PDF p.8]              k=0                                                                  functions q(x) + p(x) has the Lipschitz constant Lq + Lp and (ii) the</div>
+<div id="L650"><a href="#L650">00650</a> [PDF p.8] for all t where ŷ∗t +k|t = γ̂k (ξ∗ , ytt +                                       multiplication of two functions q(x)p(x) has the Lipschitz constant</div>
+<div id="L651"><a href="#L651">00651</a> [PDF p.8]                                           −n , ut −n ). By the law of large</div>
+<div id="L652"><a href="#L652">00652</a> [PDF p.8]                                            k−1  t +k−1</div>
+<div id="L653"><a href="#L653">00653</a> [PDF p.8]                                                                                   Lq mp + Lp mq , where mq is the maximum of q(x) on the considered</div>
+<div id="L654"><a href="#L654">00654</a> [PDF p.8] numbers, as T → ∞, the sample distribution of {et +k }Tk= −1</div>
+<div id="L655"><a href="#L655">00655</a> [PDF p.8]                                                            0 will                 compact set x ∈ Ξx and mq is similarly defined.</div>
+<div id="L656"><a href="#L656">00656</a> [PDF p.8] converge to the original white noise distribution of e with finite</div>
+<div id="L657"><a href="#L657">00657</a> [PDF p.8]                                                                                       The Lipschitz constants of fθ , hθ and ψη are defined by the</div>
+<div id="L658"><a href="#L658">00658</a> [PDF p.8] variance Σe and with probably 1. Thus, it is sufficient to show</div>
+<div id="L659"><a href="#L659">00659</a> [PDF p.8]                                                                                   following relations:</div>
+<div id="L660"><a href="#L660">00660</a> [PDF p.8] that</div>
+<div id="L661"><a href="#L661">00661</a> [PDF p.8]                                                                                   ∥hθ1 (x) − hθ2 (x̃)∥22 ≤ L2h (∥θ1 − θ2 ∥22 + ∥x − x̃∥22 ),                (33a)</div>
+<div id="L662"><a href="#L662">00662</a> [PDF p.8] Ee [∥ŷ∗t +k|t − yt +k ∥22 ] ≤ Ee [∥ŷt +k|t − yt +k ∥22 ]            (26)</div>
+<div id="L663"><a href="#L663">00663</a> [PDF p.8] </div>
+<div id="L664"><a href="#L664">00664</a> [PDF p.8] which can be expanded with yt +k = h(xt +k ) + et +k as                           ∥fθ1 (x, u, y − hθ1 (x)) − fθ2 (x̃, u, y − hθ2 (x̃))∥22</div>
+<div id="L665"><a href="#L665">00665</a> [PDF p.8] Ee [∥ŷ∗t +k|t − yt +k ∥22 ] = Ee [∥ŷ∗t +k|t − h(xt +k )∥22 ] −                      ≤ L2f (∥θ1 − θ2 ∥22 + ∥x − x̃∥22 + ∥hθ1 (x) − hθ2 (x̃)∥22 )</div>
+<div id="L666"><a href="#L666">00666</a> [PDF p.8]   Ee [2(ŷ∗t +k|t − h(xt +k )) · et +k ] + Ee [∥et +k ∥22 ].          (27)            ≤ L2f (1 + L2h )(∥θ1 − θ2 ∥22 + ∥x − x̃∥22 ),                        (33b)</div>
+<div id="L667"><a href="#L667">00667</a> [PDF p.8] </div>
+<div id="L668"><a href="#L668">00668</a> [PDF p.8] The second term of this expansion is equal to zero since et +k is                 and</div>
+<div id="L669"><a href="#L669">00669</a> [PDF p.8] uncorrelated to (ŷ∗t +k|t − h(xt +k )) and et +k is zero-mean. Further-</div>
+<div id="L670"><a href="#L670">00670</a> [PDF p.8]                                                                                             −n , yt −n ) − ψη2 (ut −n , yt −n )∥2</div>
+<div id="L671"><a href="#L671">00671</a> [PDF p.8]                                                                                   ∥ψη1 (utt − 1   t              t −1    t      2</div>
+<div id="L672"><a href="#L672">00672</a> [PDF p.8] more, the first term is also zero since in terms of Definition 5,</div>
+<div id="L673"><a href="#L673">00673</a> [PDF p.8] ŷ∗t +k|t = γ̂k (ξ∗ , ytt −n , ut −n ) is equal to ȳt +k|t in (21). Hence,</div>
+<div id="L674"><a href="#L674">00674</a> [PDF p.8]                           +k−1  t +k−1                                                ≤ L2ψ ∥η1 − η2 ∥22 .                                                  (33c)</div>
+<div id="L675"><a href="#L675">00675</a> [PDF p.8] </div>
+<div id="L676"><a href="#L676">00676</a> [PDF p.8]                                                                                   Since V enc,T (θ, η) = 1/Nsec t vt with Nsec = N − T − n + 1 as</div>
+<div id="L677"><a href="#L677">00677</a> [PDF p.8]                                                                                                                       ∑</div>
+<div id="L678"><a href="#L678">00678</a> [PDF p.8] Ee [∥ŷ∗t +k|t − yt +k ∥22 ] = ∥Σe ∥22                                (28)</div>
+<div id="L679"><a href="#L679">00679</a> [PDF p.8]                                                                                   defined in (13), by the sum property, we have that Lenc,T = Lvt .</div>
+<div id="L680"><a href="#L680">00680</a> [PDF p.8] which is irreducible and thus minimal.                       ■                    Using the relations (33a)–(33c), it is possible to derive Lvt in terms</div>
+<div id="L681"><a href="#L681">00681</a> [PDF p.8]                                                                                   of Lh , Lf , Lψ and T . A similar derivation has been done by Ribeiro</div>
+<div id="L682"><a href="#L682">00682</a> [PDF p.8] Theorem 8 (Consistency). Under the conditions of Theorem 4,</div>
+<div id="L683"><a href="#L683">00683</a> [PDF p.8]                                                                                                                                        ∑T</div>
+<div id="L684"><a href="#L684">00684</a> [PDF p.8]                                                                                   et al. (2020) of the cost function VT (θ ) ≜ T1                        2</div>
+<div id="L685"><a href="#L685">00685</a> [PDF p.8]                                                                                                                                          t =1 ∥yt − ŷt ∥2</div>
+<div id="L686"><a href="#L686">00686</a> [PDF p.8] Condition 6 and Property 7,                                                       where an OE noise model was considered and, instead of an</div>
+<div id="L687"><a href="#L687">00687</a> [PDF p.8]   lim ξ̂N ∈ Ξ∗                                                        (29)        encoder, different initial states x0 were used. They showed that</div>
+<div id="L688"><a href="#L688">00688</a> [PDF p.8] T ,N →∞                                                                           the following scaling law applies</div>
+<div id="L689"><a href="#L689">00689</a> [PDF p.8] with probability 1, where</div>
+<div id="L690"><a href="#L690">00690</a> [PDF p.8]                                                                                            f ); LVT = O (Lf ).</div>
+<div id="L691"><a href="#L691">00691</a> [PDF p.8]                                                                                   LVT = O(L2T    ′        3T</div>
+<div id="L692"><a href="#L692">00692</a> [PDF p.8]                                                                                                                                                              (34)</div>
+<div id="L693"><a href="#L693">00693</a> [PDF p.8] ξ̂N =            enc</div>
+<div id="L694"><a href="#L694">00694</a> [PDF p.8]         arg min VD   (    θ , η ).                                    (30)        when Lf &gt; 1 and where L′V represents the Lipschitz constant</div>
+<div id="L695"><a href="#L695">00695</a> [PDF p.8]             ξ ∈Ξ  N</div>
+<div id="L696"><a href="#L696">00696</a> [PDF p.8]                                                                                                                  T</div>
+<div id="L697"><a href="#L697">00697</a> [PDF p.8]                                                                                   of the derivative of VT . Hence, to derive the scaling of Lvt and</div>
+<div id="L698"><a href="#L698">00698</a> [PDF p.8] Proof. See Lemma 4.1 in Ljung (1978). Note that the squared loss                  thus Lenc,T we rely on this derivation by only showing that these</div>
+<div id="L699"><a href="#L699">00699</a> [PDF p.8]                                                                                   differences leave the exponential scaling with T unaltered.</div>
+<div id="L700"><a href="#L700">00700</a> [PDF p.8] function (13) fulfills Condition (4.4) in Ljung (1978). ■</div>
+<div id="L701"><a href="#L701">00701</a> [PDF p.8]                                                                                       Adapting this result to our considered case is relatively simple</div>
+<div id="L702"><a href="#L702">00702</a> [PDF p.8]                                                                                   to show since the encoder only changes the initial state differ-</div>
+<div id="L703"><a href="#L703">00703</a> [PDF p.8] 4.2. Increased cost smoothness due to truncation</div>
+<div id="L704"><a href="#L704">00704</a> [PDF p.8]                                                                                   ence ∥x0 − x̃0 ∥22 to L2ψ ∥η1 − η2 ∥22 which is independent of T</div>
+<div id="L705"><a href="#L705">00705</a> [PDF p.8]                                                                                   and the change to innovation structure replaces Lf by Lf˜ = Lf</div>
+<div id="L706"><a href="#L706">00706</a> [PDF p.8]    Next, we show that the considered estimation structure and                     √</div>
+<div id="L707"><a href="#L707">00707</a> [PDF p.8] the truncated prediction loss increase the smoothness of the cost                     1 + L2h .       ■</div>
+<div id="L708"><a href="#L708">00708</a> [PDF p.8] function, which potentially makes the optimization process for</div>
+<div id="L709"><a href="#L709">00709</a> [PDF p.8] model estimation more stable and less prone to get stuck in local                 4.3. Data-efficiency with overlapping subsections</div>
+<div id="L710"><a href="#L710">00710</a> [PDF p.8] minima (Ribeiro et al., 2020). For this purpose, we investigate</div>
+<div id="L711"><a href="#L711">00711</a> [PDF p.8] the smoothness of the encoder loss function by the means of the                      To quantify the data-efficiency of overlapping subsections,</div>
+<div id="L712"><a href="#L712">00712</a> [PDF p.8] Lipschitz-continuity analysis. The Lipschitz constant Lenc,T ≥ 0 for              consider a fixed T for the T -step truncated prediction loss and</div>
+<div id="L713"><a href="#L713">00713</a> [PDF p.8] the considered loss function is defined as                                        analyze the data efficiency using equidistantly placed sections in</div>
+<div id="L714"><a href="#L714">00714</a> [PDF p.8]       ,T               enc,T                                                      terms of the distance parameter d, i.e. I = {1 + dk ∈ IN1 −T −1 |</div>
+<div id="L715"><a href="#L715">00715</a> [PDF p.8] ∥VDenc   (θ1 , η1 ) − VDN (θ2 , η2 )∥22</div>
+<div id="L716"><a href="#L716">00716</a> [PDF p.8]     N                                                                             k ∈ N ∪ 0}. The parameter d regulates the distance between each</div>
+<div id="L717"><a href="#L717">00717</a> [PDF p.8]   ≤ L2enc,T (∥θ1 − θ2 ∥22 + ∥η1 − η2 ∥22 )                            (31)        sub-section where d = 1 recovers the encoder formulation and</div>
+<div id="L718"><a href="#L718">00718</a> [PDF p.8]                                                                               7</div>
+<div id="L719"><a href="#L719">00719</a> [PDF p.8] </div>
+<div id="L720"><a href="#L720">00720</a> [PDF p.9] G.I. Beintema, M. Schoukens and R. Tóth                                                                                                                      Automatica 156 (2023) 111210</div>
+<div id="L721"><a href="#L721">00721</a> [PDF p.9] </div>
+<div id="L722"><a href="#L722">00722</a> [PDF p.9] </div>
+<div id="L723"><a href="#L723">00723</a> [PDF p.9] d = T recovers the conventional approach in multiple shooting                           As we have shown in Theorem 11, vt is strictly stationary un-</div>
+<div id="L724"><a href="#L724">00724</a> [PDF p.9] with no overlap. To make the notation more compact, introduce                           der Assumption 10, hence we can replace the covariance by</div>
+<div id="L725"><a href="#L725">00725</a> [PDF p.9] a change of variables in the sum (9b) such that                                         C (d|k − l|) ≜ Cov(vkd , vld ) and use the auto-correlation function</div>
+<div id="L726"><a href="#L726">00726</a> [PDF p.9]                         md −1                                                           R(t) ≜ C (t)/C (0) to simplify the expression to</div>
+<div id="L727"><a href="#L727">00727</a> [PDF p.9]                       1 ∑</div>
+<div id="L728"><a href="#L728">00728</a> [PDF p.9]  d</div>
+<div id="L729"><a href="#L729">00729</a> [PDF p.9] VD   (   θ, η) =                 v1+dk                                       (35)</div>
+<div id="L730"><a href="#L730">00730</a> [PDF p.9]                                                                                                             (                md −1</div>
+<div id="L731"><a href="#L731">00731</a> [PDF p.9]                                                                                                                                                          )</div>
+<div id="L732"><a href="#L732">00732</a> [PDF p.9]    N</div>
+<div id="L733"><a href="#L733">00733</a> [PDF p.9]                       md                                                                             1                       ∑</div>
+<div id="L734"><a href="#L734">00734</a> [PDF p.9]                            k=0                                                          G(d) =               md + 2                  (md − t)R(td) .                                (39)</div>
+<div id="L735"><a href="#L735">00735</a> [PDF p.9]                                                                                                      m2d</div>
+<div id="L736"><a href="#L736">00736</a> [PDF p.9] where N − T + 1 = dmd + rd with md , rd ∈ N and 0 ≤ rd &lt; d.                                                                   t =1</div>
+<div id="L737"><a href="#L737">00737</a> [PDF p.9] </div>
+<div id="L738"><a href="#L738">00738</a> [PDF p.9]    To define data-efficiency, we assume stationary input and                               The only part which remains to complete the proof is to</div>
+<div id="L739"><a href="#L739">00739</a> [PDF p.9] output signals                                                                          determine if R(td) under the given assumptions implies G(1) ≤</div>
+<div id="L740"><a href="#L740">00740</a> [PDF p.9]                                                                                         G(T ) using this expression.</div>
+<div id="L741"><a href="#L741">00741</a> [PDF p.9] Assumption 10 (Stationarity). Both the model output ŷt +k|t and                           The value of R(td) can be derived from</div>
+<div id="L742"><a href="#L742">00742</a> [PDF p.9] system output yt are assumed to be strictly statistically station-</div>
+<div id="L743"><a href="#L743">00743</a> [PDF p.9]                                                                                                      T −1                                        T −1</div>
+<div id="L744"><a href="#L744">00744</a> [PDF p.9] ary. In other words, the cumulative distribution function pY of                                  1∑                                         1∑</div>
+<div id="L745"><a href="#L745">00745</a> [PDF p.9] the joint distribution of instances of yt at times t1 , . . . , tn has the              vt =                ∥yt +k −        ŷt +k|t 22</div>
+<div id="L746"><a href="#L746">00746</a> [PDF p.9]                                                                                                                                      ∥ =                ∥et +k ∥22                  (40)</div>
+<div id="L747"><a href="#L747">00747</a> [PDF p.9]                                                                                                  T                                          T</div>
+<div id="L748"><a href="#L748">00748</a> [PDF p.9] property that                                                                                        k=0                                         k=0</div>
+<div id="L749"><a href="#L749">00749</a> [PDF p.9] </div>
+<div id="L750"><a href="#L750">00750</a> [PDF p.9]                                                                                         since we evaluate the cost in (θ∗ , η∗ ). Hence,</div>
+<div id="L751"><a href="#L751">00751</a> [PDF p.9] pY (yt1 +τ , . . . , ytn +τ ) = pY (yt1 , . . . , ytn ).                     (36)</div>
+<div id="L752"><a href="#L752">00752</a> [PDF p.9]                                                                                                                       T −1 T −1</div>
+<div id="L753"><a href="#L753">00753</a> [PDF p.9] for all t1 , . . . , tn , τ ∈ Z.</div>
+<div id="L754"><a href="#L754">00754</a> [PDF p.9]                                                                                                                       ∑    ∑</div>
+<div id="L755"><a href="#L755">00755</a> [PDF p.9]                                                                                         Cov(vt , vt +τ ) ∼                        Cov(∥et +i ∥22 , ∥et +τ +j ∥22 )                  (41)</div>
+<div id="L756"><a href="#L756">00756</a> [PDF p.9]     This assumption is reasonable since many fading memory                                                            i=0 j=0</div>
+<div id="L757"><a href="#L757">00757</a> [PDF p.9] system like bi-linear systems (Priestley, 1988), and Volterra se-</div>
+<div id="L758"><a href="#L758">00758</a> [PDF p.9]                                                                                         where Cov(∥et +i ∥22 , ∥et +τ +j ∥22 ) is nonzero if and only if i = τ + j</div>
+<div id="L759"><a href="#L759">00759</a> [PDF p.9] ries (Boyd &amp; Chua, 1985) have the property that the system</div>
+<div id="L760"><a href="#L760">00760</a> [PDF p.9]                                                                                         and it is the same value for any t since et is white. Hence, the</div>
+<div id="L761"><a href="#L761">00761</a> [PDF p.9] output yt is quasi stationary if the input ut is stationary. However,</div>
+<div id="L762"><a href="#L762">00762</a> [PDF p.9] to our knowledge a proof of this property for stable systems                            auto-correlation function is R(t) = max(0, 1 − t /T ), which simply</div>
+<div id="L763"><a href="#L763">00763</a> [PDF p.9] defined via an NL-SS representation is not present in the liter-                        counts the number of terms which have the same index in the</div>
+<div id="L764"><a href="#L764">00764</a> [PDF p.9] ature. Firstly, to show enhanced data efficiency we need that the                       sum. After substitution of R(t) = max(0, 1 − t /T ) in (39), it</div>
+<div id="L765"><a href="#L765">00765</a> [PDF p.9] cost functions converge to the same cost function in the limit of                       directly follows that G(1) ≤ G(T ).          ■</div>
+<div id="L766"><a href="#L766">00766</a> [PDF p.9] infinite data.</div>
+<div id="L767"><a href="#L767">00767</a> [PDF p.9]                                                                                            Under consistency of the estimator, the parameter estimates</div>
+<div id="L768"><a href="#L768">00768</a> [PDF p.9]                                                                                         will converge to (θ∗ , η∗ ), hence, this result hold in general. This</div>
+<div id="L769"><a href="#L769">00769</a> [PDF p.9] Theorem 11 (Asymp. insensitivity For T ). Under Assumption 10,</div>
+<div id="L770"><a href="#L770">00770</a> [PDF p.9]                                                                                         shows that allowing for overlap in the subsections results in a</div>
+<div id="L771"><a href="#L771">00771</a> [PDF p.9] both VD1</div>
+<div id="L772"><a href="#L772">00772</a> [PDF p.9]            (θ , η) and VD</div>
+<div id="L773"><a href="#L773">00773</a> [PDF p.9]                         T</div>
+<div id="L774"><a href="#L774">00774</a> [PDF p.9]                             (θ, η) converge to the same loss function</div>
+<div id="L775"><a href="#L775">00775</a> [PDF p.9]          N                N                                                             more efficient estimator.</div>
+<div id="L776"><a href="#L776">00776</a> [PDF p.9] with probability 1 when N → ∞.</div>
+<div id="L777"><a href="#L777">00777</a> [PDF p.9] </div>
+<div id="L778"><a href="#L778">00778</a> [PDF p.9] Proof. Assumption 10 implies that vt is also strictly stationary                        5. Simulation study</div>
+<div id="L779"><a href="#L779">00779</a> [PDF p.9] since any signal which is dependent only on strictly stationary</div>
+<div id="L780"><a href="#L780">00780</a> [PDF p.9] variables is also strictly stationary. Furthermore, by the law of                          In this section, we demonstrate the effectiveness of the pro-</div>
+<div id="L781"><a href="#L781">00781</a> [PDF p.9] large numbers, the infinite mean sum of vt becomes equal to                             posed SUBNET architecture based identification approach in an</div>
+<div id="L782"><a href="#L782">00782</a> [PDF p.9] E[vk ] with probability 1. Hence, the limit cost can be expressed                       extensive simulation study. As the method has a number of</div>
+<div id="L783"><a href="#L783">00783</a> [PDF p.9] as                                                                                      hyperparameters that can substantially alter its behavior and</div>
+<div id="L784"><a href="#L784">00784</a> [PDF p.9]                                          md −1                                          performance, hence we investigate the effects of these hyperpa-</div>
+<div id="L785"><a href="#L785">00785</a> [PDF p.9]                                        1 ∑</div>
+<div id="L786"><a href="#L786">00786</a> [PDF p.9]  lim VDdN (θ , η) = lim                          v1+dk = E[vk ]                         rameters and also motivate the previously provided guidelines for</div>
+<div id="L787"><a href="#L787">00787</a> [PDF p.9] N →∞                       N →∞ md                                                      choosing them. An evaluation of the subspace encoder method on</div>
+<div id="L788"><a href="#L788">00788</a> [PDF p.9]                                           k=0</div>
+<div id="L789"><a href="#L789">00789</a> [PDF p.9]                                                                                         experimental data is provided in Section 6.</div>
+<div id="L790"><a href="#L790">00790</a> [PDF p.9] which is independent of d.                      ■</div>
+<div id="L791"><a href="#L791">00791</a> [PDF p.9] </div>
+<div id="L792"><a href="#L792">00792</a> [PDF p.9]    Next, we show that allowing for overlap, e.g. by taking d = 1,                       5.1. Data-generating system</div>
+<div id="L793"><a href="#L793">00793</a> [PDF p.9] reduces the variance of the loss function compared to disallowing</div>
+<div id="L794"><a href="#L794">00794</a> [PDF p.9] overlap by d = T .</div>
+<div id="L795"><a href="#L795">00795</a> [PDF p.9]                                                                                                The following system is considered:</div>
+<div id="L796"><a href="#L796">00796</a> [PDF p.9]                                                                                                                 (1)</div>
+<div id="L797"><a href="#L797">00797</a> [PDF p.9] Theorem 12 (Overlap Effect). With Assumption 10, there exists an                         (1)                 xk                            (2)</div>
+<div id="L798"><a href="#L798">00798</a> [PDF p.9] N∗ ∈ N, such that, for all N &gt; N∗ , the following relation holds                        xk+1 =                  (          )2 + 0.4 · xk ,                                         (42a)</div>
+<div id="L799"><a href="#L799">00799</a> [PDF p.9]                                                                                                                      (2)</div>
+<div id="L800"><a href="#L800">00800</a> [PDF p.9]                                                                                                      1.2 +          xk</div>
+<div id="L801"><a href="#L801">00801</a> [PDF p.9] Var(VD1N (θ∗ , η∗ )) ≤ Var(VDTN (θ∗ , η∗ ))</div>
+<div id="L802"><a href="#L802">00802</a> [PDF p.9]                                                                                                                 (2)</div>
+<div id="L803"><a href="#L803">00803</a> [PDF p.9]                                                                                                              xk</div>
+<div id="L804"><a href="#L804">00804</a> [PDF p.9] for all (θ∗ , η∗ ) ∈ Ξ∗ given by Eq. (22).                                               (2)</div>
+<div id="L805"><a href="#L805">00805</a> [PDF p.9]                                                                                         xk+1 =                  (</div>
+<div id="L806"><a href="#L806">00806</a> [PDF p.9]                                                                                                                                        (1)</div>
+<div id="L807"><a href="#L807">00807</a> [PDF p.9]                                                                                                                            )2 + 0.4 · xk + uk ,                                   (42b)</div>
+<div id="L808"><a href="#L808">00808</a> [PDF p.9]                                                                                                                      (1)</div>
+<div id="L809"><a href="#L809">00809</a> [PDF p.9]                                                                                                      1.2 +          xk</div>
+<div id="L810"><a href="#L810">00810</a> [PDF p.9] Proof. Proving this statement is equivalent to showing that the</div>
+<div id="L811"><a href="#L811">00811</a> [PDF p.9]                                                                                                      (1)</div>
+<div id="L812"><a href="#L812">00812</a> [PDF p.9] function                                                                                  y k = xk + e k ,                                                                         (42c)</div>
+<div id="L813"><a href="#L813">00813</a> [PDF p.9]                                                          md −1</div>
+<div id="L814"><a href="#L814">00814</a> [PDF p.9]                                                 (                        )</div>
+<div id="L815"><a href="#L815">00815</a> [PDF p.9]                                                                                                               (1)           (2)</div>
+<div id="L816"><a href="#L816">00816</a> [PDF p.9]                                                     1 ∑                                 where xk = [          ]</div>
+<div id="L817"><a href="#L817">00817</a> [PDF p.9]                                                                                                              xk            xk ⊤ denotes the elements of the state vector,</div>
+<div id="L818"><a href="#L818">00818</a> [PDF p.9] G(d) ≜ Var VDdN (θ∗ , η∗ ) = Var                                 v1+dk</div>
+<div id="L819"><a href="#L819">00819</a> [PDF p.9]                  (                 )</div>
+<div id="L820"><a href="#L820">00820</a> [PDF p.9]                                                                              (37)</div>
+<div id="L821"><a href="#L821">00821</a> [PDF p.9]                                                     md                                  x0 = 0 and e is generated by an i.i.d. white Gaussian noise</div>
+<div id="L822"><a href="#L822">00822</a> [PDF p.9]                                                          k=0</div>
+<div id="L823"><a href="#L823">00823</a> [PDF p.9]                                                                                         process resulting in an output SNR of 20 dB. This noise signal</div>
+<div id="L824"><a href="#L824">00824</a> [PDF p.9] has the property of G(1) ≤ G(T ) for all N &gt; N∗ . By expanding (37)                     is only present in the training and validation data sets and it is</div>
+<div id="L825"><a href="#L825">00825</a> [PDF p.9] using conventional variance and covariance relations, we get                            omitted in the test set to accurately measure the performance</div>
+<div id="L826"><a href="#L826">00826</a> [PDF p.9]               md −1 md −1                                                               of the obtained models. The system input u is a white, random,</div>
+<div id="L827"><a href="#L827">00827</a> [PDF p.9]             1 ∑ ∑                                                                       uniformly distributed signal uk ∼ U (−2, 2). N = 104 training,</div>
+<div id="L828"><a href="#L828">00828</a> [PDF p.9] G(d) =                           Cov(v1+kd , v1+ld ).                        (38)</div>
+<div id="L829"><a href="#L829">00829</a> [PDF p.9]            m2d                                                                          3 · 103 validation and 104 test samples are generated with inde-</div>
+<div id="L830"><a href="#L830">00830</a> [PDF p.9]                      k=0   l=0</div>
+<div id="L831"><a href="#L831">00831</a> [PDF p.9] </div>
+<div id="L832"><a href="#L832">00832</a> [PDF p.9]                                                                                     8</div>
+<div id="L833"><a href="#L833">00833</a> [PDF p.9] </div>
+<div id="L834"><a href="#L834">00834</a> [PDF p.10] G.I. Beintema, M. Schoukens and R. Tóth                                                                                            Automatica 156 (2023) 111210</div>
+<div id="L835"><a href="#L835">00835</a> [PDF p.10] </div>
+<div id="L836"><a href="#L836">00836</a> [PDF p.10] </div>
+<div id="L837"><a href="#L837">00837</a> [PDF p.10] pendent realizations of e and u. Note that this system for zero</div>
+<div id="L838"><a href="#L838">00838</a> [PDF p.10] input has two stable equilibria at x = ±[0.68 0.68]⊤ and one</div>
+<div id="L839"><a href="#L839">00839</a> [PDF p.10] unstable equilibrium point at x = [0 0]⊤ (the largest eigenvalue</div>
+<div id="L840"><a href="#L840">00840</a> [PDF p.10] of ∇x f (x, 0)|x=[0 0]⊤ is 1.23). Hence, (42) is not strictly contractive,</div>
+<div id="L841"><a href="#L841">00841</a> [PDF p.10] but it is stable in the sense of Condition 1 which has been checked</div>
+<div id="L842"><a href="#L842">00842</a> [PDF p.10] numerically.</div>
+<div id="L843"><a href="#L843">00843</a> [PDF p.10] </div>
+<div id="L844"><a href="#L844">00844</a> [PDF p.10] 5.2. Model estimation</div>
+<div id="L845"><a href="#L845">00845</a> [PDF p.10] </div>
+<div id="L846"><a href="#L846">00846</a> [PDF p.10]    At this point, the system under study is only disturbed by</div>
+<div id="L847"><a href="#L847">00847</a> [PDF p.10] measurement noise, hence, the SUBNET structure is simplified to</div>
+<div id="L848"><a href="#L848">00848</a> [PDF p.10] an output error noise structure (i.e. fθ does not depend on êk ).</div>
+<div id="L849"><a href="#L849">00849</a> [PDF p.10] During the analysis, we have varied one hyper-parameter while</div>
+<div id="L850"><a href="#L850">00850</a> [PDF p.10] keeping all the others equal to the following base values: T = 40,</div>
+<div id="L851"><a href="#L851">00851</a> [PDF p.10] n = 10, nx = 4. All the functions hθ , fθ and ψη are parametrized</div>
+<div id="L852"><a href="#L852">00852</a> [PDF p.10] using 2 hidden layer feedforward neural networks with 64 nodes</div>
+<div id="L853"><a href="#L853">00853</a> [PDF p.10] per layer, linear bypass and IO normalization. To compute the                    Fig. 2. Evolution of the NRMS simulation error of the estimated models by</div>
+<div id="L854"><a href="#L854">00854</a> [PDF p.10] model estimate, the Adam optimizer (Kingma &amp; Ba, 2015) with                      the considered approaches w.r.t. the test data. The keywords ‘‘encoder init’’</div>
+<div id="L855"><a href="#L855">00855</a> [PDF p.10]                                                                                  and ‘‘parameter init’’ indicate if either encoder-based prediction or parametric</div>
+<div id="L856"><a href="#L856">00856</a> [PDF p.10] a batch size of 256 has been used with default learning rate of                  estimation is used to estimate the initial states, ‘‘overlap’’ and ‘‘no-overlap’’</div>
+<div id="L857"><a href="#L857">00857</a> [PDF p.10] 10−3 and early stopping using a validation set.                                  indicate if the subsections can overlap, while ‘‘OE’’ stands for simulation based</div>
+<div id="L858"><a href="#L858">00858</a> [PDF p.10]    We chose a base model order nx = 4 as it will be shown                        cost over the entire data sequence with no subsections.</div>
+<div id="L859"><a href="#L859">00859</a> [PDF p.10] that immersion effects are observed under the considered ANN</div>
+<div id="L860"><a href="#L860">00860</a> [PDF p.10] complexity for hθ , fθ and ψη . Immersion is a well-known phe-</div>
+<div id="L861"><a href="#L861">00861</a> [PDF p.10] nomenon (Lee &amp; Marcus, 1988; Ohtsuka, 2005), corresponding to</div>
+<div id="L862"><a href="#L862">00862</a> [PDF p.10] the fact that at the price of introducing extra state variables, the</div>
+<div id="L863"><a href="#L863">00863</a> [PDF p.10]                                                                                  Table 1</div>
+<div id="L864"><a href="#L864">00864</a> [PDF p.10] original system can be equivalently represented by less complex                  Performance of the compared approaches (see Section 5.3) given the same</div>
+<div id="L865"><a href="#L865">00865</a> [PDF p.10] state-transition and output functions, till reaching the class of                training budget of 25 min (and same hardware).</div>
+<div id="L866"><a href="#L866">00866</a> [PDF p.10] linear, but often infinite dimensional representations, coined in                 Combination                                                        NRMS test</div>
+<div id="L867"><a href="#L867">00867</a> [PDF p.10] the literature as Koopman forms (Williams, Hemati, Dawson,                        Parameter init OE                                                  15.9%</div>
+<div id="L868"><a href="#L868">00868</a> [PDF p.10] Kevrekidis, &amp; Rowley, 2016). As will be shown, this trade-off                     Parameter init no-overlap                                          2.0%</div>
+<div id="L869"><a href="#L869">00869</a> [PDF p.10] between nx and the layer-depth of the involved ANNs makes                         Parameter init overlap                                             3.0%</div>
+<div id="L870"><a href="#L870">00870</a> [PDF p.10]                                                                                   Encoder init no-overlap                                            2.1%</div>
+<div id="L871"><a href="#L871">00871</a> [PDF p.10] the optimization problem more stable and ensures relatively fast</div>
+<div id="L872"><a href="#L872">00872</a> [PDF p.10]                                                                                   Encoder init overlap                                               1.7%</div>
+<div id="L873"><a href="#L873">00873</a> [PDF p.10] convergence.</div>
+<div id="L874"><a href="#L874">00874</a> [PDF p.10]    The performance of the estimated models is characterized by</div>
+<div id="L875"><a href="#L875">00875</a> [PDF p.10] the normalized root mean square (NRMS) simulation error:</div>
+<div id="L876"><a href="#L876">00876</a> [PDF p.10]                       √         ∑N                                                  Fig. 2 shows that the ‘‘Parameter init OE’’ approach is indeed</div>
+<div id="L877"><a href="#L877">00877</a> [PDF p.10]            RMS            1/N                   2</div>
+<div id="L878"><a href="#L878">00878</a> [PDF p.10]                                  k=1 ∥yk − ŷk ∥2</div>
+<div id="L879"><a href="#L879">00879</a> [PDF p.10]                                                                                  the slowest as it needs to simulate the entire training data set</div>
+<div id="L880"><a href="#L880">00880</a> [PDF p.10] NRMS =            =                                 ,                (43)        to perform one optimization step. It also shows that the encoder</div>
+<div id="L881"><a href="#L881">00881</a> [PDF p.10]              σy                      σy</div>
+<div id="L882"><a href="#L882">00882</a> [PDF p.10]                                                                                  provides improved performance compared to parametrization of</div>
+<div id="L883"><a href="#L883">00883</a> [PDF p.10] where σy is the sample standard deviation of y and NRMS% =                       the initial condition and co-estimating it with the model. Fur-</div>
+<div id="L884"><a href="#L884">00884</a> [PDF p.10] NRMS × 100. In this case, an independent noiseless data set                      thermore, the overlap variants of the methods suffer less from</div>
+<div id="L885"><a href="#L885">00885</a> [PDF p.10] has been used to calculate the NRMS simulation error to clearly                  overfitting than standard multiple-shooting. This is in line with</div>
+<div id="L886"><a href="#L886">00886</a> [PDF p.10] characterize the accuracy of the estimated model. The estimated                  the variance reduction obtained from the overlapping subsections</div>
+<div id="L887"><a href="#L887">00887</a> [PDF p.10] encoder is used to initialize the state for every simulation. Hence,             as shown in Section 4.2.</div>
+<div id="L888"><a href="#L888">00888</a> [PDF p.10] the first n outputs are not used to compute (43) as they have been</div>
+<div id="L889"><a href="#L889">00889</a> [PDF p.10] used to feed the encoder.                                                        5.4. Truncation length (T )</div>
+<div id="L890"><a href="#L890">00890</a> [PDF p.10] </div>
+<div id="L891"><a href="#L891">00891</a> [PDF p.10] 5.3. Computational cost and performance                                             A key parameter of the encoder method is the truncation</div>
+<div id="L892"><a href="#L892">00892</a> [PDF p.10]                                                                                  length T . Fig. 3 illustrates that overfitting is a significant is-</div>
+<div id="L893"><a href="#L893">00893</a> [PDF p.10]    The computational cost and performance of the proposed sub-                   sue when T is smaller than the dominant timescale of the sys-</div>
+<div id="L894"><a href="#L894">00894</a> [PDF p.10] space encoder based method is compared to existing methods in                    tem. However, a bigger T increases the computational cost. To</div>
+<div id="L895"><a href="#L895">00895</a> [PDF p.10] Fig. 2 and Table 1. For the comparison, multiple ANN-based state–                choose T in an informed manner, we employ expected normalized</div>
+<div id="L896"><a href="#L896">00896</a> [PDF p.10] space identification methods are considered: (i) the classical SS-               k-step-error plots in Fig. 4 in terms of</div>
+<div id="L897"><a href="#L897">00897</a> [PDF p.10] ANN simulation error minimization method which simulates the</div>
+<div id="L898"><a href="#L898">00898</a> [PDF p.10]                                                                                                 </div>
+<div id="L899"><a href="#L899">00899</a> [PDF p.10]                                                                                                        N −k</div>
+<div id="L900"><a href="#L900">00900</a> [PDF p.10]                                                                                                 </div>
+<div id="L901"><a href="#L901">00901</a> [PDF p.10] entire training range (T = training data length) starting from                                1√ 1</div>
+<div id="L902"><a href="#L902">00902</a> [PDF p.10]                                                                                                        ∑</div>
+<div id="L903"><a href="#L903">00903</a> [PDF p.10]                                                                                  NRMSk-step =               ∥ŷt +k|t − yt +k ∥22 ,                          (44)</div>
+<div id="L904"><a href="#L904">00904</a> [PDF p.10] an initial state which is estimated together with the system                                  σy N − k</div>
+<div id="L905"><a href="#L905">00905</a> [PDF p.10]                                                                                                                  t =1</div>
+<div id="L906"><a href="#L906">00906</a> [PDF p.10] parameters (Parameter init OE) (Schoukens &amp; Ljung, 2019), (ii)</div>
+<div id="L907"><a href="#L907">00907</a> [PDF p.10] the unconstrained multiple-shooting method for SS-ANNs which                     where ŷt +k|t corresponds to the k-step-ahead prediction by the</div>
+<div id="L908"><a href="#L908">00908</a> [PDF p.10] adds the initial state of each considered simulation section to                  estimated model relative to sample t. These show that, for the</div>
+<div id="L909"><a href="#L909">00909</a> [PDF p.10] the parameter vector without (Parameter init no-overlap) (Bock,                  current system under test, the transient error has a length of 30</div>
+<div id="L910"><a href="#L910">00910</a> [PDF p.10] 1981) and with (Parameter init overlap) overlapping simulation                   time steps, which approximately corresponds to the characteristic</div>
+<div id="L911"><a href="#L911">00911</a> [PDF p.10] sections, and finally (iii) the considered subspace encoder method               timescale of the system. Furthermore, Fig. 4 shows that the error</div>
+<div id="L912"><a href="#L912">00912</a> [PDF p.10] without (Encoder init no-overlap) and with (Encoder init overlap)                in the output is larger for low values of k compared to large values</div>
+<div id="L913"><a href="#L913">00913</a> [PDF p.10] overlapping simulation sections.                                                 of k. Hence, the estimated state at k = 0 is less accurate than</div>
+<div id="L914"><a href="#L914">00914</a> [PDF p.10]                                                                              9</div>
+<div id="L915"><a href="#L915">00915</a> [PDF p.10] </div>
+<div id="L916"><a href="#L916">00916</a> [PDF p.11] G.I. Beintema, M. Schoukens and R. Tóth                                                                                                      Automatica 156 (2023) 111210</div>
+<div id="L917"><a href="#L917">00917</a> [PDF p.11] </div>
+<div id="L918"><a href="#L918">00918</a> [PDF p.11] </div>
+<div id="L919"><a href="#L919">00919</a> [PDF p.11] </div>
+<div id="L920"><a href="#L920">00920</a> [PDF p.11] </div>
+<div id="L921"><a href="#L921">00921</a> [PDF p.11] Fig. 3. Influence of the truncation length T of the loss function on the test error        Fig. 5. The influence of the model order nx on the resulting test error of the</div>
+<div id="L922"><a href="#L922">00922</a> [PDF p.11] during training.                                                                           estimates during training. The displayed results are based on 7 models trained</div>
+<div id="L923"><a href="#L923">00923</a> [PDF p.11]                                                                                            using different random initial parameter values.</div>
+<div id="L924"><a href="#L924">00924</a> [PDF p.11] </div>
+<div id="L925"><a href="#L925">00925</a> [PDF p.11] </div>
+<div id="L926"><a href="#L926">00926</a> [PDF p.11] </div>
+<div id="L927"><a href="#L927">00927</a> [PDF p.11] </div>
+<div id="L928"><a href="#L928">00928</a> [PDF p.11]                                                                                            Fig. 6. The influence of the lag window na and nb , i.e. the horizon of past data</div>
+<div id="L929"><a href="#L929">00929</a> [PDF p.11] Fig. 4. The k-step NRMS error of estimated models under different truncation               used by the encoder, on the test error during training.</div>
+<div id="L930"><a href="#L930">00930</a> [PDF p.11] lengths, computed on the test data. The red dots indicate the truncation length</div>
+<div id="L931"><a href="#L931">00931</a> [PDF p.11] T.</div>
+<div id="L932"><a href="#L932">00932</a> [PDF p.11] </div>
+<div id="L933"><a href="#L933">00933</a> [PDF p.11] </div>
+<div id="L934"><a href="#L934">00934</a> [PDF p.11] </div>
+<div id="L935"><a href="#L935">00935</a> [PDF p.11]                                                                                            samples shows in Fig. 6 that the minimal required n = na =</div>
+<div id="L936"><a href="#L936">00936</a> [PDF p.11] the state obtained after a number of steps. This suggests that                             nb = nx − 1 = 1, with nx the order of the system for state</div>
+<div id="L937"><a href="#L937">00937</a> [PDF p.11] the encoder is unable to accurately recover/estimate the initial                           reconstructability, on which the encoder is based on, is not the</div>
+<div id="L938"><a href="#L938">00938</a> [PDF p.11] state, i.e. the encoder estimate has a high variance, indicating that                      optimal value in this case. As seen from the figure, 20 ≥ n =</div>
+<div id="L939"><a href="#L939">00939</a> [PDF p.11] the encoder parametrization is not sufficiently rich (n = 10 is                            na = nb &gt; 4 perform much better. As we argued earlier, this</div>
+<div id="L940"><a href="#L940">00940</a> [PDF p.11] insufficient or the used number of layers/neurons is too low).                             can be contributed to a variance reduction in the state estimate</div>
+<div id="L941"><a href="#L941">00941</a> [PDF p.11]                                                                                            (i.e. encoder as a minimum variance observer) which reduces</div>
+<div id="L942"><a href="#L942">00942</a> [PDF p.11] 5.5. Model order (nx )</div>
+<div id="L943"><a href="#L943">00943</a> [PDF p.11]                                                                                            the average transient error. However, for values that are much</div>
+<div id="L944"><a href="#L944">00944</a> [PDF p.11]                                                                                            larger than nx − 1 = 1 (around 20), the computational cost</div>
+<div id="L945"><a href="#L945">00945</a> [PDF p.11]     Changing the state order of the model has also significant</div>
+<div id="L946"><a href="#L946">00946</a> [PDF p.11] influence on the behavior of the estimation as shown in Fig. 5,                            significantly increases without too much gain in performance.</div>
+<div id="L947"><a href="#L947">00947</a> [PDF p.11] where the obtained results are averaged over 7 identification                              Lastly, the choice of lag windows has a less strong impact on</div>
+<div id="L948"><a href="#L948">00948</a> [PDF p.11] runs. nx values that are much larger than the order of the true                            performance than the choice of T and nx .</div>
+<div id="L949"><a href="#L949">00949</a> [PDF p.11] data-generating system quickly result in overfitted model es-</div>
+<div id="L950"><a href="#L950">00950</a> [PDF p.11] timates. Using the true state dimension nx = 2 results in a                                5.7. Neural network depth and width</div>
+<div id="L951"><a href="#L951">00951</a> [PDF p.11] model with the lowest obtained NRMS, but the variability of the</div>
+<div id="L952"><a href="#L952">00952</a> [PDF p.11] obtained models over the 7 identification runs is quite high, and                             The influence of varying the depth and width of the neural</div>
+<div id="L953"><a href="#L953">00953</a> [PDF p.11] the optimization time is significantly larger than for nx = 4. As                          networks used to parametrize ψη , fθ and hθ is illustrated in Fig. 7.</div>
+<div id="L954"><a href="#L954">00954</a> [PDF p.11] discussed earlier, we suspect that this can be attributed to an                            A network structure that is too complex results in a growing</div>
+<div id="L955"><a href="#L955">00955</a> [PDF p.11] effect similar to immersion where providing additional degrees                             computational cost and variance of the model estimates. Whereas</div>
+<div id="L956"><a href="#L956">00956</a> [PDF p.11] of freedom makes the functions fθ , hθ and ψη less complex and                             a network structure that is too simple results in under-fitting as</div>
+<div id="L957"><a href="#L957">00957</a> [PDF p.11] hence simpler to estimate up to the point where the variance of                            the model is unable to capture the dynamics of the true under-</div>
+<div id="L958"><a href="#L958">00958</a> [PDF p.11] the sheer number of extra parameters overtakes this advantage.                             lying system. Overfitting is suppressed in our approach by the</div>
+<div id="L959"><a href="#L959">00959</a> [PDF p.11]     The 7 different runs, each initialized with different random pa-                       regularization introduced with early stopping, the stochastic gra-</div>
+<div id="L960"><a href="#L960">00960</a> [PDF p.11] rameters, converge to the same test error level in NRMS. This sug-                         dient descent algorithm, and the increased data efficiency allow-</div>
+<div id="L961"><a href="#L961">00961</a> [PDF p.11] gests that the encoder method gives reproducible results for dif-                          ing for overlap in the subsections. Hence, neural network struc-</div>
+<div id="L962"><a href="#L962">00962</a> [PDF p.11] ferent initializations which highlight insensitivity of the method                         ture selection is more sensitive to underparametrization than</div>
+<div id="L963"><a href="#L963">00963</a> [PDF p.11] for initialization.                                                                        overparametrization for the proposed method.</div>
+<div id="L964"><a href="#L964">00964</a> [PDF p.11] </div>
+<div id="L965"><a href="#L965">00965</a> [PDF p.11] 5.6. Encoder window length (n)                                                             5.8. Estimation under process noise</div>
+<div id="L966"><a href="#L966">00966</a> [PDF p.11] </div>
+<div id="L967"><a href="#L967">00967</a> [PDF p.11]    Varying the lag window n (or na and nb considered separately                               The subspace-encoder based estimation approach has been</div>
+<div id="L968"><a href="#L968">00968</a> [PDF p.11] for u and y) of the encoder in terms of the considered past IO                             introduced to provide reliable model estimates under general</div>
+<div id="L969"><a href="#L969">00969</a> [PDF p.11]                                                                                       10</div>
+<div id="L970"><a href="#L970">00970</a> [PDF p.11] </div>
+<div id="L971"><a href="#L971">00971</a> [PDF p.12] G.I. Beintema, M. Schoukens and R. Tóth                                                                                                  Automatica 156 (2023) 111210</div>
+<div id="L972"><a href="#L972">00972</a> [PDF p.12] </div>
+<div id="L973"><a href="#L973">00973</a> [PDF p.12] </div>
+<div id="L974"><a href="#L974">00974</a> [PDF p.12] </div>
+<div id="L975"><a href="#L975">00975</a> [PDF p.12]                                                                                        Table 2</div>
+<div id="L976"><a href="#L976">00976</a> [PDF p.12]                                                                                        Mean and mean standard deviation of the NRMS% of the simulation error on</div>
+<div id="L977"><a href="#L977">00977</a> [PDF p.12]                                                                                        the test data over 4 independent runs, when linear innovation noise is present</div>
+<div id="L978"><a href="#L978">00978</a> [PDF p.12]                                                                                        in the data-generating system.</div>
+<div id="L979"><a href="#L979">00979</a> [PDF p.12]                                                                                         σK          OE noise         Linear innovation         Nonlinear innovation</div>
+<div id="L980"><a href="#L980">00980</a> [PDF p.12]                                                                                                                      noise model               noise model</div>
+<div id="L981"><a href="#L981">00981</a> [PDF p.12]                                                                                         0.0         1.8 ± 0.1        1.7 ± 0.1                 1.8 ± 0.1</div>
+<div id="L982"><a href="#L982">00982</a> [PDF p.12]                                                                                         0.25        2.1 ± 0.2        1.9 ± 0.1                 2.1 ± 0.1</div>
+<div id="L983"><a href="#L983">00983</a> [PDF p.12]                                                                                         0.5         2.3 ± 0.1        1.9 ± 0.1                 2.1 ± 0.1</div>
+<div id="L984"><a href="#L984">00984</a> [PDF p.12]                                                                                         1.0         3.2 ± 0.1        2.2 ± 0.1                 2.0 ± 0.2</div>
+<div id="L985"><a href="#L985">00985</a> [PDF p.12]                                                                                         2.0         4.8 ± 0.1        3.0 ± 0.1                 2.5 ± 0.0</div>
+<div id="L986"><a href="#L986">00986</a> [PDF p.12]                                                                                         4.0         8.4 ± 0.3        5.7 ± 0.4                 4.4 ± 0.1</div>
+<div id="L987"><a href="#L987">00987</a> [PDF p.12] </div>
+<div id="L988"><a href="#L988">00988</a> [PDF p.12] </div>
+<div id="L989"><a href="#L989">00989</a> [PDF p.12] </div>
+<div id="L990"><a href="#L990">00990</a> [PDF p.12] </div>
+<div id="L991"><a href="#L991">00991</a> [PDF p.12] Fig. 7. The influence of the neural network architecture on the model estimates</div>
+<div id="L992"><a href="#L992">00992</a> [PDF p.12]                                                                                        Table 3</div>
+<div id="L993"><a href="#L993">00993</a> [PDF p.12] in terms of the achieved NRMS simulation error on test data.</div>
+<div id="L994"><a href="#L994">00994</a> [PDF p.12]                                                                                        Same as Table 2 but for nonlinear innovation noise.</div>
+<div id="L995"><a href="#L995">00995</a> [PDF p.12]                                                                                         σk         OE noise          Linear innovation         Nonlinear innovation</div>
+<div id="L996"><a href="#L996">00996</a> [PDF p.12]                                                                                                                      noise model               noise model</div>
+<div id="L997"><a href="#L997">00997</a> [PDF p.12]                                                                                         0.0        1.8 ± 0.1         1.7 ± 0.0                 1.8 ± 0.1</div>
+<div id="L998"><a href="#L998">00998</a> [PDF p.12]                                                                                         0.25       2.2 ± 0.1         2.2 ± 0.1                 1.8 ± 0.1</div>
+<div id="L999"><a href="#L999">00999</a> [PDF p.12] noise conditions that can be described in an innovation form. To</div>
+<div id="L1000"><a href="#L1000">01000</a> [PDF p.12]                                                                                         0.5        2.8 ± 0.1         2.4 ± 0.1                 1.8 ± 0.1</div>
+<div id="L1001"><a href="#L1001">01001</a> [PDF p.12] demonstrate this property, we extend (42) with a process noise                          1.0        4.1 ± 0.1         3.2 ± 0.1                 2.3 ± 0.2</div>
+<div id="L1002"><a href="#L1002">01002</a> [PDF p.12] term. First we will consider the case when the noise enters the                         2.0        8.2 ± 0.3         6.5 ± 0.4                 4.3 ± 0.3</div>
+<div id="L1003"><a href="#L1003">01003</a> [PDF p.12] state equation linearly, then we will consider the case when the                        4.0        14.2 ± 0.8        12.6 ± 0.6                10.5 ± 0.3</div>
+<div id="L1004"><a href="#L1004">01004</a> [PDF p.12] noise enters nonlinearly:</div>
+<div id="L1005"><a href="#L1005">01005</a> [PDF p.12]                  (1)</div>
+<div id="L1006"><a href="#L1006">01006</a> [PDF p.12]  (1)            xk                (2)</div>
+<div id="L1007"><a href="#L1007">01007</a> [PDF p.12] xk+1 =       ( )2 + 0.4xk</div>
+<div id="L1008"><a href="#L1008">01008</a> [PDF p.12]                (2)</div>
+<div id="L1009"><a href="#L1009">01009</a> [PDF p.12]                                         + g1 (x(1)</div>
+<div id="L1010"><a href="#L1010">01010</a> [PDF p.12]                                                k , ek ),                (45a)</div>
+<div id="L1011"><a href="#L1011">01011</a> [PDF p.12]          1.2+ xk</div>
+<div id="L1012"><a href="#L1012">01012</a> [PDF p.12]                  (2)</div>
+<div id="L1013"><a href="#L1013">01013</a> [PDF p.12]                 xk</div>
+<div id="L1014"><a href="#L1014">01014</a> [PDF p.12]                                                                                        78,000 test samples. Similarly as before, we utilize the same</div>
+<div id="L1015"><a href="#L1015">01015</a> [PDF p.12]  (2)                              (1)</div>
+<div id="L1016"><a href="#L1016">01016</a> [PDF p.12] xk+1 =       ( )2 + 0.4xk</div>
+<div id="L1017"><a href="#L1017">01017</a> [PDF p.12]                (1)</div>
+<div id="L1018"><a href="#L1018">01018</a> [PDF p.12]                                         + uk + g2 (x(2)</div>
+<div id="L1019"><a href="#L1019">01019</a> [PDF p.12]                                                     k , ek ),           (45b)          network structure and OE noise structure for all three networks</div>
+<div id="L1020"><a href="#L1020">01020</a> [PDF p.12]          1.2+ xk</div>
+<div id="L1021"><a href="#L1021">01021</a> [PDF p.12]                                                                                        in the model, but now with a single hidden layer with 15 hidden</div>
+<div id="L1022"><a href="#L1022">01022</a> [PDF p.12]           (1)</div>
+<div id="L1023"><a href="#L1023">01023</a> [PDF p.12]   yk = xk + ek ,                                                        (45c)          nodes and a linear bypass. The hyperparameters used are nx = 6,</div>
+<div id="L1024"><a href="#L1024">01024</a> [PDF p.12]            (i)                                                (i)</div>
+<div id="L1025"><a href="#L1025">01025</a> [PDF p.12]                                                                                        T = 80, n = na = nb = 50, a batch size of 1024, early stopping,</div>
+<div id="L1026"><a href="#L1026">01026</a> [PDF p.12] where gi (xk      , ek ) =                       , ek ) = K (i) x(i)</div>
+<div id="L1027"><a href="#L1027">01027</a> [PDF p.12]                              K (i) ek for the linear and gi (xk  k ek                  input/output normalization, and the Adam optimizer with default</div>
+<div id="L1028"><a href="#L1028">01028</a> [PDF p.12] for the nonlinear case respectively, K ≜ σK K0 /∥K0 ∥2 with K0 ≜                       learning rate of α = 10−3 .</div>
+<div id="L1029"><a href="#L1029">01029</a> [PDF p.12] [1.0 −0.9]⊤ , and σK ≥ 0 is an adjustable parameter which                                  The obtained results are displayed in Table 4 together with</div>
+<div id="L1030"><a href="#L1030">01030</a> [PDF p.12] regulates how strong the process noise is affecting the state. The                     results achieved by other approaches on this benchmark. Many</div>
+<div id="L1031"><a href="#L1031">01031</a> [PDF p.12] noise ek is generated by a white Gaussian noise process with a                         of these methods have been developed for Wiener–Hammerstein</div>
+<div id="L1032"><a href="#L1032">01032</a> [PDF p.12] standard deviation σe = 0.082 (resulting in 20 dB SNR) for the                         identification problems and use varying level of structural knowl-</div>
+<div id="L1033"><a href="#L1033">01033</a> [PDF p.12] training data and σe = 0 for the test data.                                            edge about the system. Remarkably, the proposed approach is</div>
+<div id="L1034"><a href="#L1034">01034</a> [PDF p.12]    We compare estimation with the subspace encoder method                              able to get the lowest test error results using no structural knowl-</div>
+<div id="L1035"><a href="#L1035">01035</a> [PDF p.12] under three different noise models: OE noise: there is no process                      edge or guided initialization as some of the methods that are</div>
+<div id="L1036"><a href="#L1036">01036</a> [PDF p.12] noise considered in the model, linear innovation: êt +k|t appears                     reported on this benchmark. Note however that, while good</div>
+<div id="L1037"><a href="#L1037">01037</a> [PDF p.12] linearly in fθ , i.e. in the state Eq. (7a) of the model and general                   performance is obtained quite rapidly, a long optimization (over</div>
+<div id="L1038"><a href="#L1038">01038</a> [PDF p.12] innovation: êt +k|t is passed through the neural network fθ . The                     200 h) is required to fine tune the estimate and obtain the final</div>
+<div id="L1039"><a href="#L1039">01039</a> [PDF p.12] resulting NRMS of the simulation error over the test data for the                      result. This aspect can be further improved by using learning rate</div>
+<div id="L1040"><a href="#L1040">01040</a> [PDF p.12] three considered models can be viewed in Tables 2 and 3 under                          schedulers and higher-order optimization methods.</div>
+<div id="L1041"><a href="#L1041">01041</a> [PDF p.12] linear and nonlinear innovation noise in the data-generating sys-</div>
+<div id="L1042"><a href="#L1042">01042</a> [PDF p.12] tem, respectively. To indicate the significance of the results these</div>
+<div id="L1043"><a href="#L1043">01043</a> [PDF p.12] tables also contain the standard deviation√of the mean which is                        7. Conclusion</div>
+<div id="L1044"><a href="#L1044">01044</a> [PDF p.12] the sample standard deviation divided by 4 − 1 since there are</div>
+<div id="L1045"><a href="#L1045">01045</a> [PDF p.12] 4 independent samples considered. The linear case shows that for                           By carefully combining elements from machine learning (batch</div>
+<div id="L1046"><a href="#L1046">01046</a> [PDF p.12] σK &gt; 0.5, both the linear and the nonlinear parametrization of                         optimization), multiple-shooting (multi-step-ahead loss), and</div>
+<div id="L1047"><a href="#L1047">01047</a> [PDF p.12] the process noise model structure significantly reduces the test                       subspace identification (encoder), a subspace encoder-based ANN</div>
+<div id="L1048"><a href="#L1048">01048</a> [PDF p.12] error in comparison with the OE model. For the nonlinear case,                         method for nonlinear state–space identification has been intro-</div>
+<div id="L1049"><a href="#L1049">01049</a> [PDF p.12] the nonlinear parametrization outperforms the linear innovation                        duced. The method is proven to be locally consistent, to have</div>
+<div id="L1050"><a href="#L1050">01050</a> [PDF p.12] noise model structure for σK &gt; 0.5, as expected.                                       a relatively smooth cost function by using a multiple shooting</div>
+<div id="L1051"><a href="#L1051">01051</a> [PDF p.12]                                                                                        strategy, and to be more data efficient than other ANN-based</div>
+<div id="L1052"><a href="#L1052">01052</a> [PDF p.12] 6. Benchmark results                                                                   strategies by considering overlapping subsections. The method</div>
+<div id="L1053"><a href="#L1053">01053</a> [PDF p.12]                                                                                        has shown state-of-the-art results in our simulation studies and</div>
+<div id="L1054"><a href="#L1054">01054</a> [PDF p.12]    The Wiener–Hammerstein benchmark (Schoukens &amp; Ljung,                                on a widely used benchmark identification problem. Remarkably,</div>
+<div id="L1055"><a href="#L1055">01055</a> [PDF p.12] 2009) is an electronic circuit with a diode-resistor nonlinearity                      it does not need specialized initialization of the model parame-</div>
+<div id="L1056"><a href="#L1056">01056</a> [PDF p.12] and has been used in benchmarking a wide variety of nonlinear                          ters to achieve this performance or structural knowledge of the</div>
+<div id="L1057"><a href="#L1057">01057</a> [PDF p.12] system identification methods. As in Beintema et al. (2021b), we                       system and besides of some rules of thumb, it is also relatively</div>
+<div id="L1058"><a href="#L1058">01058</a> [PDF p.12] split the data set into 80,000 training, 20,000 validation and                         insensitive to the choices of its hyper parameters.</div>
+<div id="L1059"><a href="#L1059">01059</a> [PDF p.12]                                                                                   11</div>
+<div id="L1060"><a href="#L1060">01060</a> [PDF p.12] </div>
+<div id="L1061"><a href="#L1061">01061</a> [PDF p.13] G.I. Beintema, M. Schoukens and R. Tóth                                                                                                           Automatica 156 (2023) 111210</div>
+<div id="L1062"><a href="#L1062">01062</a> [PDF p.13] </div>
+<div id="L1063"><a href="#L1063">01063</a> [PDF p.13]                  Table 4</div>
+<div id="L1064"><a href="#L1064">01064</a> [PDF p.13]                  Results of the subspace encoder on the Wiener–Hammerstein benchmark compared to results reported in the literature.</div>
+<div id="L1065"><a href="#L1065">01065</a> [PDF p.13]                   Identification method                                                        Test RMS simulation (mV)                Test NRMS simulation</div>
+<div id="L1066"><a href="#L1066">01066</a> [PDF p.13]                   Subspace Encoder                                                             0.241                                   0.0987%</div>
+<div id="L1067"><a href="#L1067">01067</a> [PDF p.13]                   QBLA (Schoukens, Pintelon, &amp; Rolain, 2014)                                   0.279                                   0.113%</div>
+<div id="L1068"><a href="#L1068">01068</a> [PDF p.13]                   Pole-zero splitting (Sjöberg, Lauwers, &amp; Schoukens, 2012)                    0.30                                    0.123%</div>
+<div id="L1069"><a href="#L1069">01069</a> [PDF p.13]                   NL-LFR (Schoukens &amp; Tóth, 2020)                                              0.30                                    0.123%</div>
+<div id="L1070"><a href="#L1070">01070</a> [PDF p.13]                   PNLSS (Paduart, Lauwers, Pintelon, &amp; Schoukens, 2012)                        0.42                                    0.172%</div>
+<div id="L1071"><a href="#L1071">01071</a> [PDF p.13]                   Generalized WH (Wills &amp; Ninness, 2009)                                       0.49                                    0.200%</div>
+<div id="L1072"><a href="#L1072">01072</a> [PDF p.13]                   LS-SVM (Falck, Pelckmans, Suykens, &amp; De Moor, 2009)                          4.07                                    1.663%</div>
+<div id="L1073"><a href="#L1073">01073</a> [PDF p.13]                   Bio-social evolution (Naitali &amp; Giri, 2016)                                  8.55                                    3.494%</div>
+<div id="L1074"><a href="#L1074">01074</a> [PDF p.13]                   SS auto-encoder (Masti &amp; Bemporad, 2021)                                     12.01                                   4.907%</div>
+<div id="L1075"><a href="#L1075">01075</a> [PDF p.13]                   Genetic Programming (Khandelwal, 2022)                                       23.50                                   9.605%</div>
+<div id="L1076"><a href="#L1076">01076</a> [PDF p.13]                   SVM (Marconato &amp; Schoukens, 2009)                                            47.40                                   19.373%</div>
+<div id="L1077"><a href="#L1077">01077</a> [PDF p.13]                   BLA (Lauwers, Pintelon, &amp; Schoukens, 2009)                                   56.20                                   22.969%</div>
+<div id="L1078"><a href="#L1078">01078</a> [PDF p.13] </div>
+<div id="L1079"><a href="#L1079">01079</a> [PDF p.13] </div>
+<div id="L1080"><a href="#L1080">01080</a> [PDF p.13] References                                                                                    Lee, L. H., &amp; Poolla, K. (1999). Identification of linear parameter-varying systems</div>
+<div id="L1081"><a href="#L1081">01081</a> [PDF p.13]                                                                                                   using nonlinear programming. Journal of Dynamic Systems, Measurement, and</div>
+<div id="L1082"><a href="#L1082">01082</a> [PDF p.13] Allgöwer, F., &amp; Zheng, A. (2012). Nonlinear model predictive control, Vol. 26.                    Control, 121(1), 71–78.</div>
+<div id="L1083"><a href="#L1083">01083</a> [PDF p.13]      Birkhäuser.                                                                              Ljung, L. (1978). Convergence analysis of parametric identification methods. IEEE</div>
+<div id="L1084"><a href="#L1084">01084</a> [PDF p.13] Beintema, G. I., Tóth, R., &amp; Schoukens, M. (2021a). Non-linear state-space model                  Transactions on Automatic Control, 23(5), 770–783.</div>
+<div id="L1085"><a href="#L1085">01085</a> [PDF p.13]                                                                                               Marconato, A., &amp; Schoukens, J. (2009). Identification of Wiener–Hammerstein</div>
+<div id="L1086"><a href="#L1086">01086</a> [PDF p.13]      identification from video data using deep encoders. IFAC-PapersOnLine, 54(7),</div>
+<div id="L1087"><a href="#L1087">01087</a> [PDF p.13]                                                                                                   benchmark data by means of support vector machines. IFAC Proceedings</div>
+<div id="L1088"><a href="#L1088">01088</a> [PDF p.13]      697–701.</div>
+<div id="L1089"><a href="#L1089">01089</a> [PDF p.13] Beintema, G. I., Tóth, R., &amp; Schoukens, M. (2021b). Nonlinear state-space                         Volumes, 42(10), 816–819.</div>
+<div id="L1090"><a href="#L1090">01090</a> [PDF p.13]                                                                                               Masti, D., &amp; Bemporad, A. (2021). Learning nonlinear state–space models using</div>
+<div id="L1091"><a href="#L1091">01091</a> [PDF p.13]      identification using deep encoder networks. In The proc. of machine learning</div>
+<div id="L1092"><a href="#L1092">01092</a> [PDF p.13]                                                                                                   autoencoders. Automatica, 129, Article 109666.</div>
+<div id="L1093"><a href="#L1093">01093</a> [PDF p.13]      research (3rd annual learning for dynamics &amp; control conference), Vol. 144 (pp.</div>
+<div id="L1094"><a href="#L1094">01094</a> [PDF p.13]                                                                                               Naitali, A., &amp; Giri, F. (2016). Wiener–Hammerstein system identification – an</div>
+<div id="L1095"><a href="#L1095">01095</a> [PDF p.13]      241–250). Zurich.</div>
+<div id="L1096"><a href="#L1096">01096</a> [PDF p.13]                                                                                                   evolutionary approach. International Journal of Systems Science, 47(1), 45–61.</div>
+<div id="L1097"><a href="#L1097">01097</a> [PDF p.13] Billings, S. A. (2013). Nonlinear system identification: NARMAX methods in the time,          Ohtsuka, T. (2005). Model structure simplification of Nonlinear Systems via</div>
+<div id="L1098"><a href="#L1098">01098</a> [PDF p.13]      frequency, and spatio-temporal domains. Wiley.                                               immersion. IEEE Transactions on Automatic Control, 50(5), 607–618.</div>
+<div id="L1099"><a href="#L1099">01099</a> [PDF p.13] Birpoutsoukis, G., Marconato, A., Lataire, J., &amp; Schoukens, J. (2017). Regularized            Paduart, J., Lauwers, L., Pintelon, R., &amp; Schoukens, J. (2012). Identification of</div>
+<div id="L1100"><a href="#L1100">01100</a> [PDF p.13]      nonparametric Volterra kernel estimation. Automatica, 82, 324–327.                           a Wiener–Hammerstein system using the polynomial nonlinear state space</div>
+<div id="L1101"><a href="#L1101">01101</a> [PDF p.13] Bock, H. G. (1981). Numerical treatment of inverse problems in chemical reaction                  approach. Control Engineering Practice, 20(11), 1133–1139.</div>
+<div id="L1102"><a href="#L1102">01102</a> [PDF p.13]      kinetics. In The proc. of modelling of chemical reaction systems (pp. 102–125).          Paduart, J., Lauwers, L., Swevers, J., Smolders, K., Schoukens, J., &amp; Pintelon, R.</div>
+<div id="L1103"><a href="#L1103">01103</a> [PDF p.13]      Springer.                                                                                    (2010). Identification of nonlinear systems using polynomial nonlinear state</div>
+<div id="L1104"><a href="#L1104">01104</a> [PDF p.13] Boyd, S., &amp; Chua, L. (1985). Fading memory and the problem of approximating                       space models. Automatica, 46(4), 647–656.</div>
+<div id="L1105"><a href="#L1105">01105</a> [PDF p.13]      nonlinear operators with Volterra series. IEEE Transactions on Circuits and              Priestley, M. B. (1988). Non-linear and non-stationary time series analysis (pp.</div>
+<div id="L1106"><a href="#L1106">01106</a> [PDF p.13]      Systems, 32(11), 1150–1161.                                                                  59–63). London: Academic Press.</div>
+<div id="L1107"><a href="#L1107">01107</a> [PDF p.13] Darouach, M., &amp; Zasadzinski, M. (1997). Unbiased minimum variance estimation                  Ribeiro, A. H., Tiels, K., Umenberger, J., Schön, T. B., &amp; Aguirre, L. A. (2020). On</div>
+<div id="L1108"><a href="#L1108">01108</a> [PDF p.13]      for systems with unknown exogenous inputs. Automatica, 33(4), 717–719.                       the smoothness of nonlinear system identification. Automatica, 121, Article</div>
+<div id="L1109"><a href="#L1109">01109</a> [PDF p.13] Decuyper, J., Dreesen, P., Schoukens, J., Runacres, M. C., &amp; Tiels, K. (2019).                    109158.</div>
+<div id="L1110"><a href="#L1110">01110</a> [PDF p.13]      Decoupling multivariate polynomials for nonlinear state-space models. IEEE               Schön, T. B., Wills, A., &amp; Ninness, B. (2011). System identification of nonlinear</div>
+<div id="L1111"><a href="#L1111">01111</a> [PDF p.13]      Control Systems Letters, 3(3), 745–750.                                                      state-space models. Automatica, 47(1), 39–49.</div>
+<div id="L1112"><a href="#L1112">01112</a> [PDF p.13] Decuyper, J., Runacres, M., Schoukens, J., &amp; Tiels, K. (2020). Tuning                         Schoukens, M. (2021). Improved initialization of state-space artificial neural</div>
+<div id="L1113"><a href="#L1113">01113</a> [PDF p.13]      nonlinear state-space models using unconstrained multiple shooting.                          networks. In The proc. of the European control conference (pp. 1913–1918).</div>
+<div id="L1114"><a href="#L1114">01114</a> [PDF p.13]      IFAC-PapersOnLine, 53(2), 334–340.                                                       Schoukens, J., &amp; Ljung, L. (2009). Wiener–Hammerstein benchmark. In LiTH-ISY-R.</div>
+<div id="L1115"><a href="#L1115">01115</a> [PDF p.13] Falck, T., Pelckmans, K., Suykens, J. A., &amp; De Moor, B. (2009). Identification                    Linköping University Electronic Press.</div>
+<div id="L1116"><a href="#L1116">01116</a> [PDF p.13]      of Wiener–Hammerstein systems using LS-SVMs. IFAC Proceedings Volumes,                   Schoukens, J., &amp; Ljung, L. (2019). Nonlinear system identification: A user-oriented</div>
+<div id="L1117"><a href="#L1117">01117</a> [PDF p.13]      42(10), 820–825.                                                                             road map. IEEE Control Systems Magazine, 39(6), 28–99.</div>
+<div id="L1118"><a href="#L1118">01118</a> [PDF p.13]                                                                                               Schoukens, M., Pintelon, R., &amp; Rolain, Y. (2014). Identification of Wiener–</div>
+<div id="L1119"><a href="#L1119">01119</a> [PDF p.13] Forgione, M., Mejari, M., &amp; Piga, D. (2022). Learning neural state-space models:</div>
+<div id="L1120"><a href="#L1120">01120</a> [PDF p.13]                                                                                                   Hammerstein systems by a nonparametric separation of the best linear</div>
+<div id="L1121"><a href="#L1121">01121</a> [PDF p.13]      do we need a state estimator? arXiv preprint arXiv:2206.12928.</div>
+<div id="L1122"><a href="#L1122">01122</a> [PDF p.13]                                                                                                   approximation. Automatica, 50(2), 628–634.</div>
+<div id="L1123"><a href="#L1123">01123</a> [PDF p.13] Forgione, M., &amp; Piga, D. (2021). Continuous-time system identification with</div>
+<div id="L1124"><a href="#L1124">01124</a> [PDF p.13]                                                                                               Schoukens, M., &amp; Tiels, K. (2017). Identification of block-oriented nonlinear</div>
+<div id="L1125"><a href="#L1125">01125</a> [PDF p.13]      neural networks: Model structures and fitting criteria. European Journal of</div>
+<div id="L1126"><a href="#L1126">01126</a> [PDF p.13]                                                                                                   systems starting from linear approximations: A survey. Automatica, 85,</div>
+<div id="L1127"><a href="#L1127">01127</a> [PDF p.13]      Control, 59, 69–81.</div>
+<div id="L1128"><a href="#L1128">01128</a> [PDF p.13]                                                                                                   272–292.</div>
+<div id="L1129"><a href="#L1129">01129</a> [PDF p.13] Gedon, D., Wahlström, N., Schön, T. B., &amp; Ljung, L. (2021). Deep state</div>
+<div id="L1130"><a href="#L1130">01130</a> [PDF p.13]                                                                                               Schoukens, M., &amp; Tóth, R. (2020). On the initialization of nonlinear LFR model</div>
+<div id="L1131"><a href="#L1131">01131</a> [PDF p.13]      space models for nonlinear system identification. IFAC-PapersOnLine, 54(7),</div>
+<div id="L1132"><a href="#L1132">01132</a> [PDF p.13]                                                                                                   identification with the best linear approximation. IFAC-PapersOnLine, 53(2),</div>
+<div id="L1133"><a href="#L1133">01133</a> [PDF p.13]      481–486.</div>
+<div id="L1134"><a href="#L1134">01134</a> [PDF p.13]                                                                                                   310–315.</div>
+<div id="L1135"><a href="#L1135">01135</a> [PDF p.13] Giri, F., &amp; Bai, E.-W. (2010). Block-oriented nonlinear system identification, Vol. 1.        Sjöberg, J., Lauwers, L., &amp; Schoukens, J. (2012). Identification of Wiener–</div>
+<div id="L1136"><a href="#L1136">01136</a> [PDF p.13]      Springer.                                                                                    Hammerstein models: Two algorithms based on the best split of a linear</div>
+<div id="L1137"><a href="#L1137">01137</a> [PDF p.13] Glorot, X., &amp; Bengio, Y. (2010). Understanding the difficulty of training deep                    model applied to the SYSID’09 benchmark problem. Control Engineering</div>
+<div id="L1138"><a href="#L1138">01138</a> [PDF p.13]      feedforward neural networks. In The proc. of the thirteenth international con-               Practice, 20(11), 1119–1125.</div>
+<div id="L1139"><a href="#L1139">01139</a> [PDF p.13]      ference on artificial intelligence and statistics (pp. 249–256). JMLR Workshop           Sliwiński, P., Marconato, A., Wachel, P., &amp; Birpoutsoukis, G. (2017). Non-linear</div>
+<div id="L1140"><a href="#L1140">01140</a> [PDF p.13]      and Conference Proceedings.                                                                  system modelling based on constrained Volterra series estimates. IET Control</div>
+<div id="L1141"><a href="#L1141">01141</a> [PDF p.13] Isidori, A. (1985). Nonlinear control systems: An introduction. Springer.                         Theory &amp; Applications, 11(15), 2623–2629.</div>
+<div id="L1142"><a href="#L1142">01142</a> [PDF p.13] Isidori, A., Sontag, E., &amp; Thoma, M. (1995). Nonlinear control systems, Vol. 3.               Suykens, J. A. K., Moor, B. L. R. D., &amp; Vandewalle, J. (1995). Nonlinear system</div>
+<div id="L1143"><a href="#L1143">01143</a> [PDF p.13]      Springer.                                                                                    identification using neural state space models, applicable to robust control</div>
+<div id="L1144"><a href="#L1144">01144</a> [PDF p.13] Jansson, M. (2003). Subspace identification and ARX modeling. IFAC Proceedings                    design. International Journal of Control, 62(1), 129–152.</div>
+<div id="L1145"><a href="#L1145">01145</a> [PDF p.13]      Volumes, 36(16), 1585–1590.                                                              Tallec, C., &amp; Ollivier, Y. (2017). Unbiasing truncated backpropagation through</div>
+<div id="L1146"><a href="#L1146">01146</a> [PDF p.13] Katayama, T., et al. (2005). Subspace methods for system identification, Vol. 1.                  time. arXiv preprint arXiv:1705.08209.</div>
+<div id="L1147"><a href="#L1147">01147</a> [PDF p.13]      Springer.                                                                                Tóth, R. (2010). Modeling and identification of linear parameter-varying systems,</div>
+<div id="L1148"><a href="#L1148">01148</a> [PDF p.13] Khandelwal, D. (2022). Springer theses, Automating data-driven modelling of                       Vol. 403. Springer.</div>
+<div id="L1149"><a href="#L1149">01149</a> [PDF p.13]      dynamical systems: An evolutionary computation approach. Springer.                       Willems, J. C. (2013). Open stochastic systems. IEEE Transactions on Automatic</div>
+<div id="L1150"><a href="#L1150">01150</a> [PDF p.13] Kingma, D. P., &amp; Ba, J. (2015). Adam: A method for stochastic optimization. In                    Control, 58(2), 406–421.</div>
+<div id="L1151"><a href="#L1151">01151</a> [PDF p.13]      International conference on learning representations.                                    Williams, M. O., Hemati, M. S., Dawson, S. T., Kevrekidis, I. G., &amp; Rowley, C.</div>
+<div id="L1152"><a href="#L1152">01152</a> [PDF p.13] Lauwers, L., Pintelon, R., &amp; Schoukens, J. (2009). Modelling of Wiener–                           W. (2016). Extending data-driven Koopman analysis to actuated systems.</div>
+<div id="L1153"><a href="#L1153">01153</a> [PDF p.13]      Hammerstein systems via the best linear approximation. IFAC Proceedings                      IFAC-PapersOnLine, 49(18), 704–709.</div>
+<div id="L1154"><a href="#L1154">01154</a> [PDF p.13]      Volumes, 42(10), 1098–1103.                                                              Wills, A., &amp; Ninness, B. (2009). Estimation of generalised Hammerstein–Wiener</div>
+<div id="L1155"><a href="#L1155">01155</a> [PDF p.13] Lee, H.-G., &amp; Marcus, S. (1988). Immersion and immersion by nonsingular                           systems. IFAC Proceedings Volumes, 42(10), 1104–1109.</div>
+<div id="L1156"><a href="#L1156">01156</a> [PDF p.13]      feedback of a discrete-time nonlinear system into a linear system. IEEE</div>
+<div id="L1157"><a href="#L1157">01157</a> [PDF p.13]      Transactions on Automatic Control, 33(5), 479–483.</div>
+<div id="L1158"><a href="#L1158">01158</a> [PDF p.13] </div>
+<div id="L1159"><a href="#L1159">01159</a> [PDF p.13]                                                                                          12</div>
+<div id="L1160"><a href="#L1160">01160</a> [PDF p.13] </div>
+<div id="L1161"><a href="#L1161">01161</a> [PDF p.14] G.I. Beintema, M. Schoukens and R. Tóth                                                                                                    Automatica 156 (2023) 111210</div>
+<div id="L1162"><a href="#L1162">01162</a> [PDF p.14] </div>
+<div id="L1163"><a href="#L1163">01163</a> [PDF p.14] </div>
+<div id="L1164"><a href="#L1164">01164</a> [PDF p.14]                         Gerben I. Beintema is a Doctoral Candidate at the Con-          and an ERC Starting Grant in 2022. His main research interests include the</div>
+<div id="L1165"><a href="#L1165">01165</a> [PDF p.14]                         trol Systems (CS) Group at the Department of Electrical         measurement and data-driven modeling and control of nonlinear dynamical</div>
+<div id="L1166"><a href="#L1166">01166</a> [PDF p.14]                         Engineering. His current research is on the intersection        systems using system identification and machine learning techniques.</div>
+<div id="L1167"><a href="#L1167">01167</a> [PDF p.14]                         of nonlinear system identification and deep learning,</div>
+<div id="L1168"><a href="#L1168">01168</a> [PDF p.14]                         under the supervision of Associate Professor Roland</div>
+<div id="L1169"><a href="#L1169">01169</a> [PDF p.14]                         Tóth and assistant Professor Maarten Schoukens. His                                       Roland Tóth received his Ph.D. degree with Cum Laude</div>
+<div id="L1170"><a href="#L1170">01170</a> [PDF p.14]                         main research interest is improving and understanding                                     distinction at the Delft Center for Systems and Con-</div>
+<div id="L1171"><a href="#L1171">01171</a> [PDF p.14]                         deep nonlinear state-space identification to obtain in-                                   trol (DCSC), Delft University of Technology (TUDelft)</div>
+<div id="L1172"><a href="#L1172">01172</a> [PDF p.14]                         terpretable, robust, and generally applicable methods.                                    in 2008. He was a Post-Doctoral Research Fellow at</div>
+<div id="L1173"><a href="#L1173">01173</a> [PDF p.14]                         Gerben I. Beintema obtained his B.Sc. degree in Applied                                   TUDelft in 2009 and at the Berkeley Center for Control</div>
+<div id="L1174"><a href="#L1174">01174</a> [PDF p.14]                         Physics from the Eindhoven University of Technology                                       and Identification, University of California, Berkeley in</div>
+<div id="L1175"><a href="#L1175">01175</a> [PDF p.14] (TU/e), cum laude, in 2019.                                                                                       2010. He held a position at DCSC, TUDelft in 2011-12,</div>
+<div id="L1176"><a href="#L1176">01176</a> [PDF p.14]                                                                                                                   then he joined to the Control Systems (CS) Group at the</div>
+<div id="L1177"><a href="#L1177">01177</a> [PDF p.14]                                                                                                                   Eindhoven University of Technology (TU/e). Currently,</div>
+<div id="L1178"><a href="#L1178">01178</a> [PDF p.14]                          Maarten Schoukens is an Assistant Professor in the                                       he is an Associate Professor at the CS Group, TU/e</div>
+<div id="L1179"><a href="#L1179">01179</a> [PDF p.14]                          Control Systems group of the Department of Electrical                                    and a senior researcher at the Systems and Control</div>
+<div id="L1180"><a href="#L1180">01180</a> [PDF p.14]                          Engineering at the Eindhoven University of Technology.         Laboratory, Institute for Computer Science and Control (SZTAKI) in Budapest,</div>
+<div id="L1181"><a href="#L1181">01181</a> [PDF p.14]                          He received a master’s degree in electrical engineering        Hungary. His research interests are in identification and control of linear</div>
+<div id="L1182"><a href="#L1182">01182</a> [PDF p.14]                          and a Ph.D. degree in engineering from the Vrije               parameter-varying (LPV) and nonlinear systems, developing machine learning</div>
+<div id="L1183"><a href="#L1183">01183</a> [PDF p.14]                          Universiteit Brussel (VUB), Brussels, Belgium, in 2010         methods with performance and stability guarantees for modeling and control,</div>
+<div id="L1184"><a href="#L1184">01184</a> [PDF p.14]                          and 2015 respectively. From 2015 to 2017, he has been          model predictive control and behavioral system theory. On the application</div>
+<div id="L1185"><a href="#L1185">01185</a> [PDF p.14]                          a Post-Doctoral Researcher with the ELEC Department,           side, his research focuses on advancing reliability and performance of precision</div>
+<div id="L1186"><a href="#L1186">01186</a> [PDF p.14]                          VUB. In October 2017 he joined the Control Systems             mechatronics and autonomous robots/vehicles with LPV and learning-based</div>
+<div id="L1187"><a href="#L1187">01187</a> [PDF p.14]                          research group, TU/e, Eindhoven, The Netherlands as            motion control. Dr. Tóth received the TUDelft Young Researcher Fellowship</div>
+<div id="L1188"><a href="#L1188">01188</a> [PDF p.14]                          a Post-Doctoral Researcher, in 2018 he became an               Award in 2010, the VENI award of The Netherlands Organisation for Scientific</div>
+<div id="L1189"><a href="#L1189">01189</a> [PDF p.14] Assistant Professor in the same group. Maarten was awarded an FWO Ph.D.                 Research in 2011 and the Starting Grant of the European Research Council in</div>
+<div id="L1190"><a href="#L1190">01190</a> [PDF p.14] Fellowship in 2011, a Marie Skłodowska-Curie Individual Fellowship in 2018,             2016.</div>
+<div id="L1191"><a href="#L1191">01191</a> [PDF p.14] </div>
+<div id="L1192"><a href="#L1192">01192</a> [PDF p.14] </div>
+<div id="L1193"><a href="#L1193">01193</a> [PDF p.14] </div>
+<div id="L1194"><a href="#L1194">01194</a> [PDF p.14] </div>
+<div id="L1195"><a href="#L1195">01195</a> [PDF p.14]                                                                                    13</div>
+<div id="L1196"><a href="#L1196">01196</a> [PDF p.14] </div></pre>

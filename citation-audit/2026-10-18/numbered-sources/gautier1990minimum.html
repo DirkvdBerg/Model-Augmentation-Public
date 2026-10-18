@@ -1,0 +1,515 @@
+<meta charset="utf-8"><title>gautier1990minimum</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1]      Direct calculation of minimum set of inertial parameters of</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1]                              serial robots</div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1]                                       Maxime Gautier, Wisama Khalil</div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1] </div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1] </div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1] </div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1]       To cite this version:</div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1]      Maxime Gautier, Wisama Khalil. Direct calculation of minimum set of inertial parameters of serial robots.</div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1]      IEEE Transactions on Robotics and Automation, 1990, 6 (3), pp.368-373. ⟨10.1109/70.56655⟩. ⟨hal-05223021⟩</div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1] </div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1] </div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1] </div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1] </div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1]                                         HAL Id: hal-05223021</div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1]                               https://hal.science/hal-05223021v1</div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1]                                            Submitted on 26 Aug 2025</div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1] </div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1] </div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1] </div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1] </div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1]     HAL is a multi-disciplinary open access archive             L’archive ouverte pluridisciplinaire HAL, est des-</div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1] for the deposit and dissemination of scientific re-        tinée au dépôt et à la diffusion de documents scien-</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1] search documents, whether they are published or not.       tifiques de niveau recherche, publiés ou non, émanant</div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1] The documents may come from teaching and research          des établissements d’enseignement et de recherche</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1] institutions in France or abroad, or from public or pri-   français ou étrangers, des laboratoires publics ou</div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1] vate research centers.                                     privés.</div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1] </div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1] </div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1]  Distributed under a Creative Commons CC BY-NC 4.0 - Attribution - Non-commercial use - International</div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1]                                              License</div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1] </div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.2]                                                         Accepted Manuscript</div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.2] </div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.2] </div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.2] </div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.2] </div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.2]        Direct Calculation of Minimum Set of Inertial                                                      11. DLscRIPno, OF I HL Rot11J1</div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.2]                 Parameters of Serial Robots                                     The system to be considered is an open-loop mechanism of n -­</div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.2]                                                                                 links, where link O is the base, whereas link n is the terminal</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.2]           M. GAUTIER AND W. KHALIL. 1rNJoR \IC\1BER. ,err                  link. The description of the syskm will be carried out by the use</div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.2]                                                                            of the modified Denavit-Hartenherg notation (19]. [20]. Thanh to</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.2]   Abstract- The determination of the minimum set of inerlial param­        this description, the closed-form solution of regrouping the inertial</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.2] eters of robots contributes to the reduction of the computational cost     parameters has been obtained. The coordinate frame j is a&quot;i[meJ</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.2] of the dynamic models and simplifies the identification of the inertial    fixed with respect to link j. The z I axis is along the axis of joint J.</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.2] parameters. These parameters can be obtained from the classical inertial   and the X axis is along the common perpendicular of z I and z 1 1 1</div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.2]                                                                                      .1</div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.2] </div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.2] </div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.2] parameters bJ eliminating those that have no effect on the dynamic         The frame j is denned with respect to frame j - l as a !&#x27;unction of</div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.2] model and by regrouping some others.                                       the parameters ( aJ, d 1, 0 1, r 1 ). The type of joint j will he defined</div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.2]   This paper presents a direct method of determining the minimum           by CJ,, where CJ, = 0 for j rotational, CJ 1 � I for j translational. and</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.2]                                                                            ii 1     (l-01).</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.2] set of inertial parameters of serial robots. The given method permits</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.2] determination of most of the regrouped parameters hJ means of closed­</div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.2]                                                                                                     Ill. THc MINIMtM hcR r&quot;L PsRA \IE I cRS</div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.2] form relations.</div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.2]                                                                              The minimum inertial parameters are ddined as the minimum set</div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.2]                                                                            of constant inertial parameters that do not contain the zero element</div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.2]    In order to increase the dvnamic performance of robots, many            and arc sufficient to calculate the dynamic model of the robot. They</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.2] control schemes based on the dynamic nrndel have been presented            can be obtained from the classical inertial parameters b) eliminating</div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.2] [l]-[4]. Two problems ha,c to he solved for real lime implementation       those that have no effect on the dynamic model and h) regrouping</div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.2] of these control law,:                                                     some other parameters.</div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.2]     I) The numerical values of the inertial parameters must be known.      A. The C/as,ical Inertial Paraml&#x27;lcn</div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.2] The solution of this problem has been investigakd by the use of iden­</div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.2]                                                                               The inertial parameters of link j arc given by the ,cctor X , which</div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.2] tification procedures based on a dynamic model linear in the inertial</div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.2] parameters [5]-19[. The classification and the determination of the        is denoted as</div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.2] identifiable parameter, (the minimum inertial parameters) increases            X&#x27; - IXX;XY,XZi .YY 1 .Y Z, .ZZ;.mX 1 .mY 1 .mZ 1 .111 1 1 1 ( l 1</div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.2] the robusiness of the identification process [8].</div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.2]     2) The computational cost of the dynamic model must be reduced.        where (XX 1 ... ·,ZZ1) an, the elements of the inertia matrix &#x27;J_; .</div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.2] The solution of this problem has been carried out by the use of the        which defines the inertia of link j around the origin nf frame j.</div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.2] customized Newton-Euler method [IO]. (11]. To increase the number          ( mXJ, mY 1, mZ1) are the clements of &#x27;mS,, which defines the first</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.2] of parameters that are equal to zero and. consequently, to reduce the      moments of link j. and m; is the ma,s of link j.</div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2] number of operations of the dynamic model. the use of the minimum             Using this set of parameters and denoting E as the kinetic encrg)</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2] set of inertial parameters in a customized Newton -Euler method has        and U as the potential energy of the robot. we deduce that</div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2] been proposed [ 12). I 13].</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2]    The dcterrmnation of the minimum set ot inertial parameters has</div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2] been investigated in [12]-ll5]:</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2]    Khosla [14] has used a symbolic Newton-Euler algorithm. Some                                                         Ill</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2] results concerning some parameters in the case of robots whose suc­                           111</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2] </div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2] cessive axes are either parallel or perpendicular are given. The detec­</div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2] tion of most of the combined parameter, rcquirC&#x27;, a long examination</div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2]                                                                                    U-     L</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2]                                                                                           1         l</div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2]                                                                                                          i)L1</div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2]                                                                                                         i)X, X, =   L (dU, t W,)X, L DU.X,</div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.2]                                                                                                                     .         I</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.2]                                                                                                                                       cc         (3 )</div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.2] </div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.2] of the symbolic Newton-Euler model on a case-by-case basis.                where m is equal to IOn. X I is an inertial parameter. and W, is</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.2]    Khalil et al. (13]. [15] have determined the minimum set of inertial    constant.</div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.2] parameters by the examination of the symbolic expressions of the</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.2] inertia matrix and the gravity forces of a Lagrangian dynamic model.       B. Parameters Having 1\/0 £&#x27;jfecl on the Dynamic A1odel</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.2] Although these expressions are generated automatically by computer             Using the Lagrange equation. one can derive that if</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.2] (16], the detection of the combined inertial parameters may take</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.2] several hours.                                                                                              DE, -0 and d[;, =0</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.2]    The aim of this paper is to present a general and direct method to</div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.2] determine the minimum set of inertial parameters of serial robots.         the corresponding inertial parameter X, has no effect on the dy­</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.2] Most of these parameters (or in most cases, all of them) will he           namic model. Thus. X; is not an element of the minimum inc11ial</div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.2] determined by the use of the clrn,ed-form solution.                        parameters.</div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.2]    Coincidently with our work [17], similar results concerning the            The inertial parameters satisfying these conditions belong to the</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.2] special case of rotational robots whose successive axes are perpen­        links near the base side. They can be determined easily by hand</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.2] dicular or parallel have been given by Mayeda et al. [18].                 or automatically by computer (16]. Supposing that r 1 is the first</div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.2]                                                                            rotational joint and r2 the first succeeding rotational joint not parallel</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.2]                                                                            to r,, one can derive most of the parameters having no effect by the</div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.2]                                                                            following rules:</div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.2]   The authors are with the Laboratoire d&#x27;Automatique de Nantes URA</div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.2] C.N.R.S., E.N.S.M., Nantes, France                                          I) If joint j is translational and j&lt;r 1, then XX;,XY1,</div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.2]                                                                            XZ;, YY;, YZ;, ZZ 1 , mX 1 , mY1 , mZ1 have no effect on the dy-</div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.2] </div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.2] </div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.2] </div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.2] </div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.2]                                                                            1</div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.2] </div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.3]                                                          Accepted Manuscript</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.3] </div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.3] </div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.3] namic model due to the fact that the angular velocity of link j is As au/axi,, -1 = 0 for k =; l , ···,6, and taking into account that</div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.3]  equal 10zero.                                                               (see 1he Appendix) (Jf,. = &gt;{; (k = 7,• •· ,IO), (12) can be written</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.3]    2) lf the axis of joint r I is parallel 10 the direc1ion of gravity and as</div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.3] 1he axes of joints j &lt; r 1 are parallel to 1he axes of joint r 1, or if</div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.3] r 1 = I, then mX,.,mY,. have no effect on the dynamic model.                                a       �                = �&gt; / �</div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.3]                                                                                                       10                 10</div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.3]                                                                                               u; =       &gt;./�</div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.3]                                                                                                             ,                                 ( 13)</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.3] Moreover, in the case of r1 = I, m 1 has no effect on the dynamic                          ax&#x27;      L.r    , ax;k-1</div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.3]                                                                                                               k</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.3]                                                                                                                         L .r , .• axi-•.</div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.3] model.</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.3]                                                                                                     k=7                 k=I         k</div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.3] </div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.3]     3) For a link j such tha1 r 1 5, j &lt; r2 and 1he axis of link) is paral­ The expressions of},/ andjl are given in the Appendix.</div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.3] lel 101ha1 of r 1 , 1he parame1ersXX;,XY;, XZ1, YYh YZ;, mZ;</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.3] have no effec1 on the dynamic model. The elimination of B. General Regrouping Relations of Inertial Parameters</div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.3] mX;, mY;, m; mus1 be studied on a case-by-case basis. The pa­                   Lei us examine lhe regrouping of lhe inertial parameters of link j</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.3] rame1ers 10 be eliminated if the axis of joint j is perpendicular to on those of link j -I by lhe use of the recursive relations of}./ and</div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.3] that of r I can be deduced easily.                                          f1 given in the Appendix. We consider the following two cases:</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.3]    4) For the links j 2: r2 , all the parameters of the inertia tensor          I) If joinl) is rotational, we see that</div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.3] have an effect on the dynamic model. Therefore, if the parameters</div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.3]                                                                                .a) the coefficients &gt;-;0 are constant for k = I,··•, 10, whereas</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.3] mXk,mYk,mZk appear in the model, then all the parameters of f: (q, q ) = 0. Thl!S,D� can be obtained as linear combina1ions of</div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.3]                                                                                0 -i</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.3] links j &gt; k will appear in the dynamic model.                               DEi , i .e., DE;0 verifies the condition (Sa). Taking into account</div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.3]                                                                                                            0</div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.3] </div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.3]                                                                              (13), (Sb) is also verified . Thus, the tenth parame1er m1 can be</div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.3] C. Conditions for Regrouping the Inertial Parameters                         regrouped to rhe _inertial parame1ers of Iink j - I. Using (6) and the</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.3]     An inertial parameter X; can be regrouped to some other param­ expressions of 1-(0 ,k given in the Appendix, we gel</div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.3] e-ters X;, , ···,X;, if</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.3]                                                                                                    XXR;-i =XX1 _1 +r;m;</div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.3]            DE;=a;,DE;i + · · · +a;,DE;, = z=a,kDE;k                   (5a)                      XYR;-i = XY;- 1 +d;r1Saimi</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.3]                                                    k=I</div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.3] and                                                                                            XZR;-1 = XZ;-1 -d;r;Cai m;</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.3]                                                                                          YY Ri-, = YY;-1 +(d} + r}Ca})m;</div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.3]                                                   r</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.3]          dU; = a;, dU; , +···+a;, dU;, =La;, dU;k             (Sb)</div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.3]                                              k=I                                           YZR;- 1 = YZ1 -1 + r}Ca 1 Sa;m;</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.3] with a; k = constam; therefore, wc gel the same value of £ and</div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.3]                                                                                           ZZR;-1 =ZZ;-1 +(d}+r;Sa;&gt;m1</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.3] au/&amp;q (and consequently, the dynamic model) if we use the p a ­</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.3] rameters X;, X; 1 ,···,X;, or if w e put X; equal t o zero and the                             mXR;- 1 = mX;-1 +dJ m;</div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.3] parameters X;k equal to X R;k where</div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.3]                                                                                              mYR;-1= mY,_, - r;Sa1 m1</div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.3]                                                                     (6)</div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.3]                                                                                              mZR1 -1 ; mZ1 -• + r;Ca 1 m1</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.3]   Relation (5) is similar to that given in [13). Its use by calculating</div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.3] DE; and dU; is time consuming and error prone, especially for                                     mR1-1 =m;- 1 +m;.                           (14)</div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.3] robots having n � 3. In the following section, we present a method</div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.3] that overcomes this difficulty.                                             . b) The coefficients �- k are cons1ant for k = I,· · · , 10, whereas</div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.3]                                                                           f9(q, tj) = 0. Similar 10 lhe foregoing case, the parameter mZJ can</div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.3]                                                                            be regrouped to the in�rtial parameters of link j -I.</div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.3]                                                                              c) The sum of DE� and DE�, corresponding to the parameters</div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.3] IV. CLOSED•fuRM SOLUTION OF R£GROUPING THE INERTIAL PARAMETERS</div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.3] </div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.3]   Let Xf be the ith inertial parameter of link), with i = I,..· ,IO,</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.3] and j 7 I_,••• ,n. Denoting DE1 the vector of the componen1s              XXi and YY;, respectively, qn- be expressed through constanl c o ­</div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.3] 8£/oXf and DUi the vector of 1he compooems au/aXf                         efficienlS as a function of DE� ,, k = I,···,10. Thus, XX; or</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.3]                                                                           YY; can be regrouped to the parameters of link j - I and YY; or</div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.3]                               8£ i)E ... f)E                               XX;. We will always choose to regroup YY1 ,</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.3]                   DEi = [                                           (7)</div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.3]                                                   ]r                         As a conclusion, if joint j is rotational, the parame1ers</div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.3]                               ax; ax;      ax;0                           (YY;, mZ1, mi ) can be eliminated, whereas the combined parame­</div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.3]                                                                           ters of links j and j -I are given as</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.3]                               au au .. au</div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.3]                  »vi = [</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.3]                                                 ]r</div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.3]                               ax; ax� · ax;0                                                      XXR; = XX; - YY1</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.3]                                                                     (8)</div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.3] </div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.3] The main idea is to calculateD£i andDUj as a function ofDF.Y- 1                      XXR;-i =XX;-, + YY; +2r1 mZ1 +r;m;</div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.3] and Dul- •, respectively.</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.3]                                                                                     XYR;-1 =XY;-1 +d;Sa;mZ; +d1 r1 Scxi m1</div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.3] A. Recursive Relations ofDEi andDUi</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.3]                                                                                     XZRJ-i = XZ;-1 - d;Ca;mZ; -d1 r1 Ca1m1</div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.3]   The recursive relations ofDEi and DUi can be written as</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.3]                                                                            YYR;-i = YY;-i +Ca7YY; +2r;CaJmZ; +(d] +r;Ca})m1</div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.3]                                                                    (9)</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.3] and                                                                        YZR;-i &quot;&quot;YZ1_, + Ca1 Sa;YY; + 2r;Ca;Sa1 mZ1</div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.3]                           DU1 = (JIDU1-1                          (10)                                                           +r;Ccx1 Sa;m;</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.3] or in the expanded form, we have                                            ZZR 1_1 = ZZ;-1 +Sa7YY; + 2r1 Scx;mZ 1           + (d]+ r7Sa7)m1</div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.3]                 a£    � &gt;/ DE       .                                                          mXR;- 1 = mX;-1 +di mJ</div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.3]                          10</div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.3] </div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.3]                {) j = L.,, i,k j-1 +qjfi �q,q&#x27;)                   ( II)</div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.3]                  XI   k =I    f)Xk                                                     mYR;-i =mY;-1 -Scx1mZ1 -r;Sa;m;</div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.3]                        au =� j �                                                       mZR ;-1 = mZ1 -1 + Ca;mZ; +r;Ca;m;</div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.3]                                  10</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.3] </div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.3]                                   . (J   ;-1.                     ( 12)</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.3]                        axil     L</div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.3]                                 k-1r u axk                                                                                                    (15)</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.3] </div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.3] </div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.3] </div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.3] </div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.3]                                                                             2</div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.3] </div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.4]                                                                Accepted Manuscript</div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.4] </div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.4] </div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.4]    2) If joint j is translational, we see that &#x27;A;, k are constant, whereas</div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.4] f; (q , q ) = 0 for i = 1 , · · · , 6 and k = I , · · · , 10. Thus, the param­</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.4] eters XX1 , XY 1 , XZ 1 , YY 1 , YZ 1 , zz i can be regrouped to the</div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.4] inertial parameters of link j - I by the use of the following rela­                                                                                    &#x27;   &#x27;</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.4] tions:                                                                                                                                           -----...1 04 1-</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.4]                                                                                                                                                          1    J</div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.4] </div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.4]      XXRj - 1 = XXj - 1 + co;xxj - 2CS01 XY 1 + soJYYj</div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.4] XYR; - , = XY J - 1 + CSO; Ca;XXJ + (COJ - S07)Ca;XY;</div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.4]                         -CO;SctJ XZi - CSO;CctJ YY i + SOJSct1 YZ;</div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.4] XZR J - i = XZ J - i + CSOJ Sct;XX i + (CO] - SO])Sai XY;</div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.4]                        +COJ CctJ XZ; - CSOJ Sct;YY; - S01 Ca; YZ;</div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.4]         YYR 1 _ , = YY; - , + S07Ca7XXJ + 2CSOi Ca7XY J</div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.4]                       - 2S()J CSa1 XZi + C07Ca7YY J</div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.4]                       - 2COJ CSaJ YZ i + Sa7ZZ;</div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.4]                                                                                                               Fig. I .     PUMA    robot.</div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.4]       YZR 1 _ , = YZJ - i + S07CSaJXX; + 2CSO;CSa;XY 1</div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.4]                     + S O; (Ca; - Sa7)XZ1 + CO} CSa i Y Y;                                                               TABLE I</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.4]                                                                                                  GEOMETRIC PARAMETERS OF THE PUMA Roem</div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.4]                     + CO; (CaJ - S a7)YZ; - CSaJZZ J</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.4]                                                                                                  i       Oj          a;       d;            8J    r;</div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.4] ZZR; - i = ZZ; - , + S07Sa7XX; + 2CSO;Sa7XY;</div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.4]                                                                                                   ,      0          0         0         0,        0</div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.4]       +2SO;CSa J XZ; + C07Sa7YY J + 2CO;CSa; YZ J + Ca7ZZ                                         2      0         -9 0       0         0,        0</div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.4] </div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.4]                                                                            ( 1 6)                3       0           0        D3        83       R3</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.4] </div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.4] where CS( -) is equal to cos ( · ) sin ( · ) .                                                    4      0         - 90       D4        84       R4</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.4] </div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.4]      Remarks: l ) We note that ( 1 6) corresponds t o the following                               5      0          90        0         85        0</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.4] matrix equation:</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.4]                                                                                                   6      0         - 90        0        0,        0</div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.4]                j - lJR ; - 1 = j - l Jj - 1 + i - 1 A /I1 1A ; - 1        ( 1 7)</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.4] where J - 1A J is the (3 x 3) matrix defining the orientation of frame                2) If Ca i = 0, then mY J - I has no effect on the dynamic model ,</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.4] j with respect to frame j - l .                                                     and</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.4]    This relation can be obtained directly by noting that the angular</div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.4] velocity of link j is equal to that of link j - 1 if joint j is translational .             Y YR; - , = YY; - 1 + 2d1 COi mXJ - 2d;S01 mY 1</div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.4]    2) From the general regrouped results and taking into account                               mXR1 - 1 = MX1 _ , + C01 mXJ - SOi mY;</div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.4] the eliminated parameters of link I , we deduce that the number of</div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.4] minimum inertial parameters is equal or less than                                          mZR 1 _ , = MZ 1 _ , + Sa1 S01 mX1 + Sa1 C 9; mY 1 .                    (20)</div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.4]                                                                            ( 1 8)</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.4]                                                                                           V. PRACTICA L UTJLJZA TION OF THE REGROUPING RELATIONS</div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.4] where n, is the number of rotational joints = &#x27;f.iiJ and n, is the              The proposed algorithm of the detection of the set of minimum</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.4] number of translational joints = &#x27;f.cri .                                    parameters will be carried out as follows:</div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.4] C. Particular Regrouping of the Inertial Parameters                              1 ) Find the parameters having no effect on the dynamic model , as</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.4]                                                                              is given in Section III-B.</div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.4]    As we have seen in Section III-B, some of the inertial parameters            2) Apply ( 1 5) and ( 16) from link n to link I .</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.4] of the first links may have no effect on the dynamic model; there­              3) Apply (5) to the parameters of translational links lying between</div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.4] fore, particular regrouping, other than that denoted in Section IV-B, r 1 and r2 to detect the existence of supplementary regrouping. If</div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.4] may take place. The detection of these particular cases have to be these joints are parallel or perpendicular, we can use ( 1 9) and (20) .</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.4] studied on a case-by-case basis using (5) . We find that the particular             Example: In the following, we get the minimum inertial param­</div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.4] regrouping will concern only the parameters mX , mY , and mZ of eters of the six rotational joints of the well-known 560 PUMA robot</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.4] the translational links lying between the joints r 1 and r2 defined in (Fig. I ) . The geometric parameters of the robot are given in Table</div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.4] Section 111-B. For the general case, it is not easy to calculate this I.</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.4] regrouping by a closed-form solution. If we consider that the joints            Step a): Using rules 2) and 3) given in Section Ill-B, the following</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.4] between r 1 and r 2 are either parallel or perpendicular such that the parameters have no effect on the dynamic model:</div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.4] angular velocity of the links referred to the link frame will have only</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.4] one component different than zero, then the particular cases will take             XX 1 , XY , , XZ 1 , YY 1 , YZ 1 , mX , , mY 1 , mZ , , and m , .</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.4] place if the axis of the joint is parallel to r 1 ; in this case, the param•</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.4] eter mZ1 has no effect on the model, whereas the parameters mX1                 Step b): Use ( 15) for links 6, • · · , I :</div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.4] and mY 1 will be regrouped to the parameters of link j I . Two                  link 6:</div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.4] cases are considered.</div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.4]                                                                                                       XXR 6 = XX6 - YY 6</div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.4]    I) If Sa1 = 0, then mZ1 . 1 has no effect on the dynamic model ,</div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.4] and                                                                                                   XXR1 = XXs + YY6</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.4]           ZZR1 _ 1 = ZZ; - 1 + 2d1 C01 mX1             2d1 S01 mY 1                                           ZZR 5 = ZZ 5 + YY 6</div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.4]               mXR; - 1 = mX1 - , + C01 mX1 - S01 mY1                                                         mYR 5 = mYs + mZ6</div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.4]          mYR 1 _ 1 = mY 1 _ , + S01 Ca1 mX1 + C01 Ca1 mY 1 •               ( 19)</div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.4] </div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.4] </div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.4] </div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.4] </div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.4]                                                                                      3</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.4] </div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.5]                                                                 Accepted Manuscript</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.5] </div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.5] </div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.5] </div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.5] The minimum parameters of link 6 are XXR 6 , XY 6 , XZ6 , YZo ,                    Step c): This step does not have to be calculated since the robot</div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.5] ZZ 6 , mX 6 , mYo ,                                                              has only rotational joints . The final results arc summarized as fol­</div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.5]   link 5 :                                                                       lows :</div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.5]                       XXR 5 = XX , t Y Y 6 - YY 5                                   I ) The parameters having no effect on the dynamic model arc</div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.5] </div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.5]                           XXR4 = xx4 + Y Y ,                                      XX , , XY , , XZ , , Y Y , , YZ 1 , mX , , mY , , mZ , , m 1 • mZ 2 , mi .</div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.5] </div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.5]                            ZZR4 = ZZ4 I Y Y ,                                       2) The parameters to be eliminated by regrouping arc</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.5]                                                                                  Y Y 2 , Y Y, , mZ, , m, , Y Y . , mz. , m4 ,</div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.5]                           mYR. = mY 4 - mZ,</div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.5]                                                                                                                              Y Y 5 , mZ 5 , m 5 , Y Y 6 , mZ 6 , m 6 •</div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.5] </div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.5] The minimum parameters of link 5 are XXR 5 , XY 5 , XZ, , YZ, ,                           VI . A PPLICATIO, TO T H F foDITIF ICATION A N D Co�TROI.</div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.5] ZZRs , mX 5 , mYR 5 •                                                               The minimum set of inertial parameters are the only identifiable</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.5]   l i nk 4 :                                                                     parameters by the use of the dynamic model [8], and they are only</div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.5]                                                                                  needed for the calculation of the control law . They represent, in the</div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.5]                       XXR4 = XX&quot; + Y Y 5 - Y Y 4                                 case of the given example, 36 parameters, i . e . 24 parameters less</div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.5]      XXR 3 = XX 3 + YY 4 + 2R4mZ 4 + R4 2 ( m 4 + m, ! m 6 J                     than the classical parameters. This will greatly facilitate the identifi­</div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.5]                                                                                  cation process . The regrouped relations may not be important in this</div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.5]           XYR 3 � XY 3 - D4mZ 4 - D4R4(m&quot; I m , + m 6 )                          case: only the knowledge of the parameters lo be eliminated either</div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.5]                                                                                  by regrouping nr because they have no e ffect is needed . The identi­</div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.5]                   YYR 3 =· Y Y 3 + D4 2 ( 111 4 + m , , m 6 1                    fication process would give the values of the identifiable parameters</div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.5]                                                                                  directly.</div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.5]  ZZR 3 = ZZ 3 I Y Y 4 + 2R4mZ 4 + &lt; D4 2 i R4 2 )(m4 + ms + m6 )                    In many control schemes , such as computed torque, we need</div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.5]                  mXR3 = mX3 + D4( m4 + 111, + ms )                               to calculate the dy namic model at the servo rate . The use of the</div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.5]                                                                                  minimum set of inertial parameters in an algorithm of customized</div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.5]                                                                                  Newton-Euler will contribute to reducing the cost of calculating the</div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.5]                                                                                  dynamic model [ 1 3 ] .</div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.5] </div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.5]                                                                                                                   VII. CoNcLLSION</div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.5] The minimum parameters of link 4 are XXR 4 , XY 4 , XZ 4 , YZ 4 •</div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.5] ZZR 4 , mX4 , mYR4 •                                                                This paper presents a direct method of determining the minimum</div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.5]    link 3 :                                                                      set of inertial parameters of serial robots. The given method per­</div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.5]                                                                                  mits determination of most of the regrouped parameters by means of</div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.5] XXR 3 = XX 3 t Y Y 4 + 2R4mZ 4 , ( R4 2 - D4 2 )                                 closed-form relation function of the geometric parameters of the</div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.5]                                                                                  robot . The parameters that may need particular study concern the</div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.5]                                                  · ( m4 - m 5 + mo) - YY 1       first moments of the translation l inks between r, and r 2 • If the joints</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.5]                                                                                  between r, and r 2 are parallel or perpendicular, we can obtain all of</div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.5] XXR, = XX, + Y Y 3 + 2R 3 mZ 3 + R3 2 / m , -&#x27;- m 4 + ms + m 6 )                 the minimum inertial parameters directly w ithout calculating the dy­</div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.5]                                                     +D42 (m4 + ms + mo)          namic model or the energy. The method i s integrated lo our software</div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.5]                                                                                  package of automatic symbol ic model ing of robots SY MORO [ 1 6] .</div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.5]       XZR 2 = XZ2 - D3mZ , - D3R3(m3 + m4 + ms + m 6 )                           Generalization o f this symbolic method to tree-structured robots and</div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.5]                                                                                  to robots w ith parallelogram closed loops are given in [22] and [23 I ,</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.5] YYR2 = Y Y 2 + Y Y 3 + D4 2 ( m4 + ms + m 6 ) + 2R3mZ,                           respectively. Numerical approaches t o determine the minimum iner­</div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.5]                                    + ( D3 2 + R 3 2 )( m 3 + m 4 + m s +- m o)   tial parameters are given in [24] and [25 ] .</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.5] </div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.5]                ZZR 2 - ZZ 2 + D3 2 ( m 1 + m4 t- m 5 + m 6 )                                                         APPENDIX</div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.5] </div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.5]                mXR2 = mX2 + D3(m1 + 1114 + m, + mo )                                   REC URSIVE RELATIONS O F T H E DERI \ ATIVLS O F TII L EN ERG Y</div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.5] </div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.5]            mZR 2 = mZ2 + mZ3 + R3(m,              m4 t m, + m 6 )                   In this Appendix, we present directly the results of the calculation</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.5]                                                                                  of the derivatives of the energy with respect to the inertial parameters</div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.5]                                                                                  of link j in terms of the derivatives of the energy w . r.t. the inertial</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.5] The minimum parameters of l ink 3 are XX R 3 , XY R 3 , XZ 3 , YZ 3 ,            parameters of link j - I . The details can be found in [2 1 ] .</div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.5] ZZR 3 , mXR 3 , mYR1 .</div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.5]                                                                                  A . Recursive Relation of DE1</div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.5]   link 2 :</div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.5]                                                                                    We have the matrix relation</div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.5] </div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.5]                                                                                                                                                                 (Al)</div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.5] ZZR , = ZZ 1 -f YY2 + Y Y R 3 + 2R3mZ 1                                          where °}\ i s a ( 1 0 x I O) matrix , and/1 i s a ( I O x I ) column matrix.</div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.5]                                                                                          .i</div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.5] </div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.5]                                   +(R3 2 + D3 2 )(m 3 I m4 + m, + mo ) .           1. E\pressions of A1 : The matrix &#x27;)..1 is given as</div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.5]   The regrouping relations o n the parameters XX , , XY , ,                                                       [ DJ</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.5] </div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.5] </div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.5] </div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.5]                                                                                                                                          �&#x27; ]</div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.5]                                                                                                                              OD, 3</div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.5] XZ , , Y Y 1 , YZ 1 , mX , . mY , . mZ 1 , m 1 are not written because</div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.5]                                                                                                       A   1              1A j - l</div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.5] these parameters have no effect on the dynamic model. The minimum                                             -    DS                    0�, I                  (A2)</div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.5] parameters of l i nk 2 are XXR 2 • XY 2 , XZR 2 , YZ 2 , ZZR 2 , mX R 2 ,                                                     &#x27;P</div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.5] mY 2 •                                                                                                            Dm     I</div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.5]                                                                                                                                      �</div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.5]   link I :                                                                       where</div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.5]   The minimum parameter of l ink I is ZZR , .                                      Om , n is the ( m x n) zero matrix:</div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.5]                                                                                       1</div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.5]   Since mZ 2 and m 2 do not appear on Z ZR , , they have no effect                 ; - A, is the ( 3 x 3) matrix defining the orientation of frame i with</div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.5] on the dynamic model .                                                           respect to frame i - I ;</div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.5] </div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.5] </div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.5] </div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.5] </div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.5]                                                                                    4</div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.5] </div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.6]                                                                                      Accepted Manuscript</div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.6] </div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.6] </div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.6]    i - tp ,</div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.6]             is the (3 x I) vector defining the position of the origin of                                   We initialize the recursive relation by</div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.6] frame i with respect to frame i        I;</div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.6]   DJ , DS , Dm , J A J - t , and J - t Pi are functions of the geometric                                                               D U 0 = [ o, , 6     --gT    of                     ( A l 2)</div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.6] parameters dJ , r; , 01 , a 1 . They are given as follows ( the index j has</div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.6] been omitted to simplify the writing) :                                                                    where g is the acceleration of gravity.</div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.6] </div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.6]                                      CCIJ                    CSOCo,                         CS BS ct                SSOCCct              SS0CSr,             SSOSS ct</div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.6]                                     -&#x27;2CS0              (CC/J - SSO)Cct              (CCe - sse ySo:                2CS/JCCa            2CS0CSo:            2CSOSSct</div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.6] </div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.6]                                           0                     -COSa                       C0Co:                   -2S/JCSo,      S0(CCa - SSal             2SOCSo,</div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.6]                     DJ                                                                                                                                                                       ( A3)</div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.6]                                          sse                -CSOCct                            CSOSo:               CC0CCa              CCOCS cx             CCOSSa</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.6] </div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.6]                                           0                      S0So:                      -SOCa                   -2COCSa        CO(CCa          SSa)      2C0CSOI</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.6]                                           0                        0                             0                    SSa                 -CSa                  CCo,</div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.6]                                                                                                                                        - - - -- -- -           - --  - -     -   -- --         --</div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.6] where CS( ·) means cos ( -) sin ( ,) . CC( ·) means -cos 2 ( -) , and SS( ·)                                                                     REFERENCES</div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.6] means sin2 ( ·):                                                                                             [ I]    W . Khalil, A. Liegeois, and A. Fournier, &quot;Commande dynamique de</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.6]                                                                                                                      robots, &quot; RA/RO Automatique Sys/. Anal. Contr., vol . 1 3 , no. 2,</div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.6]                           0                                        0                       2r                        pp . 189-201 , 1979</div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.6]                                                                                                              1 2]    J . Y. S. Luh , M . W. Walker. and R. Paul, &quot;Resolved-acceleration</div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.6]                -dSOCa + rC0Sc,                      -dCOCa - rSOSa                        dSa                        control of mechanical manipulators, &quot; IEEE Trans. Automut. Conlr. ,</div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.6]                                                                                                                      vol . AC-25, pp. 468-474. 1 980.</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.6]                -dSOSa - rCOCa                       -dCOSa + rSOCo,                       -dCa</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.6]                                                                                                              [ 3]    0. Khatib, &quot; A unified approach for motion and force control : The</div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.6]  DS T =                                                                                                              operational space formulation ... IEEE J. Robotics Automa1. . vol. 3 ,</div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.6]                2( dCIJ + rSOCSr, )                 2( -dS O + rCOCSo,)                2rCCo:                         pp. 43-53, 1987 _</div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.6]                                                                                                              [4 J    C. S. G. Lee and M . J . Chung, &quot;An adaptive control strategy for</div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.6]                rSO(SSa - CC a )                     rCO(SScx               CCa)           2rCSa                      mechanical manipulators, &quot; IEEE Trans. Automat . Contr. , voL AC-</div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.6]                                                                                           2rSSa                      29, no_ 9, pp. 837-840, 1 984 .</div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.6]                2(dCO - rSOCSa )                    2( -dSIJ            rCOCSo,)                                      E. Ferreira, &quot;Contribution a !&#x27;identification des parametres et a la com­</div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.6]                                                                                                              [5]</div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.6]                                                                                                  (A4)                mande dynamique adaptative des robots manipulateurs, &quot; These Doct .</div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.6]                                                                                                                      Ing , , Toulouse, France, 1984 .</div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.6] Dm                                                                                                                   C . H . A n , C . G . Atkeson and J . M . Hollerbach, &quot;Estimation o f inertial</div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.6]                                                                                                              [6]</div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.6]   = [ r2   drSo,       -drCa             d 2 + r 2 CCa             r 2 CSa       d2 + r 2 SS0, l .                   parameters of rigid body links of manipulators, &quot; in Proc. 24th Conj.</div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.6]                                                                                                                      Decision Contr . . 1985. pp. 990-995 .</div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.6]                                                                                                   ( AS)      [7]     A. Mukerjee and D. H. Ballard . &quot;Self-calibration in robot manipu­</div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.6]                          1   - &#x27;P; = [ d                -rsa       rccx ]                         (A6)               lators, &quot; in Proc. IEEE In!. Cun/. Robotics Automat. , 1 985 . pp .</div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.6]                                                                                                                      1050- 1057.</div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.6]   2) Expression off1 : Two cases are considered :                                                            1 8]    P. K. Khosla and I . Kanade, &quot;Parameter identification of robot dvnam­</div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.6]                                                                                                                      ics , &quot; in Proc. 24th Cun[. Deci,iun Contr. , 1985, pp. 1 754- \ 760.</div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.6]   a) For j rotational                                                                                       \9]      M. Gautier and W Khalil, &quot;On the identification of the ine11ial pa­</div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.6]                                                         cas(J</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.6] </div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.6] </div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.6] </div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.6]                                          [ ,,                      ,�,]</div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.6]                                                                                                                      rameters of robots, · · in Proc. 27rh Conj. Decision Con tr . . 1988. pp.</div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.6]                        1A _ ,                                                                                        2264-2269.</div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.6]                          1                -sO           ccxc(J     sacfJ                         ( A7)</div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.6]                                                                                                            [ 1 0]    T. Kanade, P. Khosla, and N. Tanaka, &quot;Real-time control of CMU</div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.6]                                                                                                                      direct-drive arm Il using customized inverse dynamics, &quot; in Proc. 23</div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.6]                                               0         -Sa            COi                                           CDC, 1984 , pp. 1 345- 1352.</div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.6]                                                                                                            [ I I]    W . Khalil and J . F. Kleinfinger, &quot;Une modelisation performante pour</div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.6]                          0</div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.6]                                                            I . ) V2 , 1                    0     of.                 la commande dynamique de robots , &quot; RAIRO, APJJ, vol . 6, pp.</div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.6] J1 = [ 0   0    W1,j            W1 , J         W3 , j      2, QJ                 vl , j</div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.6]                                                                                                                      561 -574, 1 985 .</div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.6]                                           (                                                       (A8)     f l 2]    W. Khalil, J. F. Kleintinger. and M. Gautier, &quot;Reducing the computa­</div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.6]                                                                                                                      tional burden of the dynamic model of robots, &quot; in Proc. IEEE Conj.</div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.6]    b) for j translational</div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.6]                                                                                                                      Robotics Automat. (San Francisco), 1986, pp. 525-53 1 .</div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.6]  /1 = [ 0 0 0 0 0 0                           -wz, 1      W\,j         O     ( v3 , 1 - � IJ1 ) f          [ 1 3]    W . Khalil and J . F . Klcinfi n ger. &quot; Minimum operations and minimum</div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.6]                                                                                                                      parameters of the dynamic models of tree structure robots, &quot; IEEE</div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.6]                                                                      ( A9)                                           Trans. Robotics Awomat . . vol . RA-3, pp. 5 1 7-526, Dec . 1987.</div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.6] where q J is the velocity of the joint variable j, whereas wk . 1 , and                                    [ 1 4]    P. Khosla, &quot;Real-time control and identification of direct-drive manip­</div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.6]                                                                                                                      ulators, &quot; Ph. D . thesis. Carnegie Mellon University, Pittsburgh, 1 986.</div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.6] V k, i denotes the ,hh component of i w J and i V; , respectively, and</div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.6]                                                                                                            [ 1 5]    W . Khalil, M _ Gautier, and J. F. Kleinfinger. &quot;Automatic generation</div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.6] where 1 VJ is the velodty of the origin of the link j fixed frame,                                                   of identification models of robots, &quot; Int . J. Robotics Automat., vol .</div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.6] referred to frame j, and 1 w J is the angular velocity of link j, referred                                            I , pp. 2-6, I 986.</div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.6] to frame j.                                                                                                [ 1 6]    W. Khalil, J. F . Kleinfinger, and C . Chevallcrcau, &quot;SYMORO:</div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.6]    3) Initialization of the recursive relations of DEi: Since link 0                                                 systeme pour la modelisation des rohots, &quot; Notice d &#x27;utilisation, Note</div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.6] is fixed, then we initialize the calculation by                                                                      interne LAN , Nantes , 1987.</div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.6]                                                                                                            [ 1 7]    M . Gautier and W . Khalil, &quot;A direct determination of minimum iner­</div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.6]                           DE 0 = [ O 0                           of .                           ( A I O)             tial parameters of robots, .. in Proc. IEEE Conj. Robotics Auromat.</div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.6]                                                                                                                      (Philadelphia), 1 988, pp. 1 682-1 687.</div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.6] B. Recursive Relations of D U1                                                                             ( 1 8]    H . Mayeda, K. Yoshida, and K. Ousuka, &quot;Base parameters of manipu­</div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.6]   We have the relation                                                                                               lator dynamics. &quot; in Proc. IEEE Conj. Robotics Automat. ( Philadel­</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.6]                                                                                                                      phia), 1988. pp. 1 367- 1 373.</div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.6]                                                                                                            [ 1 9]    W . Khalil and J . F. Kleinfinger, &quot;A new geometric notation for open</div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.6] </div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.6] </div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.6] </div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.6]                               [�&#x27;</div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.6]                                                06, 3</div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.6]                                                                                                                      and closed loop robots, &quot; in Proc. IEEE Conj. Robolics Automat.</div>
+<div id="L481"><a href="#L481">00481</a> [PDF p.6]                 vu1             03 , 6</div>
+<div id="L482"><a href="#L482">00482</a> [PDF p.6]                                               1A J - 1      o , vu1             1</div>
+<div id="L483"><a href="#L483">00483</a> [PDF p.6]                                                                                - •              (Al 1)               (San Francisco) , 1986, pp. 1 174- 1 1 80 .</div>
+<div id="L484"><a href="#L484">00484</a> [PDF p.6]                                               j-</div>
+<div id="L485"><a href="#L485">00485</a> [PDF p.6]                                                    lp</div>
+<div id="L486"><a href="#L486">00486</a> [PDF p.6]                                                              �                                             [20]      E. Dombre and W . Khalil , &quot;Modelisation e t commande des robots,&quot;</div>
+<div id="L487"><a href="#L487">00487</a> [PDF p.6]                                 01,6                  �     Os, l                                                    Edition Hermes, Paris, 1 988.</div>
+<div id="L488"><a href="#L488">00488</a> [PDF p.6] </div>
+<div id="L489"><a href="#L489">00489</a> [PDF p.6] </div>
+<div id="L490"><a href="#L490">00490</a> [PDF p.6] </div>
+<div id="L491"><a href="#L491">00491</a> [PDF p.6] </div>
+<div id="L492"><a href="#L492">00492</a> [PDF p.6]                                                                                                               5</div>
+<div id="L493"><a href="#L493">00493</a> [PDF p.6] </div>
+<div id="L494"><a href="#L494">00494</a> [PDF p.7]                                                                Accepted Manuscript</div>
+<div id="L495"><a href="#L495">00495</a> [PDF p.7] </div>
+<div id="L496"><a href="#L496">00496</a> [PDF p.7] </div>
+<div id="L497"><a href="#L497">00497</a> [PDF p.7] [2 1] M . Gautier, &quot;Contribution a l a model isation e t a !&#x27;identification des</div>
+<div id="L498"><a href="#L498">00498</a> [PDF p.7]       robots, &quot; these d&#x27;etat, Nantes, 1 990.</div>
+<div id="L499"><a href="#L499">00499</a> [PDF p.7]  [22] W. Khalil , F. Bennis, and M. Gautier. &quot;Calculation of the minimum</div>
+<div id="L500"><a href="#L500">00500</a> [PDF p.7]       inertial parameters of tree structure robots , &quot; in Proc. 3rd [CAR Conj.</div>
+<div id="L501"><a href="#L501">00501</a> [PDF p.7]       (Columbus), 1 989.</div>
+<div id="L502"><a href="#L502">00502</a> [PDF p.7] [23] F. Bennis and W. Khalil, &quot;Minimum inertial parameters of robots</div>
+<div id="L503"><a href="#L503">00503</a> [PDF p.7]       with parallelogram closed loops. &quot; in Proc. IEEE Conj. Robotics A u ­</div>
+<div id="L504"><a href="#L504">00504</a> [PDF p.7]       tomat. (Cincinnati) , 1 990 .</div>
+<div id="L505"><a href="#L505">00505</a> [PDF p.7] [24] H. Sheu and M . W. Walker, &quot;Basis sets for manipulator inertial pa­</div>
+<div id="L506"><a href="#L506">00506</a> [PDF p.7]       rameters, &quot; in Proc. IEEE Conj. Robotics A utomat. ( Scottsdale),</div>
+<div id="L507"><a href="#L507">00507</a> [PDF p.7]        1 989, pp. 1 5 1 7- 1522.</div>
+<div id="L508"><a href="#L508">00508</a> [PDF p.7] [25] M . Gautier, &quot;Numerical calculation of the base inertial parameters, &quot;</div>
+<div id="L509"><a href="#L509">00509</a> [PDF p.7]       i n Proc. IEEE Conj. Robotics Automat . (Cincinnati) , 1 990.</div>
+<div id="L510"><a href="#L510">00510</a> [PDF p.7] </div>
+<div id="L511"><a href="#L511">00511</a> [PDF p.7] </div>
+<div id="L512"><a href="#L512">00512</a> [PDF p.7] </div>
+<div id="L513"><a href="#L513">00513</a> [PDF p.7] </div>
+<div id="L514"><a href="#L514">00514</a> [PDF p.7]                                                                                   6</div>
+<div id="L515"><a href="#L515">00515</a> [PDF p.7] </div></pre>

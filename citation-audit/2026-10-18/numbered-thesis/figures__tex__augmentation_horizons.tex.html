@@ -1,0 +1,18 @@
+<meta charset="utf-8"><title>figures/tex/augmentation_horizons.tex</title><pre><div id="L1"><a href="#L1">0001</a> % Source asset, adapted from docs/writeup/training-objective-v1.tex.</div>
+<div id="L2"><a href="#L2">0002</a> % No fixed legacy validation duration; the top axis is to scale at 4 kHz.</div>
+<div id="L3"><a href="#L3">0003</a> \begin{tikzpicture}[x=0.075cm,y=1cm,&gt;=Latex,font=\scriptsize]</div>
+<div id="L4"><a href="#L4">0004</a>  \fill[black!12] (-7.25,0) rectangle (0,0.38);</div>
+<div id="L5"><a href="#L5">0005</a>  \draw (-7.25,0) rectangle (0,0.38);</div>
+<div id="L6"><a href="#L6">0006</a>  \draw (0,0) rectangle (100,0.38);</div>
+<div id="L7"><a href="#L7">0007</a>  \node[anchor=east,align=right] at (-8,0.19) {history\\29 lags};</div>
+<div id="L8"><a href="#L8">0008</a>  \node at (50,0.19) {fully scored rollout: $n_f=400$, 100 ms};</div>
+<div id="L9"><a href="#L9">0009</a>  \draw[-&gt;] (-7.25,-0.12) -- (105,-0.12) node[right] {$t$};</div>
+<div id="L10"><a href="#L10">0010</a>  \draw (0,-0.12) -- (0,-0.22) node[below] {$\tau$};</div>
+<div id="L11"><a href="#L11">0011</a>  \draw (100,-0.12) -- (100,-0.22) node[below] {$\tau+n_fT_s$};</div>
+<div id="L12"><a href="#L12">0012</a>  \node[anchor=west] at (0,0.68) {encoder uses history and current sample};</div>
+<div id="L13"><a href="#L13">0013</a>  \draw[-&gt;] (0,0.57) -- (0,0.4);</div>
+<div id="L14"><a href="#L14">0014</a>  \draw[-&gt;] (0,-1.0) -- (100,-1.0);</div>
+<div id="L15"><a href="#L15">0015</a>  \node[anchor=east,align=right] at (-8,-1.0) {validation\\separate axis};</div>
+<div id="L16"><a href="#L16">0016</a>  \node[above] at (50,-1.0) {encoder once, then full-record closed-loop rollout};</div>
+<div id="L17"><a href="#L17">0017</a>  \node[below] at (50,-1.0) {no periodic state resets; duration set by each record};</div>
+<div id="L18"><a href="#L18">0018</a> \end{tikzpicture}</div></pre>

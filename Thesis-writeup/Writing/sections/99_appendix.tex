@@ -18,7 +18,7 @@
 %   positive definiteness, identifiable combinations.
 \subsection{Nominal physical parameters}\label{app:params}
 Table~\ref{tab:nominal_parameters} lists the nominal values used by the baseline.
-They are taken from the ETEL gantry reported by Garc\'ia-Herreros et al.
+They are taken from the gantry reported by Garc\'ia-Herreros et al.
 \cite[Table~I]{garcia2013model}. 
 %Here $\theta$ collects the fourteen table entries other than the fixed length $L_b$.
 The lower block holds the parameters of the simulated system that the
@@ -287,8 +287,7 @@ box.
 \end{table}
 \revnote{Add the validation curves here: validation $\mathrm{NRMS}_e$
 against the optimiser updates for every grey-box run and the selected black
-box, from the runs' \texttt{val\_hist.npz} on the server; to be produced
-once R1 and R2 have finished.}
+box}
 
 \section{Experiment design details}\label{app:setup}
 This appendix gives the details of Section~\ref{sec:setup} and the checks
@@ -494,7 +493,7 @@ $K_1$ at $T_s$, force change, median & \SetupKmismatchMed\,\%\\
 The training loop re-discretises $K_1$ at $T_s$, which changes the feedback
 force on the training records by a median of \SetupKmismatchMed\,\% RMS.
 \todo{Missing: the cause of this change and whether it affects the results. Candidate: the half-sample offset between the block-mean force and the controller output at $T_s$ (2\,sin($\pi f\cdot0.1$~ms) is 9 to 19\,\% over the band, only records with multisine show it; not verified); the effect to Section~\ref{sec:results} or the Discussion.}
-\revnote{Cause found (2026-10-16, D-265): the check compares the 4~kHz
+\todo{Cause found (2026-10-16, D-265): the check compares the 4~kHz
 controller output at sample $kD$ with the force averaged over $kD$ to $kD+4$,
 centred 0.1~ms later. Compared at the same instant, the two controllers agree
 to 0.5 to 1\,\% on TR-S1. The 10.8\,\% is the change of the force within one

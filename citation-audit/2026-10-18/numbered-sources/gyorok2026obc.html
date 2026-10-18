@@ -1,0 +1,814 @@
+<meta charset="utf-8"><title>gyorok2026obc</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1]                                                                       Orthogonal-by-construction augmentation</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1]                                                                        of physics-based input-output models ⋆</div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1]                                                                          Bendegúz M. Györök ∗ Maarten Schoukens ∗∗ Tamás Péni ∗</div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1]                                                                                               Roland Tóth ∗,∗∗</div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1]                                                                      ∗</div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1]                                                                        Systems and Control Laboratory, HUN-REN Institute for Computer</div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1]                                                                               Science and Control, Budapest, Hungary (e-mails:</div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1]                                                                                         {gyorokbende;peni}@sztaki.hu)</div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1]                                                                         ∗∗</div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1]                                                                            Control Systems Group, Eindhoven University of Technology,</div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1]                                                                       Eindhoven, The Netherlands (e-mails: {m.schoukens;r.toth}@tue.nl)</div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1] arXiv:2511.01321v3 [eess.SY] 9 Jan 2026</div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1] </div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1] </div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1] </div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1] </div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1]                                                        Abstract: This paper proposes a novel orthogonal-by-construction parametrization for aug-</div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1]                                                        menting physics-based input-output models with a learning component in an additive sense.</div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1]                                                        The parametrization allows to jointly optimize the parameters of the physics-based model</div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1]                                                        and the learning component. Unlike the commonly applied additive (parallel) augmentation</div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1]                                                        structure, the proposed formulation eliminates overlap in representation of the system dynamics,</div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1]                                                        thereby preserving the uniqueness of the estimated physical parameters, ultimately leading to</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1]                                                        enhanced model interpretability. By theoretical analysis, we show that, under mild conditions,</div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1]                                                        the method is statistically consistent and guarantees recovery of the true physical parameters.</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1]                                                        With further analysis regarding the asymptotic covariance matrix of the identified parameters,</div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1]                                                        we also prove that the proposed structure provides a clear separation between the physics-based</div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1]                                                        and learning components of the augmentation structure. The effectiveness of the proposed</div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1]                                                        approach is demonstrated through simulation studies, showing accurate reproduction of the</div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1]                                                        data-generating dynamics without sacrificing consistent estimation of the physical parameters.</div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1] </div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1]                                                        Keywords: Nonlinear system identification, Physics-based learning, Model augmentation</div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.1] </div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.1]                                                               1. INTRODUCTION                                 deep artificial neural networks (ANNs) have demonstrated</div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.1]                                                                                                               superior modeling accuracy compared to conventional ap-</div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.1]                                           In recent years, the increasing complexity of engineering           proaches (Ljung et al., 2020). However, the practical use</div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.1]                                           systems and the growing performance demands in con-                 of ANN-based black-box models in control-oriented ap-</div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.1]                                           trol applications have intensified the need for accurate            plications, e.g., trajectory planning, remains limited due</div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.1]                                           nonlinear models. Discrete-time (DT) input-output (IO)              to their lack of physical interpretability (Ljung, 2010).</div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.1]                                           models are one of the most commonly applied struc-                  Furthermore, ANN-based models typically exhibit poor</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.1]                                           tures in system identification as they incorporate a broad          extrapolation capabilities beyond the range of the train-</div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.1]                                           spectrum of model classes, ranging from linear time-                ing data, and substantial learning effort is often spent</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.1]                                           invariant (LTI) (Hespanha, 2018) and linear parameter-              on rediscovering system behaviors that are already well</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.1]                                           varying (LPV) (Tóth, 2010) models to various nonlinear             understood from first-principles knowledge.</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.1]                                           structures (Schoukens and Ljung, 2019). First-principle</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.1]                                                                                                               To address these challenges, different strategies have been</div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.1]                                           (FP) models can be obtained in DT IO form based on</div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.1]                                                                                                               proposed in the literature, starting from (light) grey-box</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.1]                                           known physical laws and engineering insight. While such</div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.1]                                                                                                               modeling (Bohlin, 2006) till physics-informed neural net-</div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.1]                                           physics-based models provide interpretable system de-</div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.1]                                                                                                               works (PINNs) (Raissi et al., 2019) and physics-guided</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.1]                                           scriptions, they often capture only the dominant dynamics,</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.1]                                                                                                               neural networks (PGNNs) (Daw et al., 2022). One of the</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.1]                                           while additional high-complexity effects, such as friction</div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.1]                                                                                                               most promising directions of these hybrid approaches is</div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.1]                                           properties or aerodynamic forces, are typically neglected.</div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.1]                                                                                                               model augmentation (Schön et al., 2022; Hoekstra et al.,</div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.1]                                           As an alternative approach, various data-driven identifi-           2025). The augmentation approach aims at combining FP</div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.1]                                           cation methods have been developed for modeling non-                models, i.e., baseline models, with flexible learning compo-</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.1]                                           linear systems with an IO model structure (Schoukens                nents to achieve faster convergence and better model accu-</div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.1]                                           and Ljung, 2019). In particular, recent advances employing          racy compared to black-box learning methods (Djeumou</div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.1]                                           ⋆ This project has been supported by the Air Force Office of Sci-   et al., 2022). Furthermore, model augmentation produces</div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.1]                                           entific Research under award number FA8655-23-1-7061. This work</div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.1]                                                                                                               interpretable models with a clear understanding of how the</div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.1]                                           is also partly funded by the European Union (ERC, COMPLETE,         learning component complements the baseline dynamics.</div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.1]                                           101075836). Views and opinions expressed are however those of the   In this paper, we investigate a widely used model aug-</div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.1]                                           authors only and do not necessarily reflect those of the European</div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.1]                                                                                                               mentation structure in the literature, namely the additive</div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.1]                                           Union or the European Research Council Executive Agency. Neither</div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.1]                                           the European Union nor the granting authority can be held respon-</div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.1]                                                                                                               formulation. This approach connects the physics-based</div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.1]                                           sible for them.                                                     and learning components in parallel and the corresponding</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.1] </div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2] parameters of the two components are jointly optimized.          parametrization that addresses these challenges. In Sect. 4,</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2] However, simultaneously tuning the learning-based and            the theoretical analysis of the proposed parametrization</div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2] physical parameters results in the two ”subcomponents”           is presented. We provide conditions under which the pre-</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2] competing with each other (Bolderman et al., 2022). As           sented model augmentation approach with joint parameter</div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2] a result, the ANN can learn relations that could be rep-         estimation recovers the physically true parameters of the</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2] resented by the FP model, while the baseline parameters          baseline model, followed by the consistency analysis of the</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2] can be tuned to physically unrealistic values. This effect       method. Sect. 5 shows two numerical examples, where we</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2] undermines physical interpretability of the model estimate       demonstrate the effectiveness of the proposed orthogonal-</div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2] and can even compromise the extrapolation capabilities of        by-construction model augmentation method. Finally, the</div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2] the resulting model.                                             conclusions on the achieved results are drawn in Sect. 6.</div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2] This challenge was first addressed in Bolderman et al.</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2] (2022) in the context of PGNN-based feedforward control                         2. PROBLEM STATEMENT</div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2] by introducing an additional regularization term into the</div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2] cost function, penalizing deviations of the baseline pa-         We consider the dynamics of the data-generating system</div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.2] rameters from their nominal values. This addition to the         defined by a discrete-time input-output process:</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.2] cost function effectively limits deviations of the baseline                            yk = f (xk ) + ek ,                     (1)</div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.2] parameters compared to their initial values, hence prevent-      where k ∈ Z is the discrete time index, yk ∈ Rny is</div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.2] ing them from reaching a physically unrealistic parameter        the measured output, xk ∈ Rnx contains the lagged IO</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.2] domain. Despite its simplicity, the approach has provided        instances with xk = vec(yk−n   k−1</div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.2]                                                                                                          , ukk−nb ) ∈ Rnx , where</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.2] good experimental results (Bolderman et al., 2024); more-         k−1                                 ⊤</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.2]                                                                                                        a</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.2]                                                                             ⊤     ⊤           ⊤</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.2]                                                                                                           ∈ Rna ny for na &gt; 0 and</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.2]                                                                                                    </div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.2] over, the method can be straightforwardly extended for           yk−n a</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.2]                                                                         = yk−1   yk−2  · · · yk−n a</div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.2] more complex model augmentation structures (Hoekstra             ∅ otherwise, being the lagged output values, and ukk−nb can</div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.2] et al., 2025). Another attractive approach is based on an        be defined similarly for the lagged input values. Moreover,</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.2] orthogonal projection-based regularization, introduced in        f : Rnx → Rny is a nonlinear function and ek ∈ Rny is</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.2] Kon et al. (2022), also for feedforward control applications.    represented by a white noise process with finite variance.</div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.2] This approach promotes a specific orthogonality between          The formulation of (1) represents a wide range of systems</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.2] the baseline and learning components via regularization,         depending on na ≥ 0, nb ≥ 0, called NARX-type systems.</div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.2] penalizing when the ANN learns the already known rela-</div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.2] tions represented by the baseline model. This technique          The exact dynamics of (1) are not known, but we assume</div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.2] has been adapted and generalized for nonlinear system            that based on prior knowledge, a physics-based approxima-</div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.2] identification in Györök et al. (2025); however, since these   tive model (baseline model) in a linear-in-the-parameters</div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.2] approaches promote orthogonality via regularization, in-         form is available as</div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.2] herently, there exists a trade-off between model accuracy                                ŷk = ϕ(xk )θb ,                (2)</div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.2] and the desired complementarity. Finding the appropriate                       ny</div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.2]                                                                  where ŷk ∈ R is the model output, θb ∈ R     nθ b</div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.2]                                                                                                                     contains</div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.2] trade-off parameter (i.e., regularization coefficient) may       the physical parameters, ϕ : Rnx → Rny ×nθ is the regressor</div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.2] not be intuitive. To overcome this, we propose a direct          matrix-function of the baseline model. Furthermore, we</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.2] parametrization with guaranteed orthogonality between            assume that based on first-principles modeling, an initial</div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.2] the baseline and learning components on a selected data          rough estimate for the baseline parameters is available,</div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.2] set without requiring any trade-off parameter. We also           and is denoted as θb0 .</div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.2] show that under certain conditions for the dataset used to</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.2] impose such an orthogonality property, the tuned baseline        Since the baseline model only provides an approximation</div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.2] parameters converge to their physically true values.             of the dominant dynamics in (1), common practice is to</div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.2]                                                                  augment it with an additive learning component as</div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.2] The main contributions of this work are summarized as:                           ŷk = ϕ(xk )θb + fθANN (xk ),       (3)</div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.2]                                                                                                     a</div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.2]   • Proposing an orthogonal-by-construction parametriza-         where f ANN here represents a fully connected, feedforward</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.2]     tion for additive augmentation of baseline models in         neural network with θa ∈ Rnθa being the collection of its</div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.2]     input-output form.                                           parameters. Alternatively, fθANN   can be replaced by any</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.2]   • Deriving a theoretical error value for the estimated                                       a</div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.2]                                                                  function approximator without loss of generality. Instead</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.2]     baseline model parameters.                                   of the additive formulation, many other model augmenta-</div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.2]   • Proving that the proposed model estimator is consis-         tion structures can be selected from the literature, e.g., see</div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.2]     tent in the statistical sense and showing that there is      Retzler et al. (2024). However, the additive, i.e., parallel,</div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.2]     zero covariance between the estimated parameters of          formulation offers a transparent model structure with clear</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.2]     the baseline and the learning components.                    separation between the baseline and learning components</div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.2]   • Demonstrating the advantages of the orthogonal               (Hoekstra et al., 2025), hence can be an attractive ap-</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.2]     model augmentation structure via an extensive iden-          proach for practical applications.</div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.2]     tification study.</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.2]                                                                  To achieve the best possible data-fit, while simultaneously</div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.2] The remainder of the paper is organized as follows: Sect. 2      acquiring as accurate baseline parameters as possible, an</div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.2] introduces the considered model augmentation problem             efficient approach is to co-estimate θb and θa parameters,</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.2] with the additive structure and model learning setup.            as proposed in Bolderman et al. (2022). Hence, using a</div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.2] Then, Sect. 3 discusses the problems caused by the non-                                           N −1</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.2] unique parametrization of the standard additive struc-           data sequence DN = {(xi , yi )}i=0 generated by (1), the</div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.2] ture and proposes an orthogonal-by-construction model            parameters are estimated by minimizing the prediction</div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.2]                                                                  error loss function expressed as</div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.2] </div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.3]                                  1                              Example 2. Consider a data-generating system as yk =</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.3]                VDN (θb , θa ) =    ∥Y − Ŷ ∥22 ,        (4)     x⊤  ∗                                          ⊤</div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.3]                                 N                                k θb and an IO baseline model of ŷk = xk θb . By using</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.3]               ⊤ ⊤</div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.3] where Y = y0 y1 · · · yN  ⊤</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.3]                                ⊤</div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.3]                                    are the stacked measured     a single linear layer in the ANN, which gives fθANN a</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.3]                                                                                                                        (xk ) =</div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.3]                             −1</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.3]                                                                 x⊤</div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.3]                                                                  k W  , any  (θ b , W ) pair that satisfies W + θ b  = θ ∗</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.3]                                                                                                                         b is a</div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.3] output values. Moreover, Ŷ is computed, as</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.3]                                       ANN                     global minimizer of (4).</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.3]       </div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.3]          ŷ0</div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.3]                 </div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.3]                     ϕ(x0 )</div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.3]                                         fθa (x0 )</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.3]        ŷ1   ϕ(x1 )               f ANN (x1 )             3.2 Direct parametrization of orthogonal subcomponents</div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.3]        . =                         θa</div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.3]                        ..       θb +           ..   , (5)</div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.3]                                                     </div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.3]        ..            .                        .              The illustrated overparametrization problem means that</div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.3]                                                    </div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.3]        ŷN −1      ϕ(xN −1 )           fθANN (xN −1 )           the learning component can identify such relations that</div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.3]       | {z } |        {z     }       | a {z           }         otherwise could be captured by the baseline model. This</div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.3]           Ŷ            Φ                   FθANN</div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.3]                                               a                 naturally conflicts with the aim of model augmentation,</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.3] where Ŷ ∈ RN ny is the vectorized form of the model            namely to incorporate as much physics-based information</div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.3] responses, Φ ∈ RN ny ×nθb contains the baseline regressor       into the (interpretable) baseline model as possible. With</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.3] matrices corresponding to the training data, while FθANN        non-unique θb , the baseline model could lose its physical</div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.3] contains the learning component terms.</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.3]                                                      a</div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.3]                                                                 meaning, and might even compromise the extrapolation</div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.3]                                                                 capabilities of the final model. To address this challenge,</div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.3] To ensure the feasibility of recovering the physically true     first, we introduce the following parameter:</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.3] parameters of the baseline model, certain conditions must                                      −1 ⊤ ANN</div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.3]                                                  (1)      (2)                     θaux = Φ⊤ Φ       Φ Fθ a .              (8)</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.3] be satisfied. Specifically, we require that ϕ(·)θb = ϕ(·)θb</div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.3]            (1)    (2)                                           The specified data informativity condition in Sect. 2 im-</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.3] implies θb = θb , which corresponds to an identifiably                                                             −1</div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.3]                                                                 plies that Φ is full rank; hence, the inverse Φ⊤ Φ     exists.</div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.3] condition under the functions composing ϕ (distinguisha-                           −1</div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.3]                                                                 In fact, Φ⊤ Φ</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.3]                                                                                  </div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.3] bility of θ), and we require the input sequence in the data                           Φ corresponds to the Moore-Penrose</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.3] set DN to be weakly persistently exciting in the sense that     pseudo inverse of Φ. With the introduced parameter θaux ,</div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.3]          (1)    (2)                   (1)           (2)         the prediction map (5) is modified as</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.3]      ∥Φ(θb − θb )∥22 = 0 ⇒ ϕ(·)θb = ϕ(·)θb .             (6)</div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.3] Under these conditions, the regressor matrix Φ is full rank.                    Ŷ = Φθb + FθANN − Φθaux ,                (9)</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.3]                                                                                            | a {z</div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.3] Let θb∗ denote the physically true baseline parameters. If</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.3]                                                                                                        }</div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.3]                                                                                                   F̃θANN</div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.3]                                                                                                     a</div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.3] Φ is not full rank, there exists a non-zero vector p such</div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.3] that Φp = 0. In this case, Φθb∗ = Φ(θb∗ + λp), where λ ∈ R      where  F̃θANN</div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.3]                                                                           a</div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.3]                                                                                 denotes the vectorized formulation of the</div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.3] is an arbitrary non-zero constant, implying that θb∗ is not     projected learning component. Substituting θaux based on</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.3] uniquely identifiably from DN . Therefore, we make the          (8) into (9), the proposed parametrization for the learning</div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.3] following assumption.                                           component can be expressed as</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.3]                                                                                      h</div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.3]                                                                                               ⊤</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.3]                                                                                                   −1 ⊤ i ANN</div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.3] Assumption 1. The training data set DN satisfies                           F̃θANN</div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.3]                                                                               a</div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.3]                                                                                    =  I − Φ Φ   Φ    Φ Fθa .           (10)</div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.3]                        rank(Φ) = nθ ,                    (7)</div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.3] where Φ ∈ R  N ny ×nθ</div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.3]                       with N ny ≥ nθ .                          The presented model structure ensures guaranteed orthog-</div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.3]                                                                 onality between the baseline and learning components over</div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.3] This is a core assumption upon which the subsequent or-         the training data, as shown in Lemma 3.</div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.3] thogonal parametrization is developed. It should be noted,      Lemma 3. Following the parametrization outlined in (9),</div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.3] however, that this condition only guarantees a unique           orthogonality between the baseline and projected learning</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.3] solution of the estimation problem w.r.t. the baseline          component is guaranteed on the training set, i.e.,</div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.3] model. Further discussions on how the learning component                               Φ⊤ F̃θANN = 0.                (11)</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.3] influences this property will be provided in Sect. 3 and 4.                                  a</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.3] </div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.3] </div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.3]                                                                 Proof. Substituting (10) into (11), we arrive to</div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.3]        3. ORTHOGONAL-BY-CONSTRUCTION                                                           −1 ⊤ ANN</div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.3]               PARAMETRIZATION                                          Φ⊤ FθANN</div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.3]                                                                             a</div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.3]                                                                                  − Φ ⊤ Φ Φ⊤ Φ      Φ Fθ a    = 0.        (12)</div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.3]                                                                                    |      {z     }</div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.3]                                                                                              I                              ■</div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.3] 3.1 Non-uniqueness of the parametrization</div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.3]                                                                 Alternatively, θaux in (8) can be constructed by using any</div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.3] Commonly applied function approximators, such as ANNs,          auxiliary evaluation of the regressor ϕ that can either</div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.3] employed to parameterize the learning component, are            be on a synthetically generated data set or a subset of</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.3] typically overparameterized. As a result, multiple param-       the estimation data. In the remainder of this paper, we</div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.3] eter values of θa can result in the same IO relations of the    will assume that the whole training data set is utilized</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.3] learning component. This is generally referred to as non-       when constructing (8), but keep in mind that the proposed</div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.3] identifiability. More critically, due to the inherent struc-    methodology is not restricted to this scenario.</div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.3] ture of the additive model augmentation in (3), multiple        For the applied parametrization, model training now re-</div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.3] parameter pairs (θb , θa ) can minimize (4) even when the       sults in the estimated θ̂b , θ̂a parameters and, moreover,</div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.3] learning component itself is uniquely parameterized. As</div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.3] a consequence, the baseline parameters might be tuned           a fixed θ̂aux value. This is due to the applied orthogo-</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.3] to unrealistic values; hence, the interpretability of the       nal projection depending on the data distribution of DN .</div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.3] augmented model can be compromised. Example 2 demon-            Hence, after training, prediction on new test data can be</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.3] strates the effect of this parameter non-uniqueness on the      computed as</div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.3] interpretability of the model augmentation structure.                     ŷk = ϕ(xk )θ̂b + fθ̂ANN (xk ) − ϕ(xk )θ̂aux . (13)</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.3]                                                                                              a</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.3] </div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.4]              4. THEORETICAL ANALYSIS                           Note that Assumption 6 is only realistic for a finite N</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.4]                                                                number of data points if the training data does not</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.4] 4.1 Recovery of the baseline parameters                        contain any noise. Later, in Sect. 4.3, we will show that</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.4]                                                                under certain conditions, Assumption 6 holds as N →</div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.4] To analyze theoretically the error of the estimated base-      ∞ even when noise is present in the data, i.e., we will</div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.4] line parameters, first, we reformulate the data-generating     prove consistency of the estimator. Before moving to the</div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.4] system (1) as                                                  noisy scenario, we show that the proposed orthogonal</div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.4]                                                                parametrization recovers the physically true parameters</div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.4]                 yk = ϕ(xk )θb∗ + δ(xk ) + ek ,        (14)</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.4]                                                                of the baseline model if the training data is noiseless.</div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.4] where δ : Rnx → Rny represents the unmodeled terms,            Theorem 7. Under Assumptions 1 and 6, if Condition 4</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.4] while θb∗ ∈ Rnθ denotes the physically true baseline           is satisfied, then the estimation error of the baseline</div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.4] parameters. Then, a similar vectorized form of the true</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.4] dynamics on the training data can be provided as in (5):       parameters is zero, i.e., θ̂b = θb∗ .</div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.4]                     Y = Φθb∗ + ∆ + E,                 (15)     Proof. Assumption 6 implies that the relations of the</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.4] where Y ∈ R    N ny</div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.4]                     is the vectorized form of the system       data-generating system are exactly recovered on the train-</div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.4] outputs, and ∆ ∈ RN ny , E ∈ RN ny are the collection of       ing data. Assumption 1 dictates that parametrization (9)</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.4] the δ(xk ) and ek terms, respectively.                         exists and the true baseline parameters can be identified</div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.4]                                                                based on DN . Hence, substituting (9) to (18) leads to</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.4] Achieving orthogonal subcomponents is only realistic if                             h            −1 ⊤ i ANN</div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.4] the baseline model regressor matrix function is in fact            Φθb∗ + ∆ = Φθ̂b + I − Φ Φ⊤ Φ       Φ Fθ̂a .       (19)</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.4] orthogonal to the unmodeled terms on a task-specific</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.4]                                                                Left multiplying both sides with Φ⊤ , then dropping out</div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.4] operating domain xk ∈ X ⊆ Rnx . Thus,</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.4]                 Z                                              terms similarly as in the proof of Lemma 3, we arrive to</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.4]                      ϕ⊤ (x)δ(x) dx = 0.            (16)                          Φ⊤ Φθb∗ + Φ⊤ ∆ = Φ⊤ Φθ̂b .     (20)</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.4]                    x∈X</div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.4]                                                                Re-arranging the terms and taking the ℓ2 norm of both</div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.4] Moreover, we require that the above-defined orthogonality      sides leads to</div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.4]                                                                                                    −1 ⊤</div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.4] is reflected in the gathered data.                                          ∥θb∗ − θ̂b ∥2 = ∥ Φ⊤ Φ    Φ ∆∥2 ,   (21)</div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.4] Condition 4. The data set DN generated by (14) satisfies       which is exactly zero, since Φ⊤ ∆ = 0 according to</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.4]                    N</div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.4]                    X −1                                        Condition 4.                                    ■</div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.4]                           ϕ⊤ (xi )δ(xi ) = 0.          (17)</div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.4]                    i=0                                         4.2 Comparison with the standard parametrization</div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.4] For certain basis functions in ϕ and δ (e.g., orthogonal       Two important factors can be derived from Theorem 7.</div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.4] polynomials), (16) implies that with N → ∞ there always        First, when Assumptions 1 and 6 hold, but Condition 4</div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.4] exists an appropriate selection of regressor points xk to      does not, the true baseline parameters can not be recov-</div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.4] satisfy Condition 4. For other scenarios, a dedicated ex-      ered, but the acquired θ̂b value is unique and the estima-</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.4] periment design is necessary. An alternative interpretation    tion error is given by (21). Secondly, using the standard</div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.4] is that (16) is the identifiability criterion of model class   additive structure (3) can result in larger baseline param-</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.4] (9), while (17) is a specific excitation condition for the     eter errors (in a worst-case sense) than the orthogonal</div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.4] considered identification problem.                             parametrization, even when Condition 4 is not satisfied. To</div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.4] Remark 5. If the structure of δ can be inferred from prior     show this, we make the following reasonable assumption.</div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.4] physical knowledge, it is possible to specifically design an   Assumption 8. The baseline model contains the dominant</div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.4] input sequence that satisfies Condition 4 (at least with       characteristics of the data-generating system; hence, for</div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.4] respect to the suspected unmodeled terms). This is a           the given data sequence in DN , it holds that</div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.4] common scenario in practical applications. For example,</div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.4] in aerial robotics, the drag force is known to depend                               ∥Φθb∗ ∥2 &gt; ∥∆∥2 .                  (22)</div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.4] quadratically on the relative velocity of the object (Huang    Let the error of the baseline parameters with the orthogonal-</div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.4] et al., 2024). However, the associated aerodynamic compu-      by-construction parametrization be denoted by eorth     θb ,</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.4] tations are often complex, and this force term is typically</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.4]                                                                which is given by (21), based on Theorem 7. Similarly,</div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.4] left unmodeled. Incorporating these physics-based insights</div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.4]                                                                let us introduce a notation for the same error value, but</div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.4] can, however, guide the design of experiments that fulfil</div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.4]                                                                without the proposed parametrization. However, without</div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.4] Condition 4.</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.4]                                                                orthogonalization, θ̂b is non-unique, hence, when Assump-</div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.4] Next, we assume that the minimization of (4) results in        tion 6 holds, the following equivalence set can be defined:</div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.4] such θb , θa estimates for which the relations of (14) are       Θb × Θa = {(θb , θa ) | ϕ(xk )θb + fθANN (xk ) =</div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.4]                                                                                                       a</div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.4] exactly recovered on the training data.</div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.4]                                                                                    ϕ(xk )θb∗ + δ(xk ), ∀xk ∈ DN }.    (23)</div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.4] Assumption 6. The identified model recovers the dynam-</div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.4] ics of the data-generating system (14) on the training data    Then, estd</div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.4]                                                                       θb denotes the upper bound of the error value, as</div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.4] set DN , as                                                                   estd           ∗</div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.4]                                                                                θb = sup ∥θb − θ̂b ∥2 .            (24)</div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.4]                   Φθb∗ + ∆ = Φθ̂b + F̃θ̂ANN ,          (18)                          θ̂b ∈Θb</div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.4]                                           a</div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.4] </div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.4] where θ̂b and θ̂a are the estimated parameters of the          Now we can use a similar analysis as in Theorem 7,</div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.4] baseline and learning component, respectively.                 however, the learning component does not drop out when</div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.4] </div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.5] left-multiplying the expression with Φ⊤ , and the following      any {ui , yi }ki=−n , {ũi , ỹi }ki=−n with n = max(na , nb ), the</div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.5] error characterization holds under Assumption 6:                 predictor γk satisfies that</div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.5]                             −1 ⊤ ANN</div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.5]      ∥θb∗ − θ̂b ∥2 = ∥ Φ⊤ Φ                                        ∥γk (θ, {yi }k−1          k</div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.5]                                               </div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.5]                                Φ Fθa − ∆ ∥2 .          (25)                     i=−na , {ui }i=−nb )−</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.5] Then, it is enough to show that there exists at least                           γk (θ, {ỹi }k−1           k</div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.5]                                                                                              i=−na , {ũi }i=−nb )∥2 ≤ CΓk , (28)</div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.5] one parametrization for the standard model augmenta-                           Pk</div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.5] tion approach that satisfies Assumption 6, but provides          where Γk = i=−n λk−i (∥ui − ũi ∥2 +∥yi − ỹi ∥2 ); moreover,</div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.5] larger baseline recovery error than the orthogonal-by-           ∥γ(θ, {0}k−1          k</div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.5]                                                                            i=−na , {0}i=−nb )∥2 ≤ C. Furthermore, (28) is</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.5] construction method. Consider the case when the baseline         also satisfied by ∂θ∂</div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.5]                                                                                        γk .</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.5] component is estimated to be zero, θb = 0. Then, based</div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.5] on Assumption 6 and the defined equivalence set in (23),         Theorem 12. (Convergence). Consider the data-generating</div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.5] the learning component becomes FθANN     = Φθb∗ + ∆. Using       system (1) satisfying Condition 10 with a quasi-stationary</div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.5]                                      a</div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.5] this specific scenario and Assumption 8, comparing the           u independent of the white noise process e. Given the</div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.5] formulation of (25) with (21), it straightforwardly follows      model set M defined by (9) satisfies Condition 11, then</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.5] that ebase</div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.5]        θb  &gt; eorth</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.5]                  θb .</div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.5]                                                                            sup      ∥VDN (θb , θa ) − V̄ (θb , θa )∥2 → 0,   (29)</div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.5]                                                                        vec(θb ,θa )∈Θ</div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.5] Remark 9. The error of the estimated baseline parameters</div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.5] in (25) is similar to the one in Donati et al. (2025),           with probability 1 as N → ∞, where V̄ (θb , θa ) =</div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.5] which also follows intuitively. When the dynamics of (14)        limN →∞ N1 E{∥Y − Ŷ ∥22 }.</div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.5] are recovered on the training data, the exact baseline</div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.5] parameters are found only if the learning component              Proof. The identification criterion given by (4) satisfies</div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.5] identifies the unmodeled terms and nothing else. If the          Condition C1 in Ljung (1978), hence the proof of (Ljung,</div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.5] ANN learns parts that the baseline model could represent,        1978, Lemma 3.1) applies for the considered case.        ■</div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.5] the true baseline parameters can not be retained.                Remark 13. In practice, Condition 11 serves only as a</div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.5]                                                                  technical condition. After acquiring the estimate of the</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.5] 4.3 Consistency analysis                                         model parameters θ̂, it can be numerically checked whether</div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.5]                                                                  the given model realization satisfies this requirement. For</div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.5] In the previous derivations, we assumed that the model           a strict guarantee of satisfying Condition 11, a so-called</div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.5] training results in such parameters for which the exact          stable-by-design parametrization can be applied. See, e.g.,</div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.5] relations of the data-generating system are recovered on         Revay et al. (2024); Kon et al. (2025). Extending these</div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.5] the training set. Now, we will provide certain conditions        methods for the model augmentation setting is an open</div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.5] under which this assumption is satisfied for N → ∞, i.e.,        question and can be the topic of future research.</div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.5] we will show consistency of the estimator following the</div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.5] arguments of Ljung (1978). For that, first we require that       Similarly, as in Sect. 4.1, we assume that system (14) be-</div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.5] the data-generating system (1) is stable.                        longs to model class M. Due to the overparametrization of</div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.5] Condition 10. (Stable data-generating system). The data-         the learning problem, we define an equivalence set Θ∗ ⊂ Θ</div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.5] generating system (1) has the property that, for any ρ &gt; 0,      as in (23), which contains all θ∗ ∈ Θ for which Mθ∗ is</div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.5] there exist a C(ρ) ∈ [0, ∞), and a λ ∈ [0, 1), such that         equivalent to the data-generating system. Later, we will</div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.5]                                                                  verify that the baseline part for all θ∗ ∈ Θ∗ remains unique</div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.5]          Ee ∥yk − ỹk ∥42 &lt; C(ρ)λk−ko , ∀k ≥ ko</div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.5]              </div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.5]                                                          (26)</div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.5]                                                                  by applying the orthogonal-by-construction parameteriza-</div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.5] under any ko ≥ 0, x0 , x̃0 ∈ Rnx with ∥x0 − x̃0 ∥2 &lt; ρ,          tion. In order to show that, we require that non-equivalent</div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.5] and {(ui , ei )}∞</div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.5]                 i=0 ∈ W[0,∞] , where W[0,∞] denotes the σ-       models can be distinguished in M based on DN .</div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.5] algebra associated with the random variables {(ui , ei )}∞</div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.5]                                                          i=0 ;   Condition 14. (Persistency of excitation). Given model set</div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.5] moreover, the random variables yk and ỹk satisfy (1) with                                                               −1</div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.5] the same (uk , ek ), but with xko = x0 and x̃ko = x̃0 .          M = {Mθ | θ ∈ Θ}, we call the input sequence {ui }N   i=0 in</div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.5]                                                                  DN weakly persistently exciting, if for all parametrizations</div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.5] Next, we make assumptions on the representation capa-            given by θ1 , θ2 ∈ Θ for which the function mapping is</div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.5] bility of the applied model parametrization. Let us de-          unequal, i.e., V(·) (θ1 ) ̸= V(·) (θ2 ), we have</div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.5] note the model structure represented by (9) as Mθ with                                 VDN (θ1 ) ̸= VDN (θ2 ),            (30)</div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.5] θ = vec(θb , θa ) ∈ Rnθ . Furthermore, we assume that θ is       with probability 1.</div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.5] restricted to vary in a compact set Θ ⊂ Rnθ , hence, the</div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.5] considered model set is given by M = {Mθ | θ ∈ Θ}. For a         For linear time-invariant models, the classical persistency</div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.5] given model structure Mθ , the corresponding 1-step-ahead        of excitation (PE) condition that is characterized solely</div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.5] predictor can be expressed according to (9), as                  on the input trajectory in the open loop case, implies a</div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.5]            ŷkpred = γk (θ, {yi }k−1          k                  fundamental informativity requirement, i.e., distinguisha-</div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.5]                                  i=−na , {ui }i=−nb ). (27)</div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.5]                                                                  bility of (equivalence sets of) parameters under the data</div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.5] We take a further assumption that γk is differentiable</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.5]                                                                  (Gevers et al., 2009). For NARX-type models with linear-</div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.5] w.r.t. θ everywhere on an open neighborhood Θ̆ of Θ.             in-the-parameters form as (2), the PE condition requires</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.5] In practice, only such parametrizations are considered for       the regressor matrix composed of nonlinear basis functions</div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.5] which automatic differentiation is available; hence, this is     to be of full column rank. Unlike for linear systems, this</div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.5] only a technical condition. Moreover, we require γk to           condition depends not only on the input signal, but also</div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.5] be stable w.r.t. perturbations regarding the data set, to        on the resulting output trajectories. Consequently, PE</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.5] guarantee convergence of the predictor.                          requirements must be assessed at the level of the nonlinear</div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.5] Condition 11. (Stable predictor). There exist a C ∈ [0, ∞)       regressor. Considering the full nonlinear model augmenta-</div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.5] and a λ ∈ [0, 1) such that, for any k ≥ 0 and θ ∈ Θ̆, and        tion structure of (3) further complicates the PE condition.</div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.5] </div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.6] In practice, space-filling and model-based excitation de-                    estimated θb and θa parameters. Under the conditions</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.6] signs (see, e.g., (Liu et al., 2025)) can be applied to select               of the consistency results, the asymptotic distribution of</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.6] inputs for maximizing data information content over the                      θ̂N can be expressed w.r.t. to limN →∞ θ̂N = θ∗ ∈ Θ∗ as</div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.6]                                                                              √</div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.6] regressor space.                                                                N (θ̂N − θ∗ ) ∈ As N (0, Pθ ) (Ljung, 1998). Then, under</div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.6] Lastly, to prove consistency, we need to show that any                       the considered quadratic loss function,</div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.6] element of Θ∗ has minimal cost with N → ∞.                                                                 −1 </div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.6]                                                                                 Pθ = Ē{ψk⊤ (θ∗ )ψk (θ∗ )}       Ē{2ψk⊤ (θ∗ )Σ0 ψk (θ∗ )}</div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.6]                                                                                                                                           </div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.6] Lemma 15. (Minimal cost). If Θ∗ ̸= ∅, then the minimum                                                                             −1</div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.6]                                                                                                               Ē{ψk⊤ (θ∗ )ψk (θ∗ )}</div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.6]                                                                                                              </div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.6] of the limit limN →∞ VDN (θb , θa ) is reached only when                                                                                 , (37)</div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.6] vec(θb , θa ) ∈ Θ∗ .                                                         where ψk (θ∗ ) ∈ Rny ×nθ is the Jacobian matrix 1 ∂ ŷk /∂θ.</div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.6] Proof. Substituting (15) and (9) into the cost function                      Based on DN and parameter estimate θ̂N , Pθ can be</div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.6] (4) gives                                                                    estimated as</div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.6]                                                                                         &quot; N −1                      #−1</div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.6]           1                                                                               1 X ⊤ N</div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.6]             ∥ Φθ∗ + ∆ − Φθb − F̃θANN  +E∥22 ,      (31)                           N</div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.6]                                                                                P̂ =                              N</div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.6]                                                                                                    ψk (θ̂ )ψk (θ̂ )</div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.6]           N | b          {z       a</div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.6]                                     }                                                    N</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.6]                                    ε                                                         k=0</div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.6]                                                                                                                                           #−1</div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.6] which can be reformulated as</div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.6]                                                                              &quot; N −1                           # &quot; N −1</div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.6]                                                                                 2 X ⊤ N N                   N     1 X ⊤ N              N</div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.6]                     1          2           1                                            ψk (θ̂ )Σ̂ ψk (θ̂ )              ψk (θ̂ )ψk (θ̂ )     ,</div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.6]                       ∥ε∥22 + ε⊤ Eε + ∥E∥22 .              (32)                N                                  N</div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.6]                    N          N            N                                       k=0                               k=0</div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.6] </div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.6] As N → ∞, the sample distribution of {ek }k=0 will    N −1                                                                                  (38)</div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.6] converge to the original white noise distribution of ek with                                            N −1</div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.6]                                                                              where Σ̂N = (1/N ) k=0 (yk − ŷk )(yk − ŷk )⊤ . This gives</div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.6]                                                                                                       P</div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.6] (finite) variance Σe . Thus, the second term in (32) is equal                an approximation for the covariance of the parameters, as</div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.6] to zero, since ek is uncorrelated with (ϕ(xk )θb∗ +δ(xk )−ŷk ).             Cov(θ̂N ) ≃ N1 P̂ N .</div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.6] Moreover, N → ∞ also implies that N1 ∥E∥22 → trace(Σe ).</div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.6]                                                                              Theorem 18. (Zero covariance). Under the conditions of</div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.6] Since the first term in (32) is non-negative,</div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.6]                                                                              Theorem 16 and Σe being diagonal, the covariance between</div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.6]                          1                                                   the estimated baseline and learning component parame-</div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.6]                    lim      ∥Y − Ŷ ∥22 ≥ trace(Σe ),      (33)</div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.6]                  N →∞ N                                                      ters, θ̂bN and θ̂aN , is zero.</div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.6] where equality (i.e., the minimal cost of the identification</div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.6] criterion) holds when ε = 0, thus, when the identified                       Proof. According to Theorem 16 the approximation in</div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.6] model recovers the relations of the data-generating system,                  (38) is valid. Then, as the parameter vector θ is separated</div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.6] i.e., vec(θb , θa ) ∈ Θ∗ .                                   ■               into the baseline and learning parts, the gradient ∂ ŷk /∂θ</div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.6] Theorem 16. (Consistency). Under the conditions of The-                      can be computed separately:</div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.6] orem 12 and Lemma 15 and Conditions 4 and 14,                                               ∂ ŷk           ∂ ŷk</div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.6]                                                                                                   = ϕ(xk ),       = Jf (xk ),        (39)</div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.6]                           lim θ̂N ∈ Θ∗ ,                              (34)                  ∂θb             ∂θa</div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.6]                          N →∞</div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.6]                                                                              where Jf denotes the Jacobian of f˜ANN (xk ) w.r.t θa ,</div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.6]                                                                                                                          θa</div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.6]                           lim θ̂bN = θb∗ ,                            (35)</div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.6]                          N →∞                                                evaluated at θ̂N . Since ψk is computed on the training</div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.6] with probability 1, where                                                    data set, f˜θANN</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.6]                                                                                           a</div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.6]                                                                                               is orthogonal to the subspace spanned by Φ;</div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.6]    θ̂N = vec(θ̂bN , θ̂aN ) = arg       min          VDN (θb , θa ).   (36)   moreover, all changes in the projected ANN output remain</div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.6]                                    vec(θb ,θa )∈Θ                            orthogonal to the columns of Φ, hence ϕ⊤ Jf = 0. Then,</div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.6]                                                                              for all data points in DN</div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.6] Proof. For the proof of (34), see Lemma 4.1 in Ljung                                                 ⊤                              </div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.6]                                                                                  ⊤ N          N      ϕ (xk )ϕ(xk )          0</div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.6] (1978). Note that the applied loss function (4) fulfills                        ψk (θ̂ )ψk (θ̂ ) =                                     . (40)</div>
+<div id="L481"><a href="#L481">00481</a> [PDF p.6] Condition (4.4) in Ljung (1978). To prove (35), refer                                                     0         Jf⊤ (xk )Jf (xk )</div>
+<div id="L482"><a href="#L482">00482</a> [PDF p.6] back to Theorem 7. With the conditions of Lemma 15,                                                                              PN</div>
+<div id="L483"><a href="#L483">00483</a> [PDF p.6]                                                                              The expression in (40) is block-diagonal, hence k=0 ψk⊤ ψk</div>
+<div id="L484"><a href="#L484">00484</a> [PDF p.6] Assumption 6 is trivially satisfied; hence, (35) holds under                 is a sum of block-diagonal matrices with the same struc-</div>
+<div id="L485"><a href="#L485">00485</a> [PDF p.6] Condition 4.                                               ■                 ture. Assuming both blocks are full rank, the first and third</div>
+<div id="L486"><a href="#L486">00486</a> [PDF p.6] Remark 17. For the noiseless case, i.e., when ek ≡ 0, the                    terms in (38) can be computed by separately inverting</div>
+<div id="L487"><a href="#L487">00487</a> [PDF p.6] error expression for θb in (21) holds for all N provided that                the two blocks, again resulting in the same block-diagonal</div>
+<div id="L488"><a href="#L488">00488</a> [PDF p.6] all other conditions of Theorem 16 are satisfied. In this                    structure. With the noise process ek affecting each output</div>
+<div id="L489"><a href="#L489">00489</a> [PDF p.6] scenario, attaining the global minimum of the cost function                  channel being uncorrelated, it is reasonable to assume that</div>
+<div id="L490"><a href="#L490">00490</a> [PDF p.6] implies that the exact dynamics of the data-generating                       Σ̂N in (38) is diagonal. Thus, the middle term in (38)</div>
+<div id="L491"><a href="#L491">00491</a> [PDF p.6] system are recovered on the training data. In contrast,                      also follows the same block diagonal structure, ultimately</div>
+<div id="L492"><a href="#L492">00492</a> [PDF p.6] when ek ̸= 0, this equivalence holds only in a statistical                   causing Cov(θ̂N ) being block-diagonal, hence the zero co-</div>
+<div id="L493"><a href="#L493">00493</a> [PDF p.6] sense, which motivates the asymptotic (N → ∞) nature</div>
+<div id="L494"><a href="#L494">00494</a> [PDF p.6]                                                                              variance between θ̂bN and θ̂aN .                              ■</div>
+<div id="L495"><a href="#L495">00495</a> [PDF p.6] of (35).</div>
+<div id="L496"><a href="#L496">00496</a> [PDF p.6]                                                                              Zero covariance between θ̂b and θ̂a implies that the applied</div>
+<div id="L497"><a href="#L497">00497</a> [PDF p.6] 4.4 Covariance of the model parameters                                       parameter initialization of the ANN weights does not affect</div>
+<div id="L498"><a href="#L498">00498</a> [PDF p.6]                                                                              the estimation of the baseline parameters, maintaining a</div>
+<div id="L499"><a href="#L499">00499</a> [PDF p.6] Finally, we show that, due to the orthogonality be-</div>
+<div id="L500"><a href="#L500">00500</a> [PDF p.6] tween the baseline and learning components, the proposed                     1 Note that ψk is defined with a different dimensional notation</div>
+<div id="L501"><a href="#L501">00501</a> [PDF p.6] parametrization results in zero covariance between the                       compared to Ljung (1998) for practical reasons.</div>
+<div id="L502"><a href="#L502">00502</a> [PDF p.6] </div>
+<div id="L503"><a href="#L503">00503</a> [PDF p.7] clear separation between the two submodels and promot-</div>
+<div id="L504"><a href="#L504">00504</a> [PDF p.7] ing interpretable model augmentation.</div>
+<div id="L505"><a href="#L505">00505</a> [PDF p.7] </div>
+<div id="L506"><a href="#L506">00506</a> [PDF p.7]            5. IDENTIFICATION EXAMPLES</div>
+<div id="L507"><a href="#L507">00507</a> [PDF p.7] </div>
+<div id="L508"><a href="#L508">00508</a> [PDF p.7] This section presents two identification examples 2 that</div>
+<div id="L509"><a href="#L509">00509</a> [PDF p.7] demonstrate the effectiveness of the proposed orthogonal-</div>
+<div id="L510"><a href="#L510">00510</a> [PDF p.7] by-construction model augmentation structure. The first</div>
+<div id="L511"><a href="#L511">00511</a> [PDF p.7] example considers a static nonlinear data-generating sys-</div>
+<div id="L512"><a href="#L512">00512</a> [PDF p.7] tem and illustrates the theoretical properties derived in</div>
+<div id="L513"><a href="#L513">00513</a> [PDF p.7] previous sections. The second example involves a physics-</div>
+<div id="L514"><a href="#L514">00514</a> [PDF p.7] motivated simulation study, in which the proposed ap-</div>
+<div id="L515"><a href="#L515">00515</a> [PDF p.7] proach is further evaluated and compared with existing</div>
+<div id="L516"><a href="#L516">00516</a> [PDF p.7] methods from the literature.                                     Fig. 1. Error of the estimated baseline parameters and</div>
+<div id="L517"><a href="#L517">00517</a> [PDF p.7]                                                                       RMSE of the simulated model response under σe2 = 0</div>
+<div id="L518"><a href="#L518">00518</a> [PDF p.7] 5.1 Academic simulation example                                       for 10 Monte Carlo runs.</div>
+<div id="L519"><a href="#L519">00519</a> [PDF p.7] </div>
+<div id="L520"><a href="#L520">00520</a> [PDF p.7] To demonstrate the capabilities of the proposed model</div>
+<div id="L521"><a href="#L521">00521</a> [PDF p.7] augmentation approach, we have generated data using the</div>
+<div id="L522"><a href="#L522">00522</a> [PDF p.7] following static nonlinear system:                               First, the data sets were generated using σe2 = 0 to test</div>
+<div id="L523"><a href="#L523">00523</a> [PDF p.7]             yk = θ0 + θ1 uk + θ2 u2k + θ3 u3k + ek , (41)        the methodologies without noise. Based on the 10 different</div>
+<div id="L524"><a href="#L524">00524</a> [PDF p.7]                                                                  initialization points, the test errors and the estimation</div>
+<div id="L525"><a href="#L525">00525</a> [PDF p.7] where θ0 = 0.01, θ1 = 1, θ2 = −0.5, θ3 = 0.1, moreover,          errors regarding θb are shown in Fig. 1. Keep in mind</div>
+<div id="L526"><a href="#L526">00526</a> [PDF p.7] ek ∼ N (0, σe2 ). We assume that, based on prior physical        that models were estimated on the same data during</div>
+<div id="L527"><a href="#L527">00527</a> [PDF p.7] knowledge, a to-be-augmented baseline model is available:        the Monte Carlo study; only initialization of the model</div>
+<div id="L528"><a href="#L528">00528</a> [PDF p.7]                    ŷk (uk ) = θ̂1 uk + θ̂3 u3k ,        (42)    parameters was varied. Both parametrizations with the</div>
+<div id="L529"><a href="#L529">00529</a> [PDF p.7]                                                                  three different training data sets have generated similar,</div>
+<div id="L530"><a href="#L530">00530</a> [PDF p.7] where the baseline parameters are θ̂1 , and θ̂2 with initial</div>
+<div id="L531"><a href="#L531">00531</a> [PDF p.7]                                                                  highly accurate results near the numerical tolerance of the</div>
+<div id="L532"><a href="#L532">00532</a> [PDF p.7] values as θ̂10 = 0.8, θ̂20 = 0.03. Similar physics-based base-   applied optimizer. The main advantage of the orthogonal-</div>
+<div id="L533"><a href="#L533">00533</a> [PDF p.7] line models have high relevance in system identification         by-construction method is highlighted when we investigate</div>
+<div id="L534"><a href="#L534">00534</a> [PDF p.7] theory (Schoukens and Tiels, 2017). For the learning com-                                                                 (1)</div>
+<div id="L535"><a href="#L535">00535</a> [PDF p.7] ponent, a simple feedforward ANN with 1 hidden layer and         the error of the estimated baseline parameters. For DN ,</div>
+<div id="L536"><a href="#L536">00536</a> [PDF p.7] 16 neurons is applied, using the hyperbolic tangent (tanh)       the special persistence of excitation condition, i.e., Con-</div>
+<div id="L537"><a href="#L537">00537</a> [PDF p.7] activation. The ANN parameters are initialized with the          dition 4, is satisfied, and θb converges to the physically</div>
+<div id="L538"><a href="#L538">00538</a> [PDF p.7] Xavier method (Glorot and Bengio, 2010).                         true values (within numerical error), as shown in Fig. 2a.</div>
+<div id="L539"><a href="#L539">00539</a> [PDF p.7]                                                                  When this condition is not fulfilled, the exact values of θb</div>
+<div id="L540"><a href="#L540">00540</a> [PDF p.7] Three distinct datasets are generated for training to high-      can not be recovered, but the uniqueness of the estimated</div>
+<div id="L541"><a href="#L541">00541</a> [PDF p.7] light the importance of data generation, each with N =           baseline parameter still holds, as shown in Fig. 2b, and 2c.</div>
+<div id="L542"><a href="#L542">00542</a> [PDF p.7] 1024 data points. The first approach applies a white noise       It is worth mentioning that using different input sequences</div>
+<div id="L543"><a href="#L543">00543</a> [PDF p.7] input signal with uk ∼ N (0, 0.32 ) for generating 512           sampled from the same distribution would result in slightly</div>
+<div id="L544"><a href="#L544">00544</a> [PDF p.7] samples, then the rest of the data points are acquired by                                            (2)       (3)</div>
+<div id="L545"><a href="#L545">00545</a> [PDF p.7]                                                                  different estimation results for DN and DN . For certain</div>
+<div id="L546"><a href="#L546">00546</a> [PDF p.7] using the first half of the input signal multiplied by -1.       ANN initializations, the standard additive structure has</div>
+<div id="L547"><a href="#L547">00547</a> [PDF p.7] This results in a symmetric training data set (denoted by        yielded reasonably accurate baseline parameters; on aver-</div>
+<div id="L548"><a href="#L548">00548</a> [PDF p.7]   (1)</div>
+<div id="L549"><a href="#L549">00549</a> [PDF p.7] DN ), since the even nonlinearities are orthogonal to odd        age, it provided significantly less accurate θb estimates, as</div>
+<div id="L550"><a href="#L550">00550</a> [PDF p.7] nonlinearities, according to (17), Condition 4 is satisfied.     visible in Fig. 1. To show that the ANN with orthogonal</div>
+<div id="L551"><a href="#L551">00551</a> [PDF p.7]                     (2)                                          projection learns exactly the missing quadratic function in</div>
+<div id="L552"><a href="#L552">00552</a> [PDF p.7] The second set DN is gathered by applying 1024 input</div>
+<div id="L553"><a href="#L553">00553</a> [PDF p.7] samples directly generated by the previous distribution.         (41) under Condition 4, Fig. 3a shows the outputs of the</div>
+<div id="L554"><a href="#L554">00554</a> [PDF p.7] This results in a dataset with, most likely, small asym-         learning component for both the orthogonal parametriza-</div>
+<div id="L555"><a href="#L555">00555</a> [PDF p.7]                                                                                                                       (1)</div>
+<div id="L556"><a href="#L556">00556</a> [PDF p.7] metries. However, these asymmetries will disappear, and          tion and the standard additive structure (for DN and</div>
+<div id="L557"><a href="#L557">00557</a> [PDF p.7]                                     (3)</div>
+<div id="L558"><a href="#L558">00558</a> [PDF p.7] (17) holds for N → ∞. Finally, DN is acquired by using           σe2 = 0). It is visible that the proposed method has recov-</div>
+<div id="L559"><a href="#L559">00559</a> [PDF p.7] an asymmetric distribution of uk ∼ N (−0.01, 0.32 ), which       ered nearly identically the unmodeled quadratic function</div>
+<div id="L560"><a href="#L560">00560</a> [PDF p.7] will not satisfy Condition 4 when N → ∞. For testing, a          for all Monte Carlo runs, whereas the standard approach</div>
+<div id="L561"><a href="#L561">00561</a> [PDF p.7] data set is constructed with Ntest = 1024 using the same         has generated diverse results depending on the parameter</div>
+<div id="L562"><a href="#L562">00562</a> [PDF p.7]                            (2)                                   initialization; moreover, most of them exhibit distorted</div>
+<div id="L563"><a href="#L563">00563</a> [PDF p.7] input distribution as in DN . For better demonstration of</div>
+<div id="L564"><a href="#L564">00564</a> [PDF p.7]                                                                  characteristics compared to the true unmodeled terms. We</div>
+<div id="L565"><a href="#L565">00565</a> [PDF p.7] the results, the test data is kept noise-free. To minimize</div>
+<div id="L566"><a href="#L566">00566</a> [PDF p.7]                                                                  now show that the naive data generation approach used for</div>
+<div id="L567"><a href="#L567">00567</a> [PDF p.7] (4), we applied the Adam optimizer for 500 epochs, fol-                        (2)</div>
+<div id="L568"><a href="#L568">00568</a> [PDF p.7] lowed by the L-BFGS method for 1000 iterations, using the        acquiring DN also fulfills Condition 4 as N → ∞. This</div>
+<div id="L569"><a href="#L569">00569</a> [PDF p.7] identification pipeline proposed in Bemporad (2025). For         is illustrated by repeating the identification task with the</div>
+<div id="L570"><a href="#L570">00570</a> [PDF p.7] benchmarking, we applied the standard additive augmen-           orthogonal parametrization for various data lengths. The</div>
+<div id="L571"><a href="#L571">00571</a> [PDF p.7] tation, as well as the proposed orthogonal-by-construction       resulting baseline parameter error values are depicted in</div>
+<div id="L572"><a href="#L572">00572</a> [PDF p.7] method, using 10 different initialization points.                Fig. 3b. As visible, the error converges towards zero for</div>
+<div id="L573"><a href="#L573">00573</a> [PDF p.7]                                                                    (2)</div>
+<div id="L574"><a href="#L574">00574</a> [PDF p.7] 2 The used data and code for both examples are available at:     DN as N → ∞, on the other hand, it converges towards</div>
+<div id="L575"><a href="#L575">00575</a> [PDF p.7]                                                                                                 (3)</div>
+<div id="L576"><a href="#L576">00576</a> [PDF p.7] https://github.com/AIMotionLab-SZTAKI/orthogonal-IO-augm         a fixed number in case of DN .</div>
+<div id="L577"><a href="#L577">00577</a> [PDF p.7] </div>
+<div id="L578"><a href="#L578">00578</a> [PDF p.8]                                    θ̂1             θ̂2                                                       θ̂1         θ̂2                                                      θ̂1           θ̂2</div>
+<div id="L579"><a href="#L579">00579</a> [PDF p.8]                                                                                        1.0                                                                       1.0</div>
+<div id="L580"><a href="#L580">00580</a> [PDF p.8]                   1.0</div>
+<div id="L581"><a href="#L581">00581</a> [PDF p.8] Estimated value</div>
+<div id="L582"><a href="#L582">00582</a> [PDF p.8] </div>
+<div id="L583"><a href="#L583">00583</a> [PDF p.8] </div>
+<div id="L584"><a href="#L584">00584</a> [PDF p.8] </div>
+<div id="L585"><a href="#L585">00585</a> [PDF p.8] </div>
+<div id="L586"><a href="#L586">00586</a> [PDF p.8]                                                                      Estimated value</div>
+<div id="L587"><a href="#L587">00587</a> [PDF p.8] </div>
+<div id="L588"><a href="#L588">00588</a> [PDF p.8] </div>
+<div id="L589"><a href="#L589">00589</a> [PDF p.8] </div>
+<div id="L590"><a href="#L590">00590</a> [PDF p.8] </div>
+<div id="L591"><a href="#L591">00591</a> [PDF p.8]                                                                                                                                                Estimated value</div>
+<div id="L592"><a href="#L592">00592</a> [PDF p.8]                   0.5                                                                  0.5                                                                       0.5</div>
+<div id="L593"><a href="#L593">00593</a> [PDF p.8] </div>
+<div id="L594"><a href="#L594">00594</a> [PDF p.8] </div>
+<div id="L595"><a href="#L595">00595</a> [PDF p.8]                   0.0                                                                  0.0                                                                       0.0</div>
+<div id="L596"><a href="#L596">00596</a> [PDF p.8]                      Orthogonal                        Standard                           Orthogonal                         Standard                               Orthogonal                      Standard</div>
+<div id="L597"><a href="#L597">00597</a> [PDF p.8]                    parametrization                   augmentation                       parametrization                    augmentation                           parametrization                 augmentation</div>
+<div id="L598"><a href="#L598">00598</a> [PDF p.8]                                              (1)                                                                   (2)                                                                  (3)</div>
+<div id="L599"><a href="#L599">00599</a> [PDF p.8]                                   (a) DN                                                                  (b) DN                                                                 (c) DN</div>
+<div id="L600"><a href="#L600">00600</a> [PDF p.8] Fig. 2. Estimated baseline parameters with different model structures and training data distributions for σe2 = 0 with</div>
+<div id="L601"><a href="#L601">00601</a> [PDF p.8]      10 Monte Carlo steps. Horizontal dashed lines correspond to the physically true parameter values.</div>
+<div id="L602"><a href="#L602">00602</a> [PDF p.8] Learning comp.</div>
+<div id="L603"><a href="#L603">00603</a> [PDF p.8] </div>
+<div id="L604"><a href="#L604">00604</a> [PDF p.8] </div>
+<div id="L605"><a href="#L605">00605</a> [PDF p.8] </div>
+<div id="L606"><a href="#L606">00606</a> [PDF p.8] </div>
+<div id="L607"><a href="#L607">00607</a> [PDF p.8]                    0.0                                                                                                                                           10−1</div>
+<div id="L608"><a href="#L608">00608</a> [PDF p.8] </div>
+<div id="L609"><a href="#L609">00609</a> [PDF p.8] </div>
+<div id="L610"><a href="#L610">00610</a> [PDF p.8] </div>
+<div id="L611"><a href="#L611">00611</a> [PDF p.8] </div>
+<div id="L612"><a href="#L612">00612</a> [PDF p.8]                                                                                                                                                 kθb∗ − θ̂b k2</div>
+<div id="L613"><a href="#L613">00613</a> [PDF p.8]                                                                                        10−1</div>
+<div id="L614"><a href="#L614">00614</a> [PDF p.8]                                                                       kθb∗ − θ̂b k2</div>
+<div id="L615"><a href="#L615">00615</a> [PDF p.8] </div>
+<div id="L616"><a href="#L616">00616</a> [PDF p.8] </div>
+<div id="L617"><a href="#L617">00617</a> [PDF p.8] </div>
+<div id="L618"><a href="#L618">00618</a> [PDF p.8]                   −0.5                   Unmodeled terms                               10−2              (2)                                                     10−3</div>
+<div id="L619"><a href="#L619">00619</a> [PDF p.8]                                          Standard augm.                                                 DN                                                                     Standard augm.</div>
+<div id="L620"><a href="#L620">00620</a> [PDF p.8]                                          Orthogonal param.                                   −3          (3)                                                                   Orth. param.</div>
+<div id="L621"><a href="#L621">00621</a> [PDF p.8]                                                                                        10               DN</div>
+<div id="L622"><a href="#L622">00622</a> [PDF p.8] </div>
+<div id="L623"><a href="#L623">00623</a> [PDF p.8]                         −1.0    −0.5         0.0         0.5   1.0                                        103            105            107                                      103            105        107</div>
+<div id="L624"><a href="#L624">00624</a> [PDF p.8]                                              uk                                                                      N                                                                    N</div>
+<div id="L625"><a href="#L625">00625</a> [PDF p.8]                                        (1)                                                                                                                                      (1)</div>
+<div id="L626"><a href="#L626">00626</a> [PDF p.8]                                (a) DN , σe2 = 0                                                   (b) orth. param., σe2 = 0                                               (c) DN , 30 dB SNR</div>
+<div id="L627"><a href="#L627">00627</a> [PDF p.8] Fig. 3. Panel (a) shows the learning component outputs compared to the true unmodeled terms for 10 Monte Carlo</div>
+<div id="L628"><a href="#L628">00628</a> [PDF p.8]      runs. Panels (b) and (c) show the error of the estimated baseline parameters for different training data lengths.</div>
+<div id="L629"><a href="#L629">00629</a> [PDF p.8]      The results are averaged over 10 Monte Carlo runs for each N with the bars representing the ± two times the</div>
+<div id="L630"><a href="#L630">00630</a> [PDF p.8]      standard deviation. These error bars are only visible for the standard augmentation approach, as the orthogonal</div>
+<div id="L631"><a href="#L631">00631</a> [PDF p.8]      parametrization brings uniqueness regarding the estimated baseline parameters.</div>
+<div id="L632"><a href="#L632">00632</a> [PDF p.8] </div>
+<div id="L633"><a href="#L633">00633</a> [PDF p.8] To analyze estimation under noise, the value of σe2 was                                                                        Table 1. Test errors and the error of the esti-</div>
+<div id="L634"><a href="#L634">00634</a> [PDF p.8] set to reach a signal-to-noise ratio (SNR) of 30 dB w.r.t.                                                                     mated baseline parameters with 30 dB SNR.</div>
+<div id="L635"><a href="#L635">00635</a> [PDF p.8] the measured output. As the importance of satisfying                                                                            Model                                  Test RMSE        ∥θb∗ − θb ∥2</div>
+<div id="L636"><a href="#L636">00636</a> [PDF p.8] Condition 4 was demonstrated with the noiseless exam-</div>
+<div id="L637"><a href="#L637">00637</a> [PDF p.8]                     (1)</div>
+<div id="L638"><a href="#L638">00638</a> [PDF p.8] ple, now only DN is used. The results are shown in                                                                              Base additive augm.                     5.86 · 10−4       0.1952</div>
+<div id="L639"><a href="#L639">00639</a> [PDF p.8]                                                                                                                                 Orthogonal param.                       5.35 · 10−4       0.0089</div>
+<div id="L640"><a href="#L640">00640</a> [PDF p.8] Table 1. Keep in mind that the test data set does not</div>
+<div id="L641"><a href="#L641">00641</a> [PDF p.8] contain any noise for a better comparison, and similarly</div>
+<div id="L642"><a href="#L642">00642</a> [PDF p.8] as before, only parameter initialization is varied during</div>
+<div id="L643"><a href="#L643">00643</a> [PDF p.8] the Monte Carlo study, the estimation data is kept the</div>
+<div id="L644"><a href="#L644">00644</a> [PDF p.8] same. As expected, a slight increase is visible in the test</div>
+<div id="L645"><a href="#L645">00645</a> [PDF p.8] errors compared to the noiseless scenario, but similarly to</div>
+<div id="L646"><a href="#L646">00646</a> [PDF p.8] before, the orthogonal parametrization and the baseline</div>
+<div id="L647"><a href="#L647">00647</a> [PDF p.8] structure provided nearly identical results considering only</div>
+<div id="L648"><a href="#L648">00648</a> [PDF p.8] model accuracy. On the other hand, the orthogonal-by-</div>
+<div id="L649"><a href="#L649">00649</a> [PDF p.8] construction method resulted in nearly two magnitudes</div>
+<div id="L650"><a href="#L650">00650</a> [PDF p.8] more accurate baseline parameters. For this scenario, the</div>
+<div id="L651"><a href="#L651">00651</a> [PDF p.8] claimed zero covariance is also validated. After training</div>
+<div id="L652"><a href="#L652">00652</a> [PDF p.8] the orthogonal-by-construction structure, Cov(θ̂N ) is com-</div>
+<div id="L653"><a href="#L653">00653</a> [PDF p.8] puted using (38). The values of the asymptotic covariance</div>
+<div id="L654"><a href="#L654">00654</a> [PDF p.8] matrix are depicted in Fig. 4 with the elements that are                                                            Fig. 4. Elements of the asymptotic covariance matrix with</div>
+<div id="L655"><a href="#L655">00655</a> [PDF p.8] smaller than 10−6 in absolute value, i.e., numerically zero,                                                             (numerically) zero entries shown in black.</div>
+<div id="L656"><a href="#L656">00656</a> [PDF p.8] shown in black. The first two rows and columns correspond</div>
+<div id="L657"><a href="#L657">00657</a> [PDF p.8] to the baseline parameters, hence the block matrix nature                                                           5.2 Physics-motivated simulation example</div>
+<div id="L658"><a href="#L658">00658</a> [PDF p.8] of P̂ N is visible. To showcase the results of Theorem 7,</div>
+<div id="L659"><a href="#L659">00659</a> [PDF p.8] we repeated the identification task for the noisy case with                                                         Consider the discretized dynamics of a single-degree-of-</div>
+<div id="L660"><a href="#L660">00660</a> [PDF p.8] different training data lengths. As shown in Fig. 3c, the                                                           freedom mass-spring-damper (MSD) system subjected to</div>
+<div id="L661"><a href="#L661">00661</a> [PDF p.8] baseline parameter estimation error for the orthogonal-by-                                                          an external force uk :</div>
+<div id="L662"><a href="#L662">00662</a> [PDF p.8] construction method clearly converges to zero as N → ∞.                                                                yk = θ1 yk−1 + θ2 yk−2 + θ3 uk−1 −</div>
+<div id="L663"><a href="#L663">00663</a> [PDF p.8] In contrast, the standard additive model augmentation</div>
+<div id="L664"><a href="#L664">00664</a> [PDF p.8]                                                                                                                                                        yk−1 − yk−2</div>
+<div id="L665"><a href="#L665">00665</a> [PDF p.8]                                                                                                                                                                   </div>
+<div id="L666"><a href="#L666">00666</a> [PDF p.8] approach does not exhibit such convergence behavior,                                                                                        θ4 Ffric                 + ek , (43)</div>
+<div id="L667"><a href="#L667">00667</a> [PDF p.8] showing the consistency of the proposed parametrization                                                                                                     Ts</div>
+<div id="L668"><a href="#L668">00668</a> [PDF p.8] regarding the baseline parameters.                                                                                  where yk is the position of the mass, ek is an i.i.d. white</div>
+<div id="L669"><a href="#L669">00669</a> [PDF p.8]                                                                                                                     noise process resulting in approximately 30 dB SNR level,</div>
+<div id="L670"><a href="#L670">00670</a> [PDF p.8]                                                                                                                     θ1 , θ2 , θ3 and θ4 are physical parameters that can be</div>
+<div id="L671"><a href="#L671">00671</a> [PDF p.8] </div>
+<div id="L672"><a href="#L672">00672</a> [PDF p.9] expressed using the mass m, spring constant ks , damping                                                       Orth. reg.       Base. reg.     Orth. param.</div>
+<div id="L673"><a href="#L673">00673</a> [PDF p.9] coefficient cd , and sampling time Ts , as</div>
+<div id="L674"><a href="#L674">00674</a> [PDF p.9] </div>
+<div id="L675"><a href="#L675">00675</a> [PDF p.9] </div>
+<div id="L676"><a href="#L676">00676</a> [PDF p.9] </div>
+<div id="L677"><a href="#L677">00677</a> [PDF p.9] </div>
+<div id="L678"><a href="#L678">00678</a> [PDF p.9]                                                                                k(θb∗ − θ̂b )/θb∗ k2</div>
+<div id="L679"><a href="#L679">00679</a> [PDF p.9]             2m − cd Ts                m                    T2</div>
+<div id="L680"><a href="#L680">00680</a> [PDF p.9]      θ1 =              , θ2 = − , θ3 = θ4 = s ,                   (44)                           10−1</div>
+<div id="L681"><a href="#L681">00681</a> [PDF p.9]                 Γ                     Γ                    Γ</div>
+<div id="L682"><a href="#L682">00682</a> [PDF p.9] where Γ = m+cd Ts +ks Ts2 . Furthermore, the friction force</div>
+<div id="L683"><a href="#L683">00683</a> [PDF p.9] Ffric is computed according to the Stribeck model, as</div>
+<div id="L684"><a href="#L684">00684</a> [PDF p.9]                                                   |v|</div>
+<div id="L685"><a href="#L685">00685</a> [PDF p.9]                                                      </div>
+<div id="L686"><a href="#L686">00686</a> [PDF p.9] </div>
+<div id="L687"><a href="#L687">00687</a> [PDF p.9] </div>
+<div id="L688"><a href="#L688">00688</a> [PDF p.9] </div>
+<div id="L689"><a href="#L689">00689</a> [PDF p.9] </div>
+<div id="L690"><a href="#L690">00690</a> [PDF p.9]                                                                             Test RMSE</div>
+<div id="L691"><a href="#L691">00691</a> [PDF p.9]                                                                                           0.0004</div>
+<div id="L692"><a href="#L692">00692</a> [PDF p.9]   Ffric (v) = FC sign(v)+(FS −FC ) exp −                 sign(v). (45)</div>
+<div id="L693"><a href="#L693">00693</a> [PDF p.9]                                                   vS</div>
+<div id="L694"><a href="#L694">00694</a> [PDF p.9] Numerical parameter values corresponding to the data-                                     0.0002</div>
+<div id="L695"><a href="#L695">00695</a> [PDF p.9] generating system are m = 1 kg, ks = 1000 N/m, cd =</div>
+<div id="L696"><a href="#L696">00696</a> [PDF p.9] 100 Ns/m, FC = 0.8 N, FS = 1.2 N, vS = 0.02 m/s                                                         10−4        10−3         10−2        10−1       100</div>
+<div id="L697"><a href="#L697">00697</a> [PDF p.9] with a sampling time of Ts = 0.01 s. These values result                                                                    Trade-off. param</div>
+<div id="L698"><a href="#L698">00698</a> [PDF p.9] in θ1 ≈ 0.48, θ2 ≈ −0.48, θ3 = θ4 ≈ 4.8 · 10−5 (all</div>
+<div id="L699"><a href="#L699">00699</a> [PDF p.9] in appropriate SI unit). Similar MSD interconnections                    Fig. 5. Error of the estimated baseline parameters and</div>
+<div id="L700"><a href="#L700">00700</a> [PDF p.9] have high importance in mechanical engineering practice,                       RMSE of the simulated model response under differ-</div>
+<div id="L701"><a href="#L701">00701</a> [PDF p.9] as they are used for dynamic modeling a wide range of                          ent regularization values compared to the proposed</div>
+<div id="L702"><a href="#L702">00702</a> [PDF p.9] components, e.g., suspension of a ground vehicle (Prabakar                     orthogonal parametrization. The error bars repre-</div>
+<div id="L703"><a href="#L703">00703</a> [PDF p.9] et al., 2013). These systems are usually described with                        sent the ± standard deviation. As the orthogonal-</div>
+<div id="L704"><a href="#L704">00704</a> [PDF p.9] linear models, which is convenient for system analysis and                     by-construction method does not apply any trade-off</div>
+<div id="L705"><a href="#L705">00705</a> [PDF p.9] control design. Hence, we utilize the following physics-                       parameters, corresponding results are shown with hor-</div>
+<div id="L706"><a href="#L706">00706</a> [PDF p.9] based baseline model:                                                          izontal lines. The shaded area represents the standard</div>
+<div id="L707"><a href="#L707">00707</a> [PDF p.9]                                                                                deviations.</div>
+<div id="L708"><a href="#L708">00708</a> [PDF p.9]                ŷk = θ̂1 ŷk−1 + θ̂2 ŷk−2 + θ̂3 ûk−1 ,          (46)</div>
+<div id="L709"><a href="#L709">00709</a> [PDF p.9]                                                                          larization coefficients). As the true baseline model pa-</div>
+<div id="L710"><a href="#L710">00710</a> [PDF p.9] with θ̂1 , θ̂2 , and θ̂3 as baseline parameters. We assume               rameters have different magnitudes, now we evaluate the</div>
+<div id="L711"><a href="#L711">00711</a> [PDF p.9] that, based on prior knowledge, initial values are available             estimation performance by the relative error metric, as</div>
+<div id="L712"><a href="#L712">00712</a> [PDF p.9] for the parameters as m̂ = 1.1 kg, k̂s = 1100 N/m,                       ∥(θb∗ − θ̂b )/θb∗ ∥2 . The results are shown in Fig. 5. As</div>
+<div id="L713"><a href="#L713">00713</a> [PDF p.9] ĉd = 90 Ns/m. With the sampling time assumed to be                      shown in the results, the orthogonal regularization–based</div>
+<div id="L714"><a href="#L714">00714</a> [PDF p.9] known accurately, the resulting initial baseline parameters              approach converges toward the proposed method in terms</div>
+<div id="L715"><a href="#L715">00715</a> [PDF p.9] are θ̂10 = 0.61, θ̂20 = −0.52, θ̂30 = 4.7 · 10−5 . We generated          of baseline model parameter estimation error as the trade-</div>
+<div id="L716"><a href="#L716">00716</a> [PDF p.9] the training data set similarly to Sect. 5.1, i.e., have                 off parameter is increased. However, a slight reduction</div>
+<div id="L717"><a href="#L717">00717</a> [PDF p.9] generated 5000 samples from a symmetric distribution,                    of the overall model performance can be noticed for the</div>
+<div id="L718"><a href="#L718">00718</a> [PDF p.9] as uk ∼ N (0, 1002 ), then the second 5000 samples are                   regularization-based approach. The baseline regularization</div>
+<div id="L719"><a href="#L719">00719</a> [PDF p.9] generated by multiplying the original sequence with -1. As               method inherently depends on the initial baseline parame-</div>
+<div id="L720"><a href="#L720">00720</a> [PDF p.9] yk−2 and yk−1 also affect yk , this experiment design does               ter values, since for large values of the trade-off parameter,</div>
+<div id="L721"><a href="#L721">00721</a> [PDF p.9] not fully guarantee orthogonality between the unmodeled                  θ̂b remains close to the initial value θ̂b0 . Both approaches</div>
+<div id="L722"><a href="#L722">00722</a> [PDF p.9] dynamics and the baseline model. To achieve that, a                      demonstrate that, as the regularization coefficient is re-</div>
+<div id="L723"><a href="#L723">00723</a> [PDF p.9] more concise data acquisition process would be required.                 duced, the baseline parameters become non-unique and</div>
+<div id="L724"><a href="#L724">00724</a> [PDF p.9] However, the deviation from orthogonality is minimal, so                 may deviate substantially from the true parameters θb∗ .</div>
+<div id="L725"><a href="#L725">00725</a> [PDF p.9] the estimated baseline parameters are expected to remain                 At the same time, lower trade-off parameter values can</div>
+<div id="L726"><a href="#L726">00726</a> [PDF p.9] close to their true values, which is generally sufficient                yield improved model performance, an effect that is par-</div>
+<div id="L727"><a href="#L727">00727</a> [PDF p.9] for practical applications. The test set is acquired by                  ticularly visible for the baseline regularization method. In</div>
+<div id="L728"><a href="#L728">00728</a> [PDF p.9] sampling 1000 samples of the system response for uk ∼                    practical system identification scenarios, where only test</div>
+<div id="L729"><a href="#L729">00729</a> [PDF p.9] U(−100, 100). For better comparison of the results, the                  or validation errors are available during hyperparameter</div>
+<div id="L730"><a href="#L730">00730</a> [PDF p.9] test data does not contain any noise. For both data sets,                tuning, selecting appropriate regularization coefficients is</div>
+<div id="L731"><a href="#L731">00731</a> [PDF p.9] an initial condition of y−1 = y0 = 0 is used, then the                   therefore nontrivial and potentially a complex task. This</div>
+<div id="L732"><a href="#L732">00732</a> [PDF p.9] nonlinear model is forward simulated using the generated                 observation highlights a key advantage of the proposed</div>
+<div id="L733"><a href="#L733">00733</a> [PDF p.9] input sequences.                                                         orthogonal-by-construction method, namely that it re-</div>
+<div id="L734"><a href="#L734">00734</a> [PDF p.9] We apply the same ANN structure, initialization method,                  quires no hyperparameter tuning.</div>
+<div id="L735"><a href="#L735">00735</a> [PDF p.9] and training environment as in Sect. 5.1, but now with</div>
+<div id="L736"><a href="#L736">00736</a> [PDF p.9] 2500 Adam and 500 L-BFGS epochs, respectively. For                                                                6. CONCLUSION</div>
+<div id="L737"><a href="#L737">00737</a> [PDF p.9] benchmarking, we apply the standard additive structure,                  In this paper, an orthogonal-by-construction parametriza-</div>
+<div id="L738"><a href="#L738">00738</a> [PDF p.9] but now complemented with the orthogonal regularization                  tion has been introduced for DT IO baseline models.</div>
+<div id="L739"><a href="#L739">00739</a> [PDF p.9] approach (see Kon et al. (2022); Györök et al. (2025)),                The proposed methodology addresses the challenges of</div>
+<div id="L740"><a href="#L740">00740</a> [PDF p.9] which promotes a similar orthogonality as our method.                    the additive model augmentation structure when the</div>
+<div id="L741"><a href="#L741">00741</a> [PDF p.9] Moreover, for further benchmarking, we apply another                     baseline and learning parameters are co-estimated. De-</div>
+<div id="L742"><a href="#L742">00742</a> [PDF p.9] regularization-based technique (denoted as ”baseline reg-                tailed theoretical analysis has shown that the orthogonal</div>
+<div id="L743"><a href="#L743">00743</a> [PDF p.9] ularization” in the remainder), adapted from Bolderman                   parametrization can recover the physically true baseline</div>
+<div id="L744"><a href="#L744">00744</a> [PDF p.9] et al. (2022), which penalizes deviations of the baseline                parameter values under the specified identifiability and</div>
+<div id="L745"><a href="#L745">00745</a> [PDF p.9] parameters compared to their nominal values. To demon-                   persistence of excitation conditions. Then, these findings</div>
+<div id="L746"><a href="#L746">00746</a> [PDF p.9] strate the advantage of our method over regularization-                  have been validated by numerical experiments. Future</div>
+<div id="L747"><a href="#L747">00747</a> [PDF p.9] based techniques, we perform a Monte-Carlo study with                    research may be directed at extending the approach for</div>
+<div id="L748"><a href="#L748">00748</a> [PDF p.9] 5 steps, using various trade-off parameter values (regu-                 augmenting baseline models in state-space form, where the</div>
+<div id="L749"><a href="#L749">00749</a> [PDF p.9] </div>
+<div id="L750"><a href="#L750">00750</a> [PDF p.10] general assumption of no available full-state measurement     Kon, J., Tóth, R., van de Wijdeven, J., Heertjes, M., and</div>
+<div id="L751"><a href="#L751">00751</a> [PDF p.10] complicates the orthogonal projection of the learning com-      Oomen, T. (2025). Unconstrained Parametrizations of</div>
+<div id="L752"><a href="#L752">00752</a> [PDF p.10] ponent, thus requiring careful investigation.                   Discrete-Time Linear Input-Output Models: Stability</div>
+<div id="L753"><a href="#L753">00753</a> [PDF p.10]                                                                 and Dissipativity by Construction. IEEE Transactions</div>
+<div id="L754"><a href="#L754">00754</a> [PDF p.10]                      REFERENCES                                 on Automatic Control, 1–16.</div>
+<div id="L755"><a href="#L755">00755</a> [PDF p.10]                                                               Liu, Y., Kiss, M., Tóth, R., and Schoukens, M. (2025). On</div>
+<div id="L756"><a href="#L756">00756</a> [PDF p.10] Bemporad, A. (2025). An L-BFGS-B Approach for Lin-              space-filling input design for nonlinear dynamic model</div>
+<div id="L757"><a href="#L757">00757</a> [PDF p.10]   ear and Nonlinear System Identification Under ℓ1 and          learning: A gaussian process approach. IEEE Control</div>
+<div id="L758"><a href="#L758">00758</a> [PDF p.10]   Group-Lasso Regularization. IEEE Transactions on              Systems Letters, 9, 1868–1873.</div>
+<div id="L759"><a href="#L759">00759</a> [PDF p.10]   Automatic Control, 70(7), 4857–4864.                        Ljung, L. (1978). Convergence analysis of parametric iden-</div>
+<div id="L760"><a href="#L760">00760</a> [PDF p.10] Bohlin, T. (2006). Practical Grey-box Process Identifica-       tification methods. IEEE Transactions on Automatic</div>
+<div id="L761"><a href="#L761">00761</a> [PDF p.10]   tion. Advances in Industrial Control. Springer London,        Control, 23(5), 770–783.</div>
+<div id="L762"><a href="#L762">00762</a> [PDF p.10]   1st edition.                                                Ljung, L. (1998). System Identification: Theory for the</div>
+<div id="L763"><a href="#L763">00763</a> [PDF p.10] Bolderman, M., Butler, H., Koekebakker, S., Van Horssen,        User. Pearson Education, 2nd edition.</div>
+<div id="L764"><a href="#L764">00764</a> [PDF p.10]   E., Kamidi, R., Spaan-Burke, T., Strijbosch, N., and        Ljung, L. (2010). Perspectives on system identification.</div>
+<div id="L765"><a href="#L765">00765</a> [PDF p.10]   Lazar, M. (2024). Physics-guided neural networks for          Annual Reviews in Control, 34(1), 1–12.</div>
+<div id="L766"><a href="#L766">00766</a> [PDF p.10]   feedforward control with input-to-state-stability guar-     Ljung, L., Andersson, C., Tiels, K., and Schön, T.B.</div>
+<div id="L767"><a href="#L767">00767</a> [PDF p.10]   antees. Control Engineering Practice, 145, 105851.            (2020). Deep Learning and System Identification. In</div>
+<div id="L768"><a href="#L768">00768</a> [PDF p.10] Bolderman, M., Lazar, M., and Butler, H. (2022). On             Proc. of the 21st IFAC World Congress, 1175–1181.</div>
+<div id="L769"><a href="#L769">00769</a> [PDF p.10]   feedforward control using physics–guided neural net-        Prabakar, R., Sujatha, C., and Narayanan, S. (2013).</div>
+<div id="L770"><a href="#L770">00770</a> [PDF p.10]   works: Training cost regularization and optimized ini-        Response of a quarter car model with optimal magne-</div>
+<div id="L771"><a href="#L771">00771</a> [PDF p.10]   tialization. In Proc. of the European Control Conference,     torheological damper parameters. Journal of Sound and</div>
+<div id="L772"><a href="#L772">00772</a> [PDF p.10]   1403–1408.                                                    Vibration, 332(9), 2191–2206.</div>
+<div id="L773"><a href="#L773">00773</a> [PDF p.10] Daw, A., Karpatne, A., Watkins, W.D., Read, J.S., and         Raissi, M., Perdikaris, P., and Karniadakis, G.E. (2019).</div>
+<div id="L774"><a href="#L774">00774</a> [PDF p.10]   Kumar, V. (2022). Physics-Guided Neural Networks              Physics-informed neural networks: A deep learning</div>
+<div id="L775"><a href="#L775">00775</a> [PDF p.10]   (PGNN): An Application in Lake Temperature Model-             framework for solving forward and inverse problems in-</div>
+<div id="L776"><a href="#L776">00776</a> [PDF p.10]   ing. In Knowledge Guided Machine Learning. Chapman            volving nonlinear partial differential equations. Journal</div>
+<div id="L777"><a href="#L777">00777</a> [PDF p.10]   and Hall/CRC.                                                 of Computational Physics, 378, 686–707.</div>
+<div id="L778"><a href="#L778">00778</a> [PDF p.10] Djeumou, F., Neary, C., Goubault, E., Putot, S., and          Retzler, A., Tóth, R., Schoukens, M., Beintema, G.I.,</div>
+<div id="L779"><a href="#L779">00779</a> [PDF p.10]   Topcu, U. (2022). Neural networks with physics-               Weigand, J., Noël, J.P., Kollár, Z., and Swevers, J.</div>
+<div id="L780"><a href="#L780">00780</a> [PDF p.10]   informed architectures and constraints for dynamical          (2024). Learning-based augmentation of physics-based</div>
+<div id="L781"><a href="#L781">00781</a> [PDF p.10]   systems modeling. In Proc. of the 4th Annual Learning         models: an industrial robot use case. Data-Centric</div>
+<div id="L782"><a href="#L782">00782</a> [PDF p.10]   for Dynamics and Control Conference, 263–277.                 Engineering, 5, e12.</div>
+<div id="L783"><a href="#L783">00783</a> [PDF p.10] Donati, C., Mammarella, M., Dabbene, F., Novara, C.,          Revay, M., Wang, R., and Manchester, I.R. (2024). Re-</div>
+<div id="L784"><a href="#L784">00784</a> [PDF p.10]   and Lagoa, C.M. (2025). Combining off-white and               current Equilibrium Networks: Flexible Dynamic Mod-</div>
+<div id="L785"><a href="#L785">00785</a> [PDF p.10]   sparse black models in multi-step physics-based systems       els With Guaranteed Stability and Robustness. IEEE</div>
+<div id="L786"><a href="#L786">00786</a> [PDF p.10]   identification. Automatica, 179, 112409.                      Transactions on Automatic Control, 69(5), 2855–2870.</div>
+<div id="L787"><a href="#L787">00787</a> [PDF p.10] Gevers, M., Bazanella, A.S., Bombois, X., and Mišković,     Schoukens, J. and Ljung, L. (2019). Nonlinear system</div>
+<div id="L788"><a href="#L788">00788</a> [PDF p.10]   L. (2009). Identification and the information matrix:         identification: A user-oriented road map. IEEE Control</div>
+<div id="L789"><a href="#L789">00789</a> [PDF p.10]   how to get just sufficiently rich? IEEE Transactions on       Systems Magazine, 39(6), 28–99.</div>
+<div id="L790"><a href="#L790">00790</a> [PDF p.10]   Automatic Control, 54(12), 2828–2840.                       Schoukens, M. and Tiels, K. (2017). Identification of</div>
+<div id="L791"><a href="#L791">00791</a> [PDF p.10] Glorot, X. and Bengio, Y. (2010). Understanding the             block-oriented nonlinear systems starting from linear</div>
+<div id="L792"><a href="#L792">00792</a> [PDF p.10]   difficulty of training deep feedforward neural networks.      approximations: A survey. Automatica, 85, 272–292.</div>
+<div id="L793"><a href="#L793">00793</a> [PDF p.10]   In Proc. of the Thirteenth International Conference on      Schön, O., Götte, R.S., and Timmermann, J. (2022).</div>
+<div id="L794"><a href="#L794">00794</a> [PDF p.10]   Artificial Intelligence and Statistics, 249–256.              Multi-Objective Physics-Guided Recurrent Neural Net-</div>
+<div id="L795"><a href="#L795">00795</a> [PDF p.10] Györök, B.M., Hoekstra, J.H., Kon, J., Péni, T.,             works for Identifying Non-Autonomous Dynamical Sys-</div>
+<div id="L796"><a href="#L796">00796</a> [PDF p.10]   Schoukens, M., and Tóth, R. (2025). Orthogonal               tems. In Proc. of the 14th IFAC Workshop on Adaptive</div>
+<div id="L797"><a href="#L797">00797</a> [PDF p.10]   projection-based regularization for efficient model aug-      and Learning Control Systems, 19–24.</div>
+<div id="L798"><a href="#L798">00798</a> [PDF p.10]   mentation. In Proc. of the 7th Annual Learning for          Tóth, R. (2010). Modeling and Identification of Lin-</div>
+<div id="L799"><a href="#L799">00799</a> [PDF p.10]   Dynamics &amp; Control Conference, 166–178.                       ear Parameter-Varying Systems, volume 403 of Lecture</div>
+<div id="L800"><a href="#L800">00800</a> [PDF p.10] Hespanha, J.P. (2018). Linear Systems Theory: Second            Notes in Control and Information Sciences. Springer.</div>
+<div id="L801"><a href="#L801">00801</a> [PDF p.10]   Edition. Princeton University Press.</div>
+<div id="L802"><a href="#L802">00802</a> [PDF p.10] Hoekstra, J.H., Verhoek, C., Tóth, R., and Schoukens, M.</div>
+<div id="L803"><a href="#L803">00803</a> [PDF p.10]   (2025). Learning-based model augmentation with LFRs.</div>
+<div id="L804"><a href="#L804">00804</a> [PDF p.10]   European Journal of Control, 101304.</div>
+<div id="L805"><a href="#L805">00805</a> [PDF p.10] Huang, Y., Greiff, M., Vinod, A., and Di Cairano, S.</div>
+<div id="L806"><a href="#L806">00806</a> [PDF p.10]   (2024). Leveraging Computational Fluid Dynamics</div>
+<div id="L807"><a href="#L807">00807</a> [PDF p.10]   in UAV Motion Planning. In Proc. of the American</div>
+<div id="L808"><a href="#L808">00808</a> [PDF p.10]   Control Conference, 375–381.</div>
+<div id="L809"><a href="#L809">00809</a> [PDF p.10] Kon, J., Bruijnen, D., Van De Wijdeven, J., Heertjes, M.,</div>
+<div id="L810"><a href="#L810">00810</a> [PDF p.10]   and Oomen, T. (2022). Physics-Guided Neural Networks</div>
+<div id="L811"><a href="#L811">00811</a> [PDF p.10]   for Feedforward Control: An Orthogonal Projection-</div>
+<div id="L812"><a href="#L812">00812</a> [PDF p.10]   Based Approach. In Proc. of the American Control</div>
+<div id="L813"><a href="#L813">00813</a> [PDF p.10]   Conference, 4377–4382.</div>
+<div id="L814"><a href="#L814">00814</a> [PDF p.10] </div></pre>

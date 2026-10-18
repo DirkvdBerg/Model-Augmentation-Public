@@ -1,0 +1,38 @@
+<meta charset="utf-8"><title>figures/tex/augmentation_closed_loop.tex</title><pre><div id="L1"><a href="#L1">0001</a> % Source asset, condensed from docs/writeup/closed-loop-form-v4.tex.</div>
+<div id="L2"><a href="#L2">0002</a> % Original three-loop argument, with current symbols and no unsupported footer.</div>
+<div id="L3"><a href="#L3">0003</a> \begin{tikzpicture}[x=1cm,y=1cm,&gt;=Latex,font=\scriptsize,</div>
+<div id="L4"><a href="#L4">0004</a>  block/.style={draw,rounded corners,align=center,minimum width=13mm,minimum height=6mm},</div>
+<div id="L5"><a href="#L5">0005</a>  sum/.style={draw,circle,inner sep=0pt,minimum size=4.5mm}]</div>
+<div id="L6"><a href="#L6">0006</a>  \foreach \yy/\obj/\uin/\yout/\ttl in {</div>
+<div id="L7"><a href="#L7">0007</a>    3.65/plant/u/y/recorded,</div>
+<div id="L8"><a href="#L8">0008</a>    1.9/model/{\hat u}/{\hat y}/direct model}{</div>
+<div id="L9"><a href="#L9">0009</a>    \node[anchor=west] at (0,\yy+0.48) {\ttl};</div>
+<div id="L10"><a href="#L10">0010</a>    \node[sum] (e\ttl) at (0.9,\yy) {$+$};</div>
+<div id="L11"><a href="#L11">0011</a>    \node[block] (c\ttl) at (2.25,\yy) {$C_{\mathrm{fb}}$};</div>
+<div id="L12"><a href="#L12">0012</a>    \node[sum] (f\ttl) at (3.55,\yy) {$+$};</div>
+<div id="L13"><a href="#L13">0013</a>    \node[block] (p\ttl) at (5.25,\yy) {\obj};</div>
+<div id="L14"><a href="#L14">0014</a>    \draw[-&gt;] (0,\yy) -- (e\ttl.west) node[pos=0,above] {$r$};</div>
+<div id="L15"><a href="#L15">0015</a>    \draw[-&gt;] (e\ttl.east) -- (c\ttl.west);</div>
+<div id="L16"><a href="#L16">0016</a>    \draw[-&gt;] (c\ttl.east) -- (f\ttl.west);</div>
+<div id="L17"><a href="#L17">0017</a>    \draw[-&gt;] (3.55,\yy+0.6) -- (f\ttl.north)</div>
+<div id="L18"><a href="#L18">0018</a>       node[pos=0,right] {$u^{\mathrm{ff}}$};</div>
+<div id="L19"><a href="#L19">0019</a>    \draw[-&gt;] (f\ttl.east) -- (p\ttl.west) node[midway,above] {$\uin$};</div>
+<div id="L20"><a href="#L20">0020</a>    \draw[-&gt;] (p\ttl.east) -- (7.4,\yy) node[right] {$\yout$};</div>
+<div id="L21"><a href="#L21">0021</a>    \draw[-&gt;] (7.05,\yy) -- (7.05,\yy-0.65)</div>
+<div id="L22"><a href="#L22">0022</a>       -- (0.9,\yy-0.65) -- (e\ttl.south);</div>
+<div id="L23"><a href="#L23">0023</a>    \node at (1.13,\yy-0.32) {$-$};</div>
+<div id="L24"><a href="#L24">0024</a>  }</div>
+<div id="L25"><a href="#L25">0025</a>  \node[anchor=west] at (0,0.48) {residual model};</div>
+<div id="L26"><a href="#L26">0026</a>  \node[sum] (us) at (0.9,0) {$+$};</div>
+<div id="L27"><a href="#L27">0027</a>  \node[block] (pm) at (2.65,0) {model};</div>
+<div id="L28"><a href="#L28">0028</a>  \node[sum] (es) at (5.1,-0.9) {$+$};</div>
+<div id="L29"><a href="#L29">0029</a>  \node[block] (cf) at (2.65,-0.9) {$C_{\mathrm{fb}}$};</div>
+<div id="L30"><a href="#L30">0030</a>  \draw[-&gt;] (0,0) -- (us.west) node[pos=0,above] {$u$};</div>
+<div id="L31"><a href="#L31">0031</a>  \draw[-&gt;] (us.east) -- (pm.west) node[midway,above] {$\hat u$};</div>
+<div id="L32"><a href="#L32">0032</a>  \draw[-&gt;] (pm.east) -- (7.4,0) node[right] {$\hat y$};</div>
+<div id="L33"><a href="#L33">0033</a>  \draw[-&gt;] (6.7,0) -- (6.7,-0.9) -- (es.east);</div>
+<div id="L34"><a href="#L34">0034</a>  \node at (5.65,-0.68) {$-$};</div>
+<div id="L35"><a href="#L35">0035</a>  \draw[-&gt;] (5.1,-1.55) -- (es.south) node[pos=0,right] {$y$};</div>
+<div id="L36"><a href="#L36">0036</a>  \draw[-&gt;] (es.west) -- (cf.east) node[midway,above] {$y-\hat y$};</div>
+<div id="L37"><a href="#L37">0037</a>  \draw[-&gt;] (cf.west) -- (0.9,-0.9) -- (us.south);</div>
+<div id="L38"><a href="#L38">0038</a> \end{tikzpicture}</div></pre>

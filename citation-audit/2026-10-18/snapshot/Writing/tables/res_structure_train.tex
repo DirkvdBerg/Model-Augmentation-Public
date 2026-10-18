@@ -1,0 +1,27 @@
+% training records
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{l r r r r r r}
+\toprule
+ & \multicolumn{3}{c}{Multisine} & \multicolumn{3}{c}{No multisine}\\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+$\mathrm{NRMS}_e$ (\%) & $X_1$ & $X_2$ & $Y$ & $X_1$ & $X_2$ & $Y$\\
+\midrule
+Baseline, true $\theta$ & $21.9$ & $24.5$ & $120.0$ & $4.6$ & $5.0$ & $3.7$\\
+Baseline, detuned $\theta$$^\dagger$ & $29.3$ & $32.9$ & $129.3$ & $9.8$ & $5.7$ & $11.4$\\
+Static parallel, $n_a{=}0$ & $13.7$ & $14.2$ & $85.0$ & $4.9$ & $4.6$ & $18.5$\\
+Static parallel, $n_a{=}0$, detuned $\theta$ & $13.6$ & $14.2$ & $85.0$ & $4.9$ & $4.7$ & $18.7$\\
+Static parallel (OBC), $n_a{=}0$, detuned $\theta$ & $14.1$ & $14.7$ & $85.1$ & $5.3$ & $5.2$ & $19.8$\\
+Plain training, $n_a{=}2$ & $10.9$ & $11.8$ & $76.6$ & $4.4$ & $4.6$ & $14.6$\\
+PS init., $n_a{=}2$ & $9.4$ & $10.7$ & $6.3$ & $4.1$ & $4.4$ & $4.3$\\
+PS init., baseline part only & $20.1$ & $21.4$ & $118.6$ & $5.5$ & $4.4$ & $3.7$\\
+PS init., $n_a{=}8$ & $8.8$ & $9.7$ & $6.3$ & $4.1$ & $4.3$ & $4.3$\\
+PS init., detuned $\theta$ & $9.4$ & $10.2$ & $6.6$ & $4.1$ & $4.3$ & $4.3$\\
+\midrule
+Augmented (OBC), detuned $\theta$$^\dagger$ & $10.5$ & $11.2$ & $6.8$ & $4.5$ & $5.0$ & $4.2$\\
+\midrule
+Black-box model & $32.4$ & $34.5$ & $25.2$ & $75.6$ & $76.9$ & $104.4$\\
+\midrule
+Noise floor & $0.06$ & $0.07$ & $0.01$ & $0.04$ & $0.04$ & $0.01$\\
+\bottomrule
+\multicolumn{7}{l}{\footnotesize $^\dagger$ preliminary, update 19500 of 33400}\\
+\end{tabular}

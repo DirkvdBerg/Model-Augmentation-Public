@@ -1,0 +1,480 @@
+<meta charset="utf-8"><title>teo2007dynamic</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1]                                                       Mechatronics 17 (2007) 361–367</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1] </div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1] </div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1] </div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1] </div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1]       Dynamic modeling and adaptive control of a H-type gantry stage</div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1]                                 C.S. Teo *, K.K. Tan, S.Y. Lim, S. Huang, E.B. Tay</div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1]        Department of Electrical and Computer Engineering, National University of Singapore, 4, Engineering Drive 3, Singapore 117576, Singapore</div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1] </div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1]                                                  Received 18 September 2006; accepted 2 April 2007</div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1] </div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1] </div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1] </div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1] </div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1] Abstract</div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1] </div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1]    This paper addresses the dynamic modeling and adaptive control of a H-type gantry stage. The stage is posed as a three-degree-of-</div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1] freedom system. Based on this structure, a mathematical model is built using the Lagrangian equation. An adaptive control method is</div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1] formulated for the positioning of the stage, with minimal a priori information assumed of the model. A stability analysis is provided for</div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1] the proposed control scheme. Both software simulation and experimental results are documented to illustrate the practical application of</div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1] the scheme, and to verify the adequateness of the gantry model.</div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1] Ó 2007 Elsevier Ltd. All rights reserved.</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1] </div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1] Keywords: Dynamic modeling; Adaptive control; Gantry stage</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1] </div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1] </div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1] </div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1] </div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1] 1. Introduction                                                              priately coordinated and synchronized in motion. In cer-</div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1]                                                                              tain applications such as in wafer steppers, the dual</div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1]    Among the various conﬁgurations of long travel and                        drives can also be used to produce a small ‘‘theta’’ rotary</div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.1] high precision cartesian robotic systems, one of the most                    motion, without any additional rotary actuators. The</div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.1] popular is the H-type which is more commonly known as                        application domain of the moving gantry stage is rapidly</div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.1] the moving gantry stage. In this conﬁguration, two motors                    expanding because of the increasingly stringent require-</div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.1] which are mounted on two parallel slides move a gantry                       ments arising from developments in precision engineering</div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.1] simultaneously in tandem. This gantry conﬁguration has                       and nanotechnology ([1,2]). To-date, there is not one preci-</div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.1] been in use for large overhead traveling cranes in ports,                    sion machine manufacturer who does not supply a moving</div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.1] rolling mills and ﬂying shear. Direct drive linear motors                    gantry stage in one form or another.</div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.1] are usually used when positioning precision is of the pri-                      The main challenges to address in order to harness the</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.1] mary concern. Using a particular class of direct drive linear                full potential of this conﬁguration of Cartesian stages are</div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.1] motors: permanent magnet linear motors (PMLM), the                           mainly in the control system. Various research papers on</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.1] moving gantry stage can be designed to provide high-speed,                   independent axis control have been published, including</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.1] high-accuracy X, Y and Z motion to facilitate automated                      [3–8], but these papers do not address the coupling eﬀect</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.1] processes in ﬂat panel display, printed circuit board manu-                  between the axes. In certain instances, eﬃcient synchroni-</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.1] facturing, precision metrology, and circuit assembly where                   zation among the axes is crucially important to minimize</div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.1] high part placement accuracy for overhead access is neces-                   the positional oﬀsets between the two axes. This oﬀset</div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.1] sary. The stage is equipped with a high power density due                    arises due to diﬀerent drive and motor characteristics,</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.1] to the dual drives, and it can yield high speed motion with                  non-uniform load distribution of the gantry and attached</div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.1] no signiﬁcant lateral oﬀset when the two drives are appro-                   end-eﬀectors, and time-varying thermo-mechanical proper-</div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.1]                                                                              ties. Research works such as [9,10] seek to achieve this</div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.1]                                                                              objective. In [9], Tan et al. used an observer-augmented</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.1]  *</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.1]      Corresponding author. Tel.: +65 6874 4460; fax: +65 6777 3117.          scheme to more eﬀectively deal with the inter-axis oﬀset</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.1]      E-mail address: g0301472@nus.edu.sg (C.S. Teo).                         phenomenon through a disturbance observer. However,</div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.1] </div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.1] 0957-4158/$ - see front matter Ó 2007 Elsevier Ltd. All rights reserved.</div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.1] doi:10.1016/j.mechatronics.2007.04.004</div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.1] </div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.2] 362                                         C.S. Teo et al. / Mechatronics 17 (2007) 361–367</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.2] </div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.2] these are all essentially non-parametric schemes, or par-</div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.2] tially parametric ones based on linear dominant linear</div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.2] models for the respective servo dynamics without explicitly</div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.2] modeling the cross-axis eﬀects. In particular, disturbances</div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.2] in the form of dynamical load changes which can be fairly</div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.2] asymmetrical in nature, have to be adequately addressed.</div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.2]    Our proposed methodology employs an adaptive con-</div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.2] trol algorithm based on a dynamic Lagrangian model of</div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.2] the stage. Adaptive control scheme, [11], have long been</div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.2] in existence and the use of the Lagrangian equation to</div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.2] model gantry system are not uncommon, [7,8]; However,                                 Fig. 1. Example of a precision gantry stage.</div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.2] the merger of these two approaches, (which to the best of</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.2] our knowledge, have not be implemented before) may pro-</div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2] vide appealing solutions to the above-mentioned issues.</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2] This is the ﬁrst time derivation of the model of a H-type</div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2] gantry stage is attempted. Thus, the main contribution of</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2] our paper seek to formulate an adaptive control law to</div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2] tackle the above issues; Existing adaptive control cannot</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2] be used directly to this gantry stage due to its’ special</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2] model structure. The modeling of the gantry stage is based</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2] on Lagrangian equation; the model is detailed enough to</div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2] address our main concerns and yet generic enough to cover</div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2] various types of H gantry stage. Furthermore, only two</div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2] basic parameters (the length and width of the stage) regard-</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2] ing the stage need to be measured.</div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2]    The rest of the paper is organized as follows. In Section</div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2] 2, we discuss two of the possible forms of H-type gantry                          Fig. 2. Another structurally-similar gantry stage.</div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.2] stage which our control algorithm is applicable. It also</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.2] details the development of a full model of the gantry stage,</div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.2] based on ﬁrst energy principles. In Section 3, the adaptive           in subsequent section accordingly, as this setup is the test</div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.2] control scheme is designed based on this physical model,              bed for our real-time experimentation.</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.2] which is able to adaptively estimate the model parameters                 Although there are various conﬁgurations of H-type gan-</div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.2] without much a priori information assumed. A stability                try stages (as illustrated above with two examples), they are</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.2] analysis is provided to show the error convergence under              intrinsically similar. Both of these gantry stages may be con-</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.2] the scheme in Section 4. Software simulations are con-                sidered as a three-degree-of-freedom servo-mechanism,</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.2] ducted to assess its feasibility in Section 5, while full exper-      which can be adequately described by the schematics in</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.2] imental results on a real gantry stage are ﬁnally presented           Fig. 3. Two servomotors carry a gantry on which a slider</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.2] in Section 6 to illustrate the applicability of the method.           holding the load (e.g., the tool) is mounted. One motor yields</div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.2] In Section 7, we conclude our ﬁndings.                                a linear displacement x1 (measured from origin O), while the</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.2] </div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.2] </div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.2] 2. Dynamic modeling of the gantry stage</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.2]                                                                              Y</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.2] </div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.2]    Prior to the modeling of the gantry stage, a brief descrip-                                                     0</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.2] </div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.2] tion of the typical gantry setup will provide a good basis               X</div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.2] for the subsequent discussion.</div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.2]                                                                                                          x</div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.2] </div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.2]                                                                                                                         y</div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.2] 2.1. Brief description of a typical gantry stage</div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.2]                                                                                                                        theta</div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.2]    An example of a precision gantry stage is shown in                                                                                v</div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.2]                                                                                           w</div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.2] Fig. 1. This gantry system [12] consists of four sub-assem-                                               m1                         m2</div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.2] blies, viz., the X- and Y-axis sub-assemblies, the planar</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.2] platform, and two orthogonal guide bars.</div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.2]                                                                                                                L</div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.2]    Another setup of H-type gantry stage is shown in Fig. 2.</div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.2] It consists of two X-axis servo motors: SEM’s MT22G2-10                          x1                                                       x2</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.2] and a Y-axis servo motor: Yaskawa’s SGML-01AF12.</div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.2] Further speciﬁcations regarding this stage will be provided                           Fig. 3. Three-degree-of-freedom structure.</div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.2] </div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.3]                                                C.S. Teo et al. / Mechatronics 17 (2007) 361–367                                               363</div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.3] </div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.3] other yields a linear displacement x2. Ideally x1 = x2, but                which can be further written as</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.3] they may diﬀer owing to diﬀerent dynamics exhibited by each                    1</div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.3] of the motor, and also the dynamic loading present due to the              K ¼ X_ T DX_ ;                                                     ð8Þ</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.3]                                                                                2</div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.3] translation of the slider along the gantry. The central point C            where D is the inertia matrix given by</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.3] of the gantry is thus constrained to move along the dashed                         2                                                         3</div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.3]                                                                                         m1 þ m2           m2 d sin h  m2 y cos h m2 sin h</div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.3] line with two degrees of freedom. The displacement of this                     6                                                             7</div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.3]                                                                            D ¼ 4 m2 d sin h  m2 y cos h I 1 þ I 2 þ m2 y 2 þ m2 d 2 m2 d 5:</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.3] central point C from the origin O is denoted by x. The gantry</div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.3] may also rotate about an axis perpendicular to the plane of                            m2 sin h                     m2 d             m2</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.3] Fig. 3 due to deviation between x1 and x2, and this rotational                                                                                ð9Þ</div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.3] angle is denoted by h. The slider motion relative to the gantry            Next, we can derive the elements of the Coriolis and cen-</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.3] is represented by y. It is also assumed that the gantry is sym-            trifugal matrix C from</div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.3] metric and the distance from C to the slider mass center S is</div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.3]                                                                                        X</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.3]                                                                                        3</div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.3] denoted by d = w + v.                                                      C ij ¼            ðcijk q_k Þ;                                    ð10Þ</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.3]     With the formulation of the system under study, it is                              k¼1</div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.3] imminent to proceed with the dynamic modeling of the</div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.3]                                                                            where q_1 , q_2 and q_3 represents the derivative of x, h and y</div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.3] gantry stage.</div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.3]                                                                            respectively, and cijk, the Christoﬀel symbols, are computed</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.3]                                                                            as</div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.3]                                                                                    &quot;                              #</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.3] 2.2. Lagrangian-based modeling                                                    1 od ij ðqÞ od ik ðqÞ od jk ðqÞ</div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.3]                                                                            cijk ¼            þ          þ           ;                 ð11Þ</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.3]                                                                                   2 oqk            oqj      oqi</div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.3]    Let m1, m2 denote the mass of the gantry and slider</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.3] respectively, l denotes the length of the gantry, I1, I2 denote            where dij represents the element in the ith row and jth col-</div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.3] the moment of inertia of the gantry and slider   respectively,</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.3]                                                       2                   umn of the inertia matrix D. Substituting the assumed iner-</div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.3] (we assume that I 1 ¼ m1 ðl=2Þ2 ; I 2 ¼ m2 2l þ y ) and                    tia equation I1 and I2 into Eq. (9) and computing Eq. (11),</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.3] X = [xhy]T where x ¼ x1 þ x2 x2</div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.3]                                  1</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.3]                                    (refer to Fig. 3).                      we may thus obtain matrix C as shown:</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.3] </div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.3] </div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.3] </div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.3] </div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.3]          2                                                                                                     3</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.3]                           0                   y h_ sin h  d h_ cos h  y_ cos h              h_ cos h</div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.3]        6                                                                                ð2l þ 2yÞh_  x_ cos h 7</div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.3] C ¼ m2 4 y h_ sin h  d h_ cos h  y_ cos h ðy sin h  d cos hÞ_x  ð2l þ 2yÞ_y                                5:                            ð12Þ</div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.3]                      h_ cos h                     ð l þ 2yÞh_  x_ cos h</div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.3]                                                     2</div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.3]                                                                                                        0</div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.3] </div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.3] </div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.3] </div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.3]     The positions of mi, i = 1, 2 are given by</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.3] xm1 ¼ x;                                                          ð1Þ      Finally, we may obtain the dynamic model as</div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.3] y m1 ¼ 0;                                                         ð2Þ      DX€ þ C X_ þ BF ¼ BU ;                                            ð13Þ</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.3] xm2 ¼ x þ d cos h  y sin h;                                      ð3Þ</div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.3]                                                                            where</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.3] y m2 ¼ y cos h þ d sin h;                                         ð4Þ          2                                      3</div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.3] which lead to the corresponding velocities as                                       1                    1          0</div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.3]                                                                              6                                      7</div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.3]                                                                            B ¼ 4 l cos h              l cos h      0 5;                     ð14Þ</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.3]          x_</div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.3] vm1 ¼         ;                                                   ð5Þ                        0                  0   1</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.3]          0</div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.3]        &quot;                                         #                         F ¼ ½F x1 ; F x2 ; F y  ;       T</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.3]                                                                                                                                              ð15Þ</div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.3]          x_  d h_ sin h  y_ sin h  y h_ cos h</div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.3] vm2 ¼                                             :               ð6Þ      U ¼ ½ux1 ; ux2 ; uy  :     T</div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.3]                                                                                                                                              ð16Þ</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.3]             y_ cos h  y h_ sin h þ d h_ cos h</div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.3]                                                                            F x1 ; F x2 ; F y are the frictional forces, and ux1 ; ux2 ; uy are the</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.3] Thus, the total kinetic energy may be computed as</div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.3]                                                                            generated mechanical forces along x1 ; x2 and y respectively.</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.3]    1               1             1                                         The frictional forces, F, are assumed to be adequately de-</div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.3] K ¼ m1 vTm1 vm1 þ m2 vTm2 vm2 þ ðI 1 þ I 2 Þh_ 2</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.3]    2               2             2                                         scribed by the Tustin model,</div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.3]    1                  1                                                    F z ¼ d z z_ þ fz sgnð_zÞ:                                        ð17Þ</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.3]   ¼ ðm1 þ m2 Þ_x þ ðI 1 þ I 2 þ m2 y 2 þ m2 d 2 Þh_ 2</div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.3]                   2</div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.3]    2                  2</div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.3]      1                                                                     It is a simple and often adequate approach to regard fric-</div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.3]                   _ 2 ½d sin h þ y cos h  x_ y_ m2 sin h</div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.3]    þ m2 y_ 2  x_ hm                                                       tion force as a static nonlinear function of the velocity,</div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.3]      2</div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.3]                                                                            where dz is the viscous friction coeﬃcient, and fz covers</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.3]      _ y m2 d;</div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.3]    þ h_                                                           ð7Þ      the level of static friction, the level of Coulomb friction</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.3] </div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.4] 364                                                      C.S. Teo et al. / Mechatronics 17 (2007) 361–367</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.4] </div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.4]                                                                                                          T</div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.4] and the Stribeck eﬀect. The Tustin model has proven to be                            F 03 ¼ ½0; 0; y_  ;                                                                 ð27Þ</div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.4] useful and it has been validated adequately in many suc-                                                          T</div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.4] cessful applications, including [13,14].                                             F 11 ¼ ½sgnð_x1 Þ; 0; 0 ;                                                           ð28Þ</div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.4]                                                                                                                   T</div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.4]    NB: For other unmodeled higher order term, we may                                 F 12 ¼ ½0; sgnð_x2 Þ; 0 ;                                                           ð29Þ</div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.4] regard it as a form of disturbance to the system. The feed-                                                      T</div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.4]                                                                                      F 13 ¼ ½0; 0; sgnð_y Þ :                                                            ð30Þ</div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.4] back gain of the proposed adaptive controller may be</div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.4] increased so as to suppress the disturbance and enhance                              Let</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.4] the robustness of the system. In this case, although asymp-</div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.4] totic stability is not guaranteed, but the tracking error will                          1</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.4]                                                                                      V ¼ D_ ¼ m2 V 0 :                                                                    ð31Þ</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.4] converge to a very small neighbourhood of zero.                                         2</div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.4]                                                                                      Thus, V0 may be expressed as</div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.4] 3. Adaptive control of gantry stage                                                         2                                                                                  3</div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.4]                                                                                                               0                  d h_ cos h  y_ cos h þ y h_ sin h h_ cos h</div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.4]                                                                                           16                                                                                   7</div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.4]                                                                                      V 0 ¼ 4 d h_ cos h  y_ cos h þ y h_ sin h         2ð2l þ yÞ_y þ 2y y_             0     5:</div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.4]    For the actual real system, it is a challenging and diﬃ-                               2</div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.4]                                                                                                          h_ cos h                                0                      0</div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.4] cult task to obtain the exact values of the parameters of</div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.4] the model m1 ; m2 ; d i and fi ði ¼ x1 ; x2 ; yÞ accurately. To this                                                                                                      ð32Þ</div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.4] end, we proposed an adaptive controller that will be                                 Now the ﬁltered error Eq. (18) can be re-written as</div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.4] designed based on the dynamic model, described in Section                            D_s ¼ Vs þ m1 D0 ðK_e þ X€ d Þ þ m2 ½V 0 s þ D1 ðK_e þ X€ d Þ þ C 0 X_ </div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.4] 2, which does not require accurate estimates of the model                                       X</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.4]                                                                                                 3</div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.4] parameters.                                                                                 þ          ðd i BF 0i þ fi BF 1i Þ  Bu:                                      ð33Þ</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.4]    Deﬁne the ﬁltered error s ¼ Ke þ e_ where e = Xd  X,                                         i¼1</div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.4] </div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.4] and Xd, representing the desired trajectories, is twice diﬀer-                       We propose an adaptive controller given by</div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.4] entiable; K is a user-deﬁned parameter. Thus, (13) can be                                         ^ 1 B1 D0 ðK_e þ X€ d Þ</div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.4]                                                                                      U ¼ B1 Ks þ m</div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.4] expressed as</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.4]                                                                                                                                                     X</div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.4]                                                                                                                                                     3</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.4] </div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.4] D_s ¼ DðK_e þ X€ d Þ þ C X_ þ BF  BU :                                    ð18Þ             ^ 2 B1 ½V 0 s þ D1 ðK_e þ X€ d Þ þ C 0 X_  þ</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.4]                                                                                            þm                                                         ðd^i F 0i þ f^ i F 1i Þ;</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.4]                                                                                                                                                      i¼1</div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.4] The parameters D, C, and F may be further expressed as                                                                                                                    ð34Þ</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.4] follows:</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.4]                                                                                      with the following adaptation rules:</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.4] D ¼ m1 D0 þ m2 D1 ;                                                        ð19Þ</div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.4] C ¼ m2 C 0 ;                                                               ð20Þ      m^_ 1 ¼ c1 sT D0 ðK_e þ X€ d Þ;                                                      ð35Þ</div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.4]       X</div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.4]       3                                                                              m^_ 2 ¼ c2 sT ½V 0 s þ D1 ðK_e þ X€ d Þ þ C 0 X_ ;                                  ð36Þ</div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.4] F ¼          ðd i F 0i þ fi F 1i Þ;                                        ð21Þ       _</div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.4]                                                                                      d^i ¼ c3i sT BF 0i ;                                                                 ð37Þ</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.4]        i¼1</div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.4]                                                                                       _</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.4] where the various coeﬃcients (D0, D1 etc.) are expressed in                          f^ i ¼ c4i sT BF 1i ;                                                                ð38Þ</div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.4] Eq. (22) through Eq. (30):</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.4]       2              3                                                               where K &gt; 0 is positive deﬁnite, and m           ^ 2 ; d^i ; f^ i are esti-</div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.4]                                                                                                                                  ^ 1; m</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.4]         1     0    0                                                                 mates of m1 ; m2 ; d i ; fi , respectively.</div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.4]       6         2    7</div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.4] D0 ¼ 4 0 ðl=2Þ 0 5;                                    ð22Þ</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.4]              0       0        0                                                      4. Stability analysis</div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.4]         2                                                                  3</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.4]                           1           d sin h  y cos h          sin h</div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.4]      6                                       2                             7            In this section, we will show that the proposed adaptive</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.4] D1 ¼ 4 d sin h  y cos h             ð2l þ yÞ þ y 2 þ d 2          d      5;</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.4]                                                                                      controller can guarantee the stability of the closed-loop</div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.4]                      sin h                      d                  1                system, and the ﬁltered error s will approach zero as</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.4]                                                                            ð23Þ      t ! 1.</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.4] </div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.4] </div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.4] </div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.4]         2                                                                                                           3</div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.4]                                 0                     y h_ sin h  d h_ cos h  y_ cos h           h_ cos h</div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.4]       6                                                                                      ð2l þ 2yÞh_  x_ cos h 7</div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.4] C 0 ¼ 4 y h_ sin h  d h_ cos h  y_ cos h           ðy sin h  d cos hÞ_x  ð2l þ 2yÞ_y                            5;                                                    ð24Þ</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.4]                     h_ cos h                               ð l þ 2yÞh_  x_ cos h</div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.4]                                                              2</div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.4]                                                                                                              0</div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.4] </div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.4]                      T</div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.4] F 01 ¼ ½_x1 ; 0; 0 ;                                                      ð25Þ         Deﬁne the Lyapunov function</div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.4]                                                                                                                 3                 </div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.4]                                                                                                 1 2 1 2 X            1 ~2     1</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.4]                                                                                      v ¼ sT Ds þ m ~1 þ m ~2 þ          d i þ f~ 2i ;                                     ð39Þ</div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.4] F 02 ¼ ½0; x_ 2 ; 0T ;                                                    ð26Þ                 c1     c2      i¼1</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.4]                                                                                                                     c3i      c4i</div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.4] </div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.5]                                                       C.S. Teo et al. / Mechatronics 17 (2007) 361–367                                                  365</div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.5] </div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.5] where m     ~ 2 ; d~i ; f~ i are the estimation error of m1 ; m2 ; d i ; fi</div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.5]        ~ 1; m                                                                   Fig. 4. The trajectory would span a distance of 0.01 m,</div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.5] respectively. Diﬀerentiating v and substitute in Eq. (33)                       periodically in 4 s. The maximum velocity and acceleration</div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.5] and the control law (34), we obtain                                             attained are 0.094 m/s and 0.145 m/s2 respectively.</div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.5]                                                                                    For the PID controllers, the following PID control law</div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.5] v_ ¼ 2sT Ks þ 2m    ~ 1 sT D0 ðK_e þ X€ d Þ</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.5]                                                                                 is used:</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.5]         ~ 2 sT ½V 0 s þ D1 ðK_e þ X€ d Þ þ C 0 X_ </div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.5]      þ 2m</div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.5]            X</div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.5]            3</div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.5]                                              1</div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.5]       þ2    sT ðd~i BF 0i þ f~ i BF 1i Þ  2 m      ^_ 1</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.5]                                                  ~ 1m</div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.5]         i¼1</div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.5]                                              c 1</div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.5] </div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.5]                        X  3                          </div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.5]         1     _                  1 ~ ^_      1 ~ ^_</div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.5]       2 m    ^2  2</div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.5]            ~ 2m                     d id i þ f if i :                 ð40Þ</div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.5]         c2              i¼1</div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.5]                                 c3i         c4i</div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.5] </div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.5] Incorporating the adaptive laws (35)–(38), v_ becomes</div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.5] v_ ¼ 2sT Ks:                                                         ð41Þ</div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.5] This implies that s; m     ^ 2 ; d^i ; f^ i are bounded. Based on the</div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.5]                       ^ 1; m</div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.5] deﬁned ﬁltered error equation, since K is positive deﬁnite</div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.5] and s is bounded, it follows that e is bounded. This also im-</div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.5] plies that e_ is bounded, and in turn, that X ; X_ are bounded.</div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.5] Furthermore, from (33), we can conclude that s_ is bounded,</div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.5] and from (41) together with the deﬁnition of v jointly imply</div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.5] that</div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.5]                                                                                       Fig. 5. Simulated tracking error for x1, x2 and y respectively.</div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.5] lim Ks2 ¼ V ð0Þ  lim V ð1Þ:                                          ð42Þ</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.5] t!1                    t!1</div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.5] </div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.5] Finally, applying            Barbalat’s        lemma,       we     obtain</div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.5] limt!1s(t) = 0.</div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.5] </div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.5] 5. Simulation</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.5] </div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.5]    To verify the eﬀectiveness of the proposed approach, we</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.5] shall compare the results of using three decoupled PID</div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.5] controllers on each individual axis, with the developed</div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.5] adaptive controller applied to a software version of the</div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.5] dynamic gantry model. A MATLAB simulation is setup</div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.5] in each case. The gantry’s parameters are selected as fol-</div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.5] lows: masses: m1 = 1 kg, m2 = 1 kg, length l = 0.415 m, dis-</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.5] tance d = 0.015 m and the friction parameters are</div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.5] d1 = d2 = d3 = 1, and f1 = f2 = f3 = 1. The desired trajecto-</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.5] ries (position, velocity and acceleration) are as depicted in                   Fig. 6. Simulated inter-axis oﬀset error between x1 and x2 using (a) PID</div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.5]                                                                                 control and (b) adaptive control.</div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.5] </div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.5] </div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.5] </div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.5] </div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.5] Fig. 4. Desired position, velocity and acceleration trajectories for x1, x2</div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.5] and y.                                                                                Fig. 7. Simulated control signal for x1, x2 and y respectively.</div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.5] </div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.6] 366                                                  C.S. Teo et al. / Mechatronics 17 (2007) 361–367</div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.6] </div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.6]                                                                                 Table 1</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.6]                                                                                 Speciﬁcations of gantry motors</div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.6]                                                                                 Content            X-axis servo motor          Y-axis servo motor</div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.6]                                                                                                    SEM MT22G2-10               Yaskawa SGML-01AF12</div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.6]                                                                                 Power              350 W                       100 W</div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.6]                                                                                 Torque             0.70 N m                    0.318 N m</div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.6]                                                                                 Velocity           5000 rpm                    3000 rpm</div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.6]                                                                                 Resolution         10 lm                       10 lm</div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.6] </div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.6] </div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.6] </div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.6] </div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.6] Fig. 8. Time histories for simulated learning parameters: m1, m2, d1, d2, d3,</div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.6] f1, f2 and f3 respectively.</div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.6] </div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.6]                  Z</div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.6]                               oe</div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.6] u ¼ Kpe þ Ki         e þ Kd      :                                     ð43Þ</div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.6]                               ot</div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.6] </div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.6] Using independent axis control, and assuming identical</div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.6] dynamics for each axis; in this simulation, all three PID</div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.6] controller are tuned as Kp = 400, Ki = 50 and Kd = 30.</div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.6] The adaptive controllers’ parameters are conﬁgured                                        Fig. 9. Tracking error for x1, x2 and y respectively.</div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.6] as c1 = 45 000, c2 = 2800, c31 = 4000, c32 = 4000,</div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.6] c33 = 28 000, c41 = c42 = c43 = 100, K = diag(100 10 10),</div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.6] and K equates the identity matrix, i.e. K = diag(1 1 1).                        in the same class and diﬀerent from the Y-axis motor,</div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.6]    The simulation results showing the error responses for                       hence the X-axes and Y-axis need to be tuned diﬀerently.</div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.6] individual axes are depicted in Fig. 5, whilst the inter-axis                   The adaptive controllers’ parameters are conﬁgured</div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.6] oﬀset error is shown in Fig. 6. The control signals coming                      as c1 = c2 = c31 = c32 = c33 = c41 = c42 = c43 = 1.8, K =</div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.6] from the controller are recorded in Fig. 7. The data col-                       diag(40 3 5), and K = diag(1 1 1).</div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.6] lated from the PID-based simulations are represented in                            Trajectories similar to the software simulations are used</div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.6] dotted lines whilst the adaptive-based simulations are rep-                     and the results are shown in Figs. 9–12. These ﬁgures pres-</div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.6] resented by solid lines. The time histories of the estimated                    ent similar characteristics obtained to those from software</div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.6] parameters m1, m2, d1, d2, d3, f1, f2 and f3 are shown in                       simulations. The adaptive controller is able to yield individ-</div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.6] Fig. 8.                                                                         ual axis error of under 0.38 mm at steady state as compared</div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.6]    For a short time duration from t = 0 to t = 3, the PID                       to the PID performance of 0.96 mm for both x1- and x2-</div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.6] control outperforms the adaptive controller. This is                            axis, whilst the y-axis error is kept under 2 mm for both</div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.6] expected as the learning parameters have been initialized                       controllers (refer to Fig. 9). In addition, the adaptive</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.6] to zero with no a priori knowledge assumed. Subse-</div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.6] quently, after some parameter adaptation, the proposed</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.6] approach quickly yielded signiﬁcantly improved perfor-</div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.6] mance over PID control. On a further note, from</div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.6] Fig. 8, it can be seen that prior to attaining steady state,</div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.6] the tracking errors (for x1, x2 and y) has achieved reason-</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.6] able performances.</div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.6] </div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.6] 6. Implementation results</div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.6] </div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.6]    The stage used for the experimental setup is the gantry</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.6] stage as mentioned earlier in Fig. 2. The motor speciﬁca-</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.6] tions are listed in Table 1.</div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.6]    For the PID-controlled implementation, PID controllers</div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.6] are tuned as Kp = 90, Ki = 5 and Kd = 1, for the two X-axes</div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.6] (X1 and X2) whilst the Y-axis is tuned as Kp = 30, Ki = 1                       Fig. 10. Inter-axis oﬀset error between x1 and x2 using (a) adaptive</div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.6] and Kd = 0. As noted in Table 1, the X-axes motors are                          control and (b) PID control.</div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.6] </div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.7]                                                     C.S. Teo et al. / Mechatronics 17 (2007) 361–367                                               367</div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.7] </div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.7]                                                                               Lagrangian equation. An adaptive controller has been</div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.7]                                                                               developed to minimize the tracking error as well as inter-</div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.7]                                                                               axis oﬀset error. The stability of the control scheme has</div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.7]                                                                               been proven via a Lyapunov-based analysis. Software sim-</div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.7]                                                                               ulations were conducted and the results has shown the</div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.7]                                                                               superior performances of the adaptive controller over</div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.7]                                                                               PID control. The subsequent real-time implementation</div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.7]                                                                               also showed similar appealing performances.</div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.7] </div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.7]                                                                               References</div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.7] </div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.7]                                                                                [1] Goto S, Nakamura M. Accurate contour control of mechatronics</div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.7]                                                                                    servo system using Gaussian networks. IEEE Trans Ind Electron</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.7]                                                                                    1996;43(4):469–76.</div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.7]           Fig. 11. Control signal for x1, x2 and y respectively.               [2] Yeh Syh-Shiuh, Hsu Pau-Lo. Analysis and design of the integrated</div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.7]                                                                                    controller for precise motion systems. IEEE Trans Control Syst</div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.7]                                                                                    Technol 1999;7(6):706–17.</div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.7]                                                                                [3] Rieber Jochen M, Taylor David G. Gain-scheduled L2-gain based</div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.7]                                                                                    control of a ﬂexible parameter-varying robot link. IECON’01</div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.7]                                                                                    2001:552–7.</div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.7]                                                                                [4] Ratcliﬀe James, van-Duinkerken Lize, Lewin Paul, Rogers Eric,</div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.7]                                                                                    Hatonen Jari, Harte Thomas, Owens David, Fast norm-optimal</div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.7]                                                                                    iterative learning control for industrial applications. In: American</div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.7]                                                                                    control conference; 2005. p. 1951–6.</div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.7]                                                                                [5] Samhouri Murad, Raouﬁ Asghar, Surgenor Brian. Control of a</div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.7]                                                                                    pneumatic gantry robot for grinding: a neuro-fuzzy approach to PID</div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.7]                                                                                    tuning. In: Proceedings of the 2005 IEEE conference on control</div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.7]                                                                                    applications; 2005. p. 452–8.</div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.7]                                                                                [6] Rijs Rob, de Jager Bram. Adaptive backstepping control for an XY-</div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.7]                                                                                    table. In: Proceedings of the American control conference; 1997. p.</div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.7]                                                                                    758–62.</div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.7]                                                                                [7] de Jager Bram. Acceleration assisted tracking control IEEE control</div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.7] Fig. 12. Time histories for learning parameters: m1, m2, d1, d2, d3, f1, f2        systems. IEEE Control Syst Mag 1994:20–7.</div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.7] and f3 respectively.                                                           [8] Yang X, Taylor David G. H1 control design for positioning</div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.7]                                                                                    performance of gantry robots. In: Proceedings of the American</div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.7]                                                                                    control conference; 2000. p. 3038–42.</div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.7] controller is able to minimize the inter-axis oﬀset error (by                  [9] Tan KK, Lim SY, Huang S, Dou H, Giam TS. Co-ordinated motion</div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.7] manipulation of the parameter K), whilst the decoupled                             control of moving gantry stages for precision applications based on</div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.7] PID controller were only able to track individual trajecto-                        an observer-augmented composite controller. IEEE Trans Control</div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.7] ries independently. This performance is reﬂected by the                            Syst Technol 2002;12(6):984–91.</div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.7]                                                                               [10] Kim S, Chu B, Hong D, Park HK, Park JM, Cho TY. Synchronizing</div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.7] resultant inter-axis oﬀset error of 0.32 mm using the adap-                        dual-drive gantry of chip mounter with LQR approach. In: IEEE</div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.7] tive controller versus 0.81 mm for the decoupled PID con-                          international conference on advanced intelligent mechatronics; 2003.</div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.7] troller (refer to Fig. 10). Lastly, the time histories of the                      p. 838–43.</div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.7] learning parameters in Fig. 12 showed gradually adapting                      [11] Slotine Jean-Jacques E, Li Weiping. Applied nonlinear con-</div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.7] parameters. This is expected as the learning gains are small                       trol. Imprint Englewood Cliﬀs N.J.: Prentice Hall; 1991.</div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.7]                                                                               [12] Lim SY, Lin W, Leow YP. Decoupled planar positioning system,</div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.7] and it is to prevent drastic parameter adjustment in the ini-                      Singapore Patent, Patent No: PCT/SG01/00190; 2001.</div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.7] tial transient stage. Note that even with this small learning                 [13] Tan KK, Lee TH, Huang S, Jiang X. Friction modeling and adaptive</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.7] gain, the error performances are generally acceptable.                             compensation using a relay feedback approach. IEEE Trans Ind</div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.7]                                                                                    Electron 2001;48(1):169–76.</div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.7] 7. Conclusion                                                                 [14] LiXu, BinYao. Adaptive robust precision motion control of linear</div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.7]                                                                                    motors with ripple force compensations: theory and experiments. In:</div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.7]                                                                                    Proceedings of the 2000 IEEE international conference on control</div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.7]   In this paper, we have derived an appropriate dynamic                            applications; 2000. p. 373–8.</div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.7] model of a typical H-type gantry stage based on the</div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.7] </div></pre>

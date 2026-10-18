@@ -1,0 +1,1843 @@
+<meta charset="utf-8"><title>garcia2013model</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1]                          Science Arts &amp; Métiers (SAM)</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1]     is an open access repository that collects the work of Arts et Métiers Institute of</div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1]   Technology researchers and makes it freely available over the web where possible.</div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1] </div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1] </div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1] </div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1]              This is an author-deposited version published in: https://sam.ensam.eu</div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1]                            Handle ID: .http://hdl.handle.net/10985/7016</div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1] </div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1] </div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1] </div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1] To cite this version :</div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1] Iván GARCÍA-HERREROS, Ralph COLEMAN, Pierre-Jean BARRE, Julien GOMAND, Xavier</div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1] KESTELYN - Model-based decoupling control method for dual-drive gantry stages : A case study</div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1] with experimental validations - Control Engineering Practice - Vol. Volume 21, n°Issue 3, p.Pages</div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1] 298-307 - 2013</div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1] </div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1] </div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1] </div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1] </div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1] Any correspondence concerning this service should be sent to the repository</div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1]                 Administrator : scienceouverte@ensam.eu</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1] </div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.2] Model-based decoupling control method for dual-drive gantry stages:</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.2]            A case study with experimental validations</div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.2] </div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.2]                                   Iván GarcíaHerreros</div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.2]             Laboratory of Electrical Engineering and Power Electronics (L2EP)</div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.2]                                  Arts et Métiers ParisTech</div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.2]                   8, Boulevard Louis XIV, 59046 Lille Cedex (France)</div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.2] </div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.2]                                         ETEL SA</div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.2]                     Zone Industrielle, CH2112 Môtiers (Switzerland)</div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.2] </div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.2]                                      Xavier Kestelyn*</div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.2]             Laboratory of Electrical Engineering and Power Electronics (L2EP)</div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.2]                                  Arts et Métiers ParisTech</div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.2]                   8, Boulevard Louis XIV, 59046 Lille Cedex (France)</div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.2]                Fax: +33 3 20 62 27 50 ; Email: xavier.kestelyn@ensam.eu</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.2] </div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.2]                                      Julien Gomand</div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.2]                   Laboratory of Systems and Information Sciences (LSIS)</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.2]                                  Arts et Métiers ParisTech</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.2]               2, Cours des Arts et Métiers, 13100 Aix–en–Provence (France)</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.2] </div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.2]                                      Ralph Coleman</div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.2]                                         ETEL SA</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.2]                     Zone Industrielle, CH–2112 Môtiers (Switzerland)</div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.2] </div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.2]                                     Pierre–Jean Barre</div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.2]                   Laboratory of Systems and Information Sciences (LSIS)</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.2]                                  Arts et Métiers ParisTech</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.2]               2, Cours des Arts et Métiers, 13100 Aix–en–Provence (France)</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.2] </div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.2] </div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.2] </div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.2] </div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.2] *Corresponding author</div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.2] </div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.3]                                                   Abstract</div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.3] </div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.3] </div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.3] </div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.3] Industrial motion control of dual–drive gantry stages is usually performed by position controllers acting</div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.3] </div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.3] independently on each actuator. This approach neglects the unbalance and the mechanical coupling between</div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.3] </div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.3] actuators, leading to poor positioning performances. To overcome this drawback, a model–based decoupling</div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.3] </div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.3] control is proposed. Initially, a dynamic model of the gantry stage is proposed. Once identified and validated,</div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.3] </div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.3] such model is written in terms of a decoupling basis. Then, by model inversion, a feedbackfeedforward</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.3] </div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.3] decoupling control is presented. Experimental results show that, in comparison to the independent axis control</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.3] </div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.3] approach, the proposed solution leads to improved motion control.</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.3] </div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.3] </div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.3]                                                   Keywords</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.3] </div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.3] </div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.3] Model–based control; Dynamic modeling; Decoupled subsystems; Dynamic decoupling; Position control; Dual–</div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.3] </div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.3] </div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.3] drive gantry industrial robots; Independent Modal Space Control (IMSC)</div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.3] </div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.4] 1    INTRODUCTION</div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.4] </div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.4] A dual-drive gantry stage consists of a cross–arm, which is mounted on two linear actuators (X1 – and X2 – axes)</div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.4] </div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.4] installed in parallel. The cross–arm serves as a support for a third linear actuator (Y – axis) carrying the payload.</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.4] </div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.4] This payload can be an additional actuator (Z – axis), as in Fig. 1; a camera; or any other device. The</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.4] </div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.4] connections between the cross-arm and the moving parts of actuators X1 and X2 are provided by flexible joints in</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.4] </div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.4] order to avoid high stresses and strains at the fixation interfaces. Thanks to their particular mechanical</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.4] </div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.4] configuration and to the advances in electrical linear drives, gantry stages have a very high precision over</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.4] </div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.4] workspace ratio and high dynamic performances. For this reason, they are used on high-end industrial</div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.4] </div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.4] applications such as surface chip mounting, precision metrology, flat panel display manufacturing and</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.4] </div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.4] inspection, and many others.</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.4] </div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.4] </div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.4] </div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.4] Despite the advantages of advanced linear actuation devices, gantry stages cannot be used at its maximum level</div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.4] </div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.4] of performance due to the coupling between the actuators constituting them. This coupling comprises the non-</div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.4] </div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.4] uniform load distribution between actuators X1 and X2 due to the variable position of the payload along the cross-</div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.4] </div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.4] arm; the coupling between actuators X1 and X2 due to different drive and motor characteristics between them;</div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.4] </div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.4] and the acceleration of actuator Y. The latter generates a twisting moment about the center of the cross-arm, and</div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.4] </div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.4] thus a force disturbance on actuators X1 and X2. All these factors induce desynchronization between the axes</div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.4] </div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.4] carrying the cross-arm and, by extension, tool-point positioning errors.</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.4] </div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.4] </div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.4] </div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.4] In the literature, many efforts have been made towards a more advanced control of gantry stages. In general, the</div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.4] </div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.4] actuators carrying the cross-arm are modeled as two separate entities and the coupling between them is</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.4] </div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.4] considered as an external disturbance affecting each. The objective of the proposed controllers is to reject such a</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.4] </div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.4] disturbance and to improve the synchronization between the actuators carrying the cross-arm. Essentially, three</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.4] </div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.4] types of control schemes can be found (Giam, Tan, &amp; Huang, 2007): master/slave, master/master, and cross-</div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.4] </div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.4] coupled. In the master/slave scheme, the actuators carrying the cross-arm are controlled independently and the</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.4] </div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.4] output of the master control-loop is used as the reference of the slave one. This type of scheme is used on gantry</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.4] </div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.4] stages where the path-tracking precision is a secondary objective, e.g. a gantry crane, as the slave motor will be</div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.4] </div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.4] always delayed and therefore desynchronized from the master motor. In the master/master control scheme, the</div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.4] </div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.4] actuators carrying the cross-arm are controlled independently and share the same set-point reference. This</div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.4] </div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.4] control scheme is used in most industrial gantry stages. To compensate for the differences in the dynamics of the</div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.4] </div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.5] motors or in their load, each independent control-loop is tuned heuristically to provide the best possible</div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.5] </div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.5] positioning performances. Based on a dynamic model of a cross-arm carrying a moving payload, (Teo, Tan, Lim,</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.5] </div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.5] Huang, &amp; Tay, 2007) proposes an adaptative tuning method for the PID controllers of the master/master scheme.</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.5] </div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.5] This control algorithm is aimed to compensate for the non-uniform load distribution between the actuators</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.5] </div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.5] carrying the cross-arm due to the moving payload. Finally, the cross-coupled control scheme is the one that has</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.5] </div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.5] received the most attention in the literature. In this scheme, the motors carrying the cross-arm are controlled</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.5] </div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.5] using the master/master control scheme. A third controller, placed between the independent control-loops, is</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.5] </div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.5] used to monitor and to compensate the desynchronization between the motors carrying the cross-arm by</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.5] </div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.5] accelerating the slowest one and by slowing down the fastest one. The structure and/or the tuning method of this</div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.5] </div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.5] third controller can be of type optimal control (Tan, Lim, Huang, Dou, &amp; Giam, 2004) (Hu, Yao, &amp; Wang,</div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.5] </div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.5] 2010), iterative learning control (Van Dijk, Tinsel, &amp; Schrijver, 2001), fuzzy logic control (Lin &amp; Shen, 2006),</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.5] </div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.5] or sliding mode control (Giam, Tan, &amp; Huang, 2007)(Lin, Chou, Chen, &amp; Lin, 2011).</div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.5] </div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.5] </div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.5] </div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.5] The cross-coupled control scheme is essentially a non-parametric scheme, or a partially parametric one, based on</div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.5] </div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.5] a simplified representation of the actuators dynamics without explicit modeling of the coupling between them.</div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.5] </div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.5] Due to its nature, this approach has the drawback of being structurally complex and hard to compute, which</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.5] </div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.5] makes it difficult to implement in real-time applications. As a result, it is seldom used to control gantry stages</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.5] </div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.5] industrially. In the current paper, it is shown that the coupling effect, when adequately addressed, can be</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.5] </div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.5] included into the definition of a model-based decoupling control scheme that is structurally simple and therefore</div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.5] </div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.5] well adapted to real-time implementation.</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.5] </div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.5] </div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.5] </div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.5] The first step to develop such a control scheme consists in building a detailed dynamic model of the gantry stage.</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.5] </div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.5] This model, which is presented in section 2, includes the payload (Y – axis), the cross-arm, and the actuators</div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.5] </div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.5] carrying it (X1 – and X2 – axes). This detailed modeling accounts for the coupling effects associated with the</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.5] </div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.5] interaction between the actuators of the gantry stage, which has not been implemented before on a single model</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.5] </div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.5] to the best of the authors’ knowledge.</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.5] </div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.5] </div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.5] </div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.5] Concerning the control, the core of the proposed approach consists in expressing the proposed model, which is</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.5] </div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.5] coupled, in terms of the decoupled motions defined by the translation of the payload, the translation of, and the</div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.5] </div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.5] rotation about, the center of mass of the gantry stage; and to use independent controllers to control each. The</div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.5] </div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.5] method to obtain such a transformation between model representations is not usual. Indeed, if one wants to</div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.5] </div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.6] transform the coupled model of the gantry stage into a decoupled one by interpreting it as an eigenvalue</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.6] </div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.6] problem, he will find that the gantry stage has two repeated eigenvalues (associated with the rigid motion of the</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.6] </div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.6] payload and the synchronizing motion of actuators X1 and X2). As a result, the orthogonalization has to be forced</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.6] </div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.6] by using an iterative method such as the Gram-Schmidt process, the Householder transformation, or the Givens</div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.6] </div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.6] rotation. These methods, although effective, are known to be expensive to compute, and in some cases, to have</div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.6] </div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.6] numerical stability issues (Higham, 2002). To avoid such drawbacks and to obtain a simpler transition between</div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.6] </div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.6] model representations, the decoupling transformation proposed in this paper has two stages.</div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.6] </div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.6] </div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.6] </div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.6] The first stage consists in rejecting the disturbance induced by the acceleration of the payload on actuators X1</div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.6] </div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.6] and X2 by feedforward compensation. This is equivalent to eliminate one of the repeated eigenvalues from the</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.6] </div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.6] coupled model. Then, by using a modal transformation, the remaining coupled dynamics is defined as the</div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.6] </div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.6] dynamics of a unique rigid body translating and pivoting with respect to its own center of mass; two motions that</div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.6] </div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.6] are naturally decoupled. Based on the latter, a decoupling feedforward/feedback control scheme is derived by</div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.6] </div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.6] model inversion.</div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.6] </div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.6] </div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.6] </div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.6] The remainder of the paper is organized as follows:</div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.6] </div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.6] </div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.6] </div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.6] In section 2, a general description about the mechanical design and installation of gantry stages is presented first.</div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.6] </div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.6] Then, the development of the dynamic model of the gantry stage, along with an adapted parameter identification</div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.6] </div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.6] method, is proposed. The simplification that allows decoupling the dynamics of the payload from the rest of the</div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.6] </div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.6] system is introduced in this section as it is also exploited for parameter identification. Finally, a comparison</div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.6] </div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.6] between simulation and experiment is presented and the influence of un-modeled phenomena on the overall</div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.6] </div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.6] system behavior is discussed.</div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.6] </div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.6] </div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.6] </div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.6] Section 3 concerns the model-based decoupling control of gantry stages. To this purpose, the simplified model is</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.6] </div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.6] transformed into a decoupling basis by means of a modal transformation. Based on this representation,</div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.6] </div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.6] feedforward and feedback control structures are proposed. Experimental results comparing the model-based</div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.6] </div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.6] decoupling control and the current independent axis control show that including the expression of the mechanical</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.6] </div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.6] coupling inside the control structure results on a significant improvement of the positioning performance of the</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.6] </div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.6] gantry stage.</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.6] </div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.7]                              Fig. 1 Dual–drive H–type gantry stage provided by ETEL</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.7] </div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.7] </div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.7] 2     (GANTRY STAGE) DYNAMIC MODELING AND MODEL PARAMETER</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.7] </div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.7]       IDENTIFICATION</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.7] </div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.7] 2.1    Mechanical description of gantry stages</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.7] </div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.7] </div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.7] A gantry stage is a 3–DOF high–speed, high–precision Cartesian positioning system. It consists of a cross-arm</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.7] </div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.7] that is moved by two parallel linear actuators (axes X1 and X2). To provide high–power density actuation, axes X1</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.7] </div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.7] and X2 are often equipped with iron–core Permanent Magnet Linear Synchronous Machines (PMLSM). The</div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.7] </div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.7] moving cross-arm serves as a support for a third iron–core PMLSM (Y–axis). The tool–point or Z–axis is</div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.7] </div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.7] mounted orthogonally to the Y–axis. The tool–point is usually installed by the customer according to its needs.</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.7] </div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.7] To keep this study general, the mass of the Y-axis moving carriage and those of the tool-point are considered</div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.7] </div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.7] one. Each actuator is equipped with a linear encoder to measure its position. The travel length of the actuators</div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.7] </div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.7] can vary from a few centimeters to several meters depending on the application and required work area. To limit</div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.7] </div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.7] stresses at the cross-arm to actuator junctions and to permit a small desynchronization between the parallel</div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.7] </div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.7] actuators X1 and X2, flexible joints are used.</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.7] </div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.7] </div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.7] </div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.7] Concerning the installation, gantry stages can be mounted on different types of bases. This is done in function of</div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.7] </div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.7] the required level of precision. For an increasing level of precision, the typical base types that are used are;</div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.7] </div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.7] welded, die-cast, and granite for very high-precision applications.</div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.7] </div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.8] 2.2     Dynamic modeling</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.8] The proposed lumped parameter model in Fig. 2 can be described using fourteen physical parameters.</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.8] </div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.8] – Four masses mb, mh, m1 and m2 corresponding, respectively, to the mass of the cross-arm, the payload (actuator</div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.8] </div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.8] Y), and the parallel actuators X1 and X2.</div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.8] </div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.8] – Five friction coefficients cg1, cg2, cy, cb1 and cb2 corresponding to the viscous friction of actuators X1, X2, and Y,</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.8] </div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.8] and to those of the flexible joints.</div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.8] </div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.8] – Three forces cc1, cc2, and ccy corresponding to the Coulomb friction of actuators X1, X2, and Y.</div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.8] </div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.8] – Two stiffness coefficients kb1 and kb2 of the flexible joints of the cross-arm to actuator junctions.</div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.8] </div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.8]                                                      Θ                                           .</div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.8]                                                           Y                         F1 cc1sign(X1)</div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.8]                                 .</div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.8]                    F2 cc2sign(X2)                   Lh                         .</div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.8]                                                                    Fy ccysign(Y)</div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.8]                                                      mh</div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.8]                                               .                    d                           m1</div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.8]                                           cy Y                                  Θ</div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.8]                                                                     mb              kb1, cb1</div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.8]                                 m2</div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.8]                                                                       Lb                                 X1</div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.8]                                      kb2, cb2                        X                               .</div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.8]                  X2                                                                             cg1 X1</div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.8]                                                                y      z</div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.8]                             .</div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.8]                        cg2 X2</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.8]                                                                      x</div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.8]                           Fig. 2 Lumped–parameter model of the Dual–drive H–type gantry stage</div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.8] </div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.8] </div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.8] </div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.8] The cross-arm and the payload have lengths Lb and Lh. The position of the payload is measured from the center</div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.8] </div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.8] of the cross-arm and it is denoted by Y and d. Two sets of coordinates can be used to completely specify the</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.8] </div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.8] configuration of the gantry stage, see Fig. 2. One set is given by coordinates (X1, X2, Y), which are the measured</div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.8] </div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.8] positions of the actuators constituting the system. The second set is given by the equivalent coordinates (X, Θ,</div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.8] </div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.8] Y), which denote, respectively, the linear position of the cross-arm, its yaw angle, and the position of the</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.8] </div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.8] payload. The relations between sets are given by (1) and (2),</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.8] </div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.8] </div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.8] </div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.8] X   X 1  X 2  2;             sin 1  X 1  X 2  Lb ;             Y Y                                       (1)</div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.8] </div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.8] X 1  X sin  Lb 2;          X 2  X sin  Lb 2;                   Y Y                                       (2)</div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.8] </div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.9] The set (X, Θ, Y) is chosen to deduce the motion equations of the gantry stage as it allows avoiding closed-</div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.9] </div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.9] kinematic chains when defining its kinematics. Moreover, the coordinates (X, Θ, Y) put directly in evidence the</div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.9] </div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.9] coupling that is associated with the non-uniform load distribution between actuators X1 and X2 due to the payload</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.9] </div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.9] and to different motor characteristics between them.</div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.9] </div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.9] </div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.9] </div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.9] The motion equations of the gantry stage will be derived using the Lagrange-Euler formalism. To this purpose, it</div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.9] </div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.9] is necessary to define the energy expressions associated with its dynamics. These expressions are the kinetic</div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.9] </div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.9] energy T (3); the potential elastic energy V (4); and the Rayleigh’s dissipation function D (5) accounting for the</div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.9] </div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.9] energy losses associated with friction.</div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.9] </div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.9] </div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.9] </div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.9]    1                                                                       L2   2 </div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.9] T  m1  m2  mb  mh  X 2  Jb  J h  mh d 2 Y 2 m1  m2 cos2  b      </div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.9]    2                                                                        4  </div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.9]                                                                                                                   (3)</div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.9]     1</div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.9]              </div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.9]     mh Y 2 2dY</div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.9]     2</div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.9]                      2 X cosY </div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.9]                              </div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.9]                                            sinY d                     cos Lb</div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.9]                                                                m m  X </div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.9]                                                                      1   2</div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.9]                                                                                            2</div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.9] </div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.9]      1</div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.9] V     kb1  kb 2 2                                                                                           (4)</div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.9]      2</div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.9] </div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.9]    1                                     cos Lb  c c c c cos2  Lb  </div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.9]                                                                                   2</div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.9]                                                                                               </div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.9]                                                                                            2 </div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.9] D  cg1 cg 2  X 2  2cg1 cg 2  X               b1 b 2   g1 g2</div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.9]                                                                                       2</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.9]                                                                                       cy Y                     (5)</div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.9]    2                                             2                            4           </div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.9] </div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.9] </div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.9] </div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.9] In (3), Jb and Jh stand, respectively, for the rotary inertias of the cross-arm and the payload with respect to their</div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.9] </div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.9] own centers of mass. The forces acting on the gantry stage, in terms of coordinates (X, Θ, Y), are defined by (6).</div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.9] </div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.9] </div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.9] </div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.9] </div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.9]                                            </div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.9] FX   F1  F2  cc1 sign X 1 cc 2 sign X 2 </div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.9] </div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.9] F  F  F  c sign X c sign X cos L 2</div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.9]         1       2    c1         1     c2          2               b                                              (6)</div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.9] </div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.9] FY  Fy ccy signY </div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.9] </div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.9] </div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.9] </div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.9] </div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.9] By substituting (3), (4), (5), and (6) into (7),</div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.9] </div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.9] </div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.9] </div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.9] </div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.9] d  L  L D</div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.9]                        Qj                 q j  X , , Y ;       Q j  FX , F , FY ;   L  T V            (7)</div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.9] dt  q j  q j q j</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.9] </div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.10] The motion equations of the gantry stage can be obtained and written as (8),</div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.10] </div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.10] </div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.10] </div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.10] q</div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.10]    Hq  Cq  Kq  f                                                                                          (8)</div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.10] </div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.10] </div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.10] </div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.10] Where M, C and K are the inertia, viscous damping and stiffness matrices, H is the Coriolis and centripetal</div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.10] </div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.10] acceleration matrix, f is the vector of forces and q is the vector of coordinates (X, Θ, Y).</div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.10] </div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.10] </div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.10] </div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.10] </div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.10] 2.3    Model Simplification</div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.10] </div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.10] </div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.10] </div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.10] Simplifying hypotheses</div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.10] </div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.10] </div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.10] </div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.10] Compared to the friction of the Y–axis, both the force and torque corresponding to the linear and angular</div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.10] </div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.10] accelerations of the cross-arm have a negligible influence over the motion of the payload. Consequently, the</div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.10] </div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.10] terms M31 and M32 of the inertia matrix M are neglected. Likewise, the force due to the acceleration of the</div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.10] </div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.10] payload has negligible influence over the motion of the cross-arm along the X–direction. Thus, the term M13 is</div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.10] </div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.10] also neglected. By contrast, the term M23 is not negligible. Indeed, the force generated by the moving payload</div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.10] </div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.10] can cause the cross-arm to rotate. To avoid an asymmetric mass matrix; this coupling term, M23, between Θ and</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.10] </div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.10] Y is considered as a disturbance and moved to the force vector f. This term is later compensated by the</div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.10] </div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.10] feedforward control.</div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.10] </div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.10] </div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.10] </div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.10] Mechanically, the yaw angle Θ is limited to nearly 0.1 rad. Furthermore, in normal operating conditions, the</div>
+<div id="L481"><a href="#L481">00481</a> [PDF p.10] </div>
+<div id="L482"><a href="#L482">00482</a> [PDF p.10]                                  of the cross-arm are limited, respectively, to several tens of µrad and of</div>
+<div id="L483"><a href="#L483">00483</a> [PDF p.10] rotation Θ and angular velocity </div>
+<div id="L484"><a href="#L484">00484</a> [PDF p.10] </div>
+<div id="L485"><a href="#L485">00485</a> [PDF p.10] mrad/s. Assuming that cos(Θ) ≈ 1 and sin(Θ) ≈ 0, the terms M12 and M21 of the inertia matrix M can be reduced</div>
+<div id="L486"><a href="#L486">00486</a> [PDF p.10] </div>
+<div id="L487"><a href="#L487">00487</a> [PDF p.10] to:</div>
+<div id="L488"><a href="#L488">00488</a> [PDF p.10] </div>
+<div id="L489"><a href="#L489">00489</a> [PDF p.10] </div>
+<div id="L490"><a href="#L490">00490</a> [PDF p.10] </div>
+<div id="L491"><a href="#L491">00491</a> [PDF p.10] M12 = M21 ≈ – [mhY – (m1 – m2)Lb/2]                                                                               (9)</div>
+<div id="L492"><a href="#L492">00492</a> [PDF p.10] </div>
+<div id="L493"><a href="#L493">00493</a> [PDF p.10] </div>
+<div id="L494"><a href="#L494">00494</a> [PDF p.10] </div>
+<div id="L495"><a href="#L495">00495</a> [PDF p.10] Similarly, all the terms of the centripetal and Coriolis acceleration matrix H are also ignored assuming that,</div>
+<div id="L496"><a href="#L496">00496</a> [PDF p.10] </div>
+<div id="L497"><a href="#L497">00497</a> [PDF p.10] </div>
+<div id="L498"><a href="#L498">00498</a> [PDF p.10] </div>
+<div id="L499"><a href="#L499">00499</a> [PDF p.10]    Cq  Kq</div>
+<div id="L500"><a href="#L500">00500</a> [PDF p.10] q                  Hq                                                                                          (10)</div>
+<div id="L501"><a href="#L501">00501</a> [PDF p.10] </div>
+<div id="L502"><a href="#L502">00502</a> [PDF p.11] Finally, the simplified motion equations can be written as (11),</div>
+<div id="L503"><a href="#L503">00503</a> [PDF p.11] </div>
+<div id="L504"><a href="#L504">00504</a> [PDF p.11] </div>
+<div id="L505"><a href="#L505">00505</a> [PDF p.11] </div>
+<div id="L506"><a href="#L506">00506</a> [PDF p.11]    S  CS q S  K S qS  fS</div>
+<div id="L507"><a href="#L507">00507</a> [PDF p.11] MS q                                                                                                          (11)</div>
+<div id="L508"><a href="#L508">00508</a> [PDF p.11] </div>
+<div id="L509"><a href="#L509">00509</a> [PDF p.11] </div>
+<div id="L510"><a href="#L510">00510</a> [PDF p.11] </div>
+<div id="L511"><a href="#L511">00511</a> [PDF p.11] Where MS, CS, and KS are the simplified inertia (12), damping (13) and stiffness (14) matrices; fS is the vector of</div>
+<div id="L512"><a href="#L512">00512</a> [PDF p.11] </div>
+<div id="L513"><a href="#L513">00513</a> [PDF p.11] simplified forces (15), and qS is the vector of coordinates X and Θ (16).</div>
+<div id="L514"><a href="#L514">00514</a> [PDF p.11] </div>
+<div id="L515"><a href="#L515">00515</a> [PDF p.11] </div>
+<div id="L516"><a href="#L516">00516</a> [PDF p.11] </div>
+<div id="L517"><a href="#L517">00517</a> [PDF p.11]       m m m m                            m1  m2  Lb 2  mhY          </div>
+<div id="L518"><a href="#L518">00518</a> [PDF p.11] ΜS   1 2 b h                                                             2</div>
+<div id="L519"><a href="#L519">00519</a> [PDF p.11]                                                                                                               (12)</div>
+<div id="L520"><a href="#L520">00520</a> [PDF p.11]       m1  m2  Lb 2  mhY       Jb  J h   m1  m2  Lb 4  mh d  mhY </div>
+<div id="L521"><a href="#L521">00521</a> [PDF p.11]                                                            2         2</div>
+<div id="L522"><a href="#L522">00522</a> [PDF p.11] </div>
+<div id="L523"><a href="#L523">00523</a> [PDF p.11] </div>
+<div id="L524"><a href="#L524">00524</a> [PDF p.11] </div>
+<div id="L525"><a href="#L525">00525</a> [PDF p.11] </div>
+<div id="L526"><a href="#L526">00526</a> [PDF p.11] CS  </div>
+<div id="L527"><a href="#L527">00527</a> [PDF p.11]        cg1  cg2                cg1  cg2  Lb 2 </div>
+<div id="L528"><a href="#L528">00528</a> [PDF p.11]                                                                                                              (13)</div>
+<div id="L529"><a href="#L529">00529</a> [PDF p.11]       cg1  cg2  Lb 2 cb1  cb 2   cg1  cg2  Lb 4 </div>
+<div id="L530"><a href="#L530">00530</a> [PDF p.11]                                                       2</div>
+<div id="L531"><a href="#L531">00531</a> [PDF p.11] </div>
+<div id="L532"><a href="#L532">00532</a> [PDF p.11] </div>
+<div id="L533"><a href="#L533">00533</a> [PDF p.11] </div>
+<div id="L534"><a href="#L534">00534</a> [PDF p.11] </div>
+<div id="L535"><a href="#L535">00535</a> [PDF p.11] K S  0      0 </div>
+<div id="L536"><a href="#L536">00536</a> [PDF p.11]                                                                                                               (14)</div>
+<div id="L537"><a href="#L537">00537</a> [PDF p.11]       0 kb1  kb2 </div>
+<div id="L538"><a href="#L538">00538</a> [PDF p.11] </div>
+<div id="L539"><a href="#L539">00539</a> [PDF p.11] </div>
+<div id="L540"><a href="#L540">00540</a> [PDF p.11]       FX</div>
+<div id="L541"><a href="#L541">00541</a> [PDF p.11] fS   S</div>
+<div id="L542"><a href="#L542">00542</a> [PDF p.11]                     </div>
+<div id="L543"><a href="#L543">00543</a> [PDF p.11]                       </div>
+<div id="L544"><a href="#L544">00544</a> [PDF p.11]                                                                                     </div>
+<div id="L545"><a href="#L545">00545</a> [PDF p.11]                         FX S   F1  F2    cc1 sign  X 1   cc 2 sign  X 2  </div>
+<div id="L546"><a href="#L546">00546</a> [PDF p.11]                                                                                                               (15)</div>
+<div id="L547"><a href="#L547">00547</a> [PDF p.11]                     </div>
+<div id="L548"><a href="#L548">00548</a> [PDF p.11]                  </div>
+<div id="L549"><a href="#L549">00549</a> [PDF p.11]       FS  mh dY                                                                 </div>
+<div id="L550"><a href="#L550">00550</a> [PDF p.11]                         F S   F1  F2   cc1 sign  X 1   cc 2 sign  X 2   Lb 2</div>
+<div id="L551"><a href="#L551">00551</a> [PDF p.11] </div>
+<div id="L552"><a href="#L552">00552</a> [PDF p.11] </div>
+<div id="L553"><a href="#L553">00553</a> [PDF p.11] qS  X </div>
+<div id="L554"><a href="#L554">00554</a> [PDF p.11]                T</div>
+<div id="L555"><a href="#L555">00555</a> [PDF p.11]                                                                                                               (16)</div>
+<div id="L556"><a href="#L556">00556</a> [PDF p.11] </div>
+<div id="L557"><a href="#L557">00557</a> [PDF p.11] </div>
+<div id="L558"><a href="#L558">00558</a> [PDF p.11] </div>
+<div id="L559"><a href="#L559">00559</a> [PDF p.11] And, for the Y – axis, the independent equation (17)</div>
+<div id="L560"><a href="#L560">00560</a> [PDF p.11] </div>
+<div id="L561"><a href="#L561">00561</a> [PDF p.11] </div>
+<div id="L562"><a href="#L562">00562</a> [PDF p.11] </div>
+<div id="L563"><a href="#L563">00563</a> [PDF p.11] mhY  c yY  Fy  ccy sign Y                                                                            (17)</div>
+<div id="L564"><a href="#L564">00564</a> [PDF p.11] </div>
+<div id="L565"><a href="#L565">00565</a> [PDF p.11] </div>
+<div id="L566"><a href="#L566">00566</a> [PDF p.11] </div>
+<div id="L567"><a href="#L567">00567</a> [PDF p.11] </div>
+<div id="L568"><a href="#L568">00568</a> [PDF p.11] The inertia MS (12) and the damping CS (13) matrices point out the non-uniform load distribution between</div>
+<div id="L569"><a href="#L569">00569</a> [PDF p.11] </div>
+<div id="L570"><a href="#L570">00570</a> [PDF p.11] actuators X1 and X2 due to the variable position of the payload and to the difference of motor characteristics</div>
+<div id="L571"><a href="#L571">00571</a> [PDF p.11] </div>
+<div id="L572"><a href="#L572">00572</a> [PDF p.11] (mass and friction) between them. The force vector fS (15) contains the coupling term associated with the</div>
+<div id="L573"><a href="#L573">00573</a> [PDF p.11] </div>
+<div id="L574"><a href="#L574">00574</a> [PDF p.11] acceleration of the payload.</div>
+<div id="L575"><a href="#L575">00575</a> [PDF p.11] </div>
+<div id="L576"><a href="#L576">00576</a> [PDF p.12] 2.4    Comparison between the simplified model and the real system</div>
+<div id="L577"><a href="#L577">00577</a> [PDF p.12] </div>
+<div id="L578"><a href="#L578">00578</a> [PDF p.12] </div>
+<div id="L579"><a href="#L579">00579</a> [PDF p.12] This section is divided in three subsections. First, the experimental set–up is presented. Second, the model</div>
+<div id="L580"><a href="#L580">00580</a> [PDF p.12] </div>
+<div id="L581"><a href="#L581">00581</a> [PDF p.12] parameters are presented along with a brief description of the identification method that was used. Finally, using</div>
+<div id="L582"><a href="#L582">00582</a> [PDF p.12] </div>
+<div id="L583"><a href="#L583">00583</a> [PDF p.12] independent axis controllers, simulation and experimental results are compared in order to validate the proposed</div>
+<div id="L584"><a href="#L584">00584</a> [PDF p.12] </div>
+<div id="L585"><a href="#L585">00585</a> [PDF p.12] dynamic modeling of the gantry stage.</div>
+<div id="L586"><a href="#L586">00586</a> [PDF p.12] </div>
+<div id="L587"><a href="#L587">00587</a> [PDF p.12] </div>
+<div id="L588"><a href="#L588">00588</a> [PDF p.12] </div>
+<div id="L589"><a href="#L589">00589</a> [PDF p.12] Experimental set–up</div>
+<div id="L590"><a href="#L590">00590</a> [PDF p.12] </div>
+<div id="L591"><a href="#L591">00591</a> [PDF p.12] </div>
+<div id="L592"><a href="#L592">00592</a> [PDF p.12] </div>
+<div id="L593"><a href="#L593">00593</a> [PDF p.12] The gantry stage that is used as experimental set-up has a work area of 450 mm². It is installed on a die-cast base.</div>
+<div id="L594"><a href="#L594">00594</a> [PDF p.12] </div>
+<div id="L595"><a href="#L595">00595</a> [PDF p.12] The velocity and acceleration limits for axes X1, X2, and Y are, respectively, 2 m/s and 20 m/s²; providing the</div>
+<div id="L596"><a href="#L596">00596</a> [PDF p.12] </div>
+<div id="L597"><a href="#L597">00597</a> [PDF p.12] system a minimum workload capacity of 9000 point-to-point operations per hour. At steady-state, the positioning</div>
+<div id="L598"><a href="#L598">00598</a> [PDF p.12] </div>
+<div id="L599"><a href="#L599">00599</a> [PDF p.12] precision is ±1µm. The mechanical limit for the desynchronization between X1 and X2 is ±60 mm. In other</div>
+<div id="L600"><a href="#L600">00600</a> [PDF p.12] </div>
+<div id="L601"><a href="#L601">00601</a> [PDF p.12] words, the yaw angle of the cross-arm is mechanically limited to ±0.1 rad.</div>
+<div id="L602"><a href="#L602">00602</a> [PDF p.12] </div>
+<div id="L603"><a href="#L603">00603</a> [PDF p.12] </div>
+<div id="L604"><a href="#L604">00604</a> [PDF p.12] </div>
+<div id="L605"><a href="#L605">00605</a> [PDF p.12] Model parameters</div>
+<div id="L606"><a href="#L606">00606</a> [PDF p.12] </div>
+<div id="L607"><a href="#L607">00607</a> [PDF p.12] </div>
+<div id="L608"><a href="#L608">00608</a> [PDF p.12] </div>
+<div id="L609"><a href="#L609">00609</a> [PDF p.12] Since the proposed model is based on the physical parameters of the actual system, the identification of its</div>
+<div id="L610"><a href="#L610">00610</a> [PDF p.12] </div>
+<div id="L611"><a href="#L611">00611</a> [PDF p.12] parameters is very simple. It starts with the identification of the simplest element of the gantry stage, the Y–axis.</div>
+<div id="L612"><a href="#L612">00612</a> [PDF p.12] </div>
+<div id="L613"><a href="#L613">00613</a> [PDF p.12] To avoid the cross-arm to rotate, axes X1 and X2 are blocked, i.e. X1 = X2 = constant. Then, the Coulomb and</div>
+<div id="L614"><a href="#L614">00614</a> [PDF p.12] </div>
+<div id="L615"><a href="#L615">00615</a> [PDF p.12] viscous frictions of the Y–axis are estimated by displacing the payload at various constant velocities. Similarly,</div>
+<div id="L616"><a href="#L616">00616</a> [PDF p.12] </div>
+<div id="L617"><a href="#L617">00617</a> [PDF p.12] the estimation of the mass of the Y–axis is done by moving it at constant acceleration cycles. The distance d</div>
+<div id="L618"><a href="#L618">00618</a> [PDF p.12] </div>
+<div id="L619"><a href="#L619">00619</a> [PDF p.12] between the center of mass of the payload and those of the cross-arm is calculated from the reaction forces F1</div>
+<div id="L620"><a href="#L620">00620</a> [PDF p.12] </div>
+<div id="L621"><a href="#L621">00621</a> [PDF p.12] and F2 measured during the constant acceleration cycles.</div>
+<div id="L622"><a href="#L622">00622</a> [PDF p.12] </div>
+<div id="L623"><a href="#L623">00623</a> [PDF p.12] </div>
+<div id="L624"><a href="#L624">00624</a> [PDF p.12] </div>
+<div id="L625"><a href="#L625">00625</a> [PDF p.12] To identify the remaining parameters, the procedure is the same. The viscous and Coulomb frictions of actuators</div>
+<div id="L626"><a href="#L626">00626</a> [PDF p.12] </div>
+<div id="L627"><a href="#L627">00627</a> [PDF p.12] X1 and X2 are estimated by moving them in synchronization at various constant velocities, i.e. X 1  X 2 . The total</div>
+<div id="L628"><a href="#L628">00628</a> [PDF p.12] </div>
+<div id="L629"><a href="#L629">00629</a> [PDF p.12] mass in translation, i.e. m1 + m2 + mb + mh, can be estimated by moving actuators X1 and X2 in synchronization at</div>
+<div id="L630"><a href="#L630">00630</a> [PDF p.12] </div>
+<div id="L631"><a href="#L631">00631</a> [PDF p.12] constant acceleration cycles, i.e. X1  X2 . The total mass is determined using (18). The difference between the</div>
+<div id="L632"><a href="#L632">00632</a> [PDF p.12] </div>
+<div id="L633"><a href="#L633">00633</a> [PDF p.12] masses of actuators X1 and X2 is estimated using (19).</div>
+<div id="L634"><a href="#L634">00634</a> [PDF p.12] </div>
+<div id="L635"><a href="#L635">00635</a> [PDF p.13]                           </div>
+<div id="L636"><a href="#L636">00636</a> [PDF p.13] m1  m2  mb  mh   F1  F2    cc1 sign  X 1   cc 2 sign  X 2     cg1  cg2  X     X                                  (18)</div>
+<div id="L637"><a href="#L637">00637</a> [PDF p.13] </div>
+<div id="L638"><a href="#L638">00638</a> [PDF p.13] </div>
+<div id="L639"><a href="#L639">00639</a> [PDF p.13]              </div>
+<div id="L640"><a href="#L640">00640</a> [PDF p.13] m1  m2   F1  F2    cc1 sign  X 1   cc 2 sign  X 2     cg1  cg2  X    X                                             (19)</div>
+<div id="L641"><a href="#L641">00641</a> [PDF p.13] </div>
+<div id="L642"><a href="#L642">00642</a> [PDF p.13] Expressions (18) and (19) represent a system with more unknowns, i.e. m1, m2, and mb, than equations. To</div>
+<div id="L643"><a href="#L643">00643</a> [PDF p.13] </div>
+<div id="L644"><a href="#L644">00644</a> [PDF p.13] estimate each of these values, it is first necessary to calculate the parameters associated with the rotation Θ. To</div>
+<div id="L645"><a href="#L645">00645</a> [PDF p.13] </div>
+<div id="L646"><a href="#L646">00646</a> [PDF p.13] estimate the rotary stiffness of the cross-arm to actuator junctions, the cross-arm is rotated to different fixed</div>
+<div id="L647"><a href="#L647">00647</a> [PDF p.13] </div>
+<div id="L648"><a href="#L648">00648</a> [PDF p.13] angles, i.e. –0.1 rad, –0.09 rad… +0.1 rad. Then, by measuring the forces F1 and F2, it is possible to calculate its</div>
+<div id="L649"><a href="#L649">00649</a> [PDF p.13] </div>
+<div id="L650"><a href="#L650">00650</a> [PDF p.13] value. The viscous friction of the junctions is estimated by rotating the cross-arm at various constant speeds, i.e.</div>
+<div id="L651"><a href="#L651">00651</a> [PDF p.13] </div>
+<div id="L652"><a href="#L652">00652</a> [PDF p.13] X 1   X 2 , and the total rotary inertia by rotating the cross-arm at various constant accelerations. The rotary</div>
+<div id="L653"><a href="#L653">00653</a> [PDF p.13] </div>
+<div id="L654"><a href="#L654">00654</a> [PDF p.13] inertia is estimated using (20).</div>
+<div id="L655"><a href="#L655">00655</a> [PDF p.13] </div>
+<div id="L656"><a href="#L656">00656</a> [PDF p.13] </div>
+<div id="L657"><a href="#L657">00657</a> [PDF p.13] </div>
+<div id="L658"><a href="#L658">00658</a> [PDF p.13]                                   1                                                                                                       </div>
+<div id="L659"><a href="#L659">00659</a> [PDF p.13]                      L2</div>
+<div id="L660"><a href="#L660">00660</a> [PDF p.13]                                                                                        L                             L2  </div>
+<div id="L661"><a href="#L661">00661</a> [PDF p.13] Jb  J h  m1  m2  b  mh d 2   F1  F2   cc1sign X 1   cc 2 sign X 2  b  cb1  cb 2  cg1  cg2  b </div>
+<div id="L662"><a href="#L662">00662</a> [PDF p.13]                      4             </div>
+<div id="L663"><a href="#L663">00663</a> [PDF p.13]                                                                                         2                            4</div>
+<div id="L664"><a href="#L664">00664</a> [PDF p.13]                                                                                                                                kb1  kb2  (20)</div>
+<div id="L665"><a href="#L665">00665</a> [PDF p.13]                                                                                                                                              </div>
+<div id="L666"><a href="#L666">00666</a> [PDF p.13] </div>
+<div id="L667"><a href="#L667">00667</a> [PDF p.13] Finally, to estimate the masses of the cross-arm and actuators X1 and X2, it is assumed that the rotary inertias of</div>
+<div id="L668"><a href="#L668">00668</a> [PDF p.13] </div>
+<div id="L669"><a href="#L669">00669</a> [PDF p.13] the cross-arm and payload are defined by (21), which is the definition of the rotary inertia of a bar about its</div>
+<div id="L670"><a href="#L670">00670</a> [PDF p.13] </div>
+<div id="L671"><a href="#L671">00671</a> [PDF p.13] centroid.</div>
+<div id="L672"><a href="#L672">00672</a> [PDF p.13] </div>
+<div id="L673"><a href="#L673">00673</a> [PDF p.13] </div>
+<div id="L674"><a href="#L674">00674</a> [PDF p.13] </div>
+<div id="L675"><a href="#L675">00675</a> [PDF p.13] J b  mb L2b 12;         J h  mh L2h 12                                                                                                    (21)</div>
+<div id="L676"><a href="#L676">00676</a> [PDF p.13] </div>
+<div id="L677"><a href="#L677">00677</a> [PDF p.13] The identified parameters of the simplified model (11) are given in Table I.</div>
+<div id="L678"><a href="#L678">00678</a> [PDF p.13] </div>
+<div id="L679"><a href="#L679">00679</a> [PDF p.13]                                                                       TABLE I</div>
+<div id="L680"><a href="#L680">00680</a> [PDF p.13]                                                  PHYSICAL PARAMETERS OF THE GANTRY STAGE</div>
+<div id="L681"><a href="#L681">00681</a> [PDF p.13] </div>
+<div id="L682"><a href="#L682">00682</a> [PDF p.13]                                    Name              Value                            Description</div>
+<div id="L683"><a href="#L683">00683</a> [PDF p.13]                                      mb             22.8 kg          Mass of the moving cross-arm</div>
+<div id="L684"><a href="#L684">00684</a> [PDF p.13]                                      mh             10.1 kg          Mass of the payload (Y–axis)</div>
+<div id="L685"><a href="#L685">00685</a> [PDF p.13]                                      m1             10.2 kg          Mass of actuator X1</div>
+<div id="L686"><a href="#L686">00686</a> [PDF p.13]                                      m2             10.7 kg          Mass of actuator X2</div>
+<div id="L687"><a href="#L687">00687</a> [PDF p.13]                                      Jb            1.0 kg m²         Rotary inertia of the cross-arm</div>
+<div id="L688"><a href="#L688">00688</a> [PDF p.13]                                      Jh            0.05 kg m²        Rotary inertia of the payload (Y–axis)</div>
+<div id="L689"><a href="#L689">00689</a> [PDF p.13]                                      cg1          14.5 N/(m/s)       Viscous friction of actuator X1</div>
+<div id="L690"><a href="#L690">00690</a> [PDF p.13]                                      cg2          20.3 N/(m/s)       Viscous friction of actuator X2</div>
+<div id="L691"><a href="#L691">00691</a> [PDF p.13]                                       cy           10 N/(m/s)        Viscous friction of the payload (Y–axis)</div>
+<div id="L692"><a href="#L692">00692</a> [PDF p.13]                                   cb1 = cb2      9 Nm/(rad/s)        Viscous Friction of elastic joints 1 and 2</div>
+<div id="L693"><a href="#L693">00693</a> [PDF p.13]                                      cc1             16.8 N          Coulomb friction of actuator X1</div>
+<div id="L694"><a href="#L694">00694</a> [PDF p.13]                                      cc2            18.35 N          Coulomb friction of actuator X2</div>
+<div id="L695"><a href="#L695">00695</a> [PDF p.13]                                      ccy             11.6 N          Coulomb friction of the payload (Y–axis)</div>
+<div id="L696"><a href="#L696">00696</a> [PDF p.13]                                   kb1 = kb2     1987.5 Nm/rad        Stiffness of elastic joints 1 and 2</div>
+<div id="L697"><a href="#L697">00697</a> [PDF p.13]                                      Lb             0.725 m          Length of the moving cross-arm</div>
+<div id="L698"><a href="#L698">00698</a> [PDF p.13]                                      Lh              0.25 m          Length of the payload</div>
+<div id="L699"><a href="#L699">00699</a> [PDF p.13]                                       d              0.1 m           Distance between cross-arm and payload</div>
+<div id="L700"><a href="#L700">00700</a> [PDF p.13] </div>
+<div id="L701"><a href="#L701">00701</a> [PDF p.14] Comparison between experimental and simulation results</div>
+<div id="L702"><a href="#L702">00702</a> [PDF p.14] </div>
+<div id="L703"><a href="#L703">00703</a> [PDF p.14] The industrial independent axis control is reproduced by simulation. Experimental and simulation results are</div>
+<div id="L704"><a href="#L704">00704</a> [PDF p.14] </div>
+<div id="L705"><a href="#L705">00705</a> [PDF p.14] compared in order to validate the simplified model. The results presented in Fig. 3 are obtained with a</div>
+<div id="L706"><a href="#L706">00706</a> [PDF p.14] </div>
+<div id="L707"><a href="#L707">00707</a> [PDF p.14] simultaneous 0.4 m long displacement of axes X1, X2 and Y (the payload moves on a diagonal over the</div>
+<div id="L708"><a href="#L708">00708</a> [PDF p.14] </div>
+<div id="L709"><a href="#L709">00709</a> [PDF p.14] workspace).</div>
+<div id="L710"><a href="#L710">00710</a> [PDF p.14] </div>
+<div id="L711"><a href="#L711">00711</a> [PDF p.14]                                                                              a) Motion references X and X</div>
+<div id="L712"><a href="#L712">00712</a> [PDF p.14]                                                                                                    1        2</div>
+<div id="L713"><a href="#L713">00713</a> [PDF p.14]                                                                2</div>
+<div id="L714"><a href="#L714">00714</a> [PDF p.14] </div>
+<div id="L715"><a href="#L715">00715</a> [PDF p.14]                                                                1</div>
+<div id="L716"><a href="#L716">00716</a> [PDF p.14] </div>
+<div id="L717"><a href="#L717">00717</a> [PDF p.14]                                                                0</div>
+<div id="L718"><a href="#L718">00718</a> [PDF p.14]                                                                                                                 10X Pos. ref (m)</div>
+<div id="L719"><a href="#L719">00719</a> [PDF p.14]                                                                -1                                               Vel. ref (m/s)</div>
+<div id="L720"><a href="#L720">00720</a> [PDF p.14]                                                                                                                 0.1X Acc. ref (m/s²)</div>
+<div id="L721"><a href="#L721">00721</a> [PDF p.14]                                                                -2</div>
+<div id="L722"><a href="#L722">00722</a> [PDF p.14]                                                                  0     0.1         0.2            0.3              0.4             0.5</div>
+<div id="L723"><a href="#L723">00723</a> [PDF p.14]                                                                                 b) Synchronization Error</div>
+<div id="L724"><a href="#L724">00724</a> [PDF p.14]                                                                40</div>
+<div id="L725"><a href="#L725">00725</a> [PDF p.14]                                                                30                                                  Simplified model</div>
+<div id="L726"><a href="#L726">00726</a> [PDF p.14]                                                                20</div>
+<div id="L727"><a href="#L727">00727</a> [PDF p.14]                                   X – X [µm]</div>
+<div id="L728"><a href="#L728">00728</a> [PDF p.14] </div>
+<div id="L729"><a href="#L729">00729</a> [PDF p.14] </div>
+<div id="L730"><a href="#L730">00730</a> [PDF p.14] </div>
+<div id="L731"><a href="#L731">00731</a> [PDF p.14] </div>
+<div id="L732"><a href="#L732">00732</a> [PDF p.14]                                                                                                                    Experimental</div>
+<div id="L733"><a href="#L733">00733</a> [PDF p.14]                                                                10</div>
+<div id="L734"><a href="#L734">00734</a> [PDF p.14]                                                                 0</div>
+<div id="L735"><a href="#L735">00735</a> [PDF p.14]                                                2</div>
+<div id="L736"><a href="#L736">00736</a> [PDF p.14] </div>
+<div id="L737"><a href="#L737">00737</a> [PDF p.14] </div>
+<div id="L738"><a href="#L738">00738</a> [PDF p.14] </div>
+<div id="L739"><a href="#L739">00739</a> [PDF p.14] </div>
+<div id="L740"><a href="#L740">00740</a> [PDF p.14]                                                               -10</div>
+<div id="L741"><a href="#L741">00741</a> [PDF p.14]                                                               -20</div>
+<div id="L742"><a href="#L742">00742</a> [PDF p.14]                                                1</div>
+<div id="L743"><a href="#L743">00743</a> [PDF p.14] </div>
+<div id="L744"><a href="#L744">00744</a> [PDF p.14] </div>
+<div id="L745"><a href="#L745">00745</a> [PDF p.14] </div>
+<div id="L746"><a href="#L746">00746</a> [PDF p.14] </div>
+<div id="L747"><a href="#L747">00747</a> [PDF p.14]                                                               -30</div>
+<div id="L748"><a href="#L748">00748</a> [PDF p.14]                                                               -40</div>
+<div id="L749"><a href="#L749">00749</a> [PDF p.14]                                                                  0     0.1        0.2              0.3             0.4             0.5</div>
+<div id="L750"><a href="#L750">00750</a> [PDF p.14]                                                                                   c) Position Error X</div>
+<div id="L751"><a href="#L751">00751</a> [PDF p.14]                                                                                                        1</div>
+<div id="L752"><a href="#L752">00752</a> [PDF p.14]                                                         100</div>
+<div id="L753"><a href="#L753">00753</a> [PDF p.14]                           X ref – X mes [µm]</div>
+<div id="L754"><a href="#L754">00754</a> [PDF p.14] </div>
+<div id="L755"><a href="#L755">00755</a> [PDF p.14] </div>
+<div id="L756"><a href="#L756">00756</a> [PDF p.14] </div>
+<div id="L757"><a href="#L757">00757</a> [PDF p.14] </div>
+<div id="L758"><a href="#L758">00758</a> [PDF p.14]                                                          75</div>
+<div id="L759"><a href="#L759">00759</a> [PDF p.14]                                                          50</div>
+<div id="L760"><a href="#L760">00760</a> [PDF p.14]                                                          25</div>
+<div id="L761"><a href="#L761">00761</a> [PDF p.14]                                                           0</div>
+<div id="L762"><a href="#L762">00762</a> [PDF p.14]                                      1</div>
+<div id="L763"><a href="#L763">00763</a> [PDF p.14] </div>
+<div id="L764"><a href="#L764">00764</a> [PDF p.14] </div>
+<div id="L765"><a href="#L765">00765</a> [PDF p.14] </div>
+<div id="L766"><a href="#L766">00766</a> [PDF p.14] </div>
+<div id="L767"><a href="#L767">00767</a> [PDF p.14]                                                         -25</div>
+<div id="L768"><a href="#L768">00768</a> [PDF p.14]                                                         -50</div>
+<div id="L769"><a href="#L769">00769</a> [PDF p.14]                                                         -75</div>
+<div id="L770"><a href="#L770">00770</a> [PDF p.14]                                      1</div>
+<div id="L771"><a href="#L771">00771</a> [PDF p.14] </div>
+<div id="L772"><a href="#L772">00772</a> [PDF p.14] </div>
+<div id="L773"><a href="#L773">00773</a> [PDF p.14] </div>
+<div id="L774"><a href="#L774">00774</a> [PDF p.14] </div>
+<div id="L775"><a href="#L775">00775</a> [PDF p.14]                                                        -100</div>
+<div id="L776"><a href="#L776">00776</a> [PDF p.14]                                                            0           0.1        0.2              0.3             0.4             0.5</div>
+<div id="L777"><a href="#L777">00777</a> [PDF p.14]                                                                                   d) Position Error X</div>
+<div id="L778"><a href="#L778">00778</a> [PDF p.14]                                                                                                        2</div>
+<div id="L779"><a href="#L779">00779</a> [PDF p.14]                                                         100</div>
+<div id="L780"><a href="#L780">00780</a> [PDF p.14]                           X ref – X mes [µm]</div>
+<div id="L781"><a href="#L781">00781</a> [PDF p.14] </div>
+<div id="L782"><a href="#L782">00782</a> [PDF p.14] </div>
+<div id="L783"><a href="#L783">00783</a> [PDF p.14] </div>
+<div id="L784"><a href="#L784">00784</a> [PDF p.14] </div>
+<div id="L785"><a href="#L785">00785</a> [PDF p.14]                                                          75</div>
+<div id="L786"><a href="#L786">00786</a> [PDF p.14]                                                          50</div>
+<div id="L787"><a href="#L787">00787</a> [PDF p.14]                                                          25</div>
+<div id="L788"><a href="#L788">00788</a> [PDF p.14]                                                           0</div>
+<div id="L789"><a href="#L789">00789</a> [PDF p.14]                                      2</div>
+<div id="L790"><a href="#L790">00790</a> [PDF p.14] </div>
+<div id="L791"><a href="#L791">00791</a> [PDF p.14] </div>
+<div id="L792"><a href="#L792">00792</a> [PDF p.14] </div>
+<div id="L793"><a href="#L793">00793</a> [PDF p.14] </div>
+<div id="L794"><a href="#L794">00794</a> [PDF p.14]                                                         -25</div>
+<div id="L795"><a href="#L795">00795</a> [PDF p.14]                                                         -50</div>
+<div id="L796"><a href="#L796">00796</a> [PDF p.14]                                                         -75</div>
+<div id="L797"><a href="#L797">00797</a> [PDF p.14]                                      2</div>
+<div id="L798"><a href="#L798">00798</a> [PDF p.14] </div>
+<div id="L799"><a href="#L799">00799</a> [PDF p.14] </div>
+<div id="L800"><a href="#L800">00800</a> [PDF p.14] </div>
+<div id="L801"><a href="#L801">00801</a> [PDF p.14] </div>
+<div id="L802"><a href="#L802">00802</a> [PDF p.14]                                                        -100</div>
+<div id="L803"><a href="#L803">00803</a> [PDF p.14]                                                            0           0.1        0.2            0.3               0.4             0.5</div>
+<div id="L804"><a href="#L804">00804</a> [PDF p.14]                                                                                 e) Motion References Y</div>
+<div id="L805"><a href="#L805">00805</a> [PDF p.14]                                                                2</div>
+<div id="L806"><a href="#L806">00806</a> [PDF p.14] </div>
+<div id="L807"><a href="#L807">00807</a> [PDF p.14]                                                                1</div>
+<div id="L808"><a href="#L808">00808</a> [PDF p.14] </div>
+<div id="L809"><a href="#L809">00809</a> [PDF p.14]                                                                0</div>
+<div id="L810"><a href="#L810">00810</a> [PDF p.14]                                                                                                                 10X Pos. ref (m)</div>
+<div id="L811"><a href="#L811">00811</a> [PDF p.14]                                                                -1                                               Vel. ref (m/s)</div>
+<div id="L812"><a href="#L812">00812</a> [PDF p.14]                                                                                                                 0.1X Acc. ref (m/s²)</div>
+<div id="L813"><a href="#L813">00813</a> [PDF p.14]                                                                -2</div>
+<div id="L814"><a href="#L814">00814</a> [PDF p.14]                                                                  0     0.1        0.2              0.3             0.4             0.5</div>
+<div id="L815"><a href="#L815">00815</a> [PDF p.14]                                                                                    f) Position Error Y</div>
+<div id="L816"><a href="#L816">00816</a> [PDF p.14]                                                                30</div>
+<div id="L817"><a href="#L817">00817</a> [PDF p.14]                                          Y ref – Y mes [µm]</div>
+<div id="L818"><a href="#L818">00818</a> [PDF p.14] </div>
+<div id="L819"><a href="#L819">00819</a> [PDF p.14] </div>
+<div id="L820"><a href="#L820">00820</a> [PDF p.14] </div>
+<div id="L821"><a href="#L821">00821</a> [PDF p.14] </div>
+<div id="L822"><a href="#L822">00822</a> [PDF p.14]                                                                20</div>
+<div id="L823"><a href="#L823">00823</a> [PDF p.14]                                                                10</div>
+<div id="L824"><a href="#L824">00824</a> [PDF p.14]                                                                 0</div>
+<div id="L825"><a href="#L825">00825</a> [PDF p.14]                                                               -10</div>
+<div id="L826"><a href="#L826">00826</a> [PDF p.14]                                                               -20</div>
+<div id="L827"><a href="#L827">00827</a> [PDF p.14]                                                               -30</div>
+<div id="L828"><a href="#L828">00828</a> [PDF p.14]                                                                  0     0.1        0.2             0.3              0.4             0.5</div>
+<div id="L829"><a href="#L829">00829</a> [PDF p.14]                                                                                         time[s]</div>
+<div id="L830"><a href="#L830">00830</a> [PDF p.14] </div>
+<div id="L831"><a href="#L831">00831</a> [PDF p.14] </div>
+<div id="L832"><a href="#L832">00832</a> [PDF p.14]   Fig. 3 Experimental and simulation responses of a) Motion references X1 and X2; b) Synchronization Error;</div>
+<div id="L833"><a href="#L833">00833</a> [PDF p.14] </div>
+<div id="L834"><a href="#L834">00834</a> [PDF p.14] Position Error of c) X1 axis, d) X2 axis; e) Motion references Y; and f) position error of Y axis. Test realized using</div>
+<div id="L835"><a href="#L835">00835</a> [PDF p.14] </div>
+<div id="L836"><a href="#L836">00836</a> [PDF p.14] independent axis control for a displacement of – 0.2 m to 0.2 m for all axes, at a maximum speed of 2 m/s, and a</div>
+<div id="L837"><a href="#L837">00837</a> [PDF p.14] </div>
+<div id="L838"><a href="#L838">00838</a> [PDF p.14]                                                                      maximum acceleration of 20 m/s².</div>
+<div id="L839"><a href="#L839">00839</a> [PDF p.14] </div>
+<div id="L840"><a href="#L840">00840</a> [PDF p.15] In comparison to the model, the experimental position errors X1, X2, and Y have an oscillating behavior that can</div>
+<div id="L841"><a href="#L841">00841</a> [PDF p.15] </div>
+<div id="L842"><a href="#L842">00842</a> [PDF p.15] be related to the combination of the following phenomena,</div>
+<div id="L843"><a href="#L843">00843</a> [PDF p.15] </div>
+<div id="L844"><a href="#L844">00844</a> [PDF p.15] </div>
+<div id="L845"><a href="#L845">00845</a> [PDF p.15] </div>
+<div id="L846"><a href="#L846">00846</a> [PDF p.15] For actuators X1 and X2:</div>
+<div id="L847"><a href="#L847">00847</a> [PDF p.15] </div>
+<div id="L848"><a href="#L848">00848</a> [PDF p.15] </div>
+<div id="L849"><a href="#L849">00849</a> [PDF p.15] </div>
+<div id="L850"><a href="#L850">00850</a> [PDF p.15]      o    The gantry stage used for experimentation, see Fig. 1, is mounted on a die cast base. This supporting</div>
+<div id="L851"><a href="#L851">00851</a> [PDF p.15] </div>
+<div id="L852"><a href="#L852">00852</a> [PDF p.15]           structure has a first resonance frequency along the X - direction (37.7 Hz) that is excited by the motion</div>
+<div id="L853"><a href="#L853">00853</a> [PDF p.15] </div>
+<div id="L854"><a href="#L854">00854</a> [PDF p.15]           of the gantry stage along this direction. The effects of this oscillation on the positioning performance</div>
+<div id="L855"><a href="#L855">00855</a> [PDF p.15] </div>
+<div id="L856"><a href="#L856">00856</a> [PDF p.15]           appear all along the motion of actuators X1 and X2; nevertheless, they can be particularly noticed at the</div>
+<div id="L857"><a href="#L857">00857</a> [PDF p.15] </div>
+<div id="L858"><a href="#L858">00858</a> [PDF p.15]           end of the motion, see Figs. 3 (c) and (d). The gantry stage has attained its target position and yet, it</div>
+<div id="L859"><a href="#L859">00859</a> [PDF p.15] </div>
+<div id="L860"><a href="#L860">00860</a> [PDF p.15]           continues to oscillate. This effect is not included into the modeling of the gantry stage; since, as</div>
+<div id="L861"><a href="#L861">00861</a> [PDF p.15] </div>
+<div id="L862"><a href="#L862">00862</a> [PDF p.15]           commented on (§ 2.1), gantry stages can be mounted on different types of bases depending on the</div>
+<div id="L863"><a href="#L863">00863</a> [PDF p.15] </div>
+<div id="L864"><a href="#L864">00864</a> [PDF p.15]           required level of precision. Moreover, this phenomenon can be easily compensated by adding jerk</div>
+<div id="L865"><a href="#L865">00865</a> [PDF p.15] </div>
+<div id="L866"><a href="#L866">00866</a> [PDF p.15]           time (Chang, Nguyen, &amp; Wang, 2010) to the motion references. That is, the position controllers are</div>
+<div id="L867"><a href="#L867">00867</a> [PDF p.15] </div>
+<div id="L868"><a href="#L868">00868</a> [PDF p.15]           equipped with third-order set-point generators. This means that the motion references are defined</div>
+<div id="L869"><a href="#L869">00869</a> [PDF p.15] </div>
+<div id="L870"><a href="#L870">00870</a> [PDF p.15]           within an allowed maximum value for velocity, acceleration and jerk. The jerk being the rate of</div>
+<div id="L871"><a href="#L871">00871</a> [PDF p.15] </div>
+<div id="L872"><a href="#L872">00872</a> [PDF p.15]           change of acceleration; the jerk time is the time it takes the acceleration reference to go from one</div>
+<div id="L873"><a href="#L873">00873</a> [PDF p.15] </div>
+<div id="L874"><a href="#L874">00874</a> [PDF p.15]           constant value to the other. When defined as the inverse of a given resonance frequency, the jerk time</div>
+<div id="L875"><a href="#L875">00875</a> [PDF p.15] </div>
+<div id="L876"><a href="#L876">00876</a> [PDF p.15]           allows to generate a counter vibration (due to the change in acceleration) that cancels the vibration</div>
+<div id="L877"><a href="#L877">00877</a> [PDF p.15] </div>
+<div id="L878"><a href="#L878">00878</a> [PDF p.15]           associated with such frequency. In the present case, the jerk time is equal to 26.5 ms (1/37.7 Hz). The</div>
+<div id="L879"><a href="#L879">00879</a> [PDF p.15] </div>
+<div id="L880"><a href="#L880">00880</a> [PDF p.15]           effects of adding jerk time to the motion references can be appreciated on the validation of the</div>
+<div id="L881"><a href="#L881">00881</a> [PDF p.15] </div>
+<div id="L882"><a href="#L882">00882</a> [PDF p.15]           proposed control scheme on Fig. 5.</div>
+<div id="L883"><a href="#L883">00883</a> [PDF p.15] </div>
+<div id="L884"><a href="#L884">00884</a> [PDF p.15] </div>
+<div id="L885"><a href="#L885">00885</a> [PDF p.15] </div>
+<div id="L886"><a href="#L886">00886</a> [PDF p.15]      o    The detent forces of the PMLSM; they can be principally detected during the motion as they are</div>
+<div id="L887"><a href="#L887">00887</a> [PDF p.15] </div>
+<div id="L888"><a href="#L888">00888</a> [PDF p.15]           caused by the interaction between the permanent magnets and the iron core of the mover. They are not</div>
+<div id="L889"><a href="#L889">00889</a> [PDF p.15] </div>
+<div id="L890"><a href="#L890">00890</a> [PDF p.15]           considered within the model since the proposed approach is principally focused in compensating the</div>
+<div id="L891"><a href="#L891">00891</a> [PDF p.15] </div>
+<div id="L892"><a href="#L892">00892</a> [PDF p.15]           mechanical coupling between the actuators constituting the gantry stage, and not in phenomena</div>
+<div id="L893"><a href="#L893">00893</a> [PDF p.15] </div>
+<div id="L894"><a href="#L894">00894</a> [PDF p.15]           associated with the actuator itself. Several papers on this subject can be found in the literature, see for</div>
+<div id="L895"><a href="#L895">00895</a> [PDF p.15] </div>
+<div id="L896"><a href="#L896">00896</a> [PDF p.15]           example (Yousefi, Hirnoven, Handroos, &amp; Soleymani, 2008).</div>
+<div id="L897"><a href="#L897">00897</a> [PDF p.15] </div>
+<div id="L898"><a href="#L898">00898</a> [PDF p.16]       o     The identified values of the Coulomb and viscous friction are assumed to be constant. In reality, they</div>
+<div id="L899"><a href="#L899">00899</a> [PDF p.16] </div>
+<div id="L900"><a href="#L900">00900</a> [PDF p.16]             present non-linear small variations all along the actuator’s stroke. The effects of these variations are</div>
+<div id="L901"><a href="#L901">00901</a> [PDF p.16] </div>
+<div id="L902"><a href="#L902">00902</a> [PDF p.16]             considered negligible with respect to the effects induced by the detent forces of the PMLSM, which</div>
+<div id="L903"><a href="#L903">00903</a> [PDF p.16] </div>
+<div id="L904"><a href="#L904">00904</a> [PDF p.16]             are also neglected.</div>
+<div id="L905"><a href="#L905">00905</a> [PDF p.16] </div>
+<div id="L906"><a href="#L906">00906</a> [PDF p.16] </div>
+<div id="L907"><a href="#L907">00907</a> [PDF p.16] </div>
+<div id="L908"><a href="#L908">00908</a> [PDF p.16]       o     The cross-arm vibrates on the elastic support that is provided by the flexible plates attaching it to</div>
+<div id="L909"><a href="#L909">00909</a> [PDF p.16] </div>
+<div id="L910"><a href="#L910">00910</a> [PDF p.16]             actuators X1 and X2. This phenomenon is not considered into the modeling since its influence on the</div>
+<div id="L911"><a href="#L911">00911</a> [PDF p.16] </div>
+<div id="L912"><a href="#L912">00912</a> [PDF p.16]             overall positioning performance of the system is negligible in comparison to the coupling between</div>
+<div id="L913"><a href="#L913">00913</a> [PDF p.16] </div>
+<div id="L914"><a href="#L914">00914</a> [PDF p.16]             actuators.</div>
+<div id="L915"><a href="#L915">00915</a> [PDF p.16] </div>
+<div id="L916"><a href="#L916">00916</a> [PDF p.16] </div>
+<div id="L917"><a href="#L917">00917</a> [PDF p.16] </div>
+<div id="L918"><a href="#L918">00918</a> [PDF p.16] 3     DECOUPLING BASIS CONTROL OF GANTRY STAGES</div>
+<div id="L919"><a href="#L919">00919</a> [PDF p.16] </div>
+<div id="L920"><a href="#L920">00920</a> [PDF p.16] 3.1       Transformation into a decoupling basis</div>
+<div id="L921"><a href="#L921">00921</a> [PDF p.16] Many authors have addressed the motion control of gantry stages from the perspective of independent axis</div>
+<div id="L922"><a href="#L922">00922</a> [PDF p.16] </div>
+<div id="L923"><a href="#L923">00923</a> [PDF p.16] control. That is, the actuators carrying the cross-arm are controlled as two separate entities and the coupling</div>
+<div id="L924"><a href="#L924">00924</a> [PDF p.16] </div>
+<div id="L925"><a href="#L925">00925</a> [PDF p.16] effect is considered as an external disturbance affecting each. Cross-coupled controllers are added to minimize</div>
+<div id="L926"><a href="#L926">00926</a> [PDF p.16] </div>
+<div id="L927"><a href="#L927">00927</a> [PDF p.16] both the settling time of the tool–point along the X-direction and the synchronization error ( X1 – X2 ). However,</div>
+<div id="L928"><a href="#L928">00928</a> [PDF p.16] </div>
+<div id="L929"><a href="#L929">00929</a> [PDF p.16] the principal drawback of control schemes based on an independent axis control approach is not the coupling</div>
+<div id="L930"><a href="#L930">00930</a> [PDF p.16] </div>
+<div id="L931"><a href="#L931">00931</a> [PDF p.16] effect itself, but the fact that the actuators carrying the cross-arm are confronted with two antagonistic objectives.</div>
+<div id="L932"><a href="#L932">00932</a> [PDF p.16] </div>
+<div id="L933"><a href="#L933">00933</a> [PDF p.16] Indeed, they have to displace the cross-arm in minimum time; and they have to do so while moving in</div>
+<div id="L934"><a href="#L934">00934</a> [PDF p.16] </div>
+<div id="L935"><a href="#L935">00935</a> [PDF p.16] synchronization (i.e. by minimizing the cross-arm’s yaw rotation). Physically, the translation and yaw rotation of</div>
+<div id="L936"><a href="#L936">00936</a> [PDF p.16] </div>
+<div id="L937"><a href="#L937">00937</a> [PDF p.16] the cross-arm have very different dynamics behavior. For this reason, it is very difficult to tune the independent</div>
+<div id="L938"><a href="#L938">00938</a> [PDF p.16] </div>
+<div id="L939"><a href="#L939">00939</a> [PDF p.16] pairs “controller-actuator” to satisfy both objectives. In industry, each independent control-loop is tuned</div>
+<div id="L940"><a href="#L940">00940</a> [PDF p.16] </div>
+<div id="L941"><a href="#L941">00941</a> [PDF p.16] heuristically to provide the best possible positioning performances.</div>
+<div id="L942"><a href="#L942">00942</a> [PDF p.16] </div>
+<div id="L943"><a href="#L943">00943</a> [PDF p.16] </div>
+<div id="L944"><a href="#L944">00944</a> [PDF p.16] </div>
+<div id="L945"><a href="#L945">00945</a> [PDF p.16] A solution to bypass this inherent drawback of independent axis control and to harness the full potential of</div>
+<div id="L946"><a href="#L946">00946</a> [PDF p.16] </div>
+<div id="L947"><a href="#L947">00947</a> [PDF p.16] gantry stages is to use Independent Modal Space Control (IMSC) (Meirovitch, 1990) (Bagordo, Cazzulani,</div>
+<div id="L948"><a href="#L948">00948</a> [PDF p.16] </div>
+<div id="L949"><a href="#L949">00949</a> [PDF p.16] Resta, &amp; Ripamonti, 2011). The principle of this approach consists in transforming the mechanically coupled</div>
+<div id="L950"><a href="#L950">00950</a> [PDF p.16] </div>
+<div id="L951"><a href="#L951">00951</a> [PDF p.16] system into a set of decoupled subsystems, and to control each independently.</div>
+<div id="L952"><a href="#L952">00952</a> [PDF p.16] </div>
+<div id="L953"><a href="#L953">00953</a> [PDF p.17] The decoupling of the payload dynamics is done by anticipating the torque perturbation it induces on Θ. From</div>
+<div id="L954"><a href="#L954">00954</a> [PDF p.17] </div>
+<div id="L955"><a href="#L955">00955</a> [PDF p.17] (15), the torques acting on the rotation are defined by</div>
+<div id="L956"><a href="#L956">00956</a> [PDF p.17] </div>
+<div id="L957"><a href="#L957">00957</a> [PDF p.17] </div>
+<div id="L958"><a href="#L958">00958</a> [PDF p.17] </div>
+<div id="L959"><a href="#L959">00959</a> [PDF p.17] </div>
+<div id="L960"><a href="#L960">00960</a> [PDF p.17]                                                                 </div>
+<div id="L961"><a href="#L961">00961</a> [PDF p.17] Frotation   F1  F2    cc1 sign  X 1   cc 2 sign  X 2   Lb 2  mh dY                        (22)</div>
+<div id="L962"><a href="#L962">00962</a> [PDF p.17] </div>
+<div id="L963"><a href="#L963">00963</a> [PDF p.17] </div>
+<div id="L964"><a href="#L964">00964</a> [PDF p.17] </div>
+<div id="L965"><a href="#L965">00965</a> [PDF p.17] </div>
+<div id="L966"><a href="#L966">00966</a> [PDF p.17] Ignoring the torque associated with friction; to decouple the dynamics of the payload, the total torque acting on</div>
+<div id="L967"><a href="#L967">00967</a> [PDF p.17] </div>
+<div id="L968"><a href="#L968">00968</a> [PDF p.17] the rotation must be zero (23)</div>
+<div id="L969"><a href="#L969">00969</a> [PDF p.17] </div>
+<div id="L970"><a href="#L970">00970</a> [PDF p.17] </div>
+<div id="L971"><a href="#L971">00971</a> [PDF p.17] </div>
+<div id="L972"><a href="#L972">00972</a> [PDF p.17]  F1  F2  Lb 2  mh d Y  0                                                                              (23)</div>
+<div id="L973"><a href="#L973">00973</a> [PDF p.17] </div>
+<div id="L974"><a href="#L974">00974</a> [PDF p.17] </div>
+<div id="L975"><a href="#L975">00975</a> [PDF p.17] </div>
+<div id="L976"><a href="#L976">00976</a> [PDF p.17] Then, solving for F1 and F2 and using the acceleration reference of the payload, one obtains (24)</div>
+<div id="L977"><a href="#L977">00977</a> [PDF p.17] </div>
+<div id="L978"><a href="#L978">00978</a> [PDF p.17] </div>
+<div id="L979"><a href="#L979">00979</a> [PDF p.17] </div>
+<div id="L980"><a href="#L980">00980</a> [PDF p.17]  F1anticipation   mh d  1</div>
+<div id="L981"><a href="#L981">00981</a> [PDF p.17]  F2 anticipation  = Yref L  1                                                                         (24)</div>
+<div id="L982"><a href="#L982">00982</a> [PDF p.17]                           b</div>
+<div id="L983"><a href="#L983">00983</a> [PDF p.17] </div>
+<div id="L984"><a href="#L984">00984</a> [PDF p.17] </div>
+<div id="L985"><a href="#L985">00985</a> [PDF p.17] </div>
+<div id="L986"><a href="#L986">00986</a> [PDF p.17] </div>
+<div id="L987"><a href="#L987">00987</a> [PDF p.17] This anticipation allows decoupling the dynamics of the payload from those of actuators X1 and X2. Also, it</div>
+<div id="L988"><a href="#L988">00988</a> [PDF p.17] </div>
+<div id="L989"><a href="#L989">00989</a> [PDF p.17] allows eliminating one of the repeated eigenvalues from the dynamic model of the gantry stage. This way, the</div>
+<div id="L990"><a href="#L990">00990</a> [PDF p.17] </div>
+<div id="L991"><a href="#L991">00991</a> [PDF p.17] simplified dynamic model (11) can be easily decoupled by interpreting it as an eigenvalue problem. To do so, the</div>
+<div id="L992"><a href="#L992">00992</a> [PDF p.17] </div>
+<div id="L993"><a href="#L993">00993</a> [PDF p.17] simplified model (11) is assumed to be the conservative system (25) with the differential equation solution set-up</div>
+<div id="L994"><a href="#L994">00994</a> [PDF p.17] </div>
+<div id="L995"><a href="#L995">00995</a> [PDF p.17] (26)</div>
+<div id="L996"><a href="#L996">00996</a> [PDF p.17] </div>
+<div id="L997"><a href="#L997">00997</a> [PDF p.17] </div>
+<div id="L998"><a href="#L998">00998</a> [PDF p.17] </div>
+<div id="L999"><a href="#L999">00999</a> [PDF p.17]    S  K S qS  0</div>
+<div id="L1000"><a href="#L1000">01000</a> [PDF p.17] MS q                                                                                                         (25)</div>
+<div id="L1001"><a href="#L1001">01001</a> [PDF p.17] </div>
+<div id="L1002"><a href="#L1002">01002</a> [PDF p.17] qS  Re  B  eit                                                                                        (26)</div>
+<div id="L1003"><a href="#L1003">01003</a> [PDF p.17] </div>
+<div id="L1004"><a href="#L1004">01004</a> [PDF p.17] </div>
+<div id="L1005"><a href="#L1005">01005</a> [PDF p.17] </div>
+<div id="L1006"><a href="#L1006">01006</a> [PDF p.17] </div>
+<div id="L1007"><a href="#L1007">01007</a> [PDF p.17] In (26), B is a scalar and is a vector of same dimension as qS. By substituting (26) into (25) and developing,</div>
+<div id="L1008"><a href="#L1008">01008</a> [PDF p.17] </div>
+<div id="L1009"><a href="#L1009">01009</a> [PDF p.17] one obtains (27), which is an eigenvalue problem.</div>
+<div id="L1010"><a href="#L1010">01010</a> [PDF p.17] </div>
+<div id="L1011"><a href="#L1011">01011</a> [PDF p.17] </div>
+<div id="L1012"><a href="#L1012">01012</a> [PDF p.17] </div>
+<div id="L1013"><a href="#L1013">01013</a> [PDF p.17] K   M     0</div>
+<div id="L1014"><a href="#L1014">01014</a> [PDF p.17]    S</div>
+<div id="L1015"><a href="#L1015">01015</a> [PDF p.17]           2</div>
+<div id="L1016"><a href="#L1016">01016</a> [PDF p.17]                S                                                                                             (27)</div>
+<div id="L1017"><a href="#L1017">01017</a> [PDF p.17] </div>
+<div id="L1018"><a href="#L1018">01018</a> [PDF p.18] From (27), it is possible to determine the eigenvalues (or resonance frequencies) ωk (28) of the gantry stage,</div>
+<div id="L1019"><a href="#L1019">01019</a> [PDF p.18] </div>
+<div id="L1020"><a href="#L1020">01020</a> [PDF p.18] defined by det (KS – ω2MS) = 0, and the eigenvectors k (29) associated with them,</div>
+<div id="L1021"><a href="#L1021">01021</a> [PDF p.18] </div>
+<div id="L1022"><a href="#L1022">01022</a> [PDF p.18]                                                                      kb1  kb 2</div>
+<div id="L1023"><a href="#L1023">01023</a> [PDF p.18] 1  0;       2                                                                                                 (28)</div>
+<div id="L1024"><a href="#L1024">01024</a> [PDF p.18]                        J b  J h   m1  m2  L 4  mh d  mhY   m1  m2  Lb 2  mhY  m1  m2  mb  mh</div>
+<div id="L1025"><a href="#L1025">01025</a> [PDF p.18]                                                 2           2        2                      2</div>
+<div id="L1026"><a href="#L1026">01026</a> [PDF p.18]                                                 b</div>
+<div id="L1027"><a href="#L1027">01027</a> [PDF p.18] </div>
+<div id="L1028"><a href="#L1028">01028</a> [PDF p.18] </div>
+<div id="L1029"><a href="#L1029">01029</a> [PDF p.18] </div>
+<div id="L1030"><a href="#L1030">01030</a> [PDF p.18]                     1     </div>
+<div id="L1031"><a href="#L1031">01031</a> [PDF p.18]   1 , 2     ,  12    12   mhY  (m1  m2 ) Lb 2  m1  m2  mb  mh                          (29)</div>
+<div id="L1032"><a href="#L1032">01032</a> [PDF p.18]                     0   1  </div>
+<div id="L1033"><a href="#L1033">01033</a> [PDF p.18] </div>
+<div id="L1034"><a href="#L1034">01034</a> [PDF p.18] </div>
+<div id="L1035"><a href="#L1035">01035</a> [PDF p.18] </div>
+<div id="L1036"><a href="#L1036">01036</a> [PDF p.18] In (28), ω1 describes the rigid mode associated with the synchronous motion of actuators X1 and X2, ω2 defines</div>
+<div id="L1037"><a href="#L1037">01037</a> [PDF p.18] </div>
+<div id="L1038"><a href="#L1038">01038</a> [PDF p.18] the resonance frequency of the rotation of the gantry stage with respect to its own center of mass. Then, qS can</div>
+<div id="L1039"><a href="#L1039">01039</a> [PDF p.18] </div>
+<div id="L1040"><a href="#L1040">01040</a> [PDF p.18] be defined as,</div>
+<div id="L1041"><a href="#L1041">01041</a> [PDF p.18] </div>
+<div id="L1042"><a href="#L1042">01042</a> [PDF p.18] </div>
+<div id="L1043"><a href="#L1043">01043</a> [PDF p.18] </div>
+<div id="L1044"><a href="#L1044">01044</a> [PDF p.18]                                                         Re  B1ei1t  </div>
+<div id="L1045"><a href="#L1045">01045</a> [PDF p.18]                                                                         </div>
+<div id="L1046"><a href="#L1046">01046</a> [PDF p.18] q S  Re  B1 1 e   Re  B2 2 e    1 ,  2  </div>
+<div id="L1047"><a href="#L1047">01047</a> [PDF p.18]                  i1t</div>
+<div id="L1048"><a href="#L1048">01048</a> [PDF p.18]                                  i2 t</div>
+<div id="L1049"><a href="#L1049">01049</a> [PDF p.18]                                                                                                                  (30)</div>
+<div id="L1050"><a href="#L1050">01050</a> [PDF p.18]                                                         Re  B2 e  </div>
+<div id="L1051"><a href="#L1051">01051</a> [PDF p.18]                                                                   i 2 t</div>
+<div id="L1052"><a href="#L1052">01052</a> [PDF p.18]                                                                        </div>
+<div id="L1053"><a href="#L1053">01053</a> [PDF p.18] </div>
+<div id="L1054"><a href="#L1054">01054</a> [PDF p.18] </div>
+<div id="L1055"><a href="#L1055">01055</a> [PDF p.18] </div>
+<div id="L1056"><a href="#L1056">01056</a> [PDF p.18] </div>
+<div id="L1057"><a href="#L1057">01057</a> [PDF p.18] Finally, by replacing the complex exponentials by a new set of time dependent position variables ηj, one obtains</div>
+<div id="L1058"><a href="#L1058">01058</a> [PDF p.18] </div>
+<div id="L1059"><a href="#L1059">01059</a> [PDF p.18] the modal transformation (31),</div>
+<div id="L1060"><a href="#L1060">01060</a> [PDF p.18] </div>
+<div id="L1061"><a href="#L1061">01061</a> [PDF p.18] </div>
+<div id="L1062"><a href="#L1062">01062</a> [PDF p.18] </div>
+<div id="L1063"><a href="#L1063">01063</a> [PDF p.18] qs  Φ  η                                                                                                        (31)</div>
+<div id="L1064"><a href="#L1064">01064</a> [PDF p.18] </div>
+<div id="L1065"><a href="#L1065">01065</a> [PDF p.18] </div>
+<div id="L1066"><a href="#L1066">01066</a> [PDF p.18] </div>
+<div id="L1067"><a href="#L1067">01067</a> [PDF p.18] Applying (31) and multiplying by ΦT, Eq. (11) becomes,</div>
+<div id="L1068"><a href="#L1068">01068</a> [PDF p.18] </div>
+<div id="L1069"><a href="#L1069">01069</a> [PDF p.18] </div>
+<div id="L1070"><a href="#L1070">01070</a> [PDF p.18] </div>
+<div id="L1071"><a href="#L1071">01071</a> [PDF p.18] Φ T M s Φ </div>
+<div id="L1072"><a href="#L1072">01072</a> [PDF p.18]           η + Φ T C s Φ η + Φ T K s Φ η = Φ T f s                                                                (32)</div>
+<div id="L1073"><a href="#L1073">01073</a> [PDF p.18] </div>
+<div id="L1074"><a href="#L1074">01074</a> [PDF p.18] </div>
+<div id="L1075"><a href="#L1075">01075</a> [PDF p.18] </div>
+<div id="L1076"><a href="#L1076">01076</a> [PDF p.18] Where ΦT Ms Φ is the modal inertia matrix (33); its diagonal terms correspond to the total mass and rotary</div>
+<div id="L1077"><a href="#L1077">01077</a> [PDF p.18] </div>
+<div id="L1078"><a href="#L1078">01078</a> [PDF p.18] inertia of the gantry stage. ΦT Cs Φ is the modal damping matrix (34); its diagonal terms correspond to the</div>
+<div id="L1079"><a href="#L1079">01079</a> [PDF p.18] </div>
+<div id="L1080"><a href="#L1080">01080</a> [PDF p.18] friction opposing to the translation η1 and the rotation η2. ΦT Ks Φ is the modal stiffness matrix (35). Finally, ΦT</div>
+<div id="L1081"><a href="#L1081">01081</a> [PDF p.18] </div>
+<div id="L1082"><a href="#L1082">01082</a> [PDF p.18] fs is the modal force vector (36).</div>
+<div id="L1083"><a href="#L1083">01083</a> [PDF p.18] </div>
+<div id="L1084"><a href="#L1084">01084</a> [PDF p.19]            m  m  m  m           0                                                                            </div>
+<div id="L1085"><a href="#L1085">01085</a> [PDF p.19] ΦT M s Φ   1 2 b h                                                                                                 (33)</div>
+<div id="L1086"><a href="#L1086">01086</a> [PDF p.19]            0                       J b  J h   m1  m2  L2b 4  mh  d 2 Y 2    m1  m2  mb  mh 122 </div>
+<div id="L1087"><a href="#L1087">01087</a> [PDF p.19] </div>
+<div id="L1088"><a href="#L1088">01088</a> [PDF p.19] </div>
+<div id="L1089"><a href="#L1089">01089</a> [PDF p.19] Φ TCs Φ  </div>
+<div id="L1090"><a href="#L1090">01090</a> [PDF p.19]            cg1  cg 2                              c  c    c  c  L 2</div>
+<div id="L1091"><a href="#L1091">01091</a> [PDF p.19]                                                       g1    g2   12     g1    g2   b</div>
+<div id="L1092"><a href="#L1092">01092</a> [PDF p.19]                                                                                      </div>
+<div id="L1093"><a href="#L1093">01093</a> [PDF p.19]                                                                                                                     (34)</div>
+<div id="L1094"><a href="#L1094">01094</a> [PDF p.19]           cg1  cg2 12  cg1  cg2  Lb 2    c  c  c  c  L 4  L    </div>
+<div id="L1095"><a href="#L1095">01095</a> [PDF p.19]                                                                               2                 2</div>
+<div id="L1096"><a href="#L1096">01096</a> [PDF p.19]                                                     b1     b2     g1    g2    b        b 12     12</div>
+<div id="L1097"><a href="#L1097">01097</a> [PDF p.19] </div>
+<div id="L1098"><a href="#L1098">01098</a> [PDF p.19] </div>
+<div id="L1099"><a href="#L1099">01099</a> [PDF p.19] </div>
+<div id="L1100"><a href="#L1100">01100</a> [PDF p.19] </div>
+<div id="L1101"><a href="#L1101">01101</a> [PDF p.19] ΦTK s Φ  </div>
+<div id="L1102"><a href="#L1102">01102</a> [PDF p.19]             0    0 </div>
+<div id="L1103"><a href="#L1103">01103</a> [PDF p.19]                                                                                                                     (35)</div>
+<div id="L1104"><a href="#L1104">01104</a> [PDF p.19]            0 k  </div>
+<div id="L1105"><a href="#L1105">01105</a> [PDF p.19]                b1 kb 2 </div>
+<div id="L1106"><a href="#L1106">01106</a> [PDF p.19] </div>
+<div id="L1107"><a href="#L1107">01107</a> [PDF p.19] </div>
+<div id="L1108"><a href="#L1108">01108</a> [PDF p.19] </div>
+<div id="L1109"><a href="#L1109">01109</a> [PDF p.19]         F                   </div>
+<div id="L1110"><a href="#L1110">01110</a> [PDF p.19] ΦT fs   X         F                                                                                           (36)</div>
+<div id="L1111"><a href="#L1111">01111</a> [PDF p.19]          F</div>
+<div id="L1112"><a href="#L1112">01112</a> [PDF p.19]            mh d Y    X 12 </div>
+<div id="L1113"><a href="#L1113">01113</a> [PDF p.19] </div>
+<div id="L1114"><a href="#L1114">01114</a> [PDF p.19] </div>
+<div id="L1115"><a href="#L1115">01115</a> [PDF p.19] </div>
+<div id="L1116"><a href="#L1116">01116</a> [PDF p.19] </div>
+<div id="L1117"><a href="#L1117">01117</a> [PDF p.19] To have a full decoupling basis, the off–diagonal terms in (34) are neglected considering that,</div>
+<div id="L1118"><a href="#L1118">01118</a> [PDF p.19] </div>
+<div id="L1119"><a href="#L1119">01119</a> [PDF p.19] </div>
+<div id="L1120"><a href="#L1120">01120</a> [PDF p.19] </div>
+<div id="L1121"><a href="#L1121">01121</a> [PDF p.19] cg1+cg2 &gt;&gt; (cg1+cg2) φ12 + (cg1–cg2) Lb/2                                                                            (37)</div>
+<div id="L1122"><a href="#L1122">01122</a> [PDF p.19] </div>
+<div id="L1123"><a href="#L1123">01123</a> [PDF p.19] cb1+cb2+ (cg1+cg2) (Lb²/4+Lbφ12+φ12²) &gt;&gt; (cg1+cg2) φ12 + (cg1–cg2) Lb/2                                              (38)</div>
+<div id="L1124"><a href="#L1124">01124</a> [PDF p.19] </div>
+<div id="L1125"><a href="#L1125">01125</a> [PDF p.19] </div>
+<div id="L1126"><a href="#L1126">01126</a> [PDF p.19] </div>
+<div id="L1127"><a href="#L1127">01127</a> [PDF p.19] </div>
+<div id="L1128"><a href="#L1128">01128</a> [PDF p.19] 3.2     Control on a decoupling basis</div>
+<div id="L1129"><a href="#L1129">01129</a> [PDF p.19] </div>
+<div id="L1130"><a href="#L1130">01130</a> [PDF p.19] </div>
+<div id="L1131"><a href="#L1131">01131</a> [PDF p.19] The decoupling basis control structure is divided in two parts:</div>
+<div id="L1132"><a href="#L1132">01132</a> [PDF p.19] </div>
+<div id="L1133"><a href="#L1133">01133</a> [PDF p.19] </div>
+<div id="L1134"><a href="#L1134">01134</a> [PDF p.19] </div>
+<div id="L1135"><a href="#L1135">01135</a> [PDF p.19] 1) A feedforward control structure (bottom of Fig.4), which is obtained by inversion of the decoupling basis</div>
+<div id="L1136"><a href="#L1136">01136</a> [PDF p.19] </div>
+<div id="L1137"><a href="#L1137">01137</a> [PDF p.19] model (32). This model inversion is performed using the Energetic Macroscopic Representation (EMR)</div>
+<div id="L1138"><a href="#L1138">01138</a> [PDF p.19] </div>
+<div id="L1139"><a href="#L1139">01139</a> [PDF p.19] formalism (Barre, et al., 2006). The feedforward control starts from the reference positions, velocities, and</div>
+<div id="L1140"><a href="#L1140">01140</a> [PDF p.19] </div>
+<div id="L1141"><a href="#L1141">01141</a> [PDF p.19] accelerations X1 ref, X2 ref, and Yref. These references are transformed into the equivalent decoupling basis</div>
+<div id="L1142"><a href="#L1142">01142</a> [PDF p.19] </div>
+<div id="L1143"><a href="#L1143">01143</a> [PDF p.19] references η1 ref, η2 ref and Yref, using (39). Each decoupled reference is then fed into its respective controller</div>
+<div id="L1144"><a href="#L1144">01144</a> [PDF p.19] </div>
+<div id="L1145"><a href="#L1145">01145</a> [PDF p.19] Cη1_ff, Cη2_ff, and Cy_ff. Finally, the calculated feedforward forces Fη1_ff (40), Fη2_ff (41), and Fy_ff (42) are</div>
+<div id="L1146"><a href="#L1146">01146</a> [PDF p.19] </div>
+<div id="L1147"><a href="#L1147">01147</a> [PDF p.19] transformed into the reference forces F1_ff, F2_ff, and Fy_ff using (43). The compensation of the dynamics of the</div>
+<div id="L1148"><a href="#L1148">01148</a> [PDF p.19] </div>
+<div id="L1149"><a href="#L1149">01149</a> [PDF p.19] payload (24) is added to the reference forces F1_ff and F2_ff.</div>
+<div id="L1150"><a href="#L1150">01150</a> [PDF p.19] </div>
+<div id="L1151"><a href="#L1151">01151</a> [PDF p.19] </div>
+<div id="L1152"><a href="#L1152">01152</a> [PDF p.19] </div>
+<div id="L1153"><a href="#L1153">01153</a> [PDF p.19]  1               X1         1 12 0       1 2 1 2 0</div>
+<div id="L1154"><a href="#L1154">01154</a> [PDF p.19] 2  =  1  T   X 2     0 1 0  ; T  1 Lb 1 Lb 0                                                       (39)</div>
+<div id="L1155"><a href="#L1155">01155</a> [PDF p.19]                                            0    0 1 </div>
+<div id="L1156"><a href="#L1156">01156</a> [PDF p.19] Y                Y           0 0 1 </div>
+<div id="L1157"><a href="#L1157">01157</a> [PDF p.19] </div>
+<div id="L1158"><a href="#L1158">01158</a> [PDF p.20]                                                              T</div>
+<div id="L1159"><a href="#L1159">01159</a> [PDF p.20]                   </div>
+<div id="L1160"><a href="#L1160">01160</a> [PDF p.20]                    1ref              m1  m2  mb  mh </div>
+<div id="L1161"><a href="#L1161">01161</a> [PDF p.20] F1_ff  C1_ff   1ref   C1_ff       cg1  cg 2                                                                 (40)</div>
+<div id="L1162"><a href="#L1162">01162</a> [PDF p.20]                                               0        </div>
+<div id="L1163"><a href="#L1163">01163</a> [PDF p.20]                    1ref                                 </div>
+<div id="L1164"><a href="#L1164">01164</a> [PDF p.20] </div>
+<div id="L1165"><a href="#L1165">01165</a> [PDF p.20] </div>
+<div id="L1166"><a href="#L1166">01166</a> [PDF p.20]                                       J b  J h   m1  m2  L2b 4  mh  d 2 Y 2   m1  m2  mb  mh 12</div>
+<div id="L1167"><a href="#L1167">01167</a> [PDF p.20]                                                                                                                       T</div>
+<div id="L1168"><a href="#L1168">01168</a> [PDF p.20]                  </div>
+<div id="L1169"><a href="#L1169">01169</a> [PDF p.20]                    2 ref                                                                                   2</div>
+<div id="L1170"><a href="#L1170">01170</a> [PDF p.20]                                                                                                                  </div>
+<div id="L1171"><a href="#L1171">01171</a> [PDF p.20]                           </div>
+<div id="L1172"><a href="#L1172">01172</a> [PDF p.20] F2_ff  C2_ff   2 ref  C2_ff                 cb1  cb 2  cg1  cg2  Lb 4  Lb12 12 </div>
+<div id="L1173"><a href="#L1173">01173</a> [PDF p.20]                                                                                   2              2                       (41)</div>
+<div id="L1174"><a href="#L1174">01174</a> [PDF p.20]                                                                                                              </div>
+<div id="L1175"><a href="#L1175">01175</a> [PDF p.20]                   2 ref                                               kb1  kb 2                             </div>
+<div id="L1176"><a href="#L1176">01176</a> [PDF p.20] </div>
+<div id="L1177"><a href="#L1177">01177</a> [PDF p.20]                  Yref          mh </div>
+<div id="L1178"><a href="#L1178">01178</a> [PDF p.20]                                           T</div>
+<div id="L1179"><a href="#L1179">01179</a> [PDF p.20] </div>
+<div id="L1180"><a href="#L1180">01180</a> [PDF p.20]                         </div>
+<div id="L1181"><a href="#L1181">01181</a> [PDF p.20] Fy _ff  Cy _ff  Yref  Cy _ff   cy                                                                                  (42)</div>
+<div id="L1182"><a href="#L1182">01182</a> [PDF p.20]                                  0</div>
+<div id="L1183"><a href="#L1183">01183</a> [PDF p.20]                  Yref           </div>
+<div id="L1184"><a href="#L1184">01184</a> [PDF p.20] </div>
+<div id="L1185"><a href="#L1185">01185</a> [PDF p.20]  F1                     F1         1       1   0</div>
+<div id="L1186"><a href="#L1186">01186</a> [PDF p.20]  F2  = P 1   T    F2   P   Lb 2  Lb 2 0</div>
+<div id="L1187"><a href="#L1187">01187</a> [PDF p.20]                       1</div>
+<div id="L1188"><a href="#L1188">01188</a> [PDF p.20]                                                                                                                           (43)</div>
+<div id="L1189"><a href="#L1189">01189</a> [PDF p.20] F                                   0      0   1 </div>
+<div id="L1190"><a href="#L1190">01190</a> [PDF p.20]  Y                      FY </div>
+<div id="L1191"><a href="#L1191">01191</a> [PDF p.20] </div>
+<div id="L1192"><a href="#L1192">01192</a> [PDF p.20] 2) A feedback control structure (middle of Fig.4). The decoupling basis feedforward control provides most of the</div>
+<div id="L1193"><a href="#L1193">01193</a> [PDF p.20] </div>
+<div id="L1194"><a href="#L1194">01194</a> [PDF p.20] dynamic response of the gantry stage (i.e. coarse positioning). In the same way, it compensates for the unbalance</div>
+<div id="L1195"><a href="#L1195">01195</a> [PDF p.20] </div>
+<div id="L1196"><a href="#L1196">01196</a> [PDF p.20] and mechanical coupling between actuators. Nevertheless, it does not compensate for non–modeled disturbances,</div>
+<div id="L1197"><a href="#L1197">01197</a> [PDF p.20] </div>
+<div id="L1198"><a href="#L1198">01198</a> [PDF p.20] uncertainties on the model parameters and neglected phenomena. Thus, to improve the fine positioning of the</div>
+<div id="L1199"><a href="#L1199">01199</a> [PDF p.20] </div>
+<div id="L1200"><a href="#L1200">01200</a> [PDF p.20] gantry stage, a decoupling basis feedback control is proposed. Its structure is similar to those of the feedforward</div>
+<div id="L1201"><a href="#L1201">01201</a> [PDF p.20] </div>
+<div id="L1202"><a href="#L1202">01202</a> [PDF p.20] control. It starts from the reference positions X1 ref, X2 ref and Yref, which are transformed into the decoupled</div>
+<div id="L1203"><a href="#L1203">01203</a> [PDF p.20] </div>
+<div id="L1204"><a href="#L1204">01204</a> [PDF p.20] references η1 ref, η2 ref and Yref using (39). These references are then fed into classical industrial PID controllers.</div>
+<div id="L1205"><a href="#L1205">01205</a> [PDF p.20] </div>
+<div id="L1206"><a href="#L1206">01206</a> [PDF p.20] They generate the feedback decoupling basis force references Fη1_fb, Fη2_fb and Fy_fb, which are the transformed</div>
+<div id="L1207"><a href="#L1207">01207</a> [PDF p.20] </div>
+<div id="L1208"><a href="#L1208">01208</a> [PDF p.20] into the reference forces F1_fb, F2_fb and Fy_fb using (43).</div>
+<div id="L1209"><a href="#L1209">01209</a> [PDF p.20] </div>
+<div id="L1210"><a href="#L1210">01210</a> [PDF p.20] </div>
+<div id="L1211"><a href="#L1211">01211</a> [PDF p.20] </div>
+<div id="L1212"><a href="#L1212">01212</a> [PDF p.20] 3) Implemented control. The reference forces from the feedback and feedforward controls are added and fed into</div>
+<div id="L1213"><a href="#L1213">01213</a> [PDF p.20] </div>
+<div id="L1214"><a href="#L1214">01214</a> [PDF p.20] the drives controlling actuators X1, X2 and Y (top of Fig. 4). Finally, to cancel residual vibrations of the support</div>
+<div id="L1215"><a href="#L1215">01215</a> [PDF p.20] </div>
+<div id="L1216"><a href="#L1216">01216</a> [PDF p.20] structure, a jerk time of 26.5 ms is added to the references X1ref and X2ref. This reduces the solicitation of the first</div>
+<div id="L1217"><a href="#L1217">01217</a> [PDF p.20] </div>
+<div id="L1218"><a href="#L1218">01218</a> [PDF p.20] vibration mode (37.7 Hz) of the supporting structure along the X–direction. Along the Y–direction no jerk time is</div>
+<div id="L1219"><a href="#L1219">01219</a> [PDF p.20] </div>
+<div id="L1220"><a href="#L1220">01220</a> [PDF p.20] added. This is because, on this direction, the vibrations are of small amplitude and they disappear rapidly.</div>
+<div id="L1221"><a href="#L1221">01221</a> [PDF p.20] </div>
+<div id="L1222"><a href="#L1222">01222</a> [PDF p.21]                                                                                                        X2</div>
+<div id="L1223"><a href="#L1223">01223</a> [PDF p.21]                                                                            FY                                            Y</div>
+<div id="L1224"><a href="#L1224">01224</a> [PDF p.21]                                           Drive Y                                m2               F2</div>
+<div id="L1225"><a href="#L1225">01225</a> [PDF p.21] </div>
+<div id="L1226"><a href="#L1226">01226</a> [PDF p.21] </div>
+<div id="L1227"><a href="#L1227">01227</a> [PDF p.21] </div>
+<div id="L1228"><a href="#L1228">01228</a> [PDF p.21] </div>
+<div id="L1229"><a href="#L1229">01229</a> [PDF p.21]                                                                                                                               Gantry stage</div>
+<div id="L1230"><a href="#L1230">01230</a> [PDF p.21]                                                                                              mh         Y</div>
+<div id="L1231"><a href="#L1231">01231</a> [PDF p.21]                                                                            F1                                     y</div>
+<div id="L1232"><a href="#L1232">01232</a> [PDF p.21]                                                                                                                          X1</div>
+<div id="L1233"><a href="#L1233">01233</a> [PDF p.21]                                        Drive X1                                       mb    Fy               x</div>
+<div id="L1234"><a href="#L1234">01234</a> [PDF p.21] </div>
+<div id="L1235"><a href="#L1235">01235</a> [PDF p.21] </div>
+<div id="L1236"><a href="#L1236">01236</a> [PDF p.21] </div>
+<div id="L1237"><a href="#L1237">01237</a> [PDF p.21] </div>
+<div id="L1238"><a href="#L1238">01238</a> [PDF p.21]                                                                            F2          m1</div>
+<div id="L1239"><a href="#L1239">01239</a> [PDF p.21]                                                                                                                        X2</div>
+<div id="L1240"><a href="#L1240">01240</a> [PDF p.21]                                                                                                         F1</div>
+<div id="L1241"><a href="#L1241">01241</a> [PDF p.21]                                        Drive X2</div>
+<div id="L1242"><a href="#L1242">01242</a> [PDF p.21]                                                                                                         X1</div>
+<div id="L1243"><a href="#L1243">01243</a> [PDF p.21] </div>
+<div id="L1244"><a href="#L1244">01244</a> [PDF p.21]                                                                                 η2</div>
+<div id="L1245"><a href="#L1245">01245</a> [PDF p.21]                                                                                 η1           1T</div>
+<div id="L1246"><a href="#L1246">01246</a> [PDF p.21] </div>
+<div id="L1247"><a href="#L1247">01247</a> [PDF p.21] </div>
+<div id="L1248"><a href="#L1248">01248</a> [PDF p.21] </div>
+<div id="L1249"><a href="#L1249">01249</a> [PDF p.21] </div>
+<div id="L1250"><a href="#L1250">01250</a> [PDF p.21]                                                                                                                               Feedback control</div>
+<div id="L1251"><a href="#L1251">01251</a> [PDF p.21]                                                                                              Y</div>
+<div id="L1252"><a href="#L1252">01252</a> [PDF p.21]                          F2_fb                     Fη2_fb            εη2    η2 ref                               X2 ref</div>
+<div id="L1253"><a href="#L1253">01253</a> [PDF p.21]                                                             Cη2_fb</div>
+<div id="L1254"><a href="#L1254">01254</a> [PDF p.21]                                   P1T </div>
+<div id="L1255"><a href="#L1255">01255</a> [PDF p.21]                                               1</div>
+<div id="L1256"><a href="#L1256">01256</a> [PDF p.21]                                                                                             1T</div>
+<div id="L1257"><a href="#L1257">01257</a> [PDF p.21]                          F1_fb                     Fη1_fb            εη1    η1 ref                               X1 ref</div>
+<div id="L1258"><a href="#L1258">01258</a> [PDF p.21]                                                             Cη1_fb</div>
+<div id="L1259"><a href="#L1259">01259</a> [PDF p.21] </div>
+<div id="L1260"><a href="#L1260">01260</a> [PDF p.21]                                       Y                                                       Y</div>
+<div id="L1261"><a href="#L1261">01261</a> [PDF p.21]                           Fy_fb                                      εy                                          Y ref</div>
+<div id="L1262"><a href="#L1262">01262</a> [PDF p.21]                                                             Cy_fb</div>
+<div id="L1263"><a href="#L1263">01263</a> [PDF p.21] </div>
+<div id="L1264"><a href="#L1264">01264</a> [PDF p.21]                                                                             η2 ref                               X2 ref</div>
+<div id="L1265"><a href="#L1265">01265</a> [PDF p.21]                                                                                              1</div>
+<div id="L1266"><a href="#L1266">01266</a> [PDF p.21]                                                                             η1 ref          T                   X1 ref</div>
+<div id="L1267"><a href="#L1267">01267</a> [PDF p.21]                          F2_ff                     Fη2_ff</div>
+<div id="L1268"><a href="#L1268">01268</a> [PDF p.21]                                                             Cη1_ff</div>
+<div id="L1269"><a href="#L1269">01269</a> [PDF p.21]                                                                                                                    .</div>
+<div id="L1270"><a href="#L1270">01270</a> [PDF p.21] </div>
+<div id="L1271"><a href="#L1271">01271</a> [PDF p.21] </div>
+<div id="L1272"><a href="#L1272">01272</a> [PDF p.21] </div>
+<div id="L1273"><a href="#L1273">01273</a> [PDF p.21] </div>
+<div id="L1274"><a href="#L1274">01274</a> [PDF p.21]                                                                                                                               Feedforward control</div>
+<div id="L1275"><a href="#L1275">01275</a> [PDF p.21]                                                                             .       Y</div>
+<div id="L1276"><a href="#L1276">01276</a> [PDF p.21]                                                                             η2 ref                               X. 2 ref</div>
+<div id="L1277"><a href="#L1277">01277</a> [PDF p.21]                                   P1  T 1                              .</div>
+<div id="L1278"><a href="#L1278">01278</a> [PDF p.21]                                                                             η1 ref  1T                         X1 ref</div>
+<div id="L1279"><a href="#L1279">01279</a> [PDF p.21]                          F1_ff                     Fη1_ff</div>
+<div id="L1280"><a href="#L1280">01280</a> [PDF p.21]                                                             Cη2_ff          ..      Y                            ..</div>
+<div id="L1281"><a href="#L1281">01281</a> [PDF p.21]                                                                             η2 ref                               X2 ref</div>
+<div id="L1282"><a href="#L1282">01282</a> [PDF p.21]                                                                             ..                                   ..</div>
+<div id="L1283"><a href="#L1283">01283</a> [PDF p.21]                                                                             η1 ref  1T                         X1 ref</div>
+<div id="L1284"><a href="#L1284">01284</a> [PDF p.21]                                       Y</div>
+<div id="L1285"><a href="#L1285">01285</a> [PDF p.21]                              F2 anticipation</div>
+<div id="L1286"><a href="#L1286">01286</a> [PDF p.21]                                                         2 mhd Lb                             Y</div>
+<div id="L1287"><a href="#L1287">01287</a> [PDF p.21]                             F1 anticipation                                                                  ..</div>
+<div id="L1288"><a href="#L1288">01288</a> [PDF p.21]                                                                                                              Y ref</div>
+<div id="L1289"><a href="#L1289">01289</a> [PDF p.21]                                                             Cy_ff</div>
+<div id="L1290"><a href="#L1290">01290</a> [PDF p.21]                                   Fy_ff                                                                      .</div>
+<div id="L1291"><a href="#L1291">01291</a> [PDF p.21]                                                                                                              Y ref</div>
+<div id="L1292"><a href="#L1292">01292</a> [PDF p.21] </div>
+<div id="L1293"><a href="#L1293">01293</a> [PDF p.21]                            Fig. 4 Feedback–feedforward decoupled control structure.</div>
+<div id="L1294"><a href="#L1294">01294</a> [PDF p.21] </div>
+<div id="L1295"><a href="#L1295">01295</a> [PDF p.21] </div>
+<div id="L1296"><a href="#L1296">01296</a> [PDF p.21] </div>
+<div id="L1297"><a href="#L1297">01297</a> [PDF p.21] To sum up, using the proposed model-based decoupling control scheme, the factors associated with the coupling</div>
+<div id="L1298"><a href="#L1298">01298</a> [PDF p.21] </div>
+<div id="L1299"><a href="#L1299">01299</a> [PDF p.21] effect are compensated as follows: the disturbance associated with the acceleration of the payload is</div>
+<div id="L1300"><a href="#L1300">01300</a> [PDF p.21] </div>
+<div id="L1301"><a href="#L1301">01301</a> [PDF p.21] compensated by anticipation. The non-uniform load distribution associated with the variable position of the</div>
+<div id="L1302"><a href="#L1302">01302</a> [PDF p.21] </div>
+<div id="L1303"><a href="#L1303">01303</a> [PDF p.21] payload, and the coupling due to different motor characteristics is implicitly taken into account by the modal</div>
+<div id="L1304"><a href="#L1304">01304</a> [PDF p.21] </div>
+<div id="L1305"><a href="#L1305">01305</a> [PDF p.21] transformation. In the decoupled frame, the translation controller handles the synchronizing motion of actuators</div>
+<div id="L1306"><a href="#L1306">01306</a> [PDF p.21] </div>
+<div id="L1307"><a href="#L1307">01307</a> [PDF p.21] X1 and X2 while the rotation controller rejects un-modeled disturbances affecting their synchronization.</div>
+<div id="L1308"><a href="#L1308">01308</a> [PDF p.21] </div>
+<div id="L1309"><a href="#L1309">01309</a> [PDF p.22] 4     EXPERIMENTAL VALIDATION</div>
+<div id="L1310"><a href="#L1310">01310</a> [PDF p.22] </div>
+<div id="L1311"><a href="#L1311">01311</a> [PDF p.22] In this section, independent axis control and the proposed decoupling basis control are compared. First, two</div>
+<div id="L1312"><a href="#L1312">01312</a> [PDF p.22] </div>
+<div id="L1313"><a href="#L1313">01313</a> [PDF p.22] point–to–point motion examples are presented, then a Ballbar test (path–tracking motion) is proposed.</div>
+<div id="L1314"><a href="#L1314">01314</a> [PDF p.22] </div>
+<div id="L1315"><a href="#L1315">01315</a> [PDF p.22] </div>
+<div id="L1316"><a href="#L1316">01316</a> [PDF p.22] </div>
+<div id="L1317"><a href="#L1317">01317</a> [PDF p.22] </div>
+<div id="L1318"><a href="#L1318">01318</a> [PDF p.22] 4.1      Point–to–point motion tests</div>
+<div id="L1319"><a href="#L1319">01319</a> [PDF p.22] </div>
+<div id="L1320"><a href="#L1320">01320</a> [PDF p.22] </div>
+<div id="L1321"><a href="#L1321">01321</a> [PDF p.22] The first test consists in synchronously displacing X1 and X2 from –0.2 m to +0.2 m at a maximum velocity of</div>
+<div id="L1322"><a href="#L1322">01322</a> [PDF p.22] </div>
+<div id="L1323"><a href="#L1323">01323</a> [PDF p.22] 2 m/s and acceleration of 20 m/s². For the first motion example (Fig.5), position references are generated with a</div>
+<div id="L1324"><a href="#L1324">01324</a> [PDF p.22] </div>
+<div id="L1325"><a href="#L1325">01325</a> [PDF p.22] 26.5 ms jerk time, the payload is kept immobile at 0.2 m. In this configuration of the Y–axis, the unbalance</div>
+<div id="L1326"><a href="#L1326">01326</a> [PDF p.22] </div>
+<div id="L1327"><a href="#L1327">01327</a> [PDF p.22] between X1 and X2 actuators is at its maximum value.</div>
+<div id="L1328"><a href="#L1328">01328</a> [PDF p.22] </div>
+<div id="L1329"><a href="#L1329">01329</a> [PDF p.22] </div>
+<div id="L1330"><a href="#L1330">01330</a> [PDF p.22] </div>
+<div id="L1331"><a href="#L1331">01331</a> [PDF p.22] The second test consists in displacing the payload along a diagonal over the machine workspace. Trajectories for</div>
+<div id="L1332"><a href="#L1332">01332</a> [PDF p.22] </div>
+<div id="L1333"><a href="#L1333">01333</a> [PDF p.22] axes X1, X2, and Y are identical. They move from –0.2 m to +0.2 m at a maximum velocity of 2 m/s and a</div>
+<div id="L1334"><a href="#L1334">01334</a> [PDF p.22] </div>
+<div id="L1335"><a href="#L1335">01335</a> [PDF p.22] maximum acceleration of 20 m/s². During this motion, the gantry stage goes from an extreme unbalance</div>
+<div id="L1336"><a href="#L1336">01336</a> [PDF p.22] </div>
+<div id="L1337"><a href="#L1337">01337</a> [PDF p.22] condition to the other. Due to the acceleration of the payload, the coupling between the Y–axis and actuators X1</div>
+<div id="L1338"><a href="#L1338">01338</a> [PDF p.22] </div>
+<div id="L1339"><a href="#L1339">01339</a> [PDF p.22] and X2 is important. To exacerbate this phenomenon, the jerk time has been set to zero for all axes (Fig.6).</div>
+<div id="L1340"><a href="#L1340">01340</a> [PDF p.22] </div>
+<div id="L1341"><a href="#L1341">01341</a> [PDF p.22] </div>
+<div id="L1342"><a href="#L1342">01342</a> [PDF p.22] </div>
+<div id="L1343"><a href="#L1343">01343</a> [PDF p.22] Figs. 5 and 6, allow verifying that controlling the gantry stage on a decoupling basis results in an improvement</div>
+<div id="L1344"><a href="#L1344">01344</a> [PDF p.22] </div>
+<div id="L1345"><a href="#L1345">01345</a> [PDF p.22] of the synchronization of actuators X1 and X2 and in a reduction of more than 50% of the position error during</div>
+<div id="L1346"><a href="#L1346">01346</a> [PDF p.22] </div>
+<div id="L1347"><a href="#L1347">01347</a> [PDF p.22] acceleration shifts. Moreover, when jerk time is well tuned (Fig.5), the settling time is significantly reduced, i.e.</div>
+<div id="L1348"><a href="#L1348">01348</a> [PDF p.22] </div>
+<div id="L1349"><a href="#L1349">01349</a> [PDF p.22] a reduction of about 10%, compared to the independent axis control. The remaining oscillations on the</div>
+<div id="L1350"><a href="#L1350">01350</a> [PDF p.22] </div>
+<div id="L1351"><a href="#L1351">01351</a> [PDF p.22] synchronization and on position tracking errors are mostly due to the detent forces of the PMLSMs.</div>
+<div id="L1352"><a href="#L1352">01352</a> [PDF p.22] </div>
+<div id="L1353"><a href="#L1353">01353</a> [PDF p.22] </div>
+<div id="L1354"><a href="#L1354">01354</a> [PDF p.22] </div>
+<div id="L1355"><a href="#L1355">01355</a> [PDF p.22] Another advantage of the decoupling basis approach is a reduction of about 12% of the peak force of actuators</div>
+<div id="L1356"><a href="#L1356">01356</a> [PDF p.22] </div>
+<div id="L1357"><a href="#L1357">01357</a> [PDF p.22] X1 and X2, as shown on force plots in Figs.5 and 6. So, future versions of the gantry stage using the model-based</div>
+<div id="L1358"><a href="#L1358">01358</a> [PDF p.22] </div>
+<div id="L1359"><a href="#L1359">01359</a> [PDF p.22] decoupling control proposed in this paper could be designed with less powerful actuators for X1 and X2. This is</div>
+<div id="L1360"><a href="#L1360">01360</a> [PDF p.22] </div>
+<div id="L1361"><a href="#L1361">01361</a> [PDF p.22] an economical advantage for manufacturers insofar as gantry stages will be more efficient at reduced production</div>
+<div id="L1362"><a href="#L1362">01362</a> [PDF p.22] </div>
+<div id="L1363"><a href="#L1363">01363</a> [PDF p.22] costs.</div>
+<div id="L1364"><a href="#L1364">01364</a> [PDF p.22] </div>
+<div id="L1365"><a href="#L1365">01365</a> [PDF p.23]                                                                 a) Motion references X and X</div>
+<div id="L1366"><a href="#L1366">01366</a> [PDF p.23]                                                                                       1        2</div>
+<div id="L1367"><a href="#L1367">01367</a> [PDF p.23]                                                2</div>
+<div id="L1368"><a href="#L1368">01368</a> [PDF p.23] </div>
+<div id="L1369"><a href="#L1369">01369</a> [PDF p.23]                                                1</div>
+<div id="L1370"><a href="#L1370">01370</a> [PDF p.23] </div>
+<div id="L1371"><a href="#L1371">01371</a> [PDF p.23]                                                0</div>
+<div id="L1372"><a href="#L1372">01372</a> [PDF p.23]                                                                                                    10X Pos. ref (m)</div>
+<div id="L1373"><a href="#L1373">01373</a> [PDF p.23]                                                -1                                                  Vel. ref (m/s)</div>
+<div id="L1374"><a href="#L1374">01374</a> [PDF p.23]                                                                                                    0.1X Acc. ref (m/s²)</div>
+<div id="L1375"><a href="#L1375">01375</a> [PDF p.23]                                                -2</div>
+<div id="L1376"><a href="#L1376">01376</a> [PDF p.23]                                                  0       0.1          0.2            0.3              0.4             0.5</div>
+<div id="L1377"><a href="#L1377">01377</a> [PDF p.23]                                                                    b) Synchronization Error</div>
+<div id="L1378"><a href="#L1378">01378</a> [PDF p.23]                                                20</div>
+<div id="L1379"><a href="#L1379">01379</a> [PDF p.23]                                                15</div>
+<div id="L1380"><a href="#L1380">01380</a> [PDF p.23]                                                                                                       ~40ms</div>
+<div id="L1381"><a href="#L1381">01381</a> [PDF p.23]                                                10</div>
+<div id="L1382"><a href="#L1382">01382</a> [PDF p.23]                         X – X [µm]              5</div>
+<div id="L1383"><a href="#L1383">01383</a> [PDF p.23]                                                 0</div>
+<div id="L1384"><a href="#L1384">01384</a> [PDF p.23]                                    2</div>
+<div id="L1385"><a href="#L1385">01385</a> [PDF p.23] </div>
+<div id="L1386"><a href="#L1386">01386</a> [PDF p.23]                                                -5</div>
+<div id="L1387"><a href="#L1387">01387</a> [PDF p.23]                                               -10                                              Independent axis control</div>
+<div id="L1388"><a href="#L1388">01388</a> [PDF p.23]                                    1</div>
+<div id="L1389"><a href="#L1389">01389</a> [PDF p.23] </div>
+<div id="L1390"><a href="#L1390">01390</a> [PDF p.23] </div>
+<div id="L1391"><a href="#L1391">01391</a> [PDF p.23] </div>
+<div id="L1392"><a href="#L1392">01392</a> [PDF p.23]                                               -15                                              Decoupling control</div>
+<div id="L1393"><a href="#L1393">01393</a> [PDF p.23]                                               -20</div>
+<div id="L1394"><a href="#L1394">01394</a> [PDF p.23]                                                  0       0.1         0.2              0.3             0.4                 0.5</div>
+<div id="L1395"><a href="#L1395">01395</a> [PDF p.23]                                                                      c) Position Error X</div>
+<div id="L1396"><a href="#L1396">01396</a> [PDF p.23]                                                                                           1</div>
+<div id="L1397"><a href="#L1397">01397</a> [PDF p.23]                                               50</div>
+<div id="L1398"><a href="#L1398">01398</a> [PDF p.23]                         X ref – X mes [µm]</div>
+<div id="L1399"><a href="#L1399">01399</a> [PDF p.23] </div>
+<div id="L1400"><a href="#L1400">01400</a> [PDF p.23] </div>
+<div id="L1401"><a href="#L1401">01401</a> [PDF p.23] </div>
+<div id="L1402"><a href="#L1402">01402</a> [PDF p.23] </div>
+<div id="L1403"><a href="#L1403">01403</a> [PDF p.23]                                               25                                                       ~40ms</div>
+<div id="L1404"><a href="#L1404">01404</a> [PDF p.23] </div>
+<div id="L1405"><a href="#L1405">01405</a> [PDF p.23]                                                0</div>
+<div id="L1406"><a href="#L1406">01406</a> [PDF p.23]                                    1</div>
+<div id="L1407"><a href="#L1407">01407</a> [PDF p.23] </div>
+<div id="L1408"><a href="#L1408">01408</a> [PDF p.23] </div>
+<div id="L1409"><a href="#L1409">01409</a> [PDF p.23] </div>
+<div id="L1410"><a href="#L1410">01410</a> [PDF p.23] </div>
+<div id="L1411"><a href="#L1411">01411</a> [PDF p.23]                                               -25</div>
+<div id="L1412"><a href="#L1412">01412</a> [PDF p.23]                                    1</div>
+<div id="L1413"><a href="#L1413">01413</a> [PDF p.23] </div>
+<div id="L1414"><a href="#L1414">01414</a> [PDF p.23] </div>
+<div id="L1415"><a href="#L1415">01415</a> [PDF p.23] </div>
+<div id="L1416"><a href="#L1416">01416</a> [PDF p.23] </div>
+<div id="L1417"><a href="#L1417">01417</a> [PDF p.23]                                               -50</div>
+<div id="L1418"><a href="#L1418">01418</a> [PDF p.23]                                                  0       0.1         0.2              0.3             0.4                 0.5</div>
+<div id="L1419"><a href="#L1419">01419</a> [PDF p.23]                                                                      d) Position Error X</div>
+<div id="L1420"><a href="#L1420">01420</a> [PDF p.23]                                                                                           2</div>
+<div id="L1421"><a href="#L1421">01421</a> [PDF p.23]                                               50</div>
+<div id="L1422"><a href="#L1422">01422</a> [PDF p.23]                         X ref – X mes [µm]</div>
+<div id="L1423"><a href="#L1423">01423</a> [PDF p.23] </div>
+<div id="L1424"><a href="#L1424">01424</a> [PDF p.23] </div>
+<div id="L1425"><a href="#L1425">01425</a> [PDF p.23] </div>
+<div id="L1426"><a href="#L1426">01426</a> [PDF p.23] </div>
+<div id="L1427"><a href="#L1427">01427</a> [PDF p.23]                                                                                                        ~40ms</div>
+<div id="L1428"><a href="#L1428">01428</a> [PDF p.23]                                               25</div>
+<div id="L1429"><a href="#L1429">01429</a> [PDF p.23] </div>
+<div id="L1430"><a href="#L1430">01430</a> [PDF p.23]                                                0</div>
+<div id="L1431"><a href="#L1431">01431</a> [PDF p.23]                                    2</div>
+<div id="L1432"><a href="#L1432">01432</a> [PDF p.23] </div>
+<div id="L1433"><a href="#L1433">01433</a> [PDF p.23] </div>
+<div id="L1434"><a href="#L1434">01434</a> [PDF p.23] </div>
+<div id="L1435"><a href="#L1435">01435</a> [PDF p.23] </div>
+<div id="L1436"><a href="#L1436">01436</a> [PDF p.23]                                               -25</div>
+<div id="L1437"><a href="#L1437">01437</a> [PDF p.23]                                    2</div>
+<div id="L1438"><a href="#L1438">01438</a> [PDF p.23] </div>
+<div id="L1439"><a href="#L1439">01439</a> [PDF p.23] </div>
+<div id="L1440"><a href="#L1440">01440</a> [PDF p.23] </div>
+<div id="L1441"><a href="#L1441">01441</a> [PDF p.23] </div>
+<div id="L1442"><a href="#L1442">01442</a> [PDF p.23]                                               -50</div>
+<div id="L1443"><a href="#L1443">01443</a> [PDF p.23]                                                  0       0.1         0.2            0.3               0.4                 0.5</div>
+<div id="L1444"><a href="#L1444">01444</a> [PDF p.23]                                                                        e) Force F (N)</div>
+<div id="L1445"><a href="#L1445">01445</a> [PDF p.23]                                                                                  1</div>
+<div id="L1446"><a href="#L1446">01446</a> [PDF p.23]                                               900</div>
+<div id="L1447"><a href="#L1447">01447</a> [PDF p.23]                                               600</div>
+<div id="L1448"><a href="#L1448">01448</a> [PDF p.23]                                               300</div>
+<div id="L1449"><a href="#L1449">01449</a> [PDF p.23]                         [N]</div>
+<div id="L1450"><a href="#L1450">01450</a> [PDF p.23] </div>
+<div id="L1451"><a href="#L1451">01451</a> [PDF p.23] </div>
+<div id="L1452"><a href="#L1452">01452</a> [PDF p.23] </div>
+<div id="L1453"><a href="#L1453">01453</a> [PDF p.23] </div>
+<div id="L1454"><a href="#L1454">01454</a> [PDF p.23]                                                 0</div>
+<div id="L1455"><a href="#L1455">01455</a> [PDF p.23]                                              -300</div>
+<div id="L1456"><a href="#L1456">01456</a> [PDF p.23]                                              -600</div>
+<div id="L1457"><a href="#L1457">01457</a> [PDF p.23]                                              -900</div>
+<div id="L1458"><a href="#L1458">01458</a> [PDF p.23]                                                  0       0.1         0.2            0.3               0.4                 0.5</div>
+<div id="L1459"><a href="#L1459">01459</a> [PDF p.23]                                                                        f) Force F (N)</div>
+<div id="L1460"><a href="#L1460">01460</a> [PDF p.23]                                                                                  2</div>
+<div id="L1461"><a href="#L1461">01461</a> [PDF p.23]                                               900</div>
+<div id="L1462"><a href="#L1462">01462</a> [PDF p.23]                                               600</div>
+<div id="L1463"><a href="#L1463">01463</a> [PDF p.23]                                               300</div>
+<div id="L1464"><a href="#L1464">01464</a> [PDF p.23]                         [N]</div>
+<div id="L1465"><a href="#L1465">01465</a> [PDF p.23] </div>
+<div id="L1466"><a href="#L1466">01466</a> [PDF p.23] </div>
+<div id="L1467"><a href="#L1467">01467</a> [PDF p.23] </div>
+<div id="L1468"><a href="#L1468">01468</a> [PDF p.23] </div>
+<div id="L1469"><a href="#L1469">01469</a> [PDF p.23]                                                 0</div>
+<div id="L1470"><a href="#L1470">01470</a> [PDF p.23]                                              -300</div>
+<div id="L1471"><a href="#L1471">01471</a> [PDF p.23]                                              -600</div>
+<div id="L1472"><a href="#L1472">01472</a> [PDF p.23]                                              -900</div>
+<div id="L1473"><a href="#L1473">01473</a> [PDF p.23]                                                  0       0.1         0.2             0.3              0.4             0.5</div>
+<div id="L1474"><a href="#L1474">01474</a> [PDF p.23]                                                                            time[s]</div>
+<div id="L1475"><a href="#L1475">01475</a> [PDF p.23] </div>
+<div id="L1476"><a href="#L1476">01476</a> [PDF p.23] </div>
+<div id="L1477"><a href="#L1477">01477</a> [PDF p.23] Fig. 5: Independent axis control vs. decoupling basis control, point–to–point X1 and X2 synchronized motions</div>
+<div id="L1478"><a href="#L1478">01478</a> [PDF p.23] </div>
+<div id="L1479"><a href="#L1479">01479</a> [PDF p.23] (from –0.2 to +0.2 m) at a maximum velocity of 2 m/s and a maximum acceleration of 20 m/s²; the position of</div>
+<div id="L1480"><a href="#L1480">01480</a> [PDF p.23] </div>
+<div id="L1481"><a href="#L1481">01481</a> [PDF p.23]                                              the payload is kept at 0.2 m (i.e. maximum unbalance).</div>
+<div id="L1482"><a href="#L1482">01482</a> [PDF p.23] </div>
+<div id="L1483"><a href="#L1483">01483</a> [PDF p.24]                                                                         a) Motion references X and X</div>
+<div id="L1484"><a href="#L1484">01484</a> [PDF p.24]                                                                                               1        2</div>
+<div id="L1485"><a href="#L1485">01485</a> [PDF p.24]                                                             2</div>
+<div id="L1486"><a href="#L1486">01486</a> [PDF p.24] </div>
+<div id="L1487"><a href="#L1487">01487</a> [PDF p.24]                                                             1</div>
+<div id="L1488"><a href="#L1488">01488</a> [PDF p.24] </div>
+<div id="L1489"><a href="#L1489">01489</a> [PDF p.24]                                                             0</div>
+<div id="L1490"><a href="#L1490">01490</a> [PDF p.24]                                                                                                            10X Pos. ref (m)</div>
+<div id="L1491"><a href="#L1491">01491</a> [PDF p.24]                                                             -1                                             Vel. ref (m/s)</div>
+<div id="L1492"><a href="#L1492">01492</a> [PDF p.24]                                                                                                            0.1X Acc. ref (m/s²)</div>
+<div id="L1493"><a href="#L1493">01493</a> [PDF p.24]                                                             -2</div>
+<div id="L1494"><a href="#L1494">01494</a> [PDF p.24]                                                               0   0.1         0.2             0.3             0.4             0.5</div>
+<div id="L1495"><a href="#L1495">01495</a> [PDF p.24]                                                                            b) Synchronization Error</div>
+<div id="L1496"><a href="#L1496">01496</a> [PDF p.24]                                                             40</div>
+<div id="L1497"><a href="#L1497">01497</a> [PDF p.24]                                                             30</div>
+<div id="L1498"><a href="#L1498">01498</a> [PDF p.24]                                X – X [µm]                   20</div>
+<div id="L1499"><a href="#L1499">01499</a> [PDF p.24]                                                             10</div>
+<div id="L1500"><a href="#L1500">01500</a> [PDF p.24]                                                              0</div>
+<div id="L1501"><a href="#L1501">01501</a> [PDF p.24]                                             2</div>
+<div id="L1502"><a href="#L1502">01502</a> [PDF p.24] </div>
+<div id="L1503"><a href="#L1503">01503</a> [PDF p.24] </div>
+<div id="L1504"><a href="#L1504">01504</a> [PDF p.24]                                                            -10</div>
+<div id="L1505"><a href="#L1505">01505</a> [PDF p.24]                                                            -20                                         Independent axis control</div>
+<div id="L1506"><a href="#L1506">01506</a> [PDF p.24]                                             1</div>
+<div id="L1507"><a href="#L1507">01507</a> [PDF p.24] </div>
+<div id="L1508"><a href="#L1508">01508</a> [PDF p.24] </div>
+<div id="L1509"><a href="#L1509">01509</a> [PDF p.24] </div>
+<div id="L1510"><a href="#L1510">01510</a> [PDF p.24] </div>
+<div id="L1511"><a href="#L1511">01511</a> [PDF p.24]                                                            -30                                         Decoupling control</div>
+<div id="L1512"><a href="#L1512">01512</a> [PDF p.24]                                                            -40</div>
+<div id="L1513"><a href="#L1513">01513</a> [PDF p.24]                                                               0   0.1        0.2              0.3             0.4             0.5</div>
+<div id="L1514"><a href="#L1514">01514</a> [PDF p.24]                                                                              c) Position Error X</div>
+<div id="L1515"><a href="#L1515">01515</a> [PDF p.24]                                                                                                   1</div>
+<div id="L1516"><a href="#L1516">01516</a> [PDF p.24]                                                      100</div>
+<div id="L1517"><a href="#L1517">01517</a> [PDF p.24]                        X ref – X mes [µm]</div>
+<div id="L1518"><a href="#L1518">01518</a> [PDF p.24] </div>
+<div id="L1519"><a href="#L1519">01519</a> [PDF p.24] </div>
+<div id="L1520"><a href="#L1520">01520</a> [PDF p.24] </div>
+<div id="L1521"><a href="#L1521">01521</a> [PDF p.24] </div>
+<div id="L1522"><a href="#L1522">01522</a> [PDF p.24]                                                       75</div>
+<div id="L1523"><a href="#L1523">01523</a> [PDF p.24]                                                       50</div>
+<div id="L1524"><a href="#L1524">01524</a> [PDF p.24]                                                       25</div>
+<div id="L1525"><a href="#L1525">01525</a> [PDF p.24]                                                        0</div>
+<div id="L1526"><a href="#L1526">01526</a> [PDF p.24]                                   1</div>
+<div id="L1527"><a href="#L1527">01527</a> [PDF p.24] </div>
+<div id="L1528"><a href="#L1528">01528</a> [PDF p.24] </div>
+<div id="L1529"><a href="#L1529">01529</a> [PDF p.24] </div>
+<div id="L1530"><a href="#L1530">01530</a> [PDF p.24] </div>
+<div id="L1531"><a href="#L1531">01531</a> [PDF p.24]                                                      -25</div>
+<div id="L1532"><a href="#L1532">01532</a> [PDF p.24]                                                      -50</div>
+<div id="L1533"><a href="#L1533">01533</a> [PDF p.24]                                                      -75</div>
+<div id="L1534"><a href="#L1534">01534</a> [PDF p.24]                                   1</div>
+<div id="L1535"><a href="#L1535">01535</a> [PDF p.24] </div>
+<div id="L1536"><a href="#L1536">01536</a> [PDF p.24] </div>
+<div id="L1537"><a href="#L1537">01537</a> [PDF p.24] </div>
+<div id="L1538"><a href="#L1538">01538</a> [PDF p.24] </div>
+<div id="L1539"><a href="#L1539">01539</a> [PDF p.24]                                                     -100</div>
+<div id="L1540"><a href="#L1540">01540</a> [PDF p.24]                                                         0         0.1        0.2              0.3             0.4             0.5</div>
+<div id="L1541"><a href="#L1541">01541</a> [PDF p.24]                                                                              d) Position Error X</div>
+<div id="L1542"><a href="#L1542">01542</a> [PDF p.24]                                                                                                   2</div>
+<div id="L1543"><a href="#L1543">01543</a> [PDF p.24]                                                      100</div>
+<div id="L1544"><a href="#L1544">01544</a> [PDF p.24]                        X ref – X mes [µm]</div>
+<div id="L1545"><a href="#L1545">01545</a> [PDF p.24] </div>
+<div id="L1546"><a href="#L1546">01546</a> [PDF p.24] </div>
+<div id="L1547"><a href="#L1547">01547</a> [PDF p.24] </div>
+<div id="L1548"><a href="#L1548">01548</a> [PDF p.24] </div>
+<div id="L1549"><a href="#L1549">01549</a> [PDF p.24]                                                       75</div>
+<div id="L1550"><a href="#L1550">01550</a> [PDF p.24]                                                       50</div>
+<div id="L1551"><a href="#L1551">01551</a> [PDF p.24]                                                       25</div>
+<div id="L1552"><a href="#L1552">01552</a> [PDF p.24]                                                        0</div>
+<div id="L1553"><a href="#L1553">01553</a> [PDF p.24]                                   2</div>
+<div id="L1554"><a href="#L1554">01554</a> [PDF p.24] </div>
+<div id="L1555"><a href="#L1555">01555</a> [PDF p.24] </div>
+<div id="L1556"><a href="#L1556">01556</a> [PDF p.24] </div>
+<div id="L1557"><a href="#L1557">01557</a> [PDF p.24] </div>
+<div id="L1558"><a href="#L1558">01558</a> [PDF p.24]                                                      -25</div>
+<div id="L1559"><a href="#L1559">01559</a> [PDF p.24]                                                      -50</div>
+<div id="L1560"><a href="#L1560">01560</a> [PDF p.24]                                                      -75</div>
+<div id="L1561"><a href="#L1561">01561</a> [PDF p.24]                                   2</div>
+<div id="L1562"><a href="#L1562">01562</a> [PDF p.24] </div>
+<div id="L1563"><a href="#L1563">01563</a> [PDF p.24] </div>
+<div id="L1564"><a href="#L1564">01564</a> [PDF p.24] </div>
+<div id="L1565"><a href="#L1565">01565</a> [PDF p.24] </div>
+<div id="L1566"><a href="#L1566">01566</a> [PDF p.24]                                                     -100</div>
+<div id="L1567"><a href="#L1567">01567</a> [PDF p.24]                                                         0         0.1        0.2            0.3               0.4             0.5</div>
+<div id="L1568"><a href="#L1568">01568</a> [PDF p.24]                                                                                e) Force F (N)</div>
+<div id="L1569"><a href="#L1569">01569</a> [PDF p.24]                                                                                          1</div>
+<div id="L1570"><a href="#L1570">01570</a> [PDF p.24]                                                      900</div>
+<div id="L1571"><a href="#L1571">01571</a> [PDF p.24]                                                      600</div>
+<div id="L1572"><a href="#L1572">01572</a> [PDF p.24]                                                      300</div>
+<div id="L1573"><a href="#L1573">01573</a> [PDF p.24]                               [N]</div>
+<div id="L1574"><a href="#L1574">01574</a> [PDF p.24] </div>
+<div id="L1575"><a href="#L1575">01575</a> [PDF p.24] </div>
+<div id="L1576"><a href="#L1576">01576</a> [PDF p.24] </div>
+<div id="L1577"><a href="#L1577">01577</a> [PDF p.24] </div>
+<div id="L1578"><a href="#L1578">01578</a> [PDF p.24]                                                        0</div>
+<div id="L1579"><a href="#L1579">01579</a> [PDF p.24]                                                     -300</div>
+<div id="L1580"><a href="#L1580">01580</a> [PDF p.24]                                                     -600</div>
+<div id="L1581"><a href="#L1581">01581</a> [PDF p.24]                                                     -900</div>
+<div id="L1582"><a href="#L1582">01582</a> [PDF p.24]                                                         0         0.1        0.2            0.3               0.4             0.5</div>
+<div id="L1583"><a href="#L1583">01583</a> [PDF p.24]                                                                                f) Force F (N)</div>
+<div id="L1584"><a href="#L1584">01584</a> [PDF p.24]                                                                                          2</div>
+<div id="L1585"><a href="#L1585">01585</a> [PDF p.24]                                                      900</div>
+<div id="L1586"><a href="#L1586">01586</a> [PDF p.24]                                                      600</div>
+<div id="L1587"><a href="#L1587">01587</a> [PDF p.24]                                                      300</div>
+<div id="L1588"><a href="#L1588">01588</a> [PDF p.24]                               [N]</div>
+<div id="L1589"><a href="#L1589">01589</a> [PDF p.24] </div>
+<div id="L1590"><a href="#L1590">01590</a> [PDF p.24] </div>
+<div id="L1591"><a href="#L1591">01591</a> [PDF p.24] </div>
+<div id="L1592"><a href="#L1592">01592</a> [PDF p.24] </div>
+<div id="L1593"><a href="#L1593">01593</a> [PDF p.24]                                                        0</div>
+<div id="L1594"><a href="#L1594">01594</a> [PDF p.24]                                                     -300</div>
+<div id="L1595"><a href="#L1595">01595</a> [PDF p.24]                                                     -600</div>
+<div id="L1596"><a href="#L1596">01596</a> [PDF p.24]                                                     -900</div>
+<div id="L1597"><a href="#L1597">01597</a> [PDF p.24]                                                         0         0.1        0.2            0.3               0.4             0.5</div>
+<div id="L1598"><a href="#L1598">01598</a> [PDF p.24]                                                                            g) Motion References Y</div>
+<div id="L1599"><a href="#L1599">01599</a> [PDF p.24]                                                             2</div>
+<div id="L1600"><a href="#L1600">01600</a> [PDF p.24] </div>
+<div id="L1601"><a href="#L1601">01601</a> [PDF p.24]                                                             1</div>
+<div id="L1602"><a href="#L1602">01602</a> [PDF p.24] </div>
+<div id="L1603"><a href="#L1603">01603</a> [PDF p.24]                                                             0</div>
+<div id="L1604"><a href="#L1604">01604</a> [PDF p.24]                                                                                                            10X Pos. ref (m)</div>
+<div id="L1605"><a href="#L1605">01605</a> [PDF p.24]                                                             -1                                             Vel. ref (m/s)</div>
+<div id="L1606"><a href="#L1606">01606</a> [PDF p.24]                                                                                                            0.1X Acc. ref (m/s²)</div>
+<div id="L1607"><a href="#L1607">01607</a> [PDF p.24]                                                             -2</div>
+<div id="L1608"><a href="#L1608">01608</a> [PDF p.24]                                                               0   0.1        0.2             0.3              0.4             0.5</div>
+<div id="L1609"><a href="#L1609">01609</a> [PDF p.24]                                                                              h) Position Error Y</div>
+<div id="L1610"><a href="#L1610">01610</a> [PDF p.24]                                                             30</div>
+<div id="L1611"><a href="#L1611">01611</a> [PDF p.24]                                       Y ref – Y mes [µm]</div>
+<div id="L1612"><a href="#L1612">01612</a> [PDF p.24] </div>
+<div id="L1613"><a href="#L1613">01613</a> [PDF p.24] </div>
+<div id="L1614"><a href="#L1614">01614</a> [PDF p.24] </div>
+<div id="L1615"><a href="#L1615">01615</a> [PDF p.24] </div>
+<div id="L1616"><a href="#L1616">01616</a> [PDF p.24]                                                             20</div>
+<div id="L1617"><a href="#L1617">01617</a> [PDF p.24]                                                             10</div>
+<div id="L1618"><a href="#L1618">01618</a> [PDF p.24]                                                              0</div>
+<div id="L1619"><a href="#L1619">01619</a> [PDF p.24]                                                            -10</div>
+<div id="L1620"><a href="#L1620">01620</a> [PDF p.24]                                                            -20</div>
+<div id="L1621"><a href="#L1621">01621</a> [PDF p.24]                                                            -30</div>
+<div id="L1622"><a href="#L1622">01622</a> [PDF p.24]                                                               0   0.1        0.2             0.3              0.4             0.5</div>
+<div id="L1623"><a href="#L1623">01623</a> [PDF p.24]                                                                                    time[s]</div>
+<div id="L1624"><a href="#L1624">01624</a> [PDF p.24] </div>
+<div id="L1625"><a href="#L1625">01625</a> [PDF p.24] </div>
+<div id="L1626"><a href="#L1626">01626</a> [PDF p.24] Fig. 6: Independent axis control vs. decoupling basis control, point–to–point diagonal movement (X1, X2, and Y</div>
+<div id="L1627"><a href="#L1627">01627</a> [PDF p.24] </div>
+<div id="L1628"><a href="#L1628">01628</a> [PDF p.24]         from –0.2 to +0.2 m) at a maximum velocity of 2 m/s and a maximum acceleration of 20 m/s².</div>
+<div id="L1629"><a href="#L1629">01629</a> [PDF p.24] </div>
+<div id="L1630"><a href="#L1630">01630</a> [PDF p.25] 4.2    Ballbar tests</div>
+<div id="L1631"><a href="#L1631">01631</a> [PDF p.25] </div>
+<div id="L1632"><a href="#L1632">01632</a> [PDF p.25] </div>
+<div id="L1633"><a href="#L1633">01633</a> [PDF p.25] This test consists in tracing clockwise three concentric circles of 100 mm radius. The test results are presented</div>
+<div id="L1634"><a href="#L1634">01634</a> [PDF p.25] </div>
+<div id="L1635"><a href="#L1635">01635</a> [PDF p.25] thanks to ballbars, see Fig.7. The dash dot circle represents the reference. The plotted radius error is amplified a</div>
+<div id="L1636"><a href="#L1636">01636</a> [PDF p.25] </div>
+<div id="L1637"><a href="#L1637">01637</a> [PDF p.25] million times. The measurement precision is 1µm.</div>
+<div id="L1638"><a href="#L1638">01638</a> [PDF p.25] </div>
+<div id="L1639"><a href="#L1639">01639</a> [PDF p.25] </div>
+<div id="L1640"><a href="#L1640">01640</a> [PDF p.25] </div>
+<div id="L1641"><a href="#L1641">01641</a> [PDF p.25] The first circle is traced during the tangential acceleration cycle of the payload; the peak acceleration of actuators</div>
+<div id="L1642"><a href="#L1642">01642</a> [PDF p.25] </div>
+<div id="L1643"><a href="#L1643">01643</a> [PDF p.25] X1, X2, and Y is 16 m/s². At the end of this cycle, the payload has reached a constant tangential velocity of 1.3</div>
+<div id="L1644"><a href="#L1644">01644</a> [PDF p.25] </div>
+<div id="L1645"><a href="#L1645">01645</a> [PDF p.25] m/s. The second circle is traced at this velocity. The third and final circle is traced during the deceleration cycle.</div>
+<div id="L1646"><a href="#L1646">01646</a> [PDF p.25] </div>
+<div id="L1647"><a href="#L1647">01647</a> [PDF p.25] </div>
+<div id="L1648"><a href="#L1648">01648</a> [PDF p.25] </div>
+<div id="L1649"><a href="#L1649">01649</a> [PDF p.25] The effect of the mechanical coupling on the tracking precision is easy to identify thanks to a comparison</div>
+<div id="L1650"><a href="#L1650">01650</a> [PDF p.25] </div>
+<div id="L1651"><a href="#L1651">01651</a> [PDF p.25] between the two ballbars of Fig. 7. This is specially highlighted during the tangential acceleration and</div>
+<div id="L1652"><a href="#L1652">01652</a> [PDF p.25] </div>
+<div id="L1653"><a href="#L1653">01653</a> [PDF p.25] deceleration phases. To take into account the unbalance and the mechanical coupling between actuators within</div>
+<div id="L1654"><a href="#L1654">01654</a> [PDF p.25] </div>
+<div id="L1655"><a href="#L1655">01655</a> [PDF p.25] the control structure results in a minimization of 33% of the maximum radius error and in a global minimization</div>
+<div id="L1656"><a href="#L1656">01656</a> [PDF p.25] </div>
+<div id="L1657"><a href="#L1657">01657</a> [PDF p.25] of the mean error. This represents a significant improvement in tracking precision performances. The remaining</div>
+<div id="L1658"><a href="#L1658">01658</a> [PDF p.25] </div>
+<div id="L1659"><a href="#L1659">01659</a> [PDF p.25] error has a cyclic shape function of the actuators&#x27; positions and is mostly due to the detent forces of the</div>
+<div id="L1660"><a href="#L1660">01660</a> [PDF p.25] </div>
+<div id="L1661"><a href="#L1661">01661</a> [PDF p.25] PMLSMs. This error can be compensated for example by considering the coordinated motion control of the</div>
+<div id="L1662"><a href="#L1662">01662</a> [PDF p.25] </div>
+<div id="L1663"><a href="#L1663">01663</a> [PDF p.25] decoupled motions X and Y, as in (Yang &amp; Li, 2011) and (Hu, Yao, &amp; Wang, 2011), so that the path-tracking</div>
+<div id="L1664"><a href="#L1664">01664</a> [PDF p.25] </div>
+<div id="L1665"><a href="#L1665">01665</a> [PDF p.25] performance can be further improved.</div>
+<div id="L1666"><a href="#L1666">01666</a> [PDF p.25] </div>
+<div id="L1667"><a href="#L1667">01667</a> [PDF p.26]                                Independent axis control : R=100 mm, Rmax=16 µm</div>
+<div id="L1668"><a href="#L1668">01668</a> [PDF p.26] </div>
+<div id="L1669"><a href="#L1669">01669</a> [PDF p.26] </div>
+<div id="L1670"><a href="#L1670">01670</a> [PDF p.26] </div>
+<div id="L1671"><a href="#L1671">01671</a> [PDF p.26] </div>
+<div id="L1672"><a href="#L1672">01672</a> [PDF p.26]                                                               -20µ -10µ 0µ   +10µ +20µ</div>
+<div id="L1673"><a href="#L1673">01673</a> [PDF p.26] </div>
+<div id="L1674"><a href="#L1674">01674</a> [PDF p.26] </div>
+<div id="L1675"><a href="#L1675">01675</a> [PDF p.26] </div>
+<div id="L1676"><a href="#L1676">01676</a> [PDF p.26] </div>
+<div id="L1677"><a href="#L1677">01677</a> [PDF p.26]                               Decoupling basis control : R=100 mm, Rmax=10.8 µm</div>
+<div id="L1678"><a href="#L1678">01678</a> [PDF p.26] </div>
+<div id="L1679"><a href="#L1679">01679</a> [PDF p.26] </div>
+<div id="L1680"><a href="#L1680">01680</a> [PDF p.26] </div>
+<div id="L1681"><a href="#L1681">01681</a> [PDF p.26] </div>
+<div id="L1682"><a href="#L1682">01682</a> [PDF p.26]                                                               -20µ -10µ 0µ   +10µ +20µ</div>
+<div id="L1683"><a href="#L1683">01683</a> [PDF p.26] </div>
+<div id="L1684"><a href="#L1684">01684</a> [PDF p.26] </div>
+<div id="L1685"><a href="#L1685">01685</a> [PDF p.26] </div>
+<div id="L1686"><a href="#L1686">01686</a> [PDF p.26] </div>
+<div id="L1687"><a href="#L1687">01687</a> [PDF p.26]     Fig. 7: Independent axis control vs. decoupling basis control. Ballbar tests realized with three 100 mm radius</div>
+<div id="L1688"><a href="#L1688">01688</a> [PDF p.26] </div>
+<div id="L1689"><a href="#L1689">01689</a> [PDF p.26]                   circles at a maximum tangential velocity of 1.3 m/s and acceleration of 16 m/s².</div>
+<div id="L1690"><a href="#L1690">01690</a> [PDF p.26] </div>
+<div id="L1691"><a href="#L1691">01691</a> [PDF p.26] </div>
+<div id="L1692"><a href="#L1692">01692</a> [PDF p.26] </div>
+<div id="L1693"><a href="#L1693">01693</a> [PDF p.26] </div>
+<div id="L1694"><a href="#L1694">01694</a> [PDF p.26] 5      CONCLUSION</div>
+<div id="L1695"><a href="#L1695">01695</a> [PDF p.26] </div>
+<div id="L1696"><a href="#L1696">01696</a> [PDF p.26] In this paper, a model-based decoupling control method for dual-drive gantry stages is presented. First, a</div>
+<div id="L1697"><a href="#L1697">01697</a> [PDF p.26] </div>
+<div id="L1698"><a href="#L1698">01698</a> [PDF p.26] dynamical model of the gantry stage is presented in terms of coordinates (X, Θ, Y). Where, X and Θ define,</div>
+<div id="L1699"><a href="#L1699">01699</a> [PDF p.26] </div>
+<div id="L1700"><a href="#L1700">01700</a> [PDF p.26] respectively, the translation and the rotation of the transverse member of the gantry stage, Y defines the</div>
+<div id="L1701"><a href="#L1701">01701</a> [PDF p.26] </div>
+<div id="L1702"><a href="#L1702">01702</a> [PDF p.26] translation of the payload. This model accounts for the coupling effects associated with the interaction between</div>
+<div id="L1703"><a href="#L1703">01703</a> [PDF p.26] </div>
+<div id="L1704"><a href="#L1704">01704</a> [PDF p.26] the actuators constituting the gantry stage. To make this model adaptable to various types of gantry stages, an</div>
+<div id="L1705"><a href="#L1705">01705</a> [PDF p.26] </div>
+<div id="L1706"><a href="#L1706">01706</a> [PDF p.26] identification method (that can be easily implemented using independent axis control) is also presented. The</div>
+<div id="L1707"><a href="#L1707">01707</a> [PDF p.26] </div>
+<div id="L1708"><a href="#L1708">01708</a> [PDF p.26] second part of the paper is devoted to the model-based decoupling control of gantry stages. As described, via</div>
+<div id="L1709"><a href="#L1709">01709</a> [PDF p.26] </div>
+<div id="L1710"><a href="#L1710">01710</a> [PDF p.26] feedforward compensation, it is possible to fully decouple the dynamics of the payload from the rest of the</div>
+<div id="L1711"><a href="#L1711">01711</a> [PDF p.26] </div>
+<div id="L1712"><a href="#L1712">01712</a> [PDF p.27] system. Thanks to this pre-decoupling, the remaining system dynamics (defined now in terms of coordinates X</div>
+<div id="L1713"><a href="#L1713">01713</a> [PDF p.27] </div>
+<div id="L1714"><a href="#L1714">01714</a> [PDF p.27] and Θ) can be easily decoupled by interpreting it as an eigenvalue problem. Without this pre-decoupling, the</div>
+<div id="L1715"><a href="#L1715">01715</a> [PDF p.27] </div>
+<div id="L1716"><a href="#L1716">01716</a> [PDF p.27] orthogonalization of the motion equations of the gantry stage would have been more laborious and</div>
+<div id="L1717"><a href="#L1717">01717</a> [PDF p.27] </div>
+<div id="L1718"><a href="#L1718">01718</a> [PDF p.27] computationally more expensive due to the repeated eigenvalues associated with the rigid motions X and Y. The</div>
+<div id="L1719"><a href="#L1719">01719</a> [PDF p.27] </div>
+<div id="L1720"><a href="#L1720">01720</a> [PDF p.27] decoupled model that is obtained using the pre-decoupling approach is also a physical model. It describes the</div>
+<div id="L1721"><a href="#L1721">01721</a> [PDF p.27] </div>
+<div id="L1722"><a href="#L1722">01722</a> [PDF p.27] dynamics of the gantry stage in terms of the total mass in translation and in rotation; two motions that are</div>
+<div id="L1723"><a href="#L1723">01723</a> [PDF p.27] </div>
+<div id="L1724"><a href="#L1724">01724</a> [PDF p.27] naturally decoupled. Based on this description, a decoupling feedforward/feedback control scheme was derived</div>
+<div id="L1725"><a href="#L1725">01725</a> [PDF p.27] </div>
+<div id="L1726"><a href="#L1726">01726</a> [PDF p.27] by model inversion. Experimental results show that in comparison to the industrial independent axis control, the</div>
+<div id="L1727"><a href="#L1727">01727</a> [PDF p.27] </div>
+<div id="L1728"><a href="#L1728">01728</a> [PDF p.27] proposed model-based decoupling control lead to a significant improvement of the positioning performance of</div>
+<div id="L1729"><a href="#L1729">01729</a> [PDF p.27] </div>
+<div id="L1730"><a href="#L1730">01730</a> [PDF p.27] the gantry stage.</div>
+<div id="L1731"><a href="#L1731">01731</a> [PDF p.27] </div>
+<div id="L1732"><a href="#L1732">01732</a> [PDF p.27] </div>
+<div id="L1733"><a href="#L1733">01733</a> [PDF p.27] </div>
+<div id="L1734"><a href="#L1734">01734</a> [PDF p.27] The contribution of this paper is by no means limited to the model-based decoupling control method that is</div>
+<div id="L1735"><a href="#L1735">01735</a> [PDF p.27] </div>
+<div id="L1736"><a href="#L1736">01736</a> [PDF p.27] presented here. Indeed, the proposed modeling of the gantry stage, along with the proposed identification</div>
+<div id="L1737"><a href="#L1737">01737</a> [PDF p.27] </div>
+<div id="L1738"><a href="#L1738">01738</a> [PDF p.27] method, can be used as a base to develop other control architectures. This will be the subject of future papers.</div>
+<div id="L1739"><a href="#L1739">01739</a> [PDF p.27] </div>
+<div id="L1740"><a href="#L1740">01740</a> [PDF p.27] </div>
+<div id="L1741"><a href="#L1741">01741</a> [PDF p.27] </div>
+<div id="L1742"><a href="#L1742">01742</a> [PDF p.27] </div>
+<div id="L1743"><a href="#L1743">01743</a> [PDF p.27] 6    ACKNOLEDGMENT</div>
+<div id="L1744"><a href="#L1744">01744</a> [PDF p.27] </div>
+<div id="L1745"><a href="#L1745">01745</a> [PDF p.27] This research project is funded and supported by ETEL SA. http://www.etel.ch and the CIFRE research grant</div>
+<div id="L1746"><a href="#L1746">01746</a> [PDF p.27] </div>
+<div id="L1747"><a href="#L1747">01747</a> [PDF p.27] No. 448/2008 of the French National Association of Research and Technology.</div>
+<div id="L1748"><a href="#L1748">01748</a> [PDF p.27] </div>
+<div id="L1749"><a href="#L1749">01749</a> [PDF p.27] </div>
+<div id="L1750"><a href="#L1750">01750</a> [PDF p.27] </div>
+<div id="L1751"><a href="#L1751">01751</a> [PDF p.27] </div>
+<div id="L1752"><a href="#L1752">01752</a> [PDF p.27] 7    REFERENCES</div>
+<div id="L1753"><a href="#L1753">01753</a> [PDF p.27] </div>
+<div id="L1754"><a href="#L1754">01754</a> [PDF p.27] Bagordo, G., Cazzulani, G., Resta, F., &amp; Ripamonti, F. (2011). A modal disturbance estimator for vibration</div>
+<div id="L1755"><a href="#L1755">01755</a> [PDF p.27] suppresion in nonlinear flexible structures. Journal of Sound and Vibration , 330, 6061-6069.</div>
+<div id="L1756"><a href="#L1756">01756</a> [PDF p.27] </div>
+<div id="L1757"><a href="#L1757">01757</a> [PDF p.27] Barre, P., Bouscayrol, A., Delarue, P., Dumetz, E., Giraud, F., Hautier, J., et al. (2006). Inversion-based control</div>
+<div id="L1758"><a href="#L1758">01758</a> [PDF p.27] of electromechanical systems using causal graphical descriptions. IEEE-IECON&#x27;06 - 32nd Annual Conference on</div>
+<div id="L1759"><a href="#L1759">01759</a> [PDF p.27] Industrial Electronics, (pp. 5276-5281).</div>
+<div id="L1760"><a href="#L1760">01760</a> [PDF p.27] </div>
+<div id="L1761"><a href="#L1761">01761</a> [PDF p.27] Chang, Y., Nguyen, T., &amp; Wang, C. (2010). Design and Implementation of look-ahead linear jerk filter for a</div>
+<div id="L1762"><a href="#L1762">01762</a> [PDF p.27] computerized numerical controller machine. Control Engineering Practice , 18 (12), 1399-1405.</div>
+<div id="L1763"><a href="#L1763">01763</a> [PDF p.27] </div>
+<div id="L1764"><a href="#L1764">01764</a> [PDF p.27] Giam, T., Tan, K., &amp; Huang, S. (2007). Precision coordinated motion of multi-axis gantry stages. ISA</div>
+<div id="L1765"><a href="#L1765">01765</a> [PDF p.27] Transactions , 46 (3), 399-409.</div>
+<div id="L1766"><a href="#L1766">01766</a> [PDF p.27] </div>
+<div id="L1767"><a href="#L1767">01767</a> [PDF p.27] Higham, N. (2002). Accuracy and Stability of Numerical Algorithms (2nd ed. ed.). Society for Industrial and</div>
+<div id="L1768"><a href="#L1768">01768</a> [PDF p.27] Applied Mathematics.</div>
+<div id="L1769"><a href="#L1769">01769</a> [PDF p.27] </div>
+<div id="L1770"><a href="#L1770">01770</a> [PDF p.28] Hu, C., Yao, B., &amp; Wang, Q. (2011). Global Task Coordinate Frame-Based Contouring Control of Linear-</div>
+<div id="L1771"><a href="#L1771">01771</a> [PDF p.28] Motor-Driven Biaxial Systems With Accurate Parameter Estimations. IEEE Transactions on Industrial</div>
+<div id="L1772"><a href="#L1772">01772</a> [PDF p.28] Electronics , 58 (11), 5195-5205.</div>
+<div id="L1773"><a href="#L1773">01773</a> [PDF p.28] </div>
+<div id="L1774"><a href="#L1774">01774</a> [PDF p.28] Hu, C., Yao, B., &amp; Wang, Q. (2010). Integrated direct/indirect adaptative robust contouring control of a biaxial</div>
+<div id="L1775"><a href="#L1775">01775</a> [PDF p.28] gantry with accurate parameters estimation. Automatica , 46, 701-707.</div>
+<div id="L1776"><a href="#L1776">01776</a> [PDF p.28] </div>
+<div id="L1777"><a href="#L1777">01777</a> [PDF p.28] Lin, F., &amp; Shen, P. (2006). Robust fuzzy neural network sliding-mode control for two axis motion control</div>
+<div id="L1778"><a href="#L1778">01778</a> [PDF p.28] system. IEEE Transactions on Industrial Electronics , 53 (4), 1209-1225.</div>
+<div id="L1779"><a href="#L1779">01779</a> [PDF p.28] </div>
+<div id="L1780"><a href="#L1780">01780</a> [PDF p.28] Lin, F.-J., Chou, P.-H., Chen, C.-S., &amp; Lin, Y.-S. (2011). DSP-Based Cross-Coupled Synchronous Control for</div>
+<div id="L1781"><a href="#L1781">01781</a> [PDF p.28] Dual Linear Motors via Intelligent. IEEE Transactions on Industrial Electronics .</div>
+<div id="L1782"><a href="#L1782">01782</a> [PDF p.28] </div>
+<div id="L1783"><a href="#L1783">01783</a> [PDF p.28] Meirovitch, L. (1990). Dynamics and Control of Structures. Wiley Interscience.</div>
+<div id="L1784"><a href="#L1784">01784</a> [PDF p.28] </div>
+<div id="L1785"><a href="#L1785">01785</a> [PDF p.28] Tan, K., Lim, S., Huang, S., Dou, H., &amp; Giam, T. (2004). Coordinated motion control of moving gantry stages</div>
+<div id="L1786"><a href="#L1786">01786</a> [PDF p.28] for precision applications based on an observer-augmented composite controller. IEEE Transactions on Control</div>
+<div id="L1787"><a href="#L1787">01787</a> [PDF p.28] Systems Technology , 12 (6), 984-991.</div>
+<div id="L1788"><a href="#L1788">01788</a> [PDF p.28] </div>
+<div id="L1789"><a href="#L1789">01789</a> [PDF p.28] Teo, C., Tan, K., Lim, S., Huang, S., &amp; Tay, E. (2007). Dynamic modeling and adaptative control of a H-type</div>
+<div id="L1790"><a href="#L1790">01790</a> [PDF p.28] gantry stage. Mechatronics , 17 (7), 361-367.</div>
+<div id="L1791"><a href="#L1791">01791</a> [PDF p.28] </div>
+<div id="L1792"><a href="#L1792">01792</a> [PDF p.28] Van Dijk, J., Tinsel, R., &amp; Schrijver, E. (2001). Comparison of two iterative learning concepts applied on a</div>
+<div id="L1793"><a href="#L1793">01793</a> [PDF p.28] manipulator with cogging force disturbances. IFAC Workshop on Adaptation and Learning in Control and</div>
+<div id="L1794"><a href="#L1794">01794</a> [PDF p.28] Signal Processing, (pp. 71-76).</div>
+<div id="L1795"><a href="#L1795">01795</a> [PDF p.28] </div>
+<div id="L1796"><a href="#L1796">01796</a> [PDF p.28] Yang, J., &amp; Li, Z. (2011). A Novel Contour Error Estimation for Position Loop-Based Cross-Coupled Control.</div>
+<div id="L1797"><a href="#L1797">01797</a> [PDF p.28] IEEE/ASME Transactions on Mechatronics , 16 (4), 643-655.</div>
+<div id="L1798"><a href="#L1798">01798</a> [PDF p.28] </div>
+<div id="L1799"><a href="#L1799">01799</a> [PDF p.28] Yousefi, H., Hirnoven, M., Handroos, H., &amp; Soleymani, A. (2008). Application of neural network in suppressing</div>
+<div id="L1800"><a href="#L1800">01800</a> [PDF p.28] mechanical vibration of a permanent magnet linear motor. Control Engineering Practice , 16 (7), 787-797.</div>
+<div id="L1801"><a href="#L1801">01801</a> [PDF p.28] </div>
+<div id="L1802"><a href="#L1802">01802</a> [PDF p.29] Figure Legends</div>
+<div id="L1803"><a href="#L1803">01803</a> [PDF p.29] </div>
+<div id="L1804"><a href="#L1804">01804</a> [PDF p.29] Fig. 1 Dual–drive H–type gantry stage provided by ETEL</div>
+<div id="L1805"><a href="#L1805">01805</a> [PDF p.29] </div>
+<div id="L1806"><a href="#L1806">01806</a> [PDF p.29] </div>
+<div id="L1807"><a href="#L1807">01807</a> [PDF p.29] </div>
+<div id="L1808"><a href="#L1808">01808</a> [PDF p.29] Fig. 2 Lumped–parameter model of the Dual–drive H–type gantry stage</div>
+<div id="L1809"><a href="#L1809">01809</a> [PDF p.29] </div>
+<div id="L1810"><a href="#L1810">01810</a> [PDF p.29] </div>
+<div id="L1811"><a href="#L1811">01811</a> [PDF p.29] </div>
+<div id="L1812"><a href="#L1812">01812</a> [PDF p.29] Fig. 3 Experimental and simulation responses of a) Motion references X1 and X2; b) Synchronization Error;</div>
+<div id="L1813"><a href="#L1813">01813</a> [PDF p.29] </div>
+<div id="L1814"><a href="#L1814">01814</a> [PDF p.29] Position Error of c) X1 axis, d) X2 axis; e) Motion references Y; and f) position error of Y axis. Test realized using</div>
+<div id="L1815"><a href="#L1815">01815</a> [PDF p.29] </div>
+<div id="L1816"><a href="#L1816">01816</a> [PDF p.29] independent axis control for a displacement of – 0.2 m to 0.2 m for all axes, at a maximum speed of 2 m/s, and a</div>
+<div id="L1817"><a href="#L1817">01817</a> [PDF p.29] </div>
+<div id="L1818"><a href="#L1818">01818</a> [PDF p.29] maximum acceleration of 20 m/s².</div>
+<div id="L1819"><a href="#L1819">01819</a> [PDF p.29] </div>
+<div id="L1820"><a href="#L1820">01820</a> [PDF p.29] </div>
+<div id="L1821"><a href="#L1821">01821</a> [PDF p.29] </div>
+<div id="L1822"><a href="#L1822">01822</a> [PDF p.29] Fig. 4 Feedback–feedforward decoupled control structure.</div>
+<div id="L1823"><a href="#L1823">01823</a> [PDF p.29] </div>
+<div id="L1824"><a href="#L1824">01824</a> [PDF p.29] </div>
+<div id="L1825"><a href="#L1825">01825</a> [PDF p.29] </div>
+<div id="L1826"><a href="#L1826">01826</a> [PDF p.29] Fig. 5: Independent axis control vs. decoupling basis control, point–to–point X1 and X2 synchronized motions</div>
+<div id="L1827"><a href="#L1827">01827</a> [PDF p.29] </div>
+<div id="L1828"><a href="#L1828">01828</a> [PDF p.29] (from –0.2 to +0.2 m) at a maximum velocity of 2 m/s and a maximum acceleration of 20 m/s²; the position of</div>
+<div id="L1829"><a href="#L1829">01829</a> [PDF p.29] </div>
+<div id="L1830"><a href="#L1830">01830</a> [PDF p.29] the payload is kept at 0.2 m (i.e. maximum unbalance).</div>
+<div id="L1831"><a href="#L1831">01831</a> [PDF p.29] </div>
+<div id="L1832"><a href="#L1832">01832</a> [PDF p.29] </div>
+<div id="L1833"><a href="#L1833">01833</a> [PDF p.29] </div>
+<div id="L1834"><a href="#L1834">01834</a> [PDF p.29] Fig. 6: Independent axis control vs. decoupling basis control, point–to–point diagonal movement (X1, X2, and Y</div>
+<div id="L1835"><a href="#L1835">01835</a> [PDF p.29] </div>
+<div id="L1836"><a href="#L1836">01836</a> [PDF p.29] from –0.2 to +0.2 m) at a maximum velocity of 2 m/s and a maximum acceleration of 20 m/s².</div>
+<div id="L1837"><a href="#L1837">01837</a> [PDF p.29] </div>
+<div id="L1838"><a href="#L1838">01838</a> [PDF p.29] </div>
+<div id="L1839"><a href="#L1839">01839</a> [PDF p.29] </div>
+<div id="L1840"><a href="#L1840">01840</a> [PDF p.29] Fig. 7: Independent axis control vs. decoupling basis control. Ballbar tests realized with three 100 mm radius</div>
+<div id="L1841"><a href="#L1841">01841</a> [PDF p.29] </div>
+<div id="L1842"><a href="#L1842">01842</a> [PDF p.29] circles at a maximum tangential velocity of 1.3 m/s and acceleration of 16 m/s².</div>
+<div id="L1843"><a href="#L1843">01843</a> [PDF p.29] </div></pre>

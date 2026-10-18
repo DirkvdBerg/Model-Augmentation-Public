@@ -1,0 +1,345 @@
+<meta charset="utf-8"><title>sections/05_setup.tex</title><pre><div id="L1"><a href="#L1">0001</a> % Page budget: 1.50 pages | Owns: datasets, splits, excitation, preprocessing, comparators, metrics, and experimental protocol.</div>
+<div id="L2"><a href="#L2">0002</a> % WRITING GUIDE</div>
+<div id="L3"><a href="#L3">0003</a> % Purpose: Make the simulation and real-data evaluation reproducible and define fair comparisons before showing outcomes.</div>
+<div id="L4"><a href="#L4">0004</a> % Sources: README &quot;Source map per subsection&quot;, rows the V rows (data-generating system, data, controller, compared models, metrics, hyperparameters); mandatory papers and the reference gate as in the README.</div>
+<div id="L5"><a href="#L5">0005</a> % Research-plan anchor: Preserve the planned interpolation, generalisation, and black-box questions; update datasets, horizons, excitation, and preprocessing to what was actually used.</div>
+<div id="L6"><a href="#L6">0006</a> % Current decisions: Independent phases, held-out positions, multisine-free motion, truth-only friction or absorber variants, matched budgets, and long-horizon evaluation.</div>
+<div id="L7"><a href="#L7">0007</a> % Choices to justify: Operating-point grid, ASMPT motion profiles, frequency bands, amplitudes, phase realizations, crest-factor selection, record length, sample rate, split sizes, window sampling, settling interval, primary metric, seed policy, comparator capacity, noise status, and all tuned hyperparameters.</div>
+<div id="L8"><a href="#L8">0008</a> % Hyperparameter check: Classify each important setting as physics-derived, inherited, validation-tuned, safety-constrained, or compute-constrained; give a sensitivity result for settings that could change the conclusion.</div>
+<div id="L9"><a href="#L9">0009</a> % Cautions: Plans are not evidence; use the corrected matched friction dataset only; do not call a generated profile ASMPT-relevant until its motion parameters are confirmed; keep oracle states outside the trainable pipeline.</div>
+<div id="L10"><a href="#L10">0010</a> % Planned figures: Reuse the training-horizon strip and show a 2D train, validation, and test operating-point coverage map; use 3D only if the third coordinate communicates additional coverage rather than visual clutter.</div>
+<div id="L11"><a href="#L11">0011</a> % Section is finished when: Every dataset, split, unit, horizon, comparator, metric, seed policy, and checkpoint rule is unambiguous.</div>
+<div id="L12"><a href="#L12">0012</a> % Header notes (2026-10-15): real-data evaluation and the settling interval are out of the thesis results</div>
+<div id="L13"><a href="#L13">0013</a> %   (THESIS-RESULTS.md Sec. 6); E5 (changed controller) is left out for now (Dirk 2026-10-15).</div>
+<div id="L14"><a href="#L14">0014</a> %   Dataset of every reported run: Thesis-writeup/Data/Coulomb-tanh-and-MSD-lowpass-noise, floor from</div>
+<div id="L15"><a href="#L15">0015</a> %   Coulomb-tanh-and-MSD-noise-free (runs.tsv rows 201 to 207, THESIS_NOISE=lowpass; D-238).</div>
+<div id="L16"><a href="#L16">0016</a> %   Data-based numbers are macros \Setup* from tables/setup_numbers.tex, written by the scripts in</div>
+<div id="L17"><a href="#L17">0017</a> %   Thesis-writeup/Code/Setup/ (see its README) on that dataset; numbers are never typed in.</div>
+<div id="L18"><a href="#L18">0018</a> % Header notes (2026-10-16, clean rewrite, handoff 2026-10-16-section-5-clean-rewrite):</div>
+<div id="L19"><a href="#L19">0019</a> %   Main text states only what Section VI uses; every design detail sits in Appendix app:setup with a</div>
+<div id="L20"><a href="#L20">0020</a> %   pointer from here (Jasper: pragmatic, details in an appendix). Five models in the main text (THESIS-RESULTS</div>
+<div id="L21"><a href="#L21">0021</a> %   &quot;Presentation agreed 2026-10-16&quot;). Justifications checked item by item (scratchpad reports</div>
+<div id="L22"><a href="#L22">0022</a> %   justification-check-data/-train, 2026-10-16); design choices may rest on the known simulated system</div>
+<div id="L23"><a href="#L23">0023</a> %   (D-259 item 1). Notation renames (Dirk 2026-10-16): coupling vector b_a, absorber displacement q_a,</div>
+<div id="L24"><a href="#L24">0024</a> %   friction scale v_fr, multisine force u^ms, multisine phases alpha, noise level lambda_j, black box f_bb,</div>
+<div id="L25"><a href="#L25">0025</a> %   h_bb, theta_bb, x^bb.</div>
+<div id="L26"><a href="#L26">0026</a> % MUST ESTABLISH (outline agreed with Dirk 2026-10-15, updated 2026-10-16)</div>
+<div id="L27"><a href="#L27">0027</a> %   1. The data come from a known system: the baseline plus a payload absorber and rail friction, both</div>
+<div id="L28"><a href="#L28">0028</a> %      absent from the baseline, in closed loop with one known controller K1 and with measurement noise at a</div>
+<div id="L29"><a href="#L29">0029</a> %      representative level (Sections II, III; Aspect 2).</div>
+<div id="L30"><a href="#L30">0030</a> %   2. The data excite what must be learned: motion profiles at low frequencies, a multisine over the</div>
+<div id="L31"><a href="#L31">0031</a> %      absorber band placed with the simulated frequency response (simulation only) (Aspect 2).</div>
+<div id="L32"><a href="#L32">0032</a> %   3. The test records separate interpolation, operational motion and range extrapolation; each E record</div>
+<div id="L33"><a href="#L33">0033</a> %      leaves the training range in one design setting against its I record; E6 is a stress record (Aspect 4).</div>
+<div id="L34"><a href="#L34">0034</a> %   4. Five compared models: M_LPV and M_LTI untrained, M_U and the final model M_OBC from a 10 % detuned</div>
+<div id="L35"><a href="#L35">0035</a> %      start, and the black box (no physics, sized on validation); choice-justifying runs in the appendix.</div>
+<div id="L36"><a href="#L36">0036</a> %   5. Metrics: NRMS_e per axis with the RMS in m and the record&#x27;s noise floor; combination error and the</div>
+<div id="L37"><a href="#L37">0037</a> %      overlaps of Section IV with the predicted first-order bias (Aspect 3).</div>
+<div id="L38"><a href="#L38">0038</a> \input{tables/setup_numbers}% generated by Thesis-writeup/Code/Setup (numbers of this section)</div>
+<div id="L39"><a href="#L39">0039</a> \section{Experiment design}\label{sec:setup}</div>
+<div id="L40"><a href="#L40">0040</a> \ifdraft</div>
+<div id="L41"><a href="#L41">0041</a> \begin{itemize}</div>
+<div id="L42"><a href="#L42">0042</a> \item Opening: the records are simulated on a model of a confidential industrial gantry; quantities are given relative; design details and checks in Appendix~\ref{app:setup}</div>
+<div id="L43"><a href="#L43">0043</a> \end{itemize}</div>
+<div id="L44"><a href="#L44">0044</a> \fi</div>
+<div id="L45"><a href="#L45">0045</a> The system used to obtain the data is simulated. </div>
+<div id="L46"><a href="#L46">0046</a> When referring to the system in this section, we refer to this simulated model. </div>
+<div id="L47"><a href="#L47">0047</a> The data consist of simulated records, with motion profiles, </div>
+<div id="L48"><a href="#L48">0048</a> limits and noise level taken from an industrial gantry whose data is confidential.</div>
+<div id="L49"><a href="#L49">0049</a> Frequencies are therefore given relative to the controller bandwidth</div>
+<div id="L50"><a href="#L50">0050</a> $f_b$, positions relative to the training range, and velocities and</div>
+<div id="L51"><a href="#L51">0051</a> accelerations relative to the machine limits.</div>
+<div id="L52"><a href="#L52">0052</a> The design details and their checks are in Appendix~\ref{app:setup}.</div>
+<div id="L53"><a href="#L53">0053</a> </div>
+<div id="L54"><a href="#L54">0054</a> \subsection{Simulated system}\label{sec:setup_system}</div>
+<div id="L55"><a href="#L55">0055</a> % Sources: D-204, D-224 (truth), D-188 (absorber), D-223, D-226 (friction gain), D-221 (K1),</div>
+<div id="L56"><a href="#L56">0056</a> % D-238 (noise); tdg_config.m, gtd_build_plant.m; Code/Setup rail_velocity.py, band_edge.py, snr.py.</div>
+<div id="L57"><a href="#L57">0057</a> \ifdraft</div>
+<div id="L58"><a href="#L58">0058</a> \begin{itemize}</div>
+<div id="L59"><a href="#L59">0059</a> \item The data is simulated: the system is the baseline plus rail friction and a payload absorber, both absent from the baseline</div>
+<div id="L60"><a href="#L60">0060</a> \item The friction subtracts from the actuator forces; a smoothed Coulomb law, Coulomb-like on the excited records</div>
+<div id="L61"><a href="#L61">0061</a> \item The absorber adds one coordinate, coupled through the inertia; matrices written out as in Section~II</div>
+<div id="L62"><a href="#L62">0062</a> \item Parameter values with their basis; both absorber features lie above the crossover of the loop</div>
+<div id="L63"><a href="#L63">0063</a> \item One known controller $K_1$, the same in every record; the injected force is the only feedforward</div>
+<div id="L64"><a href="#L64">0064</a> \item Noise matched to the machine; noise-free twin of every record; SNR (?: confidentiality)</div>
+<div id="L65"><a href="#L65">0065</a> \end{itemize}</div>
+<div id="L66"><a href="#L66">0066</a> \fi</div>
+<div id="L67"><a href="#L67">0067</a> The system consists of the baseline model \eqref{eq:eom}, with two additions.</div>
+<div id="L68"><a href="#L68">0068</a> The first is Coulomb friction at the actuators $X_1$, $X_2$ and $Y$, as</div>
+<div id="L69"><a href="#L69">0069</a> modelled by Garc\&#x27;ia-Herreros et al.~\cite{garcia2013model}.</div>
+<div id="L70"><a href="#L70">0070</a> We deliberately left it out of the baseline, to add nonlinear unmodelled</div>
+<div id="L71"><a href="#L71">0071</a> dynamics to the system. The friction works as a force against each actuator </div>
+<div id="L72"><a href="#L72">0072</a> force, this is modeled as a term entering \eqref{eq:eom} through the input.</div>
+<div id="L73"><a href="#L73">0073</a> For the second addition, we split the payload mass $m_h$ into</div>
+<div id="L74"><a href="#L74">0074</a> $m_a$ and $m_{h,r}=m_h-m_a$, with $m_a$ connected to $m_{h,r}$</div>
+<div id="L75"><a href="#L75">0075</a> by a spring and damper in the $Y$ direction</div>
+<div id="L76"><a href="#L76">0076</a> (Fig.~\ref{fig:gantry_absorber}).</div>
+<div id="L77"><a href="#L77">0077</a> This adds a vibration mode which the </div>
+<div id="L78"><a href="#L78">0078</a> baseline model is not able to represent with its states.</div>
+<div id="L79"><a href="#L79">0079</a> \begin{figure}[t]</div>
+<div id="L80"><a href="#L80">0080</a>   \centering</div>
+<div id="L81"><a href="#L81">0081</a>   \resizebox{\columnwidth}{!}{\input{figures/gantry_system_with_absorber}}</div>
+<div id="L82"><a href="#L82">0082</a>   \caption{\todo{Simulated gantry with a flexibly mounted part $m_a$ of the</div>
+<div id="L83"><a href="#L83">0083</a>   payload mass $m_h$; the rest of the payload is $m_{h,r}=m_h-m_a$. The</div>
+<div id="L84"><a href="#L84">0084</a>   light-gray elements $(m_a,k_a,c_a,q_a)$ are absent from the baseline.}}</div>
+<div id="L85"><a href="#L85">0085</a>   \label{fig:gantry_absorber}</div>
+<div id="L86"><a href="#L86">0086</a> \end{figure}</div>
+<div id="L87"><a href="#L87">0087</a> With the friction acting against each actuator force on the input, </div>
+<div id="L88"><a href="#L88">0088</a> \eqref{eq:eom} becomes</div>
+<div id="L89"><a href="#L89">0089</a> \begin{subequations}\label{eq:setup_truth}</div>
+<div id="L90"><a href="#L90">0090</a> \begin{equation}</div>
+<div id="L91"><a href="#L91">0091</a> \begin{aligned}</div>
+<div id="L92"><a href="#L92">0092</a>  M(Y)\ddot q+C\dot q+Kq&amp;=P\bigl(\uact-F_{\mathrm{fr}}(P^\top\dot q)\bigr),\\</div>
+<div id="L93"><a href="#L93">0093</a>  F_{\mathrm{fr},i}(v_i)&amp;=c_{c,i}\tanh\bigl(v_i/v_{\mathrm{fr}}\bigr),</div>
+<div id="L94"><a href="#L94">0094</a> \end{aligned}</div>
+<div id="L95"><a href="#L95">0095</a>  \label{eq:setup_fric}</div>
+<div id="L96"><a href="#L96">0096</a> \end{equation}</div>
+<div id="L97"><a href="#L97">0097</a> where $P^\top\dot q$ gives the actuator velocities</div>
+<div id="L98"><a href="#L98">0098</a> for $i\in\{X_1,X_2,Y\}$, and $v_{\mathrm{fr}}$ sets</div>
+<div id="L99"><a href="#L99">0099</a> the velocity scale of the smoothing.</div>
+<div id="L100"><a href="#L100">0100</a> For $\lvert v_i\rvert\gg v_{\mathrm{fr}}$, the friction</div>
+<div id="L101"><a href="#L101">0101</a> approaches the Coulomb law</div>
+<div id="L102"><a href="#L102">0102</a> $F_{\mathrm{fr},i}=c_{c,i}\operatorname{sign}(v_i)$</div>
+<div id="L103"><a href="#L103">0103</a> of~\cite{garcia2013model}.</div>
+<div id="L104"><a href="#L104">0104</a> $v_{\mathrm{fr}}=\SetupFricVzero$~mm/s was chosen by simulating</div>
+<div id="L105"><a href="#L105">0105</a> the loop with values between 0.1 and 10~mm/s.</div>
+<div id="L106"><a href="#L106">0106</a> \kw{Higher values turn the friction into viscous damping under the multisine,</div>
+<div id="L107"><a href="#L107">0107</a> and lower values keep the standstill servo error above the noise level.}</div>
+<div id="L108"><a href="#L108">0108</a> \\</div>
+<div id="L109"><a href="#L109">0109</a> The added mass adds the displacement $q_a$ of $m_a$ relative to</div>
+<div id="L110"><a href="#L110">0110</a> $m_{h,r}$ along $Y$.</div>
+<div id="L111"><a href="#L111">0111</a> With $q_{\mathrm e}=\begin{bmatrix}q^\top&amp;q_a\end{bmatrix}^\top$, the</div>
+<div id="L112"><a href="#L112">0112</a> system is</div>
+<div id="L113"><a href="#L113">0113</a> \begin{equation}</div>
+<div id="L114"><a href="#L114">0114</a>  M_{\mathrm e}(Y,q_a)\,\ddot q_{\mathrm e}+C_{\mathrm e}\dot q_{\mathrm e}+K_{\mathrm e}q_{\mathrm e}</div>
+<div id="L115"><a href="#L115">0115</a>  =\begin{bmatrix}P\bigl(\uact-F_{\mathrm{fr}}(P^\top\dot q)\bigr)\\0\end{bmatrix},</div>
+<div id="L116"><a href="#L116">0116</a>  \label{eq:setup_abs}</div>
+<div id="L117"><a href="#L117">0117</a> \end{equation}</div>
+<div id="L118"><a href="#L118">0118</a> \end{subequations}</div>
+<div id="L119"><a href="#L119">0119</a> with</div>
+<div id="L120"><a href="#L120">0120</a> {\footnotesize</div>
+<div id="L121"><a href="#L121">0121</a> \setlength{\arraycolsep}{3pt}</div>
+<div id="L122"><a href="#L122">0122</a> \begin{equation*}</div>
+<div id="L123"><a href="#L123">0123</a> \begin{gathered}</div>
+<div id="L124"><a href="#L124">0124</a>  M_{\mathrm e}(Y,q_a)=\begin{bmatrix}M(Y)+M_a(Y,\ell)&amp;m_a\begin{bmatrix}0&amp;-d&amp;1\end{bmatrix}^\top\\m_a\begin{bmatrix}0&amp;-d&amp;1\end{bmatrix}&amp;m_a\end{bmatrix},\\</div>
+<div id="L125"><a href="#L125">0125</a>  M_a(Y,\ell)=m_a\ell\begin{bmatrix}0&amp;-1&amp;0\\-1&amp;2Y+\ell&amp;0\\0&amp;0&amp;0\end{bmatrix},\\</div>
+<div id="L126"><a href="#L126">0126</a>  C_{\mathrm e}=\operatorname{diag}(C,c_a),\quad</div>
+<div id="L127"><a href="#L127">0127</a>  K_{\mathrm e}=\operatorname{diag}(K,k_a),</div>
+<div id="L128"><a href="#L128">0128</a> \end{gathered}</div>
+<div id="L129"><a href="#L129">0129</a> \end{equation*}}</div>
+<div id="L130"><a href="#L130">0130</a> where $M(Y)$ is \eqref{eq:mass_matrix} with $m_h$ the total payload mass.</div>
+<div id="L131"><a href="#L131">0131</a> $M_a(Y,\ell)$ corrects it for $m_a$ being at $Y+\ell$ instead of $Y$,</div>
+<div id="L132"><a href="#L132">0132</a> where $\ell=L_0+q_a$ and $L_0$ is the offset of the added mass along $Y$.</div>
+<div id="L133"><a href="#L133">0133</a> $k_a=m_a(2\pi f_a)^2$ and</div>
+<div id="L134"><a href="#L134">0134</a> $c_a=2\zeta_a\sqrt{k_am_a}$, with natural frequency $f_a$</div>
+<div id="L135"><a href="#L135">0135</a> and damping ratio $\zeta_a$.</div>
+<div id="L136"><a href="#L136">0136</a> The added mass changes the inertia through $M_a$,</div>
+<div id="L137"><a href="#L137">0137</a> which also includes its coupling to $\Theta$ and $Y$.</div>
+<div id="L138"><a href="#L138">0138</a> We simulate the system with fixed-step RK4 at</div>
+<div id="L139"><a href="#L139">0139</a> $f_{\mathrm s}=20$~kHz.</div>
+<div id="L140"><a href="#L140">0140</a> All parameter values are listed in Table~\ref{tab:nominal_parameters}.</div>
+<div id="L141"><a href="#L141">0141</a> The friction levels $c_c$ are taken from Garc\&#x27;ia-Herreros et</div>
+<div id="L142"><a href="#L142">0142</a> al.~\cite[Table~I]{garcia2013model}.</div>
+<div id="L143"><a href="#L143">0143</a> The added mass creates an anti-resonance</div>
+<div id="L144"><a href="#L144">0144</a> at $f_a$ and a resonance at $f_a\sqrt{1+m_a/m_{h,r}}\approx2.12\,f_b$,</div>
+<div id="L145"><a href="#L145">0145</a> in the transfer function from $F_Y$ to $Y$.</div>
+<div id="L146"><a href="#L146">0146</a> Both are designed to be above the crossover of the loop with $K_1$</div>
+<div id="L147"><a href="#L147">0147</a> (Section~\ref{sec:setup_data}).</div>
+<div id="L148"><a href="#L148">0148</a> As a result, the feedback does not suppress them, and we can identify</div>
+<div id="L149"><a href="#L149">0149</a> them from the data.</div>
+<div id="L150"><a href="#L150">0150</a> All data is generated in closed loop with the controller $K_1$ of</div>
+<div id="L151"><a href="#L151">0151</a> Appendix~\ref{app:setup_system}, which is the known controller of</div>
+<div id="L152"><a href="#L152">0152</a> Section~\ref{sec:aug_loop}.</div>
+<div id="L153"><a href="#L153">0153</a> The only feedforward, $u^{\mathrm{ff}}$ in \eqref{eq:aug_two_loops}, is the</div>
+<div id="L154"><a href="#L154">0154</a> injected excitation force.</div>
+<div id="L155"><a href="#L155">0155</a> Independent coloured noise is added to the position measurements</div>
+<div id="L156"><a href="#L156">0156</a> of each axis, $y=\qact+v$.</div>
+<div id="L157"><a href="#L157">0157</a> The simulated servo error matches at standstill the noise level</div>
+<div id="L158"><a href="#L158">0158</a> and spectral shape of the industrial gantry, but its resonances are left</div>
+<div id="L159"><a href="#L159">0159</a> out (Appendix~\ref{app:setup_system}).</div>
+<div id="L160"><a href="#L160">0160</a> The servo-error signal-to-noise ratio (SNR) ranges from</div>
+<div id="L161"><a href="#L161">0161</a> \SetupSnrMinX{} to \SetupSnrMaxX~dB on the $X$ actuators</div>
+<div id="L162"><a href="#L162">0162</a> and \SetupSnrMinY{} to \SetupSnrMaxY~dB on $Y$, depending on the motion of the record.</div>
+<div id="L163"><a href="#L163">0163</a> The data is also generated without measurement noise, with output $y^\circ$.</div>
+<div id="L164"><a href="#L164">0164</a> \todo{dB in combination with RMS migth be sensitive information.}</div>
+<div id="L165"><a href="#L165">0165</a> \todo{Missing: what may be named about the machine and its noise. </div>
+<div id="L166"><a href="#L166">0166</a> Candidate: ask Jasper or Dragan; if allowed, </div>
+<div id="L167"><a href="#L167">0167</a> list $f_{v,j}$, $\lambda_j$, $\sigma_{v,j}$ in Appendix~\ref{app:setup_system}.}</div>
+<div id="L168"><a href="#L168">0168</a> </div>
+<div id="L169"><a href="#L169">0169</a> \subsection{Records}\label{sec:setup_data}</div>
+<div id="L170"><a href="#L170">0170</a> % Sources: D-219, D-226 (band), D-221 (split), D-258 (twins), README validation story;</div>
+<div id="L171"><a href="#L171">0171</a> % Code/Setup band_edge.py, band_frf.py, coverage.py, rate.py, filter_leak.py, loop_memory.py.</div>
+<div id="L172"><a href="#L172">0172</a> \ifdraft</div>
+<div id="L173"><a href="#L173">0173</a> \begin{itemize}</div>
+<div id="L174"><a href="#L174">0174</a> \item A record: 12~s in closed loop with $K_1$, one of five motion types, a multisine added except on the operational moves; noisy and noise-free</div>
+<div id="L175"><a href="#L175">0175</a> \item The motion profiles excite up to the crossover above the noise; the multisine band starts at the highest crossover, ends at 90\,\% of the model difference and holds the absorber features of the simulated system (simulation only)</div>
+<div id="L176"><a href="#L176">0176</a> \item Split 18 / 6 / 11; validation only selects; results on all three sets, comparisons on the test records</div>
+<div id="L177"><a href="#L177">0177</a> \item Test records by layer: interpolation, operational motion, extrapolation in one setting, stress record E6, multisine twins for evaluation only</div>
+<div id="L178"><a href="#L178">0178</a> \item Model rate, anti-alias filter and window checked on the simulated loop (appendix)</div>
+<div id="L179"><a href="#L179">0179</a> \end{itemize}</div>
+<div id="L180"><a href="#L180">0180</a> \fi</div>
+<div id="L181"><a href="#L181">0181</a> The data is divided into five types of motion profiles and each record is 12~s</div>
+<div id="L182"><a href="#L182">0182</a> (Appendix~\ref{app:setup_records}).</div>
+<div id="L183"><a href="#L183">0183</a> The motion profiles excite the low frequencies up till the loop crossover, </div>
+<div id="L184"><a href="#L184">0184</a> for at least \SetupGapSnrMinMotion~dB above the noise.</div>
+<div id="L185"><a href="#L185">0185</a> A multisine force is added to each of the generalized channels $X$,</div>
+<div id="L186"><a href="#L186">0186</a> $\Theta$, $Y$, except in records with an operational motion profile.</div>
+<div id="L187"><a href="#L187">0187</a> The force is applied to the actuators through $P^{-1}$.</div>
+<div id="L188"><a href="#L188">0188</a> The multisine band starts at the highest loop crossover </div>
+<div id="L189"><a href="#L189">0189</a> $\fpeval{round(\SetupCrossMax/100,2)}\,f_b$, to prevent feedback suppression.</div>
+<div id="L190"><a href="#L190">0190</a> The band ends at $2.97\,f_b$, which keeps 90\,\% of the squared</div>
+<div id="L191"><a href="#L191">0191</a> frequency-response error of the baseline above the crossover. This was </div>
+<div id="L192"><a href="#L192">0192</a> measured on the system without noise.</div>
+<div id="L193"><a href="#L193">0193</a> The band contains the anti-resonance and the</div>
+<div id="L194"><a href="#L194">0194</a> resonance of the added mass (Fig.~\ref{fig:setup_band}), </div>
+<div id="L195"><a href="#L195">0195</a> for all the positions used in training.</div>
+<div id="L196"><a href="#L196">0196</a> This was determined from the frequency response of the known system model at</div>
+<div id="L197"><a href="#L197">0197</a> each training position.</div>
+<div id="L198"><a href="#L198">0198</a> \\</div>
+<div id="L199"><a href="#L199">0199</a> We use 18 records for training, 6 for validation and 11 for testing</div>
+<div id="L200"><a href="#L200">0200</a> (Table~\ref{tab:setup_records} in Appendix~\ref{app:setup_records}).</div>
+<div id="L201"><a href="#L201">0201</a> \revnote{11? and the multinse doubles?}</div>
+<div id="L202"><a href="#L202">0202</a> Training and validation include all five motion types, with</div>
+<div id="L203"><a href="#L203">0203</a> $\lvert Y\rvert\le Y_{\mathrm{tr}}$, up to \SetupTrainAcc\,\% of the</div>
+<div id="L204"><a href="#L204">0204</a> acceleration limit and \SetupTrainVel\,\% of the velocity limit.</div>
+<div id="L205"><a href="#L205">0205</a> The validation records are used to select the best-performing checkpoints</div>
+<div id="L206"><a href="#L206">0206</a> and the hyperparameters for the black box.</div>
+<div id="L207"><a href="#L207">0207</a> We separate the test records into interpolation and extrapolation.</div>
+<div id="L208"><a href="#L208">0208</a> Interpolation stays within the training range, while each</div>
+<div id="L209"><a href="#L209">0209</a> extrapolation record exceeds one of the limits on $Y$,</div>
+<div id="L210"><a href="#L210">0210</a> acceleration or velocity.</div>
+<div id="L211"><a href="#L211">0211</a> The results for all three sets are reported, but performance is evaluated on</div>
+<div id="L212"><a href="#L212">0212</a> the test set.</div>
+<div id="L213"><a href="#L213">0213</a> \todo{Missing: whether E6 (a measured machine move) and the relative limits may be described this way. Candidate: ask Jasper or Dragan.}</div>
+<div id="L214"><a href="#L214">0214</a> \\</div>
+<div id="L215"><a href="#L215">0215</a> The models run at $T_s=0.25$~ms on training windows of 0.1~s.</div>
+<div id="L216"><a href="#L216">0216</a> The rate, its anti-alias filter and the window length are supported by the</div>
+<div id="L217"><a href="#L217">0217</a> checks in Table~\ref{tab:setup_checks}.</div>
+<div id="L218"><a href="#L218">0218</a> </div>
+<div id="L219"><a href="#L219">0219</a> \subsection{Compared models}\label{sec:setup_models}</div>
+<div id="L220"><a href="#L220">0220</a> % Sources: THESIS-RESULTS.md &quot;Presentation agreed 2026-10-16&quot;; D-191, D-243 (detuned start);</div>
+<div id="L221"><a href="#L221">0221</a> % D-242, thesis_r8_grid.conf (black box); D-259 (single seed).</div>
+<div id="L222"><a href="#L222">0222</a> \ifdraft</div>
+<div id="L223"><a href="#L223">0223</a> \begin{itemize}</div>
+<div id="L224"><a href="#L224">0224</a> \item Each comparison answers one aspect of the research question</div>
+<div id="L225"><a href="#L225">0225</a> \item Grey-box models: same records, settings, budget and checkpoint rule; PS start of the added states; 10\,\% detuned start of the combinations; one seed</div>
+<div id="L226"><a href="#L226">0226</a> \item The runs that justify $n_{\bar x}$, PS and the start are in the appendix (?: label)</div>
+<div id="L227"><a href="#L227">0227</a> \item Black box: SUBNET of the closed loop, no physics, no controller, sized on the validation records</div>
+<div id="L228"><a href="#L228">0228</a> \end{itemize}</div>
+<div id="L229"><a href="#L229">0229</a> \fi</div>
+<div id="L230"><a href="#L230">0230</a> The models of Table~\ref{tab:setup_models} are compared in pairs,</div>
+<div id="L231"><a href="#L231">0231</a> each answering one aspect of the research question.</div>
+<div id="L232"><a href="#L232">0232</a> The pairs are $\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{LTI}}$</div>
+<div id="L233"><a href="#L233">0233</a> for the baseline, the final model $\mathcal M_{\mathrm{OBC}}$ with</div>
+<div id="L234"><a href="#L234">0234</a> $\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{BB}}$ for the</div>
+<div id="L235"><a href="#L235">0235</a> augmentation, and $\mathcal M_{\mathrm{OBC}}$ with $\mathcal M_{\mathrm U}$</div>
+<div id="L236"><a href="#L236">0236</a> for the orthogonal construction.</div>
+<div id="L237"><a href="#L237">0237</a> The extrapolation records compare the final model with the black box</div>
+<div id="L238"><a href="#L238">0238</a> (Aspect~4).</div>
+<div id="L239"><a href="#L239">0239</a> $\mathcal M_{\mathrm{LPV}}$ and $\mathcal M_{\mathrm{LTI}}$ are the baseline</div>
+<div id="L240"><a href="#L240">0240</a> at the true parameters, with $M(Y)$ taken at $Y=0$ for</div>
+<div id="L241"><a href="#L241">0241</a> $\mathcal M_{\mathrm{LTI}}$.</div>
+<div id="L242"><a href="#L242">0242</a> \begin{table}[t]</div>
+<div id="L243"><a href="#L243">0243</a> \caption{Compared models. Start: the ten combinations at the start of</div>
+<div id="L244"><a href="#L244">0244</a> training; final model: $\mathcal M_{\mathrm{OBC}}$.}</div>
+<div id="L245"><a href="#L245">0245</a> \label{tab:setup_models}</div>
+<div id="L246"><a href="#L246">0246</a> \centering</div>
+<div id="L247"><a href="#L247">0247</a> \footnotesize</div>
+<div id="L248"><a href="#L248">0248</a> \begin{tabular}{@{}llll@{}}</div>
+<div id="L249"><a href="#L249">0249</a> \toprule</div>
+<div id="L250"><a href="#L250">0250</a> Model &amp; Added states &amp; OBC &amp; Start\\</div>
+<div id="L251"><a href="#L251">0251</a> \midrule</div>
+<div id="L252"><a href="#L252">0252</a> $\mathcal M_{\mathrm{LPV}}$ &amp; 0 &amp; no &amp; true, untrained\\</div>
+<div id="L253"><a href="#L253">0253</a> $\mathcal M_{\mathrm{LTI}}$ &amp; 0 &amp; no &amp; true, untrained\\</div>
+<div id="L254"><a href="#L254">0254</a> $\mathcal M_{\mathrm{U}}$ &amp; 2 &amp; no &amp; 10\,\% detuned\\</div>
+<div id="L255"><a href="#L255">0255</a> $\mathcal M_{\mathrm{OBC}}$ &amp; 2 &amp; yes &amp; 10\,\% detuned\\</div>
+<div id="L256"><a href="#L256">0256</a> $\mathcal M_{\mathrm{BB}}$ &amp; black box &amp; no &amp; no physics\\</div>
+<div id="L257"><a href="#L257">0257</a> \bottomrule</div>
+<div id="L258"><a href="#L258">0258</a> \end{tabular}</div>
+<div id="L259"><a href="#L259">0259</a> \end{table}</div>
+<div id="L260"><a href="#L260">0260</a> \todo{Missing: model notation. Candidate: the calligraphic </div>
+<div id="L261"><a href="#L261">0261</a> names of the table (README open conflict on model names; same </div>
+<div id="L262"><a href="#L262">0262</a> \texttt{\textbackslash todo} as in Section~\ref{sec:obc}).}</div>
+<div id="L263"><a href="#L263">0263</a> We identify $\mathcal M_{\mathrm U}$ and $\mathcal M_{\mathrm{OBC}}$</div>
+<div id="L264"><a href="#L264">0264</a> by minimising the loss of Section~\ref{sec:aug_closed_loop} </div>
+<div id="L265"><a href="#L265">0265</a> with the same training setup (Table~\ref{tab:hyper}).</div>
+<div id="L266"><a href="#L266">0266</a> This includes PS to initialise the added states (Section~\ref{sec:aug_ps2}).</div>
+<div id="L267"><a href="#L267">0267</a> The parameter combinations $\theta_{\mathrm{base}}$ start 10\,\% larger or</div>
+<div id="L268"><a href="#L268">0268</a> smaller in magnitude than their true values, and every run uses the same</div>
+<div id="L269"><a href="#L269">0269</a> signs.</div>
+<div id="L270"><a href="#L270">0270</a> Appendix~\ref{app:choices} shows the runs used to choose $n_{\bar x}$ and</div>
+<div id="L271"><a href="#L271">0271</a> the PS initialisation of the added states.</div>
+<div id="L272"><a href="#L272">0272</a> \todo{Missing: the label of the appendix with the choice-justifying runs, </div>
+<div id="L273"><a href="#L273">0273</a> and whether they are compared on the validation records. Candidate: </div>
+<div id="L274"><a href="#L274">0274</a> a new appendix section on the validation records (THESIS-RESULTS, recommendation </div>
+<div id="L275"><a href="#L275">0275</a> of 2026-10-16, not yet confirmed).}</div>
+<div id="L276"><a href="#L276">0276</a> The black box $\mathcal M_{\mathrm{BB}}$ is a SUBNET</div>
+<div id="L277"><a href="#L277">0277</a> model~\cite{beintema2023subnet} that predicts the closed-loop</div>
+<div id="L278"><a href="#L278">0278</a> servo error from the reference and injected force,</div>
+<div id="L279"><a href="#L279">0279</a> without modelling the controller separately</div>
+<div id="L280"><a href="#L280">0280</a> (Appendix~\ref{app:setup_bb}).</div>
+<div id="L281"><a href="#L281">0281</a> Its state count, network widths and learning rate are selected</div>
+<div id="L282"><a href="#L282">0282</a> from 11 configurations using the validation records,</div>
+<div id="L283"><a href="#L283">0283</a> with the same data and training and encoder window as the grey-box models.</div>
+<div id="L284"><a href="#L284">0284</a> % The black box $\mathcal M_{\mathrm{BB}}$ is a SUBNET</div>
+<div id="L285"><a href="#L285">0285</a> % model~\cite{beintema2023subnet} of the closed loop, from the reference and</div>
+<div id="L286"><a href="#L286">0286</a> % the injected force to the servo error, without a controller</div>
+<div id="L287"><a href="#L287">0287</a> % (Appendix~\ref{app:setup_bb}).</div>
+<div id="L288"><a href="#L288">0288</a> % Its state count, network widths and learning rate are selected on the</div>
+<div id="L289"><a href="#L289">0289</a> % validation records from 11 configurations, with the data and windows of</div>
+<div id="L290"><a href="#L290">0290</a> % the grey-box models.</div>
+<div id="L291"><a href="#L291">0291</a> </div>
+<div id="L292"><a href="#L292">0292</a> </div>
+<div id="L293"><a href="#L293">0293</a> \subsection{Metrics}\label{sec:setup_metrics}</div>
+<div id="L294"><a href="#L294">0294</a> % Sources: D-256 (NRMS_e), THESIS-RESULTS Sec. 2; D-259 (m_Delta scale, revnotes); Section IV</div>
+<div id="L295"><a href="#L295">0295</a> % eq:obc_eps, eq:obc_recovery, eq:obc_overlap; Code/Evaluation eval_overlap.py.</div>
+<div id="L296"><a href="#L296">0296</a> \ifdraft</div>
+<div id="L297"><a href="#L297">0297</a> \begin{itemize}</div>
+<div id="L298"><a href="#L298">0298</a> \item Every model is simulated over whole test records: grey-box models in closed loop with $K_1$, the black box in free run</div>
+<div id="L299"><a href="#L299">0299</a> \item Primary metric: the simulation error relative to the servo error, $\mathrm{NRMS}_e$, per stage axis; beside it the RMS in metres and the noise floor</div>
+<div id="L300"><a href="#L300">0300</a> \item Parameter error per combination against the true values; $m_\Delta$ scaled by the mean actuator mass; simulation only</div>
+<div id="L301"><a href="#L301">0301</a> \item The two predictions of Section~\ref{sec:obc}: the network stays out of the parameter directions, and the remaining parameter error is the first-order bias</div>
+<div id="L302"><a href="#L302">0302</a> \end{itemize}</div>
+<div id="L303"><a href="#L303">0303</a> \fi</div>
+<div id="L304"><a href="#L304">0304</a> All models are evaluated based on its output simulated over the full records. </div>
+<div id="L305"><a href="#L305">0305</a> Since the reference is known, we compare the predicted servo error</div>
+<div id="L306"><a href="#L306">0306</a> with the recorded servo error $y-r$.</div>
+<div id="L307"><a href="#L307">0307</a> The primary metric is the NRMS of~\cite[Eq.~(43)]{beintema2023subnet},</div>
+<div id="L308"><a href="#L308">0308</a> adapted by using the servo error as output.</div>
+<div id="L309"><a href="#L309">0309</a> We also report the RMS in metres and the noise floor:</div>
+<div id="L310"><a href="#L310">0310</a> \begin{equation}</div>
+<div id="L311"><a href="#L311">0311</a> \begin{aligned}</div>
+<div id="L312"><a href="#L312">0312</a>  \mathrm{RMS}_j&amp;=\Bigl(\frac{1}{N-n-1}\sum_{k=n+1}^{N-1}(\hat y_{j,k}-y_{j,k})^2\Bigr)^{1/2},\\</div>
+<div id="L313"><a href="#L313">0313</a>  \mathrm{NRMS}_{e,j}&amp;=\frac{\mathrm{RMS}_j}{\sigma_{e,j}},\\</div>
+<div id="L314"><a href="#L314">0314</a>  \mathrm{RMS}^{\mathrm{fl}}_j&amp;=\Bigl(\frac{1}{N-n-1}\sum_{k=n+1}^{N-1}(y_{j,k}-y^{\circ}_{j,k})^2\Bigr)^{1/2},</div>
+<div id="L315"><a href="#L315">0315</a> \end{aligned}</div>
+<div id="L316"><a href="#L316">0316</a> \label{eq:setup_rms}</div>
+<div id="L317"><a href="#L317">0317</a> \end{equation}</div>
+<div id="L318"><a href="#L318">0318</a> where $j$ is the stage axis, $N$ the record length, $n+1$ the encoder</div>
+<div id="L319"><a href="#L319">0319</a> window length and $\sigma_{e,j}$ the population standard deviation of the servo error</div>
+<div id="L320"><a href="#L320">0320</a> $y_j-r_j$ over the same samples.</div>
+<div id="L321"><a href="#L321">0321</a> An NRMS of 100\,\% means the model performs no better than $\hat y=r$.</div>
+<div id="L322"><a href="#L322">0322</a> The noise floor is the RMS difference between the measured and noise-free</div>
+<div id="L323"><a href="#L323">0323</a> outputs.</div>
+<div id="L324"><a href="#L324">0324</a> \\</div>
+<div id="L325"><a href="#L325">0325</a> The parameter error of combination $j$ is</div>
+<div id="L326"><a href="#L326">0326</a> \begin{equation}</div>
+<div id="L327"><a href="#L327">0327</a> \begin{aligned}</div>
+<div id="L328"><a href="#L328">0328</a>  \delta_j&amp;=\frac{\theta_{\mathrm{base},j}-\theta^\star_{\mathrm{base},j}}{s_j},\\</div>
+<div id="L329"><a href="#L329">0329</a>  s_j&amp;=\begin{cases}</div>
+<div id="L330"><a href="#L330">0330</a>   (m_1+m_2)/2, &amp; \text{for } m_\Delta,\\</div>
+<div id="L331"><a href="#L331">0331</a>   \lvert\theta^\star_{\mathrm{base},j}\rvert, &amp; \text{otherwise},</div>
+<div id="L332"><a href="#L332">0332</a>  \end{cases}</div>
+<div id="L333"><a href="#L333">0333</a> \end{aligned}</div>
+<div id="L334"><a href="#L334">0334</a>  \label{eq:setup_delta}</div>
+<div id="L335"><a href="#L335">0335</a> \end{equation}</div>
+<div id="L336"><a href="#L336">0336</a> where the true value of $m_\Delta=m_1-m_2$ is close to zero,</div>
+<div id="L337"><a href="#L337">0337</a> so we scale its error by the mean actuator mass $(m_1+m_2)/2$ instead.</div>
+<div id="L338"><a href="#L338">0338</a> \\</div>
+<div id="L339"><a href="#L339">0339</a> For the orthogonal construction of Section~\ref{sec:obc}, the overlap</div>
+<div id="L340"><a href="#L340">0340</a> $\rho$ of \eqref{eq:obc_overlap} is computed at $\bar x=0$ on the one-step</div>
+<div id="L341"><a href="#L341">0341</a> tuples of the training, validation and test records (test: I1 to I6), for</div>
+<div id="L342"><a href="#L342">0342</a> the network of $\mathcal M_{\mathrm U}$, the corrected network of</div>
+<div id="L343"><a href="#L343">0343</a> $\mathcal M_{\mathrm{OBC}}$ and the missing dynamics $\Xi$.</div>
+<div id="L344"><a href="#L344">0344</a> On the training tuples the corrected overlap is zero by construction.</div>
+<div id="L345"><a href="#L345">0345</a> </div></pre>

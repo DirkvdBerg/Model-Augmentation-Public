@@ -1,0 +1,649 @@
+<meta charset="utf-8"><title>venkatraman2017psd</title><pre><div id="L1"><a href="#L1">00001</a> [PDF p.1]                                                                Predictive-State Decoders:</div>
+<div id="L2"><a href="#L2">00002</a> [PDF p.1]                                                       Encoding the Future into Recurrent Networks</div>
+<div id="L3"><a href="#L3">00003</a> [PDF p.1] </div>
+<div id="L4"><a href="#L4">00004</a> [PDF p.1] </div>
+<div id="L5"><a href="#L5">00005</a> [PDF p.1]                                                                   Arun Venkatraman1∗ , Nicholas Rhinehart1∗, Wen Sun1 ,</div>
+<div id="L6"><a href="#L6">00006</a> [PDF p.1]                                                     Lerrel Pinto , Martial Hebert1 , Byron Boots2 , Kris M. Kitani1 , J. Andrew Bagnell1</div>
+<div id="L7"><a href="#L7">00007</a> [PDF p.1]                                                                  1</div>
+<div id="L8"><a href="#L8">00008</a> [PDF p.1]                                                              1</div>
+<div id="L9"><a href="#L9">00009</a> [PDF p.1]                                                                The Robotics Institute, Carnegie-Mellon University, Pittsburgh, PA</div>
+<div id="L10"><a href="#L10">00010</a> [PDF p.1] arXiv:1709.08520v1 [stat.ML] 25 Sep 2017</div>
+<div id="L11"><a href="#L11">00011</a> [PDF p.1] </div>
+<div id="L12"><a href="#L12">00012</a> [PDF p.1] </div>
+<div id="L13"><a href="#L13">00013</a> [PDF p.1] </div>
+<div id="L14"><a href="#L14">00014</a> [PDF p.1] </div>
+<div id="L15"><a href="#L15">00015</a> [PDF p.1]                                                        2</div>
+<div id="L16"><a href="#L16">00016</a> [PDF p.1]                                                          School of Interactive Computing, Georgia Institute of Technology, Atlanta, GA</div>
+<div id="L17"><a href="#L17">00017</a> [PDF p.1] </div>
+<div id="L18"><a href="#L18">00018</a> [PDF p.1] </div>
+<div id="L19"><a href="#L19">00019</a> [PDF p.1] </div>
+<div id="L20"><a href="#L20">00020</a> [PDF p.1]                                                                                             Abstract</div>
+<div id="L21"><a href="#L21">00021</a> [PDF p.1] </div>
+<div id="L22"><a href="#L22">00022</a> [PDF p.1]                                                        Recurrent neural networks (RNNs) are a vital modeling technique that rely on</div>
+<div id="L23"><a href="#L23">00023</a> [PDF p.1]                                                        internal states learned indirectly by optimization of a supervised, unsupervised, or</div>
+<div id="L24"><a href="#L24">00024</a> [PDF p.1]                                                        reinforcement training loss. RNNs are used to model dynamic processes that are</div>
+<div id="L25"><a href="#L25">00025</a> [PDF p.1]                                                        characterized by underlying latent states whose form is often unknown, precluding</div>
+<div id="L26"><a href="#L26">00026</a> [PDF p.1]                                                        its analytic representation inside an RNN. In the Predictive-State Representation</div>
+<div id="L27"><a href="#L27">00027</a> [PDF p.1]                                                        (PSR) literature, latent state processes are modeled by an internal state representa-</div>
+<div id="L28"><a href="#L28">00028</a> [PDF p.1]                                                        tion that directly models the distribution of future observations, and most recent</div>
+<div id="L29"><a href="#L29">00029</a> [PDF p.1]                                                        work in this area has relied on explicitly representing and targeting sufficient statis-</div>
+<div id="L30"><a href="#L30">00030</a> [PDF p.1]                                                        tics of this probability distribution. We seek to combine the advantages of RNNs</div>
+<div id="L31"><a href="#L31">00031</a> [PDF p.1]                                                        and PSRs by augmenting existing state-of-the-art recurrent neural networks with</div>
+<div id="L32"><a href="#L32">00032</a> [PDF p.1]                                                        P REDICTIVE -S TATE D ECODERS (P SDs), which add supervision to the network’s</div>
+<div id="L33"><a href="#L33">00033</a> [PDF p.1]                                                        internal state representation to target predicting future observations. P SDs are</div>
+<div id="L34"><a href="#L34">00034</a> [PDF p.1]                                                        simple to implement and easily incorporated into existing training pipelines via</div>
+<div id="L35"><a href="#L35">00035</a> [PDF p.1]                                                        additional loss regularization. We demonstrate the effectiveness of P SDs with</div>
+<div id="L36"><a href="#L36">00036</a> [PDF p.1]                                                        experimental results in three different domains: probabilistic filtering, Imitation</div>
+<div id="L37"><a href="#L37">00037</a> [PDF p.1]                                                        Learning, and Reinforcement Learning. In each, our method improves statistical</div>
+<div id="L38"><a href="#L38">00038</a> [PDF p.1]                                                        performance of state-of-the-art recurrent baselines and does so with fewer iterations</div>
+<div id="L39"><a href="#L39">00039</a> [PDF p.1]                                                        and less data.</div>
+<div id="L40"><a href="#L40">00040</a> [PDF p.1] </div>
+<div id="L41"><a href="#L41">00041</a> [PDF p.1] </div>
+<div id="L42"><a href="#L42">00042</a> [PDF p.1]                                            1       Introduction</div>
+<div id="L43"><a href="#L43">00043</a> [PDF p.1]                                            Despite their wide success in a variety of domains, recurrent neural networks (RNNs) are often</div>
+<div id="L44"><a href="#L44">00044</a> [PDF p.1]                                            inhibited by the difficulty of learning an internal state representation. Internal state is a unifying</div>
+<div id="L45"><a href="#L45">00045</a> [PDF p.1]                                            characteristic of RNNs, as it serves as an RNN’s memory. Learning these internal states is challenging</div>
+<div id="L46"><a href="#L46">00046</a> [PDF p.1]                                            because optimization is guided by the indirect signal of the RNN’s target task, such as maximizing</div>
+<div id="L47"><a href="#L47">00047</a> [PDF p.1]                                            the cost-to-go for reinforcement learning or maximizing the likelihood of a sequence of words. These</div>
+<div id="L48"><a href="#L48">00048</a> [PDF p.1]                                            target tasks have a latent state sequence that characterizes the underlying sequential data-generating</div>
+<div id="L49"><a href="#L49">00049</a> [PDF p.1]                                            process. Unfortunately, most settings do not afford a parametric model of latent state that is available</div>
+<div id="L50"><a href="#L50">00050</a> [PDF p.1]                                            to the learner.</div>
+<div id="L51"><a href="#L51">00051</a> [PDF p.1]                                            However, recent work has shown that in certain settings, latent states can be characterized by</div>
+<div id="L52"><a href="#L52">00052</a> [PDF p.1]                                            observations alone [8, 24, 26] – which are almost always available to recurrent models. In such</div>
+<div id="L53"><a href="#L53">00053</a> [PDF p.1]                                            partially-observable problems (e.g. Fig. 1a), a single observation is not guaranteed to contain enough</div>
+<div id="L54"><a href="#L54">00054</a> [PDF p.1]                                            information to fully represent the system’s latent state. For example, a single image of a robot is</div>
+<div id="L55"><a href="#L55">00055</a> [PDF p.1]                                            insufficient to characterize its latent velocity and acceleration. While a latent state parametrization</div>
+<div id="L56"><a href="#L56">00056</a> [PDF p.1]                                            may be known in some domains – e.g. a simple pendulum can be sufficiently modeled by its angle</div>
+<div id="L57"><a href="#L57">00057</a> [PDF p.1]                                            and angular velocity (θ, θ̇) – data from most domains cannot be explicitly parametrized.</div>
+<div id="L58"><a href="#L58">00058</a> [PDF p.1]                                                ∗</div>
+<div id="L59"><a href="#L59">00059</a> [PDF p.1]                                                    Contributed equally to this work. Direct correspondence to: {arunvenk,nrhineha}@cs.cmu.edu</div>
+<div id="L60"><a href="#L60">00060</a> [PDF p.1] </div>
+<div id="L61"><a href="#L61">00061</a> [PDF p.1] </div>
+<div id="L62"><a href="#L62">00062</a> [PDF p.1]                                            31st Conference on Neural Information Processing Systems (NIPS 2017), Long Beach, CA, USA.</div>
+<div id="L63"><a href="#L63">00063</a> [PDF p.1] </div>
+<div id="L64"><a href="#L64">00064</a> [PDF p.2] (a) The process generating sequential data has latent      (b) An overview of our approach for modelling the pro-</div>
+<div id="L65"><a href="#L65">00065</a> [PDF p.2] state st which generates the next latent state st+1 . st   cess from Fig. 1a. We attach a decoder to the internal</div>
+<div id="L66"><a href="#L66">00066</a> [PDF p.2] is usually unknown but generates the observations xt       state of an RNN to predict statistics of future observa-</div>
+<div id="L67"><a href="#L67">00067</a> [PDF p.2] which are used to learn a model for the system.            tions xt to xt+k observed at training time.</div>
+<div id="L68"><a href="#L68">00068</a> [PDF p.2]                           Figure 1: Data generation process and proposed model</div>
+<div id="L69"><a href="#L69">00069</a> [PDF p.2] </div>
+<div id="L70"><a href="#L70">00070</a> [PDF p.2] </div>
+<div id="L71"><a href="#L71">00071</a> [PDF p.2] In lieu of ground truth access to latent states, recurrent neural networks [32, 47] employ internal states</div>
+<div id="L72"><a href="#L72">00072</a> [PDF p.2] to summarize previous data, serving as a learner’s memory. We avoid the terminology “hidden state&quot;</div>
+<div id="L73"><a href="#L73">00073</a> [PDF p.2] as it refers to the internal state in the RNN literature but refers to the latent state in the HMM, PSR,</div>
+<div id="L74"><a href="#L74">00074</a> [PDF p.2] and related literature. Internal states are modified towards minimizing the target application’s loss,</div>
+<div id="L75"><a href="#L75">00075</a> [PDF p.2] e.g., minimizing observation loss in filtering or cumulative reward in reinforcement learning. The</div>
+<div id="L76"><a href="#L76">00076</a> [PDF p.2] target application’s loss is not directly defined over the internal states: they are updated via the chain</div>
+<div id="L77"><a href="#L77">00077</a> [PDF p.2] rule (backpropagation) through the global loss. Although this modeling is indirect, recurrent networks</div>
+<div id="L78"><a href="#L78">00078</a> [PDF p.2] nonetheless can achieve state-of-the-art results on many robotics [18, 23], vision [34, 50], and natural</div>
+<div id="L79"><a href="#L79">00079</a> [PDF p.2] language tasks [15, 20, 38] when training succeeds. However, recurrent model optimization is</div>
+<div id="L80"><a href="#L80">00080</a> [PDF p.2] hampered by two main difficulties: 1) non-convexity, and 2) the loss does not directly encourage</div>
+<div id="L81"><a href="#L81">00081</a> [PDF p.2] the internal state to model the latent state. A poor internal state representation can yield poor task</div>
+<div id="L82"><a href="#L82">00082</a> [PDF p.2] performance, but rarely does the task objective directly measure the quality of the internal state.</div>
+<div id="L83"><a href="#L83">00083</a> [PDF p.2] Predictive-State Representations (PSRs) [8, 24, 26] offer an alternative internal state representation</div>
+<div id="L84"><a href="#L84">00084</a> [PDF p.2] to that of RNNs in terms of the available observations. Spectral learning methods for PSRs provide</div>
+<div id="L85"><a href="#L85">00085</a> [PDF p.2] theoretical guarantees on discovering the global optimum for the model and internal state parameters</div>
+<div id="L86"><a href="#L86">00086</a> [PDF p.2] under the assumptions of infinite training data and realizability. However, in the non-realizable setting</div>
+<div id="L87"><a href="#L87">00087</a> [PDF p.2] – i.e. model mismatch (e.g., using learned parameters of a linear system model for a non-linear system)</div>
+<div id="L88"><a href="#L88">00088</a> [PDF p.2] – these algorithms lose any performance guarantees on using the learned model for the target inference</div>
+<div id="L89"><a href="#L89">00089</a> [PDF p.2] tasks. Extensions to handle nonlinear systems rely on RKHS embeddings [43], which themselves</div>
+<div id="L90"><a href="#L90">00090</a> [PDF p.2] can be computationally infeasible to use with large datasets. Nevertheless, when these models are</div>
+<div id="L91"><a href="#L91">00091</a> [PDF p.2] trainable, they often achieve strong performance [24, 45]; the structure they impose significantly</div>
+<div id="L92"><a href="#L92">00092</a> [PDF p.2] simplifies the learning problem.</div>
+<div id="L93"><a href="#L93">00093</a> [PDF p.2] We leverage ideas from the both RNN and PSR paradigms, resulting in a marriage of two orthogonal</div>
+<div id="L94"><a href="#L94">00094</a> [PDF p.2] sequential modeling approaches. When training an RNN, P REDICTIVE -S TATE D ECODERS (Fig. 1b)</div>
+<div id="L95"><a href="#L95">00095</a> [PDF p.2] provide direct supervision on the internal state, aiding the training problem. The proposed method</div>
+<div id="L96"><a href="#L96">00096</a> [PDF p.2] can be viewed as an instance of Multi-Task Learning (MTL) [13] and self-supervision [27], using the</div>
+<div id="L97"><a href="#L97">00097</a> [PDF p.2] inputs to the learner to form a secondary unsupervised objective. Our contribution is a general method</div>
+<div id="L98"><a href="#L98">00098</a> [PDF p.2] that improves performance of learning RNNs for sequential prediction problems. The approach is</div>
+<div id="L99"><a href="#L99">00099</a> [PDF p.2] easy to implement as a regularizer on traditional RNN loss functions with little overhead and can</div>
+<div id="L100"><a href="#L100">00100</a> [PDF p.2] thus be incorporated into a variety of existing recurrent models.</div>
+<div id="L101"><a href="#L101">00101</a> [PDF p.2] In our experiments, we examine three domains where recurrent models are used to model temporal</div>
+<div id="L102"><a href="#L102">00102</a> [PDF p.2] dependencies: probabilistic filtering, where we predict the future observation given past observations;</div>
+<div id="L103"><a href="#L103">00103</a> [PDF p.2] Imitation Learning, where the learner attempts to mimic an expert’s actions; and Reinforcement</div>
+<div id="L104"><a href="#L104">00104</a> [PDF p.2] Learning, where a policy is trained to maximize cumulative reward. We observe that our method</div>
+<div id="L105"><a href="#L105">00105</a> [PDF p.2] improves loss convergence rates and results in higher-quality final objectives in these domains.</div>
+<div id="L106"><a href="#L106">00106</a> [PDF p.2] </div>
+<div id="L107"><a href="#L107">00107</a> [PDF p.2] </div>
+<div id="L108"><a href="#L108">00108</a> [PDF p.2] 2    Latent State Space Models</div>
+<div id="L109"><a href="#L109">00109</a> [PDF p.2] </div>
+<div id="L110"><a href="#L110">00110</a> [PDF p.2] To model sequential prediction problems, it is common to cast the problem into the Markov Process</div>
+<div id="L111"><a href="#L111">00111</a> [PDF p.2] framework. Predictive distributions in this framework satisfy the Markov property:</div>
+<div id="L112"><a href="#L112">00112</a> [PDF p.2] </div>
+<div id="L113"><a href="#L113">00113</a> [PDF p.2]                                    P (st+1 |st , st−1 , . . . , s0 ) = P (st+1 |st )                           (1)</div>
+<div id="L114"><a href="#L114">00114</a> [PDF p.2] </div>
+<div id="L115"><a href="#L115">00115</a> [PDF p.2] </div>
+<div id="L116"><a href="#L116">00116</a> [PDF p.2]                                                            2</div>
+<div id="L117"><a href="#L117">00117</a> [PDF p.2] </div>
+<div id="L118"><a href="#L118">00118</a> [PDF p.3] Figure 2: Learning recurrent models consists of learning a function f that updates the internal state</div>
+<div id="L119"><a href="#L119">00119</a> [PDF p.3] ht given the latest observation xt . The internal state may also be used to predict targets yt , such as</div>
+<div id="L120"><a href="#L120">00120</a> [PDF p.3] control actions for imitation and reinforcement learning. These are then inputs to a loss function `</div>
+<div id="L121"><a href="#L121">00121</a> [PDF p.3] which accumulate as the multi-step loss L over all timesteps.</div>
+<div id="L122"><a href="#L122">00122</a> [PDF p.3] </div>
+<div id="L123"><a href="#L123">00123</a> [PDF p.3] </div>
+<div id="L124"><a href="#L124">00124</a> [PDF p.3] where st is the latent state of the system at timestep t. Intuitively, this property tells us that the</div>
+<div id="L125"><a href="#L125">00125</a> [PDF p.3] future st+1 is only dependent on the current state2 st and does not depend on any previous state</div>
+<div id="L126"><a href="#L126">00126</a> [PDF p.3] s0 , . . . , st−1 . As st is latent, the learner only has access to observations xt , which are produced by</div>
+<div id="L127"><a href="#L127">00127</a> [PDF p.3] st . For example, in robotics, xt may be joint angles from sensors or a scene observed as an image. A</div>
+<div id="L128"><a href="#L128">00128</a> [PDF p.3] common graphical model representation is shown in Fig. 1a.</div>
+<div id="L129"><a href="#L129">00129</a> [PDF p.3] The machine learning problem is to find a model f that uses the latest observation xt to recursively</div>
+<div id="L130"><a href="#L130">00130</a> [PDF p.3] update an internal state, denoted ht , illustrated in Fig. 2. Note that ht is distinct from st . ht is the</div>
+<div id="L131"><a href="#L131">00131</a> [PDF p.3] learner’s internal state, and st is the underlying configuration of the data-generating Markov</div>
+<div id="L132"><a href="#L132">00132</a> [PDF p.3] Process. For example, the internal state in the Bayesian filtering/POMDP setup is represented as a</div>
+<div id="L133"><a href="#L133">00133</a> [PDF p.3] belief state [49], a “memory&quot; unit in neural networks, or as a distribution over observations for PSRs.</div>
+<div id="L134"><a href="#L134">00134</a> [PDF p.3] Unlike traditional supervised machine learning problems, learning models for latent state problems</div>
+<div id="L135"><a href="#L135">00135</a> [PDF p.3] must be accomplished without ground-truth supervision of the internal states themselves. Two distinct</div>
+<div id="L136"><a href="#L136">00136</a> [PDF p.3] paradigms for latent state modeling exist. The first are discriminative approaches based on RNNs, and</div>
+<div id="L137"><a href="#L137">00137</a> [PDF p.3] the second is a set of theoretically well-studied approaches based on Predictive-State Representations.</div>
+<div id="L138"><a href="#L138">00138</a> [PDF p.3] In the following sections we provide a brief overview of each class of approach.</div>
+<div id="L139"><a href="#L139">00139</a> [PDF p.3] </div>
+<div id="L140"><a href="#L140">00140</a> [PDF p.3] 2.1        Recurrent Models and RNNs</div>
+<div id="L141"><a href="#L141">00141</a> [PDF p.3] </div>
+<div id="L142"><a href="#L142">00142</a> [PDF p.3] A classical supervised machine learning approach for learning internal models involves choosing</div>
+<div id="L143"><a href="#L143">00143</a> [PDF p.3] an explicit parametrization for the internal states and assuming ground-truth access to these states</div>
+<div id="L144"><a href="#L144">00144</a> [PDF p.3] and observations at training time [17, 29, 33, 37]. These models focus on learning only the recursive</div>
+<div id="L145"><a href="#L145">00145</a> [PDF p.3] model f in Fig. 2, assuming access to the st (Fig. 1a) at training time. Another class of approaches</div>
+<div id="L146"><a href="#L146">00146</a> [PDF p.3] drop the assumption of access to ground truth but still assume a parametrization of the internal state.</div>
+<div id="L147"><a href="#L147">00147</a> [PDF p.3] These models set up a multi-step prediction error and use expectation maximization to alternate</div>
+<div id="L148"><a href="#L148">00148</a> [PDF p.3] between optimizing over the model’s parameters and the internal state values [2, 19, 16].</div>
+<div id="L149"><a href="#L149">00149</a> [PDF p.3] While imposing a fixed representation on the internal state adds structure to the learning problem, it</div>
+<div id="L150"><a href="#L150">00150</a> [PDF p.3] can limit performance. For many problems such as speech recognition [20] or text generation [48], it</div>
+<div id="L151"><a href="#L151">00151</a> [PDF p.3] is difficult to fully represent a latent state inside the model’s internal state. Instead, typical machine</div>
+<div id="L152"><a href="#L152">00152</a> [PDF p.3] learning solutions rely on the Recurrent Neural Network architecture. The RNN model (Fig. 2) uses</div>
+<div id="L153"><a href="#L153">00153</a> [PDF p.3] the internal state to make predictions yt = f (ht , xt ) and is trained by minimizing a series of loss</div>
+<div id="L154"><a href="#L154">00154</a> [PDF p.3] functions `t over each prediction, as shown in the following optimization problem:</div>
+<div id="L155"><a href="#L155">00155</a> [PDF p.3]                                                       X</div>
+<div id="L156"><a href="#L156">00156</a> [PDF p.3]                                       min L = min         `t (f (ht , xt ))                            (2)</div>
+<div id="L157"><a href="#L157">00157</a> [PDF p.3]                                             f          f</div>
+<div id="L158"><a href="#L158">00158</a> [PDF p.3]                                                            t</div>
+<div id="L159"><a href="#L159">00159</a> [PDF p.3] The loss functions `t are usually application- and domain-specific. For example, in a probabilistic</div>
+<div id="L160"><a href="#L160">00160</a> [PDF p.3] filtering problem, the objective may be to minimize the negative log-likelihood of the observa-</div>
+<div id="L161"><a href="#L161">00161</a> [PDF p.3] tions [4, 52] or the prediction of the next observation [34]. For imitation learning, this objective</div>
+<div id="L162"><a href="#L162">00162</a> [PDF p.3] function will penalize deviation of the prediction from the expert’s action [39], and for policy-</div>
+<div id="L163"><a href="#L163">00163</a> [PDF p.3] gradient reinforcement learning methods, the objective includes the log-likelihood of choosing</div>
+<div id="L164"><a href="#L164">00164</a> [PDF p.3] actions weighted by their observed returns. In general, the task objective optimized by the network</div>
+<div id="L165"><a href="#L165">00165</a> [PDF p.3] does not directly specify a loss directly over the values of the internal state ht .</div>
+<div id="L166"><a href="#L166">00166</a> [PDF p.3]       2</div>
+<div id="L167"><a href="#L167">00167</a> [PDF p.3]           In Markov Decision Processes (MDPs), P (st+1 |st ) may depend on an action taken at st .</div>
+<div id="L168"><a href="#L168">00168</a> [PDF p.3] </div>
+<div id="L169"><a href="#L169">00169</a> [PDF p.3] </div>
+<div id="L170"><a href="#L170">00170</a> [PDF p.3]                                                            3</div>
+<div id="L171"><a href="#L171">00171</a> [PDF p.3] </div>
+<div id="L172"><a href="#L172">00172</a> [PDF p.4] The general difficulty with the objective in Eq. (2) is that the recurrence with f results in a highly</div>
+<div id="L173"><a href="#L173">00173</a> [PDF p.4] non-convex and difficult optimization [2].</div>
+<div id="L174"><a href="#L174">00174</a> [PDF p.4] RNN models are thus often trained with backpropagation-through-time (BPTT) [55]. BPTT allows</div>
+<div id="L175"><a href="#L175">00175</a> [PDF p.4] future losses incurred at timestep t to be back-propogated and affect the parameter updates to f .</div>
+<div id="L176"><a href="#L176">00176</a> [PDF p.4] These updates to f then change the distribution of internal states computed during the next forward</div>
+<div id="L177"><a href="#L177">00177</a> [PDF p.4] pass through time. The difficulty is then that small updates to f can drastically change the distribution</div>
+<div id="L178"><a href="#L178">00178</a> [PDF p.4] of ht , sometimes resulting in error exponential in the time horizon [53]. This “diffusion problem&quot;</div>
+<div id="L179"><a href="#L179">00179</a> [PDF p.4] can yield an unstable training procedure with exponentially exploding or vanishing gradients [7].</div>
+<div id="L180"><a href="#L180">00180</a> [PDF p.4] While techniques such as truncated gradients [47] or gradient-clipping [35] can alleviate some of</div>
+<div id="L181"><a href="#L181">00181</a> [PDF p.4] these problems, each of these techniques yields stability by discarding information about how future</div>
+<div id="L182"><a href="#L182">00182</a> [PDF p.4] observations and predictions should backpropagate through the current internal state. A significant</div>
+<div id="L183"><a href="#L183">00183</a> [PDF p.4] innovation in training internal states with long-term dependence was the LSTM [25]. Many variants</div>
+<div id="L184"><a href="#L184">00184</a> [PDF p.4] on LSTMs exist (e.g. GRUs [14]), yet in the domains evaluated by Greff et al. [21], none consistently</div>
+<div id="L185"><a href="#L185">00185</a> [PDF p.4] exhibit statistically significant improvements over LSTMs.</div>
+<div id="L186"><a href="#L186">00186</a> [PDF p.4] In the next section, we discuss a different paradigm for learning temporal models. In contrast with the</div>
+<div id="L187"><a href="#L187">00187</a> [PDF p.4] open-ended internal-state learned by RNNs, Predictive-State methods do not parameterize a specific</div>
+<div id="L188"><a href="#L188">00188</a> [PDF p.4] representation of the internal state but use certain assumptions to construct a mathematical structure</div>
+<div id="L189"><a href="#L189">00189</a> [PDF p.4] in terms of the observations to find a globally optimal representation.</div>
+<div id="L190"><a href="#L190">00190</a> [PDF p.4] </div>
+<div id="L191"><a href="#L191">00191</a> [PDF p.4] 2.2   Predictive-State Models</div>
+<div id="L192"><a href="#L192">00192</a> [PDF p.4] Predictive-State Representations (PSRs) address the problem of finding an internal state by for-</div>
+<div id="L193"><a href="#L193">00193</a> [PDF p.4] mulating the representation directly in terms of observable quantities. Instead of targeting a pre-</div>
+<div id="L194"><a href="#L194">00194</a> [PDF p.4] diction loss as with RNNs, PSRs define a belief over the distribution of k future observations,</div>
+<div id="L195"><a href="#L195">00195</a> [PDF p.4] gt = [xTt , ..., xTt+k−1 ]T ∈ Rkn given all the past observations pt = [x0 , . . . xt−1 ] [10]. In the case of</div>
+<div id="L196"><a href="#L196">00196</a> [PDF p.4] linear systems, this k is similar to the rank of the observability matrix [6]. The key assumption in</div>
+<div id="L197"><a href="#L197">00197</a> [PDF p.4] PSRs is that the definition of state is equivalent to having sufficient information to predict everything</div>
+<div id="L198"><a href="#L198">00198</a> [PDF p.4] about gt at time-step t [42], i.e. there is a bijective function that maps P (st |pt−1 ) – the distribution</div>
+<div id="L199"><a href="#L199">00199</a> [PDF p.4] of latent state given the past – to P (gt |pt−1 ) – the belief over future observations.</div>
+<div id="L200"><a href="#L200">00200</a> [PDF p.4] Spectral learning approaches were developed to find an globally optimal internal state representa-</div>
+<div id="L201"><a href="#L201">00201</a> [PDF p.4] tion and the transition model f for these Predictive-State models. In the controls literature, these</div>
+<div id="L202"><a href="#L202">00202</a> [PDF p.4] approaches were developed as subspace identification [51], and in the ML literature as spectral</div>
+<div id="L203"><a href="#L203">00203</a> [PDF p.4] approaches for partially-observed systems [9, 8, 26, 56]. A significant improvement in model</div>
+<div id="L204"><a href="#L204">00204</a> [PDF p.4] learning was developed by Boots et al. [10], Hefny et al. [24], where sufficient feature functions</div>
+<div id="L205"><a href="#L205">00205</a> [PDF p.4] φ (e.g., moments) map distributions</div>
+<div id="L206"><a href="#L206">00206</a> [PDF p.4]                                        P (gt |pt ) to points in feature space E [φ(gt )|pt ]. For example,</div>
+<div id="L207"><a href="#L207">00207</a> [PDF p.4] E [φ(gt )|pt ] = E gt , gt gtT |pt are the sufficient statistics for a Gaussian distribution. With this</div>
+<div id="L208"><a href="#L208">00208</a> [PDF p.4] representation, learning latent state prediction models can be reduced to supervised learning.</div>
+<div id="L209"><a href="#L209">00209</a> [PDF p.4] Hefny et al. [24] used this along with Instrumental Variable Regression [11] to develop a procedure</div>
+<div id="L210"><a href="#L210">00210</a> [PDF p.4] that, in the limit of infinite data, and under a linear-system realiziablity assumption, would converge</div>
+<div id="L211"><a href="#L211">00211</a> [PDF p.4] to the globally optimal solution. Sun et al. [45] extended this setup to create a practical algorithm,</div>
+<div id="L212"><a href="#L212">00212</a> [PDF p.4] Predictive-State Inference Machines (PSIMs) [44, 45, 54], based on the concept of inference ma-</div>
+<div id="L213"><a href="#L213">00213</a> [PDF p.4] chines [31, 40]. Unlike in Hefny et al. [24], which attempted to find a generative observation model</div>
+<div id="L214"><a href="#L214">00214</a> [PDF p.4] and transition model, PSIMs directly learned the filter function, an operator f , that can deterministi-</div>
+<div id="L215"><a href="#L215">00215</a> [PDF p.4] cally pass the predictive states forward in time conditioned on the latest observation, by minimizing</div>
+<div id="L216"><a href="#L216">00216</a> [PDF p.4] the following loss over f :</div>
+<div id="L217"><a href="#L217">00217</a> [PDF p.4]                                X                            2</div>
+<div id="L218"><a href="#L218">00218</a> [PDF p.4]                         `p =        kφ(gt+1 ) − f (ht , xt )k ,   ht+1 = f (ht , xt )                      (3)</div>
+<div id="L219"><a href="#L219">00219</a> [PDF p.4]                                 t</div>
+<div id="L220"><a href="#L220">00220</a> [PDF p.4] </div>
+<div id="L221"><a href="#L221">00221</a> [PDF p.4] </div>
+<div id="L222"><a href="#L222">00222</a> [PDF p.4] This loss function, which we call the predictive-state loss, forms the basis of our P REDICTIVE -S TATE</div>
+<div id="L223"><a href="#L223">00223</a> [PDF p.4] D ECODERS. By minimizing this supervised loss function, PSIM assigns statistical meaning to internal</div>
+<div id="L224"><a href="#L224">00224</a> [PDF p.4] states: it forces the internal state ht to match sufficient statistics of future observations E [φ(gt )|pt ] at</div>
+<div id="L225"><a href="#L225">00225</a> [PDF p.4] every timestep t. We observe an empirical sample of the future gt = [xt , . . . , xt+k ] at each timestep</div>
+<div id="L226"><a href="#L226">00226</a> [PDF p.4] by looking into the future in the training dataset or by waiting for streaming future observations.</div>
+<div id="L227"><a href="#L227">00227</a> [PDF p.4] Whereas [45] primarily studied algorithms for minimizing the predictive-state loss, we adapt it to</div>
+<div id="L228"><a href="#L228">00228</a> [PDF p.4] augment general recurrent models such as LSTMs and for a wider variety of applications such as</div>
+<div id="L229"><a href="#L229">00229</a> [PDF p.4] imitation and reinforcement learning.</div>
+<div id="L230"><a href="#L230">00230</a> [PDF p.4] </div>
+<div id="L231"><a href="#L231">00231</a> [PDF p.4] </div>
+<div id="L232"><a href="#L232">00232</a> [PDF p.4]                                                       4</div>
+<div id="L233"><a href="#L233">00233</a> [PDF p.4] </div>
+<div id="L234"><a href="#L234">00234</a> [PDF p.5] Figure 3: Predictive-State Decoders Architecture. We augment the RNN from Fig. 2 with an</div>
+<div id="L235"><a href="#L235">00235</a> [PDF p.5] additional objective function R which targets decoding of the internal state through F at each time</div>
+<div id="L236"><a href="#L236">00236</a> [PDF p.5] step to the predictive-state which is represented as statistics over the future observations.</div>
+<div id="L237"><a href="#L237">00237</a> [PDF p.5] </div>
+<div id="L238"><a href="#L238">00238</a> [PDF p.5] </div>
+<div id="L239"><a href="#L239">00239</a> [PDF p.5] </div>
+<div id="L240"><a href="#L240">00240</a> [PDF p.5] 3   Predictive-State Decoders</div>
+<div id="L241"><a href="#L241">00241</a> [PDF p.5] </div>
+<div id="L242"><a href="#L242">00242</a> [PDF p.5] Our P REDICTIVE -S TATE D ECODERS architecture extends the Predictive-State Representation idea</div>
+<div id="L243"><a href="#L243">00243</a> [PDF p.5] to general recurrent architectures. We hypothesize that by encouraging the internal states to encode</div>
+<div id="L244"><a href="#L244">00244</a> [PDF p.5] information sufficient for reconstructing the predictive state, the resulting internal states better capture</div>
+<div id="L245"><a href="#L245">00245</a> [PDF p.5] the underlying dynamics and learning can be improved. The result is a simple-to-implement objective</div>
+<div id="L246"><a href="#L246">00246</a> [PDF p.5] function which is coupled with the existing RNN loss. To represent arbitrary sizes and values of</div>
+<div id="L247"><a href="#L247">00247</a> [PDF p.5] PSRs with a fixed-size internal state in the recurrent network, we attach a decoding module F (·) to</div>
+<div id="L248"><a href="#L248">00248</a> [PDF p.5] the internal states to produce the resulting PSR estimates. Figure 3 illustrates our approach.</div>
+<div id="L249"><a href="#L249">00249</a> [PDF p.5] Our P SD objective R is the predictive-state loss:</div>
+<div id="L250"><a href="#L250">00250</a> [PDF p.5]                        X                                         2</div>
+<div id="L251"><a href="#L251">00251</a> [PDF p.5]                  R=          kF (ht ) − φ([xt+1 , xt+2 , . . .])k2 ,   ht = f (ht−1 , xt−1 ),           (4)</div>
+<div id="L252"><a href="#L252">00252</a> [PDF p.5]                          t</div>
+<div id="L253"><a href="#L253">00253</a> [PDF p.5] </div>
+<div id="L254"><a href="#L254">00254</a> [PDF p.5] </div>
+<div id="L255"><a href="#L255">00255</a> [PDF p.5] where F is a decoder that maps from the internal state ht to an empirical sample of the predictive-</div>
+<div id="L256"><a href="#L256">00256</a> [PDF p.5] state, computed from a sequence of observed future observations available at training. The network</div>
+<div id="L257"><a href="#L257">00257</a> [PDF p.5] is optimized by minimizing the weighted total loss function L + λR where λ is the weighting on</div>
+<div id="L258"><a href="#L258">00258</a> [PDF p.5] the predictive-state objective R. This penalty encourages the internal states to encode information</div>
+<div id="L259"><a href="#L259">00259</a> [PDF p.5] sufficient for directly predicting sufficient future observations. Unlike more standard regularization</div>
+<div id="L260"><a href="#L260">00260</a> [PDF p.5] techniques, R does not regularize the parameters of the network but instead regularizes the output</div>
+<div id="L261"><a href="#L261">00261</a> [PDF p.5] variables, the internal states predicted by the network.</div>
+<div id="L262"><a href="#L262">00262</a> [PDF p.5] Our method may be interpreted as an instance of Multi-Task Learning (MTL) [13]. MTL has found</div>
+<div id="L263"><a href="#L263">00263</a> [PDF p.5] use in recent deep neural networks [5, 27, 30]. The idea of MTL is to employ a shared representation</div>
+<div id="L264"><a href="#L264">00264</a> [PDF p.5] to perform complementary or similar tasks. When the learner exhibits good performance on one</div>
+<div id="L265"><a href="#L265">00265</a> [PDF p.5] task, some of its understanding can be transferred to a related task. In our case, forcing RNNs to be</div>
+<div id="L266"><a href="#L266">00266</a> [PDF p.5] able to more explicitly reason about the future they will encounter is an intuitive and general method.</div>
+<div id="L267"><a href="#L267">00267</a> [PDF p.5] Endowing RNNs with a theoretically-motivated representation of the future better enables them</div>
+<div id="L268"><a href="#L268">00268</a> [PDF p.5] to serve their purpose of making sequential predictions, resulting in more effective learning. This</div>
+<div id="L269"><a href="#L269">00269</a> [PDF p.5] difference is pronounced in applications such as imitation and reinforcement learning (Sections 4.2</div>
+<div id="L270"><a href="#L270">00270</a> [PDF p.5] and 4.3) where the primary objective is to find a control policy to maximize accumulated future</div>
+<div id="L271"><a href="#L271">00271</a> [PDF p.5] reward while receiving only observations from the system. MTL with P SDs supervises the network</div>
+<div id="L272"><a href="#L272">00272</a> [PDF p.5] to predict the future and implicitly the consequences of the learned policy. Finally, our P SD objective</div>
+<div id="L273"><a href="#L273">00273</a> [PDF p.5] can be considered an instance of self-supervision [27] as it uses the inputs to the learner to form a</div>
+<div id="L274"><a href="#L274">00274</a> [PDF p.5] secondary unsupervised objective.</div>
+<div id="L275"><a href="#L275">00275</a> [PDF p.5] As discussed in Section 2.1, the purpose of the internal state in recurrent network models (RNNs,</div>
+<div id="L276"><a href="#L276">00276</a> [PDF p.5] LSTMs, deep, or otherwise) is to capture a quantity similar to that of state. Ideally, the learner</div>
+<div id="L277"><a href="#L277">00277</a> [PDF p.5] would be able to back-propagate through the primary objective function L and discover the best</div>
+<div id="L278"><a href="#L278">00278</a> [PDF p.5] representation of the latent state of the system towards minimizing the objective. However, as this</div>
+<div id="L279"><a href="#L279">00279</a> [PDF p.5] problem highly non-convex, BPTT often yields a locally-optimal solution in a basin determined by</div>
+<div id="L280"><a href="#L280">00280</a> [PDF p.5] the initialization of the parameters and the dataset. By introducing R, the space of feasible models is</div>
+<div id="L281"><a href="#L281">00281</a> [PDF p.5] reduced. We observe next how this objective leads our method to find better models.</div>
+<div id="L282"><a href="#L282">00282</a> [PDF p.5] </div>
+<div id="L283"><a href="#L283">00283</a> [PDF p.5]                                                        5</div>
+<div id="L284"><a href="#L284">00284</a> [PDF p.5] </div>
+<div id="L285"><a href="#L285">00285</a> [PDF p.6]                               Pendulum GRU Network                                                     Helicopter GRU Network                                                   Hopper GRU Network</div>
+<div id="L286"><a href="#L286">00286</a> [PDF p.6]                                                     Baseline                                                                 Baseline                                                                Baseline</div>
+<div id="L287"><a href="#L287">00287</a> [PDF p.6]                                                     k = 2, λ = 1.0                                                           k = 2, λ = 1.0                                                          k = 2, λ = 1.0</div>
+<div id="L288"><a href="#L288">00288</a> [PDF p.6]                                                                                                                                                                   6 × 101</div>
+<div id="L289"><a href="#L289">00289</a> [PDF p.6]                     101</div>
+<div id="L290"><a href="#L290">00290</a> [PDF p.6] </div>
+<div id="L291"><a href="#L291">00291</a> [PDF p.6] </div>
+<div id="L292"><a href="#L292">00292</a> [PDF p.6]  Observation Loss</div>
+<div id="L293"><a href="#L293">00293</a> [PDF p.6] </div>
+<div id="L294"><a href="#L294">00294</a> [PDF p.6] </div>
+<div id="L295"><a href="#L295">00295</a> [PDF p.6] </div>
+<div id="L296"><a href="#L296">00296</a> [PDF p.6] </div>
+<div id="L297"><a href="#L297">00297</a> [PDF p.6]                                                                       Observation Loss</div>
+<div id="L298"><a href="#L298">00298</a> [PDF p.6] </div>
+<div id="L299"><a href="#L299">00299</a> [PDF p.6] </div>
+<div id="L300"><a href="#L300">00300</a> [PDF p.6] </div>
+<div id="L301"><a href="#L301">00301</a> [PDF p.6] </div>
+<div id="L302"><a href="#L302">00302</a> [PDF p.6]                                                                                                                                                Observation Loss</div>
+<div id="L303"><a href="#L303">00303</a> [PDF p.6]                                                     k = 2, λ = 10.0                                                          k = 2, λ = 10.0                                                         k = 5, λ = 5.0</div>
+<div id="L304"><a href="#L304">00304</a> [PDF p.6]                                                     k = 5, λ = 1.0                                                           k = 5, λ = 1.0                                                          k = 5, λ = 10.0</div>
+<div id="L305"><a href="#L305">00305</a> [PDF p.6]                                                     k = 5, λ = 10.0                                                          k = 5, λ = 10.0                      4 × 101                            k = 10, λ = 5.0</div>
+<div id="L306"><a href="#L306">00306</a> [PDF p.6]                                                                                             101</div>
+<div id="L307"><a href="#L307">00307</a> [PDF p.6]                     100</div>
+<div id="L308"><a href="#L308">00308</a> [PDF p.6]                                                                                                                                                                   3 × 101</div>
+<div id="L309"><a href="#L309">00309</a> [PDF p.6]                                                                                          9 × 100</div>
+<div id="L310"><a href="#L310">00310</a> [PDF p.6] </div>
+<div id="L311"><a href="#L311">00311</a> [PDF p.6] </div>
+<div id="L312"><a href="#L312">00312</a> [PDF p.6]                                                                                          8 × 100</div>
+<div id="L313"><a href="#L313">00313</a> [PDF p.6]                                                                                                                                                                   2 × 101</div>
+<div id="L314"><a href="#L314">00314</a> [PDF p.6]                           0    100   200      300      400      500                                0    100   200      300      400      500                                0   100   200      300      400      500</div>
+<div id="L315"><a href="#L315">00315</a> [PDF p.6]                                        Iteration                                                                Iteration                                                               Iteration</div>
+<div id="L316"><a href="#L316">00316</a> [PDF p.6]                               Pendulum LSTM Network                                                    Helicopter LSTM Network                                                  Hopper LSTM Network</div>
+<div id="L317"><a href="#L317">00317</a> [PDF p.6]                                                     Baseline                                                                 Baseline                                                            Baseline</div>
+<div id="L318"><a href="#L318">00318</a> [PDF p.6]                                                     k = 2, λ = 1.0                                                           k = 2, λ = 1.0                       6 × 101</div>
+<div id="L319"><a href="#L319">00319</a> [PDF p.6]                     101                                                                                                                                                                          k = 2, λ = 10.0</div>
+<div id="L320"><a href="#L320">00320</a> [PDF p.6]  Observation Loss</div>
+<div id="L321"><a href="#L321">00321</a> [PDF p.6] </div>
+<div id="L322"><a href="#L322">00322</a> [PDF p.6] </div>
+<div id="L323"><a href="#L323">00323</a> [PDF p.6] </div>
+<div id="L324"><a href="#L324">00324</a> [PDF p.6] </div>
+<div id="L325"><a href="#L325">00325</a> [PDF p.6]                                                                       Observation Loss</div>
+<div id="L326"><a href="#L326">00326</a> [PDF p.6] </div>
+<div id="L327"><a href="#L327">00327</a> [PDF p.6] </div>
+<div id="L328"><a href="#L328">00328</a> [PDF p.6] </div>
+<div id="L329"><a href="#L329">00329</a> [PDF p.6] </div>
+<div id="L330"><a href="#L330">00330</a> [PDF p.6]                                                                                                                                                Observation Loss</div>
+<div id="L331"><a href="#L331">00331</a> [PDF p.6]                                                     k = 2, λ = 10.0                                                          k = 2, λ = 10.0                                                     k = 5, λ = 0.5</div>
+<div id="L332"><a href="#L332">00332</a> [PDF p.6]                                                     k = 5, λ = 1.0                                                           k = 5, λ = 1.0                                                      k = 5, λ = 10.0</div>
+<div id="L333"><a href="#L333">00333</a> [PDF p.6]                                                     k = 5, λ = 10.0                                                          k = 5, λ = 10.0                      4 × 101</div>
+<div id="L334"><a href="#L334">00334</a> [PDF p.6]                                                                                                                                                                                                  k = 10, λ = 10.0</div>
+<div id="L335"><a href="#L335">00335</a> [PDF p.6] </div>
+<div id="L336"><a href="#L336">00336</a> [PDF p.6]                                                                                             101                                                                   3 × 101</div>
+<div id="L337"><a href="#L337">00337</a> [PDF p.6]                     100</div>
+<div id="L338"><a href="#L338">00338</a> [PDF p.6] </div>
+<div id="L339"><a href="#L339">00339</a> [PDF p.6] </div>
+<div id="L340"><a href="#L340">00340</a> [PDF p.6]                                                                                          9 × 100                                                                  2 × 101</div>
+<div id="L341"><a href="#L341">00341</a> [PDF p.6]                           0    100   200      300      400      500                                0    100   200      300      400      500                                0   100   200      300      400      500</div>
+<div id="L342"><a href="#L342">00342</a> [PDF p.6]                                        Iteration                                                                Iteration                                                               Iteration</div>
+<div id="L343"><a href="#L343">00343</a> [PDF p.6] </div>
+<div id="L344"><a href="#L344">00344</a> [PDF p.6]                                 (a) Pendulum                                                            (b) Helicopter                                                            (c) Hopper</div>
+<div id="L345"><a href="#L345">00345</a> [PDF p.6] Figure 4: Loss over predicting future observations during filtering. For both RNNs with GRU cells</div>
+<div id="L346"><a href="#L346">00346</a> [PDF p.6] (top) and with with LSTM cells (bottom), adding P SDs to the RNN networks can often improve</div>
+<div id="L347"><a href="#L347">00347</a> [PDF p.6] performance and convergence rate.</div>
+<div id="L348"><a href="#L348">00348</a> [PDF p.6] </div>
+<div id="L349"><a href="#L349">00349</a> [PDF p.6] </div>
+<div id="L350"><a href="#L350">00350</a> [PDF p.6] 4                     Experiments</div>
+<div id="L351"><a href="#L351">00351</a> [PDF p.6] We present results on problems of increasing complexity for recurrent models: probabilistic filtering,</div>
+<div id="L352"><a href="#L352">00352</a> [PDF p.6] Imitation Learning (IL), and Reinforcement Learning (RL). The first is easiest, as the goal is to predict</div>
+<div id="L353"><a href="#L353">00353</a> [PDF p.6] the next future observation given the current observation and internal state. For imitation learning, the</div>
+<div id="L354"><a href="#L354">00354</a> [PDF p.6] recurrent model is given training-time expert guidance with the goal of choosing actions to maximize</div>
+<div id="L355"><a href="#L355">00355</a> [PDF p.6] the sequence of future rewards. Finally, we analyze the challenging domain of reinforcement learning,</div>
+<div id="L356"><a href="#L356">00356</a> [PDF p.6] where the goal is the same as imitation learning but expert guidance is unavailable.</div>
+<div id="L357"><a href="#L357">00357</a> [PDF p.6] P REDICTIVE -S TATE D ECODERS require two hyperparameters: k, the number of observations to</div>
+<div id="L358"><a href="#L358">00358</a> [PDF p.6] characterize the predictive state and λ, the regularization trade-off factor. In most cases, we primarily</div>
+<div id="L359"><a href="#L359">00359</a> [PDF p.6] tune λ, and set k to one of {2, . . . , 10}. For each domain, for each k, there were λ values for which</div>
+<div id="L360"><a href="#L360">00360</a> [PDF p.6] the performance was worse than the baseline. However, for many sets of hyperparameters, the</div>
+<div id="L361"><a href="#L361">00361</a> [PDF p.6] performance exceeded the baselines. Most notably, for many experiments, the convergence rate was</div>
+<div id="L362"><a href="#L362">00362</a> [PDF p.6] significantly better using P SDs, implying that P SDs allows for more efficient data utilization for</div>
+<div id="L363"><a href="#L363">00363</a> [PDF p.6] learning recurrent models.</div>
+<div id="L364"><a href="#L364">00364</a> [PDF p.6] P SDs also require a specification of two other parameters in the architecture: the featurization function</div>
+<div id="L365"><a href="#L365">00365</a> [PDF p.6] φ and decoding module F . For simplicity, we use an affine function as the decoder F in Eq. (4). The</div>
+<div id="L366"><a href="#L366">00366</a> [PDF p.6] results presented below use an identity featurization φ for the presented results but include a short</div>
+<div id="L367"><a href="#L367">00367</a> [PDF p.6] discussion of second order featurization. We find that in each domain, we are able to improve the</div>
+<div id="L368"><a href="#L368">00368</a> [PDF p.6] performance of the state-of-the-art baselines. We observe improvements with both GRU and LSTM</div>
+<div id="L369"><a href="#L369">00369</a> [PDF p.6] cells across a range of k and λ. In IL with P SDs, we come significantly closer and occasionally</div>
+<div id="L370"><a href="#L370">00370</a> [PDF p.6] eclipse the expert’s performance, whereas the baselines never do. In our RL experiments, our method</div>
+<div id="L371"><a href="#L371">00371</a> [PDF p.6] achieves statistically significant improvements over the state-of-the-art approach of [18, 41] on the 5</div>
+<div id="L372"><a href="#L372">00372</a> [PDF p.6] different settings we tested.</div>
+<div id="L373"><a href="#L373">00373</a> [PDF p.6] </div>
+<div id="L374"><a href="#L374">00374</a> [PDF p.6] 4.1                       Probabilistic Filtering</div>
+<div id="L375"><a href="#L375">00375</a> [PDF p.6] </div>
+<div id="L376"><a href="#L376">00376</a> [PDF p.6] In the probabilistic filtering problem, the goal is to predict the future from the current internal state.</div>
+<div id="L377"><a href="#L377">00377</a> [PDF p.6] Recurrent models for filtering use a multi-step objective function that maximizes the likelihood of the</div>
+<div id="L378"><a href="#L378">00378</a> [PDF p.6] future observations over the internal states and dynamics model f ’s parameters. Under a Gaussian</div>
+<div id="L379"><a href="#L379">00379</a> [PDF p.6] assumption (e.g. like a Kalman filter [22]), the equivalent objective that minimizes the negative</div>
+<div id="L380"><a href="#L380">00380</a> [PDF p.6]                                  P                        2</div>
+<div id="L381"><a href="#L381">00381</a> [PDF p.6] log-likelihood is given as L = t kxt+1 − f (xt , ht )k .</div>
+<div id="L382"><a href="#L382">00382</a> [PDF p.6] While traditional methods would explicitly solve for parametric internal states ht using an EM</div>
+<div id="L383"><a href="#L383">00383</a> [PDF p.6] style approach, we use BPTT to implicitly find an non-parametric internal state. We optimize the</div>
+<div id="L384"><a href="#L384">00384</a> [PDF p.6] </div>
+<div id="L385"><a href="#L385">00385</a> [PDF p.6] </div>
+<div id="L386"><a href="#L386">00386</a> [PDF p.6]                                                                                                                6</div>
+<div id="L387"><a href="#L387">00387</a> [PDF p.6] </div>
+<div id="L388"><a href="#L388">00388</a> [PDF p.7] Figure 5: Cumulative rewards for AggreVaTeD and AggreVaTeD+P REDICTIVE -S TATE D ECODERS</div>
+<div id="L389"><a href="#L389">00389</a> [PDF p.7] on partially observable Acrobot and CartPole with both LSTM cells and GRU cells averaged over 15</div>
+<div id="L390"><a href="#L390">00390</a> [PDF p.7] runs with different random seeds.</div>
+<div id="L391"><a href="#L391">00391</a> [PDF p.7] </div>
+<div id="L392"><a href="#L392">00392</a> [PDF p.7]                                                      TRPO        TRPO+PSD</div>
+<div id="L393"><a href="#L393">00393</a> [PDF p.7] </div>
+<div id="L394"><a href="#L394">00394</a> [PDF p.7] </div>
+<div id="L395"><a href="#L395">00395</a> [PDF p.7] </div>
+<div id="L396"><a href="#L396">00396</a> [PDF p.7] </div>
+<div id="L397"><a href="#L397">00397</a> [PDF p.7] Figure 6: Walker Cumulative Rewards and Sorted Percentiles. N = 15, 5e4 TRPO steps per iteration.</div>
+<div id="L398"><a href="#L398">00398</a> [PDF p.7] </div>
+<div id="L399"><a href="#L399">00399</a> [PDF p.7] end-to-end filtering performance through the P SD joint objective minf,F L + λR. Our experimental</div>
+<div id="L400"><a href="#L400">00400</a> [PDF p.7] results are shown in Fig. 4. The experiments were run with φ as the identity, capturing statistics</div>
+<div id="L401"><a href="#L401">00401</a> [PDF p.7] representing the first moment. We tested φ as second-order statistics and found while the performance</div>
+<div id="L402"><a href="#L402">00402</a> [PDF p.7] improved over the baseline, it was outperformed by the first moment. In all environments, a dataset</div>
+<div id="L403"><a href="#L403">00403</a> [PDF p.7] was collected using a preset control policy. In the Pendulum experiments, we predict the pendulum’s</div>
+<div id="L404"><a href="#L404">00404</a> [PDF p.7] angle θ. The LQR controlled Helicopter experiments [3] use a noisy state as the observation, and</div>
+<div id="L405"><a href="#L405">00405</a> [PDF p.7] the Hopper dataset was generated using the OpenAI simulation [12] with robust policy optimization</div>
+<div id="L406"><a href="#L406">00406</a> [PDF p.7] algorithm [36] as the controller.</div>
+<div id="L407"><a href="#L407">00407</a> [PDF p.7] We test each environment with Tensorflow’s built-in GRU and LSTM cells [1]. We sweep over</div>
+<div id="L408"><a href="#L408">00408</a> [PDF p.7] various k and λ hyperparameters and present the average results and standard deviations from runs</div>
+<div id="L409"><a href="#L409">00409</a> [PDF p.7] with different random seeds. Fig. 4 baselines are recurrent models equivalent to P SDs with λ = 0.</div>
+<div id="L410"><a href="#L410">00410</a> [PDF p.7] </div>
+<div id="L411"><a href="#L411">00411</a> [PDF p.7] 4.2        Imitation Learning</div>
+<div id="L412"><a href="#L412">00412</a> [PDF p.7] </div>
+<div id="L413"><a href="#L413">00413</a> [PDF p.7] We experiment with the partially observable CartPole and Acrobot domains3 from OpenAI Gym [12].</div>
+<div id="L414"><a href="#L414">00414</a> [PDF p.7] We applied the method of AggreVaTeD [46], a policy-gradient method, to train our expert models.</div>
+<div id="L415"><a href="#L415">00415</a> [PDF p.7] AggreVaTeD uses access to a cost-to-go oracle in order to train a policy that is sensitive to the value</div>
+<div id="L416"><a href="#L416">00416</a> [PDF p.7] of the expert’s actions, providing an advantage over behavior cloning IL approaches. The experts</div>
+<div id="L417"><a href="#L417">00417</a> [PDF p.7] have access to the full state of the robots, unlike the learned recurrent policies.</div>
+<div id="L418"><a href="#L418">00418</a> [PDF p.7] We tune the parameters of LSTM and GRU agents (e.g., learning rate, number of internal units) and</div>
+<div id="L419"><a href="#L419">00419</a> [PDF p.7] afterwards only tune λ for P SDs. In Fig. 5, we observe that P SDs improve performance for both GRU-</div>
+<div id="L420"><a href="#L420">00420</a> [PDF p.7] and LSTM-based agents and increasing the predictive-state horizon k yields better results. Notably,</div>
+<div id="L421"><a href="#L421">00421</a> [PDF p.7] P SDs achieves 73% relative improvement over baseline LSTM and 42% over GRU on Cartpole.</div>
+<div id="L422"><a href="#L422">00422</a> [PDF p.7] Difference random seeds were used. The cumulative reward of the current best policy is shown.</div>
+<div id="L423"><a href="#L423">00423</a> [PDF p.7] </div>
+<div id="L424"><a href="#L424">00424</a> [PDF p.7] 4.3        Reinforcement Learning</div>
+<div id="L425"><a href="#L425">00425</a> [PDF p.7] </div>
+<div id="L426"><a href="#L426">00426</a> [PDF p.7] Reinforcement learning (RL) increases the problem complexity from imitation learning by removing</div>
+<div id="L427"><a href="#L427">00427</a> [PDF p.7] expert guidance. The latent state of the system is heavily influenced by the RL agent itself and</div>
+<div id="L428"><a href="#L428">00428</a> [PDF p.7] changes as the policy improves. We use [18]’s implementation of TRPO [41], a Natural Policy</div>
+<div id="L429"><a href="#L429">00429</a> [PDF p.7] Gradient method [28]. Although [41] defines a KL-constraint on policy parameters that affect actions,</div>
+<div id="L430"><a href="#L430">00430</a> [PDF p.7]       3</div>
+<div id="L431"><a href="#L431">00431</a> [PDF p.7]           The observation function only provides positional information (including joint angles), excluding velocities.</div>
+<div id="L432"><a href="#L432">00432</a> [PDF p.7] </div>
+<div id="L433"><a href="#L433">00433</a> [PDF p.7] </div>
+<div id="L434"><a href="#L434">00434</a> [PDF p.7]                                                              7</div>
+<div id="L435"><a href="#L435">00435</a> [PDF p.7] </div>
+<div id="L436"><a href="#L436">00436</a> [PDF p.8]                                            TRPO          TRPO+PSD</div>
+<div id="L437"><a href="#L437">00437</a> [PDF p.8] </div>
+<div id="L438"><a href="#L438">00438</a> [PDF p.8] </div>
+<div id="L439"><a href="#L439">00439</a> [PDF p.8] </div>
+<div id="L440"><a href="#L440">00440</a> [PDF p.8] </div>
+<div id="L441"><a href="#L441">00441</a> [PDF p.8]          (a) Swimmer, N=30              (b) HalfCheetah, N=30                 (c) Hopper, N=40</div>
+<div id="L442"><a href="#L442">00442</a> [PDF p.8] </div>
+<div id="L443"><a href="#L443">00443</a> [PDF p.8] Figure 7: Top: Per-iteration average returns for TRPO and TRPO+P REDICTIVE -S TATE D ECODERS</div>
+<div id="L444"><a href="#L444">00444</a> [PDF p.8] vs. batch iteration, with 5e3 steps per iteration. Bottom: Sorted per-run mean average returns (across</div>
+<div id="L445"><a href="#L445">00445</a> [PDF p.8] iterations). Our method generally produces better models.</div>
+<div id="L446"><a href="#L446">00446</a> [PDF p.8] </div>
+<div id="L447"><a href="#L447">00447</a> [PDF p.8] </div>
+<div id="L448"><a href="#L448">00448</a> [PDF p.8] </div>
+<div id="L449"><a href="#L449">00449</a> [PDF p.8] </div>
+<div id="L450"><a href="#L450">00450</a> [PDF p.8] Table 1: Top: Mean Average Returns ± one standard deviation, with N = 15 for Walker2d† and</div>
+<div id="L451"><a href="#L451">00451</a> [PDF p.8] N = 30 otherwise. Bottom: Relative improvement of on the means. ∗ indicates p &lt; 0.05 and</div>
+<div id="L452"><a href="#L452">00452</a> [PDF p.8] ∗∗</div>
+<div id="L453"><a href="#L453">00453</a> [PDF p.8]    indicates p &lt; 0.005 on Wilcoxon’s signed-rank test for significance of improvement. All runs</div>
+<div id="L454"><a href="#L454">00454</a> [PDF p.8] computed with 5e3 transitions per iteration, except Walker2d† , with 5e4.</div>
+<div id="L455"><a href="#L455">00455</a> [PDF p.8] </div>
+<div id="L456"><a href="#L456">00456</a> [PDF p.8]                       Swimmer         HalfCheetah       Hopper       Walker2d      Walker2d†</div>
+<div id="L457"><a href="#L457">00457</a> [PDF p.8] </div>
+<div id="L458"><a href="#L458">00458</a> [PDF p.8]          [41]         91.3 ± 25.5     330 ± 158         1103 ± 264   383 ± 96      1396 ± 396</div>
+<div id="L459"><a href="#L459">00459</a> [PDF p.8]          [41]+P SDs   97.0 ± 19.4     372 ± 143         1195 ± 272   416 ± 88      1611 ± 436</div>
+<div id="L460"><a href="#L460">00460</a> [PDF p.8] </div>
+<div id="L461"><a href="#L461">00461</a> [PDF p.8]          Rel. ∆       6.30%∗          13.0%∗            9.06%∗       8.59%∗        15.4%∗∗</div>
+<div id="L462"><a href="#L462">00462</a> [PDF p.8] </div>
+<div id="L463"><a href="#L463">00463</a> [PDF p.8] </div>
+<div id="L464"><a href="#L464">00464</a> [PDF p.8] </div>
+<div id="L465"><a href="#L465">00465</a> [PDF p.8] </div>
+<div id="L466"><a href="#L466">00466</a> [PDF p.8] our implementation of P SDs introduces parameters (those of the decoder) that are unaffected by the</div>
+<div id="L467"><a href="#L467">00467</a> [PDF p.8] constraint, as the decoder does not directly govern the agent’s actions.</div>
+<div id="L468"><a href="#L468">00468</a> [PDF p.8] In these experiments, results are highly stochastic due to both environment randomness and non-</div>
+<div id="L469"><a href="#L469">00469</a> [PDF p.8] deterministic parallelization of rllab [18]. We therefore repeat each experiment at least 15 times</div>
+<div id="L470"><a href="#L470">00470</a> [PDF p.8] with paired random seeds. We use   k = 2 for most experiments (k = 4 for Hopper), the identity</div>
+<div id="L471"><a href="#L471">00471</a> [PDF p.8] featurization for φ, and vary λ in 101 , 100 , . . . , 10−6 , and employ the LSTM cell and other default</div>
+<div id="L472"><a href="#L472">00472</a> [PDF p.8] parameters of TRPO. We report the same metric as [18]: per-TRPO batch average return. Addition-</div>
+<div id="L473"><a href="#L473">00473</a> [PDF p.8] ally, we report per-run performance by plotting the sorted average TRPO batch returns (each item is a</div>
+<div id="L474"><a href="#L474">00474</a> [PDF p.8] number representing a method’s performance for a single seed).</div>
+<div id="L475"><a href="#L475">00475</a> [PDF p.8] Figs. 6 and 7 demonstrate that our method generally produces higher-quality results than the baseline.</div>
+<div id="L476"><a href="#L476">00476</a> [PDF p.8] These results are further summarized by their means and stds. in Table 1. In Figure 6, 40% of our</div>
+<div id="L477"><a href="#L477">00477</a> [PDF p.8] method’s models are better than the best baseline model. In Figure 7c, 25% of our method’s models</div>
+<div id="L478"><a href="#L478">00478</a> [PDF p.8] are better than the second-best (98th percentile) baseline model. We compare various RNN cells in</div>
+<div id="L479"><a href="#L479">00479</a> [PDF p.8] Table 2, and find our method can improve Basic (linear + tanh nonlinearity), GRU, and LSTM RNNs,</div>
+<div id="L480"><a href="#L480">00480</a> [PDF p.8] and usually reduces the performance variance. We used Tensorflow [1] and passed both the “hidden&quot;</div>
+<div id="L481"><a href="#L481">00481</a> [PDF p.8] and “cell&quot; components of an LSTM’s internal state to the decoder. We also conducted preliminary</div>
+<div id="L482"><a href="#L482">00482</a> [PDF p.8] additional experiments with second order featurization (φ(x) = [x, vec(xxT )]). Corresponding</div>
+<div id="L483"><a href="#L483">00483</a> [PDF p.8] to Tab. 2, column 1 for the inverted pendulum, second order features yielded 861 ± 41, a 4.9%</div>
+<div id="L484"><a href="#L484">00484</a> [PDF p.8] improvement in the mean and a large reduction in variance.</div>
+<div id="L485"><a href="#L485">00485</a> [PDF p.8] </div>
+<div id="L486"><a href="#L486">00486</a> [PDF p.8]                                                     8</div>
+<div id="L487"><a href="#L487">00487</a> [PDF p.8] </div>
+<div id="L488"><a href="#L488">00488</a> [PDF p.9] Table 2: Variations of RNN units. Mean Average Returns ± one standard deviation, with N = 20.</div>
+<div id="L489"><a href="#L489">00489</a> [PDF p.9] 1e3 transitions per iteration are used. Our method can improve each recurrent unit we tested.</div>
+<div id="L490"><a href="#L490">00490</a> [PDF p.9]                            InvertedPendulum                                  Swimmer</div>
+<div id="L491"><a href="#L491">00491</a> [PDF p.9]                Basic          GRU             LSTM         Basic            GRU             LSTM</div>
+<div id="L492"><a href="#L492">00492</a> [PDF p.9]  [41]          820 ± 139      673 ± 268       640 ± 265    66.0 ± 21.4      64.6 ± 55.3     56.5 ± 23.8</div>
+<div id="L493"><a href="#L493">00493</a> [PDF p.9]  [41]+P SDs    820 ± 118      782 ± 183       784 ± 215    71.4 ± 26.9      75.1 ± 28.8     61.0 ± 23.8</div>
+<div id="L494"><a href="#L494">00494</a> [PDF p.9]  Rel. ∆        −0.08%         20.4%           22.6%        8.21%            16.1%           7.94%</div>
+<div id="L495"><a href="#L495">00495</a> [PDF p.9] </div>
+<div id="L496"><a href="#L496">00496</a> [PDF p.9] </div>
+<div id="L497"><a href="#L497">00497</a> [PDF p.9] 5   Conclusion</div>
+<div id="L498"><a href="#L498">00498</a> [PDF p.9] We introduced a theoretically-motivated method for improving the training of RNNs. Our method</div>
+<div id="L499"><a href="#L499">00499</a> [PDF p.9] stems from previous literature that assigns statistical meaning to a learner’s internal state for modelling</div>
+<div id="L500"><a href="#L500">00500</a> [PDF p.9] latent state of the data-generating processes. Our approach uses the objective in PSIMs and applies it to</div>
+<div id="L501"><a href="#L501">00501</a> [PDF p.9] more complicated recurrent models such as LSTMs and GRUs and to objectives beyond probabilistic</div>
+<div id="L502"><a href="#L502">00502</a> [PDF p.9] filtering such as imitation and reinforcement learning. We show that our straightforward method</div>
+<div id="L503"><a href="#L503">00503</a> [PDF p.9] improves performance across all domains with which we experimented.</div>
+<div id="L504"><a href="#L504">00504</a> [PDF p.9] </div>
+<div id="L505"><a href="#L505">00505</a> [PDF p.9] Acknowledgements</div>
+<div id="L506"><a href="#L506">00506</a> [PDF p.9] This material is based upon work supported in part by: Office of Naval Research (ONR) contract</div>
+<div id="L507"><a href="#L507">00507</a> [PDF p.9] N000141512365, and National Science Foundation NRI award number 1637758.</div>
+<div id="L508"><a href="#L508">00508</a> [PDF p.9] </div>
+<div id="L509"><a href="#L509">00509</a> [PDF p.9] References</div>
+<div id="L510"><a href="#L510">00510</a> [PDF p.9]  [1] Martín Abadi, Ashish Agarwal, Paul Barham, Eugene Brevdo, Zhifeng Chen, Craig Citro,</div>
+<div id="L511"><a href="#L511">00511</a> [PDF p.9]      Greg S Corrado, Andy Davis, Jeffrey Dean, Matthieu Devin, et al. Tensorflow: Large-scale</div>
+<div id="L512"><a href="#L512">00512</a> [PDF p.9]      machine learning on heterogeneous distributed systems. arXiv preprint arXiv:1603.04467,</div>
+<div id="L513"><a href="#L513">00513</a> [PDF p.9]      2016.</div>
+<div id="L514"><a href="#L514">00514</a> [PDF p.9]  [2] Pieter Abbeel and Andrew Y Ng. Learning first-order markov models for control. In NIPS,</div>
+<div id="L515"><a href="#L515">00515</a> [PDF p.9]      pages 1–8, 2005.</div>
+<div id="L516"><a href="#L516">00516</a> [PDF p.9]  [3] Pieter Abbeel and Andrew Y Ng. Exploration and apprenticeship learning in reinforcement</div>
+<div id="L517"><a href="#L517">00517</a> [PDF p.9]      learning. In ICML, pages 1–8. ACM, 2005.</div>
+<div id="L518"><a href="#L518">00518</a> [PDF p.9]  [4] Pieter Abbeel, Adam Coates, Michael Montemerlo, Andrew Y Ng, and Sebastian Thrun.</div>
+<div id="L519"><a href="#L519">00519</a> [PDF p.9]      Discriminative training of kalman filters. In Robotics: Science and Systems (RSS), 2005.</div>
+<div id="L520"><a href="#L520">00520</a> [PDF p.9]  [5] Pulkit Agrawal, Ashvin V Nair, Pieter Abbeel, Jitendra Malik, and Sergey Levine. Learning to</div>
+<div id="L521"><a href="#L521">00521</a> [PDF p.9]      poke by poking: Experiential learning of intuitive physics. In D. D. Lee, M. Sugiyama, U. V.</div>
+<div id="L522"><a href="#L522">00522</a> [PDF p.9]      Luxburg, I. Guyon, and R. Garnett, editors, Advances in Neural Information Processing Systems</div>
+<div id="L523"><a href="#L523">00523</a> [PDF p.9]      29, pages 5074–5082. Curran Associates, Inc., 2016.</div>
+<div id="L524"><a href="#L524">00524</a> [PDF p.9]  [6] Karl Johan Aström and Richard M Murray. Feedback systems: an introduction for scientists</div>
+<div id="L525"><a href="#L525">00525</a> [PDF p.9]      and engineers. Princeton university press, 2010.</div>
+<div id="L526"><a href="#L526">00526</a> [PDF p.9]  [7] Yoshua Bengio, Patrice Simard, and Paolo Frasconi. Learning long-term dependencies with</div>
+<div id="L527"><a href="#L527">00527</a> [PDF p.9]      gradient descent is difficult. Neural Networks, IEEE Transactions on, 5(2):157–166, 1994.</div>
+<div id="L528"><a href="#L528">00528</a> [PDF p.9]  [8] Byron Boots. Spectral Approaches to Learning Predictive Representations. PhD thesis, Carnegie</div>
+<div id="L529"><a href="#L529">00529</a> [PDF p.9]      Mellon University, December 2012.</div>
+<div id="L530"><a href="#L530">00530</a> [PDF p.9]  [9] Byron Boots, Sajid M Siddiqi, and Geoffrey J Gordon. Closing the learning-planning loop</div>
+<div id="L531"><a href="#L531">00531</a> [PDF p.9]      with predictive state representations. The International Journal of Robotics Research, 30(7):</div>
+<div id="L532"><a href="#L532">00532</a> [PDF p.9]      954–966, 2011.</div>
+<div id="L533"><a href="#L533">00533</a> [PDF p.9] [10] Byron Boots, Arthur Gretton, and Geoffrey J. Gordon. Hilbert space embeddings of predictive</div>
+<div id="L534"><a href="#L534">00534</a> [PDF p.9]      state representations. In UAI-2013, 2013.</div>
+<div id="L535"><a href="#L535">00535</a> [PDF p.9] [11] Roger J Bowden and Darrell A Turkington. Instrumental variables. Number 8. Cambridge</div>
+<div id="L536"><a href="#L536">00536</a> [PDF p.9]      University Press, 1990.</div>
+<div id="L537"><a href="#L537">00537</a> [PDF p.9] [12] Greg Brockman, Vicki Cheung, Ludwig Pettersson, Jonas Schneider, John Schulman, Jie Tang,</div>
+<div id="L538"><a href="#L538">00538</a> [PDF p.9]      and Wojciech Zaremba. Openai gym. arXiv preprint arXiv:1606.01540, 2016.</div>
+<div id="L539"><a href="#L539">00539</a> [PDF p.9] </div>
+<div id="L540"><a href="#L540">00540</a> [PDF p.9] </div>
+<div id="L541"><a href="#L541">00541</a> [PDF p.9]                                                       9</div>
+<div id="L542"><a href="#L542">00542</a> [PDF p.9] </div>
+<div id="L543"><a href="#L543">00543</a> [PDF p.10] [13] Rich Caruana. Multitask learning. In Learning to learn, pages 95–133. Springer, 1998.</div>
+<div id="L544"><a href="#L544">00544</a> [PDF p.10] [14] Kyunghyun Cho, Bart Van Merriënboer, Caglar Gulcehre, Dzmitry Bahdanau, Fethi Bougares,</div>
+<div id="L545"><a href="#L545">00545</a> [PDF p.10]      Holger Schwenk, and Yoshua Bengio. Learning phrase representations using rnn encoder-</div>
+<div id="L546"><a href="#L546">00546</a> [PDF p.10]      decoder for statistical machine translation. arXiv preprint arXiv:1406.1078, 2014.</div>
+<div id="L547"><a href="#L547">00547</a> [PDF p.10] [15] Junyoung Chung, Kyle Kastner, Laurent Dinh, Kratarth Goel, Aaron C Courville, and Yoshua</div>
+<div id="L548"><a href="#L548">00548</a> [PDF p.10]      Bengio. A recurrent latent variable model for sequential data. In Advances in neural information</div>
+<div id="L549"><a href="#L549">00549</a> [PDF p.10]      processing systems, pages 2980–2988, 2015.</div>
+<div id="L550"><a href="#L550">00550</a> [PDF p.10] [16] Adam Coates, Pieter Abbeel, and Andrew Y. Ng. Learning for control from multiple demonstra-</div>
+<div id="L551"><a href="#L551">00551</a> [PDF p.10]      tions. In ICML, pages 144–151, New York, NY, USA, 2008. ACM.</div>
+<div id="L552"><a href="#L552">00552</a> [PDF p.10] [17] Marc Peter Deisenroth, Marco F Huber, and Uwe D Hanebeck. Analytic moment-based gaussian</div>
+<div id="L553"><a href="#L553">00553</a> [PDF p.10]      process filtering. In International Conference on Machine Learning, pages 225–232. ACM,</div>
+<div id="L554"><a href="#L554">00554</a> [PDF p.10]      2009.</div>
+<div id="L555"><a href="#L555">00555</a> [PDF p.10] [18] Yan Duan, Xi Chen, Rein Houthooft, John Schulman, and Pieter Abbeel. Benchmarking</div>
+<div id="L556"><a href="#L556">00556</a> [PDF p.10]      deep reinforcement learning for continuous control. In Proceedings of the 33rd International</div>
+<div id="L557"><a href="#L557">00557</a> [PDF p.10]      Conference on Machine Learning (ICML), 2016.</div>
+<div id="L558"><a href="#L558">00558</a> [PDF p.10] [19] Zoubin Ghahramani and Sam T Roweis. Learning nonlinear dynamical systems using an EM</div>
+<div id="L559"><a href="#L559">00559</a> [PDF p.10]      algorithm. pages 431—-437, 1999.</div>
+<div id="L560"><a href="#L560">00560</a> [PDF p.10] [20] Alex Graves and Navdeep Jaitly. Towards end-to-end speech recognition with recurrent neural</div>
+<div id="L561"><a href="#L561">00561</a> [PDF p.10]      networks. In ICML, volume 14, pages 1764–1772, 2014.</div>
+<div id="L562"><a href="#L562">00562</a> [PDF p.10] [21] Klaus Greff, Rupesh K Srivastava, Jan Koutník, Bas R Steunebrink, and Jürgen Schmidhuber.</div>
+<div id="L563"><a href="#L563">00563</a> [PDF p.10]      Lstm: A search space odyssey. IEEE transactions on neural networks and learning systems,</div>
+<div id="L564"><a href="#L564">00564</a> [PDF p.10]      2016.</div>
+<div id="L565"><a href="#L565">00565</a> [PDF p.10] [22] Tuomas Haarnoja, Anurag Ajay, Sergey Levine, and Pieter Abbeel. Backprop kf: Learning</div>
+<div id="L566"><a href="#L566">00566</a> [PDF p.10]      discriminative deterministic state estimators. NIPS, 2016.</div>
+<div id="L567"><a href="#L567">00567</a> [PDF p.10] [23] Matthew Hausknecht and Peter Stone. Deep recurrent q-learning for partially observable mdps.</div>
+<div id="L568"><a href="#L568">00568</a> [PDF p.10]      arXiv preprint arXiv:1507.06527, 2015.</div>
+<div id="L569"><a href="#L569">00569</a> [PDF p.10] [24] Ahmed Hefny, Carlton Downey, and Geoffrey J Gordon. Supervised learning for dynamical</div>
+<div id="L570"><a href="#L570">00570</a> [PDF p.10]      system learning. In NIPS, 2015.</div>
+<div id="L571"><a href="#L571">00571</a> [PDF p.10] [25] Sepp Hochreiter and Jürgen Schmidhuber. Long short-term memory. Neural computation, 9(8):</div>
+<div id="L572"><a href="#L572">00572</a> [PDF p.10]      1735–1780, 1997.</div>
+<div id="L573"><a href="#L573">00573</a> [PDF p.10] [26] Daniel Hsu, Sham M. Kakade, and Tong Zhang. A spectral algorithm for learning hidden</div>
+<div id="L574"><a href="#L574">00574</a> [PDF p.10]      markov models. In COLT, 2009.</div>
+<div id="L575"><a href="#L575">00575</a> [PDF p.10] [27] Max Jaderberg, Volodymyr Mnih, Wojciech Marian Czarnecki, Tom Schaul, Joel Z. Leibo,</div>
+<div id="L576"><a href="#L576">00576</a> [PDF p.10]      David Silver, and Koray Kavukcuoglu. Reinforcement learning with unsupervised auxiliary</div>
+<div id="L577"><a href="#L577">00577</a> [PDF p.10]      tasks. CoRR, abs/1611.05397, 2016. URL http://arxiv.org/abs/1611.05397.</div>
+<div id="L578"><a href="#L578">00578</a> [PDF p.10] [28] Sham Kakade. A natural policy gradient. Advances in neural information processing systems,</div>
+<div id="L579"><a href="#L579">00579</a> [PDF p.10]      2:1531–1538, 2002.</div>
+<div id="L580"><a href="#L580">00580</a> [PDF p.10] [29] J Ko, D J Klein, D Fox, and D Haehnel. GP-UKF: Unscented kalman filters with Gaussian</div>
+<div id="L581"><a href="#L581">00581</a> [PDF p.10]      process prediction and observation models. pages 1901–1907, 2007.</div>
+<div id="L582"><a href="#L582">00582</a> [PDF p.10] [30] Iasonas Kokkinos. Ubernet: Training a ’universal’ convolutional neural network for low-, mid-,</div>
+<div id="L583"><a href="#L583">00583</a> [PDF p.10]      and high-level vision using diverse datasets and limited memory. CoRR, abs/1609.02132, 2016.</div>
+<div id="L584"><a href="#L584">00584</a> [PDF p.10] [31] John Langford, Ruslan Salakhutdinov, and Tong Zhang. Learning nonlinear dynamic models.</div>
+<div id="L585"><a href="#L585">00585</a> [PDF p.10]      In ICML, pages 593–600. ACM, 2009.</div>
+<div id="L586"><a href="#L586">00586</a> [PDF p.10] [32] Yann LeCun, Yoshua Bengio, and Geoffrey Hinton. Deep learning. Nature, 521:436–444, 2015.</div>
+<div id="L587"><a href="#L587">00587</a> [PDF p.10] [33] Sergey Levine, Chelsea Finn, Trevor Darrell, and Pieter Abbeel. End-to-end training of deep</div>
+<div id="L588"><a href="#L588">00588</a> [PDF p.10]      visuomotor policies. Journal of Machine Learning Research, 17(39):1–40, 2016.</div>
+<div id="L589"><a href="#L589">00589</a> [PDF p.10] [34] Peter Ondruska and Ingmar Posner. Deep tracking: Seeing beyond seeing using recurrent neural</div>
+<div id="L590"><a href="#L590">00590</a> [PDF p.10]      networks. In Thirtieth AAAI Conference on Artificial Intelligence, 2016.</div>
+<div id="L591"><a href="#L591">00591</a> [PDF p.10] [35] Razvan Pascanu, Tomas Mikolov, and Yoshua Bengio. On the difficulty of training recurrent</div>
+<div id="L592"><a href="#L592">00592</a> [PDF p.10]      neural networks. ICML, 28:1310–1318, 2013.</div>
+<div id="L593"><a href="#L593">00593</a> [PDF p.10] </div>
+<div id="L594"><a href="#L594">00594</a> [PDF p.10] </div>
+<div id="L595"><a href="#L595">00595</a> [PDF p.10]                                                  10</div>
+<div id="L596"><a href="#L596">00596</a> [PDF p.10] </div>
+<div id="L597"><a href="#L597">00597</a> [PDF p.11] [36] Lerrel Pinto, James Davidson, Rahul Sukthankar, and Abhinav Gupta. Robust adversarial</div>
+<div id="L598"><a href="#L598">00598</a> [PDF p.11]      reinforcement learning. arXiv preprint arXiv:1703.02702, 2017.</div>
+<div id="L599"><a href="#L599">00599</a> [PDF p.11] [37] Liva Ralaivola and Florence D’Alche-Buc. Dynamical modeling with kernels for nonlinear</div>
+<div id="L600"><a href="#L600">00600</a> [PDF p.11]      time series prediction. NIPS, 2004.</div>
+<div id="L601"><a href="#L601">00601</a> [PDF p.11] [38] Marc’Aurelio Ranzato, Sumit Chopra, Michael Auli, and Wojciech Zaremba. Sequence level</div>
+<div id="L602"><a href="#L602">00602</a> [PDF p.11]      training with recurrent neural networks. ICLR, 2016.</div>
+<div id="L603"><a href="#L603">00603</a> [PDF p.11] [39] Stéphane Ross, Geoffrey J Gordon, and J Andrew Bagnell. A reduction of imitation learning</div>
+<div id="L604"><a href="#L604">00604</a> [PDF p.11]      and structured prediction to no-regret online learning. AISTATS, 2011.</div>
+<div id="L605"><a href="#L605">00605</a> [PDF p.11] [40] Stephane Ross, Daniel Munoz, Martial Hebert, and J Andrew Bagnell. Learning message-</div>
+<div id="L606"><a href="#L606">00606</a> [PDF p.11]      passing inference machines for structured prediction. In CVPR. IEEE, 2011.</div>
+<div id="L607"><a href="#L607">00607</a> [PDF p.11] [41] John Schulman, Sergey Levine, Pieter Abbeel, Michael Jordan, and Philipp Moritz. Trust region</div>
+<div id="L608"><a href="#L608">00608</a> [PDF p.11]      policy optimization. In Proceedings of the 32nd International Conference on Machine Learning</div>
+<div id="L609"><a href="#L609">00609</a> [PDF p.11]      (ICML-15), pages 1889–1897, 2015.</div>
+<div id="L610"><a href="#L610">00610</a> [PDF p.11] [42] Satinder Singh, Michael R. James, and Matthew R. Rudary. Predictive state representations: A</div>
+<div id="L611"><a href="#L611">00611</a> [PDF p.11]      new theory for modeling dynamical systems. In UAI, 2004.</div>
+<div id="L612"><a href="#L612">00612</a> [PDF p.11] [43] Le Song, Byron Boots, Sajid M Siddiqi, Geoffrey J Gordon, and Alex J Smola. Hilbert space</div>
+<div id="L613"><a href="#L613">00613</a> [PDF p.11]      embeddings of hidden markov models. In ICML, pages 991–998, 2010.</div>
+<div id="L614"><a href="#L614">00614</a> [PDF p.11] [44] Wen Sun, Roberto Capobianco, Geoffrey J. Gordon, J. Andrew Bagnell, and Byron Boots.</div>
+<div id="L615"><a href="#L615">00615</a> [PDF p.11]      Learning to smooth with bidirectional predictive state inference machines. In Proceedings of</div>
+<div id="L616"><a href="#L616">00616</a> [PDF p.11]      The International Conference on Uncertainty in Artificial Intelligence (UAI), 2016.</div>
+<div id="L617"><a href="#L617">00617</a> [PDF p.11] [45] Wen Sun, Arun Venkatraman, Byron Boots, and J Andrew Bagnell. Learning to filter with</div>
+<div id="L618"><a href="#L618">00618</a> [PDF p.11]      predictive state inference machines. In Proceedings of The 33rd International Conference on</div>
+<div id="L619"><a href="#L619">00619</a> [PDF p.11]      Machine Learning, pages 1197–1205, 2016.</div>
+<div id="L620"><a href="#L620">00620</a> [PDF p.11] [46] Wen Sun, Arun Venkatraman, Geoffrey J Gordon, Byron Boots, and J Andrew Bagnell. Deeply</div>
+<div id="L621"><a href="#L621">00621</a> [PDF p.11]      aggrevated: Differentiable imitation learning for sequential prediction. 2017.</div>
+<div id="L622"><a href="#L622">00622</a> [PDF p.11] [47] Ilya Sutskever. Training recurrent neural networks. PhD thesis, University of Toronto, 2013.</div>
+<div id="L623"><a href="#L623">00623</a> [PDF p.11] [48] Ilya Sutskever, James Martens, and Geoffrey E Hinton. Generating text with recurrent neural</div>
+<div id="L624"><a href="#L624">00624</a> [PDF p.11]      networks. In Proceedings of the 28th International Conference on Machine Learning (ICML-11),</div>
+<div id="L625"><a href="#L625">00625</a> [PDF p.11]      pages 1017–1024, 2011.</div>
+<div id="L626"><a href="#L626">00626</a> [PDF p.11] [49] Sebastian Thrun, Wolfram Burgard, and Dieter Fox. Probabilistic robotics. MIT press, 2005.</div>
+<div id="L627"><a href="#L627">00627</a> [PDF p.11] [50] Aaron van den Oord, Nal Kalchbrenner, and Koray Kavukcuoglu. Pixel recurrent neural</div>
+<div id="L628"><a href="#L628">00628</a> [PDF p.11]      networks. arXiv preprint arXiv:1601.06759, 2016.</div>
+<div id="L629"><a href="#L629">00629</a> [PDF p.11] [51] Peter Van Overschee and BL De Moor. Subspace identification for linear systems: Theory-</div>
+<div id="L630"><a href="#L630">00630</a> [PDF p.11]      Implementation-Applications. Springer Science &amp; Business Media, 2012.</div>
+<div id="L631"><a href="#L631">00631</a> [PDF p.11] [52] William Vega-Brown and Nicholas Roy. Cello-em: Adaptive sensor models without ground</div>
+<div id="L632"><a href="#L632">00632</a> [PDF p.11]      truth. In 2013 IEEE/RSJ International Conference on Intelligent Robots and Systems, pages</div>
+<div id="L633"><a href="#L633">00633</a> [PDF p.11]      1907–1914. IEEE, 2013.</div>
+<div id="L634"><a href="#L634">00634</a> [PDF p.11] [53] Arun Venkatraman, Martial Hebert, and J Andrew Bagnell. Improving multi-step prediction of</div>
+<div id="L635"><a href="#L635">00635</a> [PDF p.11]      learned time series models. In AAAI, pages 3024–3030, 2015.</div>
+<div id="L636"><a href="#L636">00636</a> [PDF p.11] [54] Arun Venkatraman, Wen Sun, Martial Hebert , Byron Boots, and J. Andrew (Drew) Bagnell.</div>
+<div id="L637"><a href="#L637">00637</a> [PDF p.11]      Inference machines for nonparametric filter learning. In 25th International Joint Conference on</div>
+<div id="L638"><a href="#L638">00638</a> [PDF p.11]      Artificial Intelligence (IJCAI-16), July 2016.</div>
+<div id="L639"><a href="#L639">00639</a> [PDF p.11] [55] Paul J Werbos. Backpropagation through time: what it does and how to do it. Proceedings of</div>
+<div id="L640"><a href="#L640">00640</a> [PDF p.11]      the IEEE, 78(10):1550–1560, 1990.</div>
+<div id="L641"><a href="#L641">00641</a> [PDF p.11] [56] David Wingate and Satinder Singh. Kernel predictive linear gaussian models for nonlinear</div>
+<div id="L642"><a href="#L642">00642</a> [PDF p.11]      stochastic dynamical systems. In International Conference on Machine Learning, pages 1017–</div>
+<div id="L643"><a href="#L643">00643</a> [PDF p.11]      1024. ACM, 2006.</div>
+<div id="L644"><a href="#L644">00644</a> [PDF p.11] </div>
+<div id="L645"><a href="#L645">00645</a> [PDF p.11] </div>
+<div id="L646"><a href="#L646">00646</a> [PDF p.11] </div>
+<div id="L647"><a href="#L647">00647</a> [PDF p.11] </div>
+<div id="L648"><a href="#L648">00648</a> [PDF p.11]                                                 11</div>
+<div id="L649"><a href="#L649">00649</a> [PDF p.11] </div></pre>

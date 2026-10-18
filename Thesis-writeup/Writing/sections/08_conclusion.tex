@@ -1,26 +1,254 @@
-% Page budget: 0.45 pages | Owns: concise answer, supported contribution, limitations, and final takeaway.
+% Page budget: 0.45 pages (conclusion) + 0.90 pages (discussion, from 07) | Owns: interpretation of every result,
+%   limits of each claim, departures from the research plan, the answer to the research question.
 % WRITING GUIDE
-% Purpose: Give the shortest defensible answer to the research question and the practical recommendation that follows.
-% Start here: The final Discussion section and the headline quantitative results from Section 06.
-% Supporting material: Final comparison table and the latest scope decisions in docs/decisions.md.
-% Research-plan anchor: Answer the approved objective substantively without mechanically repeating every research-question label; distinguish achieved contributions from proposed outcomes.
-% Current decisions: State prediction benefit, added-state contribution, OBC guarantee, and black-box comparison only at the level supported by evidence.
-% Implementation audit: Confirm that every named contribution exists in the final code path and every conclusion points to a reported result.
-% Reference check: Normally introduce no new reference; reuse only verified sources already needed to identify the method or research context.
-% Cautions: Add no new method, citation, experiment, or future-work argument here.
-% Planned figures: None.
-% Section is finished when: It contains one direct answer, the central limitation, and one practical recommendation without repeating the discussion.
-\section{Conclusions and discussion}
+% Purpose: Explain the results that do not speak for themselves, state the limit of each claim, disclose the
+%   departures from the research plan, and answer the research question per aspect.
+% Start here: the frozen Results section (06) and the method sections it evaluates (03, 04).
+% Reference check: introduce no new reference; reuse only verified sources already cited in the method sections.
+% Cautions: no new results, runs or figures; every number from a float of 06, the appendix tables or
+%   Thesis-writeup/Results/18-10-2026/CSV; untested explanations stated as candidates; no LPV vs LTI as a research
+%   result; no predicted-bias comparison; no OBC network-overlap digit (R1 label mismatch).
+% Section is finished when: every discussion point is tied to a float and states its limit, and the conclusion
+%   answers each aspect and the research question in fewer words than the discussion.
+% MUST ESTABLISH (Dirk 2026-10-18; handoff tasks/handoffs/2026-10-18-discussion-conclusion.md)
+%   Form: one section "Discussion and Conclusion", discussion first, by aspect as numbered in the Introduction
+%   (1 structure and training, 2 OBC interpretability, 3 generalisation), then limits and departures, then a short
+%   conclusion in the same order. Results (06) is observational; explanations, limits and departures are here.
+%   Interpretability = unique estimate of the identifiable combinations, not true-parameter recovery.
+%   Style per paragraph: claim, evidence, limit, what would test it. Conclusion: one or two sentences per aspect,
+%   one sentence of the central limit, one recommendation.
+%   Checked 2026-10-18: the final runs build the encoder from data (D-271, logs thesis-results-4), so the old
+%   "encoder from true parameters" point is no limitation; the K1-rate point of 07 is a diagnostic only (D-265);
+%   the axis weighting point of 07 is resolved by W_r and NRMS_e selection (03, eq:aug_loss).
+\section{Discussion and Conclusion}\label{sec:conclusion}
+\ifdraft
+\begin{itemize}
+\item Discussion per aspect: explanation, limit and test of each result; then the limits and departures that bound all three (handoff 2026-10-18)
+\item Conclusion: the answer per aspect and to the research question, the central limit, one recommendation
+\end{itemize}
+\fi
+This section interprets the results of Section~\ref{sec:results} per aspect,
+states the limits of each claim and the departures from the research plan,
+and then answers the research question.
 
-\subsection{Conclusions}
-\begin{outline}
-\item Aspect 1: LPV scheduling lowers the error on $X$, increasingly away from $Y=0$
-\item Aspect 2: added states with PS initialisation learn the missing mode; plain training does not
-\item Aspect 3: OBC keeps the learned term out of the parameter directions; the parameters still drift
-\item Aspect 4: better than the black-box model on interpolation and extrapolation
-\item Black box currently doesnt perform well on test sets.
-\item Recommendation?
-\end{outline}
+\subsection{Augmentation structure}
+\ifdraft
+\begin{itemize}
+\item The gain with multisine is the absorber mode, carried by the network and the added states (Fig.~\ref{fig:res_frf}, Table~\ref{tab:res_obc}, Table~\ref{tab:app_structure})
+\item Added states and PS are both needed; shown on validation with one seed (Table~\ref{tab:app_structure})
+\item Without multisine the final model is slightly above the baseline; candidates only (Table~\ref{tab:res_structure}) (?)
+\end{itemize}
+\fi
+The gain on the records with multisine comes from the absorber mode.
+The final model has a resonance at 2.11 to 2.13\,$f_b$ over $Y$, against
+2.12\,$f_b$ of the system (Fig.~\ref{fig:res_frf}).
+Its damping ratio is 0.036 to 0.080 over $Y$, against 0.043, so the mode
+frequency is learned more accurately than its damping.
+With the learned block switched off, the $Y$ error of the trained model
+returns to about 42\,\% (Table~\ref{tab:res_obc}), so the network and the
+added states carry the mode, not the refitted parameters.
+\\
+Both the added states and their PS start are needed to learn the mode.
+On the validation records with multisine, the $Y$ error is 6.4\,\% with PS,
+78.1\,\% with plain training and 86.5\,\% without added states
+(Table~\ref{tab:app_structure}).
+Eight added states give the same error as two.
+This rests on one seed per model, so a seed that lets plain training find
+the mode is not excluded.
+The missing dynamics hold one mode of known order, so the result shows that
+two added states suffice for this mode, not how $n_{\bar x}$ should be
+chosen when the order is unknown.
+\\
+Without multisine, the final model is 0.2 to 0.4 points above the baseline
+at the true parameters (Table~\ref{tab:res_structure}).
+At this level the baseline misses only the friction and the part of the
+absorber that the motion excites.
+A candidate explanation is that the learned correction, fitted mainly where
+the multisine excites the absorber, adds small errors where the baseline is
+already close to its limit.
+The detuned start is not the cause: on the validation records, the model
+trained from the true parameters is also above the baseline on $Y$
+(Table~\ref{tab:app_structure}).
+The candidate is not tested.
+The error spectrum of both models on these records would show whether the
+difference lies in the absorber band or below the crossover.
+\todo{Missing: a check of the candidate. Candidate: compare the error spectra of the final model and the baseline on I3 to I6 with the existing evaluation code (no new run; basis: res\_ps\_spectrum uses the same computation on the validation multisine records).}
+
+\subsection{Interpretability}
+\ifdraft
+\begin{itemize}
+\item OBC halves the drift of U but does not recover the truth; expected from the truth overlap and \eqref{eq:obc_recovery} (Table~\ref{tab:res_obc})
+\item The dampers move most; the friction projects onto the damping sensitivities by construction (D-204 argument, not measured)
+\item OBC holds to first order at $\bar x=0$ for the one-step fit only; added states are not protected
+\item Uniqueness only partly shown: the two starts still differ (Table~\ref{tab:app_obc_full}) (?: row requested)
+\item Without added states the order reverses; candidate only (Table~\ref{tab:app_obc_na0})
+\item Root cause analysis compares unique estimates only while the missing dynamics do not change
+\end{itemize}
+\fi
+OBC reduces the parameter drift, but it does not recover the true
+combinations.
+From the detuned start, the combination error grows from 30.0\,\% to
+47.7\,\% with OBC and to 83.1\,\% without (Table~\ref{tab:res_obc}).
+From the correct start, OBC ends at 35.4\,\% and $\mathcal M_{\mathrm U}$ at
+58.3\,\% (Table~\ref{tab:app_obc_full}).
+This drift is expected from Section~\ref{sec:obc_ident}.
+The truth overlap of 0.59 shows that $\Phi^\top\Xi\neq0$ on the tuples, so
+the estimate of \eqref{eq:obc_recovery} is biased even with the projection.
+OBC costs no accuracy, since the full models and their physical parts differ
+by at most 0.9 points between the two arms.
+\todo{Missing: the numbers of $\mathcal M_{\mathrm{OBC}}$ (R1, R2) are preliminary (update 19500 of 33400). Candidate: update 47.7, 35.4, 0.9 and the two-start differences after the final rerun (basis: handoff 2026-10-18, Sec.~3).}
+\\
+The damping combinations $c_{g1}$, $c_{g2}$ and $c_y$ move most, by 23 to
+30 points with OBC and 43 to 46 points without, while the mass combinations
+stay within 3.4\,\% of their true values.
+A candidate cause is the rail friction of \eqref{eq:setup_fric}.
+The sensitivity to $c_{g1}$ is proportional to $\dot X_1$, and the friction
+force has the sign of $\dot X_1$.
+Their inner product over a moving record is therefore nonzero, so the
+friction lies partly in the damping directions and biases the dampers
+through $\Phi^\top\Xi$.
+This argument is ours and is not measured on the final data.
+The truth overlap of $\Xi$ split into its friction and absorber parts would
+test it.
+\\
+The guarantee of OBC is also narrower than the training it is applied to.
+The projection holds to first order around $\beta_{\mathrm{lin}}$, for the
+one-step fit on the reference slice $\bar x=0$
+(Section~\ref{sec:obc_ident}).
+With PS the added states are active, so the part of $f_{\mathrm{aug}}$ that
+depends on $\bar x$ is not orthogonal to the parameter directions, and the
+closed-loop criterion \eqref{eq:aug_loss} is not the one-step fit.
+The two starts measure how far uniqueness holds in practice.
+Their final estimates differ by 25.1\,\% with OBC and 36.4\,\% without, from
+Table~\ref{tab:app_obc_full}.
+OBC brings the two estimates closer, but they are not equal, so uniqueness is
+only partly shown.
+\todo{Missing: the two-start difference is computed by hand from Table~\ref{tab:app_obc_full}, not shown in a float. Candidate: the ``difference between starts'' row requested at the end of Section~\ref{sec:results}, computed by \texttt{res\_obc\_combinations.py} after the final rerun.}
+\\
+Without added states the order reverses: $\mathcal M_{\mathrm U}$ ends at
+48.8\,\% and $\mathcal M_{\mathrm{OBC}}$ at 68.4\,\%
+(Table~\ref{tab:app_obc_na0}).
+A candidate explanation is that the network must then represent the absorber
+statically, and a large part of it lies in the parameter directions (truth
+overlap 0.59).
+The projection removes that part from the network, so the parameters absorb
+it.
+This is not tested.
+The result shows that OBC does not bring the estimate closer to the truth in
+general.
+Its guarantee is a unique split, and only the pair from two starts tests that.
+\todo{Missing: a possible inconsistency in Table~\ref{tab:app_obc_na0}: its full-model $Y$ row (41.8, 42.7) equals the physical-part $Y$ row of Table~\ref{tab:res_obc}. Candidate: check \texttt{res\_obc\_na0} in the evaluation code before the paragraph above relies on that table.}
+\\
+Root cause analysis (Section~\ref{sec:intro}) compares unique estimates
+over time.
+By \eqref{eq:obc_recovery}, the estimate contains the bias
+$(\Phi^\top\Phi)^{-1}\Phi^\top\Xi$, which depends on the missing dynamics.
+A change of the estimate therefore indicates a changed physical parameter
+only while the missing dynamics and the excitation stay the same.
+This is our reasoning and is not tested.
+
+\subsection{Generalisation}
+\ifdraft
+\begin{itemize}
+\item The final model keeps its accuracy on each E record; each E record leaves the training range in one direction only (Fig.~\ref{fig:res_generalisation}, Fig.~\ref{fig:setup_coverage})
+\item The black box does not fit the records without multisine, training records included; candidates, with the budget evidence (Table~\ref{tab:app_bb_search})
+\item The comparison does not test the black box at its best; a black box of the plant inside the known loop would
+\end{itemize}
+\fi
+The final model keeps its accuracy outside the training range.
+Each extrapolation record is within 2.0 points of its interpolation record
+(Fig.~\ref{fig:res_generalisation}).
+On the multisine twins it stays below 10\,\% on $Y$, against 48 to 87\,\% for
+the baseline.
+Each extrapolation record leaves the training range in one direction only
+($Y$, acceleration or velocity; Fig.~\ref{fig:setup_coverage}), so a
+combined extrapolation is not tested.
+The physical part extrapolates by construction through $M(Y)$, while the
+network has only seen the training range.
+\\
+The black box does not fit the records without multisine, including the
+training records, where its error is 72 to 106\,\%.
+It therefore fails to fit these records rather than overfitting them.
+It is below the final model only on $X_2$ of I2.
+It models the whole closed loop from the reference and the injected force,
+and must learn the rigid-body and controller dynamics from servo errors of
+order $10^{-5}$~m.
+Its selected configuration reached its best validation error at update 78000
+of 80000 (Table~\ref{tab:app_bb_search}), so its training had not converged
+within the budget.
+Both are candidate causes and neither is tested.
+A longer budget would test the second.
+A black box of the plant inside the known loop would separate the first from
+the comparison of the model classes.
+The comparison therefore shows that this black box, at this budget, is less
+accurate than the final model, not that every black box would be.
+
+\subsection{Limits and departures from the research plan}
+\ifdraft
+\begin{itemize}
+\item Simulation only, one absorber plus friction, one seed, the same known controller in data and model
+\item Closed-loop training and evaluation can hide plant error behind the controller; no changed-controller test
+\item Departures: LPV vs LTI aspect removed, controller transfer (E5) dropped, real Telica data out, settling dropped (D-241)
+\end{itemize}
+\fi
+Three limits bound every result above.
+The data are simulated, and the missing dynamics are one absorber mode and
+rail friction, both chosen for this study.
+Every model is trained once with one seed (Appendix~\ref{app:hyper}), so
+differences of a few points between models are not resolved.
+The controller in the model is the controller that generated the data.
+\\
+This last limit matters because training and evaluation are both closed
+loop.
+The controller corrects part of the output error, so a plant error at low
+frequencies can stay hidden in the servo error.
+An evaluation under a changed controller would expose it, and it is the use
+that the Introduction motivates.
+\\
+The results depart from the research plan in four points.
+The comparison of the LPV baseline with an LTI baseline is no longer an
+aspect, because the LPV form follows from the equations of motion
+(Section~\ref{sec:lfr}); it justifies the baseline in
+Appendix~\ref{app:choices} (Fig.~\ref{fig:res_lpv_lti}).
+The planned test with a changed controller is not in the results.
+The planned evaluation on measured data from the industrial gantry is not
+part of the results either.
+Settling prediction is replaced by prediction over whole records, which the
+metric of Section~\ref{sec:setup_metrics} evaluates.
+\todo{Missing: a stated reason for dropping the changed-controller test (E5) and the measured data. Candidate: Dirk's decision with its basis (E5: not in the final evaluation, Introduction todo l.68; Telica: user decision 2026-09-24); the reason belongs here in one sentence each.}
+
+\subsection{Conclusion}
+\ifdraft
+\begin{itemize}
+\item Aspect 1: parallel augmentation with two added states and PS learns the missing mode from closed-loop data (Table~\ref{tab:res_structure})
+\item Aspect 2: OBC halves the drift at no accuracy cost, gives a partly unique split, does not recover the truth
+\item Aspect 3: the final model keeps its accuracy at extrapolation; better than this black box
+\item Research question, central limit, one recommendation
+\end{itemize}
+\fi
+A parallel augmentation with added states, initialised by PS and trained in
+closed loop with the known controller, learns the missing absorber mode from
+closed-loop data (Aspect~1).
+With multisine it lowers the $Y$ error from 116.6\,\% to 6.2\,\%, and
+without multisine it stays at the level of the baseline.
+OBC halves the drift of the physical combinations at no cost in accuracy
+(Aspect~2).
+It makes the estimates from two starts closer but not equal, and it does
+not recover the true values, because the missing dynamics are not orthogonal
+to the parameter directions.
+The augmented model keeps its accuracy at held-out positions, velocities and
+accelerations, and is more accurate than the black box on every record
+except one axis of one record (Aspect~3).
+The answer to the research question is therefore a parallel augmentation
+with added states, a PS start and the orthogonal construction: it predicts
+the missing dynamics, and its parameters stay closer to a unique estimate
+than without the construction.
+The central limit is that uniqueness holds only to first order at
+$\bar x=0$, and has been shown in simulation with one seed.
+The next step is to evaluate the final model under a changed controller,
+the use that motivates it.
+
+% Source material kept until Dirk removes it (wip blocks of the earlier outline, 2026-10-11 to 2026-10-18).
 \begin{wip}
 \begin{itemize}
 \item Answer whether LPV-LFR dynamic augmentation improves dual-gantry settling prediction over the physics baseline and black-box comparator
@@ -33,19 +261,6 @@
 \end{itemize}
 \todo{Rewrite every conclusion bullet after freezing the final result table; no planned or diagnostic result may appear as achieved.}
 \end{wip}
-
-\subsection{Discussion}
-\begin{outline}
-\item Why the parameters drift despite OBC (missing-dynamics overlap)
-\item Root cause analysis compares unique estimates over time; valid only while the missing dynamics do not change between the compared data (introduction, 2026-10-18)
-\item What the black-box comparison does and does not show
-\item The error during motion is not captured, likely friction??
-\item Single seed, simulation only, no controller transfer
-\item OBC holds only at $\bar x=0$; current definition doesn't take into account the additional states entering the output the next update step.
-\item Need to fix: current encoder is initialized with true parameters % polish of these runs use true-parameter information (?)
-\item Current runs only: the encoder window includes $\tau$, so the first output scored by \eqref{eq:aug_loss} is one the encoder has seen; the final runs use the window up to $\tau-1$ (D-250) and the data-based $W^b$ (D-251)
-\item Future work: friction, excitation for parameter recovery, real data
-\end{outline}
 \begin{wip}
 \begin{itemize}
     \item Why all states routing.

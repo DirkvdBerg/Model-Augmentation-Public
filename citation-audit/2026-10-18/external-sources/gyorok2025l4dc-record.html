@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Search Engine Info --><title>Orthogonal projection-based regularization for efficient model augmentation</title><meta name="description" content="Orthogonal projection-based regularization for efficient model augmentationBendeguz Mate Györök,&nbsp;Jan H. Hoekstra,&nbsp;Johan Kon,&nbsp;Tamas Peni,&nbsp;..."><!-- Solution from http://stackoverflow.com/questions/31593297/using-execcommand-javascript-to-copy-hidden-text-to-clipboard -->
+<script src="https://proceedings.mlr.press/v283/assets/js/copy_input.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="https://proceedings.mlr.press/v283/assets/js/download.js"></script>
+<meta name="citation_publisher" content="PMLR"/><meta name="citation_title" content="Orthogonal projection-based regularization for efficient model augmentation"/><meta name="citation_language" content="en"/>
+<meta name="citation_abstract_html_url" content="https://proceedings.mlr.press/v283/gyorok25a.html"/><meta name="citation_pdf_url" content="https://raw.githubusercontent.com/mlresearch/v283/main/assets/gyorok25a/gyorok25a.pdf"><meta name="citation_firstpage" content="166"><meta name="citation_lastpage" content="178"><meta name="citation_author" content="Bendeguz Mate Györök"><meta name="citation_author" content="Jan H. Hoekstra"><meta name="citation_author" content="Johan Kon"><meta name="citation_author" content="Tamas Peni"><meta name="citation_author" content="Maarten Schoukens"><meta name="citation_author" content="Roland Toth"><meta name="citation_publication_date" content="2025/05/22"><meta name="citation_inbook_title" content="7th Annual Learning for Dynamics \& Control Conference"/><meta name="citation_conference_title" content="7th Annual Learning for Dynamics \& Control Conference"/><meta name="citation_issn" content="2640-3498"><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Orthogonal projection-based regularization for efficient model augmentation"/><meta name="twitter:site" content="@MLResearchPress" /><meta name="twitter:description" content="Deep-learning-based nonlinear system identification has shown the ability to produce reliable and highly accurate models in practice. However, these black-bo..."/><meta name="twitter:image" content="https://proceedings.mlr.press/v283/assets/images/logo-pmlr.png"/>
+<meta name="twitter:image:alt" content="PMLR Logo"/><meta property="og:title" content="Orthogonal projection-based regularization for efficient model augmentation"/>
+<meta property="og:description" content="Deep-learning-based nonlinear system identification has shown the ability to produce reliable and highly accurate models in practice. However, these black-box models lack physical interpretability,..."/>
+<meta property="og:type" content="article"/><meta property="article:published_time" content="2025-05-22T00:00:00+00:00"><meta property="og:url" content="https://proceedings.mlr.press/v283/gyorok25a.html"/><meta property="og:image" content="https://proceedings.mlr.press/v283/assets/images/logo-pmlr.png"/><meta property="og:site_name" content="PMLR"/><!-- Style Info -->
+  <link rel="stylesheet" type="text/css" href="https://proceedings.mlr.press/v283/assets/css/pmlr.css" />
+  <style>.hero-text {
+    color: #303030;
+  }</style>
+
+  <!-- Icon Info -->
+  <link rel="shortcut icon" href="https://proceedings.mlr.press/v283/assets/images/favicon-pmlr.ico" type="image/x-icon">
+  <link rel="icon" href="https://proceedings.mlr.press/v283/assets/images/favicon-pmlr.ico" type="image/x-icon">
+
+  <!-- Feed Info --><link type="application/atom+xml" rel="alternate" href="https://proceedings.mlr.press/v283/feed.xml" title="Proceedings of Machine Learning Research" /><!-- Scripting info --><!-- Solution from http://stackoverflow.com/questions/31593297/using-execcommand-javascript-to-copy-hidden-text-to-clipboard -->
+<script src="https://proceedings.mlr.press/v283/assets/js/copy_input.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="https://proceedings.mlr.press/v283/assets/js/download.js"></script>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92432422-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {
+      equationNumbers: {
+          autoNumber: "AMS"
+        }
+      },
+      tex2jax: {
+      inlineMath: [ ['$','$'], ['\\(', '\\)'] ],
+      displayMath: [ ['$$','$$'], ['\\[', '\\]'] ],
+      processEscapes: true,
+    }
+  });
+</script>
+<script  async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  <!-- User custom header -->
+</head>
+
+
+
+
+
+
+<body>
+
+
+<header class="site-header">
+  <div class="wrapper">
+    
+
+
+<div class="hero-image">
+  <div class="hero-text">
+    <a href="/" target="_top"><img src="/v283/assets/images/logo-pmlr.svg" alt="[7th Annual Learning for Dynamics \& Control Conference Logo]"></a>
+    Proceedings of Machine Learning Research
+  </div>
+</div>
+
+
+    <nav class="site-nav">
+  <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+  <label for="nav-trigger">
+  <span class="menu-icon"><svg viewBox="0 0 18 15" width="18px" height="15px">
+  <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+</svg>
+</span>
+  </label>
+  <div class="trigger"><a class="page-link" href="https://proceedings.mlr.press/v283/">Volume 283</a><a class="page-link" href="https://www.jmlr.org/">JMLR</a> 
+    <a class="page-link" href="https://data.mlr.press/">DMLR</a> 
+    <a class="page-link" href="https://jmlr.org/tmlr/">TMLR</a> 
+    <a class="page-link" href="https://www.jmlr.org/mloss">MLOSS</a>
+    <a class="page-link" href="/faq.html">FAQ</a>
+    <a class="page-link" href="/spec.html">Submission Format</a>
+    <a class="page-link" href="https://proceedings.mlr.press//v283/assets/rss/feed.xml">
+      <img src="https://proceedings.mlr.press/v283/assets/images/RSS.gif" class="rss" alt="RSS Feed">
+    </a>
+  </div>
+</nav>
+
+  </div>
+</header>
+
+
+
+
+
+<main class="page-content" aria-label="Content"><div class="wrapper">
+
+
+<p style="text-align:right">[<a href="https://github.com/mlresearch/v283/edit/gh-pages/_posts/2025-05-22-gyorok25a.md" target="_blank" onclick="ga('send', 'event', 'Edit Page', 'Edit', 'https://github.com/mlresearch/v283/edit/gh-pages/_posts/2025-05-22-gyorok25a.md', 13);">edit</a>]</p>
+
+<article class="post-content">
+  <h1>Orthogonal projection-based regularization for efficient model augmentation</h1><span class="authors">Bendeguz Mate Györök,&nbsp;Jan H. Hoekstra,&nbsp;Johan Kon,&nbsp;Tamas Peni,&nbsp;Maarten Schoukens,&nbsp;Roland Toth</span>
+<div id="info"><i>Proceedings of the 7th Annual Learning for Dynamics \& Control Conference</i>,&nbsp;PMLR 283:166-178,&nbsp;2025.
+  </div> <!-- info -->
+  
+  <h4>Abstract</h4>
+  <div id="abstract" class="abstract">
+    Deep-learning-based nonlinear system identification has shown the ability to produce reliable and highly accurate models in practice. However, these black-box models lack physical interpretability, and a considerable part of the learning effort is often spent on capturing already expected/known behavior of the system, that can be accurately described by first-principles laws of physics. A potential solution is to directly integrate such prior physical knowledge into the model structure, combining the strengths of physics-based modeling and deep-learning-based identification. The most common approach is to use an additive model augmentation structure, where the physics-based and the machine-learning (ML) components are connected in parallel, i.e., additively. However, such models are overparametrized, training them is challenging, potentially causing the physics-based part to lose interpretability. To overcome this challenge, this paper proposes an orthogonal projection-based regularization technique to enhance parameter learning and even model accuracy in learning-based augmentation of nonlinear baseline models.
+  </div>
+  <h4>Cite this Paper</h4>
+<hr class="bibhr">
+
+<div class="bibbuttongroup row row--justified">
+  <div class="bibbuttontext column">
+    BibTeX
+  </div>
+  <div class="column">
+  <div class="codebox">
+    <code class="citecode" id="bibtex">@InProceedings{pmlr-v283-gyorok25a,
+  title = 	 {Orthogonal projection-based regularization for efficient model augmentation},
+  author =       {Gy{\"o}r{\"o}k, Bendeguz Mate and Hoekstra, Jan H. and Kon, Johan and Peni, Tamas and Schoukens, Maarten and Toth, Roland},
+  booktitle = 	 {Proceedings of the 7th Annual Learning for Dynamics \& Control Conference},
+  pages = 	 {166--178},
+  year = 	 {2025},
+  editor = 	 {Ozay, Necmiye and Balzano, Laura and Panagou, Dimitra and Abate, Alessandro},
+  volume = 	 {283},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {04--06 Jun},
+  publisher =    {PMLR},
+  pdf = 	 {https://raw.githubusercontent.com/mlresearch/v283/main/assets/gyorok25a/gyorok25a.pdf},
+  url = 	 {https://proceedings.mlr.press/v283/gyorok25a.html},
+  abstract = 	 {Deep-learning-based nonlinear system identification has shown the ability to produce reliable and highly accurate models in practice. However, these black-box models lack physical interpretability, and a considerable part of the learning effort is often spent on capturing already expected/known behavior of the system, that can be accurately described by first-principles laws of physics. A potential solution is to directly integrate such prior physical knowledge into the model structure, combining the strengths of physics-based modeling and deep-learning-based identification. The most common approach is to use an additive model augmentation structure, where the physics-based and the machine-learning (ML) components are connected in parallel, i.e., additively. However, such models are overparametrized, training them is challenging, potentially causing the physics-based part to lose interpretability. To overcome this challenge, this paper proposes an orthogonal projection-based regularization technique to enhance parameter learning and even model accuracy in learning-based augmentation of nonlinear baseline models.}
+}
+</code>
+  </div>
+  <button class="button"  id="button-bibtex1" onclick="CopyToClipboard('bibtex');  ga('send', 'event', 'Ref Copy', 'CopyToClipboard', '/v283/pmlr-v283-gyorok25a.bib', 15);">Copy to Clipboard</button>
+  <button class="button" id="button-bibtex2" onclick="DownloadTexToFile('pmlr-v283-gyorok25a.bib', 'bibtex'); ga('send', 'event', 'Ref Downloads', 'Download', '/v283/pmlr-v283-gyorok25a.bib', 16);">Download</button>
+  </div>
+</div>
+
+
+<div class="bibbuttongroup row row--justified">
+  <div class="bibbuttontext column">
+    Endnote
+  </div>
+  <div class="column">
+  <div class="codebox">
+    <code class="citecode" id="endnote">%0 Conference Paper
+%T Orthogonal projection-based regularization for efficient model augmentation
+%A Bendeguz Mate Györök
+%A Jan H. Hoekstra
+%A Johan Kon
+%A Tamas Peni
+%A Maarten Schoukens
+%A Roland Toth
+%B Proceedings of the 7th Annual Learning for Dynamics \& Control Conference
+%C Proceedings of Machine Learning Research
+%D 2025
+%E Necmiye Ozay
+%E Laura Balzano
+%E Dimitra Panagou
+%E Alessandro Abate	
+%F pmlr-v283-gyorok25a
+%I PMLR
+%P 166--178
+%U https://proceedings.mlr.press/v283/gyorok25a.html
+%V 283
+%X Deep-learning-based nonlinear system identification has shown the ability to produce reliable and highly accurate models in practice. However, these black-box models lack physical interpretability, and a considerable part of the learning effort is often spent on capturing already expected/known behavior of the system, that can be accurately described by first-principles laws of physics. A potential solution is to directly integrate such prior physical knowledge into the model structure, combining the strengths of physics-based modeling and deep-learning-based identification. The most common approach is to use an additive model augmentation structure, where the physics-based and the machine-learning (ML) components are connected in parallel, i.e., additively. However, such models are overparametrized, training them is challenging, potentially causing the physics-based part to lose interpretability. To overcome this challenge, this paper proposes an orthogonal projection-based regularization technique to enhance parameter learning and even model accuracy in learning-based augmentation of nonlinear baseline models.
+</code>
+  </div>
+  <button class="button"  id="button-endnote1" onclick="CopyToClipboard('endnote');  ga('send', 'event', 'Ref Copy', 'CopyToClipboard', '/v283/pmlr-v283-gyorok25a.enw', 15);">Copy to Clipboard</button>
+  <button class="button" id="button-endnote2" onclick="DownloadTexToFile('pmlr-v283-gyorok25a.enw', 'endnote'); ga('send', 'event', 'Ref Downloads', 'Download', '/v283/pmlr-v283-gyorok25a.enw', 16);">Download</button>
+  </div>
+</div>
+
+
+
+<div class="bibbuttongroup row row--justified">
+  <div class="bibbuttontext column">
+    APA
+  </div>
+  <div class="column">
+  <div class="codebox">
+    <code class="citecode" id="apa">Györök, B.M., Hoekstra, J.H., Kon, J., Peni, T., Schoukens, M. & Toth, R.. (2025). Orthogonal projection-based regularization for efficient model augmentation. <i>Proceedings of the 7th Annual Learning for Dynamics \& Control Conference</i>, in <i>Proceedings of Machine Learning Research</i> 283:166-178 Available from https://proceedings.mlr.press/v283/gyorok25a.html.
+
+</code>
+  </div>
+  <button class="button"  id="button-apa1" onclick="CopyToClipboard('apa');  ga('send', 'event', 'Ref Copy', 'CopyToClipboard', '/v283/pmlr-v283-gyorok25a.txt', 15);">Copy to Clipboard</button>
+  <button class="button" id="button-apa2" onclick="DownloadTexToFile('pmlr-v283-gyorok25a.txt', 'apa'); ga('send', 'event', 'Ref Downloads', 'Download', '/v283/pmlr-v283-gyorok25a.txt', 16);">Download</button>
+  </div>
+</div>
+
+<hr class="bibhr">
+
+
+  
+  <h4>Related Material</h4>
+  <div id="extras">
+    <ul>
+      <li><a href="https://raw.githubusercontent.com/mlresearch/v283/main/assets/gyorok25a/gyorok25a.pdf" target="_blank" onclick="ga('send', 'event', 'PDF Downloads', 'Download', 'https://raw.githubusercontent.com/mlresearch/v283/main/assets/gyorok25a/gyorok25a.pdf', 10);">Download PDF</a></li>
+    </ul>
+  </div>
+  
+
+</article>
+
+
+
+
+
+
+
+
+
+      </div>
+    </main>
+
+
+<footer class="site-footer">
+  <div class="wrapper">
+    <p>This site last compiled Wed, 07 Oct 2026 11:42:48 +0000</p>
+      <div class="footer-left"><i><a href="https://github.com/mlresearch/v283">Github Account</a></i>
+      </div>
+      <div class="footer-right">Copyright &copy; <a href="https://proceedings.mlr.press">The authors and PMLR</a> 2026.<a href="https://twitter.com/MLResearchPress"><i class="icon-twitter"></i>&nbsp;MLResearchPress</a></div>
+  </div>
+</footer>
+
+
+
+
+
+</body>
+
+</html>

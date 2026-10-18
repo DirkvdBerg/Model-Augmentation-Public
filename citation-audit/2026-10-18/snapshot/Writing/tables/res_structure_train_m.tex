@@ -1,0 +1,27 @@
+% training records
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{l r r r r r r}
+\toprule
+ & \multicolumn{3}{c}{Multisine} & \multicolumn{3}{c}{No multisine}\\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+RMS (m) & $X_1$ & $X_2$ & $Y$ & $X_1$ & $X_2$ & $Y$\\
+\midrule
+Baseline, true $\theta$ & $3.35\times10^{-6}$ & $3.46\times10^{-6}$ & $3.77\times10^{-5}$ & $1.11\times10^{-6}$ & $1.22\times10^{-6}$ & $1.02\times10^{-6}$\\
+Baseline, detuned $\theta$$^\dagger$ & $4.62\times10^{-6}$ & $4.65\times10^{-6}$ & $4.07\times10^{-5}$ & $2.40\times10^{-6}$ & $1.41\times10^{-6}$ & $3.26\times10^{-6}$\\
+Static parallel, $n_a{=}0$ & $2.16\times10^{-6}$ & $2.10\times10^{-6}$ & $2.69\times10^{-5}$ & $1.16\times10^{-6}$ & $1.13\times10^{-6}$ & $5.13\times10^{-6}$\\
+Static parallel, $n_a{=}0$, detuned $\theta$ & $2.15\times10^{-6}$ & $2.10\times10^{-6}$ & $2.69\times10^{-5}$ & $1.16\times10^{-6}$ & $1.13\times10^{-6}$ & $5.20\times10^{-6}$\\
+Static parallel (OBC), $n_a{=}0$, detuned $\theta$ & $2.22\times10^{-6}$ & $2.18\times10^{-6}$ & $2.69\times10^{-5}$ & $1.27\times10^{-6}$ & $1.30\times10^{-6}$ & $5.52\times10^{-6}$\\
+Plain training, $n_a{=}2$ & $1.73\times10^{-6}$ & $1.75\times10^{-6}$ & $2.42\times10^{-5}$ & $1.06\times10^{-6}$ & $1.12\times10^{-6}$ & $3.93\times10^{-6}$\\
+PS init., $n_a{=}2$ & $1.48\times10^{-6}$ & $1.57\times10^{-6}$ & $2.03\times10^{-6}$ & $9.64\times10^{-7}$ & $1.06\times10^{-6}$ & $1.18\times10^{-6}$\\
+PS init., baseline part only & $3.10\times10^{-6}$ & $3.02\times10^{-6}$ & $3.73\times10^{-5}$ & $1.33\times10^{-6}$ & $1.07\times10^{-6}$ & $1.02\times10^{-6}$\\
+PS init., $n_a{=}8$ & $1.40\times10^{-6}$ & $1.44\times10^{-6}$ & $2.01\times10^{-6}$ & $9.67\times10^{-7}$ & $1.04\times10^{-6}$ & $1.19\times10^{-6}$\\
+PS init., detuned $\theta$ & $1.48\times10^{-6}$ & $1.52\times10^{-6}$ & $2.11\times10^{-6}$ & $9.67\times10^{-7}$ & $1.05\times10^{-6}$ & $1.18\times10^{-6}$\\
+\midrule
+Augmented (OBC), detuned $\theta$$^\dagger$ & $1.66\times10^{-6}$ & $1.65\times10^{-6}$ & $2.20\times10^{-6}$ & $1.09\times10^{-6}$ & $1.21\times10^{-6}$ & $1.14\times10^{-6}$\\
+\midrule
+Black-box model & $8.38\times10^{-6}$ & $8.90\times10^{-6}$ & $1.02\times10^{-5}$ & $1.86\times10^{-5}$ & $1.98\times10^{-5}$ & $3.01\times10^{-5}$\\
+\midrule
+Noise floor & $9.41\times10^{-9}$ & $9.96\times10^{-9}$ & $3.45\times10^{-9}$ & $8.75\times10^{-9}$ & $9.33\times10^{-9}$ & $3.03\times10^{-9}$\\
+\bottomrule
+\multicolumn{7}{l}{\footnotesize $^\dagger$ preliminary, update 19500 of 33400}\\
+\end{tabular}
