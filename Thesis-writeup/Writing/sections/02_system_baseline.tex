@@ -276,7 +276,7 @@ ILC records.}
 \item $Y$ is a state and the scheduling variable; $M(Y)^{-1}$ makes the model rational in $Y$ (Drenth)
 \item $M(Y)=M_0+YM_1+Y^2M_2$; $Y$ enters only through $Y\ddot q$ and $Y^2\ddot q$, realized by repeating $Y$ (this work)
 \item Latent variables $z,w$ and Delta-block $\Dsch(Y)=YI_6$; not claimed minimal (this work)
-\item LTI part $G$ in the continuous-time form of Drenth Eq.~(6); its first block row is the state equation (adapted)
+\item LTI part $G$ in a continuous-time adaptation of Drenth Eq.~(2); its first block row is the state equation
 \item Closing the algebraic loop gives back \eqref{eq:eom} exactly (this work)
 \item Well posed iff $M(Y)$ nonsingular, true for every $Y$; closed-form $M(Y)^{-1}$, no numerical solve (Drenth Def.~1; this work)
 \end{itemize}
@@ -346,8 +346,8 @@ with the \kw{Delta-block} mapping $z$ to $w$,
   \label{eq:delta}
 \end{equation}
 \todo{I have an SVD reduction add this in the appendix or not?}
-We can write the LTI part $G$ of the LFR in the continuous-time form,
-\cite[Eq.~(6)]{drenth2025lpvlfr},
+We write the LTI part $G$ of the LFR in continuous time, adapting the
+discrete-time block structure of~\cite[Eq.~(2)]{drenth2025lpvlfr}:
 \begin{equation}
   \begin{bmatrix}\dot{\tilde x}\\ z\\ q\end{bmatrix}
   =G\begin{bmatrix}\tilde x\\ w\\ u\end{bmatrix},

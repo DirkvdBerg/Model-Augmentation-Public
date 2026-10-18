@@ -60,7 +60,8 @@ With $a_1$ and $a_2$ from \eqref{eq:lfr_chain} treated as independent signals, s
 $M_0\ddot q+M_1a_1+M_2a_2=u-C\dot q-Kq$ for $\ddot q$ with $R=M_0^{-1}$ gives
 $\ddot q=R(u-Kq-C\dot q-M_1a_1-M_2a_2)$. With $\dot{\tilde x}=[\dot q^\top\;\ddot q^\top]^\top$,
 $z=[\ddot q^\top\;a_1^\top]^\top$, and $w=[a_1^\top\;a_2^\top]^\top$, the LTI part $G$ of
-\eqref{eq:lfr_G}, partitioned as in \cite[Eq.~(6)]{drenth2025lpvlfr}, is
+\eqref{eq:lfr_G}, using a continuous-time adaptation of the block partition
+in~\cite[Eq.~(2)]{drenth2025lpvlfr}, is
 \begin{equation}
  \begin{bmatrix}\dot{\tilde x}\\z\\q\end{bmatrix}
  =
